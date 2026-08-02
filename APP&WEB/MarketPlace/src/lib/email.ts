@@ -255,6 +255,55 @@ Tým ZION Terra Nova
   }
 }
 
+export async function sendInvoiceEmail(order: OrderEmailData, invoiceHtml: string): Promise<void> {
+  if (!isEnabled()) {
+    console.log('Email notifications disabled: SMTP not configured');
+    return;
+  }
+
+  const subject = `Faktura k objednávce #${order.orderId} - ${SHOP_NAME}`;
+  const body = `Dobrý den, ${order.customerName},
+
+v příloze Vám zasíláme fakturu k objednávce #${order.orderId}.
+
+Celková částka: ${formatPrice(order.totalCzk)}
+
+S pozdravem,
+Tým ZION Terra Nova
+`;
+
+  try {
+    const transporter = createTransporter();
+    await transporter.sendMail({
+      from: `${SHOP_NAME} <${SHOP_EMAIL}>`,
+      to: order.customerEmail,
+      replyTo: SHOP_EMAIL,
+      subject,
+      text: body,
+      html: `<p>Dobrý den ${escapeHtml(order.customerName)},</p><p>v příloze Vám zasíláme fakturu k objednávce <strong>#${escapeHtml(order.orderId)}</strong>.</p><p>Celková částka: <strong>${formatPrice(order.totalCzk)}</strong></p><p>S pozdravem,<br>Tým ZION Terra Nova</p>`,
+      attachments: [
+        {
+          filename: `faktura-${order.orderId.replace(/\s+/g, '_')}.html`,
+          content: invoiceHtml,
+          contentType: 'text/html',
+        },
+      ],
+    });
+    console.log(`Invoice email sent for ${order.orderId}`);
+  } catch (error) {
+    console.error('Failed to send invoice email:', error);
+  }
+}
+
+function escapeHtml(input: string): string {
+  return input
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export async function sendShippingNotification(order: OrderEmailData): Promise<void> {
   if (!isEnabled()) {
     console.log('Email notifications disabled: SMTP not configured');
