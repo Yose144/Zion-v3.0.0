@@ -1,7 +1,7 @@
 /**
  * GitHub Release data for ZION v3-Mainnet public repo.
  * Source: https://github.com/Zion-TerraNova/v3-Mainnet/releases
- * Updated: 2026-07-26 — v3.0.6-beta (Triple Stream Miner, 5 platforms)
+ * Updated: 2026-08-02 — v3.1.0 (Boost Miner) + v3.1.0-desktop (Desktop GUI)
  */
 
 export const GITHUB_REPO = 'Zion-TerraNova/v3-Mainnet';
@@ -26,33 +26,70 @@ export type Release = {
   assets: ReleaseAsset[];
 };
 
+const DL_BASE_310 = `https://github.com/${GITHUB_REPO}/releases/download/v3.1.0`;
 const DL_BASE_306 = `https://github.com/${GITHUB_REPO}/releases/download/v3.0.6-beta`;
 const DL_BASE_305 = `https://github.com/${GITHUB_REPO}/releases/download/v3.0.5-beta`;
 
 /**
- * v3.0.6-beta — Triple Stream Miner (2026-07-26)
- * Standalone zion-miner binary with interactive setup menu.
- * All 5 platforms: Linux x86_64/ARM64, macOS Apple Silicon/Intel, Windows x86_64.
+ * v3.1.0 — Boost Miner (2026-08-02)
+ * Three-stream mining: ZION (primary) + Boost Stream 1 (GPU) + Boost Stream 2 (CPU).
+ * Auto GPU backend detection: OpenCL/CUDA/Metal.
+ * TUI dashboard with real-time hashrate, shares, and stream status.
+ * Currently Linux x86_64 only — macOS/Windows use v3.0.6-beta Trinity Miner below.
  */
 export const LATEST_RELEASE: Release = {
+  tag: 'v3.1.0',
+  name: 'ZION v3.1.0 — Boost Miner',
+  publishedAt: '2026-08-02',
+  prerelease: false,
+  htmlUrl: `https://github.com/${GITHUB_REPO}/releases/tag/v3.1.0`,
+  assets: [
+    {
+      name: 'zion-miner-v3.1.0-linux-x86_64.tar.gz',
+      label: 'Linux x86_64',
+      description: 'Boost Miner — three-stream mining with auto GPU backend detection',
+      sizeMB: 2.0,
+      downloadUrl: `${DL_BASE_310}/zion-miner-v3.1.0-linux-x86_64.tar.gz`,
+      platform: 'linux-x86_64',
+    },
+    {
+      name: 'SHA256SUMS-miner.txt',
+      label: 'SHA256 Checksums',
+      description: 'Verification checksums for v3.1.0 downloads',
+      sizeMB: 0.0,
+      downloadUrl: `${DL_BASE_310}/SHA256SUMS-miner.txt`,
+      platform: 'checksum',
+    },
+  ],
+};
+
+/**
+ * v3.0.6-beta — Trinity Miner (2026-08-01)
+ * Standalone zion-miner binary with interactive setup menu.
+ * Full GPU backends: CUDA + OpenCL + Metal (platform-gated).
+ * Native algorithms: VerusHash v2.2, RandomX, BLAKE3.
+ * All 5 platforms: Linux x86_64/ARM64, macOS Apple Silicon/Intel, Windows x86_64.
+ * Use this if you need macOS or Windows — v3.1.0 is Linux-only for now.
+ */
+export const TRINITY_RELEASE: Release = {
   tag: 'v3.0.6-beta',
-  name: 'ZION v3.0.6-beta — Triple Stream Miner',
-  publishedAt: '2026-07-26',
+  name: 'ZION v3.0.6-beta — Trinity Miner',
+  publishedAt: '2026-08-01',
   prerelease: true,
   htmlUrl: `https://github.com/${GITHUB_REPO}/releases/tag/v3.0.6-beta`,
   assets: [
     {
       name: 'zion-miner-linux-x86_64.tar.gz',
       label: 'Linux x86_64',
-      description: 'Triple Stream Miner — OpenCL (AMD/Intel) + CUDA (NVIDIA)',
-      sizeMB: 3.5,
+      description: 'Trinity Miner — OpenCL (AMD/Intel) + CUDA (NVIDIA) + native VerusHash/RandomX',
+      sizeMB: 3.4,
       downloadUrl: `${DL_BASE_306}/zion-miner-linux-x86_64.tar.gz`,
       platform: 'linux-x86_64',
     },
     {
       name: 'zion-miner-linux-aarch64.tar.gz',
       label: 'Linux ARM64',
-      description: 'Triple Stream Miner — CUDA (Jetson/ARM64 servers)',
+      description: 'Trinity Miner — CUDA (Jetson/ARM64 servers)',
       sizeMB: 2.7,
       downloadUrl: `${DL_BASE_306}/zion-miner-linux-aarch64.tar.gz`,
       platform: 'linux-aarch64',
@@ -60,7 +97,7 @@ export const LATEST_RELEASE: Release = {
     {
       name: 'zion-miner-macos-aarch64.tar.gz',
       label: 'macOS Apple Silicon (M1–M4)',
-      description: 'Triple Stream Miner — Metal + OpenCL',
+      description: 'Trinity Miner — Metal + OpenCL',
       sizeMB: 3.2,
       downloadUrl: `${DL_BASE_306}/zion-miner-macos-aarch64.tar.gz`,
       platform: 'macos-arm64',
@@ -68,7 +105,7 @@ export const LATEST_RELEASE: Release = {
     {
       name: 'zion-miner-macos-x86_64.tar.gz',
       label: 'macOS Intel x86_64',
-      description: 'Triple Stream Miner — Metal + OpenCL',
+      description: 'Trinity Miner — Metal + OpenCL',
       sizeMB: 3.3,
       downloadUrl: `${DL_BASE_306}/zion-miner-macos-x86_64.tar.gz`,
       platform: 'macos-x86_64',
@@ -76,7 +113,7 @@ export const LATEST_RELEASE: Release = {
     {
       name: 'zion-miner-windows-x86_64.zip',
       label: 'Windows x86_64',
-      description: 'Triple Stream Miner — CUDA (NVIDIA); OpenCL/AMD coming later',
+      description: 'Trinity Miner — CUDA (NVIDIA); OpenCL/AMD coming later',
       sizeMB: 2.9,
       downloadUrl: `${DL_BASE_306}/zion-miner-windows-x86_64.zip`,
       platform: 'windows-x86_64',
