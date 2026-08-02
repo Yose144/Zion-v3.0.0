@@ -9,6 +9,41 @@ export interface ShipLoadout {
   cargo: number;
   scanner: number;
   color: string;
+  model: ShipModelId;
+}
+
+export type ShipModelId = 'pilgrim' | 'awing' | 'bwing' | 'snowspeeder' | 'tiefighter' | 'tieinterceptor';
+
+export interface ShipModelDef {
+  id: ShipModelId;
+  label: string;
+  description: string;
+  stlPath: string | null;
+  color: string;
+  unlockLevel: number;
+  unlockCost: number;
+  class: string;
+}
+
+export const SHIP_MODELS: ShipModelDef[] = [
+  { id: 'pilgrim', label: 'Pilgrim Scout', description: 'Default explorer vessel', stlPath: null, color: '#06b6d4', unlockLevel: 1, unlockCost: 0, class: 'Scout' },
+  { id: 'awing', label: 'A-Wing', description: 'Fast interceptor — high boost', stlPath: '/models/awing.stl', color: '#ef4444', unlockLevel: 2, unlockCost: 500, class: 'Interceptor' },
+  { id: 'snowspeeder', label: 'Snowspeeder', description: 'Atmospheric recon', stlPath: '/models/snowspeeder.stl', color: '#94a3b8', unlockLevel: 3, unlockCost: 1000, class: 'Recon' },
+  { id: 'tiefighter', label: 'TIE Fighter', description: 'Imperial patrol — agile', stlPath: '/models/tiefighter.stl', color: '#1e293b', unlockLevel: 4, unlockCost: 2500, class: 'Patrol' },
+  { id: 'bwing', label: 'B-Wing', description: 'Heavy assault — balanced', stlPath: '/models/bwing.stl', color: '#f59e0b', unlockLevel: 5, unlockCost: 5000, class: 'Assault' },
+  { id: 'tieinterceptor', label: 'TIE Interceptor', description: 'Elite strike — max speed', stlPath: '/models/tieinterceptor.stl', color: '#0f172a', unlockLevel: 7, unlockCost: 10000, class: 'Elite Strike' },
+];
+
+export type Archetype = 'warrior' | 'trader' | 'explorer' | 'sage' | null;
+
+export type BodyType = 'slim' | 'standard' | 'heavy';
+export type Augmentation = 'reflexes' | 'neural' | 'tech' | 'bio' | 'stealth';
+
+export interface AvatarConfig {
+  callsign: string;
+  bodyType: BodyType;
+  neonColor: string;
+  augmentation: Augmentation;
 }
 
 interface GameState {
@@ -22,7 +57,10 @@ interface GameState {
   avatars: any[];
   territories: any[];
   collectedEggs: string[];
+  archetype: Archetype;
+  avatarConfig: AvatarConfig;
   shipLoadout: ShipLoadout;
+  unlockedShips: ShipModelId[];
   setAddress: (address: string | null) => void;
   setAvatars: (avatars: any[]) => void;
   setTerritories: (territories: any[]) => void;
@@ -37,6 +75,11 @@ interface GameState {
   claimGoldenEgg: (worldId: string) => boolean;
   upgradeShip: (part: keyof ShipLoadout) => boolean;
   setShipColor: (color: string) => void;
+  setShipModel: (model: ShipModelId) => void;
+  unlockShip: (model: ShipModelId) => boolean;
+  setArchetype: (archetype: Archetype) => void;
+  applyArchetype: (archetype: NonNullable<Archetype>) => void;
+  setAvatarConfig: (config: Partial<AvatarConfig>) => void;
   reset: () => void;
 }
 
@@ -55,7 +98,10 @@ export const useGameStore = create<GameState>()(
       avatars: [],
       territories: [],
       collectedEggs: [],
-      shipLoadout: { boost: 1, cargo: 1, scanner: 1, color: '#22d3ee' },
+      archetype: null,
+      avatarConfig: { callsign: '', bodyType: 'standard', neonColor: '#06b6d4', augmentation: 'neural' },
+      shipLoadout: { boost: 1, cargo: 1, scanner: 1, color: '#06b6d4', model: 'pilgrim' },
+      unlockedShips: ['pilgrim'],
 
       setAddress: (address) => set({ address }),
 
@@ -137,6 +183,53 @@ export const useGameStore = create<GameState>()(
           shipLoadout: { ...s.shipLoadout, color },
         })),
 
+      setShipModel: (model) =>
+        set((s) => {
+          if (!s.unlockedShips.includes(model)) return s;
+          return { shipLoadout: { ...s.shipLoadout, model } };
+        }),
+
+      unlockShip: (model) => {
+        const state = get();
+        if (state.unlockedShips.includes(model)) return false;
+        const def = SHIP_MODELS.find((m) => m.id === model);
+        if (!def) return false;
+        const level = getLevel(state.xp);
+        if (level < def.unlockLevel) return false;
+        if (state.credits < def.unlockCost) return false;
+        set({
+          unlockedShips: [...state.unlockedShips, model],
+          credits: state.credits - def.unlockCost,
+          shipLoadout: { ...state.shipLoadout, model },
+        });
+        return true;
+      },
+
+      setArchetype: (archetype) => set({ archetype }),
+
+      setAvatarConfig: (config) =>
+        set((s) => ({
+          avatarConfig: { ...s.avatarConfig, ...config },
+        })),
+
+      applyArchetype: (archetype) =>
+        set((s) => {
+          const isFirst = s.archetype === null;
+          if (!isFirst) return { archetype };
+
+          const loadout = { ...s.shipLoadout };
+          if (archetype === 'warrior') {
+            loadout.boost = Math.min(5, loadout.boost + 1);
+          } else if (archetype === 'trader') {
+            loadout.cargo = Math.min(5, loadout.cargo + 1);
+          } else if (archetype === 'explorer') {
+            loadout.scanner = Math.min(5, loadout.scanner + 1);
+          } else if (archetype === 'sage') {
+            return { archetype, credits: s.credits + 50, xp: s.xp + 100 };
+          }
+          return { archetype, shipLoadout: loadout };
+        }),
+
       reset: () =>
         set({
           address: null,
@@ -149,7 +242,10 @@ export const useGameStore = create<GameState>()(
           avatars: [],
           territories: [],
           collectedEggs: [],
-          shipLoadout: { boost: 1, cargo: 1, scanner: 1, color: '#22d3ee' },
+          archetype: null,
+          avatarConfig: { callsign: '', bodyType: 'standard', neonColor: '#06b6d4', augmentation: 'neural' },
+          shipLoadout: { boost: 1, cargo: 1, scanner: 1, color: '#06b6d4', model: 'pilgrim' },
+          unlockedShips: ['pilgrim'],
         }),
     }),
     {
@@ -164,7 +260,18 @@ export const useGameStore = create<GameState>()(
         avatars: state.avatars,
         territories: state.territories,
         collectedEggs: state.collectedEggs,
+        archetype: state.archetype,
+        avatarConfig: state.avatarConfig,
         shipLoadout: state.shipLoadout,
+        unlockedShips: state.unlockedShips,
+      }),
+      merge: (persisted, current) => ({
+        ...current,
+        ...(persisted as object),
+        // Ensure unlockedShips is always a valid array (fix for zustand v5 hydration edge case)
+        unlockedShips: Array.isArray((persisted as any)?.unlockedShips)
+          ? (persisted as any).unlockedShips
+          : current.unlockedShips ?? ['pilgrim'],
       }),
     }
   )

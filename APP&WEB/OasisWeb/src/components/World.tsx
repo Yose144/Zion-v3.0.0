@@ -39,6 +39,9 @@ export default function World({
   const [hovered, setHovered] = useState(false);
 
   const isStarSystem = category === 'star-system';
+  const distance = Math.sqrt(position[0] ** 2 + position[1] ** 2 + position[2] ** 2);
+  const isDistant = distance > 55;
+  const displaySize = isDistant ? size * 1.6 : size;
 
   useLayoutEffect(() => {
     if (gateRef.current) {
@@ -80,40 +83,35 @@ export default function World({
     >
       {/* Core sphere */}
       <mesh>
-        <sphereGeometry args={[size * (hovered ? 1.12 : 1), 32, 32]} />
-        <meshStandardMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={selected ? 0.75 : hovered ? 0.45 : 0.12}
-          roughness={0.3}
-          metalness={0.5}
-          toneMapped={false}
-        />
+        <sphereGeometry args={[displaySize * (hovered ? 1.12 : 1), 16, 16]} />
+        <meshBasicMaterial color={color} toneMapped={false} />
       </mesh>
 
-      {/* Soft glow aura */}
-      <mesh>
-        <sphereGeometry args={[size * 2.4, 32, 32]} />
-        <meshBasicMaterial
-          color={color}
-          transparent
-          opacity={hovered ? 0.22 : selected ? 0.18 : 0.08}
-          blending={THREE.AdditiveBlending}
-          depthWrite={false}
-        />
-      </mesh>
+      {/* Soft glow aura — only when hovered or selected to reduce overdraw */}
+      {(hovered || selected) && (
+        <mesh>
+          <sphereGeometry args={[displaySize * 1.6, 16, 16]} />
+          <meshBasicMaterial
+            color={color}
+            transparent
+            opacity={hovered ? 0.16 : 0.13}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+          />
+        </mesh>
+      )}
 
       {/* Rotating ring */}
       <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[size * 1.7, size * 1.76, 64]} />
-        <meshBasicMaterial color={color} transparent opacity={hovered || selected ? 0.7 : 0.32} side={THREE.DoubleSide} />
+        <ringGeometry args={[displaySize * 1.45, displaySize * 1.5, 24]} />
+        <meshBasicMaterial color={color} transparent opacity={hovered || selected ? 0.55 : 0.22} side={THREE.DoubleSide} />
       </mesh>
 
       {/* Warp gate ring (star systems + selected) */}
       {(isStarSystem || selected) && (!isMobile || hovered || selected) && (
         <group ref={gateRef}>
           <mesh>
-            <torusGeometry args={[size * (isStarSystem ? 2.4 : 2.0), size * 0.07, 10, 48]} />
+            <torusGeometry args={[displaySize * (isStarSystem ? 2.4 : 2.0), displaySize * 0.07, 8, 32]} />
             <meshBasicMaterial
               color={color}
               transparent
@@ -123,23 +121,23 @@ export default function World({
               depthWrite={false}
             />
           </mesh>
-          <WarpGateVortex color={color} size={size} active={hovered || selected} />
-          {(hovered || selected) && <GlowSprite color={color} size={size * 5} opacity={0.5} />}
+          <WarpGateVortex color={color} size={displaySize} active={hovered || selected} />
+          {(hovered || selected) && <GlowSprite color={color} size={displaySize * 3} opacity={0.45} fog={!isDistant} />}
         </group>
       )}
 
-      {/* Permanent small label for star systems / selected */}
+      {/* Permanent small label for selected / star systems */}
       {((showLabel || selected) && (!isMobile || selected)) && (
-        <Html distanceFactor={14} center position={[0, size + 0.65, 0]}>
+        <Html distanceFactor={isDistant ? undefined : 14} center position={[0, displaySize + 0.65, 0]}>
           <div className="pointer-events-none select-none rounded border border-white/10 bg-black/70 px-2 py-1 text-center shadow-lg backdrop-blur-sm">
-            <span className="text-[10px] font-semibold tracking-wide text-white/90" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.9)' }}>{name}</span>
+            <span className="text-[9px] font-semibold tracking-wide text-white/90" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.9)' }}>{name}</span>
           </div>
         </Html>
       )}
 
-      {/* Hover / selected detail card */}
-      {(hovered || selected) && !showLabel && (
-        <Html distanceFactor={12} center position={[0, size + 0.85, 0]}>
+      {/* Selected detail card only (no hover popup to reduce clutter) */}
+      {selected && !showLabel && (
+        <Html distanceFactor={isDistant ? undefined : 12} center position={[0, displaySize + 0.85, 0]}>
           <div className="min-w-[200px] max-w-[280px] pointer-events-none select-none rounded-xl border border-white/15 bg-black/85 p-3 shadow-2xl backdrop-blur-md text-center">
             <div
               className="mb-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
@@ -148,8 +146,7 @@ export default function World({
               {category}
             </div>
             <h3 className="text-sm font-bold text-white" style={{ textShadow: '0 1px 12px rgba(0,0,0,0.8)' }}>{name}</h3>
-            {selected && <p className="mt-1.5 text-xs leading-relaxed text-gray-300">{info}</p>}
-            {!selected && <p className="mt-1 text-[10px] text-gray-400">Click to focus</p>}
+            <p className="mt-1.5 text-xs leading-relaxed text-gray-300">{info}</p>
           </div>
         </Html>
       )}

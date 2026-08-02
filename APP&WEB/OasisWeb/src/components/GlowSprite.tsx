@@ -26,9 +26,10 @@ interface GlowSpriteProps {
   color: string;
   size: number;
   opacity?: number;
+  fog?: boolean;
 }
 
-export default function GlowSprite({ color, size, opacity = 0.6 }: GlowSpriteProps) {
+export default function GlowSprite({ color, size, opacity = 0.6, fog = true }: GlowSpriteProps) {
   const texture = useMemo(createRadialGlowTexture, []);
   const material = useMemo(() => {
     const mat = new THREE.SpriteMaterial({
@@ -38,9 +39,11 @@ export default function GlowSprite({ color, size, opacity = 0.6 }: GlowSpritePro
       opacity,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
+      alphaTest: 0.05,
+      fog,
     });
     return mat;
-  }, [texture, color, opacity]);
+  }, [texture, color, opacity, fog]);
 
   return <sprite material={material} scale={[size, size, 1]} />;
 }

@@ -6,19 +6,8 @@ import { X, Gauge, Target, Navigation, Rocket } from 'lucide-react';
 import type { CompassData } from './Compass';
 import type { World } from '../domain/types/world';
 
-export interface ShipHudProps {
-  compassRef: React.RefObject<CompassData | null>;
-  target: { x: number; y: number; z: number } | null;
-  targetName: string;
-  targetColor: string;
-  flightSpeed: number;
-  maxSpeed: number;
-  throttle: number;
-  onThrottleChange: (v: number) => void;
-  landTarget: World | null;
-  onApproach: (world: World) => void;
-  onExit: () => void;
-}
+const ZION_CYAN = '#06b6d4';
+const ZION_PURPLE = '#9333ea';
 
 function normalizeAngle(a: number) {
   while (a > Math.PI) a -= Math.PI * 2;
@@ -36,6 +25,20 @@ function formatDistance(d: number) {
   if (!isFinite(d)) return '--';
   if (d > 1000) return `${Math.round(d)}`;
   return d.toFixed(1);
+}
+
+export interface ShipHudProps {
+  compassRef: React.RefObject<CompassData | null>;
+  target: { x: number; y: number; z: number } | null;
+  targetName: string;
+  targetColor: string;
+  flightSpeed: number;
+  maxSpeed: number;
+  throttle: number;
+  onThrottleChange: (v: number) => void;
+  landTarget: World | null;
+  onApproach: (world: World) => void;
+  onExit: () => void;
 }
 
 export default function ShipHud({
@@ -102,7 +105,7 @@ export default function ShipHud({
     return t;
   }, []);
 
-  const throttleColor = throttle > 0.7 ? '#ef4444' : throttle > 0.35 ? '#f59e0b' : '#22d3ee';
+  const throttleColor = throttle > 0.7 ? '#ef4444' : throttle > 0.35 ? '#fbbf24' : ZION_CYAN;
   const throttleCirc = 2 * Math.PI * throttleR;
   const speedCirc = 2 * Math.PI * speedArcRadius;
   const speedHalf = speedCirc / 2;
@@ -117,7 +120,7 @@ export default function ShipHud({
       transition={{ duration: 0.5 }}
       className="pointer-events-none fixed left-1/2 top-1/2 z-50 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center"
     >
-      <div className="pointer-events-auto flex flex-col items-center rounded-3xl border border-white/10 bg-black/70 p-3 shadow-2xl backdrop-blur-xl sm:p-4">
+      <div className="pointer-events-auto zion-hud-panel flex flex-col items-center p-3 sm:p-4">
         <div className="relative">
           <svg
             viewBox="-130 -130 260 260"
@@ -126,8 +129,8 @@ export default function ShipHud({
           >
             <defs>
               <linearGradient id="shipHudSpeed" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#22d3ee" />
-                <stop offset="100%" stopColor="#a855f7" />
+                <stop offset="0%" stopColor={ZION_CYAN} />
+                <stop offset="100%" stopColor={ZION_PURPLE} />
               </linearGradient>
             </defs>
 
@@ -275,7 +278,7 @@ export default function ShipHud({
 
           <button
             onClick={onExit}
-            className="absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-black/60 text-white/70 backdrop-blur-sm transition hover:bg-white/10 hover:text-white sm:h-8 sm:w-8"
+            className="zion-button-ghost absolute -right-1 -top-1 !p-1.5"
             aria-label="Exit flight"
             title="Exit flight (F / ESC)"
           >
@@ -324,21 +327,21 @@ export default function ShipHud({
         <div className="mt-3 grid w-full grid-cols-4 gap-2">
           <button
             onClick={() => onThrottleChange(0)}
-            className="rounded-lg border border-white/10 bg-black/60 px-1 py-1.5 text-[10px] font-bold text-gray-300 transition hover:bg-white/10 hover:text-white sm:text-xs"
+            className="zion-button-ghost text-[10px]"
             title="Stop (1)"
           >
             STOP
           </button>
           <button
             onClick={() => onThrottleChange(0.5)}
-            className="rounded-lg border border-white/10 bg-black/60 px-1 py-1.5 text-[10px] font-bold text-gray-300 transition hover:bg-white/10 hover:text-white sm:text-xs"
+            className="zion-button-ghost text-[10px]"
             title="Half throttle (2)"
           >
             ½
           </button>
           <button
             onClick={() => onThrottleChange(1)}
-            className="rounded-lg border border-oasis-cyan/20 bg-oasis-cyan/10 px-1 py-1.5 text-[10px] font-bold text-oasis-cyan transition hover:bg-oasis-cyan/20 sm:text-xs"
+            className="zion-button-ghost text-[10px] text-oasis-cyan"
             title="Full throttle (3)"
           >
             FULL
@@ -346,7 +349,7 @@ export default function ShipHud({
           {canApproach ? (
             <button
               onClick={() => landTarget && onApproach(landTarget)}
-              className="rounded-lg border border-oasis-gold/30 bg-oasis-gold/10 px-1 py-1.5 text-[10px] font-bold text-oasis-gold transition hover:bg-oasis-gold/20 sm:text-xs"
+              className="rounded-xl border border-oasis-gold/30 bg-oasis-gold/10 px-1 py-1.5 text-[10px] font-bold text-oasis-gold transition hover:bg-oasis-gold/20 sm:text-xs"
               title="Approach target (L)"
             >
               <Target className="mx-auto h-3.5 w-3.5" />
@@ -354,7 +357,7 @@ export default function ShipHud({
           ) : (
             <button
               disabled
-              className="rounded-lg border border-white/10 bg-black/40 px-1 py-1.5 text-[10px] font-bold text-gray-600 sm:text-xs"
+              className="rounded-xl border border-white/10 bg-black/40 px-1 py-1.5 text-[10px] font-bold text-gray-600 sm:text-xs"
             >
               <Navigation className="mx-auto h-3.5 w-3.5" />
             </button>

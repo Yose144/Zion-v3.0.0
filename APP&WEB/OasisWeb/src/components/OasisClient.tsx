@@ -5,30 +5,29 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import WarpFlash from './WarpFlash';
-import { ChevronRight, Plane } from 'lucide-react';
-import { useAudio, AudioToggle } from './AudioEngine';
+import { ChevronRight, Eye, EyeOff } from 'lucide-react';
+import { useAudio } from './AudioEngine';
 import type { FlightControlsHandle } from './FlightControls';
 import type { MobileInput } from './MobileControls';
 import MobileControls from './MobileControls';
-import PlayerHud from './PlayerHud';
+import GamePanel from './GamePanel';
 import OnboardingHint from './OnboardingHint';
-import MusicPlayer from './MusicPlayer';
-import Compass from './Compass';
+import { PilgrimRite } from './PilgrimRite';
+import ControlHud from './ControlHud';
 import type { CompassData } from './Compass';
-import ShipHud from './ShipHud';
 import { useGameStore } from '../store/gameStore';
 import { useToastStore } from '../store/toastStore';
 import { getQuests, getAvatars, getTerritories, awardPlayerXp } from '../lib/api';
-import type { World, WorldCategory } from '../domain/types/world';
+import type { World, WorldCategory, WorldLayer } from '../domain/types/world';
 
 const WarpIntro = dynamic(() => import('./WarpIntro'), { ssr: false });
 const OasisScene = dynamic(() => import('./OasisScene'), { ssr: false });
-const OasisHud = dynamic(() => import('./OasisHud'), { ssr: false });
-const WorldPanel = dynamic(() => import('./WorldPanel'), { ssr: false });
-const WorldFilter = dynamic(() => import('./WorldFilter'), { ssr: false });
+import WorldPanel from './WorldPanel';
+import WorldFilter from './WorldFilter';
 
 const ALL_CATEGORIES: WorldCategory[] = ['star-system', 'planet', 'sector', 'world', 'dimension'];
-const MAX_FLIGHT_SPEED = 8;
+const ALL_LAYERS: WorldLayer[] = [1, 2, 3, 4, 5];
+const MAX_FLIGHT_SPEED = 18;
 
 const CATEGORY_COLORS: Record<WorldCategory, string> = {
   'star-system': '#f59e0b',
@@ -40,8 +39,9 @@ const CATEGORY_COLORS: Record<WorldCategory, string> = {
 
 export default function OasisClient() {
   const [mounted, setMounted] = useState(false);
-  const [phase, setPhase] = useState<'intro' | 'arrival' | 'scene'>('intro');
+  const [phase, setPhase] = useState<'intro' | 'arrival' | 'rite' | 'scene'>('intro');
   const [activeCategories, setActiveCategories] = useState<WorldCategory[]>(ALL_CATEGORIES);
+  const [activeLayers, setActiveLayers] = useState<WorldLayer[]>(ALL_LAYERS);
   const [selectedWorld, setSelectedWorld] = useState<World | null>(null);
   const [view, setView] = useState<'galaxy' | 'world'>('galaxy');
   const [warping, setWarping] = useState(false);
@@ -50,6 +50,7 @@ export default function OasisClient() {
   const [throttle, setThrottle] = useState(0.5);
   const [landTarget, setLandTarget] = useState<World | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [uiHidden, setUiHidden] = useState(false);
   const flightControlsRef = useRef<FlightControlsHandle | null>(null);
   const mobileInputRef = useRef<MobileInput | null>(null);
   const compassRef = useRef<CompassData | null>(null);
@@ -136,6 +137,10 @@ export default function OasisClient() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (phase === 'intro') return;
+      if (e.key.toLowerCase() === 'h') {
+        setUiHidden((h) => !h);
+        return;
+      }
       if (e.key.toLowerCase() === 'f' && !flightMode && view === 'galaxy') {
         setFlightMode(true);
         return;
@@ -172,6 +177,10 @@ export default function OasisClient() {
   };
 
   const handleArrived = () => {
+    setPhase('rite');
+  };
+
+  const handleRiteEnter = () => {
     setPhase('scene');
   };
 
@@ -246,6 +255,7 @@ export default function OasisClient() {
           started={phase !== 'intro'}
           onArrived={handleArrived}
           activeCategories={activeCategories}
+          activeLayers={activeLayers}
           selectedWorld={selectedWorld}
           onWorldSelect={handleWorldSelect}
           view={view}
@@ -262,69 +272,81 @@ export default function OasisClient() {
           isMobile={isMobile}
           compassRef={compassRef}
         />
-        {phase !== 'intro' && <PlayerHud />}
-        {phase !== 'intro' && view === 'galaxy' && !flightMode && <OasisHud />}
-        {phase !== 'intro' && view === 'galaxy' && !flightMode && <OnboardingHint />}
+        {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && (
+          <GamePanel
+            activeCategories={activeCategories}
+            selectedWorldId={selectedWorld?.id}
+            onWorldSelect={handleWorldSelect}
+            music={music}
+            muted={muted}
+            onToggleMute={toggle}
+            onEnterFlight={() => {
+              setFlightMode(true);
+              setTimeout(() => flightControlsRef.current?.lock(), 0);
+            }}
+          />
+        )}
+        {phase === 'scene' && view === 'galaxy' && !flightMode && !uiHidden && <OnboardingHint />}
 
         <AnimatePresence>
-          {phase !== 'intro' && view === 'galaxy' && !flightMode && (
+          {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && (
             <motion.div
               initial={{ opacity: 0, y: -12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 1.2, delay: 3.5 }}
-              className="pointer-events-auto absolute left-4 right-4 top-4 z-10 max-w-full sm:left-6 sm:right-auto sm:top-6 sm:max-w-sm"
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="pointer-events-auto absolute right-4 top-4 z-40 flex items-center gap-1.5 sm:right-6 sm:top-5"
             >
-              <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-oasis-cyan to-oasis-purple sm:text-3xl">
-                ZION OASIS
-              </h1>
-              <p className="mt-2 text-sm leading-relaxed text-gray-300">
-                55 worlds across one living galaxy. Click any world to focus, or press <kbd className="rounded border border-white/20 bg-white/10 px-1.5 py-0.5 text-[10px]">F</kbd> for free flight.
-              </p>
-              {selectedWorld && (
-                <p className="mt-2 text-xs font-medium" style={{ color: CATEGORY_COLORS[selectedWorld.category] }}>
-                  Selected: {selectedWorld.name}
-                </p>
-              )}
-              <div className="mt-5 flex flex-wrap items-center gap-3">
-                <Link href="/dashboard">
-                  <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-gradient-to-r from-oasis-gold via-oasis-purple to-oasis-cyan px-6 py-2.5 text-sm font-bold text-white shadow-lg"
-                  >
-                    Enter the Game
-                    <ChevronRight className="h-4 w-4" />
-                  </motion.div>
-                </Link>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
+              <Link href="/dashboard">
+                <motion.div
+                  whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    setFlightMode(true);
-                    setTimeout(() => flightControlsRef.current?.lock(), 0);
-                  }}
-                  className="inline-flex items-center gap-2 rounded-full border border-oasis-cyan/30 bg-oasis-cyan/10 px-4 py-2.5 text-sm font-bold text-oasis-cyan shadow-lg backdrop-blur-sm transition hover:bg-oasis-cyan/20"
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-gradient-to-r from-oasis-gold via-oasis-purple to-oasis-cyan px-2.5 py-1 text-[9px] font-bold text-white shadow-lg"
                 >
-                  <Plane className="h-4 w-4" />
-                  Flight Mode
-                </motion.button>
-              </div>
-              <p className="mt-3 text-xs text-gray-500">
-                Play as a pilgrim, claim territories, join a guild, and decode 108 sacred clues.
-              </p>
+                  Enter the Game
+                  <ChevronRight className="h-2.5 w-2.5" />
+                </motion.div>
+              </Link>
+              <button
+                onClick={() => setUiHidden(true)}
+                className="zion-button-ghost !p-2"
+                title="Hide all UI (H)"
+              >
+                <EyeOff className="h-3.5 w-3.5" />
+              </button>
             </motion.div>
           )}
         </AnimatePresence>
 
+        {/* Show UI button when hidden */}
         <AnimatePresence>
-          {phase !== 'intro' && view === 'galaxy' && !flightMode && (
-            <WorldFilter active={activeCategories} onChange={setActiveCategories} />
+          {phase !== 'intro' && uiHidden && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              onClick={() => setUiHidden(false)}
+              className="pointer-events-auto absolute right-4 top-4 z-50 rounded-full border border-white/15 bg-black/80 p-2.5 text-gray-300 backdrop-blur-md transition hover:bg-white/10 hover:text-white sm:right-6 sm:top-5"
+              title="Show UI (H)"
+            >
+              <Eye className="h-4 w-4" />
+            </motion.button>
           )}
         </AnimatePresence>
 
         <AnimatePresence>
-          {selectedWorld && view === 'galaxy' && !flightMode && (
+          {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && (
+            <WorldFilter
+              active={activeCategories}
+              onChange={setActiveCategories}
+              activeLayers={activeLayers}
+              onLayersChange={setActiveLayers}
+            />
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {selectedWorld && view === 'galaxy' && !flightMode && !uiHidden && (
             <WorldPanel
               world={selectedWorld}
               onClose={handleCloseWorld}
@@ -334,41 +356,32 @@ export default function OasisClient() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {phase !== 'intro' && !flightMode && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ delay: 4, duration: 0.6 }}
-              className="pointer-events-auto absolute bottom-4 left-4 z-30 flex flex-col items-start gap-2 sm:flex-row sm:items-end"
-            >
-              <MusicPlayer music={music} />
-              <AudioToggle muted={muted} onToggle={toggle} />
-            </motion.div>
+          {phase !== 'intro' && !flightMode && view === 'galaxy' && !uiHidden && (
+            <ControlHud
+              compassRef={compassRef}
+              target={compassTarget.pos}
+              targetName={compassTarget.name}
+              targetColor={compassTarget.color}
+              flightMode={false}
+              flightSpeed={0}
+              maxSpeed={flightMaxSpeed}
+              throttle={throttle}
+              onThrottleChange={setThrottle}
+              landTarget={null}
+              onApproach={handleApproachWorld}
+              onExitFlight={handleExitFlight}
+              onEnterFlight={() => {
+                setFlightMode(true);
+                setTimeout(() => flightControlsRef.current?.lock(), 0);
+              }}
+              onWarp={handleEnterWorld}
+              warping={warping}
+            />
           )}
         </AnimatePresence>
 
         <AnimatePresence>
-          {phase !== 'intro' && !flightMode && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ delay: 4.2, duration: 0.6 }}
-              className="pointer-events-auto absolute bottom-4 right-4 z-30"
-            >
-              <Compass
-                target={compassTarget.pos}
-                targetName={compassTarget.name}
-                targetColor={compassTarget.color}
-                compassRef={compassRef}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {view === 'world' && !flightMode && (
+          {view === 'world' && !flightMode && !uiHidden && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -390,19 +403,24 @@ export default function OasisClient() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {flightMode && (
-            <ShipHud
+          {flightMode && !uiHidden && (
+            <ControlHud
               compassRef={compassRef}
               target={compassTarget.pos}
               targetName={compassTarget.name}
               targetColor={compassTarget.color}
+              flightMode={true}
               flightSpeed={flightSpeed}
               maxSpeed={flightMaxSpeed}
               throttle={throttle}
               onThrottleChange={setThrottle}
               landTarget={landTarget}
               onApproach={handleApproachWorld}
-              onExit={handleExitFlight}
+              onExitFlight={handleExitFlight}
+              onWarp={() => {
+                if (selectedWorld) handleEnterWorld();
+              }}
+              warping={warping}
             />
           )}
         </AnimatePresence>
@@ -417,6 +435,12 @@ export default function OasisClient() {
       </AnimatePresence>
 
       <WarpFlash active={warping} />
+
+      <AnimatePresence>
+        {phase === 'rite' && (
+          <PilgrimRite onEnter={handleRiteEnter} />
+        )}
+      </AnimatePresence>
     </>
   );
 }

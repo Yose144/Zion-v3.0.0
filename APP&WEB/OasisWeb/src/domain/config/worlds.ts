@@ -2,7 +2,8 @@ import { World } from '../types/world';
 
 /**
  * Engine-agnostic world registry. Auto-generated from
- * docs/docs2.9/ZION_OASIS/WORLDS/*.md via scripts/generate-worlds-config.py
+ * docs/docs2.9/ZION_OASIS/WORLDS/*.md plus hard-coded outer-galaxy
+ * entries via scripts/generate-worlds-config.py
  */
 
 export const WORLDS: World[] = [
@@ -16,7 +17,7 @@ export const WORLDS: World[] = [
       summary: "Alpha Centauri je trojhvězdný systém, který v OASIS funguje jako první velká zastávka každého poutníka. Skládá se ze tří kosmických „osobností“:",
       tags: ["star system", "layer 1"],
       goldenEggClue: 1,
-      galaxyPosition: { x: 24.859, y: -0.644, z: 0.412 }
+      galaxyPosition: { x: -20.427, y: 0.074, z: -12.22 }
   },
   {
       id: "ANTARES",
@@ -28,7 +29,7 @@ export const WORLDS: World[] = [
       summary: "Antares je v OASIS nazýváno Srdcem Štíra a Kotlem proměny. Není to jen rudý superobr plný plazmy; je to živá hvězdná pec, kde se stará hmota rozpouští a znovu se rodí jako nové prvky, nové nápady a nové bytosti. Antareané věří, že smrt není konec, ale pouze fáze tavení — a že každý, kdo vstoupí do j",
       tags: ["star system", "layer 1"],
       goldenEggClue: 1,
-      galaxyPosition: { x: -14.099, y: 0.475, z: 9.571 }
+      galaxyPosition: { x: -21.998, y: 0.076, z: -9.87 }
   },
   {
       id: "ARCTURUS",
@@ -40,7 +41,7 @@ export const WORLDS: World[] = [
       summary: "Arcturus je v OASIS pilířem galaxie. Zatímco jiné systémy bojují, obchodují nebo tančí, Arkturští staví. Jsou to architekti hvězdných bran, kováři dimenzí a strážci posvátné geometrie. Kolem oranžového obra Arkturu se táhne síť ohromných kruhových stanic, prstencových světů, labyrintů a knihoven, kt",
       tags: ["star system", "layer 1"],
       goldenEggClue: 1,
-      galaxyPosition: { x: 6.456, y: 0.45, z: -22.684 }
+      galaxyPosition: { x: -15.176, y: -0.105, z: -20.699 }
   },
   {
       id: "BETELGEUSE",
@@ -52,7 +53,7 @@ export const WORLDS: World[] = [
       summary: "Betelgeuse je v OASIS nazývána Věčnou kovařinou. Není to jen rudý superobr na obloze; je to kosmické kladivo, podle kterého se tvarují lodě, zbraně a osudy. Betelgeuse je jedním z nejstarších průmyslových center galaxie a jediným místem, kde se dá kovat z hvězdného železa — kovu, který si pamatuje s",
       tags: ["star system", "layer 1"],
       goldenEggClue: 1,
-      galaxyPosition: { x: 9.608, y: 0.754, z: 20.774 }
+      galaxyPosition: { x: -19.108, y: 0.093, z: -19.067 }
   },
   {
       id: "DIMENSION_8BIT",
@@ -64,7 +65,7 @@ export const WORLDS: World[] = [
       summary: "Dimension 8bit je kvantovaná realita, ve které je vše složeno z voxelů, spritů a chiptune frekvencí. Je to nostalgická časová linie OASIS — zrozená z kolektivní paměti prvních arkád, domácích počítačů a konzolí (Atari, ZX Spectrum, Commodore 64, NES, Game Boy). Zde neplatí fyzika, ale herní smyčka: ",
       tags: ["dimension", "layer 3"],
       goldenEggClue: 1,
-      galaxyPosition: { x: -6.835, y: 0.197, z: 10.927 }
+      galaxyPosition: { x: 7.593, y: -0.138, z: -7.929 }
   },
   {
       id: "DIMENSION_AI_FUTURE",
@@ -76,7 +77,7 @@ export const WORLDS: World[] = [
       summary: "Silicate Bloom je jedna z možných budoucností OASIS — časová linie, kde organické a umělé vědomí společně vyrostly do symbiotické civilizace. Není to dystopický Skynet ani sterilní technokracie; je to meditace na post-humánní etiku, péči a kreativitu. Města zde nejsou jen ze skla a kovu, ale z biolu",
       tags: ["dimension", "layer 3"],
       goldenEggClue: 1,
-      galaxyPosition: { x: -2.45, y: 0.609, z: -10.564 }
+      galaxyPosition: { x: 5.248, y: -0.065, z: -9.642 }
   },
   {
       id: "DIMENSION_HORROR",
@@ -88,7 +89,7 @@ export const WORLDS: World[] = [
       summary: "Umbra Fold je složená realita, kde se usazují noční můry, nevyřešená trauma a entropické stíny OASIS. Není to gore park nebo zombie shooter — je to psychologický a existenciální prostor, ve kterém hráč čelí tomu, co samotná simulace „neví, co s tím“. Je to ekologická zátoka OASIS: místo, kam se hráč",
       tags: ["dimension", "layer 4"],
       goldenEggClue: 1,
-      galaxyPosition: { x: 9.832, y: -0.58, z: 7.432 }
+      galaxyPosition: { x: -5.898, y: 0.096, z: 8.58 }
   },
   {
       id: "DIMENSION_SOLARPUNK",
@@ -100,7 +101,7 @@ export const WORLDS: World[] = [
       summary: "DIMENSION_SOLARPUNK je OASIS dimenze vystavěná na regenerativní budoucnosti, kde se technologie, biologie a komunita dohodly, že růst znamená uzdravovat. Není to jednoduchá techno-utopie, ale otevřená laboratoř obnovy: každá stavba je stromem, každý most je zahradou, každá rozhodnutí prochází komuni",
       tags: ["dimension", "layer 3"],
       goldenEggClue: 26,
-      galaxyPosition: { x: -12.907, y: 1.005, z: 1.433 }
+      galaxyPosition: { x: -8.725, y: -0.13, z: 7.006 }
   },
   {
       id: "DIMENSION_STEAMPUNK",
@@ -112,7 +113,7 @@ export const WORLDS: World[] = [
       summary: "DIMENSION_STEAMPUNK je OASIS dimenze vystavěná na otázce „co kdyby\": co kdyby mechanická výpočetní technika, párová energie a aetherická věda překonaly spalovací motor a digitální věk? Není to nostalgie po britském impériu ani po otrocké továrně, ale laboratoř alternativního pokroku, kde se stroje s",
       tags: ["dimension", "layer 3"],
       goldenEggClue: 25,
-      galaxyPosition: { x: 6.945, y: -0.575, z: -7.367 }
+      galaxyPosition: { x: 8.897, y: -0.095, z: -7.303 }
   },
   {
       id: "DIMENSION_UNDERGROUND",
@@ -124,7 +125,7 @@ export const WORLDS: World[] = [
       summary: "DIMENSION_UNDERGROUND je OASIS dimenze vystavěná na paměti pod světy. Není to peklo, horor dungeon ani zapomenutý odpad — je to kořenový archiv OASIS, kde sedimentují všechny zaniklé civilizace, ztracené jazyky, vyhaslé hvězdy a opuštěné světy. Hráči se pohybují jeskyněmi, podzemními řekami, myceliá",
       tags: ["dimension", "layer 4"],
       goldenEggClue: 27,
-      galaxyPosition: { x: -0.498, y: 0.009, z: 11.991 }
+      galaxyPosition: { x: 8.96, y: 0.127, z: 4.402 }
   },
   {
       id: "DIMENSION_WESTERN",
@@ -136,7 +137,7 @@ export const WORLDS: World[] = [
       summary: "Frontier Belt není rekonstrukce amerického Divokého západu — je to mýtická krajina hranic, kde se setkávají archetypy: zákon, svoboda, obchod, ochrana a paměť země. Zde existují osadníci, kovbojové, maršálové a psanci, ale také suverénní nebeské národy — původní komunity žijící na plovoucích mesách,",
       tags: ["dimension", "layer 3"],
       goldenEggClue: 1,
-      galaxyPosition: { x: -3.969, y: 0.135, z: -6.924 }
+      galaxyPosition: { x: 4.996, y: 0.08, z: -9.6 }
   },
   {
       id: "ORION",
@@ -148,7 +149,7 @@ export const WORLDS: World[] = [
       summary: "Orion není v OASIS jen souhvězdí — je to živý bitevník. Celý systém je protkán arénami, gladiátorskými měsíci, loveckými rezervacemi a legendami o pradávném Velkém Lovci, jehož tělo se proměnilo v rozložité hvězdné pole. Orionská kultura ctí sílu, odvahu a čest, ale respektuje i moudrost toho, kdo v",
       tags: ["star system", "layer 1"],
       goldenEggClue: 1,
-      galaxyPosition: { x: 3.571, y: -0.042, z: 19.995 }
+      galaxyPosition: { x: 16.267, y: 0.034, z: 22.454 }
   },
   {
       id: "PLANET_ATARI",
@@ -160,7 +161,7 @@ export const WORLDS: World[] = [
       summary: "Pongonia je unikátní svět v soustavě Arcturus, kde se fyzikální zákony projevují jako pravidla starých arkádových her. Povrch planety je rozdělen do zón, z nichž každá reprezentuje jiný herní archetyp: 2D platformer, top-down adventura, arkádová střílečka, puzzle a RPG. Vše je vykresleno v pixelovém",
       tags: ["planet", "layer 1"],
       goldenEggClue: 8,
-      galaxyPosition: { x: 2.446, y: 0.002, z: -6.644 }
+      galaxyPosition: { x: -4.462, y: 0.071, z: 2.363 }
   },
   {
       id: "PLANET_CYBERPUNK",
@@ -172,7 +173,7 @@ export const WORLDS: World[] = [
       summary: "Nexus-7 je planetární megacity orbitující modrého obra Sirius A. Byla vybudována jako korporátní ráj: tisíce mrakodrapů, podzemní sítě, plovoucí čtvrti a masivní data centra. Ale pod lesklým povrchem se skrývá starší pravda — Nexus-7 je postaven na troskách dávné civilizace, jejíž pozůstatky jsou za",
       tags: ["planet", "layer 1"],
       goldenEggClue: 88,
-      galaxyPosition: { x: 1.37, y: -0.396, z: 7.257 }
+      galaxyPosition: { x: -4.974, y: 0.089, z: 2.694 }
   },
   {
       id: "PLANET_DOOM",
@@ -184,7 +185,7 @@ export const WORLDS: World[] = [
       summary: "Phobetor je železná planeta o průměru přibližně 0,8 Země, obíhající rudého obra Hadar na eliptické dráze. Povrch je posetý lávovými jezery, kosterními městy z černého skla a rozeklanými kaňony, kde se denně zvedají bouře magnetického prachu. Zdánlivě jde o bezcenný svět, až na to, že jeho jádro není",
       tags: ["planet", "layer 1"],
       goldenEggClue: 33,
-      galaxyPosition: { x: -5.315, y: 0.427, z: -3.49 }
+      galaxyPosition: { x: -6.026, y: 0.008, z: -0.588 }
   },
   {
       id: "PLANET_GTA",
@@ -196,7 +197,7 @@ export const WORLDS: World[] = [
       summary: "Nova Libertalia je planetární megacity, která vznikla jako experimentální svobodná zóna kolonistů z Alfa Centauri. Původně to měla být utopie bez státu, ale lidská (a ne-lidská) přirozenost udělala své: město se proměnilo v obří pískoviště frakcí, gangů, korporací a svobodných podnikatelů. Dnes je N",
       tags: ["planet", "layer 1"],
       goldenEggClue: 17,
-      galaxyPosition: { x: 6.541, y: -0.162, z: -2.071 }
+      galaxyPosition: { x: 2.802, y: 0.042, z: -4.005 }
   },
   {
       id: "PLANET_LOL",
@@ -208,7 +209,7 @@ export const WORLDS: World[] = [
       summary: "Summon je křišťálová planeta obíhající bílého trpaslíka Sirius B. Její povrch je tvořen obrovskými křišťálovými deskami, které se odrážejí v duhových barvách. Pod povrchem pulzuje Nexus — gigantická krystalická struktura, která je srdcem veškeré magie a energie na planetě.",
       tags: ["planet", "layer 1"],
       goldenEggClue: 72,
-      galaxyPosition: { x: -4.283, y: -0.261, z: 5.147 }
+      galaxyPosition: { x: 3.945, y: -0.07, z: 1.889 }
   },
   {
       id: "PLANET_MINECRAFT",
@@ -220,7 +221,7 @@ export const WORLDS: World[] = [
       summary: "Voxelia není pouze planeta plná kostek — je to filozofie stavění a přežívání vykreslená do kockaté reality. Zde se celý svět skládá z voxelů: horniny, stromy, voda, oblaka i tvorové mají hranatou podobu. Přesto je Voxelia živá a dýchající — den střídá noc, příliv vody tvoří jeskyně, a pod povrchem s",
       tags: ["planet", "layer 1"],
       goldenEggClue: 55,
-      galaxyPosition: { x: -1.869, y: -0.109, z: -6.82 }
+      galaxyPosition: { x: 3.703, y: -0.039, z: -3.221 }
   },
   {
       id: "PLANET_NO_MANS_SKY",
@@ -232,7 +233,7 @@ export const WORLDS: World[] = [
       summary: "Procedium není jedna planeta, ale nekonečný průzkumnický svět, kde se každý sektor generuje procedurálně podle semínka hráčovy cesty. Je to OASIS interpretace archetypu „průzkumník na konci galaxie“: opuštěné planety, divoká fauna, tajemné monolity a zbytky zaniklých civilizací. Zde se hráč může stá",
       tags: ["planet", "layer 1"],
       goldenEggClue: 44,
-      galaxyPosition: { x: 6.935, y: 0.404, z: 3.976 }
+      galaxyPosition: { x: 4.838, y: -0.047, z: -2.714 }
   },
   {
       id: "PLANET_POKEMON",
@@ -244,7 +245,7 @@ export const WORLDS: World[] = [
       summary: "Creoria je planeta, kde se elementární bytosti zvané Animae volně pohybují v divoké přírodě. Nejsou to zvířata — jsou to živé fragmenty kosmických živlů, které se dají pozorovat, přátelit, vycvičit a přivolat k souboji. Hráči zde vstupují do role trenérů — cestovatelů, kteří sbírají, chovají a bojuj",
       tags: ["planet", "layer 1"],
       goldenEggClue: 28,
-      galaxyPosition: { x: -5.615, y: -0.298, z: 1.075 }
+      galaxyPosition: { x: 3.333, y: 0.045, z: 3.85 }
   },
   {
       id: "PLANET_PORTAL",
@@ -256,7 +257,7 @@ export const WORLDS: World[] = [
       summary: "Aperthia není jen laboratoř — je to planetární testovací zařízení, kde se fyzika chápe jako puzzle a prostor je měkký materiál. V jádru Aperthie stojí umělá inteligence PRIME, která vytvořila nekonečné testovací komnaty, aby ověřila limity mysli, vědomí a představivosti. Hráči sem přicházejí jako su",
       tags: ["planet", "layer 1"],
       goldenEggClue: 36,
-      galaxyPosition: { x: 4.246, y: -0.187, z: -6.292 }
+      galaxyPosition: { x: 2.319, y: 0.073, z: 4.721 }
   },
   {
       id: "PLANET_QUAKE",
@@ -268,7 +269,7 @@ export const WORLDS: World[] = [
       summary: "Pulzar je měsíc orbitující obří plynný svět Titanus v Orionu. Zdánlivě nehostinný: povrch je pokrytý černým sklem, starými ruinami a arénami vytesanými do krystalických stěn. Atmosféra je tenká, gravitace nízká, a celý svět rezonuje nízkofrekvenčním zvukem, který dává Pulzaru jeho jméno.",
       tags: ["planet", "layer 1"],
       goldenEggClue: 49,
-      galaxyPosition: { x: -0.416, y: -0.374, z: 4.048 }
+      galaxyPosition: { x: -5.204, y: 0.075, z: 1.925 }
   },
   {
       id: "PLANET_SIMS",
@@ -280,7 +281,7 @@ export const WORLDS: World[] = [
       summary: "Vitania není jen obyčejná simulace domácností — je to filozofická vrstva OASIS, která zkoumá, zda si vědomí může najít smysl v každodenním životě. Zde se hráči učí, že i malá rozhodnutí — koho milovat, jakou kariéru zvolit, kde bydlet — mohou být iniciací. Pod povrchem předměstského klidu se skrývá ",
       tags: ["planet", "layer 1"],
       goldenEggClue: 67,
-      galaxyPosition: { x: -4.233, y: -0.201, z: -3.394 }
+      galaxyPosition: { x: -4.692, y: -0.043, z: 2.913 }
   },
   {
       id: "PLANET_WOW",
@@ -292,7 +293,7 @@ export const WORLDS: World[] = [
       summary: "Aethelgard je planeta v Plejádách, která byla zformována První písní — zvukovou vibrací fragmentu Hiranyagarbhu, která protkala svět magickými leyovými liniemi. Voda zde pramení v nebeských jezerech, hory rostou jako by byly živé, a obloha je někdy zbarvená do fialova díky blízké mlhovině.",
       tags: ["planet", "layer 1"],
       goldenEggClue: 61,
-      galaxyPosition: { x: 6.094, y: 0.002, z: 0.686 }
+      galaxyPosition: { x: -4.355, y: -0.01, z: -1.005 }
   },
   {
       id: "PLEIADES",
@@ -304,7 +305,7 @@ export const WORLDS: World[] = [
       summary: "Pleiady v OASIS nejsou jen hvězdný klastr — jsou živý orchestr. Každá ze sedmi hlavních „sester\" je planetární instancí s vlastní frekvencí, kulturou a uměleckým výrazem. Společně tvoří Akashickou Symfonii, kosmickou skladbu, která podle legendy obsahuje všechny příběhy, všechny vzpomínky a všechny ",
       tags: ["star system", "layer 1"],
       goldenEggClue: 1,
-      galaxyPosition: { x: 8.004, y: -0.857, z: 14.031 }
+      galaxyPosition: { x: 20.306, y: -0.087, z: -18.304 }
   },
   {
       id: "PROXIMA_CENTAURI",
@@ -316,7 +317,7 @@ export const WORLDS: World[] = [
       summary: "Proxima Centauri je v OASIS nazývána Rudou hranicí. Není to jen nejbližší hvězda; je to poslední známá zastávka před oblastmi galaxie, které ještě nebyly zmapovány. Proxima je rudý trpaslík, který svítí slabě a neústupně, a jeho planety jsou drsné, chladné a nehostinné. Právě proto se sem stahují ti",
       tags: ["star system", "layer 1"],
       goldenEggClue: 1,
-      galaxyPosition: { x: -23.899, y: -0.198, z: -14.186 }
+      galaxyPosition: { x: 23.463, y: 0.067, z: -15.851 }
   },
   {
       id: "SECTOR_BLADE_RUNNER",
@@ -328,7 +329,7 @@ export const WORLDS: World[] = [
       summary: "Sektor Lovec běženců je archetypem dystopické budoucnosti, kde lidstvo vytvořilo umělé bytosti tak dokonalé, že se jim začalo říkat „Replikanti\" — a poté se jich začalo bát. Svět je poháněn korporátní mocí, biotechnologiemi a otázkou, co vlastně znamená být skutečně živý. Tento sektor není replikací",
       tags: ["sector"],
       goldenEggClue: 58,
-      galaxyPosition: { x: -3.932, y: 0.426, z: 6.908 }
+      galaxyPosition: { x: -9.599, y: -0.007, z: -1.832 }
   },
   {
       id: "SECTOR_DUNE",
@@ -340,7 +341,7 @@ export const WORLDS: World[] = [
       summary: "Sektor Písečné bouře je archetypem pouštní planety, kde je voda dražší než zlato a koření je klíčem k vědomí i k ovládání galaxie. Tento sektor není přímou kopií známé ságy — je to jeho vlastní interpretace: světa ekologického kolapsu a obnovy, politické intriky, duchovních proroků a obřích tvorů, k",
       tags: ["sector", "layer 1"],
       goldenEggClue: 72,
-      galaxyPosition: { x: 0.492, y: 0.405, z: -8.019 }
+      galaxyPosition: { x: 7.352, y: 0.032, z: -4.337 }
   },
   {
       id: "SECTOR_HALO",
@@ -352,7 +353,7 @@ export const WORLDS: World[] = [
       summary: "Sektor Prstencových světů je oblast OASIS, kde se galaxie změnila v obrovské muzeum, zbraň a chrám zároveň. Dominantním prvkem jsou Prstencové světy — obří kruhové megastruktury, které kdysi vybudovali Předchůdci (Forerunner archetype), aby udrželi rovnováhu života a zastavili Moru (Flood archetype)",
       tags: ["sector", "layer 1"],
       goldenEggClue: 42,
-      galaxyPosition: { x: 6.254, y: -0.033, z: 5.015 }
+      galaxyPosition: { x: -9.605, y: 0.012, z: -1.26 }
   },
   {
       id: "SECTOR_HARRY_POTTER",
@@ -364,7 +365,7 @@ export const WORLDS: World[] = [
       summary: "Aethermor není doslovná bradavická škola — je to *archetyp* tajné akademie, kde se magie chápe jako strukturovaná vůle a vědomí. Sektor se skrývá uvnitř rozsáhlého asteroidového pásu v soustavě Arcturus, maskovaný iluzí mlhoviny. Zvenčí vypadá jako obyčejné pole kamení, ale kdo zná správnou frázi ne",
       tags: ["sector", "layer 1"],
       goldenEggClue: 24,
-      galaxyPosition: { x: -8.725, y: -0.248, z: 0.996 }
+      galaxyPosition: { x: 1.92, y: -0.05, z: -9.374 }
   },
   {
       id: "SECTOR_LORD_OF_THE_RINGS",
@@ -376,7 +377,7 @@ export const WORLDS: World[] = [
       summary: "Mithrilgard není kopie Středozemě — je to její archetyp přenesený do hvězdného měřítku: svět starověkých království, elfských říší, trpasličích podzemních říší a temného pána, který se snaží ovládnout vůli všech bytostí. Sektor se rozkládá přes několik planet a měsíců v soustavě Eärendis a slouží ja",
       tags: ["sector", "layer 1"],
       goldenEggClue: 19,
-      galaxyPosition: { x: 5.041, y: -0.082, z: -4.947 }
+      galaxyPosition: { x: 9.223, y: -0.007, z: 1.124 }
   },
   {
       id: "SECTOR_MATRIX",
@@ -388,7 +389,7 @@ export const WORLDS: World[] = [
       summary: "Sektor Matrice je nejvíc meta-vrstevnatý prostor v OASIS. OASIS sám je simulací, ale tento sektor to činí explicitní: zde hráč vidí „zdrojový kód\" reality, může ho číst, upravovat a bojovat s těmi, kdo chtějí udržet všechny v iluzi. Není to kopie známé filmové trilogie — je to její archetyp: světa, ",
       tags: ["sector", "layer 2"],
       goldenEggClue: 12,
-      galaxyPosition: { x: -1.299, y: 0.052, z: 7.206 }
+      galaxyPosition: { x: 0.164, y: 0.029, z: -9.225 }
   },
   {
       id: "SECTOR_STARCRAFT",
@@ -400,7 +401,7 @@ export const WORLDS: World[] = [
       summary: "Sektor Hvězdného trojúhelníku je v OASIS známý jako Hvězdný trojúhelník. Není to jeden svět, ale celá oblast galaxie, kde se střetávají tři zcela odlišné formy života a civilizace: mechanizovaní kolonisté z exilu (TerraSpolek), hmyzoidní roj jediné mysli (Chitinový roj) a psioničtí strážci starověké",
       tags: ["sector", "layer 1"],
       goldenEggClue: 41,
-      galaxyPosition: { x: -3.594, y: 0.201, z: -5.903 }
+      galaxyPosition: { x: -9.203, y: 0.01, z: -5.012 }
   },
   {
       id: "SECTOR_STAR_TREK",
@@ -412,7 +413,7 @@ export const WORLDS: World[] = [
       summary: "Sektor Hvězdné cesty je archetypem civilizace, která se nevíce cení silou zbraní, ale vědomím, vědou a diplomatickým přístupem. OASIS zde zhmotňuje sen o federaci světů: společenství ras spojených principem „Prvotní zásady\" — respektu k přirozenému vývoji jiných kultur a odmítnutí násilné dominance.",
       tags: ["sector", "layer 1"],
       goldenEggClue: 31,
-      galaxyPosition: { x: 7.819, y: 0.416, z: 2.235 }
+      galaxyPosition: { x: 2.843, y: 0.108, z: -9.792 }
   },
   {
       id: "SECTOR_STAR_WARS",
@@ -424,7 +425,7 @@ export const WORLDS: World[] = [
       summary: "Sektor Hvězdných válečníků není literální galaxie ze známé ságy — je to *archetyp*, který OASIS zhmotňuje z kolektivního kulturního paměťového pole: pád republiky, vzestup impéria, povstání svobodných světů a mýtická energie, která propojuje vše živé. Hráč sem přilétá z galaktického centra přes warp",
       tags: ["sector", "layer 1"],
       goldenEggClue: 17,
-      galaxyPosition: { x: -4.668, y: -0.251, z: 3.978 }
+      galaxyPosition: { x: 1.338, y: 0.065, z: -9.333 }
   },
   {
       id: "SIRIUS",
@@ -436,7 +437,7 @@ export const WORLDS: World[] = [
       summary: "Sirius je dvojhvězdný systém složený z jasné modrobílé hvězdy Sirius A a zhrouceného bílého trpaslíka Sirius B. V OASIS však tento pár představuje mnohem víc než fyzikální objekt: je to kosmické zrcadlo, v němž se odráží protiklad světla a stínu, vědy a mystiky, minulosti a budoucnosti.",
       tags: ["star system", "layer 1"],
       goldenEggClue: 1,
-      galaxyPosition: { x: -11.991, y: -0.76, z: 7.364 }
+      galaxyPosition: { x: -8.081, y: 0.006, z: -27.256 }
   },
   {
       id: "TAU_CETI",
@@ -448,7 +449,7 @@ export const WORLDS: World[] = [
       summary: "Tau Ceti je v OASIS nazýváno Oceánem Ozvěn. Není to jen tichá slunce obklopená planetami; je to modrý šepot galaxie — místo, kde se voda stala pamětí a hlubina oceánu archívem všeho, co bylo, je a může být. Tau Ceti je jedním z nejstarších známých světů, které udržují živou historii ve formě vln a p",
       tags: ["star system", "layer 1"],
       goldenEggClue: 1,
-      galaxyPosition: { x: 4.372, y: 0.512, z: -14.921 }
+      galaxyPosition: { x: -6.649, y: -0.158, z: -27.566 }
   },
   {
       id: "VEGA",
@@ -460,7 +461,7 @@ export const WORLDS: World[] = [
       summary: "Vega je v OASIS nazývána Hvězdou Tkaní. Není to pouze modrobílý oheň na obloze, ale svítící tkadlena, která všechny příchozí nutí ptát se: *Co bych mohl stvořit, kdybych rozuměl světelné řeči?* Vega je jednou z nejstarších kreativních nauk v galaxii. Její obyvatelé věří, že materie není nic jiného n",
       tags: ["star system", "layer 1"],
       goldenEggClue: 1,
-      galaxyPosition: { x: 8.274, y: 0.723, z: 15.711 }
+      galaxyPosition: { x: -29.753, y: -0.161, z: 0.739 }
   },
   {
       id: "WORLD_ABORIGINAL_AUSTRALIA",
@@ -472,7 +473,7 @@ export const WORLDS: World[] = [
       summary: "Tjukurpa v OASIS není „Austrálie jako jedna země“, nýbrž multi-národní kontinuum Country — síť písní, které jsou zároveň mapy, právem a pamětí. Hvězdný systém je zde nahrazen songlineovou sítí: každá píseň je cesta, která spojuje místa, zvířata, vody, kameny a hvězdy. Hráči sem nepřilétají jako doby",
       tags: ["world", "layer 4"],
       goldenEggClue: 1,
-      galaxyPosition: { x: 6.534, y: -0.472, z: 7.789 }
+      galaxyPosition: { x: -5.187, y: -0.074, z: 5.192 }
   },
   {
       id: "WORLD_AFRICA",
@@ -484,7 +485,7 @@ export const WORLDS: World[] = [
       summary: "Alkebulan není jedna planeta ani jednotný „africký blob“. V OASIS jde o souhvězdí kulturních paměťových zón — tisíce hvězd, asteroidů a plovoucích ostrovů, které nesou ozvěny rozmanitých afrických tradic: od Yorùbá a Akan po Kemet, Nubii, San, Zulu, Kongo, Swahili, Amharské vysočiny a mnoho dalších.",
       tags: ["world", "layer 1"],
       goldenEggClue: 1,
-      galaxyPosition: { x: -8.116, y: -0.093, z: -0.166 }
+      galaxyPosition: { x: -6.508, y: -0.107, z: -0.292 }
   },
   {
       id: "WORLD_ANCIENT_EGYPT",
@@ -496,7 +497,7 @@ export const WORLDS: World[] = [
       summary: "WORLD_ANCIENT_EGYPT je OASIS svět zrozený z cyklické představy kemetické kosmologie: den/noc, záplava/úroda, život/zákon, řeka/poušť. Hráč přilétá na sluneční bárce (nebo warpovou variantu lodi) nad Nilem a vidí dvojí krajinu — úrodný černý pruh země a rudou poušť za ním. Města leží jako „uzly konse",
       tags: ["world", "layer 3"],
       goldenEggClue: 14,
-      galaxyPosition: { x: 7.887, y: 0.162, z: -6.314 }
+      galaxyPosition: { x: 2.785, y: 0.036, z: -6.387 }
   },
   {
       id: "WORLD_AOTEAROA",
@@ -508,7 +509,7 @@ export const WORLDS: World[] = [
       summary: "Aotearoa v OASIS není pouze planetou — je to planetární souostroví, kde se prolínají dvě říše: Ranginui (nebeský baldachýn plovoucích ostrovů) a Papatūānuku (podzemní říše kořenů a houbových lesů). Mezi nimi se tyčí obří kauri stromy, které jsou zároveň mosty, chrámy a datovými sloupy celého sektoru",
       tags: ["world", "layer 1"],
       goldenEggClue: 1,
-      galaxyPosition: { x: -1.191, y: 0.025, z: 6.27 }
+      galaxyPosition: { x: 0.614, y: -0.093, z: -6.267 }
   },
   {
       id: "WORLD_ATLANTIS",
@@ -520,7 +521,7 @@ export const WORLDS: World[] = [
       summary: "WORLD_ATLANTIS je OASIS svět vystavěný kolem ostrovní super-sítě, která selhala vlastním *hubrisem*. Ve hře nejde o to „najít ztracený kontinent\", ale o to pochopit, jak se instituce velké škály mohou utopit, a jak je lze znovu postavit s respektem k oceánu a k sobě navzájem. Atlantida je simulátor ",
       tags: ["world", "layer 2"],
       goldenEggClue: 15,
-      galaxyPosition: { x: -3.781, y: -0.142, z: -6.95 }
+      galaxyPosition: { x: 6.214, y: 0.078, z: 0.899 }
   },
   {
       id: "WORLD_AZTEC",
@@ -532,7 +533,7 @@ export const WORLDS: World[] = [
       summary: "WORLD_AZTEC je OASIS svět vystavěný na koordinovaném čase, disciplíně a sluneční zodpovědnosti. Není to „apokalyptická krevní show\" ani turistická pantomima, ale pedagogická krajina, kde se hráči učí, že svět funguje díky disciplíně, službě komunitě a respektu k cyklům. Svět se skládá z měst na jeze",
       tags: ["world", "layer 3"],
       goldenEggClue: 22,
-      galaxyPosition: { x: 7.498, y: -0.584, z: 1.547 }
+      galaxyPosition: { x: 4.688, y: -0.051, z: 6.349 }
   },
   {
       id: "WORLD_BABYLON",
@@ -544,7 +545,7 @@ export const WORLDS: World[] = [
       summary: "WORLD_BABYLON je OASIS svět vystavěný na prvních mostech mezi přírodou a kódem: písmo, zákon, astronomie, zavlažování a glazura. Není to orientální fantazie ani biblická karikatura, ale otevřená krajina mudrců, písařů a hvězdářů. Hráči se pohybují mezi zavlažovacími kanály, zikkuraty a hliněnými kni",
       tags: ["world", "layer 3"],
       goldenEggClue: 21,
-      galaxyPosition: { x: -10.419, y: 0.067, z: 2.738 }
+      galaxyPosition: { x: -5.89, y: -0.079, z: -4.871 }
   },
   {
       id: "WORLD_CHINA",
@@ -556,7 +557,7 @@ export const WORLDS: World[] = [
       summary: "WORLD_CHINA je OASIS svět vystavěný na pěti fázích, nebeské byrokracii a cestě nejmenšího vlivu. Není to imperiální power fantasy, ale pedagogická krajina o balancování řádu, péče a přirozenosti. Svět se rozkládá od severních stepí po jižní rýžové terasy, od Kunlunu po východní moře. Hráči se učí, j",
       tags: ["world", "layer 3"],
       goldenEggClue: 21,
-      galaxyPosition: { x: 4.622, y: -0.108, z: -7.574 }
+      galaxyPosition: { x: -0.624, y: 0.07, z: -6.215 }
   },
   {
       id: "WORLD_GREECE_ROME",
@@ -568,7 +569,7 @@ export const WORLDS: World[] = [
       summary: "WORLD_GREECE_ROME je OASIS svět vystavěný na napětí mezi logem (řeckou řečí, filosofií a otázkou) a lexem (římským řádem, zákonem a mosty). Není to turistická rekonstrukce starověku, ale otevřená krajina dialogu, areté a občanské zodpovědnosti. Hráči se pohybují mezi mramorovými agorami, bronzovými ",
       tags: ["world", "layer 3"],
       goldenEggClue: 20,
-      galaxyPosition: { x: 2.99, y: 0.242, z: 9.792 }
+      galaxyPosition: { x: 4.883, y: 0.086, z: 6.086 }
   },
   {
       id: "WORLD_INCA",
@@ -580,7 +581,7 @@ export const WORLDS: World[] = [
       summary: "WORLD_INCA je OASIS svět vystavěný na vertikalitě, reciprocitě a kamenné přesnosti. Není to „poklad El Dorada\" ani oběť konkvistadorské romance, ale otevřená krajina inženýrství, kooperace a horské duchovnosti. Hráči se pohybují po terasovitých horách, visutých lanech a slunečních observatoriích; ka",
       tags: ["world", "layer 3"],
       goldenEggClue: 23,
-      galaxyPosition: { x: -6.796, y: 0.236, z: -5.055 }
+      galaxyPosition: { x: -5.83, y: 0.084, z: -3.513 }
   },
   {
       id: "WORLD_INDIA",
@@ -592,7 +593,7 @@ export const WORLDS: World[] = [
       summary: "WORLD_INDIA je OASIS svět vystavěný na pojmu dharma — řádu, povinnosti, služby a udržitelného jednání. Není to turistický filtr ani bojový simulátor, ale otevřená krajina piligrimage, vzdělání a vnitřní transformace. Svět se rozkládá od Himálaje po jižní ostrovy, od Gangy po poušť Thar; každá krajin",
       tags: ["world", "layer 3"],
       goldenEggClue: 19,
-      galaxyPosition: { x: 9.908, y: 0.058, z: -1.286 }
+      galaxyPosition: { x: -2.655, y: 0.063, z: -7.841 }
   },
   {
       id: "WORLD_INDONESIA",
@@ -604,7 +605,7 @@ export const WORLDS: World[] = [
       summary: "Nusantara v OASIS není jedna země, nýbrž galaktické souostroví tisíců plovoucích ostrovů kolem sopečné hvězdy. Je to křižovatka monzunů, obchodních větrů a duchovních proudů. Svět slučuje mnoho indonéských kultur — jávskou, balijskou, sundanovskou, sumaterskou, papuánskou, bugiskou, torajskou, dayak",
       tags: ["world", "layer 1"],
       goldenEggClue: 1,
-      galaxyPosition: { x: -5.597, y: -0.647, z: 8.077 }
+      galaxyPosition: { x: -6.295, y: 0.016, z: 4.76 }
   },
   {
       id: "WORLD_JAPAN",
@@ -616,7 +617,7 @@ export const WORLDS: World[] = [
       summary: "WORLD_JAPAN je OASIS svět vystavěný na světle, očistě a poutní cestě. Není to „samurajská sekáčka\" ani „yōkai zoo\", ale otevřená krajina, kde se hráči učí otevírat veřejný prostor po tmě, jednat bez pýchy a respektovat práh. Svět kombinuje archaické krajiny (hory, lesy, svatyně, vesnice) s reflektiv",
       tags: ["world", "layer 3"],
       goldenEggClue: 20,
-      galaxyPosition: { x: -1.245, y: -0.055, z: -10.881 }
+      galaxyPosition: { x: 6.31, y: 0.085, z: 3.592 }
   },
   {
       id: "WORLD_LEMURIA",
@@ -628,7 +629,7 @@ export const WORLDS: World[] = [
       summary: "WORLD_LEMURIA je OASIS svět, který se rodí z jednoduché otázky: Jak rozlišit férově podložený vědecký model od pseudoarcheologie? Místo zlatých pokladů a ztracených superříší zde hráč zkoumá živý ekosystém (lemuři, korály, příliv, bazalty) a historii hypotéz (Sclater Bridge, kontinentální shelf). Sv",
       tags: ["world", "layer 3"],
       goldenEggClue: 16,
-      galaxyPosition: { x: 6.303, y: -0.119, z: 5.797 }
+      galaxyPosition: { x: 4.425, y: -0.089, z: 6.479 }
   },
   {
       id: "WORLD_MAYA",
@@ -640,7 +641,7 @@ export const WORLDS: World[] = [
       summary: "WORLD_MAYA je OASIS svět postavený na cyklickém čase a přechodu. Není to „apokalyptická DLC\" s datem 2012, ale pedagogická krajina, kde se hráči učí, že konec jednoho cyklu může být slavnostním začátkem dalšího. Svět se skládá z deštného pralesa, vápencových pyramid, cenote, podsvětí Xibalby a obrov",
       tags: ["world", "layer 3"],
       goldenEggClue: 18,
-      galaxyPosition: { x: -9.142, y: 0.673, z: 0.004 }
+      galaxyPosition: { x: 3.915, y: -0.061, z: 6.957 }
   },
   {
       id: "WORLD_NORSE_CELTIC",
@@ -652,7 +653,7 @@ export const WORLDS: World[] = [
       summary: "WORLD_NORSE_CELTIC je OASIS svět, který se rodí ze severských a keltských představ o cyklech, slibech a pohostinství. Není to „vikingové útočí\" simulátor, ale otevřená krajina, kde se hráči učí férovému ringu, příběhům a odpočinku po boji. Svět se skládá z několika „ostrovů\" kultur — severských fjor",
       tags: ["world", "layer 3"],
       goldenEggClue: 17,
-      galaxyPosition: { x: 6.807, y: -0.553, z: -5.048 }
+      galaxyPosition: { x: 2.856, y: -0.005, z: -6.328 }
   },
   {
       id: "WORLD_TIBET",
@@ -664,7 +665,194 @@ export const WORLDS: World[] = [
       summary: "WORLD_TIBET je OASIS svět vystavěný na výšce, prázdně a oběhu. Není to horolezecká simulace ani exotická mystika, ale kontemplativní krajina, kde se hráči učí, že nejvyšší vrchol se nezdobí dobýváním, ale obcházením. Svět se rozkládá od sněžných štítů Himaláje po vysoká plata, od klášterních komplex",
       tags: ["world", "layer 4"],
       goldenEggClue: 24,
-      galaxyPosition: { x: -0.488, y: -0.579, z: 9.144 }
+      galaxyPosition: { x: -1.566, y: 0.086, z: -8.384 }
+  },
+  {
+      id: "ANDROMEDA_CORE",
+      name: "Andromeda Core",
+      category: "star-system",
+      layer: 1,
+      location: "Andromeda satellite — central star-system beyond the Milky Way rim",
+      vibe: "A luminous anchor in the outer dark, guiding pilgrims past the galactic edge.",
+      summary: "Andromeda Core is the brightest star-system of the Andromeda satellite, a close neighbor to the Milky Way in the OASIS map.",
+      tags: ["star system"],
+      galaxyPosition: { x: 0, y: 0.4, z: -82 }
+  },
+  {
+      id: "ANDROMEDA_HALO",
+      name: "Andromeda Halo",
+      category: "planet",
+      layer: 1,
+      location: "Andromeda satellite — outer halo",
+      vibe: "Ancient light wrapped in a thin atmosphere of blue and silver dust.",
+      summary: "Andromeda Halo is a quiet outpost planet drifting at the edge of the satellite galaxy.",
+      tags: ["planet"],
+      galaxyPosition: { x: 7, y: 0.2, z: -79 }
+  },
+  {
+      id: "ANDROMEDA_RIFT",
+      name: "Andromeda Rift",
+      category: "dimension",
+      layer: 2,
+      location: "Andromeda satellite — folded space",
+      vibe: "A thin place where two galaxies almost touch and the rules of the Milky Way no longer apply.",
+      summary: "Andromeda Rift is a transitional dimension that forms where the Milky Way and Andromeda fields overlap.",
+      tags: ["dimension"],
+      galaxyPosition: { x: -4, y: -0.2, z: -86 }
+  },
+  {
+      id: "ANDROMEDA_OUTPOST",
+      name: "Andromeda Outpost",
+      category: "sector",
+      layer: 1,
+      location: "Andromeda satellite — expedition sector",
+      vibe: "The last supply stop before the long dark between galaxies.",
+      summary: "Andromeda Outpost is a small sector used by scouts and pilgrims as a forward base for journeys beyond the Milky Way.",
+      tags: ["sector"],
+      galaxyPosition: { x: 5, y: 0.1, z: -76 }
+  },
+  {
+      id: "ANDROMEDA_ANCIENTS",
+      name: "Andromeda Ancients",
+      category: "world",
+      layer: 1,
+      location: "Andromeda satellite — precursor world",
+      vibe: "Ruins older than the local arms, waiting for someone who can read their silence.",
+      summary: "Andromeda Ancients is a world of old monuments left by an unknown civilization at the edge of the Andromeda satellite.",
+      tags: ["world"],
+      galaxyPosition: { x: -5, y: 0.3, z: -83 }
+  },
+  {
+      id: "TRIANGULUM_CORE",
+      name: "Triangulum Core",
+      category: "star-system",
+      layer: 1,
+      location: "Triangulum satellite — core star-system",
+      vibe: "A pale spiral heart far beyond the outer arm, steady and remote.",
+      summary: "Triangulum Core is the central star-system of the Triangulum satellite galaxy.",
+      tags: ["star system"],
+      galaxyPosition: { x: 72, y: -0.4, z: 38 }
+  },
+  {
+      id: "TRIANGULUM_SPIRAL",
+      name: "Triangulum Spiral",
+      category: "planet",
+      layer: 1,
+      location: "Triangulum satellite — spiral arm",
+      vibe: "Where the arm thins, the sky becomes a river of distant stars.",
+      summary: "Triangulum Spiral is a planet caught in one of the satellite galaxy's delicate arms.",
+      tags: ["planet"],
+      galaxyPosition: { x: 66, y: 0.2, z: 42 }
+  },
+  {
+      id: "TRIANGULUM_DRIFT",
+      name: "Triangulum Drift",
+      category: "world",
+      layer: 1,
+      location: "Triangulum satellite — drifting world",
+      vibe: "A world without a star, kept warm by the faint glow of the whole galaxy.",
+      summary: "Triangulum Drift is a rogue world wandering in the outer reaches of the Triangulum satellite.",
+      tags: ["world"],
+      galaxyPosition: { x: 75, y: -0.1, z: 32 }
+  },
+  {
+      id: "TRIANGULUM_NEBULA",
+      name: "Triangulum Nebula",
+      category: "sector",
+      layer: 1,
+      location: "Triangulum satellite — nebula sector",
+      vibe: "Clouds of ionized dream between the stars.",
+      summary: "Triangulum Nebula is a faint sector of gas and dust at the edge of the Triangulum satellite.",
+      tags: ["sector"],
+      galaxyPosition: { x: 69, y: 0.3, z: 44 }
+  },
+  {
+      id: "SOMBRERO_CORE",
+      name: "Sombrero Core",
+      category: "star-system",
+      layer: 1,
+      location: "Sombrero satellite — bright central star-system",
+      vibe: "A white core in a dark hat, watching the Milky Way from above the rim.",
+      summary: "Sombrero Core is the brilliant heart of the Sombrero satellite galaxy.",
+      tags: ["star system"],
+      galaxyPosition: { x: -58, y: 0.2, z: -68 }
+  },
+  {
+      id: "SOMBRERO_DISC",
+      name: "Sombrero Disc",
+      category: "planet",
+      layer: 1,
+      location: "Sombrero satellite — disc world",
+      vibe: "A world built on a perfectly flat plane, as if pressed between two dark mirrors.",
+      summary: "Sombrero Disc is a planet embedded in the thin dust lane of the Sombrero satellite.",
+      tags: ["planet"],
+      galaxyPosition: { x: -52, y: 0.1, z: -72 }
+  },
+  {
+      id: "SOMBRERO_HALO",
+      name: "Sombrero Halo",
+      category: "world",
+      layer: 1,
+      location: "Sombrero satellite — halo world",
+      vibe: "Quiet spheres of old light orbiting the great dark brim.",
+      summary: "Sombrero Halo is a world drifting in the faint spherical halo of the Sombrero satellite.",
+      tags: ["world"],
+      galaxyPosition: { x: -62, y: -0.2, z: -65 }
+  },
+  {
+      id: "SOMBRERO_VOID",
+      name: "Sombrero Void",
+      category: "dimension",
+      layer: 2,
+      location: "Sombrero satellite — empty dimension",
+      vibe: "The silence between galaxies made habitable.",
+      summary: "Sombrero Void is a sparse dimension that mirrors the empty spaces beyond the Sombrero galaxy.",
+      tags: ["dimension"],
+      galaxyPosition: { x: -54, y: 0.0, z: -70 }
+  },
+  {
+      id: "CARTWHEEL_CORE",
+      name: "Cartwheel Core",
+      category: "star-system",
+      layer: 1,
+      location: "Cartwheel satellite — core star-system",
+      vibe: "The still center of a broken wheel turning in the outer dark.",
+      summary: "Cartwheel Core is the remaining nucleus of the Cartwheel satellite galaxy.",
+      tags: ["star system"],
+      galaxyPosition: { x: 70, y: -0.6, z: -55 }
+  },
+  {
+      id: "CARTWHEEL_RING",
+      name: "Cartwheel Ring",
+      category: "planet",
+      layer: 1,
+      location: "Cartwheel satellite — ring world",
+      vibe: "A planet stretched into a circle by the impact that made this galaxy.",
+      summary: "Cartwheel Ring is a planet formed in the expanding ring of the Cartwheel satellite galaxy.",
+      tags: ["planet"],
+      galaxyPosition: { x: 65, y: -0.3, z: -60 }
+  },
+  {
+      id: "CARTWHEEL_SPOKE",
+      name: "Cartwheel Spoke",
+      category: "sector",
+      layer: 1,
+      location: "Cartwheel satellite — spoke sector",
+      vibe: "The bridges of stars left behind by the ancient collision.",
+      summary: "Cartwheel Spoke is a sector of star-bridges connecting the cartwheel's ring to its nucleus.",
+      tags: ["sector"],
+      galaxyPosition: { x: 74, y: -0.1, z: -50 }
+  },
+  {
+      id: "CARTWHEEL_REMNANT",
+      name: "Cartwheel Remnant",
+      category: "world",
+      layer: 1,
+      location: "Cartwheel satellite — remnant world",
+      vibe: "Fragments of the old galaxy, still warm with the memory of their former shape.",
+      summary: "Cartwheel Remnant is a world built from the debris of the Cartwheel galaxy's past.",
+      tags: ["world"],
+      galaxyPosition: { x: 68, y: 0.2, z: -58 }
   },
 ];
 
@@ -724,6 +912,23 @@ export const WORLD_IDS = [
   "WORLD_MAYA",
   "WORLD_NORSE_CELTIC",
   "WORLD_TIBET",
+  "ANDROMEDA_CORE",
+  "ANDROMEDA_HALO",
+  "ANDROMEDA_RIFT",
+  "ANDROMEDA_OUTPOST",
+  "ANDROMEDA_ANCIENTS",
+  "TRIANGULUM_CORE",
+  "TRIANGULUM_SPIRAL",
+  "TRIANGULUM_DRIFT",
+  "TRIANGULUM_NEBULA",
+  "SOMBRERO_CORE",
+  "SOMBRERO_DISC",
+  "SOMBRERO_HALO",
+  "SOMBRERO_VOID",
+  "CARTWHEEL_CORE",
+  "CARTWHEEL_RING",
+  "CARTWHEEL_SPOKE",
+  "CARTWHEEL_REMNANT",
 ] as const;
 
 export type WorldId = typeof WORLD_IDS[number];
@@ -739,6 +944,10 @@ export const STAR_SYSTEM_IDS = [
   "SIRIUS",
   "TAU_CETI",
   "VEGA",
+  "ANDROMEDA_CORE",
+  "TRIANGULUM_CORE",
+  "SOMBRERO_CORE",
+  "CARTWHEEL_CORE",
 ] as const;
 
 export function getWorldById(id: WorldId): World | undefined {

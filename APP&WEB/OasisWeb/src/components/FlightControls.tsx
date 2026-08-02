@@ -123,7 +123,8 @@ const FlightControls = forwardRef<FlightControlsHandle, FlightControlsProps>(
         const dist = pos.distanceTo(camera.position);
         const dir = pos.clone().sub(camera.position).normalize();
         const dot = forward.dot(dir);
-        const maxDist = size * 7;
+        const isOuterWorld = pos.length() > 55;
+        const maxDist = size * 7 * (isOuterWorld ? 1.6 : 1);
         if (dist < maxDist && dot > 0.82) {
           const score = dot * (1 - dist / maxDist);
           if (score > bestScore) {

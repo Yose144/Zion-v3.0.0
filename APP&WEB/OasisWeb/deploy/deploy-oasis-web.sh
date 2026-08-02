@@ -34,6 +34,38 @@ rsync -avz -e "ssh ${SSH_OPTS}" "${ROOT_DIR}/deploy/nginx-oasis.conf" "${REMOTE}
 echo "[deploy-oasis-web] Validating and reloading nginx..."
 ssh ${SSH_OPTS} "${REMOTE}" "nginx -t && nginx -s reload"
 
+# Optional: mirror public desktop miner artifacts to /var/www/downloads so the
+# OASIS /downloads mirror links work. This step is skipped if the artifacts do
+# not exist locally (e.g. on a fresh build machine).
+echo "[deploy-oasis-web] Checking for public desktop miner artifacts..."
+DESKTOP_DIST="${ROOT_DIR}/../../DesktopAgentP3.0.6/dist"
+DOWNLOADS_DIR="/var/www/downloads"
+APPIMAGE="${DESKTOP_DIST}/zion-public-miner-v3.0.6-linux-x86_64.AppImage"
+SHA256SUMS="${DESKTOP_DIST}/SHA256SUMS.txt"
+
+ssh ${SSH_OPTS} "${REMOTE}" "mkdir -p ${DOWNLOADS_DIR}"
+
+if [[ -f "${APPIMAGE}" ]]; then
+  echo "[deploy-oasis-web] Syncing AppImage to ${DOWNLOADS_DIR}"
+  rsync -avz -e "ssh ${SSH_OPTS}" "${APPIMAGE}" "${REMOTE}:${DOWNLOADS_DIR}/"
+else
+  echo "[deploy-oasis-web] AppImage not found at ${APPIMAGE}, skipping"
+fi
+
+shopt -s nullglob
+for deb in "${DESKTOP_DIST}"/*.deb; do
+  if [[ -f "${deb}" ]]; then
+    echo "[deploy-oasis-web] Syncing ${deb} to ${DOWNLOADS_DIR}"
+    rsync -avz -e "ssh ${SSH_OPTS}" "${deb}" "${REMOTE}:${DOWNLOADS_DIR}/"
+  fi
+done
+shopt -u nullglob
+
+if [[ -f "${SHA256SUMS}" ]]; then
+  echo "[deploy-oasis-web] Syncing SHA256SUMS.txt to ${DOWNLOADS_DIR}"
+  rsync -avz -e "ssh ${SSH_OPTS}" "${SHA256SUMS}" "${REMOTE}:${DOWNLOADS_DIR}/"
+fi
+
 echo "[deploy-oasis-web] Done — https://oasis.zionterranova.com"
 curl -fsS -o /dev/null 'https://oasis.zionterranova.com/' && echo '[deploy-oasis-web] Health check: 200' || {
   echo '[deploy-oasis-web] Health check failed' >&2

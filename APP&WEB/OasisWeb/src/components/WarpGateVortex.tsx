@@ -33,7 +33,7 @@ export default function WarpGateVortex({ color, size, active = false }: WarpGate
 
   return (
     <mesh ref={meshRef} position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
-      <circleGeometry args={[size * 1.7, 48]} />
+      <circleGeometry args={[size * 1.7, 32]} />
       <shaderMaterial
         ref={materialRef}
         uniforms={uniforms.current}

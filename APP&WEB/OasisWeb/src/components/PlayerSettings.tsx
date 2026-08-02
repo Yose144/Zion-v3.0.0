@@ -24,10 +24,7 @@ export default function PlayerSettings({ onClose }: PlayerSettingsProps) {
   const addToast = useToastStore((s) => s.add);
   const [tab, setTab] = useState<Tab>('pilgrim');
 
-  // Pilgrim / raw address
   const [input, setInput] = useState(address ?? '');
-
-  // ZION wallet
   const [zionInput, setZionInput] = useState('');
   const [mnemonic, setMnemonic] = useState('');
   const [showSeed, setShowSeed] = useState(false);
@@ -106,13 +103,18 @@ export default function PlayerSettings({ onClose }: PlayerSettingsProps) {
       className="pointer-events-auto fixed inset-0 z-[60] flex items-center justify-center p-4"
     >
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-[#05060f]/95 p-5 shadow-2xl backdrop-blur-2xl">
+      <div className="relative w-full max-w-md overflow-hidden p-5 zion-rainbow-card" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <User className="h-5 w-5 text-oasis-cyan" />
-            <h2 className="text-lg font-bold text-white">Pilgrim Identity</h2>
+            <div className="rounded-lg bg-oasis-purple/10 p-1.5 text-oasis-purple">
+              <User className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white">Pilgrim Identity</h2>
+              <p className="text-[10px] text-gray-400">Link wallet or set pilgrim ID</p>
+            </div>
           </div>
-          <button onClick={onClose} className="rounded-full p-1.5 text-gray-400 hover:bg-white/10 hover:text-white">
+          <button onClick={onClose} className="zion-button-ghost !p-1.5 text-gray-400">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -121,7 +123,7 @@ export default function PlayerSettings({ onClose }: PlayerSettingsProps) {
           <button
             onClick={() => setTab('pilgrim')}
             className={`flex-1 rounded-lg py-2 text-sm font-semibold transition ${
-              tab === 'pilgrim' ? 'bg-oasis-cyan/20 text-oasis-cyan' : 'text-gray-400 hover:text-white'
+              tab === 'pilgrim' ? 'bg-oasis-purple/20 text-oasis-purple' : 'text-gray-400 hover:text-white'
             }`}
           >
             Pilgrim
@@ -129,7 +131,7 @@ export default function PlayerSettings({ onClose }: PlayerSettingsProps) {
           <button
             onClick={() => setTab('zion')}
             className={`flex-1 rounded-lg py-2 text-sm font-semibold transition ${
-              tab === 'zion' ? 'bg-oasis-cyan/20 text-oasis-cyan' : 'text-gray-400 hover:text-white'
+              tab === 'zion' ? 'bg-oasis-purple/20 text-oasis-purple' : 'text-gray-400 hover:text-white'
             }`}
           >
             ZION Wallet
@@ -146,21 +148,21 @@ export default function PlayerSettings({ onClose }: PlayerSettingsProps) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="pilgrim-0001 or zion1..."
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-oasis-cyan focus:ring-1 focus:ring-oasis-cyan"
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-oasis-purple focus:ring-1 focus:ring-oasis-purple"
             />
             <p className="mt-1 text-[10px] text-gray-500">
-              Current type: <span className="text-oasis-cyan">{getAddressType(input) || 'empty'}</span>
+              Current type: <span className="text-oasis-purple">{getAddressType(input) || 'empty'}</span>
             </p>
             <div className="mt-4 flex items-center gap-2">
               <button
                 onClick={handleSavePilgrim}
-                className="flex-1 rounded-xl bg-oasis-cyan/20 py-2.5 text-sm font-bold text-oasis-cyan transition hover:bg-oasis-cyan/30"
+                className="zion-button-primary flex-1 text-sm"
               >
                 Save Address
               </button>
               <button
                 onClick={handleReset}
-                className="flex items-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2.5 text-sm font-bold text-red-400 transition hover:bg-red-500/20"
+                className="zion-button-ghost border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20"
               >
                 <RotateCcw className="h-4 w-4" />
                 Reset
@@ -179,19 +181,19 @@ export default function PlayerSettings({ onClose }: PlayerSettingsProps) {
                   value={zionInput}
                   onChange={(e) => setZionInput(e.target.value)}
                   placeholder="zion1..."
-                  className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-oasis-cyan focus:ring-1 focus:ring-oasis-cyan"
+                  className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-oasis-purple focus:ring-1 focus:ring-oasis-purple"
                 />
                 <button
                   onClick={handleSaveZionAddress}
                   disabled={!isValidZionAddress(zionInput)}
-                  className="rounded-xl bg-oasis-cyan/20 px-4 py-2.5 text-sm font-bold text-oasis-cyan transition hover:bg-oasis-cyan/30 disabled:opacity-40"
+                  className="zion-button-primary px-4 text-sm disabled:opacity-40"
                 >
                   Link
                 </button>
               </div>
             </div>
 
-            <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+            <div className="zion-rainbow-sub p-3" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
               <p className="mb-2 text-sm text-gray-400">Import from 12-word mnemonic:</p>
               <div className="flex gap-2">
                 <input
@@ -199,36 +201,36 @@ export default function PlayerSettings({ onClose }: PlayerSettingsProps) {
                   value={mnemonic}
                   onChange={(e) => setMnemonic(e.target.value)}
                   placeholder="abandon ability able ..."
-                  className="flex-1 rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-oasis-cyan focus:ring-1 focus:ring-oasis-cyan"
+                  className="flex-1 rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-oasis-gold focus:ring-1 focus:ring-oasis-gold"
                 />
                 <button
                   onClick={() => setShowSeed((s) => !s)}
-                  className="rounded-xl border border-white/10 bg-white/5 px-3 text-gray-400 transition hover:bg-white/10"
+                  className="zion-button-ghost !p-2"
                 >
                   {showSeed ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
               <button
                 onClick={handleImportMnemonic}
-                className="mt-2 w-full rounded-xl bg-oasis-gold/20 py-2 text-sm font-bold text-oasis-gold transition hover:bg-oasis-gold/30"
+                className="zion-button-ghost mt-2 w-full border-oasis-gold/30 bg-oasis-gold/10 text-oasis-gold hover:bg-oasis-gold/20"
               >
                 Import Mnemonic
               </button>
               <p className="mt-1 text-[10px] text-gray-500">Seed is used locally to derive address. It is not sent or stored.</p>
             </div>
 
-            <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+            <div className="zion-rainbow-sub p-3" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <p className="mb-2 text-sm text-gray-400">No wallet? Generate a new ZION address:</p>
               {generated ? (
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/30 p-2">
+                  <div className="zion-rainbow-sub flex items-center gap-2 p-2" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
                     <Wallet className="h-4 w-4 text-oasis-cyan" />
                     <code className="flex-1 text-xs text-white">{generated.address}</code>
                     <button onClick={() => copy(generated.address, 'Address')} className="text-gray-400 hover:text-white">
                       <Copy className="h-4 w-4" />
                     </button>
                   </div>
-                  <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/30 p-2">
+                  <div className="zion-rainbow-sub flex items-center gap-2 p-2" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                     <code className="flex-1 text-[10px] text-oasis-gold">{generated.mnemonic}</code>
                     <button onClick={() => copy(generated.mnemonic, 'Mnemonic')} className="text-gray-400 hover:text-white">
                       <Copy className="h-4 w-4" />
@@ -240,7 +242,7 @@ export default function PlayerSettings({ onClose }: PlayerSettingsProps) {
                 <button
                   onClick={handleGenerate}
                   disabled={loading}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-oasis-purple/20 py-2 text-sm font-bold text-oasis-purple transition hover:bg-oasis-purple/30"
+                  className="zion-button-primary w-full text-sm disabled:opacity-40"
                 >
                   <Sparkles className="h-4 w-4" />
                   {loading ? 'Generating...' : 'Generate Wallet'}
