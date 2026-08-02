@@ -5,8 +5,8 @@ import { Rocket, Download, ExternalLink } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
 const ReleaseBannerCopy = {
-  zionV306BetaTrinityIsLive: { cs: `ZION v3.0.6-beta Trinity je live`, en: `ZION v3.0.6-beta Trinity is live` },
-  publicMinerReleaseForLinuxX866: { cs: `Veřejný miner release pro Linux x86_64/ARM64, macOS Apple Silicon/Intel a Windows. Mine ZION na vlastním zařízení.`, en: `Public miner release for Linux x86_64/ARM64, macOS Apple Silicon/Intel, and Windows. Mine ZION on your own hardware.` },
+  zionV310BoostMinerIsLive: { cs: `ZION v3.1.0 Boost Miner je live`, en: `ZION v3.1.0 Boost Miner is live` },
+  threeStreamsZionGpuCpu: { cs: `Tři streamy současně: ZION + GPU + CPU. Auto GPU backend (CUDA + OpenCL + Metal). Linux x86_64 nyní, macOS/Windows přes Trinity Miner.`, en: `Three streams simultaneously: ZION + GPU + CPU. Auto GPU backend (CUDA + OpenCL + Metal). Linux x86_64 now, macOS/Windows via Trinity Miner.` },
   downloadFromGithub: { cs: `Stáhnout z GitHub`, en: `Download from GitHub` },
 };
 
@@ -30,15 +30,15 @@ export default function ReleaseBanner() {
             </div>
             <div className="min-w-0">
               <p className="text-sm sm:text-base font-semibold text-emerald-100 leading-snug">
-                {ReleaseBannerCopy.zionV306BetaTrinityIsLive[cs ? 'cs' : 'en']}
+                {ReleaseBannerCopy.zionV310BoostMinerIsLive[cs ? 'cs' : 'en']}
               </p>
               <p className="text-xs sm:text-sm text-emerald-200/80 leading-relaxed mt-0.5">
-                {ReleaseBannerCopy.publicMinerReleaseForLinuxX866[cs ? 'cs' : 'en']}
+                {ReleaseBannerCopy.threeStreamsZionGpuCpu[cs ? 'cs' : 'en']}
               </p>
             </div>
           </div>
           <a
-            href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.0.6-beta"
+            href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.1.0"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 px-4 py-2 text-sm font-semibold text-emerald-100 transition-colors shrink-0"
