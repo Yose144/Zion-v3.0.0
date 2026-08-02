@@ -1636,7 +1636,7 @@ function detectGpuForStartupFast(config) {
     temperature: '',
     utilization: '',
     cpuOnly: !wantsGpu,
-    backendPreferred: (process.platform === 'darwin' && os.arch() === 'arm64') ? 'metal' : 'opencl',
+    backendPreferred: 'auto',
     cudaCapable: false,
   };
 
@@ -2308,18 +2308,21 @@ function startMiningV3(config, v3Path) {
   const worker = config.worker ? ensureZionGroupHint(sanitizeWorkerName(config.worker)) : ensureZionGroupHint('desktop');
   const miningMode = String(config.miningMode || (config.gpu ? 'dual' : 'cpu')).toLowerCase();
   const wantsGpu = miningMode === 'gpu' || miningMode === 'dual';
-  const explicitGpuBackend = String(config?.gpuBackend || process.env.ZION_BACKEND || '').trim().toLowerCase();
+  const explicitGpuBackend = String(config?.gpuBackend || '').trim().toLowerCase();
   let gpuInfo = null;
   if (wantsGpu) {
     try { gpuInfo = detectGPU(); } catch { /* ignore */ }
   }
+  // Let the miner's resolve_auto_backend() handle GPU detection — it checks
+  // CUDA runtime usability (NVRTC), OpenCL platform availability, and Metal
+  // support at runtime, which is more accurate than the desktop agent's
+  // external tool probing (nvidia-smi / rocm-smi / system_profiler).
+  //
+  // Only force a specific backend when the user explicitly set one in config.
+  // Otherwise pass "auto" and let the miner pick the best available backend.
   const selectedGpuBackend = !wantsGpu
     ? 'cpu'
-    : explicitGpuBackend || (
-      process.platform === 'darwin' && os.arch() === 'arm64'
-        ? 'metal'
-        : (gpuInfo?.backendPreferred === 'cuda' && gpuInfo?.cudaCapable ? 'cuda' : 'opencl')
-    );
+    : explicitGpuBackend || 'auto';
 
   // ── 6. Build CLI args ──────────────────────────────────────────────────────
   const args = ['--pool', pool, '--wallet', wallet];
@@ -5310,9 +5313,10 @@ ipcMain.handle('wallet-generate-qr', async (event, { text }) => {
 
 
 // ═══════════════════════════════════════════════════════════════════
-// AUTO-UPDATER — License-gated updates via custom update server
-// Server: https://updates.zionterranova.com/api/releases
-// electron-updater generic provider + X-License-Key header
+// AUTO-UPDATER
+//   Public build:  GitHub releases (no license required, auto-download)
+//   Private build: License-gated custom update server
+//                  (https://updates.zionterranova.com/api/releases)
 // ═══════════════════════════════════════════════════════════════════
 const UPDATE_SERVER_URL = 'https://updates.zionterranova.com/api/releases';
 let _autoUpdaterAvailable = false;
@@ -5342,13 +5346,21 @@ function _initAutoUpdater() {
     _autoUpdater = autoUpdater;
     _autoUpdaterAvailable = true;
 
-    autoUpdater.autoDownload = false;
+    // Public build: auto-download updates from GitHub releases, no license
+    // required.  Private build: manual download from license-gated server.
+    if (PUBLIC_BUILD) {
+      autoUpdater.autoDownload = true;
+    } else {
+      autoUpdater.autoDownload = false;
+    }
     autoUpdater.autoInstallOnAppQuit = true;
 
-    // Set license key header for update server authentication
-    const cfg = loadConfig();
-    if (cfg?.licenseKey) {
-      autoUpdater.requestHeaders = { 'X-License-Key': cfg.licenseKey };
+    // Private build: set license key header for update server authentication
+    if (!PUBLIC_BUILD) {
+      const cfg = loadConfig();
+      if (cfg?.licenseKey) {
+        autoUpdater.requestHeaders = { 'X-License-Key': cfg.licenseKey };
+      }
     }
 
     autoUpdater.on('checking-for-update', () => {
@@ -5361,6 +5373,8 @@ function _initAutoUpdater() {
         releaseDate: info?.releaseDate,
         releaseNotes: info?.releaseNotes || info?.releaseName || '',
       });
+      // Show tray notification
+      _showUpdateTrayNotification(info?.version);
     });
 
     autoUpdater.on('update-not-available', (info) => {
@@ -5382,13 +5396,15 @@ function _initAutoUpdater() {
         version: info?.version,
         releaseNotes: info?.releaseNotes || '',
       });
+      // Show tray notification: update ready to install
+      _showUpdateReadyTrayNotification(info?.version);
     });
 
     autoUpdater.on('error', (err) => {
       _sendUpdateStatus('error', { error: err?.message || String(err) });
     });
 
-    dbg('[auto-updater] Initialized successfully');
+    dbg('[auto-updater] Initialized successfully' + (PUBLIC_BUILD ? ' (public: GitHub, auto-download)' : ' (private: license-gated)'));
     return autoUpdater;
   } catch (err) {
     dbg('[auto-updater] electron-updater not available:', err.message);
@@ -5397,9 +5413,54 @@ function _initAutoUpdater() {
   }
 }
 
-// IPC: Check for updates — uses license-gated update server
+// Tray notification helpers for update events
+function _showUpdateTrayNotification(version) {
+  try {
+    if (tray) {
+      tray.displayBalloon({
+        title: 'ZION Public Miner — Update Available',
+        content: `Version ${version || 'new'} is available. Downloading in background...`,
+      });
+    }
+  } catch { /* ignore */ }
+}
+
+function _showUpdateReadyTrayNotification(version) {
+  try {
+    if (tray) {
+      tray.displayBalloon({
+        title: 'ZION Public Miner — Update Ready',
+        content: `Version ${version || 'new'} downloaded. It will be installed when you restart the app.`,
+      });
+    }
+  } catch { /* ignore */ }
+}
+
+// IPC: Check for updates
+// Public build: checks GitHub releases (no license required)
+// Private build: checks license-gated update server
 ipcMain.handle('check-for-updates', async () => {
   try {
+    // Public build: no license required, use electron-updater with GitHub
+    if (PUBLIC_BUILD) {
+      const updater = _initAutoUpdater();
+      if (!updater) {
+        // Dev mode fallback: check GitHub API directly
+        return await _checkGitHubReleases();
+      }
+      const result = await updater.checkForUpdates();
+      return {
+        success: true,
+        updateAvailable: !!result?.updateInfo?.version &&
+          result.updateInfo.version !== app.getVersion(),
+        currentVersion: app.getVersion(),
+        latestVersion: result?.updateInfo?.version || app.getVersion(),
+        releaseNotes: result?.updateInfo?.releaseNotes || '',
+        releaseDate: result?.updateInfo?.releaseDate || '',
+      };
+    }
+
+    // Private build: license-gated update server
     const cfg = loadConfig();
     if (!cfg?.licenseKey) {
       return {
@@ -5607,7 +5668,72 @@ async function _checkUpdateServer(licenseKey, validateOnly = false) {
   }
 }
 
-// ── Hiran AI Inference IPC ─────────────────────────────────────────────────
+// Public build fallback: Check GitHub releases API directly (works in dev mode
+// without electron-updater).  Uses the public repo Zion-TerraNova/v3-Mainnet.
+async function _checkGitHubReleases() {
+  try {
+    const https = require('https');
+    const GITHUB_API = 'https://api.github.com/repos/Zion-TerraNova/v3-Mainnet/releases?per_page=5';
+
+    const data = await new Promise((resolve, reject) => {
+      const req = https.request(GITHUB_API, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'ZION-Public-Miner/' + app.getVersion(),
+          'Accept': 'application/vnd.github+json',
+        },
+        timeout: 15000,
+      }, (res) => {
+        let respBody = '';
+        res.on('data', (chunk) => respBody += chunk);
+        res.on('end', () => {
+          try { resolve({ status: res.statusCode, json: JSON.parse(respBody) }); }
+          catch { reject(new Error('Invalid JSON response from GitHub')); }
+        });
+      });
+      req.on('error', reject);
+      req.on('timeout', () => { req.destroy(); reject(new Error('Timeout')); });
+      req.end();
+    });
+
+    if (data.status !== 200 || !Array.isArray(data.json) || data.json.length === 0) {
+      return { success: true, updateAvailable: false, currentVersion: app.getVersion() };
+    }
+
+    // Find the latest non-draft release
+    const releases = data.json.filter(r => !r.draft);
+    if (releases.length === 0) {
+      return { success: true, updateAvailable: false, currentVersion: app.getVersion() };
+    }
+
+    const latest = releases[0];
+    const latestVersion = (latest.tag_name || '').replace(/^v/, '');
+    const currentVersion = app.getVersion();
+
+    // Simple semver comparison
+    const isNewer = (() => {
+      const a = latestVersion.split('.').map(Number);
+      const b = currentVersion.split('.').map(Number);
+      for (let i = 0; i < Math.max(a.length, b.length); i++) {
+        if ((a[i] || 0) > (b[i] || 0)) return true;
+        if ((a[i] || 0) < (b[i] || 0)) return false;
+      }
+      return false;
+    })();
+
+    return {
+      success: true,
+      updateAvailable: isNewer,
+      currentVersion,
+      latestVersion,
+      releaseNotes: latest.body || '',
+      releaseDate: latest.published_at || '',
+      htmlUrl: latest.html_url || '',
+    };
+  } catch (err) {
+    return { success: false, error: err?.message || String(err), currentVersion: app.getVersion() };
+  }
+}
 const HIRAN_INFERENCE_URL = process.env.HIRAN_INFERENCE_URL || 'http://localhost:8002';
 
 ipcMain.handle('ai-chat-ask', async (_event, { message, temperature = 0.7 }) => {
@@ -6141,35 +6267,59 @@ app.whenReady().then(async () => {
   createTray();
 
   // Auto-check for updates on startup (delayed 8s to not block UI)
-  // Requires license key — if not set, show "enter license" status
+  // Public build: checks GitHub releases (no license required)
+  // Private build: requires license key
   setTimeout(() => {
     try {
       const startupCfg = loadConfig();
       if (startupCfg?.autoCheckUpdates !== false) {
-        if (!startupCfg?.licenseKey) {
-          dbg('[startup] No license key set — skipping auto-update check');
-          _sendUpdateStatus('no-license', { message: 'Enter your license key to check for updates' });
-          return;
-        }
-        dbg('[startup] Auto-checking for updates (license-gated)...');
-        const updater = _initAutoUpdater();
-        if (updater) {
-          updater.checkForUpdates().catch(err => {
-            dbg('[startup] Update check failed:', err?.message);
-          });
+        if (PUBLIC_BUILD) {
+          // Public build: check GitHub releases directly, no license needed
+          dbg('[startup] Auto-checking for updates (public: GitHub releases)...');
+          const updater = _initAutoUpdater();
+          if (updater) {
+            updater.checkForUpdates().catch(err => {
+              dbg('[startup] Update check failed:', err?.message);
+            });
+          } else {
+            // Dev mode fallback: check GitHub API directly
+            _checkGitHubReleases().then(result => {
+              if (result?.updateAvailable) {
+                _sendUpdateStatus('available', {
+                  version: result.latestVersion,
+                  releaseNotes: result.releaseNotes,
+                  releaseDate: result.releaseDate,
+                });
+              }
+            }).catch(() => {});
+          }
         } else {
-          // Dev mode fallback: check update server API directly
-          _checkUpdateServer(startupCfg.licenseKey).then(result => {
-            if (result?.updateAvailable) {
-              _sendUpdateStatus('available', {
-                version: result.latestVersion,
-                releaseNotes: result.releaseNotes,
-                releaseDate: result.releaseDate,
-              });
-            } else if (result?.licenseValid === false) {
-              _sendUpdateStatus('error', { error: 'Invalid or revoked license' });
-            }
-          }).catch(() => {});
+          // Private build: license-gated update server
+          if (!startupCfg?.licenseKey) {
+            dbg('[startup] No license key set — skipping auto-update check');
+            _sendUpdateStatus('no-license', { message: 'Enter your license key to check for updates' });
+            return;
+          }
+          dbg('[startup] Auto-checking for updates (private: license-gated)...');
+          const updater = _initAutoUpdater();
+          if (updater) {
+            updater.checkForUpdates().catch(err => {
+              dbg('[startup] Update check failed:', err?.message);
+            });
+          } else {
+            // Dev mode fallback: check update server API directly
+            _checkUpdateServer(startupCfg.licenseKey).then(result => {
+              if (result?.updateAvailable) {
+                _sendUpdateStatus('available', {
+                  version: result.latestVersion,
+                  releaseNotes: result.releaseNotes,
+                  releaseDate: result.releaseDate,
+                });
+              } else if (result?.licenseValid === false) {
+                _sendUpdateStatus('error', { error: 'Invalid or revoked license' });
+              }
+            }).catch(() => {});
+          }
         }
       }
     } catch { /* ignore */ }
