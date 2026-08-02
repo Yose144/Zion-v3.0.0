@@ -14,7 +14,7 @@
 <p>
 
 ![Status: Mainnet Beta](https://img.shields.io/badge/Status-Mainnet_Beta-orange?style=for-the-badge)
-![Protocol](https://img.shields.io/badge/Protocol-3.0.7-blue?style=for-the-badge)
+![Protocol](https://img.shields.io/badge/Protocol-3.1.0-blue?style=for-the-badge)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 ![Rust](https://img.shields.io/badge/Rust-2021-orange?style=for-the-badge)
 ![PoW](https://img.shields.io/badge/Consensus-PoW-purple?style=for-the-badge)
@@ -189,19 +189,77 @@ core and pool remain fully open under the MIT license.
 
 > Don't want to build from source? Download a ready-made binary and start mining in 2 minutes.
 
-### 1. Download the miner for your system
+ZION ships **two kinds** of pre-built miner binaries:
+
+| Type | What it is | Release |
+|:------|:-----------|:--------|
+| **Desktop GUI Miner** (Boost Streams) | Electron + TUI app with full dashboard, hashrate graphs, Boost Stream cards, auto-updater. Recommended for most users. | [`v3.1.0-desktop`](https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.1.0-desktop) |
+| **CLI Miner** (headless) | Single `zion-miner` binary for servers, SMOS/HiveOS rigs, and scripting. | [`v3.0.6-beta`](https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.0.6-beta) |
+
+---
+
+### Option A — Desktop GUI Miner (v3.1.0-desktop)
+
+#### 1. Download for your system
+
+| Your system | Download file | Size |
+|:------------|:--------------|-----:|
+| **Linux x86_64** (Ubuntu, Debian, SMOS, HiveOS) | [`zion-public-miner-v3.1.0-linux-x86_64.AppImage`](https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.1.0-desktop/zion-public-miner-v3.1.0-linux-x86_64.AppImage) | 138 MB |
+| **Linux x86_64** (Debian/Ubuntu package) | [`zion-public-miner-v3.1.0-linux-amd64.deb`](https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.1.0-desktop/zion-public-miner-v3.1.0-linux-amd64.deb) | 111 MB |
+| **Windows x86_64** (10/11) | `zion-public-miner-v3.1.0-windows-x86_64.exe` | 117 MB |
+| **Windows x86_64** (portable ZIP) | `zion-public-miner-v3.1.0-windows-x86_64.zip` | 157 MB |
+| **macOS Apple Silicon** (M1/M2/M3/M4) | `zion-public-miner-v3.1.0-macos-arm64.dmg` | 134 MB |
+
+> Windows and macOS assets are published on the [v3.1.0-desktop release page](https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.1.0-desktop).
+
+#### 2. Install & run
+
+**Linux — AppImage:**
+```bash
+chmod +x zion-public-miner-v3.1.0-linux-x86_64.AppImage
+./zion-public-miner-v3.1.0-linux-x86_64.AppImage
+```
+
+**Linux — DEB:**
+```bash
+sudo dpkg -i zion-public-miner-v3.1.0-linux-amd64.deb
+zion-public-miner   # or find "ZION Miner" in your app menu
+```
+
+**Windows:**
+Double-click the `.exe` installer and follow the wizard, or extract the portable `.zip` and run `zion-public-miner.exe`.
+
+**macOS:**
+Open the `.dmg`, drag ZION Miner to Applications, then launch. On first run right-click → **Open** (Gatekeeper bypass for unsigned apps).
+
+#### 3. First-run setup
+
+The desktop miner opens a setup wizard that asks for:
+- your ZION **wallet address** (`zion1...`)
+- a **worker name** (e.g. `desktop-rig`)
+- **GPU backend** (`auto`, `opencl`, `cuda`, `metal`, or `cpu`)
+- number of **CPU threads**
+- mining **profile** (`pool` is recommended)
+
+Then it launches with Boost Streams enabled — ZION core + Boost Stream 1 (GPU) + Boost Stream 2 (CPU) all running simultaneously.
+
+---
+
+### Option B — CLI Miner (v3.0.6-beta, headless)
+
+#### 1. Download for your system
 
 | Your system | Download file |
 |:------------|:--------------|
-| **Linux x86_64** (Ubuntu, Debian, SMOS, HiveOS) | `zion-miner-linux-x86_64.tar.gz` |
+| **Linux x86_64** | `zion-miner-linux-x86_64.tar.gz` |
 | **Linux ARM64** (Raspberry Pi 4/5, Ampere, Jetson) | `zion-miner-linux-aarch64.tar.gz` |
 | **macOS Apple Silicon** (M1/M2/M3/M4) | `zion-miner-macos-aarch64.tar.gz` |
 | **macOS Intel** (pre-2020 Macs) | `zion-miner-macos-x86_64.tar.gz` |
 | **Windows x86_64** (10/11) | `zion-miner-windows-x86_64.zip` |
 
-Latest release: **[v3.0.7-beta](https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.0.7-beta)**
+Latest CLI release: **[v3.0.6-beta](https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.0.6-beta)**
 
-### 2. Extract
+#### 2. Extract
 
 **Linux / macOS:**
 ```bash
@@ -212,7 +270,7 @@ chmod +x zion-miner start.sh
 **Windows:**
 Right-click the downloaded `.zip` → **Extract All**, then open the extracted folder.
 
-### 3. Run the interactive setup
+#### 3. Run the interactive setup
 
 **Linux / macOS:**
 ```bash
@@ -232,19 +290,17 @@ The miner asks for:
 
 Then it launches with the right settings.
 
-### 4. Advanced wrapper script (optional)
+#### 4. Advanced wrapper script (optional)
 
 Use `start.sh` (Linux/macOS) or `start.bat` (Windows) for the same questions
 plus extra pass-through arguments. Set `ZION_EASY_MENU=0` to skip prompts
 and supply command-line arguments directly.
 
-### 5. Manual start (optional)
-
-If you prefer the command line:
+#### 5. Manual start (optional)
 
 ```bash
 ./zion-miner \
-    --pool 62.171.141.136:8444 \
+    --pool pool.zionterranova.com:8444 \
     --wallet zion1YOUR_WALLET_ADDRESS \
     --worker my-rig \
     --gpu auto \
@@ -253,6 +309,8 @@ If you prefer the command line:
 ```
 
 On Windows use `zion-miner.exe` in Command Prompt or PowerShell.
+
+---
 
 ### Which GPU backend should I choose?
 
@@ -297,7 +355,7 @@ rustc --version
 cargo --version
 ```
 
-> **Windows users:** Install [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) first, then run the commands above inside WSL. Native Windows builds are planned but not yet supported.
+> **Windows users:** Pre-built Windows binaries are available on the [releases page](https://github.com/Zion-TerraNova/v3-Mainnet/releases) — see [Desktop Miner Quick Start](#desktop-miner-quick-start) above. To build from source on Windows, install [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) first, then run the commands above inside WSL.
 
 ### Step 1 — Get the code
 
@@ -378,7 +436,7 @@ Download a pre-built binary from the [releases page](https://github.com/Zion-Ter
 
 > **CPU vs GPU:** Mining with a CPU works but is slow. A GPU (graphics card) is much faster. Run `zion mine bench --gpu` or the standalone miner's `--profile benchmark` to test your GPU hashrate.
 >
-> **Pool vs Solo:** By default, the CLI mines to the official pool (`pool.zionterranova.com:8444`) and the standalone miner defaults to `62.171.141.136:8444`. In pool mode, you earn a share of every block the pool finds. In solo mode, you only earn when *you* find a block — which could take a long time. Pool mode is recommended for beginners.
+> **Pool vs Solo:** By default, both the CLI and the standalone miner connect to the official pool (`pool.zionterranova.com:8444`, which resolves to `62.171.141.136:8444`). In pool mode, you earn a share of every block the pool finds. In solo mode, you only earn when *you* find a block — which could take a long time. Pool mode is recommended for beginners.
 
 ### Step 6 — Check your balance and send ZION
 
