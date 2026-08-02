@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import { buildV2OrderConfirmationHtml } from './v2-email';
+import { getActiveTheme } from './settings';
 
 function emailConfig() {
   return {
@@ -169,7 +170,8 @@ Tým ZION Terra Nova
 `;
 
   try {
-    const html = await buildV2OrderConfirmationHtml(order);
+    const theme = await getActiveTheme();
+    const html = await buildV2OrderConfirmationHtml(order, theme);
     const transporter = createTransporter();
     await transporter.sendMail({
       from: `${cfg.shopName} <${cfg.shopEmail}>`,

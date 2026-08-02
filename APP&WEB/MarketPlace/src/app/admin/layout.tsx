@@ -4,10 +4,14 @@ import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { getAdminKey } from '@/lib/admin-auth';
 
+type ShopTheme = 'rasta' | 'zion';
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [ready, setReady] = useState(false);
+  const [theme, setTheme] = useState<ShopTheme>('rasta');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const key = getAdminKey();
@@ -16,6 +20,41 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
     setReady(true);
   }, [pathname, router]);
+
+  useEffect(() => {
+    if (pathname === '/admin/login') return;
+    const key = getAdminKey();
+    if (!key) return;
+    fetch('/api/admin/settings', { headers: { 'X-API-Key': key } })
+      .then((res) => res.json())
+      .then((json) => {
+        const t = json?.data?.theme;
+        if (t === 'rasta' || t === 'zion') setTheme(t);
+      })
+      .catch((err) => console.error('Failed to load theme:', err));
+  }, [pathname]);
+
+  const saveTheme = async (next: ShopTheme) => {
+    setSaving(true);
+    try {
+      const key = getAdminKey();
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json', 'X-API-Key': key ?? '' },
+        body: JSON.stringify({ theme: next }),
+      });
+      const json = await res.json();
+      if (json?.success) {
+        setTheme(next);
+      } else {
+        console.error('Failed to save theme:', json?.error);
+      }
+    } catch (err) {
+      console.error('Failed to save theme:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (!ready) {
     return <div className="min-h-screen bg-oasis-black" />;
@@ -40,6 +79,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <a href="/admin/shipping" className="px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors">Shipping</a>
               <a href="/admin/stripe" className="px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors">Stripe</a>
               <a href="/" className="px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors text-oasis-cyan">Store</a>
+              <div className="flex items-center gap-2 ml-2 pl-3 border-l border-white/10">
+                <label htmlFor="admin-theme" className="text-xs text-white/60">Theme</label>
+                <select
+                  id="admin-theme"
+                  value={theme}
+                  disabled={saving}
+                  onChange={(e) => saveTheme(e.target.value as ShopTheme)}
+                  className="bg-white/5 border border-white/10 rounded-md text-xs px-2 py-1.5 focus:outline-none focus:border-oasis-cyan"
+                >
+                  <option value="rasta">Rasta</option>
+                  <option value="zion">Zion</option>
+                </select>
+              </div>
             </nav>
           </div>
         </header>
