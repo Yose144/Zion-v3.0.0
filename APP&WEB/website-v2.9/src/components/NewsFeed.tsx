@@ -31,6 +31,53 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'boost-miner-v310-released',
+    date: '2026-08-02',
+    tag: { cs: 'Release', en: 'Release' },
+    tagColor: 'text-emerald-400',
+    title: {
+      cs: 'ZION v3.1.0 Boost Miner — tři streamy současně: ZION + GPU + CPU',
+      en: 'ZION v3.1.0 Boost Miner — three streams simultaneously: ZION + GPU + CPU',
+    },
+    summary: {
+      cs: 'ZION v3.1.0 Boost Miner je venku! Tři streamy těží současně — ZION (primární) + Boost Stream 1 (GPU) + Boost Stream 2 (CPU). Auto GPU backend detekce (OpenCL/CUDA/Metal), TUI dashboard s real-time hashrate a shares. Linux x86_64 binárka s SHA256 verifikací. Pro macOS a Windows použij Trinity Miner v3.0.6-beta. Stáhni z GitHub Releases.',
+      en: 'ZION v3.1.0 Boost Miner is out! Three streams mine simultaneously — ZION (primary) + Boost Stream 1 (GPU) + Boost Stream 2 (CPU). Auto GPU backend detection (OpenCL/CUDA/Metal), TUI dashboard with real-time hashrate and shares. Linux x86_64 binary with SHA256 verification. For macOS and Windows use Trinity Miner v3.0.6-beta. Download from GitHub Releases.',
+    },
+    href: 'https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.1.0',
+    external: true,
+  },
+  {
+    slug: 'desktop-miner-v310-linux',
+    date: '2026-08-02',
+    tag: { cs: 'Release', en: 'Release' },
+    tagColor: 'text-emerald-400',
+    title: {
+      cs: 'ZION Desktop Miner v3.1.0 — GUI miner s Boost Streams pro Linux',
+      en: 'ZION Desktop Miner v3.1.0 — GUI miner with Boost Streams for Linux',
+    },
+    summary: {
+      cs: 'Desktop Miner v3.1.0 je dostupný pro Linux! GUI aplikace s vestavěným minerem, peněženkou a dashboardem v reálném čase. Boost Streams: GPU a CPU stream běží vedle ZION core mining. GitHub auto-updater hlídá nové releasy. AppImage (131 MB) a DEB balíček (106 MB). Windows a macOS verze brzy.',
+      en: 'Desktop Miner v3.1.0 is available for Linux! GUI app with built-in miner, wallet, and real-time dashboard. Boost Streams: GPU and CPU stream run alongside ZION core mining. GitHub auto-updater checks for new releases. AppImage (131 MB) and DEB package (106 MB). Windows and macOS versions coming soon.',
+    },
+    href: 'https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.1.0-desktop',
+    external: true,
+  },
+  {
+    slug: 'marketplace-oasis-artefacts-construction',
+    date: '2026-08-01',
+    tag: { cs: 'Marketplace', en: 'Marketplace' },
+    tagColor: 'text-fuchsia-400',
+    title: {
+      cs: 'Marketplace pro ZION ekosystém — stavba začala (OASIS artefakty, NFT, avataři)',
+      en: 'Marketplace for ZION ecosystem — construction started (OASIS artefacts, NFTs, avatars)',
+    },
+    summary: {
+      cs: 'Pracujeme na ZION Marketplace — centrálním tržišti pro celý ekosystém. První fáze pokrývá OASIS artefakty: 3D avatary, světy, guild pozemky, Golden Egg klíče a vizuální kolekce z 55 světů. Druhá fáze přidá NFT z L4/L5 vrstev, AI modely z L3 Hiran a komunitní obsah. Marketplace bude integrovaný s ZION peněženkou a ZION Liquidity — nákupy v ZION bez burzy. Cílový launch: Q4 2026 spolu s veřejným spuštěním sítě.',
+      en: 'We are building the ZION Marketplace — a central marketplace for the entire ecosystem. The first phase covers OASIS artefacts: 3D avatars, worlds, guild plots, Golden Egg keys, and visual collections from 55 worlds. The second phase will add NFTs from L4/L5 layers, AI models from L3 Hiran, and community content. The marketplace will be integrated with the ZION wallet and ZION Liquidity — purchases in ZION without an exchange. Target launch: Q4 2026 alongside the public network launch.',
+    },
+    href: '/l4-oasis',
+  },
+  {
     slug: 'v3-1-0-mainnet-alpha-website',
     date: '2026-07-31',
     tag: { cs: 'Aktualizace', en: 'Update' },
@@ -71,8 +118,8 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       en: 'Roadmap to ZION 3.1.0 Mainnet Alpha — from Trinity to a clean mainnet',
     },
     summary: {
-      cs: 'ZION 3.0.6 Trinity je venku a síť běží. Nyní míříme k 3.1.0 Mainnet Alpha: 3.0.7 „All Green“ → 3.0.8 „Full Stack Stable“ → 3.0.9 „Pre-Alpha Hardening“ → 3.1.0. Pokud síť zůstane bez kritických chyb, další hard reset nebude nutný — současný genesis hash je trvalý. Pracujeme na všech známých bugech a připravujeme repozitář pro masivní miner onboarding.',
-      en: 'ZION 3.0.6 Trinity is live and the network is running. We are now heading toward 3.1.0 Mainnet Alpha: 3.0.7 “All Green” → 3.0.8 “Full Stack Stable” → 3.0.9 “Pre-Alpha Hardening” → 3.1.0. If the network stays free of critical bugs, no further hard reset will be needed — the current genesis hash is permanent. We are working through every known issue and preparing the repository for large-scale miner onboarding.',
+      cs: 'ZION 3.1.0 Boost Miner je venku a síť běží. Nyní míříme k plnému Mainnet Alpha: 3.0.7 „All Green“ → 3.0.8 „Full Stack Stable“ → 3.0.9 „Pre-Alpha Hardening“ → 3.1.0. Pokud síť zůstane bez kritických chyb, další hard reset nebude nutný — současný genesis hash je trvalý. Pracujeme na všech známých bugech a připravujeme repozitář pro masivní miner onboarding.',
+      en: 'ZION 3.1.0 Boost Miner is live and the network is running. We are now heading toward full Mainnet Alpha: 3.0.7 “All Green” → 3.0.8 “Full Stack Stable” → 3.0.9 “Pre-Alpha Hardening” → 3.1.0. If the network stays free of critical bugs, no further hard reset will be needed — the current genesis hash is permanent. We are working through every known issue and preparing the repository for large-scale miner onboarding.',
     },
     href: '/whitepapers',
   },
