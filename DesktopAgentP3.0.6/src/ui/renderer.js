@@ -3783,7 +3783,13 @@ function initUpdateUI() {
   const licenseBtn = document.getElementById('license-activate-btn');
   const licenseStatus = document.getElementById('license-status');
 
-  // ── License key activation ──────────────────────────────────────────────────
+  // Public build: hide license key UI (updates are free via GitHub releases)
+  if (PUBLIC_BUILD) {
+    const licenseSection = document.getElementById('license-section');
+    if (licenseSection) licenseSection.style.display = 'none';
+  }
+
+  // ── License key activation (private build only) ─────────────────────────────
   if (licenseBtn && !licenseBtn._bound) {
     licenseBtn._bound = true;
 
@@ -3847,7 +3853,8 @@ function initUpdateUI() {
     checkBtn.addEventListener('click', async () => {
       if (_updateState.checking) return;
       _updateState.checking = true;
-      _setUpdateStatus('Checking...', 'Contacting update server...', '#93c5fd');
+      const statusText = PUBLIC_BUILD ? 'Checking GitHub releases...' : 'Contacting update server...';
+      _setUpdateStatus('Checking...', statusText, '#93c5fd');
       checkBtn.disabled = true;
       checkBtn.textContent = 'Checking...';
 
@@ -3863,7 +3870,12 @@ function initUpdateUI() {
           _updateState.available = true;
           _setUpdateStatus('Update Available!', `v${result.latestVersion} ready`, '#6ee7b7');
           _showChangelog(result.releaseNotes, result.latestVersion);
-          _showDownloadPrompt(result);
+          if (PUBLIC_BUILD) {
+            // Public build: auto-download is on, just show "downloading" status
+            _setUpdateStatus('Downloading...', `v${result.latestVersion} downloading in background`, '#93c5fd');
+          } else {
+            _showDownloadPrompt(result);
+          }
         } else {
           _setUpdateStatus('Up to Date', `v${result.currentVersion} is the latest`, '#6ee7b7');
         }

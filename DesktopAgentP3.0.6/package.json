@@ -113,9 +113,9 @@
     },
     "publish": [
       {
-        "provider": "generic",
-        "url": "https://updates.zionterranova.com/api/releases",
-        "channel": "latest"
+        "provider": "github",
+        "owner": "Zion-TerraNova",
+        "repo": "v3-Mainnet"
       }
     ]
   }
