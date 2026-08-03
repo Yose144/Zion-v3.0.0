@@ -292,10 +292,10 @@
 ### D.5 — Fáze D Go/No-Go (3.1.0 Mainnet Alpha)
 
 - ✅ V31 běží na Edge na produkčních portech
-- ✅ 7d continuous run bez kritického incidentu
-- ✅ V3 archivováno
-- ✅ GitHub release `v3.1.0-beta` publikován
-- ✅ Tag `v3.1.0` vytvořen
+- ⬜ 7d continuous run bez kritického incidentu (D3.5 — running since 2026-08-04)
+- ✅ V3 archivováno (D4.1-D4.4, D4.6 complete)
+- ⬜ GitHub release `v3.1.0-beta` publikován (tag pushed, release creation pending)
+- ✅ Tag `v3.1.0-beta` vytvořen a pushnut na origin
 
 ---
 
