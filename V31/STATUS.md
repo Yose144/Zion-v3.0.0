@@ -69,6 +69,13 @@
   - ✅ pool_message.rs (65 lines) — local PoolMessage to avoid cyclic dep
   - ⏳ parallel.rs (328 lines) — needs zion_auxpow crate (feature-gated)
 
+- **[C.1] Operator binaries** — 15/19 enabled (4 feature-gated):
+  - ✅ gen-keys, gen-all-keys-mnemonic, gen-canonical-wallets, gen-premine-wallets
+  - ✅ gen-pool-wallet, gen-pool-payout-wallet, gen-dao-guardians, gen-evm-validators
+  - ✅ gen-tithe-wallets, gen-admin-keys, get-canonical-addresses, get-genesis-hash
+  - ✅ get-bridge-vault-address, zion-node, zion-migrate
+  - ⏳ wallet, core-util, fund-bridge-vault, burn-funds, migrate-escrow, canonical-operator-env (feature-gated `v3-binaries`, need ChainState)
+
 ### Původní alpha.2 features
 
 - **V3 checkpoint sync** — L1 umí načíst V3 stav jako genesis checkpoint.

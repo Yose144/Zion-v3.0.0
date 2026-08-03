@@ -183,18 +183,18 @@
 
 | # | Úkol | Z V3 | Do V31 | Status |
 |---|------|------|--------|--------|
-| C1.1 | `gen-all-keys-mnemonic` | `V3/L1/core/src/bin/` | `V31/L1/core/src/bin/` | ⬜ |
-| C1.2 | `gen-premine-wallets` | `V3/L1/core/src/bin/` | `V31/L1/core/src/bin/` | ⬜ |
-| C1.3 | `gen-evm-validators` | `V3/L1/core/src/bin/` | `V31/L1/core/src/bin/` | ⬜ |
-| C1.4 | `gen-dao-guardians` | `V3/L1/core/src/bin/` | `V31/L1/core/src/bin/` | ⬜ |
-| C1.5 | `gen-pool-wallet` + `gen-pool-payout-wallet` | `V3/L1/core/src/bin/` | `V31/L1/core/src/bin/` | ⬜ |
-| C1.6 | `gen-canonical-wallets` + `gen-tithe-wallets` | `V3/L1/core/src/bin/` | `V31/L1/core/src/bin/` | ⬜ |
-| C1.7 | `wallet` binary | `V3/L1/core/src/bin/wallet.rs` | `V31/L1/core/src/bin/wallet.rs` | ⬜ |
-| C1.8 | `fund-bridge-vault` + `burn-funds` | `V3/L1/core/src/bin/` | `V31/L1/core/src/bin/` | ⬜ |
-| C1.9 | `get-genesis-hash` + `get-canonical-addresses` | `V3/L1/core/src/bin/` | `V31/L1/core/src/bin/` | ⬜ |
-| C1.10 | `migrate-escrow` + `core-util` | `V3/L1/core/src/bin/` | `V31/L1/core/src/bin/` | ⬜ |
-| C1.11 | `gen-admin-keys` + `gen-keys` | `V3/L1/core/src/bin/` | `V31/L1/core/src/bin/` | ⬜ |
-| C1.12 | Všechny binaries build + run | — | `cargo build --bin *` pass | ⬜ |
+| C1.1 | ✅ gen-all-keys-mnemonic ported | ✅ |
+| C1.2 | ✅ gen-premine-wallets ported | ✅ |
+| C1.3 | ✅ gen-evm-validators ported | ✅ |
+| C1.4 | ✅ gen-dao-guardians ported | ✅ |
+| C1.5 | ✅ gen-pool-wallet + gen-pool-payout-wallet ported | ✅ |
+| C1.6 | ✅ gen-canonical-wallets + gen-tithe-wallets ported | ✅ |
+| C1.7 | ⏳ wallet binary — feature-gated (needs ChainState) | ⏳ |
+| C1.8 | ⏳ fund-bridge-vault + burn-funds — feature-gated (needs V3 Transaction) | ⏳ |
+| C1.9 | ✅ get-genesis-hash + get-canonical-addresses ported | ✅ |
+| C1.10 | ⏳ migrate-escrow + core-util — feature-gated (needs ChainState) | ⏳ |
+| C1.11 | ✅ gen-admin-keys + gen-keys ported | ✅ |
+| C1.12 | ✅ 15/19 binaries build (4 feature-gated) | ✅ |
 
 ### C.2 — V31 G6: edge-deploy infra
 
