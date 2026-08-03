@@ -56,3 +56,8 @@ pub use migration::{migrate_v3_state, MigrationError, MigrationSummary};
 pub use node::{Node, NodeConfig};
 pub use storage::{Storage, StorageError};
 pub use transaction::{Transaction, TransactionInput, TransactionOutput};
+pub use v3_compat::{
+    BlockCandidate, DifficultyTarget as V3DifficultyTarget, MiningJob, MiningSolution,
+    SealedBlock, V3Block,
+};
+pub use v3_wallet::MIN_PAYOUT_AMOUNT;
