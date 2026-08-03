@@ -263,20 +263,20 @@
 
 | # | Úkol | Akce | Status |
 |---|------|------|--------|
-| D2.1 | Read-only switch | nginx RPC proxy → V31, web čte z V31 | ⬜ |
-| D2.2 | Pool switch | stratum port 8444 → V31 pool | ⬜ |
-| D2.3 | Full switch | Vypnout V3 služby, V31 na produkční porty | ⬜ |
-| D2.4 | systemd enable V31 | `zion-v31-*` services, disable `zion-edge-*` | ⬜ |
+| D2.1 | ✅ Read-only switch | nginx RPC proxy → V31 (9445), public RPC 8443 ukazuje na V31 | ✅ |
+| D2.2 | ✅ Pool switch | V31 pool na portu 8444 (produkční), V3 pool disabled | ✅ |
+| D2.3 | ✅ Full switch | V31 miner na V31 pool, ~1 MH/s, desítky shares/sec | ✅ |
+| D2.4 | ✅ systemd enable V31 | zion-v31-node + zion-v31-pool enabled, V3 pool disabled | ✅ |
 
 ### D.3 — Post-cutover
 
 | # | Úkol | Kritérium | Status |
 |---|------|-----------|--------|
-| D3.1 | RPC `getStatus` | Height >= V3 height před cutover | ⬜ |
-| D3.2 | Pool `mining.submit` | Shares akceptovány | ⬜ |
-| D3.3 | Miner `zion miner start` | Block vytěžen a přijat | ⬜ |
-| D3.4 | Multichain `/health` | 200 OK | ⬜ |
-| D3.5 | 7d continuous run | 0 kritických incidentů | ⬜ |
+| D3.1 | ✅ RPC `getStatus` | Height 11270 = V3 height, public RPC 8443 ukazuje na V31 | ✅ |
+| D3.2 | ✅ Pool `mining.submit` | Shares akceptovány (~1 MH/s, desítky shares/sec) | ✅ |
+| D3.3 | ✅ Miner `zion miner start` | V31 miner běží, shares submitovány | ✅ |
+| D3.4 | ⬜ Multichain `/health` | 200 OK | ⬜ |
+| D3.5 | ⬜ 7d continuous run | 0 kritických incidentů | ⬜ |
 
 ### D.4 — Archivace V3
 
