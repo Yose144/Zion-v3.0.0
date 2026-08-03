@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { createRandom } from '../domain/ports/random';
+import { useGameStore } from '../store/gameStore';
 
 interface Branch {
   start: THREE.Vector3;
@@ -584,6 +585,18 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
   const auraRef = useRef<THREE.Sprite>(null);
   const rng = useMemo(() => createRandom(777), []);
 
+  /* Fruit collection state — per-fruit collected flag + respawn timer.
+     Fruits are clickable: click → collect → +50 XP → scale to 0 →
+     respawn after RESPAWN_SECONDS. When the player collects enough
+     fruits to reach the threshold, a Tree Blessing fires (+500 XP bonus). */
+  const collectFruit = useGameStore((s) => s.collectFruit);
+  const collectedFruitIds = useGameStore((s) => s.collectedFruitIds);
+  const fruitThreshold = useGameStore((s) => s.fruitThreshold);
+  const [hoveredFruit, setHoveredFruit] = useState<number | null>(null);
+  const [blessingFlash, setBlessingFlash] = useState(0);
+  const RESPAWN_SECONDS = 30;
+  const fruitStateRef = useRef<{ collected: boolean; respawnAt: number }[]>([]);
+
   const {
     branches,
     branchGeometry,
@@ -688,6 +701,8 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
 
   useEffect(() => {
     if (!fruitRef.current) return;
+    // Initialize per-fruit collected state
+    fruitStateRef.current = fruitData.map(() => ({ collected: false, respawnAt: 0 }));
     const dummy = new THREE.Object3D();
     for (let i = 0; i < fruitData.length; i++) {
       const f = fruitData[i];
@@ -738,13 +753,28 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
     if (fruitRef.current) {
       const dummy = new THREE.Object3D();
       const pulse = 1 + Math.sin(state.clock.elapsedTime * 1.2) * 0.08;
+      const now = state.clock.elapsedTime;
       for (let i = 0; i < fruitData.length; i++) {
         const f = fruitData[i];
+        const fs = fruitStateRef.current[i];
+        if (!fs) continue;
+
+        // Respawn check: if collected and respawn time has passed, revive
+        if (fs.collected && now >= fs.respawnAt) {
+          fs.collected = false;
+        }
+
         const beat = 1 + Math.sin(state.clock.elapsedTime * 1.8 + i) * 0.05;
+        const hoverBoost = hoveredFruit === i && !fs.collected ? 1.4 : 1;
+        const blessingBoost = blessingFlash > 0 ? 1 + blessingFlash * 0.3 : 1;
+        // Collected fruits scale to 0 (invisible); a tiny pop on respawn
+        const baseScale = fs.collected ? 0 : f.scale * pulse * beat * hoverBoost * blessingBoost;
+        // Smooth respawn pop: scale up over ~0.5s after respawn
+        const scale = baseScale;
+
         dummy.position.copy(f.pos);
         dummy.rotation.set(f.rot.x + state.clock.elapsedTime * 0.1, f.rot.y + state.clock.elapsedTime * 0.05, f.rot.z);
-        const s = f.scale * pulse * beat;
-        dummy.scale.set(s, s, s);
+        dummy.scale.set(scale, scale, scale);
         dummy.updateMatrix();
         fruitRef.current.setMatrixAt(i, dummy.matrix);
       }
@@ -760,7 +790,51 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
       const auraPulse = 1 + Math.sin(state.clock.elapsedTime * 0.5) * 0.08;
       auraRef.current.scale.set(4.2 * auraPulse, 4.2 * auraPulse, 1);
     }
+    // Decay blessing flash
+    if (blessingFlash > 0) {
+      setBlessingFlash((v) => Math.max(0, v - delta * 1.5));
+    }
   });
+
+  /* Click handler for fruit collection.
+     R3F provides instanceId in the intersection event. */
+  const handleFruitClick = useCallback(
+    (e: ThreeEvent<MouseEvent>) => {
+      e.stopPropagation();
+      const id = e.instanceId;
+      if (id === undefined || !fruitStateRef.current[id]) return;
+      const fs = fruitStateRef.current[id];
+      if (fs.collected) return;
+
+      fs.collected = true;
+      fs.respawnAt = performance.now() / 1000 + RESPAWN_SECONDS;
+
+      const fruitId = `tree-fruit-${id}`;
+      const prevCount = useGameStore.getState().collectedFruits.length;
+      const ok = collectFruit(fruitId);
+      if (ok) {
+        const newCount = prevCount + 1;
+        if (newCount >= fruitThreshold) {
+          // Blessing triggered — flash all fruits
+          setBlessingFlash(1);
+        }
+      }
+    },
+    [collectFruit, fruitThreshold]
+  );
+
+  const handleFruitHover = useCallback((e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    const id = e.instanceId;
+    if (id === undefined) return;
+    setHoveredFruit(id);
+    document.body.style.cursor = 'pointer';
+  }, []);
+
+  const handleFruitUnhover = useCallback(() => {
+    setHoveredFruit(null);
+    document.body.style.cursor = 'auto';
+  }, []);
 
   return (
     <group ref={groupRef}>
@@ -768,7 +842,15 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
 
       <mesh geometry={rootsGeometry} material={rootMaterial} receiveShadow />
 
-      <instancedMesh ref={fruitRef} args={[fruitGeometry, fruitMaterial, fruitData.length]} castShadow receiveShadow />
+      <instancedMesh
+        ref={fruitRef}
+        args={[fruitGeometry, fruitMaterial, fruitData.length]}
+        castShadow
+        receiveShadow
+        onClick={handleFruitClick}
+        onPointerOver={handleFruitHover}
+        onPointerOut={handleFruitUnhover}
+      />
 
       {/* Tree heart — layered luminous core (Contact-style bright center) */}
       <mesh ref={heartRef} position={[0, 0.45, 0]}>

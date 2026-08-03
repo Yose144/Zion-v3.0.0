@@ -12,6 +12,7 @@ import type { MobileInput } from './MobileControls';
 import MobileControls from './MobileControls';
 import GamePanel from './GamePanel';
 import OnboardingHint from './OnboardingHint';
+import FruitCounter from './FruitCounter';
 import { PilgrimRite } from './PilgrimRite';
 import ControlHud from './ControlHud';
 import type { CompassData } from './Compass';
@@ -287,6 +288,7 @@ export default function OasisClient() {
           />
         )}
         {phase === 'scene' && view === 'galaxy' && !flightMode && !uiHidden && <OnboardingHint />}
+        {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && <FruitCounter />}
 
         <AnimatePresence>
           {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && (
