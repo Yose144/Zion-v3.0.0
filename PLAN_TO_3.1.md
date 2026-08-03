@@ -161,7 +161,7 @@
 | B3.5 | ✅ dual_stratum.rs ported (dual stratum manager) | AuXpow | V31 miner auxpow/dual_stratum.rs | ✅ |
 | B3.6 | ✅ parent_chains.rs ported (parent chain RPC clients) | AuXpow | V31 miner auxpow/parent_chains.rs | ✅ |
 | B3.7 | ✅ true_auxpow.rs ported (Merkle tree + proof construction) | AuXpow | V31 miner auxpow/true_auxpow.rs | ✅ |
-| B3.8 | Eliminate duplicate `ExternalCoin` | smazat z auxpow, použít cosmic-harmony | ⬜ |
+| B3.8 | ✅ Duplicate ExternalCoin eliminated (32 variants, ~650 lines removed) | cosmic-harmony canonical | profit_router imports from it | ✅ |
 | B3.9 | ✅ 6/7 modules enabled (autonomous done, parallel deferred) | ✅ |
 | B3.10 | ✅ 59 tests pass (was 14) | ✅ |
 
