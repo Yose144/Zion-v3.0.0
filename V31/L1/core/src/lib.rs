@@ -45,6 +45,7 @@ pub mod launch;
 pub mod v3_wallet;
 pub mod v3_bridge;   // needs k256, hex(), SpendableUtxo, MIGRATION_DIVISOR
 pub mod v3_validation; // needs crate::tx, crate::genesis::validate_premine
+pub mod websocket;
 
 pub use block::{Block, BlockHeader};
 pub use consensus::{ConsensusEngine, ConsensusError, HeightAwareDeeksha};

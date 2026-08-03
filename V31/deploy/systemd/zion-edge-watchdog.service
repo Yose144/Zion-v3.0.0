@@ -1,0 +1,14 @@
+[Unit]
+Description=ZION V31 Edge Watchdog (healthcheck + auto-restart)
+
+[Service]
+Type=oneshot
+# Runs as root because it must restart other services via systemctl
+User=root
+ExecStart=/opt/zion/V31/deploy/scripts/watchdog.sh
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening (root is required to restart peer services)
+NoNewPrivileges=true
+PrivateTmp=yes
