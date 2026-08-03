@@ -23,17 +23,35 @@ REMOTE="${EDGE_USER}@${EDGE_HOST}"
 
 echo "[deploy-oasis-intro] Syncing intro page to ${REMOTE}:${REMOTE_MAINT_DIR}"
 
-# Ensure target directory exists
-ssh ${SSH_OPTS} "${REMOTE}" "mkdir -p ${REMOTE_MAINT_DIR}/stargate"
+# Ensure target directories exist
+ssh ${SSH_OPTS} "${REMOTE}" "mkdir -p ${REMOTE_MAINT_DIR}/stargate ${REMOTE_MAINT_DIR}/assets ${REMOTE_MAINT_DIR}/images"
 
-# Sync main HTML + stargate assets (zion-rainbow theme + starfield images)
+# Sync main HTML
 rsync -avz --delete \
   "${ROOT_DIR}/public/maintenance.html" \
   "${REMOTE}:${REMOTE_MAINT_DIR}/maintenance.html"
 
+# Sync stargate assets (portal images + nebula + theme)
 rsync -avz --delete \
   "${ROOT_DIR}/public/stargate/" \
   "${REMOTE}:${REMOTE_MAINT_DIR}/stargate/"
+
+# Sync theme assets (CSS + fonts + JS)
+rsync -avz --delete \
+  "${ROOT_DIR}/public/assets/" \
+  "${REMOTE}:${REMOTE_MAINT_DIR}/assets/"
+
+# Sync images (support section + icons)
+rsync -avz --delete \
+  "${ROOT_DIR}/public/images/" \
+  "${REMOTE}:${REMOTE_MAINT_DIR}/images/"
+
+# Sync legacy video.css if still used
+if [ -f "${ROOT_DIR}/public/video.css" ]; then
+  rsync -avz --delete \
+    "${ROOT_DIR}/public/video.css" \
+    "${REMOTE}:${REMOTE_MAINT_DIR}/video.css"
+fi
 
 # Verify nginx config before reload
 ssh ${SSH_OPTS} "${REMOTE}" "nginx -t" || {
