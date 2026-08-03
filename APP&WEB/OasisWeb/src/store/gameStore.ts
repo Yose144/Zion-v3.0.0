@@ -57,6 +57,11 @@ interface GameState {
   avatars: any[];
   territories: any[];
   collectedEggs: string[];
+  /* Fruit of the Tree — collect N fruits → Tree Blessing bonus XP */
+  collectedFruits: string[];
+  fruitBlessings: number;
+  fruitThreshold: number;
+  collectedFruitIds: string[];
   archetype: Archetype;
   avatarConfig: AvatarConfig;
   shipLoadout: ShipLoadout;
@@ -73,6 +78,8 @@ interface GameState {
   scanWorld: (id: string) => void;
   setRealQuests: (quests: any[]) => void;
   claimGoldenEgg: (worldId: string) => boolean;
+  collectFruit: (fruitId: string) => boolean;
+  resetFruitBlessing: () => void;
   upgradeShip: (part: keyof ShipLoadout) => boolean;
   setShipColor: (color: string) => void;
   setShipModel: (model: ShipModelId) => void;
@@ -98,6 +105,10 @@ export const useGameStore = create<GameState>()(
       avatars: [],
       territories: [],
       collectedEggs: [],
+      collectedFruits: [],
+      fruitBlessings: 0,
+      fruitThreshold: 7,
+      collectedFruitIds: [],
       archetype: null,
       avatarConfig: { callsign: '', bodyType: 'standard', neonColor: '#06b6d4', augmentation: 'neural' },
       shipLoadout: { boost: 1, cargo: 1, scanner: 1, color: '#06b6d4', model: 'pilgrim' },
@@ -164,6 +175,39 @@ export const useGameStore = create<GameState>()(
         }));
         return true;
       },
+
+      /* Fruit of the Tree — each fruit gives +50 XP. When the player
+         reaches the threshold (default 7), a Tree Blessing fires:
+         +500 bonus XP, the counter resets, and fruitBlessings increments.
+         Returns true if the collection succeeded (fruit was new). */
+      collectFruit: (fruitId) => {
+        const state = get();
+        if (state.collectedFruitIds.includes(fruitId)) return false;
+        const newCount = state.collectedFruits.length + 1;
+        const threshold = state.fruitThreshold;
+        if (newCount >= threshold) {
+          // Blessing triggered
+          set((s) => ({
+            xp: s.xp + 50 + 500,
+            collectedFruits: [],
+            collectedFruitIds: [...s.collectedFruitIds, fruitId],
+            fruitBlessings: s.fruitBlessings + 1,
+          }));
+        } else {
+          set((s) => ({
+            xp: s.xp + 50,
+            collectedFruits: [...s.collectedFruits, fruitId],
+            collectedFruitIds: [...s.collectedFruitIds, fruitId],
+          }));
+        }
+        return true;
+      },
+
+      /* Clear the per-session collected IDs so fruits can respawn for the
+         next blessing cycle. Called by TreeOfLife when all fruits have
+         respawned. */
+      resetFruitBlessing: () =>
+        set({ collectedFruitIds: [] }),
 
       upgradeShip: (part) => {
         const state = get();
@@ -242,6 +286,9 @@ export const useGameStore = create<GameState>()(
           avatars: [],
           territories: [],
           collectedEggs: [],
+          collectedFruits: [],
+          fruitBlessings: 0,
+          collectedFruitIds: [],
           archetype: null,
           avatarConfig: { callsign: '', bodyType: 'standard', neonColor: '#06b6d4', augmentation: 'neural' },
           shipLoadout: { boost: 1, cargo: 1, scanner: 1, color: '#06b6d4', model: 'pilgrim' },
@@ -260,6 +307,8 @@ export const useGameStore = create<GameState>()(
         avatars: state.avatars,
         territories: state.territories,
         collectedEggs: state.collectedEggs,
+        collectedFruits: state.collectedFruits,
+        fruitBlessings: state.fruitBlessings,
         archetype: state.archetype,
         avatarConfig: state.avatarConfig,
         shipLoadout: state.shipLoadout,
