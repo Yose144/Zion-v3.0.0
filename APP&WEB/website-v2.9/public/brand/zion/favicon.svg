@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs><linearGradient id="trunkGradF" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#fde68a"/>
+    <stop offset="50%" stop-color="#fbbf24"/>
+    <stop offset="100%" stop-color="#b45309"/>
+  </linearGradient></defs>
+  <g><polygon points="201.5,156.2 261.8,160.0 250.2,192.0" fill="#fbbf24"/> <polygon points="218.7,131.6 269.0,165.1 243.0,186.9" fill="#fbbf24"/> <polygon points="241.0,120.0 272.4,171.6 239.6,180.4" fill="#fbbf24"/> <polygon points="256.0,118.0 273.0,176.0 239.0,176.0" fill="#fbbf24"/> <polygon points="271.0,120.0 272.4,180.4 239.6,171.6" fill="#fbbf24"/> <polygon points="293.3,131.6 269.0,186.9 243.0,165.1" fill="#fbbf24"/> <polygon points="310.5,156.2 261.8,192.0 250.2,160.0" fill="#fbbf24"/></g>
+  <path d="M 168 176 L 344 176 L 344 206 L 228 300 L 344 300 L 344 330 L 168 330 L 168 300 L 284 206 L 168 206 Z" fill="url(#trunkGradF)"/>
+  <g><path d="M 256.0 330 L 227.5 393.9" stroke="#b45309" stroke-width="7" stroke-linecap="round" fill="none"/> <path d="M 256.0 330 L 256.0 400.0" stroke="#b45309" stroke-width="7" stroke-linecap="round" fill="none"/> <path d="M 256.0 330 L 284.5 393.9" stroke="#b45309" stroke-width="7" stroke-linecap="round" fill="none"/></g>
+</svg>
