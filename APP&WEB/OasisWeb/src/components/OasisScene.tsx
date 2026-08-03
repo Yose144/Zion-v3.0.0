@@ -262,11 +262,9 @@ export default function OasisScene({
               <Stars radius={250} depth={160} count={isMobile ? 1500 : 5200} factor={4.5} saturation={0} fade speed={0.4} />
             </R3FErrorBoundary>
 
-            {!isMobile && (
-              <R3FErrorBoundary label="TwinkleStars">
-                <TwinkleStars count={2200} radius={150} />
-              </R3FErrorBoundary>
-            )}
+            <R3FErrorBoundary label="TwinkleStars">
+              <TwinkleStars count={isMobile ? 600 : 2200} radius={150} />
+            </R3FErrorBoundary>
 
             <R3FErrorBoundary label="ShootingStars">
               <ShootingStars count={isMobile ? 2 : 4} isMobile={isMobile} />
@@ -280,11 +278,9 @@ export default function OasisScene({
               <Galaxy isMobile={isMobile} />
             </R3FErrorBoundary>
 
-            {!isMobile && (
-              <R3FErrorBoundary label="GalaxyCore">
-                <GalaxyCore />
-              </R3FErrorBoundary>
-            )}
+            <R3FErrorBoundary label="GalaxyCore">
+              <GalaxyCore />
+            </R3FErrorBoundary>
 
             {!isMobile && (
               <R3FErrorBoundary label="MatrixCore">
