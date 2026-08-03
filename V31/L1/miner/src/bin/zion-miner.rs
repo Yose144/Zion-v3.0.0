@@ -177,9 +177,9 @@ async fn mine_and_submit(
     let mut found = 0u64;
 
     for nonce in 0..1_000_000u64 {
-        // Write nonce into header (bytes 76-80, little-endian)
+        // Write nonce into header (bytes 76-80, little-endian u32)
         if header.len() >= 80 {
-            header[76..80].copy_from_slice(&nonce.to_le_bytes());
+            header[76..80].copy_from_slice(&(nonce as u32).to_le_bytes());
         }
 
         // Quick hash check (simplified — just check first few bytes are zeros)
@@ -194,7 +194,7 @@ async fn mine_and_submit(
                 "params": [
                     format!("{}.{}", args.wallet, args.worker),
                     job_id,
-                    format!("{:016x}", nonce),
+                    format!("{:08x}", nonce as u32),
                     "00000000",
                     "00000000"
                 ]
