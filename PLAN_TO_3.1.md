@@ -172,7 +172,7 @@
 - ✅ V31 miner = feature parity s V3 + AuXpow (AuxPoW client, hashers, dual_stratum, parent_chains, true_auxpow, gpu_miner stub) — **B.3 COMPLETE** (gpu_miner stub, full GPU port deferred)
 - ✅ `cargo test --workspace` vše pass (1945 testů)
 - ✅ `cargo clippy --workspace --all-targets` 0 warnings
-- ⬜ E2E: V31 node syncne z V3 mainnet, pool přijme share od miner, block přijat
+- ✅ E2E: V31 node syncne z V3 mainnet (height 11258 = V3, sync_lag 0), pool přijme share od miner (subscribe + authorize + submit = PASS), block přijat — **B.4 COMPLETE**
 
 ---
 
