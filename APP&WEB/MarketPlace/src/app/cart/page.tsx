@@ -7,17 +7,19 @@ import { ShoppingCart, Trash2, Minus, Plus, Truck, User, CreditCard, Check, Aler
 import { useCart } from '@/components/shop/CartContext';
 import { SHIPPING_PRICES, type ShippingMethod } from '@/types/shop';
 import { isVirtualOnlyCart, createShopOrder, createStripeCheckoutSession } from '@/lib/shop-api';
+import { useLangT } from '@/lib/useTranslation';
 
-const shippingOptions: { value: ShippingMethod; label: string; desc: string; price: number }[] = [
-  { value: 'zasilkovna', label: 'Zásilkovna', desc: 'Výdejní místo', price: SHIPPING_PRICES.zasilkovna },
-  { value: 'zasilkovna-home', label: 'Zásilkovna domů', desc: 'Doručení na adresu', price: SHIPPING_PRICES['zasilkovna-home'] },
-  { value: 'virtualni-nakup', label: 'Virtuální nákup', desc: 'Digitální doručení', price: SHIPPING_PRICES['virtualni-nakup'] },
-  { value: 'virtualni-odber', label: 'Virtuální odběr', desc: 'Online převzetí / domluva', price: SHIPPING_PRICES['virtualni-odber'] },
+const shippingOptions: { value: ShippingMethod; labelKey: string; descKey: string; price: number }[] = [
+  { value: 'zasilkovna', labelKey: 'cart.shippingZasilkovna', descKey: 'cart.shippingZasilkovnaDesc', price: SHIPPING_PRICES.zasilkovna },
+  { value: 'zasilkovna-home', labelKey: 'cart.shippingZasilkovnaHome', descKey: 'cart.shippingZasilkovnaHomeDesc', price: SHIPPING_PRICES['zasilkovna-home'] },
+  { value: 'virtualni-nakup', labelKey: 'cart.shippingVirtualBuy', descKey: 'cart.shippingVirtualBuyDesc', price: SHIPPING_PRICES['virtualni-nakup'] },
+  { value: 'virtualni-odber', labelKey: 'cart.shippingVirtualPickup', descKey: 'cart.shippingVirtualPickupDesc', price: SHIPPING_PRICES['virtualni-odber'] },
 ];
 
 export default function CartPage() {
   const { items, count, total, updateQuantity, remove, clear } = useCart();
   const router = useRouter();
+  const { t } = useLangT();
 
   const [shipping, setShipping] = useState<ShippingMethod>('zasilkovna');
   const [payment, setPayment] = useState<'transfer' | 'card' | 'crypto'>('transfer');
@@ -63,6 +65,8 @@ export default function CartPage() {
     terms &&
     (!needsAddress || (form.street && form.city && form.zip));
 
+  const formatPrice = (price: number) => t('common.price', { price, symbol: t('common.kcSymbol') });
+
   async function handleSubmit() {
     if (!canSubmit || submitting) return;
     setSubmitting(true);
@@ -104,13 +108,13 @@ export default function CartPage() {
           window.location.href = stripeResult.data.url;
           return;
         }
-        alert(stripeResult?.error || 'Chyba při vytváření Stripe platby');
+        alert(stripeResult?.error || t('cart.alertStripeError'));
       } else {
         clear();
         router.push(`/order-success?order=${encodeURIComponent(orderId)}`);
       }
     } else {
-      alert(result?.error || 'Chyba při vytváření objednávky');
+      alert(result?.error || t('cart.alertOrderError'));
     }
 
     setSubmitting(false);
@@ -122,14 +126,19 @@ export default function CartPage() {
     router.push(`/order-success?order=${encodeURIComponent(orderResult?.orderId ?? '')}`);
   };
 
+  const termsText = t('cart.terms', { termsLink: '%%LINK%%' });
+  const [termsBefore, termsAfter] = termsText.includes('%%LINK%%')
+    ? termsText.split('%%LINK%%')
+    : [termsText, ''];
+
   if (items.length === 0 && !showQr) {
     return (
       <div className="zion-section p-16 text-center max-w-2xl mx-auto">
         <ShoppingCart className="w-16 h-16 mx-auto mb-4 text-oasis-gold opacity-60" />
-        <h1 className="text-2xl font-black font-display mb-2">Váš košík je prázdný</h1>
-        <p className="text-gray-500 mb-6">Přidejte nějaké produkty z našeho e-shopu.</p>
+        <h1 className="text-2xl font-black font-display mb-2">{t('cart.emptyTitle')}</h1>
+        <p className="text-gray-500 mb-6">{t('cart.emptySubtitle')}</p>
         <Link href="/shop" className="zion-button-primary">
-          <ShoppingCart className="w-4 h-4" /> Otevřít katalog
+          <ShoppingCart className="w-4 h-4" /> {t('cart.openCatalog')}
         </Link>
       </div>
     );
@@ -139,9 +148,9 @@ export default function CartPage() {
     <div className="space-y-6">
       <div className="text-center mb-8">
         <h1 className="text-3xl font-black font-display mb-2 inline-flex items-center justify-center gap-3">
-          <ShoppingCart className="w-8 h-8 text-oasis-gold" /> Váš košík
+          <ShoppingCart className="w-8 h-8 text-oasis-gold" /> {t('cart.title')}
         </h1>
-        <p className="text-gray-500">{count} položek · celkem {finalTotal} Kč</p>
+        <p className="text-gray-500">{t('cart.headerCount', { count, total: finalTotal, symbol: t('common.kcSymbol') })}</p>
       </div>
 
       <div className="grid lg:grid-cols-[1fr_380px] gap-6">
@@ -163,7 +172,7 @@ export default function CartPage() {
               <div className="flex-1 min-w-0">
                 <div className="font-bold text-white truncate">{item.name}</div>
                 <div className="text-xs text-gray-500 capitalize">{item.category}</div>
-                <div className="text-xs text-oasis-gold">+{item.tokens} ZION</div>
+                <div className="text-xs text-oasis-gold">{t('cart.tokens', { amount: item.tokens })}</div>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -181,12 +190,12 @@ export default function CartPage() {
                 </button>
               </div>
               <div className="font-mono font-bold text-white min-w-[80px] text-right">
-                {item.priceCzk * item.quantity} Kč
+                {formatPrice(item.priceCzk * item.quantity)}
               </div>
               <button
                 onClick={() => remove(item.id)}
                 className="zion-button-icon zion-button-ghost text-oasis-rose hover:text-oasis-rose/80"
-                title="Odebrat"
+                title={t('cart.remove')}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -199,7 +208,7 @@ export default function CartPage() {
           {/* Shipping */}
           <div className="zion-section p-5">
             <h2 className="text-lg font-black font-display mb-4 flex items-center gap-2 text-oasis-emerald">
-              <Truck className="w-5 h-5" /> Doprava
+              <Truck className="w-5 h-5" /> {t('cart.sectionShipping')}
             </h2>
             <div className="space-y-2">
               {shippingOptions.map((opt) => {
@@ -223,11 +232,11 @@ export default function CartPage() {
                       className="accent-oasis-emerald"
                     />
                     <div className="flex-1">
-                      <div className="font-bold text-sm">{opt.label}</div>
-                      <div className="text-xs text-gray-500">{opt.desc}</div>
+                      <div className="font-bold text-sm">{t(opt.labelKey)}</div>
+                      <div className="text-xs text-gray-500">{t(opt.descKey)}</div>
                     </div>
                     <div className="font-mono font-bold text-sm">
-                      {opt.price === 0 ? 'Zdarma' : `${opt.price} Kč`}
+                      {opt.price === 0 ? t('cart.shippingFree') : t('cart.shippingPrice', { price: opt.price, symbol: t('common.kcSymbol') })}
                     </div>
                   </label>
                 );
@@ -236,7 +245,7 @@ export default function CartPage() {
 
             {needsPickup && (
               <div className="mt-4 p-3 rounded-xl bg-oasis-emerald/5 border border-oasis-emerald/20 text-sm text-gray-300">
-                Zásilkovna widget bude dostupný v další verzi. Pro tuto objednávku budeme kontaktovat zákazníka ohledně výdejního místa.
+                {t('cart.pickupNote')}
               </div>
             )}
           </div>
@@ -244,13 +253,13 @@ export default function CartPage() {
           {/* Customer */}
           <div className="zion-section p-5">
             <h2 className="text-lg font-black font-display mb-4 flex items-center gap-2 text-oasis-gold">
-              <User className="w-5 h-5" /> Kontaktní údaje
+              <User className="w-5 h-5" /> {t('cart.sectionCustomer')}
             </h2>
             <div className="space-y-3">
               <div className="grid sm:grid-cols-2 gap-3">
                 <input
                   type="text"
-                  placeholder="Jméno a příjmení *"
+                  placeholder={t('cart.placeholderName')}
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   className="input-zion w-full"
@@ -258,7 +267,7 @@ export default function CartPage() {
                 />
                 <input
                   type="email"
-                  placeholder="E-mail *"
+                  placeholder={t('cart.placeholderEmail')}
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   className="input-zion w-full"
@@ -267,7 +276,7 @@ export default function CartPage() {
               </div>
               <input
                 type="tel"
-                placeholder="Telefon *"
+                placeholder={t('cart.placeholderPhone')}
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 className="input-zion w-full"
@@ -276,10 +285,10 @@ export default function CartPage() {
 
               {needsAddress && (
                 <div className="space-y-3 pt-2 border-t border-white/10">
-                  <h3 className="text-sm font-bold text-gray-300">Doručovací adresa</h3>
+                  <h3 className="text-sm font-bold text-gray-300">{t('cart.sectionAddress')}</h3>
                   <input
                     type="text"
-                    placeholder="Ulice a číslo *"
+                    placeholder={t('cart.placeholderStreet')}
                     value={form.street}
                     onChange={(e) => setForm({ ...form, street: e.target.value })}
                     className="input-zion w-full"
@@ -288,7 +297,7 @@ export default function CartPage() {
                   <div className="grid sm:grid-cols-2 gap-3">
                     <input
                       type="text"
-                      placeholder="Město *"
+                      placeholder={t('cart.placeholderCity')}
                       value={form.city}
                       onChange={(e) => setForm({ ...form, city: e.target.value })}
                       className="input-zion w-full"
@@ -296,7 +305,7 @@ export default function CartPage() {
                     />
                     <input
                       type="text"
-                      placeholder="PSČ *"
+                      placeholder={t('cart.placeholderZip')}
                       value={form.zip}
                       onChange={(e) => setForm({ ...form, zip: e.target.value })}
                       className="input-zion w-full"
@@ -307,7 +316,7 @@ export default function CartPage() {
               )}
 
               <textarea
-                placeholder="Poznámka k objednávce"
+                placeholder={t('cart.placeholderNote')}
                 value={form.note}
                 onChange={(e) => setForm({ ...form, note: e.target.value })}
                 className="input-zion w-full min-h-[80px]"
@@ -319,7 +328,7 @@ export default function CartPage() {
           {/* Payment */}
           <div className="zion-section p-5">
             <h2 className="text-lg font-black font-display mb-4 flex items-center gap-2 text-oasis-rose">
-              <CreditCard className="w-5 h-5" /> Způsob platby
+              <CreditCard className="w-5 h-5" /> {t('cart.sectionPayment')}
             </h2>
             <div className="space-y-2">
               <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
@@ -334,8 +343,8 @@ export default function CartPage() {
                   className="accent-oasis-rose"
                 />
                 <div className="flex-1">
-                  <div className="font-bold text-sm">Bankovní převod</div>
-                  <div className="text-xs text-gray-500">QR platba nebo klasický převod</div>
+                  <div className="font-bold text-sm">{t('cart.paymentTransfer')}</div>
+                  <div className="text-xs text-gray-500">{t('cart.paymentTransferDesc')}</div>
                 </div>
               </label>
               <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
@@ -350,8 +359,8 @@ export default function CartPage() {
                   className="accent-oasis-rose"
                 />
                 <div className="flex-1">
-                  <div className="font-bold text-sm">Platební karta</div>
-                  <div className="text-xs text-gray-500">Rychlá platba přes Stripe</div>
+                  <div className="font-bold text-sm">{t('cart.paymentCard')}</div>
+                  <div className="text-xs text-gray-500">{t('cart.paymentCardDesc')}</div>
                 </div>
               </label>
             </div>
@@ -360,24 +369,24 @@ export default function CartPage() {
           {/* Summary */}
           <div className="zion-section p-5 border-2 border-oasis-gold/30 bg-oasis-gold/5">
             <h2 className="text-lg font-black font-display mb-4 flex items-center gap-2 text-gradient-gold">
-              <Check className="w-5 h-5" /> Shrnutí
+              <Check className="w-5 h-5" /> {t('cart.sectionSummary')}
             </h2>
             <div className="space-y-2 text-sm mb-4">
               <div className="flex justify-between">
-                <span className="text-gray-400">Produkty:</span>
-                <span className="font-mono">{total} Kč</span>
+                <span className="text-gray-400">{t('cart.summaryProducts')}</span>
+                <span className="font-mono">{formatPrice(total)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Doprava:</span>
-                <span className="font-mono">{shippingPrice === 0 ? 'Zdarma' : `${shippingPrice} Kč`}</span>
+                <span className="text-gray-400">{t('cart.summaryShipping')}</span>
+                <span className="font-mono">{shippingPrice === 0 ? t('cart.shippingFree') : t('cart.shippingPrice', { price: shippingPrice, symbol: t('common.kcSymbol') })}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">ZION bonus:</span>
+                <span className="text-gray-400">{t('cart.summaryBonus')}</span>
                 <span className="font-mono text-oasis-gold">+{zionTokens}</span>
               </div>
               <div className="flex justify-between text-lg font-black border-t border-white/10 pt-2">
-                <span>Celkem:</span>
-                <span className="text-gradient-gold">{finalTotal} Kč</span>
+                <span>{t('cart.summaryTotal')}</span>
+                <span className="text-gradient-gold">{formatPrice(finalTotal)}</span>
               </div>
             </div>
 
@@ -390,7 +399,7 @@ export default function CartPage() {
                 required
               />
               <span className="text-gray-400">
-                Souhlasím s <Link href="/terms" className="text-oasis-gold hover:underline">obchodními podmínkami</Link>.
+                {termsBefore}<Link href="/terms" className="text-oasis-gold hover:underline">{t('cart.termsLink')}</Link>{termsAfter}
               </span>
             </label>
 
@@ -401,7 +410,7 @@ export default function CartPage() {
                 onChange={(e) => setNewsletter(e.target.checked)}
                 className="mt-1 accent-oasis-cyan"
               />
-              <span className="text-gray-400">Chci dostávat novinky e-mailem.</span>
+              <span className="text-gray-400">{t('cart.newsletter')}</span>
             </label>
 
             <button
@@ -410,11 +419,11 @@ export default function CartPage() {
               className={`zion-button-primary w-full ${(!canSubmit || submitting) ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {submitting ? (
-                'Odesílám…'
+                t('cart.submitting')
               ) : !canSubmit ? (
-                <span className="inline-flex items-center gap-2"><AlertTriangle className="w-4 h-4" /> Vyplňte povinné údaje</span>
+                <span className="inline-flex items-center gap-2"><AlertTriangle className="w-4 h-4" /> {t('cart.fillRequired')}</span>
               ) : (
-                <span className="inline-flex items-center gap-2"><Check className="w-4 h-4" /> Dokončit objednávku</span>
+                <span className="inline-flex items-center gap-2"><Check className="w-4 h-4" /> {t('cart.completeOrder')}</span>
               )}
             </button>
           </div>
@@ -437,22 +446,22 @@ export default function CartPage() {
             <button onClick={closeQr} className="absolute top-4 right-4 zion-button-icon zion-button-ghost">
               <X className="w-5 h-5" />
             </button>
-            <h2 className="text-xl font-black font-display mb-2">Bankovní převod</h2>
-            <p className="text-sm text-gray-400 mb-4">Naskenujte QR kód nebo použijte údaje níže.</p>
+            <h2 className="text-xl font-black font-display mb-2">{t('cart.qrTitle')}</h2>
+            <p className="text-sm text-gray-400 mb-4">{t('cart.qrSubtitle')}</p>
             <img
               src={orderResult.qrCode}
-              alt="QR platba"
+              alt={t('cart.qrAlt')}
               className="w-56 h-56 mx-auto mb-4 bg-white p-2 rounded-xl"
             />
             <div className="space-y-2 text-sm text-left bg-white/5 p-4 rounded-xl mb-4">
-              <div className="flex justify-between"><span className="text-gray-500">Číslo účtu:</span><strong>{orderResult.bank.account}</strong></div>
-              <div className="flex justify-between"><span className="text-gray-500">IBAN:</span><strong>{orderResult.bank.iban}</strong></div>
-              <div className="flex justify-between"><span className="text-gray-500">BIC:</span><strong>{orderResult.bank.bic}</strong></div>
-              <div className="flex justify-between"><span className="text-gray-500">Variabilní symbol:</span><strong>{orderResult.bank.vs}</strong></div>
-              <div className="flex justify-between"><span className="text-gray-500">Částka:</span><strong>{orderResult.bank.amount} Kč</strong></div>
+              <div className="flex justify-between"><span className="text-gray-500">{t('cart.qrAccount')}</span><strong>{orderResult.bank.account}</strong></div>
+              <div className="flex justify-between"><span className="text-gray-500">{t('cart.qrIban')}</span><strong>{orderResult.bank.iban}</strong></div>
+              <div className="flex justify-between"><span className="text-gray-500">{t('cart.qrBic')}</span><strong>{orderResult.bank.bic}</strong></div>
+              <div className="flex justify-between"><span className="text-gray-500">{t('cart.qrVs')}</span><strong>{orderResult.bank.vs}</strong></div>
+              <div className="flex justify-between"><span className="text-gray-500">{t('cart.qrAmount')}</span><strong>{formatPrice(orderResult.bank.amount)}</strong></div>
             </div>
             <button onClick={closeQr} className="zion-button-primary w-full">
-              <Check className="w-4 h-4" /> Objednávka přijata
+              <Check className="w-4 h-4" /> {t('cart.qrDone')}
             </button>
           </div>
         </div>

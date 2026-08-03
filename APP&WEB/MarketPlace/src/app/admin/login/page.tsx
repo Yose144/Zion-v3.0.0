@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { setAdminKey } from '@/lib/admin-auth';
+import { useLangT } from '@/lib/useTranslation';
 
 export default function AdminLoginPage() {
   const [username, setUsername] = useState('');
@@ -10,6 +11,7 @@ export default function AdminLoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { t } = useLangT();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,10 +31,10 @@ export default function AdminLoginPage() {
         setAdminKey(data.apiKey);
         router.replace('/admin/orders');
       } else {
-        setError(data.error ?? 'Neplatné přihlašovací údaje.');
+        setError(data.error ?? t('admin.invalidCredentials'));
       }
     } catch {
-      setError('Chyba připojení.');
+      setError(t('admin.connectionError'));
     } finally {
       setLoading(false);
     }
@@ -44,8 +46,8 @@ export default function AdminLoginPage() {
         onSubmit={handleSubmit}
         className="w-full max-w-md p-8 rounded-2xl border border-white/10 bg-oasis-surface"
       >
-        <h1 className="text-2xl font-black text-gradient mb-2">Market Admin</h1>
-        <p className="text-sm text-gray-400 mb-6">Přihlášení pro správce.</p>
+        <h1 className="text-2xl font-black text-gradient mb-2">{t('admin.loginTitle')}</h1>
+        <p className="text-sm text-gray-400 mb-6">{t('admin.loginSubtitle')}</p>
 
         {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
 
@@ -53,7 +55,7 @@ export default function AdminLoginPage() {
           type="text"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          placeholder="Uživatelské jméno"
+          placeholder={t('admin.placeholderUsername')}
           className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-3 text-sm mb-4 focus:border-oasis-cyan focus:outline-none"
         />
 
@@ -61,7 +63,7 @@ export default function AdminLoginPage() {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Heslo"
+          placeholder={t('admin.placeholderPassword')}
           className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-3 text-sm mb-4 focus:border-oasis-cyan focus:outline-none"
         />
 
@@ -70,7 +72,7 @@ export default function AdminLoginPage() {
           disabled={loading || !username || !password}
           className="w-full py-3 rounded-lg bg-gradient-to-r from-oasis-cyan to-oasis-purple text-black font-bold text-sm hover:opacity-90 disabled:opacity-40"
         >
-          {loading ? 'Ověřuji…' : 'Přihlásit'}
+          {loading ? t('admin.verifying') : t('admin.login')}
         </button>
       </form>
     </div>

@@ -4,14 +4,15 @@ import { useState, useEffect } from 'react';
 import { ShoppingBag, SearchX, Filter, Zap } from 'lucide-react';
 import { getShopProducts, type ShopProductsFilters } from '@/lib/shop-api';
 import type { ShopProductData } from '@/types/shop';
-import { SHOP_CATEGORIES, SHOP_CATEGORY_ORDER } from '@/data/shopProducts';
+import { SHOP_CATEGORY_ORDER } from '@/data/shopProducts';
 import ShopProductCard from '@/components/shop/ShopProductCard';
 import ShopProductModal from '@/components/shop/ShopProductModal';
+import { useLangT } from '@/lib/useTranslation';
 
 const sortOptions = [
-  { value: 'recent', label: 'Nejnovější' },
-  { value: 'price_low', label: 'Cena: nízká → vysoká' },
-  { value: 'price_high', label: 'Cena: vysoká → nízká' },
+  { value: 'recent', key: 'shop.sortRecent' },
+  { value: 'price_low', key: 'shop.sortPriceLow' },
+  { value: 'price_high', key: 'shop.sortPriceHigh' },
 ];
 
 export default function ShopPage() {
@@ -21,6 +22,7 @@ export default function ShopPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<ShopProductData | null>(null);
+  const { t } = useLangT();
 
   useEffect(() => {
     let cancelled = false;
@@ -49,16 +51,16 @@ export default function ShopPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="zion-kicker mb-3 inline-flex items-center gap-2">
-            <ShoppingBag className="w-4 h-4" /> eShop
+            <ShoppingBag className="w-4 h-4" /> {t('shop.kicker')}
           </div>
           <h1 className="text-3xl font-black font-display mb-1">
-            <span className="text-gradient-gold">ZION</span>{' '}
-            <span className="text-white">Handcrafted Market</span>
+            <span className="text-gradient-gold">{t('shop.title1')}</span>{' '}
+            <span className="text-white">{t('shop.title2')}</span>
           </h1>
-          <p className="text-sm text-gray-500">WoodArt · Gravírování · Artefakty · Digitální služby</p>
+          <p className="text-sm text-gray-500">{t('shop.subtitle')}</p>
         </div>
         <a href="/cart" className="zion-button-secondary self-start">
-          <Zap className="w-4 h-4" /> Dokončit nákup
+          <Zap className="w-4 h-4" /> {t('shop.completePurchase')}
         </a>
       </div>
 
@@ -68,7 +70,7 @@ export default function ShopPage() {
           <div className="zion-section p-4">
             <h3 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
               <span className="w-1 h-3 rounded-full bg-oasis-gold" />
-              Kategorie
+              {t('shop.categoriesTitle')}
             </h3>
             <div className="space-y-1">
               <button
@@ -79,7 +81,7 @@ export default function ShopPage() {
                     : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
                 }`}
               >
-                Vše
+                {t('shop.all')}
               </button>
               {SHOP_CATEGORY_ORDER.map((c) => (
                 <button
@@ -91,7 +93,7 @@ export default function ShopPage() {
                       : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
                   }`}
                 >
-                  {SHOP_CATEGORIES[c]}
+                  {t(`shop.${c}`)}
                 </button>
               ))}
             </div>
@@ -99,7 +101,7 @@ export default function ShopPage() {
 
           <div className="zion-section p-4">
             <h3 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
-              <Filter className="w-4 h-4" /> Řazení
+              <Filter className="w-4 h-4" /> {t('shop.sortTitle')}
             </h3>
             <select
               value={sort}
@@ -107,7 +109,7 @@ export default function ShopPage() {
               className="input-zion w-full"
             >
               {sortOptions.map((o) => (
-                <option key={o.value} value={o.value} className="bg-zion-card">{o.label}</option>
+                <option key={o.value} value={o.value} className="bg-zion-card">{t(o.key)}</option>
               ))}
             </select>
           </div>
@@ -117,19 +119,19 @@ export default function ShopPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-500">
-              <span className="text-white font-bold">{total}</span> produktů
+              {t('shop.productsCount', { count: total })}
             </span>
           </div>
 
           {loading ? (
             <div className="zion-section p-16 text-center">
               <div className="w-10 h-10 border-2 border-oasis-cyan/30 border-t-oasis-cyan rounded-full animate-spin mx-auto mb-4" />
-              <div className="text-gray-500">Načítání produktů…</div>
+              <div className="text-gray-500">{t('shop.loading')}</div>
             </div>
           ) : products.length === 0 ? (
             <div className="zion-section p-16 text-center">
               <SearchX className="w-16 h-16 mx-auto mb-4 opacity-30" />
-              <div className="text-gray-500 mb-1">Žádné produkty v této kategorii</div>
+              <div className="text-gray-500 mb-1">{t('shop.empty')}</div>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
