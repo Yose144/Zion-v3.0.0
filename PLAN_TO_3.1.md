@@ -191,12 +191,12 @@
 | C1.4 | ✅ gen-dao-guardians ported | ✅ |
 | C1.5 | ✅ gen-pool-wallet + gen-pool-payout-wallet ported | ✅ |
 | C1.6 | ✅ gen-canonical-wallets + gen-tithe-wallets ported | ✅ |
-| C1.7 | ⬜ wallet binary — ChainState now available, can be enabled | ⬜ |
-| C1.8 | ⬜ fund-bridge-vault + burn-funds — ChainState now available, can be enabled | ⬜ |
+| C1.7 | ✅ wallet binary (443 lines, v3-binaries feature) | ✅ |
+| C1.8 | ✅ fund-bridge-vault (82 lines) + burn-funds (103 lines) | ✅ |
 | C1.9 | ✅ get-genesis-hash + get-canonical-addresses ported | ✅ |
-| C1.10 | ⬜ migrate-escrow + core-util — ChainState now available, can be enabled | ⬜ |
+| C1.10 | ✅ migrate-escrow (114 lines) + core-util (221 lines) | ✅ |
 | C1.11 | ✅ gen-admin-keys + gen-keys ported | ✅ |
-| C1.12 | ✅ 15/19 binaries build (4 feature-gated) | ✅ |
+| C1.12 | ✅ 20/20 binaries build (5 v3-binaries feature-gated) | ✅ |
 
 ### C.2 — V31 G6: edge-deploy infra
 
@@ -207,11 +207,11 @@
 | C2.3 | ✅ fail2ban jail + filter | ✅ |
 | C2.4 | ✅ edge-environment.sh | ✅ |
 | C2.5 | ✅ deploy-edge.sh | ✅ |
-| C2.6 | ⏳ watchdog mode v31 — defer to edge deployment | ⬜ |
+| C2.6 | ✅ watchdog v31 mode (TCP JSON-RPC, sync_lag, auto-restart) | ✅ |
 
 ### C.3 — Fáze C Go/No-Go
 
-- ✅ Všechny 18 binaries build + run
+- ✅ Všechny 20 binaries build + run (5 v3-binaries feature-gated)
 - ✅ edge-deploy infra hotová
 - ✅ Shadow run V31 na Edge (izolované porty) 7d bez incidentu
 
