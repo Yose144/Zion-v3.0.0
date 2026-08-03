@@ -350,11 +350,41 @@ function warnIfCudaRuntimeMissing(dllNames) {
 
 // ── Main ───────────────────────────────────────────────────────────
 
+function cleanResources(resourcesDir) {
+  // Remove any stale binaries from a previous platform build to prevent
+  // cross-platform contamination (e.g. Windows .exe ending up in a Linux DEB).
+  if (!exists(resourcesDir)) return;
+  const ext = process.platform === 'win32' ? '.exe' : '';
+  const staleExts = process.platform === 'win32' ? [''] : ['.exe'];
+  for (const f of fs.readdirSync(resourcesDir)) {
+    const fullPath = path.join(resourcesDir, f);
+    try {
+      const stat = fs.statSync(fullPath);
+      if (!stat.isFile()) continue;
+      // Remove files with wrong extension (e.g. .exe on Linux/Mac)
+      if (staleExts.some(e => f.endsWith(e))) {
+        console.log(`[prepare-v3] Removing stale cross-platform binary: ${f}`);
+        fs.unlinkSync(fullPath);
+        continue;
+      }
+      // Remove known binaries (with correct extension) so we don't bundle old versions
+      const knownBins = ['zion-miner', 'zion-universal-miner', 'node', 'zion'];
+      if (knownBins.some(b => f === b + ext)) {
+        fs.unlinkSync(fullPath);
+      }
+    } catch { /* ignore */ }
+  }
+}
+
 function main() {
   const args = parseArgs(process.argv);
   const desktopAgentRoot = path.resolve(__dirname, '..');
   const workspaceRoot = path.resolve(desktopAgentRoot, '..');
   const resourcesDir = path.join(desktopAgentRoot, 'resources');
+
+  // Clean stale cross-platform binaries BEFORE building/copying
+  console.log('[prepare-v3] Cleaning resources/ of stale cross-platform binaries...');
+  cleanResources(resourcesDir);
   ensureDir(resourcesDir);
 
   if (!args.noBuild) {
