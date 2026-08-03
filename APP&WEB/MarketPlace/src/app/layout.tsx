@@ -6,18 +6,18 @@ import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import StarfieldCanvas from '@/components/StarfieldCanvas';
 import { CartProvider } from '@/components/shop/CartContext';
+import { tr } from '@/lib/translations';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
 const mono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono', display: 'swap' });
 const display = Space_Grotesk({ subsets: ['latin'], variable: '--font-display', display: 'swap' });
 
 export const metadata: Metadata = {
-  title: 'ZION Market — OASIS Artifact Marketplace',
-  description:
-    'Trade OASIS game artifacts, ships, avatars, territory deeds, and Golden Eggs on the ZION ecosystem marketplace. Powered by Base L2 + ERC-1155.',
+  title: tr('common', 'metadataTitle', 'cs'),
+  description: tr('common', 'metadataDescription', 'cs'),
   keywords: ['ZION', 'OASIS', 'NFT', 'marketplace', 'Base', 'ERC-1155', 'game artifacts'],
   openGraph: {
-    title: 'ZION Market — OASIS Artifact Marketplace',
+    title: tr('common', 'metadataTitle', 'cs'),
     description: 'Trade OASIS game artifacts on Base L2.',
     type: 'website',
     url: 'https://market.zionterranova.com',
