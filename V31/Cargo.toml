@@ -5,6 +5,7 @@ members = [
     "L1/cosmic-harmony-v3",
     "L1/core",
     "L1/miner",
+    "L1/native-ffi",
     "L1/pool",
     "L2/multichain",
     "L2/dao",

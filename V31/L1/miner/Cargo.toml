@@ -12,12 +12,14 @@ default = []
 # Disable for ZION-only mining or when external stratum pools are unavailable.
 auxpow = []
 # Native algorithm acceleration (optional, requires C toolchain).
-native-hashers = []
+# Enables RandomX, Ghostrider, VerusHash, etc. via zion-native-ffi.
+native-hashers = ["dep:zion-native-ffi"]
 
 [dependencies]
 zion-l1-types = { workspace = true }
 zion-core = { workspace = true }
 zion-cosmic-harmony = { workspace = true }
+zion-native-ffi = { path = "../native-ffi", optional = true }
 
 anyhow = { workspace = true }
 async-trait = { workspace = true }
