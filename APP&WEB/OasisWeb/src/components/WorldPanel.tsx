@@ -205,11 +205,11 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 40 }}
+      initial={{ opacity: 0, x: 60 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 40 }}
+      exit={{ opacity: 0, x: 60 }}
       transition={{ duration: 0.4 }}
-      className="pointer-events-auto absolute left-2.5 right-2.5 top-2.5 z-30 max-w-full overflow-hidden p-4 sm:left-auto sm:right-5 sm:top-5 sm:w-80 sm:p-5 zion-hud-panel"
+      className="pointer-events-auto absolute right-2 top-2 z-[60] max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] overflow-y-auto p-4 sm:right-5 sm:top-5 sm:w-96 sm:max-h-[calc(100dvh-2.5rem)] sm:p-5 zion-hud-panel"
     >
       <div className="mb-4 flex items-start justify-between">
         <div>
