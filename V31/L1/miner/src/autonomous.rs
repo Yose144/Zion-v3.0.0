@@ -458,7 +458,7 @@ fn fallback_revenue_usd_per_day(coin: ExternalCoin) -> f64 {
         ExternalCoin::Decred => 0.80,
         ExternalCoin::Vertcoin => 0.20,
         ExternalCoin::Ravencoin => 0.45,
-        ExternalCoin::Monero => 0.55, // CPU: ~550 H/s on Ryzen 5 3600
+        ExternalCoin::Monero => 0.55,
         ExternalCoin::EpicCash => 0.30,
         ExternalCoin::Zano => 0.28,
         ExternalCoin::Meowcoin => 0.25,
@@ -467,9 +467,24 @@ fn fallback_revenue_usd_per_day(coin: ExternalCoin) -> f64 {
         ExternalCoin::Neoxa => 0.25,
         ExternalCoin::EthereumClassic => 0.70,
         ExternalCoin::Bitcoin => 0.50,
-        ExternalCoin::Verus => 0.40, // CPU: ~12 MH/s on Ryzen 5 3600
-        // ERG/EVR not available in V31
-        // PRL, QUAI, BEAM, KLS, ZCL, QTC, IRON, NEXA, RTM, DNX, CKB, CFX, ZEC, PHX, KRX not available in V31
+        ExternalCoin::Verus => 0.40,
+        ExternalCoin::Ergo => 0.40,
+        ExternalCoin::Evrmore => 0.20,
+        ExternalCoin::Pearl => 0.19,
+        ExternalCoin::Quai => 0.15,
+        ExternalCoin::Beam => 0.18,
+        ExternalCoin::Karlsen => 0.21,
+        ExternalCoin::Zclassic => 0.15,
+        ExternalCoin::Qubitcoin => 0.10,
+        ExternalCoin::IronFish => 0.18,
+        ExternalCoin::Nexa => 0.08,
+        ExternalCoin::Raptoreum => 0.06,
+        ExternalCoin::Dynex => 0.02,
+        ExternalCoin::Nervos => 0.08,
+        ExternalCoin::Conflux => 0.15,
+        ExternalCoin::Zcash => 0.10,
+        ExternalCoin::PhoenixCoin => 0.03,
+        ExternalCoin::Keryx => 0.03,
     }
 }
 

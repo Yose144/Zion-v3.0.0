@@ -25,7 +25,7 @@ pub mod stream_layers;
 pub mod stream_profit;
 
 pub use algorithm::{DynPowAlgorithm, EkamDeeksha, PocAlgorithm, PowAlgorithm};
-pub use profit::{CoinProfile, Device, ExternalCoin, ProfitEntry, ProfitRouter};
+pub use profit::{CoinProfile, Device, ExternalCoin, PoolPreference, ProfitEntry, ProfitRouter};
 
 // Re-export key functions for miner compatibility.
 pub use algorithms_opt::cosmic_harmony_with_height;
