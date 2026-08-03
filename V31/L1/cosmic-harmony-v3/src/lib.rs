@@ -56,9 +56,10 @@ pub use ncl_integration::{
 };
 pub use profit_router::{
     best_coin_for_cpu, best_coin_for_gpu, fallback_estimates, fetch_live_profit_estimates,
-    fetch_live_profit_estimates_with_nicehash, select_best_coin, CoinProfile, ExternalCoin,
+    fetch_live_profit_estimates_with_nicehash, select_best_coin, CoinProfile,
     ProfitEntry, StratumProtocol,
 };
+pub use zion_cosmic_harmony::ExternalCoin;
 pub use revenue::{
     NclStats, RevenueCollector, RevenueEvent, RevenueHealth, RevenueSource, RevenueStats,
     BLAKE3_EXTERNAL_FEE, CIRCUIT_BREAKER_RESET_SECS, CIRCUIT_BREAKER_THRESHOLD, MERGED_MINING_FEE,

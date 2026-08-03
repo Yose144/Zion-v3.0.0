@@ -44,7 +44,7 @@ use zion_cosmic_harmony_v3::{
     CHV3_FORK_HEIGHT, CHV_EKAM_FORK_HEIGHT, EKAM_FUSION_ROUNDS, FIRE_FORK_HEIGHT,
 };
 
-pub use zion_cosmic_harmony_v3::ExternalCoin;
+pub use zion_cosmic_harmony::ExternalCoin;
 pub use zion_cosmic_harmony_v3::NclStats as NclSnapshot;
 pub use zion_cosmic_harmony_v3::RevenueSource;
 
