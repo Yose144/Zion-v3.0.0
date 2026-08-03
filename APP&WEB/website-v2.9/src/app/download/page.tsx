@@ -62,7 +62,7 @@ const DownloadCopy = {
   desktopMacDmgDesc: { cs: `Pro macOS Apple Silicon (M1–M4)`, en: `For macOS Apple Silicon (M1–M4)` },
   desktopReleaseNotes: { cs: `Poznámky k vydání`, en: `Release notes` },
   wantEarlyAccess: { cs: `Chcete předběžný přístup?`, en: `Want early access?` },
-  theDesktopAgentWillBeAvailable: { cs: `Desktop Agent bude dostupný v našem `, en: `The Desktop Agent will be available in our ` },
+  theDesktopAgentWillBeAvailable: { cs: `Desktop App bude dostupná v našem `, en: `The Desktop App will be available in our ` },
   shop: { cs: `Shopu`, en: `Shop` },
   asAPremiumDownloadWithPriority: { cs: `jako premium download s prioritní podporou a auto-updaty. Připojte se na `, en: `as a premium download with priority support and auto-updates. Join ` },
   toBeNotifiedWhenItLaunches: { cs: `a dostanete upozornění při launchi.`, en: `to be notified when it launches.` },
@@ -181,11 +181,11 @@ export default function DownloadPage() {
           </div>
         </section>
 
-        {/* ─── Desktop Agent — top spotlight ─── */}
+        {/* ─── Desktop App — top spotlight ─── */}
         <section className="space-y-6">
           <div className="flex flex-col gap-2">
-            <p className="text-sm uppercase tracking-[0.4em] text-emerald-400">Desktop Agent</p>
-            <h2 className="text-3xl font-semibold text-white">ZION Desktop Agent · {SITE_VERSION}</h2>
+            <p className="text-sm uppercase tracking-[0.4em] text-emerald-400">Desktop App</p>
+            <h2 className="text-3xl font-semibold text-white">ZION Desktop App · {SITE_VERSION}</h2>
             <p className="text-gray-400">{DownloadCopy.oneClickGuiForMiningWalletMana[cs ? 'cs' : 'en']}</p>
           </div>
 
@@ -197,7 +197,7 @@ export default function DownloadPage() {
             <div className="flex items-start gap-4 mb-6">
               <Monitor className="mt-1 h-10 w-10 shrink-0 text-zion-gold" />
               <div>
-                <h3 className="text-2xl font-semibold text-white">ZION Desktop Agent</h3>
+                <h3 className="text-2xl font-semibold text-white">ZION Desktop App</h3>
                 <p className="text-gray-400 mt-1">
                   {DownloadCopy.fullGuiApplicationWithBuiltInM[cs ? 'cs' : 'en']}
                 </p>

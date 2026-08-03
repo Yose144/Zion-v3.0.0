@@ -25,6 +25,7 @@ export interface NewsArticle {
   href: string;            // internal or external link
   external?: boolean;
   banner?: 'doge-vs-zion'; // special visual banner
+  homepage?: boolean;      // false = hide on homepage feed (still in /news archive)
 }
 
 // ─── Articles data ────────────────────────────────────────────────────────────
@@ -60,6 +61,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     },
     href: 'https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.1.0',
     external: true,
+    homepage: false,
   },
   {
     slug: 'desktop-miner-v310-linux',
@@ -67,15 +69,16 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     tag: { cs: 'Release', en: 'Release' },
     tagColor: 'text-emerald-400',
     title: {
-      cs: 'ZION Desktop Miner v3.1.0 — GUI miner s Boost Streams pro Linux',
-      en: 'ZION Desktop Miner v3.1.0 — GUI miner with Boost Streams for Linux',
+      cs: 'ZION Desktop App v3.1.0 — GUI aplikace s Boost Streams pro Linux',
+      en: 'ZION Desktop App v3.1.0 — GUI app with Boost Streams for Linux',
     },
     summary: {
-      cs: 'Desktop Miner v3.1.0 je dostupný pro Linux! GUI aplikace s vestavěným minerem, peněženkou a dashboardem v reálném čase. Boost Streams: GPU a CPU stream běží vedle ZION core mining. GitHub auto-updater hlídá nové releasy. AppImage (131 MB) a DEB balíček (106 MB). Windows a macOS verze brzy.',
-      en: 'Desktop Miner v3.1.0 is available for Linux! GUI app with built-in miner, wallet, and real-time dashboard. Boost Streams: GPU and CPU stream run alongside ZION core mining. GitHub auto-updater checks for new releases. AppImage (131 MB) and DEB package (106 MB). Windows and macOS versions coming soon.',
+      cs: 'Desktop App v3.1.0 je dostupná pro Linux! GUI aplikace s vestavěným minerem, peněženkou a dashboardem v reálném čase. Boost Streams: GPU a CPU stream běží vedle ZION core mining. GitHub auto-updater hlídá nové releasy. AppImage (131 MB) a DEB balíček (106 MB). Windows a macOS verze brzy.',
+      en: 'Desktop App v3.1.0 is available for Linux! GUI app with built-in miner, wallet, and real-time dashboard. Boost Streams: GPU and CPU stream run alongside ZION core mining. GitHub auto-updater checks for new releases. AppImage (131 MB) and DEB package (106 MB). Windows and macOS versions coming soon.',
     },
     href: 'https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.1.0-desktop',
     external: true,
+    homepage: false,
   },
   {
     slug: 'marketplace-oasis-artefacts-construction',
@@ -534,8 +537,9 @@ const HOMEPAGE_LIMIT = 4;
 export default function NewsFeed() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const visibleArticles = NEWS_ARTICLES.slice(0, HOMEPAGE_LIMIT);
-  const hasMore = NEWS_ARTICLES.length > HOMEPAGE_LIMIT;
+  const homepageArticles = NEWS_ARTICLES.filter((a) => a.homepage !== false);
+  const visibleArticles = homepageArticles.slice(0, HOMEPAGE_LIMIT);
+  const hasMore = homepageArticles.length > HOMEPAGE_LIMIT;
 
   return (
     <section className="relative py-20 px-4 overflow-hidden">
