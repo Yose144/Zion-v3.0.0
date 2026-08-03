@@ -2,15 +2,20 @@
 
 ZION používá vlastní adresní formát založený na struktuře `zion1...`.
 
-## Vytvoření peněženky
+## Nejjednodušší cesta — přes ZION Public Miner
 
-Nejrychlejší cesta je CLI:
+Pokud používáš desktopovou aplikaci:
+
+1. Otevři záložku **Wallet**.
+2. Klikni na **Create Wallet**.
+3. Zaznamenej si seed na bezpečném místě.
+4. Tvoje veřejná adresa (`zion1...`) se automaticky použije pro těžbu.
+
+## Vytvoření peněženky z příkazové řádky
 
 ```bash
 zion wallet create --name muj-wallet
 ```
-
-Případně přes ZION Desktop Agent v GUI.
 
 ## Záloha seedu
 

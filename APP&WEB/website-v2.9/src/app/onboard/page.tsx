@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
   Rocket,
+  Monitor,
   Wallet,
   Server,
   Pickaxe,
@@ -38,15 +39,30 @@ interface Category {
 
 const categories: Category[] = [
   {
+    id: 'desktop',
+    title: { cs: 'Desktop App', en: 'Desktop App' },
+    icon: Monitor,
+    accentText: 'text-cyan-300',
+    papers: [
+      {
+        id: 'desktop',
+        title: { cs: 'ZION Public Miner pro začátečníky', en: 'ZION Public Miner for beginners' },
+        description: { cs: 'Instalace na Windows 11 a macOS, povolení v nastavení, vytvoření peněženky a start těžby.', en: 'Install on Windows 11 and macOS, allow in settings, create wallet, and start mining.' },
+        file: 'desktop.md',
+        format: 'md',
+      },
+    ],
+  },
+  {
     id: 'start',
-    title: { cs: 'Začni zde', en: 'Start Here' },
+    title: { cs: 'Přehled', en: 'Overview' },
     icon: Rocket,
     accentText: 'text-emerald-300',
     papers: [
       {
         id: 'readme',
         title: { cs: 'README — Onboard to ZION', en: 'README — Onboard to ZION' },
-        description: { cs: 'Přehled sítě a první kroky nového uživatele.', en: 'Network overview and first steps for new users.' },
+        description: { cs: 'Přehled sítě a cesta od desktop aplikace po DApp.', en: 'Network overview and path from desktop app to DApp.' },
         file: 'README.md',
         format: 'md',
       },
@@ -145,12 +161,12 @@ function findCategoryIdByPaper(paperId: string): string | null {
 
 export default function OnboardPage() {
   const { lang } = useLang();
-  const [selectedPaper, setSelectedPaper] = useState('readme');
-  const [activeCategory, setActiveCategory] = useState('start');
+  const [selectedPaper, setSelectedPaper] = useState('desktop');
+  const [activeCategory, setActiveCategory] = useState('desktop');
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({ start: true, wallet: false, node: false, mining: false, dapp: false, bridge: false });
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({ desktop: true, start: false, wallet: false, node: false, mining: false, dapp: false, bridge: false });
 
   const currentPaper = allPapers.find(p => p.id === selectedPaper);
   const currentCategory = categories.find(c => c.id === activeCategory);
