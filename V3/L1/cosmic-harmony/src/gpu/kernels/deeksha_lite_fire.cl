@@ -529,7 +529,7 @@ void stream_byproduct_aes(__private const uchar in[32], ulong nonce, int iters,
 /* Main kernel                                                                  */
 /* ========================================================================== */
 
-__kernel __attribute__((work_group_size_hint(LOCAL_SIZE, 1, 1)))
+__kernel __attribute__((reqd_work_group_size(LOCAL_SIZE, 1, 1)))
 void deeksha_lite_fire_mine(
     __constant const ulong * restrict header_keccak_state,  /* same as v1: host precomputed */
     ulong  nonce_base,
