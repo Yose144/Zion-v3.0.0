@@ -6,6 +6,12 @@ authors.workspace = true
 license.workspace = true
 description = "ZION L1 node core: blocks, transactions, consensus, storage, and chain state."
 
+[features]
+default = []
+# V3-compatible binaries that need ChainState/NodeRuntime (not yet ported).
+# Enable with: cargo build -p zion-core --features v3-binaries --bins
+v3-binaries = []
+
 [[bin]]
 name = "zion-node"
 path = "src/bin/node.rs"
@@ -14,12 +20,96 @@ path = "src/bin/node.rs"
 name = "zion-migrate"
 path = "src/bin/migrate.rs"
 
+[[bin]]
+name = "zion-gen-keys"
+path = "src/bin/gen-keys.rs"
+
+[[bin]]
+name = "zion-gen-all-keys-mnemonic"
+path = "src/bin/gen-all-keys-mnemonic.rs"
+
+[[bin]]
+name = "zion-gen-canonical-wallets"
+path = "src/bin/gen-canonical-wallets.rs"
+
+[[bin]]
+name = "zion-gen-premine-wallets"
+path = "src/bin/gen-premine-wallets.rs"
+
+[[bin]]
+name = "zion-gen-pool-wallet"
+path = "src/bin/gen-pool-wallet.rs"
+
+[[bin]]
+name = "zion-gen-pool-payout-wallet"
+path = "src/bin/gen-pool-payout-wallet.rs"
+
+[[bin]]
+name = "zion-gen-dao-guardians"
+path = "src/bin/gen-dao-guardians.rs"
+
+[[bin]]
+name = "zion-gen-evm-validators"
+path = "src/bin/gen-evm-validators.rs"
+
+[[bin]]
+name = "zion-gen-tithe-wallets"
+path = "src/bin/gen-tithe-wallets.rs"
+
+[[bin]]
+name = "zion-gen-admin-keys"
+path = "src/bin/gen-admin-keys.rs"
+
+[[bin]]
+name = "zion-wallet"
+path = "src/bin/wallet.rs"
+required-features = ["v3-binaries"]
+
+[[bin]]
+name = "zion-core-util"
+path = "src/bin/core-util.rs"
+required-features = ["v3-binaries"]
+
+[[bin]]
+name = "zion-get-canonical-addresses"
+path = "src/bin/get-canonical-addresses.rs"
+
+[[bin]]
+name = "zion-get-genesis-hash"
+path = "src/bin/get-genesis-hash.rs"
+
+[[bin]]
+name = "zion-get-bridge-vault-address"
+path = "src/bin/get-bridge-vault-address.rs"
+
+[[bin]]
+name = "zion-fund-bridge-vault"
+path = "src/bin/fund-bridge-vault.rs"
+required-features = ["v3-binaries"]
+
+[[bin]]
+name = "zion-burn-funds"
+path = "src/bin/burn-funds.rs"
+required-features = ["v3-binaries"]
+
+[[bin]]
+name = "zion-migrate-escrow"
+path = "src/bin/migrate-escrow.rs"
+required-features = ["v3-binaries"]
+
+[[bin]]
+name = "zion-canonical-operator-env"
+path = "src/bin/canonical-mainnet-operator-env.rs"
+required-features = ["v3-binaries"]
+
 [dependencies]
 zion-l1-types = { workspace = true }
 zion-cosmic-harmony = { workspace = true }
 zion-cosmic-harmony-v3 = { path = "../cosmic-harmony-v3" }
 
+anyhow = { workspace = true }
 async-trait = { workspace = true }
+bip39 = "2"
 blake3 = { workspace = true }
 chrono = { workspace = true }
 clap = { workspace = true }

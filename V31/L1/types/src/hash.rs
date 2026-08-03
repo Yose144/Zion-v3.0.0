@@ -31,3 +31,9 @@ impl AsRef<[u8]> for Hash {
         &self.0
     }
 }
+
+impl std::fmt::Display for Hash {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.to_hex())
+    }
+}
