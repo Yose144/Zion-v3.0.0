@@ -13,7 +13,10 @@ export default function GameLayout({
   const isGameScene = pathname === '/';
 
   return (
-    <div className="fixed inset-0 h-screen w-screen overflow-hidden bg-oasis-black text-white">
+    <div
+      className="fixed inset-0 overflow-hidden bg-oasis-black text-white"
+      style={{ height: '100dvh', width: '100vw' }}
+    >
       {!isGameScene && <Navbar />}
       <main className="relative h-full w-full">
         <ErrorBoundary>{children}</ErrorBoundary>
