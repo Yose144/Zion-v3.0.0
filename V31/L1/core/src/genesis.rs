@@ -17,6 +17,7 @@ use crate::transaction::{Transaction, TransactionOutput};
 /// Frozen V3 mainnet beta genesis hash. Used as the trusted root for any
 /// V31 → V3 checkpoint/cutover mode.
 pub use crate::v3_compat::V3_GENESIS_HASH;
+pub use crate::v3_compat::{PremineOutput, PREMINE_OUTPUTS};
 
 /// Genesis timestamp (seconds since UNIX epoch): 2026-01-01 00:00:00 UTC.
 pub const GENESIS_TIMESTAMP: u64 = 1_767_225_600;

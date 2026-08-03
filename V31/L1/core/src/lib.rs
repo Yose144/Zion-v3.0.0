@@ -58,6 +58,6 @@ pub use storage::{Storage, StorageError};
 pub use transaction::{Transaction, TransactionInput, TransactionOutput};
 pub use v3_compat::{
     BlockCandidate, DifficultyTarget as V3DifficultyTarget, MiningHeader, MiningJob,
-    MiningSolution, SealedBlock, V3Block,
+    MiningSolution, PremineOutput, PREMINE_OUTPUTS, SealedBlock, V3Block,
 };
 pub use v3_wallet::MIN_PAYOUT_AMOUNT;
