@@ -26,7 +26,7 @@ VERSION="v3.1.0"
 echo "=== ZION Miner Windows Cross-Build ==="
 echo "Version: ${VERSION}"
 echo "Target:  x86_64-pc-windows-gnu"
-echo "Feature: public_build + full (OpenCL + CUDA + native-all + native-hashers)"
+echo "Feature: public_build + full + gpu-cuda (OpenCL + CUDA + native-all + native-hashers)"
 echo ""
 
 # ── Check prerequisites ──
@@ -49,7 +49,7 @@ source ~/.cargo/env 2>/dev/null || true
 ZION_CPU_TARGET=x86-64 ZION_DISABLE_OPENMP=1 \
     cargo build --release --target x86_64-pc-windows-gnu -p zion-miner \
         --bin zion-miner \
-        --features public_build,full \
+        --features public_build,full,gpu-cuda \
         2>&1 | tail -5
 
 BINARY="${V3_DIR}/target/x86_64-pc-windows-gnu/release/zion-miner.exe"

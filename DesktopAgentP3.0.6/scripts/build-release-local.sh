@@ -101,15 +101,22 @@ function build_mac() {
 }
 
 # ---------------------------------------------------------------------------
-# Linux x86_64 (cross-compile via cargo-zigbuild, musl, CPU-only)
+# Linux x86_64 (cross-compile via cargo-zigbuild, glibc, OpenCL + CUDA)
 # ---------------------------------------------------------------------------
 function build_linux() {
   echo "[build-release-local] Building Linux x86_64 binaries..."
   clean_resources
 
-  local target=x86_64-unknown-linux-musl
-  local features=public_build,native-all
-  export AR_x86_64_unknown_linux_musl="$LLVM_AR"
+  local target=x86_64-unknown-linux-gnu
+  local features=public_build,full,gpu-cuda
+
+  # Ensure the link-time OpenCL loader is the real x86_64 .so, not the old stub.
+  # The .incompatible file is the real loader; the target machine uses its own ocl-icd at runtime.
+  local opencl_dir="$REPO_ROOT/V3/L1/native-libs"
+  [[ -f "$opencl_dir/libOpenCL.so.incompatible" ]] && cp "$opencl_dir/libOpenCL.so.incompatible" "$opencl_dir/libOpenCL.so"
+
+  export AR_x86_64_unknown_linux_gnu="$LLVM_AR"
+  export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-L $opencl_dir -Clink-arg=-Wl,--allow-shlib-undefined"
 
   cargo zigbuild --release \
     --manifest-path "$REPO_ROOT/V3/Cargo.toml" \
@@ -145,7 +152,7 @@ function build_win() {
   clean_resources
 
   local target=x86_64-pc-windows-gnu
-  local features=public_build,full
+  local features=public_build,full,gpu-cuda
   export AR_x86_64_pc_windows_gnu="$LLVM_AR"
   export CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER="$MINGW_CC"
 

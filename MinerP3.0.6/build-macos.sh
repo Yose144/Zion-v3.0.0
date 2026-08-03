@@ -17,7 +17,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 V3_DIR="${REPO_ROOT}/V3"
 ARTIFACT_DIR="${REPO_ROOT}/public/release-artifacts/v3.0.6-beta"
 VERSION="v3.1.0"
-FEATURES="public_build,full"
+FEATURES="public_build,full,gpu-metal"
 
 echo "=== ZION Miner macOS Public Build ==="
 echo "Version: ${VERSION}"
