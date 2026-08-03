@@ -275,7 +275,7 @@
 | D3.1 | ✅ RPC `getStatus` | Height 11270 = V3 height, public RPC 8443 ukazuje na V31 | ✅ |
 | D3.2 | ✅ Pool `mining.submit` | Shares akceptovány (~1 MH/s, desítky shares/sec) | ✅ |
 | D3.3 | ✅ Miner `zion miner start` | V31 miner běží, shares submitovány | ✅ |
-| D3.4 | ⬜ Multichain `/health` | 200 OK | ⬜ |
+| D3.4 | ✅ Multichain `/health` | 200 OK — `{"ok":true,"node":"zion-edge-v31","version":"3.1.0-alpha.2"}` | ✅ |
 | D3.5 | ⬜ 7d continuous run | 0 kritických incidentů | ⬜ |
 
 ### D.4 — Archivace V3
