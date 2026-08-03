@@ -14,6 +14,14 @@ auxpow = []
 # Native algorithm acceleration (optional, requires C toolchain).
 # Enables RandomX, Ghostrider, VerusHash, etc. via zion-native-ffi.
 native-hashers = ["dep:zion-native-ffi"]
+# Native VerusHash — uses zion-native-ffi's C++ implementation instead of stub.
+native-verushash = ["native-hashers", "zion-native-ffi/native-verushash"]
+# GPU backends (feature-gated, require GPU toolchain)
+gpu-opencl = []
+gpu-cuda = []
+gpu-metal = []
+# Convenience: all GPU backends
+gpu = ["gpu-opencl"]
 
 [dependencies]
 zion-l1-types = { workspace = true }
@@ -36,3 +44,6 @@ tracing = { workspace = true }
 
 [dev-dependencies]
 tokio-test = "0.4"
+
+[build-dependencies]
+cc = "1.0"

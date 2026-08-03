@@ -658,7 +658,7 @@ fn build_randomx(target_os: &str, is_msvc: bool, using_zig: bool) {
         // argon2_avx2.c — compiled with -mavx2 (C source, no -std=c++17)
         let mut avx2_build = cc::Build::new();
         avx2_build
-            .file(&format!("{}/argon2_avx2.c", rx_dir))
+            .file(format!("{}/argon2_avx2.c", rx_dir))
             .include("csrc/randomx/randomx_src/src")
             .opt_level(3)
             .warnings(false)
@@ -671,7 +671,7 @@ fn build_randomx(target_os: &str, is_msvc: bool, using_zig: bool) {
         // argon2_ssse3.c — compiled with -mssse3 (C source, no -std=c++17)
         let mut ssse3_build = cc::Build::new();
         ssse3_build
-            .file(&format!("{}/argon2_ssse3.c", rx_dir))
+            .file(format!("{}/argon2_ssse3.c", rx_dir))
             .include("csrc/randomx/randomx_src/src")
             .opt_level(3)
             .warnings(false)
