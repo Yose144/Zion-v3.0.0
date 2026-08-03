@@ -27,13 +27,13 @@ echo ""
 
 # ── Build ──
 cd "${V3_DIR}"
-echo "[1/3] Building zion-miner with public_build + full (OpenCL + CUDA + Metal-noop + native-all + native-hashers)..."
+echo "[1/3] Building zion-miner with public_build + full + gpu-cuda (OpenCL + CUDA + native-all + native-hashers)..."
 cd "${V3_DIR}"
 source ~/.cargo/env 2>/dev/null || true
 ZION_CPU_TARGET=x86-64 ZION_DISABLE_OPENMP=1 \
     cargo build --release --target x86_64-unknown-linux-gnu -p zion-miner \
         --bin zion-miner \
-        --features public_build,full \
+        --features public_build,full,gpu-cuda \
         2>&1 | tail -5
 
 BINARY="${V3_DIR}/target/x86_64-unknown-linux-gnu/release/zion-miner"
