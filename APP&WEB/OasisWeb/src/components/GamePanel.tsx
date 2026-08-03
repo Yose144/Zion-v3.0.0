@@ -662,6 +662,14 @@ export default function GamePanel({
   // On mobile, start minimized so the 3D scene is visible.
   const [minimized, setMinimized] = useState(isMobile);
 
+  // Auto-minimize when a world is selected (WorldPanel opens top-center)
+  useEffect(() => {
+    if (selectedWorldId) {
+      setMinimized(true);
+      setExpanded(false);
+    }
+  }, [selectedWorldId]);
+
   const level = getLevel(xp);
   const progress = getLevelProgress(xp);
   const consciousness = CONSCIOUSNESS_NAMES[(level - 1) % CONSCIOUSNESS_NAMES.length] ?? 'Physical';

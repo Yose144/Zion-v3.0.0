@@ -301,8 +301,8 @@ export default function OasisClient() {
             }}
           />
         )}
-        {phase === 'scene' && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && <OnboardingHint />}
-        {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && <FruitCounter />}
+        {phase === 'scene' && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && !selectedWorld && <OnboardingHint />}
+        {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && !selectedWorld && <FruitCounter />}
 
         <AnimatePresence>
           {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && (
@@ -372,7 +372,7 @@ export default function OasisClient() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {phase !== 'intro' && !flightMode && view === 'galaxy' && !uiHidden && (
+          {phase !== 'intro' && !flightMode && view === 'galaxy' && !uiHidden && !selectedWorld && (
             <ControlHud
               compassRef={compassRef}
               target={compassTarget.pos}
