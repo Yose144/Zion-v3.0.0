@@ -16,12 +16,12 @@ export default function FruitCounter() {
   const isComplete = count >= fruitThreshold;
 
   return (
-    <div className="pointer-events-none fixed bottom-4 left-4 z-30 select-none">
+    <div className="pointer-events-none fixed bottom-4 left-4 z-30 select-none sm:bottom-5 sm:left-5">
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="zion-rainbow-card w-48 p-3"
+        className="zion-rainbow-card w-40 p-2.5 sm:w-48 sm:p-3"
         style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
       >
         <div className="mb-1.5 flex items-center justify-between">
@@ -70,7 +70,7 @@ export default function FruitCounter() {
           </AnimatePresence>
         </div>
 
-        <p className="mt-1 text-[9px] text-gray-500">
+        <p className="mt-1 hidden text-[9px] text-gray-500 sm:block">
           Click glowing fruits on the Tree to collect
         </p>
       </motion.div>

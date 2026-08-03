@@ -178,14 +178,21 @@ export default function WarpIntro({ speed = BASE_SPEED, onEnter }: WarpIntroProp
     setWarping(true);
     targetSpeed.current = WARP_SPEED;
 
+    // Short warp burst → fade out the whole intro smoothly → enter.
+    // Old timing was 4200 + 1600 = 5.8s of waiting. Now: 1.4s + 0.8s = 2.2s.
     setTimeout(() => {
       setExiting(true);
-      setTimeout(onEnter, 1600);
-    }, 4200);
+      setTimeout(onEnter, 800);
+    }, 1400);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#02030a]">
+    <motion.div
+      initial={{ opacity: 1 }}
+      animate={{ opacity: exiting ? 0 : 1 }}
+      transition={{ duration: 0.7, ease: 'easeInOut' }}
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#02030a]"
+    >
       <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 h-full w-full" />
 
       {/* Cinematic vignette */}
@@ -254,7 +261,7 @@ export default function WarpIntro({ speed = BASE_SPEED, onEnter }: WarpIntroProp
                 <motion.div
                   initial={{ x: '-100%' }}
                   animate={{ x: '100%' }}
-                  transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}
+                  transition={{ repeat: Infinity, duration: 0.7, ease: 'linear' }}
                   className="h-full w-1/2 bg-gradient-to-r from-transparent via-oasis-gold to-transparent"
                 />
               </div>
@@ -262,6 +269,6 @@ export default function WarpIntro({ speed = BASE_SPEED, onEnter }: WarpIntroProp
           </motion.div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

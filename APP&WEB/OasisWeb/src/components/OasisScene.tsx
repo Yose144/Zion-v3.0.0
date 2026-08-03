@@ -97,7 +97,7 @@ function CameraRig({ started, onArrived, view, focusTarget, disabled = false }: 
     if (disabled) return;
 
     if (isFlying.current) {
-      flightProgress.current = Math.min(1, flightProgress.current + delta * 0.32);
+      flightProgress.current = Math.min(1, flightProgress.current + delta * 0.55);
       const t = 1 - Math.pow(1 - flightProgress.current, 3);
 
       cam.position.lerpVectors(flightStart.current, flightTargetPos.current, t);
