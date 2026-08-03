@@ -1,6 +1,8 @@
 # ZION — Sůl této země
 ## Epizoda 9: Bohyně Rádha a avataři v Oasis
 
+*Čísla postaví loď. Radost rozhodne, jestli na ní bude chtít někdo zůstat.*
+
 > *„Sůl dává chuť, voda dává život, ale bez lásky i ta nejlepší síť zůstane jen studenou geometrií.“*
 
 ---
@@ -119,5 +121,7 @@ To je kompletní mapa cesty pro každého nového příchozího:
 | **Golden Egg (108 stop)** | Gamifikovaná honba za pokladem s 8,25 miliardami ZION z genesis rezervy. | **HORIZONT (2027)** |
 
 ---
+
+*→ Pokračování: [Epizoda 10 — První svět Oasis a Best of Avataři](./10-Prvni-Svet-Oasis-a-Best-of-Avatari.md)*
 
 *→ Zpět na [index série Sůl této země](./00-README.md).*

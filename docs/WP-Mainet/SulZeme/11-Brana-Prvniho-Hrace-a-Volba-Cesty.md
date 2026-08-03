@@ -1,6 +1,8 @@
 # ZION — Sůl této země
 ## Epizoda 11: Brána prvního hráče — volba cesty v Oasis
 
+*Nevstupuješ jako hráč, který má vyhrát. Vstupuješ jako člověk, který se rozhodl něco postavit.*
+
 > *„Nevolíš si jméno, které tě má převýšit. Volíš si první způsob, jak budeš ve světě užitečný.“*
 
 ---

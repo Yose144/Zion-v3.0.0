@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
   Rocket,
+  Flame,
   BookOpen,
   HelpCircle,
   Monitor,
@@ -56,16 +57,115 @@ const categories: Category[] = [
     ],
   },
   {
+    id: 'now',
+    title: { cs: 'Proč začít teď', en: 'Why Start Now' },
+    icon: Flame,
+    accentText: 'text-amber-400',
+    papers: [
+      {
+        id: 'why-now',
+        title: { cs: 'Hodina před deštěm', en: 'The Hour Before the Rain' },
+        description: { cs: 'Nejvyšší odměna za blok, jakou kdy ZION vyplatí, je dnes. Skutečný příběh Bitcoin Pizza Day a poctivá matematika rané sítě.', en: 'The highest block reward ZION will ever pay is today. The true story of Bitcoin Pizza Day and the honest math of an early network.' },
+        file: 'book/12-hodina-pred-destem.md',
+        format: 'md',
+      },
+    ],
+  },
+  {
     id: 'story',
-    title: { cs: 'Sůl této země', en: 'Salt of the Earth' },
+    title: { cs: 'Sůl této země — kniha', en: 'Salt of the Earth — the book' },
     icon: BookOpen,
     accentText: 'text-violet-300',
     papers: [
       {
-        id: 'soul-of-the-earth',
-        title: { cs: 'Sůl této země — kompletní kniha', en: 'Salt of the Earth — full book' },
-        description: { cs: 'Brána do Oasis a říše neomezené fantazie. Příběh s ověřitelnými fakty.', en: 'Gateway to Oasis and the realm of unlimited fantasy. Story with verifiable facts.' },
-        file: 'soul-of-the-earth.md',
+        id: 'book-00',
+        title: { cs: 'Úvod — dvanáct zastavení', en: 'Introduction — twelve stops' },
+        description: { cs: 'Obsah celé knihy a jak ji číst.', en: 'The full table of contents and how to read it.' },
+        file: 'book/00-index.md',
+        format: 'md',
+      },
+      {
+        id: 'book-01',
+        title: { cs: '1. Sůl země', en: '1. Salt of the Earth' },
+        description: { cs: 'Ježíš — podobenství o soli, která nesmí ztratit chuť.', en: 'Jesus — the parable of salt that must not lose its taste.' },
+        file: 'book/01-sul-zeme.md',
+        format: 'md',
+      },
+      {
+        id: 'book-02',
+        title: { cs: '2. Rozpuštění', en: '2. Dissolution' },
+        description: { cs: 'Buddha a střední cesta — sůl se má rozpouštět, ne hromadit.', en: 'Buddha and the middle way — salt should dissolve, not pile up.' },
+        file: 'book/02-rozpusteni.md',
+        format: 'md',
+      },
+      {
+        id: 'book-03',
+        title: { cs: '3. Chuť vody', en: '3. The Taste of Water' },
+        description: { cs: 'Krišna, višvarúpa a karma jóga — práce bez lpění na výsledku.', en: 'Krishna, vishvarupa, and karma yoga — work without attachment to outcome.' },
+        file: 'book/03-chut-vody.md',
+        format: 'md',
+      },
+      {
+        id: 'book-04',
+        title: { cs: '4. Cesta nevyšlapaná', en: '4. The Untrodden Path' },
+        description: { cs: 'Ráma, Sítá a Hanuman — kompas místo mapy, most místo trůnu.', en: 'Rama, Sita, and Hanuman — a compass instead of a map, a bridge instead of a throne.' },
+        file: 'book/04-cesta-nevyslapana.md',
+        format: 'md',
+      },
+      {
+        id: 'book-05',
+        title: { cs: '5. Archa', en: '5. The Ark' },
+        description: { cs: 'Noe — kdo vejde dřív, než začne pršet.', en: 'Noah — who enters before it starts raining.' },
+        file: 'book/05-archa.md',
+        format: 'md',
+      },
+      {
+        id: 'book-06',
+        title: { cs: '6. Kompas a pozvánka do Oasis', en: '6. The Compass and the Invitation to Oasis' },
+        description: { cs: 'Syntéza všech postav a první vstup do herní vrstvy L4.', en: 'A synthesis of all the characters and the first entry into the L4 game layer.' },
+        file: 'book/06-kompas-a-pozvanka-do-oasis.md',
+        format: 'md',
+      },
+      {
+        id: 'book-07',
+        title: { cs: '7. Epilog — Názor AI', en: '7. Epilogue — An AI\u2019s Opinion' },
+        description: { cs: 'Otevřené, kritické hodnocení projektu, rizik a rámce.', en: 'An open, critical assessment of the project, its risks, and its framing.' },
+        file: 'book/07-epilog-nazor-ai.md',
+        format: 'md',
+      },
+      {
+        id: 'book-08',
+        title: { cs: '8. ZION — Nová civilizace', en: '8. ZION — A New Civilization' },
+        description: { cs: 'Komplexní pozvánka: co je ŽIVÉ, co je STAVBA a co je HORIZONT.', en: 'A comprehensive invitation: what is LIVE, what is UNDER CONSTRUCTION, and what is the HORIZON.' },
+        file: 'book/08-zion-nova-civilizace.md',
+        format: 'md',
+      },
+      {
+        id: 'book-09',
+        title: { cs: '9. Bohyně Rádha a avataři', en: '9. Goddess Radha and the Avatars' },
+        description: { cs: 'Radost a lidská tvář Oasis — proč čísla samotná nestačí.', en: 'Joy and the human face of Oasis — why numbers alone are not enough.' },
+        file: 'book/09-bohyne-radha-a-avatari-oasis.md',
+        format: 'md',
+      },
+      {
+        id: 'book-10',
+        title: { cs: '10. První svět Oasis', en: '10. The First World of Oasis' },
+        description: { cs: 'Zahrada Hiranyagarbha, 8 teritorií a Best of Avataři.', en: 'The Garden of Hiranyagarbha, 8 territories, and the Best of Avatars.' },
+        file: 'book/10-prvni-svet-oasis-a-best-of-avatari.md',
+        format: 'md',
+      },
+      {
+        id: 'book-11',
+        title: { cs: '11. Brána prvního hráče', en: '11. The First Player\u2019s Gate' },
+        description: { cs: 'Vstup do Oasis, vlastní postava a sedm cest.', en: 'Entering Oasis, your own character, and the seven paths.' },
+        file: 'book/11-brana-prvniho-hrace-a-volba-cesty.md',
+        format: 'md',
+      },
+      {
+        id: 'book-12',
+        title: { cs: '12. Hodina před deštěm', en: '12. The Hour Before the Rain' },
+        description: { cs: 'Uzavírací kapitola pro stavitele a těžaře — proč je výhodné začít, dokud je síť malá.', en: 'The closing chapter for builders and miners — why it pays to start while the network is small.' },
+        file: 'book/12-hodina-pred-destem.md',
         format: 'md',
       },
     ],
@@ -150,7 +250,7 @@ export default function OnboardPage() {
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({ welcome: true, story: false, faq: false });
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({ welcome: true, now: false, story: false, faq: false });
 
   const currentPaper = allPapers.find(p => p.id === selectedPaper);
   const currentCategory = categories.find(c => c.id === activeCategory);
@@ -195,7 +295,8 @@ export default function OnboardPage() {
 
       setLoading(true);
       try {
-        const response = await fetch(`/docs/onboard/${currentPaper.file}`);
+        const langPrefix = lang === 'en' ? 'en/' : '';
+        const response = await fetch(`/docs/onboard/${langPrefix}${currentPaper.file}`);
         if (!response.ok) throw new Error(`Failed to load ${currentPaper.file}`);
         const text = await response.text();
         if (!isCancelled) setContent(text);
@@ -254,6 +355,20 @@ export default function OnboardPage() {
                 </div>
               ))}
             </div>
+
+            <button
+              onClick={() => handlePaperSelect('why-now', 'now')}
+              className="w-full mb-8 flex flex-col sm:flex-row items-center gap-3 sm:gap-4 rounded-xl border border-amber-400/30 bg-amber-400/10 px-5 py-4 text-left hover:bg-amber-400/15 transition-colors"
+            >
+              <Flame className="h-8 w-8 text-amber-400 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm sm:text-base font-semibold text-amber-100">{tr('onboard', 'now_title', lang)}</p>
+                <p className="text-xs sm:text-sm text-amber-200/70">{tr('onboard', 'now_body', lang)}</p>
+              </div>
+              <span className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-amber-400/20 px-3 py-1.5 text-xs font-semibold text-amber-100 whitespace-nowrap">
+                {tr('onboard', 'now_cta', lang)} <ChevronRight className="h-3.5 w-3.5" />
+              </span>
+            </button>
 
             <a
               href="https://github.com/Zion-TerraNova/2.9.6/tree/main/docs"

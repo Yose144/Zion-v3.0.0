@@ -566,6 +566,15 @@ const t = {
       cs: 'Marketingový onboard ZION TerraNova: od pozvánky přes Sůl této země a Oasis až po technické detaily pro zájemce.',
       en: 'Marketing onboarding for ZION TerraNova: from the invitation through Salt of the Earth and Oasis to technical details for the curious.',
     },
+    now_title: {
+      cs: 'Dnešní odměna za blok je nejvyšší, jakou ZION kdy vyplatí.',
+      en: 'Today\u2019s block reward is the highest ZION will ever pay.',
+    },
+    now_body: {
+      cs: 'Decade Decay ji navždy jen snižuje. Přečti si, proč je poctivě výhodné začít těžit, dokud je síť ještě malá.',
+      en: 'Decade Decay only lowers it from here, forever. Read why it\u2019s an honest advantage to start mining while the network is still small.',
+    },
+    now_cta: { cs: 'Hodina před deštěm', en: 'The Hour Before the Rain' },
     source_button: { cs: 'Zdrojové soubory na GitHub', en: 'Source files on GitHub' },
     download_pdf: { cs: 'Stáhnout PDF', en: 'Download PDF' },
     pdf_notice: {
