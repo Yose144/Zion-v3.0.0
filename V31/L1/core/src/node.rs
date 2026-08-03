@@ -111,7 +111,7 @@ pub struct Node {
     pub v3_rpc: Arc<crate::v3_rpc::V3RpcHandler>,
     /// V3 P2P sync client.
     pub v3_sync: crate::v3_p2p::V3Sync,
-    config: NodeConfig,
+    pub config: NodeConfig,
     next_template_id: AtomicU64,
 }
 

@@ -45,6 +45,7 @@ pub struct ExternalStreamJob {
 /// Tagged JSON (`{"type": "hello", ...}`) — matches V3 pool protocol exactly.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
+#[allow(clippy::large_enum_variant)]
 pub enum PoolMessage {
     Hello {
         miner_id: String,

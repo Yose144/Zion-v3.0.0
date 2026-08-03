@@ -1,11 +1,14 @@
 //! ZION stratum pool — PPLNS share accounting and AuxPoW validation.
 
+pub mod api;
+pub mod auxpow_bridge;
 pub mod config;
 pub mod pool;
 pub mod pplns;
 pub mod rate_limit;
 pub mod rpc_client;
 pub mod share;
+pub mod share_forwarder;
 pub mod store;
 pub mod stratum;
 pub mod stratum_v1;

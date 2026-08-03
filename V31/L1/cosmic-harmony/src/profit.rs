@@ -6,10 +6,11 @@
 use std::fmt;
 use std::str::FromStr;
 
+use serde::{Deserialize, Serialize};
 use zion_l1_types::Amount;
 
 /// Mining device category for a coin / algorithm.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum Device {
     Cpu,
     Gpu,
@@ -23,8 +24,9 @@ impl Device {
 }
 
 /// External coin mined through AuxPoW / merged mining.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Default, serde::Serialize, serde::Deserialize)]
 pub enum ExternalCoin {
+    #[default]
     Kaspa,
     Alephium,
     Decred,
@@ -180,7 +182,7 @@ impl FromStr for ExternalCoin {
 }
 
 /// Static mining profile for an external coin.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CoinProfile {
     pub coin: ExternalCoin,
     /// Normalized hashrate unit for this algorithm (MH/s).
@@ -201,6 +203,10 @@ pub struct CoinProfile {
     pub network_difficulty: f64,
     /// Device category this coin is mined with.
     pub device: Device,
+    /// Worker name for stratum authorization.
+    pub worker_name: String,
+    /// Password for stratum authorization.
+    pub password: String,
 }
 
 impl CoinProfile {
@@ -268,6 +274,8 @@ impl CoinProfile {
             block_reward: Amount::new(0),
             network_difficulty: 1.0,
             device,
+            worker_name: String::new(),
+            password: String::new(),
         }
     }
 }

@@ -24,7 +24,10 @@ pub mod thread_affinity;
 // pub mod parallel;
 
 #[cfg(feature = "auxpow")]
-pub use auxpow::{ExternalCoin, Job, Share, StratumClient, StratumJob};
+pub use auxpow::{
+    AuxPowClient, AuxPowClientConfig, ExternalCoin, ExternalJob, Job, Share, ShareResult,
+    StratumClient, StratumJob, StratumProtocol,
+};
 pub use config::MinerConfig;
 pub use runtime::{MinerError, MinerRuntime};
 pub use stream::{StreamId, StreamStats};
