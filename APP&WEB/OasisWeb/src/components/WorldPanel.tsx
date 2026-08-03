@@ -18,7 +18,7 @@ const TYPE_ICONS: Record<Quest['type'], typeof Compass> = {
 };
 
 /* ZION-theme-aligned functional colors */
-const CATEGORY_COLORS: Record<string, string> = {
+export const CATEGORY_COLORS: Record<string, string> = {
   'star-system': '#fbbf24',
   'planet': '#06b6d4',
   'sector': '#9333ea',
@@ -34,7 +34,7 @@ const CATEGORY_RGB: Record<string, string> = {
   'dimension': '236, 72, 153',
 };
 
-const CATEGORY_LABELS: Record<string, string> = {
+export const CATEGORY_LABELS: Record<string, string> = {
   'star-system': 'Star System',
   'planet': 'Planet',
   'sector': 'Sector',
