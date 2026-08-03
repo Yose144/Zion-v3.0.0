@@ -8,6 +8,11 @@ const emptyModule = resolve(rootDir, 'src/lib/empty-module.ts');
 
 const nextConfig: NextConfig = {
   output: "standalone", // Enabled — Docker build uses standalone (image 2.5GB→~200MB). Local dev unaffected (next dev ignores this).
+  poweredByHeader: false,
+  compress: true,
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
   images: {
     unoptimized: false,
     formats: ['image/avif', 'image/webp'],
@@ -23,6 +28,11 @@ const nextConfig: NextConfig = {
   // React Compiler disabled — codebase has too many manual effects/patterns that trigger its strict rules.
   reactCompiler: false,
   experimental: {
+    optimizeServerReact: true,
+    serverMinification: true,
+    webpackBuildWorker: true,
+    parallelServerBuildTraces: true,
+    memoryBasedWorkersCount: true,
     optimizePackageImports: [
       'lucide-react',
       'framer-motion',
