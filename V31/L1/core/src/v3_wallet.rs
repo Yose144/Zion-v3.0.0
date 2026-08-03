@@ -7,12 +7,15 @@
 //! - Multi-recipient batch payouts (pool PPLNS)
 //! - Account-model transaction building for hybrid balance sends
 
+#![allow(dead_code, unexpected_cfgs)]
+
 use crate::crypto;
 use crate::fee;
+use crate::v3_compat::AccountTransaction;
 use crate::v3_tx::{Transaction, TxInput, TxOutput, TX_HASH_V2_VERSION};
 use ed25519_dalek::SigningKey;
 use std::time::{SystemTime, UNIX_EPOCH};
-use zion_cosmic_harmony::tx_hash_v2_active;
+use zion_cosmic_harmony_v3::tx_hash_v2_active;
 
 /// Choose `Transaction.version` for UTXO txs broadcast while chain tip is `chain_tip_height`.
 ///
@@ -357,7 +360,7 @@ pub fn generate_account_tx_id(
     // XOR-in memo bytes if the memo v1 gate is active, so the tx_id commits to
     // the memo and the signature covers it.
     if let Some(m) = memo {
-        if zion_cosmic_harmony::account_tx_memo_v1_active(chain_height) {
+        if zion_cosmic_harmony_v3::account_tx_memo_v1_active(chain_height) {
             for (i, b) in m.bytes().enumerate() {
                 bytes[i % 32] ^= b;
             }
@@ -382,7 +385,7 @@ pub fn build_and_sign_account(
     nonce: u64,
     memo: Option<String>,
     chain_tip: u64,
-) -> Result<crate::Transaction, WalletError> {
+) -> Result<AccountTransaction, WalletError> {
     if !crypto::is_valid_address(to_address) {
         return Err(WalletError::InvalidAddress(to_address.to_string()));
     }
@@ -412,7 +415,7 @@ pub fn build_and_sign_account(
     let sig = crypto::sign_and_zeroize(key_bytes, tx_id.as_bytes())
         .map_err(|_| WalletError::SigningFailed)?;
 
-    Ok(crate::Transaction {
+    Ok(AccountTransaction {
         tx_id,
         from: from_address.to_string(),
         to: to_address.to_string(),

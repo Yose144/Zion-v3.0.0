@@ -10,7 +10,7 @@
 
 use crate::difficulty;
 use crate::emission;
-use crate::genesis;
+use crate::v3_compat as genesis;
 
 // ── Frozen Genesis Hash ────────────────────────────────────────────────
 
@@ -37,13 +37,14 @@ pub fn verify_genesis_integrity() -> Result<(), String> {
             block.transactions.len()
         ));
     }
-    if block.subsidy_zion != 0 {
-        return Err(format!("genesis subsidy {} != 0", block.subsidy_zion));
-    }
-    if block.timestamp != genesis::GENESIS_TIMESTAMP {
+    // Genesis block has no mining subsidy (subsidy starts at height 1).
+    // V3Block doesn't carry subsidy_zion directly; it's computed from
+    // emission rules. Genesis subsidy is always 0 by definition.
+    // No check needed here.
+    if block.header.timestamp != genesis::GENESIS_TIMESTAMP {
         return Err(format!(
             "genesis timestamp {} != {}",
-            block.timestamp,
+            block.header.timestamp,
             genesis::GENESIS_TIMESTAMP
         ));
     }

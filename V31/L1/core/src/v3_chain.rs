@@ -13,6 +13,16 @@ pub const MAX_REORG_DEPTH: u64 = 10;
 /// Constitutional: blocks after which a chain segment is considered soft-final.
 pub const SOFT_FINALITY_DEPTH: u64 = 60;
 
+/// A spendable UTXO entry (matches V3 `SpendableUtxo`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SpendableUtxo {
+    pub tx_hash: String,
+    pub output_index: u32,
+    pub amount: u64,
+    pub address: String,
+    pub height: u64,
+}
+
 // ---------------------------------------------------------------------------
 // Chain tip tracking
 // ---------------------------------------------------------------------------

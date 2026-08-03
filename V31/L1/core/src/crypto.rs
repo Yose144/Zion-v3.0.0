@@ -10,6 +10,7 @@ use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use ripemd::Ripemd160;
+use zeroize::Zeroize;
 use sha2::{Digest, Sha256};
 
 // ── BLAKE3 general hash ────────────────────────────────────────────────
@@ -47,6 +48,17 @@ pub fn canonical_address_for_label(label: &str) -> String {
 /// Sign `message` with an Ed25519 secret key. Returns 64-byte signature.
 pub fn sign(signing_key: &SigningKey, message: &[u8]) -> [u8; 64] {
     signing_key.sign(message).to_bytes()
+}
+
+/// Sign a message with a raw 32-byte key, then zeroize the key.
+///
+/// This is used by the wallet to ensure the secret key is wiped from memory
+/// immediately after signing.
+pub fn sign_and_zeroize(mut key_bytes: [u8; 32], message: &[u8]) -> Result<[u8; 64], &'static str> {
+    let sk = SigningKey::from_bytes(&key_bytes);
+    let sig = sk.sign(message).to_bytes();
+    key_bytes.zeroize();
+    Ok(sig)
 }
 
 /// Verify an Ed25519 signature.

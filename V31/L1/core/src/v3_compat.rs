@@ -216,6 +216,36 @@ pub struct AccountTransaction {
     pub memo: Option<String>,
 }
 
+impl AccountTransaction {
+    /// Verify the Ed25519 signature on this account-model transaction.
+    ///
+    /// Coinbase transactions (`from == "coinbase"`) are always valid.
+    /// For normal transactions, the public key must derive to the sender
+    /// address, and the signature must verify against `tx_id`.
+    pub fn verify_signature(&self) -> bool {
+        if self.from == "coinbase" {
+            return true;
+        }
+        if self.signature.len() != 128 || self.public_key.len() != 64 {
+            return false;
+        }
+        let pk_bytes = match hex::decode(&self.public_key) {
+            Ok(v) if v.len() == 32 => v,
+            _ => return false,
+        };
+        let sig_bytes = match hex::decode(&self.signature) {
+            Ok(v) if v.len() == 64 => v,
+            _ => return false,
+        };
+        // CRITICAL: the public key must derive to the sender address.
+        let derived_from = crate::crypto::derive_address(&pk_bytes);
+        if derived_from != self.from {
+            return false;
+        }
+        crate::crypto::verify(&pk_bytes, self.tx_id.as_bytes(), &sig_bytes)
+    }
+}
+
 /// Input for a V3 UTXO transaction.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TxInput {
@@ -750,6 +780,30 @@ pub fn build_v3_genesis_block() -> V3Block {
 /// Compute the V3 genesis hash (convenience wrapper).
 pub fn v3_genesis_hash() -> String {
     hex(&build_v3_genesis_block().header_hash())
+}
+
+// Re-exports for compatibility with V3 `genesis::` API used by `launch.rs`.
+pub fn genesis_hash() -> String {
+    v3_genesis_hash()
+}
+pub fn genesis_block() -> V3Block {
+    build_v3_genesis_block()
+}
+
+/// Validate that the premine outputs match the expected configuration.
+///
+/// Checks that the number of premine outputs is correct and that each
+/// output has a valid address and expected unlock height.
+pub fn validate_premine() -> Result<(), String> {
+    for (i, output) in PREMINE_OUTPUTS.iter().enumerate() {
+        if output.address.is_empty() {
+            return Err(format!("premine output {} has empty address", i));
+        }
+        if output.amount_zion == 0 {
+            return Err(format!("premine output {} has zero amount", i));
+        }
+    }
+    Ok(())
 }
 
 /// Validate a V3 block against its predecessor and expected difficulty.

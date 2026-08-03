@@ -6,6 +6,8 @@
 //! signatures over a canonical operation message reconstructed from the
 //! transaction itself.
 
+#![allow(dead_code)] // Used by ChainState (not yet ported)
+
 use k256::ecdsa::{signature::Verifier as _, Signature as EcdsaSignature, VerifyingKey};
 use std::collections::HashSet;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -405,7 +407,7 @@ pub fn bridge_operation_message(
 }
 
 pub(crate) fn bridge_unlock_replay_key_from_transaction(
-    transaction: &crate::tx::Transaction,
+    transaction: &crate::v3_tx::Transaction,
 ) -> Option<String> {
     transaction
         .outputs
@@ -427,8 +429,8 @@ pub struct BridgeUnlockRequest {
 }
 
 pub(crate) fn validate_bridge_unlock_transaction_shape_with_utxos(
-    transaction: &crate::tx::Transaction,
-    utxos: &std::collections::HashMap<(String, u32), crate::SpendableUtxo>,
+    transaction: &crate::v3_tx::Transaction,
+    utxos: &std::collections::HashMap<(String, u32), crate::v3_chain::SpendableUtxo>,
     block_height: u64,
 ) -> Result<Option<String>, String> {
     let Some(replay_key) = bridge_unlock_replay_key_from_transaction(transaction) else {
@@ -439,7 +441,7 @@ pub(crate) fn validate_bridge_unlock_transaction_shape_with_utxos(
         return Err("bridge unlock transaction must spend bridge vault UTXOs".to_string());
     }
 
-    let memo_outputs: Vec<&crate::tx::TxOutput> = transaction
+    let memo_outputs: Vec<&crate::v3_tx::TxOutput> = transaction
         .outputs
         .iter()
         .filter(|output| {
@@ -528,10 +530,10 @@ pub(crate) fn validate_bridge_unlock_transaction_shape_with_utxos(
         if !seen_inputs.insert((input.prev_tx_hash, input.output_index)) {
             return Err("bridge unlock transaction contains duplicate inputs".to_string());
         }
-        let Some(utxo) = utxos.get(&(crate::hex(&input.prev_tx_hash), input.output_index)) else {
+        let Some(utxo) = utxos.get(&(crate::v3_compat::hex(&input.prev_tx_hash), input.output_index)) else {
             return Err(format!(
                 "bridge unlock input {}:{} does not exist or is already spent",
-                crate::hex(&input.prev_tx_hash),
+                crate::v3_compat::hex(&input.prev_tx_hash),
                 input.output_index,
             ));
         };
