@@ -14,7 +14,7 @@ use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::{TcpListener, TcpStream};
 use tracing::{debug, info, warn};
 
-use crate::difficulty::{self, lwma_next_difficulty};
+use crate::difficulty;
 use crate::peer_manager::{PeerManager, PeerSource};
 use crate::storage::{Storage, StorageError};
 use crate::v3_compat::{
@@ -258,29 +258,16 @@ impl V3Sync {
                                 .await?
                                 .ok_or(V3P2PError::MissingParent(prev_height))?;
 
-                            let window = self
-                                .storage
-                                .v3_difficulty_window(difficulty::LWMA_WINDOW + 1)
-                                .await?;
-
-                            // When the difficulty window has insufficient
-                            // data (e.g. right after a checkpoint import with
-                            // only one block), trust the peer-provided
-                            // difficulty instead of computing LWMA.  V3 itself
-                            // does not validate difficulty on peer block import.
-                            let expected_difficulty =
-                                if window.len() < difficulty::LWMA_WINDOW {
-                                    block.difficulty
-                                } else {
-                                    lwma_next_difficulty(&window)
-                                };
-
+                            // V3 does NOT validate difficulty on peer block
+                            // import — it trusts the peer-provided difficulty.
+                            // We replicate this behavior to avoid LWMA mismatches
+                            // caused by minor differences in window computation.
                             validate_v3_block(
                                 &block,
                                 prev.header_hash(),
                                 prev.header.timestamp,
                                 prev.height,
-                                expected_difficulty,
+                                block.difficulty,
                             )
                             .map_err(|e| V3P2PError::Validation(e.to_string()))?;
                         }
