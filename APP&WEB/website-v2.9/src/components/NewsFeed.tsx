@@ -32,6 +32,21 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'zion-v310-mainnet-alpha-unified-update',
+    date: '2026-08-03',
+    tag: { cs: 'Aktualizace', en: 'Update' },
+    tagColor: 'text-cyan-400',
+    title: {
+      cs: 'ZION v3.1.0 — OASIS preview, dokončení backendu a trvalý genesis',
+      en: 'ZION v3.1.0 — OASIS preview, backend completion and permanent genesis',
+    },
+    summary: {
+      cs: 'Po hard resetu genesis síť běží stabilně a těžba je opět dostupná. Pracujeme na dokončení fáze 3.0.7–3.1.0 na backendu, opravách binárek a prvním OASIS preview. Následuje 5měsíční testovací období až do Silvestra — pokud se neobjeví vážnější chyby ani incidenty, zůstane aktuální genesis nastálo. Omlouváme se uživatelům za komplikace a děkujeme za trpělivost.',
+      en: 'After the genesis hard reset, the network is running stably and mining is available again. We are completing phase 3.0.7–3.1.0 on the backend, fixing binaries, and shipping the first OASIS preview. A five-month testing period follows until New Year\'s Eve — if no serious bugs or incidents occur, the current genesis will remain permanent. We apologize to users for the complications and thank you for your patience.',
+    },
+    href: '/docs',
+  },
+  {
     slug: 'nvidia-cuda-gpu-benchmark-300hs',
     date: '2026-08-02',
     tag: { cs: 'Mining', en: 'Mining' },
@@ -46,40 +61,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     },
     href: '/benchmarks',
   },
-  {
-    slug: 'boost-miner-v310-released',
-    date: '2026-08-02',
-    tag: { cs: 'Release', en: 'Release' },
-    tagColor: 'text-emerald-400',
-    title: {
-      cs: 'ZION v3.1.0 Boost Miner — tři streamy současně: ZION + GPU + CPU',
-      en: 'ZION v3.1.0 Boost Miner — three streams simultaneously: ZION + GPU + CPU',
-    },
-    summary: {
-      cs: 'ZION v3.1.0 Boost Miner je venku! Tři streamy těží současně — ZION (primární) + Boost Stream 1 (GPU) + Boost Stream 2 (CPU). Auto GPU backend detekce (OpenCL/CUDA/Metal), TUI dashboard s real-time hashrate a shares. Linux x86_64 binárka s SHA256 verifikací. Pro macOS a Windows použij Trinity Miner v3.0.6-beta. Stáhni z GitHub Releases.',
-      en: 'ZION v3.1.0 Boost Miner is out! Three streams mine simultaneously — ZION (primary) + Boost Stream 1 (GPU) + Boost Stream 2 (CPU). Auto GPU backend detection (OpenCL/CUDA/Metal), TUI dashboard with real-time hashrate and shares. Linux x86_64 binary with SHA256 verification. For macOS and Windows use Trinity Miner v3.0.6-beta. Download from GitHub Releases.',
-    },
-    href: 'https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.1.0',
-    external: true,
-    homepage: false,
-  },
-  {
-    slug: 'desktop-miner-v310-linux',
-    date: '2026-08-02',
-    tag: { cs: 'Release', en: 'Release' },
-    tagColor: 'text-emerald-400',
-    title: {
-      cs: 'ZION Desktop App v3.1.0 — GUI aplikace s Boost Streams pro Linux',
-      en: 'ZION Desktop App v3.1.0 — GUI app with Boost Streams for Linux',
-    },
-    summary: {
-      cs: 'Desktop App v3.1.0 je dostupná pro Linux! GUI aplikace s vestavěným minerem, peněženkou a dashboardem v reálném čase. Boost Streams: GPU a CPU stream běží vedle ZION core mining. GitHub auto-updater hlídá nové releasy. AppImage (131 MB) a DEB balíček (106 MB). Windows a macOS verze brzy.',
-      en: 'Desktop App v3.1.0 is available for Linux! GUI app with built-in miner, wallet, and real-time dashboard. Boost Streams: GPU and CPU stream run alongside ZION core mining. GitHub auto-updater checks for new releases. AppImage (131 MB) and DEB package (106 MB). Windows and macOS versions coming soon.',
-    },
-    href: 'https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.1.0-desktop',
-    external: true,
-    homepage: false,
-  },
+
   {
     slug: 'marketplace-oasis-artefacts-construction',
     date: '2026-08-01',
@@ -95,52 +77,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     },
     href: '/l4-oasis',
   },
-  {
-    slug: 'v3-1-0-mainnet-alpha-website',
-    date: '2026-07-31',
-    tag: { cs: 'Aktualizace', en: 'Update' },
-    tagColor: 'text-cyan-400',
-    title: {
-      cs: 'Web 2.9 se aktualizuje na v3.1.0 Mainnet Alpha',
-      en: 'Web 2.9 updated to v3.1.0 Mainnet Alpha',
-    },
-    summary: {
-      cs: 'ZION web 2.9 přechází na V31 Mainnet Alpha. Veřejná linka nyní ukazuje v3.1.0, dokumentace a přehledy jsou synchronizované. Tři samostatné veřejné služby běží současně: intro na zionterranova.com, web2.9 na app.zionterranova.com a OASIS Web na oasis.zionterranova.com.',
-      en: 'ZION web 2.9 is moving to V31 Mainnet Alpha. The public line now shows v3.1.0; docs and dashboards are in sync. Three separate public services run at the same time: the intro at zionterranova.com, web2.9 at app.zionterranova.com, and OASIS Web at oasis.zionterranova.com.',
-    },
-    href: '/docs',
-  },
-  {
-    slug: 'oasis-construction-v0-0-1',
-    date: '2026-07-31',
-    tag: { cs: 'OASIS', en: 'OASIS' },
-    tagColor: 'text-fuchsia-400',
-    title: {
-      cs: 'OASIS se staví — L4 herní vrstva ZIONu dostává vizuál v0.0.1',
-      en: 'OASIS under construction — ZION L4 gaming layer gets v0.0.1 visuals',
-    },
-    summary: {
-      cs: 'Právě probíhá stavba OASIS, L4 herní vrstvy ZION TerraNova. První vizuální iterace v0.0.1 je live na oasis.zionterranova.com: spirálová galaxie 30 000 částic inspirovaná Three.js Journey, 3D Strom života s trubičkovými větvemi a svítícími plody, bloom postprocessing a kamerový přílet do centra. Následují interaktivní světy, avataři a guild mechaniky.',
-      en: 'OASIS, the L4 gaming layer of ZION TerraNova, is currently under construction. The first visual iteration v0.0.1 is live at oasis.zionterranova.com: a 30,000-particle spiral galaxy inspired by Three.js Journey, a 3D Tree of Life with tube branches and glowing fruits, bloom postprocessing, and a camera fly-in to the center. Interactive worlds, avatars, and guild mechanics are next.',
-    },
-    href: 'https://oasis.zionterranova.com',
-    external: true,
-  },
-  {
-    slug: 'roadmap-to-mainnet-alpha-31',
-    date: '2026-07-23',
-    tag: { cs: 'Roadmap', en: 'Roadmap' },
-    tagColor: 'text-zion-gold',
-    title: {
-      cs: 'Cesta k ZION 3.1.0 Mainnet Alpha — od Trinity k čistému mainnetu',
-      en: 'Roadmap to ZION 3.1.0 Mainnet Alpha — from Trinity to a clean mainnet',
-    },
-    summary: {
-      cs: 'ZION 3.1.0 Boost Miner je venku a síť běží. Nyní míříme k plnému Mainnet Alpha: 3.0.7 „All Green“ → 3.0.8 „Full Stack Stable“ → 3.0.9 „Pre-Alpha Hardening“ → 3.1.0. Pokud síť zůstane bez kritických chyb, další hard reset nebude nutný — současný genesis hash je trvalý. Pracujeme na všech známých bugech a připravujeme repozitář pro masivní miner onboarding.',
-      en: 'ZION 3.1.0 Boost Miner is live and the network is running. We are now heading toward full Mainnet Alpha: 3.0.7 “All Green” → 3.0.8 “Full Stack Stable” → 3.0.9 “Pre-Alpha Hardening” → 3.1.0. If the network stays free of critical bugs, no further hard reset will be needed — the current genesis hash is permanent. We are working through every known issue and preparing the repository for large-scale miner onboarding.',
-    },
-    href: '/whitepapers',
-  },
+
   {
     slug: 'v3.0.6-beta-trinity-released',
     date: '2026-07-21',
@@ -518,6 +455,8 @@ const CARD_ACCENT: Record<string, { from: string; to: string; glow: string }> = 
   Kniha:     { from: 'from-yellow-500/20', to: 'to-amber-500/5', glow: 'shadow-yellow-500/10' },
   Book:      { from: 'from-yellow-500/20', to: 'to-amber-500/5', glow: 'shadow-yellow-500/10' },
   Mining:    { from: 'from-cyan-500/20', to: 'to-sky-500/5', glow: 'shadow-cyan-500/10' },
+  Aktualizace: { from: 'from-cyan-500/20', to: 'to-sky-500/5', glow: 'shadow-cyan-500/10' },
+  Update:    { from: 'from-cyan-500/20', to: 'to-sky-500/5', glow: 'shadow-cyan-500/10' },
   DeFi:      { from: 'from-gold-500/20', to: 'to-yellow-500/5', glow: 'shadow-yellow-500/10' },
   Launch:    { from: 'from-amber-500/20', to: 'to-yellow-500/5', glow: 'shadow-amber-500/10' },
   Listing:   { from: 'from-green-500/20', to: 'to-emerald-500/5', glow: 'shadow-green-500/10' },
