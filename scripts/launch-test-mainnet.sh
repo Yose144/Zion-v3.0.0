@@ -53,7 +53,7 @@ ZION_WORKER_NAME=worker1
 ZION_MINER_ID=test-miner-01
 
 # ==================== GRAFANA ====================
-GF_SECURITY_ADMIN_PASSWORD=TestMainnet2026!
+GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:-ChangeMe_Grafana_Admin_Password}
 ENV_APPEND
   echo "[launch] Keys written to $ENV_FILE"
 else
@@ -173,7 +173,7 @@ echo "  Miner    PID $MINER_PID   CPU-only (WSL2)"
 echo "  Logs:    $LOG_DIR"
 echo "  Env:     $ENV_FILE"
 echo "------------------------------------------------------------"
-echo "  Grafana:  http://localhost:3000  (admin / TestMainnet2026!)"
+echo "  Grafana:  http://localhost:3000  (admin / \$GF_SECURITY_ADMIN_PASSWORD)"
 echo "  Prometheus: http://localhost:9090"
 echo "------------------------------------------------------------"
 echo "  Stop:    bash scripts/stop-test-mainnet.sh"
