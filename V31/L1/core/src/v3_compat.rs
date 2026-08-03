@@ -96,8 +96,64 @@ impl MiningHeader {
     }
 }
 
+/// A block candidate: header + nonce, ready for hashing.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BlockCandidate {
+    pub header: MiningHeader,
+    pub nonce: u64,
+    pub height: u64,
+}
+
+impl BlockCandidate {
+    /// Hash the candidate using deeksha_chv3 (default ZION PoW).
+    pub fn hash(self) -> [u8; 32] {
+        zion_cosmic_harmony_v3::deeksha_chv3::deeksha_chv3_with_height(
+            &self.header.to_bytes(),
+            self.nonce,
+            self.height,
+        )
+        .data
+    }
+
+    /// Seal into a SealedBlock.
+    pub fn seal(self) -> SealedBlock {
+        SealedBlock {
+            header: self.header,
+            nonce: self.nonce,
+            hash: self.hash(),
+        }
+    }
+}
+
+/// A sealed block: header + nonce + computed hash.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SealedBlock {
+    pub header: MiningHeader,
+    pub nonce: u64,
+    pub hash: [u8; 32],
+}
+
+/// A mining job sent to miners.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MiningJob {
+    pub job_id: u64,
+    pub header: MiningHeader,
+    pub target: DifficultyTarget,
+    pub start_nonce: u64,
+    pub nonce_count: u64,
+    pub height: u64,
+}
+
+/// A mining solution submitted by a miner.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MiningSolution {
+    pub job_id: u64,
+    pub candidate: BlockCandidate,
+    pub hash: [u8; 32],
+}
+
 /// 256-bit difficulty target.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DifficultyTarget {
     pub bytes: [u8; 32],
 }
