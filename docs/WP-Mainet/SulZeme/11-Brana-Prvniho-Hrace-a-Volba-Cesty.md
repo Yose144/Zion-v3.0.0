@@ -198,4 +198,6 @@ Oasis má pracovat s tradicemi jako s kontextem pro příběh, ne jako s licenc�
 
 ---
 
+*→ Pokračování: [Epizoda 12 — Hodina před deštěm](./12-Hodina-Pred-Destem.md)*
+
 *→ Zpět na [index série Sůl této země](./00-README.md).*
