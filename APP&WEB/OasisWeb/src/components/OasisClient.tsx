@@ -90,7 +90,13 @@ export default function OasisClient() {
 
   useEffect(() => {
     const check = () => {
-      const mobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches;
+      const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      const isNarrow = window.innerWidth < 768;
+      const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+      // Mobile = narrow screen OR touch + coarse pointer.
+      // A touch laptop with a wide screen stays desktop; a narrow
+      // non-touch window gets mobile layout.
+      const mobile = isNarrow || (hasTouch && coarsePointer && window.innerWidth < 1024);
       setIsMobile(mobile);
       if (mobile && !mobileInputRef.current) {
         mobileInputRef.current = { move: { x: 0, y: 0 }, look: { x: 0, y: 0 }, up: false, down: false, boost: false };
@@ -297,15 +303,15 @@ export default function OasisClient() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.6, delay: 0.5 }}
-              className="pointer-events-auto absolute right-4 top-4 z-40 flex items-center gap-1.5 sm:right-6 sm:top-5"
+              className="pointer-events-auto absolute right-2 top-2 z-40 flex items-center gap-1.5 sm:right-6 sm:top-5"
             >
               <Link href="/dashboard">
                 <motion.div
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
-                  className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-gradient-to-r from-oasis-gold via-oasis-purple to-oasis-cyan px-2.5 py-1 text-[9px] font-bold text-white shadow-lg"
+                  className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-gradient-to-r from-oasis-gold via-oasis-purple to-oasis-cyan px-2.5 py-1 text-[9px] font-bold text-white shadow-lg sm:px-2.5"
                 >
-                  Enter the Game
+                  <span className="hidden sm:inline">Enter the Game</span>
                   <ChevronRight className="h-2.5 w-2.5" />
                 </motion.div>
               </Link>
@@ -328,7 +334,7 @@ export default function OasisClient() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               onClick={() => setUiHidden(false)}
-              className="pointer-events-auto absolute right-4 top-4 z-50 rounded-full border border-white/15 bg-black/80 p-2.5 text-gray-300 backdrop-blur-md transition hover:bg-white/10 hover:text-white sm:right-6 sm:top-5"
+              className="pointer-events-auto absolute right-2 top-2 z-50 rounded-full border border-white/15 bg-black/80 p-2.5 text-gray-300 backdrop-blur-md transition hover:bg-white/10 hover:text-white sm:right-6 sm:top-5"
               title="Show UI (H)"
             >
               <Eye className="h-4 w-4" />
@@ -389,13 +395,13 @@ export default function OasisClient() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.6, delay: 0.8 }}
-              className="pointer-events-auto absolute bottom-8 left-1/2 z-30 -translate-x-1/2"
+              className="pointer-events-auto absolute bottom-6 left-1/2 z-30 -translate-x-1/2 sm:bottom-8"
             >
               <motion.div
                 whileHover={{ scale: 1.08 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleCloseWorld}
-                className="group inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/15 bg-black/80 px-6 py-3 text-sm font-bold text-white shadow-2xl backdrop-blur-md transition hover:bg-white/10 sm:px-8 sm:py-4"
+                className="group inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/15 bg-black/80 px-4 py-2.5 text-xs font-bold text-white shadow-2xl backdrop-blur-md transition hover:bg-white/10 sm:px-8 sm:py-4 sm:text-sm"
               >
                 Return to Galaxy
                 <ChevronRight className="h-4 w-4 rotate-180 transition-transform group-hover:-translate-x-1" />

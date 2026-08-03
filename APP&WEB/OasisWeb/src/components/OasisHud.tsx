@@ -155,7 +155,7 @@ export default function OasisHud({ onEnterFlight }: OasisHudProps) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.96 }}
               transition={{ duration: 0.2 }}
-              className="pointer-events-auto absolute right-0 top-9 z-40 w-56 p-3 sm:w-60 sm:p-3.5 zion-rainbow-card"
+              className="pointer-events-auto absolute right-0 top-9 z-40 w-52 max-w-[calc(100vw-1rem)] p-3 sm:w-60 sm:p-3.5 zion-rainbow-card"
               style={{ '--rc': OASIS_ACCENT } as React.CSSProperties}
             >
               {/* Header */}

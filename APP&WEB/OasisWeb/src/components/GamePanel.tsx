@@ -675,11 +675,11 @@ export default function GamePanel({
     <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
-      className="pointer-events-auto absolute left-3 top-3 z-50 sm:left-5 sm:top-5"
+      className="pointer-events-auto absolute left-2 top-2 z-50 sm:left-5 sm:top-5"
     >
       <div className="flex gap-2">
         {/* ── Left column: Map + Stats (always visible) ── */}
-        <div className="zion-hud-panel !relative w-[15rem] p-3 sm:w-72 sm:p-3.5">
+        <div className="zion-hud-panel !relative w-[13rem] p-2.5 sm:w-72 sm:p-3.5">
           {/* MiniMap */}
           <MiniMap
             activeCategories={activeCategories}
@@ -819,7 +819,7 @@ export default function GamePanel({
               transition={{ duration: 0.25 }}
               className="overflow-hidden"
             >
-              <div className="zion-hud-panel !relative w-64 p-3 sm:w-72">
+              <div className="zion-hud-panel !relative w-[13rem] max-w-[calc(100vw-1.5rem)] p-2.5 sm:w-72 sm:p-3">
                 {/* Tab bar */}
                 <div className="mb-3 flex gap-1 rounded-xl border border-white/10 bg-black/30 p-1">
                   {tabs.map((t) => {

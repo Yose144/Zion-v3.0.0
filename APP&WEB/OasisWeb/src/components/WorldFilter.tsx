@@ -204,7 +204,7 @@ export default function WorldFilter({ active, onChange, activeLayers, onLayersCh
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.5 }}
-        className="pointer-events-auto absolute bottom-4 right-4 z-20 sm:bottom-5 sm:right-5"
+        className="pointer-events-auto absolute bottom-4 right-2 z-20 sm:bottom-5 sm:right-5"
       >
         <button
           onClick={() => setMinimized(false)}
@@ -226,7 +226,7 @@ export default function WorldFilter({ active, onChange, activeLayers, onLayersCh
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 30, transition: { duration: 0.3, delay: 0 } }}
       transition={{ duration: 0.5, delay: 0.5 }}
-      className="pointer-events-auto absolute bottom-64 right-4 z-20 flex max-h-[calc(100vh-20rem)] w-56 flex-col gap-2 overflow-y-auto sm:bottom-72 sm:right-5 sm:max-h-[calc(100vh-22rem)] sm:w-64"
+      className="pointer-events-auto absolute bottom-56 right-2 z-20 flex max-h-[calc(100vh-18rem)] w-48 flex-col gap-2 overflow-y-auto sm:bottom-72 sm:right-5 sm:max-h-[calc(100vh-22rem)] sm:w-64"
       style={{ scrollbarWidth: 'thin' }}
     >
       {/* Header bar */}

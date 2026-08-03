@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Menu, X } from 'lucide-react';
 import {
   Home,
   User,
@@ -38,6 +40,7 @@ const navItems: NavItem[] = [
 
 export default function Navbar() {
   const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <motion.nav
@@ -49,12 +52,13 @@ export default function Navbar() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         <Link
           href="/"
-          className="bg-gradient-to-r from-oasis-cyan via-oasis-purple to-oasis-gold bg-clip-text text-xl font-bold text-transparent"
+          className="bg-gradient-to-r from-oasis-cyan via-oasis-purple to-oasis-gold bg-clip-text text-lg font-bold text-transparent sm:text-xl"
         >
           ZION OASIS
         </Link>
 
-        <div className="hidden items-center gap-1 sm:flex">
+        {/* Desktop nav */}
+        <div className="hidden items-center gap-1 lg:flex">
           {navItems.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
             return (
@@ -81,23 +85,71 @@ export default function Navbar() {
           })}
         </div>
 
-        <div className="flex items-center gap-1 sm:hidden">
+        {/* Tablet: scrollable icon bar (sm to lg) */}
+        <div className="hidden items-center gap-0.5 overflow-x-auto sm:flex lg:hidden"
+          style={{ scrollbarWidth: 'none' }}
+        >
           {navItems.map(({ href, icon: Icon }) => {
             const active = pathname === href;
             return (
               <Link
                 key={href}
                 href={href}
-                className={`rounded-lg p-2 transition-colors ${
+                className={`shrink-0 rounded-lg p-2 transition-colors ${
                   active ? 'text-oasis-cyan' : 'text-gray-300 hover:text-white'
                 }`}
+                title={href === '/' ? 'Home' : href.slice(1).charAt(0).toUpperCase() + href.slice(2)}
               >
                 <Icon className="h-5 w-5" />
               </Link>
             );
           })}
         </div>
+
+        {/* Mobile: hamburger menu (< sm) */}
+        <button
+          onClick={() => setMobileOpen((v) => !v)}
+          className="rounded-lg p-2 text-gray-300 transition hover:bg-white/10 hover:text-white sm:hidden"
+          aria-label="Toggle menu"
+          aria-expanded={mobileOpen}
+        >
+          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
       </div>
+
+      {/* Mobile dropdown menu */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden border-t border-white/10 bg-oasis-black/95 backdrop-blur-lg sm:hidden"
+          >
+            <div className="grid grid-cols-2 gap-1 p-3">
+              {navItems.map(({ href, label, icon: Icon }) => {
+                const active = pathname === href;
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                      active
+                        ? 'bg-oasis-cyan/10 text-oasis-cyan ring-1 ring-oasis-cyan/30'
+                        : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.nav>
   );
 }
