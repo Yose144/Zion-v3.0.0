@@ -8,6 +8,12 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // CSS-variable based brand colors aligned with website-v2.9
+        'zion-gold': 'rgb(var(--color-zion-gold) / <alpha-value>)',
+        'zion-purple': 'rgb(var(--color-zion-purple) / <alpha-value>)',
+        'zion-cyan': 'rgb(var(--color-zion-cyan) / <alpha-value>)',
+        'zion-blue': 'rgb(var(--color-zion-blue) / <alpha-value>)',
+        // Legacy aliases for existing code
         oasis: {
           black: '#090A0F',
           cyan: '#06b6d4',

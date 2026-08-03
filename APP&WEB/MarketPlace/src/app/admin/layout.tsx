@@ -3,12 +3,14 @@
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { getAdminKey } from '@/lib/admin-auth';
+import { useLangT } from '@/lib/useTranslation';
 
 type ShopTheme = 'rasta' | 'zion';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { t } = useLangT();
   const [ready, setReady] = useState(false);
   const [theme, setTheme] = useState<ShopTheme>('rasta');
   const [saving, setSaving] = useState(false);
@@ -28,8 +30,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     fetch('/api/admin/settings', { headers: { 'X-API-Key': key } })
       .then((res) => res.json())
       .then((json) => {
-        const t = json?.data?.theme;
-        if (t === 'rasta' || t === 'zion') setTheme(t);
+        const themeValue = json?.data?.theme;
+        if (themeValue === 'rasta' || themeValue === 'zion') setTheme(themeValue);
       })
       .catch((err) => console.error('Failed to load theme:', err));
   }, [pathname]);
@@ -71,16 +73,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-oasis-cyan via-oasis-purple to-oasis-gold flex items-center justify-center font-black text-oasis-black text-sm">
                 Z
               </div>
-              <span className="text-lg font-black text-gradient">Market Admin</span>
+              <span className="text-lg font-black text-gradient">{t('admin.layoutTitle')}</span>
             </div>
             <nav className="flex items-center gap-2 text-sm">
-              <a href="/admin/orders" className="px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors">Orders</a>
-              <a href="/admin/invoices" className="px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors">Invoices</a>
-              <a href="/admin/shipping" className="px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors">Shipping</a>
-              <a href="/admin/stripe" className="px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors">Stripe</a>
-              <a href="/" className="px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors text-oasis-cyan">Store</a>
+              <a href="/admin/orders" className="px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors">{t('admin.navOrders')}</a>
+              <a href="/admin/invoices" className="px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors">{t('admin.navInvoices')}</a>
+              <a href="/admin/shipping" className="px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors">{t('admin.navShipping')}</a>
+              <a href="/admin/stripe" className="px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors">{t('admin.navStripe')}</a>
+              <a href="/" className="px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors text-oasis-cyan">{t('admin.navStore')}</a>
               <div className="flex items-center gap-2 ml-2 pl-3 border-l border-white/10">
-                <label htmlFor="admin-theme" className="text-xs text-white/60">Theme</label>
+                <label htmlFor="admin-theme" className="text-xs text-white/60">{t('admin.themeLabel')}</label>
                 <select
                   id="admin-theme"
                   value={theme}
@@ -88,8 +90,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   onChange={(e) => saveTheme(e.target.value as ShopTheme)}
                   className="bg-white/5 border border-white/10 rounded-md text-xs px-2 py-1.5 focus:outline-none focus:border-oasis-cyan"
                 >
-                  <option value="rasta">Rasta</option>
-                  <option value="zion">Zion</option>
+                  <option value="rasta">{t('admin.themeRasta')}</option>
+                  <option value="zion">{t('admin.themeZion')}</option>
                 </select>
               </div>
             </nav>

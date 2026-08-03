@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { getAvatars, getQuests, getPrizeTiers, getTerritories } from '@/lib/oasis-api';
 import type { AvatarDef, QuestDef, PrizeTier, Territory } from '@/lib/oasis-api';
+import { useLangT } from '@/lib/useTranslation';
 
 type SourceType = 'avatar' | 'quest' | 'prize' | 'territory';
 
@@ -23,6 +24,15 @@ function normalizeRarity(r?: string): typeof rarities[number] {
   return rarities.find((x) => x === lower) ?? 'common';
 }
 
+function getSourceLabel(source: SourceType, t: (path: string, params?: Record<string, string | number>) => string) {
+  switch (source) {
+    case 'avatar': return t('create.sourceAvatars');
+    case 'quest': return t('create.sourceQuests');
+    case 'prize': return t('create.sourcePrizes');
+    case 'territory': return t('create.sourceTerritories');
+  }
+}
+
 export default function OasisImportPanel({
   onImport,
 }: {
@@ -32,6 +42,7 @@ export default function OasisImportPanel({
   const [items, setItems] = useState<{ id: string; name: string; description: string; rarity: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useLangT();
 
   useEffect(() => {
     setLoading(true);
@@ -42,28 +53,28 @@ export default function OasisImportPanel({
       try {
         if (source === 'avatar') {
           const data = await getAvatars();
-          if (!data) { setError('Could not load OASIS avatars.'); return; }
+          if (!data) { setError(t('create.oasisLoadError', { source: getSourceLabel(source, t) })); return; }
           setItems(data.map((a) => ({ id: String(a.id), name: a.name, description: a.subtitle, rarity: a.rarity })));
         } else if (source === 'quest') {
           const data = await getQuests();
-          if (!data) { setError('Could not load OASIS quests.'); return; }
+          if (!data) { setError(t('create.oasisLoadError', { source: getSourceLabel(source, t) })); return; }
           setItems(data.map((q) => ({ id: q.quest_id, name: q.title, description: q.description, rarity: 'rare' })));
         } else if (source === 'prize') {
           const data = await getPrizeTiers();
-          if (!data) { setError('Could not load OASIS prize tiers.'); return; }
+          if (!data) { setError(t('create.oasisLoadError', { source: getSourceLabel(source, t) })); return; }
           setItems(data.tiers.map((t) => ({ id: String(t.rank), name: t.title, description: t.unlock_condition, rarity: t.rank <= 3 ? 'mythic' : t.rank <= 10 ? 'legendary' : 'epic' })));
         } else if (source === 'territory') {
           const data = await getTerritories();
-          if (!data) { setError('Could not load OASIS territories.'); return; }
+          if (!data) { setError(t('create.oasisLoadError', { source: getSourceLabel(source, t) })); return; }
           setItems(Object.values(data.territories).map((t) => ({ id: t.id, name: t.name, description: t.description, rarity: t.defense_power > 500 ? 'legendary' : t.defense_power > 100 ? 'rare' : 'uncommon' })));
         }
       } catch (e) {
-        setError('Failed to load OASIS data.');
+        setError(t('create.oasisError'));
       } finally {
         setLoading(false);
       }
     })();
-  }, [source]);
+  }, [source, t]);
 
   const handleSelect = (id: string) => {
     (async () => {
@@ -149,26 +160,28 @@ export default function OasisImportPanel({
     })();
   };
 
+  const sources: SourceType[] = ['avatar', 'quest', 'prize', 'territory'];
+
   return (
     <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
       <h2 className="text-xs font-bold text-gray-400 uppercase mb-4 flex items-center gap-2">
         <span className="w-1 h-3 rounded-full bg-oasis-cyan" />
-        Import from OASIS
+        {t('create.importFromOasis')}
       </h2>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-        {(['avatar', 'quest', 'prize', 'territory'] as const).map((t) => (
+        {sources.map((s) => (
           <button
-            key={t}
+            key={s}
             type="button"
-            onClick={() => setSource(t)}
+            onClick={() => setSource(s)}
             className={`px-3 py-2 rounded-xl text-xs font-bold capitalize transition-all border ${
-              source === t
+              source === s
                 ? 'bg-oasis-cyan/15 border-oasis-cyan/50 text-oasis-cyan'
                 : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
             }`}
           >
-            {t === 'prize' ? 'Prize Tiers' : t}s
+            {getSourceLabel(s, t)}
           </button>
         ))}
       </div>
@@ -176,7 +189,7 @@ export default function OasisImportPanel({
       {loading ? (
         <div className="py-8 text-center">
           <div className="w-8 h-8 border-2 border-oasis-cyan/30 border-t-oasis-cyan rounded-full animate-spin mx-auto mb-2" />
-          <div className="text-xs text-gray-500">Loading OASIS {source} data…</div>
+          <div className="text-xs text-gray-500">{t('create.oasisLoading', { source: getSourceLabel(source, t) })}</div>
         </div>
       ) : error ? (
         <div className="p-4 rounded-xl bg-oasis-rose/10 border border-oasis-rose/20 text-sm text-oasis-rose">
@@ -185,7 +198,7 @@ export default function OasisImportPanel({
       ) : (
         <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
           {items.length === 0 ? (
-            <div className="text-sm text-gray-500 py-2">No {source} items found.</div>
+            <div className="text-sm text-gray-500 py-2">{t('create.oasisEmpty', { source: getSourceLabel(source, t) })}</div>
           ) : (
             items.map((item) => (
               <button
@@ -199,7 +212,7 @@ export default function OasisImportPanel({
                     {item.name}
                   </span>
                   <span className={`rarity-badge rarity-${normalizeRarity(item.rarity)} text-[10px]`}>
-                    {item.rarity}
+                    {t(`rarity.${normalizeRarity(item.rarity)}`)}
                   </span>
                 </div>
                 <div className="text-xs text-gray-500 line-clamp-1 mt-0.5">{item.description}</div>

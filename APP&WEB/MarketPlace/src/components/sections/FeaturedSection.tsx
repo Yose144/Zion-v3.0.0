@@ -1,6 +1,9 @@
+'use client';
+
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import ItemCard, { type ArtifactCardData } from '@/components/ItemCard';
+import { useLangT } from '@/lib/useTranslation';
 
 const featured: ArtifactCardData[] = [
   { id: '1', name: 'Tree of Life Avatar', image: '', collection: 'OASIS Genesis', rarity: 'mythic', price: '2,500', listingType: 'fixed' },
@@ -10,15 +13,16 @@ const featured: ArtifactCardData[] = [
 ];
 
 export default function FeaturedSection() {
+  const { t } = useLangT();
   return (
     <section>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <div className="zion-kicker">Curated</div>
-          <h2 className="text-2xl font-black font-display text-gradient">Featured</h2>
+          <div className="zion-kicker">{t('featured.kicker')}</div>
+          <h2 className="text-2xl font-black font-display text-gradient">{t('featured.title')}</h2>
         </div>
         <Link href="/explore" className="text-sm text-oasis-cyan hover:underline font-semibold inline-flex items-center gap-1 group">
-          View all
+          {t('featured.viewAll')}
           <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
         </Link>
       </div>

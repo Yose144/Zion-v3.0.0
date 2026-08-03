@@ -6,15 +6,29 @@ import { useRouter } from 'next/navigation';
 import { Zap, Gavel, Lock, X, Wallet } from 'lucide-react';
 import OasisImportPanel, { type OasisArtifactDraft } from '@/components/OasisImportPanel';
 import { useMintArtifact, useSetApprovalForAll, useIsApprovedForAll, useCreateListing, useCreateAuction } from '@/hooks/useMarket';
+import { useLangT } from '@/lib/useTranslation';
 
 const rarities = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic', 'unique'] as const;
 const collections = ['OASIS Genesis', 'OASIS Quest', 'OASIS Ships', 'OASIS Territory', 'Golden Eggs', 'OASIS Cosmetics'];
+
+function getCollectionLabelKey(c: string) {
+  switch (c) {
+    case 'OASIS Genesis': return 'collections.oasisGenesis';
+    case 'OASIS Quest': return 'collections.oasisQuest';
+    case 'OASIS Ships': return 'collections.oasisShips';
+    case 'OASIS Territory': return 'collections.oasisTerritory';
+    case 'Golden Eggs': return 'collections.goldenEggs';
+    case 'OASIS Cosmetics': return 'collections.oasisCosmetics';
+    default: return c;
+  }
+}
 
 type Rarity = typeof rarities[number];
 
 export default function CreatePage() {
   const { isConnected, address } = useAccount();
   const router = useRouter();
+  const { t } = useLangT();
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -84,7 +98,7 @@ export default function CreatePage() {
       });
       const metadataJson = (await metadataRes.json()) as { success: boolean; ipfsUrl?: string; error?: string };
       if (!metadataRes.ok || !metadataJson.success) {
-        throw new Error(metadataJson.error ?? 'IPFS upload failed');
+        throw new Error(metadataJson.error ?? t('create.errorIpfs'));
       }
 
       const tokenId = BigInt(Date.now());
@@ -120,7 +134,7 @@ export default function CreatePage() {
 
       router.push('/explore');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Transaction failed');
+      setError(err instanceof Error ? err.message : t('create.errorTransaction'));
     } finally {
       setSubmitting(false);
     }
@@ -130,20 +144,27 @@ export default function CreatePage() {
     return (
       <div className="card max-w-md mx-auto mt-20 p-8 text-center">
         <Wallet className="w-16 h-16 mx-auto mb-4 opacity-40" />
-        <h2 className="text-xl font-bold mb-2 font-display">Connect your wallet</h2>
-        <p className="text-sm text-gray-400">Connect to Base L2 to create a listing.</p>
+        <h2 className="text-xl font-bold mb-2 font-display">{t('create.walletTitle')}</h2>
+        <p className="text-sm text-gray-400">{t('create.walletSubtitle')}</p>
       </div>
     );
   }
 
+  const listingTypeButtons: { value: 'fixed' | 'auction' | 'none'; icon: React.ReactNode; label: string }[] = [
+    { value: 'fixed', icon: <Zap className="w-4 h-4" />, label: t('create.listingFixed') },
+    { value: 'auction', icon: <Gavel className="w-4 h-4" />, label: t('create.listingAuction') },
+    { value: 'none', icon: <Lock className="w-4 h-4" />, label: t('create.listingNone') },
+  ];
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div>
-        <div className="zion-kicker mb-3">Mint</div>
+        <div className="zion-kicker mb-3">{t('create.kicker')}</div>
         <h1 className="text-3xl font-black font-display mb-1">
-          <span className="text-gradient">Create</span> <span className="text-white">Listing</span>
+          <span className="text-gradient">{t('create.title1')}</span>{' '}
+          <span className="text-white">{t('create.title2')}</span>
         </h1>
-        <p className="text-sm text-gray-500">Mint a new OASIS artifact and list it for sale</p>
+        <p className="text-sm text-gray-500">{t('create.subtitle')}</p>
       </div>
 
       {error && (
@@ -162,46 +183,46 @@ export default function CreatePage() {
         >
           <h2 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
             <span className="w-1 h-3 rounded-full bg-oasis-cyan" />
-            Asset
+            {t('create.sectionAsset')}
           </h2>
 
           <div>
-            <label className="block text-sm font-semibold mb-2">Name *</label>
+            <label className="block text-sm font-semibold mb-2">{t('create.labelName')}</label>
             <input
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Tree of Life Avatar"
+              placeholder={t('create.placeholderName')}
               className="input-zion"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold mb-2">Description</label>
+            <label className="block text-sm font-semibold mb-2">{t('create.labelDescription')}</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              placeholder="Describe your artifact…"
+              placeholder={t('create.placeholderDescription')}
               className="input-zion resize-none"
             />
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold mb-2">Collection *</label>
+              <label className="block text-sm font-semibold mb-2">{t('create.labelCollection')}</label>
               <select
                 value={collection}
                 onChange={(e) => setCollection(e.target.value)}
                 className="input-zion"
               >
                 {collections.map(c => (
-                  <option key={c} value={c} className="bg-zion-card">{c}</option>
+                  <option key={c} value={c} className="bg-zion-card">{t(getCollectionLabelKey(c))}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-semibold mb-2">Rarity *</label>
+              <label className="block text-sm font-semibold mb-2">{t('create.labelRarity')}</label>
               <div className="flex flex-wrap gap-2">
                 {rarities.map(r => (
                   <button
@@ -212,7 +233,7 @@ export default function CreatePage() {
                       rarity === r ? 'ring-2 ring-white/40 scale-105' : 'opacity-50 hover:opacity-100'
                     }`}
                   >
-                    {r}
+                    {t(`rarity.${r}`)}
                   </button>
                 ))}
               </div>
@@ -220,17 +241,17 @@ export default function CreatePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold mb-2">Image URL / IPFS</label>
+            <label className="block text-sm font-semibold mb-2">{t('create.labelImage')}</label>
             <div className="flex gap-3">
               <input
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="ipfs://… or https://…"
+                placeholder={t('create.placeholderImage')}
                 className="input-zion flex-1"
               />
               {imageUrl && (
                 <div className="w-20 h-20 rounded-xl overflow-hidden artifact-placeholder flex items-center justify-center flex-shrink-0">
-                  <img src={imageUrl} alt="preview" className="w-full h-full object-cover" />
+                  <img src={imageUrl} alt={t('create.imagePreviewAlt')} className="w-full h-full object-cover" />
                 </div>
               )}
             </div>
@@ -242,24 +263,24 @@ export default function CreatePage() {
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
               <span className="w-1 h-3 rounded-full bg-oasis-purple" />
-              Properties
+              {t('create.sectionProperties')}
             </h2>
             <button type="button" onClick={addTrait} className="zion-button-ghost text-xs px-3 py-1.5">
-              + Add trait
+              {t('create.addTrait')}
             </button>
           </div>
-          {traits.map((t, i) => (
+          {traits.map((trait, i) => (
             <div key={i} className="flex gap-2">
               <input
-                value={t.trait}
+                value={trait.trait}
                 onChange={(e) => updateTrait(i, 'trait', e.target.value)}
-                placeholder="Trait (e.g. Class)"
+                placeholder={t('create.placeholderTrait')}
                 className="input-zion flex-1"
               />
               <input
-                value={t.value}
+                value={trait.value}
                 onChange={(e) => updateTrait(i, 'value', e.target.value)}
-                placeholder="Value (e.g. Avatar)"
+                placeholder={t('create.placeholderValue')}
                 className="input-zion flex-1"
               />
               {traits.length > 1 && (
@@ -279,40 +300,30 @@ export default function CreatePage() {
         <section className="zion-section p-6 space-y-5">
           <h2 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
             <span className="w-1 h-3 rounded-full bg-oasis-gold" />
-            Listing
+            {t('create.sectionListing')}
           </h2>
           <div className="flex gap-2">
-            {(['fixed', 'auction', 'none'] as const).map(t => (
+            {listingTypeButtons.map(t => (
               <button
-                key={t}
+                key={t.value}
                 type="button"
-                onClick={() => setListingType(t)}
+                onClick={() => setListingType(t.value)}
                 className={`flex-1 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                  listingType === t
+                  listingType === t.value
                     ? 'bg-oasis-purple/20 text-white border border-oasis-purple/40'
                     : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'
                 }`}
               >
-                {t === 'fixed' ? (
                 <span className="inline-flex items-center gap-1.5">
-                  <Zap className="w-4 h-4" /> Fixed Price
+                  {t.icon} {t.label}
                 </span>
-              ) : t === 'auction' ? (
-                <span className="inline-flex items-center gap-1.5">
-                  <Gavel className="w-4 h-4" /> Auction
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5">
-                  <Lock className="w-4 h-4" /> Not for sale
-                </span>
-              )}
               </button>
             ))}
           </div>
 
           {listingType === 'fixed' && (
             <div>
-              <label className="block text-sm font-semibold mb-2">Price (wZION) *</label>
+              <label className="block text-sm font-semibold mb-2">{t('create.labelPrice')}</label>
               <input
                 required={listingType === 'fixed'}
                 type="number"
@@ -320,7 +331,7 @@ export default function CreatePage() {
                 min="0"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                placeholder="0.05"
+                placeholder={t('create.placeholderPrice')}
                 className="input-zion"
               />
             </div>
@@ -329,7 +340,7 @@ export default function CreatePage() {
           {listingType === 'auction' && (
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold mb-2">Starting Price (wZION) *</label>
+                <label className="block text-sm font-semibold mb-2">{t('create.labelStartingPrice')}</label>
                 <input
                   required={listingType === 'auction'}
                   type="number"
@@ -337,12 +348,12 @@ export default function CreatePage() {
                   min="0"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  placeholder="0.05"
+                  placeholder={t('create.placeholderPrice')}
                   className="input-zion"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold mb-2">Duration (hours)</label>
+                <label className="block text-sm font-semibold mb-2">{t('create.labelDuration')}</label>
                 <input
                   type="number"
                   min="1"
@@ -363,9 +374,9 @@ export default function CreatePage() {
           {submitting || minting || listing || auctioning || approving ? (
             <span className="flex items-center justify-center gap-2">
               <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              {minting ? 'Minting…' : listing || auctioning ? 'Creating listing…' : approving ? 'Approving…' : 'Minting + listing…'}
+              {minting ? t('create.minting') : listing || auctioning ? t('create.creatingListing') : approving ? t('create.approving') : t('create.mintAndList')}
             </span>
-          ) : 'Create Listing'}
+          ) : t('create.createListing')}
         </button>
       </form>
     </div>
