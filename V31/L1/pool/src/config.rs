@@ -11,7 +11,7 @@ pub struct RateLimitConfig {
 impl Default for RateLimitConfig {
     fn default() -> Self {
         Self {
-            max_reconnects_per_minute: 10,
+            max_reconnects_per_minute: 20,
             window: Duration::from_secs(60),
         }
     }
