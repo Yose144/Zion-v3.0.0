@@ -14,7 +14,7 @@ pub mod v3_pplns;
 
 // TODO: revenue_proxy needs V3 CoinProfile fields (ticker, pool_host, pool_port)
 //       which differ from V31's CoinProfile. Port after ChainState.
-// pub mod revenue_proxy;
+pub mod revenue_proxy;
 
 pub use config::{PoolConfig, RateLimitConfig};
 pub use pool::{Pool, PoolError};

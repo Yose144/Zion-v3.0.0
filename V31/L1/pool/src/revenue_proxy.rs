@@ -460,7 +460,7 @@ pub fn client_from_profile(
 ) -> Arc<ExternalPoolClient> {
     let stats = Arc::new(ExternalPoolStats::default());
     ExternalPoolClient::new(
-        &profile.ticker,
+        &profile.ticker(),
         &profile.pool_address(),
         wallet,
         worker,

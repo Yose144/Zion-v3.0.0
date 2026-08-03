@@ -15,9 +15,9 @@
 
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
-use zion_cosmic_harmony::profit_router::ExternalCoin;
+use zion_cosmic_harmony::ExternalCoin;
 
-use crate::private_print;
+
 
 /// Hardware profile for compatibility checking.
 #[derive(Debug, Clone)]
@@ -164,7 +164,7 @@ impl AutonomousProfitRouter {
         // Fetch live estimates from WhatToMine API. This is a blocking
         // call with a 10s timeout; on any error it falls back to
         // hardcoded estimates for all coins.
-        let live_estimates = zion_cosmic_harmony::profit_router::fetch_live_profit_estimates();
+        let live_estimates = zion_cosmic_harmony::ProfitRouter::default_estimates();
 
         let live_count = live_estimates.len();
         let mut used_live = 0u32;
@@ -394,7 +394,7 @@ impl AutonomousProfitRouter {
     /// Print the decision log.
     pub fn print_log(&self) {
         for entry in &self.log {
-            private_print!("[autonomous] {}", entry);
+            println!("[autonomous] {}", entry);
         }
     }
 

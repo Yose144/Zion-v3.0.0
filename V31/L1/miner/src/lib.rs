@@ -19,8 +19,8 @@ pub mod thread_affinity;
 // TODO: These modules need V3 cosmic-harmony internals (deeksha_lite,
 //       cosmic_harmony_with_height, algorithms_opt, scratchpad_ekam)
 //       and zion_auxpow crate. Port after V3 cosmic-harmony full port.
-// pub mod autonomous;
-// pub mod parallel;
+// pub mod autonomous; // needs zion_pool::PoolMessage, ExternalCoin methods
+// pub mod parallel; // needs zion_auxpow crate, feature-gated auxpow
 
 #[cfg(feature = "auxpow")]
 pub use auxpow::{ExternalCoin, Job, Share, StratumClient, StratumJob};

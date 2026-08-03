@@ -156,6 +156,16 @@ impl CoinProfile {
         gross * (1.0 - self.fee_bps as f64 / 10_000.0)
     }
 
+    /// Return the coin's ticker symbol (delegates to `ExternalCoin::as_str`).
+    pub fn ticker(&self) -> &'static str {
+        self.coin.as_str()
+    }
+
+    /// Return the first stratum URL for this coin, or empty string if none.
+    pub fn pool_address(&self) -> String {
+        self.stratum_urls.first().cloned().unwrap_or_default()
+    }
+
     /// Mark this profile as disabled with an optional reason.
     pub fn with_disabled(mut self, reason: impl Into<String>) -> Self {
         self.disabled = true;
