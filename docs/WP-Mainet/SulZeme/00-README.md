@@ -41,7 +41,9 @@ Tohle rozdělení není formalita. Je to **jádro upřímnosti** téhle řady: p
 
 Epizody na sebe volně navazují (společný rámec: večer u ohně, který se postupně stává stavbou lodi), ale každá jde číst i samostatně. Epizoda 10 popisuje První svět Oasis a jeho teritoria. Epizoda 11 navazuje prvním vstupem hráče a poctivě odděluje implementovaný backend, archivní herní návrh a budoucí klientské rozhraní. Epizoda 12 knihu uzavírá a míří konkrétně na stavitele a těžaře: proč je poctivě ověřitelnou výhodou vstoupit do mladé sítě dřív, než se zaplní — bez jediného příslibu ceny.
 
-**Zkrácená marketingová verze pro širokou veřejnost:** [`Onboarding.md`](../Onboarding.md) — jeden dokument, který celou řadu shrnuje do jednoduché pozvánky s prvními kroky.
+**Zkrácená marketingová verze pro širokou veřejnost:** [`Onboarding.md`](./Onboarding.md) — jeden dokument, který celou řadu shrnuje do jednoduché pozvánky s prvními kroky.
+
+**Kanonický onboarding (úplný, technický + narativní, CZ i EN):** [`ZION_ONBOARDING.md`](./ZION_ONBOARDING.md) — [`English version`](./ZION_ONBOARDING_EN.md).
 
 ---
 
