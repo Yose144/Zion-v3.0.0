@@ -62,8 +62,8 @@ async fn main() -> Result<()> {
                 info!("mining session ended cleanly, reconnecting...");
             }
             Err(e) => {
-                warn!("mining session error: {:#}, reconnecting in 5s...", e);
-                tokio::time::sleep(Duration::from_secs(5)).await;
+                warn!("mining session error: {:#}, reconnecting in 10s...", e);
+                tokio::time::sleep(Duration::from_secs(10)).await;
             }
         }
 
@@ -206,9 +206,7 @@ async fn mine_and_submit(
                 job_id, nonce, &hash_hex[..16]
             );
             found += 1;
-            if found >= 1 {
-                break;
-            }
+            // Don't break — keep mining for more shares on this job
         }
 
         if nonce % 100_000 == 0 && nonce > 0 {
