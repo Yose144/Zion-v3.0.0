@@ -106,6 +106,40 @@ For future releases (e.g. v3.0.4-beta, v3.1.0, etc.):
    - **macOS x86_64** (Intel) — cross-compiled with `x86_64-apple-darwin` target
 7. **Binaries to package:** Single `zion` binary (community CLI with wallet + node + mine + pool + status + doctor + monitor). Windows version has node + pool + miner embedded.
 
+### Public Miner & Desktop release build (M1 cross-compile)
+
+There are **two separate public releases** on `github.com/Zion-TerraNova/v3-Mainnet`:
+
+- **Desktop App** — source in `DesktopAgentP3.0.6/`, release tag `v3.1.0-desktop`.
+  - Packages: `*.dmg` (macOS arm64), `*.AppImage`, `*.deb` (Linux x86_64), `*.exe` + `*.zip` (Windows x64).
+  - Build: `DesktopAgentP3.0.6/scripts/build-release-local.sh --all` on an Apple Silicon Mac.
+  - Bundles `zion-miner`, `zion-universal-miner`, `node`, `zion` inside the Electron app.
+
+- **Terminal Miner** — source in `MinerP3.0.6/`, release tag `v3.1.0-cli`.
+  - Packages: `zion-miner-<platform>-<arch>.tar.gz` / `.zip`.
+  - Build: `MinerP3.0.6/build-all-local.sh` on an Apple Silicon Mac.
+
+Both must be built with these feature flags for one-click GPU auto-detect and full public branding:
+
+| Platform | Features |
+|----------|----------|
+| Linux x86_64 | `public_build,full,gpu-cuda` (OpenCL + CUDA + native-all + native-hashers) |
+| Windows x86_64 | `public_build,full,gpu-cuda` (OpenCL + CUDA + native-all + native-hashers) |
+| macOS aarch64 / x86_64 | `public_build,full,gpu-metal` (OpenCL/Metal + native-all + native-hashers) |
+
+- `public_build` hides Trinity/AuxPoW coin names (VRSC, ZANO, etc.) from the TUI, logs and status screens. The internal multi-stream logic still runs in the background, but the user sees only **ZION / Boost**.
+- `full` enables OpenCL + all native algorithms.
+- `gpu-cuda` adds NVIDIA CUDA support on Linux/Windows.
+- `gpu-metal` adds Apple Metal support on macOS.
+- `ZION_DISABLE_OPENMP=1` must be set so packages do not depend on Homebrew `libomp`.
+
+**Linux cross-compile caveat:** `cargo-zigbuild` with `x86_64-unknown-linux-gnu` needs a real x86_64 OpenCL loader at link time. The repository ships `V3/L1/native-libs/libOpenCL.so.incompatible` for this purpose; build scripts copy it to `libOpenCL.so` before linking. The resulting binary dynamically loads the target machine's `libOpenCL.so.1` (ocl-icd) at runtime, so the bundled `.so` is not redistributed.
+
+**Notes:**
+- Metal is physically unavailable on Linux/Windows — those builds get OpenCL + CUDA.
+- CUDA is physically unavailable on macOS — macOS builds get OpenCL (legacy) + Metal.
+- `gpu-all` cannot be used for cross-compilation because `gpu-metal` compiles Apple-only code that fails on non-macOS targets.
+
 ### Current release: v3.0.5-beta (2026-07-10)
 
 - **Tag:** `v3.0.5-beta` (prerelease)
