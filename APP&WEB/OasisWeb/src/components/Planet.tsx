@@ -1,8 +1,9 @@
 'use client';
 
 import { useRef, useMemo, useState, useEffect } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
+import { Html } from '@react-three/drei';
 
 /**
  * Universal planet component — uses real Earth textures for Nova Zeme,
@@ -116,20 +117,20 @@ export default function Planet({
               map={textures.color}
               bumpMap={textures.bump}
               bumpScale={0.04}
-              roughness={0.35}
+              roughness={0.5}
               metalness={0}
-              color={new THREE.Color('#e0f7fa')}
+              color={new THREE.Color('#ffffff')}
               emissiveMap={textures.night}
               emissive={new THREE.Color('#fff5e6')}
-              emissiveIntensity={2.2}
+              emissiveIntensity={3.0}
             />
           ) : (
             <meshStandardMaterial
               map={procTexture || undefined}
-              roughness={0.7}
+              roughness={0.6}
               metalness={0.1}
               emissive={getVariantEmissive(variant)}
-              emissiveIntensity={0.2}
+              emissiveIntensity={0.5}
             />
           )}
         </mesh>
@@ -164,24 +165,88 @@ export default function Planet({
       )}
 
       {/* Light to illuminate planet */}
-      <pointLight position={[radius + 1, 0.5, radius + 1]} intensity={0.6} color="#ffffff" />
+      <pointLight position={[radius + 1, 0.5, radius + 1]} intensity={1.5} color="#ffffff" distance={radius * 6} />
+      <ambientLight intensity={0.4} />
     </group>
   );
 }
 
 /**
  * Nova Zeme — Earth-like planet with Issobela satellite orbiting.
- * Small, bright, with real Earth textures.
+ * Clickable — opens WorldPanel with 3 L5 pioneer projects.
+ * Bright, with 3 project markers on surface.
  */
+
+interface PioneerProject {
+  id: string;
+  name: string;
+  location: string;
+  color: string;
+  rgb: string;
+  descCs: string;
+  descEn: string;
+  lat: number; // -90..90
+  lon: number; // -180..180
+}
+
+const PIONEER_PROJECTS: PioneerProject[] = [
+  {
+    id: 'genesis',
+    name: 'Zahrada Genesis',
+    location: 'Algarve · Portugalsko',
+    color: '#22c55e',
+    rgb: '34, 197, 94',
+    descCs: 'Atlantický uzel Terra Nova — farma, glamping, voda, energie, komunita.',
+    descEn: 'Atlantic Terra Nova node — farm, glamping, water, energy, community.',
+    lat: 37,
+    lon: -8,
+  },
+  {
+    id: 'dharma',
+    name: 'Dharma Temple',
+    location: 'La Palma · Kanárské ostrovy',
+    color: '#a855f7',
+    rgb: '168, 85, 247',
+    descCs: 'Spirituální uzel — meditace, syntropic zahrada, dharma governance.',
+    descEn: 'Spiritual node — meditation, syntropic garden, dharma governance.',
+    lat: 28,
+    lon: -17,
+  },
+  {
+    id: 'piko-ora',
+    name: 'Te Pīko Ora',
+    location: 'Tahiti · Francouzská Polynésie',
+    color: '#06b6d4',
+    rgb: '6, 182, 212',
+    descCs: 'Tichomořský uzel — ochrana mořského dědictví, regenerativní komunita.',
+    descEn: 'Pacific node — marine heritage protection, regenerative community.',
+    lat: -17,
+    lon: -149,
+  },
+];
+
+function latLonToVec3(lat: number, lon: number, r: number): [number, number, number] {
+  const phi = (90 - lat) * (Math.PI / 180);
+  const theta = (lon + 180) * (Math.PI / 180);
+  const x = -r * Math.sin(phi) * Math.cos(theta);
+  const y = r * Math.cos(phi);
+  const z = r * Math.sin(phi) * Math.sin(theta);
+  return [x, y, z];
+}
+
 export function NovaZeme({
   position = [0, 0, 8] as [number, number, number],
   isMobile = false,
+  onSelect,
 }: {
   position?: [number, number, number];
   isMobile?: boolean;
+  onSelect?: () => void;
 }) {
   const radius = isMobile ? 0.7 : 0.9;
   const issobelaRef = useRef<THREE.Mesh>(null);
+  const groupRef = useRef<THREE.Group>(null);
+  const [hovered, setHovered] = useState(false);
   const issobelaOrbit = radius + 0.4;
 
   useFrame(() => {
@@ -193,19 +258,92 @@ export function NovaZeme({
     }
   });
 
+  const handleClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation();
+    onSelect?.();
+  };
+
+  const handlePointerOver = (e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    setHovered(true);
+    document.body.style.cursor = 'pointer';
+  };
+
+  const handlePointerOut = () => {
+    setHovered(false);
+    document.body.style.cursor = 'auto';
+  };
+
   return (
-    <group position={position}>
-      {/* Nova Zeme planet */}
-      <Planet
-        position={[0, 0, 0]}
-        radius={radius}
-        isMobile={isMobile}
-        variant="earth"
-        hasAtmosphere
-        hasOrbit
-        orbitColor="#fbbf24"
-        rotationSpeed={0.08}
-      />
+    <group position={position} ref={groupRef}>
+      {/* Nova Zeme planet — clickable */}
+      <group
+        onClick={handleClick}
+        onPointerOver={handlePointerOver}
+        onPointerOut={handlePointerOut}
+      >
+        <Planet
+          position={[0, 0, 0]}
+          radius={radius * (hovered ? 1.08 : 1)}
+          isMobile={isMobile}
+          variant="earth"
+          hasAtmosphere
+          hasOrbit
+          orbitColor="#fbbf24"
+          rotationSpeed={0.08}
+        />
+
+        {/* 3 Pioneer Project markers on surface */}
+        {PIONEER_PROJECTS.map((p) => {
+          const [mx, my, mz] = latLonToVec3(p.lat, p.lon, radius * 1.02);
+          return (
+            <group key={p.id} position={[mx, my, mz]}>
+              {/* Glowing marker */}
+              <mesh>
+                <sphereGeometry args={[0.04, 12, 12]} />
+                <meshBasicMaterial color={p.color} />
+              </mesh>
+              {/* Glow halo */}
+              <mesh scale={2}>
+                <sphereGeometry args={[0.04, 8, 8]} />
+                <meshBasicMaterial
+                  color={p.color}
+                  transparent
+                  opacity={0.3}
+                  blending={THREE.AdditiveBlending}
+                  depthWrite={false}
+                />
+              </mesh>
+              {/* Label (desktop only) */}
+              {!isMobile && (
+                <Html
+                  position={[0, 0.12, 0]}
+                  center
+                  distanceFactor={4}
+                  occlude
+                  style={{ pointerEvents: 'none' }}
+                >
+                  <div
+                    style={{
+                      background: `rgba(${p.rgb}, 0.85)`,
+                      color: 'white',
+                      padding: '2px 8px',
+                      borderRadius: '8px',
+                      fontSize: '10px',
+                      fontWeight: 600,
+                      whiteSpace: 'nowrap',
+                      boxShadow: `0 0 12px rgba(${p.rgb}, 0.6)`,
+                      border: `1px solid rgba(255,255,255,0.3)`,
+                    }}
+                  >
+                    {p.name}
+                  </div>
+                </Html>
+              )}
+            </group>
+          );
+        })}
+      </group>
 
       {/* Issobela — small glowing satellite (L6) */}
       <mesh ref={issobelaRef}>
@@ -216,6 +354,28 @@ export function NovaZeme({
           emissiveIntensity={1.5}
         />
       </mesh>
+
+      {/* "Nova Zeme" label above planet (desktop) */}
+      {!isMobile && (
+        <Html position={[0, radius + 0.4, 0]} center distanceFactor={6} occlude style={{ pointerEvents: 'none' }}>
+          <div
+            style={{
+              background: 'rgba(0,0,0,0.7)',
+              border: '1px solid rgba(34,197,94,0.5)',
+              color: '#86efac',
+              padding: '4px 12px',
+              borderRadius: '12px',
+              fontSize: '12px',
+              fontWeight: 700,
+              letterSpacing: '0.1em',
+              whiteSpace: 'nowrap',
+              boxShadow: '0 0 20px rgba(34,197,94,0.3)',
+            }}
+          >
+            NOVA ZEME · L5
+          </div>
+        </Html>
+      )}
     </group>
   );
 }
