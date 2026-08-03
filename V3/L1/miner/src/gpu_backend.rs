@@ -3622,8 +3622,8 @@ pub mod opencl_deeksha {
         }
 
         opts.push_str(&format!(
-            "-DNPU_MAX_DIM={} -DWGS={}",
-            npu_max_dim, local_wgs
+            "-DNPU_MAX_DIM={} -DWGS={} -DLOCAL_SIZE={}",
+            npu_max_dim, local_wgs, local_wgs
         ));
         opts
     }
