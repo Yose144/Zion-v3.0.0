@@ -15,7 +15,11 @@
  * Compatible with: AMD GCN (Vega, Polaris), AMD RDNA, NVIDIA, Intel.
  */
 
-/* cl_khr_int64_base_atomics NOT needed — disabled to avoid compiler issues on gfx900. */
+/* 32-bit atomics for on-device target check + early exit (matches CUDA).
+ * 64-bit atomics (cl_khr_int64_base_atomics) are NOT used — they cause
+ * compiler issues on gfx900. 32-bit atomics are safe on all AMD/NVIDIA. */
+#pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics : enable
+#pragma OPENCL EXTENSION cl_khr_global_int32_extended_atomics : enable
 
 /* ========================================================================== */
 /* Constants — identical to v1 for memory management                          */
@@ -277,16 +281,14 @@ void aes_final_round(__private uchar s[16], __private const uchar k[16], __local
 
 __attribute__((always_inline))
 void fill_scratchpad(
-    __private const uchar seed[32],
+    __private const ulong seed_u64[4],
     __global uchar * restrict pad_pool,
     uint tid,
     uint total_threads)
 {
     __private ulong state[8];
-    state[0] = ((__private ulong*)seed)[0];
-    state[1] = ((__private ulong*)seed)[1];
-    state[2] = ((__private ulong*)seed)[2];
-    state[3] = ((__private ulong*)seed)[3];
+    state[0] = seed_u64[0]; state[1] = seed_u64[1];
+    state[2] = seed_u64[2]; state[3] = seed_u64[3];
     state[4] = 0; state[5] = 0; state[6] = 0; state[7] = 0;
 
     for (uint blk=0;blk<BLOCK_COUNT;blk++) {
@@ -333,17 +335,15 @@ void sequential_passes(
 
 __attribute__((always_inline))
 void random_read_mix(
-    __private const uchar seed[32],
+    __private const ulong seed_u64[4],
     __global const uchar * restrict pad_pool,
     uint tid,
     uint total_threads,
-    __private uchar out[32])
+    __private ulong out_u64[4])
 {
     __private ulong acc[4];
-    acc[0] = ((__private ulong*)seed)[0];
-    acc[1] = ((__private ulong*)seed)[1];
-    acc[2] = ((__private ulong*)seed)[2];
-    acc[3] = ((__private ulong*)seed)[3];
+    acc[0] = seed_u64[0]; acc[1] = seed_u64[1];
+    acc[2] = seed_u64[2]; acc[3] = seed_u64[3];
     ulong pos=0;
     #pragma unroll 4
     for (ulong r=0;r<RANDOM_READS;r++) {
@@ -351,10 +351,8 @@ void random_read_mix(
         acc[0] ^= pb[0]; acc[1] ^= pb[1]; acc[2] ^= pb[2]; acc[3] ^= pb[3];
         pos=(acc[0] ^ pos ^ r) % BLOCK_COUNT;
     }
-    ((__private ulong*)out)[0] = acc[0];
-    ((__private ulong*)out)[1] = acc[1];
-    ((__private ulong*)out)[2] = acc[2];
-    ((__private ulong*)out)[3] = acc[3];
+    out_u64[0] = acc[0]; out_u64[1] = acc[1];
+    out_u64[2] = acc[2]; out_u64[3] = acc[3];
 }
 
 /* ========================================================================== */
@@ -362,9 +360,10 @@ void random_read_mix(
 /* ========================================================================== */
 
 __attribute__((always_inline))
-void aes128_mix(__private const uchar seed[32], ulong nonce, __private uchar out[32],
+void aes128_mix(__private const ulong seed_u64[4], ulong nonce, __private ulong out_u64[4],
                 __local const uchar * restrict sbox)
 {
+    __private const uchar *seed = (__private const uchar*)seed_u64;
     // 8-byte aligned buffers to prevent GPU_CPU_MISMATCH (Metal fix)
     __private ulong key_aligned[2];  // 2 * 8 = 16 bytes, 8-byte aligned
     __private uchar *key = (__private uchar*)key_aligned;
@@ -397,6 +396,7 @@ void aes128_mix(__private const uchar seed[32], ulong nonce, __private uchar out
     for (int r=0;r<3;r++) { aes_round(block0,key,sbox); aes_round(block1,key,sbox); }
     aes_final_round(block0,key,sbox);
     aes_final_round(block1,key,sbox);
+    __private uchar *out = (__private uchar*)out_u64;
     #pragma unroll
     for (int i=0;i<16;i++) { out[i]=block0[i]^seed[i]; out[16+i]=block1[i]^seed[16+i]; }
 }
@@ -411,8 +411,9 @@ void aes128_mix(__private const uchar seed[32], ulong nonce, __private uchar out
 /* ========================================================================== */
 
 __attribute__((always_inline))
-void thermal_loop(__private uchar data[32] __attribute__((aligned(8))), ulong nonce)
+void thermal_loop(__private ulong data_u64[4], ulong nonce)
 {
+    __private uchar *data = (__private uchar*)data_u64;
     ulong a = nonce ^ 0x9E3779B97F4A7C15UL;
     ulong b = nonce ^ 0xBF58476D1CE4E5B9UL;
     ulong c = nonce ^ 0x94D049BB133111EBUL;
@@ -515,11 +516,12 @@ void stream_byproduct_aes(__private const uchar in[32], ulong nonce, int iters,
                           __global uchar * restrict pad, __local const uchar * restrict sbox)
 {
     if (iters <= 0) return;
-    uchar tmp[32];
+    ulong tmp_u64[4];
+    __private uchar *tmp = (__private uchar*)tmp_u64;
     #pragma unroll
     for (int i = 0; i < 32; i++) tmp[i] = in[i];
     for (int i = 0; i < iters; i++) {
-        aes128_mix(tmp, nonce + (ulong)i, tmp, sbox);
+        aes128_mix(tmp_u64, nonce + (ulong)i, tmp_u64, sbox);
     }
     ulong4 h = vload4(0, (__private ulong*)tmp);
     vstore4(h, 0, (__global ulong*)pad);
@@ -536,7 +538,11 @@ void deeksha_lite_fire_mine(
     uint   nonce_count,
     __global uchar * restrict output_hashes,
     __global uchar * restrict scratchpad_pool,
-    __constant float * restrict stream_weights)
+    __constant float * restrict stream_weights,
+    uint target_u32,                        /* big-endian u32 target (0=benchmark) */
+    __global uint  * restrict result_flag,  /* 0=not found, 1=found (atomic) */
+    __global ulong * restrict result_nonce, /* winning nonce (written by winner) */
+    __global uchar * restrict result_hash)  /* winning hash (written by winner) */
 {
     /* Load AES S-box into __local (LDS) memory — matches CUDA __shared__.
      * Cooperative strided load: workgroup may have <256 threads. */
@@ -553,29 +559,42 @@ void deeksha_lite_fire_mine(
     uint tid = get_global_id(0);
     if (tid >= nonce_count) return;
 
+    /* Early exit if solution already found by another workgroup.
+     * atomic_add(flag, 0) reads the flag with memory ordering —
+     * guarantees visibility across workgroups. Matches CUDA's
+     * atomicAdd(result_nonce, 0ULL) early-exit pattern. */
+    if (target_u32 != 0 && atomic_add(result_flag, 0) != 0) return;
+
     ulong nonce = nonce_base + (ulong)tid;
 
-    /* Step 1: Keccak256(header || nonce) — same as v1 */
-    uchar s1[32] __attribute__((aligned(8)));
-    keccak256_from_state(header_keccak_state, nonce, s1);
+    /* Step 1: Keccak256(header || nonce) — u64 throughout (matches CUDA) */
+    ulong s1[4];
+    {
+        __private ulong st[25];
+        for (int i = 0; i < 25; i++) st[i] = header_keccak_state[i];
+        st[10] ^= nonce;
+        st[11] ^= 0x01UL;
+        st[16] ^= (0x80UL << 56);
+        keccak_f1600(st);
+        s1[0] = st[0]; s1[1] = st[1]; s1[2] = st[2]; s1[3] = st[3];
+    }
 
     /* Step 2: Memory-hard scratchpad — INTERLEAVED (coalesced, matches CUDA) */
     fill_scratchpad(s1, scratchpad_pool, tid, nonce_count);
     sequential_passes(scratchpad_pool, tid, nonce_count);
-    uchar s2[32] __attribute__((aligned(8)));
+    ulong s2[4];
     random_read_mix(s1, scratchpad_pool, tid, nonce_count, s2);
 
     /* Step 3: AES-128 CTR mix — S-box from LDS */
-    uchar s3[32] __attribute__((aligned(8)));
+    ulong s3[4];
     aes128_mix(s2, nonce, s3, sbox);
 
     /* Step 4: Thermal loop — extra heat, not in v1 */
     thermal_loop(s3, nonce);
 
-    /* Step 5: Keccak256 final — u64-optimized, matches CUDA */
+    /* Step 5: Keccak256 final — u64 direct (matches CUDA, no byte-by-byte) */
     __private ulong st[25];
-    st[0]=((__private ulong*)s3)[0]; st[1]=((__private ulong*)s3)[1];
-    st[2]=((__private ulong*)s3)[2]; st[3]=((__private ulong*)s3)[3];
+    st[0]=s3[0]; st[1]=s3[1]; st[2]=s3[2]; st[3]=s3[3];
     st[4]=0; st[5]=0; st[6]=0; st[7]=0; st[8]=0; st[9]=0;
     st[10]=0; st[11]=0; st[12]=0; st[13]=0; st[14]=0; st[15]=0;
     st[16]=0; st[17]=0; st[18]=0; st[19]=0; st[20]=0; st[21]=0;
@@ -584,20 +603,34 @@ void deeksha_lite_fire_mine(
     st[16] ^= (0x80UL << 56); /* 0x80 at byte 135 = st[16] byte 7 */
     keccak_f1600(st);
 
-    __global uchar * restrict slot = output_hashes + (ulong)tid * 32;
-    __global ulong * restrict slot_u64 = (__global ulong*)slot;
-    slot_u64[0] = st[0]; slot_u64[1] = st[1]; slot_u64[2] = st[2]; slot_u64[3] = st[3];
-
-    /* hash is st[0..3] — use for stream byproduct */
-    __private ulong hash_u64[4];
+    ulong hash_u64[4];
     hash_u64[0] = st[0]; hash_u64[1] = st[1]; hash_u64[2] = st[2]; hash_u64[3] = st[3];
-    __private uchar * restrict hash = (__private uchar*)hash_u64;
 
-    /* Stream-profit byproduct work REMOVED for hashrate parity with CUDA.
-     * The byproduct work (extra keccak/SHA3/AES iterations) did not affect
-     * the PoW hash but wasted ~10% extra keccak and ~79,000% extra AES
-     * cycles per hash, making OpenCL unfairly slower than CUDA which
-     * does no byproduct work. The stream_weights buffer is still passed
-     * to maintain kernel signature compatibility but is ignored. */
+    /* On-device target check — matches CUDA kernel.
+     * Big-endian u32 of first 4 hash bytes (lexicographic comparison).
+     * If match: atomic_xchg to claim winner slot, write nonce + hash. */
+    if (target_u32 != 0) {
+        uint hash_low = (uint)(hash_u64[0] & 0xFFFFFFFFUL);
+        uint hash_be = ((hash_low & 0xFFu) << 24) |
+                       ((hash_low & 0xFF00u) << 8) |
+                       ((hash_low >> 8) & 0xFF00u) |
+                       ((hash_low >> 24) & 0xFFu);
+        if (hash_be <= target_u32) {
+            uint old = atomic_xchg(result_flag, 1u);
+            if (old == 0u) {
+                *result_nonce = nonce;
+                __global ulong *rh = (__global ulong*)result_hash;
+                rh[0] = hash_u64[0]; rh[1] = hash_u64[1];
+                rh[2] = hash_u64[2]; rh[3] = hash_u64[3];
+            }
+        }
+    } else {
+        /* Benchmark mode (target_u32 == 0): write all hashes to output_hashes */
+        __global ulong * restrict slot_u64 = (__global ulong*)(output_hashes + (ulong)tid * 32);
+        slot_u64[0] = hash_u64[0]; slot_u64[1] = hash_u64[1];
+        slot_u64[2] = hash_u64[2]; slot_u64[3] = hash_u64[3];
+    }
+
+    /* Stream-profit byproduct work REMOVED for hashrate parity with CUDA. */
     (void)stream_weights;
 }
