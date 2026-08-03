@@ -859,7 +859,7 @@ OAES_CTX * oaes_alloc(void)
 	if( NULL == _ctx )
 		return NULL;
 
-	/* Thread-safety: No srand() or rand() calls — IV is set to zeros
+	/* Thread-safety: No srand() or rand() calls -- IV is set to zeros
 	 * in oaes_set_option. The AES key is imported via
 	 * oaes_key_import_data(), not generated randomly. */
 	_ctx->key = NULL;
@@ -998,7 +998,7 @@ static OAES_RET oaes_encrypt_block(
 	}
 #endif // OAES_DEBUG
 
-	// for round = 1 step 1 to Nr–1
+	// for round = 1 step 1 to Nr--1
 	for( _i = 1; _i < _ctx->key->num_keys - 1; _i++ )
 	{
 		// SubBytes(state)

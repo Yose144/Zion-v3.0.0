@@ -5,6 +5,9 @@
 //! library linked at build time.
 
 fn main() {
+    // Declare check-cfg for the has_autolykos_c cfg flag set below.
+    println!("cargo::rustc-check-cfg=cfg(has_autolykos_c)");
+
     // Only compile C sources when the feature is explicitly enabled.
     // The pure-Rust hashers in `external_hashers.rs` are always available
     // as the default path.
@@ -19,10 +22,23 @@ fn main() {
         let mut sources = vec![
             "csrc/blake3_native.c",
             "csrc/kheavyhash_native.c",
-            "csrc/autolykos_native.c",
+            // autolykos_native.c temporarily excluded on Windows MSVC builds
+            // due to cl.exe crash (VS 2026 access violation).  The pure-Rust
+            // Autolykos hasher in external_hashers.rs is used instead.
             "csrc/kawpow_native.c",
             "csrc/etchash_native.c",
         ];
+
+        // Only include autolykos_native.c on non-Windows or when explicitly
+        // requested via ZION_BUILD_AUTOLYKOS_C=1.
+        let target = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
+        let force_autolykos = std::env::var("ZION_BUILD_AUTOLYKOS_C").as_deref() == Ok("1");
+        let has_autolykos_c = target != "windows" || force_autolykos;
+        if has_autolykos_c {
+            sources.push("csrc/autolykos_native.c");
+            // Tell the Rust code that the C autolykos implementation is available.
+            println!("cargo:rustc-cfg=has_autolykos_c");
+        }
 
         if !has_native_verushash {
             sources.push("csrc/verushash_portable.c");
@@ -30,6 +46,14 @@ fn main() {
 
         for src in &sources {
             build.file(src);
+        }
+
+        // MSVC's cl.exe crashes on UTF-8 multi-byte characters in source
+        // files (em-dashes, arrows in comments) without the /utf-8 flag.
+        // Add it for MSVC targets to prevent STATUS_ACCESS_VIOLATION crashes.
+        let target = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
+        if target == "windows" {
+            build.flag("/utf-8");
         }
 
         // Enable OpenMP for parallel DAG generation on Linux/macOS.

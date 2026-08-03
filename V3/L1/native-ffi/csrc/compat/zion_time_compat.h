@@ -1,5 +1,5 @@
 /*
- * zion_time_compat.h — minimal Windows shim for clock_gettime / CLOCK_MONOTONIC
+ * zion_time_compat.h -- minimal Windows shim for clock_gettime / CLOCK_MONOTONIC
  *
  * Include before any file that uses clock_gettime().
  * On non-Windows this header is a no-op.

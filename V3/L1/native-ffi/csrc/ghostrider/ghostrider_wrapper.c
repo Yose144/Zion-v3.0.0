@@ -1,6 +1,6 @@
 /*
  * ============================================================================
- *  ZION Native GhostRider — FFI wrapper for Raptoreum (RTM)
+ *  ZION Native GhostRider -- FFI wrapper for Raptoreum (RTM)
  *
  *  Wraps the standalone gr_hash C implementation (from npq7721/gr_hash)
  *  with the ZION FFI ABI.
@@ -46,9 +46,9 @@
 
 /* ---- FFI exports ---- */
 
-/* No-op init — GhostRider is stateless (no VM/dataset like RandomX) */
+/* No-op init -- GhostRider is stateless (no VM/dataset like RandomX) */
 EXPORT void ghostrider_zion_init(void) {
-    /* Nothing to do — GhostRider uses stack-allocated scratchpads */
+    /* Nothing to do -- GhostRider uses stack-allocated scratchpads */
 }
 
 /*
@@ -75,7 +75,7 @@ EXPORT void ghostrider_zion_hash(const uint8_t* header, size_t header_len,
     uint32_t nonce32 = (uint32_t)(nonce & 0xFFFFFFFF);
     memcpy(buf + RTM_NONCE_OFFSET, &nonce32, RTM_NONCE_SIZE);
 
-    /* Compute GhostRider hash — output in raw gr_hash order (same as yiimp's
+    /* Compute GhostRider hash -- output in raw gr_hash order (same as yiimp's
      * hash_bin).  yiimp does NOT reverse the output; it uses hash_bin directly
      * with get_hash_difficulty (reads bytes 22-29 as LE uint64) and checks
      * hash_bin[30] | hash_bin[31] == 0.  We must NOT reverse the output. */
@@ -92,7 +92,7 @@ EXPORT int32_t ghostrider_zion_verify(const uint8_t* header, size_t header_len,
     uint8_t hash[32];
     ghostrider_zion_hash(header, header_len, nonce, hash);
 
-    /* Compare hash (LE) against target (LE) — hash must be <= target */
+    /* Compare hash (LE) against target (LE) -- hash must be <= target */
     for (int i = 31; i >= 0; --i) {
         if (hash[i] < target[i]) return 1;
         if (hash[i] > target[i]) return 0;

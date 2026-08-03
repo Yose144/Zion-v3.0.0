@@ -1640,7 +1640,7 @@ fn add_be31_in_place(dst: &mut [u8; 32], src: &[u8; 31]) {
 /// `height` is the block height, and `nonce` is the 64-bit nonce.
 pub fn hash_autolykos(header: &[u8], nonce: u64, height: u32) -> [u8; 32] {
     // Use the native C implementation if available.
-    #[cfg(feature = "native-hashers")]
+    #[cfg(has_autolykos_c)]
     {
         return crate::native_ffi::hash_autolykos_native(header, nonce, height);
     }

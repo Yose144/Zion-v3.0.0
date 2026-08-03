@@ -171,6 +171,7 @@ pub fn mine_kheavyhash_native(pre_pow_hash: &[u8], timestamp: u64, nonce: u64) -
 
 // ── Autolykos v2 (ERG) ───────────────────────────────────────────────
 
+#[cfg(has_autolykos_c)]
 unsafe extern "C" {
     /// Convenience: compute Autolykos v2 hash by generating the table
     /// internally.  Returns the first 8 bytes of the hash as a LE u64.
@@ -236,6 +237,7 @@ unsafe extern "C" {
 /// This convenience function generates the table internally on every call.
 /// For production mining, precompute the table once with
 /// [`generate_autolykos_table_native`] and use [`mine_autolykos_native`].
+#[cfg(has_autolykos_c)]
 pub fn hash_autolykos_native(header: &[u8], nonce: u64, height: u32) -> [u8; 32] {
     let mut out = [0u8; 32];
     unsafe {
@@ -248,6 +250,7 @@ pub fn hash_autolykos_native(header: &[u8], nonce: u64, height: u32) -> [u8; 32]
 ///
 /// `table` must be pre-allocated with `table_size` entries (each 8 bytes).
 /// The table is derived from `SHA256(header)` and `height`.
+#[cfg(has_autolykos_c)]
 pub fn generate_autolykos_table_native(
     header: &[u8],
     height: u32,
@@ -271,6 +274,7 @@ pub fn generate_autolykos_table_native(
 /// 32-byte hash is written to the returned array.
 ///
 /// If `table` is empty (length 0), the table is generated internally.
+#[cfg(has_autolykos_c)]
 pub fn mine_autolykos_native(
     header: &[u8],
     nonce: u64,

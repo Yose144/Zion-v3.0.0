@@ -68,7 +68,7 @@
 #endif
 
 /* ============================================================================
- * KECCAK-f[1600] — reference implementation (original Keccak padding 0x01)
+ * KECCAK-f[1600] -- reference implementation (original Keccak padding 0x01)
  * ============================================================================ */
 
 static const uint64_t KECCAK_RC[24] = {
@@ -156,7 +156,7 @@ static void keccak_hash(const uint8_t *in, size_t inlen,
 
     /* Final block: copy remainder, append Keccak suffix 0x01, pad10*1 */
     memcpy(temp, in, inlen);
-    temp[inlen++] = 0x01;   /* Keccak domain suffix — NOT SHA3 (0x06) */
+    temp[inlen++] = 0x01;   /* Keccak domain suffix -- NOT SHA3 (0x06) */
     memset(temp + inlen, 0, rsiz - inlen);
     temp[rsiz - 1] |= 0x80;
     for (i = 0; i < rsiz / 8; i++)
@@ -178,7 +178,7 @@ static void keccak512(const uint8_t *in, size_t len, uint8_t *out) {
 }
 
 /* ============================================================================
- * FNV-1a (32-bit) — Ethash mixing
+ * FNV-1a (32-bit) -- Ethash mixing
  *   hash = (hash ^ element) * FNV_PRIME
  * ============================================================================ */
 
@@ -246,7 +246,7 @@ static void ethash_compute(const uint8_t header_hash[32],
         }
     }
 
-    /* Step 4: compress mix — FNV-fold each group of 4 u32 words -> 8 u32 (32 bytes) */
+    /* Step 4: compress mix -- FNV-fold each group of 4 u32 words -> 8 u32 (32 bytes) */
     uint32_t cmix[8];
     for (int i = 0; i < 32; i += 4) {
         cmix[i / 4] = fnv1a(fnv1a(fnv1a(mix[i], mix[i + 1]), mix[i + 2]), mix[i + 3]);
@@ -270,7 +270,7 @@ static void ethash_compute(const uint8_t header_hash[32],
  * The host may register a precomputed DAG once per epoch via ethash_set_dag().
  * When set, the legacy ethash_hash() uses the real DAG-based algorithm.
  * When not set, it falls back to a light cache evaluation (NOT valid for real
- * mining — only for testing the stratum pipeline).
+ * mining -- only for testing the stratum pipeline).
  * ============================================================================ */
 
 typedef struct {
@@ -291,7 +291,7 @@ EXPORT void ethash_set_dag(const uint8_t *dag, uint64_t dag_size_entries) {
 }
 
 /* ============================================================================
- * PRIMARY API — real DAG-based Ethash
+ * PRIMARY API -- real DAG-based Ethash
  * ============================================================================ */
 
 /* Compute the full Ethash hash over a precomputed DAG.
@@ -352,7 +352,7 @@ EXPORT int32_t ethash_mine(
 }
 
 /* ============================================================================
- * LEGACY API — light-mode fallback (kept for backward compatibility)
+ * LEGACY API -- light-mode fallback (kept for backward compatibility)
  *
  * ethash_hash() / ethash_verify() use the globally-registered DAG (via
  * ethash_set_dag) when available.  When no DAG is registered, they fall back
@@ -588,7 +588,7 @@ EXPORT void ethash_cleanup(void) {
 
 /* Self-test (prints to stdout for Docker log validation) */
 EXPORT void ethash_test(void) {
-    printf("=== ZION Native Ethash v3.0 — Self-Test ===\n");
+    printf("=== ZION Native Ethash v3.0 -- Self-Test ===\n");
 
     /* Build a tiny fake DAG (4 entries of 128 bytes) for a smoke test */
     uint8_t fake_dag[4 * ETHASH_DAG_ENTRY_BYTES];
@@ -617,5 +617,5 @@ EXPORT void ethash_test(void) {
 }
 
 EXPORT const char *ethash_version(void) {
-    return "ZION Ethash v3.0 — real DAG-based, ETC/ETHW compatible, Keccak-f[1600]";
+    return "ZION Ethash v3.0 -- real DAG-based, ETC/ETHW compatible, Keccak-f[1600]";
 }
