@@ -204,10 +204,10 @@ inline void sha3_512_65_u64(
 }
 
 /* ========================================================================== */
-/* AES-128 helpers                                                             */
+/* AES-128 helpers — S-box in __constant (copied to __local at kernel start)   */
 /* ========================================================================== */
 
-__constant uchar AES_SBOX[256] = {
+__constant uchar AES_SBOX_DATA[256] = {
     0x63,0x7c,0x77,0x7b,0xf2,0x6b,0x6f,0xc5,0x30,0x01,0x67,0x2b,0xfe,0xd7,0xab,0x76,
     0xca,0x82,0xc9,0x7d,0xfa,0x59,0x47,0xf0,0xad,0xd4,0xa2,0xaf,0x9c,0xa4,0x72,0xc0,
     0xb7,0xfd,0x93,0x26,0x36,0x3f,0xf7,0xcc,0x34,0xa5,0xe5,0xf1,0x71,0xd8,0x31,0x15,
@@ -226,11 +226,17 @@ __constant uchar AES_SBOX[256] = {
     0x8c,0xa1,0x89,0x0d,0xbf,0xe6,0x42,0x68,0x41,0x99,0x2d,0x0f,0xb0,0x54,0xbb,0x16,
 };
 
+/* S-box in __local (LDS) memory — matches CUDA __shared__.
+ * AMD GCN/RDNA LDS: 4-cycle latency, 128B/clock, no bank conflicts
+ * for 256-byte table. __constant cache has conflict misses on random
+ * 16-byte SubBytes lookups. */
+enum { SBOX_LDS_SIZE = 256 };
+
 __attribute__((always_inline))
-void aes_sub_bytes(__private uchar s[16])
+void aes_sub_bytes(__private uchar s[16], __local const uchar * restrict sbox)
 {
     #pragma unroll
-    for (int i = 0; i < 16; i++) s[i] = AES_SBOX[s[i]];
+    for (int i = 0; i < 16; i++) s[i] = sbox[s[i]];
 }
 
 __attribute__((always_inline))
@@ -271,18 +277,18 @@ void aes_add_round_key(__private uchar s[16], __private const uchar k[16])
 }
 
 __attribute__((always_inline))
-void aes_round(__private uchar s[16], __private const uchar k[16])
+void aes_round(__private uchar s[16], __private const uchar k[16], __local const uchar * restrict sbox)
 {
-    aes_sub_bytes(s);
+    aes_sub_bytes(s, sbox);
     aes_shift_rows(s);
     aes_mix_columns(s);
     aes_add_round_key(s, k);
 }
 
 __attribute__((always_inline))
-void aes_final_round(__private uchar s[16], __private const uchar k[16])
+void aes_final_round(__private uchar s[16], __private const uchar k[16], __local const uchar * restrict sbox)
 {
-    aes_sub_bytes(s);
+    aes_sub_bytes(s, sbox);
     aes_shift_rows(s);
     aes_add_round_key(s, k);
 }
@@ -407,7 +413,8 @@ __attribute__((always_inline))
 void aes128_mix(
     __private const uchar seed[32],
     ulong nonce,
-    __private uchar out[32])
+    __private uchar out[32],
+    __local const uchar * restrict sbox)
 {
     uchar key[16] __attribute__((aligned(8)));
     #pragma unroll
@@ -436,11 +443,11 @@ void aes128_mix(
 
     #pragma unroll
     for (int r = 0; r < 3; r++) {
-        aes_round(block0, key);
-        aes_round(block1, key);
+        aes_round(block0, key, sbox);
+        aes_round(block1, key, sbox);
     }
-    aes_final_round(block0, key);
-    aes_final_round(block1, key);
+    aes_final_round(block0, key, sbox);
+    aes_final_round(block1, key, sbox);
 
     #pragma unroll
     for (int i = 0; i < 16; i++) {
@@ -503,14 +510,15 @@ void stream_byproduct_sha3(__private const uchar in[32], int iters, __global uch
 }
 
 __attribute__((always_inline))
-void stream_byproduct_aes(__private const uchar in[32], ulong nonce, int iters, __global uchar * restrict pad)
+void stream_byproduct_aes(__private const uchar in[32], ulong nonce, int iters, __global uchar * restrict pad,
+                          __local const uchar * restrict sbox)
 {
     if (iters <= 0) return;
     uchar tmp[32];
     #pragma unroll
     for (int i = 0; i < 32; i++) tmp[i] = in[i];
     for (int i = 0; i < iters; i++) {
-        aes128_mix(tmp, nonce + (ulong)i, tmp);
+        aes128_mix(tmp, nonce + (ulong)i, tmp, sbox);
     }
     ulong4 h = vload4(0, (__private ulong*)tmp);
     vstore4(h, 0, (__global ulong*)pad);
@@ -529,6 +537,18 @@ void deeksha_lite_mine(
     __global uchar * restrict scratchpad_pool,
     __constant float * restrict stream_weights)
 {
+    /* Load AES S-box into __local (LDS) memory — matches CUDA __shared__.
+     * Cooperative strided load: workgroup may have <256 threads. */
+    __local uchar sbox[SBOX_LDS_SIZE];
+    {
+        uint lid = get_local_id(0);
+        uint lsize = get_local_size(0);
+        for (uint i = lid; i < SBOX_LDS_SIZE; i += lsize) {
+            sbox[i] = AES_SBOX_DATA[i];
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
+
     uint tid = get_global_id(0);
     if (tid >= nonce_count) return;
 
@@ -544,9 +564,9 @@ void deeksha_lite_mine(
     uchar s2[32] __attribute__((aligned(8)));
     random_read_mix(s1, scratchpad_pool, tid, nonce_count, s2);
 
-    /* Step 3: AES-128 CTR mix */
+    /* Step 3: AES-128 CTR mix — S-box from LDS */
     uchar s3[32] __attribute__((aligned(8)));
-    aes128_mix(s2, nonce, s3);
+    aes128_mix(s2, nonce, s3, sbox);
 
     /* Step 4: Keccak256 final */
     uchar hash[32] __attribute__((aligned(8)));
