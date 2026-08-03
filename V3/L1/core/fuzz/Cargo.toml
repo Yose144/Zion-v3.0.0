@@ -23,5 +23,10 @@ name = "fuzz_validate_header"
 path = "fuzz_targets/fuzz_validate_header.rs"
 doc = false
 
+[[bin]]
+name = "fuzz_transaction_validation"
+path = "fuzz_targets/fuzz_transaction_validation.rs"
+doc = false
+
 [workspace]
 members = ["."]

@@ -71,6 +71,7 @@ clap = { version = "4", features = ["derive", "color"] }
 
 [dev-dependencies]
 tempfile.workspace = true
+proptest = "1"
 
 [features]
 default = []
