@@ -5,7 +5,7 @@
 > **Protokol:** `zion-v3-node/3.0.7` (V3) / `zion-v3-node/3.1.0-alpha.2` (V31)
 > **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
 > **Status:** Mainnet Beta — oficiální public launch **2026-12-31**
-> **V31 Alpha (2026-08-04):** V31 node (`3.1.0-alpha.2`) je **LIVE na Edge** jako druhý node (systemd `zion-v31-node.service`), synchronizuje se s V3 mainnet přes V3-compatible P2P (height 11258 = V3, sync_lag 0). **V31 pool** (`zion-v31-pool.service`) běží na portu 8447 — stratum subscribe + authorize + submit E2E PASS. Difficulty validation fix: V31 nyní trusts peer difficulty unconditionally (matching V3 behavior). **Phase B COMPLETE** (B.1-B.4), **Phase C COMPLETE** (C1.7-C1.10, C2.6). Tag `v3.1.0-alpha.2` pushnut na origin. Viz [`V31_P2P_SYNC_REPORT_2026-08-03.md`](./V31_P2P_SYNC_REPORT_2026-08-03.md).
+> **V31 CUTOVER (2026-08-04):** **V31 JE NYNÍ PRODUKČNÍ!** Public RPC (rpc.zionterranova.com:8443) ukazuje na V31 node. V31 pool běží na produkčním portu 8444. V31 miner těží (~1 MH/s, desítky shares/sec). V3 pool disabled. **D.2 Cutover COMPLETE** (D2.1-D2.4), **D.3 Post-cutover** (D3.1-D3.3 PASS, D3.4-D3.5 pending). V31 node height 11270 = V3 height (sync_lag 0). Difficulty validation fix: V31 trusts peer difficulty unconditionally. V31 miner binary added (stratum v1 client). Pool rate limit 20/min. **Phase B+C+S COMPLETE**. Tag `v3.1.0-alpha.2` pushnut na origin. Viz [`V31_P2P_SYNC_REPORT_2026-08-03.md`](./V31_P2P_SYNC_REPORT_2026-08-03.md).
 > **Hard genesis reset:** 2026-07-20 — viz [`docs/3.0.5/INCIDENT_REPORT_2026-07-20_BLOCK_RETENTION_AND_GENESIS_RESET.md`](./docs/3.0.5/INCIDENT_REPORT_2026-07-20_BLOCK_RETENTION_AND_GENESIS_RESET.md). Bloky 0–~10913 předchozího řetězce jsou trvale ztraceny; aktuální chain startuje od genesis s unlimited retention.
 > **Update (2026-07-30):** **PRL (Pearl) označen jako `disabled_reason` ve `V3/L1/cosmic-harmony/src/profit_router.rs`.** `ExternalCoin::disabled_reason()` vrací důvod pro PRL, `CoinProfile` má `disabled_reason` a `enabled=false` pro PRL, `select_best_coin` ho automaticky vynechává. Řeší 3.0.8 Go/No-Go "každý aktivní coin má accepted share nebo `disabled_reason`". VTC/ZCL zůstávají aktivní (GPU E2E accepted v 3.0.7). **AutonomousProfitRouter unit testy v `V3/L1/miner/src/autonomous.rs`:** `select_stream2`/`select_stream3` vybírají nejvýnosnější coin s hysteresí, `build_coin_preference` vrací zprávu, PRL není nikdy autonomně vybrán. **3.0.9 public subtree audit + push:** `docs/3.0.6/PUBLIC_SUBTREE_AUDIT_2026-07-30.md` — 1432 sdílených souborů, 113 se liší. `git subtree push --prefix=public public main` proběhl úspěšně; public README a `hardhat.config.ts` aktualizovány. **Ruční secrets scan:** `docs/3.0.6/SECRETS_SCAN_2026-07-30.md` — v `V3/` žádné hardcoded privátní klíče, dummy fallback v `hardhat.config.ts` odstraněn.
 >
@@ -71,9 +71,9 @@
 |---------|---------|------|-------|--------|
 | zion-edge-node1 | 8333 (P2P), 9443 (RPC), 8445 (WS), 9100 (metrics) | P2P 0.0.0.0, rest 127.0.0.1 | L1 | ✅ active |
 | zion-edge-node2 | 8334 (P2P), 8448 (RPC), 8449 (WS), 9116 (metrics) | P2P 0.0.0.0, rest 127.0.0.1 | L1 | ✅ active (follower) |
-| zion-v31-node | 8335 (P2P), 9445 (RPC) | P2P 0.0.0.0, RPC 127.0.0.1 | L1 (V31 Alpha) | ✅ active (V3 P2P sync, height 11258, sync_lag 0) |
-| zion-v31-pool | 8447 (Stratum) | 0.0.0.0 | L1 (V31 Alpha) | ✅ active (stratum E2E PASS) |
-| zion-edge-pool | 8444 (Stratum), 8455 (stats/metrics HTTP) | 8444 0.0.0.0, 8455 127.0.0.1 | L1 | ✅ active (mining) |
+| zion-v31-node | 8335 (P2P), 9445 (RPC) | P2P 0.0.0.0, RPC 127.0.0.1 | L1 (V31 PRODUCTION) | ✅ active (height 11270, sync_lag 0, public RPC 8443 → 9445) |
+| zion-v31-pool | 8444 (Stratum) | 0.0.0.0 | L1 (V31 PRODUCTION) | ✅ active (~1 MH/s, desítky shares/sec) |
+| zion-edge-pool | DISABLED (V3 pool — replaced by zion-v31-pool) | — | L1 | ⛔ disabled (V31 cutover) |
 | zion-edge-bridge | 9101 (metrics) | 127.0.0.1 | L2 | ✅ active |
 | zion-edge-dao | 8450 (API) | 127.0.0.1 | L2 | ✅ active |
 | zion-edge-atomic-swap | 8452 (API) | 0.0.0.0 | L2 | ✅ active |
