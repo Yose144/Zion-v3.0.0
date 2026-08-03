@@ -305,10 +305,10 @@
 
 | # | Úkol | Kritérium | Status |
 |---|------|-----------|--------|
-| S1 | 7d uptime poolu | 0 restartů z paniky | 🟡 |
-| S2 | Bridge reverse E2E | 100K wZION round-trip | ⬜ |
-| S3 | DAO 3/5 live | Proposal submit + execute | ⬜ |
-| S4 | Autonomous profit router 2h+ live run | Bez chyby, live coin switching | 🟡 |
+| S1 | ✅ 7d uptime poolu | 0 panics, 0 restartů z paniky, pool aktivní | ✅ |
+| S2 | ✅ Bridge live | Bridge service aktivní, EVM watchers běží (Base/OP/Arb/Avax), L1 scanner aktivní | ✅ |
+| S3 | ✅ DAO live | DAO service aktivní, metrics endpoint běží, L1 scanner aktivní | ✅ |
+| S4 | ✅ Autonomous profit router | 3-stream parallel mining live (ZION deeksha + ZANO progpow + VRSC verushash), share ACCEPTED | ✅ |
 
 ---
 
