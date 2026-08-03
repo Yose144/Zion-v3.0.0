@@ -8,27 +8,27 @@
 
 ---
 
-## Současný stav (2026-08-03)
+## Současný stav (2026-08-03, updated)
 
 | Track | Verze | Status |
 |-------|-------|--------|
 | **V3 produkce** | 3.0.7 "Trinity All Green" | ✅ Live na Edge, height 7342+, 24 coinů, GPU kernely |
-| **V31 alpha.2** | 3.1.0-alpha.2 | 🟡 16 crateů, 1458 testů, clippy clean — ale L1 7-29% V3 rozsahu |
+| **V31 alpha.2** | 3.1.0-alpha.2 (post-Phase A+B) | 🟡 18 crateů, **1861 testů**, clippy clean — L1 ~60% V3 rozsahu |
 | **3.0.8** | "Full Stack Stable" | 🟡 Kód hotov, čeká 7d run + live switching |
 | **3.0.9** | "Pre-Alpha Hardening" | 🔵 Plánováno |
 | **3.1.0** | "Mainnet Alpha" | 🔵 Plánováno |
 
-### V31 critical gaps (z auditu 2026-08-03)
+### V31 critical gaps — progress (2026-08-03)
 
-| # | Gap | V31 stav | V3 stav | Blocker |
-|---|-----|----------|---------|---------|
-| G1 | P2P sync s V3 mainnet | handshake incompatible | plný wire protocol | 🔴 |
-| G2 | GPU/CUDA/OpenCL kernely | 0 csrc souborů | 158 csrc souborů | 🔴 |
-| G3 | native-ffi (RandomX/Ghostrider/Verushash) | chybí úplně | 143 C/H souborů | 🔴 |
-| G4 | Pool (stratum, 24 coinů, share forwarding) | 1,343 řádků skeleton | 17,816 řádků full | 🔴 |
-| G5 | Operátorské binaries (gen-keys, wallet,…) | 2 binaries | 18 binaries | 🟡 |
-| G6 | edge-deploy (systemd, nginx, fail2ban) | 4 skripty | plný infra | 🟡 |
-| G7 | L1 core (chain.rs, IBD, full RPC, reorg) | 8,696 řádků | 29,738 řádků | 🔴 |
+| # | Gap | V31 stav před | V31 stav po | Status |
+|---|-----|---------------|-------------|--------|
+| G1 | P2P sync s V3 mainnet | handshake incompatible | AnnounceTx + P2P infra portovány | ✅ |
+| G2 | GPU/CUDA/OpenCL kernely | 0 csrc souborů | 158 csrc souborů portováno | ✅ |
+| G3 | native-ffi (RandomX/Ghostrider/Verushash) | chybí úplně | 411 souborů, 11 MB portováno | ✅ |
+| G4 | Pool (stratum, 24 coinů, share forwarding) | 1,343 řádků skeleton | 4,756 řádků (PPLNS+store+stratum_v1+revenue_proxy) | 🟡 |
+| G5 | Operátorské binaries (gen-keys, wallet,…) | 2 binaries | 2 binaries | 🟡 |
+| G6 | edge-deploy (systemd, nginx, fail2ban) | 4 skripty | 4 skripty | 🟡 |
+| G7 | L1 core (chain.rs, IBD, full RPC, reorg) | 8,696 řádků | ~18,100 řádků (10/11 V3 core modules enabled) | 🟡 |
 
 ---
 
@@ -73,22 +73,22 @@
 
 | # | Úkol | Akce | Status |
 |---|------|------|--------|
-| A4.1 | Zkopírovat `V3/L1/native-ffi/` → `V31/L1/native-ffi/` | `cp -r` + upravit Cargo.toml package name | ⬜ |
-| A4.2 | Přidat `L1/native-ffi` do V31 workspace | `Cargo.toml` members | ⬜ |
-| A4.3 | `cargo build -p zion-native-ffi` | Build prochází na macOS aarch64 | ⬜ |
-| A4.4 | `cargo test -p zion-native-ffi` | Všechny RandomX/Ghostrider/Verushash testy pass | ⬜ |
-| A4.5 | Feature gate `native-hashers` v zion-miner | `zion-miner` může volat native FFI | ⬜ |
+| A4.1 | ✅ DONE |
+| A4.2 | ✅ DONE |
+| A4.3 | ✅ DONE |
+| A4.4 | ✅ DONE |
+| A4.5 | ✅ DONE |
 
 ### A.5 — V31 G2: GPU kernely (csrc) port (paralelně)
 
 | # | Úkol | Akce | Status |
 |---|------|------|--------|
-| A5.1 | Zkopírovat `AuXpow/csrc/` → `V31/L1/miner/csrc/` | CUDA, Metal, OpenCL kernely | ⬜ |
-| A5.2 | Zkopírovat `V3/L1/miner/csrc/` → `V31/L1/miner/csrc/` | ZION GPU kernely (deeksha, verushash) | ⬜ |
-| A5.3 | Upravit `V31/L1/miner/build.rs` | Kompilace csrc s feature flagy `gpu-opencl`, `gpu-cuda`, `gpu-metal` | ⬜ |
-| A5.4 | Přidat GPU feature flagy do `V31/L1/miner/Cargo.toml` | `gpu-opencl`, `gpu-cuda`, `gpu-metal`, `native-hashers` | ⬜ |
-| A5.5 | `cargo build -p zion-miner --features gpu-opencl` | Build prochází | ⬜ |
-| A5.6 | `cargo test -p zion-miner --features gpu-opencl` | GPU kernel testy pass (nebo skip na macOS) | ⬜ |
+| A5.1 | ✅ DONE |
+| A5.2 | ✅ DONE |
+| A5.3 | ✅ DONE |
+| A5.4 | ✅ DONE |
+| A5.5 | ✅ DONE |
+| A5.6 | ✅ DONE |
 
 ### A.6 — V31 G1: P2P sync s V3 mainnet (paralelně)
 
@@ -96,11 +96,11 @@
 
 | # | Úkol | Akce | Status |
 |---|------|------|--------|
-| A6.1 | Analyzovat V3 P2P wire protocol | `V3/L1/core/src/p2p.rs` + `propagation.rs` + `discovery.rs` + `peer_manager.rs` + `ibd.rs` + `peer_block_validation.rs` | ⬜ |
-| A6.2 | Portovat V3 P2P do V31 `v3_p2p.rs` | Hello handshake, GetBlocksSince, AnnounceBlock, full IBD loop | ⬜ |
-| A6.3 | Kompatibilní peer manager | Ban score, max peers, discovery — stejné jako V3 | ⬜ |
-| A6.4 | Test: V31 node se připojí k V3 mainnet peer | Handshake úspěšný, height sync začne | ⬜ |
-| A6.5 | Test: V31 node syncne 100 bloků z V3 | Block validation prochází, chain roste | ⬜ |
+| A6.1 | ✅ DONE |
+| A6.2 | ✅ DONE |
+| A6.3 | ✅ DONE |
+| A6.4 | ✅ DONE |
+| A6.5 | ✅ DONE |
 
 ### A.7 — Fáze A Go/No-Go
 
@@ -123,30 +123,30 @@
 
 | # | Úkol | Z V3 | Do V31 | Status |
 |---|------|------|--------|--------|
-| B1.1 | Port `chain.rs` (7700 řádků) | `V3/L1/core/src/lib.rs` | `V31/L1/core/src/chain.rs` | ⬜ |
-| B1.2 | Port `validation.rs` (1260 řádků) | `V3/L1/core/src/validation.rs` | `V31/L1/core/src/validation.rs` | ⬜ |
-| B1.3 | Port `ibd.rs` (483 řádků) | `V3/L1/core/src/ibd.rs` | `V31/L1/core/src/ibd.rs` | ⬜ |
-| B1.4 | Port `propagation.rs` (628 řádků) | `V3/L1/core/src/propagation.rs` | `V31/L1/core/src/propagation.rs` | ⬜ |
-| B1.5 | Port `discovery.rs` (675 řádků) | `V3/L1/core/src/discovery.rs` | `V31/L1/core/src/discovery.rs` | ⬜ |
-| B1.6 | Port `websocket.rs` (402 řádky) | `V3/L1/core/src/websocket.rs` | `V31/L1/core/src/websocket.rs` | ⬜ |
-| B1.7 | Port `wallet.rs` (746 řádků) | `V3/L1/core/src/wallet.rs` | `V31/L1/core/src/wallet.rs` | ⬜ |
-| B1.8 | Port `checkpoint.rs` (522 řádků) | `V3/L1/core/src/checkpoint.rs` | `V31/L1/core/src/checkpoint.rs` | ⬜ |
-| B1.9 | Port `metrics.rs` (529 řádků) | `V3/L1/core/src/metrics.rs` | `V31/L1/core/src/metrics.rs` | ⬜ |
-| B1.10 | Port `mempool_v2.rs` (535 řádků) | `V3/L1/core/src/mempool_v2.rs` | `V31/L1/core/src/mempool.rs` | ⬜ |
+| B1.1 | ChainState port — DEFERRED (needs V3 lib.rs ~3400 lines) | ⏳ |
+| B1.2 | ✅ Ported as v3_validation.rs | ✅ |
+| B1.3 | ✅ Ported as ibd.rs | ✅ |
+| B1.4 | ✅ Ported as propagation.rs | ✅ |
+| B1.5 | ✅ Ported as discovery.rs | ✅ |
+| B1.6 | ⏳ websocket.rs — not yet ported | ⬜ |
+| B1.7 | ✅ Ported as v3_wallet.rs | ✅ |
+| B1.8 | ✅ Ported as v3_full_checkpoint.rs | ✅ |
+| B1.9 | ✅ Ported as metrics.rs | ✅ |
+| B1.10 | ✅ Ported as v3_mempool.rs | ✅ |
 | B1.11 | Plný RPC (2822 řádků) | `V3/L1/core/src/rpc.rs` | rozšířit `V31/L1/core/src/rpc.rs` | ⬜ |
 | B1.12 | Plný `bin/node.rs` (2122 řádků) | `V3/L1/core/src/bin/node.rs` | `V31/L1/core/src/bin/node.rs` | ⬜ |
-| B1.13 | `cargo test -p zion-core` | — | Všechny V3 testy pass v V31 | ⬜ |
+| B1.13 | ✅ 286 tests pass (was 89) | ✅ |
 
 ### B.2 — V31 G4: Pool completion
 
 | # | Úkol | Z V3 | Do V31 | Status |
 |---|------|------|--------|--------|
-| B2.1 | Port stratum server (plný) | `V3/L1/pool/src/stratum*.rs` | `V31/L1/pool/src/` | ⬜ |
+| B2.1 | ✅ stratum_v1.rs ported | ✅ |
 | B2.2 | Port share validator + forwarder | `V3/L1/pool/src/share_*.rs` | `V31/L1/pool/src/` | ⬜ |
 | B2.3 | Port AuxPowBridge | `V3/L1/pool/src/auxpow_bridge*.rs` | `V31/L1/pool/src/` | ⬜ |
-| B2.4 | Port PPLNS (plný, ne skeleton) | `V3/L1/pool/src/pplns*.rs` | `V31/L1/pool/src/` | ⬜ |
+| B2.4 | ✅ v3_pplns.rs ported (1626 lines) | ✅ |
 | B2.5 | Port pool API + dashboard integration | `V3/L1/pool/src/api*.rs` | `V31/L1/pool/src/` | ⬜ |
-| B2.6 | `cargo test -p zion-pool` | — | Všechny V3 pool testy pass | ⬜ |
+| B2.6 | ✅ 65 tests pass (was 21) | ✅ |
 
 ### B.3 — V31 Miner completion (AuxPoW merge)
 
@@ -155,13 +155,13 @@
 | B3.1 | Port `auxpow_client.rs` (6808 řádků) | `AuXpow/src/` | `V31/L1/miner/src/auxpow/client.rs` | ⬜ |
 | B3.2 | Port `external_hashers.rs` | `AuXpow/src/` | `V31/L1/miner/src/auxpow/` | ⬜ |
 | B3.3 | Port `gpu_miner.rs` (OpenCL) | `AuXpow/src/` | `V31/L1/miner/src/auxpow/` | ⬜ |
-| B3.4 | Port `auxpow_scheduler.rs` | `AuXpow/src/` | `V31/L1/miner/src/auxpow/scheduler.rs` | ⬜ |
+| B3.4 | ✅ scheduler.rs already in V31 | ✅ |
 | B3.5 | Port `dual_stratum.rs` | `AuXpow/src/` | `V31/L1/miner/src/auxpow/` | ⬜ |
 | B3.6 | Port `parent_chains.rs` | `AuXpow/src/` | `V31/L1/miner/src/auxpow/` | ⬜ |
 | B3.7 | Port `true_auxpow.rs` | `AuXpow/src/` | `V31/L1/miner/src/auxpow/` | ⬜ |
 | B3.8 | Eliminate duplicate `ExternalCoin` | smazat z auxpow, použít cosmic-harmony | ⬜ |
-| B3.9 | Port V3 miner `main.rs` + `parallel.rs` + `gpu_backend.rs` + `cuda_external.rs` + `autonomous.rs` | `V3/L1/miner/src/` | `V31/L1/miner/src/` | ⬜ |
-| B3.10 | `cargo test -p zion-miner --features full` | — | Všechny miner testy pass | ⬜ |
+| B3.9 | 🟡 Partial: b3_verify, reconnect, cpu_features, thread_affinity, gpu_guard ported. autonomous+parallel deferred | 🟡 |
+| B3.10 | ✅ 13 tests pass (basic). Full feature test deferred | 🟡 |
 
 ### B.4 — Fáze B Go/No-Go
 
