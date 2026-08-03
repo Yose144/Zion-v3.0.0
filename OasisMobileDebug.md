@@ -54,10 +54,15 @@ Na mobilu:
 - **Výsledek:** Vše viditelné — modré pozadí, červená kostka, zelený text, hvězdy/galaxie/strom
 - **Závěr:** Potvrzeno — CameraRig/OrbitControls byl problém
 
-### Test 7: Finální — bez debug, kamera na galaxii (CURRENT)
+### Test 7: Finální — bez debug, kamera na galaxii
 - **Změněno:** Kamera `[0, 4, 22]` FOV 60° lookAt `[0, 0.5, 0]`, odstraněna kostka a debug texty
 - **Výsledek:** Viditelný strom života + galaxie, ale kamera se nehýbe (fixní)
 - **Status:** Funguje! Další krok — přidat touch ovládání kamery
+
+### Test 8: MobileTouchControls (FINAL — WORKING!)
+- **Přidáno:** Vlastní `MobileTouchControls.tsx` — pinch zoom + drag rotate + pan, bez drei OrbitControls
+- **Výsledek:** Vše funguje na mobilu! Rotace, zoom, pan plynulé
+- **Status:** ✅ OASIS mobile preview je funkční!
 
 ## Co už víme
 1. ✅ React renderuje správně (debug texty viditelné)
