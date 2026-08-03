@@ -48,10 +48,10 @@ const TwinkleStarMaterial = shaderMaterial(
       vec2 uv = gl_PointCoord - 0.5;
       float d = length(uv);
       float core = smoothstep(0.5, 0.0, d);
-      float glow = smoothstep(0.5, 0.15, d) * 0.5;
-      float alpha = (core + glow) * (0.3 + 0.55 * vTwinkle) * 0.75;
+      float glow = smoothstep(0.5, 0.15, d) * 0.8;
+      float alpha = (core + glow) * (0.4 + 0.6 * vTwinkle) * 1.0;
       if (alpha < 0.01) discard;
-      gl_FragColor = vec4(vColor, alpha);
+      gl_FragColor = vec4(vColor * (1.0 + vTwinkle * 0.5), alpha);
     }
   `
 );
