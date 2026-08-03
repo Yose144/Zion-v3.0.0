@@ -10,11 +10,10 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { WalletProvider } from "@/contexts/WalletContext";
 import { ZionWalletProvider } from "@/contexts/ZionWalletContext";
 import { AuthProvider } from "@/contexts/AuthContext";
-import ClientBackgrounds from "@/components/ClientBackgrounds";
 import HeroSection from "@/components/HeroSection";
 import AlohaOverlay from "@/components/AlohaOverlay";
-import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import BackgroundToggle from "@/components/BackgroundToggle";
+import PerformanceShell from "@/components/PerformanceShell";
 import { SITE_NETWORK_TOPOLOGY, SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_VERSION } from '@/lib/site';
 
 const inter = Inter({ 
@@ -71,7 +70,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://api.spotify.com" />
       </head>
       <body className={`${inter.variable} ${jetbrains.variable} antialiased text-white w-full`} style={{ maxWidth: '100%', overflowX: 'hidden', background: 'transparent' }}>
-        <ServiceWorkerRegistration />
+        <PerformanceShell />
         <GlobalErrorBoundary>
           <ThemeProvider>
             <ObservatoryProvider>
@@ -79,7 +78,6 @@ export default function RootLayout({
                 <WalletProvider>
                   <ZionWalletProvider>
                     <AuthProvider>
-                    <ClientBackgrounds />
                     <BackgroundToggle />
                     <div className="relative z-10 overflow-x-clip w-full">
                       <AlohaOverlay />
