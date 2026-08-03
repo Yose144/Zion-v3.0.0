@@ -28,8 +28,6 @@ const nextConfig: NextConfig = {
   // React Compiler disabled — codebase has too many manual effects/patterns that trigger its strict rules.
   reactCompiler: false,
   experimental: {
-    optimizeServerReact: true,
-    serverMinification: true,
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
     memoryBasedWorkersCount: true,
