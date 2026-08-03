@@ -122,6 +122,6 @@ To je kompletní mapa cesty pro každého nového příchozího:
 
 ---
 
-*→ Pokračování: [Epizoda 10 — První svět Oasis a Best of Avataři](./10-Prvni-Svet-Oasis-a-Best-of-Avatari.md)*
+*→ Pokračování: [Epizoda 10 — První svět Oasis a Best of Avataři](/onboard#book-10)*
 
-*→ Zpět na [index série Sůl této země](./00-README.md).*
+*→ Zpět na [index série Sůl této země](/onboard#book-00).*

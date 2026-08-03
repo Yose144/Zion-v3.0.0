@@ -64,4 +64,4 @@ Krišnovo poselství pro stavitele je přímé: **jednej bez lpění na plodech 
 
 ---
 
-*→ Pokračování: [Epizoda 4 — Cesta nevyšlapaná](./04-Cesta-Nevyslapana.md)*
+*→ Pokračování: [Epizoda 4 — Cesta nevyšlapaná](/onboard#book-04)*

@@ -217,9 +217,9 @@ Začíná tím, že různí lidé — tesař, poutník, pastýř, král v lese, 
 
 ### Kanonické zdroje ZIONu
 
-- [ZION Technical Whitepaper v3.1 (CZ)](../ZION_Technical_Whitepaper_v3.1_CZ.md)
-- [ZION Master Whitepaper v3.1 (CZ)](../ZION_MASTER_WHITEPAPER_3.1_CZ.md)
-- [L4 Oasis — Consciousness Levels & XP](../../../APP&WEB/website-v2.9/public/docs/ai-native/oasis.md)
+- [ZION Technical Whitepaper v3.1 (CZ)](/whitepapers#technical-cz)
+- [ZION Master Whitepaper v3.1 (CZ)](/whitepapers#master-cz)
+- [L4 Oasis — Consciousness Levels & XP](/l4-oasis)
 - [Veřejný repozitář](https://github.com/Zion-TerraNova/v3-Mainnet)
 
 ### Nezávislé a regulační zdroje použité pro principy pozvánky
@@ -229,4 +229,4 @@ Začíná tím, že různí lidé — tesař, poutník, pastýř, král v lese, 
 - [Nielsen Norman Group — Mobile-App Onboarding](https://www.nngroup.com/articles/mobile-app-onboarding/) a [Onboarding Tutorials vs. Contextual Help](https://www.nngroup.com/articles/onboarding-tutorials/) — proč má onboarding minimalizovat zbytečnou mentální zátěž a nápovědu dávat v kontextu.
 - [ESMA / MiCA, čl. 7 — Marketing communications](https://www.esma.europa.eu/publications-and-data/interactive-single-rulebook/mica/article-7-marketing-communications) — krypto marketing má být jasně označený, férový, jasný a neklamavý.
 
-*→ Zpět na [index série Sůl této země](./00-README.md).*
+*→ Zpět na [index série Sůl této země](/onboard#book-00).*

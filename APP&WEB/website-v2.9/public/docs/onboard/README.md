@@ -39,6 +39,14 @@ Ta loď se jmenuje **ZION**. A tohle je tvoje pozvánka na palubu.
 
 ---
 
+## Proč je dobré začít zrovna teď
+
+Tohle je jediná část pozvánky, kterou si musíš ověřit sám v kódu, ne uvěřit na slovo: **ZION je dnes v první dekádě emise — odměna 5 400 ZION za blok je nejvyšší, jakou kdy protokol vyplatí.** Každých deset let klesá o pětinu, navždy. A čím míň strojů dnes síť těží, tím větší podíl z nalezených bloků připadá na ten tvůj.
+
+Nikdo ti neslibuje cenu. Ale otevřené sítě mají svou historii: 22. května 2010 zaplatil jeden programátor 10 000 bitcoinů za dvě pizzy, protože tehdy neměly žádnou tržní hodnotu a nikdo netušil, co bude dál. Chceš vědět, co z toho poctivě plyne pro tebe dnes — bez příslibu zisku, jen s fakty o tom, jak funguje první den každé sítě? **[Přečti si Hodinu před deštěm →](/onboard#why-now)**
+
+---
+
 ## Tři cesty na palubu — vyber si svou
 
 ### 🔍 Pozorovatel — „Nejdřív chci důkaz"
@@ -120,7 +128,7 @@ Nikdo tě nebude honit. Archa se nestaví křikem — staví se blok po bloku, 6
 
 ---
 
-*Chceš celý příběh? Přečti si knihu [Sůl této země](/onboard#soul-of-the-earth) — jedenáct zastavení s Ježíšem, Buddhou, Krišnou, Rámou, Sítou, Hanumanem a Noem, každé s ověřitelnými fakty.*
+*Chceš celý příběh? Přečti si knihu [Sůl této země](/onboard#book-00) — dvanáct zastavení s Ježíšem, Buddhou, Krišnou, Rámou, Sítou, Hanumanem, Noem a jednou hodinou před deštěm, každé s ověřitelnými fakty.*
 
 *Chceš čísla? [Technický whitepaper 3.1](/whitepapers#technical-cz) — konsensus, emise, kontrakty, architektura.*
 
