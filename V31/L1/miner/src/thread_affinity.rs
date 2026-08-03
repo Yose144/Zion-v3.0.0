@@ -229,7 +229,7 @@ pub fn physical_core_ids() -> Vec<usize> {
 /// - "physical": pin to physical cores only (default for RandomX)
 /// - "spread": spread across all logical cores
 /// - Not set: auto (physical for RandomX, spread for VerusHash)
-pub fn maybe_pin_thread(thread_idx: usize, total_threads: usize, algorithm: &str) {
+pub fn maybe_pin_thread(thread_idx: usize, _total_threads: usize, algorithm: &str) {
     let env_val = std::env::var("ZION_CPU_AFFINITY").unwrap_or_else(|_| "auto".to_string());
 
     if env_val == "0" || env_val == "off" {

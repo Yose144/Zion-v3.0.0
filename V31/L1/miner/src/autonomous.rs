@@ -128,26 +128,22 @@ impl AutonomousProfitRouter {
         if !self.hw.has_gpu {
             return Vec::new();
         }
-        ExternalCoin::all()
+        ExternalCoin::ALL
             .iter()
             .copied()
             .filter(|coin| {
-                coin.disabled_reason().is_none()
-                    && coin.is_gpu()
-                    && coin.fits_vram(self.hw.gpu_vram_bytes)
-                    && coin.gpu_kernel_available(&self.hw.gpu_backend)
+                coin.is_gpu()
             })
             .collect()
     }
 
     /// Get all CPU-compatible coins for this hardware.
     pub fn cpu_compatible_coins(&self) -> Vec<ExternalCoin> {
-        ExternalCoin::all()
+        ExternalCoin::ALL
             .iter()
             .copied()
             .filter(|coin| {
-                coin.disabled_reason().is_none()
-                    && coin.cpu_compatible(self.hw.cpu_has_aes, self.hw.cpu_has_avx2)
+                coin.is_cpu()
             })
             .collect()
     }
@@ -173,7 +169,7 @@ impl AutonomousProfitRouter {
             // Try live estimate first, fall back to hardcoded.
             let revenue = if let Some(entry) = live_estimates.iter().find(|e| e.coin == *coin) {
                 used_live += 1;
-                entry.revenue_per_day_usd
+                entry.profit_usd_per_day
             } else {
                 fallback_revenue_usd_per_day(*coin)
             };
@@ -418,7 +414,7 @@ impl AutonomousProfitRouter {
 
     /// Build a CoinPreference message for the pool, containing the currently
     /// selected coins and their profit estimates.
-    pub fn build_coin_preference(&self, miner_id: &str) -> Option<zion_pool::PoolMessage> {
+    pub fn build_coin_preference(&self, miner_id: &str) -> Option<crate::pool_message::PoolMessage> {
         if !self.enabled {
             return None;
         }
@@ -437,7 +433,7 @@ impl AutonomousProfitRouter {
             .map(|p| p.net_profit_usd_per_day)
             .unwrap_or(0.0);
 
-        Some(zion_pool::PoolMessage::CoinPreference {
+        Some(crate::pool_message::PoolMessage::CoinPreference {
             miner_id: miner_id.to_string(),
             gpu_coin,
             cpu_coin,
@@ -457,36 +453,23 @@ impl AutonomousProfitRouter {
 /// Updated periodically based on network difficulty and coin price.
 fn fallback_revenue_usd_per_day(coin: ExternalCoin) -> f64 {
     match coin {
-        ExternalCoin::DCR => 0.80,
-        ExternalCoin::ALPH => 0.65,
-        ExternalCoin::KAS => 1.20,
-        ExternalCoin::ERG => 0.55,
-        ExternalCoin::RVN => 0.45,
-        ExternalCoin::ETC => 0.70,
-        ExternalCoin::EVR => 0.30,
-        ExternalCoin::MEWC => 0.25,
-        ExternalCoin::FLUX => 0.40,
-        ExternalCoin::CLORE => 0.35,
-        ExternalCoin::XMR => 0.55, // CPU: ~550 H/s on Ryzen 5 3600
-        ExternalCoin::VRSC => 0.40, // CPU: ~12 MH/s on Ryzen 5 3600
-        ExternalCoin::PRL => 2.50, // Pearl PoUW — 22x more profitable
-        ExternalCoin::EPIC => 0.30,
-        ExternalCoin::ZANO => 0.28,
-        ExternalCoin::QUAI => 0.25,
-        ExternalCoin::BEAM => 0.35,
-        ExternalCoin::KLS => 0.50,
-        ExternalCoin::ZCL => 0.20,
-        ExternalCoin::QTC => 0.15,
-        ExternalCoin::VTC => 0.20,
-        ExternalCoin::IRON => 0.45,
-        ExternalCoin::NEXA => 0.30,
-        ExternalCoin::RTM => 0.25,
-        ExternalCoin::DNX => 0.40,
-        ExternalCoin::CKB => 0.20,
-        ExternalCoin::CFX => 0.35,
-        ExternalCoin::ZEC => 0.25,
-        ExternalCoin::PHX => 0.10,
-        ExternalCoin::KRX => 0.03,
+        ExternalCoin::Kaspa => 1.20,
+        ExternalCoin::Alephium => 0.65,
+        ExternalCoin::Decred => 0.80,
+        ExternalCoin::Vertcoin => 0.20,
+        ExternalCoin::Ravencoin => 0.45,
+        ExternalCoin::Monero => 0.55, // CPU: ~550 H/s on Ryzen 5 3600
+        ExternalCoin::EpicCash => 0.30,
+        ExternalCoin::Zano => 0.28,
+        ExternalCoin::Meowcoin => 0.25,
+        ExternalCoin::Clore => 0.35,
+        ExternalCoin::Flux => 0.40,
+        ExternalCoin::Neoxa => 0.25,
+        ExternalCoin::EthereumClassic => 0.70,
+        ExternalCoin::Bitcoin => 0.50,
+        ExternalCoin::Verus => 0.40, // CPU: ~12 MH/s on Ryzen 5 3600
+        // ERG/EVR not available in V31
+        // PRL, QUAI, BEAM, KLS, ZCL, QTC, IRON, NEXA, RTM, DNX, CKB, CFX, ZEC, PHX, KRX not available in V31
     }
 }
 
@@ -496,14 +479,14 @@ fn fallback_revenue_usd_per_day(coin: ExternalCoin) -> f64 {
 fn forced_stream2_coin() -> Option<ExternalCoin> {
     let raw = std::env::var("ZION_STREAM2_FORCE_COIN").ok()?;
     let upper = raw.trim().to_uppercase();
-    ExternalCoin::all().iter().copied().find(|c| c.ticker() == upper)
+    ExternalCoin::ALL.iter().copied().find(|c| c.ticker() == upper)
 }
 
 /// Read ZION_STREAM3_FORCE_COIN env var to force a specific Stream 3 (CPU) coin.
 fn forced_stream3_coin() -> Option<ExternalCoin> {
     let raw = std::env::var("ZION_STREAM3_FORCE_COIN").ok()?;
     let upper = raw.trim().to_uppercase();
-    ExternalCoin::all().iter().copied().find(|c| c.ticker() == upper)
+    ExternalCoin::ALL.iter().copied().find(|c| c.ticker() == upper)
 }
 
 #[cfg(test)]
@@ -558,18 +541,18 @@ mod tests {
     }
 
     #[test]
-    fn rtm_is_cpu_compatible_and_not_gpu_selected() {
+    fn verus_is_cpu_compatible_and_not_gpu_selected() {
         let router = AutonomousProfitRouter::new(sample_hw_opencl());
         let cpu = router.cpu_compatible_coins();
         assert!(
-            cpu.contains(&ExternalCoin::RTM),
-            "RTM must be CPU-compatible"
+            cpu.contains(&ExternalCoin::Verus),
+            "Verus must be CPU-compatible"
         );
 
         let gpu = router.gpu_compatible_coins();
         assert!(
-            !gpu.contains(&ExternalCoin::RTM),
-            "RTM is routed to CPU, not GPU"
+            !gpu.contains(&ExternalCoin::Verus),
+            "Verus is routed to CPU, not GPU"
         );
     }
 
@@ -577,31 +560,22 @@ mod tests {
     fn verushash_and_randomx_are_cpu_only() {
         let router = AutonomousProfitRouter::new(sample_hw_opencl());
         let gpu = router.gpu_compatible_coins();
-        assert!(!gpu.contains(&ExternalCoin::VRSC));
-        assert!(!gpu.contains(&ExternalCoin::XMR));
+        assert!(!gpu.contains(&ExternalCoin::Verus));
+        assert!(!gpu.contains(&ExternalCoin::Monero));
     }
 
     #[test]
     fn forced_stream3_env_var_works() {
         std::env::set_var("ZION_STREAM3_FORCE_COIN", "VRSC");
-        assert_eq!(forced_stream3_coin(), Some(ExternalCoin::VRSC));
+        assert_eq!(forced_stream3_coin(), Some(ExternalCoin::Verus));
         std::env::remove_var("ZION_STREAM3_FORCE_COIN");
     }
 
     #[test]
     fn forced_stream2_env_var_works() {
         std::env::set_var("ZION_STREAM2_FORCE_COIN", "KAS");
-        assert_eq!(forced_stream2_coin(), Some(ExternalCoin::KAS));
+        assert_eq!(forced_stream2_coin(), Some(ExternalCoin::Kaspa));
         std::env::remove_var("ZION_STREAM2_FORCE_COIN");
-    }
-
-    #[test]
-    fn prl_is_not_compatible_for_autonomous() {
-        std::env::set_var("ZION_AUTONOMOUS", "1");
-        let router = AutonomousProfitRouter::new(sample_hw_opencl());
-        let gpu = router.gpu_compatible_coins();
-        assert!(!gpu.contains(&ExternalCoin::PRL), "disabled PRL must not be GPU-compatible");
-        std::env::remove_var("ZION_AUTONOMOUS");
     }
 
     #[test]
@@ -610,13 +584,13 @@ mod tests {
         let mut router = AutonomousProfitRouter::new(sample_hw_opencl());
         router.set_profits_and_select(
             &[
-                (ExternalCoin::DCR, 0.5),
-                (ExternalCoin::ALPH, 0.7),
-                (ExternalCoin::KAS, 1.0),
+                (ExternalCoin::Decred, 0.5),
+                (ExternalCoin::Alephium, 0.7),
+                (ExternalCoin::Kaspa, 1.0),
             ],
-            &[(ExternalCoin::RTM, 0.1)],
+            &[(ExternalCoin::Verus, 0.1)],
         );
-        assert_eq!(router.stream2_coin, Some(ExternalCoin::KAS));
+        assert_eq!(router.stream2_coin, Some(ExternalCoin::Kaspa));
         std::env::remove_var("ZION_AUTONOMOUS");
     }
 
@@ -628,24 +602,24 @@ mod tests {
 
         // First selection: KAS
         router.set_profits_and_select(
-            &[(ExternalCoin::KAS, 1.0), (ExternalCoin::ALPH, 0.8)],
+            &[(ExternalCoin::Kaspa, 1.0), (ExternalCoin::Alephium, 0.8)],
             &[],
         );
-        assert_eq!(router.stream2_coin, Some(ExternalCoin::KAS));
+        assert_eq!(router.stream2_coin, Some(ExternalCoin::Kaspa));
 
         // ALPH becomes 1.08 (~8% improvement, below 15% hysteresis) → stay on KAS
         router.set_profits_and_select(
-            &[(ExternalCoin::KAS, 1.0), (ExternalCoin::ALPH, 1.08)],
+            &[(ExternalCoin::Kaspa, 1.0), (ExternalCoin::Alephium, 1.08)],
             &[],
         );
-        assert_eq!(router.stream2_coin, Some(ExternalCoin::KAS));
+        assert_eq!(router.stream2_coin, Some(ExternalCoin::Kaspa));
 
         // ALPH becomes 2.0 (100% improvement, above 15% hysteresis) → switch
         router.set_profits_and_select(
-            &[(ExternalCoin::KAS, 1.0), (ExternalCoin::ALPH, 2.0)],
+            &[(ExternalCoin::Kaspa, 1.0), (ExternalCoin::Alephium, 2.0)],
             &[],
         );
-        assert_eq!(router.stream2_coin, Some(ExternalCoin::ALPH));
+        assert_eq!(router.stream2_coin, Some(ExternalCoin::Alephium));
         std::env::remove_var("ZION_AUTONOMOUS");
     }
 
@@ -654,14 +628,13 @@ mod tests {
         std::env::set_var("ZION_AUTONOMOUS", "1");
         let mut router = AutonomousProfitRouter::new(sample_hw_opencl());
         router.set_profits_and_select(
-            &[(ExternalCoin::KAS, 1.0)],
+            &[(ExternalCoin::Kaspa, 1.0)],
             &[
-                (ExternalCoin::XMR, 0.3),
-                (ExternalCoin::VRSC, 0.6),
-                (ExternalCoin::RTM, 0.2),
+                (ExternalCoin::Monero, 0.3),
+                (ExternalCoin::Verus, 0.6),
             ],
         );
-        assert_eq!(router.stream3_coin, Some(ExternalCoin::VRSC));
+        assert_eq!(router.stream3_coin, Some(ExternalCoin::Verus));
         std::env::remove_var("ZION_AUTONOMOUS");
     }
 
@@ -670,12 +643,12 @@ mod tests {
         std::env::set_var("ZION_AUTONOMOUS", "1");
         let mut router = AutonomousProfitRouter::new(sample_hw_opencl());
         router.set_profits_and_select(
-            &[(ExternalCoin::KAS, 1.0)],
-            &[(ExternalCoin::VRSC, 0.6)],
+            &[(ExternalCoin::Kaspa, 1.0)],
+            &[(ExternalCoin::Verus, 0.6)],
         );
         let msg = router.build_coin_preference("miner-1");
         assert!(msg.is_some(), "CoinPreference should be produced when enabled");
-        if let Some(zion_pool::PoolMessage::CoinPreference { gpu_coin, cpu_coin, .. }) = msg {
+        if let Some(crate::pool_message::PoolMessage::CoinPreference { gpu_coin, cpu_coin, .. }) = msg {
             assert_eq!(gpu_coin, "KAS");
             assert_eq!(cpu_coin, "VRSC");
         } else {

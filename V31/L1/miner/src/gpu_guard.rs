@@ -114,6 +114,12 @@ pub struct GpuGuard {
     handle: *mut std::os::raw::c_void,
 }
 
+impl Default for GpuGuard {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GpuGuard {
     pub fn new() -> Self {
         Self {
@@ -231,6 +237,7 @@ pub enum GpuAlgorithm {
 }
 
 impl GpuAlgorithm {
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Self {
         match s.trim().to_ascii_lowercase().as_str() {
             "deeksha_lite_v1" | "deeksha_lite" | "lite" | "dl" | "dlv1" => Self::DeekshaLiteV1,
