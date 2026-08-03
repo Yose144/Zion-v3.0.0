@@ -11,6 +11,17 @@ OASIS preview na mobilu (https://oasis.zionterranova.com) — po intro "Enter th
 - Mobile: width=375, isMobile=true (detekce funguje)
 - Browser: mobilní Chrome/Safari (konkrétní verze neznámá)
 
+## Root Cause Found!
+**CameraRig + OrbitControls (drei)** rozbíjejí WebGL render loop na mobilu.
+Minimální Canvas bez CameraRig funguje. S CameraRig černá obrazovka.
+
+## Solution
+Na mobilu:
+- **Skip CameraRig/OrbitControls** — kamera je fixní na `[0, 4, 22]`, FOV 60°, lookAt `[0, 0.5, 0]`
+- **MobileArrivalTrigger** — zavolá `onArrived` hned po mountu (místo camera flight animace)
+- **Skip UniverseRotator** na mobilu (závisí na groupRef z CameraRig)
+- Všechny komponenty zabaleny v **R3FErrorBoundary** (pro případ crashu)
+
 ## Debug Progress
 
 ### Test 1: Debug text v OasisClient
@@ -33,61 +44,73 @@ OASIS preview na mobilu (https://oasis.zionterranova.com) — po intro "Enter th
 - **Výsledek:** Černá obrazovka
 - **Závěr:** Některá komponenta rozbíjí render loop
 
-### Test 5: Minimální Canvas + CameraRig + OrbitControls (CURRENT)
+### Test 5: Minimální Canvas + CameraRig + OrbitControls
 - **Přidáno:** Červená kostka + CameraRig (OrbitControls + camera flight animation)
-- **Výsledek:** Čeká se na test
-- **Cíl:** Zjistit jestli CameraRig/OrbitControls rozbíjí scénu
+- **Výsledek:** Černá obrazovka
+- **Závěr:** **CameraRig/OrbitControls je root cause!**
+
+### Test 6: Plná scéna bez CameraRig + ErrorBoundary + debug cube
+- **Přidáno:** Všechny komponenty s R3FErrorBoundary, fixní kamera `[0, 0, 8]`, červená kostka 3x3x3, tmavě modré pozadí `#001a33`
+- **Výsledek:** Vše viditelné — modré pozadí, červená kostka, zelený text, hvězdy/galaxie/strom
+- **Závěr:** Potvrzeno — CameraRig/OrbitControls byl problém
+
+### Test 7: Finální — bez debug, kamera na galaxii (CURRENT)
+- **Změněno:** Kamera `[0, 4, 22]` FOV 60° lookAt `[0, 0.5, 0]`, odstraněna kostka a debug texty
+- **Výsledek:** Viditelný strom života + galaxie, ale kamera se nehýbe (fixní)
+- **Status:** Funguje! Další krok — přidat touch ovládání kamery
 
 ## Co už víme
 1. ✅ React renderuje správně (debug texty viditelné)
 2. ✅ isMobile detekce funguje (mobile=true, w=375)
 3. ✅ phase state machine funguje (intro → arrival → scene)
 4. ✅ WebGL funguje na mobilu (minimální Canvas s kostkou renderuje)
-5. ❌ Plná scéna s komponentami nerenderuje (černá obrazovka)
-6. ✅ PilgrimRite skip na mobilu funguje (phase jde rovnou na scene)
+5. ✅ Plná scéna funguje bez CameraRig/OrbitControls
+6. ❌ CameraRig/OrbitControls (drei) rozbíjí render loop na mobilu
+7. ✅ PilgrimRite skip na mobilu funguje
+8. ✅ R3FErrorBoundary zachytává crash komponent
 
 ## Co ještě nevíme
-- Která konkrétní komponenta rozbíjí render loop
-- Je to CameraRig/OrbitControls?
-- Je to některá galaxy komponenta (Galaxy, GalaxyCore, TreeOfLife...)?
-- Je to Environment (i když je skipnutý na mobilu)?
-- Je to EffectComposer (i když je skipnutý na mobilu)?
+- Proč přesně CameraRig/OrbitControls crashne na mobilu (možná drei OrbitControls touch event handler?)
+- Jak implementovat touch ovládání kamery bez drei OrbitControls
 
 ## Další kroky
-1. Test CameraRig + OrbitControls samostatně (Test 5 — current)
-2. Pokud OK → přidat Stars (drei)
-3. Pokud OK → přidat Galaxy
-4. Pokud OK → přidat TreeOfLife
-5. Pokud OK → přidat Nebula
-6. Pokud OK → přidat GalaxyMap
-7. Pokud fail → binary search na komponenty
+1. Implementovat touch ovládání kamery (bez drei OrbitControls)
+   - Pinch zoom
+   - Touch drag rotate
+   - Možná použít `useThree` + manuální event listenery
+2. Otestovat flight mode na mobilu (FlightControls komponenta)
+3. Optimalizovat výkon na mobilu (FPS)
 
-## Změny v kódu (probíhající)
-
-### OasisClient.tsx
-- `isMobile` inicializován synchronně v `useState` (ne až v useEffect)
-- `handleArrived`: na mobilu skip PilgrimRite → `setPhase('scene')` místo `'rite'`
-- Container: `fixed inset-0 overflow-hidden` (místo `relative h-full w-full`)
-- Na mobilu skryté: OnboardingHint, FruitCounter, WorldFilter, Hide UI button
-- GamePanel: `isMobile` prop, na mobilu startuje minimalizovaný
+## Změny v kódu
 
 ### OasisScene.tsx
 - Wrapper div: `position: absolute, inset: 0` (zajišťuje Canvas velikost na mobilu)
 - Canvas: explicit `style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}`
+- Na mobilu: fixní kamera `[0, 4, 22]` FOV 60° lookAt `[0, 0.5, 0]`
+- Na mobilu: skip CameraRig, OrbitControls, UniverseRotator
+- Na mobilu: MobileArrivalTrigger (setTimeout onArrived)
 - `Environment`: skip na mobilu + Suspense fallback
-- `GalaxyCore`, `MatrixCore`, `TwinkleStars`: skip na mobilu (custom shaders / CPU heavy)
+- `GalaxyCore`, `MatrixCore`, `TwinkleStars`: skip na mobilu
 - `Galaxy`: `isMobile` prop, redukované particle count (12K místo 34K)
 - `fog`: skip na mobilu
-- `EffectComposer`: skip na mobilu (už dříve)
-- `ambientLight`: 0.6 na mobilu (místo 0.15, kompenzuje chybějící Environment)
+- `EffectComposer`: skip na mobilu
+- `ambientLight`: 0.8 na mobilu
+- Všechny komponenty v R3FErrorBoundary
+
+### OasisClient.tsx
+- `isMobile` inicializován synchronně v `useState`
+- `handleArrived`: na mobilu skip PilgrimRite → `setPhase('scene')`
+- Container: `fixed inset-0 overflow-hidden`
+- Na mobilu skryté: OnboardingHint, FruitCounter, WorldFilter, Hide UI button
+
+### GamePanel.tsx
+- `isMobile` prop, na mobilu startuje minimalizovaný
+
+### R3FErrorBoundary.tsx (NEW)
+- Error boundary pro R3F komponenty uvnitř Canvas
+- Zachytí crash bez zabití render loopu
 
 ### Layout changes
 - `(landing)/layout.tsx`: `100dvh` místo `h-screen`
 - `(game)/layout.tsx`: `100dvh` místo `h-screen`
 - `globals.css`: `@supports (height: 100dvh)` pro html/body
-
-### GamePanel.tsx
-- `isMobile` prop
-- Na mobilu startuje minimalizovaný (jen `🚀 Lv1` tlačítko)
-- ChevronLeft import přidán
-- Close button pro minimalizaci
