@@ -5,8 +5,9 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import WarpFlash from './WarpFlash';
-import { ChevronRight, Eye, EyeOff, Layers, Rocket, Volume2, VolumeX } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { useAudio } from './AudioEngine';
+import SettingsPanel from './SettingsPanel';
 import type { FlightControlsHandle } from './FlightControls';
 import type { MobileInput } from './MobileControls';
 import MobileControls from './MobileControls';
@@ -343,66 +344,26 @@ export default function OasisClient() {
                   <ChevronRight className="h-2.5 w-2.5" />
                 </motion.div>
               </Link>
-              <button
-                onClick={() => setUiHidden(true)}
-                className="zion-button-ghost !p-2"
-                title="Hide all UI (H)"
-              >
-                <EyeOff className="h-3.5 w-3.5" />
-              </button>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Show UI button when hidden */}
-        <AnimatePresence>
-          {phase !== 'intro' && uiHidden && (
-            <motion.button
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              onClick={() => setUiHidden(false)}
-              className="pointer-events-auto absolute right-2 top-2 z-[70] rounded-full border border-white/15 bg-black/80 p-2.5 text-gray-300 backdrop-blur-md transition hover:bg-white/10 hover:text-white sm:right-6 sm:top-5"
-              title="Show UI (H)"
-            >
-              <Eye className="h-4 w-4" />
-            </motion.button>
-          )}
-        </AnimatePresence>
-
-        {/* Quick controls FAB — appears when panels auto-minimized */}
-        <AnimatePresence>
-          {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && panelsMinimized && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.8, y: 10 }}
-              className="pointer-events-auto absolute bottom-3 right-3 z-[65] flex items-center gap-2"
-            >
-              <button
-                onClick={() => setPanelsMinimized(false)}
-                className="rounded-full border border-white/15 bg-black/70 p-3 text-cyan-300 backdrop-blur-md transition hover:bg-white/10 hover:text-white"
-                title="Show panels"
-              >
-                <Layers className="h-5 w-5" />
-              </button>
-              <button
-                onClick={() => { setFlightMode(true); setTimeout(() => flightControlsRef.current?.lock(), 0); }}
-                className="rounded-full border border-white/15 bg-black/70 p-3 text-amber-300 backdrop-blur-md transition hover:bg-white/10 hover:text-white"
-                title="Enter flight (F)"
-              >
-                <Rocket className="h-5 w-5" />
-              </button>
-              <button
-                onClick={toggle}
-                className="rounded-full border border-white/15 bg-black/70 p-3 text-gray-300 backdrop-blur-md transition hover:bg-white/10 hover:text-white"
-                title={muted ? 'Unmute' : 'Mute'}
-              >
-                {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Settings panel — floating gear icon, always available */}
+        {phase !== 'intro' && (
+          <SettingsPanel
+            music={music}
+            muted={muted}
+            onToggleMute={toggle}
+            onEnterFlight={() => {
+              if (!flightMode && view === 'galaxy') {
+                setFlightMode(true);
+                setTimeout(() => flightControlsRef.current?.lock(), 0);
+              }
+            }}
+            uiHidden={uiHidden}
+            onToggleUiHidden={() => setUiHidden((h) => !h)}
+          />
+        )}
 
         <AnimatePresence>
           {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && !panelsMinimized && (

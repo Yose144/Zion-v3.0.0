@@ -57,7 +57,7 @@ const SHIP_ICONS: Record<keyof ShipLoadout, typeof Zap> = {
   model: Plane,
 };
 
-type Tab = 'ship' | 'identity' | 'audio' | 'oasis';
+export type Tab = 'ship' | 'identity' | 'audio' | 'oasis';
 
 interface StatTileProps {
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
@@ -83,7 +83,7 @@ function StatusDot({ status }: { status: 'loading' | 'ok' | 'error' }) {
 }
 
 // ── Ship Loadout tab ──
-function ShipTab() {
+export function ShipTab() {
   const { credits, xp, shipLoadout, upgradeShip, setShipColor, setShipModel, unlockShip, unlockedShips } = useGameStore();
   const addToast = useToastStore((s) => s.add);
   const playerLevel = getLevel(xp);
@@ -252,7 +252,7 @@ function ShipTab() {
 }
 
 // ── Identity tab ──
-function IdentityTab() {
+export function IdentityTab() {
   const { address, setAddress, reset, syncPlayer, avatarConfig, archetype } = useGameStore();
   const addToast = useToastStore((s) => s.add);
   const [input, setInput] = useState(address ?? '');
@@ -429,7 +429,7 @@ function IdentityTab() {
 }
 
 // ── Audio tab ──
-function AudioTab({ music, muted, onToggleMute }: {
+export function AudioTab({ music, muted, onToggleMute }: {
   music: MusicPlayerState;
   muted: boolean;
   onToggleMute: () => void;
@@ -514,7 +514,7 @@ function AudioTab({ music, muted, onToggleMute }: {
 }
 
 // ── OASIS info tab ──
-function OasisTab({ onEnterFlight }: { onEnterFlight?: () => void }) {
+export function OasisTab({ onEnterFlight }: { onEnterFlight?: () => void }) {
   const { address, realQuests, territories } = useGameStore();
   const [status, setStatus] = useState<'loading' | 'ok' | 'error'>('loading');
   const [avatarCount, setAvatarCount] = useState(0);
