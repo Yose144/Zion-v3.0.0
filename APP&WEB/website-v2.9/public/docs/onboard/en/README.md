@@ -41,7 +41,7 @@ That ship is called **ZION**. And this is your invitation aboard.
 
 ## Why it's good to start right now
 
-This is the only part of the invitation you must verify yourself in the code, not take on faith: **ZION is currently in the first decade of emission — the reward of 5,400 ZION per block is the highest the protocol will ever pay out.** Every ten years it drops by a fifth, forever. And the fewer machines mining on the network today, the larger the share of found blocks goes to yours.
+This is the only part of the invitation you must verify yourself in the code, not take on faith: **ZION is currently in the first decade of emission — the reward of 5,400.067 ZION per block is the highest the protocol will ever pay out.** Every ten years it drops by a fifth, forever. And the fewer machines mining on the network today, the larger the share of found blocks goes to yours.
 
 No one is promising you a price. But open networks have their history: on May 22, 2010, one programmer paid 10,000 bitcoins for two pizzas, because at the time they had no market value and no one knew what would come next. Want to know what honestly follows from this for you today — without any promise of profit, just with facts about how the first day of every network works? **[Read The Hour Before the Rain →](/onboard#why-now)**
 
@@ -49,23 +49,24 @@ No one is promising you a price. But open networks have their history: on May 22
 
 ## Three ways aboard — choose yours
 
-### 🔍 Observer — "I want proof first"
+### Observer — "I want proof first"
 
 Don't install anything, don't buy anything. Just watch:
 
 1. Open the **explorer** at [zionterranova.com](https://www.zionterranova.com) and watch a new block appear every minute.
 2. Browse the **code** at [github.com/Zion-TerraNova/v3-Mainnet](https://github.com/Zion-TerraNova/v3-Mainnet) — MIT license, nothing hidden.
-3. Ask anything on **Discord** — a good community is known by its ability to say "I don't know" and point to the source.
+3. Ask anything in the **community channels** — a good community is known by its ability to say "I don't know" and point to the source.
 
-### 🎮 Player — "I want to experience it"
+### Player — "I want to experience it"
 
-Enter the world of **Oasis** — the gaming layer of ZION:
+Enter **Oasis Web** — the visual game layer of ZION:
 
-- Choose your **avatar** and complete the first quests.
-- Collect **XP for real deeds** — helping the community, your first mining share, fixing documentation. Nine levels of growth, from the first step to the stars.
-- And one day, when the game fully opens: **Golden Egg** — a treasure hunt with 108 clues hidden in the blockchain, the books, and the real world.
+- Explore the **live 3D galaxy** with 55 worlds at [oasis.zionterranova.com](https://oasis.zionterranova.com).
+- Browse the **Avatar Codex**, quest log, territory map and leaderboard.
+- Log in with your wallet and sync XP for completed quests.
+- The path through nine Consciousness Levels, **Golden Egg** and **Dharma Credits** is still in development.
 
-### ⚒️ Builder — "I want to carry a piece of the bridge"
+### Builder — "I want to carry a piece of the bridge"
 
 Your computer can be a node of the new network:
 
@@ -74,10 +75,10 @@ Your computer can be a node of the new network:
 git clone https://github.com/Zion-TerraNova/v3-Mainnet.git
 cd v3-Mainnet/V3
 
-# 2. Build the binaries (5–15 minutes)
-cargo build --release
+# 2. Build the CLI (5–15 minutes)
+cargo build --release -p zion-cli
 
-# 3. Run the wallet, node, or miner
+# 3. Run the interactive wizard, wallet, node, or miner
 ./target/release/zion
 ```
 
@@ -117,7 +118,7 @@ Salt that knows it is salt — and does not claim to be gold — is more trustwo
 ## First step — today, in five minutes
 
 1. **Open** [zionterranova.com](https://www.zionterranova.com) and look at the live network.
-2. **Join** Discord and say hello.
+2. **Join** the community and say hello.
 3. **Decide for yourself** — observe, play, or build.
 
 No one will chase you. The ark is not built by shouting — it is built block by block, 60 seconds after 60 seconds, and the doors are open.

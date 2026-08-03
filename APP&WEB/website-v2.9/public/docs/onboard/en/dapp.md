@@ -1,18 +1,18 @@
-# Your First DApp on ZION
+# First DApp on ZION
 
 Build a simple web application that reads data from the ZION blockchain via JSON-RPC.
 
-## What we'll build
+## What we will build
 
-- A Node.js/Express server
-- An endpoint that returns the height, difficulty, and total supply
+- Node.js/Express server
+- An endpoint that returns height, difficulty and total supply
 
 ## Requirements
 
 - Node.js 18+
-- A running ZION node or the public RPC
+- Access to the public RPC or your own node
 
-## Project initialization
+## Project setup
 
 ```bash
 mkdir zion-dapp && cd zion-dapp
@@ -26,9 +26,9 @@ npm install express
 const express = require('express');
 const app = express();
 
-const ZION_RPC = 'http://localhost:8444/jsonrpc';
+const ZION_RPC = 'http://rpc.zionterranova.com:8443';
 
-async function rpcCall(method, params = {}) {
+async function rpcCall(method, params = []) {
   const res = await fetch(ZION_RPC, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -39,7 +39,7 @@ async function rpcCall(method, params = {}) {
 }
 
 app.get('/', async (req, res) => {
-  const info = await rpcCall('get_info');
+  const info = await rpcCall('getChainInfo');
   res.send(`
     <h1>ZION Live</h1>
     <p>Height: ${info.height}</p>
@@ -51,10 +51,12 @@ app.get('/', async (req, res) => {
 app.listen(3000, () => console.log('DApp running on http://localhost:3000'));
 ```
 
-## Running it
+## Run
 
 ```bash
 node server.js
 ```
 
-Open `http://localhost:3000` and you'll see live data from the chain.
+Open `http://localhost:3000` and you will see live data from the chain.
+
+> **Warning:** The RPC is plain HTTP. Use only public data. Never display your seed or private key in code.

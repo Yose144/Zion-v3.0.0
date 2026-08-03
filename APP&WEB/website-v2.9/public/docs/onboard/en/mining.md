@@ -2,7 +2,7 @@
 
 ZION mining runs on the **Cosmic Harmony Deeksha** algorithm.
 
-> **Why mine now:** ZION is in the first decade of emission — the reward of **5,400 ZION/block** is the highest the protocol will ever pay out, and with each subsequent decade it drops by a fifth. The network is still small, so fewer machines are competing for found blocks. No one is promising a price or profit — just the honest mathematics of early entry. The full story (including Bitcoin Pizza Day) can be found in the chapter [The Hour Before the Rain](/onboard#why-now).
+> **Why mine now:** ZION is in the first decade of emission — the reward of **5,400.067 ZION/block** is the highest the protocol will ever pay out, and with each subsequent decade it drops by a fifth. The network is still small, so fewer machines are competing for found blocks. No one is promising a price or profit — just the honest mathematics of early entry. The full story (including Bitcoin Pizza Day) can be found in the chapter [The Hour Before the Rain](/onboard#why-now).
 
 ## The easiest way — ZION Public Miner
 
@@ -27,27 +27,27 @@ The app takes care of everything else — connecting to the pool, tracking hashr
 
 | Recipient | Share |
 |----------|-------|
-| ⛏️ Miners | 89% |
-| 🕊️ Humanitarian Tithe | 5% |
-| 🔭 L5/L6 Issobella Fund | 5% |
-| 🏊 Pool Fee | 1% |
+| Miners | 89% |
+| Humanitarian Tithe | 5% |
+| L5/L6 Issobella Fund | 5% |
+| Pool fee / burn | 1% |
 
 ## Advanced mining from the command line
 
 ```bash
-./target/release/zion-miner \
-  --pool seed.zionterranova.com:3333 \
-  --wallet "zion1qYOUR_ADDRESS" \
-  --worker my-rig \
-  --algo cosmic_harmony \
-  --threads 4
+zion mine start --backend cpu --threads 4 --pool 62.171.141.136:8444
+```
+
+Alternatively with a specific target algorithm and address (check the specific release docs for `--miner.wallet` and `--miner.algorithm`):
+
+```bash
+zion mine start --backend cuda --threads 4 --pool 62.171.141.136:8444 \
+  --miner.wallet zion1EXAMPLE_ADDRESS --miner.worker my-rig
 ```
 
 ## Pool dashboard
 
-You can find the web pool overview at:
-
-- `https://pool.zionterranova.com`
+The web pool dashboard is still in development.
 
 ## Tips
 

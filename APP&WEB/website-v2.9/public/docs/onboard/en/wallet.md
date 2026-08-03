@@ -14,7 +14,8 @@ If you're using the desktop application:
 ## Creating a wallet from the command line
 
 ```bash
-zion wallet create --name my-wallet
+export ZION_WALLET_PASSWORD="your-strong-password"
+zion wallet new --out zion-wallet.json --password-env ZION_WALLET_PASSWORD
 ```
 
 ## Seed backup
@@ -27,10 +28,10 @@ zion wallet create --name my-wallet
 
 ```bash
 # Balance
-zion wallet balance --name my-wallet
+zion wallet balance
 
 # Send
-zion wallet send --from my-wallet --to zion1qYOUR_ADDRESS --amount 1000
+zion wallet send --to zion1EXAMPLE_ADDRESS --amount 10.5 --memo "test"
 ```
 
 ## Security tips

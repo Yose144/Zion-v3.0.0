@@ -41,7 +41,7 @@ Ta loď se jmenuje **ZION**. A tohle je tvoje pozvánka na palubu.
 
 ## Proč je dobré začít zrovna teď
 
-Tohle je jediná část pozvánky, kterou si musíš ověřit sám v kódu, ne uvěřit na slovo: **ZION je dnes v první dekádě emise — odměna 5 400 ZION za blok je nejvyšší, jakou kdy protokol vyplatí.** Každých deset let klesá o pětinu, navždy. A čím míň strojů dnes síť těží, tím větší podíl z nalezených bloků připadá na ten tvůj.
+Tohle je jediná část pozvánky, kterou si musíš ověřit sám v kódu, ne uvěřit na slovo: **ZION je dnes v první dekádě emise — odměna 5 400,067 ZION za blok je nejvyšší, jakou kdy protokol vyplatí.** Každých deset let klesá o pětinu, navždy. A čím míň strojů dnes síť těží, tím větší podíl z nalezených bloků připadá na ten tvůj.
 
 Nikdo ti neslibuje cenu. Ale otevřené sítě mají svou historii: 22. května 2010 zaplatil jeden programátor 10 000 bitcoinů za dvě pizzy, protože tehdy neměly žádnou tržní hodnotu a nikdo netušil, co bude dál. Chceš vědět, co z toho poctivě plyne pro tebe dnes — bez příslibu zisku, jen s fakty o tom, jak funguje první den každé sítě? **[Přečti si Hodinu před deštěm →](/onboard#why-now)**
 
@@ -49,23 +49,24 @@ Nikdo ti neslibuje cenu. Ale otevřené sítě mají svou historii: 22. května 
 
 ## Tři cesty na palubu — vyber si svou
 
-### 🔍 Pozorovatel — „Nejdřív chci důkaz"
+### Pozorovatel — „Nejdřív chci důkaz"
 
 Nic neinstaluj, nic nekupuj. Jen se dívej:
 
 1. Otevři **explorer** na [zionterranova.com](https://www.zionterranova.com) a sleduj, jak každou minutu přibývá nový blok.
 2. Prolistuj **kód** na [github.com/Zion-TerraNova/v3-Mainnet](https://github.com/Zion-TerraNova/v3-Mainnet) — MIT licence, nic skrytého.
-3. Zeptej se na cokoliv na **Discordu** — dobrá komunita se pozná podle toho, že umí říct „nevím" a ukázat zdroj.
+3. Zeptej se na cokoliv v **komunitních kanálech** — dobrá komunita se pozná podle toho, že umí říct „nevím" a ukázat zdroj.
 
-### 🎮 Hráč — „Chci to zažít"
+### Hráč — „Chci to zažít"
 
-Vstup do světa **Oasis** — herní vrstvy ZIONu:
+Vstup do **Oasis Webu** — vizuální herní vrstvy ZIONu:
 
-- Vyber si **avatara** a projdi první questy.
-- Sbírej **XP za skutečné činy** — pomoc komunitě, první podíl při těžbě, opravu dokumentace. Devět úrovní růstu, od prvního kroku až ke hvězdám.
-- A jednou, až se hra plně otevře: **Golden Egg** — honba za pokladem se 108 stopami ukrytými v blockchainu, knihách i skutečném světě.
+- Prohlédni si **živou 3D galaxii** s 55 světy na [oasis.zionterranova.com](https://oasis.zionterranova.com).
+- Prohlížej **Avatar Codex**, quest log, mapu teritorií a leaderboard.
+- Přihlaš se peněženkou a synchronizuj XP za splněné questy.
+- Cesta přes devět úrovní vědomí, **Golden Egg** a **Dharma Credits** je zatím ve vývoji.
 
-### ⚒️ Stavitel — „Chci nést kus mostu"
+### Stavitel — „Chci nést kus mostu"
 
 Tvůj počítač může být uzlem nové sítě:
 
@@ -74,10 +75,10 @@ Tvůj počítač může být uzlem nové sítě:
 git clone https://github.com/Zion-TerraNova/v3-Mainnet.git
 cd v3-Mainnet/V3
 
-# 2. Postav binárky (5–15 minut)
-cargo build --release
+# 2. Postav CLI (5–15 minut)
+cargo build --release -p zion-cli
 
-# 3. Spusť peněženku, uzel nebo miner
+# 3. Spusť interaktivní průvodce, peněženku, uzel nebo miner
 ./target/release/zion
 ```
 
@@ -117,7 +118,7 @@ Sůl, která ví, že je sůl — a neříká o sobě, že je zlato — je dův�
 ## První krok — dnes, za pět minut
 
 1. **Otevři** [zionterranova.com](https://www.zionterranova.com) a podívej se na živou síť.
-2. **Přidej se** na Discord a řekni ahoj.
+2. **Přidej se** do komunity a řekni ahoj.
 3. **Rozhodni se sám** — pozorovat, hrát, nebo stavět.
 
 Nikdo tě nebude honit. Archa se nestaví křikem — staví se blok po bloku, 60 sekund po 60 sekundách, a dveře jsou otevřené.
