@@ -1,0 +1,24 @@
+[Unit]
+Description=ZION V3 Bridge Relay (L2, post-hard-reset 3.0.4)
+After=network-online.target zion-node.service
+Wants=network-online.target
+Requires=zion-node.service
+
+[Service]
+Type=simple
+User=root
+EnvironmentFile=/root/zion/edge-environment.sh
+ExecStart=/usr/local/bin/zion-bridge
+Restart=always
+RestartSec=10
+LimitNOFILE=65536
+StandardOutput=journal
+StandardError=journal
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/data/zion
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

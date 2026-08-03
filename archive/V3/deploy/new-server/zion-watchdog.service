@@ -1,0 +1,6 @@
+[Unit]
+Description=ZION V3 Watchdog health check
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/zion-watchdog.sh
