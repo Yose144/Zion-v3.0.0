@@ -213,11 +213,15 @@ export default function OasisScene({
   const universeRef = useRef<THREE.Group>(null);
 
   return (
-    <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
+    <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0, background: 'purple' }}>
+      {/* DEBUG: if you see purple, this div renders. Canvas is the problem. */}
+      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', color: 'white', fontSize: 20, fontWeight: 'bold', zIndex: 999, background: 'black', padding: '8px 16px', borderRadius: 8 }}>
+        OASIS SCENE LOADED · isMobile={String(isMobile)}
+      </div>
     <Canvas
       camera={{ position: [0, 3.5, 34], fov: 55 }}
       dpr={[1, isMobile ? 1 : 1.75]}
-      style={{ width: '100% !important', height: '100% !important', display: 'block', position: 'absolute', inset: 0 }}
+      style={{ width: '100%', height: '100%', display: 'block', position: 'absolute', inset: 0 }}
       gl={{
         antialias: false,
         powerPreference: 'high-performance',
@@ -227,9 +231,6 @@ export default function OasisScene({
       }}
       onCreated={({ gl }) => {
         gl.setClearColor(isMobile ? '#00ff00' : '#02030a');
-      }}
-      onError={(e) => {
-        console.error('R3F Canvas error:', e);
       }}
     >
       <color attach="background" args={[isMobile ? '#00ff00' : '#02030a']} />
