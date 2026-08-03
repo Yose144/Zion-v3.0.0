@@ -12,16 +12,29 @@ use serde::{Deserialize, Serialize};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::{TcpListener, TcpStream};
-use tracing::{info, warn};
+use tracing::{debug, info, warn};
 
 use crate::difficulty::{self, lwma_next_difficulty};
 use crate::peer_manager::{PeerManager, PeerSource};
 use crate::storage::{Storage, StorageError};
-use crate::v3_compat::{validate_v3_block, V3AcceptedBlock};
+use crate::v3_compat::{
+    validate_v3_block, AccountTransaction, UtxoTransaction, V3AcceptedBlock,
+};
 
 // ---------------------------------------------------------------------------
 // Wire types
 // ---------------------------------------------------------------------------
+
+/// V3 submitted transaction (wire format — matches V3 `SubmittedTransaction`).
+///
+/// V3 uses an `untagged` serde enum with `Account` and `Utxo` variants.
+/// We mirror that exactly so V3 peers can send us transactions and vice-versa.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum SubmittedTransaction {
+    Account(AccountTransaction),
+    Utxo(UtxoTransaction),
+}
 
 /// V3 network identifier.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -105,6 +118,10 @@ pub enum P2pMessage {
     },
     AnnounceBlock {
         block: V3AcceptedBlock,
+    },
+    AnnounceTx {
+        tx_id: String,
+        transaction: SubmittedTransaction,
     },
 }
 
@@ -269,6 +286,20 @@ impl V3Sync {
                     // Peer has told us its height but did not send blocks.
                     // Wait a bit and retry (it may be busy).
                     tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                }
+                // Skip AnnounceTx, Ping, Pong, Peers during sync —
+                // V3 peers may relay transactions while we're syncing.
+                P2pMessage::AnnounceTx { tx_id, .. } => {
+                    debug!(%tx_id, "ignoring AnnounceTx during sync");
+                }
+                P2pMessage::Ping { nonce } => {
+                    debug!(nonce, "ignoring Ping during sync");
+                }
+                P2pMessage::Pong { .. } => {
+                    debug!("ignoring Pong during sync");
+                }
+                P2pMessage::Peers { .. } => {
+                    debug!("ignoring Peers during sync");
                 }
                 other => {
                     warn!(?other, "unexpected V3 P2P message during sync");
@@ -564,6 +595,44 @@ impl V3PeerHandler {
                             self.peers.record_bad(peer_addr, 2).await;
                         }
                     }
+                    // Acknowledge with our current status (matches V3 behavior).
+                    if let Some(tip) = self.storage.v3_tip().await? {
+                        let status = P2pMessage::Status {
+                            status: NodeStatus {
+                                node_id: self.node_id.clone(),
+                                network: self.network,
+                                protocol_version: self.protocol_version.clone(),
+                                consensus_profile: "v3".to_string(),
+                                chain_height: tip.height,
+                                tip_hash_hex: hex::encode(tip.header_hash()),
+                                p2p_bind: parse_endpoint(&self.listen_addr),
+                                rpc_bind: parse_endpoint(&self.rpc_addr),
+                                pool_bind: parse_endpoint(&self.pool_addr),
+                            },
+                        };
+                        self.write_msg(&mut writer, &status).await?;
+                    }
+                }
+                P2pMessage::AnnounceTx { tx_id, .. } => {
+                    // V31 does not yet have a mempool for V3 transactions;
+                    // acknowledge with status so the peer doesn't disconnect.
+                    debug!(%tx_id, "received AnnounceTx (not yet stored)");
+                    if let Some(tip) = self.storage.v3_tip().await? {
+                        let status = P2pMessage::Status {
+                            status: NodeStatus {
+                                node_id: self.node_id.clone(),
+                                network: self.network,
+                                protocol_version: self.protocol_version.clone(),
+                                consensus_profile: "v3".to_string(),
+                                chain_height: tip.height,
+                                tip_hash_hex: hex::encode(tip.header_hash()),
+                                p2p_bind: parse_endpoint(&self.listen_addr),
+                                rpc_bind: parse_endpoint(&self.rpc_addr),
+                                pool_bind: parse_endpoint(&self.pool_addr),
+                            },
+                        };
+                        self.write_msg(&mut writer, &status).await?;
+                    }
                 }
                 // Ignore unsolicited replies.
                 _ => {}
@@ -604,7 +673,20 @@ fn parse_endpoint(addr: &str) -> PeerEndpoint {
 }
 
 /// Convert a `V3Block` to `V3AcceptedBlock` for wire serialization.
+///
+/// Fee/subsidy fields are computed from the block's transactions so that
+/// V3 peers receiving our blocks don't reject them for zero/empty metadata.
 fn block_to_accepted(block: &crate::v3_compat::V3Block) -> V3AcceptedBlock {
+    // Compute total fees from account transactions (non-coinbase).
+    let total_fees_zion: u64 = block
+        .transactions
+        .iter()
+        .map(|t| t.fee_zion)
+        .sum();
+
+    // Compute body hash from transaction IDs (matches V3 merkle root approach).
+    let body_hash_hex = hex::encode(block.header.merkle_root);
+
     V3AcceptedBlock {
         template_id: 0,
         height: block.height,
@@ -617,8 +699,11 @@ fn block_to_accepted(block: &crate::v3_compat::V3Block) -> V3AcceptedBlock {
         algorithm: "deeksha_lite_v1".to_string(),
         transaction_ids: block.transactions.iter().map(|t| t.tx_id.clone()).collect(),
         transactions: block.transactions.clone(),
-        total_fees_zion: 0,
-        body_hash_hex: hex::encode(block.header.merkle_root),
+        total_fees_zion,
+        body_hash_hex,
+        // Subsidy and reward fields default to 0 for locally-converted blocks
+        // (V3 uses these for display/audit, not for consensus validation on
+        // the receiving side — the PoW hash and difficulty are what matter).
         subsidy_zion: 0,
         miner_reward_zion: 0,
         miner_address: String::new(),
