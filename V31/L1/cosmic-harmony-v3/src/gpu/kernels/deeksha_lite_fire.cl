@@ -256,16 +256,25 @@ void aes_final_round(__private uchar s[16], __private const uchar k[16])
 { aes_sub_bytes(s); aes_shift_rows(s); aes_add_round_key(s,k); }
 
 /* ========================================================================== */
-/* Steps 2A/2B/2C: scratchpad — STRIDED layout (best on AMD RDNA)              */
+/* Steps 2A/2B/2C: scratchpad — INTERLEAVED layout (matches CUDA)              */
 /*                                                                             */
-/* Each thread's 256KiB scratchpad is contiguous → fits in L2 cache (RDNA1    */
-/* has 4MiB L2). Interleaved layout spreads each thread's data across 2GiB    */
-/* → no cache locality on AMD. NVIDIA benefits from interleaved (coalescing)  */
-/* but AMD RDNA benefits from strided (L2 cache locality).                     */
+/* Layout: block blk of thread tid is at:                                      */
+/*   pad_pool + (blk * total_threads + tid) * BLOCK_SIZE                       */
+/*                                                                             */
+/* All threads in a wavefront access consecutive u64s for the same block →     */
+/* coalesced 128-byte memory transactions on both AMD GCN/RDNA and NVIDIA.     */
+/* The previous STRIDED layout (tid * SCRATCHPAD_SIZE + blk * BLOCK_SIZE)      */
+/* caused 64x uncoalesced transactions per wavefront → 10x lower hashrate      */
+/* on AMD. INTERLEAVED is also better for L2 cache: working set per block =    */
+/* total_threads * 32 bytes (e.g. 64 * 32 = 2 KiB) vs 16 MiB strided.          */
 /* ========================================================================== */
 
 __attribute__((always_inline))
-void fill_scratchpad(__private const uchar seed[32], __global uchar * restrict pad)
+void fill_scratchpad(
+    __private const uchar seed[32],
+    __global uchar * restrict pad_pool,
+    uint tid,
+    uint total_threads)
 {
     __private ulong state[8];
     state[0] = ((__private ulong*)seed)[0];
@@ -278,9 +287,8 @@ void fill_scratchpad(__private const uchar seed[32], __global uchar * restrict p
         __private ulong out[8];
         sha3_512_65_u64(state, (uchar)(blk & 0xFF), out);
 
-        /* Write 32 bytes (4 u64s) to scratchpad — strided layout */
-        uint off = blk * BLOCK_SIZE;
-        __global ulong *pb = (__global ulong*)(pad + off);
+        /* Write to interleaved position — coalesced across wavefront */
+        __global ulong *pb = (__global ulong*)(pad_pool + ((ulong)blk * total_threads + tid) * BLOCK_SIZE);
         pb[0] = out[0]; pb[1] = out[1]; pb[2] = out[2]; pb[3] = out[3];
 
         /* Chain state: first 4 u64s from output, rest zero */
@@ -291,23 +299,26 @@ void fill_scratchpad(__private const uchar seed[32], __global uchar * restrict p
 }
 
 __attribute__((always_inline))
-void sequential_passes(__global uchar * restrict pad)
+void sequential_passes(
+    __global uchar * restrict pad_pool,
+    uint tid,
+    uint total_threads)
 {
     /* Forward pass: XOR each block with previous (wrap-around) */
-    __global ulong *prev_pb = (__global ulong*)(pad + (BLOCK_COUNT-1)*BLOCK_SIZE);
+    __global ulong *prev_pb = (__global ulong*)(pad_pool + ((ulong)(BLOCK_COUNT-1) * total_threads + tid) * BLOCK_SIZE);
     ulong prev0 = prev_pb[0], prev1 = prev_pb[1], prev2 = prev_pb[2], prev3 = prev_pb[3];
     for (uint i=0;i<BLOCK_COUNT;i++) {
-        __global ulong *pb = (__global ulong*)(pad + i*BLOCK_SIZE);
+        __global ulong *pb = (__global ulong*)(pad_pool + ((ulong)i * total_threads + tid) * BLOCK_SIZE);
         ulong cv0 = pb[0] ^ prev0, cv1 = pb[1] ^ prev1, cv2 = pb[2] ^ prev2, cv3 = pb[3] ^ prev3;
         pb[0] = cv0; pb[1] = cv1; pb[2] = cv2; pb[3] = cv3;
         prev0 = cv0; prev1 = cv1; prev2 = cv2; prev3 = cv3;
     }
     /* Backward pass: XOR each block with next (wrap-around) */
-    __global ulong *next_pb = (__global ulong*)(pad + 0);
+    __global ulong *next_pb = (__global ulong*)(pad_pool + ((ulong)0 * total_threads + tid) * BLOCK_SIZE);
     ulong next0 = next_pb[0], next1 = next_pb[1], next2 = next_pb[2], next3 = next_pb[3];
     for (uint i=BLOCK_COUNT;i>0;i--) {
         uint idx=i-1;
-        __global ulong *pb = (__global ulong*)(pad + idx*BLOCK_SIZE);
+        __global ulong *pb = (__global ulong*)(pad_pool + ((ulong)idx * total_threads + tid) * BLOCK_SIZE);
         ulong cv0 = pb[0] ^ next0, cv1 = pb[1] ^ next1, cv2 = pb[2] ^ next2, cv3 = pb[3] ^ next3;
         pb[0] = cv0; pb[1] = cv1; pb[2] = cv2; pb[3] = cv3;
         next0 = cv0; next1 = cv1; next2 = cv2; next3 = cv3;
@@ -315,7 +326,12 @@ void sequential_passes(__global uchar * restrict pad)
 }
 
 __attribute__((always_inline))
-void random_read_mix(__private const uchar seed[32], __global const uchar * restrict pad, __private uchar out[32])
+void random_read_mix(
+    __private const uchar seed[32],
+    __global const uchar * restrict pad_pool,
+    uint tid,
+    uint total_threads,
+    __private uchar out[32])
 {
     __private ulong acc[4];
     acc[0] = ((__private ulong*)seed)[0];
@@ -325,8 +341,7 @@ void random_read_mix(__private const uchar seed[32], __global const uchar * rest
     ulong pos=0;
     #pragma unroll 4
     for (ulong r=0;r<RANDOM_READS;r++) {
-        uint off=(uint)(pos*BLOCK_SIZE);
-        __global const ulong *pb = (__global const ulong*)(pad + off);
+        __global const ulong *pb = (__global const ulong*)(pad_pool + ((ulong)(uint)pos * total_threads + tid) * BLOCK_SIZE);
         acc[0] ^= pb[0]; acc[1] ^= pb[1]; acc[2] ^= pb[2]; acc[3] ^= pb[3];
         pos=(acc[0] ^ pos ^ r) % BLOCK_COUNT;
     }
@@ -524,12 +539,11 @@ void deeksha_lite_fire_mine(
     uchar s1[32] __attribute__((aligned(8)));
     keccak256_from_state(header_keccak_state, nonce, s1);
 
-    /* Step 2: Memory-hard scratchpad — STRIDED (per-thread 256KiB contiguous) */
-    __global uchar * restrict pad = scratchpad_pool + (ulong)tid * (ulong)SCRATCHPAD_SIZE;
-    fill_scratchpad(s1, pad);
-    sequential_passes(pad);
+    /* Step 2: Memory-hard scratchpad — INTERLEAVED (coalesced, matches CUDA) */
+    fill_scratchpad(s1, scratchpad_pool, tid, nonce_count);
+    sequential_passes(scratchpad_pool, tid, nonce_count);
     uchar s2[32] __attribute__((aligned(8)));
-    random_read_mix(s1, pad, s2);
+    random_read_mix(s1, scratchpad_pool, tid, nonce_count, s2);
 
     /* Step 3: AES-128 CTR mix — same as v1 */
     uchar s3[32] __attribute__((aligned(8)));

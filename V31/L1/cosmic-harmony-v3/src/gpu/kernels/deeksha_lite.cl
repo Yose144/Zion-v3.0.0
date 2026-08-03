@@ -288,7 +288,7 @@ void aes_final_round(__private uchar s[16], __private const uchar k[16])
 }
 
 /* ========================================================================== */
-/* Step 2A: Fill scratchpad with SHA3-512 chain                               */
+/* Step 2A: Fill scratchpad with SHA3-512 chain (INTERLEAVED layout)           */
 /*                                                                             */
 /* Matches CPU deeksha_lite.rs step2_memory_hard Phase 1:                     */
 /*   state[0..32] = seed, state[32..64] = 0                                   */
@@ -298,12 +298,17 @@ void aes_final_round(__private uchar s[16], __private const uchar k[16])
 /*     out = sha3_512(&input[..65])                                            */
 /*     pad[blk*32..blk*32+32] = out[0..32]                                    */
 /*     state[0..32] = out[0..32]                                               */
+/*                                                                             */
+/* INTERLEAVED: block blk of thread tid at pad_pool + (blk*total+tid)*32      */
+/* → coalesced wavefront access (matches CUDA kernel).                        */
 /* ========================================================================== */
 
 __attribute__((always_inline))
 void fill_scratchpad(
     __private const uchar seed[32],
-    __global uchar * restrict pad)
+    __global uchar * restrict pad_pool,
+    uint tid,
+    uint total_threads)
 {
     __private ulong state[8];
     state[0] = ((__private ulong*)seed)[0];
@@ -317,8 +322,7 @@ void fill_scratchpad(
         __private ulong out[8];
         sha3_512_65_u64(state, (uchar)(blk & 0xFF), out);
 
-        uint off = blk * BLOCK_SIZE;
-        __global ulong *pb = (__global ulong*)(pad + off);
+        __global ulong *pb = (__global ulong*)(pad_pool + ((ulong)blk * total_threads + tid) * BLOCK_SIZE);
         pb[0] = out[0]; pb[1] = out[1]; pb[2] = out[2]; pb[3] = out[3];
 
         /* Chain state: first 4 u64s from output, rest zero */
@@ -329,33 +333,32 @@ void fill_scratchpad(
 }
 
 /* ========================================================================== */
-/* Step 2B: Sequential passes                                                  */
-/*                                                                             */
-/* Matches CPU Phase 2 exactly:                                                */
-/*   pass 0 (forward):  for i in 0..4096: pad[i] ^= pad[i==0 ? 4095 : i-1]  */
-/*   pass 1 (backward): for i in 4095..=0: pad[i] ^= pad[i+1==4096 ? 0: i+1]*/
+/* Step 2B: Sequential passes (INTERLEAVED)                                     */
 /* ========================================================================== */
 
 __attribute__((always_inline))
-void sequential_passes(__global uchar * restrict pad)
+void sequential_passes(
+    __global uchar * restrict pad_pool,
+    uint tid,
+    uint total_threads)
 {
     /* Forward pass: XOR each block with previous (wrap-around) */
-    __global ulong *prev_pb = (__global ulong*)(pad + (BLOCK_COUNT-1)*BLOCK_SIZE);
+    __global ulong *prev_pb = (__global ulong*)(pad_pool + ((ulong)(BLOCK_COUNT-1) * total_threads + tid) * BLOCK_SIZE);
     ulong prev0 = prev_pb[0], prev1 = prev_pb[1], prev2 = prev_pb[2], prev3 = prev_pb[3];
     #pragma unroll 1
     for (uint i = 0; i < BLOCK_COUNT; i++) {
-        __global ulong *pb = (__global ulong*)(pad + i*BLOCK_SIZE);
+        __global ulong *pb = (__global ulong*)(pad_pool + ((ulong)i * total_threads + tid) * BLOCK_SIZE);
         ulong cv0 = pb[0] ^ prev0, cv1 = pb[1] ^ prev1, cv2 = pb[2] ^ prev2, cv3 = pb[3] ^ prev3;
         pb[0] = cv0; pb[1] = cv1; pb[2] = cv2; pb[3] = cv3;
         prev0 = cv0; prev1 = cv1; prev2 = cv2; prev3 = cv3;
     }
     /* Backward pass: XOR each block with next (wrap-around) */
-    __global ulong *next_pb = (__global ulong*)(pad + 0);
+    __global ulong *next_pb = (__global ulong*)(pad_pool + ((ulong)0 * total_threads + tid) * BLOCK_SIZE);
     ulong next0 = next_pb[0], next1 = next_pb[1], next2 = next_pb[2], next3 = next_pb[3];
     #pragma unroll 1
     for (uint i = BLOCK_COUNT; i > 0; i--) {
         uint idx = i - 1;
-        __global ulong *pb = (__global ulong*)(pad + idx*BLOCK_SIZE);
+        __global ulong *pb = (__global ulong*)(pad_pool + ((ulong)idx * total_threads + tid) * BLOCK_SIZE);
         ulong cv0 = pb[0] ^ next0, cv1 = pb[1] ^ next1, cv2 = pb[2] ^ next2, cv3 = pb[3] ^ next3;
         pb[0] = cv0; pb[1] = cv1; pb[2] = cv2; pb[3] = cv3;
         next0 = cv0; next1 = cv1; next2 = cv2; next3 = cv3;
@@ -363,18 +366,15 @@ void sequential_passes(__global uchar * restrict pad)
 }
 
 /* ========================================================================== */
-/* Step 2C: Random read mix                                                    */
-/*                                                                             */
-/* FIX: idx_val reads 8 bytes (u64), matching CPU:                            */
-/*   let mut idx_val: u64 = 0;                                                 */
-/*   for i in 0..8 { idx_val |= (acc[i] as u64) << (i * 8); }                */
-/*   pos = ((idx_val ^ pos as u64 ^ r as u64) as usize) % BLOCK_COUNT;        */
+/* Step 2C: Random read mix (INTERLEAVED)                                       */
 /* ========================================================================== */
 
 __attribute__((always_inline))
 void random_read_mix(
     __private const uchar seed[32],
-    __global const uchar * restrict pad,
+    __global const uchar * restrict pad_pool,
+    uint tid,
+    uint total_threads,
     __private uchar out[32])
 {
     __private ulong acc[4];
@@ -385,8 +385,7 @@ void random_read_mix(
     ulong pos = 0;
     #pragma unroll 4
     for (ulong r = 0; r < RANDOM_READS; r++) {
-        uint off = (uint)(pos * BLOCK_SIZE);
-        __global const ulong *pb = (__global const ulong*)(pad + off);
+        __global const ulong *pb = (__global const ulong*)(pad_pool + ((ulong)(uint)pos * total_threads + tid) * BLOCK_SIZE);
         acc[0] ^= pb[0]; acc[1] ^= pb[1]; acc[2] ^= pb[2]; acc[3] ^= pb[3];
         pos = (acc[0] ^ pos ^ r) % BLOCK_COUNT;
     }
@@ -533,18 +532,17 @@ void deeksha_lite_mine(
     uint tid = get_global_id(0);
     if (tid >= nonce_count) return;
 
-    __global uchar * restrict pad = scratchpad_pool + (ulong)tid * SCRATCHPAD_SIZE;
     ulong nonce = nonce_base + (ulong)tid;
 
     /* Step 1: Keccak256(header || nonce) using host-precomputed state */
     uchar s1[32] __attribute__((aligned(8)));
     keccak256_from_state(header_keccak_state, nonce, s1);
 
-    /* Step 2: Memory-hard scratchpad */
-    fill_scratchpad(s1, pad);
-    sequential_passes(pad);
+    /* Step 2: Memory-hard scratchpad — INTERLEAVED (coalesced, matches CUDA) */
+    fill_scratchpad(s1, scratchpad_pool, tid, nonce_count);
+    sequential_passes(scratchpad_pool, tid, nonce_count);
     uchar s2[32] __attribute__((aligned(8)));
-    random_read_mix(s1, pad, s2);
+    random_read_mix(s1, scratchpad_pool, tid, nonce_count, s2);
 
     /* Step 3: AES-128 CTR mix */
     uchar s3[32] __attribute__((aligned(8)));

@@ -206,10 +206,14 @@ inline void aes_final_round(thread uchar s[16], thread const uchar k[16])
 { aes_sub_bytes(s); aes_shift_rows(s); aes_add_round_key(s, k); }
 
 /* ========================================================================== */
-/* Steps 2A/2B/2C: scratchpad                                                 */
+/* Steps 2A/2B/2C: scratchpad — INTERLEAVED layout (matches CUDA/OpenCL)       */
+/*                                                                             */
+/* Layout: block blk of thread tid at pad_pool + (blk*total_threads+tid)*32   */
+/* → coalesced SIMD-group access on Apple Silicon GPU.                         */
 /* ========================================================================== */
 
-inline void fill_scratchpad(thread const uchar seed[32], device uchar *pad)
+inline void fill_scratchpad(thread const uchar seed[32], device uchar *pad_pool,
+                            uint tid, uint total_threads)
 {
     thread ulong state_u[8];
     thread uchar *state = (thread uchar *)state_u;
@@ -222,39 +226,38 @@ inline void fill_scratchpad(thread const uchar seed[32], device uchar *pad)
         thread ulong out64_u[8];
         thread uchar *out64 = (thread uchar *)out64_u;
         sha3_512(inp, 65, out64);
-        uint off = blk * BLOCK_SIZE;
-        device ulong *dst = (device ulong *)(pad + off);
+        device ulong *dst = (device ulong *)(pad_pool + ((ulong)blk * total_threads + tid) * BLOCK_SIZE);
         for (int i = 0; i < 4; i++) dst[i] = out64_u[i];
         for (int i = 0; i < 4; i++) state_u[i] = out64_u[i];
     }
 }
 
-inline void sequential_passes(device uchar *pad)
+inline void sequential_passes(device uchar *pad_pool, uint tid, uint total_threads)
 {
     for (uint i = 0; i < BLOCK_COUNT; i++) {
         uint prev = (i == 0) ? (BLOCK_COUNT - 1) : (i - 1);
-        device ulong *cv = (device ulong *)(pad + i * BLOCK_SIZE);
-        device ulong *pv = (device ulong *)(pad + prev * BLOCK_SIZE);
+        device ulong *cv = (device ulong *)(pad_pool + ((ulong)i * total_threads + tid) * BLOCK_SIZE);
+        device ulong *pv = (device ulong *)(pad_pool + ((ulong)prev * total_threads + tid) * BLOCK_SIZE);
         for (int j = 0; j < 4; j++) cv[j] ^= pv[j];
     }
     for (uint i = BLOCK_COUNT; i > 0; i--) {
         uint idx = i - 1;
         uint next = (idx + 1 == BLOCK_COUNT) ? 0 : (idx + 1);
-        device ulong *cv = (device ulong *)(pad + idx * BLOCK_SIZE);
-        device ulong *nv = (device ulong *)(pad + next * BLOCK_SIZE);
+        device ulong *cv = (device ulong *)(pad_pool + ((ulong)idx * total_threads + tid) * BLOCK_SIZE);
+        device ulong *nv = (device ulong *)(pad_pool + ((ulong)next * total_threads + tid) * BLOCK_SIZE);
         for (int j = 0; j < 4; j++) cv[j] ^= nv[j];
     }
 }
 
-inline void random_read_mix(thread const uchar seed[32], device const uchar *pad, thread uchar *out)
+inline void random_read_mix(thread const uchar seed[32], device const uchar *pad_pool,
+                            uint tid, uint total_threads, thread uchar *out)
 {
     thread ulong acc_u[4];
     thread uchar *acc = (thread uchar *)acc_u;
     for (int i = 0; i < 32; i++) acc[i] = seed[i];
     ulong pos = 0;
     for (ulong r = 0; r < RANDOM_READS; r++) {
-        uint off = (uint)(pos * BLOCK_SIZE);
-        device const ulong *pv = (device const ulong *)(pad + off);
+        device const ulong *pv = (device const ulong *)(pad_pool + ((ulong)(uint)pos * total_threads + tid) * BLOCK_SIZE);
         for (int j = 0; j < 4; j++) acc_u[j] ^= pv[j];
         ulong idx_val = 0;
         for (int i = 0; i < 8; i++) idx_val |= ((ulong)acc[i]) << (i * 8);
@@ -357,7 +360,6 @@ kernel void deeksha_lite_fire_mine(
     if (gid >= nonce_count) return;
 
     ulong nonce = nonce_base_buf[0] + (ulong)gid;
-    device uchar *pad = scratchpad_pool + (ulong)gid * SCRATCHPAD_SIZE;
 
     /* Step 1: Keccak256(header || nonce) */
     thread ulong input_u[11];
@@ -374,11 +376,11 @@ kernel void deeksha_lite_fire_mine(
     uchar s1[32];
     keccak256(input, 88, s1);
 
-    /* Step 2: Memory-hard scratchpad */
-    fill_scratchpad(s1, pad);
-    sequential_passes(pad);
+    /* Step 2: Memory-hard scratchpad — INTERLEAVED (coalesced) */
+    fill_scratchpad(s1, scratchpad_pool, gid, nonce_count);
+    sequential_passes(scratchpad_pool, gid, nonce_count);
     uchar s2[32];
-    random_read_mix(s1, pad, s2);
+    random_read_mix(s1, scratchpad_pool, gid, nonce_count, s2);
 
     /* Step 3: AES-128 CTR mix */
     uchar s3[32];
