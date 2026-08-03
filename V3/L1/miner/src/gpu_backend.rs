@@ -4596,6 +4596,13 @@ pub mod opencl_deeksha_lite {
         /// with DMA readback (on this queue), hiding read latency.
         read_queue: Queue,
         stream_weights_buf: Buffer<f32>,
+        /// On-device target check buffers (matches CUDA kernel).
+        /// result_flag: 0=not found, 1=found (32-bit atomic)
+        /// result_nonce: winning nonce (written by winner thread)
+        /// result_hash: winning hash (written by winner thread)
+        result_flag_buf: Buffer<u32>,
+        result_nonce_buf: Buffer<u64>,
+        result_hash_buf: Buffer<u8>,
         work_size: usize,
         local_work_size: usize,
         device_name_cached: String,
@@ -4616,6 +4623,11 @@ pub mod opencl_deeksha_lite {
         chunk_meta: Vec<(usize, u64, usize)>,
         target: DifficultyTarget,
         total_tested: u64,
+        nonce_base: u64,
+        /// When true, mine_batch was used (sync path with on-device target check).
+        /// collect_batch returns pre-computed solutions without scanning host buffers.
+        sync_fallback: bool,
+        solutions: Vec<(u64, [u8; 32], Option<[u8; 32]>)>,
     }
 
     impl OpenClDeekshaLiteMiner {
@@ -4860,6 +4872,21 @@ pub mod opencl_deeksha_lite {
                 .len(6)
                 .copy_host_slice(&stream_weights_zero[..])
                 .build()?;
+            // On-device target check buffers (matches CUDA kernel)
+            let result_flag_buf = Buffer::<u32>::builder()
+                .queue(q.clone())
+                .len(1)
+                .copy_host_slice(&[0u32])
+                .build()?;
+            let result_nonce_buf = Buffer::<u64>::builder()
+                .queue(q.clone())
+                .len(1)
+                .copy_host_slice(&[SENTINEL])
+                .build()?;
+            let result_hash_buf = Buffer::<u8>::builder()
+                .queue(q.clone())
+                .len(32)
+                .build()?;
             let kernel = pro_que
                 .kernel_builder(kernel_name)
                 .arg(&header_state_buf)
@@ -4868,6 +4895,10 @@ pub mod opencl_deeksha_lite {
                 .arg(&output_hashes_buf)
                 .arg(&scratchpad_buf)
                 .arg(&stream_weights_buf)
+                .arg(0u32)              // target_u32
+                .arg(&result_flag_buf)  // result_flag
+                .arg(&result_nonce_buf) // result_nonce
+                .arg(&result_hash_buf)  // result_hash
                 .build()
                 .map_err(|e| anyhow::anyhow!("kernel build failed: {e}"))?;
             println!(
@@ -4886,6 +4917,9 @@ pub mod opencl_deeksha_lite {
                 output_hashes_buf_b,
                 read_queue,
                 stream_weights_buf,
+                result_flag_buf,
+                result_nonce_buf,
+                result_hash_buf,
                 work_size: actual_work_size,
                 local_work_size: local_ws,
                 device_name_cached: device_name,
@@ -4969,6 +5003,161 @@ pub mod opencl_deeksha_lite {
                     );
                 }
             }
+
+            // Compute target_u32 (big-endian u32 of first 4 target bytes)
+            // Matches CUDA kernel's target check.
+            let target_u32 = u32::from_be_bytes([
+                target.bytes[0],
+                target.bytes[1],
+                target.bytes[2],
+                target.bytes[3],
+            ]);
+
+            // ── FAST PATH: On-device target check (matches CUDA kernel) ──
+            // When target_u32 != 0, the kernel checks each hash on-device and
+            // atomically writes the winning nonce. This eliminates:
+            //   1. Writing all hashes to global memory (2MB+ per batch)
+            //   2. Reading all hashes back to host (2MB+ PCIe transfer)
+            //   3. CPU scan of all hashes
+            //   4. Early exit: threads skip work if solution already found
+            if target_u32 != 0 {
+                // Reset result_flag to 0 (not found) for this batch
+                {
+                    let guard = GpuGuard::new();
+                    self.result_flag_buf.write(&vec![0u32][..]).enq()?;
+                    if guard.was_caught() {
+                        self.recovery_attempts += 1;
+                        anyhow::bail!(
+                            "GPU access violation during result_flag reset (attempt {}/{}).",
+                            self.recovery_attempts,
+                            self.max_recovery_attempts
+                        );
+                    }
+                }
+
+                // Set target_u32 kernel arg (arg index 6)
+                self.kernel.set_arg(6, target_u32)?;
+
+                let mut total_tested = 0u64;
+                let mut current_nonce = nonce_start;
+                let mut left = batch_size;
+
+                // Launch all chunks back-to-back (like CUDA batched launch)
+                while left > 0 {
+                    let chunk = (left as usize).min(self.work_size);
+                    let local_size = self.local_work_size.min(chunk);
+                    let global_size = ((chunk + local_size - 1) / local_size) * local_size;
+
+                    self.kernel.set_arg(1, current_nonce)?;
+                    self.kernel.set_arg(2, chunk as u32)?;
+
+                    {
+                        let guard = GpuGuard::new();
+                        unsafe {
+                            self.kernel
+                                .cmd()
+                                .global_work_size(global_size)
+                                .local_work_size(local_size)
+                                .enq()?;
+                        }
+                        if guard.was_caught() {
+                            self.recovery_attempts += 1;
+                            anyhow::bail!(
+                                "GPU access violation during kernel enqueue (attempt {}/{}). AMD driver crash detected.",
+                                self.recovery_attempts,
+                                self.max_recovery_attempts
+                            );
+                        }
+                    }
+
+                    total_tested += chunk as u64;
+                    current_nonce = current_nonce.wrapping_add(chunk as u64);
+                    left = left.saturating_sub(chunk as u64);
+                }
+
+                // Single sync point — wait for ALL chunks to complete
+                {
+                    let guard = GpuGuard::new();
+                    self.pro_que.queue().finish()?;
+                    if guard.was_caught() {
+                        self.recovery_attempts += 1;
+                        anyhow::bail!(
+                            "GPU access violation during queue finish (attempt {}/{}).",
+                            self.recovery_attempts,
+                            self.max_recovery_attempts
+                        );
+                    }
+                }
+
+                // Read result_flag — was a solution found?
+                let result_flag_host = {
+                    let guard = GpuGuard::new();
+                    let mut buf = vec![0u32; 1];
+                    self.result_flag_buf.read(&mut buf).enq()?;
+                    self.pro_que.queue().finish()?;
+                    if guard.was_caught() {
+                        self.recovery_attempts += 1;
+                        anyhow::bail!(
+                            "GPU access violation during result_flag read (attempt {}/{}).",
+                            self.recovery_attempts,
+                            self.max_recovery_attempts
+                        );
+                    }
+                    buf[0]
+                };
+
+                let mut all_solutions = Vec::new();
+                if result_flag_host != 0 {
+                    // Solution found — read nonce and hash
+                    let result_nonce_host = {
+                        let guard = GpuGuard::new();
+                        let mut buf = vec![0u64; 1];
+                        self.result_nonce_buf.read(&mut buf).enq()?;
+                        self.pro_que.queue().finish()?;
+                        if guard.was_caught() {
+                            self.recovery_attempts += 1;
+                            anyhow::bail!(
+                                "GPU access violation during result_nonce read (attempt {}/{}).",
+                                self.recovery_attempts,
+                                self.max_recovery_attempts
+                            );
+                        }
+                        buf[0]
+                    };
+                    let result_hash_host = {
+                        let guard = GpuGuard::new();
+                        let mut buf = vec![0u8; 32];
+                        self.result_hash_buf.read(&mut buf).enq()?;
+                        self.pro_que.queue().finish()?;
+                        if guard.was_caught() {
+                            self.recovery_attempts += 1;
+                            anyhow::bail!(
+                                "GPU access violation during result_hash read (attempt {}/{}).",
+                                self.recovery_attempts,
+                                self.max_recovery_attempts
+                            );
+                        }
+                        buf
+                    };
+                    let mut hash = [0u8; 32];
+                    hash.copy_from_slice(&result_hash_host);
+                    all_solutions.push((result_nonce_host, hash, None));
+                }
+
+                // Reset target_u32 to 0 for next call (benchmark mode safety)
+                self.kernel.set_arg(6, 0u32)?;
+
+                return Ok(GpuBatchResult {
+                    solutions: all_solutions,
+                    solution: None,
+                    nonces_tested: total_tested,
+                    device_name: self.device_name_cached.clone(),
+                });
+            }
+
+            // ── BENCHMARK PATH: target_u32 == 0, write all hashes ──
+            // Set target_u32 to 0 so kernel writes all hashes to output_hashes
+            self.kernel.set_arg(6, 0u32)?;
 
             // Check if double-buffering is disabled (env override for debugging)
             let double_buffer_disabled = std::env::var("ZION_GPU_NO_DOUBLE_BUFFER")
@@ -5282,9 +5471,40 @@ pub mod opencl_deeksha_lite {
             nonce_start: u64,
             batch_size: u64,
         ) -> Result<u64> {
+            // If target is non-trivial, use sync mine_batch (on-device target check).
+            // The async launch_batch path writes all hashes to global memory and
+            // scans them on CPU — slower than on-device check for non-zero target.
+            let target_u32 = u32::from_be_bytes([
+                target.bytes[0],
+                target.bytes[1],
+                target.bytes[2],
+                target.bytes[3],
+            ]);
+            if target_u32 != 0 {
+                // Sync path with on-device target check — much faster than
+                // writing/scanning all hashes. We store a sentinel pending
+                // so collect_batch knows to return mine_batch's result.
+                let result = self.mine_batch(header, target, nonce_start, batch_size)?;
+                self.pending = Some(PendingAsyncBatch {
+                    host_a: Vec::new(),
+                    host_b: Vec::new(),
+                    read_events: Vec::new(),
+                    chunk_meta: Vec::new(),
+                    total_tested: result.nonces_tested,
+                    solutions: result.solutions,
+                    nonce_base: nonce_start,
+                    target,
+                    sync_fallback: true,
+                });
+                return Ok(result.nonces_tested);
+            }
+
             if self.pending.is_some() {
                 self.pending = None;
             }
+
+            // Benchmark path: target_u32 == 0, use async double-buffered launch
+            self.kernel.set_arg(6, 0u32)?; // target_u32 = 0
 
             let header_bytes = header.to_bytes();
             let header_80 = &header_bytes[..80.min(header_bytes.len())];
@@ -5397,6 +5617,9 @@ pub mod opencl_deeksha_lite {
                 chunk_meta,
                 target,
                 total_tested,
+                nonce_base: nonce_start,
+                sync_fallback: false,
+                solutions: Vec::new(),
             });
 
             Ok(0)
@@ -5408,6 +5631,16 @@ pub mod opencl_deeksha_lite {
                 .pending
                 .take()
                 .ok_or_else(|| anyhow::anyhow!("no pending OpenCL lite batch to collect"))?;
+
+            // Sync fallback: mine_batch already computed solutions on-device
+            if pending.sync_fallback {
+                return Ok(GpuBatchResult {
+                    solutions: pending.solutions,
+                    solution: None,
+                    nonces_tested: pending.total_tested,
+                    device_name: self.device_name_cached.clone(),
+                });
+            }
 
             let mut all_solutions = Vec::new();
             let mut total_tested = 0u64;
@@ -5480,6 +5713,10 @@ pub mod opencl_deeksha_lite_fire {
         /// Dedicated read queue for async readback overlap.
         read_queue: Queue,
         stream_weights_buf: Buffer<f32>,
+        /// On-device target check buffers (matches CUDA kernel).
+        result_flag_buf: Buffer<u32>,
+        result_nonce_buf: Buffer<u64>,
+        result_hash_buf: Buffer<u8>,
         work_size: usize,
         local_work_size: usize,
         device_name_cached: String,
@@ -5509,6 +5746,12 @@ pub mod opencl_deeksha_lite_fire {
         target: DifficultyTarget,
         /// Total nonces tested across all chunks.
         total_tested: u64,
+        /// Nonce base for this batch.
+        nonce_base: u64,
+        /// When true, mine_batch was used (sync path with on-device target check).
+        sync_fallback: bool,
+        /// Pre-computed solutions from sync_fallback path.
+        solutions: Vec<(u64, [u8; 32], Option<[u8; 32]>)>,
     }
 
     impl OpenClDeekshaLiteFireMiner {
@@ -5730,6 +5973,21 @@ pub mod opencl_deeksha_lite_fire {
                 .len(6)
                 .copy_host_slice(&stream_weights_zero[..])
                 .build()?;
+            // On-device target check buffers (matches CUDA kernel)
+            let result_flag_buf = Buffer::<u32>::builder()
+                .queue(q.clone())
+                .len(1)
+                .copy_host_slice(&[0u32])
+                .build()?;
+            let result_nonce_buf = Buffer::<u64>::builder()
+                .queue(q.clone())
+                .len(1)
+                .copy_host_slice(&[SENTINEL])
+                .build()?;
+            let result_hash_buf = Buffer::<u8>::builder()
+                .queue(q.clone())
+                .len(32)
+                .build()?;
             let kernel = pro_que
                 .kernel_builder(opencl_kernel::DEEKSHA_LITE_FIRE_KERNEL_NAME)
                 .arg(&header_state_buf)
@@ -5738,6 +5996,10 @@ pub mod opencl_deeksha_lite_fire {
                 .arg(&output_hashes_buf)
                 .arg(&scratchpad_buf)
                 .arg(&stream_weights_buf)
+                .arg(0u32)              // target_u32
+                .arg(&result_flag_buf)  // result_flag
+                .arg(&result_nonce_buf) // result_nonce
+                .arg(&result_hash_buf)  // result_hash
                 .build()
                 .map_err(|e| anyhow::anyhow!("kernel build failed: {e}"))?;
             println!(
@@ -5756,6 +6018,9 @@ pub mod opencl_deeksha_lite_fire {
                 output_hashes_buf_b,
                 read_queue,
                 stream_weights_buf,
+                result_flag_buf,
+                result_nonce_buf,
+                result_hash_buf,
                 work_size: actual_work_size,
                 local_work_size: local_ws,
                 device_name_cached: device_name,
@@ -5827,6 +6092,149 @@ pub mod opencl_deeksha_lite_fire {
                     );
                 }
             }
+
+            // Compute target_u32 (big-endian u32 of first 4 target bytes)
+            let target_u32 = u32::from_be_bytes([
+                target.bytes[0],
+                target.bytes[1],
+                target.bytes[2],
+                target.bytes[3],
+            ]);
+
+            // ── FAST PATH: On-device target check (matches CUDA kernel) ──
+            if target_u32 != 0 {
+                // Reset result_flag to 0 (not found) for this batch
+                {
+                    let guard = GpuGuard::new();
+                    self.result_flag_buf.write(&vec![0u32][..]).enq()?;
+                    if guard.was_caught() {
+                        self.recovery_attempts += 1;
+                        anyhow::bail!(
+                            "GPU access violation during result_flag reset (attempt {}/{}).",
+                            self.recovery_attempts,
+                            self.max_recovery_attempts
+                        );
+                    }
+                }
+
+                self.kernel.set_arg(6, target_u32)?;
+
+                let mut total_tested = 0u64;
+                let mut current_nonce = nonce_start;
+                let mut left = batch_size;
+
+                while left > 0 {
+                    let chunk = (left as usize).min(self.work_size);
+                    let local_size = self.local_work_size.min(chunk);
+                    let global_size = ((chunk + local_size - 1) / local_size) * local_size;
+
+                    self.kernel.set_arg(1, current_nonce)?;
+                    self.kernel.set_arg(2, chunk as u32)?;
+
+                    {
+                        let guard = GpuGuard::new();
+                        unsafe {
+                            self.kernel
+                                .cmd()
+                                .global_work_size(global_size)
+                                .local_work_size(local_size)
+                                .enq()?;
+                        }
+                        if guard.was_caught() {
+                            self.recovery_attempts += 1;
+                            anyhow::bail!(
+                                "GPU access violation during kernel enqueue (attempt {}/{}). AMD driver crash detected.",
+                                self.recovery_attempts,
+                                self.max_recovery_attempts
+                            );
+                        }
+                    }
+
+                    total_tested += chunk as u64;
+                    current_nonce = current_nonce.wrapping_add(chunk as u64);
+                    left = left.saturating_sub(chunk as u64);
+                }
+
+                // Single sync point
+                {
+                    let guard = GpuGuard::new();
+                    self.pro_que.queue().finish()?;
+                    if guard.was_caught() {
+                        self.recovery_attempts += 1;
+                        anyhow::bail!(
+                            "GPU access violation during queue finish (attempt {}/{}).",
+                            self.recovery_attempts,
+                            self.max_recovery_attempts
+                        );
+                    }
+                }
+
+                // Read result_flag
+                let result_flag_host = {
+                    let guard = GpuGuard::new();
+                    let mut buf = vec![0u32; 1];
+                    self.result_flag_buf.read(&mut buf).enq()?;
+                    self.pro_que.queue().finish()?;
+                    if guard.was_caught() {
+                        self.recovery_attempts += 1;
+                        anyhow::bail!(
+                            "GPU access violation during result_flag read (attempt {}/{}).",
+                            self.recovery_attempts,
+                            self.max_recovery_attempts
+                        );
+                    }
+                    buf[0]
+                };
+
+                let mut all_solutions = Vec::new();
+                if result_flag_host != 0 {
+                    let result_nonce_host = {
+                        let guard = GpuGuard::new();
+                        let mut buf = vec![0u64; 1];
+                        self.result_nonce_buf.read(&mut buf).enq()?;
+                        self.pro_que.queue().finish()?;
+                        if guard.was_caught() {
+                            self.recovery_attempts += 1;
+                            anyhow::bail!(
+                                "GPU access violation during result_nonce read (attempt {}/{}).",
+                                self.recovery_attempts,
+                                self.max_recovery_attempts
+                            );
+                        }
+                        buf[0]
+                    };
+                    let result_hash_host = {
+                        let guard = GpuGuard::new();
+                        let mut buf = vec![0u8; 32];
+                        self.result_hash_buf.read(&mut buf).enq()?;
+                        self.pro_que.queue().finish()?;
+                        if guard.was_caught() {
+                            self.recovery_attempts += 1;
+                            anyhow::bail!(
+                                "GPU access violation during result_hash read (attempt {}/{}).",
+                                self.recovery_attempts,
+                                self.max_recovery_attempts
+                            );
+                        }
+                        buf
+                    };
+                    let mut hash = [0u8; 32];
+                    hash.copy_from_slice(&result_hash_host);
+                    all_solutions.push((result_nonce_host, hash, None));
+                }
+
+                self.kernel.set_arg(6, 0u32)?;
+
+                return Ok(GpuBatchResult {
+                    solutions: all_solutions,
+                    solution: None,
+                    nonces_tested: total_tested,
+                    device_name: self.device_name_cached.clone(),
+                });
+            }
+
+            // ── BENCHMARK PATH: target_u32 == 0, write all hashes ──
+            self.kernel.set_arg(6, 0u32)?;
 
             let double_buffer_disabled = std::env::var("ZION_GPU_NO_DOUBLE_BUFFER")
                 .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
@@ -6127,12 +6535,38 @@ pub mod opencl_deeksha_lite_fire {
             nonce_start: u64,
             batch_size: u64,
         ) -> Result<u64> {
+            // If target is non-trivial, use sync mine_batch (on-device target check).
+            let target_u32 = u32::from_be_bytes([
+                target.bytes[0],
+                target.bytes[1],
+                target.bytes[2],
+                target.bytes[3],
+            ]);
+            if target_u32 != 0 {
+                let result = self.mine_batch(header, target, nonce_start, batch_size)?;
+                self.pending = Some(PendingAsyncBatch {
+                    host_a: Vec::new(),
+                    host_b: Vec::new(),
+                    read_events: Vec::new(),
+                    chunk_meta: Vec::new(),
+                    total_tested: result.nonces_tested,
+                    nonce_base: nonce_start,
+                    target,
+                    sync_fallback: true,
+                    solutions: result.solutions,
+                });
+                return Ok(result.nonces_tested);
+            }
+
             // If a previous batch is still pending (collect_batch not called),
             // drop it. Its events will be released when the PendingAsyncBatch
             // is dropped — the OpenCL runtime handles cleanup.
             if self.pending.is_some() {
                 self.pending = None;
             }
+
+            // Benchmark path: target_u32 == 0, use async double-buffered launch
+            self.kernel.set_arg(6, 0u32)?; // target_u32 = 0
 
             let header_bytes = header.to_bytes();
             let header_80 = &header_bytes[..80.min(header_bytes.len())];
@@ -6262,6 +6696,9 @@ pub mod opencl_deeksha_lite_fire {
                 chunk_meta,
                 target,
                 total_tested,
+                nonce_base: nonce_start,
+                sync_fallback: false,
+                solutions: Vec::new(),
             });
 
             Ok(0) // token unused, pending stored in self
@@ -6276,6 +6713,16 @@ pub mod opencl_deeksha_lite_fire {
                 .pending
                 .take()
                 .ok_or_else(|| anyhow::anyhow!("no pending OpenCL fire batch to collect"))?;
+
+            // Sync fallback: mine_batch already computed solutions on-device
+            if pending.sync_fallback {
+                return Ok(GpuBatchResult {
+                    solutions: pending.solutions,
+                    solution: None,
+                    nonces_tested: pending.total_tested,
+                    device_name: self.device_name_cached.clone(),
+                });
+            }
 
             let mut all_solutions = Vec::new();
             let mut total_tested = 0u64;
