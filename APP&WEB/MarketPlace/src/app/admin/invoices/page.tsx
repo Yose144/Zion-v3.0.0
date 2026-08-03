@@ -28,7 +28,7 @@ export default function AdminInvoicesPage() {
   return (
     <div>
       <h1 className="text-2xl font-black text-gradient mb-6">{t('admin.invoicesTitle')}</h1>
-      <div className="overflow-x-auto rounded-xl border border-white/10 bg-oasis-surface">
+      <div className="overflow-x-auto rounded-xl border border-white/10 bg-zion-card">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-white/10 text-left text-gray-400">

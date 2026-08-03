@@ -91,7 +91,7 @@ export default function AdminOrdersPage() {
         <select
           value={status}
           onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-          className="bg-oasis-surface border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-oasis-cyan focus:outline-none"
+          className="bg-zion-card border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-oasis-cyan focus:outline-none"
         >
           <option value="">{t('admin.allStatuses')}</option>
           {ORDER_STATUSES.map((s) => (
@@ -102,7 +102,7 @@ export default function AdminOrdersPage() {
         <select
           value={paymentStatus}
           onChange={(e) => { setPaymentStatus(e.target.value); setPage(1); }}
-          className="bg-oasis-surface border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-oasis-cyan focus:outline-none"
+          className="bg-zion-card border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-oasis-cyan focus:outline-none"
         >
           <option value="">{t('admin.allPayments')}</option>
           {PAYMENT_STATUSES.map((s) => (
@@ -114,7 +114,7 @@ export default function AdminOrdersPage() {
           type="text"
           placeholder={t('admin.searchPlaceholder')}
           onChange={(e) => debouncedSearch(e.target.value)}
-          className="bg-oasis-surface border border-white/10 rounded-lg px-3 py-2 text-sm min-w-[260px] focus:border-oasis-cyan focus:outline-none"
+          className="bg-zion-card border border-white/10 rounded-lg px-3 py-2 text-sm min-w-[260px] focus:border-oasis-cyan focus:outline-none"
         />
       </div>
 
@@ -123,7 +123,7 @@ export default function AdminOrdersPage() {
 
       {!loading && data && (
         <>
-          <div className="overflow-x-auto rounded-xl border border-white/10 bg-oasis-surface">
+          <div className="overflow-x-auto rounded-xl border border-white/10 bg-zion-card">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-left text-gray-400">
@@ -204,7 +204,7 @@ export default function AdminOrdersPage() {
                                   defaultValue={order.trackingNumber ?? ''}
                                   onChange={(e) => setTracking({ ...tracking, [order.id]: e.target.value })}
                                   placeholder={t('admin.trackingPlaceholder')}
-                                  className="bg-oasis-surface border border-white/10 rounded px-3 py-2 text-sm flex-1"
+                                  className="bg-zion-card border border-white/10 rounded px-3 py-2 text-sm flex-1"
                                 />
                                 <button
                                   onClick={() => handleTracking(order.id)}
