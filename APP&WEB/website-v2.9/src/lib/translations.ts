@@ -557,14 +557,14 @@ const t = {
   /* ─── Onboard ─── */
   onboard: {
     hero_kicker: { cs: 'Začni', en: 'Get Started' },
-    hero_title: { cs: 'Onboard to ZION', en: 'Onboard to ZION' },
+    hero_title: { cs: 'Sůl této země — Vítej na palubě', en: 'Salt of the Earth — Welcome Aboard' },
     hero_subtitle: {
-      cs: 'Peněženka, nód, těžba, bridge a první DApp — krok za krokem.',
-      en: 'Wallet, node, mining, bridge, and your first DApp — step by step.',
+      cs: 'Příběh, který si můžeš ověřit. Síť, na kterou můžeš vstoupit dnes.',
+      en: 'A story you can verify. A network you can join today.',
     },
     hero_description: {
-      cs: 'Všechny návody jsou otevřené, praktické a MIT licencované. Vyber si kategorii vlevo a začni stavět na ZION TerraNova.',
-      en: 'All guides are open, practical, and MIT licensed. Pick a category on the left and start building on ZION TerraNova.',
+      cs: 'Marketingový onboard ZION TerraNova: od pozvánky přes Sůl této země a Oasis až po technické detaily pro zájemce.',
+      en: 'Marketing onboarding for ZION TerraNova: from the invitation through Salt of the Earth and Oasis to technical details for the curious.',
     },
     source_button: { cs: 'Zdrojové soubory na GitHub', en: 'Source files on GitHub' },
     download_pdf: { cs: 'Stáhnout PDF', en: 'Download PDF' },
