@@ -2,13 +2,13 @@
 
 > **Verze:** 3.1.0-alpha.2 (post-Phase A+B partial)
 > **Datum:** 2026-08-03
-> **Stav:** workspace builduje, **1872 testů procházejí**, 0 failed. Fáze A hotová, Fáze B partial.
+> **Stav:** workspace builduje, **1877 testů procházejí**, 0 failed. Fáze A hotová, Fáze B+C partial.
 
 ## Co je hotovo v `v3.1.0-alpha.2` (post-Phase A+B)
 
 - L1/L2/L3/L4/L5/L6 crates existují a kompilují jako jeden workspace (18 crateů).
-- **Všechny workspace testy pass: 1872** (bylo 1458 před Fází A)
-  - `zion-core` 286 testů (bylo 89 — +197 z P2P infra + V3 core modules)
+- **Všechny workspace testy pass: 1877** (bylo 1458 před Fází A)
+  - `zion-core` 291 testů (bylo 89 — +202 z P2P infra + V3 core + websocket)
   - `zion-native-ffi` 21 testů (NOVÝ crate)
   - `zion-cosmic-harmony` 185 testů (bylo 28 — +157 z V3 modules)
   - `zion-cosmic-harmony-v3` 205 testů
@@ -44,6 +44,7 @@
   - ✅ v3_validation.rs (1260 lines) — Full block/UTXO validation
   - ✅ v3_bridge.rs (566 lines) — Bridge unlock multisig (k256 ECDSA)
   - ✅ v3_wallet.rs (746 lines) — Ed25519 wallet with account+UTXO tx
+  - ✅ websocket.rs (310 lines) — WebSocket subscriptions server (trait-based handler)
   - ⏳ v3_node_builder.rs (375 lines) — needs ChainState/NodeRuntime port
   - Added: BlockCandidate, MiningJob, MiningSolution, SealedBlock types
   - Added: AccountTransaction::verify_signature(), crypto::sign_and_zeroize()
@@ -76,6 +77,15 @@
   - ✅ get-bridge-vault-address, zion-node, zion-migrate
   - ⏳ wallet, core-util, fund-bridge-vault, burn-funds, migrate-escrow, canonical-operator-env (feature-gated `v3-binaries`, need ChainState)
 
+- **[C.2] Edge-deploy infra** — 24 files created:
+  - ✅ systemd/: 13 service files (node1, node2, pool, bridge, dao, warp, miner, watchdog, backup, maintenance) + 4 config files
+  - ✅ config/edge-environment.sh — env vars for V31 node
+  - ✅ scripts/edge-health-probe.sh — health check for V31 services
+  - ✅ nginx/zion-nginx.conf — reverse proxy + TCP stream for RPC (8443→9443)
+  - ✅ fail2ban/zion-p2p.conf + zion-p2p-filter.conf — P2P jail (maxretry=50, bantime=24h)
+  - ✅ deploy-edge.sh — main deploy script (V31 paths, binary names)
+  - ✅ README.md — deploy structure documentation
+
 ### Původní alpha.2 features
 
 - **V3 checkpoint sync** — L1 umí načíst V3 stav jako genesis checkpoint.
@@ -93,7 +103,7 @@
 
 1. **V3 ChainState + NodeRuntime port** — v3_node_builder.rs čeká (~4500 řádků V3 lib.rs). Toto je nejkomplexnější port — ChainState (~3400 řádků) + NodeRuntime (~1170 řádků).
 2. **parallel.rs** — needs zion_auxpow crate (feature-gated). Defer po ChainState port.
-3. **websocket.rs** — needs NodeRuntime. Defer po ChainState port.
+3. **4 feature-gated binaries** — wallet, core-util, fund-bridge-vault, burn-funds, migrate-escrow, canonical-operator-env (need ChainState).
 4. **Realné non-EVM WARP kontrakty** — Tron, Solana, Cosmos, Stellar, Cardano, Aptos, Sui, TON, NEAR, Bitcoin.
 5. **PoC algoritmus** — `PocAlgorithm` vrací nyní bezpečně `Hash::default()`; aktivace až po governance.
 6. **30d continuous run / mainnet beta** — vyžaduje nasazený Edge node a monitoring.
