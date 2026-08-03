@@ -1,6 +1,6 @@
 /*
  * ============================================================================
- *  GhostRider hash — Raptoreum (RTM)
+ *  GhostRider hash -- Raptoreum (RTM)
  *
  *  This implementation matches the reference Raptoreum daemon, xmrig, and
  *  cpuminer-gr-avx2 (the miners that pools actually validate against).
@@ -77,7 +77,7 @@ enum Algo {
         HASH_FUNC_COUNT
 };
 
-/* 6 CN variants — matches daemon, xmrig and cpuminer-gr. */
+/* 6 CN variants -- matches daemon, xmrig and cpuminer-gr. */
 enum CNAlgo {
 	CNDark = 0,
 	CNDarklite,
@@ -110,7 +110,7 @@ static void getAlgoString(void *mem, unsigned int size,
   unsigned char *p = (unsigned char *)mem;
   unsigned int len = size / 2;
   /* MSVC does not support VLA (C99 variable-length arrays).
-     Use a fixed-size array — algoCount is at most 15 (HASH_FUNC_COUNT). */
+     Use a fixed-size array -- algoCount is at most 15 (HASH_FUNC_COUNT). */
   bool selectedAlgo[15];
   for (int z = 0; z < algoCount && z < 15; z++) {
     selectedAlgo[z] = false;

@@ -67,7 +67,7 @@ static inline uint64_t rotl64(uint64_t x, int n) {
     return (x << n) | (x >> (64 - n));
 }
 
-/* Keccak-f[1600] permutation — 24 rounds (reused from kheavyhash_native.c) */
+/* Keccak-f[1600] permutation -- 24 rounds (reused from kheavyhash_native.c) */
 static void keccak_f1600(uint64_t state[25]) {
     for (int round = 0; round < 24; round++) {
         /* Theta */
@@ -173,12 +173,12 @@ static inline uint32_t fnv1a(uint32_t a, uint32_t b) {
 /*
  * Compute KawPow mix_hash and final_hash for a given header, nonce, and DAG.
  *
- *   header_hash — 32-byte block header hash (the seed-hash base)
- *   nonce       — 64-bit nonce
- *   dag         — pointer to precomputed DAG buffer (128-byte entries)
- *   dag_size    — number of 128-byte DAG entries
- *   mix_out     — 32-byte mix hash output
- *   hash_out    — 32-byte final hash output
+ *   header_hash -- 32-byte block header hash (the seed-hash base)
+ *   nonce       -- 64-bit nonce
+ *   dag         -- pointer to precomputed DAG buffer (128-byte entries)
+ *   dag_size    -- number of 128-byte DAG entries
+ *   mix_out     -- 32-byte mix hash output
+ *   hash_out    -- 32-byte final hash output
  */
 EXPORT void kawpow_hash(
     const uint8_t* header_hash,  /* 32 bytes */
@@ -219,13 +219,13 @@ EXPORT void kawpow_hash(
         uint32_t dag_node[16];
         memcpy(dag_node, dag + index * KAWPOW_DAG_NODE, 64);
 
-        /* mix = fnv(mix, dag_node) — per-uint32 FNV-1a */
+        /* mix = fnv(mix, dag_node) -- per-uint32 FNV-1a */
         for (int w = 0; w < 16; w++) {
             mix[w] = fnv1a(mix[w], dag_node[w]);
         }
     }
 
-    /* Step 4: Compress mix — FNV-fold each pair -> 8 uint32 (32 bytes) */
+    /* Step 4: Compress mix -- FNV-fold each pair -> 8 uint32 (32 bytes) */
     uint32_t compressed[8];
     for (int i = 0; i < 8; i++) {
         compressed[i] = fnv1a(mix[i * 2], mix[i * 2 + 1]);
@@ -255,12 +255,12 @@ EXPORT void kawpow_hash(
 /*
  * Mine a single nonce against the target.
  *
- *   header_hash — 32-byte block header hash
- *   nonce       — 64-bit nonce
- *   dag         — pointer to precomputed DAG buffer (128-byte entries)
- *   dag_size    — number of 128-byte DAG entries
- *   target      — 32-byte target (big-endian)
- *   output      — 32-byte final hash output
+ *   header_hash -- 32-byte block header hash
+ *   nonce       -- 64-bit nonce
+ *   dag         -- pointer to precomputed DAG buffer (128-byte entries)
+ *   dag_size    -- number of 128-byte DAG entries
+ *   target      -- 32-byte target (big-endian)
+ *   output      -- 32-byte final hash output
  *
  * Returns 1 if hash <= target (meets target), 0 otherwise.
  */
@@ -326,11 +326,11 @@ EXPORT uint32_t kawpow_get_epoch(uint32_t height) {
 }
 
 /* ============================================================================
- * DAG GENERATOR — light cache → full DAG (graph expansion)
+ * DAG GENERATOR -- light cache -> full DAG (graph expansion)
  *
  * KawPow (ProgPoW-derived) uses the same DAG structure as Ethash, but with
  * KAWPOW_EPOCH_LENGTH=7500 (vs Ethash's 30000).  The DAG generation algorithm
- * is identical: light cache → 64-byte nodes via 256-parent FNV-1a mixing.
+ * is identical: light cache -> 64-byte nodes via 256-parent FNV-1a mixing.
  *
  * Each DAG *entry* is 128 bytes = 2 x 64-byte "nodes".
  * ============================================================================ */
@@ -425,11 +425,11 @@ typedef void (*kawpow_dag_progress_cb)(uint32_t percent);
  * The light cache is small (~16MB + epoch*128KB) and fast to generate on CPU.
  * It is used as input for on-GPU DAG generation.
  *
- *   epoch             — epoch number
- *   cache_size_bytes  — output: size of cache in bytes
- *   cache_items       — output: cache_size / 64
- *   dag_size_entries  — output: dataset size / 128 (number of 128-byte DAG entries)
- *   returns           — malloc'd cache buffer, or NULL on error. Caller must free().
+ *   epoch             -- epoch number
+ *   cache_size_bytes  -- output: size of cache in bytes
+ *   cache_items       -- output: cache_size / 64
+ *   dag_size_entries  -- output: dataset size / 128 (number of 128-byte DAG entries)
+ *   returns           -- malloc'd cache buffer, or NULL on error. Caller must free().
  */
 EXPORT uint8_t *kawpow_generate_light_cache(
     uint32_t epoch,
@@ -482,10 +482,10 @@ EXPORT void kawpow_free_light_cache(uint8_t *cache) {
 /* Generate the full KawPow DAG for a given epoch.
  * The caller owns the returned buffer and must free() it.
  *
- *   epoch             — epoch number (height / KAWPOW_EPOCH_LENGTH)
- *   dag_size_entries  — output: number of 128-byte entries
- *   progress_cb       — optional progress callback (0..100), may be NULL
- *   returns           — malloc'd DAG buffer (dag_size_entries * 128 bytes),
+ *   epoch             -- epoch number (height / KAWPOW_EPOCH_LENGTH)
+ *   dag_size_entries  -- output: number of 128-byte entries
+ *   progress_cb       -- optional progress callback (0..100), may be NULL
+ *   returns           -- malloc'd DAG buffer (dag_size_entries * 128 bytes),
  *                       or NULL on error.  Caller must free().
  */
 EXPORT uint8_t *kawpow_generate_dag(

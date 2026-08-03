@@ -1,15 +1,15 @@
 /*
  * ZION Cosmic Harmony v3 - Native C Implementation
  * 
- * Full CHv3 pipeline: Keccak-256 → SHA3-512 → Golden Matrix → Cosmic Fusion
+ * Full CHv3 pipeline: Keccak-256 -> SHA3-512 -> Golden Matrix -> Cosmic Fusion
  * Pure C, no external dependencies. ARM NEON optimized for Apple Silicon.
  *
  * Algorithm (must match Rust implementation in algorithms_opt.rs):
  *   1. Input = header[0:80] + nonce(8 bytes LE) = 88 bytes
- *   2. Step 1: Keccak-256(input) → 32 bytes
- *   3. Step 2: SHA3-512(step1) → 64 bytes
- *   4. Step 3: Golden Matrix(step2) → 64 bytes (8×8 matrix × PHI_POWERS_FP)
- *   5. Step 4: Cosmic Fusion(step3) → 32 bytes (4 rounds Keccak+XOR + final SHA3-512)
+ *   2. Step 1: Keccak-256(input) -> 32 bytes
+ *   3. Step 2: SHA3-512(step1) -> 64 bytes
+ *   4. Step 3: Golden Matrix(step2) -> 64 bytes (8×8 matrix × PHI_POWERS_FP)
+ *   5. Step 4: Cosmic Fusion(step3) -> 32 bytes (4 rounds Keccak+XOR + final SHA3-512)
  *
  * Build:
  *   macOS ARM:  clang -O3 -shared -fPIC cosmic_harmony_v3_native.c -o libcosmic_harmony_v3.dylib
@@ -208,7 +208,7 @@ static void keccak256(const uint8_t *input, size_t input_len, uint8_t output[32]
         memcpy(block, input + offset, remaining);
     }
     
-    /* Keccak padding (0x01 ... 0x80) — NOT SHA3 (0x06 ... 0x80) */
+    /* Keccak padding (0x01 ... 0x80) -- NOT SHA3 (0x06 ... 0x80) */
     block[remaining] = 0x01;
     block[rate - 1] |= 0x80;
     
@@ -285,7 +285,7 @@ static void sha3_512(const uint8_t *input, size_t input_len, uint8_t output[64])
 }
 
 /* ============================================================================
- * Golden Matrix (Step 3) — Fixed-point integer arithmetic
+ * Golden Matrix (Step 3) -- Fixed-point integer arithmetic
  * Must match Rust golden_matrix_opt() exactly!
  * ============================================================================ */
 
@@ -356,7 +356,7 @@ static void golden_matrix(const uint8_t input[64], uint8_t output[64]) {
 #endif
     }
     
-    /* Convert result to bytes (LE) — matches Rust val.to_le_bytes() */
+    /* Convert result to bytes (LE) -- matches Rust val.to_le_bytes() */
     for (int i = 0; i < 8; i++) {
         uint64_t val = result[i];
         output[i * 8 + 0] = (uint8_t)(val >>  0);
@@ -371,7 +371,7 @@ static void golden_matrix(const uint8_t input[64], uint8_t output[64]) {
 }
 
 /* ============================================================================
- * Cosmic Fusion (Step 4) — 4 rounds of Keccak+XOR, final SHA3-512
+ * Cosmic Fusion (Step 4) -- 4 rounds of Keccak+XOR, final SHA3-512
  * Must match Rust cosmic_fusion_opt() exactly!
  * ============================================================================ */
 
@@ -467,7 +467,7 @@ static CHv3GPUState g_gpu_state = {0};
 EXPORT const char* cosmic_harmony_v3_get_info(void);
 
 /* ============================================================================
- * Public API — Exported Functions
+ * Public API -- Exported Functions
  * ============================================================================ */
 
 /* Get number of available GPU devices */
@@ -492,7 +492,7 @@ EXPORT int32_t cosmic_harmony_v3_gpu_init(uint32_t device_id, uint32_t batch_siz
     return 0;  /* Success */
 }
 
-/* Mine a batch of nonces — CPU fallback (Metal version in .metal shader) */
+/* Mine a batch of nonces -- CPU fallback (Metal version in .metal shader) */
 EXPORT int32_t cosmic_harmony_v3_gpu_mine(
     const uint8_t *header,
     size_t header_len,

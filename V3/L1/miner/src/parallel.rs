@@ -74,7 +74,7 @@ pub fn hash_candidate(candidate: &BlockCandidate, algorithm: &str) -> [u8; 32] {
 
         // ── External algorithms: Autolykos v2 (ERG) ─────────────
         "autolykos" => {
-            #[cfg(feature = "native-autolykos")]
+            #[cfg(all(feature = "native-autolykos", has_autolykos_c))]
             {
                 return zion_native_ffi::autolykos::hash(&header_bytes, nonce, height as u32);
             }

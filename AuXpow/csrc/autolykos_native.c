@@ -44,7 +44,7 @@
 #endif
 
 /* ============================================================================
- * Blake2b-256 — Full RFC-7693 implementation
+ * Blake2b-256 -- Full RFC-7693 implementation
  * ============================================================================ */
 
 static const uint64_t BLAKE2B_IV[8] = {
@@ -180,7 +180,7 @@ EXPORT void blake2b_hash(const uint8_t* data, size_t len, uint8_t* out) {
 #define AUTOLYKOS_K 32
 
 /*
- * M = concat of i=0..1023 as big-endian int64 → 8192 bytes.
+ * M = concat of i=0..1023 as big-endian int64 -> 8192 bytes.
  * Generated at runtime by build_M().
  */
 static uint8_t M_ARRAY[8192];
@@ -229,7 +229,7 @@ static void bigint32_add(uint8_t dst[32], const uint8_t* src, size_t srclen) {
 }
 
 /* ============================================================================
- * Core Autolykos v2 hash — matches hitForVersion2ForMessage
+ * Core Autolykos v2 hash -- matches hitForVersion2ForMessage
  * ============================================================================ */
 
 /*
@@ -279,7 +279,7 @@ EXPORT uint64_t autolykos_hash(
     i4[0] = (uint8_t)(idx_val >> 24); i4[1] = (uint8_t)(idx_val >> 16);
     i4[2] = (uint8_t)(idx_val >>  8); i4[3] = (uint8_t)(idx_val);
 
-    /* Step 3: f = Blake2b256(i4 || height_be4 || M).drop(1) → 31 bytes */
+    /* Step 3: f = Blake2b256(i4 || height_be4 || M).drop(1) -> 31 bytes */
     {
         blake2b_state S;
         b2_init(&S, 32);
@@ -297,7 +297,7 @@ EXPORT uint64_t autolykos_hash(
     memcpy(seed_buf + 31 + header_len, nonce_be, 8);
     seed_len = 31 + header_len + 8;
 
-    /* Step 5: genIndexes(seed, N) — correct Ergo reference implementation */
+    /* Step 5: genIndexes(seed, N) -- correct Ergo reference implementation */
     uint8_t hash32[32];
     blake2b256_one(seed_buf, seed_len, hash32);
 
@@ -367,7 +367,7 @@ EXPORT uint64_t autolykos_hash(
 }
 
 /* ============================================================================
- * Public API — verify and benchmark
+ * Public API -- verify and benchmark
  * ============================================================================ */
 
 EXPORT int autolykos_verify(

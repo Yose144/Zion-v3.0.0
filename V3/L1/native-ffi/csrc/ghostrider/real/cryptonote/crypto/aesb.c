@@ -142,7 +142,7 @@ d_4(uint32_t, t_dec(f,n), sb_data, u0, u1, u2, u3);
 
 // ── AES-NI accelerated versions (x86-64 with AES-NI) ──────────────────
 // fwd_rnd(y,x,k,c) = s(y,c) = (k)[c] ^ SubBytes(ShiftRows(x))
-// This is exactly _mm_aesenc_si128(state, key) — one AES round.
+// This is exactly _mm_aesenc_si128(state, key) -- one AES round.
 // aesb_pseudo_round does 10 rounds, aesb_single_round does 1 round.
 // Soft AES (table lookup below) is ~50x slower than AES-NI on x86-64.
 #if defined(__AES__) && (defined(__x86_64__) || defined(__i386__))
@@ -174,7 +174,7 @@ void aesb_pseudo_round(const uint8_t *in, uint8_t *out, uint8_t *expandedKey)
 }
 
 #else
-// ── Soft AES fallback (table lookup) — original implementation ─────────
+// ── Soft AES fallback (table lookup) -- original implementation ─────────
 
 void aesb_single_round(const uint8_t *in, uint8_t *out, uint8_t *expandedKey)
 {

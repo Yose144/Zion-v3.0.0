@@ -1,6 +1,6 @@
 /*
  * ============================================================================
- *  ZION Native RandomX — Real tevador/RandomX wrapper
+ *  ZION Native RandomX -- Real tevador/RandomX wrapper
  *
  *  Wraps the tevador/RandomX C++ library with the ZION FFI ABI.
  *  Supports seed_hash updates for Monero stratum mining.notify.
@@ -56,7 +56,7 @@ static uint8_t          g_current_seed[32] = {0};
 static bool             g_initialized = false;
 static std::mutex       g_init_mutex;  /* protects seed updates */
 
-/* Per-thread VM — each thread gets its own VM sharing the global dataset */
+/* Per-thread VM -- each thread gets its own VM sharing the global dataset */
 static thread_local randomx_vm* t_vm = nullptr;
 static thread_local bool        t_vm_initialized = false;
 
@@ -84,14 +84,14 @@ static randomx_flags get_vm_flags() {
         flags |= RANDOMX_FLAG_FULL_MEM;
     }
     /* LARGE_PAGES: 2MB huge pages on Linux (requires vm.nr_hugepages).
-     * On macOS Apple Silicon, superpages are NOT available — mach_vm_allocate
+     * On macOS Apple Silicon, superpages are NOT available -- mach_vm_allocate
      * with VM_FLAGS_SUPERPAGE_SIZE_2MB returns KERN_INVALID_ARGUMENT.
      * M1 already uses 16KB native pages (4x larger than x86's 4KB), providing
      * some TLB benefit. Skip LARGE_PAGES on macOS to avoid failed allocations. */
 #if !defined(__APPLE__)
     flags |= RANDOMX_FLAG_LARGE_PAGES;
 #endif
-    /* On macOS, use SECURE mode (W^X) for JIT — required by hardened runtime */
+    /* On macOS, use SECURE mode (W^X) for JIT -- required by hardened runtime */
 #if defined(__APPLE__) && defined(__aarch64__)
     flags |= RANDOMX_FLAG_SECURE;
 #endif
@@ -123,14 +123,14 @@ static randomx_vm* create_thread_vm() {
 #endif
         vm = randomx_create_vm(light_flags, g_cache, nullptr);
         if (vm) {
-            fprintf(stderr, "randomx_zion: WARNING VM created in LIGHT mode (no dataset) — hashrate will be ~10x lower!\n");
+            fprintf(stderr, "randomx_zion: WARNING VM created in LIGHT mode (no dataset) -- hashrate will be ~10x lower!\n");
         }
     }
     if (!vm) {
         /* Last resort: default flags (interpreted, soft AES) */
         vm = randomx_create_vm(RANDOMX_FLAG_DEFAULT, g_cache, nullptr);
         if (vm) {
-            fprintf(stderr, "randomx_zion: WARNING VM created with DEFAULT flags (soft AES, no JIT) — very slow!\n");
+            fprintf(stderr, "randomx_zion: WARNING VM created with DEFAULT flags (soft AES, no JIT) -- very slow!\n");
         }
     }
     return vm;
@@ -212,7 +212,7 @@ static void update_seed(const uint8_t* seed, size_t len) {
     g_cache = randomx_alloc_cache(alloc_flags);
     bool cache_large_pages = (g_cache != nullptr) && large_pages_requested;
     if (!g_cache) {
-        /* LARGE_PAGES failed — retry without it */
+        /* LARGE_PAGES failed -- retry without it */
         randomx_flags fallback_flags = (randomx_flags)(alloc_flags & ~RANDOMX_FLAG_LARGE_PAGES);
         g_cache = randomx_alloc_cache(fallback_flags);
     }
@@ -239,11 +239,11 @@ static void update_seed(const uint8_t* seed, size_t len) {
             g_dataset = randomx_alloc_dataset(RANDOMX_FLAG_DEFAULT);
         }
         if (g_dataset) {
-            /* Parallel dataset init (xmrig-style) — ~10x faster than single-threaded */
+            /* Parallel dataset init (xmrig-style) -- ~10x faster than single-threaded */
             init_dataset_parallel(g_dataset, g_cache);
         }
     } else {
-        g_dataset = nullptr; /* light mode — cache only */
+        g_dataset = nullptr; /* light mode -- cache only */
     }
 
     memcpy(g_current_seed, seed, 32);
@@ -300,7 +300,7 @@ EXPORT void randomx_zion_init(const uint8_t* seed, size_t seed_len) {
     }
     /* Fast path: if seed hasn't changed, skip entirely (lock-free).
      * This avoids mutex contention when 6+ threads call init_with_seed
-     * every batch — the seed only changes every ~2h on Monero. */
+     * every batch -- the seed only changes every ~2h on Monero. */
     if (g_initialized && seed_matches(seed, seed_len)) {
         return;
     }
@@ -327,7 +327,7 @@ EXPORT void randomx_zion_hash(
         return;
     }
 
-    /* No mutex needed — each thread has its own VM sharing the read-only dataset */
+    /* No mutex needed -- each thread has its own VM sharing the read-only dataset */
     randomx_calculate_hash(vm, header, header_len, output);
 }
 
@@ -376,7 +376,7 @@ EXPORT double randomx_zion_benchmark(int32_t iterations) {
 }
 
 EXPORT const char* randomx_zion_version(void) {
-    return "ZION RandomX v1.0 — tevador/RandomX (real)";
+    return "ZION RandomX v1.0 -- tevador/RandomX (real)";
 }
 
 } /* extern "C" */

@@ -1,5 +1,5 @@
 /*
- * ffi_wrapper_v3.cpp — extern "C" entry points for the Rust FFI layer.
+ * ffi_wrapper_v3.cpp -- extern "C" entry points for the Rust FFI layer.
  *
  * Bridges the C++ VerusHash API to the V3 native-ffi ABI:
  *   void    verushash_init(void)
@@ -8,7 +8,7 @@
  *   double  verushash_benchmark(iterations)
  *   const char* verushash_version(void)
  *
- * Copyright (c) 2024-2026 Zion Project — MIT License
+ * Copyright (c) 2024-2026 Zion Project -- MIT License
  */
 
 #include "compat.h"
@@ -50,7 +50,7 @@ void verushash_hash(
     size_t buf_len = header_len + 8;
     uint8_t* buf = (uint8_t*)malloc(buf_len);
     if (!buf) {
-        /* OOM — zero output and return */
+        /* OOM -- zero output and return */
         memset(output, 0, 32);
         return;
     }
@@ -133,16 +133,16 @@ double verushash_benchmark(int32_t iterations) {
 }
 
 const char* verushash_version(void) {
-    return "ZION VerusHash v2.2 — production (Haraka+CLHash from VerusCoin)";
+    return "ZION VerusHash v2.2 -- production (Haraka+CLHash from VerusCoin)";
 }
 
 /* ====================================================================
- * Two-stage mining hash (optimized path — 50-100x faster per nonce)
+ * Two-stage mining hash (optimized path -- 50-100x faster per nonce)
  *
  * Based on bloxminer/ccminer approach:
- *   1. verushash_hash_half()  — Haraka512 chain → 64-byte intermediate (ONCE per job)
- *   2. verushash_prepare_key() — GenNewCLKey from intermediate (ONCE per job)
- *   3. verushash_hash_with_nonce() — CLHash + final Haraka512 (PER NONCE)
+ *   1. verushash_hash_half()  -- Haraka512 chain -> 64-byte intermediate (ONCE per job)
+ *   2. verushash_prepare_key() -- GenNewCLKey from intermediate (ONCE per job)
+ *   3. verushash_hash_with_nonce() -- CLHash + final Haraka512 (PER NONCE)
  *
  * Without this, the miner does ~324 Haraka calls per nonce (full hash).
  * With this, only ~2 Haraka calls per nonce.
@@ -214,7 +214,7 @@ void verushash_hash_half(
         }
     }
 
-    /* FillExtra — matches ccminer:
+    /* FillExtra -- matches ccminer:
      *   memcpy(curBuf + 47, curBuf, 16);
      *   memcpy(curBuf + 63, curBuf, 1); */
     memcpy(curBuf + 47, curBuf, 16);
@@ -289,7 +289,7 @@ void verushash_hash_with_nonce(
     size_t keySize = pdesc ? pdesc->keySizeInBytes : 8832;
     uint64_t keyMask = tl_hasher->vclh.keyMask;
 
-    /* Restore key using fixupkey — only ~64 modified 16-byte blocks from
+    /* Restore key using fixupkey -- only ~64 modified 16-byte blocks from
      * the refresh area (1024 bytes) vs full 8832-byte memcpy.
      * On the first call after prepare_key, pMoveScratch is all zeros
      * (zeroed by GenNewCLKey), so fixupkey is a no-op. */
@@ -309,7 +309,7 @@ void verushash_hash_with_nonce(
     __m128i acc = __verusclmulwithoutreduction64alignedrepeat_sv2_2(
         (__m128i*)key, (const __m128i*)tl_curBuf, keyMask, pMoveScratch);
 
-    /* Finish CLHash — reduction + GF(2^128) division */
+    /* Finish CLHash -- reduction + GF(2^128) division */
     const __m128i lengthvector = _mm_set_epi64x(1024, 64);
     const __m128i clprod1 = _mm_clmulepi64_si128(lengthvector, lengthvector, 0x10);
     acc = _mm_xor_si128(acc, clprod1);
@@ -342,12 +342,12 @@ void verushash_hash_with_nonce(
  * when a new job requires re-initialization). */
 void verushash_mining_reset(void) {
     tl_key_prepared = false;
-    /* Don't delete tl_hasher — it's reused across jobs. */
+    /* Don't delete tl_hasher -- it's reused across jobs. */
 }
 
 /* ====================================================================
- * Batch nonce scan — the entire nonce loop runs in C++, eliminating
- * per-nonce Rust→C++ FFI overhead (~2 calls/hash saved).
+ * Batch nonce scan -- the entire nonce loop runs in C++, eliminating
+ * per-nonce Rust->C++ FFI overhead (~2 calls/hash saved).
  *
  * verushash_scan_nonces() takes a nonce range and target, returns the
  * winning nonce + hash, or -1 if none found.
@@ -380,7 +380,7 @@ int64_t verushash_scan_nonces(
     uint64_t       start_nonce,
     uint64_t       end_nonce,
     const uint8_t  target[32],
-    uint8_t*       out_hash,                /* 32 bytes — winning hash */
+    uint8_t*       out_hash,                /* 32 bytes -- winning hash */
     uint64_t*      out_nonce)               /* winning nonce */
 {
     if (!tl_key_prepared) {
@@ -403,7 +403,7 @@ int64_t verushash_scan_nonces(
                                         (char)216, (char)195, (char)238, (char)245,
                                         (char)180, (char)175, (char)130, (char)153);
 
-    /* Local nonceSpace — copy template, update 4 bytes per nonce */
+    /* Local nonceSpace -- copy template, update 4 bytes per nonce */
     uint8_t ns[15];
     memcpy(ns, nonceSpace15_template, 15);
 
@@ -416,7 +416,7 @@ int64_t verushash_scan_nonces(
             memcpy(ns + nonce_offset, &n32, 4);
         }
 
-        /* fixupkey — restore modified key blocks from refresh area */
+        /* fixupkey -- restore modified key blocks from refresh area */
         fixupkey_opt(pMoveScratch, pdesc);
 
         /* Restore curBuf[47..63] from pre-computed fill1/ch */
@@ -450,7 +450,7 @@ int64_t verushash_scan_nonces(
         uint64_t keyOffset = intermediate & (keyMask >> 4);
         (*CVerusHashV2::haraka512KeyedFunction)(hash, tl_curBuf, key + keyOffset);
 
-        /* Target check — LE hash vs BE target */
+        /* Target check -- LE hash vs BE target */
         if (meets_target_le(hash, target)) {
             memcpy(out_hash, hash, 32);
             *out_nonce = nonce;

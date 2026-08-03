@@ -1,7 +1,7 @@
-/* ghostrider_stub.c — portable stub (Keccak-256 placeholder)
+/* ghostrider_stub.c -- portable stub (Keccak-256 placeholder)
  *
  * Used when real GhostRider sources (csrc/ghostrider/real/) are not present.
- * Produces a deterministic but INVALID hash — only for testing the stratum
+ * Produces a deterministic but INVALID hash -- only for testing the stratum
  * pipeline, not actual Raptoreum mining.
  */
 #include <stdint.h>
@@ -55,5 +55,5 @@ EXPORT int32_t ghostrider_zion_verify(const uint8_t* header, size_t header_len,
 }
 
 EXPORT const char* ghostrider_zion_version(void) {
-    return "ghostrider-stub-1.0.0 (placeholder — install real sources for mining)";
+    return "ghostrider-stub-1.0.0 (placeholder -- install real sources for mining)";
 }

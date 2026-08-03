@@ -4,8 +4,8 @@
  *  Blake3 implementation for DCR (Decred) and ALPH (Alephium) mining.
  *
  *  Algorithm:
- *    DCR  — blake3(header || nonce_le)           [single hash]
- *    ALPH — blake3(blake3(nonce_24B || header))   [double hash]
+ *    DCR  -- blake3(header || nonce_le)           [single hash]
+ *    ALPH -- blake3(blake3(nonce_24B || header))   [double hash]
  *
  *  This is a from-scratch C implementation of the BLAKE3 hash function,
  *  following the official reference implementation's algorithm:
@@ -403,7 +403,7 @@ EXPORT void blake3_finalize(blake3_ctx* ctx, uint8_t* out, size_t outlen) {
     hasher_finalize(ctx, out, outlen);
 }
 
-/* Simple one-shot hash: blake3(input) → 32-byte output */
+/* Simple one-shot hash: blake3(input) -> 32-byte output */
 EXPORT void blake3_hash(const uint8_t* input, size_t len, uint8_t* output) {
     blake3_hasher h;
     hasher_init(&h);
@@ -411,7 +411,7 @@ EXPORT void blake3_hash(const uint8_t* input, size_t len, uint8_t* output) {
     hasher_finalize(&h, output, 32);
 }
 
-/* DCR mining hash: blake3(header || nonce_le) → 32-byte output.
+/* DCR mining hash: blake3(header || nonce_le) -> 32-byte output.
    The nonce is appended as 8 little-endian bytes, matching the Rust
    reference `hash_blake3`.  Uses malloc for large headers to avoid
    stack overflow. */

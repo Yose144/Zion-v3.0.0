@@ -1,6 +1,6 @@
 /*
  * ============================================================================
- *  ZION Native VerusHash v2.2 — Portable Stub (V3 Phase-2)
+ *  ZION Native VerusHash v2.2 -- Portable Stub (V3 Phase-2)
  *
  *  Full VerusHash v2.2 requires the Haraka-512 permutation with AES-NI
  *  (x86-64) or ARM-crypto extensions (aarch64).  This portable fallback
@@ -11,7 +11,7 @@
  *  PRODUCTION NOTE:
  *    Replace the hashing body with the Haraka + CLHash pipeline from
  *    https://github.com/VerusCoin/VerusCoin/tree/master/src/crypto
- *    The function signatures below are the canonical V3 ABI — do not
+ *    The function signatures below are the canonical V3 ABI -- do not
  *    change them.
  *
  *  Functions exported (matching native_ffi.rs):
@@ -80,7 +80,7 @@ static void vkeccak256(const uint8_t*in,size_t inlen,uint8_t*out){
 /* ---- Public API ---- */
 
 EXPORT void verushash_init(void) {
-    /* no-op for portable stub — real impl inits Haraka lookup tables */
+    /* no-op for portable stub -- real impl inits Haraka lookup tables */
 }
 
 EXPORT void verushash_hash(
@@ -90,7 +90,7 @@ EXPORT void verushash_hash(
     uint8_t*       output)
 {
     /* Portable fallback: Keccak256(header || nonce_LE8)
-     * Real: Haraka512 → CLHash → VerusHash v2.2 pipeline */
+     * Real: Haraka512 -> CLHash -> VerusHash v2.2 pipeline */
     size_t copy = header_len < 72 ? header_len : 72;
     uint8_t buf[80];
     memset(buf, 0, 80);
@@ -145,5 +145,5 @@ EXPORT double verushash_benchmark(int32_t iterations) {
 }
 
 EXPORT const char* verushash_version(void) {
-    return "ZION VerusHash v0.1 — portable stub (link VerusCoin Haraka/CLHash for production)";
+    return "ZION VerusHash v0.1 -- portable stub (link VerusCoin Haraka/CLHash for production)";
 }
