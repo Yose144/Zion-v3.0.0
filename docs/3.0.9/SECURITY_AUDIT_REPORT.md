@@ -77,9 +77,90 @@
 
 ---
 
+## A1.3 — Edge Server Hardening
+
+**Date:** 2026-08-03
+**Scope:** Edge server (62.171.141.136 / 2a02:c207:2342:5821::1)
+
+### Hardening Applied
+
+| Layer | Control | Status |
+|-------|---------|--------|
+| SSH | Key-only auth (PasswordAuthentication no) | ✅ |
+| SSH | Port 2222 (non-default) | ✅ |
+| SSH | MaxAuthTries 3, LoginGraceTime 30 | ✅ |
+| SSH | UFW rate limiting (LIMIT) on ports 22+2222 | ✅ |
+| fail2ban | sshd jail: 3 retries, 24h ban, ufw action | ✅ |
+| fail2ban | zion-p2p jail: 50 retries, 24h ban, nftables | ✅ |
+| UFW | Default deny incoming, allow outgoing | ✅ |
+| UFW | Only required ports open (2222, 22, 80, 443, 8333-8335, 8443-8446, 8454, 8766, 9443, 9999) | ✅ |
+| Services | Internal services bound to 127.0.0.1 (RPC 9443/9445, postgres 5432, dashboard 8888) | ✅ |
+
+### Tailscale
+
+Tailscale not installed — hardening done via SSH key-only + fail2ban + UFW rate limiting instead.
+
+---
+
+## A2 — Chaos & Load Testing
+
+**Date:** 2026-08-03
+**Target:** Edge server (62.171.141.136)
+
+### A2.1 — 1000+ Miner Simulation
+
+| Metric | Value |
+|--------|-------|
+| Miners | 1000 |
+| Duration | 60s |
+| Pool panics | 0 |
+| Pool memory | 39,524 KB (flat) |
+| Pool CPU | 34.2% (< 80%) |
+| Pool alive | Yes |
+| **Result** | **PASS** |
+
+### A2.2 — Node Restart + Sync
+
+| Metric | Value |
+|--------|-------|
+| Service | zion-edge-node1.service |
+| Restart time | 12s (service → RPC responsive) |
+| First block relayed | 41s post-restart (height 11021) |
+| Catch-up time | 41s (< 5 min threshold) |
+| **Result** | **PASS** |
+
+### A2.3 — Bridge Watcher 50x Reconnect
+
+| Metric | Value |
+|--------|-------|
+| Cycles | 50 |
+| Success | 50/50 |
+| Failures | 0 |
+| Events lost | 0 |
+| **Result** | **PASS** |
+
+### A2.4 — Pool Reconnect Storm
+
+| Metric | Value |
+|--------|-------|
+| Cycles | 100 |
+| Success | 100/100 |
+| Failures | 0 |
+| Pool alive after storm | Yes |
+| **Result** | **PASS** |
+
+---
+
 ## Summary
 
 | Check | Result |
 |-------|--------|
 | A1.1 Consensus audit | ✅ PASS — no critical/high issues |
+| A1.2 Transaction fuzzing | ✅ PASS — 7 proptest tests, 10k cases each, 0 panics |
+| A1.3 Edge hardening | ✅ PASS — SSH key-only + fail2ban + UFW rate limiting |
+| A1.4 Key rotation | ⏳ PENDING — requires air-gapped user action |
 | A1.5 Secret scan | ⚠️ 2 findings fixed in working tree, ANKR key needs rotation |
+| A2.1 1000+ miner sim | ✅ PASS — 0 panics, memory flat, CPU 34% |
+| A2.2 Node restart + sync | ✅ PASS — catch-up 41s (< 5 min) |
+| A2.3 Bridge 50x reconnect | ✅ PASS — 50/50, 0 events lost |
+| A2.4 Pool reconnect storm | ✅ PASS — 100/100, pool alive |
