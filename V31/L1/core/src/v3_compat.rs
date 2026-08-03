@@ -160,6 +160,11 @@ pub struct DifficultyTarget {
 
 impl DifficultyTarget {
     pub const MAX: Self = Self { bytes: [0xFF; 32] };
+
+    /// Check if a hash meets this target (hash <= target).
+    pub fn allows(&self, hash: &[u8; 32]) -> bool {
+        hash <= &self.bytes
+    }
 }
 
 /// Convert a u64 difficulty to a 256-bit target: `target = (2²⁵⁶ − 1) / difficulty`.

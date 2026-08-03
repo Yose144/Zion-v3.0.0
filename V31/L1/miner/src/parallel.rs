@@ -51,7 +51,7 @@ pub fn hash_candidate(candidate: &BlockCandidate, algorithm: &str) -> [u8; 32] {
             }
             #[allow(unreachable_code)]
             {
-                zion_auxpow::hash_blake3(&header_bytes, 0, nonce)
+                crate::auxpow::hash_blake3(&header_bytes, 0, nonce)
             }
         }
 
@@ -68,7 +68,7 @@ pub fn hash_candidate(candidate: &BlockCandidate, algorithm: &str) -> [u8; 32] {
             }
             #[allow(unreachable_code)]
             {
-                zion_auxpow::hash_kheavyhash(pre_pow_hash, height, nonce)
+                crate::auxpow::hash_kheavyhash(pre_pow_hash, height, nonce)
             }
         }
 
@@ -80,7 +80,7 @@ pub fn hash_candidate(candidate: &BlockCandidate, algorithm: &str) -> [u8; 32] {
             }
             #[allow(unreachable_code)]
             {
-                zion_auxpow::hash_autolykos(&header_bytes, nonce, height as u32)
+                crate::auxpow::hash_autolykos(&header_bytes, nonce, height as u32)
             }
         }
 
@@ -96,7 +96,7 @@ pub fn hash_candidate(candidate: &BlockCandidate, algorithm: &str) -> [u8; 32] {
             }
             #[allow(unreachable_code)]
             {
-                let (_mix, final_hash) = zion_auxpow::hash_kawpow(&h32, nonce, height as u32);
+                let (_mix, final_hash) = crate::auxpow::hash_kawpow(&h32, nonce, height as u32);
                 final_hash
             }
         }
@@ -110,7 +110,7 @@ pub fn hash_candidate(candidate: &BlockCandidate, algorithm: &str) -> [u8; 32] {
             }
             #[allow(unreachable_code)]
             {
-                zion_auxpow::hash_ethash(&header_bytes, nonce, height as u32)
+                crate::auxpow::hash_ethash(&header_bytes, nonce, height as u32)
             }
         }
 
