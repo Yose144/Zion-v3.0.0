@@ -15,7 +15,11 @@
  * Compatible with: AMD GCN (Vega, Polaris), AMD RDNA, NVIDIA, Intel.
  */
 
-/* cl_khr_int64_base_atomics NOT needed — disabled to avoid compiler issues on gfx900. */
+/* 32-bit atomics for on-device target check + early exit (matches CUDA).
+ * 64-bit atomics (cl_khr_int64_base_atomics) are NOT used — they cause
+ * compiler issues on gfx900. 32-bit atomics are safe on all AMD/NVIDIA. */
+#pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics : enable
+#pragma OPENCL EXTENSION cl_khr_global_int32_extended_atomics : enable
 
 /* ========================================================================== */
 /* Constants — identical to v1 for memory management                          */
@@ -186,10 +190,10 @@ inline void sha3_512_65_u64(
 
 
 /* ========================================================================== */
-/* AES-128 helpers — identical to v1                                          */
+/* AES-128 helpers — S-box in __constant (copied to __local at kernel start)   */
 /* ========================================================================== */
 
-__constant uchar AES_SBOX[256] = {
+__constant uchar AES_SBOX_DATA[256] = {
     0x63,0x7c,0x77,0x7b,0xf2,0x6b,0x6f,0xc5,0x30,0x01,0x67,0x2b,0xfe,0xd7,0xab,0x76,
     0xca,0x82,0xc9,0x7d,0xfa,0x59,0x47,0xf0,0xad,0xd4,0xa2,0xaf,0x9c,0xa4,0x72,0xc0,
     0xb7,0xfd,0x93,0x26,0x36,0x3f,0xf7,0xcc,0x34,0xa5,0xe5,0xf1,0x71,0xd8,0x31,0x15,
@@ -208,11 +212,17 @@ __constant uchar AES_SBOX[256] = {
     0x8c,0xa1,0x89,0x0d,0xbf,0xe6,0x42,0x68,0x41,0x99,0x2d,0x0f,0xb0,0x54,0xbb,0x16,
 };
 
+/* S-box in __local (LDS) memory — matches CUDA __shared__.
+ * AMD GCN/RDNA LDS: 4-cycle latency, 128B/clock, no bank conflicts
+ * for 256-byte table. __constant cache has conflict misses on random
+ * 16-byte SubBytes lookups. */
+enum { SBOX_LDS_SIZE = 256 };
+
 __attribute__((always_inline))
-void aes_sub_bytes(__private uchar s[16])
+void aes_sub_bytes(__private uchar s[16], __local const uchar * restrict sbox)
 {
     #pragma unroll
-    for (int i=0;i<16;i++) s[i]=AES_SBOX[s[i]];
+    for (int i=0;i<16;i++) s[i]=sbox[s[i]];
 }
 
 __attribute__((always_inline))
@@ -248,39 +258,45 @@ void aes_add_round_key(__private uchar s[16], __private const uchar k[16])
 }
 
 __attribute__((always_inline))
-void aes_round(__private uchar s[16], __private const uchar k[16])
-{ aes_sub_bytes(s); aes_shift_rows(s); aes_mix_columns(s); aes_add_round_key(s,k); }
+void aes_round(__private uchar s[16], __private const uchar k[16], __local const uchar * restrict sbox)
+{ aes_sub_bytes(s, sbox); aes_shift_rows(s); aes_mix_columns(s); aes_add_round_key(s,k); }
 
 __attribute__((always_inline))
-void aes_final_round(__private uchar s[16], __private const uchar k[16])
-{ aes_sub_bytes(s); aes_shift_rows(s); aes_add_round_key(s,k); }
+void aes_final_round(__private uchar s[16], __private const uchar k[16], __local const uchar * restrict sbox)
+{ aes_sub_bytes(s, sbox); aes_shift_rows(s); aes_add_round_key(s,k); }
 
 /* ========================================================================== */
-/* Steps 2A/2B/2C: scratchpad — STRIDED layout (best on AMD RDNA)              */
+/* Steps 2A/2B/2C: scratchpad — INTERLEAVED layout (matches CUDA)              */
 /*                                                                             */
-/* Each thread's 256KiB scratchpad is contiguous → fits in L2 cache (RDNA1    */
-/* has 4MiB L2). Interleaved layout spreads each thread's data across 2GiB    */
-/* → no cache locality on AMD. NVIDIA benefits from interleaved (coalescing)  */
-/* but AMD RDNA benefits from strided (L2 cache locality).                     */
+/* Layout: block blk of thread tid is at:                                      */
+/*   pad_pool + (blk * total_threads + tid) * BLOCK_SIZE                       */
+/*                                                                             */
+/* All threads in a wavefront access consecutive u64s for the same block →     */
+/* coalesced 128-byte memory transactions on both AMD GCN/RDNA and NVIDIA.     */
+/* The previous STRIDED layout (tid * SCRATCHPAD_SIZE + blk * BLOCK_SIZE)      */
+/* caused 64x uncoalesced transactions per wavefront → 10x lower hashrate      */
+/* on AMD. INTERLEAVED is also better for L2 cache: working set per block =    */
+/* total_threads * 32 bytes (e.g. 64 * 32 = 2 KiB) vs 16 MiB strided.          */
 /* ========================================================================== */
 
 __attribute__((always_inline))
-void fill_scratchpad(__private const uchar seed[32], __global uchar * restrict pad)
+void fill_scratchpad(
+    __private const ulong seed_u64[4],
+    __global uchar * restrict pad_pool,
+    uint tid,
+    uint total_threads)
 {
     __private ulong state[8];
-    state[0] = ((__private ulong*)seed)[0];
-    state[1] = ((__private ulong*)seed)[1];
-    state[2] = ((__private ulong*)seed)[2];
-    state[3] = ((__private ulong*)seed)[3];
+    state[0] = seed_u64[0]; state[1] = seed_u64[1];
+    state[2] = seed_u64[2]; state[3] = seed_u64[3];
     state[4] = 0; state[5] = 0; state[6] = 0; state[7] = 0;
 
     for (uint blk=0;blk<BLOCK_COUNT;blk++) {
         __private ulong out[8];
         sha3_512_65_u64(state, (uchar)(blk & 0xFF), out);
 
-        /* Write 32 bytes (4 u64s) to scratchpad — strided layout */
-        uint off = blk * BLOCK_SIZE;
-        __global ulong *pb = (__global ulong*)(pad + off);
+        /* Write to interleaved position — coalesced across wavefront */
+        __global ulong *pb = (__global ulong*)(pad_pool + ((ulong)blk * total_threads + tid) * BLOCK_SIZE);
         pb[0] = out[0]; pb[1] = out[1]; pb[2] = out[2]; pb[3] = out[3];
 
         /* Chain state: first 4 u64s from output, rest zero */
@@ -291,23 +307,26 @@ void fill_scratchpad(__private const uchar seed[32], __global uchar * restrict p
 }
 
 __attribute__((always_inline))
-void sequential_passes(__global uchar * restrict pad)
+void sequential_passes(
+    __global uchar * restrict pad_pool,
+    uint tid,
+    uint total_threads)
 {
     /* Forward pass: XOR each block with previous (wrap-around) */
-    __global ulong *prev_pb = (__global ulong*)(pad + (BLOCK_COUNT-1)*BLOCK_SIZE);
+    __global ulong *prev_pb = (__global ulong*)(pad_pool + ((ulong)(BLOCK_COUNT-1) * total_threads + tid) * BLOCK_SIZE);
     ulong prev0 = prev_pb[0], prev1 = prev_pb[1], prev2 = prev_pb[2], prev3 = prev_pb[3];
     for (uint i=0;i<BLOCK_COUNT;i++) {
-        __global ulong *pb = (__global ulong*)(pad + i*BLOCK_SIZE);
+        __global ulong *pb = (__global ulong*)(pad_pool + ((ulong)i * total_threads + tid) * BLOCK_SIZE);
         ulong cv0 = pb[0] ^ prev0, cv1 = pb[1] ^ prev1, cv2 = pb[2] ^ prev2, cv3 = pb[3] ^ prev3;
         pb[0] = cv0; pb[1] = cv1; pb[2] = cv2; pb[3] = cv3;
         prev0 = cv0; prev1 = cv1; prev2 = cv2; prev3 = cv3;
     }
     /* Backward pass: XOR each block with next (wrap-around) */
-    __global ulong *next_pb = (__global ulong*)(pad + 0);
+    __global ulong *next_pb = (__global ulong*)(pad_pool + ((ulong)0 * total_threads + tid) * BLOCK_SIZE);
     ulong next0 = next_pb[0], next1 = next_pb[1], next2 = next_pb[2], next3 = next_pb[3];
     for (uint i=BLOCK_COUNT;i>0;i--) {
         uint idx=i-1;
-        __global ulong *pb = (__global ulong*)(pad + idx*BLOCK_SIZE);
+        __global ulong *pb = (__global ulong*)(pad_pool + ((ulong)idx * total_threads + tid) * BLOCK_SIZE);
         ulong cv0 = pb[0] ^ next0, cv1 = pb[1] ^ next1, cv2 = pb[2] ^ next2, cv3 = pb[3] ^ next3;
         pb[0] = cv0; pb[1] = cv1; pb[2] = cv2; pb[3] = cv3;
         next0 = cv0; next1 = cv1; next2 = cv2; next3 = cv3;
@@ -315,25 +334,25 @@ void sequential_passes(__global uchar * restrict pad)
 }
 
 __attribute__((always_inline))
-void random_read_mix(__private const uchar seed[32], __global const uchar * restrict pad, __private uchar out[32])
+void random_read_mix(
+    __private const ulong seed_u64[4],
+    __global const uchar * restrict pad_pool,
+    uint tid,
+    uint total_threads,
+    __private ulong out_u64[4])
 {
     __private ulong acc[4];
-    acc[0] = ((__private ulong*)seed)[0];
-    acc[1] = ((__private ulong*)seed)[1];
-    acc[2] = ((__private ulong*)seed)[2];
-    acc[3] = ((__private ulong*)seed)[3];
+    acc[0] = seed_u64[0]; acc[1] = seed_u64[1];
+    acc[2] = seed_u64[2]; acc[3] = seed_u64[3];
     ulong pos=0;
     #pragma unroll 4
     for (ulong r=0;r<RANDOM_READS;r++) {
-        uint off=(uint)(pos*BLOCK_SIZE);
-        __global const ulong *pb = (__global const ulong*)(pad + off);
+        __global const ulong *pb = (__global const ulong*)(pad_pool + ((ulong)(uint)pos * total_threads + tid) * BLOCK_SIZE);
         acc[0] ^= pb[0]; acc[1] ^= pb[1]; acc[2] ^= pb[2]; acc[3] ^= pb[3];
         pos=(acc[0] ^ pos ^ r) % BLOCK_COUNT;
     }
-    ((__private ulong*)out)[0] = acc[0];
-    ((__private ulong*)out)[1] = acc[1];
-    ((__private ulong*)out)[2] = acc[2];
-    ((__private ulong*)out)[3] = acc[3];
+    out_u64[0] = acc[0]; out_u64[1] = acc[1];
+    out_u64[2] = acc[2]; out_u64[3] = acc[3];
 }
 
 /* ========================================================================== */
@@ -341,8 +360,10 @@ void random_read_mix(__private const uchar seed[32], __global const uchar * rest
 /* ========================================================================== */
 
 __attribute__((always_inline))
-void aes128_mix(__private const uchar seed[32], ulong nonce, __private uchar out[32])
+void aes128_mix(__private const ulong seed_u64[4], ulong nonce, __private ulong out_u64[4],
+                __local const uchar * restrict sbox)
 {
+    __private const uchar *seed = (__private const uchar*)seed_u64;
     // 8-byte aligned buffers to prevent GPU_CPU_MISMATCH (Metal fix)
     __private ulong key_aligned[2];  // 2 * 8 = 16 bytes, 8-byte aligned
     __private uchar *key = (__private uchar*)key_aligned;
@@ -372,9 +393,10 @@ void aes128_mix(__private const uchar seed[32], ulong nonce, __private uchar out
         if (carry==0) break;
     }
     #pragma unroll
-    for (int r=0;r<3;r++) { aes_round(block0,key); aes_round(block1,key); }
-    aes_final_round(block0,key);
-    aes_final_round(block1,key);
+    for (int r=0;r<3;r++) { aes_round(block0,key,sbox); aes_round(block1,key,sbox); }
+    aes_final_round(block0,key,sbox);
+    aes_final_round(block1,key,sbox);
+    __private uchar *out = (__private uchar*)out_u64;
     #pragma unroll
     for (int i=0;i<16;i++) { out[i]=block0[i]^seed[i]; out[16+i]=block1[i]^seed[16+i]; }
 }
@@ -389,8 +411,9 @@ void aes128_mix(__private const uchar seed[32], ulong nonce, __private uchar out
 /* ========================================================================== */
 
 __attribute__((always_inline))
-void thermal_loop(__private uchar data[32] __attribute__((aligned(8))), ulong nonce)
+void thermal_loop(__private ulong data_u64[4], ulong nonce)
 {
+    __private uchar *data = (__private uchar*)data_u64;
     ulong a = nonce ^ 0x9E3779B97F4A7C15UL;
     ulong b = nonce ^ 0xBF58476D1CE4E5B9UL;
     ulong c = nonce ^ 0x94D049BB133111EBUL;
@@ -489,14 +512,16 @@ void stream_byproduct_sha3(__private const uchar in[32], int iters, __global uch
 }
 
 __attribute__((always_inline))
-void stream_byproduct_aes(__private const uchar in[32], ulong nonce, int iters, __global uchar * restrict pad)
+void stream_byproduct_aes(__private const uchar in[32], ulong nonce, int iters,
+                          __global uchar * restrict pad, __local const uchar * restrict sbox)
 {
     if (iters <= 0) return;
-    uchar tmp[32];
+    ulong tmp_u64[4];
+    __private uchar *tmp = (__private uchar*)tmp_u64;
     #pragma unroll
     for (int i = 0; i < 32; i++) tmp[i] = in[i];
     for (int i = 0; i < iters; i++) {
-        aes128_mix(tmp, nonce + (ulong)i, tmp);
+        aes128_mix(tmp_u64, nonce + (ulong)i, tmp_u64, sbox);
     }
     ulong4 h = vload4(0, (__private ulong*)tmp);
     vstore4(h, 0, (__global ulong*)pad);
@@ -506,42 +531,70 @@ void stream_byproduct_aes(__private const uchar in[32], ulong nonce, int iters, 
 /* Main kernel                                                                  */
 /* ========================================================================== */
 
-__kernel __attribute__((work_group_size_hint(LOCAL_SIZE, 1, 1)))
+__kernel __attribute__((reqd_work_group_size(LOCAL_SIZE, 1, 1)))
 void deeksha_lite_fire_mine(
     __constant const ulong * restrict header_keccak_state,  /* same as v1: host precomputed */
     ulong  nonce_base,
     uint   nonce_count,
     __global uchar * restrict output_hashes,
     __global uchar * restrict scratchpad_pool,
-    __constant float * restrict stream_weights)
+    __constant float * restrict stream_weights,
+    uint target_u32,                        /* big-endian u32 target (0=benchmark) */
+    __global uint  * restrict result_flag,  /* 0=not found, 1=found (atomic) */
+    __global ulong * restrict result_nonce, /* winning nonce (written by winner) */
+    __global uchar * restrict result_hash)  /* winning hash (written by winner) */
 {
+    /* Load AES S-box into __local (LDS) memory — matches CUDA __shared__.
+     * Cooperative strided load: workgroup may have <256 threads. */
+    __local uchar sbox[SBOX_LDS_SIZE];
+    {
+        uint lid = get_local_id(0);
+        uint lsize = get_local_size(0);
+        for (uint i = lid; i < SBOX_LDS_SIZE; i += lsize) {
+            sbox[i] = AES_SBOX_DATA[i];
+        }
+        barrier(CLK_LOCAL_MEM_FENCE);
+    }
+
     uint tid = get_global_id(0);
     if (tid >= nonce_count) return;
 
+    /* Early exit if solution already found by another workgroup.
+     * atomic_add(flag, 0) reads the flag with memory ordering —
+     * guarantees visibility across workgroups. Matches CUDA's
+     * atomicAdd(result_nonce, 0ULL) early-exit pattern. */
+    if (target_u32 != 0 && atomic_add(result_flag, 0) != 0) return;
+
     ulong nonce = nonce_base + (ulong)tid;
 
-    /* Step 1: Keccak256(header || nonce) — same as v1 */
-    uchar s1[32] __attribute__((aligned(8)));
-    keccak256_from_state(header_keccak_state, nonce, s1);
+    /* Step 1: Keccak256(header || nonce) — u64 throughout (matches CUDA) */
+    ulong s1[4];
+    {
+        __private ulong st[25];
+        for (int i = 0; i < 25; i++) st[i] = header_keccak_state[i];
+        st[10] ^= nonce;
+        st[11] ^= 0x01UL;
+        st[16] ^= (0x80UL << 56);
+        keccak_f1600(st);
+        s1[0] = st[0]; s1[1] = st[1]; s1[2] = st[2]; s1[3] = st[3];
+    }
 
-    /* Step 2: Memory-hard scratchpad — STRIDED (per-thread 256KiB contiguous) */
-    __global uchar * restrict pad = scratchpad_pool + (ulong)tid * (ulong)SCRATCHPAD_SIZE;
-    fill_scratchpad(s1, pad);
-    sequential_passes(pad);
-    uchar s2[32] __attribute__((aligned(8)));
-    random_read_mix(s1, pad, s2);
+    /* Step 2: Memory-hard scratchpad — INTERLEAVED (coalesced, matches CUDA) */
+    fill_scratchpad(s1, scratchpad_pool, tid, nonce_count);
+    sequential_passes(scratchpad_pool, tid, nonce_count);
+    ulong s2[4];
+    random_read_mix(s1, scratchpad_pool, tid, nonce_count, s2);
 
-    /* Step 3: AES-128 CTR mix — same as v1 */
-    uchar s3[32] __attribute__((aligned(8)));
-    aes128_mix(s2, nonce, s3);
+    /* Step 3: AES-128 CTR mix — S-box from LDS */
+    ulong s3[4];
+    aes128_mix(s2, nonce, s3, sbox);
 
     /* Step 4: Thermal loop — extra heat, not in v1 */
     thermal_loop(s3, nonce);
 
-    /* Step 5: Keccak256 final — u64-optimized, matches CUDA */
+    /* Step 5: Keccak256 final — u64 direct (matches CUDA, no byte-by-byte) */
     __private ulong st[25];
-    st[0]=((__private ulong*)s3)[0]; st[1]=((__private ulong*)s3)[1];
-    st[2]=((__private ulong*)s3)[2]; st[3]=((__private ulong*)s3)[3];
+    st[0]=s3[0]; st[1]=s3[1]; st[2]=s3[2]; st[3]=s3[3];
     st[4]=0; st[5]=0; st[6]=0; st[7]=0; st[8]=0; st[9]=0;
     st[10]=0; st[11]=0; st[12]=0; st[13]=0; st[14]=0; st[15]=0;
     st[16]=0; st[17]=0; st[18]=0; st[19]=0; st[20]=0; st[21]=0;
@@ -550,20 +603,34 @@ void deeksha_lite_fire_mine(
     st[16] ^= (0x80UL << 56); /* 0x80 at byte 135 = st[16] byte 7 */
     keccak_f1600(st);
 
-    __global uchar * restrict slot = output_hashes + (ulong)tid * 32;
-    __global ulong * restrict slot_u64 = (__global ulong*)slot;
-    slot_u64[0] = st[0]; slot_u64[1] = st[1]; slot_u64[2] = st[2]; slot_u64[3] = st[3];
-
-    /* hash is st[0..3] — use for stream byproduct */
-    __private ulong hash_u64[4];
+    ulong hash_u64[4];
     hash_u64[0] = st[0]; hash_u64[1] = st[1]; hash_u64[2] = st[2]; hash_u64[3] = st[3];
-    __private uchar * restrict hash = (__private uchar*)hash_u64;
 
-    /* Stream-profit byproduct work REMOVED for hashrate parity with CUDA.
-     * The byproduct work (extra keccak/SHA3/AES iterations) did not affect
-     * the PoW hash but wasted ~10% extra keccak and ~79,000% extra AES
-     * cycles per hash, making OpenCL unfairly slower than CUDA which
-     * does no byproduct work. The stream_weights buffer is still passed
-     * to maintain kernel signature compatibility but is ignored. */
+    /* On-device target check — matches CUDA kernel.
+     * Big-endian u32 of first 4 hash bytes (lexicographic comparison).
+     * If match: atomic_xchg to claim winner slot, write nonce + hash. */
+    if (target_u32 != 0) {
+        uint hash_low = (uint)(hash_u64[0] & 0xFFFFFFFFUL);
+        uint hash_be = ((hash_low & 0xFFu) << 24) |
+                       ((hash_low & 0xFF00u) << 8) |
+                       ((hash_low >> 8) & 0xFF00u) |
+                       ((hash_low >> 24) & 0xFFu);
+        if (hash_be <= target_u32) {
+            uint old = atomic_xchg(result_flag, 1u);
+            if (old == 0u) {
+                *result_nonce = nonce;
+                __global ulong *rh = (__global ulong*)result_hash;
+                rh[0] = hash_u64[0]; rh[1] = hash_u64[1];
+                rh[2] = hash_u64[2]; rh[3] = hash_u64[3];
+            }
+        }
+    } else {
+        /* Benchmark mode (target_u32 == 0): write all hashes to output_hashes */
+        __global ulong * restrict slot_u64 = (__global ulong*)(output_hashes + (ulong)tid * 32);
+        slot_u64[0] = hash_u64[0]; slot_u64[1] = hash_u64[1];
+        slot_u64[2] = hash_u64[2]; slot_u64[3] = hash_u64[3];
+    }
+
+    /* Stream-profit byproduct work REMOVED for hashrate parity with CUDA. */
     (void)stream_weights;
 }
