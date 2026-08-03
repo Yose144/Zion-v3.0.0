@@ -770,12 +770,10 @@ mod tests {
         // Add coinbase so the block is structurally valid.
         let subsidy = block_subsidy(1);
         let (miner, human, issobella, _burn) = emission::fee_split(subsidy);
-        let coinbase_tos = vec![
-            "miner".to_string(),
+        let coinbase_tos = ["miner".to_string(),
             "human".to_string(),
-            "issobella".to_string(),
-        ];
-        let coinbase_amounts = vec![miner, human, issobella];
+            "issobella".to_string()];
+        let coinbase_amounts = [miner, human, issobella];
         for (i, (to_addr, amount)) in coinbase_tos.iter().zip(coinbase_amounts.iter()).enumerate() {
             let label = match i {
                 0 => format!("coinbase:{}:{}", block.height, to_addr),

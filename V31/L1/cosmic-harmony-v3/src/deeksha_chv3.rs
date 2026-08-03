@@ -350,12 +350,12 @@ mod tests {
         // Simulate a block header: version=1, prev_hash, merkle_root, timestamp, bits
         header[0] = 1; // version
                        // prev_hash: 32 bytes of 0xAA
-        for i in 4..36 {
-            header[i] = 0xAA;
+        for byte in header.iter_mut().take(36).skip(4) {
+            *byte = 0xAA;
         }
         // merkle_root: 32 bytes of 0xBB
-        for i in 36..68 {
-            header[i] = 0xBB;
+        for byte in header.iter_mut().take(68).skip(36) {
+            *byte = 0xBB;
         }
         // timestamp: 0x12345678 (LE)
         header[68] = 0x78;

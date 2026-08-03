@@ -701,7 +701,7 @@ mod tests {
         plan.steps[0]
             .tool_names
             .push("nonexistent_tool".to_string());
-        assert!(plan.validate(&p.registry()).is_err());
+        assert!(plan.validate(p.registry()).is_err());
     }
 
     #[test]
@@ -710,7 +710,7 @@ mod tests {
         let mut plan = p.plan(Intent::NodeInfo, "test").unwrap();
         // Inject an invalid dependency
         plan.steps[1].depends_on.push(999);
-        assert!(plan.validate(&p.registry()).is_err());
+        assert!(plan.validate(p.registry()).is_err());
     }
 
     // ── Topological order ─────────────────────────────────────────────────────
