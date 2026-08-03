@@ -22,6 +22,7 @@ import TwinkleStars from './TwinkleStars';
 import ShootingStars from './ShootingStars';
 import CameraCompassTracker from './CameraCompassTracker';
 import R3FErrorBoundary from './R3FErrorBoundary';
+import MobileTouchControls from './MobileTouchControls';
 import type { CompassData } from './Compass';
 
 interface CameraRigProps {
@@ -250,7 +251,7 @@ export default function OasisScene({
         )}
 
         {/* On mobile, skip CameraRig/OrbitControls — they break mobile rendering.
-            Camera stays at fixed position looking at origin. */}
+            Use custom MobileTouchControls instead (pinch + drag). */}
         {!isMobile && (
           <UniverseRotator groupRef={universeRef} flightMode={flightMode} view={view} />
         )}
@@ -342,6 +343,15 @@ export default function OasisScene({
         {/* On mobile, call onArrived immediately after mount */}
         {isMobile && started && (
           <MobileArrivalTrigger onArrived={onArrived} />
+        )}
+
+        {/* Mobile touch camera controls — replaces drei OrbitControls */}
+        {isMobile && !flightMode && (
+          <MobileTouchControls
+            target={new THREE.Vector3(0, 0.5, 0)}
+            minDistance={6}
+            maxDistance={60}
+          />
         )}
 
         {flightMode && (
