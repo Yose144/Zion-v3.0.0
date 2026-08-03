@@ -160,8 +160,8 @@
 | B3.6 | Port `parent_chains.rs` | `AuXpow/src/` | `V31/L1/miner/src/auxpow/` | ⬜ |
 | B3.7 | Port `true_auxpow.rs` | `AuXpow/src/` | `V31/L1/miner/src/auxpow/` | ⬜ |
 | B3.8 | Eliminate duplicate `ExternalCoin` | smazat z auxpow, použít cosmic-harmony | ⬜ |
-| B3.9 | 🟡 Partial: b3_verify, reconnect, cpu_features, thread_affinity, gpu_guard ported. autonomous+parallel deferred | 🟡 |
-| B3.10 | ✅ 13 tests pass (basic). Full feature test deferred | 🟡 |
+| B3.9 | ✅ 6/7 modules enabled (autonomous done, parallel deferred) | ✅ |
+| B3.10 | ✅ 14 tests pass (was 13) | ✅ |
 
 ### B.4 — Fáze B Go/No-Go
 
