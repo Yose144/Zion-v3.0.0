@@ -311,7 +311,7 @@ export default function OasisClient() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.6, delay: 0.5 }}
-              className="pointer-events-auto absolute right-2 top-2 z-40 flex items-center gap-1.5 sm:right-6 sm:top-5"
+              className="pointer-events-auto absolute right-2 top-2 z-[70] flex items-center gap-1.5 sm:right-6 sm:top-5"
             >
               <Link href="/dashboard">
                 <motion.div
@@ -323,7 +323,6 @@ export default function OasisClient() {
                   <ChevronRight className="h-2.5 w-2.5" />
                 </motion.div>
               </Link>
-              {!isMobile && (
               <button
                 onClick={() => setUiHidden(true)}
                 className="zion-button-ghost !p-2"
@@ -331,7 +330,6 @@ export default function OasisClient() {
               >
                 <EyeOff className="h-3.5 w-3.5" />
               </button>
-              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -344,7 +342,7 @@ export default function OasisClient() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               onClick={() => setUiHidden(false)}
-              className="pointer-events-auto absolute right-2 top-2 z-50 rounded-full border border-white/15 bg-black/80 p-2.5 text-gray-300 backdrop-blur-md transition hover:bg-white/10 hover:text-white sm:right-6 sm:top-5"
+              className="pointer-events-auto absolute right-2 top-2 z-[70] rounded-full border border-white/15 bg-black/80 p-2.5 text-gray-300 backdrop-blur-md transition hover:bg-white/10 hover:text-white sm:right-6 sm:top-5"
               title="Show UI (H)"
             >
               <Eye className="h-4 w-4" />
