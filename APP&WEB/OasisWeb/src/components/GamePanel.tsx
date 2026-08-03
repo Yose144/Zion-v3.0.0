@@ -662,14 +662,6 @@ export default function GamePanel({
   // On mobile, start minimized so the 3D scene is visible.
   const [minimized, setMinimized] = useState(isMobile);
 
-  // Auto-minimize when a world is selected (WorldPanel opens top-center)
-  useEffect(() => {
-    if (selectedWorldId) {
-      setMinimized(true);
-      setExpanded(false);
-    }
-  }, [selectedWorldId]);
-
   const level = getLevel(xp);
   const progress = getLevelProgress(xp);
   const consciousness = CONSCIOUSNESS_NAMES[(level - 1) % CONSCIOUSNESS_NAMES.length] ?? 'Physical';
@@ -688,6 +680,7 @@ export default function GamePanel({
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       className="pointer-events-auto absolute left-2 top-2 z-50 sm:left-5 sm:top-5"
+      style={{ '--panel-bg': 'rgba(8, 10, 20, 0.72)' } as React.CSSProperties}
     >
       {/* ── Mobile minimized: small floating button ── */}
       {minimized && (
