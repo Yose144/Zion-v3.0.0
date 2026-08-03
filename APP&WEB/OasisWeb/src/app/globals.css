@@ -95,9 +95,10 @@ input, textarea, select {
     border-radius: clamp(1rem, 2.2vw, 1.5rem);
     border: 1px solid var(--zion-border-subtle);
     background:
-      linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.028)),
-      var(--zion-surface);
-    backdrop-filter: blur(22px) saturate(140%);
+      linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.018)),
+      rgba(8, 10, 20, 0.72);
+    backdrop-filter: blur(20px) saturate(130%);
+    -webkit-backdrop-filter: blur(20px) saturate(130%);
     box-shadow: var(--zion-shadow-panel);
     transition:
       border-color 180ms ease,

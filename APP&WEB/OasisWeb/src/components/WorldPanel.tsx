@@ -205,11 +205,21 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -30 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -30 }}
-      transition={{ duration: 0.4 }}
-      className="pointer-events-auto absolute left-1/2 top-2 z-[60] max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] -translate-x-1/2 overflow-y-auto p-4 sm:top-5 sm:w-[28rem] sm:max-h-[calc(100dvh-2.5rem)] sm:p-5 zion-hud-panel"
+      initial={{ opacity: 0, x: 80 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 80 }}
+      transition={{ duration: 0.35, ease: 'easeOut' }}
+      style={{
+        background: 'rgba(8, 10, 20, 0.72)',
+        backdropFilter: 'blur(20px) saturate(130%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(130%)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 'clamp(0.75rem, 2vw, 1.25rem)',
+        boxShadow: '0 12px 48px rgba(0,0,0,0.5)',
+        overflowY: 'auto',
+        scrollbarWidth: 'thin',
+      }}
+      className="pointer-events-auto absolute right-2 top-14 z-[60] max-h-[calc(100dvh-4.5rem)] w-[calc(100vw-1rem)] p-4 sm:right-4 sm:top-16 sm:w-[26rem] sm:max-h-[calc(100dvh-5rem)] sm:p-5"
     >
       <div className="mb-4 flex items-start justify-between">
         <div>
