@@ -25,6 +25,7 @@ chrono = { workspace = true }
 clap = { workspace = true }
 ed25519-dalek = { workspace = true }
 hex = { workspace = true }
+k256 = { workspace = true }
 num-bigint = { workspace = true }
 rand = { workspace = true }
 ripemd = { workspace = true }

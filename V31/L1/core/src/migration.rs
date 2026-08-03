@@ -26,6 +26,17 @@ const V3_LEGACY_FLOWERS_PER_ZION: u128 = 1_000_000_000_000;
 const V31_FLOWERS_PER_ZION: u128 = 1_000_000;
 const LEGACY_SCALE_FACTOR: u128 = V3_LEGACY_FLOWERS_PER_ZION / V31_FLOWERS_PER_ZION;
 
+/// Divisor for converting legacy V3 flower amounts to V31 amounts.
+/// Matches V3 `MIGRATION_DIVISOR` for compatibility with V3 validation code.
+pub const MIGRATION_DIVISOR: u64 = 1_000_000;
+
+/// Check if a block height is post-migration (after the decimal fork).
+/// In V3, the migration happened at a specific height. In V31, all blocks
+/// are post-migration by definition, so this always returns true.
+pub fn is_post_migration(_height: u64) -> bool {
+    true
+}
+
 /// Errors that can occur while migrating V3 state.
 #[derive(Debug, thiserror::Error)]
 pub enum MigrationError {

@@ -16,7 +16,7 @@
 use crate::crypto;
 use crate::emission;
 use crate::fee;
-use crate::genesis;
+use crate::v3_compat as genesis;
 use crate::v3_tx::Transaction;
 
 // ── Constants ──────────────────────────────────────────────────────────
@@ -198,7 +198,7 @@ impl std::fmt::Display for ValidationError {
             } => write!(
                 f,
                 "tx {tx_index} input {input_index} references missing/spent UTXO {}:{}",
-                crate::hex(prev_tx_hash),
+                crate::v3_compat::hex(prev_tx_hash),
                 output_index,
             ),
             Self::ValueNotConserved {
@@ -614,7 +614,7 @@ pub fn validate_block(
 mod tests {
     use super::*;
     use crate::crypto::{derive_address, generate_keypair, sign};
-    use crate::tx::{TxInput, TxOutput, TX_HASH_V2_VERSION};
+    use crate::v3_tx::{TxInput, TxOutput, TX_HASH_V2_VERSION};
 
     fn make_coinbase(height: u64) -> Transaction {
         let reward = emission::block_subsidy(height);
