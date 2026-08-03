@@ -232,17 +232,22 @@ export default function WarpIntro({ speed = BASE_SPEED, onEnter }: WarpIntroProp
               </blockquote>
               <p className="mt-4 text-xs tracking-wider text-white/45">— CARL SAGAN, CONTACT</p>
 
+              <p className="mt-6 text-xs text-white/50 leading-relaxed max-w-md">
+                OASIS Preview — explore 55 worlds across the galaxy.
+                Find Nova Zeme, discover the Tree of Life, search for the Golden Egg.
+              </p>
+
               <motion.button
                 onClick={handleEnter}
                 whileHover={{ scale: 1.06 }}
                 whileTap={{ scale: 0.97 }}
-                className="group mt-9 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-oasis-gold via-oasis-purple to-oasis-cyan px-8 py-3.5 text-sm font-bold text-white shadow-[0_0_60px_rgba(245,158,11,0.25)] transition-shadow hover:shadow-[0_0_90px_rgba(168,85,247,0.55)]"
+                className="group mt-7 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-oasis-gold via-oasis-purple to-oasis-cyan px-8 py-3.5 text-sm font-bold text-white shadow-[0_0_60px_rgba(245,158,11,0.25)] transition-shadow hover:shadow-[0_0_90px_rgba(168,85,247,0.55)]"
               >
                 Enter the OASIS
                 <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </motion.button>
 
-              <p className="mt-4 text-[10px] text-white/30">Click to initiate warp sequence</p>
+              <p className="mt-3 text-[10px] text-white/30">55 worlds · Golden Egg · Nova Zeme · Issobela</p>
             </motion.div>
           )}
         </AnimatePresence>
