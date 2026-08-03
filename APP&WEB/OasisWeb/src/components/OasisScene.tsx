@@ -24,6 +24,7 @@ import CameraCompassTracker from './CameraCompassTracker';
 import R3FErrorBoundary from './R3FErrorBoundary';
 import MobileTouchControls from './MobileTouchControls';
 import Planet, { NovaZeme } from './Planet';
+import { getWorldById } from '@/domain/config/worlds';
 import type { CompassData } from './Compass';
 
 interface CameraRigProps {
@@ -320,7 +321,14 @@ export default function OasisScene({
 
             {/* Nova Zeme — centrální planeta s Issobelou na oběžné dráze */}
             <R3FErrorBoundary label="NovaZeme">
-              <NovaZeme position={[0, -0.5, 8]} isMobile={isMobile} />
+              <NovaZeme
+                position={[0, -0.5, 8]}
+                isMobile={isMobile}
+                onSelect={() => {
+                  const w = getWorldById('NOVA_ZEME');
+                  if (w) onWorldSelect(w);
+                }}
+              />
             </R3FErrorBoundary>
 
             {/* Decorative planets — brighter, smaller, scattered in galaxy */}
