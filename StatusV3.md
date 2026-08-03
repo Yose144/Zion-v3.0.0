@@ -83,7 +83,7 @@
 | zion-issobella | — | — | L6 | ⚠️ inactive (disabled) |
 | zion-edge-debug-pool@KAS | 8461 | 0.0.0.0 | L1 (debug) | ✅ active (Trinity 3.0.7 E2E) |
 | zion-rtm-debug-pool | 8460 | 0.0.0.0 | L1 (RTM) | ⚠️ disabled (stopped 2026-07-28) |
-| zion-edge-python-dashboard | 8766 | 127.0.0.1 | — | ✅ active |
+| zion-edge-python-dashboard | 8766 | 127.0.0.1 | — | ✅ active (V31 node card integrated) |
 | zion-watchdog.timer | — | — | — | ✅ active (2 min) |
 | zion-web (Docker) | 3000 | 127.0.0.1 | — | ✅ Up (runtime image 2.68 GB; 377 MB = standalone build artifact) |
 | nginx | 80, 443 | 0.0.0.0 | — | ✅ active |
@@ -108,7 +108,7 @@
 | Intro | `https://zionterranova.com` | OASIS intro landing page — `maintenance.html` from `/var/www/maintenance/` (system nginx) |
 | Web2.9 | `https://app.zionterranova.com` | Full Next.js 16.2.9 website — `zion-website.service` on `127.0.0.1:3000`, nginx proxy |
 | OASIS Web | `https://oasis.zionterranova.com` | Static OASIS web build in `/var/www/oasis/` (system nginx) |
-| Dashboard | `https://dashboard.zionterranova.com` | Basic Auth |
+| Dashboard | `https://dashboard.zionterranova.com` | Basic Auth — V31 Alpha node card integrated (4th node card, systemd status, live sync, restart/stop buttons) |
 | RPC | `http://rpc.zionterranova.com:8443` | nginx HTTP proxy → `127.0.0.1:8447` read-only Python filter → `127.0.0.1:8443` node RPC (**plain HTTP**, no TLS) |
 | Legacy newearth archive | `https://www.newearth.cz` | Root redirects to `https://zionterranova.com/`; `/V2/` served from `/var/www/newearth/` (2026-08-03) |
 | Pool | `62.171.141.136:8444` | Stratum |
