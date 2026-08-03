@@ -21,6 +21,10 @@
     "build:mac": "npm run prepare:rust-miner && electron-builder --mac",
     "build:linux": "npm run prepare:rust-miner && electron-builder --linux --x64",
     "build:all": "npm run prepare:rust-miner && electron-builder --mac --win --linux --x64",
+    "build:local:mac": "scripts/build-release-local.sh --mac",
+    "build:local:linux": "scripts/build-release-local.sh --linux",
+    "build:local:win": "scripts/build-release-local.sh --win",
+    "build:local:all": "scripts/build-release-local.sh --all",
     "tui": "node src/tui/index.js"
   },
   "keywords": [
