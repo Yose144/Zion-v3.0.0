@@ -4,7 +4,10 @@ export default function LandingLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="h-screen w-screen overflow-hidden bg-oasis-black">
+    <div
+      className="overflow-hidden bg-oasis-black"
+      style={{ height: '100dvh', width: '100vw' }}
+    >
       {children}
     </div>
   );

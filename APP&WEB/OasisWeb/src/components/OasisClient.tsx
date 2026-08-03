@@ -50,7 +50,13 @@ export default function OasisClient() {
   const [flightSpeed, setFlightSpeed] = useState(0);
   const [throttle, setThrottle] = useState(0.5);
   const [landTarget, setLandTarget] = useState<World | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    const isNarrow = window.innerWidth < 768;
+    const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+    return isNarrow || (hasTouch && coarsePointer && window.innerWidth < 1024);
+  });
   const [uiHidden, setUiHidden] = useState(false);
   const flightControlsRef = useRef<FlightControlsHandle | null>(null);
   const mobileInputRef = useRef<MobileInput | null>(null);
@@ -184,7 +190,8 @@ export default function OasisClient() {
   };
 
   const handleArrived = () => {
-    setPhase('rite');
+    // On mobile, skip PilgrimRite (avatar config) — go straight to scene for preview.
+    setPhase(isMobile ? 'scene' : 'rite');
   };
 
   const handleRiteEnter = () => {
@@ -257,7 +264,15 @@ export default function OasisClient() {
 
   return (
     <>
-      <div className="relative h-full w-full">
+      {/* DEBUG: visible state indicator */}
+      <div className="fixed left-1 top-1 z-[999] rounded bg-black/80 px-2 py-1 text-[10px] font-mono text-green-400">
+        phase={phase} mobile={String(isMobile)} w={typeof window !== 'undefined' ? window.innerWidth : '?'} view={view}
+      </div>
+      <div className="fixed inset-0 overflow-hidden bg-blue-600">
+        {/* DEBUG: canvas container marker */}
+        <div className="absolute right-2 top-2 z-[998] rounded bg-yellow-400 px-2 py-1 text-[10px] font-bold text-black">
+          CANVAS CONTAINER
+        </div>
         <OasisScene
           started={phase !== 'intro'}
           onArrived={handleArrived}
@@ -287,14 +302,15 @@ export default function OasisClient() {
             music={music}
             muted={muted}
             onToggleMute={toggle}
+            isMobile={isMobile}
             onEnterFlight={() => {
               setFlightMode(true);
               setTimeout(() => flightControlsRef.current?.lock(), 0);
             }}
           />
         )}
-        {phase === 'scene' && view === 'galaxy' && !flightMode && !uiHidden && <OnboardingHint />}
-        {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && <FruitCounter />}
+        {phase === 'scene' && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && <OnboardingHint />}
+        {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && <FruitCounter />}
 
         <AnimatePresence>
           {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && (
@@ -315,6 +331,7 @@ export default function OasisClient() {
                   <ChevronRight className="h-2.5 w-2.5" />
                 </motion.div>
               </Link>
+              {!isMobile && (
               <button
                 onClick={() => setUiHidden(true)}
                 className="zion-button-ghost !p-2"
@@ -322,6 +339,7 @@ export default function OasisClient() {
               >
                 <EyeOff className="h-3.5 w-3.5" />
               </button>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -343,7 +361,7 @@ export default function OasisClient() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && (
+          {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && (
             <WorldFilter
               active={activeCategories}
               onChange={setActiveCategories}

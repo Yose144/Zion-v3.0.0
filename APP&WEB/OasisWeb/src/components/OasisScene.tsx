@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Stars, Environment } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette, HueSaturation, BrightnessContrast, ChromaticAberration, Noise } from '@react-three/postprocessing';
@@ -213,38 +213,70 @@ export default function OasisScene({
   const universeRef = useRef<THREE.Group>(null);
 
   return (
+    <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
     <Canvas
       camera={{ position: [0, 3.5, 34], fov: 55 }}
       dpr={[1, isMobile ? 1 : 1.75]}
+      style={{ width: '100% !important', height: '100% !important', display: 'block', position: 'absolute', inset: 0 }}
       gl={{
         antialias: false,
         powerPreference: 'high-performance',
         toneMapping: THREE.ACESFilmicToneMapping,
         toneMappingExposure: 1.15,
+        failIfMajorPerformanceCaveat: false,
+      }}
+      onCreated={({ gl }) => {
+        gl.setClearColor(isMobile ? '#00ff00' : '#02030a');
+      }}
+      onError={(e) => {
+        console.error('R3F Canvas error:', e);
       }}
     >
-      <color attach="background" args={['#02030a']} />
-      <fog attach="fog" args={['#02030a', 42, 110]} />
+      <color attach="background" args={[isMobile ? '#00ff00' : '#02030a']} />
+      {/* No fog on mobile — fog was hiding everything */}
+      {!isMobile && <fog attach="fog" args={['#02030a', 80, 200]} />}
 
       {/* HDRI-based image-based lighting — gives PBR materials real reflections
-          and ambient fill without needing hand-authored art or many lights. */}
-      <Environment preset="night" background={false} environmentIntensity={0.6} />
+          and ambient fill without needing hand-authored art or many lights.
+          Skipped on mobile (HDR fetch from CDN can hang the whole scene in
+          suspense → black screen). Extra ambient light compensates. */}
+      {!isMobile && (
+        <Suspense fallback={null}>
+          <Environment preset="night" background={false} environmentIntensity={0.6} />
+        </Suspense>
+      )}
 
-      <ambientLight intensity={0.15} />
+      <ambientLight intensity={isMobile ? 0.6 : 0.15} />
       <pointLight position={[10, 8, 10]} intensity={1.0} color="#ffffff" />
       <pointLight position={[-12, -6, -12]} intensity={0.65} color="#a855f7" />
       <pointLight position={[0, 10, 0]} intensity={0.5} color="#22d3ee" />
+
+      {/* DEBUG: bright test cube on mobile to verify WebGL renders.
+          Camera starts at [0, 3.5, 34] and flies to [0, 2.4, 15].
+          Cube at [0, 2, 10] is directly in front of camera. */}
+      {isMobile && (
+        <mesh position={[0, 2, 10]}>
+          <boxGeometry args={[4, 4, 4]} />
+          <meshBasicMaterial color="#ff0000" />
+        </mesh>
+      )}
 
       <UniverseRotator groupRef={universeRef} flightMode={flightMode} view={view} />
 
       {view === 'galaxy' && (
         <group ref={universeRef}>
+          {/* Mobile debug: only Stars + test cube. Skip everything else. */}
+          {isMobile ? (
+            <Stars radius={250} depth={160} count={800} factor={4.5} saturation={0} fade speed={0.4} />
+          ) : (
+            <>
           {/* Distant star backdrop — drei's fog-faded field for far depth,
               plus a GPU-shader twinkle layer closer in for a living sky.
               Kept subtle so it reads as depth behind the UI, not noise
               competing with it. */}
-          <Stars radius={250} depth={160} count={isMobile ? 1800 : 5200} factor={4.5} saturation={0} fade speed={0.4} />
-          <TwinkleStars count={isMobile ? 900 : 2200} radius={150} />
+          <Stars radius={250} depth={160} count={5200} factor={4.5} saturation={0} fade speed={0.4} />
+          {/* TwinkleStars uses a custom GLSL shader that can crash mobile GPUs — skip on mobile */}
+          <TwinkleStars count={2200} radius={150} />
 
           {/* Occasional shooting stars for a sense of a living, moving sky */}
           <ShootingStars count={4} isMobile={isMobile} />
@@ -252,8 +284,10 @@ export default function OasisScene({
           {/* Distant satellite galaxies around the Milky Way */}
           <DistantGalaxies />
 
-          {/* Galaxy disk + core + nebula */}
-          <Galaxy />
+          {/* Galaxy disk + core + nebula.
+              GalaxyCore has a custom streak shader + heavy geometry — skip on mobile.
+              MatrixCore is CPU-heavy with per-frame position updates — skip on mobile. */}
+          <Galaxy isMobile={isMobile} />
           <GalaxyCore />
           <MatrixCore />
           <Nebula isMobile={isMobile} />
@@ -279,6 +313,8 @@ export default function OasisScene({
             onWorldSelect={onWorldSelect}
             isMobile={isMobile}
           />
+            </>
+          )}
         </group>
       )}
 
@@ -334,5 +370,6 @@ export default function OasisScene({
 
       {compassRef && <CameraCompassTracker compassRef={compassRef} />}
     </Canvas>
+    </div>
   );
 }
