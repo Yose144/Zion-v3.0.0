@@ -2,16 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import WarpFlash from './WarpFlash';
 import { ChevronRight } from 'lucide-react';
+import WarpFlash from './WarpFlash';
 import { useAudio } from './AudioEngine';
-import SettingsPanel from './SettingsPanel';
+import MainMenu from './MainMenu';
 import type { FlightControlsHandle } from './FlightControls';
 import type { MobileInput } from './MobileControls';
 import MobileControls from './MobileControls';
-import GamePanel from './GamePanel';
 import OnboardingHint from './OnboardingHint';
 import FruitCounter from './FruitCounter';
 import { PilgrimRite } from './PilgrimRite';
@@ -25,7 +23,6 @@ import type { World, WorldCategory, WorldLayer } from '../domain/types/world';
 const WarpIntro = dynamic(() => import('./WarpIntro'), { ssr: false });
 const OasisScene = dynamic(() => import('./OasisScene'), { ssr: false });
 import WorldPanel from './WorldPanel';
-import WorldFilter from './WorldFilter';
 
 const ALL_CATEGORIES: WorldCategory[] = ['star-system', 'planet', 'sector', 'world', 'dimension'];
 const ALL_LAYERS: WorldLayer[] = [1, 2, 3, 4, 5];
@@ -307,50 +304,14 @@ export default function OasisClient() {
           isMobile={isMobile}
           compassRef={compassRef}
         />
-        {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && !panelsMinimized && (
-          <GamePanel
-            activeCategories={activeCategories}
-            selectedWorldId={selectedWorld?.id}
-            onWorldSelect={handleWorldSelect}
-            music={music}
-            muted={muted}
-            onToggleMute={toggle}
-            isMobile={isMobile}
-            onEnterFlight={() => {
-              setFlightMode(true);
-              setTimeout(() => flightControlsRef.current?.lock(), 0);
-            }}
-          />
-        )}
-        {phase === 'scene' && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && !panelsMinimized && <OnboardingHint />}
-        {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && !panelsMinimized && <FruitCounter />}
-
-        <AnimatePresence>
-          {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && (
-            <motion.div
-              initial={{ opacity: 0, y: -12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="pointer-events-auto absolute right-2 top-2 z-[70] flex items-center gap-1.5 sm:right-6 sm:top-5"
-            >
-              <Link href="/dashboard">
-                <motion.div
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-gradient-to-r from-oasis-gold via-oasis-purple to-oasis-cyan px-2.5 py-1 text-[9px] font-bold text-white shadow-lg sm:px-2.5"
-                >
-                  <span className="hidden sm:inline">Enter the Game</span>
-                  <ChevronRight className="h-2.5 w-2.5" />
-                </motion.div>
-              </Link>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Settings panel — floating gear icon, always available */}
         {phase !== 'intro' && (
-          <SettingsPanel
+          <MainMenu
+            activeCategories={activeCategories}
+            onCategoriesChange={setActiveCategories}
+            activeLayers={activeLayers}
+            onLayersChange={setActiveLayers}
+            selectedWorld={selectedWorld}
+            onWorldSelect={handleWorldSelect}
             music={music}
             muted={muted}
             onToggleMute={toggle}
@@ -362,19 +323,12 @@ export default function OasisClient() {
             }}
             uiHidden={uiHidden}
             onToggleUiHidden={() => setUiHidden((h) => !h)}
+            onCloseWorld={handleCloseWorld}
+            isMobile={isMobile}
           />
         )}
-
-        <AnimatePresence>
-          {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && !panelsMinimized && (
-            <WorldFilter
-              active={activeCategories}
-              onChange={setActiveCategories}
-              activeLayers={activeLayers}
-              onLayersChange={setActiveLayers}
-            />
-          )}
-        </AnimatePresence>
+        {phase === 'scene' && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && !panelsMinimized && <OnboardingHint />}
+        {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && !panelsMinimized && <FruitCounter />}
 
         <AnimatePresence>
           {selectedWorld && view === 'galaxy' && !flightMode && !uiHidden && !panelsMinimized && (
