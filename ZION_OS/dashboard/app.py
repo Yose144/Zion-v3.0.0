@@ -1073,6 +1073,15 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "Follower node — P2P 8334, RPC 8448. Syncs from Node 1 for redundancy.",
      "child_says": "🔶 Follows Node 1 to keep a backup copy!",
      "depends_on": ["edge-node1"]},
+    {"id": "v31-node", "name": "ZION V31 Alpha Node", "icon": "🚀", "level": "L1", "kind": "node",
+     "ports": {"p2p": 8335, "rpc": 9445},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "rpc", "severity": "warning", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:9445/health",
+     "purpose": "V31 Mainnet Alpha (3.1.0-alpha.2) — V3-compatible P2P sync from Node 1. systemd zion-v31-node.service.",
+     "child_says": "🚀 V31 Alpha — syncs from V3 via P2P, ready for cutover!",
+     "depends_on": ["edge-node1"]},
     {"id": "pool-edge", "name": "ZION Pool (Primary)", "icon": "🌐", "level": "L1", "kind": "pool",
      "ports": {"stratum": 8444},
      "host": "127.0.0.1",
@@ -2861,17 +2870,54 @@ def _build_status_edge_primary() -> dict:
         r = rpc_call("127.0.0.1", 9443, "getNodeInfo", {}, timeout=2.0)
         return ("edge_info", r if r and not r.get("_rpc_error") else None)
 
+    def _v31_rpc_call():
+        # V31 Alpha Node — TCP JSON-RPC on port 9445 (not HTTP)
+        import socket as _sock
+        try:
+            req = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "getStatus", "params": []}) + "\n"
+            with _sock.create_connection(("127.0.0.1", 9445), timeout=2.0) as s:
+                s.sendall(req.encode())
+                resp = s.recv(8192).decode("utf-8", errors="replace").strip()
+                r = json.loads(resp)
+                if "error" in r and r["error"]:
+                    return ("v31", None)
+                return ("v31", r)
+        except Exception:
+            return ("v31", None)
+
+    def _v31_systemd_call():
+        # V31 systemd service status
+        try:
+            import subprocess as _sp
+            r = _sp.run(
+                ["systemctl", "show", "zion-v31-node.service",
+                 "--property=ActiveState,SubState,MainPID,MemoryCurrent"],
+                capture_output=True, text=True, timeout=3
+            )
+            props = {}
+            for line in r.stdout.strip().split("\n"):
+                if "=" in line:
+                    k, v = line.split("=", 1)
+                    props[k] = v
+            return ("v31_sys", props)
+        except Exception:
+            return ("v31_sys", {})
+
     edge_node2_info = None
     edge_node2_nodeinfo = None
     edge_peers = None
     edge_nodeinfo = None
-    ex = ThreadPoolExecutor(max_workers=5)
+    v31_rpc_info = None
+    v31_sys_info = {}
+    ex = ThreadPoolExecutor(max_workers=7)
     futures = {
         ex.submit(_edge_rpc_call),
         ex.submit(_edge_node2_rpc_call),
         ex.submit(_edge_node2_nodeinfo_call),
         ex.submit(_edge_peerinfo_call),
         ex.submit(_edge_nodeinfo_call),
+        ex.submit(_v31_rpc_call),
+        ex.submit(_v31_systemd_call),
     }
     try:
         for fut in as_completed(futures, timeout=5.0):
@@ -2887,6 +2933,10 @@ def _build_status_edge_primary() -> dict:
                     edge_peers = val
                 elif key == "edge_info":
                     edge_nodeinfo = val
+                elif key == "v31":
+                    v31_rpc_info = val
+                elif key == "v31_sys":
+                    v31_sys_info = val or {}
             except Exception:
                 pass
     except TimeoutError:
@@ -2931,6 +2981,47 @@ def _build_status_edge_primary() -> dict:
         "p2p_bind": (edge_node2_nodeinfo or {}).get("p2p_bind") if edge_node2_info else None,
         "rpc_bind": (edge_node2_nodeinfo or {}).get("rpc_bind") if edge_node2_info else None,
         "host": "127.0.0.1:8448",
+    }
+    # ── V31 Alpha Node — V3-compatible P2P sync ─────────────────────────────
+    v31_active = v31_sys_info.get("ActiveState", "unknown")
+    v31_pid = 0
+    try:
+        v31_pid = int(v31_sys_info.get("MainPID", 0))
+    except (ValueError, TypeError):
+        pass
+    v31_mem_mb = None
+    try:
+        mc = v31_sys_info.get("MemoryCurrent", "")
+        if mc and mc != "[not set]":
+            v31_mem_mb = round(int(mc) / 1048576, 1)
+    except (ValueError, TypeError):
+        pass
+    v31_chain_height = None
+    v31_tip_hash = None
+    v31_mempool = 0
+    if v31_rpc_info and isinstance(v31_rpc_info, dict):
+        _vr = v31_rpc_info.get("result") or v31_rpc_info
+        if isinstance(_vr, dict):
+            v31_chain_height = _vr.get("chain_height")
+            v31_tip_hash = _vr.get("tip_hash") or _vr.get("tip_hash_hex")
+            v31_mempool = int(_vr.get("mempool_account_transactions", 0)) + int(_vr.get("mempool_utxo_transactions", 0))
+    v31_node_status = {
+        "running": v31_active == "active",
+        "systemd_active": v31_active,
+        "systemd_sub": v31_sys_info.get("SubState", "unknown"),
+        "node_pid": v31_pid or None,
+        "memory_mb": v31_mem_mb,
+        "chain_height": v31_chain_height,
+        "tip_hash": v31_tip_hash,
+        "mempool_size": v31_mempool,
+        "network": "mainnet",
+        "protocol_version": "zion-v3-node/3.1.0-alpha.2",
+        "node_id": "zion-edge-v31",
+        "p2p_bind": "0.0.0.0:8335",
+        "rpc_bind": "127.0.0.1:9445",
+        "host": "127.0.0.1:9445",
+        "version": "3.1.0-alpha.2",
+        "sync_lag": max(0, (edge_node1_status.get("chain_height") or 0) - (v31_chain_height or 0)) if edge_node1_status.get("chain_height") else None,
     }
     # ── Local Backup Node — from beacon cache ───────────────────────────────
     # The operator's local machine pushes status via /api/backup-beacon every
@@ -3226,6 +3317,7 @@ def _build_status_edge_primary() -> dict:
         "node2": {"running": False, "chain_height": None, "tip_hash": None, "known_peers": 0, "mempool_size": 0},
         "edge_node": edge_node1_status,
         "edge_node2": edge_node2_status,
+        "v31_node": v31_node_status,
         "local_backup": local_backup_status,
         "all_nodes": all_nodes,
         "p2p_peers": p2p_peer_list,
@@ -3446,6 +3538,7 @@ def build_checklist(status: dict) -> dict:
             {"id": "env",        "label": "Env file assembled (.env.mainnet)",        "ok": True},
             {"id": "edge-node1", "label": "Edge Node 1 (Primary) running & reachable", "ok": status["edge_node"]["running"] and status["edge_node"]["chain_height"] is not None},
             {"id": "edge-node2", "label": "Edge Node 2 (Follower) running & synced",  "ok": status.get("edge_node2", {}).get("running", False) and status.get("edge_node2", {}).get("known_peers", 0) > 0},
+            {"id": "v31-node",   "label": "V31 Alpha Node running & synced (P2P)",     "ok": status.get("v31_node", {}).get("running", False) and status.get("v31_node", {}).get("chain_height") is not None},
             {"id": "local-backup", "label": "Local Backup Node running & synced",      "ok": status.get("local_backup", {}).get("running", False) and status.get("local_backup", {}).get("known_peers", 0) > 0},
             {"id": "pool",       "label": "Edge Pool running & accepting miners",     "ok": status["pool"]["running"] and status["pool"]["active_sessions"] is not None},
             {"id": "pool-edge",  "label": "Edge Pool TCP reachable",                  "ok": status.get("pool_edge", {}).get("running", False)},
@@ -4569,6 +4662,9 @@ def run_edge_action(action: str) -> dict:
     ACTION_MAP = {
         "restart-node1":          "sudo systemctl restart zion-node",
         "restart-node2":          "echo 'node2 not deployed on v3.0.4 single-server topology'",
+        "restart-v31-node":       "sudo systemctl restart zion-v31-node.service",
+        "stop-v31-node":          "sudo systemctl stop zion-v31-node.service",
+        "start-v31-node":         "sudo systemctl start zion-v31-node.service",
         "restart-pool":           "sudo systemctl restart zion-pool",
         "restart-dao":            "sudo systemctl restart zion-dao",
         "restart-warp":           "sudo systemctl restart zion-warp",
@@ -10225,6 +10321,31 @@ function updateServiceCards(s){
     const syncEl=document.getElementById('val-node2-sync');
     syncEl.textContent=synced?'✓ Synced':(n2.known_peers>0?'Syncing…':'No peers');
     syncEl.className=synced?'text-emerald-400 font-bold':'text-amber-400';
+  }
+  // V31 Alpha Node
+  const v31=s.v31_node||{};
+  setBadge('badge-v31-node',v31.running);setCardLive('v31-node',v31.running);
+  document.getElementById('val-v31-node-height').textContent=v31.chain_height??'—';
+  document.getElementById('val-v31-node-hash').textContent=v31.tip_hash?(v31.tip_hash.slice(0,12)+'…'+v31.tip_hash.slice(-8)):'—';
+  document.getElementById('val-v31-node-mempool').textContent=v31.mempool_size??'—';
+  document.getElementById('val-v31-node-systemd').textContent=v31.systemd_active||'—';
+  document.getElementById('val-v31-node-mem').textContent=v31.memory_mb!=null?v31.memory_mb+' MB':'—';
+  const v31SyncEl=document.getElementById('val-v31-node-sync');
+  if(v31SyncEl){
+    const lag=v31.sync_lag;
+    if(v31.running&&lag!=null&&lag<=2){
+      v31SyncEl.textContent=lag===0?'✓ Synced':'✓ Synced (+'+lag+')';
+      v31SyncEl.className='text-emerald-400 font-bold';
+    }else if(v31.running&&lag!=null&&lag<=10){
+      v31SyncEl.textContent='Syncing… (lag '+lag+')';
+      v31SyncEl.className='text-amber-400';
+    }else if(v31.running){
+      v31SyncEl.textContent='Catching up…';
+      v31SyncEl.className='text-amber-400';
+    }else{
+      v31SyncEl.textContent='Offline';
+      v31SyncEl.className='text-red-400';
+    }
   }
   // Edge Pool (Primary)
   setBadge('badge-pool',p.running);setCardLive('pool',p.running);

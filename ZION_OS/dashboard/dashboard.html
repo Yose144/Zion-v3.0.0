@@ -1108,8 +1108,8 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       </div>
     </div>
 
-    <!-- Service Cards (top 3) -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <!-- Service Cards (top 4) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <div id="card-node1" class="zion-panel zion-panel-hover svc-card p-5">
         <div class="flex items-center justify-between mb-3 relative z-10">
           <span class="zion-kicker">🔷 Node 1</span>
@@ -1159,6 +1159,27 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         <div class="flex gap-1.5 relative z-10">
           <button onclick="controlAction('start-node2')" class="text-[10px] px-2.5 py-1 bg-emerald-700/50 hover:bg-emerald-600 rounded-md font-semibold transition">▶ Start</button>
           <button onclick="controlAction('restart-node2')" class="text-[10px] px-2.5 py-1 bg-amber-700/50 hover:bg-amber-600 rounded-md font-semibold transition">⟳ Restart</button>
+        </div>
+      </div>
+
+      <!-- V31 Alpha Node -->
+      <div id="card-v31-node" class="zion-panel zion-panel-hover svc-card p-5">
+        <div class="flex items-center justify-between mb-3 relative z-10">
+          <span class="zion-kicker">🚀 V31 Alpha</span>
+          <span id="badge-v31-node" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
+        </div>
+        <div class="text-4xl font-bold mb-1 text-gradient relative z-10" id="val-v31-node-height">—</div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">Chain Height <span class="text-purple-400 text-[9px] ml-1">v3.1.0-alpha.2</span></div>
+        <div class="text-xs font-mono text-gray-300 truncate mb-1 relative z-10" id="val-v31-node-hash">—</div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">P2P: <span id="val-v31-node-p2p" class="font-mono">0.0.0.0:8335</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">RPC: <span id="val-v31-node-rpc" class="font-mono">127.0.0.1:9445</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Mempool: <span id="val-v31-node-mempool" class="text-amber-400 font-semibold">—</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Sync: <span id="val-v31-node-sync" class="text-gray-400">—</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">systemd: <span id="val-v31-node-systemd" class="font-mono text-emerald-400">—</span></div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">Mem: <span id="val-v31-node-mem" class="text-cyan-400 font-mono">—</span></div>
+        <div class="flex gap-1.5 relative z-10">
+          <button onclick="edgeAction('restart-v31-node')" class="text-[10px] px-2.5 py-1 bg-purple-700/50 hover:bg-purple-600 rounded-md font-semibold transition">⟳ Restart</button>
+          <button onclick="edgeAction('stop-v31-node')" class="text-[10px] px-2.5 py-1 bg-red-700/50 hover:bg-red-600 rounded-md font-semibold transition">⏹ Stop</button>
         </div>
       </div>
 
