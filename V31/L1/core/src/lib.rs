@@ -38,10 +38,14 @@ pub mod v3_state;
 pub mod v3_template;
 pub mod v3_tx;
 
+// Ported V3 core types — ChainState, NodeRuntime, CoreRuntime, etc.
+pub mod chain_state;
+pub mod node_runtime;
+
 // TODO: These modules need V3 core types (ChainState, NodeRuntime, etc.)
 //       before they can be enabled. Port in Phase B.1.
 pub mod launch;
-// pub mod v3_node_builder; // needs ChainState/NodeRuntime port
+pub mod v3_node_builder;
 pub mod v3_wallet;
 pub mod v3_bridge;   // needs k256, hex(), SpendableUtxo, MIGRATION_DIVISOR
 pub mod v3_validation; // needs crate::tx, crate::genesis::validate_premine
