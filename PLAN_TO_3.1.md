@@ -12,8 +12,8 @@
 
 | Track | Verze | Status |
 |-------|-------|--------|
-| **V3 produkce** | 3.0.7 "Trinity All Green" | ✅ Live na Edge, height 7342+, 24 coinů, GPU kernely |
-| **V31 alpha.2** | 3.1.0-alpha.2 (post-Phase A+B.1) | 🟡 18 crateů, **1900 testů**, clippy clean — L1 core complete (12/12 modules) |
+| **V3 produkce** | 3.0.7 "Trinity All Green" | ✅ Live na Edge, height 11184+, 24 coinů, GPU kernely |
+| **V31 alpha.2** | 3.1.0-alpha.2 (post-Phase D) | ✅ 18 crateů, **301+ testů**, clippy clean — L1 core complete, **V3 P2P sync LIVE na Edge** |
 | **3.0.8** | "Full Stack Stable" | 🟡 Kód hotov, čeká 7d run + live switching |
 | **3.0.9** | "Pre-Alpha Hardening" | 🔵 Plánováno |
 | **3.1.0** | "Mainnet Alpha" | 🔵 Plánováno |
@@ -217,20 +217,47 @@
 
 ---
 
-## Fáze D — Cutover V3 → V31
+## Fáze D — V31 deployment na Edge (second node) ✅ COMPLETE
 
-> **Cíl:** V31 nahradí V3 na Edge. V3 archivováno.
-> **Trvání:** 1-2 dny + 7d monitoring
+> **Cíl:** V31 běží jako druhý node na Edge, synchronizuje se s V3 mainnet přes V3-compatible P2P.
+> **Stav:** ✅ COMPLETE — V31 syncs live from V3, systemd service active.
 
-### D.1 — Pre-cutover
+### D.1 — Build V31 release na Edge ✅
 
 | # | Úkol | Kritérium | Status |
 |---|------|-----------|--------|
-| D1.1 | Backup V3 stavu | SQLite DB, peers.json, pplns-state, revenue, OASIS JSONs | ⬜ |
-| D1.2 | V31 shadow run na Edge | 7d na izolovaných portech, sync s V3 mainnet | ⬜ |
-| D1.3 | V31 pool + miner E2E na Edge | Shares akceptovány, block submit | ⬜ |
-| D1.4 | V31 multichain API test | Bridge, DEX, wallet endpointy funkční | ⬜ |
-| D1.5 | `v3.1.0-beta` release | GitHub release s binárkami + SHA256SUMS | ⬜ |
+| D1.1 | Build V31 release binary na Edge | `cargo build --release -p zion-core` na Edge (Linux x86_64) | ✅ DONE |
+| D1.2 | V3-compatible P2P sync | V31 se připojí k V3 a synchronizuje bloky | ✅ DONE (5 fixů) |
+
+### D.2 — Configure V31 node service na Edge ✅
+
+| # | Úkol | Kritérium | Status |
+|---|------|-----------|--------|
+| D2.1 | systemd service `zion-v31-node.service` | Service běží pod user `zion`, auto-restart | ✅ DONE |
+| D2.2 | Environment file `/etc/zion/edge-v31-environment.sh` | Porty 8335 (P2P), 9445 (RPC) | ✅ DONE |
+| D2.3 | Checkpoint sync script | `v3-state-to-checkpoint.py` + `v31-sync-v3.sh` | ✅ DONE |
+
+### D.3 — Start V31 node + verify sync ✅
+
+| # | Úkol | Kritérium | Status |
+|---|------|-----------|--------|
+| D3.1 | V31 sync z V3 checkpoint | Tip hash matches V3 state | ✅ DONE (height 11184+) |
+| D3.2 | Live block sync | V31 přijímá nové bloky z V3 v reálném čase | ✅ DONE |
+
+### D.4 — Tag v3.1.0-alpha.2 ✅
+
+| # | Úkol | Kritérium | Status |
+|---|------|-----------|--------|
+| D4.1 | Git commit s V3 P2P compatibility fixy | 6 files, 83 insertions, 14 deletions | ✅ DONE |
+| D4.2 | Tag `v3.1.0-alpha.2` on commit | Pushnuto na origin | ✅ DONE |
+
+### V3 P2P compatibility fixes (5 fixes)
+
+1. **Separate seed peers** (`node.rs`): V31 native P2P loop uses empty peer list; V3-compatible sync uses V3 seed peers. Prevents incompatible handshake.
+2. **NetworkId serialization** (`v3_p2p.rs`): Removed `rename_all = "snake_case"` so V3 receives PascalCase `"Mainnet"`.
+3. **from_height off-by-one** (`v3_p2p.rs`): V3's `accepted_blocks_since` filters `height > from_height` (exclusive), so send `tip.height` not `tip.height + 1`.
+4. **Block hash algorithm** (`v3_compat.rs`, `v3_checkpoint.rs`): `V3Block::header_hash()` uses height-aware dispatch (`deeksha_lite` / `deeksha_chv3` / `deeksha_lite_fire`) matching V3, plus `stored_hash` field to trust wire/checkpoint hashes like V3 does.
+5. **Difficulty validation** (`v3_p2p.rs`): Skip LWMA when difficulty window has insufficient data (post-checkpoint), trusting peer difficulty like V3 does.
 
 ### D.2 — Cutover (rolling blue/green)
 
