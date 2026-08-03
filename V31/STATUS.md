@@ -1,13 +1,13 @@
 # V31 Mainnet Alpha — Status
 
-> **Verze:** 3.1.0-alpha.2 (post-Phase A+B partial)
+> **Verze:** 3.1.0-alpha.2 (post-Phase A+B.1)
 > **Datum:** 2026-08-03
-> **Stav:** workspace builduje, **1877 testů procházejí**, 0 failed. Fáze A hotová, Fáze B+C partial.
+> **Stav:** workspace builduje, **1900 testů procházejí**, 0 failed. Fáze A hotová, Fáze B.1 (L1 core) hotová, Fáze B.2/B.3 + C partial.
 
-## Co je hotovo v `v3.1.0-alpha.2` (post-Phase A+B)
+## Co je hotovo v `v3.1.0-alpha.2` (post-Phase A+B.1)
 
 - L1/L2/L3/L4/L5/L6 crates existují a kompilují jako jeden workspace (18 crateů).
-- **Všechny workspace testy pass: 1877** (bylo 1458 před Fází A)
+- **Všechny workspace testy pass: 1900** (bylo 1877 před B.1, 1458 před Fází A)
   - `zion-core` 291 testů (bylo 89 — +202 z P2P infra + V3 core + websocket)
   - `zion-native-ffi` 21 testů (NOVÝ crate)
   - `zion-cosmic-harmony` 185 testů (bylo 28 — +157 z V3 modules)
@@ -31,9 +31,9 @@
 - **[A.6] P2P wire protocol fix** — AnnounceTx přidán do P2pMessage enum, sync client gracefully skips non-block messages.
 - **[A.6b] P2P infra moduly portovány** — p2p_security.rs (350 řádků), propagation.rs (628 řádků), discovery.rs (675 řádků), ibd.rs (483 řádků).
 
-### Fáze B — L1 Completion (partial)
+### Fáze B — L1 Completion (B.1 hotová, B.2/B.3 partial)
 
-- **[B.1] V3 core modules** — 10/11 modulů enabled:
+- **[B.1] V3 core modules** — **12/12 modulů enabled** (L1 core complete):
   - ✅ v3_tx.rs (476 lines) — UTXO transaction model
   - ✅ v3_chain.rs (545 lines) — Chain entry, Outpoint, SpendableUtxo
   - ✅ v3_mempool.rs (535 lines) — Enhanced mempool with UTXO support
@@ -45,7 +45,10 @@
   - ✅ v3_bridge.rs (566 lines) — Bridge unlock multisig (k256 ECDSA)
   - ✅ v3_wallet.rs (746 lines) — Ed25519 wallet with account+UTXO tx
   - ✅ websocket.rs (310 lines) — WebSocket subscriptions server (trait-based handler)
-  - ⏳ v3_node_builder.rs (375 lines) — needs ChainState/NodeRuntime port
+  - ✅ v3_node_builder.rs — rewritten as V31-native async composition layer (no V3 lib.rs dependency)
+  - ✅ chain_state.rs (2762 lines) — ChainState ported from V3 (block store, UTXO set, reorg, pruning)
+  - ✅ node_runtime.rs (1775 lines) — NodeRuntime ported from V3 (event loop, P2P, RPC, mempool wiring)
+  - **All 12 L1 core modules now enabled:** launch, v3_validation, v3_bridge, v3_wallet, websocket, v3_node_builder, chain_state, node_runtime, rpc, v3_compat, v3_chain, v3_p2p
   - Added: BlockCandidate, MiningJob, MiningSolution, SealedBlock types
   - Added: AccountTransaction::verify_signature(), crypto::sign_and_zeroize()
   - Added: DifficultyTarget::allows(), migration::MIGRATION_DIVISOR/is_post_migration()
@@ -101,14 +104,13 @@
 
 ## Co zůstává otevřené / vyžaduje externí krok
 
-1. **V3 ChainState + NodeRuntime port** — v3_node_builder.rs čeká (~4500 řádků V3 lib.rs). Toto je nejkomplexnější port — ChainState (~3400 řádků) + NodeRuntime (~1170 řádků).
-2. **parallel.rs** — needs zion_auxpow crate (feature-gated). Defer po ChainState port.
-3. **4 feature-gated binaries** — wallet, core-util, fund-bridge-vault, burn-funds, migrate-escrow, canonical-operator-env (need ChainState).
-4. **Realné non-EVM WARP kontrakty** — Tron, Solana, Cosmos, Stellar, Cardano, Aptos, Sui, TON, NEAR, Bitcoin.
-5. **PoC algoritmus** — `PocAlgorithm` vrací nyní bezpečně `Hash::default()`; aktivace až po governance.
-6. **30d continuous run / mainnet beta** — vyžaduje nasazený Edge node a monitoring.
-7. **Production cut-over V3 → V31** — viz [`PLAN_TO_3.1.md`](../PLAN_TO_3.1.md) Fáze D.
-8. **Security audit a chaos testy** — naplánováno v 3.0.9 / 3.1.0-beta.
+1. **parallel.rs** — needs zion_auxpow crate (feature-gated). Defer po ChainState port.
+2. **4 feature-gated binaries** — wallet, core-util, fund-bridge-vault, burn-funds, migrate-escrow, canonical-operator-env (need ChainState — nyní k dispozici, lze enable).
+3. **Realné non-EVM WARP kontrakty** — Tron, Solana, Cosmos, Stellar, Cardano, Aptos, Sui, TON, NEAR, Bitcoin.
+4. **PoC algoritmus** — `PocAlgorithm` vrací nyní bezpečně `Hash::default()`; aktivace až po governance.
+5. **30d continuous run / mainnet beta** — vyžaduje nasazený Edge node a monitoring.
+6. **Production cut-over V3 → V31** — viz [`PLAN_TO_3.1.md`](../PLAN_TO_3.1.md) Fáze D.
+7. **Security audit a chaos testy** — naplánováno v 3.0.9 / 3.1.0-beta.
 
 ## Edge staging E2E
 
@@ -117,6 +119,8 @@
 
 ## Další krok
 
-- **Fáze B.1 complete:** Portovat ChainState + NodeRuntime z V3 lib.rs (~4500 řádků)
-- **Fáze B.3 complete:** Enable autonomous.rs, parallel.rs (po ChainState port)
-- Pak Fáze C (binaries + edge-deploy) a Fáze D (cutover)
+- **Fáze B.1 ✅ COMPLETE** — ChainState (2762 lines) + NodeRuntime (1775 lines) ported, v3_node_builder rewritten, 12/12 L1 core modules enabled, 1900 tests pass.
+- **Fáze B.2 complete:** Pool share validator/forwarder, AuxPowBridge, pool API (zbývající B.2 položky)
+- **Fáze B.3 complete:** Enable parallel.rs (po zion_auxpow crate), zbytek AuxPoW modulů
+- **Fáze C:** Enable 4 feature-gated binaries (wallet, core-util, fund-bridge-vault, burn-funds — nyní ChainState k dispozici), edge-deploy watchdog mode
+- Pak Fáze D (cutover)

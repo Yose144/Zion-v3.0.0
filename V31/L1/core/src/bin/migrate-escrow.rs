@@ -70,7 +70,7 @@ fn main() {
     eprintln!("  tx_id:      {tx_id}");
     eprintln!();
 
-    let tx = zion_core::Transaction {
+    let tx = zion_core::node_runtime::Transaction {
         tx_id,
         from: old_address,
         to: new_address,
