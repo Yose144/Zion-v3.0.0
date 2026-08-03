@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { Globe, Zap, Gavel, SearchX } from 'lucide-react';
 import ItemCard, { type ArtifactCardData, type Rarity } from '@/components/ItemCard';
 import { getItems, type ItemsFilters, type ItemsResponse } from '@/lib/market-api';
@@ -101,7 +101,7 @@ export default function ExplorePage() {
     setSelectedRarities(next);
   };
 
-  const listingOptions: { value: 'all' | 'fixed' | 'auction'; icon: React.ReactNode; label: string }[] = [
+  const listingOptions: { value: 'all' | 'fixed' | 'auction'; icon: ReactNode; label: string }[] = [
     { value: 'all', icon: <Globe className="w-4 h-4" />, label: t('explore.listingAll') },
     { value: 'fixed', icon: <Zap className="w-4 h-4" />, label: t('explore.listingFixed') },
     { value: 'auction', icon: <Gavel className="w-4 h-4" />, label: t('explore.listingAuction') },
