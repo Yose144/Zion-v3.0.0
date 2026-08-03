@@ -23,7 +23,7 @@ import ShootingStars from './ShootingStars';
 import CameraCompassTracker from './CameraCompassTracker';
 import R3FErrorBoundary from './R3FErrorBoundary';
 import MobileTouchControls from './MobileTouchControls';
-import NovaZeme from './NovaZeme';
+import Planet, { NovaZeme } from './Planet';
 import type { CompassData } from './Compass';
 
 interface CameraRigProps {
@@ -260,11 +260,11 @@ export default function OasisScene({
         {view === 'galaxy' && (
           <group ref={universeRef}>
             <R3FErrorBoundary label="Stars">
-              <Stars radius={250} depth={160} count={isMobile ? 1500 : 5200} factor={4.5} saturation={0} fade speed={0.4} />
+              <Stars radius={250} depth={160} count={isMobile ? 2500 : 6000} factor={4.5} saturation={0} fade speed={0.4} />
             </R3FErrorBoundary>
 
             <R3FErrorBoundary label="TwinkleStars">
-              <TwinkleStars count={isMobile ? 600 : 2200} radius={150} />
+              <TwinkleStars count={isMobile ? 1000 : 3000} radius={150} />
             </R3FErrorBoundary>
 
             <R3FErrorBoundary label="ShootingStars">
@@ -320,7 +320,24 @@ export default function OasisScene({
 
             {/* Nova Zeme — centrální planeta s Issobelou na oběžné dráze */}
             <R3FErrorBoundary label="NovaZeme">
-              <NovaZeme position={[0, -1, 8]} isMobile={isMobile} />
+              <NovaZeme position={[0, -0.5, 8]} isMobile={isMobile} />
+            </R3FErrorBoundary>
+
+            {/* Decorative planets — brighter, smaller, scattered in galaxy */}
+            <R3FErrorBoundary label="PlanetMars">
+              <Planet position={[12, 1, -5]} radius={isMobile ? 0.4 : 0.5} isMobile={isMobile} variant="mars" rotationSpeed={0.03} />
+            </R3FErrorBoundary>
+            <R3FErrorBoundary label="PlanetIce">
+              <Planet position={[-10, -0.5, 12]} radius={isMobile ? 0.35 : 0.45} isMobile={isMobile} variant="ice" rotationSpeed={0.04} />
+            </R3FErrorBoundary>
+            <R3FErrorBoundary label="PlanetJungle">
+              <Planet position={[8, 0.8, 18]} radius={isMobile ? 0.3 : 0.4} isMobile={isMobile} variant="jungle" rotationSpeed={0.06} />
+            </R3FErrorBoundary>
+            <R3FErrorBoundary label="PlanetOcean">
+              <Planet position={[-14, 0.3, -8]} radius={isMobile ? 0.35 : 0.45} isMobile={isMobile} variant="ocean" rotationSpeed={0.05} />
+            </R3FErrorBoundary>
+            <R3FErrorBoundary label="PlanetGas">
+              <Planet position={[16, -0.3, 5]} radius={isMobile ? 0.5 : 0.6} isMobile={isMobile} variant="gas" rotationSpeed={0.02} />
             </R3FErrorBoundary>
           </group>
         )}
