@@ -97,6 +97,12 @@ impl Checkpoint {
     /// P2P sync and validate the next block's `previous_hash`.
     pub fn to_v3_block(&self) -> Result<V3Block, String> {
         let header = self.header()?;
+        // Trust the checkpoint-provided hash_hex — V3's hash computation may
+        // differ from V31's re-computation, so we store the trusted hash
+        // directly (matching V3's own behaviour of trusting wire hashes).
+        let stored_hash = hex::decode(&self.block_hash_hex)
+            .ok()
+            .and_then(|b| b.try_into().ok());
         let block = V3Block {
             height: self.block_height,
             nonce: self.nonce,
@@ -104,10 +110,8 @@ impl Checkpoint {
             header,
             transactions: Vec::new(),
             utxo_transactions: Vec::new(),
+            stored_hash,
         };
-        // NOTE: We intentionally trust the snapshot header for checkpoint sync.
-        // V3 PoW has height-aware variants; re-computing every historical hash
-        // inside a trusted snapshot is not required for state continuity.
         Ok(block)
     }
 }

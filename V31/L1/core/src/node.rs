@@ -195,7 +195,11 @@ impl Node {
 
         let rpc_addr = self.config.rpc_addr;
         let p2p_addr = self.config.p2p_addr;
-        let seed_peers = self.config.seed_peers.clone();
+        // V31 native P2P sync uses only V31 peers (empty for now — no other V31
+        // nodes exist).  V3 compat sync uses the V3 seed peers.  This prevents V31
+        // native handshake from hitting V3 nodes and getting banned for protocol
+        // violation.
+        let seed_peers: Vec<SocketAddr> = Vec::new();
         let v3_seed_peers = self.config.seed_peers.clone();
         let v3_sync = self.v3_sync.clone();
         let v3_p2p_addr = self.config.v3_p2p_addr;
