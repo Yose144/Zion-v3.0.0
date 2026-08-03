@@ -1,0 +1,15 @@
+[Unit]
+Description=Run ZION V31 Edge Maintenance daily at 04:17 UTC
+
+[Timer]
+# First run 10 min after boot (let services settle)
+OnBootSec=600
+# Daily at 04:17 UTC — off-peak, low mining/traffic
+OnCalendar=*-*-* 04:17:00 UTC
+# If missed (server was down), run ASAP
+Persistent=true
+# Random delay 0-15 min to avoid herd effect with other cron jobs
+RandomizedDelaySec=900
+
+[Install]
+WantedBy=timers.target
