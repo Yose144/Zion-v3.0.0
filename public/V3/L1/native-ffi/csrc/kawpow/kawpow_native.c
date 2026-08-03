@@ -67,7 +67,7 @@ static inline uint64_t rotl64(uint64_t x, int n) {
     return (x << n) | (x >> (64 - n));
 }
 
-/* Keccak-f[1600] permutation — 24 rounds (reused from kheavyhash_native.c) */
+/* Keccak-f[1600] permutation -- 24 rounds (reused from kheavyhash_native.c) */
 static void keccak_f1600(uint64_t state[25]) {
     for (int round = 0; round < 24; round++) {
         /* Theta */
@@ -173,12 +173,12 @@ static inline uint32_t fnv1a(uint32_t a, uint32_t b) {
 /*
  * Compute KawPow mix_hash and final_hash for a given header, nonce, and DAG.
  *
- *   header_hash — 32-byte block header hash (the seed-hash base)
- *   nonce       — 64-bit nonce
- *   dag         — pointer to precomputed DAG buffer (128-byte entries)
- *   dag_size    — number of 128-byte DAG entries
- *   mix_out     — 32-byte mix hash output
- *   hash_out    — 32-byte final hash output
+ *   header_hash -- 32-byte block header hash (the seed-hash base)
+ *   nonce       -- 64-bit nonce
+ *   dag         -- pointer to precomputed DAG buffer (128-byte entries)
+ *   dag_size    -- number of 128-byte DAG entries
+ *   mix_out     -- 32-byte mix hash output
+ *   hash_out    -- 32-byte final hash output
  */
 EXPORT void kawpow_hash(
     const uint8_t* header_hash,  /* 32 bytes */
@@ -219,13 +219,13 @@ EXPORT void kawpow_hash(
         uint32_t dag_node[16];
         memcpy(dag_node, dag + index * KAWPOW_DAG_NODE, 64);
 
-        /* mix = fnv(mix, dag_node) — per-uint32 FNV-1a */
+        /* mix = fnv(mix, dag_node) -- per-uint32 FNV-1a */
         for (int w = 0; w < 16; w++) {
             mix[w] = fnv1a(mix[w], dag_node[w]);
         }
     }
 
-    /* Step 4: Compress mix — FNV-fold each pair -> 8 uint32 (32 bytes) */
+    /* Step 4: Compress mix -- FNV-fold each pair -> 8 uint32 (32 bytes) */
     uint32_t compressed[8];
     for (int i = 0; i < 8; i++) {
         compressed[i] = fnv1a(mix[i * 2], mix[i * 2 + 1]);
@@ -255,12 +255,12 @@ EXPORT void kawpow_hash(
 /*
  * Mine a single nonce against the target.
  *
- *   header_hash — 32-byte block header hash
- *   nonce       — 64-bit nonce
- *   dag         — pointer to precomputed DAG buffer (128-byte entries)
- *   dag_size    — number of 128-byte DAG entries
- *   target      — 32-byte target (big-endian)
- *   output      — 32-byte final hash output
+ *   header_hash -- 32-byte block header hash
+ *   nonce       -- 64-bit nonce
+ *   dag         -- pointer to precomputed DAG buffer (128-byte entries)
+ *   dag_size    -- number of 128-byte DAG entries
+ *   target      -- 32-byte target (big-endian)
+ *   output      -- 32-byte final hash output
  *
  * Returns 1 if hash <= target (meets target), 0 otherwise.
  */

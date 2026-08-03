@@ -72,7 +72,7 @@ static void keccak_f1600(uint64_t state[25]) {
             state[i] ^= d[i % 5];
         }
 
-        /* Rho and Pi — lane traversal (x,y) -> (y, 2x+3y mod 5) starting at (1,0).
+        /* Rho and Pi -- lane traversal (x,y) -> (y, 2x+3y mod 5) starting at (1,0).
          * The rotation offset for step t is the triangular number ((t+1)*(t+2)/2) mod 64. */
         int x = 1, y = 0;
         uint64_t current = state[x + 5 * y];
@@ -156,7 +156,7 @@ static void sha3_256(const uint8_t* input, size_t len, uint8_t* output) {
 }
 
 /* ---------------------------------------------------------------------------
- * cSHAKE256(N, data) — matches the Rust `sha3` crate's CShake256Core::new(name)
+ * cSHAKE256(N, data) -- matches the Rust `sha3` crate's CShake256Core::new(name)
  * which sets function_name = empty and customization = name.
  *
  * Per NIST SP 800-185, when N (function name) is empty and S (customization)
@@ -215,7 +215,7 @@ static void cshake256(const uint8_t* name, size_t name_len,
 }
 
 /* ---------------------------------------------------------------------------
- * XoShiRo256++ PRNG — matches rusty-kaspa's implementation.
+ * XoShiRo256++ PRNG -- matches rusty-kaspa's implementation.
  * ------------------------------------------------------------------------- */
 typedef struct {
     uint64_t s[4];

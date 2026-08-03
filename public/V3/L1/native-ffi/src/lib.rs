@@ -630,7 +630,7 @@ pub mod kawpow {
 // Autolykos v2  (ERG)
 // ---------------------------------------------------------------------------
 
-#[cfg(feature = "native-autolykos")]
+#[cfg(all(feature = "native-autolykos", has_autolykos_c))]
 pub mod autolykos {
     //! # Safety / threading model
     //!
@@ -1911,7 +1911,7 @@ pub fn runtime_self_test() -> Vec<AlgoTestResult> {
         });
     }
 
-    #[cfg(feature = "native-autolykos")]
+    #[cfg(all(feature = "native-autolykos", has_autolykos_c))]
     {
         let name = "autolykos";
         let header = [0xA3u8; 32];
@@ -2115,7 +2115,7 @@ mod tests {
         println!("kawpow smoke: {:02x?}", &hash[..8]);
     }
 
-    #[cfg(feature = "native-autolykos")]
+    #[cfg(all(feature = "native-autolykos", has_autolykos_c))]
     #[test]
     fn autolykos_smoke() {
         let header = [0x03u8; 32];
@@ -2347,7 +2347,7 @@ mod tests {
         assert!(matches!(err, super::safety::FfiError::EmptyInput));
     }
 
-    #[cfg(feature = "native-autolykos")]
+    #[cfg(all(feature = "native-autolykos", has_autolykos_c))]
     #[test]
     fn autolykos_try_hash_rejects_empty_input() {
         let err = autolykos::try_hash(&[], 0, 0).expect_err("empty input must reject");
