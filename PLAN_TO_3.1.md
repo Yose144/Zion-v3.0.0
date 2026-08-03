@@ -128,7 +128,7 @@
 | B1.3 | ✅ Ported as ibd.rs | ✅ |
 | B1.4 | ✅ Ported as propagation.rs | ✅ |
 | B1.5 | ✅ Ported as discovery.rs | ✅ |
-| B1.6 | ⏳ websocket.rs — not yet ported | ⬜ |
+| B1.6 | ✅ websocket.rs ported (trait-based handler, no NodeRuntime dep) | ✅ |
 | B1.7 | ✅ Ported as v3_wallet.rs | ✅ |
 | B1.8 | ✅ Ported as v3_full_checkpoint.rs | ✅ |
 | B1.9 | ✅ Ported as metrics.rs | ✅ |
@@ -200,12 +200,12 @@
 
 | # | Úkol | Akce | Status |
 |---|------|------|--------|
-| C2.1 | V31 systemd unit soubory | `zion-v31-node.service`, `zion-v31-pool.service`, `zion-v31-multichain.service`, … | ⬜ |
-| C2.2 | V31 nginx config | RPC proxy, multichain API, dashboard | ⬜ |
-| C2.3 | V31 fail2ban jail | Stejná pravidla jako V3 ale pro V31 porty | ⬜ |
-| C2.4 | V31 edge-environment.sh template | Všechny env vars zdokumentovány | ⬜ |
-| C2.5 | V31 deploy script | `edge-deploy/deploy-v31.sh` | ⬜ |
-| C2.6 | V31 watchdog | `scripts/watchdog.sh` mode `v31` | ⬜ |
+| C2.1 | ✅ 13 systemd service files + 4 config files | ✅ |
+| C2.2 | ✅ nginx config (RPC proxy + TCP stream) | ✅ |
+| C2.3 | ✅ fail2ban jail + filter | ✅ |
+| C2.4 | ✅ edge-environment.sh | ✅ |
+| C2.5 | ✅ deploy-edge.sh | ✅ |
+| C2.6 | ⏳ watchdog mode v31 — defer to edge deployment | ⬜ |
 
 ### C.3 — Fáze C Go/No-Go
 
