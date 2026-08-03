@@ -44,7 +44,7 @@ export default function AdminLoginPage() {
     <div className="min-h-[60vh] flex items-center justify-center">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-md p-8 rounded-2xl border border-white/10 bg-oasis-surface"
+        className="w-full max-w-md p-8 rounded-2xl border border-white/10 bg-zion-card"
       >
         <h1 className="text-2xl font-black text-gradient mb-2">{t('admin.loginTitle')}</h1>
         <p className="text-sm text-gray-400 mb-6">{t('admin.loginSubtitle')}</p>

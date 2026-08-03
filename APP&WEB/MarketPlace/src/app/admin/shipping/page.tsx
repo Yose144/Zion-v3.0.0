@@ -39,7 +39,7 @@ export default function AdminShippingPage() {
   return (
     <div>
       <h1 className="text-2xl font-black text-gradient mb-6">{t('admin.shippingTitle')}</h1>
-      <div className="overflow-x-auto rounded-xl border border-white/10 bg-oasis-surface">
+      <div className="overflow-x-auto rounded-xl border border-white/10 bg-zion-card">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-white/10 text-left text-gray-400">
@@ -62,7 +62,7 @@ export default function AdminShippingPage() {
                       defaultValue={order.trackingNumber ?? ''}
                       onChange={(e) => setTracking({ ...tracking, [order.id]: e.target.value })}
                       placeholder={t('admin.shippingTracking')}
-                      className="bg-oasis-surface border border-white/10 rounded px-3 py-1.5 text-sm flex-1"
+                      className="bg-zion-card border border-white/10 rounded px-3 py-1.5 text-sm flex-1"
                     />
                     <button
                       onClick={() => handleSave(order.id)}
