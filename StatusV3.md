@@ -108,6 +108,7 @@
 | OASIS Web | `https://oasis.zionterranova.com` | Static OASIS web build in `/var/www/oasis/` (system nginx) |
 | Dashboard | `https://dashboard.zionterranova.com` | Basic Auth |
 | RPC | `http://rpc.zionterranova.com:8443` | nginx HTTP proxy → `127.0.0.1:8447` read-only Python filter → `127.0.0.1:8443` node RPC (**plain HTTP**, no TLS) |
+| Legacy newearth archive | `https://www.newearth.cz` | Root redirects to `https://zionterranova.com/`; `/V2/` served from `/var/www/newearth/` (2026-08-03) |
 | Pool | `62.171.141.136:8444` | Stratum |
 
 ### Resource Usage

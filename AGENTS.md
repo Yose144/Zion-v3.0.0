@@ -17,6 +17,8 @@ This file provides operating guidance to Devin, WARP, Copilot, and future automa
 > 3. **OASIS Web:** `https://oasis.zionterranova.com` — samostatná vizuální OASIS aplikace (`APP&WEB/OasisWeb`), nasazená v `/var/www/oasis/` a servírovaná systémovým nginxem.
 > 4. **MarketPlace:** `https://market.zionterranova.com` — OASIS Artifact Marketplace (Next.js 14 + ERC-1155 + Base L2). Zdroj: [`APP&WEB/MarketPlace/`](./APP&WEB/MarketPlace/). Běží jako systemd `zion-marketplace.service` na `127.0.0.1:3100`, proxy přes nginx. Smart contracts: `ZIONArtifact.sol` (ERC-1155), `ZIONMarketplace.sol` (fixed-price + auction, wZION payment, 2.5% fee, 5% royalty). wZION address: `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6`. 4 forge tests pass. API: `/api/ipfs/upload` (Pinata), `/api/oasis/sync` (OASIS game → marketplace DB), `/api/oasis/mint` (mint NFT from quest/avatar/prize/territory). Deploy: rsync → `npm install && npm run build` → `systemctl restart zion-marketplace.service`.
 >
+> **Update (2026-08-03):** `https://www.newearth.cz` je nyní vlastní nginx vhost: root `/` přesměrovává na `https://zionterranova.com/`, `/V2/` archiv je servírován z `/var/www/newearth/`. Certifikát Let's Encrypt pro `newearth.cz` + `www.newearth.cz` vydán, nginx config: `APP&WEB/public_html/deploy/nginx-newearth.conf`, deploy script: `APP&WEB/public_html/deploy/deploy-newearth.sh`. Tím se vyřešilo nechtěné směřování na market kvůli defaultnímu 443 vhostu.
+>
 > L1–L6 služby běží normálně.
 
 ## Scope and working area
