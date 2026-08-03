@@ -13,6 +13,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import HeroSection from "@/components/HeroSection";
 import AlohaOverlay from "@/components/AlohaOverlay";
 import BackgroundToggle from "@/components/BackgroundToggle";
+import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import PerformanceShell from "@/components/PerformanceShell";
 import { SITE_NETWORK_TOPOLOGY, SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_VERSION } from '@/lib/site';
 
@@ -70,6 +71,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://api.spotify.com" />
       </head>
       <body className={`${inter.variable} ${jetbrains.variable} antialiased text-white w-full`} style={{ maxWidth: '100%', overflowX: 'hidden', background: 'transparent' }}>
+        <ServiceWorkerRegistration />
         <PerformanceShell />
         <GlobalErrorBoundary>
           <ThemeProvider>
