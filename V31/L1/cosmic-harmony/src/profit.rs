@@ -100,6 +100,63 @@ impl ExternalCoin {
             ExternalCoin::Verus => "verushash",
         }
     }
+
+    /// Ticker symbol (alias for `as_str`).
+    pub fn ticker(&self) -> &'static str {
+        self.as_str()
+    }
+
+    /// Returns true if this coin is best mined on GPU.
+    pub fn is_gpu(&self) -> bool {
+        matches!(
+            self,
+            ExternalCoin::Kaspa
+                | ExternalCoin::Alephium
+                | ExternalCoin::Decred
+                | ExternalCoin::Ravencoin
+                | ExternalCoin::EpicCash
+                | ExternalCoin::Zano
+                | ExternalCoin::Meowcoin
+                | ExternalCoin::Clore
+                | ExternalCoin::Flux
+                | ExternalCoin::Neoxa
+                | ExternalCoin::EthereumClassic
+                | ExternalCoin::Bitcoin
+        )
+    }
+
+    /// Returns true if this coin is best mined on CPU.
+    pub fn is_cpu(&self) -> bool {
+        matches!(self, ExternalCoin::Monero | ExternalCoin::Verus)
+    }
+
+    /// Estimated GPU power draw in watts for this coin's algorithm.
+    pub fn estimated_gpu_power_watts(&self) -> f64 {
+        match self {
+            ExternalCoin::Kaspa => 180.0,
+            ExternalCoin::Alephium => 200.0,
+            ExternalCoin::Decred => 150.0,
+            ExternalCoin::Ravencoin => 170.0,
+            ExternalCoin::EpicCash => 220.0,
+            ExternalCoin::Zano => 220.0,
+            ExternalCoin::Meowcoin => 170.0,
+            ExternalCoin::Clore => 170.0,
+            ExternalCoin::Flux => 160.0,
+            ExternalCoin::Neoxa => 170.0,
+            ExternalCoin::EthereumClassic => 200.0,
+            ExternalCoin::Bitcoin => 250.0,
+            _ => 0.0,
+        }
+    }
+
+    /// Estimated CPU power draw in watts for this coin's algorithm.
+    pub fn estimated_cpu_power_watts(&self) -> f64 {
+        match self {
+            ExternalCoin::Monero => 120.0,
+            ExternalCoin::Verus => 90.0,
+            _ => 0.0,
+        }
+    }
 }
 
 impl fmt::Display for ExternalCoin {
@@ -251,6 +308,17 @@ impl ProfitRouter {
 
     pub fn update(&mut self, entries: Vec<ProfitEntry>) {
         self.entries = entries;
+    }
+
+    /// Return placeholder default estimates for all coins (V3 compatibility).
+    ///
+    /// In V3 this was `fetch_live_profit_estimates()` which called an oracle.
+    /// V31 returns hardcoded placeholder estimates until a live oracle is wired.
+    pub fn default_estimates() -> Vec<ProfitEntry> {
+        CoinProfile::defaults()
+            .into_iter()
+            .map(|p| ProfitEntry::from_profile(&p, 1.0))
+            .collect()
     }
 
     /// Return the most profitable active coin, if any.

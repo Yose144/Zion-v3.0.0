@@ -5,22 +5,23 @@
 //! fallback revenue stream; it is compiled only when the `auxpow` feature is
 //! enabled and can be disabled at runtime via `MinerConfig`.
 
+#![allow(dead_code, unexpected_cfgs)] // V3 ported modules — used when fully integrated
+
 #[cfg(feature = "auxpow")]
 pub mod auxpow;
+pub mod autonomous;
 pub mod b3_verify;
 pub mod config;
 pub mod cpu_features;
 pub mod gpu_guard;
+pub mod pool_message;
 pub mod reconnect;
 pub mod runtime;
 pub mod stream;
 pub mod thread_affinity;
 
-// TODO: These modules need V3 cosmic-harmony internals (deeksha_lite,
-//       cosmic_harmony_with_height, algorithms_opt, scratchpad_ekam)
-//       and zion_auxpow crate. Port after V3 cosmic-harmony full port.
-// pub mod autonomous; // needs zion_pool::PoolMessage, ExternalCoin methods
-// pub mod parallel; // needs zion_auxpow crate, feature-gated auxpow
+// TODO: parallel.rs needs zion_auxpow crate (feature-gated).
+// pub mod parallel;
 
 #[cfg(feature = "auxpow")]
 pub use auxpow::{ExternalCoin, Job, Share, StratumClient, StratumJob};

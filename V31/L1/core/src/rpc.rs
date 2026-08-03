@@ -3,9 +3,11 @@
 //! The Alpha RPC speaks line-delimited JSON over plain TCP. This avoids a heavy
 //! HTTP stack while covering the essential node operations.
 
+use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{TcpListener, TcpStream};
@@ -183,4 +185,152 @@ fn error_response(id: Option<Value>, code: i32, message: &str) -> Value {
         "id": id,
         "error": { "code": code, "message": message },
     })
+}
+
+// ── V3-compatible JSON-RPC types and error codes ──────────────────────
+//
+// These constants and types match the V3 RPC protocol so that V31 can
+// speak the same wire format as V3 nodes and existing tooling (dashboard,
+// CLI, pool) works without modification.
+
+/// JSON-RPC protocol version string.
+pub const JSONRPC_VERSION: &str = "2.0";
+
+// Standard JSON-RPC error codes.
+pub const PARSE_ERROR: i64 = -32700;
+pub const INVALID_REQUEST: i64 = -32600;
+pub const METHOD_NOT_FOUND: i64 = -32601;
+pub const INVALID_PARAMS: i64 = -32602;
+pub const INTERNAL_ERROR: i64 = -32603;
+
+// ZION-specific error codes.
+pub const BLOCK_NOT_FOUND: i64 = -32001;
+pub const TX_NOT_FOUND: i64 = -32002;
+pub const INVALID_ADDRESS: i64 = -32003;
+pub const TX_REJECTED: i64 = -32004;
+pub const NOT_SYNCED: i64 = -32005;
+
+/// A JSON-RPC request (V3-compatible).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RpcRequest {
+    pub jsonrpc: String,
+    pub id: Value,
+    pub method: String,
+    #[serde(default)]
+    pub params: Value,
+}
+
+/// A JSON-RPC error object.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RpcError {
+    pub code: i64,
+    pub message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data: Option<Value>,
+}
+
+/// A JSON-RPC response (V3-compatible).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RpcResponse {
+    pub jsonrpc: String,
+    pub id: Value,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub result: Option<Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<RpcError>,
+}
+
+impl RpcResponse {
+    /// Build a success response.
+    pub fn ok(id: Value, result: Value) -> Self {
+        Self {
+            jsonrpc: JSONRPC_VERSION.to_string(),
+            id,
+            result: Some(result),
+            error: None,
+        }
+    }
+
+    /// Build an error response.
+    pub fn err(id: Value, code: i64, message: impl Into<String>) -> Self {
+        Self {
+            jsonrpc: JSONRPC_VERSION.to_string(),
+            id,
+            result: None,
+            error: Some(RpcError {
+                code,
+                message: message.into(),
+                data: None,
+            }),
+        }
+    }
+
+    /// Build an error response with extra data.
+    pub fn err_with_data(id: Value, code: i64, message: impl Into<String>, data: Value) -> Self {
+        Self {
+            jsonrpc: JSONRPC_VERSION.to_string(),
+            id,
+            result: None,
+            error: Some(RpcError {
+                code,
+                message: message.into(),
+                data: Some(data),
+            }),
+        }
+    }
+}
+
+/// Type alias for handler results.
+pub type HandlerResult = Result<Value, (i64, String)>;
+
+/// A simple JSON-RPC method dispatcher (V3-compatible).
+///
+/// Maps method names to handler closures. Used by the node runtime to
+/// route incoming RPC calls.
+pub struct RpcRouter {
+    #[allow(clippy::type_complexity)]
+    handlers: HashMap<String, Box<dyn Fn(&Value) -> HandlerResult + Send + Sync>>,
+}
+
+impl RpcRouter {
+    /// Create an empty router.
+    pub fn new() -> Self {
+        Self {
+            handlers: HashMap::new(),
+        }
+    }
+
+    /// Register a handler for a method name.
+    pub fn register<F>(&mut self, method: &str, handler: F)
+    where
+        F: Fn(&Value) -> HandlerResult + Send + Sync + 'static,
+    {
+        self.handlers.insert(method.to_string(), Box::new(handler));
+    }
+
+    /// Dispatch a request, returning a response.
+    pub fn dispatch(&self, request: &RpcRequest) -> RpcResponse {
+        match self.handlers.get(&request.method) {
+            Some(handler) => match handler(&request.params) {
+                Ok(result) => RpcResponse::ok(request.id.clone(), result),
+                Err((code, msg)) => RpcResponse::err(request.id.clone(), code, msg),
+            },
+            None => RpcResponse::err(
+                request.id.clone(),
+                METHOD_NOT_FOUND,
+                format!("method '{}' not found", request.method),
+            ),
+        }
+    }
+
+    /// Build a stub router with no handlers (placeholder for NodeRuntime integration).
+    pub fn build_stub_router() -> Self {
+        Self::new()
+    }
+}
+
+impl Default for RpcRouter {
+    fn default() -> Self {
+        Self::new()
+    }
 }

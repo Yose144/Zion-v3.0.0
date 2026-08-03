@@ -11,6 +11,7 @@ pub mod stratum;
 pub mod stratum_v1;
 pub mod validator;
 pub mod v3_pplns;
+pub mod v3_protocol;
 
 // TODO: revenue_proxy needs V3 CoinProfile fields (ticker, pool_host, pool_port)
 //       which differ from V31's CoinProfile. Port after ChainState.
