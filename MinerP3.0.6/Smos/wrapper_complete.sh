@@ -41,13 +41,14 @@ export ZION_STREAM2_FORCE_COIN=ZANO
 export ZION_MINER_CPU_COIN=VRSC
 export ZION_EXT_CPU_NONCE_COUNT=2000000
 
-# ZANO / AuxPoW GPU — v90 config
-# Rig now has Vega 64 + Intel HD 610 (iGPU, useless for mining).
-# MULTI_GPU=0 → only Vega 64 is used. ZANO_RESERVE=0 → ZANO time-sliced on Vega.
-export ZION_MULTI_GPU=0
+# ZANO / AuxPoW GPU — v90 config from VEGA_SMOS_DUAL_GPU_REPORT.md
+# Rig has Vega 64 (gfx900) + RX 5600 XT (gfx1010, RDNA1).
+# MULTI_GPU=1 (default) → both GPUs mine ZION via MultiGpuMiner.
+# ZANO_RESERVE=0 → ZANO time-sliced on Vega 64 (best ProgPoW priority).
+# ZION_EXT_GPU_TIME_DUTY_PCT=100 → ZANO gets ~100% of Vega 64 GPU time,
+# ZION gets RX 5600 XT + residual Vega 64 time.
 export ZION_ZANO_RESERVE=0
 export ZION_ZANO_DEVICE_NAME=vega
-export ZION_OCL_DEVICE_NAME=vega
 export ZION_EXT_GPU_TIME_DUTY_PCT=100
 export ZION_SECONDARY_GPU_WORK_SIZE=1048576
 export ZION_AUXPOW_GPU_WORK_SIZE=1048576
