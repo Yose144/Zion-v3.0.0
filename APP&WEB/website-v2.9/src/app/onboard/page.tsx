@@ -5,6 +5,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
   Rocket,
+  BookOpen,
+  HelpCircle,
   Monitor,
   Wallet,
   Server,
@@ -39,11 +41,48 @@ interface Category {
 
 const categories: Category[] = [
   {
-    id: 'desktop',
-    title: { cs: 'Desktop App', en: 'Desktop App' },
-    icon: Monitor,
-    accentText: 'text-cyan-300',
+    id: 'welcome',
+    title: { cs: 'Vítej na palubě', en: 'Welcome Aboard' },
+    icon: Rocket,
+    accentText: 'text-emerald-300',
     papers: [
+      {
+        id: 'readme',
+        title: { cs: 'ZION — Vítej na palubě', en: 'ZION — Welcome Aboard' },
+        description: { cs: 'Marketingový přehled: příběh, tři cesty a první krok.', en: 'Marketing overview: story, three paths, and first step.' },
+        file: 'README.md',
+        format: 'md',
+      },
+    ],
+  },
+  {
+    id: 'story',
+    title: { cs: 'Sůl této země', en: 'Salt of the Earth' },
+    icon: BookOpen,
+    accentText: 'text-violet-300',
+    papers: [
+      {
+        id: 'soul-of-the-earth',
+        title: { cs: 'Sůl této země — kompletní kniha', en: 'Salt of the Earth — full book' },
+        description: { cs: 'Brána do Oasis a říše neomezené fantazie. Příběh s ověřitelnými fakty.', en: 'Gateway to Oasis and the realm of unlimited fantasy. Story with verifiable facts.' },
+        file: 'soul-of-the-earth.md',
+        format: 'md',
+      },
+    ],
+  },
+  {
+    id: 'faq',
+    title: { cs: 'Pro zájemce — FAQ', en: 'For the curious — FAQ' },
+    icon: HelpCircle,
+    accentText: 'text-gray-400',
+    papers: [
+      {
+        id: 'faq',
+        title: { cs: 'Technický FAQ', en: 'Technical FAQ' },
+        description: { cs: 'Přehled technických návodů pro ty, co chtějí jít hlouběji.', en: 'Overview of technical guides for those who want to go deeper.' },
+        file: 'faq.md',
+        format: 'md',
+      },
       {
         id: 'desktop',
         title: { cs: 'ZION Public Miner pro začátečníky', en: 'ZION Public Miner for beginners' },
@@ -51,29 +90,6 @@ const categories: Category[] = [
         file: 'desktop.md',
         format: 'md',
       },
-    ],
-  },
-  {
-    id: 'start',
-    title: { cs: 'Přehled', en: 'Overview' },
-    icon: Rocket,
-    accentText: 'text-emerald-300',
-    papers: [
-      {
-        id: 'readme',
-        title: { cs: 'README — Onboard to ZION', en: 'README — Onboard to ZION' },
-        description: { cs: 'Přehled sítě a cesta od desktop aplikace po DApp.', en: 'Network overview and path from desktop app to DApp.' },
-        file: 'README.md',
-        format: 'md',
-      },
-    ],
-  },
-  {
-    id: 'wallet',
-    title: { cs: 'Peněženka', en: 'Wallet' },
-    icon: Wallet,
-    accentText: 'text-zion-gold',
-    papers: [
       {
         id: 'wallet',
         title: { cs: 'Peněženka ZION', en: 'ZION Wallet' },
@@ -81,29 +97,6 @@ const categories: Category[] = [
         file: 'wallet.md',
         format: 'md',
       },
-    ],
-  },
-  {
-    id: 'node',
-    title: { cs: 'Nód', en: 'Node' },
-    icon: Server,
-    accentText: 'text-cyan-300',
-    papers: [
-      {
-        id: 'node',
-        title: { cs: 'Spuštění nodu', en: 'Run a Node' },
-        description: { cs: 'Build, systemd služba a veřejný RPC.', en: 'Build, systemd service, and public RPC.' },
-        file: 'node.md',
-        format: 'md',
-      },
-    ],
-  },
-  {
-    id: 'mining',
-    title: { cs: 'Těžba', en: 'Mining' },
-    icon: Pickaxe,
-    accentText: 'text-violet-300',
-    papers: [
       {
         id: 'mining',
         title: { cs: 'Těžba ZION', en: 'ZION Mining' },
@@ -111,34 +104,25 @@ const categories: Category[] = [
         file: 'mining.md',
         format: 'md',
       },
-    ],
-  },
-  {
-    id: 'dapp',
-    title: { cs: 'První DApp', en: 'First DApp' },
-    icon: Code,
-    accentText: 'text-rose-300',
-    papers: [
       {
-        id: 'dapp',
-        title: { cs: 'První DApp na ZION', en: 'First DApp on ZION' },
-        description: { cs: 'Node.js server a JSON-RPC volání.', en: 'Node.js server and JSON-RPC calls.' },
-        file: 'dapp.md',
+        id: 'node',
+        title: { cs: 'Spuštění nodu', en: 'Run a Node' },
+        description: { cs: 'Build, systemd služba a veřejný RPC.', en: 'Build, systemd service, and public RPC.' },
+        file: 'node.md',
         format: 'md',
       },
-    ],
-  },
-  {
-    id: 'bridge',
-    title: { cs: 'Bridge / WARP', en: 'Bridge / WARP' },
-    icon: ArrowLeftRight,
-    accentText: 'text-amber-300',
-    papers: [
       {
         id: 'bridge',
         title: { cs: 'Bridge a WARP', en: 'Bridge & WARP' },
         description: { cs: 'wZION, most mezi L1 a L2 a API.', en: 'wZION, L1↔L2 bridge, and API.' },
         file: 'bridge.md',
+        format: 'md',
+      },
+      {
+        id: 'dapp',
+        title: { cs: 'První DApp na ZION', en: 'First DApp on ZION' },
+        description: { cs: 'Node.js server a JSON-RPC volání.', en: 'Node.js server and JSON-RPC calls.' },
+        file: 'dapp.md',
         format: 'md',
       },
     ],
@@ -161,12 +145,12 @@ function findCategoryIdByPaper(paperId: string): string | null {
 
 export default function OnboardPage() {
   const { lang } = useLang();
-  const [selectedPaper, setSelectedPaper] = useState('desktop');
-  const [activeCategory, setActiveCategory] = useState('desktop');
+  const [selectedPaper, setSelectedPaper] = useState('readme');
+  const [activeCategory, setActiveCategory] = useState('welcome');
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({ desktop: true, start: false, wallet: false, node: false, mining: false, dapp: false, bridge: false });
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({ welcome: true, story: false, faq: false });
 
   const currentPaper = allPapers.find(p => p.id === selectedPaper);
   const currentCategory = categories.find(c => c.id === activeCategory);

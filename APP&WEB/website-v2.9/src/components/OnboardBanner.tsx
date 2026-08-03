@@ -6,12 +6,12 @@ import { useLang } from '@/contexts/LanguageContext';
 import Link from 'next/link';
 
 const OnboardBannerCopy = {
-  title: { cs: 'Onboard to ZION', en: 'Onboard to ZION' },
+  title: { cs: 'Sůl této země — Vítej na palubě', en: 'Salt of the Earth — Welcome Aboard' },
   body: {
-    cs: 'Peněženka, nód, těžba, bridge a první DApp — kompletní průvodce pro nové uživatele.',
-    en: 'Wallet, node, mining, bridge, and first DApp — a complete guide for new users.',
+    cs: 'Příběh, který si můžeš ověřit. Síť, na kterou můžeš vstoupit dnes.',
+    en: 'A story you can verify. A network you can join today.',
   },
-  cta: { cs: 'Začít onboard', en: 'Start Onboarding' },
+  cta: { cs: 'Otevřít onboard', en: 'Open Onboarding' },
 };
 
 export default function OnboardBanner() {
