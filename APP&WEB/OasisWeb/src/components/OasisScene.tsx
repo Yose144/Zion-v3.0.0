@@ -331,21 +331,61 @@ export default function OasisScene({
               />
             </R3FErrorBoundary>
 
-            {/* Decorative planets — brighter, smaller, scattered in galaxy */}
+            {/* Decorative planets — brighter, smaller, scattered in galaxy, clickable */}
             <R3FErrorBoundary label="PlanetMars">
-              <Planet position={[12, 1, -5]} radius={isMobile ? 0.4 : 0.5} isMobile={isMobile} variant="mars" rotationSpeed={0.03} />
+              <Planet
+                position={[12, 1, -5]}
+                radius={isMobile ? 0.4 : 0.5}
+                isMobile={isMobile}
+                variant="mars"
+                rotationSpeed={0.03}
+                label="Nexus-7"
+                onClick={() => { const w = getWorldById('PLANET_CYBERPUNK'); if (w) onWorldSelect(w); }}
+              />
             </R3FErrorBoundary>
             <R3FErrorBoundary label="PlanetIce">
-              <Planet position={[-10, -0.5, 12]} radius={isMobile ? 0.35 : 0.45} isMobile={isMobile} variant="ice" rotationSpeed={0.04} />
+              <Planet
+                position={[-10, -0.5, 12]}
+                radius={isMobile ? 0.35 : 0.45}
+                isMobile={isMobile}
+                variant="ice"
+                rotationSpeed={0.04}
+                label="Norse-Celtic"
+                onClick={() => { const w = getWorldById('WORLD_NORSE_CELTIC'); if (w) onWorldSelect(w); }}
+              />
             </R3FErrorBoundary>
             <R3FErrorBoundary label="PlanetJungle">
-              <Planet position={[8, 0.8, 18]} radius={isMobile ? 0.3 : 0.4} isMobile={isMobile} variant="jungle" rotationSpeed={0.06} />
+              <Planet
+                position={[8, 0.8, 18]}
+                radius={isMobile ? 0.3 : 0.4}
+                isMobile={isMobile}
+                variant="jungle"
+                rotationSpeed={0.06}
+                label="Africa"
+                onClick={() => { const w = getWorldById('WORLD_AFRICA'); if (w) onWorldSelect(w); }}
+              />
             </R3FErrorBoundary>
             <R3FErrorBoundary label="PlanetOcean">
-              <Planet position={[-14, 0.3, -8]} radius={isMobile ? 0.35 : 0.45} isMobile={isMobile} variant="ocean" rotationSpeed={0.05} />
+              <Planet
+                position={[-14, 0.3, -8]}
+                radius={isMobile ? 0.35 : 0.45}
+                isMobile={isMobile}
+                variant="ocean"
+                rotationSpeed={0.05}
+                label="Japan"
+                onClick={() => { const w = getWorldById('WORLD_JAPAN'); if (w) onWorldSelect(w); }}
+              />
             </R3FErrorBoundary>
             <R3FErrorBoundary label="PlanetGas">
-              <Planet position={[16, -0.3, 5]} radius={isMobile ? 0.5 : 0.6} isMobile={isMobile} variant="gas" rotationSpeed={0.02} />
+              <Planet
+                position={[16, -0.3, 5]}
+                radius={isMobile ? 0.5 : 0.6}
+                isMobile={isMobile}
+                variant="gas"
+                rotationSpeed={0.02}
+                label="Solarpunk"
+                onClick={() => { const w = getWorldById('DIMENSION_SOLARPUNK'); if (w) onWorldSelect(w); }}
+              />
             </R3FErrorBoundary>
           </group>
         )}

@@ -21,6 +21,8 @@ export default function Planet({
   hasOrbit = false,
   orbitColor = '#fbbf24',
   rotationSpeed = 0.05,
+  onClick,
+  label,
 }: {
   position?: [number, number, number];
   radius?: number;
@@ -30,9 +32,12 @@ export default function Planet({
   hasOrbit?: boolean;
   orbitColor?: string;
   rotationSpeed?: number;
+  onClick?: () => void;
+  label?: string;
 }) {
   const planetRef = useRef<THREE.Group>(null);
   const atmosphereRef = useRef<THREE.Mesh>(null);
+  const [hovered, setHovered] = useState(false);
   const [textures, setTextures] = useState<{
     color?: THREE.Texture;
     bump?: THREE.Texture;
@@ -107,11 +112,16 @@ export default function Planet({
   }
 
   return (
-    <group position={position}>
+    <group
+      position={position}
+      onClick={(e) => { if (onClick) { e.stopPropagation(); onClick(); } }}
+      onPointerOver={(e) => { if (onClick) { e.stopPropagation(); setHovered(true); document.body.style.cursor = 'pointer'; } }}
+      onPointerOut={() => { if (onClick) { setHovered(false); document.body.style.cursor = 'auto'; } }}
+    >
       {/* Planet */}
       <group ref={planetRef}>
         <mesh>
-          <sphereGeometry args={[radius, isMobile ? 32 : 64, isMobile ? 24 : 48]} />
+          <sphereGeometry args={[radius * (hovered ? 1.12 : 1), isMobile ? 32 : 64, isMobile ? 24 : 48]} />
           {variant === 'earth' ? (
             <meshStandardMaterial
               map={textures.color}
@@ -167,6 +177,27 @@ export default function Planet({
       {/* Light to illuminate planet */}
       <pointLight position={[radius + 1, 0.5, radius + 1]} intensity={1.5} color="#ffffff" distance={radius * 6} />
       <ambientLight intensity={0.4} />
+
+      {/* Label (desktop only, if provided) */}
+      {label && !isMobile && (
+        <Html position={[0, radius + 0.25, 0]} center distanceFactor={6} occlude style={{ pointerEvents: 'none' }}>
+          <div
+            style={{
+              background: 'rgba(0,0,0,0.7)',
+              border: `1px solid ${getVariantColor(variant)}80`,
+              color: getVariantColor(variant),
+              padding: '3px 10px',
+              borderRadius: '10px',
+              fontSize: '11px',
+              fontWeight: 600,
+              whiteSpace: 'nowrap',
+              boxShadow: `0 0 14px ${getVariantColor(variant)}40`,
+            }}
+          >
+            {label}
+          </div>
+        </Html>
+      )}
     </group>
   );
 }
@@ -381,6 +412,18 @@ export function NovaZeme({
 }
 
 // ── Helpers ──
+
+function getVariantColor(variant: string): string {
+  const colors: Record<string, string> = {
+    mars: '#ff8855',
+    ice: '#a0d8ff',
+    gas: '#ffc070',
+    jungle: '#50d878',
+    ocean: '#4090e0',
+    earth: '#86efac',
+  };
+  return colors[variant] || '#ffffff';
+}
 
 function getVariantEmissive(variant: string): THREE.Color {
   const colors: Record<string, string> = {
