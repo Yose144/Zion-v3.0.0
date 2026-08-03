@@ -1,0 +1,10 @@
+[Unit]
+Description=Run ZION V3 Watchdog every 2 minutes
+
+[Timer]
+OnBootSec=60
+OnUnitActiveSec=120
+Unit=zion-watchdog.service
+
+[Install]
+WantedBy=timers.target

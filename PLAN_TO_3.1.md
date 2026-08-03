@@ -282,12 +282,12 @@
 
 | # | Úkol | Akce | Status |
 |---|------|------|--------|
-| D4.1 | Tag `pre-v31-cutover` | `git tag` na posledním V3 commit | ⬜ |
-| D4.2 | `V3/` → `archive/V3/` | `git mv V3/ archive/V3/` | ⬜ |
-| D4.3 | `AuXpow/` → `archive/AuXpow/` | `git mv` (již merged do V31 miner) | ⬜ |
-| D4.4 | `ZionDex/` → `archive/ZionDex/` | `git mv` (již merged do V31 multichain) | ⬜ |
-| D4.5 | Public subtree sync | `git subtree push --prefix=public public main` | ⬜ |
-| D4.6 | AGENTS.md + StatusV3.md update | Nové cesty, V31 canonical | ⬜ |
+| D4.1 | ✅ Tag `pre-v31-cutover` | Pushnuto na origin | ✅ |
+| D4.2 | ✅ `V3/` → `archive/V3/` | `git mv` complete | ✅ |
+| D4.3 | ✅ `AuXpow/` → `archive/AuXpow/` | `git mv` complete (merged do V31 miner) | ✅ |
+| D4.4 | ✅ `ZionDex/` → `archive/ZionDex/` | `git mv` complete (merged do V31 multichain) | ✅ |
+| D4.5 | ⬜ Public subtree sync | `git subtree push --prefix=public public main` | ⬜ |
+| D4.6 | ✅ AGENTS.md + StatusV3.md update | Nové cesty, V31 canonical, V3 archived | ✅ |
 
 ### D.5 — Fáze D Go/No-Go (3.1.0 Mainnet Alpha)
 

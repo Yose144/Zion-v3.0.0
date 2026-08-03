@@ -29,17 +29,16 @@ Tento dokument je jedním vstupním bodem. Detailní pravdu najdeš v těchto zd
 
 1. [Sůl a kompas — proč to číst](#sůl-a-kompas--proč-to-číst)
 2. [Co je ZION — ve třech větách a ověřitelná fakta](#co-je-zion--ve-třech-větách-a-ověřitelná-fakta)
-3. [Co je ZION dnes — kořen, kmen a koruna](#co-je-zion-dnes--kořen-kmen-a-koruna)
-4. [Proč je dobré začít zrovna teď](#proč-je-dobré-začít-zrovna-teď)
-5. [Tři cesty na palubu](#tři-cesty-na-palubu)
-6. [Loď ZION — šest palub a čtyři knihy](#loď-zion--šest-palub-a-čtyři-knihy)
-7. [Brána do Oasis](#brána-do-oasis)
-8. [Kniha Sůl této země — dvanáct zastavení](#kniha-sůl-této-země--dvanáct-zastavení)
-9. [Co ZION neslibuje](#co-zion-neslibuje)
-10. [První krok — dnes, za pět minut](#první-krok--dnes-za-pět-minut)
-11. [Technický quickstart](#technický-quickstart)
-12. [Ověřitelná fakta — shrnutí](#ověřitelná-fakta--shrnutí)
-13. [Pro vývojáře a další zdroje](#pro-vývojáře-a-další-zdroje)
+3. [Proč je dobré začít zrovna teď](#proč-je-dobré-začít-zrovna-teď)
+4. [Tři cesty na palubu](#tři-cesty-na-palubu)
+5. [Loď ZION — šest palub a čtyři knihy](#loď-zion--šest-palub-a-čtyři-knihy)
+6. [Brána do Oasis](#brána-do-oasis)
+7. [Kniha Sůl této země — dvanáct zastavení](#kniha-sůl-této-země--dvanáct-zastavení)
+8. [Co ZION neslibuje](#co-zion-neslibuje)
+9. [První krok — dnes, za pět minut](#první-krok--dnes-za-pět-minut)
+10. [Technický quickstart](#technický-quickstart)
+11. [Ověřitelná fakta — shrnutí](#ověřitelná-fakta--shrnutí)
+12. [Pro vývojáře a další zdroje](#pro-vývojáře-a-další-zdroje)
 
 ---
 
@@ -71,7 +70,7 @@ Tento dokument je jedním vstupním bodem. Detailní pravdu najdeš v těchto zd
 
 > **Příběh**
 >
-> **ZION je blockchain, který se dá ověřit, ne jen slíbit.** Běží od 4. prosince 2025, nový blok každých 60 sekund, otevřený kód, který si může přečíst kdokoliv.
+> **ZION je blockchain, který se dá ověřit, ne jen slíbit.** Běží od 4. prosince 2025 - Testnetu, nový blok každých 60 sekund, otevřený kód, který si může přečíst kdokoliv.
 >
 > **Každý blok automaticky dělí odměnu: 89 % těžaři, 5 % humanitárnímu fondu, 5 % fondu budoucnosti, 1 % se spálí.** Není to slib firmy — je to matematika zapsaná v pravidlech sítě, kterou nikdo nemůže potichu změnit.
 >
@@ -89,41 +88,6 @@ Tento dokument je jedním vstupním bodem. Detailní pravdu najdeš v těchto zd
 | Hard cap 144 miliard ZION | `max_supply = 144_000_000_000`; premine 16,78 mld. (11,65 %), zbytek těžbou | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5 |
 | Žádné ICO / VIP vstup | Fair launch: žádný `mint()` pro tým, žádný předprodej; genesis alokace je veřejně vypsaná v coinbase | [`12-Hodina-Pred-Destem.md`](./12-Hodina-Pred-Destem.md), Ověřitelná fakta |
 | PoW: Ekam Deeksha / CosmicHarmony | Kanonický algoritmus v `V3/L1/cosmic-harmony`; šestifázový pipeline Hiranyagarbha, Brahma, Yantra, Karma, Chit, Samadhi; LWMA 60 bloků, ±25 % clamp | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), Ověřitelná fakta |
-
----
-
-## Co je ZION dnes — kořen, kmen a koruna
-
-Pozvánka do ZIONu se často ptá: co je tedy *opravdu* hotové, co se staví, a co je jen vzdálený směr? Tady je ta hranice poctivě označená:
-
-### Kořen — ŽIVÉ
-
-Tohle se dá zkontrolovat dnes na běžící síti, v blocích nebo v repozitáři:
-
-- **L1 Proof-of-Work blockchain** v Rustu; cílový block time 60 s, konsensus Ekam Deeksha / CosmicHarmony.
-- **Veřejný genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`.
-- **Emise s hard capem 144 miliard ZION**, rozdělení 89/5/5/1 % je v kódu konsensu.
-- **Otevřený zdrojový kód MIT** v `https://github.com/Zion-TerraNova/v3-Mainnet`.
-- **L2 na Base / EVM:** wZION, bridge, governance, treasury, staking, farm a atomic swap — adresy ověřitelné na Basescan.
-
-### Kmen — STAVBA
-
-Funguje, ale ještě není dokončené; detaily se mění a stav se ověřuje podle aktuálního releasu:
-
-- **Zion CLI** — sjednocené rozhraní pro peněženku, uzel, těžbu a konfiguraci.
-- **L3 WARP, AI Native, NCL** — cross-chain a AI výpočetní infrastruktura.
-- **L4 Oasis** — vizuální herní vrstva, XP, Consciousness Levels, avatary, questy a guildy. Je oddělená od L1 konsensu: herní aktivita nemění odměnu za hashovací práci.
-- **Humanitární tok** — ekonomické pravidlo v konsensu existuje; transparentní reportování konkrétních dopadů se teprve rozrůbá.
-
-### Koruna — HORIZONT
-
-Směr, který dostává prostor v ekonomickém modelu, ale není dnešní produkt:
-
-- **Free World (L5):** komunity a humanitární mise s ověřitelným dopadem.
-- **Issobella (L6):** dlouhodobý orbitální a otevřeně-vědecký horizont.
-- **Golden Egg a plný herní svět Oasis:** questová vrstva a příběhový svět mají popsané parametry; kompletní provedení zůstává výstavbou.
-
-> **Tohle členění je důležitější než velká slova.** Živé se testuje, stavba se sleduje, horizont se nesmí prodávat jako hotová věc.
 
 ---
 
@@ -369,9 +333,8 @@ Loď se staví poctivě, a poctivost znamená říct i tohle:
 - ZION je **Mainnet Beta** — živá síť, ale mladá. Chyby se stávají a opravují se veřejně.
 - **Nikdo ti negarantuje zisk ani cenu.** Tohle není investiční doporučení — je to pozvánka k ověření a účasti.
 - **Svoje klíče, svoje odpovědnost.** Ztracený klíč nikdo neobnoví.
-- **Bridge, smart kontrakty, peněženky, mining software a third-party služby** nesou vlastní technická a bezpečnostní rizika.
 - Herní svět Oasis a Golden Egg se **teprve dostavují** — co je hotové dnes a co je plán, najdeš vždy poctivě označené v dokumentaci.
-- **Náboženské a mytologické postavy** v této řadě jsou **literární archetypy**, ne důkaz náboženské autority ZIONu ani výzva nahradit víru technologií.
+- Tento dokument **není náboženským tvrzením**. Postavy a rituály jsou použity jako archetypy a literární obrazy, ne jako nárok na autoritu jakékoliv tradice.
 - Tento dokument **není finančním slibem**. Žádná část neříká "investuj a zbohatneš".
 
 Sůl, která ví, že je sůl — a neříká o sobě, že je zlato — je důvěryhodnější. Proto to píšeme takhle.
