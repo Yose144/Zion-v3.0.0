@@ -50,12 +50,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <footer className="border-t border-white/5 mt-16 relative py-10">
             <div className="section-line absolute top-0 inset-x-0" />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col items-center text-center">
-              <Link href="https://market.zionterranova.com" className="hover:opacity-100 transition-opacity duration-300">
+              <Link href="https://market.zionterranova.com" className="opacity-90 hover:opacity-100 transition-opacity duration-300">
                 <img
                   src="/logo144.png"
                   alt="ZION"
                   className="w-20 h-auto mx-auto"
-                  style={{ filter: 'grayscale(100%) contrast(180%)', opacity: 0.6 }}
+                  style={{ filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.2))' }}
                   loading="lazy"
                   decoding="async"
                 />
