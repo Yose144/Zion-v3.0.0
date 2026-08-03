@@ -3,7 +3,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or https://www.opensource.org/licenses/mit-license.php .
 //
-// Minimal standalone version for ZION VerusHash — stripped libsodium,
+// Minimal standalone version for ZION VerusHash -- stripped libsodium,
 // bitcoin-config, and Zcash-specific assertions. Only retains endian
 // helpers needed by verus_hash.cpp / verus_clhash.cpp.
 
@@ -57,7 +57,7 @@
 #elif defined(__APPLE__)
 #include <machine/endian.h>
 #include <libkern/OSByteOrder.h>
-// macOS doesn't have the Linux endian.h convenience macros — map them
+// macOS doesn't have the Linux endian.h convenience macros -- map them
 // to OSSwapHostTo{Little,Big}{16,32,64} / OSSwap{Little,Big}ToHost{16,32,64}
 #define htole16(x) OSSwapHostToLittleInt16(x)
 #define htole32(x) OSSwapHostToLittleInt32(x)
@@ -76,7 +76,7 @@
 #include <endian.h>
 #endif
 
-// sodium.h stub — not needed for VerusHash
+// sodium.h stub -- not needed for VerusHash
 static inline int sodium_init(void) { return 0; }
 
 uint16_t static inline ReadLE16(const unsigned char* ptr)

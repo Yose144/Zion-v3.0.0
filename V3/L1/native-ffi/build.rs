@@ -184,6 +184,9 @@ fn base_build(src: &str, lib: &str, target_os: &str, is_msvc: bool) {
 }
 
 fn main() {
+    // Declare check-cfg for the has_autolykos_c cfg flag set below.
+    println!("cargo::rustc-check-cfg=cfg(has_autolykos_c)");
+
     let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
     let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default();
     let is_msvc = env::var("CARGO_CFG_TARGET_ENV").unwrap_or_default() == "msvc";
@@ -265,13 +268,17 @@ fn main() {
     // -----------------------------------------------------------------------
     // Autolykos v2  (ERG)
     // -----------------------------------------------------------------------
-    if feat("native-autolykos") {
+    // Skip on Windows MSVC due to cl.exe crash (VS 2026 access violation).
+    // The pure-Rust Autolykos hasher is used instead.
+    if feat("native-autolykos") && !(is_msvc && target_os == "windows") {
         base_build(
             "csrc/autolykos/autolykos_native.c",
             "autolykos_zion",
             &target_os,
             is_msvc,
         );
+        // Tell the Rust code that the C autolykos implementation is available.
+        println!("cargo:rustc-cfg=has_autolykos_c");
     }
 
     // -----------------------------------------------------------------------

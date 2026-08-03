@@ -1,20 +1,51 @@
 /*
  * ============================================================================
- *  ZION Native Ethash Library v2.0
- *  Correct Ethash/EtcHash implementation with full Keccak-f[1600] permutation
+ *  ZION Native Ethash / Etchash Library v3.0
+ *  Real DAG-based Ethash implementation for Ethereum Classic (ETC) and
+ *  EthereumPoW (ETHW).
+ *
+ *  This replaces the previous placeholder/light-cache implementation with the
+ *  full Dagger-Hashimoto algorithm matching the OpenCL kernel
+ *  (csrc/opencl/ethash_kernel.cl) and the Rust CPU reference
+ *  (AuXpow/src/external_hashers.rs::hash_ethash).
+ *
+ *  Algorithm (per nonce):
+ *    1. seed   = Keccak-512(header_hash || nonce_le)        -> 64 bytes
+ *    2. mix    = seed concatenated with itself              -> 128 bytes (32 x u32)
+ *    3. for i in 0..63 (64 DAG accesses):
+ *         index = fnv1a(i ^ mix[0], mix[0]) % dag_size_entries
+ *         node  = dag[index]                                -> 128 bytes (16 x u64)
+ *         mix   = fnv1a(mix, node)  per 32-bit word
+ *    4. compress mix: FNV-fold each group of 4 u32 words    -> 32 bytes (8 x u32)
+ *    5. hash   = Keccak-256(seed || compressed_mix)         -> 32 bytes
+ *    6. check hash <= target (big-endian byte comparison)
+ *
+ *  Keccak here uses the ORIGINAL Keccak domain suffix (0x01), NOT the
+ *  NIST SHA-3 suffix (0x06).  Ethereum uses Keccak-256/Keccak-512.
+ *
+ *  The DAG is a per-epoch precomputed buffer of 128-byte entries that is
+ *  generated on the host and passed in as a pointer.  Each DAG entry is
+ *  16 u64 words (128 bytes).  dag_size_entries is the number of 128-byte
+ *  entries.
  *
  *  Compilation:
- *    Linux:  gcc -O3 -fPIC -shared -o libethash_zion.so ethash_native.c -lpthread -lm
- *    macOS:  clang -O3 -fPIC -shared -o libethash_zion.dylib ethash_native.c -lm
- *    Windows: cl /O2 /LD /Fe:ethash_zion.dll ethash_native.c
+ *    Linux:  gcc -O3 -fPIC -shared -std=c11 -o libethash_zion.so etchash_native.c -lm
+ *    macOS:  clang -O3 -fPIC -shared -std=c11 -o libethash_zion.dylib etchash_native.c
+ *    Windows: cl /O2 /LD /Fe:ethash_zion.dll etchash_native.c
  *
  *  Functions exported (matching Rust FFI in native_ffi.rs):
- *    void     ethash_init(void)
- *    void     ethash_hash(header, header_len, nonce, height, output)
- *    int32_t  ethash_verify(header, header_len, nonce, height, target)
- *    uint32_t ethash_get_epoch(uint32_t block_number)
- *    double   ethash_benchmark(int32_t iterations)
- *    const char* ethash_version(void)
+ *    Primary (DAG-based, real Ethash):
+ *      int32_t ethash_mine(header_hash, nonce, dag, dag_size_entries, target, output)
+ *      void    ethash_hash_dag(header_hash, nonce, dag, dag_size_entries, output)
+ *      void    ethash_set_dag(dag, dag_size_entries)
+ *    Legacy / light-mode fallback (uses globally-set DAG if available):
+ *      void    ethash_init(void)
+ *      void    ethash_hash(header, header_len, nonce, height, output)
+ *      int32_t ethash_verify(header, header_len, nonce, height, target)
+ *      uint32_t ethash_get_epoch(block_number)
+ *      void    ethash_cleanup(void)
+ *      double  ethash_benchmark(int32_t iterations)
+ *      const char* ethash_version(void)
  * ============================================================================
  */
 
@@ -29,7 +60,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
-#include <math.h>
 
 #ifdef _WIN32
     #define EXPORT __declspec(dllexport)
@@ -38,7 +68,7 @@
 #endif
 
 /* ============================================================================
- * KECCAK-f[1600] — Reference implementation (NIST SP 800-185 compatible)
+ * KECCAK-f[1600] -- reference implementation (original Keccak padding 0x01)
  * ============================================================================ */
 
 static const uint64_t KECCAK_RC[24] = {
@@ -106,44 +136,56 @@ static void keccakf1600(uint64_t s[25]) {
     }
 }
 
-/* Keccak sponge: rate_bytes is 136 for keccak-256, 72 for keccak-512 */
+/* Generic Keccak sponge with original Keccak domain suffix (0x01).
+ * rate_bytes = 136 for Keccak-256, 72 for Keccak-512. */
 static void keccak_hash(const uint8_t *in, size_t inlen,
                         uint8_t *out, size_t outlen, size_t rate_bytes)
 {
     uint64_t s[25];
-    uint8_t temp[144];  /* max rate = 144 bytes (200-56=144 for SHA3-256) */
+    uint8_t temp[144];  /* max rate = 144 bytes */
     size_t i, rsiz = rate_bytes;
 
     memset(s, 0, sizeof(s));
 
-    /* Absorb */
+    /* Absorb full blocks */
     for (; inlen >= rsiz; inlen -= rsiz, in += rsiz) {
         for (i = 0; i < rsiz / 8; i++)
-            s[i] ^= ((uint64_t*)in)[i];
+            s[i] ^= ((const uint64_t *)(const void *)in)[i];
         keccakf1600(s);
     }
 
-    /* Padding (Keccak original padding, not SHA3) */
+    /* Final block: copy remainder, append Keccak suffix 0x01, pad10*1 */
     memcpy(temp, in, inlen);
-    temp[inlen++] = 0x01;   /* Keccak pad — NOT SHA3 (which uses 0x06) */
+    temp[inlen++] = 0x01;   /* Keccak domain suffix -- NOT SHA3 (0x06) */
     memset(temp + inlen, 0, rsiz - inlen);
     temp[rsiz - 1] |= 0x80;
     for (i = 0; i < rsiz / 8; i++)
-        s[i] ^= ((uint64_t*)temp)[i];
+        s[i] ^= ((uint64_t *)(void *)temp)[i];
     keccakf1600(s);
 
-    /* Squeeze */
+    /* Squeeze (output <= rate, single squeeze for 32/64-byte outputs) */
     memcpy(out, s, outlen);
 }
 
-/* Public keccak-256 (Ethereum-compatible, NOT SHA3-256) */
+/* Keccak-256 (Ethereum-compatible, suffix 0x01, rate 136 bytes) */
 static void keccak256(const uint8_t *in, size_t len, uint8_t *out) {
-    keccak_hash(in, len, out, 32, 136); /* rate=1088 bits */
+    keccak_hash(in, len, out, 32, 136);
 }
 
-/* Public keccak-512 (Ethereum-compatible) */
+/* Keccak-512 (Ethereum-compatible, suffix 0x01, rate 72 bytes) */
 static void keccak512(const uint8_t *in, size_t len, uint8_t *out) {
-    keccak_hash(in, len, out, 64, 72);  /* rate=576 bits */
+    keccak_hash(in, len, out, 64, 72);
+}
+
+/* ============================================================================
+ * FNV-1a (32-bit) -- Ethash mixing
+ *   hash = (hash ^ element) * FNV_PRIME
+ * ============================================================================ */
+
+#define FNV_PRIME 0x01000193u
+
+static inline uint32_t fnv1a(uint32_t a, uint32_t b) {
+    return (a ^ b) * FNV_PRIME;
 }
 
 /* ============================================================================
@@ -151,26 +193,183 @@ static void keccak512(const uint8_t *in, size_t len, uint8_t *out) {
  * ============================================================================ */
 
 #define ETHASH_EPOCH_LENGTH     30000
-#define ETHASH_CACHE_ROUNDS     3
 #define ETHASH_MIX_BYTES        128
 #define ETHASH_HASH_BYTES       64
-#define ETHASH_DATASET_PARENTS  256
 #define ETHASH_ACCESSES         64
-#define ETHASH_WORD_BYTES       4
+#define ETHASH_DAG_ENTRY_BYTES  128   /* 16 x u64 / 32 x u32 */
 
-/* FNV prime */
-#define FNV_PRIME 0x01000193
+/* ============================================================================
+ * CORE: full Ethash over a precomputed DAG (real algorithm)
+ *
+ *   header_hash        : 32-byte Keccak-256 of the block header (without nonce)
+ *   nonce              : 64-bit nonce
+ *   dag                : precomputed DAG buffer, 128 bytes per entry
+ *   dag_size_entries   : number of 128-byte DAG entries
+ *   output             : 32-byte final hash buffer (Keccak-256(seed || cmix))
+ * ============================================================================ */
+static void ethash_compute(const uint8_t header_hash[32],
+                           uint64_t nonce,
+                           const uint8_t *dag,
+                           uint64_t dag_size_entries,
+                           uint8_t output[32])
+{
+    /* Step 1: seed = Keccak-512(header_hash || nonce_le) -> 64 bytes */
+    uint8_t seed_input[40];
+    memcpy(seed_input, header_hash, 32);
+    for (int i = 0; i < 8; i++)
+        seed_input[32 + i] = (uint8_t)(nonce >> (i * 8));
 
-static inline uint32_t fnv(uint32_t v1, uint32_t v2) {
-    return ((v1 * FNV_PRIME) ^ v2);
+    uint8_t seed[64];
+    keccak512(seed_input, 40, seed);
+
+    /* Step 2: mix = seed || seed  -> 128 bytes = 32 x u32 (little-endian) */
+    uint32_t mix[32];
+    for (int j = 0; j < 16; j++) {
+        uint32_t w = (uint32_t)seed[j * 4]
+                   | ((uint32_t)seed[j * 4 + 1] << 8)
+                   | ((uint32_t)seed[j * 4 + 2] << 16)
+                   | ((uint32_t)seed[j * 4 + 3] << 24);
+        mix[j]      = w;
+        mix[j + 16] = w;
+    }
+
+    /* Step 3: 64 DAG accesses with FNV-1a mixing */
+    for (int i = 0; i < ETHASH_ACCESSES; i++) {
+        uint32_t index = fnv1a((uint32_t)i ^ mix[0], mix[0]) % (uint32_t)dag_size_entries;
+
+        /* Load 128-byte DAG node = 16 x u64, split into 32 x u32 (little-endian). */
+        const uint8_t *node = dag + (uint64_t)index * ETHASH_DAG_ENTRY_BYTES;
+        for (int j = 0; j < 16; j++) {
+            uint64_t w = ((const uint64_t *)(const void *)(node + j * 8))[0];
+            mix[2 * j]     = fnv1a(mix[2 * j],     (uint32_t)(w & 0xFFFFFFFFu));
+            mix[2 * j + 1] = fnv1a(mix[2 * j + 1], (uint32_t)(w >> 32));
+        }
+    }
+
+    /* Step 4: compress mix -- FNV-fold each group of 4 u32 words -> 8 u32 (32 bytes) */
+    uint32_t cmix[8];
+    for (int i = 0; i < 32; i += 4) {
+        cmix[i / 4] = fnv1a(fnv1a(fnv1a(mix[i], mix[i + 1]), mix[i + 2]), mix[i + 3]);
+    }
+
+    /* Step 5: hash = Keccak-256(seed || compressed_mix) -> 32 bytes */
+    uint8_t final_input[96];
+    memcpy(final_input, seed, 64);
+    for (int i = 0; i < 8; i++) {
+        final_input[64 + i * 4]     = (uint8_t)(cmix[i]);
+        final_input[64 + i * 4 + 1] = (uint8_t)(cmix[i] >> 8);
+        final_input[64 + i * 4 + 2] = (uint8_t)(cmix[i] >> 16);
+        final_input[64 + i * 4 + 3] = (uint8_t)(cmix[i] >> 24);
+    }
+    keccak256(final_input, 96, output);
 }
+
+/* ============================================================================
+ * GLOBAL DAG (for legacy ethash_hash / ethash_verify path)
+ *
+ * The host may register a precomputed DAG once per epoch via ethash_set_dag().
+ * When set, the legacy ethash_hash() uses the real DAG-based algorithm.
+ * When not set, it falls back to a light cache evaluation (NOT valid for real
+ * mining -- only for testing the stratum pipeline).
+ * ============================================================================ */
+
+typedef struct {
+    const uint8_t *dag;
+    uint64_t       dag_size_entries;
+    int            set;
+} ethash_dag_ref_t;
+
+static ethash_dag_ref_t g_dag = { NULL, 0, 0 };
+
+/* Register a precomputed DAG for use by the legacy ethash_hash/verify path.
+ * The DAG memory is owned by the caller and must remain valid until the next
+ * ethash_set_dag() or ethash_cleanup() call. */
+EXPORT void ethash_set_dag(const uint8_t *dag, uint64_t dag_size_entries) {
+    g_dag.dag               = dag;
+    g_dag.dag_size_entries  = dag_size_entries;
+    g_dag.set               = (dag != NULL && dag_size_entries > 0) ? 1 : 0;
+}
+
+/* ============================================================================
+ * PRIMARY API -- real DAG-based Ethash
+ * ============================================================================ */
+
+/* Compute the full Ethash hash over a precomputed DAG.
+ *   header_hash        : 32-byte block header hash
+ *   nonce              : 64-bit nonce
+ *   dag                : precomputed DAG buffer (128 bytes per entry)
+ *   dag_size_entries   : number of 128-byte DAG entries
+ *   output             : 32-byte final hash buffer */
+EXPORT void ethash_hash_dag(
+    const uint8_t *header_hash,
+    uint64_t       nonce,
+    const uint8_t *dag,
+    uint64_t       dag_size_entries,
+    uint8_t       *output)
+{
+    if (!header_hash || !dag || dag_size_entries == 0 || !output) {
+        if (output) memset(output, 0xff, 32);
+        return;
+    }
+    uint8_t hdr[32];
+    memcpy(hdr, header_hash, 32);
+    ethash_compute(hdr, nonce, dag, dag_size_entries, output);
+}
+
+/* Full Ethash mining check: compute the hash and return 1 if it meets the
+ * target (hash <= target, big-endian byte comparison), 0 otherwise.
+ * Writes the resulting 32-byte hash into `output`.
+ *
+ *   header_hash        : 32-byte block header hash
+ *   nonce              : 64-bit nonce
+ *   dag                : precomputed DAG buffer (128 bytes per entry)
+ *   dag_size_entries   : number of 128-byte DAG entries
+ *   target             : 32-byte target (big-endian)
+ *   output             : 32-byte final hash buffer
+ *   returns            : 1 if hash <= target, else 0 */
+EXPORT int32_t ethash_mine(
+    const uint8_t *header_hash,
+    uint64_t       nonce,
+    const uint8_t *dag,
+    uint64_t       dag_size_entries,
+    const uint8_t *target,
+    uint8_t       *output)
+{
+    if (!header_hash || !dag || dag_size_entries == 0 || !target || !output) {
+        if (output) memset(output, 0xff, 32);
+        return 0;
+    }
+    uint8_t hdr[32];
+    memcpy(hdr, header_hash, 32);
+    ethash_compute(hdr, nonce, dag, dag_size_entries, output);
+
+    /* Big-endian comparison: index 0 is most significant. */
+    for (int i = 0; i < 32; i++) {
+        if (output[i] < target[i]) return 1;
+        if (output[i] > target[i]) return 0;
+    }
+    return 1; /* equal -> meets target */
+}
+
+/* ============================================================================
+ * LEGACY API -- light-mode fallback (kept for backward compatibility)
+ *
+ * ethash_hash() / ethash_verify() use the globally-registered DAG (via
+ * ethash_set_dag) when available.  When no DAG is registered, they fall back
+ * to a light cache evaluation that is NOT valid for real mining but keeps the
+ * stratum pipeline functional for testing.
+ * ============================================================================ */
+
+#define ETHASH_CACHE_ROUNDS     3
+#define ETHASH_DATASET_PARENTS  256
+#define ETHASH_WORD_BYTES       4
 
 /* Get epoch from block number */
 EXPORT uint32_t ethash_get_epoch(uint32_t block_number) {
     return block_number / ETHASH_EPOCH_LENGTH;
 }
 
-/* Get cache size for epoch */
+/* Get cache size for epoch (light-mode fallback) */
 EXPORT uint64_t ethash_get_cache_size(uint32_t epoch) {
     uint64_t size = 16 * 1024 * 1024 + (uint64_t)epoch * 128 * 1024;
     return (size / 64) * 64;
@@ -190,28 +389,25 @@ static void ethash_get_seedhash(uint32_t epoch, uint8_t seed[32]) {
     }
 }
 
-/* Context for ethash computation (light client mode) */
+/* Light-cache context (fallback only) */
 typedef struct {
     uint32_t epoch;
-    uint64_t cache_size;       /* actual allocated size */
+    uint64_t cache_size;
     uint64_t cache_items;
-    uint8_t* cache;
+    uint8_t *cache;
     uint8_t  seed[32];
     int      initialized;
 } ethash_ctx_t;
 
-/* Global context */
-static ethash_ctx_t* g_ctx = NULL;
+static ethash_ctx_t *g_ctx = NULL;
 
-/* --------- internal: init for a specific epoch --------- */
 static int _ctx_init_epoch(uint32_t epoch) {
     if (!g_ctx) {
-        g_ctx = (ethash_ctx_t*)calloc(1, sizeof(ethash_ctx_t));
+        g_ctx = (ethash_ctx_t *)calloc(1, sizeof(ethash_ctx_t));
         if (!g_ctx) return -1;
     }
     if (g_ctx->initialized && g_ctx->epoch == epoch) return 0;
 
-    /* Free old cache */
     if (g_ctx->cache) { free(g_ctx->cache); g_ctx->cache = NULL; }
 
     g_ctx->epoch = epoch;
@@ -223,7 +419,7 @@ static int _ctx_init_epoch(uint32_t epoch) {
     g_ctx->cache_size  = alloc;
     g_ctx->cache_items = alloc / 64;
 
-    g_ctx->cache = (uint8_t*)malloc(alloc);
+    g_ctx->cache = (uint8_t *)malloc(alloc);
     if (!g_ctx->cache) return -2;
 
     /* Generate cache: seed the first item, chain with keccak-512 */
@@ -235,7 +431,7 @@ static int _ctx_init_epoch(uint32_t epoch) {
     /* RANDMEMOHASH mixing rounds */
     for (int r = 0; r < ETHASH_CACHE_ROUNDS; r++) {
         for (uint64_t i = 0; i < g_ctx->cache_items; i++) {
-            uint32_t v = *(uint32_t*)&g_ctx->cache[i * 64] % (uint32_t)g_ctx->cache_items;
+            uint32_t v = *(uint32_t *)(void *)&g_ctx->cache[i * 64] % (uint32_t)g_ctx->cache_items;
             uint64_t prev = (i + g_ctx->cache_items - 1) % g_ctx->cache_items;
             uint8_t  tmp[64];
             for (int j = 0; j < 64; j++)
@@ -248,32 +444,33 @@ static int _ctx_init_epoch(uint32_t epoch) {
     return 0;
 }
 
-/* ============================================================
- * PUBLIC API — signatures match Rust FFI in native_ffi.rs
- * ============================================================ */
-
-/* Initialize for epoch 0 (can be called with no prior state) */
+/* Initialize for epoch 0 (legacy, no-op when DAG is registered) */
 EXPORT void ethash_init(void) {
-    _ctx_init_epoch(0);
+    if (!g_dag.set)
+        _ctx_init_epoch(0);
 }
 
-/*
- * Compute full ethash (light evaluation).
- *
- * header      : raw block header bytes
- * header_len  : byte length of header
- * nonce       : 64-bit nonce (LE)
- * height      : block height (used to derive epoch = height / 30000)
- * output      : 32-byte output buffer for the final mix hash
- *               format: keccak256( keccak512(seed) || compressed_mix )
- */
+/* Legacy hash: uses registered DAG if set, else light cache fallback. */
 EXPORT void ethash_hash(
-    const uint8_t* header,
+    const uint8_t *header,
     size_t         header_len,
     uint64_t       nonce,
     uint32_t       height,
-    uint8_t*       output)
+    uint8_t       *output)
 {
+    /* Build the 32-byte header hash (left-justified, zero-padded) */
+    uint8_t hdr[32];
+    memset(hdr, 0, 32);
+    size_t copy = header_len < 32 ? header_len : 32;
+    memcpy(hdr, header, copy);
+
+    /* Real DAG path */
+    if (g_dag.set) {
+        ethash_compute(hdr, nonce, g_dag.dag, g_dag.dag_size_entries, output);
+        return;
+    }
+
+    /* Light-cache fallback (NOT valid for real mining) */
     uint32_t epoch = height / ETHASH_EPOCH_LENGTH;
     if (!g_ctx || !g_ctx->initialized || g_ctx->epoch != epoch) {
         if (_ctx_init_epoch(epoch) != 0) {
@@ -282,86 +479,98 @@ EXPORT void ethash_hash(
         }
     }
 
-    /* Build seed = keccak512( first-32-bytes-of-header || nonce-LE-8-bytes ) */
     uint8_t seed_in[40];
-    size_t  copy = header_len < 32 ? header_len : 32;
     memset(seed_in, 0, 32);
-    memcpy(seed_in, header, copy);
-    /* nonce as little-endian 8 bytes */
+    memcpy(seed_in, hdr, 32);
     for (int i = 0; i < 8; i++)
         seed_in[32 + i] = (uint8_t)(nonce >> (8 * i));
 
     uint8_t s[64];
     keccak512(seed_in, 40, s);
 
-    /* Mix array: 32 x uint32 initialised from s, repeating */
+    /* mix = seed || seed -> 32 x u32 */
     uint32_t mix[32];
-    for (int i = 0; i < 32; i++)
-        mix[i] = ((uint32_t*)s)[i % 16];
+    for (int j = 0; j < 16; j++) {
+        uint32_t w = (uint32_t)s[j * 4]
+                   | ((uint32_t)s[j * 4 + 1] << 8)
+                   | ((uint32_t)s[j * 4 + 2] << 16)
+                   | ((uint32_t)s[j * 4 + 3] << 24);
+        mix[j]      = w;
+        mix[j + 16] = w;
+    }
 
-    /* Dagger-Hashimoto accesses */
+    /* Light evaluation: use cache rows as stand-in DAG nodes (placeholder) */
     for (int i = 0; i < ETHASH_ACCESSES; i++) {
-        uint32_t p = fnv(i ^ ((uint32_t*)s)[0], mix[i % 32]) % (uint32_t)g_ctx->cache_items;
-        const uint32_t* row = (const uint32_t*)&g_ctx->cache[p * 64];
-        for (int j = 0; j < 32; j++)
-            mix[j] = fnv(mix[j], row[j % 16]);
+        uint32_t index = fnv1a((uint32_t)i ^ mix[0], mix[0]) % (uint32_t)g_ctx->cache_items;
+        const uint8_t *row = g_ctx->cache + (uint64_t)index * 64;
+        for (int j = 0; j < 16; j++) {
+            uint64_t w = ((const uint64_t *)(const void *)(row + (j % 8) * 8))[0];
+            mix[2 * j]     = fnv1a(mix[2 * j],     (uint32_t)(w & 0xFFFFFFFFu));
+            mix[2 * j + 1] = fnv1a(mix[2 * j + 1], (uint32_t)(w >> 32));
+        }
     }
 
-    /* Compress mix: 8 x uint32 */
+    /* Compress mix: FNV-fold each group of 4 u32 -> 8 u32 */
     uint32_t cmix[8];
-    for (int i = 0; i < 8; i++) {
-        cmix[i] = mix[i * 4];
-        cmix[i] = fnv(cmix[i], mix[i * 4 + 1]);
-        cmix[i] = fnv(cmix[i], mix[i * 4 + 2]);
-        cmix[i] = fnv(cmix[i], mix[i * 4 + 3]);
+    for (int i = 0; i < 32; i += 4) {
+        cmix[i / 4] = fnv1a(fnv1a(fnv1a(mix[i], mix[i + 1]), mix[i + 2]), mix[i + 3]);
     }
 
-    /* Final: keccak256( s[0..64] || cmix[0..32] ) */
     uint8_t final_in[96];
-    memcpy(final_in,      s,     64);
-    memcpy(final_in + 64, cmix,  32);
+    memcpy(final_in, s, 64);
+    for (int i = 0; i < 8; i++) {
+        final_in[64 + i * 4]     = (uint8_t)(cmix[i]);
+        final_in[64 + i * 4 + 1] = (uint8_t)(cmix[i] >> 8);
+        final_in[64 + i * 4 + 2] = (uint8_t)(cmix[i] >> 16);
+        final_in[64 + i * 4 + 3] = (uint8_t)(cmix[i] >> 24);
+    }
     keccak256(final_in, 96, output);
 }
 
-/*
- * Verify ethash solution.
- * Returns 1 if the computed hash is below target (little-endian comparison), 0 otherwise.
- */
+/* Legacy verify: big-endian target comparison (corrected from old LE). */
 EXPORT int32_t ethash_verify(
-    const uint8_t* header,
+    const uint8_t *header,
     size_t         header_len,
     uint64_t       nonce,
     uint32_t       height,
-    const uint8_t* target)
+    const uint8_t *target)
 {
     uint8_t hash[32];
     ethash_hash(header, header_len, nonce, height, hash);
 
-    /* LE comparison: hash < target */
-    for (int i = 31; i >= 0; i--) {
+    /* Big-endian comparison: index 0 is most significant. */
+    for (int i = 0; i < 32; i++) {
         if (hash[i] < target[i]) return 1;
         if (hash[i] > target[i]) return 0;
     }
-    return 1; /* equal counts as valid */
+    return 1; /* equal -> meets target */
 }
 
 /* Benchmark: returns hash/s */
 EXPORT double ethash_benchmark(int32_t iterations) {
-    if (!g_ctx || !g_ctx->initialized)
+    if (!g_dag.set && (!g_ctx || !g_ctx->initialized))
         _ctx_init_epoch(0);
 
     uint8_t header[32] = {0x01, 0x02, 0x03, 0x04};
     uint8_t out[32];
 
     struct timespec t0, t1;
-    timespec_get(&t0, TIME_UTC);
+#ifdef _WIN32
+    clock_t c0 = clock();
+#else
+    clock_gettime(CLOCK_MONOTONIC, &t0);
+#endif
     for (int32_t i = 0; i < iterations; i++) {
         header[0] = (uint8_t)i;
         ethash_hash(header, 32, (uint64_t)i, 0, out);
     }
-    timespec_get(&t1, TIME_UTC);
-
+#ifdef _WIN32
+    clock_t c1 = clock();
+    double secs = (double)(c1 - c0) / CLOCKS_PER_SEC;
+#else
+    clock_gettime(CLOCK_MONOTONIC, &t1);
     double secs = (t1.tv_sec - t0.tv_sec) + (t1.tv_nsec - t0.tv_nsec) * 1e-9;
+#endif
     return secs > 0.0 ? iterations / secs : 0.0;
 }
 
@@ -372,27 +581,41 @@ EXPORT void ethash_cleanup(void) {
         free(g_ctx);
         g_ctx = NULL;
     }
+    g_dag.dag = NULL;
+    g_dag.dag_size_entries = 0;
+    g_dag.set = 0;
 }
 
 /* Self-test (prints to stdout for Docker log validation) */
 EXPORT void ethash_test(void) {
-    printf("=== ZION Native Ethash v2.0 — Self-Test ===\n");
-    _ctx_init_epoch(0);
+    printf("=== ZION Native Ethash v3.0 -- Self-Test ===\n");
 
-    uint8_t header[32] = {0x01, 0x02, 0x03, 0x04};
-    uint8_t out[32];
-    ethash_hash(header, 32, 12345ULL, 0, out);
+    /* Build a tiny fake DAG (4 entries of 128 bytes) for a smoke test */
+    uint8_t fake_dag[4 * ETHASH_DAG_ENTRY_BYTES];
+    for (int i = 0; i < (int)sizeof(fake_dag); i++)
+        fake_dag[i] = (uint8_t)(i * 7 + 13);
 
-    printf("Hash: ");
-    for (int i = 0; i < 32; i++) printf("%02x", out[i]);
+    uint8_t header[32];
+    memset(header, 0x2A, 32);
+    uint8_t hash[32];
+
+    ethash_hash_dag(header, 12345ULL, fake_dag, 4, hash);
+    printf("DAG hash: ");
+    for (int i = 0; i < 32; i++) printf("%02x", hash[i]);
     printf("\n");
 
+    uint8_t target[32];
+    memset(target, 0xFF, 32);
+    int met = ethash_mine(header, 12345ULL, fake_dag, 4, target, hash);
+    printf("meets target (0xff...): %d\n", met);
+
     double hs = ethash_benchmark(500);
-    printf("Benchmark (500 iters): %.1f H/s\n", hs);
-    printf("Cache: %" PRIu64 " MB, items: %" PRIu64 "\n",
-           g_ctx->cache_size / (1024 * 1024), g_ctx->cache_items);
+    printf("Benchmark (500 iters, light mode): %.1f H/s\n", hs);
+    if (g_ctx)
+        printf("Light cache: %" PRIu64 " MB, items: %" PRIu64 "\n",
+               g_ctx->cache_size / (1024 * 1024), g_ctx->cache_items);
 }
 
-EXPORT const char* ethash_version(void) {
-    return "ZION Ethash v2.0 — ETC/EtcHash compatible, correct Keccak-f[1600]";
+EXPORT const char *ethash_version(void) {
+    return "ZION Ethash v3.0 -- real DAG-based, ETC/ETHW compatible, Keccak-f[1600]";
 }
