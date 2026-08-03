@@ -133,15 +133,14 @@ Install nothing, buy nothing. Just watch:
 
 ### Player — "I want to experience it"
 
-Enter the world of **Oasis** — ZION's game layer:
+Enter **Oasis Web** — the visual game layer of ZION:
 
-- Choose an **avatar** and complete the first quests.
-- Collect **XP for real actions** — helping the community, first mining share, fixing documentation.
-- Climb **nine Consciousness Levels** from physical to stellar.
-- Once the game fully opens: **Golden Egg** — a treasure hunt with 108 clues hidden in the blockchain, books and the real world.
-- Earn **Dharma Credits** for service, learning and good deeds.
+- Explore the **live 3D galaxy** with 55 worlds and fly through the warp intro.
+- Browse the **Avatar Codex**, quest log, territory map and leaderboard.
+- **Log in with your wallet** and sync XP for completed quests to the backend.
+- The path through **nine Consciousness Levels**, **Golden Egg** and **Dharma Credits** is still in development — see current state above.
 
-> **Verifiable facts:** Oasis is the L4 layer with a REST API on port 8094. See [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md) and [`10-Prvni-Svet-Oasis-a-Best-of-Avatari.md`](./10-Prvni-Svet-Oasis-a-Best-of-Avatari.md).
+> **Verifiable facts:** Oasis Web runs at `https://oasis.zionterranova.com`, backend `zion-oasis` version `3.0.7`, REST API `/api/v1/oasis/*`. See [Current state of Oasis Web](#current-state-of-oasis-web).
 
 ### Builder — "I want to carry a piece of the bridge"
 
@@ -204,6 +203,26 @@ And **Oasis** is the center of the compass. There you stand.
 > **Verifiable facts**
 >
 > Radha and Elizabeth are literary archetypes — Radha as a symbol of joy and service, Elizabeth as a symbol of the future and legacy. They are not religious claims or financial brands.
+
+### Current state of Oasis Web
+
+Not everything in the vision is ready yet. **Oasis Web is a live preview — not a full game.** It is available today at `https://oasis.zionterranova.com`; the backend reports version `3.0.7`.
+
+**What works now:**
+- 3D galaxy with 55 generated worlds, warp intro, free flight (WASD / mobile joysticks), world selection and detail panel.
+- Live REST API (`/api/v1/oasis/*`): quests, avatars, territory map, leaderboard, guilds.
+- Avatar Codex, quest log, territories, leaderboard and guild browser.
+- Wallet login with a `zion1...` address, mnemonic import or in-browser generation.
+- Backend sync of XP and completed quests.
+- Audio engine and mobile controls.
+
+**What is still concept / demo:**
+- The player dashboard (XP, level, guild) is early; leaderboards and guilds currently contain mostly demo data.
+- The 8 Genesis Territories are defined in code, but the web client only shows a bonus map, not full territory management.
+- Golden Egg is currently a collection of clues and story; the 108 clues and reward pools are not fully active.
+- Dharma Credits e-shop and the full 202 avatars in the web client are still being completed.
+
+> **Source:** [`APP&WEB/OasisWeb/README.md`](../../../APP&WEB/OasisWeb/README.md), [`OASIS_WEB_JOURNAL.md`](../../../OASIS_WEB_JOURNAL.md), live API `https://oasis.zionterranova.com/api/v1/oasis/*`.
 
 ### 202 avatars
 

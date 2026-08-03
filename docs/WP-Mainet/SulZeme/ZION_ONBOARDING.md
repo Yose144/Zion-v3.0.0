@@ -133,15 +133,14 @@ Nic neinstaluj, nic nekupuj. Jen se dívej:
 
 ### Hráč — "Chci to zažít"
 
-Vstup do světa **Oasis** — herní vrstvy ZIONu:
+Vstup do **Oasis Webu** — vizuální herní vrstvy ZIONu:
 
-- Vyber si **avatara** a projdi první questy.
-- Sbírej **XP za skutečné činy** — pomoc komunitě, první podíl při těžbě, opravu dokumentace.
-- Stoupej přes **devět úrovní vědomí** od fyzické až po hvězdnou.
-- Až se hra plně otevře: **Golden Egg** — honba za pokladem se 108 stopami ukrytými v blockchainu, knihách i reálném světě.
-- Získávej **Dharma Credits** za službu, učení a dobré činy.
+- Prohlédni si **živou 3D galaxii** s 55 světy a projdi warp intro.
+- Prohlížej **Avatar Codex**, quest log, mapu teritorií a leaderboard.
+- Můžeš se **přihlásit peněženkou** a synchronizovat XP za splněné questy na backend.
+- Cesta přes **devět úrovní vědomí**, **Golden Egg** a **Dharma Credits** je zatím ve vývoji — viz aktuální stav výše.
 
-> **Ověřitelná fakta:** Oasis je L4 vrstva s REST API na portu 8094. Více v [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md) a v [`10-Prvni-Svet-Oasis-a-Best-of-Avatari.md`](./10-Prvni-Svet-Oasis-a-Best-of-Avatari.md).
+> **Ověřitelná fakta:** Oasis Web běží na `https://oasis.zionterranova.com`, backend `zion-oasis` verze `3.0.7`, REST API `/api/v1/oasis/*`. Více v [Aktuální stav Oasis Webu](#aktuální-stav-oasis-webu).
 
 ### Stavitel — "Chci nést kus mostu"
 
@@ -204,6 +203,26 @@ A **Oasis** je střed kompasu. Tam stojíš ty.
 > **Ověřitelná fakta**
 >
 > Rádha a Elizabeth jsou literární archetypy — Rádha jako symbol radosti a služby, Elizabeth jako symbol budoucnosti a dědictví. Nejsou náboženskými tvrzeními ani finančními značkami.
+
+### Aktuální stav Oasis Webu
+
+Ne všechno z vize je už hotové. **Oasis Web je živý preview — ne plná hra.** Dnes je k dispozici na `https://oasis.zionterranova.com` a verze backendu je `3.0.7`.
+
+**Co funguje teď:**
+- 3D galaxie s 55 generovanými světy, warp intro, volný let (WASD / mobilní joysticky), výběr světů a detailní panel.
+- Živé REST API (`/api/v1/oasis/*`): questy, avataři, mapa teritorií, žebříček, guildy.
+- Avatar Codex, quest log, teritoria, leaderboard a prohlížeč guild.
+- Přihlášení peněženkou `zion1...`, import mnemoniku nebo generace v prohlížeči.
+- Synchronizace XP a dokončených questů na backend.
+- Audio engine a mobilní ovládání.
+
+**Co je zatím koncept / demo:**
+- Dashboard hráče (XP, level, guild) je v rané fázi; leaderboards a guildy obsahují zatím převážně demo data.
+- Osm Genesis Teritorií má definici v kódu, ale ve hře je zatím jen mapa s bonusy, nikoli plnohodnotná správa území.
+- Golden Egg je zatím sbírka nápověd a příběh; 108 stop a odměnové pooly nejsou plně aktivní.
+- Dharma Credits eShop a kompletní 202 avatárů ve webovém klientovi se teprve dokončují.
+
+> **Zdroj:** [`APP&WEB/OasisWeb/README.md`](../../../APP&WEB/OasisWeb/README.md), [`OASIS_WEB_JOURNAL.md`](../../../OASIS_WEB_JOURNAL.md), live API `https://oasis.zionterranova.com/api/v1/oasis/*`.
 
 ### 202 avatáři
 
