@@ -264,15 +264,7 @@ export default function OasisClient() {
 
   return (
     <>
-      {/* DEBUG: visible state indicator */}
-      <div className="fixed left-1 top-1 z-[999] rounded bg-black/80 px-2 py-1 text-[10px] font-mono text-green-400">
-        phase={phase} mobile={String(isMobile)} w={typeof window !== 'undefined' ? window.innerWidth : '?'} view={view}
-      </div>
-      <div className="fixed inset-0 overflow-hidden bg-blue-600">
-        {/* DEBUG: canvas container marker */}
-        <div className="absolute right-2 top-2 z-[998] rounded bg-yellow-400 px-2 py-1 text-[10px] font-bold text-black">
-          CANVAS CONTAINER
-        </div>
+      <div className="fixed inset-0 overflow-hidden bg-oasis-black">
         <OasisScene
           started={phase !== 'intro'}
           onArrived={handleArrived}
