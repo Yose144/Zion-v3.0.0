@@ -554,6 +554,31 @@ const t = {
     },
   },
 
+  /* ─── Onboard ─── */
+  onboard: {
+    hero_kicker: { cs: 'Začni', en: 'Get Started' },
+    hero_title: { cs: 'Onboard to ZION', en: 'Onboard to ZION' },
+    hero_subtitle: {
+      cs: 'Peněženka, nód, těžba, bridge a první DApp — krok za krokem.',
+      en: 'Wallet, node, mining, bridge, and your first DApp — step by step.',
+    },
+    hero_description: {
+      cs: 'Všechny návody jsou otevřené, praktické a MIT licencované. Vyber si kategorii vlevo a začni stavět na ZION TerraNova.',
+      en: 'All guides are open, practical, and MIT licensed. Pick a category on the left and start building on ZION TerraNova.',
+    },
+    source_button: { cs: 'Zdrojové soubory na GitHub', en: 'Source files on GitHub' },
+    download_pdf: { cs: 'Stáhnout PDF', en: 'Download PDF' },
+    pdf_notice: {
+      cs: 'Tento dokument je dostupný jako PDF. Klikni na tlačítko výše pro stažení nebo otevření.',
+      en: 'This document is available as a PDF. Click the button above to download or open it.',
+    },
+    not_available_title: { cs: '# Dokument není dostupný', en: '# Document Not Available' },
+    not_available_body: {
+      cs: 'momentálně není k dispozici.',
+      en: 'is currently not available.',
+    },
+  },
+
   notFound: {
     eyebrow: { cs: 'Ztracený signál', en: 'Signal lost' },
     title_hint: { cs: 'Stránka nenalezena', en: 'Page not found' },
