@@ -9,7 +9,11 @@ use std::fmt::Write;
 
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
-use zion_cosmic_harmony_v3::{cosmic_harmony_ekam_deeksha, cosmic_harmony_with_height};
+use zion_cosmic_harmony_v3::{
+    cosmic_harmony_ekam_deeksha, cosmic_harmony_with_height, deeksha_chv3_with_height,
+    deeksha_lite_fire_with_height, deeksha_lite_with_height, CHV3_FORK_HEIGHT,
+    FIRE_FORK_HEIGHT,
+};
 
 /// Frozen V3 mainnet beta genesis hash.
 pub const V3_GENESIS_HASH: &str =
@@ -675,12 +679,40 @@ pub struct V3Block {
     pub header: MiningHeader,
     pub transactions: Vec<AccountTransaction>,
     pub utxo_transactions: Vec<UtxoTransaction>,
+    /// Trusted hash from the wire or checkpoint, if available.
+    ///
+    /// V3 itself trusts the `hash_hex` provided by peers (see
+    /// `import_peer_blocks` — it never recomputes the PoW hash).  V31 must do
+    /// the same: when a block arrives from a V3 peer or a checkpoint, the
+    /// provided hash is stored here and returned by `header_hash()` instead of
+    /// recomputing.  This avoids subtle algorithm mismatches between the V3
+    /// and V31 PoW implementations.
+    #[serde(default)]
+    pub stored_hash: Option<[u8; 32]>,
 }
 
 impl V3Block {
-    /// Compute the V3 block hash (PoW hash of the 80-byte header + nonce + height).
+    /// Compute the V3 block hash.
+    ///
+    /// If `stored_hash` is set (from a trusted peer or checkpoint), it is
+    /// returned directly — matching V3's behaviour of trusting the
+    /// wire-provided `hash_hex`.  Otherwise the hash is recomputed using the
+    /// height-aware algorithm dispatch.
     pub fn header_hash(&self) -> [u8; 32] {
-        cosmic_harmony_with_height(&self.header.to_bytes(), self.nonce, self.height).data
+        if let Some(h) = self.stored_hash {
+            return h;
+        }
+        let header_bytes = self.header.to_bytes();
+        if self.height == 0 {
+            // V3 genesis special case.
+            cosmic_harmony_with_height(&header_bytes, self.nonce, self.height).data
+        } else if self.height < CHV3_FORK_HEIGHT {
+            deeksha_lite_with_height(&header_bytes, self.nonce, self.height).data
+        } else if self.height < FIRE_FORK_HEIGHT {
+            deeksha_chv3_with_height(&header_bytes, self.nonce, self.height).data
+        } else {
+            deeksha_lite_fire_with_height(&header_bytes, self.nonce, self.height).data
+        }
     }
 }
 
@@ -744,6 +776,11 @@ impl V3AcceptedBlock {
             .map_err(|_| "header length mismatch".to_string())?;
         let header = MiningHeader::from_bytes(header_bytes);
 
+        // Trust the wire-provided hash_hex (V3 does the same).
+        let stored_hash = hex::decode(&self.hash_hex)
+            .ok()
+            .and_then(|b| b.try_into().ok());
+
         Ok(V3Block {
             height: self.height,
             nonce: self.nonce,
@@ -751,6 +788,7 @@ impl V3AcceptedBlock {
             header,
             transactions: self.transactions,
             utxo_transactions: self.utxo_transactions,
+            stored_hash,
         })
     }
 }
@@ -835,6 +873,7 @@ pub fn build_v3_genesis_block() -> V3Block {
         header,
         transactions,
         utxo_transactions,
+        stored_hash: None,
     }
 }
 

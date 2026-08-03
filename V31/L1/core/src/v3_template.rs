@@ -173,6 +173,7 @@ impl V3TemplateBuilder {
             header,
             transactions,
             utxo_transactions: self.mempool_utxo.clone(),
+            stored_hash: None,
         })
     }
 

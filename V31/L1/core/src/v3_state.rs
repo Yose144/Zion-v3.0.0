@@ -705,6 +705,7 @@ mod tests {
                 },
             ],
             utxo_transactions: vec![],
+            stored_hash: None,
         };
 
         for (i, tx) in block.transactions.iter_mut().enumerate() {
@@ -753,6 +754,7 @@ mod tests {
             },
             transactions: vec![],
             utxo_transactions: vec![],
+            stored_hash: None,
         };
 
         let tx = AccountTransaction {
