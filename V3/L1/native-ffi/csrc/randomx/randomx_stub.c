@@ -1,6 +1,6 @@
 /*
  * ============================================================================
- *  ZION Native RandomX — Portable Stub (V3 Phase-2)
+ *  ZION Native RandomX -- Portable Stub (V3 Phase-2)
  *
  *  This stub satisfies the FFI ABI so the Rust crate compiles and links on
  *  all platforms without the full Tevador/randomx C++ library.
@@ -134,5 +134,5 @@ EXPORT double randomx_zion_benchmark(int32_t iterations) {
 }
 
 EXPORT const char* randomx_zion_version(void) {
-    return "ZION RandomX v0.1 — portable stub (link Tevador/randomx for production)";
+    return "ZION RandomX v0.1 -- portable stub (link Tevador/randomx for production)";
 }
