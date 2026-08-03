@@ -2,7 +2,8 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use std::path::{Path, PathBuf};
 
-use zion_core::storage::{ChainDb, ChainMeta};
+use zion_core::storage::Storage;
+use zion_l1_types::Hash;
 
 #[derive(Parser)]
 #[command(
@@ -23,7 +24,6 @@ enum Commands {
         #[arg(long, help = "Output JSON file (default: stdout)")]
         out: Option<PathBuf>,
     },
-    /// Verify LMDB integrity and metadata consistency
     VerifyDb { db_path: PathBuf },
     /// Dump blocks to JSON
     DumpBlocks {
@@ -39,33 +39,36 @@ enum Commands {
     GetBlock { db_path: PathBuf, id: String },
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let cli = Cli::parse();
     match cli.cmd {
-        Commands::ExportState { db_path, out } => cmd_export_state(db_path, out),
-        Commands::VerifyDb { db_path } => cmd_verify_db(db_path),
+        Commands::ExportState { db_path, out } => cmd_export_state(db_path, out).await,
+        Commands::VerifyDb { db_path } => cmd_verify_db(db_path).await,
         Commands::DumpBlocks {
             db_path,
             limit,
             out,
-        } => cmd_dump_blocks(db_path, limit, out),
-        Commands::TipHeight { db_path } => cmd_tip_height(db_path),
-        Commands::GetBlock { db_path, id } => cmd_get_block(db_path, id),
+        } => cmd_dump_blocks(db_path, limit, out).await,
+        Commands::TipHeight { db_path } => cmd_tip_height(db_path).await,
+        Commands::GetBlock { db_path, id } => cmd_get_block(db_path, id).await,
     }
 }
 
-fn open_db(path: &Path) -> Result<ChainDb> {
-    ChainDb::open(path).with_context(|| format!("Failed to open LMDB at {}", path.display()))
+async fn open_db(path: &Path) -> Result<Storage> {
+    Storage::open(path)
+        .await
+        .with_context(|| format!("Failed to open SQLite DB at {}", path.display()))
 }
 
-fn cmd_export_state(db_path: PathBuf, out: Option<PathBuf>) -> Result<()> {
-    let db = open_db(&db_path)?;
-    let meta = db.get_meta()?;
-    let tip_height = db.tip_height()?;
-    let blocks = db.export_blocks(0, tip_height)?;
+async fn cmd_export_state(db_path: PathBuf, out: Option<PathBuf>) -> Result<()> {
+    let db = open_db(&db_path).await?;
+    let tip_height = db.height().await?;
+    let tip = db.tip().await?;
+    let blocks = db.get_blocks_range(0, tip_height).await?;
 
     let export = serde_json::json!({
-        "meta": meta_json(&meta),
+        "meta": meta_json(tip.as_ref().map(|(h, _)| h)),
         "tip_height": tip_height,
         "blocks_count": blocks.len(),
         "blocks": blocks.iter().map(block_json).collect::<Vec<_>>(),
@@ -76,17 +79,23 @@ fn cmd_export_state(db_path: PathBuf, out: Option<PathBuf>) -> Result<()> {
     Ok(())
 }
 
-fn cmd_verify_db(db_path: PathBuf) -> Result<()> {
-    let db = open_db(&db_path)?;
+async fn cmd_verify_db(db_path: PathBuf) -> Result<()> {
+    let db = open_db(&db_path).await?;
     let mut ok = true;
 
-    print!("Checking meta database... ");
-    match db.get_meta() {
-        Ok(m) => {
+    print!("Checking tip... ");
+    match db.tip().await {
+        Ok(Some((header, hash))) => {
             println!(
-                "OK (schema={}, tip_height={}, total_work={})",
-                m.schema_version, m.tip_height, m.total_work
+                "OK (height={}, difficulty={}, tip_hash={})",
+                header.height,
+                header.difficulty,
+                hex::encode(hash.0)
             );
+        }
+        Ok(None) => {
+            println!("EMPTY — no chain state found");
+            ok = false;
         }
         Err(e) => {
             println!("FAIL: {}", e);
@@ -95,7 +104,7 @@ fn cmd_verify_db(db_path: PathBuf) -> Result<()> {
     }
 
     print!("Checking tip height... ");
-    match db.tip_height() {
+    match db.height().await {
         Ok(h) => println!("OK (height={})", h),
         Err(e) => {
             println!("FAIL: {}", e);
@@ -104,7 +113,7 @@ fn cmd_verify_db(db_path: PathBuf) -> Result<()> {
     }
 
     print!("Checking block at height 0 (genesis)... ");
-    match db.get_block_by_height(0) {
+    match db.get_by_height(0).await {
         Ok(Some(_)) => println!("OK"),
         Ok(None) => {
             println!("MISSING — genesis block not found");
@@ -125,11 +134,11 @@ fn cmd_verify_db(db_path: PathBuf) -> Result<()> {
     Ok(())
 }
 
-fn cmd_dump_blocks(db_path: PathBuf, limit: Option<u64>, out: Option<PathBuf>) -> Result<()> {
-    let db = open_db(&db_path)?;
-    let tip = db.tip_height()?;
+async fn cmd_dump_blocks(db_path: PathBuf, limit: Option<u64>, out: Option<PathBuf>) -> Result<()> {
+    let db = open_db(&db_path).await?;
+    let tip = db.height().await?;
     let end = limit.map(|l| l.min(tip)).unwrap_or(tip);
-    let blocks = db.export_blocks(0, end)?;
+    let blocks = db.get_blocks_range(0, end).await?;
 
     let export: Vec<_> = blocks.iter().map(block_json).collect();
     let json_str = serde_json::to_string_pretty(&export)?;
@@ -137,18 +146,18 @@ fn cmd_dump_blocks(db_path: PathBuf, limit: Option<u64>, out: Option<PathBuf>) -
     Ok(())
 }
 
-fn cmd_tip_height(db_path: PathBuf) -> Result<()> {
-    let db = open_db(&db_path)?;
-    let h = db.tip_height()?;
+async fn cmd_tip_height(db_path: PathBuf) -> Result<()> {
+    let db = open_db(&db_path).await?;
+    let h = db.height().await?;
     println!("{}", h);
     Ok(())
 }
 
-fn cmd_get_block(db_path: PathBuf, id: String) -> Result<()> {
-    let db = open_db(&db_path)?;
+async fn cmd_get_block(db_path: PathBuf, id: String) -> Result<()> {
+    let db = open_db(&db_path).await?;
     let block = if id.chars().all(|c| c.is_ascii_digit()) {
         let height: u64 = id.parse().context("Invalid height")?;
-        db.get_block_by_height(height)?
+        db.get_by_height(height).await?
     } else {
         let hash = hex::decode(&id).context("Invalid hex hash")?;
         if hash.len() != 32 {
@@ -156,7 +165,7 @@ fn cmd_get_block(db_path: PathBuf, id: String) -> Result<()> {
         }
         let mut arr = [0u8; 32];
         arr.copy_from_slice(&hash);
-        db.get_block(&arr)?
+        db.get_by_hash(&Hash::new(arr)).await?
     };
 
     match block {
@@ -173,26 +182,29 @@ fn cmd_get_block(db_path: PathBuf, id: String) -> Result<()> {
 
 // ── JSON helpers ───────────────────────────────────────────────────────
 
-fn meta_json(meta: &ChainMeta) -> serde_json::Value {
-    serde_json::json!({
-        "schema_version": meta.schema_version,
-        "tip_hash": hex::encode(meta.tip_hash),
-        "tip_height": meta.tip_height,
-        "total_work": meta.total_work.to_string(),
-    })
+fn meta_json(header: Option<&zion_core::block::BlockHeader>) -> serde_json::Value {
+    match header {
+        Some(h) => serde_json::json!({
+            "tip_height": h.height,
+            "tip_difficulty": h.difficulty,
+            "tip_timestamp": h.timestamp,
+        }),
+        None => serde_json::json!({ "tip_height": 0 }),
+    }
 }
 
-fn block_json(block: &zion_core::storage::StoredBlock) -> serde_json::Value {
+fn block_json(block: &zion_core::block::Block) -> serde_json::Value {
+    let header = &block.header;
+    let hash = header.header_hash();
     serde_json::json!({
-        "hash": hex::encode(block.hash),
-        "prev_hash": hex::encode(block.prev_hash),
-        "height": block.height,
-        "timestamp": block.timestamp,
-        "difficulty": block.difficulty,
-        "nonce": block.nonce,
-        "total_work": block.total_work.to_string(),
+        "hash": hex::encode(hash.0),
+        "prev_hash": hex::encode(header.previous_hash.0),
+        "merkle_root": hex::encode(header.merkle_root.0),
+        "height": header.height,
+        "timestamp": header.timestamp,
+        "difficulty": header.difficulty,
+        "nonce": header.nonce,
         "transactions_count": block.transactions.len(),
-        "coinbase_amount": block.coinbase_amount,
     })
 }
 

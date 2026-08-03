@@ -40,7 +40,7 @@ fn main() {
     let signature = zion_core::crypto::to_hex(&sig);
     let public_key = zion_core::crypto::to_hex(sk.verifying_key().as_bytes());
 
-    let tx = zion_core::Transaction {
+    let tx = zion_core::node_runtime::Transaction {
         tx_id,
         from,
         to: to.to_string(),

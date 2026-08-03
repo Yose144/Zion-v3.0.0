@@ -267,7 +267,7 @@ fn cmd_send(to: &str, amount_str: &str, fee: u64, memo: Option<String>) {
         die("no spendable UTXOs for this address");
     }
 
-    let available: Vec<zion_core::wallet::SpendableUtxo> = utxo_list
+    let available: Vec<zion_core::v3_wallet::SpendableUtxo> = utxo_list
         .iter()
         .map(|u| {
             let hash_hex = u["tx_hash"].as_str().unwrap_or("");
@@ -275,7 +275,7 @@ fn cmd_send(to: &str, amount_str: &str, fee: u64, memo: Option<String>) {
             let mut arr = [0u8; 32];
             let len = hash_bytes.len().min(32);
             arr[..len].copy_from_slice(&hash_bytes[..len]);
-            zion_core::wallet::SpendableUtxo {
+            zion_core::v3_wallet::SpendableUtxo {
                 tx_hash: arr,
                 output_index: u["output_index"].as_u64().unwrap_or(0) as u32,
                 amount: u["amount"].as_u64().unwrap_or(0),
@@ -286,14 +286,14 @@ fn cmd_send(to: &str, amount_str: &str, fee: u64, memo: Option<String>) {
 
     let chain_tip = rpc_chain_tip_height();
 
-    let params = zion_core::wallet::SendParams {
+    let params = zion_core::v3_wallet::SendParams {
         to_address: to.to_string(),
         amount: amount_flowers,
         fee,
         memo,
     };
 
-    let result = zion_core::wallet::build_and_sign(&sk, &address, &params, &available, chain_tip)
+    let result = zion_core::v3_wallet::build_and_sign(&sk, &address, &params, &available, chain_tip)
         .unwrap_or_else(|e| die(&format!("build failed: {e}")));
 
     // Submit
@@ -336,7 +336,7 @@ fn cmd_bridge_lock(evm_recipient: &str, amount_str: &str, chain: &str) {
         die("no spendable UTXOs for this address");
     }
 
-    let available: Vec<zion_core::wallet::SpendableUtxo> = utxo_list
+    let available: Vec<zion_core::v3_wallet::SpendableUtxo> = utxo_list
         .iter()
         .map(|u| {
             let hash_hex = u["tx_hash"].as_str().unwrap_or("");
@@ -344,7 +344,7 @@ fn cmd_bridge_lock(evm_recipient: &str, amount_str: &str, chain: &str) {
             let mut arr = [0u8; 32];
             let len = hash_bytes.len().min(32);
             arr[..len].copy_from_slice(&hash_bytes[..len]);
-            zion_core::wallet::SpendableUtxo {
+            zion_core::v3_wallet::SpendableUtxo {
                 tx_hash: arr,
                 output_index: u["output_index"].as_u64().unwrap_or(0) as u32,
                 amount: u["amount"].as_u64().unwrap_or(0),
@@ -364,22 +364,22 @@ fn cmd_bridge_lock(evm_recipient: &str, amount_str: &str, chain: &str) {
     let tip = rpc_chain_tip_height();
 
     let vk = sk.verifying_key();
-    let mut outputs = vec![zion_core::tx::TxOutput {
+    let mut outputs = vec![zion_core::v3_tx::TxOutput {
         amount: amount_flowers,
         address: vault.to_string(),
         memo: Some(memo),
     }];
     if change > 0 {
-        outputs.push(zion_core::tx::TxOutput {
+        outputs.push(zion_core::v3_tx::TxOutput {
             amount: change,
             address: address.clone(),
             memo: None,
         });
     }
 
-    let inputs: Vec<zion_core::tx::TxInput> = selected
+    let inputs: Vec<zion_core::v3_tx::TxInput> = selected
         .iter()
-        .map(|utxo| zion_core::tx::TxInput {
+        .map(|utxo| zion_core::v3_tx::TxInput {
             prev_tx_hash: utxo.tx_hash,
             output_index: utxo.output_index,
             signature: vec![],
@@ -392,9 +392,9 @@ fn cmd_bridge_lock(evm_recipient: &str, amount_str: &str, chain: &str) {
         .unwrap_or_default()
         .as_secs();
 
-    let mut tx = zion_core::tx::Transaction {
+    let mut tx = zion_core::v3_tx::Transaction {
         id: [0u8; 32],
-        version: zion_core::wallet::pending_utxo_tx_version(tip),
+        version: zion_core::v3_wallet::pending_utxo_tx_version(tip),
         inputs,
         outputs,
         fee,
@@ -425,10 +425,10 @@ fn cmd_bridge_lock(evm_recipient: &str, amount_str: &str, chain: &str) {
 }
 
 fn select_utxos_largest_first(
-    available: &[zion_core::wallet::SpendableUtxo],
+    available: &[zion_core::v3_wallet::SpendableUtxo],
     target: u64,
-) -> (Vec<&zion_core::wallet::SpendableUtxo>, u64) {
-    let mut sorted: Vec<&zion_core::wallet::SpendableUtxo> = available.iter().collect();
+) -> (Vec<&zion_core::v3_wallet::SpendableUtxo>, u64) {
+    let mut sorted: Vec<&zion_core::v3_wallet::SpendableUtxo> = available.iter().collect();
     sorted.sort_by_key(|b| std::cmp::Reverse(b.amount));
     let mut selected = Vec::new();
     let mut total: u64 = 0;

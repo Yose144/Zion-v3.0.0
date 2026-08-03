@@ -5,7 +5,7 @@
 //! payout signing key must be taken from the offline mnemonic backup, not from this binary.
 
 fn main() {
-    use zion_core::genesis::{
+    use zion_core::v3_compat::{
         MAINNET_CANONICAL_DEFAULT_MINER_WALLET, MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET,
         MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET, MAINNET_CANONICAL_POOL_FEE_SUBSIDY_WALLET,
         MAINNET_CANONICAL_POOL_PAYOUT_WALLET,
