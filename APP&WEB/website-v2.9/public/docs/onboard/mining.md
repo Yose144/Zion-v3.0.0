@@ -2,6 +2,18 @@
 
 Těžba ZION běží na algoritmu **Cosmic Harmony Deeksha**.
 
+## Nejjednodušší cesta — ZION Public Miner
+
+Pro většinu uživatelů je nejjednodušší těžit přes desktopovou aplikaci:
+
+1. Nainstaluj **ZION Public Miner** (viz kategorie **Desktop App**).
+2. Vytvoř peněženku a získej adresu.
+3. Nastav **Pool** na `62.171.141.136:8444`.
+4. Zvol počet CPU vláken a případně zapni GPU.
+5. Klikni na **Start Mining**.
+
+Aplikace se postará o vše ostatní — připojení na pool, sledování hashrate a share.
+
 ## Parametry sítě
 
 - **Block time:** 60 s
@@ -18,7 +30,7 @@ Těžba ZION běží na algoritmu **Cosmic Harmony Deeksha**.
 | 🔭 L5/L6 Issobella Fund | 5 % |
 | 🏊 Pool Fee | 1 % |
 
-## Připojení na veřejný pool
+## Pokročilá těžba z příkazové řádky
 
 ```bash
 ./target/release/zion-miner \
