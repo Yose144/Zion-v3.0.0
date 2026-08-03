@@ -838,9 +838,11 @@ mod tests {
     #[test]
     fn test_router_with_llm_fallback() {
         use crate::llm_backend::EchoBackend;
-        let mut config = IntentRouterConfig::default();
-        config.use_llm = true;
-        config.llm_confidence_threshold = 0.99; // force fallback (echo won't return valid format)
+        let config = IntentRouterConfig {
+            use_llm: true,
+            llm_confidence_threshold: 0.99, // force fallback (echo won't return valid format)
+            ..Default::default()
+        };
         let llm: Box<dyn LlmBackend> = Box::new(EchoBackend::new("echo"));
         let router = IntentRouter::with_llm(llm, config);
         let c = router.classify("je vše zdravé?").unwrap();
@@ -852,8 +854,10 @@ mod tests {
     #[test]
     fn test_router_llm_not_ready_falls_back() {
         use crate::llm_backend::LlamaCppBackend;
-        let mut config = IntentRouterConfig::default();
-        config.use_llm = true;
+        let config = IntentRouterConfig {
+            use_llm: true,
+            ..Default::default()
+        };
         // LlamaCppBackend::new() returns a stub that is_ready() == false
         if let Some(llm) = LlamaCppBackend::new("dummy") {
             let router = IntentRouter::with_llm(Box::new(llm), config);

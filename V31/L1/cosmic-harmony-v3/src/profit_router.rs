@@ -1501,7 +1501,7 @@ mod tests {
 
         let best = best_coin_for_gpu(&fallback_estimates(), &profiles);
         assert_ne!(best, Some(ExternalCoin::KAS));
-        assert!(best.map_or(false, |c| c.is_gpu()));
+        assert!(best.is_some_and(|c| c.is_gpu()));
     }
 
     #[test]
@@ -1518,7 +1518,7 @@ mod tests {
 
         let best = best_coin_for_cpu(&fallback_estimates(), &profiles);
         assert_ne!(best, Some(ExternalCoin::XMR));
-        assert!(best.map_or(false, |c| c.is_cpu()));
+        assert!(best.is_some_and(|c| c.is_cpu()));
     }
 
     #[test]

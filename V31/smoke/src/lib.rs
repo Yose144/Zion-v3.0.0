@@ -70,7 +70,7 @@ mod tests {
             status.level
         );
 
-        let bridge = OasisBridge::new(ADDRESS, &completed_job.id.to_string());
+        let bridge = OasisBridge::new(ADDRESS, completed_job.id.to_string());
         let profile = bridge.sync(&status);
         let request = bridge.xp_sync_request(&status);
 

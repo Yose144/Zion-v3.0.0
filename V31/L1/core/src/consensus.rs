@@ -325,7 +325,7 @@ mod tests {
             let header = header_at_height(height).pow_header();
             let (nonce, hash) = algo
                 .find_nonce(&header, 0, 500, &target)
-                .expect(&format!("easy target should mine at height {height}"));
+                .unwrap_or_else(|| panic!("easy target should mine at height {height}"));
 
             let expected = if height < CHV3_FORK_HEIGHT {
                 Hash::new(deeksha_lite_with_height(&header, nonce, height).data)
