@@ -236,6 +236,40 @@ journalctl -u zion-v31-node -f    # live log
 
 ---
 
+## 8.1 Dashboard integrace
+
+V31 Alpha node je integrována přímo do hlavního dashboardu (`https://dashboard.zionterranova.com`) jako **4th node card**, ne jako samostatná sub-page.
+
+### Změny v `app.py`
+
+- `SERVICE_REGISTRY`: `v31-node` entry (P2P 8335, RPC 9445)
+- `build_status()`: `_v31_rpc_call()` (TCP JSON-RPC na port 9445) + `_v31_systemd_call()` (systemctl show)
+- `v31_node` v return dict: chain_height, tip_hash, sync_lag, systemd_active, memory_mb, version
+- `run_edge_action()`: `restart-v31-node`, `stop-v31-node`, `start-v31-node`
+- Checklist: "V31 Alpha Node running & synced (P2P)"
+- JS `updateServiceCards()`: renderuje V31 card se sync statusem
+
+### Změny v `dashboard.html`
+
+- Service cards grid: 3 cols → 4 cols
+- V31 Alpha node card: height, hash, P2P/RPC ports, mempool, sync indicator (SYNCED/Syncing/Offline), systemd status, memory, restart/stop buttons
+
+### API verifikace
+
+```json
+{
+  "running": true,
+  "systemd_active": "active",
+  "chain_height": 11214,
+  "tip_hash": "00001cc012f41d51...",
+  "sync_lag": 0,
+  "memory_mb": 2.1,
+  "version": "3.1.0-alpha.2"
+}
+```
+
+---
+
 ## 9. Co zbývá (next steps)
 
 | Úkol | Stav | Poznámka |
