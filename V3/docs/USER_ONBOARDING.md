@@ -9,7 +9,8 @@ This guide walks a new operator through installing the unified `zion` CLI, creat
 Download the latest release asset for your platform from the [GitHub releases page](https://github.com/Zion-TerraNova/v3-Mainnet/releases) and verify the SHA256 checksum:
 
 ```bash
-tar -xzf zion-cli-linux-x86_64.tar.gz
+# Archive name depends on platform and release, e.g. zion-cli-linux-x86_64.tar.gz
+tar -xzf zion-cli-<platform>-<arch>.tar.gz
 sudo mv zion /usr/local/bin/
 zion --help
 ```
@@ -50,7 +51,7 @@ Common overrides:
 ```bash
 # Point the CLI at a different RPC endpoint
 zion config set node.rpc_host 62.171.141.136
-zion config set node.rpc_port 9443
+zion config set node.rpc_port 8443
 
 # Use the public pool instead of the local one
 zion config set pool.host 62.171.141.136
@@ -68,7 +69,7 @@ Every `zion config set` key can also be set via an environment variable using th
 
 ```bash
 export ZION_NODE_RPC_HOST=62.171.141.136
-export ZION_NODE_RPC_PORT=9443
+export ZION_NODE_RPC_PORT=8443
 export ZION_POOL_HOST=62.171.141.136
 export ZION_POOL_PORT=8444
 export ZION_MINER_WALLET=zion1...
@@ -81,7 +82,7 @@ Environment variables take precedence over values in `~/.zion/zion.toml`.
 Create a wallet with optional encryption:
 
 ```bash
-zion wallet create --out zion-wallet.json --password-env ZION_WALLET_PASSWORD
+zion wallet new --out zion-wallet.json --password-env ZION_WALLET_PASSWORD
 ```
 
 If the environment variable `ZION_WALLET_PASSWORD` is set, all wallet subcommands that need a password will use it automatically. You can also pass `--password-env` explicitly for a different variable name.
@@ -123,16 +124,22 @@ The CLI reads the signing key from `zion-wallet.json` and submits the transactio
 CPU example:
 
 ```bash
-zion mine start --cpu --threads 4 --pool 62.171.141.136:8444 --worker my-rig
+zion mine start --backend cpu --threads 4 --pool 62.171.141.136:8444
 ```
 
-GPU example:
+OpenCL GPU example:
 
 ```bash
-zion mine start --opencl --pool 62.171.141.136:8444 --worker my-rig
+zion mine start --backend opencl --pool 62.171.141.136:8444
 ```
 
-Use `zion mine --help` to see backend options (`cpu`, `opencl`, `cuda`).
+CUDA GPU example:
+
+```bash
+zion mine start --backend cuda --pool 62.171.141.136:8444
+```
+
+Use `zion mine start --help` to see all options (`--backend`, `--threads`, `--pool`, `--wallet`, `--algorithm`).
 
 ## 9. Check pool earnings
 
