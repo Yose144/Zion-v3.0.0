@@ -1,66 +1,103 @@
+// V31 Mainnet Alpha dashboard — v3.1.0-alpha.2
+// Updated 2026-08-03: systemd + journald based, live sync metrics
+
 async function api(path, opts={}) {
   const r = await fetch(path, { ...opts, credentials: 'same-origin' });
   if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
   return r.json();
 }
 
-function dot(cls) {
-  return `<span class="status-dot ${cls}"></span>`;
-}
-
-function fmtTime() {
-  return new Date().toLocaleTimeString();
-}
+function dot(cls) { return `<span class="status-dot ${cls}"></span>`; }
+function fmtTime() { return new Date().toLocaleTimeString(); }
 
 function showError(msg) {
   const el = document.getElementById('error-box');
   el.textContent = msg;
   el.classList.remove('hidden');
 }
-function clearError() {
-  document.getElementById('error-box').classList.add('hidden');
+function clearError() { document.getElementById('error-box').classList.add('hidden'); }
+
+function shortHash(h) {
+  if (!h) return '—';
+  return h.length > 20 ? h.slice(0, 12) + '…' + h.slice(-8) : h;
 }
 
 function setKpis(st) {
+  // Node status
   const nodeEl = document.getElementById('kpi-node');
-  const poolEl = document.getElementById('kpi-pool');
   const nodeSub = document.getElementById('kpi-node-sub');
-  const poolSub = document.getElementById('kpi-pool-sub');
-
   if (st.node_running && st.node_reachable) {
     nodeEl.innerHTML = `${dot('status-up')} Online`;
-    nodeSub.textContent = `PID ${st.node_pid}`;
+    nodeSub.textContent = `PID ${st.node_pid ?? '—'}`;
   } else if (st.node_running) {
     nodeEl.innerHTML = `${dot('status-warn')} Starting`;
-    nodeSub.textContent = `PID ${st.node_pid}`;
+    nodeSub.textContent = `PID ${st.node_pid ?? '—'}`;
   } else {
     nodeEl.innerHTML = `${dot('status-down')} Offline`;
     nodeSub.textContent = '—';
   }
 
-  if (st.pool_running && st.pool_reachable) {
-    poolEl.innerHTML = `${dot('status-up')} Online`;
-    poolSub.textContent = `PID ${st.pool_pid}`;
-  } else if (st.pool_running) {
-    poolEl.innerHTML = `${dot('status-warn')} Starting`;
-    poolSub.textContent = `PID ${st.pool_pid}`;
+  // systemd status
+  const sysEl = document.getElementById('kpi-systemd');
+  const sysSub = document.getElementById('kpi-systemd-sub');
+  const active = st.systemd_active || 'unknown';
+  if (active === 'active') {
+    sysEl.innerHTML = `<span class="badge badge-green">active</span>`;
+    sysSub.textContent = `${st.systemd_sub || 'running'} · ${st.systemd_enabled || 'enabled'}`;
+  } else if (active === 'inactive' || active === 'failed') {
+    sysEl.innerHTML = `<span class="badge badge-red">${active}</span>`;
+    sysSub.textContent = st.systemd_sub || '—';
   } else {
-    poolEl.innerHTML = `${dot('status-down')} Offline`;
-    poolSub.textContent = '—';
+    sysEl.innerHTML = `<span class="badge badge-yellow">${active}</span>`;
+    sysSub.textContent = st.systemd_sub || '—';
   }
 
-  document.getElementById('kpi-canonical').textContent = st.canonical_height ?? '—';
-  document.getElementById('kpi-canonical-sub').textContent = st.tip_hash ? st.tip_hash.slice(0, 16) + '…' : '—';
-  document.getElementById('kpi-v3').textContent = st.v3_height ?? '—';
-  document.getElementById('kpi-v3-sub').textContent = st.tip_hash ? 'tip: ' + st.tip_hash.slice(0, 16) + '…' : '—';
-  document.getElementById('kpi-mempool').textContent = (st.mempool_account ?? 0) + (st.mempool_utxo ?? 0);
+  // DB height
+  document.getElementById('kpi-db-height').textContent = st.db_height ?? '—';
+  document.getElementById('kpi-db-height-sub').textContent = st.db_tip_hash ? shortHash(st.db_tip_hash) : '—';
+
+  // V3 reference height
+  document.getElementById('kpi-v3-height').textContent = st.v3_height ?? '—';
+  document.getElementById('kpi-v3-height-sub').textContent = st.sync_mode ?? '—';
+
+  // Tip hash
+  document.getElementById('kpi-tip-hash').textContent = st.tip_hash ? shortHash(st.tip_hash) : (st.db_tip_hash ? shortHash(st.db_tip_hash) : '—');
+  document.getElementById('kpi-tip-hash-sub').textContent = st.tip_hash ? 'RPC' : (st.db_tip_hash ? 'DB' : '—');
+
+  // Mempool
+  const mempool = (st.mempool_account ?? 0) + (st.mempool_utxo ?? 0);
+  document.getElementById('kpi-mempool').textContent = mempool;
   document.getElementById('kpi-mempool-sub').textContent = `account: ${st.mempool_account ?? 0}, utxo: ${st.mempool_utxo ?? 0}`;
-  document.getElementById('kpi-difficulty').textContent = st.difficulty ?? '—';
-  document.getElementById('kpi-difficulty-sub').textContent = 'next block diff';
-  document.getElementById('kpi-target').textContent = st.target ? st.target.slice(0, 20) + '…' : '—';
-  document.getElementById('kpi-target-sub').textContent = 'PoW target';
-  document.getElementById('kpi-sync-mode').textContent = st.sync_mode ?? 'genesis';
-  document.getElementById('kpi-sync-mode-sub').textContent = st.v3_height && st.v3_height > 0 ? `V3 checkpoint @ ${st.v3_height}` : 'start sync for V3 state';
+
+  // Difficulty
+  document.getElementById('kpi-difficulty').textContent = st.difficulty ? st.difficulty.toLocaleString() : '—';
+  document.getElementById('kpi-difficulty-sub').textContent = 'next block';
+
+  // Memory
+  document.getElementById('kpi-memory').textContent = st.memory_mb != null ? st.memory_mb + ' MB' : '—';
+  document.getElementById('kpi-memory-sub').textContent = st.start_timestamp ? 'since ' + st.start_timestamp.split(' ')[0] : '—';
+
+  // Sync progress bar
+  const v31h = st.db_height ?? 0;
+  const v3h = st.v3_height ?? 0;
+  const pct = v3h > 0 ? Math.min(100, Math.round((v31h / v3h) * 100)) : 0;
+  document.getElementById('sync-bar-fill').style.width = pct + '%';
+  document.getElementById('sync-v31-height').textContent = v31h;
+  document.getElementById('sync-v3-height').textContent = v3h;
+
+  const lag = st.sync_lag ?? 0;
+  const lagBadge = document.getElementById('sync-lag-badge');
+  if (lag === 0) {
+    lagBadge.className = 'badge badge-green';
+    lagBadge.textContent = 'SYNCED';
+  } else if (lag <= 3) {
+    lagBadge.className = 'badge badge-yellow';
+    lagBadge.textContent = `lag: ${lag}`;
+  } else {
+    lagBadge.className = 'badge badge-red';
+    lagBadge.textContent = `lag: ${lag}`;
+  }
+
   document.getElementById('last-update').textContent = `Poslední update: ${fmtTime()}`;
 }
 
@@ -93,18 +130,23 @@ async function refreshLogs() {
 async function refreshSyncInfo() {
   try {
     const r = await api('/api/v31/sync-info');
-    document.getElementById('v3-source-info').textContent = `V3 state: height ${r.v3_state_height ?? '—'}, file ${r.v3_state_path ?? '—'}`;
-    const syncInfo = document.getElementById('sync-info');
+    document.getElementById('sync-v3-state').textContent = r.v3_state_height ?? '—';
+    document.getElementById('sync-v31-db').textContent = r.v31_db_height ?? '—';
+    document.getElementById('sync-lag').textContent = r.sync_lag != null ? r.sync_lag + ' blocks' : '—';
+    document.getElementById('sync-checkpoint').textContent = r.checkpoint_exists ? 'exists' : 'missing';
+
+    const lastAction = document.getElementById('sync-last-action');
     if (r.last_sync) {
-      syncInfo.innerHTML = `
-        <p><strong>Poslední sync:</strong> ${r.last_sync.time}</p>
-        <p><strong>Režim:</strong> ${r.last_sync.mode}</p>
-        <p><strong>Výsledek:</strong> ${r.last_sync.status}</p>
-        ${r.last_sync.detail ? `<p><strong>Detail:</strong> ${r.last_sync.detail}</p>` : ''}
+      lastAction.innerHTML = `
+        <strong>Poslední sync:</strong> ${r.last_sync.time} ·
+        <strong>Režim:</strong> ${r.last_sync.mode} ·
+        <strong>Výsledek:</strong> ${r.last_sync.status}
+        ${r.last_sync.detail ? ` · <strong>Detail:</strong> ${r.last_sync.detail}` : ''}
       `;
     } else {
-      syncInfo.innerHTML = '<p>Žádná sync akce dosud neproběhla.</p>';
+      lastAction.textContent = 'Žádná sync akce dosud neproběhla.';
     }
+
     const sl = document.getElementById('sync-log');
     if (r.log) sl.textContent = r.log;
   } catch (e) {
@@ -113,8 +155,9 @@ async function refreshSyncInfo() {
 }
 
 async function control(action) {
-  const btn = action === 'start' ? document.getElementById('btn-start') : document.getElementById('btn-stop');
-  btn.disabled = true;
+  const btnMap = { start: 'btn-start', stop: 'btn-stop', restart: 'btn-restart' };
+  const btn = document.getElementById(btnMap[action]);
+  if (btn) btn.disabled = true;
   try {
     const r = await api('/api/v31/control', {
       method: 'POST',
@@ -123,14 +166,14 @@ async function control(action) {
     });
     if (!r.ok) throw new Error(r.error || `${action} failed`);
     const statusEl = document.getElementById('control-status');
-    statusEl.textContent = `${action.toUpperCase()} OK — node=${r.status.node_running}, pool=${r.status.pool_running}`;
+    statusEl.textContent = `${action.toUpperCase()} OK — systemd: ${r.status?.systemd_active || '?'}`;
     statusEl.classList.remove('hidden');
     setTimeout(() => statusEl.classList.add('hidden'), 5000);
   } catch (e) {
     showError(`${action} error: ${e.message}`);
   } finally {
-    btn.disabled = false;
-    setTimeout(refreshAll, 1500);
+    if (btn) btn.disabled = false;
+    setTimeout(refreshAll, 2000);
   }
 }
 
@@ -190,6 +233,7 @@ async function refreshAll() {
 
 document.getElementById('btn-start').addEventListener('click', () => control('start'));
 document.getElementById('btn-stop').addEventListener('click', () => control('stop'));
+document.getElementById('btn-restart').addEventListener('click', () => control('restart'));
 document.getElementById('btn-refresh').addEventListener('click', refreshAll);
 document.getElementById('btn-sync-state').addEventListener('click', syncV3State);
 document.getElementById('btn-sync-p2p').addEventListener('click', syncV3P2P);
