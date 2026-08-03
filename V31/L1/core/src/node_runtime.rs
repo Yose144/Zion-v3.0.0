@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
+#![allow(unused_variables)]
 #![allow(clippy::large_enum_variant)]
 //! NodeRuntime, CoreRuntime and supporting types — ported from V3 lib.rs.
 //!
