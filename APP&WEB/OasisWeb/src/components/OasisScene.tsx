@@ -218,159 +218,20 @@ export default function OasisScene({
       <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', color: 'white', fontSize: 20, fontWeight: 'bold', zIndex: 999, background: 'black', padding: '8px 16px', borderRadius: 8 }}>
         OASIS SCENE LOADED · isMobile={String(isMobile)}
       </div>
-    <Canvas
-      camera={{ position: [0, 3.5, 34], fov: 55 }}
-      dpr={[1, isMobile ? 1 : 1.75]}
-      style={{ width: '100%', height: '100%', display: 'block', position: 'absolute', inset: 0 }}
-      gl={{
-        antialias: false,
-        powerPreference: 'high-performance',
-        toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 1.15,
-        failIfMajorPerformanceCaveat: false,
-      }}
-      onCreated={({ gl }) => {
-        gl.setClearColor(isMobile ? '#00ff00' : '#02030a');
-      }}
-    >
-      <color attach="background" args={[isMobile ? '#00ff00' : '#02030a']} />
-      {/* No fog on mobile — fog was hiding everything */}
-      {!isMobile && <fog attach="fog" args={['#02030a', 80, 200]} />}
-
-      {/* HDRI-based image-based lighting — gives PBR materials real reflections
-          and ambient fill without needing hand-authored art or many lights.
-          Skipped on mobile (HDR fetch from CDN can hang the whole scene in
-          suspense → black screen). Extra ambient light compensates. */}
-      {!isMobile && (
-        <Suspense fallback={null}>
-          <Environment preset="night" background={false} environmentIntensity={0.6} />
-        </Suspense>
-      )}
-
-      <ambientLight intensity={isMobile ? 0.6 : 0.15} />
-      <pointLight position={[10, 8, 10]} intensity={1.0} color="#ffffff" />
-      <pointLight position={[-12, -6, -12]} intensity={0.65} color="#a855f7" />
-      <pointLight position={[0, 10, 0]} intensity={0.5} color="#22d3ee" />
-
-      {/* DEBUG: bright test cube on mobile to verify WebGL renders.
-          Camera starts at [0, 3.5, 34] and flies to [0, 2.4, 15].
-          Cube at [0, 2, 10] is directly in front of camera. */}
-      {isMobile && (
-        <mesh position={[0, 2, 10]}>
-          <boxGeometry args={[4, 4, 4]} />
+      <Canvas
+        style={{ width: '100%', height: '100%', display: 'block', position: 'absolute', inset: 0, background: 'orange' }}
+        onCreated={({ gl }) => {
+          gl.setClearColor('#00ff00');
+          gl.clear();
+        }}
+      >
+        <color attach="background" args={['#00ff00']} />
+        <mesh position={[0, 0, -5]}>
+          <boxGeometry args={[3, 3, 3]} />
           <meshBasicMaterial color="#ff0000" />
         </mesh>
-      )}
-
-      <UniverseRotator groupRef={universeRef} flightMode={flightMode} view={view} />
-
-      {view === 'galaxy' && (
-        <group ref={universeRef}>
-          {/* Mobile debug: only Stars + test cube. Skip everything else. */}
-          {isMobile ? (
-            <Stars radius={250} depth={160} count={800} factor={4.5} saturation={0} fade speed={0.4} />
-          ) : (
-            <>
-          {/* Distant star backdrop — drei's fog-faded field for far depth,
-              plus a GPU-shader twinkle layer closer in for a living sky.
-              Kept subtle so it reads as depth behind the UI, not noise
-              competing with it. */}
-          <Stars radius={250} depth={160} count={5200} factor={4.5} saturation={0} fade speed={0.4} />
-          {/* TwinkleStars uses a custom GLSL shader that can crash mobile GPUs — skip on mobile */}
-          <TwinkleStars count={2200} radius={150} />
-
-          {/* Occasional shooting stars for a sense of a living, moving sky */}
-          <ShootingStars count={4} isMobile={isMobile} />
-
-          {/* Distant satellite galaxies around the Milky Way */}
-          <DistantGalaxies />
-
-          {/* Galaxy disk + core + nebula.
-              GalaxyCore has a custom streak shader + heavy geometry — skip on mobile.
-              MatrixCore is CPU-heavy with per-frame position updates — skip on mobile. */}
-          <Galaxy isMobile={isMobile} />
-          <GalaxyCore />
-          <MatrixCore />
-          <Nebula isMobile={isMobile} />
-
-          {/* Oasis center — the Tree of Life in full glory */}
-          <group scale={1.1}>
-            <TreeOfLife isMobile={isMobile} />
-          </group>
-
-          {/* Selection beacon for the focused world */}
-          {selectedWorld?.galaxyPosition && (
-            <SelectionBeacon
-              position={selectedWorld.galaxyPosition}
-              color={CATEGORY_COLORS[selectedWorld.category]}
-            />
-          )}
-
-          {/* 55 OASIS worlds as a holographic galaxy map */}
-          <GalaxyMap
-            activeCategories={activeCategories}
-            activeLayers={activeLayers}
-            selectedWorldId={selectedWorld?.id}
-            onWorldSelect={onWorldSelect}
-            isMobile={isMobile}
-          />
-            </>
-          )}
-        </group>
-      )}
-
-      {view === 'world' && selectedWorld && <WorldEnvironment world={selectedWorld} isMobile={isMobile} />}
-
-      {/* Arrival flight and controls */}
-      <CameraRig
-        started={started}
-        onArrived={onArrived}
-        view={view}
-        focusTarget={selectedWorld?.galaxyPosition ?? null}
-        disabled={flightMode}
-      />
-
-      {/* First-person flight controls */}
-      {flightMode && (
-        <FlightControls
-          ref={flightControlsRef}
-          enabled={flightMode}
-          onExit={onExitFlight}
-          onSpeedChange={onFlightSpeedChange}
-          onCanLand={onCanLand}
-          onApproach={onApproach}
-          onBoost={onBoost}
-          baseSpeed={baseSpeed}
-          mobileInputRef={mobileInputRef}
-        />
-      )}
-
-      {/* Player craft visible during flight */}
-      {flightMode && <PilgrimShip speed={flightSpeed} />}
-
-      {/* Bloom + cinematic color grade — skipped on mobile to keep frame time
-          low; anti-aliasing is handled here via multisampling instead of
-          canvas MSAA (cheaper). Grading (saturation/contrast/grain/aberration)
-          is what gives the scene a "produced" rather than "raw WebGL" look. */}
-      {!isMobile && (
-        <EffectComposer multisampling={4}>
-          <Bloom
-            intensity={0.68}
-            luminanceThreshold={0.34}
-            luminanceSmoothing={0.6}
-            mipmapBlur
-            radius={0.6}
-          />
-          <HueSaturation saturation={0.16} />
-          <BrightnessContrast brightness={-0.03} contrast={0.08} />
-          <ChromaticAberration offset={[0.0005, 0.0005]} radialModulation modulationOffset={0.4} />
-          <Noise premultiply blendFunction={BlendFunction.OVERLAY} opacity={0.03} />
-          <Vignette eskil={false} offset={0.18} darkness={0.7} />
-        </EffectComposer>
-      )}
-
-      {compassRef && <CameraCompassTracker compassRef={compassRef} />}
-    </Canvas>
+        <ambientLight intensity={1} />
+      </Canvas>
     </div>
   );
 }
