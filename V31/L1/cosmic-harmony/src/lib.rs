@@ -6,7 +6,21 @@
 //! experiments.
 
 pub mod algorithm;
+pub mod algorithms_npu;
+pub mod algorithms_opt;
+pub mod deeksha;
+pub mod deeksha_lite;
+pub mod deeksha_lite_fire;
+pub mod hic;
+pub mod hugepages;
+pub mod ncl_integration;
 pub mod profit;
+pub mod revenue;
+pub mod revenue_journal;
+pub mod scratchpad_ekam;
+pub mod sha3_fast;
+pub mod stream_layers;
+pub mod stream_profit;
 
 pub use algorithm::{DynPowAlgorithm, EkamDeeksha, PocAlgorithm, PowAlgorithm};
 pub use profit::{CoinProfile, Device, ExternalCoin, ProfitEntry, ProfitRouter};

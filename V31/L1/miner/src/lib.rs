@@ -7,9 +7,20 @@
 
 #[cfg(feature = "auxpow")]
 pub mod auxpow;
+pub mod b3_verify;
 pub mod config;
+pub mod cpu_features;
+pub mod gpu_guard;
+pub mod reconnect;
 pub mod runtime;
 pub mod stream;
+pub mod thread_affinity;
+
+// TODO: These modules need V3 cosmic-harmony internals (deeksha_lite,
+//       cosmic_harmony_with_height, algorithms_opt, scratchpad_ekam)
+//       and zion_auxpow crate. Port after V3 cosmic-harmony full port.
+// pub mod autonomous;
+// pub mod parallel;
 
 #[cfg(feature = "auxpow")]
 pub use auxpow::{ExternalCoin, Job, Share, StratumClient, StratumJob};
