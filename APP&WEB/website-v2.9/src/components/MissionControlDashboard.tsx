@@ -2320,8 +2320,7 @@ export default function MissionControlDashboard() {
                       </tr>
                     ))}
                   </tbody>
-                </table>
-              </div>
+                </table></div>
             </motion.section>
 
             {/* Monitoring Log */}
@@ -2784,8 +2783,7 @@ export default function MissionControlDashboard() {
                       </tr>
                     ))}
                   </tbody>
-                </table>
-              </div>
+                </table></div>
             </motion.section>
 
             {/* Technical Details */}
@@ -2953,19 +2951,19 @@ export default function MissionControlDashboard() {
             >
               <PhaseAccordion icon={<CheckCircle2 className="h-6 w-6 text-emerald-400" />} title={MissionControlDashboardCopy.phase0SpecFreezeCoreRewrite[cs ? 'cs' : 'en']} pct={100} status={MissionControlDashboardCopy.completed[cs ? 'cs' : 'en']} statusColor="border-emerald-400/30 bg-emerald-400/10 text-emerald-200" defaultOpen>
                 <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Únor 2026 — 155 testů, 8 commitů</p>
-                <table className="w-full text-left"><tbody>
+                <div className="overflow-x-auto"><table className="w-full text-left"><tbody>
                   <SprintRow name="0.0 Repo Migrace" content="Čisté repo, workspace, Docker, CI/CD" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="0.1 Emission & Genesis" content="5,400.067 ZION/block, 16.28B premine" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="0.2 DAA & Consensus" content="LWMA 60-blok, ±25%, fork-choice" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="0.3 Fee Market" content="Fee burning, double-spend, min fee" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="0.4 Wallet & TX" content="UTXO select, Ed25519, broadcast" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="0.5 Consensus Hardening" content="Maturity=100, reorg=10, finality=60" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
-                </tbody></table>
+                </tbody></table></div>
               </PhaseAccordion>
 
               <PhaseAccordion icon={<RefreshCw className="h-6 w-6 text-cyan-400" />} title="Fáze 1 — Mainnet Stability & Launch Gate" pct={100} status="DOKONČENO" statusColor="border-emerald-400/30 bg-emerald-400/10 text-emerald-200" defaultOpen>
                 <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Březen — Květen 2026 | Stability run + closure evidence uzavřena | Security gate PASS</p>
-                <table className="w-full text-left"><thead><tr><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Sprint</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Obsah</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Testy</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Stav</th></tr></thead><tbody>
+                <div className="overflow-x-auto"><table className="w-full text-left"><thead><tr><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Sprint</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Obsah</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Testy</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Stav</th></tr></thead><tbody>
                   <SprintRow name="1.0 Network Deploy" content="Chain reset, Docker, historical 3-server rollout baseline" tests="—" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="1.1 Config Validation" content="TOML parsing, boundary checks" tests="70" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="1.2 Security Edge-Case" content="Reorg, double-spend, fork-choice" tests="29" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
@@ -2985,38 +2983,38 @@ export default function MissionControlDashboard() {
                   <SprintRow name="1.16 Collector Evidence" content="Stability collector uzavřen — vzorky, tip agreement a pool recovery evidence potvrzeny" tests="—" status={<span className="text-emerald-400 inline-flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> CLOSED</span>} highlight />
                   <SprintRow name="1.17 On-chain Reward Split" content="89/5/5/1 enforced live on blocks 465 / 471 / 472" tests="—" status={<span className="text-emerald-400 inline-flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> LIVE</span>} highlight />
                   <SprintRow name="1.18 Closure Evidence" content="Chain growth, tip agreement, reject rate a recovery verdict — launch gate uzavřen" tests="—" status={<span className="text-emerald-400 inline-flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> READY</span>} highlight />
-                </tbody></table>
+                </tbody></table></div>
               </PhaseAccordion>
 
               <PhaseAccordion icon={<CheckCircle2 className="h-6 w-6 text-emerald-400" />} title="Fáze 2 — Node UX & Mining" pct={100} status="DOKONČENO" statusColor="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">
                 <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Červen — Červenec 2026 — Node setup, mining guides, explorer live</p>
-                <table className="w-full text-left"><tbody>
+                <div className="overflow-x-auto"><table className="w-full text-left"><tbody>
                   <SprintRow name="2.1 Node UX" content="10-min setup, config.toml, structured logging, CLI → /mining/node-setup" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="2.2 Mining Polish" content="CPU bench, GPU stability, failover, solo → /mining/guides" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="2.3 Block Explorer" content="Backend indexer, frontend UI, Supply API, Rich list → /explorer" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
-                </tbody></table>
+                </tbody></table></div>
               </PhaseAccordion>
 
               <PhaseAccordion icon={<CheckCircle2 className="h-6 w-6 text-emerald-400" />} title="Fáze 3 — Launch Ops & Security Closure" pct={100} status="DOKONČENO" statusColor="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">
                 <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Duben — Květen 2026 | Všechny closure položky uzavřeny</p>
-                <table className="w-full text-left"><tbody>
+                <div className="overflow-x-auto"><table className="w-full text-left"><tbody>
                   <SprintRow name="3.1 Node Set Audit" content="Edge server potvrzené po fee-split rolloutu, privátní síť" status={<span className="text-emerald-400">SYNCED</span>} />
                   <SprintRow name="3.2 Release Artefacts" content="runbook ✅, operator guide ✅, checksums ✅, release tag ✅" status={<span className="text-emerald-400">4/4</span>} />
                   <SprintRow name="3.3 Security Hygiene" content="fuzz harnessy ✅, BFG scrub ✅, boundary review ✅" status={<span className="text-emerald-400">3/3</span>} />
                   <SprintRow name="3.4 Recovery & Alerts" content="metrics ✅, alert routing ✅, backup/restore ✅" status={<span className="text-emerald-400">3/3</span>} />
-                </tbody></table>
+                </tbody></table></div>
               </PhaseAccordion>
 
               <PhaseAccordion icon={<CheckCircle2 className="h-6 w-6 text-emerald-400" />} title="Fáze 4 — Public Launch Gate" pct={100} status="PASS · GO" statusColor="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">
-                <table className="w-full text-left"><tbody>
+                <div className="overflow-x-auto"><table className="w-full text-left"><tbody>
                   <SprintRow name="4.1 Closure Report" content="Stability verdict pro chain growth, rejects a recovery — uzavřen" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="4.2 Exit Criteria Sign-off" content="MAINNET_EXIT_CRITERIA.md uzavřen, waiver log potvrzen" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="4.3 Genesis Artefacts" content="Offline genesis hash, checksums, release tag a artifact chain — kompletní" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
-                </tbody></table>
+                </tbody></table></div>
               </PhaseAccordion>
 
               <PhaseAccordion icon={<Rocket className="h-6 w-6 text-emerald-400" />} title="Fáze 5 — Production Mainnet Genesis" pct={15} status="20. 6. 2026" statusColor="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">
-                <table className="w-full text-left"><thead><tr><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Den</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Aktivita</th></tr></thead><tbody>
+                <div className="overflow-x-auto"><table className="w-full text-left"><thead><tr><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Den</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Aktivita</th></tr></thead><tbody>
                   {[
                     ['T-14', 'Genesis freeze — parametry zmrazeny'],
                     ['T-10', 'Seed nody deployed a sync'],
@@ -3027,7 +3025,7 @@ export default function MissionControlDashboard() {
                     ['T-1', 'Genesis block vytvořen OFFLINE'],
                   ].map(([day, act]) => <tr key={day}><td className="py-2.5 px-4 text-sm font-semibold text-white rounded-l-lg">{day}</td><td className="py-2.5 px-4 text-sm text-gray-400 rounded-r-lg">{act}</td></tr>)}
                   <tr className="bg-pink-500/5"><td className="py-2.5 px-4 text-sm font-semibold text-pink-400 rounded-l-lg"><span className="inline-flex items-center gap-1">T-0 <Rocket className="h-3.5 w-3.5" /></span></td><td className="py-2.5 px-4 text-sm font-bold text-pink-400 rounded-r-lg">PRODUCTION MAINNET GENESIS</td></tr>
-                </tbody></table>
+                </tbody></table></div>
               </PhaseAccordion>
             </motion.section>
           </div>
@@ -3402,7 +3400,7 @@ export default function MissionControlDashboard() {
                   { layer: 'L5 Free World', period: '2030+', phases: 'Governance · Sovereignty', color: 'from-amber-400 to-yellow-400', width: '18%', offset: '72%' },
                   { layer: 'L6 Issobella', period: '2040+', phases: 'Orbital Station · Fund', color: 'from-rose-400 to-red-400', width: '12%', offset: '88%' }
                 ].map((row) => (
-                  <div key={row.layer} className="flex items-center gap-2 sm:gap-4 min-w-[480px] sm:min-w-0">
+                  <div key={row.layer} className="flex items-center gap-2 sm:gap-4 min-w-0">
                     <div className="w-24 sm:w-28 md:w-36 shrink-0 text-right">
                       <p className="text-xs sm:text-sm font-semibold text-white">{row.layer}</p>
                       <p className="text-[10px] sm:text-xs text-gray-500">{row.period}</p>
@@ -3417,7 +3415,7 @@ export default function MissionControlDashboard() {
                     </div>
                   </div>
                 ))}
-                <div className="flex items-center gap-2 sm:gap-4 mt-2 min-w-[480px] sm:min-w-0">
+                <div className="flex items-center gap-2 sm:gap-4 mt-2 min-w-0">
                   <div className="w-24 sm:w-28 md:w-36 shrink-0" />
                   <div className="flex-1 flex justify-between text-[8px] sm:text-[10px] text-gray-600 px-1">
                     {['2026 Q1', 'Q2', 'Q3', 'Q4', '2027 Q1', 'Q2', 'Q3', 'Q4', '2028'].map((q) => (
@@ -3485,8 +3483,7 @@ export default function MissionControlDashboard() {
                       </tr>
                     ))}
                   </tbody>
-                </table>
-              </div>
+                </table></div>
             </motion.section>
           </div>
         )}

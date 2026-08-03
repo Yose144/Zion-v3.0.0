@@ -332,10 +332,10 @@ export default function RichListClient({ embedded = false }: RichListClientProps
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="zion-section overflow-hidden"
+          className="zion-section overflow-x-auto overflow-y-hidden"
         >
           {/* Table header */}
-          <div className="grid grid-cols-[60px_1fr_1fr_120px_100px] md:grid-cols-[60px_2fr_1fr_160px_120px] gap-2 px-6 py-3 border-b border-white/10 bg-white/[0.02]">
+          <div className="grid grid-cols-[60px_1fr_1fr_120px_100px] min-w-[420px] md:grid-cols-[60px_2fr_1fr_160px_120px] gap-2 px-6 py-3 border-b border-white/10 bg-white/[0.02]">
             <span className="text-[11px] text-white/30 uppercase tracking-wider">
               {ExplorerRichlistRichListClientCopy.rank[cs ? 'cs' : 'en']}
             </span>
@@ -386,7 +386,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.3, delay: Math.min(i * 0.02, 0.6) }}
-                  className="grid grid-cols-[60px_1fr_1fr_120px_100px] md:grid-cols-[60px_2fr_1fr_160px_120px] gap-2 px-6 py-3.5 border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors items-center"
+                  className="grid grid-cols-[60px_1fr_1fr_120px_100px] min-w-[420px] md:grid-cols-[60px_2fr_1fr_160px_120px] gap-2 px-6 py-3.5 border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors items-center"
                 >
                   {/* Rank */}
                   <div className="flex items-center gap-1.5">

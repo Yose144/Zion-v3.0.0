@@ -219,9 +219,9 @@ export default function TransactionsPageClient() {
         )}
 
         {/* table card */}
-        <div className="mt-6 zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+        <div className="mt-6 zion-rainbow-card rounded-[28px] bg-black/60 overflow-x-auto overflow-y-hidden" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
           {/* table header */}
-          <div className="grid grid-cols-[32px_1fr_90px_80px_100px_80px_110px] md:grid-cols-[32px_1fr_90px_80px_100px_80px_110px] gap-3 px-5 py-3 border-b border-white/6">
+          <div className="grid grid-cols-[32px_1fr_90px_80px_100px_80px_110px] min-w-[520px] md:grid-cols-[32px_1fr_90px_80px_100px_80px_110px] min-w-[520px] gap-3 px-5 py-3 border-b border-white/6">
             <span />
             <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">TX Hash</span>
             <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerTransactionsTransactionsPageClientCopy.type[cs ? 'cs' : 'en']}</span>
@@ -233,7 +233,7 @@ export default function TransactionsPageClient() {
 
           {/* loading skeleton */}
           {loading && [...Array(12)].map((_, i) => (
-            <div key={i} className="grid grid-cols-[32px_1fr_90px_80px_100px_80px_110px] gap-3 px-5 py-3 border-b border-white/3 animate-pulse">
+            <div key={i} className="grid grid-cols-[32px_1fr_90px_80px_100px_80px_110px] min-w-[520px] gap-3 px-5 py-3 border-b border-white/3 animate-pulse">
               <div className="flex items-center justify-center"><span className="w-2.5 h-2.5 rounded-full bg-white/10" /></div>
               <div className="h-4 bg-white/5 rounded w-48" />
               <div className="h-4 bg-white/5 rounded w-16" />
@@ -258,7 +258,7 @@ export default function TransactionsPageClient() {
             <Link
               key={`${tx.hash}-${i}`}
               href={`/explorer/tx?hash=${encodeURIComponent(tx.hash)}`}
-              className="grid grid-cols-[32px_1fr_90px_80px_100px_80px_110px] gap-3 px-5 py-3 border-b border-white/3 hover:bg-white/2 transition-colors group"
+              className="grid grid-cols-[32px_1fr_90px_80px_100px_80px_110px] min-w-[520px] gap-3 px-5 py-3 border-b border-white/3 hover:bg-white/2 transition-colors group"
             >
               {/* status */}
               <div className="flex items-center justify-center"><StatusDot status={tx.status} /></div>

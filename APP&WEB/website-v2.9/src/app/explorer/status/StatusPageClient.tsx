@@ -517,8 +517,8 @@ export default function StatusPageClient() {
 
           {/* Peer table */}
           {peers?.peers && peers.peers.length > 0 && (
-            <div className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden" style={{ "--rc": "168, 85, 247" } as React.CSSProperties}>
-              <div className="grid grid-cols-[1fr_80px_80px_100px_100px_80px] gap-3 px-5 py-3 border-b border-white/6">
+            <div className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-x-auto overflow-y-hidden" style={{ "--rc": "168, 85, 247" } as React.CSSProperties}>
+              <div className="grid grid-cols-[1fr_80px_80px_100px_100px_80px] min-w-[460px] gap-3 px-5 py-3 border-b border-white/6">
                 <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerStatusStatusPageClientCopy.address[cs ? 'cs' : 'en']}</span>
                 <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerStatusStatusPageClientCopy.direction[cs ? 'cs' : 'en']}</span>
                 <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerStatusStatusPageClientCopy.height[cs ? 'cs' : 'en']}</span>
@@ -529,7 +529,7 @@ export default function StatusPageClient() {
               {peers.peers.slice(0, 10).map((peer, i) => (
                 <div
                   key={`${peer.address}-${i}`}
-                  className="grid grid-cols-[1fr_80px_80px_100px_100px_80px] gap-3 px-5 py-3 border-b border-white/3 hover:bg-white/2 transition-colors"
+                  className="grid grid-cols-[1fr_80px_80px_100px_100px_80px] min-w-[460px] gap-3 px-5 py-3 border-b border-white/3 hover:bg-white/2 transition-colors"
                 >
                   <span className="text-[13px] font-mono text-cyan-300 truncate">
                     {peer.address || peer.host}

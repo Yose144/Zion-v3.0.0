@@ -65,7 +65,7 @@ export default function NetworkLatencyPanel({ nodes }: Props) {
             className="zion-rainbow-sub p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6"
             style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
           >
-            <div className="flex items-center gap-3 min-w-[140px]">
+            <div className="flex items-center gap-3 min-w-0 sm:min-w-[140px]">
               <div className={`w-2.5 h-2.5 rounded-full ${node.online ? 'bg-emerald-400 animate-pulse' : 'bg-red-500'}`} />
               <span className="text-sm font-medium text-white">{node.name}</span>
             </div>

@@ -221,7 +221,7 @@ function PipelineStep({
   return (
     <div className="flex items-center gap-3">
       <div
-        className="relative zion-rainbow-sub p-4 min-w-[140px] flex-1"
+        className="relative zion-rainbow-sub p-4 min-w-0 sm:min-w-[140px] flex-1"
         style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
       >
         <div className="flex items-center gap-2 mb-2">
@@ -606,7 +606,7 @@ export default function BridgeTrackerClient() {
                       <th className="text-left px-4 py-3 font-medium">{ExplorerBridgeBridgeTrackerClientCopy.sender[cs ? 'cs' : 'en']}</th>
                       <th className="text-left px-4 py-3 font-medium">{ExplorerBridgeBridgeTrackerClientCopy.chain[cs ? 'cs' : 'en']}</th>
                       <th className="text-right px-4 py-3 font-medium">{ExplorerBridgeBridgeTrackerClientCopy.amount[cs ? 'cs' : 'en']}</th>
-                      <th className="text-left px-4 py-3 font-medium min-w-[120px]">{ExplorerBridgeBridgeTrackerClientCopy.finality[cs ? 'cs' : 'en']}</th>
+                      <th className="text-left px-4 py-3 font-medium min-w-0 sm:min-w-[120px]">{ExplorerBridgeBridgeTrackerClientCopy.finality[cs ? 'cs' : 'en']}</th>
                       <th className="text-center px-4 py-3 font-medium">{ExplorerBridgeBridgeTrackerClientCopy.status[cs ? 'cs' : 'en']}</th>
                     </tr>
                   </thead>
