@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import WarpFlash from './WarpFlash';
-import { ChevronRight, Eye, EyeOff } from 'lucide-react';
+import { ChevronRight, Eye, EyeOff, Layers, Rocket, Volume2, VolumeX } from 'lucide-react';
 import { useAudio } from './AudioEngine';
 import type { FlightControlsHandle } from './FlightControls';
 import type { MobileInput } from './MobileControls';
@@ -58,6 +58,8 @@ export default function OasisClient() {
     return isNarrow || (hasTouch && coarsePointer && window.innerWidth < 1024);
   });
   const [uiHidden, setUiHidden] = useState(false);
+  const [panelsMinimized, setPanelsMinimized] = useState(false);
+  const autoHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flightControlsRef = useRef<FlightControlsHandle | null>(null);
   const mobileInputRef = useRef<MobileInput | null>(null);
   const compassRef = useRef<CompassData | null>(null);
@@ -99,9 +101,6 @@ export default function OasisClient() {
       const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
       const isNarrow = window.innerWidth < 768;
       const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
-      // Mobile = narrow screen OR touch + coarse pointer.
-      // A touch laptop with a wide screen stays desktop; a narrow
-      // non-touch window gets mobile layout.
       const mobile = isNarrow || (hasTouch && coarsePointer && window.innerWidth < 1024);
       setIsMobile(mobile);
       if (mobile && !mobileInputRef.current) {
@@ -112,6 +111,27 @@ export default function OasisClient() {
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
   }, []);
+
+  // Auto-hide panels when user interacts with 3D scene (scroll/drag/touch)
+  // Panels return after 2.5s of inactivity. Doesn't affect flight mode or intro.
+  useEffect(() => {
+    if (phase === 'intro' || flightMode) return;
+    const canvas = document.querySelector('canvas');
+    if (!canvas) return;
+
+    const triggerHide = () => {
+      setPanelsMinimized(true);
+      if (autoHideTimer.current) clearTimeout(autoHideTimer.current);
+      autoHideTimer.current = setTimeout(() => setPanelsMinimized(false), 2500);
+    };
+
+    const events = ['wheel', 'pointerdown', 'touchstart'] as const;
+    events.forEach((evt) => canvas.addEventListener(evt, triggerHide, { passive: true }));
+    return () => {
+      events.forEach((evt) => canvas.removeEventListener(evt, triggerHide));
+      if (autoHideTimer.current) clearTimeout(autoHideTimer.current);
+    };
+  }, [phase, flightMode]);
 
   useEffect(() => {
     if (flightMode) {
@@ -286,7 +306,7 @@ export default function OasisClient() {
           isMobile={isMobile}
           compassRef={compassRef}
         />
-        {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && (
+        {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && !panelsMinimized && (
           <GamePanel
             activeCategories={activeCategories}
             selectedWorldId={selectedWorld?.id}
@@ -301,8 +321,8 @@ export default function OasisClient() {
             }}
           />
         )}
-        {phase === 'scene' && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && <OnboardingHint />}
-        {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && <FruitCounter />}
+        {phase === 'scene' && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && !panelsMinimized && <OnboardingHint />}
+        {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && !panelsMinimized && <FruitCounter />}
 
         <AnimatePresence>
           {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && (
@@ -350,8 +370,42 @@ export default function OasisClient() {
           )}
         </AnimatePresence>
 
+        {/* Quick controls FAB — appears when panels auto-minimized */}
         <AnimatePresence>
-          {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && (
+          {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && panelsMinimized && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.8, y: 10 }}
+              className="pointer-events-auto absolute bottom-3 right-3 z-[65] flex items-center gap-2"
+            >
+              <button
+                onClick={() => setPanelsMinimized(false)}
+                className="rounded-full border border-white/15 bg-black/70 p-3 text-cyan-300 backdrop-blur-md transition hover:bg-white/10 hover:text-white"
+                title="Show panels"
+              >
+                <Layers className="h-5 w-5" />
+              </button>
+              <button
+                onClick={() => { setFlightMode(true); setTimeout(() => flightControlsRef.current?.lock(), 0); }}
+                className="rounded-full border border-white/15 bg-black/70 p-3 text-amber-300 backdrop-blur-md transition hover:bg-white/10 hover:text-white"
+                title="Enter flight (F)"
+              >
+                <Rocket className="h-5 w-5" />
+              </button>
+              <button
+                onClick={toggle}
+                className="rounded-full border border-white/15 bg-black/70 p-3 text-gray-300 backdrop-blur-md transition hover:bg-white/10 hover:text-white"
+                title={muted ? 'Unmute' : 'Mute'}
+              >
+                {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && !panelsMinimized && (
             <WorldFilter
               active={activeCategories}
               onChange={setActiveCategories}
@@ -362,7 +416,7 @@ export default function OasisClient() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {selectedWorld && view === 'galaxy' && !flightMode && !uiHidden && (
+          {selectedWorld && view === 'galaxy' && !flightMode && !uiHidden && !panelsMinimized && (
             <WorldPanel
               world={selectedWorld}
               onClose={handleCloseWorld}
@@ -372,7 +426,7 @@ export default function OasisClient() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {phase !== 'intro' && !flightMode && view === 'galaxy' && !uiHidden && (
+          {phase !== 'intro' && !flightMode && view === 'galaxy' && !uiHidden && !panelsMinimized && (
             <ControlHud
               compassRef={compassRef}
               target={compassTarget.pos}
