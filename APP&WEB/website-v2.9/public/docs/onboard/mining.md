@@ -2,7 +2,7 @@
 
 Těžba ZION běží na algoritmu **Cosmic Harmony Deeksha**.
 
-> **Proč těžit už teď:** ZION je v první dekádě emise — odměna **5 400 ZION/blok** je nejvyšší, jakou kdy protokol vyplatí, a s každou další dekádou klesá o pětinu. Síť je zatím malá, takže o nalezené bloky se dělí míň strojů. Nikdo neslibuje cenu ani zisk — jen poctivou matematiku raného vstupu. Celý příběh (včetně Bitcoin Pizza Day) najdeš v kapitole [Hodina před deštěm](/onboard#why-now).
+> **Proč těžit už teď:** ZION je v první dekádě emise — odměna **5 400,067 ZION/blok** je nejvyšší, jakou kdy protokol vyplatí, a s každou další dekádou klesá o pětinu. Síť je zatím malá, takže o nalezené bloky se dělí míň strojů. Nikdo neslibuje cenu ani zisk — jen poctivou matematiku raného vstupu. Celý příběh (včetně Bitcoin Pizza Day) najdeš v kapitole [Hodina před deštěm](/onboard#why-now).
 
 ## Nejjednodušší cesta — ZION Public Miner
 
@@ -27,27 +27,27 @@ Aplikace se postará o vše ostatní — připojení na pool, sledování hashra
 
 | Příjemce | Podíl |
 |----------|-------|
-| ⛏️ Miners | 89 % |
-| 🕊️ Humanitarian Tithe | 5 % |
-| 🔭 L5/L6 Issobella Fund | 5 % |
-| 🏊 Pool Fee | 1 % |
+| Těžaři | 89 % |
+| Humanitární tithe | 5 % |
+| L5/L6 Issobella fond | 5 % |
+| Pool fee / burn | 1 % |
 
 ## Pokročilá těžba z příkazové řádky
 
 ```bash
-./target/release/zion-miner \
-  --pool seed.zionterranova.com:3333 \
-  --wallet "zion1qTVOJE_ADRESA" \
-  --worker muj-rig \
-  --algo cosmic_harmony \
-  --threads 4
+zion mine start --backend cpu --threads 4 --pool 62.171.141.136:8444
+```
+
+Alternativně s vlastním cílovým algoritmem a adresou (počkej na konkrétní releasovou dokumentaci pro `--miner.wallet` a `--miner.algorithm`):
+
+```bash
+zion mine start --backend cuda --threads 4 --pool 62.171.141.136:8444 \
+  --miner.wallet zion1PRIKLADNA_ADRESA --miner.worker muj-rig
 ```
 
 ## Pool dashboard
 
-Webový přehled poolu najdeš na:
-
-- `https://pool.zionterranova.com`
+Webový přehled poolu je zatím ve vývoji.
 
 ## Tipy
 

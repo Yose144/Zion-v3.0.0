@@ -233,7 +233,7 @@ const quickFacts = [
   { label: { cs: 'Konsensus', en: 'Consensus' }, value: 'Proof-of-Work' },
   { label: { cs: 'Block time', en: 'Block time' }, value: '60 s' },
   { label: { cs: 'Total supply', en: 'Total supply' }, value: '144B ZION' },
-  { label: { cs: 'Block reward', en: 'Block reward' }, value: '5 400 ZION' },
+  { label: { cs: 'Block reward', en: 'Block reward' }, value: '5 400,067 ZION' },
   { label: { cs: 'Algoritmus', en: 'Algorithm' }, value: 'Cosmic Harmony' },
 ];
 

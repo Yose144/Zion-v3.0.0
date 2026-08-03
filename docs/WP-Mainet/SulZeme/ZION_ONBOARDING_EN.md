@@ -29,16 +29,17 @@ This document is one entry point. The detailed truth lives in these sources:
 
 1. [Salt and compass — why read this](#salt-and-compass--why-read-this)
 2. [What is ZION — in three sentences and verifiable facts](#what-is-zion--in-three-sentences-and-verifiable-facts)
-3. [Why start right now](#why-start-right-now)
-4. [Three ways on board](#three-ways-on-board)
-5. [Ship ZION — six decks and four books](#ship-zion--six-decks-and-four-books)
-6. [Gate to Oasis](#gate-to-oasis)
-7. [Book *Salt of this Earth* — twelve stops](#book-salt-of-this-earth--twelve-stops)
-8. [What ZION does not promise](#what-zion-does-not-promise)
-9. [First step — today, in five minutes](#first-step--today-in-five-minutes)
-10. [Technical quickstart](#technical-quickstart)
-11. [Verifiable facts — summary](#verifiable-facts--summary)
-12. [For developers and further resources](#for-developers-and-further-resources)
+3. [What is ZION today — root, trunk and crown](#what-is-zion-today--root-trunk-and-crown)
+4. [Why start right now](#why-start-right-now)
+5. [Three ways on board](#three-ways-on-board)
+6. [Ship ZION — six decks and four books](#ship-zion--six-decks-and-four-books)
+7. [Gate to Oasis](#gate-to-oasis)
+8. [Book *Salt of this Earth* — twelve stops](#book-salt-of-this-earth--twelve-stops)
+9. [What ZION does not promise](#what-zion-does-not-promise)
+10. [First step — today, in five minutes](#first-step--today-in-five-minutes)
+11. [Technical quickstart](#technical-quickstart)
+12. [Verifiable facts — summary](#verifiable-facts--summary)
+13. [For developers and further resources](#for-developers-and-further-resources)
 
 ---
 
@@ -88,6 +89,41 @@ This document is one entry point. The detailed truth lives in these sources:
 | Hard cap 144 billion ZION | `max_supply = 144_000_000_000`; premine 16.78 B (11.65 %), rest by mining | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5 |
 | No ICO / VIP access | Fair launch: no team `mint()`, no presale; genesis allocation is publicly listed in coinbase | [`12-Hodina-Pred-Destem.md`](./12-Hodina-Pred-Destem.md), Verifiable facts |
 | PoW: Ekam Deeksha / CosmicHarmony | Canonical algorithm in `V3/L1/cosmic-harmony`; six-phase pipeline Hiranyagarbha, Brahma, Yantra, Karma, Chit, Samadhi; LWMA 60 blocks, ±25 % clamp | [`OASIS_ONBOARDING.md`](./OASIS_ONBOARDING.md), Verifiable facts; [`V3/README.md`](../../../V3/README.md) |
+
+---
+
+## What is ZION today — root, trunk and crown
+
+The invitation to ZION often asks: what is *really* finished, what is being built, and what is just a distant direction? Here is the boundary, honestly marked:
+
+### Root — LIVE
+
+This can be checked today on the running network, in blocks, or in the repository:
+
+- **L1 Proof-of-Work blockchain** in Rust; target block time 60 s, consensus Ekam Deeksha / CosmicHarmony.
+- **Public genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`.
+- **Emission with a 144 billion ZION hard cap**, the 89/5/5/1 % split is in the consensus code.
+- **Open source MIT code** at `https://github.com/Zion-TerraNova/v3-Mainnet`.
+- **L2 on Base / EVM:** wZION, bridge, governance, treasury, staking, farm and atomic swap — addresses verifiable on Basescan.
+
+### Trunk — UNDER CONSTRUCTION
+
+It works, but it is not finished; details change and the status must be verified against the current release:
+
+- **Zion CLI** — unified interface for wallet, node, mining and configuration.
+- **L3 WARP, AI Native, NCL** — cross-chain and AI compute infrastructure.
+- **L4 Oasis** — visual game layer, XP, Consciousness Levels, avatars, quests and guilds. It is separated from L1 consensus: game activity does not change the reward for hashing work.
+- **Humanitarian flow** — the economic rule exists in consensus; transparent reporting of concrete impact is still unfolding.
+
+### Crown — HORIZON
+
+A direction that has space in the economic model, but is not today's product:
+
+- **Free World (L5):** communities and humanitarian missions with verifiable impact.
+- **Issobella (L6):** long-term orbital and open-science horizon.
+- **Golden Egg and the full Oasis game world:** the quest layer and story world have described parameters; complete implementation remains under construction.
+
+> **This division matters more than big words.** Live is tested, construction is tracked, the horizon must not be sold as a finished thing.
 
 ---
 
@@ -333,8 +369,9 @@ The ship is being built honestly, and honesty means saying this too:
 - ZION is **Mainnet Beta** — a live network, but young. Bugs happen and are fixed publicly.
 - **Nobody guarantees you profit or price.** This is not investment advice — it is an invitation to verify and participate.
 - **Your keys, your responsibility.** A lost key cannot be recovered by anyone.
+- **Bridges, smart contracts, wallets, mining software and third-party services** carry their own technical and security risks.
 - The game world Oasis and the Golden Egg are **still being built** — what is ready today and what is a plan is always honestly labeled in the documentation.
-- This document **is not a religious claim**. Characters and rituals are used as archetypes and literary images, not as a claim to the authority of any tradition.
+- **Religious and mythological figures** in this series are **literary archetypes**, not proof of ZION's religious authority, nor a call to replace faith with technology.
 - This document **is not a financial promise**. No part says "invest and get rich."
 
 Salt that knows it is salt — and does not call itself gold — is more trustworthy. That is why we write it this way.

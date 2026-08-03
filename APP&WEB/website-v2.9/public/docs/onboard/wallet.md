@@ -14,7 +14,8 @@ Pokud používáš desktopovou aplikaci:
 ## Vytvoření peněženky z příkazové řádky
 
 ```bash
-zion wallet create --name muj-wallet
+export ZION_WALLET_PASSWORD="tvé-silné-heslo"
+zion wallet new --out zion-wallet.json --password-env ZION_WALLET_PASSWORD
 ```
 
 ## Záloha seedu
@@ -27,10 +28,10 @@ zion wallet create --name muj-wallet
 
 ```bash
 # Zůstatek
-zion wallet balance --name muj-wallet
+zion wallet balance
 
 # Odeslání
-zion wallet send --from muj-wallet --to zion1qTVOJE_ADRESA --amount 1000
+zion wallet send --to zion1PRIKLADNA_ADRESA --amount 10.5 --memo "test"
 ```
 
 ## Bezpečnostní tipy

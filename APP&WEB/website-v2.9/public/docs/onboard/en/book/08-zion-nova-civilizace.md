@@ -168,7 +168,7 @@ For the person who wants proof first.
 
 - Read the technical whitepaper and compare it with the public repository.
 - Browse the explorer and watch whether blocks are actually being added.
-- Ask the community on Discord or via a GitHub issue. You will recognize a good answer not by its speed, but by its ability to say "I don't know" and point to a source.
+- Ask the community in the communication channels or via a GitHub issue. You will recognize a good answer not by its speed, but by its ability to say "I don't know" and point to a source.
 
 ## The Player's and Explorer's Path
 

@@ -168,7 +168,7 @@ Pro člověka, který chce nejdřív důkaz.
 
 - Přečti si technický whitepaper a porovnej ho s veřejným repozitářem.
 - Prohlédni si explorer a sleduj, zda bloky skutečně přibývají.
-- Zeptej se komunity na Discordu nebo přes GitHub issue. Dobrá odpověď nepoznáš podle toho, že je rychlá; poznáš ji podle toho, že umí říct „nevím“ a ukáže zdroj.
+- Zeptej se komunity v komunikačních kanálech nebo přes GitHub issue. Dobrá odpověď nepoznáš podle toho, že je rychlá; poznáš ji podle toho, že umí říct „nevím“ a ukáže zdroj.
 
 ## Cesta hráče a objevitele
 
