@@ -161,7 +161,7 @@ export default function Navigation() {
   /* Close on resize from mobile to desktop */
   useEffect(() => {
     const onResize = () => {
-      if (window.innerWidth >= 640) setIsOpen(false);
+      if (window.innerWidth >= 1024) setIsOpen(false);
     };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
@@ -214,7 +214,7 @@ export default function Navigation() {
           </Link>
 
           {/* 4 HERO icons — BIG, rasta colored, inline in main bar */}
-          <div className="flex items-center justify-center gap-1.5">
+          <div className="hidden lg:flex items-center justify-center gap-1.5">
             {heroIcons.map((ml) => {
               const isActive = navItemMatches(ml.href);
               return (
@@ -258,7 +258,7 @@ export default function Navigation() {
               target="_blank"
               rel="noreferrer"
               title="GitHub"
-              className={`inline-flex rounded-lg border border-zion-gold/30 bg-linear-to-br from-zion-gold/10 to-amber-600/8 items-center justify-center shadow-[0_0_10px_rgba(251,191,36,0.12)] hover:shadow-[0_0_18px_rgba(251,191,36,0.28)] hover:border-zion-gold/50 transition-all group relative ${scrolled ? 'p-1' : 'p-1.5'}`}
+              className={`hidden sm:inline-flex rounded-lg border border-zion-gold/30 bg-linear-to-br from-zion-gold/10 to-amber-600/8 items-center justify-center shadow-[0_0_10px_rgba(251,191,36,0.12)] hover:shadow-[0_0_18px_rgba(251,191,36,0.28)] hover:border-zion-gold/50 transition-all group relative ${scrolled ? 'p-1' : 'p-1.5'}`}
             >
               <Github className={`text-zion-gold transition-all duration-300 ${scrolled ? 'w-4 h-4' : 'w-3.5 h-3.5'}`} />
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-zion-gold/20 rounded px-2 py-0.5 text-zion-gold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">GitHub</span>
@@ -267,7 +267,7 @@ export default function Navigation() {
             <Link
               href="/dashboard"
               title={tr('nav', 'dashboard', lang)}
-              className={`rounded-lg border border-white/15 bg-black/85 inline-flex items-center justify-center shadow-[0_10px_28px_rgba(0,0,0,0.25)] transition-transform hover:-translate-y-0.5 hover:border-zion-gold/50 group relative ${scrolled ? 'p-1' : 'p-1.5'}`}
+              className={`hidden sm:inline-flex rounded-lg border border-white/15 bg-black/85 items-center justify-center shadow-[0_10px_28px_rgba(0,0,0,0.25)] transition-transform hover:-translate-y-0.5 hover:border-zion-gold/50 group relative ${scrolled ? 'p-1' : 'p-1.5'}`}
             >
               <LayoutDashboard className={`text-white transition-all duration-300 ${scrolled ? 'w-4 h-4' : 'w-3.5 h-3.5'}`} />
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">{tr('nav', 'dashboard', lang)}</span>
@@ -277,10 +277,10 @@ export default function Navigation() {
           {/* Mobile hamburger */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="text-white p-2 rounded-xl border border-white/20 bg-white/5 hover:border-white/40 active:scale-95 transition-all min-w-[40px] min-h-[40px] flex items-center justify-center"
+            className="text-white p-2 rounded-xl border border-white/20 bg-white/5 hover:border-white/40 active:scale-95 transition-all min-w-[40px] min-h-[40px] flex items-center justify-center lg:hidden"
             aria-label={isOpen ? tr('nav', 'close_menu', lang) : tr('nav', 'open_menu', lang)}
             aria-expanded={isOpen}
-            style={{ display: 'none' }}
+            
           >
             {isOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
@@ -288,7 +288,7 @@ export default function Navigation() {
         </div>
 
         {/* ═══ FLOOR 2 — TEXT MENU (group dropdowns) ═══ */}
-        <div className="flex items-center justify-center gap-2 relative rounded-full border border-white/[0.06] bg-black/25 backdrop-blur-md px-3 py-1 shadow-none transition-all duration-300 mt-1.5 h-auto opacity-100 overflow-visible">
+        <div className="hidden lg:flex items-center justify-center gap-2 relative rounded-full border border-white/[0.06] bg-black/25 backdrop-blur-md px-3 py-1 shadow-none transition-all duration-300 mt-1.5 h-auto opacity-100 overflow-visible">
           <div className="flex items-center gap-2 flex-1 justify-center overflow-x-auto no-scrollbar min-w-0">
             {/* Group dropdown buttons */}
             {navGroups.map((group) => {
@@ -365,7 +365,7 @@ export default function Navigation() {
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
               onClick={() => setIsOpen(false)}
               aria-hidden="true"
-              style={{ display: 'none' }}
+              
             />
             {/* Slide-in panel */}
             <div className="fixed top-0 right-0 bottom-0 w-[min(420px,94vw)] bg-black/95 backdrop-blur-xl border-l-2 border-zion-gold/30 z-50 overflow-y-auto overscroll-contain animate-[slideIn_0.25s_ease-out]" style={{ borderImage: 'linear-gradient(to bottom, rgba(16,185,129,0.4), rgba(251,191,36,0.5), rgba(239,68,68,0.4)) 1', display: 'none' }}>
@@ -449,7 +449,7 @@ export default function Navigation() {
                     {lang === 'cs' ? tr('nav', 'language_toggle_mobile_cs', lang) : tr('nav', 'language_toggle_mobile_en', lang)}
                   </button>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   <Link
                     href="/explorer"
                     onClick={() => setIsOpen(false)}

@@ -378,7 +378,7 @@ export default function MempoolPageClient() {
         </div>
 
         {/* search + table */}
-        <div className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+        <div className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-x-auto overflow-y-hidden" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
           {/* toolbar */}
           <div className="px-5 py-3 border-b border-white/6 flex items-center gap-3">
             <div className="flex-1 relative">
@@ -397,7 +397,7 @@ export default function MempoolPageClient() {
           </div>
 
           {/* table header */}
-          <div className="grid grid-cols-[32px_1fr_90px_100px_100px_120px] gap-3 px-5 py-3 border-b border-white/6">
+          <div className="grid grid-cols-[32px_1fr_90px_100px_100px_120px] min-w-[480px] gap-3 px-5 py-3 border-b border-white/6">
             <span />
             <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">
               TX Hash
@@ -453,7 +453,7 @@ export default function MempoolPageClient() {
               <Link
                 key={tx.tx_hash}
                 href={`/explorer/tx?hash=${encodeURIComponent(tx.tx_hash)}`}
-                className="grid grid-cols-[32px_1fr_90px_100px_100px_120px] gap-3 px-5 py-3 border-b border-white/3 hover:bg-white/2 transition-colors group"
+                className="grid grid-cols-[32px_1fr_90px_100px_100px_120px] min-w-[480px] gap-3 px-5 py-3 border-b border-white/3 hover:bg-white/2 transition-colors group"
               >
                 {/* status dot */}
                 <div className="flex items-center justify-center">

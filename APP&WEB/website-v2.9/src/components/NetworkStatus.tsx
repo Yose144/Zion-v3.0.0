@@ -219,7 +219,7 @@ export default function NetworkStatus({ className }: { className?: string }) {
           <div className="grid gap-3">
             {status.nodes.filter((n) => n.online).map((node) => (
               <div key={node.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
-                <div className="flex items-center gap-2 min-w-[140px]">
+                <div className="flex items-center gap-2 min-w-0 sm:min-w-[140px]">
                   <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                   <span className="text-sm text-white">{node.name}</span>
                 </div>

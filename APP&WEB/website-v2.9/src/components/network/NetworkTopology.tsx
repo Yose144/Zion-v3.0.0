@@ -722,7 +722,7 @@ export default function NetworkTopology() {
 
           {/* Tooltip */}
           {hovered && (
-            <div className="absolute top-2 left-2 z-10 bg-black/85 backdrop-blur border border-purple-400/20 rounded-xl p-3 text-xs space-y-1 min-w-[180px]">
+            <div className="absolute top-2 left-2 z-10 bg-black/85 backdrop-blur border border-purple-400/20 rounded-xl p-3 text-xs space-y-1 min-w-0 sm:min-w-[180px]">
               <p className="text-white font-semibold text-sm">{hovered.label}</p>
               <p className="text-gray-400 font-mono">{hovered.shortAddr}</p>
               <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 pt-1">

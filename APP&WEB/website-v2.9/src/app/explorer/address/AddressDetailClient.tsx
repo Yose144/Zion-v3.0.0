@@ -430,7 +430,7 @@ export default function AddressDetailClient() {
                     </div>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-4 flex-1 min-w-[260px]">
+                <div className="grid grid-cols-3 gap-4 flex-1 min-w-0 sm:min-w-[260px]">
                   <div>
                     <div className="flex items-center gap-1.5 mb-1">
                       <span className="w-2 h-2 rounded-full bg-emerald-400" />
@@ -517,7 +517,7 @@ export default function AddressDetailClient() {
         </div>
 
         {/* ── Transaction history table ──────────────────────── */}
-        <div ref={txListRef} className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden scroll-mt-8" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+        <div ref={txListRef} className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-x-auto overflow-y-hidden scroll-mt-8" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
           <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
             <h2 className="text-sm font-semibold text-white/70">
               {ExplorerAddressAddressDetailClientCopy.transactions[cs ? 'cs' : 'en']} ({data.transactions?.length ?? 0})
@@ -533,7 +533,7 @@ export default function AddressDetailClient() {
           </div>
 
           {/* table header */}
-          <div className="grid grid-cols-[70px_1fr_100px_90px_120px] gap-3 px-5 py-2.5 border-b border-white/[0.04]">
+          <div className="grid grid-cols-[70px_1fr_100px_90px_120px] min-w-[420px] gap-3 px-5 py-2.5 border-b border-white/[0.04]">
             <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerAddressAddressDetailClientCopy.type[cs ? 'cs' : 'en']}</span>
             <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">TX Hash</span>
             <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ExplorerAddressAddressDetailClientCopy.age[cs ? 'cs' : 'en']}</span>
@@ -559,7 +559,7 @@ export default function AddressDetailClient() {
                     <Link
                       key={t.tx_hash}
                       href={`/explorer/tx?hash=${encodeURIComponent(t.tx_hash)}`}
-                      className="grid grid-cols-[70px_1fr_100px_90px_120px] gap-3 px-5 py-3 border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors group"
+                      className="grid grid-cols-[70px_1fr_100px_90px_120px] min-w-[420px] gap-3 px-5 py-3 border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors group"
                     >
                       {/* type */}
                       <div className="flex items-center">
@@ -617,7 +617,7 @@ export default function AddressDetailClient() {
 
         {/* ── UTXO list (only for UTXO-model addresses) ────── */}
         {data.transaction_model === 'utxo' && (
-          <div className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden mt-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+          <div className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-x-auto overflow-y-hidden mt-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
             <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
               <h2 className="text-sm font-semibold text-white/70 flex items-center gap-2">
                 <Layers className="w-4 h-4 text-zion-cyan" />
@@ -629,7 +629,7 @@ export default function AddressDetailClient() {
             </div>
 
             {/* table header */}
-            <div className="grid grid-cols-[60px_1fr_80px_100px_100px] gap-3 px-5 py-2.5 border-b border-white/[0.04]">
+            <div className="grid grid-cols-[60px_1fr_80px_100px_100px] min-w-[340px] gap-3 px-5 py-2.5 border-b border-white/[0.04]">
               <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">#</span>
               <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">TX Hash</span>
               <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerAddressAddressDetailClientCopy.index[cs ? 'cs' : 'en']}</span>
@@ -646,7 +646,7 @@ export default function AddressDetailClient() {
                 <Link
                   key={`${u.tx_hash}_${u.output_index}`}
                   href={`/explorer/tx?hash=${encodeURIComponent(u.tx_hash)}`}
-                  className="grid grid-cols-[60px_1fr_80px_100px_100px] gap-3 px-5 py-3 border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors group"
+                  className="grid grid-cols-[60px_1fr_80px_100px_100px] min-w-[340px] gap-3 px-5 py-3 border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors group"
                 >
                   <div className="flex items-center text-[12px] text-white/40 tabular-nums">{idx + 1}</div>
                   <div className="flex items-center gap-2 min-w-0">
