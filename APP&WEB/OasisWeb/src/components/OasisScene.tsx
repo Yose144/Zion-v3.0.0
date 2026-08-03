@@ -23,6 +23,7 @@ import ShootingStars from './ShootingStars';
 import CameraCompassTracker from './CameraCompassTracker';
 import R3FErrorBoundary from './R3FErrorBoundary';
 import MobileTouchControls from './MobileTouchControls';
+import NovaZeme from './NovaZeme';
 import type { CompassData } from './Compass';
 
 interface CameraRigProps {
@@ -315,6 +316,11 @@ export default function OasisScene({
                 onWorldSelect={onWorldSelect}
                 isMobile={isMobile}
               />
+            </R3FErrorBoundary>
+
+            {/* Nova Zeme — centrální planeta s Issobelou na oběžné dráze */}
+            <R3FErrorBoundary label="NovaZeme">
+              <NovaZeme position={[0, -1, 8]} isMobile={isMobile} />
             </R3FErrorBoundary>
           </group>
         )}
