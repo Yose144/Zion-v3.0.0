@@ -136,3 +136,4 @@ rusqlite = { workspace = true }
 
 [dev-dependencies]
 hex = { workspace = true }
+tempfile = { workspace = true }
