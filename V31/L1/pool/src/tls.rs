@@ -7,8 +7,6 @@
 use std::sync::Arc;
 
 use anyhow::{Context, Result};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::TcpListener;
 use tokio_rustls::TlsAcceptor;
 
 /// Load a TLS server config from PEM-encoded cert and key files.

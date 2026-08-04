@@ -537,12 +537,10 @@ fn prefetch_next(pad: &[u8], index: usize, pass: u64, forward: bool, blocks: usi
         } else {
             return;
         }
+    } else if index > 0 {
+        index - 1
     } else {
-        if index > 0 {
-            index - 1
-        } else {
-            return;
-        }
+        return;
     };
 
     unsafe {
