@@ -368,7 +368,7 @@ export default function Navigation() {
               
             />
             {/* Slide-in panel */}
-            <div className="fixed top-0 right-0 bottom-0 w-[min(420px,94vw)] bg-black/95 backdrop-blur-xl border-l-2 border-zion-gold/30 z-50 overflow-y-auto overscroll-contain animate-[slideIn_0.25s_ease-out]" style={{ borderImage: 'linear-gradient(to bottom, rgba(16,185,129,0.4), rgba(251,191,36,0.5), rgba(239,68,68,0.4)) 1', display: 'none' }}>
+            <div className="fixed top-0 right-0 bottom-0 w-[min(420px,94vw)] bg-black/95 backdrop-blur-xl border-l-2 border-zion-gold/30 z-50 overflow-y-auto overscroll-contain animate-[slideIn_0.25s_ease-out]" style={{ borderImage: 'linear-gradient(to bottom, rgba(16,185,129,0.4), rgba(251,191,36,0.5), rgba(239,68,68,0.4)) 1' }}>
               <div className="flex items-center justify-between p-4 border-b border-white/10">
                 <span className="text-sm font-bold text-gradient">{tr('nav', 'menu_title', lang)}</span>
                 <button
