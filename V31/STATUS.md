@@ -221,7 +221,8 @@ Všechny V3 parity moduly zapojené do pool runtime (main.rs + stratum.rs).
 4. **PoC algoritmus** — `PocAlgorithm` vrací nyní bezpečně `Hash::default()`; aktivace až po governance.
 5. **30d continuous run / mainnet beta** — vyžaduje nasazený Edge node a monitoring.
 6. **Production cut-over V3 → V31** — viz [`PLAN_TO_3.1.md`](../PLAN_TO_3.1.md) Fáze D.
-7. **Security audit a chaos testy** — naplánováno v 3.0.9 / 3.1.0-beta.
+7. **macOS aarch64 release build** — `cargo build --release` OK, balíček `zion-macos-aarch64-3.1.0-alpha.2.tar.gz` (16 MB, SHA256) připraven v `V31/releases/macos-aarch64/`.
+8. **Security audit a chaos testy** — naplánováno v 3.0.9 / 3.1.0-beta.
 
 ## Edge staging E2E
 
@@ -236,6 +237,7 @@ Všechny V3 parity moduly zapojené do pool runtime (main.rs + stratum.rs).
 - **ZionDex Multi-Path ✅ COMPLETE** — Top-N routes, cross-chain bridge routing, /v1/swap/quote/multi endpoint. 562 multichain testů pass.
 - **Dashboard Metrics ✅ COMPLETE** — Pool metrics, service overview, multichain health, Prometheus parsing.
 - **Pool Runtime Wiring ✅ COMPLETE** — Notifier, RevenueScheduler, RevenueProxy zapojené. 2043 testů pass.
+- **macOS Release Build ✅ COMPLETE** — `cargo build --release` OK, balíček připraven, viz [`REPORT_2026-08-04_SESSION.md`](./REPORT_2026-08-04_SESSION.md).
 - **Fáze D zbývá:** Production hardening:
   - Non-EVM WARP kontrakty (Tron, Solana, Cosmos, ...)
   - Security audit + chaos testy (3.0.9 / 3.1.0-beta)
