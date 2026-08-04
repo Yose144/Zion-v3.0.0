@@ -15,7 +15,8 @@
 - pool stratum `62.171.141.136:8444` (V31)
 - `zion-miner` těží a submituje share ~800k H/s
 - `zion-multichain` `/health` 200 OK
-- 1945 testů pass, clippy clean
+- 2069 testů pass, `cargo clippy --workspace` čisté
+|- GPU backend port (CUDA/OpenCL/Metal/native) kompiluje v `zion-miner`
 
 **ALE:** `V31_V3_FULL_AUDIT.md` (2026-08-04) ukazuje, že V31 je stále **alpha-grade**. `PLAN_TO_3.1.md` tvrdí, že mnoho komponent je "complete", ale audit odhaluje, že "complete" znamená *zkopírované knihovní moduly*, nikoli *produkční funkcionalitu* v binárkách. Tento dokument sjednocuje oba zdroje a definuje reálný plán hardeningu.
 
@@ -227,7 +228,7 @@ Týden 6-8: [C8] Dashboard                — monitoring
 - V31 node syncuje V3 mainnet P2P (height 11270+, sync_lag 0).
 - V31 pool stratum běží na 8444 a akceptuje share.
 - V31 multichain `/health` a základní WARP bridge fungují.
-- V3 core modules 12/12 portovány, 1945 testů pass.
+- V3 core modules 12/12 portovány, 2069 testů pass.
 - V3 archivováno (`archive/V3/`, `archive/AuXpow/`, `archive/ZionDex/`).
 
 ### Odsunuto / explicitně vynecháno z 3.1.0
