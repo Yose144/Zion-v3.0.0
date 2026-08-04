@@ -238,7 +238,10 @@ Všechny V3 parity moduly zapojené do pool runtime (main.rs + stratum.rs).
 - **Dashboard Metrics ✅ COMPLETE** — Pool metrics, service overview, multichain health, Prometheus parsing.
 - **Pool Runtime Wiring ✅ COMPLETE** — Notifier, RevenueScheduler, RevenueProxy zapojené. 2043 testů pass.
 - **Multi-Platform Release Build ✅ COMPLETE** — macOS aarch64/x86_64, Linux x86_64 (musl), Windows x86_64. Všechny balíčky + SHA256 připraveny, draft release na GitHubu, viz [`REPORT_2026-08-04_SESSION.md`](./REPORT_2026-08-04_SESSION.md).
-- **Fáze D zbývá:** Production hardening:
+- **Release Runbook ✅ COMPLETE** — `V31/RELEASE_RUNBOOK.md`, `V31/30D_RUN_PLAN.md`, `V31/CHAOS_TEST_PLAN.md`.
+- **Public Subtree Sync ✅ COMPLETE** — `git subtree push --prefix=public public main` up-to-date.
+- **Fáze D — co zbývá pro mainnet beta:**
   - Non-EVM WARP kontrakty (Tron, Solana, Cosmos, ...)
   - Security audit + chaos testy (3.0.9 / 3.1.0-beta)
   - 30d continuous run / mainnet beta
+  - Publikace GitHub release z draftu
