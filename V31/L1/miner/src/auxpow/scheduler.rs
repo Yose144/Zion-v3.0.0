@@ -102,6 +102,34 @@ impl AuxPoWScheduler {
         self.router.entries()
     }
 
+    /// Set the active GPU coin and matching profile, if the coin is compatible.
+    pub fn set_gpu(&mut self, coin: ExternalCoin, profiles: &[CoinProfile]) {
+        if let Some(profile) = profiles
+            .iter()
+            .find(|p| p.coin == coin && p.enabled && p.device.is_compatible_with(Device::Gpu))
+        {
+            self.current_gpu = Some(coin);
+            self.profile_gpu = Some(profile.clone());
+        } else {
+            self.current_gpu = None;
+            self.profile_gpu = None;
+        }
+    }
+
+    /// Set the active CPU coin and matching profile, if the coin is compatible.
+    pub fn set_cpu(&mut self, coin: ExternalCoin, profiles: &[CoinProfile]) {
+        if let Some(profile) = profiles
+            .iter()
+            .find(|p| p.coin == coin && p.enabled && p.device.is_compatible_with(Device::Cpu))
+        {
+            self.current_cpu = Some(coin);
+            self.profile_cpu = Some(profile.clone());
+        } else {
+            self.current_cpu = None;
+            self.profile_cpu = None;
+        }
+    }
+
     /// Return the selected GPU coin and the primary stratum URL, if any.
     pub fn gpu_url(&self) -> (Option<ExternalCoin>, Option<&str>) {
         (

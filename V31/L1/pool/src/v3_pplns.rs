@@ -107,7 +107,7 @@ impl MinerRegistry {
 }
 
 /// Per-miner payout entry produced by [`PplnsEngine::compute_payouts`].
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PayoutEntry {
     pub miner_id: String,
     pub address: String,
@@ -928,6 +928,7 @@ impl PplnsEngine {
         PplnsStats {
             window_size: self.config.window_size,
             window_used: self.window.len(),
+            window_total_difficulty: self.window_total_difficulty,
             registered_miners,
             miners_with_unpaid,
             total_unpaid_flowers: total_unpaid,
@@ -979,6 +980,7 @@ impl PplnsEngine {
 pub struct PplnsStats {
     pub window_size: usize,
     pub window_used: usize,
+    pub window_total_difficulty: u128,
     pub registered_miners: usize,
     pub miners_with_unpaid: usize,
     pub total_unpaid_flowers: u128,

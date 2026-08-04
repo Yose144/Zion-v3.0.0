@@ -82,9 +82,29 @@ pub struct AutonomousProfitRouter {
     /// Hysteresis percentage (only switch if new coin is X% better).
     hysteresis_pct: f64,
     /// Whether autonomy is enabled.
-    enabled: bool,
+    pub enabled: bool,
     /// Decision log (for debugging).
     pub log: Vec<String>,
+}
+
+impl HardwareProfile {
+    /// A conservative default profile: assume a mid-range GPU if a GPU feature
+    /// is compiled in, otherwise CPU-only.
+    pub fn default_for_features() -> Self {
+        #[cfg(any(feature = "gpu-opencl", feature = "gpu-cuda", feature = "gpu-metal"))]
+        let (has_gpu, backend) = (true, "opencl".to_string());
+        #[cfg(not(any(feature = "gpu-opencl", feature = "gpu-cuda", feature = "gpu-metal")))]
+        let (has_gpu, backend) = (false, "cpu".to_string());
+
+        Self {
+            gpu_vram_bytes: 6 * 1024 * 1024 * 1024, // 6 GiB
+            gpu_backend: backend,
+            has_gpu,
+            cpu_has_aes: false,
+            cpu_has_avx2: false,
+            cpu_threads: num_cpus::get().max(1),
+        }
+    }
 }
 
 impl AutonomousProfitRouter {
@@ -94,15 +114,15 @@ impl AutonomousProfitRouter {
             .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
             .unwrap_or(false);
 
-        let fetch_interval_secs: u64 = std::env::var("ZION_PROFIT_INTERVAL")
-            .ok()
-            .and_then(|v| v.parse().ok())
-            .unwrap_or(300);
-
         let hysteresis_pct: f64 = std::env::var("ZION_PROFIT_HYSTERESIS")
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(15.0);
+
+        let fetch_interval_secs: u64 = std::env::var("ZION_PROFIT_INTERVAL")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(300);
 
         Self {
             hw,
@@ -121,6 +141,11 @@ impl AutonomousProfitRouter {
     /// Whether autonomous mode is enabled.
     pub fn is_enabled(&self) -> bool {
         self.enabled
+    }
+
+    /// Override the hysteresis percentage.
+    pub fn set_hysteresis(&mut self, pct: f64) {
+        self.hysteresis_pct = pct;
     }
 
     /// Get all GPU-compatible coins for this hardware.

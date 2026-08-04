@@ -91,7 +91,8 @@ pub struct PoolConfigFile {
     pub enabled: bool,
     pub port: u16,
     pub pool_fee_bps: u16,
-    pub pplns_window_shares: usize,
+    #[serde(default = "default_pplns_window_size")]
+    pub pplns_window_size: usize,
     pub pplns_window_blocks: u64,
     pub zion_target_hex: String,
     pub auxpow_target_hex: String,
@@ -102,6 +103,24 @@ pub struct PoolConfigFile {
     pub l1_rpc_url: Option<String>,
     #[serde(default)]
     pub state_path: Option<String>,
+    #[serde(default)]
+    pub min_payout_flowers: u64,
+    #[serde(default)]
+    pub humanitarian_address: String,
+    #[serde(default)]
+    pub issobella_address: String,
+    #[serde(default)]
+    pub pool_fee_address: String,
+    #[serde(default)]
+    pub api_key: Option<String>,
+    #[serde(default)]
+    pub admin_key: Option<String>,
+    #[serde(default)]
+    pub pool_wallet_key: Option<String>,
+    #[serde(default = "default_payout_interval_s")]
+    pub payout_interval_s: u64,
+    #[serde(default = "default_payout_tx_fee_flowers")]
+    pub payout_tx_fee_flowers: u64,
 }
 
 impl Default for PoolConfigFile {
@@ -110,7 +129,7 @@ impl Default for PoolConfigFile {
             enabled: false,
             port: 8444,
             pool_fee_bps: 100,
-            pplns_window_shares: 10000,
+            pplns_window_size: default_pplns_window_size(),
             pplns_window_blocks: 100,
             zion_target_hex: "ff".repeat(32),
             auxpow_target_hex: "ff".repeat(32),
@@ -120,6 +139,15 @@ impl Default for PoolConfigFile {
             password: String::new(),
             l1_rpc_url: None,
             state_path: None,
+            min_payout_flowers: zion_core::MIN_PAYOUT_AMOUNT,
+            humanitarian_address: String::new(),
+            issobella_address: String::new(),
+            pool_fee_address: String::new(),
+            api_key: None,
+            admin_key: None,
+            pool_wallet_key: None,
+            payout_interval_s: default_payout_interval_s(),
+            payout_tx_fee_flowers: default_payout_tx_fee_flowers(),
         }
     }
 }
@@ -130,7 +158,8 @@ impl PoolConfigFile {
         zion_pool::PoolConfig {
             port: self.port,
             pool_fee_bps: self.pool_fee_bps,
-            pplns_window_shares: self.pplns_window_shares,
+            pplns_window_size: self.pplns_window_size,
+            min_payout_flowers: self.min_payout_flowers,
             pplns_window_blocks: self.pplns_window_blocks,
             zion_target: hex_to_32(&self.zion_target_hex),
             auxpow_target: hex_to_32(&self.auxpow_target_hex),
@@ -140,8 +169,35 @@ impl PoolConfigFile {
             l1_rpc_url: self.l1_rpc_url.clone(),
             state_path: self.state_path.clone(),
             reconnect_rate_limit: Default::default(),
+            fee_config: zion_pool::v3_pplns::FeeConfig {
+                humanitarian_pct: 5,
+                issobella_pct: 5,
+                pool_fee_pct: u64::from(self.pool_fee_bps) / 100,
+                humanitarian_wallet: self.humanitarian_address.clone(),
+                issobella_wallet: self.issobella_address.clone(),
+                pool_fee_wallet: self.pool_fee_address.clone(),
+            },
+            api_key: self.api_key.clone(),
+            admin_key: self.admin_key.clone(),
+            humanitarian_address: self.humanitarian_address.clone(),
+            issobella_address: self.issobella_address.clone(),
+            pool_wallet_key: self.pool_wallet_key.clone(),
+            payout_interval_s: self.payout_interval_s,
+            payout_tx_fee_flowers: self.payout_tx_fee_flowers,
         }
     }
+}
+
+fn default_pplns_window_size() -> usize {
+    500_000
+}
+
+fn default_payout_interval_s() -> u64 {
+    30
+}
+
+fn default_payout_tx_fee_flowers() -> u64 {
+    zion_core::fee::MIN_TX_FEE.max(1)
 }
 
 fn hex_to_32(hex: &str) -> [u8; 32] {

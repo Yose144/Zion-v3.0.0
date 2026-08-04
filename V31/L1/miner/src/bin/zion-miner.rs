@@ -3,8 +3,9 @@
 //! Connects to a zion-pool stratum endpoint, fetches block templates,
 //! mines Ekam Deeksha PoW, and submits shares.
 
+use std::net::SocketAddr;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
 use anyhow::{Context, Result};
@@ -16,6 +17,7 @@ use tracing::{info, warn};
 
 use zion_core::{ConsensusEngine, HeightAwareDeeksha};
 use zion_cosmic_harmony::PowAlgorithm;
+use zion_miner::metrics::{serve, Metrics};
 
 #[derive(Parser, Debug)]
 #[command(name = "zion-miner")]
@@ -40,7 +42,12 @@ struct Args {
 
     /// Number of hash iterations before reconnect (0 = infinite).
     #[arg(short, long, default_value = "0")]
+    #[allow(dead_code)]
     loops: u64,
+
+    /// Address for the Prometheus metrics HTTP server.
+    #[arg(long, default_value = "127.0.0.1:9101")]
+    metrics: SocketAddr,
 }
 
 #[tokio::main]
@@ -48,17 +55,19 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
     let args = Args::parse();
 
+    let metrics = Metrics::new(&args.pool, "zion");
+    tokio::spawn(serve(metrics.clone(), args.metrics));
+
     info!(
         "zion-miner V31 starting — pool={}, wallet={}, worker={}, threads={}",
         args.pool, args.wallet, args.worker, args.threads
     );
 
-    let algorithm =
-        Arc::new(HeightAwareDeeksha::new()) as Arc<dyn PowAlgorithm>;
+    let algorithm = Arc::new(HeightAwareDeeksha::new()) as Arc<dyn PowAlgorithm>;
     let _consensus = Arc::new(ConsensusEngine::new(algorithm));
 
     loop {
-        match run_mining_session(&args).await {
+        match run_mining_session(&args, &metrics).await {
             Ok(()) => {
                 info!("mining session ended cleanly, reconnecting...");
             }
@@ -67,14 +76,11 @@ async fn main() -> Result<()> {
                 tokio::time::sleep(Duration::from_secs(10)).await;
             }
         }
-
-        if args.loops > 0 {
-            // For now, loops is not tracked precisely; just keep running.
-        }
+        metrics.inc_reconnects();
     }
 }
 
-async fn run_mining_session(args: &Args) -> Result<()> {
+async fn run_mining_session(args: &Args, metrics: &Metrics) -> Result<()> {
     let stream = TcpStream::connect(&args.pool)
         .await
         .with_context(|| format!("failed to connect to pool {}", args.pool))?;
@@ -114,10 +120,6 @@ async fn run_mining_session(args: &Args) -> Result<()> {
     info!("authorize response: {}", buf.trim());
 
     // Main loop: read mining.notify, mine, submit shares
-    let mut job_id = String::new();
-    let mut header_hex = String::new();
-    let mut target_hex = String::new();
-
     loop {
         buf.clear();
         let n = reader.read_line(&mut buf).await?;
@@ -130,30 +132,39 @@ async fn run_mining_session(args: &Args) -> Result<()> {
 
         // Skip responses to our submit/subscribe/authorize — we only care about notify
         if msg.get("method").is_none() {
-            // This is a response (has "id" but no "method") — log and continue
-            if let Some(result) = msg.get("result") {
-                if result.as_bool() == Some(true) {
-                    info!("share accepted by pool");
-                } else if result.as_bool() == Some(false) {
-                    warn!("share rejected by pool");
+            // Count share submit responses (ids >= 100) only.
+            let is_submit_response = msg
+                .get("id")
+                .and_then(|v| v.as_u64())
+                .is_some_and(|id| id >= 100);
+            if is_submit_response {
+                if let Some(result) = msg.get("result") {
+                    if result.as_bool() == Some(true) {
+                        info!("share accepted by pool");
+                        metrics.inc_accepted();
+                    } else if result.as_bool() == Some(false) {
+                        warn!("share rejected by pool");
+                        metrics.inc_rejected();
+                    }
                 }
             }
             continue;
         }
 
         if msg.get("method").and_then(|m| m.as_str()) == Some("mining.notify") {
+            metrics.inc_jobs();
             let params = msg.get("params").context("missing params in mining.notify")?;
-            job_id = params
+            let job_id = params
                 .get(0)
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
-            header_hex = params
+            let header_hex = params
                 .get(1)
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
-            target_hex = params
+            let target_hex = params
                 .get(2)
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
@@ -173,7 +184,7 @@ async fn run_mining_session(args: &Args) -> Result<()> {
             // Mine with timeout — new jobs will interrupt after max 60s
             let mine_result = tokio::time::timeout(
                 Duration::from_secs(60),
-                mine_and_submit(&mut writer, &job_id, &header_hex, &target_hex, args),
+                mine_and_submit(&mut writer, &job_id, &header_hex, &target_hex, args, metrics),
             ).await;
             match mine_result {
                 Ok(Ok(())) => info!("mining round complete for job {}", job_id),
@@ -190,6 +201,7 @@ async fn mine_and_submit(
     header_hex: &str,
     target_hex: &str,
     args: &Args,
+    metrics: &Metrics,
 ) -> Result<()> {
     let mut header = hex::decode(header_hex).context("invalid header hex")?;
     if header.len() < 80 {
@@ -216,8 +228,6 @@ async fn mine_and_submit(
 
     // Stop flag — set when a new job arrives (checked by main loop)
     let stop = Arc::new(AtomicBool::new(false));
-    let total_hashes = Arc::new(AtomicU64::new(0));
-    let start = Instant::now();
 
     let num_threads = args.threads.max(1);
     info!("mining with {} thread(s), job={}", num_threads, job_id);
@@ -226,7 +236,7 @@ async fn mine_and_submit(
     let stop_clone = stop.clone();
     let header_clone = header.clone();
     let target_clone = target.clone();
-    let total_hashes_clone = total_hashes.clone();
+    let metrics_clone = metrics.clone();
     let share_tx_clone = share_tx.clone();
 
     std::thread::spawn(move || {
@@ -237,7 +247,7 @@ async fn mine_and_submit(
                 let stop = stop_clone.clone();
                 let header = header_clone.clone();
                 let target = target_clone.clone();
-                let total_hashes = total_hashes_clone.clone();
+                let metrics = metrics_clone.clone();
                 let share_tx = share_tx_clone.clone();
                 let deeksha = &deeksha;
                 s.spawn(move || {
@@ -253,7 +263,7 @@ async fn mine_and_submit(
                         }
                         let hash = deeksha.hash(&local_header, nonce);
                         let hb: &[u8; 32] = hash.as_bytes();
-                        total_hashes.fetch_add(1, Ordering::Relaxed);
+                        metrics.record_hashes(1);
                         if hb <= &*target {
                             let _ = share_tx.send((nonce, *hb));
                         }
@@ -270,7 +280,7 @@ async fn mine_and_submit(
     loop {
         tokio::select! {
             Some((nonce, hash_bytes)) = share_rx.recv() => {
-                let hash_hex = hex::encode(&hash_bytes);
+                let hash_hex = hex::encode(hash_bytes);
                 let submit = serde_json::json!({
                     "id": 100 + found,
                     "method": "mining.submit",
@@ -290,14 +300,14 @@ async fn mine_and_submit(
                     job_id, nonce, &hash_hex[..16]
                 );
                 found += 1;
+                metrics.inc_submitted();
             }
             _ = tokio::time::sleep(Duration::from_secs(10)), if last_hr_log.elapsed() >= Duration::from_secs(10) => {
-                let hashes = total_hashes.load(Ordering::Relaxed);
-                let elapsed = start.elapsed().as_secs_f64().max(0.1);
-                let hr = hashes as f64 / elapsed;
+                let hashes = metrics.total_hashes();
+                let hr = metrics.hashrate();
                 info!(
-                    "mining... hashes={}, elapsed={:.0}s, hash_rate={:.0} H/s, shares={}",
-                    hashes, elapsed, hr, found
+                    "mining... hashes={}, hash_rate={:.0} H/s, shares={}",
+                    hashes, hr, found
                 );
                 last_hr_log = Instant::now();
             }

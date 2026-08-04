@@ -7,9 +7,9 @@ license.workspace = true
 description = "ZION L1 node core: blocks, transactions, consensus, storage, and chain state."
 
 [features]
-default = []
-# V3-compatible binaries that need ChainState/NodeRuntime (not yet ported).
-# Enable with: cargo build -p zion-core --features v3-binaries --bins
+default = ["v3-binaries"]
+# V3-compatible binaries that need ChainState/NodeRuntime.
+# Disable with: cargo build -p zion-core --no-default-features
 v3-binaries = []
 
 [[bin]]

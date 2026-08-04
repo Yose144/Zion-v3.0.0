@@ -17,6 +17,7 @@ use crate::credits::CreditsLedger;
 use crate::db::Db;
 use crate::error::{MultichainError, MultichainResult};
 use crate::swap::dex::{DexRouter, Pool, Quote};
+use crate::swap::htlc::HtlcSwap;
 use crate::types::Transfer;
 use crate::wallet::Keyring;
 use crate::warp::config::WarpConfig;
@@ -29,6 +30,7 @@ pub struct MultichainService {
     db: Arc<Mutex<Db>>,
     adapters: Arc<ChainAdapterRegistry>,
     bridge: Bridge,
+    htlc: HtlcSwap,
     keyring: Keyring,
     credits: CreditsLedger,
     dex: RwLock<DexRouter>,
@@ -78,6 +80,7 @@ impl MultichainService {
         keyring: Keyring,
     ) -> Self {
         let bridge = Bridge::new(Arc::clone(&adapters));
+        let htlc = HtlcSwap::with_db(Arc::clone(&adapters), Arc::clone(&db));
         let pool = config.pool.as_ref().and_then(|p| {
             if p.enabled {
                 Some(Arc::new(StdMutex::new(MiningPool::new(p.to_pool_config()))))
@@ -90,6 +93,7 @@ impl MultichainService {
             db,
             adapters,
             bridge,
+            htlc,
             keyring,
             credits: CreditsLedger::new(),
             dex: RwLock::new(DexRouter::new()),
@@ -242,6 +246,11 @@ impl MultichainService {
         self.bridge.submit(transfer).await
     }
 
+    /// Borrow the HTLC atomic-swap coordinator.
+    pub fn htlc(&self) -> &HtlcSwap {
+        &self.htlc
+    }
+
     /// Access the wallet keyring.
     pub fn keyring(&self) -> &Keyring {
         &self.keyring
@@ -312,7 +321,7 @@ impl MultichainService {
         };
 
         for payout in &payouts {
-            let key = (block_height, payout.address.encoded.clone());
+            let key = (block_height, payout.address.clone());
             {
                 let processed = self.processed_payouts.lock().unwrap();
                 if processed.contains(&key) {
@@ -320,33 +329,52 @@ impl MultichainService {
                 }
             }
 
-            if let Err(e) = self.credits.credit(&payout.address, payout.amount) {
+            let address = match Address::new(
+                ChainId::ZionL1,
+                payout.address.as_bytes().to_vec(),
+                &payout.address,
+            ) {
+                Ok(a) => a,
+                Err(e) => {
+                    tracing::warn!(
+                        "payout address invalid: block={} to={} amount={} error={}",
+                        block_height,
+                        payout.address,
+                        payout.amount,
+                        e
+                    );
+                    continue;
+                }
+            };
+            let amount = Amount::new(payout.amount as u128);
+
+            if let Err(e) = self.credits.credit(&address, amount) {
                 tracing::warn!(
                     "payout credit failed: block={} to={} amount={} error={}",
                     block_height,
-                    payout.address.encoded,
-                    payout.amount.0,
+                    payout.address,
+                    payout.amount,
                     e
                 );
                 continue;
             }
 
-            match adapter.send_payment(&payout.address, payout.amount).await {
+            match adapter.send_payment(&address, amount).await {
                 Ok(hash) => {
-                    if let Err(e) = self.credits.debit(&payout.address, payout.amount) {
+                    if let Err(e) = self.credits.debit(&address, amount) {
                         tracing::warn!(
                             "payout debit failed after settlement: block={} to={} amount={} error={}",
                             block_height,
-                            payout.address.encoded,
-                            payout.amount.0,
+                            payout.address,
+                            payout.amount,
                             e
                         );
                     }
                     tracing::info!(
                         "payout executed: block={} to={} amount={} tx={}",
                         block_height,
-                        payout.address.encoded,
-                        payout.amount.0,
+                        payout.address,
+                        payout.amount,
                         hash.to_hex()
                     );
                     self.processed_payouts.lock().unwrap().insert(key);
@@ -355,8 +383,8 @@ impl MultichainService {
                     tracing::warn!(
                         "payout settlement failed: block={} to={} amount={} error={}; credit retained",
                         block_height,
-                        payout.address.encoded,
-                        payout.amount.0,
+                        payout.address,
+                        payout.amount,
                         e
                     );
                 }
@@ -376,7 +404,7 @@ impl MultichainService {
             "accepted": accepted,
             "rejected": rejected,
             "pool_fee_bps": pool.config.pool_fee_bps,
-            "pplns_window_shares": pool.config.pplns_window_shares,
+            "pplns_window_size": pool.config.pplns_window_size,
             "pplns_window_blocks": pool.config.pplns_window_blocks,
             "pool_address": pool.config.pool_address.encoded,
         }))

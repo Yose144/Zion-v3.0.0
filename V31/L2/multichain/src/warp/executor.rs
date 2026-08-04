@@ -163,6 +163,7 @@ impl OutboundExecutor {
                     validator_id: id,
                     public_key: vec![],
                     signature: sig,
+                    warp_message_hash: hex::encode(warp_message.signing_hash()),
                 })
                 .collect();
 

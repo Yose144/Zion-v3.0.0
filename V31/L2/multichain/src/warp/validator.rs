@@ -20,6 +20,7 @@ pub struct WarpValidator {
 /// collects signatures from other validators via P2P gossip. For single-node
 /// Alpha deployments, all validator keys can be configured locally via
 /// `WARP_VALIDATOR_KEYS` env var (comma-separated 64-char hex private keys).
+#[derive(Debug, Clone)]
 pub struct WarpValidatorSet {
     validators: HashMap<String, WarpValidator>,
     /// Number of signatures required for quorum (default: 3 of 5)

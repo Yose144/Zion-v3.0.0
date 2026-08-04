@@ -19,6 +19,7 @@ zion-miner = { workspace = true, features = ["auxpow"] }
 anyhow = { workspace = true }
 chrono = { workspace = true }
 clap = { workspace = true }
+ed25519-dalek = { workspace = true }
 hex = { workspace = true }
 reqwest = { workspace = true }
 rusqlite = { workspace = true }
@@ -29,6 +30,11 @@ thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
+
+# TLS support (non-fatal — pool works without certs)
+tokio-rustls = "0.26"
+rustls = { version = "0.23", default-features = false, features = ["std", "ring"] }
+rustls-pemfile = "2"
 
 [dev-dependencies]
 tokio-test = "0.4"
