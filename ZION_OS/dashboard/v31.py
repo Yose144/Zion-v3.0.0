@@ -22,7 +22,10 @@ V31_DATA_DIR = REPO_ROOT / "data" / "v31"
 
 NODE_RPC_HOST = "127.0.0.1"
 NODE_RPC_PORT = 9445
-POOL_PORT = 8446
+POOL_PORT = 8444
+POOL_API_PORT = 8080
+MULTICHAIN_PORT = 8453
+DAO_PORT = 8081
 V3_STATE_FILE = REPO_ROOT / "data" / "state"
 SYNC_LOG = V31_DATA_DIR / "sync.log"
 SYNC_STATE_FILE = V31_DATA_DIR / "sync-state.json"
@@ -31,6 +34,18 @@ V31_DB_PATH = V31_DATA_DIR / "node.db"
 V31_CHECKPOINT = V31_DATA_DIR / "v3-checkpoint.json"
 
 SYSTEMD_SERVICE = "zion-v31-node.service"
+POOL_SERVICE = "zion-v31-pool.service"
+MINER_SERVICE = "zion-v31-miner.service"
+MULTICHAIN_SERVICE = "zion-v31-multichain.service"
+DAO_SERVICE = "zion-v31-dao.service"
+
+ALL_V31_SERVICES = [
+    ("node", SYSTEMD_SERVICE),
+    ("pool", POOL_SERVICE),
+    ("miner", MINER_SERVICE),
+    ("multichain", MULTICHAIN_SERVICE),
+    ("dao", DAO_SERVICE),
+]
 
 
 def _strip_ansi(s: str) -> str:
@@ -116,6 +131,95 @@ def _journalctl_logs(lines: int = 50) -> list:
         return ["[journalctl unavailable]"]
 
 
+def _http_get_json(host: str, port: int, path: str, timeout: float = 3.0):
+    """Fetch JSON from an HTTP endpoint."""
+    import urllib.request
+    url = f"http://{host}:{port}{path}"
+    try:
+        req = urllib.request.Request(url, method="GET")
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except Exception as e:
+        return {"_error": str(e)}
+
+
+def _all_service_status() -> list:
+    """Get systemd status for all V31 services."""
+    result = []
+    for name, unit in ALL_V31_SERVICES:
+        try:
+            r = subprocess.run(
+                ["systemctl", "show", unit,
+                 "--property=ActiveState,SubState,MainPID,MemoryCurrent"],
+                capture_output=True, text=True, timeout=3
+            )
+            props = {}
+            for line in r.stdout.strip().split("\n"):
+                if "=" in line:
+                    k, v = line.split("=", 1)
+                    props[k] = v
+            active = props.get("ActiveState", "unknown")
+            mem = props.get("MemoryCurrent", "")
+            try:
+                mem_mb = round(int(mem) / 1048576, 1) if mem and mem != "[not set]" else None
+            except (ValueError, TypeError):
+                mem_mb = None
+            result.append({
+                "name": name,
+                "unit": unit,
+                "active": active == "active",
+                "active_state": active,
+                "sub_state": props.get("SubState", "unknown"),
+                "pid": int(props.get("MainPID", 0)) or None,
+                "memory_mb": mem_mb,
+            })
+        except Exception as e:
+            result.append({
+                "name": name,
+                "unit": unit,
+                "active": False,
+                "active_state": "error",
+                "sub_state": str(e)[:60],
+                "pid": None,
+                "memory_mb": None,
+            })
+    return result
+
+
+def _pool_metrics() -> dict:
+    """Fetch pool metrics from the pool HTTP API."""
+    return _http_get_json("127.0.0.1", POOL_API_PORT, "/stats")
+
+
+def _pool_prometheus() -> dict:
+    """Fetch pool Prometheus metrics and parse key values."""
+    import urllib.request
+    url = f"http://127.0.0.1:{POOL_API_PORT}/metrics"
+    try:
+        req = urllib.request.Request(url, method="GET")
+        with urllib.request.urlopen(req, timeout=3.0) as resp:
+            text = resp.read().decode("utf-8")
+        metrics = {}
+        for line in text.strip().split("\n"):
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = line.split()
+            if len(parts) >= 2:
+                try:
+                    metrics[parts[0]] = float(parts[1])
+                except ValueError:
+                    pass
+        return metrics
+    except Exception as e:
+        return {"_error": str(e)}
+
+
+def _multichain_health() -> dict:
+    """Fetch multichain health."""
+    return _http_get_json("127.0.0.1", MULTICHAIN_PORT, "/health")
+
+
 def _detect_sync_mode(v3_height: int) -> str:
     if v3_height > 0:
         return "v3-p2p-sync"
@@ -183,6 +287,12 @@ def status():
         "pool_reachable": _probe_port("0.0.0.0", POOL_PORT),
         "pool_running": _probe_port("0.0.0.0", POOL_PORT),
         "pool_pid": None,
+        # All V31 services
+        "services": _all_service_status(),
+        # Pool metrics from HTTP API
+        "pool_metrics": _pool_metrics(),
+        # Multichain health
+        "multichain_health": _multichain_health(),
         # Chain status
         "v3_height": v3_ref_height,
         "db_height": db_tip["db_height"],
@@ -392,6 +502,22 @@ def handle_get(handler, route: str, params: dict):
 
     if route == "/api/v31/status":
         handler._json(status())
+        return True
+
+    if route == "/api/v31/services":
+        handler._json({"ok": True, "services": _all_service_status()})
+        return True
+
+    if route == "/api/v31/pool-metrics":
+        handler._json(_pool_metrics())
+        return True
+
+    if route == "/api/v31/pool-prometheus":
+        handler._json(_pool_prometheus())
+        return True
+
+    if route == "/api/v31/multichain-health":
+        handler._json(_multichain_health())
         return True
 
     if route == "/api/v31/logs":
