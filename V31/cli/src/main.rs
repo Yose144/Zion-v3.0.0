@@ -99,6 +99,45 @@ enum WalletCommand {
         #[arg(short, long, default_value = "0")]
         index: u32,
     },
+    /// Create a new ZION wallet file (Ed25519 keypair).
+    Create {
+        /// Output file path (default: ~/.zion/wallet.json).
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+        /// Overwrite if file exists.
+        #[arg(long)]
+        force: bool,
+    },
+    /// Load a wallet file and show its address.
+    Load {
+        /// Wallet file path (default: ~/.zion/wallet.json).
+        #[arg(short, long)]
+        path: Option<PathBuf>,
+    },
+    /// Send ZION from a wallet file to an address.
+    Send {
+        /// Wallet file path (default: ~/.zion/wallet.json).
+        #[arg(short, long)]
+        wallet: Option<PathBuf>,
+        /// Recipient address (zion1...).
+        #[arg(short, long)]
+        to: String,
+        /// Amount in ZION (not flowers).
+        #[arg(short, long)]
+        amount: f64,
+        /// Transaction fee in ZION (default: 0.01).
+        #[arg(short, long, default_value = "0.01")]
+        fee: f64,
+        /// Optional memo.
+        #[arg(short, long)]
+        memo: Option<String>,
+        /// L1 RPC URL (default: 127.0.0.1:9445).
+        #[arg(long, default_value = "127.0.0.1:9445")]
+        rpc: String,
+        /// Dry-run: build and sign but do not broadcast.
+        #[arg(long)]
+        dry_run: bool,
+    },
 }
 
 #[derive(Parser)]
@@ -324,6 +363,146 @@ async fn main() -> anyhow::Result<()> {
                 let chain_id = chain_name_to_id(&chain)?;
                 let sig = service.wallet_sign(chain_id, message.as_bytes(), account, index)?;
                 println!("0x{}", hex::encode(sig));
+            }
+            WalletCommand::Create { output, force } => {
+                let path = output.unwrap_or_else(|| {
+                    dirs::home_dir()
+                        .unwrap_or_else(|| PathBuf::from("."))
+                        .join(".zion")
+                        .join("wallet.json")
+                });
+                if path.exists() && !force {
+                    bail!("wallet file already exists: {} (use --force to overwrite)", path.display());
+                }
+                let (sk, pk) = zion_core::crypto::generate_keypair();
+                let address = zion_core::crypto::derive_address(&pk.to_bytes());
+                let sk_hex = zion_core::crypto::to_hex(&sk.to_bytes());
+                let pk_hex = zion_core::crypto::to_hex(&pk.to_bytes());
+
+                let wallet_json = serde_json::json!({
+                    "address": address,
+                    "public_key": pk_hex,
+                    "secret_key": sk_hex,
+                    "created_at": chrono::Utc::now().to_rfc3339(),
+                });
+
+                if let Some(parent) = path.parent() {
+                    std::fs::create_dir_all(parent)?;
+                }
+                std::fs::write(&path, serde_json::to_string_pretty(&wallet_json)?)?;
+                println!("Wallet created: {}", path.display());
+                println!("Address: {}", address);
+                println!("\nWARNING: Keep this file safe. Anyone with the secret key can spend your ZION.");
+            }
+            WalletCommand::Load { path } => {
+                let path = path.unwrap_or_else(|| {
+                    dirs::home_dir()
+                        .unwrap_or_else(|| PathBuf::from("."))
+                        .join(".zion")
+                        .join("wallet.json")
+                });
+                if !path.exists() {
+                    bail!("wallet file not found: {}", path.display());
+                }
+                let raw = std::fs::read_to_string(&path)?;
+                let wallet: serde_json::Value = serde_json::from_str(&raw)?;
+                let address = wallet["address"]
+                    .as_str()
+                    .ok_or_else(|| anyhow!("wallet file missing 'address' field"))?;
+                let public_key = wallet["public_key"]
+                    .as_str()
+                    .ok_or_else(|| anyhow!("wallet file missing 'public_key' field"))?;
+                println!("Wallet loaded: {}", path.display());
+                println!("Address:     {}", address);
+                println!("Public key:  {}", public_key);
+            }
+            WalletCommand::Send { wallet, to, amount, fee, memo, rpc, dry_run } => {
+                let wallet_path = wallet.unwrap_or_else(|| {
+                    dirs::home_dir()
+                        .unwrap_or_else(|| PathBuf::from("."))
+                        .join(".zion")
+                        .join("wallet.json")
+                });
+                if !wallet_path.exists() {
+                    bail!("wallet file not found: {}", wallet_path.display());
+                }
+                let raw = std::fs::read_to_string(&wallet_path)?;
+                let wallet_data: serde_json::Value = serde_json::from_str(&raw)?;
+                let sk_hex = wallet_data["secret_key"]
+                    .as_str()
+                    .ok_or_else(|| anyhow!("wallet file missing 'secret_key' field"))?;
+                let sender_address = wallet_data["address"]
+                    .as_str()
+                    .ok_or_else(|| anyhow!("wallet file missing 'address' field"))?;
+
+                // Reconstruct signing key
+                let sk_bytes = zion_core::crypto::from_hex(sk_hex)
+                    .ok_or_else(|| anyhow!("invalid secret key hex"))?;
+                if sk_bytes.len() != 32 {
+                    bail!("secret key must be 32 bytes, got {}", sk_bytes.len());
+                }
+                let mut sk_arr = [0u8; 32];
+                sk_arr.copy_from_slice(&sk_bytes);
+                let signing_key = ed25519_dalek::SigningKey::from_bytes(&sk_arr);
+
+                // Convert ZION to flowers (6 decimals)
+                let amount_flowers = (amount * 1_000_000.0) as u64;
+                let fee_flowers = (fee * 1_000_000.0) as u64;
+
+                println!("Sending {} ZION to {} (fee: {} ZION)", amount, to, fee);
+                println!("From: {}", sender_address);
+                if let Some(ref m) = memo {
+                    println!("Memo: {}", m);
+                }
+
+                if dry_run {
+                    println!("\n[Dry-run] Would build and sign transaction, but not broadcast.");
+                    println!("Amount: {} flowers", amount_flowers);
+                    println!("Fee:    {} flowers", fee_flowers);
+                    return Ok(());
+                }
+
+                // Fetch UTXOs from L1 RPC
+                let utxos = fetch_utxos(&rpc, sender_address).await?;
+                if utxos.is_empty() {
+                    bail!("no spendable UTXOs found for address {}", sender_address);
+                }
+
+                let total_available: u64 = utxos.iter().map(|u| u.amount).sum();
+                println!("Available: {} flowers ({} UTXOs)", total_available, utxos.len());
+
+                // Build and sign transaction
+                let params = zion_core::v3_wallet::SendParams {
+                    to_address: to.clone(),
+                    amount: amount_flowers,
+                    fee: fee_flowers,
+                    memo: memo.clone(),
+                };
+
+                let result = zion_core::v3_wallet::build_and_sign(
+                    &signing_key,
+                    sender_address,
+                    &params,
+                    &utxos,
+                    0, // chain tip height — TODO: fetch from RPC
+                ).map_err(|e| anyhow!("wallet error: {}", e))?;
+
+                println!("Transaction built and signed:");
+                println!("  Change: {} flowers", result.change_amount);
+                println!("  Inputs: {}", result.transaction.inputs.len());
+                println!("  Outputs: {}", result.transaction.outputs.len());
+
+                // Serialize transaction as JSON for RPC submission
+                let tx_json = serde_json::to_value(&result.transaction)
+                    .map_err(|e| anyhow!("failed to serialize transaction: {e}"))?;
+                let tx_id = hex::encode(result.transaction.calculate_hash());
+                println!("  TX hash: {}", tx_id);
+
+                // Submit to L1 RPC
+                match submit_tx_json(&rpc, &tx_json).await {
+                    Ok(result) => println!("Broadcast OK. Result: {}", result),
+                    Err(e) => bail!("broadcast failed: {}", e),
+                }
             }
         },
         Command::Bridge(bridge) => {
@@ -591,4 +770,90 @@ fn address_bytes(chain_id: &ChainId, encoded: &str) -> anyhow::Result<Vec<u8>> {
         }
         _ => Ok(vec![]),
     }
+}
+
+/// Fetch spendable UTXOs for an address from the L1 RPC.
+async fn fetch_utxos(
+    rpc_url: &str,
+    address: &str,
+) -> anyhow::Result<Vec<zion_core::v3_wallet::SpendableUtxo>> {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    use tokio::net::TcpStream;
+
+    let mut stream = TcpStream::connect(rpc_url).await?;
+    let request = serde_json::json!({
+        "jsonrpc": "2.0",
+        "method": "get_utxos",
+        "params": {"address": address},
+        "id": 1
+    });
+    let request_str = serde_json::to_string(&request)?;
+    stream.write_all(request_str.as_bytes()).await?;
+    stream.write_all(b"\n").await?;
+    stream.flush().await?;
+
+    let mut buf = Vec::new();
+    stream.read_to_end(&mut buf).await?;
+    let response: serde_json::Value = serde_json::from_slice(&buf)?;
+
+    let utxos = response["result"]["utxos"]
+        .as_array()
+        .ok_or_else(|| anyhow!("no utxos field in RPC response"))?;
+
+    let result: Vec<zion_core::v3_wallet::SpendableUtxo> = utxos
+        .iter()
+        .filter_map(|u| {
+            let tx_hash_hex = u["tx_hash"].as_str()?;
+            let output_index = u["output_index"].as_u64()? as u32;
+            let amount = u["amount"].as_u64()?;
+            let tx_hash = hex::decode(tx_hash_hex).ok()?;
+            if tx_hash.len() != 32 {
+                return None;
+            }
+            let mut hash_arr = [0u8; 32];
+            hash_arr.copy_from_slice(&tx_hash);
+            Some(zion_core::v3_wallet::SpendableUtxo {
+                tx_hash: hash_arr,
+                output_index,
+                amount,
+                address: address.to_string(),
+            })
+        })
+        .collect();
+
+    Ok(result)
+}
+
+/// Submit a signed transaction (as JSON) to the L1 RPC.
+async fn submit_tx_json(rpc_url: &str, tx_json: &serde_json::Value) -> anyhow::Result<String> {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    use tokio::net::TcpStream;
+
+    let mut stream = TcpStream::connect(rpc_url).await?;
+    let request = serde_json::json!({
+        "jsonrpc": "2.0",
+        "method": "submitTransaction",
+        "params": tx_json,
+        "id": 1
+    });
+    let request_str = serde_json::to_string(&request)?;
+    stream.write_all(request_str.as_bytes()).await?;
+    stream.write_all(b"\n").await?;
+    stream.flush().await?;
+
+    let mut buf = Vec::new();
+    stream.read_to_end(&mut buf).await?;
+    let response: serde_json::Value = serde_json::from_slice(&buf)?;
+
+    if let Some(err) = response["error"].as_str() {
+        bail!("RPC error: {}", err);
+    }
+    if let Some(err) = response["error"]["message"].as_str() {
+        bail!("RPC error: {}", err);
+    }
+
+    let result = response["result"]
+        .to_string();
+
+    Ok(result)
 }
