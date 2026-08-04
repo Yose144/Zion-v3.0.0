@@ -209,9 +209,9 @@ async fn mine_and_submit(
                 "params": [
                     format!("{}.{}", args.wallet, args.worker),
                     job_id,
-                    format!("{:08x}", nonce as u32),
-                    "00000000",
-                    "00000000"
+                    "00000000",  // extranonce2
+                    "00000000",  // ntime
+                    format!("{:08x}", nonce as u32)  // nonce (last = nonce for pool)
                 ]
             });
             let line = format!("{}\n", submit);
