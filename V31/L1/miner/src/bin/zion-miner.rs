@@ -4,12 +4,14 @@
 //! mines Ekam Deeksha PoW, and submits shares.
 
 use std::sync::Arc;
-use std::time::Duration;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::time::{Duration, Instant};
 
 use anyhow::{Context, Result};
 use clap::Parser;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
+use tokio::sync::mpsc;
 use tracing::{info, warn};
 
 use zion_core::{ConsensusEngine, HeightAwareDeeksha};
@@ -168,8 +170,16 @@ async fn run_mining_session(args: &Args) -> Result<()> {
                 }
             );
 
-            // Simple CPU mining: iterate nonces
-            mine_and_submit(&mut writer, &job_id, &header_hex, &target_hex, args).await?;
+            // Mine with timeout — new jobs will interrupt after max 60s
+            let mine_result = tokio::time::timeout(
+                Duration::from_secs(60),
+                mine_and_submit(&mut writer, &job_id, &header_hex, &target_hex, args),
+            ).await;
+            match mine_result {
+                Ok(Ok(())) => info!("mining round complete for job {}", job_id),
+                Ok(Err(e)) => return Err(e),
+                Err(_) => info!("mining round timed out (60s), waiting for next job"),
+            }
         }
     }
 }
@@ -191,63 +201,110 @@ async fn mine_and_submit(
     let mut target = [0u8; 32];
     if target_bytes.len() == 32 {
         target.copy_from_slice(&target_bytes);
-    } else if target_bytes.len() > 0 {
-        // Pad or truncate as needed
+    } else if !target_bytes.is_empty() {
         let len = target_bytes.len().min(32);
         target[..len].copy_from_slice(&target_bytes[..len]);
     }
-    // target is big-endian: hash <= target means hash bytes <= target bytes lexicographically
 
-    // Use HeightAwareDeeksha — the canonical ZION PoW algorithm
-    let deeksha = HeightAwareDeeksha::new();
+    let header = Arc::new(header);
+    let target = Arc::new(target);
+    let job_id = job_id.to_string();
+    let wallet_worker = format!("{}.{}", args.wallet, args.worker);
 
-    let start = std::time::Instant::now();
+    // Channel: mining threads → async writer (found shares)
+    let (share_tx, mut share_rx) = mpsc::unbounded_channel::<(u64, [u8; 32])>();
+
+    // Stop flag — set when a new job arrives (checked by main loop)
+    let stop = Arc::new(AtomicBool::new(false));
+    let total_hashes = Arc::new(AtomicU64::new(0));
+    let start = Instant::now();
+
+    let num_threads = args.threads.max(1);
+    info!("mining with {} thread(s), job={}", num_threads, job_id);
+
+    // Spawn mining threads (sync, CPU-bound)
+    let stop_clone = stop.clone();
+    let header_clone = header.clone();
+    let target_clone = target.clone();
+    let total_hashes_clone = total_hashes.clone();
+    let share_tx_clone = share_tx.clone();
+
+    std::thread::spawn(move || {
+        let deeksha = HeightAwareDeeksha::new();
+        let chunk = 1_000_000u64 / num_threads as u64;
+        std::thread::scope(|s| {
+            for tid in 0..num_threads {
+                let stop = stop_clone.clone();
+                let header = header_clone.clone();
+                let target = target_clone.clone();
+                let total_hashes = total_hashes_clone.clone();
+                let share_tx = share_tx_clone.clone();
+                let deeksha = &deeksha;
+                s.spawn(move || {
+                    let base = tid as u64 * chunk;
+                    let end = base + chunk;
+                    let mut local_header = (*header).clone();
+                    for nonce in base..end {
+                        if stop.load(Ordering::Relaxed) {
+                            return;
+                        }
+                        if local_header.len() >= 80 {
+                            local_header[76..80].copy_from_slice(&(nonce as u32).to_le_bytes());
+                        }
+                        let hash = deeksha.hash(&local_header, nonce);
+                        let hb: &[u8; 32] = hash.as_bytes();
+                        total_hashes.fetch_add(1, Ordering::Relaxed);
+                        if hb <= &*target {
+                            let _ = share_tx.send((nonce, *hb));
+                        }
+                    }
+                });
+            }
+        });
+    });
+
+    // Async: receive found shares and submit to pool
     let mut found = 0u64;
+    let mut last_hr_log = Instant::now();
 
-    for nonce in 0..1_000_000u64 {
-        // Write nonce into header (bytes 76-80, little-endian u32)
-        if header.len() >= 80 {
-            header[76..80].copy_from_slice(&(nonce as u32).to_le_bytes());
+    loop {
+        tokio::select! {
+            Some((nonce, hash_bytes)) = share_rx.recv() => {
+                let hash_hex = hex::encode(&hash_bytes);
+                let submit = serde_json::json!({
+                    "id": 100 + found,
+                    "method": "mining.submit",
+                    "params": [
+                        &wallet_worker,
+                        &job_id,
+                        "00000000",
+                        "00000000",
+                        format!("{:08x}", nonce as u32)
+                    ]
+                });
+                let line = format!("{}\n", submit);
+                writer.write_all(line.as_bytes()).await?;
+                writer.flush().await?;
+                info!(
+                    "share submitted — job={}, nonce={}, hash={}",
+                    job_id, nonce, &hash_hex[..16]
+                );
+                found += 1;
+            }
+            _ = tokio::time::sleep(Duration::from_secs(10)), if last_hr_log.elapsed() >= Duration::from_secs(10) => {
+                let hashes = total_hashes.load(Ordering::Relaxed);
+                let elapsed = start.elapsed().as_secs_f64().max(0.1);
+                let hr = hashes as f64 / elapsed;
+                info!(
+                    "mining... hashes={}, elapsed={:.0}s, hash_rate={:.0} H/s, shares={}",
+                    hashes, elapsed, hr, found
+                );
+                last_hr_log = Instant::now();
+            }
         }
 
-        // Ekam Deeksha PoW hash (height-aware: picks deeksha_lite / deeksha_chv3 / deeksha_lite_fire based on height)
-        let hash = deeksha.hash(&header, nonce);
-        let hash_bytes: &[u8; 32] = hash.as_bytes();
-
-        // Check if hash meets target: hash <= target (big-endian comparison)
-        let meets = hash_bytes <= &target;
-
-        if meets {
-            let hash_hex = hex::encode(hash_bytes);
-            let submit = serde_json::json!({
-                "id": 100 + found,
-                "method": "mining.submit",
-                "params": [
-                    format!("{}.{}", args.wallet, args.worker),
-                    job_id,
-                    "00000000",  // extranonce2
-                    "00000000",  // ntime
-                    format!("{:08x}", nonce as u32)  // nonce (last = nonce for pool)
-                ]
-            });
-            let line = format!("{}\n", submit);
-            writer.write_all(line.as_bytes()).await?;
-            writer.flush().await?;
-            info!(
-                "share submitted — job={}, nonce={}, hash={}",
-                job_id, nonce, &hash_hex[..16]
-            );
-            found += 1;
-            // Don't break — keep mining for more shares on this job
-        }
-
-        if nonce % 100_000 == 0 && nonce > 0 {
-            info!(
-                "mining... nonce={}, elapsed={}ms, hash_rate={:.0} H/s",
-                nonce,
-                start.elapsed().as_millis(),
-                nonce as f64 / start.elapsed().as_secs_f64()
-            );
+        if stop.load(Ordering::Relaxed) {
+            break;
         }
     }
 
