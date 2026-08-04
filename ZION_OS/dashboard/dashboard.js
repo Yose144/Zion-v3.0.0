@@ -5231,9 +5231,22 @@ async function loadMempool(){
 
 async function loadMonitoringStatus(){
   try {
-    const data = await apiFetch('/api/monitoring/status');
-    const pm = data.pool_metrics || data.prometheus || {};
-    const bic = data.built_in_charts || data.grafana || {};
+    // V31: use /api/status instead of V3 Prometheus endpoint
+    const sd = window.currentStatus || await fetch('/api/status').then(r => r.json()).catch(() => ({}));
+    const v31p = sd.v31_pool || {};
+    const v31m = sd.v31_miner || {};
+    const pm = {
+      alive: v31p.running || false,
+      active_sessions: v31m.running ? 1 : 0,
+      miners_tracked: v31p.jobs_broadcast ?? '—',
+      accepted: v31p.shares_accepted ?? null,
+      rejected: 0,
+      blocks_found: 0,
+      submits: v31m.shares_submitted ?? null,
+      shares: v31p.shares_accepted ?? null,
+      hashrate: v31m.hashrate ? (v31m.hashrate >= 1000 ? (v31m.hashrate/1000).toFixed(1) + ' kH/s' : v31m.hashrate + ' H/s') : '—',
+    };
+    const bic = { alive: true }; // Built-in charts always available
 
     // Badge
     const badge = document.getElementById('monitoring-status-badge');
