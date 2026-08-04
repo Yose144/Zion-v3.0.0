@@ -39,7 +39,7 @@ const CATEGORY_COLORS: Record<WorldCategory, string> = {
 
 export default function OasisClient() {
   const [mounted, setMounted] = useState(false);
-  const [phase, setPhase] = useState<'intro' | 'warp' | 'arrival' | 'rite' | 'scene'>('intro');
+  const [phase, setPhase] = useState<'intro' | 'stargate' | 'arrival' | 'rite' | 'scene'>('intro');
   const [activeCategories, setActiveCategories] = useState<WorldCategory[]>(ALL_CATEGORIES);
   const [activeLayers, setActiveLayers] = useState<WorldLayer[]>(ALL_LAYERS);
   const [selectedWorld, setSelectedWorld] = useState<World | null>(null);
@@ -112,9 +112,9 @@ export default function OasisClient() {
   }, []);
 
   // Auto-hide panels when user interacts with 3D scene (scroll/drag/touch)
-  // Panels return after 2.5s of inactivity. Doesn't affect flight mode, intro, or warp.
+  // Panels return after 2.5s of inactivity. Doesn't affect flight mode, intro, or stargate.
   useEffect(() => {
-    if (phase === 'intro' || phase === 'warp' || flightMode) return;
+    if (phase === 'intro' || phase === 'stargate' || flightMode) return;
     const canvas = document.querySelector('canvas');
     if (!canvas) return;
 
@@ -168,7 +168,7 @@ export default function OasisClient() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (phase === 'intro' || phase === 'warp') return;
+      if (phase === 'intro' || phase === 'stargate') return;
       if (e.key.toLowerCase() === 'h') {
         setUiHidden((h) => !h);
         return;
@@ -202,11 +202,13 @@ export default function OasisClient() {
     );
   }
 
-  const handleBabylonEnter = () => {
-    setPhase('warp');
+  const handleEnter = () => {
+    // WarpIntro done → go to Babylon stargate
+    setPhase('stargate');
   };
 
-  const handleEnter = () => {
+  const handleStargateEnter = () => {
+    // Babylon stargate done → warp to arrival
     start();
     playWarp();
     setPhase('arrival');
@@ -421,8 +423,8 @@ export default function OasisClient() {
       </div>
 
       <AnimatePresence mode="wait">
-        {phase === 'intro' && <BabylonIntro onEnter={handleBabylonEnter} />}
-        {phase === 'warp' && <WarpIntro onEnter={handleEnter} />}
+        {phase === 'intro' && <WarpIntro onEnter={handleEnter} />}
+        {phase === 'stargate' && <BabylonIntro onEnter={handleStargateEnter} />}
       </AnimatePresence>
 
       <WarpFlash active={warping} worldName={selectedWorld?.name} />
