@@ -72,7 +72,6 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} ${jetbrains.variable} antialiased text-white w-full`} style={{ maxWidth: '100%', overflowX: 'hidden', background: 'transparent' }}>
         <ServiceWorkerRegistration />
-        <PerformanceShell />
         <GlobalErrorBoundary>
           <ThemeProvider>
             <ObservatoryProvider>
@@ -80,6 +79,7 @@ export default function RootLayout({
                 <WalletProvider>
                   <ZionWalletProvider>
                     <AuthProvider>
+                    <PerformanceShell />
                     <BackgroundToggle />
                     <div className="relative z-10 overflow-x-clip w-full">
                       <AlohaOverlay />
