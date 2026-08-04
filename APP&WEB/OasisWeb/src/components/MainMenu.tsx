@@ -187,13 +187,13 @@ export default function MainMenu({
                   color="text-gray-300"
                   onClick={onToggleUiHidden}
                 />
-                <Link href="/dashboard" onClick={onClose} className="contents">
-                  <QuickAction
-                    icon={LogIn}
-                    label="Game"
-                    color="text-oasis-emerald"
-                  />
-                </Link>
+                <QuickAction
+                  icon={LogIn}
+                  label="Game"
+                  color="text-oasis-emerald"
+                  href="/dashboard"
+                  onClick={onClose}
+                />
               </div>
             </motion.div>
           </>
@@ -216,16 +216,27 @@ function QuickAction({
   label,
   color,
   onClick,
+  href,
 }: {
   icon: typeof Plane;
   label: string;
   color: string;
   onClick?: () => void;
+  href?: string;
 }) {
+  const className = `flex flex-col items-center gap-0.5 rounded-lg border border-white/5 bg-white/[0.03] py-2 text-[9px] font-semibold transition hover:bg-white/10 ${color}`;
+  if (href) {
+    return (
+      <Link href={href} onClick={onClick} className={className}>
+        <Icon className="h-4 w-4" />
+        {label}
+      </Link>
+    );
+  }
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center gap-0.5 rounded-lg border border-white/5 bg-white/[0.03] py-2 text-[9px] font-semibold transition hover:bg-white/10 ${color}`}
+      className={className}
     >
       <Icon className="h-4 w-4" />
       {label}

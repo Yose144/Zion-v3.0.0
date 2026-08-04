@@ -128,8 +128,32 @@ export default function BabylonIntro({ onEnter }: BabylonIntroProps) {
 
     // GUI
     const uiTexture = AdvancedDynamicTexture.CreateFullscreenUI('ui');
-    const enterBtn = Button.CreateSimpleButton('enterBtn', 'Enter OASIS');
-    enterBtn.width = '220px';
+
+    const title = new TextBlock('title');
+    title.text = 'Stargate · Threshold';
+    title.color = 'white';
+    title.fontSize = '24px';
+    title.fontFamily = 'Inter, ui-sans-serif, system-ui';
+    title.fontWeight = 'bold';
+    title.top = '-42%';
+    title.shadowColor = 'rgba(6,182,212,0.8)';
+    title.shadowBlur = 24;
+    uiTexture.addControl(title);
+
+    const subtitle = new TextBlock('subtitle');
+    subtitle.text = 'At the gate to Oasis stand two priestesses — Radha and Elizabeth. One holds salt and honey; the other, a lantern of the future.';
+    subtitle.color = 'rgba(255,255,255,0.65)';
+    subtitle.fontSize = '13px';
+    subtitle.fontFamily = 'Inter, ui-sans-serif, system-ui';
+    subtitle.top = '-33%';
+    subtitle.width = '320px';
+    subtitle.height = '80px';
+    subtitle.textWrapping = true;
+    subtitle.textHorizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_CENTER;
+    uiTexture.addControl(subtitle);
+
+    const enterBtn = Button.CreateSimpleButton('enterBtn', 'Cross the Threshold');
+    enterBtn.width = '240px';
     enterBtn.height = '54px';
     enterBtn.color = 'white';
     enterBtn.fontSize = '16px';
@@ -153,14 +177,6 @@ export default function BabylonIntro({ onEnter }: BabylonIntroProps) {
       setWarping(true);
     });
     uiTexture.addControl(enterBtn);
-
-    const subtitle = new TextBlock('subtitle');
-    subtitle.text = 'Nova Zeme · L5 · Terra Nova OASIS';
-    subtitle.color = 'rgba(255,255,255,0.6)';
-    subtitle.fontSize = '13px';
-    subtitle.fontFamily = 'Inter, ui-sans-serif, system-ui';
-    subtitle.top = '45%';
-    uiTexture.addControl(subtitle);
 
     const hint = new TextBlock('hint');
     hint.text = 'Drag to rotate · Scroll to zoom';
