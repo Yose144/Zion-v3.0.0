@@ -109,7 +109,7 @@ ff2b88403 2026-07-27 feat(v31): TCP stratum server with mining.notify broadcast
 
 - **Git rev:** `0964d2599`
 - **Adresář:** `V31/releases/` (v `.gitignore`, necommituje se)
-- **Draft GitHub Release:** <https://github.com/Yose144/Zion-v3.0.0/releases/tag/untagged-80ec615cbeb9fc257f91>
+- **Draft GitHub Release:** <https://github.com/Yose144/Zion-v3.0.0/releases/tag/untagged-a1bca2e3178bdba93476>
 
 ---
 
