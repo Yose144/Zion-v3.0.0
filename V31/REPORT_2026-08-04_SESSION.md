@@ -116,8 +116,9 @@ ff2b88403 2026-07-27 feat(v31): TCP stratum server with mining.notify broadcast
 ## 4. Stav testů
 
 - `cargo test -p zion-pool vardiff` ✅ 6/6
-- Předchozí `cargo test --workspace` ✅ 2043 testů, 0 failures
+- `cargo test --workspace` ✅ 2043 testů, 0 failures
 - `cargo build --release` ✅ dokončeno
+- `cargo clippy --workspace` ✅ clean
 - `python3 -m py_compile ZION_OS/dashboard/{v31.py,app.py}` ✅
 - JSON validace `nodes.json`, `services.json` ✅
 
