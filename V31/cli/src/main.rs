@@ -53,6 +53,8 @@ enum Command {
     Api,
     /// Start the ZION L1 node.
     Node(NodeArgs),
+    /// Manage V31 systemd services (start/stop/status/restart).
+    Service(ServiceArgs),
 }
 
 #[derive(Parser)]
@@ -154,6 +156,49 @@ enum PoolCommand {
     Payouts,
     /// Show pool share statistics (same as status).
     Shares,
+}
+
+#[derive(Parser)]
+struct ServiceArgs {
+    #[command(subcommand)]
+    command: ServiceCommand,
+}
+
+#[derive(Subcommand)]
+enum ServiceCommand {
+    /// Start one or all V31 services.
+    Start {
+        /// Service name (node, pool, miner, multichain, dao, all). Default: all.
+        #[arg(default_value = "all")]
+        service: String,
+    },
+    /// Stop one or all V31 services.
+    Stop {
+        /// Service name (node, pool, miner, multichain, dao, all). Default: all.
+        #[arg(default_value = "all")]
+        service: String,
+    },
+    /// Restart one or all V31 services.
+    Restart {
+        /// Service name (node, pool, miner, multichain, dao, all). Default: all.
+        #[arg(default_value = "all")]
+        service: String,
+    },
+    /// Show status of one or all V31 services.
+    Status {
+        /// Service name (node, pool, miner, multichain, dao, all). Default: all.
+        #[arg(default_value = "all")]
+        service: String,
+    },
+    /// Show recent logs for a service.
+    Logs {
+        /// Service name (node, pool, miner, multichain, dao).
+        #[arg()]
+        service: String,
+        /// Number of lines to show (default: 50).
+        #[arg(short, long, default_value = "50")]
+        lines: usize,
+    },
 }
 
 #[derive(Parser)]
@@ -697,6 +742,7 @@ async fn main() -> anyhow::Result<()> {
 
             node.run(shutdown_rx).await?;
         }
+        Command::Service(svc) => handle_service_command(svc)?,
     }
 
     Ok(())
@@ -852,8 +898,120 @@ async fn submit_tx_json(rpc_url: &str, tx_json: &serde_json::Value) -> anyhow::R
         bail!("RPC error: {}", err);
     }
 
-    let result = response["result"]
-        .to_string();
-
+    let result = response["result"].to_string();
     Ok(result)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Service lifecycle management (systemd)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Map a service name to its systemd unit name.
+fn service_unit(name: &str) -> anyhow::Result<String> {
+    let unit = match name.to_lowercase().as_str() {
+        "node" | "l1" => "zion-v31-node.service",
+        "pool" => "zion-v31-pool.service",
+        "miner" => "zion-v31-miner.service",
+        "multichain" | "mc" => "zion-v31-multichain.service",
+        "dao" => "zion-v31-dao.service",
+        "all" => "all",
+        other => bail!("unknown service: {} (valid: node, pool, miner, multichain, dao, all)", other),
+    };
+    Ok(unit.to_string())
+}
+
+/// All V31 service unit names.
+const ALL_SERVICES: &[&str] = &[
+    "zion-v31-node.service",
+    "zion-v31-pool.service",
+    "zion-v31-miner.service",
+    "zion-v31-multichain.service",
+    "zion-v31-dao.service",
+];
+
+/// Run systemctl on one or all services.
+fn systemctl_all(action: &str, service: &str) -> anyhow::Result<()> {
+    let unit = service_unit(service)?;
+    if unit == "all" {
+        for svc in ALL_SERVICES {
+            println!("systemctl {} {}...", action, svc);
+            let output = std::process::Command::new("systemctl")
+                .arg(action)
+                .arg(svc)
+                .output();
+            match output {
+                Ok(o) if o.status.success() => println!("  ✓ {} — OK", svc),
+                Ok(o) => {
+                    let stderr = String::from_utf8_lossy(&o.stderr);
+                    println!("  ✗ {} — {}", svc, stderr.trim());
+                }
+                Err(e) => println!("  ✗ {} — {}", svc, e),
+            }
+        }
+    } else {
+        println!("systemctl {} {}...", action, unit);
+        let output = std::process::Command::new("systemctl")
+            .arg(action)
+            .arg(&unit)
+            .output()
+            .map_err(|e| anyhow!("failed to run systemctl: {e}"))?;
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            bail!("systemctl {} {} failed: {}", action, unit, stderr.trim());
+        }
+        println!("  ✓ {} — OK", unit);
+    }
+    Ok(())
+}
+
+/// Show status of one or all services.
+fn service_status(service: &str) -> anyhow::Result<()> {
+    let unit = service_unit(service)?;
+    if unit == "all" {
+        for svc in ALL_SERVICES {
+            let active = std::process::Command::new("systemctl")
+                .args(["is-active", "--quiet", svc])
+                .status()
+                .map(|s| s.success())
+                .unwrap_or(false);
+            let status = if active { "active" } else { "inactive" };
+            println!("  {:30} {}", svc, status);
+        }
+    } else {
+        let output = std::process::Command::new("systemctl")
+            .arg("status")
+            .arg(&unit)
+            .output()
+            .map_err(|e| anyhow!("failed to run systemctl: {e}"))?;
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        println!("{}", stdout);
+    }
+    Ok(())
+}
+
+/// Show recent logs for a service.
+fn service_logs(service: &str, lines: usize) -> anyhow::Result<()> {
+    let unit = service_unit(service)?;
+    if unit == "all" {
+        bail!("logs requires a specific service name, not 'all'");
+    }
+    let output = std::process::Command::new("journalctl")
+        .args(["-u", &unit, "--no-pager", "-n"])
+        .arg(lines.to_string())
+        .output()
+        .map_err(|e| anyhow!("failed to run journalctl: {e}"))?;
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    println!("{}", stdout);
+    Ok(())
+}
+
+/// Handle the service subcommand.
+fn handle_service_command(svc: ServiceArgs) -> anyhow::Result<()> {
+    match svc.command {
+        ServiceCommand::Start { service } => systemctl_all("start", &service),
+        ServiceCommand::Stop { service } => systemctl_all("stop", &service),
+        ServiceCommand::Restart { service } => systemctl_all("restart", &service),
+        ServiceCommand::Status { service } => service_status(&service),
+        ServiceCommand::Logs { service, lines } => service_logs(&service, lines),
+    }
 }
