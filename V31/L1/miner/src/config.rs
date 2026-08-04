@@ -55,6 +55,10 @@ pub struct MinerConfig {
     pub stream3_force_coin: Option<ExternalCoin>,
     /// How long to wait (ms) before retrying a failed AuxPoW operation.
     pub auxpow_retry_ms: u64,
+    /// Enable autonomous profit switching for Stream 2/3.
+    pub autonomous: bool,
+    /// Re-evaluate profit estimates every N seconds (default 300 = 5 min).
+    pub profit_interval_sec: u64,
 }
 
 impl MinerConfig {
@@ -79,6 +83,13 @@ impl MinerConfig {
                 .ok()
                 .and_then(|s| s.trim().to_uppercase().parse().ok()),
             auxpow_retry_ms: 5000,
+            autonomous: std::env::var("ZION_AUTONOMOUS")
+                .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+                .unwrap_or(false),
+            profit_interval_sec: std::env::var("ZION_PROFIT_INTERVAL")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(300),
         }
     }
 

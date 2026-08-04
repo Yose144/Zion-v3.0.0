@@ -15,6 +15,8 @@ use zion_core::{
 use zion_l1_types::{Amount, Hash};
 
 #[cfg(feature = "auxpow")]
+use crate::autonomous::{AutonomousProfitRouter, HardwareProfile};
+#[cfg(feature = "auxpow")]
 use crate::auxpow::{find_share, AuxPoWScheduler, Job, Share, StratumClient};
 use crate::config::MinerConfig;
 use crate::stream::{StreamId, StreamStats};
@@ -97,6 +99,11 @@ impl MinerRuntime {
                 stats,
             }
         }
+    }
+
+    /// Access the miner configuration.
+    pub fn config(&self) -> &MinerConfig {
+        &self.config
     }
 
     /// Build a coinbase transaction paying the configured reward address.
@@ -255,6 +262,9 @@ impl MinerRuntime {
 
     #[cfg(feature = "auxpow")]
     /// Refresh profit estimates and return selected GPU/CPU coins.
+    ///
+    /// When `config.autonomous` is enabled, uses `AutonomousProfitRouter` to
+    /// fetch estimates and apply hysteresis before switching.
     pub async fn refresh_auxpow(
         &self,
         profiles: &[zion_cosmic_harmony::CoinProfile],
@@ -263,7 +273,32 @@ impl MinerRuntime {
         Option<zion_cosmic_harmony::ExternalCoin>,
     ) {
         let mut scheduler = self.scheduler.lock().await;
-        scheduler.refresh(profiles);
+
+        if self.config.autonomous {
+            let mut router = AutonomousProfitRouter::new(HardwareProfile::default_for_features());
+            // Ensure the router runs even when `ZION_AUTONOMOUS` is not set,
+            // because the miner configuration explicitly enabled it.
+            router.enabled = true;
+            // Respect config for forced coins and interval/hysteresis overrides.
+            if let Some(coin) = self.config.stream3_force_coin {
+                router.stream3_coin = Some(coin);
+            }
+            router.initial_selection();
+            if let Some(coin) = router.stream2_coin {
+                scheduler.set_gpu(coin, profiles);
+            }
+            if let Some(coin) = router.stream3_coin {
+                scheduler.set_cpu(coin, profiles);
+            }
+            info!(
+                gpu = ?router.stream2_coin,
+                cpu = ?router.stream3_coin,
+                "autonomous profit re-evaluation"
+            );
+        } else {
+            scheduler.refresh(profiles);
+        }
+
         (scheduler.current_gpu(), scheduler.current_cpu())
     }
 
@@ -394,6 +429,39 @@ impl MinerRuntime {
             (h2, h3)
         };
 
+        // Periodically re-evaluate Stream 2/3 coin profitability.
+        #[cfg(feature = "auxpow")]
+        let h_profit: MinerHandle = if self.config.auxpow_enabled && self.config.autonomous {
+            let this = self.clone();
+            let mut shutdown = shutdown.clone();
+            tokio::spawn(async move {
+                let mut interval = tokio::time::interval(Duration::from_secs(
+                    this.config.profit_interval_sec.max(60),
+                ));
+                loop {
+                    tokio::select! {
+                        _ = shutdown.changed() => break,
+                        _ = interval.tick() => {
+                            let profiles = zion_cosmic_harmony::CoinProfile::defaults();
+                            let (gpu, cpu) = this.refresh_auxpow(&profiles).await;
+                            info!(
+                                gpu = ?gpu,
+                                cpu = ?cpu,
+                                interval_sec = this.config.profit_interval_sec,
+                                "autonomous profit re-evaluation complete"
+                            );
+                        }
+                    }
+                }
+                Ok(())
+            })
+        } else {
+            tokio::spawn(async { Ok::<(), MinerError>(()) })
+        };
+
+        #[cfg(not(feature = "auxpow"))]
+        let h_profit: MinerHandle = tokio::spawn(async { Ok::<(), MinerError>(()) });
+
         #[cfg(not(feature = "auxpow"))]
         let (h2, h3): (MinerHandle, MinerHandle) = (
             tokio::spawn(async { Ok::<(), MinerError>(()) }),
@@ -401,10 +469,11 @@ impl MinerRuntime {
         );
 
         let _ = shutdown_for_changed.changed().await;
-        let (r1, r2, r3) = tokio::join!(h1, h2, h3);
+        let (r1, r2, r3, r_profit) = tokio::join!(h1, h2, h3, h_profit);
         r1??;
         r2??;
         r3??;
+        r_profit??;
         Ok(())
     }
 

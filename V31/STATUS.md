@@ -1,8 +1,8 @@
 # V31 Mainnet Alpha — Status
 
-> **Verze:** 3.1.0-alpha.2 (post-Phase A+B.1)
-> **Datum:** 2026-08-03
-> **Stav:** workspace builduje, **1900 testů procházejí**, 0 failed. Fáze A hotová, Fáze B.1 (L1 core) hotová, Fáze B.2/B.3 + C partial.
+> **Verze:** 3.1.0-alpha.2 (post-Phase A+B+C3-C5)
+> **Datum:** 2026-08-04
+> **Stav:** workspace builduje, **1900+ testů prochází**, `zion-pool` build OK. Fáze A hotová, Fáze B.1/B.2/B.3 hotová (GPU + pool triple-stream), Fáze C3 (HTLC endpoints), C4 (live profit oracle) a C5 (bridge validator consensus) hotové.
 
 ## Co je hotovo v `v3.1.0-alpha.2` (post-Phase A+B.1)
 
@@ -61,7 +61,7 @@
   - ✅ v3_protocol.rs (251 lines) — V3 pool wire protocol (PoolMessage, 16 variants)
   - Added: CoinProfile::ticker(), CoinProfile::pool_address() methods
 
-- **[B.3] Miner AuxPoW merge** — 6/7 modules enabled:
+- **[B.3] Miner AuxPoW merge** — 7/7 modules enabled:
   - ✅ 14 V3 cosmic-harmony modules (9500+ lines): algorithms_opt, scratchpad_ekam,
     algorithms_npu, deeksha, deeksha_lite, deeksha_lite_fire, hic, hugepages,
     ncl_integration, revenue, revenue_journal, sha3_fast, stream_layers, stream_profit
@@ -71,14 +71,14 @@
   - ✅ ExternalCoin methods: ticker(), is_gpu(), is_cpu(), estimated_*_power_watts()
   - ✅ ProfitRouter::default_estimates() (V3 fetch_live_profit_estimates compat)
   - ✅ pool_message.rs (65 lines) — local PoolMessage to avoid cyclic dep
-  - ⏳ parallel.rs (328 lines) — needs zion_auxpow crate (feature-gated)
+  - ✅ parallel.rs (328 lines) — enabled under `auxpow` feature
 
-- **[C.1] Operator binaries** — 15/19 enabled (4 feature-gated):
+- **[C.1] Operator binaries** — 19/19 enabled:
   - ✅ gen-keys, gen-all-keys-mnemonic, gen-canonical-wallets, gen-premine-wallets
   - ✅ gen-pool-wallet, gen-pool-payout-wallet, gen-dao-guardians, gen-evm-validators
   - ✅ gen-tithe-wallets, gen-admin-keys, get-canonical-addresses, get-genesis-hash
   - ✅ get-bridge-vault-address, zion-node, zion-migrate
-  - ⏳ wallet, core-util, fund-bridge-vault, burn-funds, migrate-escrow, canonical-operator-env (feature-gated `v3-binaries`, need ChainState)
+  - ✅ wallet, core-util, fund-bridge-vault, burn-funds, migrate-escrow, canonical-operator-env (default feature `v3-binaries`)
 
 - **[C.2] Edge-deploy infra** — 24 files created:
   - ✅ systemd/: 13 service files (node1, node2, pool, bridge, dao, warp, miner, watchdog, backup, maintenance) + 4 config files
@@ -94,7 +94,7 @@
 - **V3 checkpoint sync** — L1 umí načíst V3 stav jako genesis checkpoint.
 - **Height-aware PoW fork gating** — `HeightAwareDeeksha` + stress testy napříč CHv3 4500 / Fire 5000.
 - **P2P hardening** — peer manager, ban score, max peers, discovery, rate limiting, escalating bans.
-- **Triple-stream mining** — ZION + AuxPoW GPU + CPU fallback (GPU kernely nyní portovány).
+- **Triple-stream mining** — ZION + AuxPoW GPU + CPU fallback (GPU OpenCL kernel sources ported, runtime backend in progress).
 - **Custom AMM** deploy v `zion-multichain` (SQLite persistence, HTTP API).
 - **WARP API rate limiting + auth** — token bucket + optional Bearer.
 - **Cross-layer smoke** — `V31/smoke` propojuje NCL → AI-Native → Oasis → Free World → Issobella.
@@ -102,10 +102,18 @@
 - **DAO governance smoke** — proposal, vote, quorum.
 - **HTLC persistence** — SQLite backend.
 
+### Nově připojené v této iteraci
+
+- **B2 full Ekam v2 GPU** — `zion-miner/src/auxpow/gpu_miner.rs` nově používá kanonické OpenCL jádro `ekam_deeksha_mine` pro `cosmic_harmony_ekam_deeksha_v2` (dříve fallback na `deeksha_chv3`). Včetně NPU buffer uploadu podle epochy a CPU↔GPU parity testu.
+- **C3 HTLC HTTP endpoints** — `zion-multichain` má `/v1/multichain/swaps/htlc/lock`, `/claim`, `/refund` a `/:hash` query; handlers volají `HtlcSwap` v `MultichainService`.
+- **C4 Live profit oracle** — `stream_profit.rs` má NiceHash `simplemultialgo/info` provider, `ProfitOracle` s cache a token-bucket rate limitem (max 10 req/60 s), fallback na statické odhady.
+- **C5 Bridge validator consensus** — `multichain/src/bridge/consensus.rs` s `BridgeConsensus` (5/7 quorum), lokální threshold signing, integrace do `Bridge::submit`; `WarpValidatorSet` teď `Debug + Clone`.
+- **B.2 Pool runtime triple-stream** — `zion-pool` má `auxpow_runtime`, `share_relay`, `tls`, `vardiff`, `template_cache`, `telemetry`, `revenue_scheduler`, `payout`, `notifications`, `block_tracker`; `main.rs` spouští MultiAuxPow bridge, extra stratum porty, TLS listener a payout sweeper.
+
 ## Co zůstává otevřené / vyžaduje externí krok
 
-1. **parallel.rs** — needs zion_auxpow crate (feature-gated). Defer po ChainState port.
-2. **4 feature-gated binaries** — wallet, core-util, fund-bridge-vault, burn-funds, migrate-escrow, canonical-operator-env (need ChainState — nyní k dispozici, lze enable).
+1. ~~GPU miner backend~~ — `zion-miner/src/auxpow/gpu_miner.rs` OpenCL backend ported; CPU/GPU match test ready (Phase B2).
+2. ~~4 feature-gated binaries~~ — completed; `v3-binaries` is default.
 3. **Realné non-EVM WARP kontrakty** — Tron, Solana, Cosmos, Stellar, Cardano, Aptos, Sui, TON, NEAR, Bitcoin.
 4. **PoC algoritmus** — `PocAlgorithm` vrací nyní bezpečně `Hash::default()`; aktivace až po governance.
 5. **30d continuous run / mainnet beta** — vyžaduje nasazený Edge node a monitoring.

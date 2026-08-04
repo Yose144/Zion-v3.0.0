@@ -217,6 +217,36 @@ impl MultiAuxPowBridge {
         let bridges = self.bridges.lock().expect("multi_bridge lock poisoned");
         bridges.get(coin).and_then(|b| b.forward(req))
     }
+
+    /// Push a job to the bridge for a specific coin.
+    pub fn push_job_for_coin(&self, coin: &ExternalCoin, job: JobPackage) {
+        let bridges = self.bridges.lock().expect("multi_bridge lock poisoned");
+        if let Some(bridge) = bridges.get(coin) {
+            bridge.push_job(job);
+        }
+    }
+
+    /// Get the latest job for a specific coin.
+    pub fn latest_job_for_coin(&self, coin: &ExternalCoin) -> Option<JobPackage> {
+        let bridges = self.bridges.lock().expect("multi_bridge lock poisoned");
+        bridges.get(coin).and_then(|b| b.pop_job())
+    }
+
+    /// Get a job by coin and external job ID.
+    pub fn job_for_coin_and_id(&self, coin: &ExternalCoin, job_id: &str) -> Option<JobPackage> {
+        let bridges = self.bridges.lock().expect("multi_bridge lock poisoned");
+        bridges.get(coin).and_then(|b| b.get_job_by_id(job_id))
+    }
+
+    /// Forward a share by coin ticker string.
+    pub fn forward_by_ticker(
+        &self,
+        ticker: &str,
+        req: ShareForwardRequest,
+    ) -> Option<ShareForwardOutcome> {
+        let coin = ExternalCoin::from_str_loose(ticker)?;
+        self.forward(&coin, req)
+    }
 }
 
 impl Default for MultiAuxPowBridge {

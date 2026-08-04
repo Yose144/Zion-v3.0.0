@@ -1,17 +1,14 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use ed25519_dalek::SigningKey;
 use zion_cosmic_harmony::ExternalCoin;
-use zion_l1_types::{Address, Amount, ChainId};
+use zion_l1_types::{Address, ChainId};
 
 use crate::config::PoolConfig;
-use crate::pplns::{Payout, PplnsState, ShareRecord};
 use crate::share::ShareSubmission;
 use crate::validator::ShareValidator;
-
-/// Placeholder block reward used for PPLNS payout calculation until the pool
-/// is wired to the node's coinbase output.
-pub const DEFAULT_BLOCK_REWARD_ZION: u64 = 6_000_000;
+use crate::v3_pplns::{PayoutEntry, PplnsConfig, PplnsEngine};
 
 #[derive(Clone, Copy, Debug, thiserror::Error)]
 pub enum PoolError {
@@ -28,7 +25,7 @@ pub enum PoolError {
 #[derive(Debug)]
 pub struct Pool {
     pub config: PoolConfig,
-    pub pplns: PplnsState,
+    pub pplns: PplnsEngine,
     pub validator: ShareValidator,
     pub current_job_id: AtomicU64,
     pub accepted: AtomicU64,
@@ -36,13 +33,36 @@ pub struct Pool {
     /// Authorized worker name -> payout address (anonymous mining).
     pub worker_addresses: HashMap<String, Address>,
     /// Last computed payouts for a found block, keyed by block height.
-    pub last_payouts: Option<(u64, Vec<Payout>)>,
+    pub last_payouts: Option<(u64, Vec<PayoutEntry>)>,
+    /// Ed25519 signing key for the pool payout wallet (hex 32 bytes).
+    pub signing_key: Option<SigningKey>,
+    /// Payouts waiting to be submitted on-chain.
+    pub pending_payouts: Vec<(u64, PayoutEntry)>,
+    /// (block_height, address) pairs already submitted to the wallet.
+    pub sent_payouts: HashSet<(u64, String)>,
 }
 
 impl Pool {
     pub fn new(config: PoolConfig) -> Self {
-        let mut pplns = PplnsState::new(config.pplns_window_shares);
-        pplns.set_fee_bps(config.pool_fee_bps);
+        let pplns_config = PplnsConfig {
+            window_size: config.pplns_window_size,
+            min_payout_flowers: config.min_payout_flowers,
+            fee_config: config.fee_config.clone(),
+        };
+        let mut pplns = PplnsEngine::new(pplns_config);
+        if let Some(path) = config.state_path.as_ref() {
+            if let Some(snap) = PplnsEngine::load_from_path(path) {
+                pplns.restore(snap);
+            }
+        }
+        let signing_key = config
+            .pool_wallet_key
+            .as_deref()
+            .and_then(|hex_str| {
+                let bytes = hex::decode(hex_str).ok()?;
+                let arr = <[u8; 32]>::try_from(bytes).ok()?;
+                Some(SigningKey::from_bytes(&arr))
+            });
         Self {
             config,
             pplns,
@@ -52,6 +72,9 @@ impl Pool {
             rejected: AtomicU64::new(0),
             worker_addresses: HashMap::new(),
             last_payouts: None,
+            signing_key,
+            pending_payouts: Vec::new(),
+            sent_payouts: HashSet::new(),
         }
     }
 
@@ -67,15 +90,11 @@ impl Pool {
         u64::from_str_radix(s, 16).map_err(|_| PoolError::Parse)
     }
 
-    fn record_share(&mut self, worker: &str, _value: u64) {
-        let value = 1u64;
-        let record = ShareRecord {
-            worker: worker.to_string(),
-            address: self.worker_address(worker),
-            value,
-            timestamp: chrono::Utc::now(),
-        };
-        self.pplns.add_share(record);
+    fn record_share(&mut self, worker: &str, height: u64, difficulty: u64) {
+        let address = self.worker_address(worker);
+        self.pplns.register_address(worker, &address.encoded);
+        self.pplns
+            .record_share_with_diff(worker, worker, height, difficulty);
     }
 
     fn worker_address(&self, worker: &str) -> Address {
@@ -90,7 +109,8 @@ impl Pool {
 
     pub fn register_worker(&mut self, worker: &str) {
         if let Some(addr) = parse_worker_address(worker) {
-            self.worker_addresses.insert(worker.to_string(), addr);
+            self.worker_addresses.insert(worker.to_string(), addr.clone());
+            self.pplns.register_address(worker, &addr.encoded);
         }
     }
 
@@ -98,13 +118,15 @@ impl Pool {
         &mut self,
         submission: ShareSubmission,
         header: &[u8],
+        height: u64,
+        difficulty: u64,
     ) -> Result<bool, PoolError> {
         let nonce = Self::parse_nonce(&submission.nonce_hex)?;
         if self
             .validator
             .validate_zion(header, nonce, &self.config.zion_target)
         {
-            self.record_share(&submission.worker, 1);
+            self.record_share(&submission.worker, height, difficulty);
             self.accepted.fetch_add(1, Ordering::Relaxed);
             Ok(true)
         } else {
@@ -118,13 +140,15 @@ impl Pool {
         coin: ExternalCoin,
         submission: ShareSubmission,
         header: &[u8],
+        height: u64,
+        difficulty: u64,
     ) -> Result<bool, PoolError> {
         let nonce = Self::parse_nonce(&submission.nonce_hex)?;
         if self
             .validator
             .validate_auxpow(coin, header, nonce, &self.config.auxpow_target)
         {
-            self.record_share(&submission.worker, 1);
+            self.record_share(&submission.worker, height, difficulty);
             self.accepted.fetch_add(1, Ordering::Relaxed);
             Ok(true)
         } else {
@@ -133,15 +157,25 @@ impl Pool {
         }
     }
 
-    pub fn payouts(&self, block_reward: Amount) -> Vec<Payout> {
-        self.pplns.payouts_for(block_reward)
+    /// Compute miner payouts for the given full block subsidy.
+    ///
+    /// The node coinbase already splits the block reward 89/5/5/1, so the pool
+    /// only redistributes the miner share (89% minus rounding dust).
+    pub fn payouts(&mut self, block_reward: u64) -> Vec<PayoutEntry> {
+        let miner_share = zion_core::emission::fee_split(block_reward).0;
+        self.pplns.compute_miner_payouts(miner_share)
     }
 
-    /// Record a found block, compute PPLNS payouts for it and store them.
+    /// Record a found block and compute PPLNS payouts for it.
     pub fn on_block_found(&mut self, block_height: u64, block_reward: u64) {
-        let block_reward = Amount::new(block_reward as u128);
-        let payouts = self.pplns.payouts_for(block_reward);
-        self.last_payouts = Some((block_height, payouts));
+        let payouts = self.payouts(block_reward);
+        for payout in payouts {
+            let key = (block_height, payout.address.clone());
+            if !self.sent_payouts.contains(&key) {
+                self.pending_payouts.push((block_height, payout));
+            }
+        }
+        self.last_payouts = Some((block_height, self.pending_payouts.iter().map(|(_, p)| p.clone()).collect()));
     }
 
     pub fn stats(&self) -> (u64, u64) {
@@ -158,7 +192,7 @@ impl Pool {
     /// Persist the current PPLNS state, if a state path is configured.
     pub fn save(&self) -> std::io::Result<()> {
         if let Some(path) = self.config.state_path.as_ref() {
-            self.pplns.save_to(path)?;
+            self.pplns.save_to_path(path)?;
         }
         Ok(())
     }
@@ -166,11 +200,25 @@ impl Pool {
     /// Restore PPLNS state from the configured path, if any.
     pub fn restore(&mut self) {
         if let Some(path) = self.config.state_path.as_ref() {
-            if let Some(state) = PplnsState::restore(path) {
-                self.pplns = state;
-                self.pplns.set_fee_bps(self.config.pool_fee_bps);
+            if let Some(snap) = PplnsEngine::load_from_path(path) {
+                self.pplns.restore(snap);
             }
         }
+    }
+
+    /// Drain and return the queued payouts for the sweep thread.
+    pub fn take_pending_payouts(&mut self) -> Vec<(u64, PayoutEntry)> {
+        std::mem::take(&mut self.pending_payouts)
+    }
+
+    /// Put payouts back into the queue for a later retry.
+    pub fn requeue_payouts(&mut self, payouts: Vec<(u64, PayoutEntry)>) {
+        self.pending_payouts.extend(payouts);
+    }
+
+    /// Mark a payout as successfully submitted so it is not re-sent.
+    pub fn mark_payout_sent(&mut self, block_height: u64, address: &str) {
+        self.sent_payouts.insert((block_height, address.to_string()));
     }
 }
 
@@ -201,7 +249,7 @@ mod tests {
             job_id: "zion_1".into(),
             nonce_hex: format!("{:016x}", nonce),
         };
-        assert!(pool.submit_zion(submission, header).unwrap());
+        assert!(pool.submit_zion(submission, header, 0, 1).unwrap());
         assert_eq!(pool.stats(), (1, 0));
     }
 
@@ -213,7 +261,7 @@ mod tests {
             job_id: "zion_1".into(),
             nonce_hex: "not_a_nonce".into(),
         };
-        assert!(pool.submit_zion(submission, b"header").is_err());
+        assert!(pool.submit_zion(submission, b"header", 0, 1).is_err());
     }
 
     #[test]
@@ -225,7 +273,7 @@ mod tests {
             nonce_hex: "0000000000000000".into(),
         };
         assert!(pool
-            .submit_auxpow(ExternalCoin::Bitcoin, submission, b"aux_header")
+            .submit_auxpow(ExternalCoin::Bitcoin, submission, b"aux_header", 0, 1)
             .unwrap());
         assert_eq!(pool.stats(), (1, 0));
     }
@@ -242,29 +290,30 @@ mod tests {
             nonce_hex: "0000000000000000".into(),
         };
         assert!(pool
-            .submit_auxpow(ExternalCoin::Bitcoin, submission, b"aux_header")
+            .submit_auxpow(ExternalCoin::Bitcoin, submission, b"aux_header", 0, 1)
             .is_err());
     }
 
     #[test]
     fn payouts_are_proportional() {
         let mut pool = Pool::new(PoolConfig {
-            pool_fee_bps: 0,
+            min_payout_flowers: 1,
             ..config()
         });
         let header = b"payout_header";
         for i in 0..4 {
             let submission = ShareSubmission {
-                worker: format!("worker{i}"),
+                worker: "worker1".into(),
                 job_id: format!("zion_{i}"),
                 nonce_hex: format!("{:016x}", i),
             };
-            pool.submit_zion(submission, header).unwrap();
+            pool.submit_zion(submission, header, 1, 1).unwrap();
         }
-        let reward = Amount(1_000_000);
+        let reward = 1_000_000;
         let payouts = pool.payouts(reward);
         assert_eq!(payouts.len(), 1);
-        assert_eq!(payouts[0].amount.0, 1_000_000);
+        let miner_share = zion_core::emission::fee_split(reward).0;
+        assert_eq!(payouts[0].amount, miner_share);
     }
 
     #[test]

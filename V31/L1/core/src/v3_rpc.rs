@@ -855,10 +855,89 @@ impl V3RpcHandler {
         }))
     }
 
-    async fn submit_bridge_unlock(&self, _params: &Value) -> Result<Value, V3RpcError> {
-        Err(V3RpcError::Validation(
-            "submitBridgeUnlock requires NodeRuntime bridge functionality (not yet wired in V31)".to_string(),
-        ))
+    async fn submit_bridge_unlock(&self, params: &Value) -> Result<Value, V3RpcError> {
+        let tx: UtxoTransaction =
+            serde_json::from_value(params.clone()).map_err(|e| V3RpcError::Parse(e.to_string()))?;
+
+        if tx.id != tx.calculate_hash() {
+            return Err(V3RpcError::Validation(
+                "UTXO transaction id does not match calculated hash".to_string(),
+            ));
+        }
+
+        let bridge_tx = crate::v3_tx::Transaction {
+            id: tx.id,
+            version: tx.version,
+            inputs: tx
+                .inputs
+                .iter()
+                .map(|i| crate::v3_tx::TxInput {
+                    prev_tx_hash: i.prev_tx_hash,
+                    output_index: i.output_index,
+                    signature: i.signature.clone(),
+                    public_key: i.public_key.clone(),
+                })
+                .collect(),
+            outputs: tx
+                .outputs
+                .iter()
+                .map(|o| crate::v3_tx::TxOutput {
+                    amount: o.amount,
+                    address: o.address.clone(),
+                    memo: o.memo.clone(),
+                })
+                .collect(),
+            fee: tx.fee,
+            timestamp: tx.timestamp,
+        };
+
+        let block_height = self.storage.v3_height().await?;
+        let utxo_rows = self
+            .storage
+            .v3_utxos_by_address(crate::fee::BRIDGE_VAULT_ADDRESS)
+            .await?;
+        let mut utxos: std::collections::HashMap<(String, u32), crate::v3_chain::SpendableUtxo> =
+            std::collections::HashMap::new();
+        for (hash, idx, amount) in utxo_rows {
+            let key = (hex(&hash), idx);
+            utxos.insert(
+                key,
+                crate::v3_chain::SpendableUtxo {
+                    tx_hash: hex(&hash),
+                    output_index: idx,
+                    amount,
+                    address: crate::fee::BRIDGE_VAULT_ADDRESS.to_string(),
+                    height: block_height,
+                },
+            );
+        }
+
+        match crate::v3_bridge::validate_bridge_unlock_transaction_shape_with_utxos(
+            &bridge_tx,
+            &utxos,
+            block_height,
+        ) {
+            Ok(Some(_replay_key)) => {
+                let mut mempool = self.mempool_utxo.lock().await;
+                if mempool.iter().any(|t| t.id == tx.id) {
+                    return Err(V3RpcError::Validation(
+                        "transaction already in mempool".to_string(),
+                    ));
+                }
+                let tx_id = hex(&tx.id);
+                mempool.push(tx);
+                Ok(json!({
+                    "accepted": true,
+                    "tx_id": tx_id,
+                }))
+            }
+            Ok(None) => Err(V3RpcError::Validation(
+                "transaction is not a bridge unlock".to_string(),
+            )),
+            Err(msg) => Err(V3RpcError::Validation(format!(
+                "bridge unlock validation failed: {msg}"
+            ))),
+        }
     }
 }
 
@@ -993,5 +1072,92 @@ mod tests {
                 .len(),
             2
         );
+    }
+
+    #[tokio::test]
+    async fn submit_bridge_unlock_accepts_valid_multisig() {
+        use k256::ecdsa::signature::Signer;
+        use k256::ecdsa::SigningKey;
+        use rand::rngs::OsRng;
+
+        let storage = Arc::new(Storage::open_in_memory().await.unwrap());
+        let handler = V3RpcHandler::new(storage.clone());
+
+        // Seed a bridge-vault UTXO that the unlock transaction will spend.
+        let input_hash = [0x11u8; 32];
+        storage
+            .put_v3_utxos(&[(
+                input_hash,
+                0,
+                1_000_000,
+                crate::fee::BRIDGE_VAULT_ADDRESS.to_string(),
+            )])
+            .await
+            .unwrap();
+
+        // Generate a recipient ZION address.
+        let (_sk, vk) = crate::crypto::generate_keypair();
+        let recipient = crate::crypto::derive_address(vk.as_bytes());
+
+        let source_chain = "base";
+        let burn_id = "burn123";
+        let evm_tx_hash = "0xdeadbeef";
+        let amount = 900_000u64;
+        let fee = 100_000u64;
+
+        let operation_message = crate::v3_bridge::bridge_operation_message(
+            &recipient, amount, source_chain, burn_id, evm_tx_hash,
+        );
+
+        // Build 3 validator proofs and collect pubkeys for the allowlist.
+        let mut pubkeys = Vec::new();
+        let mut proof_chunks = Vec::new();
+        for i in 0..3 {
+            let signing_key = SigningKey::random(&mut OsRng);
+            let verifying_key = signing_key.verifying_key();
+            let pubkey_hex = hex(verifying_key.to_sec1_bytes().as_ref());
+            pubkeys.push(pubkey_hex.clone());
+            let signature: k256::ecdsa::Signature = signing_key.sign(operation_message.as_bytes());
+            let signature_hex = hex(signature.to_bytes().as_ref());
+            proof_chunks.push(format!("val{i}:{pubkey_hex}:{signature_hex}"));
+        }
+        let proofs_str = proof_chunks.join(",");
+        let memo = format!(
+            "BRIDGE_UNLOCK:{source_chain}:{burn_id}:{evm_tx_hash}|PROOFS={proofs_str}"
+        );
+
+        // Build and hash the bridge-unlock UTXO transaction.
+        let mut tx = UtxoTransaction {
+            id: [0u8; 32],
+            version: crate::v3_compat::TX_HASH_V2_VERSION,
+            inputs: vec![crate::v3_compat::TxInput {
+                prev_tx_hash: input_hash,
+                output_index: 0,
+                signature: Vec::new(),
+                public_key: Vec::new(),
+            }],
+            outputs: vec![crate::v3_compat::TxOutput {
+                amount,
+                address: recipient,
+                memo: Some(memo),
+            }],
+            fee,
+            timestamp: 0,
+        };
+        tx.id = tx.calculate_hash();
+
+        unsafe {
+            std::env::set_var("ZION_BRIDGE_VALIDATOR_PUBKEYS", pubkeys.join(","));
+        }
+
+        let params = serde_json::to_value(&tx).unwrap();
+        let result = handler.dispatch("submitBridgeUnlock", params).await;
+
+        assert!(
+            result["result"]["accepted"].as_bool().unwrap_or(false),
+            "submitBridgeUnlock rejected valid bridge unlock: {:?}",
+            result
+        );
+        assert_eq!(result["result"]["tx_id"].as_str().unwrap(), hex(&tx.id));
     }
 }

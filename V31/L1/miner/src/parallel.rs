@@ -236,7 +236,8 @@ pub fn detect_threads() -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use zion_core::{DifficultyTarget, MiningHeader};
+    use zion_core::{MiningHeader, V3DifficultyTarget as DifficultyTarget};
+    use zion_cosmic_harmony::deeksha::cosmic_harmony_ekam_deeksha_v3;
 
     fn test_header() -> MiningHeader {
         MiningHeader {
@@ -316,8 +317,7 @@ mod tests {
         let header = test_header();
         let nonce = 42u64;
 
-        let hash_ekam =
-            zion_cosmic_harmony::cosmic_harmony_ekam_deeksha_v3(&header.to_bytes(), nonce, 0).data;
+        let hash_ekam = cosmic_harmony_ekam_deeksha_v3(&header.to_bytes(), nonce, 0).data;
         let hash_lite = deeksha_lite::deeksha_lite(&header.to_bytes(), nonce);
 
         assert_ne!(

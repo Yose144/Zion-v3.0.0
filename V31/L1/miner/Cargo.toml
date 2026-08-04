@@ -17,11 +17,11 @@ native-hashers = ["dep:zion-native-ffi"]
 # Native VerusHash — uses zion-native-ffi's C++ implementation instead of stub.
 native-verushash = ["native-hashers", "zion-native-ffi/native-verushash"]
 # GPU backends (feature-gated, require GPU toolchain)
-gpu-opencl = []
-gpu-cuda = []
-gpu-metal = []
+gpu-opencl = ["dep:ocl"]
+gpu-cuda = ["dep:cudarc"]
+gpu-metal = ["dep:metal"]
 # Convenience: all GPU backends
-gpu = ["gpu-opencl"]
+gpu = ["gpu-opencl", "gpu-cuda", "gpu-metal"]
 
 [dependencies]
 zion-l1-types = { workspace = true }
@@ -31,6 +31,10 @@ zion-native-ffi = { path = "../native-ffi", optional = true }
 
 anyhow = { workspace = true }
 async-trait = { workspace = true }
+# GPU backends
+cudarc = { version = "0.19", optional = true, default-features = false, features = ["cuda-12060", "driver", "fallback-dynamic-loading"] }
+metal = { version = "0.30", optional = true }
+ocl = { version = "0.19", optional = true }
 base64 = { workspace = true }
 blake2 = { workspace = true }
 blake2b_simd = "1"
@@ -53,6 +57,15 @@ tracing-subscriber = { workspace = true }
 
 [dev-dependencies]
 tokio-test = "0.4"
+
+[[bin]]
+name = "zion-miner"
+path = "src/bin/zion-miner.rs"
+
+[[bin]]
+name = "zion-universal-miner"
+path = "src/bin/zion-universal-miner.rs"
+required-features = ["auxpow"]
 
 [build-dependencies]
 cc = "1.0"

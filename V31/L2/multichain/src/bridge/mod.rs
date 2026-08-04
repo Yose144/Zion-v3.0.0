@@ -9,20 +9,35 @@ use std::time::Duration;
 use sha3::{Digest, Keccak256};
 use zion_l1_types::{ChainId, Hash};
 
+use crate::bridge::consensus::BridgeConsensus;
 use crate::chain::{ChainAdapter, ChainAdapterRegistry, DepositEvent};
 use crate::error::{MultichainError, MultichainResult};
 use crate::types::{Transfer, TransferDirection, TransferStatus};
+
+pub mod consensus;
 
 const MAX_ATTEMPTS: u32 = 3;
 const POLL_INTERVAL_MS: u64 = 10;
 
 pub struct Bridge {
     adapters: Arc<ChainAdapterRegistry>,
+    consensus: Option<BridgeConsensus>,
 }
 
 impl Bridge {
     pub fn new(adapters: Arc<ChainAdapterRegistry>) -> Self {
-        Self { adapters }
+        Self {
+            adapters,
+            consensus: None,
+        }
+    }
+
+    /// Create a bridge with validator consensus enabled.
+    pub fn with_consensus(adapters: Arc<ChainAdapterRegistry>, consensus: BridgeConsensus) -> Self {
+        Self {
+            adapters,
+            consensus: Some(consensus),
+        }
     }
 
     pub async fn submit(&self, transfer: &mut Transfer) -> MultichainResult<Hash> {
@@ -45,6 +60,9 @@ impl Bridge {
         if let Some(event) = self.poll_for_event(source, transfer).await {
             transfer.id = event.tx_hash.to_hex();
             transfer.status = TransferStatus::Executing;
+
+            self.verify_consensus(transfer)?;
+
             match target.execute_outbound(transfer).await {
                 Ok(hash) => {
                     transfer.status = TransferStatus::Completed;
@@ -71,6 +89,9 @@ impl Bridge {
         if let Some(event) = self.poll_for_event(source, transfer).await {
             transfer.id = event.tx_hash.to_hex();
             transfer.status = TransferStatus::Executing;
+
+            self.verify_consensus(transfer)?;
+
             match target.execute_outbound(transfer).await {
                 Ok(hash) => {
                     transfer.status = TransferStatus::Completed;
@@ -86,6 +107,19 @@ impl Bridge {
 
         transfer.status = TransferStatus::Completed;
         Ok(placeholder_hash(transfer))
+    }
+
+    /// If a `BridgeConsensus` is configured, sign the transfer locally and
+    /// demand a quorum.  If no consensus is configured, the bridge operates in
+    /// single-node / Alpha mode and the check is a no-op.
+    fn verify_consensus(&self, transfer: &Transfer) -> MultichainResult<()> {
+        if let Some(consensus) = &self.consensus {
+            consensus
+                .sign_and_verify(transfer)
+                .map(|_| ())
+                .map_err(|e| MultichainError::Validation(format!("bridge consensus: {e}")))?;
+        }
+        Ok(())
     }
 
     fn adapter(&self, chain: zion_l1_types::ChainId) -> MultichainResult<&dyn ChainAdapter> {

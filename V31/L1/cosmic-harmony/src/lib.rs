@@ -13,6 +13,7 @@ pub mod algorithms_opt;
 pub mod deeksha;
 pub mod deeksha_lite;
 pub mod deeksha_lite_fire;
+pub mod gpu;
 pub mod hic;
 pub mod hugepages;
 pub mod ncl_integration;
