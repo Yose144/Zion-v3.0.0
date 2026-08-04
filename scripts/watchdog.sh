@@ -129,9 +129,10 @@ v31_tcp_rpc() {
   local method="$1"
   local path="$2"
   local port="${V31_RPC_PORT:-9445}"
-  printf '{"jsonrpc":"2.0","id":1,"method":"%s","params":[]}\n' "$method" \
-    | timeout 5 bash -c "exec 3<>/dev/tcp/127.0.0.1/${port}; cat >&3; cat <&3" 2>/dev/null \
-    | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('result',{}).get('${path}',0))" 2>/dev/null || echo 0
+  local resp
+  resp=$(printf '{"jsonrpc":"2.0","id":1,"method":"%s","params":[]}\n' "$method" | timeout 5 bash -c "exec 3<>/dev/tcp/127.0.0.1/${port}; cat >&3; cat <&3" 2>/dev/null | head -1)
+  if [[ -z "$resp" ]]; then echo 0; return; fi
+  echo "$resp" | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('result',{}).get('${path}',0))" 2>/dev/null || echo 0
 }
 
 # ── Mode-specific checks ───────────────────────────────────────────────────
