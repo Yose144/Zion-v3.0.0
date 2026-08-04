@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -35,7 +35,7 @@ interface MainMenuProps {
   isMobile: boolean;
 }
 
-export default function MainMenu({
+function MainMenu({
   activeCategories,
   onCategoriesChange,
   activeLayers,
@@ -202,6 +202,8 @@ export default function MainMenu({
     </>
   );
 }
+
+export default memo(MainMenu);
 
 const TAB_ITEMS: { id: Tab | 'worlds'; icon: typeof MapIcon; label: string }[] = [
   { id: 'worlds', icon: Globe, label: 'Worlds' },

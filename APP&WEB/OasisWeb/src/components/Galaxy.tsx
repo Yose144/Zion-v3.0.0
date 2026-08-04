@@ -9,7 +9,7 @@ import { createRandom } from '../domain/ports/random';
 // flies between worlds — so it should read as the visual centerpiece, not
 // a background layer. Slightly larger/brighter points than a pure backdrop.
 const PARAMETERS = {
-  count: 34000,
+  count: 20000,
   radius: 48,
   branches: 8,
   spin: 1.35,
@@ -46,8 +46,8 @@ export default function Galaxy({ isMobile = false }: { isMobile?: boolean }) {
   const pointsRef = useRef<THREE.Points>(null);
   const dustRef = useRef<THREE.Points>(null);
 
-  const count = isMobile ? 12000 : PARAMETERS.count;
-  const dustCount = isMobile ? 1500 : 3500;
+  const count = isMobile ? 8000 : PARAMETERS.count;
+  const dustCount = isMobile ? 1000 : 2500;
 
   const { geometry, material, dustGeometry, dustMaterial } = useMemo(() => {
     const rng = createRandom(31415);

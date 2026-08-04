@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Gauge, Target, Navigation, Rocket, Zap, Package, ScanLine,
@@ -54,7 +54,7 @@ export interface ControlHudProps {
 
 type PanelMode = 'compact' | 'expanded';
 
-export default function ControlHud({
+function ControlHud({
   compassRef,
   target,
   targetName,
@@ -80,8 +80,9 @@ export default function ControlHud({
   const [warpCharge, setWarpCharge] = useState(0);
   const [warpReady, setWarpReady] = useState(false);
 
-  // Compass tracking loop
+  // Compass tracking loop — only runs when flightMode is active
   useEffect(() => {
+    if (!flightMode) return;
     let raf: number;
     let last = performance.now();
 
@@ -112,7 +113,7 @@ export default function ControlHud({
 
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [target, compassRef]);
+  }, [target, compassRef, flightMode]);
 
   // Warp charge animation
   useEffect(() => {
@@ -557,3 +558,5 @@ export default function ControlHud({
     </motion.div>
   );
 }
+
+export default memo(ControlHud);

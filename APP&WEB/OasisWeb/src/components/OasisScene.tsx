@@ -3,8 +3,7 @@
 import { useRef, useEffect, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Stars, Environment } from '@react-three/drei';
-import { EffectComposer, Bloom, Vignette, HueSaturation, BrightnessContrast, ChromaticAberration, Noise } from '@react-three/postprocessing';
-import { BlendFunction } from 'postprocessing';
+import { EffectComposer, Bloom, Vignette, HueSaturation, BrightnessContrast } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import type { World, WorldCategory, WorldLayer } from '../domain/types/world';
 import TreeOfLife from './TreeOfLife';
@@ -220,7 +219,7 @@ export default function OasisScene({
     <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
       <Canvas
         camera={{ position: isMobile ? [0, 4, 22] : [0, 3.5, 34], fov: isMobile ? 60 : 55 }}
-        dpr={[1, isMobile ? 1 : 1.75]}
+        dpr={[1, isMobile ? 1 : 1.25]}
         style={{ width: '100%', height: '100%', display: 'block', position: 'absolute', inset: 0 }}
         gl={{
           antialias: false,
@@ -261,11 +260,11 @@ export default function OasisScene({
         {view === 'galaxy' && (
           <group ref={universeRef}>
             <R3FErrorBoundary label="Stars">
-              <Stars radius={250} depth={160} count={isMobile ? 2500 : 6000} factor={4.5} saturation={0} fade speed={0.4} />
+              <Stars radius={250} depth={160} count={isMobile ? 2000 : 4000} factor={4.5} saturation={0} fade speed={0.4} />
             </R3FErrorBoundary>
 
             <R3FErrorBoundary label="TwinkleStars">
-              <TwinkleStars count={isMobile ? 1000 : 3000} radius={150} />
+              <TwinkleStars count={isMobile ? 800 : 2000} radius={150} />
             </R3FErrorBoundary>
 
             <R3FErrorBoundary label="ShootingStars">
@@ -438,12 +437,10 @@ export default function OasisScene({
         {flightMode && <PilgrimShip speed={flightSpeed} />}
 
         {!isMobile && (
-          <EffectComposer multisampling={4}>
+          <EffectComposer multisampling={2}>
             <Bloom intensity={0.68} luminanceThreshold={0.34} luminanceSmoothing={0.6} mipmapBlur radius={0.6} />
             <HueSaturation saturation={0.16} />
             <BrightnessContrast brightness={-0.03} contrast={0.08} />
-            <ChromaticAberration offset={[0.0005, 0.0005]} radialModulation modulationOffset={0.4} />
-            <Noise premultiply blendFunction={BlendFunction.OVERLAY} opacity={0.03} />
             <Vignette eskil={false} offset={0.18} darkness={0.7} />
           </EffectComposer>
         )}

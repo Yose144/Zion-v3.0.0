@@ -121,7 +121,7 @@ export default function Planet({
       {/* Planet */}
       <group ref={planetRef}>
         <mesh>
-          <sphereGeometry args={[radius * (hovered ? 1.12 : 1), isMobile ? 32 : 64, isMobile ? 24 : 48]} />
+          <sphereGeometry args={[radius * (hovered ? 1.12 : 1), isMobile ? 24 : 32, isMobile ? 16 : 24]} />
           {variant === 'earth' ? (
             <meshStandardMaterial
               map={textures.color}
@@ -149,7 +149,7 @@ export default function Planet({
       {/* Atmosphere glow */}
       {hasAtmosphere && (
         <mesh ref={atmosphereRef} scale={1.08}>
-          <sphereGeometry args={[radius, 24, 16]} />
+          <sphereGeometry args={[radius, 16, 12]} />
           <meshBasicMaterial
             map={glowTexture}
             transparent
