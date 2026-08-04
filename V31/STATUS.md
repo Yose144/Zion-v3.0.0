@@ -161,6 +161,25 @@ CLI rozšířeno o wallet file management a service lifecycle (Phase C6 + C7).
 - ✅ `service start/stop/restart/status [node|pool|miner|multichain|dao|all]` — systemctl wrapper pro V31 services
 - ✅ `service logs <service> [--lines N]` — journalctl log viewer
 
+### ZionDex Multi-Path + Dashboard Metrics (2026-08-04) ✅
+
+ZionDex ported do V31 multichain + dashboard metrics rozšířeny (Phase C2 + C8).
+
+**ZionDex (Phase C2):**
+- ✅ `quote_multi` — top-N routes via DFS path enumeration (až max_hops)
+- ✅ `add_bridge_pool` — syntetické 1:1 pooly pro WARP bridge edges (cross-chain routing)
+- ✅ `service.dex_quote_multi` — async wrapper
+- ✅ `POST /v1/swap/quote/multi` — HTTP endpoint s `n` + `max_hops` parametry
+- ✅ 3 nové testy (562 multichain testů pass)
+
+**Dashboard (Phase C8):**
+- ✅ Pool port fix: 8446 → 8444 (production stratum)
+- ✅ All V31 service status (node, pool, miner, multichain, dao) — systemd
+- ✅ Pool metrics z HTTP API (/stats na :8080)
+- ✅ Pool Prometheus metrics parsing
+- ✅ Multichain health check (:8453/health)
+- ✅ Nové API endpoints: /api/v31/services, /api/v31/pool-metrics, /api/v31/pool-prometheus, /api/v31/multichain-health
+
 ## Co zůstává otevřené / vyžaduje externí krok
 
 1. ~~GPU miner backend~~ — `zion-miner/src/auxpow/gpu_miner.rs` OpenCL backend ported; CPU/GPU match test ready (Phase B2).
@@ -181,8 +200,9 @@ CLI rozšířeno o wallet file management a service lifecycle (Phase C6 + C7).
 - **Pool V3 Feature Parity ✅ COMPLETE** — AuxPoW bridge runtime, TLS, extra ports, share relay, profit switcher, expanded HTTP API. Pool nasazen a běží na Edge.
 - **DAO Governance Runtime ✅ COMPLETE** — Voting engine, proposal lifecycle, HTTP API. 31 testů pass.
 - **CLI Wallet + Service ✅ COMPLETE** — Wallet create/load/send, service start/stop/status/logs.
-- **Fáze D pokračuje:** Production hardening zbývajících komponent:
-  - Dashboard V31 miner/pool metrics (C8)
-  - ZionDex port do multichain (C2)
+- **ZionDex Multi-Path ✅ COMPLETE** — Top-N routes, cross-chain bridge routing, /v1/swap/quote/multi endpoint. 562 multichain testů pass.
+- **Dashboard Metrics ✅ COMPLETE** — Pool metrics, service overview, multichain health, Prometheus parsing.
+- **Fáze D zbývá:** Production hardening:
   - Non-EVM WARP kontrakty (Tron, Solana, Cosmos, ...)
   - Security audit + chaos testy (3.0.9 / 3.1.0-beta)
+  - 30d continuous run / mainnet beta
