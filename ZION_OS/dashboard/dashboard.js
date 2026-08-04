@@ -572,6 +572,71 @@ function updateServiceCards(s){
   const n2u = document.getElementById('val-node2-uptime');
   if(n2u) n2u.textContent = formatUptime(n2data ? n2data.uptime_seconds : null);
 
+  // ── V31 Production Stack (Node + Pool + Miner + Multichain) ──
+  const v31n = s.v31_node || {};
+  setBadge('badge-v31-node', v31n.running); setCardLive('v31-node', v31n.running);
+  const v31h = document.getElementById('val-v31-node-height');
+  if(v31h) v31h.textContent = v31n.chain_height != null ? v31n.chain_height.toLocaleString() : '—';
+  const v31hash = document.getElementById('val-v31-node-hash');
+  if(v31hash) v31hash.textContent = v31n.tip_hash ? (v31n.tip_hash.slice(0,12) + '…' + v31n.tip_hash.slice(-8)) : '—';
+  const v31mp = document.getElementById('val-v31-node-mempool');
+  if(v31mp) v31mp.textContent = v31n.mempool_size ?? '—';
+  const v31sys = document.getElementById('val-v31-node-systemd');
+  if(v31sys) v31sys.textContent = v31n.systemd_active || '—';
+  const v31mem = document.getElementById('val-v31-node-mem');
+  if(v31mem) v31mem.textContent = v31n.memory_mb != null ? v31n.memory_mb + ' MB' : '—';
+  const v31syncEl = document.getElementById('val-v31-node-sync');
+  if(v31syncEl){
+    const lag = v31n.sync_lag;
+    if(v31n.running && lag != null && lag <= 2){
+      v31syncEl.textContent = lag === 0 ? '✓ Synced' : '✓ Synced (+' + lag + ')';
+      v31syncEl.className = 'text-emerald-400 font-bold text-xs';
+    } else if(v31n.running && lag != null && lag <= 10){
+      v31syncEl.textContent = 'Syncing… (lag ' + lag + ')';
+      v31syncEl.className = 'text-amber-400 text-xs';
+    } else if(v31n.running){
+      v31syncEl.textContent = 'Catching up…';
+      v31syncEl.className = 'text-amber-400 text-xs';
+    } else {
+      v31syncEl.textContent = 'Offline';
+      v31syncEl.className = 'text-red-400 text-xs';
+    }
+  }
+
+  // V31 Pool
+  const v31p = s.v31_pool || {};
+  setBadge('badge-v31-pool', v31p.running); setCardLive('v31-pool', v31p.running);
+  const v31ps = document.getElementById('val-v31-pool-shares');
+  if(v31ps) v31ps.textContent = v31p.shares_accepted ?? '—';
+  const v31pj = document.getElementById('val-v31-pool-jobs');
+  if(v31pj) v31pj.textContent = v31p.jobs_broadcast ?? '—';
+  const v31psys = document.getElementById('val-v31-pool-systemd');
+  if(v31psys) v31psys.textContent = v31p.systemd_active || '—';
+
+  // V31 Miner
+  const v31m = s.v31_miner || {};
+  setBadge('badge-v31-miner', v31m.running); setCardLive('v31-miner', v31m.running);
+  const v31mh = document.getElementById('val-v31-miner-hashrate');
+  if(v31mh) v31mh.textContent = v31m.hashrate ? Math.round(v31m.hashrate).toLocaleString() : '—';
+  const v31ms = document.getElementById('val-v31-miner-shares');
+  if(v31ms) v31ms.textContent = v31m.shares_submitted ?? '—';
+  const v31ma = document.getElementById('val-v31-miner-accepted');
+  if(v31ma) v31ma.textContent = v31m.shares_accepted ?? '—';
+  const v31mw = document.getElementById('val-v31-miner-worker');
+  if(v31mw) v31mw.textContent = v31m.worker ?? '—';
+  const v31msys = document.getElementById('val-v31-miner-systemd');
+  if(v31msys) v31msys.textContent = v31m.systemd_active || '—';
+
+  // V31 Multichain
+  const v31mc = s.v31_multichain || {};
+  setBadge('badge-v31-multichain', v31mc.running); setCardLive('v31-multichain', v31mc.running);
+  const v31mct = document.getElementById('val-v31-mc-transfers');
+  if(v31mct) v31mct.textContent = v31mc.transfers_total ?? '—';
+  const v31mcp = document.getElementById('val-v31-mc-pending');
+  if(v31mcp) v31mcp.textContent = v31mc.transfers_pending ?? '—';
+  const v31mch = document.getElementById('val-v31-mc-health');
+  if(v31mch) v31mch.textContent = v31mc.ok ? 'OK' : '—';
+
   // ── Pool Command Center (unified) ──
   const pe = s.pool_edge ?? {};
   const poolRunning = p.running || pe.running;

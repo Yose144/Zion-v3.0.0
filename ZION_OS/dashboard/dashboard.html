@@ -1183,6 +1183,58 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         </div>
       </div>
 
+      <!-- V31 Pool (PROD) -->
+      <div id="card-v31-pool" class="zion-panel zion-panel-hover svc-card p-5 border border-emerald-500/30">
+        <div class="flex items-center justify-between mb-3 relative z-10">
+          <span class="zion-kicker text-emerald-400">🌐 V31 Pool (PROD)</span>
+          <span id="badge-v31-pool" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
+        </div>
+        <div class="text-4xl font-bold mb-1 text-emerald-400 relative z-10" id="val-v31-pool-shares">—</div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">Shares Accepted</div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Stratum: <span class="font-mono text-white">0.0.0.0:8444</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">→ Node RPC: <span class="font-mono text-white">127.0.0.1:9445</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Jobs: <span id="val-v31-pool-jobs" class="text-white">—</span></div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">systemd: <span id="val-v31-pool-systemd" class="font-mono text-emerald-400">—</span></div>
+        <div class="flex gap-1.5 relative z-10">
+          <button onclick="edgeAction('restart-v31-pool')" class="text-[10px] px-2.5 py-1 bg-amber-700/50 hover:bg-amber-600 rounded-md font-semibold transition">⟳ Restart</button>
+        </div>
+      </div>
+
+      <!-- V31 Miner (PROD) -->
+      <div id="card-v31-miner" class="zion-panel zion-panel-hover svc-card p-5 border border-emerald-500/30">
+        <div class="flex items-center justify-between mb-3 relative z-10">
+          <span class="zion-kicker text-emerald-400">⛏️ V31 Miner (PROD)</span>
+          <span id="badge-v31-miner" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
+        </div>
+        <div class="text-4xl font-bold mb-1 text-amber-400 relative z-10" id="val-v31-miner-hashrate">—</div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">H/s</div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">→ Pool: <span class="font-mono text-white">127.0.0.1:8444</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Shares: <span id="val-v31-miner-shares" class="text-white">—</span> | Accepted: <span id="val-v31-miner-accepted" class="text-emerald-400">—</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Worker: <span id="val-v31-miner-worker" class="text-white text-[10px]">—</span></div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">systemd: <span id="val-v31-miner-systemd" class="font-mono text-emerald-400">—</span></div>
+        <div class="flex gap-1.5 relative z-10">
+          <button onclick="edgeAction('restart-v31-miner')" class="text-[10px] px-2.5 py-1 bg-amber-700/50 hover:bg-amber-600 rounded-md font-semibold transition">⟳ Restart</button>
+          <button onclick="edgeAction('stop-v31-miner')" class="text-[10px] px-2.5 py-1 bg-red-700/50 hover:bg-red-600 rounded-md font-semibold transition">⏹ Stop</button>
+        </div>
+      </div>
+
+      <!-- V31 Multichain (PROD) -->
+      <div id="card-v31-multichain" class="zion-panel zion-panel-hover svc-card p-5 border border-emerald-500/30">
+        <div class="flex items-center justify-between mb-3 relative z-10">
+          <span class="zion-kicker text-emerald-400">🌀 V31 Multichain (PROD)</span>
+          <span id="badge-v31-multichain" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
+        </div>
+        <div class="text-4xl font-bold mb-1 text-cyan-400 relative z-10" id="val-v31-mc-transfers">—</div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">Total Transfers</div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">API: <span class="font-mono text-white">127.0.0.1:8453</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">→ Node RPC: <span class="font-mono text-white">127.0.0.1:9445</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Pending: <span id="val-v31-mc-pending" class="text-white">—</span></div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">Health: <span id="val-v31-mc-health" class="text-emerald-400">—</span></div>
+        <div class="flex gap-1.5 relative z-10">
+          <button onclick="edgeAction('restart-v31-multichain')" class="text-[10px] px-2.5 py-1 bg-amber-700/50 hover:bg-amber-600 rounded-md font-semibold transition">⟳ Restart</button>
+        </div>
+      </div>
+
     </div>
 
     <!-- ═══════ Pool Command Center (unified) ═══════ -->
