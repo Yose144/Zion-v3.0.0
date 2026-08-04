@@ -20,32 +20,113 @@ REPO_ROOT = SCRIPT_DIR.parent.parent
 LOG_DIR = REPO_ROOT / "logs"
 V31_DATA_DIR = REPO_ROOT / "data" / "v31"
 
-NODE_RPC_HOST = "127.0.0.1"
-NODE_RPC_PORT = 9445
-POOL_PORT = 8444
-POOL_API_PORT = 8080
-MULTICHAIN_PORT = 8453
-DAO_PORT = 8081
+def _load_nodes() -> dict:
+    """Load V31 node/miner/port configuration from nodes.json."""
+    path = SCRIPT_DIR / "nodes.json"
+    if not path.exists():
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _load_services() -> dict:
+    """Load V31 service manifest from services.json."""
+    path = SCRIPT_DIR / "services.json"
+    if not path.exists():
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _nodes() -> dict:
+    """Return the cached nodes config."""
+    if not hasattr(_nodes, "_cache"):
+        _nodes._cache = _load_nodes()
+    return _nodes._cache
+
+
+def _services() -> dict:
+    """Return the cached services config."""
+    if not hasattr(_services, "_cache"):
+        _services._cache = _load_services()
+    return _services._cache
+
+
+def _detection_ports() -> dict:
+    """Return detection ports from nodes.json, or sensible V31 defaults."""
+    return _nodes().get("detection", {}).get("ports", {})
+
+
+def _node_rpc_host() -> str:
+    nodes = _nodes()
+    first = next(iter(nodes.get("nodes", {}).values()), {})
+    return os.environ.get("ZION_NODE_RPC_HOST", first.get("host", "127.0.0.1"))
+
+
+def _node_rpc_port() -> int:
+    p = _detection_ports().get("node_rpc")
+    if p is None:
+        p = os.environ.get("ZION_NODE_RPC_PORT", "9445")
+    return int(p)
+
+
+def _pool_stratum_port() -> int:
+    p = _detection_ports().get("pool_stratum")
+    if p is None:
+        p = os.environ.get("ZION_POOL_STRATUM_PORT", "8444")
+    return int(p)
+
+
+def _pool_api_port() -> int:
+    p = _detection_ports().get("pool_metrics")
+    if p is None:
+        p = os.environ.get("ZION_POOL_API_PORT", "8455")
+    return int(p)
+
+
+def _multichain_port() -> int:
+    p = _detection_ports().get("multichain_api")
+    if p is None:
+        p = os.environ.get("ZION_MULTICHAIN_PORT", "8453")
+    return int(p)
+
+
+def _service_unit(name: str) -> str:
+    """Resolve a logical service name (node, pool, miner, multichain, dao)
+    to a systemd unit name using services.json, then env, then default."""
+    env_var = f"ZION_{name.upper()}_SERVICE"
+    if os.environ.get(env_var):
+        return os.environ[env_var]
+    for key, cfg in _services().items():
+        if not isinstance(cfg, dict):
+            continue
+        if cfg.get("bin") == name or cfg.get("bin") == f"zion-{name}" or key == name:
+            unit = cfg.get("service_id")
+            if unit:
+                return f"{unit}.service"
+    return f"zion-v31-{name}.service"
+
+
+def _all_service_names() -> list:
+    """List of logical V31 service names to monitor."""
+    # Service *names* are logical; the actual systemd unit for each is looked
+    # up in services.json via _service_unit().  This keeps the canonical set
+    # small and lets local Edge vs. PC manifests differ.
+    return ["node", "pool", "miner", "multichain", "dao"]
+
+
 V3_STATE_FILE = REPO_ROOT / "data" / "state"
 SYNC_LOG = V31_DATA_DIR / "sync.log"
 SYNC_STATE_FILE = V31_DATA_DIR / "sync-state.json"
 SYNC_MODE_FILE = V31_DATA_DIR / "sync-mode.txt"
 V31_DB_PATH = V31_DATA_DIR / "node.db"
 V31_CHECKPOINT = V31_DATA_DIR / "v3-checkpoint.json"
-
-SYSTEMD_SERVICE = "zion-v31-node.service"
-POOL_SERVICE = "zion-v31-pool.service"
-MINER_SERVICE = "zion-v31-miner.service"
-MULTICHAIN_SERVICE = "zion-v31-multichain.service"
-DAO_SERVICE = "zion-v31-dao.service"
-
-ALL_V31_SERVICES = [
-    ("node", SYSTEMD_SERVICE),
-    ("pool", POOL_SERVICE),
-    ("miner", MINER_SERVICE),
-    ("multichain", MULTICHAIN_SERVICE),
-    ("dao", DAO_SERVICE),
-]
 
 
 def _strip_ansi(s: str) -> str:
@@ -58,7 +139,7 @@ def _tcp_jsonrpc(method: str, params=None, timeout: float = 3.0):
         params = {}
     req = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params}) + "\n"
     try:
-        with socket.create_connection((NODE_RPC_HOST, NODE_RPC_PORT), timeout=timeout) as s:
+        with socket.create_connection((_node_rpc_host(), _node_rpc_port()), timeout=timeout) as s:
             s.sendall(req.encode())
             resp = s.recv(8192).decode("utf-8", errors="replace").strip()
             return json.loads(resp)
@@ -74,11 +155,13 @@ def _probe_port(host: str, port: int, timeout: float = 0.5) -> bool:
         return False
 
 
-def _systemctl_status() -> dict:
-    """Get systemd service status for V31 node."""
+def _systemctl_status(unit: str = None) -> dict:
+    """Get systemd service status for a V31 unit (defaults to node)."""
+    if unit is None:
+        unit = _service_unit("node")
     try:
         r = subprocess.run(
-            ["systemctl", "show", SYSTEMD_SERVICE,
+            ["systemctl", "show", unit,
              "--property=ActiveState,SubState,UnitFileState,MainPID,ExecMainStartTimestamp,MemoryCurrent"],
             capture_output=True, text=True, timeout=5
         )
@@ -118,11 +201,13 @@ def _systemctl_status() -> dict:
         }
 
 
-def _journalctl_logs(lines: int = 50) -> list:
-    """Read V31 node logs from journald."""
+def _journalctl_logs(lines: int = 50, unit: str = None) -> list:
+    """Read V31 logs from journald for a given unit (defaults to node)."""
+    if unit is None:
+        unit = _service_unit("node")
     try:
         r = subprocess.run(
-            ["journalctl", "-u", SYSTEMD_SERVICE, "--no-pager", "-n", str(lines),
+            ["journalctl", "-u", unit, "--no-pager", "-n", str(lines),
              "--output=cat"],
             capture_output=True, text=True, timeout=5
         )
@@ -146,7 +231,8 @@ def _http_get_json(host: str, port: int, path: str, timeout: float = 3.0):
 def _all_service_status() -> list:
     """Get systemd status for all V31 services."""
     result = []
-    for name, unit in ALL_V31_SERVICES:
+    for name in _all_service_names():
+        unit = _service_unit(name)
         try:
             r = subprocess.run(
                 ["systemctl", "show", unit,
@@ -188,13 +274,64 @@ def _all_service_status() -> list:
 
 def _pool_metrics() -> dict:
     """Fetch pool metrics from the pool HTTP API."""
-    return _http_get_json("127.0.0.1", POOL_API_PORT, "/stats")
+    return _http_get_json("127.0.0.1", _pool_api_port(), "/stats")
+
+
+def _miner_metrics(lines: int = 200) -> dict:
+    """Parse the latest miner log file for key metrics.
+
+    Recognises lines containing key=value pairs and also simple
+    accepted/rejected/hashes word patterns.  Returns the most recent value
+    seen for each metric so the dashboard always shows live data.
+    """
+    import re
+    from collections import deque
+
+    miner_cfg = _nodes().get("miners", {}).get("macos-miner", {})
+    worker = miner_cfg.get("worker_name", "macos-miner")
+    log_path = LOG_DIR / "v31-miner.log"
+    if not log_path.exists():
+        log_path = LOG_DIR / "miner.log"
+    if not log_path.exists():
+        return {"_error": f"miner log not found: {log_path}", "worker": worker}
+
+    metrics = {"worker": worker}
+    try:
+        with open(log_path, "r", encoding="utf-8", errors="replace") as f:
+            tail = deque(f, maxlen=lines)
+    except Exception as e:
+        return {"_error": f"error reading miner log: {e}", "worker": worker}
+
+    # key=value and key: value patterns, e.g. hashrate=123.4, accepted=7
+    kv_re = re.compile(r"\b([a-zA-Z_][a-zA-Z0-9_]*)[=:]\s*([0-9]+(?:\.[0-9]+)?)")
+    # standalone counts: e.g. "accepted 42", "rejected 3"
+    count_re = re.compile(r"\b(accepted|rejected|stale|invalid|errors)\D*([0-9]+)", re.I)
+    # hashrate word pattern: e.g. "hashrate 1.23 MH/s" or "1.23 MH/s"
+    hrate_re = re.compile(r"(?:hashrate|h/s)\s*[:=]?\s*([0-9]+(?:\.[0-9]+)?)\s*([kMGTP]?H/s)?", re.I)
+
+    for line in tail:
+        line = _strip_ansi(line)
+        for m in kv_re.finditer(line):
+            metrics[m.group(1).lower()] = float(m.group(2)) if "." in m.group(2) else int(m.group(2))
+        for m in count_re.finditer(line):
+            key = m.group(1).lower()
+            metrics[key] = int(m.group(2))
+        for m in hrate_re.finditer(line):
+            metrics["hashrate"] = float(m.group(1))
+            if m.group(2):
+                metrics["hashrate_unit"] = m.group(2).upper()
+
+    # Fallback: miner running? (probe pool stratum to infer)
+    pool_addr = miner_cfg.get("pool_addr", "")
+    metrics["pool_addr"] = pool_addr
+    metrics["running"] = bool(pool_addr)
+    return metrics
 
 
 def _pool_prometheus() -> dict:
     """Fetch pool Prometheus metrics and parse key values."""
     import urllib.request
-    url = f"http://127.0.0.1:{POOL_API_PORT}/metrics"
+    url = f"http://127.0.0.1:{_pool_api_port()}/metrics"
     try:
         req = urllib.request.Request(url, method="GET")
         with urllib.request.urlopen(req, timeout=3.0) as resp:
@@ -217,7 +354,7 @@ def _pool_prometheus() -> dict:
 
 def _multichain_health() -> dict:
     """Fetch multichain health."""
-    return _http_get_json("127.0.0.1", MULTICHAIN_PORT, "/health")
+    return _http_get_json("127.0.0.1", _multichain_port(), "/health")
 
 
 def _detect_sync_mode(v3_height: int) -> str:
@@ -266,7 +403,11 @@ def _v3_state_height() -> int:
 def status():
     """Return V31 runtime + chain status for the dashboard."""
     svc = _systemctl_status()
-    node_reachable = _probe_port(NODE_RPC_HOST, NODE_RPC_PORT)
+    node_host = _node_rpc_host()
+    node_port = _node_rpc_port()
+    stratum_port = _pool_stratum_port()
+    api_port = _pool_api_port()
+    node_reachable = _probe_port(node_host, node_port)
 
     # V3 state height (canonical reference)
     v3_ref_height = _v3_state_height()
@@ -284,13 +425,18 @@ def status():
         "node_pid": svc["node_pid"],
         "memory_mb": svc["memory_mb"],
         "start_timestamp": svc["start_timestamp"],
-        "pool_reachable": _probe_port("0.0.0.0", POOL_PORT),
-        "pool_running": _probe_port("0.0.0.0", POOL_PORT),
+        "node_rpc_addr": f"{node_host}:{node_port}",
+        "pool_stratum_port": stratum_port,
+        "pool_api_port": api_port,
+        "pool_reachable": _probe_port("0.0.0.0", stratum_port),
+        "pool_api_reachable": _probe_port("0.0.0.0", api_port),
         "pool_pid": None,
         # All V31 services
         "services": _all_service_status(),
         # Pool metrics from HTTP API
         "pool_metrics": _pool_metrics(),
+        # Miner metrics from log file
+        "miner_metrics": _miner_metrics(),
         # Multichain health
         "multichain_health": _multichain_health(),
         # Chain status
@@ -307,7 +453,7 @@ def status():
         "sync_lag": max(0, v3_ref_height - db_tip["db_height"]) if v3_ref_height > 0 else 0,
         "log_dir": str(LOG_DIR),
         "version": "3.1.0-alpha.2",
-        "service_name": SYSTEMD_SERVICE,
+        "service_name": _service_unit("node"),
     }
 
     if node_reachable:
@@ -406,19 +552,20 @@ def sync_info():
     }
 
 
-def control(action: str) -> dict:
-    """Control V31 node via systemctl."""
+def control(action: str, service: str = "node") -> dict:
+    """Control a V31 service via systemctl (defaults to node)."""
     if action not in ("start", "stop", "restart"):
         return {"ok": False, "error": f"Unknown action: {action}"}
+    unit = _service_unit(service)
     try:
         subprocess.run(
-            ["systemctl", action, SYSTEMD_SERVICE],
+            ["systemctl", action, unit],
             capture_output=True, text=True, timeout=30
         )
         time.sleep(2)
-        return {"ok": True, "action": action, "status": status()}
+        return {"ok": True, "action": action, "service": service, "status": status()}
     except Exception as e:
-        return {"ok": False, "action": action, "error": str(e)}
+        return {"ok": False, "action": action, "service": service, "error": str(e)}
 
 
 def sync(payload: dict) -> dict:
@@ -516,6 +663,10 @@ def handle_get(handler, route: str, params: dict):
         handler._json(_pool_prometheus())
         return True
 
+    if route == "/api/v31/miner-metrics":
+        handler._json(_miner_metrics())
+        return True
+
     if route == "/api/v31/multichain-health":
         handler._json(_multichain_health())
         return True
@@ -528,7 +679,8 @@ def handle_get(handler, route: str, params: dict):
 
     if route == "/api/v31/control":
         action = (params.get("action", [""])[0]).strip()
-        handler._json(control(action))
+        service = (params.get("service", ["node"])[0]).strip() or "node"
+        handler._json(control(action, service))
         return True
 
     if route == "/api/v31/sync-info":
@@ -541,7 +693,8 @@ def handle_get(handler, route: str, params: dict):
 def handle_post(handler, route: str, payload: dict):
     if route == "/api/v31/control":
         action = str(payload.get("action", "")).strip()
-        handler._json(control(action))
+        service = str(payload.get("service", "node")).strip() or "node"
+        handler._json(control(action, service))
         return True
     if route == "/api/v31/sync":
         handler._json(sync(payload))
