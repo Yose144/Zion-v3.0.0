@@ -3338,6 +3338,7 @@ def _build_status_edge_primary() -> dict:
     for _label, _st, _role, _icon in [
         ("Edge Node 1 (Primary)", edge_node1_status, "primary", "🌍"),
         ("Edge Node 2 (Follower)", edge_node2_status, "follower", "🔶"),
+        ("V31 Node (PROD)", v31_node_status, "primary", "🚀"),
         ("Local Backup Node", local_backup_status, "backup", "💾"),
     ]:
         # Always include all known nodes — even offline ones — so the overview
