@@ -107,7 +107,7 @@ ff2b88403 2026-07-27 feat(v31): TCP stratum server with mining.notify broadcast
 - **SHA256:** `2dc34a468062b1a4fa9f0b14d9850ed72adb8820edf1735d5a13955b29917944`
 - **Git rev:** `748c2fc66`
 
-> Poznámka: balíček zůstává lokálně v `V31/releases/macos-aarch64/` (adresář není v `.gitignore`, ale tarball se do gitu necommituje; je připravený pro GitHub Release).
+> Poznámka: balíček zůstává lokálně v `V31/releases/macos-aarch64/` (adresář je v `.gitignore`, do gitu se necommituje). Draft GitHub Release: <https://github.com/Yose144/Zion-v3.0.0/releases/tag/untagged-b50c5b49e64a23722e2f>
 
 ---
 
