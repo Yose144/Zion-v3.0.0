@@ -380,8 +380,12 @@ async fn forward_share_to_upstream(
 mod tests {
     use super::*;
 
+    /// Mutex to serialize env-var-dependent tests (prevent parallel pollution).
+    static ENV_MUTEX: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
     #[test]
     fn config_from_env_defaults() {
+        let _guard = ENV_MUTEX.lock().unwrap();
         // Clear all auxpow env vars to test defaults
         std::env::remove_var("ZION_POOL_AUXPOW_WALLET");
         std::env::remove_var("ZION_POOL_AUXPOW_COINS");
@@ -402,6 +406,7 @@ mod tests {
 
     #[test]
     fn config_parses_coins() {
+        let _guard = ENV_MUTEX.lock().unwrap();
         // Clear any env vars that might pollute this test
         for profile in CoinProfile::defaults() {
             std::env::remove_var(format!(
