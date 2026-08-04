@@ -1563,29 +1563,29 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       </div>
     </div>
 
-    <!-- Pool Metrics (built-in Prometheus endpoint on :8455) -->
-    <div class="zion-panel p-5">
+    <!-- V31 Pool Metrics (from /api/status, no Prometheus endpoint) -->
+    <div class="zion-panel p-5 border border-emerald-500/20">
       <div class="flex items-center justify-between mb-3">
-        <h2 class="text-base font-bold flex items-center gap-2">📡 Pool Metrics</h2>
-        <span id="monitoring-status-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Loading…</span>
+        <h2 class="text-base font-bold flex items-center gap-2">📡 V31 Pool Metrics</h2>
+        <span id="monitoring-status-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-700/40 text-emerald-300">V31 Live</span>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="bg-black/30 border border-white/5 rounded-lg p-3">
+        <div class="bg-black/30 border border-emerald-500/10 rounded-lg p-3">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-sm font-bold text-orange-400">Pool Scraper</span>
-            <span id="prom-status-dot" class="w-2 h-2 rounded-full bg-gray-600"></span>
+            <span class="text-sm font-bold text-emerald-400">V31 Pool (Stratum 8444)</span>
+            <span id="prom-status-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           </div>
-          <div class="text-xs text-gray-400 mb-1">Endpoint: <span class="text-white font-mono">127.0.0.1:8455/metrics</span></div>
-          <div class="text-xs text-gray-400 mb-2">Pool Hashrate: <span id="prom-version" class="text-white font-mono">—</span></div>
+          <div class="text-xs text-gray-400 mb-1">Endpoint: <span class="text-white font-mono">127.0.0.1:8444 (stratum)</span></div>
+          <div class="text-xs text-gray-400 mb-2">Miner Hashrate: <span id="prom-version" class="text-white font-mono">—</span></div>
           <div class="grid grid-cols-3 gap-2 mt-2">
-            <div class="text-center"><div class="text-[9px] text-gray-500">Sessions</div><div id="pm-active-sessions" class="text-sm font-bold text-emerald-400">—</div></div>
-            <div class="text-center"><div class="text-[9px] text-gray-500">Miners</div><div id="pm-miners-tracked" class="text-sm font-bold text-cyan-400">—</div></div>
-            <div class="text-center"><div class="text-[9px] text-gray-500">Blocks</div><div id="pm-blocks-found" class="text-sm font-bold text-amber-400">—</div></div>
+            <div class="text-center"><div class="text-[9px] text-gray-500">Miners</div><div id="pm-active-sessions" class="text-sm font-bold text-emerald-400">—</div></div>
+            <div class="text-center"><div class="text-[9px] text-gray-500">Jobs</div><div id="pm-miners-tracked" class="text-sm font-bold text-cyan-400">—</div></div>
+            <div class="text-center"><div class="text-[9px] text-gray-500">Blocks</div><div id="pm-blocks-found" class="text-sm font-bold text-amber-400">0</div></div>
             <div class="text-center"><div class="text-[9px] text-gray-500">Accepted</div><div id="pm-accepted" class="text-sm font-bold text-emerald-400">—</div></div>
-            <div class="text-center"><div class="text-[9px] text-gray-500">Rejected</div><div id="pm-rejected" class="text-sm font-bold text-red-400">—</div></div>
+            <div class="text-center"><div class="text-[9px] text-gray-500">Rejected</div><div id="pm-rejected" class="text-sm font-bold text-red-400">0</div></div>
             <div class="text-center"><div class="text-[9px] text-gray-500">Submits</div><div id="pm-submits" class="text-sm font-bold text-white">—</div></div>
           </div>
-          <div class="text-xs text-gray-400 mt-2">Total Shares: <span id="prom-targets" class="text-white font-mono">—</span></div>
+          <div class="text-xs text-gray-400 mt-2">Pool Shares: <span id="prom-targets" class="text-white font-mono">—</span></div>
         </div>
         <div class="bg-black/30 border border-white/5 rounded-lg p-3">
           <div class="flex items-center justify-between mb-2">
@@ -3248,11 +3248,21 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
 
   <!-- ═════════ TAB: Pool Debugger ═════════ -->
   <div id="pane-pool-debug" class="hidden space-y-4">
+    <!-- V31 Notice -->
+    <div class="zion-panel p-4 border border-emerald-500/30 bg-emerald-500/5">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">🚀</span>
+        <div>
+          <h3 class="text-sm font-bold text-emerald-400">V31 Pool Debug</h3>
+          <p class="text-xs text-gray-400 mt-1">V31 pool (stratum 8444) does not expose Prometheus metrics or HTTP debug API. Use journalctl for diagnostics: <code class="text-emerald-300">journalctl -u zion-v31-pool.service -f</code></p>
+        </div>
+      </div>
+    </div>
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-gradient">🐛 Pool Debugger</h1>
-        <p class="text-xs text-gray-400 mt-1">Raw metrics · PPLNS state · log tail · endpoint probes · env config · AuxPow · revenue — all in one diagnostic view</p>
+        <h1 class="text-2xl font-bold text-gradient">🐛 Pool Debugger <span class="text-xs text-gray-500">(V3 legacy — metrics endpoint 8455 offline)</span></h1>
+        <p class="text-xs text-gray-400 mt-1">Raw metrics · PPLNS state · log tail · endpoint probes · env config · AuxPow · revenue — V3 pool diagnostic view (archived)</p>
       </div>
       <div class="flex gap-2 items-center">
         <label class="text-xs text-gray-400 flex items-center gap-1.5">
