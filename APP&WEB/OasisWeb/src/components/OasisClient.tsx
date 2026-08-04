@@ -415,7 +415,7 @@ export default function OasisClient() {
         </AnimatePresence>
       </div>
 
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {phase === 'intro' && <BabylonIntro onEnter={handleEnter} />}
       </AnimatePresence>
 

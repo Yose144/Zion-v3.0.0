@@ -50,8 +50,12 @@ export default function BabylonIntro({ onEnter }: BabylonIntroProps) {
     camera.lowerBetaLimit = 0.1;
     camera.upperBetaLimit = Math.PI / 1.9;
     camera.wheelPrecision = 50;
-    (camera as any).useAutoRotationBehavior = true;
-    (camera as any).autoRotationBehavior = { idleRotationSpeed: 0.08, idleRotationWaitTime: 100 };
+    camera.useAutoRotationBehavior = true;
+    if (camera.autoRotationBehavior) {
+      camera.autoRotationBehavior.idleRotationSpeed = 0.08;
+      camera.autoRotationBehavior.idleRotationWaitTime = 100;
+      camera.autoRotationBehavior.idleRotationSpinupTime = 1000;
+    }
 
     // Lights
     new HemisphericLight('hemi', new Vector3(0, 1, 0), scene).intensity = 0.3;
@@ -178,19 +182,28 @@ export default function BabylonIntro({ onEnter }: BabylonIntroProps) {
 
     return () => {
       window.removeEventListener('resize', resize);
+      // Stop render loop first
+      engine.stopRenderLoop();
+      // Dispose Babylon scene + engine
       scene.dispose();
       engine.dispose();
+      // Force WebGL context release immediately
+      try {
+        const gl = canvas.getContext('webgl2') as WebGL2RenderingContext | null;
+        if (gl) {
+          const ext = gl.getExtension('WEBGL_lose_context');
+          if (ext) ext.loseContext();
+        }
+      } catch (e) {
+        // ignore
+      }
     };
   }, []);
 
   // Warp animation triggered by state
   useEffect(() => {
     if (!warping) return;
-    // Allow one more frame then trigger onEnter
-    const t = setTimeout(() => {
-      onEnterRef.current();
-    }, 800);
-    return () => clearTimeout(t);
+    onEnterRef.current();
   }, [warping]);
 
   return (
