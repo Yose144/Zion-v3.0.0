@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>ZION Mainnet — Launch Command Center</title>
+<title>ZION V31 — Mainnet Alpha Command Center</title>
 <meta name="theme-color" content="#0f172a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -972,7 +972,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         <button onclick="controlAction('stop-stack')" class="px-3 py-1.5 bg-rose-700 hover:bg-rose-600 text-white text-xs font-medium rounded transition flex items-center gap-1">
           <span>⏹</span> Stop Stack
         </button>
-        <button onclick="controlAction('restart-node2');controlAction('restart-miner')" class="px-3 py-1.5 bg-amber-700 hover:bg-amber-600 text-white text-xs font-medium rounded transition flex items-center gap-1">
+        <button onclick="edgeAction('restart-v31-miner')" class="px-3 py-1.5 bg-amber-700 hover:bg-amber-600 text-white text-xs font-medium rounded transition flex items-center gap-1">
           <span>⟳</span> Restart
         </button>
         <button onclick="controlAction('doctor')" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-600 text-white text-xs font-medium rounded transition flex items-center gap-1">
@@ -992,7 +992,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         <div class="flex items-center gap-2">
           <span id="badge-edge-server" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
           <button onclick="refreshEdgeServerCard(true); updateEdgeHealth();" class="text-[10px] px-2.5 py-1 bg-zinc-700/50 hover:bg-zinc-600 rounded-md font-semibold transition" title="Force refresh">⟳</button>
-          <a href="http://62.171.141.136:8455" target="_blank" class="text-[10px] px-2.5 py-1 bg-teal-700/40 hover:bg-teal-600/60 rounded-md font-semibold transition text-teal-300">📈 Pool Metrics</a>
+          <a href="http://62.171.141.136:8444" target="_blank" class="text-[10px] px-2.5 py-1 bg-emerald-700/40 hover:bg-emerald-600/60 rounded-md font-semibold transition text-emerald-300">🌐 V31 Pool</a>
         </div>
       </div>
 
@@ -1078,7 +1078,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         <div class="flex flex-wrap gap-2">
           <button onclick="edgeAction('restart-node1')" class="text-[10px] px-2.5 py-1.5 bg-emerald-700/40 hover:bg-emerald-600/60 border border-emerald-500/30 rounded-md font-semibold transition">⟳ Node 1</button>
           <button onclick="edgeAction('restart-node2')" class="text-[10px] px-2.5 py-1.5 bg-emerald-700/40 hover:bg-emerald-600/60 border border-emerald-500/30 rounded-md font-semibold transition">⟳ Node 2</button>
-          <button onclick="edgeAction('restart-pool')" class="text-[10px] px-2.5 py-1.5 bg-amber-700/40 hover:bg-amber-600/60 border border-amber-500/30 rounded-md font-semibold transition">⟳ Pool</button>
+          <button onclick="edgeAction('restart-v31-pool')" class="text-[10px] px-2.5 py-1.5 bg-emerald-700/40 hover:bg-emerald-600/60 border border-emerald-500/30 rounded-md font-semibold transition">⟳ V31 Pool</button>
           <button onclick="edgeAction('restart-dao')" class="text-[10px] px-2.5 py-1.5 bg-purple-700/40 hover:bg-purple-600/60 border border-purple-500/30 rounded-md font-semibold transition">⟳ DAO</button>
           <button onclick="edgeAction('restart-warp')" class="text-[10px] px-2.5 py-1.5 bg-cyan-700/40 hover:bg-cyan-600/60 border border-cyan-500/30 rounded-md font-semibold transition">⟳ WARP</button>
           <button onclick="edgeAction('restart-dashboard')" class="text-[10px] px-2.5 py-1.5 bg-blue-700/40 hover:bg-blue-600/60 border border-blue-500/30 rounded-md font-semibold transition">⟳ Rust DB</button>
@@ -1103,7 +1103,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         <div class="flex flex-wrap gap-2">
           <a href="https://dashboard.zionterranova.com" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-orange-700/40 hover:bg-orange-600/60 border border-orange-500/30 rounded-md font-semibold transition text-orange-300">📊 Dashboard</a>
           <a href="https://zionterranova.com" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-indigo-700/40 hover:bg-indigo-600/60 border border-indigo-500/30 rounded-md font-semibold transition text-indigo-300">🌐 Website</a>
-          <a href="http://62.171.141.136:8455" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-teal-700/40 hover:bg-teal-600/60 border border-teal-500/30 rounded-md font-semibold transition text-teal-300">📈 Pool Metrics</a>
+          <a href="http://62.171.141.136:8444" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-emerald-700/40 hover:bg-emerald-600/60 border border-emerald-500/30 rounded-md font-semibold transition text-emerald-300">🌐 V31 Pool</a>
         </div>
       </div>
     </div>
@@ -1242,14 +1242,13 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       <!-- Header -->
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-3">
-          <h2 class="text-lg font-bold flex items-center gap-2">🌐 ZION Pool Command Center</h2>
+          <h2 class="text-lg font-bold flex items-center gap-2">🌐 V31 Pool Command Center</h2>
           <span id="badge-pool-cc" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
           <span id="pool-cc-uptime" class="text-[10px] text-gray-500 font-mono">—</span>
         </div>
         <div class="flex gap-2">
           <button onclick="loadPoolMinersTab()" class="text-[10px] px-2.5 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-md font-semibold transition">📋 Miners Tab</button>
-          <button onclick="restartEdgePool()" class="text-[10px] px-2.5 py-1 bg-amber-700/50 hover:bg-amber-600 rounded-md font-semibold transition">⟳ Restart Pool</button>
-          <a href="http://62.171.141.136:8455" target="_blank" class="text-[10px] px-2.5 py-1 bg-teal-700/40 hover:bg-teal-600 rounded-md font-semibold transition text-teal-300">📈 Metrics</a>
+          <button onclick="edgeAction('restart-v31-pool')" class="text-[10px] px-2.5 py-1 bg-amber-700/50 hover:bg-amber-600 rounded-md font-semibold transition">⟳ Restart V31 Pool</button>
         </div>
       </div>
 
@@ -1290,7 +1289,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
             <div class="flex justify-between"><span class="text-gray-400">Stratum</span><span id="pcc-stratum" class="font-mono text-white">—</span></div>
             <div class="flex justify-between"><span class="text-gray-400">Public IP</span><span id="pcc-public-ip" class="font-mono text-white">62.171.141.136</span></div>
             <div class="flex justify-between"><span class="text-gray-400">RPC Port</span><span class="font-mono text-white">8443</span></div>
-            <div class="flex justify-between"><span class="text-gray-400">Metrics Port</span><span class="font-mono text-white">8455</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Metrics Port</span><span class="font-mono text-white">— (V31)</span></div>
             <div class="flex justify-between"><span class="text-gray-400">Pool Wallet</span><span id="pcc-wallet" class="font-mono text-white truncate max-w-[200px]" title="">—</span></div>
             <div class="flex justify-between"><span class="text-gray-400">Payout</span><span id="pcc-payout" class="text-emerald-400">—</span></div>
             <div class="flex justify-between"><span class="text-gray-400">Registered Miners</span><span id="pcc-registered" class="text-white">—</span></div>
@@ -2098,16 +2097,16 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       </div>
     </div>
 
-    <!-- ═══════ Edge Miner (compact) ═══════ -->
-    <div id="card-miner" class="zion-panel zion-panel-hover svc-card p-4">
+    <!-- ═══════ V31 Miner (compact, replaces old V3 Edge Miner) ═══════ -->
+    <div id="card-miner" class="zion-panel zion-panel-hover svc-card p-4 border border-emerald-500/30">
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-3">
-          <span class="zion-kicker" id="lbl-miner-title">⛏️ Edge Miner</span>
+          <span class="zion-kicker text-emerald-400" id="lbl-miner-title">⛏️ V31 Miner (PROD)</span>
           <span id="badge-miner" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
         </div>
         <div class="flex gap-2">
-          <button onclick="controlAction('restart-miner')" class="text-[10px] px-2.5 py-1 bg-amber-700/50 hover:bg-amber-600 rounded-md font-semibold transition">⟳ Restart</button>
-          <button onclick="controlAction('stop-miner')" class="text-[10px] px-2.5 py-1 bg-red-700/50 hover:bg-red-600 rounded-md font-semibold transition">⏹ Stop</button>
+          <button onclick="edgeAction('restart-v31-miner')" class="text-[10px] px-2.5 py-1 bg-amber-700/50 hover:bg-amber-600 rounded-md font-semibold transition">⟳ Restart</button>
+          <button onclick="edgeAction('stop-v31-miner')" class="text-[10px] px-2.5 py-1 bg-red-700/50 hover:bg-red-600 rounded-md font-semibold transition">⏹ Stop</button>
         </div>
       </div>
       <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs">

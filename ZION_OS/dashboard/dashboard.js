@@ -637,64 +637,59 @@ function updateServiceCards(s){
   const v31mch = document.getElementById('val-v31-mc-health');
   if(v31mch) v31mch.textContent = v31mc.ok ? 'OK' : '—';
 
-  // ── Pool Command Center (unified) ──
-  const pe = s.pool_edge ?? {};
-  const poolRunning = p.running || pe.running;
+  // ── Pool Command Center (V31 PROD) ──
+  const v31pCC = s.v31_pool ?? {};
+  const v31mCC = s.v31_miner ?? {};
+  const poolRunning = v31pCC.running;
   const poolBadge = document.getElementById('badge-pool-cc');
   if(poolBadge){ setBadge('badge-pool-cc', poolRunning); }
   const poolCard = document.getElementById('card-pool-command');
   if(poolCard) setCardLive('pool-command', poolRunning);
 
-  // KPI row
+  // KPI row — V31 data
   const pccHash = document.getElementById('pcc-hashrate');
   if(pccHash){
-    const hr = pe.hashrate ?? p.hashrate_khs ?? 0;
-    pccHash.textContent = hr > 0 ? (hr.toFixed(2) + ' KH/s') : '0 H/s';
+    const hr = v31mCC.hashrate ?? 0;
+    pccHash.textContent = hr > 0 ? (hr >= 1000000 ? (hr/1000000).toFixed(2) + ' MH/s' : hr >= 1000 ? (hr/1000).toFixed(1) + ' kH/s' : hr + ' H/s') : '0 H/s';
   }
   const pccMiners = document.getElementById('pcc-miners');
-  if(pccMiners) pccMiners.textContent = pe.active_miners ?? p.active_sessions ?? '0';
+  if(pccMiners) pccMiners.textContent = v31mCC.running ? '1' : '0';
   const pccBlocks = document.getElementById('pcc-blocks');
-  if(pccBlocks) pccBlocks.textContent = pe.blocks_found ?? p.blocks_found ?? '0';
+  if(pccBlocks) pccBlocks.textContent = '0';
   const pccShares = document.getElementById('pcc-shares');
   if(pccShares){
-    const acc = pe.shares_accepted ?? p.shares_accepted ?? 0;
-    const rej = pe.shares_rejected ?? p.shares_rejected ?? 0;
+    const acc = v31pCC.shares_accepted ?? 0;
+    const rej = 0;
     pccShares.textContent = acc + ' / ' + rej;
   }
   const pccAccept = document.getElementById('pcc-accept-rate');
   if(pccAccept){
-    const ar = pe.accept_rate_pct ?? 0;
+    const acc = v31mCC.shares_accepted ?? 0;
+    const sub = v31mCC.shares_submitted ?? 0;
+    const ar = sub > 0 ? (acc / sub * 100) : 0;
     pccAccept.textContent = ar.toFixed(1) + '%';
   }
   const pccPplnsWin = document.getElementById('pcc-pplns-window');
-  if(pccPplnsWin){
-    const used = p.pplns_window_used ?? 0;
-    const size = p.pplns_window_size ?? 0;
-    pccPplnsWin.textContent = used + '/' + size;
-  }
+  if(pccPplnsWin) pccPplnsWin.textContent = '—';
 
-  // Pool config
+  // Pool config — V31
   const pccStratum = document.getElementById('pcc-stratum');
-  if(pccStratum) pccStratum.textContent = '62.171.141.136:8444';
+  if(pccStratum) pccStratum.textContent = '0.0.0.0:8444';
   const pccWallet = document.getElementById('pcc-wallet');
   if(pccWallet){
-    const w = p.pool_wallet ?? '—';
-    pccWallet.textContent = w.length > 24 ? w.slice(0,16) + '…' + w.slice(-8) : w;
-    pccWallet.title = w;
+    pccWallet.textContent = 'zion1pool';
+    pccWallet.title = 'zion1pool (V31 PROD)';
   }
   const pccPayout = document.getElementById('pcc-payout');
-  if(pccPayout) pccPayout.textContent = p.payout_enabled ? '✓ Enabled' : '✗ Disabled';
+  if(pccPayout) pccPayout.textContent = 'V31 PPLNS';
   const pccRegistered = document.getElementById('pcc-registered');
-  if(pccRegistered) pccRegistered.textContent = p.pplns_registered_miners ?? '—';
+  if(pccRegistered) pccRegistered.textContent = v31mCC.running ? '1' : '0';
   const pccPorts = document.getElementById('pcc-ports');
   if(pccPorts){
-    const ports = pe.ports_open || [];
-    pccPorts.innerHTML = ports.length
-      ? ports.map(pt => `<span class="text-emerald-400">${escapeHtml(pt)}</span>`).join(', ')
-      : '<span class="text-gray-500">scanning…</span>';
+    pccPorts.innerHTML = '<span class="text-emerald-400">8444</span>';
   }
   const pccUptime = document.getElementById('pool-cc-uptime');
-  if(pccUptime) pccUptime.textContent = p.uptime_seconds ? '⏱ ' + formatUptime(p.uptime_seconds) : '';
+  if(pccUptime) pccUptime.textContent = v31pCC.systemd_active === 'active' ? '⏱ active' : '';
 
   // Fee distribution
   const feeSplit = p.fee_split || '89/5/5/1';
@@ -750,13 +745,15 @@ function updateServiceCards(s){
     if(pccPplnsBarLabel) pccPplnsBarLabel.textContent = pct.toFixed(2) + '% of window filled';
   }
 
-  setBadge('badge-miner', m.running); setCardLive('miner', m.running);
+  // Edge Miner card → V31 Miner data
+  const v31mEdge = s.v31_miner ?? m;
+  setBadge('badge-miner', v31mEdge.running); setCardLive('miner', v31mEdge.running);
   const mh = document.getElementById('val-miner-hashrate');
-  if(mh) mh.textContent = m.hashrate ? m.hashrate.toFixed(2) : '—';
+  if(mh) mh.textContent = v31mEdge.hashrate ? (v31mEdge.hashrate >= 1000 ? (v31mEdge.hashrate/1000).toFixed(1) : v31mEdge.hashrate.toFixed(0)) : '—';
   const mg = document.getElementById('val-miner-gpu');
-  if(mg) mg.textContent = (m.gpu_backend ? m.gpu_backend + ': ' : '') + (m.gpu_device ?? '—');
+  if(mg) mg.textContent = 'CPU (AMD EPYC, 2 threads)';
   const mw = document.getElementById('val-miner-worker');
-  if(mw) mw.textContent = (m.miner_id ? m.miner_id + ' / ' : '') + (m.worker_name ?? '—');
+  if(mw) mw.textContent = v31mEdge.worker ?? 'edge-cpu-miner';
   const mon = document.getElementById('val-miner-onchain');
   if(mon) mon.textContent = m.on_chain_balance_zion != null ? _zionFmt(m.on_chain_balance_zion) + ' ZION' : '—';
   const mnh = document.getElementById('val-miner-height');
