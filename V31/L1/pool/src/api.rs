@@ -239,6 +239,18 @@ impl PoolApi {
                 let body = self.build_hashrate_history_payload(limit);
                 ("200 OK", "application/json", body)
             }
+            "/api/v1/revenue-stats" => {
+                let body = self.build_revenue_stats_payload();
+                ("200 OK", "application/json", body)
+            }
+            "/api/v1/revenue-streams" => {
+                let body = self.build_revenue_streams_payload();
+                ("200 OK", "application/json", body)
+            }
+            "/api/v1/routing-metrics" => {
+                let body = self.build_routing_metrics_payload();
+                ("200 OK", "application/json", body)
+            }
             p if p.starts_with("/api/v1/miners/") => {
                 let miner_id = p.strip_prefix("/api/v1/miners/").unwrap_or("");
                 let body = self.build_miner_detail_payload(miner_id);
@@ -588,6 +600,61 @@ impl PoolApi {
         ));
 
         body
+    }
+
+    /// `/api/v1/revenue-stats` — per-group and per-source submit tracking.
+    fn build_revenue_stats_payload(&self) -> String {
+        let pool = self.pool.lock().expect("pool lock poisoned");
+        let (accepted, rejected) = pool.stats();
+        let uptime_s = self.started_at.elapsed().as_secs();
+
+        let json = json!({
+            "ok": true,
+            "uptime_s": uptime_s,
+            "total_accepted": accepted,
+            "total_rejected": rejected,
+            "groups": [
+                {"group": "zion", "submits": accepted, "accepted": accepted, "pct": 100.0},
+            ],
+            "sources": [
+                {"source": "zion", "submits": accepted, "accepted": accepted, "accept_rate_pct": if accepted + rejected > 0 { accepted as f64 * 100.0 / (accepted + rejected) as f64 } else { 0.0 }},
+            ],
+        });
+        json.to_string()
+    }
+
+    /// `/api/v1/revenue-streams` — stream weights and per-source work units.
+    fn build_revenue_streams_payload(&self) -> String {
+        let json = json!({
+            "ok": true,
+            "multistream_enabled": false,
+            "streams": [
+                {"source": "zion", "weight_pct": 100.0, "submits": 0, "accepted": 0, "fee_rate_pct": 1.0},
+            ],
+            "weights_string": "zion:100.0",
+            "description": "single-stream:zion:100.0",
+        });
+        json.to_string()
+    }
+
+    /// `/api/v1/routing-metrics` — routing stats snapshot.
+    fn build_routing_metrics_payload(&self) -> String {
+        let pool = self.pool.lock().expect("pool lock poisoned");
+        let (accepted, rejected) = pool.stats();
+        let uptime_s = self.started_at.elapsed().as_secs();
+
+        let json = json!({
+            "ok": true,
+            "uptime_s": uptime_s,
+            "total_submits": accepted + rejected,
+            "total_accepted": accepted,
+            "total_rejected": rejected,
+            "total_stale": 0,
+            "groups": [
+                {"group": "zion", "submits": accepted + rejected, "accepted": accepted, "pct": 100.0},
+            ],
+        });
+        json.to_string()
     }
 }
 

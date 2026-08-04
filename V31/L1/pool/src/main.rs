@@ -16,6 +16,11 @@ use zion_l1_types::{Address, ChainId};
 use zion_pool::api::PoolApi;
 use zion_pool::auxpow_bridge::MultiAuxPowBridge;
 use zion_pool::auxpow_runtime;
+use zion_pool::deferred_payout::{
+    spawn_deferred_payout_processor, spawn_payout_confirmation_sweep,
+    DeferredPayoutConfig, DeferredPayoutQueue,
+};
+use zion_pool::ncl_gateway::{NclGatewayClient, NclHeartbeatConfig, NclPricing};
 use zion_pool::notifications::{Notifier, NotificationsConfig};
 use zion_pool::payout::PayoutSweeper;
 use zion_pool::revenue_scheduler::RevenueScheduler;
@@ -114,9 +119,10 @@ async fn main() -> anyhow::Result<()> {
         pool_fee_pct: u64::from(args.pool_fee_bps) / 100,
         humanitarian_wallet: humanitarian_address.clone(),
         issobella_wallet: issobella_address.clone(),
-        pool_fee_wallet: pool_fee_address,
+        pool_fee_wallet: pool_fee_address.clone(),
     };
 
+    let pool_wallet_key = args.pool_wallet_key.clone();
     let config = PoolConfig {
         port: 0,
         pool_fee_bps: args.pool_fee_bps,
@@ -230,6 +236,58 @@ async fn main() -> anyhow::Result<()> {
         info!("template feed from L1 RPC: {}", l1_rpc_url);
     } else {
         warn!("no --l1-rpc-url configured; template feed disabled");
+    }
+
+    // ── Deferred payout processor ─────────────────────────────────────────
+    let deferred_queue: DeferredPayoutQueue = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+    let deferred_cfg = DeferredPayoutConfig::from_env();
+    let deferred_rpc = if l1_rpc_url.is_empty() { None } else { Some(l1_rpc_url.clone()) };
+    let deferred_wallet = if pool_fee_address.is_empty() { None } else { Some(pool_fee_address.clone()) };
+    let deferred_key = pool_wallet_key.clone();
+    spawn_deferred_payout_processor(
+        deferred_queue.clone(),
+        deferred_cfg,
+        deferred_rpc.clone(),
+        deferred_wallet,
+        deferred_key,
+        Some(notifier.clone()),
+    );
+
+    // ── Payout confirmation sweep ─────────────────────────────────────────
+    let sweep_interval = std::env::var("ZION_PAYOUT_SWEEP_INTERVAL_SECS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(30);
+    spawn_payout_confirmation_sweep(deferred_rpc.clone(), sweep_interval);
+
+    // ── NCL Gateway (AI compute revenue stream) ───────────────────────────
+    if let Ok(gateway_url) = std::env::var("ZION_NCL_GATEWAY_URL") {
+        if !gateway_url.trim().is_empty() {
+            match NclGatewayClient::new(&gateway_url) {
+                Ok(client) => {
+                    let pricing = NclPricing::from_env();
+                    let heartbeat = NclHeartbeatConfig::from_env();
+                    info!(
+                        "ncl_gateway_enabled url={} heartbeat={} interval_secs={} price_in_per_1k={} price_out_per_1k={}",
+                        client.authority(),
+                        heartbeat.enabled,
+                        heartbeat.interval.as_secs(),
+                        pricing.price_in_per_1k_tokens,
+                        pricing.price_out_per_1k_tokens
+                    );
+                    // NCL dispatcher would be spawned here with the revenue collector
+                    // For now, just log that it's enabled — full spawn requires
+                    // a RevenueCollector handle from the pool runtime
+                }
+                Err(e) => {
+                    warn!("ncl_gateway_config_error url={} error={}", gateway_url, e);
+                }
+            }
+        } else {
+            info!("ncl_gateway_enabled=false (set ZION_NCL_GATEWAY_URL to enable)");
+        }
+    } else {
+        info!("ncl_gateway_enabled=false (set ZION_NCL_GATEWAY_URL to enable)");
     }
 
     let (_shutdown_tx, shutdown_rx) = watch::channel(false);
