@@ -109,6 +109,7 @@ impl StratumServer {
             Err(_) => return error_response(Some(id), -32602, "invalid nonce"),
         };
 
+        let worker_name = submission.worker.clone();
         let result = if job_id.starts_with("zion_") {
             self.pool.lock().unwrap().submit_zion(submission, &header)
         } else if job_id.starts_with("aux_") {
@@ -123,10 +124,18 @@ impl StratumServer {
 
         match result {
             Ok(true) => {
+                tracing::info!("share accepted — job={}, worker={}, nonce={}", job_id, worker_name, nonce_hex);
                 self.check_and_record_block(&job_id, &header, nonce, &target, reward, template);
                 success_response(id, Value::Bool(true))
             }
-            _ => success_response(id, Value::Bool(false)),
+            Ok(false) => {
+                tracing::warn!("share rejected (low difficulty) — job={}, worker={}, nonce={}", job_id, worker_name, nonce_hex);
+                success_response(id, Value::Bool(false))
+            }
+            Err(e) => {
+                tracing::warn!("share error — job={}, worker={}, nonce={}, err={}", job_id, worker_name, nonce_hex, e);
+                error_response(Some(id), -32000, &format!("share error: {}", e))
+            }
         }
     }
 
