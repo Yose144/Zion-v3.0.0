@@ -21,6 +21,7 @@ use crate::pool::{Pool, PoolError};
 use crate::rate_limit::IpRateLimiter;
 use crate::revenue_scheduler::RevenueScheduler;
 use crate::rpc_client::{jsonrpc_call, parse_rpc_addr};
+use crate::routing::{RoutingStats, resolve_session_group, session_group_name};
 use crate::share::ShareSubmission;
 use crate::share_relay::{relay_share_fire_and_forget, ShareRelayConfig};
 use crate::stratum_v1::is_stratum_v1;
@@ -66,6 +67,8 @@ pub struct StratumServer {
     notifier: Arc<Notifier>,
     /// Revenue scheduler for multi-stream revenue routing.
     revenue_scheduler: Arc<Mutex<RevenueScheduler>>,
+    /// Per-group/source submit tracking + periodic logging.
+    routing_stats: Arc<Mutex<RoutingStats>>,
 }
 
 impl StratumServer {
@@ -104,6 +107,7 @@ impl StratumServer {
             relay_config: ShareRelayConfig::from_env(),
             notifier: Arc::new(Notifier::new(NotificationsConfig::from_env())),
             revenue_scheduler: Arc::new(Mutex::new(RevenueScheduler::from_env(0.0))),
+            routing_stats: Arc::new(Mutex::new(RoutingStats::new(env_or("ZION_POOL_ROUTING_LOG_EVERY", 1000)))),
         }
     }
 
@@ -851,6 +855,15 @@ impl StratumServer {
                     &algorithm,
                     &backend,
                 );
+
+                // Resolve session group for revenue routing
+                let group = resolve_session_group(&miner_id, &worker_name);
+                tracing::info!(
+                    "v3_session_group miner={} worker={} group={}",
+                    miner_id,
+                    worker_name,
+                    session_group_name(group),
+                );
             }
             Ok(msg) => {
                 tracing::warn!("v3_expected_hello got={:?} from={}", msg, ip);
@@ -866,6 +879,8 @@ impl StratumServer {
                 return;
             }
         }
+
+        let group = resolve_session_group(&miner_id, &worker_name);
 
         let mut notify_rx = self.notify_tx.subscribe();
 
@@ -925,6 +940,18 @@ impl StratumServer {
                                     hash.as_bytes() <= &target
                                 };
 
+                                // Record routing stats
+                                use zion_cosmic_harmony::revenue::RevenueSource;
+                                let should_log = self.routing_stats.lock().unwrap().record(
+                                    group,
+                                    RevenueSource::Zion,
+                                    accepted,
+                                );
+                                if should_log {
+                                    let snap = self.routing_stats.lock().unwrap().snapshot_line();
+                                    tracing::info!("routing_stats {}", snap);
+                                }
+
                                 if accepted {
                                     // Record telemetry
                                     self.telemetry.lock().unwrap().record_job_result(
@@ -961,6 +988,9 @@ impl StratumServer {
                                         self.telemetry.lock().unwrap().record_block_found(&submit_miner, &submit_worker);
                                         self.template_cache.lock().unwrap().invalidate();
 
+                                        // Notify all channels (Telegram/SMTP/OASIS/webhook)
+                                        self.notifier.notify_block_found(&submit_miner, block_height, &submit_worker);
+
                                         // Submit block to node
                                         let rpc_url = self.pool.lock().unwrap().config.l1_rpc_url.clone();
                                         if let (Some(rpc_url), Some(tpl)) = (rpc_url, template) {
@@ -971,9 +1001,11 @@ impl StratumServer {
                                                     return;
                                                 }
                                             };
+                                            let notifier = self.notifier.clone();
                                             tokio::spawn(async move {
                                                 if let Err(e) = submit_block_rpc(&rpc_url, &block).await {
                                                     tracing::warn!("v3_submitBlock failed: {}", e);
+                                                    notifier.notify_orphan(block_height);
                                                 }
                                             });
                                         }
