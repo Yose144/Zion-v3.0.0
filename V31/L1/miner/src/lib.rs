@@ -14,6 +14,7 @@ pub mod b3_verify;
 pub mod metrics;
 pub mod config;
 pub mod cpu_features;
+pub mod gpu;
 pub mod gpu_guard;
 pub mod pool_message;
 pub mod reconnect;

@@ -14,12 +14,15 @@ auxpow = []
 # Native algorithm acceleration (optional, requires C toolchain).
 # Enables RandomX, Ghostrider, VerusHash, etc. via zion-native-ffi.
 native-hashers = ["dep:zion-native-ffi"]
+# Individual native algorithm shims used by the CPU fallback and CUDA/Metal paths.
+native-kheavyhash = ["native-hashers", "zion-native-ffi/native-kheavyhash"]
+native-blake3-algo = ["native-hashers", "zion-native-ffi/native-blake3-algo"]
 # Native VerusHash — uses zion-native-ffi's C++ implementation instead of stub.
-native-verushash = ["native-hashers", "zion-native-ffi/native-verushash"]
+native-verushash = ["native-hashers", "auxpow", "zion-native-ffi/native-verushash"]
 # GPU backends (feature-gated, require GPU toolchain)
-gpu-opencl = ["dep:ocl"]
-gpu-cuda = ["dep:cudarc"]
-gpu-metal = ["dep:metal"]
+gpu-opencl = ["dep:ocl", "auxpow"]
+gpu-cuda = ["dep:cudarc", "auxpow"]
+gpu-metal = ["dep:metal", "dep:block", "dep:objc", "auxpow"]
 # Convenience: all GPU backends
 gpu = ["gpu-opencl", "gpu-cuda", "gpu-metal"]
 
@@ -32,8 +35,10 @@ zion-native-ffi = { path = "../native-ffi", optional = true }
 anyhow = { workspace = true }
 async-trait = { workspace = true }
 # GPU backends
-cudarc = { version = "0.19", optional = true, default-features = false, features = ["cuda-12060", "driver", "fallback-dynamic-loading"] }
+cudarc = { version = "0.12", optional = true, features = ["cuda-12040"] }
 metal = { version = "0.30", optional = true }
+block = { version = "0.1", optional = true }
+objc = { version = "0.2", optional = true }
 ocl = { version = "0.19", optional = true }
 base64 = { workspace = true }
 blake2 = { workspace = true }
