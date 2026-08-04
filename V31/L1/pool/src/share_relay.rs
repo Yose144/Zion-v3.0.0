@@ -17,7 +17,6 @@ use crate::v3_protocol::{encode_message, PoolMessage};
 /// Does NOT read the response — this is intentional to minimize latency.
 pub async fn relay_share_fire_and_forget(upstream_addr: &str, relay: &PoolMessage) -> Result<()> {
     let mut stream = TcpStream::connect(upstream_addr).await?;
-    stream.set_linger(Some(Duration::from_secs(0))).ok();
 
     let line = encode_message(relay)?;
     // Write with timeout

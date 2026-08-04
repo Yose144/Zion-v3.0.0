@@ -202,6 +202,7 @@ impl DexRouter {
     }
 
     /// DFS helper for multi-path enumeration.
+    #[allow(clippy::too_many_arguments)]
     fn dfs_paths(
         &self,
         current: &AssetId,

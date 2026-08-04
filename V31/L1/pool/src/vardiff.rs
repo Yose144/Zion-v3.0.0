@@ -151,7 +151,7 @@ pub fn difficulty_to_target(difficulty: u64) -> [u8; 32] {
 
     // Number of leading zero bits = floor(log2(difficulty)).
     // For difficulty D, target ≈ 2^256 / D = 2^(256 - log2(D)).
-    let leading_zeros = (difficulty as u64).leading_zeros() as usize;
+    let leading_zeros = difficulty.leading_zeros() as usize;
     let log2_d = 63 - leading_zeros; // floor(log2(difficulty)) = position of MSB
     let shift_bits = log2_d.min(256);
 

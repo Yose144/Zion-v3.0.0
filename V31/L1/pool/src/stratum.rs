@@ -729,10 +729,10 @@ impl StratumServer {
                     match line {
                         Ok(Some(line)) => {
                             match decode_message(&line) {
-                                Ok(PoolMessage::Submit { job_id, miner_id, worker_name, nonce, .. }) => {
+                                Ok(PoolMessage::Submit { job_id, miner_id: _, worker_name, nonce, .. }) => {
                                     let job_key = format!("zion_{}", job_id);
                                     let job_data = self.jobs.lock().unwrap().get(&job_key).cloned();
-                                    if let Some((header, target, _reward, template)) = job_data {
+                                    if let Some((header, _target, _reward, template)) = job_data {
                                         let (height, difficulty) = template.as_ref().map(|t| (t.height, t.difficulty)).unwrap_or((0, 1));
                                         let submission = ShareSubmission {
                                             worker: worker_name.clone(),
@@ -1270,7 +1270,7 @@ async fn write_v3_message<W>(
 where
     W: tokio::io::AsyncWrite + Unpin + Send,
 {
-    let line = encode_message(msg).map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+    let line = encode_message(msg).map_err(std::io::Error::other)?;
     let mut w = writer.lock().await;
     w.write_all(line.as_bytes()).await?;
     w.write_all(b"\n").await?;

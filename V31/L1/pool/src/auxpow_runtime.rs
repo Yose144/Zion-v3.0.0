@@ -78,12 +78,21 @@ impl AuxPowRuntimeConfig {
 
 /// Build the runtime config from environment variables.
 pub fn config_from_env() -> AuxPowRuntimeConfig {
-    let mut cfg = AuxPowRuntimeConfig::default();
-
-    cfg.payout_wallet = std::env::var("ZION_POOL_AUXPOW_WALLET").unwrap_or_default();
-    cfg.worker_name =
-        std::env::var("ZION_POOL_AUXPOW_WORKER").unwrap_or_else(|_| "zion-pool".to_string());
-    cfg.password = std::env::var("ZION_POOL_AUXPOW_PASSWORD").unwrap_or_else(|_| "x".to_string());
+    let mut cfg = AuxPowRuntimeConfig {
+        payout_wallet: std::env::var("ZION_POOL_AUXPOW_WALLET").unwrap_or_default(),
+        worker_name: std::env::var("ZION_POOL_AUXPOW_WORKER")
+            .unwrap_or_else(|_| "zion-pool".to_string()),
+        password: std::env::var("ZION_POOL_AUXPOW_PASSWORD").unwrap_or_else(|_| "x".to_string()),
+        profit_check_interval_secs: std::env::var("ZION_POOL_PROFIT_INTERVAL")
+            .ok()
+            .and_then(|s| s.trim().parse().ok())
+            .unwrap_or(300),
+        hysteresis_pct: std::env::var("ZION_POOL_PROFIT_HYSTERESIS")
+            .ok()
+            .and_then(|s| s.trim().parse().ok())
+            .unwrap_or(15.0),
+        ..Default::default()
+    };
 
     // Parse enabled coins from ZION_POOL_AUXPOW_COINS (comma-separated tickers)
     // or from individual ZION_POOL_AUXPOW_WALLET_<COIN> env vars.
@@ -117,16 +126,6 @@ pub fn config_from_env() -> AuxPowRuntimeConfig {
             cfg.enabled_coins.insert(coin);
         }
     }
-
-    cfg.profit_check_interval_secs = std::env::var("ZION_POOL_PROFIT_INTERVAL")
-        .ok()
-        .and_then(|s| s.trim().parse().ok())
-        .unwrap_or(300);
-
-    cfg.hysteresis_pct = std::env::var("ZION_POOL_PROFIT_HYSTERESIS")
-        .ok()
-        .and_then(|s| s.trim().parse().ok())
-        .unwrap_or(15.0);
 
     cfg
 }
@@ -266,6 +265,7 @@ pub fn spawn_auxpow_runtime(
 }
 
 /// Main bridge task for a single coin — runs in its own tokio runtime.
+#[allow(clippy::too_many_arguments)]
 async fn run_bridge_task(
     coin_label: &str,
     pool_addr: &str,
@@ -308,7 +308,6 @@ async fn run_bridge_task(
         }
 
         // Main loop: fetch jobs + forward shares + touch timestamps
-        let mut last_job_fetch = std::time::Instant::now();
         loop {
             // Check if still connected
             if !client.is_connected().await {
@@ -333,7 +332,6 @@ async fn run_bridge_task(
                     );
                     // Push to bridge queue
                     bridge.push_job_for_coin(&coin, pkg);
-                    last_job_fetch = std::time::Instant::now();
                 }
                 Ok(Err(e)) => {
                     tracing::warn!("auxpow[{}]: wait_for_job error: {}", coin_label, e);
