@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Menu, X, Rocket, User, Music, Radio, Settings, Globe, Map as MapIcon,
   Compass, Volume2, VolumeX, Eye, EyeOff, Plane, LogIn,
 } from 'lucide-react';
-import Link from 'next/link';
 import { ShipTab, IdentityTab, AudioTab, OasisTab, type Tab } from './GamePanel';
 import MiniMap from './MiniMap';
 import type { World, WorldCategory, WorldLayer } from '../domain/types/world';
@@ -51,6 +51,7 @@ export default function MainMenu({
   onCloseWorld,
   isMobile,
 }: MainMenuProps) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab | 'worlds'>('worlds');
   const { xp, credits, discoveredWorlds, scannedWorlds, collectedEggs, completedQuests, address, shipLoadout } = useGameStore();
@@ -191,8 +192,7 @@ export default function MainMenu({
                   icon={LogIn}
                   label="Game"
                   color="text-oasis-emerald"
-                  href="/dashboard"
-                  onClick={onClose}
+                  onClick={() => { onClose(); router.push('/dashboard'); }}
                 />
               </div>
             </motion.div>
@@ -216,27 +216,16 @@ function QuickAction({
   label,
   color,
   onClick,
-  href,
 }: {
   icon: typeof Plane;
   label: string;
   color: string;
   onClick?: () => void;
-  href?: string;
 }) {
-  const className = `flex flex-col items-center gap-0.5 rounded-lg border border-white/5 bg-white/[0.03] py-2 text-[9px] font-semibold transition hover:bg-white/10 ${color}`;
-  if (href) {
-    return (
-      <Link href={href} onClick={onClick} className={className}>
-        <Icon className="h-4 w-4" />
-        {label}
-      </Link>
-    );
-  }
   return (
     <button
       onClick={onClick}
-      className={className}
+      className={`flex flex-col items-center gap-0.5 rounded-lg border border-white/5 bg-white/[0.03] py-2 text-[9px] font-semibold transition hover:bg-white/10 ${color}`}
     >
       <Icon className="h-4 w-4" />
       {label}
