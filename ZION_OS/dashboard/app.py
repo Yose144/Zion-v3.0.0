@@ -8817,11 +8817,12 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
     <!-- Service Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <div id="card-edge-node" class="bg-zion-800 rounded-xl p-4 border border-zion-700 transition">
-        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-gray-400">🌍 Edge Node (Primary)</span><span id="badge-edge-node" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
+        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-gray-400">🌍 V3 Node 1 (P2P Peer)</span><span id="badge-edge-node" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
         <div class="text-3xl font-bold mb-1 text-amber-400" id="val-edge-node-height">—</div><div class="text-xs text-gray-400 mb-2">Chain Height</div>
         <div class="text-xs font-mono text-gray-300 truncate mb-1" id="val-edge-node-hash">—</div>
         <div class="text-xs text-gray-400 mb-1">Peers: <span id="val-edge-node-peers" class="text-white font-bold">—</span></div>
-        <div class="text-xs text-gray-400 mb-2">Host: <span id="val-edge-node-host" class="font-mono">127.0.0.1</span></div>
+        <div class="text-xs text-gray-400 mb-1">P2P: <span class="text-white font-mono">8333</span> | RPC: <span class="text-white font-mono">9443</span></div>
+        <div class="text-xs text-gray-400 mb-2">Feeds: V31 sync + L2 services</div>
         <div class="flex gap-1 mt-2">
           <button onclick="window.open('http://127.0.0.1:9443/jsonrpc','_blank')" class="flex-1 text-xs px-2 py-1 bg-zinc-700 hover:bg-zinc-600 rounded transition">🔗 RPC</button>
         </div>
@@ -8858,10 +8859,10 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
         <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">🚀 V31 Node (PROD)</span><span id="badge-v31-node" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
         <div class="text-3xl font-bold mb-1 text-amber-400" id="val-v31-node-height">—</div><div class="text-xs text-gray-400 mb-2">Chain Height</div>
         <div class="text-xs font-mono text-gray-300 truncate mb-1" id="val-v31-node-hash">—</div>
+        <div class="text-xs text-gray-400 mb-1">P2P: <span class="text-white font-mono">8335</span> | RPC: <span class="text-white font-mono">9445</span></div>
+        <div class="text-xs text-gray-400 mb-1">Public RPC: <span class="text-emerald-400 font-mono">8443 → 9445</span></div>
         <div class="text-xs text-gray-400 mb-1">Sync: <span id="val-v31-node-sync" class="text-amber-400">—</span></div>
-        <div class="text-xs text-gray-400 mb-1">Mempool: <span id="val-v31-node-mempool" class="text-white">—</span></div>
-        <div class="text-xs text-gray-400 mb-1">SystemD: <span id="val-v31-node-systemd" class="text-white">—</span></div>
-        <div class="text-xs text-gray-400 mb-2">Mem: <span id="val-v31-node-mem" class="text-white">—</span></div>
+        <div class="text-xs text-gray-400 mb-1">Mem: <span id="val-v31-node-mem" class="text-white">—</span></div>
         <div class="flex gap-1 mt-2">
           <button onclick="controlAction('restart-v31-node')" class="flex-1 text-xs px-2 py-1 bg-amber-700 hover:bg-amber-600 rounded transition">⟳ Restart</button>
           <button onclick="controlAction('stop-v31-node')" class="flex-1 text-xs px-2 py-1 bg-red-700 hover:bg-red-600 rounded transition">⏹ Stop</button>
@@ -8871,9 +8872,9 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
       <div id="card-v31-pool" class="bg-zion-800 rounded-xl p-4 border-2 border-emerald-600/40 transition">
         <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">🌐 V31 Pool (PROD)</span><span id="badge-v31-pool" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
         <div class="text-3xl font-bold mb-1 text-emerald-400" id="val-v31-pool-shares">—</div><div class="text-xs text-gray-400 mb-2">Shares Accepted</div>
-        <div class="text-xs text-gray-400 mb-1">Stratum: <span id="val-v31-pool-port" class="text-white font-mono">8444</span></div>
+        <div class="text-xs text-gray-400 mb-1">Stratum: <span class="text-white font-mono">0.0.0.0:8444</span></div>
+        <div class="text-xs text-gray-400 mb-1">→ Node RPC: <span class="text-white font-mono">127.0.0.1:9445</span></div>
         <div class="text-xs text-gray-400 mb-1">Jobs: <span id="val-v31-pool-jobs" class="text-white">—</span></div>
-        <div class="text-xs text-gray-400 mb-2">Status: <span id="val-v31-pool-status" class="text-white">—</span></div>
         <div class="flex gap-1 mt-2">
           <button onclick="controlAction('restart-v31-pool')" class="flex-1 text-xs px-2 py-1 bg-amber-700 hover:bg-amber-600 rounded transition">⟳ Restart</button>
         </div>
@@ -8882,8 +8883,8 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
       <div id="card-v31-miner" class="bg-zion-800 rounded-xl p-4 border-2 border-emerald-600/40 transition">
         <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">⛏️ V31 Miner (PROD)</span><span id="badge-v31-miner" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
         <div class="text-3xl font-bold mb-1 text-amber-400" id="val-v31-miner-hashrate">—</div><div class="text-xs text-gray-400 mb-2">H/s</div>
-        <div class="text-xs text-gray-400 mb-1">Shares: <span id="val-v31-miner-shares" class="text-white">—</span></div>
-        <div class="text-xs text-gray-400 mb-1">Accepted: <span id="val-v31-miner-accepted" class="text-emerald-400">—</span></div>
+        <div class="text-xs text-gray-400 mb-1">→ Pool: <span class="text-white font-mono">127.0.0.1:8444</span></div>
+        <div class="text-xs text-gray-400 mb-1">Shares: <span id="val-v31-miner-shares" class="text-white">—</span> | Accepted: <span id="val-v31-miner-accepted" class="text-emerald-400">—</span></div>
         <div class="text-xs text-gray-400 mb-2">Worker: <span id="val-v31-miner-worker" class="text-white text-[10px]">—</span></div>
         <div class="flex gap-1 mt-2">
           <button onclick="controlAction('restart-v31-miner')" class="flex-1 text-xs px-2 py-1 bg-amber-700 hover:bg-amber-600 rounded transition">⟳ Restart</button>
@@ -8894,34 +8895,33 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
       <div id="card-v31-multichain" class="bg-zion-800 rounded-xl p-4 border-2 border-emerald-600/40 transition">
         <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">🌀 V31 Multichain (PROD)</span><span id="badge-v31-multichain" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
         <div class="text-3xl font-bold mb-1 text-blue-400" id="val-v31-mc-transfers">—</div><div class="text-xs text-gray-400 mb-2">Total Transfers</div>
-        <div class="text-xs text-gray-400 mb-1">Pending: <span id="val-v31-mc-pending" class="text-white">—</span></div>
-        <div class="text-xs text-gray-400 mb-1">API: <span class="text-white font-mono">8453</span></div>
+        <div class="text-xs text-gray-400 mb-1">API: <span class="text-white font-mono">127.0.0.1:8453</span></div>
+        <div class="text-xs text-gray-400 mb-1">→ Node RPC: <span class="text-white font-mono">127.0.0.1:9445</span></div>
         <div class="text-xs text-gray-400 mb-2">Health: <span id="val-v31-mc-health" class="text-white">—</span></div>
         <div class="flex gap-1 mt-2">
           <button onclick="controlAction('restart-v31-multichain')" class="flex-1 text-xs px-2 py-1 bg-amber-700 hover:bg-amber-600 rounded transition">⟳ Restart</button>
         </div>
       </div>
 
-      <div id="card-pool" class="bg-zion-800 rounded-xl p-4 border border-zion-700 transition">
-        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-gray-400">🌐 Edge Pool (Primary)</span><span id="badge-pool" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
-        <div class="text-3xl font-bold mb-1 text-emerald-400" id="val-pool-sessions">—</div><div class="text-xs text-gray-400 mb-2">Active Sessions</div>
-        <div class="text-xs text-gray-400 mb-1">Blocks: <span id="val-pool-blocks" class="text-emerald-400 font-bold">—</span></div>
-        <div class="text-xs text-gray-400 mb-1">Shares: <span id="val-pool-shares" class="text-white">—</span></div>
-        <div class="text-xs text-amber-400 mb-2" id="val-pool-fee">—</div>
+      <div id="card-pool" class="bg-zion-800/50 rounded-xl p-4 border border-red-700/40 opacity-60 transition">
+        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-red-400">🌐 V3 Pool (DISABLED)</span><span id="badge-pool" class="px-2 py-0.5 rounded text-xs font-bold bg-red-700/40 text-red-300">OFF</span></div>
+        <div class="text-3xl font-bold mb-1 text-gray-500" id="val-pool-sessions">—</div><div class="text-xs text-gray-500 mb-2">Active Sessions</div>
+        <div class="text-xs text-gray-500 mb-1">Blocks: <span id="val-pool-blocks" class="text-gray-500 font-bold">—</span></div>
+        <div class="text-xs text-gray-500 mb-1">Shares: <span id="val-pool-shares" class="text-gray-500">—</span></div>
+        <div class="text-xs text-red-400 mb-2" id="val-pool-fee">Archived — replaced by V31 Pool</div>
         <div class="flex gap-1 mt-2">
-          <button onclick="window.open('http://62.171.141.136:8444','_blank')" class="flex-1 text-xs px-2 py-1 bg-zinc-700 hover:bg-zinc-600 rounded transition">🔗 Public</button>
+          <span class="text-xs px-2 py-1 text-gray-600 italic">Replaced by V31 Pool (8444)</span>
         </div>
       </div>
 
-      <div id="card-miner" class="bg-zion-800 rounded-xl p-4 border border-zion-700 transition">
-        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-gray-400">⛏️ GPU Miner</span><span id="badge-miner" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
-        <div class="text-3xl font-bold mb-1 text-amber-400" id="val-miner-hashrate">—</div><div class="text-xs text-gray-400 mb-2">KH/s (10s avg)</div>
-        <div class="text-xs text-gray-400 mb-1">Device: <span id="val-miner-gpu" class="text-white text-[10px]">—</span></div>
-        <div class="text-xs text-gray-400 mb-1">Height: <span id="val-miner-height" class="text-white">—</span></div>
-        <div class="text-xs text-gray-400 mb-2">Diff: <span id="val-miner-diff">—</span></div>
+      <div id="card-miner" class="bg-zion-800/50 rounded-xl p-4 border border-red-700/40 opacity-60 transition">
+        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-red-400">⛏️ V3 GPU Miner (ARCHIVED)</span><span id="badge-miner" class="px-2 py-0.5 rounded text-xs font-bold bg-red-700/40 text-red-300">OFF</span></div>
+        <div class="text-3xl font-bold mb-1 text-gray-500" id="val-miner-hashrate">—</div><div class="text-xs text-gray-500 mb-2">KH/s (10s avg)</div>
+        <div class="text-xs text-gray-500 mb-1">Device: <span id="val-miner-gpu" class="text-gray-500 text-[10px]">—</span></div>
+        <div class="text-xs text-gray-500 mb-1">Height: <span id="val-miner-height" class="text-gray-500">—</span></div>
+        <div class="text-xs text-gray-500 mb-2">Diff: <span id="val-miner-diff">—</span></div>
         <div class="flex gap-1 mt-2">
-          <button onclick="controlAction('start-miner-gpu')" class="flex-1 text-xs px-2 py-1 bg-purple-700 hover:bg-purple-600 rounded transition">🎮 GPU</button>
-          <button onclick="controlAction('start-miner-cpu')" class="flex-1 text-xs px-2 py-1 bg-blue-700 hover:bg-blue-600 rounded transition">💻 CPU</button>
+          <span class="text-xs px-2 py-1 text-gray-600 italic">Replaced by V31 Miner</span>
           <button onclick="controlAction('stop-miner')" class="flex-1 text-xs px-2 py-1 bg-red-700 hover:bg-red-600 rounded transition">⏹ Stop</button>
         </div>
       </div>
