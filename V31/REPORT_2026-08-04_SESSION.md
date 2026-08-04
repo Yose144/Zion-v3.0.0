@@ -89,25 +89,27 @@ ff2b88403 2026-07-27 feat(v31): TCP stratum server with mining.notify broadcast
 
 ---
 
-## 3. Release build (macOS aarch64)
+## 3. Release builds (multi-platform)
 
-- **Příkaz:** `cargo build --release` ve workspace `V31/`
-- **Trvání:** 6 min 35 s
-- **Profil:** `release` (optimized)
-- **Vybrané binárky do balíčku:**
-  - `zion`
-  - `zion-node`
-  - `zion-pool`
-  - `zion-miner`
-  - `zion-universal-miner`
-  - `zion-wallet`
-  - `zion-dao`
-- **Balíček:** `V31/releases/macos-aarch64/zion-macos-aarch64-3.1.0-alpha.2.tar.gz`
-- **Velikost:** 16 MB
-- **SHA256:** `2dc34a468062b1a4fa9f0b14d9850ed72adb8820edf1735d5a13955b29917944`
-- **Git rev:** `748c2fc66`
+| Target | Příkaz | Trvání | Výsledek |
+|--------|--------|--------|----------|
+| macOS aarch64 | `cargo build --release` | 6 m 35 s | OK |
+| macOS x86_64 | `cargo build --release --target x86_64-apple-darwin` | 6 m 15 s | OK |
+| Windows x86_64 | `cargo build --release --target x86_64-pc-windows-gnu` | 6 m 25 s | OK |
+| Linux x86_64 | `cargo build --release --target x86_64-unknown-linux-musl` (s `x86_64-linux-musl-gcc`) | 4 m 29 s | OK (core/pool/miner/cli/wallet) |
 
-> Poznámka: balíček zůstává lokálně v `V31/releases/macos-aarch64/` (adresář je v `.gitignore`, do gitu se necommituje). Draft GitHub Release: <https://github.com/Yose144/Zion-v3.0.0/releases/tag/untagged-b50c5b49e64a23722e2f>
+### Balíčky
+
+| Platforma | Soubor | SHA256 |
+|-----------|--------|--------|
+| Linux x86_64 | `zion-linux-x86_64-3.1.0-alpha.2.tar.gz` | `e5e71e84e85090775add5f2c420a42cedaa9c31b3a910786bb7f8f70c869ad99` |
+| macOS aarch64 | `zion-macos-aarch64-3.1.0-alpha.2.tar.gz` | `2dc34a468062b1a4fa9f0b14d9850ed72adb8820edf1735d5a13955b29917944` |
+| macOS x86_64 | `zion-macos-x86_64-3.1.0-alpha.2.tar.gz` | `25e8727ef71eee4ff2bb8df26e6a026f2a006cc36f109b0be92c754809351d31` |
+| Windows x86_64 | `zion-windows-x86_64-3.1.0-alpha.2.zip` | `ffc7e5e50422ee6fc09bc6f490b7770a423257a4e40441053ca610c1622809b0` |
+
+- **Git rev:** `0964d2599`
+- **Adresář:** `V31/releases/` (v `.gitignore`, necommituje se)
+- **Draft GitHub Release:** <https://github.com/Yose144/Zion-v3.0.0/releases/tag/untagged-80ec615cbeb9fc257f91>
 
 ---
 

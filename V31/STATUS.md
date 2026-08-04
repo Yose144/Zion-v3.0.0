@@ -237,7 +237,7 @@ Všechny V3 parity moduly zapojené do pool runtime (main.rs + stratum.rs).
 - **ZionDex Multi-Path ✅ COMPLETE** — Top-N routes, cross-chain bridge routing, /v1/swap/quote/multi endpoint. 562 multichain testů pass.
 - **Dashboard Metrics ✅ COMPLETE** — Pool metrics, service overview, multichain health, Prometheus parsing.
 - **Pool Runtime Wiring ✅ COMPLETE** — Notifier, RevenueScheduler, RevenueProxy zapojené. 2043 testů pass.
-- **macOS Release Build ✅ COMPLETE** — `cargo build --release` OK, balíček připraven, draft release na GitHubu, viz [`REPORT_2026-08-04_SESSION.md`](./REPORT_2026-08-04_SESSION.md).
+- **Multi-Platform Release Build ✅ COMPLETE** — macOS aarch64/x86_64, Linux x86_64 (musl), Windows x86_64. Všechny balíčky + SHA256 připraveny, draft release na GitHubu, viz [`REPORT_2026-08-04_SESSION.md`](./REPORT_2026-08-04_SESSION.md).
 - **Fáze D zbývá:** Production hardening:
   - Non-EVM WARP kontrakty (Tron, Solana, Cosmos, ...)
   - Security audit + chaos testy (3.0.9 / 3.1.0-beta)
