@@ -51,9 +51,9 @@ enum Command {
     Doctor,
     /// Serve the V31 HTTP API gateway.
     Api,
-    /// Start the ZION L1 node.
+    /// Start / stop / status the ZION L1 node.
     Node(NodeArgs),
-    /// Manage V31 systemd services (start/stop/status/restart).
+    /// Manage V31 systemd services (start/stop/status/restart/logs).
     Service(ServiceArgs),
 }
 
@@ -150,11 +150,17 @@ struct PoolArgs {
 
 #[derive(Subcommand)]
 enum PoolCommand {
-    /// Show pool status (accepted/rejected shares and config).
+    /// Start the pool systemd service.
+    Start,
+    /// Stop the pool systemd service.
+    Stop,
+    /// Show the pool systemd service status.
     Status,
+    /// Show pool statistics (accepted/rejected shares and config).
+    Stats,
     /// Show the latest computed PPLNS payouts.
     Payouts,
-    /// Show pool share statistics (same as status).
+    /// Show pool share statistics (same as stats).
     Shares,
 }
 
@@ -210,36 +216,61 @@ struct MinerArgs {
 #[derive(Subcommand)]
 enum MinerCommand {
     /// Start the triple-stream miner (ZION + AuxPoW GPU + AuxPoW CPU).
-    Start {
-        /// ZION address that receives mining rewards.
-        #[arg(short, long)]
-        reward_address: Option<String>,
-        /// ZION L1 node RPC URL for solo mining (template fetch + block submit).
-        #[arg(long)]
-        node_rpc_url: Option<String>,
-        /// Stratum pool URL for ZION share mining.
-        #[arg(long)]
-        pool_url: Option<String>,
-        /// Optional external stratum pool URL for AuxPoW shares.
-        #[arg(short, long)]
-        auxpow_pool: Option<String>,
-        /// Worker name used on AuxPoW pools.
-        #[arg(short, long, default_value = "zion_worker")]
-        worker: String,
-        /// Disable the ZION canonical mining stream.
-        #[arg(long)]
-        no_zion: bool,
-        /// Disable the GPU AuxPoW stream.
-        #[arg(long)]
-        no_gpu: bool,
-        /// Disable the CPU AuxPoW stream.
-        #[arg(long)]
-        no_cpu: bool,
-    },
+    Start(MinerStartArgs),
+    /// Stop the miner systemd service.
+    Stop,
+    /// Show the miner systemd service status.
+    Status,
+}
+
+#[derive(Parser)]
+struct MinerStartArgs {
+    /// ZION address that receives mining rewards.
+    #[arg(short, long)]
+    reward_address: Option<String>,
+    /// ZION L1 node RPC URL for solo mining (template fetch + block submit).
+    #[arg(long)]
+    node_rpc_url: Option<String>,
+    /// Stratum pool URL for ZION share mining.
+    #[arg(long)]
+    pool_url: Option<String>,
+    /// Optional external stratum pool URL for AuxPoW shares.
+    #[arg(short, long)]
+    auxpow_pool: Option<String>,
+    /// Worker name used on AuxPoW pools.
+    #[arg(short, long, default_value = "zion_worker")]
+    worker: String,
+    /// Disable the ZION canonical mining stream.
+    #[arg(long)]
+    no_zion: bool,
+    /// Disable the GPU AuxPoW stream.
+    #[arg(long)]
+    no_gpu: bool,
+    /// Disable the CPU AuxPoW stream.
+    #[arg(long)]
+    no_cpu: bool,
 }
 
 #[derive(Parser)]
 struct NodeArgs {
+    #[command(subcommand)]
+    command: NodeCommand,
+}
+
+#[derive(Subcommand)]
+enum NodeCommand {
+    /// Start the ZION L1 node in the foreground.
+    Start(NodeStartArgs),
+    /// Stop the ZION L1 node via systemctl.
+    Stop,
+    /// Show systemd status for the ZION L1 node.
+    Status,
+    /// Restart the ZION L1 node via systemctl.
+    Restart,
+}
+
+#[derive(Parser)]
+struct NodeStartArgs {
     /// SQLite database path.
     #[arg(short, long, default_value = "zion-node.db")]
     db_path: String,
@@ -637,7 +668,10 @@ async fn main() -> anyhow::Result<()> {
             }
         },
         Command::Pool(pool) => match pool.command {
-            PoolCommand::Status | PoolCommand::Shares => match service.pool_stats() {
+            PoolCommand::Start => systemctl_all("start", "pool")?,
+            PoolCommand::Stop => systemctl_all("stop", "pool")?,
+            PoolCommand::Status => service_status("pool")?,
+            PoolCommand::Stats | PoolCommand::Shares => match service.pool_stats() {
                 Some(stats) => println!("{}", serde_json::to_string_pretty(&stats)?),
                 None => println!("Pool not configured."),
             },
@@ -647,28 +681,19 @@ async fn main() -> anyhow::Result<()> {
             },
         },
         Command::Miner(miner) => match miner.command {
-            MinerCommand::Start {
-                reward_address,
-                node_rpc_url,
-                pool_url,
-                auxpow_pool,
-                worker,
-                no_zion,
-                no_gpu,
-                no_cpu,
-            } => {
-                let reward_address = match reward_address {
-                    Some(encoded) => Address::new(ChainId::ZionL1, vec![], encoded)?,
+            MinerCommand::Start(args) => {
+                let reward_address = match args.reward_address {
+                    Some(encoded) => Address::new(ChainId::ZionL1, vec![], &encoded)?,
                     None => service.wallet_address(ChainId::ZionL1, 0, 0)?,
                 };
                 let mut miner_config = MinerConfig::new(reward_address);
-                miner_config.node_rpc_url = node_rpc_url;
-                miner_config.pool_url = pool_url;
-                miner_config.auxpow_pool = auxpow_pool;
-                miner_config.worker = worker;
-                miner_config.stream1_enabled = !no_zion;
-                miner_config.stream2_enabled = !no_gpu;
-                miner_config.stream3_enabled = !no_cpu;
+                miner_config.node_rpc_url = args.node_rpc_url;
+                miner_config.pool_url = args.pool_url;
+                miner_config.auxpow_pool = args.auxpow_pool;
+                miner_config.worker = args.worker;
+                miner_config.stream1_enabled = !args.no_zion;
+                miner_config.stream2_enabled = !args.no_gpu;
+                miner_config.stream3_enabled = !args.no_cpu;
 
                 let runtime = MinerRuntime::new(miner_config);
                 let (shutdown_tx, shutdown_rx) = watch::channel(false);
@@ -679,6 +704,8 @@ async fn main() -> anyhow::Result<()> {
                 println!("Starting triple-stream miner. Press Ctrl-C to stop.");
                 runtime.run(shutdown_rx).await?;
             }
+            MinerCommand::Stop => systemctl_all("stop", "miner")?,
+            MinerCommand::Status => service_status("miner")?,
         },
         Command::Doctor => {
             let health = service.health().await;
@@ -706,42 +733,47 @@ async fn main() -> anyhow::Result<()> {
                 .run()
                 .await?;
         }
-        Command::Node(node) => {
-            let human = Address::new(ChainId::ZionL1, vec![], &node.human)
-                .map_err(|e| anyhow!("invalid human address: {e}"))?;
-            let issobella = Address::new(ChainId::ZionL1, vec![], &node.issobella)
-                .map_err(|e| anyhow!("invalid issobella address: {e}"))?;
+        Command::Node(node) => match node.command {
+            NodeCommand::Start(args) => {
+                let human = Address::new(ChainId::ZionL1, vec![], &args.human)
+                    .map_err(|e| anyhow!("invalid human address: {e}"))?;
+                let issobella = Address::new(ChainId::ZionL1, vec![], &args.issobella)
+                    .map_err(|e| anyhow!("invalid issobella address: {e}"))?;
 
-            let node_config = NodeConfig {
-                db_path: node.db_path,
-                rpc_addr: node.rpc,
-                p2p_addr: node.p2p,
-                v3_p2p_addr: "0.0.0.0:0".parse().unwrap(),
-                human_address: human,
-                issobella_address: issobella,
-                no_genesis: node.no_genesis,
-                seed_peers: node.peer,
-                v3_miner_address: String::new(),
-                v3_humanitarian_address: String::new(),
-                v3_issobella_address: String::new(),
-                v3_no_genesis: false,
-                v3_checkpoint_path: None,
-            };
+                let node_config = NodeConfig {
+                    db_path: args.db_path,
+                    rpc_addr: args.rpc,
+                    p2p_addr: args.p2p,
+                    v3_p2p_addr: "0.0.0.0:0".parse().unwrap(),
+                    human_address: human,
+                    issobella_address: issobella,
+                    no_genesis: args.no_genesis,
+                    seed_peers: args.peer,
+                    v3_miner_address: String::new(),
+                    v3_humanitarian_address: String::new(),
+                    v3_issobella_address: String::new(),
+                    v3_no_genesis: false,
+                    v3_checkpoint_path: None,
+                };
 
-            println!(
-                "Starting ZION L1 node; RPC={} P2P={}. Press Ctrl-C to stop.",
-                node_config.rpc_addr, node_config.p2p_addr
-            );
+                println!(
+                    "Starting ZION L1 node; RPC={} P2P={}. Press Ctrl-C to stop.",
+                    node_config.rpc_addr, node_config.p2p_addr
+                );
 
-            let node = Arc::new(Node::new(node_config).await?);
-            let (shutdown_tx, shutdown_rx) = watch::channel(false);
-            tokio::spawn(async move {
-                let _ = tokio::signal::ctrl_c().await;
-                let _ = shutdown_tx.send(true);
-            });
+                let node = Arc::new(Node::new(node_config).await?);
+                let (shutdown_tx, shutdown_rx) = watch::channel(false);
+                tokio::spawn(async move {
+                    let _ = tokio::signal::ctrl_c().await;
+                    let _ = shutdown_tx.send(true);
+                });
 
-            node.run(shutdown_rx).await?;
-        }
+                node.run(shutdown_rx).await?;
+            }
+            NodeCommand::Stop => systemctl_all("stop", "node")?,
+            NodeCommand::Status => service_status("node")?,
+            NodeCommand::Restart => systemctl_all("restart", "node")?,
+        },
         Command::Service(svc) => handle_service_command(svc)?,
     }
 
