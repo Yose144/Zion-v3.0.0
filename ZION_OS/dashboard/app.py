@@ -19,6 +19,7 @@ import sys
 import threading
 import time
 import urllib.parse
+import urllib.request
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
@@ -112,6 +113,23 @@ SERVICE_LOG_MAP = {
 _ANSI_RE = re.compile(r'\x1b\[[0-9;]*[mKABCDEFGHJSTfhilmnprsuABCD]')
 def strip_ansi(s: str) -> str:
     return _ANSI_RE.sub('', s) if s else s
+
+def _systemctl_show(service: str) -> dict:
+    """Get systemd service properties."""
+    try:
+        r = subprocess.run(
+            ["systemctl", "show", service,
+             "--property=ActiveState,SubState,UnitFileState,MainPID,MemoryCurrent"],
+            capture_output=True, text=True, timeout=5
+        )
+        props = {}
+        for line in r.stdout.strip().split("\n"):
+            if "=" in line:
+                k, v = line.split("=", 1)
+                props[k] = v
+        return props
+    except Exception:
+        return {}
 
 # Load config
 def load_config() -> dict:
@@ -3023,6 +3041,77 @@ def _build_status_edge_primary() -> dict:
         "version": "3.1.0-alpha.2",
         "sync_lag": max(0, (edge_node1_status.get("chain_height") or 0) - (v31_chain_height or 0)) if edge_node1_status.get("chain_height") else None,
     }
+    # ── V31 Pool (PROD) — systemd + share count from journald ──────────────
+    v31_pool_sys = _systemctl_show("zion-v31-pool.service")
+    v31_pool_active = v31_pool_sys.get("ActiveState", "unknown")
+    v31_pool_shares = 0
+    v31_pool_jobs = 0
+    try:
+        r = subprocess.run(
+            ["journalctl", "-u", "zion-v31-pool.service", "--no-pager", "-n", "200", "--output=cat"],
+            capture_output=True, text=True, timeout=5
+        )
+        for line in r.stdout.strip().split("\n"):
+            if "share accepted" in line:
+                v31_pool_shares += 1
+            if "broadcasting mining.notify" in line:
+                v31_pool_jobs += 1
+    except Exception:
+        pass
+    v31_pool_status = {
+        "running": v31_pool_active == "active",
+        "systemd_active": v31_pool_active,
+        "port": 8444,
+        "shares_accepted": v31_pool_shares,
+        "jobs_broadcast": v31_pool_jobs,
+    }
+    # ── V31 Miner (PROD) — systemd + hashrate from journald ────────────────
+    v31_miner_sys = _systemctl_show("zion-edge-miner.service")
+    v31_miner_active = v31_miner_sys.get("ActiveState", "unknown")
+    v31_miner_hashrate = None
+    v31_miner_shares = 0
+    v31_miner_accepted = 0
+    try:
+        r = subprocess.run(
+            ["journalctl", "-u", "zion-edge-miner.service", "--no-pager", "-n", "100", "--output=cat"],
+            capture_output=True, text=True, timeout=5
+        )
+        for line in r.stdout.strip().split("\n"):
+            if "hash_rate=" in line:
+                m = re.search(r"hash_rate=(\d+)", line)
+                if m:
+                    v31_miner_hashrate = int(m.group(1))
+            if "share submitted" in line:
+                v31_miner_shares += 1
+            if "share accepted by pool" in line:
+                v31_miner_accepted += 1
+    except Exception:
+        pass
+    v31_miner_status = {
+        "running": v31_miner_active == "active",
+        "systemd_active": v31_miner_active,
+        "hashrate": v31_miner_hashrate,
+        "shares_submitted": v31_miner_shares,
+        "shares_accepted": v31_miner_accepted,
+        "worker": "edge-cpu-miner",
+    }
+    # ── V31 Multichain (PROD) — systemd + /health ──────────────────────────
+    v31_mc_sys = _systemctl_show("zion-v31-multichain.service")
+    v31_mc_active = v31_mc_sys.get("ActiveState", "unknown")
+    v31_mc_health = {}
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8453/health", timeout=2) as resp:
+            v31_mc_health = json.loads(resp.read().decode())
+    except Exception:
+        pass
+    v31_multichain_status = {
+        "running": v31_mc_active == "active",
+        "systemd_active": v31_mc_active,
+        "ok": v31_mc_health.get("ok", False),
+        "transfers_total": v31_mc_health.get("transfers_total", 0),
+        "transfers_pending": v31_mc_health.get("transfers_pending", 0),
+        "version": v31_mc_health.get("version", "—"),
+    }
     # ── Local Backup Node — from beacon cache ───────────────────────────────
     # The operator's local machine pushes status via /api/backup-beacon every
     # 15s. If the beacon is fresh (< 90s), we show the node as online.
@@ -3318,6 +3407,9 @@ def _build_status_edge_primary() -> dict:
         "edge_node": edge_node1_status,
         "edge_node2": edge_node2_status,
         "v31_node": v31_node_status,
+        "v31_pool": v31_pool_status,
+        "v31_miner": v31_miner_status,
+        "v31_multichain": v31_multichain_status,
         "local_backup": local_backup_status,
         "all_nodes": all_nodes,
         "p2p_peers": p2p_peer_list,
@@ -4665,6 +4757,15 @@ def run_edge_action(action: str) -> dict:
         "restart-v31-node":       "sudo systemctl restart zion-v31-node.service",
         "stop-v31-node":          "sudo systemctl stop zion-v31-node.service",
         "start-v31-node":         "sudo systemctl start zion-v31-node.service",
+        "restart-v31-pool":       "sudo systemctl restart zion-v31-pool.service",
+        "stop-v31-pool":          "sudo systemctl stop zion-v31-pool.service",
+        "start-v31-pool":         "sudo systemctl start zion-v31-pool.service",
+        "restart-v31-miner":      "sudo systemctl restart zion-edge-miner.service",
+        "stop-v31-miner":         "sudo systemctl stop zion-edge-miner.service",
+        "start-v31-miner":        "sudo systemctl start zion-edge-miner.service",
+        "restart-v31-multichain": "sudo systemctl restart zion-v31-multichain.service",
+        "stop-v31-multichain":    "sudo systemctl stop zion-v31-multichain.service",
+        "start-v31-multichain":   "sudo systemctl start zion-v31-multichain.service",
         "restart-pool":           "sudo systemctl restart zion-pool",
         "restart-dao":            "sudo systemctl restart zion-dao",
         "restart-warp":           "sudo systemctl restart zion-warp",
@@ -8752,6 +8853,55 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
         </div>
       </div>
 
+      <!-- V31 Production Cards -->
+      <div id="card-v31-node" class="bg-zion-800 rounded-xl p-4 border-2 border-emerald-600/40 transition">
+        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">🚀 V31 Node (PROD)</span><span id="badge-v31-node" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
+        <div class="text-3xl font-bold mb-1 text-amber-400" id="val-v31-node-height">—</div><div class="text-xs text-gray-400 mb-2">Chain Height</div>
+        <div class="text-xs font-mono text-gray-300 truncate mb-1" id="val-v31-node-hash">—</div>
+        <div class="text-xs text-gray-400 mb-1">Sync: <span id="val-v31-node-sync" class="text-amber-400">—</span></div>
+        <div class="text-xs text-gray-400 mb-1">Mempool: <span id="val-v31-node-mempool" class="text-white">—</span></div>
+        <div class="text-xs text-gray-400 mb-1">SystemD: <span id="val-v31-node-systemd" class="text-white">—</span></div>
+        <div class="text-xs text-gray-400 mb-2">Mem: <span id="val-v31-node-mem" class="text-white">—</span></div>
+        <div class="flex gap-1 mt-2">
+          <button onclick="controlAction('restart-v31-node')" class="flex-1 text-xs px-2 py-1 bg-amber-700 hover:bg-amber-600 rounded transition">⟳ Restart</button>
+          <button onclick="controlAction('stop-v31-node')" class="flex-1 text-xs px-2 py-1 bg-red-700 hover:bg-red-600 rounded transition">⏹ Stop</button>
+        </div>
+      </div>
+
+      <div id="card-v31-pool" class="bg-zion-800 rounded-xl p-4 border-2 border-emerald-600/40 transition">
+        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">🌐 V31 Pool (PROD)</span><span id="badge-v31-pool" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
+        <div class="text-3xl font-bold mb-1 text-emerald-400" id="val-v31-pool-shares">—</div><div class="text-xs text-gray-400 mb-2">Shares Accepted</div>
+        <div class="text-xs text-gray-400 mb-1">Stratum: <span id="val-v31-pool-port" class="text-white font-mono">8444</span></div>
+        <div class="text-xs text-gray-400 mb-1">Jobs: <span id="val-v31-pool-jobs" class="text-white">—</span></div>
+        <div class="text-xs text-gray-400 mb-2">Status: <span id="val-v31-pool-status" class="text-white">—</span></div>
+        <div class="flex gap-1 mt-2">
+          <button onclick="controlAction('restart-v31-pool')" class="flex-1 text-xs px-2 py-1 bg-amber-700 hover:bg-amber-600 rounded transition">⟳ Restart</button>
+        </div>
+      </div>
+
+      <div id="card-v31-miner" class="bg-zion-800 rounded-xl p-4 border-2 border-emerald-600/40 transition">
+        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">⛏️ V31 Miner (PROD)</span><span id="badge-v31-miner" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
+        <div class="text-3xl font-bold mb-1 text-amber-400" id="val-v31-miner-hashrate">—</div><div class="text-xs text-gray-400 mb-2">H/s</div>
+        <div class="text-xs text-gray-400 mb-1">Shares: <span id="val-v31-miner-shares" class="text-white">—</span></div>
+        <div class="text-xs text-gray-400 mb-1">Accepted: <span id="val-v31-miner-accepted" class="text-emerald-400">—</span></div>
+        <div class="text-xs text-gray-400 mb-2">Worker: <span id="val-v31-miner-worker" class="text-white text-[10px]">—</span></div>
+        <div class="flex gap-1 mt-2">
+          <button onclick="controlAction('restart-v31-miner')" class="flex-1 text-xs px-2 py-1 bg-amber-700 hover:bg-amber-600 rounded transition">⟳ Restart</button>
+          <button onclick="controlAction('stop-v31-miner')" class="flex-1 text-xs px-2 py-1 bg-red-700 hover:bg-red-600 rounded transition">⏹ Stop</button>
+        </div>
+      </div>
+
+      <div id="card-v31-multichain" class="bg-zion-800 rounded-xl p-4 border-2 border-emerald-600/40 transition">
+        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">🌀 V31 Multichain (PROD)</span><span id="badge-v31-multichain" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
+        <div class="text-3xl font-bold mb-1 text-blue-400" id="val-v31-mc-transfers">—</div><div class="text-xs text-gray-400 mb-2">Total Transfers</div>
+        <div class="text-xs text-gray-400 mb-1">Pending: <span id="val-v31-mc-pending" class="text-white">—</span></div>
+        <div class="text-xs text-gray-400 mb-1">API: <span class="text-white font-mono">8453</span></div>
+        <div class="text-xs text-gray-400 mb-2">Health: <span id="val-v31-mc-health" class="text-white">—</span></div>
+        <div class="flex gap-1 mt-2">
+          <button onclick="controlAction('restart-v31-multichain')" class="flex-1 text-xs px-2 py-1 bg-amber-700 hover:bg-amber-600 rounded transition">⟳ Restart</button>
+        </div>
+      </div>
+
       <div id="card-pool" class="bg-zion-800 rounded-xl p-4 border border-zion-700 transition">
         <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-gray-400">🌐 Edge Pool (Primary)</span><span id="badge-pool" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
         <div class="text-3xl font-bold mb-1 text-emerald-400" id="val-pool-sessions">—</div><div class="text-xs text-gray-400 mb-2">Active Sessions</div>
@@ -10347,6 +10497,25 @@ function updateServiceCards(s){
       v31SyncEl.className='text-red-400';
     }
   }
+  // V31 Pool (PROD)
+  const v31p=s.v31_pool||{};
+  setBadge('badge-v31-pool',v31p.running);setCardLive('v31-pool',v31p.running);
+  document.getElementById('val-v31-pool-shares').textContent=v31p.shares_accepted??'—';
+  document.getElementById('val-v31-pool-jobs').textContent=v31p.jobs_broadcast??'—';
+  document.getElementById('val-v31-pool-status').textContent=v31p.running?'Active':'Offline';
+  // V31 Miner (PROD)
+  const v31m=s.v31_miner||{};
+  setBadge('badge-v31-miner',v31m.running);setCardLive('v31-miner',v31m.running);
+  document.getElementById('val-v31-miner-hashrate').textContent=v31m.hashrate?Math.round(v31m.hashrate).toLocaleString():'—';
+  document.getElementById('val-v31-miner-shares').textContent=v31m.shares_submitted??'—';
+  document.getElementById('val-v31-miner-accepted').textContent=v31m.shares_accepted??'—';
+  document.getElementById('val-v31-miner-worker').textContent=v31m.worker??'—';
+  // V31 Multichain (PROD)
+  const v31mc=s.v31_multichain||{};
+  setBadge('badge-v31-multichain',v31mc.running);setCardLive('v31-multichain',v31mc.running);
+  document.getElementById('val-v31-mc-transfers').textContent=v31mc.transfers_total??'—';
+  document.getElementById('val-v31-mc-pending').textContent=v31mc.transfers_pending??'—';
+  document.getElementById('val-v31-mc-health').textContent=v31mc.ok?'OK':'—';
   // Edge Pool (Primary)
   setBadge('badge-pool',p.running);setCardLive('pool',p.running);
   document.getElementById('val-pool-sessions').textContent=p.active_sessions??'0';
