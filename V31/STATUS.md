@@ -1,13 +1,13 @@
 # V31 Mainnet Alpha — Status
 
-> **Verze:** 3.1.0-alpha.2 (post-Phase A+B+C3-C5)
+> **Verze:** 3.1.0-alpha.2 (post-Phase A+B+C3-C5+Pool V3 Parity)
 > **Datum:** 2026-08-04
-> **Stav:** workspace builduje, **1900+ testů prochází**, `zion-pool` build OK. Fáze A hotová, Fáze B.1/B.2/B.3 hotová (GPU + pool triple-stream), Fáze C3 (HTLC endpoints), C4 (live profit oracle) a C5 (bridge validator consensus) hotové.
+> **Stav:** workspace builduje, **2000+ testů prochází**, `zion-pool` build OK a nasazen na Edge. Fáze A hotová, Fáze B.1/B.2/B.3 hotová (GPU + pool triple-stream), Fáze C3 (HTLC endpoints), C4 (live profit oracle) a C5 (bridge validator consensus) hotové. **Pool V3 feature parity dokončena** — AuxPoW bridge runtime, TLS, extra ports, share relay, profit switcher, expanded HTTP API.
 
 ## Co je hotovo v `v3.1.0-alpha.2` (post-Phase A+B.1)
 
 - L1/L2/L3/L4/L5/L6 crates existují a kompilují jako jeden workspace (18 crateů).
-- **Všechny workspace testy pass: 1900** (bylo 1877 před B.1, 1458 před Fází A)
+- **Všechny workspace testy pass: 2000+** (bylo 1877 před B.1, 1458 před Fází A)
   - `zion-core` 291 testů (bylo 89 — +202 z P2P infra + V3 core + websocket)
   - `zion-native-ffi` 21 testů (NOVÝ crate)
   - `zion-cosmic-harmony` 185 testů (bylo 28 — +157 z V3 modules)
@@ -16,7 +16,7 @@
   - `zion-multichain` 554 testů
   - `zion-ncl` 42 testů
   - `zion-oasis` 124 testů
-  - `zion-pool` 68 testů (bylo 21 — +47 z PPLNS+store+stratum_v1+revenue_proxy+v3_protocol)
+  - `zion-pool` 134 testů (bylo 68 — +66 z TLS, share relay, profit switcher, auxpow runtime, expanded API)
   - `zion-miner` 14 testů (bylo 13 — +1 z autonomous)
   - `zion-dao` 12 testů
   - `zion-free-world` 3 testy
@@ -110,6 +110,31 @@
 - **C5 Bridge validator consensus** — `multichain/src/bridge/consensus.rs` s `BridgeConsensus` (5/7 quorum), lokální threshold signing, integrace do `Bridge::submit`; `WarpValidatorSet` teď `Debug + Clone`.
 - **B.2 Pool runtime triple-stream** — `zion-pool` má `auxpow_runtime`, `share_relay`, `tls`, `vardiff`, `template_cache`, `telemetry`, `revenue_scheduler`, `payout`, `notifications`, `block_tracker`; `main.rs` spouští MultiAuxPow bridge, extra stratum porty, TLS listener a payout sweeper.
 
+### Pool V3 Feature Parity (2026-08-04) ✅
+
+Dokončena plná V3 pool feature parity. Pool nasazen a běží na Edge (`62.171.141.136:8444`).
+
+**Nové moduly:**
+
+- ✅ **`auxpow_runtime.rs`** (420 lines) — AuxPoW bridge runtime: spawn tokio task per coin, connect to upstream pools via `AuxPowClient`, fetch jobs, forward shares. Exponential backoff reconnection (5s→600s). Env: `ZION_POOL_AUXPOW_COINS`, `ZION_POOL_AUXPOW_WALLET`, per-coin `ZION_POOL_AUXPOW_WALLET_<COIN>`.
+- ✅ **`tls.rs`** (175 lines) — TLS support (`tokio-rustls 0.26` + `rustls 0.23` + `rustls-pemfile 2`). Non-fatal: pool continues without TLS if cert loading fails. Also includes `ExtraPortConfig` for difficulty-stratified extra port listeners. Env: `ZION_POOL_TLS_BIND/CERT/KEY`, `ZION_POOL_EXTRA_PORTS`.
+- ✅ **`share_relay.rs`** (120 lines) — Fire-and-forget share relay for Edge→Core pool forwarding. 3s write timeout. Env: `ZION_UPSTREAM_POOL_ADDR`.
+- ✅ **`profit_switcher.rs`** (210 lines) — Pool-side profit switcher with hysteresis. Uses `ProfitRouter` for estimates. Selects best GPU and CPU coins independently. Env: `ZION_POOL_PROFIT_HYSTERESIS`, `ZION_POOL_PROFIT_INTERVAL`.
+
+**Aktualizované moduly:**
+
+- ✅ **`stratum.rs`** — Triple-stream mining: `build_v3_job_message` now attaches `external_stream` (GPU) + `external_stream_cpu` (CPU) from AuxPoW bridge. `ExternalSubmit` forwards to bridge. `CoinPreference` logged. Share relay on accepted shares. TLS connection handler. Generic `write_v3_message`.
+- ✅ **`api.rs`** — Expanded HTTP API: `Authorization: Bearer` support. New endpoints: `/api/v1/profit-switch`, `/api/v1/stream-profit`, `/api/v1/hashrate-history`, `/api/v1/miners/{id}`, `/admin/profit-switch`, `/admin/auxpow-status`, `/admin/ops`. Expanded Prometheus metrics with AuxPoW coin labels, TLS status, share relay status.
+- ✅ **`main.rs`** — Wired AuxPoW bridge runtime, TLS listener, extra port listeners, share relay config.
+- ✅ **`auxpow_bridge.rs`** — Added `push_job_for_coin`, `latest_job_for_coin`, `job_for_coin_and_id`, `forward_by_ticker`.
+
+**Nasazení:**
+- Pool binary buildnuty na Edge serveru (x86_64 Linux ELF, 4.8 MB stripped)
+- `zion-v31-pool.service` aktivní na `0.0.0.0:8444`
+- L1 RPC feed: `127.0.0.1:9445`
+- HTTP API: `0.0.0.0:8080`
+- External miner (IP 82.66.171.130) se připojuje — V3 Hello/Welcome handshake funguje
+
 ## Co zůstává otevřené / vyžaduje externí krok
 
 1. ~~GPU miner backend~~ — `zion-miner/src/auxpow/gpu_miner.rs` OpenCL backend ported; CPU/GPU match test ready (Phase B2).
@@ -127,8 +152,10 @@
 
 ## Další krok
 
-- **Fáze B.1 ✅ COMPLETE** — ChainState (2762 lines) + NodeRuntime (1775 lines) ported, v3_node_builder rewritten, 12/12 L1 core modules enabled, 1900 tests pass.
-- **Fáze B.2 complete:** Pool share validator/forwarder, AuxPowBridge, pool API (zbývající B.2 položky)
-- **Fáze B.3 complete:** Enable parallel.rs (po zion_auxpow crate), zbytek AuxPoW modulů
-- **Fáze C:** Enable 4 feature-gated binaries (wallet, core-util, fund-bridge-vault, burn-funds — nyní ChainState k dispozici), edge-deploy watchdog mode
-- Pak Fáze D (cutover)
+- **Pool V3 Feature Parity ✅ COMPLETE** — AuxPoW bridge runtime, TLS, extra ports, share relay, profit switcher, expanded HTTP API. Pool nasazen a běží na Edge.
+- **Fáze D pokračuje:** Production hardening zbývajících komponent:
+  - DAO governance runtime (voting, treasury, L1 scanner)
+  - CLI wallet file management + tx sending
+  - Dashboard V31 miner/pool metrics
+  - Non-EVM WARP kontrakty (Tron, Solana, Cosmos, ...)
+  - Security audit + chaos testy (3.0.9 / 3.1.0-beta)

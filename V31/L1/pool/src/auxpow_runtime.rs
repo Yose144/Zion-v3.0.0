@@ -402,6 +402,16 @@ mod tests {
 
     #[test]
     fn config_parses_coins() {
+        // Clear any env vars that might pollute this test
+        for profile in CoinProfile::defaults() {
+            std::env::remove_var(format!(
+                "ZION_POOL_AUXPOW_WALLET_{}",
+                profile.coin.as_str().to_uppercase()
+            ));
+        }
+        std::env::remove_var("ZION_POOL_AUXPOW_COIN");
+        std::env::remove_var("ZION_POOL_AUXPOW_CPU_COIN");
+
         std::env::set_var("ZION_POOL_AUXPOW_COINS", "KAS,XMR,VRSC");
         let cfg = config_from_env();
         assert!(cfg.enabled_coins.contains(&ExternalCoin::Kaspa));
@@ -409,13 +419,6 @@ mod tests {
         assert!(cfg.enabled_coins.contains(&ExternalCoin::Verus));
         // Clean up
         std::env::remove_var("ZION_POOL_AUXPOW_COINS");
-        // Also clean per-coin wallet vars that may have been set
-        for profile in CoinProfile::defaults() {
-            std::env::remove_var(format!(
-                "ZION_POOL_AUXPOW_WALLET_{}",
-                profile.coin.as_str().to_uppercase()
-            ));
-        }
     }
 
     #[test]
