@@ -29,6 +29,7 @@ auxpow-deploy.zip
 /target/
 **/target/
 target-fire/
+V31/releases/
 *.obj
 *.i
 *.o
