@@ -15,6 +15,7 @@ use tracing::{info, warn};
 use zion_core::v3_compat::{TxInput as UtxoTxInput, TxOutput as UtxoTxOutput, UtxoTransaction};
 use zion_core::v3_wallet::{build_batch_payout, BatchRecipient, SpendableUtxo};
 
+use crate::notifications::Notifier;
 use crate::pool::Pool;
 use crate::rpc_client::{jsonrpc_call, parse_rpc_addr};
 use crate::v3_pplns::PayoutEntry;
@@ -23,11 +24,22 @@ use crate::v3_pplns::PayoutEntry;
 pub struct PayoutSweeper {
     pool: Arc<Mutex<Pool>>,
     interval: Duration,
+    notifier: Option<Arc<Notifier>>,
 }
 
 impl PayoutSweeper {
     pub fn new(pool: Arc<Mutex<Pool>>, interval: Duration) -> Self {
-        Self { pool, interval }
+        Self {
+            pool,
+            interval,
+            notifier: None,
+        }
+    }
+
+    /// Set a Notifier for payout failure alerts.
+    pub fn with_notifier(mut self, notifier: Arc<Notifier>) -> Self {
+        self.notifier = Some(notifier);
+        self
     }
 
     /// Run the sweeper forever (or until the async runtime is cancelled).
@@ -37,6 +49,9 @@ impl PayoutSweeper {
             tick.tick().await;
             if let Err(e) = self.sweep().await {
                 warn!("payout sweep error: {}", e);
+                if let Some(ref notifier) = self.notifier {
+                    notifier.notify_payout_failed(0, &e.to_string());
+                }
             }
         }
     }

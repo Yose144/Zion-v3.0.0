@@ -51,6 +51,31 @@ impl Default for AuxPowRuntimeConfig {
     }
 }
 
+impl AuxPowRuntimeConfig {
+    /// Get the wallet address for a specific coin (per-coin override or fallback to payout_wallet).
+    pub fn wallet_for_coin(&self, coin: &ExternalCoin) -> Option<String> {
+        let per_coin = std::env::var(format!(
+            "ZION_POOL_AUXPOW_WALLET_{}",
+            coin.as_str().to_uppercase()
+        ))
+        .ok()
+        .filter(|w| !w.is_empty());
+
+        if let Some(w) = per_coin {
+            Some(w)
+        } else if !self.payout_wallet.is_empty() {
+            Some(self.payout_wallet.clone())
+        } else {
+            None
+        }
+    }
+
+    /// Get the worker name for a specific coin.
+    pub fn worker(&self) -> &str {
+        &self.worker_name
+    }
+}
+
 /// Build the runtime config from environment variables.
 pub fn config_from_env() -> AuxPowRuntimeConfig {
     let mut cfg = AuxPowRuntimeConfig::default();

@@ -16,7 +16,9 @@ use zion_l1_types::{Address, ChainId};
 use zion_pool::api::PoolApi;
 use zion_pool::auxpow_bridge::MultiAuxPowBridge;
 use zion_pool::auxpow_runtime;
+use zion_pool::notifications::{Notifier, NotificationsConfig};
 use zion_pool::payout::PayoutSweeper;
+use zion_pool::revenue_scheduler::RevenueScheduler;
 use zion_pool::share_relay::ShareRelayConfig;
 use zion_pool::tls::{ExtraPortConfig, TlsConfig};
 use zion_pool::v3_pplns::FeeConfig;
@@ -142,6 +144,33 @@ async fn main() -> anyhow::Result<()> {
     let pool = Arc::new(Mutex::new(Pool::new(config)));
     let server = StratumServer::new(pool.clone());
 
+    // ── Notifications (Telegram/SMTP/OASIS/webhook) ───────────────────────
+    let notif_config = NotificationsConfig::from_env();
+    let notifier = Arc::new(Notifier::new(notif_config.clone()));
+    if notif_config.telegram_enabled() {
+        info!("notifications: Telegram enabled (chat_id={:?})", notif_config.telegram_chat_id);
+    }
+    if notif_config.smtp_enabled() {
+        info!("notifications: SMTP enabled (host={:?})", notif_config.smtp_host);
+    }
+    if notif_config.oasis_enabled() {
+        info!("notifications: OASIS webhook enabled");
+    }
+    if notif_config.webhook_enabled() {
+        info!("notifications: block webhook enabled");
+    }
+    let server = server.with_notifier(notifier.clone());
+
+    // ── Revenue scheduler (multi-stream revenue routing) ──────────────────
+    let revenue_scheduler = Arc::new(Mutex::new(RevenueScheduler::from_env(0.0)));
+    {
+        let rs = revenue_scheduler.lock().unwrap();
+        if rs.is_multistream() {
+            info!("revenue_scheduler: multi-stream enabled — {}", rs.describe_plan());
+        }
+    }
+    let server = server.with_revenue_scheduler(revenue_scheduler);
+
     // ── AuxPoW bridge runtime ─────────────────────────────────────────────
     let multi_bridge = MultiAuxPowBridge::new();
     let auxpow_cfg = auxpow_runtime::config_from_env();
@@ -165,6 +194,31 @@ async fn main() -> anyhow::Result<()> {
             "share_relay: enabled → {}",
             relay_cfg.upstream_pool_addr.as_deref().unwrap_or("?")
         );
+    }
+
+    // ── Revenue proxy (external pool forwarding) ──────────────────────────
+    let auxpow_cfg_for_proxy = auxpow_runtime::config_from_env();
+    for coin in &auxpow_cfg_for_proxy.enabled_coins {
+        if let Some(wallet) = auxpow_cfg_for_proxy.wallet_for_coin(coin) {
+            if !wallet.is_empty() {
+                let profile = zion_cosmic_harmony::CoinProfile::for_coin(*coin);
+                let worker = auxpow_cfg_for_proxy.worker_name.clone();
+                info!(
+                    "revenue_proxy: starting external pool client for {:?} → {} (wallet={})",
+                    coin,
+                    profile.pool_address(),
+                    &wallet[..wallet.len().min(12)]
+                );
+                let client = zion_pool::revenue_proxy::client_from_profile(
+                    &profile,
+                    &wallet,
+                    &worker,
+                );
+                tokio::spawn(async move {
+                    client.run_loop().await;
+                });
+            }
+        }
     }
 
     // ── Primary stratum listener ──────────────────────────────────────────
@@ -278,7 +332,10 @@ async fn main() -> anyhow::Result<()> {
     let sweep_pool = Arc::clone(&pool);
     let sweep_handle = tokio::spawn(async move {
         let interval = Duration::from_secs(args.payout_interval_s);
-        PayoutSweeper::new(sweep_pool, interval).run().await;
+        PayoutSweeper::new(sweep_pool, interval)
+            .with_notifier(notifier.clone())
+            .run()
+            .await;
     });
 
     tokio::select! {

@@ -608,6 +608,14 @@ impl CoinProfile {
         ]
     }
 
+    /// Find the default profile for a specific coin.
+    pub fn for_coin(coin: ExternalCoin) -> Self {
+        Self::defaults()
+            .into_iter()
+            .find(|p| p.coin == coin)
+            .unwrap_or_else(|| Self::new(coin, 1000.0, 0.01, Device::Gpu))
+    }
+
     fn new(
         coin: ExternalCoin,
         hashrate_unit_mhs: f64,

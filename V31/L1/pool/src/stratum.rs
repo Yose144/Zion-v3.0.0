@@ -16,8 +16,10 @@ use zion_cosmic_harmony::ExternalCoin;
 use crate::auxpow_bridge::{MultiAuxPowBridge, ShareForwardRequest};
 use crate::block_tracker::BlockTracker;
 use crate::config::PoolConfig;
+use crate::notifications::{Notifier, NotificationsConfig};
 use crate::pool::{Pool, PoolError};
 use crate::rate_limit::IpRateLimiter;
+use crate::revenue_scheduler::RevenueScheduler;
 use crate::rpc_client::{jsonrpc_call, parse_rpc_addr};
 use crate::share::ShareSubmission;
 use crate::share_relay::{relay_share_fire_and_forget, ShareRelayConfig};
@@ -60,6 +62,10 @@ pub struct StratumServer {
     multi_bridge: MultiAuxPowBridge,
     /// Share relay config (optional, for Edge mode).
     relay_config: ShareRelayConfig,
+    /// Notification dispatcher (Telegram/SMTP/OASIS/webhook).
+    notifier: Arc<Notifier>,
+    /// Revenue scheduler for multi-stream revenue routing.
+    revenue_scheduler: Arc<Mutex<RevenueScheduler>>,
 }
 
 impl StratumServer {
@@ -96,6 +102,8 @@ impl StratumServer {
             vardiff_config,
             multi_bridge: MultiAuxPowBridge::new(),
             relay_config: ShareRelayConfig::from_env(),
+            notifier: Arc::new(Notifier::new(NotificationsConfig::from_env())),
+            revenue_scheduler: Arc::new(Mutex::new(RevenueScheduler::from_env(0.0))),
         }
     }
 
@@ -103,6 +111,23 @@ impl StratumServer {
     pub fn with_multi_bridge(mut self, bridge: MultiAuxPowBridge) -> Self {
         self.multi_bridge = bridge;
         self
+    }
+
+    /// Set a custom Notifier (called from main.rs when notifications are configured).
+    pub fn with_notifier(mut self, notifier: Arc<Notifier>) -> Self {
+        self.notifier = notifier;
+        self
+    }
+
+    /// Set a custom RevenueScheduler (called from main.rs when revenue routing is configured).
+    pub fn with_revenue_scheduler(mut self, scheduler: Arc<Mutex<RevenueScheduler>>) -> Self {
+        self.revenue_scheduler = scheduler;
+        self
+    }
+
+    /// Get a reference to the notifier (for payout.rs to use).
+    pub fn notifier(&self) -> &Arc<Notifier> {
+        &self.notifier
     }
 
     /// Handle a Stratum v1 JSON-RPC request line.
@@ -308,6 +333,9 @@ impl StratumServer {
         // Invalidate template cache so next job fetches fresh template
         self.template_cache.lock().unwrap().invalidate();
 
+        // Notify all channels (Telegram/SMTP/OASIS/webhook)
+        self.notifier.notify_block_found(&miner_id, block_height, &worker_name);
+
         if let (Some(rpc_url), Some(tpl)) = (pool.config.l1_rpc_url.clone(), template) {
             let block = match build_solved_block(tpl, nonce) {
                 Ok(b) => b,
@@ -316,10 +344,13 @@ impl StratumServer {
                     return;
                 }
             };
-            let job_id = job_id.to_string();
+            let job_id_str = job_id.to_string();
+            let notifier = self.notifier.clone();
             tokio::spawn(async move {
                 if let Err(e) = submit_block_rpc(&rpc_url, &block).await {
-                    tracing::warn!("submitBlock failed for {}: {}", job_id, e);
+                    tracing::warn!("submitBlock failed for {}: {}", job_id_str, e);
+                    // Notify orphan if submit fails
+                    notifier.notify_orphan(block_height);
                 }
             });
         }
