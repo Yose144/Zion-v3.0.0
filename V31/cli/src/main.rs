@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use anyhow::{anyhow, bail};
+use anyhow::{anyhow, bail, Context};
 use clap::{Parser, Subcommand};
 use tokio::sync::watch;
 
@@ -555,12 +555,17 @@ async fn main() -> anyhow::Result<()> {
                     memo: memo.clone(),
                 };
 
+                let chain_tip = get_chain_height(&rpc).await.unwrap_or(0);
+                if chain_tip == 0 {
+                    println!("Warning: could not fetch chain tip height; using 0");
+                }
+
                 let result = zion_core::v3_wallet::build_and_sign(
                     &signing_key,
                     sender_address,
                     &params,
                     &utxos,
-                    0, // chain tip height — TODO: fetch from RPC
+                    chain_tip,
                 ).map_err(|e| anyhow!("wallet error: {}", e))?;
 
                 println!("Transaction built and signed:");
@@ -836,6 +841,59 @@ fn endpoint_from_cli(
     })
 }
 
+/// Strip any URL scheme/path from an RPC endpoint so it can be used
+/// with `tokio::net::TcpStream::connect`.
+fn clean_rpc_url(rpc_url: &str) -> &str {
+    let s = rpc_url.trim();
+    let s = s
+        .strip_prefix("http://")
+        .or(s.strip_prefix("https://"))
+        .unwrap_or(s);
+    s.split_once('/').map(|(h, _)| h).unwrap_or(s)
+}
+
+/// Send a single JSON-RPC request and read the first response line.
+async fn rpc_call_line(rpc_url: &str, request: &serde_json::Value) -> anyhow::Result<serde_json::Value> {
+    use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+    use tokio::net::TcpStream;
+
+    let url = clean_rpc_url(rpc_url);
+    let mut stream = TcpStream::connect(url)
+        .await
+        .with_context(|| format!("failed to connect to RPC at {url}"))?;
+
+    let payload = format!("{}\n", serde_json::to_string(request)?);
+    stream.write_all(payload.as_bytes()).await?;
+    stream.flush().await?;
+
+    let (reader, _) = stream.split();
+    let mut reader = BufReader::new(reader);
+    let mut line = String::new();
+    reader
+        .read_line(&mut line)
+        .await
+        .with_context(|| "failed to read RPC response")?;
+
+    serde_json::from_str(&line).with_context(|| "failed to parse RPC response")
+}
+
+/// Fetch the current V3 chain height from the L1 RPC.
+async fn get_chain_height(rpc_url: &str) -> anyhow::Result<u64> {
+    let request = serde_json::json!({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "getStatus",
+        "params": null
+    });
+    let response = rpc_call_line(rpc_url, &request).await?;
+    if let Some(err) = response["error"]["message"].as_str() {
+        bail!("getStatus error: {}", err);
+    }
+    response["result"]["chain_height"]
+        .as_u64()
+        .context("missing chain_height in getStatus response")
+}
+
 fn address_bytes(chain_id: &ChainId, encoded: &str) -> anyhow::Result<Vec<u8>> {
     use zion_l1_types::ChainFamily;
     match chain_id.family() {
@@ -855,24 +913,17 @@ async fn fetch_utxos(
     rpc_url: &str,
     address: &str,
 ) -> anyhow::Result<Vec<zion_core::v3_wallet::SpendableUtxo>> {
-    use tokio::io::{AsyncReadExt, AsyncWriteExt};
-    use tokio::net::TcpStream;
-
-    let mut stream = TcpStream::connect(rpc_url).await?;
     let request = serde_json::json!({
         "jsonrpc": "2.0",
-        "method": "get_utxos",
+        "method": "getUtxos",
         "params": {"address": address},
         "id": 1
     });
-    let request_str = serde_json::to_string(&request)?;
-    stream.write_all(request_str.as_bytes()).await?;
-    stream.write_all(b"\n").await?;
-    stream.flush().await?;
+    let response = rpc_call_line(rpc_url, &request).await?;
 
-    let mut buf = Vec::new();
-    stream.read_to_end(&mut buf).await?;
-    let response: serde_json::Value = serde_json::from_slice(&buf)?;
+    if let Some(err) = response["error"]["message"].as_str() {
+        bail!("getUtxos error: {}", err);
+    }
 
     let utxos = response["result"]["utxos"]
         .as_array()
@@ -902,32 +953,18 @@ async fn fetch_utxos(
     Ok(result)
 }
 
-/// Submit a signed transaction (as JSON) to the L1 RPC.
+/// Submit a signed UTXO transaction to the L1 RPC.
 async fn submit_tx_json(rpc_url: &str, tx_json: &serde_json::Value) -> anyhow::Result<String> {
-    use tokio::io::{AsyncReadExt, AsyncWriteExt};
-    use tokio::net::TcpStream;
-
-    let mut stream = TcpStream::connect(rpc_url).await?;
     let request = serde_json::json!({
         "jsonrpc": "2.0",
-        "method": "submitTransaction",
-        "params": tx_json,
+        "method": "submitUtxoTransaction",
+        "params": {"transaction": tx_json},
         "id": 1
     });
-    let request_str = serde_json::to_string(&request)?;
-    stream.write_all(request_str.as_bytes()).await?;
-    stream.write_all(b"\n").await?;
-    stream.flush().await?;
+    let response = rpc_call_line(rpc_url, &request).await?;
 
-    let mut buf = Vec::new();
-    stream.read_to_end(&mut buf).await?;
-    let response: serde_json::Value = serde_json::from_slice(&buf)?;
-
-    if let Some(err) = response["error"].as_str() {
-        bail!("RPC error: {}", err);
-    }
     if let Some(err) = response["error"]["message"].as_str() {
-        bail!("RPC error: {}", err);
+        bail!("submitUtxoTransaction error: {}", err);
     }
 
     let result = response["result"].to_string();
