@@ -1091,30 +1091,57 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "Follower node — P2P 8334, RPC 8448. Syncs from Node 1 for redundancy.",
      "child_says": "🔶 Follows Node 1 to keep a backup copy!",
      "depends_on": ["edge-node1"]},
-    {"id": "v31-node", "name": "ZION V31 Alpha Node", "icon": "🚀", "level": "L1", "kind": "node",
+    {"id": "v31-node", "name": "V31 Node (PROD)", "icon": "🚀", "level": "L1", "kind": "node",
      "ports": {"p2p": 8335, "rpc": 9445},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
-     "health_method": "rpc", "severity": "warning", "autoheal": False,
-     "health_endpoint": "http://127.0.0.1:9445/health",
-     "purpose": "V31 Mainnet Alpha (3.1.0-alpha.2) — V3-compatible P2P sync from Node 1. systemd zion-v31-node.service.",
-     "child_says": "🚀 V31 Alpha — syncs from V3 via P2P, ready for cutover!",
+     "health_method": "tcp", "severity": "critical", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:9445",
+     "purpose": "V31 Mainnet Alpha (3.1.0-alpha.2) — PROD node. P2P 8335, RPC 9445. systemd zion-v31-node.service.",
+     "child_says": "🚀 V31 PROD node — mainnet alpha!",
      "depends_on": ["edge-node1"]},
-    {"id": "pool-edge", "name": "ZION Pool (Primary)", "icon": "🌐", "level": "L1", "kind": "pool",
+    {"id": "v31-pool", "name": "V31 Pool (PROD)", "icon": "🌐", "level": "L1", "kind": "pool",
      "ports": {"stratum": 8444},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "critical", "autoheal": False,
-     "purpose": "Primary pool — accepts all miners, validates shares, distributes payouts (89/5/5/1 burn model). Stratum 8444.",
-     "child_says": "🌐 The main pool — miners connect here!",
-     "depends_on": ["edge-node1"]},
-    {"id": "miner", "name": "CPU/GPU Miner", "icon": "⛏️", "level": "L1", "kind": "miner",
+     "health_endpoint": "http://127.0.0.1:8444",
+     "purpose": "V31 PROD pool — stratum 8444, validates shares, → Node RPC 9445. systemd zion-v31-pool.service.",
+     "child_says": "🌐 V31 PROD pool — miners connect here!",
+     "depends_on": ["v31-node"]},
+    {"id": "v31-miner", "name": "V31 Miner (PROD)", "icon": "⛏️", "level": "L1", "kind": "miner",
      "ports": {},
-     "log": "miner.log", "start": "start-miner", "stop": None,
-     "health_method": "log", "severity": "warning", "autoheal": True,
-     "health_endpoint": "http://127.0.0.1:8455/metrics",
-     "purpose": "Performs Deeksha PoW hashing to find new blocks. Connects to pool 8444.",
-     "child_says": "⛏️ The miner digs for new gold (ZION coins)!",
+     "log": None, "start": None, "stop": None,
+     "health_method": "systemd", "severity": "warning", "autoheal": False,
+     "health_endpoint": None,
+     "purpose": "V31 PROD CPU miner — 2 threads, ~500-950 kH/s. → Pool 127.0.0.1:8444. systemd zion-edge-miner.service.",
+     "child_says": "⛏️ V31 PROD miner — digs for ZION!",
+     "depends_on": ["v31-pool"]},
+    {"id": "v31-multichain", "name": "V31 Multichain (PROD)", "icon": "🌀", "level": "L2", "kind": "multichain",
+     "ports": {"api": 8453},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "tcp", "severity": "warning", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:8453/health",
+     "purpose": "V31 PROD multichain — bridge/warp/swap unified. API 8453 → Node RPC 9445. systemd zion-v31-multichain.service.",
+     "child_says": "🌀 V31 PROD multichain — cross-chain hub!",
+     "depends_on": ["v31-node"]},
+    {"id": "pool-edge", "name": "V3 Pool (DISABLED)", "icon": "⛔", "level": "L1", "kind": "pool",
+     "ports": {"stratum": 8444},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "tcp", "severity": "warning", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:8444",
+     "purpose": "V3 pool — DISABLED, replaced by V31 Pool. Kept for reference.",
+     "child_says": "⛔ V3 pool — disabled, use V31 Pool!",
+     "depends_on": ["edge-node1"]},
+    {"id": "miner", "name": "V3 Miner (ARCHIVED)", "icon": "📦", "level": "L1", "kind": "miner",
+     "ports": {},
+     "log": "miner.log", "start": None, "stop": None,
+     "health_method": "log", "severity": "info", "autoheal": False,
+     "health_endpoint": None,
+     "purpose": "V3 GPU/CPU miner — ARCHIVED, replaced by V31 Miner. Kept for reference.",
+     "child_says": "📦 V3 miner — archived, use V31 Miner!",
      "depends_on": ["pool-edge"]},
 
     # ── L2: Bridge & DAO (running on new server) ────────────────────────
@@ -1547,6 +1574,28 @@ def check_service_health(svc: dict) -> dict:
             details_parts.append(f"PID {proc_info['pid']} dead")
         else:
             details_parts.append("no PID file")
+
+    elif method == "systemd":
+        # Check systemd service status for V31 services
+        systemd_map = {
+            "v31-miner": "zion-edge-miner.service",
+            "v31-pool": "zion-v31-pool.service",
+            "v31-node": "zion-v31-node.service",
+            "v31-multichain": "zion-v31-multichain.service",
+        }
+        svc_name = systemd_map.get(sid)
+        if svc_name:
+            try:
+                r = subprocess.run(["systemctl", "is-active", svc_name],
+                                 capture_output=True, text=True, timeout=2)
+                active = r.stdout.strip() == "active"
+                alive = active
+                status = "running" if active else "stopped"
+                details_parts.append(f"systemd {svc_name}: {r.stdout.strip()}")
+            except Exception as e:
+                details_parts.append(f"systemd check failed: {e}")
+        else:
+            details_parts.append(f"no systemd mapping for {sid}")
 
     else:  # log fallback
         alive = log_alive or proc_info["alive"] or bool(open_ports)
