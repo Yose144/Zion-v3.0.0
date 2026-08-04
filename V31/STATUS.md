@@ -1,8 +1,8 @@
 # V31 Mainnet Alpha — Status
 
-> **Verze:** 3.1.0-alpha.2 (post-Phase A+B+C3-C5+Pool V3 Parity)
+> **Verze:** 3.1.0-alpha.2 (post-Phase A+B+C+Pool Complete)
 > **Datum:** 2026-08-04
-> **Stav:** workspace builduje, **2000+ testů prochází**, `zion-pool` build OK a nasazen na Edge. Fáze A hotová, Fáze B.1/B.2/B.3 hotová (GPU + pool triple-stream), Fáze C3 (HTLC endpoints), C4 (live profit oracle) a C5 (bridge validator consensus) hotové. **Pool V3 feature parity dokončena** — AuxPoW bridge runtime, TLS, extra ports, share relay, profit switcher, expanded HTTP API.
+> **Stav:** workspace builduje, **2043 testů prochází (0 failures)**, `zion-pool` build OK a nasazen na Edge. Fáze A hotová, Fáze B.1/B.2/B.3 hotová (GPU + pool triple-stream), Fáze C1-C8 hotová (DAO + CLI + ZionDex + Dashboard + Pool wiring). **Pool V3 feature parity dokončena** — AuxPoW bridge runtime, TLS, extra ports, share relay, profit switcher, expanded HTTP API, Notifier, RevenueScheduler, RevenueProxy. Kompletní report: [`REPORT_2026-08-04.md`](./REPORT_2026-08-04.md).
 
 ## Co je hotovo v `v3.1.0-alpha.2` (post-Phase A+B.1)
 
@@ -180,6 +180,33 @@ ZionDex ported do V31 multichain + dashboard metrics rozšířeny (Phase C2 + C8
 - ✅ Multichain health check (:8453/health)
 - ✅ Nové API endpoints: /api/v31/services, /api/v31/pool-metrics, /api/v31/pool-prometheus, /api/v31/multichain-health
 
+### Pool Runtime Wiring (2026-08-04) ✅
+
+Všechny V3 parity moduly zapojené do pool runtime (main.rs + stratum.rs).
+
+**Notifier (Telegram/SMTP/OASIS/webhook):**
+- ✅ `StratumServer` drží `Arc<Notifier>` inicializovaný z env vars
+- ✅ `notify_block_found()` při nalezení bloku v `stratum.rs`
+- ✅ `notify_orphan()` při selhání `submitBlock` RPC
+- ✅ `PayoutSweeper.with_notifier()` — `notify_payout_failed()` při chybě sweep
+- ✅ `main.rs` loguje při startu, které notifikační kanály jsou aktivní
+
+**RevenueScheduler (multi-stream revenue routing):**
+- ✅ `StratumServer` drží `Arc<Mutex<RevenueScheduler>>` z env
+- ✅ `with_revenue_scheduler()` builder pro `main.rs`
+- ✅ `main.rs` loguje multi-stream plán při startu
+
+**RevenueProxy (external pool forwarding):**
+- ✅ `main.rs` spouští `ExternalPoolClient` pro každý enabled coin s wallet
+- ✅ `client_from_profile()` + `CoinProfile::for_coin()`
+- ✅ `AuxPowRuntimeConfig::wallet_for_coin()` — per-coin wallet lookup
+
+**Cosmic-harmony:**
+- ✅ `CoinProfile::for_coin()` — najde default profile pro konkrétní coin
+
+**Test fix:**
+- ✅ `ENV_MUTEX` serializuje env-var-dependent testy (fix parallel pollution)
+
 ## Co zůstává otevřené / vyžaduje externí krok
 
 1. ~~GPU miner backend~~ — `zion-miner/src/auxpow/gpu_miner.rs` OpenCL backend ported; CPU/GPU match test ready (Phase B2).
@@ -197,11 +224,12 @@ ZionDex ported do V31 multichain + dashboard metrics rozšířeny (Phase C2 + C8
 
 ## Další krok
 
-- **Pool V3 Feature Parity ✅ COMPLETE** — AuxPoW bridge runtime, TLS, extra ports, share relay, profit switcher, expanded HTTP API. Pool nasazen a běží na Edge.
+- **Pool V3 Feature Parity ✅ COMPLETE** — AuxPoW bridge runtime, TLS, extra ports, share relay, profit switcher, expanded HTTP API, Notifier, RevenueScheduler, RevenueProxy. Pool nasazen a běží na Edge.
 - **DAO Governance Runtime ✅ COMPLETE** — Voting engine, proposal lifecycle, HTTP API. 31 testů pass.
-- **CLI Wallet + Service ✅ COMPLETE** — Wallet create/load/send, service start/stop/status/logs.
+- **CLI Wallet + Service ✅ COMPLETE** — Wallet create/load/send, pool/miner/node start/stop/status, service logs.
 - **ZionDex Multi-Path ✅ COMPLETE** — Top-N routes, cross-chain bridge routing, /v1/swap/quote/multi endpoint. 562 multichain testů pass.
 - **Dashboard Metrics ✅ COMPLETE** — Pool metrics, service overview, multichain health, Prometheus parsing.
+- **Pool Runtime Wiring ✅ COMPLETE** — Notifier, RevenueScheduler, RevenueProxy zapojené. 2043 testů pass.
 - **Fáze D zbývá:** Production hardening:
   - Non-EVM WARP kontrakty (Tron, Solana, Cosmos, ...)
   - Security audit + chaos testy (3.0.9 / 3.1.0-beta)
