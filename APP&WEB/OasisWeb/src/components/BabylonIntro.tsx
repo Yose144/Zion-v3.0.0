@@ -17,8 +17,8 @@ import {
   Texture,
   Animation,
   GlowLayer,
-  Camera,
   Mesh,
+  DynamicTexture,
 } from '@babylonjs/core';
 import { AdvancedDynamicTexture, Button, TextBlock } from '@babylonjs/gui';
 
@@ -29,6 +29,8 @@ interface BabylonIntroProps {
 export default function BabylonIntro({ onEnter }: BabylonIntroProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [warping, setWarping] = useState(false);
+  const onEnterRef = useRef(onEnter);
+  onEnterRef.current = onEnter;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -38,6 +40,8 @@ export default function BabylonIntro({ onEnter }: BabylonIntroProps) {
     const scene = new Scene(engine);
     scene.clearColor = new Color4(0, 0, 0, 1);
 
+    const flareTexture = createFlareTexture(scene);
+
     // Camera
     const camera = new ArcRotateCamera('camera', -Math.PI / 2, Math.PI / 2.5, 14, Vector3.Zero(), scene);
     camera.attachControl(canvas, true);
@@ -46,7 +50,8 @@ export default function BabylonIntro({ onEnter }: BabylonIntroProps) {
     camera.lowerBetaLimit = 0.1;
     camera.upperBetaLimit = Math.PI / 1.9;
     camera.wheelPrecision = 50;
-    camera.autoRotationBehavior = { idleRotationSpeed: 0.08, idleRotationWaitTime: 100, idleRotationZoomMode: 0 } as any;
+    (camera as any).useAutoRotationBehavior = true;
+    (camera as any).autoRotationBehavior = { idleRotationSpeed: 0.08, idleRotationWaitTime: 100 };
 
     // Lights
     new HemisphericLight('hemi', new Vector3(0, 1, 0), scene).intensity = 0.3;
@@ -67,7 +72,7 @@ export default function BabylonIntro({ onEnter }: BabylonIntroProps) {
 
     // Core particle halo
     const coreParticles = new ParticleSystem('coreParticles', 1200, scene);
-    coreParticles.particleTexture = new Texture('/textures/flare.png', scene, false, false, Texture.TRILINEAR_SAMPLINGMODE);
+    coreParticles.particleTexture = flareTexture;
     coreParticles.emitter = core;
     coreParticles.minEmitBox = new Vector3(-0.6, -0.6, -0.6);
     coreParticles.maxEmitBox = new Vector3(0.6, 0.6, 0.6);
@@ -89,9 +94,9 @@ export default function BabylonIntro({ onEnter }: BabylonIntroProps) {
     coreParticles.start();
 
     // Stargate rings
-    const ring1 = createRing(scene, 'ring1', 4.2, 0.12, new Color3(0.06, 0.72, 0.83), 0.002);
-    const ring2 = createRing(scene, 'ring2', 5.4, 0.08, new Color3(0.58, 0.18, 0.96), -0.0015);
-    const ring3 = createRing(scene, 'ring3', 6.8, 0.06, new Color3(1, 0.76, 0.03), 0.001);
+    createRing(scene, 'ring1', 4.2, 0.12, new Color3(0.06, 0.72, 0.83), 0.002);
+    createRing(scene, 'ring2', 5.4, 0.08, new Color3(0.58, 0.18, 0.96), -0.0015);
+    createRing(scene, 'ring3', 6.8, 0.06, new Color3(1, 0.76, 0.03), 0.001);
 
     // Nova Zeme planet in distance
     const planet = MeshBuilder.CreateSphere('planet', { diameter: 2.2, segments: 48 }, scene);
@@ -115,7 +120,7 @@ export default function BabylonIntro({ onEnter }: BabylonIntroProps) {
     createStarfield(scene, 2500);
 
     // Galaxy disc particles (spiral)
-    createGalaxyDisc(scene);
+    createGalaxyDisc(scene, flareTexture);
 
     // GUI
     const uiTexture = AdvancedDynamicTexture.CreateFullscreenUI('ui');
@@ -160,19 +165,7 @@ export default function BabylonIntro({ onEnter }: BabylonIntroProps) {
     hint.top = '52%';
     uiTexture.addControl(hint);
 
-    // Warp-in camera and core zoom animation on enter
-    if (warping) {
-      const anim = new Animation('cameraZoom', 'radius', 60, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CONSTANT);
-      const keys = [
-        { frame: 0, value: camera.radius },
-        { frame: 45, value: 0.5 },
-      ];
-      anim.setKeys(keys);
-      camera.animations.push(anim);
-      scene.beginAnimation(camera, 0, 45, false, 1.2, () => onEnter());
-    }
-
-    // Rotate planet
+    // Rotation
     scene.onBeforeRenderObservable.add(() => {
       planet.rotation.y += 0.0015;
       atmo.rotation.y += 0.0012;
@@ -188,7 +181,17 @@ export default function BabylonIntro({ onEnter }: BabylonIntroProps) {
       scene.dispose();
       engine.dispose();
     };
-  }, [onEnter]);
+  }, []);
+
+  // Warp animation triggered by state
+  useEffect(() => {
+    if (!warping) return;
+    // Allow one more frame then trigger onEnter
+    const t = setTimeout(() => {
+      onEnterRef.current();
+    }, 800);
+    return () => clearTimeout(t);
+  }, [warping]);
 
   return (
     <div className="fixed inset-0 z-50 bg-black">
@@ -250,10 +253,10 @@ function createStarfield(scene: Scene, count: number) {
   }
 }
 
-function createGalaxyDisc(scene: Scene) {
+function createGalaxyDisc(scene: Scene, flareTexture: Texture) {
   const count = 1200;
   const ps = new ParticleSystem('galaxy', count, scene);
-  ps.particleTexture = new Texture('/textures/flare.png', scene, false, false, Texture.TRILINEAR_SAMPLINGMODE);
+  ps.particleTexture = flareTexture;
   ps.emitter = Vector3.Zero();
   ps.minEmitBox = new Vector3(0, -0.1, 0);
   ps.maxEmitBox = new Vector3(0, 0.1, 0);
@@ -270,18 +273,31 @@ function createGalaxyDisc(scene: Scene) {
 
   // Custom particle position for spiral arms
   ps.startDirectionFunction = () => Vector3.Zero();
-  ps.startPositionFunction = (worldMatrix, particle) => {
+  ps.startPositionFunction = (worldMatrix, position) => {
     const arm = Math.floor(Math.random() * 4);
     const angle = arm * (Math.PI / 2) + Math.random() * 1.2;
     const dist = 3 + Math.random() * 18;
     const spread = (Math.random() - 0.5) * 2.5;
-    particle.position.x = Math.cos(angle) * dist + spread;
-    particle.position.y = (Math.random() - 0.5) * 0.4;
-    particle.position.z = Math.sin(angle) * dist + spread;
-    const s = 0.02 + Math.random() * 0.04;
-    particle.size = new Vector3(s, s, s);
+    position.x = Math.cos(angle) * dist + spread;
+    position.y = (Math.random() - 0.5) * 0.4;
+    position.z = Math.sin(angle) * dist + spread;
   };
 
   ps.updateSpeed = 0;
   ps.start();
+}
+
+function createFlareTexture(scene: Scene): Texture {
+  const size = 128;
+  const tex = new DynamicTexture('flare', { width: size, height: size }, scene, true);
+  const ctx = tex.getContext() as CanvasRenderingContext2D;
+  const grad = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  grad.addColorStop(0, 'rgba(255,255,255,1)');
+  grad.addColorStop(0.3, 'rgba(255,255,255,0.4)');
+  grad.addColorStop(0.7, 'rgba(255,255,255,0.05)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+  tex.update();
+  return tex;
 }
