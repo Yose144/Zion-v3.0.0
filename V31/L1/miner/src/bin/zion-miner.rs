@@ -8,7 +8,6 @@ use std::time::Duration;
 
 use anyhow::{Context, Result};
 use clap::Parser;
-use sha3::{Digest, Sha3_256};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
 use tracing::{info, warn};
@@ -187,7 +186,21 @@ async fn mine_and_submit(
         header.resize(80, 0);
     }
 
-    // Simple mining: try nonces 0..1_000_000
+    // Parse target (32-byte hex, big-endian)
+    let target_bytes = hex::decode(target_hex).unwrap_or_default();
+    let mut target = [0u8; 32];
+    if target_bytes.len() == 32 {
+        target.copy_from_slice(&target_bytes);
+    } else if target_bytes.len() > 0 {
+        // Pad or truncate as needed
+        let len = target_bytes.len().min(32);
+        target[..len].copy_from_slice(&target_bytes[..len]);
+    }
+    // target is big-endian: hash <= target means hash bytes <= target bytes lexicographically
+
+    // Use HeightAwareDeeksha — the canonical ZION PoW algorithm
+    let deeksha = HeightAwareDeeksha::new();
+
     let start = std::time::Instant::now();
     let mut found = 0u64;
 
@@ -197,12 +210,15 @@ async fn mine_and_submit(
             header[76..80].copy_from_slice(&(nonce as u32).to_le_bytes());
         }
 
-        // Quick hash check (simplified — just check first few bytes are zeros)
-        let hash = Sha3_256::digest(&header);
-        let hash_hex = hex::encode(&hash);
+        // Ekam Deeksha PoW hash (height-aware: picks deeksha_lite / deeksha_chv3 / deeksha_lite_fire based on height)
+        let hash = deeksha.hash(&header, nonce);
+        let hash_bytes: &[u8; 32] = hash.as_bytes();
 
-        // Check if hash meets target (simplified: first 4 hex chars must be 0)
-        if hash_hex.starts_with("0000") {
+        // Check if hash meets target: hash <= target (big-endian comparison)
+        let meets = hash_bytes <= &target;
+
+        if meets {
+            let hash_hex = hex::encode(hash_bytes);
             let submit = serde_json::json!({
                 "id": 100 + found,
                 "method": "mining.submit",
