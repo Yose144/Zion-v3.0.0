@@ -7,6 +7,7 @@
 use num_bigint::BigUint;
 use num_traits::cast::ToPrimitive;
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use zion_l1_types::{Amount, Asset, AssetId};
 
 use crate::error::{MultichainError, MultichainResult};
@@ -149,6 +150,144 @@ impl DexRouter {
         })
     }
 
+    /// Return the top-N routes ranked by expected output.
+    ///
+    /// Enumerates all simple paths up to `max_hops` length (default 3),
+    /// scores them by output amount, and returns the top `n` results.
+    pub fn quote_multi(
+        &self,
+        from: &Asset,
+        to: &Asset,
+        amount: Amount,
+        n: usize,
+        max_hops: usize,
+    ) -> MultichainResult<Vec<Quote>> {
+        if amount == Amount::ZERO {
+            return Ok(vec![Quote {
+                route: vec![from.id.clone(), to.id.clone()],
+                expected_out: Amount::ZERO,
+                slippage_bps: 0,
+                total_fee_bps: 0,
+            }]);
+        }
+
+        let mut all_paths: Vec<Quote> = Vec::new();
+
+        // Enumerate simple paths via DFS
+        let mut visited: HashSet<AssetId> = HashSet::new();
+        visited.insert(from.id.clone());
+        let mut current_route: Vec<AssetId> = vec![from.id.clone()];
+        self.dfs_paths(
+            &from.id,
+            &to.id,
+            amount,
+            0,
+            max_hops,
+            &mut visited,
+            &mut current_route,
+            &mut all_paths,
+        );
+
+        if all_paths.is_empty() {
+            return Err(MultichainError::Unsupported(format!(
+                "no route from {} to {}",
+                from.id, to.id
+            )));
+        }
+
+        // Sort by expected_out descending
+        all_paths.sort_by(|a, b| b.expected_out.cmp(&a.expected_out));
+        all_paths.truncate(n);
+        Ok(all_paths)
+    }
+
+    /// DFS helper for multi-path enumeration.
+    fn dfs_paths(
+        &self,
+        current: &AssetId,
+        target: &AssetId,
+        amount_in: Amount,
+        hops: usize,
+        max_hops: usize,
+        visited: &mut HashSet<AssetId>,
+        route: &mut Vec<AssetId>,
+        results: &mut Vec<Quote>,
+    ) {
+        if hops > 0 && current == target {
+            // Found a path to target
+            let total_fee: u16 = route
+                .windows(2)
+                .filter_map(|w| self.find_pool(&w[0], &w[1]).map(|p| p.fee_bps))
+                .sum();
+            let slippage = (hops * 50) as u16;
+            results.push(Quote {
+                route: route.clone(),
+                expected_out: amount_in,
+                slippage_bps: slippage,
+                total_fee_bps: total_fee,
+            });
+            return;
+        }
+
+        if hops >= max_hops {
+            return;
+        }
+
+        // Try all pools from current node
+        for pool in &self.pools {
+            let next = if &pool.asset_a.id == current {
+                &pool.asset_b.id
+            } else if &pool.asset_b.id == current {
+                &pool.asset_a.id
+            } else {
+                continue;
+            };
+
+            if visited.contains(next) {
+                continue;
+            }
+
+            if let Some(out) = pool.quote_by_id(current, next, amount_in) {
+                visited.insert(next.clone());
+                route.push(next.clone());
+                self.dfs_paths(
+                    next,
+                    target,
+                    out,
+                    hops + 1,
+                    max_hops,
+                    visited,
+                    route,
+                    results,
+                );
+                route.pop();
+                visited.remove(next);
+            }
+        }
+    }
+
+    /// Add a cross-chain bridge edge as a synthetic pool with 1:1 ratio.
+    ///
+    /// This allows the router to route through bridge hops when finding
+    /// multi-path quotes. The bridge fee is expressed in basis points.
+    pub fn add_bridge_pool(
+        &mut self,
+        id: u64,
+        native_asset: Asset,
+        wrapped_asset: Asset,
+        fee_bps: u16,
+    ) {
+        // Bridge pools have equal reserves (1:1 peg) with the bridge fee
+        self.pools.push(Pool {
+            id,
+            asset_a: native_asset,
+            asset_b: wrapped_asset,
+            reserve_a: Amount::new(1_000_000_000_000),
+            reserve_b: Amount::new(1_000_000_000_000),
+            fee_bps,
+        });
+    }
+
     /// Execute a DEX swap in-place, updating pool reserves.
     pub fn execute(
         &mut self,
@@ -275,5 +414,92 @@ mod tests {
         let quote = router.quote(&zion, &usdc, amount).unwrap();
         assert!(quote.expected_out.0 > 0);
         assert_eq!(quote.route.len(), 3);
+    }
+
+    #[test]
+    fn multi_path_quote_returns_top_n() {
+        let zion = asset(ChainId::ZionL1, "ZION", 6);
+        let eth = asset(ChainId::Ethereum, "ETH", 18);
+        let usdc = asset(ChainId::Base, "USDC", 6);
+
+        let mut router = DexRouter::new();
+        // Direct ZION→USDC pool
+        router.add_pool(Pool {
+            id: 1,
+            asset_a: zion.clone(),
+            asset_b: usdc.clone(),
+            reserve_a: Amount::new(50_000_000_000),
+            reserve_b: Amount::new(500_000_000_000),
+            fee_bps: 30,
+        });
+        // ZION→ETH pool
+        router.add_pool(Pool {
+            id: 2,
+            asset_a: zion.clone(),
+            asset_b: eth.clone(),
+            reserve_a: Amount::new(100_000_000_000),
+            reserve_b: Amount::new(10_000_000_000_000_000_000),
+            fee_bps: 30,
+        });
+        // ETH→USDC pool
+        router.add_pool(Pool {
+            id: 3,
+            asset_a: eth.clone(),
+            asset_b: usdc.clone(),
+            reserve_a: Amount::new(1_000_000_000_000_000_000),
+            reserve_b: Amount::new(4_000_000_000_000),
+            fee_bps: 30,
+        });
+
+        let amount = Amount::new(1_000_000);
+        let paths = router.quote_multi(&zion, &usdc, amount, 3, 3).unwrap();
+        assert!(!paths.is_empty());
+        assert!(paths.len() <= 3);
+        // Best path should be the one with highest expected_out
+        assert!(paths[0].expected_out.0 > 0);
+        // Paths should be sorted descending
+        for w in paths.windows(2) {
+            assert!(w[0].expected_out >= w[1].expected_out);
+        }
+    }
+
+    #[test]
+    fn bridge_pool_enables_cross_chain_routing() {
+        let zion = asset(ChainId::ZionL1, "ZION", 6);
+        let wzion = asset(ChainId::Base, "wZION", 6);
+        let usdc = asset(ChainId::Base, "USDC", 6);
+
+        let mut router = DexRouter::new();
+        // Bridge: ZION ↔ wZION (1:1 with 10 bps bridge fee)
+        router.add_bridge_pool(100, zion.clone(), wzion.clone(), 10);
+        // Base chain: wZION ↔ USDC
+        router.add_pool(Pool {
+            id: 2,
+            asset_a: wzion.clone(),
+            asset_b: usdc.clone(),
+            reserve_a: Amount::new(100_000_000_000),
+            reserve_b: Amount::new(1_000_000_000_000),
+            fee_bps: 30,
+        });
+
+        let amount = Amount::new(1_000_000);
+        // Should route ZION → wZION (bridge) → USDC
+        let quote = router.quote(&zion, &usdc, amount).unwrap();
+        assert!(quote.expected_out.0 > 0);
+        assert_eq!(quote.route.len(), 3);
+        assert_eq!(quote.route[0], zion.id);
+        assert_eq!(quote.route[1], wzion.id);
+        assert_eq!(quote.route[2], usdc.id);
+    }
+
+    #[test]
+    fn quote_multi_no_route_returns_error() {
+        let zion = asset(ChainId::ZionL1, "ZION", 6);
+        let btc = asset(ChainId::Bitcoin, "BTC", 8);
+
+        let router = DexRouter::new();
+        let amount = Amount::new(1_000_000);
+        let result = router.quote_multi(&zion, &btc, amount, 3, 3);
+        assert!(result.is_err());
     }
 }

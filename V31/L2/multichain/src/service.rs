@@ -226,6 +226,18 @@ impl MultichainService {
         self.dex.read().await.quote(from, to, amount)
     }
 
+    /// Return the top-N DEX routes for a swap (multi-path quote).
+    pub async fn dex_quote_multi(
+        &self,
+        from: &Asset,
+        to: &Asset,
+        amount: Amount,
+        n: usize,
+        max_hops: usize,
+    ) -> MultichainResult<Vec<Quote>> {
+        self.dex.read().await.quote_multi(from, to, amount, n, max_hops)
+    }
+
     /// Execute a DEX swap and return the output amount.
     pub async fn dex_swap(
         &self,

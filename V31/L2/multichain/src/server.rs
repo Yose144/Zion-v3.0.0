@@ -144,6 +144,7 @@ impl ApiServer {
             .route("/v1/swap/pool/deploy", post(deploy_pool))
             .route("/v1/swap/pools", get(list_pools))
             .route("/v1/swap/quote", post(swap_quote))
+            .route("/v1/swap/quote/multi", post(swap_quote_multi))
             .route("/v1/swap/execute", post(swap_execute))
             .route("/v1/bridge/submit", post(bridge_submit))
             .route("/v1/multichain/swaps/htlc/lock", post(htlc_lock))
@@ -322,6 +323,55 @@ async fn swap_quote(
             "slippage_bps": quote.slippage_bps,
             "route": quote.route,
         }))),
+        Err(_) => Err(StatusCode::BAD_REQUEST),
+    }
+}
+
+#[derive(Deserialize)]
+struct MultiQuoteRequest {
+    from: Asset,
+    to: Asset,
+    amount: u128,
+    #[serde(default = "default_n")]
+    n: usize,
+    #[serde(default = "default_max_hops")]
+    max_hops: usize,
+}
+
+fn default_n() -> usize {
+    3
+}
+
+fn default_max_hops() -> usize {
+    3
+}
+
+async fn swap_quote_multi(
+    State(state): State<AppState>,
+    Json(req): Json<MultiQuoteRequest>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    match state
+        .service
+        .dex_quote_multi(&req.from, &req.to, Amount::new(req.amount), req.n, req.max_hops)
+        .await
+    {
+        Ok(paths) => {
+            let routes: Vec<serde_json::Value> = paths
+                .iter()
+                .map(|q| serde_json::json!({
+                    "route": q.route,
+                    "expected_out": q.expected_out.0.to_string(),
+                    "slippage_bps": q.slippage_bps,
+                    "total_fee_bps": q.total_fee_bps,
+                }))
+                .collect();
+            Ok(Json(serde_json::json!({
+                "from": req.from,
+                "to": req.to,
+                "amount": req.amount.to_string(),
+                "routes": routes,
+            })))
+        }
         Err(_) => Err(StatusCode::BAD_REQUEST),
     }
 }
