@@ -11,6 +11,7 @@ pub mod hasher;
 #[cfg(feature = "native-hashers")]
 pub mod native;
 pub mod parent_chains;
+pub mod progpow_codegen;
 pub(crate) mod pure;
 pub mod scheduler;
 pub mod true_auxpow;
