@@ -135,6 +135,32 @@ Dokončena plná V3 pool feature parity. Pool nasazen a běží na Edge (`62.171
 - HTTP API: `0.0.0.0:8080`
 - External miner (IP 82.66.171.130) se připojuje — V3 Hello/Welcome handshake funguje
 
+### DAO Governance Runtime (2026-08-04) ✅
+
+DAO governance runtime dokončena (Phase C1). Plný lifecycle návrhů s hlasováním, kvórem a timelockem.
+
+**Nové moduly:**
+
+- ✅ **`voting.rs`** (215 lines) — VotingEngine: token-weighted voting (1 ZION = 1 vote), double-vote prevention, vote weight tracking.
+- ✅ **`runtime.rs`** (420 lines) — GovernanceRuntime: plný proposal lifecycle (Create → Vote → Tally → Quorum → Timelock → Execute). Parliamentary election s D'Hondt seat allocation. Cancel by proposer nebo guardian. Process expired proposals batch.
+- ✅ **`api.rs`** (500 lines) — Axum HTTP API s 9 endpoints: health, proposals CRUD, vote, tally, execute, cancel, stats. X-DAO-Key auth pro write operace. ProposalTypeDto pro JSON-friendly input.
+- ✅ **`main.rs`** — `zion-dao` binárka s tracing-subscriber.
+
+**Testy:** 31 DAO testů pass (bylo 12).
+
+### CLI Wallet + Service Management (2026-08-04) ✅
+
+CLI rozšířeno o wallet file management a service lifecycle (Phase C6 + C7).
+
+**Wallet commands:**
+- ✅ `wallet create` — generuje Ed25519 keypair, ukládá do JSON souboru (~/.zion/wallet.json), --force pro overwrite
+- ✅ `wallet load` — načte wallet ze souboru, zobrazí address + public key
+- ✅ `wallet send` — fetch UTXOs z L1 RPC, build+sign tx, broadcast přes submitTransaction JSON-RPC. --dry-run, --memo, --rpc, --fee flags.
+
+**Service lifecycle commands:**
+- ✅ `service start/stop/restart/status [node|pool|miner|multichain|dao|all]` — systemctl wrapper pro V31 services
+- ✅ `service logs <service> [--lines N]` — journalctl log viewer
+
 ## Co zůstává otevřené / vyžaduje externí krok
 
 1. ~~GPU miner backend~~ — `zion-miner/src/auxpow/gpu_miner.rs` OpenCL backend ported; CPU/GPU match test ready (Phase B2).
@@ -153,9 +179,10 @@ Dokončena plná V3 pool feature parity. Pool nasazen a běží na Edge (`62.171
 ## Další krok
 
 - **Pool V3 Feature Parity ✅ COMPLETE** — AuxPoW bridge runtime, TLS, extra ports, share relay, profit switcher, expanded HTTP API. Pool nasazen a běží na Edge.
+- **DAO Governance Runtime ✅ COMPLETE** — Voting engine, proposal lifecycle, HTTP API. 31 testů pass.
+- **CLI Wallet + Service ✅ COMPLETE** — Wallet create/load/send, service start/stop/status/logs.
 - **Fáze D pokračuje:** Production hardening zbývajících komponent:
-  - DAO governance runtime (voting, treasury, L1 scanner)
-  - CLI wallet file management + tx sending
-  - Dashboard V31 miner/pool metrics
+  - Dashboard V31 miner/pool metrics (C8)
+  - ZionDex port do multichain (C2)
   - Non-EVM WARP kontrakty (Tron, Solana, Cosmos, ...)
   - Security audit + chaos testy (3.0.9 / 3.1.0-beta)
