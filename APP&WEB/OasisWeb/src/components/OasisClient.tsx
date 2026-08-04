@@ -63,7 +63,19 @@ export default function OasisClient() {
   const mobileInputRef = useRef<MobileInput | null>(null);
   const compassRef = useRef<CompassData | null>(null);
   const { muted, toggle, start, playWarp, playBoost, playScanComplete, playApproach, startEngine, stopEngine, setEngine, music } = useAudio();
-  const { discoverWorld, scanWorld, addXp, setRealQuests, setAvatars, setTerritories, setAddress, address, shipLoadout, syncPlayer, scannedWorlds, discoveredWorlds } = useGameStore();
+  // Granular zustand selectors — prevents full re-render on every state change
+  const discoverWorld = useGameStore(s => s.discoverWorld);
+  const scanWorld = useGameStore(s => s.scanWorld);
+  const addXp = useGameStore(s => s.addXp);
+  const setRealQuests = useGameStore(s => s.setRealQuests);
+  const setAvatars = useGameStore(s => s.setAvatars);
+  const setTerritories = useGameStore(s => s.setTerritories);
+  const setAddress = useGameStore(s => s.setAddress);
+  const address = useGameStore(s => s.address);
+  const shipLoadout = useGameStore(s => s.shipLoadout);
+  const syncPlayer = useGameStore(s => s.syncPlayer);
+  const scannedWorlds = useGameStore(s => s.scannedWorlds);
+  const discoveredWorlds = useGameStore(s => s.discoveredWorlds);
   const addToast = useToastStore((s) => s.add);
 
   useEffect(() => {

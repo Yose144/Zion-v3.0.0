@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo, memo } from 'react';
 import { motion } from 'framer-motion';
 import { X, Globe, Layers, MapPin, Sparkles, Eye, Egg, Tag, Swords, Compass, Pickaxe, Brain, Users, Shield, Cpu, Gem, Users2, ScrollText, Zap, ScanLine } from 'lucide-react';
 import type { World } from '../domain/types/world';
@@ -185,23 +186,47 @@ function mapRealQuests(world: World, realQuests: any[]): Quest[] {
   }));
 }
 
-export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
+function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
   const color = CATEGORY_COLORS[world.category] || '#ffffff';
   const rc = CATEGORY_RGB[world.category] || '255, 255, 255';
-  const { xp, credits, address, completeQuest, completedQuests, realQuests, avatars, claimGoldenEgg, collectedEggs, syncPlayer, shipLoadout, addXp, addCredits } = useGameStore();
+  // Granular selectors — only subscribe to what we need
+  const xp = useGameStore(s => s.xp);
+  const credits = useGameStore(s => s.credits);
+  const address = useGameStore(s => s.address);
+  const completeQuest = useGameStore(s => s.completeQuest);
+  const completedQuests = useGameStore(s => s.completedQuests);
+  const realQuests = useGameStore(s => s.realQuests);
+  const avatars = useGameStore(s => s.avatars);
+  const claimGoldenEgg = useGameStore(s => s.claimGoldenEgg);
+  const collectedEggs = useGameStore(s => s.collectedEggs);
+  const syncPlayer = useGameStore(s => s.syncPlayer);
+  const shipLoadout = useGameStore(s => s.shipLoadout);
+  const addXp = useGameStore(s => s.addXp);
+  const addCredits = useGameStore(s => s.addCredits);
   const { playQuestComplete } = useAudio();
   const addToast = useToastStore((s) => s.add);
-  const generated = generateQuests(world);
-  const real = mapRealQuests(world, realQuests);
-  const quests = real.length > 0 ? real : generated;
-  const firstRealQuest = real[0];
-  const matchingAvatar = firstRealQuest?.avatarName
-    ? avatars.find((a) => a.name?.toLowerCase() === firstRealQuest.avatarName?.toLowerCase())
-    : null;
+
+  // Memoize heavy computations — these were running on every render
+  const quests = useMemo(() => {
+    const generated = generateQuests(world);
+    const real = mapRealQuests(world, realQuests);
+    return real.length > 0 ? real : generated;
+  }, [world, realQuests]);
+
+  const firstRealQuest = useMemo(() => {
+    const real = mapRealQuests(world, realQuests);
+    return real[0];
+  }, [world, realQuests]);
+
+  const matchingAvatar = useMemo(() => {
+    if (!firstRealQuest?.avatarName) return null;
+    return avatars.find((a) => a.name?.toLowerCase() === firstRealQuest.avatarName?.toLowerCase()) ?? null;
+  }, [firstRealQuest, avatars]);
+
   const level = getLevel(xp);
   const levelProgress = getLevelProgress(xp);
-  const intel = generateWorldIntel(world);
-  const lore = generateLore(world);
+  const intel = useMemo(() => generateWorldIntel(world), [world]);
+  const lore = useMemo(() => generateLore(world), [world]);
 
   return (
     <motion.div
@@ -566,3 +591,5 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
     </motion.div>
   );
 }
+
+export default memo(WorldPanel);
