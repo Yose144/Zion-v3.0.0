@@ -239,6 +239,7 @@ Všechny V3 parity moduly zapojené do pool runtime (main.rs + stratum.rs).
 - **Pool Runtime Wiring ✅ COMPLETE** — Notifier, RevenueScheduler, RevenueProxy zapojené. 2043 testů pass.
 - **Multi-Platform Release Build ✅ COMPLETE** — macOS aarch64/x86_64, Linux x86_64 (musl), Windows x86_64. Všechny balíčky + SHA256 připraveny, draft release na GitHubu, viz [`REPORT_2026-08-04_SESSION.md`](./REPORT_2026-08-04_SESSION.md).
 - **Release Runbook ✅ COMPLETE** — `V31/RELEASE_RUNBOOK.md`, `V31/30D_RUN_PLAN.md`, `V31/CHAOS_TEST_PLAN.md`.
+- **Clippy / Warning Cleanup ✅ COMPLETE** — `cargo clippy --workspace` clean, `cargo test --workspace` 2043+ testů pass.
 - **Public Subtree Sync ✅ COMPLETE** — `git subtree push --prefix=public public main` up-to-date.
 - **Fáze D — co zbývá pro mainnet beta:**
   - Non-EVM WARP kontrakty (Tron, Solana, Cosmos, ...)
