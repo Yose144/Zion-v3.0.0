@@ -158,7 +158,7 @@ CLI rozšířeno o wallet file management a service lifecycle (Phase C6 + C7).
 - ✅ `wallet send` — fetch UTXOs z L1 RPC, build+sign tx, broadcast přes submitTransaction JSON-RPC. --dry-run, --memo, --rpc, --fee flags.
 
 **Service lifecycle commands:**
-- ✅ `service start/stop/restart/status [node|pool|miner|multichain|dao|all]` — systemctl wrapper pro V31 services
+- ✅ `node start|stop|status|restart`, `pool start|stop|status|stats`, `miner start|stop|status` — přímé systemctl příkazy pro každý V31 service
 - ✅ `service logs <service> [--lines N]` — journalctl log viewer
 
 ### ZionDex Multi-Path + Dashboard Metrics (2026-08-04) ✅

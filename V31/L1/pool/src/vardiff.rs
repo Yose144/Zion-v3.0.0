@@ -95,16 +95,21 @@ impl VarDiff {
 
         // Compute average time between submissions.
         let n = self.submit_times.len() - 1;
+        if n == 0 {
+            return None;
+        }
         let total_secs = self
             .submit_times
             .back()
             .unwrap()
             .duration_since(*self.submit_times.front().unwrap())
             .as_secs_f64();
-        if total_secs <= 0.0 || n == 0 {
-            return None;
-        }
-        let avg_secs = total_secs / n as f64;
+        let avg_secs = if total_secs > 0.0 {
+            total_secs / n as f64
+        } else {
+            // Infinitely fast cadence: the ratio below clamps to 4.0.
+            0.0
+        };
 
         // Retarget: new_diff = current_diff × (target_time / avg_time).
         // Clamp the ratio to [0.25, 4.0] to prevent wild swings.
