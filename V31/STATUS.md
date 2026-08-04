@@ -150,7 +150,7 @@ DAO governance runtime dokončena (Phase C1). Plný lifecycle návrhů s hlasov�
 
 ### CLI Wallet + Service Management (2026-08-04) ✅
 
-CLI rozšířeno o wallet file management a service lifecycle (Phase C6 + C7).
+CLI rozšířeno o wallet file management, service lifecycle a Dashboard V31 env/metriky (Phase C6 + C7 + C8).
 
 **Wallet commands:**
 - ✅ `wallet create` — generuje Ed25519 keypair, ukládá do JSON souboru (~/.zion/wallet.json), --force pro overwrite
@@ -160,6 +160,12 @@ CLI rozšířeno o wallet file management a service lifecycle (Phase C6 + C7).
 **Service lifecycle commands:**
 - ✅ `node start|stop|status|restart`, `pool start|stop|status|stats`, `miner start|stop|status` — přímé systemctl příkazy pro každý V31 service
 - ✅ `service logs <service> [--lines N]` — journalctl log viewer
+
+**Dashboard V31 env + metrics (Phase C8):**
+- ✅ `nodes.json` a `services.json` převedeny na V31 porty (node RPC 9445/P2P 8335, pool stratum 8444/metrics 8455, multichain 8453).
+- ✅ `v31.py` načítá porty a systemd jednotky z JSONů — žádné hardcoded porty.
+- ✅ Nové endpointy `/api/v31/miner-metrics`, `/api/v31/pool-metrics`, `/api/v31/pool-prometheus`.
+- ✅ `control()` a `logs()` podporují parametr `service` pro libovolnou V31 službu.
 
 ### ZionDex Multi-Path + Dashboard Metrics (2026-08-04) ✅
 

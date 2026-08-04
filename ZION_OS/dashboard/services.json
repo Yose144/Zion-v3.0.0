@@ -4,15 +4,15 @@
   "node1": {
     "bin": "node",
     "log": "node1",
-    "service_id": "node1",
-    "mkdirs": ["V3/data"],
+    "service_id": "zion-v31-node",
+    "mkdirs": ["V31/data"],
     "env": {
       "ZION_NODE_ID": "local-backup-node",
-      "ZION_P2P_BIND": "0.0.0.0:8333",
-      "ZION_RPC_BIND": "0.0.0.0:8446",
-      "ZION_NODE_STATE_PATH": "V3/data/zion-node-state.db",
+      "ZION_P2P_BIND": "0.0.0.0:8335",
+      "ZION_RPC_BIND": "0.0.0.0:9445",
+      "ZION_NODE_STATE_PATH": "V31/data/zion-node-state.db",
       "ZION_MIGRATION_HEIGHT": "1",
-      "ZION_SEED_PEERS": "62.171.141.136:8333",
+      "ZION_SEED_PEERS": "62.171.141.136:8335",
       "ZION_MINER_ADDRESS": "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604",
       "ZION_HUMANITARIAN_WALLET": "zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4",
       "ZION_ISSOBELLA_WALLET": "zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702"
@@ -22,7 +22,7 @@
   "miner": {
     "bin": "zion-miner",
     "log": "miner",
-    "service_id": "miner",
+    "service_id": "zion-v31-miner",
     "env": {
       "ZION_POOL_ADDR": "62.171.141.136:8444",
       "ZION_LOOP_COUNT": "1000000",
@@ -39,7 +39,7 @@
   "miner-cpu": {
     "bin": "zion-miner",
     "log": "miner",
-    "service_id": "miner",
+    "service_id": "zion-v31-miner",
     "env": {
       "ZION_POOL_ADDR": "62.171.141.136:8444",
       "ZION_LOOP_COUNT": "1000000",
@@ -55,7 +55,7 @@
   "miner-gpu": {
     "bin": "zion-miner",
     "log": "miner",
-    "service_id": "miner",
+    "service_id": "zion-v31-miner",
     "env": {
       "ZION_POOL_ADDR": "62.171.141.136:8444",
       "ZION_LOOP_COUNT": "1000000",
@@ -69,6 +69,19 @@
     }
   },
 
+  "zion-pool": {
+    "bin": "zion-pool",
+    "log": "pool",
+    "service_id": "zion-v31-pool",
+    "env": {
+      "ZION_POOL_ADDR": "62.171.141.136:8444",
+      "ZION_POOL_API_BIND": "0.0.0.0:8455",
+      "ZION_MINER_ADDRESS": "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604",
+      "ZION_HUMANITARIAN_ADDRESS": "zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4",
+      "ZION_ISSOBELLA_ADDRESS": "zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702"
+    }
+  },
+
   "hiranyagarbha": {
     "bin": "zion-ai-native-api",
     "log": "hiranyagarbha",
@@ -77,7 +90,7 @@
       "HIRANYAGARBHA_BIND": "0.0.0.0:8001",
       "HIRANYAGARBHA_BACKEND": "auto",
       "HIRANYAGARBHA_MAX_AGENTS": "100",
-      "ZION_NODE_RPC_ADDR": "127.0.0.1:8443",
+      "ZION_NODE_RPC_ADDR": "127.0.0.1:9445",
       "ZION_POOL_API_URL": "http://127.0.0.1:8455",
       "LLM_BASE_URL": "http://127.0.0.1:8002/v1",
       "LLM_MODEL": "hiran-v2.2",

@@ -1,14 +1,15 @@
 {
+  "_comment": "V31 dashboard node manifest. Port numbers are read by v31.py and the JS front-end; keep them in sync with services.json.",
   "nodes": {
     "edge-primary": {
       "id": "edge-primary",
       "name": "Edge Primary Node",
       "host": "127.0.0.1",
       "public_ip": "62.171.141.136",
-      "rpc_port": 8443,
-      "p2p_port": 8333,
+      "rpc_port": 9445,
+      "p2p_port": 8335,
       "platform": "linux",
-      "location": "Hetzner Helsinki",
+      "location": "Contabo",
       "role": "primary",
       "connection": "tailscale_vpn",
       "auto_detect": true,
@@ -18,8 +19,8 @@
       "id": "local-backup",
       "name": "Local Backup Node",
       "host": "127.0.0.1",
-      "rpc_port": 8443,
-      "p2p_port": 8333,
+      "rpc_port": 9445,
+      "p2p_port": 8335,
       "platform": "windows",
       "location": "Local",
       "role": "backup",
@@ -31,8 +32,8 @@
       "id": "macos-local",
       "name": "macOS Local Node",
       "host": "127.0.0.1",
-      "rpc_port": 8443,
-      "p2p_port": 8333,
+      "rpc_port": 9445,
+      "p2p_port": 8335,
       "platform": "macos",
       "location": "Local",
       "role": "miner",
@@ -51,6 +52,17 @@
       "platform": "linux",
       "role": "pool",
       "connection": "tailscale_vpn",
+      "detect_method": "port_scan"
+    },
+    "local-pool": {
+      "id": "local-pool",
+      "name": "Local Pool",
+      "host": "127.0.0.1",
+      "stratum_port": 8444,
+      "metrics_port": 8455,
+      "platform": "linux",
+      "role": "pool",
+      "connection": "local",
       "detect_method": "port_scan"
     },
     "macos-miner": {
@@ -73,10 +85,11 @@
       "port_scan"
     ],
     "ports": {
-      "node_rpc": 8443,
-      "node_p2p": 8333,
+      "node_rpc": 9445,
+      "node_p2p": 8335,
       "pool_stratum": 8444,
-      "pool_metrics": 8455
+      "pool_metrics": 8455,
+      "multichain_api": 8453
     }
   }
 }
