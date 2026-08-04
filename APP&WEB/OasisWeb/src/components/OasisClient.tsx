@@ -20,7 +20,7 @@ import { useToastStore } from '../store/toastStore';
 import { getQuests, getAvatars, getTerritories, awardPlayerXp } from '../lib/api';
 import type { World, WorldCategory, WorldLayer } from '../domain/types/world';
 
-const WarpIntro = dynamic(() => import('./WarpIntro'), { ssr: false });
+const BabylonIntro = dynamic(() => import('./BabylonIntro'), { ssr: false });
 const OasisScene = dynamic(() => import('./OasisScene'), { ssr: false });
 import WorldPanel from './WorldPanel';
 
@@ -416,7 +416,7 @@ export default function OasisClient() {
       </div>
 
       <AnimatePresence>
-        {phase === 'intro' && <WarpIntro onEnter={handleEnter} />}
+        {phase === 'intro' && <BabylonIntro onEnter={handleEnter} />}
       </AnimatePresence>
 
       <WarpFlash active={warping} worldName={selectedWorld?.name} />
