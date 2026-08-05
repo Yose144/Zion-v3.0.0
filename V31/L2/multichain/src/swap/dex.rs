@@ -7,6 +7,8 @@
 //! The `intent` submodule brings in intent-based settlement (ZionDex V3
 //! port) without disturbing the existing AMM code.
 
+pub mod aggregator;
+pub mod executor;
 pub mod intent;
 pub mod intent_engine;
 pub mod solver_network;
