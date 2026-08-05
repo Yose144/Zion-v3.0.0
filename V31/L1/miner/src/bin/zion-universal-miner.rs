@@ -123,11 +123,17 @@ async fn main() -> Result<()> {
             let stats = stats_rt.stats().await;
             for (id, s) in &stats {
                 let prev = last_stats.get(id).cloned().unwrap_or_else(|| s.clone());
+                let coin = s
+                    .coin
+                    .as_ref()
+                    .map(|c| c.to_string())
+                    .unwrap_or_else(|| id.as_str().to_string());
                 if s.accepted > prev.accepted {
                     let delta = s.accepted - prev.accepted;
                     for _ in 0..delta {
                         stats_metrics.inc_accepted();
                     }
+                    stats_metrics.set_coin(&coin);
                 }
                 if s.rejected > prev.rejected {
                     let delta = s.rejected - prev.rejected;
@@ -136,11 +142,6 @@ async fn main() -> Result<()> {
                     }
                 }
                 let active = if s.active { "active" } else { "idle" };
-                let coin = s
-                    .coin
-                    .as_ref()
-                    .map(|c| c.to_string())
-                    .unwrap_or_else(|| id.as_str().to_string());
                 info!(
                     stream = %id.as_str(),
                     coin = %coin,
@@ -150,10 +151,8 @@ async fn main() -> Result<()> {
                     status = %active,
                     "stream stats"
                 );
-                if *id == StreamId::Zion {
-                    stats_metrics.set_coin(&coin);
-                }
             }
+            info!("{}", stats_metrics.tui_log());
             last_stats = stats;
         }
     });

@@ -1,53 +1,100 @@
-//! ZION L1 miner binary — stratum v1 client for V31 pool.
+//! ZION triple-stream miner binary (V31).
 //!
-//! Connects to a zion-pool stratum endpoint, fetches block templates,
-//! mines Ekam Deeksha PoW, and submits shares.
+//! Runs three concurrent tokio mining streams:
+//!   - Stream 1: ZION canonical / pool stratum mining.
+//!   - Stream 2: external GPU AuxPoW (KAS/ALPH/RVN/EPIC/ZANO/etc.).
+//!   - Stream 3: external CPU AuxPoW (VRSC/XMR/RTM/etc.).
+//!
+//! Stream 2/3 fall back to CPU mining when no GPU is configured or available.
+//! All configuration can come from CLI flags or environment variables.
 
 use std::net::SocketAddr;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use anyhow::{Context, Result};
 use clap::Parser;
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::net::TcpStream;
-use tokio::sync::mpsc;
+use tokio::sync::watch;
+use tokio::time::sleep;
 use tracing::{info, warn};
+use zion_l1_types::{Address, ChainId};
 
-use zion_core::{ConsensusEngine, HeightAwareDeeksha};
-use zion_cosmic_harmony::PowAlgorithm;
+use zion_miner::config::MinerConfig;
 use zion_miner::metrics::{serve, Metrics};
+use zion_miner::runtime::MinerRuntime;
+use zion_miner::stream::{StreamId, StreamStats};
 
 #[derive(Parser, Debug)]
 #[command(name = "zion-miner")]
-#[command(about = "ZION L1 stratum miner (V31)")]
+#[command(about = "ZION triple-stream stratum miner (ZION + GPU AuxPoW + CPU AuxPoW)")]
 #[command(version)]
 struct Args {
-    /// Pool stratum address (host:port).
-    #[arg(short, long, default_value = "127.0.0.1:8444")]
-    pool: String,
+    /// Pool stratum address (host:port) for ZION share mining.
+    /// Also read from `ZION_POOL_ADDR`.
+    #[arg(short, long)]
+    pool: Option<String>,
 
-    /// Miner wallet address for coinbase.
-    #[arg(short, long, default_value = "zion1pool")]
+    /// ZION L1 node RPC URL for solo mining.
+    /// Also read from `ZION_NODE_RPC`.
+    #[arg(long)]
+    node: Option<String>,
+
+    /// External AuxPoW stratum pool URL for Stream 2/3.
+    /// Also read from `ZION_AUXPOW_POOL`.
+    #[arg(long)]
+    auxpow_pool: Option<String>,
+
+    /// Stream 2 (GPU AuxPoW) stratum URL.
+    /// Also read from `ZION_STREAM2_URL`.
+    #[arg(long)]
+    stream2_url: Option<String>,
+
+    /// Stream 3 (CPU AuxPoW) stratum URL.
+    /// Also read from `ZION_STREAM3_URL`.
+    #[arg(long)]
+    stream3_url: Option<String>,
+
+    /// Wallet / reward address for coinbase.
+    #[arg(long, default_value = "zion1pool")]
     wallet: String,
 
     /// Worker name.
     #[arg(short, long, default_value = "worker1")]
     worker: String,
 
-    /// Number of CPU threads.
+    /// Number of CPU mining threads.
+    /// Also read from `ZION_MINER_THREADS`.
     #[arg(short, long, default_value = "2")]
     threads: usize,
 
-    /// Number of hash iterations before reconnect (0 = infinite).
-    #[arg(short, long, default_value = "0")]
-    #[allow(dead_code)]
-    loops: u64,
+    /// Enable autonomous profit switching for Stream 2/3.
+    /// Also read from `ZION_AUTONOMOUS=1`.
+    #[arg(long)]
+    autonomous: bool,
 
-    /// Address for the Prometheus metrics HTTP server.
+    /// Profit re-evaluation interval in seconds.
+    /// Also read from `ZION_PROFIT_INTERVAL`.
+    #[arg(long, default_value = "300")]
+    profit_interval: u64,
+
+    /// Disable Stream 1 (ZION).
+    #[arg(long)]
+    no_zion: bool,
+
+    /// Disable Stream 2 (GPU AuxPoW).
+    #[arg(long)]
+    no_gpu: bool,
+
+    /// Disable Stream 3 (CPU AuxPoW).
+    #[arg(long)]
+    no_cpu: bool,
+
+    /// Prometheus metrics server bind address.
     #[arg(long, default_value = "127.0.0.1:9101")]
     metrics: SocketAddr,
+
+    /// Log interval for per-stream statistics (seconds).
+    #[arg(long, default_value = "30")]
+    log_interval: u64,
 }
 
 #[tokio::main]
@@ -55,268 +102,101 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
     let args = Args::parse();
 
-    let metrics = Metrics::new(&args.pool, "zion");
-    tokio::spawn(serve(metrics.clone(), args.metrics));
+    let reward_address = Address::new(ChainId::ZionL1, vec![], &args.wallet)
+        .with_context(|| format!("invalid reward address: {}", args.wallet))?;
 
-    info!(
-        "zion-miner V31 starting — pool={}, wallet={}, worker={}, threads={}",
-        args.pool, args.wallet, args.worker, args.threads
+    let mut config = MinerConfig::new(reward_address);
+
+    // CLI flags override environment defaults.
+    config.pool_url = args.pool.or(config.pool_url);
+    config.node_rpc_url = args.node.or(config.node_rpc_url);
+    config.auxpow_pool = args.auxpow_pool.or(config.auxpow_pool);
+    config.stream2_url = args.stream2_url.or(config.stream2_url);
+    config.stream3_url = args.stream3_url.or(config.stream3_url);
+    config.worker = args.worker;
+    config.miner_threads = args.threads;
+    config.stream1_enabled = !args.no_zion;
+    config.stream2_enabled = !args.no_gpu;
+    config.stream3_enabled = !args.no_cpu;
+    config.autonomous = args.autonomous;
+    config.profit_interval_sec = args.profit_interval;
+    config.zion_nonce_batch = args.threads as u64 * 100_000;
+
+    let runtime = MinerRuntime::new(config);
+    let metrics = Metrics::new(
+        runtime
+            .config()
+            .pool_url
+            .as_deref()
+            .or_else(|| runtime.config().node_rpc_url.as_deref())
+            .unwrap_or("solo"),
+        "zion",
     );
 
-    let algorithm = Arc::new(HeightAwareDeeksha::new()) as Arc<dyn PowAlgorithm>;
-    let _consensus = Arc::new(ConsensusEngine::new(algorithm));
+    // Start Prometheus endpoint.
+    tokio::spawn(serve(metrics.clone(), args.metrics));
 
-    loop {
-        match run_mining_session(&args, &metrics).await {
-            Ok(()) => {
-                info!("mining session ended cleanly, reconnecting...");
-            }
-            Err(e) => {
-                warn!("mining session error: {:#}, reconnecting in 10s...", e);
-                tokio::time::sleep(Duration::from_secs(10)).await;
-            }
-        }
-        metrics.inc_reconnects();
-    }
-}
-
-async fn run_mining_session(args: &Args, metrics: &Metrics) -> Result<()> {
-    let stream = TcpStream::connect(&args.pool)
-        .await
-        .with_context(|| format!("failed to connect to pool {}", args.pool))?;
-    let (reader, mut writer) = stream.into_split();
-    let mut reader = BufReader::new(reader);
-
-    // Subscribe
-    let subscribe = serde_json::json!({
-        "id": 1,
-        "method": "mining.subscribe",
-        "params": [format!("zion-miner/{}", env!("CARGO_PKG_VERSION"))]
-    });
-    let line = format!("{}\n", subscribe);
-    writer.write_all(line.as_bytes()).await?;
-    writer.flush().await?;
-    info!("sent mining.subscribe");
-
-    // Read subscribe response + initial notify
-    let mut buf = String::new();
-    reader.read_line(&mut buf).await?;
-    info!("subscribe response: {}", buf.trim());
-
-    // Authorize
-    let authorize = serde_json::json!({
-        "id": 2,
-        "method": "mining.authorize",
-        "params": [format!("{}.{}", args.wallet, args.worker), "x"]
-    });
-    let line = format!("{}\n", authorize);
-    writer.write_all(line.as_bytes()).await?;
-    writer.flush().await?;
-    info!("sent mining.authorize for {}.{}", args.wallet, args.worker);
-
-    // Read authorize response
-    buf.clear();
-    reader.read_line(&mut buf).await?;
-    info!("authorize response: {}", buf.trim());
-
-    // Main loop: read mining.notify, mine, submit shares
-    loop {
-        buf.clear();
-        let n = reader.read_line(&mut buf).await?;
-        if n == 0 {
-            anyhow::bail!("pool disconnected");
-        }
-
-        let msg: serde_json::Value = serde_json::from_str(buf.trim())
-            .with_context(|| format!("failed to parse pool message: {}", buf.trim()))?;
-
-        // Skip responses to our submit/subscribe/authorize — we only care about notify
-        if msg.get("method").is_none() {
-            // Count share submit responses (ids >= 100) only.
-            let is_submit_response = msg
-                .get("id")
-                .and_then(|v| v.as_u64())
-                .is_some_and(|id| id >= 100);
-            if is_submit_response {
-                if let Some(result) = msg.get("result") {
-                    if result.as_bool() == Some(true) {
-                        info!("share accepted by pool");
-                        metrics.inc_accepted();
-                    } else if result.as_bool() == Some(false) {
-                        warn!("share rejected by pool");
-                        metrics.inc_rejected();
+    // Background task: poll runtime stats and update metrics + logs.
+    let stats_rt = runtime.clone();
+    let stats_metrics = metrics.clone();
+    tokio::spawn(async move {
+        let mut last_stats: std::collections::HashMap<StreamId, StreamStats> =
+            Default::default();
+        loop {
+            sleep(Duration::from_secs(args.log_interval.max(5))).await;
+            let stats = stats_rt.stats().await;
+            for (id, s) in &stats {
+                let prev = last_stats.get(id).cloned().unwrap_or_else(|| s.clone());
+                let coin = s
+                    .coin
+                    .as_ref()
+                    .map(|c| c.to_string())
+                    .unwrap_or_else(|| id.as_str().to_string());
+                if s.accepted > prev.accepted {
+                    let delta = s.accepted - prev.accepted;
+                    for _ in 0..delta {
+                        stats_metrics.inc_accepted();
+                    }
+                    stats_metrics.set_coin(&coin);
+                }
+                if s.rejected > prev.rejected {
+                    let delta = s.rejected - prev.rejected;
+                    for _ in 0..delta {
+                        stats_metrics.inc_rejected();
                     }
                 }
+                let active = if s.active { "active" } else { "idle" };
+                info!(
+                    stream = %id.as_str(),
+                    coin = %coin,
+                    accepted = s.accepted,
+                    rejected = s.rejected,
+                    hashrate = %s.hashrate,
+                    status = %active,
+                    "stream stats"
+                );
             }
-            continue;
+            info!("{}", stats_metrics.tui_log());
+            last_stats = stats;
         }
-
-        if msg.get("method").and_then(|m| m.as_str()) == Some("mining.notify") {
-            metrics.inc_jobs();
-            let params = msg.get("params").context("missing params in mining.notify")?;
-            let job_id = params
-                .get(0)
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-            let header_hex = params
-                .get(1)
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-            let target_hex = params
-                .get(2)
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-
-            info!(
-                "new job {} — header {} bytes, target {}",
-                job_id,
-                header_hex.len() / 2,
-                if target_hex.len() > 16 {
-                    &target_hex[..16]
-                } else {
-                    &target_hex
-                }
-            );
-
-            // Mine with timeout — new jobs will interrupt after max 60s
-            let mine_result = tokio::time::timeout(
-                Duration::from_secs(60),
-                mine_and_submit(&mut writer, &job_id, &header_hex, &target_hex, args, metrics),
-            ).await;
-            match mine_result {
-                Ok(Ok(())) => info!("mining round complete for job {}", job_id),
-                Ok(Err(e)) => return Err(e),
-                Err(_) => info!("mining round timed out (60s), waiting for next job"),
-            }
-        }
-    }
-}
-
-async fn mine_and_submit(
-    writer: &mut tokio::net::tcp::OwnedWriteHalf,
-    job_id: &str,
-    header_hex: &str,
-    target_hex: &str,
-    args: &Args,
-    metrics: &Metrics,
-) -> Result<()> {
-    let mut header = hex::decode(header_hex).context("invalid header hex")?;
-    if header.len() < 80 {
-        header.resize(80, 0);
-    }
-
-    // Parse target (32-byte hex, big-endian)
-    let target_bytes = hex::decode(target_hex).unwrap_or_default();
-    let mut target = [0u8; 32];
-    if target_bytes.len() == 32 {
-        target.copy_from_slice(&target_bytes);
-    } else if !target_bytes.is_empty() {
-        let len = target_bytes.len().min(32);
-        target[..len].copy_from_slice(&target_bytes[..len]);
-    }
-
-    let header = Arc::new(header);
-    let target = Arc::new(target);
-    let job_id = job_id.to_string();
-    let wallet_worker = format!("{}.{}", args.wallet, args.worker);
-
-    // Channel: mining threads → async writer (found shares)
-    let (share_tx, mut share_rx) = mpsc::unbounded_channel::<(u64, [u8; 32])>();
-
-    // Stop flag — set when a new job arrives (checked by main loop)
-    let stop = Arc::new(AtomicBool::new(false));
-
-    let num_threads = args.threads.max(1);
-    info!("mining with {} thread(s), job={}", num_threads, job_id);
-
-    // Spawn mining threads (sync, CPU-bound)
-    let stop_clone = stop.clone();
-    let header_clone = header.clone();
-    let target_clone = target.clone();
-    let metrics_clone = metrics.clone();
-    let share_tx_clone = share_tx.clone();
-
-    std::thread::spawn(move || {
-        let deeksha = HeightAwareDeeksha::new();
-        let chunk = 1_000_000u64 / num_threads as u64;
-        std::thread::scope(|s| {
-            for tid in 0..num_threads {
-                let stop = stop_clone.clone();
-                let header = header_clone.clone();
-                let target = target_clone.clone();
-                let metrics = metrics_clone.clone();
-                let share_tx = share_tx_clone.clone();
-                let deeksha = &deeksha;
-                s.spawn(move || {
-                    let base = tid as u64 * chunk;
-                    let end = base + chunk;
-                    let mut local_header = (*header).clone();
-                    for nonce in base..end {
-                        if stop.load(Ordering::Relaxed) {
-                            return;
-                        }
-                        if local_header.len() >= 80 {
-                            local_header[76..80].copy_from_slice(&(nonce as u32).to_le_bytes());
-                        }
-                        let hash = deeksha.hash(&local_header, nonce);
-                        let hb: &[u8; 32] = hash.as_bytes();
-                        metrics.record_hashes(1);
-                        if hb <= &*target {
-                            let _ = share_tx.send((nonce, *hb));
-                        }
-                    }
-                });
-            }
-        });
     });
 
-    // Async: receive found shares and submit to pool
-    let mut found = 0u64;
-    let mut last_hr_log = Instant::now();
+    info!(
+        stream1 = %(!args.no_zion),
+        stream2 = %(!args.no_gpu),
+        stream3 = %(!args.no_cpu),
+        threads = args.threads,
+        "zion-miner (triple stream) starting"
+    );
 
-    loop {
-        tokio::select! {
-            Some((nonce, hash_bytes)) = share_rx.recv() => {
-                let hash_hex = hex::encode(hash_bytes);
-                let submit = serde_json::json!({
-                    "id": 100 + found,
-                    "method": "mining.submit",
-                    "params": [
-                        &wallet_worker,
-                        &job_id,
-                        "00000000",
-                        "00000000",
-                        format!("{:08x}", nonce as u32)
-                    ]
-                });
-                let line = format!("{}\n", submit);
-                writer.write_all(line.as_bytes()).await?;
-                writer.flush().await?;
-                info!(
-                    "share submitted — job={}, nonce={}, hash={}",
-                    job_id, nonce, &hash_hex[..16]
-                );
-                found += 1;
-                metrics.inc_submitted();
-            }
-            _ = tokio::time::sleep(Duration::from_secs(10)), if last_hr_log.elapsed() >= Duration::from_secs(10) => {
-                let hashes = metrics.total_hashes();
-                let hr = metrics.hashrate();
-                info!(
-                    "mining... hashes={}, hash_rate={:.0} H/s, shares={}",
-                    hashes, hr, found
-                );
-                last_hr_log = Instant::now();
-            }
+    let (shutdown_tx, shutdown_rx) = watch::channel(false);
+    tokio::spawn(async move {
+        if let Err(e) = tokio::signal::ctrl_c().await {
+            warn!("ctrl-c handler error: {e}");
         }
+        let _ = shutdown_tx.send(true);
+    });
 
-        if stop.load(Ordering::Relaxed) {
-            break;
-        }
-    }
-
+    runtime.run(shutdown_rx).await?;
     Ok(())
 }

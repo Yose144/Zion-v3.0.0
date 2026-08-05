@@ -1547,7 +1547,7 @@ pub fn resolve_auto_backend() -> GpuBackendKind {
         {
             // Try to detect if OpenCL is actually available
             // On Apple Silicon, OpenCL is not available — fall through to Metal
-            if !std::env::var("ZION_FORCE_OPENCL").is_ok() {
+            if std::env::var("ZION_FORCE_OPENCL").is_err() {
                 #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
                 {
                     return GpuBackendKind::Metal;
@@ -2664,14 +2664,13 @@ fn create_gpu_backend_inner(
                         anyhow::bail!("External algorithm '{}' on CUDA requires native-kheavyhash or native-blake3-algo feature", algorithm);
                     }
                 }
-                let miner: Box<dyn GpuMiner> = if algorithm == "deeksha_lite_fire" {
+                Ok(if algorithm == "deeksha_lite_fire" {
                     Box::new(cuda_deeksha_lite_fire::CudaDeekshaLiteFireMiner::new(work_size)?)
                 } else if algorithm == "deeksha_lite_v1" || algorithm == "deeksha_chv3" {
                     Box::new(cuda_deeksha_lite::CudaDeekshaLiteMiner::new(work_size)?)
                 } else {
                     Box::new(cuda_deeksha::CudaDeekshaMiner::new(work_size)?)
-                };
-                return Ok(miner);
+                })
             }
             #[cfg(not(feature = "gpu-cuda"))]
             anyhow::bail!("CUDA support not compiled — rebuild with --features gpu-cuda");
@@ -2708,11 +2707,9 @@ fn create_gpu_backend_inner(
                     }
                 }
                 if algorithm == "deeksha_lite_fire" {
-                    let miner = metal_deeksha_lite_fire::MetalDeekshaLiteFireMiner::new(work_size)?;
-                    return Ok(Box::new(miner));
+                    Ok(Box::new(metal_deeksha_lite_fire::MetalDeekshaLiteFireMiner::new(work_size)?))
                 } else {
-                    let miner = metal_deeksha::MetalDeekshaMiner::new(work_size)?;
-                    return Ok(Box::new(miner));
+                    Ok(Box::new(metal_deeksha::MetalDeekshaMiner::new(work_size)?))
                 }
             }
             #[cfg(not(all(feature = "gpu-metal", target_os = "macos")))]
@@ -3607,7 +3604,7 @@ pub mod opencl_deeksha {
             // GCN (gfx8/gfx9) default to s4_mode due to compiler bugs in stages 5–6.
             // ZION_NO_GCN_S4_MODE=1 → force full pipeline on GCN (debug only).
             let env_on = |name: &str| {
-                std::env::var(name).map_or(false, |v| {
+                std::env::var(name).is_ok_and(|v| {
                     matches!(v.as_str(), "1" | "true" | "TRUE" | "yes" | "YES")
                 })
             };
@@ -3947,7 +3944,7 @@ pub mod opencl_deeksha {
             while left > 0 {
                 let chunk = (left as usize).min(self.work_size);
                 let local_size = self.local_work_size.min(chunk);
-                let global_size = ((chunk + local_size - 1) / local_size) * local_size;
+                let global_size = chunk.div_ceil(local_size) * local_size;
 
                 // Update s4 kernel args
                 s4_kernel.set_arg(1, header_bytes.len() as u32)?;
@@ -4037,7 +4034,7 @@ pub mod opencl_deeksha {
             while left > 0 {
                 let chunk = (left as usize).min(self.work_size);
                 let local_size = self.local_work_size.min(chunk);
-                let global_size = ((chunk + local_size - 1) / local_size) * local_size;
+                let global_size = chunk.div_ceil(local_size) * local_size;
 
                 let sentinel_slice: [u64; 1] = [SENTINEL];
                 self.result_nonce_buf.write(&sentinel_slice[..]).enq()?;
@@ -4321,6 +4318,12 @@ pub mod opencl_deeksha_lite {
         output_hashes_buf: Buffer<u8>,
         /// Second output buffer for double-buffered async readback.
         output_hashes_buf_b: Buffer<u8>,
+        /// On-device result flag for 10-arg kernel (target_u32 != 0 path).
+        result_flag_buf: Buffer<u32>,
+        /// On-device result nonce for 10-arg kernel.
+        result_nonce_buf: Buffer<u64>,
+        /// On-device result hash for 10-arg kernel.
+        result_hash_buf: Buffer<u8>,
         /// Dedicated read queue — allows GPU compute (on main queue) to overlap
         /// with DMA readback (on this queue), hiding read latency.
         read_queue: Queue,
@@ -4332,6 +4335,8 @@ pub mod opencl_deeksha_lite {
         tuning: GpuTuning,
         recovery_attempts: u32,
         max_recovery_attempts: u32,
+        /// Algorithm name advertised by this backend (`deeksha_lite_v1` or `deeksha_chv3`).
+        algorithm: String,
         /// Optimization #2/#3: Pending async batch state for pipelined
         /// launch/collect. Same pattern as the fire backend.
         pending: Option<PendingAsyncBatch>,
@@ -4375,8 +4380,7 @@ pub mod opencl_deeksha_lite {
             let available = global_mem.saturating_sub(reserve);
             let per_thread = DL_SCRATCHPAD_BYTES + 64; // scratchpad + output hash
             let max_by_vram = available / per_thread;
-            let size = requested.min(max_by_vram).max(64);
-            size
+            requested.min(max_by_vram).max(64)
         }
 
         fn pick_device() -> Result<(Platform, Device, String, String)> {
@@ -4500,7 +4504,7 @@ pub mod opencl_deeksha_lite {
             } else {
                 opencl_kernel::DEEKSHA_LITE_KERNEL_NAME
             };
-            let (platform, device, platform_name, device_name) = Self::pick_device()?;
+            let (platform, device, _platform_name, device_name) = Self::pick_device()?;
 
             let family = GpuDeviceFamily::from_name(&device_name);
             let vram = device
@@ -4573,11 +4577,29 @@ pub mod opencl_deeksha_lite {
                 .queue(q.clone())
                 .len(actual_work_size * 32)
                 .build()?;
+            // On-device result buffers for the 10-arg deeksha_lite/chv3/fire kernels.
+            // In benchmark/target_u32==0 mode the kernel writes all hashes to
+            // output_hashes and does not touch these buffers, but the driver still
+            // requires valid objects for all declared arguments.
+            let result_flag_buf = Buffer::<u32>::builder()
+                .queue(q.clone())
+                .len(1)
+                .copy_host_slice(&[0u32])
+                .build()?;
+            let result_nonce_buf = Buffer::<u64>::builder()
+                .queue(q.clone())
+                .len(1)
+                .copy_host_slice(&[SENTINEL])
+                .build()?;
+            let result_hash_buf = Buffer::<u8>::builder()
+                .queue(q.clone())
+                .len(32)
+                .build()?;
             // Dedicated read queue for double-buffered async readback.
             // Using a separate queue allows the GPU to execute the next kernel
             // on the compute queue while a buffer read is in-flight on this queue.
             let read_queue = Queue::new(
-                &pro_que.context(),
+                pro_que.context(),
                 pro_que.queue().device(),
                 None,
             )?;
@@ -4590,14 +4612,23 @@ pub mod opencl_deeksha_lite {
                 .build()?;
             let kernel = pro_que
                 .kernel_builder(kernel_name)
-                .arg(&header_state_buf)
-                .arg(0u64)
-                .arg(0u32)
-                .arg(&output_hashes_buf)
-                .arg(&scratchpad_buf)
-                .arg(&stream_weights_buf)
+                .arg(&header_state_buf)       // 0
+                .arg(0u64)                    // 1: nonce_base
+                .arg(0u32)                    // 2: nonce_count
+                .arg(&output_hashes_buf)      // 3
+                .arg(&scratchpad_buf)         // 4
+                .arg(&stream_weights_buf)     // 5
+                .arg(0u32)                    // 6: target_u32 (0 = benchmark/output all)
+                .arg(&result_flag_buf)        // 7
+                .arg(&result_nonce_buf)       // 8
+                .arg(&result_hash_buf)        // 9
                 .build()
                 .map_err(|e| anyhow::anyhow!("kernel build failed: {e}"))?;
+            let algorithm = if use_chv3 {
+                "deeksha_chv3".to_string()
+            } else {
+                "deeksha_lite_v1".to_string()
+            };
             println!(
                 "gpu_opencl_lite_init device=\"{}\" work_size={} local_ws={} scratchpad_mib={}",
                 device_name,
@@ -4612,6 +4643,9 @@ pub mod opencl_deeksha_lite {
                 scratchpad_buf,
                 output_hashes_buf,
                 output_hashes_buf_b,
+                result_flag_buf,
+                result_nonce_buf,
+                result_hash_buf,
                 read_queue,
                 stream_weights_buf,
                 work_size: actual_work_size,
@@ -4621,6 +4655,7 @@ pub mod opencl_deeksha_lite {
                 tuning,
                 recovery_attempts: 0,
                 max_recovery_attempts: 3,
+                algorithm,
                 pending: None,
             })
         }
@@ -4636,7 +4671,7 @@ pub mod opencl_deeksha_lite {
         }
 
         fn algorithm(&self) -> String {
-            "deeksha_lite_v1".to_string()
+            self.algorithm.clone()
         }
 
         fn suppress_mismatch_warnings(&self) -> bool {
@@ -4745,12 +4780,13 @@ pub mod opencl_deeksha_lite {
                 while left > 0 {
                     let chunk = (left as usize).min(self.work_size);
                     let local_size = self.local_work_size.min(chunk);
-                    let global_size = ((chunk + local_size - 1) / local_size) * local_size;
+                    let global_size = chunk.div_ceil(local_size) * local_size;
                     let out_buf = out_bufs[buf_idx];
 
                     self.kernel.set_arg(1, current_nonce)?;
                     self.kernel.set_arg(2, chunk as u32)?;
                     self.kernel.set_arg(3, out_buf)?;
+                    self.kernel.set_arg(6, 0u32)?; // output-all / benchmark mode
 
                     // Enqueue kernel on compute queue (non-blocking)
                     let mut k_event = Event::empty();
@@ -4887,9 +4923,10 @@ pub mod opencl_deeksha_lite {
                 while left > 0 {
                     let chunk = (left as usize).min(self.work_size);
                     let local_size = self.local_work_size.min(chunk);
-                    let global_size = ((chunk + local_size - 1) / local_size) * local_size;
+                    let global_size = chunk.div_ceil(local_size) * local_size;
                     self.kernel.set_arg(1, current_nonce)?;
                     self.kernel.set_arg(2, chunk as u32)?;
+                    self.kernel.set_arg(6, 0u32)?; // output-all / benchmark mode
 
                     // ── SEH guard for kernel enqueue ──────────────────────────
                     {
@@ -5030,12 +5067,13 @@ pub mod opencl_deeksha_lite {
             while left > 0 {
                 let chunk = (left as usize).min(self.work_size);
                 let local_size = self.local_work_size.min(chunk);
-                let global_size = ((chunk + local_size - 1) / local_size) * local_size;
+                let global_size = chunk.div_ceil(local_size) * local_size;
                 let out_buf = out_bufs[buf_idx];
 
                 self.kernel.set_arg(1, current_nonce)?;
                 self.kernel.set_arg(2, chunk as u32)?;
                 self.kernel.set_arg(3, out_buf)?;
+                self.kernel.set_arg(6, 0u32)?; // output-all / benchmark mode
 
                 let mut k_event = Event::empty();
                 let prev_read_for_buf = last_read_per_buf[buf_idx].take();
@@ -5181,6 +5219,13 @@ pub mod opencl_deeksha_lite_fire {
         /// Dedicated read queue for async readback overlap.
         read_queue: Queue,
         stream_weights_buf: Buffer<f32>,
+        /// On-device result buffers for the 10-arg fire kernel.
+        /// In benchmark/target_u32==0 mode the kernel writes all hashes to
+        /// output_hashes and does not touch these buffers, but the driver still
+        /// requires valid objects for all declared arguments.
+        result_flag_buf: Buffer<u32>,
+        result_nonce_buf: Buffer<u64>,
+        result_hash_buf: Buffer<u8>,
         work_size: usize,
         local_work_size: usize,
         device_name_cached: String,
@@ -5240,8 +5285,7 @@ pub mod opencl_deeksha_lite_fire {
             let available = global_mem.saturating_sub(reserve);
             let per_thread = DLF_SCRATCHPAD_BYTES + 64; // scratchpad + output hash
             let max_by_vram = available / per_thread;
-            let size = requested.min(max_by_vram).max(64);
-            size
+            requested.min(max_by_vram).max(64)
         }
 
         fn pick_device() -> Result<(Platform, Device, String, String)> {
@@ -5345,7 +5389,7 @@ pub mod opencl_deeksha_lite_fire {
 
         pub fn new(requested_work_size: usize) -> Result<Self> {
             let kernel_src = opencl_kernel::get_deeksha_lite_fire_kernel_source().to_string();
-            let (platform, device, platform_name, device_name) = Self::pick_device()?;
+            let (platform, device, _platform_name, device_name) = Self::pick_device()?;
 
             let family = GpuDeviceFamily::from_name(&device_name);
             let vram = device
@@ -5418,8 +5462,26 @@ pub mod opencl_deeksha_lite_fire {
                 .queue(q.clone())
                 .len(actual_work_size * 32)
                 .build()?;
+            // On-device result buffers for the 10-arg deeksha_lite_fire kernel.
+            // In benchmark/target_u32==0 mode the kernel writes all hashes to
+            // output_hashes and does not touch these buffers, but the driver still
+            // requires valid objects for all declared arguments.
+            let result_flag_buf = Buffer::<u32>::builder()
+                .queue(q.clone())
+                .len(1)
+                .copy_host_slice(&[0u32])
+                .build()?;
+            let result_nonce_buf = Buffer::<u64>::builder()
+                .queue(q.clone())
+                .len(1)
+                .copy_host_slice(&[SENTINEL])
+                .build()?;
+            let result_hash_buf = Buffer::<u8>::builder()
+                .queue(q.clone())
+                .len(32)
+                .build()?;
             let read_queue = Queue::new(
-                &pro_que.context(),
+                pro_que.context(),
                 pro_que.queue().device(),
                 None,
             )?;
@@ -5432,12 +5494,16 @@ pub mod opencl_deeksha_lite_fire {
                 .build()?;
             let kernel = pro_que
                 .kernel_builder(opencl_kernel::DEEKSHA_LITE_FIRE_KERNEL_NAME)
-                .arg(&header_state_buf)
-                .arg(0u64)
-                .arg(0u32)
-                .arg(&output_hashes_buf)
-                .arg(&scratchpad_buf)
-                .arg(&stream_weights_buf)
+                .arg(&header_state_buf)       // 0
+                .arg(0u64)                    // 1: nonce_base
+                .arg(0u32)                    // 2: nonce_count
+                .arg(&output_hashes_buf)      // 3
+                .arg(&scratchpad_buf)         // 4
+                .arg(&stream_weights_buf)     // 5
+                .arg(0u32)                    // 6: target_u32 (0 = benchmark/output all)
+                .arg(&result_flag_buf)        // 7
+                .arg(&result_nonce_buf)       // 8
+                .arg(&result_hash_buf)        // 9
                 .build()
                 .map_err(|e| anyhow::anyhow!("kernel build failed: {e}"))?;
             println!(
@@ -5456,6 +5522,9 @@ pub mod opencl_deeksha_lite_fire {
                 output_hashes_buf_b,
                 read_queue,
                 stream_weights_buf,
+                result_flag_buf,
+                result_nonce_buf,
+                result_hash_buf,
                 work_size: actual_work_size,
                 local_work_size: local_ws,
                 device_name_cached: device_name,
@@ -5561,12 +5630,13 @@ pub mod opencl_deeksha_lite_fire {
                 while left > 0 {
                     let chunk = (left as usize).min(self.work_size);
                     let local_size = self.local_work_size.min(chunk);
-                    let global_size = ((chunk + local_size - 1) / local_size) * local_size;
+                    let global_size = chunk.div_ceil(local_size) * local_size;
                     let out_buf = out_bufs[buf_idx];
 
                     self.kernel.set_arg(1, current_nonce)?;
                     self.kernel.set_arg(2, chunk as u32)?;
                     self.kernel.set_arg(3, out_buf)?;
+                    self.kernel.set_arg(6, 0u32)?; // output-all / benchmark mode
 
                     let mut k_event = Event::empty();
                     {
@@ -5694,12 +5764,13 @@ pub mod opencl_deeksha_lite_fire {
                 while left > 0 {
                     let chunk = (left as usize).min(self.work_size);
                     let local_size = self.local_work_size.min(chunk);
-                    let global_size = ((chunk + local_size - 1) / local_size) * local_size;
+                    let global_size = chunk.div_ceil(local_size) * local_size;
 
                     {
                         let guard = GpuGuard::new();
                         self.kernel.set_arg(1, current_nonce)?;
                         self.kernel.set_arg(2, chunk as u32)?;
+                        self.kernel.set_arg(6, 0u32)?; // output-all / benchmark mode
                         if guard.was_caught() {
                             self.recovery_attempts += 1;
                             anyhow::bail!(
@@ -5863,12 +5934,13 @@ pub mod opencl_deeksha_lite_fire {
             while left > 0 {
                 let chunk = (left as usize).min(self.work_size);
                 let local_size = self.local_work_size.min(chunk);
-                let global_size = ((chunk + local_size - 1) / local_size) * local_size;
+                let global_size = chunk.div_ceil(local_size) * local_size;
                 let out_buf = out_bufs[buf_idx];
 
                 self.kernel.set_arg(1, current_nonce)?;
                 self.kernel.set_arg(2, chunk as u32)?;
                 self.kernel.set_arg(3, out_buf)?;
+                self.kernel.set_arg(6, 0u32)?; // output-all / benchmark mode
 
                 let mut k_event = Event::empty();
                 // If this buffer was used before, take the previous read event
@@ -6274,7 +6346,7 @@ pub mod cuda_deeksha {
 
             while left > 0 {
                 let chunk = (left as usize).min(self.work_size) as u32;
-                let blocks = (chunk + threads_per_block - 1) / threads_per_block;
+                let blocks = chunk.div_ceil(threads_per_block);
                 let cfg = LaunchConfig {
                     grid_dim: (blocks, 1, 1),
                     block_dim: (threads_per_block, 1, 1),
@@ -6572,7 +6644,7 @@ pub mod cuda_deeksha_lite_fire {
             // Launch all chunks back-to-back without syncing between them
             while left > 0 {
                 let chunk = (left as usize).min(self.work_size) as u32;
-                let blocks = (chunk + threads_per_block - 1) / threads_per_block;
+                let blocks = chunk.div_ceil(threads_per_block);
                 let cfg = LaunchConfig {
                     grid_dim: (blocks, 1, 1),
                     block_dim: (threads_per_block, 1, 1),
@@ -6695,7 +6767,7 @@ pub mod cuda_deeksha_lite_fire {
 
             while left > 0 {
                 let chunk = (left as usize).min(self.work_size) as u32;
-                let blocks = (chunk + threads_per_block - 1) / threads_per_block;
+                let blocks = chunk.div_ceil(threads_per_block);
                 let cfg = LaunchConfig {
                     grid_dim: (blocks, 1, 1),
                     block_dim: (threads_per_block, 1, 1),
@@ -6976,7 +7048,7 @@ pub mod cuda_deeksha_lite {
 
             while left > 0 {
                 let chunk = (left as usize).min(self.work_size) as u32;
-                let blocks = (chunk + threads_per_block - 1) / threads_per_block;
+                let blocks = chunk.div_ceil(threads_per_block);
                 let cfg = LaunchConfig {
                     grid_dim: (blocks, 1, 1),
                     block_dim: (threads_per_block, 1, 1),
@@ -7090,7 +7162,7 @@ pub mod cuda_deeksha_lite {
 
             while left > 0 {
                 let chunk = (left as usize).min(self.work_size) as u32;
-                let blocks = (chunk + threads_per_block - 1) / threads_per_block;
+                let blocks = chunk.div_ceil(threads_per_block);
                 let cfg = LaunchConfig {
                     grid_dim: (blocks, 1, 1),
                     block_dim: (threads_per_block, 1, 1),
@@ -7245,8 +7317,6 @@ pub mod metal_deeksha {
                 || device_name.contains("Ultra")
             {
                 256
-            } else if device_name.contains("M1") {
-                128
             } else {
                 128
             }
@@ -7276,7 +7346,7 @@ pub mod metal_deeksha {
             // Retry with progressively smaller batch_size if allocation fails.
             let mut batch_size = batch_size;
             let mut scratchpad_buf;
-            let mut scratch_bytes = 0u64;
+            let mut scratch_bytes;
             loop {
                 scratch_bytes = (batch_size as u64) * 262_144u64;
                 scratchpad_buf = device.new_buffer(scratch_bytes, opts);
@@ -7825,8 +7895,6 @@ pub mod metal_deeksha_lite_fire {
                 || device_name.contains("Ultra")
             {
                 256
-            } else if device_name.contains("M1") {
-                128
             } else {
                 128
             }
@@ -7848,7 +7916,7 @@ pub mod metal_deeksha_lite_fire {
 
             let mut batch_size = batch_size;
             let mut scratchpad_buf;
-            let mut scratch_bytes = 0u64;
+            let mut scratch_bytes;
             loop {
                 scratch_bytes = (batch_size as u64) * 262_144u64;
                 scratchpad_buf = device.new_buffer(scratch_bytes, opts);
@@ -8247,7 +8315,7 @@ pub fn query_gpu_details() -> Vec<GpuInfo> {
                     .info(ocl::enums::DeviceInfo::MaxComputeUnits)
                     .ok()
                     .and_then(|v| match v {
-                        ocl::enums::DeviceInfoResult::MaxComputeUnits(n) => Some(n as u32),
+                        ocl::enums::DeviceInfoResult::MaxComputeUnits(n) => Some(n),
                         _ => None,
                     })
                     .unwrap_or(0);
@@ -8255,7 +8323,7 @@ pub fn query_gpu_details() -> Vec<GpuInfo> {
                     .info(ocl::enums::DeviceInfo::MaxClockFrequency)
                     .ok()
                     .and_then(|v| match v {
-                        ocl::enums::DeviceInfoResult::MaxClockFrequency(n) => Some(n as u32),
+                        ocl::enums::DeviceInfoResult::MaxClockFrequency(n) => Some(n),
                         _ => None,
                     })
                     .unwrap_or(0);
@@ -8284,7 +8352,7 @@ pub fn query_gpu_details() -> Vec<GpuInfo> {
                     })
                     .unwrap_or(0);
                 // Temperature is vendor-specific; try AMD/NVIDIA extensions
-                let temp_c: Option<u32> = None; // OpenCL does not expose temp via standard query
+                let _temp_c: Option<u32> = None; // OpenCL does not expose temp via standard query
                 out.push(GpuInfo {
                     name,
                     platform: platform_name.clone(),
@@ -8340,11 +8408,7 @@ fn query_metal_details() -> Vec<GpuInfo> {
                 32
             } else if n.contains("pro") {
                 16
-            } else if n.contains("m3") {
-                10
-            } else if n.contains("m2") {
-                10
-            } else if n.contains("m4") {
+            } else if n.contains("m3") || n.contains("m2") || n.contains("m4") {
                 10
             } else {
                 8 // base M1/M2/M3/M4

@@ -20,6 +20,7 @@ pub mod pool_message;
 pub mod reconnect;
 pub mod runtime;
 pub mod stream;
+pub mod stream_profit;
 pub mod thread_affinity;
 
 // parallel.rs provides multi-algorithm hashing and is only useful when

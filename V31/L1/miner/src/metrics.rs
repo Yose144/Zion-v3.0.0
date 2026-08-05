@@ -181,6 +181,33 @@ impl Metrics {
         )
     }
 
+    /// Format a one-line TUI log with hashrate, shares, active coin and pool.
+    pub fn tui_log(&self) -> String {
+        format!(
+            "hashrate={:.0} H/s submitted={} accepted={} rejected={} jobs={} reconnects={} coin={} pool={}",
+            self.hashrate(),
+            self.shares_submitted(),
+            self.shares_accepted(),
+            self.shares_rejected(),
+            self.jobs_received(),
+            self.reconnect_count(),
+            self.active_coin(),
+            self.active_pool()
+        )
+    }
+
+    /// Human-readable mining status summary.
+    pub fn summary(&self) -> String {
+        format!(
+            "pool={} coin={} hashrate={:.0} H/s accepted={} rejected={}",
+            self.active_pool(),
+            self.active_coin(),
+            self.hashrate(),
+            self.shares_accepted(),
+            self.shares_rejected()
+        )
+    }
+
     /// Escape label values for Prometheus text format.
     fn sanitize_label(s: &str) -> String {
         s.replace('\\', "\\\\")
@@ -275,6 +302,24 @@ mod tests {
         assert!(text.contains("zion_miner_jobs_received"));
         assert!(text.contains("zion_miner_reconnect_count"));
         assert!(text.contains("1234"));
+    }
+
+    #[test]
+    fn tui_log_contains_counters() {
+        let m = Metrics::new("127.0.0.1:8444", "zion");
+        m.record_hashes(1000);
+        m.inc_submitted();
+        m.inc_accepted();
+        m.inc_rejected();
+        m.set_coin("kaspa");
+
+        let log = m.tui_log();
+        assert!(log.contains("hashrate="));
+        assert!(log.contains("submitted=1"));
+        assert!(log.contains("accepted=1"));
+        assert!(log.contains("rejected=1"));
+        assert!(log.contains("coin=kaspa"));
+        assert!(log.contains("pool=127.0.0.1:8444"));
     }
 
     #[test]
