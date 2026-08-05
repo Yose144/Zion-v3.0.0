@@ -1984,26 +1984,32 @@ async function updateNetworkGrowth(){
 // ═══ Miner Leaderboard ═══
 async function updateMinerLeaderboard(){
   try {
-    const data = await apiFetch('/api/pool/registered-miners');
+    // V31: /api/pool/miners returns the live pool worker list enriched with PPLNS shares.
+    const data = await apiFetch('/api/pool/miners');
     if(!data || !data.ok) return;
     const miners = data.miners || [];
     const tbody = document.getElementById('miner-leaderboard-tbody');
     const badge = document.getElementById('miner-leaderboard-badge');
     if(!tbody) return;
 
-    const activeCount = data.active_count || miners.filter(m => m.active).length;
-    if(badge){ badge.textContent = activeCount + ' / ' + miners.length + ' active'; badge.className = 'text-xs px-2 py-0.5 rounded-full bg-emerald-700 text-emerald-300'; }
+    const activeCount = data.active_count ?? data.active_sessions ?? miners.filter(m => m.active).length;
+    const tracked = data.registered_count ?? data.miners_tracked ?? miners.length;
+    const sharesFlowing = (data.shares_accepted ?? 0) > 0;
+    if(badge){ badge.textContent = activeCount > 0 ? (activeCount + ' / ' + tracked + ' active') : (sharesFlowing ? (tracked + ' registered') : (tracked + ' registered')); badge.className = 'text-xs px-2 py-0.5 rounded-full bg-emerald-700 text-emerald-300'; }
 
     if(miners.length === 0){
       tbody.innerHTML = '<tr><td colspan="5" class="text-gray-500 text-center py-4">No miners</td></tr>';
       return;
     }
 
-    // Sort by hashrate descending, active first (already sorted by backend)
+    // Sort: active/hashrate first, then by accepted shares (V31 has no per-worker hashrate yet)
     const sorted = miners.slice().sort((a, b) => {
       if(a.active && !b.active) return -1;
       if(!a.active && b.active) return 1;
-      return (b.hashrate_hps || b.hashrate || 0) - (a.hashrate_hps || a.hashrate || 0);
+      const aHr = (a.hashrate_hps || a.hashrate || 0);
+      const bHr = (b.hashrate_hps || b.hashrate || 0);
+      if(bHr !== aHr) return bHr - aHr;
+      return (b.valid_shares || b.accepted_shares || 0) - (a.valid_shares || a.accepted_shares || 0);
     }).slice(0, 10); // show top 10 on overview
     tbody.innerHTML = sorted.map((m, i) => {
       const name = m.worker_name || m.miner_id || ('Miner #' + (i+1));
@@ -2689,16 +2695,34 @@ async function updateConnectedMiners(){
       if(badge) badge.textContent = '0';
       return;
     }
-    if(badge) badge.textContent = d.active_sessions + ' active';
+
+    // V31: active_sessions counts open TCP sessions; shares may still be flowing.
+    // Show registered/tracked count as well so the panel is never empty.
+    const active = d.active_sessions ?? 0;
+    const tracked = d.miners_tracked ?? d.miners.length ?? 0;
+    const sharesFlowing = (d.shares_accepted ?? 0) > 0 || (d.total_shares ?? 0) > 0;
+    if(badge) badge.textContent = active > 0 ? `${active} active` : (sharesFlowing ? `${tracked} registered` : `${tracked} registered`);
     const hrEl = document.getElementById('cm-total-hashrate');
     const actEl = document.getElementById('cm-active-count');
     const trkEl = document.getElementById('cm-tracked-count');
     if(hrEl) hrEl.textContent = (d.total_hashrate_khs ?? 0).toFixed(2) + ' KH/s';
-    if(actEl) actEl.textContent = d.active_sessions ?? 0;
-    if(trkEl) trkEl.textContent = d.miners_tracked ?? d.miners.length;
+    if(actEl) actEl.textContent = active;
+    if(trkEl) trkEl.textContent = tracked;
+
+    // Normalize V31 field names to dashboard fields
+    const normalizeMiner = m => ({
+      ...m,
+      miner_id: m.miner_id ?? m.address ?? m.worker ?? '',
+      address: m.address ?? m.miner_id ?? '',
+      worker_name: m.worker_name ?? m.worker ?? '',
+      valid_shares: m.valid_shares ?? m.accepted_shares ?? m.total_shares ?? 0,
+      invalid_shares: m.invalid_shares ?? m.rejected_shares ?? 0,
+      paid_total: m.paid_total ?? (m.total_paid_flowers ? m.total_paid_flowers / 1_000_000 : 0),
+      last_seen: m.last_seen ?? m.last_share_time ?? 0,
+    });
 
     // Sort: active hashers first, then by valid shares
-    const sorted = [...d.miners].sort((a,b) => {
+    const sorted = [...d.miners].map(normalizeMiner).sort((a,b) => {
       const aHr = a.hashrate_hps ?? a.hashrate ?? 0;
       const bHr = b.hashrate_hps ?? b.hashrate ?? 0;
       if(bHr !== aHr) return bHr - aHr;
@@ -2714,21 +2738,27 @@ async function updateConnectedMiners(){
       if(worker) payoutByKey.set(worker, m); // fallback by worker_name (unique per worker)
     });
 
-    tbody.innerHTML = sorted.map(m => {
+    // Mark top `active` rows as active; if no active sessions but shares are flowing,
+    // mark the first worker as active as a best-effort visual cue.
+    const activeSlots = active > 0 ? active : (sharesFlowing ? 1 : 0);
+    const nowSec = Math.floor(Date.now() / 1000);
+
+    tbody.innerHTML = sorted.map((m, idx) => {
       const mAddr = m.miner_id || m.address || '';
       const mWorker = m.worker_name || '';
       const mComposite = mWorker ? `${mAddr}/${mWorker}` : mAddr;
       const payoutMiner = payoutByKey.get(mComposite) || payoutByKey.get(mWorker) || null;
       const hrHps = m.hashrate_hps ?? m.hashrate ?? 0;
-      const isActive = hrHps > 0;
-      const nowSec = Math.floor(Date.now() / 1000);
+      const isActiveBySlot = idx < activeSlots;
       const lastSeenAgo = (m.last_seen > 0) ? (nowSec - m.last_seen) : null;
       const isRecent = lastSeenAgo !== null && lastSeenAgo < 300;
+      const isActive = hrHps > 0 || isActiveBySlot || isRecent;
+      // V31 pool does not expose per-worker hashrate; avoid labeling every registered worker "Stale"
       const statusDot = isActive
         ? '<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block mr-1"></span>Hashing'
         : isRecent
           ? '<span class="w-2 h-2 rounded-full bg-amber-500 inline-block mr-1"></span>Idle'
-          : '<span class="w-2 h-2 rounded-full bg-gray-600 inline-block mr-1"></span>Stale';
+          : '<span class="w-2 h-2 rounded-full bg-gray-600 inline-block mr-1"></span>Registered';
       const lastSeenStr = lastSeenAgo !== null
         ? (lastSeenAgo < 60 ? lastSeenAgo + 's' : Math.floor(lastSeenAgo/60) + 'm') + ' ago'
         : '—';
