@@ -53,12 +53,9 @@ export default function Navigation() {
       title: tr('nav', 'defi_group', lang),
       color: '251, 191, 36',
       items: [
+        { href: '/multichain', label: 'Multichain' },
         { href: '/defi', label: tr('nav', 'defi', lang) },
-        { href: '/ziondex', label: 'ZionDex' },
         { href: '/cex', label: tr('nav', 'cex', lang) },
-        { href: '/warp', label: tr('nav', 'warp', lang) },
-        { href: '/bridge', label: tr('nav', 'bridge', lang) },
-        { href: '/dao', label: tr('nav', 'dao', lang) },
         { href: '/wallet', label: tr('nav', 'wallet', lang) },
       ],
     },
@@ -299,7 +296,7 @@ export default function Navigation() {
                   <button
                     type="button"
                     onClick={() => setOpenGroup(isActive ? null : group.title)}
-                    className={`group inline-flex items-center gap-0.5 rounded-full border px-2.5 py-0.5 text-[7px] font-semibold uppercase tracking-[0.22em] transition-all ${
+                    className={`group inline-flex items-center gap-0.5 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.22em] transition-all ${
                       isActive
                         ? 'border-zion-gold/40 bg-zion-gold/10 text-zion-gold shadow-[0_0_12px_rgba(251,191,36,0.12)]'
                         : groupHasActiveChild
@@ -307,10 +304,9 @@ export default function Navigation() {
                           : 'border-white/[0.08] bg-black/40 text-gray-400 hover:border-zion-gold/25 hover:bg-black/60 hover:text-white'
                     }`}
                     aria-expanded={isActive}
-                    style={{ fontSize: '7px' }}
                   >
-                    <span className="group-hover:text-zion-gold transition-colors" style={{ fontSize: '7px' }}>{groupLabels[group.title] ?? group.title}</span>
-                    <ChevronDown className={`h-[10px] w-[10px] transition-transform ${isActive ? 'rotate-180 text-zion-gold' : 'text-current'}`} />
+                    <span className="group-hover:text-zion-gold transition-colors">{groupLabels[group.title] ?? group.title}</span>
+                    <ChevronDown className={`h-[8px] w-[8px] transition-transform ${isActive ? 'rotate-180 text-zion-gold' : 'text-current'}`} />
                   </button>
                 </div>
               );
@@ -368,7 +364,7 @@ export default function Navigation() {
               
             />
             {/* Slide-in panel */}
-            <div className="fixed top-0 right-0 bottom-0 w-[min(420px,94vw)] bg-black/95 backdrop-blur-xl border-l-2 border-zion-gold/30 z-50 overflow-y-auto overscroll-contain animate-[slideIn_0.25s_ease-out]" style={{ borderImage: 'linear-gradient(to bottom, rgba(16,185,129,0.4), rgba(251,191,36,0.5), rgba(239,68,68,0.4)) 1', display: 'none' }}>
+            <div className="fixed top-0 right-0 bottom-0 w-[min(420px,94vw)] bg-black/95 backdrop-blur-xl border-l-2 border-zion-gold/30 z-50 overflow-y-auto overscroll-contain animate-[slideIn_0.25s_ease-out]" style={{ borderImage: 'linear-gradient(to bottom, rgba(16,185,129,0.4), rgba(251,191,36,0.5), rgba(239,68,68,0.4)) 1' }}>
               <div className="flex items-center justify-between p-4 border-b border-white/10">
                 <span className="text-sm font-bold text-gradient">{tr('nav', 'menu_title', lang)}</span>
                 <button

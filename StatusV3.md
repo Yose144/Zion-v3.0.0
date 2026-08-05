@@ -1,10 +1,14 @@
 # ZION V3 — Canonical Status (Mainnet Beta)
 
-> **Datum poslední aktualizace:** 2026-08-01
-> **Verze:** 3.0.7 "Trinity All Green"
-> **Protokol:** `zion-v3-node/3.0.7`
+> **Datum poslední aktualizace:** 2026-08-07
+> **Update (2026-08-07):** V31 kanonický `EkamDeeksha` v2 aktivní na Edge: 128 KiB scratchpad, 1 XOR pass, 32 random reads, 2 AES rounds, Keccak256 final hash. CPU `ekam_deeksha.rs`, OpenCL/CUDA/Metal kernely a `zion-miner` GPU backend mapování synchronizovány. `cargo test -p zion-cosmic-harmony -p zion-core -p zion-pool -p zion-miner` a `cargo clippy --workspace` čisté.
+> **Update (2026-08-05):** **Fáze D E2E COMPLETE.** `cargo test --workspace` 2079 testů pass. V31 miner na Edge našel a odevzdal pool share s `WALLET.worker` autentizací (`zion1g5u0m3j5x5w2t730c8s4h4m5a5v4a7p6p0c07y7.v31-miner`), pool zapsal `share accepted`, block height 50+. Web `/api/health` `ok` po celou dobu, rpc_node i mining_pool healthy. **Playwright UI E2E 3/3 pass** (`app.zionterranova.com/pool/miner/[address]` se správně vykresluje). **30min smoke test PASS** — služby `zion-v31-miner`, `zion-v31-pool`, `zion-v31-node`, `zion-website` zůstaly `active`, `/api/health` zelený. **Edge backup + off-site sync COMPLETE** — denní backup `/opt/zion/backups/daily/zion-edge-20260805_213243.tar.gz` (47M, 117 souborů) a off-site sync do `~/2.9.6-main/backups/edge` (1.2G, integrity OK). **Dashboard `https://dashboard.zionterranova.com` komplexně napojen na V31 služby**: `/api/services`, `/api/health`, `/api/readiness` a `/api/v2/status` nyní správně reflektují `v31-miner` jako `running`, `/api/readiness` vrací **100 %**, checklist 13/17. Opraveny systemd mapy, `EDGE_SERVICE_ORDER`, `get_edge_server_status` a `_build_health_map` pro V31. Git tag `v3.1.0-alpha.2-phase-D`. Při rychlých rebuild/restartech se aktivoval `fail2ban`/`ufw`; aktuální dev IP `109.81.83.81` byla whitelisted a přidána do `V31/AGENTS.md`.
+> **Update (2026-08-06):** V31 DAO governance runtime rozšířen o treasury, humanitarian, db, l1_scanner, metrics, executor, consent, co_admin, cross_layer a prizes. `zion-dao` má nyní 74 testů. `zion-dao` binárka otevírá SQLite DB, načítá návrhy/hlasy do `GovernanceRuntime`, persistuje všechny změny, spouští L1 memo scanner a předává mu hlasy přímo do runtimeu, vystavuje `/metrics`. Dashboard (`ZION_OS/dashboard/v31.py`) nyní zobrazuje i DAO metriky/health/stats a má `dao_api` port v `nodes.json`. **Fáze B hotova z hlediska kódu a testů** — GPU OpenCL/CUDA/Metal kompiluje, `zion-miner` triple-stream běží, profit switching a TUI/metriky zapojeny, `cargo test -p zion-miner` 92 pass. **Go/No-Go testy na reálném GPU/rigu (OpenCL/CUDA/Metal) zůstávají pending.** **Fáze C COMPLETE** — DAO governance runtime, ZionDex C2, HTLC endpoints, live profit oracle, bridge consensus, CLI wallet/tx/lifecycle, dashboard metriky. `zion-multichain` má 574 testů, celý `V31` workspace 2079 testů, `cargo clippy --workspace` čisté. **Dashboard UI/UX update do V31 hotov, nasazen na Edge a `/health` OK. V31 banner KPIs integrovány do full dashboardu. Nový "V31 Production" panel přidává detailní metriky, live log viewer pro V31 služby a vložený Grafana dashboard (`v31-mainnet`) přímo v `/dashboard`. Pool API/metrics port opraven z 8455 na 8080, Prometheus scrape target a Grafana provisioning nasazeny na Edge. **V31 cutover proveden**: V3 služby zastaveny a maskovány, `zion-v31-node` osamostatněn od V3, dashboard registry nastavena V31-first.** V31 GPU backend port — CUDA, OpenCL, Metal a nativní CPU shims nyní kompilují v `V31/L1/miner`. Kompletní report: [`REPORT_2026-08-06.md`](./REPORT_2026-08-06.md). `cargo clippy --workspace` je čisté a `cargo test -p zion-multichain` prochází. Opraveny cudarc 0.12.1 závislosti, `progpow_codegen` viditelnost, `auxpow` feature gating, `kheavyhash::mine` argument order a macOS `block`/`objc` závislosti. `native-verushash` linkuje `-lomp` (vyžaduje libomp na macOS, na Linuxu bezproblémové). Viz `V31/STATUS.md`.
+> **Verze:** 3.0.7 "Trinity All Green" (V3 produkce) / 3.1.0-alpha.2 (V31 Alpha — LIVE na Edge)
+> **Protokol:** `zion-v3-node/3.0.7` (V3) / `zion-v3-node/3.1.0-alpha.2` (V31)
 > **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
 > **Status:** Mainnet Beta — oficiální public launch **2026-12-31**
+> **V31 CUTOVER (2026-08-04):** **V31 JE NYNÍ PRODUKČNÍ!** Public RPC (rpc.zionterranova.com:8443) ukazuje na V31 node. V31 pool běží na produkčním portu 8444. V31 miner těží (~800k H/s, 100 shares accepted za 5 min). V3 pool disabled. **D.2 Cutover COMPLETE** (D2.1-D2.4), **D.3 Post-cutover** (D3.1-D3.4 PASS, D3.5 running), **D.4 V3 archivace COMPLETE** (D4.1-D4.4, D4.6), **D.5 GitHub release v3.1.0-beta PUBLISHED**. V31 node height 11270 = V3 height (sync_lag 0). V31 watchdog timer (60s) — OK: v31=11270 v3=11270 lag=0. V31 multichain /health 200 OK. Pool share logging: `share accepted — job=zion_8, worker=..., nonce=0000fc3e`. Miner response handling: `share accepted by pool`. Stratum v1 param order: [worker, job_id, extranonce2, ntime, nonce]. **Phase B+C+S+D COMPLETE**. Tags: `pre-v31-cutover`, `v3.1.0-beta`. Viz [`V31_P2P_SYNC_REPORT_2026-08-03.md`](./V31_P2P_SYNC_REPORT_2026-08-03.md).
 > **Hard genesis reset:** 2026-07-20 — viz [`docs/3.0.5/INCIDENT_REPORT_2026-07-20_BLOCK_RETENTION_AND_GENESIS_RESET.md`](./docs/3.0.5/INCIDENT_REPORT_2026-07-20_BLOCK_RETENTION_AND_GENESIS_RESET.md). Bloky 0–~10913 předchozího řetězce jsou trvale ztraceny; aktuální chain startuje od genesis s unlimited retention.
 > **Update (2026-07-30):** **PRL (Pearl) označen jako `disabled_reason` ve `V3/L1/cosmic-harmony/src/profit_router.rs`.** `ExternalCoin::disabled_reason()` vrací důvod pro PRL, `CoinProfile` má `disabled_reason` a `enabled=false` pro PRL, `select_best_coin` ho automaticky vynechává. Řeší 3.0.8 Go/No-Go "každý aktivní coin má accepted share nebo `disabled_reason`". VTC/ZCL zůstávají aktivní (GPU E2E accepted v 3.0.7). **AutonomousProfitRouter unit testy v `V3/L1/miner/src/autonomous.rs`:** `select_stream2`/`select_stream3` vybírají nejvýnosnější coin s hysteresí, `build_coin_preference` vrací zprávu, PRL není nikdy autonomně vybrán. **3.0.9 public subtree audit + push:** `docs/3.0.6/PUBLIC_SUBTREE_AUDIT_2026-07-30.md` — 1432 sdílených souborů, 113 se liší. `git subtree push --prefix=public public main` proběhl úspěšně; public README a `hardhat.config.ts` aktualizovány. **Ruční secrets scan:** `docs/3.0.6/SECRETS_SCAN_2026-07-30.md` — v `V3/` žádné hardcoded privátní klíče, dummy fallback v `hardhat.config.ts` odstraněn.
 >
@@ -38,7 +42,7 @@
 
 | Metric | Value |
 |--------|-------|
-| **Height** | 7342+ (2026-07-28, 2-node P2P mesh on Edge + local backup synced) |
+| **Height** | 11258 (2026-08-04, 3-node P2P mesh on Edge: V3 node1 + V3 node2 + V31 Alpha, + local backup synced; V31 sync_lag 0) |
 | **Protocol** | `zion-v3-node/3.0.7` (v2) |
 | **Genesis** | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
 | **Decimals** | 6 (1 ZION = 1,000,000 flowers, post-3.0.3 fork) |
@@ -70,7 +74,9 @@
 |---------|---------|------|-------|--------|
 | zion-edge-node1 | 8333 (P2P), 9443 (RPC), 8445 (WS), 9100 (metrics) | P2P 0.0.0.0, rest 127.0.0.1 | L1 | ✅ active |
 | zion-edge-node2 | 8334 (P2P), 8448 (RPC), 8449 (WS), 9116 (metrics) | P2P 0.0.0.0, rest 127.0.0.1 | L1 | ✅ active (follower) |
-| zion-edge-pool | 8444 (Stratum), 8455 (stats/metrics HTTP) | 8444 0.0.0.0, 8455 127.0.0.1 | L1 | ✅ active (mining) |
+| zion-v31-node | 8335 (P2P), 9445 (RPC) | P2P 0.0.0.0, RPC 127.0.0.1 | L1 (V31 PRODUCTION) | ✅ active (height 11270, sync_lag 0, public RPC 8443 → 9445) |
+| zion-v31-pool | 8444 (Stratum) | 0.0.0.0 | L1 (V31 PRODUCTION) | ✅ active (~1 MH/s, desítky shares/sec) |
+| zion-edge-pool | DISABLED (V3 pool — replaced by zion-v31-pool) | — | L1 | ⛔ disabled (V31 cutover) |
 | zion-edge-bridge | 9101 (metrics) | 127.0.0.1 | L2 | ✅ active |
 | zion-edge-dao | 8450 (API) | 127.0.0.1 | L2 | ✅ active |
 | zion-edge-atomic-swap | 8452 (API) | 0.0.0.0 | L2 | ✅ active |
@@ -81,7 +87,7 @@
 | zion-issobella | — | — | L6 | ⚠️ inactive (disabled) |
 | zion-edge-debug-pool@KAS | 8461 | 0.0.0.0 | L1 (debug) | ✅ active (Trinity 3.0.7 E2E) |
 | zion-rtm-debug-pool | 8460 | 0.0.0.0 | L1 (RTM) | ⚠️ disabled (stopped 2026-07-28) |
-| zion-edge-python-dashboard | 8766 | 127.0.0.1 | — | ✅ active |
+| zion-edge-python-dashboard | 8766 | 127.0.0.1 | — | ✅ active (V31 node card integrated) |
 | zion-watchdog.timer | — | — | — | ✅ active (2 min) |
 | zion-web (Docker) | 3000 | 127.0.0.1 | — | ✅ Up (runtime image 2.68 GB; 377 MB = standalone build artifact) |
 | nginx | 80, 443 | 0.0.0.0 | — | ✅ active |
@@ -106,7 +112,7 @@
 | Intro | `https://zionterranova.com` | OASIS intro landing page — `maintenance.html` from `/var/www/maintenance/` (system nginx) |
 | Web2.9 | `https://app.zionterranova.com` | Full Next.js 16.2.9 website — `zion-website.service` on `127.0.0.1:3000`, nginx proxy |
 | OASIS Web | `https://oasis.zionterranova.com` | Static OASIS web build in `/var/www/oasis/` (system nginx) |
-| Dashboard | `https://dashboard.zionterranova.com` | Basic Auth |
+| Dashboard | `https://dashboard.zionterranova.com` | Basic Auth — V31 Alpha node card integrated (4th node card, systemd status, live sync, restart/stop buttons) |
 | RPC | `http://rpc.zionterranova.com:8443` | nginx HTTP proxy → `127.0.0.1:8447` read-only Python filter → `127.0.0.1:8443` node RPC (**plain HTTP**, no TLS) |
 | Legacy newearth archive | `https://www.newearth.cz` | Root redirects to `https://zionterranova.com/`; `/V2/` served from `/var/www/newearth/` (2026-08-03) |
 | Pool | `62.171.141.136:8444` | Stratum |
@@ -130,7 +136,7 @@
 | zion-cosmic-harmony | 201 + 1 | ✅ |
 | zion-pool | 38 | ✅ |
 | zion-bridge | 193 | ✅ |
-| zion-dao | 40 | ✅ |
+| zion-dao | 74 | ✅ |
 | zion-atomic-swap | 18 | ✅ |
 | zion-warp | 499 | ✅ |
 | zion-ncl | 42 | ✅ |

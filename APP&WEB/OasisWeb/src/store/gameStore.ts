@@ -12,27 +12,63 @@ export interface ShipLoadout {
   model: ShipModelId;
 }
 
-export type ShipModelId = 'pilgrim' | 'awing' | 'bwing' | 'snowspeeder' | 'tiefighter' | 'tieinterceptor';
+export type ShipModelId = 'pilgrim' | 'awing' | 'bwing' | 'snowspeeder' | 'tiefighter' | 'tieinterceptor' | 'xwing' | 'ywing' | 'falcon' | 'stardestroyer' | 'slave1' | 'jedistarfighter';
 
 export interface ShipModelDef {
   id: ShipModelId;
   label: string;
   description: string;
   stlPath: string | null;
+  procedural: boolean; // true = built from Three.js primitives
   color: string;
   unlockLevel: number;
   unlockCost: number;
   class: string;
+  stats: { boost: number; cargo: number; scanner: number; hp: number };
 }
 
 export const SHIP_MODELS: ShipModelDef[] = [
-  { id: 'pilgrim', label: 'Pilgrim Scout', description: 'Default explorer vessel', stlPath: null, color: '#06b6d4', unlockLevel: 1, unlockCost: 0, class: 'Scout' },
-  { id: 'awing', label: 'A-Wing', description: 'Fast interceptor — high boost', stlPath: '/models/awing.stl', color: '#ef4444', unlockLevel: 2, unlockCost: 500, class: 'Interceptor' },
-  { id: 'snowspeeder', label: 'Snowspeeder', description: 'Atmospheric recon', stlPath: '/models/snowspeeder.stl', color: '#94a3b8', unlockLevel: 3, unlockCost: 1000, class: 'Recon' },
-  { id: 'tiefighter', label: 'TIE Fighter', description: 'Imperial patrol — agile', stlPath: '/models/tiefighter.stl', color: '#1e293b', unlockLevel: 4, unlockCost: 2500, class: 'Patrol' },
-  { id: 'bwing', label: 'B-Wing', description: 'Heavy assault — balanced', stlPath: '/models/bwing.stl', color: '#f59e0b', unlockLevel: 5, unlockCost: 5000, class: 'Assault' },
-  { id: 'tieinterceptor', label: 'TIE Interceptor', description: 'Elite strike — max speed', stlPath: '/models/tieinterceptor.stl', color: '#0f172a', unlockLevel: 7, unlockCost: 10000, class: 'Elite Strike' },
+  { id: 'pilgrim', label: 'Pilgrim Scout', description: 'Default explorer vessel', stlPath: null, procedural: true, color: '#06b6d4', unlockLevel: 1, unlockCost: 0, class: 'Scout', stats: { boost: 1, cargo: 1, scanner: 1, hp: 100 } },
+  { id: 'awing', label: 'A-Wing', description: 'Fast interceptor — high boost', stlPath: '/models/awing.stl', procedural: false, color: '#ef4444', unlockLevel: 2, unlockCost: 500, class: 'Interceptor', stats: { boost: 3, cargo: 1, scanner: 2, hp: 80 } },
+  { id: 'snowspeeder', label: 'Snowspeeder', description: 'Atmospheric recon', stlPath: '/models/snowspeeder.stl', procedural: false, color: '#94a3b8', unlockLevel: 3, unlockCost: 1000, class: 'Recon', stats: { boost: 2, cargo: 1, scanner: 3, hp: 90 } },
+  { id: 'tiefighter', label: 'TIE Fighter', description: 'Imperial patrol — agile', stlPath: '/models/tiefighter.stl', procedural: false, color: '#1e293b', unlockLevel: 4, unlockCost: 2500, class: 'Patrol', stats: { boost: 2, cargo: 1, scanner: 2, hp: 70 } },
+  { id: 'bwing', label: 'B-Wing', description: 'Heavy assault — balanced', stlPath: '/models/bwing.stl', procedural: false, color: '#f59e0b', unlockLevel: 5, unlockCost: 5000, class: 'Assault', stats: { boost: 2, cargo: 2, scanner: 2, hp: 120 } },
+  { id: 'tieinterceptor', label: 'TIE Interceptor', description: 'Elite strike — max speed', stlPath: '/models/tieinterceptor.stl', procedural: false, color: '#0f172a', unlockLevel: 7, unlockCost: 10000, class: 'Elite Strike', stats: { boost: 4, cargo: 1, scanner: 2, hp: 80 } },
+  // New procedural starfighters
+  { id: 'xwing', label: 'X-Wing', description: 'Rebel icon — balanced all-rounder', stlPath: null, procedural: true, color: '#dc2626', unlockLevel: 6, unlockCost: 7500, class: 'Starfighter', stats: { boost: 3, cargo: 2, scanner: 2, hp: 110 } },
+  { id: 'ywing', label: 'Y-Wing', description: 'Heavy bomber — high cargo, strong hull', stlPath: null, procedural: true, color: '#d97706', unlockLevel: 8, unlockCost: 15000, class: 'Bomber', stats: { boost: 2, cargo: 4, scanner: 2, hp: 150 } },
+  { id: 'jedistarfighter', label: 'Jedi Starfighter', description: 'Elegant interceptor — precision crafted', stlPath: null, procedural: true, color: '#e2e8f0', unlockLevel: 9, unlockCost: 20000, class: 'Jedi', stats: { boost: 4, cargo: 2, scanner: 3, hp: 100 } },
+  { id: 'slave1', label: 'Slave I', description: 'Bounty hunter\'s vessel — versatile', stlPath: null, procedural: true, color: '#22d3ee', unlockLevel: 10, unlockCost: 30000, class: 'Bounty', stats: { boost: 3, cargo: 3, scanner: 4, hp: 130 } },
+  { id: 'falcon', label: 'Millennium Falcon', description: 'Legendary freighter — max versatility', stlPath: null, procedural: true, color: '#a8a29e', unlockLevel: 12, unlockCost: 50000, class: 'Freighter', stats: { boost: 4, cargo: 5, scanner: 3, hp: 200 } },
+  { id: 'stardestroyer', label: 'Star Destroyer', description: 'Capital ship — dominates the battlefield', stlPath: null, procedural: true, color: '#475569', unlockLevel: 15, unlockCost: 100000, class: 'Capital', stats: { boost: 2, cargo: 5, scanner: 5, hp: 500 } },
 ];
+
+// ── Hiranyagarbha Keys ──
+// 108 keys hidden across the OASIS multiverse. Collecting all unlocks
+// the Golden Egg (Hiranyagarbha — "Zlaté Lůno") endgame.
+// Key #1 is hidden in the B-Wing's quantum engine.
+export interface HiranKeyDef {
+  id: string;
+  number: number;
+  name: string;
+  location: string;
+  hint: string;
+  reward: number; // XP reward for finding this key
+}
+
+export const HIRAN_KEYS: HiranKeyDef[] = [
+  {
+    id: 'bwing-quantum-core',
+    number: 1,
+    name: 'Klíč Prvotního Lůna',
+    location: 'B-Wing · Kvantový motor',
+    hint: 'Uvnitř těžkého bombardéru se skrývá jádro, které nesvítí pro pouhé oko — pouze pro pilota, který si vybral tuto loď jako svou. Hledej puls v motoru, když letíš.',
+    reward: 500,
+  },
+  // Keys 2–108 will be added as more content is discovered
+];
+
+export const TOTAL_HIRAN_KEYS = 108;
 
 export type Archetype = 'warrior' | 'trader' | 'explorer' | 'sage' | null;
 
@@ -62,6 +98,10 @@ interface GameState {
   fruitBlessings: number;
   fruitThreshold: number;
   collectedFruitIds: string[];
+  /* Hiranyagarbha Keys — 108 keys hidden across the OASIS multiverse.
+     Collecting all 108 unlocks the Golden Egg (Hiranyagarbha) endgame.
+     Each key is tied to a specific location, ship, quest, or dimension. */
+  collectedHiranKeys: string[];
   archetype: Archetype;
   avatarConfig: AvatarConfig;
   shipLoadout: ShipLoadout;
@@ -80,6 +120,7 @@ interface GameState {
   claimGoldenEgg: (worldId: string) => boolean;
   collectFruit: (fruitId: string) => boolean;
   resetFruitBlessing: () => void;
+  collectHiranKey: (keyId: string) => boolean;
   upgradeShip: (part: keyof ShipLoadout) => boolean;
   setShipColor: (color: string) => void;
   setShipModel: (model: ShipModelId) => void;
@@ -109,6 +150,7 @@ export const useGameStore = create<GameState>()(
       fruitBlessings: 0,
       fruitThreshold: 7,
       collectedFruitIds: [],
+      collectedHiranKeys: [],
       archetype: null,
       avatarConfig: { callsign: '', bodyType: 'standard', neonColor: '#06b6d4', augmentation: 'neural' },
       shipLoadout: { boost: 1, cargo: 1, scanner: 1, color: '#06b6d4', model: 'pilgrim' },
@@ -209,6 +251,21 @@ export const useGameStore = create<GameState>()(
       resetFruitBlessing: () =>
         set({ collectedFruitIds: [] }),
 
+      /* Hiranyagarbha Key — collect a hidden key. Returns true if the key
+         was new (not already collected). Awards XP from the key definition.
+         When all 108 keys are collected, the Golden Egg endgame unlocks. */
+      collectHiranKey: (keyId) => {
+        const state = get();
+        if (state.collectedHiranKeys.includes(keyId)) return false;
+        const keyDef = HIRAN_KEYS.find((k) => k.id === keyId);
+        const reward = keyDef?.reward ?? 100;
+        set((s) => ({
+          collectedHiranKeys: [...s.collectedHiranKeys, keyId],
+          xp: s.xp + reward,
+        }));
+        return true;
+      },
+
       upgradeShip: (part) => {
         const state = get();
         const current = state.shipLoadout[part];
@@ -289,6 +346,7 @@ export const useGameStore = create<GameState>()(
           collectedFruits: [],
           fruitBlessings: 0,
           collectedFruitIds: [],
+          collectedHiranKeys: [],
           archetype: null,
           avatarConfig: { callsign: '', bodyType: 'standard', neonColor: '#06b6d4', augmentation: 'neural' },
           shipLoadout: { boost: 1, cargo: 1, scanner: 1, color: '#06b6d4', model: 'pilgrim' },
@@ -309,6 +367,7 @@ export const useGameStore = create<GameState>()(
         collectedEggs: state.collectedEggs,
         collectedFruits: state.collectedFruits,
         fruitBlessings: state.fruitBlessings,
+        collectedHiranKeys: state.collectedHiranKeys,
         archetype: state.archetype,
         avatarConfig: state.avatarConfig,
         shipLoadout: state.shipLoadout,

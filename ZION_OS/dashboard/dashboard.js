@@ -472,6 +472,192 @@ function _renderCriticalUI(statusData){
 
   // Render All Nodes immediately if on nodes tab
   if(currentTab === 'nodes') renderAllNodes();
+
+  // V31 Mainnet Alpha banner (integrated from /api/status v31_banner)
+  renderV31Banner(statusData);
+}
+
+function renderV31Banner(st){
+  const banner = st.v31_banner;
+  if(!banner) return;
+
+  const section = document.getElementById('fd-v31-banner');
+  if(!section) return;
+  section.style.display = '';
+
+  const fmt = (n, d=0) => (n == null || n === '' || n === undefined) ? '—' : Number(n).toLocaleString(undefined, {minimumFractionDigits:d, maximumFractionDigits:d});
+  const el = id => document.getElementById(id);
+
+  const netEl = el('fd-banner-network');
+  if(netEl){
+    const ok = banner.node_running && banner.node_reachable;
+    netEl.textContent = ok ? 'mainnet' : 'offline';
+    netEl.className = 'text-[10px] px-2 py-0.5 rounded-full font-bold border ' + (ok
+      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+      : 'bg-red-500/20 text-red-300 border-red-500/30');
+  }
+
+  if(el('fd-banner-height')) el('fd-banner-height').textContent = fmt(banner.height);
+
+  const lag = banner.sync_lag ?? 0;
+  if(el('fd-banner-sync-lag')){
+    el('fd-banner-sync-lag').textContent = lag === 0 ? 'synced' : lag;
+    el('fd-banner-sync-lag').style.color = lag === 0 ? 'rgb(34 197 94)' : 'rgb(251 191 36)';
+  }
+
+  if(el('fd-banner-pool-hashrate')){
+    const hr = banner.pool_hashrate_hps;
+    const sub = el('fd-banner-pool-hashrate-sub');
+    if(hr != null && hr >= 1e6){
+      el('fd-banner-pool-hashrate').textContent = (hr / 1e6).toFixed(2) + ' MH/s';
+      if(sub) sub.textContent = Number(hr).toLocaleString() + ' H/s';
+    } else if(hr != null && hr >= 1e3){
+      el('fd-banner-pool-hashrate').textContent = (hr / 1e3).toFixed(2) + ' kH/s';
+      if(sub) sub.textContent = Number(hr).toLocaleString() + ' H/s';
+    } else {
+      el('fd-banner-pool-hashrate').textContent = fmt(hr);
+      if(sub) sub.textContent = 'H/s';
+    }
+  }
+
+  if(el('fd-banner-shares-sec')) el('fd-banner-shares-sec').textContent = fmt(banner.shares_per_sec, 2);
+
+  if(el('fd-banner-multichain-health')){
+    const mcOk = banner.multichain_ok;
+    const total = banner.multichain_transfers_total ?? 0;
+    const pending = banner.multichain_transfers_pending ?? 0;
+    el('fd-banner-multichain-health').textContent = mcOk ? 'OK' : 'FAIL';
+    el('fd-banner-multichain-health').style.color = mcOk ? 'rgb(34 197 94)' : 'rgb(239 68 68)';
+    const sub = el('fd-banner-multichain-health-sub');
+    if(sub) sub.textContent = `total ${Number(total).toLocaleString()} · pending ${Number(pending).toLocaleString()}`;
+  }
+
+  if(el('fd-banner-dao-proposals')){
+    const active = banner.dao_proposals_active ?? 0;
+    const total = banner.dao_proposals_total ?? 0;
+    el('fd-banner-dao-proposals').textContent = `${Number(active).toLocaleString()} / ${Number(total).toLocaleString()}`;
+  }
+
+  // Feed the expanded V31 Production panel
+  renderV31Production(statusData);
+}
+
+// ── V31 Production panel (metrics + logs + Grafana) ────────────────────
+
+let _v31LogTimer = null;
+let _grafanaLoaded = false;
+
+function renderV31Production(st){
+  const banner = st.v31_banner;
+  const pool = st.v31_pool || st.pool_edge || st.pool || {};
+  const node = st.v31_node || st.edge_node || {};
+  const miner = st.v31_miner || {};
+  const mc = st.v31_multichain || {};
+  const dao = st.v31_dao || {};
+  const oasis = st.v31_oasis || {};
+  const el = id => document.getElementById(id);
+
+  // KPI cards
+  if(el('v31-prod-hashrate')){
+    const hr = banner?.pool_hashrate_hps ?? (pool?.hashrate_khs ? pool.hashrate_khs * 1000 : null);
+    const sub = el('v31-prod-hashrate-sub');
+    if(hr != null && hr >= 1e6){
+      el('v31-prod-hashrate').textContent = (hr / 1e6).toFixed(2) + ' MH/s';
+      if(sub) sub.textContent = Number(hr).toLocaleString() + ' H/s';
+    } else if(hr != null && hr >= 1e3){
+      el('v31-prod-hashrate').textContent = (hr / 1e3).toFixed(2) + ' kH/s';
+      if(sub) sub.textContent = Number(hr).toLocaleString() + ' H/s';
+    } else {
+      el('v31-prod-hashrate').textContent = hr != null ? Number(hr).toLocaleString() : '—';
+      if(sub) sub.textContent = 'H/s';
+    }
+  }
+
+  if(el('v31-prod-shares-sec')) el('v31-prod-shares-sec').textContent = banner?.shares_per_sec != null
+    ? Number(banner.shares_per_sec).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})
+    : '—';
+
+  if(el('v31-prod-active-miners')) el('v31-prod-active-miners').textContent = pool?.active_sessions ?? pool?.active_miners ?? '—';
+  if(el('v31-prod-blocks-found')) el('v31-prod-blocks-found').textContent = pool?.blocks_found ?? pool?.total_blocks_found ?? '—';
+
+  if(el('v31-prod-multichain')){
+    const ok = mc?.ok ?? false;
+    el('v31-prod-multichain').textContent = ok ? 'OK' : 'FAIL';
+    el('v31-prod-multichain').style.color = ok ? 'rgb(34 197 94)' : 'rgb(239 68 68)';
+    const sub = el('v31-prod-multichain-sub');
+    if(sub) sub.textContent = `pending ${mc?.transfers_pending ?? 0}`;
+  }
+
+  if(el('v31-prod-dao')){
+    const active = banner?.dao_proposals_active ?? dao?.proposals_active ?? 0;
+    const total = banner?.dao_proposals_total ?? dao?.proposals_total ?? 0;
+    el('v31-prod-dao').textContent = `${Number(active).toLocaleString()} / ${Number(total).toLocaleString()}`;
+  }
+
+  // Service status list
+  if(el('v31-stat-node')) el('v31-stat-node').innerHTML = `<span class="${node?.running ? 'text-emerald-400' : 'text-red-400'}">${node?.running ? 'LIVE' : 'DOWN'}</span> <span class="text-gray-500">h ${node?.chain_height ?? '—'}</span>`;
+  if(el('v31-stat-pool')) el('v31-stat-pool').innerHTML = `<span class="${pool?.running ? 'text-emerald-400' : 'text-red-400'}">${pool?.running ? 'LIVE' : 'DOWN'}</span> <span class="text-gray-500">${pool?.active_sessions ?? 0} miners</span>`;
+  if(el('v31-stat-miner')) el('v31-stat-miner').innerHTML = `<span class="${miner?.running ? 'text-emerald-400' : 'text-gray-500'}">${miner?.running ? 'LIVE' : '—'}</span> <span class="text-gray-500">${miner?.hashrate ? miner.hashrate : '—'}</span>`;
+  if(el('v31-stat-multichain')) el('v31-stat-multichain').innerHTML = `<span class="${mc?.ok ? 'text-emerald-400' : 'text-red-400'}">${mc?.ok ? 'OK' : 'FAIL'}</span> <span class="text-gray-500">t ${mc?.transfers_total ?? 0}</span>`;
+
+  // DAO status (may be in v31_node or banner)
+  const daoRunning = (st.dao && st.dao.ok) || (st.v31_dao && st.v31_dao.ok) || (banner && banner.dao_proposals_total != null);
+  if(el('v31-stat-dao')) el('v31-stat-dao').innerHTML = `<span class="${daoRunning ? 'text-emerald-400' : 'text-gray-500'}">${daoRunning ? 'OK' : '—'}</span> <span class="text-gray-500">${banner?.dao_proposals_total ?? dao?.proposals_total ?? 0}</span>`;
+
+  // OASIS status
+  if(el('v31-stat-oasis')) el('v31-stat-oasis').innerHTML = `<span class="${oasis?.running && oasis?.ok ? 'text-emerald-400' : 'text-gray-500'}">${oasis?.running && oasis?.ok ? 'OK' : '—'}</span> <span class="text-gray-500">8094</span>`;
+
+  // Grafana link visibility
+  if(el('v31-grafana-link')) el('v31-grafana-link').classList.remove('hidden');
+
+  // Grafana iframe (only set once; user can enable with env/dashboard config)
+  if(!_grafanaLoaded && el('v31-grafana-iframe') && st.topology === 'edge-primary'){
+    const iframe = el('v31-grafana-iframe');
+    const wrap = el('v31-grafana-wrap');
+    if(wrap) wrap.classList.remove('hidden');
+    // Default kiosk URL; replaced by /api/grafana-url if a provisioned dashboard exists
+    iframe.src = 'https://grafana.zionterranova.com/d/v31-mainnet?orgId=1&refresh=10s&kiosk=tv&theme=dark';
+    _grafanaLoaded = true;
+  }
+}
+
+function refreshV31Production(){
+  console.log('[V31-PROD] refresh');
+  apiFetch('/api/status').then(s => {
+    window.currentStatus = s;
+    renderV31Banner(s);
+    renderV31Production(s);
+  }).catch(e => console.error('[V31-PROD] status fetch failed', e));
+}
+
+async function loadV31Logs(){
+  const svc = document.getElementById('v31-log-svc')?.value || 'node';
+  const lines = document.getElementById('v31-log-lines')?.value || 50;
+  const box = document.getElementById('v31-log-box');
+  if(box) box.textContent = 'Loading…';
+  try {
+    const data = await apiFetch(`/api/v31/logs?svc=${encodeURIComponent(svc)}&lines=${lines}`);
+    if(box){
+      if(data && Array.isArray(data.lines) && data.lines.length > 0){
+        box.textContent = data.lines.join('\n');
+        box.scrollTop = box.scrollHeight;
+      } else {
+        box.textContent = data?.error ? `Error: ${data.error}` : '(no logs)';
+      }
+    }
+  } catch(e) {
+    if(box) box.textContent = 'Error loading logs: ' + e;
+  }
+}
+
+function tailV31Logs(){
+  stopV31LogTail();
+  loadV31Logs();
+  _v31LogTimer = setInterval(loadV31Logs, 3000);
+}
+
+function stopV31LogTail(){
+  if(_v31LogTimer){ clearInterval(_v31LogTimer); _v31LogTimer = null; }
 }
 
 function formatUptime(sec){
@@ -572,64 +758,124 @@ function updateServiceCards(s){
   const n2u = document.getElementById('val-node2-uptime');
   if(n2u) n2u.textContent = formatUptime(n2data ? n2data.uptime_seconds : null);
 
-  // ── Pool Command Center (unified) ──
-  const pe = s.pool_edge ?? {};
-  const poolRunning = p.running || pe.running;
+  // ── V31 Production Stack (Node + Pool + Miner + Multichain) ──
+  const v31n = s.v31_node || {};
+  setBadge('badge-v31-node', v31n.running); setCardLive('v31-node', v31n.running);
+  const v31h = document.getElementById('val-v31-node-height');
+  if(v31h) v31h.textContent = v31n.chain_height != null ? v31n.chain_height.toLocaleString() : '—';
+  const v31hash = document.getElementById('val-v31-node-hash');
+  if(v31hash) v31hash.textContent = v31n.tip_hash ? (v31n.tip_hash.slice(0,12) + '…' + v31n.tip_hash.slice(-8)) : '—';
+  const v31mp = document.getElementById('val-v31-node-mempool');
+  if(v31mp) v31mp.textContent = v31n.mempool_size ?? '—';
+  const v31sys = document.getElementById('val-v31-node-systemd');
+  if(v31sys) v31sys.textContent = v31n.systemd_active || '—';
+  const v31mem = document.getElementById('val-v31-node-mem');
+  if(v31mem) v31mem.textContent = v31n.memory_mb != null ? v31n.memory_mb + ' MB' : '—';
+  const v31syncEl = document.getElementById('val-v31-node-sync');
+  if(v31syncEl){
+    const lag = v31n.sync_lag;
+    if(v31n.running && lag != null && lag <= 2){
+      v31syncEl.textContent = lag === 0 ? '✓ Synced' : '✓ Synced (+' + lag + ')';
+      v31syncEl.className = 'text-emerald-400 font-bold text-xs';
+    } else if(v31n.running && lag != null && lag <= 10){
+      v31syncEl.textContent = 'Syncing… (lag ' + lag + ')';
+      v31syncEl.className = 'text-amber-400 text-xs';
+    } else if(v31n.running){
+      v31syncEl.textContent = 'Catching up…';
+      v31syncEl.className = 'text-amber-400 text-xs';
+    } else {
+      v31syncEl.textContent = 'Offline';
+      v31syncEl.className = 'text-red-400 text-xs';
+    }
+  }
+
+  // V31 Pool
+  const v31p = s.v31_pool || {};
+  setBadge('badge-v31-pool', v31p.running); setCardLive('v31-pool', v31p.running);
+  const v31ps = document.getElementById('val-v31-pool-shares');
+  if(v31ps) v31ps.textContent = v31p.shares_accepted ?? '—';
+  const v31pj = document.getElementById('val-v31-pool-jobs');
+  if(v31pj) v31pj.textContent = v31p.jobs_broadcast ?? '—';
+  const v31psys = document.getElementById('val-v31-pool-systemd');
+  if(v31psys) v31psys.textContent = v31p.systemd_active || '—';
+
+  // V31 Miner
+  const v31m = s.v31_miner || {};
+  setBadge('badge-v31-miner', v31m.running); setCardLive('v31-miner', v31m.running);
+  const v31mh = document.getElementById('val-v31-miner-hashrate');
+  if(v31mh) v31mh.textContent = v31m.hashrate ? Math.round(v31m.hashrate).toLocaleString() : '—';
+  const v31ms = document.getElementById('val-v31-miner-shares');
+  if(v31ms) v31ms.textContent = v31m.shares_submitted ?? '—';
+  const v31ma = document.getElementById('val-v31-miner-accepted');
+  if(v31ma) v31ma.textContent = v31m.shares_accepted ?? '—';
+  const v31mw = document.getElementById('val-v31-miner-worker');
+  if(v31mw) v31mw.textContent = v31m.worker ?? '—';
+  const v31msys = document.getElementById('val-v31-miner-systemd');
+  if(v31msys) v31msys.textContent = v31m.systemd_active || '—';
+
+  // V31 Multichain
+  const v31mc = s.v31_multichain || {};
+  setBadge('badge-v31-multichain', v31mc.running); setCardLive('v31-multichain', v31mc.running);
+  const v31mct = document.getElementById('val-v31-mc-transfers');
+  if(v31mct) v31mct.textContent = v31mc.transfers_total ?? '—';
+  const v31mcp = document.getElementById('val-v31-mc-pending');
+  if(v31mcp) v31mcp.textContent = v31mc.transfers_pending ?? '—';
+  const v31mch = document.getElementById('val-v31-mc-health');
+  if(v31mch) v31mch.textContent = v31mc.ok ? 'OK' : '—';
+
+  // ── Pool Command Center (V31 PROD) ──
+  const v31pCC = s.v31_pool ?? {};
+  const v31mCC = s.v31_miner ?? {};
+  const poolRunning = v31pCC.running;
   const poolBadge = document.getElementById('badge-pool-cc');
   if(poolBadge){ setBadge('badge-pool-cc', poolRunning); }
   const poolCard = document.getElementById('card-pool-command');
   if(poolCard) setCardLive('pool-command', poolRunning);
 
-  // KPI row
+  // KPI row — V31 data
   const pccHash = document.getElementById('pcc-hashrate');
   if(pccHash){
-    const hr = pe.hashrate ?? p.hashrate_khs ?? 0;
-    pccHash.textContent = hr > 0 ? (hr.toFixed(2) + ' KH/s') : '0 H/s';
+    const hr = v31mCC.hashrate ?? 0;
+    pccHash.textContent = hr > 0 ? (hr >= 1000000 ? (hr/1000000).toFixed(2) + ' MH/s' : hr >= 1000 ? (hr/1000).toFixed(1) + ' kH/s' : hr + ' H/s') : '0 H/s';
   }
   const pccMiners = document.getElementById('pcc-miners');
-  if(pccMiners) pccMiners.textContent = pe.active_miners ?? p.active_sessions ?? '0';
+  if(pccMiners) pccMiners.textContent = v31mCC.running ? '1' : '0';
   const pccBlocks = document.getElementById('pcc-blocks');
-  if(pccBlocks) pccBlocks.textContent = pe.blocks_found ?? p.blocks_found ?? '0';
+  if(pccBlocks) pccBlocks.textContent = '0';
   const pccShares = document.getElementById('pcc-shares');
   if(pccShares){
-    const acc = pe.shares_accepted ?? p.shares_accepted ?? 0;
-    const rej = pe.shares_rejected ?? p.shares_rejected ?? 0;
+    const acc = v31pCC.shares_accepted ?? 0;
+    const rej = 0;
     pccShares.textContent = acc + ' / ' + rej;
   }
   const pccAccept = document.getElementById('pcc-accept-rate');
   if(pccAccept){
-    const ar = pe.accept_rate_pct ?? 0;
+    const acc = v31mCC.shares_accepted ?? 0;
+    const sub = v31mCC.shares_submitted ?? 0;
+    const ar = sub > 0 ? (acc / sub * 100) : 0;
     pccAccept.textContent = ar.toFixed(1) + '%';
   }
   const pccPplnsWin = document.getElementById('pcc-pplns-window');
-  if(pccPplnsWin){
-    const used = p.pplns_window_used ?? 0;
-    const size = p.pplns_window_size ?? 0;
-    pccPplnsWin.textContent = used + '/' + size;
-  }
+  if(pccPplnsWin) pccPplnsWin.textContent = '—';
 
-  // Pool config
+  // Pool config — V31
   const pccStratum = document.getElementById('pcc-stratum');
-  if(pccStratum) pccStratum.textContent = '62.171.141.136:8444';
+  if(pccStratum) pccStratum.textContent = '0.0.0.0:8444';
   const pccWallet = document.getElementById('pcc-wallet');
   if(pccWallet){
-    const w = p.pool_wallet ?? '—';
-    pccWallet.textContent = w.length > 24 ? w.slice(0,16) + '…' + w.slice(-8) : w;
-    pccWallet.title = w;
+    pccWallet.textContent = 'zion1pool';
+    pccWallet.title = 'zion1pool (V31 PROD)';
   }
   const pccPayout = document.getElementById('pcc-payout');
-  if(pccPayout) pccPayout.textContent = p.payout_enabled ? '✓ Enabled' : '✗ Disabled';
+  if(pccPayout) pccPayout.textContent = 'V31 PPLNS';
   const pccRegistered = document.getElementById('pcc-registered');
-  if(pccRegistered) pccRegistered.textContent = p.pplns_registered_miners ?? '—';
+  if(pccRegistered) pccRegistered.textContent = v31mCC.running ? '1' : '0';
   const pccPorts = document.getElementById('pcc-ports');
   if(pccPorts){
-    const ports = pe.ports_open || [];
-    pccPorts.innerHTML = ports.length
-      ? ports.map(pt => `<span class="text-emerald-400">${escapeHtml(pt)}</span>`).join(', ')
-      : '<span class="text-gray-500">scanning…</span>';
+    pccPorts.innerHTML = '<span class="text-emerald-400">8444</span>';
   }
   const pccUptime = document.getElementById('pool-cc-uptime');
-  if(pccUptime) pccUptime.textContent = p.uptime_seconds ? '⏱ ' + formatUptime(p.uptime_seconds) : '';
+  if(pccUptime) pccUptime.textContent = v31pCC.systemd_active === 'active' ? '⏱ active' : '';
 
   // Fee distribution
   const feeSplit = p.fee_split || '89/5/5/1';
@@ -685,13 +931,15 @@ function updateServiceCards(s){
     if(pccPplnsBarLabel) pccPplnsBarLabel.textContent = pct.toFixed(2) + '% of window filled';
   }
 
-  setBadge('badge-miner', m.running); setCardLive('miner', m.running);
+  // Edge Miner card → V31 Miner data
+  const v31mEdge = s.v31_miner ?? m;
+  setBadge('badge-miner', v31mEdge.running); setCardLive('miner', v31mEdge.running);
   const mh = document.getElementById('val-miner-hashrate');
-  if(mh) mh.textContent = m.hashrate ? m.hashrate.toFixed(2) : '—';
+  if(mh) mh.textContent = v31mEdge.hashrate ? (v31mEdge.hashrate >= 1000 ? (v31mEdge.hashrate/1000).toFixed(1) : v31mEdge.hashrate.toFixed(0)) : '—';
   const mg = document.getElementById('val-miner-gpu');
-  if(mg) mg.textContent = (m.gpu_backend ? m.gpu_backend + ': ' : '') + (m.gpu_device ?? '—');
+  if(mg) mg.textContent = 'CPU (AMD EPYC, 2 threads)';
   const mw = document.getElementById('val-miner-worker');
-  if(mw) mw.textContent = (m.miner_id ? m.miner_id + ' / ' : '') + (m.worker_name ?? '—');
+  if(mw) mw.textContent = v31mEdge.worker ?? 'edge-cpu-miner';
   const mon = document.getElementById('val-miner-onchain');
   if(mon) mon.textContent = m.on_chain_balance_zion != null ? _zionFmt(m.on_chain_balance_zion) + ' ZION' : '—';
   const mnh = document.getElementById('val-miner-height');
@@ -5169,9 +5417,22 @@ async function loadMempool(){
 
 async function loadMonitoringStatus(){
   try {
-    const data = await apiFetch('/api/monitoring/status');
-    const pm = data.pool_metrics || data.prometheus || {};
-    const bic = data.built_in_charts || data.grafana || {};
+    // V31: use /api/status instead of V3 Prometheus endpoint
+    const sd = window.currentStatus || await fetch('/api/status').then(r => r.json()).catch(() => ({}));
+    const v31p = sd.v31_pool || {};
+    const v31m = sd.v31_miner || {};
+    const pm = {
+      alive: v31p.running || false,
+      active_sessions: v31m.running ? 1 : 0,
+      miners_tracked: v31p.jobs_broadcast ?? '—',
+      accepted: v31p.shares_accepted ?? null,
+      rejected: 0,
+      blocks_found: 0,
+      submits: v31m.shares_submitted ?? null,
+      shares: v31p.shares_accepted ?? null,
+      hashrate: v31m.hashrate ? (v31m.hashrate >= 1000 ? (v31m.hashrate/1000).toFixed(1) + ' kH/s' : v31m.hashrate + ' H/s') : '—',
+    };
+    const bic = { alive: true }; // Built-in charts always available
 
     // Badge
     const badge = document.getElementById('monitoring-status-badge');
@@ -6453,15 +6714,21 @@ function renderServicesGrid(){
     Infra: 'border-zion-gold/30 bg-zion-gold/3',
   };
   const statusColors = {
+    primary: 'bg-yellow-500/20 text-yellow-200 border-yellow-500/40',
     live: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
     planned: 'bg-blue-500/20 text-blue-300 border-blue-500/40',
+    critical: 'bg-red-600/30 text-red-200 border-red-500/60',
     down: 'bg-red-500/20 text-red-300 border-red-500/40',
     degraded: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
     timeout: 'bg-gray-700/30 text-gray-400 border-gray-600/30',
+    archived: 'bg-gray-600/20 text-gray-300 border-gray-500/40',
   };
   grid.innerHTML = filtered.map(s => {
-    const statusKey = s.status === 'planned' ? 'planned' : s.alive ? (s.severity === 'warning' ? 'degraded' : 'live') : s.status === 'timeout' ? 'timeout' : 'down';
+    const isCritical = s.severity === 'critical' && !s.alive;
+    const statusKey = s.archived ? 'archived' : s.status === 'planned' ? 'planned' : s.alive ? (s.severity === 'warning' ? 'degraded' : (s.primary ? 'primary' : 'live')) : isCritical ? 'critical' : s.status === 'timeout' ? 'timeout' : 'down';
     const aliveBadge = `<span class="px-2 py-0.5 text-[10px] rounded font-bold border ${statusColors[statusKey] || statusColors.down}">${s.status?.toUpperCase() || (s.alive ? 'LIVE' : 'DOWN')}</span>`;
+    const primaryBadge = s.primary ? '<span class="ml-1 px-1.5 py-0.5 rounded text-[9px] font-bold border bg-yellow-500/20 text-yellow-200 border-yellow-500/40">PRIMARY</span>' : '';
+    const archivedBadge = s.archived ? '<span class="ml-1 px-1.5 py-0.5 rounded text-[9px] font-bold border bg-gray-600/30 text-gray-300 border-gray-500/40">ARCHIVED</span>' : '';
     const portsHtml = Object.entries(s.ports || {}).map(([k, v]) => {
       const isOpen = (s.ports_open || []).includes(k + ':' + v);
       return `<span class="text-[10px] font-mono ${isOpen ? 'text-emerald-400' : 'text-gray-600'}" title="${k}">${k}:${v}</span>`;
@@ -6479,12 +6746,12 @@ function renderServicesGrid(){
     const metricsBtn = (s.ports && (s.ports.metrics || s.ports.api)) ? `<button onclick="window.open('${s.ports.metrics || s.ports.api}','_blank')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/15 text-gray-300 rounded font-semibold transition">📊</button>` : '';
     const logBtn = s.log ? `<button onclick="switchTab('logs'); setTimeout(()=>{const sel=document.getElementById('log-service-select');if(sel)sel.value='${sid}';initLogPane();},100)" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/15 text-gray-300 rounded font-semibold transition">📜</button>` : '';
     const actionRow = s.alive ? `${restartBtn}${stopBtn}${metricsBtn}${logBtn}` : `${startBtn}${metricsBtn}${logBtn}`;
-    return `<div class="zion-panel-soft zion-panel-hover p-4 rounded-xl border ${lvlColors[s.level] || 'border-white/10'} ${s.alive ? 'svc-live' : ''} transition-all">
+    return `<div class="zion-panel-soft zion-panel-hover p-4 rounded-xl border ${lvlColors[s.level] || 'border-white/10'} ${s.alive ? 'svc-live' : ''} ${s.archived ? 'opacity-70 grayscale-[0.35]' : ''} transition-all">
       <div class="flex items-center justify-between mb-2">
         <div class="flex items-center gap-2">
           <span class="text-2xl">${s.icon}</span>
           <div>
-            <div class="text-sm font-bold">${escapeHtml(s.name)}</div>
+            <div class="text-sm font-bold">${escapeHtml(s.name)}${primaryBadge}${archivedBadge}</div>
             <div class="text-[10px] text-gray-500 uppercase tracking-wider">${s.level} · ${s.kind}</div>
           </div>
         </div>

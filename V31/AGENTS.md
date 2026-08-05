@@ -2,9 +2,9 @@
 
 > **Působnost:** Tento soubor je určený pro Devina a operátory pracující s V31 Mainnet Alpha.
 
-Tento soubor je provozní a bezpečnostní pravidla pro pracovní prostor `V31` — čistý Mainnet Alpha track v `/Users/yeshuae/Projects/2.9.6/V31/`. Produkční Edge stále běží na `/Users/yeshuae/Projects/2.9.6/V3/` do okamžiku cut-over. Veškerá nová mainnet-track vývojárna patří do `V31/`. Historická topologie a incidenty jsou v kořenovém `/Users/yeshuae/Projects/2.9.6/AGENTS.md`.
+Tento soubor je provozní a bezpečnostní pravidla pro pracovní prostor `V31` — čistý Mainnet Alpha track v `/Users/yeshuae/Projects/2.9.6/V31/`. V31 cutover je dokončen a produkční Edge běží na V31; historická V3 data zůstávají v `archive/V3/` a `v3_compat` pro checkpoint sync. Veškerá nová mainnet-track vývojárna patří do `V31/`. Historická topologie a incidenty jsou v kořenovém `/Users/yeshuae/Projects/2.9.6/AGENTS.md`.
 
-Aktuální stav V31 (2026-07-30): `cargo test` prochází pro celý workspace. `zion-core` obsahuje `HeightAwareDeeksha` — height-aware PoW fork gating. `zion-pool` má rate limiting reconnect stormu. `zion-miner` má `ZION_STREAM3_FORCE_COIN` a podporu disabled coinů. `zion-dao` existuje jako skeleton. `zion-multichain` má SQLite persistenci HTLC.
+Aktuální stav V31 (2026-08-07): `cargo clippy --workspace` je čisté a `cargo test --workspace` prochází (2079 testů). `zion-core` používá kanonický `EkamDeeksha` PoW (v2: 128 KiB scratchpad, 1 pass, 32 random reads, 2 AES rounds), `zion-miner` ho mapuje na kanonické `deeksha_lite`/`deeksha_chv3` OpenCL/CUDA backendy. V31 je nasazen na Edge (public RPC, pool, multichain, dashboard). Historická V3 validace zůstává v `v3_compat`. `zion-pool` má rate limiting reconnect stormu. `zion-miner` nyní běží ve triple-stream režimu (ZION + GPU/CPU AuxPoW), má `ZION_STREAM3_FORCE_COIN`, profit switching s 15% hysteresí a TUI/metriky; `cargo test -p zion-miner` 92 pass. `zion-dao` runtime načítá/persistuje návrhy a hlasy, spouští L1 scanner a vystavuje HTTP API/metriky. Fáze B i C jsou kompletní z hlediska kódu a testů; Go/No-Go na reálném GPU/rigu zůstává pending. Dashboard UI/UX je V31-first a je nasazen na Edge (`zion-edge-python-dashboard` active, `/health` OK). V31 banner KPIs a V31 Production panel (metriky, live logy, embedovaný Grafana `v31-mainnet`) jsou integrovány do full dashboardu. Pool API/metrics port opraven na 8080, Prometheus scrape a Grafana provisioning nasazeny. **V31 cutover proveden**: V3 služby (`zion-edge-node1/2`, `zion-edge-pool`, bridge, DAO, atomic-swap, DEX, WARP, OASIS, starý dashboard) zastaveny a maskovány; `zion-v31-node` osamostatněn od V3 a běží nezávisle na portu 9445. Edge registry v dashboardu (`SERVICE_REGISTRY_EDGE_PRIMARY`, `EDGE_SERVICE_ORDER`) nastavena V31-first, přidány `zion-v31-miner`, `zion-v31-dao`, `zion-v31-oasis`, Prometheus/Grafana/website/marketplace. Opraveny systemd unit mapy (z `zion-edge-miner.service` na `zion-v31-miner.service`), `_build_health_map`, `build_checklist`, `build_readiness_score` a `build_alerts` pro V31. V31 pool, multichain, DAO, OASIS a dashboard běží, `/api/services` i `/api/readiness` vrací V31 služby jako `primary` (readiness 100 %).
 
 ---
 
@@ -51,6 +51,7 @@ OPERATOR_IPS=(
   109.81.89.176
   109.81.83.205
   109.81.81.86
+  109.81.83.81     # added 2026-08-05 during Phase D E2E / Playwright work
   2a02:c207:2342:5821::1/64
 )
 ```
@@ -262,10 +263,10 @@ V31 je aktivní mainnet-track workspace. Tato pravidla zajišťují, že zůstan
 
 - [ ] Před každým PR nebo merge do `V31/` spusťte `cargo test` přímo v `/Users/yeshuae/Projects/2.9.6/V31/`.
 - [ ] Všechny workspace testy musí projít. Žádné `--ignored` skipnutí bez odůvodnění.
-- [ ] Při změnách v `zion-core` ověřte height-aware fork gating (`HeightAwareDeeksha`) unit testy i integrační testy.
+- [ ] Při změnách v `zion-core` ověřte `EkamDeeksha` unit testy (mine/verify + nonce-search stress) i integrační testy.
 - [ ] Při změnách v `zion-pool` ověřte rate limiting reconnect stormu.
 - [ ] Při změnách v `zion-miner` ověřte `ZION_STREAM3_FORCE_COIN` a disabled-coin chování.
-- [ ] Při změnách v `zion-multichain` ověřte HTLC SQLite persistenci.
+- [ ] Při změnách v `zion-multichain` ověřte HTLC SQLite persistenci a ZionDex intent engine (`cargo test -p zion-multichain`, `cargo clippy -p zion-multichain`).
 
 ### 9.3 Závislosti a verze
 
@@ -280,7 +281,7 @@ V31 je aktivní mainnet-track workspace. Tato pravidla zajišťují, že zůstan
 - [ ] Nenosťte secrets do zdrojáků; používejte proměnné prostředí.
 - [ ] Všechny RPC endpointy a stratum message handling musí mít timeouty a rate limiting.
 - [ ] P2P message validation musí být defenzivní — neočekávejte validní data od peerů.
-- [ ] Fork gating (`HeightAwareDeeksha`) musí být explicitně otestován pro všechny relevantní výšky.
+- [ ] Kanonický `EkamDeeksha` PoW musí být otestován napříč reprezentativními výškami (stress nonce search); historická V3 validace zůstává pokrytá v `v3_compat` testech.
 - [ ] Každá změna v `zion-dao` skeletonu musí být doplněna bezpečnostním review, než se zapne na mainnetu.
 
 ### 9.5 Dokumentace a status
@@ -322,4 +323,25 @@ V31 je aktivní mainnet-track workspace. Tato pravidla zajišťují, že zůstan
 ---
 
 **Verze:** 2026-07-30 V31 Mainnet Alpha
+
+## 12. Edge V31 deploy notes (2026-08-05)
+
+- `V31/deploy/deploy-edge.sh` still references stale `zion-edge-*` units and an obsolete `--bin zion-bridge` target; manual deploy is currently more reliable.
+- Working manual procedure:
+  1. `rsync` local `V31/` to `/opt/zion` on the Edge.
+  2. On Edge: `. /root/.cargo/env && cd /opt/zion/V31 && sed -i '/"cli",/d;/"smoke",/d' Cargo.toml` (these members are not needed on Edge).
+  3. Build with `nohup cargo build -p zion-core -p zion-pool -p zion-miner -p zion-dao -p zion-multichain --release >/tmp/v31-build.log 2>&1 </dev/null &`.
+  4. `chown -R zion:zion /opt/zion/V31/target/release` and `systemctl restart zion-v31-node zion-v31-multichain zion-v31-pool zion-v31-dao zion-v31-miner`.
+- For SSH to Edge, prefer IPv6 with `ControlMaster` + `ControlPersist` and `ServerAliveInterval` to avoid `Connection refused` from `fail2ban`/rate-limiting during rapid deploy commands:
+  ```
+  Host zion-v6
+      HostName 2a02:c207:2342:5821::1
+      User root
+      Port 2222
+      IdentityFile ~/.ssh/zion-edge-post-wipe-2026-07-29
+      IdentitiesOnly yes
+      ControlMaster auto
+      ControlPath ~/.ssh/control-%r@%h:%p
+      ControlPersist 10m
+  ```
 **Autorita:** Provozní pravidla pro Devin a operátory. Jakýkoliv rozpor s kořenovým `AGENTS.md` řešte aktualizací obou souborů; tento soubor má přednost pro V31, kořenový `AGENTS.md` pro historii a globální topologii.

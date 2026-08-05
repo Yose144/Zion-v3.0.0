@@ -27,37 +27,25 @@ export type MiningPoolConfig = {
   lon: number;
 };
 
-// v3.0.6 topology: 2-node P2P mesh (StatusV3.md).
-//   - Edge Node 1 (Primary / Genesis / Pool) — P2P 8333, RPC 8443, Stratum 8444, Pool API 8455
-//   - Edge Node 2 (Follower / P2P peer)        — P2P 8334, RPC 8448
-//   - Local Backup Node is currently offline and not included in the default seed list.
+// V31 Mainnet Alpha topology: single canonical node on Edge (StatusV3.md).
+//   - V31 Node (Primary / Mainnet Alpha / Pool) — P2P 8335, RPC 9445, Stratum 8444, Pool API 8080
 // NOTE: These are built lazily (functions) so that env-var overrides in site.ts
 // (which use bracket notation to avoid Next.js build-time inlining) are read
 // at runtime, not at build time.
 function buildDefaultSeedNodes(): SeedNodeConfig[] {
   return [
     {
-      id: 'edge-vps',
-      name: 'Edge Node 1 (Primary)',
+      id: 'v31-edge',
+      name: 'V31 Edge Node',
       host: SITE_PRIMARY_HOST,
       region: 'EU',
       lat: 50.08,
       lon: 14.44,
-      ports: { p2p: 8333, rpc: 8443, stratum: 8444, pool_api: 8455 },
+      ports: { p2p: 8335, rpc: 9445, stratum: 8444, pool_api: 8080 },
       // Server-side RPC connects over localhost (node binds 127.0.0.1 for security).
       // `host` above stays public so UI/display shows the real endpoint.
-      rpcUrl: '127.0.0.1:8443',
+      rpcUrl: '127.0.0.1:9445',
       poolApiUrl: SITE_PRIMARY_POOL_API_URL,
-    },
-    {
-      id: 'edge-follower',
-      name: 'Edge Node 2 (Follower)',
-      host: SITE_PRIMARY_HOST,
-      region: 'EU',
-      lat: 50.08,
-      lon: 14.44,
-      ports: { p2p: 8334, rpc: 8448, stratum: 0, pool_api: 0 },
-      rpcUrl: '127.0.0.1:8448',
     },
   ];
 }

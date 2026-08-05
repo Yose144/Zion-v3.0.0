@@ -227,30 +227,47 @@ async function tcpJsonRpc(host: string, port: number, method: string, params: an
       if (!settled) { settled = true; socket.destroy(); reject(new Error(`TCP RPC timeout (${method})`)); }
     }, timeoutMs);
 
+    function finish(trimmed: string) {
+      if (settled) return;
+      if (!trimmed) { settled = true; clearTimeout(timer); socket.destroy(); reject(new Error('Empty RPC response')); return; }
+      try {
+        const json = JSON.parse(trimmed);
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        socket.destroy();
+        if (json.error) reject(new Error(json.error.message || JSON.stringify(json.error)));
+        else resolve(json.result);
+      } catch {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        socket.destroy();
+        reject(new Error(`Invalid JSON from RPC: ${trimmed.substring(0, 200)}`));
+      }
+    }
+
     socket.connect(port, host, () => {
       const req = JSON.stringify({ jsonrpc: '2.0', id: 1, method, params });
       socket.write(req + '\n');
     });
 
-    socket.on('data', (chunk) => { data += chunk.toString(); });
+    socket.on('data', (chunk) => {
+      data += chunk.toString();
+      // V3 and V31 nodes reply with a single JSON line terminated by a newline.
+      const lines = data.split('\n');
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed) {
+          finish(trimmed);
+          return;
+        }
+      }
+    });
 
-    function settle() {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      socket.destroy();
-      const trimmed = data.trim();
-      if (!trimmed) { reject(new Error('Empty RPC response')); return; }
-      try {
-        const json = JSON.parse(trimmed);
-        if (json.error) reject(new Error(json.error.message || JSON.stringify(json.error)));
-        else resolve(json.result);
-      } catch { reject(new Error(`Invalid JSON from RPC: ${trimmed.substring(0, 200)}`)); }
-    }
-
-    socket.on('end', settle);
-    socket.on('close', settle);
-    socket.on('error', (err) => { if (!settled) { settled = true; clearTimeout(timer); reject(err); } });
+    socket.on('end', () => finish(data.trim()));
+    socket.on('close', () => finish(data.trim()));
+    socket.on('error', (err) => { if (!settled) { settled = true; clearTimeout(timer); socket.destroy(); reject(err); } });
   });
 }
 

@@ -1,12 +1,10 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { Activity, Atom, Braces, Database, Droplets, Gauge, HelpCircle, Shield, TrendingUp } from 'lucide-react';
+import { Activity, Atom, Braces, Database, Gauge, HelpCircle, Shield, TrendingUp } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { apiClient } from '@/lib/api';
 import { usePolling } from '@/hooks/usePolling';
-import { SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL } from '@/lib/site';
 
 const LiveDashboardCopy = {
   enUs: { cs: `cs-CZ`, en: `en-US` },
@@ -40,8 +38,6 @@ const LiveDashboardCopy = {
 };
 
 interface BlockchainStats {
-  // NOTE: Backend schema can vary across deployments.
-  // Keep fields optional and use safe fallbacks in rendering.
   total_blocks?: number;
   total_supply?: number;
   circulating_supply?: number;
@@ -53,16 +49,8 @@ interface BlockchainStats {
   tx_pool_size?: number;
   difficulty?: number;
   block_height?: number;
-  latest_block?: {
-    height: number;
-    hash: string;
-    timestamp: number;
-  };
-  last_block?: {
-    height: number;
-    hash: string;
-    timestamp: number;
-  };
+  latest_block?: { height: number; hash: string; timestamp: number };
+  last_block?: { height: number; hash: string; timestamp: number };
 }
 
 interface DefiPrice {
@@ -76,11 +64,7 @@ interface DefiPrice {
     tick?: number;
   };
   liquidity?: string;
-  tvl?: {
-    weth?: number;
-    wzion?: number;
-    usd?: number;
-  };
+  tvl?: { weth?: number; wzion?: number; usd?: number };
   fetchedAt?: number;
 }
 
@@ -106,37 +90,23 @@ export default function LiveDashboard() {
   const fetchStats = useCallback(async () => {
     try {
       const data = await apiClient<BlockchainStats | null>('/blockchain/stats');
-
-      if (!data || typeof data !== 'object') {
-        throw new Error('Invalid blockchain stats payload');
-      }
-
+      if (!data || typeof data !== 'object') throw new Error('Invalid blockchain stats payload');
       setStats(data);
       setLoadedAtLeastOnce(true);
       setLastSuccessAt(Date.now());
       setError(null);
     } catch (err) {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('API not available, using placeholder data');
-        setLoadedAtLeastOnce(true);
-        return;
-      }
-
-      if (!loadedAtLeastOnce) {
-        setError(err instanceof Error ? err.message : 'Unknown error');
-      }
+      if (process.env.NODE_ENV === 'development') console.warn('API not available, using placeholder data');
+      setLoadedAtLeastOnce(true);
+      if (!loadedAtLeastOnce) setError(err instanceof Error ? err.message : 'Unknown error');
     }
   }, [loadedAtLeastOnce]);
 
   const fetchDefiPrice = useCallback(async () => {
     try {
       const data = await apiClient<DefiPrice | null>('/defi/price');
-      if (data && typeof data === 'object') {
-        setDefiPrice(data);
-      }
-    } catch {
-      // DeFi price is optional — silently ignore
-    }
+      if (data && typeof data === 'object') setDefiPrice(data);
+    } catch { /* DeFi price is optional */ }
   }, []);
 
   usePolling(fetchStats, 30_000);
@@ -152,219 +122,74 @@ export default function LiveDashboard() {
   const formattedTimestamp = latestBlock?.timestamp
     ? new Date(latestBlock.timestamp * 1000).toLocaleString(locale)
     : '—';
-  const mempoolSize = stats.mempool_size ?? stats.tx_pool_size ?? 0;
   const staleTelemetry = loadedAtLeastOnce && !!error;
 
-  const highlightCards = [
-    {
-      label: LiveDashboardCopy.totalBlocks[cs ? 'cs' : 'en'],
-      value: (stats.total_blocks ?? 0).toLocaleString(locale),
-      icon: Database,
-      accent: 'from-zion-gold/25 to-zion-purple/10',
-      tip: LiveDashboardCopy.totalNumberOfMinedBlocksSinceM[cs ? 'cs' : 'en'],
-    },
-    {
-      label: LiveDashboardCopy.totalSupply[cs ? 'cs' : 'en'],
-      value: formattedSupply,
-      icon: Gauge,
-      accent: 'from-zion-purple/25 to-zion-cyan/10',
-      tip: LiveDashboardCopy.maximumZionSupplyIs144BillionI[cs ? 'cs' : 'en'],
-    },
-    {
-      label: LiveDashboardCopy.transactions[cs ? 'cs' : 'en'],
-      value: (stats.total_transactions ?? 0).toLocaleString(locale),
-      icon: Atom,
-      accent: 'from-zion-cyan/25 to-zion-gold/10',
-      tip: LiveDashboardCopy.totalNumberOfTransactionsRecor[cs ? 'cs' : 'en'],
-    },
-  ];
-
-  const auxCards = [
-    { label: LiveDashboardCopy.difficulty[cs ? 'cs' : 'en'], value: (stats.difficulty ?? 0).toLocaleString(locale), icon: Shield, tip: LiveDashboardCopy.currentMiningDifficultySetByLw[cs ? 'cs' : 'en'] },
-    { label: LiveDashboardCopy.mempoolSize[cs ? 'cs' : 'en'], value: mempoolSize.toLocaleString(locale), icon: Braces, tip: LiveDashboardCopy.transactionsWaitingForConfirma[cs ? 'cs' : 'en'] },
+  const metrics = [
+    { icon: Database, label: LiveDashboardCopy.totalBlocks[cs ? 'cs' : 'en'], value: (stats.total_blocks ?? 0).toLocaleString(locale), tip: LiveDashboardCopy.totalNumberOfMinedBlocksSinceM[cs ? 'cs' : 'en'], color: 'text-zion-gold', rc: '251, 191, 36' },
+    { icon: Gauge, label: LiveDashboardCopy.totalSupply[cs ? 'cs' : 'en'], value: formattedSupply, tip: LiveDashboardCopy.maximumZionSupplyIs144BillionI[cs ? 'cs' : 'en'], color: 'text-zion-purple', rc: '147, 51, 234' },
+    { icon: Atom, label: LiveDashboardCopy.transactions[cs ? 'cs' : 'en'], value: (stats.total_transactions ?? 0).toLocaleString(locale), tip: LiveDashboardCopy.totalNumberOfTransactionsRecor[cs ? 'cs' : 'en'], color: 'text-zion-cyan', rc: '6, 182, 212' },
+    { icon: Shield, label: LiveDashboardCopy.difficulty[cs ? 'cs' : 'en'], value: (stats.difficulty ?? 0).toLocaleString(locale), tip: LiveDashboardCopy.currentMiningDifficultySetByLw[cs ? 'cs' : 'en'], color: 'text-emerald-400', rc: '16, 185, 129' },
+    { icon: Braces, label: LiveDashboardCopy.mempoolSize[cs ? 'cs' : 'en'], value: (stats.mempool_size ?? stats.tx_pool_size ?? 0).toLocaleString(locale), tip: LiveDashboardCopy.transactionsWaitingForConfirma[cs ? 'cs' : 'en'], color: 'text-amber-400', rc: '245, 158, 11' },
   ];
 
   return (
-    <section className="py-20 px-4">
-      <div className="zion-container space-y-10">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="inline-flex items-center gap-3 rounded-full border border-white/10 px-4 py-2">
-            <Activity className="w-5 h-5 text-zion-gold animate-pulse" />
-            <span className="text-sm tracking-wide uppercase text-gray-300">{LiveDashboardCopy.missionConsole[cs ? 'cs' : 'en']}</span>
-          </div>
-          <div className="text-xl sm:text-2xl md:text-3xl font-semibold text-gradient">{SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · Mainnet Launch Countdown Telemetry</div>
-          {staleTelemetry && (
-            <span className="text-xs text-cyan-200 bg-cyan-500/10 rounded-full px-3 py-1 border border-cyan-500/30">
-              {LiveDashboardCopy.lastValidSnapshotWaitingForTel[cs ? 'cs' : 'en']}
-            </span>
-          )}
-          {error && (
-            <span className="text-xs text-amber-300 bg-amber-500/10 rounded-full px-3 py-1 border border-amber-500/30">
-              ⚠️ {error}
-            </span>
-          )}
+    <section className="py-8 px-4">
+      <div className="zion-container space-y-4">
+        <div className="flex items-center gap-3">
+          <Activity className="w-4 h-4 text-zion-gold" />
+          <h2 className="text-lg font-semibold text-white">{LiveDashboardCopy.missionConsole[cs ? 'cs' : 'en']}</h2>
+          <span className={`ml-auto inline-flex h-2 w-2 rounded-full ${staleTelemetry ? 'bg-amber-400' : 'bg-emerald-400'} animate-pulse`} />
+          <span className="text-xs text-gray-400">
+            {staleTelemetry
+              ? (LiveDashboardCopy.snapshotActive[cs ? 'cs' : 'en'])
+              : (loadedAtLeastOnce ? LiveDashboardCopy.live[cs ? 'cs' : 'en'] : LiveDashboardCopy.initializing[cs ? 'cs' : 'en'])}
+          </span>
         </div>
 
-        <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-8">
-          <motion.div
-            initial={{ opacity: 0, y: 25 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="zion-rainbow-card backdrop-blur-xl p-6 space-y-6"
-            style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
-          >
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <p className="text-sm uppercase text-gray-400 tracking-[0.4em]">{LiveDashboardCopy.continuumStatus[cs ? 'cs' : 'en']}</p>
-                <h3 className="text-2xl font-semibold text-white">{LiveDashboardCopy.galacticNetworkSync[cs ? 'cs' : 'en']}</h3>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-gray-400">
-                <span className={`inline-flex h-2 w-2 rounded-full ${staleTelemetry ? 'bg-amber-300' : 'bg-emerald-400'} animate-pulse`} />
-                {staleTelemetry
-                  ? (LiveDashboardCopy.snapshotActive[cs ? 'cs' : 'en'])
-                  : `${LiveDashboardCopy.updated[cs ? 'cs' : 'en']} ${loadedAtLeastOnce ? (LiveDashboardCopy.live[cs ? 'cs' : 'en']) : (LiveDashboardCopy.initializing[cs ? 'cs' : 'en'])}`}
-                {lastSuccessAt && (
-                  <span>
-                    · {new Date(lastSuccessAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {highlightCards.map((card) => (
-                <div
-                  key={card.label}
-                  className={`group relative rounded-2xl border border-white/10 bg-linear-to-br ${card.accent} p-4`}
-                >
-                  <card.icon className="w-5 h-5 text-white/70 mb-3" />
-                  <div className="text-2xl font-bold text-white">{card.value}</div>
-                  <div className="text-xs uppercase tracking-wide text-gray-300">{card.label}</div>
-                  <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="group/tooltip relative">
-                      <HelpCircle className="w-3.5 h-3.5 text-white/50" />
-                      <div className="absolute right-0 top-5 w-48 p-2 rounded-lg bg-black/90 border border-white/10 text-[10px] text-gray-300 opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-20 pointer-events-none">
-                        {card.tip}
-                      </div>
-                    </div>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+          {metrics.map((m) => (
+            <div key={m.label} className="zion-rainbow-sub group p-3" style={{ '--rc': m.rc } as React.CSSProperties}>
+              <m.icon className={`w-4 h-4 ${m.color} mb-1`} />
+              <div className="text-xl font-bold text-white">{m.value}</div>
+              <div className="text-[10px] text-gray-400 uppercase tracking-wide">{m.label}</div>
+              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="group/tooltip relative">
+                  <HelpCircle className="w-3 h-3 text-white/40" />
+                  <div className="absolute right-0 top-4 w-44 p-2 rounded-lg bg-black/90 border border-white/10 text-[10px] text-gray-300 opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-20 pointer-events-none">
+                    {m.tip}
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
+          ))}
+        </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {auxCards.map((card) => (
-                <div key={card.label} className="group relative zion-rainbow-sub p-4" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-400">{card.label}</p>
-                      <p className="text-xl font-semibold text-white">{card.value}</p>
-                    </div>
-                    <card.icon className="w-5 h-5 text-zion-gold" />
-                  </div>
-                  <div className="mt-2 h-1 rounded-full bg-linear-to-r from-zion-gold via-zion-purple to-transparent" />
-                  <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="group/tooltip relative">
-                      <HelpCircle className="w-3.5 h-3.5 text-white/50" />
-                      <div className="absolute right-0 top-5 w-48 p-2 rounded-lg bg-black/90 border border-white/10 text-[10px] text-gray-300 opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-20 pointer-events-none">
-                        {card.tip}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+        <div className="grid gap-2 md:grid-cols-2">
+          <div className="zion-rainbow-card p-3" style={{ '--rc': '107, 114, 128' } as React.CSSProperties}>
+            <p className="text-[10px] text-gray-400 uppercase tracking-wide">{LiveDashboardCopy.latestBlock[cs ? 'cs' : 'en']}</p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-lg font-bold text-white">#{latestBlock?.height ?? stats.block_height ?? '—'}</span>
+              <span className="text-xs text-gray-400">{formattedTimestamp}</span>
             </div>
-          </motion.div>
+            <p className="font-mono text-[10px] text-zion-cyan break-all mt-1">{latestBlock?.hash ?? (LiveDashboardCopy.waitingForSignal[cs ? 'cs' : 'en'])}</p>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 25 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="zion-rainbow-card backdrop-blur-xl p-6 flex flex-col gap-6"
-            style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
-          >
-            <div>
-              <p className="text-xs uppercase text-gray-500 tracking-[0.3em]">{LiveDashboardCopy.latestBlock[cs ? 'cs' : 'en']}</p>
-              <h3 className="text-3xl font-semibold text-white">
-                #{latestBlock?.height ?? stats.block_height ?? '—'}
-              </h3>
-              <p className="text-sm text-gray-400">{formattedTimestamp}</p>
+          <div className="zion-rainbow-card p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] text-gray-400 uppercase tracking-wide">{LiveDashboardCopy.defiPool[cs ? 'cs' : 'en']}</p>
+              <TrendingUp className="w-4 h-4 text-zion-cyan" />
             </div>
-
-            <div className="zion-tile p-4">
-              <p className="text-xs text-gray-400 mb-2">Hash</p>
-              <p className="font-mono text-xs text-zion-cyan break-all">
-                {latestBlock?.hash ?? (LiveDashboardCopy.waitingForSignal[cs ? 'cs' : 'en'])}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-2 gap-2 mt-1">
               <div>
-                <p className="text-gray-400">Mempool</p>
-                <p className="text-xl font-semibold text-white">{(stats.mempool_size ?? 0).toLocaleString(locale)}</p>
+                <p className="text-xs text-gray-400">{LiveDashboardCopy.zionPrice[cs ? 'cs' : 'en']}</p>
+                <p className="text-base font-bold text-white">${defiPrice?.price?.usd_per_wzion?.toFixed(6) ?? '0.000200'}</p>
               </div>
               <div>
-                <p className="text-gray-400">{LiveDashboardCopy.difficulty_2[cs ? 'cs' : 'en']}</p>
-                <p className="text-xl font-semibold text-white">{(stats.difficulty ?? 0).toLocaleString(locale)}</p>
+                <p className="text-xs text-gray-400">{LiveDashboardCopy.tvlUsd[cs ? 'cs' : 'en']}</p>
+                <p className="text-base font-bold text-white">${(defiPrice?.tvl?.usd ?? 0).toFixed(2)}</p>
               </div>
             </div>
-
-            <div className="rounded-2xl border border-white/5 bg-linear-to-br from-zion-purple/20 to-zion-cyan/10 p-4 text-sm text-gray-200">
-              Blockchain telemetry pulled live from the {SITE_RELEASE_LABEL} V3 mainnet API every 30 s, on top of the {SITE_RUNTIME_LABEL} runtime.
-              Current public runtime is a Edge server topology (Edge server).
-            </div>
-
-            {/* DeFi Stats Card */}
-            <div className="rounded-2xl border border-white/10 bg-linear-to-br from-zion-gold/15 to-zion-cyan/5 p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Droplets className="w-4 h-4 text-zion-cyan" />
-                  <span className="text-xs uppercase tracking-[0.3em] text-gray-400">{LiveDashboardCopy.defiPool[cs ? 'cs' : 'en']}</span>
-                </div>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full border ${
-                  defiPrice?.source === 'live'
-                    ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30'
-                    : 'text-amber-300 bg-amber-500/10 border-amber-500/30'
-                }`}>
-                  {defiPrice?.source ?? '—'}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <p className="text-xs text-gray-400">{LiveDashboardCopy.zionPrice[cs ? 'cs' : 'en']}</p>
-                  <p className="text-lg font-semibold text-white flex items-center gap-1">
-                    <TrendingUp className="w-3.5 h-3.5 text-zion-gold" />
-                    ${defiPrice?.price?.usd_per_wzion?.toFixed(6) ?? '0.000200'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400">{LiveDashboardCopy.tvlUsd[cs ? 'cs' : 'en']}</p>
-                  <p className="text-lg font-semibold text-white">
-                    ${(defiPrice?.tvl?.usd ?? 0).toFixed(2)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400">{LiveDashboardCopy.liquidity[cs ? 'cs' : 'en']}</p>
-                  <p className="text-sm font-mono text-zion-cyan">
-                    {defiPrice?.liquidity && Number(defiPrice.liquidity) > 0
-                      ? Number(defiPrice.liquidity).toLocaleString(locale)
-                      : '—'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400">{LiveDashboardCopy.ethUsd[cs ? 'cs' : 'en']}</p>
-                  <p className="text-sm font-mono text-gray-200">
-                    ${defiPrice?.price?.weth_usd?.toFixed(2) ?? '—'}
-                  </p>
-                </div>
-              </div>
-              <p className="text-[10px] text-gray-500">
-                {LiveDashboardCopy.primaryPriceFromWzionUsdt03Poo[cs ? 'cs' : 'en']}
-              </p>
-            </div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>

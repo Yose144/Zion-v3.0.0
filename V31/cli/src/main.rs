@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use anyhow::{anyhow, bail};
+use anyhow::{anyhow, bail, Context};
 use clap::{Parser, Subcommand};
 use tokio::sync::watch;
 
@@ -51,8 +51,10 @@ enum Command {
     Doctor,
     /// Serve the V31 HTTP API gateway.
     Api,
-    /// Start the ZION L1 node.
+    /// Start / stop / status the ZION L1 node.
     Node(NodeArgs),
+    /// Manage V31 systemd services (start/stop/status/restart/logs).
+    Service(ServiceArgs),
 }
 
 #[derive(Parser)]
@@ -99,6 +101,45 @@ enum WalletCommand {
         #[arg(short, long, default_value = "0")]
         index: u32,
     },
+    /// Create a new ZION wallet file (Ed25519 keypair).
+    Create {
+        /// Output file path (default: ~/.zion/wallet.json).
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+        /// Overwrite if file exists.
+        #[arg(long)]
+        force: bool,
+    },
+    /// Load a wallet file and show its address.
+    Load {
+        /// Wallet file path (default: ~/.zion/wallet.json).
+        #[arg(short, long)]
+        path: Option<PathBuf>,
+    },
+    /// Send ZION from a wallet file to an address.
+    Send {
+        /// Wallet file path (default: ~/.zion/wallet.json).
+        #[arg(short, long)]
+        wallet: Option<PathBuf>,
+        /// Recipient address (zion1...).
+        #[arg(short, long)]
+        to: String,
+        /// Amount in ZION (not flowers).
+        #[arg(short, long)]
+        amount: f64,
+        /// Transaction fee in ZION (default: 0.01).
+        #[arg(short, long, default_value = "0.01")]
+        fee: f64,
+        /// Optional memo.
+        #[arg(short, long)]
+        memo: Option<String>,
+        /// L1 RPC URL (default: 127.0.0.1:9445).
+        #[arg(long, default_value = "127.0.0.1:9445")]
+        rpc: String,
+        /// Dry-run: build and sign but do not broadcast.
+        #[arg(long)]
+        dry_run: bool,
+    },
 }
 
 #[derive(Parser)]
@@ -109,12 +150,61 @@ struct PoolArgs {
 
 #[derive(Subcommand)]
 enum PoolCommand {
-    /// Show pool status (accepted/rejected shares and config).
+    /// Start the pool systemd service.
+    Start,
+    /// Stop the pool systemd service.
+    Stop,
+    /// Show the pool systemd service status.
     Status,
+    /// Show pool statistics (accepted/rejected shares and config).
+    Stats,
     /// Show the latest computed PPLNS payouts.
     Payouts,
-    /// Show pool share statistics (same as status).
+    /// Show pool share statistics (same as stats).
     Shares,
+}
+
+#[derive(Parser)]
+struct ServiceArgs {
+    #[command(subcommand)]
+    command: ServiceCommand,
+}
+
+#[derive(Subcommand)]
+enum ServiceCommand {
+    /// Start one or all V31 services.
+    Start {
+        /// Service name (node, pool, miner, multichain, dao, all). Default: all.
+        #[arg(default_value = "all")]
+        service: String,
+    },
+    /// Stop one or all V31 services.
+    Stop {
+        /// Service name (node, pool, miner, multichain, dao, all). Default: all.
+        #[arg(default_value = "all")]
+        service: String,
+    },
+    /// Restart one or all V31 services.
+    Restart {
+        /// Service name (node, pool, miner, multichain, dao, all). Default: all.
+        #[arg(default_value = "all")]
+        service: String,
+    },
+    /// Show status of one or all V31 services.
+    Status {
+        /// Service name (node, pool, miner, multichain, dao, all). Default: all.
+        #[arg(default_value = "all")]
+        service: String,
+    },
+    /// Show recent logs for a service.
+    Logs {
+        /// Service name (node, pool, miner, multichain, dao).
+        #[arg()]
+        service: String,
+        /// Number of lines to show (default: 50).
+        #[arg(short, long, default_value = "50")]
+        lines: usize,
+    },
 }
 
 #[derive(Parser)]
@@ -126,36 +216,61 @@ struct MinerArgs {
 #[derive(Subcommand)]
 enum MinerCommand {
     /// Start the triple-stream miner (ZION + AuxPoW GPU + AuxPoW CPU).
-    Start {
-        /// ZION address that receives mining rewards.
-        #[arg(short, long)]
-        reward_address: Option<String>,
-        /// ZION L1 node RPC URL for solo mining (template fetch + block submit).
-        #[arg(long)]
-        node_rpc_url: Option<String>,
-        /// Stratum pool URL for ZION share mining.
-        #[arg(long)]
-        pool_url: Option<String>,
-        /// Optional external stratum pool URL for AuxPoW shares.
-        #[arg(short, long)]
-        auxpow_pool: Option<String>,
-        /// Worker name used on AuxPoW pools.
-        #[arg(short, long, default_value = "zion_worker")]
-        worker: String,
-        /// Disable the ZION canonical mining stream.
-        #[arg(long)]
-        no_zion: bool,
-        /// Disable the GPU AuxPoW stream.
-        #[arg(long)]
-        no_gpu: bool,
-        /// Disable the CPU AuxPoW stream.
-        #[arg(long)]
-        no_cpu: bool,
-    },
+    Start(MinerStartArgs),
+    /// Stop the miner systemd service.
+    Stop,
+    /// Show the miner systemd service status.
+    Status,
+}
+
+#[derive(Parser)]
+struct MinerStartArgs {
+    /// ZION address that receives mining rewards.
+    #[arg(short, long)]
+    reward_address: Option<String>,
+    /// ZION L1 node RPC URL for solo mining (template fetch + block submit).
+    #[arg(long)]
+    node_rpc_url: Option<String>,
+    /// Stratum pool URL for ZION share mining.
+    #[arg(long)]
+    pool_url: Option<String>,
+    /// Optional external stratum pool URL for AuxPoW shares.
+    #[arg(short, long)]
+    auxpow_pool: Option<String>,
+    /// Worker name used on AuxPoW pools.
+    #[arg(short, long, default_value = "zion_worker")]
+    worker: String,
+    /// Disable the ZION canonical mining stream.
+    #[arg(long)]
+    no_zion: bool,
+    /// Disable the GPU AuxPoW stream.
+    #[arg(long)]
+    no_gpu: bool,
+    /// Disable the CPU AuxPoW stream.
+    #[arg(long)]
+    no_cpu: bool,
 }
 
 #[derive(Parser)]
 struct NodeArgs {
+    #[command(subcommand)]
+    command: NodeCommand,
+}
+
+#[derive(Subcommand)]
+enum NodeCommand {
+    /// Start the ZION L1 node in the foreground.
+    Start(NodeStartArgs),
+    /// Stop the ZION L1 node via systemctl.
+    Stop,
+    /// Show systemd status for the ZION L1 node.
+    Status,
+    /// Restart the ZION L1 node via systemctl.
+    Restart,
+}
+
+#[derive(Parser)]
+struct NodeStartArgs {
     /// SQLite database path.
     #[arg(short, long, default_value = "zion-node.db")]
     db_path: String,
@@ -325,6 +440,151 @@ async fn main() -> anyhow::Result<()> {
                 let sig = service.wallet_sign(chain_id, message.as_bytes(), account, index)?;
                 println!("0x{}", hex::encode(sig));
             }
+            WalletCommand::Create { output, force } => {
+                let path = output.unwrap_or_else(|| {
+                    dirs::home_dir()
+                        .unwrap_or_else(|| PathBuf::from("."))
+                        .join(".zion")
+                        .join("wallet.json")
+                });
+                if path.exists() && !force {
+                    bail!("wallet file already exists: {} (use --force to overwrite)", path.display());
+                }
+                let (sk, pk) = zion_core::crypto::generate_keypair();
+                let address = zion_core::crypto::derive_address(&pk.to_bytes());
+                let sk_hex = zion_core::crypto::to_hex(&sk.to_bytes());
+                let pk_hex = zion_core::crypto::to_hex(&pk.to_bytes());
+
+                let wallet_json = serde_json::json!({
+                    "address": address,
+                    "public_key": pk_hex,
+                    "secret_key": sk_hex,
+                    "created_at": chrono::Utc::now().to_rfc3339(),
+                });
+
+                if let Some(parent) = path.parent() {
+                    std::fs::create_dir_all(parent)?;
+                }
+                std::fs::write(&path, serde_json::to_string_pretty(&wallet_json)?)?;
+                println!("Wallet created: {}", path.display());
+                println!("Address: {}", address);
+                println!("\nWARNING: Keep this file safe. Anyone with the secret key can spend your ZION.");
+            }
+            WalletCommand::Load { path } => {
+                let path = path.unwrap_or_else(|| {
+                    dirs::home_dir()
+                        .unwrap_or_else(|| PathBuf::from("."))
+                        .join(".zion")
+                        .join("wallet.json")
+                });
+                if !path.exists() {
+                    bail!("wallet file not found: {}", path.display());
+                }
+                let raw = std::fs::read_to_string(&path)?;
+                let wallet: serde_json::Value = serde_json::from_str(&raw)?;
+                let address = wallet["address"]
+                    .as_str()
+                    .ok_or_else(|| anyhow!("wallet file missing 'address' field"))?;
+                let public_key = wallet["public_key"]
+                    .as_str()
+                    .ok_or_else(|| anyhow!("wallet file missing 'public_key' field"))?;
+                println!("Wallet loaded: {}", path.display());
+                println!("Address:     {}", address);
+                println!("Public key:  {}", public_key);
+            }
+            WalletCommand::Send { wallet, to, amount, fee, memo, rpc, dry_run } => {
+                let wallet_path = wallet.unwrap_or_else(|| {
+                    dirs::home_dir()
+                        .unwrap_or_else(|| PathBuf::from("."))
+                        .join(".zion")
+                        .join("wallet.json")
+                });
+                if !wallet_path.exists() {
+                    bail!("wallet file not found: {}", wallet_path.display());
+                }
+                let raw = std::fs::read_to_string(&wallet_path)?;
+                let wallet_data: serde_json::Value = serde_json::from_str(&raw)?;
+                let sk_hex = wallet_data["secret_key"]
+                    .as_str()
+                    .ok_or_else(|| anyhow!("wallet file missing 'secret_key' field"))?;
+                let sender_address = wallet_data["address"]
+                    .as_str()
+                    .ok_or_else(|| anyhow!("wallet file missing 'address' field"))?;
+
+                // Reconstruct signing key
+                let sk_bytes = zion_core::crypto::from_hex(sk_hex)
+                    .ok_or_else(|| anyhow!("invalid secret key hex"))?;
+                if sk_bytes.len() != 32 {
+                    bail!("secret key must be 32 bytes, got {}", sk_bytes.len());
+                }
+                let mut sk_arr = [0u8; 32];
+                sk_arr.copy_from_slice(&sk_bytes);
+                let signing_key = ed25519_dalek::SigningKey::from_bytes(&sk_arr);
+
+                // Convert ZION to flowers (6 decimals)
+                let amount_flowers = (amount * 1_000_000.0) as u64;
+                let fee_flowers = (fee * 1_000_000.0) as u64;
+
+                println!("Sending {} ZION to {} (fee: {} ZION)", amount, to, fee);
+                println!("From: {}", sender_address);
+                if let Some(ref m) = memo {
+                    println!("Memo: {}", m);
+                }
+
+                if dry_run {
+                    println!("\n[Dry-run] Would build and sign transaction, but not broadcast.");
+                    println!("Amount: {} flowers", amount_flowers);
+                    println!("Fee:    {} flowers", fee_flowers);
+                    return Ok(());
+                }
+
+                // Fetch UTXOs from L1 RPC
+                let utxos = fetch_utxos(&rpc, sender_address).await?;
+                if utxos.is_empty() {
+                    bail!("no spendable UTXOs found for address {}", sender_address);
+                }
+
+                let total_available: u64 = utxos.iter().map(|u| u.amount).sum();
+                println!("Available: {} flowers ({} UTXOs)", total_available, utxos.len());
+
+                // Build and sign transaction
+                let params = zion_core::v3_wallet::SendParams {
+                    to_address: to.clone(),
+                    amount: amount_flowers,
+                    fee: fee_flowers,
+                    memo: memo.clone(),
+                };
+
+                let chain_tip = get_chain_height(&rpc).await.unwrap_or(0);
+                if chain_tip == 0 {
+                    println!("Warning: could not fetch chain tip height; using 0");
+                }
+
+                let result = zion_core::v3_wallet::build_and_sign(
+                    &signing_key,
+                    sender_address,
+                    &params,
+                    &utxos,
+                    chain_tip,
+                ).map_err(|e| anyhow!("wallet error: {}", e))?;
+
+                println!("Transaction built and signed:");
+                println!("  Change: {} flowers", result.change_amount);
+                println!("  Inputs: {}", result.transaction.inputs.len());
+                println!("  Outputs: {}", result.transaction.outputs.len());
+
+                // Serialize transaction as JSON for RPC submission
+                let tx_json = serde_json::to_value(&result.transaction)
+                    .map_err(|e| anyhow!("failed to serialize transaction: {e}"))?;
+                let tx_id = hex::encode(result.transaction.calculate_hash());
+                println!("  TX hash: {}", tx_id);
+
+                // Submit to L1 RPC
+                match submit_tx_json(&rpc, &tx_json).await {
+                    Ok(result) => println!("Broadcast OK. Result: {}", result),
+                    Err(e) => bail!("broadcast failed: {}", e),
+                }
+            }
         },
         Command::Bridge(bridge) => {
             let (direction, from, to, amount, source_addr, target_addr) = match bridge.command {
@@ -413,7 +673,10 @@ async fn main() -> anyhow::Result<()> {
             }
         },
         Command::Pool(pool) => match pool.command {
-            PoolCommand::Status | PoolCommand::Shares => match service.pool_stats() {
+            PoolCommand::Start => systemctl_all("start", "pool")?,
+            PoolCommand::Stop => systemctl_all("stop", "pool")?,
+            PoolCommand::Status => service_status("pool")?,
+            PoolCommand::Stats | PoolCommand::Shares => match service.pool_stats() {
                 Some(stats) => println!("{}", serde_json::to_string_pretty(&stats)?),
                 None => println!("Pool not configured."),
             },
@@ -423,28 +686,19 @@ async fn main() -> anyhow::Result<()> {
             },
         },
         Command::Miner(miner) => match miner.command {
-            MinerCommand::Start {
-                reward_address,
-                node_rpc_url,
-                pool_url,
-                auxpow_pool,
-                worker,
-                no_zion,
-                no_gpu,
-                no_cpu,
-            } => {
-                let reward_address = match reward_address {
-                    Some(encoded) => Address::new(ChainId::ZionL1, vec![], encoded)?,
+            MinerCommand::Start(args) => {
+                let reward_address = match args.reward_address {
+                    Some(encoded) => Address::new(ChainId::ZionL1, vec![], &encoded)?,
                     None => service.wallet_address(ChainId::ZionL1, 0, 0)?,
                 };
                 let mut miner_config = MinerConfig::new(reward_address);
-                miner_config.node_rpc_url = node_rpc_url;
-                miner_config.pool_url = pool_url;
-                miner_config.auxpow_pool = auxpow_pool;
-                miner_config.worker = worker;
-                miner_config.stream1_enabled = !no_zion;
-                miner_config.stream2_enabled = !no_gpu;
-                miner_config.stream3_enabled = !no_cpu;
+                miner_config.node_rpc_url = args.node_rpc_url;
+                miner_config.pool_url = args.pool_url;
+                miner_config.auxpow_pool = args.auxpow_pool;
+                miner_config.worker = args.worker;
+                miner_config.stream1_enabled = !args.no_zion;
+                miner_config.stream2_enabled = !args.no_gpu;
+                miner_config.stream3_enabled = !args.no_cpu;
 
                 let runtime = MinerRuntime::new(miner_config);
                 let (shutdown_tx, shutdown_rx) = watch::channel(false);
@@ -455,6 +709,8 @@ async fn main() -> anyhow::Result<()> {
                 println!("Starting triple-stream miner. Press Ctrl-C to stop.");
                 runtime.run(shutdown_rx).await?;
             }
+            MinerCommand::Stop => systemctl_all("stop", "miner")?,
+            MinerCommand::Status => service_status("miner")?,
         },
         Command::Doctor => {
             let health = service.health().await;
@@ -482,42 +738,48 @@ async fn main() -> anyhow::Result<()> {
                 .run()
                 .await?;
         }
-        Command::Node(node) => {
-            let human = Address::new(ChainId::ZionL1, vec![], &node.human)
-                .map_err(|e| anyhow!("invalid human address: {e}"))?;
-            let issobella = Address::new(ChainId::ZionL1, vec![], &node.issobella)
-                .map_err(|e| anyhow!("invalid issobella address: {e}"))?;
+        Command::Node(node) => match node.command {
+            NodeCommand::Start(args) => {
+                let human = Address::new(ChainId::ZionL1, vec![], &args.human)
+                    .map_err(|e| anyhow!("invalid human address: {e}"))?;
+                let issobella = Address::new(ChainId::ZionL1, vec![], &args.issobella)
+                    .map_err(|e| anyhow!("invalid issobella address: {e}"))?;
 
-            let node_config = NodeConfig {
-                db_path: node.db_path,
-                rpc_addr: node.rpc,
-                p2p_addr: node.p2p,
-                v3_p2p_addr: "0.0.0.0:0".parse().unwrap(),
-                human_address: human,
-                issobella_address: issobella,
-                no_genesis: node.no_genesis,
-                seed_peers: node.peer,
-                v3_miner_address: String::new(),
-                v3_humanitarian_address: String::new(),
-                v3_issobella_address: String::new(),
-                v3_no_genesis: false,
-                v3_checkpoint_path: None,
-            };
+                let node_config = NodeConfig {
+                    db_path: args.db_path,
+                    rpc_addr: args.rpc,
+                    p2p_addr: args.p2p,
+                    v3_p2p_addr: "0.0.0.0:0".parse().unwrap(),
+                    human_address: human,
+                    issobella_address: issobella,
+                    no_genesis: args.no_genesis,
+                    seed_peers: args.peer,
+                    v3_miner_address: String::new(),
+                    v3_humanitarian_address: String::new(),
+                    v3_issobella_address: String::new(),
+                    v3_no_genesis: false,
+                    v3_checkpoint_path: None,
+                };
 
-            println!(
-                "Starting ZION L1 node; RPC={} P2P={}. Press Ctrl-C to stop.",
-                node_config.rpc_addr, node_config.p2p_addr
-            );
+                println!(
+                    "Starting ZION L1 node; RPC={} P2P={}. Press Ctrl-C to stop.",
+                    node_config.rpc_addr, node_config.p2p_addr
+                );
 
-            let node = Arc::new(Node::new(node_config).await?);
-            let (shutdown_tx, shutdown_rx) = watch::channel(false);
-            tokio::spawn(async move {
-                let _ = tokio::signal::ctrl_c().await;
-                let _ = shutdown_tx.send(true);
-            });
+                let node = Arc::new(Node::new(node_config).await?);
+                let (shutdown_tx, shutdown_rx) = watch::channel(false);
+                tokio::spawn(async move {
+                    let _ = tokio::signal::ctrl_c().await;
+                    let _ = shutdown_tx.send(true);
+                });
 
-            node.run(shutdown_rx).await?;
-        }
+                node.run(shutdown_rx).await?;
+            }
+            NodeCommand::Stop => systemctl_all("stop", "node")?,
+            NodeCommand::Status => service_status("node")?,
+            NodeCommand::Restart => systemctl_all("restart", "node")?,
+        },
+        Command::Service(svc) => handle_service_command(svc)?,
     }
 
     Ok(())
@@ -579,6 +841,59 @@ fn endpoint_from_cli(
     })
 }
 
+/// Strip any URL scheme/path from an RPC endpoint so it can be used
+/// with `tokio::net::TcpStream::connect`.
+fn clean_rpc_url(rpc_url: &str) -> &str {
+    let s = rpc_url.trim();
+    let s = s
+        .strip_prefix("http://")
+        .or(s.strip_prefix("https://"))
+        .unwrap_or(s);
+    s.split_once('/').map(|(h, _)| h).unwrap_or(s)
+}
+
+/// Send a single JSON-RPC request and read the first response line.
+async fn rpc_call_line(rpc_url: &str, request: &serde_json::Value) -> anyhow::Result<serde_json::Value> {
+    use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+    use tokio::net::TcpStream;
+
+    let url = clean_rpc_url(rpc_url);
+    let mut stream = TcpStream::connect(url)
+        .await
+        .with_context(|| format!("failed to connect to RPC at {url}"))?;
+
+    let payload = format!("{}\n", serde_json::to_string(request)?);
+    stream.write_all(payload.as_bytes()).await?;
+    stream.flush().await?;
+
+    let (reader, _) = stream.split();
+    let mut reader = BufReader::new(reader);
+    let mut line = String::new();
+    reader
+        .read_line(&mut line)
+        .await
+        .with_context(|| "failed to read RPC response")?;
+
+    serde_json::from_str(&line).with_context(|| "failed to parse RPC response")
+}
+
+/// Fetch the current V3 chain height from the L1 RPC.
+async fn get_chain_height(rpc_url: &str) -> anyhow::Result<u64> {
+    let request = serde_json::json!({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "getStatus",
+        "params": null
+    });
+    let response = rpc_call_line(rpc_url, &request).await?;
+    if let Some(err) = response["error"]["message"].as_str() {
+        bail!("getStatus error: {}", err);
+    }
+    response["result"]["chain_height"]
+        .as_u64()
+        .context("missing chain_height in getStatus response")
+}
+
 fn address_bytes(chain_id: &ChainId, encoded: &str) -> anyhow::Result<Vec<u8>> {
     use zion_l1_types::ChainFamily;
     match chain_id.family() {
@@ -590,5 +905,182 @@ fn address_bytes(chain_id: &ChainId, encoded: &str) -> anyhow::Result<Vec<u8>> {
             Ok(out.to_vec())
         }
         _ => Ok(vec![]),
+    }
+}
+
+/// Fetch spendable UTXOs for an address from the L1 RPC.
+async fn fetch_utxos(
+    rpc_url: &str,
+    address: &str,
+) -> anyhow::Result<Vec<zion_core::v3_wallet::SpendableUtxo>> {
+    let request = serde_json::json!({
+        "jsonrpc": "2.0",
+        "method": "getUtxos",
+        "params": {"address": address},
+        "id": 1
+    });
+    let response = rpc_call_line(rpc_url, &request).await?;
+
+    if let Some(err) = response["error"]["message"].as_str() {
+        bail!("getUtxos error: {}", err);
+    }
+
+    let utxos = response["result"]["utxos"]
+        .as_array()
+        .ok_or_else(|| anyhow!("no utxos field in RPC response"))?;
+
+    let result: Vec<zion_core::v3_wallet::SpendableUtxo> = utxos
+        .iter()
+        .filter_map(|u| {
+            let tx_hash_hex = u["tx_hash"].as_str()?;
+            let output_index = u["output_index"].as_u64()? as u32;
+            let amount = u["amount"].as_u64()?;
+            let tx_hash = hex::decode(tx_hash_hex).ok()?;
+            if tx_hash.len() != 32 {
+                return None;
+            }
+            let mut hash_arr = [0u8; 32];
+            hash_arr.copy_from_slice(&tx_hash);
+            Some(zion_core::v3_wallet::SpendableUtxo {
+                tx_hash: hash_arr,
+                output_index,
+                amount,
+                address: address.to_string(),
+            })
+        })
+        .collect();
+
+    Ok(result)
+}
+
+/// Submit a signed UTXO transaction to the L1 RPC.
+async fn submit_tx_json(rpc_url: &str, tx_json: &serde_json::Value) -> anyhow::Result<String> {
+    let request = serde_json::json!({
+        "jsonrpc": "2.0",
+        "method": "submitUtxoTransaction",
+        "params": {"transaction": tx_json},
+        "id": 1
+    });
+    let response = rpc_call_line(rpc_url, &request).await?;
+
+    if let Some(err) = response["error"]["message"].as_str() {
+        bail!("submitUtxoTransaction error: {}", err);
+    }
+
+    let result = response["result"].to_string();
+    Ok(result)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Service lifecycle management (systemd)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Map a service name to its systemd unit name.
+fn service_unit(name: &str) -> anyhow::Result<String> {
+    let unit = match name.to_lowercase().as_str() {
+        "node" | "l1" => "zion-v31-node.service",
+        "pool" => "zion-v31-pool.service",
+        "miner" => "zion-v31-miner.service",
+        "multichain" | "mc" => "zion-v31-multichain.service",
+        "dao" => "zion-v31-dao.service",
+        "all" => "all",
+        other => bail!("unknown service: {} (valid: node, pool, miner, multichain, dao, all)", other),
+    };
+    Ok(unit.to_string())
+}
+
+/// All V31 service unit names.
+const ALL_SERVICES: &[&str] = &[
+    "zion-v31-node.service",
+    "zion-v31-pool.service",
+    "zion-v31-miner.service",
+    "zion-v31-multichain.service",
+    "zion-v31-dao.service",
+];
+
+/// Run systemctl on one or all services.
+fn systemctl_all(action: &str, service: &str) -> anyhow::Result<()> {
+    let unit = service_unit(service)?;
+    if unit == "all" {
+        for svc in ALL_SERVICES {
+            println!("systemctl {} {}...", action, svc);
+            let output = std::process::Command::new("systemctl")
+                .arg(action)
+                .arg(svc)
+                .output();
+            match output {
+                Ok(o) if o.status.success() => println!("  ✓ {} — OK", svc),
+                Ok(o) => {
+                    let stderr = String::from_utf8_lossy(&o.stderr);
+                    println!("  ✗ {} — {}", svc, stderr.trim());
+                }
+                Err(e) => println!("  ✗ {} — {}", svc, e),
+            }
+        }
+    } else {
+        println!("systemctl {} {}...", action, unit);
+        let output = std::process::Command::new("systemctl")
+            .arg(action)
+            .arg(&unit)
+            .output()
+            .map_err(|e| anyhow!("failed to run systemctl: {e}"))?;
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            bail!("systemctl {} {} failed: {}", action, unit, stderr.trim());
+        }
+        println!("  ✓ {} — OK", unit);
+    }
+    Ok(())
+}
+
+/// Show status of one or all services.
+fn service_status(service: &str) -> anyhow::Result<()> {
+    let unit = service_unit(service)?;
+    if unit == "all" {
+        for svc in ALL_SERVICES {
+            let active = std::process::Command::new("systemctl")
+                .args(["is-active", "--quiet", svc])
+                .status()
+                .map(|s| s.success())
+                .unwrap_or(false);
+            let status = if active { "active" } else { "inactive" };
+            println!("  {:30} {}", svc, status);
+        }
+    } else {
+        let output = std::process::Command::new("systemctl")
+            .arg("status")
+            .arg(&unit)
+            .output()
+            .map_err(|e| anyhow!("failed to run systemctl: {e}"))?;
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        println!("{}", stdout);
+    }
+    Ok(())
+}
+
+/// Show recent logs for a service.
+fn service_logs(service: &str, lines: usize) -> anyhow::Result<()> {
+    let unit = service_unit(service)?;
+    if unit == "all" {
+        bail!("logs requires a specific service name, not 'all'");
+    }
+    let output = std::process::Command::new("journalctl")
+        .args(["-u", &unit, "--no-pager", "-n"])
+        .arg(lines.to_string())
+        .output()
+        .map_err(|e| anyhow!("failed to run journalctl: {e}"))?;
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    println!("{}", stdout);
+    Ok(())
+}
+
+/// Handle the service subcommand.
+fn handle_service_command(svc: ServiceArgs) -> anyhow::Result<()> {
+    match svc.command {
+        ServiceCommand::Start { service } => systemctl_all("start", &service),
+        ServiceCommand::Stop { service } => systemctl_all("stop", &service),
+        ServiceCommand::Restart { service } => systemctl_all("restart", &service),
+        ServiceCommand::Status { service } => service_status(&service),
+        ServiceCommand::Logs { service, lines } => service_logs(&service, lines),
     }
 }

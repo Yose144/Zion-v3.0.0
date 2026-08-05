@@ -1,9 +1,11 @@
 # ZION — Sůl této země
-## Jedenáct zastavení na cestě k Oasis
+## Dvanáct zastavení na cestě k Oasis — a jedna otázka pro stavitele na konci
 
 **Status: koncept / narativní řada — k diskuzi před publikací.**
 **Jazyk:** čeština (první průchod; anglická verze až po schválení tónu).
 **Vztahuje se k:** čtyřem knihám ZIONu (Genesis · Kvantová revoluce · Ekam Deeksha · Terra Nova), k technickému whitepaperu 3.1 a k L4 Oasis (Consciousness Levels, Golden Egg, avataři).
+
+Prvních jedenáct zastavení tě provede solí, rozpuštěním, chutí vody, cestou bez mapy, archou a branou do Oasis. Dvanácté zastavení je jiné: nevypráví další podobenství, ale ptá se, co uděláš teď, dokud je síť ještě malá a dveře archy ještě otevřené.
 
 ---
 
@@ -35,10 +37,13 @@ Tohle rozdělení není formalita. Je to **jádro upřímnosti** téhle řady: p
 | 9 | [Bohyně Rádha a avataři v Oasis](./09-Bohyne-Radha-a-Avatari-Oasis.md) | Bohyně Rádha, avataři, ženská energie a radost z hry | L4 Oasis / Všechny |
 | 10 | [První svět Oasis a Best of Avataři](./10-Prvni-Svet-Oasis-a-Best-of-Avatari.md) | Zahrada Hiranyagarbha, 8 teritorií, 5 reward poolů, Best of Avataři | L4 Oasis / Všechny |
 | 11 | [Brána prvního hráče — volba cesty](./11-Brana-Prvniho-Hrace-a-Volba-Cesty.md) | Vstup do Oasis, vlastní postava, sedm cest a první výzvy | L4 Oasis / Všechny |
+| 12 | [Hodina před deštěm](./12-Hodina-Pred-Destem.md) | Kovář a sedlák u archy, skutečný příběh Bitcoin Pizza Day | Genesis / Terra Nova |
 
-Epizody na sebe volně navazují (společný rámec: večer u ohně, který se postupně stává stavbou lodi), ale každá jde číst i samostatně. Epizoda 10 popisuje První svět Oasis a jeho teritoria. Epizoda 11 navazuje prvním vstupem hráče a poctivě odděluje implementovaný backend, archivní herní návrh a budoucí klientské rozhraní.
+Epizody na sebe volně navazují (společný rámec: večer u ohně, který se postupně stává stavbou lodi), ale každá jde číst i samostatně. Epizoda 10 popisuje První svět Oasis a jeho teritoria. Epizoda 11 navazuje prvním vstupem hráče a poctivě odděluje implementovaný backend, archivní herní návrh a budoucí klientské rozhraní. Epizoda 12 knihu uzavírá a míří konkrétně na stavitele a těžaře: proč je poctivě ověřitelnou výhodou vstoupit do mladé sítě dřív, než se zaplní — bez jediného příslibu ceny.
 
-**Zkrácená marketingová verze pro širokou veřejnost:** [`Onboarding.md`](../Onboarding.md) — jeden dokument, který celou řadu shrnuje do jednoduché pozvánky s prvními kroky.
+**Zkrácená marketingová verze pro širokou veřejnost:** [`Onboarding.md`](./Onboarding.md) — jeden dokument, který celou řadu shrnuje do jednoduché pozvánky s prvními kroky.
+
+**Kanonický onboarding (úplný, technický + narativní, CZ i EN):** [`ZION_ONBOARDING.md`](./ZION_ONBOARDING.md) — [`English version`](./ZION_ONBOARDING_EN.md).
 
 ---
 

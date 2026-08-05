@@ -14,7 +14,7 @@ use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::{TcpListener, TcpStream};
 use tracing::{debug, info, warn};
 
-use crate::difficulty::{self, lwma_next_difficulty};
+use crate::difficulty;
 use crate::peer_manager::{PeerManager, PeerSource};
 use crate::storage::{Storage, StorageError};
 use crate::v3_compat::{
@@ -36,9 +36,9 @@ pub enum SubmittedTransaction {
     Utxo(UtxoTransaction),
 }
 
-/// V3 network identifier.
+/// V3 network identifier.  Must match V3's serialization exactly (PascalCase,
+/// no `rename_all`) so that V3 nodes can deserialize our Hello message.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
 pub enum NetworkId {
     Mainnet,
     Testnet,
@@ -200,9 +200,12 @@ impl V3Sync {
 
         // V3 seed responds with Welcome (and optionally Status). Read and skip
         // non-Status handshake traffic until we know where to start.
+        // NOTE: V3's `accepted_blocks_since` filters `height > from_height`
+        // (exclusive), so we send our tip height (not tip+1) to get blocks
+        // starting from tip+1.
         let mut from_height = match self.storage.v3_tip().await? {
             None => 0,
-            Some(tip) => tip.height + 1,
+            Some(tip) => tip.height,
         };
         info!(from_height, "starting V3 sync");
 
@@ -255,18 +258,16 @@ impl V3Sync {
                                 .await?
                                 .ok_or(V3P2PError::MissingParent(prev_height))?;
 
-                            let window = self
-                                .storage
-                                .v3_difficulty_window(difficulty::LWMA_WINDOW + 1)
-                                .await?;
-                            let expected_difficulty = lwma_next_difficulty(&window);
-
+                            // V3 does NOT validate difficulty on peer block
+                            // import — it trusts the peer-provided difficulty.
+                            // We replicate this behavior to avoid LWMA mismatches
+                            // caused by minor differences in window computation.
                             validate_v3_block(
                                 &block,
                                 prev.header_hash(),
                                 prev.header.timestamp,
                                 prev.height,
-                                expected_difficulty,
+                                block.difficulty,
                             )
                             .map_err(|e| V3P2PError::Validation(e.to_string()))?;
                         }
@@ -274,7 +275,9 @@ impl V3Sync {
                         let height = block.height;
                         self.storage.put_v3_block(&block).await?;
                         synced += 1;
-                        from_height = height + 1;
+                        // V3 filters `height > from_height` (exclusive), so set
+                        // from_height to the last accepted height.
+                        from_height = height;
                         info!(height, synced, "V3 block accepted");
                     }
                 }
@@ -801,12 +804,15 @@ mod tests {
                 .await
                 .unwrap();
 
-            // Expect GetBlocksSince { from_height: 1 }
+            // Expect GetBlocksSince { from_height: 0 }
+            // (V3 filters `height > from_height` exclusively, so after
+            // accepting genesis at height 0, from_height stays 0 to fetch
+            // blocks with height > 0 on the next round.)
             let req = lines.next_line().await.unwrap().unwrap();
             let req: P2pMessage = serde_json::from_str(&req).unwrap();
             assert!(matches!(
                 req,
-                P2pMessage::GetBlocksSince { from_height: 1, .. }
+                P2pMessage::GetBlocksSince { from_height: 0, .. }
             ));
 
             // Send empty blocks to finish

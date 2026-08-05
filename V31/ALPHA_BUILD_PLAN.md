@@ -79,7 +79,7 @@ Tento dokument je **jediný kanonický plán** pro stavbu `V31/`. Všechny rozho
 | Oblast | V3 | V31 | Akce |
 |--------|-----|-----|------|
 | Node runtime | 7700+ řádků `chain.rs`, `bin/node.rs` | 3 malé soubory | Portovat postupně |
-| PoW | `deeksha_lite_v1`, `deeksha_chv3`, `deeksha_lite_fire` | `HeightAwareDeeksha` s height-gated dispatch | Hotovo pro Alpha |
+| PoW | `deeksha_lite_v1`, `deeksha_chv3`, `deeksha_lite_fire` | `EkamDeeksha` — jediný kanonický PoW pro všechny výšky | Hotovo pro Alpha |
 | AuxPoW | `zion-auxpow` crate, 24 coinů | stub 15 coinů | Portovat stratum + hasher subset |
 | Storage | LMDB/SQLite hybrid | SQLite pro V3 checkpoint sync | Vybrat jeden backend (SQLite nebo LMDB) |
 | P2P | wire protocol v `p2p.rs` | V3 client + listen server v `v3_p2p` | Hotovo pro Alpha; reconnect rate limit implementován |
@@ -171,7 +171,7 @@ Všechny 5 kroků z předchozího plánu je **hotovo** (2026-07-28). Další pr�
 2. ~~**Production P2P hardening**~~ — **Hotovo (2026-07-30):** `PeerManager` sdílený mezi canonical a V3 P2P, max inbound limit, ban score, `GetPeers`/`Peers` odpovědi ve welcome zprávě.
 3. ~~**Custom AMM deploy v `zion-multichain`**~~ — **Hotovo (2026-07-30):** SQLite persistence AMM poolů, `deploy_pool`, `/v1/swap/pool/deploy` + `/v1/swap/pools`, načítání poolů při startu.
 4. ~~**WARP API rate limiting + auth v `zion-multichain`**~~ — **Hotovo (2026-07-30):** per-IP token bucket, optional `Authorization: Bearer <api_key>`, `/health` public, `ConnectInfo` zapojen.
-5. ~~**Height-aware PoW fork gating + stress testy**~~ — **Hotovo (2026-07-30):** `HeightAwareDeeksha` dispatchuje dle výšky, `zion-core` obsahuje unit testy napříč fork boundary (CHV3 4500, Fire 5000) a sweep 0–5500.
+5. ~~**Kanonický Ekam Deeksha PoW + stress testy**~~ — **Hotovo (2026-08-07):** `EkamDeeksha` z `zion-cosmic-harmony` je jediný PoW pro všechny výšky; `zion-core` obsahuje unit testy mine/verify a nonce-search sweep 0–5500.
 6. ~~**HTLC persistence**~~ — **Hotovo (2026-07-30):** SQLite backend pro HTLC v `zion-multichain`.
 7. ~~**Tag `v3.1.0-alpha.2`**~~ — **Hotovo (2026-07-30):** tag vytvořen a pushnut; workspace build prochází.
 8. ~~**Finální cut-over plán V3 → V31**~~ — **Hotovo (2026-07-30):** vytvořen `V31/CUTOVER_PLAN.md` s rolling blue/green strategií.

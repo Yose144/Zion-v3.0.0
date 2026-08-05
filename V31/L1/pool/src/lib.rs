@@ -1,21 +1,35 @@
 //! ZION stratum pool — PPLNS share accounting and AuxPoW validation.
 
+pub mod api;
+pub mod auxpow_bridge;
+pub mod auxpow_runtime;
+pub mod block_tracker;
 pub mod config;
+pub mod deferred_payout;
+pub mod ncl_gateway;
+pub mod notifications;
+pub mod payout;
 pub mod pool;
 pub mod pplns;
+pub mod profit_switcher;
 pub mod rate_limit;
+pub mod revenue_proxy;
+pub mod revenue_scheduler;
 pub mod rpc_client;
+pub mod routing;
 pub mod share;
+pub mod share_forwarder;
+pub mod share_relay;
 pub mod store;
 pub mod stratum;
 pub mod stratum_v1;
+pub mod telemetry;
+pub mod template_cache;
+pub mod tls;
 pub mod validator;
 pub mod v3_pplns;
 pub mod v3_protocol;
-
-// TODO: revenue_proxy needs V3 CoinProfile fields (ticker, pool_host, pool_port)
-//       which differ from V31's CoinProfile. Port after ChainState.
-pub mod revenue_proxy;
+pub mod vardiff;
 
 pub use config::{PoolConfig, RateLimitConfig};
 pub use pool::{Pool, PoolError};

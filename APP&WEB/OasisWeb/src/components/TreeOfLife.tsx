@@ -887,7 +887,7 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
       </sprite>
 
       {/* Contact-style light fountain — spiraling vertical streaks */}
-      <LightFountain rng={rng} count={isMobile ? 500 : 1000} />
+      <LightFountain rng={rng} count={isMobile ? 300 : 500} />
 
       {/* Pulsing energy rings around the tree */}
       <EnergyRings />
@@ -899,7 +899,7 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
       <pointLight position={[0, 0.45, 0]} intensity={2.5} distance={12} decay={1.5} color="#fff7d6" />
       <pointLight position={[0, 2, 0]} intensity={1.2} distance={10} decay={1.5} color="#a855f7" />
 
-      <SporeField count={isMobile ? 400 : 800} rng={rng} />
+      <SporeField count={isMobile ? 200 : 400} rng={rng} />
       <LeafCanopy anchors={leafAnchors} leavesPerAnchor={isMobile ? 1 : 2} rng={rng} />
     </group>
   );

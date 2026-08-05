@@ -1,27 +1,17 @@
-# Root workspace — unifies V3 mainnet crates + research crates.
-# V3/Cargo.toml is kept for reference but its workspace definition is shadowed
-# because these crates are listed as members here.
+# Root workspace manifest.
+# V3 has been archived to archive/V3/ and AuXpow has been merged into V31.
+# The active Mainnet Alpha workspace is in V31/Cargo.toml.
+# Use `cd V31 && cargo ...` for all builds, tests, and releases.
+[package]
+name = "zion-root"
+version = "3.1.0-alpha.2"
+edition = "2021"
+license = "MIT"
+publish = false
+description = "Repository root meta-package; active workspace is in V31/"
+
 [workspace]
-members = [
-    "V3/L1/core",
-    "V3/L1/pool",
-    "V3/L1/miner",
-    "V3/L1/cosmic-harmony",
-    "V3/L1/native-ffi",
-    "V3/L2/bridge",
-    "V3/L2/dao",
-    "V3/L2/atomic-swap",
-    "V3/L2/swap-aggregator",
-    "V3/L3/ncl",
-    "V3/L3/warp",
-    "V3/L3/ai-native",
-    "V3/L4/oasis",
-    "V3/L5/free-world",
-    "V3/L6/issobella",
-    "V3/sdk",
-    "V3/cli",
-    "AuXpow",
-]
+members = ["."]
 resolver = "2"
 
 [workspace.package]

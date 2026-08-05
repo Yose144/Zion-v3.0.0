@@ -6,12 +6,12 @@ import { useLang } from '@/contexts/LanguageContext';
 import Link from 'next/link';
 
 const OnboardBannerCopy = {
-  title: { cs: 'Onboard to ZION', en: 'Onboard to ZION' },
+  title: { cs: 'Sůl této země — Vítej na palubě', en: 'Salt of the Earth — Welcome Aboard' },
   body: {
-    cs: 'Peněženka, nód, těžba, bridge a první DApp — kompletní průvodce pro nové uživatele.',
-    en: 'Wallet, node, mining, bridge, and first DApp — a complete guide for new users.',
+    cs: 'Síť je pořád malá a odměna za blok je dnes nejvyšší, jakou kdy bude. Přečti si proč — beze slibu ceny, jen s fakty.',
+    en: 'The network is still small and today\u2019s block reward is the highest it will ever be. Read why — no price promises, just the facts.',
   },
-  cta: { cs: 'Začít onboard', en: 'Start Onboarding' },
+  cta: { cs: 'Otevřít onboard', en: 'Open Onboarding' },
 };
 
 export default function OnboardBanner() {
@@ -42,7 +42,7 @@ export default function OnboardBanner() {
             </div>
           </div>
           <Link
-            href="/onboard"
+            href="/onboard#why-now"
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 px-4 py-2 text-sm font-semibold text-emerald-100 transition-colors shrink-0"
           >
             <Rocket className="h-4 w-4" />

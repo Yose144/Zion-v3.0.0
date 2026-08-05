@@ -24,7 +24,7 @@
 #[cfg(windows)]
 mod win_seh {
     use std::os::raw::{c_long, c_void};
-    use std::sync::atomic::{AtomicBool, AtomicPtr, Ordering};
+    use std::sync::atomic::{AtomicBool, Ordering};
 
     pub const EXCEPTION_ACCESS_VIOLATION: u32 = 0xC0000005;
 
@@ -49,13 +49,13 @@ mod win_seh {
         pub context_record: *mut ContextRecord,
     }
 
-    pub type PVECTORED_EXCEPTION_HANDLER =
+    pub type PvectoredExceptionHandler =
         Option<extern "system" fn(*mut ExceptionPointers) -> c_long>;
 
     extern "system" {
         pub fn AddVectoredExceptionHandler(
             first: u32,
-            handler: PVECTORED_EXCEPTION_HANDLER,
+            handler: PvectoredExceptionHandler,
         ) -> *mut c_void;
         pub fn RemoveVectoredExceptionHandler(handle: *mut c_void) -> u32;
     }

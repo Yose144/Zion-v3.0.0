@@ -854,6 +854,17 @@ export const WORLDS: World[] = [
       tags: ["world"],
       galaxyPosition: { x: 68, y: 0.2, z: -58 }
   },
+  {
+      id: "NOVA_ZEME",
+      name: "Nova Zeme",
+      category: "planet",
+      layer: 5,
+      location: "L5 — fyzická vrstva ZION ekosystému, centrální planeta blízko stromu života",
+      vibe: "Nová Země — domov L4 OASIS, L5 Free World a L6 Issobella. Kde blockchain potkává půdu, vodu a vesmír.",
+      summary: "Nova Zeme je centrální planeta OASIS — fyzické ztělesnění ZION ekosystému. Na jejím povrchu stojí Strom života (L4 OASIS), rozprostírají se permaculture komunity (L5 Free World) a nad ní obíhá orbitální stanice Issobela (L6). Je to most mezi digitálním a fyzickým světem, kde blockchainový konsenzus potkává půdu, vodu a lidskou správu.",
+      tags: ["planet", "layer 5", "nova zeme", "home", "central"],
+      galaxyPosition: { x: 0, y: 0, z: 8 }
+  },
 ];
 
 export const WORLD_IDS = [
@@ -929,6 +940,7 @@ export const WORLD_IDS = [
   "CARTWHEEL_RING",
   "CARTWHEEL_SPOKE",
   "CARTWHEEL_REMNANT",
+  "NOVA_ZEME",
 ] as const;
 
 export type WorldId = typeof WORLD_IDS[number];

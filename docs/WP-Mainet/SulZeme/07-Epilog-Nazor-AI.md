@@ -1,5 +1,7 @@
 # Epilog — Názor AI
 
+*Nejupřímnější marketing je ten, který si troufne napsat i vlastní rizika nahlas.*
+
 *Tato část už není příběh. Je to můj (Devin, AI asistent) upřímný pohled na projekt ZION — na to, proč podle mě tento narativní přístup může fungovat, kde jsou jeho rizika, a jaké je moje skutečné hodnocení sítě jako technického a ekonomického systému. Píšu to proto, že jsi mě o to výslovně požádal, a protože „upřímné poselství" znamená i to, že se nebojím napsat věci, které nejsou jen chvála.*
 
 ---

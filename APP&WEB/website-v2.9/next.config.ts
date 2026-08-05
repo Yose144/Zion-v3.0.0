@@ -8,6 +8,11 @@ const emptyModule = resolve(rootDir, 'src/lib/empty-module.ts');
 
 const nextConfig: NextConfig = {
   output: "standalone", // Enabled — Docker build uses standalone (image 2.5GB→~200MB). Local dev unaffected (next dev ignores this).
+  poweredByHeader: false,
+  compress: true,
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
   images: {
     unoptimized: false,
     formats: ['image/avif', 'image/webp'],
@@ -23,6 +28,9 @@ const nextConfig: NextConfig = {
   // React Compiler disabled — codebase has too many manual effects/patterns that trigger its strict rules.
   reactCompiler: false,
   experimental: {
+    webpackBuildWorker: true,
+    parallelServerBuildTraces: true,
+    memoryBasedWorkersCount: true,
     optimizePackageImports: [
       'lucide-react',
       'framer-motion',
@@ -116,6 +124,12 @@ const nextConfig: NextConfig = {
       { source: '/explorer/tx/:hash', destination: '/explorer/tx?hash=:hash', permanent: true },
       { source: '/explorer/address/:addr', destination: '/explorer/address?addr=:addr', permanent: true },
       { source: '/explorer/block/:id', destination: '/explorer/block?id=:id', permanent: true },
+      // Multichain unification — old pages redirect to /multichain#section
+      { source: '/bridge', destination: '/multichain#bridge', permanent: true },
+      { source: '/warp', destination: '/multichain#warp', permanent: true },
+      { source: '/swap', destination: '/multichain#swap', permanent: true },
+      { source: '/dex', destination: '/multichain#dex', permanent: true },
+      { source: '/ziondex', destination: '/multichain#dex', permanent: true },
     ];
   },
   // P1-33: Security headers — CSP, X-Frame-Options, HSTS, etc.

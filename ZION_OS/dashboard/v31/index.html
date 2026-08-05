@@ -38,21 +38,82 @@ body{font-family:'Inter',system-ui,sans-serif;background:
 .stat-card .label{font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:#94a3b8;}
 .stat-card .value{font-size:1.45rem;font-weight:800;}
 .stat-card .sub{font-size:0.75rem;color:#64748b;}
+.badge{font-size:0.65rem;padding:0.15rem 0.5rem;border-radius:0.35rem;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;}
+.badge-green{background:rgba(34,197,94,0.2);color:#4ade80;border:1px solid rgba(34,197,94,0.3);}
+.badge-red{background:rgba(239,68,68,0.2);color:#fca5a5;border:1px solid rgba(239,68,68,0.3);}
+.badge-yellow{background:rgba(234,179,8,0.2);color:#fde047;border:1px solid rgba(234,179,8,0.3);}
+.badge-purple{background:rgba(147,51,234,0.2);color:#d8b4fe;border:1px solid rgba(147,51,234,0.3);}
+.sync-bar{height:0.5rem;border-radius:999px;background:rgba(255,255,255,0.08);overflow:hidden;}
+.sync-bar-fill{height:100%;border-radius:999px;transition:width .5s ease;}
 </style>
 </head>
 <body class="p-4 md:p-8">
 <div class="max-w-7xl mx-auto">
+  <!-- Header -->
   <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
     <div>
-      <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight"><span style="color:rgb(255 215 0)">V31</span> Mainnet Alpha</h1>
-      <p class="text-sm text-gray-400 mt-1">Izolované porty <span style="color:rgb(6 182 212)">9445 / 8446 / 8335</span> — žádný konflikt s V3.</p>
+      <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">
+        <span style="color:rgb(255 215 0)">V31</span> Mainnet Alpha
+        <span class="badge badge-purple ml-2">v3.1.0-alpha.2</span>
+      </h1>
+      <p class="text-sm text-gray-400 mt-1">
+        systemd <span class="font-mono text-cyan-300">zion-v31-node.service</span> ·
+        P2P <span class="font-mono text-cyan-300">8335</span> ·
+        RPC <span class="font-mono text-cyan-300">9445</span> ·
+        V3 sync <span style="color:rgb(34 197 94)">LIVE</span>
+      </p>
     </div>
     <div class="flex gap-2">
-      <a href="/" class="btn"><i class="fas fa-arrow-left mr-2"></i>Zpět</a>
+      <a href="/legacy" class="btn btn-purple"><i class="fas fa-box-archive mr-2"></i>Legacy V3</a>
+      <a href="/dashboard" class="btn"><i class="fas fa-chart-line mr-2"></i>Full Dashboard</a>
       <button id="btn-refresh" class="btn" title="Aktualizovat"><i class="fas fa-sync-alt mr-2"></i>Refresh</button>
     </div>
   </div>
 
+  <!-- Mainnet Alpha Banner -->
+  <div class="card p-5 mb-6" style="border-color:rgba(255,215,0,0.3); background:linear-gradient(145deg,rgba(255,215,0,0.06),rgba(15,20,35,0.92));">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-lg font-bold">
+        <span style="color:rgb(255 215 0)">V31 Mainnet Alpha</span>
+        <span class="badge badge-purple ml-2" id="banner-version">3.1.0-alpha.2</span>
+      </h2>
+      <span id="banner-network" class="badge badge-green">mainnet</span>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div class="stat-card">
+        <div class="label">Height</div>
+        <div class="value" style="color:rgb(6 182 212)" id="banner-height">—</div>
+        <div class="sub" id="banner-height-sub">chain tip</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Sync Lag</div>
+        <div class="value" style="color:rgb(251 191 36)" id="banner-sync-lag">—</div>
+        <div class="sub">blocks behind V3</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Pool Hashrate</div>
+        <div class="value" style="color:rgb(16 185 129)" id="banner-pool-hashrate">—</div>
+        <div class="sub" id="banner-pool-hashrate-sub">H/s</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Shares / sec</div>
+        <div class="value" style="color:rgb(147 51 234)" id="banner-shares-sec">—</div>
+        <div class="sub">pool accepted</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Multichain /health</div>
+        <div class="value" id="banner-multichain-health">—</div>
+        <div class="sub" id="banner-multichain-health-sub">transfers</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">DAO Proposals</div>
+        <div class="value" style="color:rgb(255 215 0)" id="banner-dao-proposals">—</div>
+        <div class="sub" id="banner-dao-proposals-sub">active / total</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
   <div class="card p-2 mb-6">
     <nav class="flex gap-6 px-2" id="tabs">
       <button data-tab="overview" class="tab active py-3 px-1 font-semibold text-sm"><i class="fas fa-tachometer-alt mr-2"></i>Přehled</button>
@@ -65,32 +126,83 @@ body{font-family:'Inter',system-ui,sans-serif;background:
 
   <!-- OVERVIEW -->
   <div id="tab-overview" class="tab-pane">
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4" id="status-grid">
-      <div class="card p-4 stat-card"><div class="label">Node</div><div class="value" id="kpi-node">…</div><div class="sub" id="kpi-node-sub">—</div></div>
-      <div class="card p-4 stat-card"><div class="label">Pool</div><div class="value" id="kpi-pool">…</div><div class="sub" id="kpi-pool-sub">—</div></div>
-      <div class="card p-4 stat-card"><div class="label">Výška kanonického řetězce</div><div class="value" style="color:rgb(6 182 212)" id="kpi-canonical">—</div><div class="sub" id="kpi-canonical-sub">—</div></div>
-      <div class="card p-4 stat-card"><div class="label">V3 checkpoint výška</div><div class="value" style="color:rgb(147 51 234)" id="kpi-v3">—</div><div class="sub" id="kpi-v3-sub">—</div></div>
-      <div class="card p-4 stat-card"><div class="label">Mempool</div><div class="value" id="kpi-mempool">—</div><div class="sub" id="kpi-mempool-sub">—</div></div>
-      <div class="card p-4 stat-card"><div class="label">Obtížnost</div><div class="value" id="kpi-difficulty">—</div><div class="sub" id="kpi-difficulty-sub">—</div></div>
-      <div class="card p-4 stat-card"><div class="label">Cíl</div><div class="value text-sm" id="kpi-target">—</div><div class="sub" id="kpi-target-sub">—</div></div>
-      <div class="card p-4 stat-card"><div class="label">Sync režim</div><div class="value" id="kpi-sync-mode">—</div><div class="sub" id="kpi-sync-mode-sub">—</div></div>
+    <!-- Sync progress bar -->
+    <div class="card p-5 mb-4">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="text-lg font-bold"><i class="fas fa-sync-alt mr-2" style="color:rgb(6 182 212)"></i>V3 P2P Sync</h2>
+        <span id="sync-lag-badge" class="badge badge-yellow">—</span>
+      </div>
+      <div class="sync-bar mb-2">
+        <div id="sync-bar-fill" class="sync-bar-fill" style="width:0%;background:linear-gradient(90deg,rgb(6 182 212),rgb(34 197 94));"></div>
+      </div>
+      <div class="flex justify-between text-sm text-gray-400">
+        <span>V31: <span id="sync-v31-height" class="font-mono text-cyan-300">—</span></span>
+        <span>V3: <span id="sync-v3-height" class="font-mono text-purple-300">—</span></span>
+      </div>
     </div>
 
+    <!-- KPI Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4" id="status-grid">
+      <div class="card p-4 stat-card">
+        <div class="label">Node (systemd)</div>
+        <div class="value" id="kpi-node">…</div>
+        <div class="sub" id="kpi-node-sub">—</div>
+      </div>
+      <div class="card p-4 stat-card">
+        <div class="label">Service Status</div>
+        <div class="value" id="kpi-systemd">—</div>
+        <div class="sub" id="kpi-systemd-sub">—</div>
+      </div>
+      <div class="card p-4 stat-card">
+        <div class="label">V31 DB Height</div>
+        <div class="value" style="color:rgb(6 182 212)" id="kpi-db-height">—</div>
+        <div class="sub" id="kpi-db-height-sub">—</div>
+      </div>
+      <div class="card p-4 stat-card">
+        <div class="label">V3 Reference Height</div>
+        <div class="value" style="color:rgb(147 51 234)" id="kpi-v3-height">—</div>
+        <div class="sub" id="kpi-v3-height-sub">—</div>
+      </div>
+      <div class="card p-4 stat-card">
+        <div class="label">Tip Hash</div>
+        <div class="value text-sm font-mono" id="kpi-tip-hash">—</div>
+        <div class="sub" id="kpi-tip-hash-sub">—</div>
+      </div>
+      <div class="card p-4 stat-card">
+        <div class="label">Mempool</div>
+        <div class="value" id="kpi-mempool">—</div>
+        <div class="sub" id="kpi-mempool-sub">—</div>
+      </div>
+      <div class="card p-4 stat-card">
+        <div class="label">Difficulty</div>
+        <div class="value" id="kpi-difficulty">—</div>
+        <div class="sub" id="kpi-difficulty-sub">—</div>
+      </div>
+      <div class="card p-4 stat-card">
+        <div class="label">Memory</div>
+        <div class="value" id="kpi-memory">—</div>
+        <div class="sub" id="kpi-memory-sub">—</div>
+      </div>
+    </div>
+
+    <!-- Control -->
     <div class="card p-5 mb-4">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-        <h2 class="text-lg font-bold"><i class="fas fa-server mr-2" style="color:rgb(255 215 0)"></i>Ovládání runtime</h2>
+        <h2 class="text-lg font-bold"><i class="fas fa-server mr-2" style="color:rgb(255 215 0)"></i>systemd Control</h2>
         <div class="flex gap-2">
-          <button id="btn-start" class="btn btn-gold"><i class="fas fa-play mr-2"></i>Start V31</button>
-          <button id="btn-stop" class="btn btn-red"><i class="fas fa-stop mr-2"></i>Stop V31</button>
+          <button id="btn-start" class="btn btn-gold"><i class="fas fa-play mr-2"></i>Start</button>
+          <button id="btn-restart" class="btn btn-purple"><i class="fas fa-redo mr-2"></i>Restart</button>
+          <button id="btn-stop" class="btn btn-red"><i class="fas fa-stop mr-2"></i>Stop</button>
         </div>
       </div>
       <div class="text-sm text-gray-400" id="last-update">Poslední update: —</div>
       <div class="text-sm text-cyan-300 mt-2 hidden" id="control-status"></div>
     </div>
 
+    <!-- Logs preview -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div class="card p-4">
-        <h3 class="font-bold mb-2 text-sm uppercase text-gray-400">Node log (tail 40)</h3>
+        <h3 class="font-bold mb-2 text-sm uppercase text-gray-400">Node log (journald, tail 40)</h3>
         <pre class="log-box" id="overview-node-log">Loading…</pre>
       </div>
       <div class="card p-4">
@@ -104,7 +216,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:
   <div id="tab-logs" class="tab-pane hidden">
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div class="card p-5">
-        <h2 class="text-lg font-bold mb-3"><i class="fas fa-cube mr-2" style="color:rgb(6 182 212)"></i>Node Log</h2>
+        <h2 class="text-lg font-bold mb-3"><i class="fas fa-cube mr-2" style="color:rgb(6 182 212)"></i>Node Log (journald)</h2>
         <pre class="log-box" id="node-log">Loading…</pre>
       </div>
       <div class="card p-5">
@@ -116,29 +228,34 @@ body{font-family:'Inter',system-ui,sans-serif;background:
 
   <!-- SYNC -->
   <div id="tab-sync" class="tab-pane hidden">
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+    <!-- Sync status -->
+    <div class="card p-5 mb-6">
+      <h2 class="text-lg font-bold mb-4"><i class="fas fa-info-circle mr-2" style="color:rgb(6 182 212)"></i>Sync Status</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div><span class="text-gray-400">V3 state height:</span> <span id="sync-v3-state" class="font-mono text-purple-300">—</span></div>
+        <div><span class="text-gray-400">V31 DB height:</span> <span id="sync-v31-db" class="font-mono text-cyan-300">—</span></div>
+        <div><span class="text-gray-400">Sync lag:</span> <span id="sync-lag" class="font-mono text-yellow-300">—</span></div>
+        <div><span class="text-gray-400">Checkpoint:</span> <span id="sync-checkpoint" class="font-mono">—</span></div>
+      </div>
+      <div class="mt-3 text-sm text-gray-400" id="sync-last-action">Žádná sync akce dosud neproběhla.</div>
+    </div>
+
+    <!-- Sync actions -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
       <div class="card p-5">
-        <h2 class="text-lg font-bold mb-3"><i class="fas fa-database mr-2" style="color:rgb(6 182 212)"></i>Stav V3</h2>
-        <p class="text-sm text-gray-400 mb-4">Importuje aktuální V3 state z <span class="font-mono text-cyan-300">/opt/zion/data/state</span> jako checkpoint. Nereplayuje celou historii, ale zachová finální zůstatky a UTXO.</p>
-        <div class="text-sm mb-4 font-mono" id="v3-source-info">V3 state: —</div>
+        <h2 class="text-lg font-bold mb-3"><i class="fas fa-database mr-2" style="color:rgb(6 182 212)"></i>Import z V3 state</h2>
+        <p class="text-sm text-gray-400 mb-4">Exportuje aktuální V3 state jako checkpoint a restartuje V31 node. Použij pokud V31 DB je poškozená nebo needs reset.</p>
         <button id="btn-sync-state" class="btn btn-purple w-full"><i class="fas fa-download mr-2"></i>Import z V3 state</button>
       </div>
 
       <div class="card p-5">
         <h2 class="text-lg font-bold mb-3"><i class="fas fa-network-wired mr-2" style="color:rgb(255 215 0)"></i>P2P sync</h2>
-        <p class="text-sm text-gray-400 mb-4">Připojí se k běžící V3 síti jako peer a pokusí se stáhnout nové bloky. Vyžaduje, aby V3 uzel běžel na stejném serveru.</p>
+        <p class="text-sm text-gray-400 mb-4">V31 se připojí k V3 síti a synchronizuje nové bloky. V31 už běží s P2P sync — toto je pro re-sync z jiných peerů.</p>
         <div class="flex gap-2 mb-4">
           <label class="text-sm text-gray-400">Seedy:</label>
-          <input id="v3-peers" type="text" value="127.0.0.1:8333,127.0.0.1:8334" class="flex-1 bg-black/40 border border-white/10 rounded px-2 py-1 text-sm font-mono text-cyan-300" />
+          <input id="v3-peers" type="text" value="127.0.0.1:8333" class="flex-1 bg-black/40 border border-white/10 rounded px-2 py-1 text-sm font-mono text-cyan-300" />
         </div>
         <button id="btn-sync-p2p" class="btn btn-purple w-full"><i class="fas fa-sync mr-2"></i>Start P2P sync</button>
-      </div>
-
-      <div class="card p-5">
-        <h2 class="text-lg font-bold mb-3"><i class="fas fa-info-circle mr-2" style="color:rgb(147 51 234)"></i>Sync info</h2>
-        <div id="sync-info" class="text-sm space-y-2 text-gray-300">
-          <p>Žádná sync akce dosud neproběhla.</p>
-        </div>
       </div>
     </div>
 

@@ -1,5 +1,7 @@
 # Epizoda 2 — Rozpuštění
 
+*Sůl na hromadě jen leží. Sůl ve vodě dává chuť celé řece.*
+
 > *„Tak jako řeka směřuje k oceánu, nechte i svou mysl plynout — bez lpění, bez odporu."*
 > — parafráze, inspirováno buddhistickou naukou o *anattá* (neulpívání)
 

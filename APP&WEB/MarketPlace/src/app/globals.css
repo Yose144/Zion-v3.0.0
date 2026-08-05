@@ -4,7 +4,7 @@
 
 /* ═══════════════════════════════════════════════════════════════
    ZION Theme Design System — OASIS MarketPlace
-   Aligned with docs/3.0.3/ZIONTHEME.md + maintenance.html background
+   Aligned with website-v2.9 design tokens for unified ZION visual.
    Core: Gold #ffd700 · Purple #9333ea · Cyan #06b6d4 · Blue #1e3a8a
    ═══════════════════════════════════════════════════════════════ */
 
@@ -570,4 +570,88 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* ─── Responsive page shell / container from website-v2.9 ─── */
+@layer utilities {
+  .zion-page {
+    min-height: 100vh;
+    position: relative;
+    padding-top: 6rem;
+    padding-bottom: 4rem;
+    overflow-x: hidden;
+    isolation: isolate;
+  }
+  @media (min-width: 768px) {
+    .zion-page {
+      padding-top: 7.5rem;
+      padding-bottom: 5rem;
+    }
+  }
+
+  .zion-shell {
+    min-height: 100vh;
+    position: relative;
+    background: transparent;
+    isolation: isolate;
+  }
+
+  .zion-container {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+    padding-inline: clamp(0.75rem, 3.5vw, 2rem);
+  }
+
+  .zion-section-title {
+    font-size: clamp(1.6rem, 4vw, 3rem);
+    line-height: 1.15;
+    font-weight: 700;
+    color: rgb(255 255 255);
+    letter-spacing: -0.02em;
+  }
+
+  .zion-section-sub {
+    margin-top: 0.75rem;
+    font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+    line-height: 1.75;
+    color: rgb(156 163 175);
+    max-width: 65ch;
+  }
+
+  .zion-page-heading {
+    font-size: clamp(2.2rem, 7vw, 5.5rem);
+    line-height: 1.05;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+
+  .zion-stat-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  }
+}
+
+/* ─── Mobile safety — force single column for grids without responsive prefix ─── */
+@media (max-width: 639px) {
+  .grid.grid-cols-2:not(.grid-cols-1):not(.sm\:grid-cols-2):not(.sm\:grid-cols-1),
+  .grid.grid-cols-3:not(.grid-cols-1):not(.sm\:grid-cols-3):not(.sm\:grid-cols-1),
+  .grid.grid-cols-4:not(.grid-cols-1):not(.sm\:grid-cols-4):not(.sm\:grid-cols-1),
+  .grid.grid-cols-5:not(.grid-cols-1):not(.sm\:grid-cols-5):not(.sm\:grid-cols-1),
+  .grid.grid-cols-6:not(.grid-cols-1):not(.sm\:grid-cols-6):not(.sm\:grid-cols-1) {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+}
+
+/* ─── Reduced motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

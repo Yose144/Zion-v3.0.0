@@ -3,8 +3,10 @@
 import { useAccount, useConnect, useDisconnect, useChainId } from 'wagmi';
 import { base } from 'wagmi/chains';
 import { useState, useRef, useEffect } from 'react';
+import { useLangT } from '@/lib/useTranslation';
 
 export default function ConnectButton() {
+  const { t } = useLangT();
   const { address, isConnected } = useAccount();
   const { connectors, connectAsync, isPending } = useConnect();
   const { disconnect } = useDisconnect();
@@ -32,12 +34,12 @@ export default function ConnectButton() {
           disabled={isPending}
           className="zion-button-primary text-sm"
         >
-          {isPending ? 'Connecting…' : 'Connect Wallet'}
+          {isPending ? t('nav.connecting') : t('nav.connectWallet')}
         </button>
         {walletMenu && (
           <div className="absolute right-0 mt-2 w-64 zion-section p-2 z-50">
             <div className="px-3 py-2 text-xs text-gray-500 border-b border-white/5 mb-1">
-              Choose wallet
+              {t('nav.chooseWallet')}
             </div>
             {connectors.map((c) => (
               <button
@@ -83,7 +85,7 @@ export default function ConnectButton() {
         <div className="absolute right-0 mt-2 w-56 zion-section p-2 z-50">
           {wrongChain && (
             <div className="px-3 py-2 text-xs text-oasis-rose border-b border-white/5 mb-1">
-              Wrong network — switch to Base
+              {t('nav.wrongNetwork')}
             </div>
           )}
           <a
@@ -92,19 +94,19 @@ export default function ConnectButton() {
             rel="noreferrer"
             className="block px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-white/5 hover:text-white"
           >
-            View on Basescan ↗
+            {t('nav.viewOnBasescan')}
           </a>
           <a
             href={`/profile/${address}`}
             className="block px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-white/5 hover:text-white"
           >
-            My Profile
+            {t('nav.myProfile')}
           </a>
           <button
             onClick={() => { disconnect(); setOpen(false); }}
             className="w-full text-left px-3 py-2 rounded-lg text-sm text-oasis-rose hover:bg-oasis-rose/10"
           >
-            Disconnect
+            {t('nav.disconnect')}
           </button>
         </div>
       )}

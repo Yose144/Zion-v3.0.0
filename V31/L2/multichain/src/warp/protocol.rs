@@ -67,6 +67,8 @@ pub struct ValidatorSignature {
     pub validator_id: String,
     pub public_key: Vec<u8>,
     pub signature: Vec<u8>,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub warp_message_hash: String,
 }
 
 /// Parse a WARP memo string.
@@ -236,6 +238,7 @@ mod tests {
             validator_id: "v1".into(),
             public_key: vec![1, 2, 3],
             signature: vec![4, 5, 6],
+            warp_message_hash: "abc".into(),
         };
         assert_eq!(sig.validator_id, "v1");
     }

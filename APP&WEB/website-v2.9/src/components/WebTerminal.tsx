@@ -369,7 +369,7 @@ export default function WebTerminal() {
   // Collapsed view — just a button
   if (!expanded) {
     return (
-      <section className="px-4 py-6 md:py-8">
+      <section className="px-4 py-4 md:py-5">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -411,7 +411,7 @@ export default function WebTerminal() {
 
   // Expanded terminal
   return (
-    <section className="px-4 py-6 md:py-8">
+    <section className="px-4 py-4 md:py-5">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

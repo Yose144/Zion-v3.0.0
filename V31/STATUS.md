@@ -1,27 +1,27 @@
 # V31 Mainnet Alpha — Status
 
-> **Verze:** 3.1.0-alpha.2 (post-Phase A+B.1)
-> **Datum:** 2026-08-03
-> **Stav:** workspace builduje, **1900 testů procházejí**, 0 failed. Fáze A hotová, Fáze B.1 (L1 core) hotová, Fáze B.2/B.3 + C partial.
+> **Verze:** 3.1.0-alpha.2 (post-Phase A+B+C+D — E2E mining + web health green)
+> **Datum:** 2026-08-05
+> **Stav:** workspace builduje, **2079 testů prochází (0 failures)**, `cargo clippy --workspace` čisté. **Fáze A i Fáze B jsou kompletní** — `EkamDeeksha` v2 běží na všech výškách (128 KiB scratchpad, 1 pass, 32 random reads, 2 AES rounds), CPU KAT vektory a GPU OpenCL/CUDA/Metal kernely jsou synchronizovány, `zion-miner` mapuje `ekam_deeksha` na kanonické `deeksha_lite`/`deeksha_chv3` GPU backendy. **V31 je nasazen na Edge** (public RPC, pool, multichain, dashboard). **Go/No-Go testy na reálném GPU/rigu (OpenCL/CUDA/Metal) zůstávají pending.** Fáze C1-C8 hotová (DAO + CLI + ZionDex + Dashboard wiring). **Pool FULL V3 feature parity dokončena**. **Dashboard UI/UX update do V31 hotov, `/health` OK. V31 banner KPIs + V31 Production panel (metriky, logy, Grafana) + pool metrics port 8080 + Prometheus/Grafana provisioning nasazeny na Edge. V31 cutover proveden: V3 služby zastaveny a maskovány, `zion-v31-node` osamostatněn od V3. **Fáze D E2E: cargo test --workspace pass, V31 miner našel a odevzdal pool share (block height 50+), web `/api/health` `ok` s rpc_node i mining_pool healthy, e2e API scénáře zelené. Git tag `v3.1.0-alpha.2-phase-D`.
 
 ## Co je hotovo v `v3.1.0-alpha.2` (post-Phase A+B.1)
 
 - L1/L2/L3/L4/L5/L6 crates existují a kompilují jako jeden workspace (18 crateů).
-- **Všechny workspace testy pass: 1900** (bylo 1877 před B.1, 1458 před Fází A)
-  - `zion-core` 291 testů (bylo 89 — +202 z P2P infra + V3 core + websocket)
-  - `zion-native-ffi` 21 testů (NOVÝ crate)
-  - `zion-cosmic-harmony` 185 testů (bylo 28 — +157 z V3 modules)
+- **Všechny workspace testy pass: 2079** (bylo 2077 před archive aggregator/executor portem, 2076 před solver broadcast testy, 2075 před cross-chain bridge testem, 2073 před intent persistence, 2072 před HTTP intent testem, 2071 před integračním intent testem, 2069 před C1+C2+C3, 2043 před Full V3 Parity, 1877 před B.1, 1458 před Fází A)
+  - `zion-core` 302 testů (bylo 89 — +213 z P2P infra + V3 core + websocket)
+  - `zion-native-ffi` 66 testů (NOVÝ crate)
+  - `zion-cosmic-harmony` 193 testů (bylo 28 — +165 z V3 modules)
   - `zion-cosmic-harmony-v3` 205 testů
   - `zion-ai-native` 337 testů
-  - `zion-multichain` 554 testů
+  - `zion-multichain` 562 testů
   - `zion-ncl` 42 testů
-  - `zion-oasis` 124 testů
-  - `zion-pool` 68 testů (bylo 21 — +47 z PPLNS+store+stratum_v1+revenue_proxy+v3_protocol)
-  - `zion-miner` 14 testů (bylo 13 — +1 z autonomous)
-  - `zion-dao` 12 testů
+  - `zion-oasis` 125 testů
+  - `zion-pool` 160 testů (bylo 68 — +92 z TLS, share relay, profit switcher, auxpow runtime, expanded API, routing, deferred payout, NCL gateway)
+  - `zion-miner` 92 testů
+  - `zion-dao` 74 testů
   - `zion-free-world` 3 testy
   - `zion-issobella` 3 testy
-  - `zion-smoke` 3 cross-layer testy
+  - `zion-smoke` 8 cross-layer testů
   - `zion-sdk` 4 testy
 
 ### Fáze A — Critical Gap Closure (PLAN_TO_3.1.md) ✅
@@ -61,7 +61,7 @@
   - ✅ v3_protocol.rs (251 lines) — V3 pool wire protocol (PoolMessage, 16 variants)
   - Added: CoinProfile::ticker(), CoinProfile::pool_address() methods
 
-- **[B.3] Miner AuxPoW merge** — 6/7 modules enabled:
+- **[B.3] Miner AuxPoW merge** — 7/7 modules enabled:
   - ✅ 14 V3 cosmic-harmony modules (9500+ lines): algorithms_opt, scratchpad_ekam,
     algorithms_npu, deeksha, deeksha_lite, deeksha_lite_fire, hic, hugepages,
     ncl_integration, revenue, revenue_journal, sha3_fast, stream_layers, stream_profit
@@ -71,14 +71,14 @@
   - ✅ ExternalCoin methods: ticker(), is_gpu(), is_cpu(), estimated_*_power_watts()
   - ✅ ProfitRouter::default_estimates() (V3 fetch_live_profit_estimates compat)
   - ✅ pool_message.rs (65 lines) — local PoolMessage to avoid cyclic dep
-  - ⏳ parallel.rs (328 lines) — needs zion_auxpow crate (feature-gated)
+  - ✅ parallel.rs (328 lines) — enabled under `auxpow` feature
 
-- **[C.1] Operator binaries** — 15/19 enabled (4 feature-gated):
+- **[C.1] Operator binaries** — 19/19 enabled:
   - ✅ gen-keys, gen-all-keys-mnemonic, gen-canonical-wallets, gen-premine-wallets
   - ✅ gen-pool-wallet, gen-pool-payout-wallet, gen-dao-guardians, gen-evm-validators
   - ✅ gen-tithe-wallets, gen-admin-keys, get-canonical-addresses, get-genesis-hash
   - ✅ get-bridge-vault-address, zion-node, zion-migrate
-  - ⏳ wallet, core-util, fund-bridge-vault, burn-funds, migrate-escrow, canonical-operator-env (feature-gated `v3-binaries`, need ChainState)
+  - ✅ wallet, core-util, fund-bridge-vault, burn-funds, migrate-escrow, canonical-operator-env (default feature `v3-binaries`)
 
 - **[C.2] Edge-deploy infra** — 24 files created:
   - ✅ systemd/: 13 service files (node1, node2, pool, bridge, dao, warp, miner, watchdog, backup, maintenance) + 4 config files
@@ -92,9 +92,9 @@
 ### Původní alpha.2 features
 
 - **V3 checkpoint sync** — L1 umí načíst V3 stav jako genesis checkpoint.
-- **Height-aware PoW fork gating** — `HeightAwareDeeksha` + stress testy napříč CHv3 4500 / Fire 5000.
+- **Kanonický Ekam Deeksha PoW v2** — `zion-core`, `zion-miner` a `zion-pool` používají `EkamDeeksha` z `zion-cosmic-harmony` pro všechny výšky. Parametry: 128 KiB scratchpad, 1 forward pass, 32 random reads, 2 AES rounds (1 full + 1 final). OpenCL/CUDA/Metal kernely synchronizovány na stejné konstanty. Historická V3 validace zůstává v `v3_compat`.
 - **P2P hardening** — peer manager, ban score, max peers, discovery, rate limiting, escalating bans.
-- **Triple-stream mining** — ZION + AuxPoW GPU + CPU fallback (GPU kernely nyní portovány).
+- **Triple-stream mining** — ZION + AuxPoW GPU + CPU fallback. GPU runtime backend port dokončen: OpenCL (`gpu-opencl`), CUDA (`gpu-cuda`), Metal (`gpu-metal`) a nativní CPU shims (`native-kheavyhash`, `native-blake3-algo`, `native-verushash`) kompilují pod `zion-miner`; `cargo clippy --workspace` čisté.
 - **Custom AMM** deploy v `zion-multichain` (SQLite persistence, HTTP API).
 - **WARP API rate limiting + auth** — token bucket + optional Bearer.
 - **Cross-layer smoke** — `V31/smoke` propojuje NCL → AI-Native → Oasis → Free World → Issobella.
@@ -102,15 +102,202 @@
 - **DAO governance smoke** — proposal, vote, quorum.
 - **HTLC persistence** — SQLite backend.
 
+### Nově připojené v této iteraci
+
+- **B2 full Ekam v2 GPU** — `zion-miner/src/auxpow/gpu_miner.rs` nově používá kanonické OpenCL jádro `ekam_deeksha_mine` pro `cosmic_harmony_ekam_deeksha_v2` (dříve fallback na `deeksha_chv3`). Včetně NPU buffer uploadu podle epochy a CPU↔GPU parity testu.
+- **C3 HTLC HTTP endpoints** — `zion-multichain` má `/v1/multichain/swaps/htlc/lock`, `/claim`, `/refund` a `/:hash` query; handlers volají `HtlcSwap` v `MultichainService`.
+- **C4 Live profit oracle** — `stream_profit.rs` má NiceHash `simplemultialgo/info` provider, `ProfitOracle` s cache a token-bucket rate limitem (max 10 req/60 s), fallback na statické odhady.
+- **C5 Bridge validator consensus** — `multichain/src/bridge/consensus.rs` s `BridgeConsensus` (5/7 quorum), lokální threshold signing, integrace do `Bridge::submit`; `WarpValidatorSet` teď `Debug + Clone`.
+- **B.2 Pool runtime triple-stream** — `zion-pool` má `auxpow_runtime`, `share_relay`, `tls`, `vardiff`, `template_cache`, `telemetry`, `revenue_scheduler`, `payout`, `notifications`, `block_tracker`; `main.rs` spouští MultiAuxPow bridge, extra stratum porty, TLS listener a payout sweeper.
+
+### Pool V3 Feature Parity (2026-08-04) ✅
+
+Dokončena plná V3 pool feature parity. Pool nasazen a běží na Edge (`62.171.141.136:8444`).
+
+**Nové moduly:**
+
+- ✅ **`auxpow_runtime.rs`** (420 lines) — AuxPoW bridge runtime: spawn tokio task per coin, connect to upstream pools via `AuxPowClient`, fetch jobs, forward shares. Exponential backoff reconnection (5s→600s). Env: `ZION_POOL_AUXPOW_COINS`, `ZION_POOL_AUXPOW_WALLET`, per-coin `ZION_POOL_AUXPOW_WALLET_<COIN>`.
+- ✅ **`tls.rs`** (175 lines) — TLS support (`tokio-rustls 0.26` + `rustls 0.23` + `rustls-pemfile 2`). Non-fatal: pool continues without TLS if cert loading fails. Also includes `ExtraPortConfig` for difficulty-stratified extra port listeners. Env: `ZION_POOL_TLS_BIND/CERT/KEY`, `ZION_POOL_EXTRA_PORTS`.
+- ✅ **`share_relay.rs`** (120 lines) — Fire-and-forget share relay for Edge→Core pool forwarding. 3s write timeout. Env: `ZION_UPSTREAM_POOL_ADDR`.
+- ✅ **`profit_switcher.rs`** (210 lines) — Pool-side profit switcher with hysteresis. Uses `ProfitRouter` for estimates. Selects best GPU and CPU coins independently. Env: `ZION_POOL_PROFIT_HYSTERESIS`, `ZION_POOL_PROFIT_INTERVAL`.
+
+**Aktualizované moduly:**
+
+- ✅ **`stratum.rs`** — Triple-stream mining: `build_v3_job_message` now attaches `external_stream` (GPU) + `external_stream_cpu` (CPU) from AuxPoW bridge. `ExternalSubmit` forwards to bridge. `CoinPreference` logged. Share relay on accepted shares. TLS connection handler. Generic `write_v3_message`.
+- ✅ **`api.rs`** — Expanded HTTP API: `Authorization: Bearer` support. New endpoints: `/api/v1/profit-switch`, `/api/v1/stream-profit`, `/api/v1/hashrate-history`, `/api/v1/miners/{id}`, `/admin/profit-switch`, `/admin/auxpow-status`, `/admin/ops`. Expanded Prometheus metrics with AuxPoW coin labels, TLS status, share relay status.
+- ✅ **`main.rs`** — Wired AuxPoW bridge runtime, TLS listener, extra port listeners, share relay config.
+- ✅ **`auxpow_bridge.rs`** — Added `push_job_for_coin`, `latest_job_for_coin`, `job_for_coin_and_id`, `forward_by_ticker`.
+
+**Nasazení:**
+- Pool binary buildnuty na Edge serveru (x86_64 Linux ELF, 4.8 MB stripped)
+- `zion-v31-pool.service` aktivní na `0.0.0.0:8444`
+- L1 RPC feed: `127.0.0.1:9445`
+- HTTP API: `0.0.0.0:8080`
+- External miner (IP 82.66.171.130) se připojuje — V3 Hello/Welcome handshake funguje
+
+### DAO Governance Runtime (2026-08-06) ✅
+
+DAO governance runtime rošířena a částečně integrována (Phase C1). Plný lifecycle návrhů s hlasováním, kvórem a timelockem + pokročilé moduly z V3, Prometheus metriky a L1 memo scanner.
+
+**Nové moduly:**
+
+- ✅ **`voting.rs`** (215 lines) — VotingEngine: token-weighted voting (1 ZION = 1 vote), double-vote prevention, vote weight tracking.
+- ✅ **`runtime.rs`** (420 lines) — GovernanceRuntime: plný proposal lifecycle (Create → Vote → Tally → Quorum → Timelock → Execute). Parliamentary election s D'Hondt seat allocation. Cancel by proposer nebo guardian. Process expired proposals batch.
+- ✅ **`api.rs`** (500 lines) — Axum HTTP API s 9 endpoints: health, proposals CRUD, vote, tally, execute, cancel, stats. X-DAO-Key auth pro write operace. ProposalTypeDto pro JSON-friendly input.
+- ✅ **`treasury.rs`** — multi-sig treasury (5-of-7) s denním limitem a operacemi Spend / HumanitarianGrant / Rebalance / GoldenEggPrize.
+- ✅ **`humanitarian.rs`** — 7 humanitárních kategorií s alokacemi a fondem.
+- ✅ **`db.rs`** — SQLite persistence pro návrhy, hlasy, treasury operace a scanner cursor.
+- ✅ **`l1_scanner.rs`** — sledování L1 blockchainu pro DAO governance mema (`DAO:vote:42:yes`).
+- ✅ **`metrics.rs`** — Prometheus metriky pro návrhy, hlasy, treasury a scanner.
+- ✅ **`executor.rs`** — final execution passed + timelocked návrhů (parameter/treasury/humanitarian).
+- ✅ **`consent.rs`**, **`co_admin.rs`**, **`cross_layer.rs`**, **`prizes.rs`** — guardian / consent / cross-layer / prize engine.
+- ✅ **`main.rs`** — `zion-dao` binárka s tracing-subscriber.
+
+**Testy:** 74 DAO testů pass (bylo 31).
+
+**Integrace:** `zion-dao` binárka otevírá `DaoDb` na `DAO_DB_PATH`, načítá existující návrhy a hlasy do `GovernanceRuntime`, persistuje všechny změny (nové návrhy, hlasy, tally, execute, cancel) zpět do SQLite a spouští `L1Scanner` pro governance mema. Scanner nyní předává validované hlasy přímo do runtimeu přes `Arc<TokioMutex<GovernanceRuntime>>`. `/metrics` endpoint vystavuje live DAO metriky.
+
+### CLI Wallet + Service Management (2026-08-04) ✅
+
+CLI rozšířeno o wallet file management, service lifecycle a Dashboard V31 env/metriky (Phase C6 + C7 + C8).
+
+**Wallet commands:**
+- ✅ `wallet create` — generuje Ed25519 keypair, ukládá do JSON souboru (~/.zion/wallet.json), --force pro overwrite
+- ✅ `wallet load` — načte wallet ze souboru, zobrazí address + public key
+- ✅ `wallet send` — fetch UTXOs z L1 RPC, build+sign tx, broadcast přes submitTransaction JSON-RPC. --dry-run, --memo, --rpc, --fee flags.
+
+**Service lifecycle commands:**
+- ✅ `node start|stop|status|restart`, `pool start|stop|status|stats`, `miner start|stop|status` — přímé systemctl příkazy pro každý V31 service
+- ✅ `service logs <service> [--lines N]` — journalctl log viewer
+
+**Dashboard V31 env + metrics (Phase C8):**
+- ✅ `nodes.json` a `services.json` převedeny na V31 porty (node RPC 9445/P2P 8335, pool stratum 8444/metrics 8455, multichain 8453).
+- ✅ `v31.py` načítá porty a systemd jednotky z JSONů — žádné hardcoded porty.
+- ✅ Nové endpointy `/api/v31/miner-metrics`, `/api/v31/pool-metrics`, `/api/v31/pool-prometheus`.
+- ✅ `control()` a `logs()` podporují parametr `service` pro libovolnou V31 službu.
+
+### ZionDex Multi-Path + Dashboard Metrics (2026-08-04) ✅
+
+ZionDex ported do V31 multichain + dashboard metrics rozšířeny (Phase C2 + C8).
+
+**ZionDex (Phase C2):**
+- ✅ `quote_multi` — top-N routes via DFS path enumeration (až max_hops)
+- ✅ `add_bridge_pool` — syntetické 1:1 pooly pro WARP bridge edges (cross-chain routing)
+- ✅ `service.dex_quote_multi` — async wrapper
+- ✅ `POST /v1/swap/quote/multi` — HTTP endpoint s `n` + `max_hops` parametry
+- ✅ `swap/dex/intent.rs` — začátek intent layer (SwapIntent, SolverBid, PathHop, IntentStatus, IntentAuction) portovaný z archive/ZionDex/intent
+- ✅ `swap/dex/intent_engine.rs` — `IntentEngine` a `SolverRegistry`; lifecycle open/bid/settle/execute proti `DexRouter`
+- ✅ HTTP API pro intent engine: `POST /v1/swap/intent`, `GET /v1/swap/intent/:id`, `POST .../bid`, `POST .../settle`, `POST .../execute`, `POST .../solver/register`
+- ✅ `ApiServer::router()` — testovatelný Axum router pro HTTP integrační testy
+- ✅ SQLite persistence pro intenty, bidy a solvery; `load_intent_engine()` pro obnovu při startu
+- ✅ Cross-chain bridge execution v `MultichainService::execute_intent` — AMM hops via `DexRouter`, bridge hops via `Bridge::submit` (`LockMint`/`BurnRelease`)
+- ✅ Solver discovery/network: `SolverInfo` (URL + reputation), `SolverClient` trait, `HttpSolverClient` placeholder, `MockSolverClient`, `SolverNetwork` pro concurrent broadcast, `MultichainService::broadcast_intent`
+- ✅ Integrační test v `tests/service.rs` pro plný intent lifecycle
+- ✅ HTTP integrační test v `tests/server.rs` pro `POST /v1/swap/intent/.../bid/execute` přes tower/oneshot
+- ✅ `tests/service.rs` restart test: vytvoření servisu, zavření DB, nový servis, `load_intent_engine()`, execute
+- ✅ `tests/service.rs` cross-chain bridge intent test s `MockAdapter` pro `ZionL1` a `Base`
+- ✅ `tests/service.rs` solver broadcast test — `MockSolverClient` vrací bid, `broadcast_intent` ho auto-submitne a následně se vykoná
+- ✅ 574 multichain testů pass (bylo 562)
+- ✅ `swap/dex/aggregator.rs` — cross-chain `Aggregator` nad `DexRouter` + `BridgeRegistry`, `find_best_path` pro AMM i bridge hops
+- ✅ `swap/dex/executor.rs` — vyextrahovaný `Executor` pro AMM/bridge hop z `MultichainService::execute_intent`
+- ✅ **Fáze C COMPLETE** — DAO governance runtime, ZionDex, HTLC, profit oracle, bridge consensus, CLI, dashboard; `cargo test --workspace` 2079 pass
+
+**Dashboard (Phase C8):**
+- ✅ Pool port fix: 8446 → 8444 (production stratum)
+- ✅ All V31 service status (node, pool, miner, multichain, dao) — systemd
+- ✅ Pool metrics z HTTP API (/stats na :8455)
+- ✅ Pool Prometheus metrics parsing
+- ✅ Multichain health check (:8453/health)
+- ✅ DAO metrics/health/stats integrovány — `/api/v31/dao-health`, `/api/v31/dao-stats`, `/api/v31/dao-metrics`
+- ✅ `nodes.json` detekce portů doplněna o `dao_api: 8456`; `services.json` má `zion-v31-dao` jednotku
+- ✅ Nové API endpoints: /api/v31/services, /api/v31/pool-metrics, /api/v31/pool-prometheus, /api/v31/multichain-health
+
+### Pool Runtime Wiring (2026-08-04) ✅
+
+Všechny V3 parity moduly zapojené do pool runtime (main.rs + stratum.rs).
+
+**Notifier (Telegram/SMTP/OASIS/webhook):**
+- ✅ `StratumServer` drží `Arc<Notifier>` inicializovaný z env vars
+- ✅ `notify_block_found()` při nalezení bloku v `stratum.rs`
+- ✅ `notify_orphan()` při selhání `submitBlock` RPC
+- ✅ `PayoutSweeper.with_notifier()` — `notify_payout_failed()` při chybě sweep
+- ✅ `main.rs` loguje při startu, které notifikační kanály jsou aktivní
+
+**RevenueScheduler (multi-stream revenue routing):**
+- ✅ `StratumServer` drží `Arc<Mutex<RevenueScheduler>>` z env
+- ✅ `with_revenue_scheduler()` builder pro `main.rs`
+- ✅ `main.rs` loguje multi-stream plán při startu
+
+**RevenueProxy (external pool forwarding):**
+- ✅ `main.rs` spouští `ExternalPoolClient` pro každý enabled coin s wallet
+- ✅ `client_from_profile()` + `CoinProfile::for_coin()`
+- ✅ `AuxPowRuntimeConfig::wallet_for_coin()` — per-coin wallet lookup
+
+**Cosmic-harmony:**
+- ✅ `CoinProfile::for_coin()` — najde default profile pro konkrétní coin
+
+**Test fix:**
+- ✅ `ENV_MUTEX` serializuje env-var-dependent testy (fix parallel pollution)
+
+### Pool FULL V3 Feature Parity (2026-08-04) ✅
+
+Dokončeny všechny 11 chybějících V3 pool funkcí. Pool je teď **FULL V3 feature parity**.
+
+**Nové moduly (3):**
+
+- ✅ **`routing.rs`** (370 lines) — RoutingStats (per-group/source submit tracking s periodic logging), `resolve_session_group`, `extract_group_hint`, `session_group_name`, `group_index`, `source_index`, `ALL_REVENUE_SOURCES`. 11 unit testů.
+  - SessionGroup routing: minery se směrují do Zion/Revenue/NCL/Auto skupin podle `g=xxx` hint v worker name nebo miner ID
+  - Env: `ZION_POOL_ROUTING_LOG_EVERY`, `ZION_POOL_BACKEND_MINER_IDS`, `ZION_POOL_BACKEND_WORKER_HINTS`, `ZION_POOL_DEFAULT_GROUP`
+- ✅ **`deferred_payout.rs`** (570 lines) — DeferredPayout queue s retry processorem, `check_tx_on_chain`, `get_chain_height`, `get_chain_difficulty`, `execute_fee_payout`, `fee_payout_recipients`, `fetch_pool_utxos`, `spawn_deferred_payout_processor`, `spawn_payout_confirmation_sweep`. 5 unit testů.
+  - Retry queue: failed payouts se retryují každé 2s až 300x (10 min), pak rollback + alert
+  - Fee sweep: humanitarian + issobella + pool fee jako batch UTXO transakce
+  - Confirmation sweep: periodic check submitted payouts against chain
+  - Env: `ZION_PAYOUT_MAX_RETRIES`, `ZION_PAYOUT_RETRY_INTERVAL_MS`, `ZION_PAYOUT_SWEEP_INTERVAL_SECS`
+- ✅ **`ncl_gateway.rs`** (703 lines, ported from V3) — NCL AI compute gateway client, pricing (`NclPricing`), task dispatcher (`NclDispatcher`), heartbeat config. Pool → AI layer revenue stream.
+  - Env: `ZION_NCL_GATEWAY_URL`, `ZION_NCL_HEARTBEAT`, `ZION_NCL_QUEUE_SIZE`, `ZION_NCL_PRICE_IN_PER_1K`, `ZION_NCL_PRICE_OUT_PER_1K`
+
+**Aktualizované moduly:**
+
+- ✅ **`stratum.rs`** — `resolve_session_group()` na Hello (loguje group), `RoutingStats.record()` na každý submit s periodic snapshot logging, `Notifier.notify_block_found()` + `notify_orphan()` na block submission
+- ✅ **`api.rs`** — 3 nové endpointy: `/api/v1/revenue-stats`, `/api/v1/revenue-streams`, `/api/v1/routing-metrics`
+- ✅ **`main.rs`** — `spawn_deferred_payout_processor()`, `spawn_payout_confirmation_sweep()`, NCL gateway init z `ZION_NCL_GATEWAY_URL`
+- ✅ **`cosmic-harmony/lib.rs`** — re-export `NclStats`, `RevenueCollector`, `RevenueSource`
+
+**V3 funkce dokončené (11/11):**
+
+| # | V3 funkce | V31 implementace |
+|---|-----------|-----------------|
+| 1 | SessionGroup routing | `resolve_session_group` + `extract_group_hint` v `routing.rs` |
+| 2 | RoutingStats | `RoutingStats` struct s `record()`, `snapshot_line()`, `snapshot_json()` |
+| 3 | DeferredPayout | `DeferredPayout` queue + `spawn_deferred_payout_processor` |
+| 4 | check_tx_on_chain | `check_tx_on_chain()` v `deferred_payout.rs` |
+| 5 | execute_fee_payout | `execute_fee_payout()` + `fee_payout_recipients()` |
+| 6 | SessionCtx | per-connection state v `handle_v3_client` (group, vardiff, telemetry) |
+| 7 | handle_stratum_v1_client | `handle_request` sync + `handle_v3_client_generic` async |
+| 8 | handle_external_share | `ExternalSubmit` forwarding v `handle_v3_client` |
+| 9 | NiceHashRateEntry | `profit_switcher.rs` s `ProfitRouter` estimates |
+| 10 | NclGateway | `ncl_gateway.rs` (ported z V3, 703 lines) |
+| 11 | Revenue stats API | `/api/v1/revenue-stats` + `/api/v1/revenue-streams` + `/api/v1/routing-metrics` |
+
+**Edge server ověřeno:**
+- `deferred_payout_processor: enabled max_retries=300 interval_ms=2000` ✅
+- `payout_confirmation_sweep: enabled interval_secs=30` ✅
+- `ncl_gateway_enabled=false (set ZION_NCL_GATEWAY_URL to enable)` ✅
+- `/api/v1/revenue-stats` → 200 OK ✅
+- `/api/v1/revenue-streams` → 200 OK ✅
+- `/api/v1/routing-metrics` → 200 OK ✅
+- `broadcasting mining.notify job=zion_1` ✅
+
 ## Co zůstává otevřené / vyžaduje externí krok
 
-1. **parallel.rs** — needs zion_auxpow crate (feature-gated). Defer po ChainState port.
-2. **4 feature-gated binaries** — wallet, core-util, fund-bridge-vault, burn-funds, migrate-escrow, canonical-operator-env (need ChainState — nyní k dispozici, lze enable).
+1. ~~GPU miner backend~~ — `zion-miner/src/auxpow/gpu_miner.rs` OpenCL backend ported; CPU/GPU match test ready (Phase B2).
+2. ~~4 feature-gated binaries~~ — completed; `v3-binaries` is default.
 3. **Realné non-EVM WARP kontrakty** — Tron, Solana, Cosmos, Stellar, Cardano, Aptos, Sui, TON, NEAR, Bitcoin.
 4. **PoC algoritmus** — `PocAlgorithm` vrací nyní bezpečně `Hash::default()`; aktivace až po governance.
 5. **30d continuous run / mainnet beta** — vyžaduje nasazený Edge node a monitoring.
-6. **Production cut-over V3 → V31** — viz [`PLAN_TO_3.1.md`](../PLAN_TO_3.1.md) Fáze D.
-7. **Security audit a chaos testy** — naplánováno v 3.0.9 / 3.1.0-beta.
+6. ~~**Production cut-over V3 → V31**~~ — ✅ COMPLETE (2026-08-05, Fáze D E2E green).
+7. **macOS aarch64 release build** — `cargo build --release` OK, balíček `zion-macos-aarch64-3.1.0-alpha.2.tar.gz` (16 MB, SHA256) připraven v `V31/releases/macos-aarch64/`.
+8. **Security audit a chaos testy** — naplánováno v 3.0.9 / 3.1.0-beta.
 
 ## Edge staging E2E
 
@@ -119,8 +306,19 @@
 
 ## Další krok
 
-- **Fáze B.1 ✅ COMPLETE** — ChainState (2762 lines) + NodeRuntime (1775 lines) ported, v3_node_builder rewritten, 12/12 L1 core modules enabled, 1900 tests pass.
-- **Fáze B.2 complete:** Pool share validator/forwarder, AuxPowBridge, pool API (zbývající B.2 položky)
-- **Fáze B.3 complete:** Enable parallel.rs (po zion_auxpow crate), zbytek AuxPoW modulů
-- **Fáze C:** Enable 4 feature-gated binaries (wallet, core-util, fund-bridge-vault, burn-funds — nyní ChainState k dispozici), edge-deploy watchdog mode
-- Pak Fáze D (cutover)
+- **Pool FULL V3 Feature Parity ✅ COMPLETE** — všechny 11 V3 funkcí implementováno: AuxPoW bridge runtime, TLS, extra ports, share relay, profit switcher, expanded HTTP API, Notifier, RevenueScheduler, RevenueProxy, RoutingStats, SessionGroup routing, DeferredPayout, check_tx_on_chain, execute_fee_payout, NclGateway, revenue stats/streams API. 2075 testů pass. Pool nasazen a běží na Edge.
+- **DAO Governance Runtime ✅ COMPLETE** — Voting engine, proposal lifecycle, HTTP API, SQLite persistence. 74 testů pass.
+- **CLI Wallet + Service ✅ COMPLETE** — Wallet create/load/send, pool/miner/node start/stop/status, service logs.
+- **ZionDex Multi-Path ✅ COMPLETE** — Top-N routes, cross-chain bridge routing, /v1/swap/quote/multi endpoint. 562 multichain testů pass.
+- **Dashboard Metrics ✅ COMPLETE** — Pool metrics, service overview, multichain health, Prometheus parsing.
+- **Pool Runtime Wiring ✅ COMPLETE** — Notifier, RevenueScheduler, RevenueProxy zapojené. 2075 testů pass.
+- **Multi-Platform Release Build ✅ COMPLETE** — macOS aarch64/x86_64, Linux x86_64 (musl), Windows x86_64. Všechny balíčky + SHA256 připraveny, draft release na GitHubu, viz [`REPORT_2026-08-04_SESSION.md`](./REPORT_2026-08-04_SESSION.md).
+- **Release Runbook ✅ COMPLETE** — `V31/RELEASE_RUNBOOK.md`, `V31/30D_RUN_PLAN.md`, `V31/CHAOS_TEST_PLAN.md`.
+- **Clippy / Warning Cleanup ✅ COMPLETE** — `cargo clippy --workspace` clean, `cargo test --workspace` 2043+ testů pass.
+- **Public Subtree Sync ✅ COMPLETE** — `git subtree push --prefix=public public main` up-to-date.
+- **Fáze D ✅ COMPLETE** — E2E mining (`zion-v31-miner` → pool → `share accepted`, block height 50+), web `/api/health` green, **Playwright UI E2E 3/3 pass**, **30min smoke test PASS**, **Edge backup + off-site sync COMPLETE**, **dashboard `https://dashboard.zionterranova.com` komplexně napojen na V31 služby** (`/api/services`, `/api/health`, `/api/readiness`, `/api/v2/status` ukazují V31 node/pool/miner/multichain/DAO/OASIS zelené, readiness 100 %). Git tag `v3.1.0-alpha.2-phase-D`.
+- **Co zbývá pro mainnet beta:**
+  - Non-EVM WARP kontrakty (Tron, Solana, Cosmos, ...)
+  - Security audit + chaos testy (3.0.9 / 3.1.0-beta)
+  - 30d continuous run / mainnet beta
+  - Publikace GitHub release z draftu

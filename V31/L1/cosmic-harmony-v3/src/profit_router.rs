@@ -6,13 +6,12 @@
 //! and Alephium (ALPH) also uses Blake3.
 //!
 //! This module defines:
-//! - `ExternalCoin` — enumeration of mineable external coins
 //! - `CoinProfile` — per-coin metadata (algorithm, default pool, protocol)
 //! - `ProfitEntry` — snapshot of per-coin estimated profitability
 //! - `select_best_coin` — pick the most profitable coin from a list, with hysteresis
 
 use serde::{Deserialize, Serialize};
-use std::fmt;
+use zion_cosmic_harmony::{ExternalCoin, PoolPreference};
 
 // In public_build, suppress all profit_router log output (hides external
 // coin names like KAS, VRSC, RVN, etc.).  V3 never enables this feature.
@@ -24,667 +23,6 @@ macro_rules! plog {
 #[cfg(not(feature = "public_build"))]
 macro_rules! plog {
     ($($arg:tt)*) => { eprintln!($($arg)*) };
-}
-
-/// Pool routing preference, compatible with legacy revenue system semantics.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum PoolPreference {
-    NiceHash,
-    HeroMiners,
-    ZPool,
-    Default,
-}
-
-impl PoolPreference {
-    pub fn from_str_loose(value: &str) -> Self {
-        match value.trim().to_ascii_lowercase().as_str() {
-            "nicehash" | "nh" => Self::NiceHash,
-            "herominers" | "hm" => Self::HeroMiners,
-            "zpool" => Self::ZPool,
-            _ => Self::Default,
-        }
-    }
-}
-
-// ── External coin enumeration ────────────────────────────────────────
-
-/// Coins that ZION miners can profit-switch to for the 25% multi-algo revenue slot.
-///
-/// Listed in rough priority order. Only coins with a live, tested pool endpoint
-/// are `Enabled` by default.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum ExternalCoin {
-    /// Decred — standard Blake3 (DCP-0011, since Oct 2022).
-    /// High-profit Blake3 coin, GPU+ASIC. 2miners pool, BTC payout.
-    DCR,
-    /// Alephium — Blake3. GPU coin. 2miners pool, BTC payout.
-    ALPH,
-    /// Kaspa — kHeavyHash. GPU coin. 2miners, BTC payout.
-    KAS,
-    /// Ergo — Autolykos v2. GPU coin. 2miners, BTC payout.
-    ERG,
-    /// Ravencoin — KawPow. GPU coin. 2miners, BTC payout.
-    RVN,
-    /// Ethereum Classic — Ethash. GPU coin. 2miners, BTC payout.
-    ETC,
-    /// Evrmore — EvrProgPow. GPU coin. ZPool, BTC payout.
-    EVR,
-    /// MeowCoin — MeowPow. GPU coin. ZPool, BTC payout.
-    MEWC,
-    /// Flux — ZelHash (Equihash variant). GPU coin. WoolyPooly.
-    FLUX,
-    /// Clore.AI — KawPow. GPU coin. WoolyPooly.
-    CLORE,
-    /// Monero — RandomX. CPU coin. MoneroOcean, XMR→BTC.
-    XMR,
-    /// Verus — VerusHash v2.2 (Haraka+CLHash). CPU coin. LuckPool.
-    /// B2b revenue stream: ASIC/GPU resistant, PBaaS merge mining.
-    VRSC,
-    /// Pearl — PearlHash (PoUW: INT8 MatMul + BLAKE3 + Plonky2 ZK).
-    /// GPU coin. AlphaPool/suprnova, 22x more profitable than KAS.
-    /// Custom Stratum dialect (object params, no subscribe, plain_proof).
-    PRL,
-    /// Epic Cash — ProgPow. GPU coin. EpicStratum (TLS) over de.epicmine.io.
-    EPIC,
-    /// Zano — ProgPoWZ (ProgPow 0.9.2 with permuted math ops). GPU coin. HeroMiners.
-    ZANO,
-    /// Quai Network — KawPoW. GPU coin. 2miners pool, BTC payout.
-    QUAI,
-    /// Beam — BeamHash III (Equihash 150,5). GPU coin. BeamStratum (TLS) over 2miners.
-    BEAM,
-    /// Karlsen — KarlsenHash. GPU coin. Cedric-Crispin pool.
-    KLS,
-    /// Zclassic — EquihashZero (Equihash 192,7). GPU coin. ZPool.
-    ZCL,
-    /// Qubitcoin — Qhash. GPU coin. Suprnova.
-    QTC,
-    /// Vertcoin — Verthash. GPU coin. ZPool.
-    VTC,
-    /// IronFish — FishHash. GPU coin. Grandpool (IronFish stratum v2).
-    IRON,
-    /// Nexa — NexaPow. GPU coin. 2miners.
-    NEXA,
-    /// Raptoreum — GhostRider. CPU-only coin. ZPool.
-    RTM,
-    /// Dynex — DynexSolve. GPU coin. DeepMinerz (Cryptonote stratum).
-    DNX,
-    /// Nervos Network — Eaglesong. GPU coin. 2miners, NiceHash.
-    CKB,
-    /// Conflux — Octopus. GPU coin. 2miners, NiceHash.
-    CFX,
-    /// Zcash — Equihash 200,9. GPU coin. 2miners, NiceHash.
-    ZEC,
-    /// PhoenixCoin — NeoScrypt. GPU coin. ZPool, NiceHash.
-    PHX,
-    /// Keryx — KeryxHash. GPU+CPU coin.
-    KRX,
-}
-
-impl ExternalCoin {
-    /// Canonical ticker string.
-    pub fn ticker(self) -> &'static str {
-        match self {
-            Self::DCR => "DCR",
-            Self::ALPH => "ALPH",
-            Self::KAS => "KAS",
-            Self::ERG => "ERG",
-            Self::RVN => "RVN",
-            Self::ETC => "ETC",
-            Self::EVR => "EVR",
-            Self::MEWC => "MEWC",
-            Self::FLUX => "FLUX",
-            Self::CLORE => "CLORE",
-            Self::XMR => "XMR",
-            Self::VRSC => "VRSC",
-            Self::PRL => "PRL",
-            Self::EPIC => "EPIC",
-            Self::ZANO => "ZANO",
-            Self::QUAI => "QUAI",
-            Self::BEAM => "BEAM",
-            Self::KLS => "KLS",
-            Self::ZCL => "ZCL",
-            Self::QTC => "QTC",
-            Self::VTC => "VTC",
-            Self::IRON => "IRON",
-            Self::NEXA => "NEXA",
-            Self::RTM => "RTM",
-            Self::DNX => "DNX",
-            Self::CKB => "CKB",
-            Self::CFX => "CFX",
-            Self::ZEC => "ZEC",
-            Self::PHX => "PHX",
-            Self::KRX => "KRX",
-        }
-    }
-
-    /// Mining algorithm identifier string.
-    pub fn algorithm(self) -> &'static str {
-        match self {
-            Self::DCR => "blake3",
-            Self::ALPH => "blake3",
-            Self::KAS => "kheavyhash",
-            Self::ERG => "autolykos",
-            Self::RVN => "kawpow",
-            Self::ETC => "ethash",
-            Self::EVR => "evrprogpow",
-            Self::MEWC => "meowpow",
-            Self::FLUX => "zelhash",
-            Self::CLORE => "kawpow",
-            Self::XMR => "randomx",
-            Self::VRSC => "verushash",
-            Self::PRL => "pearlhash",
-            Self::EPIC => "progpow",
-            Self::ZANO => "progpow_zano",
-            Self::QUAI => "kawpow",
-            Self::BEAM => "beamhash",
-            Self::KLS => "karlsenhash",
-            Self::ZCL => "equihashzero",
-            Self::QTC => "qhash",
-            Self::VTC => "verthash",
-            Self::IRON => "fishhash",
-            Self::NEXA => "nexapow",
-            Self::RTM => "ghostrider",
-            Self::DNX => "dynexsolve",
-            Self::CKB => "eaglesong",
-            Self::CFX => "octopus",
-            Self::ZEC => "equihash",
-            Self::PHX => "neoscrypt",
-            Self::KRX => "keryxhash",
-        }
-    }
-
-    /// Whether this coin uses the Blake3 hash function (same family as ZION's
-    /// CosmicHarmony uses internally for hashing utilities).
-    pub fn is_blake3(self) -> bool {
-        matches!(self, Self::DCR | Self::ALPH)
-    }
-
-    /// Whether this coin is CPU-minable.
-    /// This includes coins that the `zion-miner` GPU backend routes to CPU
-    /// (verushash, randomx, ghostrider) plus any CPU-capable algorithm.
-    pub fn is_cpu(self) -> bool {
-        matches!(self, Self::XMR | Self::VRSC | Self::RTM)
-    }
-
-    /// Whether this coin is GPU-minable (not a CPU-only algorithm).
-    /// Note: RTM has an OpenCL kernel but is still treated as CPU-minable
-    /// by `gpu_backend::is_cpu_only_algorithm`, so it is excluded here.
-    pub fn is_gpu(self) -> bool {
-        !self.is_cpu()
-    }
-
-    /// DAG size in bytes, or `None` if the coin doesn't use a DAG.
-    /// Used for VRAM compatibility checking.
-    /// Values are approximate epoch-0 sizes; real DAG grows over time.
-    pub fn dag_size(self) -> Option<u64> {
-        match self {
-            Self::DCR => None,                  // Blake3 — no DAG
-            Self::ALPH => None,                 // Blake3 — no DAG
-            Self::KAS => None,                  // kHeavyHash — no DAG
-            Self::ERG => None, // Autolykos — no DAG (uses PK table ~1GB but not DAG)
-            Self::RVN => Some(4_294_967_296), // KawPow ~4 GB
-            Self::ETC => Some(2_684_354_560), // Ethash ~2.5 GB
-            Self::EVR => Some(2_684_354_560), // EvrProgPow ~2.5 GB
-            Self::MEWC => Some(4_294_967_296), // MeowPow ~4 GB
-            Self::FLUX => Some(6_000_000_000), // ZelHash ~6 GB
-            Self::CLORE => Some(4_294_967_296), // KawPow ~4 GB
-            Self::XMR => None, // RandomX — CPU only, no DAG
-            Self::VRSC => None, // VerusHash — CPU only, no DAG
-            Self::PRL => None, // PearlHash — no DAG
-            Self::EPIC => Some(2_684_354_560), // ProgPow ~2.5 GB
-            Self::ZANO => Some(2_684_354_560), // ProgPoWZ ~2.5 GB
-            Self::QUAI => Some(4_294_967_296), // KawPow ~4 GB
-            Self::BEAM => Some(2_147_483_648), // BeamHash III ~2 GB
-            Self::KLS => None, // KarlsenHash — no DAG
-            Self::ZCL => Some(1_073_741_824), // Equihash 192,7 ~1 GB
-            Self::QTC => None, // Qhash — no DAG
-            Self::VTC => Some(1_073_741_824), // Verthash ~1 GB
-            Self::IRON => Some(4_800_000_000), // FishHash ~4.6 GB
-            Self::NEXA => Some(5_000_000_000), // NexaPow ~5 GB
-            Self::RTM => None, // GhostRider — CPU-only, no DAG (CN scratchpad 128KB-2MB)
-            Self::DNX => None, // DynexSolve — no DAG (uses chip model)
-            Self::CKB => None, // Eaglesong — no DAG (sponge hash)
-            Self::CFX => Some(4_294_967_296), // Octopus ~4 GB (Ethash-like DAG)
-            Self::ZEC => Some(1_073_741_824), // Equihash 200,9 ~1 GB
-            Self::PHX => None, // NeoScrypt — no DAG (scrypt-based, memory-hard)
-            Self::KRX => None, // KeryxHash — no DAG
-        }
-    }
-
-    /// Check if this coin's DAG fits in the given GPU VRAM.
-    /// Non-DAG coins always fit. DAG coins need DAG + 512 MB overhead.
-    pub fn fits_vram(self, vram_bytes: u64) -> bool {
-        match self.dag_size() {
-            None => true,
-            Some(dag) => dag + 512_000_000 < vram_bytes,
-        }
-    }
-
-    /// Whether this coin's algorithm is CPU-compatible given CPU features.
-    /// `has_aes` = AES-NI support (required for RandomX).
-    /// `has_avx2` = AVX2 support (beneficial for VerusHash but not required).
-    pub fn cpu_compatible(self, has_aes: bool, _has_avx2: bool) -> bool {
-        match self {
-            Self::VRSC | Self::RTM => true, // VerusHash/GhostRider always work on CPU
-            Self::XMR => has_aes,           // RandomX needs AES-NI
-            _ => false,                     // GPU-only algorithms
-        }
-    }
-
-    /// Whether this coin's algorithm has a GPU kernel implementation
-    /// for the given backend. This must be kept in sync with the actual
-    /// kernel implementations in `AuXpow/src/gpu_miner.rs` (the
-    /// `kernel_info()` / `ensure_proque()` dispatch).
-    ///
-    /// OpenCL kernels implemented (as of 2026-07-16):
-    ///   blake3 (DCR/ALPH), kheavyhash (KAS), autolykos (ERG),
-    ///   kawpow (RVN/CLORE/QUAI), evrprogpow (EVR), meowpow (MEWC),
-    ///   ethash (ETC), zelhash (FLUX), progpow (EPIC),
-    ///   pearlhash (PRL), beamhash (BEAM), karlsenhash (KLS),
-    ///   fishhash (IRON), verthash (VTC), equihashzero (ZCL),
-    ///   nexapow (NEXA), qhash (QTC), ghostrider (RTM), dynexsolve (DNX)
-    ///
-    /// All 22 supported coins now have OpenCL GPU kernels.
-    pub fn gpu_kernel_available(self, backend: &str) -> bool {
-        match backend {
-            "opencl" => matches!(
-                self,
-                Self::DCR | Self::ALPH |          // blake3
-                Self::KAS |                        // kheavyhash
-                Self::ERG |                        // autolykos
-                Self::RVN | Self::CLORE | Self::QUAI |  // kawpow
-                Self::EVR |                        // evrprogpow (kawpow family)
-                Self::MEWC |                       // meowpow (kawpow family)
-                Self::ETC |                        // ethash
-                Self::FLUX |                       // zelhash
-                Self::EPIC |                       // progpow
-                Self::ZANO |                       // progpow_zano
-                Self::PRL |                        // pearlhash
-                Self::BEAM |                       // beamhash
-                Self::KLS |                        // karlsenhash (fishhash path)
-                Self::IRON |                       // fishhash
-                Self::VTC |                        // verthash
-                Self::ZCL |                        // equihashzero
-                Self::NEXA |                       // nexapow
-                Self::QTC |                        // qhash (quantum circuit sim)
-                Self::DNX |                        // dynexsolve (neuromorphic SAT)
-                Self::CKB |                        // eaglesong (sponge hash)
-                Self::CFX |                        // octopus (Ethash-like DAG)
-                Self::ZEC |                        // equihash 200,9
-                Self::PHX |                        // neoscrypt (scrypt-based)
-                Self::KRX // keryxhash
-            ),
-            "cuda" => matches!(
-                self,
-                Self::DCR | Self::ALPH |       // blake3
-                Self::KAS |                    // kheavyhash
-                Self::ERG |                    // autolykos
-                Self::RVN | Self::CLORE | Self::QUAI |  // kawpow
-                Self::ETC |                    // ethash
-                Self::EVR | Self::MEWC |       // evrprogpow / meowpow → ProgPow kernel
-                Self::FLUX |                   // zelhash
-                Self::EPIC | Self::ZANO // progpow / progpow_zano
-            ),
-            "metal" => matches!(self, Self::DCR | Self::ALPH | Self::KAS),
-            _ => false,
-        }
-    }
-
-    /// Estimated GPU power draw (TDP) in watts for this coin's algorithm.
-    /// Memory-hard algorithms (DAG-based) use more power than compute-only.
-    pub fn estimated_gpu_power_watts(self) -> f64 {
-        match self {
-            Self::DCR | Self::ALPH => 180.0, // Blake3 — compute-bound, high power
-            Self::KAS => 200.0,              // kHeavyHash — moderate
-            Self::ERG => 160.0,              // Autolykos — memory-light
-            Self::RVN | Self::CLORE | Self::QUAI => 220.0, // KawPow — memory-hard
-            Self::ETC | Self::EVR | Self::MEWC => 210.0, // Ethash/ProgPow — memory-hard
-            Self::FLUX => 200.0,             // ZelHash
-            Self::PRL => 190.0,              // PearlHash
-            Self::EPIC => 210.0,             // ProgPow
-            Self::ZANO => 210.0,             // ProgPoWZ
-            Self::BEAM => 180.0,             // BeamHash
-            Self::KLS => 190.0,              // KarlsenHash
-            Self::ZCL | Self::QTC | Self::VTC => 170.0, // Equihash variants
-            Self::IRON => 220.0,             // FishHash — memory-hard
-            Self::NEXA => 210.0,             // NexaPow
-            Self::DNX => 150.0,              // DynexSolve — different paradigm
-            Self::CKB => 170.0,              // Eaglesong — moderate
-            Self::CFX => 210.0,              // Octopus — DAG-based, memory-hard
-            Self::ZEC => 170.0,              // Equihash 200,9 — memory-hard
-            Self::PHX => 180.0,              // NeoScrypt — memory-hard
-            Self::KRX => 180.0,              // KeryxHash — memory-hard
-            Self::RTM => 0.0, // Treated as CPU-only; OpenCL kernel exists but routed to CPU
-            Self::XMR | Self::VRSC => 0.0, // CPU-only coins — no GPU power
-        }
-    }
-
-    /// Estimated CPU power draw (watts) for this coin's algorithm.
-    pub fn estimated_cpu_power_watts(self) -> f64 {
-        match self {
-            Self::XMR => 85.0,  // RandomX — high CPU usage, ~85W on Ryzen 5 3600
-            Self::VRSC => 65.0, // VerusHash — moderate, ~65W
-            Self::RTM => 90.0,  // GhostRider — high CPU + memory-hard CN, ~90W
-            _ => 0.0,           // GPU coins — no CPU power
-        }
-    }
-
-    /// Parse from a case-insensitive string. Accepts ticker, full name, and
-    /// common aliases.
-    pub fn from_str_loose(s: &str) -> Option<Self> {
-        match s.trim().to_ascii_lowercase().as_str() {
-            "dcr" | "decred" | "blake3-dcr" | "blake3dcr" => Some(Self::DCR),
-            "alph" | "alephium" | "blake3-alph" | "blake3alph" => Some(Self::ALPH),
-            "kas" | "kaspa" | "kheavyhash" => Some(Self::KAS),
-            "erg" | "ergo" | "autolykos" => Some(Self::ERG),
-            "rvn" | "ravencoin" | "kawpow" => Some(Self::RVN),
-            "etc" | "ethereum-classic" | "ethash" => Some(Self::ETC),
-            "evr" | "evrmore" | "evrprogpow" => Some(Self::EVR),
-            "mewc" | "meowcoin" | "meowpow" => Some(Self::MEWC),
-            "flux" | "zelhash" => Some(Self::FLUX),
-            "clore" | "clore.ai" => Some(Self::CLORE),
-            "xmr" | "monero" | "randomx" => Some(Self::XMR),
-            "vrsc" | "verus" | "verushash" => Some(Self::VRSC),
-            "prl" | "pearl" | "pearlhash" => Some(Self::PRL),
-            "epic" | "epiccash" => Some(Self::EPIC),
-            "zano" => Some(Self::ZANO),
-            "quai" | "quainetwork" => Some(Self::QUAI),
-            "beam" => Some(Self::BEAM),
-            "kls" | "karlsen" | "karlsenhash" => Some(Self::KLS),
-            "zcl" | "zclassic" | "equihashzero" => Some(Self::ZCL),
-            "qtc" | "qubitcoin" | "qhash" => Some(Self::QTC),
-            "vtc" | "vertcoin" | "verthash" => Some(Self::VTC),
-            "iron" | "ironfish" | "fishhash" => Some(Self::IRON),
-            "nexa" | "nexapow" => Some(Self::NEXA),
-            "rtm" | "raptoreum" | "ghostrider" => Some(Self::RTM),
-            "dnx" | "dynex" | "dynexsolve" => Some(Self::DNX),
-            "ckb" | "nervos" | "nervos-network" | "eaglesong" => Some(Self::CKB),
-            "cfx" | "conflux" | "octopus" => Some(Self::CFX),
-            "zec" | "zcash" | "equihash" => Some(Self::ZEC),
-            "phx" | "phoenixcoin" | "neoscrypt" => Some(Self::PHX),
-            "krx" | "keryx" | "keryxhash" => Some(Self::KRX),
-            _ => None,
-        }
-    }
-
-    /// Default Stratum pool endpoint (host:port) for this coin.
-    /// Uses 2miners where available (BTC payout), falls back to ZPool/WoolyPooly.
-    pub fn default_pool(self) -> &'static str {
-        match self {
-            Self::DCR => "pool.woolypooly.com:3152",
-            Self::ALPH => "pool.woolypooly.com:3106",
-            Self::KAS => "kas.2miners.com:2020",
-            Self::ERG => "erg.2miners.com:8888",
-            Self::RVN => "rvn.2miners.com:6060",
-            Self::ETC => "etc.2miners.com:1010",
-            Self::EVR => "evrprogpow.eu.mine.zpool.ca:1330",
-            Self::MEWC => "meowpow.eu.mine.zpool.ca:1327",
-            Self::FLUX => "flux.woolypooly.com:3000",
-            Self::CLORE => "clore.woolypooly.com:3090",
-            Self::XMR => "gulf.moneroocean.stream:10001",
-            Self::VRSC => "eu.luckpool.net:3956",
-            Self::PRL => "us2.alphapool.tech:5566",
-            Self::EPIC => "de.epicmine.io:3334",
-            Self::ZANO => "de.zano.herominers.com:1110",
-            Self::QUAI => "quai.2miners.com:4848",
-            Self::BEAM => "beam.2miners.com:5252",
-            Self::KLS => "karlsencoin.cedric-crispin.com:4154",
-            Self::ZCL => "equihash192.eu.mine.zpool.ca:2144",
-            Self::QTC => "qtc.suprnova.cc:5555",
-            Self::VTC => "verthash.eu.mine.zpool.ca:4533",
-            Self::IRON => "fr.grandpool.io:2027",
-            Self::NEXA => "nexa.2miners.com:5050",
-            Self::RTM => "ghostrider.eu.mine.zpool.ca:5354",
-            Self::DNX => "pool.deepminerz.com:3333",
-            Self::CKB => "ckb.2miners.com:6464",
-            Self::CFX => "cfx.2miners.com:6565",
-            Self::ZEC => "zec.2miners.com:7070",
-            Self::PHX => "neoscrypt.eu.mine.zpool.ca:4233",
-            Self::KRX => "keryxhash.eu.mine.zpool.ca:4233",
-        }
-    }
-
-    /// NiceHash endpoint for supported algos.
-    ///
-    /// NiceHash uses `auto.nicehash.com:9200` for all algorithms — the
-    /// algorithm name is the subdomain prefix.  NiceHash automatically
-    /// routes to the closest stratum server.
-    ///
-    /// Coins not supported by NiceHash return `None` and should fall back
-    /// to HeroMiners/ZPool/default.
-    pub fn nicehash_pool(self, region: &str) -> Option<String> {
-        let algo: &str = match self {
-            Self::ETC => "etchash",
-            Self::RVN | Self::QUAI | Self::CLORE => "kawpow",
-            Self::ERG => "autolykos",
-            Self::KAS => "kheavyhash",
-            Self::VRSC => "verushash",
-            Self::NEXA => "nexapow",
-            Self::BEAM => "beamv3",
-            Self::IRON => "fishhash",
-            Self::ALPH => "alephium",
-            Self::ZCL => "equihash192",
-            Self::CKB => "eaglesong",
-            Self::CFX => "octopus",
-            Self::ZEC => "equihash",
-            Self::PHX => "neoscrypt",
-            Self::KRX => "keryxhash",
-            // FLUX (ZelHash = Equihash 125,4) is NOT on NiceHash.
-            // NiceHash ZHash = Equihash 144,5 (BTG/ANON/BTCZ) — different algo.
-            // Sending FLUX work to ZHash endpoint would produce invalid shares.
-            // Not on NiceHash: XMR (requires KYC), DCR (Blake3), EPIC (ProgPow),
-            // EVR (EvrProgPow), MEWC (MeowPow), PRL (PearlHash), RTM (GhostRider),
-            // DNX (DynexSolve), KLS (KarlsenHash), QTC (Qhash), VTC (Verthash),
-            // FLUX (ZelHash 125,4 ≠ NiceHash ZHash 144,5)
-            _ => return None,
-        };
-        // NiceHash uses auto.nicehash.com:9200 for all algos.
-        // Region-specific endpoints are deprecated; auto handles routing.
-        let _ = region; // auto.nicehash.com handles region routing
-        Some(format!("{}.auto.nicehash.com:9200", algo))
-    }
-
-    /// HeroMiners endpoints for supported coins.
-    pub fn herominers_pool(self, region: &str) -> Option<String> {
-        let (subdomain, port): (&str, u16) = match self {
-            Self::ETC => ("etc", 1150),
-            Self::KAS => ("kaspa", 1206),
-            Self::ALPH => ("alephium", 1220),
-            Self::ERG => ("ergo", 1180),
-            Self::RVN => ("ravencoin", 1140),
-            Self::IRON => ("ironfish", 1145),
-            Self::DNX => ("dynex", 1030),
-            Self::CKB => ("nervos", 1160),
-            Self::CFX => ("conflux", 1170),
-            Self::ZEC => ("zcash", 1156),
-            Self::ZANO => ("zano", 1110),
-            _ => return None,
-        };
-
-        let hm_region = match region.to_ascii_lowercase().as_str() {
-            "eu" => "de",
-            "na" | "us" => "us",
-            "hk" | "sg" | "asia" => "hk",
-            _ => "de",
-        };
-
-        Some(format!(
-            "{}.{}.herominers.com:{}",
-            hm_region, subdomain, port
-        ))
-    }
-
-    /// ZPool endpoints for supported coins.
-    pub fn zpool_pool(self, region: &str) -> Option<String> {
-        let (algo, port): (&str, u16) = match self {
-            Self::EVR => ("evrprogpow", 1330),
-            Self::MEWC => ("meowpow", 1327),
-            Self::ZCL => ("equihash192", 2144),
-            Self::RTM => ("ghostrider", 5354),
-            Self::PHX => ("neoscrypt", 4233),
-            Self::KRX => ("keryxhash", 4233),
-            Self::ZEC => ("equihash", 1080),
-            _ => return None,
-        };
-        let zp_region = match region.to_ascii_lowercase().as_str() {
-            "na" | "us" => "na",
-            _ => "eu",
-        };
-        Some(format!("{}.{}.mine.zpool.ca:{}", algo, zp_region, port))
-    }
-
-    /// Best pool endpoint using the legacy fallback hierarchy:
-    /// nicehash -> herominers -> zpool -> default.
-    pub fn best_pool(self, preference: PoolPreference, region: &str) -> String {
-        match preference {
-            PoolPreference::NiceHash => {
-                if let Some(url) = self.nicehash_pool(region) {
-                    return url;
-                }
-                if let Some(url) = self.herominers_pool(region) {
-                    return url;
-                }
-                if let Some(url) = self.zpool_pool(region) {
-                    return url;
-                }
-                self.default_pool().to_string()
-            }
-            PoolPreference::HeroMiners => {
-                if let Some(url) = self.herominers_pool(region) {
-                    return url;
-                }
-                if let Some(url) = self.zpool_pool(region) {
-                    return url;
-                }
-                self.default_pool().to_string()
-            }
-            PoolPreference::ZPool => {
-                if let Some(url) = self.zpool_pool(region) {
-                    return url;
-                }
-                self.default_pool().to_string()
-            }
-            PoolPreference::Default => self.default_pool().to_string(),
-        }
-    }
-
-    /// Stratum protocol variant used by this coin's pool.
-    pub fn protocol(self) -> StratumProtocol {
-        match self {
-            Self::DCR => StratumProtocol::Stratum,
-            Self::ALPH => StratumProtocol::Stratum,
-            Self::KAS => StratumProtocol::Stratum,
-            Self::ERG => StratumProtocol::Stratum,
-            Self::RVN => StratumProtocol::EthStratum,
-            Self::ETC => StratumProtocol::EthStratum,
-            Self::EVR => StratumProtocol::EthStratum,
-            Self::MEWC => StratumProtocol::EthStratum,
-            Self::FLUX => StratumProtocol::Stratum,
-            Self::CLORE => StratumProtocol::EthStratum,
-            Self::XMR => StratumProtocol::Stratum,
-            Self::VRSC => StratumProtocol::ZcashStratum,
-            Self::PRL => StratumProtocol::PearlStratum,
-            Self::EPIC => StratumProtocol::EpicStratum,
-            Self::ZANO => StratumProtocol::Stratum,
-            Self::QUAI => StratumProtocol::EthStratum,
-            Self::BEAM => StratumProtocol::BeamStratum,
-            Self::KLS => StratumProtocol::Stratum,
-            Self::ZCL => StratumProtocol::ZcashStratum,
-            Self::QTC => StratumProtocol::Stratum,
-            Self::VTC => StratumProtocol::Stratum,
-            Self::IRON => StratumProtocol::Stratum,
-            Self::NEXA => StratumProtocol::Stratum,
-            Self::RTM => StratumProtocol::Stratum,
-            Self::DNX => StratumProtocol::Stratum,
-            Self::CKB => StratumProtocol::Stratum,
-            Self::CFX => StratumProtocol::Stratum,
-            Self::ZEC => StratumProtocol::ZcashStratum,
-            Self::PHX => StratumProtocol::Stratum,
-            Self::KRX => StratumProtocol::Stratum,
-        }
-    }
-
-    /// All known coins.
-    pub fn all() -> &'static [ExternalCoin] {
-        &[
-            Self::DCR,
-            Self::ALPH,
-            Self::KAS,
-            Self::ERG,
-            Self::RVN,
-            Self::ETC,
-            Self::EVR,
-            Self::MEWC,
-            Self::FLUX,
-            Self::CLORE,
-            Self::XMR,
-            Self::VRSC,
-            Self::PRL,
-            Self::EPIC,
-            Self::ZANO,
-            Self::QUAI,
-            Self::BEAM,
-            Self::KLS,
-            Self::ZCL,
-            Self::QTC,
-            Self::VTC,
-            Self::IRON,
-            Self::NEXA,
-            Self::RTM,
-            Self::DNX,
-            Self::CKB,
-            Self::CFX,
-            Self::ZEC,
-            Self::PHX,
-            Self::KRX,
-        ]
-    }
-
-    /// Only Blake3-compatible coins.
-    pub fn blake3_coins() -> &'static [ExternalCoin] {
-        &[Self::DCR, Self::ALPH]
-    }
-
-    /// Map this external coin to the canonical revenue source used by the
-    /// pool-side revenue collector.
-    pub fn revenue_source(self) -> crate::revenue::RevenueSource {
-        use crate::revenue::RevenueSource;
-        match self {
-            Self::DCR | Self::ALPH => RevenueSource::Blake3External,
-            Self::KAS => RevenueSource::KHeavyHashExternal,
-            Self::ETC | Self::EVR | Self::MEWC => RevenueSource::EthashExternal,
-            Self::RVN | Self::CLORE => RevenueSource::KawPowExternal,
-            Self::ERG => RevenueSource::AutolykosExternal,
-            Self::XMR => RevenueSource::RandomXExternal,
-            Self::FLUX => RevenueSource::ZelHashExternal,
-            Self::VRSC => RevenueSource::VerusHashExternal,
-            Self::PRL => RevenueSource::PearlExternal,
-            Self::EPIC => RevenueSource::ProgPowExternal,
-            Self::ZANO => RevenueSource::ProgPowExternal,
-            Self::QUAI => RevenueSource::KawPowExternal,
-            Self::BEAM => RevenueSource::BeamHashExternal,
-            Self::KLS => RevenueSource::KarlsenHashExternal,
-            Self::ZCL => RevenueSource::EquihashZeroExternal,
-            Self::QTC => RevenueSource::QhashExternal,
-            Self::VTC => RevenueSource::VerthashExternal,
-            Self::IRON => RevenueSource::FishHashExternal,
-            Self::NEXA => RevenueSource::NexaPowExternal,
-            Self::RTM => RevenueSource::GhostRiderExternal,
-            Self::DNX => RevenueSource::DynexSolveExternal,
-            Self::CKB => RevenueSource::EaglesongExternal,
-            Self::CFX => RevenueSource::OctopusExternal,
-            Self::ZEC => RevenueSource::EquihashExternal,
-            Self::PHX => RevenueSource::NeoScryptExternal,
-            Self::KRX => RevenueSource::KeryxHashExternal,
-        }
-    }
-}
-
-impl fmt::Display for ExternalCoin {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.ticker())
-    }
 }
 
 // ── Stratum protocol variant ─────────────────────────────────────────
@@ -720,6 +58,19 @@ impl StratumProtocol {
     }
 }
 
+pub fn coin_to_protocol(coin: ExternalCoin) -> StratumProtocol {
+    match coin {
+        ExternalCoin::Ravencoin | ExternalCoin::EthereumClassic
+        | ExternalCoin::Evrmore | ExternalCoin::Meowcoin | ExternalCoin::Clore
+        | ExternalCoin::Quai => StratumProtocol::EthStratum,
+        ExternalCoin::Verus | ExternalCoin::Zclassic | ExternalCoin::Zcash => StratumProtocol::ZcashStratum,
+        ExternalCoin::Pearl => StratumProtocol::PearlStratum,
+        ExternalCoin::EpicCash => StratumProtocol::EpicStratum,
+        ExternalCoin::Beam => StratumProtocol::BeamStratum,
+        _ => StratumProtocol::Stratum,
+    }
+}
+
 // ── Coin profile (full metadata snapshot) ────────────────────────────
 
 /// Complete profile for an external coin — enough to connect and mine.
@@ -749,7 +100,7 @@ impl CoinProfile {
             algorithm: coin.algorithm().to_string(),
             pool_host: host,
             pool_port: port,
-            protocol: coin.protocol(),
+            protocol: coin_to_protocol(coin),
             worker_name: "zion_dynamic".to_string(),
             enabled: true,
             disabled: false,
@@ -767,7 +118,7 @@ impl CoinProfile {
             algorithm: coin.algorithm().to_string(),
             pool_host: host,
             pool_port: port,
-            protocol: coin.protocol(),
+            protocol: coin_to_protocol(coin),
             worker_name: "zion_dynamic".to_string(),
             enabled: true,
             disabled: false,
@@ -810,133 +161,133 @@ impl ProfitEntry {
 pub fn fallback_estimates() -> Vec<ProfitEntry> {
     vec![
         ProfitEntry {
-            coin: ExternalCoin::KAS,
+            coin: ExternalCoin::Kaspa,
             revenue_per_day_usd: 0.85,
             power_cost_usd: 0.10,
         },
         ProfitEntry {
-            coin: ExternalCoin::ETC,
+            coin: ExternalCoin::EthereumClassic,
             revenue_per_day_usd: 0.60,
             power_cost_usd: 0.12,
         },
         ProfitEntry {
-            coin: ExternalCoin::ALPH,
+            coin: ExternalCoin::Alephium,
             revenue_per_day_usd: 0.55,
             power_cost_usd: 0.08,
         },
         ProfitEntry {
-            coin: ExternalCoin::FLUX,
+            coin: ExternalCoin::Flux,
             revenue_per_day_usd: 0.50,
             power_cost_usd: 0.10,
         },
         ProfitEntry {
-            coin: ExternalCoin::DCR,
+            coin: ExternalCoin::Decred,
             revenue_per_day_usd: 0.45,
             power_cost_usd: 0.08,
         },
         ProfitEntry {
-            coin: ExternalCoin::ERG,
+            coin: ExternalCoin::Ergo,
             revenue_per_day_usd: 0.40,
             power_cost_usd: 0.10,
         },
         ProfitEntry {
-            coin: ExternalCoin::RVN,
+            coin: ExternalCoin::Ravencoin,
             revenue_per_day_usd: 0.35,
             power_cost_usd: 0.12,
         },
         ProfitEntry {
-            coin: ExternalCoin::CLORE,
+            coin: ExternalCoin::Clore,
             revenue_per_day_usd: 0.30,
             power_cost_usd: 0.10,
         },
         ProfitEntry {
-            coin: ExternalCoin::EVR,
+            coin: ExternalCoin::Evrmore,
             revenue_per_day_usd: 0.20,
             power_cost_usd: 0.08,
         },
         ProfitEntry {
-            coin: ExternalCoin::MEWC,
+            coin: ExternalCoin::Meowcoin,
             revenue_per_day_usd: 0.15,
             power_cost_usd: 0.06,
         },
         ProfitEntry {
-            coin: ExternalCoin::XMR,
+            coin: ExternalCoin::Monero,
             revenue_per_day_usd: 0.12,
             power_cost_usd: 0.03,
         },
         ProfitEntry {
-            coin: ExternalCoin::VRSC,
+            coin: ExternalCoin::Verus,
             revenue_per_day_usd: 0.08,
             power_cost_usd: 0.01,
         },
         ProfitEntry {
-            coin: ExternalCoin::ZANO,
+            coin: ExternalCoin::Zano,
             revenue_per_day_usd: 0.28,
             power_cost_usd: 0.12,
         },
         // ── 8 new no-DAG GPU-mineable coins (2026-07-16) ──
         ProfitEntry {
-            coin: ExternalCoin::KLS,
+            coin: ExternalCoin::Karlsen,
             revenue_per_day_usd: 0.21,
             power_cost_usd: 0.22,
         },
         ProfitEntry {
-            coin: ExternalCoin::ZCL,
+            coin: ExternalCoin::Zclassic,
             revenue_per_day_usd: 0.15,
             power_cost_usd: 0.18,
         },
         ProfitEntry {
-            coin: ExternalCoin::QTC,
+            coin: ExternalCoin::Qubitcoin,
             revenue_per_day_usd: 0.10,
             power_cost_usd: 0.15,
         },
         ProfitEntry {
-            coin: ExternalCoin::VTC,
+            coin: ExternalCoin::Vertcoin,
             revenue_per_day_usd: 0.12,
             power_cost_usd: 0.18,
         },
         ProfitEntry {
-            coin: ExternalCoin::IRON,
+            coin: ExternalCoin::IronFish,
             revenue_per_day_usd: 0.18,
             power_cost_usd: 0.22,
         },
         ProfitEntry {
-            coin: ExternalCoin::NEXA,
+            coin: ExternalCoin::Nexa,
             revenue_per_day_usd: 0.08,
             power_cost_usd: 0.20,
         },
         ProfitEntry {
-            coin: ExternalCoin::RTM,
+            coin: ExternalCoin::Raptoreum,
             revenue_per_day_usd: 0.06,
             power_cost_usd: 0.20,
         },
         ProfitEntry {
-            coin: ExternalCoin::DNX,
+            coin: ExternalCoin::Dynex,
             revenue_per_day_usd: 0.02,
             power_cost_usd: 0.22,
         },
         ProfitEntry {
-            coin: ExternalCoin::CKB,
+            coin: ExternalCoin::Nervos,
             revenue_per_day_usd: 0.08,
             power_cost_usd: 0.25,
         },
         ProfitEntry {
-            coin: ExternalCoin::CFX,
+            coin: ExternalCoin::Conflux,
             revenue_per_day_usd: 0.15,
             power_cost_usd: 0.31,
         },
         ProfitEntry {
-            coin: ExternalCoin::ZEC,
+            coin: ExternalCoin::Zcash,
             revenue_per_day_usd: 0.10,
             power_cost_usd: 0.25,
         },
         ProfitEntry {
-            coin: ExternalCoin::PHX,
+            coin: ExternalCoin::PhoenixCoin,
             revenue_per_day_usd: 0.03,
             power_cost_usd: 0.27,
         },
         ProfitEntry {
-            coin: ExternalCoin::KRX,
+            coin: ExternalCoin::Keryx,
             revenue_per_day_usd: 0.03,
             power_cost_usd: 0.27,
         },
@@ -958,21 +309,21 @@ fn fetch_btc_price_usd() -> Option<f64> {
 /// Map a NiceHash algorithm name (uppercase, from API) to our `ExternalCoin`.
 fn nicehash_algo_to_external_coin(algo: &str) -> Option<ExternalCoin> {
     match algo.to_uppercase().as_str() {
-        "KHEAVYHASH" => Some(ExternalCoin::KAS),
-        "KAWPOW" => Some(ExternalCoin::RVN), // RVN/QUAI/CLORE share kawpow
-        "ETCHASH" => Some(ExternalCoin::ETC),
-        "AUTOLYKOS" => Some(ExternalCoin::ERG),
-        "VERUSHASH" => Some(ExternalCoin::VRSC),
-        "RANDOMXMONERO" => Some(ExternalCoin::XMR),
-        "NEXAPOW" => Some(ExternalCoin::NEXA),
-        "BEAMV3" => Some(ExternalCoin::BEAM),
-        "FISHHASH" => Some(ExternalCoin::IRON),
-        "ALEPHIUM" => Some(ExternalCoin::ALPH),
-        "EAGLESONG" => Some(ExternalCoin::CKB),
-        "OCTOPUS" => Some(ExternalCoin::CFX),
-        "EQUIHASH" => Some(ExternalCoin::ZEC),
-        "NEOSCRYPT" => Some(ExternalCoin::PHX),
-        "KERYXHASH" => Some(ExternalCoin::KRX),
+        "KHEAVYHASH" => Some(ExternalCoin::Kaspa),
+        "KAWPOW" => Some(ExternalCoin::Ravencoin), // RVN/QUAI/CLORE share kawpow
+        "ETCHASH" => Some(ExternalCoin::EthereumClassic),
+        "AUTOLYKOS" => Some(ExternalCoin::Ergo),
+        "VERUSHASH" => Some(ExternalCoin::Verus),
+        "RANDOMXMONERO" => Some(ExternalCoin::Monero),
+        "NEXAPOW" => Some(ExternalCoin::Nexa),
+        "BEAMV3" => Some(ExternalCoin::Beam),
+        "FISHHASH" => Some(ExternalCoin::IronFish),
+        "ALEPHIUM" => Some(ExternalCoin::Alephium),
+        "EAGLESONG" => Some(ExternalCoin::Nervos),
+        "OCTOPUS" => Some(ExternalCoin::Conflux),
+        "EQUIHASH" => Some(ExternalCoin::Zcash),
+        "NEOSCRYPT" => Some(ExternalCoin::PhoenixCoin),
+        "KERYXHASH" => Some(ExternalCoin::Keryx),
         // ZHASH (Equihash 144,5) is NOT FLUX (ZelHash = Equihash 125,4).
         // NiceHash ZHash is for BTG/ANON/BTCZ — we don't mine those.
         // FLUX must use alternative pools (WoolyPooly, etc.).
@@ -1166,15 +517,15 @@ fn parse_whattomine_for_external_coins(body: &str) -> Vec<ProfitEntry> {
 /// Map a WhatToMine coin tag to our `ExternalCoin` enum.
 fn tag_to_external_coin(tag: &str) -> Option<ExternalCoin> {
     match tag.to_uppercase().as_str() {
-        "DCR" => Some(ExternalCoin::DCR),
-        "ALPH" => Some(ExternalCoin::ALPH),
-        "KAS" => Some(ExternalCoin::KAS),
-        "ERG" => Some(ExternalCoin::ERG),
-        "RVN" => Some(ExternalCoin::RVN),
-        "ETC" => Some(ExternalCoin::ETC),
-        "XMR" => Some(ExternalCoin::XMR),
-        "FLUX" => Some(ExternalCoin::FLUX),
-        "CLORE" => Some(ExternalCoin::CLORE),
+        "DCR" => Some(ExternalCoin::Decred),
+        "ALPH" => Some(ExternalCoin::Alephium),
+        "KAS" => Some(ExternalCoin::Kaspa),
+        "ERG" => Some(ExternalCoin::Ergo),
+        "RVN" => Some(ExternalCoin::Ravencoin),
+        "ETC" => Some(ExternalCoin::EthereumClassic),
+        "XMR" => Some(ExternalCoin::Monero),
+        "FLUX" => Some(ExternalCoin::Flux),
+        "CLORE" => Some(ExternalCoin::Clore),
         _ => None, // EVR, MEWC not on WhatToMine
     }
 }
@@ -1308,39 +659,39 @@ mod tests {
 
     #[test]
     fn dcr_uses_blake3() {
-        assert_eq!(ExternalCoin::DCR.algorithm(), "blake3");
-        assert!(ExternalCoin::DCR.is_blake3());
-        assert_eq!(ExternalCoin::DCR.default_pool(), "pool.woolypooly.com:3152");
+        assert_eq!(ExternalCoin::Decred.algorithm(), "blake3_dcr");
+        assert!(ExternalCoin::Decred.is_blake3());
+        assert_eq!(ExternalCoin::Decred.default_pool(), "pool.woolypooly.com:3152");
     }
 
     #[test]
     fn alph_uses_blake3() {
-        assert_eq!(ExternalCoin::ALPH.algorithm(), "blake3");
-        assert!(ExternalCoin::ALPH.is_blake3());
+        assert_eq!(ExternalCoin::Alephium.algorithm(), "blake3_alph");
+        assert!(ExternalCoin::Alephium.is_blake3());
     }
 
     #[test]
     fn blake3_coins_returns_dcr_and_alph() {
         let blake3 = ExternalCoin::blake3_coins();
         assert_eq!(blake3.len(), 2);
-        assert!(blake3.contains(&ExternalCoin::DCR));
-        assert!(blake3.contains(&ExternalCoin::ALPH));
+        assert!(blake3.contains(&ExternalCoin::Decred));
+        assert!(blake3.contains(&ExternalCoin::Alephium));
     }
 
     #[test]
     fn from_str_loose_parses_dcr_aliases() {
-        assert_eq!(ExternalCoin::from_str_loose("dcr"), Some(ExternalCoin::DCR));
+        assert_eq!(ExternalCoin::from_str_loose("dcr"), Some(ExternalCoin::Decred));
         assert_eq!(
             ExternalCoin::from_str_loose("Decred"),
-            Some(ExternalCoin::DCR)
+            Some(ExternalCoin::Decred)
         );
         assert_eq!(
             ExternalCoin::from_str_loose("BLAKE3-DCR"),
-            Some(ExternalCoin::DCR)
+            Some(ExternalCoin::Decred)
         );
         assert_eq!(
             ExternalCoin::from_str_loose("blake3dcr"),
-            Some(ExternalCoin::DCR)
+            Some(ExternalCoin::Decred)
         );
     }
 
@@ -1348,18 +699,18 @@ mod tests {
     fn from_str_loose_parses_others() {
         assert_eq!(
             ExternalCoin::from_str_loose("alph"),
-            Some(ExternalCoin::ALPH)
+            Some(ExternalCoin::Alephium)
         );
-        assert_eq!(ExternalCoin::from_str_loose("KAS"), Some(ExternalCoin::KAS));
-        assert_eq!(ExternalCoin::from_str_loose("xmr"), Some(ExternalCoin::XMR));
+        assert_eq!(ExternalCoin::from_str_loose("KAS"), Some(ExternalCoin::Kaspa));
+        assert_eq!(ExternalCoin::from_str_loose("xmr"), Some(ExternalCoin::Monero));
         assert_eq!(ExternalCoin::from_str_loose("unknown"), None);
     }
 
     #[test]
     fn coin_profile_default_for_dcr() {
-        let profile = CoinProfile::default_for(ExternalCoin::DCR);
+        let profile = CoinProfile::default_for(ExternalCoin::Decred);
         assert_eq!(profile.ticker, "DCR");
-        assert_eq!(profile.algorithm, "blake3");
+        assert_eq!(profile.algorithm, "blake3_dcr");
         assert_eq!(profile.pool_host, "pool.woolypooly.com");
         assert_eq!(profile.pool_port, 3152);
         assert_eq!(profile.protocol, StratumProtocol::Stratum);
@@ -1372,70 +723,70 @@ mod tests {
     fn select_best_coin_picks_highest_profit() {
         let entries = vec![
             ProfitEntry {
-                coin: ExternalCoin::DCR,
+                coin: ExternalCoin::Decred,
                 revenue_per_day_usd: 0.45,
                 power_cost_usd: 0.08,
             },
             ProfitEntry {
-                coin: ExternalCoin::KAS,
+                coin: ExternalCoin::Kaspa,
                 revenue_per_day_usd: 0.85,
                 power_cost_usd: 0.10,
             },
             ProfitEntry {
-                coin: ExternalCoin::ALPH,
+                coin: ExternalCoin::Alephium,
                 revenue_per_day_usd: 0.55,
                 power_cost_usd: 0.08,
             },
         ];
         let best = select_best_coin(&entries, None, 5.0, &[]);
-        assert_eq!(best, Some(ExternalCoin::KAS));
+        assert_eq!(best, Some(ExternalCoin::Kaspa));
     }
 
     #[test]
     fn select_best_coin_hysteresis_keeps_current() {
         let entries = vec![
             ProfitEntry {
-                coin: ExternalCoin::DCR,
+                coin: ExternalCoin::Decred,
                 revenue_per_day_usd: 0.45,
                 power_cost_usd: 0.08,
             },
             ProfitEntry {
-                coin: ExternalCoin::ALPH,
+                coin: ExternalCoin::Alephium,
                 revenue_per_day_usd: 0.49,
                 power_cost_usd: 0.08,
             },
         ];
         // ALPH is ~10.8% better, but hysteresis is 15% → stay on DCR
-        let best = select_best_coin(&entries, Some(ExternalCoin::DCR), 15.0, &[]);
-        assert_eq!(best, Some(ExternalCoin::DCR));
+        let best = select_best_coin(&entries, Some(ExternalCoin::Decred), 15.0, &[]);
+        assert_eq!(best, Some(ExternalCoin::Decred));
     }
 
     #[test]
     fn select_best_coin_hysteresis_switches_when_large_gap() {
         let entries = vec![
             ProfitEntry {
-                coin: ExternalCoin::DCR,
+                coin: ExternalCoin::Decred,
                 revenue_per_day_usd: 0.30,
                 power_cost_usd: 0.08,
             },
             ProfitEntry {
-                coin: ExternalCoin::KAS,
+                coin: ExternalCoin::Kaspa,
                 revenue_per_day_usd: 0.85,
                 power_cost_usd: 0.10,
             },
         ];
         // KAS is ~240% better → switch even with 15% hysteresis
-        let best = select_best_coin(&entries, Some(ExternalCoin::DCR), 15.0, &[]);
-        assert_eq!(best, Some(ExternalCoin::KAS));
+        let best = select_best_coin(&entries, Some(ExternalCoin::Decred), 15.0, &[]);
+        assert_eq!(best, Some(ExternalCoin::Kaspa));
     }
 
     #[test]
     fn fallback_estimates_include_dcr() {
         let estimates = fallback_estimates();
-        assert!(estimates.iter().any(|e| e.coin == ExternalCoin::DCR));
+        assert!(estimates.iter().any(|e| e.coin == ExternalCoin::Decred));
         let dcr = estimates
             .iter()
-            .find(|e| e.coin == ExternalCoin::DCR)
+            .find(|e| e.coin == ExternalCoin::Decred)
             .unwrap();
         assert!(dcr.revenue_per_day_usd > 0.0);
         assert!(dcr.profit_per_day_usd() > 0.0);
@@ -1452,33 +803,33 @@ mod tests {
 
     #[test]
     fn display_shows_ticker() {
-        assert_eq!(format!("{}", ExternalCoin::DCR), "DCR");
-        assert_eq!(format!("{}", ExternalCoin::ALPH), "ALPH");
+        assert_eq!(format!("{}", ExternalCoin::Decred), "DCR");
+        assert_eq!(format!("{}", ExternalCoin::Alephium), "ALPH");
     }
 
     #[test]
     fn nicehash_supported_coin_gets_nh_endpoint() {
-        let pool = ExternalCoin::KAS.best_pool(PoolPreference::NiceHash, "eu");
+        let pool = ExternalCoin::Kaspa.best_pool(PoolPreference::NiceHash, "eu");
         assert_eq!(pool, "kheavyhash.auto.nicehash.com:9200");
     }
 
     #[test]
     fn nicehash_blake3_coin_falls_back() {
-        let pool = ExternalCoin::DCR.best_pool(PoolPreference::NiceHash, "eu");
+        let pool = ExternalCoin::Decred.best_pool(PoolPreference::NiceHash, "eu");
         assert_eq!(pool, "pool.woolypooly.com:3152");
     }
 
     #[test]
     fn profile_for_preference_uses_selected_pool() {
         let profile =
-            CoinProfile::for_preference(ExternalCoin::KAS, PoolPreference::NiceHash, "eu");
+            CoinProfile::for_preference(ExternalCoin::Kaspa, PoolPreference::NiceHash, "eu");
         assert_eq!(profile.pool_host, "kheavyhash.auto.nicehash.com");
         assert_eq!(profile.pool_port, 9200);
     }
 
     #[test]
     fn coin_profile_can_be_disabled_with_reason() {
-        let profile = CoinProfile::default_for(ExternalCoin::DCR).disabled("no accepted shares");
+        let profile = CoinProfile::default_for(ExternalCoin::Decred).disabled("no accepted shares");
         assert!(profile.disabled);
         assert_eq!(
             profile.disabled_reason,
@@ -1495,12 +846,12 @@ mod tests {
             .collect();
         let kas_idx = profiles
             .iter()
-            .position(|p| p.coin == ExternalCoin::KAS)
+            .position(|p| p.coin == ExternalCoin::Kaspa)
             .unwrap();
         profiles[kas_idx] = profiles[kas_idx].clone().disabled("no accepted shares");
 
         let best = best_coin_for_gpu(&fallback_estimates(), &profiles);
-        assert_ne!(best, Some(ExternalCoin::KAS));
+        assert_ne!(best, Some(ExternalCoin::Kaspa));
         assert!(best.is_some_and(|c| c.is_gpu()));
     }
 
@@ -1512,20 +863,20 @@ mod tests {
             .collect();
         let xmr_idx = profiles
             .iter()
-            .position(|p| p.coin == ExternalCoin::XMR)
+            .position(|p| p.coin == ExternalCoin::Monero)
             .unwrap();
         profiles[xmr_idx] = profiles[xmr_idx].clone().disabled("no accepted shares");
 
         let best = best_coin_for_cpu(&fallback_estimates(), &profiles);
-        assert_ne!(best, Some(ExternalCoin::XMR));
+        assert_ne!(best, Some(ExternalCoin::Monero));
         assert!(best.is_some_and(|c| c.is_cpu()));
     }
 
     #[test]
     fn disabled_high_profit_coin_is_still_skipped() {
-        let disabled = vec![ExternalCoin::KAS];
+        let disabled = vec![ExternalCoin::Kaspa];
         let best = select_best_coin(&fallback_estimates(), None, 5.0, &disabled);
-        assert_ne!(best, Some(ExternalCoin::KAS));
+        assert_ne!(best, Some(ExternalCoin::Kaspa));
         assert!(best.is_some());
     }
 }

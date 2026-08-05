@@ -26,7 +26,8 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 EDGE_USER="${ZION_EDGE_USER:-root}"
-EDGE_HOST="${ZION_EDGE_HOST:-62.171.141.136}"
+# zion-v6 is an ssh config alias for the Edge IPv6 address (port 2222).
+EDGE_HOST="${ZION_EDGE_HOST:-zion-v6}"
 SSH_KEY="${ZION_EDGE_SSH_KEY:-$HOME/.ssh/zion-edge-post-wipe-2026-07-29}"
 REMOTE_ROOT="/opt/zion"
 REMOTE_WEB="/opt/zion/website-v2.9"
@@ -44,7 +45,7 @@ info() { echo -e "${CYAN}[info]${NC} $*"; }
 warn() { echo -e "${YELLOW}[warn]${NC} $*"; }
 err()  { echo -e "${RED}[err]${NC} $*"; exit 1; }
 
-SSH_OPTS="-i ${SSH_KEY} -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10"
+SSH_OPTS="-i ${SSH_KEY} -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes"
 
 # ── Step 0: Verify SSH and environment file ──
 log "Verifying SSH access to Edge..."
@@ -162,11 +163,12 @@ log "Rebuilding V31 binaries on Edge..."
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
     . /root/.cargo/env || . /opt/zion/.cargo/env
     cd '${REMOTE_ROOT}/V31'
-    # Free-world / issobella / ai-native / native-ffi are not part of the Edge build set
+    # Free-world / issobella / ai-native / native-ffi / cli / smoke are not part of the Edge build set
     if [ ! -d L5/free-world ]; then
         sed -i '/\"L5\/free-world\",/d;/\"L6\/issobella\",/d;/\"L4\/oasis\",/d' Cargo.toml 2>/dev/null || true
         sed -i '/\"L1\/native-ffi\",/d' Cargo.toml 2>/dev/null || true
         sed -i '/\"L3\/ai-native\",/d' Cargo.toml 2>/dev/null || true
+        sed -i '/\"cli\",/d;/\"smoke\",/d' Cargo.toml 2>/dev/null || true
     fi
     cargo build --release --bin zion-node --bin zion-pool --bin zion-bridge --bin zion-dao --bin warpd --bin zion-miner 2>&1
     # Build agent

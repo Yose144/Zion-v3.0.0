@@ -30,14 +30,14 @@ const DownloadCopy = {
   k3CheckBalance: { cs: `3. Zkontroluj zůstatek`, en: `3. Check Balance` },
   orVisitTheExplorerAtZionterran: { cs: `Nebo navštiv Explorer na zionterranova.com/explorer`, en: `Or visit the Explorer at zionterranova.com/explorer` },
   needAWalletUseV305CliBelow: { cs: `Potřebuješ peněženku? Použij v3.0.5-beta Community CLI níže`, en: `Need a wallet? Use the v3.0.5-beta Community CLI below` },
-  tripleStreamMinerGpuCpuZionLiq: { cs: `Trinity Miner · GPU + CPU · Zion Liquidity`, en: `Trinity Miner · GPU + CPU · Zion Liquidity` },
+  tripleStreamMinerGpuCpuZionLiq: { cs: `Terminal Miner · GPU + CPU · Zion Liquidity`, en: `Terminal Miner · GPU + CPU · Zion Liquidity` },
   downloadMineEarn: { cs: `Stáhni. Těž. Vydělávej.`, en: `Download. Mine. Earn.` },
-  zionV310BoostMinerThreeStream: { cs: `ZION v3.1.0 — Boost Miner. Tři streamy současně: ZION (primární) + GPU + CPU. `, en: `ZION v3.1.0 — Boost Miner. Three streams simultaneously: ZION (primary) + GPU + CPU. ` },
-  invertsTraditionalMiningMineHo: { cs: `inverzuje tradiční mining: těž → drž ZION → likvidita roste. Žádné burzy, žádný sell pressure. Auto GPU backend (CUDA + OpenCL + Metal) a nativní algoritmy (VerusHash, RandomX, BLAKE3). Linux x86_64 nyní, macOS/Windows v Trinity Miner níže.`, en: `inverts traditional mining: mine → hold ZION → liquidity grows. No exchanges, no sell pressure. Auto GPU backend (CUDA + OpenCL + Metal) and native algorithms (VerusHash, RandomX, BLAKE3). Linux x86_64 now, macOS/Windows via Trinity Miner below.` },
+  zionV310BoostMinerThreeStream: { cs: `ZION v3.1.0 — Terminal Miner. One-click GPU auto-detect na 4 platformách. `, en: `ZION v3.1.0 — Terminal Miner. One-click GPU auto-detect on 4 platforms. ` },
+  invertsTraditionalMiningMineHo: { cs: `Auto GPU backend (CUDA + OpenCL + Metal) a nativní algoritmy (VerusHash, RandomX, BLAKE3, GhostRider, Etchash, KawPow, Autolykos, kHeavyHash, Cosmic Harmony). Linux x86_64, macOS Apple Silicon/Intel, Windows x86_64.`, en: `Auto GPU backend (CUDA + OpenCL + Metal) and native algorithms (VerusHash, RandomX, BLAKE3, GhostRider, Etchash, KawPow, Autolykos, kHeavyHash, Cosmic Harmony). Linux x86_64, macOS Apple Silicon/Intel, Windows x86_64.` },
   downloadBinaries: { cs: `Stáhnout binárky`, en: `Download binaries` },
   githubReleases: { cs: `GitHub Releases`, en: `GitHub Releases` },
   publicMainnetRelease: { cs: `Veřejný mainnet release`, en: `Public mainnet release` },
-  theLatestReleaseBringsTheTripl: { cs: `Nejnovější release v3.1.0 přináší Boost Miner — tři streamy současně: ZION (primární) + GPU + CPU. Auto GPU backend detekce (OpenCL/CUDA/Metal). Nativní algoritmy: VerusHash v2.2, RandomX, BLAKE3. Linux x86_64 binárka s SHA256 verifikací. Pro macOS/Windows použij Trinity Miner v3.0.6-beta níže.`, en: `The latest v3.1.0 release brings Boost Miner — three streams simultaneously: ZION (primary) + GPU + CPU. Auto GPU backend detection (OpenCL/CUDA/Metal). Native algorithms: VerusHash v2.2, RandomX, BLAKE3. Linux x86_64 binary with SHA256 verification. For macOS/Windows use Trinity Miner v3.0.6-beta below.` },
+  theLatestReleaseBringsTheTripl: { cs: `Nejnovější release v3.1.0-cli přináší Terminal Miner — one-click GPU auto-detect (CUDA → OpenCL → Metal → CPU). Nativní algoritmy: VerusHash, RandomX, BLAKE3, GhostRider, Etchash, KawPow, Autolykos, kHeavyHash, Cosmic Harmony. 4 platformy: Linux x86_64, macOS Apple Silicon/Intel, Windows x86_64. SHA256 verifikace.`, en: `The latest v3.1.0-cli release brings Terminal Miner — one-click GPU auto-detect (CUDA → OpenCL → Metal → CPU). Native algorithms: VerusHash, RandomX, BLAKE3, GhostRider, Etchash, KawPow, Autolykos, kHeavyHash, Cosmic Harmony. 4 platforms: Linux x86_64, macOS Apple Silicon/Intel, Windows x86_64. SHA256 verification.` },
   sourceOfTruth: { cs: `Zdroj pravdy:`, en: `Source of truth:` },
   operatorCommandsGuideFaqRefere: { cs: `operátorské příkazy, guide, FAQ, reference a troubleshooting jsou v sekci `, en: `operator commands, guide, FAQ, reference, and troubleshooting live in the ` },
   sectionOfTheDocsSourceCodeIsOp: { cs: ` v dokumentaci. Zdrojový kód je open-source na `, en: ` section of the docs. Source code is open-source on ` },
@@ -45,8 +45,8 @@ const DownloadCopy = {
   comingSoon: { cs: `Brzy`, en: `Coming Soon` },
   oneClickGuiForMiningWalletMana: { cs: `GUI na jedno kliknutí pro těžbu, správu peněženky a monitoring — bez terminálu`, en: `One-click GUI for mining, wallet management and monitoring — no terminal needed` },
   inDevelopment: { cs: `VE VYVOJI`, en: `IN DEVELOPMENT` },
-  fullGuiApplicationWithBuiltInM: { cs: `Plná GUI aplikace s vestavěným minerem, peněženkou a dashboardem v reálném čase. Linux AppImage a DEB dostupné nyní, Windows a macOS brzy.`, en: `Full GUI application with built-in miner, wallet, and real-time dashboard. Linux AppImage and DEB available now, Windows and macOS coming soon.` },
-  allPlatforms: { cs: `Linux dostupný, Windows/macOS brzy`, en: `Linux available, Windows/macOS soon` },
+  fullGuiApplicationWithBuiltInM: { cs: `Plná GUI aplikace s vestavěným minerem, peněženkou a dashboardem v reálném čase. Dostupná pro Linux (AppImage + DEB), macOS (DMG) a Windows (EXE + ZIP).`, en: `Full GUI application with built-in miner, wallet, and real-time dashboard. Available for Linux (AppImage + DEB), macOS (DMG), and Windows (EXE + ZIP).` },
+  allPlatforms: { cs: `Linux + macOS + Windows`, en: `Linux + macOS + Windows` },
   windowsComingSoon: { cs: `Windows — Brzy`, en: `Windows — Coming Soon` },
   macosComingSoon: { cs: `macOS — Brzy`, en: `macOS — Coming Soon` },
   linuxPreview: { cs: `Linux — Dostupné`, en: `Linux — Available` },
@@ -193,7 +193,6 @@ export default function DownloadPage() {
             <div className="absolute top-4 right-4 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold tracking-wider text-emerald-400">
               ✅ {DownloadCopy.allPlatforms[cs ? 'cs' : 'en']}
             </div>
-
             <div className="flex items-start gap-4 mb-6">
               <Monitor className="mt-1 h-10 w-10 shrink-0 text-zion-gold" />
               <div>
@@ -232,27 +231,33 @@ export default function DownloadPage() {
                 <Package className="h-4 w-4" />
                 {DownloadCopy.desktopLinuxDeb[cs ? 'cs' : 'en']}
               </Link>
-              <span
-                className="zion-button-secondary text-sm cursor-not-allowed opacity-60"
+              <Link
+                href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.1.0-desktop/zion-public-miner-v3.1.0-windows-x64.exe"
+                target="_blank"
+                rel="noreferrer"
+                className="zion-button-primary text-sm"
               >
                 <Package className="h-4 w-4" />
                 {DownloadCopy.desktopWindowsExe[cs ? 'cs' : 'en']}
-                <span className="ml-1 text-xs">({DownloadCopy.comingSoon[cs ? 'cs' : 'en']})</span>
-              </span>
-              <span
-                className="zion-button-secondary text-sm cursor-not-allowed opacity-60"
+              </Link>
+              <Link
+                href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.1.0-desktop/zion-public-miner-v3.1.0-windows-x64.zip"
+                target="_blank"
+                rel="noreferrer"
+                className="zion-button-primary text-sm"
               >
                 <Package className="h-4 w-4" />
                 {DownloadCopy.desktopWindowsZip[cs ? 'cs' : 'en']}
-                <span className="ml-1 text-xs">({DownloadCopy.comingSoon[cs ? 'cs' : 'en']})</span>
-              </span>
-              <span
-                className="zion-button-secondary text-sm cursor-not-allowed opacity-60"
+              </Link>
+              <Link
+                href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.1.0-desktop/zion-public-miner-v3.1.0-mac-arm64.dmg"
+                target="_blank"
+                rel="noreferrer"
+                className="zion-button-primary text-sm"
               >
                 <Package className="h-4 w-4" />
                 {DownloadCopy.desktopMacDmg[cs ? 'cs' : 'en']}
-                <span className="ml-1 text-xs">({DownloadCopy.comingSoon[cs ? 'cs' : 'en']})</span>
-              </span>
+              </Link>
             </div>
 
             <div className="mt-4 flex flex-wrap gap-4 text-xs text-gray-400">
@@ -302,7 +307,7 @@ export default function DownloadPage() {
         <section className="space-y-6">
           <div className="flex flex-col gap-2">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DownloadCopy.publicMainnetRelease[cs ? 'cs' : 'en']}</p>
-            <h2 className="text-3xl font-semibold text-white">ZION v3.1.0 · Boost Miner</h2>
+            <h2 className="text-3xl font-semibold text-white">ZION v3.1.0 · Terminal Miner</h2>
             <p className="text-gray-400 max-w-3xl">
               {DownloadCopy.theLatestReleaseBringsTheTripl[cs ? 'cs' : 'en']}
             </p>

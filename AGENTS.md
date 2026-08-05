@@ -23,11 +23,11 @@ This file provides operating guidance to Devin, WARP, Copilot, and future automa
 
 ## Scope and working area
 
-- This is a multi-layer monorepo, but **active mainnet-track development is in `V3/`**.
+- This is a multi-layer monorepo, but **active mainnet-track development is in `V31/`** (V3 has been archived to `archive/V3/` as of 2026-08-04 V31 cutover).
 - **ZionDex backend** currently lives in `ZionDex/`; planned V3.1 location is `V31/L2/multichain` (absorbed into the unified **Multi-Chain** crate alongside bridge/warp/atomic-swap/swap-aggregator). See `ZionDex/README.md` (current), [`V3.1_MIGRATION_PLAN.md`](./docs/3.0.6/V3.1_MIGRATION_PLAN.md) and [`MAINNET_ALPHA_L2_UNIFICATION.md`](docs/3.0.8/MAINNET_ALPHA_L2_UNIFICATION.md) for the migration/unification plan. **Status: Live Beta** — Router integrated with WARP API (port 8453), web UI live at `/dex` and `/ziondex` on zionterranova.com. Cross-chain AMM routing implemented (`aggregator.rs`). Multi-path quote API: `GET /quote/multi`. Pending: custom AMM deploy, intent-based execution. ZionDex Router service LIVE on Edge (port 8454, 7 chains). Contract addresses template: [`docs/3.0.5/CONTRACT_ADDRESSES.md`](./docs/3.0.5/CONTRACT_ADDRESSES.md).
 - Treat legacy root trees (`L1/`, `L2/`, `L3/`, older docs/archive content) as migration/reference material unless a task explicitly targets them.
-- For `V3` work, prefer changing only `V3/**` unless the task explicitly requires cross-tree sync.
-- **V3.1 / V31 status (updated 2026-07-30):** A clean `V31/` workspace is active and all workspace tests pass. Development on `V31/` is now the main track for Mainnet Alpha (3.1.0). The `V3/` tree remains the current production runtime on Edge until `V31/` is cut over. **L2 target:** bridge/warp/atomic-swap/ziondex/swap-aggregator unify into a single **Multi-Chain** crate (`V31/L2/multichain`) per [`MAINNET_ALPHA_L2_UNIFICATION.md`](docs/3.0.8/MAINNET_ALPHA_L2_UNIFICATION.md); AuxPoW (root `AuXpow/`) merges into `V31/L1/miner/`; `L3` = AI/orchestration/automation/NCL/PoC; **L4 Oasis / L5 Free World / L6 Issobella stay as their own superstructure layers**. See [`V3.1_MIGRATION_PLAN.md`](./docs/3.0.6/V3.1_MIGRATION_PLAN.md) and the native integration plan [`V3.1_INTEGRATION_PLAN.md`](./docs/3.0.6/V3.1_INTEGRATION_PLAN.md). Until migration/cutover, keep using current `V3/`, `AuXpow/`, and `ZionDex/` paths.
+- For `V31` work, prefer changing only `V31/**` unless the task explicitly requires cross-tree sync. `V3/` is now at `archive/V3/` (read-only reference).
+- **V3.1 / V31 status (updated 2026-08-04):** `V31/` workspace (`3.1.0-alpha.2`) is **PRODUCTION** — V31 cutover complete. **1945 tests pass**, clippy clean. **Phase B+C+S COMPLETE**, **D.2 Cutover COMPLETE**, **D.3 Post-cutover D3.1-D3.4 PASS**. V31 node (systemd `zion-v31-node.service`, P2P 8335, RPC 9445) is production — public RPC 8443 → V31. V31 pool (`zion-v31-pool.service`, Stratum 8444) is production — ~1 MH/s, dozens of shares/sec. V31 multichain (`zion-v31-multichain.service`, port 8453) — /health 200 OK. V31 miner binary (stratum v1 client) mining live. V3 pool disabled. Tag `pre-v31-cutover` marks last V3-production commit. `V3/`, `AuXpow/`, `ZionDex/` archived to `archive/`. **L2:** bridge/warp/atomic-swap/ziondex/swap-aggregator unified into **Multi-Chain** crate (`V31/L2/multichain`, 554 tests). See [`PLAN_TO_3.1.md`](./PLAN_TO_3.1.md), [`V3.1_MIGRATION_PLAN.md`](./docs/3.0.6/V3.1_MIGRATION_PLAN.md) and [`V3.1_INTEGRATION_PLAN.md`](./docs/3.0.6/V3.1_INTEGRATION_PLAN.md).
 - Avoid incidental edits in `APP&WEB/**` when the task is unrelated to website, desktop, or mobile work.
 - If deployment behavior changes, update every source of operational truth together: compose files, Docker docs, runbooks, scripts, and status docs.
 - If docs disagree, use this order of truth: `StatusV3.md` → `ROADMAP.md` / `V3/README.md` / `V3/ROADMAP.md` → `V3/docs/**` → older `STATUS.md`, root README, and archived docs.
@@ -2195,3 +2195,49 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
 - **Purpose:** Interactive 3D multiverse portal — display and explore OASIS worlds.
 - **Build:** `cd APP&WEB/OasisWeb && npm install && npm run build`.
 - **Deploy (static export):** `dist/` is exported to `/var/www/oasis` on Edge; nginx serves `https://oasis.zionterranova.com` (Let’s Encrypt SSL, HTTP/2).
+
+## Edge V31 manual deploy (2026-08-05)
+
+`V31/deploy/deploy-edge.sh` is currently out of sync with live Edge V31 services. It still tries to build an obsolete `--bin zion-bridge` target and to install stale `zion-edge-dashboard` / `zion-edge-dex` / `zion-edge-python-dashboard` systemd units that do not exist in the repo. The currently working, safer workflow is a manual build and restart of the live `zion-v31-*` units:
+
+1. **Sync source** to Edge: `rsync -avz --delete V31/ root@2a02:c207:2342:5821::1:/opt/zion/V31/ ...` (or use `V31/deploy/deploy-edge.sh` only for the rsync/backup steps).
+2. **On Edge**, source Cargo and remove the Edge-irrelevant workspace members from `V31/Cargo.toml`:
+   ```bash
+   . /root/.cargo/env
+   cd /opt/zion/V31
+   sed -i '/"cli",/d;/"smoke",/d' Cargo.toml
+   ```
+3. **Build only the production packages**:
+   ```bash
+   nohup cargo build -p zion-core -p zion-pool -p zion-miner -p zion-dao -p zion-multichain --release \
+       >/tmp/v31-build.log 2>&1 </dev/null &
+   ```
+4. **Fix ownership and restart services**:
+   ```bash
+   chown -R zion:zion /opt/zion/V31/target/release
+   systemctl daemon-reload
+   systemctl restart zion-v31-node
+   systemctl restart zion-v31-multichain zion-v31-pool zion-v31-dao zion-v31-miner
+   ```
+
+### SSH access notes
+- The Edge VPS (`62.171.141.136`, IPv6 `2a02:c207:2342:5821::1`) is reachable over SSH on ports `22` and `2222` for both IPv4 and IPv6, but rapid sequential `ssh`/`rsync`/`scp` connections can trigger `fail2ban` or `sshd MaxStartups` rate limiting and result in `Connection refused`. Use IPv6 with a persistent `ControlMaster` socket and keepalives:
+  ```
+  Host zion-v6
+      HostName 2a02:c207:2342:5821::1
+      User root
+      Port 2222
+      IdentityFile ~/.ssh/zion-edge-post-wipe-2026-07-29
+      IdentitiesOnly yes
+      ControlMaster auto
+      ControlPath ~/.ssh/control-%r@%h:%p
+      ControlPersist 10m
+      ServerAliveInterval 60
+      ServerAliveCountMax 10
+  ```
+- The `~/.ssh/config` alias `zion-new` should be kept pointing at the Edge IP as well.
+
+### Verification checklist
+- `systemctl is-active zion-v31-node zion-v31-pool zion-v31-multichain zion-v31-dao zion-v31-miner` → all `active`.
+- `curl -s http://127.0.0.1:8453/health` on Edge returns `{"ok":true,"node":"zion-edge-warp-v31",...}`.
+- Pool stratum is live on `62.171.141.136:8444` and broadcasts `mining.notify` to connected miners.

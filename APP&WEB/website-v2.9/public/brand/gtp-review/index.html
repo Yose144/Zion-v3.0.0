@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>ZION GTP Logo Review</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; background:#05080d; color:#e6f5ec; font:14px/1.5 Inter,system-ui,Segoe UI,Arial,sans-serif; }
+  header { padding:28px 24px 8px; max-width:1200px; margin:0 auto; }
+  h1 { font-size:22px; margin:0 0 4px; letter-spacing:.5px; }
+  header p { color:#7fb89a; margin:0 0 24px; font-size:13px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:18px; max-width:1200px; margin:0 auto; padding:0 24px 80px; }
+  .card { background:#0b141d; border:1px solid #163a2a; border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:10px; }
+  .card h3 { margin:0; font-size:13px; color:#9fe3bd; letter-spacing:.3px; }
+  .card .meta { color:#5a8a72; font-size:11px; }
+  .stage { display:flex; align-items:center; justify-content:center; min-height:200px; border-radius:10px; overflow:hidden; }
+  .stage.dark { background:radial-gradient(circle at 50% 40%, #0c1e16, #02080a); }
+  .stage.light { background:#f4f7f5; }
+  .stage.checker { background-image:linear-gradient(45deg,#1a2a22 25%,transparent 25%),linear-gradient(-45deg,#1a2a22 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#1a2a22 75%),linear-gradient(-45deg,transparent 75%,#1a2a22 75%); background-size:20px 20px; background-position:0 0,0 10px,10px -10px,-10px 0; }
+  .stage img { max-width:100%; max-height:220px; display:block; }
+  .stage.wide img { max-height:140px; }
+  .row { display:grid; grid-template-columns:repeat(auto-fill,minmax(48px,1fr)); gap:6px; }
+  .row img { width:100%; border-radius:6px; background:#02080a; }
+  footer { max-width:1200px; margin:0 auto; padding:0 24px 40px; color:#5a8a72; font-size:12px; }
+  code { background:#0b141d; padding:2px 6px; border-radius:4px; color:#9fe3bd; }
+</style>
+</head>
+<body>
+<header>
+  <h1>ZION — GTP Brand Package</h1>
+  <p>Strom života + Matrix Z, čistá vektorová identita. Vyber si hlavní směr — ostatní varianty zůstávají jako podklady.</p>
+</header>
+
+<div class="grid">
+
+  <div class="card">
+    <h3>zion-primary-cosmic</h3>
+    <div class="meta">1024×1024 · doporučeno jako hlavní avatar</div>
+    <div class="stage dark"><img src="zion-primary-cosmic.png" alt="cosmic"/></div>
+  </div>
+
+  <div class="card">
+    <h3>zion-matrix-legacy</h3>
+    <div class="meta">1024×1024 · matrix green / digital rain</div>
+    <div class="stage dark"><img src="zion-matrix-legacy.png" alt="matrix"/></div>
+  </div>
+
+  <div class="card">
+    <h3>zion-gold-emerald</h3>
+    <div class="meta">1024×1024 · premium zlatá edice</div>
+    <div class="stage dark"><img src="zion-gold-emerald.png" alt="gold"/></div>
+  </div>
+
+  <div class="card">
+    <h3>zion-exchange-mark</h3>
+    <div class="meta">1024×1024 · zjednodušený znak pro CMC / CoinGecko</div>
+    <div class="stage checker"><img src="zion-exchange-mark.png" alt="exchange"/></div>
+  </div>
+
+  <div class="card">
+    <h3>zion-exchange-transparent</h3>
+    <div class="meta">1024×1024 · detailní průhledné pozadí</div>
+    <div class="stage checker"><img src="zion-exchange-transparent.png" alt="transparent"/></div>
+  </div>
+
+  <div class="card">
+    <h3>zion-light-background</h3>
+    <div class="meta">1024×1024 · světlá varianta</div>
+    <div class="stage light"><img src="zion-light-background.png" alt="light"/></div>
+  </div>
+
+  <div class="card" style="grid-column:1/-1">
+    <h3>zion-wordmark-dark</h3>
+    <div class="meta">1200×630 · horizontální logo pro tmavý web</div>
+    <div class="stage dark wide"><img src="zion-wordmark-dark.png" alt="wordmark dark"/></div>
+  </div>
+
+  <div class="card" style="grid-column:1/-1">
+    <h3>zion-wordmark-light</h3>
+    <div class="meta">1200×630 · horizontální logo pro světlé pozadí</div>
+    <div class="stage light wide"><img src="zion-wordmark-light.png" alt="wordmark light"/></div>
+  </div>
+
+  <div class="card" style="grid-column:1/-1">
+    <h3>zion-social-banner</h3>
+    <div class="meta">1200×630 · OpenGraph / Twitter / Discord</div>
+    <div class="stage dark wide"><img src="zion-social-banner.png" alt="banner"/></div>
+  </div>
+
+  <div class="card">
+    <h3>favicon.ico</h3>
+    <div class="meta">multi-res 16/32/48</div>
+    <div class="stage dark"><img src="favicon-256.png" alt="favicon" style="max-height:128px"/></div>
+    <div class="row">
+      <img src="favicon-16.png" alt="16"/><img src="favicon-32.png" alt="32"/><img src="favicon-48.png" alt="48"/><img src="favicon-64.png" alt="64"/><img src="favicon-128.png" alt="128"/>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Zdroj: <code>LOGO/gtp/</code> · skript: <code>build_gtp_logos.py</code> · nasazeno pro review v <code>website-v2.9/public/brand/gtp-review/</code>.
+  Žádné živé favicony nebyly nahrazeny — čeká na tvůj výběr hlavního směru.
+</footer>
+</body>
+</html>

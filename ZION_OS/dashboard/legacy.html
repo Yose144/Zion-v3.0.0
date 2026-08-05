@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZION Legacy V3 Services</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+<style>
+:root{--gold:255 215 0;--purple:147 51 234;--cyan:6 182 212;}
+body{font-family:'Inter',system-ui,sans-serif;background:
+  radial-gradient(circle at 18% -8%,rgba(147,51,234,0.22),transparent 34rem),
+  radial-gradient(circle at 86% 8%,rgba(6,182,212,0.16),transparent 30rem),
+  radial-gradient(circle at 50% 110%,rgba(255,215,0,0.12),transparent 40rem),
+  linear-gradient(180deg,rgba(2,4,12,0.92),rgba(0,0,0,0.95));color:#fff;min-height:100vh;}
+.card{background:linear-gradient(145deg,rgba(15,20,35,0.9),rgba(10,14,26,0.95));border:1px solid rgba(255,255,255,0.1);border-radius:1.25rem;box-shadow:0 16px 50px rgba(0,0,0,0.35);}
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:0.85rem;}
+th,td{padding:0.75rem 1rem;text-align:left;border-bottom:1px solid rgba(255,255,255,0.08);}
+th{font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:#94a3b8;background:rgba(255,255,255,0.03);}
+.row-archived{opacity:0.65;background:rgba(255,255,255,0.02);}
+.btn{border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#fff;border-radius:0.6rem;padding:0.55rem 1rem;font-weight:600;transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;}
+.btn:hover{background:rgba(255,255,255,0.1);}
+.badge{font-size:0.65rem;padding:0.15rem 0.5rem;border-radius:0.35rem;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;}
+.badge-green{background:rgba(34,197,94,0.2);color:#4ade80;border:1px solid rgba(34,197,94,0.3);}
+.badge-red{background:rgba(239,68,68,0.2);color:#fca5a5;border:1px solid rgba(239,68,68,0.3);}
+.badge-yellow{background:rgba(234,179,8,0.2);color:#fde047;border:1px solid rgba(234,179,8,0.3);}
+.badge-gray{background:rgba(255,255,255,0.08);color:#94a3b8;border:1px solid rgba(255,255,255,0.15);}
+</style>
+</head>
+<body class="p-4 md:p-8">
+<div class="max-w-7xl mx-auto">
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">
+        <span style="color:rgb(255 215 0)">Legacy</span> V3 Services
+        <span class="badge badge-gray ml-2">Archived</span>
+      </h1>
+      <p class="text-sm text-gray-400 mt-1">
+        V3 services are kept in the data model but are no longer part of the active mainnet view.
+      </p>
+    </div>
+    <div class="flex gap-2">
+      <a href="/v31/" class="btn"><i class="fas fa-rocket mr-2"></i>V31 Mainnet</a>
+      <a href="/dashboard" class="btn"><i class="fas fa-chart-line mr-2"></i>Full Dashboard</a>
+    </div>
+  </div>
+
+  <div class="card p-5 mb-6">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-lg font-bold"><i class="fas fa-box-archive mr-2" style="color:rgb(255 215 0)"></i>Archived Service Registry</h2>
+      <div class="flex gap-2">
+        <button id="btn-live" class="btn text-xs" onclick="filterTable('all')">All</button>
+        <button id="btn-down" class="btn text-xs" onclick="filterTable('down')">Down</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="legacy-table">
+        <thead>
+          <tr>
+            <th>Layer</th>
+            <th>Service</th>
+            <th>Kind</th>
+            <th>Status</th>
+            <th>Details</th>
+            <th>Ports</th>
+          </tr>
+        </thead>
+        <tbody id="legacy-body">
+          <tr><td colspan="6" class="text-center text-gray-400 py-8">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+let allServices = [];
+async function load() {
+  try {
+    const r = await fetch('/api/services');
+    const data = await r.json();
+    allServices = (data.services || []).filter(s => s.archived);
+    allServices.sort((a,b) => (a.level||'').localeCompare(b.level) || a.name.localeCompare(b.name));
+    render(allServices);
+  } catch (e) {
+    document.getElementById('legacy-body').innerHTML = `<tr><td colspan="6" class="text-center text-red-300 py-8">Error loading services: ${e.message}</td></tr>`;
+  }
+}
+function badge(status, alive) {
+  const s = (status||'unknown').toLowerCase();
+  if (alive && s === 'running') return '<span class="badge badge-green">RUNNING</span>';
+  if (alive) return '<span class="badge badge-green">LIVE</span>';
+  if (s === 'degraded') return '<span class="badge badge-yellow">DEGRADED</span>';
+  if (s === 'timeout') return '<span class="badge badge-yellow">TIMEOUT</span>';
+  return '<span class="badge badge-red">OFFLINE</span>';
+}
+function ports(s) {
+  if (!s.ports) return '—';
+  return Object.entries(s.ports).map(([k,v]) => `${k}:${v}`).join(' · ');
+}
+function render(list) {
+  const body = document.getElementById('legacy-body');
+  if (!list.length) {
+    body.innerHTML = '<tr><td colspan="6" class="text-center text-gray-400 py-8">No archived services found.</td></tr>';
+    return;
+  }
+  body.innerHTML = list.map(s => `
+    <tr class="row-archived">
+      <td class="font-mono text-gray-400">${s.level}</td>
+      <td><span class="mr-2">${s.icon}</span>${s.name}</td>
+      <td class="text-gray-400">${s.kind}</td>
+      <td>${badge(s.status, s.alive)}</td>
+      <td class="text-gray-400 text-xs" title="${(s.details||'').replace(/"/g,'&quot;')}">${(s.details||'').slice(0,80)}</td>
+      <td class="font-mono text-xs text-gray-500">${ports(s)}</td>
+    </tr>
+  `).join('');
+}
+function filterTable(mode) {
+  if (mode === 'down') render(allServices.filter(s => !s.alive));
+  else render(allServices);
+}
+load();
+setInterval(load, 10000);
+</script>
+</body>
+</html>

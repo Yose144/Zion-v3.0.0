@@ -178,16 +178,14 @@ export default function World({
           polished look. Non-star worlds get a tiny procedural surface
           texture so they read as little textured planets, not flat balls. */}
       <mesh>
-        <sphereGeometry args={[displaySize * (hovered ? 1.12 : 1), 24, 24]} />
-        <meshPhysicalMaterial
+        <sphereGeometry args={[displaySize * (hovered ? 1.12 : 1), 16, 16]} />
+        <meshStandardMaterial
           map={surfaceTexture ?? undefined}
           color={surfaceTexture ? '#ffffff' : color}
           emissive={color}
           emissiveIntensity={surfaceTexture ? (hovered || selected ? 0.55 : 0.3) : hovered || selected ? 0.9 : 0.55}
-          roughness={0.3}
+          roughness={0.4}
           metalness={0.1}
-          clearcoat={0.6}
-          clearcoatRoughness={0.2}
           toneMapped={false}
         />
       </mesh>

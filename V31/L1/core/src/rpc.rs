@@ -15,7 +15,6 @@ use tokio::sync::watch;
 use tracing::{info, warn};
 
 use crate::node::{Node, NodeError};
-use crate::transaction::Transaction;
 
 /// Simple JSON-RPC server.
 pub struct RpcServer {
@@ -96,19 +95,39 @@ async fn dispatch_request(line: &str, node: &Node) -> Value {
         "getStatus",
         "getBlockByHeight",
         "getBlockByHash",
+        "getBlock",
         "submitAccountTransaction",
         "submitUtxoTransaction",
+        "sendRawTransaction",
+        "submitTransaction",
         "getBalance",
+        "getAccountBalance",
         "getUtxos",
+        "getTransaction",
+        "getAccountTransaction",
+        "getTransactionHistory",
+        "getAddressInfo",
+        "getBalanceAtHeight",
+        "getMempoolInfo",
+        "getSupplyInfo",
+        "getBlockRange",
+        "getNetworkStats",
+        "getBridgeLocks",
+        "getBridgeVaultBalance",
+        "estimateFee",
+        "getTokenInfo",
+        "submitBridgeUnlock",
     ];
     if v3_methods.contains(&method) {
         let result = node.v3_rpc.dispatch(method, params).await;
         return wrap_v3_response(id, result);
     }
 
-    // Legacy transaction submission.
+    // Node-level methods that need the V31 Node (not V3RpcHandler).
     let result = match method {
-        "submitTransaction" => submit_transaction(node, &params).await,
+        "getChainInfo" => get_chain_info(node).await,
+        "getNodeInfo" => get_node_info(node).await,
+        "getPeerInfo" => get_peer_info(node).await,
         _ => Ok(error_response(
             id.clone(),
             -32601,
@@ -165,10 +184,59 @@ async fn submit_block_rpc(node: &Node, params: &Value) -> Result<Value, NodeErro
     Ok(result.get("result").cloned().unwrap_or(Value::Null))
 }
 
-async fn submit_transaction(node: &Node, params: &Value) -> Result<Value, NodeError> {
-    let tx: Transaction = serde_json::from_value(params.clone())?;
-    node.submit_transaction(tx).await;
-    Ok(json!("ok"))
+async fn get_chain_info(node: &Node) -> Result<Value, NodeError> {
+    let v3_tip = node.storage.v3_tip().await?;
+    let (v3_height, v3_hash) = match &v3_tip {
+        Some(b) => (b.height, crate::v3_compat::hex(&b.header_hash())),
+        None => (0u64, crate::v3_compat::hex(&[0u8; 32])),
+    };
+    let native_status = node.status().await?;
+    let mempool_size = node.mempool.len().await;
+    Ok(json!({
+        "network": "mainnet",
+        "consensus_profile": "cosmic_harmony_v3",
+        "chain_height": v3_height,
+        "native_chain_height": native_status.height,
+        "tip_hash": v3_hash,
+        "accepted_blocks": v3_height + 1,
+        "mempool_transactions": mempool_size,
+        "protocol_version": "3.1.0-alpha",
+        "transaction_model": "hybrid",
+        "utxo_validation_available": true,
+    }))
+}
+
+async fn get_node_info(node: &Node) -> Result<Value, NodeError> {
+    let v3_tip = node.storage.v3_tip().await?;
+    let v3_height = v3_tip.as_ref().map_or(0, |b| b.height);
+    let native_status = node.status().await?;
+    let mempool_size = node.mempool.len().await;
+    Ok(json!({
+        "node_id": "zion-v31-node",
+        "protocol_version": "3.1.0-alpha",
+        "protocol_version_numeric": 2,
+        "flowers_per_zion": crate::emission::FLOWERS_PER_ZION,
+        "network": "mainnet",
+        "chain_height": v3_height,
+        "native_chain_height": native_status.height,
+        "rpc_bind": node.config.rpc_addr.to_string(),
+        "p2p_bind": node.config.p2p_addr.to_string(),
+        "v3_p2p_bind": node.config.v3_p2p_addr.to_string(),
+        "accepted_blocks": v3_height + 1,
+        "mempool_transactions": mempool_size,
+        "transaction_model": "hybrid",
+        "balance_lookup": "account_id_or_zion1_address",
+    }))
+}
+
+async fn get_peer_info(node: &Node) -> Result<Value, NodeError> {
+    let peers: Vec<Value> = node
+        .config
+        .seed_peers
+        .iter()
+        .map(|p| json!({ "address": p.to_string() }))
+        .collect();
+    Ok(json!({ "peers": peers, "count": peers.len() }))
 }
 
 fn success_response(id: Option<Value>, result: Value) -> Value {
@@ -278,10 +346,28 @@ impl RpcResponse {
             }),
         }
     }
+
+    /// V3-compatible alias for `ok`.
+    pub fn success(id: Value, result: Value) -> Self {
+        Self::ok(id, result)
+    }
+
+    /// V3-compatible alias for `err`.
+    pub fn error(id: Value, code: i64, message: impl Into<String>) -> Self {
+        Self::err(id, code, message)
+    }
+
+    /// V3-compatible alias for `err_with_data`.
+    pub fn error_with_data(id: Value, code: i64, message: impl Into<String>, data: Value) -> Self {
+        Self::err_with_data(id, code, message, data)
+    }
 }
 
 /// Type alias for handler results.
 pub type HandlerResult = Result<Value, (i64, String)>;
+
+/// A handler function signature: takes params, returns result or error.
+pub type HandlerFn = Box<dyn Fn(&Value) -> HandlerResult + Send + Sync>;
 
 /// A simple JSON-RPC method dispatcher (V3-compatible).
 ///
@@ -325,7 +411,110 @@ impl RpcRouter {
 
     /// Build a stub router with no handlers (placeholder for NodeRuntime integration).
     pub fn build_stub_router() -> Self {
-        Self::new()
+        let mut router = Self::new();
+        let stub = |method_name: &'static str| -> HandlerFn {
+            Box::new(move |_params: &Value| {
+                Err((
+                    INTERNAL_ERROR,
+                    format!("{method_name}: not yet bound to node state"),
+                ))
+            })
+        };
+        for method in [
+            "getBalance",
+            "getAccountBalance",
+            "getBlock",
+            "getBlockByHeight",
+            "getTransaction",
+            "getAccountTransaction",
+            "sendRawTransaction",
+            "submitTransaction",
+            "submitAccountTransaction",
+            "getBlockTemplate",
+            "getMempoolInfo",
+            "getPeerInfo",
+            "getChainInfo",
+            "getNodeInfo",
+            "submitBlock",
+            "getUtxos",
+            "getSupplyInfo",
+            "getBalanceAtHeight",
+            "getBridgeLocks",
+            "getBridgeVaultBalance",
+            "submitBridgeUnlock",
+            "getTransactionHistory",
+            "getAddressInfo",
+            "getBlockRange",
+            "getNetworkStats",
+            "estimateFee",
+            "getTokenInfo",
+        ] {
+            router.register(method, stub(method));
+        }
+        router
+    }
+
+    /// How many methods are registered.
+    pub fn method_count(&self) -> usize {
+        self.handlers.len()
+    }
+
+    /// Check if a method is registered.
+    pub fn has_method(&self, method: &str) -> bool {
+        self.handlers.contains_key(method)
+    }
+
+    /// List all registered method names.
+    pub fn methods(&self) -> Vec<&str> {
+        self.handlers.keys().map(|s| s.as_str()).collect()
+    }
+
+    /// Parse raw JSON bytes into a request, route to handler, return response bytes.
+    pub fn handle_raw(&self, input: &[u8]) -> Vec<u8> {
+        let response = match serde_json::from_slice::<Value>(input) {
+            Err(_) => RpcResponse::err(Value::Null, PARSE_ERROR, "Parse error"),
+            Ok(val) => {
+                if let Some(arr) = val.as_array() {
+                    if arr.is_empty() {
+                        RpcResponse::err(Value::Null, INVALID_REQUEST, "Empty batch")
+                    } else {
+                        let responses: Vec<RpcResponse> =
+                            arr.iter().map(|v| self.handle_value(v)).collect();
+                        return serde_json::to_vec(&responses).unwrap_or_default();
+                    }
+                } else {
+                    self.handle_value(&val)
+                }
+            }
+        };
+        serde_json::to_vec(&response).unwrap_or_default()
+    }
+
+    /// Handle a parsed JSON value as an RPC request.
+    pub fn handle_value(&self, val: &Value) -> RpcResponse {
+        let req: RpcRequest = match serde_json::from_value(val.clone()) {
+            Ok(r) => r,
+            Err(_) => return RpcResponse::err(Value::Null, INVALID_REQUEST, "Invalid Request"),
+        };
+        self.handle_request(&req)
+    }
+
+    /// Handle a parsed RPC request.
+    pub fn handle_request(&self, req: &RpcRequest) -> RpcResponse {
+        if req.jsonrpc != JSONRPC_VERSION {
+            return RpcResponse::err(req.id.clone(), INVALID_REQUEST, "Invalid jsonrpc version");
+        }
+        match self.handlers.get(&req.method) {
+            None => RpcResponse::err(
+                req.id.clone(),
+                METHOD_NOT_FOUND,
+                format!("Method not found: {}", req.method),
+            ),
+            Some(handler) => match handler(&req.params) {
+                Ok(result) => RpcResponse::ok(req.id.clone(), result),
+                Err((code, msg)) => RpcResponse::err(req.id.clone(), code, msg),
+            },
+        }
     }
 }
 

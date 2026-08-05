@@ -36,12 +36,11 @@ export default function Hero() {
   ];
 
   return (
-    <section className="relative px-4 pt-24 pb-16 sm:pt-28 sm:pb-20 md:pt-32 md:pb-28 overflow-hidden">
+    <section className="relative px-4 pt-16 pb-10 sm:pt-20 sm:pb-14 md:pt-24 md:pb-18 overflow-hidden">
       {/* ── ambient gradients ── */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute -top-40 -left-40 w-[700px] h-[700px] rounded-full bg-violet-700/12 blur-3xl" />
-        <div className="absolute top-60 -right-32 w-[500px] h-[500px] rounded-full bg-cyan-500/10 blur-3xl" />
-        <div className="absolute bottom-0 left-1/3 w-[600px] h-[400px] rounded-full bg-zion-gold/6 blur-3xl" />
+      <div className="absolute inset-0 pointer-events-none opacity-60">
+        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-violet-700/10 blur-3xl" />
+        <div className="absolute top-40 -right-32 w-[400px] h-[400px] rounded-full bg-cyan-500/8 blur-3xl" />
       </div>
 
       {/* ── lightweight floral composition ── */}
@@ -53,7 +52,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="flex flex-wrap items-center gap-3 mb-12 justify-center lg:justify-start"
+          className="flex flex-wrap items-center gap-2 mb-8 justify-center lg:justify-start"
         >
           <div className="zion-kicker border-zion-gold/25 bg-zion-gold/10 text-zion-gold">
             <Sparkles className="w-3.5 h-3.5 animate-pulse" />
@@ -76,35 +75,35 @@ export default function Hero() {
           </a>
         </motion.div>
 
-        <div className="grid lg:grid-cols-[1.08fr_0.92fr] gap-12 xl:gap-20 items-start">
+        <div className="grid lg:grid-cols-[1fr_0.85fr] gap-8 xl:gap-12 items-start">
           {/* ─── LEFT col ─── */}
           <motion.div
             initial={{ opacity: 0, y: 32 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.85 }}
-            className="space-y-8"
+            className="space-y-6"
           >
             {/* headline */}
             <div>
-              <p className="text-lg md:text-xl text-zion-cyan font-semibold mb-3 tracking-wide">
+              <p className="text-base md:text-lg text-zion-cyan font-semibold mb-2 tracking-wide">
                 {tr('hero', 'tagline', lang)}
               </p>
-              <h1 className="text-3xl sm:text-5xl md:text-6xl xl:text-7xl font-extrabold leading-[1.06] tracking-tight">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl xl:text-6xl font-extrabold leading-[1.08] tracking-tight">
                 <span className="text-gradient-soft">ZION</span>
                 <span className="block text-white mt-1">Terra Nova</span>
-                <span className="block text-lg sm:text-2xl md:text-3xl xl:text-4xl font-semibold text-white/60 mt-2 tracking-normal">
+                <span className="block text-base sm:text-lg md:text-xl xl:text-2xl font-semibold text-white/60 mt-2 tracking-normal">
                   {tr('hero', 'title_sub', lang)}
                 </span>
               </h1>
             </div>
 
             {/* paragraph */}
-            <p className="text-lg md:text-xl text-gray-300 max-w-xl leading-relaxed">
+            <p className="text-base md:text-lg text-gray-300 max-w-xl leading-relaxed">
               {tr('hero', 'description', lang)}
             </p>
 
             {/* CTA buttons */}
-            <div className="flex flex-col sm:flex-row flex-wrap gap-3">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-2">
               <Link
                 href="/network"
                 className="zion-button-primary group w-full sm:w-auto justify-center"
@@ -130,18 +129,18 @@ export default function Hero() {
             </div>
 
             {/* metrics strip */}
-            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <div className="grid grid-cols-3 gap-2">
               {heroMetrics.map((metric, i) => (
                 <motion.div
                   key={metric.label}
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.5 + i * 0.1 }}
-                  className="zion-panel-soft zion-panel-hover group p-2.5 sm:p-4 cursor-default min-w-0"
+                  className="zion-panel-soft zion-panel-hover group p-2.5 cursor-default min-w-0"
                 >
-                  <metric.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-zion-gold mb-1.5 sm:mb-2" />
-                  <div className="text-lg sm:text-xl font-bold text-white truncate">{metric.value}</div>
-                  <div className="text-[9px] sm:text-xs uppercase tracking-wide text-gray-500 mt-0.5 leading-tight">{metric.label}</div>
+                  <metric.icon className="w-3.5 h-3.5 text-zion-gold mb-1" />
+                  <div className="text-base sm:text-lg font-bold text-white truncate">{metric.value}</div>
+                  <div className="text-[9px] uppercase tracking-wide text-gray-500 mt-0.5 leading-tight">{metric.label}</div>
                 </motion.div>
               ))}
             </div>

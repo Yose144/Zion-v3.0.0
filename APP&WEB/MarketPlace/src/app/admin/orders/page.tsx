@@ -9,9 +9,14 @@ import {
   regenerateInvoice,
   type AdminOrdersListResult,
 } from '@/lib/shop-api';
+import { useLangT } from '@/lib/useTranslation';
 
 const ORDER_STATUSES = ['pending', 'paid', 'processing', 'shipped', 'completed', 'cancelled'];
 const PAYMENT_STATUSES = ['pending', 'paid', 'failed'];
+
+function capitalize(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
 
 export default function AdminOrdersPage() {
   const [data, setData] = useState<AdminOrdersListResult['data'] | null>(null);
@@ -23,6 +28,7 @@ export default function AdminOrdersPage() {
   const [page, setPage] = useState(1);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [tracking, setTracking] = useState<Record<string, string>>({});
+  const { t, lang } = useLangT();
 
   const load = async () => {
     setLoading(true);
@@ -31,7 +37,7 @@ export default function AdminOrdersPage() {
       setData(res.data);
       setError(null);
     } else {
-      setError('Nepodařilo se načíst objednávky.');
+      setError(t('admin.loadError'));
     }
     setLoading(false);
   };
@@ -41,10 +47,10 @@ export default function AdminOrdersPage() {
   }, [status, paymentStatus, page]);
 
   const debouncedSearch = useMemo(() => {
-    let t: ReturnType<typeof setTimeout>;
+    let timer: ReturnType<typeof setTimeout>;
     return (value: string) => {
-      clearTimeout(t);
-      t = setTimeout(() => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
         setSearch(value);
         setPage(1);
         load();
@@ -66,7 +72,7 @@ export default function AdminOrdersPage() {
 
   const handleSendInvoice = async (id: string) => {
     await sendInvoiceEmail(id);
-    alert('Faktura odeslána.');
+    alert(t('admin.invoiceSent'));
   };
 
   const handleRegenerateInvoice = async (id: string) => {
@@ -74,61 +80,62 @@ export default function AdminOrdersPage() {
     await load();
   };
 
-  const formatPrice = (amount: number) => `${amount.toLocaleString('cs-CZ')} Kč`;
+  const formatPrice = (amount: number) =>
+    t('common.price', { price: amount.toLocaleString(lang === 'en' ? 'en-US' : 'cs-CZ'), symbol: t('common.kcSymbol') });
 
   return (
     <div>
-      <h1 className="text-2xl font-black text-gradient mb-6">Objednávky</h1>
+      <h1 className="text-2xl font-black text-gradient mb-6">{t('admin.ordersTitle')}</h1>
 
       <div className="flex flex-wrap gap-3 mb-6">
         <select
           value={status}
           onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-          className="bg-oasis-surface border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-oasis-cyan focus:outline-none"
+          className="bg-zion-card border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-oasis-cyan focus:outline-none"
         >
-          <option value="">Všechny stavy</option>
+          <option value="">{t('admin.allStatuses')}</option>
           {ORDER_STATUSES.map((s) => (
-            <option key={s} value={s}>{s}</option>
+            <option key={s} value={s}>{t(`admin.status${capitalize(s)}`)}</option>
           ))}
         </select>
 
         <select
           value={paymentStatus}
           onChange={(e) => { setPaymentStatus(e.target.value); setPage(1); }}
-          className="bg-oasis-surface border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-oasis-cyan focus:outline-none"
+          className="bg-zion-card border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-oasis-cyan focus:outline-none"
         >
-          <option value="">Všechny platby</option>
+          <option value="">{t('admin.allPayments')}</option>
           {PAYMENT_STATUSES.map((s) => (
-            <option key={s} value={s}>{s}</option>
+            <option key={s} value={s}>{t(`admin.paymentStatus${capitalize(s)}`)}</option>
           ))}
         </select>
 
         <input
           type="text"
-          placeholder="Hledat objednávku, email, jméno..."
+          placeholder={t('admin.searchPlaceholder')}
           onChange={(e) => debouncedSearch(e.target.value)}
-          className="bg-oasis-surface border border-white/10 rounded-lg px-3 py-2 text-sm min-w-[260px] focus:border-oasis-cyan focus:outline-none"
+          className="bg-zion-card border border-white/10 rounded-lg px-3 py-2 text-sm min-w-[260px] focus:border-oasis-cyan focus:outline-none"
         />
       </div>
 
-      {loading && <p>Načítání…</p>}
+      {loading && <p>{t('admin.loading')}</p>}
       {error && <p className="text-red-400">{error}</p>}
 
       {!loading && data && (
         <>
-          <div className="overflow-x-auto rounded-xl border border-white/10 bg-oasis-surface">
+          <div className="overflow-x-auto rounded-xl border border-white/10 bg-zion-card">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-left text-gray-400">
-                  <th className="p-3">Číslo</th>
-                  <th className="p-3">Zákazník</th>
-                  <th className="p-3">Email</th>
-                  <th className="p-3">Celkem</th>
-                  <th className="p-3">Platba</th>
-                  <th className="p-3">Stav</th>
-                  <th className="p-3">Faktura</th>
-                  <th className="p-3">Datum</th>
-                  <th className="p-3">Akce</th>
+                  <th className="p-3">{t('admin.tableNumber')}</th>
+                  <th className="p-3">{t('admin.tableCustomer')}</th>
+                  <th className="p-3">{t('admin.tableEmail')}</th>
+                  <th className="p-3">{t('admin.tableTotal')}</th>
+                  <th className="p-3">{t('admin.tablePayment')}</th>
+                  <th className="p-3">{t('admin.tableStatus')}</th>
+                  <th className="p-3">{t('admin.tableInvoice')}</th>
+                  <th className="p-3">{t('admin.tableDate')}</th>
+                  <th className="p-3">{t('admin.tableActions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -145,7 +152,7 @@ export default function AdminOrdersPage() {
                       <td className="p-3 font-mono">{formatPrice(order.totalCzk)}</td>
                       <td className="p-3">
                         <span className={`px-2 py-0.5 rounded text-xs ${order.paymentStatus === 'paid' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-yellow-500/20 text-yellow-300'}`}>
-                          {order.paymentStatus}
+                          {t(`admin.paymentStatus${capitalize(order.paymentStatus)}`)}
                         </span>
                       </td>
                       <td className="p-3">
@@ -156,7 +163,7 @@ export default function AdminOrdersPage() {
                           className="bg-black/30 border border-white/10 rounded px-2 py-1 text-xs"
                         >
                           {ORDER_STATUSES.map((s) => (
-                            <option key={s} value={s}>{s}</option>
+                            <option key={s} value={s}>{t(`admin.status${capitalize(s)}`)}</option>
                           ))}
                         </select>
                       </td>
@@ -172,16 +179,16 @@ export default function AdminOrdersPage() {
                             {order.invoices[0].invoiceNumber}
                           </a>
                         ) : (
-                          <span className="text-gray-500">—</span>
+                          <span className="text-gray-500">{t('admin.noInvoice')}</span>
                         )}
                       </td>
-                      <td className="p-3 text-gray-400">{new Date(order.createdAt).toLocaleDateString('cs-CZ')}</td>
+                      <td className="p-3 text-gray-400">{new Date(order.createdAt).toLocaleDateString(lang === 'en' ? 'en-US' : 'cs-CZ')}</td>
                       <td className="p-3">
                         <button
                           onClick={(e) => { e.stopPropagation(); setExpanded(expanded === order.id ? null : order.id); }}
                           className="text-xs px-2 py-1 rounded bg-white/5 hover:bg-white/10"
                         >
-                          {expanded === order.id ? 'Skrýt' : 'Detail'}
+                          {expanded === order.id ? t('admin.hide') : t('admin.detail')}
                         </button>
                       </td>
                     </tr>
@@ -190,25 +197,25 @@ export default function AdminOrdersPage() {
                         <td colSpan={9} className="p-4">
                           <div className="grid md:grid-cols-2 gap-4">
                             <div>
-                              <h4 className="font-bold text-oasis-gold mb-2">Sledovací číslo</h4>
+                              <h4 className="font-bold text-oasis-gold mb-2">{t('admin.trackingTitle')}</h4>
                               <div className="flex gap-2">
                                 <input
                                   type="text"
                                   defaultValue={order.trackingNumber ?? ''}
                                   onChange={(e) => setTracking({ ...tracking, [order.id]: e.target.value })}
-                                  placeholder="Zadej tracking number"
-                                  className="bg-oasis-surface border border-white/10 rounded px-3 py-2 text-sm flex-1"
+                                  placeholder={t('admin.trackingPlaceholder')}
+                                  className="bg-zion-card border border-white/10 rounded px-3 py-2 text-sm flex-1"
                                 />
                                 <button
                                   onClick={() => handleTracking(order.id)}
                                   className="px-3 py-2 rounded bg-oasis-cyan/20 text-oasis-cyan hover:bg-oasis-cyan/30 text-sm"
                                 >
-                                  Uložit
+                                  {t('admin.save')}
                                 </button>
                               </div>
                             </div>
                             <div>
-                              <h4 className="font-bold text-oasis-gold mb-2">Faktura</h4>
+                              <h4 className="font-bold text-oasis-gold mb-2">{t('admin.invoiceSection')}</h4>
                               <div className="flex gap-2 flex-wrap">
                                 {order.invoices[0] ? (
                                   <>
@@ -218,13 +225,13 @@ export default function AdminOrdersPage() {
                                       rel="noopener noreferrer"
                                       className="px-3 py-2 rounded bg-white/5 hover:bg-white/10 text-sm"
                                     >
-                                      Zobrazit fakturu
+                                      {t('admin.viewInvoice')}
                                     </a>
                                     <button
                                       onClick={() => handleSendInvoice(order.id)}
                                       className="px-3 py-2 rounded bg-oasis-cyan/20 text-oasis-cyan hover:bg-oasis-cyan/30 text-sm"
                                     >
-                                      Odeslat emailem
+                                      {t('admin.sendInvoice')}
                                     </button>
                                   </>
                                 ) : (
@@ -232,7 +239,7 @@ export default function AdminOrdersPage() {
                                     onClick={() => handleRegenerateInvoice(order.id)}
                                     className="px-3 py-2 rounded bg-oasis-gold/20 text-oasis-gold hover:bg-oasis-gold/30 text-sm"
                                   >
-                                    Vytvořit fakturu
+                                    {t('admin.createInvoice')}
                                   </button>
                                 )}
                               </div>
@@ -253,15 +260,15 @@ export default function AdminOrdersPage() {
               onClick={() => setPage((p) => p - 1)}
               className="px-3 py-2 rounded bg-white/5 hover:bg-white/10 disabled:opacity-30"
             >
-              Předchozí
+              {t('admin.previous')}
             </button>
-            <span>Strana {data.page} z {data.pages} · Celkem {data.total}</span>
+            <span>{t('admin.pagination', { page: data.page, pages: data.pages, total: data.total })}</span>
             <button
               disabled={page >= data.pages}
               onClick={() => setPage((p) => p + 1)}
               className="px-3 py-2 rounded bg-white/5 hover:bg-white/10 disabled:opacity-30"
             >
-              Další
+              {t('admin.next')}
             </button>
           </div>
         </>

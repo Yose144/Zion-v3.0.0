@@ -45,6 +45,7 @@ pub struct ExternalStreamJob {
 /// Tagged JSON (`{"type": "hello", ...}`) — matches V3 pool protocol exactly.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
+#[allow(clippy::large_enum_variant)]
 pub enum PoolMessage {
     Hello {
         miner_id: String,
@@ -196,7 +197,7 @@ mod tests {
         let msg = PoolMessage::Hello {
             miner_id: "alice".into(),
             worker_name: "rig1".into(),
-            algorithm: "deeksha_lite_v1".into(),
+            algorithm: "ekam_deeksha".into(),
             payout_address: "".into(),
             backend: "cpu".into(),
         };
@@ -209,7 +210,7 @@ mod tests {
     fn roundtrip_job_with_external_stream() {
         let msg = PoolMessage::Job {
             job_id: 42,
-            algorithm: "deeksha_lite_v1".into(),
+            algorithm: "ekam_deeksha".into(),
             start_nonce: 0,
             nonce_count: 1_000_000,
             target_hex: "00ff".repeat(16),

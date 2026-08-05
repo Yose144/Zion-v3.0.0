@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo, memo } from 'react';
 import { motion } from 'framer-motion';
 import { X, Globe, Layers, MapPin, Sparkles, Eye, Egg, Tag, Swords, Compass, Pickaxe, Brain, Users, Shield, Cpu, Gem, Users2, ScrollText, Zap, ScanLine } from 'lucide-react';
 import type { World } from '../domain/types/world';
@@ -18,7 +19,7 @@ const TYPE_ICONS: Record<Quest['type'], typeof Compass> = {
 };
 
 /* ZION-theme-aligned functional colors */
-const CATEGORY_COLORS: Record<string, string> = {
+export const CATEGORY_COLORS: Record<string, string> = {
   'star-system': '#fbbf24',
   'planet': '#06b6d4',
   'sector': '#9333ea',
@@ -34,13 +35,44 @@ const CATEGORY_RGB: Record<string, string> = {
   'dimension': '236, 72, 153',
 };
 
-const CATEGORY_LABELS: Record<string, string> = {
+export const CATEGORY_LABELS: Record<string, string> = {
   'star-system': 'Star System',
   'planet': 'Planet',
   'sector': 'Sector',
   'world': 'World',
   'dimension': 'Dimension',
 };
+
+/* ── Nova Zeme L5 Pioneer Projects (from web2.9 TerraNova) ── */
+const NOVA_ZEME_PROJECTS = [
+  {
+    id: 'genesis',
+    name: 'Zahrada Genesis',
+    location: 'Algarve · Portugalsko',
+    color: '#22c55e',
+    status: 'Active',
+    desc: 'Atlantický uzel Terra Nova — organická farma, glamping, solar off-grid, surf a sázení stromů. První dlouhodobá komunitní infrastruktura.',
+    href: 'https://app.zionterranova.com/terranova/genesis',
+  },
+  {
+    id: 'dharma',
+    name: 'Dharma Temple',
+    location: 'La Palma · Kanárské ostrovy',
+    color: '#a855f7',
+    status: 'Prep',
+    desc: 'Spirituální a vzdělávací uzel — meditace, syntropic zahrada, dharma governance, vulkanická krajina, off-grid voda. UNESCO Biosphere Reserve.',
+    href: 'https://app.zionterranova.com/terranova/dharma-temple',
+  },
+  {
+    id: 'piko-ora',
+    name: 'Te Pīko Ora',
+    location: 'Tahiti · Francouzská Polynésie',
+    color: '#06b6d4',
+    status: 'Planned',
+    desc: 'Tichomořský uzel — ochrana mořského i pozemského dědictví, regenerativní komunita, kulturní most mezi Polynésií a ZION.',
+    href: 'https://app.zionterranova.com/terranova/te-piko-ora',
+  },
+];
 
 interface WorldPanelProps {
   world: World;
@@ -154,31 +186,65 @@ function mapRealQuests(world: World, realQuests: any[]): Quest[] {
   }));
 }
 
-export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
+function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
   const color = CATEGORY_COLORS[world.category] || '#ffffff';
   const rc = CATEGORY_RGB[world.category] || '255, 255, 255';
-  const { xp, credits, address, completeQuest, completedQuests, realQuests, avatars, claimGoldenEgg, collectedEggs, syncPlayer, shipLoadout, addXp, addCredits } = useGameStore();
+  // Granular selectors — only subscribe to what we need
+  const xp = useGameStore(s => s.xp);
+  const credits = useGameStore(s => s.credits);
+  const address = useGameStore(s => s.address);
+  const completeQuest = useGameStore(s => s.completeQuest);
+  const completedQuests = useGameStore(s => s.completedQuests);
+  const realQuests = useGameStore(s => s.realQuests);
+  const avatars = useGameStore(s => s.avatars);
+  const claimGoldenEgg = useGameStore(s => s.claimGoldenEgg);
+  const collectedEggs = useGameStore(s => s.collectedEggs);
+  const syncPlayer = useGameStore(s => s.syncPlayer);
+  const shipLoadout = useGameStore(s => s.shipLoadout);
+  const addXp = useGameStore(s => s.addXp);
+  const addCredits = useGameStore(s => s.addCredits);
   const { playQuestComplete } = useAudio();
   const addToast = useToastStore((s) => s.add);
-  const generated = generateQuests(world);
-  const real = mapRealQuests(world, realQuests);
-  const quests = real.length > 0 ? real : generated;
-  const firstRealQuest = real[0];
-  const matchingAvatar = firstRealQuest?.avatarName
-    ? avatars.find((a) => a.name?.toLowerCase() === firstRealQuest.avatarName?.toLowerCase())
-    : null;
+
+  // Memoize heavy computations — these were running on every render
+  const quests = useMemo(() => {
+    const generated = generateQuests(world);
+    const real = mapRealQuests(world, realQuests);
+    return real.length > 0 ? real : generated;
+  }, [world, realQuests]);
+
+  const firstRealQuest = useMemo(() => {
+    const real = mapRealQuests(world, realQuests);
+    return real[0];
+  }, [world, realQuests]);
+
+  const matchingAvatar = useMemo(() => {
+    if (!firstRealQuest?.avatarName) return null;
+    return avatars.find((a) => a.name?.toLowerCase() === firstRealQuest.avatarName?.toLowerCase()) ?? null;
+  }, [firstRealQuest, avatars]);
+
   const level = getLevel(xp);
   const levelProgress = getLevelProgress(xp);
-  const intel = generateWorldIntel(world);
-  const lore = generateLore(world);
+  const intel = useMemo(() => generateWorldIntel(world), [world]);
+  const lore = useMemo(() => generateLore(world), [world]);
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 40 }}
+      initial={{ opacity: 0, x: 80 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 40 }}
-      transition={{ duration: 0.4 }}
-      className="pointer-events-auto absolute left-2.5 right-2.5 top-2.5 z-30 max-w-full overflow-hidden p-4 sm:left-auto sm:right-5 sm:top-5 sm:w-80 sm:p-5 zion-hud-panel"
+      exit={{ opacity: 0, x: 80 }}
+      transition={{ duration: 0.35, ease: 'easeOut' }}
+      style={{
+        background: 'rgba(8, 10, 20, 0.72)',
+        backdropFilter: 'blur(20px) saturate(130%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(130%)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 'clamp(0.75rem, 2vw, 1.25rem)',
+        boxShadow: '0 12px 48px rgba(0,0,0,0.5)',
+        overflowY: 'auto',
+        scrollbarWidth: 'thin',
+      }}
+      className="pointer-events-auto absolute right-2 top-14 z-[60] max-h-[calc(100dvh-4.5rem)] w-[calc(100vw-1rem)] p-4 sm:right-4 sm:top-16 sm:w-[26rem] sm:max-h-[calc(100dvh-5rem)] sm:p-5"
     >
       <div className="mb-4 flex items-start justify-between">
         <div>
@@ -235,6 +301,56 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
         <div className="zion-rainbow-sub p-3.5" style={{ '--rc': rc } as React.CSSProperties}>
           <p className="text-sm leading-relaxed text-gray-200">{world.summary}</p>
         </div>
+
+        {/* ── Nova Zeme Pioneer Projects (L5) ── */}
+        {world.id === 'NOVA_ZEME' && (
+          <div className="zion-rainbow-sub p-3.5" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
+            <div className="mb-3 flex items-center gap-1.5">
+              <Sparkles className="h-3 w-3 text-emerald-400" />
+              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+                L5 Pioneer Projects · Terra Nova Nodes
+              </p>
+            </div>
+            <div className="space-y-2.5">
+              {NOVA_ZEME_PROJECTS.map((p) => (
+                <a
+                  key={p.id}
+                  href={p.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block rounded-lg border border-white/5 bg-white/[0.02] p-3 transition hover:border-white/15 hover:bg-white/[0.04]"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className="inline-block h-2 w-2 rounded-full"
+                          style={{ background: p.color, boxShadow: `0 0 8px ${p.color}` }}
+                        />
+                        <h4 className="text-sm font-bold text-white">{p.name}</h4>
+                      </div>
+                      <p className="mt-0.5 text-[10px] text-gray-500">{p.location}</p>
+                      <p className="mt-1.5 text-[11px] leading-snug text-gray-400">{p.desc}</p>
+                    </div>
+                    <span
+                      className="shrink-0 rounded-full px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider"
+                      style={{
+                        border: `1px solid ${p.color}40`,
+                        background: `${p.color}10`,
+                        color: p.color,
+                      }}
+                    >
+                      {p.status}
+                    </span>
+                  </div>
+                </a>
+              ))}
+            </div>
+            <p className="mt-3 text-[9px] text-gray-500">
+              Klikni na projekt → otevře detail na zionterranova.com
+            </p>
+          </div>
+        )}
 
         {/* ── World Intel ── */}
         <div className="zion-rainbow-sub p-3" style={{ '--rc': rc } as React.CSSProperties}>
@@ -475,3 +591,5 @@ export default function WorldPanel({ world, onClose, onEnter }: WorldPanelProps)
     </motion.div>
   );
 }
+
+export default memo(WorldPanel);

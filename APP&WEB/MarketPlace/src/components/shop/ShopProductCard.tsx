@@ -5,6 +5,7 @@ import { ShoppingCart, Box, Ruler, Coins } from 'lucide-react';
 import type { ShopProductData } from '@/types/shop';
 import { getTokens } from '@/lib/shop-api';
 import { useCart } from './CartContext';
+import { useLangT } from '@/lib/useTranslation';
 
 interface ShopProductCardProps {
   product: ShopProductData;
@@ -16,6 +17,7 @@ export default function ShopProductCard({ product, onOpen }: ShopProductCardProp
   const [added, setAdded] = useState(false);
   const { add } = useCart();
   const tokens = getTokens(product);
+  const { t } = useLangT();
 
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -27,6 +29,7 @@ export default function ShopProductCard({ product, onOpen }: ShopProductCardProp
   };
 
   const isOut = !product.inStock;
+  const categoryLabel = t(`shop.${product.category}` as const);
 
   return (
     <div
@@ -71,7 +74,7 @@ export default function ShopProductCard({ product, onOpen }: ShopProductCardProp
       </div>
 
       <div className="flex-1 flex flex-col">
-        <div className="text-xs text-gray-500 mb-0.5 capitalize">{product.category}</div>
+        <div className="text-xs text-gray-500 mb-0.5 capitalize">{categoryLabel}</div>
         <h3 className="font-bold text-white text-sm leading-tight mb-2 line-clamp-1 hover:text-oasis-cyan transition-colors">
           {product.name}
         </h3>
@@ -83,11 +86,11 @@ export default function ShopProductCard({ product, onOpen }: ShopProductCardProp
             </span>
           )}
           <span className="inline-flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded">
-            <Box className="w-3 h-3" /> {product.inStock ? `${product.stock} ks` : 'Nedostupné'}
+            <Box className="w-3 h-3" /> {product.inStock ? t('shop.inStock', { stock: product.stock }) : t('shop.outOfStock')}
           </span>
           {tokens > 0 && (
             <span className="inline-flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded text-oasis-gold">
-              <Coins className="w-3 h-3" /> +{tokens} ZION
+              <Coins className="w-3 h-3" /> {t('shop.tokens', { amount: tokens })}
             </span>
           )}
         </div>
@@ -96,9 +99,13 @@ export default function ShopProductCard({ product, onOpen }: ShopProductCardProp
           <div className="flex items-center justify-between">
             <div>
               {product.oldPriceCzk && (
-                <span className="text-xs text-gray-600 line-through mr-2">{product.oldPriceCzk} Kč</span>
+                <span className="text-xs text-gray-600 line-through mr-2">
+                  {t('common.price', { price: product.oldPriceCzk, symbol: t('common.kcSymbol') })}
+                </span>
               )}
-              <span className="font-mono text-sm text-gradient-gold font-bold">{product.priceCzk} Kč</span>
+              <span className="font-mono text-sm text-gradient-gold font-bold">
+                {t('common.price', { price: product.priceCzk, symbol: t('common.kcSymbol') })}
+              </span>
             </div>
             <button
               onClick={handleAdd}
@@ -106,10 +113,10 @@ export default function ShopProductCard({ product, onOpen }: ShopProductCardProp
               className={`zion-button-icon ${
                 isOut ? 'opacity-50 cursor-not-allowed' : 'zion-button-ghost hover:bg-oasis-gold/20'
               }`}
-              title={isOut ? 'Nedostupné' : 'Přidat do košíku'}
+              title={isOut ? t('shop.outOfStock') : t('shop.addToCart')}
             >
               {added ? (
-                <span className="text-oasis-emerald text-xs font-bold">Přidáno</span>
+                <span className="text-oasis-emerald text-xs font-bold">{t('shop.added')}</span>
               ) : (
                 <ShoppingCart className="w-4 h-4" />
               )}

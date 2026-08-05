@@ -10,7 +10,7 @@ Postav jednoduchou webovou aplikaci, která čte data z ZION blockchainu přes J
 ## Požadavky
 
 - Node.js 18+
-- Běžící ZION node nebo veřejný RPC
+- Přístup k veřejnému RPC nebo vlastnímu uzlu
 
 ## Inicializace projektu
 
@@ -26,9 +26,9 @@ npm install express
 const express = require('express');
 const app = express();
 
-const ZION_RPC = 'http://localhost:8444/jsonrpc';
+const ZION_RPC = 'http://rpc.zionterranova.com:8443';
 
-async function rpcCall(method, params = {}) {
+async function rpcCall(method, params = []) {
   const res = await fetch(ZION_RPC, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -39,7 +39,7 @@ async function rpcCall(method, params = {}) {
 }
 
 app.get('/', async (req, res) => {
-  const info = await rpcCall('get_info');
+  const info = await rpcCall('getChainInfo');
   res.send(`
     <h1>ZION Live</h1>
     <p>Height: ${info.height}</p>
@@ -58,3 +58,5 @@ node server.js
 ```
 
 Otevři `http://localhost:3000` a uvidíš živá data z chainu.
+
+> **Varování:** RPC je plain HTTP. Používej pouze veřejná data. Nikdy nezobrazuj seed ani privátní klíč v kódu.

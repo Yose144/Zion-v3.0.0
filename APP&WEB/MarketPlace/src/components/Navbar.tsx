@@ -6,18 +6,21 @@ import { useState } from 'react';
 import { ShoppingCart } from 'lucide-react';
 import ConnectButton from './ConnectButton';
 import { useCart } from './shop/CartContext';
+import LanguageSwitcher from './LanguageSwitcher';
+import { useLangT } from '@/lib/useTranslation';
 
-const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/explore', label: 'Explore' },
-  { href: '/shop', label: 'Shop' },
-  { href: '/create', label: 'Create' },
+const navLinkKeys = [
+  { href: '/', key: 'nav.home' },
+  { href: '/explore', key: 'nav.explore' },
+  { href: '/shop', key: 'nav.shop' },
+  { href: '/create', key: 'nav.create' },
 ];
 
 export default function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const { count } = useCart();
+  const { t } = useLangT();
 
   return (
     <nav className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5" style={{ background: 'rgba(9, 10, 15, 0.92)' }}>
@@ -35,17 +38,17 @@ export default function Navbar() {
             </div>
             <div className="flex flex-col leading-none">
               <span className="text-lg font-black tracking-tight text-gradient font-display">
-                ZION Market
+                {t('nav.logoPrimary')}
               </span>
               <span className="zion-kicker mt-1" style={{ padding: '0.1rem 0.5rem', fontSize: '0.55rem' }}>
-                OASIS Artifacts
+                {t('nav.logoSecondary')}
               </span>
             </div>
           </Link>
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => {
+            {navLinkKeys.map((link) => {
               const active = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
               return (
                 <Link
@@ -57,7 +60,7 @@ export default function Navbar() {
                       : 'text-gray-400 hover:text-white hover:bg-white/5'
                   }`}
                 >
-                  {link.label}
+                  {t(link.key as 'nav.home' | 'nav.explore' | 'nav.shop' | 'nav.create')}
                 </Link>
               );
             })}
@@ -68,7 +71,7 @@ export default function Navbar() {
             <Link
               href="/cart"
               className="relative zion-button-icon zion-button-ghost text-gray-300 hover:text-white"
-              aria-label="Košík"
+              aria-label={t('nav.cartAria')}
             >
               <ShoppingCart className="w-5 h-5" />
               {count > 0 && (
@@ -77,11 +80,12 @@ export default function Navbar() {
                 </span>
               )}
             </Link>
+            <LanguageSwitcher />
             <ConnectButton />
             <button
               onClick={() => setOpen(!open)}
               className="md:hidden zion-button-icon zion-button-ghost"
-              aria-label="Menu"
+              aria-label={open ? t('nav.close') : t('nav.open')}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 {open ? (
@@ -97,7 +101,7 @@ export default function Navbar() {
         {/* Mobile menu */}
         {open && (
           <div className="md:hidden pb-4 flex flex-col gap-1 animate-fade-in">
-            {navLinks.map((link) => {
+            {navLinkKeys.map((link) => {
               const active = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
               return (
                 <Link
@@ -108,7 +112,7 @@ export default function Navbar() {
                     active ? 'text-white bg-white/10' : 'text-gray-400 hover:text-white hover:bg-white/5'
                   }`}
                 >
-                  {link.label}
+                  {t(link.key as 'nav.home' | 'nav.explore' | 'nav.shop' | 'nav.create')}
                 </Link>
               );
             })}

@@ -41,16 +41,24 @@ body {
   color: #fff;
   min-height: 100%;
   font-family: var(--font-inter);
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  height: 100%;
 }
 
-html, body {
-  max-width: 100%;
-  overflow-x: hidden;
+body {
+  height: 100%;
+}
+
+@supports (height: 100dvh) {
+  html, body {
+    height: 100dvh;
+  }
 }
 
 @supports (-webkit-touch-callout: none) {
@@ -87,9 +95,10 @@ input, textarea, select {
     border-radius: clamp(1rem, 2.2vw, 1.5rem);
     border: 1px solid var(--zion-border-subtle);
     background:
-      linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.028)),
-      var(--zion-surface);
-    backdrop-filter: blur(22px) saturate(140%);
+      linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.018)),
+      rgba(8, 10, 20, 0.72);
+    backdrop-filter: blur(20px) saturate(130%);
+    -webkit-backdrop-filter: blur(20px) saturate(130%);
     box-shadow: var(--zion-shadow-panel);
     transition:
       border-color 180ms ease,

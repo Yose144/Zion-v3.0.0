@@ -1,11 +1,6 @@
 use std::sync::Arc;
 
-use zion_cosmic_harmony::algorithm::PowAlgorithm;
-use zion_cosmic_harmony_v3::{
-    deeksha_chv3_find_nonce, deeksha_chv3_with_height, deeksha_lite_find_nonce,
-    deeksha_lite_fire_find_nonce, deeksha_lite_fire_with_height, deeksha_lite_with_height,
-    CHV3_FORK_HEIGHT, FIRE_FORK_HEIGHT,
-};
+use zion_cosmic_harmony::PowAlgorithm;
 use zion_l1_types::Hash;
 
 use crate::block::BlockHeader;
@@ -25,58 +20,7 @@ pub enum ConsensusError {
     InvalidHeaderLength,
 }
 
-/// Height-aware Deeksha PoW algorithm.
-#[derive(Clone, Copy, Debug, Default)]
-pub struct HeightAwareDeeksha;
-
-impl HeightAwareDeeksha {
-    pub fn new() -> Self {
-        Self
-    }
-
-    fn parse_height(header: &[u8]) -> u64 {
-        let bytes = header.get(64..72).unwrap_or(&[0; 8]);
-        u64::from_le_bytes(bytes.try_into().unwrap_or([0; 8]))
-    }
-}
-
-impl PowAlgorithm for HeightAwareDeeksha {
-    fn name(&self) -> &'static str {
-        "height_aware_deeksha"
-    }
-
-    fn hash(&self, header: &[u8], nonce: u64) -> Hash {
-        let h = Self::parse_height(header);
-        let data = if h < CHV3_FORK_HEIGHT {
-            deeksha_lite_with_height(header, nonce, h).data
-        } else if h < FIRE_FORK_HEIGHT {
-            deeksha_chv3_with_height(header, nonce, h).data
-        } else {
-            deeksha_lite_fire_with_height(header, nonce, h).data
-        };
-        Hash::new(data)
-    }
-
-    fn find_nonce(
-        &self,
-        header: &[u8],
-        start: u64,
-        limit: u64,
-        target: &[u8; 32],
-    ) -> Option<(u64, Hash)> {
-        let h = Self::parse_height(header);
-        let (nonce, hash) = if h < CHV3_FORK_HEIGHT {
-            deeksha_lite_find_nonce(header, start, limit, target)?
-        } else if h < FIRE_FORK_HEIGHT {
-            deeksha_chv3_find_nonce(header, start, limit, target)?
-        } else {
-            deeksha_lite_fire_find_nonce(header, start, limit, target)?
-        };
-        Some((nonce, Hash::new(hash)))
-    }
-}
-
-/// L1 consensus engine using a height-aware Deeksha PoW algorithm.
+/// L1 consensus engine using the canonical Ekam Deeksha PoW algorithm.
 pub struct ConsensusEngine {
     algo: Arc<dyn PowAlgorithm>,
 }
@@ -177,10 +121,11 @@ impl ConsensusEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use zion_cosmic_harmony::EkamDeeksha;
 
     #[test]
     fn mine_and_verify_genesis_header() {
-        let algo: Arc<dyn PowAlgorithm> = Arc::new(HeightAwareDeeksha::new());
+        let algo: Arc<dyn PowAlgorithm> = Arc::new(EkamDeeksha::new());
         let engine = ConsensusEngine::new(algo);
 
         let previous = BlockHeader {
@@ -211,7 +156,7 @@ mod tests {
 
     #[test]
     fn invalid_height_fails() {
-        let algo: Arc<dyn PowAlgorithm> = Arc::new(HeightAwareDeeksha::new());
+        let algo: Arc<dyn PowAlgorithm> = Arc::new(EkamDeeksha::new());
         let engine = ConsensusEngine::new(algo);
 
         let previous = BlockHeader {
@@ -256,55 +201,18 @@ mod tests {
     }
 
     #[test]
-    fn pre_chv3_uses_deeksha_lite() {
-        let height = 4499;
-        let header = header_at_height(height).pow_header();
-        let nonce = 42;
-        let algo = HeightAwareDeeksha::new();
-        let got = algo.hash(&header, nonce);
-        let expected = Hash::new(deeksha_lite_with_height(&header, nonce, height).data);
-        assert_eq!(got, expected);
+    fn canonical_algorithm_name() {
+        let algo = EkamDeeksha::new();
+        assert_eq!(algo.name(), "ekam_deeksha");
     }
 
     #[test]
-    fn chv3_range_matches_deeksha_lite() {
-        let height = 4500;
-        let header = header_at_height(height).pow_header();
-        let nonce = 42;
-        let algo = HeightAwareDeeksha::new();
-        let got = algo.hash(&header, nonce);
-        let expected = Hash::new(deeksha_chv3_with_height(&header, nonce, height).data);
-        assert_eq!(got, expected);
-        assert_eq!(got.0, deeksha_lite_with_height(&header, nonce, height).data);
-    }
-
-    #[test]
-    fn fire_range_uses_deeksha_lite_fire() {
-        let height = 5000;
-        let header = header_at_height(height).pow_header();
-        let nonce = 42;
-        let algo = HeightAwareDeeksha::new();
-        let got = algo.hash(&header, nonce);
-        let expected = Hash::new(deeksha_lite_fire_with_height(&header, nonce, height).data);
-        assert_eq!(got, expected);
-        assert_ne!(got.0, deeksha_lite_with_height(&header, nonce, height).data);
-    }
-
-    #[test]
-    fn stress_mine_across_fork_boundaries() {
-        let algo: Arc<dyn PowAlgorithm> = Arc::new(HeightAwareDeeksha::new());
+    fn stress_mine_across_heights() {
+        let algo: Arc<dyn PowAlgorithm> = Arc::new(EkamDeeksha::new());
         let engine = ConsensusEngine::new(algo);
         let target = [0xFFu8; 32];
 
-        for &height in &[
-            1,
-            CHV3_FORK_HEIGHT - 1,
-            CHV3_FORK_HEIGHT,
-            FIRE_FORK_HEIGHT - 1,
-            FIRE_FORK_HEIGHT,
-            10_000,
-            100_000,
-        ] {
+        for &height in &[1, 100, 1_000, 10_000, 100_000] {
             let previous = header_at_height(height - 1);
             let mut header = header_at_height(height);
             header.previous_hash = engine.header_hash(&previous);
@@ -317,8 +225,8 @@ mod tests {
     }
 
     #[test]
-    fn stress_all_heights_dispatch_correctly() {
-        let algo = HeightAwareDeeksha::new();
+    fn stress_nonce_search_sweep() {
+        let algo = EkamDeeksha::new();
         let target = [0xFFu8; 32];
 
         for height in (0..=5_500).step_by(100) {
@@ -327,14 +235,8 @@ mod tests {
                 .find_nonce(&header, 0, 500, &target)
                 .unwrap_or_else(|| panic!("easy target should mine at height {height}"));
 
-            let expected = if height < CHV3_FORK_HEIGHT {
-                Hash::new(deeksha_lite_with_height(&header, nonce, height).data)
-            } else if height < FIRE_FORK_HEIGHT {
-                Hash::new(deeksha_chv3_with_height(&header, nonce, height).data)
-            } else {
-                Hash::new(deeksha_lite_fire_with_height(&header, nonce, height).data)
-            };
-            assert_eq!(hash, expected, "height {height} dispatched to wrong algorithm");
+            assert_eq!(hash, algo.hash(&header, nonce), "hash mismatch at height {height}");
+            assert!(hash.0 <= target, "found nonce must meet target at height {height}");
         }
     }
 }

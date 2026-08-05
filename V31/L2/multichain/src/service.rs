@@ -17,6 +17,11 @@ use crate::credits::CreditsLedger;
 use crate::db::Db;
 use crate::error::{MultichainError, MultichainResult};
 use crate::swap::dex::{DexRouter, Pool, Quote};
+use crate::swap::dex::executor::Executor;
+use crate::swap::dex::intent::{IntentStatus, SolverBid, SwapIntent};
+use crate::swap::dex::solver_network::{SolverClient, SolverNetwork};
+use crate::swap::IntentEngine;
+use crate::swap::htlc::HtlcSwap;
 use crate::types::Transfer;
 use crate::wallet::Keyring;
 use crate::warp::config::WarpConfig;
@@ -29,9 +34,11 @@ pub struct MultichainService {
     db: Arc<Mutex<Db>>,
     adapters: Arc<ChainAdapterRegistry>,
     bridge: Bridge,
+    htlc: HtlcSwap,
     keyring: Keyring,
     credits: CreditsLedger,
     dex: RwLock<DexRouter>,
+    intent_engine: RwLock<IntentEngine>,
     pool: Option<Arc<StdMutex<MiningPool>>>,
     processed_payouts: Arc<StdMutex<HashSet<(u64, String)>>>,
 }
@@ -78,6 +85,7 @@ impl MultichainService {
         keyring: Keyring,
     ) -> Self {
         let bridge = Bridge::new(Arc::clone(&adapters));
+        let htlc = HtlcSwap::with_db(Arc::clone(&adapters), Arc::clone(&db));
         let pool = config.pool.as_ref().and_then(|p| {
             if p.enabled {
                 Some(Arc::new(StdMutex::new(MiningPool::new(p.to_pool_config()))))
@@ -90,9 +98,11 @@ impl MultichainService {
             db,
             adapters,
             bridge,
+            htlc,
             keyring,
             credits: CreditsLedger::new(),
             dex: RwLock::new(DexRouter::new()),
+            intent_engine: RwLock::new(IntentEngine::new()),
             pool,
             processed_payouts: Arc::new(StdMutex::new(HashSet::new())),
         }
@@ -222,6 +232,18 @@ impl MultichainService {
         self.dex.read().await.quote(from, to, amount)
     }
 
+    /// Return the top-N DEX routes for a swap (multi-path quote).
+    pub async fn dex_quote_multi(
+        &self,
+        from: &Asset,
+        to: &Asset,
+        amount: Amount,
+        n: usize,
+        max_hops: usize,
+    ) -> MultichainResult<Vec<Quote>> {
+        self.dex.read().await.quote_multi(from, to, amount, n, max_hops)
+    }
+
     /// Execute a DEX swap and return the output amount.
     pub async fn dex_swap(
         &self,
@@ -232,6 +254,157 @@ impl MultichainService {
         self.dex.write().await.execute(from, to, amount)
     }
 
+    /// Register a solver in the intent engine whitelist and persist it.
+    pub async fn register_solver(
+        &self,
+        solver: impl Into<String>,
+        url: Option<String>,
+        reputation: u64,
+    ) -> MultichainResult<bool> {
+        let solver = solver.into();
+        let added = self
+            .intent_engine
+            .write()
+            .await
+            .registry_mut()
+            .register_with_info(&solver, url, reputation);
+        if added {
+            self.db.lock().await.save_solver(&solver)?;
+        }
+        Ok(added)
+    }
+
+    /// Create a new ZionDex intent, persist it, and return its id.
+    pub async fn create_intent(&self, intent: SwapIntent) -> MultichainResult<uuid::Uuid> {
+        let (id, saved) = {
+            let mut engine = self.intent_engine.write().await;
+            let id = engine.open_intent(intent);
+            let saved = engine.get_intent(id).cloned().unwrap();
+            (id, saved)
+        };
+        self.db.lock().await.save_intent(&saved)?;
+        Ok(id)
+    }
+
+    /// Look up a ZionDex intent by id.
+    pub async fn get_intent(&self, id: uuid::Uuid) -> Option<SwapIntent> {
+        self.intent_engine.read().await.get_intent(id).cloned()
+    }
+
+    /// Broadcast an open intent to all registered off-chain solvers and
+    /// auto-submit any bids that come back. Returns per-solver results.
+    pub async fn broadcast_intent<C: SolverClient + 'static>(
+        &self,
+        id: uuid::Uuid,
+        client: std::sync::Arc<C>,
+    ) -> MultichainResult<Vec<MultichainResult<Option<SolverBid>>>> {
+        let (intent, solvers) = {
+            let engine = self.intent_engine.read().await;
+            let intent = engine
+                .get_intent(id)
+                .ok_or_else(|| MultichainError::Validation("intent not found".to_string()))?
+                .clone();
+            let solvers = engine
+                .registry()
+                .list()
+                .iter()
+                .filter_map(|n| engine.registry().get(n))
+                .cloned()
+                .collect::<Vec<_>>();
+            (intent, solvers)
+        };
+
+        let network = SolverNetwork::new(client);
+        let results = network.broadcast(&intent, &solvers).await;
+
+        for res in &results {
+            if let Ok(Some(bid)) = res {
+                let _ = self.submit_bid(bid.clone()).await;
+            }
+        }
+        Ok(results)
+    }
+
+    /// Submit a solver bid for an existing intent and persist it.
+    pub async fn submit_bid(&self, bid: SolverBid) -> MultichainResult<bool> {
+        let bid_to_save = bid.clone();
+        let accepted = self.intent_engine.write().await.submit_bid(bid)?;
+        if accepted {
+            self.db.lock().await.save_bid(&bid_to_save)?;
+        }
+        Ok(accepted)
+    }
+
+    /// Settle an intent, persist the new status, and return the winning bid.
+    pub async fn settle_intent(
+        &self,
+        id: uuid::Uuid,
+    ) -> MultichainResult<Option<SolverBid>> {
+        let (bid, intent) = {
+            let mut engine = self.intent_engine.write().await;
+            let bid = engine.settle(id)?;
+            let intent = engine.get_intent(id).cloned();
+            (bid, intent)
+        };
+        if let Some(intent) = intent {
+            self.db.lock().await.save_intent(&intent)?;
+        }
+        Ok(bid)
+    }
+
+    /// Settle an intent and execute the winning path via `Executor`.
+    pub async fn execute_intent(
+        &self,
+        id: uuid::Uuid,
+    ) -> MultichainResult<Option<Amount>> {
+        let (out, saved) = {
+            let mut engine = self.intent_engine.write().await;
+            let mut dex = self.dex.write().await;
+
+            let Some(bid) = engine.settle(id)? else {
+                return Ok(None);
+            };
+
+            let Some(intent) = engine.get_intent(id).cloned() else {
+                return Ok(None);
+            };
+
+            let executor = Executor::new(self.keyring.clone());
+            let amount = executor.execute(&intent, &bid, &self.bridge, &mut dex).await?;
+
+            let intent = engine.get_intent_mut(id).unwrap();
+            intent.status = IntentStatus::Executed;
+            let saved = intent.clone();
+            (Some(amount), saved)
+        };
+        self.db.lock().await.save_intent(&saved)?;
+        Ok(out)
+    }
+
+    /// Load persisted intents, bids, and solvers into the in-memory engine.
+    pub async fn load_intent_engine(&self) -> MultichainResult<()> {
+        let db = self.db.lock().await;
+        let solvers = db.load_solvers()?;
+        let intents = db.load_intents()?;
+        let mut bids = Vec::new();
+        for intent in &intents {
+            bids.extend(db.load_bids_for_intent(&intent.id)?);
+        }
+        drop(db);
+
+        let mut engine = self.intent_engine.write().await;
+        for solver in solvers {
+            engine.registry_mut().register(solver);
+        }
+        for intent in intents {
+            engine.load_intent(intent);
+        }
+        for bid in bids {
+            engine.load_bid(bid);
+        }
+        Ok(())
+    }
+
     /// Access the bridge module.
     pub fn bridge(&self) -> &Bridge {
         &self.bridge
@@ -240,6 +413,11 @@ impl MultichainService {
     /// Submit a cross-chain bridge transfer.
     pub async fn bridge_submit(&self, transfer: &mut Transfer) -> MultichainResult<Hash> {
         self.bridge.submit(transfer).await
+    }
+
+    /// Borrow the HTLC atomic-swap coordinator.
+    pub fn htlc(&self) -> &HtlcSwap {
+        &self.htlc
     }
 
     /// Access the wallet keyring.
@@ -312,7 +490,7 @@ impl MultichainService {
         };
 
         for payout in &payouts {
-            let key = (block_height, payout.address.encoded.clone());
+            let key = (block_height, payout.address.clone());
             {
                 let processed = self.processed_payouts.lock().unwrap();
                 if processed.contains(&key) {
@@ -320,33 +498,52 @@ impl MultichainService {
                 }
             }
 
-            if let Err(e) = self.credits.credit(&payout.address, payout.amount) {
+            let address = match Address::new(
+                ChainId::ZionL1,
+                payout.address.as_bytes().to_vec(),
+                &payout.address,
+            ) {
+                Ok(a) => a,
+                Err(e) => {
+                    tracing::warn!(
+                        "payout address invalid: block={} to={} amount={} error={}",
+                        block_height,
+                        payout.address,
+                        payout.amount,
+                        e
+                    );
+                    continue;
+                }
+            };
+            let amount = Amount::new(payout.amount as u128);
+
+            if let Err(e) = self.credits.credit(&address, amount) {
                 tracing::warn!(
                     "payout credit failed: block={} to={} amount={} error={}",
                     block_height,
-                    payout.address.encoded,
-                    payout.amount.0,
+                    payout.address,
+                    payout.amount,
                     e
                 );
                 continue;
             }
 
-            match adapter.send_payment(&payout.address, payout.amount).await {
+            match adapter.send_payment(&address, amount).await {
                 Ok(hash) => {
-                    if let Err(e) = self.credits.debit(&payout.address, payout.amount) {
+                    if let Err(e) = self.credits.debit(&address, amount) {
                         tracing::warn!(
                             "payout debit failed after settlement: block={} to={} amount={} error={}",
                             block_height,
-                            payout.address.encoded,
-                            payout.amount.0,
+                            payout.address,
+                            payout.amount,
                             e
                         );
                     }
                     tracing::info!(
                         "payout executed: block={} to={} amount={} tx={}",
                         block_height,
-                        payout.address.encoded,
-                        payout.amount.0,
+                        payout.address,
+                        payout.amount,
                         hash.to_hex()
                     );
                     self.processed_payouts.lock().unwrap().insert(key);
@@ -355,8 +552,8 @@ impl MultichainService {
                     tracing::warn!(
                         "payout settlement failed: block={} to={} amount={} error={}; credit retained",
                         block_height,
-                        payout.address.encoded,
-                        payout.amount.0,
+                        payout.address,
+                        payout.amount,
                         e
                     );
                 }
@@ -376,7 +573,7 @@ impl MultichainService {
             "accepted": accepted,
             "rejected": rejected,
             "pool_fee_bps": pool.config.pool_fee_bps,
-            "pplns_window_shares": pool.config.pplns_window_shares,
+            "pplns_window_size": pool.config.pplns_window_size,
             "pplns_window_blocks": pool.config.pplns_window_blocks,
             "pool_address": pool.config.pool_address.encoded,
         }))

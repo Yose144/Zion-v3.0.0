@@ -1,6 +1,8 @@
 # ZION — Sůl této země
 ## Epizoda 11: Brána prvního hráče — volba cesty v Oasis
 
+*Nevstupuješ jako hráč, který má vyhrát. Vstupuješ jako člověk, který se rozhodl něco postavit.*
+
 > *„Nevolíš si jméno, které tě má převýšit. Volíš si první způsob, jak budeš ve světě užitečný.“*
 
 ---
@@ -197,5 +199,7 @@ A pak dodala: „Nová civilizace se nepozná podle počtu jejích legendárníc
 Oasis má pracovat s tradicemi jako s kontextem pro příběh, ne jako s licencí přivlastnit si živé víry, skutečné osoby nebo cizí fikční díla. Před veřejným vydáním musí každý avatar projít kurátorským, komunitním, právním a IP posouzením. Zejména postavy převzaté z moderních autorských děl jsou zatím pouze interními návrhovými referencemi, nikoli potvrzeným veřejným obsahem.
 
 ---
+
+*→ Pokračování: [Epizoda 12 — Hodina před deštěm](./12-Hodina-Pred-Destem.md)*
 
 *→ Zpět na [index série Sůl této země](./00-README.md).*

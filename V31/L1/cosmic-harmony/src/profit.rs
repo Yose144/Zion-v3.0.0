@@ -6,10 +6,11 @@
 use std::fmt;
 use std::str::FromStr;
 
+use serde::{Deserialize, Serialize};
 use zion_l1_types::Amount;
 
 /// Mining device category for a coin / algorithm.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum Device {
     Cpu,
     Gpu,
@@ -22,9 +23,29 @@ impl Device {
     }
 }
 
-/// External coin mined through AuxPoW / merged mining.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum PoolPreference {
+    NiceHash,
+    HeroMiners,
+    ZPool,
+    Default,
+}
+
+impl PoolPreference {
+    pub fn from_str_loose(value: &str) -> Self {
+        match value.trim().to_ascii_lowercase().as_str() {
+            "nicehash" | "nh" => Self::NiceHash,
+            "herominers" | "hm" => Self::HeroMiners,
+            "zpool" => Self::ZPool,
+            _ => Self::Default,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Default, serde::Serialize, serde::Deserialize)]
 pub enum ExternalCoin {
+    #[default]
     Kaspa,
     Alephium,
     Decred,
@@ -40,6 +61,23 @@ pub enum ExternalCoin {
     EthereumClassic,
     Bitcoin,
     Verus,
+    Ergo,
+    Evrmore,
+    Pearl,
+    Quai,
+    Beam,
+    Karlsen,
+    Zclassic,
+    Qubitcoin,
+    IronFish,
+    Nexa,
+    Raptoreum,
+    Dynex,
+    Nervos,
+    Conflux,
+    Zcash,
+    PhoenixCoin,
+    Keryx,
 }
 
 impl ExternalCoin {
@@ -59,7 +97,28 @@ impl ExternalCoin {
         ExternalCoin::EthereumClassic,
         ExternalCoin::Bitcoin,
         ExternalCoin::Verus,
+        ExternalCoin::Ergo,
+        ExternalCoin::Evrmore,
+        ExternalCoin::Pearl,
+        ExternalCoin::Quai,
+        ExternalCoin::Beam,
+        ExternalCoin::Karlsen,
+        ExternalCoin::Zclassic,
+        ExternalCoin::Qubitcoin,
+        ExternalCoin::IronFish,
+        ExternalCoin::Nexa,
+        ExternalCoin::Raptoreum,
+        ExternalCoin::Dynex,
+        ExternalCoin::Nervos,
+        ExternalCoin::Conflux,
+        ExternalCoin::Zcash,
+        ExternalCoin::PhoenixCoin,
+        ExternalCoin::Keryx,
     ];
+
+    pub fn all() -> &'static [ExternalCoin] {
+        Self::ALL
+    }
 
     pub fn as_str(&self) -> &'static str {
         match self {
@@ -78,6 +137,23 @@ impl ExternalCoin {
             ExternalCoin::EthereumClassic => "ETC",
             ExternalCoin::Bitcoin => "BTC",
             ExternalCoin::Verus => "VRSC",
+            ExternalCoin::Ergo => "ERG",
+            ExternalCoin::Evrmore => "EVR",
+            ExternalCoin::Pearl => "PRL",
+            ExternalCoin::Quai => "QUAI",
+            ExternalCoin::Beam => "BEAM",
+            ExternalCoin::Karlsen => "KLS",
+            ExternalCoin::Zclassic => "ZCL",
+            ExternalCoin::Qubitcoin => "QTC",
+            ExternalCoin::IronFish => "IRON",
+            ExternalCoin::Nexa => "NEXA",
+            ExternalCoin::Raptoreum => "RTM",
+            ExternalCoin::Dynex => "DNX",
+            ExternalCoin::Nervos => "CKB",
+            ExternalCoin::Conflux => "CFX",
+            ExternalCoin::Zcash => "ZEC",
+            ExternalCoin::PhoenixCoin => "PHX",
+            ExternalCoin::Keryx => "KRX",
         }
     }
 
@@ -98,64 +174,342 @@ impl ExternalCoin {
             ExternalCoin::EthereumClassic => "etchash",
             ExternalCoin::Bitcoin => "sha256d",
             ExternalCoin::Verus => "verushash",
+            ExternalCoin::Ergo => "autolykos",
+            ExternalCoin::Evrmore => "evrprogpow",
+            ExternalCoin::Pearl => "pearlhash",
+            ExternalCoin::Quai => "kawpow",
+            ExternalCoin::Beam => "beamhash",
+            ExternalCoin::Karlsen => "karlsenhash",
+            ExternalCoin::Zclassic => "equihashzero",
+            ExternalCoin::Qubitcoin => "qhash",
+            ExternalCoin::IronFish => "fishhash",
+            ExternalCoin::Nexa => "nexapow",
+            ExternalCoin::Raptoreum => "ghostrider",
+            ExternalCoin::Dynex => "dynexsolve",
+            ExternalCoin::Nervos => "eaglesong",
+            ExternalCoin::Conflux => "octopus",
+            ExternalCoin::Zcash => "equihash",
+            ExternalCoin::PhoenixCoin => "neoscrypt",
+            ExternalCoin::Keryx => "keryxhash",
         }
     }
 
-    /// Ticker symbol (alias for `as_str`).
     pub fn ticker(&self) -> &'static str {
         self.as_str()
     }
 
-    /// Returns true if this coin is best mined on GPU.
-    pub fn is_gpu(&self) -> bool {
+    pub fn is_blake3(&self) -> bool {
+        matches!(self, ExternalCoin::Decred | ExternalCoin::Alephium)
+    }
+
+    pub fn is_cpu(&self) -> bool {
         matches!(
             self,
-            ExternalCoin::Kaspa
-                | ExternalCoin::Alephium
-                | ExternalCoin::Decred
-                | ExternalCoin::Ravencoin
-                | ExternalCoin::EpicCash
-                | ExternalCoin::Zano
-                | ExternalCoin::Meowcoin
-                | ExternalCoin::Clore
-                | ExternalCoin::Flux
-                | ExternalCoin::Neoxa
-                | ExternalCoin::EthereumClassic
-                | ExternalCoin::Bitcoin
+            ExternalCoin::Monero | ExternalCoin::Verus | ExternalCoin::Raptoreum
         )
     }
 
-    /// Returns true if this coin is best mined on CPU.
-    pub fn is_cpu(&self) -> bool {
-        matches!(self, ExternalCoin::Monero | ExternalCoin::Verus)
+    pub fn is_gpu(&self) -> bool {
+        !self.is_cpu()
     }
 
-    /// Estimated GPU power draw in watts for this coin's algorithm.
+    pub fn dag_size(&self) -> Option<u64> {
+        match self {
+            ExternalCoin::Ravencoin => Some(4_294_967_296),
+            ExternalCoin::EthereumClassic => Some(2_684_354_560),
+            ExternalCoin::Evrmore => Some(2_684_354_560),
+            ExternalCoin::Meowcoin => Some(4_294_967_296),
+            ExternalCoin::Flux => Some(6_000_000_000),
+            ExternalCoin::Clore => Some(4_294_967_296),
+            ExternalCoin::EpicCash => Some(2_684_354_560),
+            ExternalCoin::Zano => Some(2_684_354_560),
+            ExternalCoin::Quai => Some(4_294_967_296),
+            ExternalCoin::Beam => Some(2_147_483_648),
+            ExternalCoin::Zclassic => Some(1_073_741_824),
+            ExternalCoin::Vertcoin => Some(1_073_741_824),
+            ExternalCoin::IronFish => Some(4_800_000_000),
+            ExternalCoin::Nexa => Some(5_000_000_000),
+            ExternalCoin::Conflux => Some(4_294_967_296),
+            ExternalCoin::Zcash => Some(1_073_741_824),
+            _ => None,
+        }
+    }
+
+    pub fn fits_vram(&self, vram_bytes: u64) -> bool {
+        match self.dag_size() {
+            None => true,
+            Some(dag) => dag + 512_000_000 < vram_bytes,
+        }
+    }
+
+    pub fn cpu_compatible(&self, has_aes: bool, _has_avx2: bool) -> bool {
+        match self {
+            ExternalCoin::Verus | ExternalCoin::Raptoreum => true,
+            ExternalCoin::Monero => has_aes,
+            _ => false,
+        }
+    }
+
+    pub fn gpu_kernel_available(&self, backend: &str) -> bool {
+        match backend {
+            "opencl" => matches!(
+                self,
+                ExternalCoin::Decred | ExternalCoin::Alephium
+                    | ExternalCoin::Kaspa
+                    | ExternalCoin::Ergo
+                    | ExternalCoin::Ravencoin | ExternalCoin::Clore | ExternalCoin::Quai
+                    | ExternalCoin::Evrmore
+                    | ExternalCoin::Meowcoin
+                    | ExternalCoin::EthereumClassic
+                    | ExternalCoin::Flux
+                    | ExternalCoin::EpicCash
+                    | ExternalCoin::Zano
+                    | ExternalCoin::Pearl
+                    | ExternalCoin::Beam
+                    | ExternalCoin::Karlsen
+                    | ExternalCoin::IronFish
+                    | ExternalCoin::Vertcoin
+                    | ExternalCoin::Zclassic
+                    | ExternalCoin::Nexa
+                    | ExternalCoin::Qubitcoin
+                    | ExternalCoin::Dynex
+                    | ExternalCoin::Nervos
+                    | ExternalCoin::Conflux
+                    | ExternalCoin::Zcash
+                    | ExternalCoin::PhoenixCoin
+                    | ExternalCoin::Keryx
+            ),
+            "cuda" => matches!(
+                self,
+                ExternalCoin::Decred | ExternalCoin::Alephium
+                    | ExternalCoin::Kaspa
+                    | ExternalCoin::Ergo
+                    | ExternalCoin::Ravencoin | ExternalCoin::Clore | ExternalCoin::Quai
+                    | ExternalCoin::EthereumClassic
+                    | ExternalCoin::Evrmore | ExternalCoin::Meowcoin
+                    | ExternalCoin::Flux
+                    | ExternalCoin::EpicCash | ExternalCoin::Zano
+            ),
+            "metal" => matches!(
+                self,
+                ExternalCoin::Decred | ExternalCoin::Alephium | ExternalCoin::Kaspa
+            ),
+            _ => false,
+        }
+    }
+
     pub fn estimated_gpu_power_watts(&self) -> f64 {
         match self {
-            ExternalCoin::Kaspa => 180.0,
-            ExternalCoin::Alephium => 200.0,
-            ExternalCoin::Decred => 150.0,
-            ExternalCoin::Ravencoin => 170.0,
-            ExternalCoin::EpicCash => 220.0,
-            ExternalCoin::Zano => 220.0,
-            ExternalCoin::Meowcoin => 170.0,
-            ExternalCoin::Clore => 170.0,
-            ExternalCoin::Flux => 160.0,
-            ExternalCoin::Neoxa => 170.0,
-            ExternalCoin::EthereumClassic => 200.0,
+            ExternalCoin::Kaspa => 200.0,
+            ExternalCoin::Alephium | ExternalCoin::Decred => 180.0,
+            ExternalCoin::Ergo => 160.0,
+            ExternalCoin::Ravencoin | ExternalCoin::Clore | ExternalCoin::Quai => 220.0,
+            ExternalCoin::EthereumClassic | ExternalCoin::Evrmore | ExternalCoin::Meowcoin => 210.0,
+            ExternalCoin::Flux => 200.0,
+            ExternalCoin::Pearl => 190.0,
+            ExternalCoin::EpicCash => 210.0,
+            ExternalCoin::Zano => 210.0,
+            ExternalCoin::Beam => 180.0,
+            ExternalCoin::Karlsen => 190.0,
+            ExternalCoin::Zclassic | ExternalCoin::Qubitcoin | ExternalCoin::Vertcoin => 170.0,
+            ExternalCoin::IronFish => 220.0,
+            ExternalCoin::Nexa => 210.0,
+            ExternalCoin::Dynex => 150.0,
+            ExternalCoin::Nervos => 170.0,
+            ExternalCoin::Conflux => 210.0,
+            ExternalCoin::Zcash => 170.0,
+            ExternalCoin::PhoenixCoin => 180.0,
+            ExternalCoin::Keryx => 180.0,
             ExternalCoin::Bitcoin => 250.0,
+            ExternalCoin::Neoxa => 170.0,
             _ => 0.0,
         }
     }
 
-    /// Estimated CPU power draw in watts for this coin's algorithm.
     pub fn estimated_cpu_power_watts(&self) -> f64 {
         match self {
-            ExternalCoin::Monero => 120.0,
-            ExternalCoin::Verus => 90.0,
+            ExternalCoin::Monero => 85.0,
+            ExternalCoin::Verus => 65.0,
+            ExternalCoin::Raptoreum => 90.0,
             _ => 0.0,
         }
+    }
+
+    pub fn from_str_loose(s: &str) -> Option<Self> {
+        match s.trim().to_ascii_lowercase().as_str() {
+            "dcr" | "decred" | "blake3-dcr" | "blake3dcr" => Some(Self::Decred),
+            "alph" | "alephium" | "blake3-alph" | "blake3alph" => Some(Self::Alephium),
+            "kas" | "kaspa" | "kheavyhash" => Some(Self::Kaspa),
+            "erg" | "ergo" | "autolykos" => Some(Self::Ergo),
+            "rvn" | "ravencoin" | "kawpow" => Some(Self::Ravencoin),
+            "etc" | "ethereum-classic" | "ethash" | "etchash" => Some(Self::EthereumClassic),
+            "evr" | "evrmore" | "evrprogpow" => Some(Self::Evrmore),
+            "mewc" | "meowcoin" | "meowpow" => Some(Self::Meowcoin),
+            "flux" | "zelhash" => Some(Self::Flux),
+            "clore" | "clore.ai" => Some(Self::Clore),
+            "xmr" | "monero" | "randomx" => Some(Self::Monero),
+            "vrsc" | "verus" | "verushash" => Some(Self::Verus),
+            "prl" | "pearl" | "pearlhash" => Some(Self::Pearl),
+            "epic" | "epiccash" | "progpow" => Some(Self::EpicCash),
+            "zano" | "progpowz" => Some(Self::Zano),
+            "quai" | "quainetwork" => Some(Self::Quai),
+            "beam" | "beamhash" => Some(Self::Beam),
+            "kls" | "karlsen" | "karlsenhash" => Some(Self::Karlsen),
+            "zcl" | "zclassic" | "equihashzero" => Some(Self::Zclassic),
+            "qtc" | "qubitcoin" | "qhash" => Some(Self::Qubitcoin),
+            "vtc" | "vertcoin" | "verthash" => Some(Self::Vertcoin),
+            "iron" | "ironfish" | "fishhash" => Some(Self::IronFish),
+            "nexa" | "nexapow" => Some(Self::Nexa),
+            "rtm" | "raptoreum" | "ghostrider" => Some(Self::Raptoreum),
+            "dnx" | "dynex" | "dynexsolve" => Some(Self::Dynex),
+            "ckb" | "nervos" | "nervos-network" | "eaglesong" => Some(Self::Nervos),
+            "cfx" | "conflux" | "octopus" => Some(Self::Conflux),
+            "zec" | "zcash" | "equihash" => Some(Self::Zcash),
+            "phx" | "phoenixcoin" | "neoscrypt" => Some(Self::PhoenixCoin),
+            "krx" | "keryx" | "keryxhash" => Some(Self::Keryx),
+            "neox" | "neoxa" => Some(Self::Neoxa),
+            "btc" | "bitcoin" | "sha256d" => Some(Self::Bitcoin),
+            _ => None,
+        }
+    }
+
+    pub fn default_pool(&self) -> &'static str {
+        match self {
+            ExternalCoin::Decred => "pool.woolypooly.com:3152",
+            ExternalCoin::Alephium => "pool.woolypooly.com:3106",
+            ExternalCoin::Kaspa => "kas.2miners.com:2020",
+            ExternalCoin::Ergo => "erg.2miners.com:8888",
+            ExternalCoin::Ravencoin => "rvn.2miners.com:6060",
+            ExternalCoin::EthereumClassic => "etc.2miners.com:1010",
+            ExternalCoin::Evrmore => "evrprogpow.eu.mine.zpool.ca:1330",
+            ExternalCoin::Meowcoin => "meowpow.eu.mine.zpool.ca:1327",
+            ExternalCoin::Flux => "flux.woolypooly.com:3000",
+            ExternalCoin::Clore => "clore.woolypooly.com:3090",
+            ExternalCoin::Monero => "gulf.moneroocean.stream:10001",
+            ExternalCoin::Verus => "eu.luckpool.net:3956",
+            ExternalCoin::Pearl => "us2.alphapool.tech:5566",
+            ExternalCoin::EpicCash => "de.epicmine.io:3334",
+            ExternalCoin::Zano => "de.zano.herominers.com:1110",
+            ExternalCoin::Quai => "quai.2miners.com:4848",
+            ExternalCoin::Beam => "beam.2miners.com:5252",
+            ExternalCoin::Karlsen => "karlsencoin.cedric-crispin.com:4154",
+            ExternalCoin::Zclassic => "equihash192.eu.mine.zpool.ca:2144",
+            ExternalCoin::Qubitcoin => "qtc.suprnova.cc:5555",
+            ExternalCoin::Vertcoin => "verthash.eu.mine.zpool.ca:4533",
+            ExternalCoin::IronFish => "fr.grandpool.io:2027",
+            ExternalCoin::Nexa => "nexa.2miners.com:5050",
+            ExternalCoin::Raptoreum => "ghostrider.eu.mine.zpool.ca:5354",
+            ExternalCoin::Dynex => "pool.deepminerz.com:3333",
+            ExternalCoin::Nervos => "ckb.2miners.com:6464",
+            ExternalCoin::Conflux => "cfx.2miners.com:6565",
+            ExternalCoin::Zcash => "zec.2miners.com:7070",
+            ExternalCoin::PhoenixCoin => "neoscrypt.eu.mine.zpool.ca:4233",
+            ExternalCoin::Keryx => "keryxhash.eu.mine.zpool.ca:4233",
+            ExternalCoin::Neoxa => "neox.2miners.com:4040",
+            ExternalCoin::Bitcoin => "stratum+tcp://bitcoin.pool.example:3333",
+        }
+    }
+
+    pub fn nicehash_pool(&self, region: &str) -> Option<String> {
+        let algo: &str = match self {
+            ExternalCoin::EthereumClassic => "etchash",
+            ExternalCoin::Ravencoin | ExternalCoin::Quai | ExternalCoin::Clore => "kawpow",
+            ExternalCoin::Ergo => "autolykos",
+            ExternalCoin::Kaspa => "kheavyhash",
+            ExternalCoin::Verus => "verushash",
+            ExternalCoin::Nexa => "nexapow",
+            ExternalCoin::Beam => "beamv3",
+            ExternalCoin::IronFish => "fishhash",
+            ExternalCoin::Alephium => "alephium",
+            ExternalCoin::Zclassic => "equihash192",
+            ExternalCoin::Nervos => "eaglesong",
+            ExternalCoin::Conflux => "octopus",
+            ExternalCoin::Zcash => "equihash",
+            ExternalCoin::PhoenixCoin => "neoscrypt",
+            ExternalCoin::Keryx => "keryxhash",
+            _ => return None,
+        };
+        let _ = region;
+        Some(format!("{}.auto.nicehash.com:9200", algo))
+    }
+
+    pub fn herominers_pool(&self, region: &str) -> Option<String> {
+        let (subdomain, port): (&str, u16) = match self {
+            ExternalCoin::EthereumClassic => ("etc", 1150),
+            ExternalCoin::Kaspa => ("kaspa", 1206),
+            ExternalCoin::Alephium => ("alephium", 1220),
+            ExternalCoin::Ergo => ("ergo", 1180),
+            ExternalCoin::Ravencoin => ("ravencoin", 1140),
+            ExternalCoin::IronFish => ("ironfish", 1145),
+            ExternalCoin::Dynex => ("dynex", 1030),
+            ExternalCoin::Nervos => ("nervos", 1160),
+            ExternalCoin::Conflux => ("conflux", 1170),
+            ExternalCoin::Zcash => ("zcash", 1156),
+            ExternalCoin::Zano => ("zano", 1110),
+            _ => return None,
+        };
+        let hm_region = match region.to_ascii_lowercase().as_str() {
+            "eu" => "de",
+            "na" | "us" => "us",
+            "hk" | "sg" | "asia" => "hk",
+            _ => "de",
+        };
+        Some(format!("{}.{}.herominers.com:{}", hm_region, subdomain, port))
+    }
+
+    pub fn zpool_pool(&self, region: &str) -> Option<String> {
+        let (algo, port): (&str, u16) = match self {
+            ExternalCoin::Evrmore => ("evrprogpow", 1330),
+            ExternalCoin::Meowcoin => ("meowpow", 1327),
+            ExternalCoin::Zclassic => ("equihash192", 2144),
+            ExternalCoin::Raptoreum => ("ghostrider", 5354),
+            ExternalCoin::PhoenixCoin => ("neoscrypt", 4233),
+            ExternalCoin::Keryx => ("keryxhash", 4233),
+            ExternalCoin::Zcash => ("equihash", 1080),
+            _ => return None,
+        };
+        let zp_region = match region.to_ascii_lowercase().as_str() {
+            "na" | "us" => "na",
+            _ => "eu",
+        };
+        Some(format!("{}.{}.mine.zpool.ca:{}", algo, zp_region, port))
+    }
+
+    pub fn best_pool(&self, preference: PoolPreference, region: &str) -> String {
+        match preference {
+            PoolPreference::NiceHash => {
+                if let Some(url) = self.nicehash_pool(region) {
+                    return url;
+                }
+                if let Some(url) = self.herominers_pool(region) {
+                    return url;
+                }
+                if let Some(url) = self.zpool_pool(region) {
+                    return url;
+                }
+                self.default_pool().to_string()
+            }
+            PoolPreference::HeroMiners => {
+                if let Some(url) = self.herominers_pool(region) {
+                    return url;
+                }
+                if let Some(url) = self.zpool_pool(region) {
+                    return url;
+                }
+                self.default_pool().to_string()
+            }
+            PoolPreference::ZPool => {
+                if let Some(url) = self.zpool_pool(region) {
+                    return url;
+                }
+                self.default_pool().to_string()
+            }
+            PoolPreference::Default => self.default_pool().to_string(),
+        }
+    }
+
+    pub fn blake3_coins() -> &'static [ExternalCoin] {
+        &[ExternalCoin::Decred, ExternalCoin::Alephium]
     }
 }
 
@@ -175,12 +529,15 @@ impl FromStr for ExternalCoin {
                 return Ok(*coin);
             }
         }
+        if let Some(coin) = Self::from_str_loose(s.as_str()) {
+            return Ok(coin);
+        }
         Err(format!("unknown external coin: {s}"))
     }
 }
 
 /// Static mining profile for an external coin.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CoinProfile {
     pub coin: ExternalCoin,
     /// Normalized hashrate unit for this algorithm (MH/s).
@@ -201,6 +558,10 @@ pub struct CoinProfile {
     pub network_difficulty: f64,
     /// Device category this coin is mined with.
     pub device: Device,
+    /// Worker name for stratum authorization.
+    pub worker_name: String,
+    /// Password for stratum authorization.
+    pub password: String,
 }
 
 impl CoinProfile {
@@ -247,6 +608,14 @@ impl CoinProfile {
         ]
     }
 
+    /// Find the default profile for a specific coin.
+    pub fn for_coin(coin: ExternalCoin) -> Self {
+        Self::defaults()
+            .into_iter()
+            .find(|p| p.coin == coin)
+            .unwrap_or_else(|| Self::new(coin, 1000.0, 0.01, Device::Gpu))
+    }
+
     fn new(
         coin: ExternalCoin,
         hashrate_unit_mhs: f64,
@@ -268,6 +637,8 @@ impl CoinProfile {
             block_reward: Amount::new(0),
             network_difficulty: 1.0,
             device,
+            worker_name: String::new(),
+            password: String::new(),
         }
     }
 }

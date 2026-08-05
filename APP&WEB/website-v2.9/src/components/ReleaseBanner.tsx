@@ -5,8 +5,8 @@ import { Rocket, Download, ExternalLink } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
 const ReleaseBannerCopy = {
-  zionV310BoostMinerIsLive: { cs: `ZION v3.1.0 Boost Miner je live`, en: `ZION v3.1.0 Boost Miner is live` },
-  threeStreamsZionGpuCpu: { cs: `Tři streamy současně: ZION + GPU + CPU. Auto GPU backend (CUDA + OpenCL + Metal). Linux x86_64 nyní, macOS/Windows přes Trinity Miner.`, en: `Three streams simultaneously: ZION + GPU + CPU. Auto GPU backend (CUDA + OpenCL + Metal). Linux x86_64 now, macOS/Windows via Trinity Miner.` },
+  zionV310TerminalMinerIsLive: { cs: `ZION v3.1.0 Terminal Miner je live`, en: `ZION v3.1.0 Terminal Miner is live` },
+  fourPlatformsAutoGpu: { cs: `4 platformy: Linux, macOS (Apple Silicon + Intel), Windows. Auto GPU backend (CUDA + OpenCL + Metal). One-click GPU auto-detect.`, en: `4 platforms: Linux, macOS (Apple Silicon + Intel), Windows. Auto GPU backend (CUDA + OpenCL + Metal). One-click GPU auto-detect.` },
   downloadFromGithub: { cs: `Stáhnout z GitHub`, en: `Download from GitHub` },
 };
 
@@ -30,15 +30,15 @@ export default function ReleaseBanner() {
             </div>
             <div className="min-w-0">
               <p className="text-sm sm:text-base font-semibold text-emerald-100 leading-snug">
-                {ReleaseBannerCopy.zionV310BoostMinerIsLive[cs ? 'cs' : 'en']}
+                {ReleaseBannerCopy.zionV310TerminalMinerIsLive[cs ? 'cs' : 'en']}
               </p>
               <p className="text-xs sm:text-sm text-emerald-200/80 leading-relaxed mt-0.5">
-                {ReleaseBannerCopy.threeStreamsZionGpuCpu[cs ? 'cs' : 'en']}
+                {ReleaseBannerCopy.fourPlatformsAutoGpu[cs ? 'cs' : 'en']}
               </p>
             </div>
           </div>
           <a
-            href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.1.0"
+            href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.1.0-cli"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 px-4 py-2 text-sm font-semibold text-emerald-100 transition-colors shrink-0"

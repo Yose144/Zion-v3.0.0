@@ -10,11 +10,6 @@ import GoldenOrb from './GoldenOrb';
 const GoldenEggHaraniagharbaCopy = {
   hiranHiranyagarbha: { cs: `Hiran / Hiranyagarbha`, en: `Hiran / Hiranyagarbha` },
   hiranAsTheAiGatewayIntoTerraNo: { cs: `Hiran jako AI brána do Terra Nova`, en: `Hiran as the AI gateway into Terra Nova` },
-  justLikeTerraNovaAboveHiranSho: { cs: `Stejně jako Terra Nova nahoře musí i Hiran na homepage působit jako jasná kapitola: AI-native vrstva, knihovna, inference a most mezi vizí a nástroji.`, en: `Just like Terra Nova above, Hiran should read as a clear chapter on the homepage: the AI-native layer, the library, inference, and the bridge between vision and tools.` },
-  homepageRole: { cs: `Úloha na homepage`, en: `Homepage role` },
-  notExtraDecorationButTheSecond: { cs: `Ne dekorace navíc, ale druhý hlavní pilíř vstupní stránky vedle Terra Nova: Hiran, Kvantová revoluce a Genesis musí mít stejnou váhu i typografii.`, en: `Not extra decoration, but the second major pillar of the entry page next to Terra Nova: Hiran, Quantum Revolution, and Genesis should carry the same weight and typography.` },
-  interactiveGoldenOrbMoveMouseT: { cs: `Interaktivní Golden Orb — pohyb myší ovlivňuje světlo`, en: `Interactive Golden Orb — move mouse to steer the light` },
-  insideTheLayer: { cs: `Uvnitř vrstvy`, en: `Inside the layer` },
 };
 
 export default function GoldenEggHaraniagharba() {
@@ -22,156 +17,71 @@ export default function GoldenEggHaraniagharba() {
   const cs = lang === 'cs';
 
   return (
-    <section className="relative px-4 py-16 md:py-20">
-      <div className="zion-container space-y-8">
-        <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
-          <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.36em] text-amber-200/75">
-              {GoldenEggHaraniagharbaCopy.hiranHiranyagarbha[cs ? 'cs' : 'en']}
-            </p>
-            <h2 className="text-3xl font-bold leading-tight text-white sm:text-4xl md:text-5xl">
-              {GoldenEggHaraniagharbaCopy.hiranAsTheAiGatewayIntoTerraNo[cs ? 'cs' : 'en']}
-            </h2>
-            <p className="max-w-3xl text-base leading-relaxed text-gray-300 md:text-lg">
-              {GoldenEggHaraniagharbaCopy.justLikeTerraNovaAboveHiranSho[cs ? 'cs' : 'en']}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-amber-300/15 bg-amber-200/6 p-4">
-            <p className="text-[10px] uppercase tracking-[0.28em] text-amber-100/60">
-              {GoldenEggHaraniagharbaCopy.homepageRole[cs ? 'cs' : 'en']}
-            </p>
-            <p className="mt-2 text-sm leading-relaxed text-gray-300">
-              {GoldenEggHaraniagharbaCopy.notExtraDecorationButTheSecond[cs ? 'cs' : 'en']}
-            </p>
-          </div>
-        </div>
+    <section className="relative px-4 py-8">
+      <div className="zion-container">
+        <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+          <div className="absolute -right-10 top-[-40px] h-32 w-32 rounded-full bg-amber-300/15 blur-3xl" />
+          <div className="absolute -bottom-16 -left-4 h-40 w-40 rounded-full bg-zion-purple/10 blur-3xl" />
 
-        <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
-          <div className="absolute -right-10 top-[-60px] h-44 w-44 rounded-full bg-amber-300/15 blur-3xl" />
-          <div className="absolute -bottom-20 -left-5 h-52 w-52 rounded-full bg-zion-purple/10 blur-3xl" />
-
-          <div className="relative grid gap-6 lg:grid-cols-[0.4fr_1fr] lg:items-start">
-            {/* ── Left: Interactive Golden Orb in cosmic space ── */}
-            <div className="space-y-2">
-              <div className="relative overflow-hidden zion-rainbow-sub shadow-[0_18px_60px_rgba(0,0,0,0.45)]" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
-                <GoldenOrb className="aspect-square w-full" />
-                <div className="absolute inset-x-0 bottom-0 p-4 pointer-events-none z-10">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/45 backdrop-blur-sm px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-amber-100">
-                    <Sparkles className="h-3 w-3 text-zion-gold" />
+          <div className="relative grid gap-4 lg:grid-cols-[160px_1fr] lg:items-center">
+            {/* Left: compact Golden Orb */}
+            <div className="space-y-1">
+              <div className="relative overflow-hidden zion-rainbow-sub shadow-[0_12px_40px_rgba(0,0,0,0.45)]" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                <GoldenOrb className="aspect-square w-full max-w-[160px] mx-auto" />
+                <div className="absolute inset-x-0 bottom-0 p-2 pointer-events-none z-10">
+                  <div className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/45 backdrop-blur-sm px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.24em] text-amber-100">
+                    <Sparkles className="h-2.5 w-2.5 text-zion-gold" />
                     {tr('goldenEgg', 'visual_badge', lang)}
                   </div>
                 </div>
               </div>
-              <p className="text-[10px] uppercase tracking-[0.24em] text-amber-100/50 text-center">
-                {GoldenEggHaraniagharbaCopy.interactiveGoldenOrbMoveMouseT[cs ? 'cs' : 'en']}
-              </p>
             </div>
 
-            {/* ── Right: Content ── */}
-            <div className="space-y-5">
-              <div className="inline-flex items-center gap-2 rounded-full border border-amber-300/20 bg-amber-200/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.32em] text-amber-200">
-                <Orbit className="h-3.5 w-3.5" />
-                {tr('goldenEgg', 'badge', lang)}
-              </div>
-
-              <div className="relative overflow-hidden zion-rainbow-sub p-4" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
-                <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-zion-gold/20 blur-2xl" />
-                <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.3em] text-zion-gold/90">
-                      {tr('goldenEgg', 'featured_label', lang)}
-                    </p>
-                    <h3 className="mt-1 text-lg font-semibold text-white md:text-xl">
-                      {tr('goldenEgg', 'featured_title', lang)}
-                    </h3>
-                    <p className="mt-1 text-sm text-amber-100/80">
-                      {tr('goldenEgg', 'featured_body', lang)}
-                    </p>
+            {/* Right: content */}
+            <div className="space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                <div>
+                  <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/20 bg-amber-200/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.32em] text-amber-200">
+                    <Orbit className="h-3 w-3" />
+                    {GoldenEggHaraniagharbaCopy.hiranHiranyagarbha[cs ? 'cs' : 'en']}
                   </div>
-                  <Link
-                    href="/docs#book-ekam-full"
-                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-zion-gold/40 bg-black/35 px-4 py-2 text-sm font-semibold text-zion-gold transition hover:bg-black/55"
-                  >
-                    {tr('goldenEgg', 'featured_cta', lang)}
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
+                  <h2 className="mt-2 text-xl font-bold leading-tight text-white sm:text-2xl">
+                    {GoldenEggHaraniagharbaCopy.hiranAsTheAiGatewayIntoTerraNo[cs ? 'cs' : 'en']}
+                  </h2>
+                  <p className="mt-1 text-sm text-amber-100/80 max-w-2xl">
+                    {tr('goldenEgg', 'featured_body', lang)}
+                  </p>
                 </div>
+
+                <Link
+                  href="/docs#book-ekam-full"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-zion-gold/40 bg-black/35 px-4 py-2 text-sm font-semibold text-zion-gold transition hover:bg-black/55 shrink-0"
+                >
+                  {tr('goldenEgg', 'featured_cta', lang)}
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
               </div>
 
-              <div>
-                <p className="text-xs uppercase tracking-[0.4em] text-amber-100/60">
-                  {GoldenEggHaraniagharbaCopy.insideTheLayer[cs ? 'cs' : 'en']}
-                </p>
-                <h3 className="mt-2 text-2xl font-semibold text-white md:text-4xl">
-                  {tr('goldenEgg', 'title', lang)}{' '}
-                  <span className="bg-linear-to-r from-amber-200 via-zion-gold to-orange-300 bg-clip-text text-transparent">
-                    {tr('goldenEgg', 'title_emphasis', lang)}
-                  </span>
-                </h3>
-              </div>
-
-              <p className="max-w-2xl text-sm leading-relaxed text-gray-300 md:text-base">
-                {tr('goldenEgg', 'lead', lang)}
-              </p>
-
-              {/* ── Compact knowledge row ── */}
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="zion-rainbow-sub p-4 backdrop-blur-sm" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+              {/* Compact knowledge row */}
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="zion-rainbow-sub p-3 backdrop-blur-sm" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                   <p className="text-[10px] uppercase tracking-[0.28em] text-amber-100/60">{tr('goldenEgg', 'what_title', lang)}</p>
-                  <p className="mt-1.5 text-sm font-semibold text-white">{tr('goldenEgg', 'what_head', lang)}</p>
-                  <p className="mt-1 text-xs leading-relaxed text-gray-400">
+                  <p className="mt-1 text-sm font-semibold text-white">{tr('goldenEgg', 'what_head', lang)}</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-gray-400 line-clamp-2">
                     {tr('goldenEgg', 'what_body', lang)}
                   </p>
                 </div>
-                <div className="zion-rainbow-sub p-4 backdrop-blur-sm" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                <div className="zion-rainbow-sub p-3 backdrop-blur-sm" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
                   <p className="text-[10px] uppercase tracking-[0.28em] text-amber-100/60">{tr('goldenEgg', 'ekam_title', lang)}</p>
-                  <p className="mt-1.5 text-sm font-semibold text-white">{tr('goldenEgg', 'ekam_head', lang)}</p>
-                  <p className="mt-1 text-xs leading-relaxed text-gray-400">
+                  <p className="mt-1 text-sm font-semibold text-white">{tr('goldenEgg', 'ekam_head', lang)}</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-gray-400 line-clamp-2">
                     {tr('goldenEgg', 'ekam_body', lang)}
                   </p>
                 </div>
               </div>
 
-              {/* ── CTA row: Book + Tour + Network ── */}
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Link
-                  href="/docs#book-ekam-full"
-                  className="group flex items-center gap-3 rounded-2xl border border-zion-gold/35 bg-zion-gold/10 p-4 transition hover:border-zion-gold/60 hover:bg-zion-gold/15"
-                >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-zion-gold/30 bg-zion-gold/20">
-                    <BookOpen className="h-4 w-4 text-zion-gold" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-zion-gold/90 uppercase tracking-wide">
-                      {tr('goldenEgg', 'book_card_label', lang)}
-                    </p>
-                    <p className="mt-0.5 text-sm font-semibold text-white truncate">
-                      {tr('goldenEgg', 'book_card_body', lang)}
-                    </p>
-                  </div>
-                  <ArrowRight className="h-4 w-4 shrink-0 text-zion-gold/80 transition group-hover:translate-x-1" />
-                </Link>
-                <Link
-                  href="/ekam"
-                  className="group flex items-center gap-3 rounded-2xl border border-amber-200/15 bg-amber-200/5 p-4 transition hover:border-amber-200/30"
-                >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-amber-200/25 bg-amber-200/10">
-                    <Stars className="h-4 w-4 text-zion-gold" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-amber-100/70 uppercase tracking-wide">
-                      {tr('goldenEgg', 'tour_badge', lang)}
-                    </p>
-                    <p className="mt-0.5 text-sm font-medium text-white truncate">
-                      {tr('goldenEgg', 'tour_title', lang)}
-                    </p>
-                  </div>
-                  <ArrowRight className="h-4 w-4 shrink-0 text-amber-200/50 transition group-hover:translate-x-1" />
-                </Link>
-              </div>
-
-              {/* ── Action buttons ── */}
-              <div className="flex flex-wrap gap-3">
+              {/* CTA row */}
+              <div className="flex flex-wrap items-center gap-2">
                 <Link
                   href="/ekam"
                   className="zion-button-primary group text-sm"
@@ -182,9 +92,15 @@ export default function GoldenEggHaraniagharba() {
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>
                 <Link
+                  href="/docs#book-ekam-full"
+                  className="group inline-flex items-center gap-2 rounded-xl border border-zion-gold/30 bg-zion-gold/5 px-4 py-2 text-sm font-semibold text-zion-gold transition hover:bg-zion-gold/10"
+                >
+                  <BookOpen className="h-4 w-4" />
+                  {tr('goldenEgg', 'book_card_body', lang)}
+                </Link>
+                <Link
                   href="/network"
-                  className="zion-button-secondary group text-sm"
-                  style={{ '--rc': '251, 191, 36' } as CSSProperties}
+                  className="group inline-flex items-center gap-2 rounded-xl border border-amber-200/15 bg-amber-200/5 px-4 py-2 text-sm font-semibold text-amber-100/80 transition hover:bg-amber-200/10"
                 >
                   {tr('goldenEgg', 'cta_network', lang)}
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />

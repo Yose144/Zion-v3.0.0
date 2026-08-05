@@ -11,20 +11,28 @@
 pub mod auxpow;
 pub mod autonomous;
 pub mod b3_verify;
+pub mod metrics;
 pub mod config;
 pub mod cpu_features;
+pub mod gpu;
 pub mod gpu_guard;
 pub mod pool_message;
 pub mod reconnect;
 pub mod runtime;
 pub mod stream;
+pub mod stream_profit;
 pub mod thread_affinity;
 
-// TODO: parallel.rs needs zion_auxpow crate (feature-gated).
-// pub mod parallel;
+// parallel.rs provides multi-algorithm hashing and is only useful when
+// AuxPoW / external mining is enabled.
+#[cfg(feature = "auxpow")]
+pub mod parallel;
 
 #[cfg(feature = "auxpow")]
-pub use auxpow::{ExternalCoin, Job, Share, StratumClient, StratumJob};
+pub use auxpow::{
+    AuxPowClient, AuxPowClientConfig, ExternalCoin, ExternalJob, Job, Share, ShareResult,
+    StratumClient, StratumJob, StratumProtocol,
+};
 pub use config::MinerConfig;
 pub use runtime::{MinerError, MinerRuntime};
 pub use stream::{StreamId, StreamStats};
