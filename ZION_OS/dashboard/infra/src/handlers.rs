@@ -366,7 +366,7 @@ async fn push_log(state: &AppState, rig_id: &str, level: &str, message: &str) {
 }
 
 async fn fetch_pool_stats(state: &AppState) -> anyhow::Result<PoolStats> {
-    // Pool metrics are exposed in Prometheus text format on port 8455
+    // Pool metrics are exposed in Prometheus text format on port 8080
     let body = state.http
         .get(format!("{}/metrics", state.pool_url))
         .timeout(std::time::Duration::from_secs(5))
