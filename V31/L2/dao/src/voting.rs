@@ -50,6 +50,12 @@ impl VotingEngine {
         }
     }
 
+    /// Register an already-persisted vote (used when reloading from DB).
+    pub fn load_vote(&mut self, vote: Vote) {
+        let proposal_votes = self.votes.entry(vote.proposal_id).or_default();
+        proposal_votes.insert(vote.voter.clone(), vote);
+    }
+
     /// Cast a vote on a proposal.
     pub fn cast_vote(
         &mut self,

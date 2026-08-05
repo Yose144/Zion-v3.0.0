@@ -22,7 +22,7 @@
 //!
 //! Write operations require `X-DAO-Key` header matching `ZION_DAO_API_KEY`.
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use axum::{
     extract::{Path, State},
@@ -32,10 +32,11 @@ use axum::{
     Router,
 };
 use serde::{Deserialize, Serialize};
-use tokio::sync::Mutex;
+use tokio::sync::Mutex as TokioMutex;
 use tracing::info;
 
 use crate::config::DaoConfig;
+use crate::db::DaoDb;
 use crate::metrics::DaoMetrics;
 use crate::proposal::{Proposal, ProposalStatus, ProposalType};
 use crate::runtime::GovernanceRuntime;
@@ -47,7 +48,7 @@ use crate::types::VoteChoice;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub runtime: Arc<Mutex<GovernanceRuntime>>,
+    pub runtime: Arc<TokioMutex<GovernanceRuntime>>,
     pub api_key: String,
     pub metrics: Arc<DaoMetrics>,
 }
@@ -513,13 +514,24 @@ pub async fn serve(
     config: DaoConfig,
     circulating_supply: u64,
     metrics: Arc<DaoMetrics>,
+    db: Option<DaoDb>,
 ) -> anyhow::Result<()> {
     let api_key = config.api_key.clone();
     let port = config.api_port;
 
-    let runtime = GovernanceRuntime::new(config, circulating_supply);
+    let mut runtime = GovernanceRuntime::new(config, circulating_supply)
+        .with_metrics(metrics.clone());
+
+    if let Some(db) = db {
+        let db = Arc::new(Mutex::new(db));
+        runtime = runtime.with_db(db);
+        if let Err(e) = runtime.load_from_db() {
+            return Err(anyhow::anyhow!("failed to load DAO state from DB: {e}"));
+        }
+    }
+
     let state = AppState {
-        runtime: Arc::new(Mutex::new(runtime)),
+        runtime: Arc::new(TokioMutex::new(runtime)),
         api_key,
         metrics,
     };
