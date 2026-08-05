@@ -26,7 +26,8 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 EDGE_USER="${ZION_EDGE_USER:-root}"
-EDGE_HOST="${ZION_EDGE_HOST:-62.171.141.136}"
+# zion-v6 is an ssh config alias for the Edge IPv6 address (port 2222).
+EDGE_HOST="${ZION_EDGE_HOST:-zion-v6}"
 SSH_KEY="${ZION_EDGE_SSH_KEY:-$HOME/.ssh/zion-edge-post-wipe-2026-07-29}"
 REMOTE_ROOT="/opt/zion"
 REMOTE_WEB="/opt/zion/website-v2.9"
