@@ -1231,6 +1231,71 @@ async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJ
 
     if params.len() >= 9 {
         let job_id = params[0].as_str().unwrap_or("").to_string();
+
+        // ZcashStratum (VRSC / FLUX / ZEC): params are
+        //   [job_id, version, prevhash, merkle, reserved, ntime, nbits, clean_jobs, solution]
+        // The first field after job_id is version (4 bytes = 8 hex chars).
+        let first_hex = params[1].as_str().unwrap_or("");
+        let first_len = first_hex.trim_start_matches("0x").len();
+        if first_len == 8 {
+            let version = parse_hex_value(&params[1]).unwrap_or_default();
+            let prevhash = parse_hex_value(&params[2]).unwrap_or_default();
+            let merkle = parse_hex_value(&params[3]).unwrap_or_default();
+            let reserved = parse_hex_value(&params[4]).unwrap_or_default();
+            let ntime = params[5].as_str().unwrap_or("00000000").to_string();
+            *state.ntime.lock().await = ntime.clone();
+            let nbits = params[6].as_str().unwrap_or("");
+            let solution = parse_hex_value(&params[8]).unwrap_or_default();
+
+            let target = hasher::parse_target_hex(nbits)
+                .or_else(|| hasher::nbits_to_target(nbits))
+                .unwrap_or([0xFF; 32]);
+
+            let en1 = state.extranonce1.lock().await.clone();
+            let mut nonce_field = [0u8; 32];
+            let en1_len = en1.len().min(32);
+            nonce_field[..en1_len].copy_from_slice(&en1[..en1_len]);
+
+            let ntime_bytes = parse_hex_value(&params[5]).unwrap_or_else(|| vec![0u8; 4]);
+            let nbits_bytes = parse_hex_value(&params[6]).unwrap_or_else(|| vec![0u8; 4]);
+
+            let varint = hasher::zcash_varint_for_len(solution.len());
+            let mut header = Vec::with_capacity(
+                version.len()
+                    + prevhash.len()
+                    + merkle.len()
+                    + reserved.len()
+                    + ntime_bytes.len()
+                    + nbits_bytes.len()
+                    + nonce_field.len()
+                    + varint.len()
+                    + solution.len(),
+            );
+            header.extend_from_slice(&version);
+            header.extend_from_slice(&prevhash);
+            header.extend_from_slice(&merkle);
+            header.extend_from_slice(&reserved);
+            header.extend_from_slice(&ntime_bytes);
+            header.extend_from_slice(&nbits_bytes);
+            header.extend_from_slice(&nonce_field);
+            header.extend_from_slice(&varint);
+            header.extend_from_slice(&solution);
+
+            return Some(StratumJob {
+                job_id,
+                header,
+                target,
+                extranonce1: en1,
+                extranonce2_size: *state.extranonce2_size.lock().await,
+                ntime,
+                difficulty: *state.difficulty.lock().await,
+                coin: zion_cosmic_harmony::ExternalCoin::Bitcoin,
+            });
+        }
+
+        // Standard Stratum v1 9-param path: [job_id, prevhash, coinb1, coinb2,
+        // merkle_branch, version, nbits, ntime, clean_jobs]. We keep only the
+        // prevhash for algorithms that hash the block header directly.
         let prevhash = parse_hex_value(&params[1]).unwrap_or_default();
         let nbits = params[6].as_str().unwrap_or("");
         let ntime = params[7].as_str().unwrap_or("00000000").to_string();
@@ -1284,15 +1349,19 @@ fn build_submit_params(worker: &str, share: &super::Share) -> Value {
         return json!({"id": 100, "method": "mining.submit", "params": params});
     }
 
-    // VerusHash / Equihash / BeamHash / ZelHash: the actual solution is the
-    // proof, not a 64-bit nonce. Replace the nonce param with the solution blob.
-    if algo.contains("verushash")
-        || algo.contains("equihash")
-        || algo.contains("zelhash")
-        || algo.contains("beamhash")
-    {
+    // VerusHash (VRSC / ZcashStratum): submit the 5-param Zcash format
+    // [worker, job_id, ntime, nonce2, solution_with_varint]. The nonce2 field
+    // is all zeros because the found nonce lives in the solution nonceSpace.
+    if algo.contains("verushash") {
         if let Some(sol) = sol {
-            return json!({"id": 100, "method": "mining.submit", "params": [worker, share.job_id, share.extranonce2, share.ntime, sol]});
+            return json!({"id": 100, "method": "mining.submit", "params": [worker, share.job_id, share.ntime, share.extranonce2, sol]});
+        }
+    }
+
+    // Equihash / BeamHash / ZelHash: the actual solution is the proof.
+    if algo.contains("equihash") || algo.contains("zelhash") || algo.contains("beamhash") {
+        if let Some(sol) = sol {
+            return json!({"id": 100, "method": "mining.submit", "params": [worker, share.job_id, share.ntime, share.extranonce2, sol]});
         }
     }
 

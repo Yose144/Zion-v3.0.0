@@ -274,6 +274,12 @@ pub fn find_auxpow_share(job: &crate::auxpow::Job, threads: usize, nonce_count: 
     let extranonce2 = job.extranonce2.clone();
     let ntime = job.ntime.clone();
 
+    // VerusHash v2.2 uses a full 1487-byte block header with a 15-byte
+    // nonceSpace; the generic nonce-per-hash path cannot produce valid shares.
+    if algorithm.contains("verushash") {
+        return find_verushash_share(job, threads, nonce_count);
+    }
+
     if threads == 1 || nonce_count < threads as u64 {
         for offset in 0..nonce_count {
             let nonce = offset;
@@ -326,6 +332,64 @@ pub fn find_auxpow_share(job: &crate::auxpow::Job, threads: usize, nonce_count: 
             }
         }
         None
+    })
+}
+
+/// VerusHash v2.2 two-stage CPU scan.
+///
+/// Each rayon thread calls `hash_half` + `prepare_key` once per chunk and then
+/// uses the batch `scan_nonces` FFI to search the nonce space. The returned
+/// `Share` carries the full `solution_with_varint` needed by ZcashStratum.
+fn find_verushash_share(
+    job: &crate::auxpow::Job,
+    threads: usize,
+    nonce_count: u64,
+) -> Option<crate::auxpow::Share> {
+    let threads = threads.max(1);
+    let chunk_size = nonce_count / threads as u64;
+    let header = job.header.clone();
+    let target = job.target;
+    let extranonce1 = job.extranonce.clone();
+    let job_id = job.job_id.clone();
+    let coin = job.coin;
+    let ntime = job.ntime.clone();
+
+    (0..threads).into_par_iter().find_map_any(|thread_idx| {
+        let start = thread_idx as u64 * chunk_size;
+        let count = if thread_idx == threads - 1 {
+            nonce_count - start
+        } else {
+            chunk_size
+        };
+        let end = start.saturating_add(count);
+
+        if let Some((nonce, hash, solution)) = crate::auxpow::hasher::mine_verushash(
+            &header,
+            &target,
+            start,
+            end,
+            &extranonce1,
+        ) {
+            // For PBaaS v7+ the nonce field in the block header must stay as
+            // en1+zeros so the pool's preHeaderHash check succeeds. The actual
+            // found nonce lives in the solution nonceSpace.
+            let en1_total = extranonce1.len().min(crate::auxpow::hasher::VERUS_NONCE_FIELD_SIZE);
+            let nonce2_len = crate::auxpow::hasher::VERUS_NONCE_FIELD_SIZE.saturating_sub(en1_total);
+            let extranonce2 = "0".repeat(nonce2_len * 2);
+
+            Some(crate::auxpow::Share {
+                job_id: job_id.clone(),
+                coin,
+                nonce,
+                hash,
+                mix_hash: None,
+                solution: Some(solution),
+                extranonce2,
+                ntime: ntime.clone(),
+            })
+        } else {
+            None
+        }
     })
 }
 
