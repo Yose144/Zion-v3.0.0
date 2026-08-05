@@ -1,7 +1,7 @@
 # V31 Mainnet Alpha — Status
 
 > **Verze:** 3.1.0-alpha.2 (post-Phase A+B+C+Pool FULL V3 Parity)
-> **Datum:** 2026-08-05
+> **Datum:** 2026-08-06
 > **Stav:** workspace builduje, **2069 testů prochází (0 failures)**, `zion-pool` build OK a nasazen na Edge. Fáze A hotová, Fáze B.1/B.2/B.3 hotová (GPU + pool triple-stream), Fáze C1-C8 hotová (DAO + CLI + ZionDex + Dashboard + Pool wiring). **GPU backend port dokončen** — CUDA/OpenCL/Metal/native feature-gated buildy procházejí, `cargo clippy --workspace` je čisté. **Pool FULL V3 feature parity dokončena** — všechny 11 V3 funkcí implementováno: AuxPoW bridge runtime, TLS, extra ports, share relay, profit switcher, expanded HTTP API, Notifier, RevenueScheduler, RevenueProxy, RoutingStats, SessionGroup routing, DeferredPayout, check_tx_on_chain, execute_fee_payout, NclGateway, revenue stats/streams API. Kompletní report: [`REPORT_2026-08-04.md`](./REPORT_2026-08-04.md).
 
 ## Co je hotovo v `v3.1.0-alpha.2` (post-Phase A+B.1)
@@ -18,7 +18,7 @@
   - `zion-oasis` 125 testů
   - `zion-pool` 160 testů (bylo 68 — +92 z TLS, share relay, profit switcher, auxpow runtime, expanded API, routing, deferred payout, NCL gateway)
   - `zion-miner` 13 testů
-  - `zion-dao` 31 testů
+  - `zion-dao` 49 testů
   - `zion-free-world` 3 testy
   - `zion-issobella` 3 testy
   - `zion-smoke` 8 cross-layer testů
@@ -135,18 +135,25 @@ Dokončena plná V3 pool feature parity. Pool nasazen a běží na Edge (`62.171
 - HTTP API: `0.0.0.0:8080`
 - External miner (IP 82.66.171.130) se připojuje — V3 Hello/Welcome handshake funguje
 
-### DAO Governance Runtime (2026-08-04) ✅
+### DAO Governance Runtime (2026-08-06) ✅
 
-DAO governance runtime dokončena (Phase C1). Plný lifecycle návrhů s hlasováním, kvórem a timelockem.
+DAO governance runtime rošířena (Phase C1). Plný lifecycle návrhů s hlasováním, kvórem a timelockem + pokročilé moduly z V3.
 
 **Nové moduly:**
 
 - ✅ **`voting.rs`** (215 lines) — VotingEngine: token-weighted voting (1 ZION = 1 vote), double-vote prevention, vote weight tracking.
 - ✅ **`runtime.rs`** (420 lines) — GovernanceRuntime: plný proposal lifecycle (Create → Vote → Tally → Quorum → Timelock → Execute). Parliamentary election s D'Hondt seat allocation. Cancel by proposer nebo guardian. Process expired proposals batch.
 - ✅ **`api.rs`** (500 lines) — Axum HTTP API s 9 endpoints: health, proposals CRUD, vote, tally, execute, cancel, stats. X-DAO-Key auth pro write operace. ProposalTypeDto pro JSON-friendly input.
+- ✅ **`treasury.rs`** — multi-sig treasury (5-of-7) s denním limitem a operacemi Spend / HumanitarianGrant / Rebalance / GoldenEggPrize.
+- ✅ **`humanitarian.rs`** — 7 humanitárních kategorií s alokacemi a fondem.
+- ✅ **`db.rs`** — SQLite persistence pro návrhy, hlasy, treasury operace a scanner cursor.
+- ✅ **`l1_scanner.rs`** — sledování L1 blockchainu pro DAO governance mema (`DAO:vote:42:yes`).
+- ✅ **`metrics.rs`** — Prometheus metriky pro návrhy, hlasy, treasury a scanner.
+- ✅ **`executor.rs`** — final execution passed + timelocked návrhů (parameter/treasury/humanitarian).
+- ✅ **`consent.rs`**, **`co_admin.rs`**, **`cross_layer.rs`**, **`prizes.rs`** — guardian / consent / cross-layer / prize engine.
 - ✅ **`main.rs`** — `zion-dao` binárka s tracing-subscriber.
 
-**Testy:** 31 DAO testů pass (bylo 12).
+**Testy:** 49 DAO testů pass (bylo 31).
 
 ### CLI Wallet + Service Management (2026-08-04) ✅
 
