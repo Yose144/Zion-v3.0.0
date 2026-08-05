@@ -296,7 +296,7 @@ export default function Navigation() {
                   <button
                     type="button"
                     onClick={() => setOpenGroup(isActive ? null : group.title)}
-                    className={`group inline-flex items-center gap-0.5 rounded-full border px-2 py-0.5 text-[7px] font-semibold uppercase tracking-[0.22em] transition-all ${
+                    className={`group inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[6px] font-semibold uppercase tracking-[0.18em] transition-all ${
                       isActive
                         ? 'border-zion-gold/40 bg-zion-gold/10 text-zion-gold shadow-[0_0_12px_rgba(251,191,36,0.12)]'
                         : groupHasActiveChild
@@ -306,7 +306,7 @@ export default function Navigation() {
                     aria-expanded={isActive}
                   >
                     <span className="group-hover:text-zion-gold transition-colors">{groupLabels[group.title] ?? group.title}</span>
-                    <ChevronDown className={`h-[10px] w-[10px] transition-transform ${isActive ? 'rotate-180 text-zion-gold' : 'text-current'}`} />
+                    <ChevronDown className={`h-[8px] w-[8px] transition-transform ${isActive ? 'rotate-180 text-zion-gold' : 'text-current'}`} />
                   </button>
                 </div>
               );
