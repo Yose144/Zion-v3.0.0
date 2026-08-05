@@ -110,14 +110,14 @@ def _dao_port() -> int:
     p = _detection_ports().get("dao_api")
     if p is not None:
         return int(p)
-    # Parse ZION_DAO_BIND (e.g. "127.0.0.1:8450") or fall back to 8450
+    # Parse ZION_DAO_BIND (e.g. "127.0.0.1:8456") or fall back to 8456
     bind = os.environ.get("ZION_DAO_BIND", "")
     if bind and ":" in bind:
         try:
             return int(bind.split(":")[-1])
         except Exception:
             pass
-    return int(os.environ.get("DAO_API_PORT", "8450"))
+    return int(os.environ.get("DAO_API_PORT", "8456"))
 
 
 def _service_unit(name: str) -> str:

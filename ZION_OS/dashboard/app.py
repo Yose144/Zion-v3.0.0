@@ -1163,6 +1163,15 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "V31 PROD DAO — governance, proposals, treasury. API 8456. systemd zion-v31-dao.service.",
      "child_says": "🗳️ V31 PROD DAO — vote on the future of ZION!",
      "depends_on": ["v31-node"]},
+    {"id": "v31-oasis", "name": "V31 OASIS Game (PROD)", "icon": "🪷", "level": "L4", "kind": "app",
+     "ports": {"api": 8094, "metrics": 9102},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "http", "severity": "info", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:8094/health",
+     "purpose": "V31 OASIS L4 game API — avatars, quests, guilds, territories. Port 8094. systemd zion-v31-oasis.service.",
+     "child_says": "🪷 V31 OASIS — the avatar consciousness game!",
+     "depends_on": ["v31-node"]},
     {"id": "pool-edge", "name": "V3 Pool (DISABLED)", "icon": "⛔", "level": "L1", "kind": "pool",
      "ports": {"stratum": 8444},
      "host": "127.0.0.1",
@@ -1447,13 +1456,13 @@ SERVICE_REGISTRY_LOCAL_DEV = [
 SERVICE_REGISTRY = SERVICE_REGISTRY_EDGE_PRIMARY if TOPOLOGY == "edge-primary" else SERVICE_REGISTRY_LOCAL_DEV
 
 # ── V31 primary / V3 archived markers ───────────────────────────────────
-PRIMARY_SERVICES = {"v31-node", "v31-pool", "v31-multichain"}
+PRIMARY_SERVICES = {"v31-node", "v31-pool", "v31-miner", "v31-multichain", "v31-dao", "v31-oasis"}
 ARCHIVED_SERVICES = {
     "edge-node1", "edge-node2", "pool-edge", "miner",
     "bridge", "dao", "atomic-swap", "dex", "warp",
     "oasis", "free-world", "issobella",
     "node1", "node2", "swap-aggregator", "ncl",
-    "hiranyagarbha", "ai-native", "node-exporter", "v31-dao", "v31-miner",
+    "hiranyagarbha", "ai-native", "node-exporter",
 }
 
 
