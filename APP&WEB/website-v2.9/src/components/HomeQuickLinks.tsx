@@ -84,18 +84,18 @@ export default function HomeQuickLinks() {
   ];
 
   return (
-    <section className="px-4 py-14 sm:py-16">
-      <div className="zion-container space-y-8">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-gold">
+    <section className="px-4 py-8 sm:py-10">
+      <div className="zion-container space-y-4">
+        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+          <div className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-zion-gold">
               {HomeQuickLinksCopy.sixGateways[cs ? 'cs' : 'en']}
             </p>
-            <h2 className="max-w-2xl text-3xl font-bold leading-tight text-white sm:text-4xl">
+            <h2 className="max-w-2xl text-2xl font-bold leading-tight text-white sm:text-3xl">
               {HomeQuickLinksCopy.homepageAsACleanControlPanel[cs ? 'cs' : 'en']}
             </h2>
           </div>
-          <p className="max-w-xl text-sm leading-relaxed text-gray-300 sm:text-base">
+          <p className="max-w-xl text-sm leading-relaxed text-gray-400">
             {HomeQuickLinksCopy.lessNoiseClearerDirectionNetwo[cs ? 'cs' : 'en']}
           </p>
         </div>
