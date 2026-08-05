@@ -73,6 +73,26 @@ EXE_SUFFIX = ".exe" if os.name == "nt" else ""
 # Cache for deriving V31 banner shares/sec from the Edge pool total-shares counter
 _V31_BANNER_POOL_TOTALS = {"ts": 0.0, "shares": 0.0}
 
+def _v31_pool_api_port() -> int:
+    """Return the V31 pool HTTP API/metrics port.
+
+    The pool binary exposes Prometheus metrics and /stats on its --api-bind
+    address, which defaults to 0.0.0.0:8080.  Prefer ZION_POOL_API_BIND or
+    ZION_POOL_API_PORT env, fall back to 8080.
+    """
+    bind = os.environ.get("ZION_POOL_API_BIND", "")
+    if bind and ":" in bind:
+        try:
+            return int(bind.split(":")[-1])
+        except Exception:
+            pass
+    p = os.environ.get("ZION_POOL_API_PORT")
+    if p is not None:
+        return int(p)
+    return 8080
+
+V31_POOL_API_PORT = _v31_pool_api_port()
+
 # Unified service → log file mapping used by all log endpoints
 SERVICE_LOG_MAP = {
     # Blockchain nodes
@@ -763,14 +783,14 @@ def get_edge_server_health() -> dict:
 
 
 def get_monitoring_status() -> dict:
-    """Scrape built-in pool metrics endpoint (Prometheus format on :8455). Cached 15 s."""
+    """Scrape built-in pool metrics endpoint (Prometheus format on :{V31_POOL_API_PORT}). Cached 15 s."""
     now = time.time()
     with MONITORING_LOCK:
         if now - MONITORING_CACHE["ts"] < 15:
             return MONITORING_CACHE["data"]
 
     metrics_host = "127.0.0.1"
-    metrics_port = 8455
+    metrics_port = V31_POOL_API_PORT
     result = {
         "prometheus": {"url": f"http://{metrics_host}:{metrics_port}/metrics", "alive": False, "version": None, "targets_up": 0, "targets_total": 0},
         "grafana": {"url": "built-in", "alive": True, "version": "dashboard", "database": "internal"},
@@ -1376,7 +1396,7 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "depends_on": ["node1"]},
 
     # ── Infrastructure ───────────────────────────────────────────────────
-    # Prometheus/Grafana removed — replaced by built-in pool metrics on :8455
+    # Prometheus/Grafana removed — replaced by built-in pool metrics on :{V31_POOL_API_PORT}
     {"id": "node-exporter", "name": "Node Exporter", "icon": "🔧", "level": "Infra", "kind": "metrics",
      "ports": {"metrics": 9100},
      "host": "127.0.0.1",
@@ -2451,7 +2471,7 @@ def detect_nodes() -> dict:
                 if check_port_open(host, port, timeout=2.0):
                     miner_status["running"] = True
                     # Try to get metrics
-                    metrics_port = miner_config.get("metrics_port", 8455)
+                    metrics_port = miner_config.get("metrics_port", V31_POOL_API_PORT)
                     try:
                         with _urlreq.urlopen(f"http://{host}:{metrics_port}/metrics", timeout=1.0) as r:
                             body = r.read().decode("utf-8", errors="ignore")
@@ -2610,7 +2630,7 @@ def get_miner_live_stats() -> dict:
     if not stats.get("running") and TOPOLOGY == "edge-primary":
         try:
             import urllib.request as _ur
-            with _ur.urlopen(f"http://{EDGE_RPC_HOST}:8455/metrics", timeout=2.0) as _r:
+            with _ur.urlopen(f"http://{EDGE_RPC_HOST}:{V31_POOL_API_PORT}/metrics", timeout=2.0) as _r:
                 _txt = _r.read().decode("utf-8", errors="ignore")
             _active = _tracked = _hashrate = _accepted = _rejected = 0
             for _ln in _txt.splitlines():
@@ -3347,8 +3367,8 @@ def _build_status_edge_primary() -> dict:
                    "fee_humanitarian": 0, "fee_issobella": 0, "fee_pool": 0, "fee_miner_pct": 89,
                    "miner_balances": []}
     try:
-        # Direct Edge pool metrics probe (port 8455)
-        url = f"http://{EDGE_RPC_HOST}:8455/metrics"
+        # Direct Edge pool metrics probe (port V31_POOL_API_PORT)
+        url = f"http://{EDGE_RPC_HOST}:{V31_POOL_API_PORT}/metrics"
         with _urlreq.urlopen(url, timeout=3.0) as r:
             body = r.read().decode("utf-8", errors="ignore")
             for line in body.splitlines():
@@ -3356,7 +3376,7 @@ def _build_status_edge_primary() -> dict:
                     edge_metrics["active_miners"] = int(line.split()[-1])
                 elif line.startswith("zion_pool_total_hashes "):
                     edge_metrics["total_hashes"] = int(line.split()[-1])
-                elif line.startswith("zion_pool_total_shares "):
+                elif line.startswith("zion_pool_shares_accepted "):
                     edge_metrics["total_shares"] = int(line.split()[-1])
                 elif line.startswith("zion_pool_blocks_found ") or line.startswith("zion_pool_blocks_found_total "):
                     edge_metrics["blocks_found"] = int(line.split()[-1])
@@ -3406,11 +3426,11 @@ def _build_status_edge_primary() -> dict:
     # Mark pool as alive if we successfully fetched metrics
     if edge_metrics.get("active_miners") is not None:
         pool_edge_health = {"alive": True}
-    # Fallback: TCP probe to pool metrics port 8455 (NOT stratum port 8444,
+    # Fallback: TCP probe to pool metrics port V31_POOL_API_PORT (NOT stratum port 8444,
     # which would create a spurious session on the pool server).
     if not pool_edge_health["alive"]:
         try:
-            pool_edge_health = {"alive": tcp_probe("127.0.0.1", 8455, timeout=0.5)}
+            pool_edge_health = {"alive": tcp_probe("127.0.0.1", V31_POOL_API_PORT, timeout=0.5)}
         except Exception:
             pool_edge_health = {"alive": False}
 
@@ -5096,7 +5116,7 @@ def get_pool_miners() -> dict:
     miners_tracked = 0
     try:
         import urllib.request as _ur
-        with _ur.urlopen(f"http://{EDGE_RPC_HOST}:8455/metrics", timeout=3.0) as r:
+        with _ur.urlopen(f"http://{EDGE_RPC_HOST}:{V31_POOL_API_PORT}/metrics", timeout=3.0) as r:
             for line in r.read().decode("utf-8", errors="ignore").splitlines():
                 line = line.strip()
                 if line.startswith("zion_pool_active_sessions "):
@@ -5316,21 +5336,21 @@ def get_pool_debug_dump() -> dict:
     """Comprehensive pool debug dump — all data needed for diagnostics.
 
     Returns:
-      - raw_metrics: raw Prometheus text from :8455/metrics
+      - raw_metrics: raw Prometheus text from :{V31_POOL_API_PORT}/metrics
       - parsed_metrics: {name: value} dict
-      - stats: JSON from :8455/stats (API routes, auxpow, etc.)
+      - stats: JSON from :{V31_POOL_API_PORT}/stats (API routes, auxpow, etc.)
       - pplns_state: full pplns-state.json dump
       - pool_log_tail: last 100 lines from /opt/zion/pool.log
       - auxpow: auxpow config
       - registered_miners: registered miners summary
       - pool_env: pool-related env vars from edge-environment.sh
-      - revenue_stats: from :8455/api/v1/revenue/stats
-      - revenue_streams: from :8455/api/v1/revenue/streams
+      - revenue_stats: from :{V31_POOL_API_PORT}/api/v1/revenue/stats
+      - revenue_streams: from :{V31_POOL_API_PORT}/api/v1/revenue/streams
       - endpoints: list of available pool API endpoints with status
     """
     import urllib.request as _ur
     host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
-    port = 8455
+    port = V31_POOL_API_PORT
     result = {"ok": True, "ts": int(time.time()), "host": host, "port": port, "sections": {}}
 
     # 1. Raw Prometheus metrics
@@ -5480,7 +5500,7 @@ def get_pool_blocks(limit: int = 100) -> dict:
     """
     import urllib.request as _ur
     host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
-    port = 8455
+    port = V31_POOL_API_PORT
     if limit < 1 or limit > 500:
         limit = 100
     try:
@@ -6215,7 +6235,7 @@ def _fetch_pool_revenue_stats() -> dict:
     host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
     try:
         import urllib.request
-        with urllib.request.urlopen(f"http://{host}:8455/api/v1/revenue/stats", timeout=3) as r:
+        with urllib.request.urlopen(f"http://{host}:{V31_POOL_API_PORT}/api/v1/revenue/stats", timeout=3) as r:
             return json.loads(r.read().decode())
     except Exception:
         return {}
@@ -6224,7 +6244,7 @@ def _fetch_pool_revenue_stats() -> dict:
 def _pool_coin_override_get(stream: str) -> dict:
     """GET current coin override from pool HTTP API. stream='cpu' or 'gpu'."""
     host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
-    port = 8455
+    port = V31_POOL_API_PORT
     try:
         import urllib.request
         with urllib.request.urlopen(f"http://{host}:{port}/api/v1/{stream}-coin", timeout=3) as r:
@@ -6236,7 +6256,7 @@ def _pool_coin_override_get(stream: str) -> dict:
 def _pool_coin_override_set(stream: str, coin: str) -> dict:
     """POST coin override to pool HTTP API. stream='cpu' or 'gpu'. Empty coin clears."""
     host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
-    port = 8455
+    port = V31_POOL_API_PORT
     try:
         import urllib.request
         body = json.dumps({"coin": coin}).encode()
@@ -6257,7 +6277,7 @@ def _fetch_pool_revenue_streams() -> dict:
     host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
     try:
         import urllib.request
-        with urllib.request.urlopen(f"http://{host}:8455/api/v1/revenue/streams", timeout=3) as r:
+        with urllib.request.urlopen(f"http://{host}:{V31_POOL_API_PORT}/api/v1/revenue/streams", timeout=3) as r:
             return json.loads(r.read().decode())
     except Exception:
         return {}
@@ -7227,7 +7247,7 @@ def get_pool_miner_detail(address: str) -> dict:
 
     # Stats
     try:
-        with urllib.request.urlopen(f"http://{host}:8455/api/v1/miner/{address}/stats", timeout=5) as r:
+        with urllib.request.urlopen(f"http://{host}:{V31_POOL_API_PORT}/api/v1/miner/{address}/stats", timeout=5) as r:
             data = json.loads(r.read().decode())
             if data.get("ok"):
                 stats = data.get("stats", {})
@@ -7250,7 +7270,7 @@ def get_pool_miner_detail(address: str) -> dict:
 
     # Payouts
     try:
-        with urllib.request.urlopen(f"http://{host}:8455/api/v1/miner/{address}/payouts", timeout=5) as r:
+        with urllib.request.urlopen(f"http://{host}:{V31_POOL_API_PORT}/api/v1/miner/{address}/payouts", timeout=5) as r:
             data = json.loads(r.read().decode())
             if data.get("ok"):
                 payouts = data.get("pending_payouts", [])
@@ -7453,11 +7473,11 @@ def get_pool_wallet_status() -> dict:
         "shares_rejected": 0,
     }
 
-    # ── Primary: fetch from pool /stats API (port 8455) ──────────────────
+    # ── Primary: fetch from pool /stats API (port V31_POOL_API_PORT) ──────────────────
     host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
     try:
         import urllib.request
-        with urllib.request.urlopen(f"http://{host}:8455/stats", timeout=3) as r:
+        with urllib.request.urlopen(f"http://{host}:{V31_POOL_API_PORT}/stats", timeout=3) as r:
             stats = json.loads(r.read().decode())
         # Blocks, shares, routing from /stats
         blocks = stats.get("blocks", {})
@@ -7525,11 +7545,11 @@ def get_pool_wallet_status() -> dict:
 # ── Payout System Status Builder ─────────────────────────────────────────
 
 def fetch_pool_stats() -> dict:
-    """Fetch live pool stats from routing metrics endpoint (port 8455)."""
+    """Fetch live pool stats from routing metrics endpoint (port V31_POOL_API_PORT)."""
     host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
     try:
         import urllib.request
-        with urllib.request.urlopen(f"http://{host}:8455/stats", timeout=3) as r:
+        with urllib.request.urlopen(f"http://{host}:{V31_POOL_API_PORT}/stats", timeout=3) as r:
             return json.loads(r.read().decode())
     except Exception:
         return {}
@@ -7545,7 +7565,7 @@ def fetch_pool_miners() -> list:
     miners = []
     try:
         import urllib.request
-        with urllib.request.urlopen(f"http://{host}:8455/miners?limit=200", timeout=5) as r:
+        with urllib.request.urlopen(f"http://{host}:{V31_POOL_API_PORT}/miners?limit=200", timeout=5) as r:
             data = json.loads(r.read().decode())
             miners = data.get("miners", [])
     except Exception:
@@ -7561,7 +7581,7 @@ def fetch_pool_miners() -> list:
     paid_map = {}
     try:
         import urllib.request
-        with urllib.request.urlopen(f"http://{host}:8455/metrics", timeout=5) as r:
+        with urllib.request.urlopen(f"http://{host}:{V31_POOL_API_PORT}/metrics", timeout=5) as r:
             for line in r.read().decode("utf-8", errors="ignore").splitlines():
                 if line.startswith("zion_pool_miner_paid_total_atomic{"):
                     miner_id = re.search(r'miner_id="([^"]+)"', line)
@@ -7700,7 +7720,7 @@ def build_payout_status() -> dict:
     edge_host = "127.0.0.1"
     local_rpc_alive = check_port_open("127.0.0.1", 9443, timeout=1.0)
     edge_rpc_alive = check_port_open(edge_host, 9443, timeout=1.5) if is_edge else False
-    edge_stats_alive = check_port_open(edge_host, 8455, timeout=1.5) if is_edge else False
+    edge_stats_alive = check_port_open(edge_host, V31_POOL_API_PORT, timeout=1.5) if is_edge else False
     tailscale_ok = True  # v3.0.4: No Tailscale needed
 
     status["pool_health"] = {
@@ -8011,13 +8031,13 @@ def build_payout_status() -> dict:
 
     # Session stats
     active_sessions = pool_stats.get("miners", {}).get("active", len(miners)) if isinstance(pool_stats.get("miners"), dict) else len(miners)
-    # accept_rate_pct: prefer live Prometheus metrics (port 8455) over pool /stats endpoint
+    # accept_rate_pct: prefer live Prometheus metrics (port V31_POOL_API_PORT) over pool /stats endpoint
     _routing_accept = pool_stats.get("routing", {}).get("accept_rate_pct") if isinstance(pool_stats.get("routing"), dict) else None
     _metrics_accept = None
     try:
         import urllib.request as _ur2
         _mhost = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
-        with _ur2.urlopen(f"http://{_mhost}:8455/metrics", timeout=1.5) as _r:
+        with _ur2.urlopen(f"http://{_mhost}:{V31_POOL_API_PORT}/metrics", timeout=1.5) as _r:
             for _ln in _r.read().decode("utf-8", errors="ignore").splitlines():
                 if _ln.startswith("zion_pool_accept_rate_pct "):
                     _metrics_accept = float(_ln.split()[-1])
@@ -8059,7 +8079,7 @@ def build_payout_status() -> dict:
 
     # If Edge stats are dead, surface a warning
     if is_edge and not edge_stats_alive:
-        status["pool_health"]["error_msg"] = "Edge pool metrics endpoint (8455) unreachable. Stats/miners may be stale."
+        status["pool_health"]["error_msg"] = "Edge pool metrics endpoint (V31_POOL_API_PORT) unreachable. Stats/miners may be stale."
 
     status["ok"] = True
     return status
@@ -8227,7 +8247,7 @@ def get_network_topology() -> dict:
         "ports": {
             "node_p2p": check_port_open("127.0.0.1", 8333),
             "node_rpc": check_port_open("127.0.0.1", 9443),
-            "pool_stratum": check_port_open("127.0.0.1", 8455),  # metrics port, not stratum 8444
+            "pool_stratum": check_port_open("127.0.0.1", V31_POOL_API_PORT),  # metrics port, not stratum 8444
             "dashboard": check_port_open("127.0.0.1", 8766),
             "hiranyagarbha": check_port_open("127.0.0.1", 8001),
             "hiran_inference": check_port_open("127.0.0.1", 8002),

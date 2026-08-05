@@ -537,6 +537,122 @@ function renderV31Banner(st){
     const total = banner.dao_proposals_total ?? 0;
     el('fd-banner-dao-proposals').textContent = `${Number(active).toLocaleString()} / ${Number(total).toLocaleString()}`;
   }
+
+  // Feed the expanded V31 Production panel
+  renderV31Production(statusData);
+}
+
+// ── V31 Production panel (metrics + logs + Grafana) ────────────────────
+
+let _v31LogTimer = null;
+let _grafanaLoaded = false;
+
+function renderV31Production(st){
+  const banner = st.v31_banner;
+  const pool = st.v31_pool || st.pool_edge || st.pool || {};
+  const node = st.v31_node || st.edge_node || {};
+  const miner = st.v31_miner || {};
+  const mc = st.v31_multichain || {};
+  const el = id => document.getElementById(id);
+
+  // KPI cards
+  if(el('v31-prod-hashrate')){
+    const hr = banner?.pool_hashrate_hps ?? (pool?.hashrate_khs ? pool.hashrate_khs * 1000 : null);
+    const sub = el('v31-prod-hashrate-sub');
+    if(hr != null && hr >= 1e6){
+      el('v31-prod-hashrate').textContent = (hr / 1e6).toFixed(2) + ' MH/s';
+      if(sub) sub.textContent = Number(hr).toLocaleString() + ' H/s';
+    } else if(hr != null && hr >= 1e3){
+      el('v31-prod-hashrate').textContent = (hr / 1e3).toFixed(2) + ' kH/s';
+      if(sub) sub.textContent = Number(hr).toLocaleString() + ' H/s';
+    } else {
+      el('v31-prod-hashrate').textContent = hr != null ? Number(hr).toLocaleString() : '—';
+      if(sub) sub.textContent = 'H/s';
+    }
+  }
+
+  if(el('v31-prod-shares-sec')) el('v31-prod-shares-sec').textContent = banner?.shares_per_sec != null
+    ? Number(banner.shares_per_sec).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})
+    : '—';
+
+  if(el('v31-prod-active-miners')) el('v31-prod-active-miners').textContent = pool?.active_sessions ?? pool?.active_miners ?? '—';
+  if(el('v31-prod-blocks-found')) el('v31-prod-blocks-found').textContent = pool?.blocks_found ?? pool?.total_blocks_found ?? '—';
+
+  if(el('v31-prod-multichain')){
+    const ok = mc?.ok ?? false;
+    el('v31-prod-multichain').textContent = ok ? 'OK' : 'FAIL';
+    el('v31-prod-multichain').style.color = ok ? 'rgb(34 197 94)' : 'rgb(239 68 68)';
+    const sub = el('v31-prod-multichain-sub');
+    if(sub) sub.textContent = `pending ${mc?.transfers_pending ?? 0}`;
+  }
+
+  if(el('v31-prod-dao')){
+    const active = banner?.dao_proposals_active ?? 0;
+    const total = banner?.dao_proposals_total ?? 0;
+    el('v31-prod-dao').textContent = `${Number(active).toLocaleString()} / ${Number(total).toLocaleString()}`;
+  }
+
+  // Service status list
+  if(el('v31-stat-node')) el('v31-stat-node').innerHTML = `<span class="${node?.running ? 'text-emerald-400' : 'text-red-400'}">${node?.running ? 'LIVE' : 'DOWN'}</span> <span class="text-gray-500">h ${node?.chain_height ?? '—'}</span>`;
+  if(el('v31-stat-pool')) el('v31-stat-pool').innerHTML = `<span class="${pool?.running ? 'text-emerald-400' : 'text-red-400'}">${pool?.running ? 'LIVE' : 'DOWN'}</span> <span class="text-gray-500">${pool?.active_sessions ?? 0} miners</span>`;
+  if(el('v31-stat-miner')) el('v31-stat-miner').innerHTML = `<span class="${miner?.running ? 'text-emerald-400' : 'text-gray-500'}">${miner?.running ? 'LIVE' : '—'}</span> <span class="text-gray-500">${miner?.hashrate ? miner.hashrate : '—'}</span>`;
+  if(el('v31-stat-multichain')) el('v31-stat-multichain').innerHTML = `<span class="${mc?.ok ? 'text-emerald-400' : 'text-red-400'}">${mc?.ok ? 'OK' : 'FAIL'}</span> <span class="text-gray-500">t ${mc?.transfers_total ?? 0}</span>`;
+
+  // DAO status (may be in v31_node or banner)
+  const daoRunning = (st.dao && st.dao.ok) || (st.v31_dao && st.v31_dao.ok) || (banner && banner.dao_proposals_total != null);
+  if(el('v31-stat-dao')) el('v31-stat-dao').innerHTML = `<span class="${daoRunning ? 'text-emerald-400' : 'text-gray-500'}">${daoRunning ? 'OK' : '—'}</span> <span class="text-gray-500">${banner?.dao_proposals_total ?? 0}</span>`;
+
+  // Grafana link visibility
+  if(el('v31-grafana-link')) el('v31-grafana-link').classList.remove('hidden');
+
+  // Grafana iframe (only set once; user can enable with env/dashboard config)
+  if(!_grafanaLoaded && el('v31-grafana-iframe') && st.topology === 'edge-primary'){
+    const iframe = el('v31-grafana-iframe');
+    const wrap = el('v31-grafana-wrap');
+    if(wrap) wrap.classList.remove('hidden');
+    // Default kiosk URL; replaced by /api/grafana-url if a provisioned dashboard exists
+    iframe.src = 'https://grafana.zionterranova.com/d/v31-mainnet?orgId=1&refresh=10s&kiosk=tv&theme=dark';
+    _grafanaLoaded = true;
+  }
+}
+
+function refreshV31Production(){
+  console.log('[V31-PROD] refresh');
+  apiFetch('/api/status').then(s => {
+    window.currentStatus = s;
+    renderV31Banner(s);
+    renderV31Production(s);
+  }).catch(e => console.error('[V31-PROD] status fetch failed', e));
+}
+
+async function loadV31Logs(){
+  const svc = document.getElementById('v31-log-svc')?.value || 'node';
+  const lines = document.getElementById('v31-log-lines')?.value || 50;
+  const box = document.getElementById('v31-log-box');
+  if(box) box.textContent = 'Loading…';
+  try {
+    const data = await apiFetch(`/api/v31/logs?svc=${encodeURIComponent(svc)}&lines=${lines}`);
+    if(box){
+      if(data && Array.isArray(data.lines) && data.lines.length > 0){
+        box.textContent = data.lines.join('\n');
+        box.scrollTop = box.scrollHeight;
+      } else {
+        box.textContent = data?.error ? `Error: ${data.error}` : '(no logs)';
+      }
+    }
+  } catch(e) {
+    if(box) box.textContent = 'Error loading logs: ' + e;
+  }
+}
+
+function tailV31Logs(){
+  stopV31LogTail();
+  loadV31Logs();
+  _v31LogTimer = setInterval(loadV31Logs, 3000);
+}
+
+function stopV31LogTail(){
+  if(_v31LogTimer){ clearInterval(_v31LogTimer); _v31LogTimer = null; }
 }
 
 function formatUptime(sec){
