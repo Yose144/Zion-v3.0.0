@@ -4,7 +4,7 @@
 
 Tento soubor je provozní a bezpečnostní pravidla pro pracovní prostor `V31` — čistý Mainnet Alpha track v `/Users/yeshuae/Projects/2.9.6/V31/`. Produkční Edge stále běží na `/Users/yeshuae/Projects/2.9.6/V3/` do okamžiku cut-over. Veškerá nová mainnet-track vývojárna patří do `V31/`. Historická topologie a incidenty jsou v kořenovém `/Users/yeshuae/Projects/2.9.6/AGENTS.md`.
 
-Aktuální stav V31 (2026-08-06): `cargo clippy --workspace` je čisté a `cargo test --workspace` prochází (2079 testů). `zion-core` obsahuje `HeightAwareDeeksha` — height-aware PoW fork gating. `zion-pool` má rate limiting reconnect stormu. `zion-miner` nyní běží ve triple-stream režimu (ZION + GPU/CPU AuxPoW), má `ZION_STREAM3_FORCE_COIN`, profit switching s 15% hysteresí a TUI/metriky; `cargo test -p zion-miner` 92 pass. `zion-dao` runtime načítá/persistuje návrhy a hlasy, spouští L1 scanner a vystavuje HTTP API/metriky. Fáze B i C jsou kompletní z hlediska kódu a testů; Go/No-Go na reálném GPU/rigu zůstává pending. Dashboard UI/UX je V31-first a je nasazen na Edge (`zion-edge-python-dashboard` active, `/health` OK). V31 banner KPIs (height, sync lag, pool hashrate, shares/sec, multichain /health, DAO proposals) jsou integrovány přímo do `app.py` `/api/status` a full dashboardu (`/dashboard`).
+Aktuální stav V31 (2026-08-06): `cargo clippy --workspace` je čisté a `cargo test --workspace` prochází (2079 testů). `zion-core` používá kanonický `EkamDeeksha` PoW; historická V3 validace zůstává v `v3_compat`. `zion-pool` má rate limiting reconnect stormu. `zion-miner` nyní běží ve triple-stream režimu (ZION + GPU/CPU AuxPoW), má `ZION_STREAM3_FORCE_COIN`, profit switching s 15% hysteresí a TUI/metriky; `cargo test -p zion-miner` 92 pass. `zion-dao` runtime načítá/persistuje návrhy a hlasy, spouští L1 scanner a vystavuje HTTP API/metriky. Fáze B i C jsou kompletní z hlediska kódu a testů; Go/No-Go na reálném GPU/rigu zůstává pending. Dashboard UI/UX je V31-first a je nasazen na Edge (`zion-edge-python-dashboard` active, `/health` OK). V31 banner KPIs a V31 Production panel (metriky, live logy, embedovaný Grafana `v31-mainnet`) jsou integrovány do full dashboardu. Pool API/metrics port opraven na 8080, Prometheus scrape a Grafana provisioning nasazeny.
 
 ---
 
@@ -262,7 +262,7 @@ V31 je aktivní mainnet-track workspace. Tato pravidla zajišťují, že zůstan
 
 - [ ] Před každým PR nebo merge do `V31/` spusťte `cargo test` přímo v `/Users/yeshuae/Projects/2.9.6/V31/`.
 - [ ] Všechny workspace testy musí projít. Žádné `--ignored` skipnutí bez odůvodnění.
-- [ ] Při změnách v `zion-core` ověřte height-aware fork gating (`HeightAwareDeeksha`) unit testy i integrační testy.
+- [ ] Při změnách v `zion-core` ověřte `EkamDeeksha` unit testy (mine/verify + nonce-search stress) i integrační testy.
 - [ ] Při změnách v `zion-pool` ověřte rate limiting reconnect stormu.
 - [ ] Při změnách v `zion-miner` ověřte `ZION_STREAM3_FORCE_COIN` a disabled-coin chování.
 - [ ] Při změnách v `zion-multichain` ověřte HTLC SQLite persistenci a ZionDex intent engine (`cargo test -p zion-multichain`, `cargo clippy -p zion-multichain`).
@@ -280,7 +280,7 @@ V31 je aktivní mainnet-track workspace. Tato pravidla zajišťují, že zůstan
 - [ ] Nenosťte secrets do zdrojáků; používejte proměnné prostředí.
 - [ ] Všechny RPC endpointy a stratum message handling musí mít timeouty a rate limiting.
 - [ ] P2P message validation musí být defenzivní — neočekávejte validní data od peerů.
-- [ ] Fork gating (`HeightAwareDeeksha`) musí být explicitně otestován pro všechny relevantní výšky.
+- [ ] Kanonický `EkamDeeksha` PoW musí být otestován napříč reprezentativními výškami (stress nonce search); historická V3 validace zůstává pokrytá v `v3_compat` testech.
 - [ ] Každá změna v `zion-dao` skeletonu musí být doplněna bezpečnostním review, než se zapne na mainnetu.
 
 ### 9.5 Dokumentace a status

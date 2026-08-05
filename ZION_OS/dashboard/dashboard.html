@@ -1000,6 +1000,99 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
 
   <!-- ═════════ TAB: Overview ═════════ -->
   <div id="pane-overview" class="space-y-5">
+
+    <!-- V31 Production — metrics, logs, Grafana -->
+    <div id="v31-production-panel" class="zion-panel p-5" style="border-color:rgba(255,215,0,0.25);">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2">
+          <span style="color:rgb(255 215 0)">🚀 V31 Production</span>
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">v3.1.0-alpha.2</span>
+        </h2>
+        <div class="flex items-center gap-2">
+          <a href="https://grafana.zionterranova.com" target="_blank" id="v31-grafana-link" class="text-[10px] px-2.5 py-1 bg-fuchsia-700/40 hover:bg-fuchsia-600/60 border border-fuchsia-500/30 rounded-md font-semibold transition text-fuchsia-300 hidden">
+            <i class="fas fa-chart-line mr-1"></i> Grafana
+          </a>
+          <button onclick="refreshV31Production()" class="text-[10px] px-2.5 py-1 bg-zinc-700/50 hover:bg-zinc-600 rounded-md font-semibold transition" title="Aktualizovat metriky a logy">⟳</button>
+        </div>
+      </div>
+
+      <!-- KPI cards -->
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+        <div class="bg-black/25 rounded-xl p-3 text-center border border-white/5">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Pool Hashrate</div>
+          <div id="v31-prod-hashrate" class="text-lg font-bold text-emerald-400" style="font-family:'JetBrains Mono',monospace;">—</div>
+          <div id="v31-prod-hashrate-sub" class="text-[9px] text-gray-500 mt-0.5">H/s</div>
+        </div>
+        <div class="bg-black/25 rounded-xl p-3 text-center border border-white/5">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Shares / sec</div>
+          <div id="v31-prod-shares-sec" class="text-lg font-bold text-purple-400" style="font-family:'JetBrains Mono',monospace;">—</div>
+          <div class="text-[9px] text-gray-500 mt-0.5">accepted</div>
+        </div>
+        <div class="bg-black/25 rounded-xl p-3 text-center border border-white/5">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Active Miners</div>
+          <div id="v31-prod-active-miners" class="text-lg font-bold text-cyan-400" style="font-family:'JetBrains Mono',monospace;">—</div>
+          <div class="text-[9px] text-gray-500 mt-0.5">sessions</div>
+        </div>
+        <div class="bg-black/25 rounded-xl p-3 text-center border border-white/5">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Blocks Found</div>
+          <div id="v31-prod-blocks-found" class="text-lg font-bold text-amber-400" style="font-family:'JetBrains Mono',monospace;">—</div>
+          <div class="text-[9px] text-gray-500 mt-0.5">pool</div>
+        </div>
+        <div class="bg-black/25 rounded-xl p-3 text-center border border-white/5">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Multichain</div>
+          <div id="v31-prod-multichain" class="text-lg font-bold">—</div>
+          <div id="v31-prod-multichain-sub" class="text-[9px] text-gray-500 mt-0.5">transfers</div>
+        </div>
+        <div class="bg-black/25 rounded-xl p-3 text-center border border-white/5">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">DAO Proposals</div>
+          <div id="v31-prod-dao" class="text-lg font-bold text-yellow-400" style="font-family:'JetBrains Mono',monospace;">—</div>
+          <div class="text-[9px] text-gray-500 mt-0.5">active / total</div>
+        </div>
+      </div>
+
+      <!-- Grafana iframe placeholder + node/pool stat row -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div id="v31-grafana-wrap" class="lg:col-span-2 bg-black/25 rounded-xl p-3 border border-white/5 hidden">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-2 flex items-center justify-between">
+            <span>Grafana</span>
+            <a href="https://grafana.zionterranova.com" target="_blank" class="text-fuchsia-300 hover:text-fuchsia-200 text-[9px]"><i class="fas fa-external-link-alt mr-1"></i> open</a>
+          </div>
+          <iframe id="v31-grafana-iframe" src="" class="w-full rounded" style="height:260px;border:0;" loading="lazy"></iframe>
+        </div>
+        <div class="bg-black/25 rounded-xl p-3 border border-white/5" id="v31-stat-col">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-2">V31 Services</div>
+          <div class="space-y-1.5 text-xs">
+            <div class="flex justify-between"><span class="text-gray-400">Node</span><span id="v31-stat-node" class="font-mono">—</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Pool</span><span id="v31-stat-pool" class="font-mono">—</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Miner</span><span id="v31-stat-miner" class="font-mono">—</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Multichain</span><span id="v31-stat-multichain" class="font-mono">—</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">DAO</span><span id="v31-stat-dao" class="font-mono">—</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- V31 log viewer -->
+      <div class="mt-4 bg-black/25 rounded-xl p-3 border border-white/5">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider">V31 Service Logs</div>
+          <div class="flex items-center gap-2">
+            <select id="v31-log-svc" class="text-[10px] bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-white">
+              <option value="node">zion-v31-node</option>
+              <option value="pool">zion-v31-pool</option>
+              <option value="miner">zion-v31-miner</option>
+              <option value="multichain">zion-v31-multichain</option>
+              <option value="dao">zion-v31-dao</option>
+            </select>
+            <input id="v31-log-lines" type="number" value="50" min="10" max="500" class="w-16 text-[10px] bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-white">
+            <button onclick="loadV31Logs()" class="text-[10px] px-2.5 py-1 bg-blue-700/50 hover:bg-blue-600 rounded-md font-semibold transition">Load</button>
+            <button onclick="tailV31Logs()" class="text-[10px] px-2.5 py-1 bg-emerald-700/50 hover:bg-emerald-600 rounded-md font-semibold transition">▶ Tail</button>
+            <button onclick="stopV31LogTail()" class="text-[10px] px-2.5 py-1 bg-red-700/50 hover:bg-red-600 rounded-md font-semibold transition">⏹ Stop</button>
+          </div>
+        </div>
+        <pre id="v31-log-box" class="log-tail" style="max-height:18rem;min-height:6rem;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.08);border-radius:0.5rem;padding:0.6rem;overflow-y:auto;">-- select service and load --</pre>
+      </div>
+    </div>
+
     <!-- Readiness Score Panel -->
     <div class="zion-panel p-5">
       <div class="flex items-center justify-between mb-3">

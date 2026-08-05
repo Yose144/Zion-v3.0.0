@@ -70,13 +70,11 @@ def _node_rpc_host() -> str:
 
 
 def _node_rpc_port() -> int:
-    # V31 node RPC is on 9445 by default; prefer explicit env, then nodes.json, then default.
+    # V31 node RPC is on 9445 by default. Do not trust V3 nodes.json (8443).
     p = os.environ.get("ZION_NODE_RPC_PORT")
-    if p is None:
-        p = _detection_ports().get("node_rpc")
-    if p is None:
-        p = "9445"
-    return int(p)
+    if p is not None:
+        return int(p)
+    return 9445
 
 
 def _pool_stratum_port() -> int:
@@ -87,10 +85,18 @@ def _pool_stratum_port() -> int:
 
 
 def _pool_api_port() -> int:
-    p = _detection_ports().get("pool_metrics")
-    if p is None:
-        p = os.environ.get("ZION_POOL_API_PORT", "8455")
-    return int(p)
+    # V31 pool HTTP API / Prometheus metrics default is 8080.
+    bind = os.environ.get("ZION_POOL_API_BIND", "")
+    if bind and ":" in bind:
+        try:
+            return int(bind.split(":")[-1])
+        except Exception:
+            pass
+    p = os.environ.get("ZION_POOL_API_PORT")
+    if p is not None:
+        return int(p)
+    # Do not trust stale nodes.json pool_metrics; use 8080 default.
+    return 8080
 
 
 def _multichain_port() -> int:
@@ -406,7 +412,8 @@ def _pool_banner_metrics() -> dict:
             except Exception:
                 pass
         if total_shares is None:
-            total_shares = prom.get("zion_pool_total_shares")
+            # V31 pool exposes accepted share counter as `zion_pool_shares_accepted`
+            total_shares = prom.get("zion_pool_shares_accepted")
 
     # Derive shares/sec from total-share delta if a direct value is not available
     if sps is None and total_shares is not None:
