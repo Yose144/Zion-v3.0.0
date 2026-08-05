@@ -2,7 +2,7 @@
 
 > **Verze:** 3.1.0-alpha.2 (post-Phase A+B+C+Pool FULL V3 Parity)
 > **Datum:** 2026-08-06
-> **Stav:** workspace builduje, **2079 testů prochází (0 failures)**, `cargo clippy --workspace` čisté. Fáze A hotová, **Fáze B hotova z hlediska kódu a testů** — GPU OpenCL/CUDA/Metal kompiluje, triple-stream běží, profit switching a TUI/metriky zapojeny, `cargo test -p zion-miner` 92 pass. **Go/No-Go testy na reálném GPU/rigu (OpenCL/CUDA/Metal) zůstávají pending.** Fáze C1-C8 hotová (DAO + CLI + ZionDex + Dashboard wiring). **Pool FULL V3 feature parity dokončena**. **Dashboard UI/UX update do V31 hotov, nasazen na Edge a `/health` OK.** Kompletní report: [`REPORT_2026-08-06.md`](./REPORT_2026-08-06.md).
+> **Stav:** workspace builduje, **2079 testů prochází (0 failures)**, `cargo clippy --workspace` čisté. Fáze A hotová, **Fáze B hotova z hlediska kódu a testů** — GPU OpenCL/CUDA/Metal kompiluje, triple-stream běží, profit switching a TUI/metriky zapojeny, `cargo test -p zion-miner` 92 pass. **Go/No-Go testy na reálném GPU/rigu (OpenCL/CUDA/Metal) zůstávají pending.** Fáze C1-C8 hotová (DAO + CLI + ZionDex + Dashboard wiring). **Pool FULL V3 feature parity dokončena**. **Dashboard UI/UX update do V31 hotov, nasazen na Edge a `/health` OK. V31 banner KPIs integrovány přímo do `app.py` `/api/status` a full dashboardu.** Kompletní report: [`REPORT_2026-08-06.md`](./REPORT_2026-08-06.md).
 
 ## Co je hotovo v `v3.1.0-alpha.2` (post-Phase A+B.1)
 
