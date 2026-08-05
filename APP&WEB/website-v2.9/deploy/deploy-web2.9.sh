@@ -16,7 +16,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 EDGE_HOST="${ZION_EDGE_HOST:-zion-post-wipe}"
 EDGE_USER="${ZION_EDGE_USER:-root}"
-REMOTE_DIR="/opt/zion/APP\&WEB/website-v2.9"
+REMOTE_DIR="/opt/zion/website-v2.9"
 SERVICE="zion-website.service"
 
 echo "[deploy-web2.9] Building locally..."

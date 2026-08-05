@@ -46,6 +46,15 @@ rsync -avz --delete \
   "${ROOT_DIR}/public/images/" \
   "${REMOTE}:${REMOTE_MAINT_DIR}/images/"
 
+# Sync canonical brand assets at root (tokenlist / social / metadata references)
+for asset in symbol-200x200.png zion-social-banner.png; do
+  if [ -f "${ROOT_DIR}/public/${asset}" ]; then
+    rsync -avz --delete \
+      "${ROOT_DIR}/public/${asset}" \
+      "${REMOTE}:${REMOTE_MAINT_DIR}/${asset}"
+  fi
+done
+
 # Sync legacy video.css if still used
 if [ -f "${ROOT_DIR}/public/video.css" ]; then
   rsync -avz --delete \
