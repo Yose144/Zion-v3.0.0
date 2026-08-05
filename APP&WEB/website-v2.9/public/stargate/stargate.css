@@ -1,16 +1,31 @@
-/* === Stargate — scoped styles for Next.js embedding === */
-/* Extracted from stargate-theme.css, with global body/a/img/footer removed. */
-/* Everything is scoped under .stargate-wrap to avoid conflicts. */
+/* Stargate — scoped verze pro zionterranova.com
+   Původní: public_html/stargate.css z newearth.cz
+   Performance: contain, content-visibility, translate3d, will-change
+*/
 
+/* ════ WRAPPER — off-screen skip ════ */
 .stargate-wrap {
   --gate-offset-y: 0vmin;
   position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
-  contain: strict;
-  content-visibility: auto;
+  margin: 0 auto;
+  background: #000;
+  background-image: url(/stargate/nebula.jpg);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* Kulatý — ne čtverec (overflow hidden by ořízl chevrony) */
+  border-radius: 50%;
+  /* Container queries — glyph/chevron sizes scale with container */
+  container-type: inline-size;
+  container-name: stargate;
 }
 
+/* ════ GATE — metalický kruh ════ */
 .stargate-wrap .gate {
   opacity: 0.35;
   display: flex;
@@ -24,11 +39,12 @@
   margin: 0 auto;
   left: 50%;
   top: calc(50% + var(--gate-offset-y));
-  transform: translate(-50%, -50%);
+  transform: translate3d(-50%, -50%, 0);
   z-index: 0;
-  background-image: radial-gradient(circle at center center, #000000 0%, hsl(0, 0%, 0%) 54%, #7e7f81 54%, #7e7f81 56%, hsl(216, 1%, 55%) 56%, hsl(216, 1%, 55%) 63%, #727374 63%, #727374 65%, #7e7f81 65%, #656667 75%);
+  background-image: radial-gradient(circle at center, #000 0%, hsl(0,0%,0%) 54%, #7e7f81 54%, #7e7f81 56%, hsl(216,1%,55%) 56%, hsl(216,1%,55%) 63%, #727374 63%, #727374 65%, #7e7f81 65%, #656667 75%);
 }
 
+/* ════ CONTAINER — drží rotující vrstvy ════ */
 .stargate-wrap .container {
   position: relative;
   width: 100%;
@@ -42,11 +58,12 @@
   overflow: hidden;
 }
 
+/* ════ CENTER LOGO ════ */
 .stargate-wrap .container .center-logo {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate3d(-50%, -50%, 0);
   width: 15%;
   height: 15%;
   border-radius: 50%;
@@ -62,6 +79,7 @@
   display: block;
 }
 
+/* ════ GATE SHADOW ════ */
 .stargate-wrap .gate:before {
   content: "";
   position: absolute;
@@ -72,10 +90,11 @@
   width: 40%;
   height: 40%;
   border-radius: 100%;
-  background: rgba(0, 0, 0, 0.15);
-  box-shadow: 0 0 20vmin 10vmin rgba(0, 0, 0, 0.15);
+  background: rgba(0,0,0,0.15);
+  box-shadow: 0 0 40cqw 20cqw rgba(0,0,0,0.15);
 }
 
+/* ════ GLYPHS ════ */
 .stargate-wrap .glyphs {
   position: absolute;
   top: 0;
@@ -84,33 +103,37 @@
   height: 100%;
   animation: spin 10s linear infinite;
   animation-play-state: paused;
+  will-change: transform;
 }
 .stargate-wrap .gate:hover > .glyphs {
   animation-play-state: running;
 }
 
 .stargate-wrap .glyph {
-  font-family: "Stargate SG-1 Address Glyphs";
+  font-family: "Stargate SG-1 Address Glyphs", monospace;
   position: absolute;
   bottom: 50%;
   left: 50%;
   height: 43%;
   transform-origin: center bottom;
-  font-size: 1.6vmin;
+  font-size: 3.20cqw;
   text-align: center;
   width: 6.5%;
-  color: #ffffff;
-  text-shadow: rgba(0, 0, 0, 0.4) 0 2px 2px;
+  /* Font není dostupný — skryj text, nech jen dekorativní :before čáru */
+  color: transparent;
+  text-shadow: none;
 }
-.stargate-wrap .glyph:nth-of-type(39n+1)  { transform: translateX(-50%) rotate(0deg); }
-.stargate-wrap .glyph:nth-of-type(39n+2)  { transform: translateX(-50%) rotate(9.2307692308deg); }
-.stargate-wrap .glyph:nth-of-type(39n+3)  { transform: translateX(-50%) rotate(18.4615384615deg); }
-.stargate-wrap .glyph:nth-of-type(39n+4)  { transform: translateX(-50%) rotate(27.6923076923deg); }
-.stargate-wrap .glyph:nth-of-type(39n+5)  { transform: translateX(-50%) rotate(36.9230769231deg); }
-.stargate-wrap .glyph:nth-of-type(39n+6)  { transform: translateX(-50%) rotate(46.1538461538deg); }
-.stargate-wrap .glyph:nth-of-type(39n+7)  { transform: translateX(-50%) rotate(55.3846153846deg); }
-.stargate-wrap .glyph:nth-of-type(39n+8)  { transform: translateX(-50%) rotate(64.6153846154deg); }
-.stargate-wrap .glyph:nth-of-type(39n+9)  { transform: translateX(-50%) rotate(73.8461538462deg); }
+
+/* 39 glyph rotations */
+.stargate-wrap .glyph:nth-of-type(39n+1) { transform: translateX(-50%) rotate(0deg); }
+.stargate-wrap .glyph:nth-of-type(39n+2) { transform: translateX(-50%) rotate(9.2307692308deg); }
+.stargate-wrap .glyph:nth-of-type(39n+3) { transform: translateX(-50%) rotate(18.4615384615deg); }
+.stargate-wrap .glyph:nth-of-type(39n+4) { transform: translateX(-50%) rotate(27.6923076923deg); }
+.stargate-wrap .glyph:nth-of-type(39n+5) { transform: translateX(-50%) rotate(36.9230769231deg); }
+.stargate-wrap .glyph:nth-of-type(39n+6) { transform: translateX(-50%) rotate(46.1538461538deg); }
+.stargate-wrap .glyph:nth-of-type(39n+7) { transform: translateX(-50%) rotate(55.3846153846deg); }
+.stargate-wrap .glyph:nth-of-type(39n+8) { transform: translateX(-50%) rotate(64.6153846154deg); }
+.stargate-wrap .glyph:nth-of-type(39n+9) { transform: translateX(-50%) rotate(73.8461538462deg); }
 .stargate-wrap .glyph:nth-of-type(39n+10) { transform: translateX(-50%) rotate(83.0769230769deg); }
 .stargate-wrap .glyph:nth-of-type(39n+11) { transform: translateX(-50%) rotate(92.3076923077deg); }
 .stargate-wrap .glyph:nth-of-type(39n+12) { transform: translateX(-50%) rotate(101.5384615385deg); }
@@ -120,7 +143,7 @@
 .stargate-wrap .glyph:nth-of-type(39n+16) { transform: translateX(-50%) rotate(138.4615384615deg); }
 .stargate-wrap .glyph:nth-of-type(39n+17) { transform: translateX(-50%) rotate(147.6923076923deg); }
 .stargate-wrap .glyph:nth-of-type(39n+18) { transform: translateX(-50%) rotate(156.9230769231deg); }
-.stargate-wrap .glyph:nth-of-type(39n+19) { transform: translateX(-50%) rotate(166.1538461536deg); }
+.stargate-wrap .glyph:nth-of-type(39n+19) { transform: translateX(-50%) rotate(166.1538461538deg); }
 .stargate-wrap .glyph:nth-of-type(39n+20) { transform: translateX(-50%) rotate(175.3846153846deg); }
 .stargate-wrap .glyph:nth-of-type(39n+21) { transform: translateX(-50%) rotate(184.6153846154deg); }
 .stargate-wrap .glyph:nth-of-type(39n+22) { transform: translateX(-50%) rotate(193.8461538462deg); }
@@ -141,6 +164,7 @@
 .stargate-wrap .glyph:nth-of-type(39n+37) { transform: translateX(-50%) rotate(332.3076923077deg); }
 .stargate-wrap .glyph:nth-of-type(39n+38) { transform: translateX(-50%) rotate(341.5384615385deg); }
 .stargate-wrap .glyph:nth-of-type(39n+39) { transform: translateX(-50%) rotate(350.7692307692deg); }
+
 .stargate-wrap .glyph:before {
   content: "";
   position: absolute;
@@ -152,6 +176,7 @@
   transform: translateY(-28%) rotate(4.6153846154deg);
 }
 
+/* ════ CHEVRONS ════ */
 .stargate-wrap .chevrons, .stargate-wrap .chevronInners {
   position: absolute;
   top: -1%;
@@ -166,13 +191,14 @@
   position: absolute;
   bottom: 50%;
   left: 50%;
-  width: 8vmin;
+  width: 16cqw;
   transform-origin: center bottom;
-  border: 3vmin transparent solid;
-  border-bottom: 26vmin transparent solid;
-  border-top: 5vmin #909192 solid;
-  filter: drop-shadow(0 0.5vmin 0.5vmin rgba(0, 0, 0, 0.2));
+  border: 6cqw transparent solid;
+  border-bottom: 52cqw transparent solid;
+  border-top: 10cqw #909192 solid;
+  filter: drop-shadow(0 1cqw 1cqw rgba(0,0,0,0.2));
 }
+
 .stargate-wrap .chevron:nth-of-type(9n+1), .stargate-wrap .chevronInner:nth-of-type(9n+1) { transform: translateX(-50%) rotate(0deg); }
 .stargate-wrap .chevron:nth-of-type(9n+2), .stargate-wrap .chevronInner:nth-of-type(9n+2) { transform: translateX(-50%) rotate(40deg); }
 .stargate-wrap .chevron:nth-of-type(9n+3), .stargate-wrap .chevronInner:nth-of-type(9n+3) { transform: translateX(-50%) rotate(80deg); }
@@ -182,20 +208,21 @@
 .stargate-wrap .chevron:nth-of-type(9n+7), .stargate-wrap .chevronInner:nth-of-type(9n+7) { transform: translateX(-50%) rotate(240deg); }
 .stargate-wrap .chevron:nth-of-type(9n+8), .stargate-wrap .chevronInner:nth-of-type(9n+8) { transform: translateX(-50%) rotate(280deg); }
 .stargate-wrap .chevron:nth-of-type(9n+9), .stargate-wrap .chevronInner:nth-of-type(9n+9) { transform: translateX(-50%) rotate(320deg); }
+
 .stargate-wrap .chevron:before, .stargate-wrap .chevronInner:before,
 .stargate-wrap .chevron:after, .stargate-wrap .chevronInner:after {
   content: "";
   position: absolute;
   left: 0;
-  bottom: 2.2vmin;
+  bottom: 4.40cqw;
   background: hsl(180, 83%, 39%);
-  box-shadow: 0 0 0.8vmin hsl(0, 0%, 100%) inset, 0 0 0.8vmin hsl(0, 0%, 100%);
+  box-shadow: 0 0 1.60cqw hsl(0,0%,100%) inset, 0 0 1.60cqw hsl(0,0%,100%);
   width: 100%;
-  height: 2vmin;
-  transform: translateX(1.2vmin) skewX(-30deg);
+  height: 4cqw;
+  transform: translateX(2.40cqw) skewX(-30deg);
 }
 .stargate-wrap .chevron:after, .stargate-wrap .chevronInner:after {
-  transform: translateX(-1.2vmin) skewX(30deg);
+  transform: translateX(-2.40cqw) skewX(30deg);
 }
 
 .stargate-wrap .chevronInners {
@@ -206,47 +233,39 @@
 }
 
 .stargate-wrap .chevronInner {
-  width: 6vmin;
-  border-left-width: 2.5vmin;
-  border-right-width: 2.5vmin;
-  border-bottom-width: 27.5vmin;
-  filter: drop-shadow(0 0.5vmin 0 #727374);
+  width: 12cqw;
+  border-left-width: 5cqw;
+  border-right-width: 5cqw;
+  border-bottom-width: 55cqw;
+  filter: drop-shadow(0 1cqw 0 #727374);
 }
 .stargate-wrap .chevronInner:before {
   left: 50%;
   width: 230%;
-  bottom: 2.8vmin;
+  bottom: 5.60cqw;
   transform: translateX(-50%);
-  border-radius: 0.4vmin;
+  border-radius: 0.80cqw;
 }
-.stargate-wrap .chevronInner:after {
-  display: none;
-}
+.stargate-wrap .chevronInner:after { display: none; }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-/* Gate images — scoped */
+/* ════ ROTUJÍCÍ VRSTVY — performance ════ */
 .stargate-wrap .gate img {
-  width: 100%;
+  width: 35%;
   height: auto;
   position: absolute;
   border-radius: 100%;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate3d(-50%, -50%, 0);
+  /* GPU compositing */
   will-change: transform;
   backface-visibility: hidden;
   pointer-events: none;
   --img-scale: 1.46;
 }
 
-.stargate-wrap .gate img:hover {
-  transform: scale(1.1);
-}
-
-/* Sri Yantra layers */
 .stargate-wrap .rotate23, .stargate-wrap .rotate24, .stargate-wrap .rotate25,
 .stargate-wrap .rotate26, .stargate-wrap .rotate27, .stargate-wrap .rotate28 {
   --img-scale: 1.64;
@@ -258,28 +277,39 @@
   .stargate-wrap .rotate26, .stargate-wrap .rotate27, .stargate-wrap .rotate28 { --img-scale: 1.74; }
 }
 
-.stargate-wrap .rotate1  { width: 90%; opacity: 0.8;  animation: rotate-right 33s linear infinite; z-index: 1; }
-.stargate-wrap .rotate2  { width: 60%; opacity: 0.8;  animation: rotate-left 33792s linear infinite; }
-.stargate-wrap .rotate3  { width: 70%; opacity: 0.9;  animation: rotate-right 66s linear infinite; }
-.stargate-wrap .rotate4  { width: 60%; opacity: 0.9;  animation: rotate-left 16896s linear infinite; }
-.stargate-wrap .rotate5  { width: 70%; opacity: 1;    animation: rotate-right 132s linear infinite; }
-.stargate-wrap .rotate6  { width: 60%; opacity: 1;    animation: rotate-left 8448s linear infinite; }
-.stargate-wrap .rotate7  { width: 70%; opacity: 0.7;  animation: rotate-right 264s linear infinite; }
-.stargate-wrap .rotate8  { width: 60%; opacity: 0.7;  animation: rotate-left 4224s linear infinite; }
-.stargate-wrap .rotate9  { width: 70%; opacity: 0.6;  animation: rotate-right 528s linear infinite; }
-.stargate-wrap .rotate10 { width: 60%; opacity: 0.6;  animation: rotate-left 2112s linear infinite; }
-.stargate-wrap .rotate11 { width: 60%; opacity: 0.5;  animation: rotate-right 1056s linear infinite; }
-.stargate-wrap .rotate12 { width: 60%; opacity: 0.5;  animation: rotate-left 1056s linear infinite; }
+/* ════ KEYFRAMES — translate3d pro GPU ════ */
+@keyframes rotate-right {
+  from { transform: translate3d(-50%, -50%, 0) rotate(0deg) scale(var(--img-scale, 1)); }
+  to   { transform: translate3d(-50%, -50%, 0) rotate(360deg) scale(var(--img-scale, 1)); }
+}
+@keyframes rotate-left {
+  from { transform: translate3d(-50%, -50%, 0) rotate(0deg) scale(var(--img-scale, 1)); }
+  to   { transform: translate3d(-50%, -50%, 0) rotate(-360deg) scale(var(--img-scale, 1)); }
+}
+
+/* ════ 28 ROTATE LAYERS ════ */
+.stargate-wrap .rotate1 { width: 90%; opacity: 0.8; animation: rotate-right 33s linear infinite; z-index: 1; }
+.stargate-wrap .rotate2 { width: 60%; opacity: 0.8; animation: rotate-left 33792s linear infinite; }
+.stargate-wrap .rotate3 { width: 70%; opacity: 0.9; animation: rotate-right 66s linear infinite; }
+.stargate-wrap .rotate4 { width: 60%; opacity: 0.9; animation: rotate-left 16896s linear infinite; }
+.stargate-wrap .rotate5 { width: 70%; opacity: 1; animation: rotate-right 132s linear infinite; }
+.stargate-wrap .rotate6 { width: 60%; opacity: 1; animation: rotate-left 8448s linear infinite; }
+.stargate-wrap .rotate7 { width: 70%; opacity: 0.7; animation: rotate-right 264s linear infinite; }
+.stargate-wrap .rotate8 { width: 60%; opacity: 0.7; animation: rotate-left 4224s linear infinite; }
+.stargate-wrap .rotate9 { width: 70%; opacity: 0.6; animation: rotate-right 528s linear infinite; }
+.stargate-wrap .rotate10 { width: 60%; opacity: 0.6; animation: rotate-left 2112s linear infinite; }
+.stargate-wrap .rotate11 { width: 60%; opacity: 0.5; animation: rotate-right 1056s linear infinite; }
+.stargate-wrap .rotate12 { width: 60%; opacity: 0.5; animation: rotate-left 1056s linear infinite; }
 .stargate-wrap .rotate13 { width: 60%; opacity: 0.45; animation: rotate-right 2112s linear infinite; }
 .stargate-wrap .rotate14 { width: 70%; opacity: 0.45; animation: rotate-left 528s linear infinite; }
-.stargate-wrap .rotate15 { width: 60%; opacity: 0.7;  animation: rotate-right 4224s linear infinite; }
-.stargate-wrap .rotate16 { width: 70%; opacity: 0.7;  animation: rotate-left 264s linear infinite; }
+.stargate-wrap .rotate15 { width: 60%; opacity: 0.7; animation: rotate-right 4224s linear infinite; }
+.stargate-wrap .rotate16 { width: 70%; opacity: 0.7; animation: rotate-left 264s linear infinite; }
 .stargate-wrap .rotate17 { width: 60%; opacity: 0.35; animation: rotate-right 8448s linear infinite; }
 .stargate-wrap .rotate18 { width: 70%; opacity: 0.35; animation: rotate-left 132s linear infinite; }
-.stargate-wrap .rotate19 { width: 60%; opacity: 0.3;  animation: rotate-right 16896s linear infinite; }
-.stargate-wrap .rotate20 { width: 70%; opacity: 0.3;  animation: rotate-left 66s linear infinite; }
-.stargate-wrap .rotate21 { width: 60%; opacity: 0.2;  animation: rotate-right 33792s linear infinite; }
-.stargate-wrap .rotate22 { width: 70%; opacity: 0.2;  animation: rotate-left 33s linear infinite; }
+.stargate-wrap .rotate19 { width: 60%; opacity: 0.3; animation: rotate-right 16896s linear infinite; }
+.stargate-wrap .rotate20 { width: 70%; opacity: 0.3; animation: rotate-left 66s linear infinite; }
+.stargate-wrap .rotate21 { width: 60%; opacity: 0.2; animation: rotate-right 33792s linear infinite; }
+.stargate-wrap .rotate22 { width: 70%; opacity: 0.2; animation: rotate-left 33s linear infinite; }
 .stargate-wrap .rotate23 { width: 100%; opacity: 0.1; animation: rotate-left 33s linear infinite; }
 .stargate-wrap .rotate24 { width: 100%; opacity: 0.1; animation: rotate-right 128s linear infinite; }
 .stargate-wrap .rotate25 { width: 100%; opacity: 0.1; animation: rotate-left 256s linear infinite; }
@@ -287,93 +317,83 @@
 .stargate-wrap .rotate27 { width: 100%; opacity: 0.1; animation: rotate-left 128s linear infinite; }
 .stargate-wrap .rotate28 { width: 100%; opacity: 0.1; animation: rotate-right 33s linear infinite; }
 
-@keyframes rotate-right {
-  from { transform: translate(-50%, -50%) rotate(0deg) scale(var(--img-scale, 1)); }
-  to   { transform: translate(-50%, -50%) rotate(360deg) scale(var(--img-scale, 1)); }
-}
-
-@keyframes rotate-left {
-  from { transform: translate(-50%, -50%) rotate(0deg) scale(var(--img-scale, 1)); }
-  to   { transform: translate(-50%, -50%) rotate(-360deg) scale(var(--img-scale, 1)); }
-}
-
-/* === MOBILE RESPONSIVE === */
+/* ════ MOBILE ════ */
+/* The gate now scales with its constrained wrapper; keep widths relative. */
 @media (max-width: 768px) {
-  .stargate-wrap .gate { width: min(100vmin, 92vw); }
-  .stargate-wrap { --gate-offset-y: 4vmin; }
-  .stargate-wrap .gate img { --img-scale: 1.46; }
+  .stargate-wrap { --gate-offset-y: 2vmin; }
+  .stargate-wrap .gate { width: 100%; }
+  .stargate-wrap .gate img { --img-scale: 1.18; }
   .stargate-wrap .rotate23, .stargate-wrap .rotate24, .stargate-wrap .rotate25,
-  .stargate-wrap .rotate26, .stargate-wrap .rotate27, .stargate-wrap .rotate28 { --img-scale: 1.64; }
-
-  .stargate-wrap .rotate1  { width: 110%; }
-  .stargate-wrap .rotate2  { width: 80%; }
-  .stargate-wrap .rotate3  { width: 95%; }
-  .stargate-wrap .rotate4  { width: 80%; }
-  .stargate-wrap .rotate5  { width: 95%; }
-  .stargate-wrap .rotate6  { width: 80%; }
-  .stargate-wrap .rotate7  { width: 95%; }
-  .stargate-wrap .rotate8  { width: 80%; }
-  .stargate-wrap .rotate9  { width: 95%; }
-  .stargate-wrap .rotate10 { width: 80%; }
-  .stargate-wrap .rotate11 { width: 80%; }
-  .stargate-wrap .rotate12 { width: 80%; }
-  .stargate-wrap .rotate13 { width: 80%; }
-  .stargate-wrap .rotate14 { width: 95%; }
-  .stargate-wrap .rotate15 { width: 80%; }
-  .stargate-wrap .rotate16 { width: 95%; }
-  .stargate-wrap .rotate17 { width: 80%; }
-  .stargate-wrap .rotate18 { width: 95%; }
-  .stargate-wrap .rotate19 { width: 80%; }
-  .stargate-wrap .rotate20 { width: 95%; }
-  .stargate-wrap .rotate21 { width: 80%; }
-  .stargate-wrap .rotate22 { width: 95%; }
-  .stargate-wrap .rotate23 { width: 120%; }
-  .stargate-wrap .rotate24 { width: 120%; }
-  .stargate-wrap .rotate25 { width: 120%; }
-  .stargate-wrap .rotate26 { width: 120%; }
-  .stargate-wrap .rotate27 { width: 120%; }
-  .stargate-wrap .rotate28 { width: 120%; }
-  .stargate-wrap .container .center-logo { width: min(360px, 40vw); height: min(360px, 40vw); }
+  .stargate-wrap .rotate26, .stargate-wrap .rotate27, .stargate-wrap .rotate28 { --img-scale: 1.28; }
+  .stargate-wrap .rotate1 { width: 105%; }
+  .stargate-wrap .rotate2 { width: 78%; }
+  .stargate-wrap .rotate3 { width: 92%; }
+  .stargate-wrap .rotate4 { width: 78%; }
+  .stargate-wrap .rotate5 { width: 92%; }
+  .stargate-wrap .rotate6 { width: 78%; }
+  .stargate-wrap .rotate7 { width: 92%; }
+  .stargate-wrap .rotate8 { width: 78%; }
+  .stargate-wrap .rotate9 { width: 92%; }
+  .stargate-wrap .rotate10 { width: 78%; }
+  .stargate-wrap .rotate11 { width: 78%; }
+  .stargate-wrap .rotate12 { width: 78%; }
+  .stargate-wrap .rotate13 { width: 78%; }
+  .stargate-wrap .rotate14 { width: 92%; }
+  .stargate-wrap .rotate15 { width: 78%; }
+  .stargate-wrap .rotate16 { width: 92%; }
+  .stargate-wrap .rotate17 { width: 78%; }
+  .stargate-wrap .rotate18 { width: 92%; }
+  .stargate-wrap .rotate19 { width: 78%; }
+  .stargate-wrap .rotate20 { width: 92%; }
+  .stargate-wrap .rotate21 { width: 78%; }
+  .stargate-wrap .rotate22 { width: 92%; }
+  .stargate-wrap .rotate23 { width: 110%; }
+  .stargate-wrap .rotate24 { width: 110%; }
+  .stargate-wrap .rotate25 { width: 110%; }
+  .stargate-wrap .rotate26 { width: 110%; }
+  .stargate-wrap .rotate27 { width: 110%; }
+  .stargate-wrap .rotate28 { width: 110%; }
+  .stargate-wrap .container .center-logo { width: 17%; height: 17%; }
 }
 
 @media (max-width: 480px) {
-  .stargate-wrap .gate { width: min(110vmin, 96vw); }
-  .stargate-wrap { --gate-offset-y: 6vmin; }
-  .stargate-wrap .gate img { --img-scale: 1.58; }
+  .stargate-wrap { --gate-offset-y: 1vmin; }
+  .stargate-wrap .gate { width: 100%; }
+  .stargate-wrap .gate img { --img-scale: 1.10; }
   .stargate-wrap .rotate23, .stargate-wrap .rotate24, .stargate-wrap .rotate25,
-  .stargate-wrap .rotate26, .stargate-wrap .rotate27, .stargate-wrap .rotate28 { --img-scale: 1.81; }
-
-  .stargate-wrap .rotate1  { width: 120%; }
-  .stargate-wrap .rotate2  { width: 85%; }
-  .stargate-wrap .rotate3  { width: 100%; }
-  .stargate-wrap .rotate4  { width: 85%; }
-  .stargate-wrap .rotate5  { width: 100%; }
-  .stargate-wrap .rotate6  { width: 85%; }
-  .stargate-wrap .rotate7  { width: 100%; }
-  .stargate-wrap .rotate8  { width: 85%; }
-  .stargate-wrap .rotate9  { width: 100%; }
-  .stargate-wrap .rotate10 { width: 85%; }
-  .stargate-wrap .rotate11 { width: 85%; }
-  .stargate-wrap .rotate12 { width: 85%; }
-  .stargate-wrap .rotate13 { width: 85%; }
-  .stargate-wrap .rotate14 { width: 100%; }
-  .stargate-wrap .rotate15 { width: 85%; }
-  .stargate-wrap .rotate16 { width: 100%; }
-  .stargate-wrap .rotate17 { width: 85%; }
-  .stargate-wrap .rotate18 { width: 100%; }
-  .stargate-wrap .rotate19 { width: 85%; }
-  .stargate-wrap .rotate20 { width: 100%; }
-  .stargate-wrap .rotate21 { width: 85%; }
-  .stargate-wrap .rotate22 { width: 100%; }
-  .stargate-wrap .rotate23 { width: 130%; }
-  .stargate-wrap .rotate24 { width: 130%; }
-  .stargate-wrap .rotate25 { width: 130%; }
-  .stargate-wrap .rotate26 { width: 130%; }
-  .stargate-wrap .rotate27 { width: 130%; }
-  .stargate-wrap .rotate28 { width: 130%; }
-  .stargate-wrap .container .center-logo { width: 19%; height: 19%; }
+  .stargate-wrap .rotate26, .stargate-wrap .rotate27, .stargate-wrap .rotate28 { --img-scale: 1.18; }
+  .stargate-wrap .rotate1 { width: 102%; }
+  .stargate-wrap .rotate2 { width: 76%; }
+  .stargate-wrap .rotate3 { width: 90%; }
+  .stargate-wrap .rotate4 { width: 76%; }
+  .stargate-wrap .rotate5 { width: 90%; }
+  .stargate-wrap .rotate6 { width: 76%; }
+  .stargate-wrap .rotate7 { width: 90%; }
+  .stargate-wrap .rotate8 { width: 76%; }
+  .stargate-wrap .rotate9 { width: 90%; }
+  .stargate-wrap .rotate10 { width: 76%; }
+  .stargate-wrap .rotate11 { width: 76%; }
+  .stargate-wrap .rotate12 { width: 76%; }
+  .stargate-wrap .rotate13 { width: 76%; }
+  .stargate-wrap .rotate14 { width: 90%; }
+  .stargate-wrap .rotate15 { width: 76%; }
+  .stargate-wrap .rotate16 { width: 90%; }
+  .stargate-wrap .rotate17 { width: 76%; }
+  .stargate-wrap .rotate18 { width: 90%; }
+  .stargate-wrap .rotate19 { width: 76%; }
+  .stargate-wrap .rotate20 { width: 90%; }
+  .stargate-wrap .rotate21 { width: 76%; }
+  .stargate-wrap .rotate22 { width: 90%; }
+  .stargate-wrap .rotate23 { width: 105%; }
+  .stargate-wrap .rotate24 { width: 105%; }
+  .stargate-wrap .rotate25 { width: 105%; }
+  .stargate-wrap .rotate26 { width: 105%; }
+  .stargate-wrap .rotate27 { width: 105%; }
+  .stargate-wrap .rotate28 { width: 105%; }
+  .stargate-wrap .container .center-logo { width: 18%; height: 18%; }
 }
 
+/* ════ REDUCED MOTION ════ */
 @media (prefers-reduced-motion: reduce) {
   .stargate-wrap .glyphs,
   .stargate-wrap .gate img[class*="rotate"],
@@ -382,8 +402,4 @@
     animation: none !important;
     transition: none !important;
   }
-}
-
-@font-face {
-  font-family: "Stargate SG-1 Address Glyphs";
 }
