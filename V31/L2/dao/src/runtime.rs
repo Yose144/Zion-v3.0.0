@@ -8,11 +8,15 @@
 //! ```
 
 use std::collections::BTreeMap;
+use std::sync::{Arc, Mutex};
 
 use chrono::Utc;
+use tracing::warn;
 
 use crate::config::DaoConfig;
+use crate::db::DaoDb;
 use crate::error::{DaoError, DaoResult};
+use crate::metrics::DaoMetrics;
 use crate::proposal::{Proposal, ProposalStatus, ProposalType};
 use crate::quorum::check_quorum;
 use crate::timelock::Timelock;
@@ -27,6 +31,8 @@ pub struct GovernanceRuntime {
     timelocks: BTreeMap<u64, Timelock>,
     next_proposal_id: u64,
     circulating_supply: u64,
+    db: Option<Arc<Mutex<DaoDb>>>,
+    metrics: Option<Arc<DaoMetrics>>,
 }
 
 impl GovernanceRuntime {
@@ -39,6 +45,91 @@ impl GovernanceRuntime {
             timelocks: BTreeMap::new(),
             next_proposal_id: 1,
             circulating_supply,
+            db: None,
+            metrics: None,
+        }
+    }
+
+    /// Attach a SQLite DAO database for persistence.
+    pub fn with_db(mut self, db: Arc<Mutex<DaoDb>>) -> Self {
+        self.db = Some(db);
+        self
+    }
+
+    /// Attach shared metrics counters.
+    pub fn with_metrics(mut self, metrics: Arc<DaoMetrics>) -> Self {
+        self.metrics = Some(metrics);
+        self
+    }
+
+    /// Load proposals and votes from the attached database.
+    pub fn load_from_db(&mut self) -> DaoResult<()> {
+        let db = match self.db.as_ref() {
+            Some(db) => db,
+            None => return Ok(()),
+        };
+
+        let db = db.lock().map_err(|e| DaoError::Internal(e.to_string()))?;
+        let rows = db.load_all_proposals()?;
+
+        for row in rows {
+            let id = row.id;
+            let proposal = row.to_proposal()?;
+
+            let votes = db.get_votes(id)?;
+            for vote in votes {
+                self.voting.load_vote(vote);
+            }
+
+            self.proposals.insert(id, proposal);
+            self.next_proposal_id = self.next_proposal_id.max(id + 1);
+        }
+
+        Ok(())
+    }
+
+    fn persist_proposal(&self, p: &Proposal) {
+        if let Some(db) = self.db.as_ref() {
+            match db.lock() {
+                Ok(db) => {
+                    if let Err(e) = db.update_proposal_status(p) {
+                        warn!("Failed to persist proposal {}: {}", p.id, e);
+                    }
+                }
+                Err(e) => warn!("DAO db lock poisoned: {}", e),
+            }
+        }
+    }
+
+    fn persist_new_proposal(&self, p: &Proposal) {
+        if let Some(db) = self.db.as_ref() {
+            match db.lock() {
+                Ok(db) => {
+                    if let Err(e) = db.insert_proposal(p) {
+                        warn!("Failed to insert proposal {}: {}", p.id, e);
+                    }
+                }
+                Err(e) => warn!("DAO db lock poisoned: {}", e),
+            }
+        }
+    }
+
+    fn persist_vote(&self, proposal_id: u64, vote: &Vote) {
+        if let Some(db) = self.db.as_ref() {
+            match db.lock() {
+                Ok(db) => {
+                    if let Err(e) = db.record_vote(
+                        proposal_id,
+                        &vote.voter,
+                        vote.choice.clone(),
+                        vote.weight,
+                        vote.tx_hash.as_deref(),
+                    ) {
+                        warn!("Failed to persist vote for proposal {}: {}", proposal_id, e);
+                    }
+                }
+                Err(e) => warn!("DAO db lock poisoned: {}", e),
+            }
         }
     }
 
@@ -102,7 +193,13 @@ impl GovernanceRuntime {
             snapshot_block,
         );
 
+        self.persist_new_proposal(&proposal);
         self.proposals.insert(id, proposal);
+
+        if let Some(metrics) = self.metrics.as_ref() {
+            metrics.proposals_created.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        }
+
         Ok(id)
     }
 
@@ -115,12 +212,31 @@ impl GovernanceRuntime {
         weight: u64,
         tx_hash: Option<String>,
     ) -> DaoResult<Vote> {
-        let proposal = self
-            .proposals
-            .get_mut(&proposal_id)
-            .ok_or_else(|| DaoError::ProposalNotFound(proposal_id.to_string()))?;
+        let vote = {
+            let proposal = self
+                .proposals
+                .get_mut(&proposal_id)
+                .ok_or_else(|| DaoError::ProposalNotFound(proposal_id.to_string()))?;
 
-        self.voting.cast_vote(proposal, voter, choice, weight, tx_hash)
+            self.voting.cast_vote(proposal, voter, choice, weight, tx_hash)?
+        };
+
+        if let Some(proposal) = self.proposals.get(&proposal_id) {
+            self.persist_vote(proposal_id, &vote);
+            self.persist_proposal(proposal);
+        }
+
+        if let Some(metrics) = self.metrics.as_ref() {
+            metrics.votes_cast.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            match vote.choice {
+                VoteChoice::Yes => metrics.votes_yes.fetch_add(vote.weight, std::sync::atomic::Ordering::Relaxed),
+                VoteChoice::No => metrics.votes_no.fetch_add(vote.weight, std::sync::atomic::Ordering::Relaxed),
+                VoteChoice::Abstain => metrics.votes_abstain.fetch_add(vote.weight, std::sync::atomic::Ordering::Relaxed),
+                VoteChoice::Candidate(_) => metrics.votes_yes.fetch_add(vote.weight, std::sync::atomic::Ordering::Relaxed),
+            };
+        }
+
+        Ok(vote)
     }
 
     /// Tally votes and check quorum for a proposal whose voting period has ended.
@@ -128,169 +244,191 @@ impl GovernanceRuntime {
     /// If quorum is met and the proposal passed, it enters the timelock phase.
     /// If quorum is not met or the proposal failed, it is marked as Failed.
     pub fn tally_proposal(&mut self, proposal_id: u64) -> DaoResult<ProposalStatus> {
-        let proposal = self
-            .proposals
-            .get_mut(&proposal_id)
-            .ok_or_else(|| DaoError::ProposalNotFound(proposal_id.to_string()))?;
+        let status = {
+            let proposal = self
+                .proposals
+                .get_mut(&proposal_id)
+                .ok_or_else(|| DaoError::ProposalNotFound(proposal_id.to_string()))?;
 
-        if proposal.status != ProposalStatus::Active {
-            return Err(DaoError::ProposalNotVotable(proposal_id.to_string()));
-        }
+            if proposal.status != ProposalStatus::Active {
+                return Err(DaoError::ProposalNotVotable(proposal_id.to_string()));
+            }
 
-        if proposal.is_voting_open() {
-            return Err(DaoError::VotingPeriodNotEnded(proposal_id.to_string()));
-        }
+            if proposal.is_voting_open() {
+                return Err(DaoError::VotingPeriodNotEnded(proposal_id.to_string()));
+            }
 
-        // Check quorum
-        let quorum_result = check_quorum(proposal, self.circulating_supply);
-        let passed = proposal.has_passed();
+            // Check quorum
+            let quorum_result = check_quorum(proposal, self.circulating_supply);
+            let passed = proposal.has_passed();
 
-        match quorum_result {
-            Ok(_) => {
-                if passed {
-                    proposal.status = ProposalStatus::Passed;
-                    // Start timelock
-                    let timelock = Timelock::new(proposal_id);
-                    proposal.timelock_ends_at = Some(timelock.ends_at);
-                    self.timelocks.insert(proposal_id, timelock);
-                } else {
+            match quorum_result {
+                Ok(_) => {
+                    if passed {
+                        proposal.status = ProposalStatus::Passed;
+                        // Start timelock
+                        let timelock = Timelock::new(proposal_id);
+                        proposal.timelock_ends_at = Some(timelock.ends_at);
+                        self.timelocks.insert(proposal_id, timelock);
+                    } else {
+                        proposal.status = ProposalStatus::Failed;
+                    }
+                }
+                Err(_) => {
                     proposal.status = ProposalStatus::Failed;
                 }
             }
-            Err(_) => {
-                proposal.status = ProposalStatus::Failed;
-            }
-        }
 
-        Ok(proposal.status)
+            proposal.status
+        };
+
+        if let Some(proposal) = self.proposals.get(&proposal_id) {
+            self.persist_proposal(proposal);
+        }
+        Ok(status)
     }
 
     /// Execute a proposal that has passed its timelock.
     ///
     /// Returns a human-readable execution result.
     pub fn execute_proposal(&mut self, proposal_id: u64) -> DaoResult<String> {
-        // Check timelock
-        let timelock = self
-            .timelocks
-            .get_mut(&proposal_id)
-            .ok_or_else(|| DaoError::Internal("proposal not in timelock phase".into()))?;
+        let summary = {
+            // Check timelock
+            let timelock = self
+                .timelocks
+                .get_mut(&proposal_id)
+                .ok_or_else(|| DaoError::Internal("proposal not in timelock phase".into()))?;
 
-        if timelock.is_active() {
-            return Err(DaoError::TimelockActive {
-                remaining_hours: timelock.remaining_hours(),
-            });
-        }
+            if timelock.is_active() {
+                return Err(DaoError::TimelockActive {
+                    remaining_hours: timelock.remaining_hours(),
+                });
+            }
 
-        if timelock.executed {
-            return Err(DaoError::Internal("proposal already executed".into()));
-        }
+            if timelock.executed {
+                return Err(DaoError::Internal("proposal already executed".into()));
+            }
 
-        // Mark timelock executed
-        timelock.mark_executed()?;
+            // Mark timelock executed
+            timelock.mark_executed()?;
 
-        // Update proposal status
-        let proposal = self
-            .proposals
-            .get_mut(&proposal_id)
-            .ok_or_else(|| DaoError::ProposalNotFound(proposal_id.to_string()))?;
+            // Update proposal status
+            let proposal = self
+                .proposals
+                .get_mut(&proposal_id)
+                .ok_or_else(|| DaoError::ProposalNotFound(proposal_id.to_string()))?;
 
-        proposal.status = ProposalStatus::Executed;
-        proposal.executed_at = Some(Utc::now());
+            proposal.status = ProposalStatus::Executed;
+            proposal.executed_at = Some(Utc::now());
 
-        // Generate execution summary
-        let summary = match &proposal.proposal_type {
-            ProposalType::Parameter {
-                parameter_name,
-                proposed_value,
-                ..
-            } => {
-                format!(
-                    "Parameter '{}' set to '{}'",
-                    parameter_name, proposed_value
-                )
-            }
-            ProposalType::Treasury {
-                recipient,
-                amount,
-                purpose,
-            } => {
-                format!(
-                    "Treasury: {} flowers to {} for '{}'",
-                    amount, recipient, purpose
-                )
-            }
-            ProposalType::Emergency { action, .. } => {
-                format!("Emergency action: {}", action)
-            }
-            ProposalType::Grant {
-                recipient,
-                amount,
-                ..
-            } => {
-                format!("Grant: {} flowers to {}", amount, recipient)
-            }
-            ProposalType::Humanitarian {
-                category,
-                amount,
-                region,
-                ..
-            } => {
-                format!(
-                    "Humanitarian: {} flowers for {} in {}",
-                    amount, category, region
-                )
-            }
-            ProposalType::Admission { candidate_id, .. } => {
-                format!("Admission: {}", candidate_id)
-            }
-            ProposalType::Bodhisattva { candidate_id, .. } => {
-                format!("Bodhisattva vow: {}", candidate_id)
-            }
-            ProposalType::Expulsion { accused_id, .. } => {
-                format!("Expulsion: {}", accused_id)
-            }
-            ProposalType::CrossLayer { description, .. } => {
-                format!("Cross-layer: {}", description)
-            }
-            ProposalType::ParliamentaryElection { title, .. } => {
-                let seats = proposal.allocate_seats();
-                let seat_str: Vec<String> = seats
-                    .iter()
-                    .map(|(p, s)| format!("{}: {}", p, s))
-                    .collect();
-                format!("Election '{}': {}", title, seat_str.join(", "))
+            // Generate execution summary
+            match &proposal.proposal_type {
+                ProposalType::Parameter {
+                    parameter_name,
+                    proposed_value,
+                    ..
+                } => {
+                    format!(
+                        "Parameter '{}' set to '{}'",
+                        parameter_name, proposed_value
+                    )
+                }
+                ProposalType::Treasury {
+                    recipient,
+                    amount,
+                    purpose,
+                } => {
+                    format!(
+                        "Treasury: {} flowers to {} for '{}'",
+                        amount, recipient, purpose
+                    )
+                }
+                ProposalType::Emergency { action, .. } => {
+                    format!("Emergency action: {}", action)
+                }
+                ProposalType::Grant {
+                    recipient,
+                    amount,
+                    ..
+                } => {
+                    format!("Grant: {} flowers to {}", amount, recipient)
+                }
+                ProposalType::Humanitarian {
+                    category,
+                    amount,
+                    region,
+                    ..
+                } => {
+                    format!(
+                        "Humanitarian: {} flowers for {} in {}",
+                        amount, category, region
+                    )
+                }
+                ProposalType::Admission { candidate_id, .. } => {
+                    format!("Admission: {}", candidate_id)
+                }
+                ProposalType::Bodhisattva { candidate_id, .. } => {
+                    format!("Bodhisattva vow: {}", candidate_id)
+                }
+                ProposalType::Expulsion { accused_id, .. } => {
+                    format!("Expulsion: {}", accused_id)
+                }
+                ProposalType::CrossLayer { description, .. } => {
+                    format!("Cross-layer: {}", description)
+                }
+                ProposalType::ParliamentaryElection { title, .. } => {
+                    let seats = proposal.allocate_seats();
+                    let seat_str: Vec<String> = seats
+                        .iter()
+                        .map(|(p, s)| format!("{}: {}", p, s))
+                        .collect();
+                    format!("Election '{}': {}", title, seat_str.join(", "))
+                }
             }
         };
+
+        if let Some(proposal) = self.proposals.get(&proposal_id) {
+            self.persist_proposal(proposal);
+        }
+        if let Some(metrics) = self.metrics.as_ref() {
+            metrics.proposals_executed.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        }
 
         Ok(summary)
     }
 
     /// Cancel a proposal (only by proposer or guardian).
     pub fn cancel_proposal(&mut self, proposal_id: u64, caller: &str) -> DaoResult<()> {
-        let proposal = self
-            .proposals
-            .get_mut(&proposal_id)
-            .ok_or_else(|| DaoError::ProposalNotFound(proposal_id.to_string()))?;
+        {
+            let proposal = self
+                .proposals
+                .get_mut(&proposal_id)
+                .ok_or_else(|| DaoError::ProposalNotFound(proposal_id.to_string()))?;
 
-        if proposal.status != ProposalStatus::Active && proposal.status != ProposalStatus::Passed {
-            return Err(DaoError::ProposalNotVotable(proposal_id.to_string()));
+            if proposal.status != ProposalStatus::Active && proposal.status != ProposalStatus::Passed {
+                return Err(DaoError::ProposalNotVotable(proposal_id.to_string()));
+            }
+
+            // Only proposer or a guardian can cancel
+            let is_proposer = proposal.proposer == caller;
+            let is_guardian = self
+                .config
+                .guardians
+                .iter()
+                .any(|g| g.address == caller);
+
+            if !is_proposer && !is_guardian {
+                return Err(DaoError::Unauthorized(
+                    "only proposer or guardian can cancel".into(),
+                ));
+            }
+
+            proposal.status = ProposalStatus::Cancelled;
         }
 
-        // Only proposer or a guardian can cancel
-        let is_proposer = proposal.proposer == caller;
-        let is_guardian = self
-            .config
-            .guardians
-            .iter()
-            .any(|g| g.address == caller);
-
-        if !is_proposer && !is_guardian {
-            return Err(DaoError::Unauthorized(
-                "only proposer or guardian can cancel".into(),
-            ));
+        if let Some(proposal) = self.proposals.get(&proposal_id) {
+            self.persist_proposal(proposal);
         }
-
-        proposal.status = ProposalStatus::Cancelled;
         Ok(())
     }
 

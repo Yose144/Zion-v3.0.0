@@ -23,6 +23,7 @@ use crate::error::{DaoError, DaoResult};
 use crate::proposal::{Proposal, ProposalStatus, ProposalType};
 use crate::treasury::TreasuryOperation;
 use crate::types::VoteChoice;
+use crate::voting::Vote;
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -364,12 +365,13 @@ impl DaoDb {
             VoteChoice::Candidate(party) => party.as_str(),
         };
 
+        let voted_at = Utc::now().to_rfc3339();
         let tx = self.conn.unchecked_transaction()?;
         let result = tx.execute(
             r#"INSERT OR IGNORE INTO votes
                (proposal_id, voter, choice, weight, l1_tx_hash, voted_at)
-               VALUES (?1,?2,?3,?4,?5, datetime('now'))"#,
-            params![proposal_id, voter, choice_str, weight, l1_tx_hash],
+               VALUES (?1,?2,?3,?4,?5,?6)"#,
+            params![proposal_id, voter, choice_str, weight, l1_tx_hash, voted_at],
         );
 
         let inserted = match result {
@@ -414,6 +416,55 @@ impl DaoDb {
 
         tx.commit().map_err(|e| DaoError::Internal(e.to_string()))?;
         Ok(inserted)
+    }
+
+    /// Load all recorded votes for a proposal (for runtime reload).
+    pub fn get_votes(&self, proposal_id: u64) -> DaoResult<Vec<Vote>> {
+        let mut stmt = self
+            .conn
+            .prepare(
+                r#"SELECT voter, choice, weight, l1_tx_hash, voted_at
+                   FROM votes WHERE proposal_id=?1 ORDER BY voted_at"#,
+            )
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+
+        let rows = stmt
+            .query_map(params![proposal_id], |row| {
+                let voter: String = row.get(0)?;
+                let choice_str: String = row.get(1)?;
+                let weight: i64 = row.get(2)?;
+                let l1_tx_hash: Option<String> = row.get(3)?;
+                let voted_at_str: String = row.get(4)?;
+
+                let choice = match choice_str.as_str() {
+                    "yes" => VoteChoice::Yes,
+                    "no" => VoteChoice::No,
+                    "abstain" => VoteChoice::Abstain,
+                    party => VoteChoice::Candidate(party.to_string()),
+                };
+
+                let voted_at = chrono::DateTime::parse_from_rfc3339(&voted_at_str)
+                    .map(|dt| dt.with_timezone(&Utc))
+                    .map_err(|e| rusqlite::Error::FromSqlConversionFailure(
+                        4,
+                        rusqlite::types::Type::Text,
+                        Box::new(e),
+                    ))?;
+
+                Ok(Vote {
+                    proposal_id,
+                    voter,
+                    choice,
+                    weight: weight as u64,
+                    tx_hash: l1_tx_hash,
+                    voted_at,
+                })
+            })
+            .map_err(|e| DaoError::Internal(e.to_string()))?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| DaoError::Internal(e.to_string()))?;
+
+        Ok(rows)
     }
 
     /// Count votes for a proposal (by choice).

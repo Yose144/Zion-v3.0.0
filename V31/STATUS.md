@@ -155,7 +155,7 @@ DAO governance runtime rošířena a částečně integrována (Phase C1). Plný
 
 **Testy:** 74 DAO testů pass (bylo 31).
 
-**Integrace:** `zion-dao` binárka nyní otevírá `DaoDb` na `DAO_DB_PATH`, spouští `L1Scanner` pro governance mema a vystavuje `/metrics` endpoint. Runtime zatím drží návrhy/hlasy v paměti; propojení runtime ↔ SQLite zůstává otevřené.
+**Integrace:** `zion-dao` binárka nyní otevírá `DaoDb` na `DAO_DB_PATH`, načítá existující návrhy a hlasy do `GovernanceRuntime`, persistuje všechny změny (nové návrhy, hlasy, tally, execute, cancel) zpět do SQLite a spouští `L1Scanner` pro governance mema. `/metrics` endpoint vystavuje live DAO metriky.
 
 ### CLI Wallet + Service Management (2026-08-04) ✅
 
@@ -290,7 +290,7 @@ Dokončeny všechny 11 chybějících V3 pool funkcí. Pool je teď **FULL V3 fe
 ## Další krok
 
 - **Pool FULL V3 Feature Parity ✅ COMPLETE** — všechny 11 V3 funkcí implementováno: AuxPoW bridge runtime, TLS, extra ports, share relay, profit switcher, expanded HTTP API, Notifier, RevenueScheduler, RevenueProxy, RoutingStats, SessionGroup routing, DeferredPayout, check_tx_on_chain, execute_fee_payout, NclGateway, revenue stats/streams API. 2069 testů pass. Pool nasazen a běží na Edge.
-- **DAO Governance Runtime ✅ COMPLETE** — Voting engine, proposal lifecycle, HTTP API. 31 testů pass.
+- **DAO Governance Runtime ✅ COMPLETE** — Voting engine, proposal lifecycle, HTTP API, SQLite persistence. 74 testů pass.
 - **CLI Wallet + Service ✅ COMPLETE** — Wallet create/load/send, pool/miner/node start/stop/status, service logs.
 - **ZionDex Multi-Path ✅ COMPLETE** — Top-N routes, cross-chain bridge routing, /v1/swap/quote/multi endpoint. 562 multichain testů pass.
 - **Dashboard Metrics ✅ COMPLETE** — Pool metrics, service overview, multichain health, Prometheus parsing.

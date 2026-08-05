@@ -47,6 +47,18 @@ async fn main() -> anyhow::Result<()> {
         }
     };
 
+    // Runtime uses a separate SQLite connection (WAL mode allows concurrent readers).
+    let runtime_db = DaoDb::open(&config.db_path)
+        .map(Some)
+        .unwrap_or_else(|e| {
+            tracing::warn!(
+                "Could not open runtime DAO db at {}: {} — running without persistence",
+                config.db_path,
+                e
+            );
+            None
+        });
+
     let metrics = DaoMetrics::new();
 
     tracing::info!(
@@ -70,5 +82,5 @@ async fn main() -> anyhow::Result<()> {
         });
     }
 
-    api::serve(config, circulating_supply, metrics).await
+    api::serve(config, circulating_supply, metrics, runtime_db).await
 }
