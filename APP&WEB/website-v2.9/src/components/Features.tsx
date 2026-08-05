@@ -71,59 +71,59 @@ export default function Features() {
   ];
 
   return (
-    <section className="py-10 px-4">
-      <div className="zion-container space-y-12">
-        <div className="flex flex-col lg:flex-row lg:items-end gap-6">
+    <section className="py-8 px-4">
+      <div className="zion-container space-y-6">
+        <div className="flex flex-col lg:flex-row lg:items-end gap-3">
           <div className="flex-1">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{FeaturesCopy.continuum[lang === 'cs' ? 'cs' : 'en']}</p>
-            <h2 className="text-4xl md:text-5xl font-bold text-white">
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{FeaturesCopy.continuum[lang === 'cs' ? 'cs' : 'en']}</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-white">
               <span className="text-gradient">{tr('features', 'heading', lang)}</span>
             </h2>
           </div>
-          <p className="text-lg text-gray-300 max-w-2xl">
+          <p className="text-sm text-gray-300 max-w-2xl">
             {tr('features', 'subheading', lang)}
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {continuumTracks.map((track) => (
               <div
                 key={track.title}
-                className="zion-rainbow-card p-6 backdrop-blur relative overflow-hidden"
+                className="zion-rainbow-card p-4 backdrop-blur relative overflow-hidden"
                 style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
               >
                 <div className={`absolute inset-0 bg-linear-to-br ${track.spectrum} opacity-70 pointer-events-none`} />
-                <div className="relative space-y-3">
+                  <div className="relative space-y-2">
                   <div className="flex items-center justify-between">
-                    <track.icon className="w-6 h-6 text-white" />
-                    <span className="text-xs font-semibold tracking-wide text-zion-gold bg-zion-gold/10 rounded-full px-3 py-1">
+                    <track.icon className="w-5 h-5 text-white" />
+                    <span className="text-[10px] font-semibold tracking-wide text-zion-gold bg-zion-gold/10 rounded-full px-2 py-0.5">
                       {track.badge}
                     </span>
                   </div>
-                  <h3 className="text-xl font-semibold text-white">{track.title}</h3>
-                  <p className="text-sm text-gray-200 leading-relaxed">{track.description}</p>
+                  <h3 className="text-base font-semibold text-white">{track.title}</h3>
+                  <p className="text-xs text-gray-200 leading-relaxed">{track.description}</p>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="zion-rainbow-card backdrop-blur-xl p-6 sm:p-8 space-y-6" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
-            <div className="flex items-center gap-3 text-sm text-gray-400">
-              <Zap className="w-5 h-5 text-zion-gold" />
+          <div className="zion-rainbow-card backdrop-blur-xl p-4 space-y-4" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <Zap className="w-4 h-4 text-zion-gold" />
               {tr('features', 'upgrade_heading', lang)}
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-3">
               {timeline.map((item) => (
-                <div key={item.phase} className="zion-rainbow-sub p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
-                  <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{item.phase}</p>
-                  <p className="text-base text-white mt-2">{item.detail}</p>
+                <div key={item.phase} className="zion-rainbow-sub p-3" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">{item.phase}</p>
+                  <p className="text-sm text-white mt-1">{item.detail}</p>
                 </div>
               ))}
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-linear-to-br from-zion-purple/20 to-zion-cyan/10 p-6 text-gray-100 text-sm">
+            <div className="rounded-2xl border border-white/10 bg-linear-to-br from-zion-purple/20 to-zion-cyan/10 p-4 text-gray-100 text-xs">
               {tr('features', 'community_cta', lang)}
             </div>
           </div>
