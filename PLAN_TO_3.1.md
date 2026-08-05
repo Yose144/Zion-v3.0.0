@@ -1,5 +1,7 @@
 # Plán do 3.1.0 Mainnet Alpha — paralelní 3.0.9 + V31 critical gaps
 
+> **⚠️ This plan was superseded by [`PLAN_TO_3.1_RECONCILED.md`](./PLAN_TO_3.1_RECONCILED.md), which is the canonical post-cutover execution plan. This file is kept for historical reference.**
+
 > **Vytvořeno:** 2026-08-03
 > **Autor:** Devin + Yose
 > **Strategie:** 3.0.9 hardening probíhá na V3 produkční větvi **paralelně** s V31 critical gap closure. V31 se stává production-ready tím, že se do ní portují chybějící kritické komponenty z V3. Cutover až když V31 = feature parity s V3.
