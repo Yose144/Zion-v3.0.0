@@ -13,6 +13,7 @@ const mono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono', displ
 const display = Space_Grotesk({ subsets: ['latin'], variable: '--font-display', display: 'swap' });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://market.zionterranova.com'),
   title: tr('common', 'metadataTitle', 'cs'),
   description: tr('common', 'metadataDescription', 'cs'),
   keywords: ['ZION', 'OASIS', 'NFT', 'marketplace', 'Base', 'ERC-1155', 'game artifacts'],
@@ -21,9 +22,15 @@ export const metadata: Metadata = {
     description: 'Trade OASIS game artifacts on Base L2.',
     type: 'website',
     url: 'https://market.zionterranova.com',
+    images: ['/zion-social-banner.png'],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    images: ['/zion-social-banner.png'],
   },
   icons: {
     icon: '/favicon.ico',
+    apple: '/symbol-200x200.png',
   },
 };
 
