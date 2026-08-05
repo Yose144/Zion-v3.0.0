@@ -323,4 +323,25 @@ V31 je aktivní mainnet-track workspace. Tato pravidla zajišťují, že zůstan
 ---
 
 **Verze:** 2026-07-30 V31 Mainnet Alpha
+
+## 12. Edge V31 deploy notes (2026-08-05)
+
+- `V31/deploy/deploy-edge.sh` still references stale `zion-edge-*` units and an obsolete `--bin zion-bridge` target; manual deploy is currently more reliable.
+- Working manual procedure:
+  1. `rsync` local `V31/` to `/opt/zion` on the Edge.
+  2. On Edge: `. /root/.cargo/env && cd /opt/zion/V31 && sed -i '/"cli",/d;/"smoke",/d' Cargo.toml` (these members are not needed on Edge).
+  3. Build with `nohup cargo build -p zion-core -p zion-pool -p zion-miner -p zion-dao -p zion-multichain --release >/tmp/v31-build.log 2>&1 </dev/null &`.
+  4. `chown -R zion:zion /opt/zion/V31/target/release` and `systemctl restart zion-v31-node zion-v31-multichain zion-v31-pool zion-v31-dao zion-v31-miner`.
+- For SSH to Edge, prefer IPv6 with `ControlMaster` + `ControlPersist` and `ServerAliveInterval` to avoid `Connection refused` from `fail2ban`/rate-limiting during rapid deploy commands:
+  ```
+  Host zion-v6
+      HostName 2a02:c207:2342:5821::1
+      User root
+      Port 2222
+      IdentityFile ~/.ssh/zion-edge-post-wipe-2026-07-29
+      IdentitiesOnly yes
+      ControlMaster auto
+      ControlPath ~/.ssh/control-%r@%h:%p
+      ControlPersist 10m
+  ```
 **Autorita:** Provozní pravidla pro Devin a operátory. Jakýkoliv rozpor s kořenovým `AGENTS.md` řešte aktualizací obou souborů; tento soubor má přednost pro V31, kořenový `AGENTS.md` pro historii a globální topologii.
