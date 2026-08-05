@@ -12,8 +12,23 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://oasis.zionterranova.com'),
   title: 'ZION OASIS · Interactive Worlds',
   description: 'Explore interactive OASIS worlds in the ZION multiverse.',
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/symbol-200x200.png',
+  },
+  openGraph: {
+    title: 'ZION OASIS · Interactive Worlds',
+    description: 'Explore interactive OASIS worlds in the ZION multiverse.',
+    images: ['/zion-social-banner.png'],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    images: ['/zion-social-banner.png'],
+  },
 };
 
 export default function RootLayout({

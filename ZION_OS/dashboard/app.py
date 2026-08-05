@@ -4511,8 +4511,25 @@ def parse_premine_from_genesis(rpc_host: str = "127.0.0.1", rpc_port: int = 9443
         "Children Future Fund — Humanitarian DAO",
     ]
     for i, tx in enumerate(genesis.get("transactions", [])):
-        addr = tx.get("to", "")
-        amount = int(tx.get("amount_zion", 0))
+        # V31 genesis: Transaction { outputs: [{ amount, address: { encoded } }] }
+        # V3 genesis: { to, amount_zion }
+        outputs = tx.get("outputs", []) if isinstance(tx, dict) else []
+        if outputs:
+            for out in outputs:
+                if not isinstance(out, dict):
+                    continue
+                addr = out.get("address", {}).get("encoded", "") if isinstance(out.get("address"), dict) else out.get("address", "")
+                amt = out.get("amount", 0)
+                if isinstance(amt, dict):
+                    amt = amt.get("0", 0)  # Amount is a u128 tuple struct serialized as {"0": value}
+                if not addr:
+                    continue
+                amount = int(amt) if amt is not None else 0
+        else:
+            addr = tx.get("to", "")
+            amount = int(tx.get("amount_zion", 0))
+        if not addr:
+            continue
         wallets.append({
             "index": i + 1,
             "address": addr,
@@ -4684,7 +4701,9 @@ def build_wallets() -> dict:
         if addr and addr.startswith("zion1"):
             bal = rpc_call(rpc_host, rpc_port, "getBalance", {"address": addr})
             if bal and not bal.get("_rpc_error"):
-                atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
+                # V31 getBalance returns "balance" as a string of flowers; V3 used balance_flowers/balance_atomic
+                raw_balance = (bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or "0")
+                atomic = int(raw_balance) if isinstance(raw_balance, (int, float, str)) and str(raw_balance).isdigit() else 0
                 w["balance_zion"] = bal.get("balance_zion") if isinstance(bal.get("balance_zion"), (int, float)) else flowers_to_zion(atomic)
                 w["balance_atomic"] = atomic
                 w["rpc_ok"] = True
@@ -5001,16 +5020,35 @@ def build_explorer() -> dict:
     try:
         for h in range(max(0, chain_height - 9), chain_height + 1):
             blk = rpc_call(rpc_host, rpc_port, "getBlockByHeight", {"height": h}, timeout=0.5)
-            if blk and not blk.get("_rpc_error"):
-                tx_ids = blk.get("transaction_ids", [])
-                transactions = blk.get("transactions", [])
-                recent_blocks.append({
-                    "height": h,
-                    "hash": blk.get("hash_hex", "")[:24] + "…",
-                    "timestamp": blk.get("timestamp", 0),
-                    "tx_count": len(tx_ids) if tx_ids else len(transactions),
-                    "difficulty": blk.get("difficulty", 0),
-                })
+            if not blk or blk.get("_rpc_error"):
+                continue
+            # V31 block: { "header": { "height", "timestamp", "difficulty", ... }, "transactions": [...] }
+            # V3 block: flat { "height", "timestamp", "difficulty", "hash_hex", "transaction_ids" / "transactions" }
+            header = blk.get("header", {}) if isinstance(blk, dict) else {}
+            transactions = blk.get("transactions", []) if isinstance(blk, dict) else []
+            tx_ids = blk.get("transaction_ids", []) if isinstance(blk, dict) else []
+            height = header.get("height") if isinstance(header, dict) else blk.get("height", h)
+            timestamp = header.get("timestamp") if isinstance(header, dict) else blk.get("timestamp", 0)
+            difficulty = header.get("difficulty") if isinstance(header, dict) else blk.get("difficulty", 0)
+            tx_count = len(tx_ids) if tx_ids else len(transactions)
+            hash_hex = blk.get("hash_hex")
+            if not hash_hex and isinstance(header, dict):
+                # Build a stable short hash from the V31 header if needed
+                prev = header.get("previous_hash")
+                if isinstance(prev, list) and prev:
+                    try:
+                        hash_hex = "".join(f"{b:02x}" for b in prev[:8]) + "…"
+                    except Exception:
+                        hash_hex = "—"
+                else:
+                    hash_hex = "—"
+            recent_blocks.append({
+                "height": height,
+                "hash": hash_hex[:24] + "…" if hash_hex and hash_hex != "—" else hash_hex,
+                "timestamp": timestamp,
+                "tx_count": tx_count,
+                "difficulty": difficulty,
+            })
     except Exception:
         pass
 
@@ -5357,16 +5395,29 @@ def get_edge_backup_path(filename: str) -> "Path | None":
         return local_cache if local_cache.exists() else None
 
 
+def _split_worker_username(username: str) -> tuple:
+    """Split 'wallet.worker' or 'wallet' into (miner_id, worker_name)."""
+    if not username:
+        return ("", "")
+    if "." in username:
+        wallet, worker = username.split(".", 1)
+        return (wallet, worker)
+    return (username, "default")
+
 def get_pool_miners() -> dict:
     """Fetch active miners from Edge pool /miners endpoint.
 
     Uses the JSON /miners endpoint as the primary source for per-miner data;
-    only extracts aggregate counters (active_sessions, miners_tracked) from
-    Prometheus metrics so the response is consistent and avoids parsing the
-    full metrics text for every field.
+    extracts aggregate counters (active_sessions, miners_tracked, shares) from
+    Prometheus metrics and enriches each miner with PPLNS state data when the
+    state file is available. V31 does not expose per-worker hashrate, so
+    hashrate is left at 0 and the UI treats that as "hashrate not reported".
     """
     active_sessions = 0
     miners_tracked = 0
+    shares_accepted = 0
+    shares_rejected = 0
+    total_shares = 0
     try:
         import urllib.request as _ur
         with _ur.urlopen(f"http://{EDGE_RPC_HOST}:{V31_POOL_API_PORT}/metrics", timeout=3.0) as r:
@@ -5379,31 +5430,95 @@ def get_pool_miners() -> dict:
                 elif line.startswith("zion_pool_pplns_registered_miners "):
                     if miners_tracked == 0:
                         miners_tracked = int(float(line.split()[-1]))
+                elif line.startswith("zion_pool_shares_accepted "):
+                    shares_accepted = int(float(line.split()[-1]))
+                    if total_shares == 0:
+                        total_shares = shares_accepted
+                elif line.startswith("zion_pool_shares_rejected "):
+                    shares_rejected = int(float(line.split()[-1]))
+                elif line.startswith("zion_pool_accepted_total "):
+                    if shares_accepted == 0:
+                        shares_accepted = int(float(line.split()[-1]))
+                        if total_shares == 0:
+                            total_shares = shares_accepted
     except Exception:
         pass
 
     try:
         miner_list = fetch_pool_miners()
     except Exception as e:
-        return {"ok": False, "miners": [], "active_sessions": active_sessions, "total_hashrate_khs": 0, "error": str(e)}
+        return {
+            "ok": False, "miners": [], "active_sessions": active_sessions,
+            "shares_accepted": shares_accepted, "shares_rejected": shares_rejected,
+            "total_shares": total_shares, "total_hashrate_khs": 0, "error": str(e),
+        }
+
+    # Load PPLNS state (best-effort) to enrich miners with shares/blocks/paid/unpaid
+    pplns_state = _fetch_pplns_state() or {}
+    pplns_shares = pplns_state.get("shares_per_miner", {}) or {}
+    pplns_last_share = pplns_state.get("last_share_time_per_miner", {}) or {}
+    pplns_paid = pplns_state.get("paid_per_miner", {}) or {}
+    pplns_unpaid = pplns_state.get("unpaid", {}) or {}
+    pplns_addresses = pplns_state.get("addresses", {}) or {}
 
     # Normalize raw /miners fields used by the dashboard
+    normalized = []
     for m in miner_list:
-        if not m.get("hashrate_hps") and m.get("hashrate"):
-            m["hashrate_hps"] = float(m["hashrate"])
-        if not m.get("miner_id") and m.get("address"):
-            m["miner_id"] = m["address"]
-        if not m.get("hashrate") and m.get("hashrate_hps"):
-            m["hashrate"] = float(m["hashrate_hps"])
+        worker = m.get("worker") or m.get("worker_name") or ""
+        address = m.get("address") or m.get("miner_id") or ""
+        if not address and worker:
+            address, _ = _split_worker_username(worker)
+        if not worker:
+            worker = m.get("miner_id") or ""
+        miner_id, worker_name = _split_worker_username(worker) if worker else (address, "default")
+        if not miner_id:
+            miner_id = address
 
-    total_hashrate_hps = sum(float(m.get("hashrate_hps") or m.get("hashrate") or 0) for m in miner_list)
+        # Prefer PPLNS stats keyed by wallet address
+        stats = pplns_shares.get(miner_id, {})
+        last_share = pplns_last_share.get(miner_id, 0)
+        paid_flowers = pplns_paid.get(miner_id, 0)
+        unpaid_flowers = pplns_unpaid.get(miner_id, 0)
+        if isinstance(paid_flowers, (int, float, str)):
+            try:
+                paid_flowers = int(paid_flowers)
+            except Exception:
+                paid_flowers = 0
+        if isinstance(unpaid_flowers, (int, float, str)):
+            try:
+                unpaid_flowers = int(unpaid_flowers)
+            except Exception:
+                unpaid_flowers = 0
+
+        enriched = {
+            "miner_id": miner_id,
+            "address": address or miner_id,
+            "worker_name": worker_name,
+            "worker": worker,
+            "valid_shares": int(stats.get("valid", 0)) if isinstance(stats, dict) else 0,
+            "invalid_shares": int(stats.get("invalid", 0)) if isinstance(stats, dict) else 0,
+            "blocks_found": int(stats.get("blocks", 0)) if isinstance(stats, dict) else 0,
+            "last_share_time": last_share,
+            "total_paid_flowers": paid_flowers,
+            "paid_total": flowers_to_zion(paid_flowers),
+            "unpaid_total": flowers_to_zion(unpaid_flowers),
+            "hashrate_hps": 0.0,
+        }
+        normalized.append(enriched)
+
+    # miners_tracked should reflect the actual number of registered workers returned
+    if not miners_tracked and normalized:
+        miners_tracked = len(normalized)
 
     return {
         "ok": True,
-        "miners": miner_list,
+        "miners": normalized,
         "active_sessions": active_sessions,
         "miners_tracked": miners_tracked,
-        "total_hashrate_khs": total_hashrate_hps / 1000.0,
+        "shares_accepted": shares_accepted,
+        "shares_rejected": shares_rejected,
+        "total_shares": total_shares,
+        "total_hashrate_khs": 0.0,
     }
 
 # ── Pool connection history (from Edge journald) ───────────────────────

@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <title>V31 Mainnet Alpha — Dashboard</title>
+<link rel="icon" type="image/x-icon" href="/v31/favicon.ico">
+<link rel="apple-touch-icon" href="/v31/symbol-200x200.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -51,17 +53,20 @@ body{font-family:'Inter',system-ui,sans-serif;background:
 <div class="max-w-7xl mx-auto">
   <!-- Header -->
   <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-    <div>
-      <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">
-        <span style="color:rgb(255 215 0)">V31</span> Mainnet Alpha
-        <span class="badge badge-purple ml-2">v3.1.0-alpha.2</span>
-      </h1>
-      <p class="text-sm text-gray-400 mt-1">
-        systemd <span class="font-mono text-cyan-300">zion-v31-node.service</span> ·
-        P2P <span class="font-mono text-cyan-300">8335</span> ·
-        RPC <span class="font-mono text-cyan-300">9445</span> ·
-        V3 sync <span style="color:rgb(34 197 94)">LIVE</span>
-      </p>
+    <div class="flex items-center gap-4">
+      <img src="/v31/symbol-200x200.png" alt="ZION" class="w-12 h-12 rounded-xl object-cover" style="background:rgba(13,17,30,0.8);">
+      <div>
+        <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">
+          <span style="color:rgb(255 215 0)">V31</span> Mainnet Alpha
+          <span class="badge badge-purple ml-2">v3.1.0-alpha.2</span>
+        </h1>
+        <p class="text-sm text-gray-400 mt-1">
+          systemd <span class="font-mono text-cyan-300">zion-v31-node.service</span> ·
+          P2P <span class="font-mono text-cyan-300">8335</span> ·
+          RPC <span class="font-mono text-cyan-300">9445</span> ·
+          V3 sync <span style="color:rgb(34 197 94)">LIVE</span>
+        </p>
+      </div>
     </div>
     <div class="flex gap-2">
       <a href="/legacy" class="btn btn-purple"><i class="fas fa-box-archive mr-2"></i>Legacy V3</a>
