@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'cs_CZ',
     siteName: 'ZION TerraNova',
-    images: [{ url: '/stargate-og.png', width: 1024, height: 1024, alt: 'ZION TerraNova — Stargate' }],
+    images: [{ url: '/zion-social-banner.png', width: 1200, height: 630, alt: 'ZION TerraNova' }],
   },
   twitter: {
     card: 'summary_large_image',
