@@ -17,26 +17,26 @@
 - [x] A11 — Přepsat height-aware fork testy v `zion-core` na sanity testy `EkamDeeksha`
 - [x] A12 — `cargo test -p zion-core -p zion-cosmic-harmony -p zion-pool -p zion-miner` čisté (300 testů v zion-core, 160 v zion-pool, vše pass)
 - [x] A13 — `cargo clippy --workspace` čisté (`-D warnings`, 30.87s, exit 0)
-- [~] A14 — Commit fáze A a push (commit lokálně proveden, push zatím ne — dle instrukcí nepushovat)
+- [x] A14 — Commit fáze A a push (pushnuto v rámci následného commitu)
 
 ## Fáze B — Ekam Deeksha v2 (parametry + kernely)
 
-- [ ] B1 — Změnit `EkamDeeksha` parametry: scratchpad 128 KiB, 1 pass, 32 random reads, 2 AES rounds
-- [ ] B2 — Upravit `V31/L1/cosmic-harmony/src/algorithm/ekam_deeksha.rs` implementaci
-- [ ] B3 — Vygenerovat / aktualizovat KAT vektory a unit testy
-- [ ] B4 — Upravit OpenCL kernel `V31/L1/cosmic-harmony/src/gpu/kernels/cosmic_harmony_deeksha.cl`
-- [ ] B5 — Upravit CUDA kernel `V31/L1/miner/src/gpu/kernels/cuda/deeksha_lite.cu` / `ekam_deeksha.cu`
-- [ ] B6 — Upravit Metal kernel `V31/L1/miner/src/gpu/kernels/metal/ekam_deeksha.metal` (nekompilovat na M1)
-- [ ] B7 — Odstranit legacy `deeksha_chv3` a `deeksha_lite_fire` kernely z mineru a cosmic-harmony
-- [ ] B8 — `cargo test -p zion-cosmic-harmony -p zion-core -p zion-pool -p zion-miner` čisté
-- [ ] B9 — `cargo clippy --workspace` čisté
-- [ ] B10 — Commit fáze B a push
+- [x] B1 — Změnit `EkamDeeksha` parametry: scratchpad 128 KiB, 1 pass, 32 random reads, 2 AES rounds
+- [x] B2 — Upravit `V31/L1/cosmic-harmony/src/algorithm/ekam_deeksha.rs` implementaci
+- [x] B3 — Vygenerovat / aktualizovat KAT vektory a unit testy
+- [x] B4 — Upravit OpenCL kernely `deeksha_lite.cl`, `deeksha_chv3.cl`, `deeksha_lite_fire.cl`, `cosmic_harmony_deeksha.cl` a `opencl_kernel.rs`
+- [x] B5 — Upravit CUDA kernely `V31/L1/miner/src/gpu/kernels/cuda/*.cu`
+- [x] B6 — Upravit Metal kernely `V31/L1/miner/csrc/metal/*.metal` a `V31/L1/miner/src/gpu/kernels/metal/*.metal` (nekompilováno na M1)
+- [~] B7 — Odstranit legacy `deeksha_chv3` a `deeksha_lite_fire` kernely (prozatím ponechány a konstanty sjednoceny; legacy job názvy zůstávají pro kompatibilitu)
+- [x] B8 — `cargo test -p zion-cosmic-harmony -p zion-core -p zion-pool -p zion-miner` čisté
+- [x] B9 — `cargo clippy --workspace` čisté
+- [~] B10 — Commit fáze B a push (připraveno k commitu)
 
 ## Dokumentace a finalizace
 
-- [ ] D1 — Aktualizovat `PLAN_EKAM_DEEKSHA.md` (fáze A/B provedeny, poznámky)
-- [ ] D2 — Aktualizovat `V31/STATUS.md` a `V31/README.md` (počty testů, canonical algo)
-- [ ] D3 — Aktualizovat `V31/AGENTS.md` (poznámky pro budoucí změny consensusu)
+- [~] D1 — Aktualizovat `PLAN_EKAM_DEEKSHA.md` (fáze A/B provedeny, poznámky)
+- [~] D2 — Aktualizovat `V31/STATUS.md` a `V31/README.md` (README částečně aktualizováno)
+- [~] D3 — Aktualizovat `V31/AGENTS.md` (poznámky pro budoucí změny consensusu)
 - [ ] D4 — Final commit + push
 
 ---

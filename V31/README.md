@@ -74,7 +74,7 @@ Pro plný Mainnet Alpha release použij `cargo build --release` — profil má `
 
 ## Aktuální highlighty
 
-- **Kanonický Ekam Deeksha PoW + stress testy** — `EkamDeeksha` z `zion-cosmic-harmony` je jediný PoW v `zion-core`, `zion-miner` a `zion-pool`; unit testy pokrývají mine/verify a nonce-search sweep 0–5500.
+- **Kanonický Ekam Deeksha PoW v2 + stress testy** — `EkamDeeksha` z `zion-cosmic-harmony` je jediný PoW v `zion-core`, `zion-miner` a `zion-pool` (128 KiB scratchpad, 1 pass, 32 random reads, 2 AES rounds); unit testy pokrývají mine/verify a nonce-search sweep 0–5500.
 - **L3–L6 cross-layer smoke** — `V31/smoke` crate prověřuje end-to-end tok: NCL compute job → AI-Native consciousness → Oasis bridge → Oasis player → Free World grant → Issobella proposal.
 - **Triple Stream mining** — kanonický ZION stream + AuxPoW GPU a CPU fallback přes `auxpow` feature.
 - **V3 checkpoint sync** — V3 stav slouží jako checkpoint pro V31, nikoliv jako genesis reset.

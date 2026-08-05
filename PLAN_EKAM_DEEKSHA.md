@@ -4,15 +4,13 @@
 
 ---
 
-## 1. Současný stav
+## 1. Současný stav (aktualizováno 2026-08-07)
 
-- `EkamDeeksha` v `V31/L1/cosmic-harmony/src/algorithm/ekam_deeksha.rs` je bit-identický s původním V3 `deeksha_lite_v1`.
-- `HeightAwareDeeksha` v `zion-core` dispatchuje podle výšky:
-  - `height < 4500` → `deeksha_lite` (== Ekam Deeksha)
-  - `4500 ≤ height < 5000` → `deeksha_chv3`
-  - `height ≥ 5000` → `deeksha_lite_fire`
-- `zion-core`, `zion-miner` i `zion-pool` používají `HeightAwareDeeksha`.
-- `zion-cosmic-harmony-v3` je v `zion-core` závislost jen kvůli těmto legacy algoritmům a jejich fork height konstantám (`CHV3_FORK_HEIGHT`, `FIRE_FORK_HEIGHT`).
+- **Fáze A hotovo:** `zion-core`, `zion-miner` a `zion-pool` používají přímo `EkamDeeksha` z `zion-cosmic-harmony`. `HeightAwareDeeksha` a height-aware fork gating byly odebrány z aktivní consensus/miner/pool cesty.
+- **Fáze B hotovo:** `EkamDeeksha` v2 používá parametry 128 KiB scratchpad, 1 forward pass, 32 random reads a 2 AES rounds (1 full + 1 final). KAT vektory byly přegenerovány.
+- **GPU synchronizace:** OpenCL/CUDA/Metal zdrojové kernely byly aktualizovány na stejné konstanty. CUDA a Metal nebyly lokálně kompilovány/testovány (M1, žádný CUDA).
+- `zion-cosmic-harmony-v3` zůstává v `zion-core` Cargo.toml pouze pro historickou V3 validaci (`v3_compat`, `v3_state`, …), nikoliv pro aktivní consensus.
+- Všechny CPU testy procházejí: `cargo test -p zion-cosmic-harmony -p zion-core -p zion-pool -p zion-miner`, `cargo clippy --workspace` je čisté.
 
 ---
 
