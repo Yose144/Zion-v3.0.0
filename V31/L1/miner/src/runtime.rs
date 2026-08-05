@@ -442,7 +442,9 @@ impl MinerRuntime {
                 #[cfg(feature = "auxpow")]
                 let mut pool_client: Option<crate::auxpow::StratumClient> = if use_pool {
                     let url = this.config.pool_url.clone().unwrap_or_default();
-                    let worker = this.config.worker.clone();
+                    // ZION pool expects username = WALLET.worker so it can map shares
+                    // to a payout address and worker telemetry.
+                    let worker = format!("{}.{}", this.config.reward_address.as_str(), this.config.worker);
                     let password = this.config.password.clone();
                     let client = crate::auxpow::StratumClient::new(&url, &worker, &password);
                     if let Err(e) = client.connect().await {
