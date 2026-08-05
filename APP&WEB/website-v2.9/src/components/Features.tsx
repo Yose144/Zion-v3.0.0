@@ -71,7 +71,7 @@ export default function Features() {
   ];
 
   return (
-    <section className="py-20 px-4">
+    <section className="py-10 px-4">
       <div className="zion-container space-y-12">
         <div className="flex flex-col lg:flex-row lg:items-end gap-6">
           <div className="flex-1">

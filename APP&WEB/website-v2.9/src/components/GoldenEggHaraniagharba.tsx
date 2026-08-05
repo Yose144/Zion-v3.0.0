@@ -22,7 +22,7 @@ export default function GoldenEggHaraniagharba() {
   const cs = lang === 'cs';
 
   return (
-    <section className="relative px-4 py-16 md:py-20">
+    <section className="relative px-4 py-10 md:py-12">
       <div className="zion-container space-y-8">
         <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
           <div className="space-y-3">

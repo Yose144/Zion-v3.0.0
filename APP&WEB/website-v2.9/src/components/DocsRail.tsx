@@ -49,7 +49,7 @@ export default function DocsRail() {
   ];
 
   return (
-    <section className="py-20 px-4">
+    <section className="py-10 px-4">
       <div className="zion-container space-y-10">
         <div className="flex flex-col md:flex-row md:items-end gap-4">
           <div className="flex-1">
