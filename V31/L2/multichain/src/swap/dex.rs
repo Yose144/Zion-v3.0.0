@@ -3,6 +3,11 @@
 //! The router operates over a constant-product AMM liquidity graph. Mainnet
 //! Alpha supports direct swaps; multi-hop quotes are computed over one
 //! intermediate pool when available.
+//!
+//! The `intent` submodule brings in intent-based settlement (ZionDex V3
+//! port) without disturbing the existing AMM code.
+
+pub mod intent;
 
 use num_bigint::BigUint;
 use num_traits::cast::ToPrimitive;

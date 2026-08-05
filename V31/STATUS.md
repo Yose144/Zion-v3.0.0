@@ -185,7 +185,8 @@ ZionDex ported do V31 multichain + dashboard metrics rozšířeny (Phase C2 + C8
 - ✅ `add_bridge_pool` — syntetické 1:1 pooly pro WARP bridge edges (cross-chain routing)
 - ✅ `service.dex_quote_multi` — async wrapper
 - ✅ `POST /v1/swap/quote/multi` — HTTP endpoint s `n` + `max_hops` parametry
-- ✅ 3 nové testy (562 multichain testů pass)
+- ✅ `swap/dex/intent.rs` — začátek intent layer (SwapIntent, SolverBid, PathHop, IntentStatus, IntentAuction) portovaný z archive/ZionDex/intent
+- ✅ 566 multichain testů pass (bylo 562)
 
 **Dashboard (Phase C8):**
 - ✅ Pool port fix: 8446 → 8444 (production stratum)
