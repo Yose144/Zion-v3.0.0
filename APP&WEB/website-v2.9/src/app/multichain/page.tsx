@@ -1,13 +1,11 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
   ArrowLeftRight,
   Globe2,
   Zap,
-  ArrowDownToLine,
   ExternalLink,
   Server,
   ShieldCheck,
@@ -19,9 +17,10 @@ import {
   Bitcoin,
   Coins,
   Droplets,
+  ArrowRight,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
-import { useState, useEffect, useCallback, type CSSProperties } from 'react';
+import { useState, useCallback, type CSSProperties } from 'react';
 import {
   getBridgeStatus,
   formatUptime,
@@ -32,19 +31,9 @@ import {
 import { usePolling } from '@/hooks/usePolling';
 import {
   getEscrowAddress,
-  getHtlcStatus,
   getPendingHtlcs,
   type HtlcRecord,
 } from '@/lib/swap-api';
-
-/* ── Dynamic widgets (SSR off) ── */
-const BridgeBurnWidget = dynamic(() => import('@/components/BridgeBurnWidget'));
-const CrossChainSwapWidget = dynamic(() => import('@/components/dex/CrossChainSwapWidget'));
-const LiFiWidget = dynamic(() => import('@/components/LiFiWidget'));
-const SwapWidget = dynamic(() => import('@/components/SwapWidget'));
-const ZionDexDashboard = dynamic(() => import('@/components/dex/ZionDexDashboard'));
-
-/* ── DAO stats inline (DAOStats component requires props) ── */
 import { getDAOStats, type DAOStats as DAOStatsType } from '@/lib/dao-api';
 
 /* ── Copy ── */
@@ -275,9 +264,20 @@ export default function MultichainPage() {
             </div>
           )}
 
-          {/* Bridge widget */}
+          {/* Bridge widget — link to /defi for full widget */}
           <div className="zion-rainbow-card p-5 sm:p-6" style={{ '--rc': '16, 185, 129' } as CSSProperties}>
-            <BridgeBurnWidget />
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-white">{cs ? 'Bridge operace' : 'Bridge operations'}</h3>
+                <p className="text-sm text-gray-400 mt-1">
+                  {cs ? 'Lock ZION na L1 → přijmi wZION na Base. Nebo spal wZION → přijmi ZION. 1:1 peg, žádné poplatky.' : 'Lock ZION on L1 → receive wZION on Base. Or burn wZION → receive ZION. 1:1 peg, no fees.'}
+                </p>
+              </div>
+              <Link href="/defi#bridge" className="zion-button-primary text-sm shrink-0">
+                <ArrowLeftRight className="h-4 w-4" />
+                {cs ? 'Otevřít' : 'Open'}
+              </Link>
+            </div>
           </div>
 
           {/* Contracts */}
@@ -328,7 +328,7 @@ export default function MultichainPage() {
             ))}
           </div>
 
-          {/* WARP status + LiFi widget */}
+          {/* WARP status + cross-chain swap link */}
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="zion-rainbow-card p-5" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
               <h3 className="text-lg font-semibold text-white mb-3">
@@ -337,7 +337,10 @@ export default function MultichainPage() {
               <p className="text-sm text-gray-400 mb-4">
                 {cs ? '30+ DEX, 20+ bridge protokolů. wZION na 6 chainech.' : '30+ DEX, 20+ bridge protocols. wZION on 6 chains.'}
               </p>
-              <LiFiWidget />
+              <Link href="/defi#swap" className="zion-button-primary text-sm">
+                <ArrowRight className="h-4 w-4" />
+                {cs ? 'Otevřít LiFi widget' : 'Open LiFi widget'}
+              </Link>
             </div>
             <div className="zion-rainbow-card p-5" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
               <h3 className="text-lg font-semibold text-white mb-3">
@@ -464,22 +467,44 @@ export default function MultichainPage() {
             </div>
           </div>
 
-          {/* DEX widgets */}
+          {/* DEX widgets — link to /defi for full widgets */}
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="zion-rainbow-card p-5" style={{ '--rc': '168, 85, 247' } as CSSProperties}>
-              <h3 className="text-lg font-semibold text-white mb-3">{cs ? 'Cross-chain swap' : 'Cross-chain swap'}</h3>
-              <CrossChainSwapWidget />
+              <h3 className="text-lg font-semibold text-white mb-2">{cs ? 'Cross-chain swap' : 'Cross-chain swap'}</h3>
+              <p className="text-sm text-gray-400 mb-4">
+                {cs ? 'ZionDex Router API. Multi-hop routing. Top-N quote paths.' : 'ZionDex Router API. Multi-hop routing. Top-N quote paths.'}
+              </p>
+              <Link href="/defi#swap" className="zion-button-primary text-sm">
+                <ArrowRight className="h-4 w-4" />
+                {cs ? 'Otevřít swap' : 'Open swap'}
+              </Link>
             </div>
             <div className="zion-rainbow-card p-5" style={{ '--rc': '168, 85, 247' } as CSSProperties}>
-              <h3 className="text-lg font-semibold text-white mb-3">{cs ? 'wZION / ETH na Base' : 'wZION / ETH on Base'}</h3>
-              <SwapWidget />
+              <h3 className="text-lg font-semibold text-white mb-2">{cs ? 'wZION / ETH na Base' : 'wZION / ETH on Base'}</h3>
+              <p className="text-sm text-gray-400 mb-4">
+                {cs ? 'Uniswap V3 pool. 0.3% fee. 1% slippage tolerance.' : 'Uniswap V3 pool. 0.3% fee. 1% slippage tolerance.'}
+              </p>
+              <Link href="/defi#swap" className="zion-button-primary text-sm">
+                <ArrowRight className="h-4 w-4" />
+                {cs ? 'Otevřít swap' : 'Open swap'}
+              </Link>
             </div>
           </div>
 
-          {/* ZionDex Dashboard */}
+          {/* ZionDex Dashboard link */}
           <div className="zion-rainbow-card p-5" style={{ '--rc': '168, 85, 247' } as CSSProperties}>
-            <h3 className="text-lg font-semibold text-white mb-4">ZionDex Dashboard</h3>
-            <ZionDexDashboard />
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-white">ZionDex Dashboard</h3>
+                <p className="text-sm text-gray-400 mt-1">
+                  {cs ? 'Plný dashboard: Swap, Liquidity, Portfolio, Bridge, Atomic.' : 'Full dashboard: Swap, Liquidity, Portfolio, Bridge, Atomic.'}
+                </p>
+              </div>
+              <Link href="/defi" className="zion-button-primary text-sm shrink-0">
+                <ArrowRight className="h-4 w-4" />
+                {cs ? 'Otevřít' : 'Open'}
+              </Link>
+            </div>
           </div>
         </section>
 
