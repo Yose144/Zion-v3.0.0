@@ -217,7 +217,7 @@ SERVICES=(
     zion-edge-bridge
     zion-edge-dao
     zion-edge-warp
-    zion-edge-watchdog
+    zion-v31-watchdog
     zion-edge-backup
     zion-edge-maintenance
     zion-edge-miner
@@ -326,7 +326,7 @@ ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-agent || 
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-dashboard zion-edge-dex zion-edge-python-dashboard || true"
 
 # Restart timers (will not start oneshot services, just activate timers)
-ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-watchdog.timer zion-edge-backup.timer zion-edge-maintenance.timer || true"
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-v31-watchdog.timer zion-edge-backup.timer zion-edge-maintenance.timer || true"
 
 # ── Step 9: Website already deployed via Docker in Step 6 ──
 log "Verifying website container..."

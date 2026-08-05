@@ -199,6 +199,12 @@ EDGE_SERVICE_ORDER = [
     "zion-edge-dashboard", "nginx",
 ]
 
+# Map logical dashboard service names to actual systemd units.
+# zion-v31-watchdog is a timer; its .service is oneshot and only active briefly.
+_EDGE_SYSTEMD_UNITS = {
+    "zion-v31-watchdog": "zion-v31-watchdog.timer",
+}
+
 # ── Basic Auth (HTTP 401) — multi-user ───────────────────────────────────
 # Supports multiple user accounts. Credentials are stored as SHA-256 hashes
 # for security. Plaintext passwords are NEVER stored on disk.
@@ -4916,7 +4922,7 @@ def get_edge_server_status() -> dict:
 
     try:
         # Single command: combine all metrics to avoid multiple calls
-        combined_cmd = "cat /proc/loadavg && free -m && df -h / | tail -1 && echo '===TOP===' && ps -eo rss,comm --sort=-rss | head -6 | tail -5 && echo '===SVC===' && systemctl is-active zion-v31-node zion-v31-pool zion-v31-miner zion-v31-multichain zion-v31-watchdog zion-v31-dao zion-v31-oasis zion-edge-python-dashboard zion-website zion-marketplace nginx 2>/dev/null"
+        combined_cmd = "cat /proc/loadavg && free -m && df -h / | tail -1 && echo '===TOP===' && ps -eo rss,comm --sort=-rss | head -6 | tail -5 && echo '===SVC===' && systemctl is-active zion-v31-node zion-v31-pool zion-v31-miner zion-v31-multichain zion-v31-watchdog.timer zion-v31-dao zion-v31-oasis zion-edge-python-dashboard zion-website zion-marketplace nginx 2>/dev/null"
         result = _run_edge_cmd(combined_cmd, timeout=8)
         if result.returncode != 0:
             return {"ok": False, "error": result.stderr.strip() or "Edge command failed"}
@@ -5083,7 +5089,7 @@ def run_edge_action(action: str) -> dict:
         "restart-website":        "sudo systemctl restart zion-website 2>&1",
         "clean-docker":           "docker builder prune -af 2>&1; docker image prune -af 2>&1; docker container prune -f 2>&1",
         "security-audit":         "echo 'Security audit placeholder — run manually'",
-        "full-health":            "sudo systemctl is-active zion-v31-node zion-v31-pool zion-v31-miner zion-v31-multichain zion-v31-watchdog zion-v31-dao zion-v31-oasis zion-website zion-marketplace nginx 2>&1",
+        "full-health":            "sudo systemctl is-active zion-v31-node zion-v31-pool zion-v31-miner zion-v31-multichain zion-v31-watchdog.timer zion-v31-dao zion-v31-oasis zion-website zion-marketplace nginx 2>&1",
         "memory-limit":           "echo 'Memory limits configured in systemd unit files'",
         # ── Edge maintenance (scripts/edge-maintenance.sh) ───────────────
         # Safe: never touches critical services (node/pool/bridge/dao/warp).
@@ -7170,8 +7176,9 @@ def get_servers_setup() -> dict:
     services = []
     for svc in zion_services:
         try:
+            unit = _EDGE_SYSTEMD_UNITS.get(svc, svc + ".service")
             r = subprocess.run(
-                ["systemctl", "is-active", svc + ".service"],
+                ["systemctl", "is-active", unit],
                 capture_output=True, text=True, timeout=5,
             )
             status = r.stdout.strip()
@@ -10114,7 +10121,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     })
             if TOPOLOGY == "edge-primary" and not procs:
                 for sid in EDGE_SERVICE_ORDER:
-                    unit = f"{sid}.service"
+                    unit = _EDGE_SYSTEMD_UNITS.get(sid, sid + ".service")
                     try:
                         state = subprocess.run(["systemctl", "is-active", unit], capture_output=True, text=True, timeout=3)
                         if state.stdout.strip() == "active":
