@@ -252,3 +252,13 @@ model Invoice {
   @@index([orderId])
   @@index([status])
 }
+
+model ShopSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@index([key])
+}

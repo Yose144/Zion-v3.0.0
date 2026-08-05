@@ -98,9 +98,7 @@ fn redirect_stdout_to_null() {
         SAVED_STDOUT_FD.store(saved, Ordering::SeqCst);
 
         // Open /dev/null for writing
-        let null_fd = unsafe {
-            open(b"/dev/null\0".as_ptr() as *const i8, O_WRONLY)
-        };
+        let null_fd = unsafe { open(b"/dev/null\0".as_ptr() as *const i8, O_WRONLY) };
         if null_fd >= 0 {
             // Redirect fd 1 (stdout) to /dev/null
             unsafe {
@@ -129,9 +127,7 @@ fn restore_stdout() {
 fn open_tty() {
     #[cfg(target_family = "unix")]
     {
-        let fd = unsafe {
-            open(b"/dev/tty\0".as_ptr() as *const i8, O_WRONLY)
-        };
+        let fd = unsafe { open(b"/dev/tty\0".as_ptr() as *const i8, O_WRONLY) };
         TTY_FD.store(fd, Ordering::SeqCst);
     }
 }
@@ -186,11 +182,11 @@ pub const ENTER_ALT_SCREEN: &str = "\x1B[?1049h";
 pub const EXIT_ALT_SCREEN: &str = "\x1B[?1049l";
 
 // Scroll region / cursor save-restore (DECSTBM + DECSC/DECRC)
-pub const SAVE_CURSOR: &str = "\x1B7";      // DECSC — save cursor + attributes
-pub const RESTORE_CURSOR: &str = "\x1B8";   // DECRC — restore cursor + attributes
+pub const SAVE_CURSOR: &str = "\x1B7"; // DECSC — save cursor + attributes
+pub const RESTORE_CURSOR: &str = "\x1B8"; // DECRC — restore cursor + attributes
 pub const CLEAR_SCREEN: &str = "\x1B[2J";
 pub const CLEAR_FROM_CURSOR: &str = "\x1B[J"; // clear from cursor to end of screen
-pub const HOME: &str = "\x1B[H";              // cursor to top-left
+pub const HOME: &str = "\x1B[H"; // cursor to top-left
 pub const RESET_SCROLL_REGION: &str = "\x1B[r"; // full screen scroll region
 
 /* ========================================================================= */
@@ -429,7 +425,10 @@ pub fn log_block_found(height: u64, nonce: u64, hash_prefix: &str) {
         .map(|v| v == "1" || v == "true")
         .unwrap_or(false)
     {
-        println!("[BLOCK FOUND] height={} nonce={} hash={}...", height, nonce, hash_prefix);
+        println!(
+            "[BLOCK FOUND] height={} nonce={} hash={}...",
+            height, nonce, hash_prefix
+        );
         return;
     }
 
@@ -775,15 +774,15 @@ pub fn print_speed_table(
 
 /// Per-stream data for the trinity stats display.
 pub struct StreamStats {
-    pub label: &'static str,      // "ZION", "GPU PROFIT", "CPU PROFIT"
-    pub coin: String,             // "ZION", "EPIC", "VRSC", etc.
-    pub algorithm: String,        // "deeksha_lite_v1", "progpow", "verushash"
+    pub label: &'static str, // "ZION", "GPU PROFIT", "CPU PROFIT"
+    pub coin: String,        // "ZION", "EPIC", "VRSC", etc.
+    pub algorithm: String,   // "deeksha_lite_v1", "progpow", "verushash"
     pub hashrate_10s: f64,
     pub hashrate_60s: f64,
     pub hashrate_15m: f64,
     pub accepted: u64,
     pub rejected: u64,
-    pub active: bool,             // is this stream currently mining?
+    pub active: bool, // is this stream currently mining?
 }
 
 /// Print a Claymore-style trinity stats block.
@@ -848,7 +847,11 @@ fn build_trinity_box(
     };
 
     // Sum active hashrates (10s window)
-    let total_hps: f64 = streams.iter().filter(|s| s.active).map(|s| s.hashrate_10s).sum();
+    let total_hps: f64 = streams
+        .iter()
+        .filter(|s| s.active)
+        .map(|s| s.hashrate_10s)
+        .sum();
     let (tv, tu) = fmt_hashrate(total_hps);
 
     let w = 73; // inner width
@@ -902,8 +905,7 @@ fn build_trinity_box(
                 || stream.algorithm.contains("kawpow")
             {
                 "SKIPPED (DAG-based on Metal)"
-            } else if stream.algorithm.contains("zelhash")
-                || stream.algorithm.contains("beamhash")
+            } else if stream.algorithm.contains("zelhash") || stream.algorithm.contains("beamhash")
             {
                 "SKIPPED (memory-hard on Metal)"
             } else {
@@ -954,7 +956,12 @@ fn build_trinity_box(
         s.push_str(RESET);
 
         // Mini bar chart (10 chars, based on 60s hashrate relative to max)
-        let bar_max = streams.iter().filter(|s2| s2.active).map(|s2| s2.hashrate_60s).fold(0.0f64, f64::max).max(1.0);
+        let bar_max = streams
+            .iter()
+            .filter(|s2| s2.active)
+            .map(|s2| s2.hashrate_60s)
+            .fold(0.0f64, f64::max)
+            .max(1.0);
         let bar_len = ((stream.hashrate_60s / bar_max) * 7.0).round() as usize;
         let bar_len = bar_len.min(7);
         s.push_str(DIM);
@@ -980,7 +987,18 @@ fn build_trinity_box(
         s.push_str(RESET);
 
         // Trailing space to fill
-        let used = 10 + 23 + 1 + 8 + 1 + 2 + 2 + 7 + 2 + stream.accepted.to_string().len() + 1 + stream.rejected.to_string().len();
+        let used = 10
+            + 23
+            + 1
+            + 8
+            + 1
+            + 2
+            + 2
+            + 7
+            + 2
+            + stream.accepted.to_string().len()
+            + 1
+            + stream.rejected.to_string().len();
         let pad = w.saturating_sub(used + 2);
         s.push_str(&" ".repeat(pad));
         s.push_str(" │\n");
@@ -1016,14 +1034,29 @@ fn build_trinity_box(
     s.push_str(DIM);
     s.push_str(" rejected  (");
     s.push_str(RESET);
-    s.push_str(if accept_pct >= 99.0 { GREEN } else if accept_pct >= 95.0 { YELLOW } else { RED });
+    s.push_str(if accept_pct >= 99.0 {
+        GREEN
+    } else if accept_pct >= 95.0 {
+        YELLOW
+    } else {
+        RED
+    });
     s.push_str(BOLD);
     s.push_str(&format!("{:.1}%", accept_pct));
     s.push_str(RESET);
     s.push_str(DIM);
     s.push_str(")");
     s.push_str(RESET);
-    let total_used = 8 + 8 + 1 + 2 + 4 + total_accepted.to_string().len() + 12 + total_rejected.to_string().len() + 13 + 4;
+    let total_used = 8
+        + 8
+        + 1
+        + 2
+        + 4
+        + total_accepted.to_string().len()
+        + 12
+        + total_rejected.to_string().len()
+        + 13
+        + 4;
     let total_pad = w.saturating_sub(total_used);
     s.push_str(&" ".repeat(total_pad));
     s.push_str(" │\n");
@@ -1042,7 +1075,15 @@ fn build_trinity_box(
     s.push_str("   latency ");
     s.push_str(RESET);
     s.push_str(&format!("{:.0}/{} ms", submit_avg_ms, submit_max_ms));
-    let pool_used = 6 + pool_addr.len() + 10 + pool_height.to_string().len() + 10 + format!("{:.0}", submit_avg_ms).len() + 1 + submit_max_ms.to_string().len() + 4;
+    let pool_used = 6
+        + pool_addr.len()
+        + 10
+        + pool_height.to_string().len()
+        + 10
+        + format!("{:.0}", submit_avg_ms).len()
+        + 1
+        + submit_max_ms.to_string().len()
+        + 4;
     let pool_pad = w.saturating_sub(pool_used);
     s.push_str(&" ".repeat(pool_pad));
     s.push_str(" │\n");
@@ -1067,7 +1108,10 @@ fn build_trinity_box(
             s.push_str(name);
             s.push_str(RESET);
             s.push_str(DIM);
-            let gpu_info = format!("  {}CU  {:.1}GiB  {}MHz  {}  {}", cu, vram_gb, clock, temp_str, power_str);
+            let gpu_info = format!(
+                "  {}CU  {:.1}GiB  {}MHz  {}  {}",
+                cu, vram_gb, clock, temp_str, power_str
+            );
             s.push_str(&gpu_info);
             s.push_str(RESET);
             let gpu_used = 7 + i.to_string().len() + name.len() + gpu_info.len();

@@ -205,10 +205,27 @@ pub fn classify_rule_based(input: &str) -> Intent {
     if matches_any(
         &lower,
         &[
-            "těž", "tez", "mine", "miner", "mining", "hashrate", "hash rate",
-            "algoritmus", "algorithm", "ekam", "fire", "deeksha lite",
-            "optimalizuj", "optimize", "benchmark", "těžba", "teztba",
-            "start mining", "stop mining", "gpu temp", "teplota",
+            "těž",
+            "tez",
+            "mine",
+            "miner",
+            "mining",
+            "hashrate",
+            "hash rate",
+            "algoritmus",
+            "algorithm",
+            "ekam",
+            "fire",
+            "deeksha lite",
+            "optimalizuj",
+            "optimize",
+            "benchmark",
+            "těžba",
+            "teztba",
+            "start mining",
+            "stop mining",
+            "gpu temp",
+            "teplota",
         ],
     ) {
         return Intent::MinerControl;
@@ -218,8 +235,15 @@ pub fn classify_rule_based(input: &str) -> Intent {
     if matches_any(
         &lower,
         &[
-            "bridge", "most", "validátor", "validator", "konsenzus", "consensus",
-            "cross-chain", "přes most", "bridge tx",
+            "bridge",
+            "most",
+            "validátor",
+            "validator",
+            "konsenzus",
+            "consensus",
+            "cross-chain",
+            "přes most",
+            "bridge tx",
         ],
     ) {
         return Intent::BridgeStatus;
@@ -229,8 +253,8 @@ pub fn classify_rule_based(input: &str) -> Intent {
     if matches_any(
         &lower,
         &[
-            "dao", "návrh", "proposal", "hlasuj", "vote", "voting",
-            "treasury", "pokladna", "tithe", "desátek", "guardian",
+            "dao", "návrh", "proposal", "hlasuj", "vote", "voting", "treasury", "pokladna",
+            "tithe", "desátek", "guardian",
         ],
     ) {
         return Intent::DaoGovernance;
@@ -240,8 +264,16 @@ pub fn classify_rule_based(input: &str) -> Intent {
     if matches_any(
         &lower,
         &[
-            "swap", "htlc", "atomic swap", "výměna", "vymena", "trh",
-            "likvidita", "liquidity", "rates", "kurz",
+            "swap",
+            "htlc",
+            "atomic swap",
+            "výměna",
+            "vymena",
+            "trh",
+            "likvidita",
+            "liquidity",
+            "rates",
+            "kurz",
         ],
     ) {
         return Intent::SwapOperation;
@@ -251,8 +283,14 @@ pub fn classify_rule_based(input: &str) -> Intent {
     if matches_any(
         &lower,
         &[
-            "warp", "ncl", "compute provider", "výpočet", "cross-chain route",
-            "routing", "7-chain", "sedm řetězců",
+            "warp",
+            "ncl",
+            "compute provider",
+            "výpočet",
+            "cross-chain route",
+            "routing",
+            "7-chain",
+            "sedm řetězců",
         ],
     ) {
         return Intent::L3Query;
@@ -262,10 +300,23 @@ pub fn classify_rule_based(input: &str) -> Intent {
     if matches_any(
         &lower,
         &[
-            "oasis", "oáza", "game", "hra", "npc",
-            "free world", "svobodný svět", "humanitarian", "humanitární",
-            "donation", "dar", "impact",
-            "issobella", "satellite", "satelit", "orbital", "data quality",
+            "oasis",
+            "oáza",
+            "game",
+            "hra",
+            "npc",
+            "free world",
+            "svobodný svět",
+            "humanitarian",
+            "humanitární",
+            "donation",
+            "dar",
+            "impact",
+            "issobella",
+            "satellite",
+            "satelit",
+            "orbital",
+            "data quality",
         ],
     ) {
         return Intent::L456Status;
@@ -275,10 +326,23 @@ pub fn classify_rule_based(input: &str) -> Intent {
     if matches_any(
         &lower,
         &[
-            "defi", "de-fi", "staking", "stake", "farm", "farming",
-            "apr", "apy", "tvl", "rewards", "reward",
-            "wzion", "w-zion", "base mainnet", "basescan",
-            "governance contract", "treasury contract",
+            "defi",
+            "de-fi",
+            "staking",
+            "stake",
+            "farm",
+            "farming",
+            "apr",
+            "apy",
+            "tvl",
+            "rewards",
+            "reward",
+            "wzion",
+            "w-zion",
+            "base mainnet",
+            "basescan",
+            "governance contract",
+            "treasury contract",
         ],
     ) {
         return Intent::DefiStatus;
@@ -288,11 +352,21 @@ pub fn classify_rule_based(input: &str) -> Intent {
     if matches_any(
         &lower,
         &[
-            "backup status", "stav zálohy", "stav zalohy",
-            "list backups", "seznam záloh", "seznam zaloh",
-            "last backup", "poslední záloha", "posledni zaloha",
-            "obnovit", "restore", "obnova",
-            "backups", "zálohy", "zalohy",  // plural = list
+            "backup status",
+            "stav zálohy",
+            "stav zalohy",
+            "list backups",
+            "seznam záloh",
+            "seznam zaloh",
+            "last backup",
+            "poslední záloha",
+            "posledni zaloha",
+            "obnovit",
+            "restore",
+            "obnova",
+            "backups",
+            "zálohy",
+            "zalohy", // plural = list
         ],
     ) {
         return Intent::BackupQuery;
@@ -302,10 +376,20 @@ pub fn classify_rule_based(input: &str) -> Intent {
     if matches_any(
         &lower,
         &[
-            "databáze", "databaze", "database", "db",
-            "tabulky", "tables", "table",
-            "inspect db", "prozkoumat db", "sql",
-            "schema", "rows", "řádky", "radky",
+            "databáze",
+            "databaze",
+            "database",
+            "db",
+            "tabulky",
+            "tables",
+            "table",
+            "inspect db",
+            "prozkoumat db",
+            "sql",
+            "schema",
+            "rows",
+            "řádky",
+            "radky",
         ],
     ) {
         return Intent::DatabaseInspect;
@@ -315,9 +399,15 @@ pub fn classify_rule_based(input: &str) -> Intent {
     if matches_any(
         &lower,
         &[
-            "watchdog", "auto-heal", "autoheal", "auto heal",
-            "alert history", "historie alertů", "historie alertu",
-            "timer status", "health check",
+            "watchdog",
+            "auto-heal",
+            "autoheal",
+            "auto heal",
+            "alert history",
+            "historie alertů",
+            "historie alertu",
+            "timer status",
+            "health check",
         ],
     ) {
         return Intent::WatchdogStatus;
@@ -327,11 +417,25 @@ pub fn classify_rule_based(input: &str) -> Intent {
     if matches_any(
         &lower,
         &[
-            "docker", "container", "kontejner", "restartuj", "restart",
-            "backup", "záloha", "zaloha", "zálohu", "zalohu", "zálohy", "zalohy",
-            "prometheus", "alert", "alertmanager",
-            "update", "aktualizuj",
-            "nginx", "reload",
+            "docker",
+            "container",
+            "kontejner",
+            "restartuj",
+            "restart",
+            "backup",
+            "záloha",
+            "zaloha",
+            "zálohu",
+            "zalohu",
+            "zálohy",
+            "zalohy",
+            "prometheus",
+            "alert",
+            "alertmanager",
+            "update",
+            "aktualizuj",
+            "nginx",
+            "reload",
         ],
     ) {
         return Intent::SystemOps;
@@ -341,8 +445,15 @@ pub fn classify_rule_based(input: &str) -> Intent {
     if matches_any(
         &lower,
         &[
-            "kolik mám", "balance", "zůstatek", "zustatek", "utxo",
-            "supply", "nabídka", "kolik zion", "account",
+            "kolik mám",
+            "balance",
+            "zůstatek",
+            "zustatek",
+            "utxo",
+            "supply",
+            "nabídka",
+            "kolik zion",
+            "account",
         ],
     ) {
         return Intent::WalletQuery;
@@ -352,9 +463,21 @@ pub fn classify_rule_based(input: &str) -> Intent {
     if matches_any(
         &lower,
         &[
-            "výška", "vyska", "height", "blok", "block",
-            "peer", "uzel", "node", "sync", "synchroniz",
-            "network info", "síť", "sit", "difficult", "obtížnost",
+            "výška",
+            "vyska",
+            "height",
+            "blok",
+            "block",
+            "peer",
+            "uzel",
+            "node",
+            "sync",
+            "synchroniz",
+            "network info",
+            "síť",
+            "sit",
+            "difficult",
+            "obtížnost",
         ],
     ) {
         return Intent::NodeInfo;
@@ -364,9 +487,21 @@ pub fn classify_rule_based(input: &str) -> Intent {
     if matches_any(
         &lower,
         &[
-            "zdravé", "zdrave", "health", "healthy", "ok", "status",
-            "vše", "vse", "everything", "all good", "funguje",
-            "je vše", "je vse", "stav", "state of",
+            "zdravé",
+            "zdrave",
+            "health",
+            "healthy",
+            "ok",
+            "status",
+            "vše",
+            "vse",
+            "everything",
+            "all good",
+            "funguje",
+            "je vše",
+            "je vse",
+            "stav",
+            "state of",
         ],
     ) {
         return Intent::SystemHealth;
@@ -449,17 +584,26 @@ mod tests {
 
     #[test]
     fn test_rule_miner_start() {
-        assert_eq!(classify("Začni těžit s optimálními nastaveními"), Intent::MinerControl);
+        assert_eq!(
+            classify("Začni těžit s optimálními nastaveními"),
+            Intent::MinerControl
+        );
     }
 
     #[test]
     fn test_rule_miner_english() {
-        assert_eq!(classify("start mining with fire algorithm"), Intent::MinerControl);
+        assert_eq!(
+            classify("start mining with fire algorithm"),
+            Intent::MinerControl
+        );
     }
 
     #[test]
     fn test_rule_miner_benchmark() {
-        assert_eq!(classify("proveď benchmark všech algoritmů"), Intent::MinerControl);
+        assert_eq!(
+            classify("proveď benchmark všech algoritmů"),
+            Intent::MinerControl
+        );
     }
 
     #[test]
@@ -517,7 +661,10 @@ mod tests {
 
     #[test]
     fn test_rule_bridge_validators() {
-        assert_eq!(classify("kolik validátorů je aktivních na bridge?"), Intent::BridgeStatus);
+        assert_eq!(
+            classify("kolik validátorů je aktivních na bridge?"),
+            Intent::BridgeStatus
+        );
     }
 
     #[test]
@@ -529,7 +676,10 @@ mod tests {
 
     #[test]
     fn test_rule_dao_proposals() {
-        assert_eq!(classify("jaké jsou aktivní DAO návrhy?"), Intent::DaoGovernance);
+        assert_eq!(
+            classify("jaké jsou aktivní DAO návrhy?"),
+            Intent::DaoGovernance
+        );
     }
 
     #[test]
@@ -575,7 +725,10 @@ mod tests {
 
     #[test]
     fn test_rule_l6_issobella() {
-        assert_eq!(classify("Issobella satellite link status"), Intent::L456Status);
+        assert_eq!(
+            classify("Issobella satellite link status"),
+            Intent::L456Status
+        );
     }
 
     // ── Rule-based: SystemOps ─────────────────────────────────────────────────
@@ -660,10 +813,22 @@ mod tests {
 
     #[test]
     fn test_parse_intent_name_variants() {
-        assert_eq!(parse_intent_name("SystemHealth"), Some(Intent::SystemHealth));
-        assert_eq!(parse_intent_name("system_health"), Some(Intent::SystemHealth));
-        assert_eq!(parse_intent_name("system health"), Some(Intent::SystemHealth));
-        assert_eq!(parse_intent_name("MinerControl"), Some(Intent::MinerControl));
+        assert_eq!(
+            parse_intent_name("SystemHealth"),
+            Some(Intent::SystemHealth)
+        );
+        assert_eq!(
+            parse_intent_name("system_health"),
+            Some(Intent::SystemHealth)
+        );
+        assert_eq!(
+            parse_intent_name("system health"),
+            Some(Intent::SystemHealth)
+        );
+        assert_eq!(
+            parse_intent_name("MinerControl"),
+            Some(Intent::MinerControl)
+        );
         assert_eq!(parse_intent_name("dao"), Some(Intent::DaoGovernance));
         assert_eq!(parse_intent_name("nonsense"), None);
     }
@@ -702,7 +867,10 @@ mod tests {
 
     #[test]
     fn test_rule_defi_staking() {
-        assert_eq!(classify("jaká je aktuální APR pro staking?"), Intent::DefiStatus);
+        assert_eq!(
+            classify("jaká je aktuální APR pro staking?"),
+            Intent::DefiStatus
+        );
     }
 
     #[test]
@@ -712,12 +880,18 @@ mod tests {
 
     #[test]
     fn test_rule_defi_wzion() {
-        assert_eq!(classify("what is the wZION contract address?"), Intent::DefiStatus);
+        assert_eq!(
+            classify("what is the wZION contract address?"),
+            Intent::DefiStatus
+        );
     }
 
     #[test]
     fn test_rule_defi_tvl() {
-        assert_eq!(classify("jaká je TVL v DeFi kontraktech?"), Intent::DefiStatus);
+        assert_eq!(
+            classify("jaká je TVL v DeFi kontraktech?"),
+            Intent::DefiStatus
+        );
     }
 
     // ── Rule-based: BackupQuery ───────────────────────────────────────────────
@@ -729,7 +903,10 @@ mod tests {
 
     #[test]
     fn test_rule_backup_list_czech() {
-        assert_eq!(classify("seznam záloh za poslední týden"), Intent::BackupQuery);
+        assert_eq!(
+            classify("seznam záloh za poslední týden"),
+            Intent::BackupQuery
+        );
     }
 
     #[test]
@@ -751,12 +928,18 @@ mod tests {
 
     #[test]
     fn test_rule_db_tables_czech() {
-        assert_eq!(classify("jaké tabulky jsou v databázi?"), Intent::DatabaseInspect);
+        assert_eq!(
+            classify("jaké tabulky jsou v databázi?"),
+            Intent::DatabaseInspect
+        );
     }
 
     #[test]
     fn test_rule_db_schema() {
-        assert_eq!(classify("show me the schema of the database"), Intent::DatabaseInspect);
+        assert_eq!(
+            classify("show me the schema of the database"),
+            Intent::DatabaseInspect
+        );
     }
 
     // ── Rule-based: WatchdogStatus ────────────────────────────────────────────
@@ -773,7 +956,10 @@ mod tests {
 
     #[test]
     fn test_rule_watchdog_alert_history() {
-        assert_eq!(classify("historie alertů za posledních 24h"), Intent::WatchdogStatus);
+        assert_eq!(
+            classify("historie alertů za posledních 24h"),
+            Intent::WatchdogStatus
+        );
     }
 
     // ── parse_intent_name: new intents ────────────────────────────────────────
@@ -785,10 +971,22 @@ mod tests {
         assert_eq!(parse_intent_name("defi"), Some(Intent::DefiStatus));
         assert_eq!(parse_intent_name("BackupQuery"), Some(Intent::BackupQuery));
         assert_eq!(parse_intent_name("backup_query"), Some(Intent::BackupQuery));
-        assert_eq!(parse_intent_name("DatabaseInspect"), Some(Intent::DatabaseInspect));
-        assert_eq!(parse_intent_name("database_inspect"), Some(Intent::DatabaseInspect));
-        assert_eq!(parse_intent_name("WatchdogStatus"), Some(Intent::WatchdogStatus));
-        assert_eq!(parse_intent_name("watchdog_status"), Some(Intent::WatchdogStatus));
+        assert_eq!(
+            parse_intent_name("DatabaseInspect"),
+            Some(Intent::DatabaseInspect)
+        );
+        assert_eq!(
+            parse_intent_name("database_inspect"),
+            Some(Intent::DatabaseInspect)
+        );
+        assert_eq!(
+            parse_intent_name("WatchdogStatus"),
+            Some(Intent::WatchdogStatus)
+        );
+        assert_eq!(
+            parse_intent_name("watchdog_status"),
+            Some(Intent::WatchdogStatus)
+        );
         assert_eq!(parse_intent_name("watchdog"), Some(Intent::WatchdogStatus));
     }
 }

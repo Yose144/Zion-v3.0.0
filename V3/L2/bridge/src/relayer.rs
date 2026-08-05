@@ -9,8 +9,8 @@ use crate::db::BridgeDb;
 use crate::evm_rpc::EvmHttpClient;
 use crate::evm_tx::{
     build_and_sign_eip1559_tx, derive_evm_address, encode_confirm_burn_release,
-    encode_execute_timelocked_mint, encode_get_burn_release_status,
-    encode_get_lock_proof_status, encode_submit_lock_proof, hash_to_bytes32,
+    encode_execute_timelocked_mint, encode_get_burn_release_status, encode_get_lock_proof_status,
+    encode_submit_lock_proof, hash_to_bytes32,
 };
 use crate::metrics::BridgeMetrics;
 use crate::rate_limiter::{RateLimitResult, RateLimiter};
@@ -300,7 +300,13 @@ impl Relayer {
         // ── Check on-chain status before spending gas ─────────────────
         let rpc_url = chain_config.effective_rpc_url(&self.config.ankr);
         let evm = EvmHttpClient::from_rpc_url(&rpc_url);
-        if is_lock_executed(&evm, &chain_config.bridge_contract_address, &lock.l1_tx_hash).await {
+        if is_lock_executed(
+            &evm,
+            &chain_config.bridge_contract_address,
+            &lock.l1_tx_hash,
+        )
+        .await
+        {
             info!(
                 "   🟡 Lock {} already executed on-chain (mint already performed) — marking Completed",
                 lock.l1_tx_hash
@@ -936,9 +942,7 @@ impl Relayer {
                     .db
                     .update_burn_status(&burn.burn_id, BridgeStatus::Failed);
             }
-            self.metrics
-                .errors
-                .fetch_add(1, Ordering::Relaxed);
+            self.metrics.errors.fetch_add(1, Ordering::Relaxed);
             return Err(anyhow::anyhow!("{}", err_msg));
         }
 

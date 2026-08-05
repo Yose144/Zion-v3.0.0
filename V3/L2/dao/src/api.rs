@@ -320,7 +320,10 @@ async fn create_proposal(
         })?;
 
     // Validate election-specific fields
-    if let ProposalType::ParliamentaryElection { ref parties, seats, .. } = proposal_type {
+    if let ProposalType::ParliamentaryElection {
+        ref parties, seats, ..
+    } = proposal_type
+    {
         if parties.is_empty() {
             return Err(err(
                 "ParliamentaryElection requires at least one party",
@@ -407,7 +410,9 @@ async fn get_votes(
         serde_json::from_str(&row.election_tallies).unwrap_or_default();
 
     let (seats, allocated_seats) = match proposal_type {
-        ProposalType::ParliamentaryElection { ref parties, seats, .. } => {
+        ProposalType::ParliamentaryElection {
+            ref parties, seats, ..
+        } => {
             let allocated = allocate_seats_dhondt(parties, seats, &election_tallies_json);
             (seats, allocated)
         }
@@ -489,8 +494,12 @@ async fn cast_vote(
             ));
         }
         Ok(Some(ref p)) => {
-            serde_json::from_str::<ProposalType>(&p.proposal_type_json)
-                .map_err(|e| err(format!("Invalid stored proposal_type: {}", e), StatusCode::INTERNAL_SERVER_ERROR))?
+            serde_json::from_str::<ProposalType>(&p.proposal_type_json).map_err(|e| {
+                err(
+                    format!("Invalid stored proposal_type: {}", e),
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                )
+            })?
         }
         Err(e) => return Err(err(e.to_string(), StatusCode::INTERNAL_SERVER_ERROR)),
     };
@@ -503,7 +512,11 @@ async fn cast_vote(
                 VoteChoice::Abstain
             } else {
                 return Err(err(
-                    format!("Invalid choice '{}'. Valid parties: {}", req.choice, parties.join(", ")),
+                    format!(
+                        "Invalid choice '{}'. Valid parties: {}",
+                        req.choice,
+                        parties.join(", ")
+                    ),
                     StatusCode::BAD_REQUEST,
                 ));
             }

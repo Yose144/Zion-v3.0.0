@@ -119,10 +119,7 @@ pub fn detect_backend(_work_size: usize) -> Result<Box<dyn GpuBackend>> {
     {
         match crate::gpu_cuda::CudaBackend::new(_work_size) {
             Ok(backend) => {
-                println!(
-                    "gpu_backend: using CUDA device: {}",
-                    backend.device_name()
-                );
+                println!("gpu_backend: using CUDA device: {}", backend.device_name());
                 return Ok(Box::new(backend));
             }
             Err(e) => {
@@ -136,10 +133,7 @@ pub fn detect_backend(_work_size: usize) -> Result<Box<dyn GpuBackend>> {
     {
         match crate::gpu_metal::MetalBackend::new(_work_size) {
             Ok(backend) => {
-                println!(
-                    "gpu_backend: using Metal device: {}",
-                    backend.device_name()
-                );
+                println!("gpu_backend: using Metal device: {}", backend.device_name());
                 return Ok(Box::new(backend));
             }
             Err(e) => {
@@ -315,7 +309,9 @@ pub(crate) fn gen_autolykos_element(i: u64, seed: &[u8; 32], height: u32) -> u64
     hasher.update(&i.to_be_bytes());
     hasher.update(&height.to_be_bytes());
     let mut out = [0u8; 32];
-    hasher.finalize_variable(&mut out).expect("blake2b256 finalize");
+    hasher
+        .finalize_variable(&mut out)
+        .expect("blake2b256 finalize");
     u64::from_be_bytes(out[0..8].try_into().unwrap())
 }
 

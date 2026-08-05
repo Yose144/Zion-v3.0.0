@@ -324,7 +324,10 @@ pub fn execute_proposal(
                 .join(", ");
             format!(
                 "Parliamentary election '{}' concluded for {} seats ({} allocated). Results: {}",
-                title, seats, total_allocated, if table.is_empty() { "no votes" } else { &table }
+                title,
+                seats,
+                total_allocated,
+                if table.is_empty() { "no votes" } else { &table }
             )
         }
     };

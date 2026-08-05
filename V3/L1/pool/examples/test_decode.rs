@@ -4,7 +4,10 @@ fn main() {
     match result {
         Ok(msg) => {
             println!("OK: decoded successfully");
-            if let zion_pool::PoolMessage::Job { external_stream, .. } = &msg {
+            if let zion_pool::PoolMessage::Job {
+                external_stream, ..
+            } = &msg
+            {
                 if let Some(ext) = external_stream {
                     println!("external_stream: coin={} algo={}", ext.coin, ext.algorithm);
                 }

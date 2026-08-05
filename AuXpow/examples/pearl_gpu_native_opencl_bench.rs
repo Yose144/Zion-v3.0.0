@@ -49,7 +49,10 @@ fn main() {
     for i in 0..30u64 {
         let native_input = PearlPouwNativeInput {
             nonce: i,
-            m, n, k, rank,
+            m,
+            n,
+            k,
+            rank,
             job_key,
             target: difficulty_bound,
             row_offsets: &row_offsets,
@@ -70,7 +73,11 @@ fn main() {
         }
     }
     let avg_gpu_raw = total_gpu_raw / 20.0;
-    println!("GPU-only avg (steady): {:.2} ms/nonce ({:.1} nonces/s)", avg_gpu_raw, 1000.0 / avg_gpu_raw);
+    println!(
+        "GPU-only avg (steady): {:.2} ms/nonce ({:.1} nonces/s)",
+        avg_gpu_raw,
+        1000.0 / avg_gpu_raw
+    );
     println!();
 
     // ── Batched persistent mining (multiple nonces per mining kernel launch) ──
@@ -83,7 +90,10 @@ fn main() {
         for batch_i in 0..10u32 {
             let native_input = PearlPouwNativeInput {
                 nonce: nonce_ctr,
-                m, n, k, rank,
+                m,
+                n,
+                k,
+                rank,
                 job_key,
                 target: difficulty_bound,
                 row_offsets: &row_offsets,
@@ -101,11 +111,18 @@ fn main() {
                 total_batch += per_nonce;
                 batch_count += 1;
             }
-            println!("  batch {}: {:.2} ms total ({:.2} ms/nonce)", batch_i, ms, per_nonce);
+            println!(
+                "  batch {}: {:.2} ms total ({:.2} ms/nonce)",
+                batch_i, ms, per_nonce
+            );
             nonce_ctr += bs as u64;
         }
         let avg_batch = total_batch / batch_count as f64;
-        println!("Batched avg (steady): {:.2} ms/nonce ({:.1} nonces/s)\n", avg_batch, 1000.0 / avg_batch);
+        println!(
+            "Batched avg (steady): {:.2} ms/nonce ({:.1} nonces/s)\n",
+            avg_batch,
+            1000.0 / avg_batch
+        );
     }
 
     // ── Full E2E (GPU + CPU proof construction) ──
@@ -114,7 +131,15 @@ fn main() {
     for i in 0..30u64 {
         let t = Instant::now();
         let _ = try_mine_one_gpu_native_opencl(
-            i, m, n, k, rank, &header, &config, &difficulty_bound, &mut gpu,
+            i,
+            m,
+            n,
+            k,
+            rank,
+            &header,
+            &config,
+            &difficulty_bound,
+            &mut gpu,
         );
         let ms = t.elapsed().as_secs_f64() * 1000.0;
         if i >= 10 {
@@ -125,7 +150,11 @@ fn main() {
         }
     }
     let avg_native = total_native / 20.0;
-    println!("E2E avg (steady): {:.2} ms/nonce ({:.1} nonces/s)", avg_native, 1000.0 / avg_native);
+    println!(
+        "E2E avg (steady): {:.2} ms/nonce ({:.1} nonces/s)",
+        avg_native,
+        1000.0 / avg_native
+    );
     println!();
 
     // ── CPU-only baseline ──
@@ -143,14 +172,30 @@ fn main() {
         }
     }
     let avg_cpu = total_cpu / 20.0;
-    println!("CPU avg (steady): {:.2} ms/nonce ({:.1} nonces/s)", avg_cpu, 1000.0 / avg_cpu);
+    println!(
+        "CPU avg (steady): {:.2} ms/nonce ({:.1} nonces/s)",
+        avg_cpu,
+        1000.0 / avg_cpu
+    );
     println!();
 
     // ── Results ──
     println!("=== Results ===");
-    println!("CPU-only:          {:.2} ms ({:.1} nonces/s)", avg_cpu, 1000.0 / avg_cpu);
-    println!("GPU-only raw:      {:.2} ms ({:.1} nonces/s)", avg_gpu_raw, 1000.0 / avg_gpu_raw);
-    println!("E2E (GPU+CPU proof): {:.2} ms ({:.1} nonces/s)", avg_native, 1000.0 / avg_native);
+    println!(
+        "CPU-only:          {:.2} ms ({:.1} nonces/s)",
+        avg_cpu,
+        1000.0 / avg_cpu
+    );
+    println!(
+        "GPU-only raw:      {:.2} ms ({:.1} nonces/s)",
+        avg_gpu_raw,
+        1000.0 / avg_gpu_raw
+    );
+    println!(
+        "E2E (GPU+CPU proof): {:.2} ms ({:.1} nonces/s)",
+        avg_native,
+        1000.0 / avg_native
+    );
     if avg_gpu_raw > 0.0 {
         println!("Speedup (GPU-only vs CPU): {:.1}x", avg_cpu / avg_gpu_raw);
     }

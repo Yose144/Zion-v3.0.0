@@ -65,7 +65,8 @@ fn main() {
         // NOTE: Must be called BEFORE compile() — flags added after compile()
         // have no effect (cc::Build::compile consumes the builder).
         {
-            let cpu_target = std::env::var("ZION_CPU_TARGET").unwrap_or_else(|_| "x86-64".to_string());
+            let cpu_target =
+                std::env::var("ZION_CPU_TARGET").unwrap_or_else(|_| "x86-64".to_string());
             if cpu_target == "native" {
                 build.flag_if_supported("-march=native");
             } else if !cpu_target.is_empty() {

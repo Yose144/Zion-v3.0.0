@@ -15,14 +15,14 @@ pub mod beamhash;
 pub mod dual_stratum;
 pub mod external_hashers;
 pub mod gpu_backend;
-#[cfg(feature = "gpu-opencl")]
-pub mod gpu_miner;
-#[cfg(feature = "gpu-opencl")]
-pub mod gpu_opencl;
 #[cfg(feature = "gpu-cuda")]
 pub mod gpu_cuda;
 #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
 pub mod gpu_metal;
+#[cfg(feature = "gpu-opencl")]
+pub mod gpu_miner;
+#[cfg(feature = "gpu-opencl")]
+pub mod gpu_opencl;
 #[cfg(feature = "native-hashers")]
 pub mod native_ffi;
 #[cfg(feature = "native-hashers")]
@@ -39,31 +39,31 @@ pub mod types;
 
 pub use auxpow_client::{AuxPowClient, ExternalJob, ShareResult, StratumProtocol};
 pub use auxpow_scheduler::{AuxPowScheduler, SchedulerConfig};
+pub use beamhash::{hash_beamhash, is_valid_solution as is_valid_beamhash_solution};
 pub use dual_stratum::{
     AssignmentCounts, DualStratumJob, DualStratumMiner, FoundExternalShare, ShareDisposition,
     WorkPackage,
 };
-pub use external_hashers::{
-    hash_autolykos, hash_blake3, hash_blake3_alph, hash_ethash, hash_ethash_with_dag, hash_etchash,
-    hash_kawpow, hash_keryxhash, hash_keryxhash_extranonce, hash_kheavyhash, hash_verushash,
-    hash_verushash_header, hash_zelhash, is_valid_autolykos_solution, is_valid_zelhash_solution,
-    kheavyhash_matrix_flat,
-    mine_ethash, mine_zelhash, ExternalAlgorithm, KERYX_MATRIX_SALT_V1, KERYX_MATRIX_SALT_V2,
-    KERYX_MATRIX_SALT_V4, KERYX_SALT_V2_ACTIVATION_DAA, KERYX_SALT_V4_ACTIVATION_DAA,
-    generate_keryx_matrix, keryx_active_salt, keryx_active_salt_version,
-};
-pub use beamhash::{hash_beamhash, is_valid_solution as is_valid_beamhash_solution};
 #[cfg(any(feature = "native-hashers", feature = "native-verushash"))]
 pub use external_hashers::init_verushash;
+pub use external_hashers::{
+    generate_keryx_matrix, hash_autolykos, hash_blake3, hash_blake3_alph, hash_etchash,
+    hash_ethash, hash_ethash_with_dag, hash_kawpow, hash_keryxhash, hash_keryxhash_extranonce,
+    hash_kheavyhash, hash_verushash, hash_verushash_header, hash_zelhash,
+    is_valid_autolykos_solution, is_valid_zelhash_solution, keryx_active_salt,
+    keryx_active_salt_version, kheavyhash_matrix_flat, mine_ethash, mine_zelhash,
+    ExternalAlgorithm, KERYX_MATRIX_SALT_V1, KERYX_MATRIX_SALT_V2, KERYX_MATRIX_SALT_V4,
+    KERYX_SALT_V2_ACTIVATION_DAA, KERYX_SALT_V4_ACTIVATION_DAA,
+};
+#[cfg(all(feature = "gpu-opencl", feature = "native-hashers"))]
+pub use gpu_miner::DagManager;
+pub use miner_harness::{mine, mine_best, FoundShare};
+pub use multiplexer::JobMultiplexer;
 pub use parent_chains::{
     AlphHeader, CoinbaseCommitment, DcrHeader, AUXPOW_COINBASE_MAGIC, AUXPOW_COMMITMENT_LEN,
     DCR_HEADER_SIZE,
 };
-pub use miner_harness::{mine, mine_best, FoundShare};
-pub use multiplexer::JobMultiplexer;
 pub use share_forwarder::ShareForwarder;
-#[cfg(all(feature = "gpu-opencl", feature = "native-hashers"))]
-pub use gpu_miner::DagManager;
 pub use true_auxpow::{
     validate_auxpow, validate_auxpow_full, AuxPowData, AuxPowFullValidation, AuxPowProofBuilder,
     AuxPowValidation, ParentAlgorithm, ParentHeader,
@@ -82,7 +82,6 @@ pub use types::{
 /// Call this at the very start of `main()` in binaries that use AuxPow
 /// with EpicStratum (TLS) protocol.
 pub fn install_rustls_crypto_provider() {
-    let result = tokio_rustls::rustls::crypto::ring::default_provider()
-        .install_default();
+    let result = tokio_rustls::rustls::crypto::ring::default_provider().install_default();
     eprintln!("install_rustls_crypto_provider: result={:?}", result);
 }

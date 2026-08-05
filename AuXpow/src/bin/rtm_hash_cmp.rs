@@ -3,12 +3,11 @@
 //
 // Usage: cargo run --features gpu-opencl --bin rtm_hash_cmp
 
-use zion_auxpow::gpu_miner::GpuMiner;
 use zion_auxpow::gpu_backend::GpuBackend;
+use zion_auxpow::gpu_miner::GpuMiner;
 
 const ALGO_NAMES: [&str; 15] = [
-    "BLAKE", "BMW", "GROESTL", "JH", "KECCAK",
-    "SKEIN", "LUFFA", "CUBEHASH", "SHAVITE", "SIMD",
+    "BLAKE", "BMW", "GROESTL", "JH", "KECCAK", "SKEIN", "LUFFA", "CUBEHASH", "SHAVITE", "SIMD",
     "ECHO", "HAMSI", "FUGUE", "SHABAL", "WHIRL",
 ];
 

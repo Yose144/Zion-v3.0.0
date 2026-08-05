@@ -27,10 +27,7 @@ fn main() {
 fn main() -> anyhow::Result<()> {
     use std::fs;
     let args: Vec<String> = std::env::args().collect();
-    let epoch: u32 = args
-        .get(1)
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(120);
+    let epoch: u32 = args.get(1).and_then(|s| s.parse().ok()).unwrap_or(120);
     let out_path = args
         .get(2)
         .cloned()

@@ -10,8 +10,8 @@ use clap_complete::Shell;
 #[cfg(feature = "admin")]
 use commands::deploy;
 use commands::{
-    agent, atomic_swap, auxpow, bridge, compose, dao, free_world, hiran, issobella, mine, ncl, node,
-    pool, swap, topology, wallet, warp,
+    agent, atomic_swap, auxpow, bridge, compose, dao, free_world, hiran, issobella, mine, ncl,
+    node, pool, swap, topology, wallet, warp,
 };
 
 #[derive(Parser)]

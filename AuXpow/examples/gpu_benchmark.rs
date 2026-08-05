@@ -63,10 +63,13 @@ fn main() {
         // ("ethash", "Ethereum Classic (ETC)"),
         // ("kawpow", "Ravencoin (RVN)"),
         // ("progpow", "Epic Cash (EPIC)"),
-        ("pearlhash", "Pearl (PRL) — PoUW"),  // No DAG — BLAKE3 placeholder
+        ("pearlhash", "Pearl (PRL) — PoUW"), // No DAG — BLAKE3 placeholder
     ];
 
-    println!("{:<20} {:<25} {:>15} {:>15}", "Algorithm", "Coin", "Hashrate (H/s)", "Total Hashes");
+    println!(
+        "{:<20} {:<25} {:>15} {:>15}",
+        "Algorithm", "Coin", "Hashrate (H/s)", "Total Hashes"
+    );
     println!("{}", "-".repeat(80));
 
     for (algo, coin) in &algorithms {
@@ -79,10 +82,7 @@ fn main() {
                 );
             }
             Err(e) => {
-                println!(
-                    "{:<20} {:<25} {:>15} {:>15}",
-                    algo, coin, "ERROR", e
-                );
+                println!("{:<20} {:<25} {:>15} {:>15}", algo, coin, "ERROR", e);
             }
         }
     }
@@ -160,9 +160,9 @@ fn pearl_pouw_benchmark() {
     use std::time::{Duration, Instant};
     use zion_auxpow::gpu_metal::{MetalBackend, PearlPouwGpuInput};
     use zion_auxpow::pearl_pouw::{
-        compute_commitment_hash, compute_noise_for_indices, compute_job_key,
-        flatten_matrix, pad_to_chunk_boundary, IncompleteBlockHeader,
-        MiningConfiguration, SimpleRng, SIGNAL_MIN, SIGNAL_MAX,
+        compute_commitment_hash, compute_job_key, compute_noise_for_indices, flatten_matrix,
+        pad_to_chunk_boundary, IncompleteBlockHeader, MiningConfiguration, SimpleRng, SIGNAL_MAX,
+        SIGNAL_MIN,
     };
 
     println!("=== Pearl PoUW MatMul Benchmark ===\n");
@@ -206,21 +206,40 @@ fn pearl_pouw_benchmark() {
     let job_key = compute_job_key(&header, &config);
     let a_row_major = pad_to_chunk_boundary(&flatten_matrix(&a_matrix));
     let b_col_major = pad_to_chunk_boundary(&flatten_matrix(&b_transposed));
-    let (b_noise_seed, a_noise_seed) = compute_commitment_hash(&job_key, &a_row_major, &b_col_major);
+    let (b_noise_seed, a_noise_seed) =
+        compute_commitment_hash(&job_key, &a_row_major, &b_col_major);
 
     let a_all_rows: Vec<usize> = (0..m).collect();
     let b_all_cols: Vec<usize> = (0..n).collect();
-    let noise = compute_noise_for_indices(k, rank, (b_noise_seed, a_noise_seed), &a_all_rows, &b_all_cols);
+    let noise = compute_noise_for_indices(
+        k,
+        rank,
+        (b_noise_seed, a_noise_seed),
+        &a_all_rows,
+        &b_all_cols,
+    );
 
     let a_noised: Vec<Vec<i32>> = a_matrix
         .iter()
         .zip(&noise.a)
-        .map(|(a_row, n_row)| a_row.iter().zip(n_row).map(|(&a, &n)| a as i32 + n as i32).collect())
+        .map(|(a_row, n_row)| {
+            a_row
+                .iter()
+                .zip(n_row)
+                .map(|(&a, &n)| a as i32 + n as i32)
+                .collect()
+        })
         .collect();
     let b_noised_t: Vec<Vec<i32>> = b_transposed
         .iter()
         .zip(&noise.b)
-        .map(|(bt_row, n_row)| bt_row.iter().zip(n_row).map(|(&b, &n)| b as i32 + n as i32).collect())
+        .map(|(bt_row, n_row)| {
+            bt_row
+                .iter()
+                .zip(n_row)
+                .map(|(&b, &n)| b as i32 + n as i32)
+                .collect()
+        })
         .collect();
 
     let a_flat: Vec<i32> = a_noised.iter().flat_map(|r| r.iter().copied()).collect();
@@ -271,8 +290,13 @@ fn pearl_pouw_benchmark() {
     let total_tiles = dispatches * 4096;
     let tiles_per_sec = total_tiles as f64 / elapsed;
 
-    println!("  Pearl PoUW: {dispatches} dispatches × 4096 tiles = {total_tiles} tiles in {elapsed:.2}s");
+    println!(
+        "  Pearl PoUW: {dispatches} dispatches × 4096 tiles = {total_tiles} tiles in {elapsed:.2}s"
+    );
     println!("  Throughput: {tiles_per_sec:.0} tiles/s");
-    println!("  Per-dispatch: {:.2}ms", elapsed * 1000.0 / dispatches as f64);
+    println!(
+        "  Per-dispatch: {:.2}ms",
+        elapsed * 1000.0 / dispatches as f64
+    );
     println!();
 }

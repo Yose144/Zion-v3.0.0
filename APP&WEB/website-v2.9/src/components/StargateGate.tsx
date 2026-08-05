@@ -240,8 +240,10 @@ export default function StargateGate() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 1.4 }}
       >
-        <Link
-          href="/l4-oasis"
+        <a
+          href="https://oasis.zionterranova.com"
+          target="_blank"
+          rel="noopener noreferrer"
           className="group flex items-center gap-3 rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/8 via-teal-500/4 to-transparent px-6 py-3 backdrop-blur-sm transition-all duration-300 hover:border-emerald-400/40 hover:shadow-[0_0_36px_rgba(16,185,129,0.15)] hover:scale-[1.03]"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-400/25 bg-emerald-500/12 ring-1 ring-emerald-400/15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
@@ -252,7 +254,7 @@ export default function StargateGate() {
             <span className="text-[10px] text-gray-400 group-hover:text-gray-300 transition-colors">UE5 Metaverse · On-chain · Guild DAO</span>
           </div>
           <ArrowRight className="h-4 w-4 text-gray-500 transition-all duration-300 group-hover:text-emerald-300 group-hover:translate-x-1" />
-        </Link>
+        </a>
       </motion.div>
     </div>
   );

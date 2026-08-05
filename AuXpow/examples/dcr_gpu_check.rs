@@ -21,9 +21,15 @@ fn main() -> anyhow::Result<()> {
             .expect("gpu mine nonce0 failed");
         if let Some(share) = zero0 {
             let cpu0 = hash_blake3(&header_zero, 0, 0);
-            println!("zero nonce0 gpu={} cpu={} match={}",
-                hex::encode(&share.hash), hex::encode(&cpu0), share.hash == cpu0);
-            if share.hash != cpu0 { ok = false; }
+            println!(
+                "zero nonce0 gpu={} cpu={} match={}",
+                hex::encode(&share.hash),
+                hex::encode(&cpu0),
+                share.hash == cpu0
+            );
+            if share.hash != cpu0 {
+                ok = false;
+            }
         } else {
             eprintln!("ERROR: GPU did not return nonce0");
             ok = false;
@@ -45,7 +51,12 @@ fn main() -> anyhow::Result<()> {
                     .expect("alph gpu mine failed");
                 if let Some(share) = alph_found {
                     let cpu_alph = hash_blake3_alph(alph_blob, &[], share.nonce);
-                    println!("alph_len={} gpu nonce={} match={}", alph_len, share.nonce, cpu_alph == share.hash);
+                    println!(
+                        "alph_len={} gpu nonce={} match={}",
+                        alph_len,
+                        share.nonce,
+                        cpu_alph == share.hash
+                    );
                     if cpu_alph != share.hash {
                         eprintln!("ERROR: ALPH GPU/CPU hash mismatch alph_len={}", alph_len);
                         ok = false;
@@ -59,12 +70,29 @@ fn main() -> anyhow::Result<()> {
                     hex::encode(&share.hash)
                 );
                 let cpu_hash = hash_blake3(hdr, 0, share.nonce);
-                println!("cpu_hash      ={} match_gpu={}", hex::encode(&cpu_hash), cpu_hash == share.hash);
+                println!(
+                    "cpu_hash      ={} match_gpu={}",
+                    hex::encode(&cpu_hash),
+                    cpu_hash == share.hash
+                );
                 let mut legacy_input = hdr.to_vec();
                 let n = share.nonce;
-                legacy_input.extend_from_slice(&[n as u8, (n>>8) as u8, (n>>16) as u8, (n>>24) as u8, (n>>32) as u8, (n>>40) as u8, (n>>48) as u8, (n>>56) as u8]);
+                legacy_input.extend_from_slice(&[
+                    n as u8,
+                    (n >> 8) as u8,
+                    (n >> 16) as u8,
+                    (n >> 24) as u8,
+                    (n >> 32) as u8,
+                    (n >> 40) as u8,
+                    (n >> 48) as u8,
+                    (n >> 56) as u8,
+                ]);
                 let legacy_hash = zion_auxpow::external_hashers::hash_blake3_raw(&legacy_input);
-                println!("legacy_hash   ={} match_gpu={}", hex::encode(&legacy_hash), legacy_hash == share.hash);
+                println!(
+                    "legacy_hash   ={} match_gpu={}",
+                    hex::encode(&legacy_hash),
+                    legacy_hash == share.hash
+                );
                 let meets = meets_target_little_endian(&cpu_hash, &target);
                 println!("cpu_meets_target={}", meets);
                 // Search for a CPU nonce that yields the GPU hash (to expose an offset bug)
@@ -100,8 +128,16 @@ fn main() -> anyhow::Result<()> {
             .expect("gpu mine diff4 failed");
         if let Some(share) = found {
             let cpu_hash = hash_blake3(&header, 0, share.nonce);
-            println!("diff4 gpu nonce={} hash={}", share.nonce, hex::encode(&share.hash));
-            println!("diff4 cpu hash={} match={}", hex::encode(&cpu_hash), cpu_hash == share.hash);
+            println!(
+                "diff4 gpu nonce={} hash={}",
+                share.nonce,
+                hex::encode(&share.hash)
+            );
+            println!(
+                "diff4 cpu hash={} match={}",
+                hex::encode(&cpu_hash),
+                cpu_hash == share.hash
+            );
             let meets_gpu = meets_target_little_endian(&share.hash, &share_target);
             let meets_cpu = meets_target_little_endian(&cpu_hash, &share_target);
             println!("diff4 meets_target gpu={} cpu={}", meets_gpu, meets_cpu);

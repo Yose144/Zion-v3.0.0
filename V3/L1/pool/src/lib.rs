@@ -776,7 +776,11 @@ impl MiningPool {
             accepted: matches!(decision.status, ShareStatus::Accepted),
             status: format!("{:?}", decision.status),
             block_found: decision.sealed_block.is_some(),
-            block_height: if decision.sealed_block.is_some() { Some(height) } else { None },
+            block_height: if decision.sealed_block.is_some() {
+                Some(height)
+            } else {
+                None
+            },
         }
     }
 

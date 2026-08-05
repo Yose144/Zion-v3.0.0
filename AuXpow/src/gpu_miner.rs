@@ -207,21 +207,13 @@ struct PearlPouwBufferCache {
 /// Maps an algorithm name to its kernel file and entry function.
 fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
     match algorithm {
-        "blake3" | "blake3_alph" => {
-            Some(("blake3_kernel.cl", "blake3_alph_mine"))
-        }
-        "blake3_dcr" => {
-            Some(("blake3_kernel.cl", "blake3_dcr_mine"))
-        }
-        "kheavyhash" | "kheavyhash_kas" => {
-            Some(("kheavyhash_kernel.cl", "kheavyhash_mine"))
-        }
-        "keryxhash" | "keryxhash_krx" => {
-            Some(("keryxhash_kernel.cl", "keryxhash_mine"))
-        }
+        "blake3" | "blake3_alph" => Some(("blake3_kernel.cl", "blake3_alph_mine")),
+        "blake3_dcr" => Some(("blake3_kernel.cl", "blake3_dcr_mine")),
+        "kheavyhash" | "kheavyhash_kas" => Some(("kheavyhash_kernel.cl", "kheavyhash_mine")),
+        "keryxhash" | "keryxhash_krx" => Some(("keryxhash_kernel.cl", "keryxhash_mine")),
         "autolykos" | "autolykos_erg" => Some(("autolykos_kernel.cl", "autolykos_mine")),
-        "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
-        | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => {
+        "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow"
+        | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => {
             // NOTE: EVR (EvrProgPow) and MEWC (MeowPow) have their own ProgPow
             // parameters (different period/epoch length). They are currently
             // wired to the KawPow kernel as a fallback — proper per-coin
@@ -250,9 +242,7 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
             Some(("pearl_kernel.cl", "pearl_mine"))
         }
         "beamhash" | "beamhash_beam" => Some(("beamhash_kernel.cl", "beamhash_generate_hashes")),
-        "karlsenhash" | "karlsenhash_kls" => {
-            Some(("karlsenhash_kernel.cl", "karlsenhash_mine"))
-        }
+        "karlsenhash" | "karlsenhash_kls" => Some(("karlsenhash_kernel.cl", "karlsenhash_mine")),
         "equihashzero" | "equihashzero_zcl" => {
             // Equihash 192,7 — kernel adapted from silentarmy
             // NOTE: Requires multi-kernel dispatch (init + rounds + sort + solution)
@@ -313,7 +303,9 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
 // ── kHeavyHash matrix generation (host side) ─────────────────────────
 //
 // Re-exports from gpu_backend for backward compatibility.
-pub(crate) use crate::gpu_backend::{generate_kheavy_matrix, autolykos_table_size, generate_autolykos_table};
+pub(crate) use crate::gpu_backend::{
+    autolykos_table_size, generate_autolykos_table, generate_kheavy_matrix,
+};
 
 // ── Autolykos v2 table cache (process-wide) ──────────────────────────
 
@@ -395,11 +387,7 @@ impl GpuMiner {
     /// Compute GhostRider hash for a single nonce using the benchmark kernel.
     /// Returns 1181 bytes: [0..15] algos, [15..29] CN algos, [29..1181] 18 steps × 64 bytes.
     #[cfg(feature = "gpu-opencl")]
-    pub fn ghostrider_single_hash(
-        &mut self,
-        header: &[u8],
-        nonce: u64,
-    ) -> Result<[u8; 1181]> {
+    pub fn ghostrider_single_hash(&mut self, header: &[u8], nonce: u64) -> Result<[u8; 1181]> {
         use ocl::{Buffer, Kernel};
 
         let pro_que = self.ensure_proque("ghostrider_kernel.cl")?;
@@ -415,10 +403,7 @@ impl GpuMiner {
             .copy_host_slice(&hdr[..])
             .build()?;
 
-        let output_hash_buf: Buffer<u8> = Buffer::builder()
-            .queue(q.clone())
-            .len(1181)
-            .build()?;
+        let output_hash_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(1181).build()?;
 
         let scratch_bytes = 1 * Self::GHOSTRIDER_SCRATCH_BYTES;
         let scratchpad_pool: Buffer<u8> = Buffer::builder()
@@ -447,7 +432,8 @@ impl GpuMiner {
                 .enq()
                 .map_err(|e| anyhow!("OpenCL enqueue failed: {e}"))?;
         }
-        q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+        q.finish()
+            .map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
 
         let mut hash = vec![0u8; 1181];
         output_hash_buf.read(&mut hash).enq()?;
@@ -456,11 +442,7 @@ impl GpuMiner {
 
     /// Test a single SPH hash function on GPU. Returns 64-byte hash.
     #[cfg(feature = "gpu-opencl")]
-    pub fn ghostrider_sph_test(
-        &mut self,
-        header: &[u8],
-        algo_idx: u32,
-    ) -> Result<[u8; 64]> {
+    pub fn ghostrider_sph_test(&mut self, header: &[u8], algo_idx: u32) -> Result<[u8; 64]> {
         use ocl::{Buffer, Kernel};
 
         let pro_que = self.ensure_proque("ghostrider_kernel.cl")?;
@@ -476,10 +458,7 @@ impl GpuMiner {
             .copy_host_slice(&hdr[..])
             .build()?;
 
-        let output_hash_buf: Buffer<u8> = Buffer::builder()
-            .queue(q.clone())
-            .len(64)
-            .build()?;
+        let output_hash_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(64).build()?;
 
         let kernel = Kernel::builder()
             .queue(q.clone())
@@ -500,7 +479,8 @@ impl GpuMiner {
                 .enq()
                 .map_err(|e| anyhow!("OpenCL enqueue failed: {e}"))?;
         }
-        q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+        q.finish()
+            .map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
 
         let mut hash = vec![0u8; 64];
         output_hash_buf.read(&mut hash).enq()?;
@@ -509,10 +489,7 @@ impl GpuMiner {
 
     /// Test cn_hash_fast on GPU. Returns 32-byte hash.
     #[cfg(feature = "gpu-opencl")]
-    pub fn cn_test(
-        &mut self,
-        input: &[u8],
-    ) -> Result<[u8; 32]> {
+    pub fn cn_test(&mut self, input: &[u8]) -> Result<[u8; 32]> {
         use ocl::{Buffer, Kernel};
 
         let pro_que = self.ensure_proque("ghostrider_kernel.cl")?;
@@ -529,10 +506,7 @@ impl GpuMiner {
             })
             .build()?;
 
-        let output_hash_buf: Buffer<u8> = Buffer::builder()
-            .queue(q.clone())
-            .len(32)
-            .build()?;
+        let output_hash_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).build()?;
 
         let kernel = Kernel::builder()
             .queue(q.clone())
@@ -552,7 +526,8 @@ impl GpuMiner {
                 .enq()
                 .map_err(|e| anyhow!("OpenCL enqueue failed: {e}"))?;
         }
-        q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+        q.finish()
+            .map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
 
         let mut hash = vec![0u8; 32];
         output_hash_buf.read(&mut hash).enq()?;
@@ -585,10 +560,7 @@ impl GpuMiner {
             })
             .build()?;
 
-        let output_hash_buf: Buffer<u8> = Buffer::builder()
-            .queue(q.clone())
-            .len(32)
-            .build()?;
+        let output_hash_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).build()?;
 
         let debug_state_buf: Buffer<u8> = Buffer::builder()
             .queue(q.clone())
@@ -624,7 +596,8 @@ impl GpuMiner {
                 .enq()
                 .map_err(|e| anyhow!("OpenCL enqueue failed: {e}"))?;
         }
-        q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+        q.finish()
+            .map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
 
         let mut hash = vec![0u8; 32];
         output_hash_buf.read(&mut hash).enq()?;
@@ -638,11 +611,7 @@ impl GpuMiner {
 
     /// Test extra hash (blake/groestl/jh/skein) on a 200-byte state. Returns 32-byte hash.
     #[cfg(feature = "gpu-opencl")]
-    pub fn extra_hash_test(
-        &mut self,
-        state: &[u8],
-        hash_sel: u32,
-    ) -> Result<[u8; 32]> {
+    pub fn extra_hash_test(&mut self, state: &[u8], hash_sel: u32) -> Result<[u8; 32]> {
         use ocl::{Buffer, Kernel};
 
         let pro_que = self.ensure_proque("ghostrider_kernel.cl")?;
@@ -659,10 +628,7 @@ impl GpuMiner {
             })
             .build()?;
 
-        let output_hash_buf: Buffer<u8> = Buffer::builder()
-            .queue(q.clone())
-            .len(32)
-            .build()?;
+        let output_hash_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).build()?;
 
         let kernel = Kernel::builder()
             .queue(q.clone())
@@ -682,7 +648,8 @@ impl GpuMiner {
                 .enq()
                 .map_err(|e| anyhow!("OpenCL enqueue failed: {e}"))?;
         }
-        q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+        q.finish()
+            .map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
 
         let mut hash = vec![0u8; 32];
         output_hash_buf.read(&mut hash).enq()?;
@@ -691,10 +658,7 @@ impl GpuMiner {
 
     /// SIMD debug: compute first compression only, return 256 u32 words.
     #[cfg(feature = "gpu-opencl")]
-    pub fn simd_debug(
-        &mut self,
-        input: &[u8],
-    ) -> Result<[u32; 256]> {
+    pub fn simd_debug(&mut self, input: &[u8]) -> Result<[u32; 256]> {
         use ocl::{Buffer, Kernel};
 
         let pro_que = self.ensure_proque("ghostrider_kernel.cl")?;
@@ -710,10 +674,7 @@ impl GpuMiner {
             .copy_host_slice(&hdr[..])
             .build()?;
 
-        let output_buf: Buffer<u32> = Buffer::builder()
-            .queue(q.clone())
-            .len(256)
-            .build()?;
+        let output_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(256).build()?;
 
         let kernel = Kernel::builder()
             .queue(q.clone())
@@ -733,7 +694,8 @@ impl GpuMiner {
                 .enq()
                 .map_err(|e| anyhow!("OpenCL enqueue failed: {e}"))?;
         }
-        q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+        q.finish()
+            .map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
 
         let mut state = vec![0u32; 256];
         output_buf.read(&mut state).enq()?;
@@ -742,11 +704,7 @@ impl GpuMiner {
 
     /// SIMD debug2: full 2-compression SIMD-512, return 32 u32 words.
     #[cfg(feature = "gpu-opencl")]
-    pub fn simd_debug2(
-        &mut self,
-        header: &[u8],
-        header_len: u32,
-    ) -> Result<[u32; 256]> {
+    pub fn simd_debug2(&mut self, header: &[u8], header_len: u32) -> Result<[u32; 256]> {
         use ocl::{Buffer, Kernel};
 
         let pro_que = self.ensure_proque("ghostrider_kernel.cl")?;
@@ -762,10 +720,7 @@ impl GpuMiner {
             .copy_host_slice(&hdr[..])
             .build()?;
 
-        let output_buf: Buffer<u32> = Buffer::builder()
-            .queue(q.clone())
-            .len(256)
-            .build()?;
+        let output_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(256).build()?;
 
         let kernel = Kernel::builder()
             .queue(q.clone())
@@ -785,7 +740,8 @@ impl GpuMiner {
                 .enq()
                 .map_err(|e| anyhow!("OpenCL enqueue failed: {e}"))?;
         }
-        q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+        q.finish()
+            .map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
 
         let mut state = vec![0u32; 256];
         output_buf.read(&mut state).enq()?;
@@ -829,18 +785,32 @@ impl GpuMiner {
         };
         let kawpow_dag = if matches!(
             algorithm,
-            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
+            "kawpow"
+                | "kawpow_rvn"
+                | "kawpow_clore"
+                | "kawpow_evr"
+                | "kawpow_mewc"
+                | "evrprogpow"
+                | "evrprogpow_evr"
+                | "meowpow"
+                | "meowpow_mewc"
         ) {
             self.kawpow_dag.clone()
         } else {
             None
         };
-        let progpow_dag = if matches!(algorithm, "progpow" | "progpow_epic" | "progpow_zano" | "progpowz") {
+        let progpow_dag = if matches!(
+            algorithm,
+            "progpow" | "progpow_epic" | "progpow_zano" | "progpowz"
+        ) {
             self.progpow_dag.clone()
         } else {
             None
         };
-        let fishhash_dag = if matches!(algorithm, "fishhash" | "fishhash_iron" | "karlsenhash" | "karlsenhash_kls") {
+        let fishhash_dag = if matches!(
+            algorithm,
+            "fishhash" | "fishhash_iron" | "karlsenhash" | "karlsenhash_kls"
+        ) {
             self.fishhash_dag.clone()
         } else {
             None
@@ -850,8 +820,19 @@ impl GpuMiner {
         // For all other algorithms, use the standard cached ProQue.
         let is_progpow = matches!(
             algorithm,
-            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
-                | "progpow" | "progpow_epic" | "progpow_zano" | "progpowz"
+            "kawpow"
+                | "kawpow_rvn"
+                | "kawpow_clore"
+                | "kawpow_evr"
+                | "kawpow_mewc"
+                | "evrprogpow"
+                | "evrprogpow_evr"
+                | "meowpow"
+                | "meowpow_mewc"
+                | "progpow"
+                | "progpow_epic"
+                | "progpow_zano"
+                | "progpowz"
         );
 
         let pro_que = if is_progpow {
@@ -875,7 +856,15 @@ impl GpuMiner {
             // 16x too large → massive out-of-bounds GPU read → GPU hang!
             let dag_entries = if matches!(
                 algorithm,
-                "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
+                "kawpow"
+                    | "kawpow_rvn"
+                    | "kawpow_clore"
+                    | "kawpow_evr"
+                    | "kawpow_mewc"
+                    | "evrprogpow"
+                    | "evrprogpow_evr"
+                    | "meowpow"
+                    | "meowpow_mewc"
             ) {
                 kawpow_dag.as_ref().map(|d| d.size_entries).unwrap_or(0)
             } else {
@@ -893,17 +882,11 @@ impl GpuMiner {
             .len(1)
             .fill_val(u64::MAX)
             .build()?;
-        let output_hash_buf: Buffer<u8> = Buffer::builder()
-            .queue(q.clone())
-            .len(32)
-            .build()?;
-        let output_mix_buf: Buffer<u8> = Buffer::builder()
-            .queue(q.clone())
-            .len(32)
-            .build()?;
+        let output_hash_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).build()?;
+        let output_mix_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).build()?;
         let output_solution_buf: Buffer<u8> = Buffer::builder()
             .queue(q.clone())
-            .len(100)  // Max solution size: BeamHash III = 100 bytes (ZelHash = 52)
+            .len(100) // Max solution size: BeamHash III = 100 bytes (ZelHash = 52)
             .build()?;
         let found_flag_buf: Buffer<u32> = Buffer::builder()
             .queue(q.clone())
@@ -925,7 +908,7 @@ impl GpuMiner {
                     &output_hash_buf,
                     &found_flag_buf,
                 )?
-            },
+            }
             "autolykos" | "autolykos_erg" => {
                 // Prepare (and cache) the Autolykos v2 precomputed table.
                 // `extra` carries the block height as a little-endian u32 in
@@ -991,7 +974,8 @@ impl GpuMiner {
                     &found_flag_buf,
                 )?
             }
-            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => {
+            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
+            | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => {
                 // KawPow requires the per-epoch DAG to be uploaded first.
                 let dag = kawpow_dag.ok_or_else(|| {
                     anyhow!(
@@ -1177,18 +1161,19 @@ impl GpuMiner {
         // BeamHash: 1 nonce per work-item (Equihash is memory-bound).
         let batch_factor = match algorithm {
             "autolykos" | "autolykos_erg" | "ethash" | "etchash" | "ethash_etc" => 4,
-            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
-            | "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" | "beamhash" | "beamhash_beam"
+            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
+            | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" | "progpow"
+            | "progpow_epic" | "progpow_zano" | "progpowz" | "beamhash" | "beamhash_beam"
             | "fishhash" | "fishhash_iron" | "karlsenhash" | "karlsenhash_kls" => 1,
             "verthash" | "verthash_vtc" => 1, // Verthash: 4-way kernel, 1 nonce per 4 work-items
             "equihashzero" | "equihashzero_zcl" => 1, // Equihash: memory-bound, 1 nonce per work-item
-            "equihash" | "equihash_zec" => 1, // Equihash 200,9: same memory-bound pattern
-            "nexapow" | "nexapow_nexa" => 1, // NexaPow: secp256k1 Schnorr per nonce
-            "qhash" | "qhash_qtc" => 1, // Qhash: 512KB state vector per nonce
-            "ghostrider" | "ghostrider_rtm" => 1, // GhostRider: 2MB scratchpad per nonce
-            "dynexsolve" | "dynexsolve_dnx" => 1, // DynexSolve: SAT solver per nonce
-            "zelhash" | "zelhash_flux" => 1, // ZelHash: multi-kernel, 1 nonce per dispatch
-            _ => 8, // blake3, kheavyhash, keryxhash
+            "equihash" | "equihash_zec" => 1,         // Equihash 200,9: same memory-bound pattern
+            "nexapow" | "nexapow_nexa" => 1,          // NexaPow: secp256k1 Schnorr per nonce
+            "qhash" | "qhash_qtc" => 1,               // Qhash: 512KB state vector per nonce
+            "ghostrider" | "ghostrider_rtm" => 1,     // GhostRider: 2MB scratchpad per nonce
+            "dynexsolve" | "dynexsolve_dnx" => 1,     // DynexSolve: SAT solver per nonce
+            "zelhash" | "zelhash_flux" => 1,          // ZelHash: multi-kernel, 1 nonce per dispatch
+            _ => 8,                                   // blake3, kheavyhash, keryxhash
         };
         // Work-group size: MUST match GROUP_SIZE defined in the kernel build
         // options. ProgPoW uses GROUP_SIZE=256 with bpermute (or 128 without).
@@ -1199,7 +1184,8 @@ impl GpuMiner {
         let progpow_wg = self.progpow_group_size.max(1);
         let wg_size = match algorithm {
             "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" => progpow_wg,
-            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => 128, // GROUP_SIZE=128 for KawPow
+            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
+            | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => 128, // GROUP_SIZE=128 for KawPow
             "autolykos" | "autolykos_erg" | "ethash" | "etchash" | "ethash_etc" => 128,
             "beamhash" | "beamhash_beam" => 256, // BeamHash: standard work-group
             "fishhash" | "fishhash_iron" | "karlsenhash" | "karlsenhash_kls" => 128, // WORKSIZE=128 in fishhash/karlsenhash kernels
@@ -1207,10 +1193,10 @@ impl GpuMiner {
             "equihashzero" | "equihashzero_zcl" => 64, // Equihash: reqd_work_group_size(64,1,1)
             "equihash" | "equihash_zec" => 64, // Equihash 200,9: same kernel structure
             "nexapow" | "nexapow_nexa" => 64, // NexaPow: secp256k1 operations, 64 for register pressure
-            "qhash" | "qhash_qtc" => 64, // Qhash: state vector ops, 64 for register pressure
+            "qhash" | "qhash_qtc" => 64,      // Qhash: state vector ops, 64 for register pressure
             "ghostrider" | "ghostrider_rtm" => 64, // GhostRider: hash + CN, 64 for register pressure
             "dynexsolve" | "dynexsolve_dnx" => 64, // DynexSolve: ODE solver, 64 for register pressure
-            "zelhash" | "zelhash_flux" => 64, // ZelHash: reqd_work_group_size(64,1,1)
+            "zelhash" | "zelhash_flux" => 64,      // ZelHash: reqd_work_group_size(64,1,1)
             _ => 256,
         };
         // Round global_work_size up to a multiple of wg_size (required by
@@ -1226,11 +1212,16 @@ impl GpuMiner {
         use std::sync::atomic::{AtomicU64, Ordering};
         static PROGPOW_BATCH_COUNT: AtomicU64 = AtomicU64::new(0);
         let batch_count_local = PROGPOW_BATCH_COUNT.fetch_add(1, Ordering::Relaxed);
-        let no_sticky = std::env::var("ZION_NO_STICKY").map(|v| v != "1" && v != "true").unwrap_or(true);
+        let no_sticky = std::env::var("ZION_NO_STICKY")
+            .map(|v| v != "1" && v != "true")
+            .unwrap_or(true);
         if is_progpow && no_sticky && (batch_count_local < 3 || batch_count_local % 500 == 0) {
             eprintln!(
                 "auxpow_gpu_kernel_enqueue algo={} gws={} lws={} batch_factor={} dag_elements={}",
-                algorithm, global_work_size, wg_size, batch_factor,
+                algorithm,
+                global_work_size,
+                wg_size,
+                batch_factor,
                 if is_progpow { "set" } else { "n/a" }
             );
         }
@@ -1251,9 +1242,9 @@ impl GpuMiner {
         // Poll event status with timeout. ProgPow kernels on RX 5700 XT
         // typically take 1-2s per batch. Allow up to 30s before declaring
         // a hang (generous margin for GPU contention from Stream 1).
+        use ocl::enums::CommandExecutionStatus;
         use ocl::enums::EventInfo;
         use ocl::enums::EventInfoResult;
-        use ocl::enums::CommandExecutionStatus;
         let kernel_timeout_secs: u64 = std::env::var("ZION_GPU_KERNEL_TIMEOUT_SECS")
             .ok()
             .and_then(|v| v.parse::<u64>().ok())
@@ -1261,7 +1252,9 @@ impl GpuMiner {
         let deadline = start + std::time::Duration::from_secs(kernel_timeout_secs);
         loop {
             match kernel_event.info(EventInfo::CommandExecutionStatus) {
-                Ok(EventInfoResult::CommandExecutionStatus(CommandExecutionStatus::Complete)) => break,
+                Ok(EventInfoResult::CommandExecutionStatus(CommandExecutionStatus::Complete)) => {
+                    break
+                }
                 Ok(EventInfoResult::CommandExecutionStatus(_)) => {
                     // Queued / Submitted / Running — keep polling
                     if Instant::now() > deadline {
@@ -1277,7 +1270,9 @@ impl GpuMiner {
                         let _ = q.flush();
                         return Err(anyhow!(
                             "OpenCL kernel hang: algo={} elapsed_ms={} timeout={}s",
-                            algorithm, start.elapsed().as_millis(), kernel_timeout_secs
+                            algorithm,
+                            start.elapsed().as_millis(),
+                            kernel_timeout_secs
                         ));
                     }
                     // Short sleep to avoid burning CPU. Poll every 10ms.
@@ -1286,13 +1281,15 @@ impl GpuMiner {
                 Ok(other) => {
                     // Unexpected info result — fall back to q.finish()
                     eprintln!("auxpow_gpu_kernel_event_unexpected_status algo={} result={:?} — falling back to q.finish()", algorithm, other);
-                    q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+                    q.finish()
+                        .map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
                     break;
                 }
                 Err(e) => {
                     // Event status query failed — fall back to q.finish()
                     eprintln!("auxpow_gpu_kernel_event_query_failed algo={} err={e} — falling back to q.finish()", algorithm);
-                    q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+                    q.finish()
+                        .map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
                     break;
                 }
             }
@@ -1324,10 +1321,24 @@ impl GpuMiner {
         // Set the hash to all zeros for these algorithms.  This passes the
         // local meets_target check (zeros <= any target), and the upstream
         // pool recomputes the real hash from nonce + mix_hash for verification.
-        let is_dag_algo = matches!(algorithm,
-            "ethash" | "etchash" | "ethash_etc"
-            | "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc"
-            | "progpow" | "progpow_epic" | "progpow_zano" | "progpowz"
+        let is_dag_algo = matches!(
+            algorithm,
+            "ethash"
+                | "etchash"
+                | "ethash_etc"
+                | "kawpow"
+                | "kawpow_rvn"
+                | "kawpow_clore"
+                | "kawpow_evr"
+                | "kawpow_mewc"
+                | "evrprogpow"
+                | "evrprogpow_evr"
+                | "meowpow"
+                | "meowpow_mewc"
+                | "progpow"
+                | "progpow_epic"
+                | "progpow_zano"
+                | "progpowz"
         );
 
         let hash_arr: [u8; 32] = if is_dag_algo {
@@ -1415,7 +1426,12 @@ impl GpuMiner {
         let mut full_header = header.to_vec();
         full_header.extend_from_slice(&full_nonce);
         let pre_pow_u64 = crate::beamhash::compute_prepow(&full_header);
-        let prepow = ocl::prm::Ulong4::new(pre_pow_u64[0], pre_pow_u64[1], pre_pow_u64[2], pre_pow_u64[3]);
+        let prepow = ocl::prm::Ulong4::new(
+            pre_pow_u64[0],
+            pre_pow_u64[1],
+            pre_pow_u64[2],
+            pre_pow_u64[3],
+        );
 
         const WG_SIZE: usize = 256;
         const NUM_BUCKETS: usize = 4096;
@@ -1450,7 +1466,12 @@ impl GpuMiner {
                 .queue(q.clone())
                 .len(RESULTS_LEN)
                 .build()?;
-            cached = Some(BeamhashSolverBuffers { buf0, buf1, counters, results });
+            cached = Some(BeamhashSolverBuffers {
+                buf0,
+                buf1,
+                counters,
+                results,
+            });
         }
 
         let result: Result<Option<GpuFoundShare>> = (|| {
@@ -1458,126 +1479,133 @@ impl GpuMiner {
             let pro_que = self.ensure_proque("beamhash_solver.cl")?;
 
             let enqueue_kernel = |name: &str, gws: usize, lws: usize| -> Result<()> {
-            let kernel = Kernel::builder()
-                .queue(q.clone())
-                .program(pro_que.program())
-                .name(name)
-                .arg(&buffers.buf0)
-                .arg(&buffers.buf1)
-                .arg(&buffers.counters)
-                .arg(&buffers.results)
-                .arg(prepow)
-                .build()
-                .map_err(|e| anyhow!("BeamHash solver kernel '{name}' build failed: {e}"))?;
+                let kernel = Kernel::builder()
+                    .queue(q.clone())
+                    .program(pro_que.program())
+                    .name(name)
+                    .arg(&buffers.buf0)
+                    .arg(&buffers.buf1)
+                    .arg(&buffers.counters)
+                    .arg(&buffers.results)
+                    .arg(prepow)
+                    .build()
+                    .map_err(|e| anyhow!("BeamHash solver kernel '{name}' build failed: {e}"))?;
 
-            let mut event = ocl::Event::empty();
-            unsafe {
-                kernel
-                    .cmd()
-                    .global_work_size(gws)
-                    .local_work_size(lws)
-                    .enew(&mut event)
-                    .enq()
-                    .map_err(|e| anyhow!("BeamHash solver kernel '{name}' enqueue failed: {e}"))?;
-            }
+                let mut event = ocl::Event::empty();
+                unsafe {
+                    kernel
+                        .cmd()
+                        .global_work_size(gws)
+                        .local_work_size(lws)
+                        .enew(&mut event)
+                        .enq()
+                        .map_err(|e| {
+                            anyhow!("BeamHash solver kernel '{name}' enqueue failed: {e}")
+                        })?;
+                }
 
-            let timeout_secs: u64 = std::env::var("ZION_GPU_KERNEL_TIMEOUT_SECS")
-                .ok()
-                .and_then(|v| v.parse::<u64>().ok())
-                .unwrap_or(120);
-            let deadline = start + std::time::Duration::from_secs(timeout_secs);
-            loop {
-                match event.info(EventInfo::CommandExecutionStatus) {
-                    Ok(EventInfoResult::CommandExecutionStatus(CommandExecutionStatus::Complete)) => break,
-                    Ok(EventInfoResult::CommandExecutionStatus(_)) => {
-                        if Instant::now() > deadline {
-                            let _ = q.flush();
-                            return Err(anyhow!(
+                let timeout_secs: u64 = std::env::var("ZION_GPU_KERNEL_TIMEOUT_SECS")
+                    .ok()
+                    .and_then(|v| v.parse::<u64>().ok())
+                    .unwrap_or(120);
+                let deadline = start + std::time::Duration::from_secs(timeout_secs);
+                loop {
+                    match event.info(EventInfo::CommandExecutionStatus) {
+                        Ok(EventInfoResult::CommandExecutionStatus(
+                            CommandExecutionStatus::Complete,
+                        )) => break,
+                        Ok(EventInfoResult::CommandExecutionStatus(_)) => {
+                            if Instant::now() > deadline {
+                                let _ = q.flush();
+                                return Err(anyhow!(
                                 "BeamHash solver kernel '{name}' hang: elapsed_ms={} timeout={}s",
                                 start.elapsed().as_millis(),
                                 timeout_secs
                             ));
+                            }
+                            std::thread::sleep(std::time::Duration::from_millis(10));
                         }
-                        std::thread::sleep(std::time::Duration::from_millis(10));
-                    }
-                    Ok(other) => {
-                        eprintln!("auxpow_gpu_kernel_event_unexpected_status algo=beamhash kernel={name} result={:?} — falling back to q.finish()", other);
-                        q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
-                        break;
-                    }
-                    Err(e) => {
-                        eprintln!("auxpow_gpu_kernel_event_query_failed algo=beamhash kernel={name} err={e} — falling back to q.finish()");
-                        q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
-                        break;
+                        Ok(other) => {
+                            eprintln!("auxpow_gpu_kernel_event_unexpected_status algo=beamhash kernel={name} result={:?} — falling back to q.finish()", other);
+                            q.finish()
+                                .map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+                            break;
+                        }
+                        Err(e) => {
+                            eprintln!("auxpow_gpu_kernel_event_query_failed algo=beamhash kernel={name} err={e} — falling back to q.finish()");
+                            q.finish()
+                                .map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+                            break;
+                        }
                     }
                 }
-            }
-            Ok(())
-        };
+                Ok(())
+            };
 
-        // Run the multi-round solver.
-        enqueue_kernel("cleanUp", COUNTERS_LEN, WG_SIZE)?;
-        enqueue_kernel("beamHashIII_seed", 33_554_432, WG_SIZE)?;
-        enqueue_kernel("beamHashIII_R1", 4_194_304, WG_SIZE)?;
-        enqueue_kernel("beamHashIII_R2", 4_194_304, WG_SIZE)?;
-        enqueue_kernel("beamHashIII_R3", 4_194_304, WG_SIZE)?;
-        enqueue_kernel("beamHashIII_R4", 4_194_304, WG_SIZE)?;
-        enqueue_kernel("beamHashIII_R5", 4_194_304, WG_SIZE)?;
+            // Run the multi-round solver.
+            enqueue_kernel("cleanUp", COUNTERS_LEN, WG_SIZE)?;
+            enqueue_kernel("beamHashIII_seed", 33_554_432, WG_SIZE)?;
+            enqueue_kernel("beamHashIII_R1", 4_194_304, WG_SIZE)?;
+            enqueue_kernel("beamHashIII_R2", 4_194_304, WG_SIZE)?;
+            enqueue_kernel("beamHashIII_R3", 4_194_304, WG_SIZE)?;
+            enqueue_kernel("beamHashIII_R4", 4_194_304, WG_SIZE)?;
+            enqueue_kernel("beamHashIII_R5", 4_194_304, WG_SIZE)?;
 
-        // Read the solution count and up to 10 candidate solutions.
-        let mut results = vec![0u32; RESULTS_LEN];
-        buffers.results.read(&mut results).enq()?;
-        q.finish().map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
+            // Read the solution count and up to 10 candidate solutions.
+            let mut results = vec![0u32; RESULTS_LEN];
+            buffers.results.read(&mut results).enq()?;
+            q.finish()
+                .map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
 
-        let solution_count = results[0] as usize;
-        if solution_count == 0 {
-            return Ok(None);
-        }
-
-        for pos in 0..solution_count.min(10) {
-            let start_u32 = 4 + pos * 32;
-            let end_u32 = start_u32 + 32;
-            if end_u32 > results.len() {
-                break;
+            let solution_count = results[0] as usize;
+            if solution_count == 0 {
+                return Ok(None);
             }
 
-            let mut sol_bytes = Vec::with_capacity(128);
-            for w in &results[start_u32..end_u32] {
-                sol_bytes.extend_from_slice(&w.to_le_bytes());
-            }
-            // The R5 kernel stores two 512-bit rows (64 bytes each) after shift56.
-            // Each row contains 400 bits (50 bytes) of packed 25-bit indices,
-            // followed by 112 bits (14 bytes) of padding/garbage.
-            // We must extract the first 50 bytes from each row and concatenate
-            // them to get the 100-byte (800-bit) solution.
-            let row0 = &sol_bytes[..64.min(sol_bytes.len())];
-            let row1 = &sol_bytes[64..128.min(sol_bytes.len())];
-            let mut indices_100 = Vec::with_capacity(100);
-            indices_100.extend_from_slice(&row0[..50.min(row0.len())]);
-            indices_100.extend_from_slice(&row1[..50.min(row1.len())]);
+            for pos in 0..solution_count.min(10) {
+                let start_u32 = 4 + pos * 32;
+                let end_u32 = start_u32 + 32;
+                if end_u32 > results.len() {
+                    break;
+                }
 
-            let hash = crate::beamhash::hash_beamhash(&full_header, &indices_100);
-            if hash.as_slice() <= target.as_slice() {
-                let mut solution = indices_100.clone();
-                solution.extend_from_slice(&extra_nonce);
+                let mut sol_bytes = Vec::with_capacity(128);
+                for w in &results[start_u32..end_u32] {
+                    sol_bytes.extend_from_slice(&w.to_le_bytes());
+                }
+                // The R5 kernel stores two 512-bit rows (64 bytes each) after shift56.
+                // Each row contains 400 bits (50 bytes) of packed 25-bit indices,
+                // followed by 112 bits (14 bytes) of padding/garbage.
+                // We must extract the first 50 bytes from each row and concatenate
+                // them to get the 100-byte (800-bit) solution.
+                let row0 = &sol_bytes[..64.min(sol_bytes.len())];
+                let row1 = &sol_bytes[64..128.min(sol_bytes.len())];
+                let mut indices_100 = Vec::with_capacity(100);
+                indices_100.extend_from_slice(&row0[..50.min(row0.len())]);
+                indices_100.extend_from_slice(&row1[..50.min(row1.len())]);
 
-                println!(
+                let hash = crate::beamhash::hash_beamhash(&full_header, &indices_100);
+                if hash.as_slice() <= target.as_slice() {
+                    let mut solution = indices_100.clone();
+                    solution.extend_from_slice(&extra_nonce);
+
+                    println!(
                     "auxpow_gpu_share_found algorithm=beamhash nonce={} hash_first8={:016x} elapsed_ms={}",
                     u64::from_le_bytes(full_nonce),
                     u64::from_le_bytes(hash[0..8].try_into().unwrap()),
                     start.elapsed().as_millis()
                 );
 
-                return Ok(Some(GpuFoundShare {
-                    nonce: u64::from_le_bytes(full_nonce),
-                    hash,
-                    mix_hash: None,
-                    solution: Some(solution),
-                }));
+                    return Ok(Some(GpuFoundShare {
+                        nonce: u64::from_le_bytes(full_nonce),
+                        hash,
+                        mix_hash: None,
+                        solution: Some(solution),
+                    }));
+                }
             }
-        }
 
-        Ok(None)
+            Ok(None)
         })();
 
         self.beamhash_buffers = cached;
@@ -1743,11 +1771,15 @@ impl GpuMiner {
     /// Read the ProgPow DAG buffer back from the GPU to host memory.
     /// Used for saving the DAG to disk cache after GPU generation.
     pub fn read_progpow_dag_to_host(&self) -> Result<(Vec<u64>, u64)> {
-        let dag = self.progpow_dag.as_ref()
+        let dag = self
+            .progpow_dag
+            .as_ref()
             .ok_or_else(|| anyhow!("ProgPow DAG not loaded on GPU"))?;
         let len = dag.buf.len();
         let mut host_buf = vec![0u64; len];
-        dag.buf.read(&mut host_buf).enq()
+        dag.buf
+            .read(&mut host_buf)
+            .enq()
             .map_err(|e| anyhow!("failed to read ProgPow DAG from GPU: {e}"))?;
         Ok((host_buf, dag.size_entries))
     }
@@ -1782,10 +1814,7 @@ impl GpuMiner {
             .build()
             .map_err(|e| anyhow!("failed to allocate FishHash DAG buffer: {e}"))?;
 
-        self.fishhash_dag = Some(FishhashDag {
-            buf,
-            size_items,
-        });
+        self.fishhash_dag = Some(FishhashDag { buf, size_items });
 
         Ok(())
     }
@@ -1821,9 +1850,9 @@ impl GpuMiner {
         use sha2::{Digest, Sha256};
         let hash = Sha256::digest(data);
         let expected: [u8; 32] = [
-            0xa5, 0x55, 0x31, 0xe8, 0x43, 0xcd, 0x56, 0xb0, 0x10, 0x11, 0x4a,
-            0xaf, 0x63, 0x25, 0xb0, 0xd5, 0x29, 0xec, 0xf8, 0x8f, 0x8a, 0xd4,
-            0x76, 0x39, 0xb6, 0xed, 0xed, 0xaf, 0xd7, 0x21, 0xaa, 0x48,
+            0xa5, 0x55, 0x31, 0xe8, 0x43, 0xcd, 0x56, 0xb0, 0x10, 0x11, 0x4a, 0xaf, 0x63, 0x25,
+            0xb0, 0xd5, 0x29, 0xec, 0xf8, 0x8f, 0x8a, 0xd4, 0x76, 0x39, 0xb6, 0xed, 0xed, 0xaf,
+            0xd7, 0x21, 0xaa, 0x48,
         ];
         if hash.as_slice() != expected {
             eprintln!(
@@ -1844,7 +1873,12 @@ impl GpuMiner {
             .len(data.len())
             .copy_host_slice(data)
             .build()
-            .map_err(|e| anyhow!("failed to allocate Verthash data buffer ({} bytes): {e}", data.len()))?;
+            .map_err(|e| {
+                anyhow!(
+                    "failed to allocate Verthash data buffer ({} bytes): {e}",
+                    data.len()
+                )
+            })?;
 
         let data_size = data.len();
         self.verthash_data = Some(VerthashData {
@@ -1888,13 +1922,17 @@ impl GpuMiner {
             "dag_manager: generating KawPow light cache epoch={} on CPU (pure-Rust)...",
             epoch
         );
-        let light_cache = generate_kawpow_light_cache_rust(epoch)
-            .ok_or_else(|| anyhow!("kawpow_generate_light_cache_rust returned NULL for epoch {}", epoch))?;
+        let light_cache = generate_kawpow_light_cache_rust(epoch).ok_or_else(|| {
+            anyhow!(
+                "kawpow_generate_light_cache_rust returned NULL for epoch {}",
+                epoch
+            )
+        })?;
 
         let cache_items = light_cache.cache_items;
         let dag_size_entries = light_cache.dag_size_entries;
         let dag_nodes = dag_size_entries * 2; // each 128-byte entry = 2 nodes
-        let dag_ulongs = dag_nodes * 8;       // each 64-byte node = 8 ulongs
+        let dag_ulongs = dag_nodes * 8; // each 64-byte node = 8 ulongs
 
         eprintln!(
             "dag_manager: light cache ready ({} items = {:.1} MB), DAG will be {} nodes = {:.1} GB",
@@ -1973,9 +2011,7 @@ typedef unsigned long ulong;
         let cache_bytes = light_cache.as_slice();
         let cache_u64_count = cache_bytes.len() / 8;
         let cache_u64: Vec<u64> = (0..cache_u64_count)
-            .map(|i| {
-                u64::from_le_bytes(cache_bytes[i*8..i*8+8].try_into().unwrap())
-            })
+            .map(|i| u64::from_le_bytes(cache_bytes[i * 8..i * 8 + 8].try_into().unwrap()))
             .collect();
 
         eprintln!(
@@ -2016,7 +2052,10 @@ typedef unsigned long ulong;
                     dag_ulongs,
                     (dag_ulongs * 8) as f64 / (1024.0 * 1024.0 * 1024.0)
                 );
-                return Err(anyhow!("failed to allocate GPU DAG buffer ({} ulongs): {e}", dag_ulongs));
+                return Err(anyhow!(
+                    "failed to allocate GPU DAG buffer ({} ulongs): {e}",
+                    dag_ulongs
+                ));
             }
         };
 
@@ -2088,7 +2127,11 @@ typedef unsigned long ulong;
                 };
                 eprintln!(
                     "dag_manager: DAG generation {}% (batch {}/{}, {:.1}s elapsed, ~{:.0}s ETA)",
-                    pct, batch + 1, num_batches, elapsed, eta
+                    pct,
+                    batch + 1,
+                    num_batches,
+                    elapsed,
+                    eta
                 );
             }
         }
@@ -2128,7 +2171,7 @@ typedef unsigned long ulong;
         algorithm_label: &str,
     ) -> Result<(Buffer<u64>, u64)> {
         let dag_nodes = dag_size_entries * 2; // each 128-byte entry = 2 nodes
-        let dag_ulongs = dag_nodes * 8;       // each 64-byte node = 8 ulongs
+        let dag_ulongs = dag_nodes * 8; // each 64-byte node = 8 ulongs
 
         eprintln!(
             "dag_manager: {} DAG will be {} nodes = {:.2} GB",
@@ -2193,9 +2236,7 @@ typedef unsigned long ulong;
         // Upload the light cache to the GPU.
         let cache_u64_count = cache_bytes.len() / 8;
         let cache_u64: Vec<u64> = (0..cache_u64_count)
-            .map(|i| {
-                u64::from_le_bytes(cache_bytes[i*8..i*8+8].try_into().unwrap())
-            })
+            .map(|i| u64::from_le_bytes(cache_bytes[i * 8..i * 8 + 8].try_into().unwrap()))
             .collect();
 
         eprintln!(
@@ -2279,7 +2320,12 @@ typedef unsigned long ulong;
                 };
                 eprintln!(
                     "dag_manager: {} DAG generation {}% (batch {}/{}, {:.1}s elapsed, ~{:.0}s ETA)",
-                    algorithm_label, pct, batch + 1, num_batches, elapsed, eta
+                    algorithm_label,
+                    pct,
+                    batch + 1,
+                    num_batches,
+                    elapsed,
+                    eta
                 );
             }
         }
@@ -2309,8 +2355,12 @@ typedef unsigned long ulong;
             "dag_manager: generating Ethash light cache epoch={} on CPU (pure-Rust)...",
             epoch
         );
-        let light_cache = generate_ethash_light_cache_rust(epoch)
-            .ok_or_else(|| anyhow!("ethash_generate_light_cache_rust returned NULL for epoch {}", epoch))?;
+        let light_cache = generate_ethash_light_cache_rust(epoch).ok_or_else(|| {
+            anyhow!(
+                "ethash_generate_light_cache_rust returned NULL for epoch {}",
+                epoch
+            )
+        })?;
 
         eprintln!(
             "dag_manager: light cache ready ({} items = {:.1} MB)",
@@ -2353,8 +2403,12 @@ typedef unsigned long ulong;
             "dag_manager: generating ProgPow light cache epoch={} on CPU (pure-Rust)...",
             epoch
         );
-        let light_cache = generate_ethash_light_cache_rust(epoch)
-            .ok_or_else(|| anyhow!("ethash_generate_light_cache_rust returned NULL for epoch {}", epoch))?;
+        let light_cache = generate_ethash_light_cache_rust(epoch).ok_or_else(|| {
+            anyhow!(
+                "ethash_generate_light_cache_rust returned NULL for epoch {}",
+                epoch
+            )
+        })?;
 
         eprintln!(
             "dag_manager: light cache ready ({} items = {:.1} MB)",
@@ -2434,8 +2488,11 @@ typedef unsigned long ulong;
             return true;
         }
         // gfx codename → classification mapping
-        let is_vega = dn.contains("gfx900") || dn.contains("gfx906") || dn.contains("gfx908")
-            || dn.contains("vega") || dn.contains("radeon vii");
+        let is_vega = dn.contains("gfx900")
+            || dn.contains("gfx906")
+            || dn.contains("gfx908")
+            || dn.contains("vega")
+            || dn.contains("radeon vii");
         let is_rdna1 = dn.contains("gfx1010") || dn.contains("gfx1011") || dn.contains("gfx1012");
         let is_rdna2 = dn.contains("gfx1030") || dn.contains("gfx1031") || dn.contains("gfx1032");
         let is_rdna3 = dn.contains("gfx1100") || dn.contains("gfx1101") || dn.contains("gfx1102");
@@ -2499,16 +2556,20 @@ typedef unsigned long ulong;
         if let Some(filter) = device_name_filter {
             let filter_l = filter.to_ascii_lowercase();
             // First try direct substring match
-            if let Some((pidx, didx, platform, device, platform_name, device_name)) =
-                candidates.iter().find(|(_, _, _, _, _, name)| {
-                    name.to_ascii_lowercase().contains(&filter_l)
-                })
+            if let Some((pidx, didx, platform, device, platform_name, device_name)) = candidates
+                .iter()
+                .find(|(_, _, _, _, _, name)| name.to_ascii_lowercase().contains(&filter_l))
             {
                 println!(
                     "auxpow_opencl_pick mode=name filter=\"{}\" platform_idx={} device_idx={} platform=\"{}\" device=\"{}\"",
                     filter, pidx, didx, platform_name, device_name
                 );
-                return Ok((*platform, *device, platform_name.clone(), device_name.clone()));
+                return Ok((
+                    *platform,
+                    *device,
+                    platform_name.clone(),
+                    device_name.clone(),
+                ));
             }
             // Try classification-based match (vega → gfx900, rdna1 → gfx1010, etc.)
             if let Some((pidx, didx, platform, device, platform_name, device_name)) =
@@ -2520,7 +2581,12 @@ typedef unsigned long ulong;
                     "auxpow_opencl_pick mode=name_classified filter=\"{}\" platform_idx={} device_idx={} platform=\"{}\" device=\"{}\"",
                     filter, pidx, didx, platform_name, device_name
                 );
-                return Ok((*platform, *device, platform_name.clone(), device_name.clone()));
+                return Ok((
+                    *platform,
+                    *device,
+                    platform_name.clone(),
+                    device_name.clone(),
+                ));
             }
             eprintln!(
                 "auxpow_opencl_pick name filter=\"{}\" matched no device, falling back to index",
@@ -2599,11 +2665,16 @@ typedef unsigned long ulong;
                 if is_ghostrider {
                     // Concatenate SPH + CN + main kernel
                     let sph = std::fs::read_to_string(&dir.join("ghostrider_sph.cl"))
-                        .with_context(|| format!("reading OpenCL kernel {:?}", dir.join("ghostrider_sph.cl")))?;
-                    let cn = std::fs::read_to_string(&dir.join("ghostrider_cn.cl"))
-                        .with_context(|| format!("reading OpenCL kernel {:?}", dir.join("ghostrider_cn.cl")))?;
-                    let main = std::fs::read_to_string(&dir.join(kernel_file))
-                        .with_context(|| format!("reading OpenCL kernel {:?}", dir.join(kernel_file)))?;
+                        .with_context(|| {
+                            format!("reading OpenCL kernel {:?}", dir.join("ghostrider_sph.cl"))
+                        })?;
+                    let cn = std::fs::read_to_string(&dir.join("ghostrider_cn.cl")).with_context(
+                        || format!("reading OpenCL kernel {:?}", dir.join("ghostrider_cn.cl")),
+                    )?;
+                    let main =
+                        std::fs::read_to_string(&dir.join(kernel_file)).with_context(|| {
+                            format!("reading OpenCL kernel {:?}", dir.join(kernel_file))
+                        })?;
                     println!("auxpow_gpu_opencl ghostrider concatenated: sph={}B cn={}B main={}B total={}B",
                         sph.len(), cn.len(), main.len(), sph.len() + cn.len() + main.len());
                     format!("{sph}\n{cn}\n{main}")
@@ -2616,40 +2687,92 @@ typedef unsigned long ulong;
             Err(_) => {
                 // Embedded kernel sources (compiled into the binary)
                 let embedded: String = match kernel_file {
-                    "kheavyhash_kernel.cl" => include_str!("../csrc/opencl/kheavyhash_kernel.cl").to_string(),
-                    "keryxhash_kernel.cl" => include_str!("../csrc/opencl/keryxhash_kernel.cl").to_string(),
-                    "blake3_kernel.cl" => include_str!("../csrc/opencl/blake3_kernel.cl").to_string(),
-                    "autolykos_kernel.cl" => include_str!("../csrc/opencl/autolykos_kernel.cl").to_string(),
-                    "kawpow_kernel.cl" => include_str!("../csrc/opencl/kawpow_kernel.cl").to_string(),
-                    "ethash_kernel.cl" => include_str!("../csrc/opencl/ethash_kernel.cl").to_string(),
-                    "progpow_kernel.cl" => include_str!("../csrc/opencl/progpow_kernel.cl").to_string(),
-                    "zelhash_kernel.cl" => include_str!("../csrc/opencl/zelhash_kernel.cl").to_string(),
-                    "zelhash_prod_kernel.cl" => include_str!("../csrc/opencl/zelhash_prod_kernel.cl").to_string(),
+                    "kheavyhash_kernel.cl" => {
+                        include_str!("../csrc/opencl/kheavyhash_kernel.cl").to_string()
+                    }
+                    "keryxhash_kernel.cl" => {
+                        include_str!("../csrc/opencl/keryxhash_kernel.cl").to_string()
+                    }
+                    "blake3_kernel.cl" => {
+                        include_str!("../csrc/opencl/blake3_kernel.cl").to_string()
+                    }
+                    "autolykos_kernel.cl" => {
+                        include_str!("../csrc/opencl/autolykos_kernel.cl").to_string()
+                    }
+                    "kawpow_kernel.cl" => {
+                        include_str!("../csrc/opencl/kawpow_kernel.cl").to_string()
+                    }
+                    "ethash_kernel.cl" => {
+                        include_str!("../csrc/opencl/ethash_kernel.cl").to_string()
+                    }
+                    "progpow_kernel.cl" => {
+                        include_str!("../csrc/opencl/progpow_kernel.cl").to_string()
+                    }
+                    "zelhash_kernel.cl" => {
+                        include_str!("../csrc/opencl/zelhash_kernel.cl").to_string()
+                    }
+                    "zelhash_prod_kernel.cl" => {
+                        include_str!("../csrc/opencl/zelhash_prod_kernel.cl").to_string()
+                    }
                     "pearl_kernel.cl" => include_str!("../csrc/opencl/pearl_kernel.cl").to_string(),
-                    "pearl_pouw_native.cl" => include_str!("../csrc/opencl/pearl_pouw_native.cl").to_string(),
-                    "fishhash_kernel.cl" => include_str!("../csrc/opencl/fishhash_kernel.cl").to_string(),
-                    "karlsenhash_kernel.cl" => include_str!("../csrc/opencl/karlsenhash_kernel.cl").to_string(),
-                    "verthash_kernel.cl" => include_str!("../csrc/opencl/verthash_kernel.cl").to_string(),
-                    "sha3_512_precompute.cl" => include_str!("../csrc/opencl/sha3_512_precompute.cl").to_string(),
+                    "pearl_pouw_native.cl" => {
+                        include_str!("../csrc/opencl/pearl_pouw_native.cl").to_string()
+                    }
+                    "fishhash_kernel.cl" => {
+                        include_str!("../csrc/opencl/fishhash_kernel.cl").to_string()
+                    }
+                    "karlsenhash_kernel.cl" => {
+                        include_str!("../csrc/opencl/karlsenhash_kernel.cl").to_string()
+                    }
+                    "verthash_kernel.cl" => {
+                        include_str!("../csrc/opencl/verthash_kernel.cl").to_string()
+                    }
+                    "sha3_512_precompute.cl" => {
+                        include_str!("../csrc/opencl/sha3_512_precompute.cl").to_string()
+                    }
                     "sha3_512_256.cl" => include_str!("../csrc/opencl/sha3_512_256.cl").to_string(),
-                    "equihash_kernel.cl" => include_str!("../csrc/opencl/equihash_kernel.cl").to_string(),
-                    "equihash200_kernel.cl" => include_str!("../csrc/opencl/equihash200_kernel.cl").to_string(),
-                    "eaglesong_kernel.cl" => include_str!("../csrc/opencl/eaglesong_kernel.cl").to_string(),
-                    "octopus_kernel.cl" => include_str!("../csrc/opencl/octopus_kernel.cl").to_string(),
-                    "neoscrypt_kernel.cl" => include_str!("../csrc/opencl/neoscrypt_kernel.cl").to_string(),
-                    "nexapow_kernel.cl" => include_str!("../csrc/opencl/nexapow_kernel.cl").to_string(),
-                    "beamhash_kernel.cl" => include_str!("../csrc/opencl/beamhash_kernel.cl").to_string(),
-                    "beamhash_solver.cl" => include_str!("../csrc/opencl/beamhash_solver.cl").to_string(),
+                    "equihash_kernel.cl" => {
+                        include_str!("../csrc/opencl/equihash_kernel.cl").to_string()
+                    }
+                    "equihash200_kernel.cl" => {
+                        include_str!("../csrc/opencl/equihash200_kernel.cl").to_string()
+                    }
+                    "eaglesong_kernel.cl" => {
+                        include_str!("../csrc/opencl/eaglesong_kernel.cl").to_string()
+                    }
+                    "octopus_kernel.cl" => {
+                        include_str!("../csrc/opencl/octopus_kernel.cl").to_string()
+                    }
+                    "neoscrypt_kernel.cl" => {
+                        include_str!("../csrc/opencl/neoscrypt_kernel.cl").to_string()
+                    }
+                    "nexapow_kernel.cl" => {
+                        include_str!("../csrc/opencl/nexapow_kernel.cl").to_string()
+                    }
+                    "beamhash_kernel.cl" => {
+                        include_str!("../csrc/opencl/beamhash_kernel.cl").to_string()
+                    }
+                    "beamhash_solver.cl" => {
+                        include_str!("../csrc/opencl/beamhash_solver.cl").to_string()
+                    }
                     "ghostrider_kernel.cl" => {
                         // Concatenate embedded SPH + CN + main kernel
                         let sph = include_str!("../csrc/opencl/ghostrider_sph.cl");
                         let cn = include_str!("../csrc/opencl/ghostrider_cn.cl");
                         let main = include_str!("../csrc/opencl/ghostrider_kernel.cl");
-                        println!("auxpow_gpu_opencl using embedded ghostrider: sph={}B cn={}B main={}B",
-                            sph.len(), cn.len(), main.len());
+                        println!(
+                            "auxpow_gpu_opencl using embedded ghostrider: sph={}B cn={}B main={}B",
+                            sph.len(),
+                            cn.len(),
+                            main.len()
+                        );
                         format!("{sph}\n{cn}\n{main}")
-                    },
-                    _ => return Err(anyhow!("Unknown kernel file: {kernel_file} (not on disk and not embedded)")),
+                    }
+                    _ => {
+                        return Err(anyhow!(
+                            "Unknown kernel file: {kernel_file} (not on disk and not embedded)"
+                        ))
+                    }
                 };
                 if !is_ghostrider {
                     println!("auxpow_gpu_opencl using embedded kernel={kernel_file}");
@@ -2662,7 +2785,13 @@ typedef unsigned long ulong;
         prog_builder.src(src);
         // Conservative build options; fast-relaxed-math can break integer hashing.
         // Include a unique timestamp to force OpenCL driver to recompile (avoid cached binaries)
-        let force_recompile = format!("-cl-std=CL1.2 -cl-mad-enable -DFORCE_RECOMPILE={}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_nanos());
+        let force_recompile = format!(
+            "-cl-std=CL1.2 -cl-mad-enable -DFORCE_RECOMPILE={}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos()
+        );
         prog_builder.cmplr_opt(&force_recompile);
 
         let pro_que = ProQue::builder()
@@ -2680,11 +2809,7 @@ typedef unsigned long ulong;
     /// Like `ensure_proque` but with extra compiler options (e.g. `-DMDIV=...`).
     /// Cached under a composite key `"kernel_file:extra_opts"` so that different
     /// build options get separate ProQue instances.
-    fn ensure_proque_with_opts(
-        &mut self,
-        kernel_file: &str,
-        extra_opts: &str,
-    ) -> Result<&ProQue> {
+    fn ensure_proque_with_opts(&mut self, kernel_file: &str, extra_opts: &str) -> Result<&ProQue> {
         let cache_key = format!("{kernel_file}:{extra_opts}");
         if self.proques.contains_key(&cache_key) {
             return Ok(self.proques.get(&cache_key).unwrap());
@@ -2700,7 +2825,9 @@ typedef unsigned long ulong;
             Err(_) => {
                 let embedded = match kernel_file {
                     "verthash_kernel.cl" => include_str!("../csrc/opencl/verthash_kernel.cl"),
-                    "sha3_512_precompute.cl" => include_str!("../csrc/opencl/sha3_512_precompute.cl"),
+                    "sha3_512_precompute.cl" => {
+                        include_str!("../csrc/opencl/sha3_512_precompute.cl")
+                    }
                     "sha3_512_256.cl" => include_str!("../csrc/opencl/sha3_512_256.cl"),
                     _ => return Err(anyhow!("Unknown kernel file for opts: {kernel_file}")),
                 };
@@ -2773,7 +2900,11 @@ typedef unsigned long ulong;
         // GROUP_SIZE: 256 with bpermute (no barriers → safe), 128 without (barrier limit)
         // On GCN/Vega we cap at 128 to reduce register pressure and TTD risk.
         // NVIDIA supports barriers cleanly and benefits from 256 (16 hashes/group).
-        let group_size_default = if is_progpow && (use_bpermute || is_nvidia) { 256 } else { 128 };
+        let group_size_default = if is_progpow && (use_bpermute || is_nvidia) {
+            256
+        } else {
+            128
+        };
         let group_size = std::env::var("ZION_AUXPOW_GPU_GROUP_SIZE")
             .ok()
             .and_then(|v| v.trim().parse::<usize>().ok())
@@ -2783,7 +2914,8 @@ typedef unsigned long ulong;
         // Cache key includes dag_elements so that the kernel is recompiled
         // with the correct PROGPOW_DAG_ELEMENTS when the DAG becomes available.
         let dag_elements_safe = dag_elements.max(1);
-        let cache_key = format!("{kernel_file}:algo_{algorithm}:period_{period}:dag_{dag_elements_safe}");
+        let cache_key =
+            format!("{kernel_file}:algo_{algorithm}:period_{period}:dag_{dag_elements_safe}");
         if self.proques_progpow.contains_key(&cache_key) {
             return Ok(self.proques_progpow.get(&cache_key).unwrap());
         }
@@ -2798,10 +2930,7 @@ typedef unsigned long ulong;
             .collect();
         // Only remove entries that are more than 1 period old
         for k in keys_to_remove {
-            if let Some(old_period) = k
-                .strip_prefix(&prefix)
-                .and_then(|s| s.parse::<u64>().ok())
-            {
+            if let Some(old_period) = k.strip_prefix(&prefix).and_then(|s| s.parse::<u64>().ok()) {
                 if old_period + 1 < period {
                     self.proques_progpow.remove(&k);
                 }
@@ -2827,12 +2956,16 @@ typedef unsigned long ulong;
 
         // Inject random math code — use algorithm-aware preparation for kawpow_kernel.cl
         let src = match kernel_file {
-            "kawpow_kernel.cl" => {
-                progpow_codegen::prepare_kawpow_kernel_source_for_algo(&base_src, algorithm, block_height)
-            }
-            "progpow_kernel.cl" => {
-                progpow_codegen::prepare_progpow_kernel_source_for_algo(&base_src, algorithm, block_height)
-            }
+            "kawpow_kernel.cl" => progpow_codegen::prepare_kawpow_kernel_source_for_algo(
+                &base_src,
+                algorithm,
+                block_height,
+            ),
+            "progpow_kernel.cl" => progpow_codegen::prepare_progpow_kernel_source_for_algo(
+                &base_src,
+                algorithm,
+                block_height,
+            ),
             _ => base_src,
         };
 
@@ -2855,10 +2988,10 @@ typedef unsigned long ulong;
         // WAVE_SIZE: 32 for RDNA1+ (gfx10xx, gfx11xx), 64 for GCN/Vega (gfx8xx, gfx9xx).
         // Detected from device name; the kernel also auto-detects via __gfxXXXX__ macros.
         let dag_bytes = dag_elements_safe * 16 * 16; // * PROGPOW_LANES(16) * sizeof(dag_t)
-        // Pass algorithm-specific PROGPOW_REGS and PROGPOW_CNT_MATH as build defines
-        // so the kernel can use the correct register file size and math loop count.
-        // MeowPow uses REGS=16 and CNT_MATH=9 (halved vs KawPow's 32/18).
-        // EvrProgPow uses the same REGS/CNT_MATH as KawPow (32/18) but PERIOD=3.
+                                                     // Pass algorithm-specific PROGPOW_REGS and PROGPOW_CNT_MATH as build defines
+                                                     // so the kernel can use the correct register file size and math loop count.
+                                                     // MeowPow uses REGS=16 and CNT_MATH=9 (halved vs KawPow's 32/18).
+                                                     // EvrProgPow uses the same REGS/CNT_MATH as KawPow (32/18) but PERIOD=3.
 
         // RDNA1+ detection (re-used for WAVE_SIZE).
         let is_rdna = dev_name_lower.contains("gfx10")
@@ -2879,7 +3012,10 @@ typedef unsigned long ulong;
         // Build platform/bpermute/wave defines
         let platform_id = if is_nvidia { 1 } else { 2 };
         let platform_def = if use_bpermute {
-            format!("-DPLATFORM={platform_id} -DUSE_AMD_BPERMUTE=1 -DWAVE_SIZE={}", wave_size)
+            format!(
+                "-DPLATFORM={platform_id} -DUSE_AMD_BPERMUTE=1 -DWAVE_SIZE={}",
+                wave_size
+            )
         } else {
             format!("-DPLATFORM={platform_id} -DWAVE_SIZE={}", wave_size)
         };
@@ -2906,11 +3042,7 @@ typedef unsigned long ulong;
             .prog_bldr(prog_builder)
             .dims(self.work_size)
             .build()
-            .map_err(|e| {
-                anyhow!(
-                    "OpenCL compile failed for {kernel_file} period={period}: {e}"
-                )
-            })?;
+            .map_err(|e| anyhow!("OpenCL compile failed for {kernel_file} period={period}: {e}"))?;
 
         println!(
             "auxpow_gpu_opencl compiled {kernel_file} for period={period} (block_height={block_height})"
@@ -3090,14 +3222,14 @@ typedef unsigned long ulong;
             .queue(q.clone())
             .program(pro_que.program())
             .name(kernel_name)
-            .arg(dag_buf)               // 0: dag (__global uint8 *)
-            .arg(&block_header_buf)     // 1: blockHeader (__global uint16 *)
-            .arg(output_nonce_buf)      // 2: output_nonce
-            .arg(output_hash_buf)       // 3: output_hash
-            .arg(found_flag_buf)        // 4: found_flag
-            .arg(dag_size_items)        // 5: dagSize
-            .arg(base_nonce)            // 6: startNonce
-            .arg(&target_buf)           // 7: target_buf
+            .arg(dag_buf) // 0: dag (__global uint8 *)
+            .arg(&block_header_buf) // 1: blockHeader (__global uint16 *)
+            .arg(output_nonce_buf) // 2: output_nonce
+            .arg(output_hash_buf) // 3: output_hash
+            .arg(found_flag_buf) // 4: found_flag
+            .arg(dag_size_items) // 5: dagSize
+            .arg(base_nonce) // 6: startNonce
+            .arg(&target_buf) // 7: target_buf
             .build()
             .map_err(|e| anyhow!("FishHash kernel build failed: {e}"))?;
 
@@ -3143,12 +3275,12 @@ typedef unsigned long ulong;
             .queue(q.clone())
             .program(pro_que.program())
             .name(kernel_name)
-            .arg(&header_buf)           // 0: header (candidateHash, 32 bytes)
-            .arg(&target_buf)           // 1: target_buf (32 bytes, big-endian)
-            .arg(base_nonce)            // 2: base_nonce
-            .arg(output_nonce_buf)      // 3: output_nonce
-            .arg(output_hash_buf)       // 4: output_hash (32 bytes)
-            .arg(found_flag_buf)        // 5: found_flag
+            .arg(&header_buf) // 0: header (candidateHash, 32 bytes)
+            .arg(&target_buf) // 1: target_buf (32 bytes, big-endian)
+            .arg(base_nonce) // 2: base_nonce
+            .arg(output_nonce_buf) // 3: output_nonce
+            .arg(output_hash_buf) // 4: output_hash (32 bytes)
+            .arg(found_flag_buf) // 5: found_flag
             .build()
             .map_err(|e| anyhow!("NexaPow kernel build failed: {e}"))?;
 
@@ -3209,14 +3341,14 @@ typedef unsigned long ulong;
             .queue(q.clone())
             .program(pro_que.program())
             .name(kernel_name)
-            .arg(&header_buf)           // 0: header (80 bytes)
-            .arg(80u32)                 // 1: header_len
-            .arg(base_nonce)            // 2: base_nonce
-            .arg(output_hash_buf)       // 3: output_hash (32 bytes)
-            .arg(found_flag_buf)        // 4: found_flag
-            .arg(output_nonce_buf)      // 5: output_nonce
-            .arg(&target_buf)           // 6: target (32 bytes)
-            .arg(&state_vec_pool)       // 7: state_vec_pool
+            .arg(&header_buf) // 0: header (80 bytes)
+            .arg(80u32) // 1: header_len
+            .arg(base_nonce) // 2: base_nonce
+            .arg(output_hash_buf) // 3: output_hash (32 bytes)
+            .arg(found_flag_buf) // 4: found_flag
+            .arg(output_nonce_buf) // 5: output_nonce
+            .arg(&target_buf) // 6: target (32 bytes)
+            .arg(&state_vec_pool) // 7: state_vec_pool
             .build()
             .map_err(|e| anyhow!("Qhash kernel build failed: {e}"))?;
 
@@ -3275,14 +3407,14 @@ typedef unsigned long ulong;
             .queue(q.clone())
             .program(pro_que.program())
             .name(kernel_name)
-            .arg(&header_buf)           // 0: header (80 bytes)
-            .arg(80u32)                 // 1: header_len
-            .arg(base_nonce)            // 2: base_nonce
-            .arg(output_hash_buf)       // 3: output_hash (32 bytes)
-            .arg(found_flag_buf)        // 4: found_flag
-            .arg(output_nonce_buf)      // 5: output_nonce
-            .arg(&target_buf)           // 6: target (32 bytes)
-            .arg(&scratchpad_pool)      // 7: scratchpad_pool
+            .arg(&header_buf) // 0: header (80 bytes)
+            .arg(80u32) // 1: header_len
+            .arg(base_nonce) // 2: base_nonce
+            .arg(output_hash_buf) // 3: output_hash (32 bytes)
+            .arg(found_flag_buf) // 4: found_flag
+            .arg(output_nonce_buf) // 5: output_nonce
+            .arg(&target_buf) // 6: target (32 bytes)
+            .arg(&scratchpad_pool) // 7: scratchpad_pool
             .build()
             .map_err(|e| anyhow!("GhostRider kernel build failed: {e}"))?;
 
@@ -3299,12 +3431,11 @@ typedef unsigned long ulong;
     /// Clause struct: 3 literals * (int var_idx + int negated) = 24 bytes
     const DYNEX_CLAUSE_BYTES: usize = Self::DYNEX_MAX_LITERALS * 8;
     /// Per work-item: clauses(24KB) + vars(1KB) + tmp_k(4KB) + tmp_x(1KB) + meta(8B) ≈ 30KB
-    const DYNEX_PER_ITEM_BYTES: usize =
-        Self::DYNEX_MAX_CLAUSES * Self::DYNEX_CLAUSE_BYTES
+    const DYNEX_PER_ITEM_BYTES: usize = Self::DYNEX_MAX_CLAUSES * Self::DYNEX_CLAUSE_BYTES
         + Self::DYNEX_MAX_VARS * 4       // vars
         + 4 * Self::DYNEX_MAX_VARS * 4   // tmp_k (k1-k4)
         + Self::DYNEX_MAX_VARS * 4       // tmp_x
-        + 8;                              // meta
+        + 8; // meta
 
     fn build_dynexsolve_kernel(
         pro_que: &ProQue,
@@ -3346,32 +3477,33 @@ typedef unsigned long ulong;
         let meta_bytes = effective_batch * 2 * 4;
 
         let clauses_pool: Buffer<u8> = Buffer::builder()
-            .queue(q.clone()).len(clauses_bytes).build()?;
-        let vars_pool: Buffer<u8> = Buffer::builder()
-            .queue(q.clone()).len(vars_bytes).build()?;
-        let tmp_pool: Buffer<u8> = Buffer::builder()
-            .queue(q.clone()).len(tmp_bytes).build()?;
+            .queue(q.clone())
+            .len(clauses_bytes)
+            .build()?;
+        let vars_pool: Buffer<u8> = Buffer::builder().queue(q.clone()).len(vars_bytes).build()?;
+        let tmp_pool: Buffer<u8> = Buffer::builder().queue(q.clone()).len(tmp_bytes).build()?;
         let tmp_x_pool: Buffer<u8> = Buffer::builder()
-            .queue(q.clone()).len(tmp_x_bytes).build()?;
-        let meta_pool: Buffer<u8> = Buffer::builder()
-            .queue(q.clone()).len(meta_bytes).build()?;
+            .queue(q.clone())
+            .len(tmp_x_bytes)
+            .build()?;
+        let meta_pool: Buffer<u8> = Buffer::builder().queue(q.clone()).len(meta_bytes).build()?;
 
         let kernel = Kernel::builder()
             .queue(q.clone())
             .program(pro_que.program())
             .name(kernel_name)
-            .arg(&header_buf)           // 0: header (80 bytes)
-            .arg(80u32)                 // 1: header_len
-            .arg(base_nonce)            // 2: base_nonce
-            .arg(output_hash_buf)       // 3: output_hash (32 bytes)
-            .arg(found_flag_buf)        // 4: found_flag
-            .arg(output_nonce_buf)      // 5: output_nonce
-            .arg(&target_buf)           // 6: target (32 bytes)
-            .arg(&clauses_pool)         // 7: clauses_pool
-            .arg(&vars_pool)            // 8: vars_pool
-            .arg(&tmp_pool)             // 9: tmp_pool (k1-k4)
-            .arg(&tmp_x_pool)           // 10: tmp_x_pool
-            .arg(&meta_pool)            // 11: meta_pool
+            .arg(&header_buf) // 0: header (80 bytes)
+            .arg(80u32) // 1: header_len
+            .arg(base_nonce) // 2: base_nonce
+            .arg(output_hash_buf) // 3: output_hash (32 bytes)
+            .arg(found_flag_buf) // 4: found_flag
+            .arg(output_nonce_buf) // 5: output_nonce
+            .arg(&target_buf) // 6: target (32 bytes)
+            .arg(&clauses_pool) // 7: clauses_pool
+            .arg(&vars_pool) // 8: vars_pool
+            .arg(&tmp_pool) // 9: tmp_pool (k1-k4)
+            .arg(&tmp_x_pool) // 10: tmp_x_pool
+            .arg(&meta_pool) // 11: meta_pool
             .build()
             .map_err(|e| anyhow!("DynexSolve kernel build failed: {e}"))?;
 
@@ -3384,10 +3516,14 @@ typedef unsigned long ulong;
 
     /// Blake2b IV (same as kernel's blake_iv).
     const EQ_BLAKE_IV: [u64; 8] = [
-        0x6a09e667f3bcc908, 0xbb67ae8584caa73b,
-        0x3c6ef372fe94f82b, 0xa54ff53a5f1d36f1,
-        0x510e527fade682d1, 0x9b05688c2b3e6c1f,
-        0x1f83d9abfb41bd6b, 0x5be0cd19137e2179,
+        0x6a09e667f3bcc908,
+        0xbb67ae8584caa73b,
+        0x3c6ef372fe94f82b,
+        0xa54ff53a5f1d36f1,
+        0x510e527fade682d1,
+        0x9b05688c2b3e6c1f,
+        0x1f83d9abfb41bd6b,
+        0x5be0cd19137e2179,
     ];
 
     /// Blake2b permutation schedule (sigma table).
@@ -3450,8 +3586,14 @@ typedef unsigned long ulong;
         let mut m = [0u64; 16];
         for i in 0..16 {
             m[i] = u64::from_le_bytes([
-                block[i * 8], block[i * 8 + 1], block[i * 8 + 2], block[i * 8 + 3],
-                block[i * 8 + 4], block[i * 8 + 5], block[i * 8 + 6], block[i * 8 + 7],
+                block[i * 8],
+                block[i * 8 + 1],
+                block[i * 8 + 2],
+                block[i * 8 + 3],
+                block[i * 8 + 4],
+                block[i * 8 + 5],
+                block[i * 8 + 6],
+                block[i * 8 + 7],
             ]);
         }
 
@@ -3460,7 +3602,7 @@ typedef unsigned long ulong;
         v[..8].copy_from_slice(&h);
         v[8..].copy_from_slice(&Self::EQ_BLAKE_IV);
         v[12] ^= 128; // bytes processed so far (non-final block)
-        // v[14] ^= 0 (not final)
+                      // v[14] ^= 0 (not final)
 
         // 12 rounds of Blake2b compression
         for round in 0..12 {
@@ -3516,8 +3658,14 @@ typedef unsigned long ulong;
         let mut m = [0u64; 16];
         for i in 0..16 {
             m[i] = u64::from_le_bytes([
-                block[i * 8], block[i * 8 + 1], block[i * 8 + 2], block[i * 8 + 3],
-                block[i * 8 + 4], block[i * 8 + 5], block[i * 8 + 6], block[i * 8 + 7],
+                block[i * 8],
+                block[i * 8 + 1],
+                block[i * 8 + 2],
+                block[i * 8 + 3],
+                block[i * 8 + 4],
+                block[i * 8 + 5],
+                block[i * 8 + 6],
+                block[i * 8 + 7],
             ]);
         }
 
@@ -3601,7 +3749,15 @@ typedef unsigned long ulong;
     ) -> Result<Option<GpuFoundShare>> {
         // Equihash 200,9 constants (must match equihash_200_9_param.h)
         // PARAM_K=9, PREFIX=20, NR_SLOTS=4 (OVERHEAD=4 for 200,9)
-        self.mine_equihash_impl(header, target, base_nonce, "equihash200_kernel.cl", 9, 20, 4)
+        self.mine_equihash_impl(
+            header,
+            target,
+            base_nonce,
+            "equihash200_kernel.cl",
+            9,
+            20,
+            4,
+        )
     }
 
     /// ZelHash (Equihash 125,4) production mining for Flux (FLUX).
@@ -3622,17 +3778,17 @@ typedef unsigned long ulong;
         // ZelHash 125,4 parameters (must match zelhash_125_4_param.h)
         const PARAM_K: u32 = 4;
         const PREFIX: u32 = 25;
-        const NR_ROWS: usize = 1 << 22;  // 4,194,304
+        const NR_ROWS: usize = 1 << 22; // 4,194,304
         const NR_SLOTS: usize = 32;
         const SLOT_LEN: usize = 24;
-        const HT_SIZE: usize = NR_ROWS * NR_SLOTS * SLOT_LEN;  // ~3.2GB
+        const HT_SIZE: usize = NR_ROWS * NR_SLOTS * SLOT_LEN; // ~3.2GB
         const ROWS_PER_UINT: usize = 4;
-        const ROW_COUNTERS_SIZE: usize = NR_ROWS / ROWS_PER_UINT;  // 1,048,576
+        const ROW_COUNTERS_SIZE: usize = NR_ROWS / ROWS_PER_UINT; // 1,048,576
         const MAX_SOLS: usize = 10;
         const ZCASH_BLOCK_HEADER_LEN: usize = 140;
         const ZCASH_NONCE_LEN: usize = 32;
         const ZCASH_NONCE_OFFSET: usize = ZCASH_BLOCK_HEADER_LEN - ZCASH_NONCE_LEN;
-        let zcash_sol_len: usize = (1usize << PARAM_K) * (PREFIX as usize + 1) / 8;  // 52
+        let zcash_sol_len: usize = (1usize << PARAM_K) * (PREFIX as usize + 1) / 8; // 52
 
         const SOLS_BUF_SIZE: usize = 8192;
 
@@ -3651,8 +3807,7 @@ typedef unsigned long ulong;
         let copy_len = header.len().min(ZCASH_BLOCK_HEADER_LEN);
         header_buf[..copy_len].copy_from_slice(&header[..copy_len]);
         let nonce_bytes = base_nonce.to_le_bytes();
-        header_buf[ZCASH_NONCE_OFFSET..ZCASH_NONCE_OFFSET + 8]
-            .copy_from_slice(&nonce_bytes);
+        header_buf[ZCASH_NONCE_OFFSET..ZCASH_NONCE_OFFSET + 8].copy_from_slice(&nonce_bytes);
         for i in (ZCASH_NONCE_OFFSET + 8)..ZCASH_BLOCK_HEADER_LEN {
             header_buf[i] = 0;
         }
@@ -3666,12 +3821,22 @@ typedef unsigned long ulong;
             .queue(q.clone())
             .len(HT_SIZE)
             .build()
-            .map_err(|e| anyhow!("ZelHash ht0 alloc failed ({:.1} GB): {e}", HT_SIZE as f64 / 1e9))?;
+            .map_err(|e| {
+                anyhow!(
+                    "ZelHash ht0 alloc failed ({:.1} GB): {e}",
+                    HT_SIZE as f64 / 1e9
+                )
+            })?;
         let ht1: Buffer<u8> = Buffer::builder()
             .queue(q.clone())
             .len(HT_SIZE)
             .build()
-            .map_err(|e| anyhow!("ZelHash ht1 alloc failed ({:.1} GB): {e}", HT_SIZE as f64 / 1e9))?;
+            .map_err(|e| {
+                anyhow!(
+                    "ZelHash ht1 alloc failed ({:.1} GB): {e}",
+                    HT_SIZE as f64 / 1e9
+                )
+            })?;
 
         let rc0: Buffer<u32> = Buffer::builder()
             .queue(q.clone())
@@ -3759,7 +3924,8 @@ typedef unsigned long ulong;
         k_init_ht.set_arg(0, &ht0)?;
         k_init_ht.set_arg(1, &rc0)?;
         unsafe {
-            k_init_ht.cmd()
+            k_init_ht
+                .cmd()
                 .global_work_size(init_global)
                 .local_work_size(init_local)
                 .enq()?;
@@ -3767,7 +3933,8 @@ typedef unsigned long ulong;
         k_init_ht.set_arg(0, &ht1)?;
         k_init_ht.set_arg(1, &rc1)?;
         unsafe {
-            k_init_ht.cmd()
+            k_init_ht
+                .cmd()
                 .global_work_size(init_global)
                 .local_work_size(init_local)
                 .enq()?;
@@ -3779,13 +3946,17 @@ typedef unsigned long ulong;
         k_round0.set_arg(2, &rc0)?;
         k_round0.set_arg(3, &dbg_buf)?;
         unsafe {
-            k_round0.cmd()
+            k_round0
+                .cmd()
                 .global_work_size(round0_global)
                 .local_work_size(round0_local)
                 .enq()?;
         }
         q.finish()?;
-        println!("auxpow_gpu_zelhash_prod round0 done in {}ms", start.elapsed().as_millis());
+        println!(
+            "auxpow_gpu_zelhash_prod round0 done in {}ms",
+            start.elapsed().as_millis()
+        );
 
         // 3. Rounds 1-2: collision finding (alternating ht0/ht1)
         let mut ht_src = &ht0;
@@ -3801,14 +3972,18 @@ typedef unsigned long ulong;
             k_round.set_arg(3, rc_dst)?;
             k_round.set_arg(4, &dbg_buf)?;
             unsafe {
-                k_round.cmd()
+                k_round
+                    .cmd()
                     .global_work_size(rounds_global)
                     .local_work_size(rounds_local)
                     .enq()?;
             }
             q.finish()?;
-            println!("auxpow_gpu_zelhash_prod round{} done in {}ms",
-                round_num, start.elapsed().as_millis());
+            println!(
+                "auxpow_gpu_zelhash_prod round{} done in {}ms",
+                round_num,
+                start.elapsed().as_millis()
+            );
 
             // Swap src/dst
             std::mem::swap(&mut ht_src, &mut ht_dst);
@@ -3823,14 +3998,17 @@ typedef unsigned long ulong;
         k_round_final.set_arg(4, &dbg_buf)?;
         k_round_final.set_arg(5, &sols_buf)?;
         unsafe {
-            k_round_final.cmd()
+            k_round_final
+                .cmd()
                 .global_work_size(rounds_global)
                 .local_work_size(rounds_local)
                 .enq()?;
         }
         q.finish()?;
-        println!("auxpow_gpu_zelhash_prod round3 (final) done in {}ms",
-            start.elapsed().as_millis());
+        println!(
+            "auxpow_gpu_zelhash_prod round3 (final) done in {}ms",
+            start.elapsed().as_millis()
+        );
 
         // 5. Solution extraction
         k_sols.set_arg(0, &ht0)?;
@@ -3839,33 +4017,38 @@ typedef unsigned long ulong;
         k_sols.set_arg(3, rc_src)?;
         k_sols.set_arg(4, rc_dst)?;
         unsafe {
-            k_sols.cmd()
+            k_sols
+                .cmd()
                 .global_work_size(sols_global)
                 .local_work_size(sols_local)
                 .enq()?;
         }
         q.finish()?;
-        println!("auxpow_gpu_zelhash_prod sols extraction done in {}ms",
-            start.elapsed().as_millis());
+        println!(
+            "auxpow_gpu_zelhash_prod sols extraction done in {}ms",
+            start.elapsed().as_millis()
+        );
 
         // 6. Read back solutions
         let mut sols_data = vec![0u8; SOLS_BUF_SIZE];
         sols_buf.read(&mut sols_data).enq()?;
 
         // Parse sols_t structure
-        let nr_sols = u32::from_le_bytes([
-            sols_data[0], sols_data[1], sols_data[2], sols_data[3],
-        ]) as usize;
+        let nr_sols =
+            u32::from_le_bytes([sols_data[0], sols_data[1], sols_data[2], sols_data[3]]) as usize;
 
-        println!("auxpow_gpu_zelhash_prod found {} potential solutions", nr_sols);
+        println!(
+            "auxpow_gpu_zelhash_prod found {} potential solutions",
+            nr_sols
+        );
 
         if nr_sols == 0 {
             return Ok(None);
         }
 
         // sols_t layout: nr(4) + likely_invalids(4) + valid[10](10) + pad(2) + values[10][16](640)
-        let values_offset = 4 + 4 + MAX_SOLS + 2;  // 20 bytes
-        let sol_stride = (1 << PARAM_K) * 4;  // 16 * 4 = 64 bytes per solution
+        let values_offset = 4 + 4 + MAX_SOLS + 2; // 20 bytes
+        let sol_stride = (1 << PARAM_K) * 4; // 16 * 4 = 64 bytes per solution
         let nr_sols_capped = nr_sols.min(MAX_SOLS);
 
         for sol_i in 0..nr_sols_capped {
@@ -3889,8 +4072,12 @@ typedef unsigned long ulong;
             // Encode solution
             let encoded_sol = Self::encode_equihash_solution(&indices, PREFIX, PARAM_K);
             if encoded_sol.len() != zcash_sol_len {
-                eprintln!("auxpow_gpu_zelhash_prod sol{}: wrong size {} != {}",
-                    sol_i, encoded_sol.len(), zcash_sol_len);
+                eprintln!(
+                    "auxpow_gpu_zelhash_prod sol{}: wrong size {} != {}",
+                    sol_i,
+                    encoded_sol.len(),
+                    zcash_sol_len
+                );
                 continue;
             }
 
@@ -3898,7 +4085,7 @@ typedef unsigned long ulong;
             // Varint for 52 bytes: 0x34 (single byte, since 52 < 253)
             let mut verify_buf = Vec::with_capacity(ZCASH_BLOCK_HEADER_LEN + 1 + zcash_sol_len);
             verify_buf.extend_from_slice(&header_buf);
-            verify_buf.push(zcash_sol_len as u8);  // varint 52 = 0x34
+            verify_buf.push(zcash_sol_len as u8); // varint 52 = 0x34
             verify_buf.extend_from_slice(&encoded_sol);
 
             use sha2::{Digest, Sha256};
@@ -3989,8 +4176,7 @@ typedef unsigned long ulong;
         header_buf[..copy_len].copy_from_slice(&header[..copy_len]);
         // Set nonce: first 8 bytes = base_nonce (LE), rest = 0
         let nonce_bytes = base_nonce.to_le_bytes();
-        header_buf[ZCASH_NONCE_OFFSET..ZCASH_NONCE_OFFSET + 8]
-            .copy_from_slice(&nonce_bytes);
+        header_buf[ZCASH_NONCE_OFFSET..ZCASH_NONCE_OFFSET + 8].copy_from_slice(&nonce_bytes);
         // Zero remaining nonce bytes
         for i in (ZCASH_NONCE_OFFSET + 8)..ZCASH_BLOCK_HEADER_LEN {
             header_buf[i] = 0;
@@ -4005,12 +4191,22 @@ typedef unsigned long ulong;
             .queue(q.clone())
             .len(ht_size)
             .build()
-            .map_err(|e| anyhow!("Equihash ht0 alloc failed ({:.1} GB): {e}", ht_size as f64 / 1e9))?;
+            .map_err(|e| {
+                anyhow!(
+                    "Equihash ht0 alloc failed ({:.1} GB): {e}",
+                    ht_size as f64 / 1e9
+                )
+            })?;
         let ht1: Buffer<u8> = Buffer::builder()
             .queue(q.clone())
             .len(ht_size)
             .build()
-            .map_err(|e| anyhow!("Equihash ht1 alloc failed ({:.1} GB): {e}", ht_size as f64 / 1e9))?;
+            .map_err(|e| {
+                anyhow!(
+                    "Equihash ht1 alloc failed ({:.1} GB): {e}",
+                    ht_size as f64 / 1e9
+                )
+            })?;
 
         let rc0: Buffer<u32> = Buffer::builder()
             .queue(q.clone())
@@ -4105,7 +4301,8 @@ typedef unsigned long ulong;
         k_init_ht.set_arg(0, &ht0)?;
         k_init_ht.set_arg(1, &rc0)?;
         unsafe {
-            k_init_ht.cmd()
+            k_init_ht
+                .cmd()
                 .global_work_size(init_global)
                 .local_work_size(init_local)
                 .enq()?;
@@ -4113,7 +4310,8 @@ typedef unsigned long ulong;
         k_init_ht.set_arg(0, &ht1)?;
         k_init_ht.set_arg(1, &rc1)?;
         unsafe {
-            k_init_ht.cmd()
+            k_init_ht
+                .cmd()
                 .global_work_size(init_global)
                 .local_work_size(init_local)
                 .enq()?;
@@ -4126,7 +4324,8 @@ typedef unsigned long ulong;
         k_round0.set_arg(2, &rc0)?;
         k_round0.set_arg(3, &dbg_buf)?;
         unsafe {
-            k_round0.cmd()
+            k_round0
+                .cmd()
                 .global_work_size(round0_global)
                 .local_work_size(round0_local)
                 .enq()?;
@@ -4147,7 +4346,8 @@ typedef unsigned long ulong;
             k_init_ht.set_arg(0, ht_dst)?;
             k_init_ht.set_arg(1, rc_dst)?;
             unsafe {
-                k_init_ht.cmd()
+                k_init_ht
+                    .cmd()
                     .global_work_size(init_global)
                     .local_work_size(init_local)
                     .enq()?;
@@ -4180,7 +4380,8 @@ typedef unsigned long ulong;
             k_init_ht.set_arg(0, ht_dst)?;
             k_init_ht.set_arg(1, rc_dst)?;
             unsafe {
-                k_init_ht.cmd()
+                k_init_ht
+                    .cmd()
                     .global_work_size(init_global)
                     .local_work_size(init_local)
                     .enq()?;
@@ -4194,7 +4395,8 @@ typedef unsigned long ulong;
             k_round_final.set_arg(4, &dbg_buf)?;
             k_round_final.set_arg(5, &sols_buf)?;
             unsafe {
-                k_round_final.cmd()
+                k_round_final
+                    .cmd()
                     .global_work_size(rounds_global)
                     .local_work_size(rounds_local)
                     .enq()?;
@@ -4209,7 +4411,8 @@ typedef unsigned long ulong;
         k_sols.set_arg(3, &rc0)?;
         k_sols.set_arg(4, &rc1)?;
         unsafe {
-            k_sols.cmd()
+            k_sols
+                .cmd()
                 .global_work_size(sols_global)
                 .local_work_size(sols_local)
                 .enq()?;
@@ -4224,12 +4427,10 @@ typedef unsigned long ulong;
         sols_buf.read(&mut sols_data).enq()?;
 
         // Parse sols_t structure
-        let nr_sols = u32::from_le_bytes([
-            sols_data[0], sols_data[1], sols_data[2], sols_data[3],
-        ]) as usize;
-        let _likely_invalids = u32::from_le_bytes([
-            sols_data[4], sols_data[5], sols_data[6], sols_data[7],
-        ]);
+        let nr_sols =
+            u32::from_le_bytes([sols_data[0], sols_data[1], sols_data[2], sols_data[3]]) as usize;
+        let _likely_invalids =
+            u32::from_le_bytes([sols_data[4], sols_data[5], sols_data[6], sols_data[7]]);
 
         if nr_sols == 0 {
             println!("auxpow_gpu_equihash no solutions found for nonce={base_nonce}");
@@ -4257,8 +4458,10 @@ typedef unsigned long ulong;
                     break;
                 }
                 inputs[j] = u32::from_le_bytes([
-                    sols_data[off], sols_data[off + 1],
-                    sols_data[off + 2], sols_data[off + 3],
+                    sols_data[off],
+                    sols_data[off + 1],
+                    sols_data[off + 2],
+                    sols_data[off + 3],
                 ]);
             }
 
@@ -4360,10 +4563,19 @@ typedef unsigned long ulong;
         // We extract queue + program from each ProQue to avoid holding
         // multiple mutable borrows of self simultaneously.
         let verthash_opts = format!("-DWORK_SIZE=64 -DMDIV={mdiv}");
-        let q = self.ensure_proque("sha3_512_precompute.cl")?.queue().clone();
-        let precompute_program = self.ensure_proque("sha3_512_precompute.cl")?.program().clone();
+        let q = self
+            .ensure_proque("sha3_512_precompute.cl")?
+            .queue()
+            .clone();
+        let precompute_program = self
+            .ensure_proque("sha3_512_precompute.cl")?
+            .program()
+            .clone();
         let sha3_256_program = self.ensure_proque("sha3_512_256.cl")?.program().clone();
-        let verthash_program = self.ensure_proque_with_opts("verthash_kernel.cl", &verthash_opts)?.program().clone();
+        let verthash_program = self
+            .ensure_proque_with_opts("verthash_kernel.cl", &verthash_opts)?
+            .program()
+            .clone();
 
         // --- Prepare header (big-endian uint32 array, like VerthashMiner) ---
         // The header is 80 bytes = 20 uint32s. VerthashMiner does:
@@ -4394,9 +4606,7 @@ typedef unsigned long ulong;
             .build()?;
 
         // --- Target: most significant 32 bits (target[7] in LE = bytes 28-31) ---
-        let target_u32 = u32::from_le_bytes([
-            target[28], target[29], target[30], target[31],
-        ]);
+        let target_u32 = u32::from_le_bytes([target[28], target[29], target[30], target[31]]);
 
         // --- Batch size ---
         // sha3_512_256 requires GWS multiple of 256 (reqd_work_group_size(256,1,1))
@@ -4449,8 +4659,8 @@ typedef unsigned long ulong;
             .queue(q.clone())
             .program(&precompute_program)
             .name("sha3_512_precompute")
-            .arg(&kstates_buf)   // 0: output (8 × 25 ulong)
-            .arg(&header_buf)    // 1: header (18 uint32 = 72 bytes)
+            .arg(&kstates_buf) // 0: output (8 × 25 ulong)
+            .arg(&header_buf) // 1: header (18 uint32 = 72 bytes)
             .build()
             .map_err(|e| anyhow!("Verthash precompute kernel build failed: {e}"))?;
 
@@ -4460,10 +4670,10 @@ typedef unsigned long ulong;
             .queue(q.clone())
             .program(&sha3_256_program)
             .name("sha3_512_256")
-            .arg(&io_hashes_buf)  // 0: output (batch × 8 uint32)
-            .arg(&header_buf)     // 1: header (18 uint32)
-            .arg(in18)            // 2: in18 (header[18])
-            .arg(batch_u32)       // 3: firstNonce (will be updated per batch)
+            .arg(&io_hashes_buf) // 0: output (batch × 8 uint32)
+            .arg(&header_buf) // 1: header (18 uint32)
+            .arg(in18) // 2: in18 (header[18])
+            .arg(batch_u32) // 3: firstNonce (will be updated per batch)
             .build()
             .map_err(|e| anyhow!("Verthash sha3_256 kernel build failed: {e}"))?;
 
@@ -4473,13 +4683,13 @@ typedef unsigned long ulong;
             .queue(q.clone())
             .program(&verthash_program)
             .name("verthash_4w")
-            .arg(&io_hashes_buf)       // 0: io_hashes (batch × 8 uint32)
-            .arg(&kstates_buf)         // 1: kStates (200 ulong)
-            .arg(&verthash.buf)        // 2: memory (verthash.dat)
-            .arg(in18)                 // 3: in18
-            .arg(batch_u32)            // 4: firstNonce (will be updated per batch)
-            .arg(&target_results_buf)  // 5: targetResults
-            .arg(target_u32)           // 6: target (high 32 bits)
+            .arg(&io_hashes_buf) // 0: io_hashes (batch × 8 uint32)
+            .arg(&kstates_buf) // 1: kStates (200 ulong)
+            .arg(&verthash.buf) // 2: memory (verthash.dat)
+            .arg(in18) // 3: in18
+            .arg(batch_u32) // 4: firstNonce (will be updated per batch)
+            .arg(&target_results_buf) // 5: targetResults
+            .arg(target_u32) // 6: target (high 32 bits)
             .build()
             .map_err(|e| anyhow!("Verthash verthash_4w kernel build failed: {e}"))?;
 
@@ -4519,9 +4729,7 @@ typedef unsigned long ulong;
         q.finish()?;
 
         let elapsed_ms = start.elapsed().as_millis();
-        println!(
-            "auxpow_gpu_verthash kernels completed in {elapsed_ms} ms (batch={batch_size})"
-        );
+        println!("auxpow_gpu_verthash kernels completed in {elapsed_ms} ms (batch={batch_size})");
 
         // --- Read target results ---
         // targetResults[0] = count of found nonces
@@ -4620,12 +4828,8 @@ typedef unsigned long ulong;
         for i in (0..header_len).step_by(4) {
             let remaining = header_len - i;
             if remaining >= 4 {
-                job_blob[i / 4] = u32::from_le_bytes([
-                    header[i],
-                    header[i + 1],
-                    header[i + 2],
-                    header[i + 3],
-                ]);
+                job_blob[i / 4] =
+                    u32::from_le_bytes([header[i], header[i + 1], header[i + 2], header[i + 3]]);
             } else {
                 let mut bytes = [0u8; 4];
                 bytes[..remaining].copy_from_slice(&header[i..]);
@@ -4641,8 +4845,7 @@ typedef unsigned long ulong;
 
         // Convert 32-byte big-endian target to u64 (big-endian first 8 bytes).
         let target_u64 = u64::from_be_bytes([
-            target[0], target[1], target[2], target[3],
-            target[4], target[5], target[6], target[7],
+            target[0], target[1], target[2], target[3], target[4], target[5], target[6], target[7],
         ]);
 
         // xmrig-style results and stop buffers.
@@ -4665,15 +4868,15 @@ typedef unsigned long ulong;
             .queue(q.clone())
             .program(pro_que.program())
             .name(kernel_name)
-            .arg(dag_buf)           // 0: g_dag
-            .arg(&job_blob_buf)     // 1: job_blob
-            .arg(target_u64)        // 2: target
-            .arg(hack_false)        // 3: hack_false
-            .arg(&results_buf)      // 4: results
-            .arg(&stop_buf)         // 5: stop
-            .arg(output_nonce_buf)  // 6: output_nonce
-            .arg(output_mix_buf)    // 7: output_mix
-            .arg(found_flag_buf)    // 8: found
+            .arg(dag_buf) // 0: g_dag
+            .arg(&job_blob_buf) // 1: job_blob
+            .arg(target_u64) // 2: target
+            .arg(hack_false) // 3: hack_false
+            .arg(&results_buf) // 4: results
+            .arg(&stop_buf) // 5: stop
+            .arg(output_nonce_buf) // 6: output_nonce
+            .arg(output_mix_buf) // 7: output_mix
+            .arg(found_flag_buf) // 8: found
             .build()
             .map_err(|e| anyhow!("KawPow kernel build failed: {e}"))?;
 
@@ -4732,8 +4935,7 @@ typedef unsigned long ulong;
 
         // Convert 32-byte big-endian target to u64.
         let target_u64 = u64::from_be_bytes([
-            target[0], target[1], target[2], target[3],
-            target[4], target[5], target[6], target[7],
+            target[0], target[1], target[2], target[3], target[4], target[5], target[6], target[7],
         ]);
 
         // EPIC-style g_output buffer (16 uint32).
@@ -4751,15 +4953,15 @@ typedef unsigned long ulong;
             .queue(q.clone())
             .program(pro_que.program())
             .name(kernel_name)
-            .arg(&g_output_buf)     // 0: g_output
-            .arg(&header_buf)       // 1: g_header
-            .arg(dag_buf)           // 2: g_dag
-            .arg(base_nonce)        // 3: start_nonce
-            .arg(target_u64)        // 4: target
-            .arg(hack_false)        // 5: hack_false
-            .arg(output_nonce_buf)  // 6: output_nonce
-            .arg(output_mix_buf)    // 7: output_mix
-            .arg(found_flag_buf)    // 8: found
+            .arg(&g_output_buf) // 0: g_output
+            .arg(&header_buf) // 1: g_header
+            .arg(dag_buf) // 2: g_dag
+            .arg(base_nonce) // 3: start_nonce
+            .arg(target_u64) // 4: target
+            .arg(hack_false) // 5: hack_false
+            .arg(output_nonce_buf) // 6: output_nonce
+            .arg(output_mix_buf) // 7: output_mix
+            .arg(found_flag_buf) // 8: found
             .build()
             .map_err(|e| anyhow!("ProgPow kernel build failed: {e}"))?;
 
@@ -5076,9 +5278,9 @@ typedef unsigned long ulong;
 // enabled (DAG generation requires the C FFI).
 
 #[cfg(feature = "native-hashers")]
-use std::path::Path;
-#[cfg(feature = "native-hashers")]
 use std::io::{BufWriter, Read, Write};
+#[cfg(feature = "native-hashers")]
+use std::path::Path;
 #[cfg(feature = "native-hashers")]
 // CPU FFI DAG generation (generate_ethash_dag, generate_kawpow_dag) is NO LONGER
 // used by DagManager — all DAG generation now happens on the GPU via
@@ -5124,24 +5326,24 @@ impl DagManager {
     /// `ethash_calculate_dag_item_mod` kernel.  If a disk cache exists (from a
     /// previous GPU generation that was saved), it is loaded and uploaded
     /// instead — this is just a host→GPU transfer, not CPU generation.
-    pub fn ensure_ethash_dag(
-        &mut self,
-        miner: &mut GpuMiner,
-        epoch: u32,
-    ) -> Result<()> {
+    pub fn ensure_ethash_dag(&mut self, miner: &mut GpuMiner, epoch: u32) -> Result<()> {
         if self.ethash_epoch == Some(epoch) && miner.ethash_dag_epoch() == Some(epoch) {
             return Ok(()); // already loaded
         }
 
         eprintln!(
             "dag_manager: loading Ethash DAG epoch={} (cache_dir={})",
-            epoch, self.cache_dir.display()
+            epoch,
+            self.cache_dir.display()
         );
 
         // Try disk cache first (from a previous GPU-generated DAG that was saved)
         let cache_path = self.cache_dir.join(format!("ethash_epoch{}.bin", epoch));
         if cache_path.exists() {
-            eprintln!("dag_manager: loading Ethash DAG from disk cache: {}", cache_path.display());
+            eprintln!(
+                "dag_manager: loading Ethash DAG from disk cache: {}",
+                cache_path.display()
+            );
             match Self::load_dag_from_disk(&cache_path) {
                 Ok((dag_u64, dag_entries)) => {
                     eprintln!(
@@ -5163,7 +5365,10 @@ impl DagManager {
             // The light cache (~16-100 MB) is generated on CPU and uploaded,
             // then the full DAG is computed in parallel on the GPU.
             // This is the standard approach used by ethminer/kawpowminer.
-            eprintln!("dag_manager: generating Ethash DAG epoch={} on GPU...", epoch);
+            eprintln!(
+                "dag_manager: generating Ethash DAG epoch={} on GPU...",
+                epoch
+            );
             miner.generate_ethash_dag_on_gpu(epoch)?;
         }
 
@@ -5180,24 +5385,24 @@ impl DagManager {
     /// `ethash_calculate_dag_item_mod` kernel.  If a disk cache exists (from a
     /// previous GPU generation that was saved), it is loaded and uploaded
     /// instead — this is just a host→GPU transfer, not CPU generation.
-    pub fn ensure_kawpow_dag(
-        &mut self,
-        miner: &mut GpuMiner,
-        epoch: u32,
-    ) -> Result<()> {
+    pub fn ensure_kawpow_dag(&mut self, miner: &mut GpuMiner, epoch: u32) -> Result<()> {
         if self.kawpow_epoch == Some(epoch) && miner.kawpow_dag_epoch() == Some(epoch) {
             return Ok(()); // already loaded
         }
 
         eprintln!(
             "dag_manager: loading KawPow DAG epoch={} (cache_dir={})",
-            epoch, self.cache_dir.display()
+            epoch,
+            self.cache_dir.display()
         );
 
         // Try disk cache first (for subsequent startups).
         let cache_path = self.cache_dir.join(format!("kawpow_epoch{}.bin", epoch));
         if cache_path.exists() {
-            eprintln!("dag_manager: loading KawPow DAG from disk cache: {}", cache_path.display());
+            eprintln!(
+                "dag_manager: loading KawPow DAG from disk cache: {}",
+                cache_path.display()
+            );
             match Self::load_dag_from_disk(&cache_path) {
                 Ok((dag_u64, dag_entries)) => {
                     eprintln!(
@@ -5218,7 +5423,10 @@ impl DagManager {
             // Generate the DAG directly on the GPU.
             // The light cache (~16-64 MB) is generated on CPU and uploaded,
             // then the GPU kernel fills the full DAG buffer in-place.
-            eprintln!("dag_manager: generating KawPow DAG epoch={} on GPU...", epoch);
+            eprintln!(
+                "dag_manager: generating KawPow DAG epoch={} on GPU...",
+                epoch
+            );
             miner.generate_kawpow_dag_on_gpu(epoch)?;
         }
 
@@ -5235,24 +5443,24 @@ impl DagManager {
     /// then the full DAG is computed in parallel on the GPU.  If a disk cache
     /// exists (from a previous GPU generation), it is loaded and uploaded
     /// instead.
-    pub fn ensure_progpow_dag(
-        &mut self,
-        miner: &mut GpuMiner,
-        epoch: u32,
-    ) -> Result<()> {
+    pub fn ensure_progpow_dag(&mut self, miner: &mut GpuMiner, epoch: u32) -> Result<()> {
         if self.progpow_epoch == Some(epoch) && miner.progpow_dag_epoch() == Some(epoch) {
             return Ok(()); // already loaded
         }
 
         eprintln!(
             "dag_manager: loading ProgPow DAG epoch={} (cache_dir={})",
-            epoch, self.cache_dir.display()
+            epoch,
+            self.cache_dir.display()
         );
 
         // Try disk cache first (separate file from Ethash)
         let cache_path = self.cache_dir.join(format!("progpow_epoch{}.bin", epoch));
         if cache_path.exists() {
-            eprintln!("dag_manager: loading ProgPow DAG from disk cache: {}", cache_path.display());
+            eprintln!(
+                "dag_manager: loading ProgPow DAG from disk cache: {}",
+                cache_path.display()
+            );
             match Self::load_dag_from_disk(&cache_path) {
                 Ok((dag_u64, dag_entries)) => {
                     eprintln!(
@@ -5275,7 +5483,10 @@ impl DagManager {
             // We intentionally do NOT persist it to disk: reading 2+ GB back to
             // host RAM violates the "DAG stays on GPU" rule and can stall the
             // miner long enough for the pool to close the connection.
-            eprintln!("dag_manager: generating ProgPow DAG epoch={} on GPU...", epoch);
+            eprintln!(
+                "dag_manager: generating ProgPow DAG epoch={} on GPU...",
+                epoch
+            );
             miner.generate_progpow_dag_on_gpu(epoch)?;
         }
 
@@ -5286,15 +5497,11 @@ impl DagManager {
 
     /// Convenience: ensure the right DAG for the given algorithm.
     /// `epoch` is the pre-computed epoch number (block_number / EPOCH_LENGTH).
-    pub fn ensure_dag(
-        &mut self,
-        miner: &mut GpuMiner,
-        algorithm: &str,
-        epoch: u32,
-    ) -> Result<()> {
+    pub fn ensure_dag(&mut self, miner: &mut GpuMiner, algorithm: &str, epoch: u32) -> Result<()> {
         match algorithm {
             "ethash" | "etchash" | "ethash_etc" => self.ensure_ethash_dag(miner, epoch),
-            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => {
+            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
+            | "evrprogpow" | "evrprogpow_evr" | "meowpow" | "meowpow_mewc" => {
                 self.ensure_kawpow_dag(miner, epoch)
             }
             "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" => {
@@ -5311,7 +5518,8 @@ impl DagManager {
     fn load_dag_from_disk(path: &Path) -> Result<(Vec<u64>, u64)> {
         let mut file = std::fs::File::open(path)
             .map_err(|e| anyhow!("failed to open DAG cache {}: {e}", path.display()))?;
-        let metadata = file.metadata()
+        let metadata = file
+            .metadata()
             .map_err(|e| anyhow!("failed to stat DAG cache: {e}"))?;
         let total_bytes = metadata.len() as usize;
         // First 8 bytes = dag_size_entries (u64 LE), rest = DAG data
@@ -5341,7 +5549,7 @@ impl DagManager {
         let u64_count = data_bytes / 8;
         let mut u64_vec = vec![0u64; u64_count];
         for i in 0..u64_count {
-            u64_vec[i] = u64::from_le_bytes(data[i*8..i*8+8].try_into().unwrap());
+            u64_vec[i] = u64::from_le_bytes(data[i * 8..i * 8 + 8].try_into().unwrap());
         }
         Ok((u64_vec, dag_entries))
     }
@@ -5365,7 +5573,8 @@ impl DagManager {
             file.write_all(&word.to_le_bytes())
                 .map_err(|e| anyhow!("failed to write DAG data: {e}"))?;
         }
-        file.flush().map_err(|e| anyhow!("failed to flush DAG cache file: {e}"))?;
+        file.flush()
+            .map_err(|e| anyhow!("failed to flush DAG cache file: {e}"))?;
         eprintln!(
             "dag_manager: saved DAG to disk cache ({} entries, {:.1} MB)",
             dag_entries,
@@ -5456,12 +5665,8 @@ impl PearlRealGpuResult {
         let i_off = i_out * self.noise_rank + ht_h_idx * self.hash_tile_h;
         let j_off = j_out * self.noise_rank + ht_w_idx * self.hash_tile_w;
 
-        let a_row_indices: Vec<usize> = (0..self.hash_tile_h)
-            .map(|u| i_off + u)
-            .collect();
-        let b_col_indices: Vec<usize> = (0..self.hash_tile_w)
-            .map(|v| j_off + v)
-            .collect();
+        let a_row_indices: Vec<usize> = (0..self.hash_tile_h).map(|u| i_off + u).collect();
+        let b_col_indices: Vec<usize> = (0..self.hash_tile_w).map(|v| j_off + v).collect();
 
         (a_row_indices, b_col_indices)
     }
@@ -5526,9 +5731,12 @@ impl GpuMiner {
         let max_chunks = num_chunks_a.max(num_chunks_b);
 
         let cache_match = self.pearl_buffers.as_ref().map_or(false, |c| {
-            c.m == m && c.n == n && c.k == k && c.rank == rank &&
-            c.num_row_offsets == input.row_offsets.len() &&
-            c.num_col_offsets == input.col_offsets.len()
+            c.m == m
+                && c.n == n
+                && c.k == k
+                && c.rank == rank
+                && c.num_row_offsets == input.row_offsets.len()
+                && c.num_col_offsets == input.col_offsets.len()
         });
 
         // Take cache out of self (will put it back before returning)
@@ -5538,55 +5746,122 @@ impl GpuMiner {
             // Create all new buffers
             let matrix_a_buf: Buffer<i8> = Buffer::builder().queue(q.clone()).len(mk).build()?;
             let matrix_bt_buf: Buffer<i8> = Buffer::builder().queue(q.clone()).len(nk).build()?;
-            let chunk_hashes_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(max_chunks * 32).build()?;
-            let merkle_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(max_chunks * 32).build()?;
+            let chunk_hashes_buf: Buffer<u8> = Buffer::builder()
+                .queue(q.clone())
+                .len(max_chunks * 32)
+                .build()?;
+            let merkle_buf: Buffer<u8> = Buffer::builder()
+                .queue(q.clone())
+                .len(max_chunks * 32)
+                .build()?;
             let root_a_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).build()?;
             let root_b_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).build()?;
-            let b_noise_seed_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).build()?;
-            let a_noise_seed_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).build()?;
+            let b_noise_seed_buf: Buffer<u8> =
+                Buffer::builder().queue(q.clone()).len(32).build()?;
+            let a_noise_seed_buf: Buffer<u8> =
+                Buffer::builder().queue(q.clone()).len(32).build()?;
             let e_al_buf: Buffer<i8> = Buffer::builder().queue(q.clone()).len(m * rank).build()?;
             let e_br_buf: Buffer<i8> = Buffer::builder().queue(q.clone()).len(n * rank).build()?;
-            let e_ar_perm_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(k * 2).build()?;
-            let e_bl_perm_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(k * 2).build()?;
+            let e_ar_perm_buf: Buffer<u32> =
+                Buffer::builder().queue(q.clone()).len(k * 2).build()?;
+            let e_bl_perm_buf: Buffer<u32> =
+                Buffer::builder().queue(q.clone()).len(k * 2).build()?;
             let noised_a_buf: Buffer<i32> = Buffer::builder().queue(q.clone()).len(mk).build()?;
             let noised_b_buf: Buffer<i32> = Buffer::builder().queue(q.clone()).len(nk).build()?;
             let iv_bytes: [u8; 32] = [
-                0x67, 0xE6, 0x09, 0x6A, 0x85, 0xAE, 0x67, 0xBB,
-                0x72, 0xF3, 0x6E, 0x3C, 0x3A, 0xF5, 0x4F, 0xA5,
-                0x7F, 0x52, 0x0E, 0x51, 0x8C, 0x68, 0x05, 0x9B,
-                0xAB, 0xD9, 0x83, 0x1F, 0x19, 0xCD, 0xE0, 0x5B,
+                0x67, 0xE6, 0x09, 0x6A, 0x85, 0xAE, 0x67, 0xBB, 0x72, 0xF3, 0x6E, 0x3C, 0x3A, 0xF5,
+                0x4F, 0xA5, 0x7F, 0x52, 0x0E, 0x51, 0x8C, 0x68, 0x05, 0x9B, 0xAB, 0xD9, 0x83, 0x1F,
+                0x19, 0xCD, 0xE0, 0x5B,
             ];
-            let iv_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).copy_host_slice(&iv_bytes).build()?;
-            let seed_label_a_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).copy_host_slice(&input.seed_label_a).build()?;
-            let seed_label_b_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).copy_host_slice(&input.seed_label_b).build()?;
-            let row_off_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(input.row_offsets.len()).copy_host_slice(input.row_offsets).build()?;
-            let col_off_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(input.col_offsets.len()).copy_host_slice(input.col_offsets).build()?;
-            let rows_base_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(input.rows_base.len()).copy_host_slice(input.rows_base).build()?;
-            let cols_base_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(input.cols_base.len()).copy_host_slice(input.cols_base).build()?;
+            let iv_buf: Buffer<u8> = Buffer::builder()
+                .queue(q.clone())
+                .len(32)
+                .copy_host_slice(&iv_bytes)
+                .build()?;
+            let seed_label_a_buf: Buffer<u8> = Buffer::builder()
+                .queue(q.clone())
+                .len(32)
+                .copy_host_slice(&input.seed_label_a)
+                .build()?;
+            let seed_label_b_buf: Buffer<u8> = Buffer::builder()
+                .queue(q.clone())
+                .len(32)
+                .copy_host_slice(&input.seed_label_b)
+                .build()?;
+            let row_off_buf: Buffer<u32> = Buffer::builder()
+                .queue(q.clone())
+                .len(input.row_offsets.len())
+                .copy_host_slice(input.row_offsets)
+                .build()?;
+            let col_off_buf: Buffer<u32> = Buffer::builder()
+                .queue(q.clone())
+                .len(input.col_offsets.len())
+                .copy_host_slice(input.col_offsets)
+                .build()?;
+            let rows_base_buf: Buffer<u32> = Buffer::builder()
+                .queue(q.clone())
+                .len(input.rows_base.len())
+                .copy_host_slice(input.rows_base)
+                .build()?;
+            let cols_base_buf: Buffer<u32> = Buffer::builder()
+                .queue(q.clone())
+                .len(input.cols_base.len())
+                .copy_host_slice(input.cols_base)
+                .build()?;
             let output_tile_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(1).build()?;
-            let output_jackpot_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).build()?;
+            let output_jackpot_buf: Buffer<u8> =
+                Buffer::builder().queue(q.clone()).len(32).build()?;
             let found_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(1).build()?;
             PearlPouwBufferCache {
-                m, n, k, rank,
+                m,
+                n,
+                k,
+                rank,
                 num_row_offsets: input.row_offsets.len(),
                 num_col_offsets: input.col_offsets.len(),
-                matrix_a_buf, matrix_bt_buf, chunk_hashes_buf, merkle_buf,
-                root_a_buf, root_b_buf, b_noise_seed_buf, a_noise_seed_buf,
-                e_al_buf, e_br_buf, e_ar_perm_buf, e_bl_perm_buf,
-                noised_a_buf, noised_b_buf, iv_buf, seed_label_a_buf, seed_label_b_buf,
-                row_off_buf, col_off_buf, rows_base_buf, cols_base_buf,
-                output_tile_buf, output_jackpot_buf, found_buf,
-                batch_noised_a: None, batch_noised_b: None,
-                batch_noise_seeds: None, batch_output_nonce: None,
+                matrix_a_buf,
+                matrix_bt_buf,
+                chunk_hashes_buf,
+                merkle_buf,
+                root_a_buf,
+                root_b_buf,
+                b_noise_seed_buf,
+                a_noise_seed_buf,
+                e_al_buf,
+                e_br_buf,
+                e_ar_perm_buf,
+                e_bl_perm_buf,
+                noised_a_buf,
+                noised_b_buf,
+                iv_buf,
+                seed_label_a_buf,
+                seed_label_b_buf,
+                row_off_buf,
+                col_off_buf,
+                rows_base_buf,
+                cols_base_buf,
+                output_tile_buf,
+                output_jackpot_buf,
+                found_buf,
+                batch_noised_a: None,
+                batch_noised_b: None,
+                batch_noise_seeds: None,
+                batch_output_nonce: None,
                 batch_size: 0,
             }
         };
 
         // Per-nonce: upload job_key, target, and reset found/output_tile
         let job_key_buf: Buffer<u8> = Buffer::builder()
-            .queue(q.clone()).len(32).copy_host_slice(&input.job_key).build()?;
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(&input.job_key)
+            .build()?;
         let target_buf: Buffer<u8> = Buffer::builder()
-            .queue(q.clone()).len(32).copy_host_slice(&input.target).build()?;
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(&input.target)
+            .build()?;
         let zero: [u32; 1] = [0u32];
         cache.found_buf.write(&zero[..]).enq()?;
         cache.output_tile_buf.write(&zero[..]).enq()?;
@@ -5620,38 +5895,94 @@ impl GpuMiner {
         // ── Step 1: Generate matrices A and B^T ────────────────────────
         {
             let kern_gen_a = Kernel::builder()
-                .queue(q.clone()).program(&program).name("pearl_gen_matrix")
-                .arg(matrix_a_buf).arg(input.nonce)
-                .arg(m as u32).arg(k as u32).arg(0u32)
+                .queue(q.clone())
+                .program(&program)
+                .name("pearl_gen_matrix")
+                .arg(matrix_a_buf)
+                .arg(input.nonce)
+                .arg(m as u32)
+                .arg(k as u32)
+                .arg(0u32)
                 .build()?;
-            unsafe { kern_gen_a.cmd().global_work_size(mk as usize).local_work_size(256).enq()?; }
+            unsafe {
+                kern_gen_a
+                    .cmd()
+                    .global_work_size(mk as usize)
+                    .local_work_size(256)
+                    .enq()?;
+            }
 
             let kern_gen_bt = Kernel::builder()
-                .queue(q.clone()).program(&program).name("pearl_gen_matrix")
-                .arg(matrix_bt_buf).arg(input.nonce)
-                .arg(n as u32).arg(k as u32).arg(1u32)
+                .queue(q.clone())
+                .program(&program)
+                .name("pearl_gen_matrix")
+                .arg(matrix_bt_buf)
+                .arg(input.nonce)
+                .arg(n as u32)
+                .arg(k as u32)
+                .arg(1u32)
                 .build()?;
-            unsafe { kern_gen_bt.cmd().global_work_size(nk as usize).local_work_size(256).enq()?; }
+            unsafe {
+                kern_gen_bt
+                    .cmd()
+                    .global_work_size(nk as usize)
+                    .local_work_size(256)
+                    .enq()?;
+            }
         }
-        if profile { q.finish()?; prof_timings.push(("step1_gen_matrix", prof_last.elapsed().as_secs_f64() * 1000.0)); prof_last = std::time::Instant::now(); }
+        if profile {
+            q.finish()?;
+            prof_timings.push((
+                "step1_gen_matrix",
+                prof_last.elapsed().as_secs_f64() * 1000.0,
+            ));
+            prof_last = std::time::Instant::now();
+        }
 
         // ── Step 2: BLAKE3 chunk hashing ────────────────────────────────
         {
             let kern_chunk_a = Kernel::builder()
-                .queue(q.clone()).program(&program).name("pearl_blake3_chunk_hash")
-                .arg(matrix_a_buf).arg(&job_key_buf).arg(chunk_hashes_buf)
+                .queue(q.clone())
+                .program(&program)
+                .name("pearl_blake3_chunk_hash")
+                .arg(matrix_a_buf)
+                .arg(&job_key_buf)
+                .arg(chunk_hashes_buf)
                 .arg(num_chunks_a as u32)
                 .build()?;
-            unsafe { kern_chunk_a.cmd().global_work_size(num_chunks_a).local_work_size(64).enq()?; }
+            unsafe {
+                kern_chunk_a
+                    .cmd()
+                    .global_work_size(num_chunks_a)
+                    .local_work_size(64)
+                    .enq()?;
+            }
 
             let kern_chunk_b = Kernel::builder()
-                .queue(q.clone()).program(&program).name("pearl_blake3_chunk_hash")
-                .arg(matrix_bt_buf).arg(&job_key_buf).arg(merkle_buf)
+                .queue(q.clone())
+                .program(&program)
+                .name("pearl_blake3_chunk_hash")
+                .arg(matrix_bt_buf)
+                .arg(&job_key_buf)
+                .arg(merkle_buf)
                 .arg(num_chunks_b as u32)
                 .build()?;
-            unsafe { kern_chunk_b.cmd().global_work_size(num_chunks_b).local_work_size(64).enq()?; }
+            unsafe {
+                kern_chunk_b
+                    .cmd()
+                    .global_work_size(num_chunks_b)
+                    .local_work_size(64)
+                    .enq()?;
+            }
         }
-        if profile { q.finish()?; prof_timings.push(("step2_blake3_chunk", prof_last.elapsed().as_secs_f64() * 1000.0)); prof_last = std::time::Instant::now(); }
+        if profile {
+            q.finish()?;
+            prof_timings.push((
+                "step2_blake3_chunk",
+                prof_last.elapsed().as_secs_f64() * 1000.0,
+            ));
+            prof_last = std::time::Instant::now();
+        }
 
         // ── Step 3: Merkle tree reduction ──────────────────────────────
         // Reduce A: chunk_hashes_buf → root_a_buf
@@ -5668,13 +5999,23 @@ impl GpuMiner {
                 let dst = if is_root { root_a_buf } else { dst_a };
 
                 let kern_merge = Kernel::builder()
-                    .queue(q.clone()).program(&program).name("pearl_blake3_merge")
-                    .arg(src_a).arg(dst)
-                    .arg(num_parents as u32).arg(if is_root { 1u32 } else { 0u32 })
+                    .queue(q.clone())
+                    .program(&program)
+                    .name("pearl_blake3_merge")
+                    .arg(src_a)
+                    .arg(dst)
+                    .arg(num_parents as u32)
+                    .arg(if is_root { 1u32 } else { 0u32 })
                     .build()?;
                 let lws = safe_lws(num_parents, 64);
                 let gws = round_up_gws(num_parents, lws);
-                unsafe { kern_merge.cmd().global_work_size(gws).local_work_size(lws).enq()?; }
+                unsafe {
+                    kern_merge
+                        .cmd()
+                        .global_work_size(gws)
+                        .local_work_size(lws)
+                        .enq()?;
+                }
 
                 std::mem::swap(&mut src_a, &mut dst_a);
                 num_nodes = num_parents;
@@ -5692,20 +6033,34 @@ impl GpuMiner {
                 let dst = if is_root { root_b_buf } else { dst_b };
 
                 let kern_merge = Kernel::builder()
-                    .queue(q.clone()).program(&program).name("pearl_blake3_merge")
-                    .arg(src_b).arg(dst)
-                    .arg(num_parents as u32).arg(if is_root { 1u32 } else { 0u32 })
+                    .queue(q.clone())
+                    .program(&program)
+                    .name("pearl_blake3_merge")
+                    .arg(src_b)
+                    .arg(dst)
+                    .arg(num_parents as u32)
+                    .arg(if is_root { 1u32 } else { 0u32 })
                     .build()?;
                 let lws = safe_lws(num_parents, 64);
                 let gws = round_up_gws(num_parents, lws);
-                unsafe { kern_merge.cmd().global_work_size(gws).local_work_size(lws).enq()?; }
+                unsafe {
+                    kern_merge
+                        .cmd()
+                        .global_work_size(gws)
+                        .local_work_size(lws)
+                        .enq()?;
+                }
 
                 std::mem::swap(&mut src_b, &mut dst_b);
                 num_nodes = num_parents;
                 level += 1;
             }
         }
-        if profile { q.finish()?; prof_timings.push(("step3_merkle", prof_last.elapsed().as_secs_f64() * 1000.0)); prof_last = std::time::Instant::now(); }
+        if profile {
+            q.finish()?;
+            prof_timings.push(("step3_merkle", prof_last.elapsed().as_secs_f64() * 1000.0));
+            prof_last = std::time::Instant::now();
+        }
 
         // ── Step 4: Derive noise seeds ─────────────────────────────────
         // b_noise_seed = blake3(job_key || hash_b)  — unkeyed, 64-byte input
@@ -5724,13 +6079,28 @@ impl GpuMiner {
             seed_msg[..32].copy_from_slice(&input.job_key);
             seed_msg[32..].copy_from_slice(&root_b);
             let seed_msg_buf_tmp: Buffer<u8> = Buffer::builder()
-                .queue(q.clone()).len(64).copy_host_slice(&seed_msg).build()?;
+                .queue(q.clone())
+                .len(64)
+                .copy_host_slice(&seed_msg)
+                .build()?;
 
             let kern_seed_b = Kernel::builder()
-                .queue(q.clone()).program(&program).name("pearl_blake3_small_hash")
-                .arg(&seed_msg_buf_tmp).arg(64u32).arg(iv_buf).arg(0u32).arg(b_noise_seed_buf)
+                .queue(q.clone())
+                .program(&program)
+                .name("pearl_blake3_small_hash")
+                .arg(&seed_msg_buf_tmp)
+                .arg(64u32)
+                .arg(iv_buf)
+                .arg(0u32)
+                .arg(b_noise_seed_buf)
                 .build()?;
-            unsafe { kern_seed_b.cmd().global_work_size(1).local_work_size(1).enq()?; }
+            unsafe {
+                kern_seed_b
+                    .cmd()
+                    .global_work_size(1)
+                    .local_work_size(1)
+                    .enq()?;
+            }
 
             // Read b_noise_seed
             let mut b_seed = [0u8; 32];
@@ -5740,88 +6110,217 @@ impl GpuMiner {
             seed_msg[..32].copy_from_slice(&b_seed);
             seed_msg[32..].copy_from_slice(&root_a);
             let seed_msg_buf2: Buffer<u8> = Buffer::builder()
-                .queue(q.clone()).len(64).copy_host_slice(&seed_msg).build()?;
+                .queue(q.clone())
+                .len(64)
+                .copy_host_slice(&seed_msg)
+                .build()?;
 
             let kern_seed_a = Kernel::builder()
-                .queue(q.clone()).program(&program).name("pearl_blake3_small_hash")
-                .arg(&seed_msg_buf2).arg(64u32).arg(iv_buf).arg(0u32).arg(a_noise_seed_buf)
+                .queue(q.clone())
+                .program(&program)
+                .name("pearl_blake3_small_hash")
+                .arg(&seed_msg_buf2)
+                .arg(64u32)
+                .arg(iv_buf)
+                .arg(0u32)
+                .arg(a_noise_seed_buf)
                 .build()?;
-            unsafe { kern_seed_a.cmd().global_work_size(1).local_work_size(1).enq()?; }
+            unsafe {
+                kern_seed_a
+                    .cmd()
+                    .global_work_size(1)
+                    .local_work_size(1)
+                    .enq()?;
+            }
         }
-        if profile { q.finish()?; prof_timings.push(("step4_seed_derive", prof_last.elapsed().as_secs_f64() * 1000.0)); prof_last = std::time::Instant::now(); }
+        if profile {
+            q.finish()?;
+            prof_timings.push((
+                "step4_seed_derive",
+                prof_last.elapsed().as_secs_f64() * 1000.0,
+            ));
+            prof_last = std::time::Instant::now();
+        }
 
         // ── Step 5: Generate noise ─────────────────────────────────────
         {
             // E_AL: m×rank uniform random int8 (key=seed_label_a, seed=a_noise_seed)
             let kern_eal = Kernel::builder()
-                .queue(q.clone()).program(&program).name("pearl_gen_uniform_noise")
-                .arg(e_al_buf).arg(a_noise_seed_buf).arg(seed_label_a_buf)
-                .arg(m as u32).arg(rank as u32)
+                .queue(q.clone())
+                .program(&program)
+                .name("pearl_gen_uniform_noise")
+                .arg(e_al_buf)
+                .arg(a_noise_seed_buf)
+                .arg(seed_label_a_buf)
+                .arg(m as u32)
+                .arg(rank as u32)
                 .build()?;
-            unsafe { kern_eal.cmd().global_work_size(m * rank).local_work_size(256).enq()?; }
+            unsafe {
+                kern_eal
+                    .cmd()
+                    .global_work_size(m * rank)
+                    .local_work_size(256)
+                    .enq()?;
+            }
 
             // E_BR: n×rank uniform random int8 (key=seed_label_b, seed=b_noise_seed)
             let kern_ebr = Kernel::builder()
-                .queue(q.clone()).program(&program).name("pearl_gen_uniform_noise")
-                .arg(e_br_buf).arg(b_noise_seed_buf).arg(seed_label_b_buf)
-                .arg(n as u32).arg(rank as u32)
+                .queue(q.clone())
+                .program(&program)
+                .name("pearl_gen_uniform_noise")
+                .arg(e_br_buf)
+                .arg(b_noise_seed_buf)
+                .arg(seed_label_b_buf)
+                .arg(n as u32)
+                .arg(rank as u32)
                 .build()?;
-            unsafe { kern_ebr.cmd().global_work_size(n * rank).local_work_size(256).enq()?; }
+            unsafe {
+                kern_ebr
+                    .cmd()
+                    .global_work_size(n * rank)
+                    .local_work_size(256)
+                    .enq()?;
+            }
 
             // E_AR: k×2 permutation pairs (key=seed_label_a, seed=a_noise_seed)
             let kern_ear = Kernel::builder()
-                .queue(q.clone()).program(&program).name("pearl_gen_permutation")
-                .arg(e_ar_perm_buf).arg(a_noise_seed_buf).arg(seed_label_a_buf)
-                .arg(k as u32).arg(rank as u32)
+                .queue(q.clone())
+                .program(&program)
+                .name("pearl_gen_permutation")
+                .arg(e_ar_perm_buf)
+                .arg(a_noise_seed_buf)
+                .arg(seed_label_a_buf)
+                .arg(k as u32)
+                .arg(rank as u32)
                 .build()?;
-            unsafe { kern_ear.cmd().global_work_size(k).local_work_size(64).enq()?; }
+            unsafe {
+                kern_ear
+                    .cmd()
+                    .global_work_size(k)
+                    .local_work_size(64)
+                    .enq()?;
+            }
 
             // E_BL: k×2 permutation pairs (key=seed_label_b, seed=b_noise_seed)
             let kern_ebl = Kernel::builder()
-                .queue(q.clone()).program(&program).name("pearl_gen_permutation")
-                .arg(e_bl_perm_buf).arg(b_noise_seed_buf).arg(seed_label_b_buf)
-                .arg(k as u32).arg(rank as u32)
+                .queue(q.clone())
+                .program(&program)
+                .name("pearl_gen_permutation")
+                .arg(e_bl_perm_buf)
+                .arg(b_noise_seed_buf)
+                .arg(seed_label_b_buf)
+                .arg(k as u32)
+                .arg(rank as u32)
                 .build()?;
-            unsafe { kern_ebl.cmd().global_work_size(k).local_work_size(64).enq()?; }
+            unsafe {
+                kern_ebl
+                    .cmd()
+                    .global_work_size(k)
+                    .local_work_size(64)
+                    .enq()?;
+            }
         }
-        if profile { q.finish()?; prof_timings.push(("step5_noise_gen", prof_last.elapsed().as_secs_f64() * 1000.0)); prof_last = std::time::Instant::now(); }
+        if profile {
+            q.finish()?;
+            prof_timings.push((
+                "step5_noise_gen",
+                prof_last.elapsed().as_secs_f64() * 1000.0,
+            ));
+            prof_last = std::time::Instant::now();
+        }
 
         // ── Step 6: Apply noise to matrices ────────────────────────────
         {
             let kern_na = Kernel::builder()
-                .queue(q.clone()).program(&program).name("pearl_apply_noise_a")
-                .arg(noised_a_buf).arg(matrix_a_buf).arg(e_al_buf).arg(e_ar_perm_buf)
-                .arg(m as u32).arg(k as u32).arg(rank as u32).arg(0u32)
+                .queue(q.clone())
+                .program(&program)
+                .name("pearl_apply_noise_a")
+                .arg(noised_a_buf)
+                .arg(matrix_a_buf)
+                .arg(e_al_buf)
+                .arg(e_ar_perm_buf)
+                .arg(m as u32)
+                .arg(k as u32)
+                .arg(rank as u32)
+                .arg(0u32)
                 .build()?;
-            unsafe { kern_na.cmd().global_work_size(mk).local_work_size(256).enq()?; }
+            unsafe {
+                kern_na
+                    .cmd()
+                    .global_work_size(mk)
+                    .local_work_size(256)
+                    .enq()?;
+            }
 
             let kern_nb = Kernel::builder()
-                .queue(q.clone()).program(&program).name("pearl_apply_noise_b")
-                .arg(noised_b_buf).arg(matrix_bt_buf).arg(e_br_buf).arg(e_bl_perm_buf)
-                .arg(n as u32).arg(k as u32).arg(rank as u32).arg(0u32)
+                .queue(q.clone())
+                .program(&program)
+                .name("pearl_apply_noise_b")
+                .arg(noised_b_buf)
+                .arg(matrix_bt_buf)
+                .arg(e_br_buf)
+                .arg(e_bl_perm_buf)
+                .arg(n as u32)
+                .arg(k as u32)
+                .arg(rank as u32)
+                .arg(0u32)
                 .build()?;
-            unsafe { kern_nb.cmd().global_work_size(nk).local_work_size(256).enq()?; }
+            unsafe {
+                kern_nb
+                    .cmd()
+                    .global_work_size(nk)
+                    .local_work_size(256)
+                    .enq()?;
+            }
         }
-        if profile { q.finish()?; prof_timings.push(("step6_apply_noise", prof_last.elapsed().as_secs_f64() * 1000.0)); prof_last = std::time::Instant::now(); }
+        if profile {
+            q.finish()?;
+            prof_timings.push((
+                "step6_apply_noise",
+                prof_last.elapsed().as_secs_f64() * 1000.0,
+            ));
+            prof_last = std::time::Instant::now();
+        }
 
         // ── Step 7: MatMul + jackpot + target check ────────────────────
         {
             let total_tiles = input.row_offsets.len() * input.col_offsets.len();
             let kern_mine = Kernel::builder()
-                .queue(q.clone()).program(&program).name("pearl_pouw_mine_native_v3")
-                .arg(noised_a_buf).arg(noised_b_buf).arg(a_noise_seed_buf).arg(&target_buf)
-                .arg(row_off_buf).arg(col_off_buf).arg(rows_base_buf).arg(cols_base_buf)
-                .arg(output_tile_buf).arg(output_jackpot_buf).arg(found_buf)
+                .queue(q.clone())
+                .program(&program)
+                .name("pearl_pouw_mine_native_v3")
+                .arg(noised_a_buf)
+                .arg(noised_b_buf)
+                .arg(a_noise_seed_buf)
+                .arg(&target_buf)
+                .arg(row_off_buf)
+                .arg(col_off_buf)
+                .arg(rows_base_buf)
+                .arg(cols_base_buf)
+                .arg(output_tile_buf)
+                .arg(output_jackpot_buf)
+                .arg(found_buf)
                 .arg(input.row_offsets.len() as u32)
                 .arg(input.col_offsets.len() as u32)
-                .arg(k as u32).arg(rank as u32)
+                .arg(k as u32)
+                .arg(rank as u32)
                 .build()?;
             // v2: one work-group per tile, TILE_H*TILE_W=32 work-items per group
             let lws = 32usize; // TILE_H * TILE_W
             let gws = total_tiles * lws;
-            unsafe { kern_mine.cmd().global_work_size(gws).local_work_size(lws).enq()?; }
+            unsafe {
+                kern_mine
+                    .cmd()
+                    .global_work_size(gws)
+                    .local_work_size(lws)
+                    .enq()?;
+            }
         }
-        if profile { q.finish()?; prof_timings.push(("step7_mine", prof_last.elapsed().as_secs_f64() * 1000.0)); prof_last = std::time::Instant::now(); }
+        if profile {
+            q.finish()?;
+            prof_timings.push(("step7_mine", prof_last.elapsed().as_secs_f64() * 1000.0));
+            prof_last = std::time::Instant::now();
+        }
 
         // ── Read results ───────────────────────────────────────────────
         let mut found = [0u32; 1];
@@ -5906,9 +6405,12 @@ impl GpuMiner {
         let max_chunks = num_chunks_a.max(num_chunks_b);
 
         let cache_match = self.pearl_buffers.as_ref().map_or(false, |c| {
-            c.m == m && c.n == n && c.k == k && c.rank == rank &&
-            c.num_row_offsets == input.row_offsets.len() &&
-            c.num_col_offsets == input.col_offsets.len()
+            c.m == m
+                && c.n == n
+                && c.k == k
+                && c.rank == rank
+                && c.num_row_offsets == input.row_offsets.len()
+                && c.num_col_offsets == input.col_offsets.len()
         });
 
         let mut cache = if cache_match {
@@ -5917,46 +6419,107 @@ impl GpuMiner {
             // Create all new single-nonce buffers (same as pearl_pouw_mine_native)
             let matrix_a_buf: Buffer<i8> = Buffer::builder().queue(q.clone()).len(mk).build()?;
             let matrix_bt_buf: Buffer<i8> = Buffer::builder().queue(q.clone()).len(nk).build()?;
-            let chunk_hashes_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(max_chunks * 32).build()?;
-            let merkle_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(max_chunks * 32).build()?;
+            let chunk_hashes_buf: Buffer<u8> = Buffer::builder()
+                .queue(q.clone())
+                .len(max_chunks * 32)
+                .build()?;
+            let merkle_buf: Buffer<u8> = Buffer::builder()
+                .queue(q.clone())
+                .len(max_chunks * 32)
+                .build()?;
             let root_a_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).build()?;
             let root_b_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).build()?;
-            let b_noise_seed_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).build()?;
-            let a_noise_seed_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).build()?;
+            let b_noise_seed_buf: Buffer<u8> =
+                Buffer::builder().queue(q.clone()).len(32).build()?;
+            let a_noise_seed_buf: Buffer<u8> =
+                Buffer::builder().queue(q.clone()).len(32).build()?;
             let e_al_buf: Buffer<i8> = Buffer::builder().queue(q.clone()).len(m * rank).build()?;
             let e_br_buf: Buffer<i8> = Buffer::builder().queue(q.clone()).len(n * rank).build()?;
-            let e_ar_perm_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(k * 2).build()?;
-            let e_bl_perm_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(k * 2).build()?;
+            let e_ar_perm_buf: Buffer<u32> =
+                Buffer::builder().queue(q.clone()).len(k * 2).build()?;
+            let e_bl_perm_buf: Buffer<u32> =
+                Buffer::builder().queue(q.clone()).len(k * 2).build()?;
             let noised_a_buf: Buffer<i32> = Buffer::builder().queue(q.clone()).len(mk).build()?;
             let noised_b_buf: Buffer<i32> = Buffer::builder().queue(q.clone()).len(nk).build()?;
             let iv_bytes: [u8; 32] = [
-                0x67, 0xE6, 0x09, 0x6A, 0x85, 0xAE, 0x67, 0xBB,
-                0x72, 0xF3, 0x6E, 0x3C, 0x3A, 0xF5, 0x4F, 0xA5,
-                0x7F, 0x52, 0x0E, 0x51, 0x8C, 0x68, 0x05, 0x9B,
-                0xAB, 0xD9, 0x83, 0x1F, 0x19, 0xCD, 0xE0, 0x5B,
+                0x67, 0xE6, 0x09, 0x6A, 0x85, 0xAE, 0x67, 0xBB, 0x72, 0xF3, 0x6E, 0x3C, 0x3A, 0xF5,
+                0x4F, 0xA5, 0x7F, 0x52, 0x0E, 0x51, 0x8C, 0x68, 0x05, 0x9B, 0xAB, 0xD9, 0x83, 0x1F,
+                0x19, 0xCD, 0xE0, 0x5B,
             ];
-            let iv_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).copy_host_slice(&iv_bytes).build()?;
-            let seed_label_a_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).copy_host_slice(&input.seed_label_a).build()?;
-            let seed_label_b_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).copy_host_slice(&input.seed_label_b).build()?;
-            let row_off_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(input.row_offsets.len()).copy_host_slice(input.row_offsets).build()?;
-            let col_off_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(input.col_offsets.len()).copy_host_slice(input.col_offsets).build()?;
-            let rows_base_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(input.rows_base.len()).copy_host_slice(input.rows_base).build()?;
-            let cols_base_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(input.cols_base.len()).copy_host_slice(input.cols_base).build()?;
+            let iv_buf: Buffer<u8> = Buffer::builder()
+                .queue(q.clone())
+                .len(32)
+                .copy_host_slice(&iv_bytes)
+                .build()?;
+            let seed_label_a_buf: Buffer<u8> = Buffer::builder()
+                .queue(q.clone())
+                .len(32)
+                .copy_host_slice(&input.seed_label_a)
+                .build()?;
+            let seed_label_b_buf: Buffer<u8> = Buffer::builder()
+                .queue(q.clone())
+                .len(32)
+                .copy_host_slice(&input.seed_label_b)
+                .build()?;
+            let row_off_buf: Buffer<u32> = Buffer::builder()
+                .queue(q.clone())
+                .len(input.row_offsets.len())
+                .copy_host_slice(input.row_offsets)
+                .build()?;
+            let col_off_buf: Buffer<u32> = Buffer::builder()
+                .queue(q.clone())
+                .len(input.col_offsets.len())
+                .copy_host_slice(input.col_offsets)
+                .build()?;
+            let rows_base_buf: Buffer<u32> = Buffer::builder()
+                .queue(q.clone())
+                .len(input.rows_base.len())
+                .copy_host_slice(input.rows_base)
+                .build()?;
+            let cols_base_buf: Buffer<u32> = Buffer::builder()
+                .queue(q.clone())
+                .len(input.cols_base.len())
+                .copy_host_slice(input.cols_base)
+                .build()?;
             let output_tile_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(1).build()?;
-            let output_jackpot_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).build()?;
+            let output_jackpot_buf: Buffer<u8> =
+                Buffer::builder().queue(q.clone()).len(32).build()?;
             let found_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(1).build()?;
             PearlPouwBufferCache {
-                m, n, k, rank,
+                m,
+                n,
+                k,
+                rank,
                 num_row_offsets: input.row_offsets.len(),
                 num_col_offsets: input.col_offsets.len(),
-                matrix_a_buf, matrix_bt_buf, chunk_hashes_buf, merkle_buf,
-                root_a_buf, root_b_buf, b_noise_seed_buf, a_noise_seed_buf,
-                e_al_buf, e_br_buf, e_ar_perm_buf, e_bl_perm_buf,
-                noised_a_buf, noised_b_buf, iv_buf, seed_label_a_buf, seed_label_b_buf,
-                row_off_buf, col_off_buf, rows_base_buf, cols_base_buf,
-                output_tile_buf, output_jackpot_buf, found_buf,
-                batch_noised_a: None, batch_noised_b: None,
-                batch_noise_seeds: None, batch_output_nonce: None,
+                matrix_a_buf,
+                matrix_bt_buf,
+                chunk_hashes_buf,
+                merkle_buf,
+                root_a_buf,
+                root_b_buf,
+                b_noise_seed_buf,
+                a_noise_seed_buf,
+                e_al_buf,
+                e_br_buf,
+                e_ar_perm_buf,
+                e_bl_perm_buf,
+                noised_a_buf,
+                noised_b_buf,
+                iv_buf,
+                seed_label_a_buf,
+                seed_label_b_buf,
+                row_off_buf,
+                col_off_buf,
+                rows_base_buf,
+                cols_base_buf,
+                output_tile_buf,
+                output_jackpot_buf,
+                found_buf,
+                batch_noised_a: None,
+                batch_noised_b: None,
+                batch_noise_seeds: None,
+                batch_output_nonce: None,
                 batch_size: 0,
             }
         };
@@ -5965,7 +6528,8 @@ impl GpuMiner {
         if cache.batch_size != bs || cache.batch_noised_a.is_none() {
             cache.batch_noised_a = Some(Buffer::builder().queue(q.clone()).len(bs * mk).build()?);
             cache.batch_noised_b = Some(Buffer::builder().queue(q.clone()).len(bs * nk).build()?);
-            cache.batch_noise_seeds = Some(Buffer::builder().queue(q.clone()).len(bs * 32).build()?);
+            cache.batch_noise_seeds =
+                Some(Buffer::builder().queue(q.clone()).len(bs * 32).build()?);
             cache.batch_output_nonce = Some(Buffer::builder().queue(q.clone()).len(8).build()?);
             cache.batch_size = bs;
         }
@@ -5977,7 +6541,10 @@ impl GpuMiner {
 
         // ── Upload target and reset found ──
         let target_buf: Buffer<u8> = Buffer::builder()
-            .queue(q.clone()).len(32).copy_host_slice(&input.target).build()?;
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(&input.target)
+            .build()?;
         let zero: [u32; 1] = [0u32];
         cache.found_buf.write(&zero[..]).enq()?;
         cache.output_tile_buf.write(&zero[..]).enq()?;
@@ -6016,40 +6583,85 @@ impl GpuMiner {
 
             // Upload job_key for this nonce
             let job_key_buf: Buffer<u8> = Buffer::builder()
-                .queue(q.clone()).len(32).copy_host_slice(&input.job_key).build()?;
+                .queue(q.clone())
+                .len(32)
+                .copy_host_slice(&input.job_key)
+                .build()?;
 
             // Step 1: Generate matrices
             {
                 let kern_gen_a = Kernel::builder()
-                    .queue(q.clone()).program(&program).name("pearl_gen_matrix")
-                    .arg(matrix_a_buf).arg(nonce)
-                    .arg(m as u32).arg(k as u32).arg(0u32)
+                    .queue(q.clone())
+                    .program(&program)
+                    .name("pearl_gen_matrix")
+                    .arg(matrix_a_buf)
+                    .arg(nonce)
+                    .arg(m as u32)
+                    .arg(k as u32)
+                    .arg(0u32)
                     .build()?;
-                unsafe { kern_gen_a.cmd().global_work_size(mk).local_work_size(256).enq()?; }
+                unsafe {
+                    kern_gen_a
+                        .cmd()
+                        .global_work_size(mk)
+                        .local_work_size(256)
+                        .enq()?;
+                }
 
                 let kern_gen_bt = Kernel::builder()
-                    .queue(q.clone()).program(&program).name("pearl_gen_matrix")
-                    .arg(matrix_bt_buf).arg(nonce)
-                    .arg(n as u32).arg(k as u32).arg(1u32)
+                    .queue(q.clone())
+                    .program(&program)
+                    .name("pearl_gen_matrix")
+                    .arg(matrix_bt_buf)
+                    .arg(nonce)
+                    .arg(n as u32)
+                    .arg(k as u32)
+                    .arg(1u32)
                     .build()?;
-                unsafe { kern_gen_bt.cmd().global_work_size(nk).local_work_size(256).enq()?; }
+                unsafe {
+                    kern_gen_bt
+                        .cmd()
+                        .global_work_size(nk)
+                        .local_work_size(256)
+                        .enq()?;
+                }
             }
 
             // Step 2: BLAKE3 chunk hashing (A→chunk_hashes, B→merkle_buf)
             {
                 let kern_chunk_a = Kernel::builder()
-                    .queue(q.clone()).program(&program).name("pearl_blake3_chunk_hash")
-                    .arg(matrix_a_buf).arg(&job_key_buf).arg(chunk_hashes_buf)
+                    .queue(q.clone())
+                    .program(&program)
+                    .name("pearl_blake3_chunk_hash")
+                    .arg(matrix_a_buf)
+                    .arg(&job_key_buf)
+                    .arg(chunk_hashes_buf)
                     .arg(num_chunks_a as u32)
                     .build()?;
-                unsafe { kern_chunk_a.cmd().global_work_size(num_chunks_a).local_work_size(64).enq()?; }
+                unsafe {
+                    kern_chunk_a
+                        .cmd()
+                        .global_work_size(num_chunks_a)
+                        .local_work_size(64)
+                        .enq()?;
+                }
 
                 let kern_chunk_b = Kernel::builder()
-                    .queue(q.clone()).program(&program).name("pearl_blake3_chunk_hash")
-                    .arg(matrix_bt_buf).arg(&job_key_buf).arg(merkle_buf)
+                    .queue(q.clone())
+                    .program(&program)
+                    .name("pearl_blake3_chunk_hash")
+                    .arg(matrix_bt_buf)
+                    .arg(&job_key_buf)
+                    .arg(merkle_buf)
                     .arg(num_chunks_b as u32)
                     .build()?;
-                unsafe { kern_chunk_b.cmd().global_work_size(num_chunks_b).local_work_size(64).enq()?; }
+                unsafe {
+                    kern_chunk_b
+                        .cmd()
+                        .global_work_size(num_chunks_b)
+                        .local_work_size(64)
+                        .enq()?;
+                }
             }
 
             // Step 3: Merkle tree reduction (A: chunk_hashes→root_a, B: merkle_buf→root_b)
@@ -6063,13 +6675,23 @@ impl GpuMiner {
                     let is_root = num_parents == 1;
                     let dst = if is_root { root_a_buf } else { dst_a };
                     let kern_merge = Kernel::builder()
-                        .queue(q.clone()).program(&program).name("pearl_blake3_merge")
-                        .arg(src_a).arg(dst)
-                        .arg(num_parents as u32).arg(if is_root { 1u32 } else { 0u32 })
+                        .queue(q.clone())
+                        .program(&program)
+                        .name("pearl_blake3_merge")
+                        .arg(src_a)
+                        .arg(dst)
+                        .arg(num_parents as u32)
+                        .arg(if is_root { 1u32 } else { 0u32 })
                         .build()?;
                     let lws = safe_lws(num_parents, 64);
                     let gws = round_up_gws(num_parents, lws);
-                    unsafe { kern_merge.cmd().global_work_size(gws).local_work_size(lws).enq()?; }
+                    unsafe {
+                        kern_merge
+                            .cmd()
+                            .global_work_size(gws)
+                            .local_work_size(lws)
+                            .enq()?;
+                    }
                     std::mem::swap(&mut src_a, &mut dst_a);
                     num_nodes = num_parents;
                 }
@@ -6083,13 +6705,23 @@ impl GpuMiner {
                     let is_root = num_parents == 1;
                     let dst = if is_root { root_b_buf } else { dst_b };
                     let kern_merge = Kernel::builder()
-                        .queue(q.clone()).program(&program).name("pearl_blake3_merge")
-                        .arg(src_b).arg(dst)
-                        .arg(num_parents as u32).arg(if is_root { 1u32 } else { 0u32 })
+                        .queue(q.clone())
+                        .program(&program)
+                        .name("pearl_blake3_merge")
+                        .arg(src_b)
+                        .arg(dst)
+                        .arg(num_parents as u32)
+                        .arg(if is_root { 1u32 } else { 0u32 })
                         .build()?;
                     let lws = safe_lws(num_parents, 64);
                     let gws = round_up_gws(num_parents, lws);
-                    unsafe { kern_merge.cmd().global_work_size(gws).local_work_size(lws).enq()?; }
+                    unsafe {
+                        kern_merge
+                            .cmd()
+                            .global_work_size(gws)
+                            .local_work_size(lws)
+                            .enq()?;
+                    }
                     std::mem::swap(&mut src_b, &mut dst_b);
                     num_nodes = num_parents;
                 }
@@ -6107,13 +6739,28 @@ impl GpuMiner {
                 seed_msg[..32].copy_from_slice(&input.job_key);
                 seed_msg[32..].copy_from_slice(&root_b);
                 let seed_msg_buf: Buffer<u8> = Buffer::builder()
-                    .queue(q.clone()).len(64).copy_host_slice(&seed_msg).build()?;
+                    .queue(q.clone())
+                    .len(64)
+                    .copy_host_slice(&seed_msg)
+                    .build()?;
 
                 let kern_seed_b = Kernel::builder()
-                    .queue(q.clone()).program(&program).name("pearl_blake3_small_hash")
-                    .arg(&seed_msg_buf).arg(64u32).arg(iv_buf).arg(0u32).arg(b_noise_seed_buf)
+                    .queue(q.clone())
+                    .program(&program)
+                    .name("pearl_blake3_small_hash")
+                    .arg(&seed_msg_buf)
+                    .arg(64u32)
+                    .arg(iv_buf)
+                    .arg(0u32)
+                    .arg(b_noise_seed_buf)
                     .build()?;
-                unsafe { kern_seed_b.cmd().global_work_size(1).local_work_size(1).enq()?; }
+                unsafe {
+                    kern_seed_b
+                        .cmd()
+                        .global_work_size(1)
+                        .local_work_size(1)
+                        .enq()?;
+                }
 
                 // Read b_noise_seed
                 let mut b_seed = [0u8; 32];
@@ -6123,44 +6770,103 @@ impl GpuMiner {
                 seed_msg[..32].copy_from_slice(&b_seed);
                 seed_msg[32..].copy_from_slice(&root_a);
                 let seed_msg_buf2: Buffer<u8> = Buffer::builder()
-                    .queue(q.clone()).len(64).copy_host_slice(&seed_msg).build()?;
+                    .queue(q.clone())
+                    .len(64)
+                    .copy_host_slice(&seed_msg)
+                    .build()?;
 
                 let kern_seed_a = Kernel::builder()
-                    .queue(q.clone()).program(&program).name("pearl_blake3_small_hash")
-                    .arg(&seed_msg_buf2).arg(64u32).arg(iv_buf).arg(0u32).arg(a_noise_seed_buf)
+                    .queue(q.clone())
+                    .program(&program)
+                    .name("pearl_blake3_small_hash")
+                    .arg(&seed_msg_buf2)
+                    .arg(64u32)
+                    .arg(iv_buf)
+                    .arg(0u32)
+                    .arg(a_noise_seed_buf)
                     .build()?;
-                unsafe { kern_seed_a.cmd().global_work_size(1).local_work_size(1).enq()?; }
+                unsafe {
+                    kern_seed_a
+                        .cmd()
+                        .global_work_size(1)
+                        .local_work_size(1)
+                        .enq()?;
+                }
             }
 
             // Step 5: Generate noise (E_AL, E_BR, E_AR_perm, E_BL_perm)
             {
                 let kern_eal = Kernel::builder()
-                    .queue(q.clone()).program(&program).name("pearl_gen_uniform_noise")
-                    .arg(e_al_buf).arg(a_noise_seed_buf).arg(seed_label_a_buf)
-                    .arg(m as u32).arg(rank as u32)
+                    .queue(q.clone())
+                    .program(&program)
+                    .name("pearl_gen_uniform_noise")
+                    .arg(e_al_buf)
+                    .arg(a_noise_seed_buf)
+                    .arg(seed_label_a_buf)
+                    .arg(m as u32)
+                    .arg(rank as u32)
                     .build()?;
-                unsafe { kern_eal.cmd().global_work_size(m * rank).local_work_size(256).enq()?; }
+                unsafe {
+                    kern_eal
+                        .cmd()
+                        .global_work_size(m * rank)
+                        .local_work_size(256)
+                        .enq()?;
+                }
 
                 let kern_ebr = Kernel::builder()
-                    .queue(q.clone()).program(&program).name("pearl_gen_uniform_noise")
-                    .arg(e_br_buf).arg(b_noise_seed_buf).arg(seed_label_b_buf)
-                    .arg(n as u32).arg(rank as u32)
+                    .queue(q.clone())
+                    .program(&program)
+                    .name("pearl_gen_uniform_noise")
+                    .arg(e_br_buf)
+                    .arg(b_noise_seed_buf)
+                    .arg(seed_label_b_buf)
+                    .arg(n as u32)
+                    .arg(rank as u32)
                     .build()?;
-                unsafe { kern_ebr.cmd().global_work_size(n * rank).local_work_size(256).enq()?; }
+                unsafe {
+                    kern_ebr
+                        .cmd()
+                        .global_work_size(n * rank)
+                        .local_work_size(256)
+                        .enq()?;
+                }
 
                 let kern_ear = Kernel::builder()
-                    .queue(q.clone()).program(&program).name("pearl_gen_permutation")
-                    .arg(e_ar_perm_buf).arg(a_noise_seed_buf).arg(seed_label_a_buf)
-                    .arg(k as u32).arg(rank as u32)
+                    .queue(q.clone())
+                    .program(&program)
+                    .name("pearl_gen_permutation")
+                    .arg(e_ar_perm_buf)
+                    .arg(a_noise_seed_buf)
+                    .arg(seed_label_a_buf)
+                    .arg(k as u32)
+                    .arg(rank as u32)
                     .build()?;
-                unsafe { kern_ear.cmd().global_work_size(k).local_work_size(64).enq()?; }
+                unsafe {
+                    kern_ear
+                        .cmd()
+                        .global_work_size(k)
+                        .local_work_size(64)
+                        .enq()?;
+                }
 
                 let kern_ebl = Kernel::builder()
-                    .queue(q.clone()).program(&program).name("pearl_gen_permutation")
-                    .arg(e_bl_perm_buf).arg(b_noise_seed_buf).arg(seed_label_b_buf)
-                    .arg(k as u32).arg(rank as u32)
+                    .queue(q.clone())
+                    .program(&program)
+                    .name("pearl_gen_permutation")
+                    .arg(e_bl_perm_buf)
+                    .arg(b_noise_seed_buf)
+                    .arg(seed_label_b_buf)
+                    .arg(k as u32)
+                    .arg(rank as u32)
                     .build()?;
-                unsafe { kern_ebl.cmd().global_work_size(k).local_work_size(64).enq()?; }
+                unsafe {
+                    kern_ebl
+                        .cmd()
+                        .global_work_size(k)
+                        .local_work_size(64)
+                        .enq()?;
+                }
             }
 
             // Step 6: Apply noise — write directly to batch buffers at nonce offset
@@ -6169,30 +6875,68 @@ impl GpuMiner {
                 let b_off = (nonce_idx * nk) as u32;
 
                 let kern_apply_a = Kernel::builder()
-                    .queue(q.clone()).program(&program).name("pearl_apply_noise_a")
-                    .arg(batch_noised_a).arg(matrix_a_buf).arg(e_al_buf).arg(e_ar_perm_buf)
-                    .arg(m as u32).arg(k as u32).arg(rank as u32).arg(a_off)
+                    .queue(q.clone())
+                    .program(&program)
+                    .name("pearl_apply_noise_a")
+                    .arg(batch_noised_a)
+                    .arg(matrix_a_buf)
+                    .arg(e_al_buf)
+                    .arg(e_ar_perm_buf)
+                    .arg(m as u32)
+                    .arg(k as u32)
+                    .arg(rank as u32)
+                    .arg(a_off)
                     .build()?;
-                unsafe { kern_apply_a.cmd().global_work_size(mk).local_work_size(256).enq()?; }
+                unsafe {
+                    kern_apply_a
+                        .cmd()
+                        .global_work_size(mk)
+                        .local_work_size(256)
+                        .enq()?;
+                }
 
                 let kern_apply_b = Kernel::builder()
-                    .queue(q.clone()).program(&program).name("pearl_apply_noise_b")
-                    .arg(batch_noised_b).arg(matrix_bt_buf).arg(e_br_buf).arg(e_bl_perm_buf)
-                    .arg(n as u32).arg(k as u32).arg(rank as u32).arg(b_off)
+                    .queue(q.clone())
+                    .program(&program)
+                    .name("pearl_apply_noise_b")
+                    .arg(batch_noised_b)
+                    .arg(matrix_bt_buf)
+                    .arg(e_br_buf)
+                    .arg(e_bl_perm_buf)
+                    .arg(n as u32)
+                    .arg(k as u32)
+                    .arg(rank as u32)
+                    .arg(b_off)
                     .build()?;
-                unsafe { kern_apply_b.cmd().global_work_size(nk).local_work_size(256).enq()?; }
+                unsafe {
+                    kern_apply_b
+                        .cmd()
+                        .global_work_size(nk)
+                        .local_work_size(256)
+                        .enq()?;
+                }
             }
 
             // Copy noise seed (32 bytes) to batch buffer via host
             {
                 let mut seed_host = [0u8; 32];
                 a_noise_seed_buf.read(&mut seed_host[..]).enq()?;
-                batch_noise_seeds.cmd().write(&seed_host[..])
-                    .offset(nonce_idx * 32).enq()?;
+                batch_noise_seeds
+                    .cmd()
+                    .write(&seed_host[..])
+                    .offset(nonce_idx * 32)
+                    .enq()?;
             }
         }
 
-        if profile { q.finish()?; eprintln!("PEARL_BATCH steps1-6 for {} nonces: {:.2}ms", bs, prof_steps_start.elapsed().as_secs_f64() * 1000.0); }
+        if profile {
+            q.finish()?;
+            eprintln!(
+                "PEARL_BATCH steps1-6 for {} nonces: {:.2}ms",
+                bs,
+                prof_steps_start.elapsed().as_secs_f64() * 1000.0
+            );
+        }
 
         let prof_mine_start = std::time::Instant::now();
 
@@ -6203,7 +6947,9 @@ impl GpuMiner {
             let gws = bs * total_tiles * lws;
 
             let kern_mine = Kernel::builder()
-                .queue(q.clone()).program(&program).name("pearl_pouw_mine_persistent")
+                .queue(q.clone())
+                .program(&program)
+                .name("pearl_pouw_mine_persistent")
                 .arg(batch_noised_a)
                 .arg(batch_noised_b)
                 .arg(batch_noise_seeds)
@@ -6225,7 +6971,13 @@ impl GpuMiner {
                 .arg(m as u32)
                 .arg(n as u32)
                 .build()?;
-            unsafe { kern_mine.cmd().global_work_size(gws).local_work_size(lws).enq()?; }
+            unsafe {
+                kern_mine
+                    .cmd()
+                    .global_work_size(gws)
+                    .local_work_size(lws)
+                    .enq()?;
+            }
         }
 
         // ── Read results ──
@@ -6234,12 +6986,18 @@ impl GpuMiner {
 
         if profile {
             q.finish()?;
-            eprintln!("PEARL_BATCH step7_mine+readback for {} nonces: {:.2}ms ({:.2}ms/nonce)",
-                bs, prof_mine_start.elapsed().as_secs_f64() * 1000.0,
-                prof_mine_start.elapsed().as_secs_f64() * 1000.0 / bs as f64);
-            eprintln!("PEARL_BATCH total for {} nonces: {:.2}ms ({:.2}ms/nonce)",
-                bs, prof_t0.elapsed().as_secs_f64() * 1000.0,
-                prof_t0.elapsed().as_secs_f64() * 1000.0 / bs as f64);
+            eprintln!(
+                "PEARL_BATCH step7_mine+readback for {} nonces: {:.2}ms ({:.2}ms/nonce)",
+                bs,
+                prof_mine_start.elapsed().as_secs_f64() * 1000.0,
+                prof_mine_start.elapsed().as_secs_f64() * 1000.0 / bs as f64
+            );
+            eprintln!(
+                "PEARL_BATCH total for {} nonces: {:.2}ms ({:.2}ms/nonce)",
+                bs,
+                prof_t0.elapsed().as_secs_f64() * 1000.0,
+                prof_t0.elapsed().as_secs_f64() * 1000.0 / bs as f64
+            );
         }
 
         if found[0] == 0 {
@@ -6261,18 +7019,40 @@ impl GpuMiner {
         let mut matrix_bt = vec![0i8; nk];
         {
             let kern_gen_a = Kernel::builder()
-                .queue(q.clone()).program(&program).name("pearl_gen_matrix")
-                .arg(matrix_a_buf).arg(winning_nonce)
-                .arg(m as u32).arg(k as u32).arg(0u32)
+                .queue(q.clone())
+                .program(&program)
+                .name("pearl_gen_matrix")
+                .arg(matrix_a_buf)
+                .arg(winning_nonce)
+                .arg(m as u32)
+                .arg(k as u32)
+                .arg(0u32)
                 .build()?;
-            unsafe { kern_gen_a.cmd().global_work_size(mk).local_work_size(256).enq()?; }
+            unsafe {
+                kern_gen_a
+                    .cmd()
+                    .global_work_size(mk)
+                    .local_work_size(256)
+                    .enq()?;
+            }
 
             let kern_gen_bt = Kernel::builder()
-                .queue(q.clone()).program(&program).name("pearl_gen_matrix")
-                .arg(matrix_bt_buf).arg(winning_nonce)
-                .arg(n as u32).arg(k as u32).arg(1u32)
+                .queue(q.clone())
+                .program(&program)
+                .name("pearl_gen_matrix")
+                .arg(matrix_bt_buf)
+                .arg(winning_nonce)
+                .arg(n as u32)
+                .arg(k as u32)
+                .arg(1u32)
                 .build()?;
-            unsafe { kern_gen_bt.cmd().global_work_size(nk).local_work_size(256).enq()?; }
+            unsafe {
+                kern_gen_bt
+                    .cmd()
+                    .global_work_size(nk)
+                    .local_work_size(256)
+                    .enq()?;
+            }
 
             matrix_a_buf.read(&mut matrix_a).enq()?;
             matrix_bt_buf.read(&mut matrix_bt).enq()?;
@@ -6301,10 +7081,10 @@ impl GpuMiner {
     #[cfg(feature = "gpu-opencl")]
     pub fn pearl_pouw_gpu_mine_real(
         &mut self,
-        noised_a: &[i8],     // m×k int8 (A' = A + E_AL·E_AR, wrapped to int8)
-        noised_bt: &[i8],    // n×k int8 (B'^T)
-        pow_key: &[u8; 32],  // noise_seed_a (BLAKE3 key for jackpot)
-        target: &[u8; 32],   // little-endian U256 target
+        noised_a: &[i8],    // m×k int8 (A' = A + E_AL·E_AR, wrapped to int8)
+        noised_bt: &[i8],   // n×k int8 (B'^T)
+        pow_key: &[u8; 32], // noise_seed_a (BLAKE3 key for jackpot)
+        target: &[u8; 32],  // little-endian U256 target
         m: usize,
         n: usize,
         k: usize,
@@ -6320,10 +7100,18 @@ impl GpuMiner {
 
         // Validate dimensions
         if noised_a.len() != m * k {
-            return Err(anyhow!("noised_a length mismatch: {} != {}", noised_a.len(), m * k));
+            return Err(anyhow!(
+                "noised_a length mismatch: {} != {}",
+                noised_a.len(),
+                m * k
+            ));
         }
         if noised_bt.len() != n * k {
-            return Err(anyhow!("noised_bt length mismatch: {} != {}", noised_bt.len(), n * k));
+            return Err(anyhow!(
+                "noised_bt length mismatch: {} != {}",
+                noised_bt.len(),
+                n * k
+            ));
         }
         if m % noise_rank != 0 {
             return Err(anyhow!("m must be divisible by noise_rank"));
@@ -6348,28 +7136,37 @@ impl GpuMiner {
 
         // Upload noised matrices (as i8 bytes)
         let noised_a_buf: Buffer<i8> = Buffer::builder()
-            .queue(q.clone()).len(m * k)
-            .copy_host_slice(noised_a).build()?;
+            .queue(q.clone())
+            .len(m * k)
+            .copy_host_slice(noised_a)
+            .build()?;
         let noised_bt_buf: Buffer<i8> = Buffer::builder()
-            .queue(q.clone()).len(n * k)
-            .copy_host_slice(noised_bt).build()?;
+            .queue(q.clone())
+            .len(n * k)
+            .copy_host_slice(noised_bt)
+            .build()?;
         let pow_key_buf: Buffer<u8> = Buffer::builder()
-            .queue(q.clone()).len(32)
-            .copy_host_slice(pow_key).build()?;
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(pow_key)
+            .build()?;
         let target_buf: Buffer<u8> = Buffer::builder()
-            .queue(q.clone()).len(32)
-            .copy_host_slice(target).build()?;
+            .queue(q.clone())
+            .len(32)
+            .copy_host_slice(target)
+            .build()?;
 
         // Output buffers
-        let output_tile_buf: Buffer<u32> = Buffer::builder()
-            .queue(q.clone()).len(1).build()?;
-        let output_jackpot_buf: Buffer<u8> = Buffer::builder()
-            .queue(q.clone()).len(32).build()?;
+        let output_tile_buf: Buffer<u32> = Buffer::builder().queue(q.clone()).len(1).build()?;
+        let output_jackpot_buf: Buffer<u8> = Buffer::builder().queue(q.clone()).len(32).build()?;
         let found_buf: Buffer<u32> = Buffer::builder()
-            .queue(q.clone()).len(1).fill_val(0u32).build()?;
+            .queue(q.clone())
+            .len(1)
+            .fill_val(0u32)
+            .build()?;
 
         // Launch kernel
-        let lws = hash_tile_h * hash_tile_w;  // 256 for 16×16
+        let lws = hash_tile_h * hash_tile_w; // 256 for 16×16
         let gws = total_hash_tiles * lws;
 
         let kern = Kernel::builder()
@@ -6418,8 +7215,16 @@ impl GpuMiner {
         Ok(Some(PearlRealGpuResult {
             tile_index: tile[0],
             jackpot_hash,
-            m, n, k, noise_rank, hash_tile_h, hash_tile_w,
-            num_ht_h, num_ht_w, num_output_tiles_i, num_output_tiles_j,
+            m,
+            n,
+            k,
+            noise_rank,
+            hash_tile_h,
+            hash_tile_w,
+            num_ht_h,
+            num_ht_w,
+            num_output_tiles_i,
+            num_output_tiles_j,
         }))
     }
 }
@@ -6438,7 +7243,9 @@ impl crate::gpu_backend::GpuBackend for GpuMiner {
         batch_size: u64,
     ) -> Result<Option<crate::gpu_backend::GpuFoundShare>> {
         // Delegate to the existing mine() method, then convert.
-        let result = GpuMiner::mine(self, algorithm, header, extra, target, base_nonce, batch_size)?;
+        let result = GpuMiner::mine(
+            self, algorithm, header, extra, target, base_nonce, batch_size,
+        )?;
         Ok(result.map(crate::gpu_backend::GpuFoundShare::from))
     }
 
@@ -6531,35 +7338,65 @@ mod tests {
     /// Verify zelhash_kernel.cl file exists on disk (simplified fallback).
     #[test]
     fn zelhash_kernel_file_exists() {
-        let kernel_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("csrc/opencl/zelhash_kernel.cl");
+        let kernel_path =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("csrc/opencl/zelhash_kernel.cl");
         assert!(
             kernel_path.exists(),
             "zelhash_kernel.cl must exist at csrc/opencl/"
         );
         let source = std::fs::read_to_string(&kernel_path).unwrap();
-        assert!(source.contains("zelhash_mine"), "kernel must define zelhash_mine");
-        assert!(source.contains("blake2b_compress"), "kernel must have blake2b");
-        assert!(source.contains("ZelProof"), "kernel must use ZelProof personalization");
+        assert!(
+            source.contains("zelhash_mine"),
+            "kernel must define zelhash_mine"
+        );
+        assert!(
+            source.contains("blake2b_compress"),
+            "kernel must have blake2b"
+        );
+        assert!(
+            source.contains("ZelProof"),
+            "kernel must use ZelProof personalization"
+        );
     }
 
     /// Verify zelhash_prod_kernel.cl file exists on disk (production kernel).
     #[test]
     fn zelhash_prod_kernel_file_exists() {
-        let kernel_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("csrc/opencl/zelhash_prod_kernel.cl");
+        let kernel_path =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("csrc/opencl/zelhash_prod_kernel.cl");
         assert!(
             kernel_path.exists(),
             "zelhash_prod_kernel.cl must exist at csrc/opencl/"
         );
         let source = std::fs::read_to_string(&kernel_path).unwrap();
-        assert!(source.contains("kernel_round0"), "prod kernel must define kernel_round0");
-        assert!(source.contains("kernel_round3"), "prod kernel must define kernel_round3 (final)");
-        assert!(source.contains("kernel_sols"), "prod kernel must define kernel_sols");
-        assert!(source.contains("PARAM_N                        125"), "prod kernel must have N=125");
-        assert!(source.contains("PARAM_K                        4"), "prod kernel must have K=4");
-        assert!(source.contains("ht_store"), "prod kernel must have ht_store");
-        assert!(source.contains("xor_and_store"), "prod kernel must have xor_and_store");
+        assert!(
+            source.contains("kernel_round0"),
+            "prod kernel must define kernel_round0"
+        );
+        assert!(
+            source.contains("kernel_round3"),
+            "prod kernel must define kernel_round3 (final)"
+        );
+        assert!(
+            source.contains("kernel_sols"),
+            "prod kernel must define kernel_sols"
+        );
+        assert!(
+            source.contains("PARAM_N                        125"),
+            "prod kernel must have N=125"
+        );
+        assert!(
+            source.contains("PARAM_K                        4"),
+            "prod kernel must have K=4"
+        );
+        assert!(
+            source.contains("ht_store"),
+            "prod kernel must have ht_store"
+        );
+        assert!(
+            source.contains("xor_and_store"),
+            "prod kernel must have xor_and_store"
+        );
     }
 
     /// Verify zelhash_blake2b_state produces ZelProof personalization.
@@ -6575,40 +7412,70 @@ mod tests {
         let mut header2 = [0u8; 140];
         header2[0] = 1;
         let state3 = GpuMiner::zelhash_blake2b_state(&header2);
-        assert_ne!(state, state3, "Different headers must produce different states");
+        assert_ne!(
+            state, state3,
+            "Different headers must produce different states"
+        );
     }
 
     /// Verify all CUDA kernel files exist.
     #[test]
     fn cuda_kernel_files_exist() {
-        let cuda_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("csrc/cuda");
-        let kernels = ["blake3_kernel.cu", "kheavyhash_kernel.cu", "keryxhash_kernel.cu", "autolykos_kernel.cu",
-                       "ethash_kernel.cu", "kawpow_kernel.cu", "zelhash_kernel.cu"];
+        let cuda_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("csrc/cuda");
+        let kernels = [
+            "blake3_kernel.cu",
+            "kheavyhash_kernel.cu",
+            "keryxhash_kernel.cu",
+            "autolykos_kernel.cu",
+            "ethash_kernel.cu",
+            "kawpow_kernel.cu",
+            "zelhash_kernel.cu",
+        ];
         for k in &kernels {
             let path = cuda_dir.join(k);
             assert!(path.exists(), "CUDA kernel {k} must exist at csrc/cuda/");
             let source = std::fs::read_to_string(&path).unwrap();
-            assert!(source.contains("__global__"), "{k} must have __global__ kernel");
-            assert!(source.contains("extern \"C\""), "{k} must have extern C for cudarc");
-            assert!(source.contains("__launch_bounds__"), "{k} must have launch bounds");
+            assert!(
+                source.contains("__global__"),
+                "{k} must have __global__ kernel"
+            );
+            assert!(
+                source.contains("extern \"C\""),
+                "{k} must have extern C for cudarc"
+            );
+            assert!(
+                source.contains("__launch_bounds__"),
+                "{k} must have launch bounds"
+            );
         }
     }
 
     /// Verify all Metal kernel files exist.
     #[test]
     fn metal_kernel_files_exist() {
-        let metal_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("csrc/metal");
-        let kernels = ["blake3_kernel.metal", "kheavyhash_kernel.metal", "keryxhash_kernel.metal", "autolykos_kernel.metal",
-                       "ethash_kernel.metal", "kawpow_kernel.metal", "zelhash_kernel.metal"];
+        let metal_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("csrc/metal");
+        let kernels = [
+            "blake3_kernel.metal",
+            "kheavyhash_kernel.metal",
+            "keryxhash_kernel.metal",
+            "autolykos_kernel.metal",
+            "ethash_kernel.metal",
+            "kawpow_kernel.metal",
+            "zelhash_kernel.metal",
+        ];
         for k in &kernels {
             let path = metal_dir.join(k);
             assert!(path.exists(), "Metal kernel {k} must exist at csrc/metal/");
             let source = std::fs::read_to_string(&path).unwrap();
             assert!(source.contains("kernel void"), "{k} must have kernel void");
-            assert!(source.contains("metal_stdlib"), "{k} must include metal_stdlib");
-            assert!(source.contains("[[buffer"), "{k} must use Metal buffer syntax");
+            assert!(
+                source.contains("metal_stdlib"),
+                "{k} must include metal_stdlib"
+            );
+            assert!(
+                source.contains("[[buffer"),
+                "{k} must use Metal buffer syntax"
+            );
         }
     }
 
@@ -6704,7 +7571,10 @@ mod tests {
         let mut header2 = [0u8; 140];
         header2[0] = 1;
         let state3 = GpuMiner::zcash_blake2b_state(&header2);
-        assert_ne!(state, state3, "Different headers must produce different states");
+        assert_ne!(
+            state, state3,
+            "Different headers must produce different states"
+        );
     }
 
     /// Test Equihash solution encoding.
@@ -6715,10 +7585,17 @@ mod tests {
         let inputs = vec![0u32; 128]; // 2^7 = 128 zero indices
         let encoded = GpuMiner::encode_equihash_solution(&inputs, 24, 7);
         // 128 * 25 bits = 3200 bits = 400 bytes
-        assert_eq!(encoded.len(), 400, "Solution must be exactly 400 bytes for K=7, PREFIX=24");
+        assert_eq!(
+            encoded.len(),
+            400,
+            "Solution must be exactly 400 bytes for K=7, PREFIX=24"
+        );
 
         // All-zero inputs should produce all-zero encoding
-        assert!(encoded.iter().all(|&b| b == 0), "Zero inputs must produce zero encoding");
+        assert!(
+            encoded.iter().all(|&b| b == 0),
+            "Zero inputs must produce zero encoding"
+        );
 
         // Test with non-zero inputs
         let mut inputs2 = vec![0u32; 128];
@@ -6726,7 +7603,10 @@ mod tests {
         let encoded2 = GpuMiner::encode_equihash_solution(&inputs2, 24, 7);
         assert_eq!(encoded2.len(), 400);
         // First 3 bytes should have the high bits set (25 bits = 3 bytes + 1 bit)
-        assert_ne!(encoded2[0], 0, "Non-zero input must produce non-zero encoding");
+        assert_ne!(
+            encoded2[0], 0,
+            "Non-zero input must produce non-zero encoding"
+        );
     }
 
     /// Verify the host BLAKE2b-256 (used by Autolykos v2 table generation)

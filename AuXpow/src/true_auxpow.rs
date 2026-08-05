@@ -156,9 +156,8 @@ pub fn validate_auxpow_full(
     let parent_hash = header.pow_hash();
     let parent_hash_meets_target = meets_target(&parent_hash, &parent_target);
 
-    let computed_root =
-        compute_aux_merkle_root(aux_hash, commitment.merkle_nonce, aux_branch)
-            .ok_or_else(|| anyhow!("aux branch too deep or malformed"))?;
+    let computed_root = compute_aux_merkle_root(aux_hash, commitment.merkle_nonce, aux_branch)
+        .ok_or_else(|| anyhow!("aux branch too deep or malformed"))?;
     let aux_included_in_coinbase = computed_root == commitment.aux_block_hash;
 
     Ok(AuxPowFullValidation {
@@ -211,9 +210,8 @@ pub fn validate_auxpow(data: &AuxPowData) -> Result<AuxPowValidation> {
     let parent_hash = data.parent_algo.hash_header(&data.parent_header);
     let parent_hash_meets_target = meets_target(&parent_hash, &data.parent_target);
 
-    let computed_root =
-        compute_aux_merkle_root(data.aux_hash, data.aux_index, &data.aux_branch)
-            .ok_or_else(|| anyhow!("aux branch too deep or malformed"))?;
+    let computed_root = compute_aux_merkle_root(data.aux_hash, data.aux_index, &data.aux_branch)
+        .ok_or_else(|| anyhow!("aux branch too deep or malformed"))?;
     let aux_included_in_coinbase = computed_root == data.coinbase_merkle_root;
 
     Ok(AuxPowValidation {
@@ -334,7 +332,10 @@ mod tests {
         let header = b"same header";
         let dcr = ParentAlgorithm::DCR.hash_header(header);
         let alph = ParentAlgorithm::ALPH.hash_header(header);
-        assert_ne!(dcr, alph, "ALPH double Blake3 must differ from DCR single Blake3");
+        assert_ne!(
+            dcr, alph,
+            "ALPH double Blake3 must differ from DCR single Blake3"
+        );
     }
 
     #[test]
@@ -369,14 +370,9 @@ mod tests {
         let parent_header = ParentHeader::DCR(header);
         let parent_target = [0xffu8; 32];
 
-        let result = validate_auxpow_full(
-            &parent_header,
-            aux_hash,
-            &commitment,
-            &[],
-            parent_target,
-        )
-        .unwrap();
+        let result =
+            validate_auxpow_full(&parent_header, aux_hash, &commitment, &[], parent_target)
+                .unwrap();
 
         assert!(result.parent_hash_meets_target);
         assert!(result.aux_included_in_coinbase);
@@ -411,14 +407,8 @@ mod tests {
         };
 
         let parent_header = ParentHeader::DCR(header);
-        let result = validate_auxpow_full(
-            &parent_header,
-            aux_hash,
-            &commitment,
-            &[],
-            [0xffu8; 32],
-        )
-        .unwrap();
+        let result =
+            validate_auxpow_full(&parent_header, aux_hash, &commitment, &[], [0xffu8; 32]).unwrap();
 
         assert!(!result.aux_included_in_coinbase);
         assert!(!result.is_valid());

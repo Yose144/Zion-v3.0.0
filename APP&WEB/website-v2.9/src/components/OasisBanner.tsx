@@ -12,8 +12,10 @@ export default function OasisBanner() {
       transition={{ duration: 1, delay: 2.2 }}
       className="w-full max-w-4xl mx-auto px-4 mt-4"
     >
-      <Link
-        href="/l4-oasis"
+      <a
+        href="https://oasis.zionterranova.com"
+        target="_blank"
+        rel="noopener noreferrer"
         className="zion-rainbow-card group relative flex flex-col sm:flex-row items-center gap-4 sm:gap-6 p-6 sm:p-8 transition-all duration-500"
         style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
       >
@@ -45,7 +47,7 @@ export default function OasisBanner() {
           </div>
           <span className="text-[10px] uppercase tracking-wider text-gray-500">2027</span>
         </div>
-      </Link>
+      </a>
     </motion.div>
   );
 }

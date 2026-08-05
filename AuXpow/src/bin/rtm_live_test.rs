@@ -1,12 +1,12 @@
 // RTM Live E2E Test — connect to zpool, mine with GhostRider (multi-threaded, 8MB stack per thread)
 // Usage: cargo run --features native-ghostrider --bin rtm_live_test
 
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::Arc;
 use std::time::Instant;
 
-use zion_auxpow::{AuxPowClient, CoinProfile, ExternalCoin, ShareResult};
 use zion_auxpow::external_hashers::meets_target_little_endian;
+use zion_auxpow::{AuxPowClient, CoinProfile, ExternalCoin, ShareResult};
 
 #[tokio::main]
 async fn main() {
@@ -58,7 +58,10 @@ async fn main() {
         let cpus = std::thread::available_parallelism()
             .map(|n| n.get())
             .unwrap_or(1);
-        println!("Mining with GhostRider ({} threads, 8MB stack each, mutex-serialized)...", cpus);
+        println!(
+            "Mining with GhostRider ({} threads, 8MB stack each, mutex-serialized)...",
+            cpus
+        );
 
         // Print header for debugging
         println!("Header hex: {}", hex::encode(&initial_job.header_bytes));
@@ -78,8 +81,7 @@ async fn main() {
                 if new_job.job_id != current_job.job_id {
                     // If prevhash is the same, keep nonce_base (only ntime
                     // changed).  Otherwise reset.
-                    let same_prev = new_job.header_bytes[4..36]
-                        == current_job.header_bytes[4..36];
+                    let same_prev = new_job.header_bytes[4..36] == current_job.header_bytes[4..36];
                     if same_prev {
                         println!(
                             "  switching job: {} -> {} (same prevhash, keeping nonce_base={})",
@@ -168,7 +170,10 @@ async fn main() {
                 let elapsed = start.elapsed().as_secs_f64();
                 println!(
                     "  total={} nonces in {:.1}s ({:.1} H/s) job={}",
-                    total_nonces, elapsed, total_nonces as f64 / elapsed, job_id
+                    total_nonces,
+                    elapsed,
+                    total_nonces as f64 / elapsed,
+                    job_id
                 );
             }
         }
@@ -177,7 +182,9 @@ async fn main() {
             let elapsed = start.elapsed();
             println!(
                 "FOUND valid nonce={} in {:?} hash={}",
-                nonce, elapsed, hex::encode(&hash)
+                nonce,
+                elapsed,
+                hex::encode(&hash)
             );
 
             // Verify hash by recomputing in main thread
@@ -191,7 +198,8 @@ async fn main() {
             if verify_hash != hash {
                 println!(
                     "*** HASH MISMATCH! thread={} main={} ***",
-                    hex::encode(&hash), hex::encode(&verify_hash)
+                    hex::encode(&hash),
+                    hex::encode(&verify_hash)
                 );
             } else {
                 println!("Hash verified OK (thread == main)");

@@ -86,9 +86,7 @@ pub fn detect_hardware(miner_bin: &str) -> HardwareProfile {
 /// Detect GPU devices by calling the miner binary with --detect-hardware.
 /// Falls back to empty list if miner binary is not found or doesn't support the flag.
 fn detect_gpus_via_miner(miner_bin: &str) -> Vec<String> {
-    let output = Command::new(miner_bin)
-        .arg("--detect-hardware")
-        .output();
+    let output = Command::new(miner_bin).arg("--detect-hardware").output();
 
     match output {
         Ok(o) if o.status.success() => {
@@ -183,7 +181,10 @@ pub fn derive_auto_config(hw: &HardwareProfile) -> AutoMineConfig {
         // Stream 3: External CPU coins (verushash, randomx)
         let (mode_name, supported_coins) = if hw.best_backend == "metal" {
             // Metal on Apple Silicon: skip DAG-based coins (EPIC, RVN, ETC, EVR, MEWC, CLORE, QUAI, BEAM)
-            ("Triple Parallel (Metal + CPU — DAG algos skipped)", METAL_COINS.to_vec())
+            (
+                "Triple Parallel (Metal + CPU — DAG algos skipped)",
+                METAL_COINS.to_vec(),
+            )
         } else {
             ("Triple Parallel (GPU + CPU)", ALL_COINS.to_vec())
         };
@@ -217,8 +218,8 @@ pub fn derive_auto_config(hw: &HardwareProfile) -> AutoMineConfig {
 
 /// All supported coins (GPU + CPU) — when OpenCL/CUDA backend is available
 static ALL_COINS: &[&str] = &[
-    "ZION", "PRL", "VRSC", "XMR", "DCR", "KAS", "ALPH", "ERG", "RVN", "ETC",
-    "EVR", "MEWC", "FLUX", "CLORE", "EPIC", "QUAI", "BEAM",
+    "ZION", "PRL", "VRSC", "XMR", "DCR", "KAS", "ALPH", "ERG", "RVN", "ETC", "EVR", "MEWC", "FLUX",
+    "CLORE", "EPIC", "QUAI", "BEAM",
 ];
 
 /// Coins supported on Metal (Apple Silicon) — excludes DAG-based algorithms
@@ -260,9 +261,30 @@ pub fn print_mine_plan(cfg: &AutoMineConfig) {
     println!("  │ Backend:    {:<32}│", cfg.backend);
     println!("  │ CPU threads:{:<32}│", cfg.cpu_threads);
     println!("  ├─────────────────────────────────────────────┤");
-    println!("  │ Stream 1 (ZION primary):     {:<13}│", if cfg.stream1_enabled { "ENABLED" } else { "disabled" });
-    println!("  │ Stream 2 (GPU external):     {:<13}│", if cfg.stream2_enabled { "ENABLED" } else { "disabled" });
-    println!("  │ Stream 3 (CPU external):     {:<13}│", if cfg.stream3_enabled { "ENABLED" } else { "disabled" });
+    println!(
+        "  │ Stream 1 (ZION primary):     {:<13}│",
+        if cfg.stream1_enabled {
+            "ENABLED"
+        } else {
+            "disabled"
+        }
+    );
+    println!(
+        "  │ Stream 2 (GPU external):     {:<13}│",
+        if cfg.stream2_enabled {
+            "ENABLED"
+        } else {
+            "disabled"
+        }
+    );
+    println!(
+        "  │ Stream 3 (CPU external):     {:<13}│",
+        if cfg.stream3_enabled {
+            "ENABLED"
+        } else {
+            "disabled"
+        }
+    );
     println!("  ├─────────────────────────────────────────────┤");
     println!("  │ Supported coins ({}):", cfg.supported_coins.len());
     // Wrap coins list
@@ -317,14 +339,26 @@ mod tests {
             has_gpu: false,
         };
         let cfg = derive_auto_config(&hw);
-        assert!(cfg.stream1_enabled, "Stream 1 should be enabled even CPU-only");
-        assert!(!cfg.stream2_enabled, "Stream 2 should be disabled without GPU");
-        assert!(cfg.stream3_enabled, "Stream 3 should be enabled (CPU coins)");
+        assert!(
+            cfg.stream1_enabled,
+            "Stream 1 should be enabled even CPU-only"
+        );
+        assert!(
+            !cfg.stream2_enabled,
+            "Stream 2 should be disabled without GPU"
+        );
+        assert!(
+            cfg.stream3_enabled,
+            "Stream 3 should be enabled (CPU coins)"
+        );
         assert_eq!(cfg.backend, "cpu");
         assert_eq!(cfg.cpu_threads, 4, "Should use all CPU cores");
         assert!(cfg.supported_coins.contains(&"VRSC"), "Should support VRSC");
         assert!(cfg.supported_coins.contains(&"XMR"), "Should support XMR");
-        assert!(!cfg.supported_coins.contains(&"KAS"), "Should not support KAS (GPU-only)");
+        assert!(
+            !cfg.supported_coins.contains(&"KAS"),
+            "Should not support KAS (GPU-only)"
+        );
     }
 
     #[test]
@@ -369,10 +403,22 @@ mod tests {
         assert_eq!(cfg.backend, "metal");
         assert!(cfg.stream2_enabled, "Metal GPU should enable Stream 2");
         // Metal should NOT support DAG-based coins (EPIC, RVN, ETC)
-        assert!(!cfg.supported_coins.contains(&"EPIC"), "Metal should skip EPIC (DAG-based)");
-        assert!(!cfg.supported_coins.contains(&"RVN"), "Metal should skip RVN (DAG-based)");
+        assert!(
+            !cfg.supported_coins.contains(&"EPIC"),
+            "Metal should skip EPIC (DAG-based)"
+        );
+        assert!(
+            !cfg.supported_coins.contains(&"RVN"),
+            "Metal should skip RVN (DAG-based)"
+        );
         // Metal SHOULD support non-DAG coins (KAS, ALPH, DCR)
-        assert!(cfg.supported_coins.contains(&"KAS"), "Metal should support KAS");
-        assert!(cfg.supported_coins.contains(&"ALPH"), "Metal should support ALPH");
+        assert!(
+            cfg.supported_coins.contains(&"KAS"),
+            "Metal should support KAS"
+        );
+        assert!(
+            cfg.supported_coins.contains(&"ALPH"),
+            "Metal should support ALPH"
+        );
     }
 }

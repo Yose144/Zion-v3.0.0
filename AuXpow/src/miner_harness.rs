@@ -19,9 +19,9 @@
 use anyhow::{anyhow, Result};
 
 use crate::external_hashers::{
-    clear_verushash_pbaas, hash_autolykos, hash_blake3, hash_blake3_alph, hash_ethash, hash_etchash,
-    hash_kawpow, hash_kheavyhash, hash_kheavyhash_extranonce, hash_progpow, meets_target,
-    meets_target_little_endian,
+    clear_verushash_pbaas, hash_autolykos, hash_blake3, hash_blake3_alph, hash_etchash,
+    hash_ethash, hash_kawpow, hash_kheavyhash, hash_kheavyhash_extranonce, hash_progpow,
+    meets_target, meets_target_little_endian,
 };
 use crate::types::{ExternalCoin, JobPackage};
 
@@ -67,7 +67,9 @@ pub fn mine(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option<Foun
         "kawpow" => Ok(scan_kawpow(job, start, end)),
         "ethash" | "etchash" => Ok(scan_ethash(job, start, end)),
         "verushash" => Ok(scan_verushash(job, start, end)),
-        "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" => Ok(scan_progpow(job, start, end)),
+        "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" => {
+            Ok(scan_progpow(job, start, end))
+        }
         "pearlhash" => Ok(scan_pearl(job, start, end)),
         "randomx" => Ok(scan_randomx(job, start, end)),
         "ghostrider" => Ok(scan_ghostrider(job, start, end)),
@@ -75,15 +77,18 @@ pub fn mine(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option<Foun
         "qhash" | "qhash_qtc" => Ok(scan_qhash(job, start, end)),
         // KLS (KarlsenHash) / ZCL (Equihash 192,7) — DAG/Wagner based.
         // CPU fallback uses blake3 placeholder until native FFI is implemented.
-        "karlsenhash" | "karlsenhash_kls"
-        | "equihashzero" | "equihashzero_zcl" => {
+        "karlsenhash" | "karlsenhash_kls" | "equihashzero" | "equihashzero_zcl" => {
             Ok(scan(job, start, end, hash_blake3))
         }
         // Eaglesong/Octopus/Equihash/NeoScrypt — GPU-only, no CPU harness yet.
-        "eaglesong" | "octopus" | "equihash" | "neoscrypt" => {
-            Err(anyhow!("algorithm '{}' requires GPU mining (no CPU harness)", algo))
-        }
-        other => Err(anyhow!("algorithm '{}' not supported by CPU harness", other)),
+        "eaglesong" | "octopus" | "equihash" | "neoscrypt" => Err(anyhow!(
+            "algorithm '{}' requires GPU mining (no CPU harness)",
+            algo
+        )),
+        other => Err(anyhow!(
+            "algorithm '{}' not supported by CPU harness",
+            other
+        )),
     }
 }
 
@@ -115,19 +120,24 @@ pub fn mine_best(job: &JobPackage, range: std::ops::Range<u64>) -> Result<Option
         "kawpow" => Ok(scan_kawpow_best(job, start, end)),
         "ethash" | "etchash" => Ok(scan_ethash_best(job, start, end)),
         "verushash" => Ok(scan_verushash_best(job, start, end)),
-        "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" => Ok(scan_progpow_best(job, start, end)),
+        "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" => {
+            Ok(scan_progpow_best(job, start, end))
+        }
         "pearlhash" => Ok(scan_pearl_best(job, start, end)),
         "randomx" => Ok(scan_randomx_best(job, start, end)),
         "ghostrider" => Ok(scan_ghostrider_best(job, start, end)),
         "qhash" | "qhash_qtc" => Ok(scan_qhash_best(job, start, end)),
-        "karlsenhash" | "karlsenhash_kls"
-        | "equihashzero" | "equihashzero_zcl" => {
+        "karlsenhash" | "karlsenhash_kls" | "equihashzero" | "equihashzero_zcl" => {
             Ok(scan_best(job, start, end, hash_blake3, false))
         }
-        "eaglesong" | "octopus" | "equihash" | "neoscrypt" => {
-            Err(anyhow!("algorithm '{}' requires GPU mining (no CPU harness)", algo))
-        }
-        other => Err(anyhow!("algorithm '{}' not supported by CPU harness", other)),
+        "eaglesong" | "octopus" | "equihash" | "neoscrypt" => Err(anyhow!(
+            "algorithm '{}' requires GPU mining (no CPU harness)",
+            algo
+        )),
+        other => Err(anyhow!(
+            "algorithm '{}' not supported by CPU harness",
+            other
+        )),
     }
 }
 
@@ -482,9 +492,7 @@ fn scan_randomx(job: &JobPackage, start: u64, end: u64) -> Option<FoundShare> {
         let hash = zion_native_ffi::randomx::hash(&work_blob, nonce);
 
         #[cfg(not(feature = "native-randomx"))]
-        let hash = {
-            crate::external_hashers::hash_blake3(&work_blob, 0, nonce)
-        };
+        let hash = { crate::external_hashers::hash_blake3(&work_blob, 0, nonce) };
 
         // RandomX/Monero: compare MSB 64 bits (bytes 24-31) of 256-bit LE hash
         if crate::external_hashers::meets_randomx_target(&hash, target) {
@@ -736,7 +744,13 @@ fn is_hash_better(a: &[u8; 32], b: &[u8; 32], little_endian: bool) -> bool {
     }
 }
 
-fn scan_best<F>(job: &JobPackage, start: u64, end: u64, hash_fn: F, little_endian: bool) -> Option<FoundShare>
+fn scan_best<F>(
+    job: &JobPackage,
+    start: u64,
+    end: u64,
+    hash_fn: F,
+    little_endian: bool,
+) -> Option<FoundShare>
 where
     F: Fn(&[u8], u64, u64) -> [u8; 32],
 {
@@ -1169,7 +1183,9 @@ mod tests {
     #[test]
     fn harness_finds_blake3_share() {
         let job = blake3_job_with_easy_target();
-        let share = mine(&job, 0..10_000).unwrap().expect("share should be found");
+        let share = mine(&job, 0..10_000)
+            .unwrap()
+            .expect("share should be found");
         assert_eq!(share.external_job_id, "job_harness_dcr");
         let recomputed = hash_blake3(&job.header_bytes, job.timestamp, share.nonce);
         assert_eq!(share.hash, recomputed);
@@ -1209,7 +1225,7 @@ mod tests {
         let mut job = blake3_job_with_easy_target();
         job.start_nonce = 100;
         job.nonce_count = 50; // valid window is 100..150
-        // Requesting 0..200 is clamped to 100..150 and still finds a share.
+                              // Requesting 0..200 is clamped to 100..150 and still finds a share.
         let share = mine(&job, 0..200).unwrap().expect("share in bounds");
         assert!(share.nonce >= 100 && share.nonce < 150);
     }
@@ -1219,7 +1235,7 @@ mod tests {
         let mut job = blake3_job_with_easy_target();
         job.start_nonce = 100;
         job.nonce_count = 50; // 100..150
-        // Requesting 0..50 does not overlap with the job window.
+                              // Requesting 0..50 does not overlap with the job window.
         let share = mine(&job, 0..50).unwrap();
         assert!(share.is_none());
     }

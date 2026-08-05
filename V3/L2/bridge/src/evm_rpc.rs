@@ -170,10 +170,13 @@ impl EvmHttpClient {
     /// `data_hex` must be a `0x`-prefixed ABI-encoded call (4-byte selector + args).
     pub async fn eth_call(&self, to: &str, data_hex: &str) -> Result<Vec<u8>> {
         let result = self
-            .call("eth_call", json!([{
+            .call(
+                "eth_call",
+                json!([{
                 "to": to,
                 "data": data_hex,
-            }, "latest"]))
+            }, "latest"]),
+            )
             .await?;
         let hex_str = result
             .as_str()

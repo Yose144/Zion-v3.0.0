@@ -34,9 +34,7 @@ use zion_auxpow::gpu_miner::{DagManager, GpuMiner};
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     if std::env::var("AUXPOW_E2E_RUN").unwrap_or_default() != "1" {
-        eprintln!(
-            "Safety stop: set AUXPOW_E2E_RUN=1 to execute this real-pool E2E test."
-        );
+        eprintln!("Safety stop: set AUXPOW_E2E_RUN=1 to execute this real-pool E2E test.");
         eprintln!("See the top of examples/e2e_pool_test.rs for all env variables.");
         std::process::exit(1);
     }
@@ -60,7 +58,9 @@ async fn main() -> anyhow::Result<()> {
     if let Ok(override_addr) = std::env::var("AUXPOW_E2E_POOL") {
         if let Some(pos) = override_addr.rfind(':') {
             profile.pool_host = override_addr[..pos].to_string();
-            profile.pool_port = override_addr[pos + 1..].parse().unwrap_or(profile.pool_port);
+            profile.pool_port = override_addr[pos + 1..]
+                .parse()
+                .unwrap_or(profile.pool_port);
         }
     }
 
@@ -83,7 +83,10 @@ async fn main() -> anyhow::Result<()> {
     println!("[1/4] Connected and authorized.");
 
     // 2) Wait for first job + difficulty
-    println!("[2/4] Waiting for first job (timeout {} ms)...", job_timeout_ms);
+    println!(
+        "[2/4] Waiting for first job (timeout {} ms)...",
+        job_timeout_ms
+    );
     let job = wait_for_job(client.clone(), Duration::from_millis(job_timeout_ms)).await?;
     let difficulty = client.current_difficulty().await;
 
@@ -110,14 +113,17 @@ async fn main() -> anyhow::Result<()> {
             // runtime's async tasks (poll_messages, getWork polling).
             let prewarm = tokio::task::spawn_blocking(move || {
                 prewarm_gpu(probe_algo, probe_height, probe_epoch)
-            }).await
+            })
+            .await
             .map_err(|e| anyhow::anyhow!("prewarm task panicked: {e}"))??;
             println!("[2.5/4] GPU pre-warm complete — ready to mine with fresh job");
             Some(prewarm)
         }
         #[cfg(not(all(feature = "gpu-opencl", feature = "native-hashers")))]
         {
-            eprintln!("GPU OpenCL requested but crate was not built with gpu-opencl + native-hashers");
+            eprintln!(
+                "GPU OpenCL requested but crate was not built with gpu-opencl + native-hashers"
+            );
             None
         }
     } else {
@@ -170,7 +176,9 @@ async fn main() -> anyhow::Result<()> {
             }
             #[cfg(not(all(feature = "gpu-opencl", feature = "native-hashers")))]
             {
-                eprintln!("GPU OpenCL requested but crate was not built with gpu-opencl + native-hashers");
+                eprintln!(
+                    "GPU OpenCL requested but crate was not built with gpu-opencl + native-hashers"
+                );
                 None
             }
         } else if use_best {
@@ -189,9 +197,25 @@ async fn main() -> anyhow::Result<()> {
                 );
 
                 if submit_enabled {
-                    println!("[4/4] Submitting share (job_id={} nonce={} hash_prefix={})...", job.job_id, nonce, hex::encode(&hash[..8]));
+                    println!(
+                        "[4/4] Submitting share (job_id={} nonce={} hash_prefix={})...",
+                        job.job_id,
+                        nonce,
+                        hex::encode(&hash[..8])
+                    );
                     let forwarder = zion_auxpow::ShareForwarder::new(client.clone());
-                    let result = forwarder.try_forward(&job.job_id, nonce, &hash, &share_target, mix_hash.as_ref(), None, &job.algorithm, &job.header_bytes).await?;
+                    let result = forwarder
+                        .try_forward(
+                            &job.job_id,
+                            nonce,
+                            &hash,
+                            &share_target,
+                            mix_hash.as_ref(),
+                            None,
+                            &job.algorithm,
+                            &job.header_bytes,
+                        )
+                        .await?;
                     println!("[4/4] Submit result: {:?}", result);
                 } else {
                     println!("[4/4] Submission skipped (AUXPOW_E2E_SUBMIT != 1).");
@@ -387,7 +411,13 @@ async fn mine_gpu_prewarmed(
             })?;
 
         let batch_start = Instant::now();
-        match miner.mine_simple(&job.algorithm, &job.header_bytes, &share_target, window_start, batch_size) {
+        match miner.mine_simple(
+            &job.algorithm,
+            &job.header_bytes,
+            &share_target,
+            window_start,
+            batch_size,
+        ) {
             Ok(Some(share)) => {
                 let batch_elapsed = batch_start.elapsed();
                 // Check if the job is still current — a push notification may
@@ -420,10 +450,14 @@ async fn mine_gpu_prewarmed(
                 let batch_elapsed = batch_start.elapsed();
                 let hashrate = if batch_elapsed.as_secs_f64() > 0.0 {
                     batch_size as f64 / batch_elapsed.as_secs_f64() / 1_000_000.0
-                } else { 0.0 };
+                } else {
+                    0.0
+                };
                 eprintln!(
                     "[3/4] Batch done: window={} batch={:.1}s hashrate={:.1}MH/s",
-                    window_start, batch_elapsed.as_secs_f64(), hashrate
+                    window_start,
+                    batch_elapsed.as_secs_f64(),
+                    hashrate
                 );
                 window_start += batch_size;
             }
@@ -460,8 +494,10 @@ async fn mine_gpu(
         let job = match client.current_job().await {
             Some(j) => j,
             None => {
-                eprintln!("[3/4] No current job — waiting 200ms (deadline in {:.0}s)...",
-                    (deadline - Instant::now()).as_secs_f64());
+                eprintln!(
+                    "[3/4] No current job — waiting 200ms (deadline in {:.0}s)...",
+                    (deadline - Instant::now()).as_secs_f64()
+                );
                 tokio::time::sleep(Duration::from_millis(200)).await;
                 continue;
             }
@@ -470,9 +506,14 @@ async fn mine_gpu(
         let height = job.block_number.unwrap_or(1);
         let epoch = job.epoch.unwrap_or((height / 30000) as u32);
 
-        eprintln!("[3/4] Loop iteration: job_id={} height={} epoch={} window_start={} deadline_in={:.0}s",
-            &job.job_id[..16.min(job.job_id.len())], height, epoch, window_start,
-            (deadline - Instant::now()).as_secs_f64());
+        eprintln!(
+            "[3/4] Loop iteration: job_id={} height={} epoch={} window_start={} deadline_in={:.0}s",
+            &job.job_id[..16.min(job.job_id.len())],
+            height,
+            epoch,
+            window_start,
+            (deadline - Instant::now()).as_secs_f64()
+        );
 
         miner.set_block_height(height);
         let dag_start = Instant::now();
@@ -503,7 +544,13 @@ async fn mine_gpu(
         let height = job.block_number.unwrap_or(1);
         miner.set_block_height(height);
 
-        match miner.mine_simple(&job.algorithm, &job.header_bytes, &share_target, window_start, batch_size) {
+        match miner.mine_simple(
+            &job.algorithm,
+            &job.header_bytes,
+            &share_target,
+            window_start,
+            batch_size,
+        ) {
             Ok(Some(share)) => {
                 println!(
                     "[3/4] GPU share found: nonce={} has_mix={} (dag_just_generated={})",

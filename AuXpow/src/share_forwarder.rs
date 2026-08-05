@@ -46,7 +46,10 @@ fn is_dag_algorithm(algo: &str) -> bool {
 /// Ethash's keccak-512/256). EPIC and Zano share the 0.9.2 structure but
 /// Zano uses a permuted math op table.
 fn is_progpow_algorithm(algo: &str) -> bool {
-    matches!(algo, "progpow" | "progpow_epic" | "progpowz" | "progpow_zano")
+    matches!(
+        algo,
+        "progpow" | "progpow_epic" | "progpowz" | "progpow_zano"
+    )
 }
 
 /// KawPow variants (RVN, CLORE, QUAI, EVR, MEWC) use keccak-f800 with
@@ -56,11 +59,7 @@ fn is_progpow_algorithm(algo: &str) -> bool {
 fn is_kawpow_algorithm(algo: &str) -> bool {
     matches!(
         algo,
-        "kawpow"
-            | "kawpow_rvn"
-            | "kawpow_clore"
-            | "kawpow_evr"
-            | "kawpow_mewc"
+        "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc"
     )
 }
 
@@ -108,9 +107,8 @@ impl ShareForwarder {
                     let real_hash = if is_kawpow_algorithm(algorithm) {
                         // KawPow: keccak_f800 with RAVENCOINKAWPOW domain.
                         // Header is NOT pre-hashed — use raw 32 bytes directly.
-                        let header_arr: [u8; 32] = header_bytes[..32]
-                            .try_into()
-                            .unwrap_or([0u8; 32]);
+                        let header_arr: [u8; 32] =
+                            header_bytes[..32].try_into().unwrap_or([0u8; 32]);
                         kawpow_final_hash_real(&header_arr, nonce, mix)
                     } else {
                         let header_hash = ethash_header_hash(header_bytes);
@@ -221,36 +219,36 @@ impl ShareForwarder {
         // working on a job that is no longer the absolute latest.
         if self.client.profile().coin.is_cpu() {
             let stale_secs = match self.client.profile().coin {
-                ExternalCoin::RTM => {
-                    std::env::var("ZION_RTM_STALE_SECS")
-                        .ok()
-                        .and_then(|v| v.parse().ok())
-                        .unwrap_or(60u64)
-                }
-                ExternalCoin::XMR => {
-                    std::env::var("ZION_XMR_STALE_SECS")
-                        .ok()
-                        .and_then(|v| v.parse().ok())
-                        .unwrap_or(30u64)
-                }
-                ExternalCoin::VRSC => {
-                    std::env::var("ZION_VRSC_STALE_SECS")
-                        .ok()
-                        .and_then(|v| v.parse().ok())
-                        .unwrap_or(0u64)
-                }
+                ExternalCoin::RTM => std::env::var("ZION_RTM_STALE_SECS")
+                    .ok()
+                    .and_then(|v| v.parse().ok())
+                    .unwrap_or(60u64),
+                ExternalCoin::XMR => std::env::var("ZION_XMR_STALE_SECS")
+                    .ok()
+                    .and_then(|v| v.parse().ok())
+                    .unwrap_or(30u64),
+                ExternalCoin::VRSC => std::env::var("ZION_VRSC_STALE_SECS")
+                    .ok()
+                    .and_then(|v| v.parse().ok())
+                    .unwrap_or(0u64),
                 _ => 0u64,
             };
             if stale_secs > 0 && self.client.is_job_stale(job_id, stale_secs).await {
                 println!(
                     "auxpow: {} stale share pre-rejected job_id={} (age > {}s)",
-                    self.client.profile().coin, job_id, stale_secs
+                    self.client.profile().coin,
+                    job_id,
+                    stale_secs
                 );
                 return Ok(ShareForwardResult::Rejected("stale job".to_string()));
             }
         }
 
-        match self.client.submit_share(job_id, nonce, &hash_hex, submit_mix_hash_hex.as_deref()).await {
+        match self
+            .client
+            .submit_share(job_id, nonce, &hash_hex, submit_mix_hash_hex.as_deref())
+            .await
+        {
             Ok(ShareResult::Accepted) => Ok(ShareForwardResult::Accepted),
             Ok(ShareResult::Rejected(reason)) => Ok(ShareForwardResult::Rejected(reason)),
             Ok(ShareResult::Unknown) => Ok(ShareForwardResult::Unknown),
@@ -268,7 +266,8 @@ impl ShareForwarder {
         target: &[u8; 32],
     ) -> Result<ShareForwardResult> {
         let hash = hash_blake3(header, 0, nonce);
-        self.try_forward(job_id, nonce, &hash, target, None, None, "blake3", &[]).await
+        self.try_forward(job_id, nonce, &hash, target, None, None, "blake3", &[])
+            .await
     }
 }
 
@@ -304,15 +303,22 @@ mod tests {
             let n = reader.read(&mut buf).await.unwrap();
             let req: serde_json::Value = serde_json::from_slice(&buf[..n]).unwrap();
             assert_eq!(req["method"], "mining.subscribe");
-            let resp = json!({ "id": 1, "result": [["mining.set_difficulty", "sub"], 4], "error": null });
-            writer.write_all((serde_json::to_string(&resp).unwrap() + "\n").as_bytes()).await.unwrap();
+            let resp =
+                json!({ "id": 1, "result": [["mining.set_difficulty", "sub"], 4], "error": null });
+            writer
+                .write_all((serde_json::to_string(&resp).unwrap() + "\n").as_bytes())
+                .await
+                .unwrap();
             writer.flush().await.unwrap();
 
             let n = reader.read(&mut buf).await.unwrap();
             let req: serde_json::Value = serde_json::from_slice(&buf[..n]).unwrap();
             assert_eq!(req["method"], "mining.authorize");
             let resp = json!({ "id": 2, "result": true, "error": null });
-            writer.write_all((serde_json::to_string(&resp).unwrap() + "\n").as_bytes()).await.unwrap();
+            writer
+                .write_all((serde_json::to_string(&resp).unwrap() + "\n").as_bytes())
+                .await
+                .unwrap();
             writer.flush().await.unwrap();
 
             let notify = json!({
@@ -320,7 +326,10 @@ mod tests {
                 "method": "mining.notify",
                 "params": ["job_forward", "deadbeef", "0000ffff"]
             });
-            writer.write_all((serde_json::to_string(&notify).unwrap() + "\n").as_bytes()).await.unwrap();
+            writer
+                .write_all((serde_json::to_string(&notify).unwrap() + "\n").as_bytes())
+                .await
+                .unwrap();
             writer.flush().await.unwrap();
 
             let n = reader.read(&mut buf).await.unwrap();
@@ -331,7 +340,10 @@ mod tests {
             } else {
                 json!({ "id": 100, "result": false, "error": { "code": -1, "message": "low diff" } })
             };
-            writer.write_all((serde_json::to_string(&resp).unwrap() + "\n").as_bytes()).await.unwrap();
+            writer
+                .write_all((serde_json::to_string(&resp).unwrap() + "\n").as_bytes())
+                .await
+                .unwrap();
             writer.flush().await.unwrap();
         }
     }
@@ -358,7 +370,10 @@ mod tests {
         let hash = [0xFFu8; 32]; // definitely above target
         let mut target = [0x00u8; 32];
         target[31] = 0x01; // very hard target
-        let result = forwarder.try_forward("job_forward", 0, &hash, &target, None, None, "blake3", &[]).await.unwrap();
+        let result = forwarder
+            .try_forward("job_forward", 0, &hash, &target, None, None, "blake3", &[])
+            .await
+            .unwrap();
         assert_eq!(result, ShareForwardResult::BelowTarget);
     }
 
@@ -377,7 +392,10 @@ mod tests {
         let forwarder = ShareForwarder::new(client);
         let target = [0xFFu8; 32]; // trivial target
         let hash = hash_blake3(b"header", 0, 42);
-        let result = forwarder.try_forward("job_forward", 42, &hash, &target, None, None, "blake3", &[]).await.unwrap();
+        let result = forwarder
+            .try_forward("job_forward", 42, &hash, &target, None, None, "blake3", &[])
+            .await
+            .unwrap();
         assert_eq!(result, ShareForwardResult::Accepted);
     }
 
@@ -394,7 +412,10 @@ mod tests {
         let forwarder = ShareForwarder::new(client);
         let target = [0xFFu8; 32];
         let hash = hash_blake3(b"header", 0, 7);
-        let result = forwarder.try_forward("job_forward", 7, &hash, &target, None, None, "blake3", &[]).await.unwrap();
+        let result = forwarder
+            .try_forward("job_forward", 7, &hash, &target, None, None, "blake3", &[])
+            .await
+            .unwrap();
         assert_eq!(result, ShareForwardResult::Rejected("low diff".to_string()));
     }
 
@@ -432,7 +453,16 @@ mod tests {
         target[31] = 0x01; // very hard target — real hash won't meet it
 
         let result = forwarder
-            .try_forward("etc_job_001", 0x1234, &kernel_hash, &target, Some(&mix_hash), None, "ethash", &header_bytes)
+            .try_forward(
+                "etc_job_001",
+                0x1234,
+                &kernel_hash,
+                &target,
+                Some(&mix_hash),
+                None,
+                "ethash",
+                &header_bytes,
+            )
             .await
             .unwrap();
 
@@ -461,7 +491,16 @@ mod tests {
         let target = [0xFFu8; 32]; // trivial target — any hash meets it
 
         let result = forwarder
-            .try_forward("etc_job_001", 0x1234, &kernel_hash, &target, Some(&mix_hash), None, "ethash", &header_bytes)
+            .try_forward(
+                "etc_job_001",
+                0x1234,
+                &kernel_hash,
+                &target,
+                Some(&mix_hash),
+                None,
+                "ethash",
+                &header_bytes,
+            )
             .await
             .unwrap();
 

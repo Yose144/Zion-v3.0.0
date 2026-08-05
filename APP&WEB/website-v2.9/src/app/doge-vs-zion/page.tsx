@@ -39,6 +39,7 @@ const DogeVsZionCopy = {
   back: { cs: `Zpět`, en: `Back` },
   zionStargatePortalToOasis: { cs: `ZION Stargate — Portál do Oasis`, en: `ZION Stargate — Portal to Oasis` },
   enterToOasis: { cs: `Vstoupit do Oasis`, en: `Enter to Oasis` },
+  learnMoreOasis: { cs: `Dozvědět se více`, en: `Learn more` },
   showdownArcade: { cs: `Showdown a Arkáda`, en: `Showdown & Arcade` },
   zionIsAt00002ExactlyWhereDogeW: { cs: `ZION je na $0.0002 — přesně kde byl Doge v prosinci 2013. Ale ZION má Oasis, kvantovou odolnost a humanitární fond. Hraj a rozhodni kdo vyhraje.`, en: `ZION is at $0.0002 — exactly where Doge was in December 2013. But ZION has Oasis, quantum resistance, and a humanitarian fund. Play and decide who wins.` },
   games: { cs: `her`, en: `games` },
@@ -554,13 +555,22 @@ export default function DogeVsZionPage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="mt-10 mb-12"
+              className="mt-10 mb-12 flex flex-wrap items-center justify-center gap-3"
             >
+              <a
+                href="https://oasis.zionterranova.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="zion-button-primary group"
+              >
+                {DogeVsZionCopy.enterToOasis[cs ? 'cs' : 'en']}
+                <span className="transition-transform group-hover:translate-x-1">→</span>
+              </a>
               <Link
                 href="/l4-oasis"
                 className="zion-button-secondary group"
               >
-                {DogeVsZionCopy.enterToOasis[cs ? 'cs' : 'en']}
+                {DogeVsZionCopy.learnMoreOasis[cs ? 'cs' : 'en']}
                 <span className="transition-transform group-hover:translate-x-1">→</span>
               </Link>
             </motion.div>

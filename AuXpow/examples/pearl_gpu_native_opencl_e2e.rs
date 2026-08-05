@@ -37,11 +37,14 @@ fn main() {
     println!("--- Test 1: Trivial target (0xFFx32, accept all) ---");
     let t = Instant::now();
     let proof1 = mine_gpu_native_opencl(
-        m, n, k, rank,
+        m,
+        n,
+        k,
+        rank,
         &header,
         &config,
         &trivial_target,
-        1,  // just 1 nonce
+        1, // just 1 nonce
         &mut gpu,
     );
     let elapsed1 = t.elapsed();
@@ -70,11 +73,14 @@ fn main() {
 
     let t = Instant::now();
     let proof = mine_gpu_native_opencl(
-        m, n, k, rank,
+        m,
+        n,
+        k,
+        rank,
         &header,
         &config,
         &easy_target,
-        100,  // max 100 nonces
+        100, // max 100 nonces
         &mut gpu,
     );
 
@@ -84,13 +90,17 @@ fn main() {
         Some(p) => {
             println!("[PASS] SHARE FOUND in {:.2}s", elapsed.as_secs_f64());
             println!("  jackpot_hash: {:02x?}", &p.jackpot_hash[..8]);
-            println!("  plain_proof_b64 length: {} bytes", p.plain_proof_b64.len());
+            println!(
+                "  plain_proof_b64 length: {} bytes",
+                p.plain_proof_b64.len()
+            );
 
             // Verify the proof is well-formed
             let proof_bytes = base64::Engine::decode(
                 &base64::engine::general_purpose::STANDARD,
                 &p.plain_proof_b64,
-            ).expect("decode proof");
+            )
+            .expect("decode proof");
 
             println!("  proof_bytes: {} bytes", proof_bytes.len());
             // PearlPlainProof is bincode-serialized: m, n, k, noise_rank (usize = 8 bytes each)
@@ -128,7 +138,9 @@ fn main() {
             println!("  CPU proof_b64 len: {}", cp.plain_proof_b64.len());
             println!("  [INFO] CPU path works -- cross-check GPU hashes separately");
         }
-        None => println!("  [INFO] CPU path did not find a share at nonce 0 (expected for hard target)"),
+        None => {
+            println!("  [INFO] CPU path did not find a share at nonce 0 (expected for hard target)")
+        }
     }
     println!();
     println!("=== OpenCL E2E complete ===");

@@ -81,11 +81,7 @@ pub fn mine_blake3_native(header: &[u8], nonce: u64) -> [u8; 32] {
 /// (interpreted as a big-endian integer).
 ///
 /// This matches the Rust reference `hash_blake3_alph` in `external_hashers.rs`.
-pub fn mine_blake3_alph_native(
-    header_blob: &[u8],
-    extranonce1: &[u8],
-    nonce: u64,
-) -> [u8; 32] {
+pub fn mine_blake3_alph_native(header_blob: &[u8], extranonce1: &[u8], nonce: u64) -> [u8; 32] {
     let mut out = [0u8; 32];
     unsafe {
         blake3_alph(
@@ -105,7 +101,12 @@ pub fn mine_blake3_alph_native(
 pub fn mine_blake3_alph_simple_native(header_blob: &[u8], nonce: u64) -> [u8; 32] {
     let mut out = [0u8; 32];
     unsafe {
-        blake3_alph_simple(header_blob.as_ptr(), header_blob.len(), nonce, out.as_mut_ptr());
+        blake3_alph_simple(
+            header_blob.as_ptr(),
+            header_blob.len(),
+            nonce,
+            out.as_mut_ptr(),
+        );
     }
     out
 }
@@ -239,7 +240,13 @@ unsafe extern "C" {
 pub fn hash_autolykos_native(header: &[u8], nonce: u64, height: u32) -> [u8; 32] {
     let mut out = [0u8; 32];
     unsafe {
-        autolykos_hash(header.as_ptr(), header.len(), nonce, height, out.as_mut_ptr());
+        autolykos_hash(
+            header.as_ptr(),
+            header.len(),
+            nonce,
+            height,
+            out.as_mut_ptr(),
+        );
     }
     out
 }
@@ -248,11 +255,7 @@ pub fn hash_autolykos_native(header: &[u8], nonce: u64, height: u32) -> [u8; 32]
 ///
 /// `table` must be pre-allocated with `table_size` entries (each 8 bytes).
 /// The table is derived from `SHA256(header)` and `height`.
-pub fn generate_autolykos_table_native(
-    header: &[u8],
-    height: u32,
-    table: &mut [u64],
-) {
+pub fn generate_autolykos_table_native(header: &[u8], height: u32, table: &mut [u64]) {
     unsafe {
         autolykos_generate_table(
             header.as_ptr(),
@@ -531,7 +534,13 @@ pub fn set_ethash_dag(dag: &[u8], dag_size_entries: u64) {
 pub fn hash_ethash_native(header: &[u8], nonce: u64, height: u32) -> [u8; 32] {
     let mut out = [0u8; 32];
     unsafe {
-        ethash_hash(header.as_ptr(), header.len(), nonce, height, out.as_mut_ptr());
+        ethash_hash(
+            header.as_ptr(),
+            header.len(),
+            nonce,
+            height,
+            out.as_mut_ptr(),
+        );
     }
     out
 }
@@ -597,7 +606,7 @@ pub fn mine_ethash_native(
 /// free (via `ethash_free_dag`), not by Rust's allocator.
 pub struct EthashDag {
     ptr: *mut u8,
-    len: usize,  // total bytes = dag_size_entries * 128
+    len: usize, // total bytes = dag_size_entries * 128
     pub dag_size_entries: u64,
     pub epoch: u32,
 }
@@ -621,9 +630,7 @@ impl EthashDag {
         if self.ptr.is_null() {
             &[]
         } else {
-            unsafe {
-                std::slice::from_raw_parts(self.ptr as *const u64, self.len / 8)
-            }
+            unsafe { std::slice::from_raw_parts(self.ptr as *const u64, self.len / 8) }
         }
     }
 }
@@ -646,9 +653,7 @@ impl Drop for EthashDag {
 /// `None`.
 pub fn generate_ethash_dag(epoch: u32) -> Option<EthashDag> {
     let mut dag_size_entries: u64 = 0;
-    let ptr = unsafe {
-        ethash_generate_dag(epoch, &mut dag_size_entries, None)
-    };
+    let ptr = unsafe { ethash_generate_dag(epoch, &mut dag_size_entries, None) };
     if ptr.is_null() {
         None
     } else {
@@ -763,9 +768,7 @@ impl KawpowDag {
         if self.ptr.is_null() {
             &[]
         } else {
-            unsafe {
-                std::slice::from_raw_parts(self.ptr as *const u64, self.len / 8)
-            }
+            unsafe { std::slice::from_raw_parts(self.ptr as *const u64, self.len / 8) }
         }
     }
 }
@@ -782,9 +785,7 @@ impl Drop for KawpowDag {
 /// Generate the full KawPow DAG for a given epoch.
 pub fn generate_kawpow_dag(epoch: u32) -> Option<KawpowDag> {
     let mut dag_size_entries: u64 = 0;
-    let ptr = unsafe {
-        kawpow_generate_dag(epoch, &mut dag_size_entries, None)
-    };
+    let ptr = unsafe { kawpow_generate_dag(epoch, &mut dag_size_entries, None) };
     if ptr.is_null() {
         None
     } else {
@@ -876,12 +877,7 @@ pub fn generate_kawpow_light_cache(epoch: u32) -> Option<KawpowLightCache> {
 
 unsafe extern "C" {
     fn verushash_init();
-    fn verushash_hash(
-        header: *const u8,
-        header_len: usize,
-        nonce: u64,
-        output: *mut u8,
-    );
+    fn verushash_hash(header: *const u8, header_len: usize, nonce: u64, output: *mut u8);
     fn verushash_hash_raw(header: *const u8, header_len: usize, output: *mut u8);
 }
 
@@ -954,10 +950,7 @@ pub fn hash_progpow_native_with_dag(
 /// Returns `Err` to signal the caller to use the pure-Rust BLAKE3 fallback.
 /// The full PoUW implementation requires INT8 MatMul + noise generation,
 /// which will be implemented in the GPU kernels (pearl_kernel.cl/metal).
-pub fn hash_pearl_native(
-    _header_hash: &[u8; 32],
-    _nonce: u64,
-) -> Result<[u8; 32], &'static str> {
+pub fn hash_pearl_native(_header_hash: &[u8; 32], _nonce: u64) -> Result<[u8; 32], &'static str> {
     Err("native Pearl FFI not yet implemented — using pure-Rust BLAKE3 fallback")
 }
 
@@ -974,11 +967,11 @@ pub fn hash_pearl_native(
 use sha3::{Digest, Keccak256, Keccak512};
 
 const CACHE_ROUNDS: usize = 3;
-const CACHE_BYTES_INIT: u64 = 1 << 24;       // 16 MB
-const CACHE_BYTES_GROWTH: u64 = 1 << 17;     // 128 KB
+const CACHE_BYTES_INIT: u64 = 1 << 24; // 16 MB
+const CACHE_BYTES_GROWTH: u64 = 1 << 17; // 128 KB
 const HASH_BYTES: u64 = 64;
-const DATASET_BYTES_INIT: u64 = 1 << 30;     // 1 GB
-const DATASET_BYTES_GROWTH: u64 = 1 << 23;   // 8 MB
+const DATASET_BYTES_INIT: u64 = 1 << 30; // 1 GB
+const DATASET_BYTES_GROWTH: u64 = 1 << 23; // 8 MB
 const MIX_BYTES: u64 = 128;
 
 /// Primality test for u64 using trial division (sufficient for cache/dataset
@@ -1008,7 +1001,8 @@ fn is_prime_u64(n: u64) -> bool {
 /// Follows the Ethash/ProgPoW spec: linear growth rounded down to the largest
 /// size whose number of 64-byte items is prime.
 fn cache_size_for_epoch(epoch: u32) -> u64 {
-    let mut items = (CACHE_BYTES_INIT + (epoch as u64) * CACHE_BYTES_GROWTH - HASH_BYTES) / HASH_BYTES;
+    let mut items =
+        (CACHE_BYTES_INIT + (epoch as u64) * CACHE_BYTES_GROWTH - HASH_BYTES) / HASH_BYTES;
     while !is_prime_u64(items) {
         items = items.saturating_sub(2).max(1);
     }
@@ -1020,7 +1014,8 @@ fn cache_size_for_epoch(epoch: u32) -> u64 {
 /// Follows the Ethash/ProgPoW spec: linear growth rounded down to the largest
 /// size whose number of 128-byte items is prime.
 fn dataset_size_for_epoch(epoch: u32) -> u64 {
-    let mut items = (DATASET_BYTES_INIT + (epoch as u64) * DATASET_BYTES_GROWTH - MIX_BYTES) / MIX_BYTES;
+    let mut items =
+        (DATASET_BYTES_INIT + (epoch as u64) * DATASET_BYTES_GROWTH - MIX_BYTES) / MIX_BYTES;
     while !is_prime_u64(items) {
         items = items.saturating_sub(2).max(1);
     }

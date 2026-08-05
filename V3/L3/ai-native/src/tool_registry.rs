@@ -113,8 +113,8 @@ pub enum SubAgent {
     ResourceOptimizer,
     BackupManager,
     UpdateEngine,
-    DashboardOps,   // NEW: Dashboard API (port 8766) — service health, launch, logs
-    DatabaseInspector, // NEW: SQLite/JSON DB inspector (9 databases)
+    DashboardOps,       // NEW: Dashboard API (port 8766) — service health, launch, logs
+    DatabaseInspector,  // NEW: SQLite/JSON DB inspector (9 databases)
     WatchdogController, // NEW: Watchdog timer + auto-heal control
 }
 
@@ -386,7 +386,10 @@ impl ToolRegistry {
 
     /// All tools that require human approval.
     pub fn approval_required_tools(&self) -> Vec<&Tool> {
-        self.tools.values().filter(|t| t.requires_approval).collect()
+        self.tools
+            .values()
+            .filter(|t| t.requires_approval)
+            .collect()
     }
 }
 
@@ -503,11 +506,7 @@ impl ToolExecutor {
         ))
     }
 
-    async fn attempt(
-        &self,
-        tool: &Tool,
-        input: &Value,
-    ) -> Result<(u16, Value), reqwest::Error> {
+    async fn attempt(&self, tool: &Tool, input: &Value) -> Result<(u16, Value), reqwest::Error> {
         let req = match tool.method {
             HttpMethod::Get => {
                 let mut r = self.client.get(&tool.endpoint).timeout(tool.timeout());
@@ -918,7 +917,8 @@ pub fn all_tools() -> Vec<Tool> {
         },
         Tool {
             name: "zion_warp_get_routes",
-            description: "Get 7-chain routing options (EVM, BTC, Solana, Tron, Stellar, Cardano, Cosmos)",
+            description:
+                "Get 7-chain routing options (EVM, BTC, Solana, Tron, Stellar, Cardano, Cosmos)",
             sub_agent: SubAgent::WarpRouter,
             layer: Layer::L3,
             endpoint: format!("{}/routes", WARP_API),
@@ -1397,19 +1397,51 @@ mod tests {
     #[test]
     fn test_registry_has_55_tools() {
         let reg = ToolRegistry::with_all_tools();
-        assert_eq!(reg.len(), 55, "v2.4 Maestro expanded spec requires 55 tools");
+        assert_eq!(
+            reg.len(),
+            55,
+            "v2.4 Maestro expanded spec requires 55 tools"
+        );
     }
 
     #[test]
     fn test_layer_distribution() {
         let reg = ToolRegistry::with_all_tools();
-        assert_eq!(reg.tools_for_layer(Layer::L1).len(), 15, "L1 should have 15 tools");
-        assert_eq!(reg.tools_for_layer(Layer::L2).len(), 10, "L2 should have 10 tools");
-        assert_eq!(reg.tools_for_layer(Layer::L3).len(), 6, "L3 should have 6 tools");
-        assert_eq!(reg.tools_for_layer(Layer::L4).len(), 2, "L4 should have 2 tools");
-        assert_eq!(reg.tools_for_layer(Layer::L5).len(), 2, "L5 should have 2 tools");
-        assert_eq!(reg.tools_for_layer(Layer::L6).len(), 2, "L6 should have 2 tools");
-        assert_eq!(reg.tools_for_layer(Layer::System).len(), 18, "System should have 18 tools");
+        assert_eq!(
+            reg.tools_for_layer(Layer::L1).len(),
+            15,
+            "L1 should have 15 tools"
+        );
+        assert_eq!(
+            reg.tools_for_layer(Layer::L2).len(),
+            10,
+            "L2 should have 10 tools"
+        );
+        assert_eq!(
+            reg.tools_for_layer(Layer::L3).len(),
+            6,
+            "L3 should have 6 tools"
+        );
+        assert_eq!(
+            reg.tools_for_layer(Layer::L4).len(),
+            2,
+            "L4 should have 2 tools"
+        );
+        assert_eq!(
+            reg.tools_for_layer(Layer::L5).len(),
+            2,
+            "L5 should have 2 tools"
+        );
+        assert_eq!(
+            reg.tools_for_layer(Layer::L6).len(),
+            2,
+            "L6 should have 2 tools"
+        );
+        assert_eq!(
+            reg.tools_for_layer(Layer::System).len(),
+            18,
+            "System should have 18 tools"
+        );
     }
 
     #[test]
@@ -1431,7 +1463,10 @@ mod tests {
         assert!(Intent::MinerControl
             .required_sub_agents()
             .contains(&SubAgent::MinerThermal));
-        assert_eq!(Intent::WalletQuery.required_sub_agents(), &[SubAgent::WalletOps]);
+        assert_eq!(
+            Intent::WalletQuery.required_sub_agents(),
+            &[SubAgent::WalletOps]
+        );
     }
 
     #[test]
@@ -1448,10 +1483,15 @@ mod tests {
         let approval = reg.approval_required_tools();
         // Critical ops: node_ctrl, miner_ctrl, wallet_ops, dao_vote, swap_execute,
         // ncl_submit_job, docker_restart, backup_trigger
-        assert!(approval.len() >= 8, "At least 8 tools should require approval");
+        assert!(
+            approval.len() >= 8,
+            "At least 8 tools should require approval"
+        );
         assert!(approval.iter().any(|t| t.name == "zion_node_ctrl"));
         assert!(approval.iter().any(|t| t.name == "zion_dao_vote"));
-        assert!(approval.iter().any(|t| t.name == "docker_restart_container"));
+        assert!(approval
+            .iter()
+            .any(|t| t.name == "docker_restart_container"));
     }
 
     #[test]

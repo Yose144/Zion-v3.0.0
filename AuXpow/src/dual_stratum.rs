@@ -16,7 +16,9 @@
 
 use anyhow::{anyhow, Result};
 
-use crate::external_hashers::{hash_blake3, hash_kheavyhash, meets_target, meets_target_little_endian};
+use crate::external_hashers::{
+    hash_blake3, hash_kheavyhash, meets_target, meets_target_little_endian,
+};
 use crate::types::{ExternalCoin, JobPackage, SplitConfig};
 
 /// Generic PoW work package.
@@ -65,12 +67,18 @@ pub struct FoundExternalShare {
 impl DualStratumJob {
     /// Create a dual job with the given ZION/external packages and split.
     pub fn new(zion: WorkPackage, external: JobPackage, split: SplitConfig) -> Self {
-        Self { zion, external, split }
+        Self {
+            zion,
+            external,
+            split,
+        }
     }
 
     /// Total weight of the split (used for modulo assignment).
     pub fn total_weight(&self) -> u32 {
-        self.split.zion_weight.saturating_add(self.split.external_weight)
+        self.split
+            .zion_weight
+            .saturating_add(self.split.external_weight)
     }
 
     /// Decide whether `nonce` belongs to ZION or external job.
@@ -103,7 +111,12 @@ pub(crate) enum JobAssignment {
 /// Keeps the AuXpow crate self-contained by only supporting algorithms that
 /// are already implemented here.  Integration with `V3/L1/miner` can extend
 /// the dispatcher through a trait or callback in the future.
-pub fn dispatch_hash(algorithm: &str, header: &[u8], timestamp: u64, nonce: u64) -> Result<[u8; 32]> {
+pub fn dispatch_hash(
+    algorithm: &str,
+    header: &[u8],
+    timestamp: u64,
+    nonce: u64,
+) -> Result<[u8; 32]> {
     match algorithm {
         "blake3" => Ok(hash_blake3(header, timestamp, nonce)),
         "kheavyhash" => Ok(hash_kheavyhash(header, timestamp, nonce)),
@@ -116,7 +129,8 @@ pub fn dispatch_hash(algorithm: &str, header: &[u8], timestamp: u64, nonce: u64)
             let mut h32 = [0u8; 32];
             let len = header.len().min(32);
             h32[..len].copy_from_slice(&header[..len]);
-            let (_mix, final_hash) = crate::external_hashers::hash_kawpow(&h32, nonce, timestamp as u32);
+            let (_mix, final_hash) =
+                crate::external_hashers::hash_kawpow(&h32, nonce, timestamp as u32);
             Ok(final_hash)
         }
         "ethash" => Ok(crate::external_hashers::hash_ethash(
@@ -138,7 +152,10 @@ pub fn dispatch_hash(algorithm: &str, header: &[u8], timestamp: u64, nonce: u64)
             h32[..len].copy_from_slice(&header[..len]);
             Ok(crate::external_hashers::hash_pearl(&h32, nonce))
         }
-        other => Err(anyhow!("dual-stratum: algorithm '{}' not supported by AuXpow hasher", other)),
+        other => Err(anyhow!(
+            "dual-stratum: algorithm '{}' not supported by AuXpow hasher",
+            other
+        )),
     }
 }
 
@@ -194,7 +211,10 @@ impl DualStratumMiner {
     /// Count how many nonces in `range` are assigned to each job.
     ///
     /// Useful for telemetry and verifying the split ratio.
-    pub fn count_assignments(job: &DualStratumJob, range: std::ops::Range<u64>) -> AssignmentCounts {
+    pub fn count_assignments(
+        job: &DualStratumJob,
+        range: std::ops::Range<u64>,
+    ) -> AssignmentCounts {
         let mut zion = 0u64;
         let mut external = 0u64;
         for nonce in range {
@@ -279,10 +299,14 @@ mod tests {
 
     #[test]
     fn assignment_75_25_split() {
-        let job = DualStratumJob::new(zion_job(), external_job(), SplitConfig {
-            zion_weight: 75,
-            external_weight: 25,
-        });
+        let job = DualStratumJob::new(
+            zion_job(),
+            external_job(),
+            SplitConfig {
+                zion_weight: 75,
+                external_weight: 25,
+            },
+        );
         let counts = DualStratumMiner::count_assignments(&job, 0..100);
         assert_eq!(counts.zion, 75);
         assert_eq!(counts.external, 25);
@@ -291,10 +315,14 @@ mod tests {
 
     #[test]
     fn assignment_repeats_every_total_weight() {
-        let job = DualStratumJob::new(zion_job(), external_job(), SplitConfig {
-            zion_weight: 3,
-            external_weight: 1,
-        });
+        let job = DualStratumJob::new(
+            zion_job(),
+            external_job(),
+            SplitConfig {
+                zion_weight: 3,
+                external_weight: 1,
+            },
+        );
         assert_eq!(job.assign_nonce(0), JobAssignment::Zion);
         assert_eq!(job.assign_nonce(1), JobAssignment::Zion);
         assert_eq!(job.assign_nonce(2), JobAssignment::Zion);
@@ -304,10 +332,14 @@ mod tests {
 
     #[test]
     fn zero_weight_defaults_to_zion() {
-        let job = DualStratumJob::new(zion_job(), external_job(), SplitConfig {
-            zion_weight: 0,
-            external_weight: 0,
-        });
+        let job = DualStratumJob::new(
+            zion_job(),
+            external_job(),
+            SplitConfig {
+                zion_weight: 0,
+                external_weight: 0,
+            },
+        );
         assert_eq!(job.assign_nonce(0), JobAssignment::Zion);
         assert_eq!(job.assign_nonce(99), JobAssignment::Zion);
     }
@@ -321,10 +353,14 @@ mod tests {
         let mut ext = external_job();
         ext.target_bytes = impossible_target();
 
-        let job = DualStratumJob::new(zion, ext, SplitConfig {
-            zion_weight: 1,
-            external_weight: 0,
-        });
+        let job = DualStratumJob::new(
+            zion,
+            ext,
+            SplitConfig {
+                zion_weight: 1,
+                external_weight: 0,
+            },
+        );
 
         let result = DualStratumMiner::scan(&job, 0..10_000).expect("share found");
         assert!(matches!(result, ShareDisposition::ZionShare { .. }));
@@ -338,10 +374,14 @@ mod tests {
         let mut ext = external_job();
         ext.target_bytes = easy_target();
 
-        let job = DualStratumJob::new(zion, ext, SplitConfig {
-            zion_weight: 0,
-            external_weight: 1,
-        });
+        let job = DualStratumJob::new(
+            zion,
+            ext,
+            SplitConfig {
+                zion_weight: 0,
+                external_weight: 1,
+            },
+        );
 
         let result = DualStratumMiner::scan(&job, 0..10_000).expect("share found");
         match result {

@@ -68,8 +68,7 @@ pub struct BlockRecord {
 impl ShareStore {
     /// Open (or create) the SQLite database at `path` and run migrations.
     pub fn open<P: AsRef<Path>>(path: P) -> Result<Self> {
-        let conn = Connection::open(path)
-            .context("failed to open share store sqlite database")?;
+        let conn = Connection::open(path).context("failed to open share store sqlite database")?;
         // Performance pragmas — WAL mode for concurrent reads during writes,
         // busy timeout for contention, normal sync for durability.
         conn.pragma_update(None, "journal_mode", "WAL")?;
@@ -104,9 +103,7 @@ impl ShareStore {
             debug!("share_store: schema already at v{current}");
             return Ok(());
         }
-        info!(
-            "share_store: migrating schema v{current} → v{SCHEMA_VERSION}"
-        );
+        info!("share_store: migrating schema v{current} → v{SCHEMA_VERSION}");
 
         if current < 1 {
             conn.execute_batch(

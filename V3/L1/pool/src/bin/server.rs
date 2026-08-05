@@ -9,28 +9,29 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tracing::{debug, error, info, warn};
+use zion_auxpow::{
+    AuxPowScheduler, AuxPowStats, ExternalCoin, JobMultiplexer, JobPackage, ShareForwardResult,
+    ShareForwarder, ShareResult, SplitConfig,
+};
 use zion_core::wallet::{BatchRecipient, SpendableUtxo};
+use zion_core::MiningJob;
 use zion_core::{
     decode_rpc_response, encode_rpc_request, BlockTemplate, ConsensusConfig, CoreRuntime,
     DifficultyTarget, MiningHeader, MiningSolution, RevenueSource, RpcRequest, RpcResponse,
     Transaction as AccountTransaction,
+};
+use zion_cosmic_harmony::stream_profit::{
+    fetch_profit_snapshot, StreamProfitConfig, StreamProfitSnapshot, StreamWeights,
+};
+use zion_cosmic_harmony::{
+    fetch_live_profit_estimates, fetch_live_profit_estimates_with_nicehash, select_best_coin,
+    ExternalCoin as ChExternalCoin,
 };
 use zion_pool::ncl_gateway::{NclDispatcher, NclGatewayClient, NclHeartbeatConfig, NclPricing};
 use zion_pool::pplns::{FeeConfig, PayoutEntry, PplnsConfig, PplnsEngine};
 use zion_pool::{
     decode_message, encode_message, MiningPool, PoolMessage, ShareDecision, ShareStatus,
 };
-use zion_auxpow::{
-    AuxPowScheduler, AuxPowStats, ExternalCoin, JobMultiplexer, JobPackage, ShareForwardResult,
-    ShareForwarder, ShareResult, SplitConfig,
-};
-use zion_cosmic_harmony::{
-    fetch_live_profit_estimates, fetch_live_profit_estimates_with_nicehash, select_best_coin, ExternalCoin as ChExternalCoin,
-};
-use zion_cosmic_harmony::stream_profit::{
-    fetch_profit_snapshot, StreamProfitConfig, StreamProfitSnapshot, StreamWeights,
-};
-use zion_core::MiningJob;
 
 // F2: Global shutdown flag for Stratum v1 sessions (set by ctrl-c handler).
 static SHUTDOWN_FLAG: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
@@ -252,7 +253,11 @@ impl BlockTracker {
             network_difficulty,
             shares_since_prev_block: shares,
             node_accepted,
-            status: if node_accepted { BlockStatus::Pending } else { BlockStatus::Orphaned },
+            status: if node_accepted {
+                BlockStatus::Pending
+            } else {
+                BlockStatus::Orphaned
+            },
             confirmed_at_chain_height: 0,
         });
         if !node_accepted {
@@ -268,8 +273,16 @@ impl BlockTracker {
 
     /// Mark a block as confirmed or orphaned by height.
     fn resolve_block(&mut self, height: u64, orphaned: bool, chain_height: u64) {
-        if let Some(rec) = self.blocks.iter_mut().find(|b| b.height == height && b.status == BlockStatus::Pending) {
-            rec.status = if orphaned { BlockStatus::Orphaned } else { BlockStatus::Confirmed };
+        if let Some(rec) = self
+            .blocks
+            .iter_mut()
+            .find(|b| b.height == height && b.status == BlockStatus::Pending)
+        {
+            rec.status = if orphaned {
+                BlockStatus::Orphaned
+            } else {
+                BlockStatus::Confirmed
+            };
             rec.confirmed_at_chain_height = chain_height;
             if orphaned {
                 self.total_orphans += 1;
@@ -336,7 +349,10 @@ impl BlockTracker {
 
     /// Pending blocks (found but not yet confirmed/orphaned).
     fn pending_blocks(&self) -> Vec<&BlockRecord> {
-        self.blocks.iter().filter(|b| b.status == BlockStatus::Pending).collect()
+        self.blocks
+            .iter()
+            .filter(|b| b.status == BlockStatus::Pending)
+            .collect()
     }
 }
 
@@ -442,7 +458,10 @@ impl TemplateCache {
             }
             Err(e) => {
                 if let Some(ref t) = self.template {
-                    error!("template_cache: fetch failed ({e:#}), serving stale template height={}", t.height);
+                    error!(
+                        "template_cache: fetch failed ({e:#}), serving stale template height={}",
+                        t.height
+                    );
                     Ok(t.clone())
                 } else {
                     Err(e)
@@ -581,7 +600,8 @@ fn parse_webhook_url(url: &str) -> Result<(String, String, String)> {
 // ---------------------------------------------------------------------------
 
 /// Global Telegram notifier singleton (initialized in main()).
-static TELEGRAM_NOTIFIER: std::sync::OnceLock<Option<TelegramNotifier>> = std::sync::OnceLock::new();
+static TELEGRAM_NOTIFIER: std::sync::OnceLock<Option<TelegramNotifier>> =
+    std::sync::OnceLock::new();
 
 /// Get the global Telegram notifier (None if not configured).
 fn telegram() -> Option<&'static TelegramNotifier> {
@@ -620,7 +640,10 @@ impl TelegramNotifier {
     /// Check if enough time has passed since the last alert of this kind.
     fn should_send(&self, kind: &str) -> bool {
         let now = now_unix_seconds();
-        let mut guard = self.last_alert.lock().expect("telegram alert lock poisoned");
+        let mut guard = self
+            .last_alert
+            .lock()
+            .expect("telegram alert lock poisoned");
         if let Some(&last) = guard.get(kind) {
             if now.saturating_sub(last) < self.min_alert_interval_s {
                 return false;
@@ -637,7 +660,8 @@ impl TelegramNotifier {
         let chat_id = self.chat_id.clone();
         let body = format!(
             r#"{{"chat_id":"{}","text":"{}","disable_web_page_preview":true}}"#,
-            chat_id, text.replace('"', "\\\"").replace('\n', "\\n")
+            chat_id,
+            text.replace('"', "\\\"").replace('\n', "\\n")
         );
         let url = format!("https://api.telegram.org/bot{}/sendMessage", token);
         std::thread::spawn(move || {
@@ -662,7 +686,8 @@ impl TelegramNotifier {
                         return;
                     }
                 };
-                match client.post(&url)
+                match client
+                    .post(&url)
                     .header("Content-Type", "application/json")
                     .body(body)
                     .send()
@@ -684,7 +709,10 @@ impl TelegramNotifier {
     fn alert_block_found(&self, height: u64, miner_id: &str, worker: &str) {
         let msg = format!(
             "🧱 Block Found\nHeight: {}\nMiner: {}\nWorker: {}\nTime: {}",
-            height, miner_id, worker, now_unix_seconds()
+            height,
+            miner_id,
+            worker,
+            now_unix_seconds()
         );
         self.send(&msg);
     }
@@ -696,7 +724,8 @@ impl TelegramNotifier {
         }
         let msg = format!(
             "⚠️ Orphan Block\nHeight: {}\nThe node rejected or orphaned this block.\nTime: {}",
-            height, now_unix_seconds()
+            height,
+            now_unix_seconds()
         );
         self.send(&msg);
     }
@@ -708,7 +737,10 @@ impl TelegramNotifier {
         }
         let msg = format!(
             "❌ Payout Failed\nMiner: {}\nAmount: {} flowers\nError: {}\nTime: {}",
-            miner_id, amount_flowers, error, now_unix_seconds()
+            miner_id,
+            amount_flowers,
+            error,
+            now_unix_seconds()
         );
         self.send(&msg);
     }
@@ -755,11 +787,15 @@ impl SmtpNotifier {
         if admin_email.is_empty() {
             return None;
         }
-        let host = std::env::var("ZION_POOL_SMTP_HOST")
-            .unwrap_or_else(|_| "127.0.0.1:25".to_string());
+        let host =
+            std::env::var("ZION_POOL_SMTP_HOST").unwrap_or_else(|_| "127.0.0.1:25".to_string());
         let from_addr = std::env::var("ZION_POOL_SMTP_FROM")
             .unwrap_or_else(|_| "pool@zionterranova.com".to_string());
-        Some(Self { host, from_addr, admin_email })
+        Some(Self {
+            host,
+            from_addr,
+            admin_email,
+        })
     }
 
     /// Send an e-mail via plain SMTP (fire-and-forget in spawned thread).
@@ -780,9 +816,17 @@ impl SmtpNotifier {
     fn notify_payout(&self, height: u64, miner_count: usize, total_flowers: u64, tx_id: &str) {
         let body = format!(
             "Payout Executed\n\nHeight: {}\nMiners: {}\nTotal: {} flowers\nTX ID: {}\nTime: {}",
-            height, miner_count, total_flowers, tx_id, now_unix_seconds()
+            height,
+            miner_count,
+            total_flowers,
+            tx_id,
+            now_unix_seconds()
         );
-        self.send_email(&self.admin_email.clone(), "ZION Pool: Payout Executed", &body);
+        self.send_email(
+            &self.admin_email.clone(),
+            "ZION Pool: Payout Executed",
+            &body,
+        );
     }
 }
 
@@ -790,8 +834,8 @@ impl SmtpNotifier {
 /// Supports only plain SMTP on port 25 (no TLS, no AUTH).
 /// Suitable for local MTA (postfix/exim) or relay.
 fn smtp_send_plain(host: &str, from: &str, to: &str, subject: &str, body: &str) -> Result<()> {
-    let mut stream = TcpStream::connect(host)
-        .with_context(|| format!("SMTP connect failed to {host}"))?;
+    let mut stream =
+        TcpStream::connect(host).with_context(|| format!("SMTP connect failed to {host}"))?;
     stream.set_read_timeout(Some(Duration::from_secs(10)))?;
     stream.set_write_timeout(Some(Duration::from_secs(10)))?;
 
@@ -962,9 +1006,7 @@ fn external_coin_to_revenue_source(coin: ExternalCoin) -> RevenueSource {
     match coin {
         ExternalCoin::DCR | ExternalCoin::ALPH => RevenueSource::Blake3External,
         ExternalCoin::KAS => RevenueSource::KHeavyHashExternal,
-        ExternalCoin::ETC | ExternalCoin::EVR | ExternalCoin::MEWC => {
-            RevenueSource::EthashExternal
-        }
+        ExternalCoin::ETC | ExternalCoin::EVR | ExternalCoin::MEWC => RevenueSource::EthashExternal,
         ExternalCoin::RVN | ExternalCoin::CLORE | ExternalCoin::QUAI => {
             RevenueSource::KawPowExternal
         }
@@ -1119,8 +1161,14 @@ fn external_coin_to_algorithm(coin: ExternalCoin) -> &'static str {
 async fn run_auxpow_bridge(
     cfg: AuxPowIntegrationConfig,
     bridge: AuxPowBridge,
-    share_rx: std::sync::mpsc::Receiver<(ShareForwardRequest, std::sync::mpsc::Sender<ShareForwardOutcome>)>,
-    pearl_rx: std::sync::mpsc::Receiver<(PearlForwardRequest, std::sync::mpsc::Sender<ShareForwardOutcome>)>,
+    share_rx: std::sync::mpsc::Receiver<(
+        ShareForwardRequest,
+        std::sync::mpsc::Sender<ShareForwardOutcome>,
+    )>,
+    pearl_rx: std::sync::mpsc::Receiver<(
+        PearlForwardRequest,
+        std::sync::mpsc::Sender<ShareForwardOutcome>,
+    )>,
     touch_rx: std::sync::mpsc::Receiver<String>,
 ) {
     let mut mux = JobMultiplexer::new(&cfg.payout_wallet, &cfg.worker_name)
@@ -1146,13 +1194,15 @@ async fn run_auxpow_bridge(
     let initial_coin = cfg.force_coin.unwrap_or_else(|| {
         let estimates = fetch_live_profit_estimates();
         ch_to_auxpow_external_coin(
-            select_best_coin(&estimates, None, cfg.hysteresis_pct)
-                .unwrap_or(ChExternalCoin::KAS),
+            select_best_coin(&estimates, None, cfg.hysteresis_pct).unwrap_or(ChExternalCoin::KAS),
         )
     });
     mux.set_wallet(select_wallet(initial_coin));
     if let Err(e) = mux.connect(initial_coin).await {
-        error!("auxpow_bridge: initial connect to {} failed: {}", initial_coin, e);
+        error!(
+            "auxpow_bridge: initial connect to {} failed: {}",
+            initial_coin, e
+        );
     }
 
     // Track when we last checked profitability for auto-switching.
@@ -1176,7 +1226,10 @@ async fn run_auxpow_bridge(
                 )
             });
             mux.set_wallet(select_wallet(coin));
-            warn!("auxpow_bridge: no active connection, reconnecting to {}…", coin);
+            warn!(
+                "auxpow_bridge: no active connection, reconnecting to {}…",
+                coin
+            );
             if let Err(e) = mux.connect(coin).await {
                 error!("auxpow_bridge: reconnect to {} failed: {}", coin, e);
                 tokio::time::sleep(Duration::from_secs(reconnect_backoff_secs)).await;
@@ -1193,9 +1246,7 @@ async fn run_auxpow_bridge(
             last_profit_check = Instant::now();
             let estimates = fetch_live_profit_estimates();
             let current = mux.active_coin().map(auxpow_to_ch_external_coin);
-            if let Some(best) =
-                select_best_coin(&estimates, current, cfg.hysteresis_pct)
-            {
+            if let Some(best) = select_best_coin(&estimates, current, cfg.hysteresis_pct) {
                 if current != Some(best) {
                     info!(
                         "auxpow_bridge: profit_switch old={:?} new={} old_profit={:.4} new_profit={:.4}",
@@ -1216,7 +1267,10 @@ async fn run_auxpow_bridge(
                     mux.disconnect().await;
                     mux.set_wallet(select_wallet(new_coin));
                     if let Err(e) = mux.connect(new_coin).await {
-                        error!("auxpow_bridge: profit_switch connect to {} failed: {}", new_coin, e);
+                        error!(
+                            "auxpow_bridge: profit_switch connect to {} failed: {}",
+                            new_coin, e
+                        );
                     } else {
                         info!("auxpow_bridge: profit_switch connected to {}", new_coin);
                     }
@@ -1233,7 +1287,10 @@ async fn run_auxpow_bridge(
                     "auxpow_bridge: queued job_id={} coin={} algo={}",
                     job.external_job_id, job.external_coin, job.algorithm
                 );
-                let mut q = bridge.job_queue.lock().expect("auxpow job queue lock poisoned");
+                let mut q = bridge
+                    .job_queue
+                    .lock()
+                    .expect("auxpow job queue lock poisoned");
                 // Keep at most 5 jobs per algorithm to tolerate frequent
                 // job updates (e.g. ALPH Herominers sends new jobs every ~5s).
                 while q.len() >= 5 {
@@ -1259,7 +1316,19 @@ async fn run_auxpow_bridge(
             let started = Instant::now();
             let result = if let Some(client) = mux.client() {
                 let forwarder = ShareForwarder::new(client);
-                match forwarder.try_forward(&req.external_job_id, req.nonce, &req.hash, &req.target, req.mix_hash.as_ref(), req.solution.as_deref(), &req.algorithm, &req.header_bytes).await {
+                match forwarder
+                    .try_forward(
+                        &req.external_job_id,
+                        req.nonce,
+                        &req.hash,
+                        &req.target,
+                        req.mix_hash.as_ref(),
+                        req.solution.as_deref(),
+                        &req.algorithm,
+                        &req.header_bytes,
+                    )
+                    .await
+                {
                     Ok(r) => {
                         info!(
                             "auxpow_bridge: share_forwarded job_id={} nonce={} result={:?} elapsed_ms={}",
@@ -1285,12 +1354,15 @@ async fn run_auxpow_bridge(
         while let Ok((req, reply_tx)) = pearl_rx.try_recv() {
             let started = Instant::now();
             let result = if let Some(client) = mux.client() {
-                match client.submit_pearl_proof(
-                    &req.external_job_id,
-                    &req.plain_proof_b64,
-                    &req.header_bytes,
-                    &req.target_bytes,
-                ).await {
+                match client
+                    .submit_pearl_proof(
+                        &req.external_job_id,
+                        &req.plain_proof_b64,
+                        &req.header_bytes,
+                        &req.target_bytes,
+                    )
+                    .await
+                {
                     Ok(ShareResult::Accepted) => {
                         info!(
                             "auxpow_bridge: pearl_proof_forwarded job_id={} result=accepted elapsed_ms={}",
@@ -1301,20 +1373,21 @@ async fn run_auxpow_bridge(
                     Ok(ShareResult::Rejected(reason)) => {
                         info!(
                             "auxpow_bridge: pearl_proof_rejected job_id={} reason={} elapsed_ms={}",
-                            req.external_job_id, reason, started.elapsed().as_millis()
+                            req.external_job_id,
+                            reason,
+                            started.elapsed().as_millis()
                         );
                         ShareForwardResult::Rejected(reason)
                     }
                     Ok(ShareResult::Unknown) => {
                         info!(
                             "auxpow_bridge: pearl_proof_unknown job_id={} elapsed_ms={}",
-                            req.external_job_id, started.elapsed().as_millis()
+                            req.external_job_id,
+                            started.elapsed().as_millis()
                         );
                         ShareForwardResult::Unknown
                     }
-                    Ok(ShareResult::NoShare) => {
-                        ShareForwardResult::BelowTarget
-                    }
+                    Ok(ShareResult::NoShare) => ShareForwardResult::BelowTarget,
                     Err(e) => {
                         error!("auxpow_bridge: pearl forward error: {}", e);
                         ShareForwardResult::Unknown
@@ -1350,14 +1423,11 @@ async fn run_auxpow_bridge(
 
 /// Load a TLS server config from PEM-encoded cert + key files.
 /// Uses rustls 0.26 with safe defaults (no dangerous protocols).
-fn load_tls_server_config(
-    cert_path: &str,
-    key_path: &str,
-) -> Result<tokio_rustls::TlsAcceptor> {
-    let cert_pem = std::fs::read(cert_path)
-        .with_context(|| format!("failed to read TLS cert {cert_path}"))?;
-    let key_pem = std::fs::read(key_path)
-        .with_context(|| format!("failed to read TLS key {key_path}"))?;
+fn load_tls_server_config(cert_path: &str, key_path: &str) -> Result<tokio_rustls::TlsAcceptor> {
+    let cert_pem =
+        std::fs::read(cert_path).with_context(|| format!("failed to read TLS cert {cert_path}"))?;
+    let key_pem =
+        std::fs::read(key_path).with_context(|| format!("failed to read TLS key {key_path}"))?;
     let cert_chain: Vec<rustls::pki_types::CertificateDer> =
         rustls_pemfile::certs(&mut cert_pem.as_slice())
             .collect::<Result<Vec<_>, _>>()
@@ -1373,7 +1443,9 @@ fn load_tls_server_config(
         .with_single_cert(cert_chain, key_der)
         .context("failed to build rustls ServerConfig")?;
     server_config.max_early_data_size = 0;
-    Ok(tokio_rustls::TlsAcceptor::from(std::sync::Arc::new(server_config)))
+    Ok(tokio_rustls::TlsAcceptor::from(std::sync::Arc::new(
+        server_config,
+    )))
 }
 
 // ---------------------------------------------------------------------------
@@ -1501,7 +1573,11 @@ impl SessionCtx {
                 Arc::clone(&self.gpu_coin_override),
                 Arc::clone(&self.force_save),
                 Arc::clone(&self.block_tracker),
-                if first_line.is_empty() { None } else { Some(&first_line) },
+                if first_line.is_empty() {
+                    None
+                } else {
+                    Some(&first_line)
+                },
                 self.share_store.clone(),
             )
         };
@@ -1517,8 +1593,7 @@ fn main() -> Result<()> {
     // Default: info.  F1.1 upgrade — replaces println!/eprintln! throughout.
     tracing_subscriber::fmt()
         .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "info".into()),
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
         )
         .init();
 
@@ -1600,9 +1675,7 @@ fn main() -> Result<()> {
             );
         }
     } else {
-        info!(
-            "pplns_persistence: ZION_PPLNS_STATE_PATH not set — state will be lost on restart"
-        );
+        info!("pplns_persistence: ZION_PPLNS_STATE_PATH not set — state will be lost on restart");
     }
 
     let pplns_engine = Arc::new(Mutex::new(pplns_engine_inner));
@@ -1634,7 +1707,10 @@ fn main() -> Result<()> {
                 Some(Arc::new(s))
             }
             Err(e) => {
-                warn!("share_store: failed to open {}: {} — continuing without DB", db_path, e);
+                warn!(
+                    "share_store: failed to open {}: {} — continuing without DB",
+                    db_path, e
+                );
                 None
             }
         }
@@ -1663,7 +1739,10 @@ fn main() -> Result<()> {
                     info!("block_tracker: loaded {} pending blocks from DB", loaded);
                 }
             }
-            Err(e) => warn!("block_tracker: failed to load pending blocks from DB: {}", e),
+            Err(e) => warn!(
+                "block_tracker: failed to load pending blocks from DB: {}",
+                e
+            ),
         }
     }
     // F4.2: Restore miner telemetry paid totals and payout history from the
@@ -1705,7 +1784,10 @@ fn main() -> Result<()> {
                         },
                     );
                 }
-                info!("share_store: restored {} payout records into telemetry", rows.len());
+                info!(
+                    "share_store: restored {} payout records into telemetry",
+                    rows.len()
+                );
             }
             Err(e) => warn!("share_store: failed to restore payout history: {}", e),
         }
@@ -1718,9 +1800,9 @@ fn main() -> Result<()> {
     // (3x improvement over the previous 3s default).  Configurable via
     // ZION_POOL_TEMPLATE_TTL_MS.
     let template_ttl_ms = parse_env_u64("ZION_POOL_TEMPLATE_TTL_MS", 1000).unwrap_or(1000);
-    let template_cache = Arc::new(Mutex::new(TemplateCache::new(
-        Duration::from_millis(template_ttl_ms),
-    )));
+    let template_cache = Arc::new(Mutex::new(TemplateCache::new(Duration::from_millis(
+        template_ttl_ms,
+    ))));
     // F6.4/F6.5: Shared template generation counter — incremented each time
     // the background template watcher detects a new chain height.  Session
     // threads read this to detect height changes between iterations without
@@ -1828,7 +1910,8 @@ fn main() -> Result<()> {
         // Scan all ZION_POOL_AUXPOW_WALLET_* env vars and start a bridge
         // for each non-empty one.  Also include the default payout_wallet
         // coin (from ZION_POOL_AUXPOW_COIN) and the CPU bridge coin.
-        let mut coins_to_start: std::collections::HashSet<ExternalCoin> = std::collections::HashSet::new();
+        let mut coins_to_start: std::collections::HashSet<ExternalCoin> =
+            std::collections::HashSet::new();
 
         // Add the forced GPU coin (if any)
         if let Some(coin) = config.auxpow_config.force_coin {
@@ -1854,7 +1937,10 @@ fn main() -> Result<()> {
 
         info!(
             "multi_bridge: enabled coins={:?} ({} bridges will be started)",
-            coins_to_start.iter().map(|c| c.ticker()).collect::<Vec<_>>(),
+            coins_to_start
+                .iter()
+                .map(|c| c.ticker())
+                .collect::<Vec<_>>(),
             coins_to_start.len(),
         );
 
@@ -1863,12 +1949,15 @@ fn main() -> Result<()> {
             // For NiceHash preference: if the coin has a NiceHash endpoint,
             // use the default payout_wallet (BTC address). If the coin falls
             // back to a non-NiceHash pool (e.g. DCR/EPIC), use per-coin wallet.
-            let wallet = if config.auxpow_config.pool_preference == zion_auxpow::PoolPreference::NiceHash
+            let wallet = if config.auxpow_config.pool_preference
+                == zion_auxpow::PoolPreference::NiceHash
                 && coin.nicehash_pool().is_some()
             {
                 config.auxpow_config.payout_wallet.clone()
             } else {
-                config.auxpow_config.coin_wallets
+                config
+                    .auxpow_config
+                    .coin_wallets
                     .get(coin.ticker())
                     .cloned()
                     .unwrap_or_else(|| config.auxpow_config.payout_wallet.clone())
@@ -1882,7 +1971,11 @@ fn main() -> Result<()> {
                 pool_preference: config.auxpow_config.pool_preference,
                 region: config.auxpow_config.region.clone(),
                 payout_wallet: wallet.clone(),
-                worker_name: format!("{}-{}", config.auxpow_config.worker_name, coin.ticker().to_lowercase()),
+                worker_name: format!(
+                    "{}-{}",
+                    config.auxpow_config.worker_name,
+                    coin.ticker().to_lowercase()
+                ),
                 coin_wallets: config.auxpow_config.coin_wallets.clone(),
                 profit_check_interval_secs: config.auxpow_config.profit_check_interval_secs,
                 hysteresis_pct: config.auxpow_config.hysteresis_pct,
@@ -1911,7 +2004,13 @@ fn main() -> Result<()> {
                         return;
                     }
                 };
-                rt.block_on(run_auxpow_bridge(cfg_clone, bridge_clone, share_rx, pearl_rx, touch_rx));
+                rt.block_on(run_auxpow_bridge(
+                    cfg_clone,
+                    bridge_clone,
+                    share_rx,
+                    pearl_rx,
+                    touch_rx,
+                ));
             });
 
             multi_bridge.insert(coin, bridge);
@@ -1920,7 +2019,11 @@ fn main() -> Result<()> {
         info!(
             "multi_bridge: {} bridges started, cpu_coins={:?}",
             multi_bridge.enabled_coins().len(),
-            multi_bridge.cpu_coins.iter().map(|c| c.ticker()).collect::<Vec<_>>(),
+            multi_bridge
+                .cpu_coins
+                .iter()
+                .map(|c| c.ticker())
+                .collect::<Vec<_>>(),
         );
     } else {
         info!("multi_bridge: disabled (set ZION_POOL_AUXPOW_ENABLED=1 to enable)");
@@ -1932,9 +2035,13 @@ fn main() -> Result<()> {
         .unwrap_or(false)
     {
         let interval: u64 = std::env::var("ZION_POOL_PROFIT_INTERVAL")
-            .ok().and_then(|s| s.trim().parse().ok()).unwrap_or(300);
+            .ok()
+            .and_then(|s| s.trim().parse().ok())
+            .unwrap_or(300);
         let hysteresis: f64 = std::env::var("ZION_POOL_PROFIT_HYSTERESIS")
-            .ok().and_then(|s| s.trim().parse().ok()).unwrap_or(15.0);
+            .ok()
+            .and_then(|s| s.trim().parse().ok())
+            .unwrap_or(15.0);
         info!(
             "pool_profit_switch: enabled interval={}s hysteresis={}%",
             interval, hysteresis,
@@ -1942,15 +2049,21 @@ fn main() -> Result<()> {
     }
 
     // ── Pool-side profit switcher shared state ─────────────────────────
-    let profit_switch_state: PoolProfitSwitchStateArc = Arc::new(Mutex::new(
-        PoolProfitSwitchState {
+    let profit_switch_state: PoolProfitSwitchStateArc =
+        Arc::new(Mutex::new(PoolProfitSwitchState {
             enabled: std::env::var("ZION_POOL_PROFIT_SWITCH")
-                .map(|v| v.trim().eq_ignore_ascii_case("1") || v.trim().eq_ignore_ascii_case("true"))
+                .map(|v| {
+                    v.trim().eq_ignore_ascii_case("1") || v.trim().eq_ignore_ascii_case("true")
+                })
                 .unwrap_or(false),
             interval_secs: std::env::var("ZION_POOL_PROFIT_INTERVAL")
-                .ok().and_then(|s| s.trim().parse().ok()).unwrap_or(300),
+                .ok()
+                .and_then(|s| s.trim().parse().ok())
+                .unwrap_or(300),
             hysteresis_pct: std::env::var("ZION_POOL_PROFIT_HYSTERESIS")
-                .ok().and_then(|s| s.trim().parse().ok()).unwrap_or(15.0),
+                .ok()
+                .and_then(|s| s.trim().parse().ok())
+                .unwrap_or(15.0),
             best_gpu_coin: None,
             best_cpu_coin: None,
             best_gpu_profit_usd: 0.0,
@@ -1958,8 +2071,7 @@ fn main() -> Result<()> {
             last_check_unix: 0,
             estimates: Vec::new(),
             nicehash_rates: Vec::new(),
-        },
-    ));
+        }));
 
     // ── Runtime coin overrides (dashboard hot-switch) ─────────────────
     // Set via POST /api/v1/cpu-coin and /api/v1/gpu-coin on the pool's
@@ -2164,7 +2276,10 @@ fn main() -> Result<()> {
                     if let Some(ref ss) = share_store_ref {
                         let _ = ss.update_block_status(height, "confirmed");
                     }
-                    info!("block_confirmed height={} chain_height={}", height, chain_height);
+                    info!(
+                        "block_confirmed height={} chain_height={}",
+                        height, chain_height
+                    );
                 } else {
                     if let Ok(mut bt) = bt_ref.lock() {
                         bt.resolve_block(height, true, chain_height);
@@ -2213,7 +2328,9 @@ fn main() -> Result<()> {
                 let snapshot = fetch_profit_snapshot(&cfg_clone);
 
                 {
-                    let mut sched = scheduler_ref.lock().expect("revenue scheduler lock poisoned");
+                    let mut sched = scheduler_ref
+                        .lock()
+                        .expect("revenue scheduler lock poisoned");
                     sched.update_stream_weights(snapshot);
                 }
             });
@@ -2228,10 +2345,9 @@ fn main() -> Result<()> {
     // sends a Telegram alert (rate-limited to 1/hour).
     if telegram().is_some() {
         let stats_ref = Arc::clone(&routing_stats);
-        let threshold = parse_env_f64("ZION_POOL_ALERT_ACCEPT_RATE_THRESHOLD", 95.0)
-            .unwrap_or(95.0);
-        let check_interval = parse_env_u64("ZION_POOL_ALERT_CHECK_INTERVAL_S", 300)
-            .unwrap_or(300);
+        let threshold =
+            parse_env_f64("ZION_POOL_ALERT_ACCEPT_RATE_THRESHOLD", 95.0).unwrap_or(95.0);
+        let check_interval = parse_env_u64("ZION_POOL_ALERT_CHECK_INTERVAL_S", 300).unwrap_or(300);
         info!(
             "accept_rate_monitor: enabled threshold={}% interval={}s",
             threshold, check_interval
@@ -2432,9 +2548,7 @@ fn main() -> Result<()> {
             }
             // Mark already-paid payouts as confirmed in telemetry and the DB.
             if !already_paid.is_empty() {
-                let mut telemetry = telemetry_ref
-                    .lock()
-                    .expect("miner telemetry lock poisoned");
+                let mut telemetry = telemetry_ref.lock().expect("miner telemetry lock poisoned");
                 for (p, tx_id) in &already_paid {
                     telemetry.confirm_failed_payout(&p.miner_id, height, p.amount, tx_id);
                     if let Some(ref ss) = share_store_ref {
@@ -2480,9 +2594,8 @@ fn main() -> Result<()> {
                         retry
                     );
                     {
-                        let mut telemetry = telemetry_ref
-                            .lock()
-                            .expect("miner telemetry lock poisoned");
+                        let mut telemetry =
+                            telemetry_ref.lock().expect("miner telemetry lock poisoned");
                         telemetry.record_submitted_payouts(
                             height,
                             &outcome.executed,
@@ -2580,7 +2693,8 @@ fn main() -> Result<()> {
                         Ok(Some(tx_height)) => {
                             let confirmations =
                                 chain_height.saturating_sub(tx_height).saturating_add(1);
-                            let mut telemetry = telemetry_ref.lock().expect("telemetry lock poisoned");
+                            let mut telemetry =
+                                telemetry_ref.lock().expect("telemetry lock poisoned");
                             telemetry.confirm_payout(miner_id, *height, tx_id);
                             if let Some(ref ss) = share_store_ref {
                                 let _ = ss.confirm_payout(tx_id, confirmations as u32);
@@ -2633,9 +2747,10 @@ fn main() -> Result<()> {
                             telemetry.confirm_failed_payout(miner_id, *height, *amount, &tx_id);
                             if let Some(ref ss) = share_store_ref {
                                 let confirmations = match check_tx_on_chain(rpc, &tx_id) {
-                                    Ok(Some(tx_height)) => chain_height
-                                        .saturating_sub(tx_height)
-                                        .saturating_add(1) as u32,
+                                    Ok(Some(tx_height)) => {
+                                        chain_height.saturating_sub(tx_height).saturating_add(1)
+                                            as u32
+                                    }
                                     _ => 1,
                                 };
                                 let _ = ss.confirm_payout(&tx_id, confirmations);
@@ -2753,22 +2868,22 @@ fn main() -> Result<()> {
                         let ctx = Arc::clone(&session_ctx);
                         let acceptor = Arc::new(acceptor);
                         let shutdown_ref = Arc::clone(&shutdown);
-                // Spawn a dedicated thread for TLS accept loop.  Each accepted
-                // TLS connection is handed to tokio::task::spawn_blocking after
-                // the TLS handshake completes (async).
-                std::thread::spawn(move || {
-                    let runtime = match tokio::runtime::Builder::new_current_thread()
-                        .enable_all()
-                        .build()
-                    {
-                        Ok(rt) => rt,
-                        Err(e) => {
-                            warn!("tls_stratum: failed to build runtime: {e}");
-                            return;
-                        }
-                    };
-                    let acceptor = acceptor;
-                    runtime.block_on(async move {
+                        // Spawn a dedicated thread for TLS accept loop.  Each accepted
+                        // TLS connection is handed to tokio::task::spawn_blocking after
+                        // the TLS handshake completes (async).
+                        std::thread::spawn(move || {
+                            let runtime = match tokio::runtime::Builder::new_current_thread()
+                                .enable_all()
+                                .build()
+                            {
+                                Ok(rt) => rt,
+                                Err(e) => {
+                                    warn!("tls_stratum: failed to build runtime: {e}");
+                                    return;
+                                }
+                            };
+                            let acceptor = acceptor;
+                            runtime.block_on(async move {
                         let tls_listener = match tokio::net::TcpListener::from_std(tls_listener) {
                             Ok(l) => l,
                             Err(e) => {
@@ -2854,7 +2969,7 @@ fn main() -> Result<()> {
                             });
                         }
                     });
-                });
+                        });
                     }
                     Err(e) => {
                         warn!(
@@ -2892,7 +3007,9 @@ fn main() -> Result<()> {
                             Err(_) => return,
                         };
                         loop {
-                            if shutdown_ref.load(Ordering::SeqCst) { break; }
+                            if shutdown_ref.load(Ordering::SeqCst) {
+                                break;
+                            }
                             let accept_result = tokio::select! {
                                 _ = tokio::time::sleep(Duration::from_millis(200)) => continue,
                                 r = listener.accept() => r,
@@ -2907,7 +3024,9 @@ fn main() -> Result<()> {
                                 Err(_) => continue,
                             };
                             let _ = stream.set_nonblocking(false);
-                            let _ = stream.set_read_timeout(Some(Duration::from_secs(ctx.session_read_timeout)));
+                            let _ = stream.set_read_timeout(Some(Duration::from_secs(
+                                ctx.session_read_timeout,
+                            )));
                             let ctx = Arc::clone(&ctx);
                             tokio::task::spawn_blocking(move || {
                                 // Protocol detection.
@@ -2917,8 +3036,12 @@ fn main() -> Result<()> {
                                 let stream = peek.into_inner();
                                 let is_stratum = if read_result.is_ok() && !first_line.is_empty() {
                                     zion_pool::stratum_v1::is_stratum_v1(&first_line)
-                                } else { false };
-                                ctx.dispatch_session(stream, peer_ip, peer_addr, is_stratum, first_line);
+                                } else {
+                                    false
+                                };
+                                ctx.dispatch_session(
+                                    stream, peer_ip, peer_addr, is_stratum, first_line,
+                                );
                             });
                         }
                     });
@@ -3008,9 +3131,8 @@ fn main() -> Result<()> {
         }
 
         // F1.7: Graceful session drain with 30s timeout (async version).
-        let drain_timeout = Duration::from_secs(
-            parse_env_u64("ZION_POOL_DRAIN_TIMEOUT_S", 30).unwrap_or(30),
-        );
+        let drain_timeout =
+            Duration::from_secs(parse_env_u64("ZION_POOL_DRAIN_TIMEOUT_S", 30).unwrap_or(30));
         let drain_started = Instant::now();
         let mut drained = 0u32;
         let mut remaining = handles.len();
@@ -3610,8 +3732,8 @@ fn handle_stratum_v1_client(
     // ── Phase 1: mining.subscribe ─────────────────────────────────────
     // The first line was already read by the accept loop for protocol
     // detection.  Parse it as a Stratum request.
-    let subscribe_req: StratumRequest = serde_json::from_str(first_line.trim())
-        .context("failed to parse stratum subscribe")?;
+    let subscribe_req: StratumRequest =
+        serde_json::from_str(first_line.trim()).context("failed to parse stratum subscribe")?;
     if subscribe_req.method != "mining.subscribe" {
         // Some miners send authorize first — tolerate it.
         info!(
@@ -3620,7 +3742,12 @@ fn handle_stratum_v1_client(
         );
     }
     // Extract user-agent from subscribe params (optional).
-    if let Some(agent) = subscribe_req.params.as_array().and_then(|a| a.first()).and_then(|v| v.as_str()) {
+    if let Some(agent) = subscribe_req
+        .params
+        .as_array()
+        .and_then(|a| a.first())
+        .and_then(|v| v.as_str())
+    {
         info!("stratum_v1: client agent = {}", agent);
     }
     // Send subscribe response: [[methods], extranonce1, extranonce2_size]
@@ -3703,7 +3830,12 @@ fn handle_stratum_v1_client(
         let mut telemetry = miner_telemetry
             .lock()
             .expect("miner telemetry lock poisoned");
-        telemetry.touch_session(&miner_id, &worker_name, &sv1_session.algorithm, &sv1_session.backend);
+        telemetry.touch_session(
+            &miner_id,
+            &worker_name,
+            &sv1_session.algorithm,
+            &sv1_session.backend,
+        );
     }
     let pplns_key = format!("{miner_id}/{worker_name}");
     pplns_engine
@@ -3766,16 +3898,14 @@ fn handle_stratum_v1_client(
         let req = match read_result {
             Ok(r) => r,
             Err(e) => {
-                let is_timeout = e
-                    .chain()
-                    .any(|cause| {
-                        if let Some(io_err) = cause.downcast_ref::<std::io::Error>() {
-                            io_err.kind() == std::io::ErrorKind::WouldBlock
-                                || io_err.kind() == std::io::ErrorKind::TimedOut
-                        } else {
-                            false
-                        }
-                    });
+                let is_timeout = e.chain().any(|cause| {
+                    if let Some(io_err) = cause.downcast_ref::<std::io::Error>() {
+                        io_err.kind() == std::io::ErrorKind::WouldBlock
+                            || io_err.kind() == std::io::ErrorKind::TimedOut
+                    } else {
+                        false
+                    }
+                });
                 if is_timeout {
                     debug!("stratum_v1: read timeout, refreshing job");
                     continue;
@@ -3868,7 +3998,11 @@ fn handle_stratum_v1_client(
             error: if accepted {
                 None
             } else {
-                Some(serde_json::json!([23, &format!("{:?}", decision.status), null]))
+                Some(serde_json::json!([
+                    23,
+                    &format!("{:?}", decision.status),
+                    null
+                ]))
             },
         };
         write_stratum_response(&mut writer, &resp)?;
@@ -3878,14 +4012,7 @@ fn handle_stratum_v1_client(
             let mut telemetry = miner_telemetry
                 .lock()
                 .expect("miner telemetry lock poisoned");
-            telemetry.record_job_result_stream(
-                &miner_id,
-                &worker_name,
-                accepted,
-                0,
-                0,
-                "zion",
-            );
+            telemetry.record_job_result_stream(&miner_id, &worker_name, accepted, 0, 0, "zion");
         }
         if accepted {
             {
@@ -4050,9 +4177,13 @@ fn handle_client(
         .map(|v| v.trim().eq_ignore_ascii_case("1") || v.trim().eq_ignore_ascii_case("true"))
         .unwrap_or(false);
     let pool_profit_interval_secs: u64 = std::env::var("ZION_POOL_PROFIT_INTERVAL")
-        .ok().and_then(|s| s.trim().parse().ok()).unwrap_or(300);
+        .ok()
+        .and_then(|s| s.trim().parse().ok())
+        .unwrap_or(300);
     let pool_profit_hysteresis: f64 = std::env::var("ZION_POOL_PROFIT_HYSTERESIS")
-        .ok().and_then(|s| s.trim().parse().ok()).unwrap_or(15.0);
+        .ok()
+        .and_then(|s| s.trim().parse().ok())
+        .unwrap_or(15.0);
     let mut pool_profit_best_gpu: Option<ExternalCoin> = None;
     let mut pool_profit_best_cpu: Option<ExternalCoin> = None;
     let mut pool_profit_last_check = Instant::now();
@@ -4084,9 +4215,8 @@ fn handle_client(
     // Use the shorter of session_timeout and job_refresh for the read
     // timeout, so the inner loop can break and refresh the job.
     let effective_read_timeout = session_read_timeout_secs.min(job_refresh_secs);
-    let _ = reader_stream.set_read_timeout(Some(
-        std::time::Duration::from_secs(effective_read_timeout),
-    ));
+    let _ = reader_stream
+        .set_read_timeout(Some(std::time::Duration::from_secs(effective_read_timeout)));
     let mut reader = BufReader::new(reader_stream);
     let mut writer = stream;
 
@@ -4331,14 +4461,16 @@ fn handle_client(
                     .collect();
 
                 let current_gpu = pool_profit_best_gpu.map(auxpow_to_ch_external_coin);
-                if let Some(best) = select_best_coin(
-                    &gpu_estimates, current_gpu, pool_profit_hysteresis,
-                ) {
+                if let Some(best) =
+                    select_best_coin(&gpu_estimates, current_gpu, pool_profit_hysteresis)
+                {
                     let new_aux = ch_to_auxpow_external_coin(best);
                     if pool_profit_best_gpu != Some(new_aux) {
-                        let profit = gpu_estimates.iter()
+                        let profit = gpu_estimates
+                            .iter()
                             .find(|e| e.coin == best)
-                            .map(|e| e.profit_per_day_usd()).unwrap_or(0.0);
+                            .map(|e| e.profit_per_day_usd())
+                            .unwrap_or(0.0);
                         info!(
                             "pool_profit_switch: GPU {:?} → {} profit=${:.4}/day",
                             pool_profit_best_gpu, new_aux, profit,
@@ -4348,14 +4480,16 @@ fn handle_client(
                 }
 
                 let current_cpu = pool_profit_best_cpu.map(auxpow_to_ch_external_coin);
-                if let Some(best) = select_best_coin(
-                    &cpu_estimates, current_cpu, pool_profit_hysteresis,
-                ) {
+                if let Some(best) =
+                    select_best_coin(&cpu_estimates, current_cpu, pool_profit_hysteresis)
+                {
                     let new_aux = ch_to_auxpow_external_coin(best);
                     if pool_profit_best_cpu != Some(new_aux) {
-                        let profit = cpu_estimates.iter()
+                        let profit = cpu_estimates
+                            .iter()
                             .find(|e| e.coin == best)
-                            .map(|e| e.profit_per_day_usd()).unwrap_or(0.0);
+                            .map(|e| e.profit_per_day_usd())
+                            .unwrap_or(0.0);
                         info!(
                             "pool_profit_switch: CPU {:?} → {} profit=${:.4}/day",
                             pool_profit_best_cpu, new_aux, profit,
@@ -4365,27 +4499,40 @@ fn handle_client(
                 }
 
                 // ── Update shared state for dashboard API ───────────────
-                let estimate_entries: Vec<ProfitEstimateEntry> = estimates.iter().map(|e| {
-                    let aux = ch_to_auxpow_external_coin(e.coin);
-                    let is_cpu = multi_bridge.is_cpu_coin(&aux);
-                    let is_nicehash = aux.nicehash_pool().is_some();
-                    ProfitEstimateEntry {
-                        coin: e.coin.to_string(),
-                        algorithm: e.coin.algorithm().to_string(),
-                        revenue_usd_per_day: e.revenue_per_day_usd,
-                        power_cost_usd: e.power_cost_usd,
-                        profit_usd_per_day: e.profit_per_day_usd(),
-                        is_cpu,
-                        is_nicehash,
-                    }
-                }).collect();
+                let estimate_entries: Vec<ProfitEstimateEntry> = estimates
+                    .iter()
+                    .map(|e| {
+                        let aux = ch_to_auxpow_external_coin(e.coin);
+                        let is_cpu = multi_bridge.is_cpu_coin(&aux);
+                        let is_nicehash = aux.nicehash_pool().is_some();
+                        ProfitEstimateEntry {
+                            coin: e.coin.to_string(),
+                            algorithm: e.coin.algorithm().to_string(),
+                            revenue_usd_per_day: e.revenue_per_day_usd,
+                            power_cost_usd: e.power_cost_usd,
+                            profit_usd_per_day: e.profit_per_day_usd(),
+                            is_cpu,
+                            is_nicehash,
+                        }
+                    })
+                    .collect();
 
                 let gpu_profit = pool_profit_best_gpu
-                    .and_then(|c| gpu_estimates.iter().find(|e| ch_to_auxpow_external_coin(e.coin) == c))
-                    .map(|e| e.profit_per_day_usd()).unwrap_or(0.0);
+                    .and_then(|c| {
+                        gpu_estimates
+                            .iter()
+                            .find(|e| ch_to_auxpow_external_coin(e.coin) == c)
+                    })
+                    .map(|e| e.profit_per_day_usd())
+                    .unwrap_or(0.0);
                 let cpu_profit = pool_profit_best_cpu
-                    .and_then(|c| cpu_estimates.iter().find(|e| ch_to_auxpow_external_coin(e.coin) == c))
-                    .map(|e| e.profit_per_day_usd()).unwrap_or(0.0);
+                    .and_then(|c| {
+                        cpu_estimates
+                            .iter()
+                            .find(|e| ch_to_auxpow_external_coin(e.coin) == c)
+                    })
+                    .map(|e| e.profit_per_day_usd())
+                    .unwrap_or(0.0);
 
                 if let Ok(mut state) = profit_switch_state.lock() {
                     state.best_gpu_coin = pool_profit_best_gpu.map(|c| c.ticker().to_string());
@@ -4394,15 +4541,17 @@ fn handle_client(
                     state.best_cpu_profit_usd = cpu_profit;
                     state.last_check_unix = std::time::SystemTime::now()
                         .duration_since(std::time::UNIX_EPOCH)
-                        .map(|d| d.as_secs()).unwrap_or(0);
+                        .map(|d| d.as_secs())
+                        .unwrap_or(0);
                     state.estimates = estimate_entries;
-                    state.nicehash_rates = nh_rates.iter().map(|(coin, paying)| {
-                        NiceHashRateEntry {
+                    state.nicehash_rates = nh_rates
+                        .iter()
+                        .map(|(coin, paying)| NiceHashRateEntry {
                             coin: coin.to_string(),
                             algorithm: coin.algorithm().to_string(),
                             paying: *paying,
-                        }
-                    }).collect();
+                        })
+                        .collect();
                 }
             }
 
@@ -4419,15 +4568,27 @@ fn handle_client(
                 .or_else(|| {
                     // Runtime override (dashboard hot-switch via POST /api/v1/gpu-coin)
                     gpu_coin_override
-                        .lock().expect("gpu coin override lock poisoned")
+                        .lock()
+                        .expect("gpu coin override lock poisoned")
                         .as_deref()
                         .and_then(ExternalCoin::from_str_loose)
                         .filter(|c| multi_bridge.contains(c) && !multi_bridge.is_cpu_coin(c))
                 })
-                .or_else(|| config.auxpow_config.force_coin.filter(|c| multi_bridge.contains(c)))
-                .or_else(|| revenue_source_to_external_coin(revenue_source).filter(|c| multi_bridge.contains(c)))
                 .or_else(|| {
-                    multi_bridge.enabled_coins().into_iter().find(|c| !multi_bridge.is_cpu_coin(c))
+                    config
+                        .auxpow_config
+                        .force_coin
+                        .filter(|c| multi_bridge.contains(c))
+                })
+                .or_else(|| {
+                    revenue_source_to_external_coin(revenue_source)
+                        .filter(|c| multi_bridge.contains(c))
+                })
+                .or_else(|| {
+                    multi_bridge
+                        .enabled_coins()
+                        .into_iter()
+                        .find(|c| !multi_bridge.is_cpu_coin(c))
                 })
         } else {
             None
@@ -4449,64 +4610,66 @@ fn handle_client(
         )?;
 
         // Fetch external job for parallel streaming (if available)
-        let external_stream_job: Option<zion_pool::ExternalStreamJob> =
-            if let Some(coin) = desired_external_coin {
-                if let Some(ext_job) = multi_bridge.pop_job_for_coin(&coin)
+        let external_stream_job: Option<zion_pool::ExternalStreamJob> = if let Some(coin) =
+            desired_external_coin
+        {
+            if let Some(ext_job) = multi_bridge.pop_job_for_coin(&coin) {
+                let ext_coin_ticker = ext_job.external_coin.ticker().to_string();
+                let ext_algorithm = ext_job.external_coin.algorithm().to_string();
+                let ext_job_id = ext_job.external_job_id.clone();
+                let ext_height = ext_job.block_number.unwrap_or(0);
+                let ext_target_hex = to_hex(&ext_job.share_target_bytes);
+                let ext_header_hex = to_hex(&ext_job.header_bytes);
+                let ext_extranonce1_hex = to_hex(&ext_job.extranonce1);
+                let ext_protocol = ext_job.external_coin.protocol_name().to_string();
+                info!(
+                    "parallel_stream_embedded miner={} coin={} algo={} ext_job_id={} height={}",
+                    worker_name, ext_coin_ticker, ext_algorithm, ext_job_id, ext_height
+                );
+                // Refresh the job's freshness timestamp whenever we
+                // distribute it to a miner.  This prevents false "stale
+                // job" pre-rejections when the upstream pool (HeroMiners
+                // ZANO) stops sending eth_getWork notifications while the
+                // pool keeps distributing the same job.
+                multi_bridge.touch_job_timestamp(&ext_job.external_coin, &ext_job_id);
+                // For testing: use an easier target so the miner can find
+                // shares quickly.  The pool still checks against the real
+                // external target before forwarding to LuckPool.
+                let easy_target_hex = if std::env::var("ZION_AUXPOW_EASY_TARGET")
+                    .as_deref()
+                    .unwrap_or("")
+                    .eq_ignore_ascii_case("1")
                 {
-                    let ext_coin_ticker = ext_job.external_coin.ticker().to_string();
-                    let ext_algorithm = ext_job.external_coin.algorithm().to_string();
-                    let ext_job_id = ext_job.external_job_id.clone();
-                    let ext_height = ext_job.block_number.unwrap_or(0);
-                    let ext_target_hex = to_hex(&ext_job.share_target_bytes);
-                    let ext_header_hex = to_hex(&ext_job.header_bytes);
-                    let ext_extranonce1_hex = to_hex(&ext_job.extranonce1);
-                    let ext_protocol = ext_job.external_coin.protocol_name().to_string();
-                    info!(
-                        "parallel_stream_embedded miner={} coin={} algo={} ext_job_id={} height={}",
-                        worker_name, ext_coin_ticker, ext_algorithm, ext_job_id, ext_height
-                    );
-                    // Refresh the job's freshness timestamp whenever we
-                    // distribute it to a miner.  This prevents false "stale
-                    // job" pre-rejections when the upstream pool (HeroMiners
-                    // ZANO) stops sending eth_getWork notifications while the
-                    // pool keeps distributing the same job.
-                    multi_bridge.touch_job_timestamp(&ext_job.external_coin, &ext_job_id);
-                    // For testing: use an easier target so the miner can find
-                    // shares quickly.  The pool still checks against the real
-                    // external target before forwarding to LuckPool.
-                    let easy_target_hex = if std::env::var("ZION_AUXPOW_EASY_TARGET")
-                        .as_deref()
-                        .unwrap_or("")
-                        .eq_ignore_ascii_case("1")
-                    {
-                        "0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff".to_string()
-                    } else {
-                        ext_target_hex
-                    };
-                    Some(zion_pool::ExternalStreamJob {
-                        coin: ext_coin_ticker,
-                        algorithm: ext_algorithm,
-                        job_id: ext_job_id,
-                        header_hex: ext_header_hex,
-                        target_hex: easy_target_hex,
-                        height: ext_height,
-                        extranonce1_hex: ext_extranonce1_hex,
-                        protocol: ext_protocol,
-                        seed_hash_hex: ext_job.seed_hash.as_ref()
-                            .map(|s| hex::encode(s))
-                            .unwrap_or_default(),
-                        timestamp: ext_job.timestamp,
-                    })
+                    "0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff".to_string()
                 } else {
-                    log_ch.log_verbose(format!(
-                        "parallel_stream_no_external_job miner={} coin={} zion_only",
-                        worker_name, coin
-                    ));
-                    None
-                }
+                    ext_target_hex
+                };
+                Some(zion_pool::ExternalStreamJob {
+                    coin: ext_coin_ticker,
+                    algorithm: ext_algorithm,
+                    job_id: ext_job_id,
+                    header_hex: ext_header_hex,
+                    target_hex: easy_target_hex,
+                    height: ext_height,
+                    extranonce1_hex: ext_extranonce1_hex,
+                    protocol: ext_protocol,
+                    seed_hash_hex: ext_job
+                        .seed_hash
+                        .as_ref()
+                        .map(|s| hex::encode(s))
+                        .unwrap_or_default(),
+                    timestamp: ext_job.timestamp,
+                })
             } else {
+                log_ch.log_verbose(format!(
+                    "parallel_stream_no_external_job miner={} coin={} zion_only",
+                    worker_name, coin
+                ));
                 None
-            };
+            }
+        } else {
+            None
+        };
 
         // ── Fetch CPU external job for triple parallel streaming ──────────
         // Pop a CPU-coin job (XMR/VRSC/etc.) from the multi-bridge and embed
@@ -4522,12 +4685,14 @@ fn handle_client(
                 .filter(|c| multi_bridge.contains(c) && multi_bridge.is_cpu_coin(c))
                 .or_else(|| {
                     // Pool-side profit switcher: best CPU coin
-                    pool_profit_best_cpu.filter(|c| multi_bridge.contains(c) && multi_bridge.is_cpu_coin(c))
+                    pool_profit_best_cpu
+                        .filter(|c| multi_bridge.contains(c) && multi_bridge.is_cpu_coin(c))
                 })
                 .or_else(|| {
                     // Runtime override (dashboard hot-switch via POST /api/v1/cpu-coin)
                     cpu_coin_override
-                        .lock().expect("cpu coin override lock poisoned")
+                        .lock()
+                        .expect("cpu coin override lock poisoned")
                         .as_deref()
                         .and_then(ExternalCoin::from_str_loose)
                         .filter(|c| multi_bridge.contains(c) && multi_bridge.is_cpu_coin(c))
@@ -4541,58 +4706,63 @@ fn handle_client(
                 })
                 .or_else(|| {
                     // Last resort: pick any available CPU coin
-                    multi_bridge.enabled_coins().into_iter().find(|c| multi_bridge.is_cpu_coin(c))
+                    multi_bridge
+                        .enabled_coins()
+                        .into_iter()
+                        .find(|c| multi_bridge.is_cpu_coin(c))
                 })
         } else {
             None
         };
 
-        let external_stream_cpu_job: Option<zion_pool::ExternalStreamJob> =
-            if let Some(cpu_coin) = desired_cpu_coin {
-                if let Some(ext_job) = multi_bridge.pop_job_for_coin(&cpu_coin)
-                {
-                    let ext_coin_ticker = ext_job.external_coin.ticker().to_string();
-                    let ext_algorithm = ext_job.external_coin.algorithm().to_string();
-                    let ext_job_id = ext_job.external_job_id.clone();
-                    let ext_height = ext_job.block_number.unwrap_or(0);
-                    let ext_target_hex = to_hex(&ext_job.share_target_bytes);
-                    let ext_header_hex = to_hex(&ext_job.header_bytes);
-                    let ext_extranonce1_hex = to_hex(&ext_job.extranonce1);
-                    let ext_protocol = ext_job.external_coin.protocol_name().to_string();
-                    info!(
+        let external_stream_cpu_job: Option<zion_pool::ExternalStreamJob> = if let Some(cpu_coin) =
+            desired_cpu_coin
+        {
+            if let Some(ext_job) = multi_bridge.pop_job_for_coin(&cpu_coin) {
+                let ext_coin_ticker = ext_job.external_coin.ticker().to_string();
+                let ext_algorithm = ext_job.external_coin.algorithm().to_string();
+                let ext_job_id = ext_job.external_job_id.clone();
+                let ext_height = ext_job.block_number.unwrap_or(0);
+                let ext_target_hex = to_hex(&ext_job.share_target_bytes);
+                let ext_header_hex = to_hex(&ext_job.header_bytes);
+                let ext_extranonce1_hex = to_hex(&ext_job.extranonce1);
+                let ext_protocol = ext_job.external_coin.protocol_name().to_string();
+                info!(
                         "parallel_stream_cpu_embedded miner={} coin={} algo={} ext_job_id={} height={} ext_target_hex={:.64}",
                         worker_name, ext_coin_ticker, ext_algorithm, ext_job_id, ext_height, ext_target_hex
                     );
-                    multi_bridge.touch_job_timestamp(&ext_job.external_coin, &ext_job_id);
-                    let easy_target_hex = if std::env::var("ZION_AUXPOW_EASY_TARGET")
-                        .as_deref()
-                        .unwrap_or("")
-                        .eq_ignore_ascii_case("1")
-                    {
-                        "0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff".to_string()
-                    } else {
-                        ext_target_hex
-                    };
-                    Some(zion_pool::ExternalStreamJob {
-                        coin: ext_coin_ticker,
-                        algorithm: ext_algorithm,
-                        job_id: ext_job_id,
-                        header_hex: ext_header_hex,
-                        target_hex: easy_target_hex,
-                        height: ext_height,
-                        extranonce1_hex: ext_extranonce1_hex,
-                        protocol: ext_protocol,
-                        seed_hash_hex: ext_job.seed_hash.as_ref()
-                            .map(|s| hex::encode(s))
-                            .unwrap_or_default(),
-                        timestamp: ext_job.timestamp,
-                    })
+                multi_bridge.touch_job_timestamp(&ext_job.external_coin, &ext_job_id);
+                let easy_target_hex = if std::env::var("ZION_AUXPOW_EASY_TARGET")
+                    .as_deref()
+                    .unwrap_or("")
+                    .eq_ignore_ascii_case("1")
+                {
+                    "0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff".to_string()
                 } else {
-                    None
-                }
+                    ext_target_hex
+                };
+                Some(zion_pool::ExternalStreamJob {
+                    coin: ext_coin_ticker,
+                    algorithm: ext_algorithm,
+                    job_id: ext_job_id,
+                    header_hex: ext_header_hex,
+                    target_hex: easy_target_hex,
+                    height: ext_height,
+                    extranonce1_hex: ext_extranonce1_hex,
+                    protocol: ext_protocol,
+                    seed_hash_hex: ext_job
+                        .seed_hash
+                        .as_ref()
+                        .map(|s| hex::encode(s))
+                        .unwrap_or_default(),
+                    timestamp: ext_job.timestamp,
+                })
             } else {
                 None
-            };
+            }
+        } else {
+            None
+        };
 
         let job_issued_at = Instant::now();
         // Store network target for block validation; send share target to miner.
@@ -4686,16 +4856,14 @@ fn handle_client(
                     Ok(r) => r,
                     Err(e) => {
                         // Check if this is a timeout error (would block / timed out)
-                        let is_timeout = e
-                            .chain()
-                            .any(|cause| {
-                                if let Some(io_err) = cause.downcast_ref::<std::io::Error>() {
-                                    io_err.kind() == std::io::ErrorKind::WouldBlock
-                                        || io_err.kind() == std::io::ErrorKind::TimedOut
-                                } else {
-                                    false
-                                }
-                            });
+                        let is_timeout = e.chain().any(|cause| {
+                            if let Some(io_err) = cause.downcast_ref::<std::io::Error>() {
+                                io_err.kind() == std::io::ErrorKind::WouldBlock
+                                    || io_err.kind() == std::io::ErrorKind::TimedOut
+                            } else {
+                                false
+                            }
+                        });
                         if is_timeout {
                             // Break the inner loop — the outer loop will issue
                             // a new job with the latest external stream.
@@ -4758,7 +4926,8 @@ fn handle_client(
                                 _ => RevenueSource::Blake3External,
                             };
                             {
-                                let mut stats = routing_stats.lock().expect("routing stats lock poisoned");
+                                let mut stats =
+                                    routing_stats.lock().expect("routing stats lock poisoned");
                                 stats.record(session_group, ext_source, false);
                             }
                             continue;
@@ -4849,7 +5018,10 @@ fn handle_client(
                             }
                         }
                         // Parse hash bytes
-                        let hash_bytes = match zion_pool::parse_fixed_hex::<32>(&hash_hex, "external share hash") {
+                        let hash_bytes = match zion_pool::parse_fixed_hex::<32>(
+                            &hash_hex,
+                            "external share hash",
+                        ) {
                             Ok(h) => h,
                             Err(e) => {
                                 let ext_result = PoolMessage::ExternalResult {
@@ -4884,18 +5056,26 @@ fn handle_client(
                                         if is_cpu_share {
                                             match &external_stream_cpu_job {
                                                 Some(ext) => (
-                                                    zion_pool::parse_fixed_hex::<32>(&ext.target_hex, "external cpu target")
-                                                        .unwrap_or([0xFFu8; 32]),
-                                                    hex::decode(&ext.header_hex).unwrap_or_default(),
+                                                    zion_pool::parse_fixed_hex::<32>(
+                                                        &ext.target_hex,
+                                                        "external cpu target",
+                                                    )
+                                                    .unwrap_or([0xFFu8; 32]),
+                                                    hex::decode(&ext.header_hex)
+                                                        .unwrap_or_default(),
                                                 ),
                                                 None => ([0xFFu8; 32], Vec::new()),
                                             }
                                         } else {
                                             match &external_stream_job {
                                                 Some(ext) => (
-                                                    zion_pool::parse_fixed_hex::<32>(&ext.target_hex, "external target")
-                                                        .unwrap_or([0xFFu8; 32]),
-                                                    hex::decode(&ext.header_hex).unwrap_or_default(),
+                                                    zion_pool::parse_fixed_hex::<32>(
+                                                        &ext.target_hex,
+                                                        "external target",
+                                                    )
+                                                    .unwrap_or([0xFFu8; 32]),
+                                                    hex::decode(&ext.header_hex)
+                                                        .unwrap_or_default(),
                                                 ),
                                                 None => ([0xFFu8; 32], Vec::new()),
                                             }
@@ -4939,10 +5119,16 @@ fn handle_client(
                         let (accepted, status) = match bridge_result {
                             Some(outcome) => match outcome.result {
                                 ShareForwardResult::Accepted => (true, "accepted".to_string()),
-                                ShareForwardResult::BelowTarget => (false, "below_target".to_string()),
-                                ShareForwardResult::Rejected(ref r) => (false, format!("rejected: {r}")),
+                                ShareForwardResult::BelowTarget => {
+                                    (false, "below_target".to_string())
+                                }
+                                ShareForwardResult::Rejected(ref r) => {
+                                    (false, format!("rejected: {r}"))
+                                }
                                 ShareForwardResult::Unknown => (false, "unknown".to_string()),
-                                ShareForwardResult::NotConnected => (false, "not_connected".to_string()),
+                                ShareForwardResult::NotConnected => {
+                                    (false, "not_connected".to_string())
+                                }
                             },
                             None => (false, "bridge_unavailable".to_string()),
                         };
@@ -4961,7 +5147,9 @@ fn handle_client(
                             "DCR" | "ALPH" => RevenueSource::Blake3External,
                             "KAS" => RevenueSource::KHeavyHashExternal,
                             "ETC" => RevenueSource::EthashExternal,
-                            "RVN" | "CLORE" | "EVR" | "MEWC" | "QUAI" => RevenueSource::KawPowExternal,
+                            "RVN" | "CLORE" | "EVR" | "MEWC" | "QUAI" => {
+                                RevenueSource::KawPowExternal
+                            }
                             "ERG" => RevenueSource::AutolykosExternal,
                             "XMR" => RevenueSource::RandomXExternal,
                             "FLUX" => RevenueSource::ZelHashExternal,
@@ -4981,7 +5169,8 @@ fn handle_client(
                             _ => RevenueSource::Blake3External,
                         };
                         {
-                            let mut stats = routing_stats.lock().expect("routing stats lock poisoned");
+                            let mut stats =
+                                routing_stats.lock().expect("routing stats lock poisoned");
                             let should_log = stats.record(session_group, ext_source, accepted);
                             if should_log {
                                 info!("routing_snapshot {}", stats.snapshot_line());
@@ -5015,14 +5204,20 @@ fn handle_client(
                         // Forward Pearl PoUW proof to AlphaPool via the bridge
                         info!(
                             "pearl_proof_received miner={} coin={} job_id={} proof_b64_len={}",
-                            sub_miner_id, coin, external_job_id, plain_proof_b64.len()
+                            sub_miner_id,
+                            coin,
+                            external_job_id,
+                            plain_proof_b64.len()
                         );
                         // Get header + target from the external stream job we sent
                         let (header_bytes, target_bytes) = match &external_stream_job {
                             Some(ext) => {
                                 let hdr = hex::decode(&ext.header_hex).unwrap_or_default();
-                                let tgt = zion_pool::parse_fixed_hex::<32>(&ext.target_hex, "pearl target")
-                                    .unwrap_or([0xFFu8; 32]);
+                                let tgt = zion_pool::parse_fixed_hex::<32>(
+                                    &ext.target_hex,
+                                    "pearl target",
+                                )
+                                .unwrap_or([0xFFu8; 32]);
                                 (hdr, tgt)
                             }
                             None => (vec![], [0xFFu8; 32]),
@@ -5033,13 +5228,21 @@ fn handle_client(
                             header_bytes,
                             target_bytes,
                         };
-                        let (accepted, status) = match multi_bridge.forward_pearl_for_coin(&ExternalCoin::PRL, pearl_req) {
+                        let (accepted, status) = match multi_bridge
+                            .forward_pearl_for_coin(&ExternalCoin::PRL, pearl_req)
+                        {
                             Some(outcome) => match outcome.result {
                                 ShareForwardResult::Accepted => (true, "accepted".to_string()),
-                                ShareForwardResult::BelowTarget => (false, "below_target".to_string()),
-                                ShareForwardResult::Rejected(ref r) => (false, format!("rejected: {r}")),
+                                ShareForwardResult::BelowTarget => {
+                                    (false, "below_target".to_string())
+                                }
+                                ShareForwardResult::Rejected(ref r) => {
+                                    (false, format!("rejected: {r}"))
+                                }
                                 ShareForwardResult::Unknown => (false, "unknown".to_string()),
-                                ShareForwardResult::NotConnected => (false, "not_connected".to_string()),
+                                ShareForwardResult::NotConnected => {
+                                    (false, "not_connected".to_string())
+                                }
                             },
                             None => (false, "bridge_unavailable".to_string()),
                         };
@@ -5055,12 +5258,10 @@ fn handle_client(
                         );
                         // Record in routing stats as PearlExternal
                         {
-                            let mut stats = routing_stats.lock().expect("routing stats lock poisoned");
-                            let should_log = stats.record(
-                                session_group,
-                                RevenueSource::PearlExternal,
-                                accepted,
-                            );
+                            let mut stats =
+                                routing_stats.lock().expect("routing stats lock poisoned");
+                            let should_log =
+                                stats.record(session_group, RevenueSource::PearlExternal, accepted);
                             if should_log {
                                 info!("routing_snapshot {}", stats.snapshot_line());
                             }
@@ -5086,8 +5287,16 @@ fn handle_client(
                         );
                         // Store preferences in session-scoped variables for
                         // the job construction logic to reference.
-                        miner_gpu_coin_pref = if gpu_coin.is_empty() { None } else { Some(gpu_coin) };
-                        miner_cpu_coin_pref = if cpu_coin.is_empty() { None } else { Some(cpu_coin) };
+                        miner_gpu_coin_pref = if gpu_coin.is_empty() {
+                            None
+                        } else {
+                            Some(gpu_coin)
+                        };
+                        miner_cpu_coin_pref = if cpu_coin.is_empty() {
+                            None
+                        } else {
+                            Some(cpu_coin)
+                        };
                         // Continue reading — CoinPreference is not a submit
                         continue;
                     }
@@ -5289,9 +5498,7 @@ fn handle_client(
                     let decision = if assignment.is_external() {
                         // Parse mix_hash (32 bytes for Ethash/KawPow) or
                         // solution blob (variable-length for BeamHash/ZelHash).
-                        let mix_hash = mix_hash_hex
-                            .as_deref()
-                            .and_then(|h| parse_hash_hex(h).ok());
+                        let mix_hash = mix_hash_hex.as_deref().and_then(|h| parse_hash_hex(h).ok());
                         let solution = if mix_hash.is_none() {
                             mix_hash_hex
                                 .as_deref()
@@ -5325,8 +5532,12 @@ fn handle_client(
                                         unreachable!("external handled above")
                                     }
                                 };
-                                match submit_candidate_to_node(addr, mining_job, nonce, job_algorithm)
-                                {
+                                match submit_candidate_to_node(
+                                    addr,
+                                    mining_job,
+                                    nonce,
+                                    job_algorithm,
+                                ) {
                                     Ok(RpcResponse::SubmitResult { accepted: true, .. }) => {
                                         info!(
                                             "node_accepted_block height={} nonce={}",
@@ -5497,7 +5708,8 @@ fn handle_client(
                     // F1.6: count accepted ZION shares for pool luck calc.
                     // External shares (ZANO/VRSC) are NOT counted — only ZION
                     // shares contribute to ZION block-finding luck.
-                    if matches!(decision.status, ShareStatus::Accepted) && !assignment.is_external() {
+                    if matches!(decision.status, ShareStatus::Accepted) && !assignment.is_external()
+                    {
                         if let Ok(mut bt) = block_tracker.lock() {
                             bt.record_share();
                         }
@@ -5508,8 +5720,7 @@ fn handle_client(
                     // dashboard with per-coin external mining income.
                     if matches!(decision.status, ShareStatus::Accepted) {
                         if let WorkAssignment::External(ref ext_job) = assignment {
-                            let ext_source =
-                                external_coin_to_revenue_source(ext_job.external_coin);
+                            let ext_source = external_coin_to_revenue_source(ext_job.external_coin);
                             // Estimate USD value per accepted share from fallback
                             // estimates.  In production this would come from the
                             // external pool's actual payout data.
@@ -5544,14 +5755,20 @@ fn handle_client(
                     // lane (e.g. VerusHashExternal) but if no external job was available
                     // the miner actually did ZION work, not Verus work.
                     let routed_source = match &assignment {
-                        WorkAssignment::External(j) => external_coin_to_revenue_source(j.external_coin),
+                        WorkAssignment::External(j) => {
+                            external_coin_to_revenue_source(j.external_coin)
+                        }
                         WorkAssignment::Zion(_) => RevenueSource::Zion,
                     };
                     JobCompletion::Submitted {
                         decision,
                         routed_source,
                         attempted_hashes: attempted_hashes.unwrap_or_else(|| {
-                            solution.candidate.nonce.saturating_sub(assignment.start_nonce()) + 1
+                            solution
+                                .candidate
+                                .nonce
+                                .saturating_sub(assignment.start_nonce())
+                                + 1
                         }),
                         elapsed_ms: elapsed_ms
                             .unwrap_or_else(|| job_issued_at.elapsed().as_millis() as u64),
@@ -5627,7 +5844,8 @@ fn handle_client(
                     // and pool luck calculation.  Fetch network difficulty from
                     // the node (best-effort — 0 if unavailable, luck calc skipped).
                     {
-                        let net_diff = config.node_rpc_addr
+                        let net_diff = config
+                            .node_rpc_addr
                             .as_deref()
                             .filter(|s| !s.is_empty())
                             .map(get_chain_difficulty)
@@ -5648,7 +5866,8 @@ fn handle_client(
                         );
                         // F4: Record block in SQLite store.
                         if let Some(ref ss) = share_store {
-                            let block_hash = decision.sealed_block
+                            let block_hash = decision
+                                .sealed_block
                                 .as_ref()
                                 .map(|b| hex::encode(&b.hash))
                                 .unwrap_or_default();
@@ -6172,8 +6391,8 @@ impl AuxPowIntegrationConfig {
     /// Falls back to the legacy `ZION_AUXPOW_*` env vars if the CPU-specific
     /// ones are not set.
     fn cpu_bridge_from_env() -> Option<Self> {
-        let cpu_coin_str = std::env::var("ZION_POOL_AUXPOW_CPU_COIN")
-            .unwrap_or_else(|_| "VRSC".to_string());
+        let cpu_coin_str =
+            std::env::var("ZION_POOL_AUXPOW_CPU_COIN").unwrap_or_else(|_| "VRSC".to_string());
         let cpu_coin = ExternalCoin::from_str_loose(&cpu_coin_str)?;
 
         let payout_wallet = std::env::var("ZION_POOL_AUXPOW_CPU_WALLET")
@@ -6316,19 +6535,33 @@ struct ShareForwardOutcome {
 struct AuxPowBridge {
     enabled: bool,
     job_queue: Arc<Mutex<VecDeque<JobPackage>>>,
-    share_tx: std::sync::mpsc::Sender<(ShareForwardRequest, std::sync::mpsc::Sender<ShareForwardOutcome>)>,
+    share_tx: std::sync::mpsc::Sender<(
+        ShareForwardRequest,
+        std::sync::mpsc::Sender<ShareForwardOutcome>,
+    )>,
     /// Separate channel for Pearl PoUW proof forwarding (large blobs).
-    pearl_tx: std::sync::mpsc::Sender<(PearlForwardRequest, std::sync::mpsc::Sender<ShareForwardOutcome>)>,
+    pearl_tx: std::sync::mpsc::Sender<(
+        PearlForwardRequest,
+        std::sync::mpsc::Sender<ShareForwardOutcome>,
+    )>,
     /// Job-id touch channel to refresh `AuxPowClient::job_received_at` when
     /// the pool distributes an external job to a miner.
     touch_tx: std::sync::mpsc::Sender<String>,
 }
 
 impl AuxPowBridge {
-    fn new(enabled: bool) -> (
+    fn new(
+        enabled: bool,
+    ) -> (
         Self,
-        std::sync::mpsc::Receiver<(ShareForwardRequest, std::sync::mpsc::Sender<ShareForwardOutcome>)>,
-        std::sync::mpsc::Receiver<(PearlForwardRequest, std::sync::mpsc::Sender<ShareForwardOutcome>)>,
+        std::sync::mpsc::Receiver<(
+            ShareForwardRequest,
+            std::sync::mpsc::Sender<ShareForwardOutcome>,
+        )>,
+        std::sync::mpsc::Receiver<(
+            PearlForwardRequest,
+            std::sync::mpsc::Sender<ShareForwardOutcome>,
+        )>,
         std::sync::mpsc::Receiver<String>,
     ) {
         let (share_tx, share_rx) = std::sync::mpsc::channel();
@@ -6364,7 +6597,10 @@ impl AuxPowBridge {
         if !self.enabled {
             return None;
         }
-        let q = self.job_queue.lock().expect("auxpow job queue lock poisoned");
+        let q = self
+            .job_queue
+            .lock()
+            .expect("auxpow job queue lock poisoned");
         q.front().cloned()
     }
 
@@ -6375,7 +6611,10 @@ impl AuxPowBridge {
         if !self.enabled {
             return None;
         }
-        let q = self.job_queue.lock().expect("auxpow job queue lock poisoned");
+        let q = self
+            .job_queue
+            .lock()
+            .expect("auxpow job queue lock poisoned");
         q.iter().find(|j| j.external_job_id == job_id).cloned()
     }
 
@@ -6440,9 +6679,9 @@ impl MultiAuxPowBridge {
     /// Coins that are CPU-only (mined on CPU, not GPU).
     fn default_cpu_coins() -> std::collections::HashSet<ExternalCoin> {
         let mut s = std::collections::HashSet::new();
-        s.insert(ExternalCoin::XMR);   // RandomX
-        s.insert(ExternalCoin::VRSC);  // VerusHash
-        s.insert(ExternalCoin::RTM);   // GhostRider (CPU-only: 15 sphlib + 6 CryptoNight)
+        s.insert(ExternalCoin::XMR); // RandomX
+        s.insert(ExternalCoin::VRSC); // VerusHash
+        s.insert(ExternalCoin::RTM); // GhostRider (CPU-only: 15 sphlib + 6 CryptoNight)
         s
     }
 
@@ -6451,15 +6690,26 @@ impl MultiAuxPowBridge {
     }
 
     fn insert(&self, coin: ExternalCoin, bridge: AuxPowBridge) {
-        self.bridges.lock().expect("multi_bridge lock poisoned").insert(coin, bridge);
+        self.bridges
+            .lock()
+            .expect("multi_bridge lock poisoned")
+            .insert(coin, bridge);
     }
 
     fn contains(&self, coin: &ExternalCoin) -> bool {
-        self.bridges.lock().expect("multi_bridge lock poisoned").contains_key(coin)
+        self.bridges
+            .lock()
+            .expect("multi_bridge lock poisoned")
+            .contains_key(coin)
     }
 
     fn enabled_coins(&self) -> Vec<ExternalCoin> {
-        self.bridges.lock().expect("multi_bridge lock poisoned").keys().copied().collect()
+        self.bridges
+            .lock()
+            .expect("multi_bridge lock poisoned")
+            .keys()
+            .copied()
+            .collect()
     }
 
     /// Inform the tokio side that an external job has been distributed to a
@@ -6467,7 +6717,12 @@ impl MultiAuxPowBridge {
     /// used for ZANO/HeroMiners to avoid false "stale job" pre-rejections
     /// when the upstream pool goes silent.
     fn touch_job_timestamp(&self, coin: &ExternalCoin, job_id: &str) {
-        if let Some(bridge) = self.bridges.lock().expect("multi_bridge lock poisoned").get(coin) {
+        if let Some(bridge) = self
+            .bridges
+            .lock()
+            .expect("multi_bridge lock poisoned")
+            .get(coin)
+        {
             bridge.touch_job_timestamp(job_id);
         }
     }
@@ -6510,10 +6765,13 @@ impl MultiAuxPowBridge {
     /// holds at most 5 jobs, covering the current + recent jobs.
     fn job_ids_for_coin(&self, coin: &ExternalCoin) -> Vec<String> {
         let bridges = self.bridges.lock().expect("multi_bridge lock poisoned");
-        bridges.get(coin).map(|b| {
-            let q = b.job_queue.lock().expect("auxpow job queue lock poisoned");
-            q.iter().map(|j| j.external_job_id.clone()).collect()
-        }).unwrap_or_default()
+        bridges
+            .get(coin)
+            .map(|b| {
+                let q = b.job_queue.lock().expect("auxpow job queue lock poisoned");
+                q.iter().map(|j| j.external_job_id.clone()).collect()
+            })
+            .unwrap_or_default()
     }
 
     /// Get the latest target bytes and header bytes for a specific coin.
@@ -6538,19 +6796,31 @@ impl MultiAuxPowBridge {
     }
 
     /// Forward a share to the bridge for the given coin.
-    fn forward_for_coin(&self, coin: &ExternalCoin, req: ShareForwardRequest) -> Option<ShareForwardOutcome> {
+    fn forward_for_coin(
+        &self,
+        coin: &ExternalCoin,
+        req: ShareForwardRequest,
+    ) -> Option<ShareForwardOutcome> {
         let bridges = self.bridges.lock().expect("multi_bridge lock poisoned");
         bridges.get(coin).and_then(|b| b.forward(req))
     }
 
     /// Forward a Pearl proof to the bridge for the given coin.
-    fn forward_pearl_for_coin(&self, coin: &ExternalCoin, req: PearlForwardRequest) -> Option<ShareForwardOutcome> {
+    fn forward_pearl_for_coin(
+        &self,
+        coin: &ExternalCoin,
+        req: PearlForwardRequest,
+    ) -> Option<ShareForwardOutcome> {
         let bridges = self.bridges.lock().expect("multi_bridge lock poisoned");
         bridges.get(coin).and_then(|b| b.forward_pearl(req))
     }
 
     /// Forward a share by coin ticker string.
-    fn forward_by_ticker(&self, ticker: &str, req: ShareForwardRequest) -> Option<ShareForwardOutcome> {
+    fn forward_by_ticker(
+        &self,
+        ticker: &str,
+        req: ShareForwardRequest,
+    ) -> Option<ShareForwardOutcome> {
         let coin = ExternalCoin::from_str_loose(ticker)?;
         self.forward_for_coin(&coin, req)
     }
@@ -6716,7 +6986,14 @@ impl MinerTelemetryRegistry {
         attempted_hashes: u64,
         elapsed_ms: u64,
     ) {
-        self.record_job_result_stream(miner_id, worker_name, accepted, attempted_hashes, elapsed_ms, "zion");
+        self.record_job_result_stream(
+            miner_id,
+            worker_name,
+            accepted,
+            attempted_hashes,
+            elapsed_ms,
+            "zion",
+        );
     }
 
     fn record_job_result_stream(
@@ -7175,14 +7452,70 @@ impl RevenueScheduler {
             0,
             default_value_usd,
         )?;
-        push_lane_from_env(&mut lanes, RevenueSource::KarlsenHashExternal, "ZION_STREAM_KARLSENHASH_PCT", "ZION_STREAM_KARLSENHASH_USD", 0, default_value_usd)?;
-        push_lane_from_env(&mut lanes, RevenueSource::EquihashZeroExternal, "ZION_STREAM_EQUIHASHZERO_PCT", "ZION_STREAM_EQUIHASHZERO_USD", 0, default_value_usd)?;
-        push_lane_from_env(&mut lanes, RevenueSource::QhashExternal, "ZION_STREAM_QHASH_PCT", "ZION_STREAM_QHASH_USD", 0, default_value_usd)?;
-        push_lane_from_env(&mut lanes, RevenueSource::VerthashExternal, "ZION_STREAM_VERTHASH_PCT", "ZION_STREAM_VERTHASH_USD", 0, default_value_usd)?;
-        push_lane_from_env(&mut lanes, RevenueSource::FishHashExternal, "ZION_STREAM_FISHHASH_PCT", "ZION_STREAM_FISHHASH_USD", 0, default_value_usd)?;
-        push_lane_from_env(&mut lanes, RevenueSource::NexaPowExternal, "ZION_STREAM_NEXAPOW_PCT", "ZION_STREAM_NEXAPOW_USD", 0, default_value_usd)?;
-        push_lane_from_env(&mut lanes, RevenueSource::GhostRiderExternal, "ZION_STREAM_GHOSTRIDER_PCT", "ZION_STREAM_GHOSTRIDER_USD", 0, default_value_usd)?;
-        push_lane_from_env(&mut lanes, RevenueSource::DynexSolveExternal, "ZION_STREAM_DYNEXSOLVE_PCT", "ZION_STREAM_DYNEXSOLVE_USD", 0, default_value_usd)?;
+        push_lane_from_env(
+            &mut lanes,
+            RevenueSource::KarlsenHashExternal,
+            "ZION_STREAM_KARLSENHASH_PCT",
+            "ZION_STREAM_KARLSENHASH_USD",
+            0,
+            default_value_usd,
+        )?;
+        push_lane_from_env(
+            &mut lanes,
+            RevenueSource::EquihashZeroExternal,
+            "ZION_STREAM_EQUIHASHZERO_PCT",
+            "ZION_STREAM_EQUIHASHZERO_USD",
+            0,
+            default_value_usd,
+        )?;
+        push_lane_from_env(
+            &mut lanes,
+            RevenueSource::QhashExternal,
+            "ZION_STREAM_QHASH_PCT",
+            "ZION_STREAM_QHASH_USD",
+            0,
+            default_value_usd,
+        )?;
+        push_lane_from_env(
+            &mut lanes,
+            RevenueSource::VerthashExternal,
+            "ZION_STREAM_VERTHASH_PCT",
+            "ZION_STREAM_VERTHASH_USD",
+            0,
+            default_value_usd,
+        )?;
+        push_lane_from_env(
+            &mut lanes,
+            RevenueSource::FishHashExternal,
+            "ZION_STREAM_FISHHASH_PCT",
+            "ZION_STREAM_FISHHASH_USD",
+            0,
+            default_value_usd,
+        )?;
+        push_lane_from_env(
+            &mut lanes,
+            RevenueSource::NexaPowExternal,
+            "ZION_STREAM_NEXAPOW_PCT",
+            "ZION_STREAM_NEXAPOW_USD",
+            0,
+            default_value_usd,
+        )?;
+        push_lane_from_env(
+            &mut lanes,
+            RevenueSource::GhostRiderExternal,
+            "ZION_STREAM_GHOSTRIDER_PCT",
+            "ZION_STREAM_GHOSTRIDER_USD",
+            0,
+            default_value_usd,
+        )?;
+        push_lane_from_env(
+            &mut lanes,
+            RevenueSource::DynexSolveExternal,
+            "ZION_STREAM_DYNEXSOLVE_PCT",
+            "ZION_STREAM_DYNEXSOLVE_USD",
+            0,
+            default_value_usd,
+        )?;
 
         let total_weight: u32 = lanes.iter().map(|l| l.weight).sum();
         if total_weight == 0 {
@@ -7195,12 +7528,7 @@ impl RevenueScheduler {
         let stream_weights = if stream_profit_config.enabled {
             let snap = StreamProfitSnapshot::fallback();
             let sources = stream_profit_config.parse_enabled_sources();
-            StreamWeights::from_profit(
-                &snap,
-                None,
-                &sources,
-                stream_profit_config.hysteresis_pct,
-            )
+            StreamWeights::from_profit(&snap, None, &sources, stream_profit_config.hysteresis_pct)
         } else {
             StreamWeights::default_split()
         };
@@ -7431,7 +7759,10 @@ impl RevenueScheduler {
         let old_desc = self.stream_weights.describe();
         let new_desc = new_weights.describe();
         if old_desc != new_desc {
-            info!("stream_weights_update old=[{}] new=[{}]", old_desc, new_desc);
+            info!(
+                "stream_weights_update old=[{}] new=[{}]",
+                old_desc, new_desc
+            );
         }
 
         self.stream_weights = new_weights;
@@ -7886,12 +8217,14 @@ fn serve_routing_metrics(
             if header.trim().is_empty() {
                 break; // end of headers
             }
-            if let Some(val) = header.strip_prefix("Content-Length:")
+            if let Some(val) = header
+                .strip_prefix("Content-Length:")
                 .or_else(|| header.strip_prefix("content-length:"))
             {
                 content_length = val.trim().parse().unwrap_or(0);
             }
-            if let Some(val) = header.strip_prefix("Authorization:")
+            if let Some(val) = header
+                .strip_prefix("Authorization:")
                 .or_else(|| header.strip_prefix("authorization:"))
             {
                 auth_header = Some(val.trim().to_string());
@@ -7909,7 +8242,9 @@ fn serve_routing_metrics(
         // /api/v1/miners require `Authorization: Bearer <key>`.
         // If ZION_POOL_API_KEY is not set, these endpoints are open
         // (backward compatible, for local/dev deployments).
-        let api_key = std::env::var("ZION_POOL_API_KEY").ok().filter(|s| !s.is_empty());
+        let api_key = std::env::var("ZION_POOL_API_KEY")
+            .ok()
+            .filter(|s| !s.is_empty());
         let is_db_endpoint = path == "/api/v1/blocks"
             || path == "/api/v1/payouts"
             || path == "/api/v1/miners"
@@ -7943,7 +8278,15 @@ fn serve_routing_metrics(
                     .expect("miner telemetry lock poisoned");
                 let pplns = pplns_engine.lock().expect("pplns lock poisoned");
                 let bt = block_tracker.lock().expect("block tracker lock poisoned");
-                let body = build_prometheus_payload(&stats, &telemetry, &pplns, sessions, uptime_s, &bt, total_connections);
+                let body = build_prometheus_payload(
+                    &stats,
+                    &telemetry,
+                    &pplns,
+                    sessions,
+                    uptime_s,
+                    &bt,
+                    total_connections,
+                );
                 ("200 OK", "text/plain; version=0.0.4", body)
             }
             p if p == "/stats" || p == "/" || p == "/pool" => {
@@ -7955,9 +8298,20 @@ fn serve_routing_metrics(
                     .expect("miner telemetry lock poisoned");
                 let pplns = pplns_engine.lock().expect("pplns lock poisoned");
                 let auxpow_stats = auxpow_scheduler.stats_sync();
-                let rev_sched = revenue_scheduler.lock().expect("revenue scheduler lock poisoned");
+                let rev_sched = revenue_scheduler
+                    .lock()
+                    .expect("revenue scheduler lock poisoned");
                 let bt = block_tracker.lock().expect("block tracker lock poisoned");
-                let body = build_stats_payload(&stats, &telemetry, &pplns, sessions, uptime_s, &auxpow_stats, &rev_sched, &bt);
+                let body = build_stats_payload(
+                    &stats,
+                    &telemetry,
+                    &pplns,
+                    sessions,
+                    uptime_s,
+                    &auxpow_stats,
+                    &rev_sched,
+                    &bt,
+                );
                 ("200 OK", "application/json", body)
             }
             p if p.starts_with("/miners") => {
@@ -7975,7 +8329,13 @@ fn serve_routing_metrics(
                     .lock()
                     .expect("miner telemetry lock poisoned");
                 let pplns = pplns_engine.lock().expect("pplns lock poisoned");
-                match build_miner_api_payload(path, &stats, &telemetry, &pplns, share_store.as_deref()) {
+                match build_miner_api_payload(
+                    path,
+                    &stats,
+                    &telemetry,
+                    &pplns,
+                    share_store.as_deref(),
+                ) {
                     Some(body) => ("200 OK", "application/json", body),
                     None => (
                         "404 Not Found",
@@ -7989,18 +8349,30 @@ fn serve_routing_metrics(
                 let stats = routing_stats.lock().expect("routing stats lock poisoned");
                 let pplns = pplns_engine.lock().expect("pplns lock poisoned");
                 let auxpow_stats = auxpow_scheduler.stats_sync();
-                let rev_sched = revenue_scheduler.lock().expect("revenue scheduler lock poisoned");
-                let body = build_revenue_stats_payload(&stats, &pplns, &auxpow_stats, &rev_sched, uptime_s);
+                let rev_sched = revenue_scheduler
+                    .lock()
+                    .expect("revenue scheduler lock poisoned");
+                let body = build_revenue_stats_payload(
+                    &stats,
+                    &pplns,
+                    &auxpow_stats,
+                    &rev_sched,
+                    uptime_s,
+                );
                 ("200 OK", "application/json", body)
             }
             "/api/v1/revenue/streams" => {
                 let stats = routing_stats.lock().expect("routing stats lock poisoned");
-                let rev_sched = revenue_scheduler.lock().expect("revenue scheduler lock poisoned");
+                let rev_sched = revenue_scheduler
+                    .lock()
+                    .expect("revenue scheduler lock poisoned");
                 let body = build_revenue_streams_payload(&stats, &rev_sched);
                 ("200 OK", "application/json", body)
             }
             "/api/v1/profit/switcher" => {
-                let state = profit_switch_state.lock().expect("profit switch state lock poisoned");
+                let state = profit_switch_state
+                    .lock()
+                    .expect("profit switch state lock poisoned");
                 let body = serde_json::to_string(&*state).unwrap_or_else(|_| "{}".to_string());
                 ("200 OK", "application/json", body)
             }
@@ -8010,9 +8382,12 @@ fn serve_routing_metrics(
             // POST /api/v1/cpu-coin {"coin":""}     → clear override (revert to env/profit)
             "/api/v1/cpu-coin" => {
                 if method == "POST" {
-                    let parsed: serde_json::Value = serde_json::from_str(&post_body).unwrap_or(serde_json::Value::Null);
+                    let parsed: serde_json::Value =
+                        serde_json::from_str(&post_body).unwrap_or(serde_json::Value::Null);
                     let coin = parsed.get("coin").and_then(|v| v.as_str()).unwrap_or("");
-                    let mut guard = cpu_coin_override.lock().expect("cpu coin override lock poisoned");
+                    let mut guard = cpu_coin_override
+                        .lock()
+                        .expect("cpu coin override lock poisoned");
                     if coin.is_empty() {
                         *guard = None;
                         info!("cpu_coin_override: cleared (revert to env/profit)");
@@ -8020,19 +8395,27 @@ fn serve_routing_metrics(
                         *guard = Some(coin.to_uppercase());
                         info!("cpu_coin_override: set to {coin}");
                     }
-                    let body = format!("{{\"ok\":true,\"coin\":{:?}}}", guard.as_deref().unwrap_or(""));
+                    let body = format!(
+                        "{{\"ok\":true,\"coin\":{:?}}}",
+                        guard.as_deref().unwrap_or("")
+                    );
                     ("200 OK", "application/json", body)
                 } else {
-                    let guard = cpu_coin_override.lock().expect("cpu coin override lock poisoned");
+                    let guard = cpu_coin_override
+                        .lock()
+                        .expect("cpu coin override lock poisoned");
                     let body = format!("{{\"coin\":{:?}}}", guard.as_deref().unwrap_or(""));
                     ("200 OK", "application/json", body)
                 }
             }
             "/api/v1/gpu-coin" => {
                 if method == "POST" {
-                    let parsed: serde_json::Value = serde_json::from_str(&post_body).unwrap_or(serde_json::Value::Null);
+                    let parsed: serde_json::Value =
+                        serde_json::from_str(&post_body).unwrap_or(serde_json::Value::Null);
                     let coin = parsed.get("coin").and_then(|v| v.as_str()).unwrap_or("");
-                    let mut guard = gpu_coin_override.lock().expect("gpu coin override lock poisoned");
+                    let mut guard = gpu_coin_override
+                        .lock()
+                        .expect("gpu coin override lock poisoned");
                     if coin.is_empty() {
                         *guard = None;
                         info!("gpu_coin_override: cleared (revert to env/profit)");
@@ -8040,10 +8423,15 @@ fn serve_routing_metrics(
                         *guard = Some(coin.to_uppercase());
                         info!("gpu_coin_override: set to {coin}");
                     }
-                    let body = format!("{{\"ok\":true,\"coin\":{:?}}}", guard.as_deref().unwrap_or(""));
+                    let body = format!(
+                        "{{\"ok\":true,\"coin\":{:?}}}",
+                        guard.as_deref().unwrap_or("")
+                    );
                     ("200 OK", "application/json", body)
                 } else {
-                    let guard = gpu_coin_override.lock().expect("gpu coin override lock poisoned");
+                    let guard = gpu_coin_override
+                        .lock()
+                        .expect("gpu coin override lock poisoned");
                     let body = format!("{{\"coin\":{:?}}}", guard.as_deref().unwrap_or(""));
                     ("200 OK", "application/json", body)
                 }
@@ -8062,7 +8450,8 @@ fn serve_routing_metrics(
                         ("200 OK", "application/json", body)
                     }
                     None => {
-                        let body = "{\"ok\":false,\"error\":\"database not configured\"}".to_string();
+                        let body =
+                            "{\"ok\":false,\"error\":\"database not configured\"}".to_string();
                         ("503 Service Unavailable", "application/json", body)
                     }
                 }
@@ -8081,7 +8470,8 @@ fn serve_routing_metrics(
                         ("200 OK", "application/json", body)
                     }
                     None => {
-                        let body = "{\"ok\":false,\"error\":\"database not configured\"}".to_string();
+                        let body =
+                            "{\"ok\":false,\"error\":\"database not configured\"}".to_string();
                         ("503 Service Unavailable", "application/json", body)
                     }
                 }
@@ -8096,7 +8486,8 @@ fn serve_routing_metrics(
                         ("200 OK", "application/json", body)
                     }
                     None => {
-                        let body = "{\"ok\":false,\"error\":\"database not configured\"}".to_string();
+                        let body =
+                            "{\"ok\":false,\"error\":\"database not configured\"}".to_string();
                         ("503 Service Unavailable", "application/json", body)
                     }
                 }
@@ -8124,22 +8515,27 @@ fn serve_routing_metrics(
             // return 503 (admin API disabled) — they are NEVER open.
             p if p == "/api/v1/op/miners"
                 || p == "/api/v1/op/blocks"
-                || p == "/api/v1/op/revenue" => {
+                || p == "/api/v1/op/revenue" =>
+            {
                 let admin_key = std::env::var("ZION_POOL_API_ADMIN_KEY")
-                    .ok().filter(|s| !s.is_empty());
+                    .ok()
+                    .filter(|s| !s.is_empty());
                 if admin_key.is_none() {
                     let body = "{\"ok\":false,\"error\":\"admin API disabled (set ZION_POOL_API_ADMIN_KEY)\"}".to_string();
                     ("503 Service Unavailable", "application/json", body)
                 } else {
                     let expected = format!("Bearer {}", admin_key.as_deref().unwrap_or(""));
                     if auth_header.as_deref() != Some(expected.as_str()) {
-                        let body = "{\"ok\":false,\"error\":\"unauthorized: admin key required\"}".to_string();
+                        let body = "{\"ok\":false,\"error\":\"unauthorized: admin key required\"}"
+                            .to_string();
                         ("401 Unauthorized", "application/json", body)
                     } else {
                         match p {
                             "/api/v1/op/miners" => {
                                 let now_s = now_unix_seconds();
-                                let telemetry = miner_telemetry.lock().expect("miner telemetry lock poisoned");
+                                let telemetry = miner_telemetry
+                                    .lock()
+                                    .expect("miner telemetry lock poisoned");
                                 let miners: Vec<serde_json::Value> = telemetry.miners.iter().map(|(key, m)| {
                                     serde_json::json!({
                                         "key": key,
@@ -8165,7 +8561,8 @@ fn serve_routing_metrics(
                                     "count": miners.len(),
                                     "miners": miners,
                                     "ts": now_s,
-                                }).to_string();
+                                })
+                                .to_string();
                                 ("200 OK", "application/json", body)
                             }
                             "/api/v1/op/blocks" => {
@@ -8200,15 +8597,19 @@ fn serve_routing_metrics(
                                         "luck_100": bt.pool_luck_pct(100),
                                     },
                                     "blocks": blocks,
-                                }).to_string();
+                                })
+                                .to_string();
                                 ("200 OK", "application/json", body)
                             }
                             "/api/v1/op/revenue" => {
                                 let uptime_s = started_at.elapsed().as_secs();
-                                let stats = routing_stats.lock().expect("routing stats lock poisoned");
+                                let stats =
+                                    routing_stats.lock().expect("routing stats lock poisoned");
                                 let pplns = pplns_engine.lock().expect("pplns lock poisoned");
                                 let auxpow_stats = auxpow_scheduler.stats_sync();
-                                let rev_sched = revenue_scheduler.lock().expect("revenue scheduler lock poisoned");
+                                let rev_sched = revenue_scheduler
+                                    .lock()
+                                    .expect("revenue scheduler lock poisoned");
                                 let bt = block_tracker.lock().expect("block tracker lock poisoned");
                                 let body = serde_json::json!({
                                     "ok": true,
@@ -8316,16 +8717,40 @@ fn build_prometheus_payload(
     let _ = writeln!(body, "# TYPE zion_pool_luck_pct gauge");
     let luck = block_tracker.pool_luck_pct(64).unwrap_or(0.0);
     let _ = writeln!(body, "zion_pool_luck_pct {luck}");
-    let _ = writeln!(body, "# HELP zion_pool_blocks_total Total blocks found (all time).");
+    let _ = writeln!(
+        body,
+        "# HELP zion_pool_blocks_total Total blocks found (all time)."
+    );
     let _ = writeln!(body, "# TYPE zion_pool_blocks_total counter");
-    let _ = writeln!(body, "zion_pool_blocks_total {}", block_tracker.total_blocks);
-    let _ = writeln!(body, "# HELP zion_pool_blocks_confirmed_total Total confirmed blocks (all time).");
+    let _ = writeln!(
+        body,
+        "zion_pool_blocks_total {}",
+        block_tracker.total_blocks
+    );
+    let _ = writeln!(
+        body,
+        "# HELP zion_pool_blocks_confirmed_total Total confirmed blocks (all time)."
+    );
     let _ = writeln!(body, "# TYPE zion_pool_blocks_confirmed_total counter");
-    let _ = writeln!(body, "zion_pool_blocks_confirmed_total {}", block_tracker.total_confirmed);
-    let _ = writeln!(body, "# HELP zion_pool_blocks_orphaned_total Total orphaned blocks (all time).");
+    let _ = writeln!(
+        body,
+        "zion_pool_blocks_confirmed_total {}",
+        block_tracker.total_confirmed
+    );
+    let _ = writeln!(
+        body,
+        "# HELP zion_pool_blocks_orphaned_total Total orphaned blocks (all time)."
+    );
     let _ = writeln!(body, "# TYPE zion_pool_blocks_orphaned_total counter");
-    let _ = writeln!(body, "zion_pool_blocks_orphaned_total {}", block_tracker.total_orphans);
-    let _ = writeln!(body, "# HELP zion_pool_orphan_rate Orphan rate (orphans/total, 0.0-1.0).");
+    let _ = writeln!(
+        body,
+        "zion_pool_blocks_orphaned_total {}",
+        block_tracker.total_orphans
+    );
+    let _ = writeln!(
+        body,
+        "# HELP zion_pool_orphan_rate Orphan rate (orphans/total, 0.0-1.0)."
+    );
     let _ = writeln!(body, "# TYPE zion_pool_orphan_rate gauge");
     let orphan_rate = if block_tracker.total_blocks > 0 {
         block_tracker.total_orphans as f64 / block_tracker.total_blocks as f64
@@ -8333,19 +8758,43 @@ fn build_prometheus_payload(
         0.0
     };
     let _ = writeln!(body, "zion_pool_orphan_rate {orphan_rate}");
-    let _ = writeln!(body, "# HELP zion_pool_shares_since_last_block Shares submitted since the last block was found.");
+    let _ = writeln!(
+        body,
+        "# HELP zion_pool_shares_since_last_block Shares submitted since the last block was found."
+    );
     let _ = writeln!(body, "# TYPE zion_pool_shares_since_last_block gauge");
-    let _ = writeln!(body, "zion_pool_shares_since_last_block {}", block_tracker.shares_since_last_block);
-    let _ = writeln!(body, "# HELP zion_pool_share_rate_per_sec Share submission rate (shares/sec).");
+    let _ = writeln!(
+        body,
+        "zion_pool_shares_since_last_block {}",
+        block_tracker.shares_since_last_block
+    );
+    let _ = writeln!(
+        body,
+        "# HELP zion_pool_share_rate_per_sec Share submission rate (shares/sec)."
+    );
     let _ = writeln!(body, "# TYPE zion_pool_share_rate_per_sec gauge");
-    let share_rate = if uptime_s > 0 { stats.total_submits as f64 / uptime_s as f64 } else { 0.0 };
+    let share_rate = if uptime_s > 0 {
+        stats.total_submits as f64 / uptime_s as f64
+    } else {
+        0.0
+    };
     let _ = writeln!(body, "zion_pool_share_rate_per_sec {share_rate}");
-    let _ = writeln!(body, "# HELP zion_pool_connections_total Total connections initiated (all time).");
+    let _ = writeln!(
+        body,
+        "# HELP zion_pool_connections_total Total connections initiated (all time)."
+    );
     let _ = writeln!(body, "# TYPE zion_pool_connections_total counter");
     let _ = writeln!(body, "zion_pool_connections_total {total_connections}");
-    let _ = writeln!(body, "# HELP zion_pool_conn_rate_per_sec Connection rate (connections/sec).");
+    let _ = writeln!(
+        body,
+        "# HELP zion_pool_conn_rate_per_sec Connection rate (connections/sec)."
+    );
     let _ = writeln!(body, "# TYPE zion_pool_conn_rate_per_sec gauge");
-    let conn_rate = if uptime_s > 0 { total_connections as f64 / uptime_s as f64 } else { 0.0 };
+    let conn_rate = if uptime_s > 0 {
+        total_connections as f64 / uptime_s as f64
+    } else {
+        0.0
+    };
     let _ = writeln!(body, "zion_pool_conn_rate_per_sec {conn_rate}");
     let _ = writeln!(body, "zion_pplns_window_size {}", pplns.window_size);
     let _ = writeln!(body, "zion_pplns_window_used {}", pplns.window_used);
@@ -8445,28 +8894,45 @@ fn build_stats_payload(
     let fees = pplns_engine.fee_stats();
     // F1.4: compute multi_auxpow stats from routing_stats (real share counts).
     let zion_idx = source_index(RevenueSource::Zion);
-    let multi_auxpow_total_submitted: u64 = stats.source_submits.iter().enumerate()
+    let multi_auxpow_total_submitted: u64 = stats
+        .source_submits
+        .iter()
+        .enumerate()
         .filter(|(i, _)| *i != zion_idx)
-        .map(|(_, v)| *v).sum();
-    let multi_auxpow_total_accepted: u64 = stats.source_accepted.iter().enumerate()
+        .map(|(_, v)| *v)
+        .sum();
+    let multi_auxpow_total_accepted: u64 = stats
+        .source_accepted
+        .iter()
+        .enumerate()
         .filter(|(i, _)| *i != zion_idx)
-        .map(|(_, v)| *v).sum();
+        .map(|(_, v)| *v)
+        .sum();
     let mut multi_auxpow_by_coin = serde_json::Map::new();
     for (i, submits) in stats.source_submits.iter().enumerate() {
-        if *submits == 0 && stats.source_accepted[i] == 0 { continue; }
-        if i == zion_idx { continue; }
+        if *submits == 0 && stats.source_accepted[i] == 0 {
+            continue;
+        }
+        if i == zion_idx {
+            continue;
+        }
         let name = revenue_source_name(ALL_REVENUE_SOURCES[i]);
         let accepted = stats.source_accepted[i];
         let rejected = submits.saturating_sub(accepted);
         let accept_rate = if *submits > 0 {
             (accepted as f64 * 100.0 / *submits as f64).round()
-        } else { 0.0 };
-        multi_auxpow_by_coin.insert(name.to_string(), serde_json::json!({
-            "submitted": submits,
-            "accepted": accepted,
-            "rejected": rejected,
-            "accept_rate_pct": accept_rate
-        }));
+        } else {
+            0.0
+        };
+        multi_auxpow_by_coin.insert(
+            name.to_string(),
+            serde_json::json!({
+                "submitted": submits,
+                "accepted": accepted,
+                "rejected": rejected,
+                "accept_rate_pct": accept_rate
+            }),
+        );
     }
     // F1.5/F1.6: block tracker stats — orphan monitoring + pool luck.
     let bt_total_blocks = block_tracker.total_blocks;
@@ -8475,26 +8941,34 @@ fn build_stats_payload(
     let bt_pending = block_tracker.pending_blocks().len();
     let bt_orphan_rate = if bt_total_blocks > 0 {
         (bt_total_orphans as f64 * 100.0 / bt_total_blocks as f64 * 10.0).round() / 10.0
-    } else { 0.0 };
+    } else {
+        0.0
+    };
     let bt_luck_50 = block_tracker.pool_luck_pct(50);
     let bt_luck_100 = block_tracker.pool_luck_pct(100);
-    let bt_recent: Vec<serde_json::Value> = block_tracker.blocks.iter().rev().take(10).map(|b| {
-        let status_str = match b.status {
-            BlockStatus::Pending => "pending",
-            BlockStatus::Confirmed => "confirmed",
-            BlockStatus::Orphaned => "orphaned",
-        };
-        serde_json::json!({
-            "height": b.height,
-            "miner": b.miner_id,
-            "worker": b.worker_name,
-            "found_at": b.found_at_unix,
-            "share_difficulty": b.share_difficulty,
-            "network_difficulty": b.network_difficulty,
-            "shares": b.shares_since_prev_block,
-            "status": status_str
+    let bt_recent: Vec<serde_json::Value> = block_tracker
+        .blocks
+        .iter()
+        .rev()
+        .take(10)
+        .map(|b| {
+            let status_str = match b.status {
+                BlockStatus::Pending => "pending",
+                BlockStatus::Confirmed => "confirmed",
+                BlockStatus::Orphaned => "orphaned",
+            };
+            serde_json::json!({
+                "height": b.height,
+                "miner": b.miner_id,
+                "worker": b.worker_name,
+                "found_at": b.found_at_unix,
+                "share_difficulty": b.share_difficulty,
+                "network_difficulty": b.network_difficulty,
+                "shares": b.shares_since_prev_block,
+                "status": status_str
+            })
         })
-    }).collect();
+        .collect();
     let json = serde_json::json!({
         "ok": true,
         "hashrate": {
@@ -8923,9 +9397,7 @@ fn build_miners_payload(
                 .split_once('/')
                 .map(|(mid, wn)| (mid.to_string(), wn.to_string()))
                 .unwrap_or((key.clone(), miner.worker_name.clone()));
-            let payout_addr = pplns_engine
-                .address_for(key)
-                .unwrap_or("");
+            let payout_addr = pplns_engine.address_for(key).unwrap_or("");
             serde_json::json!({
                 "address": display_miner_id,
                 "worker_name": display_worker,
@@ -9228,9 +9700,15 @@ impl ServerConfig {
             accept_limit: parse_optional_env_u32("ZION_ACCEPT_LIMIT")?,
             node_rpc_addr: std::env::var("ZION_NODE_RPC_ADDR").ok(),
             // F5.1: TLS stratum listener (optional).
-            tls_bind: std::env::var("ZION_POOL_TLS_BIND").ok().filter(|s| !s.is_empty()),
-            tls_cert_path: std::env::var("ZION_POOL_TLS_CERT").ok().filter(|s| !s.is_empty()),
-            tls_key_path: std::env::var("ZION_POOL_TLS_KEY").ok().filter(|s| !s.is_empty()),
+            tls_bind: std::env::var("ZION_POOL_TLS_BIND")
+                .ok()
+                .filter(|s| !s.is_empty()),
+            tls_cert_path: std::env::var("ZION_POOL_TLS_CERT")
+                .ok()
+                .filter(|s| !s.is_empty()),
+            tls_key_path: std::env::var("ZION_POOL_TLS_KEY")
+                .ok()
+                .filter(|s| !s.is_empty()),
             // F5.2/F5.3: Multi-port difficulty stratification.
             // Format: ZION_POOL_EXTRA_PORTS="8445:gpu:5000:100:50000,8446:farm:50000:1000:0"
             extra_ports: parse_extra_ports(),
@@ -9267,8 +9745,14 @@ impl ServerConfig {
             max_sessions_per_ip: parse_env_u32("ZION_MAX_SESSIONS_PER_IP", 10)?,
             session_read_timeout_secs: parse_env_u64("ZION_SESSION_READ_TIMEOUT_SECS", 300)?,
             no_solution_throttle_ms: parse_env_u64("ZION_POOL_NO_SOLUTION_THROTTLE_MS", 100)?,
-            max_consecutive_no_solution: parse_env_u64("ZION_POOL_MAX_CONSECUTIVE_NO_SOLUTION", 1000)?,
-            no_solution_reconnect_cooldown_secs: parse_env_u64("ZION_POOL_NO_SOLUTION_RECONNECT_COOLDOWN_SECS", 30)?,
+            max_consecutive_no_solution: parse_env_u64(
+                "ZION_POOL_MAX_CONSECUTIVE_NO_SOLUTION",
+                1000,
+            )?,
+            no_solution_reconnect_cooldown_secs: parse_env_u64(
+                "ZION_POOL_NO_SOLUTION_RECONNECT_COOLDOWN_SECS",
+                30,
+            )?,
             pool_wallet_address: parse_optional_env_string("ZION_POOL_WALLET"),
             pool_signing_key: parse_pool_signing_key(),
             vardiff_start_difficulty: parse_env_u64("ZION_VARDIFF_START_DIFF", 1)?,
@@ -9406,7 +9890,10 @@ fn parse_extra_ports() -> Vec<ExtraPortConfig> {
         let label = parts[2].to_string();
         let default_difficulty = parts[3].parse::<u64>().unwrap_or(1);
         let min_difficulty = parts[4].parse::<u64>().unwrap_or(1);
-        let max_difficulty = parts.get(5).and_then(|s| s.parse::<u64>().ok()).unwrap_or(0);
+        let max_difficulty = parts
+            .get(5)
+            .and_then(|s| s.parse::<u64>().ok())
+            .unwrap_or(0);
         out.push(ExtraPortConfig {
             bind_addr,
             label,
@@ -9484,7 +9971,9 @@ fn parse_revenue_source(value: &str) -> Result<RevenueSource> {
         "pearlhash" | "pearl" | "prl" => Ok(RevenueSource::PearlExternal),
         "beamhash" | "beam" => Ok(RevenueSource::BeamHashExternal),
         "karlsenhash" | "karlsen" | "kls" => Ok(RevenueSource::KarlsenHashExternal),
-        "equihashzero" | "equihash192" | "zcl" | "zclassic" => Ok(RevenueSource::EquihashZeroExternal),
+        "equihashzero" | "equihash192" | "zcl" | "zclassic" => {
+            Ok(RevenueSource::EquihashZeroExternal)
+        }
         "qhash" | "qtc" | "qubitcoin" => Ok(RevenueSource::QhashExternal),
         "verthash" | "vtc" | "vertcoin" => Ok(RevenueSource::VerthashExternal),
         "fishhash" | "iron" | "ironfish" => Ok(RevenueSource::FishHashExternal),
@@ -9634,9 +10123,7 @@ mod tests {
             let coin = config
                 .auxpow_config
                 .force_coin
-                .or_else(|| {
-                    ExternalCoin::from_str_loose(&config.revenue_proxy_coin)
-                })
+                .or_else(|| ExternalCoin::from_str_loose(&config.revenue_proxy_coin))
                 .unwrap_or(ExternalCoin::DCR);
             multi_bridge.insert(coin, bridge);
         }
@@ -9672,12 +10159,12 @@ mod tests {
                     estimates: Vec::new(),
                     nicehash_rates: Vec::new(),
                 })),
-                Arc::new(Mutex::new(None)), // cpu_coin_override
-                Arc::new(Mutex::new(None)), // gpu_coin_override
+                Arc::new(Mutex::new(None)),       // cpu_coin_override
+                Arc::new(Mutex::new(None)),       // gpu_coin_override
                 Arc::new(AtomicBool::new(false)), // force_save
                 Arc::new(Mutex::new(BlockTracker::default())), // block_tracker
-                None, // first_line (test: read from stream normally)
-                None, // share_store (test: no DB)
+                None,                             // first_line (test: read from stream normally)
+                None,                             // share_store (test: no DB)
             )
         });
 
@@ -9931,7 +10418,10 @@ mod tests {
             upstream_pool_addr: None,
             auxpow_config: AuxPowIntegrationConfig {
                 enabled: true,
-                split: Some(SplitConfig { zion_weight: 0, external_weight: 1 }),
+                split: Some(SplitConfig {
+                    zion_weight: 0,
+                    external_weight: 1,
+                }),
                 force_coin: Some(ExternalCoin::KAS),
                 pool_preference: zion_auxpow::PoolPreference::Default,
                 region: "eu".to_string(),
@@ -9942,8 +10432,8 @@ mod tests {
                 hysteresis_pct: 15.0,
             },
         };
-        let (pool_addr, multi_bridge, pool_handle) = spawn_pool_server(config.clone(), None)
-            .expect("spawn pool server with auxpow bridge");
+        let (pool_addr, multi_bridge, pool_handle) =
+            spawn_pool_server(config.clone(), None).expect("spawn pool server with auxpow bridge");
 
         // Pre-seed the multi-bridge with a synthetic KAS job.
         // multi_bridge uses Arc<Mutex<HashMap>> so insert propagates to the session clone.
@@ -10009,7 +10499,10 @@ mod tests {
                 assert_eq!(ext.header_hex, to_hex(&vec![0xAA; 80]));
                 assert_eq!(ext.height, 0); // block_number was None
             }
-            PoolMessage::Job { external_stream: None, .. } => {
+            PoolMessage::Job {
+                external_stream: None,
+                ..
+            } => {
                 // If bridge queue was empty, we get ZION-only — also acceptable
                 // in parallel streaming mode (external job may not always be available)
             }
@@ -10037,7 +10530,13 @@ mod tests {
 
         // Read result and bye.
         let (_, result) = read_wire_message(&mut reader).expect("read result");
-        assert!(matches!(result, PoolMessage::Result { accepted: false, .. }));
+        assert!(matches!(
+            result,
+            PoolMessage::Result {
+                accepted: false,
+                ..
+            }
+        ));
         let (_, bye) = read_wire_message(&mut reader).expect("read bye");
         assert!(matches!(bye, PoolMessage::Bye { .. }));
 
@@ -10058,7 +10557,9 @@ mod tests {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
         use tokio::net::TcpListener;
 
-        let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind mock stratum");
+        let listener = TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind mock stratum");
         let addr = listener.local_addr().unwrap().to_string();
         let (submit_tx, submit_rx) = tokio::sync::mpsc::channel::<serde_json::Value>(4);
 
@@ -10076,7 +10577,8 @@ mod tests {
                 buf: &mut [u8],
             ) -> serde_json::Value {
                 let n = reader.read(buf).await.expect("read stratum message");
-                serde_json::from_slice::<serde_json::Value>(&buf[..n]).expect("parse stratum message")
+                serde_json::from_slice::<serde_json::Value>(&buf[..n])
+                    .expect("parse stratum message")
             }
 
             let (socket, _) = listener.accept().await.expect("accept stratum client");
@@ -10087,14 +10589,20 @@ mod tests {
             let req = read_json_message(&mut reader, &mut buf).await;
             assert_eq!(req["method"], "mining.subscribe");
             let resp = serde_json::json!({ "id": 1, "result": [["mining.set_difficulty", "sub"], 4], "error": null });
-            writer.write_all((serde_json::to_string(&resp).unwrap() + "\n").as_bytes()).await.unwrap();
+            writer
+                .write_all((serde_json::to_string(&resp).unwrap() + "\n").as_bytes())
+                .await
+                .unwrap();
             writer.flush().await.unwrap();
 
             // Authorize
             let req = read_json_message(&mut reader, &mut buf).await;
             assert_eq!(req["method"], "mining.authorize");
             let resp = serde_json::json!({ "id": 2, "result": true, "error": null });
-            writer.write_all((serde_json::to_string(&resp).unwrap() + "\n").as_bytes()).await.unwrap();
+            writer
+                .write_all((serde_json::to_string(&resp).unwrap() + "\n").as_bytes())
+                .await
+                .unwrap();
             writer.flush().await.unwrap();
 
             // Send job
@@ -10111,7 +10619,10 @@ mod tests {
             } else {
                 serde_json::json!({ "id": id, "result": false, "error": { "code": -1, "message": "low diff" } })
             };
-            writer.write_all((serde_json::to_string(&resp).unwrap() + "\n").as_bytes()).await.unwrap();
+            writer
+                .write_all((serde_json::to_string(&resp).unwrap() + "\n").as_bytes())
+                .await
+                .unwrap();
             writer.flush().await.unwrap();
         });
 
@@ -10139,7 +10650,10 @@ mod tests {
         profile.worker_name = "zion_e2e".to_string();
 
         let client = std::sync::Arc::new(zion_auxpow::AuxPowClient::new(profile));
-        client.connect("bc1qtest").await.expect("connect to mock pool");
+        client
+            .connect("bc1qtest")
+            .await
+            .expect("connect to mock pool");
 
         // Wait for the first job.
         let external_job = client
@@ -10181,7 +10695,16 @@ mod tests {
             };
             let started = std::time::Instant::now();
             let result = match forwarder
-                .try_forward(&req.external_job_id, req.nonce, &req.hash, &req.target, req.mix_hash.as_ref(), req.solution.as_deref(), &req.algorithm, &req.header_bytes)
+                .try_forward(
+                    &req.external_job_id,
+                    req.nonce,
+                    &req.hash,
+                    &req.target,
+                    req.mix_hash.as_ref(),
+                    req.solution.as_deref(),
+                    &req.algorithm,
+                    &req.header_bytes,
+                )
                 .await
             {
                 Ok(r) => r,
@@ -10240,7 +10763,10 @@ mod tests {
             upstream_pool_addr: None,
             auxpow_config: AuxPowIntegrationConfig {
                 enabled: true,
-                split: Some(SplitConfig { zion_weight: 0, external_weight: 1 }),
+                split: Some(SplitConfig {
+                    zion_weight: 0,
+                    external_weight: 1,
+                }),
                 force_coin: Some(zion_auxpow::ExternalCoin::DCR),
                 pool_preference: zion_auxpow::PoolPreference::Default,
                 region: "eu".to_string(),
@@ -10251,8 +10777,8 @@ mod tests {
                 hysteresis_pct: 15.0,
             },
         };
-        let (pool_addr, _bridge_for_server, pool_handle) = spawn_pool_server(config, Some(bridge))
-            .expect("spawn pool server for e2e");
+        let (pool_addr, _bridge_for_server, pool_handle) =
+            spawn_pool_server(config, Some(bridge)).expect("spawn pool server for e2e");
 
         // 5) Connect a miner and read the external job.
         let mut stream = TcpStream::connect(pool_addr).expect("connect test miner to pool");
@@ -10277,7 +10803,12 @@ mod tests {
         assert!(matches!(_set_diff, PoolMessage::SetDifficulty { .. }));
         let (_, job_message) = read_wire_message(&mut reader).expect("read job");
         let (job_id, ext_job_id_str) = match &job_message {
-            PoolMessage::Job { job_id, algorithm, external_stream: Some(ext), .. } => {
+            PoolMessage::Job {
+                job_id,
+                algorithm,
+                external_stream: Some(ext),
+                ..
+            } => {
                 // Parallel streaming: ZION job with embedded external stream
                 assert_eq!(algorithm, "deeksha_lite_v1");
                 assert_eq!(ext.coin, "DCR");
@@ -10308,7 +10839,10 @@ mod tests {
         // Read external result
         let (_, ext_result) = read_wire_message(&mut reader).expect("read external result");
         assert!(
-            matches!(ext_result, PoolMessage::ExternalResult { accepted: true, .. }),
+            matches!(
+                ext_result,
+                PoolMessage::ExternalResult { accepted: true, .. }
+            ),
             "external share should be accepted: {ext_result:?}"
         );
 
@@ -11094,7 +11628,10 @@ mod tests {
     fn should_issue_external_job_respects_split() {
         let cfg = AuxPowIntegrationConfig {
             enabled: true,
-            split: Some(SplitConfig { zion_weight: 4, external_weight: 1 }),
+            split: Some(SplitConfig {
+                zion_weight: 4,
+                external_weight: 1,
+            }),
             force_coin: None,
             pool_preference: zion_auxpow::PoolPreference::Default,
             region: "eu".to_string(),
@@ -11105,23 +11642,38 @@ mod tests {
             hysteresis_pct: 15.0,
         };
         // 4:1 split → 1 in 5 iterations is external (iteration % 5 < 1)
-        assert!(should_issue_external_job(0, &cfg));  // 0 % 5 = 0 < 1 → external
+        assert!(should_issue_external_job(0, &cfg)); // 0 % 5 = 0 < 1 → external
         assert!(!should_issue_external_job(1, &cfg)); // 1 % 5 = 1 < 1? no → zion
         assert!(!should_issue_external_job(2, &cfg)); // 2 % 5 = 2 < 1? no → zion
         assert!(!should_issue_external_job(3, &cfg)); // 3 % 5 = 3 < 1? no → zion
         assert!(!should_issue_external_job(4, &cfg)); // 4 % 5 = 4 < 1? no → zion
-        assert!(should_issue_external_job(5, &cfg));  // 5 % 5 = 0 < 1 → external
+        assert!(should_issue_external_job(5, &cfg)); // 5 % 5 = 0 < 1 → external
     }
 
     #[test]
     fn advertised_algorithm_is_deeksha_lite_v1() {
         // Verify that the pool always advertises deeksha_lite_v1,
         // not deeksha_chv3 (which broke the chain at block 4502).
-        assert_eq!(zion_pool::advertised_algorithm_for_height(0), "deeksha_lite_v1");
-        assert_eq!(zion_pool::advertised_algorithm_for_height(4499), "deeksha_lite_v1");
-        assert_eq!(zion_pool::advertised_algorithm_for_height(4500), "deeksha_lite_v1");
-        assert_eq!(zion_pool::advertised_algorithm_for_height(5000), "deeksha_lite_v1");
-        assert_eq!(zion_pool::advertised_algorithm_for_height(99999), "deeksha_lite_v1");
+        assert_eq!(
+            zion_pool::advertised_algorithm_for_height(0),
+            "deeksha_lite_v1"
+        );
+        assert_eq!(
+            zion_pool::advertised_algorithm_for_height(4499),
+            "deeksha_lite_v1"
+        );
+        assert_eq!(
+            zion_pool::advertised_algorithm_for_height(4500),
+            "deeksha_lite_v1"
+        );
+        assert_eq!(
+            zion_pool::advertised_algorithm_for_height(5000),
+            "deeksha_lite_v1"
+        );
+        assert_eq!(
+            zion_pool::advertised_algorithm_for_height(99999),
+            "deeksha_lite_v1"
+        );
     }
 }
 
@@ -11245,7 +11797,11 @@ fn fetch_pool_account_balance(node_rpc_addr: &str, address: &str) -> Result<u128
 // The functions below query the node to verify whether a payout TX is on chain.
 
 /// Generic single-request JSON-RPC call over TCP (newline-delimited).
-fn rpc_single_call(node_rpc_addr: &str, method: &str, params: serde_json::Value) -> Result<serde_json::Value> {
+fn rpc_single_call(
+    node_rpc_addr: &str,
+    method: &str,
+    params: serde_json::Value,
+) -> Result<serde_json::Value> {
     let request_body = serde_json::json!({
         "jsonrpc": "2.0",
         "id": 1,
@@ -11265,17 +11821,27 @@ fn rpc_single_call(node_rpc_addr: &str, method: &str, params: serde_json::Value)
         serde_json::from_str(&response_line).context("failed to parse RPC response")?;
     if let Some(error) = response.get("error") {
         if !error.is_null() {
-            let msg = error.get("message").and_then(|m| m.as_str()).unwrap_or("unknown");
+            let msg = error
+                .get("message")
+                .and_then(|m| m.as_str())
+                .unwrap_or("unknown");
             return Err(anyhow!("RPC error {}: {}", method, msg));
         }
     }
-    response.get("result").cloned().ok_or_else(|| anyhow!("missing result in {} response", method))
+    response
+        .get("result")
+        .cloned()
+        .ok_or_else(|| anyhow!("missing result in {} response", method))
 }
 
 /// Check if a TX (by tx_id) is confirmed on chain.
 /// Returns `Ok(Some(height))` if confirmed, `Ok(None)` if not found.
 fn check_tx_on_chain(node_rpc_addr: &str, tx_id: &str) -> Result<Option<u64>> {
-    let result = rpc_single_call(node_rpc_addr, "getTransaction", serde_json::json!({ "txid": tx_id }))?;
+    let result = rpc_single_call(
+        node_rpc_addr,
+        "getTransaction",
+        serde_json::json!({ "txid": tx_id }),
+    )?;
     if result.is_null() {
         return Ok(None);
     }
@@ -11308,7 +11874,10 @@ fn get_chain_difficulty(node_rpc_addr: &str) -> u64 {
         Ok(b) => b,
         Err(_) => return 0,
     };
-    block.get("difficulty").and_then(|v| v.as_u64()).unwrap_or(0)
+    block
+        .get("difficulty")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0)
 }
 
 /// Check if a payout (pool_wallet → miner_address for `amount`) already exists

@@ -14,6 +14,7 @@ use serde_json::{json, Value};
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
+use crate::bridge::bridge_vault_utxo_scaled_amount;
 use crate::crypto;
 use crate::emission;
 use crate::fee;
@@ -21,7 +22,6 @@ use crate::migration;
 use crate::{
     bridge_operation_message, BridgeValidatorProof, NodeRuntime, BRIDGE_MIN_VALIDATOR_PROOFS,
 };
-use crate::bridge::bridge_vault_utxo_scaled_amount;
 
 // ── Constants ──────────────────────────────────────────────────────────
 
@@ -335,7 +335,10 @@ fn scaled_utxo_balance_at_height(rt: &NodeRuntime, address: &str, height: u64) -
             let tx_hash = crypto::to_hex(&utxo_tx.id);
             for (index, output) in utxo_tx.outputs.iter().enumerate() {
                 if output.address == address {
-                    utxos.insert((tx_hash.clone(), index as u32), (output.amount, block.height));
+                    utxos.insert(
+                        (tx_hash.clone(), index as u32),
+                        (output.amount, block.height),
+                    );
                 }
             }
         }
@@ -617,7 +620,8 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                                 .filter(|o| o.address == address)
                                 .map(|o| {
                                     if is_bridge_vault {
-                                        bridge_vault_utxo_scaled_amount(o.amount, block.height) as u128
+                                        bridge_vault_utxo_scaled_amount(o.amount, block.height)
+                                            as u128
                                     } else {
                                         scaled_amount(o.amount as u128, block.height)
                                     }
@@ -874,7 +878,8 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                     .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
                 let effective_height = height.min(rt.chain_height());
                 if looks_like_utxo_address(account_id) {
-                    let utxo_balance = scaled_utxo_balance_at_height(&rt, account_id, effective_height);
+                    let utxo_balance =
+                        scaled_utxo_balance_at_height(&rt, account_id, effective_height);
                     let mut account_balance: i128 = 0;
                     for block in rt
                         .accepted_blocks()

@@ -14,12 +14,12 @@
 //!
 //! ## Default server address: `0.0.0.0:9333`
 
+use chrono::Timelike;
 use std::net::SocketAddr;
 use tracing::info;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
-use chrono::Timelike;
 use zion_warp::{
-    WarpConfig, WarpState, OutboundExecutor, TimelockMonitor, create_api_router, WarpWatcher,
+    create_api_router, OutboundExecutor, TimelockMonitor, WarpConfig, WarpState, WarpWatcher,
 };
 
 #[tokio::main]

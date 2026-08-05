@@ -6,8 +6,8 @@ use std::io::{self, IsTerminal};
 use zion_cli::commands::deploy;
 use zion_cli::commands::{
     agent, atomic_swap, auxpow, bridge, completions, compose, dao, doctor, explorer, free_world,
-    hiran, issobella, mine, monitor, ncl, node, onboard, pool, status, swap, topology, update, wallet,
-    warp,
+    hiran, issobella, mine, monitor, ncl, node, onboard, pool, status, swap, topology, update,
+    wallet, warp,
 };
 use zion_cli::config;
 use zion_cli::menu;

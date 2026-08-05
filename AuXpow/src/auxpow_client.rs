@@ -18,16 +18,16 @@
 use anyhow::{anyhow, bail, Context, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
-use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
-use tokio::sync::{Mutex, Notify, oneshot};
+use tokio::sync::{oneshot, Mutex, Notify};
 // TLS support for EPIC stratum — rustls types are re-exported via tokio_rustls
-use tokio_rustls::rustls::RootCertStore;
 use tokio::time::timeout;
+use tokio_rustls::rustls::RootCertStore;
 use tracing::{debug, info, warn};
 
 use crate::types::{CoinProfile, ExternalCoin};
@@ -114,8 +114,7 @@ impl ExternalCoin {
             // mining.authorize + mining.notify), NOT EthStratum.
             // ETC notify: [seed_hash, header_hash, boundary, target, clean]
             // RVN notify: [job_id, seed_hash, header_hash, target, clean, height, nbits]
-            Self::DCR | Self::KAS | Self::ALPH
-            | Self::ETC | Self::RVN | Self::QUAI => {
+            Self::DCR | Self::KAS | Self::ALPH | Self::ETC | Self::RVN | Self::QUAI => {
                 StratumProtocol::Stratum
             }
             // XMR (Monero) uses CryptoNote stratum (login/getjob/submit) on
@@ -124,9 +123,7 @@ impl ExternalCoin {
             Self::XMR => StratumProtocol::CryptonoteStratum,
             // FLUX uses ZcashStratum (Equihash 125,4 / ZelHash) with solution
             // field in mining.notify and 5-param mining.submit.
-            Self::FLUX => {
-                StratumProtocol::ZcashStratum
-            }
+            Self::FLUX => StratumProtocol::ZcashStratum,
             // ERG (Autolykos v2) uses standard Stratum v1 on 2miners.
             // CLORE uses Stratum v1 on NiceHash kawpow (same as RVN/QUAI).
             // EVR/MEWC use Stratum v1 on ZPool (kawpow ports) — same as RVN/CLORE.
@@ -135,14 +132,10 @@ impl ExternalCoin {
             Self::ERG | Self::CLORE | Self::EVR | Self::MEWC => StratumProtocol::Stratum,
             // VRSC (Verus) uses Zcash/Equihash Stratum with solution field
             // and 5-param submit: [worker, job_id, ntime, nonce2, solution]
-            Self::VRSC => {
-                StratumProtocol::ZcashStratum
-            }
+            Self::VRSC => StratumProtocol::ZcashStratum,
             // EPIC (Epic Cash) uses a custom JSON-RPC 2.0 protocol over TLS.
             // See StratumProtocol::EpicStratum docs for full protocol details.
-            Self::EPIC => {
-                StratumProtocol::EpicStratum
-            }
+            Self::EPIC => StratumProtocol::EpicStratum,
             // ZANO uses ProgPoWZ (ProgPow 0.9.2 with permuted math ops) on
             // HeroMiners / open-ethereum-pool style EthStratum pools:
             //   eth_submitLogin -> eth_getWork / eth_submitWork
@@ -150,20 +143,13 @@ impl ExternalCoin {
             // Pearl (PRL) uses a custom JSON-RPC dialect over TCP.
             // Object params (not arrays), no mining.subscribe, plain_proof submit.
             // See StratumProtocol::PearlStratum docs for full protocol details.
-            Self::PRL => {
-                StratumProtocol::PearlStratum
-            }
+            Self::PRL => StratumProtocol::PearlStratum,
             // Beam (BEAM) uses custom JSON-RPC 2.0 over TLS (BeamStratum).
             // login/job/solution protocol with Equihash 150,5 (BeamHash III).
-            Self::BEAM => {
-                StratumProtocol::BeamStratum
-            }
+            Self::BEAM => StratumProtocol::BeamStratum,
             // New coins — all use standard Stratum v1 except ZCL (Equihash),
             // DNX (cryptonote-nodejs-pool protocol), and IRON (IronFish stratum v2).
-            Self::KLS | Self::QTC | Self::VTC
-            | Self::NEXA | Self::RTM => {
-                StratumProtocol::Stratum
-            }
+            Self::KLS | Self::QTC | Self::VTC | Self::NEXA | Self::RTM => StratumProtocol::Stratum,
             Self::DNX => StratumProtocol::CryptonoteStratum,
             Self::IRON => StratumProtocol::IronFishStratum,
             Self::ZCL => StratumProtocol::ZcashStratum,
@@ -405,7 +391,10 @@ impl AuxPowClient {
     pub async fn with_gpu(self) -> Self {
         match crate::gpu_metal::MetalBackend::new(256) {
             Ok(backend) => {
-                println!("auxpow: GPU backend enabled — {}", backend.device_name_pub());
+                println!(
+                    "auxpow: GPU backend enabled — {}",
+                    backend.device_name_pub()
+                );
                 *self.gpu_backend.lock().await = Some(backend);
             }
             Err(e) => {
@@ -586,9 +575,8 @@ impl AuxPowClient {
             // require TLS.
             // Use explicit provider to avoid "Could not automatically determine
             // the process-level CryptoProvider" panic.
-            let provider = std::sync::Arc::new(
-                tokio_rustls::rustls::crypto::ring::default_provider()
-            );
+            let provider =
+                std::sync::Arc::new(tokio_rustls::rustls::crypto::ring::default_provider());
             let roots = RootCertStore {
                 roots: webpki_roots::TLS_SERVER_ROOTS.iter().cloned().collect(),
             };
@@ -598,8 +586,16 @@ impl AuxPowClient {
                 .with_no_client_auth();
             let connector = tokio_rustls::TlsConnector::from(std::sync::Arc::new(config));
             let domain = rustls_pki_types::ServerName::try_from(self.profile.pool_host.clone())
-                .map_err(|e| anyhow!("invalid TLS server name '{}': {}", self.profile.pool_host, e))?;
-            let tls_stream = connector.connect(domain, tcp_stream).await
+                .map_err(|e| {
+                    anyhow!(
+                        "invalid TLS server name '{}': {}",
+                        self.profile.pool_host,
+                        e
+                    )
+                })?;
+            let tls_stream = connector
+                .connect(domain, tcp_stream)
+                .await
                 .context("TLS handshake failed")?;
             let (reader_half, writer_half) = tokio::io::split(tls_stream);
             let buf_reader: BufReader<Box<dyn AsyncRead + Unpin + Send>> =
@@ -664,11 +660,20 @@ impl AuxPowClient {
             // Without this, send_request waits the full 60s timeout.
             let cancelled = self.pending_requests.lock().await.drain().count();
             if cancelled > 0 {
-                warn!("AuxPow: cancelled {} pending request(s) after reconnect for {}", cancelled, self.profile.coin);
+                warn!(
+                    "AuxPow: cancelled {} pending request(s) after reconnect for {}",
+                    cancelled, self.profile.coin
+                );
             }
-            warn!("AuxPow: cleared per-job state after reconnect for {}", self.profile.coin);
+            warn!(
+                "AuxPow: cleared per-job state after reconnect for {}",
+                self.profile.coin
+            );
         }
-        info!("AuxPow: reconnected and authorized for {}", self.profile.coin);
+        info!(
+            "AuxPow: reconnected and authorized for {}",
+            self.profile.coin
+        );
         Ok(())
     }
 
@@ -732,7 +737,8 @@ impl AuxPowClient {
             // *or* exact string id. Messages with a "method" field are
             // notifications or EPIC method-tagged responses (handled below).
             let resp_id_i64 = parsed.get("id").and_then(|v| {
-                v.as_i64().or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok()))
+                v.as_i64()
+                    .or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok()))
             });
             let resp_id_str = parsed.get("id").and_then(|v| v.as_str());
             if let Some(id) = resp_id_i64 {
@@ -754,7 +760,8 @@ impl AuxPowClient {
                         // This prevents picking up error responses from other
                         // requests (e.g. getjobtemplate errors during login).
                         if let Some(method) = parsed.get("method").and_then(|m| m.as_str()) {
-                            let req_method = req.get("method").and_then(|m| m.as_str()).unwrap_or("");
+                            let req_method =
+                                req.get("method").and_then(|m| m.as_str()).unwrap_or("");
                             if method == req_method {
                                 return Ok(parsed);
                             }
@@ -770,7 +777,8 @@ impl AuxPowClient {
                 if let Some(result) = parsed.get("result") {
                     if !result.is_null() {
                         if let Some(method) = parsed.get("method").and_then(|m| m.as_str()) {
-                            let req_method = req.get("method").and_then(|m| m.as_str()).unwrap_or("");
+                            let req_method =
+                                req.get("method").and_then(|m| m.as_str()).unwrap_or("");
                             if method == req_method {
                                 return Ok(parsed);
                             }
@@ -783,21 +791,37 @@ impl AuxPowClient {
             if let Some(method) = parsed.get("method").and_then(|m| m.as_str()) {
                 match method {
                     "mining.set_difficulty" => {
-                        if let Some(diff) = parsed.get("params").and_then(|p| p.get(0)).and_then(|d| d.as_f64()) {
+                        if let Some(diff) = parsed
+                            .get("params")
+                            .and_then(|p| p.get(0))
+                            .and_then(|d| d.as_f64())
+                        {
                             *self.current_difficulty.lock().await = diff;
                         }
                     }
                     "mining.set_target" => {
-                        if let Some(target_hex) = parsed.get("params").and_then(|p| p.get(0)).and_then(|d| d.as_str()) {
-                            println!("auxpow: RAW mining.set_target params[0] = '{}' (len={})", target_hex, target_hex.len());
+                        if let Some(target_hex) = parsed
+                            .get("params")
+                            .and_then(|p| p.get(0))
+                            .and_then(|d| d.as_str())
+                        {
+                            println!(
+                                "auxpow: RAW mining.set_target params[0] = '{}' (len={})",
+                                target_hex,
+                                target_hex.len()
+                            );
                             let target_bytes = crate::external_hashers::parse_target_hex(
                                 target_hex.trim_start_matches("0x"),
-                            ).unwrap_or([0xFFu8; 32]);
+                            )
+                            .unwrap_or([0xFFu8; 32]);
                             let max_target = algorithm_max_target(&self.profile.algorithm);
                             let diff = target_to_difficulty_with_max(&target_bytes, &max_target);
                             println!(
                                 "auxpow: {} set_target={} difficulty={:.2} parsed_bytes={}",
-                                self.profile.coin, target_hex, diff, hex::encode(target_bytes)
+                                self.profile.coin,
+                                target_hex,
+                                diff,
+                                hex::encode(target_bytes)
                             );
                             *self.current_target_bytes.lock().await = Some(target_bytes);
                             *self.current_difficulty.lock().await = diff;
@@ -903,7 +927,10 @@ impl AuxPowClient {
         let resp = self.send_request_inline(&req).await?;
         if let Some(result) = resp.get("result") {
             *self.subscribed.lock().await = true;
-            println!("auxpow: subscribed to {} — result={}", self.profile.coin, result);
+            println!(
+                "auxpow: subscribed to {} — result={}",
+                self.profile.coin, result
+            );
             let mut en1 = self.extranonce1.lock().await;
             *en1 = if let Some(hex) = result.as_str() {
                 hex::decode(hex).unwrap_or_default()
@@ -946,7 +973,10 @@ impl AuxPowClient {
         };
         println!(
             "auxpow: authorizing worker={} password={} on {} (protocol={})",
-            worker, password, self.profile.coin, self.protocol.as_str()
+            worker,
+            password,
+            self.profile.coin,
+            self.protocol.as_str()
         );
         let method = if is_ethstratum {
             "eth_submitLogin"
@@ -976,10 +1006,14 @@ impl AuxPowClient {
 
         let resp = self.send_request_inline(&req).await?;
         let ok = if is_ethstratum {
-            resp.get("result").and_then(|v| v.as_bool()).unwrap_or(false)
+            resp.get("result")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false)
                 || resp.get("result").and_then(|v| v.as_str()).is_some()
         } else {
-            resp.get("result").and_then(|v| v.as_bool()).unwrap_or(false)
+            resp.get("result")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false)
         };
         if ok {
             *self.authorized.lock().await = true;
@@ -993,7 +1027,10 @@ impl AuxPowClient {
                     "params": []
                 });
                 if let Err(e) = self.send_request_inline(&ex_req).await {
-                    debug!("auxpow: extranonce.subscribe (inline) failed for {}: {}", self.profile.coin, e);
+                    debug!(
+                        "auxpow: extranonce.subscribe (inline) failed for {}: {}",
+                        self.profile.coin, e
+                    );
                 }
             }
             Ok(())
@@ -1001,7 +1038,10 @@ impl AuxPowClient {
             let err = resp.get("error");
             println!(
                 "auxpow: authorize FAILED for {} on {} — result={:?} error={:?}",
-                worker, self.profile.coin, resp.get("result"), err
+                worker,
+                self.profile.coin,
+                resp.get("result"),
+                err
             );
             bail!("authorize failed: {:?}", err);
         }
@@ -1049,7 +1089,10 @@ impl AuxPowClient {
         });
         println!(
             "auxpow: EPIC login as {} (len={}) on {} (protocol={})",
-            login, login.len(), self.profile.coin, self.protocol.as_str()
+            login,
+            login.len(),
+            self.profile.coin,
+            self.protocol.as_str()
         );
         let resp = self.send_request_inline(&req).await?;
         if let Some(err) = resp.get("error") {
@@ -1088,7 +1131,10 @@ impl AuxPowClient {
         });
         println!(
             "auxpow: BEAM login as {} (len={}) on {} (protocol={})",
-            api_key, api_key.len(), self.profile.coin, self.protocol.as_str()
+            api_key,
+            api_key.len(),
+            self.profile.coin,
+            self.protocol.as_str()
         );
         let resp = self.send_request_inline(&req).await?;
         if let Some(err) = resp.get("error") {
@@ -1102,7 +1148,8 @@ impl AuxPowClient {
         //    "code":-32003,"description":"Invalid address",...}
         if let Some(code) = resp.get("code").and_then(|v| v.as_i64()) {
             if code < 0 {
-                let desc = resp.get("description")
+                let desc = resp
+                    .get("description")
                     .and_then(|v| v.as_str())
                     .unwrap_or("unknown error");
                 bail!("BEAM login failed: code={} desc={}", code, desc);
@@ -1128,23 +1175,32 @@ impl AuxPowClient {
     async fn parse_beam_job(&self, msg: &Value) -> Result<ExternalJob> {
         let job = msg.get("params").unwrap_or(msg);
 
-        let input_hex = job.get("input").and_then(|v| v.as_str())
+        let input_hex = job
+            .get("input")
+            .and_then(|v| v.as_str())
             .ok_or_else(|| anyhow!("BEAM job: missing 'input' field"))?;
-        let header_bytes = hex::decode(input_hex)
-            .context("BEAM job: invalid hex in 'input'")?;
+        let header_bytes = hex::decode(input_hex).context("BEAM job: invalid hex in 'input'")?;
 
-        let job_id = job.get("id").and_then(|v| {
-            v.as_u64().map(|n| n.to_string())
-                .or_else(|| v.as_str().map(|s| s.to_string()))
-        }).unwrap_or_default();
+        let job_id = job
+            .get("id")
+            .and_then(|v| {
+                v.as_u64()
+                    .map(|n| n.to_string())
+                    .or_else(|| v.as_str().map(|s| s.to_string()))
+            })
+            .unwrap_or_default();
 
         let height = job.get("height").and_then(|v| v.as_u64()).unwrap_or(0);
 
-        let difficulty = job.get("difficulty").and_then(|v| {
-            v.as_f64().or_else(|| v.as_u64().map(|n| n as f64))
-        }).unwrap_or(1.0);
+        let difficulty = job
+            .get("difficulty")
+            .and_then(|v| v.as_f64().or_else(|| v.as_u64().map(|n| n as f64)))
+            .unwrap_or(1.0);
 
-        let nonceprefix_hex = job.get("nonceprefix").and_then(|v| v.as_str()).unwrap_or("");
+        let nonceprefix_hex = job
+            .get("nonceprefix")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
         let extranonce1 = if !nonceprefix_hex.is_empty() {
             hex::decode(nonceprefix_hex).unwrap_or_default()
         } else {
@@ -1207,27 +1263,43 @@ impl AuxPowClient {
         });
         println!(
             "auxpow: cryptonote login as {} on {} (protocol={})",
-            login, self.profile.coin, self.protocol.as_str()
+            login,
+            self.profile.coin,
+            self.protocol.as_str()
         );
         let resp = self.send_request_inline(&req).await?;
         if let Some(err) = resp.get("error") {
             if !err.is_null() {
-                bail!("cryptonote login failed for {}: {:?}", self.profile.coin, err);
+                bail!(
+                    "cryptonote login failed for {}: {:?}",
+                    self.profile.coin,
+                    err
+                );
             }
         }
 
         // Extract session ID from login response.
-        if let Some(id) = resp.get("result").and_then(|r| r.get("id")).and_then(|v| v.as_str()) {
+        if let Some(id) = resp
+            .get("result")
+            .and_then(|r| r.get("id"))
+            .and_then(|v| v.as_str())
+        {
             *self.cryptonote_session_id.lock().await = Some(id.to_string());
         }
 
         *self.authorized.lock().await = true;
         *self.subscribed.lock().await = true;
-        println!("auxpow: cryptonote login successful for {}", self.profile.coin);
+        println!(
+            "auxpow: cryptonote login successful for {}",
+            self.profile.coin
+        );
 
         // Debug: log raw login response for XMR
         if self.profile.coin == ExternalCoin::XMR {
-            println!("auxpow: XMR RAW login response: {}", serde_json::to_string(&resp).unwrap_or_default());
+            println!(
+                "auxpow: XMR RAW login response: {}",
+                serde_json::to_string(&resp).unwrap_or_default()
+            );
         }
 
         // The login response may include an initial job.
@@ -1246,13 +1318,18 @@ impl AuxPowClient {
     async fn parse_cryptonote_job(&self, msg: &Value) -> Result<ExternalJob> {
         let job = msg.get("params").unwrap_or(msg);
 
-        let blob_hex = job.get("blob").and_then(|v| v.as_str())
+        let blob_hex = job
+            .get("blob")
+            .and_then(|v| v.as_str())
             .ok_or_else(|| anyhow!("cryptonote job: missing 'blob' field"))?;
-        let header_bytes = hex::decode(blob_hex)
-            .context("cryptonote job: invalid hex in 'blob'")?;
+        let header_bytes =
+            hex::decode(blob_hex).context("cryptonote job: invalid hex in 'blob'")?;
 
-        let job_id = job.get("job_id").and_then(|v| v.as_str())
-            .unwrap_or("unknown").to_string();
+        let job_id = job
+            .get("job_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("unknown")
+            .to_string();
 
         // Target is a compact hex string. In Monero/CryptoNote stratum,
         // the target hex string is raw hex-encoded bytes (NOT a big-endian
@@ -1266,7 +1343,9 @@ impl AuxPowClient {
         //     as LE u64 directly.
         // The 64-bit target is then stored as 32 bytes in little-endian
         // order for hash comparison (only first 8 bytes matter).
-        let target_hex = job.get("target").and_then(|v| v.as_str())
+        let target_hex = job
+            .get("target")
+            .and_then(|v| v.as_str())
             .unwrap_or("ffffffffffffffff");
         let target_u64: u64 = if target_hex.len() <= 8 {
             // 4-byte target: hex decode to raw bytes, interpret as LE u32,
@@ -1301,7 +1380,10 @@ impl AuxPowClient {
         target_bytes[..8].copy_from_slice(&target_u64.to_le_bytes());
 
         let height = job.get("height").and_then(|v| v.as_u64()).unwrap_or(0);
-        let seed_hash = job.get("seed_hash").and_then(|v| v.as_str()).map(|s| s.to_string());
+        let seed_hash = job
+            .get("seed_hash")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
 
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -1351,7 +1433,9 @@ impl AuxPowClient {
         });
         println!(
             "auxpow: IRON IronFish subscribe as {} on {} (protocol={})",
-            payout_wallet, self.profile.coin, self.protocol.as_str()
+            payout_wallet,
+            self.profile.coin,
+            self.protocol.as_str()
         );
         let resp = self.send_request_inline(&req).await?;
         if let Some(err) = resp.get("error") {
@@ -1375,25 +1459,32 @@ impl AuxPowClient {
 
         *self.authorized.lock().await = true;
         *self.subscribed.lock().await = true;
-        println!("auxpow: IRON IronFish subscribe successful for {}", self.profile.coin);
+        println!(
+            "auxpow: IRON IronFish subscribe successful for {}",
+            self.profile.coin
+        );
         Ok(())
     }
 
     /// Parse an IronFish mining.notify body into an ExternalJob.
     /// Format: {"miningRequestId": <num>, "header": "<hex>"}
     async fn parse_ironfish_job(&self, body: &Value) -> Result<ExternalJob> {
-        let header_hex = body.get("header").and_then(|v| v.as_str())
+        let header_hex = body
+            .get("header")
+            .and_then(|v| v.as_str())
             .ok_or_else(|| anyhow!("IRON job: missing 'header' field"))?;
-        let header_bytes = hex::decode(header_hex)
-            .context("IRON job: invalid hex in 'header'")?;
+        let header_bytes = hex::decode(header_hex).context("IRON job: invalid hex in 'header'")?;
 
-        let mining_request_id = body.get("miningRequestId")
+        let mining_request_id = body
+            .get("miningRequestId")
             .and_then(|v| v.as_u64())
             .unwrap_or(0);
 
         // Target may come from a separate mining.set_target notification,
         // or we use a default. The target is stored in current_job's target.
-        let target_hex = body.get("target").and_then(|v| v.as_str())
+        let target_hex = body
+            .get("target")
+            .and_then(|v| v.as_str())
             .unwrap_or("00000000ffff0000000000000000000000000000000000000000000000000000");
         let mut target_vec = hex::decode(target_hex).unwrap_or_else(|_| vec![0xff; 32]);
         target_vec.resize(32, 0);
@@ -1410,7 +1501,9 @@ impl AuxPowClient {
 
         println!(
             "auxpow: IRON job parsed miningRequestId={} header_len={} target={}",
-            mining_request_id, header_bytes.len(), &target_hex[..target_hex.len().min(16)],
+            mining_request_id,
+            header_bytes.len(),
+            &target_hex[..target_hex.len().min(16)],
         );
 
         Ok(ExternalJob {
@@ -1471,11 +1564,17 @@ impl AuxPowClient {
             // rate-limiting our requests.
             let mut interval = tokio::time::interval(Duration::from_secs(120));
             interval.tick().await; // skip first immediate tick
-            println!("auxpow: EPIC keepalive task started for {} (interval=120s)", client.profile.coin);
+            println!(
+                "auxpow: EPIC keepalive task started for {} (interval=120s)",
+                client.profile.coin
+            );
             loop {
                 interval.tick().await;
                 if !*client.connected.lock().await {
-                    println!("auxpow: EPIC keepalive task stopping for {} (disconnected)", client.profile.coin);
+                    println!(
+                        "auxpow: EPIC keepalive task stopping for {} (disconnected)",
+                        client.profile.coin
+                    );
                     break;
                 }
                 // Send getjobtemplate (fire-and-forget) — server responds
@@ -1493,10 +1592,16 @@ impl AuxPowClient {
                     match w.write_all(req_line.as_bytes()).await {
                         Ok(_) => {
                             let _ = w.flush().await;
-                            println!("auxpow: EPIC keepalive getjobtemplate sent for {}", client.profile.coin);
+                            println!(
+                                "auxpow: EPIC keepalive getjobtemplate sent for {}",
+                                client.profile.coin
+                            );
                         }
                         Err(e) => {
-                            println!("auxpow: EPIC keepalive write failed for {}: {} — stopping", client.profile.coin, e);
+                            println!(
+                                "auxpow: EPIC keepalive write failed for {}: {} — stopping",
+                                client.profile.coin, e
+                            );
                             break;
                         }
                     }
@@ -1531,7 +1636,10 @@ impl AuxPowClient {
                     if w.write_all(req_line.as_bytes()).await.is_err() {
                         break;
                     }
-                    debug!("auxpow: cryptonote keepalived sent for {}", client.profile.coin);
+                    debug!(
+                        "auxpow: cryptonote keepalived sent for {}",
+                        client.profile.coin
+                    );
                 }
             }
         });
@@ -1547,14 +1655,17 @@ impl AuxPowClient {
     ///   - epochs: [[start_height, end_height, [32-byte seed_hex]], ...]
     ///   - algorithm: "progpow"
     async fn parse_epic_job(&self, job: &Value) -> Result<ExternalJob> {
-        let pre_pow_hex = job.get("pre_pow")
+        let pre_pow_hex = job
+            .get("pre_pow")
             .and_then(|v| v.as_str())
             .ok_or_else(|| anyhow!("EPIC job missing pre_pow"))?;
-        let height = job.get("height")
+        let height = job
+            .get("height")
             .and_then(|v| v.as_u64())
             .or_else(|| job.get("height").and_then(|v| v.as_i64()).map(|i| i as u64))
             .unwrap_or(0);
-        let job_id = job.get("job_id")
+        let job_id = job
+            .get("job_id")
             .and_then(|v| v.as_u64())
             .or_else(|| job.get("job_id").and_then(|v| v.as_i64()).map(|i| i as u64))
             .unwrap_or(0);
@@ -1566,7 +1677,8 @@ impl AuxPowClient {
         // Difficulty: EPIC sends a nested array of [algo_name, diff_value] pairs:
         //   [["cuckoo", 3], ["randomx", 800000], ["progpow", 2500000000]]
         // We extract the progpow share difficulty.
-        let share_difficulty = job.get("difficulty")
+        let share_difficulty = job
+            .get("difficulty")
             .and_then(|d| d.as_array())
             .and_then(|arr| {
                 // Look for the "progpow" entry in the nested array
@@ -1592,7 +1704,8 @@ impl AuxPowClient {
         // Extract seed hash from epochs for DAG management.
         // EPIC epochs format: [[start_height, end_height, [seed_bytes...]], ...]
         // The seed is an array of integers (bytes), not a hex string.
-        let seed_hash = job.get("epochs")
+        let seed_hash = job
+            .get("epochs")
             .and_then(|e| e.as_array())
             .and_then(|arr| arr.first())
             .and_then(|epoch| epoch.as_array())
@@ -1600,7 +1713,8 @@ impl AuxPowClient {
             .and_then(|s| s.as_array())
             .map(|seed_arr| {
                 // Convert array of integers to hex string
-                let bytes: Vec<u8> = seed_arr.iter()
+                let bytes: Vec<u8> = seed_arr
+                    .iter()
                     .filter_map(|v| v.as_u64().map(|n| n as u8))
                     .collect();
                 hex::encode(&bytes)
@@ -1613,8 +1727,7 @@ impl AuxPowClient {
             None
         };
 
-        let header_bytes = hex::decode(pre_pow_hex.trim_start_matches("0x"))
-            .unwrap_or_default();
+        let header_bytes = hex::decode(pre_pow_hex.trim_start_matches("0x")).unwrap_or_default();
 
         let job = ExternalJob {
             job_id: job_id.to_string(),
@@ -1738,14 +1851,23 @@ impl AuxPowClient {
                     *self.extranonce2_size.lock().await = Some(en2_size as u32);
                 }
             }
-            println!("auxpow: subscribed to {} (NiceHash set_extranonce) — extranonce1={:?}",
-                self.profile.coin, self.extranonce1.try_lock().map(|v| hex::encode(&*v)).unwrap_or_default());
+            println!(
+                "auxpow: subscribed to {} (NiceHash set_extranonce) — extranonce1={:?}",
+                self.profile.coin,
+                self.extranonce1
+                    .try_lock()
+                    .map(|v| hex::encode(&*v))
+                    .unwrap_or_default()
+            );
             return Ok(());
         }
 
         if let Some(result) = resp.get("result") {
             *self.subscribed.lock().await = true;
-            println!("auxpow: subscribed to {} — result={}", self.profile.coin, result);
+            println!(
+                "auxpow: subscribed to {} — result={}",
+                self.profile.coin, result
+            );
 
             // Alephium/Kryptex returns extranonce1 as a plain hex string.
             // Standard stratum returns [subscriptions, extranonce1, extranonce2_size].
@@ -1802,7 +1924,10 @@ impl AuxPowClient {
         };
         println!(
             "auxpow: authorizing worker={} password={} on {} (protocol={})",
-            worker, password, self.profile.coin, self.protocol.as_str()
+            worker,
+            password,
+            self.profile.coin,
+            self.protocol.as_str()
         );
         let method = if is_ethstratum {
             "eth_submitLogin"
@@ -1835,10 +1960,14 @@ impl AuxPowClient {
         let resp = self.send_request(&req).await?;
         let ok = if is_ethstratum {
             // EthStratum may return result=true or result="0x..." for success.
-            resp.get("result").and_then(|v| v.as_bool()).unwrap_or(false)
+            resp.get("result")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false)
                 || resp.get("result").and_then(|v| v.as_str()).is_some()
         } else {
-            resp.get("result").and_then(|v| v.as_bool()).unwrap_or(false)
+            resp.get("result")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false)
         };
         if ok {
             *self.authorized.lock().await = true;
@@ -1853,7 +1982,10 @@ impl AuxPowClient {
                     "params": []
                 });
                 if let Err(e) = self.send_request(&ex_req).await {
-                    debug!("auxpow: extranonce.subscribe failed for {}: {}", self.profile.coin, e);
+                    debug!(
+                        "auxpow: extranonce.subscribe failed for {}: {}",
+                        self.profile.coin, e
+                    );
                 }
             }
             Ok(())
@@ -1919,7 +2051,12 @@ impl AuxPowClient {
             } else {
                 300
             };
-            match timeout(Duration::from_secs(timeout_secs), reader.read_line(&mut buf)).await {
+            match timeout(
+                Duration::from_secs(timeout_secs),
+                reader.read_line(&mut buf),
+            )
+            .await
+            {
                 Ok(Ok(_)) => {
                     if buf.is_empty() {
                         bail!("connection closed by remote");
@@ -1969,15 +2106,23 @@ impl AuxPowClient {
                     format!(
                         "array[{}] seed={:.20} header={} target={:.20} height={}",
                         arr.len(),
-                        elem0, elem1, elem2, elem3
+                        elem0,
+                        elem1,
+                        elem2,
+                        elem3
                     )
                 } else {
                     format!("{}", r)
                 }
-            } else { "none".to_string() };
+            } else {
+                "none".to_string()
+            };
             eprintln!(
                 "auxpow: ZANO poll msg method={} id={:?} result={} (len={})",
-                method, id, result_preview, line.len()
+                method,
+                id,
+                result_preview,
+                line.len()
             );
         }
 
@@ -2001,7 +2146,8 @@ impl AuxPowClient {
         // both integer and string representations (same logic as
         // send_request_inline).
         if let Some(id) = msg.get("id").and_then(|v| {
-            v.as_i64().or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok()))
+            v.as_i64()
+                .or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok()))
         }) {
             if let Some(tx) = self.pending_requests.lock().await.remove(&id) {
                 let _ = tx.send(msg);
@@ -2030,10 +2176,7 @@ impl AuxPowClient {
                     // AlphaPool protocol: sends {seed, difficulty} as challenge
                     if let Some(params) = msg.get("params") {
                         if let Some(job) = self.parse_pearl_challenge_params(params).await {
-                            debug!(
-                                "AuxPow: received pearl.challenge for {}",
-                                self.profile.coin
-                            );
+                            debug!("AuxPow: received pearl.challenge for {}", self.profile.coin);
                             *self.current_job.lock().await = Some(job);
                             self.job_notify.notify_waiters();
                         }
@@ -2049,7 +2192,10 @@ impl AuxPowClient {
                 "mining.set_difficulty" => {
                     if let Some(params) = msg.get("params") {
                         if let Some(diff) = params.get(0).and_then(|d| d.as_f64()) {
-                            debug!("AuxPow: difficulty set to {:.2} for {}", diff, self.profile.coin);
+                            debug!(
+                                "AuxPow: difficulty set to {:.2} for {}",
+                                diff, self.profile.coin
+                            );
                             *self.current_difficulty.lock().await = diff;
                         }
                     }
@@ -2059,10 +2205,15 @@ impl AuxPowClient {
                     // with a 32-byte hex target string instead of mining.set_difficulty.
                     if let Some(params) = msg.get("params") {
                         if let Some(target_hex) = params.get(0).and_then(|d| d.as_str()) {
-                            println!("auxpow: RAW set_target full='{}' len={}", target_hex, target_hex.len());
+                            println!(
+                                "auxpow: RAW set_target full='{}' len={}",
+                                target_hex,
+                                target_hex.len()
+                            );
                             let target_bytes = crate::external_hashers::parse_target_hex(
                                 target_hex.trim_start_matches("0x"),
-                            ).unwrap_or([0xFFu8; 32]);
+                            )
+                            .unwrap_or([0xFFu8; 32]);
                             let max_target = algorithm_max_target(&self.profile.algorithm);
                             let diff = target_to_difficulty_with_max(&target_bytes, &max_target);
                             println!(
@@ -2122,13 +2273,18 @@ impl AuxPowClient {
                         Ok(job) => {
                             debug!(
                                 "AuxPow: received EPIC job {} height={} for {}",
-                                job.job_id, job.block_number.unwrap_or(0), self.profile.coin
+                                job.job_id,
+                                job.block_number.unwrap_or(0),
+                                self.profile.coin
                             );
                             *self.current_job.lock().await = Some(job);
                             self.job_notify.notify_waiters();
                         }
                         Err(e) => {
-                            warn!("AuxPow: EPIC job parse error for {}: {}", self.profile.coin, e);
+                            warn!(
+                                "AuxPow: EPIC job parse error for {}: {}",
+                                self.profile.coin, e
+                            );
                         }
                     }
                 }
@@ -2141,13 +2297,18 @@ impl AuxPowClient {
                             Ok(job) => {
                                 debug!(
                                     "AuxPow: received EPIC getjobtemplate job {} height={} for {}",
-                                    job.job_id, job.block_number.unwrap_or(0), self.profile.coin
+                                    job.job_id,
+                                    job.block_number.unwrap_or(0),
+                                    self.profile.coin
                                 );
                                 *self.current_job.lock().await = Some(job);
                                 self.job_notify.notify_waiters();
                             }
                             Err(e) => {
-                                warn!("AuxPow: EPIC getjobtemplate parse error for {}: {}", self.profile.coin, e);
+                                warn!(
+                                    "AuxPow: EPIC getjobtemplate parse error for {}: {}",
+                                    self.profile.coin, e
+                                );
                             }
                         }
                     }
@@ -2158,19 +2319,27 @@ impl AuxPowClient {
                     let job_val = msg.get("params").unwrap_or(&msg);
                     // Debug: log raw JSON for XMR to diagnose share rejection
                     if self.profile.coin == ExternalCoin::XMR {
-                        println!("auxpow: XMR RAW job notification: {}", serde_json::to_string(job_val).unwrap_or_default());
+                        println!(
+                            "auxpow: XMR RAW job notification: {}",
+                            serde_json::to_string(job_val).unwrap_or_default()
+                        );
                     }
                     match self.parse_cryptonote_job(job_val).await {
                         Ok(job) => {
                             debug!(
                                 "AuxPow: received cryptonote job {} height={} for {}",
-                                job.job_id, job.block_number.unwrap_or(0), self.profile.coin
+                                job.job_id,
+                                job.block_number.unwrap_or(0),
+                                self.profile.coin
                             );
                             *self.current_job.lock().await = Some(job);
                             self.job_notify.notify_waiters();
                         }
                         Err(e) => {
-                            warn!("AuxPow: cryptonote job parse error for {}: {}", self.profile.coin, e);
+                            warn!(
+                                "AuxPow: cryptonote job parse error for {}: {}",
+                                self.profile.coin, e
+                            );
                         }
                     }
                 }
@@ -2181,13 +2350,18 @@ impl AuxPowClient {
                         Ok(job) => {
                             debug!(
                                 "AuxPow: received BEAM job {} height={} for {}",
-                                job.job_id, job.block_number.unwrap_or(0), self.profile.coin
+                                job.job_id,
+                                job.block_number.unwrap_or(0),
+                                self.profile.coin
                             );
                             *self.current_job.lock().await = Some(job);
                             self.job_notify.notify_waiters();
                         }
                         Err(e) => {
-                            warn!("AuxPow: BEAM job parse error for {}: {}", self.profile.coin, e);
+                            warn!(
+                                "AuxPow: BEAM job parse error for {}: {}",
+                                self.profile.coin, e
+                            );
                         }
                     }
                 }
@@ -2205,13 +2379,18 @@ impl AuxPowClient {
                         Ok(job) => {
                             debug!(
                                 "AuxPow: received IRON job {} (miningRequestId={}) for {}",
-                                job.job_id, job.block_number.unwrap_or(0), self.profile.coin
+                                job.job_id,
+                                job.block_number.unwrap_or(0),
+                                self.profile.coin
                             );
                             *self.current_job.lock().await = Some(job);
                             self.job_notify.notify_waiters();
                         }
                         Err(e) => {
-                            warn!("AuxPow: IRON job parse error for {}: {}", self.profile.coin, e);
+                            warn!(
+                                "AuxPow: IRON job parse error for {}: {}",
+                                self.profile.coin, e
+                            );
                         }
                     }
                 }
@@ -2219,10 +2398,14 @@ impl AuxPowClient {
                 "mining.set_target" if self.protocol == StratumProtocol::IronFishStratum => {
                     if let Some(body) = msg.get("body") {
                         if let Some(target_hex) = body.get("target").and_then(|v| v.as_str()) {
-                            println!("auxpow: IRON set_target target={}", &target_hex[..target_hex.len().min(16)]);
+                            println!(
+                                "auxpow: IRON set_target target={}",
+                                &target_hex[..target_hex.len().min(16)]
+                            );
                             let target_bytes = crate::external_hashers::parse_target_hex(
                                 target_hex.trim_start_matches("0x"),
-                            ).unwrap_or([0xFFu8; 32]);
+                            )
+                            .unwrap_or([0xFFu8; 32]);
                             let max_target = algorithm_max_target(&self.profile.algorithm);
                             let diff = target_to_difficulty_with_max(&target_bytes, &max_target);
                             *self.current_target_bytes.lock().await = Some(target_bytes);
@@ -2231,7 +2414,10 @@ impl AuxPowClient {
                     }
                 }
                 _ => {
-                    debug!("AuxPow: unknown method '{}' from {}", method, self.profile.coin);
+                    debug!(
+                        "AuxPow: unknown method '{}' from {}",
+                        method, self.profile.coin
+                    );
                 }
             }
         } else if self.protocol == StratumProtocol::EthStratum {
@@ -2294,9 +2480,8 @@ fn build_stratum_v1_header(
     use sha2::{Digest, Sha256};
 
     // Parse hex strings to bytes
-    let parse_hex = |h: &str| -> Vec<u8> {
-        hex::decode(h.trim_start_matches("0x")).unwrap_or_default()
-    };
+    let parse_hex =
+        |h: &str| -> Vec<u8> { hex::decode(h.trim_start_matches("0x")).unwrap_or_default() };
 
     let version_bytes = parse_hex(version_hex);
     let prevhash_bytes = parse_hex(prevhash_hex);
@@ -2309,7 +2494,7 @@ fn build_stratum_v1_header(
 
     // Build coinbase transaction: coinbase1 + extranonce1 + extranonce2 + coinbase2
     let mut coinbase_tx = Vec::with_capacity(
-        coinbase1.len() + extranonce1.len() + extranonce2.len() + coinbase2.len()
+        coinbase1.len() + extranonce1.len() + extranonce2.len() + coinbase2.len(),
     );
     coinbase_tx.extend_from_slice(&coinbase1);
     coinbase_tx.extend_from_slice(&extranonce1);
@@ -2409,7 +2594,11 @@ impl AuxPowClient {
     ///   - Standard Bitcoin-like: [job_id, prevhash, coinbase1, coinbase2,
     ///     branches, version, nbits, ntime, clean_jobs]
     ///   - Simplified: [job_id, header_hex, target_hex]
-    async fn parse_notify_params(&self, params: &Value, notify_height: Option<u64>) -> Result<ExternalJob> {
+    async fn parse_notify_params(
+        &self,
+        params: &Value,
+        notify_height: Option<u64>,
+    ) -> Result<ExternalJob> {
         // Debug: log raw notify params for KAS to diagnose timestamp issues.
         if self.profile.coin == ExternalCoin::KAS {
             println!(
@@ -2454,15 +2643,12 @@ impl AuxPowClient {
                     .and_then(|v| v.as_str())
                     .unwrap_or("ffff")
                     .to_string();
-                let height = obj
-                    .get("height")
-                    .and_then(|v| v.as_u64())
-                    .or(notify_height);
+                let height = obj.get("height").and_then(|v| v.as_u64()).or(notify_height);
 
-                let header_bytes = hex::decode(header_hex.trim_start_matches("0x"))
-                    .unwrap_or_default();
-                let target_bytes = crate::external_hashers::parse_target_hex(&target_hex)
-                    .unwrap_or([0xFFu8; 32]);
+                let header_bytes =
+                    hex::decode(header_hex.trim_start_matches("0x")).unwrap_or_default();
+                let target_bytes =
+                    crate::external_hashers::parse_target_hex(&target_hex).unwrap_or([0xFFu8; 32]);
 
                 println!(
                     "auxpow: PRL notify — job={} header_len={} height={:?} target={:.16}...",
@@ -2513,14 +2699,8 @@ impl AuxPowClient {
                 .and_then(|v| v.as_str())
                 .unwrap_or("unknown")
                 .to_string();
-            let from_group = obj
-                .get("fromGroup")
-                .and_then(|v| v.as_u64())
-                .unwrap_or(0) as u32;
-            let to_group = obj
-                .get("toGroup")
-                .and_then(|v| v.as_u64())
-                .unwrap_or(0) as u32;
+            let from_group = obj.get("fromGroup").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
+            let to_group = obj.get("toGroup").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
             let header_hex = obj
                 .get("headerBlob")
                 .and_then(|v| v.as_str())
@@ -2533,10 +2713,9 @@ impl AuxPowClient {
                 .to_string();
             let height = obj.get("height").and_then(|v| v.as_u64());
 
-            let header_bytes = hex::decode(header_hex.trim_start_matches("0x"))
-                .unwrap_or_default();
-            let target_bytes = crate::external_hashers::parse_target_hex(&target_hex)
-                .unwrap_or([0xFFu8; 32]);
+            let header_bytes = hex::decode(header_hex.trim_start_matches("0x")).unwrap_or_default();
+            let target_bytes =
+                crate::external_hashers::parse_target_hex(&target_hex).unwrap_or([0xFFu8; 32]);
 
             return Ok(ExternalJob {
                 job_id,
@@ -2613,10 +2792,16 @@ impl AuxPowClient {
             if arr.len() >= 6
                 && matches!(
                     self.profile.coin,
-                    ExternalCoin::RVN | ExternalCoin::CLORE | ExternalCoin::EVR
-                        | ExternalCoin::MEWC | ExternalCoin::QUAI
+                    ExternalCoin::RVN
+                        | ExternalCoin::CLORE
+                        | ExternalCoin::EVR
+                        | ExternalCoin::MEWC
+                        | ExternalCoin::QUAI
                 )
-                && arr[0].as_str().map(|s| !s.starts_with("0x") && s.len() <= 20).unwrap_or(false)
+                && arr[0]
+                    .as_str()
+                    .map(|s| !s.starts_with("0x") && s.len() <= 20)
+                    .unwrap_or(false)
                 && arr[1].as_str().map(|s| s.len() == 64).unwrap_or(false)
                 && arr[2].as_str().map(|s| s.len() == 64).unwrap_or(false)
             {
@@ -2627,12 +2812,11 @@ impl AuxPowClient {
                 let height = arr.get(5).and_then(|v| v.as_u64());
                 let nbits = arr.get(6).and_then(|v| v.as_str()).map(String::from);
 
-                let header_bytes = hex::decode(header_hex.trim_start_matches("0x"))
-                    .unwrap_or_default();
-                let target_bytes = crate::external_hashers::parse_target_hex(
-                    target_hex.trim_start_matches("0x"),
-                )
-                .unwrap_or([0xFFu8; 32]);
+                let header_bytes =
+                    hex::decode(header_hex.trim_start_matches("0x")).unwrap_or_default();
+                let target_bytes =
+                    crate::external_hashers::parse_target_hex(target_hex.trim_start_matches("0x"))
+                        .unwrap_or([0xFFu8; 32]);
 
                 // Derive epoch from block height (height / 7500 for KawPow).
                 let epoch_length = self.profile.coin.epoch_length() as u64;
@@ -2681,36 +2865,41 @@ impl AuxPowClient {
         if let Some(arr) = params.as_array() {
             if arr.len() >= 4
                 && self.profile.coin == ExternalCoin::ETC
-                && arr[0].as_str().map(|s| s.starts_with("0x") && s.len() == 66).unwrap_or(false)
-                && arr[1].as_str().map(|s| s.starts_with("0x") && s.len() == 66).unwrap_or(false)
-                && arr[3].as_str().map(|s| s.starts_with("0x") && s.len() == 66).unwrap_or(false)
+                && arr[0]
+                    .as_str()
+                    .map(|s| s.starts_with("0x") && s.len() == 66)
+                    .unwrap_or(false)
+                && arr[1]
+                    .as_str()
+                    .map(|s| s.starts_with("0x") && s.len() == 66)
+                    .unwrap_or(false)
+                && arr[3]
+                    .as_str()
+                    .map(|s| s.starts_with("0x") && s.len() == 66)
+                    .unwrap_or(false)
             {
                 let seed_hash = arr[0].as_str().unwrap_or("").to_string();
                 let header_hex = arr[1].as_str().unwrap_or("").to_string();
                 let _difficulty_hex = arr[2].as_str().unwrap_or("").to_string();
                 let target_hex = arr[3].as_str().unwrap_or("").to_string();
 
-                let header_bytes = hex::decode(header_hex.trim_start_matches("0x"))
-                    .unwrap_or_default();
-                let target_bytes = crate::external_hashers::parse_target_hex(
-                    target_hex.trim_start_matches("0x"),
-                )
-                .unwrap_or([0xFFu8; 32]);
+                let header_bytes =
+                    hex::decode(header_hex.trim_start_matches("0x")).unwrap_or_default();
+                let target_bytes =
+                    crate::external_hashers::parse_target_hex(target_hex.trim_start_matches("0x"))
+                        .unwrap_or([0xFFu8; 32]);
 
                 // Derive epoch from block height (height / epoch_length).
                 // ETC: 30000, RVN/KawPow: 7500.
                 // Fall back to seed hash search if height is not available.
                 let epoch = if let Some(height) = notify_height {
                     let e = (height / self.profile.coin.epoch_length() as u64) as u32;
-                    println!(
-                        "auxpow: ETC epoch={} from height={}",
-                        e, height
-                    );
+                    println!("auxpow: ETC epoch={} from height={}", e, height);
                     Some(e)
                 } else {
                     // Fall back: try to find epoch from seed hash.
-                    let seed_bytes = hex::decode(seed_hash.trim_start_matches("0x"))
-                        .unwrap_or_default();
+                    let seed_bytes =
+                        hex::decode(seed_hash.trim_start_matches("0x")).unwrap_or_default();
                     if seed_bytes.len() == 32 {
                         let seed_arr: [u8; 32] = seed_bytes[..32].try_into().unwrap();
                         crate::external_hashers::ethash_epoch_from_seed_hash(
@@ -2762,24 +2951,34 @@ impl AuxPowClient {
         if self.profile.coin == ExternalCoin::ZANO {
             if let Some(arr) = params.as_array() {
                 if arr.len() >= 4
-                    && arr[1].as_str().map(|s| s.trim_start_matches("0x").len() == 64).unwrap_or(false)
-                    && arr[2].as_str().map(|s| s.trim_start_matches("0x").len() == 64).unwrap_or(false)
-                    && arr[3].as_str().map(|s| s.trim_start_matches("0x").len() == 64).unwrap_or(false)
+                    && arr[1]
+                        .as_str()
+                        .map(|s| s.trim_start_matches("0x").len() == 64)
+                        .unwrap_or(false)
+                    && arr[2]
+                        .as_str()
+                        .map(|s| s.trim_start_matches("0x").len() == 64)
+                        .unwrap_or(false)
+                    && arr[3]
+                        .as_str()
+                        .map(|s| s.trim_start_matches("0x").len() == 64)
+                        .unwrap_or(false)
                 {
                     let job_id = arr[0].as_str().unwrap_or("unknown").to_string();
                     let header_hex = arr[1].as_str().unwrap_or("").to_string();
                     let seed_hash = arr[2].as_str().unwrap_or("").to_string();
                     let target_hex = arr[3].as_str().unwrap_or("ffffffff").to_string();
 
-                    let header_bytes = hex::decode(header_hex.trim_start_matches("0x"))
-                        .unwrap_or_default();
+                    let header_bytes =
+                        hex::decode(header_hex.trim_start_matches("0x")).unwrap_or_default();
                     let target_bytes = crate::external_hashers::parse_target_hex(
                         target_hex.trim_start_matches("0x"),
                     )
                     .unwrap_or([0xFFu8; 32]);
 
                     // Try to extract block height from the first integer/hex field after target.
-                    let height = arr.get(4)
+                    let height = arr
+                        .get(4)
                         .and_then(|v| v.as_u64())
                         .or_else(|| {
                             arr.get(4).and_then(|v| v.as_str()).and_then(|s| {
@@ -2792,7 +2991,8 @@ impl AuxPowClient {
                         })
                         .or(notify_height);
 
-                    let epoch = height.map(|h| (h / self.profile.coin.epoch_length() as u64) as u32);
+                    let epoch =
+                        height.map(|h| (h / self.profile.coin.epoch_length() as u64) as u32);
 
                     println!(
                         "auxpow: ZANO notify — job={} header={}.. seed={}.. target={}.. height={:?} epoch={:?}",
@@ -2867,11 +3067,12 @@ impl AuxPowClient {
                     }
 
                     if !blob_hex.is_empty() {
-                        let header_bytes = hex::decode(blob_hex.trim_start_matches("0x"))
-                            .unwrap_or_default();
-                        let target_bytes = crate::external_hashers::parse_randomx_target_hex(target_hex)
-                            .or_else(|| crate::external_hashers::parse_target_hex(target_hex))
-                            .unwrap_or([0xFFu8; 32]);
+                        let header_bytes =
+                            hex::decode(blob_hex.trim_start_matches("0x")).unwrap_or_default();
+                        let target_bytes =
+                            crate::external_hashers::parse_randomx_target_hex(target_hex)
+                                .or_else(|| crate::external_hashers::parse_target_hex(target_hex))
+                                .unwrap_or([0xFFu8; 32]);
 
                         println!(
                             "auxpow: XMR notify — job={} blob_len={} height={:?} target={}",
@@ -2921,8 +3122,8 @@ impl AuxPowClient {
                     let blob_hex = arr[2].as_str().unwrap_or("").to_string();
                     let target_hex = arr[5].as_str().unwrap_or("ffffffff").to_string();
 
-                    let header_bytes = hex::decode(blob_hex.trim_start_matches("0x"))
-                        .unwrap_or_default();
+                    let header_bytes =
+                        hex::decode(blob_hex.trim_start_matches("0x")).unwrap_or_default();
                     // ERG target: 2miners sends a compact hex target in arr[5]
                     // (e.g. "00000002") and the full 256-bit target as a decimal
                     // string in arr[6]. The decimal target is authoritative for
@@ -3002,7 +3203,15 @@ impl AuxPowClient {
                 println!(
                     "auxpow: VRSC notify params_count={} extra={}",
                     arr.len(),
-                    if arr.len() > 9 { arr[9..].iter().map(|v| v.to_string()).collect::<Vec<_>>().join(",") } else { String::new() }
+                    if arr.len() > 9 {
+                        arr[9..]
+                            .iter()
+                            .map(|v| v.to_string())
+                            .collect::<Vec<_>>()
+                            .join(",")
+                    } else {
+                        String::new()
+                    }
                 );
                 if arr.len() >= 8 {
                     let as_s = |idx: usize| -> String {
@@ -3030,26 +3239,30 @@ impl AuxPowClient {
 
                     if !job_id.is_empty() {
                         *self.latest_job_id.lock().await = Some(job_id.clone());
-                        self.job_received_at.lock().await.insert(job_id.clone(), std::time::Instant::now());
+                        self.job_received_at
+                            .lock()
+                            .await
+                            .insert(job_id.clone(), std::time::Instant::now());
                     }
 
                     // VerusHash 2.2 solution: pad to exactly 1344 bytes (2688 hex).
                     // LuckPool sends ~229B; ccminer pads with zeros to 1344B.
-                    let effective_solution = if self.profile.algorithm.eq_ignore_ascii_case("verushash") {
-                        if !maybe_solution.is_empty() {
-                            let mut sol = maybe_solution.clone();
-                            if sol.len() < 2688 {
-                                sol.push_str(&"0".repeat(2688 - sol.len()));
-                            } else if sol.len() > 2688 {
-                                sol.truncate(2688);
+                    let effective_solution =
+                        if self.profile.algorithm.eq_ignore_ascii_case("verushash") {
+                            if !maybe_solution.is_empty() {
+                                let mut sol = maybe_solution.clone();
+                                if sol.len() < 2688 {
+                                    sol.push_str(&"0".repeat(2688 - sol.len()));
+                                } else if sol.len() > 2688 {
+                                    sol.truncate(2688);
+                                }
+                                sol
+                            } else {
+                                "00".repeat(1344)
                             }
-                            sol
                         } else {
-                            "00".repeat(1344)
-                        }
-                    } else {
-                        maybe_solution.clone()
-                    };
+                            maybe_solution.clone()
+                        };
 
                     // Clean jobs: invalidate old job state.
                     // NOTE: We do NOT clear job_ntime / job_solution / job_header_prefix
@@ -3092,14 +3305,29 @@ impl AuxPowClient {
                     // Store per-job data for submit reconstruction.
                     if !job_id.is_empty() {
                         if !effective_solution.is_empty() {
-                            self.job_solution.lock().await.insert(job_id.clone(), effective_solution.clone());
+                            self.job_solution
+                                .lock()
+                                .await
+                                .insert(job_id.clone(), effective_solution.clone());
                         }
-                        let header_prefix = format!("{}{}{}{}{}{}", version, prevhash, merkle, reserved, ntime, nbits);
+                        let header_prefix = format!(
+                            "{}{}{}{}{}{}",
+                            version, prevhash, merkle, reserved, ntime, nbits
+                        );
                         if !header_prefix.is_empty() {
-                            self.job_header_prefix.lock().await.insert(job_id.clone(), header_prefix);
+                            self.job_header_prefix
+                                .lock()
+                                .await
+                                .insert(job_id.clone(), header_prefix);
                         }
-                        self.job_ntime.lock().await.insert(job_id.clone(), ntime.clone());
-                        self.job_extranonce1.lock().await.insert(job_id.clone(), job_en1.clone());
+                        self.job_ntime
+                            .lock()
+                            .await
+                            .insert(job_id.clone(), ntime.clone());
+                        self.job_extranonce1
+                            .lock()
+                            .await
+                            .insert(job_id.clone(), job_en1.clone());
                     }
 
                     // Build the hashing blob:
@@ -3131,9 +3359,22 @@ impl AuxPowClient {
                             }
                             sol_with_ns.replace_range(2658..2688, &ns);
                         }
-                        format!("{}{}{}{}{}{}{}fd4005{}", version, prevhash, merkle, reserved, ntime, nbits, nonce_field, sol_with_ns)
+                        format!(
+                            "{}{}{}{}{}{}{}fd4005{}",
+                            version,
+                            prevhash,
+                            merkle,
+                            reserved,
+                            ntime,
+                            nbits,
+                            nonce_field,
+                            sol_with_ns
+                        )
                     } else {
-                        format!("{}{}{}{}{}{}{}", version, prevhash, merkle, reserved, ntime, nbits, effective_solution)
+                        format!(
+                            "{}{}{}{}{}{}{}",
+                            version, prevhash, merkle, reserved, ntime, nbits, effective_solution
+                        )
                     };
 
                     let header_bytes = hex::decode(&blob).unwrap_or_default();
@@ -3190,29 +3431,62 @@ impl AuxPowClient {
         // We store ntime per job_id for submit reconstruction.
         if matches!(
             self.profile.coin,
-            ExternalCoin::RTM | ExternalCoin::VTC | ExternalCoin::QTC
-                | ExternalCoin::KLS | ExternalCoin::DNX
+            ExternalCoin::RTM
+                | ExternalCoin::VTC
+                | ExternalCoin::QTC
+                | ExternalCoin::KLS
+                | ExternalCoin::DNX
                 | ExternalCoin::NEXA
         ) {
             if let Some(arr) = params.as_array() {
                 if arr.len() >= 9 {
                     let job_id = arr[0].as_str().unwrap_or("").to_string();
-                    let ntime = arr.get(7).and_then(|v| v.as_str()).unwrap_or("").to_string();
-                    let nbits = arr.get(6).and_then(|v| v.as_str()).unwrap_or("").to_string();
-                    let version = arr.get(5).and_then(|v| v.as_str()).unwrap_or("").to_string();
-                    let prevhash = arr.get(1).and_then(|v| v.as_str()).unwrap_or("").to_string();
-                    let coinbase1 = arr.get(2).and_then(|v| v.as_str()).unwrap_or("").to_string();
-                    let coinbase2 = arr.get(3).and_then(|v| v.as_str()).unwrap_or("").to_string();
-                    let merkle_branches: Vec<String> = arr.get(4)
+                    let ntime = arr
+                        .get(7)
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                    let nbits = arr
+                        .get(6)
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                    let version = arr
+                        .get(5)
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                    let prevhash = arr
+                        .get(1)
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                    let coinbase1 = arr
+                        .get(2)
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                    let coinbase2 = arr
+                        .get(3)
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                    let merkle_branches: Vec<String> = arr
+                        .get(4)
                         .and_then(|v| v.as_array())
-                        .map(|a| a.iter()
-                            .filter_map(|b| b.as_str().map(|s| s.to_string()))
-                            .collect())
+                        .map(|a| {
+                            a.iter()
+                                .filter_map(|b| b.as_str().map(|s| s.to_string()))
+                                .collect()
+                        })
                         .unwrap_or_default();
 
                     // Store ntime for submit reconstruction
                     if !job_id.is_empty() && !ntime.is_empty() {
-                        self.job_ntime.lock().await.insert(job_id.clone(), ntime.clone());
+                        self.job_ntime
+                            .lock()
+                            .await
+                            .insert(job_id.clone(), ntime.clone());
                     }
 
                     let extranonce1 = self.extranonce1.lock().await.clone();
@@ -3222,8 +3496,15 @@ impl AuxPowClient {
                     // Build 80-byte block header for RTM/Dash-style coins:
                     // version(4) + prevhash(32) + merkle_root(32) + ntime(4) + nbits(4) + nonce(4)
                     let header_bytes = build_stratum_v1_header(
-                        &version, &prevhash, &coinbase1, &coinbase2,
-                        &merkle_branches, &ntime, &nbits, &extranonce1_hex, &extranonce2_hex,
+                        &version,
+                        &prevhash,
+                        &coinbase1,
+                        &coinbase2,
+                        &merkle_branches,
+                        &ntime,
+                        &nbits,
+                        &extranonce1_hex,
+                        &extranonce2_hex,
                     );
 
                     let header_hex = hex::encode(&header_bytes);
@@ -3304,86 +3585,79 @@ impl AuxPowClient {
             bail!("empty notify params");
         }
 
-        let job_id = arr[0]
-            .as_str()
-            .unwrap_or("unknown")
-            .to_string();
+        let job_id = arr[0].as_str().unwrap_or("unknown").to_string();
 
         // Try simplified format first: [job_id, header_hex, target_hex]
-        let (header_hex, target_hex, timestamp, nbits) = if arr.len() == 3
-            && arr[1].as_str().map(|s| s.len()) > Some(32)
-        {
-            let h = arr[1].as_str().unwrap_or("");
-            let t = arr[2].as_str().unwrap_or("ffffffff");
-            (h.to_string(), t.to_string(), None, None)
-        } else if self.profile.coin == ExternalCoin::DCR {
-            // DCR (Blake3, DCP-0011) uses standard Stratum v1 format.  The pool
-            // provides the serialized partial header in coinbase1 (arr[2], 144
-            // bytes, standard offsets 36-179), the block version in arr[5], the
-            // previous block hash in arr[1], and ntime/nbits in arr[7]/arr[6].
-            // Assemble the full 180-byte block header template and insert the
-            // pool-provided extranonce1 at absolute offset 144 (just after the
-            // 4-byte nonce at offset 140), matching gominer/dcrpool semantics.
-            let version_hex = arr.get(5).and_then(|v| v.as_str()).unwrap_or("00000000");
-            let prevhash_hex = arr.get(1).and_then(|v| v.as_str()).unwrap_or("");
-            let partial_header_hex = arr.get(2).and_then(|v| v.as_str()).unwrap_or("");
-            let nbits = arr.get(6).and_then(|v| v.as_str()).map(String::from);
-            let ntime = arr.get(7).and_then(|v| {
-                if let Some(s) = v.as_str() {
-                    u64::from_str_radix(s.trim_start_matches("0x"), 16).ok()
-                } else {
-                    v.as_u64()
-                }
-            });
-
-            let mut full_header = Vec::with_capacity(180);
-            full_header.extend_from_slice(
-                &hex::decode(version_hex.trim_start_matches("0x")).unwrap_or_default(),
-            );
-            full_header.extend_from_slice(
-                &hex::decode(prevhash_hex.trim_start_matches("0x")).unwrap_or_default(),
-            );
-            full_header.extend_from_slice(
-                &hex::decode(partial_header_hex.trim_start_matches("0x")).unwrap_or_default(),
-            );
-            full_header.resize(180, 0);
-
-            let en1 = self.extranonce1.lock().await.clone();
-            let en1_len = en1.len().min(4);
-            if en1_len > 0 {
-                full_header[144..144 + en1_len].copy_from_slice(&en1[..en1_len]);
-            }
-
-            let target = hex::encode(self.share_target().await);
-            (hex::encode(&full_header), target, ntime, nbits)
-        } else {
-            // Standard format
-            let header = arr.get(1).and_then(|v| v.as_str()).unwrap_or("");
-            let nbits = arr.get(6).and_then(|v| v.as_str()).map(String::from);
-            let ntime = arr
-                .get(7)
-                .and_then(|v| {
+        let (header_hex, target_hex, timestamp, nbits) =
+            if arr.len() == 3 && arr[1].as_str().map(|s| s.len()) > Some(32) {
+                let h = arr[1].as_str().unwrap_or("");
+                let t = arr[2].as_str().unwrap_or("ffffffff");
+                (h.to_string(), t.to_string(), None, None)
+            } else if self.profile.coin == ExternalCoin::DCR {
+                // DCR (Blake3, DCP-0011) uses standard Stratum v1 format.  The pool
+                // provides the serialized partial header in coinbase1 (arr[2], 144
+                // bytes, standard offsets 36-179), the block version in arr[5], the
+                // previous block hash in arr[1], and ntime/nbits in arr[7]/arr[6].
+                // Assemble the full 180-byte block header template and insert the
+                // pool-provided extranonce1 at absolute offset 144 (just after the
+                // 4-byte nonce at offset 140), matching gominer/dcrpool semantics.
+                let version_hex = arr.get(5).and_then(|v| v.as_str()).unwrap_or("00000000");
+                let prevhash_hex = arr.get(1).and_then(|v| v.as_str()).unwrap_or("");
+                let partial_header_hex = arr.get(2).and_then(|v| v.as_str()).unwrap_or("");
+                let nbits = arr.get(6).and_then(|v| v.as_str()).map(String::from);
+                let ntime = arr.get(7).and_then(|v| {
                     if let Some(s) = v.as_str() {
                         u64::from_str_radix(s.trim_start_matches("0x"), 16).ok()
                     } else {
                         v.as_u64()
                     }
                 });
-            // For kHeavyHash/KAS the prevhash field is the 32-byte pre_pow_hash.
-            // The share target is derived from the difficulty set by
-            // mining.set_difficulty, not from the network nbits field.
-            let target = if self.profile.algorithm.eq_ignore_ascii_case("kheavyhash") {
-                hex::encode(self.share_target().await)
-            } else {
-                nbits.clone().unwrap_or_else(|| "ffffffff".to_string())
-            };
-            (header.to_string(), target, ntime, nbits)
-        };
 
-        let header_bytes = hex::decode(header_hex.trim_start_matches("0x"))
-            .unwrap_or_default();
-        let target_bytes = crate::external_hashers::parse_target_hex(&target_hex)
-            .unwrap_or([0xFFu8; 32]);
+                let mut full_header = Vec::with_capacity(180);
+                full_header.extend_from_slice(
+                    &hex::decode(version_hex.trim_start_matches("0x")).unwrap_or_default(),
+                );
+                full_header.extend_from_slice(
+                    &hex::decode(prevhash_hex.trim_start_matches("0x")).unwrap_or_default(),
+                );
+                full_header.extend_from_slice(
+                    &hex::decode(partial_header_hex.trim_start_matches("0x")).unwrap_or_default(),
+                );
+                full_header.resize(180, 0);
+
+                let en1 = self.extranonce1.lock().await.clone();
+                let en1_len = en1.len().min(4);
+                if en1_len > 0 {
+                    full_header[144..144 + en1_len].copy_from_slice(&en1[..en1_len]);
+                }
+
+                let target = hex::encode(self.share_target().await);
+                (hex::encode(&full_header), target, ntime, nbits)
+            } else {
+                // Standard format
+                let header = arr.get(1).and_then(|v| v.as_str()).unwrap_or("");
+                let nbits = arr.get(6).and_then(|v| v.as_str()).map(String::from);
+                let ntime = arr.get(7).and_then(|v| {
+                    if let Some(s) = v.as_str() {
+                        u64::from_str_radix(s.trim_start_matches("0x"), 16).ok()
+                    } else {
+                        v.as_u64()
+                    }
+                });
+                // For kHeavyHash/KAS the prevhash field is the 32-byte pre_pow_hash.
+                // The share target is derived from the difficulty set by
+                // mining.set_difficulty, not from the network nbits field.
+                let target = if self.profile.algorithm.eq_ignore_ascii_case("kheavyhash") {
+                    hex::encode(self.share_target().await)
+                } else {
+                    nbits.clone().unwrap_or_else(|| "ffffffff".to_string())
+                };
+                (header.to_string(), target, ntime, nbits)
+            };
+
+        let header_bytes = hex::decode(header_hex.trim_start_matches("0x")).unwrap_or_default();
+        let target_bytes =
+            crate::external_hashers::parse_target_hex(&target_hex).unwrap_or([0xFFu8; 32]);
 
         Ok(ExternalJob {
             job_id,
@@ -3416,7 +3690,10 @@ impl AuxPowClient {
     /// broadcasting it.  Prevents false "stale job" pre-rejections when the
     /// upstream pool goes silent (e.g. HeroMiners ZANO).
     pub async fn touch_job_timestamp(&self, job_id: &str) {
-        self.job_received_at.lock().await.insert(job_id.to_string(), std::time::Instant::now());
+        self.job_received_at
+            .lock()
+            .await
+            .insert(job_id.to_string(), std::time::Instant::now());
     }
 
     /// Check if a VRSC job is stale and should not be forwarded upstream.
@@ -3532,8 +3809,12 @@ impl AuxPowClient {
             let needs_dedup = is_ethstratum
                 || matches!(
                     self.profile.coin,
-                    ExternalCoin::RVN | ExternalCoin::CLORE | ExternalCoin::EVR
-                        | ExternalCoin::MEWC | ExternalCoin::QUAI | ExternalCoin::ZANO
+                    ExternalCoin::RVN
+                        | ExternalCoin::CLORE
+                        | ExternalCoin::EVR
+                        | ExternalCoin::MEWC
+                        | ExternalCoin::QUAI
+                        | ExternalCoin::ZANO
                         | ExternalCoin::ETC
                 );
             if needs_dedup {
@@ -3574,7 +3855,9 @@ impl AuxPowClient {
             // the response, and close — all within our own controlled
             // lifecycle. EPIC shares are ~14 min apart, so the extra TLS
             // handshake (~100ms) is negligible.
-            return self.epic_submit_dedicated(job_id, nonce, mix_hash_hex, _hash_hex).await;
+            return self
+                .epic_submit_dedicated(job_id, nonce, mix_hash_hex, _hash_hex)
+                .await;
         }
 
         // Beam submit format:
@@ -3596,15 +3879,14 @@ impl AuxPowClient {
             let resp = self.send_request(&req).await?;
             if let Some(err) = resp.get("error") {
                 if !err.is_null() {
-                    let msg = err.get("message")
+                    let msg = err
+                        .get("message")
                         .and_then(|m| m.as_str())
                         .unwrap_or("unknown error");
                     return Ok(ShareResult::Rejected(msg.to_string()));
                 }
             }
-            let ok = resp.get("result")
-                .and_then(|v| v.as_bool())
-                .unwrap_or(true);
+            let ok = resp.get("result").and_then(|v| v.as_bool()).unwrap_or(true);
             if ok {
                 return Ok(ShareResult::Accepted);
             } else {
@@ -3647,31 +3929,34 @@ impl AuxPowClient {
             // Debug: log the exact submit payload for XMR share diagnosis
             println!(
                 "auxpow: XMR submit sid={} job_id={} nonce_hex={} result_hex={} full_req={}",
-                sid, job_id, nonce_hex, result_hex, serde_json::to_string(&req).unwrap_or_default()
+                sid,
+                job_id,
+                nonce_hex,
+                result_hex,
+                serde_json::to_string(&req).unwrap_or_default()
             );
             let resp = self.send_request(&req).await?;
             // Debug: log the response
             println!(
                 "auxpow: XMR submit response job_id={} resp={}",
-                job_id, serde_json::to_string(&resp).unwrap_or_default()
+                job_id,
+                serde_json::to_string(&resp).unwrap_or_default()
             );
             if let Some(err) = resp.get("error") {
                 if !err.is_null() {
-                    let msg = err.get("message")
+                    let msg = err
+                        .get("message")
                         .and_then(|m| m.as_str())
                         .unwrap_or("unknown error");
                     return Ok(ShareResult::Rejected(msg.to_string()));
                 }
             }
-            let ok = resp.get("result")
+            let ok = resp
+                .get("result")
                 .and_then(|v| v.get("status"))
                 .and_then(|s| s.as_str())
                 .map(|s| s == "OK")
-                .unwrap_or_else(|| {
-                    resp.get("result")
-                        .and_then(|v| v.as_bool())
-                        .unwrap_or(true)
-                });
+                .unwrap_or_else(|| resp.get("result").and_then(|v| v.as_bool()).unwrap_or(true));
             if ok {
                 return Ok(ShareResult::Accepted);
             } else {
@@ -3686,10 +3971,7 @@ impl AuxPowClient {
         // graffiti = 32-byte hex (arbitrary, we use zeros)
         if self.protocol == StratumProtocol::IronFishStratum {
             let job = self.current_job().await;
-            let mining_request_id: u64 = job
-                .as_ref()
-                .and_then(|j| j.block_number)
-                .unwrap_or(0);
+            let mining_request_id: u64 = job.as_ref().and_then(|j| j.block_number).unwrap_or(0);
             // randomness: extranonce (xn) + scanned nonce, 8 bytes LE hex
             let xn = self.extranonce1.lock().await.clone();
             let mut randomness_bytes = [0u8; 8];
@@ -3718,25 +4000,24 @@ impl AuxPowClient {
             // or generic error: {error: {id, message}}
             if let Some(err) = resp.get("error") {
                 if !err.is_null() {
-                    let msg = err.get("message")
+                    let msg = err
+                        .get("message")
                         .and_then(|m| m.as_str())
                         .unwrap_or("unknown error");
                     return Ok(ShareResult::Rejected(msg.to_string()));
                 }
             }
             // Check mining.submitted body
-            let ok = resp.get("body")
+            let ok = resp
+                .get("body")
                 .and_then(|b| b.get("result"))
                 .and_then(|v| v.as_bool())
-                .unwrap_or_else(|| {
-                    resp.get("result")
-                        .and_then(|v| v.as_bool())
-                        .unwrap_or(true)
-                });
+                .unwrap_or_else(|| resp.get("result").and_then(|v| v.as_bool()).unwrap_or(true));
             if ok {
                 return Ok(ShareResult::Accepted);
             } else {
-                let msg = resp.get("body")
+                let msg = resp
+                    .get("body")
                     .and_then(|b| b.get("message"))
                     .and_then(|m| m.as_str())
                     .unwrap_or("submit rejected");
@@ -3772,7 +4053,7 @@ impl AuxPowClient {
                         stale_secs
                     );
                     return Ok(ShareResult::Rejected(
-                        "stale job — pre-rejected (ZANO job expired)".to_string()
+                        "stale job — pre-rejected (ZANO job expired)".to_string(),
                     ));
                 }
             }
@@ -3812,13 +4093,16 @@ impl AuxPowClient {
             let nonce_hex = hex::encode(full);
             let wallet = self.payout_wallet.lock().await.clone();
             let worker = format!("{}.{}", wallet, self.profile.worker_name);
-            ("mining.submit", json!({
-                "jobId": job_id,
-                "fromGroup": from_group,
-                "toGroup": to_group,
-                "nonce": nonce_hex,
-                "worker": worker,
-            }))
+            (
+                "mining.submit",
+                json!({
+                    "jobId": job_id,
+                    "fromGroup": from_group,
+                    "toGroup": to_group,
+                    "nonce": nonce_hex,
+                    "worker": worker,
+                }),
+            )
         } else if is_kas {
             // Kaspa stratum bridge (used by 2miners, Kryptex, etc.) parses the
             // nonce param with `u64::from_str_radix(..., 16)`, i.e. as a
@@ -3840,8 +4124,12 @@ impl AuxPowClient {
             ("mining.submit", json!([worker, job_id, hex]))
         } else if matches!(
             self.profile.coin,
-            ExternalCoin::RVN | ExternalCoin::CLORE | ExternalCoin::EVR
-                | ExternalCoin::MEWC | ExternalCoin::QUAI | ExternalCoin::ZANO
+            ExternalCoin::RVN
+                | ExternalCoin::CLORE
+                | ExternalCoin::EVR
+                | ExternalCoin::MEWC
+                | ExternalCoin::QUAI
+                | ExternalCoin::ZANO
         ) {
             // KawPow / ProgPoW coins on 2miners/NiceHash/HeroMiners use Stratum v1
             // mining.submit with 5 params:
@@ -3868,14 +4156,19 @@ impl AuxPowClient {
                         format!("0x{}", j.header_hex)
                     }
                 })
-                .unwrap_or_else(|| "0x0000000000000000000000000000000000000000000000000000000000000000".to_string());
+                .unwrap_or_else(|| {
+                    "0x0000000000000000000000000000000000000000000000000000000000000000".to_string()
+                });
             let mix_src = mix_hash_hex.unwrap_or(_hash_hex);
             let mix_hex = if mix_src.starts_with("0x") {
                 mix_src.to_string()
             } else {
                 format!("0x{}", mix_src)
             };
-            ("mining.submit", json!([worker, job_id, nonce_hex, header_hash_hex, mix_hex]))
+            (
+                "mining.submit",
+                json!([worker, job_id, nonce_hex, header_hash_hex, mix_hex]),
+            )
         } else if self.profile.coin == ExternalCoin::ETC {
             // ETC on 2miners uses Stratum v1 mining.submit with 5 params:
             //   [worker, job_id, nonce_hex, header_hash_hex, mix_hash_hex]
@@ -3900,7 +4193,10 @@ impl AuxPowClient {
             } else {
                 format!("0x{}", mix_src)
             };
-            ("mining.submit", json!([worker, job_id, nonce_hex, header_hash_hex, mix_hex]))
+            (
+                "mining.submit",
+                json!([worker, job_id, nonce_hex, header_hash_hex, mix_hex]),
+            )
         } else if self.profile.coin == ExternalCoin::XMR {
             // Monero / RandomX (xmrig-compatible Stratum):
             // mining.submit params = [worker, job_id, nonce_hex]
@@ -3959,7 +4255,7 @@ impl AuxPowClient {
                         self.profile.coin, job_id, nonce, stale_secs
                     );
                     return Ok(ShareResult::Rejected(
-                        "stale job — pre-rejected to avoid upstream job-not-found".to_string()
+                        "stale job — pre-rejected to avoid upstream job-not-found".to_string(),
                     ));
                 }
             }
@@ -3981,7 +4277,7 @@ impl AuxPowClient {
                         self.profile.coin, job_id, nonce
                     );
                     return Ok(ShareResult::Rejected(
-                        "stale job — post-reconnect, solution unavailable".to_string()
+                        "stale job — post-reconnect, solution unavailable".to_string(),
                     ));
                 }
             }
@@ -4027,7 +4323,8 @@ impl AuxPowClient {
                                     self.profile.coin, job_id, nonce, latest_id, age, grace_secs
                                 );
                                 return Ok(ShareResult::Rejected(
-                                    "stale job — superseded by newer job (grace period expired)".to_string()
+                                    "stale job — superseded by newer job (grace period expired)"
+                                        .to_string(),
                                 ));
                             }
                         }
@@ -4106,7 +4403,12 @@ impl AuxPowClient {
 
             // Build solution_with_varint for VerusHash 2.2.
             let solution_with_varint = if self.profile.algorithm.eq_ignore_ascii_case("verushash") {
-                let solution_raw = self.job_solution.lock().await.get(job_id).cloned()
+                let solution_raw = self
+                    .job_solution
+                    .lock()
+                    .await
+                    .get(job_id)
+                    .cloned()
                     .unwrap_or_else(|| "00".repeat(1344));
 
                 // Ensure solution is exactly 2688 hex (1344 bytes).
@@ -4115,7 +4417,11 @@ impl AuxPowClient {
                 } else if solution_raw.len() > 2688 {
                     solution_raw[..2688].to_string()
                 } else {
-                    format!("{}{}", solution_raw, "0".repeat((2688 - solution_raw.len()) / 2))
+                    format!(
+                        "{}{}",
+                        solution_raw,
+                        "0".repeat((2688 - solution_raw.len()) / 2)
+                    )
                 };
 
                 // PBaaS v7+ nonceSpace embedding: write extranonce1 + miner_nonce
@@ -4179,7 +4485,11 @@ impl AuxPowClient {
 
             println!(
                 "auxpow: {} submit — job={} ntime={} nonce2_len={} sol_len={}",
-                self.profile.coin, job_id, ntime, nonce2_str.len(), solution_with_varint.len()
+                self.profile.coin,
+                job_id,
+                ntime,
+                nonce2_str.len(),
+                solution_with_varint.len()
             );
             // Detailed debug: print exact submit params (truncated for readability)
             println!(
@@ -4201,7 +4511,10 @@ impl AuxPowClient {
             // LuckPool VRSC follows this format. The "unknown" rejections
             // were NOT caused by the parameter count — they were caused by
             // the solution/nonce2 content being wrong.
-            ("mining.submit", json!([worker, job_id, ntime, nonce2_str, solution_with_varint]))
+            (
+                "mining.submit",
+                json!([worker, job_id, ntime, nonce2_str, solution_with_varint]),
+            )
         } else if self.profile.coin == ExternalCoin::DCR {
             // DCR Blake3: standard Stratum v1 submit with 5 params:
             //   [worker, job_id, extranonce2, ntime, nonce]
@@ -4218,7 +4531,10 @@ impl AuxPowClient {
             // Nonce as LE byte hex (e.g. nonce=14 → "0e000000")
             let nonce_le_bytes = (nonce as u32).to_le_bytes();
             let nonce_hex = hex::encode(nonce_le_bytes);
-            ("mining.submit", json!([worker, job_id, "", ntime, nonce_hex]))
+            (
+                "mining.submit",
+                json!([worker, job_id, "", ntime, nonce_hex]),
+            )
         } else if self.profile.coin == ExternalCoin::ERG {
             // ERG / Autolykos v2 (2miners): 3 params
             //   [worker, job_id, nonce2]
@@ -4333,8 +4649,13 @@ impl AuxPowClient {
                         crate::pearl_real_pouw::mine_pearl_share_gpu(
                             &header_hex,
                             &target_hex,
-                            m, n, k, noise_rank, noise_range,
-                            hash_tile_h, hash_tile_w,
+                            m,
+                            n,
+                            k,
+                            noise_rank,
+                            noise_range,
+                            hash_tile_h,
+                            hash_tile_w,
                             nonce,
                             miner,
                         )
@@ -4342,8 +4663,13 @@ impl AuxPowClient {
                         crate::pearl_real_pouw::mine_pearl_share(
                             &header_hex,
                             &target_hex,
-                            m, n, k, noise_rank, noise_range,
-                            hash_tile_h, hash_tile_w,
+                            m,
+                            n,
+                            k,
+                            noise_rank,
+                            noise_range,
+                            hash_tile_h,
+                            hash_tile_w,
                             nonce,
                         )
                     }
@@ -4351,8 +4677,13 @@ impl AuxPowClient {
                     crate::pearl_real_pouw::mine_pearl_share(
                         &header_hex,
                         &target_hex,
-                        m, n, k, noise_rank, noise_range,
-                        hash_tile_h, hash_tile_w,
+                        m,
+                        n,
+                        k,
+                        noise_rank,
+                        noise_range,
+                        hash_tile_h,
+                        hash_tile_w,
                         nonce,
                     )
                 };
@@ -4361,8 +4692,13 @@ impl AuxPowClient {
                 let mined_result = crate::pearl_real_pouw::mine_pearl_share(
                     &header_hex,
                     &target_hex,
-                    m, n, k, noise_rank, noise_range,
-                    hash_tile_h, hash_tile_w,
+                    m,
+                    n,
+                    k,
+                    noise_rank,
+                    noise_range,
+                    hash_tile_h,
+                    hash_tile_w,
                     nonce,
                 );
 
@@ -4372,7 +4708,10 @@ impl AuxPowClient {
                         let elapsed_ms = mine_start.elapsed().as_secs_f64() * 1000.0;
                         println!(
                             "auxpow: PRL share found! nonce={} attempts={} time={:.1}ms b64_len={}",
-                            nonce, attempts_this_call, elapsed_ms, b64.len()
+                            nonce,
+                            attempts_this_call,
+                            elapsed_ms,
+                            b64.len()
                         );
                         plain_proof = Some(b64);
                         break;
@@ -4401,20 +4740,27 @@ impl AuxPowClient {
 
             println!(
                 "auxpow: PRL submit — job={} proof_b64_len={}",
-                job_id, plain_proof.len()
+                job_id,
+                plain_proof.len()
             );
 
             // Pearl plain stratum (port 5571) per suprnova spec §4.3:
             //   mining.submit with object params {job_id, plain_proof}
             //   plain_proof is base64-encoded bincode PlainProof
-            ("mining.submit", json!({
-                "job_id": job_id,
-                "plain_proof": plain_proof
-            }))
+            (
+                "mining.submit",
+                json!({
+                    "job_id": job_id,
+                    "plain_proof": plain_proof
+                }),
+            )
         } else if matches!(
             self.profile.coin,
-            ExternalCoin::RTM | ExternalCoin::VTC | ExternalCoin::QTC
-                | ExternalCoin::KLS | ExternalCoin::DNX
+            ExternalCoin::RTM
+                | ExternalCoin::VTC
+                | ExternalCoin::QTC
+                | ExternalCoin::KLS
+                | ExternalCoin::DNX
                 | ExternalCoin::NEXA
         ) {
             // Standard Stratum v1 with 5 params for zpool/suprnova/herominers:
@@ -4478,7 +4824,10 @@ impl AuxPowClient {
                 self.profile.coin, job_id, en2, ntime, nonce_hex
             );
 
-            ("mining.submit", json!([worker, job_id, en2, ntime, nonce_hex]))
+            (
+                "mining.submit",
+                json!([worker, job_id, en2, ntime, nonce_hex]),
+            )
         } else {
             let hex = format!("0x{:016x}", nonce);
             let wallet = self.payout_wallet.lock().await.clone();
@@ -4494,7 +4843,10 @@ impl AuxPowClient {
             "params": params
         });
 
-        println!("auxpow: submitting share request {}", serde_json::to_string(&req).unwrap_or_default());
+        println!(
+            "auxpow: submitting share request {}",
+            serde_json::to_string(&req).unwrap_or_default()
+        );
         let resp = self.send_request(&req).await?;
 
         let accepted = resp
@@ -4515,7 +4867,10 @@ impl AuxPowClient {
             Ok(ShareResult::Accepted)
         } else if let Some(err) = resp.get("error") {
             if err.is_null() {
-                println!("auxpow: {} submit response (result=false, error=null): {}", self.profile.coin, resp);
+                println!(
+                    "auxpow: {} submit response (result=false, error=null): {}",
+                    self.profile.coin, resp
+                );
                 return Ok(ShareResult::Unknown);
             }
             // Log the raw error for debugging
@@ -4527,7 +4882,10 @@ impl AuxPowClient {
             } else {
                 format!("{}", err)
             };
-            warn!("AuxPow: share rejected for {}: {}", self.profile.coin, reason);
+            warn!(
+                "AuxPow: share rejected for {}: {}",
+                self.profile.coin, reason
+            );
             Ok(ShareResult::Rejected(reason))
         } else {
             Ok(ShareResult::Unknown)
@@ -4560,8 +4918,8 @@ impl AuxPowClient {
         // Convert mix_hash_hex to array of 32 bytes for ProgPow pow field.
         // EPIC expects the mix hash as a JSON array of integers [0, 255, ...].
         let mix_hex = mix_hash_hex.unwrap_or(_hash_hex);
-        let mix_bytes = hex::decode(mix_hex.trim_start_matches("0x"))
-            .unwrap_or_else(|_| vec![0u8; 32]);
+        let mix_bytes =
+            hex::decode(mix_hex.trim_start_matches("0x")).unwrap_or_else(|_| vec![0u8; 32]);
         let mut mix_arr = [0u8; 32];
         let len = mix_bytes.len().min(32);
         mix_arr[..len].copy_from_slice(&mix_bytes[..len]);
@@ -4613,27 +4971,36 @@ impl AuxPowClient {
         for attempt in 0..3u32 {
             eprintln!(
                 "auxpow: EPIC dedicated submit attempt={} (job_id={} nonce={} height={})",
-                attempt + 1, job_id_num, nonce, height
+                attempt + 1,
+                job_id_num,
+                nonce,
+                height
             );
 
             // 1. Open fresh TCP+TLS connection
-            let tcp_stream = match timeout(Duration::from_secs(15), TcpStream::connect(&addr)).await {
+            let tcp_stream = match timeout(Duration::from_secs(15), TcpStream::connect(&addr)).await
+            {
                 Ok(Ok(s)) => s,
                 Ok(Err(e)) => {
-                    eprintln!("auxpow: EPIC dedicated submit attempt={} TCP connect failed: {e}", attempt + 1);
+                    eprintln!(
+                        "auxpow: EPIC dedicated submit attempt={} TCP connect failed: {e}",
+                        attempt + 1
+                    );
                     tokio::time::sleep(Duration::from_secs(2)).await;
                     continue;
                 }
                 Err(_) => {
-                    eprintln!("auxpow: EPIC dedicated submit attempt={} TCP connect timeout", attempt + 1);
+                    eprintln!(
+                        "auxpow: EPIC dedicated submit attempt={} TCP connect timeout",
+                        attempt + 1
+                    );
                     tokio::time::sleep(Duration::from_secs(2)).await;
                     continue;
                 }
             };
 
-            let provider = std::sync::Arc::new(
-                tokio_rustls::rustls::crypto::ring::default_provider()
-            );
+            let provider =
+                std::sync::Arc::new(tokio_rustls::rustls::crypto::ring::default_provider());
             let roots = RootCertStore {
                 roots: webpki_roots::TLS_SERVER_ROOTS.iter().cloned().collect(),
             };
@@ -4647,17 +5014,21 @@ impl AuxPowClient {
                 }
             };
             let connector = tokio_rustls::TlsConnector::from(std::sync::Arc::new(config));
-            let domain = match rustls_pki_types::ServerName::try_from(self.profile.pool_host.clone()) {
-                Ok(d) => d,
-                Err(e) => {
-                    eprintln!("auxpow: EPIC dedicated submit invalid TLS server name: {e}");
-                    return Ok(ShareResult::Unknown);
-                }
-            };
+            let domain =
+                match rustls_pki_types::ServerName::try_from(self.profile.pool_host.clone()) {
+                    Ok(d) => d,
+                    Err(e) => {
+                        eprintln!("auxpow: EPIC dedicated submit invalid TLS server name: {e}");
+                        return Ok(ShareResult::Unknown);
+                    }
+                };
             let tls_stream = match connector.connect(domain, tcp_stream).await {
                 Ok(s) => s,
                 Err(e) => {
-                    eprintln!("auxpow: EPIC dedicated submit attempt={} TLS handshake failed: {e}", attempt + 1);
+                    eprintln!(
+                        "auxpow: EPIC dedicated submit attempt={} TLS handshake failed: {e}",
+                        attempt + 1
+                    );
                     tokio::time::sleep(Duration::from_secs(2)).await;
                     continue;
                 }
@@ -4665,21 +5036,31 @@ impl AuxPowClient {
 
             let (reader_half, writer_half) = tokio::io::split(tls_stream);
             let mut sock_writer: Box<dyn AsyncWrite + Unpin + Send> = Box::new(writer_half);
-            let mut sock_reader = BufReader::new(Box::new(reader_half) as Box<dyn AsyncRead + Unpin + Send>);
+            let mut sock_reader =
+                BufReader::new(Box::new(reader_half) as Box<dyn AsyncRead + Unpin + Send>);
 
             // 2. Login on the dedicated connection
-            let login_resp = match epic_dedicated_request(&mut sock_writer, &mut sock_reader, &login_req, 1).await {
-                Ok(r) => r,
-                Err(e) => {
-                    eprintln!("auxpow: EPIC dedicated submit attempt={} login failed: {e}", attempt + 1);
-                    let _ = sock_writer.shutdown().await;
-                    tokio::time::sleep(Duration::from_secs(2)).await;
-                    continue;
-                }
-            };
+            let login_resp =
+                match epic_dedicated_request(&mut sock_writer, &mut sock_reader, &login_req, 1)
+                    .await
+                {
+                    Ok(r) => r,
+                    Err(e) => {
+                        eprintln!(
+                            "auxpow: EPIC dedicated submit attempt={} login failed: {e}",
+                            attempt + 1
+                        );
+                        let _ = sock_writer.shutdown().await;
+                        tokio::time::sleep(Duration::from_secs(2)).await;
+                        continue;
+                    }
+                };
             if let Some(err) = login_resp.get("error") {
                 if !err.is_null() {
-                    let msg = err.get("message").and_then(|m| m.as_str()).unwrap_or("login error");
+                    let msg = err
+                        .get("message")
+                        .and_then(|m| m.as_str())
+                        .unwrap_or("login error");
                     eprintln!("auxpow: EPIC dedicated submit login rejected: {msg}");
                     let _ = sock_writer.shutdown().await;
                     return Ok(ShareResult::Rejected(format!("EPIC login: {msg}")));
@@ -4687,24 +5068,25 @@ impl AuxPowClient {
             }
 
             // 3. Submit the share on the dedicated connection
-            match epic_dedicated_request(&mut sock_writer, &mut sock_reader, &submit_req, 20).await {
+            match epic_dedicated_request(&mut sock_writer, &mut sock_reader, &submit_req, 20).await
+            {
                 Ok(resp) => {
                     let _ = sock_writer.shutdown().await;
                     if let Some(err) = resp.get("error") {
                         if !err.is_null() {
-                            let msg = err.get("message")
+                            let msg = err
+                                .get("message")
                                 .and_then(|m| m.as_str())
                                 .unwrap_or("unknown error");
                             eprintln!("auxpow: EPIC dedicated submit rejected: {msg}");
                             return Ok(ShareResult::Rejected(msg.to_string()));
                         }
                     }
-                    let ok = resp.get("result")
-                        .and_then(|v| v.as_bool())
-                        .unwrap_or(true);
+                    let ok = resp.get("result").and_then(|v| v.as_bool()).unwrap_or(true);
                     eprintln!(
                         "auxpow: EPIC dedicated submit accepted={} (attempt={})",
-                        ok, attempt + 1
+                        ok,
+                        attempt + 1
                     );
                     if ok {
                         return Ok(ShareResult::Accepted);
@@ -4727,9 +5109,7 @@ impl AuxPowClient {
             }
         }
 
-        eprintln!(
-            "auxpow: EPIC dedicated submit exhausted 3 attempts — returning Unknown"
-        );
+        eprintln!("auxpow: EPIC dedicated submit exhausted 3 attempts — returning Unknown");
         Ok(ShareResult::Unknown)
     }
 
@@ -4750,10 +5130,8 @@ impl AuxPowClient {
         header_bytes: &[u8],
         target_bytes: &[u8; 32],
     ) -> Result<ShareResult> {
-        let header_b64 = base64::Engine::encode(
-            &base64::engine::general_purpose::STANDARD,
-            header_bytes,
-        );
+        let header_b64 =
+            base64::Engine::encode(&base64::engine::general_purpose::STANDARD, header_bytes);
         // Convert 32-byte big-endian target to decimal string
         let target_str = target_bytes_to_decimal_string(target_bytes);
 
@@ -4886,9 +5264,17 @@ impl AuxPowClient {
         };
         // Allow operator override of share target for coins that do not
         // receive mining.set_difficulty (e.g. ALPH on Herominers).
-        if let Ok(target_hex) = std::env::var(format!("ZION_AUXPOW_{}_SHARE_TARGET_HEX", self.profile.coin.ticker())) {
+        if let Ok(target_hex) = std::env::var(format!(
+            "ZION_AUXPOW_{}_SHARE_TARGET_HEX",
+            self.profile.coin.ticker()
+        )) {
             if let Some(t) = crate::external_hashers::parse_target_hex(&target_hex) {
-                println!("auxpow: {} share_target override hex={} -> {}", self.profile.coin, target_hex, hex::encode(t));
+                println!(
+                    "auxpow: {} share_target override hex={} -> {}",
+                    self.profile.coin,
+                    target_hex,
+                    hex::encode(t)
+                );
                 return t;
             }
         }
@@ -4920,7 +5306,10 @@ impl AuxPowClient {
         tokio::spawn(async move {
             // Initial fetch immediately after connect.
             if let Err(e) = client_clone.request_eth_getwork().await {
-                debug!("auxpow: initial eth_getWork for {}: {}", client_clone.profile.coin, e);
+                debug!(
+                    "auxpow: initial eth_getWork for {}: {}",
+                    client_clone.profile.coin, e
+                );
             }
             loop {
                 // Poll every 3 seconds — fast enough to catch new jobs,
@@ -5100,7 +5489,10 @@ impl AuxPowClient {
 
         println!(
             "auxpow: PRL pearl.challenge — job={} seed_len={} difficulty={} target={:.16}...",
-            job_id, seed_bytes.len(), difficulty, target_hex,
+            job_id,
+            seed_bytes.len(),
+            difficulty,
+            target_hex,
         );
 
         Some(ExternalJob {
@@ -5133,12 +5525,10 @@ impl AuxPowClient {
         target_hex: &str,
         height_hex: Option<&str>,
     ) -> ExternalJob {
-        let header_bytes = hex::decode(header_hex.trim_start_matches("0x"))
-            .unwrap_or_default();
-        let target_bytes = crate::external_hashers::parse_target_hex(
-            target_hex.trim_start_matches("0x"),
-        )
-        .unwrap_or([0xFFu8; 32]);
+        let header_bytes = hex::decode(header_hex.trim_start_matches("0x")).unwrap_or_default();
+        let target_bytes =
+            crate::external_hashers::parse_target_hex(target_hex.trim_start_matches("0x"))
+                .unwrap_or([0xFFu8; 32]);
 
         // Update the client's current target and difficulty from the
         // getWork target.  EthStratum pools (ZANO, ETC, etc.) provide the
@@ -5154,14 +5544,12 @@ impl AuxPowClient {
 
         // open-ethereum-pool style eth_getWork returns an optional 4th
         // element: the block height as a 0x-prefixed big-endian hex u64.
-        let block_number = height_hex.and_then(|h| {
-            u64::from_str_radix(h.trim_start_matches("0x"), 16).ok()
-        });
+        let block_number =
+            height_hex.and_then(|h| u64::from_str_radix(h.trim_start_matches("0x"), 16).ok());
 
         // Derive epoch from seed hash for DAG management.
         let epoch = if seed_hash.len() >= 2 {
-            let seed_bytes = hex::decode(seed_hash.trim_start_matches("0x"))
-                .unwrap_or_default();
+            let seed_bytes = hex::decode(seed_hash.trim_start_matches("0x")).unwrap_or_default();
             if seed_bytes.len() == 32 {
                 let seed_arr: [u8; 32] = seed_bytes[..32].try_into().unwrap();
                 crate::external_hashers::ethash_epoch_from_seed_hash(
@@ -5228,11 +5616,7 @@ impl AuxPowClient {
         // eth_submitHashrate params: [hashrate_hex, miner_id]
         // hashrate_hex is 0x-prefixed 32-byte hex of the hashrate value.
         let hashrate_hex = format!("0x{:064x}", hashrate_hps);
-        let miner_id = format!(
-            "{}-{}",
-            self.profile.coin,
-            self.profile.worker_name
-        );
+        let miner_id = format!("{}-{}", self.profile.coin, self.profile.worker_name);
         let req = json!({
             "id": self.next_jsonrpc_id().await,
             "method": "eth_submitHashrate",
@@ -5283,10 +5667,8 @@ pub fn target_bytes_to_decimal_string(target: &[u8; 32]) -> String {
 /// LuckPool's `mining.set_target` and share difficulty math are computed
 /// against this base, not the full 2^256 - 1 maximum used by most coins.
 pub const VERUS_HASH_DIFF1: [u8; 32] = [
-    0x00, 0x07, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0x00, 0x07, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
 ];
 
 /// Return the base target used for difficulty↔target conversions for an
@@ -5332,10 +5714,8 @@ pub fn difficulty_to_target(difficulty: f64) -> [u8; 32] {
 /// Dash pow_limit = 0x00000fffff000000000000000000000000000000000000000000000000000000
 /// (from nbits 0x1e0fffff)
 pub const RTM_POW_LIMIT: [u8; 32] = [
-    0x00, 0x00, 0x0f, 0xff, 0xff, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x0f, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 ];
 
 /// Convert a Stratum difficulty value to a 32-byte big-endian target
@@ -5478,7 +5858,8 @@ async fn epic_dedicated_request(
         };
         // Check for matching response id
         let resp_id = parsed.get("id").and_then(|v| {
-            v.as_i64().or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok()))
+            v.as_i64()
+                .or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok()))
         });
         if let Some(id) = resp_id {
             if id == req_id {
@@ -5712,11 +6093,7 @@ mod tests {
 
             let req = read_json(&mut reader, &mut buf).await;
             assert_eq!(req["method"], "mining.authorize");
-            write_json(
-                &mut writer,
-                json!({"id": 2, "result": true, "error": null}),
-            )
-            .await;
+            write_json(&mut writer, json!({"id": 2, "result": true, "error": null})).await;
 
             write_json(
                 &mut writer,
@@ -5853,11 +6230,7 @@ mod tests {
 
             let req = read_json(&mut reader, &mut buf).await;
             assert_eq!(req["method"], "mining.authorize");
-            write_json(
-                &mut writer,
-                json!({"id": 2, "result": true, "error": null}),
-            )
-            .await;
+            write_json(&mut writer, json!({"id": 2, "result": true, "error": null})).await;
 
             write_json(
                 &mut writer,
@@ -5891,7 +6264,10 @@ mod tests {
             assert_eq!(params["jobId"], "alph_job_1");
             assert_eq!(params["fromGroup"], 3);
             assert_eq!(params["toGroup"], 3);
-            assert_eq!(params["worker"], "14DLdim8A2o6AzFNgajvKgwWGpi9Fj4sP1RixdGteJNGJ.test_worker");
+            assert_eq!(
+                params["worker"],
+                "14DLdim8A2o6AzFNgajvKgwWGpi9Fj4sP1RixdGteJNGJ.test_worker"
+            );
             let nonce_hex = params["nonce"].as_str().unwrap();
             // full 24-byte nonce = 48 hex chars
             assert_eq!(nonce_hex.len(), 48);
@@ -5923,7 +6299,10 @@ mod tests {
         profile.worker_name = "test_worker".to_string();
 
         let client = AuxPowClient::new(profile);
-        client.connect("14DLdim8A2o6AzFNgajvKgwWGpi9Fj4sP1RixdGteJNGJ").await.unwrap();
+        client
+            .connect("14DLdim8A2o6AzFNgajvKgwWGpi9Fj4sP1RixdGteJNGJ")
+            .await
+            .unwrap();
 
         let job = client.wait_for_job(2000).await.unwrap().unwrap();
         assert_eq!(job.job_id, "alph_job_1");
@@ -5993,11 +6372,7 @@ mod tests {
             // 2. Read mining.authorize
             let req = read_json(&mut reader, &mut buf).await;
             assert_eq!(req["method"], "mining.authorize");
-            write_json(
-                &mut writer,
-                json!({"id": 2, "result": true, "error": null}),
-            )
-            .await;
+            write_json(&mut writer, json!({"id": 2, "result": true, "error": null})).await;
 
             // 3. Push mining.notify
             //    ERG format: [job_id, height, blob, "", "", target_hex, target_decimal, "", clean_jobs]
@@ -6035,7 +6410,10 @@ mod tests {
         profile.worker_name = "test_worker".to_string();
 
         let client = AuxPowClient::new(profile);
-        client.connect("9ewyQvX7YJ1PqgJpK5qGjxRwJZQjWxJr5QJ1PqgJpK5qGjxRwJZQ").await.unwrap();
+        client
+            .connect("9ewyQvX7YJ1PqgJpK5qGjxRwJZQjWxJr5QJ1PqgJpK5qGjxRwJZQ")
+            .await
+            .unwrap();
 
         // Wait for the mining.notify push to deliver a job.
         let job = client.wait_for_job(5000).await.unwrap().unwrap();
@@ -6094,11 +6472,7 @@ mod tests {
 
             // 2. Authorize
             let _req = read_json(&mut reader, &mut buf).await;
-            write_json(
-                &mut writer,
-                json!({"id": 2, "result": true, "error": null}),
-            )
-            .await;
+            write_json(&mut writer, json!({"id": 2, "result": true, "error": null})).await;
 
             // 3. Push first mining.notify
             let blob1 = "ab".repeat(32);
@@ -6230,7 +6604,11 @@ mod tests {
             assert_eq!(params["job_id"].as_str().unwrap(), job_id);
             // Nonce 0x1234abcd → 4-byte LE hex = "cdab3412"
             let nonce_hex = params["nonce"].as_str().unwrap();
-            assert_eq!(nonce_hex.len(), 8, "XMR nonce must be 8 hex chars (4-byte LE)");
+            assert_eq!(
+                nonce_hex.len(),
+                8,
+                "XMR nonce must be 8 hex chars (4-byte LE)"
+            );
             assert_eq!(nonce_hex, "cdab3412");
 
             write_json(
@@ -6271,7 +6649,10 @@ mod tests {
         assert_eq!(job.target_bytes[..8], hex::decode(target_hex).unwrap());
 
         // Submit a share with nonce 0x1234abcd (305441741).
-        let result = client.submit_share(job_id, 0x1234abcd, "deadbeef", None).await.unwrap();
+        let result = client
+            .submit_share(job_id, 0x1234abcd, "deadbeef", None)
+            .await
+            .unwrap();
         assert_eq!(result, ShareResult::Accepted);
 
         client.disconnect().await.unwrap();
@@ -6371,8 +6752,15 @@ mod tests {
             assert_eq!(nonce2.len(), 56, "nonce2 must be 28 bytes (56 hex chars) with 4-byte extranonce1 (standard 32-byte Zcash Stratum nonce field)");
             // solution_with_varint should start with fd4005 and be 2694 hex chars
             let solution = params[4].as_str().unwrap();
-            assert!(solution.starts_with("fd4005"), "solution must start with varint fd4005");
-            assert_eq!(solution.len(), 2694, "solution_with_varint must be 2694 hex chars (3 varint + 1344 solution)");
+            assert!(
+                solution.starts_with("fd4005"),
+                "solution must start with varint fd4005"
+            );
+            assert_eq!(
+                solution.len(),
+                2694,
+                "solution_with_varint must be 2694 hex chars (3 varint + 1344 solution)"
+            );
 
             write_json(
                 &mut writer,
@@ -6395,11 +6783,18 @@ mod tests {
         assert_eq!(job.external_coin, ExternalCoin::VRSC);
         assert_eq!(job.algorithm, "verushash");
         // Blob = header_prefix(108B=216hex) + nonce_field(32B=64hex) + varint(6hex) + solution(2688hex) = 2974 hex
-        assert_eq!(job.header_hex.len(), 2974, "VRSC blob must be 2974 hex chars (108+32+3+1344 bytes)");
+        assert_eq!(
+            job.header_hex.len(),
+            2974,
+            "VRSC blob must be 2974 hex chars (108+32+3+1344 bytes)"
+        );
         assert_eq!(job.header_bytes.len(), 1487, "VRSC blob must be 1487 bytes");
 
         // Submit a share with nonce 0x1234abcd
-        let result = client.submit_share(job_id, 0x1234abcd, "deadbeef", None).await.unwrap();
+        let result = client
+            .submit_share(job_id, 0x1234abcd, "deadbeef", None)
+            .await
+            .unwrap();
         assert_eq!(result, ShareResult::Accepted);
 
         client.disconnect().await.unwrap();
@@ -6497,10 +6892,17 @@ mod tests {
             assert_eq!(params[2].as_str().unwrap(), ntime);
             // nonce2 = 32 bytes total - extranonce1(4 bytes) = 28 bytes = 56 hex chars
             let nonce2 = params[3].as_str().unwrap();
-            assert_eq!(nonce2.len(), 56, "nonce2 must be 28 bytes (56 hex chars) with 4-byte extranonce1");
+            assert_eq!(
+                nonce2.len(),
+                56,
+                "nonce2 must be 28 bytes (56 hex chars) with 4-byte extranonce1"
+            );
             // solution_with_varint should start with "34" (varint for 52 bytes)
             let solution = params[4].as_str().unwrap();
-            assert!(solution.starts_with("34"), "FLUX solution must start with varint 34 (52 bytes)");
+            assert!(
+                solution.starts_with("34"),
+                "FLUX solution must start with varint 34 (52 bytes)"
+            );
 
             write_json(
                 &mut writer,
@@ -6525,7 +6927,10 @@ mod tests {
 
         // Submit a share with a mock Equihash solution in mix_hash_hex
         let mock_solution = "ee".repeat(52); // 52-byte solution
-        let result = client.submit_share(job_id, 0x1234abcd, "deadbeef", Some(&mock_solution)).await.unwrap();
+        let result = client
+            .submit_share(job_id, 0x1234abcd, "deadbeef", Some(&mock_solution))
+            .await
+            .unwrap();
         assert_eq!(result, ShareResult::Accepted);
 
         client.disconnect().await.unwrap();
@@ -6623,16 +7028,31 @@ mod tests {
 
             // nonce2 = 32 bytes total - extranonce1(4 bytes) = 28 bytes = 56 hex chars
             let nonce2 = params[3].as_str().unwrap();
-            assert_eq!(nonce2.len(), 56, "ZCL nonce2 must be 28 bytes (56 hex chars) with 4-byte extranonce1");
+            assert_eq!(
+                nonce2.len(),
+                56,
+                "ZCL nonce2 must be 28 bytes (56 hex chars) with 4-byte extranonce1"
+            );
 
             // For nonce=0x1234abcd, nonce2 should start with LE-encoded nonce (cdab3412)
-            assert_eq!(&nonce2[..8], "cdab3412", "ZCL nonce2 must start with LE-encoded miner nonce");
+            assert_eq!(
+                &nonce2[..8],
+                "cdab3412",
+                "ZCL nonce2 must start with LE-encoded miner nonce"
+            );
 
             // solution_with_varint should start with "fd9001" (varint for 400 bytes)
             let solution = params[4].as_str().unwrap();
-            assert!(solution.starts_with("fd9001"), "ZCL solution must start with varint fd9001 (400 bytes)");
+            assert!(
+                solution.starts_with("fd9001"),
+                "ZCL solution must start with varint fd9001 (400 bytes)"
+            );
             // Total: 6 (varint) + 800 (400 bytes hex) = 806 hex chars
-            assert_eq!(solution.len(), 806, "ZCL solution_with_varint must be 806 hex chars (6 varint + 800 solution)");
+            assert_eq!(
+                solution.len(),
+                806,
+                "ZCL solution_with_varint must be 806 hex chars (6 varint + 800 solution)"
+            );
 
             write_json(
                 &mut writer,
@@ -6657,7 +7077,10 @@ mod tests {
 
         // Submit a share with a mock 400-byte Equihash solution in mix_hash_hex
         let mock_solution = "ee".repeat(400); // 400-byte solution
-        let result = client.submit_share(job_id, 0x1234abcd, "deadbeef", Some(&mock_solution)).await.unwrap();
+        let result = client
+            .submit_share(job_id, 0x1234abcd, "deadbeef", Some(&mock_solution))
+            .await
+            .unwrap();
         assert_eq!(result, ShareResult::Accepted);
 
         client.disconnect().await.unwrap();
@@ -6739,10 +7162,18 @@ mod tests {
             let params = req["params"].as_array().unwrap();
             assert_eq!(params.len(), 5, "RTM submit must have 5 params");
             assert_eq!(params[1].as_str().unwrap(), job_id);
-            assert_eq!(params[2].as_str().unwrap().len(), 8, "extranonce2 must be 4 bytes (8 hex)");
+            assert_eq!(
+                params[2].as_str().unwrap().len(),
+                8,
+                "extranonce2 must be 4 bytes (8 hex)"
+            );
             assert_eq!(params[3].as_str().unwrap(), ntime);
             // nonce = 4-byte LE hex
-            assert_eq!(params[4].as_str().unwrap().len(), 8, "nonce must be 4 bytes (8 hex)");
+            assert_eq!(
+                params[4].as_str().unwrap().len(),
+                8,
+                "nonce must be 4 bytes (8 hex)"
+            );
 
             write_json(
                 &mut writer,
@@ -6764,7 +7195,10 @@ mod tests {
         assert_eq!(job.job_id, job_id);
         assert_eq!(job.external_coin, ExternalCoin::RTM);
 
-        let result = client.submit_share(job_id, 0x1234abcd, "deadbeef", None).await.unwrap();
+        let result = client
+            .submit_share(job_id, 0x1234abcd, "deadbeef", None)
+            .await
+            .unwrap();
         assert_eq!(result, ShareResult::Accepted);
 
         client.disconnect().await.unwrap();
@@ -6833,10 +7267,7 @@ mod tests {
                 serde_json::from_slice::<Value>(&buf[..n]).unwrap()
             }
 
-            async fn write_json(
-                writer: &mut tokio::net::tcp::WriteHalf<'_>,
-                v: Value,
-            ) {
+            async fn write_json(writer: &mut tokio::net::tcp::WriteHalf<'_>, v: Value) {
                 writer
                     .write_all((serde_json::to_string(&v).unwrap() + "\n").as_bytes())
                     .await
@@ -6860,7 +7291,11 @@ mod tests {
             // mining.authorize
             let req = read_json(&mut reader, &mut buf).await;
             assert_eq!(req["method"], "mining.authorize");
-            write_json(&mut writer, json!({"id": req["id"], "result": true, "error": null})).await;
+            write_json(
+                &mut writer,
+                json!({"id": req["id"], "result": true, "error": null}),
+            )
+            .await;
 
             // mining.set_difficulty — very low difficulty = easy target
             write_json(
@@ -6891,11 +7326,9 @@ mod tests {
             .await;
 
             // Wait for mining.submit (with timeout)
-            let submit_req = tokio::time::timeout(
-                Duration::from_secs(60),
-                read_json(&mut reader, &mut buf),
-            )
-            .await;
+            let submit_req =
+                tokio::time::timeout(Duration::from_secs(60), read_json(&mut reader, &mut buf))
+                    .await;
 
             match submit_req {
                 Ok(req) => {
@@ -6904,13 +7337,19 @@ mod tests {
                     assert_eq!(params.len(), 5, "RTM submit must have 5 params");
                     assert_eq!(params[1].as_str().unwrap(), job_id);
                     // extranonce2 must be "00000000" (fixed for CPU mining)
-                    assert_eq!(params[2].as_str().unwrap(), "00000000",
-                        "extranonce2 must be 00000000 for RTM CPU mining");
+                    assert_eq!(
+                        params[2].as_str().unwrap(),
+                        "00000000",
+                        "extranonce2 must be 00000000 for RTM CPU mining"
+                    );
                     // ntime must match notify
                     assert_eq!(params[3].as_str().unwrap(), ntime_hex);
                     // nonce must be 4-byte LE hex (8 chars)
-                    assert_eq!(params[4].as_str().unwrap().len(), 8,
-                        "nonce must be 4 bytes (8 hex chars)");
+                    assert_eq!(
+                        params[4].as_str().unwrap().len(),
+                        8,
+                        "nonce must be 4 bytes (8 hex chars)"
+                    );
 
                     *share_submitted_clone.lock().unwrap() = true;
 
@@ -6951,9 +7390,11 @@ mod tests {
             let nonce_offset = 76usize;
             let mut work_blob = header.clone();
 
-            println!("rtm_e2e: header={} target={}..",
+            println!(
+                "rtm_e2e: header={} target={}..",
                 hex::encode(&header[..16.min(header.len())]),
-                hex::encode(&target[..8.min(target.len())]));
+                hex::encode(&target[..8.min(target.len())])
+            );
 
             let mut found_nonce: Option<u64> = None;
             let start = std::time::Instant::now();
@@ -6968,29 +7409,46 @@ mod tests {
                     && crate::external_hashers::meets_target_little_endian(&hash, target)
                 {
                     found_nonce = Some(nonce);
-                    println!("rtm_e2e: Found valid nonce={} in {:?} hash={}",
-                        nonce, start.elapsed(), hex::encode(&hash));
+                    println!(
+                        "rtm_e2e: Found valid nonce={} in {:?} hash={}",
+                        nonce,
+                        start.elapsed(),
+                        hex::encode(&hash)
+                    );
                     break;
                 }
 
                 if nonce % 10000 == 0 && nonce > 0 {
-                    println!("rtm_e2e: scanned {} nonces in {:?}...", nonce, start.elapsed());
+                    println!(
+                        "rtm_e2e: scanned {} nonces in {:?}...",
+                        nonce,
+                        start.elapsed()
+                    );
                 }
             }
 
-            assert!(found_nonce.is_some(), "Should find valid nonce within 1M attempts");
+            assert!(
+                found_nonce.is_some(),
+                "Should find valid nonce within 1M attempts"
+            );
 
             // Submit the share
             let nonce = found_nonce.unwrap();
             let hash_hex = "deadbeef".to_string(); // pool doesn't verify hash in submit
-            let result = client.submit_share(job_id, nonce, &hash_hex, None).await.unwrap();
+            let result = client
+                .submit_share(job_id, nonce, &hash_hex, None)
+                .await
+                .unwrap();
             assert_eq!(result, ShareResult::Accepted, "Share should be accepted");
         }
 
         client.disconnect().await.unwrap();
 
         // Verify share was submitted
-        assert!(*share_submitted.lock().unwrap(), "Share should have been submitted");
+        assert!(
+            *share_submitted.lock().unwrap(),
+            "Share should have been submitted"
+        );
 
         // Don't await server_task — it may have already finished
         drop(server_task);
@@ -7004,7 +7462,10 @@ mod tests {
         assert_eq!(ExternalCoin::ETC.protocol(), StratumProtocol::Stratum);
         assert_eq!(ExternalCoin::RVN.protocol(), StratumProtocol::Stratum);
         assert_eq!(ExternalCoin::FLUX.protocol(), StratumProtocol::ZcashStratum);
-        assert_eq!(ExternalCoin::XMR.protocol(), StratumProtocol::CryptonoteStratum);
+        assert_eq!(
+            ExternalCoin::XMR.protocol(),
+            StratumProtocol::CryptonoteStratum
+        );
         assert_eq!(ExternalCoin::ERG.protocol(), StratumProtocol::Stratum);
         assert_eq!(ExternalCoin::EVR.protocol(), StratumProtocol::Stratum);
         assert_eq!(ExternalCoin::MEWC.protocol(), StratumProtocol::Stratum);
@@ -7074,10 +7535,7 @@ mod tests {
 
     #[test]
     fn pearl_protocol_is_pearl_stratum() {
-        assert_eq!(
-            ExternalCoin::PRL.protocol(),
-            StratumProtocol::PearlStratum
-        );
+        assert_eq!(ExternalCoin::PRL.protocol(), StratumProtocol::PearlStratum);
         assert_eq!(StratumProtocol::PearlStratum.as_str(), "pearlstratum");
     }
 

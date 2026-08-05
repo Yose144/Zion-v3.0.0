@@ -19,9 +19,9 @@ use serde::{Deserialize, Serialize};
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-pub const BLAKE3_DIGEST_SIZE: usize = OUT_LEN;       // 32
-pub const BLAKE3_CHUNK_LEN: usize = CHUNK_LEN;       // 1024
-pub const BLAKE3_BLOCK_LEN: usize = 64;              // BLAKE3 compression block
+pub const BLAKE3_DIGEST_SIZE: usize = OUT_LEN; // 32
+pub const BLAKE3_CHUNK_LEN: usize = CHUNK_LEN; // 1024
+pub const BLAKE3_BLOCK_LEN: usize = 64; // BLAKE3 compression block
 
 /// Transcript size: 64 bytes = 16 × uint32 (matches blake3::MSG_BLOCK_SIZE_U32)
 const TRANSCRIPT_SIZE_U32: usize = 16;
@@ -56,19 +56,33 @@ impl IncompleteBlockHeader {
     pub const SERIALIZED_SIZE: usize = 76;
 
     pub fn from_bytes(data: &[u8]) -> Result<Self> {
-        ensure!(data.len() == Self::SERIALIZED_SIZE, "Expected 76 bytes, got {}", data.len());
+        ensure!(
+            data.len() == Self::SERIALIZED_SIZE,
+            "Expected 76 bytes, got {}",
+            data.len()
+        );
         Ok(Self {
             version: u32::from_le_bytes(data[0..4].try_into().unwrap()),
             prev_block: {
                 // Stored internally LE; wire has reversed bytes
                 let mut arr = [0u8; 32];
                 arr.copy_from_slice(&data[4..36]);
-                arr.iter().rev().copied().collect::<Vec<_>>().try_into().unwrap()
+                arr.iter()
+                    .rev()
+                    .copied()
+                    .collect::<Vec<_>>()
+                    .try_into()
+                    .unwrap()
             },
             merkle_root: {
                 let mut arr = [0u8; 32];
                 arr.copy_from_slice(&data[36..68]);
-                arr.iter().rev().copied().collect::<Vec<_>>().try_into().unwrap()
+                arr.iter()
+                    .rev()
+                    .copied()
+                    .collect::<Vec<_>>()
+                    .try_into()
+                    .unwrap()
             },
             timestamp: u32::from_le_bytes(data[68..72].try_into().unwrap()),
             nbits: u32::from_le_bytes(data[72..76].try_into().unwrap()),
@@ -129,7 +143,10 @@ impl PeriodicPattern {
             } else if factor <= 1 && min_stride != 1 {
                 bail!("A single stride must not be broken");
             }
-            ensure!(min_stride <= (1 << 24) / (factor * length), "Pattern period > 2^24");
+            ensure!(
+                min_stride <= (1 << 24) / (factor * length),
+                "Pattern period > 2^24"
+            );
             let stride = factor * min_stride;
             shape[i] = (stride, length);
             min_stride = stride * length;
@@ -153,7 +170,10 @@ impl PeriodicPattern {
 
     pub fn from_list(pattern: &[u32]) -> Result<Self> {
         ensure!(!pattern.is_empty(), "Pattern cannot be empty");
-        ensure!(pattern.windows(2).all(|w| w[0] < w[1]), "Pattern must be sorted");
+        ensure!(
+            pattern.windows(2).all(|w| w[0] < w[1]),
+            "Pattern must be sorted"
+        );
         ensure!(pattern[0] == 0, "Pattern must start at 0");
         let mut p: Vec<u32> = pattern.to_vec();
         let mut shape_vec = Vec::new();
@@ -178,7 +198,9 @@ impl PeriodicPattern {
         while shape_vec.len() < Self::NUM_DIMS {
             shape_vec.push((period, 1));
         }
-        Ok(Self { shape: shape_vec.try_into().unwrap() })
+        Ok(Self {
+            shape: shape_vec.try_into().unwrap(),
+        })
     }
 
     pub fn size(&self) -> u32 {
@@ -200,8 +222,8 @@ pub enum MMAType {
 /// Mining configuration (52 bytes serialized).
 #[derive(Debug, Clone, Copy)]
 pub struct MiningConfiguration {
-    pub common_dim: u32,    // k
-    pub rank: u16,          // noise_rank
+    pub common_dim: u32, // k
+    pub rank: u16,       // noise_rank
     pub mma_type: MMAType,
     pub rows_pattern: PeriodicPattern,
     pub cols_pattern: PeriodicPattern,
@@ -273,11 +295,19 @@ impl MerkleTree {
     /// Build a Merkle tree from padded data using keyed BLAKE3.
     pub fn new(data: &[u8], key: Digest) -> Self {
         if data.is_empty() {
-            return Self { key, layers: vec![vec![]], data: vec![] };
+            return Self {
+                key,
+                layers: vec![vec![]],
+                data: vec![],
+            };
         }
         if data.len() <= CHUNK_LEN {
             let root = blake3_digest(data, Some(key));
-            return Self { key, layers: vec![vec![root]], data: data.to_vec() };
+            return Self {
+                key,
+                layers: vec![vec![root]],
+                data: data.to_vec(),
+            };
         }
         // Hash each chunk
         let num_chunks = data.len().div_ceil(CHUNK_LEN);
@@ -321,7 +351,11 @@ impl MerkleTree {
             layers.push(vec![root]);
         }
 
-        Self { key, layers, data: data.to_vec() }
+        Self {
+            key,
+            layers,
+            data: data.to_vec(),
+        }
     }
 
     pub fn root(&self) -> Digest {
@@ -514,20 +548,10 @@ impl PlainProof {
         buf.extend_from_slice(&(self.noise_rank as u64).to_le_bytes());
 
         // Append A matrix proof
-        Self::append_matrix_proof_bytes(
-            &mut buf,
-            &self.a.proof,
-            &self.a.row_indices,
-            self.k,
-        );
+        Self::append_matrix_proof_bytes(&mut buf, &self.a.proof, &self.a.row_indices, self.k);
 
         // Append B^T matrix proof
-        Self::append_matrix_proof_bytes(
-            &mut buf,
-            &self.bt.proof,
-            &self.bt.row_indices,
-            self.k,
-        );
+        Self::append_matrix_proof_bytes(&mut buf, &self.bt.proof, &self.bt.row_indices, self.k);
 
         Ok(buf)
     }
@@ -632,7 +656,11 @@ pub fn compute_job_key(header: &IncompleteBlockHeader, config: &MiningConfigurat
 /// Compute commitment hash (noise seeds) from job_key and Merkle roots.
 /// b_noise_seed = blake3(job_key || hash_b)
 /// a_noise_seed = blake3(b_noise_seed || hash_a)
-pub fn compute_commitment_hash(job_key: &Digest, hash_a: &Digest, hash_b: &Digest) -> CommitmentHash {
+pub fn compute_commitment_hash(
+    job_key: &Digest,
+    hash_a: &Digest,
+    hash_b: &Digest,
+) -> CommitmentHash {
     let noise_seed_b = blake3_digest(&[job_key.as_slice(), hash_b.as_slice()].concat(), None);
     let noise_seed_a = blake3_digest(&[noise_seed_b.as_slice(), hash_a.as_slice()].concat(), None);
     CommitmentHash {
@@ -765,8 +793,14 @@ pub fn generate_noise(
     noise_rank: usize,
     noise_range: usize,
 ) -> Result<NoiseMatrices> {
-    ensure!(is_power_of_two(noise_range), "noise_range must be power of two");
-    ensure!(is_power_of_two(noise_rank), "noise_rank must be power of two");
+    ensure!(
+        is_power_of_two(noise_range),
+        "noise_range must be power of two"
+    );
+    ensure!(
+        is_power_of_two(noise_rank),
+        "noise_rank must be power of two"
+    );
 
     // Fixed seeds
     let mut seed_a = [0u8; 32];
@@ -795,7 +829,12 @@ pub fn generate_noise(
         }
     }
 
-    Ok(NoiseMatrices { e_al, e_ar, e_bl, e_br })
+    Ok(NoiseMatrices {
+        e_al,
+        e_ar,
+        e_bl,
+        e_br,
+    })
 }
 
 // ─── Noisy GEMM + Jackpot Hash ───────────────────────────────────────────────
@@ -808,7 +847,9 @@ struct Transcript {
 
 impl Transcript {
     fn new() -> Self {
-        Self { data: [0u32; TRANSCRIPT_SIZE_U32] }
+        Self {
+            data: [0u32; TRANSCRIPT_SIZE_U32],
+        }
     }
 
     fn rotl_xor_into(&mut self, reduction_count: usize, combined_hash: u32) {
@@ -858,7 +899,7 @@ fn check_pow_target(transcript: &Transcript, pow_key: &[u8; 32], target: &[u8; 3
     // Equivalent: reverse hash to big-endian, then compare from byte 0 (MSB)
     for i in 0..32 {
         let h = hash_bytes[31 - i]; // hash MSB-first (reversed)
-        let t = target[i];          // target MSB-first (already big-endian)
+        let t = target[i]; // target MSB-first (already big-endian)
         if h != t {
             return h < t;
         }
@@ -885,8 +926,8 @@ pub struct MiningResult {
 /// 3. C' = A' * B' (tiled, checking jackpot per hash tile)
 /// 4. C = C' - A*E_BL*E_BR - E_AL*E_AR*B' (denoise — not needed for mining)
 pub fn noisy_gemm_mine(
-    a: &[i8],       // m × k (row-major)
-    b: &[i8],       // k × n (row-major)
+    a: &[i8], // m × k (row-major)
+    b: &[i8], // k × n (row-major)
     noise: &NoiseMatrices,
     m: usize,
     k: usize,
@@ -905,8 +946,7 @@ pub fn noisy_gemm_mine(
         for col in 0..k {
             let mut sum: i32 = 0;
             for r in 0..noise_rank {
-                sum += noise.e_al[row * noise_rank + r] as i32
-                    * noise.e_ar[r * k + col] as i32;
+                sum += noise.e_al[row * noise_rank + r] as i32 * noise.e_ar[r * k + col] as i32;
             }
             e_a[row * k + col] = sum;
         }
@@ -922,8 +962,7 @@ pub fn noisy_gemm_mine(
         for col in 0..n {
             let mut sum: i32 = 0;
             for r in 0..noise_rank {
-                sum += noise.e_bl[row * noise_rank + r] as i32
-                    * noise.e_br[r * n + col] as i32;
+                sum += noise.e_bl[row * noise_rank + r] as i32 * noise.e_br[r * n + col] as i32;
             }
             e_b[row * n + col] = sum;
         }
@@ -983,7 +1022,10 @@ pub fn noisy_gemm_mine(
                             let mut tile_vals = Vec::with_capacity(hash_tile_h * hash_tile_w);
                             for th in 0..hash_tile_h {
                                 for tw in 0..hash_tile_w {
-                                    tile_vals.push(c_block[(tile_start_h + th) * noise_rank + tile_start_w + tw]);
+                                    tile_vals.push(
+                                        c_block
+                                            [(tile_start_h + th) * noise_rank + tile_start_w + tw],
+                                    );
                                 }
                             }
                             let inner_hash = xor_reduction(&tile_vals);
@@ -1009,7 +1051,9 @@ pub fn noisy_gemm_mine(
                             break;
                         }
                     }
-                    if found_block { break; }
+                    if found_block {
+                        break;
+                    }
                 }
             }
         }
@@ -1029,8 +1073,8 @@ pub fn noisy_gemm_mine(
 /// This builds Merkle trees for A and B^T, then generates multi-leaf proofs
 /// for the opened hash tile's rows/columns.
 pub fn create_plain_proof(
-    a: &[i8],           // m × k (row-major)
-    b: &[i8],           // k × n (row-major)
+    a: &[i8], // m × k (row-major)
+    b: &[i8], // k × n (row-major)
     m: usize,
     n: usize,
     k: usize,
@@ -1184,13 +1228,24 @@ pub fn mine_pearl_share(
     let noise = generate_noise(
         &commitment.noise_seed_a,
         &commitment.noise_seed_b,
-        m, k, n, noise_rank, noise_range,
+        m,
+        k,
+        n,
+        noise_rank,
+        noise_range,
     )?;
 
     // Perform noisy GEMM with jackpot check
     let result = noisy_gemm_mine(
-        &a, &b, &noise, m, k, n, noise_rank,
-        hash_tile_h, hash_tile_w,
+        &a,
+        &b,
+        &noise,
+        m,
+        k,
+        n,
+        noise_rank,
+        hash_tile_h,
+        hash_tile_w,
         &commitment.noise_seed_a, // pow_key = a_noise_seed
         &target_bytes,
     );
@@ -1198,7 +1253,12 @@ pub fn mine_pearl_share(
     if result.found_block {
         // Create PlainProof
         let proof = create_plain_proof(
-            &a, &b, m, n, k, noise_rank,
+            &a,
+            &b,
+            m,
+            n,
+            k,
+            noise_rank,
             &result.a_row_indices,
             &result.b_column_indices,
             &job_key,
@@ -1389,8 +1449,11 @@ fn extract_permutation_indices(
         for col in 0..cols {
             for row in 0..rows {
                 let val = matrix[row * cols + col];
-                if val == 1 { first[col] = row; }
-                else if val == -1 { second[col] = row; }
+                if val == 1 {
+                    first[col] = row;
+                } else if val == -1 {
+                    second[col] = row;
+                }
             }
         }
         (first, second)
@@ -1401,8 +1464,11 @@ fn extract_permutation_indices(
         for row in 0..rows {
             for col in 0..cols {
                 let val = matrix[row * cols + col];
-                if val == 1 { first[row] = col; }
-                else if val == -1 { second[row] = col; }
+                if val == 1 {
+                    first[row] = col;
+                } else if val == -1 {
+                    second[row] = col;
+                }
             }
         }
         (first, second)
@@ -1473,7 +1539,9 @@ pub fn prepare_pearl_gpu_input(
         let hash = blake3_digest(&rng_state, None);
         rng_state = hash;
         for &byte in &hash[..] {
-            if offset >= total_elements { break; }
+            if offset >= total_elements {
+                break;
+            }
             let val = byte % range_size;
             let v = min_data.wrapping_add(val as i8);
             if offset < m * k {
@@ -1507,18 +1575,18 @@ pub fn prepare_pearl_gpu_input(
     let noise = generate_noise(
         &commitment.noise_seed_a,
         &commitment.noise_seed_b,
-        m, k, n, noise_rank, noise_range,
+        m,
+        k,
+        n,
+        noise_rank,
+        noise_range,
     )?;
 
     // Extract permutation indices for O(1) noise application
     // E_AR: rank×k, assign_columns=true → (first_idx[k], second_idx[k])
-    let (e_ar_first, e_ar_second) = extract_permutation_indices(
-        &noise.e_ar, noise_rank, k, true,
-    );
+    let (e_ar_first, e_ar_second) = extract_permutation_indices(&noise.e_ar, noise_rank, k, true);
     // E_BL: k×rank, assign_columns=false → (first_idx[k], second_idx[k])
-    let (e_bl_first, e_bl_second) = extract_permutation_indices(
-        &noise.e_bl, k, noise_rank, false,
-    );
+    let (e_bl_first, e_bl_second) = extract_permutation_indices(&noise.e_bl, k, noise_rank, false);
 
     // Compute noised A' = A + E_AL·E_AR (int8, wrapped)
     // Optimized: E_A[row, col] = E_AL[row, e_ar_first[col]] - E_AL[row, e_ar_second[col]]
@@ -1559,7 +1627,12 @@ pub fn prepare_pearl_gpu_input(
         matrix_a: a,
         matrix_b: b,
         job_key,
-        m, n, k, noise_rank, hash_tile_h, hash_tile_w,
+        m,
+        n,
+        k,
+        noise_rank,
+        hash_tile_h,
+        hash_tile_w,
     })
 }
 
@@ -1587,9 +1660,15 @@ pub fn mine_pearl_share_gpu(
 ) -> Result<Option<PlainProof>> {
     // Step 1: CPU prep (with nonce for matrix variation)
     let prep = prepare_pearl_gpu_input(
-        header_hex, target_hex,
-        m, n, k, noise_rank, noise_range,
-        hash_tile_h, hash_tile_w,
+        header_hex,
+        target_hex,
+        m,
+        n,
+        k,
+        noise_rank,
+        noise_range,
+        hash_tile_h,
+        hash_tile_w,
         nonce,
     )?;
 
@@ -1608,7 +1687,9 @@ pub fn mine_pearl_share_gpu(
         &prep.noised_bt,
         &prep.pow_key,
         &target_bytes,
-        prep.m, prep.n, prep.k,
+        prep.m,
+        prep.n,
+        prep.k,
         prep.noise_rank,
         prep.hash_tile_h,
         prep.hash_tile_w,
@@ -1620,7 +1701,10 @@ pub fn mine_pearl_share_gpu(
         let mut proof = create_plain_proof(
             &prep.matrix_a,
             &prep.matrix_b,
-            prep.m, prep.n, prep.k, prep.noise_rank,
+            prep.m,
+            prep.n,
+            prep.k,
+            prep.noise_rank,
             &a_row_indices,
             &b_col_indices,
             &prep.job_key,

@@ -205,9 +205,9 @@ impl NearAdapter {
             .unwrap_or_else(|_| "https://rpc.mainnet.near.org".into());
         let bridge_contract =
             std::env::var("WARP_NEAR_BRIDGE_CONTRACT").unwrap_or_else(|_| "warp.near".into());
-            // TODO: After deploying zion_token.rs (NEP-141), set this to the
-            // real contract account ID (e.g. "zion.near"). See:
-            // V3/L2/bridge/contracts/non-evm/near/README.md
+        // TODO: After deploying zion_token.rs (NEP-141), set this to the
+        // real contract account ID (e.g. "zion.near"). See:
+        // V3/L2/bridge/contracts/non-evm/near/README.md
         Self {
             rpc_url,
             bridge_contract,
