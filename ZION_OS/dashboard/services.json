@@ -118,5 +118,17 @@
     "log": "space",
     "service_id": "issobella",
     "env": {}
+  },
+
+  "dao": {
+    "bin": "zion-dao",
+    "log": "dao",
+    "service_id": "zion-v31-dao",
+    "env": {
+      "DAO_API_PORT": "8456",
+      "DAO_DB_PATH": "V31/data/dao.db",
+      "DAO_CIRCULATING_SUPPLY": "4000000000000000",
+      "ZION_DAO_API_KEY": ""
+    }
   }
 }

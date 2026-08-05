@@ -89,7 +89,8 @@
       "node_p2p": 8335,
       "pool_stratum": 8444,
       "pool_metrics": 8455,
-      "multichain_api": 8453
+      "multichain_api": 8453,
+      "dao_api": 8456
     }
   }
 }
