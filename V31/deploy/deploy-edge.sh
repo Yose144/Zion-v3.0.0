@@ -5,7 +5,7 @@
 # Adapted from edge-deploy/deploy-edge.sh for V31:
 #   - All /opt/zion/V3/ paths → /opt/zion/V31/
 #   - Binary names: node → zion-node, server → zion-pool
-#   - Service names: kept zion-edge-* (same naming convention)
+#   - Service names: zion-v31-* for L1/L2, zion-edge-* for ops/dashboard
 #
 # Run from any machine with SSH access to Edge:
 #   bash V31/deploy/deploy-edge.sh
@@ -170,7 +170,7 @@ ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
         sed -i '/\"L3\/ai-native\",/d' Cargo.toml 2>/dev/null || true
         sed -i '/\"cli\",/d;/\"smoke\",/d' Cargo.toml 2>/dev/null || true
     fi
-    cargo build --release --bin zion-node --bin zion-pool --bin zion-bridge --bin zion-dao --bin warpd --bin zion-miner 2>&1
+    cargo build --release --bin zion-node --bin zion-pool --bin zion-miner --bin zion-universal-miner --bin zion-dao --bin warpd --bin zion-oasis 2>&1
     # Build agent
     cd '${REMOTE_ROOT}/ZION_OS/agent'
     cargo build --release 2>&1
@@ -186,7 +186,7 @@ ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
 # Stop first so cp -f does not hit "Text file busy" on a running executable.
 log "Stopping standalone services before binary update..."
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
-    systemctl stop zion-edge-agent zion-edge-dashboard zion-edge-dex 2>/dev/null || true
+    systemctl stop zion-edge-agent zion-edge-python-dashboard 2>/dev/null || true
 "
 
 log "Installing standalone binaries to /usr/local/bin..."
@@ -211,19 +211,16 @@ fi
 # ── Step 7: Install systemd services and timers ──
 log "Installing systemd services..."
 SERVICES=(
-    zion-edge-node1
-    zion-edge-node2
-    zion-edge-pool
-    zion-edge-bridge
-    zion-edge-dao
-    zion-edge-warp
+    zion-v31-node
+    zion-v31-pool
+    zion-v31-multichain
+    zion-v31-dao
+    zion-v31-oasis
+    zion-v31-miner
     zion-v31-watchdog
     zion-edge-backup
     zion-edge-maintenance
-    zion-edge-miner
     zion-edge-agent
-    zion-edge-dashboard
-    zion-edge-dex
     zion-edge-python-dashboard
 )
 
@@ -245,16 +242,15 @@ done
 # ── Install systemd drop-ins (memory limits, OOM, maintenance overrides) ──
 log "Installing systemd drop-ins..."
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
-    mkdir -p /etc/systemd/system/zion-edge-node1.service.d
-    mkdir -p /etc/systemd/system/zion-edge-node2.service.d
+    mkdir -p /etc/systemd/system/zion-v31-node.service.d
     mkdir -p /etc/systemd/system/zion-edge-python-dashboard.service.d
     mkdir -p /etc/systemd/system/docker.service.d
     cp -f '${REMOTE_ROOT}/V31/deploy/systemd/docker-ram-limits.conf'                /etc/systemd/system/docker.service.d/ram-limits.conf
 "
 
-# Cleanup old/duplicate service name
+# Cleanup old/duplicate service names
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} \
-    "systemctl disable zion-edge-node 2>/dev/null || true; systemctl reset-failed zion-edge-node 2>/dev/null || true"
+    "for old in zion-edge-node zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-bridge zion-edge-dao zion-edge-warp zion-edge-miner zion-edge-dashboard zion-edge-dex; do systemctl disable \$old 2>/dev/null || true; systemctl reset-failed \$old 2>/dev/null || true; done"
 
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl daemon-reload"
 
@@ -285,18 +281,22 @@ ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
     nginx -t 2>&1 && systemctl reload nginx 2>/dev/null || true
 "
 
-# Stop legacy zion-* services before starting the hardened zion-edge-* units
-# to avoid port conflicts (e.g. zion-node :8443 vs nginx :8443).
-log "Stopping legacy zion-* services..."
+# Stop legacy zion-* and zion-edge-* services before starting the hardened
+# zion-v31-* units to avoid port conflicts.
+log "Stopping legacy zion-* and zion-edge-* services..."
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
     systemctl disable --now \
         zion-node zion-node2 zion-pool zion-bridge zion-dao \
-        zion-warp zion-dex zion-oasis \
-        zion-dashboard zion-watchdog.timer \
+        zion-warp zion-dex zion-oasis zion-dashboard zion-watchdog.timer \
+        zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-bridge \
+        zion-edge-dao zion-edge-warp zion-edge-miner zion-edge-dashboard \
+        zion-edge-dex \
         2>/dev/null || true
     systemctl reset-failed zion-node zion-node2 zion-pool zion-bridge zion-dao \
-        zion-warp zion-dex zion-oasis zion-dashboard \
-        zion-watchdog.timer \
+        zion-warp zion-dex zion-oasis zion-dashboard zion-watchdog.timer \
+        zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-bridge \
+        zion-edge-dao zion-edge-warp zion-edge-miner zion-edge-dashboard \
+        zion-edge-dex \
         2>/dev/null || true
 "
 
@@ -310,20 +310,18 @@ done
 # ── Step 8: Restart services in order ──
 log "Restarting Edge services..."
 
-ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-node1"
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-v31-node"
 sleep 3
 
-ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-node2"
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-v31-pool"
 sleep 3
 
-ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-pool"
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-v31-multichain zion-v31-dao zion-v31-oasis || true"
 sleep 3
 
-ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-bridge zion-edge-dao zion-edge-warp || true"
-
-ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-miner || true"
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-v31-miner || true"
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-agent || true"
-ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-dashboard zion-edge-dex zion-edge-python-dashboard || true"
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-python-dashboard || true"
 
 # Restart timers (will not start oneshot services, just activate timers)
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-v31-watchdog.timer zion-edge-backup.timer zion-edge-maintenance.timer || true"
@@ -343,7 +341,7 @@ sleep 10
 
 echo ""
 echo "=== Deployment Status ==="
-for svc in zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-bridge zion-edge-dao zion-edge-warp zion-edge-miner zion-edge-agent zion-edge-dashboard zion-edge-dex zion-edge-python-dashboard; do
+for svc in zion-v31-node zion-v31-pool zion-v31-multichain zion-v31-dao zion-v31-oasis zion-v31-miner zion-edge-agent zion-edge-python-dashboard; do
     STATUS=$(ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl is-active ${svc}" 2>/dev/null || true)
     if [[ "$STATUS" == "active" ]]; then
         echo -e "${GREEN}  ${svc} : ACTIVE${NC}"
@@ -372,9 +370,11 @@ log "=== Deployment Complete ==="
 echo "Backup: ${BACKUP_PATH}"
 echo ""
 echo "Quick checks:"
-echo "  ssh ${EDGE_USER}@${EDGE_HOST} 'curl -s http://127.0.0.1:8443/health'"
-echo "  ssh ${EDGE_USER}@${EDGE_HOST} 'curl -s http://127.0.0.1:8450/health'"
+echo "  ssh ${EDGE_USER}@${EDGE_HOST} 'curl -s http://127.0.0.1:9445/health'"
+echo "  ssh ${EDGE_USER}@${EDGE_HOST} 'curl -s http://127.0.0.1:8080/metrics'"
 echo "  ssh ${EDGE_USER}@${EDGE_HOST} 'curl -s http://127.0.0.1:8453/health'"
+echo "  ssh ${EDGE_USER}@${EDGE_HOST} 'curl -s http://127.0.0.1:8456/health'"
+echo "  ssh ${EDGE_USER}@${EDGE_HOST} 'curl -s http://127.0.0.1:8766/health'"
 echo ""
 echo "Pool endpoint: ${EDGE_HOST}:8444"
 echo "Website:       ${EDGE_HOST}:3000"
