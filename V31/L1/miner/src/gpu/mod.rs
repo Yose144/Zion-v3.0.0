@@ -8381,6 +8381,7 @@ pub fn query_gpu_details() -> Vec<GpuInfo> {
 
 #[cfg(not(feature = "gpu-opencl"))]
 pub fn query_gpu_details() -> Vec<GpuInfo> {
+    #[allow(unused_mut)]
     let mut out = Vec::new();
     #[cfg(feature = "gpu-cuda")]
     {
@@ -8431,4 +8432,34 @@ fn query_metal_details() -> Vec<GpuInfo> {
         });
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
+    fn metal_ekam_deeksha_smoke() {
+        let mut miner = metal_deeksha::MetalDeekshaMiner::new(64)
+            .expect("Metal EkamDeeksha miner should initialize");
+        let header = MiningHeader {
+            version: 0x20000000,
+            previous_hash: [0xBB; 32],
+            merkle_root: [0xCC; 32],
+            timestamp: 1_762_000_200,
+            difficulty_bits: 0x1f00ffff,
+        };
+        // Maximum target so any hash is accepted.
+        let target = DifficultyTarget {
+            bytes: [0xff; 32],
+        };
+        let result = miner
+            .mine_batch(header, target, 0, 1024)
+            .expect("Metal mine_batch should run");
+        assert!(
+            !result.solutions.is_empty(),
+            "Metal ekam_deeksha should find a nonce at max target"
+        );
+    }
 }
