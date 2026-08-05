@@ -4415,8 +4415,60 @@ def load_env_file(name: str) -> dict:
 
 # ── Wallet discovery & RPC balance lookup ──────────────────────────────
 
+def _rpc_call_tcp(host: str, port: int, method: str, params: dict, timeout: float = 2.0) -> dict:
+    """Raw TCP JSON-RPC call used by V31 node (port 9445).
+
+    V31 node exposes a line-delimited JSON-RPC socket instead of HTTP.
+    Sends a single JSON line and reads the response until the first newline.
+    """
+    req = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params or []}) + "\n"
+    try:
+        with socket.create_connection((host, port), timeout=timeout) as s:
+            s.settimeout(timeout)
+            s.sendall(req.encode("utf-8"))
+            resp = b""
+            while True:
+                chunk = s.recv(65536)
+                if not chunk:
+                    break
+                resp += chunk
+                if b"\n" in chunk:
+                    break
+            text = resp.decode("utf-8", errors="replace").strip()
+            if not text:
+                return {"_rpc_error": "empty TCP response"}
+            r = json.loads(text.split("\n")[0])
+            if "error" in r and r["error"]:
+                return {"_rpc_error": r["error"]}
+            return r.get("result")
+    except Exception as e:
+        return {"_rpc_error": str(e)[:120]}
+
+def _get_node_rpc_addr() -> tuple:
+    """Return canonical (host, port) for the active node RPC from env."""
+    rpc_addr = os.environ.get("ZION_NODE_RPC_ADDR", "")
+    if rpc_addr and ":" in rpc_addr:
+        try:
+            h, p = rpc_addr.rsplit(":", 1)
+            return (h or "127.0.0.1", int(p))
+        except Exception:
+            pass
+    return ("127.0.0.1", 9443)
+
 def rpc_call(host: str, port: int, method: str, params: dict, timeout: float = 2.0) -> dict:
-    """HTTP JSON-RPC call to ZION node. Returns result dict or None on failure."""
+    """JSON-RPC call to ZION node.
+
+    V31 nodes (port 9445) use raw TCP JSON-RPC, so we route those directly.
+    If the caller still targets the legacy port 9443 but ZION_NODE_RPC_ADDR
+    points to a different (V31) port, we honour the configured node address.
+    """
+    # Honour active node RPC config when legacy port 9443 is requested
+    if port == 9443:
+        cfg_host, cfg_port = _get_node_rpc_addr()
+        if cfg_port != 9443:
+            host, port = cfg_host, cfg_port
+    if port == 9445:
+        return _rpc_call_tcp(host, port, method, params, timeout=timeout)
     try:
         req = _urlreq.Request(
             f"http://{host}:{port}/jsonrpc",
@@ -4745,16 +4797,15 @@ def _parse_mempool_tx(tx: dict) -> dict:
 @_ttl_cache_fn(2.0)
 def get_mempool_detail() -> dict:
     """Fetch mempool transactions and stats via getMempoolInfo + getBlockTemplate RPC."""
-    rpc_host, rpc_port = "127.0.0.1", 9443
-    # Try getMempoolInfo first (richer data)
-    info = rpc_call(rpc_host, rpc_port, "getMempoolInfo", {}, timeout=1.5)
+    info, rpc_host, rpc_port = _rpc_with_fallback("getMempoolInfo", {}, timeout=1.5)
     if info and not info.get("_rpc_error"):
-        template = rpc_call(rpc_host, rpc_port, "getBlockTemplate", {}, timeout=1.5) or {}
+        template, _, _ = _rpc_with_fallback("getBlockTemplate", {}, timeout=1.5)
+        template = template or {}
         tx_ids = template.get("transaction_ids", [])
         tx_count = info.get("size", 0) or len(tx_ids)
         transactions = []
         for txid in tx_ids[:50]:
-            tx = rpc_call(rpc_host, rpc_port, "getTransaction", {"txid": txid}, timeout=0.8)
+            tx, _, _ = _rpc_with_fallback("getTransaction", {"txid": txid}, timeout=0.8)
             if tx and not tx.get("_rpc_error") and (tx.get("tx_id") or tx.get("txid")):
                 transactions.append(_parse_mempool_tx(tx))
             else:
@@ -4774,7 +4825,7 @@ def get_mempool_detail() -> dict:
             "transactions": transactions,
         }
     # Fallback to getChainInfo
-    info = rpc_call(rpc_host, rpc_port, "getChainInfo", {}, timeout=1.5)
+    info, _, _ = _rpc_with_fallback("getChainInfo", {}, timeout=1.5)
     if not info or info.get("_rpc_error"):
         return {"rpc_reachable": False, "tx_count": 0, "transactions": []}
     mempool_txs = info.get("mempool_transactions", 0)
@@ -7924,8 +7975,19 @@ def build_payout_status() -> dict:
     # ── Topology-aware config discovery ───────────────────────────────
     is_edge = TOPOLOGY == "edge-primary"
     edge_host = "127.0.0.1"
-    local_rpc_alive = check_port_open("127.0.0.1", 9443, timeout=1.0)
-    edge_rpc_alive = check_port_open(edge_host, 9443, timeout=1.5) if is_edge else False
+    # V31 node RPC uses TCP on port 9445 (or whatever ZION_NODE_RPC_ADDR says)
+    _rpc_addr = os.environ.get("ZION_NODE_RPC_ADDR", "")
+    if _rpc_addr and ":" in _rpc_addr:
+        try:
+            _rpc_host_default, _rpc_port_str = _rpc_addr.rsplit(":", 1)
+            rpc_port = int(_rpc_port_str)
+            rpc_host_default = _rpc_host_default or "127.0.0.1"
+        except Exception:
+            rpc_port, rpc_host_default = 9445, "127.0.0.1"
+    else:
+        rpc_port, rpc_host_default = 9445, "127.0.0.1"
+    local_rpc_alive = check_port_open(rpc_host_default, rpc_port, timeout=1.0)
+    edge_rpc_alive = check_port_open(edge_host, rpc_port, timeout=1.5) if is_edge else False
     edge_stats_alive = check_port_open(edge_host, V31_POOL_API_PORT, timeout=1.5) if is_edge else False
     tailscale_ok = True  # v3.0.4: No Tailscale needed
 

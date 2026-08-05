@@ -549,7 +549,9 @@ let _grafanaLoaded = false;
 
 function renderV31Production(st){
   const banner = st.v31_banner;
-  const pool = st.v31_pool || st.pool_edge || st.pool || {};
+  // V31 Production KPIs should use the rich Prometheus-backed pool object first;
+  // v31_pool is only the systemd/journald view and lacks metrics.
+  const pool = st.pool || st.pool_edge || st.v31_pool || {};
   const node = st.v31_node || st.edge_node || {};
   const miner = st.v31_miner || {};
   const mc = st.v31_multichain || {};
@@ -577,7 +579,8 @@ function renderV31Production(st){
     ? Number(banner.shares_per_sec).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})
     : '—';
 
-  if(el('v31-prod-active-miners')) el('v31-prod-active-miners').textContent = pool?.active_sessions ?? pool?.active_miners ?? '—';
+  const activeMiners = (pool?.active_sessions > 0) ? pool.active_sessions : (pool?.miners_tracked ?? pool?.active_miners ?? 0);
+  if(el('v31-prod-active-miners')) el('v31-prod-active-miners').textContent = activeMiners || '—';
   if(el('v31-prod-blocks-found')) el('v31-prod-blocks-found').textContent = pool?.blocks_found ?? pool?.total_blocks_found ?? '—';
 
   if(el('v31-prod-multichain')){
@@ -596,7 +599,7 @@ function renderV31Production(st){
 
   // Service status list
   if(el('v31-stat-node')) el('v31-stat-node').innerHTML = `<span class="${node?.running ? 'text-emerald-400' : 'text-red-400'}">${node?.running ? 'LIVE' : 'DOWN'}</span> <span class="text-gray-500">h ${node?.chain_height ?? '—'}</span>`;
-  if(el('v31-stat-pool')) el('v31-stat-pool').innerHTML = `<span class="${pool?.running ? 'text-emerald-400' : 'text-red-400'}">${pool?.running ? 'LIVE' : 'DOWN'}</span> <span class="text-gray-500">${pool?.active_sessions ?? 0} miners</span>`;
+  if(el('v31-stat-pool')) el('v31-stat-pool').innerHTML = `<span class="${pool?.running ? 'text-emerald-400' : 'text-red-400'}">${pool?.running ? 'LIVE' : 'DOWN'}</span> <span class="text-gray-500">${activeMiners || 0} miners</span>`;
   if(el('v31-stat-miner')) el('v31-stat-miner').innerHTML = `<span class="${miner?.running ? 'text-emerald-400' : 'text-gray-500'}">${miner?.running ? 'LIVE' : '—'}</span> <span class="text-gray-500">${miner?.hashrate ? miner.hashrate : '—'}</span>`;
   if(el('v31-stat-multichain')) el('v31-stat-multichain').innerHTML = `<span class="${mc?.ok ? 'text-emerald-400' : 'text-red-400'}">${mc?.ok ? 'OK' : 'FAIL'}</span> <span class="text-gray-500">t ${mc?.transfers_total ?? 0}</span>`;
 
@@ -824,7 +827,8 @@ function updateServiceCards(s){
   if(v31mch) v31mch.textContent = v31mc.ok ? 'OK' : '—';
 
   // ── Pool Command Center (V31 PROD) ──
-  const v31pCC = s.v31_pool ?? {};
+  // Prefer the Prometheus-backed pool object; v31_pool only captures systemd state.
+  const v31pCC = s.pool ?? s.pool_edge ?? s.v31_pool ?? {};
   const v31mCC = s.v31_miner ?? {};
   const poolRunning = v31pCC.running;
   const poolBadge = document.getElementById('badge-pool-cc');
@@ -832,31 +836,41 @@ function updateServiceCards(s){
   const poolCard = document.getElementById('card-pool-command');
   if(poolCard) setCardLive('pool-command', poolRunning);
 
-  // KPI row — V31 data
+  // KPI row — live pool metrics
   const pccHash = document.getElementById('pcc-hashrate');
   if(pccHash){
-    const hr = v31mCC.hashrate ?? 0;
+    const hrHps = (v31pCC.hashrate_khs ?? 0) * 1000;
+    const hr = hrHps > 0 ? hrHps : (v31mCC.hashrate ?? 0);
     pccHash.textContent = hr > 0 ? (hr >= 1000000 ? (hr/1000000).toFixed(2) + ' MH/s' : hr >= 1000 ? (hr/1000).toFixed(1) + ' kH/s' : hr + ' H/s') : '0 H/s';
   }
   const pccMiners = document.getElementById('pcc-miners');
-  if(pccMiners) pccMiners.textContent = v31mCC.running ? '1' : '0';
+  if(pccMiners){
+    const active = v31pCC.active_sessions ?? 0;
+    const tracked = v31pCC.miners_tracked ?? v31pCC.pplns_registered_miners ?? 0;
+    pccMiners.textContent = (active > 0 ? active : tracked) || '0';
+  }
   const pccBlocks = document.getElementById('pcc-blocks');
-  if(pccBlocks) pccBlocks.textContent = '0';
+  if(pccBlocks) pccBlocks.textContent = v31pCC.blocks_found ?? '0';
   const pccShares = document.getElementById('pcc-shares');
   if(pccShares){
     const acc = v31pCC.shares_accepted ?? 0;
-    const rej = 0;
+    const rej = v31pCC.shares_rejected ?? 0;
     pccShares.textContent = acc + ' / ' + rej;
   }
   const pccAccept = document.getElementById('pcc-accept-rate');
   if(pccAccept){
-    const acc = v31mCC.shares_accepted ?? 0;
-    const sub = v31mCC.shares_submitted ?? 0;
+    const acc = v31pCC.shares_accepted ?? 0;
+    const rej = v31pCC.shares_rejected ?? 0;
+    const sub = v31pCC.total_shares ?? (acc + rej);
     const ar = sub > 0 ? (acc / sub * 100) : 0;
     pccAccept.textContent = ar.toFixed(1) + '%';
   }
   const pccPplnsWin = document.getElementById('pcc-pplns-window');
-  if(pccPplnsWin) pccPplnsWin.textContent = '—';
+  if(pccPplnsWin){
+    const winSize = v31pCC.pplns_window_size ?? 0;
+    const winUsed = v31pCC.pplns_window_used ?? 0;
+    pccPplnsWin.textContent = winSize > 0 ? (winUsed + ' / ' + winSize) : '—';
+  }
 
   // Pool config — V31
   const pccStratum = document.getElementById('pcc-stratum');
@@ -869,13 +883,13 @@ function updateServiceCards(s){
   const pccPayout = document.getElementById('pcc-payout');
   if(pccPayout) pccPayout.textContent = 'V31 PPLNS';
   const pccRegistered = document.getElementById('pcc-registered');
-  if(pccRegistered) pccRegistered.textContent = v31mCC.running ? '1' : '0';
+  if(pccRegistered) pccRegistered.textContent = (v31pCC.miners_tracked ?? v31pCC.pplns_registered_miners ?? 0) || '0';
   const pccPorts = document.getElementById('pcc-ports');
   if(pccPorts){
     pccPorts.innerHTML = '<span class="text-emerald-400">8444</span>';
   }
   const pccUptime = document.getElementById('pool-cc-uptime');
-  if(pccUptime) pccUptime.textContent = v31pCC.systemd_active === 'active' ? '⏱ active' : '';
+  if(pccUptime) pccUptime.textContent = v31pCC.running ? '⏱ active' : '';
 
   // Fee distribution
   const feeSplit = p.fee_split || '89/5/5/1';
@@ -5417,20 +5431,28 @@ async function loadMempool(){
 
 async function loadMonitoringStatus(){
   try {
-    // V31: use /api/status instead of V3 Prometheus endpoint
+    // V31: use /api/status (Prometheus-backed pool object) instead of V3 Prometheus endpoint
     const sd = window.currentStatus || await fetch('/api/status').then(r => r.json()).catch(() => ({}));
+    // Prefer the live pool metrics object; fall back to v31_pool (systemd/journald) for shares/jobs
+    const pool = sd.pool || sd.pool_edge || sd.v31_pool || {};
     const v31p = sd.v31_pool || {};
     const v31m = sd.v31_miner || {};
+    const active = pool.active_sessions ?? 0;
+    const tracked = pool.miners_tracked ?? pool.pplns_registered_miners ?? 0;
+    const activeMiners = active > 0 ? active : tracked;
+    const hrHps = (pool.hashrate_khs ?? 0) * 1000;
+    const minerHr = v31m.hashrate ?? 0;
+    const hr = hrHps > 0 ? hrHps : minerHr;
     const pm = {
-      alive: v31p.running || false,
-      active_sessions: v31m.running ? 1 : 0,
-      miners_tracked: v31p.jobs_broadcast ?? '—',
-      accepted: v31p.shares_accepted ?? null,
-      rejected: 0,
-      blocks_found: 0,
-      submits: v31m.shares_submitted ?? null,
-      shares: v31p.shares_accepted ?? null,
-      hashrate: v31m.hashrate ? (v31m.hashrate >= 1000 ? (v31m.hashrate/1000).toFixed(1) + ' kH/s' : v31m.hashrate + ' H/s') : '—',
+      alive: pool.running || v31p.running || false,
+      active_sessions: activeMiners,
+      miners_tracked: tracked ?? '—',
+      accepted: pool.shares_accepted ?? v31p.shares_accepted ?? null,
+      rejected: pool.shares_rejected ?? 0,
+      blocks_found: pool.blocks_found ?? 0,
+      submits: pool.total_shares ?? v31m.shares_submitted ?? null,
+      shares: pool.shares_accepted ?? v31p.shares_accepted ?? null,
+      hashrate: hr > 0 ? (hr >= 1000 ? (hr/1000).toFixed(1) + ' kH/s' : hr.toFixed(0) + ' H/s') : '—',
     };
     const bic = { alive: true }; // Built-in charts always available
 
