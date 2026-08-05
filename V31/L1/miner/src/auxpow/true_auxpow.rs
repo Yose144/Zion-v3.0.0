@@ -123,9 +123,8 @@ pub fn validate_auxpow_full(
 ) -> Result<AuxPowFullValidation> {
     let parent_hash = header.pow_hash();
     let parent_hash_meets_target = meets_target(&parent_hash, &parent_target);
-    let computed_root =
-        compute_aux_merkle_root(aux_hash, commitment.merkle_nonce, aux_branch)
-            .ok_or_else(|| anyhow!("aux branch too deep or malformed"))?;
+    let computed_root = compute_aux_merkle_root(aux_hash, commitment.merkle_nonce, aux_branch)
+        .ok_or_else(|| anyhow!("aux branch too deep or malformed"))?;
     let aux_included_in_coinbase = computed_root == commitment.aux_block_hash;
     Ok(AuxPowFullValidation {
         parent_hash_meets_target,
@@ -159,9 +158,8 @@ impl AuxPowValidation {
 pub fn validate_auxpow(data: &AuxPowData) -> Result<AuxPowValidation> {
     let parent_hash = data.parent_algo.hash_header(&data.parent_header);
     let parent_hash_meets_target = meets_target(&parent_hash, &data.parent_target);
-    let computed_root =
-        compute_aux_merkle_root(data.aux_hash, data.aux_index, &data.aux_branch)
-            .ok_or_else(|| anyhow!("aux branch too deep or malformed"))?;
+    let computed_root = compute_aux_merkle_root(data.aux_hash, data.aux_index, &data.aux_branch)
+        .ok_or_else(|| anyhow!("aux branch too deep or malformed"))?;
     let aux_included_in_coinbase = computed_root == data.coinbase_merkle_root;
     Ok(AuxPowValidation {
         parent_hash_meets_target,
@@ -196,8 +194,8 @@ fn combine(left: &[u8; 32], right: &[u8; 32]) -> [u8; 32] {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::parent_chains::{CoinbaseCommitment, DcrHeader};
+    use super::*;
 
     #[test]
     fn aux_merkle_root_basic() {
@@ -274,15 +272,21 @@ mod tests {
             merkle_nonce: 0,
         };
         let header = DcrHeader {
-            version: 9, previous_hash: [0u8; 32], merkle_root: [0u8; 32],
-            stake_root: [0u8; 32], vote_bits: 0, final_state: [0u8; 6],
-            voters: 0, stake_version: 0, timestamp: 1_750_000_000,
-            bits: 0, nonce: 42,
+            version: 9,
+            previous_hash: [0u8; 32],
+            merkle_root: [0u8; 32],
+            stake_root: [0u8; 32],
+            vote_bits: 0,
+            final_state: [0u8; 6],
+            voters: 0,
+            stake_version: 0,
+            timestamp: 1_750_000_000,
+            bits: 0,
+            nonce: 42,
         };
         let parent_header = ParentHeader::DCR(header);
-        let result = validate_auxpow_full(
-            &parent_header, aux_hash, &commitment, &[], [0xffu8; 32],
-        ).unwrap();
+        let result =
+            validate_auxpow_full(&parent_header, aux_hash, &commitment, &[], [0xffu8; 32]).unwrap();
         assert!(result.parent_hash_meets_target);
         assert!(result.aux_included_in_coinbase);
         assert!(result.is_valid());
@@ -298,15 +302,21 @@ mod tests {
             merkle_nonce: 0,
         };
         let header = DcrHeader {
-            version: 9, previous_hash: [0u8; 32], merkle_root: [0u8; 32],
-            stake_root: [0u8; 32], vote_bits: 0, final_state: [0u8; 6],
-            voters: 0, stake_version: 0, timestamp: 1_750_000_001,
-            bits: 0, nonce: 0,
+            version: 9,
+            previous_hash: [0u8; 32],
+            merkle_root: [0u8; 32],
+            stake_root: [0u8; 32],
+            vote_bits: 0,
+            final_state: [0u8; 6],
+            voters: 0,
+            stake_version: 0,
+            timestamp: 1_750_000_001,
+            bits: 0,
+            nonce: 0,
         };
         let parent_header = ParentHeader::DCR(header);
-        let result = validate_auxpow_full(
-            &parent_header, aux_hash, &commitment, &[], [0xffu8; 32],
-        ).unwrap();
+        let result =
+            validate_auxpow_full(&parent_header, aux_hash, &commitment, &[], [0xffu8; 32]).unwrap();
         assert!(!result.aux_included_in_coinbase);
         assert!(!result.is_valid());
     }
@@ -320,13 +330,24 @@ mod tests {
             merkle_nonce: 7,
         };
         let header = DcrHeader {
-            version: 9, previous_hash: [1u8; 32], merkle_root: [2u8; 32],
-            stake_root: [3u8; 32], vote_bits: 0, final_state: [0u8; 6],
-            voters: 0, stake_version: 0, timestamp: 1_750_000_002,
-            bits: 0, nonce: 123,
+            version: 9,
+            previous_hash: [1u8; 32],
+            merkle_root: [2u8; 32],
+            stake_root: [3u8; 32],
+            vote_bits: 0,
+            final_state: [0u8; 6],
+            voters: 0,
+            stake_version: 0,
+            timestamp: 1_750_000_002,
+            bits: 0,
+            nonce: 123,
         };
         let data = AuxPowProofBuilder::build_dcr(
-            aux_hash, header.clone(), [0xffu8; 32], commitment.clone(), vec![],
+            aux_hash,
+            header.clone(),
+            [0xffu8; 32],
+            commitment.clone(),
+            vec![],
         );
         assert_eq!(data.parent_algo, ParentAlgorithm::DCR);
         assert_eq!(data.aux_hash, aux_hash);

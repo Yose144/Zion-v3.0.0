@@ -90,7 +90,10 @@ impl StreamProfitOracle {
 
         if let Some(last) = state.last_fetch {
             if now.duration_since(last) < self.min_fetch_interval && !state.cache.is_empty() {
-                debug!("stream_profit: returning {} cached estimates", state.cache.len());
+                debug!(
+                    "stream_profit: returning {} cached estimates",
+                    state.cache.len()
+                );
                 return state.cache.clone();
             }
         }
@@ -408,7 +411,9 @@ mod tests {
         }"#;
         let map = parse_nicehash(body, 60_000.0).unwrap();
         assert!(map.contains_key(&ExternalCoin::Kaspa));
-        assert!(map.contains_key(&ExternalCoin::Ravencoin) || map.contains_key(&ExternalCoin::Clore));
+        assert!(
+            map.contains_key(&ExternalCoin::Ravencoin) || map.contains_key(&ExternalCoin::Clore)
+        );
         assert!(map.contains_key(&ExternalCoin::Monero));
     }
 }

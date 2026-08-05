@@ -49,16 +49,10 @@ fn main() {
             } else if !cpu_target.is_empty() {
                 build.flag_if_supported(format!("-march={}", cpu_target));
             }
-            println!(
-                "cargo:warning=ZION miner build: cpu_target={}",
-                cpu_target
-            );
+            println!("cargo:warning=ZION miner build: cpu_target={}", cpu_target);
         }
 
-        build
-            .warnings(false)
-            .opt_level(3)
-            .compile("auxpow_native");
+        build.warnings(false).opt_level(3).compile("auxpow_native");
 
         let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
         if target_os == "macos" && !openmp_disabled {

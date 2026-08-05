@@ -160,10 +160,8 @@ impl MetalDeekshaLiteMiner {
         if flag == SENTINEL_U32 {
             return None;
         }
-        let nonce_lo =
-            unsafe { *(self.result_nonce_buf.contents().add(4) as *const u32) } as u64;
-        let nonce_hi =
-            unsafe { *(self.result_nonce_buf.contents().add(8) as *const u32) } as u64;
+        let nonce_lo = unsafe { *(self.result_nonce_buf.contents().add(4) as *const u32) } as u64;
+        let nonce_hi = unsafe { *(self.result_nonce_buf.contents().add(8) as *const u32) } as u64;
         let nonce = nonce_lo | (nonce_hi << 32);
         let mut hash = [0u8; 32];
         unsafe {
@@ -202,11 +200,7 @@ impl GpuMiner for MetalDeekshaLiteMiner {
 
         unsafe {
             let ptr = self.header_buf.contents() as *mut u8;
-            std::ptr::copy_nonoverlapping(
-                header_bytes.as_ptr(),
-                ptr,
-                header_bytes.len().min(80),
-            );
+            std::ptr::copy_nonoverlapping(header_bytes.as_ptr(), ptr, header_bytes.len().min(80));
         }
 
         let target_u32 = u32::from_be_bytes([

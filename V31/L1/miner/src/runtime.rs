@@ -64,8 +64,7 @@ pub struct MinerRuntime {
 
 impl MinerRuntime {
     pub fn new(config: MinerConfig) -> Self {
-        let algorithm =
-            Arc::new(EkamDeeksha::new()) as Arc<dyn zion_cosmic_harmony::PowAlgorithm>;
+        let algorithm = Arc::new(EkamDeeksha::new()) as Arc<dyn zion_cosmic_harmony::PowAlgorithm>;
         let consensus = Arc::new(ConsensusEngine::new(algorithm));
         #[cfg(feature = "auxpow")]
         let hashrate_per_unit = config.hashrate_per_unit;
@@ -310,12 +309,11 @@ impl MinerRuntime {
 
         let job = job.clone();
         let threads = self.config.miner_threads;
-        let share = task::spawn_blocking(move || {
-            crate::parallel::find_auxpow_share(&job, threads, batch)
-        })
-        .await
-        .map_err(|e| MinerError::Consensus(format!("cpu scanner join: {e}")))?
-        .ok_or(MinerError::NoAuxPoWSolution)?;
+        let share =
+            task::spawn_blocking(move || crate::parallel::find_auxpow_share(&job, threads, batch))
+                .await
+                .map_err(|e| MinerError::Consensus(format!("cpu scanner join: {e}")))?
+                .ok_or(MinerError::NoAuxPoWSolution)?;
         Ok(share)
     }
 
@@ -323,17 +321,24 @@ impl MinerRuntime {
     async fn try_gpu_auxpow_share(&self, job: &Job, batch: u64) -> Option<Share> {
         let kind = parse_gpu_backend(&self.config.gpu_backend);
         let work_size = batch as usize;
-        let algorithm = job.coin.algorithm().to_string();
-        let coin_ticker = job.coin.ticker().to_string();
+        let algorithm = job.coin.algorithm();
+        let coin_ticker = job.coin.ticker();
         let header = job.header.clone();
         let target = DifficultyTarget { bytes: job.target };
         let coin = job.coin;
         let job_id = job.job_id.clone();
         let extranonce2 = job.extranonce2.clone();
+        let extranonce1 = job.extranonce.clone();
         let ntime = job.ntime.clone();
+        let height = job.height;
 
         let gpu_result = task::spawn_blocking(move || {
-            let mut miner = create_gpu_backend(kind, work_size, &algorithm, &coin_ticker)
+            let mut miner = create_gpu_backend(kind, work_size, algorithm, coin_ticker)
+                .map_err(|e| anyhow::anyhow!("{e}"))?;
+            // Load the correct DAG/epoch and, for ProgPoW, recompile the kernel
+            // when the period changes. This must happen before mine_batch_raw.
+            miner
+                .update_epoch(height)
                 .map_err(|e| anyhow::anyhow!("{e}"))?;
             let result = miner
                 .mine_batch_raw(&header, target, 0, batch)
@@ -345,13 +350,25 @@ impl MinerRuntime {
         match gpu_result {
             Ok(Ok(gpu_result)) => {
                 if let Some((nonce, hash, mix)) = gpu_result.solutions.into_iter().next() {
+                    // Some algorithms (VerusHash, ZelHash, Equihash) need a
+                    // variable-length solution blob in addition to the 32-byte hash.
+                    let solution =
+                        if algorithm == "verushash" || algorithm.starts_with("verushash_") {
+                            crate::auxpow::hasher::build_verushash_solution(
+                                &job.header,
+                                nonce,
+                                &extranonce1,
+                            )
+                        } else {
+                            gpu_result.solution_blob
+                        };
                     return Some(Share {
                         job_id,
                         coin,
                         nonce,
                         hash,
                         mix_hash: mix,
-                        solution: None,
+                        solution,
                         extranonce2,
                         ntime,
                     });
@@ -390,7 +407,13 @@ impl MinerRuntime {
                 } else {
                     r.initial_selection();
                 }
-                Ok::<(Option<zion_cosmic_harmony::ExternalCoin>, Option<zion_cosmic_harmony::ExternalCoin>), String>((r.stream2_coin, r.stream3_coin))
+                Ok::<
+                    (
+                        Option<zion_cosmic_harmony::ExternalCoin>,
+                        Option<zion_cosmic_harmony::ExternalCoin>,
+                    ),
+                    String,
+                >((r.stream2_coin, r.stream3_coin))
             })
             .await
             {
@@ -448,7 +471,11 @@ impl MinerRuntime {
                     let url = this.config.pool_url.clone().unwrap_or_default();
                     // ZION pool expects username = WALLET.worker so it can map shares
                     // to a payout address and worker telemetry.
-                    let worker = format!("{}.{}", this.config.reward_address.as_str(), this.config.worker);
+                    let worker = format!(
+                        "{}.{}",
+                        this.config.reward_address.as_str(),
+                        this.config.worker
+                    );
                     let password = this.config.password.clone();
                     let client = crate::auxpow::StratumClient::new(&url, &worker, &password);
                     if let Err(e) = client.connect().await {
@@ -924,6 +951,7 @@ mod tests {
             extranonce: vec![0x01],
             extranonce2: "00".to_string(),
             ntime: "00000000".to_string(),
+            height: 0,
         };
         let share = runtime
             .mine_auxpow_share(StreamId::GpuExternal, &job)

@@ -167,10 +167,7 @@ mod opencl_impl {
                 .copy_host_slice(&[SENTINEL])
                 .build()?;
 
-            let result_hash_buf = Buffer::<u8>::builder()
-                .queue(q.clone())
-                .len(32)
-                .build()?;
+            let result_hash_buf = Buffer::<u8>::builder().queue(q.clone()).len(32).build()?;
 
             let kernel = pro_que
                 .kernel_builder(kernel_name)
@@ -356,7 +353,12 @@ mod opencl_impl {
     }
 
     impl EkamOpenClState {
-        fn new(device: Device, platform: Platform, family: GpuDeviceFamily, vram: usize) -> Result<Self> {
+        fn new(
+            device: Device,
+            platform: Platform,
+            family: GpuDeviceFamily,
+            vram: usize,
+        ) -> Result<Self> {
             let tuning = GpuTuning::auto_tune(GpuAlgorithm::CosmicHarmony, family, vram);
             let local_ws = std::env::var("ZION_OCL_LOCAL_SIZE")
                 .ok()
@@ -408,10 +410,7 @@ mod opencl_impl {
                 .copy_host_slice(&[SENTINEL])
                 .build()?;
 
-            let result_hash_buf = Buffer::<u8>::builder()
-                .queue(q.clone())
-                .len(32)
-                .build()?;
+            let result_hash_buf = Buffer::<u8>::builder().queue(q.clone()).len(32).build()?;
 
             // Allocate placeholder NPU buffers; they are populated on first mine()
             // once the block height (and thus NPU epoch) is known.
@@ -525,7 +524,10 @@ mod opencl_impl {
             let mut header_80 = [0u8; 80];
             let len = header.len().min(80);
             header_80[..len].copy_from_slice(&header[..len]);
-            self.header_buf.write(&header_80[..]).enq().with_context(|| "ekam header write failed")?;
+            self.header_buf
+                .write(&header_80[..])
+                .enq()
+                .with_context(|| "ekam header write failed")?;
             self.kernel.set_arg(1, len as u32)?;
             Ok(())
         }
@@ -632,8 +634,17 @@ mod opencl_impl {
                 let gpus = Device::list(platform, Some(ocl::flags::DeviceType::GPU))
                     .with_context(|| format!("OpenCL device list on {platform_name}"))?;
                 for (didx, device) in gpus.into_iter().enumerate() {
-                    let device_name = device.name().unwrap_or_else(|_| "unknown-device".to_string());
-                    candidates.push((pidx, didx, *platform, device, platform_name.clone(), device_name));
+                    let device_name = device
+                        .name()
+                        .unwrap_or_else(|_| "unknown-device".to_string());
+                    candidates.push((
+                        pidx,
+                        didx,
+                        *platform,
+                        device,
+                        platform_name.clone(),
+                        device_name,
+                    ));
                 }
             }
 
@@ -641,8 +652,11 @@ mod opencl_impl {
                 anyhow::bail!("no OpenCL GPU devices found");
             }
 
-            let idx = device_idx_override.unwrap_or(0).min(candidates.len().saturating_sub(1));
-            let (pidx, didx, platform, device, platform_name, device_name) = candidates.swap_remove(idx);
+            let idx = device_idx_override
+                .unwrap_or(0)
+                .min(candidates.len().saturating_sub(1));
+            let (pidx, didx, platform, device, platform_name, device_name) =
+                candidates.swap_remove(idx);
 
             eprintln!(
                 "gpu_opencl_pick platform_idx={pidx} device_idx={didx} \"{platform_name}\" \"{device_name}\""
@@ -751,15 +765,17 @@ mod opencl_impl {
                 return Ok(None);
             }
             match algorithm {
-                "deeksha_lite_v1" => self.lite_state()?.mine(header, target, start_nonce, nonce_count),
-                "cosmic_harmony_ekam_deeksha_v2" => self.ekam_state()?.mine(
-                    header,
-                    target,
-                    start_nonce,
-                    nonce_count,
-                    block_height,
-                ),
-                _ => self.chv3_state()?.mine(header, target, start_nonce, nonce_count),
+                "deeksha_lite_v1" => {
+                    self.lite_state()?
+                        .mine(header, target, start_nonce, nonce_count)
+                }
+                "cosmic_harmony_ekam_deeksha_v2" => {
+                    self.ekam_state()?
+                        .mine(header, target, start_nonce, nonce_count, block_height)
+                }
+                _ => self
+                    .chv3_state()?
+                    .mine(header, target, start_nonce, nonce_count),
             }
         }
 

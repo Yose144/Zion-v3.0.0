@@ -140,8 +140,7 @@ async fn main() -> Result<()> {
     let stats_rt = runtime.clone();
     let stats_metrics = metrics.clone();
     tokio::spawn(async move {
-        let mut last_stats: std::collections::HashMap<StreamId, StreamStats> =
-            Default::default();
+        let mut last_stats: std::collections::HashMap<StreamId, StreamStats> = Default::default();
         loop {
             sleep(Duration::from_secs(args.log_interval.max(5))).await;
             let stats = stats_rt.stats().await;

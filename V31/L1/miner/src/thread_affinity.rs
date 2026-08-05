@@ -99,7 +99,7 @@ mod linux {
 }
 
 #[cfg(target_os = "linux")]
-pub use linux::{pin_to_core, physical_core_ids};
+pub use linux::{physical_core_ids, pin_to_core};
 
 #[cfg(target_os = "windows")]
 mod windows {
@@ -116,10 +116,7 @@ mod windows {
     // GetLogicalProcessorInformation for physical core detection.
     // Returns an array of SYSTEM_LOGICAL_PROCESSOR_INFORMATION entries.
     extern "system" {
-        fn GetLogicalProcessorInformation(
-            buffer: *mut u8,
-            length: *mut u32,
-        ) -> i32;
+        fn GetLogicalProcessorInformation(buffer: *mut u8, length: *mut u32) -> i32;
     }
 
     // SYSTEM_LOGICAL_PROCESSOR_INFORMATION layout (x64):
@@ -171,9 +168,7 @@ mod windows {
 
         let n_entries = (buf_len as usize) / SLPI_ENTRY_SIZE;
         let mut buf = vec![0u8; buf_len as usize];
-        let ret = unsafe {
-            GetLogicalProcessorInformation(buf.as_mut_ptr(), &mut buf_len)
-        };
+        let ret = unsafe { GetLogicalProcessorInformation(buf.as_mut_ptr(), &mut buf_len) };
         if ret == 0 {
             return (0..num_cpus::get()).collect();
         }
@@ -182,13 +177,11 @@ mod windows {
         for i in 0..n_entries {
             let offset = i * SLPI_ENTRY_SIZE;
             // Read ProcessorMask (8 bytes at offset 0)
-            let proc_mask = usize::from_le_bytes(
-                buf[offset..offset + 8].try_into().unwrap_or([0u8; 8])
-            );
+            let proc_mask =
+                usize::from_le_bytes(buf[offset..offset + 8].try_into().unwrap_or([0u8; 8]));
             // Read Relationship (4 bytes at offset 8)
-            let rel = u32::from_le_bytes(
-                buf[offset + 8..offset + 12].try_into().unwrap_or([0u8; 4])
-            );
+            let rel =
+                u32::from_le_bytes(buf[offset + 8..offset + 12].try_into().unwrap_or([0u8; 4]));
             // RelationProcessorCore == 0
             if rel == 0 && proc_mask != 0 {
                 // Find the lowest set bit — that's the primary LP of this physical core
@@ -206,7 +199,7 @@ mod windows {
 }
 
 #[cfg(target_os = "windows")]
-pub use windows::{pin_to_core, physical_core_ids};
+pub use windows::{physical_core_ids, pin_to_core};
 
 #[cfg(not(any(target_os = "linux", target_os = "windows")))]
 pub fn pin_to_core(_core_id: usize) -> std::io::Result<()> {
