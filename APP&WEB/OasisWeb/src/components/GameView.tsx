@@ -15,6 +15,7 @@ const Scenes: Record<ZoneId, ReturnType<typeof dynamic>> = {
   territories: dynamic(() => import('@/app/(game)/territories/Scene'), { ssr: false }),
   guilds: dynamic(() => import('@/app/(game)/guilds/Scene'), { ssr: false }),
   'golden-egg': dynamic(() => import('@/app/(game)/golden-egg/Scene'), { ssr: false }),
+  ships: dynamic(() => import('@/app/(game)/ships/Scene'), { ssr: false }),
 };
 
 const Panels: Record<ZoneId, ReturnType<typeof dynamic>> = {
@@ -26,6 +27,7 @@ const Panels: Record<ZoneId, ReturnType<typeof dynamic>> = {
   territories: dynamic(() => import('@/app/(game)/territories/Panel'), { ssr: false }),
   guilds: dynamic(() => import('@/app/(game)/guilds/Panel'), { ssr: false }),
   'golden-egg': dynamic(() => import('@/app/(game)/golden-egg/Panel'), { ssr: false }),
+  ships: dynamic(() => import('@/app/(game)/ships/Panel'), { ssr: false }),
 };
 
 function GameView({ mode }: { mode: ZoneId }) {
