@@ -70,9 +70,12 @@ def _node_rpc_host() -> str:
 
 
 def _node_rpc_port() -> int:
-    p = _detection_ports().get("node_rpc")
+    # V31 node RPC is on 9445 by default; prefer explicit env, then nodes.json, then default.
+    p = os.environ.get("ZION_NODE_RPC_PORT")
     if p is None:
-        p = os.environ.get("ZION_NODE_RPC_PORT", "9445")
+        p = _detection_ports().get("node_rpc")
+    if p is None:
+        p = "9445"
     return int(p)
 
 
@@ -99,9 +102,16 @@ def _multichain_port() -> int:
 
 def _dao_port() -> int:
     p = _detection_ports().get("dao_api")
-    if p is None:
-        p = os.environ.get("DAO_API_PORT", "8456")
-    return int(p)
+    if p is not None:
+        return int(p)
+    # Parse ZION_DAO_BIND (e.g. "127.0.0.1:8450") or fall back to 8450
+    bind = os.environ.get("ZION_DAO_BIND", "")
+    if bind and ":" in bind:
+        try:
+            return int(bind.split(":")[-1])
+        except Exception:
+            pass
+    return int(os.environ.get("DAO_API_PORT", "8450"))
 
 
 def _service_unit(name: str) -> str:

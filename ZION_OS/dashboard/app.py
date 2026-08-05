@@ -70,6 +70,9 @@ CONFIG_FILE = SCRIPT_DIR / "config.json"
 RELEASE_BIN_DIR = REPO_ROOT / "V3" / "target" / "release"
 EXE_SUFFIX = ".exe" if os.name == "nt" else ""
 
+# Cache for deriving V31 banner shares/sec from the Edge pool total-shares counter
+_V31_BANNER_POOL_TOTALS = {"ts": 0.0, "shares": 0.0}
+
 # Unified service → log file mapping used by all log endpoints
 SERVICE_LOG_MAP = {
     # Blockchain nodes
@@ -2943,6 +2946,71 @@ def build_status() -> dict:
         _STATUS_CACHE_TIME = now
     return result
 
+def _compute_v31_banner_metrics(pool_status: dict, v31_multichain_status: dict, v31_node_status: dict = None) -> dict:
+    """Compute the V31 Mainnet Alpha banner KPIs for the full dashboard.
+
+    Uses data already collected in _build_status_edge_primary plus a quick DAO
+    stats call.  pool_status must contain 'hashrate_khs' and 'total_shares'.
+    """
+    # Pool hashrate: pool_status.hashrate_khs is in kH/s from Prometheus
+    hashrate_hps = None
+    if pool_status.get("hashrate_khs") is not None:
+        try:
+            hashrate_hps = float(pool_status["hashrate_khs"]) * 1000.0
+        except Exception:
+            hashrate_hps = None
+
+    # Derive shares/sec from total-shares delta (same logic as v31.py)
+    shares_per_sec = None
+    total_shares = pool_status.get("total_shares")
+    if total_shares is not None:
+        global _V31_BANNER_POOL_TOTALS
+        now = time.time()
+        prev = _V31_BANNER_POOL_TOTALS
+        try:
+            total = float(total_shares)
+            if prev["ts"] > 0 and total >= prev["shares"]:
+                dt = now - prev["ts"]
+                if dt > 0:
+                    shares_per_sec = round((total - prev["shares"]) / dt, 2)
+            prev["ts"] = now
+            prev["shares"] = total
+        except Exception:
+            pass
+
+    multichain_ok = bool(v31_multichain_status.get("ok", False))
+    multichain_transfers_total = v31_multichain_status.get("transfers_total", 0) or 0
+    multichain_transfers_pending = v31_multichain_status.get("transfers_pending", 0) or 0
+
+    # DAO proposal counts from the V31 DAO service (port 8450)
+    dao_total = 0
+    dao_active = 0
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8450/api/dao/stats", timeout=1.5) as r:
+            dao_st = json.loads(r.read().decode("utf-8", errors="ignore"))
+            if isinstance(dao_st, dict) and "_error" not in dao_st:
+                dao_total = dao_st.get("total_proposals") or dao_st.get("proposals_total") or dao_st.get("proposals", 0)
+                dao_active = dao_st.get("active_proposals") or dao_st.get("proposals_active") or dao_st.get("open_proposals", 0)
+    except Exception:
+        pass
+
+    vns = v31_node_status or {}
+    return {
+        "height": vns.get("chain_height") or vns.get("canonical_height"),
+        "sync_lag": vns.get("sync_lag"),
+        "node_running": vns.get("running", False),
+        "node_reachable": vns.get("running", False),
+        "pool_hashrate_hps": hashrate_hps,
+        "shares_per_sec": shares_per_sec,
+        "pool_total_shares": total_shares,
+        "multichain_ok": multichain_ok,
+        "multichain_transfers_total": multichain_transfers_total,
+        "multichain_transfers_pending": multichain_transfers_pending,
+        "dao_proposals_total": int(dao_total) if dao_total is not None else 0,
+        "dao_proposals_active": int(dao_active) if dao_active is not None else 0,
+    }
+
+
 def _build_status_edge_primary() -> dict:
     """Build status for edge-primary topology: fast, parallel RPC with short timeouts."""
     t0 = time.time()
@@ -3491,10 +3559,13 @@ def _build_status_edge_primary() -> dict:
     max_height = max(running_heights) if running_heights else 0
     all_in_sync = len(running_heights) >= 2 and all(h == running_heights[0] for h in running_heights)
 
+    v31_banner = _compute_v31_banner_metrics(pool_status, v31_multichain_status, v31_node_status)
+
     elapsed = time.time() - t0
     return {
         "timestamp": datetime.now().isoformat(),
         "topology": "edge-primary",
+        "v31_banner": v31_banner,
         "node1": n1,
         "node2": {"running": False, "chain_height": None, "tip_hash": None, "known_peers": 0, "mempool_size": 0},
         "edge_node": edge_node1_status,
@@ -3653,6 +3724,20 @@ def _build_status_local_dev() -> dict:
     return {
         "timestamp": datetime.now().isoformat(),
         "topology": "local-dev",
+        "v31_banner": {
+            "height": n1.get("chain_height"),
+            "sync_lag": None,
+            "node_running": n1.get("running", False),
+            "node_reachable": n1.get("running", False),
+            "pool_hashrate_hps": pool_status.get("hashrate_khs") and float(pool_status["hashrate_khs"]) * 1000.0 or None,
+            "shares_per_sec": None,
+            "pool_total_shares": pool_status.get("total_shares"),
+            "multichain_ok": False,
+            "multichain_transfers_total": 0,
+            "multichain_transfers_pending": 0,
+            "dao_proposals_total": 0,
+            "dao_proposals_active": 0,
+        },
         "node1": n1,
         "node2": n2,
         "edge_node": {
