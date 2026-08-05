@@ -2,12 +2,12 @@
 
 > **Verze:** 3.1.0-alpha.2 (post-Phase A+B+C+Pool FULL V3 Parity)
 > **Datum:** 2026-08-06
-> **Stav:** workspace builduje, **2076 testů prochází (0 failures)**, `zion-pool` build OK a nasazen na Edge. Fáze A hotová, Fáze B.1/B.2/B.3 hotová (GPU + pool triple-stream), Fáze C1-C8 hotová (DAO + CLI + ZionDex + Dashboard + Pool wiring). **GPU backend port dokončen** — CUDA/OpenCL/Metal/native feature-gated buildy procházejí, `cargo clippy --workspace` je čisté. **Pool FULL V3 feature parity dokončena** — všechny 11 V3 funkcí implementováno: AuxPoW bridge runtime, TLS, extra ports, share relay, profit switcher, expanded HTTP API, Notifier, RevenueScheduler, RevenueProxy, RoutingStats, SessionGroup routing, DeferredPayout, check_tx_on_chain, execute_fee_payout, NclGateway, revenue stats/streams API. Kompletní report: [`REPORT_2026-08-04.md`](./REPORT_2026-08-04.md).
+> **Stav:** workspace builduje, **2077 testů prochází (0 failures)**, `zion-pool` build OK a nasazen na Edge. Fáze A hotová, Fáze B.1/B.2/B.3 hotová (GPU + pool triple-stream), Fáze C1-C8 hotová (DAO + CLI + ZionDex + Dashboard + Pool wiring). **GPU backend port dokončen** — CUDA/OpenCL/Metal/native feature-gated buildy procházejí, `cargo clippy --workspace` je čisté. **Pool FULL V3 feature parity dokončena** — všechny 11 V3 funkcí implementováno: AuxPoW bridge runtime, TLS, extra ports, share relay, profit switcher, expanded HTTP API, Notifier, RevenueScheduler, RevenueProxy, RoutingStats, SessionGroup routing, DeferredPayout, check_tx_on_chain, execute_fee_payout, NclGateway, revenue stats/streams API. Kompletní report: [`REPORT_2026-08-04.md`](./REPORT_2026-08-04.md).
 
 ## Co je hotovo v `v3.1.0-alpha.2` (post-Phase A+B.1)
 
 - L1/L2/L3/L4/L5/L6 crates existují a kompilují jako jeden workspace (18 crateů).
-- **Všechny workspace testy pass: 2076** (bylo 2075 před cross-chain bridge testem, 2073 před intent persistence, 2072 před HTTP intent testem, 2071 před integračním intent testem, 2069 před C1+C2+C3, 2043 před Full V3 Parity, 1877 před B.1, 1458 před Fází A)
+- **Všechny workspace testy pass: 2077** (bylo 2076 před solver broadcast testy, 2075 před cross-chain bridge testem, 2073 před intent persistence, 2072 před HTTP intent testem, 2071 před integračním intent testem, 2069 před C1+C2+C3, 2043 před Full V3 Parity, 1877 před B.1, 1458 před Fází A)
   - `zion-core` 302 testů (bylo 89 — +213 z P2P infra + V3 core + websocket)
   - `zion-native-ffi` 66 testů (NOVÝ crate)
   - `zion-cosmic-harmony` 193 testů (bylo 28 — +165 z V3 modules)
@@ -191,11 +191,13 @@ ZionDex ported do V31 multichain + dashboard metrics rozšířeny (Phase C2 + C8
 - ✅ `ApiServer::router()` — testovatelný Axum router pro HTTP integrační testy
 - ✅ SQLite persistence pro intenty, bidy a solvery; `load_intent_engine()` pro obnovu při startu
 - ✅ Cross-chain bridge execution v `MultichainService::execute_intent` — AMM hops via `DexRouter`, bridge hops via `Bridge::submit` (`LockMint`/`BurnRelease`)
+- ✅ Solver discovery/network: `SolverInfo` (URL + reputation), `SolverClient` trait, `HttpSolverClient` placeholder, `MockSolverClient`, `SolverNetwork` pro concurrent broadcast, `MultichainService::broadcast_intent`
 - ✅ Integrační test v `tests/service.rs` pro plný intent lifecycle
 - ✅ HTTP integrační test v `tests/server.rs` pro `POST /v1/swap/intent/.../bid/execute` přes tower/oneshot
 - ✅ `tests/service.rs` restart test: vytvoření servisu, zavření DB, nový servis, `load_intent_engine()`, execute
 - ✅ `tests/service.rs` cross-chain bridge intent test s `MockAdapter` pro `ZionL1` a `Base`
-- ✅ 571 multichain testů pass (bylo 562)
+- ✅ `tests/service.rs` solver broadcast test — `MockSolverClient` vrací bid, `broadcast_intent` ho auto-submitne a následně se vykoná
+- ✅ 572 multichain testů pass (bylo 562)
 
 **Dashboard (Phase C8):**
 - ✅ Pool port fix: 8446 → 8444 (production stratum)

@@ -768,13 +768,20 @@ async fn execute_intent(
 #[derive(Deserialize)]
 struct RegisterSolverRequest {
     solver: String,
+    url: Option<String>,
+    #[serde(default)]
+    reputation: u64,
 }
 
 async fn register_solver(
     State(state): State<AppState>,
     Json(req): Json<RegisterSolverRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    match state.service.register_solver(req.solver).await {
+    match state
+        .service
+        .register_solver(req.solver, req.url, req.reputation)
+        .await
+    {
         Ok(added) => Ok(Json(serde_json::json!({ "registered": added }))),
         Err(_) => Err(StatusCode::BAD_REQUEST),
     }

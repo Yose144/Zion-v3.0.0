@@ -18,6 +18,7 @@ use crate::db::Db;
 use crate::error::{MultichainError, MultichainResult};
 use crate::swap::dex::{DexRouter, Pool, Quote};
 use crate::swap::dex::intent::{IntentStatus, SolverBid, SwapIntent};
+use crate::swap::dex::solver_network::{SolverClient, SolverNetwork};
 use crate::swap::IntentEngine;
 use crate::swap::htlc::HtlcSwap;
 use crate::types::{Transfer, TransferDirection, TransferEndpoint};
@@ -253,14 +254,19 @@ impl MultichainService {
     }
 
     /// Register a solver in the intent engine whitelist and persist it.
-    pub async fn register_solver(&self, solver: impl Into<String>) -> MultichainResult<bool> {
+    pub async fn register_solver(
+        &self,
+        solver: impl Into<String>,
+        url: Option<String>,
+        reputation: u64,
+    ) -> MultichainResult<bool> {
         let solver = solver.into();
         let added = self
             .intent_engine
             .write()
             .await
             .registry_mut()
-            .register(&solver);
+            .register_with_info(&solver, url, reputation);
         if added {
             self.db.lock().await.save_solver(&solver)?;
         }
@@ -282,6 +288,40 @@ impl MultichainService {
     /// Look up a ZionDex intent by id.
     pub async fn get_intent(&self, id: uuid::Uuid) -> Option<SwapIntent> {
         self.intent_engine.read().await.get_intent(id).cloned()
+    }
+
+    /// Broadcast an open intent to all registered off-chain solvers and
+    /// auto-submit any bids that come back. Returns per-solver results.
+    pub async fn broadcast_intent<C: SolverClient + 'static>(
+        &self,
+        id: uuid::Uuid,
+        client: std::sync::Arc<C>,
+    ) -> MultichainResult<Vec<MultichainResult<Option<SolverBid>>>> {
+        let (intent, solvers) = {
+            let engine = self.intent_engine.read().await;
+            let intent = engine
+                .get_intent(id)
+                .ok_or_else(|| MultichainError::Validation("intent not found".to_string()))?
+                .clone();
+            let solvers = engine
+                .registry()
+                .list()
+                .iter()
+                .filter_map(|n| engine.registry().get(n))
+                .cloned()
+                .collect::<Vec<_>>();
+            (intent, solvers)
+        };
+
+        let network = SolverNetwork::new(client);
+        let results = network.broadcast(&intent, &solvers).await;
+
+        for res in &results {
+            if let Ok(Some(bid)) = res {
+                let _ = self.submit_bid(bid.clone()).await;
+            }
+        }
+        Ok(results)
     }
 
     /// Submit a solver bid for an existing intent and persist it.

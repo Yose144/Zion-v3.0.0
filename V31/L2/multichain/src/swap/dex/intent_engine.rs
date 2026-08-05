@@ -3,9 +3,9 @@
 //! `IntentEngine` combines user swap intents, a solver whitelist, and an
 //! in-memory auction book. It can settle an intent by selecting the best
 //! solver bid and then execute the winning path on-chain through the local
-//! AMM router (same-chain AMM hops for now; cross-chain hops are planned).
+//! AMM router or the WARP bridge.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use uuid::Uuid;
 
@@ -14,33 +14,78 @@ use zion_l1_types::{Amount, Asset};
 use super::{DexRouter, MultichainError, MultichainResult};
 use super::intent::{IntentAuction, IntentStatus, SolverBid, SwapIntent};
 
+/// Off-chain contact / reputation metadata for a registered solver.
+#[derive(Debug, Clone, Default)]
+pub struct SolverInfo {
+    pub name: String,
+    pub url: Option<String>,
+    pub reputation: u64,
+}
+
 /// Whitelist of solvers allowed to submit bids in this engine.
 #[derive(Debug, Default)]
 pub struct SolverRegistry {
-    solvers: HashSet<String>,
+    solvers: HashMap<String, SolverInfo>,
 }
 
 impl SolverRegistry {
     pub fn new() -> Self {
         Self {
-            solvers: HashSet::new(),
+            solvers: HashMap::new(),
         }
     }
 
+    /// Register a solver without an advertised URL.
     pub fn register(&mut self, solver: impl Into<String>) -> bool {
-        self.solvers.insert(solver.into())
+        let name = solver.into();
+        self.solvers
+            .insert(
+                name.clone(),
+                SolverInfo {
+                    name,
+                    ..Default::default()
+                },
+            )
+            .is_none()
+    }
+
+    /// Register a solver with an optional URL and initial reputation.
+    pub fn register_with_info(
+        &mut self,
+        name: impl Into<String>,
+        url: Option<String>,
+        reputation: u64,
+    ) -> bool {
+        let name = name.into();
+        let is_new = !self.solvers.contains_key(&name);
+        let mut info = self.solvers.remove(&name).unwrap_or_default();
+        info.name = name.clone();
+        if url.is_some() || is_new {
+            info.url = url;
+        }
+        info.reputation = reputation;
+        self.solvers.insert(name, info);
+        is_new
     }
 
     pub fn deregister(&mut self, solver: &str) -> bool {
-        self.solvers.remove(solver)
+        self.solvers.remove(solver).is_some()
     }
 
     pub fn is_registered(&self, solver: &str) -> bool {
-        self.solvers.contains(solver)
+        self.solvers.contains_key(solver)
     }
 
     pub fn list(&self) -> Vec<String> {
-        self.solvers.iter().cloned().collect()
+        self.solvers.keys().cloned().collect()
+    }
+
+    pub fn get(&self, solver: &str) -> Option<&SolverInfo> {
+        self.solvers.get(solver)
+    }
+
+    pub fn get_mut(&mut self, solver: &str) -> Option<&mut SolverInfo> {
+        self.solvers.get_mut(solver)
     }
 }
 

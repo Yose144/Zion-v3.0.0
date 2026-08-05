@@ -9,6 +9,7 @@
 
 pub mod intent;
 pub mod intent_engine;
+pub mod solver_network;
 
 use num_bigint::BigUint;
 use num_traits::cast::ToPrimitive;
