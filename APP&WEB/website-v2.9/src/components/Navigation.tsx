@@ -53,12 +53,9 @@ export default function Navigation() {
       title: tr('nav', 'defi_group', lang),
       color: '251, 191, 36',
       items: [
+        { href: '/multichain', label: 'Multichain' },
         { href: '/defi', label: tr('nav', 'defi', lang) },
-        { href: '/ziondex', label: 'ZionDex' },
         { href: '/cex', label: tr('nav', 'cex', lang) },
-        { href: '/warp', label: tr('nav', 'warp', lang) },
-        { href: '/bridge', label: tr('nav', 'bridge', lang) },
-        { href: '/dao', label: tr('nav', 'dao', lang) },
         { href: '/wallet', label: tr('nav', 'wallet', lang) },
       ],
     },
@@ -299,7 +296,7 @@ export default function Navigation() {
                   <button
                     type="button"
                     onClick={() => setOpenGroup(isActive ? null : group.title)}
-                    className={`group inline-flex items-center gap-0.5 rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] transition-all ${
+                    className={`group inline-flex items-center gap-0.5 rounded-full border px-2.5 py-0.5 text-[8.5px] font-semibold uppercase tracking-[0.22em] transition-all ${
                       isActive
                         ? 'border-zion-gold/40 bg-zion-gold/10 text-zion-gold shadow-[0_0_12px_rgba(251,191,36,0.12)]'
                         : groupHasActiveChild
