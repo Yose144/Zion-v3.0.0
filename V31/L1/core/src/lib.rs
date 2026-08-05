@@ -52,7 +52,8 @@ pub mod v3_validation; // needs crate::tx, crate::genesis::validate_premine
 pub mod websocket;
 
 pub use block::{Block, BlockHeader};
-pub use consensus::{ConsensusEngine, ConsensusError, HeightAwareDeeksha};
+pub use consensus::{ConsensusEngine, ConsensusError};
+pub use zion_cosmic_harmony::EkamDeeksha;
 pub use difficulty::{difficulty_to_target, lwma_next_difficulty, target_to_difficulty, BlockInfo};
 pub use emission::{block_subsidy, fee_split, flowers_to_zion, format_zion, zion_to_flowers};
 pub use genesis::{genesis_block, genesis_hash, GENESIS_DIFFICULTY, GENESIS_TIMESTAMP};

@@ -16,8 +16,8 @@ Workspace se nachází v `/Users/yeshuae/Projects/2.9.6/V31/`; produkční V3 b�
 | `L1/cosmic-harmony` | `zion-cosmic-harmony` | Kanonický PoW `EkamDeeksha`, `ExternalCoin`, `CoinProfile`, `ProfitRouter` a podpora disabled coinů. |
 | `L1/cosmic-harmony-v3` | `zion-cosmic-harmony-v3` | Legacy v3/v2 PoW algoritmy (`deeksha_lite`, `chv3`, `lite_fire`) a CHV3 body root / NPU mixing scaffolding. |
 | `L1/core` | `zion-core` | Node runtime s V3 checkpoint sync, V3 P2P listen/IBD, V3 RPC, state/template/reorg, SQLite storage a `PeerManager` (max peers, ban score, discovery). |
-| `L1/miner` | `zion-miner` | Triple Stream miner, AuxPoW GPU/CPU fallback (`auxpow` feature), `StratumClient`, `ZION_STREAM3_FORCE_COIN`, disabled-coin filtering a `HeightAwareDeeksha`. |
-| `L1/pool` | `zion-pool` | Stratum server + PPLNS, share validator s `HeightAwareDeeksha`, reconnect rate limiter a `template_feed_loop` z `zion-core`. |
+| `L1/miner` | `zion-miner` | Triple Stream miner, AuxPoW GPU/CPU fallback (`auxpow` feature), `StratumClient`, `ZION_STREAM3_FORCE_COIN`, disabled-coin filtering a kanonický `EkamDeeksha`. |
+| `L1/pool` | `zion-pool` | Stratum server + PPLNS, share validator s `EkamDeeksha`, reconnect rate limiter a `template_feed_loop` z `zion-core`. |
 | `L2/multichain` | `zion-multichain` | `ChainAdapter` trait, EVM/BTC/ZionL1 adaptery, HTLC s SQLite persistencí, DEX router + custom AMM deploy, WARP, rate limiting + auth, wallet keyring, Dharma Credits a HTTP API. |
 | `L2/dao` | `zion-dao` | Návrh/quorum/timelock typy, smoke test, zapojený do workspace. |
 | `L3/ncl` | `zion-ncl` | NCL compute marketplace — scaffold s unit testy. |
@@ -74,7 +74,7 @@ Pro plný Mainnet Alpha release použij `cargo build --release` — profil má `
 
 ## Aktuální highlighty
 
-- **Height-aware PoW fork gating + stress testy** — `HeightAwareDeeksha` v `zion-core` dispatchuje `deeksha_lite`/`chv3`/`lite_fire` na výškách `4500`/`5000`; unit testy pokrývají boundary a sweep 0–5500.
+- **Kanonický Ekam Deeksha PoW + stress testy** — `EkamDeeksha` z `zion-cosmic-harmony` je jediný PoW v `zion-core`, `zion-miner` a `zion-pool`; unit testy pokrývají mine/verify a nonce-search sweep 0–5500.
 - **L3–L6 cross-layer smoke** — `V31/smoke` crate prověřuje end-to-end tok: NCL compute job → AI-Native consciousness → Oasis bridge → Oasis player → Free World grant → Issobella proposal.
 - **Triple Stream mining** — kanonický ZION stream + AuxPoW GPU a CPU fallback přes `auxpow` feature.
 - **V3 checkpoint sync** — V3 stav slouží jako checkpoint pro V31, nikoliv jako genesis reset.
@@ -99,7 +99,7 @@ Všechny naplánované E2E položky pro `v3.1.0-alpha.2` jsou hotové. Zbývá o
 - ~~Custom AMM deploy a integrace v `zion-multichain`.~~ **Hotovo (2026-07-30):** `/v1/swap/pool/deploy`, `/v1/swap/pools`, SQLite persistence, načítání při startu.
 - ~~WARP API rate limiting a autentizace v `zion-multichain`.~~ **Hotovo (2026-07-30):** per-IP token bucket, optional `Authorization: Bearer <api_key>`, `/health` public.
 - ~~Plná L3–L6 end-to-end verifikace — Oasis game, NCL compute marketplace, AI-native agenti, Free World a Issobella.~~ **Hotovo (2026-07-30):** `V31/smoke` crate s cross-layer smoke testem (NCL → AI-Native → Oasis → Free World → Issobella) prochází.
-- ~~Stress test `HeightAwareDeeksha` fork gating pro všechny výšky a algoritmy.~~ **Hotovo (2026-07-30):** boundary CHV3/Fire + sweep 0–5500 v `zion-core`.
+- ~~Kanonický `EkamDeeksha` PoW pro všechny výšky.~~ **Hotovo (2026-08-07):** `zion-core`, `zion-miner` a `zion-pool` používají `EkamDeeksha`; nonce-search stress sweep 0–5500 v `zion-core`.
 - ~~Tag `v3.1.0-alpha.2`.~~ **Hotovo (2026-07-30):** tag vytvořen a pushnut, workspace build prochází.
 - ~~Finální cut-over plán z V3 Edge (`62.171.141.136`) na V31.~~ **Hotovo (2026-07-30):** viz [`V31/CUTOVER_PLAN.md`](./CUTOVER_PLAN.md).
 - ~~Cross-chain WARP transfer (Base ↔ ZionL1).~~ **Hotovo (2026-07-30):** `V31/smoke` HTLC lock/claim smoke mezi Base a ZionL1.

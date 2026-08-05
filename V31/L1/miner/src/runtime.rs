@@ -10,7 +10,7 @@ use tokio::task;
 use tokio::time::sleep;
 use tracing::{info, warn};
 use zion_core::{
-    Block, BlockHeader, ConsensusEngine, HeightAwareDeeksha, Transaction, TransactionInput,
+    Block, BlockHeader, ConsensusEngine, EkamDeeksha, Transaction, TransactionInput,
     TransactionOutput,
 };
 use zion_l1_types::{Amount, Hash};
@@ -65,7 +65,7 @@ pub struct MinerRuntime {
 impl MinerRuntime {
     pub fn new(config: MinerConfig) -> Self {
         let algorithm =
-            Arc::new(HeightAwareDeeksha::new()) as Arc<dyn zion_cosmic_harmony::PowAlgorithm>;
+            Arc::new(EkamDeeksha::new()) as Arc<dyn zion_cosmic_harmony::PowAlgorithm>;
         let consensus = Arc::new(ConsensusEngine::new(algorithm));
         #[cfg(feature = "auxpow")]
         let hashrate_per_unit = config.hashrate_per_unit;
