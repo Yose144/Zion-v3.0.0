@@ -16,7 +16,7 @@
 - `zion-miner` těží a submituje share ~800k H/s
 - `zion-multichain` `/health` 200 OK
 - 2079 testů pass, `cargo clippy --workspace` čisté
-- ZionDex C2 (intent engine persistence, cross-chain bridge execution, solver network, executor/aggregator) hotovo
+- Fáze C hotova (DAO, ZionDex, HTLC, profit oracle, bridge consensus, CLI, dashboard)
 |- GPU backend port (CUDA/OpenCL/Metal/native) kompiluje v `zion-miner`
 |- DAO governance moduly portovány (treasury, humanitarian, db, l1_scanner, executor, consent, co_admin, cross_layer, metrics, prizes)
 
@@ -148,7 +148,7 @@
 
 | # | Úkol | Soubor / crate | Acceptance | Poznámka | Status |
 |---|------|----------------|------------|----------|--------|
-| C1 | Port DAO governance runtime | `V31/L2/dao/src/` | Proposal submit, vote, quorum, treasury, humanitarian kategorie, L1 scanner, HTTP API | Port z `archive/V3/L2/dao/`. | IN PROGRESS |
+| C1 | Port DAO governance runtime | `V31/L2/dao/src/` | Proposal submit, vote, quorum, treasury, humanitarian kategorie, L1 scanner, HTTP API | Port z `archive/V3/L2/dao/`. | DONE |
 | C2 | Port ZionDex do multichain | `V31/L2/multichain/src/swap/dex.rs` | Intent + solver + AMM aggregator; smoke test quote + execute | Vzor `archive/ZionDex/`. | DONE |
 | C3 | Přidat HTLC endpoints | `V31/L2/multichain/src/server.rs` | `/v1/multichain/swaps/htlc/lock`, `/claim`, `/refund` fungují | Již existují moduly v multichain. | DONE |
 | C4 | Přidat live profit oracle | `V31/L1/cosmic-harmony/src/stream_profit.rs` | WhatToMine + NiceHash fetch s fallbackem, cache, rate limit | Opatrně s API klíči (1Password). | DONE |
@@ -158,10 +158,10 @@
 | C8 | Dashboard V31 env + metriky | `ZION_OS/dashboard/app.py`, `v31.py` | Pool/miner/multichain/DAO metriky živě, porty z `nodes.json`, služby z `services.json` | DONE |
 
 **Fáze C Go/No-Go:**
-- [ ] Bridge E2E round-trip 100K wZION funguje.
-- [ ] DAO proposal vote + execute prochází.
-- [ ] CLI umí poslat TX a spravovat wallet.
-- [ ] Dashboard zobrazuje všechny V31 služby a metriky.
+- [x] Bridge E2E round-trip 100K wZION funguje.
+- [x] DAO proposal vote + execute prochází.
+- [x] CLI umí poslat TX a spravovat wallet.
+- [x] Dashboard zobrazuje všechny V31 služby a metriky.
 
 ---
 
