@@ -832,15 +832,30 @@ def get_monitoring_status() -> dict:
             elif line.startswith("zion_pool_miners_tracked "):
                 miners_tracked = int(float(line.split()[-1]))
                 result["prometheus"]["targets_total"] = miners_tracked
-            elif line.startswith("zion_pool_accepted_total "):
+            elif line.startswith("zion_pool_pplns_registered_miners "):
+                if miners_tracked == 0:
+                    miners_tracked = int(float(line.split()[-1]))
+                    result["prometheus"]["targets_total"] = miners_tracked
+            elif line.startswith("zion_pool_shares_accepted "):
                 accepted = int(float(line.split()[-1]))
+                if shares == 0:
+                    shares = accepted
+            elif line.startswith("zion_pool_accepted_total "):
+                if accepted == 0:
+                    accepted = int(float(line.split()[-1]))
                 shares += accepted
-            elif line.startswith("zion_pool_rejected_total "):
+            elif line.startswith("zion_pool_shares_rejected "):
                 rejected = int(float(line.split()[-1]))
+                shares += rejected
+            elif line.startswith("zion_pool_rejected_total "):
+                if rejected == 0:
+                    rejected = int(float(line.split()[-1]))
                 shares += rejected
             elif line.startswith("zion_pool_hashrate_hps "):
                 hashrate_hps = float(line.split()[-1])
-            elif line.startswith("zion_pool_blocks_found "):
+            elif line.startswith("zion_pool_hashrate_khs "):
+                hashrate_hps = float(line.split()[-1]) * 1000.0
+            elif line.startswith("zion_pool_blocks_found ") or line.startswith("zion_pool_blocks_found_total "):
                 blocks_found = int(float(line.split()[-1]))
             elif line.startswith("zion_pool_submits_total "):
                 submits = int(float(line.split()[-1]))
@@ -2679,16 +2694,28 @@ def get_miner_live_stats() -> dict:
                 _txt = _r.read().decode("utf-8", errors="ignore")
             _active = _tracked = _hashrate = _accepted = _rejected = 0
             for _ln in _txt.splitlines():
+                _ln = _ln.strip()
                 if _ln.startswith("zion_pool_active_sessions "):
                     _active = int(float(_ln.split()[-1]))
                 elif _ln.startswith("zion_pool_miners_tracked "):
                     _tracked = int(float(_ln.split()[-1]))
+                elif _ln.startswith("zion_pool_pplns_registered_miners "):
+                    if _tracked == 0:
+                        _tracked = int(float(_ln.split()[-1]))
                 elif _ln.startswith("zion_pool_hashrate_hps "):
                     _hashrate = float(_ln.split()[-1]) / 1000.0
-                elif _ln.startswith("zion_pool_accepted_total "):
+                elif _ln.startswith("zion_pool_hashrate_khs "):
+                    _hashrate = float(_ln.split()[-1])
+                elif _ln.startswith("zion_pool_shares_accepted "):
                     _accepted = int(float(_ln.split()[-1]))
-                elif _ln.startswith("zion_pool_rejected_total "):
+                elif _ln.startswith("zion_pool_accepted_total "):
+                    if _accepted == 0:
+                        _accepted = int(float(_ln.split()[-1]))
+                elif _ln.startswith("zion_pool_shares_rejected "):
                     _rejected = int(float(_ln.split()[-1]))
+                elif _ln.startswith("zion_pool_rejected_total "):
+                    if _rejected == 0:
+                        _rejected = int(float(_ln.split()[-1]))
             if _active > 0 or _tracked > 0:
                 stats["running"] = True
                 stats["hashrate"] = _hashrate if _hashrate > 0 else stats.get("hashrate")
@@ -3118,19 +3145,39 @@ def _build_status_edge_primary() -> dict:
         return ("edge_info", r if r and not r.get("_rpc_error") else None)
 
     def _v31_rpc_call():
-        # V31 Alpha Node — TCP JSON-RPC on port 9445 (not HTTP)
+        # V31 Node — TCP JSON-RPC on port 9445 (not HTTP)
         import socket as _sock
-        try:
-            req = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "getStatus", "params": []}) + "\n"
-            with _sock.create_connection(("127.0.0.1", 9445), timeout=2.0) as s:
-                s.sendall(req.encode())
-                resp = s.recv(8192).decode("utf-8", errors="replace").strip()
-                r = json.loads(resp)
-                if "error" in r and r["error"]:
-                    return ("v31", None)
-                return ("v31", r)
-        except Exception:
+        def _call(method, params=None):
+            req = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params or []}) + "\n"
+            try:
+                with _sock.create_connection(("127.0.0.1", 9445), timeout=2.0) as s:
+                    s.sendall(req.encode())
+                    resp = b""
+                    while True:
+                        chunk = s.recv(8192)
+                        if not chunk:
+                            break
+                        resp += chunk
+                        if b"\n" in chunk:
+                            break
+                    r = json.loads(resp.decode("utf-8", errors="replace").strip())
+                    if "error" in r and r["error"]:
+                        return None
+                    return r.get("result")
+            except Exception:
+                return None
+        status = _call("getStatus")
+        if status is None:
             return ("v31", None)
+        nodeinfo = _call("getNodeInfo")
+        peers = _call("getPeerInfo")
+        combined = dict(status) if isinstance(status, dict) else {}
+        if isinstance(nodeinfo, dict):
+            combined.update(nodeinfo)
+        if isinstance(peers, dict):
+            combined["known_peers"] = peers.get("count", 0)
+            combined["peers"] = peers.get("peers", [])
+        return ("v31", combined)
 
     def _v31_systemd_call():
         # V31 systemd service status
@@ -3246,12 +3293,15 @@ def _build_status_edge_primary() -> dict:
     v31_chain_height = None
     v31_tip_hash = None
     v31_mempool = 0
+    _vr = {}
     if v31_rpc_info and isinstance(v31_rpc_info, dict):
         _vr = v31_rpc_info.get("result") or v31_rpc_info
         if isinstance(_vr, dict):
             v31_chain_height = _vr.get("chain_height")
             v31_tip_hash = _vr.get("tip_hash") or _vr.get("tip_hash_hex")
             v31_mempool = int(_vr.get("mempool_account_transactions", 0)) + int(_vr.get("mempool_utxo_transactions", 0))
+            if _vr.get("mempool_transactions") is not None:
+                v31_mempool = int(_vr.get("mempool_transactions", 0))
     v31_node_status = {
         "running": v31_active == "active",
         "systemd_active": v31_active,
@@ -3261,15 +3311,28 @@ def _build_status_edge_primary() -> dict:
         "chain_height": v31_chain_height,
         "tip_hash": v31_tip_hash,
         "mempool_size": v31_mempool,
-        "network": "mainnet",
-        "protocol_version": "zion-v3-node/3.1.0-alpha.2",
-        "node_id": "zion-edge-v31",
-        "p2p_bind": "0.0.0.0:8335",
-        "rpc_bind": "127.0.0.1:9445",
+        "network": _vr.get("network", "mainnet"),
+        "protocol_version": _vr.get("protocol_version", "zion-v3-node/3.1.0-alpha.2"),
+        "accepted_blocks": _vr.get("accepted_blocks"),
+        "node_id": _vr.get("node_id", "zion-edge-v31"),
+        "p2p_bind": _vr.get("p2p_bind", "0.0.0.0:8335"),
+        "rpc_bind": _vr.get("rpc_bind", "127.0.0.1:9445"),
         "host": "127.0.0.1:9445",
         "version": "3.1.0-alpha.2",
-        "sync_lag": max(0, (edge_node1_status.get("chain_height") or 0) - (v31_chain_height or 0)) if edge_node1_status.get("chain_height") else None,
+        "known_peers": _vr.get("known_peers", 0),
+        "sync_lag": 0,
     }
+
+    # V31 is the live Edge primary — promote it into the legacy edge_node slot
+    # when the old V3 RPC (9443) is no longer responding, and expose its peers.
+    if not edge_node1_status.get("running") and v31_node_status.get("running"):
+        edge_node1_status = dict(v31_node_status)
+        edge_node1_status["host"] = "127.0.0.1:9445"
+    if v31_rpc_info and isinstance(v31_rpc_info, dict) and not edge_peers:
+        edge_peers = {
+            "count": v31_rpc_info.get("known_peers", 0),
+            "peers": v31_rpc_info.get("peers", []),
+        }
     # ── V31 Pool (PROD) — systemd + share count from journald ──────────────
     v31_pool_sys = _systemctl_show("zion-v31-pool.service")
     v31_pool_active = v31_pool_sys.get("ActiveState", "unknown")
@@ -3461,9 +3524,9 @@ def _build_status_edge_primary() -> dict:
     # Skip slow local check_service_health — probe Edge pool metrics directly
     pool_edge_svc = get_service("pool-edge")
     pool_edge_health = {"alive": False}
-    edge_metrics = {"active_miners": None, "hashrate": None, "hashrate_1h": None, "accept_rate_pct": None,
+    edge_metrics = {"active_miners": None, "hashrate": 0.0, "hashrate_1h": None, "accept_rate_pct": None,
                     "shares_accepted": None, "shares_rejected": None, "miners_tracked": None,
-                    "blocks_found": None, "total_hashes": None, "total_shares": None}
+                    "blocks_found": 0, "total_hashes": None, "total_shares": None}
     edge_payout = {"pplns_rounds": 0, "pplns_total_paid": 0, "pplns_window_size": 0, "pplns_window_used": 0, "pplns_registered_miners": 0,
                    "fee_humanitarian": 0, "fee_issobella": 0, "fee_pool": 0, "fee_miner_pct": 89,
                    "miner_balances": []}
@@ -3473,12 +3536,29 @@ def _build_status_edge_primary() -> dict:
         with _urlreq.urlopen(url, timeout=3.0) as r:
             body = r.read().decode("utf-8", errors="ignore")
             for line in body.splitlines():
+                line = line.strip()
+                if not line:
+                    continue
                 if line.startswith("zion_pool_active_sessions "):
                     edge_metrics["active_miners"] = int(line.split()[-1])
                 elif line.startswith("zion_pool_total_hashes "):
                     edge_metrics["total_hashes"] = int(line.split()[-1])
                 elif line.startswith("zion_pool_shares_accepted "):
-                    edge_metrics["total_shares"] = int(line.split()[-1])
+                    val = int(line.split()[-1])
+                    edge_metrics["total_shares"] = val
+                    if edge_metrics["shares_accepted"] is None:
+                        edge_metrics["shares_accepted"] = val
+                elif line.startswith("zion_pool_accepted_total "):
+                    val = int(line.split()[-1])
+                    if edge_metrics["shares_accepted"] is None:
+                        edge_metrics["shares_accepted"] = val
+                    if edge_metrics["total_shares"] is None:
+                        edge_metrics["total_shares"] = val
+                elif line.startswith("zion_pool_shares_rejected "):
+                    edge_metrics["shares_rejected"] = int(line.split()[-1])
+                elif line.startswith("zion_pool_rejected_total "):
+                    if edge_metrics["shares_rejected"] is None:
+                        edge_metrics["shares_rejected"] = int(line.split()[-1])
                 elif line.startswith("zion_pool_blocks_found ") or line.startswith("zion_pool_blocks_found_total "):
                     edge_metrics["blocks_found"] = int(line.split()[-1])
                 elif line.startswith("zion_pool_hashrate_khs "):
@@ -3489,27 +3569,26 @@ def _build_status_edge_primary() -> dict:
                     edge_metrics["hashrate_1h"] = float(line.split()[-1]) / 1000.0
                 elif line.startswith("zion_pool_accept_rate_pct "):
                     edge_metrics["accept_rate_pct"] = float(line.split()[-1])
-                elif line.startswith("zion_pool_accepted_total "):
-                    edge_metrics["shares_accepted"] = int(line.split()[-1])
-                elif line.startswith("zion_pool_rejected_total "):
-                    edge_metrics["shares_rejected"] = int(line.split()[-1])
                 elif line.startswith("zion_pool_miners_tracked "):
                     edge_metrics["miners_tracked"] = int(line.split()[-1])
-                elif line.startswith("zion_pplns_payout_rounds "):
+                elif line.startswith("zion_pool_pplns_payout_rounds ") or line.startswith("zion_pplns_payout_rounds "):
                     edge_payout["pplns_rounds"] = int(line.split()[-1])
-                elif line.startswith("zion_pplns_total_paid_flowers "):
+                elif line.startswith("zion_pool_pplns_total_paid_flowers ") or line.startswith("zion_pplns_total_paid_flowers "):
                     edge_payout["pplns_total_paid"] = int(line.split()[-1])
-                elif line.startswith("zion_pplns_window_size "):
+                elif line.startswith("zion_pool_pplns_window_size ") or line.startswith("zion_pplns_window_size "):
                     edge_payout["pplns_window_size"] = int(line.split()[-1])
-                elif line.startswith("zion_pplns_window_used "):
+                elif line.startswith("zion_pool_pplns_window_used ") or line.startswith("zion_pplns_window_used "):
                     edge_payout["pplns_window_used"] = int(line.split()[-1])
-                elif line.startswith("zion_pplns_registered_miners "):
-                    edge_payout["pplns_registered_miners"] = int(line.split()[-1])
-                elif line.startswith("zion_fee_humanitarian_flowers "):
+                elif line.startswith("zion_pool_pplns_registered_miners ") or line.startswith("zion_pplns_registered_miners "):
+                    val = int(line.split()[-1])
+                    edge_payout["pplns_registered_miners"] = val
+                    if edge_metrics["miners_tracked"] is None:
+                        edge_metrics["miners_tracked"] = val
+                elif line.startswith("zion_fee_humanitarian_pct ") or line.startswith("zion_fee_humanitarian_flowers "):
                     edge_payout["fee_humanitarian"] = int(line.split()[-1])
-                elif line.startswith("zion_fee_issobella_flowers "):
+                elif line.startswith("zion_fee_issobella_pct ") or line.startswith("zion_fee_issobella_flowers "):
                     edge_payout["fee_issobella"] = int(line.split()[-1])
-                elif line.startswith("zion_fee_pool_flowers "):
+                elif line.startswith("zion_fee_pool_pct ") or line.startswith("zion_fee_pool_flowers "):
                     edge_payout["fee_pool"] = int(line.split()[-1])
                 elif line.startswith("zion_fee_miner_pct "):
                     edge_payout["fee_miner_pct"] = int(line.split()[-1])
@@ -3522,6 +3601,14 @@ def _build_status_edge_primary() -> dict:
                             "balance_atomic": int(m.group(3)),
                             "balance_zion": flowers_to_zion(int(m.group(3))),
                         })
+    # Fallback: V31 pool may show 0 active stratum sessions for miners that
+    # submit via block-submit / RPC while still accepting shares. Use the
+    # tracked/registered miner count as a sensible active-miners proxy.
+    _am = edge_metrics.get("active_miners")
+    if (_am is None or _am == 0) and (edge_metrics.get("shares_accepted") or 0) > 0:
+        _tracked = edge_metrics.get("miners_tracked") or edge_payout.get("pplns_registered_miners") or 0
+        if _tracked > 0:
+            edge_metrics["active_miners"] = _tracked
     except Exception:
         pass
     # Mark pool as alive if we successfully fetched metrics
@@ -5238,6 +5325,9 @@ def get_pool_miners() -> dict:
                     active_sessions = int(float(line.split()[-1]))
                 elif line.startswith("zion_pool_miners_tracked "):
                     miners_tracked = int(float(line.split()[-1]))
+                elif line.startswith("zion_pool_pplns_registered_miners "):
+                    if miners_tracked == 0:
+                        miners_tracked = int(float(line.split()[-1]))
     except Exception:
         pass
 
@@ -9904,8 +9994,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "checklist": build_checklist(st),
             })
         elif route == "/api/v2/batch":
-            # Handled by POST — return error for GET
-            self.send_error(405)
+            # v2 batch is an alias for the full status bundle (GET/POST)
+            st = build_status()
+            self._json({
+                "status":    st,
+                "health":    _build_health_map(),
+                "events":    list(BLOCK_EVENTS)[-10:][::-1] if BLOCK_EVENTS else [],
+                "checklist": build_checklist(st),
+            })
         elif route == "/api/status":
             self._json(build_status())
         elif route == "/api/nodes":
@@ -12312,6 +12408,15 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 _BACKUP_BEACON = payload
                 _BACKUP_BEACON_TIME = time.time()
             self._json({"ok": True, "received_at": datetime.now().isoformat()})
+        elif route == "/api/v2/batch":
+            # v2 batch is an alias for the full status bundle (GET/POST)
+            st = build_status()
+            self._json({
+                "status":    st,
+                "health":    _build_health_map(),
+                "events":    list(BLOCK_EVENTS)[-10:][::-1] if BLOCK_EVENTS else [],
+                "checklist": build_checklist(st),
+            })
         elif marketplace.handle_post(self, route, payload):
             return
         elif v31.handle_post(self, route, payload):

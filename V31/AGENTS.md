@@ -71,14 +71,14 @@ OPERATOR_IPS=(
 | Služba | Port / Adresa | Proces | Dostupnost | Poznámka |
 |---|---|---|---|---|
 | SSH | `22` / `2222` | `sshd` | **operator-only** | Klíčová autentizace, žádné root heslo, IPv4 + IPv6. |
-| Node P2P | `8333` / `8334` | `zion-node` | **known-peers** | Otevřené pro whitelisted peery / bootstrap. fail2ban hlídá scan. |
-| Node RPC | `127.0.0.1:9443` | `zion-node` | **localhost-only** | Nikdy přímo veřejný. Pouze interní L2 služby. |
-| RPC přes nginx | `rpc.zionterranova.com:8443` → `127.0.0.1:9443` | `nginx` (TCP stream) | **operator-only** | IP allowlist, TLS/ TCP proxy. |
-| RPC alternativa | `9443` přes nginx | `nginx` | **operator-only** | Pouze pokud explicitně nasazeno s allowlistem. |
+| Node P2P (V31) | `0.0.0.0:8335` | `zion-node` | **known-peers** | V31 Edge primary; legacy/backup may use `8333/8334`. fail2ban hlídá scan. |
+| Node RPC (V31) | `127.0.0.1:9445` | `zion-node` | **localhost-only** | Nikdy přímo veřejný. Pouze interní L2 služby. |
+| RPC přes nginx | `rpc.zionterranova.com:8443` → `127.0.0.1:9445` | `nginx` (TCP stream) | **operator-only** | TCP proxy; zakončení na V31 node RPC `9445` (ne historickém `9443`). |
+| RPC alternativa | `127.0.0.1:9445` | `zion-node` | **localhost-only** | Výhradně lokální; veřejně přístupný jen přes nginx `8443`. |
 | Pool stratum | `62.171.141.136:8444` | `zion-pool` | **public** | Hlavní veřejná služba pro minery. |
-| Pool HTTP API | `127.0.0.1:8453` (nebo podobný) | `zion-pool` | **localhost-only** | Interní API, neexponuj bez allowlistu. |
-| WARP API | `8454` / `8455` | `zion-multichain` | **local** / **public dle potřeby** | Výchozí je `localhost-only`; public jen s allowlistem/nginx. |
-| Dashboard | `443` → interní port | `nginx` → dashboard | **operator-only** | Basic Auth nebo IP allowlist. |
+| Pool HTTP API / Prometheus | `0.0.0.0:8080` | `zion-pool` | **localhost-only** | `/stats`, `/metrics`, `/miners`; neexponuj bez allowlistu. |
+| WARP API | `0.0.0.0:8453` | `zion-multichain` (`warpd`) | **local** | Výchozí `localhost-only`; public jen s allowlistem/nginx. |
+| Dashboard | `443` → `127.0.0.1:8766` | `nginx` → dashboard | **operator-only** | Basic Auth nebo IP allowlist. |
 | Web | `443` | `nginx` | **public** / **maintenance** | Případně maintenance mód, pokud je web vypnutý. |
 
 ### 4.1 Dostupnost — legendy
