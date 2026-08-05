@@ -284,6 +284,8 @@ pub fn find_auxpow_share(job: &crate::auxpow::Job, threads: usize, nonce_count: 
                     coin,
                     nonce,
                     hash,
+                    mix_hash: None,
+                    solution: None,
                     extranonce2,
                     ntime,
                 });
@@ -316,6 +318,8 @@ pub fn find_auxpow_share(job: &crate::auxpow::Job, threads: usize, nonce_count: 
                     coin,
                     nonce,
                     hash,
+                    mix_hash: None,
+                    solution: None,
                     extranonce2: extranonce2.clone(),
                     ntime: ntime.clone(),
                 });

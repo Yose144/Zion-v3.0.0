@@ -1253,14 +1253,59 @@ async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJ
     None
 }
 
+/// Build the `mining.submit` / `eth_submitWork` params for a given share,
+/// taking into account the coin/algorithm-specific requirements.
+fn build_submit_params(worker: &str, share: &super::Share) -> Value {
+    let algo = share.coin.algorithm();
+    let nonce = share.nonce_hex();
+    let mix = share.mix_hash_hex();
+    let sol = share.solution_hex();
+
+    // DAG-based Ethash variants: EthereumStratum uses eth_submitWork with
+    // [nonce, header_hash, mix_hash]. We use the found hash as the header hash
+    // and the mix hash as the third parameter; pools recompute the final hash.
+    if algo.contains("ethash") || algo == "etchash" {
+        let header = format!("0x{}", hex::encode(&share.hash));
+        let mix = mix.unwrap_or_else(|| format!("0x{}", hex::encode([0u8; 32])));
+        return json!({"id": 100, "method": "eth_submitWork", "params": [nonce, header, mix]});
+    }
+
+    // KawPow / ProgPow variants: many pools expect mix_hash as a 6th param.
+    if algo.contains("kawpow")
+        || algo.contains("progpow")
+        || algo == "evrprogpow"
+        || algo == "meowpow"
+    {
+        let mut params =
+            json!([worker, share.job_id, share.extranonce2, share.ntime, nonce]);
+        if let Some(mix) = mix {
+            params.as_array_mut().unwrap().push(json!(format!("0x{mix}")));
+        }
+        return json!({"id": 100, "method": "mining.submit", "params": params});
+    }
+
+    // VerusHash / Equihash / BeamHash / ZelHash: the actual solution is the
+    // proof, not a 64-bit nonce. Replace the nonce param with the solution blob.
+    if algo.contains("verushash")
+        || algo.contains("equihash")
+        || algo.contains("zelhash")
+        || algo.contains("beamhash")
+    {
+        if let Some(sol) = sol {
+            return json!({"id": 100, "method": "mining.submit", "params": [worker, share.job_id, share.extranonce2, share.ntime, sol]});
+        }
+    }
+
+    // Default Bitcoin-style / kHeavyHash / blake3 stratum submit.
+    json!({"id": 100, "method": "mining.submit", "params": [worker, share.job_id, share.extranonce2, share.ntime, nonce]})
+}
+
 async fn send_submit(
     writer: &mut tokio::net::tcp::WriteHalf<'_>,
     worker: &str,
     share: &super::Share,
 ) -> Result<()> {
-    let params = json!([worker, share.job_id, share.extranonce2, share.ntime, share.nonce_hex()]);
-    let msg = json!({"id": 100, "method": "mining.submit", "params": params});
-    send_line(writer, &msg).await
+    send_line(writer, &build_submit_params(worker, share)).await
 }
 
 #[cfg(test)]
@@ -1365,6 +1410,8 @@ mod tests {
             coin: ExternalCoin::Kaspa,
             nonce: 42,
             hash: [0u8; 32],
+            mix_hash: None,
+            solution: None,
             extranonce2: "00".to_string(),
             ntime: "00000000".to_string(),
         };
