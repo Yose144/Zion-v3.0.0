@@ -31,7 +31,7 @@ export default function AlohaOverlay() {
     <>
       {/* Aloha trigger — sits above the navigation bar, hides on scroll */}
       <div className={`fixed top-1 left-0 right-0 z-[60] flex justify-center pointer-events-none transition-all duration-300 ${scrolled ? '-translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`}>
-        <div className="pointer-events-auto scale-[0.55] sm:scale-[0.65] md:scale-75 origin-top">
+        <div className="pointer-events-auto scale-[0.85] sm:scale-90 md:scale-95 origin-top">
           <TahitiFlower expanded={expanded} onToggle={() => setExpanded((v) => !v)} />
         </div>
       </div>
@@ -53,10 +53,10 @@ export default function AlohaOverlay() {
               aria-label="Close Aloha portal"
             />
 
-            <div className="min-h-screen flex flex-col items-center justify-center px-4 py-24">
+            <div className="min-h-screen flex flex-col items-center justify-start sm:justify-center px-4 py-16 sm:py-20 gap-4 overflow-y-auto">
               <VisionBar />
 
-              <p className="mt-8 mb-5 text-xs sm:text-sm font-bold uppercase tracking-[0.3em] text-zion-cyan/80 text-center">
+              <p className="text-xs sm:text-sm font-bold uppercase tracking-[0.3em] text-zion-cyan/80 text-center">
                 ZION Stargate — Portál do Oasis
               </p>
 
@@ -64,7 +64,7 @@ export default function AlohaOverlay() {
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ duration: 0.8, ease: 'easeOut', delay: 0.15 }}
-                className="w-full max-w-[160px] sm:max-w-[220px] md:max-w-[300px]"
+                className="w-full max-w-[120px] sm:max-w-[160px] md:max-w-[200px]"
               >
                 <StargateLogo className="w-full" />
               </motion.div>
@@ -73,7 +73,6 @@ export default function AlohaOverlay() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className="mt-8"
               >
                 <a
                   href="https://oasis.zionterranova.com"
@@ -90,7 +89,7 @@ export default function AlohaOverlay() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6 }}
                 onClick={() => setExpanded(false)}
-                className="mt-12 text-xs text-gray-500 hover:text-white transition-colors uppercase tracking-widest"
+                className="text-xs text-gray-500 hover:text-white transition-colors uppercase tracking-widest"
               >
                 Zavřít portál
               </motion.button>
