@@ -2,12 +2,12 @@
 
 > **Verze:** 3.1.0-alpha.2 (post-Phase A+B+C+Pool FULL V3 Parity)
 > **Datum:** 2026-08-06
-> **Stav:** workspace builduje, **2073 testů prochází (0 failures)**, `zion-pool` build OK a nasazen na Edge. Fáze A hotová, Fáze B.1/B.2/B.3 hotová (GPU + pool triple-stream), Fáze C1-C8 hotová (DAO + CLI + ZionDex + Dashboard + Pool wiring). **GPU backend port dokončen** — CUDA/OpenCL/Metal/native feature-gated buildy procházejí, `cargo clippy --workspace` je čisté. **Pool FULL V3 feature parity dokončena** — všechny 11 V3 funkcí implementováno: AuxPoW bridge runtime, TLS, extra ports, share relay, profit switcher, expanded HTTP API, Notifier, RevenueScheduler, RevenueProxy, RoutingStats, SessionGroup routing, DeferredPayout, check_tx_on_chain, execute_fee_payout, NclGateway, revenue stats/streams API. Kompletní report: [`REPORT_2026-08-04.md`](./REPORT_2026-08-04.md).
+> **Stav:** workspace builduje, **2075 testů prochází (0 failures)**, `zion-pool` build OK a nasazen na Edge. Fáze A hotová, Fáze B.1/B.2/B.3 hotová (GPU + pool triple-stream), Fáze C1-C8 hotová (DAO + CLI + ZionDex + Dashboard + Pool wiring). **GPU backend port dokončen** — CUDA/OpenCL/Metal/native feature-gated buildy procházejí, `cargo clippy --workspace` je čisté. **Pool FULL V3 feature parity dokončena** — všechny 11 V3 funkcí implementováno: AuxPoW bridge runtime, TLS, extra ports, share relay, profit switcher, expanded HTTP API, Notifier, RevenueScheduler, RevenueProxy, RoutingStats, SessionGroup routing, DeferredPayout, check_tx_on_chain, execute_fee_payout, NclGateway, revenue stats/streams API. Kompletní report: [`REPORT_2026-08-04.md`](./REPORT_2026-08-04.md).
 
 ## Co je hotovo v `v3.1.0-alpha.2` (post-Phase A+B.1)
 
 - L1/L2/L3/L4/L5/L6 crates existují a kompilují jako jeden workspace (18 crateů).
-- **Všechny workspace testy pass: 2073** (bylo 2072 před HTTP intent testem, 2071 před integračním intent testem, 2069 před C1+C2+C3, 2043 před Full V3 Parity, 1877 před B.1, 1458 před Fází A)
+- **Všechny workspace testy pass: 2075** (bylo 2073 před intent persistence, 2072 před HTTP intent testem, 2071 před integračním intent testem, 2069 před C1+C2+C3, 2043 před Full V3 Parity, 1877 před B.1, 1458 před Fází A)
   - `zion-core` 302 testů (bylo 89 — +213 z P2P infra + V3 core + websocket)
   - `zion-native-ffi` 66 testů (NOVÝ crate)
   - `zion-cosmic-harmony` 193 testů (bylo 28 — +165 z V3 modules)
@@ -189,9 +189,11 @@ ZionDex ported do V31 multichain + dashboard metrics rozšířeny (Phase C2 + C8
 - ✅ `swap/dex/intent_engine.rs` — `IntentEngine` a `SolverRegistry`; lifecycle open/bid/settle/execute proti `DexRouter`
 - ✅ HTTP API pro intent engine: `POST /v1/swap/intent`, `GET /v1/swap/intent/:id`, `POST .../bid`, `POST .../settle`, `POST .../execute`, `POST .../solver/register`
 - ✅ `ApiServer::router()` — testovatelný Axum router pro HTTP integrační testy
+- ✅ SQLite persistence pro intenty, bidy a solvery; `load_intent_engine()` pro obnovu při startu
 - ✅ Integrační test v `tests/service.rs` pro plný intent lifecycle
 - ✅ HTTP integrační test v `tests/server.rs` pro `POST /v1/swap/intent/.../bid/execute` přes tower/oneshot
-- ✅ 569 multichain testů pass (bylo 562)
+- ✅ `tests/service.rs` restart test: vytvoření servisu, zavření DB, nový servis, `load_intent_engine()`, execute
+- ✅ 570 multichain testů pass (bylo 562)
 
 **Dashboard (Phase C8):**
 - ✅ Pool port fix: 8446 → 8444 (production stratum)
@@ -297,12 +299,12 @@ Dokončeny všechny 11 chybějících V3 pool funkcí. Pool je teď **FULL V3 fe
 
 ## Další krok
 
-- **Pool FULL V3 Feature Parity ✅ COMPLETE** — všechny 11 V3 funkcí implementováno: AuxPoW bridge runtime, TLS, extra ports, share relay, profit switcher, expanded HTTP API, Notifier, RevenueScheduler, RevenueProxy, RoutingStats, SessionGroup routing, DeferredPayout, check_tx_on_chain, execute_fee_payout, NclGateway, revenue stats/streams API. 2073 testů pass. Pool nasazen a běží na Edge.
+- **Pool FULL V3 Feature Parity ✅ COMPLETE** — všechny 11 V3 funkcí implementováno: AuxPoW bridge runtime, TLS, extra ports, share relay, profit switcher, expanded HTTP API, Notifier, RevenueScheduler, RevenueProxy, RoutingStats, SessionGroup routing, DeferredPayout, check_tx_on_chain, execute_fee_payout, NclGateway, revenue stats/streams API. 2075 testů pass. Pool nasazen a běží na Edge.
 - **DAO Governance Runtime ✅ COMPLETE** — Voting engine, proposal lifecycle, HTTP API, SQLite persistence. 74 testů pass.
 - **CLI Wallet + Service ✅ COMPLETE** — Wallet create/load/send, pool/miner/node start/stop/status, service logs.
 - **ZionDex Multi-Path ✅ COMPLETE** — Top-N routes, cross-chain bridge routing, /v1/swap/quote/multi endpoint. 562 multichain testů pass.
 - **Dashboard Metrics ✅ COMPLETE** — Pool metrics, service overview, multichain health, Prometheus parsing.
-- **Pool Runtime Wiring ✅ COMPLETE** — Notifier, RevenueScheduler, RevenueProxy zapojené. 2073 testů pass.
+- **Pool Runtime Wiring ✅ COMPLETE** — Notifier, RevenueScheduler, RevenueProxy zapojené. 2075 testů pass.
 - **Multi-Platform Release Build ✅ COMPLETE** — macOS aarch64/x86_64, Linux x86_64 (musl), Windows x86_64. Všechny balíčky + SHA256 připraveny, draft release na GitHubu, viz [`REPORT_2026-08-04_SESSION.md`](./REPORT_2026-08-04_SESSION.md).
 - **Release Runbook ✅ COMPLETE** — `V31/RELEASE_RUNBOOK.md`, `V31/30D_RUN_PLAN.md`, `V31/CHAOS_TEST_PLAN.md`.
 - **Clippy / Warning Cleanup ✅ COMPLETE** — `cargo clippy --workspace` clean, `cargo test --workspace` 2043+ testů pass.

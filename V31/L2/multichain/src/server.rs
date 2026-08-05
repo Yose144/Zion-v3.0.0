@@ -163,6 +163,7 @@ impl ApiServer {
     pub async fn run(&self) -> MultichainResult<()> {
         self.start_stratum_if_configured().await?;
         self.service.load_dex_pools().await?;
+        self.service.load_intent_engine().await?;
 
         let payout_service = Arc::clone(&self.service);
         tokio::spawn(async move {
@@ -698,8 +699,10 @@ async fn create_intent(
         req.deadline,
         req.nonce,
     );
-    let id = state.service.create_intent(intent).await;
-    Ok(Json(serde_json::json!({ "intent_id": id })))
+    match state.service.create_intent(intent).await {
+        Ok(id) => Ok(Json(serde_json::json!({ "intent_id": id }))),
+        Err(_) => Err(StatusCode::BAD_REQUEST),
+    }
 }
 
 async fn get_intent(
@@ -771,8 +774,10 @@ async fn register_solver(
     State(state): State<AppState>,
     Json(req): Json<RegisterSolverRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let added = state.service.register_solver(req.solver).await;
-    Ok(Json(serde_json::json!({ "registered": added })))
+    match state.service.register_solver(req.solver).await {
+        Ok(added) => Ok(Json(serde_json::json!({ "registered": added }))),
+        Err(_) => Err(StatusCode::BAD_REQUEST),
+    }
 }
 
 fn build_endpoint(

@@ -252,18 +252,31 @@ impl MultichainService {
         self.dex.write().await.execute(from, to, amount)
     }
 
-    /// Register a solver in the intent engine whitelist.
-    pub async fn register_solver(&self, solver: impl Into<String>) -> bool {
-        self.intent_engine
+    /// Register a solver in the intent engine whitelist and persist it.
+    pub async fn register_solver(&self, solver: impl Into<String>) -> MultichainResult<bool> {
+        let solver = solver.into();
+        let added = self
+            .intent_engine
             .write()
             .await
             .registry_mut()
-            .register(solver)
+            .register(&solver);
+        if added {
+            self.db.lock().await.save_solver(&solver)?;
+        }
+        Ok(added)
     }
 
-    /// Create a new ZionDex intent and return its id.
-    pub async fn create_intent(&self, intent: SwapIntent) -> uuid::Uuid {
-        self.intent_engine.write().await.open_intent(intent)
+    /// Create a new ZionDex intent, persist it, and return its id.
+    pub async fn create_intent(&self, intent: SwapIntent) -> MultichainResult<uuid::Uuid> {
+        let (id, saved) = {
+            let mut engine = self.intent_engine.write().await;
+            let id = engine.open_intent(intent);
+            let saved = engine.get_intent(id).cloned().unwrap();
+            (id, saved)
+        };
+        self.db.lock().await.save_intent(&saved)?;
+        Ok(id)
     }
 
     /// Look up a ZionDex intent by id.
@@ -271,17 +284,31 @@ impl MultichainService {
         self.intent_engine.read().await.get_intent(id).cloned()
     }
 
-    /// Submit a solver bid for an existing intent.
+    /// Submit a solver bid for an existing intent and persist it.
     pub async fn submit_bid(&self, bid: SolverBid) -> MultichainResult<bool> {
-        self.intent_engine.write().await.submit_bid(bid)
+        let bid_to_save = bid.clone();
+        let accepted = self.intent_engine.write().await.submit_bid(bid)?;
+        if accepted {
+            self.db.lock().await.save_bid(&bid_to_save)?;
+        }
+        Ok(accepted)
     }
 
-    /// Settle an intent and return the winning bid.
+    /// Settle an intent, persist the new status, and return the winning bid.
     pub async fn settle_intent(
         &self,
         id: uuid::Uuid,
     ) -> MultichainResult<Option<SolverBid>> {
-        self.intent_engine.write().await.settle(id)
+        let (bid, intent) = {
+            let mut engine = self.intent_engine.write().await;
+            let bid = engine.settle(id)?;
+            let intent = engine.get_intent(id).cloned();
+            (bid, intent)
+        };
+        if let Some(intent) = intent {
+            self.db.lock().await.save_intent(&intent)?;
+        }
+        Ok(bid)
     }
 
     /// Settle an intent and execute the winning path on the AMM router.
@@ -290,9 +317,44 @@ impl MultichainService {
         id: uuid::Uuid,
     ) -> MultichainResult<Option<Amount>> {
         // Take both locks in a fixed order to avoid deadlocks: dex, then engine.
-        let mut dex = self.dex.write().await;
+        let (out, saved) = {
+            let mut dex = self.dex.write().await;
+            let mut engine = self.intent_engine.write().await;
+            let out = engine.settle_and_execute(id, &mut dex)?;
+            let saved = out
+                .is_some()
+                .then(|| engine.get_intent(id).cloned())
+                .flatten();
+            (out, saved)
+        };
+        if let Some(intent) = saved {
+            self.db.lock().await.save_intent(&intent)?;
+        }
+        Ok(out)
+    }
+
+    /// Load persisted intents, bids, and solvers into the in-memory engine.
+    pub async fn load_intent_engine(&self) -> MultichainResult<()> {
+        let db = self.db.lock().await;
+        let solvers = db.load_solvers()?;
+        let intents = db.load_intents()?;
+        let mut bids = Vec::new();
+        for intent in &intents {
+            bids.extend(db.load_bids_for_intent(&intent.id)?);
+        }
+        drop(db);
+
         let mut engine = self.intent_engine.write().await;
-        engine.settle_and_execute(id, &mut dex)
+        for solver in solvers {
+            engine.registry_mut().register(solver);
+        }
+        for intent in intents {
+            engine.load_intent(intent);
+        }
+        for bid in bids {
+            engine.load_bid(bid);
+        }
+        Ok(())
     }
 
     /// Access the bridge module.

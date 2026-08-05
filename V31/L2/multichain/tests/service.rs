@@ -4,7 +4,7 @@ use zion_l1_types::{Address, Amount, Asset, ChainFamily, ChainId, Hash};
 use zion_multichain::chain::adapter::{ChainAdapter, ChainAdapterRegistry, DepositEvent};
 use zion_multichain::config::MultichainConfig;
 use zion_multichain::service::MultichainService;
-use zion_multichain::swap::dex::intent::{PathHop, SolverBid, SwapIntent};
+use zion_multichain::swap::dex::intent::{IntentStatus, PathHop, SolverBid, SwapIntent};
 use zion_multichain::swap::dex::Pool;
 use zion_multichain::MultichainResult;
 
@@ -122,7 +122,10 @@ async fn intent_lifecycle_creates_bids_settles_and_executes() {
         .expect("deploy pool");
 
     // Register the solver and open an intent.
-    service.register_solver("solver-a").await;
+    service
+        .register_solver("solver-a")
+        .await
+        .expect("register solver");
 
     let intent = SwapIntent::new(
         "zion1user",
@@ -133,7 +136,7 @@ async fn intent_lifecycle_creates_bids_settles_and_executes() {
         u64::MAX,
         1,
     );
-    let id = service.create_intent(intent).await;
+    let id = service.create_intent(intent).await.expect("create intent");
 
     // Solver submits a bid that satisfies the user's minimum output.
     let bid = SolverBid::new(
@@ -158,4 +161,86 @@ async fn intent_lifecycle_creates_bids_settles_and_executes() {
 
     let intent = service.get_intent(id).await.expect("intent exists");
     assert_eq!(intent.status, zion_multichain::swap::dex::intent::IntentStatus::Executed);
+}
+
+#[tokio::test]
+async fn intent_engine_loads_from_db_on_restart() {
+    let db_path = std::env::temp_dir().join("multichain-intent-persist-test.db");
+    let _ = std::fs::remove_file(&db_path);
+
+    let mut config = MultichainConfig::default();
+    config.l1_rpc_url = String::new();
+    config.database.path = db_path.to_string_lossy().into();
+
+    let zion = Asset::native(ChainId::ZionL1, "ZION", 6, "ZION");
+    let usdc = Asset::native(ChainId::ZionL1, "USDC", 6, "USD Coin");
+
+    // First service: register solver, create intent, submit bid.
+    let service = MultichainService::new_with_adapters(config.clone(), ChainAdapterRegistry::new())
+        .expect("first service builds");
+    service
+        .register_solver("solver-a")
+        .await
+        .expect("register solver");
+
+    let intent = SwapIntent::new(
+        "user1",
+        zion.id.clone(),
+        usdc.id.clone(),
+        Amount::new(1_000_000),
+        Amount::new(900_000),
+        u64::MAX,
+        1,
+    );
+    let id = service.create_intent(intent).await.expect("create intent");
+
+    let bid = SolverBid::new(
+        id,
+        "solver-a",
+        Amount::new(1_100_000),
+        vec![PathHop {
+            chain: "zion".into(),
+            dex: "amm".into(),
+            from_token: zion.id.clone(),
+            to_token: usdc.id.clone(),
+            is_bridge: false,
+        }],
+        10,
+        0,
+    );
+    service.submit_bid(bid).await.expect("submit bid");
+    drop(service);
+
+    // Second service: load persisted state from the same file DB.
+    let service2 = MultichainService::new_with_adapters(config, ChainAdapterRegistry::new())
+        .expect("second service builds");
+    service2.load_intent_engine().await.expect("load intent engine");
+
+    let loaded = service2.get_intent(id).await.expect("intent loaded");
+    assert_eq!(loaded.status, IntentStatus::Pending);
+
+    // Deploy the pool and execute the loaded intent/bid end-to-end.
+    service2
+        .deploy_pool(Pool {
+            id: 1,
+            asset_a: zion,
+            asset_b: usdc,
+            reserve_a: Amount::new(100_000_000_000),
+            reserve_b: Amount::new(1_000_000_000_000),
+            fee_bps: 30,
+        })
+        .await
+        .expect("deploy pool");
+
+    let out = service2
+        .execute_intent(id)
+        .await
+        .expect("execute")
+        .expect("some output");
+    assert!(out.0 > 0);
+
+    assert_eq!(
+        service2.get_intent(id).await.unwrap().status,
+        IntentStatus::Executed
+    );
 }
