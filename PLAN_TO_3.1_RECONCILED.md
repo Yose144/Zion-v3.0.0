@@ -47,7 +47,7 @@
 | 5 | **Profit oracle** | AutonomousProfitRouter unit testy pass | Profit oracle má fallback, chybí NiceHash + WhatToMine live integrace | `autonomous.rs` a `stream_profit.rs` jsou v workspace, ale live data nejsou zapojená v binárce. |
 | 6 | **Desktop Agent** | Není zmíněn v plánu | Neexistuje V31 Desktop Agent — bundle pouze V3 | Skutečně neexistuje. Nutné rozhodnout, zda je 3.1.0 blocker. |
 | 7 | **CLI** | `zion` CLI má wallet/bridge/swap/api příkazy | Chybí wallet file management, transaction sending, service lifecycle | `zion-cli` implementuje `wallet create|load|send` a `service start|stop|status|restart|logs`. |
-| 8 | **Dashboard** | V31 node card integrated | Hardcoded RPC porty, chybí V31 miner monitoring, pool metrics | Dashboard čte V31 node, ale miner/pool metriky jsou slabé. |
+| 8 | **Dashboard** | V31 node card integrated | Hardcoded RPC porty, chybí V31 miner monitoring, pool metrics | Dashboard má živé pool/miner/multichain/DAO metriky, porty z `nodes.json` a systemd jednotky z `services.json`. C8 COMPLETE. |
 | 9 | **Bridge** | `v3_bridge.rs` ported, bridge unlock multisig | `submitBridgeUnlock` je stub v nativním V31 RPC | V3 compat layer existuje, ale nativní V31 RPC volá `submitBridgeUnlock` jako stub. |
 | 10 | **P2P / Mempool** | P2P hardening done (PeerManager, bans, discovery, IBD) | Nativní P2P/mempool jsou alpha-grade (JSON, žádný scoring, minimal mempool) | V3-compatible P2P funguje, nativní P2P potřebuje dotáhnout. |
 | 11 | **Repo / Security** | A1.1-A2.4 PASS, D4.5 public subtree pending, A3.x deferred | N/A (audit je code-only) | A1.4 key rotation, A1.5 `git secrets`, A3.2-A3.6 purification a D4.5 public subtree zůstávají otevřené. |
@@ -154,7 +154,7 @@
 | C5 | Bridge validator consensus | `V31/L2/multichain/src/bridge/` | 5/7 quorum logika, threshold signing | V3 bridge má 5/5, navrh 5/7. | DONE |
 | C6 | CLI wallet file + tx sending | `V31/cli/src/commands/wallet.rs` | `zion wallet create|load|send` ukládá/načítá wallet file a posílá TX | Bezpečné zpracování seedu. | DONE |
 | C7 | CLI service lifecycle | `V31/cli/src/commands/` | `zion node start|stop|status`, `zion pool start|stop`, `zion miner start|stop` | Volá `systemctl` nebo nástavec. | DONE |
-| C8 | Dashboard V31 env + metriky | `ZION_OS/dashboard/app.py`, `v31.py` | Pool a miner metriky živě, žádné hardcoded porty | Upravit `nodes.json`, `services.json`. |
+| C8 | Dashboard V31 env + metriky | `ZION_OS/dashboard/app.py`, `v31.py` | Pool/miner/multichain/DAO metriky živě, porty z `nodes.json`, služby z `services.json` | DONE |
 
 **Fáze C Go/No-Go:**
 - [ ] Bridge E2E round-trip 100K wZION funguje.

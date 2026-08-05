@@ -97,6 +97,13 @@ def _multichain_port() -> int:
     return int(p)
 
 
+def _dao_port() -> int:
+    p = _detection_ports().get("dao_api")
+    if p is None:
+        p = os.environ.get("DAO_API_PORT", "8456")
+    return int(p)
+
+
 def _service_unit(name: str) -> str:
     """Resolve a logical service name (node, pool, miner, multichain, dao)
     to a systemd unit name using services.json, then env, then default."""
@@ -357,6 +364,40 @@ def _multichain_health() -> dict:
     return _http_get_json("127.0.0.1", _multichain_port(), "/health")
 
 
+def _dao_health() -> dict:
+    """Fetch DAO health."""
+    return _http_get_json("127.0.0.1", _dao_port(), "/api/dao/health")
+
+
+def _dao_stats() -> dict:
+    """Fetch DAO stats (proposals, votes, treasury, scanner)."""
+    return _http_get_json("127.0.0.1", _dao_port(), "/api/dao/stats")
+
+
+def _dao_prometheus() -> dict:
+    """Fetch DAO Prometheus metrics."""
+    import urllib.request
+    url = f"http://127.0.0.1:{_dao_port()}/metrics"
+    try:
+        req = urllib.request.Request(url, method="GET")
+        with urllib.request.urlopen(req, timeout=3.0) as resp:
+            text = resp.read().decode("utf-8")
+        metrics = {}
+        for line in text.strip().split("\n"):
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = line.split()
+            if len(parts) >= 2:
+                try:
+                    metrics[parts[0]] = float(parts[1])
+                except ValueError:
+                    pass
+        return metrics
+    except Exception as e:
+        return {"_error": str(e)}
+
+
 def _detect_sync_mode(v3_height: int) -> str:
     if v3_height > 0:
         return "v3-p2p-sync"
@@ -415,6 +456,8 @@ def status():
     # V31 DB tip (from SQLite — always available even if RPC is down)
     db_tip = _sqlite_tip()
 
+    dao_port = _dao_port()
+
     out = {
         "ok": True,
         "node_running": svc["is_running"],
@@ -431,6 +474,8 @@ def status():
         "pool_reachable": _probe_port("0.0.0.0", stratum_port),
         "pool_api_reachable": _probe_port("0.0.0.0", api_port),
         "pool_pid": None,
+        "dao_api_port": dao_port,
+        "dao_reachable": _probe_port("127.0.0.1", dao_port),
         # All V31 services
         "services": _all_service_status(),
         # Pool metrics from HTTP API
@@ -439,6 +484,10 @@ def status():
         "miner_metrics": _miner_metrics(),
         # Multichain health
         "multichain_health": _multichain_health(),
+        # DAO health and stats
+        "dao_health": _dao_health(),
+        "dao_stats": _dao_stats(),
+        "dao_prometheus": _dao_prometheus(),
         # Chain status
         "v3_height": v3_ref_height,
         "db_height": db_tip["db_height"],
@@ -669,6 +718,18 @@ def handle_get(handler, route: str, params: dict):
 
     if route == "/api/v31/multichain-health":
         handler._json(_multichain_health())
+        return True
+
+    if route == "/api/v31/dao-health":
+        handler._json(_dao_health())
+        return True
+
+    if route == "/api/v31/dao-stats":
+        handler._json(_dao_stats())
+        return True
+
+    if route == "/api/v31/dao-metrics":
+        handler._json(_dao_prometheus())
         return True
 
     if route == "/api/v31/logs":

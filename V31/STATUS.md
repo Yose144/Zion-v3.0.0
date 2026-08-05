@@ -190,9 +190,11 @@ ZionDex ported do V31 multichain + dashboard metrics rozšířeny (Phase C2 + C8
 **Dashboard (Phase C8):**
 - ✅ Pool port fix: 8446 → 8444 (production stratum)
 - ✅ All V31 service status (node, pool, miner, multichain, dao) — systemd
-- ✅ Pool metrics z HTTP API (/stats na :8080)
+- ✅ Pool metrics z HTTP API (/stats na :8455)
 - ✅ Pool Prometheus metrics parsing
 - ✅ Multichain health check (:8453/health)
+- ✅ DAO metrics/health/stats integrovány — `/api/v31/dao-health`, `/api/v31/dao-stats`, `/api/v31/dao-metrics`
+- ✅ `nodes.json` detekce portů doplněna o `dao_api: 8456`; `services.json` má `zion-v31-dao` jednotku
 - ✅ Nové API endpoints: /api/v31/services, /api/v31/pool-metrics, /api/v31/pool-prometheus, /api/v31/multichain-health
 
 ### Pool Runtime Wiring (2026-08-04) ✅
