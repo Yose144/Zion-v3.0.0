@@ -1280,12 +1280,14 @@ const DEFAULT_CONFIG = {
   // gpuCoin:  Stream 2 GPU external coin preference ("auto" = pool decides).
   //   Supported: "auto", "KAS", "ALPH", "DCR", "ERG", "ETC", "RVN", "CLORE",
   //              "MEWC", "EVR", "FLUX", "EPIC"
-  // tripleStream: master toggle. When true, --no_gpu/--no_cpu are omitted and
+  // tripleStream: master toggle. When true, --no-gpu/--no-cpu are omitted and
   //   ZION_STREAM2_FORCE_COIN / ZION_STREAM3_FORCE_COIN are forwarded to the
   //   V31 miner. When false, both AuxPoW streams are disabled.
+  //   Default is false (pure ZION mining) until the user explicitly enables
+  //   triple-stream / revenue mining and supplies valid AuxPoW pool URLs.
   cpuCoin: 'auto',
   gpuCoin: 'auto',
-  tripleStream: true,
+  tripleStream: false,
   // Triple-stream tuning (CUDA primary + ext coin)
   extGpuBackend: 'cuda',
   extGpuDutyPct: 50,
@@ -1360,6 +1362,14 @@ function loadConfig() {
         saveConfig(merged);
       }
       merged.algorithm = normalizeAlgorithmName(merged.algorithm || DEFAULT_CONFIG.algorithm);
+      // V31 Mainnet Alpha: disable triple-stream by default until the user
+      // explicitly enables it and supplies valid AuxPoW pool URLs. Old configs
+      // may still have the previous (broken) default of true.
+      if (merged.tripleStream === true) {
+        log('[config] disabling legacy tripleStream default; enable in UI only when AuxPoW pools are configured');
+        merged.tripleStream = false;
+        saveConfig(merged);
+      }
       merged.desktopPureZionDefault = DESKTOP_PURE_ZION_DEFAULT;
       // Migrate legacy 'address' field to 'wallet' if wallet is empty
       if (!merged.wallet && merged.address) {
@@ -2320,7 +2330,7 @@ function startMiningV31(config, v31Path) {
 
   // ── 6. Build V31 CLI args ─────────────────────────────────────────────────
   const algoForMiner = normalizeAlgorithmName(config.algorithm || DEFAULT_CONFIG.algorithm);
-  const tripleStreamEnabled = config.tripleStream !== false;
+  const tripleStreamEnabled = config.tripleStream === true;
   const cpuCoin = String(config.cpuCoin || 'auto').trim();
   const gpuCoin = String(config.gpuCoin || 'auto').trim();
   const cpuCoinAuto = !cpuCoin || cpuCoin.toLowerCase() === 'auto';
@@ -3865,15 +3875,17 @@ function parseMinerOutput(output) {
   }
 
   // ─── V31 per-stream telemetry ───
-  // stream=zion coin=zion accepted=0 rejected=0 hashrate=0.00 status=active stream stats
+  // INFO zion_miner: stream stats stream=zion coin=zion accepted=1 rejected=0 hashrate=0 status=active
   const streamIndex = { zion: 0, 'gpu-external': 1, 'cpu-external': 2 };
   const streamLabels = { zion: 'ZION', 'gpu-external': 'GPU AuxPoW', 'cpu-external': 'CPU AuxPoW' };
   if (!Array.isArray(minerStats.streams)) minerStats.streams = [];
-  for (const m of output.matchAll(/(?:^|\n)[^\n]*stream\s*=\s*"?([^"\s,]+)"?\s+coin\s*=\s*"?([^"\s,]+)"?\s+accepted\s*=\s*(\d+)\s+rejected\s*=\s*(\d+)\s+hashrate\s*=\s*([^\s,]+)\s+status\s*=\s*"?([^"\s,]+)"?[^\n]*stream\s+stats/gi)) {
+  for (const m of output.matchAll(/(?:^|\n)[^\n]*?stream\s+stats[^\n]*stream\s*=\s*"?([^"\s,]+)"?\s+coin\s*=\s*"?([^"\s,]+)"?\s+accepted\s*=\s*(\d+)\s+rejected\s*=\s*(\d+)\s+hashrate\s*=\s*([^\s,]+)\s+status\s*=\s*"?([^"\s,]+)"?/gi)) {
     const streamId = String(m[1] || '').toLowerCase();
     const idx = streamIndex[streamId] ?? 0;
     const hr = parseFloat(m[5]);
     const active = String(m[6] || '').toLowerCase() === 'active';
+    const accepted = parseInt(m[3], 10) || 0;
+    const rejected = parseInt(m[4], 10) || 0;
     minerStats.streams[idx] = {
       index: idx,
       label: streamLabels[streamId] || streamId,
@@ -3882,15 +3894,22 @@ function parseMinerOutput(output) {
       hashrate_10s: Number.isFinite(hr) ? hr : 0,
       hashrate_60s: Number.isFinite(hr) ? hr : 0,
       hashrate_15m: Number.isFinite(hr) ? hr : 0,
-      accepted: parseInt(m[3], 10) || 0,
-      rejected: parseInt(m[4], 10) || 0,
+      accepted,
+      rejected,
       active
     };
-    if (streamId === 'zion' && Number.isFinite(hr) && hr > 0) {
-      minerStats.hashrate = hr;
-      if (!Number.isFinite(Number(minerStats.hashrate_10s)) || minerStats.hashrate_10s <= 0) minerStats.hashrate_10s = hr;
-      if (!Number.isFinite(Number(minerStats.hashrate_60s)) || minerStats.hashrate_60s <= 0) minerStats.hashrate_60s = hr;
-      if (!Number.isFinite(Number(minerStats.hashrate_15m)) || minerStats.hashrate_15m <= 0) minerStats.hashrate_15m = hr;
+    if (streamId === 'zion') {
+      // Update top-level stats from the most reliable per-stream source.
+      // The aggregate tui_log may lag by one interval in the V31 miner.
+      if (Number.isFinite(hr) && hr > 0) {
+        minerStats.hashrate = hr;
+        if (!Number.isFinite(Number(minerStats.hashrate_10s)) || minerStats.hashrate_10s <= 0) minerStats.hashrate_10s = hr;
+        if (!Number.isFinite(Number(minerStats.hashrate_60s)) || minerStats.hashrate_60s <= 0) minerStats.hashrate_60s = hr;
+        if (!Number.isFinite(Number(minerStats.hashrate_15m)) || minerStats.hashrate_15m <= 0) minerStats.hashrate_15m = hr;
+      }
+      if (accepted >= 0) minerStats.accepted = accepted;
+      if (rejected >= 0) minerStats.rejected = rejected;
+      minerStats.shares = (Number(minerStats.accepted) || 0) + (Number(minerStats.rejected) || 0);
     }
   }
 

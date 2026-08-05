@@ -41,8 +41,10 @@ function currentPureZionDefault(cfg = config) {
   return DESKTOP_PURE_ZION_DEFAULT;
 }
 
-// V3: pure-ZION stubs — these replace the removed multi-coin revenue helpers.
-function isPureZionDesktopMode(_cfg) { return true; }
+// V31: pure-ZION when the user has not explicitly enabled triple-stream.
+function isPureZionDesktopMode(cfg = config) {
+  return cfg && cfg.tripleStream !== true;
+}
 function normalizeMiningMode(val) {
   const VALID = ['cpu', 'gpu', 'dual'];
   return VALID.includes(val) ? val : 'dual';
