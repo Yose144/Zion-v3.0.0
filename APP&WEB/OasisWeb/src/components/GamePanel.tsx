@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Coins, Star, MapPin, Rocket, Egg, User, Wallet, ScanLine, Zap, Package,
-  ChevronRight, Plane, RefreshCw, Palette, Scan, RotateCcw, Eye, EyeOff,
+  ChevronRight, ChevronLeft, Plane, RefreshCw, Palette, Scan, RotateCcw, Eye, EyeOff,
   Volume2, VolumeX, Play, Pause, SkipBack, SkipForward, ListMusic, Music,
   Settings, Radio, Trophy, Map as MapIcon, Sparkles, Copy, Globe,
 } from 'lucide-react';
@@ -57,7 +57,7 @@ const SHIP_ICONS: Record<keyof ShipLoadout, typeof Zap> = {
   model: Plane,
 };
 
-type Tab = 'ship' | 'identity' | 'audio' | 'oasis';
+export type Tab = 'ship' | 'identity' | 'audio' | 'oasis';
 
 interface StatTileProps {
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
@@ -83,7 +83,7 @@ function StatusDot({ status }: { status: 'loading' | 'ok' | 'error' }) {
 }
 
 // ── Ship Loadout tab ──
-function ShipTab() {
+export function ShipTab() {
   const { credits, xp, shipLoadout, upgradeShip, setShipColor, setShipModel, unlockShip, unlockedShips } = useGameStore();
   const addToast = useToastStore((s) => s.add);
   const playerLevel = getLevel(xp);
@@ -252,7 +252,7 @@ function ShipTab() {
 }
 
 // ── Identity tab ──
-function IdentityTab() {
+export function IdentityTab() {
   const { address, setAddress, reset, syncPlayer, avatarConfig, archetype } = useGameStore();
   const addToast = useToastStore((s) => s.add);
   const [input, setInput] = useState(address ?? '');
@@ -429,7 +429,7 @@ function IdentityTab() {
 }
 
 // ── Audio tab ──
-function AudioTab({ music, muted, onToggleMute }: {
+export function AudioTab({ music, muted, onToggleMute }: {
   music: MusicPlayerState;
   muted: boolean;
   onToggleMute: () => void;
@@ -514,7 +514,7 @@ function AudioTab({ music, muted, onToggleMute }: {
 }
 
 // ── OASIS info tab ──
-function OasisTab({ onEnterFlight }: { onEnterFlight?: () => void }) {
+export function OasisTab({ onEnterFlight }: { onEnterFlight?: () => void }) {
   const { address, realQuests, territories } = useGameStore();
   const [status, setStatus] = useState<'loading' | 'ok' | 'error'>('loading');
   const [avatarCount, setAvatarCount] = useState(0);
@@ -642,6 +642,7 @@ interface GamePanelProps {
   muted: boolean;
   onToggleMute: () => void;
   onEnterFlight?: () => void;
+  isMobile?: boolean;
 }
 
 export default function GamePanel({
@@ -652,11 +653,14 @@ export default function GamePanel({
   muted,
   onToggleMute,
   onEnterFlight,
+  isMobile = false,
 }: GamePanelProps) {
   const { xp, credits, completedQuests, discoveredWorlds, scannedWorlds, collectedEggs, address, shipLoadout } = useGameStore();
   const [expanded, setExpanded] = useState(false);
   const [tab, setTab] = useState<Tab>('ship');
   const [showSocial, setShowSocial] = useState(false);
+  // On mobile, start minimized so the 3D scene is visible.
+  const [minimized, setMinimized] = useState(isMobile);
 
   const level = getLevel(xp);
   const progress = getLevelProgress(xp);
@@ -676,9 +680,33 @@ export default function GamePanel({
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       className="pointer-events-auto absolute left-2 top-2 z-50 sm:left-5 sm:top-5"
+      style={{ '--panel-bg': 'rgba(8, 10, 20, 0.72)' } as React.CSSProperties}
     >
+      {/* ── Mobile minimized: small floating button ── */}
+      {minimized && (
+        <button
+          onClick={() => setMinimized(false)}
+          className="zion-hud-panel flex items-center gap-2 px-3 py-2.5 text-xs font-semibold text-white transition hover:text-oasis-cyan"
+          title="Show game panel"
+        >
+          <Rocket className="h-4 w-4 text-oasis-cyan" />
+          <span className="font-mono text-[10px] text-gray-400">Lv{level}</span>
+        </button>
+      )}
+
+      {!minimized && (
       <div className="flex gap-2">
-        {/* ── Left column: Map + Stats (always visible) ── */}
+        {/* ── Left column: Map + Stats ── */}
+        {/* Mobile: close button to minimize and free the screen */}
+        {isMobile && (
+          <button
+            onClick={() => { setMinimized(true); setExpanded(false); }}
+            className="zion-button-ghost absolute -right-2 -top-2 z-10 !rounded-full !p-1.5"
+            title="Minimize panel"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </button>
+        )}
         <div className="zion-hud-panel !relative w-[13rem] p-2.5 sm:w-72 sm:p-3.5">
           {/* MiniMap */}
           <MiniMap
@@ -852,6 +880,7 @@ export default function GamePanel({
           )}
         </AnimatePresence>
       </div>
+      )}
 
       <AnimatePresence>
         {showSocial && <SocialPanel onClose={() => setShowSocial(false)} />}

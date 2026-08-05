@@ -161,13 +161,13 @@ export default function GalaxyCore() {
     <group ref={coreRef} position={[0, 0.4, 0]}>
       {/* Inner bright drop — the "contact" point */}
       <mesh>
-        <sphereGeometry args={[0.42, 64, 64]} />
+        <sphereGeometry args={[0.42, 32, 32]} />
         <meshBasicMaterial color="#ffffff" transparent opacity={1} toneMapped={false} />
       </mesh>
 
       {/* Warm gold inner corona */}
       <mesh>
-        <sphereGeometry args={[0.72, 64, 64]} />
+        <sphereGeometry args={[0.72, 32, 32]} />
         <meshBasicMaterial
           color="#fbbf24"
           transparent
@@ -180,7 +180,7 @@ export default function GalaxyCore() {
 
       {/* Cyan-blue corona */}
       <mesh>
-        <sphereGeometry args={[1.1, 64, 64]} />
+        <sphereGeometry args={[1.1, 24, 24]} />
         <meshBasicMaterial
           color="#60a5fa"
           transparent
@@ -193,7 +193,7 @@ export default function GalaxyCore() {
 
       {/* Deep blue outer glow */}
       <mesh>
-        <sphereGeometry args={[2.2, 64, 64]} />
+        <sphereGeometry args={[2.2, 16, 16]} />
         <meshBasicMaterial
           color="#1e40af"
           transparent
@@ -208,7 +208,7 @@ export default function GalaxyCore() {
       <group ref={ringsRef} rotation={[Math.PI / 2, 0, 0]}>
         {rings.map((ring, i) => (
           <mesh key={i} rotation={[Math.PI / 2, 0, i * 0.4]}>
-            <torusGeometry args={[ring.radius, ring.tube, 24, 96]} />
+            <torusGeometry args={[ring.radius, ring.tube, 16, 48]} />
             <meshBasicMaterial
               color={ring.color}
               transparent

@@ -1,5 +1,7 @@
 # Epizoda 3 — Chuť vody
 
+*Největší síla se nechlubí trůnem. Schová se do chuti vody, kterou piješ, aniž bys nad tím přemýšlel.*
+
 > *„Jsem chuť vody, světlo slunce a měsíce... schopnost v člověku."*
 > — Bhagavadgíta 7.8
 

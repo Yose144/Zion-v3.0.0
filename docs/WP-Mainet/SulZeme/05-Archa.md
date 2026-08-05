@@ -1,5 +1,7 @@
 # Epizoda 5 — Archa
 
+*Archa nezachraňuje ty, kdo si ji zaslouží. Zachraňuje ty, kdo vejdou dřív, než začne pršet.*
+
 > *„A hle, já uvedu potopu vod na zemi... Ale s tebou učiním smlouvu."*
 > — Genesis 6, 17–18 (volně)
 

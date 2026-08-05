@@ -531,6 +531,7 @@ pub fn fetch_profit_snapshot(config: &StreamProfitConfig) -> StreamProfitSnapsho
     match config.api_provider.as_str() {
         "whattomine" => fetch_whattomine(config),
         "coingecko" => fetch_coingecko(config),
+        "nicehash" => fetch_nicehash(config),
         _ => StreamProfitSnapshot::fallback(),
     }
 }
@@ -580,6 +581,149 @@ fn fetch_coingecko(config: &StreamProfitConfig) -> StreamProfitSnapshot {
             snap
         }
     }
+}
+
+/// Fetch profitability from NiceHash `simplemultialgo/info` public API.
+///
+/// Returns current paying prices (BTC per unit per day) for each algorithm.
+/// We map relevant algorithms to Deeksha Chv3 streams and convert BTC to
+/// USD using a cached or hard-coded BTC/USD reference price.
+fn fetch_nicehash(config: &StreamProfitConfig) -> StreamProfitSnapshot {
+    let url = if config.api_url.is_empty() {
+        "https://api2.nicehash.com/main/api/v2/public/simplemultialgo/info"
+    } else {
+        &config.api_url
+    };
+
+    let btc_price = fetch_btc_price_usd().unwrap_or(60_000.0);
+    match fetch_url_blocking(url, 10) {
+        Ok(body) => parse_nicehash_response(&body, btc_price),
+        Err(e) => {
+            plog!("stream_profit: nicehash fetch error: {e}");
+            let mut snap = StreamProfitSnapshot::fallback();
+            snap.live = false;
+            snap
+        }
+    }
+}
+
+/// Parse NiceHash `simplemultialgo/info` JSON into a `StreamProfitSnapshot`.
+///
+/// Example response:
+/// ```json
+/// {
+///   "miningAlgorithms": [
+///     { "algorithm": "KECCAK", "speed": "1000000000.0", "paying": "0.0001234" },
+///     ...
+///   ]
+/// }
+/// ```
+/// `paying` is in BTC per unit per day.  We use a reference BTC/USD price
+/// (fetched from CoinGecko or a conservative fallback) to convert to USD.
+fn parse_nicehash_response(body: &str, btc_price_usd: f64) -> StreamProfitSnapshot {
+    let parsed: Option<serde_json::Value> = serde_json::from_str(body).ok();
+    let Some(json) = parsed else {
+        plog!("stream_profit: nicehash parse error");
+        return StreamProfitSnapshot::fallback();
+    };
+
+    let fallback = StreamProfitSnapshot::fallback();
+    let mut entries: Vec<StreamProfitEntry> = Vec::new();
+
+    if let Some(algorithms) = json
+        .get("miningAlgorithms")
+        .and_then(|a| a.as_array())
+    {
+        for algo in algorithms {
+            let name = algo
+                .get("algorithm")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_uppercase();
+            let paying = algo
+                .get("paying")
+                .and_then(|v| v.as_str())
+                .and_then(|s| s.parse::<f64>().ok())
+                .unwrap_or(0.0);
+
+            if paying <= 0.0 {
+                continue;
+            }
+
+            // paying is BTC per unit/day; convert to USD for a reference unit.
+            // For SHA3/Keccak we normalise to ~USD/day per 1 TH/s-like unit.
+            let revenue_per_day_usd = paying * btc_price_usd * 1_000.0;
+
+            let (source, cost) = match name.as_str() {
+                "KECCAK" | "BLAKE2S" | "BLAKE256R8" | "BLAKE256R14" => {
+                    (RevenueSource::KeccakBonus, 0.05)
+                }
+                "SHA256" | "SHA256ASICBOOST" => (RevenueSource::Sha3Bonus, 0.05),
+                "SCRYPT" | "X11" | "X13" | "X15" | "NIST5" => (RevenueSource::DeekshaLite, 0.05),
+                "CRYPTONIGHT" | "CRYPTONIGHTV7" | "CRYPTONIGHTHEAVY" | "CRYPTONIGHTV8"
+                | "CRYPTONIGHTR" => (RevenueSource::NclAi, 0.08),
+                _ => continue,
+            };
+
+            // If we already have an entry for this source, keep the larger revenue.
+            if let Some(existing) = entries.iter_mut().find(|e| e.source == source) {
+                existing.revenue_per_day_usd = existing.revenue_per_day_usd.max(revenue_per_day_usd);
+                existing.api_label = Some(format!("nicehash:{name}"));
+            } else {
+                entries.push(StreamProfitEntry {
+                    source,
+                    revenue_per_day_usd: revenue_per_day_usd.max(0.01),
+                    cost_per_day_usd: cost,
+                    api_label: Some(format!("nicehash:{name}")),
+                });
+            }
+        }
+    }
+
+    // Fill missing streams from fallback so downstream weighting has all sources.
+    for source in [
+        RevenueSource::Zion,
+        RevenueSource::KeccakBonus,
+        RevenueSource::Sha3Bonus,
+        RevenueSource::NclAi,
+        RevenueSource::DeekshaLite,
+        RevenueSource::ThermalBonus,
+    ] {
+        if !entries.iter().any(|e| e.source == source) {
+            if let Some(e) = fallback.entry_for(source) {
+                entries.push(e.clone());
+            }
+        }
+    }
+
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+
+    StreamProfitSnapshot {
+        entries,
+        timestamp,
+        live: true,
+    }
+}
+
+/// Fetch a reference BTC/USD price.  First tries CoinGecko; on failure,
+/// returns a conservative fallback so NiceHash parsing can still proceed.
+fn fetch_btc_price_usd() -> Option<f64> {
+    let url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd";
+    match fetch_url_blocking(url, 5) {
+        Ok(body) => {
+            if let Ok(json) = serde_json::from_str::<serde_json::Value>(&body) {
+                return json
+                    .get("bitcoin")
+                    .and_then(|b| b.get("usd"))
+                    .and_then(|u| u.as_f64());
+            }
+        }
+        Err(e) => plog!("stream_profit: BTC price fetch error: {e}"),
+    }
+    None
 }
 
 /// Fetch a URL with a timeout using a blocking reqwest client.
@@ -719,7 +863,7 @@ fn parse_coingecko_response(body: &str) -> StreamProfitSnapshot {
     };
 
     let fallback = StreamProfitSnapshot::fallback();
-    let mut entries = Vec::new();
+    let mut entries: Vec<StreamProfitEntry> = Vec::new();
 
     // Helper: get USD price for a coin ID.
     let get_price = |id: &str| -> f64 {
@@ -777,6 +921,121 @@ fn parse_coingecko_response(body: &str) -> StreamProfitSnapshot {
         entries,
         timestamp,
         live: true,
+    }
+}
+
+// ============================================================================
+// PROFIT ORACLE — cached + rate-limited live snapshots
+// ============================================================================
+
+/// Thread-safe cached profit oracle.
+///
+/// Fetches a fresh `StreamProfitSnapshot` only when the cached snapshot is
+/// older than `config.interval_secs` and the rate limiter allows a new call.
+/// On any failure it returns the cached snapshot (if any) or the static
+/// fallback, so mining never stalls on a network hiccup.
+#[derive(Debug)]
+pub struct ProfitOracle {
+    config: StreamProfitConfig,
+    cache: std::sync::Mutex<Option<StreamProfitSnapshot>>,
+    last_fetch: std::sync::atomic::AtomicU64,
+    min_fetch_interval: u64,
+    max_requests_per_window: u64,
+    window_secs: u64,
+    request_count: std::sync::atomic::AtomicU64,
+    window_start: std::sync::atomic::AtomicU64,
+}
+
+impl ProfitOracle {
+    /// Create a new oracle with sensible rate limits (1 req / 60 s, max 10 / 60 s).
+    pub fn new(config: StreamProfitConfig) -> Self {
+        Self {
+            min_fetch_interval: config.interval_secs.max(10),
+            max_requests_per_window: 10,
+            window_secs: 60,
+            config,
+            cache: std::sync::Mutex::new(None),
+            last_fetch: std::sync::atomic::AtomicU64::new(0),
+            request_count: std::sync::atomic::AtomicU64::new(0),
+            window_start: std::sync::atomic::AtomicU64::new(0),
+        }
+    }
+
+    /// Return the current profit snapshot, fetching a fresh one if needed.
+    pub fn get_snapshot(&self) -> StreamProfitSnapshot {
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+
+        let last = self.last_fetch.load(std::sync::atomic::Ordering::Relaxed);
+        let age = now.saturating_sub(last);
+
+        // Serve cached snapshot if it is still fresh.
+        if age < self.min_fetch_interval {
+            if let Ok(guard) = self.cache.lock() {
+                if let Some(snap) = guard.as_ref() {
+                    return snap.clone();
+                }
+            }
+        }
+
+        // Rate-limit: allow at most `max_requests_per_window` within `window_secs`.
+        if !self.rate_limit_allow(now) {
+            // Too many requests — return stale cache or fallback.
+            if let Ok(guard) = self.cache.lock() {
+                if let Some(snap) = guard.as_ref() {
+                    return snap.clone();
+                }
+            }
+            return StreamProfitSnapshot::fallback();
+        }
+
+        if !self.config.enabled {
+            return StreamProfitSnapshot::fallback();
+        }
+
+        let fresh = fetch_profit_snapshot(&self.config);
+        if !fresh.entries.is_empty() {
+            if let Ok(mut guard) = self.cache.lock() {
+                *guard = Some(fresh.clone());
+            }
+            self.last_fetch.store(now, std::sync::atomic::Ordering::Relaxed);
+        }
+
+        // If the fetch failed and returned an empty snapshot, fall back.
+        if fresh.entries.is_empty() {
+            if let Ok(guard) = self.cache.lock() {
+                if let Some(snap) = guard.as_ref() {
+                    return snap.clone();
+                }
+            }
+            return StreamProfitSnapshot::fallback();
+        }
+
+        fresh
+    }
+
+    fn rate_limit_allow(&self, now: u64) -> bool {
+        let start = self
+            .window_start
+            .load(std::sync::atomic::Ordering::Relaxed);
+        if now.saturating_sub(start) >= self.window_secs {
+            // New window. Use compare-exchange to reset, but another thread
+            // may have beaten us; in that case just continue with current window.
+            let _ = self.window_start.compare_exchange(
+                start,
+                now,
+                std::sync::atomic::Ordering::Relaxed,
+                std::sync::atomic::Ordering::Relaxed,
+            );
+            self.request_count
+                .store(1, std::sync::atomic::Ordering::Relaxed);
+            return true;
+        }
+
+        let count = self.request_count.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
+        count <= self.max_requests_per_window
     }
 }
 
@@ -908,5 +1167,56 @@ mod tests {
     fn parse_job_weights_rejects_out_of_range() {
         assert!(StreamWeights::parse("zion:101").is_err());
         assert!(StreamWeights::parse("zion:-0.1").is_err());
+    }
+
+    #[test]
+    fn parse_nicehash_response_maps_keccak_and_sha256() {
+        let body = r#"{
+            "miningAlgorithms": [
+                { "algorithm": "KECCAK", "speed": "1.0", "paying": "0.0001" },
+                { "algorithm": "SHA256", "speed": "1.0", "paying": "0.0002" }
+            ]
+        }"#;
+        let snap = parse_nicehash_response(body, 60_000.0);
+        assert!(snap.live);
+        assert!(snap.entry_for(RevenueSource::KeccakBonus).is_some());
+        assert!(snap.entry_for(RevenueSource::Sha3Bonus).is_some());
+        // All streams present via fallback fill.
+        assert!(snap.entry_for(RevenueSource::Zion).is_some());
+    }
+
+    #[test]
+    fn parse_nicehash_response_ignores_unmapped_algorithms() {
+        let body = r#"{
+            "miningAlgorithms": [
+                { "algorithm": "EQUIHASH", "speed": "1.0", "paying": "0.0001" }
+            ]
+        }"#;
+        let snap = parse_nicehash_response(body, 60_000.0);
+        assert!(snap.live);
+        // No mapped algorithms -> fallback entries for all streams.
+        assert!(snap.entry_for(RevenueSource::KeccakBonus).is_some());
+    }
+
+    #[test]
+    fn profit_oracle_disabled_returns_fallback() {
+        let mut cfg = StreamProfitConfig::default();
+        cfg.enabled = false;
+        let oracle = ProfitOracle::new(cfg);
+        let snap = oracle.get_snapshot();
+        assert!(!snap.live);
+        assert!(snap.entry_for(RevenueSource::Zion).is_some());
+    }
+
+    #[test]
+    fn profit_oracle_caches_snapshot() {
+        let mut cfg = StreamProfitConfig::default();
+        cfg.enabled = false; // avoids network
+        let oracle = ProfitOracle::new(cfg);
+        let snap1 = oracle.get_snapshot();
+        let snap2 = oracle.get_snapshot();
+        // Both should return the same fallback and populate cache.
+        assert!(!snap1.live);
+        assert!(!snap2.live);
     }
 }

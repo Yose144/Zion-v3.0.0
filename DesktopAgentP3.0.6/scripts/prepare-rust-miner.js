@@ -321,6 +321,24 @@ function copyBinaries(workspaceRoot, resourcesDir) {
 
   warnIfCudaRuntimeMissing(dllNames);
 
+  // On Windows MSVC builds, bundle system DLLs that the miner needs at load
+  // time but that may not be present on a clean user machine:
+  //   - OpenCL.dll      — ICD loader required by the `full` feature
+  //   - VCRUNTIME140.dll — MSVC C runtime (usually present but bundle to be safe)
+  //   - VCRUNTIME140_1.dll
+  if (process.platform === 'win32') {
+    const systemDlls = ['OpenCL.dll', 'VCRUNTIME140.dll', 'VCRUNTIME140_1.dll'];
+    const sysDir = 'C:\\Windows\\System32';
+    for (const dll of systemDlls) {
+      const src = path.join(sysDir, dll);
+      const dst = path.join(resourcesDir, dll);
+      if (exists(src) && !exists(dst)) {
+        console.log(`[prepare-v3] Copying system DLL ${dll}`);
+        copyIfExists(src, dst);
+      }
+    }
+  }
+
   return copied;
 }
 

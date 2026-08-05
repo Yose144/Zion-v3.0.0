@@ -9,7 +9,7 @@ import { createRandom } from '../domain/ports/random';
 // flies between worlds — so it should read as the visual centerpiece, not
 // a background layer. Slightly larger/brighter points than a pure backdrop.
 const PARAMETERS = {
-  count: 34000,
+  count: 20000,
   radius: 48,
   branches: 8,
   spin: 1.35,
@@ -42,14 +42,17 @@ function createParticleTexture(): THREE.Texture {
   return texture;
 }
 
-export default function Galaxy() {
+export default function Galaxy({ isMobile = false }: { isMobile?: boolean }) {
   const pointsRef = useRef<THREE.Points>(null);
   const dustRef = useRef<THREE.Points>(null);
 
+  const count = isMobile ? 8000 : PARAMETERS.count;
+  const dustCount = isMobile ? 1000 : 2500;
+
   const { geometry, material, dustGeometry, dustMaterial } = useMemo(() => {
     const rng = createRandom(31415);
-    const positions = new Float32Array(PARAMETERS.count * 3);
-    const colors = new Float32Array(PARAMETERS.count * 3);
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
 
     const insideColor = new THREE.Color(PARAMETERS.insideColor);
     const midColor = new THREE.Color(PARAMETERS.midColor);
@@ -57,7 +60,7 @@ export default function Galaxy() {
     const color = new THREE.Color();
     const radiusNorm = PARAMETERS.radius;
 
-    for (let i = 0; i < PARAMETERS.count; i++) {
+    for (let i = 0; i < count; i++) {
       const i3 = i * 3;
 
       const radius = rng.next() * PARAMETERS.radius;
@@ -118,7 +121,6 @@ export default function Galaxy() {
     });
 
     // Dust lane particles — larger, dimmer, warm-toned
-    const dustCount = 3500;
     const dustPositions = new Float32Array(dustCount * 3);
     const dustColors = new Float32Array(dustCount * 3);
     const dustColor = new THREE.Color();
@@ -163,7 +165,7 @@ export default function Galaxy() {
     });
 
     return { geometry, material, dustGeometry, dustMaterial };
-  }, []);
+  }, [count, dustCount]);
 
   useFrame((state, delta) => {
     if (pointsRef.current) {

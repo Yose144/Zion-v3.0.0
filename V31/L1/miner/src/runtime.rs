@@ -6,18 +6,26 @@ use chrono::Utc;
 use serde_json::{json, Value};
 use sha3::{Digest, Sha3_256};
 use tokio::sync::{watch, Mutex};
+use tokio::task;
 use tokio::time::sleep;
 use tracing::{info, warn};
 use zion_core::{
-    Block, BlockHeader, ConsensusEngine, HeightAwareDeeksha, Transaction, TransactionInput,
+    Block, BlockHeader, ConsensusEngine, EkamDeeksha, Transaction, TransactionInput,
     TransactionOutput,
 };
 use zion_l1_types::{Amount, Hash};
 
 #[cfg(feature = "auxpow")]
-use crate::auxpow::{find_share, AuxPoWScheduler, Job, Share, StratumClient};
+use crate::autonomous::{AutonomousProfitRouter, HardwareProfile};
+#[cfg(feature = "auxpow")]
+use crate::auxpow::{AuxPoWScheduler, Job, Share, StratumClient};
 use crate::config::MinerConfig;
 use crate::stream::{StreamId, StreamStats};
+
+#[cfg(feature = "auxpow")]
+use crate::gpu::{create_gpu_backend, GpuBackendKind};
+#[cfg(feature = "auxpow")]
+use zion_core::V3DifficultyTarget as DifficultyTarget;
 
 #[derive(Debug, thiserror::Error)]
 pub enum MinerError {
@@ -50,17 +58,27 @@ pub struct MinerRuntime {
     gpu_client: Arc<Mutex<Option<StratumClient>>>,
     #[cfg(feature = "auxpow")]
     cpu_client: Arc<Mutex<Option<StratumClient>>>,
+    #[cfg(feature = "auxpow")]
+    profit_router: Arc<std::sync::Mutex<AutonomousProfitRouter>>,
 }
 
 impl MinerRuntime {
     pub fn new(config: MinerConfig) -> Self {
         let algorithm =
-            Arc::new(HeightAwareDeeksha::new()) as Arc<dyn zion_cosmic_harmony::PowAlgorithm>;
+            Arc::new(EkamDeeksha::new()) as Arc<dyn zion_cosmic_harmony::PowAlgorithm>;
         let consensus = Arc::new(ConsensusEngine::new(algorithm));
         #[cfg(feature = "auxpow")]
         let hashrate_per_unit = config.hashrate_per_unit;
         #[cfg(feature = "auxpow")]
         let stream3_force_coin = config.stream3_force_coin;
+        #[cfg(feature = "auxpow")]
+        let stream2_force_coin = config.stream2_force_coin;
+        #[cfg(feature = "auxpow")]
+        let profit_hysteresis_pct = config.profit_hysteresis_pct;
+        #[cfg(feature = "auxpow")]
+        let profit_interval_sec = config.profit_interval_sec;
+        #[cfg(feature = "auxpow")]
+        let autonomous = config.autonomous;
 
         let mut map = HashMap::new();
         map.insert(StreamId::Zion, StreamStats::new(StreamId::Zion));
@@ -77,16 +95,30 @@ impl MinerRuntime {
 
         #[cfg(feature = "auxpow")]
         {
+            let mut profit_router =
+                AutonomousProfitRouter::new(HardwareProfile::default_for_features());
+            profit_router.enabled = autonomous;
+            profit_router.set_hysteresis(profit_hysteresis_pct);
+            profit_router.set_fetch_interval(profit_interval_sec);
+            if let Some(coin) = stream2_force_coin {
+                profit_router.stream2_coin = Some(coin);
+            }
+            if let Some(coin) = stream3_force_coin {
+                profit_router.stream3_coin = Some(coin);
+            }
+
             Self {
                 config,
                 consensus,
                 stats,
                 scheduler: Arc::new(Mutex::new(AuxPoWScheduler::new(
                     hashrate_per_unit,
+                    stream2_force_coin,
                     stream3_force_coin,
                 ))),
                 gpu_client: Arc::new(Mutex::new(None)),
                 cpu_client: Arc::new(Mutex::new(None)),
+                profit_router: Arc::new(std::sync::Mutex::new(profit_router)),
             }
         }
         #[cfg(not(feature = "auxpow"))]
@@ -97,6 +129,11 @@ impl MinerRuntime {
                 stats,
             }
         }
+    }
+
+    /// Access the miner configuration.
+    pub fn config(&self) -> &MinerConfig {
+        &self.config
     }
 
     /// Build a coinbase transaction paying the configured reward address.
@@ -238,23 +275,101 @@ impl MinerRuntime {
 
     #[cfg(feature = "auxpow")]
     /// Mine a single AuxPoW share for `job` using the configured batch.
-    pub async fn mine_auxpow_share(&self, job: &Job) -> Result<Share, MinerError> {
-        self.mine_auxpow_share_batch(job, self.config.auxpow_nonce_batch)
-            .await
+    pub async fn mine_auxpow_share(
+        &self,
+        stream: StreamId,
+        job: &Job,
+    ) -> Result<Share, MinerError> {
+        let batch = match stream {
+            StreamId::GpuExternal => self.config.stream2_batch,
+            StreamId::CpuExternal => self.config.stream3_batch,
+            _ => self.config.auxpow_nonce_batch,
+        };
+        self.mine_auxpow_share_batch(stream, job, batch).await
     }
 
     #[cfg(feature = "auxpow")]
     /// Mine a single AuxPoW share for `job` using a custom batch.
+    ///
+    /// Stream 2 first attempts GPU mining when `gpu_backend` is not "cpu";
+    /// on failure or for Stream 3 it falls back to the CPU `parallel` scanner.
     pub async fn mine_auxpow_share_batch(
         &self,
+        stream: StreamId,
         job: &Job,
         batch: u64,
     ) -> Result<Share, MinerError> {
-        find_share(job.coin, job, 0, batch).ok_or(MinerError::NoAuxPoWSolution)
+        let try_gpu = stream == StreamId::GpuExternal && self.config.gpu_backend != "cpu";
+        if try_gpu {
+            if let Some(share) = self.try_gpu_auxpow_share(job, batch).await {
+                return Ok(share);
+            }
+        }
+
+        let job = job.clone();
+        let threads = self.config.miner_threads;
+        let share = task::spawn_blocking(move || {
+            crate::parallel::find_auxpow_share(&job, threads, batch)
+        })
+        .await
+        .map_err(|e| MinerError::Consensus(format!("cpu scanner join: {e}")))?
+        .ok_or(MinerError::NoAuxPoWSolution)?;
+        Ok(share)
+    }
+
+    #[cfg(feature = "auxpow")]
+    async fn try_gpu_auxpow_share(&self, job: &Job, batch: u64) -> Option<Share> {
+        let kind = parse_gpu_backend(&self.config.gpu_backend);
+        let work_size = batch as usize;
+        let algorithm = job.coin.algorithm().to_string();
+        let coin_ticker = job.coin.ticker().to_string();
+        let header = job.header.clone();
+        let target = DifficultyTarget { bytes: job.target };
+        let coin = job.coin;
+        let job_id = job.job_id.clone();
+        let extranonce2 = job.extranonce2.clone();
+        let ntime = job.ntime.clone();
+
+        let gpu_result = task::spawn_blocking(move || {
+            let mut miner = create_gpu_backend(kind, work_size, &algorithm, &coin_ticker)
+                .map_err(|e| anyhow::anyhow!("{e}"))?;
+            let result = miner
+                .mine_batch_raw(&header, target, 0, batch)
+                .map_err(|e| anyhow::anyhow!("{e}"))?;
+            Ok::<_, anyhow::Error>(result)
+        })
+        .await;
+
+        match gpu_result {
+            Ok(Ok(gpu_result)) => {
+                if let Some((nonce, hash, _mix)) = gpu_result.solutions.into_iter().next() {
+                    return Some(Share {
+                        job_id,
+                        coin,
+                        nonce,
+                        hash,
+                        extranonce2,
+                        ntime,
+                    });
+                }
+            }
+            Ok(Err(e)) => {
+                warn!(stream = "gpu", error = %e, "gpu auxpow mining failed; falling back to cpu");
+            }
+            Err(e) => {
+                warn!(stream = "gpu", error = %e, "gpu auxpow task failed; falling back to cpu");
+            }
+        }
+        None
     }
 
     #[cfg(feature = "auxpow")]
     /// Refresh profit estimates and return selected GPU/CPU coins.
+    ///
+    /// When `config.autonomous` is enabled, uses the persisted
+    /// `AutonomousProfitRouter` to fetch estimates and apply hysteresis before
+    /// switching.  The synchronous oracle work is run on a blocking thread so
+    /// the async runtime is not stalled by network I/O.
     pub async fn refresh_auxpow(
         &self,
         profiles: &[zion_cosmic_harmony::CoinProfile],
@@ -262,8 +377,51 @@ impl MinerRuntime {
         Option<zion_cosmic_harmony::ExternalCoin>,
         Option<zion_cosmic_harmony::ExternalCoin>,
     ) {
+        let (gpu, cpu) = if self.config.autonomous {
+            let router = self.profit_router.clone();
+            match tokio::task::spawn_blocking(move || {
+                let mut r = router.lock().map_err(|e| e.to_string())?;
+                if r.has_profit_data() {
+                    r.reevaluate();
+                } else {
+                    r.initial_selection();
+                }
+                Ok::<(Option<zion_cosmic_harmony::ExternalCoin>, Option<zion_cosmic_harmony::ExternalCoin>), String>((r.stream2_coin, r.stream3_coin))
+            })
+            .await
+            {
+                Ok(Ok((gpu, cpu))) => (gpu, cpu),
+                Ok(Err(e)) => {
+                    warn!("profit router error: {e}");
+                    (None, None)
+                }
+                Err(e) => {
+                    warn!("profit task failed: {e}");
+                    (None, None)
+                }
+            }
+        } else {
+            (None, None)
+        };
+
         let mut scheduler = self.scheduler.lock().await;
-        scheduler.refresh(profiles);
+
+        if self.config.autonomous {
+            if let Some(coin) = gpu {
+                scheduler.set_gpu(coin, profiles);
+            }
+            if let Some(coin) = cpu {
+                scheduler.set_cpu(coin, profiles);
+            }
+            info!(
+                gpu = ?gpu,
+                cpu = ?cpu,
+                "autonomous profit re-evaluation complete"
+            );
+        } else {
+            scheduler.refresh(profiles);
+        }
+
         (scheduler.current_gpu(), scheduler.current_cpu())
     }
 
@@ -284,7 +442,9 @@ impl MinerRuntime {
                 #[cfg(feature = "auxpow")]
                 let mut pool_client: Option<crate::auxpow::StratumClient> = if use_pool {
                     let url = this.config.pool_url.clone().unwrap_or_default();
-                    let worker = this.config.worker.clone();
+                    // ZION pool expects username = WALLET.worker so it can map shares
+                    // to a payout address and worker telemetry.
+                    let worker = format!("{}.{}", this.config.reward_address.as_str(), this.config.worker);
                     let password = this.config.password.clone();
                     let client = crate::auxpow::StratumClient::new(&url, &worker, &password);
                     if let Err(e) = client.connect().await {
@@ -394,6 +554,39 @@ impl MinerRuntime {
             (h2, h3)
         };
 
+        // Periodically re-evaluate Stream 2/3 coin profitability.
+        #[cfg(feature = "auxpow")]
+        let h_profit: MinerHandle = if self.config.auxpow_enabled && self.config.autonomous {
+            let this = self.clone();
+            let mut shutdown = shutdown.clone();
+            tokio::spawn(async move {
+                let mut interval = tokio::time::interval(Duration::from_secs(
+                    this.config.profit_interval_sec.max(60),
+                ));
+                loop {
+                    tokio::select! {
+                        _ = shutdown.changed() => break,
+                        _ = interval.tick() => {
+                            let profiles = zion_cosmic_harmony::CoinProfile::defaults();
+                            let (gpu, cpu) = this.refresh_auxpow(&profiles).await;
+                            info!(
+                                gpu = ?gpu,
+                                cpu = ?cpu,
+                                interval_sec = this.config.profit_interval_sec,
+                                "autonomous profit re-evaluation complete"
+                            );
+                        }
+                    }
+                }
+                Ok(())
+            })
+        } else {
+            tokio::spawn(async { Ok::<(), MinerError>(()) })
+        };
+
+        #[cfg(not(feature = "auxpow"))]
+        let h_profit: MinerHandle = tokio::spawn(async { Ok::<(), MinerError>(()) });
+
         #[cfg(not(feature = "auxpow"))]
         let (h2, h3): (MinerHandle, MinerHandle) = (
             tokio::spawn(async { Ok::<(), MinerError>(()) }),
@@ -401,10 +594,11 @@ impl MinerRuntime {
         );
 
         let _ = shutdown_for_changed.changed().await;
-        let (r1, r2, r3) = tokio::join!(h1, h2, h3);
+        let (r1, r2, r3, r_profit) = tokio::join!(h1, h2, h3, h_profit);
         r1??;
         r2??;
         r3??;
+        r_profit??;
         Ok(())
     }
 
@@ -427,7 +621,15 @@ impl MinerRuntime {
             return Ok(());
         };
 
-        let url = self.config.auxpow_pool.clone().or(url).unwrap_or_default();
+        let explicit_url = match stream {
+            StreamId::GpuExternal => self.config.stream2_url.clone(),
+            StreamId::CpuExternal => self.config.stream3_url.clone(),
+            _ => None,
+        };
+        let url = explicit_url
+            .or(self.config.auxpow_pool.clone())
+            .or(url)
+            .unwrap_or_default();
 
         if url.is_empty() {
             warn!(stream = ?stream, coin = %coin, "no stratum url for auxpow coin");
@@ -469,7 +671,7 @@ impl MinerRuntime {
             _ => self.config.auxpow_nonce_batch,
         };
 
-        let share = self.mine_auxpow_share_batch(&job, batch).await?;
+        let share = self.mine_auxpow_share_batch(stream, &job, batch).await?;
 
         let guard = client_cell.lock().await;
         if let Some(client) = guard.as_ref() {
@@ -508,6 +710,17 @@ impl MinerRuntime {
             s.accepted += 1;
             s.shares_found += 1;
         }
+    }
+}
+
+#[cfg(feature = "auxpow")]
+fn parse_gpu_backend(s: &str) -> GpuBackendKind {
+    match s.trim().to_ascii_lowercase().as_str() {
+        "opencl" | "ocl" => GpuBackendKind::OpenCL,
+        "cuda" => GpuBackendKind::Cuda,
+        "metal" => GpuBackendKind::Metal,
+        "cpu" => GpuBackendKind::Cpu,
+        _ => GpuBackendKind::Auto,
     }
 }
 
@@ -708,7 +921,10 @@ mod tests {
             extranonce2: "00".to_string(),
             ntime: "00000000".to_string(),
         };
-        let share = runtime.mine_auxpow_share(&job).await.unwrap();
+        let share = runtime
+            .mine_auxpow_share(StreamId::GpuExternal, &job)
+            .await
+            .unwrap();
         assert_eq!(share.coin, job.coin);
     }
 

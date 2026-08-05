@@ -170,7 +170,7 @@ Tento moment slouží jako **tutoriál a onboarding** — ne textový, ale pří
 
 ### 9.4 První loď — warp-ready
 
-> **Status: Částečně implementováno (web).** Ship selection systém má 6 lodí (Pilgrim Scout + 5 Star Wars STL modelů: A-Wing, B-Wing, Snowspeeder, TIE Fighter, TIE Interceptor). STL modely se načítají přes STLLoader a renderují v flight mode. Ship loadout (boost/cargo/scanner) + hull color jsou upgradovatelné. Zatím chybí: odemykání lodí přes questy/craft/obchod, vizuální loadout (zbraně/štíty na modelu), posádka.
+> **Status: Částečně implementováno (web).** Ship selection systém má 12 lodí (Pilgrim Scout + 5 Star Wars STL modelů + 6 procedurálních 3D modelů). STL modely se načítají přes STLLoader; procedurální modely jsou postavené z Three.js primitivek (viz `StarFighterModels.tsx`). Ship loadout (boost/cargo/scanner) + hull color jsou upgradovatelné. Nová zóna **Hangar** (`/ships`) zobrazuje všechny lodě v 3D s rotujícími modely, stat bary, unlock/select. Zatím chybí: odemykání lodí přes questy/craft/obchod, vizuální loadout (zbraně/štíty na modelu), posádka.
 
 Jakmile si hráč doladí avatara, dostane **základní loď**. Ta není jen kosmická loď, ale **multivrstevný transportér**:
 
@@ -237,7 +237,8 @@ Každý svět reprezentuje jiný žánr nebo éru:
 - [ ] Budou existovat “uctívané” licence pro známé značky, nebo vše jako vlastní archetypy?
 - [ ] Jaká je minimální MVP — jeden hvězdný systém + jedna planeta s jedním žánrem?
 - [ ] Jak vypadá Morpheus/Neo/Trinity ve scéně — NPC, video, stylizovaní průvodci?
-- [x] ~~Jaké jsou lodní třídy (starfighter, defender, mega-carrier) a jak se odemykají?~~ — **Hotovo:** 6 tříd s level/credit požadavky (Pilgrim Scout, A-Wing, Snowspeeder, TIE Fighter, B-Wing, TIE Interceptor). STL modely pro každou loď.
+- [x] ~~Jaké jsou lodní třídy (starfighter, defender, mega-carrier) a jak se odemykají?~~ — **Hotovo:** 12 lodí v 7 třídách (Scout, Interceptor, Recon, Patrol, Assault, Elite Strike, Starfighter, Bomber, Jedi, Bounty, Freighter, Capital) s level/credit požadavky. 5 STL modelů + 6 procedurálních 3D modelů + 1 default. Nová zóna Hangar (`/ships`) s 3D galerií.
+- [x] ~~První Hiranyagarbha klíč?~~ — **Hotovo:** Klíč #1 (`bwing-quantum-core`) skrytý v B-Wing kvantovém motoru. Viditelný jen když je B-Wing aktivní loď. Viz sekce 13.2.
 - [ ] Jak se warp skok ovládá — z galaktické mapy, z kokpitu, z quest menu?
 
 ---
@@ -246,22 +247,74 @@ Každý svět reprezentuje jiný žánr nebo éru:
 
 ### 13.1 Ship Unlocking System
 
-Lodě se odemykají na základě **levelu hráče** a **ZION kreditů**. Každá loď má STL model, vlastní barvu a třídu.
+Lodě se odemykají na základě **levelu hráče** a **ZION kreditů**. Každá loď má buď STL model, nebo procedurální 3D model (z Three.js primitivek), vlastní barvu, třídu a staty (boost/cargo/scanner/hp).
+
+**STL modely** (načítají se z `/public/models/`):
 
 | Loď | Třída | Level | Cena | STL Model |
 |-----|-------|-------|------|-----------|
-| Pilgrim Scout | Scout | 1 | 0 Z | — (default) |
+| Pilgrim Scout | Scout | 1 | 0 Z | — (procedurální default) |
 | A-Wing | Interceptor | 2 | 500 Z | `/models/awing.stl` |
 | Snowspeeder | Recon | 3 | 1000 Z | `/models/snowspeeder.stl` |
 | TIE Fighter | Patrol | 4 | 2500 Z | `/models/tiefighter.stl` |
 | B-Wing | Assault | 5 | 5000 Z | `/models/bwing.stl` |
 | TIE Interceptor | Elite Strike | 7 | 10000 Z | `/models/tieinterceptor.stl` |
 
+**Procedurální 3D modely** (postavené z Three.js primitivek v `StarFighterModels.tsx`, inspirace [eigenbloom.com/woodenstarfighter/](https://eigenbloom.com/woodenstarfighter/) — Graham Smith laser-cut wooden starfighters):
+
+| Loď | Třída | Level | Cena | Boost/Cargo/Scan/Hull |
+|-----|-------|-------|------|----------------------|
+| X-Wing | Starfighter | 6 | 7 500 Z | 3/2/2/110 |
+| Y-Wing | Bomber | 8 | 15 000 Z | 2/4/2/150 |
+| Jedi Starfighter | Jedi | 9 | 20 000 Z | 4/2/3/100 |
+| Slave I | Bounty | 10 | 30 000 Z | 3/3/4/130 |
+| Millennium Falcon | Freighter | 12 | 50 000 Z | 4/5/3/200 |
+| Star Destroyer | Capital | 15 | 100 000 Z | 2/5/5/500 |
+
+- **Procedurální modely features:**
+  - **X-Wing:** S-foils se otevírají podle rychlosti (animace v `useFrame`), 4 engine glows, R2 droid dome
+  - **Y-Wing:** Twin engine nacelles, dlouhý narrow fuselage, R2 droid
+  - **Jedi Starfighter:** Štíhlý delta-wing, swept-back křídla, tail fins
+  - **Slave I:** Asymetrický ovoid, offset cockpit, mandible/cargo arm
+  - **Millennium Falcon:** Saucer body, front mandibles, offset cockpit tube, twin rear engines, radar dish
+  - **Star Destroyer:** Trojúhelníkový wedge hull, bridge tower, 3 engine thrusters, surface lights
 - **Stavy:** SELECTED (aktivní), UNLOCKED (odemčený), CAN_UNLOCK (gold border, splňuje požadavky), LOCKED (nedostatek levelu nebo kreditů).
 - **Persistence:** `unlockedShips` v `oasis-game-store` localStorage, s `merge` funkcí pro zustand v5 hydrataci.
-- **UI:** `ShipTab()` v `GamePanel.tsx` + `ShipLoadout.tsx` (modal v `PlayerHud`).
+- **UI:** `ShipTab()` v `GamePanel.tsx` + nová zóna **Hangar** (`/ships`) s 3D rotujícími modely a stat bary.
 
-### 13.2 World Interaction Panel
+### 13.2 Hiranyagarbha Keys — 108 klíčů ke Zlatému lůnu
+
+> **Hiranyagarbha** (sanskrt: हिरण्यगर्भ, „Zlaté Lůno" nebo „Zlaté Vejce") — v Rigvédě (10.121) prvotní kosmická entita, zárodek veškerého bytí. V OASIS je to metafora pro **Golden Egg** endgame: kdo najde všech 108 klíčů, odemyká Hiranyagarbhu — kosmický zárodek, jednotu, stav vědomí.
+
+OASIS má **108 skrytých klíčů** rozprostřených napříč multivesmírem — v lodích, na planetách, v dimenzích, v questech, v hudbě, v kódu. Každý klíč je easter egg: objeví se jen za specifických podmínek.
+
+**Klíč #1 — Klíč Prvotního Lůna** (implementováno):
+
+| Pole | Hodnota |
+|------|---------|
+| ID | `bwing-quantum-core` |
+| Číslo | 1 / 108 |
+| Lokace | B-Wing · Kvantový motor |
+| Odměna | +500 XP |
+| Podmínka | Hráč musí mít **B-Wing jako aktivní loď** a navštívit **Hangar** (`/ships`) |
+| Vizuál | Pulsující zlatý oktaedr nad B-Wing pedesálem, viditelný jen když je B-Wing aktivní |
+| Po nalezení | Na B-Wing pedesálu zůstane statický zlatý oktaedr jako důkaz |
+
+**Hint z hry:**
+> *Uvnitř těžkého bombardéru se skrývá jádro, které nesvítí pro pouhé oko — pouze pro pilota, který si vybral tuto loď jako svou. Hledej puls v motoru, když letíš.*
+
+**Implementace:**
+- `HIRAN_KEYS` array v `gameStore.ts` — definice všech klíčů (č. 1 implementován, 2–108 TBD)
+- `collectHiranKey(keyId)` — přidá klíč do `collectedHiranKeys`, award XP
+- `QuantumCoreKey` komponenta v `ships/Scene.tsx` — 3D oktaedr s pulzující animací, click-to-collect
+- `collectedHiranKeys` persistováno v localStorage
+- Toast: `🔑 Klíč Prvotního Lůna — Key #1 of 108 found! +500 XP`
+
+**Filosofický kontext:** B-Wing je v Star Wars kánonu těžký bombardér s neobvyklou konstrukcí — rotující kokpit, asymetrické křídlo. V OASIS je to loď, která nese **kvantový jádrový motor** — technologii, která dokáže otevírat mikro-portály mezi dimenzemi. Klíč uvnitř motoru je metaforou: **první krok k Hiranyagarbhě začíná uvnitř stroje, který překračuje hranice realit.** Další klíče budou skryty v dalších lodích, světech, dimenzích a questech.
+
+> Detailní filosofický základ Hiranyagarbhy viz [`docs/2.9.7/CHV4_1_HIRANYAGARBHA_PART1.md`](../../docs/2.9.7/CHV4_1_HIRANYAGARBHA_PART1.md) a [`PART2.md`](../../docs/2.9.7/CHV4_1_HIRANYAGARBHA_PART2.md).
+
+### 13.3 World Interaction Panel
 
 `WorldPanel.tsx` rozšířen o tři nové sekce:
 

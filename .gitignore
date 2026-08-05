@@ -29,6 +29,7 @@ auxpow-deploy.zip
 /target/
 **/target/
 target-fire/
+V31/releases/
 *.obj
 *.i
 *.o
@@ -366,8 +367,8 @@ zion-sm3042c-fire-*/
 nul
 foundry.lock
 
-# PUBLIC/ is a separate git repo (github.com/Zion-TerraNova/v3-Mainnet)
-PUBLIC/
+# /PUBLIC/ is a separate git repo (github.com/Zion-TerraNova/v3-Mainnet)
+/PUBLIC/
 
 # OpenZeppelin submodule (vendored, not tracked)
 

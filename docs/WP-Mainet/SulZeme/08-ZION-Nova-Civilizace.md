@@ -1,6 +1,8 @@
 # ZION — Nová civilizace
 ## Komplexní pozvánka pro lidi, kteří ještě nevědí, že hledají cestu
 
+*Civilizace se nepozná podle vlajky. Pozná se podle toho, co se stane, když se nikdo nedívá.*
+
 > **Status:** narativní a onboardingový koncept; není investiční doporučení ani nabídka k nákupu aktiva.
 > **Účel:** pozvat širokou veřejnost, aby ZION nejdříve pochopila, ověřila a případně se dobrovolně zapojila.
 > **Pravidlo textu:** co je **ŽIVÉ**, lze ověřit. Co je **STAVBA**, vzniká a nemusí být hotové. Co je **HORIZONT**, je směr, nikoli slíbený produkt ani termín.

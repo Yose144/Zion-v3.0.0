@@ -10,11 +10,11 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { WalletProvider } from "@/contexts/WalletContext";
 import { ZionWalletProvider } from "@/contexts/ZionWalletContext";
 import { AuthProvider } from "@/contexts/AuthContext";
-import ClientBackgrounds from "@/components/ClientBackgrounds";
 import HeroSection from "@/components/HeroSection";
 import AlohaOverlay from "@/components/AlohaOverlay";
-import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import BackgroundToggle from "@/components/BackgroundToggle";
+import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
+import PerformanceShell from "@/components/PerformanceShell";
 import { SITE_NETWORK_TOPOLOGY, SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_VERSION } from '@/lib/site';
 
 const inter = Inter({ 
@@ -79,7 +79,7 @@ export default function RootLayout({
                 <WalletProvider>
                   <ZionWalletProvider>
                     <AuthProvider>
-                    <ClientBackgrounds />
+                    <PerformanceShell />
                     <BackgroundToggle />
                     <div className="relative z-10 overflow-x-clip w-full">
                       <AlohaOverlay />

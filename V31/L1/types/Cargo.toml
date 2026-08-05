@@ -16,6 +16,7 @@ k256 = { workspace = true }
 ed25519-dalek = { workspace = true }
 thiserror = { workspace = true }
 chrono = { workspace = true }
+ripemd = { workspace = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }

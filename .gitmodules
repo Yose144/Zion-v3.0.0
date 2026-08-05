@@ -1,3 +1,3 @@
 [submodule "V3/L2/bridge/contracts/lib/openzeppelin-contracts"]
-	path = V3/L2/bridge/contracts/lib/openzeppelin-contracts
+	path = archive/V3/L2/bridge/contracts/lib/openzeppelin-contracts
 	url = https://github.com/openzeppelin/openzeppelin-contracts

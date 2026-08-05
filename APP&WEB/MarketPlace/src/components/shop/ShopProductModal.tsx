@@ -5,6 +5,7 @@ import { X, Minus, Plus, ShoppingCart, Ruler, Box, Coins, FileText, Flame } from
 import type { ShopProductData } from '@/types/shop';
 import { getTokens } from '@/lib/shop-api';
 import { useCart } from './CartContext';
+import { useLangT } from '@/lib/useTranslation';
 
 interface ShopProductModalProps {
   product: ShopProductData | null;
@@ -16,6 +17,7 @@ export default function ShopProductModal({ product, onClose }: ShopProductModalP
   const [imgError, setImgError] = useState(false);
   const [added, setAdded] = useState(false);
   const { add } = useCart();
+  const { t } = useLangT();
 
   useEffect(() => {
     setQty(1);
@@ -36,6 +38,7 @@ export default function ShopProductModal({ product, onClose }: ShopProductModalP
 
   const tokens = getTokens(product);
   const isOut = !product.inStock;
+  const categoryLabel = t(`shop.${product.category}` as const);
 
   const handleAdd = () => {
     if (isOut) return;
@@ -49,9 +52,9 @@ export default function ShopProductModal({ product, onClose }: ShopProductModalP
   };
 
   const capabilities = [];
-  if (product.modelUrl) capabilities.push({ icon: Box, label: '3D STL preview' });
-  if (product.filesUrl) capabilities.push({ icon: Flame, label: 'Laser ready' });
-  if (product.instructionsUrl) capabilities.push({ icon: FileText, label: 'PDF guide' });
+  if (product.modelUrl) capabilities.push({ icon: Box, label: t('shop.capability3d') });
+  if (product.filesUrl) capabilities.push({ icon: Flame, label: t('shop.capabilityLaser') });
+  if (product.instructionsUrl) capabilities.push({ icon: FileText, label: t('shop.capabilityPdf') });
 
   return (
     <div
@@ -68,7 +71,7 @@ export default function ShopProductModal({ product, onClose }: ShopProductModalP
         <button
           onClick={onClose}
           className="absolute top-4 right-4 zion-button-icon zion-button-ghost"
-          aria-label="Zavřít"
+          aria-label={t('shop.close')}
         >
           <X className="w-5 h-5" />
         </button>
@@ -98,7 +101,7 @@ export default function ShopProductModal({ product, onClose }: ShopProductModalP
           {/* Info */}
           <div className="flex flex-col">
             <div className="text-xs text-oasis-cyan font-bold uppercase tracking-wider mb-1">
-              {product.category}
+              {categoryLabel}
             </div>
             <h2 className="text-2xl font-black font-display mb-3">{product.name}</h2>
             <p className="text-gray-400 text-sm leading-relaxed mb-4">{product.description}</p>
@@ -111,11 +114,11 @@ export default function ShopProductModal({ product, onClose }: ShopProductModalP
               )}
               <span className="inline-flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg">
                 <Box className="w-4 h-4 text-oasis-cyan" />
-                {product.inStock ? `${product.stock} ks skladem` : 'Nedostupné'}
+                {product.inStock ? t('shop.inStockModal', { stock: product.stock }) : t('shop.outOfStock')}
               </span>
               {tokens > 0 && (
                 <span className="inline-flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg text-oasis-gold">
-                  <Coins className="w-4 h-4" /> +{tokens} ZION tokenů
+                  <Coins className="w-4 h-4" /> {t('shop.tokensModal', { amount: tokens })}
                 </span>
               )}
             </div>
@@ -136,13 +139,17 @@ export default function ShopProductModal({ product, onClose }: ShopProductModalP
             <div className="mt-auto pt-4 border-t border-white/10">
               <div className="flex items-baseline gap-3 mb-4">
                 {product.oldPriceCzk && (
-                  <span className="text-gray-500 line-through text-lg">{product.oldPriceCzk} Kč</span>
+                  <span className="text-gray-500 line-through text-lg">
+                    {t('common.price', { price: product.oldPriceCzk, symbol: t('common.kcSymbol') })}
+                  </span>
                 )}
-                <span className="text-3xl font-black text-gradient-gold">{product.priceCzk} Kč</span>
+                <span className="text-3xl font-black text-gradient-gold">
+                  {t('common.price', { price: product.priceCzk, symbol: t('common.kcSymbol') })}
+                </span>
               </div>
 
               <div className="flex items-center gap-4 mb-4">
-                <span className="text-sm text-gray-400">Množství:</span>
+                <span className="text-sm text-gray-400">{t('shop.quantity')}</span>
                 <div className="flex items-center gap-2 bg-white/5 rounded-xl p-1">
                   <button
                     onClick={() => setQty((q) => Math.max(1, q - 1))}
@@ -168,12 +175,12 @@ export default function ShopProductModal({ product, onClose }: ShopProductModalP
                 className={`zion-button-primary w-full ${isOut ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {isOut ? (
-                  'Nedostupné'
+                  t('shop.outOfStock')
                 ) : added ? (
-                  <span className="inline-flex items-center gap-2">Přidáno do košíku</span>
+                  <span className="inline-flex items-center gap-2">{t('shop.addedToCart')}</span>
                 ) : (
                   <span className="inline-flex items-center gap-2">
-                    <ShoppingCart className="w-5 h-5" /> Přidat do košíku
+                    <ShoppingCart className="w-5 h-5" /> {t('shop.addToCart')}
                   </span>
                 )}
               </button>

@@ -73,12 +73,30 @@ impl V3RpcHandler {
             "getStatus" => self.get_status().await,
             "getBlockByHeight" => self.get_block_by_height(&params).await,
             "getBlockByHash" => self.get_block_by_hash(&params).await,
+            "getBlock" => self.get_block_by_hash(&params).await,
             "getTemplate" => self.get_template(&params).await,
             "submitBlock" => self.submit_block(&params).await,
             "submitAccountTransaction" => self.submit_account_tx(&params).await,
             "submitUtxoTransaction" => self.submit_utxo_tx(&params).await,
+            "sendRawTransaction" => self.submit_account_tx(&params).await,
+            "submitTransaction" => self.submit_account_tx(&params).await,
             "getBalance" => self.get_balance(&params).await,
+            "getAccountBalance" => self.get_balance(&params).await,
             "getUtxos" => self.get_utxos(&params).await,
+            "getTransaction" => self.get_transaction(&params).await,
+            "getAccountTransaction" => self.get_transaction(&params).await,
+            "getTransactionHistory" => self.get_transaction_history(&params).await,
+            "getAddressInfo" => self.get_address_info(&params).await,
+            "getBalanceAtHeight" => self.get_balance_at_height(&params).await,
+            "getMempoolInfo" => self.get_mempool_info().await,
+            "getSupplyInfo" => self.get_supply_info().await,
+            "getBlockRange" => self.get_block_range(&params).await,
+            "getNetworkStats" => self.get_network_stats().await,
+            "getBridgeLocks" => self.get_bridge_locks(&params).await,
+            "getBridgeVaultBalance" => self.get_bridge_vault_balance().await,
+            "estimateFee" => self.estimate_fee(&params).await,
+            "getTokenInfo" => self.get_token_info().await,
+            "submitBridgeUnlock" => self.submit_bridge_unlock(&params).await,
             _ => Err(V3RpcError::Validation(format!(
                 "unknown method: {}",
                 method
@@ -331,8 +349,604 @@ impl V3RpcHandler {
                 })
             })
             .collect();
-        Ok(json!({ "address": address, "utxos": out }))
+        Ok(json!({ "address": address, "utxos": out, "count": out.len() }))
     }
+
+    async fn get_transaction(&self, params: &Value) -> Result<Value, V3RpcError> {
+        let txid = params
+            .get("txid")
+            .or_else(|| params.get(0))
+            .and_then(Value::as_str)
+            .ok_or_else(|| V3RpcError::Parse("txid required".to_string()))?;
+        let height = self.storage.v3_height().await?;
+        for h in 0..=height {
+            if let Some(block) = self.storage.get_v3_block_by_height(h).await? {
+                for tx in &block.transactions {
+                    if tx.tx_id == txid {
+                        return Ok(json!({
+                            "transaction_model": "hybrid",
+                            "transaction": tx,
+                            "block_height": block.height,
+                            "block_hash": hex(&block.header_hash()),
+                            "confirmed": true,
+                            "source": "confirmed",
+                        }));
+                    }
+                }
+                for utxo_tx in &block.utxo_transactions {
+                    if hex(&utxo_tx.id) == txid {
+                        return Ok(json!({
+                            "transaction_model": "hybrid",
+                            "transaction": utxo_tx,
+                            "block_height": block.height,
+                            "block_hash": hex(&block.header_hash()),
+                            "confirmed": true,
+                            "source": "confirmed",
+                        }));
+                    }
+                }
+            }
+        }
+        Ok(Value::Null)
+    }
+
+    async fn get_transaction_history(&self, params: &Value) -> Result<Value, V3RpcError> {
+        let address = params
+            .get("address")
+            .or_else(|| params.get("account"))
+            .or_else(|| params.get(0))
+            .and_then(Value::as_str)
+            .ok_or_else(|| V3RpcError::Parse("address required".to_string()))?;
+        let offset = params
+            .get("offset")
+            .or_else(|| params.get(1))
+            .and_then(Value::as_u64)
+            .unwrap_or(0);
+        let limit = params
+            .get("limit")
+            .or_else(|| params.get(2))
+            .and_then(Value::as_u64)
+            .unwrap_or(50)
+            .min(1000);
+        if address.is_empty() {
+            return Err(V3RpcError::Validation("empty address".to_string()));
+        }
+        let height = self.storage.v3_height().await?;
+        let mut transactions = Vec::new();
+        for h in 0..=height {
+            if let Some(block) = self.storage.get_v3_block_by_height(h).await? {
+                for tx in &block.transactions {
+                    if tx.from == address || tx.to == address {
+                        transactions.push(json!({
+                            "transaction": tx,
+                            "tx_model": "account",
+                            "block_height": block.height,
+                            "block_hash": hex(&block.header_hash()),
+                            "timestamp": block.header.timestamp,
+                            "confirmed": true,
+                        }));
+                    }
+                }
+                for utxo_tx in &block.utxo_transactions {
+                    let is_recipient = utxo_tx.outputs.iter().any(|o| o.address == address);
+                    let is_sender = utxo_tx.inputs.iter().any(|input| {
+                        crate::crypto::derive_address(&input.public_key) == address
+                    });
+                    if is_recipient || is_sender {
+                        let received: u128 = utxo_tx
+                            .outputs
+                            .iter()
+                            .filter(|o| o.address == address)
+                            .map(|o| o.amount as u128)
+                            .sum();
+                        transactions.push(json!({
+                            "transaction": utxo_tx,
+                            "tx_model": "utxo",
+                            "tx_hash": hex(&utxo_tx.id),
+                            "block_height": block.height,
+                            "block_hash": hex(&block.header_hash()),
+                            "timestamp": block.header.timestamp,
+                            "confirmed": true,
+                            "is_sender": is_sender,
+                            "is_recipient": is_recipient,
+                            "received_amount_flowers": received.to_string(),
+                        }));
+                    }
+                }
+            }
+        }
+        transactions.sort_by(|a, b| {
+            let ha = a["block_height"].as_u64().unwrap_or(0);
+            let hb = b["block_height"].as_u64().unwrap_or(0);
+            hb.cmp(&ha)
+        });
+        let total = transactions.len();
+        let start = offset as usize;
+        let end = (start + limit as usize).min(total);
+        let page = if start < total {
+            transactions[start..end].to_vec()
+        } else {
+            Vec::new()
+        };
+        Ok(json!({
+            "address": address,
+            "transactions": page,
+            "total": total,
+            "offset": offset,
+            "limit": limit,
+            "has_more": end < total,
+        }))
+    }
+
+    async fn get_address_info(&self, params: &Value) -> Result<Value, V3RpcError> {
+        let address = params
+            .get("address")
+            .or_else(|| params.get("account"))
+            .or_else(|| params.get(0))
+            .and_then(Value::as_str)
+            .ok_or_else(|| V3RpcError::Parse("address required".to_string()))?;
+        if address.is_empty() {
+            return Err(V3RpcError::Validation("empty address".to_string()));
+        }
+        let (account_balance, nonce) = self
+            .storage
+            .v3_account(address)
+            .await?
+            .unwrap_or((0, 0));
+        let utxos = self.storage.v3_utxos_by_address(address).await?;
+        let utxo_balance: u128 = utxos.iter().map(|(_, _, amt)| *amt as u128).sum();
+        let utxo_count = utxos.len() as u64;
+        let total = utxo_balance + account_balance;
+        let mut tx_count = 0u64;
+        let mut first_seen: Option<u64> = None;
+        let mut last_seen: Option<u64> = None;
+        let height = self.storage.v3_height().await?;
+        for h in 0..=height {
+            if let Some(block) = self.storage.get_v3_block_by_height(h).await? {
+                for tx in &block.transactions {
+                    if tx.from == address || tx.to == address {
+                        tx_count += 1;
+                        first_seen = Some(first_seen.map_or(block.height, |h| h.min(block.height)));
+                        last_seen = Some(last_seen.map_or(block.height, |h| h.max(block.height)));
+                    }
+                }
+            }
+        }
+        Ok(json!({
+            "address": address,
+            "balance_flowers": total.to_string(),
+            "balance_zion": format_zion(total),
+            "transaction_count": tx_count,
+            "utxo_count": utxo_count,
+            "nonce": nonce,
+            "first_seen_height": first_seen,
+            "last_seen_height": last_seen,
+            "transaction_model": "hybrid",
+        }))
+    }
+
+    async fn get_balance_at_height(&self, params: &Value) -> Result<Value, V3RpcError> {
+        let address = params
+            .get("address")
+            .or_else(|| params.get("account"))
+            .or_else(|| params.get(0))
+            .and_then(Value::as_str)
+            .ok_or_else(|| V3RpcError::Parse("address required".to_string()))?;
+        let height = params
+            .get("height")
+            .or_else(|| params.get(1))
+            .and_then(Value::as_u64)
+            .ok_or_else(|| V3RpcError::Parse("height required".to_string()))?;
+        let chain_height = self.storage.v3_height().await?;
+        let effective_height = height.min(chain_height);
+        let mut balance: i128 = 0;
+        for h in 0..=effective_height {
+            if let Some(block) = self.storage.get_v3_block_by_height(h).await? {
+                for tx in &block.transactions {
+                    if tx.to == address {
+                        balance += tx.amount_zion as i128;
+                    }
+                    if tx.from == address {
+                        balance -= (tx.amount_zion + tx.fee_zion as u128) as i128;
+                    }
+                }
+            }
+        }
+        Ok(json!({
+            "address": address,
+            "height": effective_height,
+            "balance_zion": balance.max(0).to_string(),
+            "transaction_model": "hybrid",
+            "balance_scope": "confirmed_chain_only",
+        }))
+    }
+
+    async fn get_mempool_info(&self) -> Result<Value, V3RpcError> {
+        let account_count = self.mempool_account.lock().await.len();
+        let utxo_count = self.mempool_utxo.lock().await.len();
+        Ok(json!({
+            "size": account_count + utxo_count,
+            "account_transactions": account_count,
+            "utxo_transactions": utxo_count,
+            "transaction_model": "hybrid",
+        }))
+    }
+
+    async fn get_supply_info(&self) -> Result<Value, V3RpcError> {
+        let height = self.storage.v3_height().await?;
+        let block_reward = crate::emission::block_subsidy(height.max(1));
+        let mined_flowers: u128 = {
+            let mut sum: u128 = 0;
+            let mut h: u64 = 1;
+            while h <= height {
+                let decade_end =
+                    ((h - 1) / crate::emission::BLOCKS_PER_DECADE + 1) * crate::emission::BLOCKS_PER_DECADE;
+                let blocks_in_range = decade_end.min(height) - h + 1;
+                sum += crate::emission::block_subsidy(h) as u128 * blocks_in_range as u128;
+                h = decade_end + 1;
+            }
+            sum
+        };
+        let circulating = crate::emission::GENESIS_PREMINE + mined_flowers;
+        let remaining = crate::emission::TOTAL_SUPPLY.saturating_sub(circulating);
+        let supply_mined_pct = if crate::emission::MINING_EMISSION > 0 {
+            (mined_flowers as f64 / crate::emission::MINING_EMISSION as f64) * 100.0
+        } else {
+            0.0
+        };
+        Ok(json!({
+            "total_supply_flowers": crate::emission::TOTAL_SUPPLY.to_string(),
+            "premine_flowers": crate::emission::GENESIS_PREMINE.to_string(),
+            "mining_emission_flowers": crate::emission::MINING_EMISSION.to_string(),
+            "mined_so_far_flowers": mined_flowers.to_string(),
+            "circulating_supply_flowers": circulating.to_string(),
+            "remaining_supply_flowers": remaining.to_string(),
+            "block_reward_flowers": block_reward,
+            "total_supply_zion": (crate::emission::TOTAL_SUPPLY / crate::emission::FLOWERS_PER_ZION as u128) as u64,
+            "premine_zion": (crate::emission::GENESIS_PREMINE / crate::emission::FLOWERS_PER_ZION as u128) as u64,
+            "mining_emission_zion": (crate::emission::MINING_EMISSION / crate::emission::FLOWERS_PER_ZION as u128) as u64,
+            "mined_so_far_zion": (mined_flowers / crate::emission::FLOWERS_PER_ZION as u128) as u64,
+            "circulating_supply_zion": (circulating / crate::emission::FLOWERS_PER_ZION as u128) as u64,
+            "remaining_supply_zion": (remaining / crate::emission::FLOWERS_PER_ZION as u128) as u64,
+            "block_reward_zion": block_reward as f64 / crate::emission::FLOWERS_PER_ZION as f64,
+            "supply_mined_percent": format!("{:.6}", supply_mined_pct),
+            "height": height,
+            "protocol_version": 2,
+        }))
+    }
+
+    async fn get_block_range(&self, params: &Value) -> Result<Value, V3RpcError> {
+        let start_height = params
+            .get("start_height")
+            .or_else(|| params.get("from"))
+            .or_else(|| params.get(0))
+            .and_then(Value::as_u64)
+            .ok_or_else(|| V3RpcError::Parse("start_height required".to_string()))?;
+        let end_height = params
+            .get("end_height")
+            .or_else(|| params.get("to"))
+            .or_else(|| params.get(1))
+            .and_then(Value::as_u64);
+        let limit = params
+            .get("limit")
+            .or_else(|| params.get(2))
+            .and_then(Value::as_u64)
+            .unwrap_or(100)
+            .min(500);
+        let chain_height = self.storage.v3_height().await?;
+        let actual_end = end_height.unwrap_or(chain_height).min(chain_height);
+        if start_height > actual_end {
+            return Err(V3RpcError::Validation(
+                "start_height cannot be greater than end_height".to_string(),
+            ));
+        }
+        let requested_count = (actual_end - start_height + 1).min(limit);
+        let mut blocks = Vec::new();
+        for h in start_height..=(start_height + requested_count - 1).min(actual_end) {
+            if let Some(block) = self.storage.get_v3_block_by_height(h).await? {
+                blocks.push(serde_json::to_value(block)?);
+            }
+        }
+        Ok(json!({
+            "blocks": blocks,
+            "count": blocks.len(),
+            "start_height": start_height,
+            "end_height": actual_end,
+            "chain_height": chain_height,
+            "has_more": actual_end > start_height + requested_count - 1,
+        }))
+    }
+
+    async fn get_network_stats(&self) -> Result<Value, V3RpcError> {
+        let height = self.storage.v3_height().await?;
+        if height < 1 {
+            return Ok(json!({
+                "error": "insufficient blocks for statistics",
+                "min_blocks_required": 2,
+            }));
+        }
+        let sample_size = 100.min(height as usize + 1);
+        let start = height.saturating_sub(sample_size as u64 - 1);
+        let mut block_times = Vec::new();
+        let mut total_difficulty = 0u64;
+        let mut last_ts = 0u64;
+        let mut current_difficulty = 0u64;
+        for h in start..=height {
+            if let Some(block) = self.storage.get_v3_block_by_height(h).await? {
+                if last_ts > 0 {
+                    block_times.push(block.header.timestamp.saturating_sub(last_ts));
+                }
+                total_difficulty += block.difficulty;
+                current_difficulty = block.difficulty;
+                last_ts = block.header.timestamp;
+            }
+        }
+        let avg_block_time = if !block_times.is_empty() {
+            block_times.iter().sum::<u64>() / block_times.len() as u64
+        } else {
+            60
+        };
+        let avg_difficulty = if sample_size > 0 {
+            total_difficulty / sample_size as u64
+        } else {
+            0
+        };
+        let estimated_hashrate = if avg_block_time > 0 {
+            (avg_difficulty as f64 * 4_294_967_296.0) / avg_block_time as f64
+        } else {
+            0.0
+        };
+        let hashrate_fmt = if estimated_hashrate >= 1e18 {
+            format!("{:.2} EH/s", estimated_hashrate / 1e18)
+        } else if estimated_hashrate >= 1e15 {
+            format!("{:.2} PH/s", estimated_hashrate / 1e15)
+        } else if estimated_hashrate >= 1e12 {
+            format!("{:.2} TH/s", estimated_hashrate / 1e12)
+        } else if estimated_hashrate >= 1e9 {
+            format!("{:.2} GH/s", estimated_hashrate / 1e9)
+        } else if estimated_hashrate >= 1e6 {
+            format!("{:.2} MH/s", estimated_hashrate / 1e6)
+        } else {
+            format!("{:.2} H/s", estimated_hashrate)
+        };
+        let mempool_size = self.mempool_account.lock().await.len() + self.mempool_utxo.lock().await.len();
+        Ok(json!({
+            "chain_height": height,
+            "average_block_time": avg_block_time,
+            "target_block_time": 60,
+            "average_difficulty": avg_difficulty,
+            "current_difficulty": current_difficulty,
+            "estimated_hashrate_hps": estimated_hashrate,
+            "estimated_hashrate_formatted": hashrate_fmt,
+            "sample_size": sample_size,
+            "mempool_size": mempool_size,
+            "network_hashrate": hashrate_fmt,
+        }))
+    }
+
+    async fn get_bridge_locks(&self, params: &Value) -> Result<Value, V3RpcError> {
+        let from_height = params
+            .get("from_height")
+            .or_else(|| params.get(0))
+            .and_then(Value::as_u64)
+            .ok_or_else(|| V3RpcError::Parse("from_height required".to_string()))?;
+        let chain_height = self.storage.v3_height().await?;
+        let to_height = params
+            .get("to_height")
+            .or_else(|| params.get(1))
+            .and_then(Value::as_u64)
+            .unwrap_or(chain_height)
+            .min(chain_height);
+        if from_height > to_height {
+            return Err(V3RpcError::Validation(
+                "from_height cannot be greater than to_height".to_string(),
+            ));
+        }
+        let mut locks = Vec::new();
+        for h in from_height..=to_height {
+            if let Some(block) = self.storage.get_v3_block_by_height(h).await? {
+                for utxo_tx in &block.utxo_transactions {
+                    let sender = utxo_tx
+                        .inputs
+                        .first()
+                        .map(|input| crate::crypto::derive_address(&input.public_key))
+                        .unwrap_or_default();
+                    let txid = hex(&utxo_tx.id);
+                    for output in &utxo_tx.outputs {
+                        if output.address != crate::fee::BRIDGE_VAULT_ADDRESS {
+                            continue;
+                        }
+                        let Some(memo) = output.memo.as_deref() else { continue };
+                        let Some(rest) = memo.strip_prefix("BRIDGE:") else { continue };
+                        let Some((chain, recipient)) = rest.split_once(':') else { continue };
+                        if chain.is_empty() || recipient.is_empty() {
+                            continue;
+                        }
+                        locks.push(json!({
+                            "txid": txid,
+                            "block_height": block.height,
+                            "sender": sender,
+                            "recipient_chain": chain,
+                            "recipient": recipient,
+                            "amount_flowers": output.amount,
+                            "amount_zion": format_zion(output.amount as u128),
+                            "memo": memo,
+                            "confirmed": true,
+                        }));
+                    }
+                }
+            }
+        }
+        Ok(json!({
+            "from_height": from_height,
+            "to_height": to_height,
+            "locks": locks,
+            "count": locks.len(),
+        }))
+    }
+
+    async fn get_bridge_vault_balance(&self) -> Result<Value, V3RpcError> {
+        let utxos = self
+            .storage
+            .v3_utxos_by_address(crate::fee::BRIDGE_VAULT_ADDRESS)
+            .await?;
+        let balance: u128 = utxos.iter().map(|(_, _, amt)| *amt as u128).sum();
+        let height = self.storage.v3_height().await?;
+        Ok(json!({
+            "address": crate::fee::BRIDGE_VAULT_ADDRESS,
+            "balance_flowers": balance.to_string(),
+            "balance_zion": format_zion(balance),
+            "chain_height": height,
+        }))
+    }
+
+    async fn estimate_fee(&self, params: &Value) -> Result<Value, V3RpcError> {
+        let amount_zion = params
+            .get("amount")
+            .or_else(|| params.get(0))
+            .and_then(Value::as_str)
+            .and_then(|s| s.parse::<u64>().ok())
+            .unwrap_or(0);
+        let base_fee = 1_000_000u64;
+        let amount_fee = (amount_zion / 10000).max(base_fee);
+        let mempool_size = self.mempool_account.lock().await.len() + self.mempool_utxo.lock().await.len();
+        let congestion_multiplier = if mempool_size > 1000 {
+            2.0
+        } else if mempool_size > 500 {
+            1.5
+        } else {
+            1.0
+        };
+        let estimated_fee = (amount_fee as f64 * congestion_multiplier) as u64;
+        Ok(json!({
+            "estimated_fee_flowers": estimated_fee.to_string(),
+            "estimated_fee_zion": format_zion(estimated_fee as u128),
+            "amount_zion": amount_zion,
+            "mempool_size": mempool_size,
+            "congestion_multiplier": congestion_multiplier,
+            "min_fee_flowers": base_fee.to_string(),
+            "min_fee_zion": format_zion(base_fee as u128),
+        }))
+    }
+
+    async fn get_token_info(&self) -> Result<Value, V3RpcError> {
+        let utxos = self
+            .storage
+            .v3_utxos_by_address(crate::fee::BRIDGE_VAULT_ADDRESS)
+            .await?;
+        let vault_balance: u128 = utxos.iter().map(|(_, _, amt)| *amt as u128).sum();
+        let height = self.storage.v3_height().await?;
+        let bridge_contract = "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721";
+        let wzion_contract = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6";
+        Ok(json!({
+            "token_name": "Wrapped ZION",
+            "token_symbol": "wZION",
+            "bridge_contract": bridge_contract,
+            "wzion_contract": wzion_contract,
+            "bridge_network": "Base Mainnet",
+            "total_locked_flowers": vault_balance.to_string(),
+            "total_locked_zion": format_zion(vault_balance),
+            "total_minted_wzion": format_zion(vault_balance),
+            "bridge_vault_address": crate::fee::BRIDGE_VAULT_ADDRESS,
+            "bridge_vault_balance_flowers": vault_balance.to_string(),
+            "chain_height": height,
+            "peg_status": "1:1 maintained",
+            "bridge_status": "operational",
+        }))
+    }
+
+    async fn submit_bridge_unlock(&self, params: &Value) -> Result<Value, V3RpcError> {
+        let tx: UtxoTransaction =
+            serde_json::from_value(params.clone()).map_err(|e| V3RpcError::Parse(e.to_string()))?;
+
+        if tx.id != tx.calculate_hash() {
+            return Err(V3RpcError::Validation(
+                "UTXO transaction id does not match calculated hash".to_string(),
+            ));
+        }
+
+        let bridge_tx = crate::v3_tx::Transaction {
+            id: tx.id,
+            version: tx.version,
+            inputs: tx
+                .inputs
+                .iter()
+                .map(|i| crate::v3_tx::TxInput {
+                    prev_tx_hash: i.prev_tx_hash,
+                    output_index: i.output_index,
+                    signature: i.signature.clone(),
+                    public_key: i.public_key.clone(),
+                })
+                .collect(),
+            outputs: tx
+                .outputs
+                .iter()
+                .map(|o| crate::v3_tx::TxOutput {
+                    amount: o.amount,
+                    address: o.address.clone(),
+                    memo: o.memo.clone(),
+                })
+                .collect(),
+            fee: tx.fee,
+            timestamp: tx.timestamp,
+        };
+
+        let block_height = self.storage.v3_height().await?;
+        let utxo_rows = self
+            .storage
+            .v3_utxos_by_address(crate::fee::BRIDGE_VAULT_ADDRESS)
+            .await?;
+        let mut utxos: std::collections::HashMap<(String, u32), crate::v3_chain::SpendableUtxo> =
+            std::collections::HashMap::new();
+        for (hash, idx, amount) in utxo_rows {
+            let key = (hex(&hash), idx);
+            utxos.insert(
+                key,
+                crate::v3_chain::SpendableUtxo {
+                    tx_hash: hex(&hash),
+                    output_index: idx,
+                    amount,
+                    address: crate::fee::BRIDGE_VAULT_ADDRESS.to_string(),
+                    height: block_height,
+                },
+            );
+        }
+
+        match crate::v3_bridge::validate_bridge_unlock_transaction_shape_with_utxos(
+            &bridge_tx,
+            &utxos,
+            block_height,
+        ) {
+            Ok(Some(_replay_key)) => {
+                let mut mempool = self.mempool_utxo.lock().await;
+                if mempool.iter().any(|t| t.id == tx.id) {
+                    return Err(V3RpcError::Validation(
+                        "transaction already in mempool".to_string(),
+                    ));
+                }
+                let tx_id = hex(&tx.id);
+                mempool.push(tx);
+                Ok(json!({
+                    "accepted": true,
+                    "tx_id": tx_id,
+                }))
+            }
+            Ok(None) => Err(V3RpcError::Validation(
+                "transaction is not a bridge unlock".to_string(),
+            )),
+            Err(msg) => Err(V3RpcError::Validation(format!(
+                "bridge unlock validation failed: {msg}"
+            ))),
+        }
+    }
+}
+
+fn format_zion(amount: u128) -> String {
+    format!(
+        "{}.{:06}",
+        amount / crate::emission::FLOWERS_PER_ZION as u128,
+        amount % crate::emission::FLOWERS_PER_ZION as u128
+    )
 }
 
 fn validate_account_tx_for_mempool(tx: &AccountTransaction) -> Result<(), V3RpcError> {
@@ -458,5 +1072,92 @@ mod tests {
                 .len(),
             2
         );
+    }
+
+    #[tokio::test]
+    async fn submit_bridge_unlock_accepts_valid_multisig() {
+        use k256::ecdsa::signature::Signer;
+        use k256::ecdsa::SigningKey;
+        use rand::rngs::OsRng;
+
+        let storage = Arc::new(Storage::open_in_memory().await.unwrap());
+        let handler = V3RpcHandler::new(storage.clone());
+
+        // Seed a bridge-vault UTXO that the unlock transaction will spend.
+        let input_hash = [0x11u8; 32];
+        storage
+            .put_v3_utxos(&[(
+                input_hash,
+                0,
+                1_000_000,
+                crate::fee::BRIDGE_VAULT_ADDRESS.to_string(),
+            )])
+            .await
+            .unwrap();
+
+        // Generate a recipient ZION address.
+        let (_sk, vk) = crate::crypto::generate_keypair();
+        let recipient = crate::crypto::derive_address(vk.as_bytes());
+
+        let source_chain = "base";
+        let burn_id = "burn123";
+        let evm_tx_hash = "0xdeadbeef";
+        let amount = 900_000u64;
+        let fee = 100_000u64;
+
+        let operation_message = crate::v3_bridge::bridge_operation_message(
+            &recipient, amount, source_chain, burn_id, evm_tx_hash,
+        );
+
+        // Build 3 validator proofs and collect pubkeys for the allowlist.
+        let mut pubkeys = Vec::new();
+        let mut proof_chunks = Vec::new();
+        for i in 0..3 {
+            let signing_key = SigningKey::random(&mut OsRng);
+            let verifying_key = signing_key.verifying_key();
+            let pubkey_hex = hex(verifying_key.to_sec1_bytes().as_ref());
+            pubkeys.push(pubkey_hex.clone());
+            let signature: k256::ecdsa::Signature = signing_key.sign(operation_message.as_bytes());
+            let signature_hex = hex(signature.to_bytes().as_ref());
+            proof_chunks.push(format!("val{i}:{pubkey_hex}:{signature_hex}"));
+        }
+        let proofs_str = proof_chunks.join(",");
+        let memo = format!(
+            "BRIDGE_UNLOCK:{source_chain}:{burn_id}:{evm_tx_hash}|PROOFS={proofs_str}"
+        );
+
+        // Build and hash the bridge-unlock UTXO transaction.
+        let mut tx = UtxoTransaction {
+            id: [0u8; 32],
+            version: crate::v3_compat::TX_HASH_V2_VERSION,
+            inputs: vec![crate::v3_compat::TxInput {
+                prev_tx_hash: input_hash,
+                output_index: 0,
+                signature: Vec::new(),
+                public_key: Vec::new(),
+            }],
+            outputs: vec![crate::v3_compat::TxOutput {
+                amount,
+                address: recipient,
+                memo: Some(memo),
+            }],
+            fee,
+            timestamp: 0,
+        };
+        tx.id = tx.calculate_hash();
+
+        unsafe {
+            std::env::set_var("ZION_BRIDGE_VALIDATOR_PUBKEYS", pubkeys.join(","));
+        }
+
+        let params = serde_json::to_value(&tx).unwrap();
+        let result = handler.dispatch("submitBridgeUnlock", params).await;
+
+        assert!(
+            result["result"]["accepted"].as_bool().unwrap_or(false),
+            "submitBridgeUnlock rejected valid bridge unlock: {:?}",
+            result
+        );
+        assert_eq!(result["result"]["tx_id"].as_str().unwrap(), hex(&tx.id));
     }
 }

@@ -1,5 +1,7 @@
 # Epizoda 6 — Kompas a pozvánka do Oasis
 
+*Kompas ti neřekne, kam přesně dojdeš. Řekne ti jen, že směr, kterým jdeš, aspoň nevede do kruhu.*
+
 > *„Kdo se ptá ‚jak se přihlásím', ptá se na mapu. Kdo se ptá ‚proč by mi na tom měl záležet', ptá se na kompas."*
 
 ---

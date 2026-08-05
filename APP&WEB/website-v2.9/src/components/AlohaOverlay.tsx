@@ -73,23 +73,15 @@ export default function AlohaOverlay() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className="mt-8 flex flex-wrap items-center justify-center gap-3"
+                className="mt-8"
               >
                 <a
                   href="https://oasis.zionterranova.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="zion-rainbow-card group inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold text-white"
-                  style={{ '--rc': '20, 184, 166' } as React.CSSProperties}
+                  className="zion-rainbow-card group inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold text-cyan-300"
+                  style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
                 >
                   Vstoupit do Oasis
                   <span className="transition-transform group-hover:translate-x-1">→</span>
-                </a>
-                <a
-                  href="/l4-oasis"
-                  className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-white/[0.04] px-5 py-2.5 text-sm font-medium text-zion-cyan transition-all duration-200 hover:bg-white/[0.08] hover:border-zion-cyan/50"
-                >
-                  Dozvědět se více
                 </a>
               </motion.div>
 

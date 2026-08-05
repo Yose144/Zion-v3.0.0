@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>ZION Mainnet — Launch Command Center</title>
+<title>ZION V31 — Mainnet Alpha Command Center</title>
 <meta name="theme-color" content="#0f172a">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -946,12 +946,155 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
     </div>
   </section>
 
+  <!-- V31 Mainnet Alpha Banner — integrated from /api/status v31_banner -->
+  <section class="zion-hero-grid mb-6" id="fd-v31-banner" style="display:none;">
+    <div class="zion-hero-card" style="--rc:255 215 0; grid-column:1 / -1;">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <div class="zhc-icon" style="--rc:255 215 0;">🚀</div>
+          <div class="zhc-title" style="color:rgb(255 215 0); font-size:0.75rem;">V31 Mainnet Alpha</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="fd-banner-version" class="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">3.1.0-alpha.2</span>
+          <span id="fd-banner-network" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">mainnet</span>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3" style="grid-column:1 / -1;">
+        <div class="bg-black/25 rounded-xl p-3 text-center border border-white/5">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Height</div>
+          <div id="fd-banner-height" class="text-xl font-bold text-cyan-400" style="font-family:'JetBrains Mono',monospace;">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">chain tip</div>
+        </div>
+        <div class="bg-black/25 rounded-xl p-3 text-center border border-white/5">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Sync Lag</div>
+          <div id="fd-banner-sync-lag" class="text-xl font-bold text-amber-400" style="font-family:'JetBrains Mono',monospace;">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">blocks behind V3</div>
+        </div>
+        <div class="bg-black/25 rounded-xl p-3 text-center border border-white/5">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Pool Hashrate</div>
+          <div id="fd-banner-pool-hashrate" class="text-xl font-bold text-emerald-400" style="font-family:'JetBrains Mono',monospace;">—</div>
+          <div id="fd-banner-pool-hashrate-sub" class="text-[10px] text-gray-500 mt-0.5">H/s</div>
+        </div>
+        <div class="bg-black/25 rounded-xl p-3 text-center border border-white/5">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Shares / sec</div>
+          <div id="fd-banner-shares-sec" class="text-xl font-bold text-purple-400" style="font-family:'JetBrains Mono',monospace;">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">pool accepted</div>
+        </div>
+        <div class="bg-black/25 rounded-xl p-3 text-center border border-white/5">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Multichain /health</div>
+          <div id="fd-banner-multichain-health" class="text-xl font-bold">—</div>
+          <div id="fd-banner-multichain-health-sub" class="text-[10px] text-gray-500 mt-0.5">transfers</div>
+        </div>
+        <div class="bg-black/25 rounded-xl p-3 text-center border border-white/5">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">DAO Proposals</div>
+          <div id="fd-banner-dao-proposals" class="text-xl font-bold text-yellow-400" style="font-family:'JetBrains Mono',monospace;">—</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">active / total</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Main Content -->
   <!-- Main Content -->
   <main class="dashboard-main">
 
   <!-- ═════════ TAB: Overview ═════════ -->
   <div id="pane-overview" class="space-y-5">
+
+    <!-- V31 Production — metrics, logs, Grafana -->
+    <div id="v31-production-panel" class="zion-panel p-5" style="border-color:rgba(255,215,0,0.25);">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2">
+          <span style="color:rgb(255 215 0)">🚀 V31 Production</span>
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">v3.1.0-alpha.2</span>
+        </h2>
+        <div class="flex items-center gap-2">
+          <a href="https://grafana.zionterranova.com" target="_blank" id="v31-grafana-link" class="text-[10px] px-2.5 py-1 bg-fuchsia-700/40 hover:bg-fuchsia-600/60 border border-fuchsia-500/30 rounded-md font-semibold transition text-fuchsia-300 hidden">
+            <i class="fas fa-chart-line mr-1"></i> Grafana
+          </a>
+          <button onclick="refreshV31Production()" class="text-[10px] px-2.5 py-1 bg-zinc-700/50 hover:bg-zinc-600 rounded-md font-semibold transition" title="Aktualizovat metriky a logy">⟳</button>
+        </div>
+      </div>
+
+      <!-- KPI cards -->
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+        <div class="bg-black/25 rounded-xl p-3 text-center border border-white/5">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Pool Hashrate</div>
+          <div id="v31-prod-hashrate" class="text-lg font-bold text-emerald-400" style="font-family:'JetBrains Mono',monospace;">—</div>
+          <div id="v31-prod-hashrate-sub" class="text-[9px] text-gray-500 mt-0.5">H/s</div>
+        </div>
+        <div class="bg-black/25 rounded-xl p-3 text-center border border-white/5">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Shares / sec</div>
+          <div id="v31-prod-shares-sec" class="text-lg font-bold text-purple-400" style="font-family:'JetBrains Mono',monospace;">—</div>
+          <div class="text-[9px] text-gray-500 mt-0.5">accepted</div>
+        </div>
+        <div class="bg-black/25 rounded-xl p-3 text-center border border-white/5">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Active Miners</div>
+          <div id="v31-prod-active-miners" class="text-lg font-bold text-cyan-400" style="font-family:'JetBrains Mono',monospace;">—</div>
+          <div class="text-[9px] text-gray-500 mt-0.5">sessions</div>
+        </div>
+        <div class="bg-black/25 rounded-xl p-3 text-center border border-white/5">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Blocks Found</div>
+          <div id="v31-prod-blocks-found" class="text-lg font-bold text-amber-400" style="font-family:'JetBrains Mono',monospace;">—</div>
+          <div class="text-[9px] text-gray-500 mt-0.5">pool</div>
+        </div>
+        <div class="bg-black/25 rounded-xl p-3 text-center border border-white/5">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Multichain</div>
+          <div id="v31-prod-multichain" class="text-lg font-bold">—</div>
+          <div id="v31-prod-multichain-sub" class="text-[9px] text-gray-500 mt-0.5">transfers</div>
+        </div>
+        <div class="bg-black/25 rounded-xl p-3 text-center border border-white/5">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">DAO Proposals</div>
+          <div id="v31-prod-dao" class="text-lg font-bold text-yellow-400" style="font-family:'JetBrains Mono',monospace;">—</div>
+          <div class="text-[9px] text-gray-500 mt-0.5">active / total</div>
+        </div>
+      </div>
+
+      <!-- Grafana iframe placeholder + node/pool stat row -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div id="v31-grafana-wrap" class="lg:col-span-2 bg-black/25 rounded-xl p-3 border border-white/5 hidden">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-2 flex items-center justify-between">
+            <span>Grafana</span>
+            <a href="https://grafana.zionterranova.com" target="_blank" class="text-fuchsia-300 hover:text-fuchsia-200 text-[9px]"><i class="fas fa-external-link-alt mr-1"></i> open</a>
+          </div>
+          <iframe id="v31-grafana-iframe" src="" class="w-full rounded" style="height:260px;border:0;" loading="lazy"></iframe>
+        </div>
+        <div class="bg-black/25 rounded-xl p-3 border border-white/5" id="v31-stat-col">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-2">V31 Services</div>
+          <div class="space-y-1.5 text-xs">
+            <div class="flex justify-between"><span class="text-gray-400">Node</span><span id="v31-stat-node" class="font-mono">—</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Pool</span><span id="v31-stat-pool" class="font-mono">—</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Miner</span><span id="v31-stat-miner" class="font-mono">—</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Multichain</span><span id="v31-stat-multichain" class="font-mono">—</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">DAO</span><span id="v31-stat-dao" class="font-mono">—</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">OASIS</span><span id="v31-stat-oasis" class="font-mono">—</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- V31 log viewer -->
+      <div class="mt-4 bg-black/25 rounded-xl p-3 border border-white/5">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider">V31 Service Logs</div>
+          <div class="flex items-center gap-2">
+            <select id="v31-log-svc" class="text-[10px] bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-white">
+              <option value="node">zion-v31-node</option>
+              <option value="pool">zion-v31-pool</option>
+              <option value="miner">zion-v31-miner</option>
+              <option value="multichain">zion-v31-multichain</option>
+              <option value="dao">zion-v31-dao</option>
+              <option value="oasis">zion-v31-oasis</option>
+            </select>
+            <input id="v31-log-lines" type="number" value="50" min="10" max="500" class="w-16 text-[10px] bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-white">
+            <button onclick="loadV31Logs()" class="text-[10px] px-2.5 py-1 bg-blue-700/50 hover:bg-blue-600 rounded-md font-semibold transition">Load</button>
+            <button onclick="tailV31Logs()" class="text-[10px] px-2.5 py-1 bg-emerald-700/50 hover:bg-emerald-600 rounded-md font-semibold transition">▶ Tail</button>
+            <button onclick="stopV31LogTail()" class="text-[10px] px-2.5 py-1 bg-red-700/50 hover:bg-red-600 rounded-md font-semibold transition">⏹ Stop</button>
+          </div>
+        </div>
+        <pre id="v31-log-box" class="log-tail" style="max-height:18rem;min-height:6rem;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.08);border-radius:0.5rem;padding:0.6rem;overflow-y:auto;">-- select service and load --</pre>
+      </div>
+    </div>
+
     <!-- Readiness Score Panel -->
     <div class="zion-panel p-5">
       <div class="flex items-center justify-between mb-3">
@@ -972,7 +1115,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         <button onclick="controlAction('stop-stack')" class="px-3 py-1.5 bg-rose-700 hover:bg-rose-600 text-white text-xs font-medium rounded transition flex items-center gap-1">
           <span>⏹</span> Stop Stack
         </button>
-        <button onclick="controlAction('restart-node2');controlAction('restart-miner')" class="px-3 py-1.5 bg-amber-700 hover:bg-amber-600 text-white text-xs font-medium rounded transition flex items-center gap-1">
+        <button onclick="edgeAction('restart-v31-miner')" class="px-3 py-1.5 bg-amber-700 hover:bg-amber-600 text-white text-xs font-medium rounded transition flex items-center gap-1">
           <span>⟳</span> Restart
         </button>
         <button onclick="controlAction('doctor')" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-600 text-white text-xs font-medium rounded transition flex items-center gap-1">
@@ -992,7 +1135,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         <div class="flex items-center gap-2">
           <span id="badge-edge-server" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
           <button onclick="refreshEdgeServerCard(true); updateEdgeHealth();" class="text-[10px] px-2.5 py-1 bg-zinc-700/50 hover:bg-zinc-600 rounded-md font-semibold transition" title="Force refresh">⟳</button>
-          <a href="http://62.171.141.136:8455" target="_blank" class="text-[10px] px-2.5 py-1 bg-teal-700/40 hover:bg-teal-600/60 rounded-md font-semibold transition text-teal-300">📈 Pool Metrics</a>
+          <a href="http://62.171.141.136:8444" target="_blank" class="text-[10px] px-2.5 py-1 bg-emerald-700/40 hover:bg-emerald-600/60 rounded-md font-semibold transition text-emerald-300">🌐 V31 Pool</a>
         </div>
       </div>
 
@@ -1078,7 +1221,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         <div class="flex flex-wrap gap-2">
           <button onclick="edgeAction('restart-node1')" class="text-[10px] px-2.5 py-1.5 bg-emerald-700/40 hover:bg-emerald-600/60 border border-emerald-500/30 rounded-md font-semibold transition">⟳ Node 1</button>
           <button onclick="edgeAction('restart-node2')" class="text-[10px] px-2.5 py-1.5 bg-emerald-700/40 hover:bg-emerald-600/60 border border-emerald-500/30 rounded-md font-semibold transition">⟳ Node 2</button>
-          <button onclick="edgeAction('restart-pool')" class="text-[10px] px-2.5 py-1.5 bg-amber-700/40 hover:bg-amber-600/60 border border-amber-500/30 rounded-md font-semibold transition">⟳ Pool</button>
+          <button onclick="edgeAction('restart-v31-pool')" class="text-[10px] px-2.5 py-1.5 bg-emerald-700/40 hover:bg-emerald-600/60 border border-emerald-500/30 rounded-md font-semibold transition">⟳ V31 Pool</button>
           <button onclick="edgeAction('restart-dao')" class="text-[10px] px-2.5 py-1.5 bg-purple-700/40 hover:bg-purple-600/60 border border-purple-500/30 rounded-md font-semibold transition">⟳ DAO</button>
           <button onclick="edgeAction('restart-warp')" class="text-[10px] px-2.5 py-1.5 bg-cyan-700/40 hover:bg-cyan-600/60 border border-cyan-500/30 rounded-md font-semibold transition">⟳ WARP</button>
           <button onclick="edgeAction('restart-dashboard')" class="text-[10px] px-2.5 py-1.5 bg-blue-700/40 hover:bg-blue-600/60 border border-blue-500/30 rounded-md font-semibold transition">⟳ Rust DB</button>
@@ -1103,13 +1246,13 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         <div class="flex flex-wrap gap-2">
           <a href="https://dashboard.zionterranova.com" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-orange-700/40 hover:bg-orange-600/60 border border-orange-500/30 rounded-md font-semibold transition text-orange-300">📊 Dashboard</a>
           <a href="https://zionterranova.com" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-indigo-700/40 hover:bg-indigo-600/60 border border-indigo-500/30 rounded-md font-semibold transition text-indigo-300">🌐 Website</a>
-          <a href="http://62.171.141.136:8455" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-teal-700/40 hover:bg-teal-600/60 border border-teal-500/30 rounded-md font-semibold transition text-teal-300">📈 Pool Metrics</a>
+          <a href="http://62.171.141.136:8444" target="_blank" class="text-[10px] px-2.5 py-1.5 bg-emerald-700/40 hover:bg-emerald-600/60 border border-emerald-500/30 rounded-md font-semibold transition text-emerald-300">🌐 V31 Pool</a>
         </div>
       </div>
     </div>
 
-    <!-- Service Cards (top 3) -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <!-- Service Cards (top 4) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <div id="card-node1" class="zion-panel zion-panel-hover svc-card p-5">
         <div class="flex items-center justify-between mb-3 relative z-10">
           <span class="zion-kicker">🔷 Node 1</span>
@@ -1162,6 +1305,79 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         </div>
       </div>
 
+      <!-- V31 Alpha Node -->
+      <div id="card-v31-node" class="zion-panel zion-panel-hover svc-card p-5">
+        <div class="flex items-center justify-between mb-3 relative z-10">
+          <span class="zion-kicker">🚀 V31 Alpha</span>
+          <span id="badge-v31-node" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
+        </div>
+        <div class="text-4xl font-bold mb-1 text-gradient relative z-10" id="val-v31-node-height">—</div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">Chain Height <span class="text-purple-400 text-[9px] ml-1">v3.1.0-alpha.2</span></div>
+        <div class="text-xs font-mono text-gray-300 truncate mb-1 relative z-10" id="val-v31-node-hash">—</div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">P2P: <span id="val-v31-node-p2p" class="font-mono">0.0.0.0:8335</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">RPC: <span id="val-v31-node-rpc" class="font-mono">127.0.0.1:9445</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Mempool: <span id="val-v31-node-mempool" class="text-amber-400 font-semibold">—</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Sync: <span id="val-v31-node-sync" class="text-gray-400">—</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">systemd: <span id="val-v31-node-systemd" class="font-mono text-emerald-400">—</span></div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">Mem: <span id="val-v31-node-mem" class="text-cyan-400 font-mono">—</span></div>
+        <div class="flex gap-1.5 relative z-10">
+          <button onclick="edgeAction('restart-v31-node')" class="text-[10px] px-2.5 py-1 bg-purple-700/50 hover:bg-purple-600 rounded-md font-semibold transition">⟳ Restart</button>
+          <button onclick="edgeAction('stop-v31-node')" class="text-[10px] px-2.5 py-1 bg-red-700/50 hover:bg-red-600 rounded-md font-semibold transition">⏹ Stop</button>
+        </div>
+      </div>
+
+      <!-- V31 Pool (PROD) -->
+      <div id="card-v31-pool" class="zion-panel zion-panel-hover svc-card p-5 border border-emerald-500/30">
+        <div class="flex items-center justify-between mb-3 relative z-10">
+          <span class="zion-kicker text-emerald-400">🌐 V31 Pool (PROD)</span>
+          <span id="badge-v31-pool" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
+        </div>
+        <div class="text-4xl font-bold mb-1 text-emerald-400 relative z-10" id="val-v31-pool-shares">—</div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">Shares Accepted</div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Stratum: <span class="font-mono text-white">0.0.0.0:8444</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">→ Node RPC: <span class="font-mono text-white">127.0.0.1:9445</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Jobs: <span id="val-v31-pool-jobs" class="text-white">—</span></div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">systemd: <span id="val-v31-pool-systemd" class="font-mono text-emerald-400">—</span></div>
+        <div class="flex gap-1.5 relative z-10">
+          <button onclick="edgeAction('restart-v31-pool')" class="text-[10px] px-2.5 py-1 bg-amber-700/50 hover:bg-amber-600 rounded-md font-semibold transition">⟳ Restart</button>
+        </div>
+      </div>
+
+      <!-- V31 Miner (PROD) -->
+      <div id="card-v31-miner" class="zion-panel zion-panel-hover svc-card p-5 border border-emerald-500/30">
+        <div class="flex items-center justify-between mb-3 relative z-10">
+          <span class="zion-kicker text-emerald-400">⛏️ V31 Miner (PROD)</span>
+          <span id="badge-v31-miner" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
+        </div>
+        <div class="text-4xl font-bold mb-1 text-amber-400 relative z-10" id="val-v31-miner-hashrate">—</div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">H/s</div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">→ Pool: <span class="font-mono text-white">127.0.0.1:8444</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Shares: <span id="val-v31-miner-shares" class="text-white">—</span> | Accepted: <span id="val-v31-miner-accepted" class="text-emerald-400">—</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Worker: <span id="val-v31-miner-worker" class="text-white text-[10px]">—</span></div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">systemd: <span id="val-v31-miner-systemd" class="font-mono text-emerald-400">—</span></div>
+        <div class="flex gap-1.5 relative z-10">
+          <button onclick="edgeAction('restart-v31-miner')" class="text-[10px] px-2.5 py-1 bg-amber-700/50 hover:bg-amber-600 rounded-md font-semibold transition">⟳ Restart</button>
+          <button onclick="edgeAction('stop-v31-miner')" class="text-[10px] px-2.5 py-1 bg-red-700/50 hover:bg-red-600 rounded-md font-semibold transition">⏹ Stop</button>
+        </div>
+      </div>
+
+      <!-- V31 Multichain (PROD) -->
+      <div id="card-v31-multichain" class="zion-panel zion-panel-hover svc-card p-5 border border-emerald-500/30">
+        <div class="flex items-center justify-between mb-3 relative z-10">
+          <span class="zion-kicker text-emerald-400">🌀 V31 Multichain (PROD)</span>
+          <span id="badge-v31-multichain" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
+        </div>
+        <div class="text-4xl font-bold mb-1 text-cyan-400 relative z-10" id="val-v31-mc-transfers">—</div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">Total Transfers</div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">API: <span class="font-mono text-white">127.0.0.1:8453</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">→ Node RPC: <span class="font-mono text-white">127.0.0.1:9445</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Pending: <span id="val-v31-mc-pending" class="text-white">—</span></div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">Health: <span id="val-v31-mc-health" class="text-emerald-400">—</span></div>
+        <div class="flex gap-1.5 relative z-10">
+          <button onclick="edgeAction('restart-v31-multichain')" class="text-[10px] px-2.5 py-1 bg-amber-700/50 hover:bg-amber-600 rounded-md font-semibold transition">⟳ Restart</button>
+        </div>
+      </div>
+
     </div>
 
     <!-- ═══════ Pool Command Center (unified) ═══════ -->
@@ -1169,14 +1385,13 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       <!-- Header -->
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-3">
-          <h2 class="text-lg font-bold flex items-center gap-2">🌐 ZION Pool Command Center</h2>
+          <h2 class="text-lg font-bold flex items-center gap-2">🌐 V31 Pool Command Center</h2>
           <span id="badge-pool-cc" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
           <span id="pool-cc-uptime" class="text-[10px] text-gray-500 font-mono">—</span>
         </div>
         <div class="flex gap-2">
           <button onclick="loadPoolMinersTab()" class="text-[10px] px-2.5 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-md font-semibold transition">📋 Miners Tab</button>
-          <button onclick="restartEdgePool()" class="text-[10px] px-2.5 py-1 bg-amber-700/50 hover:bg-amber-600 rounded-md font-semibold transition">⟳ Restart Pool</button>
-          <a href="http://62.171.141.136:8455" target="_blank" class="text-[10px] px-2.5 py-1 bg-teal-700/40 hover:bg-teal-600 rounded-md font-semibold transition text-teal-300">📈 Metrics</a>
+          <button onclick="edgeAction('restart-v31-pool')" class="text-[10px] px-2.5 py-1 bg-amber-700/50 hover:bg-amber-600 rounded-md font-semibold transition">⟳ Restart V31 Pool</button>
         </div>
       </div>
 
@@ -1217,7 +1432,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
             <div class="flex justify-between"><span class="text-gray-400">Stratum</span><span id="pcc-stratum" class="font-mono text-white">—</span></div>
             <div class="flex justify-between"><span class="text-gray-400">Public IP</span><span id="pcc-public-ip" class="font-mono text-white">62.171.141.136</span></div>
             <div class="flex justify-between"><span class="text-gray-400">RPC Port</span><span class="font-mono text-white">8443</span></div>
-            <div class="flex justify-between"><span class="text-gray-400">Metrics Port</span><span class="font-mono text-white">8455</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Metrics Port</span><span class="font-mono text-white">— (V31)</span></div>
             <div class="flex justify-between"><span class="text-gray-400">Pool Wallet</span><span id="pcc-wallet" class="font-mono text-white truncate max-w-[200px]" title="">—</span></div>
             <div class="flex justify-between"><span class="text-gray-400">Payout</span><span id="pcc-payout" class="text-emerald-400">—</span></div>
             <div class="flex justify-between"><span class="text-gray-400">Registered Miners</span><span id="pcc-registered" class="text-white">—</span></div>
@@ -1491,29 +1706,29 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       </div>
     </div>
 
-    <!-- Pool Metrics (built-in Prometheus endpoint on :8455) -->
-    <div class="zion-panel p-5">
+    <!-- V31 Pool Metrics (from /api/status, no Prometheus endpoint) -->
+    <div class="zion-panel p-5 border border-emerald-500/20">
       <div class="flex items-center justify-between mb-3">
-        <h2 class="text-base font-bold flex items-center gap-2">📡 Pool Metrics</h2>
-        <span id="monitoring-status-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Loading…</span>
+        <h2 class="text-base font-bold flex items-center gap-2">📡 V31 Pool Metrics</h2>
+        <span id="monitoring-status-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-700/40 text-emerald-300">V31 Live</span>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="bg-black/30 border border-white/5 rounded-lg p-3">
+        <div class="bg-black/30 border border-emerald-500/10 rounded-lg p-3">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-sm font-bold text-orange-400">Pool Scraper</span>
-            <span id="prom-status-dot" class="w-2 h-2 rounded-full bg-gray-600"></span>
+            <span class="text-sm font-bold text-emerald-400">V31 Pool (Stratum 8444)</span>
+            <span id="prom-status-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           </div>
-          <div class="text-xs text-gray-400 mb-1">Endpoint: <span class="text-white font-mono">127.0.0.1:8455/metrics</span></div>
-          <div class="text-xs text-gray-400 mb-2">Pool Hashrate: <span id="prom-version" class="text-white font-mono">—</span></div>
+          <div class="text-xs text-gray-400 mb-1">Endpoint: <span class="text-white font-mono">127.0.0.1:8444 (stratum)</span></div>
+          <div class="text-xs text-gray-400 mb-2">Miner Hashrate: <span id="prom-version" class="text-white font-mono">—</span></div>
           <div class="grid grid-cols-3 gap-2 mt-2">
-            <div class="text-center"><div class="text-[9px] text-gray-500">Sessions</div><div id="pm-active-sessions" class="text-sm font-bold text-emerald-400">—</div></div>
-            <div class="text-center"><div class="text-[9px] text-gray-500">Miners</div><div id="pm-miners-tracked" class="text-sm font-bold text-cyan-400">—</div></div>
-            <div class="text-center"><div class="text-[9px] text-gray-500">Blocks</div><div id="pm-blocks-found" class="text-sm font-bold text-amber-400">—</div></div>
+            <div class="text-center"><div class="text-[9px] text-gray-500">Miners</div><div id="pm-active-sessions" class="text-sm font-bold text-emerald-400">—</div></div>
+            <div class="text-center"><div class="text-[9px] text-gray-500">Jobs</div><div id="pm-miners-tracked" class="text-sm font-bold text-cyan-400">—</div></div>
+            <div class="text-center"><div class="text-[9px] text-gray-500">Blocks</div><div id="pm-blocks-found" class="text-sm font-bold text-amber-400">0</div></div>
             <div class="text-center"><div class="text-[9px] text-gray-500">Accepted</div><div id="pm-accepted" class="text-sm font-bold text-emerald-400">—</div></div>
-            <div class="text-center"><div class="text-[9px] text-gray-500">Rejected</div><div id="pm-rejected" class="text-sm font-bold text-red-400">—</div></div>
+            <div class="text-center"><div class="text-[9px] text-gray-500">Rejected</div><div id="pm-rejected" class="text-sm font-bold text-red-400">0</div></div>
             <div class="text-center"><div class="text-[9px] text-gray-500">Submits</div><div id="pm-submits" class="text-sm font-bold text-white">—</div></div>
           </div>
-          <div class="text-xs text-gray-400 mt-2">Total Shares: <span id="prom-targets" class="text-white font-mono">—</span></div>
+          <div class="text-xs text-gray-400 mt-2">Pool Shares: <span id="prom-targets" class="text-white font-mono">—</span></div>
         </div>
         <div class="bg-black/30 border border-white/5 rounded-lg p-3">
           <div class="flex items-center justify-between mb-2">
@@ -2025,16 +2240,16 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       </div>
     </div>
 
-    <!-- ═══════ Edge Miner (compact) ═══════ -->
-    <div id="card-miner" class="zion-panel zion-panel-hover svc-card p-4">
+    <!-- ═══════ V31 Miner (compact, replaces old V3 Edge Miner) ═══════ -->
+    <div id="card-miner" class="zion-panel zion-panel-hover svc-card p-4 border border-emerald-500/30">
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-3">
-          <span class="zion-kicker" id="lbl-miner-title">⛏️ Edge Miner</span>
+          <span class="zion-kicker text-emerald-400" id="lbl-miner-title">⛏️ V31 Miner (PROD)</span>
           <span id="badge-miner" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
         </div>
         <div class="flex gap-2">
-          <button onclick="controlAction('restart-miner')" class="text-[10px] px-2.5 py-1 bg-amber-700/50 hover:bg-amber-600 rounded-md font-semibold transition">⟳ Restart</button>
-          <button onclick="controlAction('stop-miner')" class="text-[10px] px-2.5 py-1 bg-red-700/50 hover:bg-red-600 rounded-md font-semibold transition">⏹ Stop</button>
+          <button onclick="edgeAction('restart-v31-miner')" class="text-[10px] px-2.5 py-1 bg-amber-700/50 hover:bg-amber-600 rounded-md font-semibold transition">⟳ Restart</button>
+          <button onclick="edgeAction('stop-v31-miner')" class="text-[10px] px-2.5 py-1 bg-red-700/50 hover:bg-red-600 rounded-md font-semibold transition">⏹ Stop</button>
         </div>
       </div>
       <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs">
@@ -3176,11 +3391,21 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
 
   <!-- ═════════ TAB: Pool Debugger ═════════ -->
   <div id="pane-pool-debug" class="hidden space-y-4">
+    <!-- V31 Notice -->
+    <div class="zion-panel p-4 border border-emerald-500/30 bg-emerald-500/5">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">🚀</span>
+        <div>
+          <h3 class="text-sm font-bold text-emerald-400">V31 Pool Debug</h3>
+          <p class="text-xs text-gray-400 mt-1">V31 pool (stratum 8444) does not expose Prometheus metrics or HTTP debug API. Use journalctl for diagnostics: <code class="text-emerald-300">journalctl -u zion-v31-pool.service -f</code></p>
+        </div>
+      </div>
+    </div>
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-gradient">🐛 Pool Debugger</h1>
-        <p class="text-xs text-gray-400 mt-1">Raw metrics · PPLNS state · log tail · endpoint probes · env config · AuxPow · revenue — all in one diagnostic view</p>
+        <h1 class="text-2xl font-bold text-gradient">🐛 Pool Debugger <span class="text-xs text-gray-500">(V3 legacy — metrics endpoint 8455 offline)</span></h1>
+        <p class="text-xs text-gray-400 mt-1">Raw metrics · PPLNS state · log tail · endpoint probes · env config · AuxPow · revenue — V3 pool diagnostic view (archived)</p>
       </div>
       <div class="flex gap-2 items-center">
         <label class="text-xs text-gray-400 flex items-center gap-1.5">

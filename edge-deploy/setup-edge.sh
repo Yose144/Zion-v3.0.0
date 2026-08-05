@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# ⚠️ DEPRECATED — legacy V3 edge setup script.
+# V3 has been archived to archive/V3/. For V31 Mainnet Alpha use V31/deploy/setup-edge.sh (when available).
+# This file remains only for historical reference.
+#
 # ZION Edge Server — Multi-Node Setup (run directly on Edge server as root)
 # Sets up systemd services so Edge runs autonomously 24/7 with:
 #   - 2 P2P nodes (primary + follower)

@@ -21,6 +21,12 @@ impl IpRateLimiter {
     }
 
     pub fn allow(&self, ip: IpAddr) -> bool {
+        // Local loopback is always trusted; rate limiting is for remote
+        // reconnect storms, not for co-located miners/services.
+        if ip.is_loopback() {
+            return true;
+        }
+
         let now = Instant::now();
         let mut history = self.history.lock().unwrap();
         let attempts = history.entry(ip).or_default();

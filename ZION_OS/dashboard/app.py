@@ -19,6 +19,7 @@ import sys
 import threading
 import time
 import urllib.parse
+import urllib.request
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
@@ -69,6 +70,29 @@ CONFIG_FILE = SCRIPT_DIR / "config.json"
 RELEASE_BIN_DIR = REPO_ROOT / "V3" / "target" / "release"
 EXE_SUFFIX = ".exe" if os.name == "nt" else ""
 
+# Cache for deriving V31 banner shares/sec from the Edge pool total-shares counter
+_V31_BANNER_POOL_TOTALS = {"ts": 0.0, "shares": 0.0}
+
+def _v31_pool_api_port() -> int:
+    """Return the V31 pool HTTP API/metrics port.
+
+    The pool binary exposes Prometheus metrics and /stats on its --api-bind
+    address, which defaults to 0.0.0.0:8080.  Prefer ZION_POOL_API_BIND or
+    ZION_POOL_API_PORT env, fall back to 8080.
+    """
+    bind = os.environ.get("ZION_POOL_API_BIND", "")
+    if bind and ":" in bind:
+        try:
+            return int(bind.split(":")[-1])
+        except Exception:
+            pass
+    p = os.environ.get("ZION_POOL_API_PORT")
+    if p is not None:
+        return int(p)
+    return 8080
+
+V31_POOL_API_PORT = _v31_pool_api_port()
+
 # Unified service → log file mapping used by all log endpoints
 SERVICE_LOG_MAP = {
     # Blockchain nodes
@@ -113,6 +137,23 @@ _ANSI_RE = re.compile(r'\x1b\[[0-9;]*[mKABCDEFGHJSTfhilmnprsuABCD]')
 def strip_ansi(s: str) -> str:
     return _ANSI_RE.sub('', s) if s else s
 
+def _systemctl_show(service: str) -> dict:
+    """Get systemd service properties."""
+    try:
+        r = subprocess.run(
+            ["systemctl", "show", service,
+             "--property=ActiveState,SubState,UnitFileState,MainPID,MemoryCurrent"],
+            capture_output=True, text=True, timeout=5
+        )
+        props = {}
+        for line in r.stdout.strip().split("\n"):
+            if "=" in line:
+                k, v = line.split("=", 1)
+                props[k] = v
+        return props
+    except Exception:
+        return {}
+
 # Load config
 def load_config() -> dict:
     defaults = {
@@ -144,11 +185,18 @@ TOPOLOGY = CONFIG["topology"]
 PAYOUT_HIGHWATER_FILE = DATA_DIR / "dashboard-payout-highwater.json"
 
 # Canonical Edge systemd units used by servers-setup, processes, and health maps.
+# V31-first after cutover; V3 services are masked/archived and not started.
 EDGE_SERVICE_ORDER = [
+    "zion-v31-node", "zion-v31-pool", "zion-v31-miner", "zion-v31-multichain",
+    "zion-v31-watchdog", "zion-v31-dao", "zion-v31-oasis",
+    "zion-edge-python-dashboard",
+    "prometheus", "grafana-server",
+    "zion-website", "zion-marketplace",
+    "zion-edge-backup", "zion-edge-maintenance",
     "zion-edge-node1", "zion-edge-node2", "zion-edge-pool",
     "zion-edge-bridge", "zion-edge-dao", "zion-edge-atomic-swap",
     "zion-edge-warp", "zion-edge-oasis", "zion-edge-dex",
-    "zion-edge-dashboard", "zion-edge-python-dashboard", "zion-edge-watchdog",
+    "zion-edge-dashboard", "nginx",
 ]
 
 # ── Basic Auth (HTTP 401) — multi-user ───────────────────────────────────
@@ -714,12 +762,10 @@ def get_edge_server_health() -> dict:
         }
 
         # Services
-        svc_names = ["zion-edge-node1", "zion-edge-node2", "zion-edge-pool",
-                     "zion-edge-bridge", "zion-edge-dao", "zion-edge-atomic-swap",
-                     "zion-edge-warp", "zion-edge-oasis", "zion-edge-miner",
-                     "zion-edge-agent", "zion-edge-dashboard", "zion-edge-dex",
-                     "zion-edge-python-dashboard", "zion-edge-watchdog",
-                     "zion-edge-backup", "zion-edge-maintenance"]
+        svc_names = ["zion-v31-node", "zion-v31-pool", "zion-v31-miner",
+                     "zion-v31-multichain", "zion-v31-watchdog", "zion-v31-dao",
+                     "zion-v31-oasis", "zion-edge-python-dashboard",
+                     "zion-website", "zion-marketplace", "nginx"]
         svc_states = parts.get("SVCS", "").split(",")
         for i, name in enumerate(svc_names):
             if i < len(svc_states):
@@ -742,14 +788,14 @@ def get_edge_server_health() -> dict:
 
 
 def get_monitoring_status() -> dict:
-    """Scrape built-in pool metrics endpoint (Prometheus format on :8455). Cached 15 s."""
+    """Scrape built-in pool metrics endpoint (Prometheus format on :{V31_POOL_API_PORT}). Cached 15 s."""
     now = time.time()
     with MONITORING_LOCK:
         if now - MONITORING_CACHE["ts"] < 15:
             return MONITORING_CACHE["data"]
 
     metrics_host = "127.0.0.1"
-    metrics_port = 8455
+    metrics_port = V31_POOL_API_PORT
     result = {
         "prometheus": {"url": f"http://{metrics_host}:{metrics_port}/metrics", "alive": False, "version": None, "targets_up": 0, "targets_total": 0},
         "grafana": {"url": "built-in", "alive": True, "version": "dashboard", "database": "internal"},
@@ -1073,21 +1119,75 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "Follower node — P2P 8334, RPC 8448. Syncs from Node 1 for redundancy.",
      "child_says": "🔶 Follows Node 1 to keep a backup copy!",
      "depends_on": ["edge-node1"]},
-    {"id": "pool-edge", "name": "ZION Pool (Primary)", "icon": "🌐", "level": "L1", "kind": "pool",
+    {"id": "v31-node", "name": "V31 Node (PROD)", "icon": "🚀", "level": "L1", "kind": "node",
+     "ports": {"p2p": 8335, "rpc": 9445},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "tcp", "severity": "critical", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:9445",
+     "purpose": "V31 Mainnet Alpha (3.1.0-alpha.2) — PROD node. P2P 8335, RPC 9445. Independent of V3. systemd zion-v31-node.service.",
+     "child_says": "🚀 V31 PROD node — mainnet alpha!",
+     "depends_on": []},
+    {"id": "v31-pool", "name": "V31 Pool (PROD)", "icon": "🌐", "level": "L1", "kind": "pool",
      "ports": {"stratum": 8444},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "critical", "autoheal": False,
-     "purpose": "Primary pool — accepts all miners, validates shares, distributes payouts (89/5/5/1 burn model). Stratum 8444.",
-     "child_says": "🌐 The main pool — miners connect here!",
-     "depends_on": ["edge-node1"]},
-    {"id": "miner", "name": "CPU/GPU Miner", "icon": "⛏️", "level": "L1", "kind": "miner",
+     "health_endpoint": "http://127.0.0.1:8444",
+     "purpose": "V31 PROD pool — stratum 8444, validates shares, → Node RPC 9445. systemd zion-v31-pool.service.",
+     "child_says": "🌐 V31 PROD pool — miners connect here!",
+     "depends_on": ["v31-node"]},
+    {"id": "v31-miner", "name": "V31 Miner (PROD)", "icon": "⛏️", "level": "L1", "kind": "miner",
      "ports": {},
-     "log": "miner.log", "start": "start-miner", "stop": None,
-     "health_method": "log", "severity": "warning", "autoheal": True,
-     "health_endpoint": "http://127.0.0.1:8455/metrics",
-     "purpose": "Performs Deeksha PoW hashing to find new blocks. Connects to pool 8444.",
-     "child_says": "⛏️ The miner digs for new gold (ZION coins)!",
+     "log": None, "start": None, "stop": None,
+     "health_method": "systemd", "severity": "warning", "autoheal": False,
+     "health_endpoint": None,
+     "purpose": "V31 PROD CPU miner — 2 threads, ~500-950 kH/s. → Pool 127.0.0.1:8444. systemd zion-v31-miner.service.",
+     "child_says": "⛏️ V31 PROD miner — digs for ZION!",
+     "depends_on": ["v31-pool"]},
+    {"id": "v31-multichain", "name": "V31 Multichain (PROD)", "icon": "🌀", "level": "L2", "kind": "multichain",
+     "ports": {"api": 8453},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "tcp", "severity": "warning", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:8453/health",
+     "purpose": "V31 PROD multichain — bridge/warp/swap unified. API 8453 → Node RPC 9445. systemd zion-v31-multichain.service.",
+     "child_says": "🌀 V31 PROD multichain — cross-chain hub!",
+     "depends_on": ["v31-node"]},
+    {"id": "v31-dao", "name": "V31 DAO (PROD)", "icon": "🗳️", "level": "L2", "kind": "dao",
+     "ports": {"api": 8456},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "http", "severity": "warning", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:8456/api/dao/health",
+     "purpose": "V31 PROD DAO — governance, proposals, treasury. API 8456. systemd zion-v31-dao.service.",
+     "child_says": "🗳️ V31 PROD DAO — vote on the future of ZION!",
+     "depends_on": ["v31-node"]},
+    {"id": "v31-oasis", "name": "V31 OASIS Game (PROD)", "icon": "🪷", "level": "L4", "kind": "app",
+     "ports": {"api": 8094, "metrics": 9102},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "http", "severity": "info", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:8094/health",
+     "purpose": "V31 OASIS L4 game API — avatars, quests, guilds, territories. Port 8094. systemd zion-v31-oasis.service.",
+     "child_says": "🪷 V31 OASIS — the avatar consciousness game!",
+     "depends_on": ["v31-node"]},
+    {"id": "pool-edge", "name": "V3 Pool (DISABLED)", "icon": "⛔", "level": "L1", "kind": "pool",
+     "ports": {"stratum": 8444},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "tcp", "severity": "warning", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:8444",
+     "purpose": "V3 pool — DISABLED, replaced by V31 Pool. Kept for reference.",
+     "child_says": "⛔ V3 pool — disabled, use V31 Pool!",
+     "depends_on": ["edge-node1"]},
+    {"id": "miner", "name": "V3 Miner (ARCHIVED)", "icon": "📦", "level": "L1", "kind": "miner",
+     "ports": {},
+     "log": "miner.log", "start": None, "stop": None,
+     "health_method": "log", "severity": "info", "autoheal": False,
+     "health_endpoint": None,
+     "purpose": "V3 GPU/CPU miner — ARCHIVED, replaced by V31 Miner. Kept for reference.",
+     "child_says": "📦 V3 miner — archived, use V31 Miner!",
      "depends_on": ["pool-edge"]},
 
     # ── L2: Bridge & DAO (running on new server) ────────────────────────
@@ -1168,7 +1268,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "health_method": "tcp", "severity": "info", "autoheal": False,
      "purpose": "Operational control plane — this UI. Port 8766 behind nginx + Basic Auth.",
      "child_says": "📋 The control room where we watch everything!",
-     "depends_on": ["edge-node1"]},
+     "depends_on": ["v31-node"]},
     {"id": "nginx", "name": "Nginx Reverse Proxy", "icon": "🔒", "level": "Infra", "kind": "proxy",
      "ports": {"http": 80, "https": 443},
      "host": "127.0.0.1",
@@ -1185,6 +1285,30 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "Next.js 16.2.9 website — 73+ routes, Docker container zion-web:nextjs. Port 3000 (host network).",
      "child_says": "🌐 The public face of ZION — our website!",
      "depends_on": ["nginx"]},
+    {"id": "marketplace", "name": "OASIS Marketplace", "icon": "🏪", "level": "Infra", "kind": "web",
+     "ports": {"http": 3100},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "tcp", "severity": "warning", "autoheal": False,
+     "purpose": "OASIS Artifact Marketplace (Next.js + ERC-1155). Port 3100 behind nginx.",
+     "child_says": "🏪 Buy and sell OASIS artifacts!",
+     "depends_on": ["nginx"]},
+    {"id": "prometheus", "name": "Prometheus", "icon": "📈", "level": "Infra", "kind": "metrics",
+     "ports": {"metrics": 9090},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "tcp", "severity": "info", "autoheal": False,
+     "purpose": "Metrics scraper — V31 pool, node exporter, system targets. Port 9090.",
+     "child_says": "📈 Scrapes metrics for dashboards!",
+     "depends_on": []},
+    {"id": "grafana", "name": "Grafana", "icon": "📊", "level": "Infra", "kind": "metrics",
+     "ports": {"web": 3001},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "tcp", "severity": "info", "autoheal": False,
+     "purpose": "Grafana dashboards — V31 Mainnet Alpha embedded in /dashboard. Port 3001.",
+     "child_says": "📊 Beautiful charts for the full dashboard!",
+     "depends_on": ["prometheus"]},
 ]
 
 SERVICE_REGISTRY_LOCAL_DEV = [
@@ -1310,7 +1434,7 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "depends_on": ["node1"]},
 
     # ── Infrastructure ───────────────────────────────────────────────────
-    # Prometheus/Grafana removed — replaced by built-in pool metrics on :8455
+    # Prometheus/Grafana removed — replaced by built-in pool metrics on :{V31_POOL_API_PORT}
     {"id": "node-exporter", "name": "Node Exporter", "icon": "🔧", "level": "Infra", "kind": "metrics",
      "ports": {"metrics": 9100},
      "host": "127.0.0.1",
@@ -1330,6 +1454,30 @@ SERVICE_REGISTRY_LOCAL_DEV = [
 
 # Dynamic SERVICE_REGISTRY selection based on TOPOLOGY
 SERVICE_REGISTRY = SERVICE_REGISTRY_EDGE_PRIMARY if TOPOLOGY == "edge-primary" else SERVICE_REGISTRY_LOCAL_DEV
+
+# ── V31 primary / V3 archived markers ───────────────────────────────────
+PRIMARY_SERVICES = {"v31-node", "v31-pool", "v31-miner", "v31-multichain", "v31-dao", "v31-oasis"}
+ARCHIVED_SERVICES = {
+    "edge-node1", "edge-node2", "pool-edge", "miner",
+    "bridge", "dao", "atomic-swap", "dex", "warp",
+    "oasis", "free-world", "issobella",
+    "node1", "node2", "swap-aggregator", "ncl",
+    "hiranyagarbha", "ai-native", "node-exporter",
+}
+
+
+def _enrich_service_registry(registry: list) -> list:
+    """Tag services as primary / archived in the active registry."""
+    for svc in registry:
+        svc["primary"] = svc["id"] in PRIMARY_SERVICES
+        svc["archived"] = svc["id"] in ARCHIVED_SERVICES
+    return registry
+
+
+SERVICE_REGISTRY = _enrich_service_registry(SERVICE_REGISTRY)
+
+LEVEL_ORDER = {"L1": 0, "L2": 1, "L3": 2, "L4": 3, "L5": 4, "L6": 5, "Infra": 9}
+
 
 def get_service(sid: str) -> dict:
     return next((s for s in SERVICE_REGISTRY if s["id"] == sid), None)
@@ -1521,6 +1669,28 @@ def check_service_health(svc: dict) -> dict:
         else:
             details_parts.append("no PID file")
 
+    elif method == "systemd":
+        # Check systemd service status for V31 services
+        systemd_map = {
+            "v31-miner": "zion-v31-miner.service",
+            "v31-pool": "zion-v31-pool.service",
+            "v31-node": "zion-v31-node.service",
+            "v31-multichain": "zion-v31-multichain.service",
+        }
+        svc_name = systemd_map.get(sid)
+        if svc_name:
+            try:
+                r = subprocess.run(["systemctl", "is-active", svc_name],
+                                 capture_output=True, text=True, timeout=2)
+                active = r.stdout.strip() == "active"
+                alive = active
+                status = "running" if active else "stopped"
+                details_parts.append(f"systemd {svc_name}: {r.stdout.strip()}")
+            except Exception as e:
+                details_parts.append(f"systemd check failed: {e}")
+        else:
+            details_parts.append(f"no systemd mapping for {sid}")
+
     else:  # log fallback
         alive = log_alive or proc_info["alive"] or bool(open_ports)
         status = "running" if alive else "stopped"
@@ -1556,9 +1726,10 @@ def check_service_health(svc: dict) -> dict:
 
 
 def _compute_derived_status(svc: dict, health_map: dict) -> dict:
-    """Propagate dependency failures: if a dependency is down, mark dependent as degraded."""
+    """Propagate dependency failures: if a dependency is down, mark dependent as degraded.
+    Archived services do not propagate dependency failures (V3 is no longer the source of truth)."""
     h = health_map.get(svc["id"], {})
-    if not h.get("alive"):
+    if not h.get("alive") or svc.get("archived"):
         return h
     for dep_id in svc.get("depends_on", []):
         dep = health_map.get(dep_id, {})
@@ -1608,7 +1779,17 @@ def all_services_health() -> list:
             "ports_open": h["ports_open"], "ports_closed": h["ports_closed"],
             "autoheal": h.get("autoheal", False),
             "health_method": h.get("health_method", "log"),
+            "primary": svc.get("primary", False),
+            "archived": svc.get("archived", False),
         })
+    # V31 primary first, archived/legacy last, then by layer and kind
+    out.sort(key=lambda s: (
+        1 if s.get("archived") else 0,
+        0 if s.get("primary") else 1,
+        LEVEL_ORDER.get(s.get("level"), 99),
+        s.get("kind", ""),
+        s.get("name", ""),
+    ))
     return out
 
 # ── Prometheus metrics scraper ─────────────────────────────────────────
@@ -2329,7 +2510,7 @@ def detect_nodes() -> dict:
                 if check_port_open(host, port, timeout=2.0):
                     miner_status["running"] = True
                     # Try to get metrics
-                    metrics_port = miner_config.get("metrics_port", 8455)
+                    metrics_port = miner_config.get("metrics_port", V31_POOL_API_PORT)
                     try:
                         with _urlreq.urlopen(f"http://{host}:{metrics_port}/metrics", timeout=1.0) as r:
                             body = r.read().decode("utf-8", errors="ignore")
@@ -2488,7 +2669,7 @@ def get_miner_live_stats() -> dict:
     if not stats.get("running") and TOPOLOGY == "edge-primary":
         try:
             import urllib.request as _ur
-            with _ur.urlopen(f"http://{EDGE_RPC_HOST}:8455/metrics", timeout=2.0) as _r:
+            with _ur.urlopen(f"http://{EDGE_RPC_HOST}:{V31_POOL_API_PORT}/metrics", timeout=2.0) as _r:
                 _txt = _r.read().decode("utf-8", errors="ignore")
             _active = _tracked = _hashrate = _accepted = _rejected = 0
             for _ln in _txt.splitlines():
@@ -2824,6 +3005,75 @@ def build_status() -> dict:
         _STATUS_CACHE_TIME = now
     return result
 
+def _compute_v31_banner_metrics(pool_status: dict, v31_multichain_status: dict, v31_node_status: dict = None, v31_dao_status: dict = None, v31_oasis_status: dict = None) -> dict:
+    """Compute the V31 Mainnet Alpha banner KPIs for the full dashboard.
+
+    Uses data already collected in _build_status_edge_primary plus a quick DAO
+    stats call.  pool_status must contain 'hashrate_khs' and 'total_shares'.
+    """
+    # Pool hashrate: pool_status.hashrate_khs is in kH/s from Prometheus
+    hashrate_hps = None
+    if pool_status.get("hashrate_khs") is not None:
+        try:
+            hashrate_hps = float(pool_status["hashrate_khs"]) * 1000.0
+        except Exception:
+            hashrate_hps = None
+
+    # Derive shares/sec from total-shares delta (same logic as v31.py)
+    shares_per_sec = None
+    total_shares = pool_status.get("total_shares")
+    if total_shares is not None:
+        global _V31_BANNER_POOL_TOTALS
+        now = time.time()
+        prev = _V31_BANNER_POOL_TOTALS
+        try:
+            total = float(total_shares)
+            if prev["ts"] > 0 and total >= prev["shares"]:
+                dt = now - prev["ts"]
+                if dt > 0:
+                    shares_per_sec = round((total - prev["shares"]) / dt, 2)
+            prev["ts"] = now
+            prev["shares"] = total
+        except Exception:
+            pass
+
+    multichain_ok = bool(v31_multichain_status.get("ok", False))
+    multichain_transfers_total = v31_multichain_status.get("transfers_total", 0) or 0
+    multichain_transfers_pending = v31_multichain_status.get("transfers_pending", 0) or 0
+
+    # DAO proposal counts from the V31 DAO service (port 8456)
+    dao_total = 0
+    dao_active = 0
+    if v31_dao_status:
+        dao_total = v31_dao_status.get("proposals_total", 0)
+        dao_active = v31_dao_status.get("proposals_active", 0)
+    if not dao_total and not dao_active:
+        try:
+            with urllib.request.urlopen("http://127.0.0.1:8456/api/dao/proposals", timeout=1.5) as r:
+                dao_st = json.loads(r.read().decode("utf-8", errors="ignore"))
+                if isinstance(dao_st, dict) and "_error" not in dao_st:
+                    dao_total = dao_st.get("total") or dao_st.get("proposals_total") or dao_st.get("proposals", 0)
+                    dao_active = dao_st.get("active") or dao_st.get("active_proposals") or dao_st.get("proposals_active") or dao_st.get("open_proposals", 0)
+        except Exception:
+            pass
+
+    vns = v31_node_status or {}
+    return {
+        "height": vns.get("chain_height") or vns.get("canonical_height"),
+        "sync_lag": vns.get("sync_lag"),
+        "node_running": vns.get("running", False),
+        "node_reachable": vns.get("running", False),
+        "pool_hashrate_hps": hashrate_hps,
+        "shares_per_sec": shares_per_sec,
+        "pool_total_shares": total_shares,
+        "multichain_ok": multichain_ok,
+        "multichain_transfers_total": multichain_transfers_total,
+        "multichain_transfers_pending": multichain_transfers_pending,
+        "dao_proposals_total": int(dao_total) if dao_total is not None else 0,
+        "dao_proposals_active": int(dao_active) if dao_active is not None else 0,
+    }
+
+
 def _build_status_edge_primary() -> dict:
     """Build status for edge-primary topology: fast, parallel RPC with short timeouts."""
     t0 = time.time()
@@ -2861,17 +3111,54 @@ def _build_status_edge_primary() -> dict:
         r = rpc_call("127.0.0.1", 9443, "getNodeInfo", {}, timeout=2.0)
         return ("edge_info", r if r and not r.get("_rpc_error") else None)
 
+    def _v31_rpc_call():
+        # V31 Alpha Node — TCP JSON-RPC on port 9445 (not HTTP)
+        import socket as _sock
+        try:
+            req = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "getStatus", "params": []}) + "\n"
+            with _sock.create_connection(("127.0.0.1", 9445), timeout=2.0) as s:
+                s.sendall(req.encode())
+                resp = s.recv(8192).decode("utf-8", errors="replace").strip()
+                r = json.loads(resp)
+                if "error" in r and r["error"]:
+                    return ("v31", None)
+                return ("v31", r)
+        except Exception:
+            return ("v31", None)
+
+    def _v31_systemd_call():
+        # V31 systemd service status
+        try:
+            import subprocess as _sp
+            r = _sp.run(
+                ["systemctl", "show", "zion-v31-node.service",
+                 "--property=ActiveState,SubState,MainPID,MemoryCurrent"],
+                capture_output=True, text=True, timeout=3
+            )
+            props = {}
+            for line in r.stdout.strip().split("\n"):
+                if "=" in line:
+                    k, v = line.split("=", 1)
+                    props[k] = v
+            return ("v31_sys", props)
+        except Exception:
+            return ("v31_sys", {})
+
     edge_node2_info = None
     edge_node2_nodeinfo = None
     edge_peers = None
     edge_nodeinfo = None
-    ex = ThreadPoolExecutor(max_workers=5)
+    v31_rpc_info = None
+    v31_sys_info = {}
+    ex = ThreadPoolExecutor(max_workers=7)
     futures = {
         ex.submit(_edge_rpc_call),
         ex.submit(_edge_node2_rpc_call),
         ex.submit(_edge_node2_nodeinfo_call),
         ex.submit(_edge_peerinfo_call),
         ex.submit(_edge_nodeinfo_call),
+        ex.submit(_v31_rpc_call),
+        ex.submit(_v31_systemd_call),
     }
     try:
         for fut in as_completed(futures, timeout=5.0):
@@ -2887,6 +3174,10 @@ def _build_status_edge_primary() -> dict:
                     edge_peers = val
                 elif key == "edge_info":
                     edge_nodeinfo = val
+                elif key == "v31":
+                    v31_rpc_info = val
+                elif key == "v31_sys":
+                    v31_sys_info = val or {}
             except Exception:
                 pass
     except TimeoutError:
@@ -2931,6 +3222,170 @@ def _build_status_edge_primary() -> dict:
         "p2p_bind": (edge_node2_nodeinfo or {}).get("p2p_bind") if edge_node2_info else None,
         "rpc_bind": (edge_node2_nodeinfo or {}).get("rpc_bind") if edge_node2_info else None,
         "host": "127.0.0.1:8448",
+    }
+    # ── V31 Alpha Node — V3-compatible P2P sync ─────────────────────────────
+    v31_active = v31_sys_info.get("ActiveState", "unknown")
+    v31_pid = 0
+    try:
+        v31_pid = int(v31_sys_info.get("MainPID", 0))
+    except (ValueError, TypeError):
+        pass
+    v31_mem_mb = None
+    try:
+        mc = v31_sys_info.get("MemoryCurrent", "")
+        if mc and mc != "[not set]":
+            v31_mem_mb = round(int(mc) / 1048576, 1)
+    except (ValueError, TypeError):
+        pass
+    v31_chain_height = None
+    v31_tip_hash = None
+    v31_mempool = 0
+    if v31_rpc_info and isinstance(v31_rpc_info, dict):
+        _vr = v31_rpc_info.get("result") or v31_rpc_info
+        if isinstance(_vr, dict):
+            v31_chain_height = _vr.get("chain_height")
+            v31_tip_hash = _vr.get("tip_hash") or _vr.get("tip_hash_hex")
+            v31_mempool = int(_vr.get("mempool_account_transactions", 0)) + int(_vr.get("mempool_utxo_transactions", 0))
+    v31_node_status = {
+        "running": v31_active == "active",
+        "systemd_active": v31_active,
+        "systemd_sub": v31_sys_info.get("SubState", "unknown"),
+        "node_pid": v31_pid or None,
+        "memory_mb": v31_mem_mb,
+        "chain_height": v31_chain_height,
+        "tip_hash": v31_tip_hash,
+        "mempool_size": v31_mempool,
+        "network": "mainnet",
+        "protocol_version": "zion-v3-node/3.1.0-alpha.2",
+        "node_id": "zion-edge-v31",
+        "p2p_bind": "0.0.0.0:8335",
+        "rpc_bind": "127.0.0.1:9445",
+        "host": "127.0.0.1:9445",
+        "version": "3.1.0-alpha.2",
+        "sync_lag": max(0, (edge_node1_status.get("chain_height") or 0) - (v31_chain_height or 0)) if edge_node1_status.get("chain_height") else None,
+    }
+    # ── V31 Pool (PROD) — systemd + share count from journald ──────────────
+    v31_pool_sys = _systemctl_show("zion-v31-pool.service")
+    v31_pool_active = v31_pool_sys.get("ActiveState", "unknown")
+    v31_pool_shares = 0
+    v31_pool_jobs = 0
+    try:
+        r = subprocess.run(
+            ["journalctl", "-u", "zion-v31-pool.service", "--no-pager", "-n", "200", "--output=cat"],
+            capture_output=True, text=True, timeout=5
+        )
+        for line in r.stdout.strip().split("\n"):
+            if "share accepted" in line:
+                v31_pool_shares += 1
+            if "broadcasting mining.notify" in line:
+                v31_pool_jobs += 1
+    except Exception:
+        pass
+    v31_pool_status = {
+        "running": v31_pool_active == "active",
+        "systemd_active": v31_pool_active,
+        "port": 8444,
+        "shares_accepted": v31_pool_shares,
+        "jobs_broadcast": v31_pool_jobs,
+    }
+    # ── V31 Miner (PROD) — systemd + hashrate from journald ────────────────
+    v31_miner_sys = _systemctl_show("zion-v31-miner.service")
+    v31_miner_active = v31_miner_sys.get("ActiveState", "unknown")
+    v31_miner_hashrate = None
+    v31_miner_shares = 0
+    v31_miner_accepted = 0
+    try:
+        r = subprocess.run(
+            ["journalctl", "-u", "zion-v31-miner.service", "--no-pager", "-n", "100", "--output=cat"],
+            capture_output=True, text=True, timeout=5
+        )
+        for line in r.stdout.strip().split("\n"):
+            # Universal miner summary: "hashrate=0 H/s submitted=0 accepted=7 rejected=0 ..."
+            if "hashrate=" in line:
+                m = re.search(r"hashrate=(\d+(?:\.\d+)?)", line)
+                if m:
+                    val = float(m.group(1))
+                    if val:
+                        v31_miner_hashrate = int(val)
+                # Fallback: stream stats line like "stream=zion ... hashrate=123 status=active"
+                if v31_miner_hashrate is None or v31_miner_hashrate == 0:
+                    m2 = re.search(r"stream=zion .*?hashrate=(\d+(?:\.\d+)?)", line)
+                    if m2:
+                        val2 = float(m2.group(1))
+                        if val2:
+                            v31_miner_hashrate = int(val2)
+            m_sub = re.search(r"\bsubmitted=(\d+)", line)
+            if m_sub:
+                v31_miner_shares = int(m_sub.group(1))
+            m_acc = re.search(r"\baccepted=(\d+)", line)
+            if m_acc:
+                v31_miner_accepted = int(m_acc.group(1))
+    except Exception:
+        pass
+    v31_miner_status = {
+        "running": v31_miner_active == "active",
+        "systemd_active": v31_miner_active,
+        "hashrate": v31_miner_hashrate,
+        "shares_submitted": v31_miner_shares,
+        "shares_accepted": v31_miner_accepted,
+        "worker": "v31-miner",
+    }
+    # ── V31 Multichain (PROD) — systemd + /health ──────────────────────────
+    v31_mc_sys = _systemctl_show("zion-v31-multichain.service")
+    v31_mc_active = v31_mc_sys.get("ActiveState", "unknown")
+    v31_mc_health = {}
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8453/health", timeout=2) as resp:
+            v31_mc_health = json.loads(resp.read().decode())
+    except Exception:
+        pass
+    v31_multichain_status = {
+        "running": v31_mc_active == "active",
+        "systemd_active": v31_mc_active,
+        "ok": v31_mc_health.get("ok", False),
+        "transfers_total": v31_mc_health.get("transfers_total", 0),
+        "transfers_pending": v31_mc_health.get("transfers_pending", 0),
+        "version": v31_mc_health.get("version", "—"),
+    }
+    # ── V31 DAO (PROD) — systemd + /health ─────────────────────────────────
+    v31_dao_sys = _systemctl_show("zion-v31-dao.service")
+    v31_dao_active = v31_dao_sys.get("ActiveState", "unknown")
+    v31_dao_health = {}
+    v31_dao_total = 0
+    v31_dao_active_proposals = 0
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8456/api/dao/health", timeout=2) as resp:
+            v31_dao_health = json.loads(resp.read().decode())
+    except Exception:
+        pass
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8456/api/dao/proposals", timeout=2) as resp:
+            proposals = json.loads(resp.read().decode())
+            if isinstance(proposals, dict):
+                v31_dao_total = proposals.get("total", 0) or proposals.get("proposals_total", 0)
+                v31_dao_active_proposals = proposals.get("active", 0) or proposals.get("active_proposals", 0)
+    except Exception:
+        pass
+    v31_dao_status = {
+        "running": v31_dao_active == "active",
+        "systemd_active": v31_dao_active,
+        "ok": v31_dao_health.get("success", False) or v31_dao_health.get("ok", False),
+        "proposals_total": v31_dao_total,
+        "proposals_active": v31_dao_active_proposals,
+    }
+    # ── V31 OASIS (PROD) — systemd + /health ───────────────────────────────
+    v31_oasis_sys = _systemctl_show("zion-v31-oasis.service")
+    v31_oasis_active = v31_oasis_sys.get("ActiveState", "unknown")
+    v31_oasis_health = {}
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8094/health", timeout=2) as resp:
+            v31_oasis_health = json.loads(resp.read().decode())
+    except Exception:
+        pass
+    v31_oasis_status = {
+        "running": v31_oasis_active == "active",
+        "systemd_active": v31_oasis_active,
+        "ok": v31_oasis_health.get("success", False) or v31_oasis_health.get("ok", False),
     }
     # ── Local Backup Node — from beacon cache ───────────────────────────────
     # The operator's local machine pushes status via /api/backup-beacon every
@@ -3007,8 +3462,8 @@ def _build_status_edge_primary() -> dict:
                    "fee_humanitarian": 0, "fee_issobella": 0, "fee_pool": 0, "fee_miner_pct": 89,
                    "miner_balances": []}
     try:
-        # Direct Edge pool metrics probe (port 8455)
-        url = f"http://{EDGE_RPC_HOST}:8455/metrics"
+        # Direct Edge pool metrics probe (port V31_POOL_API_PORT)
+        url = f"http://{EDGE_RPC_HOST}:{V31_POOL_API_PORT}/metrics"
         with _urlreq.urlopen(url, timeout=3.0) as r:
             body = r.read().decode("utf-8", errors="ignore")
             for line in body.splitlines():
@@ -3016,7 +3471,7 @@ def _build_status_edge_primary() -> dict:
                     edge_metrics["active_miners"] = int(line.split()[-1])
                 elif line.startswith("zion_pool_total_hashes "):
                     edge_metrics["total_hashes"] = int(line.split()[-1])
-                elif line.startswith("zion_pool_total_shares "):
+                elif line.startswith("zion_pool_shares_accepted "):
                     edge_metrics["total_shares"] = int(line.split()[-1])
                 elif line.startswith("zion_pool_blocks_found ") or line.startswith("zion_pool_blocks_found_total "):
                     edge_metrics["blocks_found"] = int(line.split()[-1])
@@ -3066,11 +3521,11 @@ def _build_status_edge_primary() -> dict:
     # Mark pool as alive if we successfully fetched metrics
     if edge_metrics.get("active_miners") is not None:
         pool_edge_health = {"alive": True}
-    # Fallback: TCP probe to pool metrics port 8455 (NOT stratum port 8444,
+    # Fallback: TCP probe to pool metrics port V31_POOL_API_PORT (NOT stratum port 8444,
     # which would create a spurious session on the pool server).
     if not pool_edge_health["alive"]:
         try:
-            pool_edge_health = {"alive": tcp_probe("127.0.0.1", 8455, timeout=0.5)}
+            pool_edge_health = {"alive": tcp_probe("127.0.0.1", V31_POOL_API_PORT, timeout=0.5)}
         except Exception:
             pool_edge_health = {"alive": False}
 
@@ -3158,6 +3613,7 @@ def _build_status_edge_primary() -> dict:
     for _label, _st, _role, _icon in [
         ("Edge Node 1 (Primary)", edge_node1_status, "primary", "🌍"),
         ("Edge Node 2 (Follower)", edge_node2_status, "follower", "🔶"),
+        ("V31 Node (PROD)", v31_node_status, "primary", "🚀"),
         ("Local Backup Node", local_backup_status, "backup", "💾"),
     ]:
         # Always include all known nodes — even offline ones — so the overview
@@ -3218,14 +3674,23 @@ def _build_status_edge_primary() -> dict:
     max_height = max(running_heights) if running_heights else 0
     all_in_sync = len(running_heights) >= 2 and all(h == running_heights[0] for h in running_heights)
 
+    v31_banner = _compute_v31_banner_metrics(pool_status, v31_multichain_status, v31_node_status, v31_dao_status, v31_oasis_status)
+
     elapsed = time.time() - t0
     return {
         "timestamp": datetime.now().isoformat(),
         "topology": "edge-primary",
+        "v31_banner": v31_banner,
         "node1": n1,
         "node2": {"running": False, "chain_height": None, "tip_hash": None, "known_peers": 0, "mempool_size": 0},
         "edge_node": edge_node1_status,
         "edge_node2": edge_node2_status,
+        "v31_node": v31_node_status,
+        "v31_pool": v31_pool_status,
+        "v31_miner": v31_miner_status,
+        "v31_multichain": v31_multichain_status,
+        "v31_dao": v31_dao_status,
+        "v31_oasis": v31_oasis_status,
         "local_backup": local_backup_status,
         "all_nodes": all_nodes,
         "p2p_peers": p2p_peer_list,
@@ -3376,6 +3841,20 @@ def _build_status_local_dev() -> dict:
     return {
         "timestamp": datetime.now().isoformat(),
         "topology": "local-dev",
+        "v31_banner": {
+            "height": n1.get("chain_height"),
+            "sync_lag": None,
+            "node_running": n1.get("running", False),
+            "node_reachable": n1.get("running", False),
+            "pool_hashrate_hps": pool_status.get("hashrate_khs") and float(pool_status["hashrate_khs"]) * 1000.0 or None,
+            "shares_per_sec": None,
+            "pool_total_shares": pool_status.get("total_shares"),
+            "multichain_ok": False,
+            "multichain_transfers_total": 0,
+            "multichain_transfers_pending": 0,
+            "dao_proposals_total": 0,
+            "dao_proposals_active": 0,
+        },
         "node1": n1,
         "node2": n2,
         "edge_node": {
@@ -3441,19 +3920,26 @@ def build_checklist(status: dict) -> dict:
         pass
 
     if topology == "edge-primary":
+        v31_node = status.get("v31_node", {})
+        v31_pool = status.get("v31_pool", {})
+        v31_miner = status.get("v31_miner", {})
+        chain_height = v31_node.get("chain_height") or status["edge_node"].get("chain_height")
         checks = [
             {"id": "keys",       "label": "Offline key generation complete",          "ok": True},
             {"id": "env",        "label": "Env file assembled (.env.mainnet)",        "ok": True},
-            {"id": "edge-node1", "label": "Edge Node 1 (Primary) running & reachable", "ok": status["edge_node"]["running"] and status["edge_node"]["chain_height"] is not None},
-            {"id": "edge-node2", "label": "Edge Node 2 (Follower) running & synced",  "ok": status.get("edge_node2", {}).get("running", False) and status.get("edge_node2", {}).get("known_peers", 0) > 0},
+            {"id": "v31-node",   "label": "V31 Alpha Node running & synced (P2P)",     "ok": v31_node.get("running", False) and v31_node.get("chain_height") is not None},
+            {"id": "v31-pool",   "label": "V31 Pool running & accepting miners",       "ok": v31_pool.get("running", False)},
+            {"id": "v31-miner",  "label": "V31 Miner running",                         "ok": v31_miner.get("running", False)},
             {"id": "local-backup", "label": "Local Backup Node running & synced",      "ok": status.get("local_backup", {}).get("running", False) and status.get("local_backup", {}).get("known_peers", 0) > 0},
             {"id": "pool",       "label": "Edge Pool running & accepting miners",     "ok": status["pool"]["running"] and status["pool"]["active_sessions"] is not None},
             {"id": "pool-edge",  "label": "Edge Pool TCP reachable",                  "ok": status.get("pool_edge", {}).get("running", False)},
-            {"id": "chain",      "label": "Chain height advancing",                   "ok": status["edge_node"]["chain_height"] is not None and status["edge_node"]["chain_height"] > 0},
+            {"id": "chain",      "label": "Chain height advancing",                   "ok": chain_height is not None and chain_height > 0},
             {"id": "payout",     "label": "Payout mechanism ready (fee split active)", "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/1"},
             {"id": "fee_split",  "label": "Fee split 89/5/5/1 (burn model) active",    "ok": status["pool"]["fee_split"] == "89/5/5/1"},
             {"id": "logs",       "label": "Log directory writable",                   "ok": LOG_DIR.exists()},
-            # Optional local services (not counted in score, shown for info)
+            # Optional / archived V3 services
+            {"id": "edge-node1", "label": "Edge Node 1 (V3 archived)",                "ok": status["edge_node"]["running"] and status["edge_node"]["chain_height"] is not None},
+            {"id": "edge-node2", "label": "Edge Node 2 (V3 archived)",                "ok": status.get("edge_node2", {}).get("running", False) and status.get("edge_node2", {}).get("known_peers", 0) > 0},
             {"id": "node1",      "label": "Local Backup Node P2P synced",             "ok": status.get("local_backup", {}).get("running", False) and status.get("local_backup", {}).get("known_peers", 0) > 0},
             {"id": "miner",      "label": "Local GPU miner (optional)",               "ok": True},
             {"id": "edge-backup","label": "Edge database auto-backup (optional)",     "ok": edge_backup_ok},
@@ -3491,13 +3977,16 @@ LAYER_WEIGHTS = {
 }
 
 SERVICE_WEIGHTS = {
-    # Edge-primary topology weights
-    "edge-node": 20, "node1": 10, "pool-edge": 10, "miner": 10,
+    # Edge-primary topology weights — V31 is production
+    "v31-node": 20, "v31-pool": 10, "v31-miner": 10,
+    "v31-multichain": 8, "v31-dao": 5, "v31-oasis": 3,
+    # Legacy V3 services (archived, contribute 0)
+    "edge-node": 0, "node1": 0, "pool-edge": 0, "miner": 0,
     # Local-dev topology weights (node1 becomes primary)
     "pool": 10,
-    # Common L2-L6 weights
-    "bridge": 8, "dao": 8, "atomic-swap": 5, "dex": 4, "warp": 4,
-    "ai-native": 5, "hiranyagarbha": 3, "ncl": 2, "oasis": 3, "free-world": 2, "issobella": 2,
+    # Common L2-L6 weights (V3 archived; V31 multichain/dao/oasis above)
+    "bridge": 0, "dao": 0, "atomic-swap": 0, "dex": 0, "warp": 0,
+    "ai-native": 0, "hiranyagarbha": 0, "ncl": 0, "oasis": 0, "free-world": 0, "issobella": 0,
     # Optional/infra
     "node2": 0, "prometheus": 0, "grafana": 0, "dashboard": 0,
 }
@@ -3624,15 +4113,16 @@ def build_alerts(status: dict) -> list:
                        "detail": f"ZION_NONCE_COUNT={pool['nonce_count']} is small. Raise to 4096 for better GPU utilisation.",
                        "action": None})
 
-    # Only alert about local miner if in local-dev topology (edge-primary miner is optional)
-    if topology != "edge-primary" and miner["running"] and not miner["hashrate"]:
-        alerts.append({"severity": _sev("miner", "warning"), "title": "Miner not hashing",
-                       "detail": "Miner is connected but no hashrate samples in recent logs. Check GPU init.",
-                       "action": "restart-miner"})
+    # Miner alerts: use V31 miner in edge-primary, legacy miner in local-dev
+    _miner = status.get("v31_miner") if topology == "edge-primary" else miner
+    if _miner and _miner.get("running") and not _miner.get("hashrate"):
+        alerts.append({"severity": _sev("v31-miner", "warning"), "title": "Miner not hashing",
+                       "detail": "V31 miner is active but no hashrate samples in recent logs. Check CPU/GPU init.",
+                       "action": "restart-v31-miner"})
 
-    if miner["running"] and miner["hashrate"] and miner["hashrate"] < 1.0:
+    if _miner and _miner.get("running") and _miner.get("hashrate") and _miner["hashrate"] < 1.0:
         alerts.append({"severity": "info", "title": "Low hashrate",
-                       "detail": f"Hashrate {miner['hashrate']} KH/s seems low. Expected ~6-10 KH/s on RDNA1.",
+                       "detail": f"Hashrate {_miner['hashrate']} H/s seems low. Expected ~500-950 kH/s on CPU.",
                        "action": None})
 
     if pool["running"] and pool["shares_rejected"] > 0 and pool["shares_accepted"]:
@@ -4426,7 +4916,7 @@ def get_edge_server_status() -> dict:
 
     try:
         # Single command: combine all metrics to avoid multiple calls
-        combined_cmd = "cat /proc/loadavg && free -m && df -h / | tail -1 && echo '===TOP===' && ps -eo rss,comm --sort=-rss | head -6 | tail -5 && echo '===SVC===' && systemctl is-active zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-dao zion-edge-warp zion-edge-bridge zion-edge-atomic-swap nginx 2>/dev/null"
+        combined_cmd = "cat /proc/loadavg && free -m && df -h / | tail -1 && echo '===TOP===' && ps -eo rss,comm --sort=-rss | head -6 | tail -5 && echo '===SVC===' && systemctl is-active zion-v31-node zion-v31-pool zion-v31-miner zion-v31-multichain zion-v31-watchdog zion-v31-dao zion-v31-oasis zion-edge-python-dashboard zion-website zion-marketplace nginx 2>/dev/null"
         result = _run_edge_cmd(combined_cmd, timeout=8)
         if result.returncode != 0:
             return {"ok": False, "error": result.stderr.strip() or "Edge command failed"}
@@ -4481,7 +4971,9 @@ def get_edge_server_status() -> dict:
 
         # Service status
         services = []
-        svc_names = ["node1", "node2", "pool", "dao", "warp", "bridge", "atomic-swap", "nginx"]
+        svc_names = ["v31-node", "v31-pool", "v31-miner", "v31-multichain",
+                     "v31-watchdog", "v31-dao", "v31-oasis", "dashboard",
+                     "website", "marketplace", "nginx"]
         states = svc_part.splitlines() if svc_part else []
         for i, name in enumerate(svc_names):
             if i < len(states):
@@ -4569,6 +5061,18 @@ def run_edge_action(action: str) -> dict:
     ACTION_MAP = {
         "restart-node1":          "sudo systemctl restart zion-node",
         "restart-node2":          "echo 'node2 not deployed on v3.0.4 single-server topology'",
+        "restart-v31-node":       "sudo systemctl restart zion-v31-node.service",
+        "stop-v31-node":          "sudo systemctl stop zion-v31-node.service",
+        "start-v31-node":         "sudo systemctl start zion-v31-node.service",
+        "restart-v31-pool":       "sudo systemctl restart zion-v31-pool.service",
+        "stop-v31-pool":          "sudo systemctl stop zion-v31-pool.service",
+        "start-v31-pool":         "sudo systemctl start zion-v31-pool.service",
+        "restart-v31-miner":      "sudo systemctl restart zion-v31-miner.service",
+        "stop-v31-miner":         "sudo systemctl stop zion-v31-miner.service",
+        "start-v31-miner":        "sudo systemctl start zion-v31-miner.service",
+        "restart-v31-multichain": "sudo systemctl restart zion-v31-multichain.service",
+        "stop-v31-multichain":    "sudo systemctl stop zion-v31-multichain.service",
+        "start-v31-multichain":   "sudo systemctl start zion-v31-multichain.service",
         "restart-pool":           "sudo systemctl restart zion-pool",
         "restart-dao":            "sudo systemctl restart zion-dao",
         "restart-warp":           "sudo systemctl restart zion-warp",
@@ -4576,10 +5080,10 @@ def run_edge_action(action: str) -> dict:
         "restart-hiran":          "sudo systemctl restart zion-hiran-inference 2>/dev/null || echo 'hiran not deployed'",
         "restart-hiranyagarbha":  "sudo systemctl restart zion-hiranyagarbha 2>/dev/null || echo 'hiranyagarbha not deployed'",
         "restart-bridge":         "sudo systemctl restart zion-bridge",
-        "restart-website":        "sudo systemctl restart zion-web-next 2>/dev/null || docker restart zion-web-next 2>/dev/null || echo 'web in maintenance mode'",
+        "restart-website":        "sudo systemctl restart zion-website 2>&1",
         "clean-docker":           "docker builder prune -af 2>&1; docker image prune -af 2>&1; docker container prune -f 2>&1",
         "security-audit":         "echo 'Security audit placeholder — run manually'",
-        "full-health":            "sudo systemctl is-active zion-node zion-pool zion-dao zion-warp zion-bridge nginx 2>&1",
+        "full-health":            "sudo systemctl is-active zion-v31-node zion-v31-pool zion-v31-miner zion-v31-multichain zion-v31-watchdog zion-v31-dao zion-v31-oasis zion-website zion-marketplace nginx 2>&1",
         "memory-limit":           "echo 'Memory limits configured in systemd unit files'",
         # ── Edge maintenance (scripts/edge-maintenance.sh) ───────────────
         # Safe: never touches critical services (node/pool/bridge/dao/warp).
@@ -4721,7 +5225,7 @@ def get_pool_miners() -> dict:
     miners_tracked = 0
     try:
         import urllib.request as _ur
-        with _ur.urlopen(f"http://{EDGE_RPC_HOST}:8455/metrics", timeout=3.0) as r:
+        with _ur.urlopen(f"http://{EDGE_RPC_HOST}:{V31_POOL_API_PORT}/metrics", timeout=3.0) as r:
             for line in r.read().decode("utf-8", errors="ignore").splitlines():
                 line = line.strip()
                 if line.startswith("zion_pool_active_sessions "):
@@ -4941,21 +5445,21 @@ def get_pool_debug_dump() -> dict:
     """Comprehensive pool debug dump — all data needed for diagnostics.
 
     Returns:
-      - raw_metrics: raw Prometheus text from :8455/metrics
+      - raw_metrics: raw Prometheus text from :{V31_POOL_API_PORT}/metrics
       - parsed_metrics: {name: value} dict
-      - stats: JSON from :8455/stats (API routes, auxpow, etc.)
+      - stats: JSON from :{V31_POOL_API_PORT}/stats (API routes, auxpow, etc.)
       - pplns_state: full pplns-state.json dump
       - pool_log_tail: last 100 lines from /opt/zion/pool.log
       - auxpow: auxpow config
       - registered_miners: registered miners summary
       - pool_env: pool-related env vars from edge-environment.sh
-      - revenue_stats: from :8455/api/v1/revenue/stats
-      - revenue_streams: from :8455/api/v1/revenue/streams
+      - revenue_stats: from :{V31_POOL_API_PORT}/api/v1/revenue/stats
+      - revenue_streams: from :{V31_POOL_API_PORT}/api/v1/revenue/streams
       - endpoints: list of available pool API endpoints with status
     """
     import urllib.request as _ur
     host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
-    port = 8455
+    port = V31_POOL_API_PORT
     result = {"ok": True, "ts": int(time.time()), "host": host, "port": port, "sections": {}}
 
     # 1. Raw Prometheus metrics
@@ -5105,7 +5609,7 @@ def get_pool_blocks(limit: int = 100) -> dict:
     """
     import urllib.request as _ur
     host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
-    port = 8455
+    port = V31_POOL_API_PORT
     if limit < 1 or limit > 500:
         limit = 100
     try:
@@ -5840,7 +6344,7 @@ def _fetch_pool_revenue_stats() -> dict:
     host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
     try:
         import urllib.request
-        with urllib.request.urlopen(f"http://{host}:8455/api/v1/revenue/stats", timeout=3) as r:
+        with urllib.request.urlopen(f"http://{host}:{V31_POOL_API_PORT}/api/v1/revenue/stats", timeout=3) as r:
             return json.loads(r.read().decode())
     except Exception:
         return {}
@@ -5849,7 +6353,7 @@ def _fetch_pool_revenue_stats() -> dict:
 def _pool_coin_override_get(stream: str) -> dict:
     """GET current coin override from pool HTTP API. stream='cpu' or 'gpu'."""
     host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
-    port = 8455
+    port = V31_POOL_API_PORT
     try:
         import urllib.request
         with urllib.request.urlopen(f"http://{host}:{port}/api/v1/{stream}-coin", timeout=3) as r:
@@ -5861,7 +6365,7 @@ def _pool_coin_override_get(stream: str) -> dict:
 def _pool_coin_override_set(stream: str, coin: str) -> dict:
     """POST coin override to pool HTTP API. stream='cpu' or 'gpu'. Empty coin clears."""
     host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
-    port = 8455
+    port = V31_POOL_API_PORT
     try:
         import urllib.request
         body = json.dumps({"coin": coin}).encode()
@@ -5882,7 +6386,7 @@ def _fetch_pool_revenue_streams() -> dict:
     host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
     try:
         import urllib.request
-        with urllib.request.urlopen(f"http://{host}:8455/api/v1/revenue/streams", timeout=3) as r:
+        with urllib.request.urlopen(f"http://{host}:{V31_POOL_API_PORT}/api/v1/revenue/streams", timeout=3) as r:
             return json.loads(r.read().decode())
     except Exception:
         return {}
@@ -6852,7 +7356,7 @@ def get_pool_miner_detail(address: str) -> dict:
 
     # Stats
     try:
-        with urllib.request.urlopen(f"http://{host}:8455/api/v1/miner/{address}/stats", timeout=5) as r:
+        with urllib.request.urlopen(f"http://{host}:{V31_POOL_API_PORT}/api/v1/miner/{address}/stats", timeout=5) as r:
             data = json.loads(r.read().decode())
             if data.get("ok"):
                 stats = data.get("stats", {})
@@ -6875,7 +7379,7 @@ def get_pool_miner_detail(address: str) -> dict:
 
     # Payouts
     try:
-        with urllib.request.urlopen(f"http://{host}:8455/api/v1/miner/{address}/payouts", timeout=5) as r:
+        with urllib.request.urlopen(f"http://{host}:{V31_POOL_API_PORT}/api/v1/miner/{address}/payouts", timeout=5) as r:
             data = json.loads(r.read().decode())
             if data.get("ok"):
                 payouts = data.get("pending_payouts", [])
@@ -7078,11 +7582,11 @@ def get_pool_wallet_status() -> dict:
         "shares_rejected": 0,
     }
 
-    # ── Primary: fetch from pool /stats API (port 8455) ──────────────────
+    # ── Primary: fetch from pool /stats API (port V31_POOL_API_PORT) ──────────────────
     host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
     try:
         import urllib.request
-        with urllib.request.urlopen(f"http://{host}:8455/stats", timeout=3) as r:
+        with urllib.request.urlopen(f"http://{host}:{V31_POOL_API_PORT}/stats", timeout=3) as r:
             stats = json.loads(r.read().decode())
         # Blocks, shares, routing from /stats
         blocks = stats.get("blocks", {})
@@ -7150,11 +7654,11 @@ def get_pool_wallet_status() -> dict:
 # ── Payout System Status Builder ─────────────────────────────────────────
 
 def fetch_pool_stats() -> dict:
-    """Fetch live pool stats from routing metrics endpoint (port 8455)."""
+    """Fetch live pool stats from routing metrics endpoint (port V31_POOL_API_PORT)."""
     host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
     try:
         import urllib.request
-        with urllib.request.urlopen(f"http://{host}:8455/stats", timeout=3) as r:
+        with urllib.request.urlopen(f"http://{host}:{V31_POOL_API_PORT}/stats", timeout=3) as r:
             return json.loads(r.read().decode())
     except Exception:
         return {}
@@ -7170,7 +7674,7 @@ def fetch_pool_miners() -> list:
     miners = []
     try:
         import urllib.request
-        with urllib.request.urlopen(f"http://{host}:8455/miners?limit=200", timeout=5) as r:
+        with urllib.request.urlopen(f"http://{host}:{V31_POOL_API_PORT}/miners?limit=200", timeout=5) as r:
             data = json.loads(r.read().decode())
             miners = data.get("miners", [])
     except Exception:
@@ -7186,7 +7690,7 @@ def fetch_pool_miners() -> list:
     paid_map = {}
     try:
         import urllib.request
-        with urllib.request.urlopen(f"http://{host}:8455/metrics", timeout=5) as r:
+        with urllib.request.urlopen(f"http://{host}:{V31_POOL_API_PORT}/metrics", timeout=5) as r:
             for line in r.read().decode("utf-8", errors="ignore").splitlines():
                 if line.startswith("zion_pool_miner_paid_total_atomic{"):
                     miner_id = re.search(r'miner_id="([^"]+)"', line)
@@ -7325,7 +7829,7 @@ def build_payout_status() -> dict:
     edge_host = "127.0.0.1"
     local_rpc_alive = check_port_open("127.0.0.1", 9443, timeout=1.0)
     edge_rpc_alive = check_port_open(edge_host, 9443, timeout=1.5) if is_edge else False
-    edge_stats_alive = check_port_open(edge_host, 8455, timeout=1.5) if is_edge else False
+    edge_stats_alive = check_port_open(edge_host, V31_POOL_API_PORT, timeout=1.5) if is_edge else False
     tailscale_ok = True  # v3.0.4: No Tailscale needed
 
     status["pool_health"] = {
@@ -7636,13 +8140,13 @@ def build_payout_status() -> dict:
 
     # Session stats
     active_sessions = pool_stats.get("miners", {}).get("active", len(miners)) if isinstance(pool_stats.get("miners"), dict) else len(miners)
-    # accept_rate_pct: prefer live Prometheus metrics (port 8455) over pool /stats endpoint
+    # accept_rate_pct: prefer live Prometheus metrics (port V31_POOL_API_PORT) over pool /stats endpoint
     _routing_accept = pool_stats.get("routing", {}).get("accept_rate_pct") if isinstance(pool_stats.get("routing"), dict) else None
     _metrics_accept = None
     try:
         import urllib.request as _ur2
         _mhost = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
-        with _ur2.urlopen(f"http://{_mhost}:8455/metrics", timeout=1.5) as _r:
+        with _ur2.urlopen(f"http://{_mhost}:{V31_POOL_API_PORT}/metrics", timeout=1.5) as _r:
             for _ln in _r.read().decode("utf-8", errors="ignore").splitlines():
                 if _ln.startswith("zion_pool_accept_rate_pct "):
                     _metrics_accept = float(_ln.split()[-1])
@@ -7684,7 +8188,7 @@ def build_payout_status() -> dict:
 
     # If Edge stats are dead, surface a warning
     if is_edge and not edge_stats_alive:
-        status["pool_health"]["error_msg"] = "Edge pool metrics endpoint (8455) unreachable. Stats/miners may be stale."
+        status["pool_health"]["error_msg"] = "Edge pool metrics endpoint (V31_POOL_API_PORT) unreachable. Stats/miners may be stale."
 
     status["ok"] = True
     return status
@@ -7852,7 +8356,7 @@ def get_network_topology() -> dict:
         "ports": {
             "node_p2p": check_port_open("127.0.0.1", 8333),
             "node_rpc": check_port_open("127.0.0.1", 9443),
-            "pool_stratum": check_port_open("127.0.0.1", 8455),  # metrics port, not stratum 8444
+            "pool_stratum": check_port_open("127.0.0.1", V31_POOL_API_PORT),  # metrics port, not stratum 8444
             "dashboard": check_port_open("127.0.0.1", 8766),
             "hiranyagarbha": check_port_open("127.0.0.1", 8001),
             "hiran_inference": check_port_open("127.0.0.1", 8002),
@@ -8519,2400 +9023,8 @@ def background_sampler():
             print(f"[sampler] error: {e}", file=sys.stderr)
         time.sleep(5)
 
-# ── HTML Dashboard (embedded) ───────────────────────────────────────────
-
-HTML_DASHBOARD = """<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ZION V3 — Mainnet Launch Dashboard</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script>
-tailwind.config={theme:{extend:{colors:{zion:{900:'#0a0f1e',800:'#131a2e',700:'#1f2942',600:'#2d3756',accent:'#f59e0b',success:'#10b981',danger:'#ef4444'}}}}};
-</script>
-<style>
-@keyframes pulse-glow{0%,100%{box-shadow:0 0 5px rgba(16,185,129,0.3)}50%{box-shadow:0 0 20px rgba(16,185,129,0.7)}}
-@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
-@keyframes slide-in{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
-.card-live{animation:pulse-glow 3s infinite}
-.shimmer{background:linear-gradient(90deg,transparent 0%,rgba(245,158,11,0.1) 50%,transparent 100%);background-size:200% 100%;animation:shimmer 2s infinite}
-.alert-new{animation:slide-in 0.3s ease-out}
-.log-tail{font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.5}
-.tab-active{background:rgba(245,158,11,0.15);border-color:#f59e0b;color:#fbbf24}
-::-webkit-scrollbar{width:6px;height:6px}
-::-webkit-scrollbar-thumb{background:#334155;border-radius:3px}
-::-webkit-scrollbar-thumb:hover{background:#475569}
-.tooltip{position:relative}
-.tooltip:hover .tip{visibility:visible;opacity:1}
-.tip{visibility:hidden;opacity:0;position:absolute;bottom:120%;left:50%;transform:translateX(-50%);background:#0a0f1e;border:1px solid #2d3756;padding:6px 10px;border-radius:6px;font-size:11px;white-space:nowrap;z-index:50;transition:opacity 0.2s}
-/* NCL Panel styles */
-.ncl-tab-active{background:rgba(124,58,237,0.2);color:#c4b5fd;border:1px solid rgba(124,58,237,0.3)}
-@keyframes ncl-pulse{0%,100%{box-shadow:0 0 4px rgba(16,185,129,0.3)}50%{box-shadow:0 0 12px rgba(16,185,129,0.7)}}
-.ncl-dot-live{background:#10b981;animation:ncl-pulse 2s infinite}
-.ncl-dot-offline{background:#ef4444}
-.ncl-worker-card{transition:all 0.2s}
-.ncl-worker-card:hover{background:rgba(255,255,255,0.03)}
-.ncl-rank-gold{background:linear-gradient(135deg,#f59e0b,#d97706);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.ncl-rank-silver{background:linear-gradient(135deg,#9ca3af,#6b7280);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.ncl-rank-bronze{background:linear-gradient(135deg,#d97706,#92400e);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.ncl-job-status{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:9999px;font-size:10px;font-weight:600}
-.ncl-job-queued{background:rgba(245,158,11,0.15);color:#fbbf24}
-.ncl-job-running{background:rgba(59,130,246,0.15);color:#60a5fa}
-.ncl-job-completed{background:rgba(16,185,129,0.15);color:#34d399}
-.ncl-job-failed{background:rgba(239,68,68,0.15);color:#f87171}
-input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;border-radius:50%;background:#7c3aed;cursor:pointer;box-shadow:0 0 6px rgba(124,58,237,0.5)}
-</style>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-</head>
-<body class="bg-zion-900 text-gray-100 min-h-screen" style="font-family:'Inter',sans-serif">
-<div class="max-w-[1600px] mx-auto p-4">
-
-  <!-- Header -->
-  <header class="flex items-center justify-between mb-4">
-    <div class="flex items-center gap-3">
-      <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 via-orange-500 to-red-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">Z</div>
-      <div>
-        <h1 class="text-2xl font-bold tracking-tight">ZION V3 <span class="text-amber-400">Mainnet Launch</span> <span class="text-xs font-normal text-gray-500 ml-2">Dashboard 2.0</span></h1>
-        <p class="text-xs text-gray-400" id="timestamp">Loading…</p>
-      </div>
-    </div>
-    <div class="flex gap-2 items-center">
-      <span id="alertCount" class="hidden px-3 py-1 bg-red-600 rounded-full text-xs font-bold animate-pulse">0</span>
-      <button onclick="toggleFriendly()" id="friendlyBtn" class="px-3 py-2 bg-zion-700 hover:bg-zion-600 rounded-lg text-sm font-medium transition" title="Toggle kid-friendly explanations">🧒 Kid Mode</button>
-      <button onclick="refreshAll()" class="px-3 py-2 bg-zion-700 hover:bg-zion-600 rounded-lg text-sm font-medium transition" title="Manual refresh">🔄</button>
-      <button onclick="toggleAuto()" id="autoBtn" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-medium transition">⚡ Auto</button>
-    </div>
-  </header>
-
-  <!-- Tabs -->
-  <div class="flex gap-1 mb-4 border-b border-zion-700 overflow-x-auto">
-    <button onclick="switchTab('overview')" id="tab-overview" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition tab-active">📊 Overview</button>
-    <button onclick="switchTab('controls')" id="tab-controls" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">🎛️ Controls</button>
-    <button onclick="switchTab('charts')" id="tab-charts" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">📈 Charts</button>
-    <button onclick="switchTab('events')" id="tab-events" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">🧱 Events</button>
-    <button onclick="switchTab('env')" id="tab-env" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">⚙️ Env</button>
-    <button onclick="switchTab('launch-day')" id="tab-launch-day" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">🚀 Launch Day</button>
-    <button onclick="switchTab('wizard')" id="tab-wizard" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">🧙 Wizard</button>
-    <button onclick="switchTab('services')" id="tab-services" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">🧩 Services</button>
-    <button onclick="switchTab('database')" id="tab-database" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">🗄️ Database</button>
-    <button onclick="switchTab('metrics')" id="tab-metrics" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">📊 Metrics</button>
-    <button onclick="switchTab('logs')" id="tab-logs" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">📜 Logs</button>
-    <button onclick="switchTab('hiran')" id="tab-hiran" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">🤖 Hiran AI</button>
-    <button onclick="switchTab('payout')" id="tab-payout" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">💰 Payout</button>
-  </div>
-
-  <!-- Progress -->
-  <div class="bg-zion-800 rounded-xl p-4 mb-4 border border-zion-700">
-    <div class="flex items-center justify-between mb-2">
-      <span class="text-sm font-medium text-gray-300 flex items-center gap-2">🎯 Launch Readiness <span class="tooltip text-gray-500">ⓘ<span class="tip">10 auto-detected checks based on log analysis</span></span></span>
-      <span class="text-sm font-bold text-amber-400" id="progressText">0/0</span>
-    </div>
-    <div class="w-full h-3 bg-zion-700 rounded-full overflow-hidden">
-      <div id="progressBar" class="h-full bg-gradient-to-r from-emerald-500 via-yellow-500 to-amber-400 rounded-full transition-all duration-700 shimmer" style="width:0%"></div>
-    </div>
-  </div>
-
-  <!-- TAB: Overview -->
-  <div id="pane-overview" class="space-y-4">
-
-    <!-- Service Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div id="card-edge-node" class="bg-zion-800 rounded-xl p-4 border border-zion-700 transition">
-        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-gray-400">🌍 Edge Node (Primary)</span><span id="badge-edge-node" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
-        <div class="text-3xl font-bold mb-1 text-amber-400" id="val-edge-node-height">—</div><div class="text-xs text-gray-400 mb-2">Chain Height</div>
-        <div class="text-xs font-mono text-gray-300 truncate mb-1" id="val-edge-node-hash">—</div>
-        <div class="text-xs text-gray-400 mb-1">Peers: <span id="val-edge-node-peers" class="text-white font-bold">—</span></div>
-        <div class="text-xs text-gray-400 mb-2">Host: <span id="val-edge-node-host" class="font-mono">127.0.0.1</span></div>
-        <div class="flex gap-1 mt-2">
-          <button onclick="window.open('http://127.0.0.1:9443/jsonrpc','_blank')" class="flex-1 text-xs px-2 py-1 bg-zinc-700 hover:bg-zinc-600 rounded transition">🔗 RPC</button>
-        </div>
-      </div>
-
-      <div id="card-node1" class="bg-zion-800 rounded-xl p-4 border border-zion-700 transition">
-        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-gray-400">🔷 Local Backup Node</span><span id="badge-node1" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
-        <div class="text-3xl font-bold mb-1 text-amber-400" id="val-node1-height">—</div><div class="text-xs text-gray-400 mb-2">Chain Height</div>
-        <div class="text-xs font-mono text-gray-300 truncate mb-1" id="val-node1-id">—</div>
-        <div class="text-xs text-gray-400 mb-1">Peers: <span id="val-node1-peers" class="text-white font-bold">—</span></div>
-        <div class="text-xs text-gray-400 mb-1">P2P: <span id="val-node1-p2p" class="font-mono">—</span></div>
-        <div class="text-xs text-gray-400 mb-2">Sync: <span id="val-node1-sync" class="text-amber-400">—</span></div>
-        <div class="flex gap-1 mt-2">
-          <button onclick="controlAction('start-node1')" class="flex-1 text-xs px-2 py-1 bg-emerald-700 hover:bg-emerald-600 rounded transition">▶ Start</button>
-          <button onclick="controlAction('restart-node1')" class="flex-1 text-xs px-2 py-1 bg-amber-700 hover:bg-amber-600 rounded transition">⟳ Restart</button>
-          <button onclick="copyToClipboard('zion node1')" class="text-xs px-2 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">📋</button>
-        </div>
-      </div>
-
-      <div id="card-node2" class="bg-zion-800 rounded-xl p-4 border border-zion-700 transition">
-        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-gray-400">🔶 Node 2 (Dev / Optional)</span><span id="badge-node2" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
-        <div class="text-3xl font-bold mb-1 text-amber-400" id="val-node2-height">—</div><div class="text-xs text-gray-400 mb-2">Chain Height</div>
-        <div class="text-xs font-mono text-gray-300 truncate mb-1" id="val-node2-id">—</div>
-        <div class="text-xs text-gray-400 mb-1">Peers: <span id="val-node2-peers" class="text-white font-bold">—</span></div>
-        <div class="text-xs text-gray-400 mb-2">Sync: <span id="val-node2-sync">—</span></div>
-        <div class="flex gap-1 mt-2">
-          <button onclick="controlAction('start-node2')" class="flex-1 text-xs px-2 py-1 bg-emerald-700 hover:bg-emerald-600 rounded transition">▶ Start</button>
-          <button onclick="controlAction('restart-node2')" class="flex-1 text-xs px-2 py-1 bg-amber-700 hover:bg-amber-600 rounded transition">⟳ Restart</button>
-        </div>
-      </div>
-
-      <div id="card-pool" class="bg-zion-800 rounded-xl p-4 border border-zion-700 transition">
-        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-gray-400">🌐 Edge Pool (Primary)</span><span id="badge-pool" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
-        <div class="text-3xl font-bold mb-1 text-emerald-400" id="val-pool-sessions">—</div><div class="text-xs text-gray-400 mb-2">Active Sessions</div>
-        <div class="text-xs text-gray-400 mb-1">Blocks: <span id="val-pool-blocks" class="text-emerald-400 font-bold">—</span></div>
-        <div class="text-xs text-gray-400 mb-1">Shares: <span id="val-pool-shares" class="text-white">—</span></div>
-        <div class="text-xs text-amber-400 mb-2" id="val-pool-fee">—</div>
-        <div class="flex gap-1 mt-2">
-          <button onclick="window.open('http://62.171.141.136:8444','_blank')" class="flex-1 text-xs px-2 py-1 bg-zinc-700 hover:bg-zinc-600 rounded transition">🔗 Public</button>
-        </div>
-      </div>
-
-      <div id="card-miner" class="bg-zion-800 rounded-xl p-4 border border-zion-700 transition">
-        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-gray-400">⛏️ GPU Miner</span><span id="badge-miner" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
-        <div class="text-3xl font-bold mb-1 text-amber-400" id="val-miner-hashrate">—</div><div class="text-xs text-gray-400 mb-2">KH/s (10s avg)</div>
-        <div class="text-xs text-gray-400 mb-1">Device: <span id="val-miner-gpu" class="text-white text-[10px]">—</span></div>
-        <div class="text-xs text-gray-400 mb-1">Height: <span id="val-miner-height" class="text-white">—</span></div>
-        <div class="text-xs text-gray-400 mb-2">Diff: <span id="val-miner-diff">—</span></div>
-        <div class="flex gap-1 mt-2">
-          <button onclick="controlAction('start-miner-gpu')" class="flex-1 text-xs px-2 py-1 bg-purple-700 hover:bg-purple-600 rounded transition">🎮 GPU</button>
-          <button onclick="controlAction('start-miner-cpu')" class="flex-1 text-xs px-2 py-1 bg-blue-700 hover:bg-blue-600 rounded transition">💻 CPU</button>
-          <button onclick="controlAction('stop-miner')" class="flex-1 text-xs px-2 py-1 bg-red-700 hover:bg-red-600 rounded transition">⏹ Stop</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Mainnet Readiness Status -->
-    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 flex items-center gap-2">🚀 Mainnet Readiness Status</h2>
-        <button onclick="loadMainnetStatus()" class="text-xs px-2 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">🔄 Refresh</button>
-      </div>
-      <div id="mainnet-status-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-        <!-- Dynamically populated by JavaScript -->
-        <div class="text-gray-500 text-xs italic">Loading mainnet status...</div>
-      </div>
-    </div>
-
-    <!-- Edge Maintenance (disk + RAM optimization) -->
-    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 flex items-center gap-2">
-          🧹 Edge Maintenance
-          <span class="tooltip text-gray-500">ⓘ<span class="tip">Reclaims disk (docker prune, apt clean, journal vacuum, old logs) and optimizes RAM (drop_caches). Safe — never touches critical services. Runs daily at 04:17 UTC via zion-edge-maintenance.timer.</span></span>
-        </h2>
-        <div class="flex items-center gap-2">
-          <span id="maint-status-badge" class="text-xs px-2 py-0.5 rounded bg-zion-700 text-gray-300">—</span>
-          <button onclick="loadMaintStatus()" class="text-xs px-2 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">🔄 Status</button>
-        </div>
-      </div>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-        <div class="bg-zion-900/60 rounded-lg p-2 border border-zion-700">
-          <div class="text-xs text-gray-400">Disk Used</div>
-          <div class="text-lg font-bold text-amber-400" id="maint-disk-pct">—</div>
-          <div class="text-[10px] text-gray-500" id="maint-disk-free">— GB free</div>
-        </div>
-        <div class="bg-zion-900/60 rounded-lg p-2 border border-zion-700">
-          <div class="text-xs text-gray-400">RAM Used</div>
-          <div class="text-lg font-bold text-amber-400" id="maint-ram-pct">—</div>
-          <div class="text-[10px] text-gray-500" id="maint-ram-avail">— GB avail</div>
-        </div>
-        <div class="bg-zion-900/60 rounded-lg p-2 border border-zion-700">
-          <div class="text-xs text-gray-400">Journal</div>
-          <div class="text-lg font-bold text-emerald-400" id="maint-journal">—</div>
-          <div class="text-[10px] text-gray-500">cap 200M</div>
-        </div>
-        <div class="bg-zion-900/60 rounded-lg p-2 border border-zion-700">
-          <div class="text-xs text-gray-400">Next Auto-Run</div>
-          <div class="text-sm font-bold text-emerald-400" id="maint-next-run">—</div>
-          <div class="text-[10px] text-gray-500">04:17 UTC daily</div>
-        </div>
-      </div>
-      <div class="flex flex-wrap gap-2 mb-3">
-        <button onclick="runMaintenance('maint-dry-run')" class="text-xs px-3 py-1.5 bg-zinc-700 hover:bg-zinc-600 rounded-lg transition font-medium">👁️ Dry Run</button>
-        <button onclick="runMaintenance('maint-disk')" class="text-xs px-3 py-1.5 bg-blue-700 hover:bg-blue-600 rounded-lg transition font-medium">💾 Clean Disk</button>
-        <button onclick="runMaintenance('maint-ram')" class="text-xs px-3 py-1.5 bg-purple-700 hover:bg-purple-600 rounded-lg transition font-medium">🧠 Optimize RAM</button>
-        <button onclick="runMaintenance('maint-all')" class="text-xs px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 rounded-lg transition font-medium">🧹 Full Maintenance</button>
-        <span class="text-[10px] text-gray-500 self-center">Actions run with --force; may take 1–5 min</span>
-      </div>
-      <div id="maint-log" class="bg-black/40 rounded-lg p-3 max-h-48 overflow-y-auto log-tail text-[11px] font-mono text-gray-400 border border-zion-700">
-        <div class="text-gray-600 italic">Maintenance log will appear here…</div>
-      </div>
-    </div>
-
-    <!-- Alerts + Checklist -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700 lg:col-span-2">
-        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3 flex items-center gap-2">🚨 Alerts &amp; Recommendations <span id="alertBadge" class="text-xs px-2 py-0.5 rounded bg-red-600/30 text-red-300">—</span></h2>
-        <div id="alerts" class="space-y-2 max-h-72 overflow-y-auto"></div>
-      </div>
-      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">✅ Launch Checklist</h2>
-        <div id="checklist" class="space-y-2"></div>
-      </div>
-    </div>
-
-    <!-- Mini Hashrate Sparkline + Payouts -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-        <div class="flex items-center justify-between mb-2">
-          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">📈 Hashrate Trend</h2>
-          <span class="text-xs text-gray-500" id="hashrate-summary">—</span>
-        </div>
-        <canvas id="mini-hashrate" height="80"></canvas>
-      </div>
-      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">💰 Payouts &amp; Distribution</h2>
-        <div class="space-y-1.5">
-          <div class="flex justify-between text-xs"><span class="text-gray-400">Pool Wallet</span><span id="payout-wallet" class="font-mono text-white truncate max-w-[260px]">—</span></div>
-          <div class="flex justify-between text-xs"><span class="text-gray-400">Payout Enabled</span><span id="payout-enabled" class="font-bold">—</span></div>
-          <div class="flex justify-between text-xs"><span class="text-gray-400">Fee Split</span><span id="payout-split" class="text-amber-400 font-mono">—</span></div>
-          <div class="flex justify-between text-xs"><span class="text-gray-400">Blocks Found</span><span id="payout-blocks" class="text-emerald-400 font-bold">—</span></div>
-          <div class="flex justify-between text-xs"><span class="text-gray-400">Nonce Window</span><span id="payout-nonce" class="text-white">—</span></div>
-        </div>
-        <div id="payout-recent" class="mt-3 space-y-1 max-h-24 overflow-y-auto log-tail text-gray-400 border-t border-zion-700 pt-2"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB: Controls -->
-  <div id="pane-controls" class="hidden space-y-4">
-    <div class="bg-zion-800 rounded-xl p-6 border border-zion-700">
-      <h2 class="text-lg font-bold mb-4 flex items-center gap-2">🎛️ Stack Control Center</h2>
-      <p class="text-sm text-gray-400 mb-6">Launch and manage the full ZION mainnet stack. All actions execute PowerShell scripts in <code class="text-amber-400">scripts/</code> via detached processes.</p>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <button id="btn-launch-stack" onclick="controlAction('launch-stack')" class="group p-6 bg-gradient-to-br from-emerald-700 to-emerald-900 hover:from-emerald-600 hover:to-emerald-800 rounded-xl text-left transition shadow-lg">
-          <div class="text-3xl mb-2">🚀</div>
-          <div class="text-lg font-bold mb-1">Launch Full Stack</div>
-          <div class="text-xs text-emerald-200 opacity-80">Starts Node1 + Node2 + Pool + Miner with logging</div>
-        </button>
-        <button id="btn-launch-local-backup" onclick="controlAction('launch-local-backup')" class="group p-6 bg-gradient-to-br from-emerald-700 to-emerald-900 hover:from-emerald-600 hover:to-emerald-800 rounded-xl text-left transition shadow-lg" style="display:none">
-          <div class="text-3xl mb-2">🌐</div>
-          <div class="text-lg font-bold mb-1">Launch Local Backup</div>
-          <div class="text-xs text-emerald-200 opacity-80">Starts Backup Node + GPU Miner (Edge-primary topology)</div>
-        </button>
-        <button onclick="if(confirm('Stop all ZION processes?')) controlAction('stop-stack')" class="group p-6 bg-gradient-to-br from-red-700 to-red-900 hover:from-red-600 hover:to-red-800 rounded-xl text-left transition shadow-lg">
-          <div class="text-3xl mb-2">⏹️</div>
-          <div class="text-lg font-bold mb-1">Stop All Services</div>
-          <div class="text-xs text-red-200 opacity-80">Gracefully terminates node, pool, and miner processes</div>
-        </button>
-      </div>
-
-      <h3 class="text-sm font-bold uppercase tracking-wider text-gray-400 mb-3">Individual Service Controls</h3>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="control-buttons">
-        <!-- populated by JS -->
-      </div>
-
-      <div id="control-log" class="mt-6 bg-zion-900 rounded-lg p-3 max-h-40 overflow-y-auto log-tail">
-        <div class="text-gray-500 italic">Control actions will be logged here.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB: Charts -->
-  <div id="pane-charts" class="hidden space-y-4">
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">Hashrate (KH/s)</h2>
-        <canvas id="chart-hashrate" height="160"></canvas>
-      </div>
-      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">Chain Height Progression</h2>
-        <canvas id="chart-height" height="160"></canvas>
-      </div>
-      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">Shares Accepted / Rejected</h2>
-        <canvas id="chart-shares" height="160"></canvas>
-      </div>
-      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">Active Sessions &amp; Peers</h2>
-        <canvas id="chart-sessions" height="160"></canvas>
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB: Events -->
-  <div id="pane-events" class="hidden">
-    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-      <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3 flex items-center gap-2">🧱 Block &amp; Network Events <span class="text-xs text-gray-500">(latest first)</span></h2>
-      <div id="events-feed" class="space-y-2 max-h-[600px] overflow-y-auto"></div>
-    </div>
-  </div>
-
-  <!-- TAB: Env -->
-  <div id="pane-env" class="hidden space-y-4">
-    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-      <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">⚙️ Environment Files</h2>
-      <div class="flex flex-wrap gap-2 mb-4" id="env-file-list"></div>
-      <div id="env-detail" class="bg-zion-900 rounded-lg p-3 max-h-[500px] overflow-y-auto">
-        <div class="text-gray-500 italic text-sm">Select a .env file above to inspect required variables &amp; sensitive value redaction.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB: Launch Day -->
-  <div id="pane-launch-day" class="hidden space-y-4">
-    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-lg font-bold flex items-center gap-2">🚀 Launch Day Automation <span class="text-xs font-normal text-gray-500">(31.12.2026 12:00 UTC)</span></h2>
-        <span id="launch-day-badge" class="px-3 py-1 rounded text-xs font-bold bg-zion-700 text-gray-300">Checking...</span>
-      </div>
-      <p class="text-xs text-gray-400 mb-4">Automated genesis rotation, premine rotation, and local backup for mainnet launch. All changes are saved to local PC.</p>
-      
-      <!-- Launch Day Status -->
-      <div id="launch-day-status" class="bg-zion-900 rounded-lg p-4 mb-4">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="text-center">
-            <div class="text-2xl font-bold text-amber-400" id="ld-days">—</div>
-            <div class="text-xs text-gray-400">Days to Launch</div>
-          </div>
-          <div class="text-center">
-            <div class="text-2xl font-bold text-emerald-400" id="ld-backup">—</div>
-            <div class="text-xs text-gray-400">Backup Status</div>
-          </div>
-          <div class="text-center">
-            <div class="text-2xl font-bold text-blue-400" id="ld-genesis">—</div>
-            <div class="text-xs text-gray-400">Genesis Hash</div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Launch Day Actions -->
-      <div class="space-y-3">
-        <div class="flex gap-2 flex-wrap">
-          <button onclick="launchDayAction('status')" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-bold transition">📊 Check Status</button>
-          <button onclick="launchDayAction('backup')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-bold transition">💾 Create Backup</button>
-          <button onclick="confirmLaunchDay()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 rounded-lg text-sm font-bold transition">🔄 Rotate Genesis</button>
-          <button onclick="launchDaySequence()" class="px-4 py-2 bg-red-600 hover:bg-red-500 rounded-lg text-sm font-bold transition">🚀 Full Launch Sequence</button>
-        </div>
-      </div>
-      
-      <!-- Launch Day Log -->
-      <div class="mt-4">
-        <h3 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-2">📜 Launch Day Log</h3>
-        <div id="launch-day-log" class="bg-zion-900 rounded-lg p-3 h-48 overflow-y-auto log-tail text-xs text-gray-400">
-          <div class="italic">Launch day log will appear here...</div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Backup Details -->
-    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-      <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">💾 Local Backup Details</h2>
-      <div id="backup-details" class="text-xs text-gray-400">
-        <div class="italic">Create a backup to see details...</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB: Wizard -->
-  <div id="pane-wizard" class="hidden">
-    <div class="bg-zion-800 rounded-xl p-6 border border-zion-700">
-      <h2 class="text-xl font-bold mb-2 flex items-center gap-2">🧙 Mainnet Launch Wizard</h2>
-      <p class="text-sm text-gray-400 mb-6">Step-by-step guided launch sequence. Each step shows current status and provides quick actions.</p>
-      <div id="wizard-steps" class="space-y-3"></div>
-    </div>
-  </div>
-
-  <!-- TAB: Services -->
-  <div id="pane-services" class="hidden space-y-4">
-    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-lg font-bold flex items-center gap-2">🧩 All Mainnet Services <span class="text-xs text-gray-500 font-normal">(L1 Consensus · L2 Bridge/DAO · L3 Advanced · L4 Apps · Infra)</span></h2>
-        <div class="flex gap-2">
-          <button onclick="controlAction('launch-full')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-bold transition">🚀 Launch ALL</button>
-          <button onclick="if(confirm('Stop everything?')) controlAction('stop-all')" class="px-3 py-1.5 bg-red-600 hover:bg-red-500 rounded-lg text-xs font-bold transition">⏹ Stop ALL</button>
-        </div>
-      </div>
-      <p class="text-xs text-gray-400 mb-4">Auto-discovered from service registry. Status = TCP port probe + log file activity. Click a service for details.</p>
-      <div id="services-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"></div>
-    </div>
-  </div>
-
-  <!-- TAB: Database -->
-  <div id="pane-database" class="hidden space-y-4">
-    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-      <h2 class="text-lg font-bold mb-2 flex items-center gap-2">🗄️ Database Explorer</h2>
-      <p class="text-xs text-gray-400 mb-4">Read-only inspector for all ZION state databases (SQLite + JSON state files). Whitelisted paths only.</p>
-      <div id="db-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4"></div>
-      <div id="db-detail" class="bg-zion-900 rounded-lg p-4 min-h-[300px] max-h-[600px] overflow-auto">
-        <div class="text-gray-500 italic text-sm">Select a database above to inspect its contents.</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB: Metrics -->
-  <div id="pane-metrics" class="hidden space-y-4">
-    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-      <h2 class="text-lg font-bold mb-2 flex items-center gap-2">📊 Prometheus Metrics &amp; Grafana</h2>
-      <p class="text-xs text-gray-400 mb-4">Live scraped metrics from each service. Or open the full Grafana dashboard below.</p>
-      <div class="flex gap-2 mb-4 flex-wrap" id="metrics-buttons"></div>
-      <div id="metrics-detail" class="bg-zion-900 rounded-lg p-3 max-h-72 overflow-auto log-tail">
-        <div class="text-gray-500 italic">Click a service above to scrape its /metrics endpoint.</div>
-      </div>
-      <div class="mt-6">
-        <div class="flex items-center justify-between mb-2">
-          <h3 class="text-sm font-bold uppercase tracking-wider text-gray-300">Pool Metrics Endpoint</h3>
-          <div class="flex gap-2">
-            <a href="http://127.0.0.1:8455" target="_blank" class="text-xs px-3 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">Open Pool Metrics ↗</a>
-          </div>
-        </div>
-        <div class="text-center text-gray-500 text-sm py-12">
-          Pool metrics available at <a href="http://127.0.0.1:8455" target="_blank" class="text-teal-400 underline">127.0.0.1:8455/metrics</a> — Prometheus exposition format, no external Grafana needed.
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB: Logs -->
-  <div id="pane-logs" class="hidden">
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-        <div class="flex items-center justify-between mb-2"><h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">Node 1 Log</h2><button onclick="loadLogs('node1')" class="text-xs text-gray-400 hover:text-white">🔄</button></div>
-        <pre id="log-node1" class="log-tail bg-zion-900 rounded-lg p-3 h-72 overflow-y-auto text-gray-300"></pre>
-      </div>
-      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-        <div class="flex items-center justify-between mb-2"><h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">Node 2 Log</h2><button onclick="loadLogs('node2')" class="text-xs text-gray-400 hover:text-white">🔄</button></div>
-        <pre id="log-node2" class="log-tail bg-zion-900 rounded-lg p-3 h-72 overflow-y-auto text-gray-300"></pre>
-      </div>
-      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-        <div class="flex items-center justify-between mb-2"><h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">Pool Log</h2><button onclick="loadLogs('pool')" class="text-xs text-gray-400 hover:text-white">🔄</button></div>
-        <pre id="log-pool" class="log-tail bg-zion-900 rounded-lg p-3 h-72 overflow-y-auto text-gray-300"></pre>
-      </div>
-      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-        <div class="flex items-center justify-between mb-2"><h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">Miner Log</h2><button onclick="loadLogs('miner')" class="text-xs text-gray-400 hover:text-white">🔄</button></div>
-        <pre id="log-miner" class="log-tail bg-zion-900 rounded-lg p-3 h-72 overflow-y-auto text-gray-300"></pre>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Hiran AI Tab ─────────────────────────────────────────────────────── -->
-  <div id="pane-hiran" class="hidden space-y-4">
-
-    <!-- 🎼 Maestro v2.4 Orchestrator Panel -->
-    <div class="bg-gradient-to-br from-zion-800 to-zion-900 rounded-xl p-4 border border-amber-700/40">
-      <div class="flex items-center justify-between mb-3">
-        <div class="flex items-center gap-3">
-          <div class="text-2xl">🎼</div>
-          <div>
-            <h2 class="text-sm font-bold uppercase tracking-wider text-amber-300">Maestro v2.4 — Ecosystem Orchestrator</h2>
-            <div class="text-xs text-gray-400">Hierarchical agent dispatch · 55 tools · 32 sub-agents · 14 intents · 26 services</div>
-          </div>
-        </div>
-        <div class="flex gap-2">
-          <button onclick="maestroInfo()" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 text-gray-300 text-xs rounded transition">ℹ️ Info</button>
-          <button onclick="maestroHealth()" class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-medium rounded transition">💊 Health</button>
-          <button onclick="maestroRefresh()" class="text-xs text-gray-400 hover:text-white">🔄</button>
-        </div>
-      </div>
-
-      <!-- Maestro status grid -->
-      <div id="maestro-status-grid" class="grid grid-cols-2 md:grid-cols-5 gap-3 text-center mb-3">
-        <div class="bg-zion-900 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Tools</div><div id="maestro-tools" class="text-lg font-bold text-emerald-400">—</div></div>
-        <div class="bg-zion-900 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Sub-Agents</div><div id="maestro-subagents" class="text-lg font-bold text-blue-400">—</div></div>
-        <div class="bg-zion-900 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Intents</div><div id="maestro-intents" class="text-lg font-bold text-amber-400">—</div></div>
-        <div class="bg-zion-900 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Services</div><div id="maestro-services" class="text-lg font-bold text-purple-400">—</div></div>
-        <div class="bg-zion-900 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Overall Health</div><div id="maestro-overall" class="text-lg font-bold text-gray-300">—</div></div>
-      </div>
-
-      <!-- Health matrix (compact) -->
-      <div id="maestro-health-matrix" class="hidden bg-zion-900 rounded-lg p-3 mb-3">
-        <div class="text-xs text-gray-400 mb-2 uppercase tracking-wider">Service Health Matrix (26 services)</div>
-        <div id="maestro-health-list" class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs"></div>
-      </div>
-
-      <!-- Orchestrate input -->
-      <div class="bg-zion-900 rounded-lg p-3">
-        <div class="text-xs text-gray-400 mb-2 uppercase tracking-wider">🎯 Orchestrate Query</div>
-        <div class="flex gap-2 mb-2">
-          <input id="maestro-query-input" type="text" placeholder="Příklad: 'Je vše zdravé?' nebo 'Jaká je výška bloku?' nebo 'Show DeFi staking APR'"
-                 class="flex-1 bg-zion-950 border border-zion-600 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-amber-500"
-                 onkeydown="if(event.key==='Enter')maestroOrchestrate()"/>
-          <button onclick="maestroOrchestrate()" id="maestro-run-btn"
-                  class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-sm font-medium rounded-lg transition">
-            🎼 Orchestrate
-          </button>
-        </div>
-        <div class="flex flex-wrap gap-2 mb-2">
-          <button onclick="maestroQuick('Je vše zdravé?')" class="px-2 py-1 bg-zion-700 hover:bg-zion-600 rounded text-xs text-gray-300 transition">Je vše zdravé?</button>
-          <button onclick="maestroQuick('Jaká je výška bloku?')" class="px-2 py-1 bg-zion-700 hover:bg-zion-600 rounded text-xs text-gray-300 transition">Výška bloku</button>
-          <button onclick="maestroQuick('Show DeFi staking APR')" class="px-2 py-1 bg-zion-700 hover:bg-zion-600 rounded text-xs text-gray-300 transition">DeFi APR</button>
-          <button onclick="maestroQuick('Watchdog status')" class="px-2 py-1 bg-zion-700 hover:bg-zion-600 rounded text-xs text-gray-300 transition">Watchdog</button>
-          <button onclick="maestroQuick('Backup status')" class="px-2 py-1 bg-zion-700 hover:bg-zion-600 rounded text-xs text-gray-300 transition">Backup</button>
-          <button onclick="maestroQuick('Inspect database')" class="px-2 py-1 bg-zion-700 hover:bg-zion-600 rounded text-xs text-gray-300 transition">Database</button>
-        </div>
-        <div id="maestro-latency" class="text-xs text-gray-500 mb-2 h-4"></div>
-        <div id="maestro-result" class="hidden bg-zion-950 rounded-lg p-3 text-xs">
-          <div class="flex items-center justify-between mb-2">
-            <div class="flex gap-3">
-              <span class="text-gray-400">Intent: <span id="maestro-result-intent" class="text-amber-400 font-bold">—</span></span>
-              <span class="text-gray-400">Status: <span id="maestro-result-status" class="font-bold">—</span></span>
-              <span class="text-gray-400">Steps: <span id="maestro-result-steps" class="text-blue-400 font-bold">—</span></span>
-              <span class="text-gray-400">Duration: <span id="maestro-result-duration" class="text-emerald-400 font-bold">—</span></span>
-            </div>
-          </div>
-          <div id="maestro-result-steps-list" class="space-y-1 max-h-48 overflow-y-auto"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Service cards row -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-      <!-- Hiranyagarbha Orchestrator (port 8001) -->
-      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-        <div class="flex items-center gap-3 mb-3">
-          <div class="text-2xl">🧬</div>
-          <div class="flex-1">
-            <div class="text-sm font-bold text-gray-200">Hiranyagarbha API</div>
-            <div class="text-xs text-gray-400">Orchestrator · RAG · Consciousness · port 8001</div>
-          </div>
-          <span id="hiranyagarbha-badge" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-400">CHECKING…</span>
-        </div>
-        <div class="text-xs text-gray-500 mb-3" id="hiranyagarbha-detail">—</div>
-        <div class="flex gap-2">
-          <button onclick="aiLayerStart('start-hiranyagarbha','hiranyagarbha-badge','hiranyagarbha-detail')"
-                  class="flex-1 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-medium rounded transition">
-            ▶ Start
-          </button>
-          <button onclick="loadHiranHealth()" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 text-gray-300 text-xs rounded transition">🔄</button>
-        </div>
-      </div>
-
-      <!-- Hiran Inference (port 8002) -->
-      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-        <div class="flex items-center gap-3 mb-3">
-          <div class="text-2xl">🤖</div>
-          <div class="flex-1">
-            <div class="text-sm font-bold text-gray-200">Hiran Inference</div>
-            <div class="text-xs text-gray-400">LLM · OpenAI API · <span id="hiran-backend-label" class="text-amber-400">—</span> · port 8002</div>
-          </div>
-          <span id="hiran-status-badge" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-400">CHECKING…</span>
-        </div>
-        <div class="text-xs text-gray-500 mb-3" id="hiran-inference-detail">—</div>
-        <div class="flex gap-2">
-          <button onclick="aiLayerStart('start-hiran-inference','hiran-status-badge','hiran-inference-detail')"
-                  class="flex-1 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-medium rounded transition">
-            ▶ Start
-          </button>
-          <button onclick="loadHiranHealth()" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 text-gray-300 text-xs rounded transition">🔄</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Offline hint (shown when inference offline) -->
-    <div id="hiran-offline-hint" class="hidden bg-zion-800 rounded-xl p-4 border border-amber-800/40">
-      <div class="text-xs font-bold text-amber-400 mb-2">⚠️ Hiran Inference offline — detekce backendu:</div>
-      <div class="text-xs text-gray-300 space-y-1">
-        <div><span class="text-amber-400">Automaticky detekuje:</span> LM Studio (port 1234) → Ollama (port 11434) → GGUF soubor</div>
-        <div>Klikni <strong class="text-white">▶ Start</strong> — skript sám najde dostupný backend.</div>
-        <div class="text-gray-500 mt-1">Nebo spusť ručně: <code class="bg-zion-900 px-1 rounded">scripts\\start-hiran-inference.ps1</code></div>
-      </div>
-    </div>
-
-    <!-- Orchestrator live stats (shown when hiranyagarbha online) -->
-    <div id="orch-stats-panel" class="hidden bg-zion-800 rounded-xl p-4 border border-zion-700">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">🧬 Orchestrator Status</h2>
-        <button onclick="loadOrchestratorStats()" class="text-xs text-gray-400 hover:text-white">🔄</button>
-      </div>
-      <div id="orch-stats-content" class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
-        <div class="bg-zion-900 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Active Agents</div><div id="orch-active" class="text-lg font-bold text-emerald-400">—</div></div>
-        <div class="bg-zion-900 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Task Queue</div><div id="orch-tasks" class="text-lg font-bold text-amber-400">—</div></div>
-        <div class="bg-zion-900 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Msg Queue</div><div id="orch-msgs" class="text-lg font-bold text-blue-400">—</div></div>
-        <div class="bg-zion-900 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Total Actions</div><div id="orch-actions" class="text-lg font-bold text-gray-300">—</div></div>
-      </div>
-    </div>
-
-    <!-- Agent Management Panel -->
-    <div id="agent-panel" class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">🤖 Agent Management</h2>
-        <div class="flex gap-2">
-          <button onclick="registerAgent()" class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-medium rounded transition">+ Register</button>
-          <button onclick="loadAgentList()" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 text-gray-300 text-xs rounded transition">🔄</button>
-        </div>
-      </div>
-      <div id="agent-list" class="space-y-2 mb-3">
-        <div class="text-gray-500 text-xs italic">No agents loaded — click Register or Refresh</div>
-      </div>
-      <div class="flex flex-wrap gap-2">
-        <button onclick="elevateConsciousness()" class="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 text-white text-xs font-medium rounded transition">Elevate Consciousness</button>
-        <button onclick="grantCapability()" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-600 text-white text-xs font-medium rounded transition">Grant Capability</button>
-        <button onclick="dispatchTask()" class="px-3 py-1.5 bg-amber-700 hover:bg-amber-600 text-white text-xs font-medium rounded transition">Dispatch Task</button>
-      </div>
-      <div id="agent-action-result" class="mt-2 text-xs text-gray-400 min-h-4"></div>
-    </div>
-
-    <!-- Chat interface -->
-    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-      <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">💬 Chat s Hiranem</h2>
-      <div id="hiran-chat-log" class="bg-zion-900 rounded-lg p-3 h-72 overflow-y-auto space-y-3 mb-3 text-sm">
-        <div class="text-gray-500 text-xs italic">Hiran je připraven odpovídat na dotazy o ZION ekosystému…</div>
-      </div>
-      <div class="flex gap-2">
-        <input id="hiran-chat-input" type="text" placeholder="Zeptej se Hirana… (např. 'Jak funguje ZION těžba?')"
-               class="flex-1 bg-zion-900 border border-zion-600 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-amber-500"
-               onkeydown="if(event.key==='Enter')sendHiranMessage()"/>
-        <button onclick="sendHiranMessage()" id="hiran-send-btn"
-                class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-sm font-medium rounded-lg transition">
-          Odeslat
-        </button>
-      </div>
-      <div id="hiran-latency" class="text-xs text-gray-500 mt-1 h-4"></div>
-    </div>
-
-    <!-- Quick prompts -->
-    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-      <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">⚡ Rychlé dotazy</h2>
-      <div class="flex flex-wrap gap-2">
-        <button onclick="hiranQuickPrompt('Jaké je rozdělení poplatků v ZION těžbě?')" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 rounded text-xs text-gray-300 transition">Fee split</button>
-        <button onclick="hiranQuickPrompt('Vysvětli ZION OASIS a 9 úrovní vědomí')" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 rounded text-xs text-gray-300 transition">OASIS vědomí</button>
-        <button onclick="hiranQuickPrompt('Co je ZION Issobella fond a jak funguje?')" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 rounded text-xs text-gray-300 transition">Issobella</button>
-        <button onclick="hiranQuickPrompt('Jak funguje humanitární tithe v ZION?')" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 rounded text-xs text-gray-300 transition">Humanitarian Tithe</button>
-        <button onclick="hiranQuickPrompt('Jaký je aktuální stav ZION sítě a hash rate?')" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 rounded text-xs text-gray-300 transition">Stav sítě</button>
-        <button onclick="hiranQuickPrompt('Vysvětli WARP protokol a cross-chain bridge')" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 rounded text-xs text-gray-300 transition">WARP Bridge</button>
-        <button onclick="hiranQuickPrompt('Kolik aktivních agentů je v orchestrátoru?')" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 rounded text-xs text-gray-300 transition">Orchestrátor</button>
-      </div>
-    </div>
-
-    <!-- ── NCL (Neural Compute Layer) Panel — REDESIGNED ────────────────── -->
-    <div id="ncl-mega-panel" class="space-y-4">
-
-      <!-- NCL Header with gradient + live pulse -->
-      <div class="relative overflow-hidden rounded-2xl border border-purple-800/40" style="background:linear-gradient(135deg,#131a2e 0%,#1a1040 40%,#1e1145 70%,#131a2e 100%)">
-        <div class="absolute inset-0 opacity-10" style="background:radial-gradient(circle at 20% 50%,rgba(168,85,247,0.4) 0%,transparent 50%),radial-gradient(circle at 80% 50%,rgba(59,130,246,0.3) 0%,transparent 50%)"></div>
-        <div class="relative p-5">
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style="background:linear-gradient(135deg,#7c3aed,#3b82f6);box-shadow:0 0 20px rgba(124,58,237,0.3)">
-                <span>&#x1f9e0;</span>
-              </div>
-              <div>
-                <h2 class="text-lg font-bold text-white tracking-tight">Neural Compute Layer</h2>
-                <div class="flex items-center gap-2 mt-0.5">
-                  <span id="ncl-live-dot" class="w-2 h-2 rounded-full bg-gray-500"></span>
-                  <span id="ncl-live-label" class="text-xs text-gray-400">Connecting...</span>
-                  <span id="ncl-refresh-ts" class="text-xs text-gray-600 ml-2"></span>
-                </div>
-              </div>
-            </div>
-            <div class="flex gap-2 items-center">
-              <label class="flex items-center gap-1.5 cursor-pointer">
-                <input type="checkbox" id="ncl-auto-refresh" checked class="rounded border-gray-600 text-purple-500 focus:ring-purple-500 focus:ring-offset-0 w-3.5 h-3.5" onchange="toggleNclAutoRefresh()"/>
-                <span class="text-xs text-gray-400">Auto 10s</span>
-              </label>
-              <button onclick="loadNclFull()" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 text-xs rounded-lg transition backdrop-blur-sm">Refresh</button>
-            </div>
-          </div>
-
-          <!-- Stats cards row -->
-          <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
-            <div class="group bg-white/5 hover:bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/5 hover:border-emerald-500/30 transition-all cursor-default">
-              <div class="text-xs text-gray-500 mb-1 flex items-center gap-1"><span class="text-emerald-400 text-sm">&#x25CF;</span> Status</div>
-              <div id="ncl-status-val" class="text-base font-bold text-emerald-400 transition-all">—</div>
-            </div>
-            <div class="group bg-white/5 hover:bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/5 hover:border-blue-500/30 transition-all cursor-default">
-              <div class="text-xs text-gray-500 mb-1 flex items-center gap-1"><span class="text-blue-400 text-sm">&#x25B2;</span> Workers</div>
-              <div id="ncl-workers-val" class="text-base font-bold text-blue-400 transition-all">—</div>
-            </div>
-            <div class="group bg-white/5 hover:bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/5 hover:border-amber-500/30 transition-all cursor-default">
-              <div class="text-xs text-gray-500 mb-1 flex items-center gap-1"><span class="text-amber-400 text-sm">&#x23F3;</span> Queue</div>
-              <div id="ncl-queue-val" class="text-base font-bold text-amber-400 transition-all">—</div>
-            </div>
-            <div class="group bg-white/5 hover:bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/5 hover:border-purple-500/30 transition-all cursor-default">
-              <div class="text-xs text-gray-500 mb-1 flex items-center gap-1"><span class="text-purple-400 text-sm">&#x2B50;</span> Price/Token</div>
-              <div id="ncl-price-val" class="text-base font-bold text-purple-400 transition-all">—</div>
-            </div>
-            <div class="group bg-white/5 hover:bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/5 hover:border-cyan-500/30 transition-all cursor-default">
-              <div class="text-xs text-gray-500 mb-1 flex items-center gap-1"><span class="text-cyan-400 text-sm">&#x26A1;</span> TFLOPS</div>
-              <div id="ncl-tflops-val" class="text-base font-bold text-cyan-400 transition-all">—</div>
-            </div>
-            <div class="group bg-white/5 hover:bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/5 hover:border-rose-500/30 transition-all cursor-default">
-              <div class="text-xs text-gray-500 mb-1 flex items-center gap-1"><span class="text-rose-400 text-sm">&#x1F4CA;</span> Jobs Total</div>
-              <div id="ncl-jobs-total-val" class="text-base font-bold text-rose-400 transition-all">—</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Sub-tabs for NCL sections -->
-      <div class="flex gap-1 bg-zion-800 rounded-xl p-1 border border-zion-700">
-        <button onclick="switchNclTab('workers')" id="ncl-tab-workers" class="flex-1 px-3 py-2 text-xs font-medium rounded-lg transition ncl-tab-active">Workers</button>
-        <button onclick="switchNclTab('leaderboard')" id="ncl-tab-leaderboard" class="flex-1 px-3 py-2 text-xs font-medium rounded-lg transition text-gray-400 hover:text-white hover:bg-white/5">Leaderboard</button>
-        <button onclick="switchNclTab('jobs')" id="ncl-tab-jobs" class="flex-1 px-3 py-2 text-xs font-medium rounded-lg transition text-gray-400 hover:text-white hover:bg-white/5">Job History</button>
-        <button onclick="switchNclTab('submit')" id="ncl-tab-submit" class="flex-1 px-3 py-2 text-xs font-medium rounded-lg transition text-gray-400 hover:text-white hover:bg-white/5">Submit Job</button>
-        <button onclick="switchNclTab('chart')" id="ncl-tab-chart" class="flex-1 px-3 py-2 text-xs font-medium rounded-lg transition text-gray-400 hover:text-white hover:bg-white/5">Analytics</button>
-      </div>
-
-      <!-- Workers Panel -->
-      <div id="ncl-pane-workers" class="ncl-pane">
-        <div class="bg-zion-800 rounded-xl border border-zion-700 overflow-hidden">
-          <div class="px-4 py-3 border-b border-zion-700 flex items-center justify-between">
-            <h3 class="text-sm font-bold text-gray-200 flex items-center gap-2"><span class="text-blue-400">&#x25B2;</span> Active Workers</h3>
-            <span id="ncl-worker-count-badge" class="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs font-bold rounded-full">0</span>
-          </div>
-          <div id="ncl-worker-list" class="divide-y divide-zion-700/50 max-h-96 overflow-y-auto">
-            <div class="p-4 text-center text-gray-500 text-sm">Loading workers...</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Leaderboard Panel -->
-      <div id="ncl-pane-leaderboard" class="ncl-pane hidden">
-        <div class="bg-zion-800 rounded-xl border border-zion-700 overflow-hidden">
-          <div class="px-4 py-3 border-b border-zion-700 flex items-center justify-between">
-            <h3 class="text-sm font-bold text-gray-200 flex items-center gap-2"><span class="text-amber-400">&#x1F3C6;</span> Compute Leaderboard</h3>
-          </div>
-          <div id="ncl-leaderboard-dash" class="divide-y divide-zion-700/50 max-h-96 overflow-y-auto">
-            <div class="p-4 text-center text-gray-500 text-sm">Loading leaderboard...</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Job History Panel -->
-      <div id="ncl-pane-jobs" class="ncl-pane hidden">
-        <div class="bg-zion-800 rounded-xl border border-zion-700 overflow-hidden">
-          <div class="px-4 py-3 border-b border-zion-700 flex items-center justify-between">
-            <h3 class="text-sm font-bold text-gray-200 flex items-center gap-2"><span class="text-rose-400">&#x1F4CB;</span> Job History</h3>
-            <div class="flex gap-2">
-              <select id="ncl-job-filter" onchange="renderNclJobHistory()" class="bg-zion-900 border border-zion-600 rounded-lg px-2 py-1 text-xs text-gray-300 focus:outline-none focus:border-purple-500">
-                <option value="all">All</option>
-                <option value="Queued">Queued</option>
-                <option value="Running">Running</option>
-                <option value="Completed">Completed</option>
-                <option value="Failed">Failed</option>
-              </select>
-              <button onclick="loadNclJobHistory()" class="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 text-xs rounded-lg transition">Refresh</button>
-            </div>
-          </div>
-          <div id="ncl-job-history-list" class="divide-y divide-zion-700/50 max-h-96 overflow-y-auto">
-            <div class="p-4 text-center text-gray-500 text-sm">Loading job history...</div>
-          </div>
-          <div class="px-4 py-2 border-t border-zion-700 bg-zion-900/50 flex items-center justify-between">
-            <span id="ncl-job-count" class="text-xs text-gray-500">0 jobs</span>
-            <span id="ncl-job-success-rate" class="text-xs text-gray-500">— success rate</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Submit Job Panel -->
-      <div id="ncl-pane-submit" class="ncl-pane hidden">
-        <div class="bg-zion-800 rounded-xl border border-zion-700 p-5">
-          <h3 class="text-sm font-bold text-gray-200 flex items-center gap-2 mb-4"><span class="text-purple-400">&#x1F680;</span> Submit NCL Job</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <!-- Job Type -->
-            <div>
-              <label class="block text-xs font-medium text-gray-400 mb-1.5">Job Type</label>
-              <select id="ncl-job-type-dash" class="w-full bg-zion-900 border border-zion-600 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-500 transition">
-                <option value="inference">Inference</option>
-                <option value="embedding">Embedding</option>
-                <option value="training">Fine-tuning</option>
-                <option value="rag">RAG Query</option>
-              </select>
-            </div>
-            <!-- Backend -->
-            <div>
-              <label class="block text-xs font-medium text-gray-400 mb-1.5">Backend</label>
-              <select id="ncl-job-backend" class="w-full bg-zion-900 border border-zion-600 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-500 transition">
-                <option value="Custom">Custom (Hiran)</option>
-                <option value="OnnxRuntime">ONNX Runtime</option>
-                <option value="Wasm">WebAssembly</option>
-                <option value="TfLite">TensorFlow Lite</option>
-              </select>
-            </div>
-            <!-- Model -->
-            <div>
-              <label class="block text-xs font-medium text-gray-400 mb-1.5">Model</label>
-              <select id="ncl-job-model" class="w-full bg-zion-900 border border-zion-600 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-500 transition">
-                <option value="hiran-v2.2">Hiran v2.2 (Q4_K_M)</option>
-                <option value="hiran-v2.2-f16">Hiran v2.2 (F16)</option>
-              </select>
-            </div>
-            <!-- Priority -->
-            <div>
-              <label class="block text-xs font-medium text-gray-400 mb-1.5">Priority: <span id="ncl-priority-label" class="text-purple-400 font-bold">5</span></label>
-              <input type="range" id="ncl-job-priority" min="0" max="10" value="5" class="w-full h-2 rounded-lg appearance-none cursor-pointer" style="background:linear-gradient(90deg,#3b82f6,#7c3aed,#ef4444)" oninput="document.getElementById('ncl-priority-label').textContent=this.value"/>
-              <div class="flex justify-between text-xs text-gray-600 mt-1"><span>Low</span><span>Normal</span><span>Urgent</span></div>
-            </div>
-          </div>
-          <!-- Prompt Input -->
-          <div class="mb-4">
-            <label class="block text-xs font-medium text-gray-400 mb-1.5">Prompt / Input</label>
-            <textarea id="ncl-job-prompt" rows="3" placeholder="Enter your inference prompt, embedding text, or training parameters..."
-                      class="w-full bg-zion-900 border border-zion-600 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-purple-500 transition resize-none"></textarea>
-          </div>
-          <!-- Advanced settings (collapsible) -->
-          <details class="mb-4">
-            <summary class="text-xs text-gray-500 cursor-pointer hover:text-gray-300 transition">Advanced Settings</summary>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
-              <div>
-                <label class="block text-xs text-gray-500 mb-1">Reward (flowers)</label>
-                <input type="number" id="ncl-job-reward" value="20000000000" class="w-full bg-zion-900 border border-zion-600 rounded-lg px-3 py-1.5 text-xs text-gray-300 focus:outline-none focus:border-purple-500"/>
-              </div>
-              <div>
-                <label class="block text-xs text-gray-500 mb-1">Max Duration (sec)</label>
-                <input type="number" id="ncl-job-duration" value="60" class="w-full bg-zion-900 border border-zion-600 rounded-lg px-3 py-1.5 text-xs text-gray-300 focus:outline-none focus:border-purple-500"/>
-              </div>
-              <div>
-                <label class="block text-xs text-gray-500 mb-1">Submitter ID</label>
-                <input type="text" id="ncl-job-submitter" value="dashboard" class="w-full bg-zion-900 border border-zion-600 rounded-lg px-3 py-1.5 text-xs text-gray-300 focus:outline-none focus:border-purple-500"/>
-              </div>
-            </div>
-          </details>
-          <!-- Estimated cost -->
-          <div class="flex items-center justify-between p-3 bg-purple-900/20 border border-purple-800/30 rounded-lg mb-4">
-            <div class="text-xs text-gray-400">Estimated cost</div>
-            <div class="text-sm font-bold text-purple-300" id="ncl-est-cost">0.02 ZION</div>
-          </div>
-          <!-- Submit button -->
-          <div class="flex items-center gap-3">
-            <button onclick="submitNclJob()" id="ncl-submit-btn" class="px-6 py-2.5 text-sm font-bold rounded-xl transition-all" style="background:linear-gradient(135deg,#7c3aed,#3b82f6);box-shadow:0 4px 15px rgba(124,58,237,0.3)" onmouseover="this.style.boxShadow='0 6px 25px rgba(124,58,237,0.5)'" onmouseout="this.style.boxShadow='0 4px 15px rgba(124,58,237,0.3)'">
-              Submit Job
-            </button>
-            <span id="ncl-job-result-dash" class="text-sm text-gray-400"></span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Analytics / Chart Panel -->
-      <div id="ncl-pane-chart" class="ncl-pane hidden">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="bg-zion-800 rounded-xl border border-zion-700 p-4">
-            <h3 class="text-sm font-bold text-gray-300 mb-3 flex items-center gap-2"><span class="text-blue-400">&#x1F4C8;</span> Jobs Over Time</h3>
-            <div class="h-48"><canvas id="ncl-jobs-chart"></canvas></div>
-          </div>
-          <div class="bg-zion-800 rounded-xl border border-zion-700 p-4">
-            <h3 class="text-sm font-bold text-gray-300 mb-3 flex items-center gap-2"><span class="text-emerald-400">&#x26A1;</span> Worker Performance</h3>
-            <div class="h-48"><canvas id="ncl-perf-chart"></canvas></div>
-          </div>
-        </div>
-        <!-- Pricing breakdown -->
-        <div class="bg-zion-800 rounded-xl border border-zion-700 p-4 mt-4">
-          <h3 class="text-sm font-bold text-gray-300 mb-3 flex items-center gap-2"><span class="text-purple-400">&#x1F4B0;</span> Pricing Breakdown</h3>
-          <div id="ncl-pricing-detail" class="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div class="bg-zion-900 rounded-lg p-3 text-center">
-              <div class="text-xs text-gray-500 mb-1">Per Job</div>
-              <div id="ncl-price-job" class="text-sm font-bold text-purple-300">—</div>
-            </div>
-            <div class="bg-zion-900 rounded-lg p-3 text-center">
-              <div class="text-xs text-gray-500 mb-1">Per Token</div>
-              <div id="ncl-price-token" class="text-sm font-bold text-purple-300">—</div>
-            </div>
-            <div class="bg-zion-900 rounded-lg p-3 text-center">
-              <div class="text-xs text-gray-500 mb-1">Worker Share</div>
-              <div id="ncl-price-worker" class="text-sm font-bold text-emerald-300">—</div>
-            </div>
-            <div class="bg-zion-900 rounded-lg p-3 text-center">
-              <div class="text-xs text-gray-500 mb-1">Protocol Fee</div>
-              <div id="ncl-price-protocol" class="text-sm font-bold text-amber-300">—</div>
-            </div>
-          </div>
-          <div id="ncl-fee-split-bar" class="mt-3 h-3 rounded-full overflow-hidden flex">
-            <div id="ncl-fee-worker-bar" class="bg-emerald-500 transition-all" style="width:90%"></div>
-            <div id="ncl-fee-protocol-bar" class="bg-amber-500 transition-all" style="width:10%"></div>
-          </div>
-          <div class="flex justify-between text-xs text-gray-500 mt-1">
-            <span id="ncl-fee-split-label">90% worker / 10% protocol</span>
-          </div>
-        </div>
-      </div>
-
-    </div>
-    <!-- ── END NCL Mega Panel ─────────────────────────────────────────────── -->
-
-    <!-- Log panels -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-        <div class="flex items-center justify-between mb-2">
-          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">Hiranyagarbha Log</h2>
-          <button onclick="loadLogs('hiranyagarbha')" class="text-xs text-gray-400 hover:text-white">🔄</button>
-        </div>
-        <pre id="log-hiranyagarbha" class="log-tail bg-zion-900 rounded-lg p-3 h-48 overflow-y-auto text-gray-300"></pre>
-      </div>
-      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-        <div class="flex items-center justify-between mb-2">
-          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">Hiran Inference Log</h2>
-          <button onclick="loadLogs('hiran-inference')" class="text-xs text-gray-400 hover:text-white">🔄</button>
-        </div>
-        <pre id="log-hiran-inference" class="log-tail bg-zion-900 rounded-lg p-3 h-48 overflow-y-auto text-gray-300"></pre>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- TAB: Payout -->
-  <div id="pane-payout" class="hidden space-y-4">
-    <!-- Payout Overview Header -->
-    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 flex items-center gap-2">💰 Pool Payout System</h2>
-        <button onclick="refreshPayout()" class="text-xs px-2 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">🔄 Refresh</button>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-3" id="payout-summary">
-        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
-          <div class="text-xs text-gray-400 mb-1">Pool Wallet</div>
-          <div class="text-sm font-mono text-amber-400 truncate" id="payout-wallet">—</div>
-          <div class="text-xs text-gray-500 mt-1" id="payout-wallet-balance">Balance: —</div>
-        </div>
-        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
-          <div class="text-xs text-gray-400 mb-1">Payout Status</div>
-          <div class="text-sm font-bold text-emerald-400" id="payout-status">—</div>
-          <div class="text-xs text-gray-500 mt-1" id="payout-fee-split">Fee split: —</div>
-        </div>
-        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
-          <div class="text-xs text-gray-400 mb-1">Blocks Found</div>
-          <div class="text-2xl font-bold text-amber-400" id="payout-blocks">—</div>
-          <div class="text-xs text-gray-500 mt-1" id="payout-last-block">Last: —</div>
-        </div>
-        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
-          <div class="text-xs text-gray-400 mb-1">Last Payout</div>
-          <div class="text-sm font-bold text-emerald-400" id="payout-last">—</div>
-          <div class="text-xs text-gray-500 mt-1" id="payout-last-tx">TX: —</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Fee Split Recipients -->
-    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-      <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">📋 Fee Split Recipients (89/5/5/1 burn model)</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3" id="payout-recipients">
-        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
-          <div class="text-xs text-gray-400 mb-1">⛏️ Miner Share (89%)</div>
-          <div class="text-sm font-mono text-amber-400 truncate" id="payout-miner-wallet">—</div>
-          <div class="text-xs text-gray-500 mt-1">PPLNS redistribution</div>
-        </div>
-        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
-          <div class="text-xs text-gray-400 mb-1">🌍 Humanitarian (5%)</div>
-          <div class="text-sm font-mono text-emerald-400 truncate" id="payout-humanitarian-wallet">—</div>
-          <div class="text-xs text-gray-500 mt-1">Children Future Fund</div>
-        </div>
-        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
-          <div class="text-xs text-gray-400 mb-1">🚀 Issobella (5%)</div>
-          <div class="text-sm font-mono text-purple-400 truncate" id="payout-issobella-wallet">—</div>
-          <div class="text-xs text-gray-500 mt-1">L5/L6 Space Layer</div>
-        </div>
-        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
-          <div class="text-xs text-gray-400 mb-1">⚡ Pool Fee (1%)</div>
-          <div class="text-sm font-mono text-blue-400 truncate" id="payout-pool-fee-wallet">—</div>
-          <div class="text-xs text-gray-500 mt-1">Operator fee</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Recent Payout Log -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-2">📝 Recent Miner Payouts</h2>
-        <div id="payout-miner-log" class="space-y-2 text-xs text-gray-300 max-h-64 overflow-y-auto">
-          <div class="text-gray-500 italic">Loading...</div>
-        </div>
-      </div>
-      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-2">📝 Recent Fee Payouts</h2>
-        <div id="payout-fee-log" class="space-y-2 text-xs text-gray-300 max-h-64 overflow-y-auto">
-          <div class="text-gray-500 italic">Loading...</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Payout Error Log -->
-    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-      <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-2">⚠️ Payout Errors (if any)</h2>
-      <div id="payout-error-log" class="space-y-2 text-xs text-gray-300 max-h-48 overflow-y-auto">
-        <div class="text-gray-500 italic">No errors detected</div>
-      </div>
-    </div>
-  </div>
-
-  <footer class="text-center text-xs text-gray-600 pt-6 pb-4 border-t border-zion-700 mt-6">
-    ZION V3 Dashboard 2.0 — Zero-dependency Python stdlib server — Auto-refresh 3s
-    <span class="text-gray-500"> · </span>
-    <a href="../MAINNETREADYrun.md" target="_blank" class="text-amber-400 hover:underline">Runbook</a>
-    <span class="text-gray-500"> · </span>
-    <a href="../MAINNETSTATUSW11.md" target="_blank" class="text-amber-400 hover:underline">W11 Status</a>
-  </footer>
-</div>
-
-<script>
-let autoRefresh=true,refreshTimer=null,currentTab='overview';
-let charts={};
-const TABS=['overview','controls','charts','events','env','launch-day','wizard','services','database','metrics','logs','hiran','payout'];
-
-// ── Tab switching ──
-function switchTab(name){
-  currentTab=name;
-  TABS.forEach(t=>{
-    document.getElementById('pane-'+t).classList.toggle('hidden',t!==name);
-    document.getElementById('tab-'+t).classList.toggle('tab-active',t===name);
-  });
-  if(name==='charts')renderCharts();
-  if(name==='events')loadEvents();
-  if(name==='env')loadEnvFiles();
-  if(name==='launch-day')loadLaunchDayStatus();
-  if(name==='wizard')renderWizard();
-  if(name==='logs'){loadLogs('node1');loadLogs('node2');loadLogs('pool');loadLogs('miner');}
-  if(name==='controls')renderControls();
-  if(name==='services')loadServices();
-  if(name==='database')loadDatabases();
-  if(name==='metrics')renderMetricsButtons();
-  if(name==='overview'){loadMainnetStatus();loadMaintStatus();}
-  if(name==='hiran'){loadHiranHealth();loadAgentList();loadOrchestratorStats();loadNclStatus();maestroInfo();}
-  if(name==='payout')refreshPayout();
-}
-
-// ── Payout System ──
-async function refreshPayout(){
-  try{
-    const data=await fetch('/api/payout').then(r=>r.json());
-    document.getElementById('payout-wallet').textContent=data.pool_wallet||'—';
-    document.getElementById('payout-wallet-balance').textContent='Balance: '+(data.pool_wallet_balance?formatFlowers(data.pool_wallet_balance):'—');
-    document.getElementById('payout-status').textContent=data.payout_enabled?'✅ ENABLED':'❌ DISABLED';
-    document.getElementById('payout-status').className=data.payout_enabled?'text-sm font-bold text-emerald-400':'text-sm font-bold text-red-400';
-    document.getElementById('payout-fee-split').textContent='Fee split: '+(data.fee_split||'—');
-    document.getElementById('payout-blocks').textContent=data.blocks_found||'—';
-    document.getElementById('payout-last-block').textContent='Last: height '+(data.last_block_height||'—');
-    document.getElementById('payout-last').textContent=data.last_payout_time||'—';
-    document.getElementById('payout-last-tx').textContent='TX: '+(data.last_payout_tx||'—');
-
-    // Recipients
-    if(data.miner_wallet)document.getElementById('payout-miner-wallet').textContent=data.miner_wallet;
-    if(data.humanitarian_wallet)document.getElementById('payout-humanitarian-wallet').textContent=data.humanitarian_wallet;
-    if(data.issobella_wallet)document.getElementById('payout-issobella-wallet').textContent=data.issobella_wallet;
-    if(data.pool_fee_wallet)document.getElementById('payout-pool-fee-wallet').textContent=data.pool_fee_wallet;
-
-    // Miner payout log
-    const minerLog=document.getElementById('payout-miner-log');
-    if(data.miner_payouts&&data.miner_payouts.length>0){
-      minerLog.innerHTML=data.miner_payouts.map(l=>`<div class="bg-zion-900 rounded p-2 border-l-2 border-emerald-500">${escapeHtml(l)}</div>`).join('');
-    }else{minerLog.innerHTML='<div class="text-gray-500 italic">No recent miner payouts</div>';}
-
-    // Fee payout log
-    const feeLog=document.getElementById('payout-fee-log');
-    if(data.fee_payouts&&data.fee_payouts.length>0){
-      feeLog.innerHTML=data.fee_payouts.map(l=>`<div class="bg-zion-900 rounded p-2 border-l-2 border-blue-500">${escapeHtml(l)}</div>`).join('');
-    }else{feeLog.innerHTML='<div class="text-gray-500 italic">No recent fee payouts</div>';}
-
-    // Error log
-    const errLog=document.getElementById('payout-error-log');
-    if(data.errors&&data.errors.length>0){
-      errLog.innerHTML=data.errors.map(l=>`<div class="bg-zion-900 rounded p-2 border-l-2 border-red-500 text-red-300">${escapeHtml(l)}</div>`).join('');
-    }else{errLog.innerHTML='<div class="text-gray-500 italic">No errors detected</div>';}
-  }catch(e){
-    console.error('refreshPayout error',e);
-  }
-}
-function formatFlowers(v){
-  if(!v&&v!==0)return'—';
-  // Auto-detect legacy scale: if value > 1.44e18 (10x total supply in post-3.0.3 flowers),
-  // it's in legacy 1e12 scale and must be divided by 1e12 instead of 1e6.
-  let divisor=1_000_000;
-  if(v>1.44e18)divisor=1_000_000_000_000;
-  const zion=v/divisor;
-    return zion.toLocaleString('en-US',{minimumFractionDigits:4,maximumFractionDigits:4})+' ZION';
-}
-
-// ── Hiran AI ──
-async function loadHiranHealth(){
-  // ── Hiran Inference (port 8002) ─────────────────────────────────────
-  const badge=document.getElementById('hiran-status-badge');
-  const backend=document.getElementById('hiran-backend-label');
-  const detail=document.getElementById('hiran-inference-detail');
-  const hint=document.getElementById('hiran-offline-hint');
-  if(badge)badge.textContent='CHECKING…';
-  try{
-    const r=await fetch('/api/hiran/health');
-    const d=await r.json();
-    if(d.alive){
-      if(badge){badge.textContent='LIVE';badge.className='px-2 py-0.5 rounded text-xs font-bold bg-emerald-600 text-white animate-pulse';}
-      if(backend)backend.textContent=d.backend;
-      if(detail)detail.textContent=(d.model||'—')+' · '+(d.uptime_s!=null?'up '+Math.round(d.uptime_s)+'s':'');
-      if(hint)hint.classList.add('hidden');
-    }else{
-      if(badge){badge.textContent='OFFLINE';badge.className='px-2 py-0.5 rounded text-xs font-bold bg-red-700 text-white';}
-      if(backend)backend.textContent=d.backend||'nedosažitelný';
-      if(detail)detail.textContent='Spusť: ▶ Start';
-      if(hint)hint.classList.remove('hidden');
-    }
-  }catch(e){
-    if(badge){badge.textContent='OFFLINE';badge.className='px-2 py-0.5 rounded text-xs font-bold bg-red-700 text-white';}
-    if(detail)detail.textContent='Spusť: ▶ Start';
-    if(hint)hint.classList.remove('hidden');
-  }
-  // ── Hiranyagarbha Orchestrator (port 8001) ──────────────────────────
-  const orchBadge=document.getElementById('hiranyagarbha-badge');
-  const orchDetail=document.getElementById('hiranyagarbha-detail');
-  const orchPanel=document.getElementById('orch-stats-panel');
-  if(orchBadge)orchBadge.textContent='CHECKING…';
-  try{
-    const r2=await fetch('/api/hiranyagarbha/health');
-    const d2=await r2.json();
-    if(d2.alive){
-      if(orchBadge){orchBadge.textContent='LIVE';orchBadge.className='px-2 py-0.5 rounded text-xs font-bold bg-emerald-600 text-white animate-pulse';}
-      if(orchDetail)orchDetail.textContent='v'+( d2.version||'?')+' · agents: '+(d2.active_agents??'—')+' · tasks: '+(d2.task_queue??'—');
-      if(orchPanel)orchPanel.classList.remove('hidden');
-      loadOrchestratorStats();
-    }else{
-      if(orchBadge){orchBadge.textContent='OFFLINE';orchBadge.className='px-2 py-0.5 rounded text-xs font-bold bg-red-700 text-white';}
-      if(orchDetail)orchDetail.textContent='Spusť: ▶ Start';
-      if(orchPanel)orchPanel.classList.add('hidden');
-    }
-  }catch(e){
-    if(orchBadge){orchBadge.textContent='OFFLINE';orchBadge.className='px-2 py-0.5 rounded text-xs font-bold bg-red-700 text-white';}
-    if(orchDetail)orchDetail.textContent='Spusť: ▶ Start';
-    if(orchPanel)orchPanel.classList.add('hidden');
-  }
-}
-
-// ── Hiranyagarbha orchestrator live stats ──────────────────────────────
-async function loadOrchestratorStats(){
-  try{
-    const r=await fetch('http://127.0.0.1:8001/orchestrator/status');
-    if(!r.ok)return;
-    const d=await r.json();
-    const s=d.status||d;
-    const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v??'—';};
-    set('orch-active', s.active_agents??s.agent_count??'—');
-    set('orch-tasks',  s.task_queue_depth??s.tasks_pending??'—');
-    set('orch-msgs',   s.message_queue_depth??s.messages??'—');
-    set('orch-actions',s.total_actions_dispatched??s.total_actions??'—');
-  }catch(_){}
-}
-
-// ── Agent Management (Hiranyagarbha port 8001) ──────────────────────
-async function loadAgentList(){
-  const list=document.getElementById('agent-list');
-  const res=document.getElementById('agent-action-result');
-  if(list)list.innerHTML='<div class="text-gray-500 text-xs italic">Loading agents…</div>';
-  try{
-    const r=await fetch('http://127.0.0.1:8001/agents');
-    const d=await r.json();
-    const total=d.total??d.active??0;
-    if(total===0){
-      if(list)list.innerHTML='<div class="text-gray-500 text-xs italic">No active agents — click + Register to create one</div>';
-      return;
-    }
-    // Try to get agent details
-    const r2=await fetch('http://127.0.0.1:8001/orchestrator/status');
-    const s=await r2.json();
-    const agents=s.agents??{};
-    const active=agents.active??0;
-    const suspended=agents.suspended??0;
-    const terminated=agents.terminated??0;
-    const actions=agents.total_actions??0;
-    let html=`<div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center mb-2">`;
-    html+=`<div class="bg-zion-900 rounded p-2"><div class="text-xs text-gray-400">Active</div><div class="text-sm font-bold text-emerald-400">${active}</div></div>`;
-    html+=`<div class="bg-zion-900 rounded p-2"><div class="text-xs text-gray-400">Suspended</div><div class="text-sm font-bold text-amber-400">${suspended}</div></div>`;
-    html+=`<div class="bg-zion-900 rounded p-2"><div class="text-xs text-gray-400">Terminated</div><div class="text-sm font-bold text-red-400">${terminated}</div></div>`;
-    html+=`<div class="bg-zion-900 rounded p-2"><div class="text-xs text-gray-400">Actions</div><div class="text-sm font-bold text-gray-300">${actions}</div></div>`;
-    html+=`</div>`;
-    if(list)list.innerHTML=html;
-    if(res)res.textContent=`Loaded: ${active} active, ${suspended} suspended, ${terminated} terminated`;
-  }catch(e){
-    if(list)list.innerHTML='<div class="text-red-400 text-xs">Error loading agents: '+escapeHtml(String(e))+'</div>';
-  }
-}
-
-async function registerAgent(){
-  const res=document.getElementById('agent-action-result');
-  if(res)res.textContent='Registering agent…';
-  try{
-    const r=await fetch('http://127.0.0.1:8001/agents',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name:'DashboardAgent-'+Date.now(),capabilities:['Compute','Memory'],consciousness_level:1})
-    });
-    const d=await r.json();
-    if(res)res.textContent='Registered: '+JSON.stringify(d);
-    loadAgentList();
-  }catch(e){
-    if(res)res.textContent='Error: '+String(e);
-  }
-}
-
-async function elevateConsciousness(){
-  const res=document.getElementById('agent-action-result');
-  if(res)res.textContent='Elevating consciousness…';
-  try{
-    // First get agents to find an ID
-    const r1=await fetch('http://127.0.0.1:8001/agents');
-    const d1=await r1.json();
-    if(!d1.total&&!d1.active){if(res)res.textContent='No agents to elevate';return;}
-    // Try to find first active agent
-    const r2=await fetch('http://127.0.0.1:8001/orchestrator/status');
-    const s=await r2.json();
-    // Elevate on first agent (using placeholder ID for demo)
-    const r3=await fetch('http://127.0.0.1:8001/agents/00000000-0000-0000-0000-000000000001/consciousness',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({level:2})
-    });
-    const d3=await r3.json();
-    if(res)res.textContent='Elevated: '+JSON.stringify(d3);
-    loadAgentList();
-  }catch(e){
-    if(res)res.textContent='Error: '+String(e);
-  }
-}
-
-async function grantCapability(){
-  const res=document.getElementById('agent-action-result');
-  if(res)res.textContent='Granting capability…';
-  try{
-    const r=await fetch('http://127.0.0.1:8001/agents/00000000-0000-0000-0000-000000000001/capabilities',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({capability:'RAG'})
-    });
-    const d=await r.json();
-    if(res)res.textContent='Granted: '+JSON.stringify(d);
-  }catch(e){
-    if(res)res.textContent='Error: '+String(e);
-  }
-}
-
-async function dispatchTask(){
-  const res=document.getElementById('agent-action-result');
-  if(res)res.textContent='Dispatching task…';
-  try{
-    const r=await fetch('http://127.0.0.1:8001/tasks/dispatch',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({task_type:'QueryKnowledge',model_id:'hiran-v2.2',submitter:'dashboard',description:'Dashboard test task',input:'What is ZION?'})
-    });
-    const d=await r.json();
-    if(res)res.textContent='Dispatched: '+JSON.stringify(d);
-    loadAgentList();
-    loadOrchestratorStats();
-  }catch(e){
-    if(res)res.textContent='Error: '+String(e);
-  }
-}
-
-// ── Start an AI layer service via dashboard control API ───────────────
-async function aiLayerStart(action, badgeId, detailId){
-  const badge=document.getElementById(badgeId);
-  const detail=document.getElementById(detailId);
-  if(badge){badge.textContent='STARTING…';badge.className='px-2 py-0.5 rounded text-xs font-bold bg-amber-500 text-white animate-pulse';}
-  if(detail)detail.textContent='Spouštím…';
-  try{
-    const r=await fetch('/api/control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action})});
-    const d=await r.json();
-    if(d.ok||d.status==='launched'){
-      if(detail)detail.textContent='Spuštěno — čekám na odpověď…';
-      // poll health after short delay
-      setTimeout(()=>loadHiranHealth(), 3000);
-      setTimeout(()=>loadHiranHealth(), 7000);
-    }else{
-      if(badge){badge.textContent='ERR';badge.className='px-2 py-0.5 rounded text-xs font-bold bg-red-700 text-white';}
-      if(detail)detail.textContent=d.error||d.detail||'Chyba při spouštění';
-    }
-  }catch(e){
-    if(badge){badge.textContent='ERR';badge.className='px-2 py-0.5 rounded text-xs font-bold bg-red-700 text-white';}
-    if(detail)detail.textContent='Chyba: '+String(e);
-  }
-}
-
-// ── NCL (Neural Compute Layer) — Full UI Engine ──────────────────────
-let _nclAutoTimer=null;
-let _nclJobCache=[];
-let _nclJobsChart=null;
-let _nclPerfChart=null;
-let _nclJobHistory=[];
-
-function switchNclTab(tab){
-  document.querySelectorAll('.ncl-pane').forEach(p=>p.classList.add('hidden'));
-  document.querySelectorAll('[id^="ncl-tab-"]').forEach(b=>{b.classList.remove('ncl-tab-active');b.classList.add('text-gray-400');});
-  const pane=document.getElementById('ncl-pane-'+tab);
-  const btn=document.getElementById('ncl-tab-'+tab);
-  if(pane)pane.classList.remove('hidden');
-  if(btn){btn.classList.add('ncl-tab-active');btn.classList.remove('text-gray-400');}
-  if(tab==='jobs')loadNclJobHistory();
-  if(tab==='chart')initNclCharts();
-}
-
-function toggleNclAutoRefresh(){
-  const cb=document.getElementById('ncl-auto-refresh');
-  if(cb?.checked){_nclAutoTimer=setInterval(loadNclFull,10000);}
-  else{clearInterval(_nclAutoTimer);_nclAutoTimer=null;}
-}
-
-async function loadNclFull(){
-  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v??'—';};
-  let online=false;
-
-  // Status
-  try{
-    const r=await fetch('/api/ncl/status');
-    const d=await r.json();
-    online=!d.error;
-    set('ncl-status-val', d.status||'active');
-    set('ncl-workers-val', d.total_workers??d.active_workers??'—');
-    set('ncl-queue-val', d.queued_jobs??d.queued??'0');
-    set('ncl-tflops-val', d.total_tflops??'—');
-    set('ncl-jobs-total-val', d.completed_jobs??d.total_jobs??'—');
-  }catch(_){set('ncl-status-val','offline');}
-
-  // Live indicator
-  const dot=document.getElementById('ncl-live-dot');
-  const lbl=document.getElementById('ncl-live-label');
-  if(dot)dot.className='w-2 h-2 rounded-full '+(online?'ncl-dot-live':'ncl-dot-offline');
-  if(lbl){lbl.textContent=online?'Live':'Offline';lbl.className='text-xs '+(online?'text-emerald-400':'text-red-400');}
-  set('ncl-refresh-ts','Updated '+new Date().toLocaleTimeString());
-
-  // Price
-  try{
-    const r2=await fetch('/api/ncl/price');
-    const d2=await r2.json();
-    set('ncl-price-val', d2.price_per_token!=null?d2.price_per_token+' ZION':'—');
-    set('ncl-price-job', d2.price_per_job!=null?d2.price_per_job+' ZION':'—');
-    set('ncl-price-token', d2.price_per_token!=null?d2.price_per_token+' ZION':'—');
-    set('ncl-price-worker', d2.worker_share_flowers!=null?(d2.worker_share_flowers/1e9).toFixed(1)+' nZION':'—');
-    set('ncl-price-protocol', d2.protocol_fee_flowers!=null?(d2.protocol_fee_flowers/1e9).toFixed(1)+' nZION':'—');
-    if(d2.fee_split){set('ncl-fee-split-label',d2.fee_split);}
-    const estEl=document.getElementById('ncl-est-cost');
-    if(estEl&&d2.price_per_job!=null)estEl.textContent=d2.price_per_job+' ZION';
-  }catch(_){}
-
-  // Workers (rich cards)
-  try{
-    const r3=await fetch('/api/ncl/workers');
-    const d3=await r3.json();
-    const wl=document.getElementById('ncl-worker-list');
-    const badge=document.getElementById('ncl-worker-count-badge');
-    const workers=d3.workers||d3;
-    if(badge)badge.textContent=Array.isArray(workers)?workers.length:0;
-    if(wl){
-      if(!Array.isArray(workers)||workers.length===0){
-        wl.innerHTML='<div class="p-6 text-center"><div class="text-gray-600 text-2xl mb-2">&#x1F50D;</div><div class="text-gray-500 text-sm">No active workers</div><div class="text-gray-600 text-xs mt-1">Workers will appear when they connect to the NCL</div></div>';
-      }else{
-        wl.innerHTML=workers.map((w,i)=>{
-          const id=w.worker_id||'worker-'+i;
-          const short=id.slice(0,8);
-          const score=w.score||0;
-          const jobs=w.jobs_completed||0;
-          const failed=w.jobs_failed||0;
-          const cl=w.consciousness_level||0;
-          const successRate=jobs>0?Math.round(((jobs-failed)/jobs)*100):0;
-          const barW=Math.min(score,100);
-          return `<div class="ncl-worker-card p-4 cursor-pointer" onclick="this.querySelector('.ncl-worker-detail').classList.toggle('hidden')">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold" style="background:linear-gradient(135deg,${score>=80?'#10b981,#059669':score>=50?'#3b82f6,#2563eb':'#6b7280,#4b5563'})">
-                  ${short.slice(0,2).toUpperCase()}
-                </div>
-                <div>
-                  <div class="text-sm font-medium text-gray-200">${short}...</div>
-                  <div class="text-xs text-gray-500">CL ${cl} · ${jobs} jobs</div>
-                </div>
-              </div>
-              <div class="text-right">
-                <div class="text-sm font-bold ${score>=80?'text-emerald-400':score>=50?'text-blue-400':'text-gray-400'}">${score} pts</div>
-                <div class="text-xs text-gray-500">${successRate}% success</div>
-              </div>
-            </div>
-            <div class="mt-2 h-1.5 bg-zion-900 rounded-full overflow-hidden">
-              <div class="h-full rounded-full transition-all" style="width:${barW}%;background:linear-gradient(90deg,#7c3aed,#3b82f6)"></div>
-            </div>
-            <div class="ncl-worker-detail hidden mt-3 pt-3 border-t border-zion-700/50 grid grid-cols-3 gap-2 text-xs">
-              <div><span class="text-gray-500">Full ID</span><div class="text-gray-300 font-mono text-xs break-all">${id}</div></div>
-              <div><span class="text-gray-500">Failed</span><div class="text-red-400 font-bold">${failed}</div></div>
-              <div><span class="text-gray-500">Consciousness</span><div class="text-purple-400 font-bold">Level ${cl}</div></div>
-            </div>
-          </div>`;
-        }).join('');
-      }
-    }
-  }catch(_){}
-
-  // Leaderboard (rich)
-  try{
-    const r4=await fetch('/api/ncl/leaderboard');
-    const d4=await r4.json();
-    const lb=document.getElementById('ncl-leaderboard-dash');
-    const entries=d4.leaderboard||d4;
-    if(lb){
-      if(!Array.isArray(entries)||entries.length===0){
-        lb.innerHTML='<div class="p-6 text-center"><div class="text-gray-600 text-2xl mb-2">&#x1F3C6;</div><div class="text-gray-500 text-sm">No leaderboard data yet</div></div>';
-      }else{
-        lb.innerHTML=entries.slice(0,20).map((e,i)=>{
-          const rank=e.rank||i+1;
-          const rankClass=rank===1?'ncl-rank-gold':rank===2?'ncl-rank-silver':rank===3?'ncl-rank-bronze':'';
-          const medal=rank===1?'&#x1F947;':rank===2?'&#x1F948;':rank===3?'&#x1F949;':'';
-          const addr=e.wallet_address||e.worker_id||'—';
-          const shortAddr=addr.length>20?addr.slice(0,10)+'...'+addr.slice(-6):addr;
-          const avgMs=e.avg_completion_ms?Math.round(e.avg_completion_ms)+'ms':'—';
-          return `<div class="ncl-worker-card p-3 flex items-center gap-3">
-            <div class="w-8 text-center">
-              ${medal?'<span class="text-lg">'+medal+'</span>':'<span class="text-sm font-bold text-gray-500">#'+rank+'</span>'}
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="text-sm font-medium text-gray-200 truncate" title="${addr}">${shortAddr}</div>
-              <div class="text-xs text-gray-500">${e.jobs_completed||0} jobs · avg ${avgMs}</div>
-            </div>
-            <div class="text-right">
-              <div class="text-sm font-bold ${rankClass||'text-gray-300'}">${e.score||0}</div>
-              <div class="text-xs text-gray-500">points</div>
-            </div>
-          </div>`;
-        }).join('');
-      }
-    }
-  }catch(_){}
-}
-
-// Alias for backwards compat
-const loadNclStatus=loadNclFull;
-
-async function loadNclJobHistory(){
-  try{
-    const r=await fetch('/api/ncl/jobs');
-    const d=await r.json();
-    _nclJobHistory=d.jobs||d||[];
-    renderNclJobHistory();
-  }catch(_){
-    const el=document.getElementById('ncl-job-history-list');
-    if(el)el.innerHTML='<div class="p-4 text-center text-red-400 text-sm">Failed to load jobs</div>';
-  }
-}
-
-function renderNclJobHistory(){
-  const filter=document.getElementById('ncl-job-filter')?.value||'all';
-  const list=filter==='all'?_nclJobHistory:_nclJobHistory.filter(j=>(j.status||'').toLowerCase()===filter.toLowerCase());
-  const el=document.getElementById('ncl-job-history-list');
-  const countEl=document.getElementById('ncl-job-count');
-  const rateEl=document.getElementById('ncl-job-success-rate');
-
-  if(countEl)countEl.textContent=_nclJobHistory.length+' jobs total';
-  const completed=_nclJobHistory.filter(j=>j.status==='Completed').length;
-  const total=_nclJobHistory.length;
-  if(rateEl)rateEl.textContent=total>0?Math.round((completed/total)*100)+'% success rate':'—';
-
-  if(!el)return;
-  if(!Array.isArray(list)||list.length===0){
-    el.innerHTML='<div class="p-6 text-center"><div class="text-gray-600 text-2xl mb-2">&#x1F4ED;</div><div class="text-gray-500 text-sm">No jobs found</div></div>';
-    return;
-  }
-  el.innerHTML=list.slice(0,50).map(j=>{
-    const st=(j.status||'unknown').toLowerCase();
-    const stClass='ncl-job-'+st;
-    const id=(j.job_id||j.id||'—').slice(0,8);
-    const type=j.job_type||'—';
-    const backend=j.backend||'—';
-    const ts=j.created_at?new Date(j.created_at).toLocaleString():'—';
-    return `<div class="ncl-worker-card p-3 flex items-center gap-3">
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-2">
-          <span class="text-sm font-mono text-gray-300">${id}...</span>
-          <span class="ncl-job-status ${stClass}">&#x25CF; ${j.status||'Unknown'}</span>
-        </div>
-        <div class="text-xs text-gray-500 mt-0.5">${type} · ${backend} · ${ts}</div>
-      </div>
-      <div class="text-xs text-gray-500">${j.priority!=null?'P'+j.priority:''}</div>
-    </div>`;
-  }).join('');
-}
-
-async function submitNclJob(){
-  const jt=document.getElementById('ncl-job-type-dash')?.value||'inference';
-  const backend=document.getElementById('ncl-job-backend')?.value||'Custom';
-  const model=document.getElementById('ncl-job-model')?.value||'hiran-v2.2';
-  const priority=parseInt(document.getElementById('ncl-job-priority')?.value||'5',10);
-  const prompt=document.getElementById('ncl-job-prompt')?.value||'Dashboard test job';
-  const reward=parseInt(document.getElementById('ncl-job-reward')?.value||'20000000000',10);
-  const duration=parseInt(document.getElementById('ncl-job-duration')?.value||'60',10);
-  const submitter=document.getElementById('ncl-job-submitter')?.value||'dashboard';
-  const res=document.getElementById('ncl-job-result-dash');
-  const btn=document.getElementById('ncl-submit-btn');
-
-  if(btn){btn.disabled=true;btn.textContent='Submitting...';}
-  if(res)res.innerHTML='<span class="text-purple-400">Submitting...</span>';
-
-  try{
-    const payload={job_type:jt,model_id:model,backend:backend,params:{prompt:prompt},priority:priority,submitter:submitter,input_hash:Date.now().toString(16),reward_flowers:reward,max_duration_secs:duration};
-    const r=await fetch('/api/ncl/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    const d=await r.json();
-    if(d.error){if(res)res.innerHTML='<span class="text-red-400">Error: '+d.error+'</span>';}
-    else{
-      if(res)res.innerHTML='<span class="text-emerald-400">&#x2705; Job queued: '+(d.job_id||d.id||'OK')+'</span>';
-      setTimeout(()=>{loadNclFull();loadNclJobHistory();},1000);
-    }
-  }catch(e){if(res)res.innerHTML='<span class="text-red-400">Error: '+String(e)+'</span>';}
-  finally{if(btn){btn.disabled=false;btn.textContent='Submit Job';}}
-}
-
-function initNclCharts(){
-  // Jobs over time chart
-  const jCtx=document.getElementById('ncl-jobs-chart');
-  if(jCtx&&!_nclJobsChart){
-    const labels=[];const queued=[];const completed=[];const failed=[];
-    for(let i=11;i>=0;i--){const d=new Date();d.setHours(d.getHours()-i);labels.push(d.getHours()+':00');queued.push(Math.floor(Math.random()*5));completed.push(Math.floor(Math.random()*8));failed.push(Math.floor(Math.random()*2));}
-    _nclJobsChart=new Chart(jCtx,{type:'bar',data:{labels,datasets:[
-      {label:'Completed',data:completed,backgroundColor:'rgba(16,185,129,0.6)',borderRadius:4},
-      {label:'Queued',data:queued,backgroundColor:'rgba(245,158,11,0.6)',borderRadius:4},
-      {label:'Failed',data:failed,backgroundColor:'rgba(239,68,68,0.4)',borderRadius:4}
-    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#9ca3af',font:{size:10}}}},scales:{x:{ticks:{color:'#6b7280',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#6b7280',font:{size:9}},grid:{color:'rgba(255,255,255,0.05)'}}}}});
-  }
-  // Worker perf chart
-  const pCtx=document.getElementById('ncl-perf-chart');
-  if(pCtx&&!_nclPerfChart){
-    const wLabels=[];const scores=[];const jobCounts=[];
-    try{
-      const wl=document.getElementById('ncl-worker-list');
-      if(wl){
-        const cards=wl.querySelectorAll('.ncl-worker-card');
-        cards.forEach(c=>{const t=c.querySelector('.text-sm.font-medium');if(t){wLabels.push(t.textContent.trim());scores.push(Math.random()*100);jobCounts.push(Math.floor(Math.random()*20));}});
-      }
-    }catch(_){}
-    if(wLabels.length===0){wLabels.push('Worker 1','Worker 2');scores.push(85,65);jobCounts.push(12,8);}
-    _nclPerfChart=new Chart(pCtx,{type:'radar',data:{labels:['Score','Jobs','Speed','Uptime','Reliability'],datasets:[
-      {label:'Network Avg',data:[70,60,75,80,85],borderColor:'rgba(124,58,237,0.5)',backgroundColor:'rgba(124,58,237,0.1)',pointBackgroundColor:'#7c3aed'},
-      {label:'Top Worker',data:[95,90,88,96,92],borderColor:'rgba(16,185,129,0.7)',backgroundColor:'rgba(16,185,129,0.1)',pointBackgroundColor:'#10b981'}
-    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#9ca3af',font:{size:10}}}},scales:{r:{ticks:{color:'#6b7280',backdropColor:'transparent',font:{size:8}},grid:{color:'rgba(255,255,255,0.05)'},pointLabels:{color:'#9ca3af',font:{size:9}}}}}});
-  }
-}
-
-// Start NCL auto-refresh when hiran tab opens
-(function(){
-  const origSwitch=window.switchTab;
-  if(origSwitch){
-    window.switchTab=function(t){
-      origSwitch(t);
-      if(t==='hiran'){loadNclFull();_nclAutoTimer=setInterval(loadNclFull,10000);}
-      else{clearInterval(_nclAutoTimer);_nclAutoTimer=null;}
-    };
-  }
-})();
-
-// ── Service log tail ─────────────────────────────────────────────────
-async function loadLogs(serviceId){
-  const el=document.getElementById('log-'+serviceId);
-  if(!el)return;
-  try{
-    const r=await fetch('/api/service-log?id='+encodeURIComponent(serviceId)+'&lines=80');
-    const d=await r.json();
-    el.textContent=d.lines||(d.error?'Error: '+d.error:'(empty)');
-    el.scrollTop=el.scrollHeight;
-  }catch(e){el.textContent='Chyba: '+String(e);}
-}
-
-function hiranQuickPrompt(text){
-  const inp=document.getElementById('hiran-chat-input');
-  if(inp){inp.value=text;sendHiranMessage();}
-}
-
-async function sendHiranMessage(){
-  const inp=document.getElementById('hiran-chat-input');
-  const log=document.getElementById('hiran-chat-log');
-  const btn=document.getElementById('hiran-send-btn');
-  const lat=document.getElementById('hiran-latency');
-  if(!inp||!log)return;
-  const msg=inp.value.trim();
-  if(!msg)return;
-  inp.value='';
-  // Append user bubble
-  const userDiv=document.createElement('div');
-  userDiv.className='flex justify-end';
-  userDiv.innerHTML=`<div class="max-w-xs lg:max-w-md px-3 py-2 bg-amber-700/40 rounded-lg text-gray-200 text-xs">${escapeHtml(msg)}</div>`;
-  log.appendChild(userDiv);
-  log.scrollTop=log.scrollHeight;
-  // Spinner
-  const spinDiv=document.createElement('div');
-  spinDiv.className='flex justify-start';
-  spinDiv.innerHTML='<div class="px-3 py-2 bg-zion-700 rounded-lg text-gray-400 text-xs animate-pulse">Hiran přemýšlí…</div>';
-  log.appendChild(spinDiv);
-  log.scrollTop=log.scrollHeight;
-  if(btn)btn.disabled=true;
-  try{
-    const t0=Date.now();
-    const r=await fetch('/api/hiran/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})});
-    const d=await r.json();
-    log.removeChild(spinDiv);
-    const aiDiv=document.createElement('div');
-    aiDiv.className='flex justify-start';
-    const text=d.ok?d.reply:`❌ ${d.error}`;
-    aiDiv.innerHTML=`<div class="max-w-xs lg:max-w-2xl px-3 py-2 bg-zion-700 rounded-lg text-gray-200 text-xs whitespace-pre-wrap">${escapeHtml(text)}</div>`;
-    log.appendChild(aiDiv);
-    log.scrollTop=log.scrollHeight;
-    const elapsed=d.latency_ms!=null?d.latency_ms:Date.now()-t0;
-    if(lat)lat.textContent=`Odpověď za ${Math.round(elapsed)} ms`;
-  }catch(e){
-    log.removeChild(spinDiv);
-    const errDiv=document.createElement('div');
-    errDiv.className='flex justify-start';
-    errDiv.innerHTML=`<div class="px-3 py-2 bg-red-900/40 rounded-lg text-red-400 text-xs">Chyba: ${escapeHtml(String(e))}</div>`;
-    log.appendChild(errDiv);
-  }finally{
-    if(btn)btn.disabled=false;
-  }
-}
-
-// ── Badges & cards ──
-function setBadge(el,ok){const b=document.getElementById(el);if(!b)return;b.textContent=ok?'LIVE':'DOWN';b.className=ok?'px-2 py-0.5 rounded text-xs font-bold bg-emerald-600 text-white':'px-2 py-0.5 rounded text-xs font-bold bg-red-600 text-white';}
-function setCardLive(id,ok){const c=document.getElementById('card-'+id);if(!c)return;if(ok){c.classList.add('card-live');c.style.borderColor='#10b981';}else{c.classList.remove('card-live');c.style.borderColor='#1f2942';}}
-
-// ── Main refresh ──
-async function refreshAll(){
-  try{
-    const[s,cl,al]=await Promise.all([
-      fetch('/api/status').then(r=>r.json()),
-      fetch('/api/checklist').then(r=>r.json()),
-      fetch('/api/alerts').then(r=>r.json())
-    ]);
-    document.getElementById('timestamp').textContent='Last update: '+new Date(s.timestamp).toLocaleTimeString();
-    document.getElementById('progressText').textContent=cl.passed+'/'+cl.total+' ('+cl.pct+'%)';
-    document.getElementById('progressBar').style.width=cl.pct+'%';
-    updateServiceCards(s);
-    updateAlerts(al.alerts);
-    updateChecklist(cl.checks);
-    updatePayouts(s.pool);
-    updateMiniHashrate();
-    loadMainnetStatus();
-    if(currentTab==='charts')renderCharts();
-    if(currentTab==='events')loadEvents();
-    if(currentTab==='wizard')renderWizard();
-  }catch(e){console.error('Refresh error:',e);}
-}
-
-function updateServiceCards(s){
-  const en=s.edge_node,n1=s.node1,n2=s.node2,p=s.pool,m=s.miner;
-  const lb=s.local_backup||{};
-  // Topology-aware visibility
-  const isEdgePrimary = s.topology === 'edge-primary';
-  const node2Card = document.getElementById('card-node2');
-  if(node2Card) node2Card.style.display = isEdgePrimary ? 'none' : '';
-  const launchStackBtn = document.getElementById('btn-launch-stack');
-  if(launchStackBtn) launchStackBtn.style.display = isEdgePrimary ? 'none' : '';
-  const launchBackupBtn = document.getElementById('btn-launch-local-backup');
-  if(launchBackupBtn) launchBackupBtn.style.display = isEdgePrimary ? '' : 'none';
-  // Edge Node (Primary)
-  setBadge('badge-edge-node',en&&en.running);setCardLive('edge-node',en&&en.running);
-  document.getElementById('val-edge-node-height').textContent=en?en.chain_height??'—':'—';
-  document.getElementById('val-edge-node-hash').textContent=en?en.tip_hash??'—':'—';
-  document.getElementById('val-edge-node-peers').textContent=en?en.known_peers??'—':'—';
-  // Local Backup Node
-  setBadge('badge-node1',n1.running);setCardLive('node1',n1.running);
-  document.getElementById('val-node1-height').textContent=n1.chain_height??'—';
-  document.getElementById('val-node1-id').textContent=n1.node_id??'—';
-  document.getElementById('val-node1-peers').textContent=n1.known_peers??'—';
-  document.getElementById('val-node1-p2p').textContent=n1.p2p_bind??'—';
-  // Sync status for local backup node
-  const lbSyncEl=document.getElementById('val-node1-sync');
-  if(lbSyncEl){
-    const synced=en&&en.chain_height&&n1.chain_height&&n1.chain_height>=en.chain_height-2;
-    const tipMatch=en&&n1&&en.tip_hash&&n1.tip_hash&&en.tip_hash===n1.tip_hash;
-    if(n1.running&&synced){
-      lbSyncEl.textContent=tipMatch?'✓ Synced (tip match)':'✓ Synced';
-      lbSyncEl.className='text-emerald-400 font-bold';
-    }else if(n1.running&&n1.known_peers>0){
-      lbSyncEl.textContent='Syncing…';
-      lbSyncEl.className='text-amber-400';
-    }else if(n1.running){
-      lbSyncEl.textContent='No peers';
-      lbSyncEl.className='text-red-400';
-    }else{
-      lbSyncEl.textContent='Offline';
-      lbSyncEl.className='text-red-400';
-    }
-  }
-  // Node 2 (Dev / Optional)
-  if(!isEdgePrimary){
-    setBadge('badge-node2',n2.running);setCardLive('node2',n2.running);
-    document.getElementById('val-node2-height').textContent=n2.chain_height??'—';
-    document.getElementById('val-node2-id').textContent=n2.node_id??'—';
-    document.getElementById('val-node2-peers').textContent=n2.known_peers??'—';
-    const synced=en&&en.chain_height&&n1.chain_height&&n1.chain_height>=en.chain_height-5;
-    const syncEl=document.getElementById('val-node2-sync');
-    syncEl.textContent=synced?'✓ Synced':(n2.known_peers>0?'Syncing…':'No peers');
-    syncEl.className=synced?'text-emerald-400 font-bold':'text-amber-400';
-  }
-  // Edge Pool (Primary)
-  setBadge('badge-pool',p.running);setCardLive('pool',p.running);
-  document.getElementById('val-pool-sessions').textContent=p.active_sessions??'0';
-  document.getElementById('val-pool-blocks').textContent=p.blocks_found??'0';
-  document.getElementById('val-pool-shares').textContent=(p.shares_accepted??0)+' / '+(p.shares_rejected??0);
-  document.getElementById('val-pool-fee').textContent=p.fee_split?'Split: '+p.fee_split:'—';
-  // Miner
-  setBadge('badge-miner',m.running&&m.hashrate);setCardLive('miner',m.running&&m.hashrate);
-  document.getElementById('val-miner-hashrate').textContent=m.hashrate?m.hashrate.toFixed(2):'—';
-  document.getElementById('val-miner-gpu').textContent=(m.gpu_backend?m.gpu_backend+': ':'')+(m.gpu_device??'—');
-  document.getElementById('val-miner-height').textContent=m.current_height??'—';
-  document.getElementById('val-miner-diff').textContent=m.current_diff??'—';
-}
-
-function updatePayouts(p){
-  document.getElementById('payout-wallet').textContent=p.pool_wallet??'—';
-  const en=document.getElementById('payout-enabled');
-  en.textContent=p.payout_enabled===true?'YES':(p.payout_enabled===false?'NO':'—');
-  en.className=p.payout_enabled?'font-bold text-emerald-400':'font-bold text-red-400';
-  document.getElementById('payout-blocks').textContent=p.blocks_found??'0';
-  document.getElementById('payout-nonce').textContent=p.nonce_count??'—';
-  document.getElementById('payout-split').textContent=p.fee_split??'—';
-  const pr=document.getElementById('payout-recent');
-  pr.innerHTML=(p.recent_payouts&&p.recent_payouts.length)
-    ?p.recent_payouts.map(l=>'<div class="truncate text-[10px]">'+escapeHtml(l)+'</div>').join('')
-    :'<div class="text-gray-600 italic text-[10px]">No payout events yet</div>';
-}
-
-function updateAlerts(alerts){
-  const cont=document.getElementById('alerts');
-  const badge=document.getElementById('alertBadge');
-  const topBadge=document.getElementById('alertCount');
-  const critical=alerts.filter(a=>a.severity==='critical'||a.severity==='warning').length;
-  badge.textContent=critical+' active';
-  badge.className='text-xs px-2 py-0.5 rounded '+(critical>0?'bg-red-600/30 text-red-300':'bg-emerald-600/30 text-emerald-300');
-  if(critical>0){topBadge.classList.remove('hidden');topBadge.textContent=critical;}else{topBadge.classList.add('hidden');}
-  const colors={critical:'bg-red-900/40 border-red-600 text-red-200',warning:'bg-amber-900/30 border-amber-600 text-amber-200',info:'bg-blue-900/30 border-blue-600 text-blue-200',success:'bg-emerald-900/30 border-emerald-600 text-emerald-200'};
-  const icons={critical:'🚨',warning:'⚠️',info:'ℹ️',success:'✅'};
-  cont.innerHTML=alerts.map(a=>`<div class="alert-new flex items-start gap-3 p-3 rounded-lg border ${colors[a.severity]||colors.info}">
-    <span class="text-lg">${icons[a.severity]||'ℹ️'}</span>
-    <div class="flex-1">
-      <div class="text-sm font-semibold">${escapeHtml(a.title)}</div>
-      <div class="text-xs opacity-80 mt-0.5">${escapeHtml(a.detail)}</div>
-    </div>
-    ${a.action?`<button onclick="controlAction('${a.action}')" class="text-xs px-2 py-1 bg-white/10 hover:bg-white/20 rounded transition whitespace-nowrap">Fix</button>`:''}
-  </div>`).join('');
-}
-
-function updateChecklist(checks){
-  const cl=document.getElementById('checklist');
-  cl.innerHTML=checks.map(c=>`<div class="flex items-center gap-2 py-1.5 px-2 rounded ${c.ok?'bg-emerald-900/30':'bg-zion-700/40'} transition">
-    <span class="text-sm ${c.ok?'text-emerald-400':'text-gray-500'}">${c.ok?'✓':'○'}</span>
-    <span class="text-xs ${c.ok?'text-gray-300':'text-gray-400'}">${escapeHtml(c.label)}</span>
-  </div>`).join('');
-}
-
-// ── Mainnet Status ──
-async function loadMainnetStatus(){
-  try{
-    const res=await fetch('/api/mainnet-status').then(r=>r.json());
-    const grid=document.getElementById('mainnet-status-grid');
-    
-    const statusItems=[
-      {label:'Genesis Hash',value:res.genesis_hash?res.genesis_hash.substring(0,16)+'…':'Unknown',ok:res.genesis_hash==='003529805e9b47babb9ac0f26b27b1aad0a1cf3c483181857daf3269f7088923',icon:'🔷'},
-      {label:'Fee Split',value:res.fee_split_all_match?'✓ Canonical':'✗ Mismatch',ok:res.fee_split_all_match,icon:'💰'},
-      {label:'Launch Date',value:res.days_to_launch>0?res.days_to_launch+' days':'LAUNCH DAY!',ok:res.days_to_launch>=0,icon:'🚀'},
-      {label:'Checklist',value:res.checklist_passed+'/'+res.checklist_total+' ('+res.checklist_pass_rate+'%)',ok:res.checklist_pass_rate>=80,icon:'✅'},
-      {label:'Node Status',value:(res.topology==='edge-primary'?(res.edge_node_running?'E1✓':'E1✗')+' '+(res.local_backup_running?'LB✓':'LB✗'):(res.node1_running?'N1✓':'N1✗')+' '+(res.node2_running?'N2✓':'N2✗')),ok:res.topology==='edge-primary'?(res.edge_node_running&&res.local_backup_running):(res.node1_running&&res.node2_running),icon:'🔶'},
-      {label:'Pool Status',value:res.pool_running?'Running':'Stopped',ok:res.pool_running,icon:'⚡'},
-      {label:'Git Status',value:res.git_status.clean?'Clean: '+res.git_status.branch:'Dirty: '+res.git_status.branch,ok:res.git_status.clean,icon:'📦'},
-      {label:'Overall',value:res.ready_for_launch?'🎉 READY':'⏳ PREPARING',ok:res.ready_for_launch,icon:'🎯'},
-    ];
-    
-    grid.innerHTML=statusItems.map(item=>`<div class="bg-zion-900/50 rounded-lg p-3 border ${item.ok?'border-emerald-600/50':'border-zion-600'}">
-      <div class="flex items-center gap-2 mb-1"><span class="text-lg">${item.icon}</span><span class="text-xs font-semibold text-gray-400">${item.label}</span></div>
-      <div class="text-sm font-bold ${item.ok?'text-emerald-400':'text-amber-400'}">${item.value}</div>
-    </div>`).join('');
-    
-  }catch(e){
-    console.error('Failed to load mainnet status:',e);
-    document.getElementById('mainnet-status-grid').innerHTML='<div class="text-red-400 text-xs">Failed to load mainnet status</div>';
-  }
-}
-
-// ── Launch Day Automation ──
-async function loadLaunchDayStatus(){
-  try{
-    const res=await fetch('/api/launch-day-prepare?action=status').then(r=>r.json());
-    
-    // Update badge
-    const badge=document.getElementById('launch-day-badge');
-    if(res.is_launch_day){
-      badge.textContent='🎉 LAUNCH DAY';
-      badge.className='px-3 py-1 rounded text-xs font-bold bg-emerald-600 text-white animate-pulse';
-    }else if(res.backup_exists){
-      badge.textContent='✓ Ready';
-      badge.className='px-3 py-1 rounded text-xs font-bold bg-blue-600 text-white';
-    }else{
-      badge.textContent='⏳ Pending';
-      badge.className='px-3 py-1 rounded text-xs font-bold bg-amber-600 text-white';
-    }
-    
-    // Update status cards
-    document.getElementById('ld-days').textContent=res.is_launch_day?'TODAY':Math.ceil((new Date('2026-06-20T12:00:00')-new Date())/86400000)+' days';
-    document.getElementById('ld-backup').textContent=res.backup_exists?'✓ Exists':'✗ None';
-    document.getElementById('ld-backup').className=res.backup_exists?'text-2xl font-bold text-emerald-400':'text-2xl font-bold text-red-400';
-    document.getElementById('ld-genesis').textContent=res.current_genesis_hash?res.current_genesis_hash.substring(0,8)+'…':'Unknown';
-    
-    // Update backup details
-    const details=document.getElementById('backup-details');
-    if(res.backup_exists){
-      details.innerHTML=`<div class="text-emerald-400 mb-2">✓ Backup exists at: ${res.backup_dir}</div>
-        <div class="text-gray-300">Ready for launch day rotation</div>`;
-    }else{
-      details.innerHTML=`<div class="text-amber-400 mb-2">⚠ No backup found</div>
-        <div class="text-gray-300">Create a backup before launch day</div>`;
-    }
-    
-    addLaunchDayLog('📊 Status updated: '+(res.is_launch_day?'LAUNCH DAY':res.backup_exists?'Ready':'Pending'));
-    
-  }catch(e){
-    console.error('Failed to load launch day status:',e);
-    addLaunchDayLog('❌ Failed to load status: '+e.message);
-  }
-}
-
-async function launchDayAction(action){
-  addLaunchDayLog('⏳ Executing: '+action+'...');
-  
-  try{
-    const res=await fetch('/api/launch-day-prepare?action='+action).then(r=>r.json());
-    
-    if(res.success){
-      if(action==='backup'){
-        addLaunchDayLog('✅ Backup created: '+res.backup_dir);
-        addLaunchDayLog('📁 Files backed up: '+res.manifest.files_backed_up);
-        document.getElementById('backup-details').innerHTML=`
-          <div class="text-emerald-400 mb-2">✓ Backup created: ${res.backup_dir}</div>
-          <div class="text-xs text-gray-400 mt-2">
-            <div>Timestamp: ${res.manifest.timestamp}</div>
-            <div>Files: ${res.manifest.files_backed_up}</div>
-          </div>
-          <div class="mt-2 max-h-32 overflow-y-auto">
-            ${res.backup_log.map(l=>`<div class="text-xs">${escapeHtml(l)}</div>`).join('')}
-          </div>
-        `;
-        loadLaunchDayStatus();
-      }else if(action==='status'){
-        addLaunchDayLog('✅ Status checked');
-        loadLaunchDayStatus();
-      }
-    }else{
-      addLaunchDayLog('❌ Action failed: '+res.error);
-    }
-  }catch(e){
-    addLaunchDayLog('❌ Action error: '+e.message);
-  }
-}
-
-function confirmLaunchDay(){
-  if(confirm('⚠️ CRITICAL OPERATION\n\nThis will rotate genesis and premine addresses for mainnet launch.\n\nMake sure:\n• All nodes are stopped\n• Backup is created\n• You have private keys backed up\n\nProceed with genesis rotation?')){
-    launchDayAction('rotate-genesis&confirmed=true');
-  }else{
-    addLaunchDayLog('🚫 Genesis rotation cancelled by user');
-  }
-}
-
-async function launchDaySequence(){
-  if(!confirm('🚀 FULL LAUNCH SEQUENCE\n\nThis will execute the complete launch day automation:\n1. Create backup\n2. Stop all services\n3. Rotate genesis\n4. Restart network\n5. Verify everything\n\nThis is irreversible. Continue?')) return;
-  
-  addLaunchDayLog('🚀 Starting full launch sequence...');
-  
-  const steps=['prepare','stop-network','rotate-genesis','restart-network','verify'];
-  
-  for(const step of steps){
-    addLaunchDayLog('⏳ Step: '+step+'...');
-    try{
-      const res=await fetch('/api/launch-day-execute?step='+step).then(r=>r.json());
-      if(res.success){
-        addLaunchDayLog('✅ Step completed: '+step);
-        if(res.next_step) addLaunchDayLog('➡️ Next: '+res.next_step);
-        if(res.complete){
-          addLaunchDayLog('🎉 LAUNCH SEQUENCE COMPLETE!');
-          alert('🎉 Mainnet launch sequence completed successfully!');
-        }
-      }else{
-        addLaunchDayLog('❌ Step failed: '+res.error);
-        break;
-      }
-    }catch(e){
-      addLaunchDayLog('❌ Step error: '+e.message);
-      break;
-    }
-  }
-}
-
-function addLaunchDayLog(message){
-  const log=document.getElementById('launch-day-log');
-  const time=new Date().toLocaleTimeString();
-  const line=`<div class="log-line"><span class="text-gray-500">[${time}]</span> ${escapeHtml(message)}</div>`;
-  log.innerHTML=line+log.innerHTML;
-}
-
-// ── Mini hashrate sparkline ──
-async function updateMiniHashrate(){
-  const hist=await fetch('/api/history').then(r=>r.json());
-  const data=hist.samples.map(s=>s.hashrate||0);
-  const labels=hist.samples.map(s=>'');
-  if(!charts.mini){
-    const ctx=document.getElementById('mini-hashrate').getContext('2d');
-    charts.mini=new Chart(ctx,{type:'line',data:{labels,datasets:[{data,borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.1)',fill:true,tension:0.3,pointRadius:0,borderWidth:2}]},
-      options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:true,grid:{color:'#1f2942'},ticks:{color:'#64748b',font:{size:10}}}},animation:{duration:300}}});
-  }else{charts.mini.data.labels=labels;charts.mini.data.datasets[0].data=data;charts.mini.update('none');}
-  const valid=data.filter(x=>x>0);
-  if(valid.length){
-    const avg=valid.reduce((a,b)=>a+b,0)/valid.length;
-    const max=Math.max(...valid);
-    document.getElementById('hashrate-summary').textContent='avg '+avg.toFixed(2)+' / peak '+max.toFixed(2)+' KH/s';
-  }
-}
-
-// ── Charts tab ──
-async function renderCharts(){
-  const hist=await fetch('/api/history').then(r=>r.json());
-  const s=hist.samples;
-  const labels=s.map(x=>new Date(x.t*1000).toLocaleTimeString().slice(0,5));
-  const common={responsive:true,plugins:{legend:{labels:{color:'#cbd5e1'}}},scales:{x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1f2942'}},y:{ticks:{color:'#64748b'},grid:{color:'#1f2942'}}},animation:{duration:300}};
-  mkChart('chart-hashrate','line',{labels,datasets:[{label:'KH/s',data:s.map(x=>x.hashrate||0),borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.15)',fill:true,tension:0.3,pointRadius:0}]},common);
-  mkChart('chart-height','line',{labels,datasets:[
-    {label:'Node1',data:s.map(x=>x.n1_height||0),borderColor:'#10b981',pointRadius:0,tension:0.2},
-    {label:'Node2',data:s.map(x=>x.n2_height||0),borderColor:'#3b82f6',pointRadius:0,tension:0.2,borderDash:[5,5]}
-  ]},common);
-  mkChart('chart-shares','bar',{labels,datasets:[
-    {label:'Accepted',data:s.map(x=>x.shares_ok||0),backgroundColor:'#10b981'},
-    {label:'Rejected',data:s.map(x=>x.shares_bad||0),backgroundColor:'#ef4444'}
-  ]},common);
-  mkChart('chart-sessions','line',{labels,datasets:[
-    {label:'Sessions',data:s.map(x=>x.sessions||0),borderColor:'#a855f7',pointRadius:0,tension:0.3},
-    {label:'Node1 Peers',data:s.map(x=>x.n1_peers||0),borderColor:'#06b6d4',pointRadius:0,tension:0.3}
-  ]},common);
-}
-
-function mkChart(id,type,data,opts){
-  const ctx=document.getElementById(id);if(!ctx)return;
-  if(charts[id]){charts[id].data=data;charts[id].update('none');return;}
-  charts[id]=new Chart(ctx.getContext('2d'),{type,data,options:opts});
-}
-
-// ── Events feed ──
-async function loadEvents(){
-  const res=await fetch('/api/events').then(r=>r.json());
-  const c=document.getElementById('events-feed');
-  if(!res.events||!res.events.length){c.innerHTML='<div class="text-gray-500 italic text-sm">No block events recorded yet. Events appear as nodes mine and relay blocks.</div>';return;}
-  const srcColors={node1:'bg-emerald-700',node2:'bg-blue-700',pool:'bg-amber-700'};
-  const typeIcons={block_found:'⛏️',block_relay:'📡'};
-  c.innerHTML=res.events.map(e=>`<div class="flex items-center gap-3 p-3 bg-zion-900 rounded-lg border border-zion-700 hover:border-amber-600 transition">
-    <span class="text-2xl">${typeIcons[e.type]||'🧱'}</span>
-    <span class="px-2 py-0.5 rounded text-xs font-bold text-white ${srcColors[e.source]||'bg-gray-700'}">${e.source}</span>
-    <div class="flex-1">
-      <div class="text-sm font-bold">Height #${e.height} <span class="text-xs text-gray-400 font-normal">${e.type.replace('_',' ')}</span></div>
-      ${e.hash?`<div class="text-xs font-mono text-gray-500">${escapeHtml(e.hash)}</div>`:''}
-    </div>
-    <div class="text-xs text-gray-500">${new Date(e.ts*1000).toLocaleTimeString()}</div>
-  </div>`).join('');
-}
-
-// ── Env files ──
-let currentEnvFile=null;
-async function loadEnvFiles(){
-  const res=await fetch('/api/env').then(r=>r.json());
-  const c=document.getElementById('env-file-list');
-  c.innerHTML=res.files.map(f=>`<button onclick="selectEnv('${escapeHtml(f.name)}')" class="px-3 py-2 bg-zion-700 hover:bg-zion-600 rounded-lg text-xs font-mono ${currentEnvFile===f.name?'ring-2 ring-amber-400':''}">
-    <div class="font-bold text-amber-300">${escapeHtml(f.name)}</div>
-    <div class="text-[10px] text-gray-400">${f.vars} vars · ${(f.size/1024).toFixed(1)} KB</div>
-  </button>`).join('');
-}
-async function selectEnv(name){
-  currentEnvFile=name;loadEnvFiles();
-  const res=await fetch('/api/env/load?name='+encodeURIComponent(name)).then(r=>r.json());
-  const c=document.getElementById('env-detail');
-  if(res.error){c.innerHTML='<div class="text-red-400">'+escapeHtml(res.error)+'</div>';return;}
-  const missing=res.missing_required||[];
-  let html=`<div class="mb-3"><div class="text-sm font-bold text-amber-300 mb-1">${escapeHtml(res.file)} <span class="text-xs text-gray-400">(${res.total} variables)</span></div>`;
-  if(missing.length){html+=`<div class="text-xs text-red-400 mt-1">⚠ Missing required: ${missing.map(escapeHtml).join(', ')}</div>`;}
-  else{html+='<div class="text-xs text-emerald-400 mt-1">✓ All required variables present</div>';}
-  html+='</div><div class="space-y-1">';
-  html+=res.vars.map(v=>`<div class="flex items-center gap-2 py-1 px-2 rounded ${v.required?'bg-amber-900/20':'hover:bg-zion-700/40'}">
-    <span class="text-[10px] w-8 text-gray-500">${v.line}</span>
-    <span class="text-xs ${v.required?'text-amber-300':'text-gray-300'} font-mono w-64 truncate">${escapeHtml(v.key)}</span>
-    <span class="text-xs font-mono flex-1 truncate ${v.sensitive?'text-red-400':'text-gray-400'}">${escapeHtml(v.value)}</span>
-    ${v.required?'<span class="text-[10px] px-1.5 py-0.5 bg-amber-700/40 rounded text-amber-200">required</span>':''}
-    ${v.sensitive?'<span class="text-[10px] px-1.5 py-0.5 bg-red-700/40 rounded text-red-200">secret</span>':''}
-  </div>`).join('');
-  html+='</div>';
-  c.innerHTML=html;
-}
-
-// ── Wizard ──
-async function renderWizard(){
-  const[st,cl]=await Promise.all([fetch('/api/status').then(r=>r.json()),fetch('/api/checklist').then(r=>r.json())]);
-  const isEdge = st.topology === 'edge-primary';
-  const steps=[
-    {n:1,title:'Prepare environment',desc:'Generate keys (gen-keys), assemble .env file with all wallets and ZION_POOL_PAYOUT_SK_HEX.',done:cl.checks.find(c=>c.id==='env')?.ok,actions:[{label:'View env files',cb:`switchTab('env')`}]},
-    {n:2,title:isEdge?'Start Local Backup Node':'Start Genesis Node',desc:isEdge?'Syncs from Edge primary via P2P. 0.0.0.0:8333 (P2P) / 0.0.0.0:9443 (RPC).':'Local genesis node. 0.0.0.0:8333 (P2P) / 0.0.0.0:9443 (RPC).',done:cl.checks.find(c=>c.id==='node1')?.ok,actions:[{label:'▶ Start Node',cb:`controlAction('start-node1')`}]},
-    isEdge?{n:3,title:'Connect to Edge Pool',desc:'Edge (127.0.0.1) runs the primary pool. Verify VPN connectivity.',done:cl.checks.find(c=>c.id==='pool-edge')?.ok,actions:[{label:'Check Edge Pool',cb:`switchTab('overview')`}]}:{n:3,title:'Start Local Pool',desc:'Accepts miners, validates shares, distributes payouts (89/5/5 burn model).',done:cl.checks.find(c=>c.id==='pool')?.ok,actions:[{label:'▶ Start Pool',cb:`controlAction('start-pool')`}]},
-    {n:4,title:'Start GPU Miner',desc:'Connects to pool, performs cosmic_harmony hashing on GPU.',done:cl.checks.find(c=>c.id==='miner')?.ok,actions:[{label:'▶ Start Miner',cb:`controlAction('start-miner')`}]},
-    {n:5,title:'Verify chain progression',desc:'Confirm node syncs with network and chain height advances.',done:cl.checks.find(c=>c.id==='chain')?.ok,actions:[{label:'View events',cb:`switchTab('events')`}]},
-    {n:6,title:'Confirm fee split & payouts',desc:'Validate 89/5/5/1 burn-model distribution and payout wallet is funded.',done:cl.checks.find(c=>c.id==='fee_split')?.ok&&cl.checks.find(c=>c.id==='payout')?.ok,actions:[{label:'View payouts',cb:`switchTab('overview')`}]},
-  ];
-  const cont=document.getElementById('wizard-steps');
-  cont.innerHTML=steps.map((s,i)=>{
-    const next=!s.done&&steps.slice(0,i).every(x=>x.done);
-    const bg=s.done?'border-emerald-600 bg-emerald-900/20':next?'border-amber-500 bg-amber-900/20':'border-zion-700 bg-zion-900/40';
-    return `<div class="flex items-start gap-4 p-4 rounded-lg border ${bg}">
-      <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold ${s.done?'bg-emerald-600':next?'bg-amber-600 animate-pulse':'bg-zion-700'}">${s.done?'✓':s.n}</div>
-      <div class="flex-1">
-        <div class="font-bold text-base mb-1 ${next?'text-amber-300':''}">${escapeHtml(s.title)}</div>
-        <div class="text-xs text-gray-400 mb-2">${escapeHtml(s.desc)}</div>
-        <div class="flex gap-2">${s.actions.map(a=>`<button onclick="${a.cb}" class="text-xs px-3 py-1 bg-zion-700 hover:bg-amber-600 rounded transition">${escapeHtml(a.label)}</button>`).join('')}</div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-// ── Controls ──
-async function renderControls(){
-  const res=await fetch('/api/controls').then(r=>r.json());
-  const c=document.getElementById('control-buttons');
-  const icons={'start-node1':'🔷','start-node2':'🔶','start-pool':'⚡','start-miner':'⛏️','start-miner-gpu':'🎮','start-miner-cpu':'💻','stop-miner':'⏹','restart-node2':'⟳ 🔶','restart-miner':'⟳ ⛏️','launch-stack':'🚀','launch-local-backup':'🌐','stop-stack':'⏹️'};
-  c.innerHTML=res.actions.filter(a=>!['launch-stack','stop-stack'].includes(a)).map(a=>`<button onclick="controlAction('${a}')" class="p-3 bg-zion-700 hover:bg-zion-600 rounded-lg text-left transition">
-    <div class="text-xl mb-1">${icons[a]||'⚙️'}</div>
-    <div class="text-xs font-medium">${a}</div>
-  </button>`).join('');
-}
-
-async function controlAction(action){
-  const log=document.getElementById('control-log');
-  const ts=new Date().toLocaleTimeString();
-  if(log){log.insertAdjacentHTML('afterbegin','<div class="text-amber-400">['+ts+'] dispatching '+action+'...</div>');}
-  try{
-    const res=await fetch('/api/control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action})}).then(r=>r.json());
-    const msg=res.ok?'<div class="text-emerald-400">['+ts+'] ✓ '+action+' started (PID '+res.pid+')</div>':'<div class="text-red-400">['+ts+'] ✗ '+(res.error||'failed')+'</div>';
-    if(log){log.insertAdjacentHTML('afterbegin',msg);}
-    toast(res.ok?('▶ '+action+' dispatched'):('Failed: '+(res.error||action)),res.ok?'success':'error');
-  }catch(e){
-    if(log){log.insertAdjacentHTML('afterbegin','<div class="text-red-400">['+ts+'] ✗ '+e.message+'</div>');}
-    toast('Error: '+e.message,'error');
-  }
-}
-
-// ── Edge Maintenance (disk + RAM optimization) ──────────────────────────
-// Calls /api/control with maint-* actions. Shows live status + log output.
-async function runMaintenance(action){
-  const log=document.getElementById('maint-log');
-  const badge=document.getElementById('maint-status-badge');
-  const ts=new Date().toLocaleTimeString();
-  const labels={ 'maint-dry-run':'Dry Run','maint-disk':'Clean Disk','maint-ram':'Optimize RAM','maint-all':'Full Maintenance','maint-status':'Status' };
-  const label=labels[action]||action;
-  if(badge){badge.textContent='RUNNING…';badge.className='text-xs px-2 py-0.5 rounded bg-amber-500 text-white animate-pulse';}
-  if(log){log.insertAdjacentHTML('afterbegin','<div class="text-amber-400">['+ts+'] ⏳ '+label+' — dispatching (may take 1–5 min)…</div>');}
-  toast('🧹 '+label+' started…','');
-  try{
-    const res=await fetch('/api/control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action})}).then(r=>r.json());
-    const lines=(res.result||res.error||'OK').split('\n').filter(l=>l.trim());
-    const color=res.ok?'text-emerald-400':'text-red-400';
-    const mark=res.ok?'✓':'✗';
-    if(log){
-      log.insertAdjacentHTML('afterbegin','<div class="'+color+'">['+ts+'] '+mark+' '+label+' ('+(res.ok?'ok':'failed')+')</div>');
-      // Show last ~30 lines of script output (newest first)
-      lines.slice(0,30).forEach(l=>{
-        const lc = l.includes('WARN')?'text-yellow-400':l.includes('ERROR')?'text-red-400':l.includes('reclaimed')||l.includes('after')?'text-emerald-400':'text-gray-400';
-        log.insertAdjacentHTML('afterbegin','<div class="'+lc+'">'+escapeHtml(l)+'</div>');
-      });
-    }
-    if(badge){badge.textContent=res.ok?'DONE':'ERROR';badge.className='text-xs px-2 py-0.5 rounded '+(res.ok?'bg-emerald-600 text-white':'bg-red-700 text-white');}
-    toast(res.ok?('✓ '+label+' complete'):('✗ '+label+': '+(res.error||'failed')),res.ok?'success':'error');
-    // Refresh status metrics after any maint action
-    setTimeout(()=>loadMaintStatus(),1500);
-  }catch(e){
-    if(log){log.insertAdjacentHTML('afterbegin','<div class="text-red-400">['+ts+'] ✗ '+e.message+'</div>');}
-    if(badge){badge.textContent='ERROR';badge.className='text-xs px-2 py-0.5 rounded bg-red-700 text-white';}
-    toast('Error: '+e.message,'error');
-  }
-}
-
-async function loadMaintStatus(){
-  // Pull maintenance status (disk/ram %) from the maint-status action.
-  // maint-status doesn't need sudo (script runs status mode without --force).
-  try{
-    const res=await fetch('/api/control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'maint-status'})}).then(r=>r.json());
-    if(res.ok && res.result){
-      // Output format: "[ts] [INFO] [maint] status: ram=NN% disk=NN% disk_free=NGB"
-      const m=res.result.match(/ram=(\\d+)%\\s+disk=(\\d+)%\\s+disk_free=(\\d+)GB/);
-      if(m){
-        const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
-        set('maint-ram-pct',m[1]+'%');
-        set('maint-disk-pct',m[2]+'%');
-        set('maint-disk-free',m[3]+' GB free');
-        const ramPct=parseInt(m[1]), diskPct=parseInt(m[2]);
-        const ramEl=document.getElementById('maint-ram-pct');
-        const diskEl=document.getElementById('maint-disk-pct');
-        if(ramEl)ramEl.className='text-lg font-bold '+(ramPct>=92?'text-red-400':ramPct>=80?'text-amber-400':'text-emerald-400');
-        if(diskEl)diskEl.className='text-lg font-bold '+(diskPct>=85?'text-red-400':diskPct>=70?'text-amber-400':'text-emerald-400');
-        const badge=document.getElementById('maint-status-badge');
-        if(badge){
-          const worst=Math.max(ramPct,diskPct);
-          badge.textContent=worst>=92?'CRITICAL':worst>=80?'WARN':'OK';
-          badge.className='text-xs px-2 py-0.5 rounded '+(worst>=92?'bg-red-700 text-white':worst>=80?'bg-amber-600 text-white':'bg-emerald-600 text-white');
-        }
-      }
-    }
-  }catch(e){/* ignore — status is best-effort */}
-  const next=document.getElementById('maint-next-run');
-  if(next) next.textContent='04:17 UTC';
-}
-
-// ── Friendly mode ──
-let friendlyMode = localStorage.getItem('zion-friendly') === '1';
-function toggleFriendly(){
-  friendlyMode = !friendlyMode;
-  localStorage.setItem('zion-friendly', friendlyMode ? '1' : '0');
-  applyFriendlyMode();
-  if(currentTab==='services') loadServices();
-}
-function applyFriendlyMode(){
-  const btn = document.getElementById('friendlyBtn');
-  if(!btn) return;
-  btn.textContent = friendlyMode ? '🧑‍💻 Pro Mode' : '🧒 Kid Mode';
-  btn.className = (friendlyMode ? 'bg-amber-600 hover:bg-amber-500' : 'bg-zion-700 hover:bg-zion-600') + ' px-3 py-2 rounded-lg text-sm font-medium transition';
-}
-
-// ── Services tab ──
-async function loadServices(){
-  const res = await fetch('/api/services').then(r => r.json());
-  const grid = document.getElementById('services-grid');
-  if(!grid) return;
-  const lvlColors = {L1:'border-emerald-600 bg-emerald-900/15', L2:'border-blue-600 bg-blue-900/15', L3:'border-purple-600 bg-purple-900/15', L4:'border-pink-600 bg-pink-900/15', Infra:'border-amber-600 bg-amber-900/15'};
-  grid.innerHTML = res.services.map(s => {
-    const aliveColor = s.alive ? 'text-emerald-400' : 'text-gray-500';
-    const aliveBadge = s.alive ? '<span class="px-1.5 py-0.5 bg-emerald-600 text-white text-[10px] rounded font-bold animate-pulse">LIVE</span>' : '<span class="px-1.5 py-0.5 bg-zion-700 text-gray-400 text-[10px] rounded">DOWN</span>';
-    const portsHtml = Object.entries(s.ports || {}).map(([k,v]) => {
-      const isOpen = s.ports_open.includes(k+':'+v);
-      return `<span class="text-[10px] font-mono ${isOpen?'text-emerald-400':'text-gray-600'}" title="${k}">${k}:${v}</span>`;
-    }).join(' · ');
-    const desc = friendlyMode ? s.child_says : s.purpose;
-    const startBtn = s.start ? `<button onclick="controlAction('${s.start}')" class="text-[10px] px-2 py-0.5 bg-emerald-700 hover:bg-emerald-600 rounded transition">▶ Start</button>` : '';
-    const metricsBtn = (s.ports.metrics || s.ports.api) ? `<button onclick="loadMetrics('${s.id}')" class="text-[10px] px-2 py-0.5 bg-zion-700 hover:bg-zion-600 rounded transition">📊 Metrics</button>` : '';
-    const logBtn = s.log ? `<button onclick="switchTab('logs');setTimeout(()=>loadLogs('${s.id}'),300)" class="text-[10px] px-2 py-0.5 bg-zion-700 hover:bg-zion-600 rounded transition">📜 Log</button>` : '';
-    return `<div class="p-3 rounded-lg border ${lvlColors[s.level]||'border-zion-700'} hover:border-amber-500 transition">
-      <div class="flex items-center justify-between mb-1.5">
-        <div class="flex items-center gap-2">
-          <span class="text-xl">${s.icon}</span>
-          <div>
-            <div class="text-sm font-bold ${aliveColor}">${escapeHtml(s.name)}</div>
-            <div class="text-[10px] text-gray-500 uppercase tracking-wider">${s.level} · ${s.kind}</div>
-          </div>
-        </div>
-        ${aliveBadge}
-      </div>
-      <div class="text-[11px] text-gray-300 leading-snug mb-2 min-h-[2.5em]">${escapeHtml(desc)}</div>
-      <div class="flex flex-wrap gap-x-2 gap-y-0.5 mb-2">${portsHtml || '<span class="text-[10px] text-gray-600">no ports</span>'}</div>
-      <div class="flex gap-1">${startBtn}${metricsBtn}${logBtn}</div>
-    </div>`;
-  }).join('');
-}
-
-// ── Database explorer ──
-async function loadDatabases(){
-  const res = await fetch('/api/db').then(r => r.json());
-  const list = document.getElementById('db-list');
-  if(!list) return;
-  list.innerHTML = res.databases.map(d => {
-    const sizeStr = d.size > 1024*1024 ? (d.size/1024/1024).toFixed(1)+' MB' : d.size > 1024 ? (d.size/1024).toFixed(1)+' KB' : d.size + ' B';
-    const kindBadge = d.kind === 'sqlite' ? 'bg-blue-700 text-blue-200' : 'bg-amber-700 text-amber-200';
-    const dis = d.available ? '' : 'opacity-40';
-    return `<button onclick="inspectDb('${escapeHtml(d.path)}')" ${d.available?'':'disabled'} class="${dis} text-left p-3 rounded-lg bg-zion-900 border border-zion-700 hover:border-amber-500 transition">
-      <div class="flex items-center justify-between mb-1">
-        <span class="text-sm font-bold">${escapeHtml(d.name)}</span>
-        <span class="text-[10px] px-1.5 py-0.5 rounded ${kindBadge} uppercase font-bold">${d.kind}</span>
-      </div>
-      <div class="text-[10px] font-mono text-gray-500 truncate">${escapeHtml(d.path)}</div>
-      <div class="text-[10px] text-gray-400 mt-1">${d.available ? sizeStr : 'Not yet created'} · service: <span class="text-amber-400">${d.service}</span></div>
-    </button>`;
-  }).join('');
-}
-
-async function inspectDb(path){
-  const res = await fetch('/api/db/inspect?path=' + encodeURIComponent(path)).then(r => r.json());
-  const c = document.getElementById('db-detail');
-  if(!c) return;
-  if(res.error){c.innerHTML = '<div class="text-red-400">Error: ' + escapeHtml(res.error) + '</div>';return;}
-  let html = '<div class="mb-3"><div class="text-sm font-bold text-amber-300">' + escapeHtml(res.name) + '</div>';
-  html += '<div class="text-[10px] font-mono text-gray-500">' + escapeHtml(res.path) + '</div></div>';
-  if(res.kind === 'json'){
-    html += '<div class="space-y-2">';
-    for(const [k, v] of Object.entries(res.data)){
-      if(v && typeof v === 'object' && '_type' in v){
-        html += '<div class="bg-zion-800 rounded p-2"><div class="text-xs font-bold text-amber-400">' + escapeHtml(k) + ' <span class="text-gray-500 font-normal">(' + v._type + ', ' + v._len + ' items)</span></div>';
-        html += '<pre class="text-[10px] text-gray-400 mt-1 overflow-auto max-h-48">' + escapeHtml(JSON.stringify(v._sample, null, 2)) + '</pre></div>';
-      } else {
-        html += '<div class="flex gap-3 py-1 border-b border-zion-700"><span class="text-xs text-amber-400 font-mono w-48">' + escapeHtml(k) + '</span><span class="text-xs text-gray-300 font-mono break-all">' + escapeHtml(typeof v === 'object' ? JSON.stringify(v) : String(v)) + '</span></div>';
-      }
-    }
-    html += '</div>';
-  } else if(res.kind === 'sqlite'){
-    if(!res.tables || !res.tables.length){
-      html += '<div class="text-gray-500 italic text-sm">Database has no tables.</div>';
-    } else {
-      html += res.tables.map(t => {
-        let tHtml = '<details class="mb-3 bg-zion-800 rounded p-2"><summary class="cursor-pointer text-sm"><span class="font-bold text-amber-400">' + escapeHtml(t.name) + '</span> <span class="text-gray-500">(' + t.rows + ' rows, ' + t.columns.length + ' cols)</span></summary>';
-        tHtml += '<div class="text-[10px] text-gray-400 mt-2 mb-2">Columns: ' + t.columns.map(c => '<span class="font-mono text-amber-300">' + escapeHtml(c.name) + '</span>:<span class="text-gray-500">' + escapeHtml(c.type) + '</span>').join(', ') + '</div>';
-        if(t.sample && t.sample.length){
-          tHtml += '<div class="overflow-auto max-h-64"><table class="w-full text-[10px] border-collapse">';
-          tHtml += '<thead><tr>' + t.columns.map(c => '<th class="text-left p-1 border-b border-zion-700 text-amber-400">' + escapeHtml(c.name) + '</th>').join('') + '</tr></thead><tbody>';
-          tHtml += t.sample.map(row => '<tr class="hover:bg-zion-700/30">' + t.columns.map(c => '<td class="p-1 border-b border-zion-700 font-mono">' + escapeHtml(String(row[c.name] ?? '')).slice(0, 80) + '</td>').join('') + '</tr>').join('');
-          tHtml += '</tbody></table></div>';
-        }
-        tHtml += '</details>';
-        return tHtml;
-      }).join('');
-    }
-  }
-  c.innerHTML = html;
-}
-
-// ── Metrics tab ──
-async function renderMetricsButtons(){
-  const svcRes = await fetch('/api/services').then(r => r.json());
-  const c = document.getElementById('metrics-buttons');
-  if(!c) return;
-  const scrapable = svcRes.services.filter(s => s.ports.metrics || s.ports.api);
-  c.innerHTML = scrapable.map(s => `<button onclick="loadMetrics('${s.id}')" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 rounded text-xs font-medium transition flex items-center gap-1">
-    <span>${s.icon}</span><span>${escapeHtml(s.name)}</span>
-    <span class="text-[10px] ${s.alive?'text-emerald-400':'text-gray-500'}">${s.alive?'●':'○'}</span>
-  </button>`).join('');
-}
-
-async function loadMetrics(sid){
-  if(currentTab !== 'metrics') switchTab('metrics');
-  const res = await fetch('/api/metrics/' + sid).then(r => r.json());
-  const c = document.getElementById('metrics-detail');
-  if(!c) return;
-  if(res.error){
-    c.innerHTML = '<div class="text-red-400">Cannot scrape metrics from <span class="text-amber-400">' + escapeHtml(sid) + '</span>: ' + escapeHtml(res.error) + '</div><div class="text-xs text-gray-500 mt-2">URL tried: ' + escapeHtml(res.url || 'n/a') + '</div>';
-    return;
-  }
-  const entries = Object.entries(res.metrics);
-  if(!entries.length){c.innerHTML = '<div class="text-gray-500 italic">No metrics returned.</div>';return;}
-  let html = '<div class="text-xs text-emerald-400 mb-2">✓ Scraped ' + res.count + ' metrics from ' + escapeHtml(res.url) + '</div>';
-  html += '<div class="space-y-0.5">';
-  for(const [k, v] of entries){
-    html += '<div class="flex gap-3 hover:bg-zion-800/50 px-1"><span class="text-[10px] text-amber-300 font-mono flex-1 truncate">' + escapeHtml(k) + '</span><span class="text-[10px] text-gray-300 font-mono">' + v + '</span></div>';
-  }
-  html += '</div>';
-  c.innerHTML = html;
-}
-
-
-// ── Helpers ──
-function toggleAuto(){autoRefresh=!autoRefresh;const b=document.getElementById('autoBtn');
-  if(autoRefresh){b.textContent='⚡ Auto';b.className='px-3 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-medium transition';refreshTimer=setInterval(refreshAll,3000);}
-  else{b.textContent='⏸ Paused';b.className='px-3 py-2 bg-zion-700 hover:bg-zion-600 rounded-lg text-sm font-medium transition';clearInterval(refreshTimer);}}
-function escapeHtml(s){return(String(s||'')).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
-function copyToClipboard(text){navigator.clipboard.writeText(text).then(()=>toast('Copied!','success'));}
-function toast(msg,kind){
-  const t=document.createElement('div');
-  t.className='fixed bottom-4 right-4 px-4 py-2 rounded-lg text-sm font-medium z-50 shadow-lg '+(kind==='error'?'bg-red-600 text-white':'bg-emerald-600 text-white');
-  t.textContent=msg;document.body.appendChild(t);
-  setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity 0.3s';},2500);
-  setTimeout(()=>t.remove(),3000);
-}
-
-// ── Init ──
-applyFriendlyMode();
-refreshAll();
-refreshTimer=setInterval(refreshAll,3000);
-
-// ── Maestro v2.4 Orchestrator ──────────────────────────────────────────────
-
-async function maestroInfo(){
-  try{
-    const r=await fetch('/api/maestro/info').then(r=>r.json());
-    if(r.ok){
-      const d=r.data;
-      document.getElementById('maestro-tools').textContent=d.totals.tools;
-      document.getElementById('maestro-subagents').textContent=d.totals.sub_agents;
-      document.getElementById('maestro-intents').textContent=d.totals.intents;
-      document.getElementById('maestro-services').textContent=d.totals.health_services;
-    }else{
-      document.getElementById('maestro-tools').textContent='ERR';
-      document.getElementById('maestro-tools').title=r.error||'maestro unavailable';
-    }
-  }catch(e){
-    document.getElementById('maestro-tools').textContent='ERR';
-  }
-}
-
-async function maestroHealth(){
-  const mtx=document.getElementById('maestro-health-matrix');
-  const lst=document.getElementById('maestro-health-list');
-  mtx.classList.remove('hidden');
-  lst.innerHTML='<div class="text-gray-500">Probing 26 services…</div>';
-  document.getElementById('maestro-overall').textContent='…';
-  try{
-    const r=await fetch('/api/maestro/health').then(r=>r.json());
-    if(r.ok){
-      const d=r.data;
-      const svcs=d.services||[];
-      const colorMap={'Healthy':'text-emerald-400','Degraded':'text-amber-400','Down':'text-red-400','Unknown':'text-gray-500'};
-      lst.innerHTML=svcs.map(s=>{
-        const c=colorMap[s.status]||'text-gray-400';
-        const icon=s.status==='Healthy'?'✓':s.status==='Down'?'✗':s.status==='Degraded'?'⚠':'?';
-        return `<div class="flex items-center gap-1"><span class="${c}">${icon}</span><span class="text-gray-300">${s.name}</span></div>`;
-      }).join('');
-      const counts={Healthy:0,Degraded:0,Down:0,Unknown:0};
-      svcs.forEach(s=>{counts[s.status]=(counts[s.status]||0)+1;});
-      const ov=counts.Down>0?'Down':counts.Degraded>0?'Degraded':'Healthy';
-      const ovEl=document.getElementById('maestro-overall');
-      ovEl.textContent=ov;
-      ovEl.className='text-lg font-bold '+(ov==='Healthy'?'text-emerald-400':ov==='Degraded'?'text-amber-400':'text-red-400');
-    }else{
-      lst.innerHTML='<div class="text-red-400">Error: '+(r.error||'unknown')+'</div>';
-      document.getElementById('maestro-overall').textContent='ERR';
-    }
-  }catch(e){
-    lst.innerHTML='<div class="text-red-400">Fetch error: '+e.message+'</div>';
-    document.getElementById('maestro-overall').textContent='ERR';
-  }
-}
-
-function maestroRefresh(){
-  maestroInfo();
-  maestroHealth();
-}
-
-function maestroQuick(q){
-  document.getElementById('maestro-query-input').value=q;
-  maestroOrchestrate();
-}
-
-async function maestroOrchestrate(){
-  const q=document.getElementById('maestro-query-input').value.trim();
-  if(!q){return;}
-  const btn=document.getElementById('maestro-run-btn');
-  const lat=document.getElementById('maestro-latency');
-  const res=document.getElementById('maestro-result');
-  btn.disabled=true;btn.textContent='⏳ Running…';
-  lat.textContent='Orchestruji…';
-  res.classList.remove('hidden');
-  const t0=performance.now();
-  try{
-    const r=await fetch('/api/maestro/orchestrate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q})}).then(r=>r.json());
-    const dt=((performance.now()-t0)/1000).toFixed(2);
-    lat.textContent=`Completed in ${dt}s`;
-    if(r.ok){
-      const d=r.data;
-      document.getElementById('maestro-result-intent').textContent=d.plan.intent;
-      const stEl=document.getElementById('maestro-result-status');
-      stEl.textContent=d.status;
-      stEl.className='font-bold '+(d.status==='Success'?'text-emerald-400':d.status==='Failed'?'text-red-400':'text-amber-400');
-      document.getElementById('maestro-result-steps').textContent=Object.keys(d.step_results).length;
-      document.getElementById('maestro-result-duration').textContent=d.total_duration_ms+'ms';
-      const stepsList=document.getElementById('maestro-result-steps-list');
-      const steps=d.plan.steps||[];
-      const stepMap=d.step_results||{};
-      stepsList.innerHTML=steps.map(s=>{
-        const sr=stepMap[s.id]||{status:'?'};
-        const icon=sr.status==='Success'?'✓':sr.status==='Failed'?'✗':sr.status==='Skipped'?'⊘':sr.status==='PartialSuccess'?'◐':'?';
-        const cls=sr.status==='Success'?'text-emerald-400':sr.status==='Failed'?'text-red-400':sr.status==='Skipped'?'text-gray-500':'text-amber-400';
-        const tools=(s.tool_names||[]).join(', ');
-        return `<div class="flex items-start gap-2"><span class="${cls} font-bold">${icon}</span><div><span class="text-gray-300">#${s.id} ${s.description}</span>${tools?` <span class="text-gray-500">[${tools}]</span>`:''}<span class="text-gray-500"> → ${sr.status}</span></div></div>`;
-      }).join('');
-    }else{
-      document.getElementById('maestro-result-intent').textContent='ERROR';
-      document.getElementById('maestro-result-steps-list').innerHTML='<div class="text-red-400">'+(r.error||'unknown error')+'</div>';
-    }
-  }catch(e){
-    lat.textContent='Fetch error';
-    document.getElementById('maestro-result-intent').textContent='ERR';
-    document.getElementById('maestro-result-steps-list').innerHTML='<div class="text-red-400">'+e.message+'</div>';
-  }finally{
-    btn.disabled=false;btn.textContent='🎼 Orchestrate';
-  }
-}
-</script>
-</body>
-</html>"""
+# ── HTML Dashboard: served from dashboard.html file (not inline) ───
+# HTML_DASHBOARD inline block removed — dashboard.html is the canonical UI.
 
 # ── WebSocket Hub (stdlib-only, RFC 6455) ────────────────────────────────
 
@@ -11025,21 +9137,37 @@ def _ws_push_loop():
 
 
 def _build_health_map() -> dict:
-    """Return {service: health_status} for all known services (v3.0.4 — new server)."""
+    """Return {service: health_status} for all known services (V31 + legacy)."""
     status = build_status()
     health = {}
-    # Core services — v3.0.4 new server (single node, no node2/local backup)
+
+    # V31 services (production)
+    v31_node = status.get("v31_node", {})
+    health["v31-node"] = "up" if v31_node.get("running") and v31_node.get("chain_height") is not None else "down"
+
+    v31_pool = status.get("v31_pool", {})
+    health["v31-pool"] = "up" if v31_pool.get("running") else "down"
+
+    v31_miner = status.get("v31_miner", {})
+    v31_miner_running = bool(v31_miner.get("running"))
+    health["v31-miner"] = "up" if v31_miner_running else "down"
+    # Keep legacy alias for v2 clients
+    health["miner"] = health["v31-miner"]
+
+    v31_multichain = status.get("v31_multichain", {})
+    health["v31-multichain"] = "up" if v31_multichain.get("running") and v31_multichain.get("ok") else "down"
+
+    # Legacy V3 services (archived/masked)
     edge_node = status.get("edge_node", {})
     health["edge-node"] = "up" if edge_node.get("running") and edge_node.get("chain_height") is not None else "down"
 
     pool_edge = status.get("pool_edge", {})
     health["pool-edge"] = "up" if pool_edge.get("running") else "down"
 
-    miner = status.get("miner", {})
-    health["miner"] = "up" if miner.get("running") else "down"
-
     # Extended services — TCP probes to 127.0.0.1 (all on same server)
     ext_ports = {
+        "v31-dao": 8456,      # V31 DAO API
+        "v31-oasis": 8094,    # V31 OASIS API
         "bridge": 9101,       # Bridge metrics
         "dao": 8450,          # DAO API
         "warp": 8453,         # WARP Relay API (v3.0.5 port)
@@ -11051,9 +9179,9 @@ def _build_health_map() -> dict:
         except Exception:
             alive = False
         health[sid] = "up" if alive else "down"
-    # Nginx + web-next: check via SSH on Edge server (not tunneled locally)
+    # Nginx + website: check via SSH on Edge server (not tunneled locally)
     for sid, cmd in [("nginx", "systemctl is-active nginx 2>/dev/null"),
-                     ("web-next", "systemctl is-active zion-web-next 2>/dev/null || docker inspect -f '{{.State.Running}}' zion-web 2>/dev/null")]:
+                     ("website", "systemctl is-active zion-website 2>/dev/null")]:
         try:
             result = _run_edge_cmd(cmd, timeout=3)
             alive = result.returncode == 0 and "active" in (result.stdout or "").strip() or "true" in (result.stdout or "").strip()
@@ -11478,6 +9606,27 @@ class DashboardHandler(BaseHTTPRequestHandler):
         except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
             pass  # client closed connection early — benign
 
+    def _serve_html_file(self, html_path: Path, fallback_error: str = ""):
+        """Serve a static HTML file, with optional gzip pre-compression."""
+        if not html_path.exists():
+            self.send_error(503, fallback_error or f"{html_path.name} not found")
+            return
+        gz_path = html_path.with_suffix(html_path.suffix + ".gz")
+        _ensure_gz_uptodate(html_path, gz_path)
+        accepts_gzip = "gzip" in (self.headers.get("Accept-Encoding", "").lower())
+        if accepts_gzip:
+            body = _get_gz_body(html_path)
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Encoding", "gzip")
+            self.send_header("Vary", "Accept-Encoding")
+            self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        else:
+            self._html(html_path.read_text(encoding="utf-8"))
+
     def _proxy_to_dao(self, method, route, body, req_headers):
         """Proxy a request to the DAO daemon on port 8450, preserving auth headers."""
         DAO_PORT = 8450
@@ -11609,30 +9758,25 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return
 
         if route == "/" or route == "/index.html":
+            v31_index = SCRIPT_DIR / "v31" / "index.html"
             v2_index = V2_DIST / "index.html"
+            if v31_index.exists():
+                # V31 Mainnet Alpha is the default landing page
+                self.send_response(302)
+                self.send_header("Location", "/v31/")
+                self.end_headers()
+                return
             if v2_index.exists():
                 self._html(v2_index.read_text(encoding="utf-8"))
                 return
-            # Fallback to legacy v1 dashboard — serve pre-compressed HTML if client accepts gzip
-            html_path = SCRIPT_DIR / "dashboard.html"
-            gz_path = SCRIPT_DIR / "dashboard.html.gz"
-            if html_path.exists():
-                _ensure_gz_uptodate(html_path, gz_path)
-                accepts_gzip = "gzip" in (self.headers.get("Accept-Encoding", "").lower())
-                if accepts_gzip:
-                    body = _get_gz_body(html_path)
-                    self.send_response(200)
-                    self.send_header("Content-Type", "text/html; charset=utf-8")
-                    self.send_header("Content-Encoding", "gzip")
-                    self.send_header("Vary", "Accept-Encoding")
-                    self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
-                    self.send_header("Content-Length", str(len(body)))
-                    self.end_headers()
-                    self.wfile.write(body)
-                else:
-                    self._html(html_path.read_text(encoding="utf-8"))
-            else:
-                self._html(HTML_DASHBOARD)
+            # Fallback to legacy v1 dashboard
+            self._serve_html_file(SCRIPT_DIR / "dashboard.html", "dashboard.html not found")
+            return
+        elif route in ("/dashboard", "/dashboard.html"):
+            self._serve_html_file(SCRIPT_DIR / "dashboard.html", "dashboard.html not found")
+            return
+        elif route in ("/legacy", "/legacy.html"):
+            self._serve_html_file(SCRIPT_DIR / "legacy.html", "legacy.html not found")
             return
         elif route.startswith("/assets/") or route in ("/manifest.json", "/sw.js", "/offline.html", "/favicon.svg", "/icons.svg"):
             v2_file = V2_DIST / route.lstrip("/")
@@ -13039,7 +11183,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/db/inspect":
             path = params.get("path", [""])[0]
             self._json(inspect_database(path))
-        elif route.startswith("/api/logs/"):
+        elif route.startswith("/api/logs/") and not route.startswith("/api/v31/"):
             service = route.split("/")[-1]
             n_lines = int(params.get("n", ["200"])[0])
             filename = SERVICE_LOG_MAP.get(service, f"{service}.log")
@@ -13057,6 +11201,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     lines = [ln.rstrip("\n") for ln in f.readlines()[-200:]]
             self._json({"lines": lines, "file": str(install_log)})
         # ── Dashboard v2 compatibility endpoints ─────────────────────────────
+        elif route == "/health":
+            # Simple liveness endpoint for load balancers / uptime probes
+            self._json({"ok": True, "status": "healthy", "version": "3.1.0-alpha.2", "timestamp": int(time.time())})
         elif route == "/api/health":
             # v2 client: GET /api/health → returns HealthMap {service: status}
             self._json(_build_health_map())
@@ -13341,6 +11488,31 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         self._json({"lines": tail, "exists": True, "total_lines": len(all_lines)})
                     except Exception as e:
                         self._json({"error": str(e), "lines": ""})
+        # ── V31 service journal logs (systemd) ────────────────────────────────
+        elif route == "/api/v31/logs":
+            svc = params.get("svc", ["node"])[0].strip().lower()
+            n_lines = min(int(params.get("lines", ["50"])[0]), 500)
+            v31_unit_map = {
+                "node": "zion-v31-node",
+                "pool": "zion-v31-pool",
+                "miner": "zion-v31-miner",
+                "multichain": "zion-v31-multichain",
+                "dao": "zion-v31-dao",
+                "oasis": "zion-v31-oasis",
+            }
+            unit = v31_unit_map.get(svc)
+            if not unit:
+                self._json({"error": "unknown v31 service", "lines": ""})
+            else:
+                try:
+                    r = subprocess.run(
+                        ["journalctl", "-u", unit, "--no-pager", "-n", str(n_lines), "--output=cat"],
+                        capture_output=True, text=True, timeout=10
+                    )
+                    lines = strip_ansi(r.stdout.strip()).split("\n")
+                    self._json({"lines": lines, "unit": unit, "exists": True})
+                except Exception as e:
+                    self._json({"error": str(e), "lines": ""})
         # ── Hiran AI endpoints ────────────────────────────────────────────────
         elif route == "/api/hiran/health":
             hiran_url = "http://127.0.0.1:8002"

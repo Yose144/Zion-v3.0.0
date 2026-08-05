@@ -4,17 +4,30 @@ const TEST_MINER = 'zion1g5u0m3j5x5w2t730c8s4h4m5a5v4a7p6p0c07y7';
 
 test.describe('miner stats page', () => {
   test('renders miner address and basic structure', async ({ page }) => {
+    page.on('console', (msg) => console.log(`[PAGE CONSOLE ${msg.type()}]`, msg.text()));
+    page.on('pageerror', (err) => console.log('[PAGE ERROR]', err.message));
+    const minerResponse = page.waitForResponse(
+      (res) => res.url().includes(`/api/pool/miner/${TEST_MINER}`) && res.status() === 200,
+      { timeout: 30_000 }
+    );
     await page.goto(`/pool/miner/${TEST_MINER}`);
     await expect(page).toHaveTitle(/Miner/i);
-    // Wait for the dashboard to load (hashrate section is rendered after data fetch)
-    await expect(page.locator('body')).toHaveText(/hashrate|Hashrate/i, { timeout: 15000 });
+    await minerResponse;
+    // Wait for the dashboard to render after data fetch (Czech or English label)
+    await expect(page.locator('body')).toHaveText(/hashrate|Hashrate|Výkon/i, { timeout: 30_000 });
     // Page shortens the address (zion1g5u0m3j5…6p0c07y7)
     await expect(page.locator('body')).toHaveText(new RegExp(TEST_MINER.slice(0, 12)));
   });
 
   test('displays payout history with normalized ZION amounts', async ({ page }) => {
+    const minerResponse = page.waitForResponse(
+      (res) => res.url().includes(`/api/pool/miner/${TEST_MINER}`) && res.status() === 200,
+      { timeout: 30_000 }
+    );
     await page.goto(`/pool/miner/${TEST_MINER}`);
+    await minerResponse;
     await page.waitForLoadState('networkidle');
+    await expect(page.locator('body')).toHaveText(/hashrate|Hashrate|Výkon/i, { timeout: 30_000 });
 
     const bodyText = await page.locator('body').innerText();
 

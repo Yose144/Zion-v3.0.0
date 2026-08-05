@@ -12,7 +12,8 @@ use tracing::{info, warn};
 use zion_l1_types::{Address, Amount, Hash};
 
 use crate::block::{Block, BlockHeader};
-use crate::consensus::{ConsensusEngine, ConsensusError, HeightAwareDeeksha};
+use crate::consensus::{ConsensusEngine, ConsensusError};
+use zion_cosmic_harmony::EkamDeeksha;
 use crate::difficulty::{self, difficulty_to_target, lwma_next_difficulty};
 use crate::emission::{block_subsidy, fee_split};
 use crate::genesis;
@@ -111,7 +112,7 @@ pub struct Node {
     pub v3_rpc: Arc<crate::v3_rpc::V3RpcHandler>,
     /// V3 P2P sync client.
     pub v3_sync: crate::v3_p2p::V3Sync,
-    config: NodeConfig,
+    pub config: NodeConfig,
     next_template_id: AtomicU64,
 }
 
@@ -170,7 +171,7 @@ impl Node {
             crate::v3_p2p::NetworkId::Mainnet,
         );
 
-        let consensus = ConsensusEngine::new(Arc::new(HeightAwareDeeksha::new()));
+        let consensus = ConsensusEngine::new(Arc::new(EkamDeeksha::new()));
         Ok(Self {
             storage,
             mempool: Mempool::new(),
@@ -195,7 +196,11 @@ impl Node {
 
         let rpc_addr = self.config.rpc_addr;
         let p2p_addr = self.config.p2p_addr;
-        let seed_peers = self.config.seed_peers.clone();
+        // V31 native P2P sync uses only V31 peers (empty for now — no other V31
+        // nodes exist).  V3 compat sync uses the V3 seed peers.  This prevents V31
+        // native handshake from hitting V3 nodes and getting banned for protocol
+        // violation.
+        let seed_peers: Vec<SocketAddr> = Vec::new();
         let v3_seed_peers = self.config.seed_peers.clone();
         let v3_sync = self.v3_sync.clone();
         let v3_p2p_addr = self.config.v3_p2p_addr;

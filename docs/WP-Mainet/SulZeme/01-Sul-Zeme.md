@@ -1,5 +1,7 @@
 # Epizoda 1 — Sůl země
 
+*Sůl, kterou dostaneš zdarma, ti stejně k ničemu není, dokud si ji nevmícháš do vlastního chleba.*
+
 > *„Vy jste sůl země. Jestliže sůl ztratí svou chuť, čím bude solena? Už se nehodí k ničemu, než aby byla vyhozena ven a pošlapávána lidmi."*
 > — Matouš 5, 13
 

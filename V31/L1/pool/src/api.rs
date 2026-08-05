@@ -1,0 +1,758 @@
+use std::io::{BufRead, BufReader, Read, Write};
+use std::net::{TcpListener, TcpStream};
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, Mutex};
+use std::time::Instant;
+
+use anyhow::Result;
+use serde_json::json;
+use tracing::{error, info};
+
+use crate::auxpow_bridge::MultiAuxPowBridge;
+use crate::pool::Pool;
+use crate::store::ShareStore;
+
+pub struct PoolApi {
+    pool: Arc<Mutex<Pool>>,
+    share_store: Option<Arc<ShareStore>>,
+    auxpow_bridge: Option<MultiAuxPowBridge>,
+    started_at: Instant,
+    active_sessions: Arc<AtomicU64>,
+    total_connections: Arc<AtomicU64>,
+}
+
+impl PoolApi {
+    pub fn new(
+        pool: Arc<Mutex<Pool>>,
+        share_store: Option<Arc<ShareStore>>,
+        auxpow_bridge: Option<MultiAuxPowBridge>,
+    ) -> Self {
+        Self {
+            pool,
+            share_store,
+            auxpow_bridge,
+            started_at: Instant::now(),
+            active_sessions: Arc::new(AtomicU64::new(0)),
+            total_connections: Arc::new(AtomicU64::new(0)),
+        }
+    }
+
+    pub fn active_sessions(&self) -> &Arc<AtomicU64> {
+        &self.active_sessions
+    }
+
+    pub fn total_connections(&self) -> &Arc<AtomicU64> {
+        &self.total_connections
+    }
+
+    pub fn serve(&self, bind_addr: &str) -> Result<()> {
+        let listener = TcpListener::bind(bind_addr)?;
+        info!("pool API listening on {bind_addr}");
+
+        for stream in listener.incoming() {
+            let stream = match stream {
+                Ok(s) => s,
+                Err(e) => {
+                    error!("pool_api_accept_error={e}");
+                    continue;
+                }
+            };
+            if let Err(e) = self.handle_request(stream) {
+                error!("pool_api_handle_error={e}");
+            }
+        }
+        Ok(())
+    }
+
+    fn handle_request(&self, mut stream: TcpStream) -> Result<()> {
+        let mut reader = BufReader::new(&stream);
+        let mut request_line = String::new();
+        if reader.read_line(&mut request_line).is_err() {
+            return Ok(());
+        }
+        let parts: Vec<&str> = request_line.split_whitespace().collect();
+        let method = *parts.first().unwrap_or(&"GET");
+        let raw_path = *parts.get(1).unwrap_or(&"/stats");
+        let path = raw_path.split('?').next().unwrap_or(raw_path);
+
+        let mut content_length = 0usize;
+        let mut api_key_header = None;
+        let mut admin_key_header = None;
+        let mut auth_bearer = None;
+        loop {
+            let mut header = String::new();
+            if reader.read_line(&mut header).is_err() {
+                break;
+            }
+            if header.trim().is_empty() {
+                break;
+            }
+            let trimmed = header.trim();
+            if let Some(val) = trimmed
+                .strip_prefix("Content-Length:")
+                .or_else(|| trimmed.strip_prefix("content-length:"))
+            {
+                content_length = val.trim().parse().unwrap_or(0);
+            } else if let Some(val) = trimmed
+                .strip_prefix("X-API-Key:")
+                .or_else(|| trimmed.strip_prefix("x-api-key:"))
+            {
+                api_key_header = Some(val.trim().to_string());
+            } else if let Some(val) = trimmed
+                .strip_prefix("X-Admin-Key:")
+                .or_else(|| trimmed.strip_prefix("x-admin-key:"))
+            {
+                admin_key_header = Some(val.trim().to_string());
+            } else if let Some(val) = trimmed
+                .strip_prefix("Authorization:")
+                .or_else(|| trimmed.strip_prefix("authorization:"))
+            {
+                if let Some(token) = val.trim().strip_prefix("Bearer ") {
+                    auth_bearer = Some(token.to_string());
+                }
+            }
+        }
+        if method == "POST" && content_length > 0 {
+            let mut buf = vec![0u8; content_length];
+            let _ = reader.read_exact(&mut buf);
+        }
+
+        // API key authorization for /api/* and admin endpoints.
+        let (api_key, admin_key) = {
+            let pool = self.pool.lock().expect("pool lock poisoned");
+            (pool.config.api_key.clone(), pool.config.admin_key.clone())
+        };
+
+        if path.starts_with("/admin") {
+            let admin_ok = admin_key.as_deref().is_some()
+                && (admin_key_header.as_deref() == admin_key.as_deref()
+                    || auth_bearer.as_deref() == admin_key.as_deref());
+            if !admin_ok {
+                let body = "{\"ok\":false,\"error\":\"unauthorized\"}";
+                let response = format!(
+                    "HTTP/1.1 401 Unauthorized\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    body.len(),
+                    body
+                );
+                stream.write_all(response.as_bytes())?;
+                return Ok(());
+            }
+        } else if path.starts_with("/api")
+            && api_key.is_some()
+            && api_key_header.as_deref() != api_key.as_deref()
+            && auth_bearer.as_deref() != api_key.as_deref()
+        {
+            let body = "{\"ok\":false,\"error\":\"unauthorized\"}";
+            let response = format!(
+                "HTTP/1.1 401 Unauthorized\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                body.len(),
+                body
+            );
+            stream.write_all(response.as_bytes())?;
+            return Ok(());
+        }
+
+        let (status, content_type, body) = match path {
+            "/health" => {
+                let uptime_s = self.started_at.elapsed().as_secs();
+                let body = format!("{{\"status\":\"ok\",\"uptime_s\":{uptime_s}}}");
+                ("200 OK", "application/json", body)
+            }
+            "/metrics" => {
+                let body = self.build_prometheus_payload();
+                ("200 OK", "text/plain; version=0.0.4", body)
+            }
+            p if p == "/stats" || p == "/" || p == "/pool" => {
+                let body = self.build_stats_payload();
+                ("200 OK", "application/json", body)
+            }
+            p if p.starts_with("/miners") => {
+                let limit = parse_query_limit(raw_path, 200);
+                let body = self.build_miners_payload(limit as usize);
+                ("200 OK", "application/json", body)
+            }
+            "/api/v1/blocks" => {
+                let limit = parse_query_limit(raw_path, 50);
+                match &self.share_store {
+                    Some(store) => {
+                        let blocks = store.query_blocks(limit).unwrap_or_default();
+                        let body = serialize_blocks_json(&blocks);
+                        ("200 OK", "application/json", body)
+                    }
+                    None => {
+                        let body = "{\"ok\":false,\"error\":\"database not configured\"}";
+                        ("503 Service Unavailable", "application/json", body.to_string())
+                    }
+                }
+            }
+            "/api/v1/payouts" => {
+                let (miner_filter, limit) = parse_query_miner_limit(raw_path, 50);
+                match &self.share_store {
+                    Some(store) => {
+                        let payouts = if let Some(miner) = miner_filter.as_deref() {
+                            store.query_payouts(miner, limit).unwrap_or_default()
+                        } else {
+                            store.query_all_payouts(limit).unwrap_or_default()
+                        };
+                        let body = serialize_payouts_json(&payouts);
+                        ("200 OK", "application/json", body)
+                    }
+                    None => {
+                        let body = "{\"ok\":false,\"error\":\"database not configured\"}";
+                        ("503 Service Unavailable", "application/json", body.to_string())
+                    }
+                }
+            }
+            "/api/v1/miners" => {
+                let limit = parse_query_limit(raw_path, 100);
+                match &self.share_store {
+                    Some(store) => {
+                        let miners = store.query_all_miners(limit).unwrap_or_default();
+                        let count = store.miner_count().unwrap_or(0);
+                        let body = serialize_miners_json(&miners, count);
+                        ("200 OK", "application/json", body)
+                    }
+                    None => {
+                        let body = "{\"ok\":false,\"error\":\"database not configured\"}";
+                        ("503 Service Unavailable", "application/json", body.to_string())
+                    }
+                }
+            }
+            "/api/v1/pplns" => {
+                let body = self.build_pplns_payload();
+                ("200 OK", "application/json", body)
+            }
+            "/api/v1/auxpow" => {
+                let body = self.build_auxpow_payload();
+                ("200 OK", "application/json", body)
+            }
+            "/api/v1/profit-switch" => {
+                let body = self.build_profit_switch_payload();
+                ("200 OK", "application/json", body)
+            }
+            "/api/v1/stream-profit" => {
+                let body = self.build_stream_profit_payload();
+                ("200 OK", "application/json", body)
+            }
+            "/api/v1/hashrate-history" => {
+                let limit = parse_query_limit(raw_path, 168) as usize;
+                let body = self.build_hashrate_history_payload(limit);
+                ("200 OK", "application/json", body)
+            }
+            "/api/v1/revenue-stats" => {
+                let body = self.build_revenue_stats_payload();
+                ("200 OK", "application/json", body)
+            }
+            "/api/v1/revenue-streams" => {
+                let body = self.build_revenue_streams_payload();
+                ("200 OK", "application/json", body)
+            }
+            "/api/v1/routing-metrics" => {
+                let body = self.build_routing_metrics_payload();
+                ("200 OK", "application/json", body)
+            }
+            p if p.starts_with("/api/v1/miners/") => {
+                let miner_id = p.strip_prefix("/api/v1/miners/").unwrap_or("");
+                let body = self.build_miner_detail_payload(miner_id);
+                ("200 OK", "application/json", body)
+            }
+            "/admin/profit-switch" => {
+                let body = self.build_profit_switch_payload();
+                ("200 OK", "application/json", body)
+            }
+            "/admin/auxpow-status" => {
+                let body = self.build_auxpow_payload();
+                ("200 OK", "application/json", body)
+            }
+            "/admin/ops" => {
+                let body = self.build_ops_payload();
+                ("200 OK", "application/json", body)
+            }
+            _ => {
+                let body = "{\"ok\":false,\"error\":\"not found\"}";
+                ("404 Not Found", "application/json", body.to_string())
+            }
+        };
+
+        let response = format!(
+            "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+            body.len()
+        );
+        stream.write_all(response.as_bytes())?;
+        Ok(())
+    }
+
+    fn build_stats_payload(&self) -> String {
+        let pool = self.pool.lock().expect("pool lock poisoned");
+        let (accepted, rejected) = pool.stats();
+        let uptime_s = self.started_at.elapsed().as_secs();
+        let sessions = self.active_sessions.load(Ordering::Relaxed);
+        let total_conn = self.total_connections.load(Ordering::Relaxed);
+        let stats = pool.pplns.stats();
+        let fees = pool.pplns.fee_stats();
+
+        let auxpow_json = if let Some(ref bridge) = self.auxpow_bridge {
+            let coins: Vec<String> = bridge.enabled_coins().iter().map(|c| c.as_str().to_string()).collect();
+            json!({"enabled":true,"coins":coins})
+        } else {
+            json!({"enabled":false})
+        };
+
+        json!({
+            "ok": true,
+            "uptime_s": uptime_s,
+            "sessions": sessions,
+            "total_connections": total_conn,
+            "shares": {
+                "accepted": accepted,
+                "rejected": rejected,
+                "total": accepted + rejected
+            },
+            "pplns": {
+                "window_size": stats.window_size,
+                "window_used": stats.window_used,
+                "window_total_difficulty": stats.window_total_difficulty.to_string(),
+                "registered_miners": stats.registered_miners,
+                "miners_with_unpaid": stats.miners_with_unpaid,
+                "total_unpaid_flowers": stats.total_unpaid_flowers.to_string(),
+                "total_paid_flowers": stats.total_paid_flowers.to_string(),
+                "payout_rounds": stats.payout_rounds
+            },
+            "pool": {
+                "fee_bps": fees.pool_fee_pct * 100,
+                "miner_pct": fees.miner_pct,
+                "humanitarian_pct": fees.humanitarian_pct,
+                "issobella_pct": fees.issobella_pct,
+                "port": pool.config.port
+            },
+            "auxpow": auxpow_json,
+            "api": {
+                "stats": "/stats",
+                "miners": "/miners?limit=200",
+                "blocks": "/api/v1/blocks?limit=50",
+                "payouts": "/api/v1/payouts?limit=50",
+                "all_miners": "/api/v1/miners?limit=100",
+                "pplns": "/api/v1/pplns",
+                "auxpow": "/api/v1/auxpow",
+                "health": "/health",
+                "metrics": "/metrics"
+            }
+        })
+        .to_string()
+    }
+
+    fn build_pplns_payload(&self) -> String {
+        let pool = self.pool.lock().expect("pool lock poisoned");
+        let stats = pool.pplns.stats();
+        let fees = pool.pplns.fee_stats();
+
+        json!({
+            "ok": true,
+            "window_size": stats.window_size,
+            "window_used": stats.window_used,
+            "window_total_difficulty": stats.window_total_difficulty.to_string(),
+            "registered_miners": stats.registered_miners,
+            "miners_with_unpaid": stats.miners_with_unpaid,
+            "total_unpaid_flowers": stats.total_unpaid_flowers.to_string(),
+            "total_paid_flowers": stats.total_paid_flowers.to_string(),
+            "payout_rounds": stats.payout_rounds,
+            "fee_bps": fees.pool_fee_pct * 100,
+            "humanitarian_pct": fees.humanitarian_pct,
+            "issobella_pct": fees.issobella_pct,
+            "miner_pct": fees.miner_pct
+        })
+        .to_string()
+    }
+
+    fn build_auxpow_payload(&self) -> String {
+        match &self.auxpow_bridge {
+            Some(bridge) => {
+                let coins: Vec<String> = bridge
+                    .enabled_coins()
+                    .iter()
+                    .map(|c| format!("\"{}\"", c.as_str()))
+                    .collect();
+                format!(
+                    "{{\"ok\":true,\"enabled\":true,\"coins\":[{}]}}",
+                    coins.join(",")
+                )
+            }
+            None => "{\"ok\":true,\"enabled\":false}".to_string(),
+        }
+    }
+
+    /// Build the profit switcher status payload.
+    fn build_profit_switch_payload(&self) -> String {
+        let profiles = zion_cosmic_harmony::CoinProfile::defaults();
+        let entries: Vec<serde_json::Value> = profiles
+            .iter()
+            .map(|p| {
+                json!({
+                    "coin": p.coin.as_str(),
+                    "device": format!("{:?}", p.device),
+                    "profit_usd_day": p.estimate_profit(1.0),
+                    "enabled": p.enabled && !p.disabled,
+                    "disabled_reason": p.disabled_reason,
+                })
+            })
+            .collect();
+
+        json!({
+            "ok": true,
+            "hysteresis_pct": std::env::var("ZION_POOL_PROFIT_HYSTERESIS")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(15.0),
+            "check_interval_secs": std::env::var("ZION_POOL_PROFIT_INTERVAL")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(300u64),
+            "coins": entries,
+        })
+        .to_string()
+    }
+
+    /// Build the stream profit weights payload.
+    fn build_stream_profit_payload(&self) -> String {
+        let profiles = zion_cosmic_harmony::CoinProfile::defaults();
+        let gpu_coins: Vec<serde_json::Value> = profiles
+            .iter()
+            .filter(|p| matches!(p.device, zion_cosmic_harmony::Device::Gpu | zion_cosmic_harmony::Device::Both))
+            .map(|p| json!({
+                "coin": p.coin.as_str(),
+                "profit_usd_day": p.estimate_profit(1.0),
+            }))
+            .collect();
+        let cpu_coins: Vec<serde_json::Value> = profiles
+            .iter()
+            .filter(|p| matches!(p.device, zion_cosmic_harmony::Device::Cpu | zion_cosmic_harmony::Device::Both))
+            .map(|p| json!({
+                "coin": p.coin.as_str(),
+                "profit_usd_day": p.estimate_profit(1.0),
+            }))
+            .collect();
+
+        json!({
+            "ok": true,
+            "gpu_streams": gpu_coins,
+            "cpu_streams": cpu_coins,
+        })
+        .to_string()
+    }
+
+    /// Build hashrate history payload (placeholder — returns empty array
+    /// until a hashrate history store is wired in).
+    fn build_hashrate_history_payload(&self, _limit: usize) -> String {
+        json!({
+            "ok": true,
+            "history": [],
+            "note": "hashrate history requires telemetry persistence"
+        })
+        .to_string()
+    }
+
+    /// Build per-miner detail payload.
+    fn build_miner_detail_payload(&self, miner_id: &str) -> String {
+        let pool = self.pool.lock().expect("pool lock poisoned");
+        let worker_info = pool.worker_addresses.get(miner_id);
+
+        match worker_info {
+            Some(addr) => {
+                json!({
+                    "ok": true,
+                    "miner_id": miner_id,
+                    "address": addr.encoded,
+                })
+                .to_string()
+            }
+            None => {
+                format!(
+                    "{{\"ok\":false,\"error\":\"miner not found\",\"miner_id\":\"{}\"}}",
+                    miner_id
+                )
+            }
+        }
+    }
+
+    /// Build admin ops payload — pool operational status.
+    fn build_ops_payload(&self) -> String {
+        let pool = self.pool.lock().expect("pool lock poisoned");
+        let (accepted, rejected) = pool.stats();
+        let uptime_s = self.started_at.elapsed().as_secs();
+        let sessions = self.active_sessions.load(Ordering::Relaxed);
+        let total_conn = self.total_connections.load(Ordering::Relaxed);
+
+        json!({
+            "ok": true,
+            "uptime_s": uptime_s,
+            "active_sessions": sessions,
+            "total_connections": total_conn,
+            "shares_accepted": accepted,
+            "shares_rejected": rejected,
+            "l1_rpc_url": pool.config.l1_rpc_url,
+            "pool_fee_bps": pool.config.pool_fee_bps,
+            "pplns_window_size": pool.config.pplns_window_size,
+            "min_payout_flowers": pool.config.min_payout_flowers,
+            "auxpow_enabled": self.auxpow_bridge.is_some(),
+            "tls_enabled": std::env::var("ZION_POOL_TLS_BIND").is_ok(),
+            "share_relay_enabled": std::env::var("ZION_UPSTREAM_POOL_ADDR").is_ok(),
+        })
+        .to_string()
+    }
+
+    fn build_miners_payload(&self, limit: usize) -> String {
+        let pool = self.pool.lock().expect("pool lock poisoned");
+        let workers: Vec<String> = pool
+            .worker_addresses
+            .iter()
+            .take(limit)
+            .map(|(name, addr)| {
+                format!(
+                    "{{\"worker\":\"{}\",\"address\":\"{}\"}}",
+                    name, addr.encoded
+                )
+            })
+            .collect();
+        format!(
+            "{{\"ok\":true,\"count\":{},\"miners\":[{}]}}",
+            pool.worker_addresses.len(),
+            workers.join(",")
+        )
+    }
+
+    fn build_prometheus_payload(&self) -> String {
+        let pool = self.pool.lock().expect("pool lock poisoned");
+        let (accepted, rejected) = pool.stats();
+        let sessions = self.active_sessions.load(Ordering::Relaxed);
+        let uptime_s = self.started_at.elapsed().as_secs();
+        let stats = pool.pplns.stats();
+        let fees = pool.pplns.fee_stats();
+        let mut body = String::new();
+        body.push_str(&format!("zion_pool_uptime_s {uptime_s}\n"));
+        body.push_str(&format!("zion_pool_active_sessions {sessions}\n"));
+        body.push_str(&format!("zion_pool_shares_accepted {accepted}\n"));
+        body.push_str(&format!("zion_pool_shares_rejected {rejected}\n"));
+        body.push_str(&format!(
+            "zion_pool_pplns_window_size {}\n",
+            stats.window_size
+        ));
+        body.push_str(&format!(
+            "zion_pool_pplns_window_used {}\n",
+            stats.window_used
+        ));
+        body.push_str(&format!(
+            "zion_pool_pplns_window_total_difficulty {}\n",
+            stats.window_total_difficulty
+        ));
+        body.push_str(&format!(
+            "zion_pool_pplns_registered_miners {}\n",
+            stats.registered_miners
+        ));
+        body.push_str(&format!(
+            "zion_pool_pplns_total_paid_flowers {}\n",
+            stats.total_paid_flowers
+        ));
+        body.push_str(&format!(
+            "zion_pool_pplns_payout_rounds {}\n",
+            stats.payout_rounds
+        ));
+        body.push_str(&format!(
+            "zion_fee_humanitarian_pct {}\n",
+            fees.humanitarian_pct
+        ));
+        body.push_str(&format!("zion_fee_issobella_pct {}\n", fees.issobella_pct));
+        body.push_str(&format!("zion_fee_pool_pct {}\n", fees.pool_fee_pct));
+        body.push_str(&format!("zion_fee_miner_pct {}\n", fees.miner_pct));
+
+        // AuxPoW bridge metrics
+        if let Some(ref bridge) = self.auxpow_bridge {
+            let coins = bridge.enabled_coins();
+            body.push_str(&format!("zion_auxpow_enabled_coins {}\n", coins.len()));
+            for coin in &coins {
+                let label = coin.as_str().to_lowercase();
+                body.push_str(&format!(
+                    "zion_auxpow_coin_enabled{{coin=\"{}\"}} 1\n",
+                    label
+                ));
+                // Job queue depth
+                let queue_depth = bridge.latest_job_for_coin(coin).map(|_| 1).unwrap_or(0);
+                body.push_str(&format!(
+                    "zion_auxpow_job_available{{coin=\"{}\"}} {}\n",
+                    label, queue_depth
+                ));
+            }
+        } else {
+            body.push_str("zion_auxpow_enabled_coins 0\n");
+        }
+
+        // TLS status
+        let tls_enabled = std::env::var("ZION_POOL_TLS_BIND").is_ok();
+        body.push_str(&format!(
+            "zion_pool_tls_enabled {}\n",
+            if tls_enabled { 1 } else { 0 }
+        ));
+
+        // Share relay status
+        let relay_enabled = std::env::var("ZION_UPSTREAM_POOL_ADDR").is_ok();
+        body.push_str(&format!(
+            "zion_pool_share_relay_enabled {}\n",
+            if relay_enabled { 1 } else { 0 }
+        ));
+
+        body
+    }
+
+    /// `/api/v1/revenue-stats` — per-group and per-source submit tracking.
+    fn build_revenue_stats_payload(&self) -> String {
+        let pool = self.pool.lock().expect("pool lock poisoned");
+        let (accepted, rejected) = pool.stats();
+        let uptime_s = self.started_at.elapsed().as_secs();
+
+        let json = json!({
+            "ok": true,
+            "uptime_s": uptime_s,
+            "total_accepted": accepted,
+            "total_rejected": rejected,
+            "groups": [
+                {"group": "zion", "submits": accepted, "accepted": accepted, "pct": 100.0},
+            ],
+            "sources": [
+                {"source": "zion", "submits": accepted, "accepted": accepted, "accept_rate_pct": if accepted + rejected > 0 { accepted as f64 * 100.0 / (accepted + rejected) as f64 } else { 0.0 }},
+            ],
+        });
+        json.to_string()
+    }
+
+    /// `/api/v1/revenue-streams` — stream weights and per-source work units.
+    fn build_revenue_streams_payload(&self) -> String {
+        let json = json!({
+            "ok": true,
+            "multistream_enabled": false,
+            "streams": [
+                {"source": "zion", "weight_pct": 100.0, "submits": 0, "accepted": 0, "fee_rate_pct": 1.0},
+            ],
+            "weights_string": "zion:100.0",
+            "description": "single-stream:zion:100.0",
+        });
+        json.to_string()
+    }
+
+    /// `/api/v1/routing-metrics` — routing stats snapshot.
+    fn build_routing_metrics_payload(&self) -> String {
+        let pool = self.pool.lock().expect("pool lock poisoned");
+        let (accepted, rejected) = pool.stats();
+        let uptime_s = self.started_at.elapsed().as_secs();
+
+        let json = json!({
+            "ok": true,
+            "uptime_s": uptime_s,
+            "total_submits": accepted + rejected,
+            "total_accepted": accepted,
+            "total_rejected": rejected,
+            "total_stale": 0,
+            "groups": [
+                {"group": "zion", "submits": accepted + rejected, "accepted": accepted, "pct": 100.0},
+            ],
+        });
+        json.to_string()
+    }
+}
+
+fn parse_query_limit(path: &str, default: u32) -> u32 {
+    if let Some(q) = path.split('?').nth(1) {
+        for pair in q.split('&') {
+            if let Some(val) = pair.strip_prefix("limit=") {
+                if let Ok(n) = val.parse::<u32>() {
+                    return n.clamp(1, 500);
+                }
+            }
+        }
+    }
+    default
+}
+
+fn parse_query_miner_limit(path: &str, default_limit: u32) -> (Option<String>, u32) {
+    let mut miner = None;
+    let mut limit = default_limit;
+    if let Some(q) = path.split('?').nth(1) {
+        for pair in q.split('&') {
+            if let Some(val) = pair.strip_prefix("miner=") {
+                miner = Some(val.to_string());
+            } else if let Some(val) = pair.strip_prefix("limit=") {
+                if let Ok(n) = val.parse::<u32>() {
+                    limit = n.clamp(1, 500);
+                }
+            }
+        }
+    }
+    (miner, limit)
+}
+
+fn serialize_blocks_json(blocks: &[crate::store::DbBlockRow]) -> String {
+    let mut out = String::from("{\"ok\":true,\"blocks\":[");
+    for (i, b) in blocks.iter().enumerate() {
+        if i > 0 {
+            out.push(',');
+        }
+        out.push_str(&format!(
+            "{{\"height\":{},\"hash\":\"{}\",\"miner_id\":\"{}\",\"worker_name\":\"{}\",\"share_difficulty\":{},\"network_difficulty\":{},\"status\":\"{}\",\"ts\":{},\"confirmed_at\":{}}}",
+            b.height, b.hash, b.miner_id, b.worker_name,
+            b.share_difficulty, b.network_difficulty, b.status, b.ts,
+            b.confirmed_at.map(|t| t.to_string()).unwrap_or_else(|| "null".to_string())
+        ));
+    }
+    out.push_str("]}");
+    out
+}
+
+fn serialize_payouts_json(payouts: &[crate::store::PayoutRow]) -> String {
+    let mut out = String::from("{\"ok\":true,\"payouts\":[");
+    for (i, p) in payouts.iter().enumerate() {
+        if i > 0 {
+            out.push(',');
+        }
+        out.push_str(&format!(
+            "{{\"ts\":{},\"miner_id\":\"{}\",\"address\":\"{}\",\"amount_flowers\":{},\"tx_id\":\"{}\",\"height\":{},\"block_hash\":\"{}\",\"confirmations\":{},\"confirmed\":{}}}",
+            p.ts, p.miner_id, p.address, p.amount_flowers,
+            p.tx_id, p.height, p.block_hash, p.confirmations, p.confirmed
+        ));
+    }
+    out.push_str("]}");
+    out
+}
+
+fn serialize_miners_json(miners: &[crate::store::MinerStatsRow], total_count: u64) -> String {
+    let mut out = format!("{{\"ok\":true,\"miner_count\":{total_count},\"miners\":[");
+    for (i, m) in miners.iter().enumerate() {
+        if i > 0 {
+            out.push(',');
+        }
+        out.push_str(&format!(
+            "{{\"miner_id\":\"{}\",\"first_seen\":{},\"last_seen\":{},\"total_shares\":{},\"accepted_shares\":{},\"rejected_shares\":{},\"total_paid_flowers\":{}}}",
+            m.miner_id, m.first_seen, m.last_seen,
+            m.total_shares, m.accepted_shares, m.rejected_shares, m.total_paid_flowers
+        ));
+    }
+    out.push_str("]}");
+    out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_limit_default() {
+        assert_eq!(parse_query_limit("/blocks", 50), 50);
+        assert_eq!(parse_query_limit("/blocks?limit=10", 50), 10);
+        assert_eq!(parse_query_limit("/blocks?limit=999", 50), 500);
+        assert_eq!(parse_query_limit("/blocks?limit=0", 50), 1);
+    }
+
+    #[test]
+    fn parse_miner_limit() {
+        let (miner, limit) = parse_query_miner_limit("/payouts?miner=abc&limit=20", 50);
+        assert_eq!(miner, Some("abc".to_string()));
+        assert_eq!(limit, 20);
+    }
+}

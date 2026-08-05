@@ -2,6 +2,20 @@
 
 Těžba ZION běží na algoritmu **Cosmic Harmony Deeksha**.
 
+> **Proč těžit už teď:** ZION je v první dekádě emise — odměna **5 400,067 ZION/blok** je nejvyšší, jakou kdy protokol vyplatí, a s každou další dekádou klesá o pětinu. Síť je zatím malá, takže o nalezené bloky se dělí míň strojů. Nikdo neslibuje cenu ani zisk — jen poctivou matematiku raného vstupu. Celý příběh (včetně Bitcoin Pizza Day) najdeš v kapitole [Hodina před deštěm](/onboard#why-now).
+
+## Nejjednodušší cesta — ZION Public Miner
+
+Pro většinu uživatelů je nejjednodušší těžit přes desktopovou aplikaci:
+
+1. Nainstaluj **ZION Public Miner** (viz kategorie **Desktop App**).
+2. Vytvoř peněženku a získej adresu.
+3. Nastav **Pool** na `62.171.141.136:8444`.
+4. Zvol počet CPU vláken a případně zapni GPU.
+5. Klikni na **Start Mining**.
+
+Aplikace se postará o vše ostatní — připojení na pool, sledování hashrate a share.
+
 ## Parametry sítě
 
 - **Block time:** 60 s
@@ -13,27 +27,27 @@ Těžba ZION běží na algoritmu **Cosmic Harmony Deeksha**.
 
 | Příjemce | Podíl |
 |----------|-------|
-| ⛏️ Miners | 89 % |
-| 🕊️ Humanitarian Tithe | 5 % |
-| 🔭 L5/L6 Issobella Fund | 5 % |
-| 🏊 Pool Fee | 1 % |
+| Těžaři | 89 % |
+| Humanitární tithe | 5 % |
+| L5/L6 Issobella fond | 5 % |
+| Pool fee / burn | 1 % |
 
-## Připojení na veřejný pool
+## Pokročilá těžba z příkazové řádky
 
 ```bash
-./target/release/zion-miner \
-  --pool seed.zionterranova.com:3333 \
-  --wallet "zion1qTVOJE_ADRESA" \
-  --worker muj-rig \
-  --algo cosmic_harmony \
-  --threads 4
+zion mine start --backend cpu --threads 4 --pool 62.171.141.136:8444
+```
+
+Alternativně s vlastním cílovým algoritmem a adresou (počkej na konkrétní releasovou dokumentaci pro `--miner.wallet` a `--miner.algorithm`):
+
+```bash
+zion mine start --backend cuda --threads 4 --pool 62.171.141.136:8444 \
+  --miner.wallet zion1PRIKLADNA_ADRESA --miner.worker muj-rig
 ```
 
 ## Pool dashboard
 
-Webový přehled poolu najdeš na:
-
-- `https://pool.zionterranova.com`
+Webový přehled poolu je zatím ve vývoji.
 
 ## Tipy
 

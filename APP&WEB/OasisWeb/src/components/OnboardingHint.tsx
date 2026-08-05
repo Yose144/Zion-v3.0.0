@@ -46,7 +46,7 @@ export default function OnboardingHint({ onClose }: { onClose?: () => void }) {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -12, scale: 0.96 }}
           transition={{ duration: 0.35 }}
-          className="pointer-events-auto absolute right-2 top-28 z-30 w-[16rem] max-w-[calc(100vw-1rem)] p-3 sm:right-5 sm:top-40 sm:w-80 sm:p-4 zion-hud-panel"
+          className="pointer-events-auto absolute left-2 top-28 z-30 w-[16rem] max-w-[calc(100vw-1rem)] p-3 sm:left-5 sm:top-40 sm:w-72 sm:p-4 zion-hud-panel"
         >
           <div className="mb-3 flex items-start justify-between gap-3">
             <div className="min-w-0">

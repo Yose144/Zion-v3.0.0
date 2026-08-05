@@ -1,12 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { Globe, Zap, Gavel, SearchX } from 'lucide-react';
 import ItemCard, { type ArtifactCardData, type Rarity } from '@/components/ItemCard';
 import { getItems, type ItemsFilters, type ItemsResponse } from '@/lib/market-api';
+import { useLangT } from '@/lib/useTranslation';
 
 const rarities: Rarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic', 'unique'];
 const collections = ['All', 'OASIS Genesis', 'OASIS Quest', 'OASIS Ships', 'OASIS Territory', 'Golden Eggs', 'OASIS Cosmetics'];
+
+function getCollectionLabelKey(c: string) {
+  switch (c) {
+    case 'All': return 'explore.all';
+    case 'OASIS Genesis': return 'collections.oasisGenesis';
+    case 'OASIS Quest': return 'collections.oasisQuest';
+    case 'OASIS Ships': return 'collections.oasisShips';
+    case 'OASIS Territory': return 'collections.oasisTerritory';
+    case 'Golden Eggs': return 'collections.goldenEggs';
+    case 'OASIS Cosmetics': return 'collections.oasisCosmetics';
+    default: return c;
+  }
+}
 
 // Fallback mock data for dev without a populated DB
 const mockItems: ArtifactCardData[] = [
@@ -25,10 +39,10 @@ const mockItems: ArtifactCardData[] = [
 ];
 
 const sortOptions = [
-  { value: 'recent', label: 'Recently Listed' },
-  { value: 'price_low', label: 'Price: Low → High' },
-  { value: 'price_high', label: 'Price: High → Low' },
-  { value: 'rarity', label: 'Rarity' },
+  { value: 'recent', key: 'explore.sortRecent' },
+  { value: 'price_low', key: 'explore.sortPriceLow' },
+  { value: 'price_high', key: 'explore.sortPriceHigh' },
+  { value: 'rarity', key: 'explore.sortRarity' },
 ];
 
 export default function ExplorePage() {
@@ -40,6 +54,7 @@ export default function ExplorePage() {
   const [items, setItems] = useState<ArtifactCardData[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const { t } = useLangT();
 
   useEffect(() => {
     let cancelled = false;
@@ -86,16 +101,27 @@ export default function ExplorePage() {
     setSelectedRarities(next);
   };
 
+  const listingOptions: { value: 'all' | 'fixed' | 'auction'; icon: ReactNode; label: string }[] = [
+    { value: 'all', icon: <Globe className="w-4 h-4" />, label: t('explore.listingAll') },
+    { value: 'fixed', icon: <Zap className="w-4 h-4" />, label: t('explore.listingFixed') },
+    { value: 'auction', icon: <Gavel className="w-4 h-4" />, label: t('explore.listingAuction') },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <div className="zion-kicker mb-3">Marketplace</div>
-          <h1 className="text-3xl font-black font-display mb-1">
-            <span className="text-gradient">Explore</span> <span className="text-white">Artifacts</span>
-          </h1>
-          <p className="text-sm text-gray-500">Discover and trade OASIS universe artifacts</p>
+          <div className="zion-kicker mb-3">{t('explore.kicker')}</div>
+          {(() => {
+            const [first, ...rest] = t('explore.title').split(' ');
+            return (
+              <h1 className="text-3xl font-black font-display mb-1">
+                <span className="text-gradient">{first}</span> <span className="text-white">{rest.join(' ')}</span>
+              </h1>
+            );
+          })()}
+          <p className="text-sm text-gray-500">{t('explore.description')}</p>
         </div>
         <div className="relative">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -104,7 +130,7 @@ export default function ExplorePage() {
           </svg>
           <input
             type="text"
-            placeholder="Search items…"
+            placeholder={t('explore.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="input-zion pl-10 w-full sm:w-64"
@@ -119,7 +145,7 @@ export default function ExplorePage() {
           <div className="zion-section p-4">
             <h3 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
               <span className="w-1 h-3 rounded-full bg-oasis-purple" />
-              Collection
+              {t('explore.collectionTitle')}
             </h3>
             <div className="space-y-1">
               {collections.map(c => (
@@ -132,7 +158,7 @@ export default function ExplorePage() {
                       : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
                   }`}
                 >
-                  {c}
+                  {t(getCollectionLabelKey(c))}
                 </button>
               ))}
             </div>
@@ -142,7 +168,7 @@ export default function ExplorePage() {
           <div className="zion-section p-4">
             <h3 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
               <span className="w-1 h-3 rounded-full bg-oasis-gold" />
-              Rarity
+              {t('explore.rarityTitle')}
             </h3>
             <div className="flex flex-wrap gap-2">
               {rarities.map(r => (
@@ -153,7 +179,7 @@ export default function ExplorePage() {
                     selectedRarities.has(r) ? 'ring-2 ring-white/30 scale-105' : 'opacity-50 hover:opacity-100'
                   }`}
                 >
-                  {r}
+                  {t(`rarity.${r}`)}
                 </button>
               ))}
             </div>
@@ -163,22 +189,22 @@ export default function ExplorePage() {
           <div className="zion-section p-4">
             <h3 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
               <span className="w-1 h-3 rounded-full bg-oasis-cyan" />
-              Listing
+              {t('explore.listingTitle')}
             </h3>
             <div className="space-y-1">
-              {(['all', 'fixed', 'auction'] as const).map(t => (
+              {listingOptions.map(o => (
                 <button
-                  key={t}
-                  onClick={() => setListingFilter(t)}
+                  key={o.value}
+                  onClick={() => setListingFilter(o.value)}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm capitalize transition-all duration-200 ${
-                    listingFilter === t
+                    listingFilter === o.value
                       ? 'bg-oasis-cyan/20 text-white border border-oasis-cyan/30'
                       : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
                   }`}
                 >
                   <span className="inline-flex items-center gap-2">
-                    {t === 'all' ? <Globe className="w-4 h-4" /> : t === 'fixed' ? <Zap className="w-4 h-4" /> : <Gavel className="w-4 h-4" />}
-                    {t === 'all' ? 'All listings' : t === 'fixed' ? 'Buy now' : 'Auctions'}
+                    {o.icon}
+                    {o.label}
                   </span>
                 </button>
               ))}
@@ -190,7 +216,7 @@ export default function ExplorePage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-500">
-              <span className="text-white font-bold">{total}</span> items
+              {t('explore.itemsCount', { count: total })}
             </span>
             <select
               value={sort}
@@ -198,7 +224,7 @@ export default function ExplorePage() {
               className="input-zion w-auto"
             >
               {sortOptions.map(o => (
-                <option key={o.value} value={o.value} className="bg-zion-card">{o.label}</option>
+                <option key={o.value} value={o.value} className="bg-zion-card">{t(o.key)}</option>
               ))}
             </select>
           </div>
@@ -206,13 +232,13 @@ export default function ExplorePage() {
           {loading ? (
             <div className="zion-section p-16 text-center">
               <div className="w-10 h-10 border-2 border-oasis-cyan/30 border-t-oasis-cyan rounded-full animate-spin mx-auto mb-4" />
-              <div className="text-gray-500">Loading artifacts…</div>
+              <div className="text-gray-500">{t('explore.loading')}</div>
             </div>
           ) : items.length === 0 ? (
             <div className="zion-section p-16 text-center">
               <SearchX className="w-16 h-16 mx-auto mb-4 opacity-30" />
-              <div className="text-gray-500 mb-1">No items match your filters</div>
-              <div className="text-xs text-gray-600">Try adjusting your search or filters</div>
+              <div className="text-gray-500 mb-1">{t('explore.emptyTitle')}</div>
+              <div className="text-xs text-gray-600">{t('explore.emptySubtitle')}</div>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">

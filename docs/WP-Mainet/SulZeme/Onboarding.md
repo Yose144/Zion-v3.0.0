@@ -4,6 +4,8 @@
 > *„Zlatý věk nezačíná datem. Začíná rozhodnutím."*
 > — ZION Genesis blok, 4. 12. 2025
 
+> **Toto je zkrácená marketingová verze.** Plný kanonický onboarding (příběh + technické příkazy, CZ i EN) najdeš v [`ZION_ONBOARDING.md`](./ZION_ONBOARDING.md) a [`ZION_ONBOARDING_EN.md`](./ZION_ONBOARDING_EN.md).
+
 ---
 
 ## Bylo jednou jedno město, které zapomnělo na chuť
@@ -120,8 +122,8 @@ Nikdo tě nebude honit. Archa se nestaví křikem — staví se blok po bloku, 6
 
 ---
 
-*Chceš celý příběh? Přečti si sérii [Sůl této země](./SulZeme/00-README.md) — sedm zastavení s Ježíšem, Buddhou, Krišnou, Rámou, Sítou, Hanumanem a Noem, každé s ověřitelnými fakty.*
+*Chceš celý příběh? Přečti si sérii [Sůl této země](./00-README.md) — dvanáct zastavení s Ježíšem, Buddhou, Krišnou, Rámou, Sítou, Hanumanem a Noem, každé s ověřitelnými fakty.*
 
-*Chceš čísla? [Technický whitepaper 3.1](./ZION_Technical_Whitepaper_v3.1_CZ.md) — konsensus, emise, kontrakty, architektura.*
+*Chceš čísla? [Technický whitepaper 3.1](../ZION_Technical_Whitepaper_v3.1_CZ.md) — konsensus, emise, kontrakty, architektura.*
 
 *Gate, Gate, Paragate, Parasamgate, Bodhi Svaha.*

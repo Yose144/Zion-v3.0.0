@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -359,7 +359,12 @@ export default function MinerDashboard({ address }: { address: string }) {
     }
   }, [address, cs]);
 
-  usePolling(fetchData, 15_000);
+  // Immediate initial fetch so the page loads even in headless / background tabs.
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
+
+  usePolling(fetchData, 15_000, { runWhenHidden: true });
 
   /* ── Loading state ── */
   if (loading) {

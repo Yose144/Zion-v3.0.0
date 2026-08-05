@@ -1,6 +1,8 @@
 # ZION — Sůl této země
 ## Epizoda 10: První svět Oasis — Zahrada Hiranyagarbha a Best of Avataři
 
+*Zahrada nezačíná plná. Začíná prázdná, aby v ní bylo kam růst.*
+
 > *„Vstupuješ do světa, kde každý tůj čin zanechává stopu v paměti. Svět se neotevírá klíčem ze zlata, ale klíčem tvého vlastního záměru.“*
 
 ---
@@ -90,5 +92,7 @@ Jak funguje život v Prvním světě Oasis?
 | **REST API pro Oasis** | Port `8094` s endpointy `/api/v1/oasis/player`, `/leaderboard`, `/guild`, `/map`, `/rewards/pools`. | **FUNKČNÍ SKELETON (port 8094)** |
 
 ---
+
+*→ Pokračování: [Epizoda 11 — Brána prvního hráče a volba cesty](./11-Brana-Prvniho-Hrace-a-Volba-Cesty.md)*
 
 *→ Zpět na [index série Sůl této země](./00-README.md).*

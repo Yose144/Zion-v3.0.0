@@ -76,8 +76,6 @@ export default function StargateLogo({ className = '' }: { className?: string })
           <a
             className="center-logo"
             href="https://oasis.zionterranova.com"
-            target="_blank"
-            rel="noopener noreferrer"
             aria-label="Zion Terra Nova — Enter to Oasis"
           >
             <picture>

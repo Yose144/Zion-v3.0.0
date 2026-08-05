@@ -48,7 +48,7 @@ Fáze D — Full cut-over (H-0):
 | Oblast | V3 | V31 |
 |--------|-----|-----|
 | L2 layout | bridge/dao/atomic-swap/warp/dex separate | `zion-multichain` jednotný crate |
-| Miner | standalone + auxpow externí | Triple Stream + `HeightAwareDeeksha` |
+| Miner | standalone + auxpow externí | Triple Stream + kanonický `EkamDeeksha` |
 | Pool | Python/nginx + C stratum | `zion-pool` Rust PPLNS |
 | API keys | žádné / manuální | `server.auth.api_key` v TOML |
 | Rate limit | nginx / žádný | vestavěný token bucket |

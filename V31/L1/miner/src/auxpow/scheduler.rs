@@ -12,6 +12,7 @@ use zion_cosmic_harmony::{CoinProfile, Device, ExternalCoin, ProfitEntry, Profit
 pub struct AuxPoWScheduler {
     hashrate: f64,
     router: ProfitRouter,
+    stream2_force_coin: Option<ExternalCoin>,
     stream3_force_coin: Option<ExternalCoin>,
     current: Option<ExternalCoin>,
     profile: Option<CoinProfile>,
@@ -22,10 +23,15 @@ pub struct AuxPoWScheduler {
 }
 
 impl AuxPoWScheduler {
-    pub fn new(hashrate: f64, stream3_force_coin: Option<ExternalCoin>) -> Self {
+    pub fn new(
+        hashrate: f64,
+        stream2_force_coin: Option<ExternalCoin>,
+        stream3_force_coin: Option<ExternalCoin>,
+    ) -> Self {
         Self {
             hashrate,
             router: ProfitRouter::default(),
+            stream2_force_coin,
             stream3_force_coin,
             current: None,
             profile: None,
@@ -49,9 +55,21 @@ impl AuxPoWScheduler {
             self.profile = profiles.iter().find(|p| p.coin == best.coin).cloned();
         }
 
-        if let Some(best) = self.router.best_for(Device::Gpu) {
-            self.current_gpu = Some(best.coin);
-            self.profile_gpu = profiles.iter().find(|p| p.coin == best.coin).cloned();
+        if let Some(coin) = self.stream2_force_coin {
+            if let Some(profile) = profiles
+                .iter()
+                .find(|p| p.coin == coin && p.enabled && p.device.is_compatible_with(Device::Gpu))
+            {
+                self.current_gpu = Some(coin);
+                self.profile_gpu = Some(profile.clone());
+            }
+        }
+
+        if self.current_gpu.is_none() {
+            if let Some(best) = self.router.best_for(Device::Gpu) {
+                self.current_gpu = Some(best.coin);
+                self.profile_gpu = profiles.iter().find(|p| p.coin == best.coin).cloned();
+            }
         }
 
         if let Some(coin) = self.stream3_force_coin {
@@ -92,6 +110,11 @@ impl AuxPoWScheduler {
         self.profile.as_ref()
     }
 
+    /// Return the profile for the currently selected GPU coin.
+    pub fn profile_gpu(&self) -> Option<&CoinProfile> {
+        self.profile_gpu.as_ref()
+    }
+
     /// Return the profile for the currently selected CPU coin.
     pub fn profile_cpu(&self) -> Option<&CoinProfile> {
         self.profile_cpu.as_ref()
@@ -100,6 +123,34 @@ impl AuxPoWScheduler {
     /// Return the active profit entries for monitoring.
     pub fn entries(&self) -> &[ProfitEntry] {
         self.router.entries()
+    }
+
+    /// Set the active GPU coin and matching profile, if the coin is compatible.
+    pub fn set_gpu(&mut self, coin: ExternalCoin, profiles: &[CoinProfile]) {
+        if let Some(profile) = profiles
+            .iter()
+            .find(|p| p.coin == coin && p.enabled && p.device.is_compatible_with(Device::Gpu))
+        {
+            self.current_gpu = Some(coin);
+            self.profile_gpu = Some(profile.clone());
+        } else {
+            self.current_gpu = None;
+            self.profile_gpu = None;
+        }
+    }
+
+    /// Set the active CPU coin and matching profile, if the coin is compatible.
+    pub fn set_cpu(&mut self, coin: ExternalCoin, profiles: &[CoinProfile]) {
+        if let Some(profile) = profiles
+            .iter()
+            .find(|p| p.coin == coin && p.enabled && p.device.is_compatible_with(Device::Cpu))
+        {
+            self.current_cpu = Some(coin);
+            self.profile_cpu = Some(profile.clone());
+        } else {
+            self.current_cpu = None;
+            self.profile_cpu = None;
+        }
     }
 
     /// Return the selected GPU coin and the primary stratum URL, if any.
@@ -128,8 +179,19 @@ mod tests {
     use super::*;
 
     #[test]
+    fn stream2_force_coin_overrides_profit_router() {
+        let mut scheduler = AuxPoWScheduler::new(1000.0, Some(ExternalCoin::Kaspa), None);
+        let profiles = CoinProfile::defaults();
+        scheduler.refresh(&profiles);
+
+        assert_eq!(scheduler.current_gpu(), Some(ExternalCoin::Kaspa));
+        assert!(scheduler.profile_gpu().is_some());
+        assert!(scheduler.gpu_url().1.is_some());
+    }
+
+    #[test]
     fn stream3_force_coin_overrides_profit_router() {
-        let mut scheduler = AuxPoWScheduler::new(1000.0, Some(ExternalCoin::Verus));
+        let mut scheduler = AuxPoWScheduler::new(1000.0, None, Some(ExternalCoin::Verus));
         let profiles = CoinProfile::defaults();
         scheduler.refresh(&profiles);
 
@@ -140,7 +202,7 @@ mod tests {
 
     #[test]
     fn stream3_force_coin_falls_back_when_not_in_profiles() {
-        let mut scheduler = AuxPoWScheduler::new(1000.0, Some(ExternalCoin::Verus));
+        let mut scheduler = AuxPoWScheduler::new(1000.0, None, Some(ExternalCoin::Verus));
         let profiles: Vec<_> = CoinProfile::defaults()
             .into_iter()
             .filter(|p| p.coin == ExternalCoin::Kaspa)

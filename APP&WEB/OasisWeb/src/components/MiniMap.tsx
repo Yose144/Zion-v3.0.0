@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useCallback, memo } from 'react';
 import { WORLDS } from '../domain/config/worlds';
 import type { World, WorldCategory } from '../domain/types/world';
 
@@ -21,7 +21,7 @@ interface MiniMapProps {
   cameraPosition?: { x: number; y: number; z: number };
 }
 
-export default function MiniMap({ activeCategories, selectedWorldId, onWorldSelect, cameraPosition }: MiniMapProps) {
+function MiniMap({ activeCategories, selectedWorldId, onWorldSelect, cameraPosition }: MiniMapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -160,3 +160,5 @@ export default function MiniMap({ activeCategories, selectedWorldId, onWorldSele
     </div>
   );
 }
+
+export default memo(MiniMap);

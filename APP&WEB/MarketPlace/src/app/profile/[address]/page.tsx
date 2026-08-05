@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAccount } from 'wagmi';
 import ItemCard, { type ArtifactCardData } from '@/components/ItemCard';
 import { getProfileItems, getProfileActivity, type ProfileItemsResponse, type ProfileActivity } from '@/lib/market-api';
+import { useLangT } from '@/lib/useTranslation';
 
 const mockOwned: ArtifactCardData[] = [
   { id: '101', name: 'Tree of Life Avatar', image: '', collection: 'OASIS Genesis', rarity: 'mythic', price: '2,500', listingType: 'fixed' },
@@ -19,9 +20,36 @@ const mockActivity: ProfileActivity[] = [
   { id: '4', type: 'Minted', item: 'Ship HUD Mk-III', price: '—', time: '2026-07-20T10:00:00Z' },
 ];
 
+function getActivityType(type: string, t: (path: string, params?: Record<string, string | number>) => string) {
+  const map: Record<string, string> = {
+    'Sale': 'item.eventSale',
+    'Purchase': 'item.eventPurchase',
+    'Listed': 'item.eventListed',
+    'Minted': 'item.eventMinted',
+    'Bid': 'item.eventBid',
+  };
+  return t(map[type] ?? 'common.unknown');
+}
+
+function formatTime(iso: string, t: (path: string, params?: Record<string, string | number>) => string): string {
+  try {
+    const d = new Date(iso);
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - d.getTime()) / 1000);
+    if (diff < 60) return t('profile.justNow');
+    if (diff < 3600) return t('profile.minutesAgo', { n: Math.floor(diff / 60) });
+    if (diff < 86400) return t('profile.hoursAgo', { n: Math.floor(diff / 3600) });
+    if (diff < 604800) return t('profile.daysAgo', { n: Math.floor(diff / 86400) });
+    return d.toLocaleDateString();
+  } catch {
+    return iso;
+  }
+}
+
 export default function ProfilePage() {
   const params = useParams<{ address: string }>();
   const { address: connected } = useAccount();
+  const { t } = useLangT();
   const [tab, setTab] = useState<'owned' | 'listed' | 'activity'>('owned');
   const [profile, setProfile] = useState<ProfileItemsResponse | null>(null);
   const [activity, setActivity] = useState<ProfileActivity[] | null>(null);
@@ -76,6 +104,12 @@ export default function ProfilePage() {
     volume: '0',
   };
 
+  const tabs: { value: 'owned' | 'listed' | 'activity'; label: string }[] = [
+    { value: 'owned', label: t('profile.tabOwned') },
+    { value: 'listed', label: t('profile.tabListed') },
+    { value: 'activity', label: t('profile.tabActivity') },
+  ];
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -99,23 +133,23 @@ export default function ProfilePage() {
                 rel="noreferrer"
                 className="hover:text-oasis-cyan transition-colors flex items-center gap-1"
               >
-                View on Basescan ↗
+                {t('profile.viewOnBasescan')}
               </a>
-              {isMe && <span className="rarity-badge rarity-unique">You</span>}
+              {isMe && <span className="rarity-badge rarity-unique">{t('profile.youBadge')}</span>}
             </div>
           </div>
           <div className="grid grid-cols-3 gap-6 text-center">
             <div>
               <div className="text-2xl font-black text-oasis-cyan font-display">{stats.owned}</div>
-              <div className="text-xs text-gray-500">Owned</div>
+              <div className="text-xs text-gray-500">{t('profile.owned')}</div>
             </div>
             <div>
               <div className="text-2xl font-black text-gradient-gold font-display">{stats.listedCount}</div>
-              <div className="text-xs text-gray-500">Listed</div>
+              <div className="text-xs text-gray-500">{t('profile.listed')}</div>
             </div>
             <div>
               <div className="text-2xl font-black text-oasis-emerald font-display">{stats.volume}</div>
-              <div className="text-xs text-gray-500">Volume</div>
+              <div className="text-xs text-gray-500">{t('profile.volume')}</div>
             </div>
           </div>
         </div>
@@ -123,13 +157,13 @@ export default function ProfilePage() {
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-white/5">
-        {(['owned', 'listed', 'activity'] as const).map(t => (
+        {tabs.map(t => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`tab-zion ${tab === t ? 'tab-zion-active' : 'tab-zion-inactive'}`}
+            key={t.value}
+            onClick={() => setTab(t.value)}
+            className={`tab-zion ${tab === t.value ? 'tab-zion-active' : 'tab-zion-inactive'}`}
           >
-            {t}
+            {t.label}
           </button>
         ))}
       </div>
@@ -138,7 +172,7 @@ export default function ProfilePage() {
       {loading ? (
         <div className="zion-section p-16 text-center">
           <div className="w-10 h-10 border-2 border-oasis-cyan/30 border-t-oasis-cyan rounded-full animate-spin mx-auto mb-4" />
-          <div className="text-gray-500">Loading profile…</div>
+          <div className="text-gray-500">{t('profile.loading')}</div>
         </div>
       ) : (
         <>
@@ -172,12 +206,12 @@ export default function ProfilePage() {
                         a.type === 'Sale' || a.type === 'Purchase' ? 'status-active' :
                         a.type === 'Listed' ? 'status-pending' : 'status-inactive'
                       }`} />
-                      <span className="text-sm text-white font-semibold">{a.type}</span>
+                      <span className="text-sm text-white font-semibold">{getActivityType(a.type, t)}</span>
                       <span className="text-sm text-gray-400">{a.item}</span>
                     </div>
                     <div className="flex items-center gap-4">
                       <span className="text-sm text-gradient-gold font-mono">{a.price}</span>
-                      <span className="text-xs text-gray-600">{formatTime(a.time)}</span>
+                      <span className="text-xs text-gray-600">{formatTime(a.time, t)}</span>
                     </div>
                   </div>
                 ))}
@@ -188,19 +222,4 @@ export default function ProfilePage() {
       )}
     </div>
   );
-}
-
-function formatTime(iso: string): string {
-  try {
-    const d = new Date(iso);
-    const now = new Date();
-    const diff = Math.floor((now.getTime() - d.getTime()) / 1000);
-    if (diff < 60) return 'just now';
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
-    return d.toLocaleDateString();
-  } catch {
-    return iso;
-  }
 }

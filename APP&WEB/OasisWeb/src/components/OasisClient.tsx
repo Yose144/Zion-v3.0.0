@@ -2,15 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronRight } from 'lucide-react';
 import WarpFlash from './WarpFlash';
-import { ChevronRight, Eye, EyeOff } from 'lucide-react';
 import { useAudio } from './AudioEngine';
+import MainMenu from './MainMenu';
 import type { FlightControlsHandle } from './FlightControls';
 import type { MobileInput } from './MobileControls';
 import MobileControls from './MobileControls';
-import GamePanel from './GamePanel';
 import OnboardingHint from './OnboardingHint';
 import FruitCounter from './FruitCounter';
 import { PilgrimRite } from './PilgrimRite';
@@ -21,10 +20,10 @@ import { useToastStore } from '../store/toastStore';
 import { getQuests, getAvatars, getTerritories, awardPlayerXp } from '../lib/api';
 import type { World, WorldCategory, WorldLayer } from '../domain/types/world';
 
+const BabylonIntro = dynamic(() => import('./BabylonIntro'), { ssr: false });
 const WarpIntro = dynamic(() => import('./WarpIntro'), { ssr: false });
 const OasisScene = dynamic(() => import('./OasisScene'), { ssr: false });
 import WorldPanel from './WorldPanel';
-import WorldFilter from './WorldFilter';
 
 const ALL_CATEGORIES: WorldCategory[] = ['star-system', 'planet', 'sector', 'world', 'dimension'];
 const ALL_LAYERS: WorldLayer[] = [1, 2, 3, 4, 5];
@@ -40,7 +39,7 @@ const CATEGORY_COLORS: Record<WorldCategory, string> = {
 
 export default function OasisClient() {
   const [mounted, setMounted] = useState(false);
-  const [phase, setPhase] = useState<'intro' | 'arrival' | 'rite' | 'scene'>('intro');
+  const [phase, setPhase] = useState<'intro' | 'stargate' | 'arrival' | 'rite' | 'scene'>('intro');
   const [activeCategories, setActiveCategories] = useState<WorldCategory[]>(ALL_CATEGORIES);
   const [activeLayers, setActiveLayers] = useState<WorldLayer[]>(ALL_LAYERS);
   const [selectedWorld, setSelectedWorld] = useState<World | null>(null);
@@ -50,13 +49,33 @@ export default function OasisClient() {
   const [flightSpeed, setFlightSpeed] = useState(0);
   const [throttle, setThrottle] = useState(0.5);
   const [landTarget, setLandTarget] = useState<World | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    const isNarrow = window.innerWidth < 768;
+    const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+    return isNarrow || (hasTouch && coarsePointer && window.innerWidth < 1024);
+  });
   const [uiHidden, setUiHidden] = useState(false);
+  const [panelsMinimized, setPanelsMinimized] = useState(false);
+  const autoHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flightControlsRef = useRef<FlightControlsHandle | null>(null);
   const mobileInputRef = useRef<MobileInput | null>(null);
   const compassRef = useRef<CompassData | null>(null);
   const { muted, toggle, start, playWarp, playBoost, playScanComplete, playApproach, startEngine, stopEngine, setEngine, music } = useAudio();
-  const { discoverWorld, scanWorld, addXp, setRealQuests, setAvatars, setTerritories, setAddress, address, shipLoadout, syncPlayer, scannedWorlds, discoveredWorlds } = useGameStore();
+  // Granular zustand selectors — prevents full re-render on every state change
+  const discoverWorld = useGameStore(s => s.discoverWorld);
+  const scanWorld = useGameStore(s => s.scanWorld);
+  const addXp = useGameStore(s => s.addXp);
+  const setRealQuests = useGameStore(s => s.setRealQuests);
+  const setAvatars = useGameStore(s => s.setAvatars);
+  const setTerritories = useGameStore(s => s.setTerritories);
+  const setAddress = useGameStore(s => s.setAddress);
+  const address = useGameStore(s => s.address);
+  const shipLoadout = useGameStore(s => s.shipLoadout);
+  const syncPlayer = useGameStore(s => s.syncPlayer);
+  const scannedWorlds = useGameStore(s => s.scannedWorlds);
+  const discoveredWorlds = useGameStore(s => s.discoveredWorlds);
   const addToast = useToastStore((s) => s.add);
 
   useEffect(() => {
@@ -93,9 +112,6 @@ export default function OasisClient() {
       const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
       const isNarrow = window.innerWidth < 768;
       const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
-      // Mobile = narrow screen OR touch + coarse pointer.
-      // A touch laptop with a wide screen stays desktop; a narrow
-      // non-touch window gets mobile layout.
       const mobile = isNarrow || (hasTouch && coarsePointer && window.innerWidth < 1024);
       setIsMobile(mobile);
       if (mobile && !mobileInputRef.current) {
@@ -106,6 +122,27 @@ export default function OasisClient() {
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
   }, []);
+
+  // Auto-hide panels when user interacts with 3D scene (scroll/drag/touch)
+  // Panels return after 2.5s of inactivity. Doesn't affect flight mode, intro, or stargate.
+  useEffect(() => {
+    if (phase === 'intro' || phase === 'stargate' || flightMode) return;
+    const canvas = document.querySelector('canvas');
+    if (!canvas) return;
+
+    const triggerHide = () => {
+      setPanelsMinimized(true);
+      if (autoHideTimer.current) clearTimeout(autoHideTimer.current);
+      autoHideTimer.current = setTimeout(() => setPanelsMinimized(false), 2500);
+    };
+
+    const events = ['wheel', 'pointerdown', 'touchstart'] as const;
+    events.forEach((evt) => canvas.addEventListener(evt, triggerHide, { passive: true }));
+    return () => {
+      events.forEach((evt) => canvas.removeEventListener(evt, triggerHide));
+      if (autoHideTimer.current) clearTimeout(autoHideTimer.current);
+    };
+  }, [phase, flightMode]);
 
   useEffect(() => {
     if (flightMode) {
@@ -143,7 +180,7 @@ export default function OasisClient() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (phase === 'intro') return;
+      if (phase === 'intro' || phase === 'stargate') return;
       if (e.key.toLowerCase() === 'h') {
         setUiHidden((h) => !h);
         return;
@@ -178,13 +215,20 @@ export default function OasisClient() {
   }
 
   const handleEnter = () => {
+    // WarpIntro done → go to Babylon stargate
+    setPhase('stargate');
+  };
+
+  const handleStargateEnter = () => {
+    // Babylon stargate done → warp to arrival
     start();
     playWarp();
     setPhase('arrival');
   };
 
   const handleArrived = () => {
-    setPhase('rite');
+    // On mobile, skip PilgrimRite (avatar config) — go straight to scene for preview.
+    setPhase(isMobile ? 'scene' : 'rite');
   };
 
   const handleRiteEnter = () => {
@@ -257,7 +301,7 @@ export default function OasisClient() {
 
   return (
     <>
-      <div className="relative h-full w-full">
+      <div className="fixed inset-0 overflow-hidden bg-oasis-black">
         <OasisScene
           started={phase !== 'intro'}
           onArrived={handleArrived}
@@ -279,82 +323,34 @@ export default function OasisClient() {
           isMobile={isMobile}
           compassRef={compassRef}
         />
-        {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && (
-          <GamePanel
+        {phase !== 'intro' && (
+          <MainMenu
             activeCategories={activeCategories}
-            selectedWorldId={selectedWorld?.id}
+            onCategoriesChange={setActiveCategories}
+            activeLayers={activeLayers}
+            onLayersChange={setActiveLayers}
+            selectedWorld={selectedWorld}
             onWorldSelect={handleWorldSelect}
             music={music}
             muted={muted}
             onToggleMute={toggle}
             onEnterFlight={() => {
-              setFlightMode(true);
-              setTimeout(() => flightControlsRef.current?.lock(), 0);
+              if (!flightMode && view === 'galaxy') {
+                setFlightMode(true);
+                setTimeout(() => flightControlsRef.current?.lock(), 0);
+              }
             }}
+            uiHidden={uiHidden}
+            onToggleUiHidden={() => setUiHidden((h) => !h)}
+            onCloseWorld={handleCloseWorld}
+            isMobile={isMobile}
           />
         )}
-        {phase === 'scene' && view === 'galaxy' && !flightMode && !uiHidden && <OnboardingHint />}
-        {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && <FruitCounter />}
+        {phase === 'scene' && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && !panelsMinimized && <OnboardingHint />}
+        {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && !isMobile && !panelsMinimized && <FruitCounter />}
 
         <AnimatePresence>
-          {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && (
-            <motion.div
-              initial={{ opacity: 0, y: -12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="pointer-events-auto absolute right-2 top-2 z-40 flex items-center gap-1.5 sm:right-6 sm:top-5"
-            >
-              <Link href="/dashboard">
-                <motion.div
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-gradient-to-r from-oasis-gold via-oasis-purple to-oasis-cyan px-2.5 py-1 text-[9px] font-bold text-white shadow-lg sm:px-2.5"
-                >
-                  <span className="hidden sm:inline">Enter the Game</span>
-                  <ChevronRight className="h-2.5 w-2.5" />
-                </motion.div>
-              </Link>
-              <button
-                onClick={() => setUiHidden(true)}
-                className="zion-button-ghost !p-2"
-                title="Hide all UI (H)"
-              >
-                <EyeOff className="h-3.5 w-3.5" />
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Show UI button when hidden */}
-        <AnimatePresence>
-          {phase !== 'intro' && uiHidden && (
-            <motion.button
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              onClick={() => setUiHidden(false)}
-              className="pointer-events-auto absolute right-2 top-2 z-50 rounded-full border border-white/15 bg-black/80 p-2.5 text-gray-300 backdrop-blur-md transition hover:bg-white/10 hover:text-white sm:right-6 sm:top-5"
-              title="Show UI (H)"
-            >
-              <Eye className="h-4 w-4" />
-            </motion.button>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {phase !== 'intro' && view === 'galaxy' && !flightMode && !uiHidden && (
-            <WorldFilter
-              active={activeCategories}
-              onChange={setActiveCategories}
-              activeLayers={activeLayers}
-              onLayersChange={setActiveLayers}
-            />
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {selectedWorld && view === 'galaxy' && !flightMode && !uiHidden && (
+          {selectedWorld && view === 'galaxy' && !flightMode && !uiHidden && !panelsMinimized && (
             <WorldPanel
               world={selectedWorld}
               onClose={handleCloseWorld}
@@ -364,7 +360,7 @@ export default function OasisClient() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {phase !== 'intro' && !flightMode && view === 'galaxy' && !uiHidden && (
+          {phase !== 'intro' && !flightMode && view === 'galaxy' && !uiHidden && !panelsMinimized && (
             <ControlHud
               compassRef={compassRef}
               target={compassTarget.pos}
@@ -438,8 +434,9 @@ export default function OasisClient() {
         </AnimatePresence>
       </div>
 
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {phase === 'intro' && <WarpIntro onEnter={handleEnter} />}
+        {phase === 'stargate' && <BabylonIntro onEnter={handleStargateEnter} />}
       </AnimatePresence>
 
       <WarpFlash active={warping} worldName={selectedWorld?.name} />

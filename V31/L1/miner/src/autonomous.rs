@@ -17,7 +17,7 @@ use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use zion_cosmic_harmony::ExternalCoin;
 
-
+use crate::stream_profit::StreamProfitOracle;
 
 /// Hardware profile for compatibility checking.
 #[derive(Debug, Clone)]
@@ -69,6 +69,8 @@ impl ElectricityConfig {
 pub struct AutonomousProfitRouter {
     hw: HardwareProfile,
     electricity: ElectricityConfig,
+    /// Live profit oracle (cached + rate-limited).
+    oracle: StreamProfitOracle,
     /// Current Stream 2 coin (GPU external), or None if disabled.
     pub stream2_coin: Option<ExternalCoin>,
     /// Current Stream 3 coin (CPU external), or None if disabled.
@@ -82,9 +84,29 @@ pub struct AutonomousProfitRouter {
     /// Hysteresis percentage (only switch if new coin is X% better).
     hysteresis_pct: f64,
     /// Whether autonomy is enabled.
-    enabled: bool,
+    pub enabled: bool,
     /// Decision log (for debugging).
     pub log: Vec<String>,
+}
+
+impl HardwareProfile {
+    /// A conservative default profile: assume a mid-range GPU if a GPU feature
+    /// is compiled in, otherwise CPU-only.
+    pub fn default_for_features() -> Self {
+        #[cfg(any(feature = "gpu-opencl", feature = "gpu-cuda", feature = "gpu-metal"))]
+        let (has_gpu, backend) = (true, "opencl".to_string());
+        #[cfg(not(any(feature = "gpu-opencl", feature = "gpu-cuda", feature = "gpu-metal")))]
+        let (has_gpu, backend) = (false, "cpu".to_string());
+
+        Self {
+            gpu_vram_bytes: 6 * 1024 * 1024 * 1024, // 6 GiB
+            gpu_backend: backend,
+            has_gpu,
+            cpu_has_aes: false,
+            cpu_has_avx2: false,
+            cpu_threads: num_cpus::get().max(1),
+        }
+    }
 }
 
 impl AutonomousProfitRouter {
@@ -94,19 +116,20 @@ impl AutonomousProfitRouter {
             .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
             .unwrap_or(false);
 
-        let fetch_interval_secs: u64 = std::env::var("ZION_PROFIT_INTERVAL")
-            .ok()
-            .and_then(|v| v.parse().ok())
-            .unwrap_or(300);
-
         let hysteresis_pct: f64 = std::env::var("ZION_PROFIT_HYSTERESIS")
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(15.0);
 
+        let fetch_interval_secs: u64 = std::env::var("ZION_PROFIT_INTERVAL")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(300);
+
         Self {
             hw,
             electricity: ElectricityConfig::default(),
+            oracle: StreamProfitOracle::new(),
             stream2_coin: None,
             stream3_coin: None,
             profit_cache: HashMap::new(),
@@ -123,6 +146,21 @@ impl AutonomousProfitRouter {
         self.enabled
     }
 
+    /// Override the hysteresis percentage.
+    pub fn set_hysteresis(&mut self, pct: f64) {
+        self.hysteresis_pct = pct;
+    }
+
+    /// Override the profit fetch interval.
+    pub fn set_fetch_interval(&mut self, secs: u64) {
+        self.fetch_interval = Duration::from_secs(secs);
+    }
+
+    /// Return true if profit data has already been fetched at least once.
+    pub fn has_profit_data(&self) -> bool {
+        self.last_fetch.is_some()
+    }
+
     /// Get all GPU-compatible coins for this hardware.
     pub fn gpu_compatible_coins(&self) -> Vec<ExternalCoin> {
         if !self.hw.has_gpu {
@@ -133,6 +171,8 @@ impl AutonomousProfitRouter {
             .copied()
             .filter(|coin| {
                 coin.is_gpu()
+                    && coin.fits_vram(self.hw.gpu_vram_bytes)
+                    && coin.gpu_kernel_available(&self.hw.gpu_backend)
             })
             .collect()
     }
@@ -143,36 +183,38 @@ impl AutonomousProfitRouter {
             .iter()
             .copied()
             .filter(|coin| {
-                coin.is_cpu()
+                coin.is_cpu() && coin.cpu_compatible(self.hw.cpu_has_aes, self.hw.cpu_has_avx2)
             })
             .collect()
     }
 
     /// Fetch profit estimates for all compatible coins.
     ///
-    /// Tries the live WhatToMine API first (via cosmic-harmony's
-    /// `fetch_live_profit_estimates()`), then falls back to hardcoded
-    /// estimates for any coins not covered by the API.
+    /// Uses the cached live oracle (`StreamProfitOracle`) to fetch WhatToMine
+    /// and NiceHash estimates with rate limiting, then falls back to
+    /// `CoinProfile`-based estimates for any coins not covered by the APIs.
     pub fn fetch_profits(&mut self) {
         let gpu_coins = self.gpu_compatible_coins();
         let cpu_coins = self.cpu_compatible_coins();
 
-        // Fetch live estimates from WhatToMine API. This is a blocking
-        // call with a 10s timeout; on any error it falls back to
-        // hardcoded estimates for all coins.
-        let live_estimates = zion_cosmic_harmony::ProfitRouter::default_estimates();
-
-        let live_count = live_estimates.len();
+        let live_estimates = self.oracle.get_estimates();
+        let live_count = live_estimates.iter().filter(|e| e.live).count();
         let mut used_live = 0u32;
 
         for coin in gpu_coins.iter().chain(cpu_coins.iter()) {
-            // Try live estimate first, fall back to hardcoded.
-            let revenue = if let Some(entry) = live_estimates.iter().find(|e| e.coin == *coin) {
+            let (revenue, is_live) = live_estimates
+                .iter()
+                .find(|e| e.coin == *coin)
+                .map(|e| (e.revenue_usd_per_day, e.live))
+                .unwrap_or_else(|| {
+                    let e = crate::stream_profit::fallback_for_coin(*coin);
+                    (e.revenue_usd_per_day, e.live)
+                });
+
+            if is_live {
                 used_live += 1;
-                entry.profit_usd_per_day
-            } else {
-                fallback_revenue_usd_per_day(*coin)
-            };
+            }
+
             let power = if coin.is_gpu() {
                 coin.estimated_gpu_power_watts()
             } else {
@@ -195,7 +237,7 @@ impl AutonomousProfitRouter {
         self.last_fetch = Some(Instant::now());
 
         self.log.push(format!(
-            "profit_fetch: {} coins evaluated ({} GPU + {} CPU compatible), {}/{} live estimates from WhatToMine",
+            "profit_fetch: {} coins evaluated ({} GPU + {} CPU compatible), {}/{} live estimates",
             gpu_coins.len() + cpu_coins.len(),
             gpu_coins.len(),
             cpu_coins.len(),
@@ -445,31 +487,6 @@ impl AutonomousProfitRouter {
     /// Check if the coin selection has changed since the last pool notification.
     pub fn coins_changed(&self, prev_s2: Option<ExternalCoin>, prev_s3: Option<ExternalCoin>) -> bool {
         self.stream2_coin != prev_s2 || self.stream3_coin != prev_s3
-    }
-}
-
-/// Fallback revenue estimates (USD per day) for coins.
-/// These are conservative estimates — real values come from whattomine API.
-/// Updated periodically based on network difficulty and coin price.
-fn fallback_revenue_usd_per_day(coin: ExternalCoin) -> f64 {
-    match coin {
-        ExternalCoin::Kaspa => 1.20,
-        ExternalCoin::Alephium => 0.65,
-        ExternalCoin::Decred => 0.80,
-        ExternalCoin::Vertcoin => 0.20,
-        ExternalCoin::Ravencoin => 0.45,
-        ExternalCoin::Monero => 0.55, // CPU: ~550 H/s on Ryzen 5 3600
-        ExternalCoin::EpicCash => 0.30,
-        ExternalCoin::Zano => 0.28,
-        ExternalCoin::Meowcoin => 0.25,
-        ExternalCoin::Clore => 0.35,
-        ExternalCoin::Flux => 0.40,
-        ExternalCoin::Neoxa => 0.25,
-        ExternalCoin::EthereumClassic => 0.70,
-        ExternalCoin::Bitcoin => 0.50,
-        ExternalCoin::Verus => 0.40, // CPU: ~12 MH/s on Ryzen 5 3600
-        // ERG/EVR not available in V31
-        // PRL, QUAI, BEAM, KLS, ZCL, QTC, IRON, NEXA, RTM, DNX, CKB, CFX, ZEC, PHX, KRX not available in V31
     }
 }
 

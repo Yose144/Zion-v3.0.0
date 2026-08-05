@@ -1,5 +1,7 @@
 # Epizoda 4 — Cesta nevyšlapaná
 
+*Kam mapa nesahá, tam začíná kompas — a most, který nikdo nepostaví, pokud nezačne dřív, než ho o to někdo poprosí.*
+
 > *„Kam vede vaše síť, když na ní není žádná mapa?"*
 > *„Nevím, kam přesně vede každá cesta. Ale vím, kterým směrem je sever."*
 

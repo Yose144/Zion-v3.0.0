@@ -5,6 +5,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import { useGameStore, SHIP_MODELS, type ShipModelId } from '../store/gameStore';
+import { ProceduralShip } from './StarFighterModels';
 
 interface PilgrimShipProps {
   speed?: number;
@@ -88,6 +89,20 @@ export default function PilgrimShip({ speed = 0 }: PilgrimShipProps) {
       material.emissiveIntensity = intensity;
     }
   });
+
+  // If this is a procedural model, render it via ProceduralShip
+  if (modelInfo.procedural && !modelInfo.stlPath) {
+    return (
+      <group ref={groupRef}>
+        <ProceduralShip modelId={modelId} color={color} boostLevel={boostLevel} speed={speed} />
+        {/* Engine ring (shared) */}
+        <mesh ref={engineRef} position={[0, -0.12, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.015 + boostLevel * 0.003, 0.025 + boostLevel * 0.005, 16]} />
+          <meshBasicMaterial color={color} transparent opacity={0.5} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
+        </mesh>
+      </group>
+    );
+  }
 
   // If we have an STL model, render it
   if (normalizedGeometry) {

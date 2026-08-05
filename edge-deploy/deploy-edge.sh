@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# ⚠️ DEPRECATED — legacy V3 edge deploy script.
+# V3 has been archived to archive/V3/. For V31 Mainnet Alpha use V31/deploy/deploy-edge.sh.
+# This file remains only for historical reference.
+#
 # ZION Edge Server — Full Stack Deployment
 # Pushes latest code to Edge (Contabo VPS) and restarts all services.
 #
