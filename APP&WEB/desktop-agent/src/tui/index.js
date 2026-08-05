@@ -18,6 +18,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const http = require('http');
 const { spawn } = require('child_process');
 const blessed = require('blessed');
 
@@ -33,16 +34,16 @@ const STATS_PATH = path.join(USER_DATA_PATH, 'miner_stats_tui.json');
 
 // ── Miner binary discovery (mirrors main.js findRustMiner) ──
 function findRustMiner() {
-  const v3Names = process.platform === 'win32' ? ['zion-miner.exe'] : ['zion-miner'];
+  const v31Names = process.platform === 'win32' ? ['zion-miner.exe'] : ['zion-miner', 'zion-universal-miner'];
   const searchPaths = IS_PACKAGED
     ? [process.resourcesPath]
     : [
         path.join(APP_ROOT, 'APP&WEB', 'desktop-agent', 'resources'),
-        path.join(APP_ROOT, 'V3', 'target', 'release'),
-        path.join(APP_ROOT, 'V3', 'L1', 'miner', 'target', 'release'),
+        path.join(APP_ROOT, 'V31', 'L1', 'miner', 'target', 'release'),
+        path.join(APP_ROOT, 'V31', 'target', 'release'),
         path.join(APP_ROOT, 'target', 'release'),
       ];
-  for (const name of v3Names) {
+  for (const name of v31Names) {
     for (const sp of searchPaths) {
       const fp = path.join(sp, name);
       if (fs.existsSync(fp)) return fp;
@@ -72,14 +73,52 @@ function loadConfig() {
 }
 
 // ── Stats polling ──
-function readStats() {
-  try {
-    if (!fs.existsSync(STATS_PATH)) return null;
-    const raw = fs.readFileSync(STATS_PATH, 'utf8');
-    return JSON.parse(raw);
-  } catch {
-    return null;
+function parsePrometheusMetrics(text) {
+  const out = {};
+  const re = /^(zion_miner_\w+)\{[^}]*\}\s+([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)/gm;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    const v = Number(m[2]);
+    out[m[1]] = Number.isFinite(v) ? v : 0;
   }
+  const poolMatch = text.match(/zion_miner_hash_rate\{[^}]*pool="([^"]+)"/);
+  const coinMatch = text.match(/zion_miner_hash_rate\{[^}]*coin="([^"]+)"/);
+  if (poolMatch) out._pool = poolMatch[1];
+  if (coinMatch) out._coin = coinMatch[1];
+  return out;
+}
+
+function pollMetrics() {
+  return new Promise((resolve) => {
+    const req = http.get('http://127.0.0.1:9116/metrics', { timeout: 1500 }, (res) => {
+      let data = '';
+      res.on('data', (chunk) => { data += chunk; });
+      res.on('end', () => {
+        if (res.statusCode === 200) {
+          const pm = parsePrometheusMetrics(data);
+          const hr = pm.zion_miner_hash_rate || 0;
+          resolve({
+            hashrate: hr,
+            hashrate_10s: hr,
+            hashrate_60s: hr,
+            hashrate_15m: hr,
+            hashrate_max: hr,
+            accepted: pm.zion_miner_shares_accepted || 0,
+            rejected: pm.zion_miner_shares_rejected || 0,
+            total_hashes: pm.zion_miner_total_hashes || 0,
+            shares: (pm.zion_miner_shares_submitted || 0),
+            pool: pm._pool,
+            coin: pm._coin,
+            _ok: true
+          });
+        } else {
+          resolve(null);
+        }
+      });
+    });
+    req.on('error', () => resolve(null));
+    req.on('timeout', () => { req.destroy(); resolve(null); });
+  });
 }
 
 // ── Hashrate formatting ──
@@ -120,8 +159,8 @@ function sparkline(history, width) {
 async function main() {
   const minerPath = findRustMiner();
   if (!minerPath) {
-    console.error('ERROR: zion-miner binary not found. Build V3/L1/miner first:');
-    console.error('  cd V3 && cargo build --release -p zion-miner --features gpu-opencl,...');
+    console.error('ERROR: zion-miner binary not found. Build V31/L1/miner first:');
+    console.error('  cd V31 && cargo build --release -p zion-miner --features auxpow,gpu-opencl,native-hashers');
     process.exit(1);
   }
 
@@ -256,8 +295,8 @@ async function main() {
   let lastShareCount = 0;
 
   // ── Update dashboard from stats ──
-  function updateDashboard() {
-    const stats = readStats();
+  async function updateDashboard() {
+    const stats = await pollMetrics();
     if (!stats) {
       hrBox.setContent(' {grey-fg}Waiting for stats…{/}');
       gpuBox.setContent(' {grey-fg}No GPU data{/}');
@@ -267,65 +306,38 @@ async function main() {
     }
 
     // Hashrate
-    const hr10 = fmtHr(stats.hashrate_10s || stats.hashrate_10s_hps);
-    const hr60 = fmtHr(stats.hashrate_60s || stats.hashrate_60s_hps);
-    const hr15 = fmtHr(stats.hashrate_15m || stats.hashrate_15m_hps);
+    const hr10 = fmtHr(stats.hashrate_10s);
+    const hr60 = fmtHr(stats.hashrate_60s);
+    const hr15 = fmtHr(stats.hashrate_15m);
     const hrMax = fmtHr(stats.hashrate_max);
-    const hrNow = fmtHr(stats.hashrate || stats.hashrate_hps);
+    const hrNow = fmtHr(stats.hashrate);
     hrBox.setContent(
       ` Current: {bold}{cyan-fg}${hrNow}{/}\n` +
       ` 10s: {cyan-fg}${hr10}{/}   60s: {cyan-fg}${hr60}{/}\n` +
       ` 15m: {cyan-fg}${hr15}{/}   Max: {green-fg}${hrMax}{/}\n` +
       ` Shares: {green-fg}${stats.accepted || 0}{/}/${stats.rejected || 0}  ` +
-      `Uptime: ${stats.uptime_sec || 0}s`
+      `Coin: ${stats.coin || '—'}`
     );
 
-    // GPU
-    const gpuName = stats.gpu_name || stats.gpu_info || '—';
-    const temp = stats.gpu_temp_c != null ? stats.gpu_temp_c + '°C' : '—';
-    const power = stats.gpu_power_w != null ? stats.gpu_power_w + 'W' : '—';
-    const vram = stats.gpu_vram_mib ? stats.gpu_vram_mib + ' MiB' : '—';
-    const clock = stats.gpu_clock_mhz ? stats.gpu_clock_mhz + ' MHz' : '—';
-    const cus = stats.gpu_compute_units || '—';
-    const tempColor = stats.gpu_temp_c >= 80 ? 'red-fg' : stats.gpu_temp_c >= 70 ? 'yellow-fg' : 'green-fg';
-    gpuBox.setContent(
-      ` {bold}${gpuName}{/}\n` +
-      ` Temp: {${tempColor}}${temp}{/}  Power: {yellow-fg}${power}{/}\n` +
-      ` VRAM: ${vram}  Clock: ${clock}\n` +
-      ` CUs: ${cus}  Backend: ${stats.backend || '—'}`
-    );
+    // GPU — V31 Prometheus endpoint does not expose GPU details yet.
+    gpuBox.setContent(' {grey-fg}GPU metrics not available via Prometheus{/}');
 
     // Sparkline
-    const hps = stats.hashrate_10s || stats.hashrate_10s_hps || stats.hashrate || 0;
+    const hps = stats.hashrate_10s || stats.hashrate || 0;
     if (hps > 0) {
       hrHistory.push(hps);
       if (hrHistory.length > 120) hrHistory.shift();
     }
     sparkBox.setContent(' ' + sparkline(hrHistory, 80));
 
-    // Trinity streams
-    if (Array.isArray(stats.streams) && stats.streams.length > 0) {
-      let lines = '';
-      for (const s of stats.streams) {
-        const active = s.active ? '{green-fg}●{/}' : '{red-fg}○{/}';
-        const hr = fmtHr(s.hashrate_10s);
-        const coin = s.coin || s.label || '—';
-        const algo = s.algorithm || '';
-        const acc = s.accepted || 0;
-        const rej = s.rejected || 0;
-        lines += ` ${active} ${coin.padEnd(10)} ${hr.padEnd(12)} ${algo.padEnd(20)} A:${acc} R:${rej}\n`;
-      }
-      streamBox.setContent(lines.trim());
-    } else {
-      streamBox.setContent(' {grey-fg}No active streams{/}');
-    }
+    // Trinity streams — V31 Prometheus endpoint is aggregate only.
+    streamBox.setContent(' {grey-fg}Per-stream metrics not available via Prometheus{/}');
 
     // Share log — detect new shares
     const totalShares = (stats.accepted || 0) + (stats.rejected || 0);
     if (totalShares > lastShareCount) {
-      const newShares = totalShares - lastShareCount;
       const time = new Date().toLocaleTimeString();
-      if (stats.accepted > 0 && stats.accepted > (lastShareCount - (stats.rejected || 0))) {
+      if (stats.accepted > (lastShareCount - (stats.rejected || 0))) {
         shareLog.log(`{green-fg}[${time}] ✓ ZION share accepted (A:${stats.accepted} R:${stats.rejected}){/}`);
       }
       if (stats.rejected > 0) {
@@ -345,33 +357,36 @@ async function main() {
   // ── Start mining ──
   function startMining() {
     if (isRunning || minerProc) return;
-    // Clean up old stats file
-    try { if (fs.existsSync(STATS_PATH)) fs.unlinkSync(STATS_PATH); } catch {}
+    const pool = `${config.pool.host}:${config.pool.port}`;
+    const worker = config.workerName || 'w11-tui';
+    const threads = String(config.threads || 2);
+    const backend = String(config.backend || 'opencl').toLowerCase();
+    const wantsGpu = backend !== 'cpu';
 
     const env = {
       ...process.env,
-      ZION_STATS_FILE: STATS_PATH,
-      ZION_BACKEND: config.backend || 'opencl',
-      ZION_GPU_WORK_SIZE: String(config.gpuWorkSize || 8192),
-      ZION_THREADS: String(config.threads || 2),
-      ZION_INTERACTIVE: '0',
-      ZION_NO_STICKY: '1',
-      ZION_QUIET: '1',
-      ZION_METRICS_REPORT_SECS: '2',
-      ZION_PAYOUT_ADDRESS: config.payoutAddress,
-      ZION_WORKER_NAME: config.workerName || 'w11-tui',
-      ZION_POOL_ADDR: `${config.pool.host}:${config.pool.port}`,
+      ZION_POOL_ADDR: pool,
+      ZION_WORKER: worker,
+      ZION_WORKER_NAME: worker,
+      ZION_MINER_THREADS: threads,
+      ZION_GPU_BACKEND: backend,
+      ZION_BACKEND: backend,
+      ZION_MINER_ALGORITHM: 'deeksha_lite_v1',
+      ZION_PROFIT_INTERVAL: '300',
+      ZION_AUTONOMOUS: '1'
     };
 
     const args = [
-      '--stats-file', STATS_PATH,
-      '--payout-address', config.payoutAddress,
-      '--worker-name', config.workerName || 'w11-tui',
-      '--pool-addr', `${config.pool.host}:${config.pool.port}`,
-      '--backend', config.backend || 'opencl',
-      '--threads', String(config.threads || 2),
-      '--gpu-work-size', String(config.gpuWorkSize || 8192),
+      '--pool', pool,
+      '--wallet', config.payoutAddress,
+      '--worker', worker,
+      '--threads', threads,
+      '--metrics', '127.0.0.1:9116',
+      '--log_interval', '30'
     ];
+    if (!wantsGpu) {
+      args.push('--no_gpu');
+    }
 
     minerProc = spawn(minerPath, args, { env, stdio: ['ignore', 'pipe', 'pipe'] });
     isRunning = true;
@@ -420,7 +435,7 @@ async function main() {
   });
 
   // ── Polling loop ──
-  setInterval(updateDashboard, 1000);
+  setInterval(async () => { await updateDashboard(); }, 1000);
   updateDashboard();
 
   // Welcome message

@@ -2,7 +2,7 @@
 /**
  * ZION Desktop Agent — Trinity / Triple-Stream E2E Mining Flow Test (W11 ready)
  *
- * Tests the full V3 mining pipeline on the host platform:
+ * Tests the full V31 mining pipeline on the host platform:
  *   1. Build/prepare the Rust miner binary for the current platform.
  *   2. Generate a temporary zion1 wallet.
  *   3. Spawn the miner in triple-stream mode (ZION GPU + external GPU coin +
@@ -21,6 +21,7 @@ const { spawn, execFileSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const http = require('http');
 
 const WalletGenerator = require('../src/wallet-generator');
 
@@ -77,7 +78,7 @@ class E2EMiningTest {
   }
 
   async prepareMiner() {
-    log('Step 1: Preparing V3 Rust miner binaries...');
+    log('Step 1: Preparing V31 Rust miner binaries...');
     const prepareScript = path.join(__dirname, '..', 'scripts', 'prepare-rust-miner.js');
 
     try {
@@ -100,7 +101,9 @@ class E2EMiningTest {
     const ext = process.platform === 'win32' ? '.exe' : '';
     const candidates = [
       path.join(__dirname, '..', 'resources', `zion-miner${ext}`),
-      path.join(__dirname, '..', '..', '..', 'V3', 'target', 'release', `zion-miner${ext}`),
+      path.join(__dirname, '..', 'resources', `zion-universal-miner${ext}`),
+      path.join(__dirname, '..', '..', '..', 'V31', 'L1', 'miner', 'target', 'release', `zion-miner${ext}`),
+      path.join(__dirname, '..', '..', '..', 'V31', 'target', 'release', `zion-miner${ext}`),
       path.join(__dirname, '..', '..', '..', 'target', 'release', `zion-miner${ext}`)
     ];
     for (const candidate of candidates) {
@@ -120,10 +123,7 @@ class E2EMiningTest {
   }
 
   async runMiner(minerPath, wallet) {
-    log('Step 3: Spawning miner in Trinity / triple-stream mode...');
-
-    const statsFile = path.join(os.tmpdir(), `zion-e2e-stats-${Date.now()}.json`);
-    const [poolHost, poolPort] = this.pool.split(':');
+    log('Step 3: Spawning miner in V31 triple-stream mode...');
 
     const cpuThreads = Math.max(1, os.cpus().length - 1);
     const gpuBackend = 'auto'; // let the compiled miner pick CUDA / OpenCL / CPU
@@ -132,36 +132,23 @@ class E2EMiningTest {
       '--wallet', wallet,
       '--worker', this.worker,
       '--threads', String(cpuThreads),
-      '--gpu', gpuBackend,
-      '--algorithm', 'cosmic_harmony_ekam_deeksha_v2',
-      '--cpu-coin', this.cpuCoin,
-      '--gpu-coin', this.gpuCoin,
-      '--stats-file', statsFile,
-      '--no-tui'
+      '--metrics', '127.0.0.1:9116',
+      '--log_interval', '10'
     ];
 
     const env = {
       ...process.env,
       ZION_POOL_ADDR: this.pool,
-      ZION_PAYOUT_ADDRESS: wallet,
+      ZION_WORKER: this.worker,
       ZION_WORKER_NAME: this.worker,
-      ZION_PROFILE: 'pool',
-      ZION_LOOP_COUNT: '1000000',
-      ZION_NONCE_COUNT: '4096',
-      ZION_NONCE_AUTOTUNE: 'true',
-      ZION_RECONNECT: 'true',
-      ZION_METRICS_REPORT_SECS: '10',
-      ZION_STATS_FILE: statsFile,
-      ZION_MINER_METRICS_BIND: '127.0.0.1:9116',
-      ZION_ENABLE_STREAM_SWITCH: '1',
-      ZION_STREAM1_ENABLED: '1',
-      ZION_STREAM2_ENABLED: '1',
-      ZION_STREAM3_ENABLED: '1',
+      ZION_MINER_THREADS: String(cpuThreads),
+      ZION_GPU_BACKEND: gpuBackend,
+      ZION_BACKEND: gpuBackend,
+      ZION_MINER_ALGORITHM: 'cosmic_harmony_ekam_deeksha_v2',
+      ZION_PROFIT_INTERVAL: '300',
       ZION_AUTONOMOUS: '0',
-      ZION_MINER_CPU_COIN: this.cpuCoin,
-      ZION_MINER_GPU_COIN: this.gpuCoin,
-      ZION_BACKEND: 'opencl',
-      ZION_HAS_GPU: '1'
+      ZION_STREAM2_FORCE_COIN: this.gpuCoin,
+      ZION_STREAM3_FORCE_COIN: this.cpuCoin
     };
 
     return new Promise((resolve, reject) => {
@@ -202,8 +189,8 @@ class E2EMiningTest {
         }
       });
 
-      const statsTimer = setInterval(() => {
-        this.readStatsFile(statsFile);
+      const statsTimer = setInterval(async () => {
+        await this.pollMetrics();
         if (this.results.tripleStreamDetected && this.results.sharesSubmitted > 0) {
           clearInterval(statsTimer);
           finish();
@@ -214,58 +201,65 @@ class E2EMiningTest {
         }
       }, STATS_POLL_MS);
 
-      // Give the miner a bit of time before the first stats read
-      setTimeout(() => this.readStatsFile(statsFile), 3000);
+      // Give the miner a bit of time before the first metrics poll
+      setTimeout(() => this.pollMetrics(), 3000);
     });
   }
 
   scanLog(text) {
     // Pool connection
-    if (/pool_config_received|Connected to|Connected!|welcome/i.test(text)) {
+    if (/zion\s+pool\s+stratum\s+connected|pool\s+connected|connected\s+to/i.test(text)) {
       this.results.poolConnected = true;
     }
-    // Coin preference (proves Trinity negotiation)
-    if (/manual_coin_preference_sent|autonomous_coin_preference_sent|CoinPreference/i.test(text)) {
-      this.results.tripleStreamNegotiated = true;
-    }
-    // Stream activation
-    if (/stream3c_ext_cpu_enabled|stream2_gpu_external_enabled|dual_gpu_enabled|Trinity/i.test(text)) {
+    // Coin preference / stream activation (proves triple-stream negotiation)
+    if (/(?:mined\s+auxpow\s+share|stream\s+stats)/i.test(text)) {
       this.results.tripleStreamDetected = true;
     }
-    // Share accepted
-    const shareMatch = text.match(/(?:accepted|share.*accepted).*?(\d+)/gi);
+    // Share accepted (V31 auxpow share events)
+    const shareMatch = text.match(/mined\s+auxpow\s+share/gi);
     if (shareMatch) {
       this.results.sharesSubmitted += shareMatch.length;
     }
   }
 
-  readStatsFile(statsFile) {
+  parsePrometheusMetrics(text) {
+    const out = {};
+    const re = /^(zion_miner_\w+)\{[^}]*\}\s+([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)/gm;
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      const v = Number(m[2]);
+      out[m[1]] = Number.isFinite(v) ? v : 0;
+    }
+    return out;
+  }
+
+  async pollMetrics() {
     try {
-      if (!fs.existsSync(statsFile)) return;
-      const raw = fs.readFileSync(statsFile, 'utf8');
-      if (!raw) return;
-      const stats = JSON.parse(raw);
-
-      if (typeof stats.hashrate === 'number') this.results.hashrateHs = stats.hashrate;
-      if (typeof stats.shares_accepted === 'number') this.results.sharesSubmitted = stats.shares_accepted;
-
-      if (Array.isArray(stats.streams) && stats.streams.length >= 3) {
-        this.results.streams = stats.streams.map(s => ({
-          index: s.index,
-          label: s.label,
-          coin: s.coin,
-          algorithm: s.algorithm,
-          hashrate_10s: s.hashrate_10s,
-          active: s.active
-        }));
+      const data = await new Promise((resolve) => {
+        const req = http.get('http://127.0.0.1:9116/metrics', { timeout: 1500 }, (res) => {
+          let body = '';
+          res.on('data', (chunk) => { body += chunk; });
+          res.on('end', () => resolve(res.statusCode === 200 ? body : null));
+        });
+        req.on('error', () => resolve(null));
+        req.on('timeout', () => { req.destroy(); resolve(null); });
+      });
+      if (!data) return;
+      const pm = this.parsePrometheusMetrics(data);
+      if (typeof pm.zion_miner_hash_rate === 'number') {
+        this.results.hashrateHs = pm.zion_miner_hash_rate;
+      }
+      if (typeof pm.zion_miner_shares_accepted === 'number') {
+        this.results.sharesSubmitted = pm.zion_miner_shares_accepted;
+      }
+      if (typeof pm.zion_miner_shares_submitted === 'number' && pm.zion_miner_shares_submitted > 0) {
         this.results.tripleStreamDetected = true;
-        const active = this.results.streams.filter(s => s.active).length;
-        if (active > 0) {
-          log(`Telemetry: ${active}/${this.results.streams.length} streams active, hashrate=${this.results.hashrateHs.toFixed(2)} H/s`, 'success');
-        }
+      }
+      if (this.results.tripleStreamDetected && this.results.hashrateHs > 0) {
+        log(`Telemetry: hashrate=${this.results.hashrateHs.toFixed(2)} H/s, accepted=${this.results.sharesSubmitted}`, 'success');
       }
     } catch {
-      // stats file may be partially written; ignore and retry
+      // metrics may not be ready yet; ignore and retry
     }
   }
 

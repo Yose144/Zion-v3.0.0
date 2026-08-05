@@ -1,4 +1,4 @@
-// ZION V3 Mainnet Ready v3.1.0 "Triple Parallel" - Main Process
+// ZION V31 Mainnet Alpha v3.1.0 "Triple Stream" - Main Process
 // Electron main process with system tray, auto-start, GPU mining, IPC
 
 // Work around NVIDIA/Wayland GPU sandbox segfaults by forcing the X11 Ozone
@@ -181,9 +181,9 @@ const rustCliFeatureCache = new Map();
 function rustMinerSupportsGroupFlag(minerPath) {
   try {
     if (!minerPath) return false;
-    // V3 zion-miner does not use/need --group split semantics from legacy miner.
+    // V31 zion-miner does not use/need --group split semantics from legacy miner.
     // Skip expensive synchronous help probing to keep startup one-click responsive.
-    if (isV3MinerBinary(minerPath)) {
+    if (isV31MinerBinary(minerPath)) {
       rustCliFeatureCache.set(minerPath, false);
       return false;
     }
@@ -667,7 +667,7 @@ let minerStats = {
   gpu_detected: false,
   gpu_type: 'none',
   gpu_name: '',
-  // GPU hardware details (populated from stats file / HTTP /stats)
+  // GPU hardware details (populated from miner stdout / Prometheus /metrics)
   gpu_compute_units: 0,
   gpu_vram_mib: 0,
   gpu_clock_mhz: 0,
@@ -676,7 +676,7 @@ let minerStats = {
   cpu_only_mode: true,
   // Dual mining: ZION + XMR (DAO revenue)
   // ── Trinity per-stream telemetry (DeekshaChv3 parallel streaming) ──
-  // Populated from V3 miner /stats `streams` array. Each entry:
+  // Populated from V31 miner `stream stats` log lines. Each entry:
   //   {index, label, coin, algorithm, hashrate_10s, hashrate_60s,
   //    hashrate_15m, accepted, rejected, active}
   // streams: [] — Stream 1 (ZION), Stream 2 (GPU external), Stream 3 (CPU external)
@@ -1002,19 +1002,19 @@ function composeStatsPayload() {
 }
 
 function findRustMiner() {
-  // V3 miner binary names take priority over legacy universal miner.
-  const v3Names = process.platform === 'win32' ? ['zion-miner.exe'] : ['zion-miner'];
+  // V31 miner binary names take priority over legacy universal miner.
+  const v31Names = process.platform === 'win32' ? ['zion-miner.exe'] : ['zion-miner'];
   const namesByPlatform = {
     darwin: [
-      ...v3Names,
+      ...v31Names,
       'zion-universal-miner',
       'zion-universal-miner-macos-arm64',
       'zion-universal-miner-macos-x64',
       'zion-universal-miner-arm64',
       'zion-universal-miner-x64'
     ],
-    linux: [...v3Names, 'zion-universal-miner', 'zion-universal-miner-linux-x64'],
-    win32: [...v3Names, 'zion-universal-miner.exe', 'zion-universal-miner-win-x64.exe']
+    linux: [...v31Names, 'zion-universal-miner', 'zion-universal-miner-linux-x64'],
+    win32: [...v31Names, 'zion-universal-miner.exe', 'zion-universal-miner-win-x64.exe']
   };
 
   const names = namesByPlatform[process.platform] || [];
@@ -1023,10 +1023,10 @@ function findRustMiner() {
     : [
         // Prefer explicit refreshed dev copies and alternate target dirs first.
         path.join(APP_ROOT, 'resources'),
-        path.join(APP_ROOT, '..', '..', 'V3', 'target-vega-fix', 'release'),
-        // V3 miner build outputs
-        path.join(APP_ROOT, '..', '..', 'V3', 'L1', 'miner', 'target', 'release'),
-        path.join(APP_ROOT, '..', '..', 'V3', 'target', 'release'),
+        path.join(APP_ROOT, '..', '..', 'V31', 'target-vega-fix', 'release'),
+        // V31 miner build outputs
+        path.join(APP_ROOT, '..', '..', 'V31', 'L1', 'miner', 'target', 'release'),
+        path.join(APP_ROOT, '..', '..', 'V31', 'target', 'release'),
         path.join(APP_ROOT, '..', '..', 'target', 'release'),
         path.join(APP_ROOT, '..', '..', 'L1', 'miner', 'target', 'release'),
         path.join(APP_ROOT, '..', '..', 'miner', 'target', 'release'),
@@ -1053,7 +1053,7 @@ function findRustMiner() {
 
     if (candidates.length > 0) {
       // Prefer the canonical bundled location (lowest pathIndex) so dev tests
-      // don't accidentally pick up a stale/broken build from V3/target/release.
+      // don't accidentally pick up a stale/broken build from V31/target/release.
       // Break ties by mtime to still allow intentional local rebuilds.
       candidates.sort((left, right) => {
         if (left.pathIndex !== right.pathIndex) {
@@ -1062,7 +1062,7 @@ function findRustMiner() {
         return right.mtimeMs - left.mtimeMs;
       });
       const chosen = candidates[0].fullPath;
-      console.log(`[V3-FAST] findRustMiner selected ${chosen} (mtime=${candidates[0].mtimeMs}, pathIndex=${candidates[0].pathIndex})`);
+      console.log(`[V31-FAST] findRustMiner selected ${chosen} (mtime=${candidates[0].mtimeMs}, pathIndex=${candidates[0].pathIndex})`);
       return chosen;
     }
   }
@@ -1072,13 +1072,13 @@ function findRustMiner() {
 
 
 /**
- * Detect whether a resolved miner binary is the V3 miner (zion-miner) vs legacy (zion-universal-miner).
- * V3 miner uses env-var configuration, not CLI flags.
+ * Detect whether a resolved miner binary is the V31 miner (zion-miner or zion-universal-miner)
+ * vs legacy. V31 uses CLI flags + environment variables.
  */
-function isV3MinerBinary(minerPath) {
+function isV31MinerBinary(minerPath) {
   if (!minerPath) return false;
   const base = path.basename(minerPath).toLowerCase().replace(/\.exe$/, '');
-  return base === 'zion-miner';
+  return base === 'zion-miner' || base === 'zion-universal-miner';
 }
 
 function resolveMinerSelection(preferred) {
@@ -1094,7 +1094,7 @@ if (rustMinerPath) {
   MINER_IS_RUST = true;
   dbg('[MINER] Using Rust native miner:', rustMinerPath);
 } else {
-  console.error('[MINER] V3 Rust miner not found at app startup. Build V3/L1/miner release or package zion-miner.exe into resources. Mining will be unavailable until the binary is present.');
+  console.error('[MINER] V31 Rust miner not found at app startup. Build V311/L1/miner release or package zion-miner.exe into resources. Mining will be unavailable until the binary is present.');
   MINER_PATH = null;
   MINER_IS_RUST = false;
 }
@@ -1250,7 +1250,7 @@ function rotateFileIfTooLarge(filePath, maxBytes, maxBackups = 1, maxAgeMs = nul
   } catch { /* ignore */ }
 }
 
-// ── V3 Config Defaults ──────────────────────────────────────────────────────
+// ── V31 Config Defaults ──────────────────────────────────────────────────────
 const DESKTOP_PURE_ZION_DEFAULT = true;
 
 const DEFAULT_CONFIG = {
@@ -1280,9 +1280,9 @@ const DEFAULT_CONFIG = {
   // gpuCoin:  Stream 2 GPU external coin preference ("auto" = pool decides).
   //   Supported: "auto", "KAS", "ALPH", "DCR", "ERG", "ETC", "RVN", "CLORE",
   //              "MEWC", "EVR", "FLUX", "EPIC"
-  // tripleStream: master toggle. When true, ZION_ENABLE_STREAM_SWITCH=1 and
-  //   --cpu-coin/--gpu-coin are forwarded to the miner. When false, the miner
-  //   runs in legacy single-stream ZION-only mode.
+  // tripleStream: master toggle. When true, --no_gpu/--no_cpu are omitted and
+  //   ZION_STREAM2_FORCE_COIN / ZION_STREAM3_FORCE_COIN are forwarded to the
+  //   V31 miner. When false, both AuxPoW streams are disabled.
   cpuCoin: 'auto',
   gpuCoin: 'auto',
   tripleStream: true,
@@ -1444,7 +1444,7 @@ function hasNvrtcRuntime() {
   const dirs = [];
   try {
     dirs.push(IS_PACKAGED ? process.resourcesPath : path.join(APP_ROOT, 'resources'));
-    dirs.push(path.join(APP_ROOT, '..', '..', 'V3', 'target', 'release'));
+    dirs.push(path.join(APP_ROOT, '..', '..', 'V31', 'target', 'release'));
   } catch { /* ignore */ }
   for (const envVar of ['CUDA_PATH', 'CUDA_HOME']) {
     const base = process.env[envVar];
@@ -1810,7 +1810,7 @@ async function checkStratumHealth(host, port = 8444, timeout = 5000) {
     socket.on('close', fail);
 
     socket.on('connect', () => {
-      // V3 pool protocol: send a hello probe (pool responds with welcome or closes)
+      // V31 pool protocol: send a hello probe (pool responds with welcome or closes)
       try {
         socket.write('{"type":"hello","miner_id":"probe","worker_name":"health-check","algorithm":"cosmic_harmony_ekam_deeksha_v2"}\n');
       } catch { fail(); return; }
@@ -1818,13 +1818,13 @@ async function checkStratumHealth(host, port = 8444, timeout = 5000) {
 
     socket.on('data', (chunk) => {
       buf += chunk.toString();
-      // V3 pool uses newline-delimited JSON — any valid JSON response = pool alive
+      // V31 pool uses newline-delimited JSON — any valid JSON response = pool alive
       const lines = buf.split('\n');
       for (const line of lines) {
         if (!line.trim()) continue;
         try {
           const msg = JSON.parse(line);
-          // welcome, job, or any valid V3 message = online
+          // welcome, job, or any valid V31 message = online
           if (msg && msg.type) {
             if (!responded) {
               responded = true;
@@ -1849,7 +1849,7 @@ async function getAllServersStatus() {
     TESTNET_SERVERS.map(async (server) => {
       const poolPort = server.poolPort || PRIMARY_POOL_PORT;
       const [poolStatus, rpcStatus] = await Promise.all([
-        checkStratumHealth(server.host, poolPort),  // V3 hello probe
+        checkStratumHealth(server.host, poolPort),  // stratum hello probe
         checkServerPort(server.host, PRIMARY_RPC_PORT)
       ]);
       return {
@@ -2225,11 +2225,11 @@ function updateTrayMenu(stats) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// V3 Fast-Path: clean startup that bypasses all legacy blocking code.
-// Called by startMining() when findRustMiner() returns a V3 binary.
+// V31 Fast-Path: clean startup that bypasses all legacy blocking code.
+// Called by startMining() when findRustMiner() returns a V31 binary.
 // Returns { success, ... } or null to fall through to legacy path.
 // ═══════════════════════════════════════════════════════════════════════════════
-function startMiningV3(config, v3Path) {
+function startMiningV31(config, v31Path) {
   const t0 = Date.now();
   const log = (msg) => {
     try { sendToRenderer('miner-output', { stream: 'stdout', text: msg }); } catch {}
@@ -2238,9 +2238,9 @@ function startMiningV3(config, v3Path) {
     try { sendToRenderer('miner-output', { stream: 'stderr', text: msg }); } catch {}
   };
 
-  log(`[V3-FAST] Starting V3 miner fast-path (${path.basename(v3Path)})\n`);
-  log(`[V3-FAST] Config keys: ${Object.keys(config || {}).join(', ')}\n`);
-  log(`[V3-FAST] Pool: ${JSON.stringify(config?.pool)} | Wallet set: ${!!config?.wallet}\n`);
+  log(`[V31-FAST] Starting V31 miner fast-path (${path.basename(v31Path)})\n`);
+  log(`[V31-FAST] Config keys: ${Object.keys(config || {}).join(', ')}\n`);
+  log(`[V31-FAST] Pool: ${JSON.stringify(config?.pool)} | Wallet set: ${!!config?.wallet}\n`);
 
   // ── 1. Validate wallet ─────────────────────────────────────────────────────
   const wallet = String(config?.wallet || '').trim();
@@ -2262,14 +2262,14 @@ function startMiningV3(config, v3Path) {
   }
 
   // ── 2. Verify binary exists ────────────────────────────────────────────────
-  if (!fs.existsSync(v3Path)) {
+  if (!fs.existsSync(v31Path)) {
     const defMsg = process.platform === 'win32'
-      ? `V3 miner not found at: ${v3Path}\n\nWindows Defender may have quarantined zion-miner.exe.`
-      : `V3 miner not found at: ${v3Path}`;
+      ? `V31 miner not found at: ${v31Path}\n\nWindows Defender may have quarantined zion-miner.exe.`
+      : `V31 miner not found at: ${v31Path}`;
     dialog.showErrorBox('Miner Not Found', defMsg);
     startMiningInProgress = false;
     if (startMiningGuardTimer) { clearTimeout(startMiningGuardTimer); startMiningGuardTimer = null; }
-    return { success: false, error: 'V3 miner not found' };
+    return { success: false, error: 'V31 miner not found' };
   }
 
   // ── 3. Idempotent guard ────────────────────────────────────────────────────
@@ -2281,7 +2281,7 @@ function startMiningV3(config, v3Path) {
   }
 
   // ── 4. Update global state ─────────────────────────────────────────────────
-  MINER_PATH = v3Path;
+  MINER_PATH = v31Path;
   MINER_IS_RUST = true;
   minerUserStopRequested = false;
   minerStopping = false;
@@ -2292,7 +2292,7 @@ function startMiningV3(config, v3Path) {
   if (minerGpuInitWatchdogTimer) { clearTimeout(minerGpuInitWatchdogTimer); minerGpuInitWatchdogTimer = null; }
   if (minerAutoStopTimer) { clearTimeout(minerAutoStopTimer); minerAutoStopTimer = null; }
 
-  log(`[V3-FAST] Binary: ${v3Path}\n`);
+  log(`[V31-FAST] Binary: ${v31Path}\n`);
 
   // ── 5. Compute threads and GPU ─────────────────────────────────────────────
   const effectiveThreads = computeEffectiveThreads(config);
@@ -2318,106 +2318,58 @@ function startMiningV3(config, v3Path) {
     ? 'cpu'
     : explicitGpuBackend || 'auto';
 
-  // ── 6. Build CLI args ──────────────────────────────────────────────────────
-  const args = ['--pool', pool, '--wallet', wallet];
-  if (worker) args.push('--worker', worker);
-  if (effectiveThreads > 0) args.push('--threads', String(effectiveThreads));
-  if (wantsGpu) {
-    args.push('--gpu', selectedGpuBackend);
-  }
-  args.push('--stats-file', STATS_PATH);
-  // The miner is launched non-interactively from Electron; keep the TUI off so
-  // stdout is a clean stream of logs/telemetry for the agent to parse.
-  args.push('--no-tui');
-
-  // ── 6a. Trinity CLI flags (DeekshaChv3 parallel streaming) ──────────
-  // Forward the user's algorithm / coin preferences to the V3 miner so the
-  // pool can assign the correct Stream 2 (GPU external) and Stream 3 (CPU
-  // external) jobs. "auto" = let the pool's profit router decide.
-  const tripleStreamEnabled = config.tripleStream !== false;
+  // ── 6. Build V31 CLI args ─────────────────────────────────────────────────
   const algoForMiner = normalizeAlgorithmName(config.algorithm || DEFAULT_CONFIG.algorithm);
-  if (algoForMiner) {
-    args.push('--algorithm', algoForMiner);
+  const tripleStreamEnabled = config.tripleStream !== false;
+  const cpuCoin = String(config.cpuCoin || 'auto').trim();
+  const gpuCoin = String(config.gpuCoin || 'auto').trim();
+  const cpuCoinAuto = !cpuCoin || cpuCoin.toLowerCase() === 'auto';
+  const gpuCoinAuto = !gpuCoin || gpuCoin.toLowerCase() === 'auto';
+  const METRICS_BIND = '127.0.0.1:9116';
+
+  const args = ['--pool', pool, '--wallet', wallet, '--worker', worker, '--threads', String(effectiveThreads), '--metrics', METRICS_BIND, '--log_interval', '30'];
+  if (!tripleStreamEnabled) {
+    args.push('--no_gpu', '--no_cpu');
+  } else if (!wantsGpu) {
+    args.push('--no_gpu');
   }
-  if (tripleStreamEnabled) {
-    const cpuCoin = String(config.cpuCoin || 'auto').trim();
-    const gpuCoin = String(config.gpuCoin || 'auto').trim();
-    if (cpuCoin && cpuCoin.toLowerCase() !== 'auto') {
-      args.push('--cpu-coin', cpuCoin);
-    }
-    if (wantsGpu && gpuCoin && gpuCoin.toLowerCase() !== 'auto') {
-      args.push('--gpu-coin', gpuCoin);
-    }
+  if (tripleStreamEnabled && cpuCoinAuto && gpuCoinAuto) {
+    args.push('--autonomous');
   }
 
-  // ── 7. Build environment ───────────────────────────────────────────────────
+  // ── 7. Build V31 environment ───────────────────────────────────────────────
   const env = {
     ...process.env,
     ZION_POOL_ADDR: pool,
-    ZION_MINER_ID: wallet,
-    ZION_WORKER_NAME: ensureZionGroupHint(worker || 'desktop'),
-    ZION_PROFILE: 'pool',
-    // Loop count must be large — default of 1 causes pool to send Bye after every iteration
-    ZION_LOOP_COUNT: '1000000',
-    // Nonce count: 4096 matches pool default (ZION_NONCE_COUNT on pool server)
-    // for good GPU batch utilisation; auto-tune can override this per GPU
-    ZION_NONCE_COUNT: '4096',
-    ZION_NONCE_AUTOTUNE: 'true',
-    ZION_RECONNECT: 'true',
-    ZION_METRICS_REPORT_SECS: '10',
-    ZION_STATS_FILE: STATS_PATH,
-    ZION_MINER_METRICS_BIND: '127.0.0.1:9116',
-    ZION_NO_DASHBOARD: '1', // desktop agent renders its own Trinity UI; suppress SMOS compact dashboard
-    ZION_NO_FANCY: '1',     // suppress ASCII banner and block-found art; keep machine-parseable logs
-    ZION_NONCE_BASE: String((Date.now() >>> 0) & 0x1fffffff),
-    ZION_PAYOUT_ADDRESS: wallet,
-    // ── Trinity: enable parallel ZION (GPU) + external coin (CPU/GPU) ──
-    // When enabled, the pool sends Job messages with external_stream /
-    // external_stream_cpu fields and the miner runs them in parallel.
-    ZION_ENABLE_STREAM_SWITCH: tripleStreamEnabled ? '1' : '0',
-    ZION_STREAM2_ENABLED: tripleStreamEnabled ? '1' : '0',
-    ZION_STREAM3_ENABLED: tripleStreamEnabled ? '1' : '0',
+    ZION_WORKER: worker,
+    ZION_WORKER_NAME: worker,
+    ZION_MINER_THREADS: String(effectiveThreads),
+    ZION_GPU_BACKEND: selectedGpuBackend,
+    ZION_BACKEND: selectedGpuBackend,
+    ZION_MINER_ALGORITHM: algoForMiner,
+    ZION_PROFIT_INTERVAL: '300'
   };
-  // Forward coin preferences via env (in addition to CLI flags) so the miner's
-  // autonomous profit router and CoinPreference message see them even if a
-  // future miner version changes CLI flag handling.
+  const nodeRpc = config?.rpcUrl || DEFAULT_RPC_URL;
+  if (nodeRpc) {
+    env.ZION_NODE_RPC = nodeRpc;
+  }
+  // V31 uses stream2 (GPU) / stream3 (CPU) force-coin env vars, and
+  // ZION_AUTONOMOUS to toggle the profit router.
   if (tripleStreamEnabled) {
-    const cpuCoinEnv = String(config.cpuCoin || 'auto').trim();
-    const gpuCoinEnv = String(config.gpuCoin || 'auto').trim();
-    const gpuIsAuto = !gpuCoinEnv || gpuCoinEnv.toLowerCase() === 'auto';
-    const cpuIsAuto = !cpuCoinEnv || cpuCoinEnv.toLowerCase() === 'auto';
-    if (cpuCoinEnv && !cpuIsAuto) {
-      env.ZION_MINER_CPU_COIN = cpuCoinEnv;
+    if (!cpuCoinAuto) {
+      env.ZION_STREAM3_FORCE_COIN = cpuCoin.toUpperCase();
     }
-    if (gpuCoinEnv && !gpuIsAuto) {
-      env.ZION_MINER_GPU_COIN = gpuCoinEnv;
+    if (wantsGpu && !gpuCoinAuto) {
+      env.ZION_STREAM2_FORCE_COIN = gpuCoin.toUpperCase();
     }
-    // When the user explicitly selects a specific GPU or CPU coin (not "auto"),
-    // disable the autonomous profit router so it does NOT override their
-    // manual choice. The autonomous router re-evaluates every 5 min and
-    // switches to whatever coin it thinks is most profitable, ignoring the
-    // user's selection. Only enable autonomy when BOTH coins are "auto".
-    if (!gpuIsAuto || !cpuIsAuto) {
-      env.ZION_AUTONOMOUS = '0';
-    }
+    env.ZION_AUTONOMOUS = (cpuCoinAuto && gpuCoinAuto) ? '1' : '0';
+  } else {
+    env.ZION_AUTONOMOUS = '0';
   }
-  // Always tell the miner which backend to use.  When the user disables GPU,
-  // force CPU so the miner does not auto-detect Metal/OpenCL and run a broken
-  // or unsupported GPU kernel.
-  env.ZION_BACKEND = selectedGpuBackend;
-  // When GPU is off (or Apple Silicon where Metal ProgPoW is not implemented),
-  // disable the external GPU stream (ZANO/ProgPoW) to prevent memory exhaustion
-  // and wasted CPU cycles.  The pool still sends external_stream jobs, but the
-  // miner will skip them instead of spinning a useless GPU thread.
-  if (!wantsGpu || (process.platform === 'darwin' && os.arch() === 'arm64')) {
-    env.ZION_DISABLE_EXT_GPU = '1';
-  }
+  // ── GPU batch / work-cap tuning (still read by V31 miner internals) ──
   if (wantsGpu) {
-    env.ZION_HAS_GPU = '1';
-
-    // ── VRAM-aware batch/work-cap sizing ──
     const batchSize = chooseGpuBatchSize(gpuInfo, config?.gpuBatchSize);
-    const backend = env.ZION_BACKEND;
+    const backend = selectedGpuBackend;
     if (backend === 'cuda') {
       env.ZION_CUDA_WORK_CAP = String(batchSize);
       // Apply tier-based CUDA tuning from gpu-tuning-config.json
@@ -2425,37 +2377,6 @@ function startMiningV3(config, v3Path) {
       if (tuningCfg) {
         const cudaOverrides = applyCudaTuning(gpuInfo, tuningCfg);
         Object.assign(env, cudaOverrides);
-      }
-      // Triple-stream tuning: external GPU (ZANO) backend, duty cycle and batch.
-      // On NVIDIA the ProgPoWZ CUDA kernel is ~2x faster than OpenCL in
-      // isolation, but it must share the GPU with the main ZION deeksha
-      // kernel.  Empirically OpenCL ProgPoWZ does not submit work on some
-      // Pascal/Turing drivers, so we default the ext backend to CUDA and
-      // rely on the time-based duty cycle to share the GPU.  Users can override
-      // with config.extGpuBackend or env.ZION_EXT_GPU_BACKEND.
-      if (!env.ZION_EXT_GPU_BACKEND) {
-        const cfgExtBackend = String(config?.extGpuBackend || '').toLowerCase();
-        env.ZION_EXT_GPU_BACKEND = (cfgExtBackend === 'cuda' || cfgExtBackend === 'opencl')
-          ? cfgExtBackend
-          : 'cuda';
-      }
-      if (!env.ZION_EXT_GPU_TIME_DUTY_PCT) {
-        const cfgDuty = Number(config?.extGpuDutyPct);
-        env.ZION_EXT_GPU_TIME_DUTY_PCT = (Number.isFinite(cfgDuty) && cfgDuty > 0 && cfgDuty <= 100)
-          ? String(Math.floor(cfgDuty))
-          : '50';
-      }
-      if (!env.ZION_EXT_GPU_BATCH_SIZE) {
-        const cfgExtBatch = Number(config?.extGpuBatchSize);
-        env.ZION_EXT_GPU_BATCH_SIZE = (Number.isFinite(cfgExtBatch) && cfgExtBatch > 0)
-          ? String(Math.floor(cfgExtBatch))
-          : '2097152'; // 2M default (was 256K — far too small for ProgPoWZ)
-      }
-      // Reduce max gap between ZANO batches for more responsive time-slicing.
-      // Default 5000ms is too long — with 70% duty, ZION gets 30% which means
-      // ~1.5s gaps.  Cap at 2000ms to keep ZION responsive.
-      if (!env.ZION_EXT_GPU_MAX_GAP_MS) {
-        env.ZION_EXT_GPU_MAX_GAP_MS = '2000';
       }
     } else if (backend === 'opencl') {
       env.ZION_OCL_WORK_CAP = String(batchSize);
@@ -2470,44 +2391,26 @@ function startMiningV3(config, v3Path) {
       env.ZION_OCL_LOCAL_SIZE = String(localSize);
     }
 
-    // ── Stale-job prevention: cap GPU batch to avoid pool job rotation ──
-    // The pool rotates ZION jobs every ~5s. If the GPU batch takes longer,
-    // the miner submits stale nonces → NoSolution rejects (observed 41%
-    // reject rate on GTX 1070 Ti with batch=262144 taking ~10s).
-    // Default 65536 = ~2.5s at 25 KH/s, well within job TTL.
-    // Override: ZION_GPU_MAX_BATCH env var or config.gpuMaxBatch.
+    // Stale-job prevention: cap GPU batch to avoid pool job rotation.
     if (!env.ZION_GPU_MAX_BATCH) {
       const cfgMaxBatch = Number(config?.gpuMaxBatch);
-      if (Number.isFinite(cfgMaxBatch) && cfgMaxBatch > 0) {
-        env.ZION_GPU_MAX_BATCH = String(Math.floor(cfgMaxBatch));
-      } else {
-        env.ZION_GPU_MAX_BATCH = '65536';
-      }
+      env.ZION_GPU_MAX_BATCH = (Number.isFinite(cfgMaxBatch) && cfgMaxBatch > 0)
+        ? String(Math.floor(cfgMaxBatch))
+        : '65536';
     }
 
-    // ── GPU pipeline: overlap GPU compute with pool I/O (commit d93cd232) ──
-    // ZION_GPU_PIPELINE=1 enables async launch_batch/collect_batch so the
-    // miner can submit the previous batch's solution while the GPU computes
-    // the current batch.  This hides pool network latency behind GPU time.
-    // The 1-iteration lag is safe because the pool reuses template_id as
-    // job_id (same across iterations when block template hasn't changed),
-    // and ZION block time is ~30s >> batch time ~2.5s.
-    if (!env.ZION_GPU_PIPELINE) {
-      env.ZION_GPU_PIPELINE = '1';
-    }
-    // Ensure double-buffered async readback is enabled (commit 0ecaba4a).
-    // ZION_GPU_EARLY_BREAK=0 → early_break=false → double-buffering active.
+    // Double-buffered async readback.
     if (!env.ZION_GPU_EARLY_BREAK) {
       env.ZION_GPU_EARLY_BREAK = '0';
     }
 
-    log(`[V3-FAST] GPU detected: ${gpuInfo?.name || 'unknown'} (${gpuInfo?.type || '?'}) | Backend: ${backend} | BatchSize: ${batchSize} | MaxBatch: ${env.ZION_GPU_MAX_BATCH}\n`);
-    if (gpuInfo?.memory) log(`[V3-FAST] GPU VRAM: ${gpuInfo.memory} | Driver: ${gpuInfo.driver || 'n/a'}\n`);
+    log(`[V31-FAST] GPU detected: ${gpuInfo?.name || 'unknown'} (${gpuInfo?.type || '?'}) | Backend: ${backend} | BatchSize: ${batchSize} | MaxBatch: ${env.ZION_GPU_MAX_BATCH}\n`);
+    if (gpuInfo?.memory) log(`[V31-FAST] GPU VRAM: ${gpuInfo.memory} | Driver: ${gpuInfo.driver || 'n/a'}\n`);
   }
 
-  log(`[V3-FAST] Pool: ${pool} | Wallet: ${wallet} | Worker: ${worker || 'desktop'}\n`);
-  log(`[V3-FAST] Threads: ${effectiveThreads} | GPU: ${wantsGpu ? (env.ZION_BACKEND || 'cpu') : 'off'}\n`);
-  log(`[V3-FAST] Args: ${args.join(' ')}\n`);
+  log(`[V31-FAST] Pool: ${pool} | Wallet: ${wallet} | Worker: ${worker || 'desktop'}\n`);
+  log(`[V31-FAST] Threads: ${effectiveThreads} | GPU: ${wantsGpu ? selectedGpuBackend : 'off'}\n`);
+  log(`[V31-FAST] Args: ${args.join(' ')}\n`);
 
   // ── 8. Determine cwd ──────────────────────────────────────────────────────
   const minerCwd = IS_PACKAGED
@@ -2516,19 +2419,19 @@ function startMiningV3(config, v3Path) {
 
   // ── 9. Unix execute bit ────────────────────────────────────────────────────
   if (process.platform !== 'win32') {
-    try { fs.chmodSync(v3Path, 0o755); } catch {}
+    try { fs.chmodSync(v31Path, 0o755); } catch {}
   }
 
   // ── 10. Spawn ──────────────────────────────────────────────────────────────
   try {
-    minerProcess = spawn(v3Path, args, {
+    minerProcess = spawn(v31Path, args, {
       cwd: minerCwd,
       env,
       stdio: ['pipe', 'pipe', 'pipe'],
       windowsHide: true
     });
   } catch (spawnErr) {
-    logErr(`[V3-FAST] Spawn failed: ${spawnErr?.message || String(spawnErr)}\n`);
+    logErr(`[V31-FAST] Spawn failed: ${spawnErr?.message || String(spawnErr)}\n`);
     minerProcess = null;
     startMiningInProgress = false;
     if (startMiningGuardTimer) { clearTimeout(startMiningGuardTimer); startMiningGuardTimer = null; }
@@ -2536,8 +2439,8 @@ function startMiningV3(config, v3Path) {
     return { success: false, error: `Spawn failed: ${spawnErr?.message}` };
   }
 
-  log(`[V3-FAST] Spawned PID ${minerProcess?.pid} in ${Date.now() - t0}ms\n`);
-  logApp('v3-fast-spawn', JSON.stringify({ pid: minerProcess?.pid, args, pool, wallet: wallet.slice(0, 12) + '...', threads: effectiveThreads }));
+  log(`[V31-FAST] Spawned PID ${minerProcess?.pid} in ${Date.now() - t0}ms\n`);
+  logApp('v31-fast-spawn', JSON.stringify({ pid: minerProcess?.pid, args, pool, wallet: wallet.slice(0, 12) + '...', threads: effectiveThreads }));
 
   resetMinerTelemetryForNewSpawn();
 
@@ -2593,7 +2496,7 @@ function startMiningV3(config, v3Path) {
   // ── 16. Close handler ──────────────────────────────────────────────────────
   minerProcess.on('close', (code, signal) => {
     flushBufferedFileAppendsSync();
-    const exitMsg = `[V3] Miner exited code=${code}${signal ? ` signal=${signal}` : ''}\n`;
+    const exitMsg = `[V31] Miner exited code=${code}${signal ? ` signal=${signal}` : ''}\n`;
     console.log(exitMsg.trim());
     log(exitMsg);
     minerProcess = null;
@@ -2606,22 +2509,22 @@ function startMiningV3(config, v3Path) {
     // Auto-restart on crash (pool failover)
     if (!minerStopping && !minerUserStopRequested && code !== 0 && poolFailoverCount < 3) {
       poolFailoverCount++;
-      log(`[V3-FAST] Miner crashed (code=${code}). Failover ${poolFailoverCount}/3 in 5s...\n`);
+      log(`[V31-FAST] Miner crashed (code=${code}). Failover ${poolFailoverCount}/3 in 5s...\n`);
       if (poolFailoverTimer) clearTimeout(poolFailoverTimer);
       poolFailoverTimer = setTimeout(() => {
         try {
           const cfg = loadConfig();
           startMining(cfg);
         } catch (err) {
-          logErr(`[V3-FAST] Failover restart failed: ${err?.message}\n`);
+          logErr(`[V31-FAST] Failover restart failed: ${err?.message}\n`);
         }
       }, 5000);
     }
   });
 
   minerProcess.on('error', (err) => {
-    logErr(`[V3-FAST] Process error: ${err?.message || String(err)}\n`);
-    logApp('v3-fast-error', JSON.stringify({ error: err?.message || String(err) }));
+    logErr(`[V31-FAST] Process error: ${err?.message || String(err)}\n`);
+    logApp('v31-fast-error', JSON.stringify({ error: err?.message || String(err) }));
     try { sendToRenderer('miner-error', { message: err?.message || String(err) }); } catch {}
   });
 
@@ -2630,6 +2533,7 @@ function startMiningV3(config, v3Path) {
   minerStats.worker = worker || 'desktop';
   minerStats.threads = String(effectiveThreads);
   minerStats.algorithm = algoForMiner;
+  minerStats.runtime_backend = selectedGpuBackend;
   updateTrayMenu(minerStats);
 
   // ── 18. Clear guard ────────────────────────────────────────────────────────
@@ -2637,7 +2541,7 @@ function startMiningV3(config, v3Path) {
   if (startMiningGuardTimer) { clearTimeout(startMiningGuardTimer); startMiningGuardTimer = null; }
   poolFailoverCount = 0;
 
-  log(`[V3-FAST] Startup complete in ${Date.now() - t0}ms\n`);
+  log(`[V31-FAST] Startup complete in ${Date.now() - t0}ms\n`);
   return { success: true };
 }
 
@@ -2695,32 +2599,32 @@ function startMining(config) {
     }
   }, 30000);
 
-  // ═══ V3 Fast-Path: bypass all legacy blocking code ═══
-  // If the V3 binary (zion-miner) is available, skip the entire legacy
+  // ═══ V31 Fast-Path: bypass all legacy blocking code ═══
+  // If the V31 binary (zion-miner) is available, skip the entire legacy
   // startup path (~2500 lines of blocking PowerShell calls, legacy Python
   // fallbacks, CHv4.2 paths, revenue splits, and GPU detection).
   {
-    const v3FastPath = findRustMiner();
-    if (v3FastPath && isV3MinerBinary(v3FastPath)) {
+    const v31FastPath = findRustMiner();
+    if (v31FastPath && isV31MinerBinary(v31FastPath)) {
       try {
-        const v3Result = startMiningV3(config, v3FastPath);
-        if (v3Result) return v3Result;
-      } catch (v3Err) {
-        console.error('[V3-FAST] startMiningV3 threw:', v3Err);
-        startupMark('v3-exception');
+        const v31Result = startMiningV31(config, v31FastPath);
+        if (v31Result) return v31Result;
+      } catch (v31Err) {
+        console.error('[V31-FAST] startMiningV31 threw:', v31Err);
+        startupMark('v31-exception');
         try {
           sendToRenderer('miner-output', {
             stream: 'stderr',
-            text: `[V3-FAST] Startup error: ${v3Err?.message || String(v3Err)}\n`
+            text: `[V31-FAST] Startup error: ${v31Err?.message || String(v31Err)}\n`
           });
         } catch {}
         startMiningInProgress = false;
         if (startMiningGuardTimer) { clearTimeout(startMiningGuardTimer); startMiningGuardTimer = null; }
-        return { success: false, error: `V3 startup error: ${v3Err?.message}` };
+        return { success: false, error: `V31 startup error: ${v31Err?.message}` };
       }
     } else {
-      const msg = 'V3 Rust miner binary not found. Run "npm run prepare:rust-miner" or package zion-miner into resources.';
-      console.error('[V3-FAST]', msg);
+      const msg = 'V31 Rust miner binary not found. Run "npm run prepare:rust-miner" or package zion-miner into resources.';
+      console.error('[V31-FAST]', msg);
       try { sendToRenderer('miner-output', { stream: 'stderr', text: `${msg}\n` }); } catch {}
       startMiningInProgress = false;
       if (startMiningGuardTimer) { clearTimeout(startMiningGuardTimer); startMiningGuardTimer = null; }
@@ -2816,10 +2720,9 @@ function tryUpdateStatsFromFile() {
     else if (typeof payload.shares === 'number') minerStats.shares = payload.shares;
     if (typeof payload.uptime_sec === 'number') minerStats.uptime = Math.floor(payload.uptime_sec);
 
-    // ── Trinity per-stream telemetry (from stats file) ──
-    // The V3 miner writes a `streams` array to the stats file with the same
-    // shape as the HTTP /stats endpoint. This is the fallback path when the
-    // HTTP metrics endpoint is unreachable.
+    // ── Trinity per-stream telemetry (from legacy stats file) ──
+    // The V31 miner no longer writes a stats file; per-stream data comes from
+    // `stream stats` log lines. This branch is kept for backward compatibility.
     if (Array.isArray(payload.streams)) {
       minerStats.streams = payload.streams.map(s => ({
         index: Number(s.index) || 0,
@@ -2840,6 +2743,24 @@ function tryUpdateStatsFromFile() {
     // Ignore stats parsing issues; keep UI responsive
     return false;
   }
+}
+
+/**
+ * Parse V31 miner Prometheus /metrics text into a plain JS object.
+ */
+function parsePrometheusMetrics(text) {
+  const out = {};
+  const re = /^(zion_miner_\w+)\{[^}]*\}\s+([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)/gm;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    const v = Number(m[2]);
+    out[m[1]] = Number.isFinite(v) ? v : 0;
+  }
+  const poolMatch = text.match(/zion_miner_hash_rate\{[^}]*pool="([^"]+)"/);
+  const coinMatch = text.match(/zion_miner_hash_rate\{[^}]*coin="([^"]+)"/);
+  if (poolMatch) out._pool = poolMatch[1];
+  if (coinMatch) out._coin = coinMatch[1];
+  return out;
 }
 
 
@@ -3284,7 +3205,7 @@ function parseMinerOutput(output) {
     minerStats.hashrate = minerStats.hashrate_10s || minerStats.hashrate_60s || minerStats.hashrate_15m || minerStats.hashrate_max; // fallback chain: first non-zero
   }
 
-  // ─── V3 machine-parseable: "session_status iter=1/N ... hps_10s=91600.00 hps_overall=..." ───
+  // ─── V31 machine-parseable: "session_status iter=1/N ... hps_10s=91600.00 hps_overall=..." ───
   const v3SessionMatch = output.match(/session_status\s.*?hps_overall=([\d.]+).*?hps_10s=([\d.]+).*?hps_60s=([\d.]+).*?hps_15m=([\d.]+).*?attempted_hashes=(\d+).*?accepted=(\d+).*?rejected=(\d+)/i)
     || output.match(/session_status\s.*?accepted=(\d+).*?rejected=(\d+).*?hps_overall=([\d.]+).*?hps_10s=([\d.]+).*?hps_60s=([\d.]+).*?hps_15m=([\d.]+).*?attempted_hashes=(\d+)/i);
   if (v3SessionMatch) {
@@ -3338,7 +3259,7 @@ function parseMinerOutput(output) {
     }
   }
 
-  // ─── V3 shares line: "shares A:5 R:0 (100.0%) | hashes 458000" ───
+  // ─── V31 shares line: "shares A:5 R:0 (100.0%) | hashes 458000" ───
   const v3SharesMatch = output.match(/shares\s+A:(\d+)\s+R:(\d+)\s+\(([\d.]+)%\)/i);
   if (v3SharesMatch) {
     minerStats.accepted = parseInt(v3SharesMatch[1], 10);
@@ -3404,7 +3325,7 @@ function parseMinerOutput(output) {
     minerStats.stream_algorithm = newJobMatch[3];
   }
 
-  // ─── V3 Rust miner new job: ">> new job #6216 height=6216 algo=deeksha_lite_v1" ───
+  // ─── V31 Rust miner new job: ">> new job #6216 height=6216 algo=deeksha_lite_v1" ───
   const v3NewJobMatch = output.match(/>>\s*new job\s*#(\d+)\s+height=(\d+)\s+algo=(\S+)/i);
   if (v3NewJobMatch) {
     minerStats.last_job_id = v3NewJobMatch[1];
@@ -3429,7 +3350,7 @@ function parseMinerOutput(output) {
     minerStats.blocks_found = parseInt(blockMatch[2]);
     try { sendToRenderer('block-found', { height }); } catch {}
   } else {
-    // F9.1: V3 miner format — "[BLOCK FOUND] height=1523 nonce=... hash=..."
+    // F9.1: V31 miner format — "[BLOCK FOUND] height=1523 nonce=... hash=..."
     const v3BlockMatch = output.match(/\[?BLOCK FOUND\]?.*height[=:]\s*(\d+)/i);
     if (v3BlockMatch) {
       const height = parseInt(v3BlockMatch[1]);
@@ -3677,10 +3598,10 @@ function parseMinerOutput(output) {
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // V3 MINER OUTPUT PARSERS (zion-miner v3 key=value + JSON wire)
+  // V31 MINER OUTPUT PARSERS (zion-miner v3 key=value + JSON wire)
   // ═══════════════════════════════════════════════════════════════
 
-  // ─── V3 session_status: enriched with 15m hashrate, GPU backend, epoch, pool height ───
+  // ─── V31 session_status: enriched with 15m hashrate, GPU backend, epoch, pool height ───
   const v3StatusMatch = output.match(/session_status\s+iter=(\d+)\/(\d+)\s+uptime_s=([\d.]+)\s+accepted=(\d+)\s+rejected=(\d+)\s+accept_pct=([\d.]+)\s+no_solution=(\d+)\s+local_skip=(\d+)\s+hps_overall=([\d.]+)\s+hps_10s=([\d.]+)\s+hps_60s=([\d.]+)\s+hps_15m=([\d.]+)(?:\s+attempted_hashes=(\d+))?(?:\s+submit_avg_ms=([\d.]+))?(?:\s+submit_max_ms=(\d+))?(?:\s+remote_ttl_ms=(\S+))?(?:\s+gpu_backend=(\S+))?(?:\s+gpu_hps=([\d.]+))?(?:\s+epoch=(\d+))?(?:\s+pool_height=(\d+))?(?:\s+best_batch_ms=(\d+))?/);
   if (v3StatusMatch) {
     minerStats.accepted = parseInt(v3StatusMatch[4]);
@@ -3692,7 +3613,7 @@ function parseMinerOutput(output) {
     const hps10s = parseFloat(v3StatusMatch[10]);
     const hps60s = parseFloat(v3StatusMatch[11]);
     const hps15m = parseFloat(v3StatusMatch[12]);
-    // V3 reports 0.00 for 10s/60s/15m when windows are not yet full
+    // V31 reports 0.00 for 10s/60s/15m when windows are not yet full
     minerStats.hashrate = hpsOverall;
     minerStats.hashrate_10s = hps10s > 0 ? hps10s : hpsOverall;
     minerStats.hashrate_60s = hps60s > 0 ? hps60s : hpsOverall;
@@ -3721,7 +3642,7 @@ function parseMinerOutput(output) {
     if (v3StatusMatch[21]) minerStats.best_batch_ms = parseInt(v3StatusMatch[21]);
   }
 
-  // ─── V3 wire_job JSON: extract height and algorithm ───
+  // ─── V31 wire_job JSON: extract height and algorithm ───
   const v3WireJobMatch = output.match(/wire_job=\{[^}]*"height"\s*:\s*(\d+)[^}]*"algorithm"\s*:\s*"([^"]+)"/);
   if (v3WireJobMatch) {
     minerStats.last_job_height = v3WireJobMatch[1];
@@ -3734,13 +3655,13 @@ function parseMinerOutput(output) {
     minerStats.stream_algorithm = v3WireJobAltMatch[1];
   }
 
-  // ─── V3 wire_job JSON: extract job_id ───
+  // ─── V31 wire_job JSON: extract job_id ───
   const v3JobIdMatch = output.match(/wire_job=\{[^}]*"job_id"\s*:\s*(\d+)/);
   if (v3JobIdMatch) {
     minerStats.last_job_id = v3JobIdMatch[1];
   }
 
-  // ─── V3 share_status: "share_status=\"Accepted\"" or share_status=Accepted ───
+  // ─── V31 share_status: "share_status=\"Accepted\"" or share_status=Accepted ───
   if (/share_status="?Accepted"?/i.test(output)) {
     minerStats.accepted = (Number(minerStats.accepted) || 0) + 1;
     minerStats.shares = (Number(minerStats.accepted) || 0) + (Number(minerStats.rejected) || 0);
@@ -3749,7 +3670,7 @@ function parseMinerOutput(output) {
     minerStats.shares = (Number(minerStats.accepted) || 0) + (Number(minerStats.rejected) || 0);
   }
 
-  // ─── V3 SHARE_ACCEPTED/SHARE_REJECTED events (real-time, between session_status updates) ──
+  // ─── V31 SHARE_ACCEPTED/SHARE_REJECTED events (real-time, between session_status updates) ──
   const v3ShareAccMatch = output.match(/SHARE_ACCEPTED\s+job=(\d+)\s+height=(\d+)\s+nonce=\d+\s+algo=(\S+)\s+latency_ms=(\d+)/i);
   if (v3ShareAccMatch) {
     minerStats.last_job_id = v3ShareAccMatch[1];
@@ -3766,7 +3687,7 @@ function parseMinerOutput(output) {
     minerStats.last_share_time = Date.now();
   }
 
-  // ─── V3 wire_result JSON: extract accepted flag for real-time share counting ───
+  // ─── V31 wire_result JSON: extract accepted flag for real-time share counting ───
   const v3WireResultMatch = output.match(/wire_result=\{[^}]*"accepted"\s*:\s*(true|false)/);
   if (v3WireResultMatch) {
     // wire_result fires for every pool response — do not double-count
@@ -3784,33 +3705,33 @@ function parseMinerOutput(output) {
 
 
 
-  // ─── V3 mining progress: "mining job_id=N height=N nonces=A..B" ───
+  // ─── V31 mining progress: "mining job_id=N height=N nonces=A..B" ───
   const v3MiningMatch = output.match(/^mining\s+job_id=(\d+)\s+height=(\d+)\s+nonces=(\d+)\.\.(\d+)/m);
   if (v3MiningMatch) {
     minerStats.last_job_id = v3MiningMatch[1];
     minerStats.last_job_height = v3MiningMatch[2];
   }
 
-  // ─── V3 version banner: "version=3.1.0-dev" ───
+  // ─── V31 version banner: "version=3.1.0-dev" ───
   const v3VersionMatch = output.match(/^version=([\d.]+(?:-\w+)?)/m);
   if (v3VersionMatch) {
     minerStats.miner_version = v3VersionMatch[1];
   }
 
-  // ─── V3 consensus: "consensus=cosmic_harmony_ekam_deeksha_v2" ───
+  // ─── V31 consensus: "consensus=cosmic_harmony_ekam_deeksha_v2" ───
   const v3ConsensusMatch = output.match(/^consensus=(\S+)/m);
   if (v3ConsensusMatch) {
     minerStats.stream_algorithm = v3ConsensusMatch[1];
   }
 
-  // ─── V3 pool_set_difficulty: "pool_set_difficulty=1024" ───
+  // ─── V31 pool_set_difficulty: "pool_set_difficulty=1024" ───
   const v3PoolDiffMatch = output.match(/pool_set_difficulty=(\d+)/);
   if (v3PoolDiffMatch) {
     minerStats.last_pool_diff = v3PoolDiffMatch[1];
     minerStats.difficulty = parseInt(v3PoolDiffMatch[1], 10);
   }
 
-  // ─── V3 DCR stealth stats: "dcr_total_hashes=N dcr_accepted=N dcr_rejected=N" ───
+  // ─── V31 DCR stealth stats: "dcr_total_hashes=N dcr_accepted=N dcr_rejected=N" ───
   const v3DcrMatch = output.match(/dcr_total_hashes=(\d+)\s+dcr_accepted=(\d+)\s+dcr_rejected=(\d+)/);
   if (v3DcrMatch) {
     minerStats.dcr_total_hashes = parseInt(v3DcrMatch[1]);
@@ -3818,13 +3739,13 @@ function parseMinerOutput(output) {
     minerStats.dcr_rejected = parseInt(v3DcrMatch[3]);
   }
 
-  // ─── V3 reconnect: "reconnect_attempt=N" ───
+  // ─── V31 reconnect: "reconnect_attempt=N" ───
   const v3ReconnectMatch = output.match(/reconnect_attempt=(\d+)/);
   if (v3ReconnectMatch) {
     minerStats.reconnect_attempts = parseInt(v3ReconnectMatch[1]);
   }
 
-  // ─── V3 GPU device: "gpu[0]=metal:Apple M1" ───
+  // ─── V31 GPU device: "gpu[0]=metal:Apple M1" ───
   const v3GpuMatch = output.match(/^gpu\[\d+\]=(\w+):(.+)/m);
   if (v3GpuMatch) {
     minerStats.gpu_detected = true;
@@ -3834,7 +3755,7 @@ function parseMinerOutput(output) {
     minerStats.cpu_only_mode = false;
   }
 
-  // ─── V3 backend: "backend=metal" / "backend=cpu" ───
+  // ─── V31 backend: "backend=metal" / "backend=cpu" ───
   const v3BackendMatch = output.match(/^backend=(\w+)/m);
   if (v3BackendMatch) {
     const be = v3BackendMatch[1].toLowerCase();
@@ -3846,7 +3767,7 @@ function parseMinerOutput(output) {
     }
   }
 
-  // ─── V3 GPU init: "gpu_init backend=metal device=\"Apple M1\" work_size=262144" ───
+  // ─── V31 GPU init: "gpu_init backend=metal device=\"Apple M1\" work_size=262144" ───
   const v3GpuInitMatch = output.match(/gpu_init\s+backend=(\w+)\s+device="([^"]+)"\s+work_size=(\d+)/);
   if (v3GpuInitMatch) {
     minerStats.gpu_detected = true;
@@ -3857,7 +3778,7 @@ function parseMinerOutput(output) {
     minerStats.runtime_backend = v3GpuInitMatch[1];
   }
 
-  // ─── V3 OpenCL detailed init: "gpu_opencl_init device=\"gfx1010\" work_size=16384 scratchpad_mib=4096" ───
+  // ─── V31 OpenCL detailed init: "gpu_opencl_init device=\"gfx1010\" work_size=16384 scratchpad_mib=4096" ───
   const v3OclInitMatch = output.match(/gpu_opencl_init\s+device="([^"]+)"\s+work_size=(\d+)\s+scratchpad_mib=(\d+)/);
   if (v3OclInitMatch) {
     minerStats.gpu_detected = true;
@@ -3868,7 +3789,7 @@ function parseMinerOutput(output) {
     minerStats.runtime_backend = 'opencl';
   }
 
-  // ─── V3 GPU fallback: "gpu_init_fallback reason=\"...\" using=cpu" ───
+  // ─── V31 GPU fallback: "gpu_init_fallback reason=\"...\" using=cpu" ───
   if (/gpu_init_fallback/.test(output)) {
     minerStats.runtime_backend = 'cpu';
     minerStats.gpu_detected = false;
@@ -3877,32 +3798,32 @@ function parseMinerOutput(output) {
     delete minerStats.gpu_info;
   }
 
-  // ─── V3 mining threads: "cpu_cores=8 logical=8 mining_threads=8" ───
+  // ─── V31 mining threads: "cpu_cores=8 logical=8 mining_threads=8" ───
   const v3ThreadsMatch = output.match(/mining_threads=(\d+)/);
   if (v3ThreadsMatch) {
     minerStats.cpu_threads = parseInt(v3ThreadsMatch[1]);
     minerStats.threads = v3ThreadsMatch[1];
   }
 
-  // ─── V3 pool addr: "pool_addr=62.171.141.136:8444" ───
+  // ─── V31 pool addr: "pool_addr=62.171.141.136:8444" ───
   const v3PoolMatch = output.match(/^pool_addr=(.+)/m);
   if (v3PoolMatch) {
     minerStats.pool = v3PoolMatch[1].trim();
   }
 
-  // ─── V3 worker: "worker_name=desktop-agent" ───
+  // ─── V31 worker: "worker_name=desktop-agent" ───
   const v3WorkerMatch = output.match(/^worker_name=(.+)/m);
   if (v3WorkerMatch) {
     minerStats.worker = v3WorkerMatch[1].trim();
   }
 
-  // ─── V3 miner_id: "miner_id=zion1..." ───
+  // ─── V31 miner_id: "miner_id=zion1..." ───
   const v3MinerIdMatch = output.match(/^miner_id=(.+)/m);
   if (v3MinerIdMatch) {
     minerStats.miner_id = v3MinerIdMatch[1].trim();
   }
 
-  // ─── V3 session_status uptime → formatted display ───
+  // ─── V31 session_status uptime → formatted display ───
   if (v3StatusMatch) {
     const uptimeSecs = parseFloat(v3StatusMatch[3]);
     if (Number.isFinite(uptimeSecs) && uptimeSecs > 0) {
@@ -3913,7 +3834,7 @@ function parseMinerOutput(output) {
     }
   }
 
-  // ─── V3 attempted hashes (exit summary): "attempted_hashes=N" ───
+  // ─── V31 attempted hashes (exit summary): "attempted_hashes=N" ───
   const v3HashesMatch = output.match(/attempted_hashes=(\d+)/);
   if (v3HashesMatch) {
     const n = parseInt(v3HashesMatch[1]);
@@ -3934,6 +3855,82 @@ function parseMinerOutput(output) {
   if (/First\s+share\s+rejected/i.test(output)) {
     minerStats.rejected = Number(minerStats.rejected || 0) + 1;
     minerStats.shares = Number(minerStats.shares || 0) + 1;
+  }
+
+  // ─── V31 startup banner ───
+  // zion-miner (triple stream) starting stream1=true stream2=true stream3=true threads=4
+  const v31StartMatch = output.match(/zion-(?:universal-)?miner\s+\(triple\s+stream\)\s+starting.*?stream1=(\S+)\s+stream2=(\S+)\s+stream3=(\S+)\s+threads=(\d+)/is);
+  if (v31StartMatch) {
+    minerStats.threads = v31StartMatch[4];
+  }
+
+  // ─── V31 per-stream telemetry ───
+  // stream=zion coin=zion accepted=0 rejected=0 hashrate=0.00 status=active stream stats
+  const streamIndex = { zion: 0, 'gpu-external': 1, 'cpu-external': 2 };
+  const streamLabels = { zion: 'ZION', 'gpu-external': 'GPU AuxPoW', 'cpu-external': 'CPU AuxPoW' };
+  if (!Array.isArray(minerStats.streams)) minerStats.streams = [];
+  for (const m of output.matchAll(/(?:^|\n)[^\n]*stream\s*=\s*"?([^"\s,]+)"?\s+coin\s*=\s*"?([^"\s,]+)"?\s+accepted\s*=\s*(\d+)\s+rejected\s*=\s*(\d+)\s+hashrate\s*=\s*([^\s,]+)\s+status\s*=\s*"?([^"\s,]+)"?[^\n]*stream\s+stats/gi)) {
+    const streamId = String(m[1] || '').toLowerCase();
+    const idx = streamIndex[streamId] ?? 0;
+    const hr = parseFloat(m[5]);
+    const active = String(m[6] || '').toLowerCase() === 'active';
+    minerStats.streams[idx] = {
+      index: idx,
+      label: streamLabels[streamId] || streamId,
+      coin: String(m[2] || ''),
+      algorithm: (minerStats.streams[idx] && minerStats.streams[idx].algorithm) || '',
+      hashrate_10s: Number.isFinite(hr) ? hr : 0,
+      hashrate_60s: Number.isFinite(hr) ? hr : 0,
+      hashrate_15m: Number.isFinite(hr) ? hr : 0,
+      accepted: parseInt(m[3], 10) || 0,
+      rejected: parseInt(m[4], 10) || 0,
+      active
+    };
+    if (streamId === 'zion' && Number.isFinite(hr) && hr > 0) {
+      minerStats.hashrate = hr;
+      if (!Number.isFinite(Number(minerStats.hashrate_10s)) || minerStats.hashrate_10s <= 0) minerStats.hashrate_10s = hr;
+      if (!Number.isFinite(Number(minerStats.hashrate_60s)) || minerStats.hashrate_60s <= 0) minerStats.hashrate_60s = hr;
+      if (!Number.isFinite(Number(minerStats.hashrate_15m)) || minerStats.hashrate_15m <= 0) minerStats.hashrate_15m = hr;
+    }
+  }
+
+  // ─── V31 TUI log (aggregate counters) ───
+  // hashrate=1234 H/s submitted=0 accepted=0 rejected=0 jobs=0 reconnects=0 coin=zion pool=...
+  const v31TuiMatch = output.match(/hashrate\s*=\s*([\d.]+)\s*H\/s\s+submitted\s*=\s*(\d+)\s+accepted\s*=\s*(\d+)\s+rejected\s*=\s*(\d+)\s+jobs\s*=\s*(\d+)\s+reconnects\s*=\s*(\d+)\s+coin\s*=\s*([^\s,]+)\s+pool\s*=\s*([^\s,]+)/i);
+  if (v31TuiMatch) {
+    const hr = parseFloat(v31TuiMatch[1]);
+    if (Number.isFinite(hr) && hr > 0) {
+      minerStats.hashrate = hr;
+      if (!Number.isFinite(Number(minerStats.hashrate_10s)) || minerStats.hashrate_10s <= 0) minerStats.hashrate_10s = hr;
+      if (!Number.isFinite(Number(minerStats.hashrate_60s)) || minerStats.hashrate_60s <= 0) minerStats.hashrate_60s = hr;
+      if (!Number.isFinite(Number(minerStats.hashrate_15m)) || minerStats.hashrate_15m <= 0) minerStats.hashrate_15m = hr;
+    }
+    minerStats.submitted = parseInt(v31TuiMatch[2], 10) || 0;
+    minerStats.accepted = parseInt(v31TuiMatch[3], 10) || 0;
+    minerStats.rejected = parseInt(v31TuiMatch[4], 10) || 0;
+    minerStats.shares = (Number.isFinite(minerStats.accepted) ? minerStats.accepted : 0) + (Number.isFinite(minerStats.rejected) ? minerStats.rejected : 0);
+    minerStats.jobs_received = parseInt(v31TuiMatch[5], 10) || 0;
+    minerStats.reconnect_count = parseInt(v31TuiMatch[6], 10) || 0;
+    minerStats.coin = v31TuiMatch[7];
+    minerStats.pool = v31TuiMatch[8];
+  }
+
+  // ─── V31 summary line ───
+  // pool=62.171.141.136:8444 coin=zion hashrate=1234 H/s accepted=0 rejected=0
+  const v31SummaryMatch = output.match(/pool\s*=\s*([^\s,]+)\s+coin\s*=\s*([^\s,]+)\s+hashrate\s*=\s*([\d.]+)\s*H\/s\s+accepted\s*=\s*(\d+)\s+rejected\s*=\s*(\d+)/i);
+  if (v31SummaryMatch && !v31TuiMatch) {
+    const hr = parseFloat(v31SummaryMatch[3]);
+    if (Number.isFinite(hr) && hr > 0) {
+      minerStats.hashrate = hr;
+      if (!Number.isFinite(Number(minerStats.hashrate_10s)) || minerStats.hashrate_10s <= 0) minerStats.hashrate_10s = hr;
+      if (!Number.isFinite(Number(minerStats.hashrate_60s)) || minerStats.hashrate_60s <= 0) minerStats.hashrate_60s = hr;
+      if (!Number.isFinite(Number(minerStats.hashrate_15m)) || minerStats.hashrate_15m <= 0) minerStats.hashrate_15m = hr;
+    }
+    minerStats.accepted = parseInt(v31SummaryMatch[4], 10) || 0;
+    minerStats.rejected = parseInt(v31SummaryMatch[5], 10) || 0;
+    minerStats.shares = (Number.isFinite(minerStats.accepted) ? minerStats.accepted : 0) + (Number.isFinite(minerStats.rejected) ? minerStats.rejected : 0);
+    minerStats.pool = v31SummaryMatch[1];
+    minerStats.coin = v31SummaryMatch[2];
   }
 
   // Parse consciousness: "Level: MENTAL (XP: 1250)"
@@ -4178,7 +4175,7 @@ function findCoreBinary() {
   const candidates = [
     path.join(APP_ROOT, 'resources', bin),
     path.join(process.resourcesPath, bin),
-    path.join(APP_ROOT, '..', '..', 'V3', 'target', 'release', bin),
+    path.join(APP_ROOT, '..', '..', 'V31', 'target', 'release', bin),
     path.join(APP_ROOT, '..', '..', 'target', 'release', bin),
     path.join(APP_ROOT, '..', '..', 'L1', 'core', 'target', 'release', bin),
     path.join(APP_ROOT, '..', 'target', 'release', bin),
@@ -4196,7 +4193,7 @@ function findZionCli() {
   const candidates = [
     path.join(APP_ROOT, 'resources', bin),
     path.join(process.resourcesPath, bin),
-    path.join(APP_ROOT, '..', '..', 'V3', 'target', 'release', bin),
+    path.join(APP_ROOT, '..', '..', 'V31', 'target', 'release', bin),
     path.join(APP_ROOT, '..', '..', 'target', 'release', bin),
     path.join(APP_ROOT, '..', 'target', 'release', bin),
   ];
@@ -4757,7 +4754,7 @@ async function zionRpcCall(rpcUrl, method, params) {
     throw new Error('RPC URL is missing');
   }
 
-  // V3 core uses raw TCP JSON-RPC (not HTTP). Parse host:port from URL.
+  // V31 core uses raw TCP JSON-RPC (not HTTP). Parse host:port from URL.
   let host, port;
   try {
     const parsed = new URL(url);
@@ -4900,7 +4897,7 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
       rpcOk = false;
     }
 
-    // V3 returns: balance_flowers (string, u128 in flowers), chain_height, transaction_model
+    // V31 returns: balance_flowers (string, u128 in flowers), chain_height, transaction_model
     // 1 ZION = 1_000_000 flowers (1e6) — 3.0.3 decimal fork
     // Use BigInt for precision with large u128 values, then convert to Number for display
     const balanceFlowersStr = rpcOk ? (result?.balance_flowers ?? '0') : '0';
@@ -4917,7 +4914,7 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
     const chainHeight = rpcOk ? (result?.chain_height ?? 0) : 0;
 
     // Fetch pool mined balance — try Edge pool API if available.
-    // V3 pool API runs on the Edge node (port 8080) for miner stats.
+    // V31 pool API runs on the Edge node (port 8080) for miner stats.
     const POOL_API_SERVERS = [
       { id: 'zion-edge', host: PRIMARY_MAINNET_HOST },
       { id: 'zion-edge-vpn', host: EDGE_VPN_HOST },
@@ -4996,7 +4993,7 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
       transaction_model: rpcOk ? (result?.transaction_model ?? 'account') : 'unknown',
       rpc_ok: rpcOk,
       rpc_error: rpcError || '',
-      // Pool mining balance (V3 pool stores flowers: 1 ZION = 1_000_000 flowers — 3.0.3 decimal fork)
+      // Pool mining balance (V31 pool stores flowers: 1 ZION = 1_000_000 flowers — 3.0.3 decimal fork)
       pool_pending:        poolPending  / 1_000_000,
       pool_pending_atomic: poolPending,
       pool_pending_stats_atomic: poolPendingFromStats,
@@ -6245,87 +6242,43 @@ setInterval(() => {
     const updated = tryUpdateStatsFromFile();
     if (!updated) minerStats.uptime += STATS_INTERVAL_SEC;
 
-    // V3 miner HTTP metrics: poll /stats and /health on the local metrics bind.
+    // V31 miner HTTP metrics: poll Prometheus /metrics on the local metrics bind.
     void (async () => {
       try {
         const metricsBase = 'http://127.0.0.1:9116';
         const ctrl = new AbortController();
         const timer = setTimeout(() => ctrl.abort(), 2000);
         try {
-          const res = await fetch(`${metricsBase}/stats`, { signal: ctrl.signal });
+          const res = await fetch(`${metricsBase}/metrics`, { signal: ctrl.signal });
           if (res.ok) {
-            const stats = await res.json();
-            // V3 miner HTTP /stats uses *_hps suffixed field names — map to agent keys.
-            const hrTotal = typeof stats.hashrate_hps === 'number' ? stats.hashrate_hps
-                          : typeof stats.hashrate === 'number' ? stats.hashrate : null;
-            const hr10 = typeof stats.hashrate_10s_hps === 'number' ? stats.hashrate_10s_hps
-                       : typeof stats.hashrate_10s === 'number' ? stats.hashrate_10s : null;
-            const hr60 = typeof stats.hashrate_60s_hps === 'number' ? stats.hashrate_60s_hps
-                       : typeof stats.hashrate_60s === 'number' ? stats.hashrate_60s : null;
-            const hr15 = typeof stats.hashrate_15m_hps === 'number' ? stats.hashrate_15m_hps
-                       : typeof stats.hashrate_15m === 'number' ? stats.hashrate_15m : null;
-            const hrMax = typeof stats.hashrate_max === 'number' ? stats.hashrate_max : null;
-            const gpuHr = typeof stats.gpu_hashrate_hps === 'number' ? stats.gpu_hashrate_hps
-                        : typeof stats.hashrate_gpu === 'number' ? stats.hashrate_gpu : null;
-            // Prefer 10s window for primary display, fallback chain
-            if (hr10 != null || hr60 != null || hr15 != null || hrTotal != null) {
-              minerStats.hashrate = hr10 || hr60 || hr15 || hrTotal;
+            const text = await res.text();
+            const pm = parsePrometheusMetrics(text);
+            const hr = typeof pm.zion_miner_hash_rate === 'number' ? pm.zion_miner_hash_rate : 0;
+            if (hr > 0) {
+              minerStats.hashrate = hr;
+              if (!Number.isFinite(Number(minerStats.hashrate_10s)) || minerStats.hashrate_10s <= 0) minerStats.hashrate_10s = hr;
+              if (!Number.isFinite(Number(minerStats.hashrate_60s)) || minerStats.hashrate_60s <= 0) minerStats.hashrate_60s = hr;
+              if (!Number.isFinite(Number(minerStats.hashrate_15m)) || minerStats.hashrate_15m <= 0) minerStats.hashrate_15m = hr;
+              if (!Number.isFinite(Number(minerStats.hashrate_max)) || hr > minerStats.hashrate_max) minerStats.hashrate_max = hr;
             }
-            if (hr10 != null) minerStats.hashrate_10s = hr10;
-            if (hr60 != null) minerStats.hashrate_60s = hr60;
-            if (hr15 != null) minerStats.hashrate_15m = hr15;
-            if (hrMax != null) minerStats.hashrate_max = hrMax;
-            if (gpuHr != null && gpuHr > 0) minerStats.hashrate_gpu = gpuHr;
-            const acc = typeof stats.accepted_shares === 'number' ? stats.accepted_shares
-                      : typeof stats.accepted === 'number' ? stats.accepted : null;
-            const rej = typeof stats.rejected_shares === 'number' ? stats.rejected_shares
-                      : typeof stats.rejected === 'number' ? stats.rejected : null;
+            const acc = typeof pm.zion_miner_shares_accepted === 'number' ? pm.zion_miner_shares_accepted : null;
+            const rej = typeof pm.zion_miner_shares_rejected === 'number' ? pm.zion_miner_shares_rejected : null;
             if (acc != null) minerStats.accepted = acc;
             if (rej != null) minerStats.rejected = rej;
             if (acc != null || rej != null) minerStats.shares = (acc || 0) + (rej || 0);
-            const up = typeof stats.uptime_s === 'number' ? stats.uptime_s
-                     : typeof stats.uptime_sec === 'number' ? stats.uptime_sec : null;
-            if (up != null) minerStats.uptime = Math.floor(up);
-            if (typeof stats.current_epoch === 'number') minerStats.current_epoch = stats.current_epoch;
-            if (typeof stats.pool_height === 'number') minerStats.last_job_height = String(stats.pool_height);
-            if (typeof stats.backend === 'string') minerStats.runtime_backend = stats.backend;
-            // ── GPU hardware details (temp/power/VRAM/clock) ──
-            if (typeof stats.gpu_name === 'string' && stats.gpu_name !== 'none') minerStats.gpu_info = stats.gpu_name;
-            if (typeof stats.gpu_compute_units === 'number') minerStats.gpu_compute_units = stats.gpu_compute_units;
-            if (typeof stats.gpu_vram_mib === 'number') minerStats.gpu_vram_mib = stats.gpu_vram_mib;
-            if (typeof stats.gpu_clock_mhz === 'number') minerStats.gpu_clock_mhz = stats.gpu_clock_mhz;
-            if (stats.gpu_temp_c != null) minerStats.gpu_temp_c = stats.gpu_temp_c;
-            if (stats.gpu_power_w != null) minerStats.gpu_power_w = stats.gpu_power_w;
-            // ── Trinity per-stream telemetry ──
-            // V3 miner exposes `streams` as an array of per-stream objects.
-            // Forward to renderer for the 3-stream dashboard cards.
-            if (Array.isArray(stats.streams)) {
-              minerStats.streams = stats.streams.map(s => ({
-                index: Number(s.index) || 0,
-                label: String(s.label || ''),
-                coin: String(s.coin || ''),
-                algorithm: String(s.algorithm || ''),
-                hashrate_10s: Number(s.hashrate_10s) || 0,
-                hashrate_60s: Number(s.hashrate_60s) || 0,
-                hashrate_15m: Number(s.hashrate_15m) || 0,
-                accepted: Number(s.accepted) || 0,
-                rejected: Number(s.rejected) || 0,
-                active: !!s.active,
-              }));
-            }
+            const total = typeof pm.zion_miner_total_hashes === 'number' ? pm.zion_miner_total_hashes : null;
+            if (total != null) minerStats.total_hashes = total;
+            if (typeof pm.zion_miner_jobs_received === 'number') minerStats.jobs_received = pm.zion_miner_jobs_received;
+            if (typeof pm.zion_miner_reconnect_count === 'number') minerStats.reconnect_count = pm.zion_miner_reconnect_count;
+            if (pm._pool) minerStats.pool = pm._pool;
+            if (pm._coin) minerStats.coin = pm._coin;
             minerStats._http_metrics_ok = true;
+            minerStats._miner_health = 'ok';
+          } else {
+            minerStats._http_metrics_ok = false;
+            minerStats._miner_health = 'degraded';
           }
         } finally { clearTimeout(timer); }
-
-        // Health check — detect hung miner
-        const hCtrl = new AbortController();
-        const hTimer = setTimeout(() => hCtrl.abort(), 2000);
-        try {
-          const hRes = await fetch(`${metricsBase}/health`, { signal: hCtrl.signal });
-          minerStats._miner_health = hRes.ok ? 'ok' : 'degraded';
-        } catch {
-          minerStats._miner_health = 'unreachable';
-        } finally { clearTimeout(hTimer); }
       } catch {
         minerStats._http_metrics_ok = false;
         minerStats._miner_health = 'unreachable';
