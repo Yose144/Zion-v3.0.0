@@ -1,16 +1,16 @@
-use zion_core::HeightAwareDeeksha;
+use zion_core::EkamDeeksha;
 use zion_cosmic_harmony::{ExternalCoin, PowAlgorithm};
 use zion_miner::auxpow::hasher::{hash_for_coin, meets_target};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct ShareValidator {
-    deeksha: HeightAwareDeeksha,
+    deeksha: EkamDeeksha,
 }
 
 impl ShareValidator {
     pub fn new() -> Self {
         Self {
-            deeksha: HeightAwareDeeksha::new(),
+            deeksha: EkamDeeksha::new(),
         }
     }
 

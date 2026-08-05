@@ -1333,15 +1333,13 @@ fn split_worker(username: &str) -> (String, String) {
     }
 }
 
-/// Select algorithm based on block height (height-aware fork gating).
-fn algorithm_for_height(height: u64) -> &'static str {
-    if height < 4500 {
-        "deeksha_lite_v1"
-    } else if height >= 5000 {
-        "deeksha_lite_fire"
-    } else {
-        "deeksha_chv3"
-    }
+/// Select algorithm based on block height.
+///
+/// V31 canonizes a single PoW algorithm — Ekam Deeksha — so the same name is
+/// returned for all heights. The height parameter is retained for compatibility
+/// with the Stratum v1 wire format.
+fn algorithm_for_height(_height: u64) -> &'static str {
+    "ekam_deeksha"
 }
 
 /// Read a u64 from env or return default.
@@ -1474,12 +1472,10 @@ mod tests {
 
     #[test]
     fn algorithm_for_height_gates_correctly() {
-        assert_eq!(algorithm_for_height(0), "deeksha_lite_v1");
-        assert_eq!(algorithm_for_height(4499), "deeksha_lite_v1");
-        assert_eq!(algorithm_for_height(4500), "deeksha_chv3");
-        assert_eq!(algorithm_for_height(4999), "deeksha_chv3");
-        assert_eq!(algorithm_for_height(5000), "deeksha_lite_fire");
-        assert_eq!(algorithm_for_height(99999), "deeksha_lite_fire");
+        // V31 uses a single canonical algorithm for all heights.
+        for height in [0, 4499, 4500, 4999, 5000, 99999] {
+            assert_eq!(algorithm_for_height(height), "ekam_deeksha");
+        }
     }
 
     #[test]
@@ -1498,7 +1494,7 @@ mod tests {
 
     #[test]
     fn v3_hello_decodes_correctly() {
-        let hello = r#"{"type":"hello","miner_id":"alice","worker_name":"rig1","algorithm":"deeksha_lite_v1","backend":"opencl"}"#;
+        let hello = r#"{"type":"hello","miner_id":"alice","worker_name":"rig1","algorithm":"ekam_deeksha","backend":"opencl"}"#;
         let msg = decode_message(hello).unwrap();
         match msg {
             PoolMessage::Hello {
@@ -1510,7 +1506,7 @@ mod tests {
             } => {
                 assert_eq!(miner_id, "alice");
                 assert_eq!(worker_name, "rig1");
-                assert_eq!(algorithm, "deeksha_lite_v1");
+                assert_eq!(algorithm, "ekam_deeksha");
                 assert_eq!(backend, "opencl");
             }
             _ => panic!("expected Hello"),

@@ -12,7 +12,8 @@ use tracing::{info, warn};
 use zion_l1_types::{Address, Amount, Hash};
 
 use crate::block::{Block, BlockHeader};
-use crate::consensus::{ConsensusEngine, ConsensusError, HeightAwareDeeksha};
+use crate::consensus::{ConsensusEngine, ConsensusError};
+use zion_cosmic_harmony::EkamDeeksha;
 use crate::difficulty::{self, difficulty_to_target, lwma_next_difficulty};
 use crate::emission::{block_subsidy, fee_split};
 use crate::genesis;
@@ -170,7 +171,7 @@ impl Node {
             crate::v3_p2p::NetworkId::Mainnet,
         );
 
-        let consensus = ConsensusEngine::new(Arc::new(HeightAwareDeeksha::new()));
+        let consensus = ConsensusEngine::new(Arc::new(EkamDeeksha::new()));
         Ok(Self {
             storage,
             mempool: Mempool::new(),
