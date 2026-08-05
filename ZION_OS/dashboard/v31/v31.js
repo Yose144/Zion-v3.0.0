@@ -22,6 +22,60 @@ function shortHash(h) {
   return h.length > 20 ? h.slice(0, 12) + '…' + h.slice(-8) : h;
 }
 
+function setBanner(st) {
+  const fmt = (n, d=0) => (n == null || n === '' || n === undefined) ? '—' : Number(n).toLocaleString(undefined, {minimumFractionDigits:d, maximumFractionDigits:d});
+  const el = id => document.getElementById(id);
+
+  if (el('banner-version')) el('banner-version').textContent = st.version || '3.1.0-alpha.2';
+
+  if (el('banner-network')) {
+    const ok = st.node_running && st.node_reachable;
+    el('banner-network').textContent = ok ? 'mainnet' : 'offline';
+    el('banner-network').className = 'badge ' + (ok ? 'badge-green' : 'badge-red');
+  }
+
+  if (el('banner-height')) {
+    el('banner-height').textContent = fmt(st.height);
+  }
+
+  const lag = st.sync_lag ?? 0;
+  if (el('banner-sync-lag')) {
+    el('banner-sync-lag').textContent = lag === 0 ? 'synced' : lag;
+    el('banner-sync-lag').style.color = lag === 0 ? 'rgb(34 197 94)' : 'rgb(251 191 36)';
+  }
+
+  if (el('banner-pool-hashrate')) {
+    const hr = st.pool_hashrate_hps;
+    if (hr != null && hr >= 1e6) {
+      el('banner-pool-hashrate').textContent = (hr / 1e6).toFixed(2) + ' MH/s';
+      if (el('banner-pool-hashrate-sub')) el('banner-pool-hashrate-sub').textContent = Number(hr).toLocaleString() + ' H/s';
+    } else if (hr != null && hr >= 1e3) {
+      el('banner-pool-hashrate').textContent = (hr / 1e3).toFixed(2) + ' kH/s';
+      if (el('banner-pool-hashrate-sub')) el('banner-pool-hashrate-sub').textContent = Number(hr).toLocaleString() + ' H/s';
+    } else {
+      el('banner-pool-hashrate').textContent = fmt(hr);
+      if (el('banner-pool-hashrate-sub')) el('banner-pool-hashrate-sub').textContent = 'H/s';
+    }
+  }
+
+  if (el('banner-shares-sec')) el('banner-shares-sec').textContent = fmt(st.shares_per_sec, 2);
+
+  if (el('banner-multichain-health')) {
+    const mcOk = st.multichain_ok;
+    const total = st.multichain_transfers_total ?? 0;
+    const pending = st.multichain_transfers_pending ?? 0;
+    el('banner-multichain-health').innerHTML = (mcOk ? dot('status-up') : dot('status-down')) + (mcOk ? 'OK' : 'FAIL');
+    el('banner-multichain-health').style.color = mcOk ? 'rgb(34 197 94)' : 'rgb(239 68 68)';
+    if (el('banner-multichain-health-sub')) el('banner-multichain-health-sub').textContent = `total ${Number(total).toLocaleString()} · pending ${Number(pending).toLocaleString()}`;
+  }
+
+  if (el('banner-dao-proposals')) {
+    const active = st.dao_proposals_active ?? 0;
+    const total = st.dao_proposals_total ?? 0;
+    el('banner-dao-proposals').textContent = `${Number(active).toLocaleString()} / ${Number(total).toLocaleString()}`;
+  }
+}
+
 function setKpis(st) {
   // Node status
   const nodeEl = document.getElementById('kpi-node');
@@ -106,6 +160,7 @@ async function refreshStatus() {
     const st = await api('/api/v31/status');
     if (!st.ok) throw new Error(st.error || 'status failed');
     setKpis(st);
+    setBanner(st);
     clearError();
   } catch (e) {
     showError(`Refresh error: ${e.message}`);

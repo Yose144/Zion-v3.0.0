@@ -1126,6 +1126,15 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "V31 PROD multichain — bridge/warp/swap unified. API 8453 → Node RPC 9445. systemd zion-v31-multichain.service.",
      "child_says": "🌀 V31 PROD multichain — cross-chain hub!",
      "depends_on": ["v31-node"]},
+    {"id": "v31-dao", "name": "V31 DAO (PROD)", "icon": "🗳️", "level": "L2", "kind": "dao",
+     "ports": {"api": 8456},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "http", "severity": "warning", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:8456/api/dao/health",
+     "purpose": "V31 PROD DAO — governance, proposals, treasury. API 8456. systemd zion-v31-dao.service.",
+     "child_says": "🗳️ V31 PROD DAO — vote on the future of ZION!",
+     "depends_on": ["v31-node"]},
     {"id": "pool-edge", "name": "V3 Pool (DISABLED)", "icon": "⛔", "level": "L1", "kind": "pool",
      "ports": {"stratum": 8444},
      "host": "127.0.0.1",
@@ -1386,7 +1395,7 @@ SERVICE_REGISTRY_LOCAL_DEV = [
 SERVICE_REGISTRY = SERVICE_REGISTRY_EDGE_PRIMARY if TOPOLOGY == "edge-primary" else SERVICE_REGISTRY_LOCAL_DEV
 
 # ── V31 primary / V3 archived markers ───────────────────────────────────
-PRIMARY_SERVICES = {"v31-node", "v31-pool", "v31-miner", "v31-multichain"}
+PRIMARY_SERVICES = {"v31-node", "v31-pool", "v31-miner", "v31-multichain", "v31-dao"}
 ARCHIVED_SERVICES = {
     "edge-node1", "edge-node2", "pool-edge", "miner",
     "bridge", "dao", "atomic-swap", "dex", "warp",
@@ -10962,6 +10971,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     lines = [ln.rstrip("\n") for ln in f.readlines()[-200:]]
             self._json({"lines": lines, "file": str(install_log)})
         # ── Dashboard v2 compatibility endpoints ─────────────────────────────
+        elif route == "/health":
+            # Simple liveness endpoint for load balancers / uptime probes
+            self._json({"ok": True, "status": "healthy", "version": "3.1.0-alpha.2", "timestamp": int(time.time())})
         elif route == "/api/health":
             # v2 client: GET /api/health → returns HealthMap {service: status}
             self._json(_build_health_map())
