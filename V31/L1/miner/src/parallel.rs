@@ -66,16 +66,8 @@ pub fn dispatch_algorithm(
         }
 
         // ── External algorithms: KawPow (RVN, CLORE, EVR, MEWC, QUAI) ─
-        "kawpow"
-        | "kawpow_rvn"
-        | "kawpow_clore"
-        | "kawpow_evr"
-        | "kawpow_mewc"
-        | "kawpow_quai"
-        | "meowpow"
-        | "meowpow_mewc"
-        | "evrprogpow"
-        | "evrprogpow_evr" => {
+        "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" | "kawpow_quai"
+        | "meowpow" | "meowpow_mewc" | "evrprogpow" | "evrprogpow_evr" => {
             let mut h32 = [0u8; 32];
             let len = header.len().min(32);
             h32[..len].copy_from_slice(&header[..len]);
@@ -250,7 +242,10 @@ fn sequential_scan(
 
 /// Parse the stratum `ntime` hex string into a u64 timestamp/height.
 fn parse_ntime(ntime: &str) -> u64 {
-    let ntime = ntime.trim().trim_start_matches("0x").trim_start_matches("0X");
+    let ntime = ntime
+        .trim()
+        .trim_start_matches("0x")
+        .trim_start_matches("0X");
     u64::from_str_radix(ntime, 16).unwrap_or(0)
 }
 
@@ -259,7 +254,11 @@ fn parse_ntime(ntime: &str) -> u64 {
 /// This is the CPU fallback used by `MinerRuntime` when no GPU backend is
 /// configured or available.  It dispatches to the correct hashing algorithm
 /// via `dispatch_algorithm`.
-pub fn find_auxpow_share(job: &crate::auxpow::Job, threads: usize, nonce_count: u64) -> Option<crate::auxpow::Share> {
+pub fn find_auxpow_share(
+    job: &crate::auxpow::Job,
+    threads: usize,
+    nonce_count: u64,
+) -> Option<crate::auxpow::Share> {
     if nonce_count == 0 {
         return None;
     }
@@ -363,18 +362,17 @@ fn find_verushash_share(
         };
         let end = start.saturating_add(count);
 
-        if let Some((nonce, hash, solution)) = crate::auxpow::hasher::mine_verushash(
-            &header,
-            &target,
-            start,
-            end,
-            &extranonce1,
-        ) {
+        if let Some((nonce, hash, solution)) =
+            crate::auxpow::hasher::mine_verushash(&header, &target, start, end, &extranonce1)
+        {
             // For PBaaS v7+ the nonce field in the block header must stay as
             // en1+zeros so the pool's preHeaderHash check succeeds. The actual
             // found nonce lives in the solution nonceSpace.
-            let en1_total = extranonce1.len().min(crate::auxpow::hasher::VERUS_NONCE_FIELD_SIZE);
-            let nonce2_len = crate::auxpow::hasher::VERUS_NONCE_FIELD_SIZE.saturating_sub(en1_total);
+            let en1_total = extranonce1
+                .len()
+                .min(crate::auxpow::hasher::VERUS_NONCE_FIELD_SIZE);
+            let nonce2_len =
+                crate::auxpow::hasher::VERUS_NONCE_FIELD_SIZE.saturating_sub(en1_total);
             let extranonce2 = "0".repeat(nonce2_len * 2);
 
             Some(crate::auxpow::Share {
@@ -504,6 +502,7 @@ mod tests {
             extranonce: vec![0x01],
             extranonce2: "00".to_string(),
             ntime: "00000000".to_string(),
+            height: 0,
         };
         let share = find_auxpow_share(&job, 2, 1_000).expect("should find share with max target");
         assert_eq!(share.coin, job.coin);

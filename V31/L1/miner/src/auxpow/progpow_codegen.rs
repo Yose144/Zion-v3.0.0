@@ -26,8 +26,12 @@ impl Kiss99 {
 
     #[allow(clippy::should_implement_trait)]
     pub fn next(&mut self) -> u32 {
-        self.z = 36969u32.wrapping_mul(self.z & 0xFFFF).wrapping_add(self.z >> 16);
-        self.w = 18000u32.wrapping_mul(self.w & 0xFFFF).wrapping_add(self.w >> 16);
+        self.z = 36969u32
+            .wrapping_mul(self.z & 0xFFFF)
+            .wrapping_add(self.z >> 16);
+        self.w = 18000u32
+            .wrapping_mul(self.w & 0xFFFF)
+            .wrapping_add(self.w >> 16);
         let mwc = (self.z << 16).wrapping_add(self.w);
         self.jsr ^= self.jsr << 17;
         self.jsr ^= self.jsr >> 13;
@@ -126,20 +130,8 @@ fn merge_code(a: &str, b: &str, r: u32) -> String {
     match r % 4 {
         0 => format!("{} = ({} * 33) + {};\n", a, a, b),
         1 => format!("{} = ({} ^ {}) * 33;\n", a, a, b),
-        2 => format!(
-            "{} = ROTL32({}, {}) ^ {};\n",
-            a,
-            a,
-            (r >> 16) % 31 + 1,
-            b
-        ),
-        3 => format!(
-            "{} = ROTR32({}, {}) ^ {};\n",
-            a,
-            a,
-            (r >> 16) % 31 + 1,
-            b
-        ),
+        2 => format!("{} = ROTL32({}, {}) ^ {};\n", a, a, (r >> 16) % 31 + 1, b),
+        3 => format!("{} = ROTR32({}, {}) ^ {};\n", a, a, (r >> 16) % 31 + 1, b),
         _ => unreachable!(),
     }
 }
@@ -507,10 +499,7 @@ fn gen_progpow_loop_impl(
     // The progPowLoop function is injected after those definitions.
 
     // progPowLoop function
-    ret.push_str(&format!(
-        "// Inner loop for prog_seed {}\n",
-        prog_seed
-    ));
+    ret.push_str(&format!("// Inner loop for prog_seed {}\n", prog_seed));
     ret.push_str("static inline __attribute__((always_inline))\n");
     ret.push_str("void progPowLoop(const uint32_t loop,\n");
     ret.push_str("        uint32_t mix[PROGPOW_REGS],\n");
@@ -602,10 +591,7 @@ pub fn gen_zano_progpow_loop(params: &ProgPowParams, block_height: u64) -> Strin
 
 /// Prepare the KawPow kernel source by injecting random math code.
 /// Replaces XMRIG_INCLUDE_PROGPOW_RANDOM_MATH and XMRIG_INCLUDE_PROGPOW_DATA_LOADS.
-pub fn prepare_kawpow_kernel_source(
-    base_source: &str,
-    block_height: u64,
-) -> String {
+pub fn prepare_kawpow_kernel_source(base_source: &str, block_height: u64) -> String {
     let prog_seed = block_height / KAWPOW_PARAMS.period as u64;
     let random_math = gen_kawpow_random_math(&KAWPOW_PARAMS, prog_seed);
     let data_loads = gen_kawpow_data_loads(&KAWPOW_PARAMS, prog_seed);
@@ -619,10 +605,7 @@ pub fn prepare_kawpow_kernel_source(
 /// data load code, and the progPowLoop function. Replaces
 /// PROGPOW_INCLUDE_PROGPOW_LOOP with the generated loop code,
 /// PROGPOW_INCLUDE_RANDOM_MATH and PROGPOW_INCLUDE_DATA_LOADS.
-pub fn prepare_epic_progpow_kernel_source(
-    base_source: &str,
-    block_height: u64,
-) -> String {
+pub fn prepare_epic_progpow_kernel_source(base_source: &str, block_height: u64) -> String {
     let random_math = gen_epic_progpow_random_math(&EPIC_PROGPOW_PARAMS, block_height);
     let data_loads = gen_epic_progpow_data_loads(&EPIC_PROGPOW_PARAMS, block_height);
     let progpow_loop = gen_epic_progpow_loop(&EPIC_PROGPOW_PARAMS, block_height);
@@ -635,10 +618,7 @@ pub fn prepare_epic_progpow_kernel_source(
 
 /// Prepare the ProgPoWZ (Zano) kernel source.
 /// Same ProgPow 0.9.2 structure as EPIC, but uses the Zano math op permutation.
-pub fn prepare_zano_progpow_kernel_source(
-    base_source: &str,
-    block_height: u64,
-) -> String {
+pub fn prepare_zano_progpow_kernel_source(base_source: &str, block_height: u64) -> String {
     let random_math = gen_zano_progpow_random_math(&PROGPOWZ_PARAMS, block_height);
     let data_loads = gen_epic_progpow_data_loads(&PROGPOWZ_PARAMS, block_height);
     let progpow_loop = gen_zano_progpow_loop(&PROGPOWZ_PARAMS, block_height);
@@ -658,21 +638,21 @@ pub fn prepare_progpow_kernel_source_for_algo(
 ) -> String {
     match algorithm {
         "progpow" | "progpow_epic" => prepare_epic_progpow_kernel_source(base_source, block_height),
-        "progpowz" | "progpow_zano" => prepare_zano_progpow_kernel_source(base_source, block_height),
+        "progpowz" | "progpow_zano" => {
+            prepare_zano_progpow_kernel_source(base_source, block_height)
+        }
         _ => prepare_epic_progpow_kernel_source(base_source, block_height),
     }
 }
 
 /// Metal template for ProgPow / ProgPoWZ kernels.
 /// Includes placeholders for the inline random math and data loads.
-static PROGPOW_METAL_TEMPLATE: &str = include_str!("../../csrc/metal/progpow_zano_kernel_template.metal");
+static PROGPOW_METAL_TEMPLATE: &str =
+    include_str!("../../csrc/metal/progpow_zano_kernel_template.metal");
 
 /// Prepare a Metal ProgPow kernel source for a specific algorithm and block height.
 /// The returned source can be passed directly to `MTLDevice::new_library_with_source`.
-pub fn prepare_progpow_metal_kernel_source_for_algo(
-    algorithm: &str,
-    block_height: u64,
-) -> String {
+pub fn prepare_progpow_metal_kernel_source_for_algo(algorithm: &str, block_height: u64) -> String {
     prepare_progpow_kernel_source_for_algo(PROGPOW_METAL_TEMPLATE, algorithm, block_height)
 }
 
@@ -737,7 +717,10 @@ mod tests {
     #[test]
     fn test_gen_epic_progpow_loop() {
         let code = gen_epic_progpow_loop(&EPIC_PROGPOW_PARAMS, 0);
-        assert!(code.contains("void progPowLoop"), "Should define progPowLoop");
+        assert!(
+            code.contains("void progPowLoop"),
+            "Should define progPowLoop"
+        );
         assert!(code.contains("g_dag[offset]"), "Should have DAG access");
         assert!(code.contains("c_dag[offset]"), "Should have cache access");
     }
@@ -746,15 +729,24 @@ mod tests {
     fn test_prepare_kawpow_kernel() {
         let base = "XMRIG_INCLUDE_PROGPOW_RANDOM_MATH\nXMRIG_INCLUDE_PROGPOW_DATA_LOADS";
         let result = prepare_kawpow_kernel_source(base, 100);
-        assert!(!result.contains("XMRIG_INCLUDE"), "Placeholders should be replaced");
+        assert!(
+            !result.contains("XMRIG_INCLUDE"),
+            "Placeholders should be replaced"
+        );
     }
 
     #[test]
     fn test_prepare_epic_kernel() {
         let base = "PROGPOW_INCLUDE_PROGPOW_LOOP\n// rest of kernel";
         let result = prepare_epic_progpow_kernel_source(base, 100);
-        assert!(!result.contains("PROGPOW_INCLUDE"), "Placeholder should be replaced");
-        assert!(result.contains("progPowLoop"), "Should have progPowLoop function");
+        assert!(
+            !result.contains("PROGPOW_INCLUDE"),
+            "Placeholder should be replaced"
+        );
+        assert!(
+            result.contains("progPowLoop"),
+            "Should have progPowLoop function"
+        );
     }
 
     #[test]
@@ -766,13 +758,18 @@ mod tests {
             println!("EPIC_SRC {:3}: {}", i + 1, line);
         }
         // Verify definitions appear before progPowLoop
-        let def_line = result.lines().position(|l| l.contains("typedef unsigned int       uint32_t;"));
+        let def_line = result
+            .lines()
+            .position(|l| l.contains("typedef unsigned int       uint32_t;"));
         let loop_line = result.lines().position(|l| l.contains("void progPowLoop"));
         println!("uint32_t typedef at line: {:?}", def_line);
         println!("progPowLoop at line: {:?}", loop_line);
         assert!(def_line.is_some(), "uint32_t typedef must be present");
         assert!(loop_line.is_some(), "progPowLoop must be present");
-        assert!(def_line.unwrap() < loop_line.unwrap(), "typedef must come before progPowLoop");
+        assert!(
+            def_line.unwrap() < loop_line.unwrap(),
+            "typedef must come before progPowLoop"
+        );
     }
 
     #[test]
@@ -780,13 +777,18 @@ mod tests {
         let base = include_str!("../../csrc/opencl/kawpow_kernel.cl");
         let result = prepare_kawpow_kernel_source(base, 3621120);
         // Verify definitions appear before progPowSearch
-        let def_line = result.lines().position(|l| l.contains("#define PROGPOW_LANES"));
+        let def_line = result
+            .lines()
+            .position(|l| l.contains("#define PROGPOW_LANES"));
         let search_line = result.lines().position(|l| l.contains("progpow_search"));
         println!("PROGPOW_LANES define at line: {:?}", def_line);
         println!("progpow_search at line: {:?}", search_line);
         assert!(def_line.is_some(), "PROGPOW_LANES define must be present");
         assert!(search_line.is_some(), "progpow_search must be present");
-        assert!(def_line.unwrap() < search_line.unwrap(), "defines must come before kernel");
+        assert!(
+            def_line.unwrap() < search_line.unwrap(),
+            "defines must come before kernel"
+        );
         // Verify no placeholder leakage in comments
         let placeholder_count = result.matches("XMRIG_INCLUDE_PROGPOW_RANDOM_MATH").count()
             + result.matches("XMRIG_INCLUDE_PROGPOW_DATA_LOADS").count();
@@ -802,9 +804,15 @@ mod tests {
         let uint32_count = code.matches("typedef unsigned int").count();
         let rotl_count = code.matches("#define ROTL32").count();
         let group_size_count = code.matches("#define GROUP_SIZE").count();
-        assert_eq!(uint32_count, 0, "Generated code should NOT redefine uint32_t");
+        assert_eq!(
+            uint32_count, 0,
+            "Generated code should NOT redefine uint32_t"
+        );
         assert_eq!(rotl_count, 0, "Generated code should NOT redefine ROTL32");
-        assert_eq!(group_size_count, 0, "Generated code should NOT redefine GROUP_SIZE");
+        assert_eq!(
+            group_size_count, 0,
+            "Generated code should NOT redefine GROUP_SIZE"
+        );
     }
 
     #[test]
@@ -813,7 +821,10 @@ mod tests {
         // Should have 11 cache loads and 18 math operations
         let code = gen_kawpow_random_math(&KAWPOW_PARAMS, 0);
         let cache_loads = code.matches("c_dag[offset]").count();
-        assert_eq!(cache_loads, 11, "Should have exactly 11 cache loads (CNT_CACHE=11)");
+        assert_eq!(
+            cache_loads, 11,
+            "Should have exactly 11 cache loads (CNT_CACHE=11)"
+        );
     }
 
     #[test]
@@ -821,16 +832,28 @@ mod tests {
         // EPIC: cnt_cache=12, cnt_math=20, so max_ops=20
         let code = gen_epic_progpow_loop(&EPIC_PROGPOW_PARAMS, 0);
         let cache_loads = code.matches("c_dag[offset]").count();
-        assert_eq!(cache_loads, 12, "Should have exactly 12 cache loads (CNT_CACHE=12)");
+        assert_eq!(
+            cache_loads, 12,
+            "Should have exactly 12 cache loads (CNT_CACHE=12)"
+        );
     }
 
     #[test]
     fn test_evr_progpow_params() {
         // EvrProgPow: PERIOD=3, REGS=32, CNT_CACHE=11, CNT_MATH=18
-        assert_eq!(EVR_PROGPOW_PARAMS.period, 3, "EvrProgPow period should be 3");
+        assert_eq!(
+            EVR_PROGPOW_PARAMS.period, 3,
+            "EvrProgPow period should be 3"
+        );
         assert_eq!(EVR_PROGPOW_PARAMS.regs, 32, "EvrProgPow regs should be 32");
-        assert_eq!(EVR_PROGPOW_PARAMS.cnt_cache, 11, "EvrProgPow cnt_cache should be 11");
-        assert_eq!(EVR_PROGPOW_PARAMS.cnt_math, 18, "EvrProgPow cnt_math should be 18");
+        assert_eq!(
+            EVR_PROGPOW_PARAMS.cnt_cache, 11,
+            "EvrProgPow cnt_cache should be 11"
+        );
+        assert_eq!(
+            EVR_PROGPOW_PARAMS.cnt_math, 18,
+            "EvrProgPow cnt_math should be 18"
+        );
     }
 
     #[test]
@@ -882,7 +905,10 @@ mod tests {
     fn test_prepare_kawpow_for_evrprogpow() {
         let base = "XMRIG_INCLUDE_PROGPOW_RANDOM_MATH\nXMRIG_INCLUDE_PROGPOW_DATA_LOADS";
         let result = prepare_kawpow_kernel_source_for_algo(base, "evrprogpow", 100);
-        assert!(!result.contains("XMRIG_INCLUDE"), "Placeholders should be replaced");
+        assert!(
+            !result.contains("XMRIG_INCLUDE"),
+            "Placeholders should be replaced"
+        );
         // EvrProgPow: period=3, so prog_seed = 100/3 = 33
         // Should have 11 cache loads (same as KawPow)
         let cache_loads = result.matches("c_dag[offset]").count();
@@ -893,7 +919,10 @@ mod tests {
     fn test_prepare_kawpow_for_meowpow() {
         let base = "XMRIG_INCLUDE_PROGPOW_RANDOM_MATH\nXMRIG_INCLUDE_PROGPOW_DATA_LOADS";
         let result = prepare_kawpow_kernel_source_for_algo(base, "meowpow", 100);
-        assert!(!result.contains("XMRIG_INCLUDE"), "Placeholders should be replaced");
+        assert!(
+            !result.contains("XMRIG_INCLUDE"),
+            "Placeholders should be replaced"
+        );
         // MeowPow: period=6, so prog_seed = 100/6 = 16
         // Should have 6 cache loads (CNT_CACHE=6)
         let cache_loads = result.matches("c_dag[offset]").count();
@@ -903,11 +932,7 @@ mod tests {
     #[test]
     fn test_dump_cuda_progpow_source() {
         let base_src = include_str!("../../csrc/cuda/progpow_kernel.cu");
-        let prepared = prepare_progpow_kernel_source_for_algo(
-            base_src,
-            "progpow_zano",
-            3785945,
-        );
+        let prepared = prepare_progpow_kernel_source_for_algo(base_src, "progpow_zano", 3785945);
         std::fs::write("/tmp/progpow_cuda_source.cu", &prepared).unwrap();
 
         // Check where injected code ends up
@@ -922,6 +947,9 @@ mod tests {
                 println!("Line {}: {}", i + 1, line);
             }
         }
-        assert!(!prepared.contains("PROGPOW_INCLUDE"), "Placeholders should be replaced");
+        assert!(
+            !prepared.contains("PROGPOW_INCLUDE"),
+            "Placeholders should be replaced"
+        );
     }
 }

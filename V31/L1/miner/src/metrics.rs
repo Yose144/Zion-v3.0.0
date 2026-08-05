@@ -224,10 +224,7 @@ pub async fn serve(metrics: Metrics, bind_addr: SocketAddr) -> Result<()> {
     tracing::info!("metrics server listening on http://{bind_addr}/metrics");
 
     loop {
-        let (stream, peer) = listener
-            .accept()
-            .await
-            .context("metrics accept failed")?;
+        let (stream, peer) = listener.accept().await.context("metrics accept failed")?;
         let metrics = metrics.clone();
         tokio::spawn(async move {
             if let Err(e) = handle_metrics_conn(stream, metrics).await {
@@ -259,14 +256,17 @@ async fn handle_metrics_conn(mut stream: TcpStream, metrics: Metrics) -> Result<
         }
     }
 
-    let body = if first_line.starts_with("GET /metrics") || first_line.starts_with("get /metrics")
-    {
+    let body = if first_line.starts_with("GET /metrics") || first_line.starts_with("get /metrics") {
         metrics.render()
     } else {
         "404 Not Found\n".to_string()
     };
 
-    let status = if body.starts_with("404") { "404 Not Found" } else { "200 OK" };
+    let status = if body.starts_with("404") {
+        "404 Not Found"
+    } else {
+        "200 OK"
+    };
     let response = format!(
         "HTTP/1.1 {status}\r\n\
          Content-Type: text/plain; version=0.0.4\r\n\

@@ -51,8 +51,7 @@ pub fn hash_blake3(header: &[u8], _timestamp: u64, nonce: u64) -> [u8; 32] {
     let copy_len = header.len().min(DCR_HEADER_SIZE);
     full_header[..copy_len].copy_from_slice(&header[..copy_len]);
     let nonce_bytes = (nonce as u32).to_le_bytes();
-    full_header[DCR_NONCE_OFFSET..DCR_NONCE_OFFSET + DCR_NONCE_SIZE]
-        .copy_from_slice(&nonce_bytes);
+    full_header[DCR_NONCE_OFFSET..DCR_NONCE_OFFSET + DCR_NONCE_SIZE].copy_from_slice(&nonce_bytes);
     blake3::hash(&full_header).into()
 }
 
@@ -149,9 +148,7 @@ impl XoShiRo256PlusPlus {
 
     #[inline(always)]
     fn next(&mut self) -> u64 {
-        let res = self
-            .s[0]
-            .wrapping_add(self.s[0].wrapping_add(self.s[3]).rotate_left(23));
+        let res = self.s[0].wrapping_add(self.s[0].wrapping_add(self.s[3]).rotate_left(23));
         let t = self.s[1] << 17;
         self.s[2] ^= self.s[0];
         self.s[3] ^= self.s[1];
@@ -403,12 +400,7 @@ fn keryx_matrix_rank(mat: &[[u16; 64]; 64]) -> usize {
     rank
 }
 
-pub fn hash_keryxhash(
-    pre_pow_hash: &[u8],
-    timestamp: u64,
-    nonce: u64,
-    daa_score: u64,
-) -> [u8; 32] {
+pub fn hash_keryxhash(pre_pow_hash: &[u8], timestamp: u64, nonce: u64, daa_score: u64) -> [u8; 32] {
     let mut pow_hasher = CShake256::from_core(CShake256Core::new(b"ProofOfWorkHash"));
     pow_hasher.update(pre_pow_hash);
     pow_hasher.update(&timestamp.to_le_bytes());
@@ -598,6 +590,35 @@ pub fn hash_verushash_header(header: &[u8]) -> [u8; 32] {
     out
 }
 
+/// Build a VerusHash v2.2 ZcashStratum solution blob from the original header
+/// and the found nonce. The pool re-computes the hash from the solution, so
+/// the header must contain the found nonce in the 15-byte nonceSpace.
+pub fn build_verushash_solution(header: &[u8], nonce: u64, extranonce1: &[u8]) -> Option<Vec<u8>> {
+    if header.len() < VERUS_HEADER_SIZE {
+        return None;
+    }
+
+    // The 15-byte nonceSpace layout: [en1][miner_nonce(4B LE)][padding].
+    let en1_len = extranonce1.len().min(VERUS_NONCE_SPACE_SIZE - 4);
+    let nonce_le = (nonce as u32).to_le_bytes();
+    let mut final_nonce_space = [0u8; VERUS_NONCE_SPACE_SIZE];
+    final_nonce_space[..en1_len].copy_from_slice(&extranonce1[..en1_len]);
+    final_nonce_space[en1_len..en1_len + 4].copy_from_slice(&nonce_le);
+
+    // MMR roots stay as supplied by the pool; the upstream validator clears
+    // non-canonical PBaaS fields before hashing.
+    let mut final_header = header.to_vec();
+    final_header[VERUS_NONCE_SPACE_OFFSET..VERUS_NONCE_SPACE_OFFSET + VERUS_NONCE_SPACE_SIZE]
+        .copy_from_slice(&final_nonce_space);
+
+    let mut solution = zcash_varint_for_len(VERUS_SOLUTION_SIZE);
+    solution.extend_from_slice(
+        &final_header[VERUS_SOLUTION_OFFSET..VERUS_SOLUTION_OFFSET + VERUS_SOLUTION_SIZE],
+    );
+
+    Some(solution)
+}
+
 /// Mine VerusHash v2.2 using the two-stage native path.
 /// Returns the found nonce, the little-endian PoW hash, and the
 /// solution-with-varint bytes ready for ZcashStratum submission.
@@ -641,20 +662,9 @@ pub fn mine_verushash(
     )?;
 
     // Build the submit solution from the original header with the found nonce
-    // embedded in the solution nonceSpace. MMR roots stay as supplied by the
-    // pool; the upstream validator clears them before hashing.
+    // embedded in the solution nonceSpace.
     let (nonce, hash) = found;
-    let nonce_le = (nonce as u32).to_le_bytes();
-    let mut final_nonce_space = [0u8; VERUS_NONCE_SPACE_SIZE];
-    final_nonce_space[..en1_len].copy_from_slice(&extranonce1[..en1_len]);
-    final_nonce_space[en1_len..en1_len + 4].copy_from_slice(&nonce_le);
-
-    let mut final_header = header.to_vec();
-    final_header[VERUS_NONCE_SPACE_OFFSET..VERUS_NONCE_SPACE_OFFSET + VERUS_NONCE_SPACE_SIZE]
-        .copy_from_slice(&final_nonce_space);
-
-    let mut solution = zcash_varint_for_len(VERUS_SOLUTION_SIZE);
-    solution.extend_from_slice(&final_header[VERUS_SOLUTION_OFFSET..VERUS_SOLUTION_OFFSET + VERUS_SOLUTION_SIZE]);
+    let solution = build_verushash_solution(header, nonce, extranonce1)?;
 
     Some((nonce, hash, solution))
 }
@@ -723,9 +733,7 @@ pub fn hash_kawpow(header: &[u8; 32], nonce: u64, _height: u32) -> ([u8; 32], [u
     let mut mix = [0u8; 32];
     mix.copy_from_slice(&h);
     let mut final_hash = [0u8; 32];
-    let combined = Keccak256::digest(
-        [h.as_ref(), &nonce.to_le_bytes()[..]].concat(),
-    );
+    let combined = Keccak256::digest([h.as_ref(), &nonce.to_le_bytes()[..]].concat());
     final_hash.copy_from_slice(&combined);
     (mix, final_hash)
 }
@@ -752,7 +760,12 @@ pub fn hash_pearl(header: &[u8; 32], nonce: u64) -> [u8; 32] {
 
 // ── Mining helpers ───────────────────────────────────────────────────
 
-pub fn mine_zelhash(header: &[u8], target: &[u8; 32], start: u64, count: u64) -> Option<(u64, [u8; 32])> {
+pub fn mine_zelhash(
+    header: &[u8],
+    target: &[u8; 32],
+    start: u64,
+    count: u64,
+) -> Option<(u64, [u8; 32])> {
     for offset in 0..count {
         let nonce = start.wrapping_add(offset);
         let hash = hash_zelhash(header, nonce);
@@ -880,9 +893,7 @@ pub fn dispatch_hash(
 ) -> anyhow::Result<[u8; 32]> {
     match algorithm {
         "blake3" | "blake3_dcr" => Ok(hash_blake3(header, timestamp, nonce)),
-        "blake3_alph" => {
-            Ok(hash_blake3_alph(header, &[], nonce))
-        }
+        "blake3_alph" => Ok(hash_blake3_alph(header, &[], nonce)),
         "kheavyhash" => Ok(hash_kheavyhash(header, timestamp, nonce)),
         "autolykos" => Ok(hash_autolykos(header, nonce, timestamp as u32)),
         "kawpow" => {
@@ -1040,8 +1051,8 @@ mod tests {
         let mut verify_header = header.clone();
         clear_verushash_pbaas(&mut verify_header);
         let nonce_le = (nonce as u32).to_le_bytes();
-        verify_header[VERUS_NONCE_SPACE_OFFSET + en1.len()
-            ..VERUS_NONCE_SPACE_OFFSET + en1.len() + 4]
+        verify_header
+            [VERUS_NONCE_SPACE_OFFSET + en1.len()..VERUS_NONCE_SPACE_OFFSET + en1.len() + 4]
             .copy_from_slice(&nonce_le);
         let verify_hash = hash_verushash_header(&verify_header);
         assert_eq!(verify_hash, hash, "hashed solution must match scan hash");

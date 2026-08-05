@@ -20,7 +20,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
-use tokio::sync::{Mutex, Notify, oneshot};
+use tokio::sync::{oneshot, Mutex, Notify};
 use tokio::time::timeout;
 use tracing::{debug, info, warn};
 
@@ -349,7 +349,10 @@ impl AuxPowClient {
             *self.latest_job_id.lock().await = None;
             let cancelled = self.pending_requests.lock().await.drain().count();
             if cancelled > 0 {
-                warn!("AuxPow: cancelled {} pending request(s) after reconnect", cancelled);
+                warn!(
+                    "AuxPow: cancelled {} pending request(s) after reconnect",
+                    cancelled
+                );
             }
         }
         info!("AuxPow: reconnected for {}", self.config.coin);
@@ -550,7 +553,11 @@ impl AuxPowClient {
     }
 
     async fn parse_cryptonote_job(&self, job: &Value) {
-        let job_id = job.get("job_id").and_then(Value::as_str).unwrap_or("").to_string();
+        let job_id = job
+            .get("job_id")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_string();
         let blob_hex = job.get("blob").and_then(Value::as_str).unwrap_or("");
         let target_hex = job.get("target").and_then(Value::as_str).unwrap_or("");
         let height = job.get("height").and_then(Value::as_u64);
@@ -639,7 +646,11 @@ impl AuxPowClient {
                 }
             }
             "mining.set_difficulty" => {
-                if let Some(d) = msg.get("params").and_then(|p| p.get(0)).and_then(Value::as_f64) {
+                if let Some(d) = msg
+                    .get("params")
+                    .and_then(|p| p.get(0))
+                    .and_then(Value::as_f64)
+                {
                     *self.current_difficulty.lock().await = d;
                     debug!(difficulty = d, "stratum set difficulty");
                 }
@@ -701,7 +712,9 @@ impl AuxPowClient {
                 prevhash
             };
 
-            let timestamp = u32::from_str_radix(ntime.trim_start_matches("0x"), 16).ok().map(|t| t as u64);
+            let timestamp = u32::from_str_radix(ntime.trim_start_matches("0x"), 16)
+                .ok()
+                .map(|t| t as u64);
 
             let job = ExternalJob {
                 job_id,
@@ -777,7 +790,10 @@ impl AuxPowClient {
     ) -> Result<ShareResult> {
         {
             let mut submitted = self.submitted_nonces.lock().await;
-            if submitted.iter().any(|(jid, n)| jid == job_id && *n == nonce) {
+            if submitted
+                .iter()
+                .any(|(jid, n)| jid == job_id && *n == nonce)
+            {
                 return Ok(ShareResult::Rejected("duplicate share".to_string()));
             }
             submitted.push_back((job_id.to_string(), nonce));
@@ -923,6 +939,8 @@ pub struct StratumJob {
     pub ntime: String,
     pub difficulty: f64,
     pub coin: zion_cosmic_harmony::ExternalCoin,
+    /// Block height / block number from the external pool (for DAG/epoch derivation).
+    pub height: u64,
 }
 
 impl From<StratumJob> for super::Job {
@@ -935,6 +953,7 @@ impl From<StratumJob> for super::Job {
             extranonce: j.extranonce1,
             extranonce2: "00".to_string(),
             ntime: j.ntime,
+            height: j.height,
         }
     }
 }
@@ -980,7 +999,13 @@ impl StratumClient {
             ));
         }
 
-        Self { url, worker, password, job_rx, submit_tx }
+        Self {
+            url,
+            worker,
+            password,
+            job_rx,
+            submit_tx,
+        }
     }
 
     pub async fn connect(&self) -> Result<()> {
@@ -1019,9 +1044,9 @@ fn parse_url(url: &str) -> Result<(&str, u16)> {
         .trim_start_matches("stratum+tcp://")
         .trim_start_matches("stratum://")
         .trim_start_matches("tcp://");
-    let (host, port) = trimmed.rsplit_once(':').ok_or_else(|| {
-        anyhow!("stratum url must be host:port or stratum+tcp://host:port")
-    })?;
+    let (host, port) = trimmed
+        .rsplit_once(':')
+        .ok_or_else(|| anyhow!("stratum url must be host:port or stratum+tcp://host:port"))?;
     let port = port.parse()?;
     Ok((host, port))
 }
@@ -1079,12 +1104,14 @@ async fn stratum_session(
     let (reader, mut writer) = stream.split();
     let mut lines = BufReader::new(reader).lines();
 
-    let subscribe = json!({"id": 1, "method": "mining.subscribe", "params": ["zion-miner/3.1.0", null]});
+    let subscribe =
+        json!({"id": 1, "method": "mining.subscribe", "params": ["zion-miner/3.1.0", null]});
     send_line(&mut writer, &subscribe).await?;
     let auth = json!({"id": 2, "method": "mining.authorize", "params": [worker, password]});
     send_line(&mut writer, &auth).await?;
 
-    let mut pending_submits: std::collections::VecDeque<super::Share> = std::collections::VecDeque::new();
+    let mut pending_submits: std::collections::VecDeque<super::Share> =
+        std::collections::VecDeque::new();
 
     loop {
         tokio::select! {
@@ -1151,7 +1178,11 @@ async fn handle_line(
     let method = value.get("method").and_then(Value::as_str).unwrap_or("");
     match method {
         "mining.notify" => {
-            let params = value.get("params").and_then(Value::as_array).cloned().unwrap_or_default();
+            let params = value
+                .get("params")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default();
             if let Some(job) = parse_notify(&params, state).await {
                 let _ = job_tx.send(job).await;
             }
@@ -1192,16 +1223,26 @@ async fn parse_subscribe_response(value: &Value, state: &StratumState) -> Result
 }
 
 fn params_difficulty(value: &Value) -> Option<f64> {
-    value.get("params").and_then(Value::as_array).and_then(|p| p.first()).and_then(Value::as_f64)
+    value
+        .get("params")
+        .and_then(Value::as_array)
+        .and_then(|p| p.first())
+        .and_then(Value::as_f64)
         .or_else(|| {
-            value.get("params").and_then(Value::as_array).and_then(|p| p.first())
-                .and_then(Value::as_i64).map(|i| i as f64)
+            value
+                .get("params")
+                .and_then(Value::as_array)
+                .and_then(|p| p.first())
+                .and_then(Value::as_i64)
+                .map(|i| i as f64)
         })
 }
 
 fn params_extranonce(value: &Value) -> Option<(Vec<u8>, usize)> {
     let params = value.get("params").and_then(Value::as_array)?;
-    if params.len() < 2 { return None; }
+    if params.len() < 2 {
+        return None;
+    }
     let e1 = parse_hex_value(&params[0]).unwrap_or_default();
     let size = params[1].as_u64()? as usize;
     Some((e1, size))
@@ -1219,13 +1260,17 @@ async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJ
             Err(_) => header_hex.as_bytes().to_vec(),
         };
         let target = hasher::parse_target_hex(target_hex).unwrap_or([0xFF; 32]);
+        let height = params.get(3).and_then(Value::as_u64).unwrap_or(0);
         return Some(StratumJob {
-            job_id, header, target,
+            job_id,
+            header,
+            target,
             extranonce1: state.extranonce1.lock().await.clone(),
             extranonce2_size: *state.extranonce2_size.lock().await,
             ntime: "00000000".to_string(),
             difficulty: *state.difficulty.lock().await,
             coin: zion_cosmic_harmony::ExternalCoin::Bitcoin,
+            height,
         });
     }
 
@@ -1281,6 +1326,7 @@ async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJ
             header.extend_from_slice(&varint);
             header.extend_from_slice(&solution);
 
+            let height = params.get(9).and_then(Value::as_u64).unwrap_or(0);
             return Some(StratumJob {
                 job_id,
                 header,
@@ -1290,6 +1336,7 @@ async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJ
                 ntime,
                 difficulty: *state.difficulty.lock().await,
                 coin: zion_cosmic_harmony::ExternalCoin::Bitcoin,
+                height,
             });
         }
 
@@ -1303,14 +1350,22 @@ async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJ
         let target = hasher::parse_target_hex(nbits)
             .or_else(|| hasher::nbits_to_target(nbits))
             .unwrap_or([0xFF; 32]);
-        let header = if prevhash.is_empty() { vec![0u8; 32] } else { prevhash };
+        let header = if prevhash.is_empty() {
+            vec![0u8; 32]
+        } else {
+            prevhash
+        };
+        let height = params.get(9).and_then(Value::as_u64).unwrap_or(0);
         return Some(StratumJob {
-            job_id, header, target,
+            job_id,
+            header,
+            target,
             extranonce1: state.extranonce1.lock().await.clone(),
             extranonce2_size: *state.extranonce2_size.lock().await,
             ntime,
             difficulty: *state.difficulty.lock().await,
             coin: zion_cosmic_harmony::ExternalCoin::Bitcoin,
+            height,
         });
     }
 
@@ -1341,10 +1396,12 @@ fn build_submit_params(worker: &str, share: &super::Share) -> Value {
         || algo == "evrprogpow"
         || algo == "meowpow"
     {
-        let mut params =
-            json!([worker, share.job_id, share.extranonce2, share.ntime, nonce]);
+        let mut params = json!([worker, share.job_id, share.extranonce2, share.ntime, nonce]);
         if let Some(mix) = mix {
-            params.as_array_mut().unwrap().push(json!(format!("0x{mix}")));
+            params
+                .as_array_mut()
+                .unwrap()
+                .push(json!(format!("0x{mix}")));
         }
         return json!({"id": 100, "method": "mining.submit", "params": params});
     }
@@ -1403,10 +1460,22 @@ mod tests {
     #[test]
     fn coin_protocol_mapping() {
         assert_eq!(coin_protocol(ExternalCoin::Kaspa), StratumProtocol::Stratum);
-        assert_eq!(coin_protocol(ExternalCoin::Monero), StratumProtocol::CryptonoteStratum);
-        assert_eq!(coin_protocol(ExternalCoin::Verus), StratumProtocol::ZcashStratum);
-        assert_eq!(coin_protocol(ExternalCoin::EpicCash), StratumProtocol::EpicStratum);
-        assert_eq!(coin_protocol(ExternalCoin::Zano), StratumProtocol::EthStratum);
+        assert_eq!(
+            coin_protocol(ExternalCoin::Monero),
+            StratumProtocol::CryptonoteStratum
+        );
+        assert_eq!(
+            coin_protocol(ExternalCoin::Verus),
+            StratumProtocol::ZcashStratum
+        );
+        assert_eq!(
+            coin_protocol(ExternalCoin::EpicCash),
+            StratumProtocol::EpicStratum
+        );
+        assert_eq!(
+            coin_protocol(ExternalCoin::Zano),
+            StratumProtocol::EthStratum
+        );
     }
 
     #[tokio::test]

@@ -45,11 +45,17 @@ pub struct FoundExternalShare {
 
 impl DualStratumJob {
     pub fn new(zion: WorkPackage, external: JobPackage, split: SplitConfig) -> Self {
-        Self { zion, external, split }
+        Self {
+            zion,
+            external,
+            split,
+        }
     }
 
     pub fn total_weight(&self) -> u32 {
-        self.split.zion_weight.saturating_add(self.split.external_weight)
+        self.split
+            .zion_weight
+            .saturating_add(self.split.external_weight)
     }
 
     pub(crate) fn assign_nonce(&self, nonce: u64) -> JobAssignment {
@@ -115,7 +121,10 @@ impl DualStratumMiner {
         None
     }
 
-    pub fn count_assignments(job: &DualStratumJob, range: std::ops::Range<u64>) -> AssignmentCounts {
+    pub fn count_assignments(
+        job: &DualStratumJob,
+        range: std::ops::Range<u64>,
+    ) -> AssignmentCounts {
         let mut zion = 0u64;
         let mut external = 0u64;
         for nonce in range {
@@ -198,10 +207,14 @@ mod tests {
 
     #[test]
     fn assignment_75_25_split() {
-        let job = DualStratumJob::new(zion_job(), external_job(), SplitConfig {
-            zion_weight: 75,
-            external_weight: 25,
-        });
+        let job = DualStratumJob::new(
+            zion_job(),
+            external_job(),
+            SplitConfig {
+                zion_weight: 75,
+                external_weight: 25,
+            },
+        );
         let counts = DualStratumMiner::count_assignments(&job, 0..100);
         assert_eq!(counts.zion, 75);
         assert_eq!(counts.external, 25);
@@ -210,10 +223,14 @@ mod tests {
 
     #[test]
     fn assignment_repeats_every_total_weight() {
-        let job = DualStratumJob::new(zion_job(), external_job(), SplitConfig {
-            zion_weight: 3,
-            external_weight: 1,
-        });
+        let job = DualStratumJob::new(
+            zion_job(),
+            external_job(),
+            SplitConfig {
+                zion_weight: 3,
+                external_weight: 1,
+            },
+        );
         assert_eq!(job.assign_nonce(0), JobAssignment::Zion);
         assert_eq!(job.assign_nonce(1), JobAssignment::Zion);
         assert_eq!(job.assign_nonce(2), JobAssignment::Zion);
@@ -223,10 +240,14 @@ mod tests {
 
     #[test]
     fn zero_weight_defaults_to_zion() {
-        let job = DualStratumJob::new(zion_job(), external_job(), SplitConfig {
-            zion_weight: 0,
-            external_weight: 0,
-        });
+        let job = DualStratumJob::new(
+            zion_job(),
+            external_job(),
+            SplitConfig {
+                zion_weight: 0,
+                external_weight: 0,
+            },
+        );
         assert_eq!(job.assign_nonce(0), JobAssignment::Zion);
         assert_eq!(job.assign_nonce(99), JobAssignment::Zion);
     }
@@ -237,10 +258,14 @@ mod tests {
         zion.target_bytes = easy_target();
         let mut ext = external_job();
         ext.target_bytes = impossible_target();
-        let job = DualStratumJob::new(zion, ext, SplitConfig {
-            zion_weight: 1,
-            external_weight: 0,
-        });
+        let job = DualStratumJob::new(
+            zion,
+            ext,
+            SplitConfig {
+                zion_weight: 1,
+                external_weight: 0,
+            },
+        );
         let result = DualStratumMiner::scan(&job, 0..10_000).expect("share found");
         assert!(matches!(result, ShareDisposition::ZionShare { .. }));
     }
@@ -251,10 +276,14 @@ mod tests {
         zion.target_bytes = impossible_target();
         let mut ext = external_job();
         ext.target_bytes = easy_target();
-        let job = DualStratumJob::new(zion, ext, SplitConfig {
-            zion_weight: 0,
-            external_weight: 1,
-        });
+        let job = DualStratumJob::new(
+            zion,
+            ext,
+            SplitConfig {
+                zion_weight: 0,
+                external_weight: 1,
+            },
+        );
         let result = DualStratumMiner::scan(&job, 0..10_000).expect("share found");
         match result {
             ShareDisposition::ExternalShare(share) => {

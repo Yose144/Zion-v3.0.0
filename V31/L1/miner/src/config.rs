@@ -86,16 +86,13 @@ impl MinerConfig {
             auxpow_pool: std::env::var("ZION_AUXPOW_POOL").ok(),
             stream2_url: std::env::var("ZION_STREAM2_URL").ok(),
             stream3_url: std::env::var("ZION_STREAM3_URL").ok(),
-            gpu_backend: std::env::var("ZION_GPU_BACKEND")
-                .unwrap_or_else(|_| "cpu".to_string()),
+            gpu_backend: std::env::var("ZION_GPU_BACKEND").unwrap_or_else(|_| "cpu".to_string()),
             miner_threads: std::env::var("ZION_MINER_THREADS")
                 .ok()
                 .and_then(|v| v.parse().ok())
                 .unwrap_or_else(|| num_cpus::get().max(1)),
-            worker: std::env::var("ZION_WORKER")
-                .unwrap_or_else(|_| "zion_worker".to_string()),
-            password: std::env::var("ZION_PASSWORD")
-                .unwrap_or_else(|_| "x".to_string()),
+            worker: std::env::var("ZION_WORKER").unwrap_or_else(|_| "zion_worker".to_string()),
+            password: std::env::var("ZION_PASSWORD").unwrap_or_else(|_| "x".to_string()),
             auxpow_enabled: true,
             hashrate_per_unit: 1000.0,
             zion_nonce_batch: 10_000,

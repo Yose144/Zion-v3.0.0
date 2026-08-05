@@ -17,21 +17,23 @@ pub mod scheduler;
 pub mod true_auxpow;
 pub mod types;
 
-pub use client::{AuxPowClient, AuxPowClientConfig, ExternalJob, ShareResult, StratumClient, StratumJob, StratumProtocol};
+pub use client::{
+    AuxPowClient, AuxPowClientConfig, ExternalJob, ShareResult, StratumClient, StratumJob,
+    StratumProtocol,
+};
 pub use dual_stratum::{
     AssignmentCounts, DualStratumJob, DualStratumMiner, FoundExternalShare, ShareDisposition,
     WorkPackage,
 };
 pub use gpu_miner::{DagManager, GpuFoundShare, GpuMiner};
 pub use hasher::{
-    hash_autolykos, hash_blake3, hash_blake3_alph, hash_blake3_raw, hash_ethash,
-    hash_ethash_with_dag, hash_etchash, hash_kawpow, hash_kawpow_final, hash_keryxhash,
-    hash_keryxhash_extranonce, hash_kheavyhash, hash_kheavyhash_extranonce, hash_pearl,
-    hash_verushash, hash_verushash_header, hash_zelhash, is_valid_autolykos_solution,
-    is_valid_zelhash_solution, kheavyhash_matrix_flat, meets_target, meets_target_little_endian,
-    mine_ethash, mine_verushash, mine_zelhash,
-    generate_keryx_matrix, keryx_active_salt, keryx_active_salt_version,
-    KERYX_MATRIX_SALT_V1, KERYX_MATRIX_SALT_V2, KERYX_MATRIX_SALT_V4,
+    generate_keryx_matrix, hash_autolykos, hash_blake3, hash_blake3_alph, hash_blake3_raw,
+    hash_etchash, hash_ethash, hash_ethash_with_dag, hash_kawpow, hash_kawpow_final,
+    hash_keryxhash, hash_keryxhash_extranonce, hash_kheavyhash, hash_kheavyhash_extranonce,
+    hash_pearl, hash_verushash, hash_verushash_header, hash_zelhash, is_valid_autolykos_solution,
+    is_valid_zelhash_solution, keryx_active_salt, keryx_active_salt_version,
+    kheavyhash_matrix_flat, meets_target, meets_target_little_endian, mine_ethash, mine_verushash,
+    mine_zelhash, KERYX_MATRIX_SALT_V1, KERYX_MATRIX_SALT_V2, KERYX_MATRIX_SALT_V4,
     KERYX_SALT_V2_ACTIVATION_DAA, KERYX_SALT_V4_ACTIVATION_DAA,
 };
 pub use parent_chains::{

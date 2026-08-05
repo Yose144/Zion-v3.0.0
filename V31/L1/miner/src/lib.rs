@@ -7,15 +7,15 @@
 
 #![allow(dead_code, unexpected_cfgs)] // V3 ported modules — used when fully integrated
 
+pub mod autonomous;
 #[cfg(feature = "auxpow")]
 pub mod auxpow;
-pub mod autonomous;
 pub mod b3_verify;
-pub mod metrics;
 pub mod config;
 pub mod cpu_features;
 pub mod gpu;
 pub mod gpu_guard;
+pub mod metrics;
 pub mod pool_message;
 pub mod reconnect;
 pub mod runtime;

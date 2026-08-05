@@ -77,6 +77,8 @@ pub struct Job {
     pub extranonce: Vec<u8>,
     pub extranonce2: String,
     pub ntime: String,
+    /// Block height / block number from the external pool (for DAG/epoch derivation).
+    pub height: u64,
 }
 
 impl Default for Job {
@@ -89,6 +91,7 @@ impl Default for Job {
             extranonce: Vec::new(),
             extranonce2: "00".to_string(),
             ntime: "00000000".to_string(),
+            height: 0,
         }
     }
 }

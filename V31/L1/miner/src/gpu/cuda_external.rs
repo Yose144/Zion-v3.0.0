@@ -13,10 +13,9 @@
 ///   - zelhash / zelhash_flux (FLUX)
 ///   - ethash / ethash_etc (Ethereum Classic / ETHW)
 ///   - kawpow / kawpow_rvn (Ravencoin / CLORE / EVR / MEWC)
-
-use anyhow::{Context, Result};
-use cudarc::driver::{CudaDevice, CudaSlice, LaunchAsync, LaunchConfig};
+use anyhow::Result;
 use cudarc::driver::sys::CUdevice_attribute;
+use cudarc::driver::{CudaDevice, CudaSlice, LaunchAsync, LaunchConfig};
 use cudarc::nvrtc::{compile_ptx_with_opts, CompileOptions};
 use std::sync::Arc;
 use std::time::Instant;
@@ -35,17 +34,22 @@ fn detect_cuda_arch(dev: &CudaDevice) -> String {
     match (major, minor) {
         (Ok(maj), Ok(min)) => {
             let arch = format!("compute_{}{}", maj, min);
-            eprintln!("cuda_arch_detect: compute_capability={}.{} => arch={}", maj, min, arch);
+            eprintln!(
+                "cuda_arch_detect: compute_capability={}.{} => arch={}",
+                maj, min, arch
+            );
             arch
         }
         _ => {
-            eprintln!("cuda_arch_detect: failed to query compute capability, falling back to compute_86");
+            eprintln!(
+                "cuda_arch_detect: failed to query compute capability, falling back to compute_86"
+            );
             "compute_86".to_string()
         }
     }
 }
 
-use crate::gpu::{GpuBatchResult, GpuBackendKind, GpuMiner};
+use crate::gpu::{GpuBackendKind, GpuBatchResult, GpuMiner};
 use zion_core::{MiningHeader, V3DifficultyTarget as DifficultyTarget};
 
 const SENTINEL_NONCE: u64 = 0xFFFF_FFFF_FFFF_FFFF;
@@ -123,7 +127,9 @@ impl CudaExtAlgo {
             "autolykos" | "autolykos_erg" => Some(Self::Autolykos),
             "zelhash" | "zelhash_flux" => Some(Self::Zelhash),
             "ethash" | "ethash_etc" | "ethash_ethw" => Some(Self::Ethash),
-            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => Some(Self::Kawpow),
+            "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => {
+                Some(Self::Kawpow)
+            }
             "progpow" | "progpow_epic" | "progpow_zano" | "progpowz" => Some(Self::Progpow),
             "verushash" | "verushash_vrsc" | "verus" => Some(Self::Verushash),
             _ => None,
@@ -230,6 +236,9 @@ pub struct CudaExternalMiner {
     dag_gen_loaded: bool,
     // Cached timestamp for kheavyhash
     kheavy_timestamp: u64,
+    // Block height set by update_epoch(); used for algorithms that need height
+    // in mine_batch_raw where the MiningHeader timestamp is not available.
+    current_height: u64,
     // Verushash: precomputed key (552 uint4 = 8832 bytes) and blockhash_half (4 uint4 = 64 bytes)
     verus_vkey: Option<CudaSlice<u32>>,
     verus_blockhash_half: Option<CudaSlice<u32>>,
@@ -249,8 +258,8 @@ pub struct CudaExternalMiner {
 
 impl CudaExternalMiner {
     pub fn new(algorithm: &str, work_size: usize) -> Result<Self> {
-        let dev = CudaDevice::new(0)
-            .map_err(|e| anyhow::anyhow!("CUDA device init failed: {e}"))?;
+        let dev =
+            CudaDevice::new(0).map_err(|e| anyhow::anyhow!("CUDA device init failed: {e}"))?;
         Self::new_with_device(algorithm, work_size, dev)
     }
 
@@ -258,7 +267,11 @@ impl CudaExternalMiner {
     /// device used by the main ZION deeksha miner). This avoids creating a
     /// second CUDA context on the same GPU, which causes deadlocks on
     /// consumer GPUs (GTX 1080, etc.) that don't support MPS.
-    pub fn new_with_device(algorithm: &str, work_size: usize, dev: Arc<CudaDevice>) -> Result<Self> {
+    pub fn new_with_device(
+        algorithm: &str,
+        work_size: usize,
+        dev: Arc<CudaDevice>,
+    ) -> Result<Self> {
         let algo = CudaExtAlgo::from_name(algorithm)
             .ok_or_else(|| anyhow::anyhow!("unsupported CUDA external algorithm: {}", algorithm))?;
 
@@ -376,6 +389,7 @@ impl CudaExternalMiner {
             light_cache_items: 0,
             dag_gen_loaded: false,
             kheavy_timestamp: 0,
+            current_height: 0,
             verus_vkey: None,
             verus_blockhash_half: None,
             verus_scratch: None,
@@ -454,15 +468,16 @@ impl CudaExternalMiner {
             self.verus_vkey = Some(key_buf);
             self.verus_blockhash_half = Some(blockhash_buf);
             self.verus_scratch = Some(scratch_buf);
+            Ok(())
         }
 
         #[cfg(not(feature = "native-verushash"))]
         {
             let _ = header;
-            anyhow::bail!("Verushash CUDA kernel requires native-verushash feature for key precomputation");
+            anyhow::bail!(
+                "Verushash CUDA kernel requires native-verushash feature for key precomputation"
+            )
         }
-
-        Ok(())
     }
 
     /// Ensure the DAG for the current epoch is loaded on the GPU.
@@ -486,7 +501,7 @@ impl CudaExternalMiner {
         let cache_items = cache_bytes.len() / 64;
         let dag_size_entries = dataset_size_for_epoch(epoch) / 128;
         let dag_nodes = dag_size_entries * 2; // each 128-byte entry = 2 nodes
-        let dag_u64s = dag_nodes * 8;         // each 64-byte node = 8 u64
+        let dag_u64s = dag_nodes * 8; // each 64-byte node = 8 u64
 
         eprintln!(
             "dag_manager: light cache ready ({} items = {:.1} MB), DAG will be {} nodes = {:.2} GB",
@@ -498,8 +513,8 @@ impl CudaExternalMiner {
 
         // Step 2: Convert cache to u64 array and upload to GPU
         let cache_u64s = cache_items * 8;
-        let mut cache_u64 = Vec::with_capacity(cache_u64s as usize);
-        for i in 0..cache_u64s as usize {
+        let mut cache_u64 = Vec::with_capacity(cache_u64s);
+        for i in 0..cache_u64s {
             let off = i * 8;
             cache_u64.push(u64::from_le_bytes(
                 cache_bytes[off..off + 8].try_into().unwrap(),
@@ -562,7 +577,7 @@ impl CudaExternalMiner {
         let mut node_start: u64 = 0;
         while node_start < dag_nodes {
             let chunk = (dag_nodes - node_start).min(batch_nodes as u64);
-            let blocks = ((chunk as u32) + threads_per_block - 1) / threads_per_block;
+            let blocks = (chunk as u32).div_ceil(threads_per_block);
             let cfg = LaunchConfig {
                 grid_dim: (blocks, 1, 1),
                 block_dim: (threads_per_block, 1, 1),
@@ -592,10 +607,12 @@ impl CudaExternalMiner {
             node_start += chunk;
 
             let pct = (node_start * 100 / dag_nodes).min(100);
-            if pct % 10 == 0 || node_start == dag_nodes {
+            if pct.is_multiple_of(10) || node_start == dag_nodes {
                 eprintln!(
                     "dag_manager: DAG generation {}% ({}/{}, {:.1}s)",
-                    pct, node_start, dag_nodes,
+                    pct,
+                    node_start,
+                    dag_nodes,
                     start.elapsed().as_secs_f64(),
                 );
             }
@@ -607,7 +624,8 @@ impl CudaExternalMiner {
 
         eprintln!(
             "dag_manager: {} DAG epoch={} ready on GPU ({:.1}s total)",
-            algo_name, epoch,
+            algo_name,
+            epoch,
             start.elapsed().as_secs_f64(),
         );
 
@@ -622,7 +640,7 @@ impl CudaExternalMiner {
     fn ensure_progpow_kernel(&mut self, block_height: u64) -> Result<()> {
         let period = (block_height / self.algo.period_length() as u64) as u32;
         let dag_elements = if self.dag_buf.is_some() {
-            self.dag_size_entries / 2  // PROGPOW_DAG_ELEMENTS = dag_entries / 2
+            self.dag_size_entries / 2 // PROGPOW_DAG_ELEMENTS = dag_entries / 2
         } else {
             1 // fallback (will be recompiled when DAG is loaded)
         };
@@ -634,7 +652,9 @@ impl CudaExternalMiner {
 
         tlog!(
             "progpow_cuda: recompiling kernel period={} dag_elements={} block_height={}",
-            period, dag_elements, block_height,
+            period,
+            dag_elements,
+            block_height,
         );
         let start = Instant::now();
 
@@ -689,7 +709,8 @@ impl CudaExternalMiner {
 
         tlog!(
             "progpow_cuda: kernel ready period={} dag_elements={} ({:.1}s)",
-            period, dag_elements,
+            period,
+            dag_elements,
             start.elapsed().as_secs_f64(),
         );
 
@@ -727,9 +748,7 @@ impl CudaExternalMiner {
         let func = self
             .dev
             .get_func(self.algo.module_name(), self.algo.kernel_name())
-            .ok_or_else(|| {
-                anyhow::anyhow!("kernel {} not found", self.algo.kernel_name())
-            })?;
+            .ok_or_else(|| anyhow::anyhow!("kernel {} not found", self.algo.kernel_name()))?;
 
         let threads_per_block: u32 = if self.algo == CudaExtAlgo::Verushash {
             128 // Verushash kernel uses __launch_bounds__(128)
@@ -752,7 +771,7 @@ impl CudaExternalMiner {
 
         while left > 0 {
             let chunk = (left as u32).min(self.work_size as u32);
-            let blocks = (chunk + threads_per_block - 1) / threads_per_block;
+            let blocks = chunk.div_ceil(threads_per_block);
             let cfg = LaunchConfig {
                 grid_dim: (blocks, 1, 1),
                 block_dim: (threads_per_block, 1, 1),
@@ -763,8 +782,7 @@ impl CudaExternalMiner {
                 match self.algo {
                     CudaExtAlgo::Kheavyhash => {
                         let matrix = self.kheavy_matrix.as_ref().unwrap();
-                        func
-                            .clone()
+                        func.clone()
                             .launch(
                                 cfg,
                                 (
@@ -782,8 +800,7 @@ impl CudaExternalMiner {
                     }
                     CudaExtAlgo::Blake3Alph => {
                         let header_len_u32 = header_len as u32;
-                        func
-                            .clone()
+                        func.clone()
                             .launch(
                                 cfg,
                                 (
@@ -800,8 +817,7 @@ impl CudaExternalMiner {
                     }
                     CudaExtAlgo::Blake3Dcr => {
                         let header_len_u32 = header_len as u32;
-                        func
-                            .clone()
+                        func.clone()
                             .launch(
                                 cfg,
                                 (
@@ -823,8 +839,7 @@ impl CudaExternalMiner {
                             .ok_or_else(|| anyhow::anyhow!("autolykos table not generated"))?;
                         let header_len_u32 = header_len as u32;
                         let table_size_u32 = self.autolykos_table_size;
-                        func
-                            .clone()
+                        func.clone()
                             .launch(
                                 cfg,
                                 (
@@ -843,8 +858,7 @@ impl CudaExternalMiner {
                     }
                     CudaExtAlgo::Zelhash => {
                         let header_len_u32 = header_len as u32;
-                        func
-                            .clone()
+                        func.clone()
                             .launch(
                                 cfg,
                                 (
@@ -866,8 +880,7 @@ impl CudaExternalMiner {
                             .as_ref()
                             .ok_or_else(|| anyhow::anyhow!("ethash DAG not loaded"))?;
                         let dag_size = self.dag_size_entries;
-                        func
-                            .clone()
+                        func.clone()
                             .launch(
                                 cfg,
                                 (
@@ -891,8 +904,7 @@ impl CudaExternalMiner {
                             .as_ref()
                             .ok_or_else(|| anyhow::anyhow!("kawpow DAG not loaded"))?;
                         let dag_entries = self.dag_size_entries;
-                        func
-                            .clone()
+                        func.clone()
                             .launch(
                                 cfg,
                                 (
@@ -924,12 +936,11 @@ impl CudaExternalMiner {
                             .map_err(|e| anyhow::anyhow!("progpow g_output reset: {e}"))?;
                         // Convert 32-byte big-endian target to u64 (first 8 bytes)
                         let target_u64 = u64::from_be_bytes([
-                            target[0], target[1], target[2], target[3],
-                            target[4], target[5], target[6], target[7],
+                            target[0], target[1], target[2], target[3], target[4], target[5],
+                            target[6], target[7],
                         ]);
                         let hack_false: u32 = 0;
-                        func
-                            .clone()
+                        func.clone()
                             .launch(
                                 cfg,
                                 (
@@ -947,17 +958,19 @@ impl CudaExternalMiner {
                             .map_err(|e| anyhow::anyhow!("progpow launch: {e}"))?;
                     }
                     CudaExtAlgo::Verushash => {
-                        let vkey = self.verus_vkey.as_ref().ok_or_else(|| {
-                            anyhow::anyhow!("verus vkey not precomputed")
-                        })?;
-                        let blockhash_half = self.verus_blockhash_half.as_ref().ok_or_else(|| {
-                            anyhow::anyhow!("verus blockhash_half not set")
-                        })?;
-                        let scratch = self.verus_scratch.as_ref().ok_or_else(|| {
-                            anyhow::anyhow!("verus scratch not allocated")
-                        })?;
-                        func
-                            .clone()
+                        let vkey = self
+                            .verus_vkey
+                            .as_ref()
+                            .ok_or_else(|| anyhow::anyhow!("verus vkey not precomputed"))?;
+                        let blockhash_half = self
+                            .verus_blockhash_half
+                            .as_ref()
+                            .ok_or_else(|| anyhow::anyhow!("verus blockhash_half not set"))?;
+                        let scratch = self
+                            .verus_scratch
+                            .as_ref()
+                            .ok_or_else(|| anyhow::anyhow!("verus scratch not allocated"))?;
+                        func.clone()
                             .launch(
                                 cfg,
                                 (
@@ -1026,7 +1039,8 @@ impl CudaExternalMiner {
                         if g_host.len() >= 18 {
                             let cuda_seed = (g_host[10] as u64) | ((g_host[11] as u64) << 32);
                             let cuda_final = (g_host[12] as u64) | ((g_host[13] as u64) << 32);
-                            let cuda_initial_seed = (g_host[14] as u64) | ((g_host[15] as u64) << 32);
+                            let cuda_initial_seed =
+                                (g_host[14] as u64) | ((g_host[15] as u64) << 32);
                             let cuda_hdr0 = g_host[16];
                             let cuda_hdr1 = g_host[17];
                             tlog!(
@@ -1043,14 +1057,27 @@ impl CudaExternalMiner {
                 }
             }
 
+            // ZelHash (Equihash 125,4) writes a 52-byte solution to output_solution.
+            let solution_blob = if self.algo == CudaExtAlgo::Zelhash {
+                let sol_host = self
+                    .dev
+                    .dtoh_sync_copy(&self.output_solution)
+                    .map_err(|e| anyhow::anyhow!("zelhash solution download: {e}"))?;
+                Some(sol_host)
+            } else {
+                None
+            };
+
             Ok(GpuBatchResult {
                 solutions: vec![(nonce_host[0], hash, mix_hash)],
+                solution_blob,
                 nonces_tested: total_tested,
                 device_name: self.device_name_cached.clone(),
             })
         } else {
             Ok(GpuBatchResult {
                 solutions: Vec::new(),
+                solution_blob: None,
                 nonces_tested: total_tested,
                 device_name: self.device_name_cached.clone(),
             })
@@ -1072,6 +1099,7 @@ impl GpuMiner for CudaExternalMiner {
     }
 
     fn update_epoch(&mut self, height: u64) -> Result<()> {
+        self.current_height = height;
         if self.algo.needs_dag() {
             let epoch = (height / self.algo.epoch_length() as u64) as u32;
             self.ensure_dag(epoch)?;
@@ -1147,7 +1175,7 @@ impl GpuMiner for CudaExternalMiner {
         }
 
         if self.algo == CudaExtAlgo::Autolykos {
-            let height = 0u32;
+            let height = self.current_height as u32;
             self.ensure_autolykos_table(raw_header, height)?;
         }
 
@@ -1186,14 +1214,21 @@ impl GpuMiner for CudaExternalMiner {
             let mut total: u64 = 0;
             let mut nonce: u64 = 0;
             let header = [0xAAu8; 32];
-            let target = DifficultyTarget { bytes: [0xFFu8; 32] };
+            let target = DifficultyTarget {
+                bytes: [0xFFu8; 32],
+            };
             while start.elapsed().as_secs_f64() < secs {
-                let result = self.run_kernel(&header, &target.bytes, nonce, self.work_size as u64)?;
+                let result =
+                    self.run_kernel(&header, &target.bytes, nonce, self.work_size as u64)?;
                 total += result.nonces_tested;
                 nonce = nonce.wrapping_add(self.work_size as u64);
             }
             let elapsed = start.elapsed().as_secs_f64();
-            let hps = if elapsed > 0.0 { total as f64 / elapsed } else { 0.0 };
+            let hps = if elapsed > 0.0 {
+                total as f64 / elapsed
+            } else {
+                0.0
+            };
             return Ok((total, elapsed, hps));
         }
 
@@ -1207,14 +1242,20 @@ impl GpuMiner for CudaExternalMiner {
             timestamp: 1_762_000_200,
             difficulty_bits: 0x1f00ffff,
         };
-        let target = DifficultyTarget { bytes: [0xFFu8; 32] };
+        let target = DifficultyTarget {
+            bytes: [0xFFu8; 32],
+        };
         while start.elapsed().as_secs_f64() < secs {
             let result = self.mine_batch(header, target, nonce, self.work_size as u64)?;
             total += result.nonces_tested;
             nonce = nonce.wrapping_add(self.work_size as u64);
         }
         let elapsed = start.elapsed().as_secs_f64();
-        let hps = if elapsed > 0.0 { total as f64 / elapsed } else { 0.0 };
+        let hps = if elapsed > 0.0 {
+            total as f64 / elapsed
+        } else {
+            0.0
+        };
         Ok((total, elapsed, hps))
     }
 }
@@ -1278,7 +1319,9 @@ fn gen_autolykos_element_cuda(i: u64, seed: &[u8; 32], height: u32) -> u64 {
     hasher.update(&i.to_be_bytes());
     hasher.update(&height.to_be_bytes());
     let mut out = [0u8; 32];
-    hasher.finalize_variable(&mut out).expect("blake2b256 finalize");
+    hasher
+        .finalize_variable(&mut out)
+        .expect("blake2b256 finalize");
     u64::from_be_bytes(out[0..8].try_into().unwrap())
 }
 
@@ -1298,8 +1341,8 @@ impl XoShiRo256PlusPlus {
     }
 
     fn next(&mut self) -> u64 {
-        let result = Self::rotl(self.state[0].wrapping_add(self.state[3]), 23)
-            .wrapping_add(self.state[0]);
+        let result =
+            Self::rotl(self.state[0].wrapping_add(self.state[3]), 23).wrapping_add(self.state[0]);
         let t = self.state[1] << 17;
         self.state[2] ^= self.state[0];
         self.state[3] ^= self.state[1];
@@ -1311,7 +1354,7 @@ impl XoShiRo256PlusPlus {
     }
 
     fn rotl(x: u64, k: u32) -> u64 {
-        (x << k) | (x >> (64 - k))
+        x.rotate_left(k)
     }
 }
 
@@ -1322,8 +1365,8 @@ fn compute_rank_64(mat: &[[u16; 64]; 64]) -> usize {
     let mut col = 0;
     while col < 64 && rank < 64 {
         let mut pivot = None;
-        for r in rank..64 {
-            if m[r][col] != 0 {
+        for (r, row) in m.iter().enumerate().skip(rank) {
+            if row[col] != 0 {
                 pivot = Some(r);
                 break;
             }
@@ -1333,15 +1376,16 @@ fn compute_rank_64(mat: &[[u16; 64]; 64]) -> usize {
             let pivot_val = m[rank][col];
             if pivot_val != 0 {
                 let inv = mod_inv_15(pivot_val);
-                for c in col..64 {
-                    m[rank][c] = (m[rank][c] * inv) & 0x0F;
+                for item in m[rank].iter_mut().skip(col) {
+                    *item = (*item * inv) & 0x0F;
                 }
             }
-            for r in 0..64 {
-                if r != rank && m[r][col] != 0 {
-                    let factor = m[r][col];
-                    for c in col..64 {
-                        m[r][c] = ((m[r][c] + 16) - ((m[rank][c] * factor) & 0x0F)) & 0x0F;
+            let rank_row = m[rank];
+            for (r, row) in m.iter_mut().enumerate() {
+                if r != rank && row[col] != 0 {
+                    let factor = row[col];
+                    for (dest, src) in row.iter_mut().skip(col).zip(rank_row.iter().skip(col)) {
+                        *dest = ((*dest + 16) - ((src * factor) & 0x0F)) & 0x0F;
                     }
                 }
             }
@@ -1369,11 +1413,11 @@ fn mod_inv_15(a: u32) -> u32 {
 
 const DAG_CACHE_ROUNDS: usize = 3;
 
-const CACHE_BYTES_INIT: u64 = 1 << 24;       // 16 MB
-const CACHE_BYTES_GROWTH: u64 = 1 << 17;     // 128 KB
+const CACHE_BYTES_INIT: u64 = 1 << 24; // 16 MB
+const CACHE_BYTES_GROWTH: u64 = 1 << 17; // 128 KB
 const HASH_BYTES: u64 = 64;
-const DATASET_BYTES_INIT: u64 = 1 << 30;     // 1 GB
-const DATASET_BYTES_GROWTH: u64 = 1 << 23;   // 8 MB
+const DATASET_BYTES_INIT: u64 = 1 << 30; // 1 GB
+const DATASET_BYTES_GROWTH: u64 = 1 << 23; // 8 MB
 const MIX_BYTES: u64 = 128;
 
 /// Primality test for u64 using trial division (sufficient for cache/dataset
@@ -1382,15 +1426,15 @@ fn is_prime_u64(n: u64) -> bool {
     if n < 2 {
         return false;
     }
-    if n % 2 == 0 {
+    if n.is_multiple_of(2) {
         return n == 2;
     }
-    if n % 3 == 0 {
+    if n.is_multiple_of(3) {
         return n == 3;
     }
     let mut i = 5u64;
     while i * i <= n {
-        if n % i == 0 || n % (i + 2) == 0 {
+        if n.is_multiple_of(i) || n.is_multiple_of(i + 2) {
             return false;
         }
         i += 6;
@@ -1403,7 +1447,8 @@ fn is_prime_u64(n: u64) -> bool {
 /// Follows the Ethash/ProgPoW spec: linear growth rounded down to the largest
 /// size whose number of 64-byte items is prime.
 fn cache_size_for_epoch(epoch: u32) -> u64 {
-    let mut items = (CACHE_BYTES_INIT + (epoch as u64) * CACHE_BYTES_GROWTH - HASH_BYTES) / HASH_BYTES;
+    let mut items =
+        (CACHE_BYTES_INIT + (epoch as u64) * CACHE_BYTES_GROWTH - HASH_BYTES) / HASH_BYTES;
     while !is_prime_u64(items) {
         items = items.saturating_sub(2).max(1);
     }
@@ -1415,7 +1460,8 @@ fn cache_size_for_epoch(epoch: u32) -> u64 {
 /// Follows the Ethash/ProgPoW spec: linear growth rounded down to the largest
 /// size whose number of 128-byte items is prime.
 fn dataset_size_for_epoch(epoch: u32) -> u64 {
-    let mut items = (DATASET_BYTES_INIT + (epoch as u64) * DATASET_BYTES_GROWTH - MIX_BYTES) / MIX_BYTES;
+    let mut items =
+        (DATASET_BYTES_INIT + (epoch as u64) * DATASET_BYTES_GROWTH - MIX_BYTES) / MIX_BYTES;
     while !is_prime_u64(items) {
         items = items.saturating_sub(2).max(1);
     }
@@ -1428,7 +1474,7 @@ fn seed_hash_for_epoch(epoch: u32) -> [u8; 32] {
     let mut seed = [0u8; 32];
     for _ in 0..epoch {
         let mut hasher = Keccak256::new();
-        hasher.update(&seed);
+        hasher.update(seed);
         seed = hasher.finalize().into();
     }
     seed
@@ -1448,7 +1494,7 @@ fn generate_light_cache(epoch: u32) -> Vec<u8> {
     // First item = keccak512(seed)
     {
         let mut hasher = Keccak512::new();
-        hasher.update(&seed);
+        hasher.update(seed);
         let hash = hasher.finalize();
         cache[..64].copy_from_slice(&hash);
     }
@@ -1478,7 +1524,7 @@ fn generate_light_cache(epoch: u32) -> Vec<u8> {
             }
 
             let mut hasher = Keccak512::new();
-            hasher.update(&tmp);
+            hasher.update(tmp);
             let hash = hasher.finalize();
             cache[i * 64..(i + 1) * 64].copy_from_slice(&hash);
         }

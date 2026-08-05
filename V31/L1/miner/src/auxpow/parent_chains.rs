@@ -32,7 +32,11 @@ impl CoinbaseCommitment {
         aux_block_hash.copy_from_slice(&bytes[4..36]);
         let merkle_size = u32::from_le_bytes(bytes[36..40].try_into()?);
         let merkle_nonce = u32::from_le_bytes(bytes[40..44].try_into()?);
-        Ok(Self { aux_block_hash, merkle_size, merkle_nonce })
+        Ok(Self {
+            aux_block_hash,
+            merkle_size,
+            merkle_nonce,
+        })
     }
 
     pub fn scan(coinbase_script: &[u8]) -> Option<Self> {
@@ -108,9 +112,17 @@ impl DcrHeader {
         let bits = read_u32_le(bytes, &mut off)?;
         let nonce = read_u32_le(bytes, &mut off)?;
         Ok(Self {
-            version, previous_hash, merkle_root, stake_root,
-            vote_bits, final_state, voters, stake_version,
-            timestamp, bits, nonce,
+            version,
+            previous_hash,
+            merkle_root,
+            stake_root,
+            vote_bits,
+            final_state,
+            voters,
+            stake_version,
+            timestamp,
+            bits,
+            nonce,
         })
     }
 
@@ -230,9 +242,17 @@ mod tests {
     #[test]
     fn dcr_header_nonce_changes_hash() {
         let mut header = DcrHeader {
-            version: 9, previous_hash: [0u8; 32], merkle_root: [0u8; 32],
-            stake_root: [0u8; 32], vote_bits: 0, final_state: [0u8; 6],
-            voters: 0, stake_version: 0, timestamp: 0, bits: 0, nonce: 0,
+            version: 9,
+            previous_hash: [0u8; 32],
+            merkle_root: [0u8; 32],
+            stake_root: [0u8; 32],
+            vote_bits: 0,
+            final_state: [0u8; 6],
+            voters: 0,
+            stake_version: 0,
+            timestamp: 0,
+            bits: 0,
+            nonce: 0,
         };
         let h0 = header.pow_hash();
         header.nonce = 1;
