@@ -1330,7 +1330,7 @@ fn build_submit_params(worker: &str, share: &super::Share) -> Value {
     // [nonce, header_hash, mix_hash]. We use the found hash as the header hash
     // and the mix hash as the third parameter; pools recompute the final hash.
     if algo.contains("ethash") || algo == "etchash" {
-        let header = format!("0x{}", hex::encode(&share.hash));
+        let header = format!("0x{}", hex::encode(share.hash));
         let mix = mix.unwrap_or_else(|| format!("0x{}", hex::encode([0u8; 32])));
         return json!({"id": 100, "method": "eth_submitWork", "params": [nonce, header, mix]});
     }

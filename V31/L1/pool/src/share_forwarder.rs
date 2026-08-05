@@ -116,15 +116,13 @@ impl ShareForwarder {
             }
         }
 
-        let _hash_hex = hash_to_hex(&effective_hash);
-        let _mix_hash_hex = mix_hash.map(hash_to_hex);
-        let _solution_hex = solution.map(hex::encode);
-
         let share = AuxShare {
             job_id: job_id.to_string(),
             coin: self.coin,
             nonce,
             hash: effective_hash,
+            mix_hash: mix_hash.copied(),
+            solution: solution.map(|s| s.to_vec()),
             extranonce2: "00".to_string(),
             ntime: "00000000".to_string(),
         };
