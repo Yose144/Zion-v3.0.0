@@ -200,6 +200,7 @@ ZionDex ported do V31 multichain + dashboard metrics rozšířeny (Phase C2 + C8
 - ✅ 574 multichain testů pass (bylo 562)
 - ✅ `swap/dex/aggregator.rs` — cross-chain `Aggregator` nad `DexRouter` + `BridgeRegistry`, `find_best_path` pro AMM i bridge hops
 - ✅ `swap/dex/executor.rs` — vyextrahovaný `Executor` pro AMM/bridge hop z `MultichainService::execute_intent`
+- ✅ **Fáze C COMPLETE** — DAO governance runtime, ZionDex, HTLC, profit oracle, bridge consensus, CLI, dashboard; `cargo test --workspace` 2079 pass
 
 **Dashboard (Phase C8):**
 - ✅ Pool port fix: 8446 → 8444 (production stratum)

@@ -4,7 +4,7 @@
 
 Tento soubor je provozní a bezpečnostní pravidla pro pracovní prostor `V31` — čistý Mainnet Alpha track v `/Users/yeshuae/Projects/2.9.6/V31/`. Produkční Edge stále běží na `/Users/yeshuae/Projects/2.9.6/V3/` do okamžiku cut-over. Veškerá nová mainnet-track vývojárna patří do `V31/`. Historická topologie a incidenty jsou v kořenovém `/Users/yeshuae/Projects/2.9.6/AGENTS.md`.
 
-Aktuální stav V31 (2026-08-06): `cargo clippy --workspace` je čisté a `cargo test -p zion-multichain` prochází (574 testů). `zion-core` obsahuje `HeightAwareDeeksha` — height-aware PoW fork gating. `zion-pool` má rate limiting reconnect stormu. `zion-miner` má `ZION_STREAM3_FORCE_COIN` a podporu disabled coinů. `zion-dao` existuje jako skeleton. `zion-multichain` má SQLite persistenci HTLC, ZionDex intent engine persistence, cross-chain bridge execution, solver network/discovery a port archivního executoru/aggregatoru.
+Aktuální stav V31 (2026-08-06): `cargo clippy --workspace` je čisté a `cargo test --workspace` prochází (2079 testů). `zion-core` obsahuje `HeightAwareDeeksha` — height-aware PoW fork gating. `zion-pool` má rate limiting reconnect stormu. `zion-miner` má `ZION_STREAM3_FORCE_COIN` a podporu disabled coinů. `zion-dao` runtime načítá/persistuje návrhy a hlasy, spouští L1 scanner a vystavuje HTTP API/metriky. Fáze C je kompletní (DAO, ZionDex, HTLC, profit oracle, bridge consensus, CLI, dashboard).
 
 ---
 
