@@ -7,8 +7,18 @@ import clsx from 'clsx';
 
 const HolographicEarth = dynamic(
   () => import('./HolographicEarth'),
-  { ssr: false, loading: () => <EarthSkeleton /> }
+  { ssr: false, loading: () => <EarthSkeleton className="" /> }
 );
+
+function isWebGLAvailable() {
+  if (typeof window === 'undefined') return false;
+  try {
+    const canvas = document.createElement('canvas');
+    return !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
+  } catch {
+    return false;
+  }
+}
 
 function EarthSkeleton({ className }: { className?: string }) {
   return (
@@ -56,23 +66,26 @@ function EarthStaticFallback({ className }: { className?: string }) {
 }
 
 export default function HolographicEarthLazy({ className }: { className?: string }) {
-  const [isDesktop, setIsDesktop] = useState<boolean | null>(null);
+  const [webglOk, setWebglOk] = useState<boolean | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const mq = window.matchMedia('(min-width: 768px)');
-    setIsDesktop(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    setWebglOk(isWebGLAvailable());
+    const mq = window.matchMedia('(max-width: 640px)');
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
 
-  if (isDesktop === null) {
+  if (webglOk === null) {
     return <EarthSkeleton className={className} />;
   }
 
-  return isDesktop ? (
-    <HolographicEarth className={className} />
-  ) : (
-    <EarthStaticFallback className={className} />
-  );
+  // Always try 3D if WebGL is available; only fallback for no WebGL or very small screens
+  if (!webglOk || isMobile) {
+    return <EarthStaticFallback className={className} />;
+  }
+
+  return <HolographicEarth className={className} />;
 }
