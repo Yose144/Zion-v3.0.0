@@ -17,11 +17,12 @@ use crate::credits::CreditsLedger;
 use crate::db::Db;
 use crate::error::{MultichainError, MultichainResult};
 use crate::swap::dex::{DexRouter, Pool, Quote};
+use crate::swap::dex::executor::Executor;
 use crate::swap::dex::intent::{IntentStatus, SolverBid, SwapIntent};
 use crate::swap::dex::solver_network::{SolverClient, SolverNetwork};
 use crate::swap::IntentEngine;
 use crate::swap::htlc::HtlcSwap;
-use crate::types::{Transfer, TransferDirection, TransferEndpoint};
+use crate::types::Transfer;
 use crate::wallet::Keyring;
 use crate::warp::config::WarpConfig;
 use crate::warp::runtime::WarpRuntime;
@@ -351,13 +352,7 @@ impl MultichainService {
         Ok(bid)
     }
 
-    /// Settle an intent and execute the winning path on the AMM router.
-    ///
-    /// AMM hops (`is_bridge = false`) execute directly on `DexRouter`.
-    /// Bridge hops (`is_bridge = true`) are submitted to `Bridge` as a
-    /// `LockMint` or `BurnRelease` transfer. Cross-chain WARP execution is
-    /// still experimental: source/target addresses currently use service
-    /// wallet addresses, which is a placeholder for solver/user addresses.
+    /// Settle an intent and execute the winning path via `Executor`.
     pub async fn execute_intent(
         &self,
         id: uuid::Uuid,
@@ -370,62 +365,12 @@ impl MultichainService {
                 return Ok(None);
             };
 
-            if bid.path.is_empty() {
-                return Err(MultichainError::Validation(
-                    "winning bid has empty execution path".to_string(),
-                ));
-            }
+            let Some(intent) = engine.get_intent(id).cloned() else {
+                return Ok(None);
+            };
 
-            let mut amount = engine.get_intent(id).unwrap().amount_in;
-            let mut previous_asset = engine.get_intent(id).unwrap().from_asset.clone();
-
-            for hop in &bid.path {
-                if hop.from_token != previous_asset {
-                    return Err(MultichainError::Validation(
-                        "solver path is not continuous".to_string(),
-                    ));
-                }
-
-                if hop.is_bridge {
-                    let direction = self.bridge_direction(hop.from_token.chain, hop.to_token.chain)?;
-                    let source_addr = self.wallet_address(hop.from_token.chain, 0, 0)?;
-                    let target_addr = self.wallet_address(hop.to_token.chain, 0, 0)?;
-                    let source_asset = Asset::native(
-                        hop.from_token.chain,
-                        &hop.from_token.ticker,
-                        6,
-                        &hop.from_token.ticker,
-                    );
-                    let target_asset = Asset::native(
-                        hop.to_token.chain,
-                        &hop.to_token.ticker,
-                        6,
-                        &hop.to_token.ticker,
-                    );
-                    let mut transfer = Transfer::new(
-                        format!("intent-{}", id),
-                        direction,
-                        TransferEndpoint {
-                            address: source_addr,
-                            asset: source_asset,
-                            amount,
-                        },
-                        TransferEndpoint {
-                            address: target_addr,
-                            asset: target_asset,
-                            amount,
-                        },
-                    );
-                    self.bridge.submit(&mut transfer).await?;
-                    amount = transfer.target.amount;
-                } else {
-                    let from = Self::asset_from_id(&hop.from_token);
-                    let to = Self::asset_from_id(&hop.to_token);
-                    amount = dex.execute(&from, &to, amount)?;
-                }
-
-                previous_asset = hop.to_token.clone();
-            }
+            let executor = Executor::new(self.keyring.clone());
+            let amount = executor.execute(&intent, &bid, &self.bridge, &mut dex).await?;
 
             let intent = engine.get_intent_mut(id).unwrap();
             intent.status = IntentStatus::Executed;
@@ -434,24 +379,6 @@ impl MultichainService {
         };
         self.db.lock().await.save_intent(&saved)?;
         Ok(out)
-    }
-
-    fn bridge_direction(
-        &self,
-        from: ChainId,
-        to: ChainId,
-    ) -> MultichainResult<TransferDirection> {
-        match (from, to) {
-            (ChainId::ZionL1, _) => Ok(TransferDirection::LockMint),
-            (_, ChainId::ZionL1) => Ok(TransferDirection::BurnRelease),
-            _ => Err(MultichainError::Unsupported(
-                "direct bridge between two external chains is not supported".to_string(),
-            )),
-        }
-    }
-
-    fn asset_from_id(id: &zion_l1_types::AssetId) -> Asset {
-        Asset::native(id.chain, &id.ticker, 6, &id.ticker)
     }
 
     /// Load persisted intents, bids, and solvers into the in-memory engine.
