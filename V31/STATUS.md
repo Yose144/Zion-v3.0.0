@@ -155,7 +155,7 @@ DAO governance runtime rošířena a částečně integrována (Phase C1). Plný
 
 **Testy:** 74 DAO testů pass (bylo 31).
 
-**Integrace:** `zion-dao` binárka nyní otevírá `DaoDb` na `DAO_DB_PATH`, načítá existující návrhy a hlasy do `GovernanceRuntime`, persistuje všechny změny (nové návrhy, hlasy, tally, execute, cancel) zpět do SQLite a spouští `L1Scanner` pro governance mema. `/metrics` endpoint vystavuje live DAO metriky.
+**Integrace:** `zion-dao` binárka otevírá `DaoDb` na `DAO_DB_PATH`, načítá existující návrhy a hlasy do `GovernanceRuntime`, persistuje všechny změny (nové návrhy, hlasy, tally, execute, cancel) zpět do SQLite a spouští `L1Scanner` pro governance mema. Scanner nyní předává validované hlasy přímo do runtimeu přes `Arc<TokioMutex<GovernanceRuntime>>`. `/metrics` endpoint vystavuje live DAO metriky.
 
 ### CLI Wallet + Service Management (2026-08-04) ✅
 

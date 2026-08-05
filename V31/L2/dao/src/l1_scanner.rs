@@ -37,7 +37,8 @@ use zion_l1_types::{bytes_to_hex, normalize_rpc_addr, zion_address_from_public_k
 
 use crate::db::DaoDb;
 use crate::error::{DaoError, DaoResult};
-use crate::proposal::ProposalType;
+use crate::proposal::{ProposalStatus, ProposalType};
+use crate::runtime::GovernanceRuntime;
 use crate::types::{parse_dao_memo, DaoMemo, VoteChoice};
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -135,6 +136,8 @@ impl Default for ScannerConfig {
 pub struct L1Scanner {
     config: ScannerConfig,
     db: Arc<Mutex<DaoDb>>,
+    /// Optional shared governance runtime for live vote application.
+    runtime: Option<Arc<Mutex<GovernanceRuntime>>>,
     /// How many DAO events were processed this session
     events_processed: Arc<std::sync::atomic::AtomicU64>,
     /// Shared metrics counters (optional — None in tests)
@@ -146,9 +149,16 @@ impl L1Scanner {
         Self {
             config,
             db,
+            runtime: None,
             events_processed: Arc::new(std::sync::atomic::AtomicU64::new(0)),
             metrics: None,
         }
+    }
+
+    /// Attach a shared governance runtime so scanned votes are applied live.
+    pub fn with_runtime(mut self, runtime: Arc<Mutex<GovernanceRuntime>>) -> Self {
+        self.runtime = Some(runtime);
+        self
     }
 
     /// Attach shared metrics counters for Prometheus reporting.
@@ -353,11 +363,60 @@ impl L1Scanner {
                         continue;
                     }
 
-                    let recorded = {
+                    let recorded = if let Some(runtime) = self.runtime.as_ref() {
+                        let proposal_type = {
+                            let rt = runtime.lock().await;
+                            match rt.get_proposal(pid) {
+                                Some(p) if p.status == ProposalStatus::Active => {
+                                    p.proposal_type.clone()
+                                }
+                                Some(_) => {
+                                    debug!(
+                                        "[DAO-SCANNER] Proposal {} not active, ignoring vote",
+                                        pid
+                                    );
+                                    continue;
+                                }
+                                None => {
+                                    debug!("[DAO-SCANNER] Proposal {} not found, ignoring vote", pid);
+                                    continue;
+                                }
+                            }
+                        };
+
+                        if !validate_choice(&choice, &proposal_type) {
+                            debug!(
+                                "[DAO-SCANNER] Invalid choice for proposal {}: {:?}",
+                                pid, choice
+                            );
+                            continue;
+                        }
+
+                        match runtime.lock().await.cast_vote(
+                            pid,
+                            sender.to_string(),
+                            choice.clone(),
+                            weight,
+                            Some(txid.to_string()),
+                        ) {
+                            Ok(_) => true,
+                            Err(DaoError::AlreadyVoted(_)) => {
+                                debug!(
+                                    "[DAO-SCANNER] Duplicate vote ignored: proposal={} voter={}",
+                                    pid, sender
+                                );
+                                false
+                            }
+                            Err(e) => {
+                                warn!("[DAO-SCANNER] Runtime cast_vote error: {}", e);
+                                false
+                            }
+                        }
+                    } else {
                         let db = self.db.lock().await;
 
                         let row = db.get_proposal(pid)?;
-                        let (_is_active, proposal_type) = match row {
+                        let proposal_type = match row {
                             None => {
                                 debug!("[DAO-SCANNER] Proposal {} not found, ignoring vote", pid);
                                 continue;
@@ -369,40 +428,22 @@ impl L1Scanner {
                                 );
                                 continue;
                             }
-                            Some(ref r) => {
-                                let pt: Option<ProposalType> =
-                                    serde_json::from_str(&r.proposal_type_json).ok();
-                                (true, pt)
-                            }
+                            Some(ref r) => match serde_json::from_str::<ProposalType>(&r.proposal_type_json) {
+                                Ok(pt) => pt,
+                                Err(e) => {
+                                    debug!(
+                                        "[DAO-SCANNER] Cannot parse proposal type for {}: {}",
+                                        pid, e
+                                    );
+                                    continue;
+                                }
+                            },
                         };
 
-                        // Validate choice against proposal type
-                        let valid = match (&choice, &proposal_type) {
-                            (VoteChoice::Yes | VoteChoice::No | VoteChoice::Abstain, Some(ProposalType::ParliamentaryElection { .. })) => {
-                                debug!(
-                                    "[DAO-SCANNER] Invalid choice for election proposal {}: {:?}",
-                                    pid, choice
-                                );
-                                continue;
-                            }
-                            (VoteChoice::Candidate(ref party), Some(ProposalType::ParliamentaryElection { ref parties, .. })) => {
-                                parties.contains(party)
-                            }
-                            (VoteChoice::Candidate(_), _) => {
-                                debug!(
-                                    "[DAO-SCANNER] Candidate vote not allowed for non-election proposal {}",
-                                    pid
-                                );
-                                continue;
-                            }
-                            _ => true,
-                        };
-
-                        if !valid {
+                        if !validate_choice(&choice, &proposal_type) {
                             debug!(
-                                "[DAO-SCANNER] Party '{}' not on ballot for proposal {}",
-                                match &choice { VoteChoice::Candidate(p) => p.as_str(), _ => "?" },
-                                pid
+                                "[DAO-SCANNER] Invalid choice for proposal {}: {:?}",
+                                pid, choice
                             );
                             continue;
                         }
@@ -513,6 +554,21 @@ impl L1Scanner {
             )
             .await?;
         Ok(bal.balance_flowers)
+    }
+}
+
+/// Validate that a vote choice is allowed for the given proposal type.
+fn validate_choice(choice: &VoteChoice, proposal_type: &ProposalType) -> bool {
+    match (choice, proposal_type) {
+        (
+            VoteChoice::Yes | VoteChoice::No | VoteChoice::Abstain,
+            ProposalType::ParliamentaryElection { .. },
+        ) => false,
+        (VoteChoice::Candidate(ref party), ProposalType::ParliamentaryElection { ref parties, .. }) => {
+            parties.contains(party)
+        }
+        (VoteChoice::Candidate(_), _) => false,
+        _ => true,
     }
 }
 
