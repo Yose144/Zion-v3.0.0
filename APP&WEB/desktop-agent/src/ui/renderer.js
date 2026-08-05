@@ -1,4 +1,4 @@
-// ZION V3 Mainnet Ready v3.1.0 - Renderer Process
+// ZION V31 Mainnet Alpha v3.1.0 - Renderer Process
 // UI logic and state management
 
 // ── Logging: only user-visible events + errors in console.log.
@@ -846,8 +846,9 @@ function setupControls() {
 
   // ═══ Trinity coin selectors — bind to config ═══
   // GPU coin (Stream 2) and CPU coin (Stream 3) are persisted in config and
-  // forwarded to the V3 miner as --gpu-coin / --cpu-coin CLI flags. "auto"
-  // means the pool's profit router decides.
+  // forwarded to the V31 miner via ZION_STREAM2_FORCE_COIN /
+  // ZION_STREAM3_FORCE_COIN environment variables. "auto" means the pool's
+  // profit router decides.
   const syncCoinSelect = (selectEl, configKey, mirrorEl) => {
     if (!selectEl) return;
     selectEl.addEventListener('change', () => {
@@ -1188,22 +1189,43 @@ function flushSuppressedStreamLogs() {
   }
 }
 
-// Parse V3 Rust miner stdout lines and return a short summary for the
+// Parse V31 Rust miner stdout lines and return a short summary for the
 // Live Activity feed.  Returns null for lines that should not appear
 // in the feed (verbose / repetitive lines).
 function parseMinerEventForFeed(line) {
   // Strip optional timestamp prefix: "[2026-07-26 18:26:03] ..."
   const stripped = line.replace(/^\[\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\]\s*/, '');
 
+  // ── V31 live events ──
+  // zion-miner (triple stream) starting
+  if (/zion-(?:universal-)?miner\s+\(triple\s+stream\)\s+starting/i.test(stripped)) {
+    return { msg: 'V31 triple-stream miner starting', type: 'info' };
+  }
+
+  // zion pool stratum connected
+  let m = stripped.match(/zion\s+pool\s+stratum\s+connected/i);
+  if (m) return { msg: 'Pool connected', type: 'ok' };
+
+  // mined auxpow share
+  m = stripped.match(/coin\s*=\s*([^\s,]+).*?mined\s+auxpow\s+share/i);
+  if (m) return { msg: `AuxPoW share (${m[1]})`, type: 'ok' };
+
+  // block submitted to node
+  m = stripped.match(/block\s+submitted\s+to\s+node:\s*height=(\d+)/i);
+  if (m) return { msg: `Block submitted — height ${m[1]}`, type: 'success' };
+
+  // Skip repetitive V31 telemetry from the live feed
+  if (/\bstream\s+stats\b|\btui_log\b|\bhashrate=\d+\s+H\/s\b/i.test(stripped)) return null;
+
   // SHARE_ACCEPTED
-  let m = stripped.match(/SHARE_ACCEPTED\s+job=(\d+)\s+height=(\d+)\s+nonce=\d+\s+algo=(\S+)\s+latency_ms=(\d+)/i);
+  m = stripped.match(/SHARE_ACCEPTED\s+job=(\d+)\s+height=(\d+)\s+nonce=\d+\s+algo=(\S+)\s+latency_ms=(\d+)/i);
   if (m) return { msg: `Share accepted — job #${m[1]} h=${m[2]} ${m[4]}ms`, type: 'ok' };
 
   // SHARE_REJECTED
   m = stripped.match(/SHARE_REJECTED\s+job=(\d+)\s+height=(\d+)\s+nonce=\d+\s+algo=\S+\s+reason="([^"]+)"/i);
   if (m) return { msg: `Share rejected — job #${m[1]} ${m[3]}`, type: 'error' };
 
-  // new job (V3 Rust: ">> new job #6216 height=6216 algo=deeksha_lite_v1")
+  // new job (V31 Rust: ">> new job #6216 height=6216 algo=deeksha_lite_v1")
   m = stripped.match(/>>\s*new job\s*#(\d+)\s+height=(\d+)\s+algo=(\S+)/i);
   if (m) return { msg: `New job #${m[1]} — height ${m[2]} algo ${m[3]}`, type: 'info' };
 
@@ -1315,7 +1337,7 @@ function parseMinerEventForFeed(line) {
   }
 
   // Startup lines
-  if (/V3-FAST|Starting|started|Initializ/i.test(stripped)) {
+  if (/V31-FAST|Starting|started|Initializ/i.test(stripped)) {
     return { msg: stripped.substring(0, 100), type: 'info' };
   }
 
@@ -1331,7 +1353,7 @@ function logStreamLine(stream, line) {
     flushSuppressedStreamLogs();
   }
 
-  // Parse V3 Rust miner events for the Live Activity feed.
+  // Parse V31 Rust miner events for the Live Activity feed.
   // Only parsed events appear in the feed; unparsed/verbose lines are
   // skipped entirely (they still show in the Mining Console / Logs tab).
   const feedMsg = parseMinerEventForFeed(line);
@@ -1420,42 +1442,42 @@ function colorizeConsoleLine(raw) {
   const tsHtml = `<span class="mc-ts">[${ts}]</span> `;
   const esc = (s) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-  // ── V3 Rust miner: SHARE_ACCEPTED ──
+  // ── V31 Rust miner: SHARE_ACCEPTED ──
   // "SHARE_ACCEPTED  job=6242  height=6242  nonce=...  algo=deeksha_lite_v1  latency_ms=564"
   let m = raw.match(/SHARE_ACCEPTED\s+job=(\d+)\s+height=(\d+)\s+nonce=(\d+)\s+algo=(\S+)\s+latency_ms=(\d+)/i);
   if (m) {
     return { html: `${tsHtml}<span class="mc-accepted">[+] SHARE ACCEPTED</span> job=<span class="mc-hr">${m[1]}</span> height=<span class="mc-hr">${m[2]}</span> algo=<span class="mc-algo">${esc(m[4])}</span> <span class="mc-ts">${m[5]}ms</span>`, _cls: ' mc-highlight' };
   }
 
-  // ── V3 Rust miner: SHARE_REJECTED ──
+  // ── V31 Rust miner: SHARE_REJECTED ──
   // "SHARE_REJECTED  job=6243  height=6243  nonce=...  algo=...  reason="NoSolution"  hash=..."
   m = raw.match(/SHARE_REJECTED\s+job=(\d+)\s+height=(\d+)\s+nonce=(\d+)\s+algo=(\S+)\s+reason="([^"]+)"(?:\s+hash=([0-9a-fA-F]+))?/i);
   if (m) {
     return { html: `${tsHtml}<span class="mc-rejected">[✗] SHARE REJECTED</span> job=<span class="mc-hr">${m[1]}</span> height=<span class="mc-hr">${m[2]}</span> algo=<span class="mc-algo">${esc(m[4])}</span> <span class="mc-err">${esc(m[5])}</span>`, _cls: ' mc-highlight' };
   }
 
-  // ── V3 Rust miner: new job ──
+  // ── V31 Rust miner: new job ──
   // ">> new job #6216 height=6216 algo=deeksha_lite_v1"
   m = raw.match(/>>\s*new job\s*#(\d+)\s+height=(\d+)\s+algo=(\S+)/i);
   if (m) {
     return { html: `${tsHtml}<span class="mc-job">[▶] NEW JOB</span> #<span class="mc-hr">${m[1]}</span> height=<span class="mc-hr">${m[2]}</span> algo=<span class="mc-algo">${esc(m[3])}</span>` };
   }
 
-  // ── V3 Rust miner: VRSC_SHARE_FOUND (triple-stream CPU coin) ──
+  // ── V31 Rust miner: VRSC_SHARE_FOUND (triple-stream CPU coin) ──
   // "VRSC_SHARE_FOUND nonce=... hash=... (batch-scan)"
   m = raw.match(/(\w+)_SHARE_FOUND\s+nonce=(\d+)\s+hash=([0-9a-fA-F]+)\s+\((\S+)\)/i);
   if (m) {
     return { html: `${tsHtml}<span class="mc-ok">[◆] ${esc(m[1])} SHARE FOUND</span> <span class="mc-info">(${esc(m[4])})</span> <span class="mc-ts">nonce=${m[2]}</span>` };
   }
 
-  // ── V3 Rust miner: pool_set_difficulty ──
+  // ── V31 Rust miner: pool_set_difficulty ──
   // "pool_set_difficulty=1024"
   m = raw.match(/pool_set_difficulty=(\d+)/i);
   if (m) {
     return { html: `${tsHtml}<span class="mc-warn">[~] POOL DIFFICULTY</span> → <span class="mc-diff">${m[1]}</span>` };
   }
 
-  // ── V3 Rust miner: wire_stale / wire_cancel ──
+  // ── V31 Rust miner: wire_stale / wire_cancel ──
   if (/^wire_stale\b/.test(raw)) {
     return { html: `${tsHtml}<span class="mc-warn">[~] STALE</span> <span class="mc-info">${esc(raw)}</span>` };
   }
@@ -1463,17 +1485,17 @@ function colorizeConsoleLine(raw) {
     return { html: `${tsHtml}<span class="mc-warn">[~] CANCEL</span> <span class="mc-info">${esc(raw)}</span>` };
   }
 
-  // ── V3 Rust miner: gpu_init / gpu_backend ──
+  // ── V31 Rust miner: gpu_init / gpu_backend ──
   if (/^gpu_init\b|^gpu_backend\b|^gpu_epoch_fallback\b/.test(raw)) {
     return { html: `${tsHtml}<span class="mc-algo">${esc(raw)}</span>` };
   }
 
-  // ── V3 Rust miner: external_stream / ext_gpu ──
+  // ── V31 Rust miner: external_stream / ext_gpu ──
   if (/^external_stream|^ext_gpu|^ext_cpu|^ext_share/.test(raw)) {
     return { html: `${tsHtml}<span class="mc-info">${esc(raw)}</span>` };
   }
 
-  // ── V3 Rust miner: BLOCK FOUND ──
+  // ── V31 Rust miner: BLOCK FOUND ──
   m = raw.match(/BLOCK\s+FOUND.*?height[=:]\s*(\d+)/i);
   if (m) {
     return { html: `${tsHtml}<span class="mc-block">█ BLOCK FOUND █ ★</span> height=<span class="mc-hr">${m[1]}</span>`, _cls: ' mc-block-line' };
@@ -1529,7 +1551,7 @@ function colorizeConsoleLine(raw) {
   }
 
   // ── Startup info lines ──
-  if (/^\s*\*|Starting|started|Initializ|threads|algorithm|pool|wallet|miner|V3-FAST/i.test(raw)) {
+  if (/^\s*\*|Starting|started|Initializ|threads|algorithm|pool|wallet|miner|V31-FAST/i.test(raw)) {
     return { html: `${tsHtml}<span class="mc-info">${esc(raw)}</span>` };
   }
 
@@ -1612,7 +1634,7 @@ function setupEventListeners() {
     addLogEntry('Mining started successfully', 'info');
     // Mining Console banner
     appendMiningConsole('─'.repeat(60));
-    appendMiningConsole(' * ZION V3 Mainnet Ready v3.1.0 — Mining started');
+    appendMiningConsole(' * ZION V31 Mainnet Alpha v3.1.0 — Mining started');
     appendMiningConsole('─'.repeat(60));
   });
   
