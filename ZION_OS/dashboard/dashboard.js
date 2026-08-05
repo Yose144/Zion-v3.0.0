@@ -472,6 +472,71 @@ function _renderCriticalUI(statusData){
 
   // Render All Nodes immediately if on nodes tab
   if(currentTab === 'nodes') renderAllNodes();
+
+  // V31 Mainnet Alpha banner (integrated from /api/status v31_banner)
+  renderV31Banner(statusData);
+}
+
+function renderV31Banner(st){
+  const banner = st.v31_banner;
+  if(!banner) return;
+
+  const section = document.getElementById('fd-v31-banner');
+  if(!section) return;
+  section.style.display = '';
+
+  const fmt = (n, d=0) => (n == null || n === '' || n === undefined) ? '—' : Number(n).toLocaleString(undefined, {minimumFractionDigits:d, maximumFractionDigits:d});
+  const el = id => document.getElementById(id);
+
+  const netEl = el('fd-banner-network');
+  if(netEl){
+    const ok = banner.node_running && banner.node_reachable;
+    netEl.textContent = ok ? 'mainnet' : 'offline';
+    netEl.className = 'text-[10px] px-2 py-0.5 rounded-full font-bold border ' + (ok
+      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+      : 'bg-red-500/20 text-red-300 border-red-500/30');
+  }
+
+  if(el('fd-banner-height')) el('fd-banner-height').textContent = fmt(banner.height);
+
+  const lag = banner.sync_lag ?? 0;
+  if(el('fd-banner-sync-lag')){
+    el('fd-banner-sync-lag').textContent = lag === 0 ? 'synced' : lag;
+    el('fd-banner-sync-lag').style.color = lag === 0 ? 'rgb(34 197 94)' : 'rgb(251 191 36)';
+  }
+
+  if(el('fd-banner-pool-hashrate')){
+    const hr = banner.pool_hashrate_hps;
+    const sub = el('fd-banner-pool-hashrate-sub');
+    if(hr != null && hr >= 1e6){
+      el('fd-banner-pool-hashrate').textContent = (hr / 1e6).toFixed(2) + ' MH/s';
+      if(sub) sub.textContent = Number(hr).toLocaleString() + ' H/s';
+    } else if(hr != null && hr >= 1e3){
+      el('fd-banner-pool-hashrate').textContent = (hr / 1e3).toFixed(2) + ' kH/s';
+      if(sub) sub.textContent = Number(hr).toLocaleString() + ' H/s';
+    } else {
+      el('fd-banner-pool-hashrate').textContent = fmt(hr);
+      if(sub) sub.textContent = 'H/s';
+    }
+  }
+
+  if(el('fd-banner-shares-sec')) el('fd-banner-shares-sec').textContent = fmt(banner.shares_per_sec, 2);
+
+  if(el('fd-banner-multichain-health')){
+    const mcOk = banner.multichain_ok;
+    const total = banner.multichain_transfers_total ?? 0;
+    const pending = banner.multichain_transfers_pending ?? 0;
+    el('fd-banner-multichain-health').textContent = mcOk ? 'OK' : 'FAIL';
+    el('fd-banner-multichain-health').style.color = mcOk ? 'rgb(34 197 94)' : 'rgb(239 68 68)';
+    const sub = el('fd-banner-multichain-health-sub');
+    if(sub) sub.textContent = `total ${Number(total).toLocaleString()} · pending ${Number(pending).toLocaleString()}`;
+  }
+
+  if(el('fd-banner-dao-proposals')){
+    const active = banner.dao_proposals_active ?? 0;
+    const total = banner.dao_proposals_total ?? 0;
+    el('fd-banner-dao-proposals').textContent = `${Number(active).toLocaleString()} / ${Number(total).toLocaleString()}`;
+  }
 }
 
 function formatUptime(sec){
