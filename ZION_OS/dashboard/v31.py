@@ -359,6 +359,81 @@ def _pool_prometheus() -> dict:
         return {"_error": str(e)}
 
 
+# Cache for deriving shares/sec from total share counter
+_LAST_POOL_TOTALS = {"ts": 0.0, "shares": 0.0}
+
+
+def _pool_banner_metrics() -> dict:
+    """Return pool hashrate (H/s) and shares/sec for the V31 banner."""
+    prom = _pool_prometheus()
+    hashrate = None
+    if isinstance(prom, dict) and "_error" not in prom:
+        if "zion_pool_hashrate_hps" in prom:
+            hashrate = float(prom["zion_pool_hashrate_hps"])
+        elif "zion_pool_hashrate_khs" in prom:
+            hashrate = float(prom["zion_pool_hashrate_khs"]) * 1000.0
+        elif "zion_pool_hashrate_1h_hps" in prom:
+            hashrate = float(prom["zion_pool_hashrate_1h_hps"])
+
+    sps = None
+    total_shares = None
+
+    # Try direct shares-per-second from /stats or prometheus
+    stats = _pool_metrics()
+    if isinstance(stats, dict) and "_error" not in stats:
+        sps_field = stats.get("shares_per_second") or stats.get("shares_per_sec")
+        if sps_field is not None:
+            try:
+                sps = float(sps_field)
+            except Exception:
+                pass
+        total_shares = stats.get("total_shares") or stats.get("shares_total")
+
+    if isinstance(prom, dict) and "_error" not in prom:
+        if sps is None and "zion_pool_shares_per_second" in prom:
+            try:
+                sps = float(prom["zion_pool_shares_per_second"])
+            except Exception:
+                pass
+        if total_shares is None:
+            total_shares = prom.get("zion_pool_total_shares")
+
+    # Derive shares/sec from total-share delta if a direct value is not available
+    if sps is None and total_shares is not None:
+        global _LAST_POOL_TOTALS
+        now = time.time()
+        prev = _LAST_POOL_TOTALS
+        try:
+            total = float(total_shares)
+            if prev["ts"] > 0 and total >= prev["shares"]:
+                dt = now - prev["ts"]
+                if dt > 0:
+                    sps = round((total - prev["shares"]) / dt, 2)
+            prev["ts"] = now
+            prev["shares"] = total
+        except Exception:
+            pass
+
+    return {
+        "hashrate_hps": hashrate,
+        "shares_per_sec": sps,
+        "total_shares": total_shares,
+    }
+
+
+def _dao_proposals() -> dict:
+    """Extract DAO proposal counts from DAO stats."""
+    st = _dao_stats()
+    if not isinstance(st, dict) or "_error" in st:
+        return {"total": 0, "active": 0}
+    total = st.get("total_proposals") or st.get("proposals_total") or st.get("proposals", 0)
+    active = st.get("active_proposals") or st.get("proposals_active") or st.get("open_proposals", 0)
+    return {
+        "total": int(total) if total is not None else 0,
+        "active": int(active) if active is not None else 0,
+    }
+
+
 def _multichain_health() -> dict:
     """Fetch multichain health."""
     return _http_get_json("127.0.0.1", _multichain_port(), "/health")
@@ -521,6 +596,22 @@ def status():
             out["tip_hash"] = r.get("tip_hash") or r.get("tip_hash_hex")
             out["mempool_account"] = int(r.get("mempool_account_transactions", 0))
             out["mempool_utxo"] = int(r.get("mempool_utxo_transactions", 0))
+
+    # Banner KPIs: hashrate, shares/sec, multichain /health, DAO proposals
+    banner = _pool_banner_metrics()
+    mc = _multichain_health()
+    dao_p = _dao_proposals()
+    out.update({
+        "height": out.get("canonical_height") or out["db_height"],
+        "pool_hashrate_hps": banner["hashrate_hps"],
+        "shares_per_sec": banner["shares_per_sec"],
+        "pool_total_shares": banner["total_shares"],
+        "multichain_ok": bool(mc.get("ok")) if isinstance(mc, dict) and "_error" not in mc else False,
+        "multichain_transfers_total": mc.get("transfers_total", 0) if isinstance(mc, dict) else 0,
+        "multichain_transfers_pending": mc.get("transfers_pending", 0) if isinstance(mc, dict) else 0,
+        "dao_proposals_total": dao_p["total"],
+        "dao_proposals_active": dao_p["active"],
+    })
 
     return out
 

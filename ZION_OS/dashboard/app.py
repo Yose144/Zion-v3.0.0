@@ -1385,6 +1385,30 @@ SERVICE_REGISTRY_LOCAL_DEV = [
 # Dynamic SERVICE_REGISTRY selection based on TOPOLOGY
 SERVICE_REGISTRY = SERVICE_REGISTRY_EDGE_PRIMARY if TOPOLOGY == "edge-primary" else SERVICE_REGISTRY_LOCAL_DEV
 
+# ── V31 primary / V3 archived markers ───────────────────────────────────
+PRIMARY_SERVICES = {"v31-node", "v31-pool", "v31-miner", "v31-multichain"}
+ARCHIVED_SERVICES = {
+    "edge-node1", "edge-node2", "pool-edge", "miner",
+    "bridge", "dao", "atomic-swap", "dex", "warp",
+    "oasis", "free-world", "issobella",
+    "node1", "node2", "swap-aggregator", "ncl",
+    "hiranyagarbha", "ai-native", "node-exporter",
+}
+
+
+def _enrich_service_registry(registry: list) -> list:
+    """Tag services as primary / archived in the active registry."""
+    for svc in registry:
+        svc["primary"] = svc["id"] in PRIMARY_SERVICES
+        svc["archived"] = svc["id"] in ARCHIVED_SERVICES
+    return registry
+
+
+SERVICE_REGISTRY = _enrich_service_registry(SERVICE_REGISTRY)
+
+LEVEL_ORDER = {"L1": 0, "L2": 1, "L3": 2, "L4": 3, "L5": 4, "L6": 5, "Infra": 9}
+
+
 def get_service(sid: str) -> dict:
     return next((s for s in SERVICE_REGISTRY if s["id"] == sid), None)
 
@@ -1684,7 +1708,17 @@ def all_services_health() -> list:
             "ports_open": h["ports_open"], "ports_closed": h["ports_closed"],
             "autoheal": h.get("autoheal", False),
             "health_method": h.get("health_method", "log"),
+            "primary": svc.get("primary", False),
+            "archived": svc.get("archived", False),
         })
+    # V31 primary first, archived/legacy last, then by layer and kind
+    out.sort(key=lambda s: (
+        1 if s.get("archived") else 0,
+        0 if s.get("primary") else 1,
+        LEVEL_ORDER.get(s.get("level"), 99),
+        s.get("kind", ""),
+        s.get("name", ""),
+    ))
     return out
 
 # ── Prometheus metrics scraper ─────────────────────────────────────────
@@ -9333,6 +9367,27 @@ class DashboardHandler(BaseHTTPRequestHandler):
         except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
             pass  # client closed connection early — benign
 
+    def _serve_html_file(self, html_path: Path, fallback_error: str = ""):
+        """Serve a static HTML file, with optional gzip pre-compression."""
+        if not html_path.exists():
+            self.send_error(503, fallback_error or f"{html_path.name} not found")
+            return
+        gz_path = html_path.with_suffix(html_path.suffix + ".gz")
+        _ensure_gz_uptodate(html_path, gz_path)
+        accepts_gzip = "gzip" in (self.headers.get("Accept-Encoding", "").lower())
+        if accepts_gzip:
+            body = _get_gz_body(html_path)
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Encoding", "gzip")
+            self.send_header("Vary", "Accept-Encoding")
+            self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        else:
+            self._html(html_path.read_text(encoding="utf-8"))
+
     def _proxy_to_dao(self, method, route, body, req_headers):
         """Proxy a request to the DAO daemon on port 8450, preserving auth headers."""
         DAO_PORT = 8450
@@ -9464,30 +9519,25 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return
 
         if route == "/" or route == "/index.html":
+            v31_index = SCRIPT_DIR / "v31" / "index.html"
             v2_index = V2_DIST / "index.html"
+            if v31_index.exists():
+                # V31 Mainnet Alpha is the default landing page
+                self.send_response(302)
+                self.send_header("Location", "/v31/")
+                self.end_headers()
+                return
             if v2_index.exists():
                 self._html(v2_index.read_text(encoding="utf-8"))
                 return
-            # Fallback to legacy v1 dashboard — serve pre-compressed HTML if client accepts gzip
-            html_path = SCRIPT_DIR / "dashboard.html"
-            gz_path = SCRIPT_DIR / "dashboard.html.gz"
-            if html_path.exists():
-                _ensure_gz_uptodate(html_path, gz_path)
-                accepts_gzip = "gzip" in (self.headers.get("Accept-Encoding", "").lower())
-                if accepts_gzip:
-                    body = _get_gz_body(html_path)
-                    self.send_response(200)
-                    self.send_header("Content-Type", "text/html; charset=utf-8")
-                    self.send_header("Content-Encoding", "gzip")
-                    self.send_header("Vary", "Accept-Encoding")
-                    self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
-                    self.send_header("Content-Length", str(len(body)))
-                    self.end_headers()
-                    self.wfile.write(body)
-                else:
-                    self._html(html_path.read_text(encoding="utf-8"))
-            else:
-                self.send_error(503, "dashboard.html not found — please restore from git")
+            # Fallback to legacy v1 dashboard
+            self._serve_html_file(SCRIPT_DIR / "dashboard.html", "dashboard.html not found")
+            return
+        elif route in ("/dashboard", "/dashboard.html"):
+            self._serve_html_file(SCRIPT_DIR / "dashboard.html", "dashboard.html not found")
+            return
+        elif route in ("/legacy", "/legacy.html"):
+            self._serve_html_file(SCRIPT_DIR / "legacy.html", "legacy.html not found")
             return
         elif route.startswith("/assets/") or route in ("/manifest.json", "/sw.js", "/offline.html", "/favicon.svg", "/icons.svg"):
             v2_file = V2_DIST / route.lstrip("/")
