@@ -859,6 +859,12 @@ def get_monitoring_status() -> dict:
                 blocks_found = int(float(line.split()[-1]))
             elif line.startswith("zion_pool_submits_total "):
                 submits = int(float(line.split()[-1]))
+        # V31 may report 0 active sessions while shares are flowing; use tracked as proxy.
+        if active_sessions == 0 and (accepted or shares) and (miners_tracked or 0) > 0:
+            active_sessions = miners_tracked
+            result["prometheus"]["targets_up"] = active_sessions
+        if submits == 0 and (accepted or rejected):
+            submits = accepted + rejected
         hr_str = f"{hashrate_hps/1000:.1f} KH/s" if hashrate_hps >= 1000 else f"{hashrate_hps:.1f} H/s"
         result["prometheus"]["version"] = hr_str
         result["prometheus"]["shares"] = shares
@@ -3650,6 +3656,7 @@ def _build_status_edge_primary() -> dict:
         "pplns_window_size": edge_payout["pplns_window_size"],
         "pplns_window_used": edge_payout["pplns_window_used"],
         "pplns_registered_miners": edge_payout["pplns_registered_miners"],
+        "miners_tracked": edge_metrics["miners_tracked"] if edge_metrics["miners_tracked"] is not None else edge_payout["pplns_registered_miners"],
         "fee_humanitarian": edge_payout["fee_humanitarian"],
         "fee_issobella": edge_payout["fee_issobella"],
         "fee_pool": edge_payout["fee_pool"],
@@ -4762,7 +4769,16 @@ def build_wallets() -> dict:
 
 # ── Block detail ────────────────────────────────────────────────────────
 
-@_ttl_cache_fn(5.0)
+def _bytes_to_hex(obj) -> str:
+    """Convert a list of byte values to a hex string."""
+    if isinstance(obj, list) and obj:
+        try:
+            return "".join(f"{b:02x}" for b in obj)
+        except Exception:
+            return "—"
+    return "—"
+
+
 def get_block_detail(height: int = None, hash_hex: str = None) -> dict:
     """Fetch full block details by height or hash."""
     blk = None
@@ -4775,27 +4791,54 @@ def get_block_detail(height: int = None, hash_hex: str = None) -> dict:
             blk, _, _ = _rpc_with_fallback("getBlockByHash", {"hash": hash_hex}, timeout=2)
     if not blk or blk.get("_rpc_error"):
         return {"found": False, "error": blk.get("_rpc_error") if blk else "RPC unavailable"}
+
+    header = blk.get("header", {}) if isinstance(blk, dict) else {}
+    # V31 fields: hash is stored_hash bytes, timestamp is in header, previous_hash is parent
+    block_hash = blk.get("hash_hex") or _bytes_to_hex(blk.get("stored_hash")) or _bytes_to_hex(header.get("previous_hash"))
+    prev_hash = blk.get("prev_hash_hex") or _bytes_to_hex(header.get("previous_hash"))
+    height = blk.get("height") or (header.get("height") if isinstance(header, dict) else None)
+    timestamp = blk.get("timestamp") or (header.get("timestamp") if isinstance(header, dict) else None)
+    difficulty = blk.get("difficulty") or (header.get("difficulty") if isinstance(header, dict) else None)
+
     tx_list = []
+    reward_zion = 0.0
+    total_fees_zion = 0.0
     for tx in blk.get("transactions", []):
+        from_addr = tx.get("from") or tx.get("from_address") or "—"
+        to_addr = tx.get("to") or tx.get("to_address") or "—"
+        amount = tx.get("amount_zion", 0)
+        fee = tx.get("fee_zion", 0)
+        try:
+            amount_f = float(amount) / 1_000_000
+        except Exception:
+            amount_f = 0.0
+        try:
+            fee_f = float(fee) / 1_000_000
+        except Exception:
+            fee_f = 0.0
+        if from_addr == "coinbase":
+            reward_zion += amount_f
+        total_fees_zion += fee_f
         tx_list.append({
             "tx_id": tx.get("tx_id", "—"),
-            "type": tx.get("tx_type", "transfer"),
-            "from": tx.get("from_address", "—"),
-            "to": tx.get("to_address", "—"),
-            "amount_zion": tx.get("amount_zion", 0),
-            "fee_zion": tx.get("fee_zion", 0),
+            "type": "coinbase" if from_addr == "coinbase" else tx.get("tx_type", "transfer"),
+            "from": from_addr,
+            "to": to_addr,
+            "amount_zion": amount,
+            "fee_zion": fee,
         })
+
     return {
         "found": True,
-        "height": blk.get("height"),
-        "hash": blk.get("hash_hex", "—"),
-        "timestamp": blk.get("timestamp"),
-        "difficulty": blk.get("difficulty"),
+        "height": height,
+        "hash": block_hash or "—",
+        "timestamp": timestamp,
+        "difficulty": difficulty,
         "miner": blk.get("miner_address", "—"),
-        "reward_zion": blk.get("reward_zion", 0),
-        "total_fees_zion": blk.get("total_fees_zion", 0),
+        "reward_zion": round(reward_zion, 6),
+        "total_fees_zion": round(total_fees_zion, 6),
         "nonce": blk.get("nonce"),
-        "prev_hash": blk.get("prev_hash_hex", "—"),
+        "prev_hash": prev_hash,
         "tx_count": len(tx_list),
         "transactions": tx_list,
         "body_hash": blk.get("body_hash_hex", "—"),
@@ -5038,20 +5081,32 @@ def build_explorer() -> dict:
             if difficulty is None and isinstance(header, dict):
                 difficulty = header.get("difficulty", 0)
             tx_count = len(tx_ids) if tx_ids else len(transactions)
+            # V31 block hash is stored_hash (list of bytes); previous_hash is the parent.
             hash_hex = blk.get("hash_hex")
+            if not hash_hex:
+                stored = blk.get("stored_hash") if isinstance(blk, dict) else None
+                if isinstance(stored, list) and stored:
+                    try:
+                        hash_hex = "".join(f"{b:02x}" for b in stored)
+                    except Exception:
+                        hash_hex = None
             if not hash_hex and isinstance(header, dict):
-                # Build a stable short hash from the V31 header if needed
                 prev = header.get("previous_hash")
                 if isinstance(prev, list) and prev:
                     try:
-                        hash_hex = "".join(f"{b:02x}" for b in prev[:8]) + "…"
+                        hash_hex = "".join(f"{b:02x}" for b in prev)
                     except Exception:
                         hash_hex = "—"
                 else:
                     hash_hex = "—"
+            # Truncate the hash for the overview table (explorer uses its own full copy)
+            if hash_hex and hash_hex != "—":
+                hash_display = hash_hex[:24] + "…"
+            else:
+                hash_display = hash_hex
             recent_blocks.append({
                 "height": height,
-                "hash": hash_hex[:24] + "…" if hash_hex and hash_hex != "—" else hash_hex,
+                "hash": hash_display,
                 "timestamp": timestamp,
                 "tx_count": tx_count,
                 "difficulty": difficulty,
@@ -5481,11 +5536,14 @@ def get_pool_miners() -> dict:
         if not miner_id:
             miner_id = address
 
-        # Prefer PPLNS stats keyed by wallet address
-        stats = pplns_shares.get(miner_id, {})
-        last_share = pplns_last_share.get(miner_id, 0)
-        paid_flowers = pplns_paid.get(miner_id, 0)
-        unpaid_flowers = pplns_unpaid.get(miner_id, 0)
+        # PPLNS state is keyed by either "address/worker_name" or just "address" (legacy)
+        composite = f"{miner_id}/{worker_name}"
+        stats = pplns_shares.get(composite) or pplns_shares.get(miner_id) or {}
+        if not isinstance(stats, dict):
+            stats = {}
+        last_share = pplns_last_share.get(composite, pplns_last_share.get(miner_id, 0))
+        paid_flowers = pplns_paid.get(composite, pplns_paid.get(miner_id, 0))
+        unpaid_flowers = pplns_unpaid.get(composite, pplns_unpaid.get(miner_id, 0))
         if isinstance(paid_flowers, (int, float, str)):
             try:
                 paid_flowers = int(paid_flowers)
@@ -5510,6 +5568,7 @@ def get_pool_miners() -> dict:
             "paid_total": flowers_to_zion(paid_flowers),
             "unpaid_total": flowers_to_zion(unpaid_flowers),
             "hashrate_hps": 0.0,
+            "active": True,
         }
         normalized.append(enriched)
 
@@ -5573,10 +5632,10 @@ def get_pool_connection_history(limit: int = 100, since_hours: int = 24) -> dict
 
     # Try the current Edge pool unit first, then legacy zion-pool. Fall back to pool.log.
     raw = ""
-    for unit in ["zion-edge-pool", "zion-pool"]:
+    for unit in ["zion-v31-pool", "zion-edge-pool", "zion-pool"]:
         cmd = (
             f"journalctl -q -u {unit} --no-pager --since '{since_hours} hours ago' -n 5000 "
-            "| grep -E 'peer_addr=|session_start|session_miner_id|session_worker_name|session_duration_secs|wire_bye'"
+            "| grep -E 'peer_addr=|session_start|session_miner_id|session_worker_name|session_duration_secs|wire_bye|share_submit|new_session|v3_hello|v3_bye'"
         )
         try:
             result = _run_edge_cmd(cmd, timeout=10)
@@ -5668,6 +5727,36 @@ def get_pool_connection_history(limit: int = 100, since_hours: int = 24) -> dict
                     break
             continue
 
+        # V31 stratum: v3_hello miner=<id> worker=<name> algo=... backend=... ip=<addr>
+        if (m2 := re.search(r'v3_hello\s+miner=(\S+)\s+worker=(\S+)(?:\s+algo=\S+)?\s+backend=(\S*)\s+ip=([\d.]+)', line)):
+            events.append({
+                "ts": ts,
+                "time": datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S"),
+                "session_id": "v31",
+                "active_sessions": 1,
+                "peer_addr": m2.group(4),
+                "miner_id": m2.group(1),
+                "worker_name": m2.group(2),
+                "duration_secs": None,
+                "bye": None,
+            })
+            continue
+
+        # V31 stratum disconnect
+        if (m2 := re.search(r'v3_bye\s+miner=(\S+)\s+worker=(\S+)', line)):
+            events.append({
+                "ts": ts,
+                "time": datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M:%S"),
+                "session_id": "v31",
+                "active_sessions": 0,
+                "peer_addr": "",
+                "miner_id": m2.group(1),
+                "worker_name": m2.group(2),
+                "duration_secs": None,
+                "bye": "bye",
+            })
+            continue
+
     # Sort by timestamp descending and cache
     events.sort(key=lambda x: x["ts"], reverse=True)
     with _POOL_HISTORY_LOCK:
@@ -5699,13 +5788,22 @@ def _get_pool_active_miner_map() -> dict:
 
     Uses composite key "address/worker_name" to match PPLNS state keys, since
     multiple workers can share the same miner_id (e.g. local-miner).
+    V31 /miners returns worker as "address.worker_name", so we split it.
     """
     try:
         miners = fetch_pool_miners()
         result = {}
         for m in miners:
-            addr = m.get("address") or m.get("miner_id") or ""
-            worker = m.get("worker_name") or ""
+            worker_full = m.get("worker") or ""
+            if worker_full:
+                addr, worker = _split_worker_username(worker_full)
+            else:
+                addr = m.get("address") or m.get("miner_id") or ""
+                worker = m.get("worker_name") or ""
+            if not addr:
+                addr = m.get("address") or m.get("miner_id") or ""
+            m["miner_id"] = addr
+            m["worker_name"] = worker or "default"
             key = f"{addr}/{worker}" if worker else addr
             if key:
                 result[key] = m
