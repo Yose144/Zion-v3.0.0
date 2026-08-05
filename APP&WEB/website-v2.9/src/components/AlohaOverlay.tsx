@@ -76,7 +76,7 @@ export default function AlohaOverlay() {
                 className="mt-8"
               >
                 <a
-                  href="/l4-oasis"
+                  href="https://oasis.zionterranova.com"
                   className="zion-rainbow-card group inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold text-cyan-300"
                   style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
                 >
