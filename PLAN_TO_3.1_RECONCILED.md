@@ -18,7 +18,7 @@
 - 2079 testů pass, `cargo clippy --workspace` čisté
 - Fáze C hotova (DAO, ZionDex, HTLC, profit oracle, bridge consensus, CLI, dashboard)
 - Fáze B **hotova z hlediska kódu a testů** — GPU/triple-stream/profit metrics implementováno, `cargo test -p zion-miner` 92 pass, `cargo clippy --workspace` čisté. Go/No-Go testy na reálném GPU/rigu (OpenCL/CUDA/Metal) zůstávají pending.
-- Dashboard UI/UX update do V31 hotov, nasazen na Edge (`zion-edge-python-dashboard` active, `/health` OK). V31 banner KPIs + V31 Production panel (metriky, logy, Grafana) + pool API metrics port fix 8080 + Prometheus/Grafana provisioning na Edge.
+- Dashboard UI/UX update do V31 hotov, nasazen na Edge (`zion-edge-python-dashboard` active, `/health` OK). V31 banner KPIs + V31 Production panel (metriky, logy, Grafana) + pool API metrics port fix 8080 + Prometheus/Grafana provisioning na Edge. V31 cutover proveden: V3 služby zastaveny a maskovány, `zion-v31-node` osamostatněn od V3.
 |- GPU backend port (CUDA/OpenCL/Metal/native) kompiluje v `zion-miner`
 |- DAO governance moduly portovány (treasury, humanitarian, db, l1_scanner, executor, consent, co_admin, cross_layer, metrics, prizes)
 
