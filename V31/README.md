@@ -1,8 +1,8 @@
 # V31 — Mainnet Alpha Workspace
 
-> **Stav 2026-08-03:** `V31` (`3.1.0-alpha.2`) je aktivní **Mainnet Alpha** workspace. `cargo test` prochází pro celý workspace (301+ testů). **V31 node je LIVE na Edge** (`62.171.141.136`) jako druhý node — systemd service `zion-v31-node.service`, synchronizuje se s V3 mainnet přes V3-compatible P2P (height 11184+). Tag `v3.1.0-alpha.2` pushnut na origin.
+> **Stav 2026-08-07:** `V31` (`3.1.0-alpha.2`) je aktivní **Mainnet Alpha** workspace. `cargo test` prochází pro celý workspace (2079 testů), `cargo clippy --workspace` čisté. **V31 je produkční na Edge** — node, pool, multichain a dashboard běží na `62.171.141.136` s kanonickým `EkamDeeksha` v2 (128 KiB, 1 pass, 32 random reads, 2 AES rounds). V3 služby zastaveny a maskovány.
 
-Workspace se nachází v `/Users/yeshuae/Projects/2.9.6/V31/`; produkční V3 běží nezávisle na Edge a slouží V31 jako checkpoint reference.
+Workspace se nachází v `/Users/yeshuae/Projects/2.9.6/V31/`; V3 produkční služby byly zastaveny a maskovány, V3 zůstává jako historická checkpoint reference (`archive/V3/` + `v3_compat`).
 
 ## Filozofie
 
