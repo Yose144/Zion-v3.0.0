@@ -1,4 +1,6 @@
 use async_trait::async_trait;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 use zion_l1_types::{Address, Amount, Asset, ChainFamily, ChainId, Hash};
 use zion_multichain::chain::adapter::{ChainAdapter, ChainAdapterRegistry, DepositEvent};
@@ -14,6 +16,7 @@ struct MockAdapter {
     height: u64,
     balance: Amount,
     family: ChainFamily,
+    events: Arc<Mutex<Vec<DepositEvent>>>,
 }
 
 impl MockAdapter {
@@ -23,7 +26,12 @@ impl MockAdapter {
             height,
             balance,
             family,
+            events: Arc::new(Mutex::new(vec![])),
         }
+    }
+
+    fn with_events(self, events: Arc<Mutex<Vec<DepositEvent>>>) -> Self {
+        Self { events, ..self }
     }
 }
 
@@ -42,7 +50,7 @@ impl ChainAdapter for MockAdapter {
     }
 
     async fn watch_events(&self) -> MultichainResult<Vec<DepositEvent>> {
-        Ok(vec![])
+        Ok(self.events.lock().await.clone())
     }
 
     async fn execute_outbound(
@@ -243,4 +251,98 @@ async fn intent_engine_loads_from_db_on_restart() {
         service2.get_intent(id).await.unwrap().status,
         IntentStatus::Executed
     );
+}
+
+#[tokio::test]
+async fn cross_chain_intent_executes_bridge_hop() {
+    let mut config = MultichainConfig::default();
+    config.l1_rpc_url = String::new();
+
+    let zion_events = Arc::new(Mutex::new(vec![]));
+    let base_events = Arc::new(Mutex::new(vec![]));
+
+    let zion = Asset::native(ChainId::ZionL1, "ZION", 6, "ZION");
+    let wzion = Asset::native(ChainId::Base, "wZION", 6, "Wrapped ZION");
+
+    let zion_adapter = MockAdapter::new(
+        "zion",
+        100,
+        Amount::new(1_000_000_000_000),
+        ChainFamily::Zion,
+    )
+    .with_events(Arc::clone(&zion_events));
+    let base_adapter = MockAdapter::new(
+        "base",
+        12_345,
+        Amount::new(1_000_000_000_000),
+        ChainFamily::Evm,
+    )
+    .with_events(Arc::clone(&base_events));
+
+    let mut registry = ChainAdapterRegistry::new();
+    registry.register(ChainId::ZionL1, Box::new(zion_adapter));
+    registry.register(ChainId::Base, Box::new(base_adapter));
+
+    let service = MultichainService::new_with_adapters(config, registry)
+        .expect("service builds with bridge adapters");
+
+    // Source / target addresses are the service wallet on each chain.
+    let source_address = service
+        .wallet_address(ChainId::ZionL1, 0, 0)
+        .expect("zion address");
+    let target_address = service
+        .wallet_address(ChainId::Base, 0, 0)
+        .expect("base address");
+
+    // Pre-seed the source adapter with a matching bridge deposit event.
+    zion_events.lock().await.push(DepositEvent {
+        chain: ChainId::ZionL1,
+        tx_hash: Hash::default(),
+        recipient: source_address,
+        amount: Amount::new(1_000_000),
+        memo: Some(format!("bridge:base:{}", target_address.encoded)),
+        confirmations: 1,
+    });
+
+    service
+        .register_solver("solver-a")
+        .await
+        .expect("register solver");
+
+    let intent = SwapIntent::new(
+        "user1",
+        zion.id.clone(),
+        wzion.id.clone(),
+        Amount::new(1_000_000),
+        Amount::new(900_000),
+        u64::MAX,
+        1,
+    );
+    let id = service.create_intent(intent).await.expect("create intent");
+
+    let bid = SolverBid::new(
+        id,
+        "solver-a",
+        Amount::new(950_000),
+        vec![PathHop {
+            chain: "zion".into(),
+            dex: "warp".into(),
+            from_token: zion.id.clone(),
+            to_token: wzion.id.clone(),
+            is_bridge: true,
+        }],
+        50,
+        0,
+    );
+    service.submit_bid(bid).await.expect("submit bid");
+
+    let out = service
+        .execute_intent(id)
+        .await
+        .expect("execute bridge intent")
+        .expect("some output");
+    assert!(out.0 >= 900_000);
+
+    let intent = service.get_intent(id).await.expect("intent exists");
+    assert_eq!(intent.status, IntentStatus::Executed);
 }
