@@ -133,7 +133,7 @@ class E2EMiningTest {
       '--worker', this.worker,
       '--threads', String(cpuThreads),
       '--metrics', '127.0.0.1:9116',
-      '--log_interval', '10'
+      '--log-interval', '10'
     ];
 
     const env = {

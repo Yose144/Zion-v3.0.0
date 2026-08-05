@@ -382,10 +382,10 @@ async function main() {
       '--worker', worker,
       '--threads', threads,
       '--metrics', '127.0.0.1:9116',
-      '--log_interval', '30'
+      '--log-interval', '30'
     ];
     if (!wantsGpu) {
-      args.push('--no_gpu');
+      args.push('--no-gpu');
     }
 
     minerProc = spawn(minerPath, args, { env, stdio: ['ignore', 'pipe', 'pipe'] });

@@ -2327,11 +2327,11 @@ function startMiningV31(config, v31Path) {
   const gpuCoinAuto = !gpuCoin || gpuCoin.toLowerCase() === 'auto';
   const METRICS_BIND = '127.0.0.1:9116';
 
-  const args = ['--pool', pool, '--wallet', wallet, '--worker', worker, '--threads', String(effectiveThreads), '--metrics', METRICS_BIND, '--log_interval', '30'];
+  const args = ['--pool', pool, '--wallet', wallet, '--worker', worker, '--threads', String(effectiveThreads), '--metrics', METRICS_BIND, '--log-interval', '30'];
   if (!tripleStreamEnabled) {
-    args.push('--no_gpu', '--no_cpu');
+    args.push('--no-gpu', '--no-cpu');
   } else if (!wantsGpu) {
-    args.push('--no_gpu');
+    args.push('--no-gpu');
   }
   if (tripleStreamEnabled && cpuCoinAuto && gpuCoinAuto) {
     args.push('--autonomous');
