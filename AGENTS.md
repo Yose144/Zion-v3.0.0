@@ -2195,3 +2195,49 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
 - **Purpose:** Interactive 3D multiverse portal — display and explore OASIS worlds.
 - **Build:** `cd APP&WEB/OasisWeb && npm install && npm run build`.
 - **Deploy (static export):** `dist/` is exported to `/var/www/oasis` on Edge; nginx serves `https://oasis.zionterranova.com` (Let’s Encrypt SSL, HTTP/2).
+
+## Edge V31 manual deploy (2026-08-05)
+
+`V31/deploy/deploy-edge.sh` is currently out of sync with live Edge V31 services. It still tries to build an obsolete `--bin zion-bridge` target and to install stale `zion-edge-dashboard` / `zion-edge-dex` / `zion-edge-python-dashboard` systemd units that do not exist in the repo. The currently working, safer workflow is a manual build and restart of the live `zion-v31-*` units:
+
+1. **Sync source** to Edge: `rsync -avz --delete V31/ root@2a02:c207:2342:5821::1:/opt/zion/V31/ ...` (or use `V31/deploy/deploy-edge.sh` only for the rsync/backup steps).
+2. **On Edge**, source Cargo and remove the Edge-irrelevant workspace members from `V31/Cargo.toml`:
+   ```bash
+   . /root/.cargo/env
+   cd /opt/zion/V31
+   sed -i '/"cli",/d;/"smoke",/d' Cargo.toml
+   ```
+3. **Build only the production packages**:
+   ```bash
+   nohup cargo build -p zion-core -p zion-pool -p zion-miner -p zion-dao -p zion-multichain --release \
+       >/tmp/v31-build.log 2>&1 </dev/null &
+   ```
+4. **Fix ownership and restart services**:
+   ```bash
+   chown -R zion:zion /opt/zion/V31/target/release
+   systemctl daemon-reload
+   systemctl restart zion-v31-node
+   systemctl restart zion-v31-multichain zion-v31-pool zion-v31-dao zion-v31-miner
+   ```
+
+### SSH access notes
+- The Edge VPS (`62.171.141.136`, IPv6 `2a02:c207:2342:5821::1`) is reachable over SSH on ports `22` and `2222` for both IPv4 and IPv6, but rapid sequential `ssh`/`rsync`/`scp` connections can trigger `fail2ban` or `sshd MaxStartups` rate limiting and result in `Connection refused`. Use IPv6 with a persistent `ControlMaster` socket and keepalives:
+  ```
+  Host zion-v6
+      HostName 2a02:c207:2342:5821::1
+      User root
+      Port 2222
+      IdentityFile ~/.ssh/zion-edge-post-wipe-2026-07-29
+      IdentitiesOnly yes
+      ControlMaster auto
+      ControlPath ~/.ssh/control-%r@%h:%p
+      ControlPersist 10m
+      ServerAliveInterval 60
+      ServerAliveCountMax 10
+  ```
+- The `~/.ssh/config` alias `zion-new` should be kept pointing at the Edge IP as well.
+
+### Verification checklist
+- `systemctl is-active zion-v31-node zion-v31-pool zion-v31-multichain zion-v31-dao zion-v31-miner` → all `active`.
+- `curl -s http://127.0.0.1:8453/health` on Edge returns `{"ok":true,"node":"zion-edge-warp-v31",...}`.
+- Pool stratum is live on `62.171.141.136:8444` and broadcasts `mining.notify` to connected miners.
