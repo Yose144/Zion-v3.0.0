@@ -3601,6 +3601,8 @@ def _build_status_edge_primary() -> dict:
                             "balance_atomic": int(m.group(3)),
                             "balance_zion": flowers_to_zion(int(m.group(3))),
                         })
+    except Exception:
+        pass
     # Fallback: V31 pool may show 0 active stratum sessions for miners that
     # submit via block-submit / RPC while still accepting shares. Use the
     # tracked/registered miner count as a sensible active-miners proxy.
@@ -3609,8 +3611,6 @@ def _build_status_edge_primary() -> dict:
         _tracked = edge_metrics.get("miners_tracked") or edge_payout.get("pplns_registered_miners") or 0
         if _tracked > 0:
             edge_metrics["active_miners"] = _tracked
-    except Exception:
-        pass
     # Mark pool as alive if we successfully fetched metrics
     if edge_metrics.get("active_miners") is not None:
         pool_edge_health = {"alive": True}
