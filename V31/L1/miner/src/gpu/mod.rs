@@ -2709,6 +2709,8 @@ fn create_gpu_backend_inner(
                 }
                 if algorithm == "deeksha_lite_fire" {
                     Ok(Box::new(metal_deeksha_lite_fire::MetalDeekshaLiteFireMiner::new(work_size)?))
+                } else if algorithm == "ekam_deeksha" || algorithm == "deeksha_lite_v1" || algorithm == "deeksha_chv3" {
+                    Ok(Box::new(metal_deeksha_lite::MetalDeekshaLiteMiner::new(work_size)?))
                 } else {
                     Ok(Box::new(metal_deeksha::MetalDeekshaMiner::new(work_size)?))
                 }
@@ -7843,6 +7845,11 @@ pub mod cpu_external_fallback {
     }
 }
 
+// ─── Metal Backend: Canonical Ekam Deeksha / DeekshaLite v2 ──────────────────
+
+#[cfg(all(feature = "gpu-metal", target_os = "macos"))]
+pub mod metal_deeksha_lite;
+
 // ─── Metal Backend: DeekshaLite Fire ─────────────────────────────────────────
 
 #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
@@ -8436,13 +8443,16 @@ fn query_metal_details() -> Vec<GpuInfo> {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
     use super::*;
+    #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
+    use zion_cosmic_harmony::EkamDeeksha;
 
     #[test]
     #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
-    fn metal_ekam_deeksha_smoke() {
-        let mut miner = metal_deeksha::MetalDeekshaMiner::new(64)
-            .expect("Metal EkamDeeksha miner should initialize");
+    fn metal_ekam_deeksha_matches_cpu() {
+        let mut miner = metal_deeksha_lite::MetalDeekshaLiteMiner::new(64)
+            .expect("Metal canonical EkamDeeksha miner should initialize");
         let header = MiningHeader {
             version: 0x20000000,
             previous_hash: [0xBB; 32],
@@ -8450,16 +8460,31 @@ mod tests {
             timestamp: 1_762_000_200,
             difficulty_bits: 0x1f00ffff,
         };
-        // Maximum target so any hash is accepted.
+        let header_bytes = header.to_bytes();
+        // Maximum target so the first nonce (nonce_start) is a solution.
         let target = DifficultyTarget {
             bytes: [0xff; 32],
         };
+        let nonce_start = 0x123456789ABCDEF0u64;
         let result = miner
-            .mine_batch(header, target, 0, 1024)
+            .mine_batch(header, target, nonce_start, 1024)
             .expect("Metal mine_batch should run");
+
         assert!(
             !result.solutions.is_empty(),
             "Metal ekam_deeksha should find a nonce at max target"
+        );
+
+        let (gpu_nonce, gpu_hash, _mix) = result.solutions[0];
+        assert_eq!(
+            gpu_nonce, nonce_start,
+            "Metal should return the first nonce at max target"
+        );
+
+        let cpu_hash = EkamDeeksha::hash_bytes(&header_bytes, gpu_nonce);
+        assert_eq!(
+            gpu_hash, cpu_hash,
+            "Metal ekam_deeksha hash must be bit-identical to CPU EkamDeeksha"
         );
     }
 }
