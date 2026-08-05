@@ -386,17 +386,22 @@ impl StratumServer {
             }
         };
 
+        // Stratum v1 ZION simplified notify: [job_id, header, target, height, clean_jobs].
+        // Matches the zion-miner parse_notify implementation.
+        let height = template.as_ref().map(|t| t.height).unwrap_or(0);
+        let clean_jobs = true;
+
         if let Ok(bytes) = hex::decode(header_trim) {
             self.jobs
                 .lock()
                 .unwrap()
-                .insert(job_id.to_string(), (bytes, target, block_reward, template));
+                .insert(job_id.to_string(), (bytes, target, block_reward, template.clone()));
         }
 
         json!({
             "id": null,
             "method": "mining.notify",
-            "params": [job_id, header_hex, target_hex]
+            "params": [job_id, header_hex, target_hex, height, clean_jobs]
         })
         .to_string()
     }
@@ -1530,7 +1535,8 @@ mod tests {
             window: Duration::from_secs(60),
         };
         let limiter = IpRateLimiter::new(config);
-        let ip = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+        // Loopback is always allowed, so use a non-loopback address.
+        let ip = IpAddr::V4(Ipv4Addr::new(192, 168, 1, 1));
 
         assert!(limiter.allow(ip));
         assert!(!limiter.allow(ip));
