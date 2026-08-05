@@ -1,6 +1,6 @@
 # ZION V3 — Canonical Status (Mainnet Beta)
 
-> **Datum poslední aktualizace:** 2026-08-05
+> **Datum poslední aktualizace:** 2026-08-06
 > **Update (2026-08-05):** V31 GPU backend port — CUDA (`gpu-cuda`), OpenCL (`gpu-opencl`), Metal (`gpu-metal`) a nativní CPU shims (`native-kheavyhash`, `native-blake3-algo`, `native-verushash`) nyní kompilují v `V31/L1/miner`. `cargo clippy --workspace` je čisté a `cargo test --workspace` prochází (2069 testů). Opraveny cudarc 0.12.1 závislosti, `progpow_codegen` viditelnost, `auxpow` feature gating, `kheavyhash::mine` argument order a macOS `block`/`objc` závislosti. `native-verushash` linkuje `-lomp` (vyžaduje libomp na macOS, na Linuxu bezproblémové). Viz `V31/STATUS.md`.
 > **Verze:** 3.0.7 "Trinity All Green" (V3 produkce) / 3.1.0-alpha.2 (V31 Alpha — LIVE na Edge)
 > **Protokol:** `zion-v3-node/3.0.7` (V3) / `zion-v3-node/3.1.0-alpha.2` (V31)
@@ -134,7 +134,7 @@
 | zion-cosmic-harmony | 201 + 1 | ✅ |
 | zion-pool | 38 | ✅ |
 | zion-bridge | 193 | ✅ |
-| zion-dao | 40 | ✅ |
+| zion-dao | 49 | ✅ |
 | zion-atomic-swap | 18 | ✅ |
 | zion-warp | 499 | ✅ |
 | zion-ncl | 42 | ✅ |

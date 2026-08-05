@@ -17,6 +17,7 @@
 - `zion-multichain` `/health` 200 OK
 - 2069 testů pass, `cargo clippy --workspace` čisté
 |- GPU backend port (CUDA/OpenCL/Metal/native) kompiluje v `zion-miner`
+|- DAO governance moduly portovány (treasury, humanitarian, db, l1_scanner, executor, consent, co_admin, cross_layer, metrics, prizes)
 
 **ALE:** `V31_V3_FULL_AUDIT.md` (2026-08-04) ukazuje, že V31 je stále **alpha-grade**. `PLAN_TO_3.1.md` tvrdí, že mnoho komponent je "complete", ale audit odhaluje, že "complete" znamená *zkopírované knihovní moduly*, nikoli *produkční funkcionalitu* v binárkách. Tento dokument sjednocuje oba zdroje a definuje reálný plán hardeningu.
 
@@ -41,7 +42,7 @@
 |---|--------|---------------------------|--------------------------------|---------------------------|
 | 1 | **Miner binary** | B.3 COMPLETE — 59 testů, miner feature parity | Miner binary je 312-řádkový CPU-only stub, žádné GPU, triple-stream, TUI, profit switching | **Knihovní moduly** (`auxpow/client.rs`, `hasher.rs`, `dual_stratum.rs`, ...) jsou portovány. **Binárka `zion-miner.rs`** je CPU-only stratum klient. GPU backendy (`gpu-opencl`, `gpu-cuda`, `gpu-metal`) jsou prázdné feature flags. |
 | 2 | **Pool** | B.2 COMPLETE — 79 testů, pool feature parity | Pool API server se nespouští, PPLNS je share-count (ne difficulty-weighted), chybí fee split, payout execution, auth, env var config | `zion-pool` binary běží a forwarduje share (produkční stratum 8444). PPLNS má `v3_pplns.rs` portován, ale binárka ho zatím nekonfiguruje. Chybí API server, fee split, metrics, env config. |
-| 3 | **DAO** | C1.4 `gen-dao-guardians` ported; D3.4 multichain `/health` OK | `zion-dao` je skeleton — žádné voting, treasury, humanitarian, L1 scanner, HTTP API | `zion-dao` crate má pouze proposal/quorum/timelock modely. Governance runtime chybí. |
+| 3 | **DAO** | C1.4 `gen-dao-guardians` ported; D3.4 multichain `/health` OK | `zion-dao` je skeleton — žádné voting, treasury, humanitarian, L1 scanner, HTTP API | `zion-dao` má voting, quorum, timelock, treasury, humanitarian, db, l1_scanner, metrics, executor, consent, co_admin, cross_layer, prizes. Chybí plné propojení runtime ↔ db/scanner a service start v `main.rs`. |
 | 4 | **DEX / ZionDex** | Multichain `/v1/swap/pools` OK, WARP HTLC smoke pass | DEX je basic AMM router, chybí intent-based settlement, solver network, TypeScript SDK, Solidity contracts | `zion-multichain::swap::dex` má constant-product AMM. ZionDex backend není portován. |
 | 5 | **Profit oracle** | AutonomousProfitRouter unit testy pass | Profit oracle má fallback, chybí NiceHash + WhatToMine live integrace | `autonomous.rs` a `stream_profit.rs` jsou v workspace, ale live data nejsou zapojená v binárce. |
 | 6 | **Desktop Agent** | Není zmíněn v plánu | Neexistuje V31 Desktop Agent — bundle pouze V3 | Skutečně neexistuje. Nutné rozhodnout, zda je 3.1.0 blocker. |
@@ -146,7 +147,7 @@
 
 | # | Úkol | Soubor / crate | Acceptance | Poznámka | Status |
 |---|------|----------------|------------|----------|--------|
-| C1 | Port DAO governance runtime | `V31/L2/dao/src/` | Proposal submit, vote, quorum, treasury, humanitarian kategorie, L1 scanner, HTTP API | Port z `archive/V3/L2/dao/`. |
+| C1 | Port DAO governance runtime | `V31/L2/dao/src/` | Proposal submit, vote, quorum, treasury, humanitarian kategorie, L1 scanner, HTTP API | Port z `archive/V3/L2/dao/`. | IN PROGRESS |
 | C2 | Port ZionDex do multichain | `V31/L2/multichain/src/swap/dex.rs` | Intent + solver + AMM aggregator; smoke test quote + execute | Vzor `archive/ZionDex/`. |
 | C3 | Přidat HTLC endpoints | `V31/L2/multichain/src/server.rs` | `/v1/multichain/swaps/htlc/lock`, `/claim`, `/refund` fungují | Již existují moduly v multichain. | DONE |
 | C4 | Přidat live profit oracle | `V31/L1/cosmic-harmony/src/stream_profit.rs` | WhatToMine + NiceHash fetch s fallbackem, cache, rate limit | Opatrně s API klíči (1Password). | DONE |
