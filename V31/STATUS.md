@@ -18,7 +18,7 @@
   - `zion-oasis` 125 testů
   - `zion-pool` 160 testů (bylo 68 — +92 z TLS, share relay, profit switcher, auxpow runtime, expanded API, routing, deferred payout, NCL gateway)
   - `zion-miner` 13 testů
-  - `zion-dao` 49 testů
+  - `zion-dao` 74 testů
   - `zion-free-world` 3 testy
   - `zion-issobella` 3 testy
   - `zion-smoke` 8 cross-layer testů
@@ -137,7 +137,7 @@ Dokončena plná V3 pool feature parity. Pool nasazen a běží na Edge (`62.171
 
 ### DAO Governance Runtime (2026-08-06) ✅
 
-DAO governance runtime rošířena (Phase C1). Plný lifecycle návrhů s hlasováním, kvórem a timelockem + pokročilé moduly z V3.
+DAO governance runtime rošířena a částečně integrována (Phase C1). Plný lifecycle návrhů s hlasováním, kvórem a timelockem + pokročilé moduly z V3, Prometheus metriky a L1 memo scanner.
 
 **Nové moduly:**
 
@@ -153,7 +153,9 @@ DAO governance runtime rošířena (Phase C1). Plný lifecycle návrhů s hlasov
 - ✅ **`consent.rs`**, **`co_admin.rs`**, **`cross_layer.rs`**, **`prizes.rs`** — guardian / consent / cross-layer / prize engine.
 - ✅ **`main.rs`** — `zion-dao` binárka s tracing-subscriber.
 
-**Testy:** 49 DAO testů pass (bylo 31).
+**Testy:** 74 DAO testů pass (bylo 31).
+
+**Integrace:** `zion-dao` binárka nyní otevírá `DaoDb` na `DAO_DB_PATH`, spouští `L1Scanner` pro governance mema a vystavuje `/metrics` endpoint. Runtime zatím drží návrhy/hlasy v paměti; propojení runtime ↔ SQLite zůstává otevřené.
 
 ### CLI Wallet + Service Management (2026-08-04) ✅
 
