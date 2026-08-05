@@ -43,6 +43,33 @@ export const SHIP_MODELS: ShipModelDef[] = [
   { id: 'stardestroyer', label: 'Star Destroyer', description: 'Capital ship — dominates the battlefield', stlPath: null, procedural: true, color: '#475569', unlockLevel: 15, unlockCost: 100000, class: 'Capital', stats: { boost: 2, cargo: 5, scanner: 5, hp: 500 } },
 ];
 
+// ── Hiranyagarbha Keys ──
+// 108 keys hidden across the OASIS multiverse. Collecting all unlocks
+// the Golden Egg (Hiranyagarbha — "Zlaté Lůno") endgame.
+// Key #1 is hidden in the B-Wing's quantum engine.
+export interface HiranKeyDef {
+  id: string;
+  number: number;
+  name: string;
+  location: string;
+  hint: string;
+  reward: number; // XP reward for finding this key
+}
+
+export const HIRAN_KEYS: HiranKeyDef[] = [
+  {
+    id: 'bwing-quantum-core',
+    number: 1,
+    name: 'Klíč Prvotního Lůna',
+    location: 'B-Wing · Kvantový motor',
+    hint: 'Uvnitř těžkého bombardéru se skrývá jádro, které nesvítí pro pouhé oko — pouze pro pilota, který si vybral tuto loď jako svou. Hledej puls v motoru, když letíš.',
+    reward: 500,
+  },
+  // Keys 2–108 will be added as more content is discovered
+];
+
+export const TOTAL_HIRAN_KEYS = 108;
+
 export type Archetype = 'warrior' | 'trader' | 'explorer' | 'sage' | null;
 
 export type BodyType = 'slim' | 'standard' | 'heavy';
@@ -71,6 +98,10 @@ interface GameState {
   fruitBlessings: number;
   fruitThreshold: number;
   collectedFruitIds: string[];
+  /* Hiranyagarbha Keys — 108 keys hidden across the OASIS multiverse.
+     Collecting all 108 unlocks the Golden Egg (Hiranyagarbha) endgame.
+     Each key is tied to a specific location, ship, quest, or dimension. */
+  collectedHiranKeys: string[];
   archetype: Archetype;
   avatarConfig: AvatarConfig;
   shipLoadout: ShipLoadout;
@@ -89,6 +120,7 @@ interface GameState {
   claimGoldenEgg: (worldId: string) => boolean;
   collectFruit: (fruitId: string) => boolean;
   resetFruitBlessing: () => void;
+  collectHiranKey: (keyId: string) => boolean;
   upgradeShip: (part: keyof ShipLoadout) => boolean;
   setShipColor: (color: string) => void;
   setShipModel: (model: ShipModelId) => void;
@@ -118,6 +150,7 @@ export const useGameStore = create<GameState>()(
       fruitBlessings: 0,
       fruitThreshold: 7,
       collectedFruitIds: [],
+      collectedHiranKeys: [],
       archetype: null,
       avatarConfig: { callsign: '', bodyType: 'standard', neonColor: '#06b6d4', augmentation: 'neural' },
       shipLoadout: { boost: 1, cargo: 1, scanner: 1, color: '#06b6d4', model: 'pilgrim' },
@@ -218,6 +251,21 @@ export const useGameStore = create<GameState>()(
       resetFruitBlessing: () =>
         set({ collectedFruitIds: [] }),
 
+      /* Hiranyagarbha Key — collect a hidden key. Returns true if the key
+         was new (not already collected). Awards XP from the key definition.
+         When all 108 keys are collected, the Golden Egg endgame unlocks. */
+      collectHiranKey: (keyId) => {
+        const state = get();
+        if (state.collectedHiranKeys.includes(keyId)) return false;
+        const keyDef = HIRAN_KEYS.find((k) => k.id === keyId);
+        const reward = keyDef?.reward ?? 100;
+        set((s) => ({
+          collectedHiranKeys: [...s.collectedHiranKeys, keyId],
+          xp: s.xp + reward,
+        }));
+        return true;
+      },
+
       upgradeShip: (part) => {
         const state = get();
         const current = state.shipLoadout[part];
@@ -298,6 +346,7 @@ export const useGameStore = create<GameState>()(
           collectedFruits: [],
           fruitBlessings: 0,
           collectedFruitIds: [],
+          collectedHiranKeys: [],
           archetype: null,
           avatarConfig: { callsign: '', bodyType: 'standard', neonColor: '#06b6d4', augmentation: 'neural' },
           shipLoadout: { boost: 1, cargo: 1, scanner: 1, color: '#06b6d4', model: 'pilgrim' },
@@ -318,6 +367,7 @@ export const useGameStore = create<GameState>()(
         collectedEggs: state.collectedEggs,
         collectedFruits: state.collectedFruits,
         fruitBlessings: state.fruitBlessings,
+        collectedHiranKeys: state.collectedHiranKeys,
         archetype: state.archetype,
         avatarConfig: state.avatarConfig,
         shipLoadout: state.shipLoadout,
