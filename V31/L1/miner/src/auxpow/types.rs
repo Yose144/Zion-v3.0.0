@@ -120,7 +120,7 @@ impl Share {
 
     /// Hex representation of the mix hash, if any.
     pub fn mix_hash_hex(&self) -> Option<String> {
-        self.mix_hash.map(|m| hex::encode_upper(&m).to_lowercase())
+        self.mix_hash.map(|m| hex::encode_upper(m).to_lowercase())
     }
 }
 

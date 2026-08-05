@@ -1319,7 +1319,7 @@ fn detect_physical_cores() -> Option<usize> {
         }
         // Fallback: lscpu
         if let Ok(output) = std::process::Command::new("lscpu")
-            .args(&["-p=Core"])
+            .args(["-p=Core"])
             .output()
         {
             if let Ok(text) = String::from_utf8(output.stdout) {
@@ -1685,7 +1685,7 @@ pub fn detect_available_memory_bytes() -> u64 {
                 }
             }
         }
-        return detect_system_memory_bytes() / 4;
+        detect_system_memory_bytes() / 4
     }
 
     #[cfg(target_os = "windows")]
