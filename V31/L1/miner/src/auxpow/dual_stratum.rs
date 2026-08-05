@@ -37,6 +37,10 @@ pub struct FoundExternalShare {
     pub external_job_id: String,
     pub nonce: u64,
     pub hash: [u8; 32],
+    /// Mix hash for Ethash/KawPow/ProgPow-style shares.
+    pub mix_hash: Option<[u8; 32]>,
+    /// Variable-length solution blob for Equihash/BeamHash/VerusHash-style shares.
+    pub solution: Option<Vec<u8>>,
 }
 
 impl DualStratumJob {
@@ -101,6 +105,8 @@ impl DualStratumMiner {
                             external_job_id: job.external.external_job_id.clone(),
                             nonce,
                             hash,
+                            mix_hash: None,
+                            solution: None,
                         }));
                     }
                 }

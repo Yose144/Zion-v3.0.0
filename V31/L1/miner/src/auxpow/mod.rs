@@ -29,7 +29,7 @@ pub use hasher::{
     hash_keryxhash_extranonce, hash_kheavyhash, hash_kheavyhash_extranonce, hash_pearl,
     hash_verushash, hash_verushash_header, hash_zelhash, is_valid_autolykos_solution,
     is_valid_zelhash_solution, kheavyhash_matrix_flat, meets_target, meets_target_little_endian,
-    mine_ethash, mine_zelhash,
+    mine_ethash, mine_verushash, mine_zelhash,
     generate_keryx_matrix, keryx_active_salt, keryx_active_salt_version,
     KERYX_MATRIX_SALT_V1, KERYX_MATRIX_SALT_V2, KERYX_MATRIX_SALT_V4,
     KERYX_SALT_V2_ACTIVATION_DAA, KERYX_SALT_V4_ACTIVATION_DAA,

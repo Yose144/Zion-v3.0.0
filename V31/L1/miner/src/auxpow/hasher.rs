@@ -493,7 +493,89 @@ pub fn is_valid_autolykos_solution(_header: &[u8], _nonce: u64, _solution: &[u8]
 
 // ── VerusHash (Verus) ────────────────────────────────────────────────
 
+pub const VERUS_HEADER_SIZE: usize = 1487;
+pub const VERUS_SOLUTION_SIZE: usize = 1344;
+pub const VERUS_SOLUTION_OFFSET: usize = 143;
+pub const VERUS_NONCE_SPACE_SIZE: usize = 15;
+pub const VERUS_NONCE_SPACE_OFFSET: usize = VERUS_SOLUTION_OFFSET + 1329; // 1472
+pub const VERUS_NONCE_FIELD_SIZE: usize = 32;
+
+/// Clear non-canonical PBaaS v7+ VerusCoin header fields in-place.
+/// This matches what the upstream pool does before hashing a share,
+/// so the miner's local hash computation uses the same canonical data.
+pub fn clear_verushash_pbaas(header: &mut [u8]) {
+    const SOLUTION_OFFSET: usize = 143;
+    if header.len() < SOLUTION_OFFSET + 8 {
+        return;
+    }
+
+    let sol_ver = u32::from_le_bytes([
+        header[SOLUTION_OFFSET],
+        header[SOLUTION_OFFSET + 1],
+        header[SOLUTION_OFFSET + 2],
+        header[SOLUTION_OFFSET + 3],
+    ]);
+    if sol_ver <= 6 {
+        return;
+    }
+
+    let num_pbaas = header[SOLUTION_OFFSET + 5];
+    if num_pbaas == 0 {
+        return;
+    }
+
+    // Zero non-canonical fields in the 140-byte header prefix.
+    if header.len() >= 140 {
+        for b in &mut header[4..100] {
+            *b = 0;
+        }
+        for b in &mut header[104..108] {
+            *b = 0;
+        }
+        for b in &mut header[108..140] {
+            *b = 0;
+        }
+    }
+
+    // Zero MMR roots stored in the first 72 bytes of the solution.
+    let mmr_start = SOLUTION_OFFSET + 8;
+    let mmr_end = SOLUTION_OFFSET + 72;
+    if header.len() >= mmr_end {
+        for b in &mut header[mmr_start..mmr_end] {
+            *b = 0;
+        }
+    }
+}
+
+/// Build a Zcash compact-size varint for a solution length.
+pub fn zcash_varint_for_len(len: usize) -> Vec<u8> {
+    if len < 0xfd {
+        vec![len as u8]
+    } else if len <= 0xffff {
+        let mut v = vec![0xfd];
+        v.extend_from_slice(&(len as u16).to_le_bytes());
+        v
+    } else if len <= 0xffff_ffff {
+        let mut v = vec![0xfe];
+        v.extend_from_slice(&(len as u32).to_le_bytes());
+        v
+    } else {
+        let mut v = vec![0xff];
+        v.extend_from_slice(&(len as u64).to_le_bytes());
+        v
+    }
+}
+
+#[cfg(feature = "native-verushash")]
 pub fn hash_verushash(header: &[u8], nonce: u64) -> [u8; 32] {
+    zion_native_ffi::verushash::hash(header, nonce)
+}
+
+#[cfg(not(feature = "native-verushash"))]
+pub fn hash_verushash(header: &[u8], nonce: u64) -> [u8; 32] {
+    // Stub: without the native C++ implementation we cannot produce a valid
+    // VerusHash. Returning a deterministic dummy keeps compilation/tests green
+    // but VRSC shares will be rejected by real pools.
     let mut input = Vec::with_capacity(header.len() + 8);
     input.extend_from_slice(header);
     input.extend_from_slice(&nonce.to_le_bytes());
@@ -503,11 +585,91 @@ pub fn hash_verushash(header: &[u8], nonce: u64) -> [u8; 32] {
     out
 }
 
+#[cfg(feature = "native-verushash")]
+pub fn hash_verushash_header(header: &[u8]) -> [u8; 32] {
+    zion_native_ffi::verushash::hash_raw(header)
+}
+
+#[cfg(not(feature = "native-verushash"))]
 pub fn hash_verushash_header(header: &[u8]) -> [u8; 32] {
     let h = sha2::Sha256::digest(header);
     let mut out = [0u8; 32];
     out.copy_from_slice(&h);
     out
+}
+
+/// Mine VerusHash v2.2 using the two-stage native path.
+/// Returns the found nonce, the little-endian PoW hash, and the
+/// solution-with-varint bytes ready for ZcashStratum submission.
+#[cfg(feature = "native-verushash")]
+pub fn mine_verushash(
+    header: &[u8],
+    target: &[u8; 32],
+    start: u64,
+    end: u64,
+    extranonce1: &[u8],
+) -> Option<(u64, [u8; 32], Vec<u8>)> {
+    zion_native_ffi::verushash::init();
+
+    if header.len() < VERUS_HEADER_SIZE {
+        return None;
+    }
+
+    // The 15-byte nonceSpace layout: [en1][miner_nonce(4B LE)][padding].
+    let en1_len = extranonce1.len().min(VERUS_NONCE_SPACE_SIZE - 4);
+    let mut nonce_space = [0u8; VERUS_NONCE_SPACE_SIZE];
+    nonce_space[..en1_len].copy_from_slice(&extranonce1[..en1_len]);
+
+    // Work header: canonical copy with PBaaS non-canonical data cleared.
+    let mut work_header = header.to_vec();
+    clear_verushash_pbaas(&mut work_header);
+    work_header[VERUS_NONCE_SPACE_OFFSET..VERUS_NONCE_SPACE_OFFSET + VERUS_NONCE_SPACE_SIZE]
+        .copy_from_slice(&nonce_space);
+
+    // Two-stage scan: hash_half + prepare_key once, scan_nonces for the range.
+    let intermediate = zion_native_ffi::verushash::hash_half(&work_header);
+    zion_native_ffi::verushash::prepare_key(&intermediate);
+
+    let nonce_offset = en1_len as u32;
+    let found = zion_native_ffi::verushash::scan_nonces(
+        &intermediate,
+        &nonce_space,
+        nonce_offset,
+        start,
+        end,
+        target,
+    )?;
+
+    // Build the submit solution from the original header with the found nonce
+    // embedded in the solution nonceSpace. MMR roots stay as supplied by the
+    // pool; the upstream validator clears them before hashing.
+    let (nonce, hash) = found;
+    let nonce_le = (nonce as u32).to_le_bytes();
+    let mut final_nonce_space = [0u8; VERUS_NONCE_SPACE_SIZE];
+    final_nonce_space[..en1_len].copy_from_slice(&extranonce1[..en1_len]);
+    final_nonce_space[en1_len..en1_len + 4].copy_from_slice(&nonce_le);
+
+    let mut final_header = header.to_vec();
+    final_header[VERUS_NONCE_SPACE_OFFSET..VERUS_NONCE_SPACE_OFFSET + VERUS_NONCE_SPACE_SIZE]
+        .copy_from_slice(&final_nonce_space);
+
+    let mut solution = zcash_varint_for_len(VERUS_SOLUTION_SIZE);
+    solution.extend_from_slice(&final_header[VERUS_SOLUTION_OFFSET..VERUS_SOLUTION_OFFSET + VERUS_SOLUTION_SIZE]);
+
+    Some((nonce, hash, solution))
+}
+
+#[cfg(not(feature = "native-verushash"))]
+pub fn mine_verushash(
+    _header: &[u8],
+    _target: &[u8; 32],
+    _start: u64,
+    _end: u64,
+    _extranonce1: &[u8],
+) -> Option<(u64, [u8; 32], Vec<u8>)> {
+    // Without the native VerusHash implementation we cannot produce a valid
+    // share. Returning None lets callers fall back cleanly.
+    None
 }
 
 pub fn init_verushash() {}
@@ -835,5 +997,58 @@ mod tests {
     #[test]
     fn dispatch_unsupported() {
         assert!(dispatch_hash("unknown_algo", b"header", 0, 0).is_err());
+    }
+
+    #[test]
+    #[cfg(feature = "native-verushash")]
+    fn mine_verushash_finds_share_and_solution_verifies() {
+        let en1 = [0x01u8, 0x02, 0x03, 0x04];
+        let mut header = vec![0u8; VERUS_HEADER_SIZE];
+
+        // Block version (4 bytes LE)
+        header[0..4].copy_from_slice(&[4, 0, 0, 0]);
+        // nTime / nBits (will be zeroed by clear_verushash_pbaas, but keep
+        // realistic values so the header is well-formed).
+        header[100..104].copy_from_slice(&[0x00, 0xC0, 0x5A, 0x5A]);
+        header[104..108].copy_from_slice(&[0x1b, 0x00, 0xff, 0xff]);
+        // nNonce field: en1 + zeros (matches what the pool expects).
+        header[108..108 + en1.len()].copy_from_slice(&en1);
+        // Compact varint for 1344-byte solution.
+        header[140..143].copy_from_slice(&[0xfd, 0x40, 0x05]);
+
+        // Solution: PBaaS v7+ version and at least one PBaaS header declared.
+        header[VERUS_SOLUTION_OFFSET] = 7;
+        header[VERUS_SOLUTION_OFFSET + 5] = 1;
+        // MMR roots in the solution — must be restored in the submitted solution
+        // and cleared by the pool before hashing.
+        for b in &mut header[VERUS_SOLUTION_OFFSET + 8..VERUS_SOLUTION_OFFSET + 72] {
+            *b = 0xAB;
+        }
+
+        // Pre-populate nonceSpace with en1; the scan will embed the nonce.
+        header[VERUS_NONCE_SPACE_OFFSET..VERUS_NONCE_SPACE_OFFSET + en1.len()]
+            .copy_from_slice(&en1);
+
+        // Very easy target so the first nonce wins.
+        let target = [0xffu8; 32];
+
+        let (nonce, hash, solution) = mine_verushash(&header, &target, 0, 1000, &en1)
+            .expect("mine_verushash should find a share with max target");
+
+        // Reconstruct the canonical header the pool will hash and verify the
+        // reported hash matches.
+        let mut verify_header = header.clone();
+        clear_verushash_pbaas(&mut verify_header);
+        let nonce_le = (nonce as u32).to_le_bytes();
+        verify_header[VERUS_NONCE_SPACE_OFFSET + en1.len()
+            ..VERUS_NONCE_SPACE_OFFSET + en1.len() + 4]
+            .copy_from_slice(&nonce_le);
+        let verify_hash = hash_verushash_header(&verify_header);
+        assert_eq!(verify_hash, hash, "hashed solution must match scan hash");
+
+        // The solution-with-varint must be the correct length and start with the
+        // Zcash compact varint for 1344 bytes.
+        assert_eq!(solution.len(), 3 + VERUS_SOLUTION_SIZE);
+        assert_eq!(&solution[..3], &[0xfd, 0x40, 0x05]);
     }
 }
