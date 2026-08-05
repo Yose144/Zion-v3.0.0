@@ -135,5 +135,5 @@ Klíčové provozní body z `V31/AGENTS.md`:
 
 ---
 
-**Verze:** `3.1.0-alpha.1` (2026-07-30)
+**Verze:** `3.1.0-alpha.2` (2026-08-05)
 **Autorita:** Tento `README.md` je kanonický vstupní bod pro V31 Mainnet Alpha workspace.
