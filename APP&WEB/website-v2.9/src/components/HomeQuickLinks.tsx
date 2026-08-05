@@ -68,6 +68,13 @@ export default function HomeQuickLinks() {
       rc: '16, 185, 129', // emerald
     },
     {
+      href: '/multichain',
+      label: 'Multichain',
+      desc: cs ? 'Bridge, WARP, swap' : 'Bridge, WARP, swap',
+      icon: Globe,
+      rc: '16, 185, 129', // emerald
+    },
+    {
       href: '/roadmap',
       label: HomeQuickLinksCopy.roadmap[cs ? 'cs' : 'en'],
       desc: HomeQuickLinksCopy.l1L6Vision[cs ? 'cs' : 'en'],

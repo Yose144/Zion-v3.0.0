@@ -56,7 +56,7 @@ export default function StoryTriptych() {
   ];
 
   return (
-    <section className="px-4 py-14 sm:py-16">
+    <section className="px-4 py-10 sm:py-12">
       <div className="zion-container space-y-8">
         {/* Header */}
         <div className="text-center space-y-3">

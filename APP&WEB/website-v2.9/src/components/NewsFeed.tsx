@@ -481,7 +481,7 @@ export default function NewsFeed() {
   const hasMore = homepageArticles.length > HOMEPAGE_LIMIT;
 
   return (
-    <section className="relative py-20 px-4 overflow-hidden">
+    <section className="relative py-10 px-4 overflow-hidden">
       {/* Subtle background gradient */}
       <div className="absolute inset-0 bg-linear-to-b from-transparent via-zion-gold/[0.02] to-transparent pointer-events-none" />
       {/* Floating particles */}
@@ -509,7 +509,7 @@ export default function NewsFeed() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="mb-12"
+          className="mb-6"
         >
           <div className="flex items-center gap-3 mb-3">
             <Newspaper className="w-5 h-5 text-zion-gold" />

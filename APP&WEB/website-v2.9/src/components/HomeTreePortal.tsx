@@ -68,7 +68,7 @@ export default function HomeTreePortal() {
   const [hovered, setHovered] = useState<string | null>(null);
 
   return (
-    <section id="tree-of-life" className="px-4 py-14 sm:py-16 scroll-mt-28">
+    <section id="tree-of-life" className="px-4 py-10 sm:py-12 scroll-mt-28">
       <div className="zion-container space-y-6">
         {/* Header — unified with StoryTriptych style */}
         <div className="text-center space-y-3">
