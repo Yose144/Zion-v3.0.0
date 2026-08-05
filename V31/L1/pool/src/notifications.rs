@@ -358,10 +358,16 @@ impl Notifier {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
+
+    /// Guards the shared process environment so env-var tests do not race.
+    static ENV_LOCK: Mutex<()> = Mutex::new(());
 
     /// With no env vars set, every channel should be disabled.
     #[test]
     fn test_config_from_env_disabled() {
+        let _guard = ENV_LOCK.lock().unwrap();
+
         // Temporarily clear all notification env vars so the test is
         // deterministic regardless of the host environment.
         let keys = [
@@ -405,6 +411,8 @@ mod tests {
     /// With telegram env vars set, `telegram_enabled` should be true.
     #[test]
     fn test_config_telegram_enabled() {
+        let _guard = ENV_LOCK.lock().unwrap();
+
         let keys = ["ZION_TELEGRAM_BOT_TOKEN", "ZION_TELEGRAM_CHAT_ID"];
         let snapshot: Vec<(String, Option<String>)> = keys
             .iter()
