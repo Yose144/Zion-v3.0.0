@@ -720,7 +720,9 @@ impl AuxPowClient {
             return Some(job);
         }
 
-        if params.len() == 3 {
+        if params.len() == 3 || params.len() == 5 {
+            // 3-param: [job_id, header_hex, target_hex]
+            // 5-param (ZION simplified): [job_id, header_hex, target_hex, height, clean_jobs]
             let job_id = params[0].as_str().unwrap_or("").to_string();
             let header_hex = params[1].as_str().unwrap_or("");
             let target_hex = params[2].as_str().unwrap_or("");
@@ -1088,6 +1090,9 @@ async fn stratum_session(
         tokio::select! {
             line = lines.next_line() => match line {
                 Ok(Some(line)) => {
+                    if line.trim().is_empty() {
+                        continue;
+                    }
                     if let Err(e) = handle_line(&line, job_tx, state).await {
                         warn!(line = %line, error = %e, "stratum line parse failed");
                     }
@@ -1203,7 +1208,9 @@ fn params_extranonce(value: &Value) -> Option<(Vec<u8>, usize)> {
 }
 
 async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJob> {
-    if params.len() == 3 {
+    if params.len() == 3 || params.len() == 5 {
+        // 3-param: [job_id, header_hex, target_hex]
+        // 5-param (ZION simplified): [job_id, header_hex, target_hex, height, clean_jobs]
         let job_id = params[0].as_str().unwrap_or("").to_string();
         let header_hex = params[1].as_str().unwrap_or("");
         let target_hex = params[2].as_str().unwrap_or("");
