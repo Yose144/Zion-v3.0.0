@@ -30,14 +30,14 @@
 - [~] B7 — Odstranit legacy `deeksha_chv3` a `deeksha_lite_fire` kernely (prozatím ponechány a konstanty sjednoceny; legacy job názvy zůstávají pro kompatibilitu)
 - [x] B8 — `cargo test -p zion-cosmic-harmony -p zion-core -p zion-pool -p zion-miner` čisté
 - [x] B9 — `cargo clippy --workspace` čisté
-- [~] B10 — Commit fáze B a push (připraveno k commitu)
+- [x] B10 — Commit fáze B a push
 
 ## Dokumentace a finalizace
 
-- [~] D1 — Aktualizovat `PLAN_EKAM_DEEKSHA.md` (fáze A/B provedeny, poznámky)
-- [~] D2 — Aktualizovat `V31/STATUS.md` a `V31/README.md` (README částečně aktualizováno)
-- [~] D3 — Aktualizovat `V31/AGENTS.md` (poznámky pro budoucí změny consensusu)
-- [ ] D4 — Final commit + push
+- [x] D1 — Aktualizovat `PLAN_EKAM_DEEKSHA.md` (fáze A/B provedeny, poznámky)
+- [x] D2 — Aktualizovat `V31/STATUS.md` a `V31/README.md` (README částečně aktualizováno)
+- [x] D3 — Aktualizovat `V31/AGENTS.md` (poznámky pro budoucí změny consensusu)
+- [x] D4 — Final commit + push
 
 ---
 
