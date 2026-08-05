@@ -185,11 +185,16 @@ TOPOLOGY = CONFIG["topology"]
 PAYOUT_HIGHWATER_FILE = DATA_DIR / "dashboard-payout-highwater.json"
 
 # Canonical Edge systemd units used by servers-setup, processes, and health maps.
+# V31-first after cutover; V3 services are masked/archived and not started.
 EDGE_SERVICE_ORDER = [
+    "zion-v31-node", "zion-v31-pool", "zion-v31-multichain", "zion-v31-watchdog",
+    "zion-edge-python-dashboard",
+    "prometheus", "grafana-server",
+    "zion-website", "zion-marketplace",
     "zion-edge-node1", "zion-edge-node2", "zion-edge-pool",
     "zion-edge-bridge", "zion-edge-dao", "zion-edge-atomic-swap",
     "zion-edge-warp", "zion-edge-oasis", "zion-edge-dex",
-    "zion-edge-dashboard", "zion-edge-python-dashboard", "zion-edge-watchdog",
+    "zion-edge-dashboard",
 ]
 
 # ── Basic Auth (HTTP 401) — multi-user ───────────────────────────────────
@@ -1120,9 +1125,9 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "critical", "autoheal": False,
      "health_endpoint": "http://127.0.0.1:9445",
-     "purpose": "V31 Mainnet Alpha (3.1.0-alpha.2) — PROD node. P2P 8335, RPC 9445. systemd zion-v31-node.service.",
+     "purpose": "V31 Mainnet Alpha (3.1.0-alpha.2) — PROD node. P2P 8335, RPC 9445. Independent of V3. systemd zion-v31-node.service.",
      "child_says": "🚀 V31 PROD node — mainnet alpha!",
-     "depends_on": ["edge-node1"]},
+     "depends_on": []},
     {"id": "v31-pool", "name": "V31 Pool (PROD)", "icon": "🌐", "level": "L1", "kind": "pool",
      "ports": {"stratum": 8444},
      "host": "127.0.0.1",
@@ -1271,6 +1276,30 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "Next.js 16.2.9 website — 73+ routes, Docker container zion-web:nextjs. Port 3000 (host network).",
      "child_says": "🌐 The public face of ZION — our website!",
      "depends_on": ["nginx"]},
+    {"id": "marketplace", "name": "OASIS Marketplace", "icon": "🏪", "level": "Infra", "kind": "web",
+     "ports": {"http": 3100},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "tcp", "severity": "warning", "autoheal": False,
+     "purpose": "OASIS Artifact Marketplace (Next.js + ERC-1155). Port 3100 behind nginx.",
+     "child_says": "🏪 Buy and sell OASIS artifacts!",
+     "depends_on": ["nginx"]},
+    {"id": "prometheus", "name": "Prometheus", "icon": "📈", "level": "Infra", "kind": "metrics",
+     "ports": {"metrics": 9090},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "tcp", "severity": "info", "autoheal": False,
+     "purpose": "Metrics scraper — V31 pool, node exporter, system targets. Port 9090.",
+     "child_says": "📈 Scrapes metrics for dashboards!",
+     "depends_on": []},
+    {"id": "grafana", "name": "Grafana", "icon": "📊", "level": "Infra", "kind": "metrics",
+     "ports": {"web": 3001},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "tcp", "severity": "info", "autoheal": False,
+     "purpose": "Grafana dashboards — V31 Mainnet Alpha embedded in /dashboard. Port 3001.",
+     "child_says": "📊 Beautiful charts for the full dashboard!",
+     "depends_on": ["prometheus"]},
 ]
 
 SERVICE_REGISTRY_LOCAL_DEV = [
@@ -1418,13 +1447,13 @@ SERVICE_REGISTRY_LOCAL_DEV = [
 SERVICE_REGISTRY = SERVICE_REGISTRY_EDGE_PRIMARY if TOPOLOGY == "edge-primary" else SERVICE_REGISTRY_LOCAL_DEV
 
 # ── V31 primary / V3 archived markers ───────────────────────────────────
-PRIMARY_SERVICES = {"v31-node", "v31-pool", "v31-miner", "v31-multichain", "v31-dao"}
+PRIMARY_SERVICES = {"v31-node", "v31-pool", "v31-multichain"}
 ARCHIVED_SERVICES = {
     "edge-node1", "edge-node2", "pool-edge", "miner",
     "bridge", "dao", "atomic-swap", "dex", "warp",
     "oasis", "free-world", "issobella",
     "node1", "node2", "swap-aggregator", "ncl",
-    "hiranyagarbha", "ai-native", "node-exporter",
+    "hiranyagarbha", "ai-native", "node-exporter", "v31-dao", "v31-miner",
 }
 
 
