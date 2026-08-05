@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Activity, Atom, Braces, Database, HelpCircle, Shield, TrendingUp } from 'lucide-react';
+import { Activity, Atom, Braces, Database, Gauge, HelpCircle, Shield, TrendingUp } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { apiClient } from '@/lib/api';
 import { usePolling } from '@/hooks/usePolling';
