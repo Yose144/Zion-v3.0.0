@@ -100,6 +100,10 @@ pub struct Share {
     pub coin: ExternalCoin,
     pub nonce: u64,
     pub hash: [u8; 32],
+    /// Mix hash for Ethash/KawPow/ProgPow-style shares (needed by upstream pool).
+    pub mix_hash: Option<[u8; 32]>,
+    /// Variable-length solution blob for Equihash/BeamHash/VerusHash-style shares.
+    pub solution: Option<Vec<u8>>,
     pub extranonce2: String,
     pub ntime: String,
 }
@@ -107,6 +111,16 @@ pub struct Share {
 impl Share {
     pub fn nonce_hex(&self) -> String {
         format!("{:016x}", self.nonce)
+    }
+
+    /// Hex representation of the solution blob, if any.
+    pub fn solution_hex(&self) -> Option<String> {
+        self.solution.as_ref().map(hex::encode)
+    }
+
+    /// Hex representation of the mix hash, if any.
+    pub fn mix_hash_hex(&self) -> Option<String> {
+        self.mix_hash.map(|m| hex::encode_upper(&m).to_lowercase())
     }
 }
 

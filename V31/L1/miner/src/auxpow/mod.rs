@@ -62,6 +62,8 @@ pub fn find_share(coin: ExternalCoin, job: &Job, start: u64, limit: u64) -> Opti
                 coin,
                 nonce,
                 hash,
+                mix_hash: None,
+                solution: None,
                 extranonce2: job.extranonce2.clone(),
                 ntime: job.ntime.clone(),
             });

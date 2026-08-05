@@ -242,6 +242,8 @@ impl MinerRuntime {
             coin: zion_cosmic_harmony::ExternalCoin::Bitcoin,
             nonce,
             hash: _hash.0,
+            mix_hash: None,
+            solution: None,
             extranonce2: job.extranonce2,
             ntime: job.ntime,
         };
@@ -342,12 +344,14 @@ impl MinerRuntime {
 
         match gpu_result {
             Ok(Ok(gpu_result)) => {
-                if let Some((nonce, hash, _mix)) = gpu_result.solutions.into_iter().next() {
+                if let Some((nonce, hash, mix)) = gpu_result.solutions.into_iter().next() {
                     return Some(Share {
                         job_id,
                         coin,
                         nonce,
                         hash,
+                        mix_hash: mix,
+                        solution: None,
                         extranonce2,
                         ntime,
                     });
