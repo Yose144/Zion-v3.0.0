@@ -244,8 +244,7 @@ impl WorkBits {
         temp[..7].copy_from_slice(&self.words);
 
         // padNum = ((512 - remLen) + collisionBitSize) / (collisionBitSize + 1)
-        let pad_num = ((512 - rem_len) + BEAMHASH_COLLISION_BITS)
-            / (BEAMHASH_COLLISION_BITS + 1);
+        let pad_num = ((512 - rem_len) + BEAMHASH_COLLISION_BITS) / (BEAMHASH_COLLISION_BITS + 1);
         let pad_num = pad_num.min(indices.len());
 
         for i in 0..pad_num {
@@ -459,7 +458,10 @@ pub fn is_valid_solution(header: &[u8], solution: &[u8]) -> Result<(), String> {
     let pre_pow = compute_prepow(header);
 
     // Build the tree bottom-up
-    let mut nodes: Vec<BeamNode> = indices.iter().map(|&i| BeamNode::new(&pre_pow, i)).collect();
+    let mut nodes: Vec<BeamNode> = indices
+        .iter()
+        .map(|&i| BeamNode::new(&pre_pow, i))
+        .collect();
 
     for round in 0..BEAMHASH_K {
         let mix_len = apply_mix_rem_len(round);
@@ -668,7 +670,12 @@ mod tests {
 
     #[test]
     fn test_siphash24_deterministic() {
-        let state = SipHash24State { v0: 1, v1: 2, v2: 3, v3: 4 };
+        let state = SipHash24State {
+            v0: 1,
+            v1: 2,
+            v2: 3,
+            v3: 4,
+        };
         let h1 = state.hash(42);
         let h2 = state.hash(42);
         assert_eq!(h1, h2, "SipHash should be deterministic");
@@ -676,7 +683,12 @@ mod tests {
 
     #[test]
     fn test_siphash24_different_inputs() {
-        let state = SipHash24State { v0: 1, v1: 2, v2: 3, v3: 4 };
+        let state = SipHash24State {
+            v0: 1,
+            v1: 2,
+            v2: 3,
+            v3: 4,
+        };
         let h1 = state.hash(0);
         let h2 = state.hash(1);
         assert_ne!(h1, h2, "Different inputs should produce different hashes");
@@ -684,8 +696,12 @@ mod tests {
 
     #[test]
     fn test_workbits_xor() {
-        let a = WorkBits { words: [0xFF, 0, 0, 0, 0, 0, 0] };
-        let b = WorkBits { words: [0x0F, 0, 0, 0, 0, 0, 0] };
+        let a = WorkBits {
+            words: [0xFF, 0, 0, 0, 0, 0, 0],
+        };
+        let b = WorkBits {
+            words: [0x0F, 0, 0, 0, 0, 0, 0],
+        };
         let c = a.xor(&b);
         assert_eq!(c.words[0], 0xF0);
     }
@@ -696,7 +712,9 @@ mod tests {
         // But shr shifts the ENTIRE 448-bit value right.
         // words[0] = 0xFFFFFFFFFFFFFFFF, rest = 0
         // After shr 32: words[0] = 0xFFFFFFFFFFFFFFFF >> 32 = 0x00000000FFFFFFFF
-        let a = WorkBits { words: [0xFFFFFFFFFFFFFFFF, 0, 0, 0, 0, 0, 0] };
+        let a = WorkBits {
+            words: [0xFFFFFFFFFFFFFFFF, 0, 0, 0, 0, 0, 0],
+        };
         let b = a.shr(32);
         assert_eq!(b.words[0], 0x00000000FFFFFFFFu64);
     }
@@ -704,7 +722,9 @@ mod tests {
     #[test]
     fn test_workbits_first_bits() {
         // 0x123456789ABCDEF0 — lower 24 bits = 0xCDEF0 & 0xFFFFFF = 0xBCDEF0
-        let a = WorkBits { words: [0x123456789ABCDEF0, 0, 0, 0, 0, 0, 0] };
+        let a = WorkBits {
+            words: [0x123456789ABCDEF0, 0, 0, 0, 0, 0, 0],
+        };
         assert_eq!(a.first_bits(24), 0x123456789ABCDEF0u64 & 0xFFFFFF);
     }
 
@@ -712,7 +732,9 @@ mod tests {
     fn test_workbits_zero() {
         let a = WorkBits::zero();
         assert!(a.is_zero());
-        let b = WorkBits { words: [1, 0, 0, 0, 0, 0, 0] };
+        let b = WorkBits {
+            words: [1, 0, 0, 0, 0, 0, 0],
+        };
         assert!(!b.is_zero());
     }
 
@@ -742,8 +764,10 @@ mod tests {
 
         // A random/all-zeros compressed solution must be rejected.
         let fake_solution = [0u8; BEAMHASH_SOLUTION_SIZE];
-        assert!(is_valid_solution(&header, &fake_solution).is_err(),
-            "random solution must be rejected");
+        assert!(
+            is_valid_solution(&header, &fake_solution).is_err(),
+            "random solution must be rejected"
+        );
 
         let hash = hash_beamhash(&header, &fake_solution);
         assert_eq!(hash, [0xffu8; 32], "invalid solution hash must be all 0xff");
@@ -779,8 +803,8 @@ mod tests {
             }
 
             // Index tree padding: padNum = ((512 - remLen) + 24) / 25.
-            let pad_num = ((512 - rem_len) + BEAMHASH_COLLISION_BITS)
-                / (BEAMHASH_COLLISION_BITS + 1);
+            let pad_num =
+                ((512 - rem_len) + BEAMHASH_COLLISION_BITS) / (BEAMHASH_COLLISION_BITS + 1);
             let pad_num = pad_num.min(indices.len());
             for i in 0..pad_num {
                 let offset = rem_len + i * (BEAMHASH_COLLISION_BITS + 1);
@@ -836,7 +860,8 @@ mod tests {
             let expected = reference_apply_mix(words, &indices, rem_len);
             assert_eq!(
                 wb.words[0], expected,
-                "apply_mix mismatch for rem_len={}", rem_len
+                "apply_mix mismatch for rem_len={}",
+                rem_len
             );
         }
     }

@@ -22,12 +22,10 @@ use tracing::{error, info, warn};
 
 use crate::auxpow_client::{AuxPowClient, ShareResult};
 use crate::external_hashers::{
-    hash_blake3, hash_blake3_alph, hash_ethash, hash_etchash, hash_kheavyhash,
+    hash_blake3, hash_blake3_alph, hash_etchash, hash_ethash, hash_kheavyhash,
     hash_kheavyhash_extranonce, meets_target, meets_target_little_endian, ExternalAlgorithm,
 };
-use crate::types::{
-    select_best_coin, AuxPowConfig, AuxPowStats, CoinProfile, ExternalCoin,
-};
+use crate::types::{select_best_coin, AuxPowConfig, AuxPowStats, CoinProfile, ExternalCoin};
 
 /// Scheduler configuration — tunable parameters for the mining loop.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -296,9 +294,9 @@ impl AuxPowScheduler {
         // Get current job
         let job = {
             let client_guard = self.client.lock().await;
-            let client = client_guard.as_ref().ok_or_else(|| {
-                anyhow::anyhow!("no client connected")
-            })?;
+            let client = client_guard
+                .as_ref()
+                .ok_or_else(|| anyhow::anyhow!("no client connected"))?;
             client.current_job().await
         };
 
@@ -323,8 +321,8 @@ impl AuxPowScheduler {
         }
 
         // Determine algorithm
-        let algo = ExternalAlgorithm::from_str_loose(&job.algorithm)
-            .unwrap_or(ExternalAlgorithm::Blake3);
+        let algo =
+            ExternalAlgorithm::from_str_loose(&job.algorithm).unwrap_or(ExternalAlgorithm::Blake3);
 
         // Hash a batch of nonces
         let start_nonce = {
@@ -358,13 +356,11 @@ impl AuxPowScheduler {
                         hash_kheavyhash(header, 0, nonce)
                     }
                 }
-                ExternalAlgorithm::Autolykos => {
-                    crate::external_hashers::hash_autolykos(
-                        header,
-                        nonce,
-                        job.block_number.unwrap_or(job.timestamp.unwrap_or(0)) as u32,
-                    )
-                }
+                ExternalAlgorithm::Autolykos => crate::external_hashers::hash_autolykos(
+                    header,
+                    nonce,
+                    job.block_number.unwrap_or(job.timestamp.unwrap_or(0)) as u32,
+                ),
                 ExternalAlgorithm::KawPow => {
                     let mut h32 = [0u8; 32];
                     let len = header.len().min(32);
@@ -377,9 +373,7 @@ impl AuxPowScheduler {
                     final_hash
                 }
                 ExternalAlgorithm::Ethash => {
-                    let height = job
-                        .block_number
-                        .unwrap_or(job.timestamp.unwrap_or(0)) as u32;
+                    let height = job.block_number.unwrap_or(job.timestamp.unwrap_or(0)) as u32;
                     if job.external_coin == ExternalCoin::ETC {
                         hash_etchash(header, nonce, height)
                     } else {
@@ -391,7 +385,9 @@ impl AuxPowScheduler {
                     // Falls back to blake3 if native-randomx feature is not enabled.
                     #[cfg(feature = "native-randomx")]
                     {
-                        let seed_bytes = job.seed_hash.as_ref()
+                        let seed_bytes = job
+                            .seed_hash
+                            .as_ref()
                             .and_then(|s| hex::decode(s.trim_start_matches("0x")).ok())
                             .unwrap_or_else(|| vec![0u8; 32]);
                         zion_native_ffi::randomx::hash_with_seed(&seed_bytes, header, nonce)
@@ -453,9 +449,7 @@ impl AuxPowScheduler {
                 | ExternalAlgorithm::Octopus
                 | ExternalAlgorithm::Equihash
                 | ExternalAlgorithm::NeoScrypt
-                | ExternalAlgorithm::KeryxHash => {
-                    hash_blake3(header, 0, nonce)
-                }
+                | ExternalAlgorithm::KeryxHash => hash_blake3(header, 0, nonce),
             };
 
             let meets = if job.external_coin == ExternalCoin::DCR {
@@ -482,10 +476,12 @@ impl AuxPowScheduler {
 
             let result = {
                 let client_guard = self.client.lock().await;
-                let client = client_guard.as_ref().ok_or_else(|| {
-                    anyhow::anyhow!("no client connected")
-                })?;
-                client.submit_share(&job.job_id, nonce, &hash_hex, None).await
+                let client = client_guard
+                    .as_ref()
+                    .ok_or_else(|| anyhow::anyhow!("no client connected"))?;
+                client
+                    .submit_share(&job.job_id, nonce, &hash_hex, None)
+                    .await
             };
 
             let mut stats = self.stats.lock().await;

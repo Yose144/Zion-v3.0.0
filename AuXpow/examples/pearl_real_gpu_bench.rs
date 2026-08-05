@@ -37,25 +37,36 @@ fn main() {
     let target_hex = "ff".repeat(32);
 
     println!("=== Real Pearl PoUW CPU vs GPU Benchmark ===");
-    println!("m={} n={} k={} rank={} range={} tile={}x{}",
-             m, n, k, noise_rank, noise_range, hash_tile_h, hash_tile_w);
+    println!(
+        "m={} n={} k={} rank={} range={} tile={}x{}",
+        m, n, k, noise_rank, noise_range, hash_tile_h, hash_tile_w
+    );
     println!();
 
     // ── CPU baseline ──────────────────────────────────────────────────
     println!("CPU-only pipeline (mine_pearl_share)...");
-    let cpu_times: Vec<f64> = (0..3).map(|i| {
-        let t0 = Instant::now();
-        let result = pearl_real_pouw::mine_pearl_share(
-            &header_hex, &target_hex,
-            m, n, k, noise_rank, noise_range,
-            hash_tile_h, hash_tile_w,
-            i as u64,
-        ).expect("CPU mining failed");
-        let ms = t0.elapsed().as_secs_f64() * 1000.0;
-        let found = result.is_some();
-        println!("  run {}: {:.2} ms (found={})", i, ms, found);
-        ms
-    }).collect();
+    let cpu_times: Vec<f64> = (0..3)
+        .map(|i| {
+            let t0 = Instant::now();
+            let result = pearl_real_pouw::mine_pearl_share(
+                &header_hex,
+                &target_hex,
+                m,
+                n,
+                k,
+                noise_rank,
+                noise_range,
+                hash_tile_h,
+                hash_tile_w,
+                i as u64,
+            )
+            .expect("CPU mining failed");
+            let ms = t0.elapsed().as_secs_f64() * 1000.0;
+            let found = result.is_some();
+            println!("  run {}: {:.2} ms (found={})", i, ms, found);
+            ms
+        })
+        .collect();
     let cpu_avg = cpu_times.iter().sum::<f64>() / cpu_times.len() as f64;
     let cpu_min = cpu_times.iter().cloned().fold(f64::INFINITY, f64::min);
     println!("  CPU avg: {:.2} ms, min: {:.2} ms", cpu_avg, cpu_min);
@@ -69,7 +80,10 @@ fn main() {
             m
         }
         Err(e) => {
-            eprintln!("  GPU init failed: {} — exiting (CPU-only results above)", e);
+            eprintln!(
+                "  GPU init failed: {} — exiting (CPU-only results above)",
+                e
+            );
             return;
         }
     };
@@ -78,28 +92,43 @@ fn main() {
     // Warmup
     println!("GPU warmup...");
     let _ = pearl_real_pouw::mine_pearl_share_gpu(
-        &header_hex, &target_hex,
-        m, n, k, noise_rank, noise_range,
-        hash_tile_h, hash_tile_w,
+        &header_hex,
+        &target_hex,
+        m,
+        n,
+        k,
+        noise_rank,
+        noise_range,
+        hash_tile_h,
+        hash_tile_w,
         0,
         &mut gpu_miner,
     );
 
     println!("GPU pipeline (mine_pearl_share_gpu)...");
-    let gpu_times: Vec<f64> = (0..5).map(|i| {
-        let t0 = Instant::now();
-        let result = pearl_real_pouw::mine_pearl_share_gpu(
-            &header_hex, &target_hex,
-            m, n, k, noise_rank, noise_range,
-            hash_tile_h, hash_tile_w,
-            i as u64,
-            &mut gpu_miner,
-        ).expect("GPU mining failed");
-        let ms = t0.elapsed().as_secs_f64() * 1000.0;
-        let found = result.is_some();
-        println!("  run {}: {:.2} ms (found={})", i, ms, found);
-        ms
-    }).collect();
+    let gpu_times: Vec<f64> = (0..5)
+        .map(|i| {
+            let t0 = Instant::now();
+            let result = pearl_real_pouw::mine_pearl_share_gpu(
+                &header_hex,
+                &target_hex,
+                m,
+                n,
+                k,
+                noise_rank,
+                noise_range,
+                hash_tile_h,
+                hash_tile_w,
+                i as u64,
+                &mut gpu_miner,
+            )
+            .expect("GPU mining failed");
+            let ms = t0.elapsed().as_secs_f64() * 1000.0;
+            let found = result.is_some();
+            println!("  run {}: {:.2} ms (found={})", i, ms, found);
+            ms
+        })
+        .collect();
     let gpu_avg = gpu_times.iter().sum::<f64>() / gpu_times.len() as f64;
     let gpu_min = gpu_times.iter().cloned().fold(f64::INFINITY, f64::min);
     println!("  GPU avg: {:.2} ms, min: {:.2} ms", gpu_avg, gpu_min);
@@ -107,27 +136,54 @@ fn main() {
 
     // ── Summary ───────────────────────────────────────────────────────
     println!("=== Summary ===");
-    println!("CPU avg: {:.2} ms ({:.1} attempts/s)", cpu_avg, 1000.0 / cpu_avg);
-    println!("GPU avg: {:.2} ms ({:.1} attempts/s)", gpu_avg, 1000.0 / gpu_avg);
+    println!(
+        "CPU avg: {:.2} ms ({:.1} attempts/s)",
+        cpu_avg,
+        1000.0 / cpu_avg
+    );
+    println!(
+        "GPU avg: {:.2} ms ({:.1} attempts/s)",
+        gpu_avg,
+        1000.0 / gpu_avg
+    );
     println!("Speedup: {:.2}x", cpu_avg / gpu_avg);
 
     // ── Breakdown: CPU-prep only vs GPU GEMM only ─────────────────────
     println!();
     println!("=== Breakdown: CPU-prep vs GPU GEMM ===");
-    let prep_times: Vec<f64> = (0..5).map(|i| {
-        let t0 = Instant::now();
-        let _prep = pearl_real_pouw::prepare_pearl_gpu_input(
-            &header_hex, &target_hex,
-            m, n, k, noise_rank, noise_range,
-            hash_tile_h, hash_tile_w,
-            i as u64,
-        ).expect("prep failed");
-        let ms = t0.elapsed().as_secs_f64() * 1000.0;
-        if i == 0 { println!("  CPU-prep run {}: {:.2} ms", i, ms); }
-        ms
-    }).collect();
+    let prep_times: Vec<f64> = (0..5)
+        .map(|i| {
+            let t0 = Instant::now();
+            let _prep = pearl_real_pouw::prepare_pearl_gpu_input(
+                &header_hex,
+                &target_hex,
+                m,
+                n,
+                k,
+                noise_rank,
+                noise_range,
+                hash_tile_h,
+                hash_tile_w,
+                i as u64,
+            )
+            .expect("prep failed");
+            let ms = t0.elapsed().as_secs_f64() * 1000.0;
+            if i == 0 {
+                println!("  CPU-prep run {}: {:.2} ms", i, ms);
+            }
+            ms
+        })
+        .collect();
     let prep_avg = prep_times.iter().sum::<f64>() / prep_times.len() as f64;
     let gpu_gemm_avg = gpu_avg - prep_avg;
-    println!("  CPU-prep avg: {:.2} ms ({:.1}% of total)", prep_avg, prep_avg / gpu_avg * 100.0);
-    println!("  GPU GEMM avg: {:.2} ms ({:.1}% of total)", gpu_gemm_avg, gpu_gemm_avg / gpu_avg * 100.0);
+    println!(
+        "  CPU-prep avg: {:.2} ms ({:.1}% of total)",
+        prep_avg,
+        prep_avg / gpu_avg * 100.0
+    );
+    println!(
+        "  GPU GEMM avg: {:.2} ms ({:.1}% of total)",
+        gpu_gemm_avg,
+        gpu_gemm_avg / gpu_avg * 100.0
+    );
 }

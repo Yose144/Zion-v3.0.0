@@ -3,7 +3,10 @@ use zion_auxpow::gpu_miner::GpuMiner;
 use zion_native_ffi::ghostrider;
 
 fn hex_to_bytes(hex: &str) -> Vec<u8> {
-    (0..hex.len()).step_by(2).map(|i| u8::from_str_radix(&hex[i..i+2], 16).unwrap()).collect()
+    (0..hex.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap())
+        .collect()
 }
 
 fn main() {
@@ -17,18 +20,24 @@ fn main() {
     let gpu_groestl = gpu.extra_hash_test(&cpu_state, 1).unwrap();
     let groestl_hex: String = gpu_groestl.iter().map(|b| format!("{:02x}", b)).collect();
     println!("GPU groestl(CPU_state): {}", groestl_hex);
-    println!("CPU expected:           34ef29701dffa8d743432c5abf6088d2c6926d4b76aa27c799fd617fe5008511");
+    println!(
+        "CPU expected:           34ef29701dffa8d743432c5abf6088d2c6926d4b76aa27c799fd617fe5008511"
+    );
 
     // Test the full CN hash (CNDarklite: memory=512KB, iter_div=131072, aes_init=16384)
     let input: [u8; 64] = {
         let hex = "ca7a536a9e1ef913108ce12efbc9714077562e8877dfa90d0391cab10751fcf4e0e215422c85e3d2a313d770c642a3b32b34f7909236c67696f38ca88eb481d9";
         let mut arr = [0u8; 64];
         let bytes = hex_to_bytes(hex);
-        for i in 0..64 { arr[i] = bytes[i]; }
+        for i in 0..64 {
+            arr[i] = bytes[i];
+        }
         arr
     };
 
-    let (gpu_cn, _) = gpu.ghostrider_cn_full_test(&input, 64, 524288, 131072, 16384).unwrap();
+    let (gpu_cn, _) = gpu
+        .ghostrider_cn_full_test(&input, 64, 524288, 131072, 16384)
+        .unwrap();
     let cn_hex: String = gpu_cn.iter().map(|b| format!("{:02x}", b)).collect();
     println!("\nGPU cn_hash_full(CNDarklite): {}", cn_hex);
 

@@ -15,8 +15,8 @@
 //!         pearl-blake3/src/merkle.rs (MerkleTree)
 //!         pearl/zk-pow/src/api/proof_utils.rs (compute_jackpot_hash)
 
-use blake3::OUT_LEN as BLAKE3_DIGEST_SIZE;
 use blake3::CHUNK_LEN as BLAKE3_CHUNK_LEN;
+use blake3::OUT_LEN as BLAKE3_DIGEST_SIZE;
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -78,7 +78,9 @@ pub struct MerkleTree {
 
 #[allow(dead_code)]
 impl MerkleTree {
-    pub fn key(&self) -> &[u8; 32] { &self.key }
+    pub fn key(&self) -> &[u8; 32] {
+        &self.key
+    }
 
     fn mode(&self) -> Mode<'_> {
         Mode::KeyedHash(&self.key)
@@ -99,13 +101,21 @@ impl MerkleTree {
 
     pub fn new(data: &[u8], key: [u8; 32]) -> Self {
         if data.is_empty() {
-            return Self { key, layers: vec![vec![]], data: vec![] };
+            return Self {
+                key,
+                layers: vec![vec![]],
+                data: vec![],
+            };
         }
 
         // Single chunk or less: hash directly (with ROOT flag)
         if data.len() <= BLAKE3_CHUNK_LEN {
             let root = *blake3::keyed_hash(&key, data).as_bytes();
-            return Self { key, layers: vec![vec![root]], data: data.to_vec() };
+            return Self {
+                key,
+                layers: vec![vec![root]],
+                data: data.to_vec(),
+            };
         }
 
         // Multi-chunk: hash each chunk using hazmat chunk_cv (non-root)
@@ -147,7 +157,11 @@ impl MerkleTree {
             layers.push(vec![root]);
         }
 
-        Self { key, layers, data: data.to_vec() }
+        Self {
+            key,
+            layers,
+            data: data.to_vec(),
+        }
     }
 
     pub fn root(&self) -> [u8; 32] {
@@ -167,7 +181,10 @@ impl MerkleTree {
 
         let unique: std::collections::BTreeSet<usize> = leaf_indices.iter().copied().collect();
         let total_leaves = self.num_leaves();
-        assert!(*unique.last().unwrap() < total_leaves, "leaf index out of bounds");
+        assert!(
+            *unique.last().unwrap() < total_leaves,
+            "leaf index out of bounds"
+        );
 
         let sorted_indices: Vec<usize> = unique.iter().copied().collect();
         let leaf_data: Vec<Blake3Chunk> = sorted_indices
@@ -213,7 +230,10 @@ impl MerkleTree {
     }
 
     /// Compute which leaf indices are needed to prove the given matrix rows.
-    pub fn compute_leaf_indices_from_rows(row_indices: &[usize], shape: (usize, usize)) -> Vec<usize> {
+    pub fn compute_leaf_indices_from_rows(
+        row_indices: &[usize],
+        shape: (usize, usize),
+    ) -> Vec<usize> {
         let cols = shape.1;
         let mut indices = std::collections::BTreeSet::new();
         for &row in row_indices {
@@ -272,7 +292,10 @@ impl PeriodicPattern {
     pub fn from_list(pattern: &[u32]) -> Self {
         assert!(!pattern.is_empty(), "Pattern cannot be empty");
         assert!(pattern[0] == 0, "Pattern must start at 0");
-        assert!(pattern.windows(2).all(|w| w[0] < w[1]), "Pattern must be sorted");
+        assert!(
+            pattern.windows(2).all(|w| w[0] < w[1]),
+            "Pattern must be sorted"
+        );
 
         let mut p: Vec<u32> = pattern.to_vec();
         let mut shape_vec = Vec::new();
@@ -299,7 +322,9 @@ impl PeriodicPattern {
         while shape_vec.len() < Self::NUM_DIMS {
             shape_vec.push((period, 1));
         }
-        Self { shape: shape_vec.try_into().unwrap() }
+        Self {
+            shape: shape_vec.try_into().unwrap(),
+        }
     }
 
     /// Convert pattern to a list of indices.
@@ -398,9 +423,9 @@ impl IncompleteBlockHeader {
 /// Mining configuration (52 bytes serialized).
 #[derive(Clone, Copy, Debug)]
 pub struct MiningConfiguration {
-    pub common_dim: u32,      // k
-    pub rank: u16,            // noise_rank
-    pub mma_type: u16,        // 0 = Int7xInt7ToInt32
+    pub common_dim: u32, // k
+    pub rank: u16,       // noise_rank
+    pub mma_type: u16,   // 0 = Int7xInt7ToInt32
     pub rows_pattern: PeriodicPattern,
     pub cols_pattern: PeriodicPattern,
     pub moe: Option<(u16, u16)>, // (e, top_k) — None for dense
@@ -424,11 +449,11 @@ impl MiningConfiguration {
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut data = Vec::with_capacity(52);
         data.extend_from_slice(&self.common_dim.to_le_bytes()); // 4
-        data.extend_from_slice(&self.rank.to_le_bytes());       // 2
-        data.extend_from_slice(&self.mma_type.to_le_bytes());   // 2
-        data.extend_from_slice(&self.rows_pattern.to_bytes());  // 6
-        data.extend_from_slice(&self.cols_pattern.to_bytes());  // 6
-        // 32-byte reserved/MoE trailer
+        data.extend_from_slice(&self.rank.to_le_bytes()); // 2
+        data.extend_from_slice(&self.mma_type.to_le_bytes()); // 2
+        data.extend_from_slice(&self.rows_pattern.to_bytes()); // 6
+        data.extend_from_slice(&self.cols_pattern.to_bytes()); // 6
+                                                               // 32-byte reserved/MoE trailer
         let mut trailer = [0u8; 32];
         if let Some((e, top_k)) = self.moe {
             trailer[0..2].copy_from_slice(&e.to_le_bytes());
@@ -449,10 +474,16 @@ impl MiningConfiguration {
 // Source: pearl/zk-pow/src/circuit/pearl_noise.rs
 
 /// Generate random hash for noise: blake3(prepend_index || seed, key=key)
-fn get_random_hash(index: usize, seed: &[u8; 32], key: &[u8; 32], prepend_index: usize) -> [u8; 32] {
+fn get_random_hash(
+    index: usize,
+    seed: &[u8; 32],
+    key: &[u8; 32],
+    prepend_index: usize,
+) -> [u8; 32] {
     let mut message = vec![0u8; 64]; // 32 bytes for prepend slots + 32 bytes for seed
     let prepend_value = (1 + index) as i32;
-    message[prepend_index * 4..(prepend_index * 4 + 4)].copy_from_slice(&prepend_value.to_le_bytes());
+    message[prepend_index * 4..(prepend_index * 4 + 4)]
+        .copy_from_slice(&prepend_value.to_le_bytes());
     message[32..64].copy_from_slice(seed);
     blake3_digest(&message, Some(key))
 }
@@ -469,8 +500,7 @@ fn generate_uniform_random_matrix(
         .iter()
         .map(|&row_idx| {
             let start_idx = row_idx * num_cols;
-            (start_idx / BLAKE3_DIGEST_SIZE
-                ..(start_idx + num_cols).div_ceil(BLAKE3_DIGEST_SIZE))
+            (start_idx / BLAKE3_DIGEST_SIZE..(start_idx + num_cols).div_ceil(BLAKE3_DIGEST_SIZE))
                 .flat_map(|block| {
                     let hash = get_random_hash(block, seed, key, 0);
                     hash.into_iter().enumerate().filter_map(move |(k, byte)| {
@@ -547,18 +577,29 @@ pub fn compute_noise_for_indices(
 ) -> Noise {
     let (b_noise_seed, a_noise_seed) = commitment_hash;
 
-    let e_al = generate_uniform_random_matrix(&SEED_LABEL_A, &a_noise_seed, a_rows_indices, noise_rank);
+    let e_al =
+        generate_uniform_random_matrix(&SEED_LABEL_A, &a_noise_seed, a_rows_indices, noise_rank);
     let e_ar_transposed = generate_permutation_matrix(&SEED_LABEL_A, &a_noise_seed, k, noise_rank);
     let e_bl = generate_permutation_matrix(&SEED_LABEL_B, &b_noise_seed, k, noise_rank);
-    let e_br_transposed = generate_uniform_random_matrix(&SEED_LABEL_B, &b_noise_seed, b_cols_indices, noise_rank);
+    let e_br_transposed =
+        generate_uniform_random_matrix(&SEED_LABEL_B, &b_noise_seed, b_cols_indices, noise_rank);
 
     // noise_a[i] = E_AR · E_AL[i] (sparse matvec)
-    let noise_a: Vec<Vec<i8>> = e_al.iter().map(|row| matvec_sparse_perm(&e_ar_transposed, row)).collect();
+    let noise_a: Vec<Vec<i8>> = e_al
+        .iter()
+        .map(|row| matvec_sparse_perm(&e_ar_transposed, row))
+        .collect();
 
     // noise_b_t[j] = E_BL · E_BR_T[j] (sparse matvec)
-    let noise_b: Vec<Vec<i8>> = e_br_transposed.iter().map(|col| matvec_sparse_perm(&e_bl, col)).collect();
+    let noise_b: Vec<Vec<i8>> = e_br_transposed
+        .iter()
+        .map(|col| matvec_sparse_perm(&e_bl, col))
+        .collect();
 
-    Noise { a: noise_a, b: noise_b }
+    Noise {
+        a: noise_a,
+        b: noise_b,
+    }
 }
 
 // ─── Jackpot Hash ───────────────────────────────────────────────────────────
@@ -622,8 +663,12 @@ pub fn extract_difficulty_bound(nbits: u32, config: &MiningConfiguration) -> [u8
 /// Compare two 32-byte LE values (returns true if a <= b)
 pub fn le_compare(a: &[u8; 32], b: &[u8; 32]) -> bool {
     for i in (0..32).rev() {
-        if a[i] < b[i] { return true; }
-        if a[i] > b[i] { return false; }
+        if a[i] < b[i] {
+            return true;
+        }
+        if a[i] > b[i] {
+            return false;
+        }
     }
     true
 }
@@ -637,7 +682,10 @@ pub fn flatten_matrix(matrix: &[Vec<i8>]) -> Vec<u8> {
 /// Partition indices using periodic pattern.
 fn threads_partition(pattern: &PeriodicPattern, total_dimension: usize) -> Vec<Vec<usize>> {
     let period = pattern.period() as usize;
-    assert!(total_dimension % period == 0, "total_dimension must be divisible by pattern period");
+    assert!(
+        total_dimension % period == 0,
+        "total_dimension must be divisible by pattern period"
+    );
     let base_indices: Vec<usize> = pattern.to_list().iter().map(|&i| i as usize).collect();
     (0..total_dimension)
         .filter(|&i| pattern.offset_is_valid(i as u32))
@@ -675,7 +723,8 @@ fn build_matrix_proof(
 ) -> PearlMatrixMerkleProof {
     let padded = pad_to_chunk_boundary(&flatten_matrix(matrix));
     let tree = MerkleTree::new(&padded, *job_key);
-    let leaf_indices = MerkleTree::compute_leaf_indices_from_rows(row_indices, (matrix.len(), num_cols));
+    let leaf_indices =
+        MerkleTree::compute_leaf_indices_from_rows(row_indices, (matrix.len(), num_cols));
     let proof = tree.get_multileaf_proof(&leaf_indices);
     PearlMatrixMerkleProof {
         proof,
@@ -742,23 +791,42 @@ pub fn try_mine_one(
     let job_key = compute_job_key(header, config);
     let a_row_major = pad_to_chunk_boundary(&flatten_matrix(&a_matrix));
     let b_col_major = pad_to_chunk_boundary(&flatten_matrix(&b_transposed));
-    let (b_noise_seed, a_noise_seed) = compute_commitment_hash(&job_key, &a_row_major, &b_col_major);
+    let (b_noise_seed, a_noise_seed) =
+        compute_commitment_hash(&job_key, &a_row_major, &b_col_major);
 
     // Compute noise for all rows/cols
     let a_all_rows: Vec<usize> = (0..m).collect();
     let b_all_cols: Vec<usize> = (0..n).collect();
-    let noise = compute_noise_for_indices(k, rank, (b_noise_seed, a_noise_seed), &a_all_rows, &b_all_cols);
+    let noise = compute_noise_for_indices(
+        k,
+        rank,
+        (b_noise_seed, a_noise_seed),
+        &a_all_rows,
+        &b_all_cols,
+    );
 
     // Add noise: A' = A + E, B'^T = B^T + F
     let a_noised: Vec<Vec<i32>> = a_matrix
         .iter()
         .zip(&noise.a)
-        .map(|(a_row, n_row)| a_row.iter().zip(n_row).map(|(&a, &n)| a as i32 + n as i32).collect())
+        .map(|(a_row, n_row)| {
+            a_row
+                .iter()
+                .zip(n_row)
+                .map(|(&a, &n)| a as i32 + n as i32)
+                .collect()
+        })
         .collect();
     let b_noised_t: Vec<Vec<i32>> = b_transposed
         .iter()
         .zip(&noise.b)
-        .map(|(bt_row, n_row)| bt_row.iter().zip(n_row).map(|(&b, &n)| b as i32 + n as i32).collect())
+        .map(|(bt_row, n_row)| {
+            bt_row
+                .iter()
+                .zip(n_row)
+                .map(|(&b, &n)| b as i32 + n as i32)
+                .collect()
+        })
         .collect();
 
     // Mine using pattern partitions
@@ -777,7 +845,10 @@ pub fn try_mine_one(
                         }
                     }
                 }
-                let xored_tile = jackpot_tile.iter().flatten().fold(0u32, |a, &x| a ^ x as u32);
+                let xored_tile = jackpot_tile
+                    .iter()
+                    .flatten()
+                    .fold(0u32, |a, &x| a ^ x as u32);
                 let tid = (ll / rank - 1) % JACKPOT_SIZE;
                 jackpot[tid] = jackpot[tid].rotate_left(LROT_PER_TILE) ^ xored_tile;
             }
@@ -789,7 +860,9 @@ pub fn try_mine_one(
                 let bt_proof = build_matrix_proof(&b_transposed, &job_key, &b_cols, k);
 
                 let proof = PearlPlainProof {
-                    m, n, k,
+                    m,
+                    n,
+                    k,
                     noise_rank: rank,
                     a: a_proof,
                     bt: bt_proof,
@@ -845,21 +918,33 @@ pub fn try_mine_one_fast(
     let b_padded_len = nk.div_ceil(BLAKE3_CHUNK_LEN) * BLAKE3_CHUNK_LEN;
     let mut a_padded = vec![0u8; a_padded_len];
     let mut b_t_padded = vec![0u8; b_padded_len];
-    a_padded[..mk].copy_from_slice(unsafe { std::slice::from_raw_parts(a_flat_i8.as_ptr() as *const u8, mk) });
+    a_padded[..mk].copy_from_slice(unsafe {
+        std::slice::from_raw_parts(a_flat_i8.as_ptr() as *const u8, mk)
+    });
     // Build B^T flat for commitment hash
-    let b_t_flat_i8: Vec<i8> = (0..nk).map(|idx| {
-        let j = idx / k; // row of B^T
-        let l = idx % k; // col of B^T
-        b_flat_i8[l * n + j] // B[l][j] = B^T[j][l]
-    }).collect();
-    b_t_padded[..nk].copy_from_slice(unsafe { std::slice::from_raw_parts(b_t_flat_i8.as_ptr() as *const u8, nk) });
+    let b_t_flat_i8: Vec<i8> = (0..nk)
+        .map(|idx| {
+            let j = idx / k; // row of B^T
+            let l = idx % k; // col of B^T
+            b_flat_i8[l * n + j] // B[l][j] = B^T[j][l]
+        })
+        .collect();
+    b_t_padded[..nk].copy_from_slice(unsafe {
+        std::slice::from_raw_parts(b_t_flat_i8.as_ptr() as *const u8, nk)
+    });
 
     let (b_noise_seed, a_noise_seed) = compute_commitment_hash(&job_key, &a_padded, &b_t_padded);
 
     // Generate noise — reuse the existing function but with flat output
     let a_all_rows: Vec<usize> = (0..m).collect();
     let b_all_cols: Vec<usize> = (0..n).collect();
-    let noise = compute_noise_for_indices(k, rank, (b_noise_seed, a_noise_seed), &a_all_rows, &b_all_cols);
+    let noise = compute_noise_for_indices(
+        k,
+        rank,
+        (b_noise_seed, a_noise_seed),
+        &a_all_rows,
+        &b_all_cols,
+    );
 
     // Build noised matrices as flat i32 arrays
     // a_noised[i*k + l] = a_flat_i8[i*k + l] + noise.a[i][l]
@@ -917,7 +1002,9 @@ pub fn try_mine_one_fast(
                 let bt_proof = build_matrix_proof(&b_transposed, &job_key, &b_cols, k);
 
                 let proof = PearlPlainProof {
-                    m, n, k,
+                    m,
+                    n,
+                    k,
                     noise_rank: rank,
                     a: a_proof,
                     bt: bt_proof,
@@ -968,7 +1055,9 @@ pub struct SimpleRng {
 
 impl SimpleRng {
     pub fn new(seed: u64) -> Self {
-        Self { state: seed.wrapping_add(0x9E3779B97F4A7C15) }
+        Self {
+            state: seed.wrapping_add(0x9E3779B97F4A7C15),
+        }
     }
 
     fn next_u64(&mut self) -> u64 {
@@ -1114,10 +1203,7 @@ mod tests {
         let bytes = bincode::serialize(&proof).unwrap();
         assert!(!bytes.is_empty());
         // Verify base64 encoding works
-        let b64 = base64::Engine::encode(
-            &base64::engine::general_purpose::STANDARD,
-            &bytes,
-        );
+        let b64 = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes);
         assert!(!b64.is_empty());
     }
 
@@ -1186,21 +1272,40 @@ mod tests {
         let job_key = compute_job_key(&header, &config);
         let a_row_major = pad_to_chunk_boundary(&flatten_matrix(&a_matrix));
         let b_col_major = pad_to_chunk_boundary(&flatten_matrix(&b_transposed));
-        let (b_noise_seed, a_noise_seed) = compute_commitment_hash(&job_key, &a_row_major, &b_col_major);
+        let (b_noise_seed, a_noise_seed) =
+            compute_commitment_hash(&job_key, &a_row_major, &b_col_major);
 
         let a_all_rows: Vec<usize> = (0..m).collect();
         let b_all_cols: Vec<usize> = (0..n).collect();
-        let noise = compute_noise_for_indices(k, rank, (b_noise_seed, a_noise_seed), &a_all_rows, &b_all_cols);
+        let noise = compute_noise_for_indices(
+            k,
+            rank,
+            (b_noise_seed, a_noise_seed),
+            &a_all_rows,
+            &b_all_cols,
+        );
 
         let a_noised: Vec<Vec<i32>> = a_matrix
             .iter()
             .zip(&noise.a)
-            .map(|(a_row, n_row)| a_row.iter().zip(n_row).map(|(&a, &n)| a as i32 + n as i32).collect())
+            .map(|(a_row, n_row)| {
+                a_row
+                    .iter()
+                    .zip(n_row)
+                    .map(|(&a, &n)| a as i32 + n as i32)
+                    .collect()
+            })
             .collect();
         let b_noised_t: Vec<Vec<i32>> = b_transposed
             .iter()
             .zip(&noise.b)
-            .map(|(bt_row, n_row)| bt_row.iter().zip(n_row).map(|(&b, &n)| b as i32 + n as i32).collect())
+            .map(|(bt_row, n_row)| {
+                bt_row
+                    .iter()
+                    .zip(n_row)
+                    .map(|(&b, &n)| b as i32 + n as i32)
+                    .collect()
+            })
             .collect();
 
         // Compute all jackpot hashes on CPU
@@ -1217,8 +1322,14 @@ mod tests {
         let mut best_hash: Option<([u8; 32], usize)> = None;
         for (tile_idx, &row_off) in row_offsets.iter().enumerate() {
             for (col_idx, &col_off) in col_offsets.iter().enumerate() {
-                let a_rows: Vec<usize> = rows_base.iter().map(|&d| row_off as usize + d as usize).collect();
-                let b_cols: Vec<usize> = cols_base.iter().map(|&d| col_off as usize + d as usize).collect();
+                let a_rows: Vec<usize> = rows_base
+                    .iter()
+                    .map(|&d| row_off as usize + d as usize)
+                    .collect();
+                let b_cols: Vec<usize> = cols_base
+                    .iter()
+                    .map(|&d| col_off as usize + d as usize)
+                    .collect();
 
                 let mut jackpot_tile: Vec<Vec<i32>> = vec![vec![0; b_cols.len()]; a_rows.len()];
                 let mut jackpot: [u32; JACKPOT_SIZE] = [0; JACKPOT_SIZE];
@@ -1231,7 +1342,10 @@ mod tests {
                             }
                         }
                     }
-                    let xored = jackpot_tile.iter().flatten().fold(0u32, |a, &x| a ^ x as u32);
+                    let xored = jackpot_tile
+                        .iter()
+                        .flatten()
+                        .fold(0u32, |a, &x| a ^ x as u32);
                     let tid = (ll / rank - 1) % JACKPOT_SIZE;
                     jackpot[tid] = jackpot[tid].rotate_left(LROT_PER_TILE) ^ xored;
                 }
@@ -1265,7 +1379,10 @@ mod tests {
             cols_base: &cols_base,
         };
 
-        let gpu_result = backend.pearl_pouw_mine(&gpu_input).expect("GPU mine").expect("GPU should find a share");
+        let gpu_result = backend
+            .pearl_pouw_mine(&gpu_input)
+            .expect("GPU mine")
+            .expect("GPU should find a share");
 
         // The GPU should find a tile (first one that meets the easy target)
         // Verify the GPU jackpot hash matches the CPU-computed hash for that tile
@@ -1277,8 +1394,14 @@ mod tests {
         let gpu_col_off_idx = gpu_tile % 64;
         let gpu_row_off = row_offsets[gpu_row_off_idx] as usize;
         let gpu_col_off = col_offsets[gpu_col_off_idx] as usize;
-        let gpu_a_rows: Vec<usize> = rows_base.iter().map(|&d| gpu_row_off + d as usize).collect();
-        let gpu_b_cols: Vec<usize> = cols_base.iter().map(|&d| gpu_col_off + d as usize).collect();
+        let gpu_a_rows: Vec<usize> = rows_base
+            .iter()
+            .map(|&d| gpu_row_off + d as usize)
+            .collect();
+        let gpu_b_cols: Vec<usize> = cols_base
+            .iter()
+            .map(|&d| gpu_col_off + d as usize)
+            .collect();
 
         let mut jackpot_tile: Vec<Vec<i32>> = vec![vec![0; gpu_b_cols.len()]; gpu_a_rows.len()];
         let mut jackpot: [u32; JACKPOT_SIZE] = [0; JACKPOT_SIZE];
@@ -1290,7 +1413,10 @@ mod tests {
                     }
                 }
             }
-            let xored = jackpot_tile.iter().flatten().fold(0u32, |a, &x| a ^ x as u32);
+            let xored = jackpot_tile
+                .iter()
+                .flatten()
+                .fold(0u32, |a, &x| a ^ x as u32);
             let tid = (ll / rank - 1) % JACKPOT_SIZE;
             jackpot[tid] = jackpot[tid].rotate_left(LROT_PER_TILE) ^ xored;
         }
@@ -1305,7 +1431,10 @@ mod tests {
         // Also verify the GPU found the same best tile as CPU
         // (with easy target, GPU finds first tile that meets, which should be tile 0
         // since all tiles meet the easy target — but the hash should still match)
-        eprintln!("CPU best tile={} hash={:02x?}", cpu_best_tile, cpu_best_hash);
+        eprintln!(
+            "CPU best tile={} hash={:02x?}",
+            cpu_best_tile, cpu_best_hash
+        );
         eprintln!("GPU found tile={} hash={:02x?}", gpu_tile, gpu_hash);
     }
 }
@@ -1349,23 +1478,42 @@ pub fn try_mine_one_gpu(
     let job_key = compute_job_key(header, config);
     let a_row_major = pad_to_chunk_boundary(&flatten_matrix(&a_matrix));
     let b_col_major = pad_to_chunk_boundary(&flatten_matrix(&b_transposed));
-    let (b_noise_seed, a_noise_seed) = compute_commitment_hash(&job_key, &a_row_major, &b_col_major);
+    let (b_noise_seed, a_noise_seed) =
+        compute_commitment_hash(&job_key, &a_row_major, &b_col_major);
 
     // Compute noise for all rows/cols
     let a_all_rows: Vec<usize> = (0..m).collect();
     let b_all_cols: Vec<usize> = (0..n).collect();
-    let noise = compute_noise_for_indices(k, rank, (b_noise_seed, a_noise_seed), &a_all_rows, &b_all_cols);
+    let noise = compute_noise_for_indices(
+        k,
+        rank,
+        (b_noise_seed, a_noise_seed),
+        &a_all_rows,
+        &b_all_cols,
+    );
 
     // Add noise: A' = A + E, B'^T = B^T + F
     let a_noised: Vec<Vec<i32>> = a_matrix
         .iter()
         .zip(&noise.a)
-        .map(|(a_row, n_row)| a_row.iter().zip(n_row).map(|(&a, &n)| a as i32 + n as i32).collect())
+        .map(|(a_row, n_row)| {
+            a_row
+                .iter()
+                .zip(n_row)
+                .map(|(&a, &n)| a as i32 + n as i32)
+                .collect()
+        })
         .collect();
     let b_noised_t: Vec<Vec<i32>> = b_transposed
         .iter()
         .zip(&noise.b)
-        .map(|(bt_row, n_row)| bt_row.iter().zip(n_row).map(|(&b, &n)| b as i32 + n as i32).collect())
+        .map(|(bt_row, n_row)| {
+            bt_row
+                .iter()
+                .zip(n_row)
+                .map(|(&b, &n)| b as i32 + n as i32)
+                .collect()
+        })
         .collect();
 
     // Flatten noised matrices for GPU (row-major)
@@ -1413,7 +1561,9 @@ pub fn try_mine_one_gpu(
     let bt_proof = build_matrix_proof(&b_transposed, &job_key, &b_cols, k);
 
     let proof = PearlPlainProof {
-        m, n, k,
+        m,
+        n,
+        k,
         noise_rank: rank,
         a: a_proof,
         bt: bt_proof,
@@ -1421,10 +1571,8 @@ pub fn try_mine_one_gpu(
     };
 
     let proof_bytes = bincode::serialize(&proof).ok()?;
-    let plain_proof_b64 = base64::Engine::encode(
-        &base64::engine::general_purpose::STANDARD,
-        &proof_bytes,
-    );
+    let plain_proof_b64 =
+        base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &proof_bytes);
 
     Some(MinedProof {
         plain_proof_b64,
@@ -1446,7 +1594,17 @@ pub fn mine_gpu(
     gpu_backend: &mut crate::gpu_metal::MetalBackend,
 ) -> Option<MinedProof> {
     for nonce in 0..max_attempts {
-        if let Some(proof) = try_mine_one_gpu(nonce, m, n, k, rank, header, config, difficulty_bound, gpu_backend) {
+        if let Some(proof) = try_mine_one_gpu(
+            nonce,
+            m,
+            n,
+            k,
+            rank,
+            header,
+            config,
+            difficulty_bound,
+            gpu_backend,
+        ) {
             return Some(proof);
         }
     }
@@ -1486,7 +1644,10 @@ pub fn try_mine_one_gpu_native(
 
     let native_input = PearlPouwNativeInput {
         nonce,
-        m, n, k, rank,
+        m,
+        n,
+        k,
+        rank,
         job_key,
         target: *difficulty_bound,
         row_offsets: &row_offsets,
@@ -1524,7 +1685,9 @@ pub fn try_mine_one_gpu_native(
     let bt_proof = build_matrix_proof(&b_transposed, &job_key, &b_cols, k);
 
     let proof = PearlPlainProof {
-        m, n, k,
+        m,
+        n,
+        k,
         noise_rank: rank,
         a: a_proof,
         bt: bt_proof,
@@ -1532,10 +1695,8 @@ pub fn try_mine_one_gpu_native(
     };
 
     let proof_bytes = bincode::serialize(&proof).ok()?;
-    let plain_proof_b64 = base64::Engine::encode(
-        &base64::engine::general_purpose::STANDARD,
-        &proof_bytes,
-    );
+    let plain_proof_b64 =
+        base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &proof_bytes);
 
     Some(MinedProof {
         plain_proof_b64,
@@ -1558,7 +1719,17 @@ pub fn mine_gpu_native(
     gpu_backend: &mut crate::gpu_metal::MetalBackend,
 ) -> Option<MinedProof> {
     for nonce in 0..max_attempts {
-        if let Some(proof) = try_mine_one_gpu_native(nonce, m, n, k, rank, header, config, difficulty_bound, gpu_backend) {
+        if let Some(proof) = try_mine_one_gpu_native(
+            nonce,
+            m,
+            n,
+            k,
+            rank,
+            header,
+            config,
+            difficulty_bound,
+            gpu_backend,
+        ) {
             return Some(proof);
         }
     }
@@ -1598,7 +1769,10 @@ pub fn try_mine_one_gpu_native_opencl(
 
     let native_input = PearlPouwNativeInput {
         nonce,
-        m, n, k, rank,
+        m,
+        n,
+        k,
+        rank,
         job_key,
         target: *difficulty_bound,
         row_offsets: &row_offsets,
@@ -1642,7 +1816,9 @@ pub fn try_mine_one_gpu_native_opencl(
     let bt_proof = build_matrix_proof(&b_transposed, &job_key, &b_cols, k);
 
     let proof = PearlPlainProof {
-        m, n, k,
+        m,
+        n,
+        k,
         noise_rank: rank,
         a: a_proof,
         bt: bt_proof,
@@ -1650,10 +1826,8 @@ pub fn try_mine_one_gpu_native_opencl(
     };
 
     let proof_bytes = bincode::serialize(&proof).ok()?;
-    let plain_proof_b64 = base64::Engine::encode(
-        &base64::engine::general_purpose::STANDARD,
-        &proof_bytes,
-    );
+    let plain_proof_b64 =
+        base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &proof_bytes);
 
     Some(MinedProof {
         plain_proof_b64,
@@ -1676,7 +1850,15 @@ pub fn mine_gpu_native_opencl(
 ) -> Option<MinedProof> {
     for nonce in 0..max_attempts {
         if let Some(proof) = try_mine_one_gpu_native_opencl(
-            nonce, m, n, k, rank, header, config, difficulty_bound, gpu_backend,
+            nonce,
+            m,
+            n,
+            k,
+            rank,
+            header,
+            config,
+            difficulty_bound,
+            gpu_backend,
         ) {
             return Some(proof);
         }
@@ -1720,7 +1902,10 @@ pub fn mine_gpu_native_opencl_batched(
 
         let native_input = PearlPouwNativeInput {
             nonce,
-            m, n, k, rank,
+            m,
+            n,
+            k,
+            rank,
             job_key,
             target: *difficulty_bound,
             row_offsets: &row_offsets,
@@ -1735,7 +1920,11 @@ pub fn mine_gpu_native_opencl_batched(
             Ok(Some(result)) => {
                 // Found a winning share — reconstruct Merkle proof
                 let PearlPouwNativeResult {
-                    tile_index, jackpot_hash, nonce: winning_nonce, matrix_a, matrix_bt,
+                    tile_index,
+                    jackpot_hash,
+                    nonce: winning_nonce,
+                    matrix_a,
+                    matrix_bt,
                 } = result;
 
                 let num_col_off = col_offsets.len();
@@ -1757,7 +1946,9 @@ pub fn mine_gpu_native_opencl_batched(
                 let bt_proof = build_matrix_proof(&b_transposed, &job_key, &b_cols, k);
 
                 let proof = PearlPlainProof {
-                    m, n, k,
+                    m,
+                    n,
+                    k,
                     noise_rank: rank,
                     a: a_proof,
                     bt: bt_proof,
@@ -1784,7 +1975,15 @@ pub fn mine_gpu_native_opencl_batched(
                 // Fall back to single-nonce for the rest
                 for n2 in nonce..max_attempts {
                     if let Some(proof) = try_mine_one_gpu_native_opencl(
-                        n2, m, n, k, rank, header, config, difficulty_bound, gpu_backend,
+                        n2,
+                        m,
+                        n,
+                        k,
+                        rank,
+                        header,
+                        config,
+                        difficulty_bound,
+                        gpu_backend,
                     ) {
                         return Some(proof);
                     }
@@ -1795,4 +1994,3 @@ pub fn mine_gpu_native_opencl_batched(
     }
     None
 }
-

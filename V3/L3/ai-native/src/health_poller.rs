@@ -138,7 +138,10 @@ impl HealthMatrix {
 
     /// Services that are down.
     pub fn down_services(&self) -> Vec<&ServiceHealth> {
-        self.services.iter().filter(|s| s.status.is_down()).collect()
+        self.services
+            .iter()
+            .filter(|s| s.status.is_down())
+            .collect()
     }
 
     /// Services in a specific layer.
@@ -459,11 +462,7 @@ impl HealthPoller {
             services.push(h);
         }
         // Sort by layer then name for stable display
-        services.sort_by(|a, b| {
-            a.layer
-                .cmp(&b.layer)
-                .then_with(|| a.name.cmp(&b.name))
-        });
+        services.sort_by(|a, b| a.layer.cmp(&b.layer).then_with(|| a.name.cmp(&b.name)));
         HealthMatrix {
             services,
             timestamp: Utc::now(),
@@ -487,7 +486,11 @@ impl HealthPoller {
 
     /// Probe all services in a specific layer.
     pub async fn poll_layer(&self, layer: Layer) -> Vec<ServiceHealth> {
-        let probes: Vec<_> = SERVICES.iter().filter(|p| p.layer == layer).cloned().collect();
+        let probes: Vec<_> = SERVICES
+            .iter()
+            .filter(|p| p.layer == layer)
+            .cloned()
+            .collect();
         let mut tasks = Vec::with_capacity(probes.len());
         for probe in probes {
             let client = self.client.clone();
@@ -571,7 +574,11 @@ async fn probe_tcp(probe: &ServiceProbe, probe_timeout: Duration) -> ServiceHeal
     health.endpoint = probe.endpoint.to_string();
 
     let start = std::time::Instant::now();
-    let result = timeout(probe_timeout, tokio::net::TcpStream::connect(probe.endpoint)).await;
+    let result = timeout(
+        probe_timeout,
+        tokio::net::TcpStream::connect(probe.endpoint),
+    )
+    .await;
 
     health.latency_ms = start.elapsed().as_millis() as u64;
     health.checked_at = Utc::now();
@@ -650,24 +657,39 @@ mod tests {
         let l5 = SERVICES.iter().filter(|s| s.layer == Layer::L5).count();
         let l6 = SERVICES.iter().filter(|s| s.layer == Layer::L6).count();
         let sys = SERVICES.iter().filter(|s| s.layer == Layer::System).count();
-        assert_eq!(l1, 8, "L1 should have 8 services (node1×3, node2×3, pool×2)");
+        assert_eq!(
+            l1, 8,
+            "L1 should have 8 services (node1×3, node2×3, pool×2)"
+        );
         assert_eq!(l2, 4, "L2 should have 4 services (bridge, dao, swap, dex)");
-        assert_eq!(l3, 4, "L3 should have 4 services (warp, ai-native, hiran×2)");
+        assert_eq!(
+            l3, 4,
+            "L3 should have 4 services (warp, ai-native, hiran×2)"
+        );
         assert_eq!(l4, 2, "L4 should have 2 services (oasis, oasis-metrics)");
         assert_eq!(l5, 1, "L5 should have 1 service (free-world)");
         assert_eq!(l6, 1, "L6 should have 1 service (issobella)");
-        assert_eq!(sys, 6, "System should have 6 services (dashboard, web, nginx×2, prometheus, docker)");
+        assert_eq!(
+            sys, 6,
+            "System should have 6 services (dashboard, web, nginx×2, prometheus, docker)"
+        );
     }
 
     #[test]
     fn test_probe_methods() {
         // TCP probes: P2P + stratum
-        let tcp: Vec<_> = SERVICES.iter().filter(|s| s.method == ProbeMethod::TcpConnect).collect();
+        let tcp: Vec<_> = SERVICES
+            .iter()
+            .filter(|s| s.method == ProbeMethod::TcpConnect)
+            .collect();
         assert!(tcp.iter().any(|s| s.name == "node1-p2p"));
         assert!(tcp.iter().any(|s| s.name == "node2-p2p"));
         assert!(tcp.iter().any(|s| s.name == "pool-stratum"));
         // HTTP probes: everything else
-        let http: Vec<_> = SERVICES.iter().filter(|s| s.method == ProbeMethod::HttpGet).collect();
+        let http: Vec<_> = SERVICES
+            .iter()
+            .filter(|s| s.method == ProbeMethod::HttpGet)
+            .collect();
         assert!(http.iter().any(|s| s.name == "node1-rpc"));
         assert!(http.iter().any(|s| s.name == "dashboard"));
     }

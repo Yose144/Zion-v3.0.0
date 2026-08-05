@@ -50,7 +50,11 @@ impl CoinbaseCommitment {
         aux_block_hash.copy_from_slice(&bytes[4..36]);
         let merkle_size = u32::from_le_bytes(bytes[36..40].try_into()?);
         let merkle_nonce = u32::from_le_bytes(bytes[40..44].try_into()?);
-        Ok(Self { aux_block_hash, merkle_size, merkle_nonce })
+        Ok(Self {
+            aux_block_hash,
+            merkle_size,
+            merkle_nonce,
+        })
     }
 
     /// Scan arbitrary coinbase script bytes for the AuxPoW magic and parse

@@ -219,36 +219,36 @@ impl ExternalCoin {
     /// Values are approximate epoch-0 sizes; real DAG grows over time.
     pub fn dag_size(self) -> Option<u64> {
         match self {
-            Self::DCR => None,           // Blake3 — no DAG
-            Self::ALPH => None,          // Blake3 — no DAG
-            Self::KAS => None,           // kHeavyHash — no DAG
-            Self::ERG => None,           // Autolykos — no DAG (uses PK table ~1GB but not DAG)
-            Self::RVN => Some(4_294_967_296),    // KawPow ~4 GB
-            Self::ETC => Some(2_684_354_560),    // Ethash ~2.5 GB
-            Self::EVR => Some(2_684_354_560),    // EvrProgPow ~2.5 GB
-            Self::MEWC => Some(4_294_967_296),   // MeowPow ~4 GB
-            Self::FLUX => Some(6_000_000_000),   // ZelHash ~6 GB
-            Self::CLORE => Some(4_294_967_296),  // KawPow ~4 GB
-            Self::XMR => None,           // RandomX — CPU only, no DAG
-            Self::VRSC => None,          // VerusHash — CPU only, no DAG
-            Self::PRL => None,           // PearlHash — no DAG
-            Self::EPIC => Some(2_684_354_560),   // ProgPow ~2.5 GB
-            Self::ZANO => Some(2_684_354_560),   // ProgPoWZ ~2.5 GB
-            Self::QUAI => Some(4_294_967_296),   // KawPow ~4 GB
-            Self::BEAM => Some(2_147_483_648),   // BeamHash III ~2 GB
-            Self::KLS => None,           // KarlsenHash — no DAG
-            Self::ZCL => Some(1_073_741_824),    // Equihash 192,7 ~1 GB
-            Self::QTC => None,           // Qhash — no DAG
-            Self::VTC => Some(1_073_741_824),    // Verthash ~1 GB
-            Self::IRON => Some(4_800_000_000),   // FishHash ~4.6 GB
-            Self::NEXA => Some(5_000_000_000),   // NexaPow ~5 GB
-            Self::RTM => None,           // GhostRider — CPU-only, no DAG (CN scratchpad 128KB-2MB)
-            Self::DNX => None,           // DynexSolve — no DAG (uses chip model)
-            Self::CKB => None,           // Eaglesong — no DAG (sponge hash)
-            Self::CFX => Some(4_294_967_296),    // Octopus ~4 GB (Ethash-like DAG)
-            Self::ZEC => Some(1_073_741_824),    // Equihash 200,9 ~1 GB
-            Self::PHX => None,           // NeoScrypt — no DAG (scrypt-based, memory-hard)
-            Self::KRX => None,           // KeryxHash — no DAG
+            Self::DCR => None,                  // Blake3 — no DAG
+            Self::ALPH => None,                 // Blake3 — no DAG
+            Self::KAS => None,                  // kHeavyHash — no DAG
+            Self::ERG => None, // Autolykos — no DAG (uses PK table ~1GB but not DAG)
+            Self::RVN => Some(4_294_967_296), // KawPow ~4 GB
+            Self::ETC => Some(2_684_354_560), // Ethash ~2.5 GB
+            Self::EVR => Some(2_684_354_560), // EvrProgPow ~2.5 GB
+            Self::MEWC => Some(4_294_967_296), // MeowPow ~4 GB
+            Self::FLUX => Some(6_000_000_000), // ZelHash ~6 GB
+            Self::CLORE => Some(4_294_967_296), // KawPow ~4 GB
+            Self::XMR => None, // RandomX — CPU only, no DAG
+            Self::VRSC => None, // VerusHash — CPU only, no DAG
+            Self::PRL => None, // PearlHash — no DAG
+            Self::EPIC => Some(2_684_354_560), // ProgPow ~2.5 GB
+            Self::ZANO => Some(2_684_354_560), // ProgPoWZ ~2.5 GB
+            Self::QUAI => Some(4_294_967_296), // KawPow ~4 GB
+            Self::BEAM => Some(2_147_483_648), // BeamHash III ~2 GB
+            Self::KLS => None, // KarlsenHash — no DAG
+            Self::ZCL => Some(1_073_741_824), // Equihash 192,7 ~1 GB
+            Self::QTC => None, // Qhash — no DAG
+            Self::VTC => Some(1_073_741_824), // Verthash ~1 GB
+            Self::IRON => Some(4_800_000_000), // FishHash ~4.6 GB
+            Self::NEXA => Some(5_000_000_000), // NexaPow ~5 GB
+            Self::RTM => None, // GhostRider — CPU-only, no DAG (CN scratchpad 128KB-2MB)
+            Self::DNX => None, // DynexSolve — no DAG (uses chip model)
+            Self::CKB => None, // Eaglesong — no DAG (sponge hash)
+            Self::CFX => Some(4_294_967_296), // Octopus ~4 GB (Ethash-like DAG)
+            Self::ZEC => Some(1_073_741_824), // Equihash 200,9 ~1 GB
+            Self::PHX => None, // NeoScrypt — no DAG (scrypt-based, memory-hard)
+            Self::KRX => None, // KeryxHash — no DAG
         }
     }
 
@@ -313,7 +313,7 @@ impl ExternalCoin {
                 Self::CFX |                        // octopus (Ethash-like DAG)
                 Self::ZEC |                        // equihash 200,9
                 Self::PHX |                        // neoscrypt (scrypt-based)
-                Self::KRX                          // keryxhash
+                Self::KRX // keryxhash
             ),
             "cuda" => matches!(
                 self,
@@ -324,12 +324,9 @@ impl ExternalCoin {
                 Self::ETC |                    // ethash
                 Self::EVR | Self::MEWC |       // evrprogpow / meowpow → ProgPow kernel
                 Self::FLUX |                   // zelhash
-                Self::EPIC | Self::ZANO        // progpow / progpow_zano
+                Self::EPIC | Self::ZANO // progpow / progpow_zano
             ),
-            "metal" => matches!(
-                self,
-                Self::DCR | Self::ALPH | Self::KAS
-            ),
+            "metal" => matches!(self, Self::DCR | Self::ALPH | Self::KAS),
             _ => false,
         }
     }
@@ -338,38 +335,38 @@ impl ExternalCoin {
     /// Memory-hard algorithms (DAG-based) use more power than compute-only.
     pub fn estimated_gpu_power_watts(self) -> f64 {
         match self {
-            Self::DCR | Self::ALPH => 180.0,        // Blake3 — compute-bound, high power
-            Self::KAS => 200.0,                      // kHeavyHash — moderate
-            Self::ERG => 160.0,                      // Autolykos — memory-light
-            Self::RVN | Self::CLORE | Self::QUAI => 220.0,  // KawPow — memory-hard
-            Self::ETC | Self::EVR | Self::MEWC => 210.0,    // Ethash/ProgPow — memory-hard
-            Self::FLUX => 200.0,                     // ZelHash
-            Self::PRL => 190.0,                      // PearlHash
-            Self::EPIC => 210.0,                     // ProgPow
-            Self::ZANO => 210.0,                     // ProgPoWZ
-            Self::BEAM => 180.0,                     // BeamHash
-            Self::KLS => 190.0,                      // KarlsenHash
-            Self::ZCL | Self::QTC | Self::VTC => 170.0,  // Equihash variants
-            Self::IRON => 220.0,                     // FishHash — memory-hard
-            Self::NEXA => 210.0,                     // NexaPow
-            Self::DNX => 150.0,                      // DynexSolve — different paradigm
-            Self::CKB => 170.0,                      // Eaglesong — moderate
-            Self::CFX => 210.0,                      // Octopus — DAG-based, memory-hard
-            Self::ZEC => 170.0,                      // Equihash 200,9 — memory-hard
-            Self::PHX => 180.0,                      // NeoScrypt — memory-hard
-            Self::KRX => 180.0,                      // KeryxHash — memory-hard
-            Self::RTM => 0.0,                    // Treated as CPU-only; OpenCL kernel exists but routed to CPU
-            Self::XMR | Self::VRSC => 0.0,         // CPU-only coins — no GPU power
+            Self::DCR | Self::ALPH => 180.0, // Blake3 — compute-bound, high power
+            Self::KAS => 200.0,              // kHeavyHash — moderate
+            Self::ERG => 160.0,              // Autolykos — memory-light
+            Self::RVN | Self::CLORE | Self::QUAI => 220.0, // KawPow — memory-hard
+            Self::ETC | Self::EVR | Self::MEWC => 210.0, // Ethash/ProgPow — memory-hard
+            Self::FLUX => 200.0,             // ZelHash
+            Self::PRL => 190.0,              // PearlHash
+            Self::EPIC => 210.0,             // ProgPow
+            Self::ZANO => 210.0,             // ProgPoWZ
+            Self::BEAM => 180.0,             // BeamHash
+            Self::KLS => 190.0,              // KarlsenHash
+            Self::ZCL | Self::QTC | Self::VTC => 170.0, // Equihash variants
+            Self::IRON => 220.0,             // FishHash — memory-hard
+            Self::NEXA => 210.0,             // NexaPow
+            Self::DNX => 150.0,              // DynexSolve — different paradigm
+            Self::CKB => 170.0,              // Eaglesong — moderate
+            Self::CFX => 210.0,              // Octopus — DAG-based, memory-hard
+            Self::ZEC => 170.0,              // Equihash 200,9 — memory-hard
+            Self::PHX => 180.0,              // NeoScrypt — memory-hard
+            Self::KRX => 180.0,              // KeryxHash — memory-hard
+            Self::RTM => 0.0, // Treated as CPU-only; OpenCL kernel exists but routed to CPU
+            Self::XMR | Self::VRSC => 0.0, // CPU-only coins — no GPU power
         }
     }
 
     /// Estimated CPU power draw (watts) for this coin's algorithm.
     pub fn estimated_cpu_power_watts(self) -> f64 {
         match self {
-            Self::XMR => 85.0,    // RandomX — high CPU usage, ~85W on Ryzen 5 3600
-            Self::VRSC => 65.0,   // VerusHash — moderate, ~65W
-            Self::RTM => 90.0,    // GhostRider — high CPU + memory-hard CN, ~90W
-            _ => 0.0,             // GPU coins — no CPU power
+            Self::XMR => 85.0,  // RandomX — high CPU usage, ~85W on Ryzen 5 3600
+            Self::VRSC => 65.0, // VerusHash — moderate, ~65W
+            Self::RTM => 90.0,  // GhostRider — high CPU + memory-hard CN, ~90W
+            _ => 0.0,           // GPU coins — no CPU power
         }
     }
 
@@ -1062,10 +1059,7 @@ pub fn fetch_live_profit_estimates_with_nicehash() -> (Vec<ProfitEntry>, Vec<(Ex
     // Fetch NiceHash paying rates for monitoring.
     let nh_rates = fetch_nicehash_paying_rates();
     for (coin, paying) in &nh_rates {
-        plog!(
-            "profit_router: nicehash {} paying={:.15}",
-            coin, paying
-        );
+        plog!("profit_router: nicehash {} paying={:.15}", coin, paying);
     }
 
     // Fetch WhatToMine estimates (USD/day per coin) — primary source.
@@ -1106,10 +1100,7 @@ fn parse_whattomine_for_external_coins(body: &str) -> Vec<ProfitEntry> {
 
     if let Some(coins) = json.get("coins").and_then(|c| c.as_object()) {
         for (_id, coin_data) in coins {
-            let tag = coin_data
-                .get("tag")
-                .and_then(|t| t.as_str())
-                .unwrap_or("");
+            let tag = coin_data.get("tag").and_then(|t| t.as_str()).unwrap_or("");
 
             // WhatToMine now provides `btc_revenue` (BTC/day per reference hashrate).
             // Older API had `revenue` (USD/day). Try both for backwards compat.
@@ -1141,7 +1132,11 @@ fn parse_whattomine_for_external_coins(body: &str) -> Vec<ProfitEntry> {
                     .find(|e| e.coin == coin)
                     .map(|e| e.power_cost_usd)
                     .unwrap_or(0.10);
-                plog!("profit_router: whattomine {} revenue=${:.4}/day", tag, revenue_usd);
+                plog!(
+                    "profit_router: whattomine {} revenue=${:.4}/day",
+                    tag,
+                    revenue_usd
+                );
                 entries.push(ProfitEntry {
                     coin,
                     revenue_per_day_usd: revenue_usd.max(0.01),
@@ -1432,7 +1427,10 @@ mod tests {
             ExternalCoin::PRL.disabled_reason().is_some(),
             "PRL should be disabled in v3.0.8"
         );
-        assert!(ExternalCoin::PRL.disabled_reason().unwrap().contains("deferred"));
+        assert!(ExternalCoin::PRL
+            .disabled_reason()
+            .unwrap()
+            .contains("deferred"));
     }
 
     #[test]

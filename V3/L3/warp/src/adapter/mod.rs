@@ -59,7 +59,9 @@ pub fn create_adapter(chain_name: &str) -> Option<Box<dyn ChainAdapter>> {
         "near" => Some(Box::new(near::NearAdapter::new())),
         "ton" => Some(Box::new(ton::TonAdapter::new())),
         "lightning" => Some(Box::new(lightning::LightningAdapter::new())),
-        "zion-l1" => Some(Box::new(zion_l1::ZionL1Adapter::from_config(&crate::config::WarpConfig::default()))),
+        "zion-l1" => Some(Box::new(zion_l1::ZionL1Adapter::from_config(
+            &crate::config::WarpConfig::default(),
+        ))),
         _ => None,
     }
 }

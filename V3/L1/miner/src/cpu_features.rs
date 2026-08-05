@@ -71,9 +71,7 @@ static FEATURES: OnceLock<CpuFeatures> = OnceLock::new();
 /// On x86_64, uses `is_x86_feature_detected!` macro which calls `cpuid`.
 /// On other architectures, returns a default with all features disabled.
 pub fn detect() -> CpuFeatures {
-    FEATURES
-        .get_or_init(detect_impl)
-        .clone()
+    FEATURES.get_or_init(detect_impl).clone()
 }
 
 #[cfg(target_arch = "x86_64")]

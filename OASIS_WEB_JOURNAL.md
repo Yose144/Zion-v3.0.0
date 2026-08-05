@@ -50,9 +50,12 @@ The work began from an earlier conversation state where the `WarpIntro`, `TreeOf
 ### 2.4 Intro & UI
 
 - **WarpIntro.tsx** — canvas-based deterministic multispectrum warp starfield, cinematic vignette, Carl Sagan quote, progress bar while warping.
-- **OasisClient.tsx** — orchestrates phases (intro/arrival/scene), filters, selected world, world view, audio, flight mode, responsive layout.
+- **OasisClient.tsx** — orchestrates phases (intro/arrival/rite/scene), filters, selected world, world view, audio, flight mode, responsive layout, UI hide/show toggle (H key).
+- **PilgrimRite.tsx** — 3-step onboarding: Morpheus (red/blue pill) → Avatar customization (callsign, body type, neon accent, augmentation) → Archetype selection (warrior/trader/explorer/sage with bonuses).
 - **OasisHud.tsx** — API status panel (now uses relative API paths when `NEXT_PUBLIC_OASIS_API_URL` is empty for edge deploy).
 - **OasisScene.tsx** — Canvas root, conditional galaxy/world rendering, post-processing Bloom.
+- **WorldFilter.tsx** — vertical right-side panel with category filters and Galactic Layers (1-5) filtering.
+- **GamePanel.tsx** — tabbed settings panel (Ship, Identity, Audio, OASIS) with ship model selector, upgrades, hull color, avatar config summary, wallet management.
 
 ### 2.5 Audio
 
@@ -70,11 +73,11 @@ The work began from an earlier conversation state where the `WarpIntro`, `TreeOf
 
 ### 2.8 Gameplay, Progression & Backend Sync
 
-- **gameStore** — persistent (localStorage) player state: `xp`, `credits`, `completedQuests`, `discoveredWorlds`, `scannedWorlds`, `collectedEggs`, `shipLoadout`.
+- **gameStore** — persistent (localStorage) player state: `xp`, `credits`, `completedQuests`, `discoveredWorlds`, `scannedWorlds`, `collectedEggs`, `shipLoadout` (with `model` field for STL ships), `avatarConfig` (callsign, bodyType, neonColor, augmentation), `archetype`.
 - **PlayerHud** — level, XP bar, credits, completed quests, discovered worlds, live quests, linked wallet address with type badge.
 - **WorldPanel** — real backend quests with avatar cards, quest completion, Golden Egg claim.
-- **PilgrimShip** — visible in flight, color/thruster changes based on `shipLoadout`.
-- **ShipLoadout** — upgrade engine/cargo/scanner and pick hull color.
+- **PilgrimShip** — visible in flight, loads STL ship models (A-Wing, B-Wing, Snowspeeder, TIE Fighter, TIE Interceptor) via STLLoader, color/thruster changes based on `shipLoadout`.
+- **ShipLoadout / GamePanel ShipTab** — upgrade engine/cargo/scanner, pick hull color, select vessel chassis from 6 ship models.
 - **AudioEngine** — procedural chord pad, random space chimes, SFX for quest complete, scan, approach.
 - **Toast / feedback UI** — notifications for key actions.
 - **OnboardingHint** — dismissible first-visit overlay with controls, flight, quests, eggs, wallet hints.
@@ -252,6 +255,45 @@ The next work was explicitly requested as a slow, careful pass through these six
 - Surface `goldenEggClue` in world view with a scanner puzzle.
 - Show territory map with hot zones; allow claiming / mining actions.
 - Add backend calls for territory participation if endpoints exist.
+
+### 6.13 Hide/Show UI toggle ✅
+
+- Added `uiHidden` state toggle via "H" key and EyeOff/Eye button in `OasisClient.tsx`.
+- All UI panels (GamePanel, ControlHud, WorldFilter, OnboardingHint, WorldPanel, "Enter the Game") wrapped in `!uiHidden`.
+- PilgrimRite stays visible regardless of UI hidden state.
+- WorldFilter exit transition fixed (was 3.2s delay, now 0.3s instant).
+
+### 6.14 WorldFilter vertical redesign + Galactic Layers ✅
+
+- Redesigned `WorldFilter.tsx` from horizontal bottom bar to vertical right-side panel opening upward (above ControlHud).
+- Added Galactic Layers section (Layers 1-5: Core Galaxy, Inner Rim, Temporal, Mythic, Creative).
+- Added `activeLayers` state to `OasisClient.tsx`, passed through `OasisScene.tsx` → `GalaxyMap.tsx` for filtering.
+- Position `bottom-44 right-4` to avoid overlap with ControlHud at `bottom-4 left-1/2`.
+
+### 6.15 3D engine graphics expansion ✅
+
+- **TreeOfLife**: Contact fountain effect — LightFountain (1200 spiral light strands), EnergyRings (12 pulsing rings), EnergyBeams (8 vertical beams), multi-layered heart with 4 glow layers.
+- **Galaxy**: 65000 particles (was 45000), 8 branches, dust lane layer (8000 particles).
+- **GalaxyCore**: 1000 tunnel streaks, 10 rings, 3 lens flares.
+- **Nebula**: 11 clouds. **DistantGalaxies**: 10 galaxies.
+- **OasisScene**: 16000 stars, 6 point lights, Bloom 1.4, exposure 1.2.
+
+### 6.16 Ship selection system (STL models) ✅
+
+- Added `ShipModelId` type and `SHIP_MODELS` array to `gameStore.ts` (6 ships: Pilgrim Scout, A-Wing, B-Wing, Snowspeeder, TIE Fighter, TIE Interceptor).
+- Copied 5 Star Wars STL models to `OasisWeb/public/models/`.
+- `PilgrimShip.tsx` loads STL geometry via `STLLoader`, normalizes to 0.25 bounding box, renders with ship color material + engine glow. STL cache implemented.
+- Ship model selector UI ("Vessel Chassis") added to both `GamePanel.tsx` ShipTab and `ShipLoadout.tsx` modal.
+- Selected ship model persists in localStorage and renders in flight mode.
+
+### 6.17 Avatar customization (cyberpunk sequence) ✅
+
+- Added `AvatarConfig` interface to `gameStore.ts` with `callsign`, `bodyType` (slim/standard/heavy), `neonColor`, `augmentation` (reflexes/neural/tech/bio/stealth).
+- Added `setAvatarConfig` action, persisted in localStorage.
+- PilgrimRite flow expanded: morpheus (red/blue pill) → **customize** (avatar configuration) → archetype (path selection).
+- Customize step: cyberpunk-styled UI with callsign input, body type selector, neon accent color picker, augmentation selector.
+- Avatar config summary card added to GamePanel Identity tab (callsign, body, augment, archetype, neon).
+- Implements OASIS_UNIVERSE.md §9.3 "Cyberpunkový avatár a volba postavy".
 
 ---
 

@@ -38,9 +38,11 @@ impl TimelockMonitor {
 
     /// Run the monitor loop forever
     pub async fn run(self) {
-        info!("[Timelock] Starting timelock monitor (hold: {}s, check interval: {}s)", 
-              self.hold_duration_secs, CHECK_INTERVAL_SECS);
-        
+        info!(
+            "[Timelock] Starting timelock monitor (hold: {}s, check interval: {}s)",
+            self.hold_duration_secs, CHECK_INTERVAL_SECS
+        );
+
         let mut interval = time::interval(Duration::from_secs(CHECK_INTERVAL_SECS));
 
         loop {
@@ -54,7 +56,7 @@ impl TimelockMonitor {
     /// Check all transfers in TimelockHold and release expired ones
     async fn check_and_release(&self) -> WarpResult<()> {
         let now = chrono::Utc::now().timestamp() as u64;
-        
+
         // First, collect IDs of transfers that need to be released
         let to_release: Vec<_> = {
             let router = self.router.lock().await;
@@ -75,12 +77,18 @@ impl TimelockMonitor {
             return Ok(());
         }
 
-        info!("[Timelock] Releasing {} expired timelock(s)", to_release.len());
+        info!(
+            "[Timelock] Releasing {} expired timelock(s)",
+            to_release.len()
+        );
 
         for transfer_id in to_release {
             let mut router = self.router.lock().await;
             if let Err(e) = router.advance_transfer(transfer_id, WarpStatus::Detected) {
-                warn!("[Timelock] Failed to release transfer {}: {}", transfer_id, e);
+                warn!(
+                    "[Timelock] Failed to release transfer {}: {}",
+                    transfer_id, e
+                );
             } else {
                 info!("[Timelock] Released transfer {} from timelock", transfer_id);
             }
@@ -104,12 +112,10 @@ mod tests {
     fn test_timelock_monitor_creation() {
         // Just verify it can be constructed
         let validator_set = Arc::new(Mutex::new(WarpValidatorSet::new(3)));
-        let _monitor = TimelockMonitor::default(
-            Arc::new(Mutex::new(WarpRouter::new(
-                ChainRegistry::with_defaults(),
-                FeeEngine::with_defaults(),
-                validator_set,
-            )))
-        );
+        let _monitor = TimelockMonitor::default(Arc::new(Mutex::new(WarpRouter::new(
+            ChainRegistry::with_defaults(),
+            FeeEngine::with_defaults(),
+            validator_set,
+        ))));
     }
 }

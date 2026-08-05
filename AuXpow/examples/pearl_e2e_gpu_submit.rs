@@ -10,7 +10,8 @@ use tokio::time::sleep;
 
 #[tokio::main]
 async fn main() {
-    let profile = zion_auxpow::types::CoinProfile::default_for(zion_auxpow::types::ExternalCoin::PRL);
+    let profile =
+        zion_auxpow::types::CoinProfile::default_for(zion_auxpow::types::ExternalCoin::PRL);
     println!("Pool: {}:{}", profile.pool_host, profile.pool_port);
 
     let client = zion_auxpow::auxpow_client::AuxPowClient::new(profile);
@@ -30,7 +31,7 @@ async fn main() {
         sleep(Duration::from_secs(2)).await;
         let job = client.current_job().await;
         if let Some(j) = job {
-            println!("\n[{}s] Job received:", i*2);
+            println!("\n[{}s] Job received:", i * 2);
             println!("  job_id:     {}", j.job_id);
             println!("  header_len: {} bytes", j.header_bytes.len());
             println!("  height:     {:?}", j.block_number);
@@ -38,7 +39,7 @@ async fn main() {
             got_job = true;
             break;
         }
-        println!("[{}s] No job yet...", i*2);
+        println!("[{}s] No job yet...", i * 2);
     }
 
     if !got_job {
@@ -58,7 +59,9 @@ async fn main() {
         let t0 = std::time::Instant::now();
 
         // Get current job_id from the poll loop
-        let job_id = client.current_job().await
+        let job_id = client
+            .current_job()
+            .await
             .map(|j| j.job_id.clone())
             .unwrap_or_else(|| "auto".to_string());
 
@@ -118,7 +121,10 @@ async fn main() {
     println!("Accepted:       {}", accepted);
     println!("Rejected:       {}", rejected);
     println!("Duration:       {}s", start.elapsed().as_secs());
-    println!("Rate:           {:.1} attempts/s", attempts as f64 / start.elapsed().as_secs_f64());
+    println!(
+        "Rate:           {:.1} attempts/s",
+        attempts as f64 / start.elapsed().as_secs_f64()
+    );
 
     println!("\nE2E GPU submit test complete!");
 }

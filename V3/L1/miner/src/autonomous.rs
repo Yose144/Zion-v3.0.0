@@ -217,7 +217,8 @@ impl AutonomousProfitRouter {
 
         let candidates = self.gpu_compatible_coins();
         if candidates.is_empty() {
-            self.log.push("stream2: no GPU-compatible coins".to_string());
+            self.log
+                .push("stream2: no GPU-compatible coins".to_string());
             return None;
         }
 
@@ -269,7 +270,8 @@ impl AutonomousProfitRouter {
     pub fn select_stream3(&mut self) -> Option<ExternalCoin> {
         let candidates = self.cpu_compatible_coins();
         if candidates.is_empty() {
-            self.log.push("stream3: no CPU-compatible coins".to_string());
+            self.log
+                .push("stream3: no CPU-compatible coins".to_string());
             return None;
         }
 
@@ -319,7 +321,8 @@ impl AutonomousProfitRouter {
         if !self.enabled {
             return;
         }
-        self.log.push("=== Autonomous Profit Router — Initial Selection ===".to_string());
+        self.log
+            .push("=== Autonomous Profit Router — Initial Selection ===".to_string());
         self.log.push(format!(
             "hardware: GPU={} ({} MiB VRAM, {} backend), CPU AES={} AVX2={}, threads={}",
             self.hw.has_gpu,
@@ -377,7 +380,8 @@ impl AutonomousProfitRouter {
         if !self.enabled {
             return;
         }
-        self.log.push("=== Autonomous Profit Router — Re-evaluation ===".to_string());
+        self.log
+            .push("=== Autonomous Profit Router — Re-evaluation ===".to_string());
         self.fetch_profits();
         self.select_stream2();
         self.select_stream3();
@@ -410,9 +414,7 @@ impl AutonomousProfitRouter {
             .unwrap_or_else(|| "disabled".to_string());
         format!(
             "autonomous: stream2={} stream3={} (enabled={})",
-            s2,
-            s3,
-            self.enabled
+            s2, s3, self.enabled
         )
     }
 
@@ -423,8 +425,14 @@ impl AutonomousProfitRouter {
             return None;
         }
 
-        let gpu_coin = self.stream2_coin.map(|c| c.ticker().to_string()).unwrap_or_default();
-        let cpu_coin = self.stream3_coin.map(|c| c.ticker().to_string()).unwrap_or_default();
+        let gpu_coin = self
+            .stream2_coin
+            .map(|c| c.ticker().to_string())
+            .unwrap_or_default();
+        let cpu_coin = self
+            .stream3_coin
+            .map(|c| c.ticker().to_string())
+            .unwrap_or_default();
 
         let gpu_profit = self
             .stream2_coin
@@ -447,7 +455,11 @@ impl AutonomousProfitRouter {
     }
 
     /// Check if the coin selection has changed since the last pool notification.
-    pub fn coins_changed(&self, prev_s2: Option<ExternalCoin>, prev_s3: Option<ExternalCoin>) -> bool {
+    pub fn coins_changed(
+        &self,
+        prev_s2: Option<ExternalCoin>,
+        prev_s3: Option<ExternalCoin>,
+    ) -> bool {
         self.stream2_coin != prev_s2 || self.stream3_coin != prev_s3
     }
 }
@@ -467,9 +479,9 @@ fn fallback_revenue_usd_per_day(coin: ExternalCoin) -> f64 {
         ExternalCoin::MEWC => 0.25,
         ExternalCoin::FLUX => 0.40,
         ExternalCoin::CLORE => 0.35,
-        ExternalCoin::XMR => 0.55, // CPU: ~550 H/s on Ryzen 5 3600
+        ExternalCoin::XMR => 0.55,  // CPU: ~550 H/s on Ryzen 5 3600
         ExternalCoin::VRSC => 0.40, // CPU: ~12 MH/s on Ryzen 5 3600
-        ExternalCoin::PRL => 2.50, // Pearl PoUW — 22x more profitable
+        ExternalCoin::PRL => 2.50,  // Pearl PoUW — 22x more profitable
         ExternalCoin::EPIC => 0.30,
         ExternalCoin::ZANO => 0.28,
         ExternalCoin::QUAI => 0.25,
@@ -496,14 +508,20 @@ fn fallback_revenue_usd_per_day(coin: ExternalCoin) -> f64 {
 fn forced_stream2_coin() -> Option<ExternalCoin> {
     let raw = std::env::var("ZION_STREAM2_FORCE_COIN").ok()?;
     let upper = raw.trim().to_uppercase();
-    ExternalCoin::all().iter().copied().find(|c| c.ticker() == upper)
+    ExternalCoin::all()
+        .iter()
+        .copied()
+        .find(|c| c.ticker() == upper)
 }
 
 /// Read ZION_STREAM3_FORCE_COIN env var to force a specific Stream 3 (CPU) coin.
 fn forced_stream3_coin() -> Option<ExternalCoin> {
     let raw = std::env::var("ZION_STREAM3_FORCE_COIN").ok()?;
     let upper = raw.trim().to_uppercase();
-    ExternalCoin::all().iter().copied().find(|c| c.ticker() == upper)
+    ExternalCoin::all()
+        .iter()
+        .copied()
+        .find(|c| c.ticker() == upper)
 }
 
 #[cfg(test)]
@@ -529,7 +547,11 @@ impl AutonomousProfitRouter {
     }
 
     /// Clear cached profit and select coins using deterministic net profits.
-    fn set_profits_and_select(&mut self, gpu_profits: &[(ExternalCoin, f64)], cpu_profits: &[(ExternalCoin, f64)]) {
+    fn set_profits_and_select(
+        &mut self,
+        gpu_profits: &[(ExternalCoin, f64)],
+        cpu_profits: &[(ExternalCoin, f64)],
+    ) {
         self.profit_cache.clear();
         for (coin, net) in gpu_profits {
             self.set_coin_profit_for_test(*coin, *net);
@@ -600,7 +622,10 @@ mod tests {
         std::env::set_var("ZION_AUTONOMOUS", "1");
         let router = AutonomousProfitRouter::new(sample_hw_opencl());
         let gpu = router.gpu_compatible_coins();
-        assert!(!gpu.contains(&ExternalCoin::PRL), "disabled PRL must not be GPU-compatible");
+        assert!(
+            !gpu.contains(&ExternalCoin::PRL),
+            "disabled PRL must not be GPU-compatible"
+        );
         std::env::remove_var("ZION_AUTONOMOUS");
     }
 
@@ -627,24 +652,15 @@ mod tests {
         router.hysteresis_pct = 15.0;
 
         // First selection: KAS
-        router.set_profits_and_select(
-            &[(ExternalCoin::KAS, 1.0), (ExternalCoin::ALPH, 0.8)],
-            &[],
-        );
+        router.set_profits_and_select(&[(ExternalCoin::KAS, 1.0), (ExternalCoin::ALPH, 0.8)], &[]);
         assert_eq!(router.stream2_coin, Some(ExternalCoin::KAS));
 
         // ALPH becomes 1.08 (~8% improvement, below 15% hysteresis) → stay on KAS
-        router.set_profits_and_select(
-            &[(ExternalCoin::KAS, 1.0), (ExternalCoin::ALPH, 1.08)],
-            &[],
-        );
+        router.set_profits_and_select(&[(ExternalCoin::KAS, 1.0), (ExternalCoin::ALPH, 1.08)], &[]);
         assert_eq!(router.stream2_coin, Some(ExternalCoin::KAS));
 
         // ALPH becomes 2.0 (100% improvement, above 15% hysteresis) → switch
-        router.set_profits_and_select(
-            &[(ExternalCoin::KAS, 1.0), (ExternalCoin::ALPH, 2.0)],
-            &[],
-        );
+        router.set_profits_and_select(&[(ExternalCoin::KAS, 1.0), (ExternalCoin::ALPH, 2.0)], &[]);
         assert_eq!(router.stream2_coin, Some(ExternalCoin::ALPH));
         std::env::remove_var("ZION_AUTONOMOUS");
     }
@@ -669,13 +685,16 @@ mod tests {
     fn build_coin_preference_returns_message() {
         std::env::set_var("ZION_AUTONOMOUS", "1");
         let mut router = AutonomousProfitRouter::new(sample_hw_opencl());
-        router.set_profits_and_select(
-            &[(ExternalCoin::KAS, 1.0)],
-            &[(ExternalCoin::VRSC, 0.6)],
-        );
+        router.set_profits_and_select(&[(ExternalCoin::KAS, 1.0)], &[(ExternalCoin::VRSC, 0.6)]);
         let msg = router.build_coin_preference("miner-1");
-        assert!(msg.is_some(), "CoinPreference should be produced when enabled");
-        if let Some(zion_pool::PoolMessage::CoinPreference { gpu_coin, cpu_coin, .. }) = msg {
+        assert!(
+            msg.is_some(),
+            "CoinPreference should be produced when enabled"
+        );
+        if let Some(zion_pool::PoolMessage::CoinPreference {
+            gpu_coin, cpu_coin, ..
+        }) = msg
+        {
             assert_eq!(gpu_coin, "KAS");
             assert_eq!(cpu_coin, "VRSC");
         } else {

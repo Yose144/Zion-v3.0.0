@@ -26,12 +26,8 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
     match algorithm {
         "blake3" | "blake3_alph" => Some(("blake3_kernel.metal", "blake3_alph_mine")),
         "blake3_dcr" => Some(("blake3_kernel.metal", "blake3_dcr_mine")),
-        "kheavyhash" | "kheavyhash_kas" => {
-            Some(("kheavyhash_kernel.metal", "kheavyhash_mine"))
-        }
-        "keryxhash" | "keryxhash_krx" => {
-            Some(("keryxhash_kernel.metal", "keryxhash_mine"))
-        }
+        "kheavyhash" | "kheavyhash_kas" => Some(("kheavyhash_kernel.metal", "kheavyhash_mine")),
+        "keryxhash" | "keryxhash_krx" => Some(("keryxhash_kernel.metal", "keryxhash_mine")),
         "autolykos" | "autolykos_erg" => Some(("autolykos_kernel.metal", "autolykos_mine")),
         "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => {
             Some(("kawpow_kernel.metal", "kawpow_mine"))
@@ -78,8 +74,8 @@ pub struct MetalBackend {
 impl MetalBackend {
     /// Create a new Metal backend on the system default device.
     pub fn new(work_size: usize) -> Result<Self> {
-        let device = Device::system_default()
-            .ok_or_else(|| anyhow!("no Metal GPU device available"))?;
+        let device =
+            Device::system_default().ok_or_else(|| anyhow!("no Metal GPU device available"))?;
 
         let device_name = device.name().to_string();
         let cmd_queue = device.new_command_queue();
@@ -123,9 +119,7 @@ impl MetalBackend {
         let library = self
             .device
             .new_library_with_source(&source, &options)
-            .map_err(|e| {
-                anyhow!("Metal compile failed for {kernel_file}: {e}")
-            })?;
+            .map_err(|e| anyhow!("Metal compile failed for {kernel_file}: {e}"))?;
 
         self.libraries.insert(kernel_file.to_string(), library);
         Ok(self.libraries.get(kernel_file).unwrap())
@@ -387,7 +381,9 @@ impl GpuBackend for MetalBackend {
                 // autolykos: 0=header, 1=target, 2=table, 3=nonce, 4=hash, 5=found, 6=hlen, 7=base_nonce, 8=table_size
                 let height: u32 = if extra.len() >= 4 {
                     u32::from_le_bytes(extra[..4].try_into().unwrap())
-                } else { 0 };
+                } else {
+                    0
+                };
                 let table_size = if extra.len() >= 8 {
                     u32::from_le_bytes(extra[4..8].try_into().unwrap()) as usize
                 } else {
@@ -397,8 +393,12 @@ impl GpuBackend for MetalBackend {
                 let table_size_u32 = table_size as u32;
 
                 // Cache table buffer — regenerate only when height or size changes.
-                if self.autolykos_height != height || self.autolykos_table_size != table_size_u32 || self.autolykos_table.is_none() {
-                    let table = crate::gpu_backend::generate_autolykos_table(header, height, table_size);
+                if self.autolykos_height != height
+                    || self.autolykos_table_size != table_size_u32
+                    || self.autolykos_table.is_none()
+                {
+                    let table =
+                        crate::gpu_backend::generate_autolykos_table(header, height, table_size);
                     let table_buf = self.device.new_buffer_with_data(
                         table.as_ptr() as *const _,
                         (table.len() * std::mem::size_of::<u64>()) as u64,
@@ -427,8 +427,9 @@ impl GpuBackend for MetalBackend {
             }
             // ethash: 0=header, 1=target, 2=dag, 3=nonce, 4=hash, 5=mix, 6=found, 7=nonce_base, 8=stride, 9=dag_size
             "ethash" | "etchash" | "ethash_etc" => {
-                let dag = self.ethash_dag.as_ref()
-                    .ok_or_else(|| anyhow!("Ethash DAG not set; call set_ethash_dag() before mining"))?;
+                let dag = self.ethash_dag.as_ref().ok_or_else(|| {
+                    anyhow!("Ethash DAG not set; call set_ethash_dag() before mining")
+                })?;
                 let mix_init = [0u8; 32];
                 let mix_buf = self.device.new_buffer_with_data(
                     mix_init.as_ptr() as *const _,
@@ -460,8 +461,9 @@ impl GpuBackend for MetalBackend {
             }
             // kawpow: 0=header, 1=target, 2=dag, 3=nonce, 4=hash, 5=mix, 6=found, 7=base_nonce, 8=dag_entries
             "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => {
-                let dag = self.kawpow_dag.as_ref()
-                    .ok_or_else(|| anyhow!("KawPow DAG not set; call set_kawpow_dag() before mining"))?;
+                let dag = self.kawpow_dag.as_ref().ok_or_else(|| {
+                    anyhow!("KawPow DAG not set; call set_kawpow_dag() before mining")
+                })?;
                 let mix_init = [0u8; 32];
                 let mix_buf = self.device.new_buffer_with_data(
                     mix_init.as_ptr() as *const _,
@@ -504,8 +506,9 @@ impl GpuBackend for MetalBackend {
             // progpow / progpow_zano: 0=header, 1=target, 2=dag, 3=nonce, 4=hash, 5=mix,
             //                         6=found, 7=base_nonce, 8=batch_size, 9=dag_entries, 10=prog_seed
             "progpow" | "progpow_epic" | "progpow_zano" => {
-                let dag = self.progpow_dag.as_ref()
-                    .ok_or_else(|| anyhow!("ProgPow DAG not set; call set_progpow_dag() before mining"))?;
+                let dag = self.progpow_dag.as_ref().ok_or_else(|| {
+                    anyhow!("ProgPow DAG not set; call set_progpow_dag() before mining")
+                })?;
                 let mix_init = [0u8; 32];
                 mix_buf = Some(self.device.new_buffer_with_data(
                     mix_init.as_ptr() as *const _,
@@ -549,7 +552,8 @@ impl GpuBackend for MetalBackend {
 
         // Dispatch threads
         let max_tg = self.device.max_threads_per_threadgroup();
-        let threads_per_group = if matches!(algorithm, "progpow" | "progpow_epic" | "progpow_zano") {
+        let threads_per_group = if matches!(algorithm, "progpow" | "progpow_epic" | "progpow_zano")
+        {
             // ProgPow kernels are hard-coded to GROUP_SIZE=128 lanes.
             128
         } else {
@@ -691,8 +695,8 @@ impl MetalBackend {
 
 /// Input data for Pearl PoUW GPU mining.
 pub struct PearlPouwGpuInput<'a> {
-    pub noised_a: &'a [i32],    // m×k, row-major
-    pub noised_b: &'a [i32],    // n×k, B^T row-major
+    pub noised_a: &'a [i32], // m×k, row-major
+    pub noised_b: &'a [i32], // n×k, B^T row-major
     pub a_noise_seed: [u8; 32],
     pub target: [u8; 32],
     pub row_offsets: &'a [u32], // 64 entries
@@ -720,7 +724,10 @@ pub struct PearlPouwNativeResult {
 impl MetalBackend {
     /// Mine Pearl PoUW on GPU. Launches 4096 work-items (64×64 tiles).
     /// Returns the winning tile index and jackpot hash if a valid share is found.
-    pub fn pearl_pouw_mine(&mut self, input: &PearlPouwGpuInput<'_>) -> Result<Option<PearlPouwGpuResult>> {
+    pub fn pearl_pouw_mine(
+        &mut self,
+        input: &PearlPouwGpuInput<'_>,
+    ) -> Result<Option<PearlPouwGpuResult>> {
         let kernel_file = "pearl_pouw_kernel.metal";
         let kernel_name = "pearl_pouw_mine";
 
@@ -814,7 +821,11 @@ impl MetalBackend {
         encoder.set_buffer(10, Some(&found_buf), 0);
 
         // Dispatch: 4096 work-items (64 row_offsets × 64 col_offsets)
-        let grid_size = MTLSize { width: 4096, height: 1, depth: 1 };
+        let grid_size = MTLSize {
+            width: 4096,
+            height: 1,
+            depth: 1,
+        };
         let max_tg = self.device.max_threads_per_threadgroup();
         let group_size = MTLSize {
             width: max_tg.width.min(256),
@@ -935,12 +946,12 @@ impl MetalBackend {
 
         // Matrix buffers (int8) — use shared storage so CPU can read back for Merkle proof
         // On Apple Silicon unified memory, this has no performance penalty
-        let matrix_a_buf = self.device.new_buffer((mk) as u64, shared);     // m×k int8
-        let matrix_bt_buf = self.device.new_buffer((nk) as u64, shared);    // n×k int8 (B^T)
+        let matrix_a_buf = self.device.new_buffer((mk) as u64, shared); // m×k int8
+        let matrix_bt_buf = self.device.new_buffer((nk) as u64, shared); // n×k int8 (B^T)
 
         // Chunk hash buffers
-        let num_chunks_a = mk.div_ceil(1024);  // 256
-        let num_chunks_b = nk.div_ceil(1024);  // 512
+        let num_chunks_a = mk.div_ceil(1024); // 256
+        let num_chunks_b = nk.div_ceil(1024); // 512
         let max_chunks = num_chunks_a.max(num_chunks_b);
         let chunk_hashes_buf = self.device.new_buffer((max_chunks * 32) as u64, storage);
         let merkle_buf = self.device.new_buffer((max_chunks * 32) as u64, storage);
@@ -950,84 +961,90 @@ impl MetalBackend {
         let root_b_buf = self.device.new_buffer(32, shared);
 
         // Seed derivation buffers
-        let seed_msg_buf = self.device.new_buffer(64, shared);  // job_key||hash_b or b_noise_seed||hash_a
+        let seed_msg_buf = self.device.new_buffer(64, shared); // job_key||hash_b or b_noise_seed||hash_a
         let b_noise_seed_buf = self.device.new_buffer(32, shared);
         let a_noise_seed_buf = self.device.new_buffer(32, shared);
 
         // Noise buffers
-        let e_al_buf = self.device.new_buffer((m * rank) as u64, storage);     // m×rank int8
-        let e_br_buf = self.device.new_buffer((n * rank) as u64, storage);     // n×rank int8
+        let e_al_buf = self.device.new_buffer((m * rank) as u64, storage); // m×rank int8
+        let e_br_buf = self.device.new_buffer((n * rank) as u64, storage); // n×rank int8
         let e_ar_perm_buf = self.device.new_buffer((k * 2 * 4) as u64, storage); // k×2 uint32
         let e_bl_perm_buf = self.device.new_buffer((k * 2 * 4) as u64, storage); // k×2 uint32
 
         // Noised matrices (int32)
-        let noised_a_buf = self.device.new_buffer((mk * 4) as u64, storage);   // m×k int32
-        let noised_b_buf = self.device.new_buffer((nk * 4) as u64, storage);   // n×k int32
+        let noised_a_buf = self.device.new_buffer((mk * 4) as u64, storage); // m×k int32
+        let noised_b_buf = self.device.new_buffer((nk * 4) as u64, storage); // n×k int32
 
         // Key/seed buffers
-        let job_key_buf = self.device.new_buffer_with_data(
-            input.job_key.as_ptr() as *const _,
-            32, shared,
-        );
+        let job_key_buf =
+            self.device
+                .new_buffer_with_data(input.job_key.as_ptr() as *const _, 32, shared);
         let iv_buf = self.device.new_buffer_with_data(
-            [0x6A09E667u32, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
-             0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19].as_ptr() as *const _,
-            32, shared,
+            [
+                0x6A09E667u32,
+                0xBB67AE85,
+                0x3C6EF372,
+                0xA54FF53A,
+                0x510E527F,
+                0x9B05688C,
+                0x1F83D9AB,
+                0x5BE0CD19,
+            ]
+            .as_ptr() as *const _,
+            32,
+            shared,
         );
-        let seed_label_a_buf = self.device.new_buffer_with_data(
-            input.seed_label_a.as_ptr() as *const _,
-            32, shared,
-        );
-        let seed_label_b_buf = self.device.new_buffer_with_data(
-            input.seed_label_b.as_ptr() as *const _,
-            32, shared,
-        );
+        let seed_label_a_buf =
+            self.device
+                .new_buffer_with_data(input.seed_label_a.as_ptr() as *const _, 32, shared);
+        let seed_label_b_buf =
+            self.device
+                .new_buffer_with_data(input.seed_label_b.as_ptr() as *const _, 32, shared);
 
         // Mining config buffers
-        let target_buf = self.device.new_buffer_with_data(
-            input.target.as_ptr() as *const _,
-            32, shared,
-        );
+        let target_buf =
+            self.device
+                .new_buffer_with_data(input.target.as_ptr() as *const _, 32, shared);
         let row_off_buf = self.device.new_buffer_with_data(
             input.row_offsets.as_ptr() as *const _,
-            (input.row_offsets.len() * 4) as u64, shared,
+            (input.row_offsets.len() * 4) as u64,
+            shared,
         );
         let col_off_buf = self.device.new_buffer_with_data(
             input.col_offsets.as_ptr() as *const _,
-            (input.col_offsets.len() * 4) as u64, shared,
+            (input.col_offsets.len() * 4) as u64,
+            shared,
         );
         let rows_base_buf = self.device.new_buffer_with_data(
             input.rows_base.as_ptr() as *const _,
-            (input.rows_base.len() * 4) as u64, shared,
+            (input.rows_base.len() * 4) as u64,
+            shared,
         );
         let cols_base_buf = self.device.new_buffer_with_data(
             input.cols_base.as_ptr() as *const _,
-            (input.cols_base.len() * 4) as u64, shared,
+            (input.cols_base.len() * 4) as u64,
+            shared,
         );
 
         // Output buffers
         let tile_init: u32 = 0;
-        let output_tile_buf = self.device.new_buffer_with_data(
-            &tile_init as *const u32 as *const _,
-            4, shared,
-        );
+        let output_tile_buf =
+            self.device
+                .new_buffer_with_data(&tile_init as *const u32 as *const _, 4, shared);
         let jackpot_init = [0u8; 32];
-        let output_jackpot_buf = self.device.new_buffer_with_data(
-            jackpot_init.as_ptr() as *const _,
-            32, shared,
-        );
+        let output_jackpot_buf =
+            self.device
+                .new_buffer_with_data(jackpot_init.as_ptr() as *const _, 32, shared);
         let found_init: u32 = 0;
-        let found_buf = self.device.new_buffer_with_data(
-            &found_init as *const u32 as *const _,
-            4, shared,
-        );
+        let found_buf =
+            self.device
+                .new_buffer_with_data(&found_init as *const u32 as *const _, 4, shared);
 
         // Constant data buffers (small values passed as constant buffers)
         let nonce_val = input.nonce;
-        let nonce_buf = self.device.new_buffer_with_data(
-            &nonce_val as *const u64 as *const _,
-            8, shared,
-        );
+        let nonce_buf =
+            self.device
+                .new_buffer_with_data(&nonce_val as *const u64 as *const _, 8, shared);
 
         // Create one command buffer for the entire pipeline
         let cmd_buffer = self.cmd_queue.new_command_buffer();
@@ -1040,19 +1057,49 @@ impl MetalBackend {
             // Generate A (m×k, is_b_transpose=0)
             enc.set_buffer(0, Some(&matrix_a_buf), 0);
             enc.set_buffer(1, Some(&nonce_buf), 0);
-            { let v: u32 = m as u32; enc.set_bytes(2, 4, &v as *const u32 as *const _); };  // rows
-            { let v: u32 = k as u32; enc.set_bytes(3, 4, &v as *const u32 as *const _); };  // cols
-            { let v: u32 = 0; enc.set_bytes(4, 4, &v as *const u32 as *const _); };         // is_b_transpose = 0 (A)
-            let grid = MTLSize { width: mk as u64, height: 1, depth: 1 };
-            let tg = MTLSize { width: 256, height: 1, depth: 1 };
+            {
+                let v: u32 = m as u32;
+                enc.set_bytes(2, 4, &v as *const u32 as *const _);
+            }; // rows
+            {
+                let v: u32 = k as u32;
+                enc.set_bytes(3, 4, &v as *const u32 as *const _);
+            }; // cols
+            {
+                let v: u32 = 0;
+                enc.set_bytes(4, 4, &v as *const u32 as *const _);
+            }; // is_b_transpose = 0 (A)
+            let grid = MTLSize {
+                width: mk as u64,
+                height: 1,
+                depth: 1,
+            };
+            let tg = MTLSize {
+                width: 256,
+                height: 1,
+                depth: 1,
+            };
             enc.dispatch_threads(grid, tg);
 
             // Generate B^T (n×k, is_b_transpose=1)
             enc.set_buffer(0, Some(&matrix_bt_buf), 0);
-            { let v: u32 = n as u32; enc.set_bytes(2, 4, &v as *const u32 as *const _); };  // rows = n
-            { let v: u32 = k as u32; enc.set_bytes(3, 4, &v as *const u32 as *const _); };  // cols = k
-            { let v: u32 = 1; enc.set_bytes(4, 4, &v as *const u32 as *const _); };         // is_b_transpose = 1 (B^T)
-            let grid_bt = MTLSize { width: nk as u64, height: 1, depth: 1 };
+            {
+                let v: u32 = n as u32;
+                enc.set_bytes(2, 4, &v as *const u32 as *const _);
+            }; // rows = n
+            {
+                let v: u32 = k as u32;
+                enc.set_bytes(3, 4, &v as *const u32 as *const _);
+            }; // cols = k
+            {
+                let v: u32 = 1;
+                enc.set_bytes(4, 4, &v as *const u32 as *const _);
+            }; // is_b_transpose = 1 (B^T)
+            let grid_bt = MTLSize {
+                width: nk as u64,
+                height: 1,
+                depth: 1,
+            };
             enc.dispatch_threads(grid_bt, tg);
 
             enc.end_encoding();
@@ -1067,17 +1114,45 @@ impl MetalBackend {
             enc.set_buffer(0, Some(&matrix_a_buf), 0);
             enc.set_buffer(1, Some(&job_key_buf), 0);
             enc.set_buffer(2, Some(&chunk_hashes_buf), 0);
-            { let v: u32 = num_chunks_a as u32; enc.set_bytes(3, 4, &v as *const u32 as *const _); };
-            let grid = MTLSize { width: num_chunks_a as u64, height: 1, depth: 1 };
-            enc.dispatch_threads(grid, MTLSize { width: 64, height: 1, depth: 1 });
+            {
+                let v: u32 = num_chunks_a as u32;
+                enc.set_bytes(3, 4, &v as *const u32 as *const _);
+            };
+            let grid = MTLSize {
+                width: num_chunks_a as u64,
+                height: 1,
+                depth: 1,
+            };
+            enc.dispatch_threads(
+                grid,
+                MTLSize {
+                    width: 64,
+                    height: 1,
+                    depth: 1,
+                },
+            );
 
             // Hash B^T chunks (keyed with job_key) — write to merkle_buf
             enc.set_buffer(0, Some(&matrix_bt_buf), 0);
             enc.set_buffer(1, Some(&job_key_buf), 0);
             enc.set_buffer(2, Some(&merkle_buf), 0);
-            { let v: u32 = num_chunks_b as u32; enc.set_bytes(3, 4, &v as *const u32 as *const _); };
-            let grid_b = MTLSize { width: num_chunks_b as u64, height: 1, depth: 1 };
-            enc.dispatch_threads(grid_b, MTLSize { width: 64, height: 1, depth: 1 });
+            {
+                let v: u32 = num_chunks_b as u32;
+                enc.set_bytes(3, 4, &v as *const u32 as *const _);
+            };
+            let grid_b = MTLSize {
+                width: num_chunks_b as u64,
+                height: 1,
+                depth: 1,
+            };
+            enc.dispatch_threads(
+                grid_b,
+                MTLSize {
+                    width: 64,
+                    height: 1,
+                    depth: 1,
+                },
+            );
 
             enc.end_encoding();
         }
@@ -1086,10 +1161,10 @@ impl MetalBackend {
         // Reduce A: 256 → 128 → 64 → 32 → 16 → 8 → 4 → 2 → 1
         // Reduce B: 512 → 256 → 128 → 64 → 32 → 16 → 8 → 4 → 2 → 1
         let reduce_tree = |enc: &metal::ComputeCommandEncoderRef,
-                          src: &metal::Buffer,
-                          dst: &metal::Buffer,
-                          num_leaves: usize,
-                          root_buf: &metal::Buffer| {
+                           src: &metal::Buffer,
+                           dst: &metal::Buffer,
+                           num_leaves: usize,
+                           root_buf: &metal::Buffer| {
             let mut num_nodes = num_leaves;
             let mut src_buf = src;
             let mut dst_buf = dst;
@@ -1106,11 +1181,28 @@ impl MetalBackend {
                 } else {
                     enc.set_buffer(1, Some(dst_buf), 0);
                 }
-                { let v: u32 = num_parents as u32; enc.set_bytes(2, 4, &v as *const u32 as *const _); };
-                { let v: u32 = if is_root { 1u32 } else { 0u32 }; enc.set_bytes(3, 4, &v as *const u32 as *const _); };
+                {
+                    let v: u32 = num_parents as u32;
+                    enc.set_bytes(2, 4, &v as *const u32 as *const _);
+                };
+                {
+                    let v: u32 = if is_root { 1u32 } else { 0u32 };
+                    enc.set_bytes(3, 4, &v as *const u32 as *const _);
+                };
 
-                let grid = MTLSize { width: num_parents as u64, height: 1, depth: 1 };
-                enc.dispatch_threads(grid, MTLSize { width: 64, height: 1, depth: 1 });
+                let grid = MTLSize {
+                    width: num_parents as u64,
+                    height: 1,
+                    depth: 1,
+                };
+                enc.dispatch_threads(
+                    grid,
+                    MTLSize {
+                        width: 64,
+                        height: 1,
+                        depth: 1,
+                    },
+                );
 
                 // Swap src and dst for next level
                 std::mem::swap(&mut src_buf, &mut dst_buf);
@@ -1130,13 +1222,25 @@ impl MetalBackend {
 
             // Reduce A: chunk_hashes_buf → root_a_buf
             // After chunk hashing, A's chunk hashes are in chunk_hashes_buf
-            reduce_tree(&enc, &chunk_hashes_buf, &merkle_buf, num_chunks_a, &root_a_buf);
+            reduce_tree(
+                &enc,
+                &chunk_hashes_buf,
+                &merkle_buf,
+                num_chunks_a,
+                &root_a_buf,
+            );
 
             // Reduce B: merkle_buf → root_b_buf
             // After chunk hashing, B's chunk hashes are in merkle_buf
             // We need a separate temp buffer for B's reduction since chunk_hashes_buf is being used
             // Actually, we can reuse chunk_hashes_buf as the dst for B's reduction
-            reduce_tree(&enc, &merkle_buf, &chunk_hashes_buf, num_chunks_b, &root_b_buf);
+            reduce_tree(
+                &enc,
+                &merkle_buf,
+                &chunk_hashes_buf,
+                num_chunks_b,
+                &root_b_buf,
+            );
 
             enc.end_encoding();
         }
@@ -1171,11 +1275,28 @@ impl MetalBackend {
             let enc = cmd_buffer.new_compute_command_encoder();
             enc.set_compute_pipeline_state(&pipe_small);
             enc.set_buffer(0, Some(&seed_msg_buf), 0);
-            { let v: u32 = 64; enc.set_bytes(1, 4, &v as *const u32 as *const _); };  // msg_len
-            enc.set_buffer(2, Some(&iv_buf), 0);  // key = IV (unkeyed)
-            { let v: u32 = 0; enc.set_bytes(3, 4, &v as *const u32 as *const _); };   // use_keyed = 0
+            {
+                let v: u32 = 64;
+                enc.set_bytes(1, 4, &v as *const u32 as *const _);
+            }; // msg_len
+            enc.set_buffer(2, Some(&iv_buf), 0); // key = IV (unkeyed)
+            {
+                let v: u32 = 0;
+                enc.set_bytes(3, 4, &v as *const u32 as *const _);
+            }; // use_keyed = 0
             enc.set_buffer(4, Some(&b_noise_seed_buf), 0);
-            enc.dispatch_threads(MTLSize { width: 1, height: 1, depth: 1 }, MTLSize { width: 1, height: 1, depth: 1 });
+            enc.dispatch_threads(
+                MTLSize {
+                    width: 1,
+                    height: 1,
+                    depth: 1,
+                },
+                MTLSize {
+                    width: 1,
+                    height: 1,
+                    depth: 1,
+                },
+            );
             enc.end_encoding();
         }
 
@@ -1191,11 +1312,28 @@ impl MetalBackend {
             let enc = cmd_buffer.new_compute_command_encoder();
             enc.set_compute_pipeline_state(&pipe_small);
             enc.set_buffer(0, Some(&seed_msg_buf), 0);
-            { let v: u32 = 64; enc.set_bytes(1, 4, &v as *const u32 as *const _); };
+            {
+                let v: u32 = 64;
+                enc.set_bytes(1, 4, &v as *const u32 as *const _);
+            };
             enc.set_buffer(2, Some(&iv_buf), 0);
-            { let v: u32 = 0; enc.set_bytes(3, 4, &v as *const u32 as *const _); };
+            {
+                let v: u32 = 0;
+                enc.set_bytes(3, 4, &v as *const u32 as *const _);
+            };
             enc.set_buffer(4, Some(&a_noise_seed_buf), 0);
-            enc.dispatch_threads(MTLSize { width: 1, height: 1, depth: 1 }, MTLSize { width: 1, height: 1, depth: 1 });
+            enc.dispatch_threads(
+                MTLSize {
+                    width: 1,
+                    height: 1,
+                    depth: 1,
+                },
+                MTLSize {
+                    width: 1,
+                    height: 1,
+                    depth: 1,
+                },
+            );
             enc.end_encoding();
         }
 
@@ -1208,37 +1346,101 @@ impl MetalBackend {
             enc.set_buffer(0, Some(&e_al_buf), 0);
             enc.set_buffer(1, Some(&a_noise_seed_buf), 0);
             enc.set_buffer(2, Some(&seed_label_a_buf), 0);
-            { let v: u32 = m as u32; enc.set_bytes(3, 4, &v as *const u32 as *const _); };
-            { let v: u32 = rank as u32; enc.set_bytes(4, 4, &v as *const u32 as *const _); };
-            let eal_grid = MTLSize { width: (m * rank) as u64, height: 1, depth: 1 };
-            enc.dispatch_threads(eal_grid, MTLSize { width: 256, height: 1, depth: 1 });
+            {
+                let v: u32 = m as u32;
+                enc.set_bytes(3, 4, &v as *const u32 as *const _);
+            };
+            {
+                let v: u32 = rank as u32;
+                enc.set_bytes(4, 4, &v as *const u32 as *const _);
+            };
+            let eal_grid = MTLSize {
+                width: (m * rank) as u64,
+                height: 1,
+                depth: 1,
+            };
+            enc.dispatch_threads(
+                eal_grid,
+                MTLSize {
+                    width: 256,
+                    height: 1,
+                    depth: 1,
+                },
+            );
 
             // E_BR: n×rank uniform random int8 (key=seed_label_b, seed=b_noise_seed)
             enc.set_buffer(0, Some(&e_br_buf), 0);
             enc.set_buffer(1, Some(&b_noise_seed_buf), 0);
             enc.set_buffer(2, Some(&seed_label_b_buf), 0);
-            { let v: u32 = n as u32; enc.set_bytes(3, 4, &v as *const u32 as *const _); };
-            { let v: u32 = rank as u32; enc.set_bytes(4, 4, &v as *const u32 as *const _); };
-            let ebr_grid = MTLSize { width: (n * rank) as u64, height: 1, depth: 1 };
-            enc.dispatch_threads(ebr_grid, MTLSize { width: 256, height: 1, depth: 1 });
+            {
+                let v: u32 = n as u32;
+                enc.set_bytes(3, 4, &v as *const u32 as *const _);
+            };
+            {
+                let v: u32 = rank as u32;
+                enc.set_bytes(4, 4, &v as *const u32 as *const _);
+            };
+            let ebr_grid = MTLSize {
+                width: (n * rank) as u64,
+                height: 1,
+                depth: 1,
+            };
+            enc.dispatch_threads(
+                ebr_grid,
+                MTLSize {
+                    width: 256,
+                    height: 1,
+                    depth: 1,
+                },
+            );
 
             // E_AR: k×2 permutation pairs (key=seed_label_a, seed=a_noise_seed)
             enc.set_compute_pipeline_state(&pipe_perm);
             enc.set_buffer(0, Some(&e_ar_perm_buf), 0);
             enc.set_buffer(1, Some(&a_noise_seed_buf), 0);
             enc.set_buffer(2, Some(&seed_label_a_buf), 0);
-            { let v: u32 = k as u32; enc.set_bytes(3, 4, &v as *const u32 as *const _); };
-            { let v: u32 = rank as u32; enc.set_bytes(4, 4, &v as *const u32 as *const _); };
-            let ear_grid = MTLSize { width: k as u64, height: 1, depth: 1 };
-            enc.dispatch_threads(ear_grid, MTLSize { width: 64, height: 1, depth: 1 });
+            {
+                let v: u32 = k as u32;
+                enc.set_bytes(3, 4, &v as *const u32 as *const _);
+            };
+            {
+                let v: u32 = rank as u32;
+                enc.set_bytes(4, 4, &v as *const u32 as *const _);
+            };
+            let ear_grid = MTLSize {
+                width: k as u64,
+                height: 1,
+                depth: 1,
+            };
+            enc.dispatch_threads(
+                ear_grid,
+                MTLSize {
+                    width: 64,
+                    height: 1,
+                    depth: 1,
+                },
+            );
 
             // E_BL: k×2 permutation pairs (key=seed_label_b, seed=b_noise_seed)
             enc.set_buffer(0, Some(&e_bl_perm_buf), 0);
             enc.set_buffer(1, Some(&b_noise_seed_buf), 0);
             enc.set_buffer(2, Some(&seed_label_b_buf), 0);
-            { let v: u32 = k as u32; enc.set_bytes(3, 4, &v as *const u32 as *const _); };
-            { let v: u32 = rank as u32; enc.set_bytes(4, 4, &v as *const u32 as *const _); };
-            enc.dispatch_threads(ear_grid, MTLSize { width: 64, height: 1, depth: 1 });
+            {
+                let v: u32 = k as u32;
+                enc.set_bytes(3, 4, &v as *const u32 as *const _);
+            };
+            {
+                let v: u32 = rank as u32;
+                enc.set_bytes(4, 4, &v as *const u32 as *const _);
+            };
+            enc.dispatch_threads(
+                ear_grid,
+                MTLSize {
+                    width: 64,
+                    height: 1,
+                    depth: 1,
+                },
+            );
 
             enc.end_encoding();
         }
@@ -1253,11 +1455,31 @@ impl MetalBackend {
             enc.set_buffer(1, Some(&matrix_a_buf), 0);
             enc.set_buffer(2, Some(&e_al_buf), 0);
             enc.set_buffer(3, Some(&e_ar_perm_buf), 0);
-            { let v: u32 = m as u32; enc.set_bytes(4, 4, &v as *const u32 as *const _); };
-            { let v: u32 = k as u32; enc.set_bytes(5, 4, &v as *const u32 as *const _); };
-            { let v: u32 = rank as u32; enc.set_bytes(6, 4, &v as *const u32 as *const _); };
-            let na_grid = MTLSize { width: mk as u64, height: 1, depth: 1 };
-            enc.dispatch_threads(na_grid, MTLSize { width: 256, height: 1, depth: 1 });
+            {
+                let v: u32 = m as u32;
+                enc.set_bytes(4, 4, &v as *const u32 as *const _);
+            };
+            {
+                let v: u32 = k as u32;
+                enc.set_bytes(5, 4, &v as *const u32 as *const _);
+            };
+            {
+                let v: u32 = rank as u32;
+                enc.set_bytes(6, 4, &v as *const u32 as *const _);
+            };
+            let na_grid = MTLSize {
+                width: mk as u64,
+                height: 1,
+                depth: 1,
+            };
+            enc.dispatch_threads(
+                na_grid,
+                MTLSize {
+                    width: 256,
+                    height: 1,
+                    depth: 1,
+                },
+            );
 
             // noised_b_t[j][l] = B^T[j][l] + (E_BR[j][E_BL[l].first] - E_BR[j][E_BL[l].second])
             enc.set_compute_pipeline_state(&pipe_noise_b);
@@ -1265,11 +1487,31 @@ impl MetalBackend {
             enc.set_buffer(1, Some(&matrix_bt_buf), 0);
             enc.set_buffer(2, Some(&e_br_buf), 0);
             enc.set_buffer(3, Some(&e_bl_perm_buf), 0);
-            { let v: u32 = n as u32; enc.set_bytes(4, 4, &v as *const u32 as *const _); };
-            { let v: u32 = k as u32; enc.set_bytes(5, 4, &v as *const u32 as *const _); };
-            { let v: u32 = rank as u32; enc.set_bytes(6, 4, &v as *const u32 as *const _); };
-            let nb_grid = MTLSize { width: nk as u64, height: 1, depth: 1 };
-            enc.dispatch_threads(nb_grid, MTLSize { width: 256, height: 1, depth: 1 });
+            {
+                let v: u32 = n as u32;
+                enc.set_bytes(4, 4, &v as *const u32 as *const _);
+            };
+            {
+                let v: u32 = k as u32;
+                enc.set_bytes(5, 4, &v as *const u32 as *const _);
+            };
+            {
+                let v: u32 = rank as u32;
+                enc.set_bytes(6, 4, &v as *const u32 as *const _);
+            };
+            let nb_grid = MTLSize {
+                width: nk as u64,
+                height: 1,
+                depth: 1,
+            };
+            enc.dispatch_threads(
+                nb_grid,
+                MTLSize {
+                    width: 256,
+                    height: 1,
+                    depth: 1,
+                },
+            );
 
             enc.end_encoding();
         }
@@ -1290,15 +1532,38 @@ impl MetalBackend {
             enc.set_buffer(8, Some(&output_tile_buf), 0);
             enc.set_buffer(9, Some(&output_jackpot_buf), 0);
             enc.set_buffer(10, Some(&found_buf), 0);
-            { let v: u32 = input.row_offsets.len() as u32; enc.set_bytes(11, 4, &v as *const u32 as *const _); }
-            { let v: u32 = input.col_offsets.len() as u32; enc.set_bytes(12, 4, &v as *const u32 as *const _); }
-            { let v: u32 = k as u32; enc.set_bytes(13, 4, &v as *const u32 as *const _); };
-            { let v: u32 = rank as u32; enc.set_bytes(14, 4, &v as *const u32 as *const _); };
+            {
+                let v: u32 = input.row_offsets.len() as u32;
+                enc.set_bytes(11, 4, &v as *const u32 as *const _);
+            }
+            {
+                let v: u32 = input.col_offsets.len() as u32;
+                enc.set_bytes(12, 4, &v as *const u32 as *const _);
+            }
+            {
+                let v: u32 = k as u32;
+                enc.set_bytes(13, 4, &v as *const u32 as *const _);
+            };
+            {
+                let v: u32 = rank as u32;
+                enc.set_bytes(14, 4, &v as *const u32 as *const _);
+            };
 
             let total_tiles = (input.row_offsets.len() * input.col_offsets.len()) as u64;
-            let grid = MTLSize { width: total_tiles, height: 1, depth: 1 };
+            let grid = MTLSize {
+                width: total_tiles,
+                height: 1,
+                depth: 1,
+            };
             let max_tg = self.device.max_threads_per_threadgroup();
-            enc.dispatch_threads(grid, MTLSize { width: max_tg.width.min(256), height: 1, depth: 1 });
+            enc.dispatch_threads(
+                grid,
+                MTLSize {
+                    width: max_tg.width.min(256),
+                    height: 1,
+                    depth: 1,
+                },
+            );
 
             enc.end_encoding();
         }
@@ -1349,17 +1614,28 @@ impl MetalBackend {
 
 impl MetalBackend {
     /// Test: hash a single 1024-byte chunk on GPU. For BLAKE3 correctness verification.
-    pub fn test_blake3_chunk_hash(&mut self, data: &[u8; 1024], key: &[u8; 32]) -> Result<[u8; 32]> {
+    pub fn test_blake3_chunk_hash(
+        &mut self,
+        data: &[u8; 1024],
+        key: &[u8; 32],
+    ) -> Result<[u8; 32]> {
         let kernel_file = "pearl_pouw_native.metal";
         let library = self.ensure_library(kernel_file)?.clone();
-        let func = library.get_function("pearl_blake3_chunk_hash", None)
+        let func = library
+            .get_function("pearl_blake3_chunk_hash", None)
             .map_err(|e| anyhow!("function: {e}"))?;
-        let pipeline = self.device.new_compute_pipeline_state_with_function(&func)
+        let pipeline = self
+            .device
+            .new_compute_pipeline_state_with_function(&func)
             .map_err(|e| anyhow!("pipeline: {e}"))?;
 
         let shared = MTLResourceOptions::CPUCacheModeDefaultCache;
-        let data_buf = self.device.new_buffer_with_data(data.as_ptr() as *const _, 1024, shared);
-        let key_buf = self.device.new_buffer_with_data(key.as_ptr() as *const _, 32, shared);
+        let data_buf = self
+            .device
+            .new_buffer_with_data(data.as_ptr() as *const _, 1024, shared);
+        let key_buf = self
+            .device
+            .new_buffer_with_data(key.as_ptr() as *const _, 32, shared);
         let out_buf = self.device.new_buffer(32, shared);
 
         let cmd = self.cmd_queue.new_command_buffer();
@@ -1368,15 +1644,31 @@ impl MetalBackend {
         enc.set_buffer(0, Some(&data_buf), 0);
         enc.set_buffer(1, Some(&key_buf), 0);
         enc.set_buffer(2, Some(&out_buf), 0);
-        { let v: u32 = 1u32; enc.set_bytes(3, 4, &v as *const u32 as *const _); }
-        enc.dispatch_threads(MTLSize { width: 1, height: 1, depth: 1 }, MTLSize { width: 1, height: 1, depth: 1 });
+        {
+            let v: u32 = 1u32;
+            enc.set_bytes(3, 4, &v as *const u32 as *const _);
+        }
+        enc.dispatch_threads(
+            MTLSize {
+                width: 1,
+                height: 1,
+                depth: 1,
+            },
+            MTLSize {
+                width: 1,
+                height: 1,
+                depth: 1,
+            },
+        );
         enc.end_encoding();
         cmd.commit();
         cmd.wait_until_completed();
 
         let ptr = out_buf.contents() as *const u8;
         let mut result = [0u8; 32];
-        unsafe { std::ptr::copy_nonoverlapping(ptr, result.as_mut_ptr(), 32); }
+        unsafe {
+            std::ptr::copy_nonoverlapping(ptr, result.as_mut_ptr(), 32);
+        }
         Ok(result)
     }
 }
@@ -1446,7 +1738,8 @@ mod tests {
         };
         let mix_hash = share.mix_hash.expect("expected mix hash for progpow_zano");
 
-        let final_hash = crate::external_hashers::progpow_final_hash(&header, share.nonce, &mix_hash);
+        let final_hash =
+            crate::external_hashers::progpow_final_hash(&header, share.nonce, &mix_hash);
 
         // The full final hash must be <= max target (always true) and must not
         // be all zeros (practically impossible for a valid ProgPoWZ hash).

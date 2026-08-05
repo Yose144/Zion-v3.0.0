@@ -1,5 +1,5 @@
 //! Zion L1 Adapter for WARP Bridge
-//! 
+//!
 //! This adapter monitors the Zion L1 blockchain for burn transactions
 //! sent to the WARP vault address with WARP memos, which signal outbound
 //! cross-chain transfers.
@@ -152,11 +152,12 @@ impl ZionL1Adapter {
         let result = self
             .rpc_call("getBlockByHeight", serde_json::json!({"height": height}))
             .await?;
-        
-        let block: L1Block = serde_json::from_value(result).map_err(|e| WarpError::AdapterError {
-            chain: "zion-l1".into(),
-            reason: format!("Block parse error: {}", e),
-        })?;
+
+        let block: L1Block =
+            serde_json::from_value(result).map_err(|e| WarpError::AdapterError {
+                chain: "zion-l1".into(),
+                reason: format!("Block parse error: {}", e),
+            })?;
         Ok(block)
     }
 
@@ -220,7 +221,10 @@ impl ChainAdapter for ZionL1Adapter {
             return Ok(vec![]);
         }
 
-        info!("[WARP][zion-l1] Scanning blocks {} to {} for WARP burns", from, to);
+        info!(
+            "[WARP][zion-l1] Scanning blocks {} to {} for WARP burns",
+            from, to
+        );
 
         let mut proofs = Vec::new();
 
@@ -233,7 +237,7 @@ impl ChainAdapter for ZionL1Adapter {
                                 if let Some((dest_chain, dest_addr)) = self.parse_warp_memo(memo) {
                                     // Amount is in ZION (u128), convert to flowers (6 decimals)
                                     let amount_flowers = (tx.amount_zion * 1_000_000) as u64;
-                                    
+
                                     let proof = DepositProof {
                                         tx_hash: tx.tx_id.clone(),
                                         block_height: block.height,
@@ -262,7 +266,10 @@ impl ChainAdapter for ZionL1Adapter {
         Ok(proofs)
     }
 
-    async fn execute_mint(&self, _instruction: &crate::protocol::MintInstruction) -> WarpResult<String> {
+    async fn execute_mint(
+        &self,
+        _instruction: &crate::protocol::MintInstruction,
+    ) -> WarpResult<String> {
         // Zion L1 is the source chain for outbound transfers
         // Mint happens on destination chain via other adapters
         Err(WarpError::AdapterError {
@@ -279,7 +286,7 @@ impl ChainAdapter for ZionL1Adapter {
         let result = self
             .rpc_call("getTransaction", serde_json::json!({"txid": tx_hash}))
             .await?;
-        
+
         let tx_height = result
             .get("block_height")
             .and_then(|v| v.as_u64())

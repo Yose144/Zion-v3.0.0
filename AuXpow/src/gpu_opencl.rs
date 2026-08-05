@@ -4,7 +4,7 @@
 //! It delegates to the existing `GpuMiner` implementation in `gpu_miner.rs`.
 
 #[cfg(feature = "gpu-opencl")]
-pub use crate::gpu_miner::{GpuMiner, GpuFoundShare};
+pub use crate::gpu_miner::{GpuFoundShare, GpuMiner};
 
 /// OpenCL backend type alias.
 #[cfg(feature = "gpu-opencl")]

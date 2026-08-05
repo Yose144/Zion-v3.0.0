@@ -440,11 +440,19 @@ async fn list_guilds(State(state): State<OasisState>) -> impl IntoResponse {
             (StatusCode::OK, Json(ApiResponse::ok(guilds))).into_response()
         }
         _ => {
-            let mut demo1 = Guild::new("demo-guild-1".into(), "Star Forgers".into(), "zion1demo".into());
+            let mut demo1 = Guild::new(
+                "demo-guild-1".into(),
+                "Star Forgers".into(),
+                "zion1demo".into(),
+            );
             demo1.description = "Forging unity in the Celestial Mountains.".into();
             demo1.guild_xp = 7500;
             demo1.territories = vec!["celestial-peaks".into()];
-            let mut demo2 = Guild::new("demo-guild-2".into(), "Quantum Monks".into(), "zion1seeker".into());
+            let mut demo2 = Guild::new(
+                "demo-guild-2".into(),
+                "Quantum Monks".into(),
+                "zion1seeker".into(),
+            );
             demo2.description = "Meditation and mining in the Crystal Caves.".into();
             demo2.guild_xp = 5200;
             demo2.territories = vec!["crystal-caves".into()];

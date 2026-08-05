@@ -4,7 +4,8 @@ use tokio::time::sleep;
 
 #[tokio::main]
 async fn main() {
-    let profile = zion_auxpow::types::CoinProfile::default_for(zion_auxpow::types::ExternalCoin::PRL);
+    let profile =
+        zion_auxpow::types::CoinProfile::default_for(zion_auxpow::types::ExternalCoin::PRL);
     println!("Pool: {}:{}", profile.pool_host, profile.pool_port);
     println!("Protocol: {:?}", profile.coin.protocol());
 
@@ -21,11 +22,17 @@ async fn main() {
         sleep(Duration::from_secs(2)).await;
         let job = client.current_job().await;
         if let Some(j) = job {
-            println!("[{}s] Job received: id={} header_len={} height={:?} target={:.20}",
-                i*2, j.job_id, j.header_bytes.len(), j.block_number, j.target_hex);
+            println!(
+                "[{}s] Job received: id={} header_len={} height={:?} target={:.20}",
+                i * 2,
+                j.job_id,
+                j.header_bytes.len(),
+                j.block_number,
+                j.target_hex
+            );
             break;
         } else {
-            println!("[{}s] No job yet...", i*2);
+            println!("[{}s] No job yet...", i * 2);
         }
     }
 

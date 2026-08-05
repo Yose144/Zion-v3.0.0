@@ -2,8 +2,8 @@
 
 #[cfg(feature = "gpu-metal")]
 fn main() {
-    use zion_auxpow::gpu_metal::MetalBackend;
     use blake3::hazmat::HasherExt;
+    use zion_auxpow::gpu_metal::MetalBackend;
 
     let mut gpu = MetalBackend::new(262144).expect("Metal backend");
 
@@ -27,7 +27,9 @@ fn main() {
 
     // Test 2: Sequential bytes
     let mut chunk2 = [0u8; 1024];
-    for i in 0..1024 { chunk2[i] = (i % 256) as u8; }
+    for i in 0..1024 {
+        chunk2[i] = (i % 256) as u8;
+    }
     let key2 = [0xAAu8; 32];
 
     let mut hasher2 = blake3::Hasher::new_keyed(&key2);
@@ -44,9 +46,13 @@ fn main() {
 
     // Test 3: Pseudo-random
     let mut chunk3 = [0u8; 1024];
-    for i in 0..1024 { chunk3[i] = ((i * 7 + 13) % 256) as u8; }
+    for i in 0..1024 {
+        chunk3[i] = ((i * 7 + 13) % 256) as u8;
+    }
     let mut key3 = [0u8; 32];
-    for i in 0..32 { key3[i] = ((i * 3 + 1) % 256) as u8; }
+    for i in 0..32 {
+        key3[i] = ((i * 3 + 1) % 256) as u8;
+    }
 
     let mut hasher3 = blake3::Hasher::new_keyed(&key3);
     hasher3.update(&chunk3);
@@ -61,8 +67,14 @@ fn main() {
     println!();
 
     let all_match = cpu_cv1 == gpu_cv1 && cpu_cv2 == gpu_cv2 && cpu_cv3 == gpu_cv3;
-    println!("=== Overall: {} ===",
-        if all_match { "ALL TESTS PASSED" } else { "SOME TESTS FAILED" });
+    println!(
+        "=== Overall: {} ===",
+        if all_match {
+            "ALL TESTS PASSED"
+        } else {
+            "SOME TESTS FAILED"
+        }
+    );
 }
 
 #[cfg(not(feature = "gpu-metal"))]

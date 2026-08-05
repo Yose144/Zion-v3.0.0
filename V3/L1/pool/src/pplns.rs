@@ -304,7 +304,8 @@ impl PplnsEngine {
             self.addresses.resize(needed, None);
             self.unpaid.resize(needed, 0);
             self.paid_per_miner.resize(needed, 0);
-            self.shares_per_miner.resize(needed, MinerShareStats::default());
+            self.shares_per_miner
+                .resize(needed, MinerShareStats::default());
             self.last_share_time_per_miner.resize(needed, 0);
         }
     }
@@ -628,7 +629,8 @@ impl PplnsEngine {
         while self.window_total_difficulty > self.config.window_size as u128 {
             if let Some(oldest) = self.window.pop_front() {
                 self.window_total_difficulty -= oldest.difficulty as u128;
-                self.share_weights[oldest.miner_index as usize] -= oldest.difficulty as u128; // P8
+                self.share_weights[oldest.miner_index as usize] -= oldest.difficulty as u128;
+            // P8
             } else {
                 break;
             }
@@ -677,7 +679,8 @@ impl PplnsEngine {
         while self.window_total_difficulty > self.config.window_size as u128 {
             if let Some(oldest) = self.window.pop_front() {
                 self.window_total_difficulty -= oldest.difficulty as u128;
-                self.share_weights[oldest.miner_index as usize] -= oldest.difficulty as u128; // P8
+                self.share_weights[oldest.miner_index as usize] -= oldest.difficulty as u128;
+            // P8
             } else {
                 break;
             }
@@ -912,11 +915,7 @@ impl PplnsEngine {
             self.total_paid_flowers
         };
 
-        let registered_miners = self
-            .addresses
-            .iter()
-            .filter(|a| a.is_some())
-            .count();
+        let registered_miners = self.addresses.iter().filter(|a| a.is_some()).count();
 
         let miners_with_unpaid = self.unpaid.iter().filter(|&&v| v > 0).count();
 

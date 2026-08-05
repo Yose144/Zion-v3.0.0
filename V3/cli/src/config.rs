@@ -453,7 +453,10 @@ impl Config {
     }
 
     pub fn atomic_swap_host(&self) -> &str {
-        self.atomic_swap.host.as_deref().unwrap_or(&self.node.rpc_host)
+        self.atomic_swap
+            .host
+            .as_deref()
+            .unwrap_or(&self.node.rpc_host)
     }
 }
 
@@ -467,7 +470,10 @@ fn parse_env<T: std::str::FromStr>(name: &str) -> Option<T> {
 /// keys accepted by `zion config set`. Booleans and numbers are parsed; empty
 /// values are ignored.
 fn apply_env_overrides(cfg: &mut Config) {
-    if let Some(v) = env::var("ZION_NODE_RPC_HOST").ok().filter(|s| !s.is_empty()) {
+    if let Some(v) = env::var("ZION_NODE_RPC_HOST")
+        .ok()
+        .filter(|s| !s.is_empty())
+    {
         cfg.node.rpc_host = v;
     }
     if let Some(v) = parse_env::<u16>("ZION_NODE_RPC_PORT") {
@@ -493,19 +499,34 @@ fn apply_env_overrides(cfg: &mut Config) {
     if let Some(v) = env::var("ZION_MINER_WALLET").ok().filter(|s| !s.is_empty()) {
         cfg.miner.wallet = v;
     }
-    if let Some(v) = env::var("ZION_MINER_BTC_WALLET").ok().filter(|s| !s.is_empty()) {
+    if let Some(v) = env::var("ZION_MINER_BTC_WALLET")
+        .ok()
+        .filter(|s| !s.is_empty())
+    {
         cfg.miner.btc_wallet = v;
     }
-    if let Some(v) = env::var("ZION_MINER_THREADS").ok().filter(|s| !s.is_empty()) {
+    if let Some(v) = env::var("ZION_MINER_THREADS")
+        .ok()
+        .filter(|s| !s.is_empty())
+    {
         cfg.miner.threads = v;
     }
-    if let Some(v) = env::var("ZION_MINER_BACKEND").ok().filter(|s| !s.is_empty()) {
+    if let Some(v) = env::var("ZION_MINER_BACKEND")
+        .ok()
+        .filter(|s| !s.is_empty())
+    {
         cfg.miner.backend = v;
     }
-    if let Some(v) = env::var("ZION_MINER_PROFILE").ok().filter(|s| !s.is_empty()) {
+    if let Some(v) = env::var("ZION_MINER_PROFILE")
+        .ok()
+        .filter(|s| !s.is_empty())
+    {
         cfg.miner.profile = v;
     }
-    if let Some(v) = env::var("ZION_MINER_ALGORITHM").ok().filter(|s| !s.is_empty()) {
+    if let Some(v) = env::var("ZION_MINER_ALGORITHM")
+        .ok()
+        .filter(|s| !s.is_empty())
+    {
         cfg.miner.algorithm = v;
     }
 
@@ -534,17 +555,26 @@ fn apply_env_overrides(cfg: &mut Config) {
     if let Some(v) = parse_env::<u16>("ZION_SWAP_PORT") {
         cfg.swap.port = v;
     }
-    if let Some(v) = env::var("ZION_ATOMIC_SWAP_HOST").ok().filter(|s| !s.is_empty()) {
+    if let Some(v) = env::var("ZION_ATOMIC_SWAP_HOST")
+        .ok()
+        .filter(|s| !s.is_empty())
+    {
         cfg.atomic_swap.host = Some(v);
     }
     if let Some(v) = parse_env::<u16>("ZION_ATOMIC_SWAP_PORT") {
         cfg.atomic_swap.port = v;
     }
 
-    if let Some(v) = env::var("ZION_ISSOBELLA_URL").ok().filter(|s| !s.is_empty()) {
+    if let Some(v) = env::var("ZION_ISSOBELLA_URL")
+        .ok()
+        .filter(|s| !s.is_empty())
+    {
         cfg.issobella.url = v;
     }
-    if let Some(v) = env::var("ZION_FREE_WORLD_URL").ok().filter(|s| !s.is_empty()) {
+    if let Some(v) = env::var("ZION_FREE_WORLD_URL")
+        .ok()
+        .filter(|s| !s.is_empty())
+    {
         cfg.free_world.url = v;
     }
 
@@ -552,21 +582,36 @@ fn apply_env_overrides(cfg: &mut Config) {
         cfg.cli.auto_update_check = v;
     }
 
-    if let Some(v) = env::var("ZION_DEPLOY_DEFAULT_SERVER").ok().filter(|s| !s.is_empty()) {
+    if let Some(v) = env::var("ZION_DEPLOY_DEFAULT_SERVER")
+        .ok()
+        .filter(|s| !s.is_empty())
+    {
         cfg.deploy.default_server = v;
     }
-    if let Some(v) = env::var("ZION_DEPLOY_SSH_KEY").ok().filter(|s| !s.is_empty()) {
+    if let Some(v) = env::var("ZION_DEPLOY_SSH_KEY")
+        .ok()
+        .filter(|s| !s.is_empty())
+    {
         cfg.deploy.ssh_key = v;
     }
-    if let Some(v) = env::var("ZION_DEPLOY_SSH_USER").ok().filter(|s| !s.is_empty()) {
+    if let Some(v) = env::var("ZION_DEPLOY_SSH_USER")
+        .ok()
+        .filter(|s| !s.is_empty())
+    {
         cfg.deploy.ssh_user = v;
     }
 
     if let Some(hiran) = cfg.hiran.as_mut() {
-        if let Some(v) = env::var("ZION_HIRAN_MODEL_PATH").ok().filter(|s| !s.is_empty()) {
+        if let Some(v) = env::var("ZION_HIRAN_MODEL_PATH")
+            .ok()
+            .filter(|s| !s.is_empty())
+        {
             hiran.model_path = v;
         }
-        if let Some(v) = env::var("ZION_HIRAN_BACKEND").ok().filter(|s| !s.is_empty()) {
+        if let Some(v) = env::var("ZION_HIRAN_BACKEND")
+            .ok()
+            .filter(|s| !s.is_empty())
+        {
             hiran.backend = v;
         }
         if let Some(v) = env::var("ZION_HIRAN_DEVICE").ok().filter(|s| !s.is_empty()) {

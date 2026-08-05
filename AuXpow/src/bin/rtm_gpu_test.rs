@@ -7,9 +7,9 @@
 use std::sync::Arc;
 use std::time::Instant;
 
-use zion_auxpow::{AuxPowClient, CoinProfile, ExternalCoin, ShareResult};
-use zion_auxpow::gpu_miner::GpuMiner;
 use zion_auxpow::gpu_backend::GpuBackend;
+use zion_auxpow::gpu_miner::GpuMiner;
+use zion_auxpow::{AuxPowClient, CoinProfile, ExternalCoin, ShareResult};
 
 #[tokio::main]
 async fn main() {
@@ -78,7 +78,10 @@ async fn main() {
     let mut last_stats = Instant::now();
     let mut last_hashes: u64 = 0;
 
-    println!("Mining with OpenCL GhostRider (batch_size={})...", batch_size);
+    println!(
+        "Mining with OpenCL GhostRider (batch_size={})...",
+        batch_size
+    );
 
     loop {
         // Check for updated job
@@ -103,7 +106,14 @@ async fn main() {
         let job_id = current_job.job_id.clone();
 
         // Run GPU mining
-        match gpu.mine("ghostrider", header, &[], &target_arr, nonce_base, batch_size) {
+        match gpu.mine(
+            "ghostrider",
+            header,
+            &[],
+            &target_arr,
+            nonce_base,
+            batch_size,
+        ) {
             Ok(Some(share)) => {
                 shares_found += 1;
                 let nonce = share.nonce;
@@ -111,7 +121,9 @@ async fn main() {
                 total_hashes += batch_size;
                 println!(
                     "GPU FOUND nonce={} hash={} job={}",
-                    nonce, hex::encode(&hash[..]), job_id
+                    nonce,
+                    hex::encode(&hash[..]),
+                    job_id
                 );
 
                 // Submit share
@@ -167,8 +179,12 @@ async fn main() {
     let elapsed = start.elapsed().as_secs_f64();
     println!(
         "\nFinal: {} hashes in {:.1}s ({:.0} H/s) | {} found | {} accepted | {} rejected",
-        total_hashes, elapsed, total_hashes as f64 / elapsed,
-        shares_found, shares_accepted, shares_rejected
+        total_hashes,
+        elapsed,
+        total_hashes as f64 / elapsed,
+        shares_found,
+        shares_accepted,
+        shares_rejected
     );
 
     let _ = client.disconnect().await;

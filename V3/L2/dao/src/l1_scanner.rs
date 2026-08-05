@@ -378,16 +378,20 @@ impl L1Scanner {
 
                         // Validate choice against proposal type
                         let valid = match (&choice, &proposal_type) {
-                            (VoteChoice::Yes | VoteChoice::No | VoteChoice::Abstain, Some(ProposalType::ParliamentaryElection { .. })) => {
+                            (
+                                VoteChoice::Yes | VoteChoice::No | VoteChoice::Abstain,
+                                Some(ProposalType::ParliamentaryElection { .. }),
+                            ) => {
                                 debug!(
                                     "[DAO-SCANNER] Invalid choice for election proposal {}: {:?}",
                                     pid, choice
                                 );
                                 continue;
                             }
-                            (VoteChoice::Candidate(ref party), Some(ProposalType::ParliamentaryElection { ref parties, .. })) => {
-                                parties.contains(party)
-                            }
+                            (
+                                VoteChoice::Candidate(ref party),
+                                Some(ProposalType::ParliamentaryElection { ref parties, .. }),
+                            ) => parties.contains(party),
                             (VoteChoice::Candidate(_), _) => {
                                 debug!(
                                     "[DAO-SCANNER] Candidate vote not allowed for non-election proposal {}",
@@ -401,7 +405,10 @@ impl L1Scanner {
                         if !valid {
                             debug!(
                                 "[DAO-SCANNER] Party '{}' not on ballot for proposal {}",
-                                match &choice { VoteChoice::Candidate(p) => p.as_str(), _ => "?" },
+                                match &choice {
+                                    VoteChoice::Candidate(p) => p.as_str(),
+                                    _ => "?",
+                                },
                                 pid
                             );
                             continue;

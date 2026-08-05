@@ -37,9 +37,15 @@ fn print_status() -> Result<()> {
     ui::print_header("AuxPow Configuration (from environment)");
 
     ui::print_header("Scheduler (external merge mining revenue)");
-    ui::print_row("ZION_AUXPOW_ENABLED", &env_or_missing("ZION_AUXPOW_ENABLED"));
+    ui::print_row(
+        "ZION_AUXPOW_ENABLED",
+        &env_or_missing("ZION_AUXPOW_ENABLED"),
+    );
     ui::print_row("ZION_AUXPOW_WALLET", &env_or_missing("ZION_AUXPOW_WALLET"));
-    ui::print_row("ZION_AUXPOW_WORKER_NAME", &env_or_missing("ZION_AUXPOW_WORKER_NAME"));
+    ui::print_row(
+        "ZION_AUXPOW_WORKER_NAME",
+        &env_or_missing("ZION_AUXPOW_WORKER_NAME"),
+    );
     ui::print_row("ZION_AUXPOW_COIN", &env_or_missing("ZION_AUXPOW_COIN"));
     ui::print_row(
         "ZION_AUXPOW_PROFIT_CHECK_INTERVAL",
@@ -49,7 +55,10 @@ fn print_status() -> Result<()> {
         "ZION_AUXPOW_HYSTERESIS_PCT",
         &env_or_missing("ZION_AUXPOW_HYSTERESIS_PCT"),
     );
-    ui::print_row("ZION_AUXPOW_EASY_TARGET", &env_or_missing("ZION_AUXPOW_EASY_TARGET"));
+    ui::print_row(
+        "ZION_AUXPOW_EASY_TARGET",
+        &env_or_missing("ZION_AUXPOW_EASY_TARGET"),
+    );
 
     println!();
     ui::print_header("Pool B2B Bridge (external Stratum job multiplexing)");
@@ -57,7 +66,10 @@ fn print_status() -> Result<()> {
         "ZION_POOL_AUXPOW_ENABLED",
         &env_or_missing("ZION_POOL_AUXPOW_ENABLED"),
     );
-    ui::print_row("ZION_POOL_AUXPOW_COIN", &env_or_missing("ZION_POOL_AUXPOW_COIN"));
+    ui::print_row(
+        "ZION_POOL_AUXPOW_COIN",
+        &env_or_missing("ZION_POOL_AUXPOW_COIN"),
+    );
     ui::print_row(
         "ZION_POOL_AUXPOW_SPLIT_ZION",
         &env_or_missing("ZION_POOL_AUXPOW_SPLIT_ZION"),
@@ -78,7 +90,10 @@ fn print_status() -> Result<()> {
         "ZION_POOL_AUXPOW_POOL_PREFERENCE",
         &env_or_missing("ZION_POOL_AUXPOW_POOL_PREFERENCE"),
     );
-    ui::print_row("ZION_POOL_AUXPOW_REGION", &env_or_missing("ZION_POOL_AUXPOW_REGION"));
+    ui::print_row(
+        "ZION_POOL_AUXPOW_REGION",
+        &env_or_missing("ZION_POOL_AUXPOW_REGION"),
+    );
     ui::print_row(
         "ZION_POOL_AUXPOW_PROFIT_CHECK_INTERVAL",
         &env_or_missing("ZION_POOL_AUXPOW_PROFIT_CHECK_INTERVAL"),
@@ -102,7 +117,9 @@ fn print_status() -> Result<()> {
 
     println!();
     ui::print_info("Note: These values are read by the pool server at startup.");
-    ui::print_info("Change them in the pool systemd service EnvironmentFile, then restart the pool.");
+    ui::print_info(
+        "Change them in the pool systemd service EnvironmentFile, then restart the pool.",
+    );
     Ok(())
 }
 

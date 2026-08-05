@@ -101,7 +101,10 @@ pub struct ExecutionPlan {
 impl ExecutionPlan {
     /// Steps with no dependencies (can start immediately).
     pub fn root_steps(&self) -> Vec<&PlanStep> {
-        self.steps.iter().filter(|s| s.depends_on.is_empty()).collect()
+        self.steps
+            .iter()
+            .filter(|s| s.depends_on.is_empty())
+            .collect()
     }
 
     /// Steps that depend on the given step ID.
@@ -273,7 +276,11 @@ fn template_for_intent(intent: &Intent) -> Vec<PlanStep> {
         // ── SystemHealth: aggregate health across all layers ──────────────────
         Intent::SystemHealth => vec![
             PlanStep::new(1, "L1 node health (primary)", SubAgent::NodeSync)
-                .with_tools(&["zion_rpc_getblockcount", "zion_rpc_getnetworkinfo", "zion_rpc_getpeerinfo"])
+                .with_tools(&[
+                    "zion_rpc_getblockcount",
+                    "zion_rpc_getnetworkinfo",
+                    "zion_rpc_getpeerinfo",
+                ])
                 .with_timeout(10),
             PlanStep::new(2, "L1 pool health", SubAgent::PoolWorkers)
                 .with_tools(&["zion_pool_get_sessions"])
@@ -291,9 +298,13 @@ fn template_for_intent(intent: &Intent) -> Vec<PlanStep> {
                     "zion_issobella_link_status",
                 ])
                 .with_timeout(10),
-            PlanStep::new(6, "System health (Docker + Prometheus)", SubAgent::DockerHealth)
-                .with_tools(&["docker_list_containers", "prometheus_alerts"])
-                .with_timeout(10),
+            PlanStep::new(
+                6,
+                "System health (Docker + Prometheus)",
+                SubAgent::DockerHealth,
+            )
+            .with_tools(&["docker_list_containers", "prometheus_alerts"])
+            .with_timeout(10),
             PlanStep::new(7, "Aggregate + format response", SubAgent::AiNativeRuntime)
                 .depends_on(&[1, 2, 3, 4, 5, 6])
                 .with_timeout(5),
@@ -301,25 +312,41 @@ fn template_for_intent(intent: &Intent) -> Vec<PlanStep> {
 
         // ── MinerControl: benchmark + optimize + start ────────────────────────
         Intent::MinerControl => vec![
-            PlanStep::new(1, "Benchmark all 3 algorithms (30s each)", SubAgent::MinerPerformance)
-                .with_tools(&["zion_miner_benchmark"])
-                .with_timeout(120),
+            PlanStep::new(
+                1,
+                "Benchmark all 3 algorithms (30s each)",
+                SubAgent::MinerPerformance,
+            )
+            .with_tools(&["zion_miner_benchmark"])
+            .with_timeout(120),
             PlanStep::new(2, "Check GPU thermal status", SubAgent::MinerThermal)
                 .with_tools(&["zion_miner_get_temps"])
                 .with_timeout(10),
-            PlanStep::new(3, "Check pool economics (profitability)", SubAgent::PoolEconomics)
-                .with_tools(&["zion_rpc_getmininginfo", "zion_pool_get_sessions"])
-                .with_timeout(10),
+            PlanStep::new(
+                3,
+                "Check pool economics (profitability)",
+                SubAgent::PoolEconomics,
+            )
+            .with_tools(&["zion_rpc_getmininginfo", "zion_pool_get_sessions"])
+            .with_timeout(10),
             // Step 4 depends on 1,2,3 — selects best algorithm
-            PlanStep::new(4, "Select optimal algorithm + report", SubAgent::MinerPerformance)
-                .depends_on(&[1, 2, 3])
-                .with_timeout(5),
+            PlanStep::new(
+                4,
+                "Select optimal algorithm + report",
+                SubAgent::MinerPerformance,
+            )
+            .depends_on(&[1, 2, 3])
+            .with_timeout(5),
             // Step 5: actually start miner (requires approval)
-            PlanStep::new(5, "Start miner with optimal algorithm", SubAgent::MinerPerformance)
-                .depends_on(&[4])
-                .with_tools(&["zion_miner_ctrl"])
-                .requires_approval()
-                .with_timeout(15),
+            PlanStep::new(
+                5,
+                "Start miner with optimal algorithm",
+                SubAgent::MinerPerformance,
+            )
+            .depends_on(&[4])
+            .with_tools(&["zion_miner_ctrl"])
+            .requires_approval()
+            .with_timeout(15),
         ],
 
         // ── NodeInfo: simple parallel queries ─────────────────────────────────
@@ -384,9 +411,13 @@ fn template_for_intent(intent: &Intent) -> Vec<PlanStep> {
             PlanStep::new(1, "Query swap market rates", SubAgent::SwapMarket)
                 .with_tools(&["zion_swap_market_rates"])
                 .with_timeout(10),
-            PlanStep::new(2, "Query swap status (if swap_id given)", SubAgent::SwapExecutor)
-                .with_tools(&["zion_swap_status"])
-                .with_timeout(10),
+            PlanStep::new(
+                2,
+                "Query swap status (if swap_id given)",
+                SubAgent::SwapExecutor,
+            )
+            .with_tools(&["zion_swap_status"])
+            .with_timeout(10),
             // Step 3: execute swap (requires approval)
             PlanStep::new(3, "Execute swap (if requested)", SubAgent::SwapExecutor)
                 .depends_on(&[1, 2])
@@ -413,15 +444,30 @@ fn template_for_intent(intent: &Intent) -> Vec<PlanStep> {
 
         // ── L456Status: Oasis + Free World + Issobella ────────────────────────
         Intent::L456Status => vec![
-            PlanStep::new(1, "Query Oasis economy + NPC quality", SubAgent::OasisManager)
-                .with_tools(&["zion_oasis_economy_status", "zion_oasis_npc_quality"])
-                .with_timeout(10),
-            PlanStep::new(2, "Query Free World donations + impact", SubAgent::FreeWorldOps)
-                .with_tools(&["zion_free_world_donation_status", "zion_free_world_impact_report"])
-                .with_timeout(10),
-            PlanStep::new(3, "Query Issobella links + data quality", SubAgent::IsobellaOps)
-                .with_tools(&["zion_issobella_link_status", "zion_issobella_data_quality"])
-                .with_timeout(10),
+            PlanStep::new(
+                1,
+                "Query Oasis economy + NPC quality",
+                SubAgent::OasisManager,
+            )
+            .with_tools(&["zion_oasis_economy_status", "zion_oasis_npc_quality"])
+            .with_timeout(10),
+            PlanStep::new(
+                2,
+                "Query Free World donations + impact",
+                SubAgent::FreeWorldOps,
+            )
+            .with_tools(&[
+                "zion_free_world_donation_status",
+                "zion_free_world_impact_report",
+            ])
+            .with_timeout(10),
+            PlanStep::new(
+                3,
+                "Query Issobella links + data quality",
+                SubAgent::IsobellaOps,
+            )
+            .with_tools(&["zion_issobella_link_status", "zion_issobella_data_quality"])
+            .with_timeout(10),
             PlanStep::new(4, "Format response", SubAgent::AiNativeRuntime)
                 .depends_on(&[1, 2, 3])
                 .with_timeout(5),
@@ -436,11 +482,15 @@ fn template_for_intent(intent: &Intent) -> Vec<PlanStep> {
                 .with_tools(&["prometheus_alerts"])
                 .with_timeout(10),
             // Step 3: restart container (requires approval)
-            PlanStep::new(3, "Restart container (if requested)", SubAgent::DockerHealth)
-                .depends_on(&[1])
-                .with_tools(&["docker_restart_container"])
-                .requires_approval()
-                .with_timeout(20),
+            PlanStep::new(
+                3,
+                "Restart container (if requested)",
+                SubAgent::DockerHealth,
+            )
+            .depends_on(&[1])
+            .with_tools(&["docker_restart_container"])
+            .requires_approval()
+            .with_timeout(20),
             // Step 4: backup (requires approval)
             PlanStep::new(4, "Trigger backup (if requested)", SubAgent::BackupManager)
                 .with_tools(&["backup_trigger"])
@@ -492,10 +542,14 @@ fn template_for_intent(intent: &Intent) -> Vec<PlanStep> {
                 .with_tools(&["db_list"])
                 .with_timeout(10),
             // Step 2: inspect specific DB (if path given)
-            PlanStep::new(2, "Inspect specific database (if requested)", SubAgent::DatabaseInspector)
-                .depends_on(&[1])
-                .with_tools(&["db_inspect"])
-                .with_timeout(15),
+            PlanStep::new(
+                2,
+                "Inspect specific database (if requested)",
+                SubAgent::DatabaseInspector,
+            )
+            .depends_on(&[1])
+            .with_tools(&["db_inspect"])
+            .with_timeout(15),
             PlanStep::new(3, "Format response", SubAgent::AiNativeRuntime)
                 .depends_on(&[1, 2])
                 .with_timeout(5),
@@ -513,11 +567,15 @@ fn template_for_intent(intent: &Intent) -> Vec<PlanStep> {
                 .with_tools(&["dashboard_alerts"])
                 .with_timeout(10),
             // Step 4: trigger watchdog check (requires approval)
-            PlanStep::new(4, "Trigger watchdog check (if requested)", SubAgent::WatchdogController)
-                .depends_on(&[1])
-                .with_tools(&["watchdog_run"])
-                .requires_approval()
-                .with_timeout(30),
+            PlanStep::new(
+                4,
+                "Trigger watchdog check (if requested)",
+                SubAgent::WatchdogController,
+            )
+            .depends_on(&[1])
+            .with_tools(&["watchdog_run"])
+            .requires_approval()
+            .with_timeout(30),
             PlanStep::new(5, "Format response", SubAgent::AiNativeRuntime)
                 .depends_on(&[1, 2, 3])
                 .with_timeout(5),
@@ -544,7 +602,10 @@ mod tests {
         let p = planner();
         let plan = p.plan(Intent::SystemHealth, "je vše zdravé?").unwrap();
         assert_eq!(plan.intent, Intent::SystemHealth);
-        assert!(plan.steps.len() >= 6, "SystemHealth plan should have 6+ steps");
+        assert!(
+            plan.steps.len() >= 6,
+            "SystemHealth plan should have 6+ steps"
+        );
         // All root steps should have no dependencies
         let roots = plan.root_steps();
         assert!(!roots.is_empty(), "Should have at least one root step");
@@ -557,7 +618,10 @@ mod tests {
         let plan = p.plan(Intent::MinerControl, "start mining").unwrap();
         assert!(plan.steps.len() >= 4);
         // Should have an approval-required step (miner_ctrl)
-        assert!(plan.requires_approval(), "MinerControl plan should require approval");
+        assert!(
+            plan.requires_approval(),
+            "MinerControl plan should require approval"
+        );
     }
 
     #[test]
@@ -565,14 +629,20 @@ mod tests {
         let p = planner();
         let plan = p.plan(Intent::NodeInfo, "block height?").unwrap();
         assert!(plan.steps.len() >= 2);
-        assert!(!plan.requires_approval(), "NodeInfo should not require approval");
+        assert!(
+            !plan.requires_approval(),
+            "NodeInfo should not require approval"
+        );
     }
 
     #[test]
     fn test_plan_dao_governance() {
         let p = planner();
         let plan = p.plan(Intent::DaoGovernance, "show proposals").unwrap();
-        assert!(plan.requires_approval(), "DaoGovernance plan should require approval (vote step)");
+        assert!(
+            plan.requires_approval(),
+            "DaoGovernance plan should require approval (vote step)"
+        );
     }
 
     #[test]
@@ -599,7 +669,11 @@ mod tests {
             let plan = p
                 .plan(intent.clone(), "test")
                 .unwrap_or_else(|e| panic!("Plan for {:?} failed: {}", intent, e));
-            assert!(!plan.steps.is_empty(), "Plan for {:?} should have steps", intent);
+            assert!(
+                !plan.steps.is_empty(),
+                "Plan for {:?} should have steps",
+                intent
+            );
         }
     }
 
@@ -611,7 +685,11 @@ mod tests {
         let plan = p.plan(Intent::SystemHealth, "test").unwrap();
         // All tools in the plan should exist in the registry
         for name in plan.all_tool_names() {
-            assert!(p.registry().get(&name).is_some(), "Tool {} should exist", name);
+            assert!(
+                p.registry().get(&name).is_some(),
+                "Tool {} should exist",
+                name
+            );
         }
     }
 
@@ -620,7 +698,9 @@ mod tests {
         let p = planner();
         let mut plan = p.plan(Intent::NodeInfo, "test").unwrap();
         // Inject an invalid tool name
-        plan.steps[0].tool_names.push("nonexistent_tool".to_string());
+        plan.steps[0]
+            .tool_names
+            .push("nonexistent_tool".to_string());
         assert!(plan.validate(&p.registry()).is_err());
     }
 
@@ -705,7 +785,10 @@ mod tests {
         let plan = p.plan(Intent::SystemHealth, "test").unwrap();
         let roots = plan.root_steps();
         // SystemHealth template has steps 1-6 as roots, step 7 depends on all
-        assert!(roots.len() >= 5, "SystemHealth should have multiple root steps");
+        assert!(
+            roots.len() >= 5,
+            "SystemHealth should have multiple root steps"
+        );
     }
 
     #[test]
@@ -714,7 +797,10 @@ mod tests {
         let plan = p.plan(Intent::MinerControl, "test").unwrap();
         // Step 4 depends on 1,2,3 → dependents_of(1) should include 4
         let deps = plan.dependents_of(1);
-        assert!(deps.iter().any(|s| s.id == 4), "Step 4 should depend on step 1");
+        assert!(
+            deps.iter().any(|s| s.id == 4),
+            "Step 4 should depend on step 1"
+        );
     }
 
     #[test]
@@ -730,8 +816,14 @@ mod tests {
     fn test_requires_approval() {
         let p = planner();
         let health = p.plan(Intent::SystemHealth, "test").unwrap();
-        assert!(!health.requires_approval(), "SystemHealth should not require approval");
+        assert!(
+            !health.requires_approval(),
+            "SystemHealth should not require approval"
+        );
         let miner = p.plan(Intent::MinerControl, "test").unwrap();
-        assert!(miner.requires_approval(), "MinerControl should require approval");
+        assert!(
+            miner.requires_approval(),
+            "MinerControl should require approval"
+        );
     }
 }

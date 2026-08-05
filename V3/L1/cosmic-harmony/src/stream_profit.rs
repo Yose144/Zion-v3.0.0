@@ -278,12 +278,20 @@ impl StreamWeights {
         if let Some(cur) = current {
             let new_dominant = weights
                 .iter()
-                .max_by(|a, b| a.weight.partial_cmp(&b.weight).unwrap_or(std::cmp::Ordering::Equal))
+                .max_by(|a, b| {
+                    a.weight
+                        .partial_cmp(&b.weight)
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                })
                 .map(|w| w.source);
             let old_dominant = cur
                 .weights
                 .iter()
-                .max_by(|a, b| a.weight.partial_cmp(&b.weight).unwrap_or(std::cmp::Ordering::Equal))
+                .max_by(|a, b| {
+                    a.weight
+                        .partial_cmp(&b.weight)
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                })
                 .map(|w| w.source);
 
             if let (Some(new), Some(old)) = (new_dominant, old_dominant) {
@@ -298,8 +306,7 @@ impl StreamWeights {
                         .map(|e| e.profit_per_day_usd())
                         .unwrap_or(0.0);
                     if old_profit > 0.0 {
-                        let improvement =
-                            (new_profit - old_profit) / old_profit * 100.0;
+                        let improvement = (new_profit - old_profit) / old_profit * 100.0;
                         if improvement < hysteresis_pct {
                             // Keep current weights — improvement not large enough.
                             return cur.clone();
@@ -339,7 +346,10 @@ impl StreamWeights {
                 continue;
             }
             let (name, value) = part.split_once(':').ok_or_else(|| {
-                format!("invalid stream weight segment (expected name:value): {}", part)
+                format!(
+                    "invalid stream weight segment (expected name:value): {}",
+                    part
+                )
             })?;
             let source = RevenueSource::from_str_ci(name)
                 .ok_or_else(|| format!("unknown revenue source: {}", name))?;
@@ -384,7 +394,11 @@ impl StreamWeights {
             (DeekshaStep::ThermalLoop, RevenueSource::DeekshaLite, 3),
             (DeekshaStep::KeccakFinal, RevenueSource::Zion, 2),
             (DeekshaStep::AesMixFire, RevenueSource::ThermalBonus, 10),
-            (DeekshaStep::ThermalLoopFire, RevenueSource::ThermalBonus, 15),
+            (
+                DeekshaStep::ThermalLoopFire,
+                RevenueSource::ThermalBonus,
+                15,
+            ),
         ];
 
         // Compute per-stream total base weight for normalisation.
@@ -483,8 +497,9 @@ impl StreamProfitConfig {
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(DEFAULT_HYSTERESIS_PCT);
-        let enabled_sources = std::env::var("ZION_STREAM_PROFIT_SOURCES")
-            .unwrap_or_else(|_| "zion,keccak_bonus,sha3_bonus,ncl_ai,deeksha_lite,thermal_bonus".to_string());
+        let enabled_sources = std::env::var("ZION_STREAM_PROFIT_SOURCES").unwrap_or_else(|_| {
+            "zion,keccak_bonus,sha3_bonus,ncl_ai,deeksha_lite,thermal_bonus".to_string()
+        });
         let api_key = std::env::var("ZION_STREAM_PROFIT_API_KEY").unwrap_or_default();
 
         Self {
@@ -634,10 +649,7 @@ fn parse_whattomine_response(body: &str) -> StreamProfitSnapshot {
     // WhatToMine coins are keyed by numeric ID.
     if let Some(coins) = json.get("coins").and_then(|c| c.as_object()) {
         for (_id, coin_data) in coins {
-            let tag = coin_data
-                .get("tag")
-                .and_then(|t| t.as_str())
-                .unwrap_or("");
+            let tag = coin_data.get("tag").and_then(|t| t.as_str()).unwrap_or("");
             let revenue = coin_data
                 .get("revenue")
                 .and_then(|r| r.as_str())
@@ -685,7 +697,10 @@ fn parse_whattomine_response(body: &str) -> StreamProfitSnapshot {
     }
 
     // If no external coins were found, add fallback KeccakBonus/Sha3Bonus.
-    if !entries.iter().any(|e| e.source == RevenueSource::KeccakBonus) {
+    if !entries
+        .iter()
+        .any(|e| e.source == RevenueSource::KeccakBonus)
+    {
         if let Some(k) = fallback.entry_for(RevenueSource::KeccakBonus) {
             entries.push(k.clone());
         }
@@ -803,7 +818,11 @@ mod tests {
     fn default_split_sums_to_one() {
         let w = StreamWeights::default_split();
         let sum: f64 = w.weights.iter().map(|w| w.weight).sum();
-        assert!((sum - 1.0).abs() < 0.01, "weights must sum to 1.0, got {}", sum);
+        assert!(
+            (sum - 1.0).abs() < 0.01,
+            "weights must sum to 1.0, got {}",
+            sum
+        );
     }
 
     #[test]
@@ -814,7 +833,11 @@ mod tests {
         let weights = StreamWeights::from_profit(&snap, None, &sources, 15.0);
 
         let sum: f64 = weights.weights.iter().map(|w| w.weight).sum();
-        assert!((sum - 1.0).abs() < 0.01, "weights must sum to 1.0, got {}", sum);
+        assert!(
+            (sum - 1.0).abs() < 0.01,
+            "weights must sum to 1.0, got {}",
+            sum
+        );
         assert!(!weights.weights.is_empty());
     }
 
@@ -827,14 +850,23 @@ mod tests {
 
         // Slightly different snapshot — NclAi slightly more profitable.
         let mut snap2 = snap1.clone();
-        if let Some(e) = snap2.entries.iter_mut().find(|e| e.source == RevenueSource::NclAi) {
+        if let Some(e) = snap2
+            .entries
+            .iter_mut()
+            .find(|e| e.source == RevenueSource::NclAi)
+        {
             e.revenue_per_day_usd += 0.05; // Small change
         }
 
         let w2 = StreamWeights::from_profit(&snap2, Some(&w1), &sources, 15.0);
         // With hysteresis, weights should not change much.
-        let zion_diff = (w1.weight_for(RevenueSource::Zion) - w2.weight_for(RevenueSource::Zion)).abs();
-        assert!(zion_diff < 0.1, "hysteresis should prevent large shifts, diff={}", zion_diff);
+        let zion_diff =
+            (w1.weight_for(RevenueSource::Zion) - w2.weight_for(RevenueSource::Zion)).abs();
+        assert!(
+            zion_diff < 0.1,
+            "hysteresis should prevent large shifts, diff={}",
+            zion_diff
+        );
     }
 
     #[test]

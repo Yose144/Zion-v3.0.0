@@ -29,9 +29,7 @@ fn kernel_info(algorithm: &str) -> Option<(&'static str, &'static str)> {
     match algorithm {
         "blake3" | "blake3_alph" => Some(("blake3_kernel.cu", "blake3_alph_mine")),
         "blake3_dcr" => Some(("blake3_kernel.cu", "blake3_dcr_mine")),
-        "kheavyhash" | "kheavyhash_kas" => {
-            Some(("kheavyhash_kernel.cu", "kheavyhash_mine"))
-        }
+        "kheavyhash" | "kheavyhash_kas" => Some(("kheavyhash_kernel.cu", "kheavyhash_mine")),
         "autolykos" | "autolykos_erg" => Some(("autolykos_kernel.cu", "autolykos_mine")),
         "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc" => {
             Some(("kawpow_kernel.cu", "kawpow_mine"))
@@ -164,7 +162,8 @@ impl GpuBackend for CudaBackend {
 
         // Launch configuration
         let threads_per_block = 256u32;
-        let num_blocks = ((batch_size.max(1) + threads_per_block as u64 - 1) / threads_per_block as u64) as u32;
+        let num_blocks =
+            ((batch_size.max(1) + threads_per_block as u64 - 1) / threads_per_block as u64) as u32;
         let cfg = LaunchConfig {
             grid: (num_blocks, 1, 1),
             block: (threads_per_block, 1, 1),
@@ -178,13 +177,24 @@ impl GpuBackend for CudaBackend {
         // For now, use a generic launch that works for blake3/kheavyhash/zelhash
         // (header_nonce style kernels). Ethash/KawPow need DAG buffers.
         unsafe {
-            if matches!(algorithm, "ethash" | "etchash" | "ethash_etc" | "kawpow" | "kawpow_rvn" | "kawpow_clore" | "kawpow_evr" | "kawpow_mewc") {
+            if matches!(
+                algorithm,
+                "ethash"
+                    | "etchash"
+                    | "ethash_etc"
+                    | "kawpow"
+                    | "kawpow_rvn"
+                    | "kawpow_clore"
+                    | "kawpow_evr"
+                    | "kawpow_mewc"
+            ) {
                 // Ethash/KawPow need DAG — not yet implemented for CUDA
                 anyhow::bail!("CUDA Ethash/KawPow not yet implemented — use OpenCL backend");
             }
 
             // Generic header_nonce kernel launch
-            let f = module.get_fn(kernel_name)
+            let f = module
+                .get_fn(kernel_name)
                 .ok_or_else(|| anyhow!("CUDA kernel function not found: {kernel_name}"))?;
 
             // Launch with: header, header_len, target, base_nonce, output_nonce, output_hash, found
@@ -193,7 +203,7 @@ impl GpuBackend for CudaBackend {
                 cfg,
                 (
                     &header_buf,
-                    &header_len as *const _ as *const u32,  // pass as raw ptr — cudarc will handle
+                    &header_len as *const _ as *const u32, // pass as raw ptr — cudarc will handle
                     &target_buf,
                     &base_nonce,
                     &output_nonce,
@@ -204,7 +214,9 @@ impl GpuBackend for CudaBackend {
             .map_err(|e| anyhow!("CUDA launch failed: {e}"))?;
         }
 
-        self.device.synchronize().map_err(|e| anyhow!("CUDA sync failed: {e}"))?;
+        self.device
+            .synchronize()
+            .map_err(|e| anyhow!("CUDA sync failed: {e}"))?;
 
         // Read results
         let found = self.device.copy_to_host(&found_flag)?;
@@ -285,9 +297,7 @@ pub fn list_cuda_devices() -> Vec<String> {
     let n = cudarc::driver::device_count().unwrap_or(0);
     for i in 0..n {
         if let Ok(dev) = CudaDevice::new(i) {
-            let name = dev
-                .name()
-                .unwrap_or_else(|_| format!("CUDA device {i}"));
+            let name = dev.name().unwrap_or_else(|_| format!("CUDA device {i}"));
             devices.push(format!("cuda:{name}"));
         }
     }

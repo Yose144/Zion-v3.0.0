@@ -35,12 +35,12 @@ pub use deeksha::{
     EKAM_V2_CANONICAL_TEST_VECTOR_HEX, EKAM_V2_PASSES, EKAM_V2_RANDOM_READS,
     EKAM_V2_SCRATCHPAD_SIZE, TX_HASH_V2_ACTIVATION_HEIGHT,
 };
-pub use deeksha_lite::{deeksha_lite_find_nonce, deeksha_lite_self_test, deeksha_lite_with_height};
 pub use deeksha_chv3::{
     deeksha_chv3_find_nonce, deeksha_chv3_find_nonce_with_streams, deeksha_chv3_hash,
     deeksha_chv3_self_test, deeksha_chv3_with_height, deeksha_chv3_with_streams,
     deeksha_chv3_with_streams_height, DEEKSHA_CHV3_PROFILE,
 };
+pub use deeksha_lite::{deeksha_lite_find_nonce, deeksha_lite_self_test, deeksha_lite_with_height};
 pub use deeksha_lite_fire::{
     deeksha_lite_fire, deeksha_lite_fire_find_nonce, deeksha_lite_fire_self_test,
     deeksha_lite_fire_with_height, DEEKSHA_LITE_FIRE_PROFILE,
@@ -56,8 +56,7 @@ pub use ncl_integration::{
 };
 pub use profit_router::{
     fallback_estimates, fetch_live_profit_estimates, fetch_live_profit_estimates_with_nicehash,
-    select_best_coin, CoinProfile, ExternalCoin,
-    ProfitEntry, StratumProtocol,
+    select_best_coin, CoinProfile, ExternalCoin, ProfitEntry, StratumProtocol,
 };
 pub use revenue::{
     NclStats, RevenueCollector, RevenueEvent, RevenueHealth, RevenueSource, RevenueStats,

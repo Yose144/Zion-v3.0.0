@@ -229,10 +229,23 @@ impl ExternalCoin {
             // ZCL (equihash192.auto.nicehash.com does not resolve — NiceHash has no equihash192 endpoint;
             //   ZCL falls back to zpool.ca which supports BTC payout)
             // KRX (KeryxHash — NiceHash has no keryxhash endpoint; mainnet is PoM-only anyway)
-            Self::XMR | Self::DCR | Self::EPIC | Self::ZANO | Self::EVR | Self::MEWC | Self::PRL
-            | Self::KLS | Self::QTC | Self::VTC | Self::RTM | Self::DNX | Self::FLUX
-            | Self::BEAM | Self::IRON | Self::ZCL | Self::KRX
-            => return None,
+            Self::XMR
+            | Self::DCR
+            | Self::EPIC
+            | Self::ZANO
+            | Self::EVR
+            | Self::MEWC
+            | Self::PRL
+            | Self::KLS
+            | Self::QTC
+            | Self::VTC
+            | Self::RTM
+            | Self::DNX
+            | Self::FLUX
+            | Self::BEAM
+            | Self::IRON
+            | Self::ZCL
+            | Self::KRX => return None,
         })
     }
 
@@ -240,9 +253,7 @@ impl ExternalCoin {
     /// NiceHash → default_pool (fallback if NiceHash doesn't support the coin).
     pub fn best_pool(self, preference: PoolPreference) -> &'static str {
         match preference {
-            PoolPreference::NiceHash => {
-                self.nicehash_pool().unwrap_or_else(|| self.default_pool())
-            }
+            PoolPreference::NiceHash => self.nicehash_pool().unwrap_or_else(|| self.default_pool()),
             _ => self.default_pool(),
         }
     }
@@ -252,10 +263,22 @@ impl ExternalCoin {
     pub fn supports_btc_payout(self) -> bool {
         matches!(
             self,
-            Self::KAS | Self::ERG | Self::RVN | Self::ETC
-                | Self::EVR | Self::MEWC | Self::QUAI | Self::BEAM
-                | Self::ZCL | Self::NEXA | Self::RTM | Self::VTC
-                | Self::CKB | Self::CFX | Self::ZEC | Self::PHX
+            Self::KAS
+                | Self::ERG
+                | Self::RVN
+                | Self::ETC
+                | Self::EVR
+                | Self::MEWC
+                | Self::QUAI
+                | Self::BEAM
+                | Self::ZCL
+                | Self::NEXA
+                | Self::RTM
+                | Self::VTC
+                | Self::CKB
+                | Self::CFX
+                | Self::ZEC
+                | Self::PHX
         )
     }
 
@@ -263,8 +286,7 @@ impl ExternalCoin {
     pub fn is_zpool(self) -> bool {
         matches!(
             self,
-            Self::EVR | Self::MEWC | Self::ZCL | Self::NEXA | Self::RTM | Self::VTC
-                | Self::PHX
+            Self::EVR | Self::MEWC | Self::ZCL | Self::NEXA | Self::RTM | Self::VTC | Self::PHX
         )
     }
 
@@ -411,40 +433,144 @@ impl ProfitEntry {
 /// Static fallback profitability estimates (per 100 MH/s reference).
 pub fn fallback_estimates() -> Vec<ProfitEntry> {
     vec![
-        ProfitEntry { coin: ExternalCoin::KAS, revenue_per_day_usd: 0.85, power_cost_usd: 0.10 },
-        ProfitEntry { coin: ExternalCoin::ETC, revenue_per_day_usd: 0.60, power_cost_usd: 0.12 },
-        ProfitEntry { coin: ExternalCoin::ALPH, revenue_per_day_usd: 0.55, power_cost_usd: 0.08 },
-        ProfitEntry { coin: ExternalCoin::FLUX, revenue_per_day_usd: 0.50, power_cost_usd: 0.10 },
-        ProfitEntry { coin: ExternalCoin::DCR, revenue_per_day_usd: 0.45, power_cost_usd: 0.08 },
-        ProfitEntry { coin: ExternalCoin::ERG, revenue_per_day_usd: 0.40, power_cost_usd: 0.10 },
-        ProfitEntry { coin: ExternalCoin::RVN, revenue_per_day_usd: 0.35, power_cost_usd: 0.12 },
-        ProfitEntry { coin: ExternalCoin::CLORE, revenue_per_day_usd: 0.30, power_cost_usd: 0.10 },
-        ProfitEntry { coin: ExternalCoin::EVR, revenue_per_day_usd: 0.20, power_cost_usd: 0.08 },
-        ProfitEntry { coin: ExternalCoin::MEWC, revenue_per_day_usd: 0.15, power_cost_usd: 0.06 },
-        ProfitEntry { coin: ExternalCoin::XMR, revenue_per_day_usd: 0.12, power_cost_usd: 0.03 },
-        ProfitEntry { coin: ExternalCoin::VRSC, revenue_per_day_usd: 0.14, power_cost_usd: 0.03 },
-        ProfitEntry { coin: ExternalCoin::EPIC, revenue_per_day_usd: 0.35, power_cost_usd: 0.10 },
-        ProfitEntry { coin: ExternalCoin::QUAI, revenue_per_day_usd: 0.90, power_cost_usd: 0.12 },
-        ProfitEntry { coin: ExternalCoin::BEAM, revenue_per_day_usd: 0.25, power_cost_usd: 0.10 },
+        ProfitEntry {
+            coin: ExternalCoin::KAS,
+            revenue_per_day_usd: 0.85,
+            power_cost_usd: 0.10,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::ETC,
+            revenue_per_day_usd: 0.60,
+            power_cost_usd: 0.12,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::ALPH,
+            revenue_per_day_usd: 0.55,
+            power_cost_usd: 0.08,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::FLUX,
+            revenue_per_day_usd: 0.50,
+            power_cost_usd: 0.10,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::DCR,
+            revenue_per_day_usd: 0.45,
+            power_cost_usd: 0.08,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::ERG,
+            revenue_per_day_usd: 0.40,
+            power_cost_usd: 0.10,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::RVN,
+            revenue_per_day_usd: 0.35,
+            power_cost_usd: 0.12,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::CLORE,
+            revenue_per_day_usd: 0.30,
+            power_cost_usd: 0.10,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::EVR,
+            revenue_per_day_usd: 0.20,
+            power_cost_usd: 0.08,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::MEWC,
+            revenue_per_day_usd: 0.15,
+            power_cost_usd: 0.06,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::XMR,
+            revenue_per_day_usd: 0.12,
+            power_cost_usd: 0.03,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::VRSC,
+            revenue_per_day_usd: 0.14,
+            power_cost_usd: 0.03,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::EPIC,
+            revenue_per_day_usd: 0.35,
+            power_cost_usd: 0.10,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::QUAI,
+            revenue_per_day_usd: 0.90,
+            power_cost_usd: 0.12,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::BEAM,
+            revenue_per_day_usd: 0.25,
+            power_cost_usd: 0.10,
+        },
         // Pearl (PRL) — 22x more profitable than KAS (WhatToMine 2026-07-15).
         // RTX 4090: ~$4.33/day profit at 125 Th/s. Normalized per 100 MH/s
         // equivalent: very high revenue, moderate power (GPU MatMul).
-        ProfitEntry { coin: ExternalCoin::PRL, revenue_per_day_usd: 4.33, power_cost_usd: 0.67 },
+        ProfitEntry {
+            coin: ExternalCoin::PRL,
+            revenue_per_day_usd: 4.33,
+            power_cost_usd: 0.67,
+        },
         // KLS/IRON/DNX removed — disabled (no working pool/wallet)
-        ProfitEntry { coin: ExternalCoin::ZCL, revenue_per_day_usd: 0.20, power_cost_usd: 0.26 },
-        ProfitEntry { coin: ExternalCoin::QTC, revenue_per_day_usd: 0.10, power_cost_usd: 0.26 },
-        ProfitEntry { coin: ExternalCoin::VTC, revenue_per_day_usd: 0.04, power_cost_usd: 0.26 },
-        ProfitEntry { coin: ExternalCoin::NEXA, revenue_per_day_usd: 0.03, power_cost_usd: 0.24 },
-        ProfitEntry { coin: ExternalCoin::RTM, revenue_per_day_usd: 0.03, power_cost_usd: 0.24 },
-        ProfitEntry { coin: ExternalCoin::CKB, revenue_per_day_usd: 0.08, power_cost_usd: 0.25 },
-        ProfitEntry { coin: ExternalCoin::CFX, revenue_per_day_usd: 0.15, power_cost_usd: 0.31 },
-        ProfitEntry { coin: ExternalCoin::ZEC, revenue_per_day_usd: 0.10, power_cost_usd: 0.25 },
-        ProfitEntry { coin: ExternalCoin::PHX, revenue_per_day_usd: 0.03, power_cost_usd: 0.27 },
+        ProfitEntry {
+            coin: ExternalCoin::ZCL,
+            revenue_per_day_usd: 0.20,
+            power_cost_usd: 0.26,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::QTC,
+            revenue_per_day_usd: 0.10,
+            power_cost_usd: 0.26,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::VTC,
+            revenue_per_day_usd: 0.04,
+            power_cost_usd: 0.26,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::NEXA,
+            revenue_per_day_usd: 0.03,
+            power_cost_usd: 0.24,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::RTM,
+            revenue_per_day_usd: 0.03,
+            power_cost_usd: 0.24,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::CKB,
+            revenue_per_day_usd: 0.08,
+            power_cost_usd: 0.25,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::CFX,
+            revenue_per_day_usd: 0.15,
+            power_cost_usd: 0.31,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::ZEC,
+            revenue_per_day_usd: 0.10,
+            power_cost_usd: 0.25,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::PHX,
+            revenue_per_day_usd: 0.03,
+            power_cost_usd: 0.27,
+        },
         // Keryx (KRX) — ⚠️ Mainnet is PoM-only since 2026-06-26 (DAA 37,780,000).
         // Pure KeryxHash mining is not viable on mainnet; this entry is kept at
         // zero revenue to keep the profit router from selecting it. Testnet or a
         // future KeryxHash revival would raise this estimate.
-        ProfitEntry { coin: ExternalCoin::KRX, revenue_per_day_usd: 0.00, power_cost_usd: 0.20 },
+        ProfitEntry {
+            coin: ExternalCoin::KRX,
+            revenue_per_day_usd: 0.00,
+            power_cost_usd: 0.20,
+        },
     ]
 }
 
@@ -456,10 +582,7 @@ pub fn select_best_coin(
     hysteresis_pct: f64,
 ) -> Option<ExternalCoin> {
     // Filter out disabled coins (IRON/KLS/DNX — no working pool/wallet)
-    let entries: Vec<&ProfitEntry> = entries
-        .iter()
-        .filter(|e| !e.coin.is_disabled())
-        .collect();
+    let entries: Vec<&ProfitEntry> = entries.iter().filter(|e| !e.coin.is_disabled()).collect();
     if entries.is_empty() {
         return None;
     }
@@ -486,8 +609,7 @@ pub fn select_best_coin(
             .unwrap_or(0.0);
 
         if cur_profit > 0.0 {
-            let improvement_pct =
-                (best.profit_per_day_usd() - cur_profit) / cur_profit * 100.0;
+            let improvement_pct = (best.profit_per_day_usd() - cur_profit) / cur_profit * 100.0;
             if improvement_pct < hysteresis_pct {
                 return Some(cur);
             }
@@ -724,7 +846,10 @@ mod tests {
         assert_eq!(ExternalCoin::KRX.algorithm(), "keryxhash");
         assert_eq!(ExternalCoin::KRX.ticker(), "KRX");
         assert_eq!(ExternalCoin::from_str_loose("krx"), Some(ExternalCoin::KRX));
-        assert_eq!(ExternalCoin::from_str_loose("keryx"), Some(ExternalCoin::KRX));
+        assert_eq!(
+            ExternalCoin::from_str_loose("keryx"),
+            Some(ExternalCoin::KRX)
+        );
         assert_eq!(ExternalCoin::from_str_loose("KRX"), Some(ExternalCoin::KRX));
         // KRX is not on NiceHash and does not support BTC payout (mainnet is PoM-only)
         assert_eq!(ExternalCoin::KRX.nicehash_pool(), None);
@@ -795,8 +920,16 @@ mod tests {
     #[test]
     fn select_best_coin_picks_highest() {
         let entries = vec![
-            ProfitEntry { coin: ExternalCoin::DCR, revenue_per_day_usd: 0.45, power_cost_usd: 0.08 },
-            ProfitEntry { coin: ExternalCoin::KAS, revenue_per_day_usd: 0.85, power_cost_usd: 0.10 },
+            ProfitEntry {
+                coin: ExternalCoin::DCR,
+                revenue_per_day_usd: 0.45,
+                power_cost_usd: 0.08,
+            },
+            ProfitEntry {
+                coin: ExternalCoin::KAS,
+                revenue_per_day_usd: 0.85,
+                power_cost_usd: 0.10,
+            },
         ];
         let best = select_best_coin(&entries, None, 10.0);
         assert_eq!(best, Some(ExternalCoin::KAS));
@@ -805,8 +938,16 @@ mod tests {
     #[test]
     fn select_best_coin_hysteresis_prevents_flapping() {
         let entries = vec![
-            ProfitEntry { coin: ExternalCoin::DCR, revenue_per_day_usd: 0.45, power_cost_usd: 0.08 },
-            ProfitEntry { coin: ExternalCoin::KAS, revenue_per_day_usd: 0.50, power_cost_usd: 0.10 },
+            ProfitEntry {
+                coin: ExternalCoin::DCR,
+                revenue_per_day_usd: 0.45,
+                power_cost_usd: 0.08,
+            },
+            ProfitEntry {
+                coin: ExternalCoin::KAS,
+                revenue_per_day_usd: 0.50,
+                power_cost_usd: 0.10,
+            },
         ];
         // Current = DCR. KAS is only 11% better. With 15% hysteresis, stay on DCR.
         let best = select_best_coin(&entries, Some(ExternalCoin::DCR), 15.0);
@@ -816,8 +957,16 @@ mod tests {
     #[test]
     fn select_best_coin_switches_when_better() {
         let entries = vec![
-            ProfitEntry { coin: ExternalCoin::DCR, revenue_per_day_usd: 0.45, power_cost_usd: 0.08 },
-            ProfitEntry { coin: ExternalCoin::KAS, revenue_per_day_usd: 0.85, power_cost_usd: 0.10 },
+            ProfitEntry {
+                coin: ExternalCoin::DCR,
+                revenue_per_day_usd: 0.45,
+                power_cost_usd: 0.08,
+            },
+            ProfitEntry {
+                coin: ExternalCoin::KAS,
+                revenue_per_day_usd: 0.85,
+                power_cost_usd: 0.10,
+            },
         ];
         // Current = DCR. KAS is 100% better. With 10% hysteresis, switch.
         let best = select_best_coin(&entries, Some(ExternalCoin::DCR), 10.0);
@@ -866,55 +1015,88 @@ mod tests {
     fn from_str_loose_parses_kls() {
         assert_eq!(ExternalCoin::from_str_loose("kls"), Some(ExternalCoin::KLS));
         assert_eq!(ExternalCoin::from_str_loose("KLS"), Some(ExternalCoin::KLS));
-        assert_eq!(ExternalCoin::from_str_loose("karlsen"), Some(ExternalCoin::KLS));
+        assert_eq!(
+            ExternalCoin::from_str_loose("karlsen"),
+            Some(ExternalCoin::KLS)
+        );
     }
 
     #[test]
     fn from_str_loose_parses_zcl() {
         assert_eq!(ExternalCoin::from_str_loose("zcl"), Some(ExternalCoin::ZCL));
         assert_eq!(ExternalCoin::from_str_loose("ZCL"), Some(ExternalCoin::ZCL));
-        assert_eq!(ExternalCoin::from_str_loose("zclassic"), Some(ExternalCoin::ZCL));
+        assert_eq!(
+            ExternalCoin::from_str_loose("zclassic"),
+            Some(ExternalCoin::ZCL)
+        );
     }
 
     #[test]
     fn from_str_loose_parses_qtc() {
         assert_eq!(ExternalCoin::from_str_loose("qtc"), Some(ExternalCoin::QTC));
         assert_eq!(ExternalCoin::from_str_loose("QTC"), Some(ExternalCoin::QTC));
-        assert_eq!(ExternalCoin::from_str_loose("qubitcoin"), Some(ExternalCoin::QTC));
+        assert_eq!(
+            ExternalCoin::from_str_loose("qubitcoin"),
+            Some(ExternalCoin::QTC)
+        );
     }
 
     #[test]
     fn from_str_loose_parses_vtc() {
         assert_eq!(ExternalCoin::from_str_loose("vtc"), Some(ExternalCoin::VTC));
         assert_eq!(ExternalCoin::from_str_loose("VTC"), Some(ExternalCoin::VTC));
-        assert_eq!(ExternalCoin::from_str_loose("vertcoin"), Some(ExternalCoin::VTC));
+        assert_eq!(
+            ExternalCoin::from_str_loose("vertcoin"),
+            Some(ExternalCoin::VTC)
+        );
     }
 
     #[test]
     fn from_str_loose_parses_iron() {
-        assert_eq!(ExternalCoin::from_str_loose("iron"), Some(ExternalCoin::IRON));
-        assert_eq!(ExternalCoin::from_str_loose("IRON"), Some(ExternalCoin::IRON));
-        assert_eq!(ExternalCoin::from_str_loose("ironfish"), Some(ExternalCoin::IRON));
+        assert_eq!(
+            ExternalCoin::from_str_loose("iron"),
+            Some(ExternalCoin::IRON)
+        );
+        assert_eq!(
+            ExternalCoin::from_str_loose("IRON"),
+            Some(ExternalCoin::IRON)
+        );
+        assert_eq!(
+            ExternalCoin::from_str_loose("ironfish"),
+            Some(ExternalCoin::IRON)
+        );
     }
 
     #[test]
     fn from_str_loose_parses_nexa() {
-        assert_eq!(ExternalCoin::from_str_loose("nexa"), Some(ExternalCoin::NEXA));
-        assert_eq!(ExternalCoin::from_str_loose("NEXA"), Some(ExternalCoin::NEXA));
+        assert_eq!(
+            ExternalCoin::from_str_loose("nexa"),
+            Some(ExternalCoin::NEXA)
+        );
+        assert_eq!(
+            ExternalCoin::from_str_loose("NEXA"),
+            Some(ExternalCoin::NEXA)
+        );
     }
 
     #[test]
     fn from_str_loose_parses_rtm() {
         assert_eq!(ExternalCoin::from_str_loose("rtm"), Some(ExternalCoin::RTM));
         assert_eq!(ExternalCoin::from_str_loose("RTM"), Some(ExternalCoin::RTM));
-        assert_eq!(ExternalCoin::from_str_loose("raptoreum"), Some(ExternalCoin::RTM));
+        assert_eq!(
+            ExternalCoin::from_str_loose("raptoreum"),
+            Some(ExternalCoin::RTM)
+        );
     }
 
     #[test]
     fn from_str_loose_parses_dnx() {
         assert_eq!(ExternalCoin::from_str_loose("dnx"), Some(ExternalCoin::DNX));
         assert_eq!(ExternalCoin::from_str_loose("DNX"), Some(ExternalCoin::DNX));
-        assert_eq!(ExternalCoin::from_str_loose("dynex"), Some(ExternalCoin::DNX));
+        assert_eq!(
+            ExternalCoin::from_str_loose("dynex"),
+            Some(ExternalCoin::DNX)
+        );
     }
 
     #[test]
@@ -967,13 +1149,25 @@ mod tests {
 
     #[test]
     fn new_coin_default_pools() {
-        assert_eq!(ExternalCoin::KLS.default_pool(), "karlsencoin.cedric-crispin.com:4154");
-        assert_eq!(ExternalCoin::ZCL.default_pool(), "equihash192.eu.mine.zpool.ca:2144");
+        assert_eq!(
+            ExternalCoin::KLS.default_pool(),
+            "karlsencoin.cedric-crispin.com:4154"
+        );
+        assert_eq!(
+            ExternalCoin::ZCL.default_pool(),
+            "equihash192.eu.mine.zpool.ca:2144"
+        );
         assert_eq!(ExternalCoin::QTC.default_pool(), "qtc.suprnova.cc:5555");
-        assert_eq!(ExternalCoin::VTC.default_pool(), "verthash.eu.mine.zpool.ca:4533");
+        assert_eq!(
+            ExternalCoin::VTC.default_pool(),
+            "verthash.eu.mine.zpool.ca:4533"
+        );
         assert_eq!(ExternalCoin::IRON.default_pool(), "fr.grandpool.io:2027");
         assert_eq!(ExternalCoin::NEXA.default_pool(), "nexa.2miners.com:5050");
-        assert_eq!(ExternalCoin::RTM.default_pool(), "ghostrider.eu.mine.zpool.ca:5354");
+        assert_eq!(
+            ExternalCoin::RTM.default_pool(),
+            "ghostrider.eu.mine.zpool.ca:5354"
+        );
         assert_eq!(ExternalCoin::DNX.default_pool(), "pool.deepminerz.com:3333");
     }
 

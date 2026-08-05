@@ -33,13 +33,29 @@ fn main() {
     let mut total_native = 0.0;
     for i in 0..20 {
         let t = Instant::now();
-        let _ = try_mine_one_gpu_native(i as u64, m, n, k, rank, &header, &config, &difficulty_bound, &mut gpu);
+        let _ = try_mine_one_gpu_native(
+            i as u64,
+            m,
+            n,
+            k,
+            rank,
+            &header,
+            &config,
+            &difficulty_bound,
+            &mut gpu,
+        );
         let ms = t.elapsed().as_secs_f64() * 1000.0;
         println!("  nonce {}: {:.2} ms", i, ms);
-        if i >= 5 { total_native += ms; } // skip warmup
+        if i >= 5 {
+            total_native += ms;
+        } // skip warmup
     }
     let avg_native = total_native / 15.0;
-    println!("Average: {:.2} ms/nonce ({:.1} nonces/s)", avg_native, 1000.0 / avg_native);
+    println!(
+        "Average: {:.2} ms/nonce ({:.1} nonces/s)",
+        avg_native,
+        1000.0 / avg_native
+    );
     println!();
 
     // Benchmark CPU-prep + GPU dispatch (original approach)
@@ -47,18 +63,42 @@ fn main() {
     let mut total_orig = 0.0;
     for i in 0..20 {
         let t = Instant::now();
-        let _ = try_mine_one_gpu(i as u64, m, n, k, rank, &header, &config, &difficulty_bound, &mut gpu);
+        let _ = try_mine_one_gpu(
+            i as u64,
+            m,
+            n,
+            k,
+            rank,
+            &header,
+            &config,
+            &difficulty_bound,
+            &mut gpu,
+        );
         let ms = t.elapsed().as_secs_f64() * 1000.0;
-        if i >= 5 { total_orig += ms; } // skip warmup
+        if i >= 5 {
+            total_orig += ms;
+        } // skip warmup
     }
     let avg_orig = total_orig / 15.0;
-    println!("Average: {:.2} ms/nonce ({:.1} nonces/s)", avg_orig, 1000.0 / avg_orig);
+    println!(
+        "Average: {:.2} ms/nonce ({:.1} nonces/s)",
+        avg_orig,
+        1000.0 / avg_orig
+    );
     println!();
 
     // Results
     println!("=== Results ===");
-    println!("CPU-prep + GPU: {:.2} ms ({:.1} nonces/s)", avg_orig, 1000.0 / avg_orig);
-    println!("GPU-native:      {:.2} ms ({:.1} nonces/s)", avg_native, 1000.0 / avg_native);
+    println!(
+        "CPU-prep + GPU: {:.2} ms ({:.1} nonces/s)",
+        avg_orig,
+        1000.0 / avg_orig
+    );
+    println!(
+        "GPU-native:      {:.2} ms ({:.1} nonces/s)",
+        avg_native,
+        1000.0 / avg_native
+    );
     if avg_native > 0.0 {
         println!("Speedup: {:.1}x", avg_orig / avg_native);
     }

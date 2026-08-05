@@ -233,8 +233,14 @@ mod tests {
         let (h100, t100) = deeksha_chv3_with_streams_height(header, nonce, 100);
         let (h4500, t4500) = deeksha_chv3_with_streams_height(header, nonce, 4500);
 
-        assert_eq!(h0.data, h100.data, "hash must be height-independent in Phase A/B");
-        assert_eq!(h0.data, h4500.data, "hash must be height-independent in Phase A/B");
+        assert_eq!(
+            h0.data, h100.data,
+            "hash must be height-independent in Phase A/B"
+        );
+        assert_eq!(
+            h0.data, h4500.data,
+            "hash must be height-independent in Phase A/B"
+        );
         assert_eq!(t0.total_work, t100.total_work);
         assert_eq!(t0.total_work, t4500.total_work);
     }
@@ -250,10 +256,7 @@ mod tests {
             breakdown.contains_key("keccak_bonus"),
             "must have keccak_bonus stream"
         );
-        assert!(
-            breakdown.contains_key("zion"),
-            "must have zion stream"
-        );
+        assert!(breakdown.contains_key("zion"), "must have zion stream");
         assert!(
             breakdown.contains_key("deeksha_lite"),
             "must have deeksha_lite stream"
@@ -283,7 +286,10 @@ mod tests {
         let (h2, t2) = deeksha_chv3_with_streams(header, nonce);
 
         assert_eq!(h1.data, h2.data, "hash must be deterministic");
-        assert_eq!(t1.total_work, t2.total_work, "telemetry must be deterministic");
+        assert_eq!(
+            t1.total_work, t2.total_work,
+            "telemetry must be deterministic"
+        );
         assert_eq!(t1.steps.len(), t2.steps.len());
     }
 
@@ -311,7 +317,10 @@ mod tests {
         // Log the hex for documentation purposes
         let hex: String = hash.iter().map(|b| format!("{:02x}", b)).collect();
         // Hash must be non-zero (sanity)
-        assert!(hash.iter().any(|&b| b != 0), "KAT vector 1: hash must be non-zero");
+        assert!(
+            hash.iter().any(|&b| b != 0),
+            "KAT vector 1: hash must be non-zero"
+        );
         // Print for KAT documentation (visible with --nocapture)
         println!("KAT vector 1: header=zeros[80] nonce=0 hash={hex}");
     }
@@ -328,10 +337,7 @@ mod tests {
         let hash = deeksha_chv3_hash(&header, nonce);
 
         let expected = deeksha_lite::deeksha_lite(&header, nonce);
-        assert_eq!(
-            hash, expected,
-            "KAT vector 2: chv3 must match lite"
-        );
+        assert_eq!(hash, expected, "KAT vector 2: chv3 must match lite");
 
         let hex: String = hash.iter().map(|b| format!("{:02x}", b)).collect();
         println!("KAT vector 2: header=pattern[80] nonce=0x4242... hash={hex}");
@@ -343,7 +349,7 @@ mod tests {
         let mut header = [0u8; 80];
         // Simulate a block header: version=1, prev_hash, merkle_root, timestamp, bits
         header[0] = 1; // version
-        // prev_hash: 32 bytes of 0xAA
+                       // prev_hash: 32 bytes of 0xAA
         for i in 4..36 {
             header[i] = 0xAA;
         }
@@ -396,8 +402,10 @@ mod tests {
     #[test]
     fn chv3_kat_gpu_kernel_present() {
         use crate::gpu::opencl_kernel;
-        assert!(opencl_kernel::has_deeksha_chv3_kernel(),
-            "GPU kernel deeksha_chv3_mine must be present in opencl_kernel module");
+        assert!(
+            opencl_kernel::has_deeksha_chv3_kernel(),
+            "GPU kernel deeksha_chv3_mine must be present in opencl_kernel module"
+        );
         assert_eq!(
             opencl_kernel::DEEKSHA_CHV3_KERNEL_NAME,
             "deeksha_chv3_mine",
@@ -405,9 +413,13 @@ mod tests {
         );
         // Kernel source must contain the same scratchpad constants as lite
         let src = opencl_kernel::get_deeksha_chv3_kernel_source();
-        assert!(src.contains("SCRATCHPAD_SIZE  262144"),
-            "GPU kernel must have 256 KiB scratchpad (parity with CPU)");
-        assert!(src.contains("BLOCK_COUNT      8192"),
-            "GPU kernel must have 8192 blocks (parity with CPU)");
+        assert!(
+            src.contains("SCRATCHPAD_SIZE  262144"),
+            "GPU kernel must have 256 KiB scratchpad (parity with CPU)"
+        );
+        assert!(
+            src.contains("BLOCK_COUNT      8192"),
+            "GPU kernel must have 8192 blocks (parity with CPU)"
+        );
     }
 }
