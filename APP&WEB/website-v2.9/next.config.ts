@@ -130,7 +130,6 @@ const nextConfig: NextConfig = {
       { source: '/swap', destination: '/multichain#swap', permanent: true },
       { source: '/dex', destination: '/multichain#dex', permanent: true },
       { source: '/ziondex', destination: '/multichain#dex', permanent: true },
-      { source: '/dao', destination: '/multichain#dao', permanent: true },
     ];
   },
   // P1-33: Security headers — CSP, X-Frame-Options, HSTS, etc.
