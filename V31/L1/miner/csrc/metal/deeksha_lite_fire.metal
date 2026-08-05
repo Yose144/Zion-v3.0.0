@@ -5,8 +5,8 @@
  * Fire = DeekshaLite v1 + thermal_loop step.
  * Pipeline:
  *   1. Keccak256(header || nonce)
- *   2. Memory-hard scratchpad (256 KiB, 8192 blocks, 2 passes, 64 reads)
- *   3. AES-128 CTR mix (3 full rounds + 1 final)
+ *   2. Memory-hard scratchpad (128 KiB, 4096 blocks, 1 pass, 32 reads) (Ekam v2)
+ *   3. AES-128 CTR mix (1 full round + 1 final round)
  *   4. Thermal loop (16384 iters, 8 ulong chains)
  *   5. Keccak256(s3_after_thermal) -> final hash
  *
@@ -17,11 +17,11 @@
 #include <metal_atomic>
 using namespace metal;
 
-#define SCRATCHPAD_SIZE  262144
+#define SCRATCHPAD_SIZE  131072   /* 128 KiB = 4096 * 32 */
 #define BLOCK_SIZE       32
-#define BLOCK_COUNT      8192
-#define PASSES           2
-#define RANDOM_READS     64
+#define BLOCK_COUNT      4096
+#define PASSES           1
+#define RANDOM_READS     32
 #define THERMAL_ITERS    16384
 
 #define ROL64(x, n) (((x) << (n)) | ((x) >> (64 - (n))))
@@ -237,6 +237,7 @@ inline void sequential_passes(device uchar *pad)
         device ulong *pv = (device ulong *)(pad + prev * BLOCK_SIZE);
         for (int j = 0; j < 4; j++) cv[j] ^= pv[j];
     }
+#if PASSES >= 2
     for (uint i = BLOCK_COUNT; i > 0; i--) {
         uint idx = i - 1;
         uint next = (idx + 1 == BLOCK_COUNT) ? 0 : (idx + 1);
@@ -244,6 +245,7 @@ inline void sequential_passes(device uchar *pad)
         device ulong *nv = (device ulong *)(pad + next * BLOCK_SIZE);
         for (int j = 0; j < 4; j++) cv[j] ^= nv[j];
     }
+#endif
 }
 
 inline void random_read_mix(thread const uchar seed[32], device const uchar *pad, thread uchar *out)
@@ -283,7 +285,8 @@ inline void aes128_mix(thread const uchar seed[32], ulong nonce, thread uchar *o
         carry = s >> 8;
         if (carry == 0) break;
     }
-    for (int r = 0; r < 3; r++) { aes_round(block0, key); aes_round(block1, key); }
+    /* Ekam v2: 1 full AES round + 1 final round (total 2 rounds) */
+    for (int r = 0; r < 1; r++) { aes_round(block0, key); aes_round(block1, key); }
     aes_final_round(block0, key);
     aes_final_round(block1, key);
     for (int i = 0; i < 16; i++) { out[i] = block0[i] ^ seed[i]; out[16 + i] = block1[i] ^ seed[16 + i]; }

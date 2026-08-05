@@ -114,7 +114,7 @@ fn claim_gpu_memory_budget(device_recommended: u64) -> u64 {
     let max_per_instance = budget / 2;
     let allocation = remaining.min(max_per_instance);
 
-    // Ensure minimum viable batch (threads_per_tg * 256 KiB = ~32 MiB)
+    // Ensure minimum viable batch (threads_per_tg * 128 KiB = ~32 MiB)
     let min_viable = 32 * 1024 * 1024;
     if allocation < min_viable {
         // Budget exhausted — use minimum viable, NOT device_recommended
@@ -3184,7 +3184,7 @@ pub mod opencl_deeksha {
     use std::time::Instant;
     use zion_cosmic_harmony::gpu::opencl_kernel;
 
-    const SCRATCHPAD_BYTES: usize = 262_144; // 256 KiB per thread
+    const SCRATCHPAD_BYTES: usize = 131_072; // 128 KiB per thread (Ekam v2)
     const SENTINEL: u64 = 0xFFFF_FFFF_FFFF_FFFF;
 
     pub struct OpenClDeekshaMiner {
@@ -3216,7 +3216,7 @@ pub mod opencl_deeksha {
     }
 
     /// Determine max work_size that fits in GPU VRAM.
-    /// Each thread needs SCRATCHPAD_BYTES (256 KiB).
+    /// Each thread needs SCRATCHPAD_BYTES (128 KiB).
     /// Reserve VRAM for NPU buffers, driver overhead, and other allocations.
     fn vram_aware_work_size(device: &Device, requested: usize) -> usize {
         let global_mem = device
@@ -4307,7 +4307,7 @@ pub mod opencl_deeksha_lite {
     use std::time::Instant;
     use zion_cosmic_harmony::gpu::opencl_kernel;
 
-    const DL_SCRATCHPAD_BYTES: usize = 256 * 1024; // 256 KiB per thread
+    const DL_SCRATCHPAD_BYTES: usize = 128 * 1024; // 128 KiB per thread (Ekam v2)
     const SENTINEL: u64 = 0xFFFF_FFFF_FFFF_FFFF;
 
     pub struct OpenClDeekshaLiteMiner {
@@ -5203,7 +5203,7 @@ pub mod opencl_deeksha_lite_fire {
     use std::time::Instant;
     use zion_cosmic_harmony::gpu::opencl_kernel;
 
-    const DLF_SCRATCHPAD_BYTES: usize = 256 * 1024; // 256 KiB per thread — same as v1
+    const DLF_SCRATCHPAD_BYTES: usize = 128 * 1024; // 128 KiB per thread (Ekam v2)
     const SENTINEL: u64 = 0xFFFF_FFFF_FFFF_FFFF;
 
     pub struct OpenClDeekshaLiteFireMiner {
@@ -6108,7 +6108,7 @@ pub mod cuda_deeksha {
     use std::time::Instant;
 
     const CUDA_KERNEL_SRC: &str = include_str!("kernels/cuda/cosmic_harmony_deeksha.cu");
-    const SCRATCHPAD_BYTES: usize = 262_144; // 256 KiB per thread
+    const SCRATCHPAD_BYTES: usize = 131_072; // 128 KiB per thread (Ekam v2)
     const SENTINEL: u64 = 0xFFFF_FFFF_FFFF_FFFF;
     const DEFAULT_WORK_SIZE_CAP: usize = 32_768;
 
@@ -6449,7 +6449,7 @@ pub mod cuda_deeksha_lite_fire {
     use std::time::Instant;
 
     const CUDA_KERNEL_SRC: &str = include_str!("kernels/cuda/deeksha_lite_fire.cu");
-    const SCRATCHPAD_BYTES: usize = 262_144; // 256 KiB per thread
+    const SCRATCHPAD_BYTES: usize = 131_072; // 128 KiB per thread (Ekam v2)
     const SENTINEL: u64 = 0xFFFF_FFFF_FFFF_FFFF;
     const DEFAULT_WORK_SIZE_CAP: usize = 65_536; // 16GB VRAM for 24GB GPU
 
@@ -6878,7 +6878,7 @@ pub mod cuda_deeksha_lite {
     use std::time::Instant;
 
     const CUDA_KERNEL_SRC: &str = include_str!("kernels/cuda/deeksha_lite.cu");
-    const SCRATCHPAD_BYTES: usize = 262_144; // 256 KiB per thread
+    const SCRATCHPAD_BYTES: usize = 131_072; // 128 KiB per thread (Ekam v2)
     const SENTINEL: u64 = 0xFFFF_FFFF_FFFF_FFFF;
     const DEFAULT_WORK_SIZE_CAP: usize = 65_536; // 16GB VRAM for 24GB GPU
 
@@ -7308,10 +7308,10 @@ pub mod metal_deeksha {
                 .map_err(|e| anyhow::anyhow!("Metal pipeline creation failed: {:?}", e))?;
 
             let max_tpg = pipeline.max_total_threads_per_threadgroup() as usize;
-            // Memory-hard workloads (256 KiB scratchpad) benefit from larger
+            // Memory-hard workloads (128 KiB scratchpad) benefit from larger
             // threadgroups on Apple Silicon to saturate GPU cores.
             // M1 has 8 GPU cores; 128 or 256 threads per TG hides latency better
-            // than 64 when each thread touches 256 KiB scratchpad.
+            // than 64 when each thread touches 128 KiB scratchpad.
             let threads_per_tg = if device_name.contains("Pro")
                 || device_name.contains("Max")
                 || device_name.contains("Ultra")
@@ -7326,10 +7326,10 @@ pub mod metal_deeksha {
             // On Apple Silicon (unified memory), multiple Metal instances
             // share the same physical RAM. We use a global budget tracker
             // to prevent OOM system freezes.
-            // Each thread needs 256 KiB scratchpad.
+            // Each thread needs 128 KiB scratchpad.
             let device_recommended = device.recommended_max_working_set_size();
             let budget_bytes = claim_gpu_memory_budget(device_recommended);
-            let max_threads_by_mem = (budget_bytes / 262_144) as usize;
+            let max_threads_by_mem = (budget_bytes / 131_072) as usize;
             let batch_size = work_size
                 .max(threads_per_tg)
                 .min(max_threads_by_mem.max(threads_per_tg));
@@ -7342,13 +7342,13 @@ pub mod metal_deeksha {
             let result_nonce_buf = device.new_buffer(12, opts); // atomic_uint flag + nonce_lo + nonce_hi
             let result_hash_buf = device.new_buffer(32, opts); // hash output
 
-            // Scratchpad: batch_size × 256 KiB per thread
+            // Scratchpad: batch_size × 128 KiB per thread
             // Retry with progressively smaller batch_size if allocation fails.
             let mut batch_size = batch_size;
             let mut scratchpad_buf;
             let mut scratch_bytes;
             loop {
-                scratch_bytes = (batch_size as u64) * 262_144u64;
+                scratch_bytes = (batch_size as u64) * 131_072u64;
                 scratchpad_buf = device.new_buffer(scratch_bytes, opts);
                 if scratchpad_buf.length() >= scratch_bytes {
                     break;
@@ -7902,7 +7902,7 @@ pub mod metal_deeksha_lite_fire {
 
             let device_recommended = device.recommended_max_working_set_size();
             let budget_bytes = claim_gpu_memory_budget(device_recommended);
-            let max_threads_by_mem = (budget_bytes / 262_144) as usize;
+            let max_threads_by_mem = (budget_bytes / 131_072) as usize;
             let batch_size = work_size
                 .max(threads_per_tg)
                 .min(max_threads_by_mem.max(threads_per_tg));
@@ -7918,7 +7918,7 @@ pub mod metal_deeksha_lite_fire {
             let mut scratchpad_buf;
             let mut scratch_bytes;
             loop {
-                scratch_bytes = (batch_size as u64) * 262_144u64;
+                scratch_bytes = (batch_size as u64) * 131_072u64;
                 scratchpad_buf = device.new_buffer(scratch_bytes, opts);
                 if scratchpad_buf.length() >= scratch_bytes {
                     break;

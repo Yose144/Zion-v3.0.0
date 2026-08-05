@@ -5,17 +5,17 @@
  * Phase A established deeksha_chv3 as the canonical name for deeksha_lite_v1.
  * Phase C provides a dedicated GPU kernel with the canonical name.
  *
- * Pipeline (matches CPU deeksha_chv3.rs / deeksha_lite.rs exactly):
+ * Pipeline (Ekam Deeksha v2):
  *   1. Keccak256(header[0..80] || nonce_le[0..8])  → s1[32]
  *      OPTIMIZATION: Host precomputes Keccak state after absorbing header.
  *      Each thread only XORs nonce, applies padding, and runs f1600.
- *   2. Memory-hard scratchpad (256 KiB)
- *        Phase A: SHA3-512 chain fill  (BLOCK_COUNT=8192 × 32B)
- *        Phase B: 2 sequential XOR passes (forward, backward)
- *        Phase C: 64 random reads → acc[32]  (idx derived from 8 bytes)
+ *   2. Memory-hard scratchpad (128 KiB)
+ *        Phase A: SHA3-512 chain fill  (BLOCK_COUNT=4096 × 32B)
+ *        Phase B: 1 forward sequential XOR pass
+ *        Phase C: 32 random reads → acc[32]  (idx derived from 8 bytes)
  *      OPTIMIZATION: Vectorized 32-byte reads/writes via ulong4 vload4/vstore4.
  *   3. AES-128 CTR mix (key=s2[0..16], counter=nonce||s2[16..24])
- *        → block0 + block1(counter+1), 3 full rounds + 1 final
+ *        → block0 + block1(counter+1), 1 full round + 1 final round
  *        → XOR with s2[0..32]
  *   4. Keccak256(s3)  → final hash[32]
  *
@@ -36,11 +36,11 @@
 /* Constants                                                                   */
 /* ========================================================================== */
 
-#define SCRATCHPAD_SIZE  262144   /* 256 KiB = 8192 * 32 */
+#define SCRATCHPAD_SIZE  131072   /* 128 KiB = 4096 * 32 */
 #define BLOCK_SIZE       32
-#define BLOCK_COUNT      8192
-#define PASSES           2
-#define RANDOM_READS     64
+#define BLOCK_COUNT      4096
+#define PASSES           1
+#define RANDOM_READS     32
 
 /* Local work group size — overridden via build options for the real miner. */
 #ifndef LOCAL_SIZE
@@ -301,7 +301,7 @@ void aes_final_round(__private uchar s[16], __private const uchar k[16], __local
 /* ========================================================================== */
 /* Step 2A: Fill scratchpad with SHA3-512 chain (INTERLEAVED layout)           */
 /*                                                                             */
-/* Matches CPU deeksha_lite.rs step2_memory_hard Phase 1:                     */
+/* Matches CPU ekam_deeksha.rs step2_memory_hard Phase 1 (Ekam v2):           */
 /*   state[0..32] = seed, state[32..64] = 0                                   */
 /*   for blk in 0..4096:                                                       */
 /*     input[0..64] = state                                                    */
@@ -361,6 +361,7 @@ void sequential_passes(
         pb[0] = cv0; pb[1] = cv1; pb[2] = cv2; pb[3] = cv3;
         prev0 = cv0; prev1 = cv1; prev2 = cv2; prev3 = cv3;
     }
+#if PASSES >= 2
     /* Backward pass: XOR each block with next (wrap-around) */
     __global ulong *next_pb = (__global ulong*)(pad_pool + ((ulong)0 * total_threads + tid) * BLOCK_SIZE);
     ulong next0 = next_pb[0], next1 = next_pb[1], next2 = next_pb[2], next3 = next_pb[3];
@@ -372,6 +373,7 @@ void sequential_passes(
         pb[0] = cv0; pb[1] = cv1; pb[2] = cv2; pb[3] = cv3;
         next0 = cv0; next1 = cv1; next2 = cv2; next3 = cv3;
     }
+#endif
 }
 
 /* ========================================================================== */
@@ -441,8 +443,9 @@ void aes128_mix(
         if (carry == 0) break;
     }
 
+    /* Ekam v2: 1 full AES round + 1 final round (total 2 rounds) */
     #pragma unroll
-    for (int r = 0; r < 3; r++) {
+    for (int r = 0; r < 1; r++) {
         aes_round(block0, key, sbox);
         aes_round(block1, key, sbox);
     }

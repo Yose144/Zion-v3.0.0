@@ -5,7 +5,7 @@
  *   Step 1: Keccak-256 (header||nonce → 32 B)
  *   Step 2: SHA3-512 (32 B → 64 B)
  *   Step 3: Golden Matrix (φ^k fixed-point, 64 B → 64 B)
- *   Step 4: Memory-Hard (64 KiB scratchpad, 2 sequential passes, 64 random reads)
+ *   Step 4: Memory-Hard (128 KiB scratchpad, 1 sequential pass, 32 random reads)
  *   Step 5: NPU Mix (INT8 MLP 64→128→64 + residual)
  *   Step 6: Cosmic Fusion (4 × Keccak-256 + AES-128 + XOR, final SHA3-512 → 32 B)
  *
@@ -20,11 +20,11 @@
 /* Constants                                                                   */
 /* ========================================================================== */
 
-#define SCRATCHPAD_SIZE  262144
+#define SCRATCHPAD_SIZE  131072   /* 128 KiB = 2048 * 64 */
 #define BLOCK_SIZE       64
-#define BLOCK_COUNT      4096
-#define PASSES           4
-#define RANDOM_READS     256
+#define BLOCK_COUNT      2048
+#define PASSES           1
+#define RANDOM_READS     32
 #define MATRIX_DIM       8
 
 /* NPU max intermediate dimension — set at compile time via -DNPU_MAX_DIM=N.

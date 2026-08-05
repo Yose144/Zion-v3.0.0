@@ -6,7 +6,7 @@
  *   Step 1: Keccak-256 (header||nonce → 32 B)
  *   Step 2: SHA3-512 (32 B → 64 B)
  *   Step 3: Golden Matrix (φ^k fixed-point, 64 B → 64 B)
- *   Step 4: Memory-Hard (Blake3 XOF 256 KiB scratchpad, 4 passes, 256 reads)
+ *   Step 4: Memory-Hard (Blake3 XOF 128 KiB scratchpad, 1 pass, 32 reads)
  *   Step 5: NPU Mix (INT8 MLP 64→128→64 + residual)
  *   Step 6: Cosmic Fusion (8 × Keccak-256 + AES-128, final SHA3-512 → 32 B)
  *
@@ -24,11 +24,11 @@ using namespace metal;
 // Constants
 // ============================================================================
 
-#define SCRATCHPAD_SIZE  262144
+#define SCRATCHPAD_SIZE  131072   /* 128 KiB = 2048 * 64 */
 #define BLOCK_SIZE       64
-#define BLOCK_COUNT      4096
-#define PASSES           4
-#define RANDOM_READS     256
+#define BLOCK_COUNT      2048
+#define PASSES           1
+#define RANDOM_READS     32
 
 #define ROL64(x, n) (((x) << (n)) | ((x) >> (64 - (n))))
 #define XTIME(a) ((uchar)(((a) << 1) ^ ((((a) >> 7) & 1) * 0x1b)))

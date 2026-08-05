@@ -26,10 +26,11 @@ typedef long long          int64_t;
 /* Constants                                                                   */
 /* ========================================================================== */
 
-#define SCRATCHPAD_SIZE  262144   /* 256 KiB = 8192 * 32 */
+#define SCRATCHPAD_SIZE  131072   /* 128 KiB = 4096 * 32 */
 #define BLOCK_SIZE       32       /* bytes per block */
-#define BLOCK_COUNT      8192
-#define RANDOM_READS     64
+#define BLOCK_COUNT      4096
+#define RANDOM_READS     32
+#define PASSES           1
 #define THERMAL_ITERS    16384
 #define TPB              128      /* threads per block (must match launch config) */
 
@@ -206,7 +207,8 @@ __device__ __forceinline__ void aes128_mix(
         if (carry == 0) break;
     }
 
-    for (int r = 0; r < 3; r++) {
+    /* Ekam v2: 1 full AES round + 1 final round (total 2 rounds) */
+    for (int r = 0; r < 1; r++) {
         /* SubBytes (from shared memory) */
         #pragma unroll
         for (int i = 0; i < 16; i++) { b0[i] = sbox[b0[i]]; b1[i] = sbox[b1[i]]; }
@@ -283,7 +285,7 @@ __device__ __forceinline__ uint64_t* pad_block(
 }
 
 /* ========================================================================== */
-/* Step 2A: fill_scratchpad — 8192 SHA3-512 calls (INTERLEAVED)                */
+/* Step 2A: fill_scratchpad — 4096 SHA3-512 calls (INTERLEAVED, Ekam v2)       */
 /* ========================================================================== */
 
 __device__ __forceinline__ void fill_scratchpad(
@@ -313,7 +315,7 @@ __device__ __forceinline__ void fill_scratchpad(
 }
 
 /* ========================================================================== */
-/* Step 2B: sequential_passes — forward + backward XOR (INTERLEAVED)           */
+/* Step 2B: sequential_passes — forward XOR (backward guarded by PASSES, Ekam v2) */
 /* ========================================================================== */
 
 __device__ __forceinline__ void sequential_passes(
@@ -339,6 +341,7 @@ __device__ __forceinline__ void sequential_passes(
         prev[0] = cv[0]; prev[1] = cv[1]; prev[2] = cv[2]; prev[3] = cv[3];
     }
 
+#if PASSES >= 2
     /* Backward pass: XOR each block with next (wrap-around) */
     uint64_t nxt[4];
     {
@@ -357,10 +360,11 @@ __device__ __forceinline__ void sequential_passes(
         pb[0] = cv[0]; pb[1] = cv[1]; pb[2] = cv[2]; pb[3] = cv[3];
         nxt[0] = cv[0]; nxt[1] = cv[1]; nxt[2] = cv[2]; nxt[3] = cv[3];
     }
+#endif
 }
 
 /* ========================================================================== */
-/* Step 2C: random_read_mix — 64 random reads (INTERLEAVED)                    */
+/* Step 2C: random_read_mix — 32 random reads (INTERLEAVED, Ekam v2)           */
 /* ========================================================================== */
 
 __device__ __forceinline__ void random_read_mix(
@@ -590,6 +594,7 @@ extern "C" __global__ void deeksha_lite_fire_debug(
         pad[i*4]=cv[0]; pad[i*4+1]=cv[1]; pad[i*4+2]=cv[2]; pad[i*4+3]=cv[3];
         prev[0]=cv[0]; prev[1]=cv[1]; prev[2]=cv[2]; prev[3]=cv[3];
     }
+#if PASSES >= 2
     uint64_t nxt[4];
     nxt[0]=pad[0]; nxt[1]=pad[1]; nxt[2]=pad[2]; nxt[3]=pad[3];
     for (uint32_t i=BLOCK_COUNT; i>0; i--) {
@@ -600,6 +605,7 @@ extern "C" __global__ void deeksha_lite_fire_debug(
         pad[idx*4]=cv[0]; pad[idx*4+1]=cv[1]; pad[idx*4+2]=cv[2]; pad[idx*4+3]=cv[3];
         nxt[0]=cv[0]; nxt[1]=cv[1]; nxt[2]=cv[2]; nxt[3]=cv[3];
     }
+#endif
 
     /* Random read mix (non-interleaved) */
     uint64_t acc[4];

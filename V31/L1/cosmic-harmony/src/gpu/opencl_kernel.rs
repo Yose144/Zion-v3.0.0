@@ -59,10 +59,10 @@ mod tests {
 
     #[test]
     fn chv3_kernel_has_same_constants_as_lite() {
-        // Both kernels must have identical scratchpad parameters for parity.
-        assert!(DEEKSHA_CHV3_KERNEL.contains("SCRATCHPAD_SIZE  262144"));
-        assert!(DEEKSHA_CHV3_KERNEL.contains("BLOCK_COUNT      8192"));
-        assert!(DEEKSHA_CHV3_KERNEL.contains("PASSES           2"));
-        assert!(DEEKSHA_CHV3_KERNEL.contains("RANDOM_READS     64"));
+        // Both kernels must have identical Ekam v2 scratchpad parameters for parity.
+        assert!(DEEKSHA_CHV3_KERNEL.contains("SCRATCHPAD_SIZE  131072"));
+        assert!(DEEKSHA_CHV3_KERNEL.contains("BLOCK_COUNT      4096"));
+        assert!(DEEKSHA_CHV3_KERNEL.contains("PASSES           1"));
+        assert!(DEEKSHA_CHV3_KERNEL.contains("RANDOM_READS     32"));
     }
 }

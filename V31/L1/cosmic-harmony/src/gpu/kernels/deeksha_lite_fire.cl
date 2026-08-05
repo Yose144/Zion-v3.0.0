@@ -1,14 +1,14 @@
 /*
  * DeekshaLite Fire — OpenCL Kernel (GCN/RDNA compatible)
  *
- * Fire = DeekshaLite v1 (identical, verified working) + thermal_loop step.
+ * Fire = Ekam Deeksha v2 / DeekshaLite v1 + thermal_loop step.
  * The thermal loop burns ALU cycles after the AES mix to maximize GPU heat.
- * All hashing / memory logic is 100% identical to deeksha_lite.cl (v1).
+ * All base hashing / memory logic is 100% identical to deeksha_lite.cl.
  *
  * Pipeline:
  *   1. Keccak256(header || nonce)  — host precomputed state (same as v1)
- *   2. Memory-hard scratchpad (256 KiB, 8192 blocks, 2 passes, 64 reads)
- *   3. AES-128 CTR mix (3 full rounds + 1 final)
+ *   2. Memory-hard scratchpad (128 KiB, 4096 blocks, 1 pass, 32 reads)
+ *   3. AES-128 CTR mix (1 full round + 1 final round)
  *   4. Thermal loop (16384 iters, 8 ulong chains) — extra heat, no float
  *   5. Keccak256(s3_after_thermal) → final hash
  *
@@ -22,14 +22,14 @@
 #pragma OPENCL EXTENSION cl_khr_global_int32_extended_atomics : enable
 
 /* ========================================================================== */
-/* Constants — identical to v1 for memory management                          */
+/* Constants — Ekam Deeksha v2 (bit-identical to deeksha_lite.cl)             */
 /* ========================================================================== */
 
-#define SCRATCHPAD_SIZE  262144   /* 256 KiB = 8192 * 32 — same as v1 */
+#define SCRATCHPAD_SIZE  131072   /* 128 KiB = 4096 * 32 — Ekam v2 */
 #define BLOCK_SIZE       32
-#define BLOCK_COUNT      8192
-#define PASSES           2
-#define RANDOM_READS     64
+#define BLOCK_COUNT      4096
+#define PASSES           1
+#define RANDOM_READS     32
 #define THERMAL_ITERS    16384 // OPTIMIZED: reduced from 65536 (4x less) for better efficiency
 
 /* Local work group size — overridden via build options for the real miner. */
@@ -268,6 +268,9 @@ void aes_final_round(__private uchar s[16], __private const uchar k[16], __local
 /* ========================================================================== */
 /* Steps 2A/2B/2C: scratchpad — INTERLEAVED layout (matches CUDA)              */
 /*                                                                             */
+/* Matches CPU ekam_deeksha.rs step2_memory_hard (Ekam v2):                    */
+/*   SCRATCHPAD_SIZE 128 KiB, BLOCK_COUNT 4096, PASSES 1, RANDOM_READS 32      */
+/*                                                                             */
 /* Layout: block blk of thread tid is at:                                      */
 /*   pad_pool + (blk * total_threads + tid) * BLOCK_SIZE                       */
 /*                                                                             */
@@ -321,6 +324,7 @@ void sequential_passes(
         pb[0] = cv0; pb[1] = cv1; pb[2] = cv2; pb[3] = cv3;
         prev0 = cv0; prev1 = cv1; prev2 = cv2; prev3 = cv3;
     }
+#if PASSES >= 2
     /* Backward pass: XOR each block with next (wrap-around) */
     __global ulong *next_pb = (__global ulong*)(pad_pool + ((ulong)0 * total_threads + tid) * BLOCK_SIZE);
     ulong next0 = next_pb[0], next1 = next_pb[1], next2 = next_pb[2], next3 = next_pb[3];
@@ -331,6 +335,7 @@ void sequential_passes(
         pb[0] = cv0; pb[1] = cv1; pb[2] = cv2; pb[3] = cv3;
         next0 = cv0; next1 = cv1; next2 = cv2; next3 = cv3;
     }
+#endif
 }
 
 __attribute__((always_inline))
@@ -392,8 +397,9 @@ void aes128_mix(__private const ulong seed_u64[4], ulong nonce, __private ulong 
         carry=s>>8;
         if (carry==0) break;
     }
+    /* Ekam v2: 1 full AES round + 1 final round (total 2 rounds) */
     #pragma unroll
-    for (int r=0;r<3;r++) { aes_round(block0,key,sbox); aes_round(block1,key,sbox); }
+    for (int r=0;r<1;r++) { aes_round(block0,key,sbox); aes_round(block1,key,sbox); }
     aes_final_round(block0,key,sbox);
     aes_final_round(block1,key,sbox);
     __private uchar *out = (__private uchar*)out_u64;

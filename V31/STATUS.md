@@ -92,7 +92,7 @@
 ### Původní alpha.2 features
 
 - **V3 checkpoint sync** — L1 umí načíst V3 stav jako genesis checkpoint.
-- **Kanonický Ekam Deeksha PoW** — `zion-core`, `zion-miner` a `zion-pool` používají `EkamDeeksha` z `zion-cosmic-harmony` pro všechny výšky; historická V3 validace zůstává v `v3_compat`.
+- **Kanonický Ekam Deeksha PoW v2** — `zion-core`, `zion-miner` a `zion-pool` používají `EkamDeeksha` z `zion-cosmic-harmony` pro všechny výšky. Parametry: 128 KiB scratchpad, 1 forward pass, 32 random reads, 2 AES rounds (1 full + 1 final). OpenCL/CUDA/Metal kernely synchronizovány na stejné konstanty. Historická V3 validace zůstává v `v3_compat`.
 - **P2P hardening** — peer manager, ban score, max peers, discovery, rate limiting, escalating bans.
 - **Triple-stream mining** — ZION + AuxPoW GPU + CPU fallback. GPU runtime backend port dokončen: OpenCL (`gpu-opencl`), CUDA (`gpu-cuda`), Metal (`gpu-metal`) a nativní CPU shims (`native-kheavyhash`, `native-blake3-algo`, `native-verushash`) kompilují pod `zion-miner`; `cargo clippy --workspace` čisté.
 - **Custom AMM** deploy v `zion-multichain` (SQLite persistence, HTTP API).
