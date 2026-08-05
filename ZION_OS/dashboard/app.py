@@ -248,7 +248,7 @@ if _legacy_user and _legacy_pass:
     DASHBOARD_USERS[_legacy_user] = _sha256(_legacy_pass)
 
 # Endpoints that skip auth (health checks, static assets)
-AUTH_EXEMPT_ROUTES = {"/api/health", "/health", "/favicon.ico", "/api/poc/html", "/api/poc/status"}
+AUTH_EXEMPT_ROUTES = {"/api/health", "/health", "/favicon.ico", "/v31/favicon.ico", "/v31/symbol-200x200.png", "/api/poc/html", "/api/poc/status"}
 
 # Edge server addresses (Hetzner VPS — always-on)
 EDGE_HOST = "127.0.0.1"   # Dashboard runs on same server (v3.0.4)
@@ -5027,9 +5027,16 @@ def build_explorer() -> dict:
             header = blk.get("header", {}) if isinstance(blk, dict) else {}
             transactions = blk.get("transactions", []) if isinstance(blk, dict) else []
             tx_ids = blk.get("transaction_ids", []) if isinstance(blk, dict) else []
-            height = header.get("height") if isinstance(header, dict) else blk.get("height", h)
-            timestamp = header.get("timestamp") if isinstance(header, dict) else blk.get("timestamp", 0)
-            difficulty = header.get("difficulty") if isinstance(header, dict) else blk.get("difficulty", 0)
+            # V31: difficulty/height are top-level; timestamp is in header
+            height = blk.get("height", h) if isinstance(blk, dict) else h
+            if height is None and isinstance(header, dict):
+                height = header.get("height", h)
+            timestamp = (header.get("timestamp") if isinstance(header, dict) else None) if isinstance(header, dict) else None
+            if timestamp is None and isinstance(blk, dict):
+                timestamp = blk.get("timestamp", 0)
+            difficulty = blk.get("difficulty") if isinstance(blk, dict) else 0
+            if difficulty is None and isinstance(header, dict):
+                difficulty = header.get("difficulty", 0)
             tx_count = len(tx_ids) if tx_ids else len(transactions)
             hash_hex = blk.get("hash_hex")
             if not hash_hex and isinstance(header, dict):
@@ -5506,9 +5513,13 @@ def get_pool_miners() -> dict:
         }
         normalized.append(enriched)
 
-    # miners_tracked should reflect the actual number of registered workers returned
+    # V31 pool may report 0 active TCP sessions for miners that submit via block-submit
+    # or that connect briefly; use the registered worker count as a sensible active proxy
+    # when shares are being accepted.
     if not miners_tracked and normalized:
         miners_tracked = len(normalized)
+    if active_sessions == 0 and (shares_accepted or total_shares) and miners_tracked > 0:
+        active_sessions = miners_tracked
 
     return {
         "ok": True,
