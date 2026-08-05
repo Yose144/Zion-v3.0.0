@@ -1,11 +1,12 @@
 [Unit]
-Description=ZION V31 Edge Watchdog (healthcheck + auto-restart)
+Description=ZION V31 Watchdog (healthcheck + auto-restart)
+After=network.target zion-v31-node.service zion-v31-pool.service zion-v31-multichain.service
 
 [Service]
 Type=oneshot
 # Runs as root because it must restart other services via systemctl
 User=root
-ExecStart=/opt/zion/V31/deploy/scripts/watchdog.sh
+ExecStart=/opt/zion/scripts/watchdog.sh v31
 StandardOutput=journal
 StandardError=journal
 

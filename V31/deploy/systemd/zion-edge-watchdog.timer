@@ -1,9 +1,0 @@
-[Unit]
-Description=Run ZION V31 Edge Watchdog every 2 minutes
-
-[Timer]
-OnBootSec=60
-OnUnitActiveSec=2m
-
-[Install]
-WantedBy=timers.target
