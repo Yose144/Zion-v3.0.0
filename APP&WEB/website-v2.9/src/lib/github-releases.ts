@@ -1,7 +1,7 @@
 /**
  * GitHub Release data for ZION v3-Mainnet public repo.
  * Source: https://github.com/Zion-TerraNova/v3-Mainnet/releases
- * Updated: 2026-08-02 — v3.1.0 (Boost Miner) + v3.1.0-desktop (Desktop GUI)
+ * Updated: 2026-08-03 — v3.1.0-cli (Terminal Miner, 4 platforms) + v3.1.0-desktop (Desktop GUI)
  */
 
 export const GITHUB_REPO = 'Zion-TerraNova/v3-Mainnet';
@@ -26,38 +26,63 @@ export type Release = {
   assets: ReleaseAsset[];
 };
 
-const DL_BASE_310 = `https://github.com/${GITHUB_REPO}/releases/download/v3.1.0`;
+const DL_BASE_310_CLI = `https://github.com/${GITHUB_REPO}/releases/download/v3.1.0-cli`;
 const DL_BASE_306 = `https://github.com/${GITHUB_REPO}/releases/download/v3.0.6-beta`;
 const DL_BASE_305 = `https://github.com/${GITHUB_REPO}/releases/download/v3.0.5-beta`;
 
 /**
- * v3.1.0 — Boost Miner (2026-08-02)
- * Three-stream mining: ZION (primary) + Boost Stream 1 (GPU) + Boost Stream 2 (CPU).
- * Auto GPU backend detection: OpenCL/CUDA/Metal.
- * TUI dashboard with real-time hashrate, shares, and stream status.
- * Currently Linux x86_64 only — macOS/Windows use v3.0.6-beta Trinity Miner below.
+ * v3.1.0-cli — Terminal Miner (2026-08-03)
+ * One-click GPU auto-detect: CUDA → OpenCL → Metal → CPU.
+ * Public Boost branding — internal Trinity/AuxPoW streams hidden.
+ * All builds include native-all + native-hashers: VerusHash, RandomX,
+ * GhostRider, Etchash, KawPow, Autolykos, kHeavyHash, BLAKE3, Cosmic Harmony.
+ * 4 platforms: Linux x86_64, macOS Apple Silicon, macOS Intel, Windows x86_64.
  */
 export const LATEST_RELEASE: Release = {
-  tag: 'v3.1.0',
-  name: 'ZION v3.1.0 — Boost Miner',
-  publishedAt: '2026-08-02',
+  tag: 'v3.1.0-cli',
+  name: 'ZION v3.1.0 — Terminal Miner',
+  publishedAt: '2026-08-03',
   prerelease: false,
-  htmlUrl: `https://github.com/${GITHUB_REPO}/releases/tag/v3.1.0`,
+  htmlUrl: `https://github.com/${GITHUB_REPO}/releases/tag/v3.1.0-cli`,
   assets: [
     {
-      name: 'zion-miner-v3.1.0-linux-x86_64.tar.gz',
+      name: 'zion-miner-linux-x86_64.tar.gz',
       label: 'Linux x86_64',
-      description: 'Boost Miner — three-stream mining with auto GPU backend detection',
-      sizeMB: 2.0,
-      downloadUrl: `${DL_BASE_310}/zion-miner-v3.1.0-linux-x86_64.tar.gz`,
+      description: 'Terminal Miner — auto GPU (CUDA + OpenCL) + all native algorithms',
+      sizeMB: 3.7,
+      downloadUrl: `${DL_BASE_310_CLI}/zion-miner-linux-x86_64.tar.gz`,
       platform: 'linux-x86_64',
     },
     {
-      name: 'SHA256SUMS-miner.txt',
+      name: 'zion-miner-macos-aarch64.tar.gz',
+      label: 'macOS Apple Silicon (M1–M4)',
+      description: 'Terminal Miner — Metal + OpenCL (legacy) + all native algorithms',
+      sizeMB: 3.2,
+      downloadUrl: `${DL_BASE_310_CLI}/zion-miner-macos-aarch64.tar.gz`,
+      platform: 'macos-arm64',
+    },
+    {
+      name: 'zion-miner-macos-x86_64.tar.gz',
+      label: 'macOS Intel x86_64',
+      description: 'Terminal Miner — Metal + OpenCL (legacy) + all native algorithms',
+      sizeMB: 3.3,
+      downloadUrl: `${DL_BASE_310_CLI}/zion-miner-macos-x86_64.tar.gz`,
+      platform: 'macos-x86_64',
+    },
+    {
+      name: 'zion-miner-windows-x86_64.zip',
+      label: 'Windows x86_64',
+      description: 'Terminal Miner — CUDA + OpenCL + all native algorithms',
+      sizeMB: 22.3,
+      downloadUrl: `${DL_BASE_310_CLI}/zion-miner-windows-x86_64.zip`,
+      platform: 'windows-x86_64',
+    },
+    {
+      name: 'SHA256SUMS.txt',
       label: 'SHA256 Checksums',
-      description: 'Verification checksums for v3.1.0 downloads',
+      description: 'Verification checksums for v3.1.0-cli downloads',
       sizeMB: 0.0,
-      downloadUrl: `${DL_BASE_310}/SHA256SUMS-miner.txt`,
+      downloadUrl: `${DL_BASE_310_CLI}/SHA256SUMS.txt`,
       platform: 'checksum',
     },
   ],

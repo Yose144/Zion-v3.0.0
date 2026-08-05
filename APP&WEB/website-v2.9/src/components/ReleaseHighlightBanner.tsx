@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Rocket, ArrowDownToLine, ArrowRight, ExternalLink, X, Cpu, Wallet, Activity, Zap, Monitor } from 'lucide-react';
+import { Rocket, ArrowDownToLine, ArrowRight, ExternalLink, X, Cpu, Wallet, Zap, Monitor } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
@@ -9,24 +9,24 @@ import { useLang } from '@/contexts/LanguageContext';
 const ReleaseHighlightBannerCopy = {
   dismiss: { cs: `Zavřít`, en: `Dismiss` },
   newRelease: { cs: `Nový release`, en: `New release` },
-  zionV310ReleaseHub: { cs: `ZION v3.1.0 — Boost Miner & Desktop App`, en: `ZION v3.1.0 — Boost Miner & Desktop App` },
+  zionV310ReleaseHub: { cs: `ZION v3.1.0 — Terminal Miner & Desktop App`, en: `ZION v3.1.0 — Terminal Miner & Desktop App` },
   oneClickGuiMining: { cs: `GUI těžba na jedno kliknutí`, en: `One-click GUI mining` },
   builtInWalletDashboard: { cs: `Vestavěná peněženka a dashboard`, en: `Built-in wallet & dashboard` },
-  linuxAvailable: { cs: `Linux (AppImage + DEB)`, en: `Linux (AppImage + DEB)` },
+  allPlatformsAvailable: { cs: `Linux + macOS + Windows`, en: `Linux + macOS + Windows` },
   boostStreams: { cs: `Boost Streams: GPU + CPU`, en: `Boost Streams: GPU + CPU` },
   autoGpuBackend: { cs: `Auto GPU backend`, en: `Auto GPU backend` },
-  windowsMacosComingSoon: { cs: `Windows & macOS brzy`, en: `Windows & macOS coming soon` },
+  fourPlatforms: { cs: `4 platformy (Linux, macOS ARM/Intel, Windows)`, en: `4 platforms (Linux, macOS ARM/Intel, Windows)` },
   downloadDesktopApp: { cs: `Stáhnout Desktop App`, en: `Download Desktop App` },
   githubDesktopApp: { cs: `GitHub — Desktop App`, en: `GitHub — Desktop App` },
-  githubBoostMiner: { cs: `GitHub — Boost Miner`, en: `GitHub — Boost Miner` },
+  githubTerminalMiner: { cs: `GitHub — Terminal Miner`, en: `GitHub — Terminal Miner` },
   allNews: { cs: `Všechny novinky`, en: `All news` },
 };
 
 const DISMISS_KEY = 'zion-release-310-hub-dismissed';
-const RELEASE_TAG = 'v3.1.0';
-const RELEASE_DATE = '2026-08-02';
+const RELEASE_TAG = 'v3.1.0-cli';
+const RELEASE_DATE = '2026-08-03';
 const GITHUB_DESKTOP_URL = 'https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.1.0-desktop';
-const GITHUB_BOOST_URL = 'https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.1.0';
+const GITHUB_BOOST_URL = 'https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.1.0-cli';
 
 export default function ReleaseHighlightBanner() {
   const { lang } = useLang();
@@ -96,11 +96,11 @@ export default function ReleaseHighlightBanner() {
           <p className="text-base text-gray-300 leading-relaxed mb-5 max-w-3xl">
             {cs ? (
               <>
-                ZION v3.1.0 přináší dvě hlavní novinky: <strong className="text-white font-semibold">Boost Miner</strong> — tři streamy ZION + GPU + CPU s auto GPU backendem — a <strong className="text-white font-semibold">Desktop App</strong> — GUI aplikaci s vestavěným minerem, peněženkou a dashboardem v reálném čase. <strong className="text-white font-semibold">Desktop App je dostupná pro Linux</strong> (AppImage 131 MB + DEB 106 MB). Windows a macOS verze <strong className="text-zion-gold">připravujeme</strong>.
+                ZION v3.1.0 přináší dvě hlavní novinky: <strong className="text-white font-semibold">Terminal Miner</strong> — one-click GPU auto-detect (CUDA → OpenCL → Metal → CPU) na <strong className="text-white font-semibold">4 platformách</strong> (Linux, macOS Apple Silicon/Intel, Windows) — a <strong className="text-white font-semibold">Desktop App</strong> — GUI aplikaci s vestavěným minerem, peněženkou a dashboardem v reálném čase. Desktop App dostupná pro <strong className="text-white font-semibold">Linux, macOS a Windows</strong>.
               </>
             ) : (
               <>
-                ZION v3.1.0 brings two main updates: <strong className="text-white font-semibold">Boost Miner</strong> — three streams ZION + GPU + CPU with auto GPU backend — and <strong className="text-white font-semibold">Desktop App</strong> — a GUI app with built-in miner, wallet, and real-time dashboard. <strong className="text-white font-semibold">Desktop App is available for Linux</strong> (AppImage 131 MB + DEB 106 MB). Windows and macOS versions <strong className="text-zion-gold">coming soon</strong>.
+                ZION v3.1.0 brings two main updates: <strong className="text-white font-semibold">Terminal Miner</strong> — one-click GPU auto-detect (CUDA → OpenCL → Metal → CPU) on <strong className="text-white font-semibold">4 platforms</strong> (Linux, macOS Apple Silicon/Intel, Windows) — and <strong className="text-white font-semibold">Desktop App</strong> — a GUI app with built-in miner, wallet, and real-time dashboard. Desktop App available for <strong className="text-white font-semibold">Linux, macOS and Windows</strong>.
               </>
             )}
           </p>
@@ -125,11 +125,11 @@ export default function ReleaseHighlightBanner() {
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-300">
               <Cpu className="h-3 w-3 text-emerald-400" />
-              {ReleaseHighlightBannerCopy.linuxAvailable[cs ? 'cs' : 'en']}
+              {ReleaseHighlightBannerCopy.fourPlatforms[cs ? 'cs' : 'en']}
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-500">
-              <Activity className="h-3 w-3 text-gray-500" />
-              {ReleaseHighlightBannerCopy.windowsMacosComingSoon[cs ? 'cs' : 'en']}
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-300">
+              <Monitor className="h-3 w-3 text-emerald-400" />
+              {ReleaseHighlightBannerCopy.allPlatformsAvailable[cs ? 'cs' : 'en']}
             </span>
           </div>
 
@@ -158,7 +158,7 @@ export default function ReleaseHighlightBanner() {
               className="group inline-flex items-center gap-2 rounded-xl bg-white/[0.04] border border-white/10 px-5 py-2.5 text-sm font-medium text-gray-200 transition-all duration-200 hover:bg-white/[0.08] hover:border-white/20 hover:text-white"
             >
               <ExternalLink className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-              {ReleaseHighlightBannerCopy.githubBoostMiner[cs ? 'cs' : 'en']}
+              {ReleaseHighlightBannerCopy.githubTerminalMiner[cs ? 'cs' : 'en']}
             </Link>
             <Link
               href="/news"
