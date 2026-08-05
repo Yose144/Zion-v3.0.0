@@ -86,23 +86,22 @@ log "Rotating local backups..."
 
 DAILY_LEFT=$(find "${LOCAL_DAILY}" -name 'zion-edge-*.tar.gz' -type f | wc -l)
 if [[ ${DAILY_LEFT} -gt ${RETENTION_DAILY} ]]; then
-    find "${LOCAL_DAILY}" -name 'zion-edge-*.tar.gz' -type f -printf '%T@ %p\n' | \
-        sort -n | head -n -${RETENTION_DAILY} | cut -d' ' -f2- | \
+    ls -1t "${LOCAL_DAILY}"/zion-edge-*.tar.gz 2>/dev/null | \
+        tail -n +$((RETENTION_DAILY + 1)) | \
         xargs -r rm -f
     log "${GREEN}  ✓ Rotated daily (keep ${RETENTION_DAILY})${NC}"
 fi
 
 WEEKLY_LEFT=$(find "${LOCAL_WEEKLY}" -name 'zion-edge-*.tar.gz' -type f | wc -l)
 if [[ ${WEEKLY_LEFT} -gt ${RETENTION_WEEKLY} ]]; then
-    find "${LOCAL_WEEKLY}" -name 'zion-edge-*.tar.gz' -type f -printf '%T@ %p\n' | \
-        sort -n | head -n -${RETENTION_WEEKLY} | cut -d' ' -f2- | \
+    ls -1t "${LOCAL_WEEKLY}"/zion-edge-*.tar.gz 2>/dev/null | \
+        tail -n +$((RETENTION_WEEKLY + 1)) | \
         xargs -r rm -f
     log "${GREEN}  ✓ Rotated weekly (keep ${RETENTION_WEEKLY})${NC}"
 fi
 
 # ── 4. Verify latest backup integrity ───────────────────────────────────────
-LATEST=$(find "${LOCAL_DAILY}" -name 'zion-edge-*.tar.gz' -type f -printf '%T@ %p\n' | \
-    sort -rn | head -1 | cut -d' ' -f2-)
+LATEST=$(ls -1t "${LOCAL_DAILY}"/zion-edge-*.tar.gz 2>/dev/null | head -1)
 if [[ -n "${LATEST}" && -f "${LATEST}" ]]; then
     log "Verifying latest backup: $(basename ${LATEST})"
     if tar tzf "${LATEST}" >/dev/null 2>&1; then
