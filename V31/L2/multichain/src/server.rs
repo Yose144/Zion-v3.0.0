@@ -112,27 +112,14 @@ impl ApiServer {
         Ok(())
     }
 
-    pub async fn run(&self) -> MultichainResult<()> {
-        self.start_stratum_if_configured().await?;
-        self.service.load_dex_pools().await?;
-
-        let payout_service = Arc::clone(&self.service);
-        tokio::spawn(async move {
-            let mut interval = tokio::time::interval(Duration::from_secs(30));
-            loop {
-                interval.tick().await;
-                if let Err(e) = payout_service.execute_payouts().await {
-                    tracing::warn!("payout executor error: {}", e);
-                }
-            }
-        });
-
+    /// Build the Axum router for testing and serving.
+    pub fn router(&self) -> Router {
         let state = AppState {
             service: Arc::clone(&self.service),
             limiter: RateLimiter::new(&self.config),
         };
 
-        let app = Router::new()
+        Router::new()
             .route("/health", get(health))
             .route("/v1/multichain/health", get(service_health))
             .route("/v1/multichain/chains", get(list_chains))
@@ -170,7 +157,25 @@ impl ApiServer {
                     .allow_methods(AllowMethods::any())
                     .allow_headers(AllowHeaders::any()),
             )
-            .with_state(state);
+            .with_state(state)
+    }
+
+    pub async fn run(&self) -> MultichainResult<()> {
+        self.start_stratum_if_configured().await?;
+        self.service.load_dex_pools().await?;
+
+        let payout_service = Arc::clone(&self.service);
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(Duration::from_secs(30));
+            loop {
+                interval.tick().await;
+                if let Err(e) = payout_service.execute_payouts().await {
+                    tracing::warn!("payout executor error: {}", e);
+                }
+            }
+        });
+
+        let app = self.router();
 
         let bind = format!("{}:{}", self.config.bind, self.config.port);
         let listener = tokio::net::TcpListener::bind(&bind)
