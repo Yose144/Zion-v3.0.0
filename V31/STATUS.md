@@ -316,7 +316,7 @@ Dokončeny všechny 11 chybějících V3 pool funkcí. Pool je teď **FULL V3 fe
 - **Release Runbook ✅ COMPLETE** — `V31/RELEASE_RUNBOOK.md`, `V31/30D_RUN_PLAN.md`, `V31/CHAOS_TEST_PLAN.md`.
 - **Clippy / Warning Cleanup ✅ COMPLETE** — `cargo clippy --workspace` clean, `cargo test --workspace` 2043+ testů pass.
 - **Public Subtree Sync ✅ COMPLETE** — `git subtree push --prefix=public public main` up-to-date.
-- **Fáze D ✅ COMPLETE** — E2E mining (`zion-v31-miner` → pool → `submitBlock` accepted), web `/api/health` green, e2e API scénáře pass, dashboard V31 services/logy nasazeny, Git tag `v3.1.0-alpha.2-phase-D` vytvořen.
+- **Fáze D ✅ COMPLETE** — E2E mining (`zion-v31-miner` → pool → `share accepted`, block height 50+), web `/api/health` green, **Playwright UI E2E 3/3 pass**, **30min smoke test PASS**, **Edge backup + off-site sync COMPLETE**. Git tag `v3.1.0-alpha.2-phase-D`.
 - **Co zbývá pro mainnet beta:**
   - Non-EVM WARP kontrakty (Tron, Solana, Cosmos, ...)
   - Security audit + chaos testy (3.0.9 / 3.1.0-beta)
