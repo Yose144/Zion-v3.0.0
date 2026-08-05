@@ -187,14 +187,16 @@ PAYOUT_HIGHWATER_FILE = DATA_DIR / "dashboard-payout-highwater.json"
 # Canonical Edge systemd units used by servers-setup, processes, and health maps.
 # V31-first after cutover; V3 services are masked/archived and not started.
 EDGE_SERVICE_ORDER = [
-    "zion-v31-node", "zion-v31-pool", "zion-v31-multichain", "zion-v31-watchdog",
+    "zion-v31-node", "zion-v31-pool", "zion-v31-miner", "zion-v31-multichain",
+    "zion-v31-watchdog", "zion-v31-dao", "zion-v31-oasis",
     "zion-edge-python-dashboard",
     "prometheus", "grafana-server",
     "zion-website", "zion-marketplace",
+    "zion-edge-backup", "zion-edge-maintenance",
     "zion-edge-node1", "zion-edge-node2", "zion-edge-pool",
     "zion-edge-bridge", "zion-edge-dao", "zion-edge-atomic-swap",
     "zion-edge-warp", "zion-edge-oasis", "zion-edge-dex",
-    "zion-edge-dashboard",
+    "zion-edge-dashboard", "nginx",
 ]
 
 # ── Basic Auth (HTTP 401) — multi-user ───────────────────────────────────
@@ -760,12 +762,10 @@ def get_edge_server_health() -> dict:
         }
 
         # Services
-        svc_names = ["zion-edge-node1", "zion-edge-node2", "zion-edge-pool",
-                     "zion-edge-bridge", "zion-edge-dao", "zion-edge-atomic-swap",
-                     "zion-edge-warp", "zion-edge-oasis", "zion-edge-miner",
-                     "zion-edge-agent", "zion-edge-dashboard", "zion-edge-dex",
-                     "zion-edge-python-dashboard", "zion-edge-watchdog",
-                     "zion-edge-backup", "zion-edge-maintenance"]
+        svc_names = ["zion-v31-node", "zion-v31-pool", "zion-v31-miner",
+                     "zion-v31-multichain", "zion-v31-watchdog", "zion-v31-dao",
+                     "zion-v31-oasis", "zion-edge-python-dashboard",
+                     "zion-website", "zion-marketplace", "nginx"]
         svc_states = parts.get("SVCS", "").split(",")
         for i, name in enumerate(svc_names):
             if i < len(svc_states):
@@ -1142,7 +1142,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "log": None, "start": None, "stop": None,
      "health_method": "systemd", "severity": "warning", "autoheal": False,
      "health_endpoint": None,
-     "purpose": "V31 PROD CPU miner — 2 threads, ~500-950 kH/s. → Pool 127.0.0.1:8444. systemd zion-edge-miner.service.",
+     "purpose": "V31 PROD CPU miner — 2 threads, ~500-950 kH/s. → Pool 127.0.0.1:8444. systemd zion-v31-miner.service.",
      "child_says": "⛏️ V31 PROD miner — digs for ZION!",
      "depends_on": ["v31-pool"]},
     {"id": "v31-multichain", "name": "V31 Multichain (PROD)", "icon": "🌀", "level": "L2", "kind": "multichain",
@@ -1268,7 +1268,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "health_method": "tcp", "severity": "info", "autoheal": False,
      "purpose": "Operational control plane — this UI. Port 8766 behind nginx + Basic Auth.",
      "child_says": "📋 The control room where we watch everything!",
-     "depends_on": ["edge-node1"]},
+     "depends_on": ["v31-node"]},
     {"id": "nginx", "name": "Nginx Reverse Proxy", "icon": "🔒", "level": "Infra", "kind": "proxy",
      "ports": {"http": 80, "https": 443},
      "host": "127.0.0.1",
@@ -1672,7 +1672,7 @@ def check_service_health(svc: dict) -> dict:
     elif method == "systemd":
         # Check systemd service status for V31 services
         systemd_map = {
-            "v31-miner": "zion-edge-miner.service",
+            "v31-miner": "zion-v31-miner.service",
             "v31-pool": "zion-v31-pool.service",
             "v31-node": "zion-v31-node.service",
             "v31-multichain": "zion-v31-multichain.service",
@@ -1726,9 +1726,10 @@ def check_service_health(svc: dict) -> dict:
 
 
 def _compute_derived_status(svc: dict, health_map: dict) -> dict:
-    """Propagate dependency failures: if a dependency is down, mark dependent as degraded."""
+    """Propagate dependency failures: if a dependency is down, mark dependent as degraded.
+    Archived services do not propagate dependency failures (V3 is no longer the source of truth)."""
     h = health_map.get(svc["id"], {})
-    if not h.get("alive"):
+    if not h.get("alive") or svc.get("archived"):
         return h
     for dep_id in svc.get("depends_on", []):
         dep = health_map.get(dep_id, {})
@@ -3299,14 +3300,26 @@ def _build_status_edge_primary() -> dict:
             capture_output=True, text=True, timeout=5
         )
         for line in r.stdout.strip().split("\n"):
+            # Universal miner summary: "hashrate=0 H/s submitted=0 accepted=7 rejected=0 ..."
             if "hashrate=" in line:
-                m = re.search(r"hashrate=(\d+)", line)
+                m = re.search(r"hashrate=(\d+(?:\.\d+)?)", line)
                 if m:
-                    v31_miner_hashrate = int(m.group(1))
-            if "share submitted" in line:
-                v31_miner_shares += 1
-            if "share accepted" in line:
-                v31_miner_accepted += 1
+                    val = float(m.group(1))
+                    if val:
+                        v31_miner_hashrate = int(val)
+                # Fallback: stream stats line like "stream=zion ... hashrate=123 status=active"
+                if v31_miner_hashrate is None or v31_miner_hashrate == 0:
+                    m2 = re.search(r"stream=zion .*?hashrate=(\d+(?:\.\d+)?)", line)
+                    if m2:
+                        val2 = float(m2.group(1))
+                        if val2:
+                            v31_miner_hashrate = int(val2)
+            m_sub = re.search(r"\bsubmitted=(\d+)", line)
+            if m_sub:
+                v31_miner_shares = int(m_sub.group(1))
+            m_acc = re.search(r"\baccepted=(\d+)", line)
+            if m_acc:
+                v31_miner_accepted = int(m_acc.group(1))
     except Exception:
         pass
     v31_miner_status = {
@@ -3907,20 +3920,26 @@ def build_checklist(status: dict) -> dict:
         pass
 
     if topology == "edge-primary":
+        v31_node = status.get("v31_node", {})
+        v31_pool = status.get("v31_pool", {})
+        v31_miner = status.get("v31_miner", {})
+        chain_height = v31_node.get("chain_height") or status["edge_node"].get("chain_height")
         checks = [
             {"id": "keys",       "label": "Offline key generation complete",          "ok": True},
             {"id": "env",        "label": "Env file assembled (.env.mainnet)",        "ok": True},
-            {"id": "edge-node1", "label": "Edge Node 1 (Primary) running & reachable", "ok": status["edge_node"]["running"] and status["edge_node"]["chain_height"] is not None},
-            {"id": "edge-node2", "label": "Edge Node 2 (Follower) running & synced",  "ok": status.get("edge_node2", {}).get("running", False) and status.get("edge_node2", {}).get("known_peers", 0) > 0},
-            {"id": "v31-node",   "label": "V31 Alpha Node running & synced (P2P)",     "ok": status.get("v31_node", {}).get("running", False) and status.get("v31_node", {}).get("chain_height") is not None},
+            {"id": "v31-node",   "label": "V31 Alpha Node running & synced (P2P)",     "ok": v31_node.get("running", False) and v31_node.get("chain_height") is not None},
+            {"id": "v31-pool",   "label": "V31 Pool running & accepting miners",       "ok": v31_pool.get("running", False)},
+            {"id": "v31-miner",  "label": "V31 Miner running",                         "ok": v31_miner.get("running", False)},
             {"id": "local-backup", "label": "Local Backup Node running & synced",      "ok": status.get("local_backup", {}).get("running", False) and status.get("local_backup", {}).get("known_peers", 0) > 0},
             {"id": "pool",       "label": "Edge Pool running & accepting miners",     "ok": status["pool"]["running"] and status["pool"]["active_sessions"] is not None},
             {"id": "pool-edge",  "label": "Edge Pool TCP reachable",                  "ok": status.get("pool_edge", {}).get("running", False)},
-            {"id": "chain",      "label": "Chain height advancing",                   "ok": status["edge_node"]["chain_height"] is not None and status["edge_node"]["chain_height"] > 0},
+            {"id": "chain",      "label": "Chain height advancing",                   "ok": chain_height is not None and chain_height > 0},
             {"id": "payout",     "label": "Payout mechanism ready (fee split active)", "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/1"},
             {"id": "fee_split",  "label": "Fee split 89/5/5/1 (burn model) active",    "ok": status["pool"]["fee_split"] == "89/5/5/1"},
             {"id": "logs",       "label": "Log directory writable",                   "ok": LOG_DIR.exists()},
-            # Optional local services (not counted in score, shown for info)
+            # Optional / archived V3 services
+            {"id": "edge-node1", "label": "Edge Node 1 (V3 archived)",                "ok": status["edge_node"]["running"] and status["edge_node"]["chain_height"] is not None},
+            {"id": "edge-node2", "label": "Edge Node 2 (V3 archived)",                "ok": status.get("edge_node2", {}).get("running", False) and status.get("edge_node2", {}).get("known_peers", 0) > 0},
             {"id": "node1",      "label": "Local Backup Node P2P synced",             "ok": status.get("local_backup", {}).get("running", False) and status.get("local_backup", {}).get("known_peers", 0) > 0},
             {"id": "miner",      "label": "Local GPU miner (optional)",               "ok": True},
             {"id": "edge-backup","label": "Edge database auto-backup (optional)",     "ok": edge_backup_ok},
@@ -3958,13 +3977,16 @@ LAYER_WEIGHTS = {
 }
 
 SERVICE_WEIGHTS = {
-    # Edge-primary topology weights
-    "edge-node": 20, "node1": 10, "pool-edge": 10, "miner": 10,
+    # Edge-primary topology weights — V31 is production
+    "v31-node": 20, "v31-pool": 10, "v31-miner": 10,
+    "v31-multichain": 8, "v31-dao": 5, "v31-oasis": 3,
+    # Legacy V3 services (archived, contribute 0)
+    "edge-node": 0, "node1": 0, "pool-edge": 0, "miner": 0,
     # Local-dev topology weights (node1 becomes primary)
     "pool": 10,
-    # Common L2-L6 weights
-    "bridge": 8, "dao": 8, "atomic-swap": 5, "dex": 4, "warp": 4,
-    "ai-native": 5, "hiranyagarbha": 3, "ncl": 2, "oasis": 3, "free-world": 2, "issobella": 2,
+    # Common L2-L6 weights (V3 archived; V31 multichain/dao/oasis above)
+    "bridge": 0, "dao": 0, "atomic-swap": 0, "dex": 0, "warp": 0,
+    "ai-native": 0, "hiranyagarbha": 0, "ncl": 0, "oasis": 0, "free-world": 0, "issobella": 0,
     # Optional/infra
     "node2": 0, "prometheus": 0, "grafana": 0, "dashboard": 0,
 }
@@ -4091,15 +4113,16 @@ def build_alerts(status: dict) -> list:
                        "detail": f"ZION_NONCE_COUNT={pool['nonce_count']} is small. Raise to 4096 for better GPU utilisation.",
                        "action": None})
 
-    # Only alert about local miner if in local-dev topology (edge-primary miner is optional)
-    if topology != "edge-primary" and miner["running"] and not miner["hashrate"]:
-        alerts.append({"severity": _sev("miner", "warning"), "title": "Miner not hashing",
-                       "detail": "Miner is connected but no hashrate samples in recent logs. Check GPU init.",
-                       "action": "restart-miner"})
+    # Miner alerts: use V31 miner in edge-primary, legacy miner in local-dev
+    _miner = status.get("v31_miner") if topology == "edge-primary" else miner
+    if _miner and _miner.get("running") and not _miner.get("hashrate"):
+        alerts.append({"severity": _sev("v31-miner", "warning"), "title": "Miner not hashing",
+                       "detail": "V31 miner is active but no hashrate samples in recent logs. Check CPU/GPU init.",
+                       "action": "restart-v31-miner"})
 
-    if miner["running"] and miner["hashrate"] and miner["hashrate"] < 1.0:
+    if _miner and _miner.get("running") and _miner.get("hashrate") and _miner["hashrate"] < 1.0:
         alerts.append({"severity": "info", "title": "Low hashrate",
-                       "detail": f"Hashrate {miner['hashrate']} KH/s seems low. Expected ~6-10 KH/s on RDNA1.",
+                       "detail": f"Hashrate {_miner['hashrate']} H/s seems low. Expected ~500-950 kH/s on CPU.",
                        "action": None})
 
     if pool["running"] and pool["shares_rejected"] > 0 and pool["shares_accepted"]:
@@ -4893,7 +4916,7 @@ def get_edge_server_status() -> dict:
 
     try:
         # Single command: combine all metrics to avoid multiple calls
-        combined_cmd = "cat /proc/loadavg && free -m && df -h / | tail -1 && echo '===TOP===' && ps -eo rss,comm --sort=-rss | head -6 | tail -5 && echo '===SVC===' && systemctl is-active zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-dao zion-edge-warp zion-edge-bridge zion-edge-atomic-swap nginx 2>/dev/null"
+        combined_cmd = "cat /proc/loadavg && free -m && df -h / | tail -1 && echo '===TOP===' && ps -eo rss,comm --sort=-rss | head -6 | tail -5 && echo '===SVC===' && systemctl is-active zion-v31-node zion-v31-pool zion-v31-miner zion-v31-multichain zion-v31-watchdog zion-v31-dao zion-v31-oasis zion-edge-python-dashboard zion-website zion-marketplace nginx 2>/dev/null"
         result = _run_edge_cmd(combined_cmd, timeout=8)
         if result.returncode != 0:
             return {"ok": False, "error": result.stderr.strip() or "Edge command failed"}
@@ -4948,7 +4971,9 @@ def get_edge_server_status() -> dict:
 
         # Service status
         services = []
-        svc_names = ["node1", "node2", "pool", "dao", "warp", "bridge", "atomic-swap", "nginx"]
+        svc_names = ["v31-node", "v31-pool", "v31-miner", "v31-multichain",
+                     "v31-watchdog", "v31-dao", "v31-oasis", "dashboard",
+                     "website", "marketplace", "nginx"]
         states = svc_part.splitlines() if svc_part else []
         for i, name in enumerate(svc_names):
             if i < len(states):
@@ -5042,9 +5067,9 @@ def run_edge_action(action: str) -> dict:
         "restart-v31-pool":       "sudo systemctl restart zion-v31-pool.service",
         "stop-v31-pool":          "sudo systemctl stop zion-v31-pool.service",
         "start-v31-pool":         "sudo systemctl start zion-v31-pool.service",
-        "restart-v31-miner":      "sudo systemctl restart zion-edge-miner.service",
-        "stop-v31-miner":         "sudo systemctl stop zion-edge-miner.service",
-        "start-v31-miner":        "sudo systemctl start zion-edge-miner.service",
+        "restart-v31-miner":      "sudo systemctl restart zion-v31-miner.service",
+        "stop-v31-miner":         "sudo systemctl stop zion-v31-miner.service",
+        "start-v31-miner":        "sudo systemctl start zion-v31-miner.service",
         "restart-v31-multichain": "sudo systemctl restart zion-v31-multichain.service",
         "stop-v31-multichain":    "sudo systemctl stop zion-v31-multichain.service",
         "start-v31-multichain":   "sudo systemctl start zion-v31-multichain.service",
@@ -5055,10 +5080,10 @@ def run_edge_action(action: str) -> dict:
         "restart-hiran":          "sudo systemctl restart zion-hiran-inference 2>/dev/null || echo 'hiran not deployed'",
         "restart-hiranyagarbha":  "sudo systemctl restart zion-hiranyagarbha 2>/dev/null || echo 'hiranyagarbha not deployed'",
         "restart-bridge":         "sudo systemctl restart zion-bridge",
-        "restart-website":        "sudo systemctl restart zion-web-next 2>/dev/null || docker restart zion-web-next 2>/dev/null || echo 'web in maintenance mode'",
+        "restart-website":        "sudo systemctl restart zion-website 2>&1",
         "clean-docker":           "docker builder prune -af 2>&1; docker image prune -af 2>&1; docker container prune -f 2>&1",
         "security-audit":         "echo 'Security audit placeholder — run manually'",
-        "full-health":            "sudo systemctl is-active zion-node zion-pool zion-dao zion-warp zion-bridge nginx 2>&1",
+        "full-health":            "sudo systemctl is-active zion-v31-node zion-v31-pool zion-v31-miner zion-v31-multichain zion-v31-watchdog zion-v31-dao zion-v31-oasis zion-website zion-marketplace nginx 2>&1",
         "memory-limit":           "echo 'Memory limits configured in systemd unit files'",
         # ── Edge maintenance (scripts/edge-maintenance.sh) ───────────────
         # Safe: never touches critical services (node/pool/bridge/dao/warp).
@@ -9112,21 +9137,37 @@ def _ws_push_loop():
 
 
 def _build_health_map() -> dict:
-    """Return {service: health_status} for all known services (v3.0.4 — new server)."""
+    """Return {service: health_status} for all known services (V31 + legacy)."""
     status = build_status()
     health = {}
-    # Core services — v3.0.4 new server (single node, no node2/local backup)
+
+    # V31 services (production)
+    v31_node = status.get("v31_node", {})
+    health["v31-node"] = "up" if v31_node.get("running") and v31_node.get("chain_height") is not None else "down"
+
+    v31_pool = status.get("v31_pool", {})
+    health["v31-pool"] = "up" if v31_pool.get("running") else "down"
+
+    v31_miner = status.get("v31_miner", {})
+    v31_miner_running = bool(v31_miner.get("running"))
+    health["v31-miner"] = "up" if v31_miner_running else "down"
+    # Keep legacy alias for v2 clients
+    health["miner"] = health["v31-miner"]
+
+    v31_multichain = status.get("v31_multichain", {})
+    health["v31-multichain"] = "up" if v31_multichain.get("running") and v31_multichain.get("ok") else "down"
+
+    # Legacy V3 services (archived/masked)
     edge_node = status.get("edge_node", {})
     health["edge-node"] = "up" if edge_node.get("running") and edge_node.get("chain_height") is not None else "down"
 
     pool_edge = status.get("pool_edge", {})
     health["pool-edge"] = "up" if pool_edge.get("running") else "down"
 
-    miner = status.get("miner", {})
-    health["miner"] = "up" if miner.get("running") else "down"
-
     # Extended services — TCP probes to 127.0.0.1 (all on same server)
     ext_ports = {
+        "v31-dao": 8456,      # V31 DAO API
+        "v31-oasis": 8094,    # V31 OASIS API
         "bridge": 9101,       # Bridge metrics
         "dao": 8450,          # DAO API
         "warp": 8453,         # WARP Relay API (v3.0.5 port)
@@ -9138,9 +9179,9 @@ def _build_health_map() -> dict:
         except Exception:
             alive = False
         health[sid] = "up" if alive else "down"
-    # Nginx + web-next: check via SSH on Edge server (not tunneled locally)
+    # Nginx + website: check via SSH on Edge server (not tunneled locally)
     for sid, cmd in [("nginx", "systemctl is-active nginx 2>/dev/null"),
-                     ("web-next", "systemctl is-active zion-web-next 2>/dev/null || docker inspect -f '{{.State.Running}}' zion-web 2>/dev/null")]:
+                     ("website", "systemctl is-active zion-website 2>/dev/null")]:
         try:
             result = _run_edge_cmd(cmd, timeout=3)
             alive = result.returncode == 0 and "active" in (result.stdout or "").strip() or "true" in (result.stdout or "").strip()
