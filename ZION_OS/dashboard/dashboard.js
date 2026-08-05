@@ -6528,15 +6528,21 @@ function renderServicesGrid(){
     Infra: 'border-zion-gold/30 bg-zion-gold/3',
   };
   const statusColors = {
+    primary: 'bg-yellow-500/20 text-yellow-200 border-yellow-500/40',
     live: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
     planned: 'bg-blue-500/20 text-blue-300 border-blue-500/40',
+    critical: 'bg-red-600/30 text-red-200 border-red-500/60',
     down: 'bg-red-500/20 text-red-300 border-red-500/40',
     degraded: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
     timeout: 'bg-gray-700/30 text-gray-400 border-gray-600/30',
+    archived: 'bg-gray-600/20 text-gray-300 border-gray-500/40',
   };
   grid.innerHTML = filtered.map(s => {
-    const statusKey = s.status === 'planned' ? 'planned' : s.alive ? (s.severity === 'warning' ? 'degraded' : 'live') : s.status === 'timeout' ? 'timeout' : 'down';
+    const isCritical = s.severity === 'critical' && !s.alive;
+    const statusKey = s.archived ? 'archived' : s.status === 'planned' ? 'planned' : s.alive ? (s.severity === 'warning' ? 'degraded' : (s.primary ? 'primary' : 'live')) : isCritical ? 'critical' : s.status === 'timeout' ? 'timeout' : 'down';
     const aliveBadge = `<span class="px-2 py-0.5 text-[10px] rounded font-bold border ${statusColors[statusKey] || statusColors.down}">${s.status?.toUpperCase() || (s.alive ? 'LIVE' : 'DOWN')}</span>`;
+    const primaryBadge = s.primary ? '<span class="ml-1 px-1.5 py-0.5 rounded text-[9px] font-bold border bg-yellow-500/20 text-yellow-200 border-yellow-500/40">PRIMARY</span>' : '';
+    const archivedBadge = s.archived ? '<span class="ml-1 px-1.5 py-0.5 rounded text-[9px] font-bold border bg-gray-600/30 text-gray-300 border-gray-500/40">ARCHIVED</span>' : '';
     const portsHtml = Object.entries(s.ports || {}).map(([k, v]) => {
       const isOpen = (s.ports_open || []).includes(k + ':' + v);
       return `<span class="text-[10px] font-mono ${isOpen ? 'text-emerald-400' : 'text-gray-600'}" title="${k}">${k}:${v}</span>`;
@@ -6554,12 +6560,12 @@ function renderServicesGrid(){
     const metricsBtn = (s.ports && (s.ports.metrics || s.ports.api)) ? `<button onclick="window.open('${s.ports.metrics || s.ports.api}','_blank')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/15 text-gray-300 rounded font-semibold transition">📊</button>` : '';
     const logBtn = s.log ? `<button onclick="switchTab('logs'); setTimeout(()=>{const sel=document.getElementById('log-service-select');if(sel)sel.value='${sid}';initLogPane();},100)" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/15 text-gray-300 rounded font-semibold transition">📜</button>` : '';
     const actionRow = s.alive ? `${restartBtn}${stopBtn}${metricsBtn}${logBtn}` : `${startBtn}${metricsBtn}${logBtn}`;
-    return `<div class="zion-panel-soft zion-panel-hover p-4 rounded-xl border ${lvlColors[s.level] || 'border-white/10'} ${s.alive ? 'svc-live' : ''} transition-all">
+    return `<div class="zion-panel-soft zion-panel-hover p-4 rounded-xl border ${lvlColors[s.level] || 'border-white/10'} ${s.alive ? 'svc-live' : ''} ${s.archived ? 'opacity-70 grayscale-[0.35]' : ''} transition-all">
       <div class="flex items-center justify-between mb-2">
         <div class="flex items-center gap-2">
           <span class="text-2xl">${s.icon}</span>
           <div>
-            <div class="text-sm font-bold">${escapeHtml(s.name)}</div>
+            <div class="text-sm font-bold">${escapeHtml(s.name)}${primaryBadge}${archivedBadge}</div>
             <div class="text-[10px] text-gray-500 uppercase tracking-wider">${s.level} · ${s.kind}</div>
           </div>
         </div>
