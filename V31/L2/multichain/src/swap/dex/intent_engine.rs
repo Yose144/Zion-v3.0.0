@@ -74,6 +74,18 @@ impl IntentEngine {
         id
     }
 
+    /// Restore a persisted intent (used at startup).
+    pub fn load_intent(&mut self, intent: SwapIntent) {
+        self.auctions.insert(intent.id, (intent, IntentAuction::new()));
+    }
+
+    /// Restore a persisted bid (used at startup).
+    pub fn load_bid(&mut self, bid: SolverBid) {
+        if let Some((_, auction)) = self.auctions.get_mut(&bid.intent_id) {
+            auction.load_bid(bid);
+        }
+    }
+
     /// Look up an intent by id.
     pub fn get_intent(&self, id: Uuid) -> Option<&SwapIntent> {
         self.auctions.get(&id).map(|(i, _)| i)

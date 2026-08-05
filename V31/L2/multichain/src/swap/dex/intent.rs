@@ -185,6 +185,11 @@ impl IntentAuction {
         }
     }
 
+    /// Load a persisted bid without lifecycle checks (used at startup).
+    pub fn load_bid(&mut self, bid: SolverBid) {
+        self.bids.entry(bid.intent_id).or_default().push(bid);
+    }
+
     /// Submit a bid. Returns `false` if the target intent is not open.
     pub fn submit_bid(&mut self, intent: &SwapIntent, bid: SolverBid) -> MultichainResult<bool> {
         if bid.intent_id != intent.id {
