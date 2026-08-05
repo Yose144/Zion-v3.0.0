@@ -1,6 +1,6 @@
 [Unit]
-Description=ZION V3 Dashboard (Python, zero-dep, port 8766)
-After=network-online.target zion-edge-node1.service zion-edge-pool.service
+Description=ZION V31 Dashboard (Python, zero-dep, port 8766)
+After=network-online.target zion-v31-node.service zion-v31-pool.service
 Wants=network-online.target
 
 [Service]

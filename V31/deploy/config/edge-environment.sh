@@ -12,10 +12,10 @@
 # in each systemd service via Environment= directives.
 #
 # Server runs:
-#   - Node (Primary / Genesis) — P2P 8333, RPC 9443 (localhost, direct)
-#   - Pool (Primary) — connects to Node RPC 9443, Stratum 8444 public
-#   - Bridge, DAO, Atomic-Swap, WARP — all connect to Node RPC 9443
-#   - nginx TCP stream proxy public 8443 → 9443 for public RPC (rpc.zionterranova.com:8443)
+#   - Node (Primary / Genesis) — P2P 8335, RPC 9445 (localhost, direct)
+#   - Pool (Primary) — connects to Node RPC 9445, Stratum 8444 public, HTTP API/metrics 8080
+#   - Bridge, DAO, Atomic-Swap, WARP — all connect to Node RPC 9445
+#   - nginx TCP stream proxy public 8443 → 9445 for public RPC (rpc.zionterranova.com:8443)
 
 # ── Canonical Fee Split Addresses (89/5/5/1 burn model — no pool fee wallet) ──
 # NOTE: ZION_MINER_ADDRESS = default_miner canonical wallet (89% coinbase).
@@ -36,7 +36,8 @@ ZION_POOL_FEE_PCT=0
 
 # ── Pool Configuration (PRIMARY — accepts all miners) ──
 ZION_POOL_BIND=0.0.0.0:8444
-ZION_NODE_RPC_ADDR=127.0.0.1:9443
+ZION_NODE_RPC_ADDR=127.0.0.1:9445
+ZION_L1_RPC_URL=http://127.0.0.1:9445
 ZION_POOL_LOOP_COUNT=1000000
 ZION_MAX_SESSIONS_PER_IP=10
 # GPU optimization: nonce_count tuned for RX 5700 XT @ ~19.25 KH/s (deeksha_lite_v1).
@@ -54,7 +55,9 @@ ZION_VARDIFF_TARGET_SECS=15
 ZION_VARDIFF_RETARGET_SHARES=6
 ZION_PPLNS_WINDOW_SIZE=500000
 ZION_PPLNS_STATE_PATH=/data/zion/pplns-state.json
-ZION_ROUTING_METRICS_BIND=127.0.0.1:8455
+ZION_POOL_API_BIND=0.0.0.0:8080
+# Legacy V3 routing metrics port (unused by V31; kept for reference)
+# ZION_ROUTING_METRICS_BIND=127.0.0.1:8455
 
 # ── AuxPow / Stream Profit Configuration ────────────────────────────────────
 # Required after chain-stall fix (2026-07-13). Without these the pool may

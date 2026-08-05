@@ -10,6 +10,10 @@ Group=zion
 WorkingDirectory=/opt/zion
 EnvironmentFile=/etc/zion/edge-environment.sh
 Environment="RUST_LOG=info,zion_core=debug"
+Environment="ZION_NODE_DB=/opt/zion/data/v31/node.db"
+Environment="ZION_NODE_RPC=127.0.0.1:9445"
+Environment="ZION_NODE_P2P=0.0.0.0:8335"
+Environment="ZION_NODE_ID=zion-v31-node"
 ExecStart=/opt/zion/V31/target/release/zion-node
 Restart=always
 RestartSec=10
