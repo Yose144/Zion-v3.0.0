@@ -4,7 +4,7 @@
 
 Tento soubor je provozní a bezpečnostní pravidla pro pracovní prostor `V31` — čistý Mainnet Alpha track v `/Users/yeshuae/Projects/2.9.6/V31/`. Produkční Edge stále běží na `/Users/yeshuae/Projects/2.9.6/V3/` do okamžiku cut-over. Veškerá nová mainnet-track vývojárna patří do `V31/`. Historická topologie a incidenty jsou v kořenovém `/Users/yeshuae/Projects/2.9.6/AGENTS.md`.
 
-Aktuální stav V31 (2026-07-30): `cargo test` prochází pro celý workspace. `zion-core` obsahuje `HeightAwareDeeksha` — height-aware PoW fork gating. `zion-pool` má rate limiting reconnect stormu. `zion-miner` má `ZION_STREAM3_FORCE_COIN` a podporu disabled coinů. `zion-dao` existuje jako skeleton. `zion-multichain` má SQLite persistenci HTLC.
+Aktuální stav V31 (2026-08-06): `cargo clippy --workspace` je čisté a `cargo test -p zion-multichain` prochází (574 testů). `zion-core` obsahuje `HeightAwareDeeksha` — height-aware PoW fork gating. `zion-pool` má rate limiting reconnect stormu. `zion-miner` má `ZION_STREAM3_FORCE_COIN` a podporu disabled coinů. `zion-dao` existuje jako skeleton. `zion-multichain` má SQLite persistenci HTLC, ZionDex intent engine persistence, cross-chain bridge execution, solver network/discovery a port archivního executoru/aggregatoru.
 
 ---
 
@@ -265,7 +265,7 @@ V31 je aktivní mainnet-track workspace. Tato pravidla zajišťují, že zůstan
 - [ ] Při změnách v `zion-core` ověřte height-aware fork gating (`HeightAwareDeeksha`) unit testy i integrační testy.
 - [ ] Při změnách v `zion-pool` ověřte rate limiting reconnect stormu.
 - [ ] Při změnách v `zion-miner` ověřte `ZION_STREAM3_FORCE_COIN` a disabled-coin chování.
-- [ ] Při změnách v `zion-multichain` ověřte HTLC SQLite persistenci.
+- [ ] Při změnách v `zion-multichain` ověřte HTLC SQLite persistenci a ZionDex intent engine (`cargo test -p zion-multichain`, `cargo clippy -p zion-multichain`).
 
 ### 9.3 Závislosti a verze
 
