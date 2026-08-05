@@ -4,7 +4,7 @@ use std::sync::Arc;
 use zion_core::{BlockCandidate, MiningJob, MiningSolution};
 use zion_cosmic_harmony::{cosmic_harmony_with_height, deeksha_lite, deeksha_lite_fire};
 
-/// Hash function selector for multi-algo support.
+/// Dispatch a single hash for the given algorithm.
 ///
 /// Supports all ZION PoW algorithms plus external merge-mining algorithms
 /// via `zion-auxpow` (pure-Rust) or `zion-native-ffi` (C acceleration).
@@ -15,52 +15,33 @@ use zion_cosmic_harmony::{cosmic_harmony_with_height, deeksha_lite, deeksha_lite
 /// 1. `zion-native-ffi` C implementation (if `native-*` feature enabled)
 /// 2. `zion-auxpow` pure-Rust fallback (always available)
 ///
-/// # Supported algorithms
-///
-/// | Algorithm             | Source         | Coins           |
-/// |-----------------------|----------------|-----------------|
-/// | `deeksha_chv3`        | cosmic-harmony | ZION (unified)  |
-/// | `deeksha_lite_v1`     | cosmic-harmony | ZION            |
-/// | `deeksha_lite_fire`   | cosmic-harmony | ZION (Metal)    |
-/// | `cosmic_harmony_v3`   | cosmic-harmony | ZION (full)     |
-/// | `blake3`              | auxpow/native  | DCR, ALPH       |
-/// | `kheavyhash`          | auxpow/native  | KAS             |
-/// | `autolykos`           | auxpow/native  | ERG             |
-/// | `kawpow`              | auxpow/native  | RVN, CLORE      |
-/// | `ethash` / `etchash`  | auxpow/native  | ETC             |
-/// | `verushash`           | native-ffi     | VRSC            |
-/// | `randomx`             | native-ffi     | XMR, ZEPH       |
-pub fn hash_candidate(candidate: &BlockCandidate, algorithm: &str) -> [u8; 32] {
-    let header_bytes = candidate.header.to_bytes();
-    let nonce = candidate.nonce;
-    let height = candidate.height;
-
+/// `coin` is used only as a final fallback for unknown/placeholder
+/// algorithms via `crate::auxpow::hasher::hash_for_coin`.
+pub fn dispatch_algorithm(
+    coin: zion_cosmic_harmony::ExternalCoin,
+    header: &[u8],
+    nonce: u64,
+    height: u64,
+    extranonce: &[u8],
+    algorithm: &str,
+) -> [u8; 32] {
     match algorithm {
         // ── ZION PoW algorithms ──────────────────────────────────
-        "deeksha_chv3" | "deeksha_lite_v1" => deeksha_lite::deeksha_lite(&header_bytes, nonce),
-        "deeksha_lite_fire" => deeksha_lite_fire::deeksha_lite_fire(&header_bytes, nonce),
-        "cosmic_harmony_v3" | "cosmic_harmony_ekam_deeksha_v2" => {
-            cosmic_harmony_with_height(&header_bytes, nonce, height).data
+        "deeksha_chv3" | "deeksha_lite_v1" => deeksha_lite::deeksha_lite(header, nonce),
+        "deeksha_lite_fire" => deeksha_lite_fire::deeksha_lite_fire(header, nonce),
+        "cosmic_harmony_v3" | "cosmic_harmony_ekam_deeksha_v2" | "ekam_deeksha" => {
+            cosmic_harmony_with_height(header, nonce, height).data
         }
 
         // ── External algorithms: Blake3 (DCR, ALPH) ──────────────
-        "blake3" => {
-            #[cfg(feature = "native-blake3-algo")]
-            {
-                return zion_native_ffi::blake3_algo::mine(&header_bytes, nonce);
-            }
-            #[allow(unreachable_code)]
-            {
-                crate::auxpow::hash_blake3(&header_bytes, 0, nonce)
-            }
-        }
+        "blake3" | "blake3_dcr" => crate::auxpow::hash_blake3(header, 0, nonce),
+        "blake3_alph" => crate::auxpow::hash_blake3_alph(header, extranonce, nonce),
 
         // ── External algorithms: kHeavyHash (KAS) ────────────────
         // For KAS jobs the pool sends the block timestamp in the `height` field.
-        // The pre_pow_hash is in the first 32 bytes of the header (the pool
-        // pads the 32-byte pre_pow_hash to 80 bytes for the MiningHeader).
-        "kheavyhash" | "kheavy" => {
-            let pre_pow_hash = &header_bytes[..32];
+        // The pre_pow_hash is in the first 32 bytes of the header.
+        "kheavyhash" | "kheavy" | "kheavyhash_kas" => {
+            let pre_pow_hash = &header[..header.len().min(32)];
             #[cfg(feature = "native-kheavyhash")]
             {
                 // Native FFI currently lacks a timestamp argument; fall back to
@@ -73,22 +54,31 @@ pub fn hash_candidate(candidate: &BlockCandidate, algorithm: &str) -> [u8; 32] {
         }
 
         // ── External algorithms: Autolykos v2 (ERG) ─────────────
-        "autolykos" => {
+        "autolykos" | "autolykos_erg" => {
             #[cfg(feature = "native-autolykos")]
             {
-                return zion_native_ffi::autolykos::hash(&header_bytes, nonce, height as u32);
+                return zion_native_ffi::autolykos::hash(header, nonce, height as u32);
             }
             #[allow(unreachable_code)]
             {
-                crate::auxpow::hash_autolykos(&header_bytes, nonce, height as u32)
+                crate::auxpow::hash_autolykos(header, nonce, height as u32)
             }
         }
 
-        // ── External algorithms: KawPow (RVN, CLORE) ────────────
-        "kawpow" => {
+        // ── External algorithms: KawPow (RVN, CLORE, EVR, MEWC, QUAI) ─
+        "kawpow"
+        | "kawpow_rvn"
+        | "kawpow_clore"
+        | "kawpow_evr"
+        | "kawpow_mewc"
+        | "kawpow_quai"
+        | "meowpow"
+        | "meowpow_mewc"
+        | "evrprogpow"
+        | "evrprogpow_evr" => {
             let mut h32 = [0u8; 32];
-            let len = header_bytes.len().min(32);
-            h32[..len].copy_from_slice(&header_bytes[..len]);
+            let len = header.len().min(32);
+            h32[..len].copy_from_slice(&header[..len]);
             #[cfg(feature = "native-kawpow")]
             {
                 let (_mix, final_hash) = zion_native_ffi::kawpow::hash(&h32, nonce, height as u32);
@@ -102,49 +92,82 @@ pub fn hash_candidate(candidate: &BlockCandidate, algorithm: &str) -> [u8; 32] {
         }
 
         // ── External algorithms: Ethash/EtcHash (ETC) ───────────
-        "ethash" | "etchash" => {
+        "ethash" | "etchash" | "ethash_etc" => {
             #[cfg(feature = "native-etchash")]
             {
                 zion_native_ffi::etchash::init();
-                return zion_native_ffi::etchash::hash(&header_bytes, nonce, height as u32);
+                return zion_native_ffi::etchash::hash(header, nonce, height as u32);
             }
             #[allow(unreachable_code)]
             {
-                crate::auxpow::hash_ethash(&header_bytes, nonce, height as u32)
+                crate::auxpow::hash_ethash(header, nonce, height as u32)
             }
         }
 
         // ── External algorithms: VerusHash v2.2 (VRSC) ──────────
-        "verushash" => {
+        "verushash" | "verushash_vrsc" | "verus" => {
             #[cfg(feature = "native-verushash")]
             {
                 zion_native_ffi::verushash::init();
-                return zion_native_ffi::verushash::hash(&header_bytes, nonce);
+                return zion_native_ffi::verushash::hash(header, nonce);
             }
             #[allow(unreachable_code)]
             {
-                // No pure-Rust fallback for VerusHash — use Blake3 as placeholder
-                deeksha_lite::deeksha_lite(&header_bytes, nonce)
+                crate::auxpow::hash_verushash(header, nonce)
             }
         }
 
-        // ── External algorithms: RandomX (XMR, ZEPH) ────────────
-        "randomx" => {
+        // ── External algorithms: ZelHash (FLUX) ─────────────────
+        "zelhash" | "zelhash_flux" | "zel" => crate::auxpow::hash_zelhash(header, nonce),
+
+        // ── External algorithms: PearlHash (PRL) ─────────────────
+        "pearl" | "pearlhash" => {
+            let mut h32 = [0u8; 32];
+            let len = header.len().min(32);
+            h32[..len].copy_from_slice(&header[..len]);
+            crate::auxpow::hash_pearl(&h32, nonce)
+        }
+
+        // ── External algorithms: KeryxHash (KRX) ─────────────────
+        "keryx" | "keryxhash" => {
+            let pre_pow_hash = &header[..header.len().min(32)];
+            crate::auxpow::hash_keryxhash(pre_pow_hash, height, nonce, height)
+        }
+
+        // ── External algorithms: RandomX (XMR, ZEPH) / GhostRider (RTM) ─
+        // No pure-Rust fallback — use a fast Blake3 placeholder.
+        "randomx" | "randomx_xmr" | "randomx_zeph" | "ghostrider" | "ghostrider_rtm" => {
             #[cfg(feature = "native-randomx")]
             {
-                zion_native_ffi::randomx::init();
-                return zion_native_ffi::randomx::hash(&header_bytes, nonce);
+                if algorithm == "randomx" || algorithm.starts_with("randomx_") {
+                    zion_native_ffi::randomx::init();
+                    return zion_native_ffi::randomx::hash(header, nonce);
+                }
             }
-            #[allow(unreachable_code)]
-            {
-                // No pure-Rust fallback for RandomX — use Blake3 as placeholder
-                deeksha_lite::deeksha_lite(&header_bytes, nonce)
-            }
+            let mut input = Vec::with_capacity(header.len().saturating_add(8));
+            input.extend_from_slice(header);
+            input.extend_from_slice(&nonce.to_le_bytes());
+            *blake3::hash(&input).as_bytes()
         }
 
-        // ── Fallback: assume cosmic_harmony_v3 for unknown ───────
-        _ => cosmic_harmony_with_height(&header_bytes, nonce, height).data,
+        // ── Fallback: use the generic AuxPoW hasher for unknown coins ─
+        _ => crate::auxpow::hasher::hash_for_coin(coin, header, nonce),
     }
+}
+
+/// Hash function selector for multi-algo support.
+///
+/// Supports all ZION PoW algorithms plus external merge-mining algorithms
+/// via `zion-auxpow` (pure-Rust) or `zion-native-ffi` (C acceleration).
+pub fn hash_candidate(candidate: &BlockCandidate, algorithm: &str) -> [u8; 32] {
+    dispatch_algorithm(
+        zion_cosmic_harmony::ExternalCoin::Bitcoin,
+        &candidate.header.to_bytes(),
+        candidate.nonce,
+        candidate.height,
+        &[],
+        algorithm,
+    )
 }
 
 /// Multi-threaded nonce scan using rayon thread pool.
@@ -223,6 +246,83 @@ fn sequential_scan(
         }
     }
     None
+}
+
+/// Parse the stratum `ntime` hex string into a u64 timestamp/height.
+fn parse_ntime(ntime: &str) -> u64 {
+    let ntime = ntime.trim().trim_start_matches("0x").trim_start_matches("0X");
+    u64::from_str_radix(ntime, 16).unwrap_or(0)
+}
+
+/// Find a valid share for an AuxPoW `Job` using the CPU parallel scanner.
+///
+/// This is the CPU fallback used by `MinerRuntime` when no GPU backend is
+/// configured or available.  It dispatches to the correct hashing algorithm
+/// via `dispatch_algorithm`.
+pub fn find_auxpow_share(job: &crate::auxpow::Job, threads: usize, nonce_count: u64) -> Option<crate::auxpow::Share> {
+    if nonce_count == 0 {
+        return None;
+    }
+    let threads = threads.max(1);
+    let height = parse_ntime(&job.ntime);
+    let coin = job.coin;
+    let algorithm = coin.algorithm();
+    let extranonce = job.extranonce.clone();
+    let header = job.header.clone();
+    let target = job.target;
+    let job_id = job.job_id.clone();
+    let extranonce2 = job.extranonce2.clone();
+    let ntime = job.ntime.clone();
+
+    if threads == 1 || nonce_count < threads as u64 {
+        for offset in 0..nonce_count {
+            let nonce = offset;
+            let hash = dispatch_algorithm(coin, &header, nonce, height, &extranonce, algorithm);
+            if crate::auxpow::hasher::meets_target(&hash, &target) {
+                return Some(crate::auxpow::Share {
+                    job_id,
+                    coin,
+                    nonce,
+                    hash,
+                    extranonce2,
+                    ntime,
+                });
+            }
+        }
+        return None;
+    }
+
+    let chunk_size = nonce_count / threads as u64;
+    let cancelled = Arc::new(AtomicBool::new(false));
+
+    (0..threads).into_par_iter().find_map_any(|thread_idx| {
+        let start = thread_idx as u64 * chunk_size;
+        let count = if thread_idx == threads - 1 {
+            nonce_count - start
+        } else {
+            chunk_size
+        };
+
+        for offset in 0..count {
+            if offset % 4096 == 0 && cancelled.load(Ordering::Relaxed) {
+                return None;
+            }
+            let nonce = start.wrapping_add(offset);
+            let hash = dispatch_algorithm(coin, &header, nonce, height, &extranonce, algorithm);
+            if crate::auxpow::hasher::meets_target(&hash, &target) {
+                cancelled.store(true, Ordering::Relaxed);
+                return Some(crate::auxpow::Share {
+                    job_id: job_id.clone(),
+                    coin,
+                    nonce,
+                    hash,
+                    extranonce2: extranonce2.clone(),
+                    ntime: ntime.clone(),
+                });
+            }
+        }
+        None
+    })
 }
 
 /// Detect optimal thread count from env or CPU cores.
@@ -324,5 +424,21 @@ mod tests {
             hash_ekam, hash_lite,
             "DeekshaLite must produce different hashes than ekam_v3"
         );
+    }
+
+    #[test]
+    fn find_auxpow_share_accepts_max_target() {
+        let job = crate::auxpow::Job {
+            job_id: "test".to_string(),
+            coin: zion_cosmic_harmony::ExternalCoin::Kaspa,
+            header: vec![0xAA; 32],
+            target: [0xFF; 32],
+            extranonce: vec![0x01],
+            extranonce2: "00".to_string(),
+            ntime: "00000000".to_string(),
+        };
+        let share = find_auxpow_share(&job, 2, 1_000).expect("should find share with max target");
+        assert_eq!(share.coin, job.coin);
+        assert_eq!(share.job_id, job.job_id);
     }
 }

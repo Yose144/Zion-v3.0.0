@@ -7,9 +7,9 @@ license.workspace = true
 description = "ZION L1 miner runtime with merged AuxPoW and Ekam Deeksha PoW."
 
 [features]
-default = []
 # Enable external AuxPoW (Stream 2 GPU + Stream 3 CPU) merged mining.
 # Disable for ZION-only mining or when external stratum pools are unavailable.
+default = ["auxpow"]
 auxpow = []
 # Native algorithm acceleration (optional, requires C toolchain).
 # Enables RandomX, Ghostrider, VerusHash, etc. via zion-native-ffi.
