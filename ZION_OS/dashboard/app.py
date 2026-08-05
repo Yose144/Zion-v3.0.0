@@ -3004,7 +3004,7 @@ def build_status() -> dict:
         _STATUS_CACHE_TIME = now
     return result
 
-def _compute_v31_banner_metrics(pool_status: dict, v31_multichain_status: dict, v31_node_status: dict = None) -> dict:
+def _compute_v31_banner_metrics(pool_status: dict, v31_multichain_status: dict, v31_node_status: dict = None, v31_dao_status: dict = None, v31_oasis_status: dict = None) -> dict:
     """Compute the V31 Mainnet Alpha banner KPIs for the full dashboard.
 
     Uses data already collected in _build_status_edge_primary plus a quick DAO
@@ -3040,17 +3040,21 @@ def _compute_v31_banner_metrics(pool_status: dict, v31_multichain_status: dict, 
     multichain_transfers_total = v31_multichain_status.get("transfers_total", 0) or 0
     multichain_transfers_pending = v31_multichain_status.get("transfers_pending", 0) or 0
 
-    # DAO proposal counts from the V31 DAO service (port 8450)
+    # DAO proposal counts from the V31 DAO service (port 8456)
     dao_total = 0
     dao_active = 0
-    try:
-        with urllib.request.urlopen("http://127.0.0.1:8450/api/dao/stats", timeout=1.5) as r:
-            dao_st = json.loads(r.read().decode("utf-8", errors="ignore"))
-            if isinstance(dao_st, dict) and "_error" not in dao_st:
-                dao_total = dao_st.get("total_proposals") or dao_st.get("proposals_total") or dao_st.get("proposals", 0)
-                dao_active = dao_st.get("active_proposals") or dao_st.get("proposals_active") or dao_st.get("open_proposals", 0)
-    except Exception:
-        pass
+    if v31_dao_status:
+        dao_total = v31_dao_status.get("proposals_total", 0)
+        dao_active = v31_dao_status.get("proposals_active", 0)
+    if not dao_total and not dao_active:
+        try:
+            with urllib.request.urlopen("http://127.0.0.1:8456/api/dao/proposals", timeout=1.5) as r:
+                dao_st = json.loads(r.read().decode("utf-8", errors="ignore"))
+                if isinstance(dao_st, dict) and "_error" not in dao_st:
+                    dao_total = dao_st.get("total") or dao_st.get("proposals_total") or dao_st.get("proposals", 0)
+                    dao_active = dao_st.get("active") or dao_st.get("active_proposals") or dao_st.get("proposals_active") or dao_st.get("open_proposals", 0)
+        except Exception:
+            pass
 
     vns = v31_node_status or {}
     return {
@@ -3284,24 +3288,24 @@ def _build_status_edge_primary() -> dict:
         "jobs_broadcast": v31_pool_jobs,
     }
     # ── V31 Miner (PROD) — systemd + hashrate from journald ────────────────
-    v31_miner_sys = _systemctl_show("zion-edge-miner.service")
+    v31_miner_sys = _systemctl_show("zion-v31-miner.service")
     v31_miner_active = v31_miner_sys.get("ActiveState", "unknown")
     v31_miner_hashrate = None
     v31_miner_shares = 0
     v31_miner_accepted = 0
     try:
         r = subprocess.run(
-            ["journalctl", "-u", "zion-edge-miner.service", "--no-pager", "-n", "100", "--output=cat"],
+            ["journalctl", "-u", "zion-v31-miner.service", "--no-pager", "-n", "100", "--output=cat"],
             capture_output=True, text=True, timeout=5
         )
         for line in r.stdout.strip().split("\n"):
-            if "hash_rate=" in line:
-                m = re.search(r"hash_rate=(\d+)", line)
+            if "hashrate=" in line:
+                m = re.search(r"hashrate=(\d+)", line)
                 if m:
                     v31_miner_hashrate = int(m.group(1))
             if "share submitted" in line:
                 v31_miner_shares += 1
-            if "share accepted by pool" in line:
+            if "share accepted" in line:
                 v31_miner_accepted += 1
     except Exception:
         pass
@@ -3311,7 +3315,7 @@ def _build_status_edge_primary() -> dict:
         "hashrate": v31_miner_hashrate,
         "shares_submitted": v31_miner_shares,
         "shares_accepted": v31_miner_accepted,
-        "worker": "edge-cpu-miner",
+        "worker": "v31-miner",
     }
     # ── V31 Multichain (PROD) — systemd + /health ──────────────────────────
     v31_mc_sys = _systemctl_show("zion-v31-multichain.service")
@@ -3329,6 +3333,46 @@ def _build_status_edge_primary() -> dict:
         "transfers_total": v31_mc_health.get("transfers_total", 0),
         "transfers_pending": v31_mc_health.get("transfers_pending", 0),
         "version": v31_mc_health.get("version", "—"),
+    }
+    # ── V31 DAO (PROD) — systemd + /health ─────────────────────────────────
+    v31_dao_sys = _systemctl_show("zion-v31-dao.service")
+    v31_dao_active = v31_dao_sys.get("ActiveState", "unknown")
+    v31_dao_health = {}
+    v31_dao_total = 0
+    v31_dao_active_proposals = 0
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8456/api/dao/health", timeout=2) as resp:
+            v31_dao_health = json.loads(resp.read().decode())
+    except Exception:
+        pass
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8456/api/dao/proposals", timeout=2) as resp:
+            proposals = json.loads(resp.read().decode())
+            if isinstance(proposals, dict):
+                v31_dao_total = proposals.get("total", 0) or proposals.get("proposals_total", 0)
+                v31_dao_active_proposals = proposals.get("active", 0) or proposals.get("active_proposals", 0)
+    except Exception:
+        pass
+    v31_dao_status = {
+        "running": v31_dao_active == "active",
+        "systemd_active": v31_dao_active,
+        "ok": v31_dao_health.get("success", False) or v31_dao_health.get("ok", False),
+        "proposals_total": v31_dao_total,
+        "proposals_active": v31_dao_active_proposals,
+    }
+    # ── V31 OASIS (PROD) — systemd + /health ───────────────────────────────
+    v31_oasis_sys = _systemctl_show("zion-v31-oasis.service")
+    v31_oasis_active = v31_oasis_sys.get("ActiveState", "unknown")
+    v31_oasis_health = {}
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8094/health", timeout=2) as resp:
+            v31_oasis_health = json.loads(resp.read().decode())
+    except Exception:
+        pass
+    v31_oasis_status = {
+        "running": v31_oasis_active == "active",
+        "systemd_active": v31_oasis_active,
+        "ok": v31_oasis_health.get("success", False) or v31_oasis_health.get("ok", False),
     }
     # ── Local Backup Node — from beacon cache ───────────────────────────────
     # The operator's local machine pushes status via /api/backup-beacon every
@@ -3617,7 +3661,7 @@ def _build_status_edge_primary() -> dict:
     max_height = max(running_heights) if running_heights else 0
     all_in_sync = len(running_heights) >= 2 and all(h == running_heights[0] for h in running_heights)
 
-    v31_banner = _compute_v31_banner_metrics(pool_status, v31_multichain_status, v31_node_status)
+    v31_banner = _compute_v31_banner_metrics(pool_status, v31_multichain_status, v31_node_status, v31_dao_status, v31_oasis_status)
 
     elapsed = time.time() - t0
     return {
@@ -3632,6 +3676,8 @@ def _build_status_edge_primary() -> dict:
         "v31_pool": v31_pool_status,
         "v31_miner": v31_miner_status,
         "v31_multichain": v31_multichain_status,
+        "v31_dao": v31_dao_status,
+        "v31_oasis": v31_oasis_status,
         "local_backup": local_backup_status,
         "all_nodes": all_nodes,
         "p2p_peers": p2p_peer_list,
@@ -11096,7 +11142,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/db/inspect":
             path = params.get("path", [""])[0]
             self._json(inspect_database(path))
-        elif route.startswith("/api/logs/"):
+        elif route.startswith("/api/logs/") and not route.startswith("/api/v31/"):
             service = route.split("/")[-1]
             n_lines = int(params.get("n", ["200"])[0])
             filename = SERVICE_LOG_MAP.get(service, f"{service}.log")
@@ -11401,6 +11447,31 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         self._json({"lines": tail, "exists": True, "total_lines": len(all_lines)})
                     except Exception as e:
                         self._json({"error": str(e), "lines": ""})
+        # ── V31 service journal logs (systemd) ────────────────────────────────
+        elif route == "/api/v31/logs":
+            svc = params.get("svc", ["node"])[0].strip().lower()
+            n_lines = min(int(params.get("lines", ["50"])[0]), 500)
+            v31_unit_map = {
+                "node": "zion-v31-node",
+                "pool": "zion-v31-pool",
+                "miner": "zion-v31-miner",
+                "multichain": "zion-v31-multichain",
+                "dao": "zion-v31-dao",
+                "oasis": "zion-v31-oasis",
+            }
+            unit = v31_unit_map.get(svc)
+            if not unit:
+                self._json({"error": "unknown v31 service", "lines": ""})
+            else:
+                try:
+                    r = subprocess.run(
+                        ["journalctl", "-u", unit, "--no-pager", "-n", str(n_lines), "--output=cat"],
+                        capture_output=True, text=True, timeout=10
+                    )
+                    lines = strip_ansi(r.stdout.strip()).split("\n")
+                    self._json({"lines": lines, "unit": unit, "exists": True})
+                except Exception as e:
+                    self._json({"error": str(e), "lines": ""})
         # ── Hiran AI endpoints ────────────────────────────────────────────────
         elif route == "/api/hiran/health":
             hiran_url = "http://127.0.0.1:8002"

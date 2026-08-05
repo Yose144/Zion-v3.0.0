@@ -553,6 +553,8 @@ function renderV31Production(st){
   const node = st.v31_node || st.edge_node || {};
   const miner = st.v31_miner || {};
   const mc = st.v31_multichain || {};
+  const dao = st.v31_dao || {};
+  const oasis = st.v31_oasis || {};
   const el = id => document.getElementById(id);
 
   // KPI cards
@@ -587,8 +589,8 @@ function renderV31Production(st){
   }
 
   if(el('v31-prod-dao')){
-    const active = banner?.dao_proposals_active ?? 0;
-    const total = banner?.dao_proposals_total ?? 0;
+    const active = banner?.dao_proposals_active ?? dao?.proposals_active ?? 0;
+    const total = banner?.dao_proposals_total ?? dao?.proposals_total ?? 0;
     el('v31-prod-dao').textContent = `${Number(active).toLocaleString()} / ${Number(total).toLocaleString()}`;
   }
 
@@ -600,7 +602,10 @@ function renderV31Production(st){
 
   // DAO status (may be in v31_node or banner)
   const daoRunning = (st.dao && st.dao.ok) || (st.v31_dao && st.v31_dao.ok) || (banner && banner.dao_proposals_total != null);
-  if(el('v31-stat-dao')) el('v31-stat-dao').innerHTML = `<span class="${daoRunning ? 'text-emerald-400' : 'text-gray-500'}">${daoRunning ? 'OK' : '—'}</span> <span class="text-gray-500">${banner?.dao_proposals_total ?? 0}</span>`;
+  if(el('v31-stat-dao')) el('v31-stat-dao').innerHTML = `<span class="${daoRunning ? 'text-emerald-400' : 'text-gray-500'}">${daoRunning ? 'OK' : '—'}</span> <span class="text-gray-500">${banner?.dao_proposals_total ?? dao?.proposals_total ?? 0}</span>`;
+
+  // OASIS status
+  if(el('v31-stat-oasis')) el('v31-stat-oasis').innerHTML = `<span class="${oasis?.running && oasis?.ok ? 'text-emerald-400' : 'text-gray-500'}">${oasis?.running && oasis?.ok ? 'OK' : '—'}</span> <span class="text-gray-500">8094</span>`;
 
   // Grafana link visibility
   if(el('v31-grafana-link')) el('v31-grafana-link').classList.remove('hidden');

@@ -141,7 +141,7 @@ def _all_service_names() -> list:
     # Service *names* are logical; the actual systemd unit for each is looked
     # up in services.json via _service_unit().  This keeps the canonical set
     # small and lets local Edge vs. PC manifests differ.
-    return ["node", "pool", "miner", "multichain", "dao"]
+    return ["node", "pool", "miner", "multichain", "dao", "oasis"]
 
 
 V3_STATE_FILE = REPO_ROOT / "data" / "state"
@@ -634,21 +634,9 @@ def status():
 
 
 def logs(svc: str = "node", lines: int = 50):
-    """Read V31 logs from journald (node) or log file (pool)."""
-    if svc == "node":
-        return {"ok": True, "svc": svc, "lines": _journalctl_logs(lines)}
-    # Pool logs from file
-    log_name = f"v31-{svc}.log"
-    log_path = LOG_DIR / log_name
-    if not log_path.exists():
-        return {"ok": False, "error": f"Log not found: {log_path}"}
-    try:
-        from collections import deque
-        with open(log_path, "r", encoding="utf-8", errors="replace") as f:
-            tail = [l.rstrip() for l in deque(f, maxlen=min(lines, 500))]
-        return {"ok": True, "svc": svc, "lines": [_strip_ansi(l) for l in tail]}
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
+    """Read V31 logs from journald for all V31 systemd services."""
+    unit = _service_unit(svc)
+    return {"ok": True, "svc": svc, "lines": _journalctl_logs(lines, unit)}
 
 
 def tail(svc: str = "node", lines: int = 50):

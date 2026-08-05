@@ -11,20 +11,20 @@ export const SITE_LAUNCH_DATE = '2026-12-31T00:00:00Z';
 export const SITE_LAUNCH_DATE_DISPLAY = '31 December 2026 (New Year\'s Eve)';
 export const SITE_NETWORK_LABEL = `${SITE_ENVIRONMENT_LABEL} · ${SITE_RELEASE_LABEL}`;
 
-// ── Infrastructure (Edge server topology, 2026-07-09) ──────────────────────
-// Edge server — cloud VPS, public-facing node + pool stratum
+// ── Infrastructure (V31 Mainnet Alpha, 2026-08-05) ─────────────────────────
+// Edge server — cloud VPS, public-facing V31 node + pool stratum
 export const SITE_PRIMARY_HOST = process.env.NEXT_PUBLIC_ZION_RPC_HOST || 'rpc.zionterranova.com';
-export const SITE_PRIMARY_RPC_PORT = 8443;
+export const SITE_PRIMARY_RPC_PORT = 9445;
 export const SITE_PRIMARY_RPC_URL = `${SITE_PRIMARY_HOST}:${SITE_PRIMARY_RPC_PORT}`;
-// Pool metrics API — runs locally on Edge (port 8455).
-export const SITE_PRIMARY_POOL_API_URL = process.env.ZION_POOL_API_URL || `http://127.0.0.1:8455`;
-export const SITE_PRIMARY_DAO_API_URL = process.env.ZION_DAO_API_URL || `http://127.0.0.1:8450`;
+// Pool metrics API — runs locally on Edge (port 8080).
+export const SITE_PRIMARY_POOL_API_URL = process.env.ZION_POOL_API_URL || `http://127.0.0.1:8080`;
+export const SITE_PRIMARY_DAO_API_URL = process.env.ZION_DAO_API_URL || `http://127.0.0.1:8456`;
 
 // Edge pool stratum port is 8444 (ShareRelay architecture)
 export const SITE_POOL_PRIMARY = `${SITE_PRIMARY_HOST}:8444`;
 
 // Network topology descriptor (operational details are injected via environment variables only)
-export const SITE_NETWORK_TOPOLOGY = '2-node P2P mesh (Edge 1 + Edge 2; Local Backup offline)';
+export const SITE_NETWORK_TOPOLOGY = 'V31 single-node Mainnet Alpha (V3 archived to archive/V3/)';
 export const EKAM_GOLDEN_EGG_IMAGE = 'https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/themes/2147915250/settings_images/8802b3-c826-05c7-bcd2-12b608d18d1_ABOUT-ONENESS.webp';
 export const EKAM_BANNER_IMAGE = 'https://onenessoceania.org/wp-content/uploads/2024/04/Ekam-Banner.jpg';
 export const EKAM_FOUNDERS_BANNER_IMAGE = 'https://onenessoceania.org/wp-content/uploads/2024/03/Sri-Amma-Bhagavan-1920x600-1.jpg';

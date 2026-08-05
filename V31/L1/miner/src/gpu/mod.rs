@@ -8381,7 +8381,7 @@ pub fn query_gpu_details() -> Vec<GpuInfo> {
 
 #[cfg(not(feature = "gpu-opencl"))]
 pub fn query_gpu_details() -> Vec<GpuInfo> {
-    let out = Vec::new();
+    let mut out = Vec::new();
     #[cfg(feature = "gpu-cuda")]
     {
         out.extend(query_cuda_details());
