@@ -17,6 +17,8 @@
 - `zion-multichain` `/health` 200 OK
 - 2079 testů pass, `cargo clippy --workspace` čisté
 - Fáze C hotova (DAO, ZionDex, HTLC, profit oracle, bridge consensus, CLI, dashboard)
+- Fáze B probíhá — kód GPU/triple-stream/profit metrics portován, ale Go/No-Go testy na reálném GPU/rigu zatím neproběhly (běží subagenty)
+- Dashboard UI/UX update do V31 probíhá (běží subagent)
 |- GPU backend port (CUDA/OpenCL/Metal/native) kompiluje v `zion-miner`
 |- DAO governance moduly portovány (treasury, humanitarian, db, l1_scanner, executor, consent, co_admin, cross_layer, metrics, prizes)
 
@@ -128,12 +130,12 @@
 
 | # | Úkol | Soubor / crate | Acceptance | Poznámka | Status |
 |---|------|----------------|------------|----------|--------|
-| B1 | Přidat GPU deps do miner Cargo.toml | `V31/L1/miner/Cargo.toml` | `ocl`, `cudarc`, `metal` pod feature flags `gpu-opencl`, `gpu-cuda`, `gpu-metal`; build pass | GPU csrc soubory již existují. | DONE |
-| B2 | Nahradit stub `gpu_miner.rs` | `V31/L1/miner/src/auxpow/gpu_miner.rs` | ZION Deeksha běží na OpenCL/CUDA/Metal, CPU/GPU match testy pass | Port z `archive/V3/L1/miner/src/gpu_backend.rs` + `AuXpow/`. | DONE |
-| B3 | Přepsat `zion-miner.rs` na triple-stream | `V31/L1/miner/src/bin/zion-miner.rs` | Stream 1 ZION, Stream 2 GPU AuxPoW, Stream 3 CPU AuxPoW souběžně; TUI zobrazuje per-stream hashrate/shares | Využít `MinerConfig` a `MinerRuntime` z `runtime.rs`/`stream.rs`. | DONE |
-| B4 | Připojit `parallel.rs` | `V31/L1/miner/src/parallel.rs` | Feature `zion_auxpow` (nebo jiný crate) není cyklická závislost; triple stream test pass | Dle `V31/STATUS.md` 1. otevřená položka. | DONE |
-| B5 | Aktivovat profit switching | `V31/L1/miner/src/autonomous.rs`, `stream_profit.rs` | Miner volá `select_stream2`/`select_stream3` každých 5 min, přepíná při 15% hysteresis | Live data zatím mohou být fallback / stub. | DONE |
-| B6 | Přidat miner metrics / TUI | `V31/L1/miner/src/` | Prometheus endpoint nebo TUI log zobrazuje hashrate, accepted/rejected shares, active coin | TUI z V3 lze portovat postupně. | DONE |
+| B1 | Přidat GPU deps do miner Cargo.toml | `V31/L1/miner/Cargo.toml` | `ocl`, `cudarc`, `metal` pod feature flags `gpu-opencl`, `gpu-cuda`, `gpu-metal`; build pass | GPU csrc soubory již existují. | CODE DONE |
+| B2 | Nahradit stub `gpu_miner.rs` | `V31/L1/miner/src/auxpow/gpu_miner.rs` | ZION Deeksha běží na OpenCL/CUDA/Metal, CPU/GPU match testy pass | Port z `archive/V3/L1/miner/src/gpu_backend.rs` + `AuXpow/`. | CODE DONE |
+| B3 | Přepsat `zion-miner.rs` na triple-stream | `V31/L1/miner/src/bin/zion-miner.rs` | Stream 1 ZION, Stream 2 GPU AuxPoW, Stream 3 CPU AuxPoW souběžně; TUI zobrazuje per-stream hashrate/shares | Využít `MinerConfig` a `MinerRuntime` z `runtime.rs`/`stream.rs`. | CODE DONE |
+| B4 | Připojit `parallel.rs` | `V31/L1/miner/src/parallel.rs` | Feature `zion_auxpow` (nebo jiný crate) není cyklická závislost; triple stream test pass | Dle `V31/STATUS.md` 1. otevřená položka. | CODE DONE |
+| B5 | Aktivovat profit switching | `V31/L1/miner/src/autonomous.rs`, `stream_profit.rs` | Miner volá `select_stream2`/`select_stream3` každých 5 min, přepíná při 15% hysteresis | Live data zatím mohou být fallback / stub. | CODE DONE |
+| B6 | Přidat miner metrics / TUI | `V31/L1/miner/src/` | Prometheus endpoint nebo TUI log zobrazuje hashrate, accepted/rejected shares, active coin | TUI z V3 lze portovat postupně. | CODE DONE |
 
 **Fáze B Go/No-Go:**
 - [ ] `zion-miner --features gpu-opencl` těží ZION na GPU s >90% accept rate.
