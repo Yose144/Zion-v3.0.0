@@ -481,54 +481,27 @@ export default function NewsFeed() {
   const hasMore = homepageArticles.length > HOMEPAGE_LIMIT;
 
   return (
-    <section className="relative py-10 px-4 overflow-hidden">
-      {/* Subtle background gradient */}
-      <div className="absolute inset-0 bg-linear-to-b from-transparent via-zion-gold/[0.02] to-transparent pointer-events-none" />
-      {/* Floating particles */}
-      <div className="absolute inset-0 pointer-events-none">
-        {Array.from({ length: 12 }).map((_, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full bg-white/5 animate-pulse"
-            style={{
-              width: `${2 + (i % 4)}px`,
-              height: `${2 + (i % 4)}px`,
-              top: `${(i * 17.3) % 100}%`,
-              left: `${(i * 29.7) % 100}%`,
-              animationDelay: `${i * 0.4}s`,
-              animationDuration: `${3 + (i % 4)}s`,
-            }}
-          />
-        ))}
-      </div>
-
-      <div className="zion-container relative">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="mb-6"
-        >
-          <div className="flex items-center gap-3 mb-3">
-            <Newspaper className="w-5 h-5 text-zion-gold" />
-            <span className="text-sm uppercase tracking-[0.4em] text-gray-400">
+    <section className="relative py-8 px-4">
+      <div className="zion-container">
+        <div className="mb-4">
+          <div className="flex items-center gap-3 mb-2">
+            <Newspaper className="w-4 h-4 text-zion-gold" />
+            <span className="text-xs uppercase tracking-[0.3em] text-gray-400">
               {NewsFeedCopy.newsUpdates[cs ? 'cs' : 'en']}
             </span>
             <span className="ml-auto text-[10px] uppercase tracking-wider text-zion-gold/60 bg-zion-gold/10 border border-zion-gold/20 px-2 py-0.5 rounded-full">
               {cs ? `${NEWS_ARTICLES.length} článků` : `${NEWS_ARTICLES.length} articles`}
             </span>
           </div>
-          <h2 className="text-4xl md:text-5xl font-bold text-white">
+          <h2 className="text-2xl md:text-3xl font-bold text-white">
             <span className="text-gradient">
               {NewsFeedCopy.news[cs ? 'cs' : 'en']}
             </span>
           </h2>
-          <p className="text-lg text-gray-300 mt-3 max-w-2xl">
+          <p className="text-sm text-gray-400 mt-1 max-w-2xl">
             {NewsFeedCopy.latestUpdatesFromTheZionEcosys[cs ? 'cs' : 'en']}
           </p>
-        </motion.div>
+        </div>
 
         {/* Articles grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -546,15 +519,9 @@ export default function NewsFeed() {
                   href={article.href}
                   target={article.external ? '_blank' : undefined}
                   rel={article.external ? 'noopener noreferrer' : undefined}
-                  className={`zion-rainbow-sub group relative block h-full overflow-hidden`}
+                  className="zion-rainbow-sub group relative block h-full overflow-hidden p-4"
                   style={{ '--rc': '14, 165, 233' } as React.CSSProperties}
                 >
-                  {/* Gradient accent top */}
-                  <div className={`absolute top-0 left-0 right-0 h-1.5 bg-linear-to-r ${accent.from} ${accent.to}`} />
-                  {/* Background glow on hover */}
-                  <div className={`absolute -inset-px rounded-3xl bg-linear-to-br ${accent.from} ${accent.to} opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl pointer-events-none`} />
-
-                  <div className="relative p-6">
                     {/* Meta row */}
                     <div className="flex items-center gap-3 mb-3">
                       <span className={`text-[10px] tracking-wider uppercase px-2 py-0.5 rounded-full border border-white/10 bg-white/5 ${article.tagColor}`}>
@@ -588,7 +555,6 @@ export default function NewsFeed() {
                       <span>{NewsFeedCopy.readMore[cs ? 'cs' : 'en']}</span>
                       <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                     </div>
-                  </div>
                 </Link>
               </motion.div>
             );

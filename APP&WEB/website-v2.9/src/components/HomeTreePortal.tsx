@@ -68,17 +68,17 @@ export default function HomeTreePortal() {
   const [hovered, setHovered] = useState<string | null>(null);
 
   return (
-    <section id="tree-of-life" className="px-4 py-10 sm:py-12 scroll-mt-28">
-      <div className="zion-container space-y-6">
-        {/* Header — unified with StoryTriptych style */}
-        <div className="text-center space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.36em] text-emerald-400">
+    <section id="tree-of-life" className="px-4 py-8 scroll-mt-28">
+      <div className="zion-container space-y-4">
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-400">
             {HomeTreePortalCopy.kabbalah10Sephirot22Paths[cs ? 'cs' : 'en']}
           </p>
-          <h2 className="text-3xl font-bold leading-tight text-white sm:text-4xl">
+          <h2 className="text-2xl font-bold leading-tight text-white sm:text-3xl">
             {HomeTreePortalCopy.treeOfLife[cs ? 'cs' : 'en']}
           </h2>
-          <p className="mx-auto max-w-2xl text-sm leading-relaxed text-gray-400 sm:text-base">
+          <p className="mx-auto max-w-2xl text-sm leading-relaxed text-gray-400">
             {HomeTreePortalCopy.tenSpheresThroughWhichLightFlo[cs ? 'cs' : 'en']}
           </p>
         </div>
@@ -90,10 +90,10 @@ export default function HomeTreePortal() {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <div className="zion-rainbow-card relative overflow-hidden p-6 md:p-8" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
-              <div className="grid gap-6 lg:grid-cols-[1fr_1fr] lg:items-center">
+            <div className="zion-rainbow-card relative overflow-hidden p-4" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
+              <div className="grid gap-4 lg:grid-cols-[1fr_1fr] lg:items-center">
                 {/* Left: text */}
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs uppercase tracking-[0.3em] text-emerald-300">
                     <Sparkles className="h-4 w-4" />
                     {HomeTreePortalCopy.quickPreview[cs ? 'cs' : 'en']}
