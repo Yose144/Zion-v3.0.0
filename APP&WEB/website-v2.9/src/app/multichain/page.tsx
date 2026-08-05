@@ -152,8 +152,8 @@ export default function MultichainPage() {
   const [pendingHtlcs, setPendingHtlcs] = useState<HtlcRecord[]>([]);
   const fetchHtlc = useCallback(async () => {
     try {
-      const [addr, htlcs] = await Promise.all([getEscrowAddress(), getPendingHtlcs()]);
-      setEscrowAddr(addr);
+      const [addrResp, htlcs] = await Promise.all([getEscrowAddress(), getPendingHtlcs()]);
+      setEscrowAddr(addrResp?.escrow_address ?? '');
       setPendingHtlcs(htlcs);
     } catch { /* ignore */ }
   }, []);
@@ -419,11 +419,11 @@ export default function MultichainPage() {
                   </thead>
                   <tbody>
                     {pendingHtlcs.slice(0, 10).map((h) => (
-                      <tr key={h.hashlock} className="border-b border-white/5">
-                        <td className="py-2 px-2 font-mono text-zion-gold text-[10px]">{h.hashlock.slice(0, 16)}…</td>
-                        <td className="py-2 px-2 text-right text-white">{h.amount} ZION</td>
+                      <tr key={h.hash_hex} className="border-b border-white/5">
+                        <td className="py-2 px-2 font-mono text-zion-gold text-[10px]">{h.hash_hex.slice(0, 16)}…</td>
+                        <td className="py-2 px-2 text-right text-white">{h.amount_flowers} ZION</td>
                         <td className="py-2 px-2 text-gray-300">{h.target_chain}</td>
-                        <td className="py-2 px-2 text-gray-400">{h.timelock}</td>
+                        <td className="py-2 px-2 text-gray-400">{h.timeout_mins}m</td>
                       </tr>
                     ))}
                   </tbody>
