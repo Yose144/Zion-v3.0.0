@@ -75,7 +75,7 @@ export default function StargateLogo({ className = '' }: { className?: string })
           {/* Center logo — Z.gif s grayscale + contrast filtrem (dle originálu) */}
           <a
             className="center-logo"
-            href="/l4-oasis"
+            href="https://oasis.zionterranova.com"
             aria-label="Zion Terra Nova — Enter to Oasis"
           >
             <picture>
