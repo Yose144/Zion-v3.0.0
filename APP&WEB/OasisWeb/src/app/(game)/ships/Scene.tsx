@@ -6,7 +6,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import { getZonePosition } from '@/lib/zones';
-import { SHIP_MODELS, useGameStore, getLevel, type ShipModelId } from '@/store/gameStore';
+import { SHIP_MODELS, HIRAN_KEYS, useGameStore, getLevel, type ShipModelId } from '@/store/gameStore';
 import { useToastStore } from '@/store/toastStore';
 import { ProceduralShip } from '@/components/StarFighterModels';
 
@@ -30,7 +30,13 @@ export default function ShipsScene() {
   const [selected, setSelected] = useState<ShipModelId | null>(null);
   const unlockedShips = useGameStore(s => s.unlockedShips);
   const xp = useGameStore(s => s.xp);
+  const activeModel = useGameStore(s => s.shipLoadout.model);
+  const collectedHiranKeys = useGameStore(s => s.collectedHiranKeys);
   const level = getLevel(xp);
+
+  // Key #1: B-Wing quantum core — only visible when B-Wing is the active ship
+  const bwingKeyFound = collectedHiranKeys.includes('bwing-quantum-core');
+  const bwingKeyVisible = activeModel === 'bwing' && !bwingKeyFound;
 
   // Arrange ships in a circle
   const positions = useMemo(() => {
@@ -93,6 +99,94 @@ export default function ShipsScene() {
         >
           <div className="rounded-2xl border border-white/10 bg-black/80 p-4 backdrop-blur-xl">
             <ShipDetail shipId={selected} onClose={() => setSelected(null)} />
+          </div>
+        </Html>
+      )}
+
+      {/* ── Hiranyagarbha Key #1: B-Wing Quantum Core ── */}
+      {/* Only visible when B-Wing is the active ship and key not yet found */}
+      {bwingKeyVisible && (() => {
+        const bwingIdx = SHIP_MODELS.findIndex((s) => s.id === 'bwing');
+        const bwingPos = positions[bwingIdx] ?? new THREE.Vector3();
+        return <QuantumCoreKey position={bwingPos} />;
+      })()}
+
+      {/* Show found key indicator on B-Wing pedestal */}
+      {bwingKeyFound && (() => {
+        const bwingIdx = SHIP_MODELS.findIndex((s) => s.id === 'bwing');
+        const bwingPos = positions[bwingIdx] ?? new THREE.Vector3();
+        return (
+          <mesh position={[bwingPos.x, bwingPos.y + 0.45, bwingPos.z]}>
+            <octahedronGeometry args={[0.04, 0]} />
+            <meshStandardMaterial color="#fbbf24" emissive="#fbbf24" emissiveIntensity={0.8} toneMapped={false} />
+          </mesh>
+        );
+      })()}
+    </group>
+  );
+}
+
+// ── Quantum Core Key: hidden easter egg in B-Wing ──
+function QuantumCoreKey({ position }: { position: THREE.Vector3 }) {
+  const coreRef = useRef<THREE.Mesh>(null);
+  const [discovered, setDiscovered] = useState(false);
+  const [showHint, setShowHint] = useState(false);
+  const collectHiranKey = useGameStore(s => s.collectHiranKey);
+  const addToast = useToastStore(s => s.add);
+  const keyDef = HIRAN_KEYS[0];
+
+  useFrame((state, delta) => {
+    if (coreRef.current) {
+      coreRef.current.rotation.y += delta * 2;
+      coreRef.current.rotation.x += delta * 0.8;
+      const mat = coreRef.current.material as THREE.MeshStandardMaterial;
+      mat.emissiveIntensity = 0.5 + Math.sin(state.clock.elapsedTime * 3) * 0.3;
+    }
+  });
+
+  if (discovered) return null;
+
+  return (
+    <group position={[position.x, position.y + 0.35, position.z]}>
+      {/* Pulsing quantum core — clickable */}
+      <mesh
+        ref={coreRef}
+        onClick={(e) => {
+          e.stopPropagation();
+          const ok = collectHiranKey(keyDef.id);
+          if (ok) {
+            setDiscovered(true);
+            addToast(`🔑 ${keyDef.name} — Key #1 of 108 found! +${keyDef.reward} XP`, 'success', 6000);
+          }
+        }}
+        onPointerOver={() => { document.body.style.cursor = 'pointer'; setShowHint(true); }}
+        onPointerOut={() => { document.body.style.cursor = 'auto'; setShowHint(false); }}
+      >
+        <octahedronGeometry args={[0.05, 0]} />
+        <meshStandardMaterial
+          color="#fbbf24"
+          emissive="#fbbf24"
+          emissiveIntensity={0.8}
+          toneMapped={false}
+          transparent
+          opacity={0.85}
+        />
+      </mesh>
+
+      {/* Inner glow */}
+      <mesh>
+        <sphereGeometry args={[0.08, 16, 16]} />
+        <meshBasicMaterial color="#fbbf24" transparent opacity={0.15} blending={THREE.AdditiveBlending} />
+      </mesh>
+
+      {/* Light */}
+      <pointLight color="#fbbf24" intensity={0.8} distance={1.5} />
+
+      {/* Hint label on hover */}
+      {showHint && (
+        <Html position={[0, 0.2, 0]} center distanceFactor={6} occlude={false}>
+          <div className="whitespace-nowrap rounded-full bg-black/80 px-3 py-1 text-[10px] font-bold text-oasis-gold border border-oasis-gold/40">
+            ⚡ Quantum Core — click to reveal
           </div>
         </Html>
       )}
