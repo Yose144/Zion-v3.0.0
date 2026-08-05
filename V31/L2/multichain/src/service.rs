@@ -17,6 +17,8 @@ use crate::credits::CreditsLedger;
 use crate::db::Db;
 use crate::error::{MultichainError, MultichainResult};
 use crate::swap::dex::{DexRouter, Pool, Quote};
+use crate::swap::dex::intent::{SolverBid, SwapIntent};
+use crate::swap::IntentEngine;
 use crate::swap::htlc::HtlcSwap;
 use crate::types::Transfer;
 use crate::wallet::Keyring;
@@ -34,6 +36,7 @@ pub struct MultichainService {
     keyring: Keyring,
     credits: CreditsLedger,
     dex: RwLock<DexRouter>,
+    intent_engine: RwLock<IntentEngine>,
     pool: Option<Arc<StdMutex<MiningPool>>>,
     processed_payouts: Arc<StdMutex<HashSet<(u64, String)>>>,
 }
@@ -97,6 +100,7 @@ impl MultichainService {
             keyring,
             credits: CreditsLedger::new(),
             dex: RwLock::new(DexRouter::new()),
+            intent_engine: RwLock::new(IntentEngine::new()),
             pool,
             processed_payouts: Arc::new(StdMutex::new(HashSet::new())),
         }
@@ -246,6 +250,49 @@ impl MultichainService {
         amount: Amount,
     ) -> MultichainResult<Amount> {
         self.dex.write().await.execute(from, to, amount)
+    }
+
+    /// Register a solver in the intent engine whitelist.
+    pub async fn register_solver(&self, solver: impl Into<String>) -> bool {
+        self.intent_engine
+            .write()
+            .await
+            .registry_mut()
+            .register(solver)
+    }
+
+    /// Create a new ZionDex intent and return its id.
+    pub async fn create_intent(&self, intent: SwapIntent) -> uuid::Uuid {
+        self.intent_engine.write().await.open_intent(intent)
+    }
+
+    /// Look up a ZionDex intent by id.
+    pub async fn get_intent(&self, id: uuid::Uuid) -> Option<SwapIntent> {
+        self.intent_engine.read().await.get_intent(id).cloned()
+    }
+
+    /// Submit a solver bid for an existing intent.
+    pub async fn submit_bid(&self, bid: SolverBid) -> MultichainResult<bool> {
+        self.intent_engine.write().await.submit_bid(bid)
+    }
+
+    /// Settle an intent and return the winning bid.
+    pub async fn settle_intent(
+        &self,
+        id: uuid::Uuid,
+    ) -> MultichainResult<Option<SolverBid>> {
+        self.intent_engine.write().await.settle(id)
+    }
+
+    /// Settle an intent and execute the winning path on the AMM router.
+    pub async fn execute_intent(
+        &self,
+        id: uuid::Uuid,
+    ) -> MultichainResult<Option<Amount>> {
+        // Take both locks in a fixed order to avoid deadlocks: dex, then engine.
+        let mut dex = self.dex.write().await;
+        let mut engine = self.intent_engine.write().await;
+        engine.settle_and_execute(id, &mut dex)
     }
 
     /// Access the bridge module.
