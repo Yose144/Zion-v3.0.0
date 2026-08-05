@@ -75,7 +75,7 @@
     "service_id": "zion-v31-pool",
     "env": {
       "ZION_POOL_ADDR": "62.171.141.136:8444",
-      "ZION_POOL_API_BIND": "0.0.0.0:8455",
+      "ZION_POOL_API_BIND": "0.0.0.0:8080",
       "ZION_MINER_ADDRESS": "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604",
       "ZION_HUMANITARIAN_ADDRESS": "zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4",
       "ZION_ISSOBELLA_ADDRESS": "zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702"
@@ -91,7 +91,7 @@
       "HIRANYAGARBHA_BACKEND": "auto",
       "HIRANYAGARBHA_MAX_AGENTS": "100",
       "ZION_NODE_RPC_ADDR": "127.0.0.1:9445",
-      "ZION_POOL_API_URL": "http://127.0.0.1:8455",
+      "ZION_POOL_API_URL": "http://127.0.0.1:8080",
       "LLM_BASE_URL": "http://127.0.0.1:8002/v1",
       "LLM_MODEL": "hiran-v2.2",
       "ZION_WORKSPACE_ROOT": ".",

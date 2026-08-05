@@ -2183,7 +2183,7 @@ async function refreshPayout(){
         healthErr.textContent = ph.error_msg;
         healthErr.classList.remove('hidden');
       } else if(!ph.edge_stats_ok && data.topology === 'edge-primary'){
-        healthErr.textContent = 'Edge pool metrics endpoint (8455) unreachable. Pool may not be running on Edge server.';
+        healthErr.textContent = 'Edge pool metrics endpoint (8080) unreachable. Pool may not be running on Edge server.';
         healthErr.classList.remove('hidden');
       } else {
         healthErr.classList.add('hidden');
@@ -5907,7 +5907,7 @@ async function renderWizard(){
     { n: 2, title: 'Start Local Backup Node', desc: 'Syncs from Edge primary via Tailscale VPN. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).', done: C('node1')?.ok, actions: [{ label: '▶ Start Backup Node', control: 'start-node1' }] },
     { n: 3, title: 'Connect to Edge Pool', desc: 'Edge (62.171.141.136) runs the primary pool. Verify VPN connectivity.', done: C('pool-edge')?.ok, actions: [{ label: 'Check Edge Pool', tab: 'overview' }] },
     { n: 4, title: 'Start GPU Miner', desc: 'Connects to Edge pool, performs cosmic_harmony hashing on GPU.', done: C('miner')?.ok, actions: [{ label: '▶ Start Miner', control: 'start-miner' }] },
-    { n: 5, title: 'Pool Metrics', desc: 'Built-in Prometheus exposition on port 8455 — no external monitoring needed.', done: C('pool-edge')?.ok, actions: [{ label: 'Open Pool Metrics', href: 'http://62.171.141.136:8455' }] },
+    { n: 5, title: 'Pool Metrics', desc: 'Built-in Prometheus exposition on port 8080 — no external monitoring needed.', done: C('pool-edge')?.ok, actions: [{ label: 'Open Pool Metrics', href: 'http://62.171.141.136:8080' }] },
     { n: 6, title: 'Verify chain progression', desc: 'Confirm local backup node syncs with Edge and chain height advances.', done: C('chain')?.ok, actions: [{ label: 'View events', tab: 'events' }] },
     { n: 7, title: 'Confirm fee split & payouts', desc: 'Validate 89/5/5 burn-model distribution and payout wallet funded.', done: C('fee_split')?.ok && C('payout')?.ok, actions: [{ label: 'View payouts', tab: 'overview' }] },
   ] : [
@@ -5915,7 +5915,7 @@ async function renderWizard(){
     { n: 2, title: 'Start Genesis Node', desc: 'Local genesis node. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).', done: C('node1')?.ok, actions: [{ label: '▶ Start Node', control: 'start-node1' }] },
     { n: 3, title: 'Start Local Pool', desc: 'Accepts miners, validates shares, distributes payouts (89/5/5 burn model).', done: C('pool')?.ok, actions: [{ label: '▶ Start Pool', control: 'start-pool' }] },
     { n: 4, title: 'Start GPU Miner', desc: 'Connects to local pool, performs cosmic_harmony hashing on GPU.', done: C('miner')?.ok, actions: [{ label: '▶ Start Miner', control: 'start-miner' }] },
-    { n: 5, title: 'Pool Metrics', desc: 'Built-in Prometheus exposition on port 8455 — no external monitoring needed.', done: C('pool')?.ok, actions: [{ label: 'Open Pool Metrics', href: 'http://62.171.141.136:8455' }] },
+    { n: 5, title: 'Pool Metrics', desc: 'Built-in Prometheus exposition on port 8080 — no external monitoring needed.', done: C('pool')?.ok, actions: [{ label: 'Open Pool Metrics', href: 'http://62.171.141.136:8080' }] },
     { n: 6, title: 'Verify chain progression', desc: 'Confirm node is mining and chain height advances.', done: C('chain')?.ok, actions: [{ label: 'View events', tab: 'events' }] },
     { n: 7, title: 'Confirm fee split & payouts', desc: 'Validate 89/5/5 burn-model distribution and payout wallet funded.', done: C('fee_split')?.ok && C('payout')?.ok, actions: [{ label: 'View payouts', tab: 'overview' }] },
   ];
@@ -12023,7 +12023,7 @@ async function pdRpcTest(path){
     if(ep){
       resultEl.textContent = `Endpoint ${path}:\nStatus: ${ep.status ?? '—'}\nOK: ${ep.ok}\nError: ${ep.error || 'none'}\n\n(Use direct fetch for full response body — see /stats or /metrics sections above)`;
     } else {
-      resultEl.textContent = `Endpoint ${path} not in probe list. Try fetching directly from http://62.171.141.136:8455${path}`;
+      resultEl.textContent = `Endpoint ${path} not in probe list. Try fetching directly from http://62.171.141.136:8080${path}`;
     }
   } catch(e) {
     if(resultEl) resultEl.textContent = 'Error: ' + e.message;

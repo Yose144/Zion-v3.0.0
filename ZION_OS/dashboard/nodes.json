@@ -48,7 +48,7 @@
       "name": "Edge Pool",
       "host": "127.0.0.1",
       "stratum_port": 8444,
-      "metrics_port": 8455,
+      "metrics_port": 8080,
       "platform": "linux",
       "role": "pool",
       "connection": "tailscale_vpn",
@@ -59,7 +59,7 @@
       "name": "Local Pool",
       "host": "127.0.0.1",
       "stratum_port": 8444,
-      "metrics_port": 8455,
+      "metrics_port": 8080,
       "platform": "linux",
       "role": "pool",
       "connection": "local",
@@ -88,7 +88,7 @@
       "node_rpc": 9445,
       "node_p2p": 8335,
       "pool_stratum": 8444,
-      "pool_metrics": 8455,
+      "pool_metrics": 8080,
       "multichain_api": 8453,
       "dao_api": 8456
     }
