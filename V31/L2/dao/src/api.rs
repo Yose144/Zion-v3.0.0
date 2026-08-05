@@ -16,6 +16,7 @@
 //! | POST   | /api/dao/proposals/:id/execute | Execute proposal (auth)       |
 //! | POST   | /api/dao/proposals/:id/cancel  | Cancel proposal (auth)        |
 //! | GET    | /api/dao/stats               | Global DAO statistics           |
+//! | GET    | /metrics                     | Prometheus text metrics         |
 //!
 //! ## Auth
 //!
@@ -35,6 +36,7 @@ use tokio::sync::Mutex;
 use tracing::info;
 
 use crate::config::DaoConfig;
+use crate::metrics::DaoMetrics;
 use crate::proposal::{Proposal, ProposalStatus, ProposalType};
 use crate::runtime::GovernanceRuntime;
 use crate::types::VoteChoice;
@@ -47,6 +49,7 @@ use crate::types::VoteChoice;
 pub struct AppState {
     pub runtime: Arc<Mutex<GovernanceRuntime>>,
     pub api_key: String,
+    pub metrics: Arc<DaoMetrics>,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -442,6 +445,16 @@ async fn stats(State(state): State<AppState>) -> Json<serde_json::Value> {
     }))
 }
 
+use axum::response::Response;
+
+async fn prometheus(State(state): State<AppState>) -> Response<String> {
+    let body = state.metrics.render_prometheus();
+    Response::builder()
+        .header("Content-Type", "text/plain; charset=utf-8")
+        .body(body)
+        .unwrap()
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
@@ -496,7 +509,11 @@ fn serialize_proposal(p: &Proposal) -> serde_json::Value {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Start the DAO HTTP API server.
-pub async fn serve(config: DaoConfig, circulating_supply: u64) -> anyhow::Result<()> {
+pub async fn serve(
+    config: DaoConfig,
+    circulating_supply: u64,
+    metrics: Arc<DaoMetrics>,
+) -> anyhow::Result<()> {
     let api_key = config.api_key.clone();
     let port = config.api_port;
 
@@ -504,6 +521,7 @@ pub async fn serve(config: DaoConfig, circulating_supply: u64) -> anyhow::Result
     let state = AppState {
         runtime: Arc::new(Mutex::new(runtime)),
         api_key,
+        metrics,
     };
 
     let app = Router::new()
@@ -516,6 +534,7 @@ pub async fn serve(config: DaoConfig, circulating_supply: u64) -> anyhow::Result
         .route("/api/dao/proposals/:id/execute", post(execute_proposal))
         .route("/api/dao/proposals/:id/cancel", post(cancel_proposal))
         .route("/api/dao/stats", get(stats))
+        .route("/metrics", get(prometheus))
         .with_state(state);
 
     let addr = format!("0.0.0.0:{port}");
