@@ -8,6 +8,7 @@
 //! port) without disturbing the existing AMM code.
 
 pub mod intent;
+pub mod intent_engine;
 
 use num_bigint::BigUint;
 use num_traits::cast::ToPrimitive;

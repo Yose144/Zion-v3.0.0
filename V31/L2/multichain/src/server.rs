@@ -12,8 +12,8 @@ use axum::{
 };
 use serde::Deserialize;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer};
-
-use zion_l1_types::{Address, Amount, Asset, ChainId, Hash};
+use uuid::Uuid;
+use zion_l1_types::{Address, Amount, Asset, AssetId, ChainId, Hash};
 
 use std::net::SocketAddr;
 
@@ -22,6 +22,7 @@ use crate::contracts::ZionContracts;
 use crate::error::{MultichainError, MultichainResult};
 use crate::rate_limit::{auth_rate_limit, RateLimiter};
 use crate::service::MultichainService;
+use crate::swap::dex::intent::{PathHop, SolverBid, SwapIntent};
 use crate::swap::Pool;
 use crate::types::{Transfer, TransferDirection, TransferEndpoint};
 use zion_pool::StratumServer;
@@ -146,6 +147,12 @@ impl ApiServer {
             .route("/v1/swap/quote", post(swap_quote))
             .route("/v1/swap/quote/multi", post(swap_quote_multi))
             .route("/v1/swap/execute", post(swap_execute))
+            .route("/v1/swap/intent", post(create_intent))
+            .route("/v1/swap/intent/:id", get(get_intent))
+            .route("/v1/swap/intent/:id/bid", post(submit_bid))
+            .route("/v1/swap/intent/:id/settle", post(settle_intent))
+            .route("/v1/swap/intent/:id/execute", post(execute_intent))
+            .route("/v1/swap/intent/solver/register", post(register_solver))
             .route("/v1/bridge/submit", post(bridge_submit))
             .route("/v1/multichain/swaps/htlc/lock", post(htlc_lock))
             .route("/v1/multichain/swaps/htlc/claim", post(htlc_claim))
@@ -643,6 +650,124 @@ async fn htlc_refund(
         }))),
         Err(_) => Err(StatusCode::BAD_REQUEST),
     }
+}
+
+#[derive(Deserialize)]
+struct CreateIntentRequest {
+    user: String,
+    from_chain: String,
+    from_ticker: String,
+    #[serde(default)]
+    from_contract: Option<String>,
+    to_chain: String,
+    to_ticker: String,
+    #[serde(default)]
+    to_contract: Option<String>,
+    amount_in: u128,
+    min_amount_out: u128,
+    deadline: u64,
+    #[serde(default)]
+    nonce: u64,
+}
+
+fn make_asset_id(chain: &str, ticker: &str, contract: Option<String>) -> MultichainResult<AssetId> {
+    let chain_id = chain_name_to_id(chain)?;
+    Ok(AssetId::new(chain_id, ticker, contract))
+}
+
+async fn create_intent(
+    State(state): State<AppState>,
+    Json(req): Json<CreateIntentRequest>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let from_asset = make_asset_id(&req.from_chain, &req.from_ticker, req.from_contract)
+        .map_err(|_| StatusCode::BAD_REQUEST)?;
+    let to_asset = make_asset_id(&req.to_chain, &req.to_ticker, req.to_contract)
+        .map_err(|_| StatusCode::BAD_REQUEST)?;
+
+    let intent = SwapIntent::new(
+        req.user,
+        from_asset,
+        to_asset,
+        Amount::new(req.amount_in),
+        Amount::new(req.min_amount_out),
+        req.deadline,
+        req.nonce,
+    );
+    let id = state.service.create_intent(intent).await;
+    Ok(Json(serde_json::json!({ "intent_id": id })))
+}
+
+async fn get_intent(
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    match state.service.get_intent(id).await {
+        Some(intent) => Ok(Json(serde_json::json!({ "intent": intent }))),
+        None => Err(StatusCode::NOT_FOUND),
+    }
+}
+
+#[derive(Deserialize)]
+struct BidRequest {
+    intent_id: Uuid,
+    solver: String,
+    amount_out: u128,
+    fee_bps: u16,
+    timestamp: u64,
+    path: Vec<PathHop>,
+}
+
+async fn submit_bid(
+    State(state): State<AppState>,
+    Json(req): Json<BidRequest>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let bid = SolverBid::new(
+        req.intent_id,
+        req.solver,
+        Amount::new(req.amount_out),
+        req.path,
+        req.fee_bps,
+        req.timestamp,
+    );
+    match state.service.submit_bid(bid).await {
+        Ok(accepted) => Ok(Json(serde_json::json!({ "accepted": accepted }))),
+        Err(_) => Err(StatusCode::BAD_REQUEST),
+    }
+}
+
+async fn settle_intent(
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    match state.service.settle_intent(id).await {
+        Ok(Some(bid)) => Ok(Json(serde_json::json!({ "winning_bid": bid }))),
+        Ok(None) => Ok(Json(serde_json::json!({ "winning_bid": null }))),
+        Err(_) => Err(StatusCode::BAD_REQUEST),
+    }
+}
+
+async fn execute_intent(
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    match state.service.execute_intent(id).await {
+        Ok(Some(out)) => Ok(Json(serde_json::json!({ "executed": true, "out": out.0.to_string() }))),
+        Ok(None) => Ok(Json(serde_json::json!({ "executed": false, "out": null }))),
+        Err(_) => Err(StatusCode::BAD_REQUEST),
+    }
+}
+
+#[derive(Deserialize)]
+struct RegisterSolverRequest {
+    solver: String,
+}
+
+async fn register_solver(
+    State(state): State<AppState>,
+    Json(req): Json<RegisterSolverRequest>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let added = state.service.register_solver(req.solver).await;
+    Ok(Json(serde_json::json!({ "registered": added })))
 }
 
 fn build_endpoint(
