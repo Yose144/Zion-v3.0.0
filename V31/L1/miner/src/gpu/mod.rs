@@ -507,7 +507,7 @@ impl TriGpuManager {
         // Only switch for Deeksha-family algorithms.
         let is_deeksha = matches!(
             algorithm,
-            "deeksha_lite_v1" | "deeksha_lite" | "deeksha_chv3" | "deeksha_lite_fire"
+            "deeksha_lite_v1" | "deeksha_lite" | "deeksha_chv3" | "deeksha_lite_fire" | "ekam_deeksha"
         );
         if !is_deeksha {
             return Ok(());
@@ -2557,7 +2557,8 @@ fn create_gpu_backend_inner(
                 }
 
                 // Select miner based on algorithm
-                if algorithm == "deeksha_chv3" {
+                // Ekam deeksha is the canonical V31 PoW and is bit-identical to deeksha_chv3 / deeksha_lite_v1.
+                if algorithm == "deeksha_chv3" || algorithm == "ekam_deeksha" {
                     // Phase C: use canonical deeksha_chv3.cl kernel
                     match opencl_deeksha_lite::OpenClDeekshaLiteMiner::new_chv3(work_size) {
                         Ok(miner) => return Ok(Box::new(miner)),
@@ -2666,7 +2667,7 @@ fn create_gpu_backend_inner(
                 }
                 Ok(if algorithm == "deeksha_lite_fire" {
                     Box::new(cuda_deeksha_lite_fire::CudaDeekshaLiteFireMiner::new(work_size)?)
-                } else if algorithm == "deeksha_lite_v1" || algorithm == "deeksha_chv3" {
+                } else if algorithm == "deeksha_lite_v1" || algorithm == "deeksha_chv3" || algorithm == "ekam_deeksha" {
                     Box::new(cuda_deeksha_lite::CudaDeekshaLiteMiner::new(work_size)?)
                 } else {
                     Box::new(cuda_deeksha::CudaDeekshaMiner::new(work_size)?)
