@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
 
     // Send notifications in background; don't block the response
     sendAdminOrderNotification(emailData).catch(console.error);
-    sendCustomerOrderConfirmation(emailData).catch(console.error);
+    sendCustomerOrderConfirmation(emailData, invoiceResult?.html ?? null).catch(console.error);
 
     return NextResponse.json({
       success: true,
