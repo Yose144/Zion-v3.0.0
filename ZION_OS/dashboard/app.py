@@ -95,14 +95,21 @@ V31_POOL_API_PORT = _v31_pool_api_port()
 
 # Unified service → log file mapping used by all log endpoints
 SERVICE_LOG_MAP = {
-    # Blockchain nodes
-    "node1":           "node1.log",           # legacy alias
+    # Blockchain nodes — V31 (journalctl-backed, see V31_JOURNAL_MAP)
+    "v31-node":        "v31-node.log",         # V31 Node 1 (Primary)
+    "v31-node2":       "v31-node2.log",        # V31 Node 2 (Follower)
+    "v31-node3":       "v31-node3.log",        # V31 Node 3 (Follower)
+    # Legacy node aliases (fallback to log files)
+    "node1":           "node1.log",            # legacy alias
     "edge-node1":      "node1.log",            # Edge Node 1 (primary) — log forwarded via SSH tunnel
     "node2":           "node2.log",            # legacy alias
     "edge-node2":      "node2.log",            # Edge Node 2 (follower)
     "local-backup":    "node-backup.log",      # Local backup node
     "node-backup":     "node-backup.log",      # alias
-    # L1 services
+    # L1 services — V31 (journalctl-backed)
+    "v31-pool":        "v31-pool.log",         # V31 Pool
+    "v31-miner":       "v31-miner.log",        # V31 Miner
+    # L1 services — legacy
     "pool":            "pool.log",
     "pool-edge":       "pool.log",             # alias
     "miner":           "miner.log",
@@ -130,6 +137,18 @@ SERVICE_LOG_MAP = {
     "watchdog":        "watchdog.log",
     "backup":          "backup.log",
     "autostart":       "autostart.log",
+}
+
+# V31 systemd services — log stream uses journalctl instead of log files
+V31_JOURNAL_MAP = {
+    "v31-node":      "zion-v31-node.service",
+    "v31-node2":     "zion-v31-node2.service",
+    "v31-node3":     "zion-v31-node3.service",
+    "v31-pool":      "zion-v31-pool.service",
+    "v31-miner":     "zion-v31-miner.service",
+    "warp":          "zion-v31-multichain.service",
+    "dao-daemon":    "zion-v31-dao.service",
+    "oasis":         "zion-v31-oasis.service",
 }
 
 # ── ANSI escape strip ─────────────────────────────────────────────────────
@@ -10731,9 +10750,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         pass
             self._json({"processes": procs})
         elif route == "/api/logs/stream":
-            # SSE live log streaming: /api/logs/stream?svc=node1&lines=200
-            svc_id   = params.get("svc",   ["node1"])[0].strip()
+            # SSE live log streaming: /api/logs/stream?svc=v31-node&lines=200
+            # V31 systemd services use journalctl; legacy services use log files
+            svc_id   = params.get("svc",   ["v31-node"])[0].strip()
             n_init   = min(int(params.get("lines", ["150"])[0]), 500)
+            journal_unit = V31_JOURNAL_MAP.get(svc_id)
             log_name = SERVICE_LOG_MAP.get(svc_id)
             self.send_response(200)
             self.send_header("Content-Type", "text/event-stream; charset=utf-8")
@@ -10745,40 +10766,76 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     msg = "data: " + data.replace("\n", "\ndata: ") + "\n\n"
                     self.wfile.write(msg.encode("utf-8", errors="replace"))
                     self.wfile.flush()
-                if not log_name:
-                    _sse(f"[error] unknown service '{svc_id}'")
-                    return
-                log_path = LOG_DIR / log_name
-                # Send initial tail
-                if log_path.exists():
-                    with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
-                        lines_all = f.readlines()
-                    for ln in lines_all[-n_init:]:
-                        _sse(ln.rstrip())
-                else:
-                    _sse(f"[info] Log file not found yet: {log_path}")
-                # Tail new lines (poll every 0.8 s, max 10 min)
-                import time as _time
-                pos = log_path.stat().st_size if log_path.exists() else 0
-                deadline = _time.time() + 600
-                while _time.time() < deadline:
-                    _time.sleep(0.8)
-                    if not log_path.exists():
-                        continue
-                    cur_size = log_path.stat().st_size
-                    if cur_size < pos:
-                        pos = 0  # rotated
-                    if cur_size > pos:
-                        with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
-                            f.seek(pos)
-                            new_data = f.read()
-                        pos = cur_size
-                        for ln in new_data.splitlines():
+                if journal_unit:
+                    # ── journalctl-backed streaming (V31 systemd services) ──
+                    import time as _time
+                    # Send initial tail via journalctl
+                    try:
+                        r = subprocess.run(
+                            ["journalctl", "-u", journal_unit, "--no-pager", "-n", str(n_init), "--output=cat"],
+                            capture_output=True, text=True, timeout=10
+                        )
+                        for ln in strip_ansi(r.stdout).splitlines():
                             _sse(ln)
+                    except Exception as e:
+                        _sse(f"[error] journalctl initial tail failed: {e}")
+                    # Tail new lines via journalctl --since (poll every 2s, max 10 min)
+                    deadline = _time.time() + 600
+                    last_ts = _time.time()
+                    while _time.time() < deadline:
+                        _time.sleep(2.0)
+                        try:
+                            since_str = _time.strftime("%Y-%m-%d %H:%M:%S", _time.localtime(last_ts))
+                            r = subprocess.run(
+                                ["journalctl", "-u", journal_unit, "--no-pager", "--since", since_str, "--output=cat"],
+                                capture_output=True, text=True, timeout=10
+                            )
+                            new_lines = strip_ansi(r.stdout).splitlines()
+                            if new_lines:
+                                for ln in new_lines:
+                                    _sse(ln)
+                                last_ts = _time.time()
+                            else:
+                                self.wfile.write(b": ping\n\n")
+                                self.wfile.flush()
+                        except Exception:
+                            self.wfile.write(b": ping\n\n")
+                            self.wfile.flush()
+                elif log_name:
+                    # ── File-based streaming (legacy services) ──
+                    log_path = LOG_DIR / log_name
+                    # Send initial tail
+                    if log_path.exists():
+                        with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+                            lines_all = f.readlines()
+                        for ln in lines_all[-n_init:]:
+                            _sse(ln.rstrip())
                     else:
-                        # heartbeat to keep connection alive
-                        self.wfile.write(b": ping\n\n")
-                        self.wfile.flush()
+                        _sse(f"[info] Log file not found yet: {log_path}")
+                    # Tail new lines (poll every 0.8 s, max 10 min)
+                    import time as _time
+                    pos = log_path.stat().st_size if log_path.exists() else 0
+                    deadline = _time.time() + 600
+                    while _time.time() < deadline:
+                        _time.sleep(0.8)
+                        if not log_path.exists():
+                            continue
+                        cur_size = log_path.stat().st_size
+                        if cur_size < pos:
+                            pos = 0  # rotated
+                        if cur_size > pos:
+                            with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+                                f.seek(pos)
+                                new_data = f.read()
+                            pos = cur_size
+                            for ln in new_data.splitlines():
+                                _sse(ln)
+                        else:
+                            # heartbeat to keep connection alive
+                            self.wfile.write(b": ping\n\n")
+                            self.wfile.flush()
+                else:
+                    _sse(f"[error] unknown service '{svc_id}'")
             except (BrokenPipeError, ConnectionResetError):
                 pass
             return
@@ -12096,21 +12153,34 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/service-log":
             svc_id = params.get("id", [""])[0].strip()
             n_lines = int(params.get("lines", ["80"])[0])
-            log_name = SERVICE_LOG_MAP.get(svc_id)
-            if not log_name:
-                self._json({"error": "unknown service", "lines": ""})
+            # V31 systemd services → journalctl
+            journal_unit = V31_JOURNAL_MAP.get(svc_id)
+            if journal_unit:
+                try:
+                    r = subprocess.run(
+                        ["journalctl", "-u", journal_unit, "--no-pager", "-n", str(n_lines), "--output=cat"],
+                        capture_output=True, text=True, timeout=10
+                    )
+                    lines = strip_ansi(r.stdout).split("\n")
+                    self._json({"lines": "\n".join(lines), "exists": True, "total_lines": len(lines), "source": "journalctl"})
+                except Exception as e:
+                    self._json({"error": str(e), "lines": ""})
             else:
-                log_path = latest_log_path(log_name)
-                if not log_path or not log_path.exists():
-                    self._json({"lines": f"(log file {log_name} not found)", "exists": False})
+                log_name = SERVICE_LOG_MAP.get(svc_id)
+                if not log_name:
+                    self._json({"error": "unknown service", "lines": ""})
                 else:
-                    try:
-                        with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
-                            all_lines = f.readlines()
-                        tail = "".join(all_lines[-n_lines:])
-                        self._json({"lines": tail, "exists": True, "total_lines": len(all_lines)})
-                    except Exception as e:
-                        self._json({"error": str(e), "lines": ""})
+                    log_path = latest_log_path(log_name)
+                    if not log_path or not log_path.exists():
+                        self._json({"lines": f"(log file {log_name} not found)", "exists": False})
+                    else:
+                        try:
+                            with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+                                all_lines = f.readlines()
+                            tail = "".join(all_lines[-n_lines:])
+                            self._json({"lines": tail, "exists": True, "total_lines": len(all_lines)})
+                        except Exception as e:
+                            self._json({"error": str(e), "lines": ""})
         # ── V31 service journal logs (systemd) ────────────────────────────────
         elif route == "/api/v31/logs":
             svc = params.get("svc", ["node"])[0].strip().lower()
