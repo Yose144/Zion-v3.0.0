@@ -1219,7 +1219,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
 
     # ── L2: Bridge & DAO (running on new server) ────────────────────────
     {"id": "bridge", "name": "ZION Bridge", "icon": "🌉", "level": "L2", "kind": "bridge",
-     "ports": {"metrics": 9101},
+     "ports": {"api": 8453},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "warning", "autoheal": False,
@@ -1227,19 +1227,19 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "child_says": "🌉 A magical bridge to send ZION to other crypto worlds!",
      "depends_on": ["edge-node1"]},
     {"id": "dao", "name": "ZION DAO", "icon": "🗳️", "level": "L2", "kind": "dao",
-     "ports": {"api": 8450},
+     "ports": {"api": 8456},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "warning", "autoheal": False,
-     "purpose": "Decentralized governance: proposals, voting, treasury management. API on 8450.",
+     "purpose": "Decentralized governance: proposals, voting, treasury management. API on 8456.",
      "child_says": "🗳️ Everyone votes here to decide what ZION should do next!",
      "depends_on": ["edge-node1"]},
     {"id": "atomic-swap", "name": "Atomic Swap", "icon": "🔄", "level": "L2", "kind": "swap",
-     "ports": {"api": 8452},
+     "ports": {"api": 8453},
      "host": "127.0.0.1",
      "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "warning", "autoheal": False,
-     "purpose": "Trustless cross-chain atomic swaps via HTLC. API on 8452.",
+     "purpose": "Trustless cross-chain atomic swaps via HTLC. API on 8453 (V31 multichain).",
      "child_says": "🔄 Swap ZION for other coins without a middleman!",
      "depends_on": ["edge-node1"]},
     {"id": "dex", "name": "ZionDex Router", "icon": "💱", "level": "L2", "kind": "dex",
@@ -1380,10 +1380,10 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "child_says": "🌉 A magical bridge to send ZION to other crypto worlds!",
      "depends_on": ["node1"]},
     {"id": "dao", "name": "ZION DAO", "icon": "🗳️", "level": "L2", "kind": "dao",
-     "ports": {"api": 8450},
+     "ports": {"api": 8456},
      "log": "dao.log", "start": "start-dao", "stop": "stop-dao",
      "health_method": "tcp", "severity": "warning", "autoheal": False,
-     "purpose": "Decentralized governance: proposals, voting, treasury management. API on 8450.",
+     "purpose": "Decentralized governance: proposals, voting, treasury management. API on 8456.",
      "child_says": "🗳️ Everyone votes here to decide what ZION should do next!",
      "depends_on": ["node1"]},
     {"id": "atomic-swap", "name": "Atomic Swap", "icon": "🔄", "level": "L2", "kind": "swap",
@@ -3686,14 +3686,14 @@ def _build_status_edge_primary() -> dict:
     # ── L2/L3 Edge services health — TCP port check on Edge (fast, 0.5s) ────
     _edge = "127.0.0.1"
     _edge_ports = {
-        "bridge":     9101,
-        "dao":        8450,
-        "warp":       8453,
-        "atomic_swap": 8452,
-        "dex":        8454,
-        "oasis":      8094,
-        "free_world": 8095,
-        "issobella":  8096,
+        "bridge":     8453,   # V31 multichain (bridge/warp/swap unified)
+        "dao":        8456,   # V31 DAO API
+        "warp":       8453,   # V31 multichain WARP relay
+        "atomic_swap": 8453,  # V31 multichain (atomic swap is part of multichain)
+        "dex":        8454,   # V31 multichain DEX router
+        "oasis":      8094,   # V31 OASIS API
+        "free_world": 8095,   # V31 Free World (if running)
+        "issobella":  8096,   # V31 Issobella (if running)
     }
     _health_map = {}
     for _sid, _port in _edge_ports.items():
@@ -9679,9 +9679,9 @@ def _build_health_map() -> dict:
     ext_ports = {
         "v31-dao": 8456,      # V31 DAO API
         "v31-oasis": 8094,    # V31 OASIS API
-        "bridge": 9101,       # Bridge metrics
-        "dao": 8450,          # DAO API
-        "warp": 8453,         # WARP Relay API (v3.0.5 port)
+        "bridge": 8453,       # V31 Multichain (bridge/warp/swap unified) — was V3 port 9101
+        "dao": 8456,          # V31 DAO API — was V3 port 8450
+        "warp": 8453,         # V31 Multichain WARP Relay
         "dashboard": 8766,    # This dashboard
     }
     for sid, port in ext_ports.items():
@@ -10139,8 +10139,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._html(html_path.read_text(encoding="utf-8"))
 
     def _proxy_to_dao(self, method, route, body, req_headers):
-        """Proxy a request to the DAO daemon on port 8450, preserving auth headers."""
-        DAO_PORT = 8450
+        """Proxy a request to the V31 DAO daemon on port 8456, preserving auth headers."""
+        DAO_PORT = 8456
         # Reconstruct full path including query string
         full_path = self.path if self.path.startswith("/api/dao") else route
         url = f"http://127.0.0.1:{DAO_PORT}{full_path}"
