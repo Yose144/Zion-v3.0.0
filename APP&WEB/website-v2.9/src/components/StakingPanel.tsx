@@ -252,16 +252,16 @@ export default function StakingPanel() {
         style={{ '--rc': EMERALD_RC } as React.CSSProperties}
         className="zion-rainbow-card p-6 md:p-8"
       >
-        <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan-500/40 bg-zion-cyan-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan-300 uppercase mb-4">
+        <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase mb-4">
           <PiggyBank className="h-4 w-4" />
           DeFi · Staking
         </div>
         {STAKING_DEPLOYED ? (
-          <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan-500/30 bg-zion-cyan-500/10 px-3 py-1 text-[10px] font-semibold tracking-wider text-zion-cyan-300 uppercase mb-4 ml-2">
+          <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-3 py-1 text-[10px] font-semibold tracking-wider text-zion-cyan uppercase mb-4 ml-2">
             <CheckCircle2 className="h-3 w-3" /> Base Mainnet
           </div>
         ) : (
-          <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold-500/30 bg-zion-gold-500/10 px-3 py-1 text-[10px] font-semibold tracking-wider text-zion-gold-300 uppercase mb-4 ml-2">
+          <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-3 py-1 text-[10px] font-semibold tracking-wider text-zion-gold uppercase mb-4 ml-2">
             <Clock className="h-3 w-3" /> {StakingPanelCopy.deployPending[cs ? 'cs' : 'en']}
           </div>
         )}
@@ -274,8 +274,8 @@ export default function StakingPanel() {
 
         {/* Deploy pending banner */}
         {!STAKING_DEPLOYED && (
-          <div className="mt-6 rounded-2xl border border-zion-gold-500/20 bg-zion-gold-500/5 p-4 flex items-center gap-3">
-            <AlertCircle className="h-5 w-5 text-zion-gold-400 shrink-0" />
+          <div className="mt-6 rounded-2xl border border-zion-gold/20 bg-zion-gold/5 p-4 flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-zion-gold shrink-0" />
             <div className="flex-1">
               <p className="text-sm text-gray-300">
                 {StakingPanelCopy.stakingContractHasNotYetBeenDe[cs ? 'cs' : 'en']}
@@ -285,8 +285,8 @@ export default function StakingPanel() {
         )}
 
         {paused && STAKING_DEPLOYED && (
-          <div className="mt-6 rounded-2xl border border-zion-purple-500/20 bg-zion-purple-500/5 p-4 flex items-center gap-3">
-            <AlertCircle className="h-5 w-5 text-zion-purple-400 shrink-0" />
+          <div className="mt-6 rounded-2xl border border-zion-purple/20 bg-zion-purple/5 p-4 flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-zion-purple shrink-0" />
             <p className="text-sm text-gray-300">
               {StakingPanelCopy.stakingIsCurrentlyPaused[cs ? 'cs' : 'en']}
             </p>
@@ -295,7 +295,7 @@ export default function StakingPanel() {
 
         <div className="mt-6 flex flex-wrap gap-3 text-xs">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-            <TrendingUp className="h-3 w-3 text-zion-cyan-400" /> {apy}% APR
+            <TrendingUp className="h-3 w-3 text-zion-cyan" /> {apy}% APR
           </span>
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
             <Clock className="h-3 w-3 text-zion-gold" /> {cooldownDays}d {StakingPanelCopy.cooldown[cs ? 'cs' : 'en']}
@@ -303,8 +303,8 @@ export default function StakingPanel() {
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
             <Shield className="h-3 w-3 text-zion-cyan" /> {StakingPanelCopy.bridgeFeeRewards[cs ? 'cs' : 'en']}
           </span>
-          <span className={`inline-flex items-center gap-2 rounded-full px-2 py-0.5 ${bridgeOnline ? 'bg-zion-cyan-500/10 text-zion-cyan-400' : 'bg-gray-500/10 text-gray-400'}`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${bridgeOnline ? 'bg-zion-cyan-400 animate-pulse' : 'bg-gray-500'}`} />
+          <span className={`inline-flex items-center gap-2 rounded-full px-2 py-0.5 ${bridgeOnline ? 'bg-zion-cyan/10 text-zion-cyan' : 'bg-gray-500/10 text-gray-400'}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${bridgeOnline ? 'bg-zion-cyan animate-pulse' : 'bg-gray-500'}`} />
             Bridge {bridgeOnline ? 'Online' : 'Offline'}
           </span>
         </div>
@@ -314,9 +314,9 @@ export default function StakingPanel() {
       <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: StakingPanelCopy.totalStaked[cs ? 'cs' : 'en'], value: totalStaked, icon: Lock, color: 'text-zion-cyan-400' },
+            { label: StakingPanelCopy.totalStaked[cs ? 'cs' : 'en'], value: totalStaked, icon: Lock, color: 'text-zion-cyan' },
             { label: StakingPanelCopy.rewardPool[cs ? 'cs' : 'en'], value: rewardPool, icon: PiggyBank, color: 'text-zion-gold' },
-            { label: 'APR', value: `${apy}%`, icon: TrendingUp, color: 'text-zion-cyan-400' },
+            { label: 'APR', value: `${apy}%`, icon: TrendingUp, color: 'text-zion-cyan' },
             { label: StakingPanelCopy.cooldown_2[cs ? 'cs' : 'en'], value: `${cooldownDays}d`, icon: Calendar, color: 'text-zion-cyan' },
           ].map((card) => (
             <div key={card.label} className="zion-tile p-5">
@@ -336,7 +336,7 @@ export default function StakingPanel() {
           <div className="grid grid-cols-3 gap-4">
             <div className="zion-tile p-4">
               <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{StakingPanelCopy.myStake[cs ? 'cs' : 'en']}</p>
-              <p className="text-xl font-bold text-zion-cyan-400">{parseFloat(userStaked).toFixed(2)} wZION</p>
+              <p className="text-xl font-bold text-zion-cyan">{parseFloat(userStaked).toFixed(2)} wZION</p>
             </div>
             <div className="zion-tile p-4">
               <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{StakingPanelCopy.earned[cs ? 'cs' : 'en']}</p>
@@ -366,14 +366,14 @@ export default function StakingPanel() {
             </p>
             <button
               onClick={connect}
-              className="rounded-2xl bg-zion-cyan-500/20 border border-zion-cyan-500/30 px-8 py-3 text-sm font-semibold text-zion-cyan-300 hover:bg-zion-cyan-500/30 transition-colors"
+              className="rounded-2xl bg-zion-cyan/20 border border-zion-cyan/30 px-8 py-3 text-sm font-semibold text-zion-cyan hover:bg-zion-cyan/30 transition-colors"
             >
               {StakingPanelCopy.connectMetamask[cs ? 'cs' : 'en']}
             </button>
           </div>
         ) : !isBaseMainnet ? (
           <div className="text-center py-8">
-            <AlertCircle className="h-12 w-12 text-zion-gold-400 mx-auto mb-4" />
+            <AlertCircle className="h-12 w-12 text-zion-gold mx-auto mb-4" />
             <p className="text-gray-400 mb-4">
               {StakingPanelCopy.switchToBaseMainnet[cs ? 'cs' : 'en']}
             </p>
@@ -386,7 +386,7 @@ export default function StakingPanel() {
           </div>
         ) : !STAKING_DEPLOYED ? (
           <div className="text-center py-8">
-            <Clock className="h-12 w-12 text-zion-gold-400 mx-auto mb-4" />
+            <Clock className="h-12 w-12 text-zion-gold mx-auto mb-4" />
             <p className="text-gray-400">
               {StakingPanelCopy.stakingContractAwaitingDeploym[cs ? 'cs' : 'en']}
             </p>
@@ -426,7 +426,7 @@ export default function StakingPanel() {
                       onChange={(e) => setAmount(e.target.value)}
                       placeholder="0.00"
                       disabled={busy}
-                      className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-zion-cyan-500/40 font-mono disabled:opacity-50"
+                      className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-zion-cyan/40 font-mono disabled:opacity-50"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-500">wZION</span>
                   </div>
@@ -437,7 +437,7 @@ export default function StakingPanel() {
                 <button
                   onClick={handleStake}
                   disabled={busy || !amount || parseFloat(amount) <= 0}
-                  className="w-full rounded-2xl bg-zion-cyan-500/20 border border-zion-cyan-500/30 px-6 py-3 text-sm font-semibold text-zion-cyan-300 hover:bg-zion-cyan-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full rounded-2xl bg-zion-cyan/20 border border-zion-cyan/30 px-6 py-3 text-sm font-semibold text-zion-cyan hover:bg-zion-cyan/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {busy && <Loader2 className="h-4 w-4 animate-spin" />}
                   {txPhase === 'approving' ? (StakingPanelCopy.approving[cs ? 'cs' : 'en']) :
@@ -452,9 +452,9 @@ export default function StakingPanel() {
               <div className="space-y-4 max-w-md">
                 <div className="zion-tile p-4">
                   <p className="text-xs text-gray-500 mb-1">{StakingPanelCopy.yourStake[cs ? 'cs' : 'en']}</p>
-                  <p className="text-2xl font-bold text-zion-cyan-400">{parseFloat(userStaked).toFixed(2)} wZION</p>
+                  <p className="text-2xl font-bold text-zion-cyan">{parseFloat(userStaked).toFixed(2)} wZION</p>
                   {cooldownStarted > 0 && cooldownAmount > 0 && (
-                    <p className="text-[10px] text-zion-gold-400 mt-1">
+                    <p className="text-[10px] text-zion-gold mt-1">
                       {StakingPanelCopy.inCooldown[cs ? 'cs' : 'en']}: {ethers.utils.formatEther(cooldownAmount)} wZION
                     </p>
                   )}
@@ -472,7 +472,7 @@ export default function StakingPanel() {
                           onChange={(e) => setUnstakeAmount(e.target.value)}
                           placeholder="0.00"
                           disabled={busy}
-                          className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-zion-cyan-500/40 font-mono disabled:opacity-50"
+                          className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-zion-cyan/40 font-mono disabled:opacity-50"
                         />
                         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-500">wZION</span>
                       </div>
@@ -483,7 +483,7 @@ export default function StakingPanel() {
                     <button
                       onClick={handleQueueUnstake}
                       disabled={busy || !unstakeAmount || parseFloat(unstakeAmount) <= 0 || parseFloat(unstakeAmount) > parseFloat(userStaked)}
-                      className="w-full rounded-2xl bg-zion-gold-500/20 border border-zion-gold-500/30 px-6 py-3 text-sm font-semibold text-zion-gold-300 hover:bg-zion-gold-500/30 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                      className="w-full rounded-2xl bg-zion-gold/20 border border-zion-gold/30 px-6 py-3 text-sm font-semibold text-zion-gold hover:bg-zion-gold/30 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                       {busy && <Loader2 className="h-4 w-4 animate-spin" />}
                       {StakingPanelCopy.queueUnstake[cs ? 'cs' : 'en']}
@@ -493,18 +493,18 @@ export default function StakingPanel() {
                   <button
                     onClick={handleUnstake}
                     disabled={busy}
-                    className="w-full rounded-2xl bg-zion-purple-500/20 border border-zion-purple-500/30 px-6 py-3 text-sm font-semibold text-zion-purple-300 hover:bg-zion-purple-500/30 transition-colors flex items-center justify-center gap-2"
+                    className="w-full rounded-2xl bg-zion-purple/20 border border-zion-purple/30 px-6 py-3 text-sm font-semibold text-zion-purple hover:bg-zion-purple/30 transition-colors flex items-center justify-center gap-2"
                   >
                     {busy && <Loader2 className="h-4 w-4 animate-spin" />}
                     {StakingPanelCopy.withdrawCooldownPassed[cs ? 'cs' : 'en']}
                   </button>
                 ) : (
-                  <div className="rounded-2xl border border-zion-gold-500/20 bg-zion-gold-500/5 p-4 text-center">
-                    <Clock className="h-8 w-8 text-zion-gold-400 mx-auto mb-2" />
+                  <div className="rounded-2xl border border-zion-gold/20 bg-zion-gold/5 p-4 text-center">
+                    <Clock className="h-8 w-8 text-zion-gold mx-auto mb-2" />
                     <p className="text-sm text-gray-300">
                       {StakingPanelCopy.cooldownActive[cs ? 'cs' : 'en']}
                     </p>
-                    <p className="text-2xl font-bold text-zion-gold-400 mt-1">
+                    <p className="text-2xl font-bold text-zion-gold mt-1">
                       {Math.floor(cooldownRemaining / 3600)}h {Math.floor((cooldownRemaining % 3600) / 60)}m
                     </p>
                   </div>
@@ -536,14 +536,14 @@ export default function StakingPanel() {
             {/* TX status */}
             {txHash && (txPhase === 'success' || busy) && (
               <div className="mt-4 zion-tile p-3 flex items-center gap-2 text-xs">
-                {txPhase === 'success' ? <CheckCircle2 className="h-4 w-4 text-zion-cyan-400" /> : <Loader2 className="h-4 w-4 animate-spin text-zion-gold" />}
+                {txPhase === 'success' ? <CheckCircle2 className="h-4 w-4 text-zion-cyan" /> : <Loader2 className="h-4 w-4 animate-spin text-zion-gold" />}
                 <a href={`https://basescan.org/tx/${txHash}`} target="_blank" rel="noopener" className="text-zion-gold hover:underline flex items-center gap-1">
                   {txHash.slice(0, 10)}...{txHash.slice(-8)} <ExternalLink className="h-3 w-3" />
                 </a>
               </div>
             )}
             {txError && (
-              <div className="mt-4 rounded-xl border border-zion-purple-500/20 bg-zion-purple-500/5 p-3 flex items-center gap-2 text-xs text-zion-purple-400">
+              <div className="mt-4 rounded-xl border border-zion-purple/20 bg-zion-purple/5 p-3 flex items-center gap-2 text-xs text-zion-purple">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 <span>{txError}</span>
               </div>

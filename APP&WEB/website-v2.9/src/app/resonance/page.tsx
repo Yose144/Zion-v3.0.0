@@ -281,7 +281,7 @@ export default function ResonancePage() {
             {/* Carrier wave card */}
             <FadeIn delay={FREQUENCIES.length * 0.05}>
               <div className="zion-rainbow-sub p-5 flex flex-col justify-center items-center text-center" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-zion-gold-500/15 text-zion-gold-400 mb-3">
+                <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-zion-gold/15 text-zion-gold mb-3">
                   <Waves className="h-6 w-6" />
                 </span>
                 <h3 className="text-lg font-bold text-white mb-1">108 Hz</h3>

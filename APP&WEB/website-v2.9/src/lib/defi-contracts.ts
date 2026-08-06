@@ -306,7 +306,7 @@ export const DEFI_PRODUCTS: DefiProduct[] = [
     href: '/bridge',
     status: 'live',
     icon: 'bridge',
-    color: 'from-zion-cyan-500 to-zion-purple-500',
+    color: 'from-zion-cyan to-zion-purple',
     tags: ['Lock/Mint', 'Burn/Unlock', 'Multi-sig', 'Timelock'],
   },
   {
@@ -319,7 +319,7 @@ export const DEFI_PRODUCTS: DefiProduct[] = [
     href: '/defi',
     status: 'live',
     icon: 'dex',
-    color: 'from-zion-cyan-500 to-zion-purple-500',
+    color: 'from-zion-cyan to-zion-purple',
     tags: ['Uniswap V3', 'USDT Primary', 'WETH', 'SOL', 'Active Liquidity'],
   },
   {
@@ -332,7 +332,7 @@ export const DEFI_PRODUCTS: DefiProduct[] = [
     href: '/defi/farming',
     status: FARM_DEPLOYED ? 'live' : 'pending',
     icon: 'farm',
-    color: 'from-zion-cyan-500 to-zion-cyan-500',
+    color: 'from-zion-cyan to-zion-cyan',
     tags: ['MasterChef v2', 'LP Rewards', '90d Halving'],
   },
   {
@@ -345,7 +345,7 @@ export const DEFI_PRODUCTS: DefiProduct[] = [
     href: '/defi/staking',
     status: STAKING_DEPLOYED ? 'live' : 'pending',
     icon: 'staking',
-    color: 'from-zion-cyan-500 to-zion-cyan-500',
+    color: 'from-zion-cyan to-zion-cyan',
     tags: ['APR', 'Cooldown', 'Reward Pool'],
   },
   {
@@ -358,7 +358,7 @@ export const DEFI_PRODUCTS: DefiProduct[] = [
     href: '/defi/dao',
     status: GOVERNANCE_DEPLOYED ? 'live' : 'pending',
     icon: 'governance',
-    color: 'from-zion-purple-500 to-zion-purple-500',
+    color: 'from-zion-purple to-zion-purple',
     tags: ['Proposals', 'Voting', 'Timelock', 'Quorum'],
   },
 ];

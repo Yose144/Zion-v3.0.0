@@ -78,7 +78,7 @@ export default function OasisAmbientScene({ className = '' }: { className?: stri
         style={{ x: portalX, y: portalY }}
         className="absolute right-[12%] top-[12%]"
       >
-        <div className="relative h-16 w-16 rounded-full bg-gradient-to-br from-amber-100/80 to-zion-gold-300/40 shadow-[0_0_60px_rgba(252, 209, 22,0.3)]">
+        <div className="relative h-16 w-16 rounded-full bg-gradient-to-br from-amber-100/80 to-zion-gold/40 shadow-[0_0_60px_rgba(252, 209, 22,0.3)]">
           <div className="absolute inset-0 rounded-full bg-gradient-to-br from-transparent to-black/30" />
           {/* Krátery */}
           <div className="absolute left-3 top-4 h-2 w-2 rounded-full bg-black/15" />
@@ -150,7 +150,7 @@ export default function OasisAmbientScene({ className = '' }: { className?: stri
       >
         <div className="relative w-[280px] h-[60px]">
           {/* Vodní hladina */}
-          <div className="absolute inset-0 rounded-[50%] bg-gradient-to-b from-zion-cyan-400/40 to-zion-purple-600/30 blur-[2px]" />
+          <div className="absolute inset-0 rounded-[50%] bg-gradient-to-b from-zion-cyan/40 to-zion-purple/30 blur-[2px]" />
           {/* Vlny */}
           {[0, 1, 2].map((i) => (
             <motion.div

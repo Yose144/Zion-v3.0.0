@@ -38,18 +38,18 @@ function CopyBtn({ text }: { text: string }) {
       onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(text); setOk(true); setTimeout(() => setOk(false), 1500); }}
       className="text-white/20 hover:text-white/60 transition-colors"
     >
-      {ok ? <Check className="w-3.5 h-3.5 text-zion-cyan-400" /> : <Copy className="w-3.5 h-3.5" />}
+      {ok ? <Check className="w-3.5 h-3.5 text-zion-cyan" /> : <Copy className="w-3.5 h-3.5" />}
     </button>
   );
 }
 
 function StatusDot({ status }: { status: string }) {
-  if (status === "pending") return <span className="relative flex h-2.5 w-2.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-zion-gold-400 opacity-75" /><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-zion-gold-400" /></span>;
-  return <span className="inline-flex h-2.5 w-2.5 rounded-full bg-zion-cyan-400" />;
+  if (status === "pending") return <span className="relative flex h-2.5 w-2.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-zion-gold opacity-75" /><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-zion-gold" /></span>;
+  return <span className="inline-flex h-2.5 w-2.5 rounded-full bg-zion-cyan" />;
 }
 
 function TypeBadge({ type, cs }: { type: string; cs: boolean }) {
-  const map: Record<string, string> = { coinbase: "bg-zion-gold/15 text-zion-gold", payout: "bg-zion-cyan-500/15 text-zion-cyan-400", transfer: "bg-zion-cyan-500/15 text-zion-cyan-300" };
+  const map: Record<string, string> = { coinbase: "bg-zion-gold/15 text-zion-gold", payout: "bg-zion-cyan/15 text-zion-cyan", transfer: "bg-zion-cyan/15 text-zion-cyan" };
   const cls = map[type] || "bg-white/10 text-white/60";
   const label = type === 'coinbase' ? 'coinbase' : type === 'payout' ? (ExplorerTransactionsTransactionsPageClientCopy.payout[cs ? 'cs' : 'en']) : type === 'transfer' ? (ExplorerTransactionsTransactionsPageClientCopy.transfer[cs ? 'cs' : 'en']) : type;
   return <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${cls}`}>{label}</span>;
@@ -178,8 +178,8 @@ export default function TransactionsPageClient() {
 
         {/* title */}
         <div className="flex items-center gap-3 mb-1">
-          <div className="w-9 h-9 rounded-xl bg-zion-cyan-500/10 border border-zion-cyan-500/20 flex items-center justify-center">
-            <ArrowRightLeft className="w-4.5 h-4.5 text-zion-cyan-400" />
+          <div className="w-9 h-9 rounded-xl bg-zion-cyan/10 border border-zion-cyan/20 flex items-center justify-center">
+            <ArrowRightLeft className="w-4.5 h-4.5 text-zion-cyan" />
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight">{ExplorerTransactionsTransactionsPageClientCopy.transactions[cs ? 'cs' : 'en']}</h1>
           <span className="text-[11px] text-white/30 font-mono tabular-nums ml-1">{transactions.length} {ExplorerTransactionsTransactionsPageClientCopy.loaded[cs ? 'cs' : 'en']}</span>
@@ -194,19 +194,19 @@ export default function TransactionsPageClient() {
         </div>
 
         {addressFilter && (
-          <div className="flex items-center gap-2 mt-2 mb-4 px-3 py-2 rounded-xl bg-zion-cyan-500/5 border border-zion-cyan-500/10 w-fit">
+          <div className="flex items-center gap-2 mt-2 mb-4 px-3 py-2 rounded-xl bg-zion-cyan/5 border border-zion-cyan/10 w-fit">
             <span className="text-[11px] text-white/40">{ExplorerTransactionsTransactionsPageClientCopy.addressFilter[cs ? 'cs' : 'en']}</span>
-            <span className="text-[11px] text-zion-cyan-300 font-mono">{addressFilter}</span>
+            <span className="text-[11px] text-zion-cyan font-mono">{addressFilter}</span>
             <Link href="/explorer/transactions" className="text-white/30 hover:text-white/60"><X className="w-3 h-3" /></Link>
           </div>
         )}
 
         {/* error banner */}
         {error && (
-          <div className="mt-4 px-4 py-3 rounded-2xl bg-zion-purple-500/10 border border-zion-purple-500/20 flex items-center gap-3">
-            <AlertTriangle className="w-5 h-5 text-zion-purple-400 shrink-0" />
+          <div className="mt-4 px-4 py-3 rounded-2xl bg-zion-purple/10 border border-zion-purple/20 flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-zion-purple shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-zion-purple-300 font-medium">{ExplorerTransactionsTransactionsPageClientCopy.failedToLoadTransactions[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm text-zion-purple font-medium">{ExplorerTransactionsTransactionsPageClientCopy.failedToLoadTransactions[cs ? 'cs' : 'en']}</p>
               <p className="text-xs text-white/40 font-mono break-all">{error}</p>
             </div>
             <button
@@ -249,7 +249,7 @@ export default function TransactionsPageClient() {
             <div className="flex flex-col items-center justify-center py-20 gap-3">
               <ArrowRightLeft className="w-10 h-10 text-white/10" />
               <p className="text-white/30 text-sm">{ExplorerTransactionsTransactionsPageClientCopy.noTransactionsFound[cs ? 'cs' : 'en']}</p>
-              {addressFilter && <Link href="/explorer/transactions" className="text-zion-cyan-400 text-xs hover:underline">{ExplorerTransactionsTransactionsPageClientCopy.clearFilter[cs ? 'cs' : 'en']}</Link>}
+              {addressFilter && <Link href="/explorer/transactions" className="text-zion-cyan text-xs hover:underline">{ExplorerTransactionsTransactionsPageClientCopy.clearFilter[cs ? 'cs' : 'en']}</Link>}
             </div>
           )}
 
@@ -265,7 +265,7 @@ export default function TransactionsPageClient() {
 
               {/* hash */}
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-[13px] font-mono text-zion-cyan-300 group-hover:text-cyan-200 truncate transition-colors">
+                <span className="text-[13px] font-mono text-zion-cyan group-hover:text-cyan-200 truncate transition-colors">
                   {tx.hash.slice(0, 16)}…{tx.hash.slice(-8)}
                 </span>
                 <CopyBtn text={tx.hash} />
@@ -288,7 +288,7 @@ export default function TransactionsPageClient() {
                     #{tx.block_height?.toLocaleString()}
                   </Link>
                 ) : (
-                  <span className="text-[12px] text-zion-gold-400/60 italic">{ExplorerTransactionsTransactionsPageClientCopy.pending[cs ? 'cs' : 'en']}</span>
+                  <span className="text-[12px] text-zion-gold/60 italic">{ExplorerTransactionsTransactionsPageClientCopy.pending[cs ? 'cs' : 'en']}</span>
                 )}
               </div>
 

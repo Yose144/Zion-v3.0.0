@@ -35,8 +35,8 @@ export default function GeographyRegionPage({ data }: { data: RegionData }) {
   return (
     <div className="zion-page">
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute -left-40 top-1/3 h-[600px] w-[600px] rounded-full blur-[240px] bg-zion-purple-500/8" />
-        <div className="absolute -right-40 top-2/3 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-purple-500/6" />
+        <div className="absolute -left-40 top-1/3 h-[600px] w-[600px] rounded-full blur-[240px] bg-zion-purple/8" />
+        <div className="absolute -right-40 top-2/3 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-purple/6" />
       </div>
 
       <div className="relative z-10 zion-container max-w-5xl">

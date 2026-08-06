@@ -44,7 +44,7 @@ export default function LifeTreeVisualization({
               mixBlendMode: "screen",
             }}
           />
-          <div className="absolute left-1/2 top-6 bottom-6 w-[2px] -translate-x-1/2 bg-gradient-to-b from-emerald-200 via-zion-gold to-zion-purple-400 shadow-[0_0_15px_rgba(255,255,255,0.4)]" />
+          <div className="absolute left-1/2 top-6 bottom-6 w-[2px] -translate-x-1/2 bg-gradient-to-b from-emerald-200 via-zion-gold to-zion-purple shadow-[0_0_15px_rgba(255,255,255,0.4)]" />
           <div className="spark spark-1" />
           <div className="spark spark-2" />
           <div className="orbital orbital-1" />
@@ -96,20 +96,20 @@ export default function LifeTreeVisualization({
               </div>
               <div className="tree-node-pin relative mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-white/40 bg-black/70 text-white shadow-[0_0_30px_rgba(7, 137, 48,0.5)]">
                 <span className="text-lg font-semibold">{node.level.slice(0, 1)}</span>
-                <div className="absolute inset-0 -z-10 rounded-full bg-zion-cyan-400/20" />
+                <div className="absolute inset-0 -z-10 rounded-full bg-zion-cyan/20" />
               </div>
             </div>
           ))}
         </div>
         <div className="relative mt-10 flex flex-wrap items-center justify-center gap-4 text-xs uppercase tracking-[0.3em] text-gray-300">
           <span className="inline-flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-zion-gold-300" /> Roots · Pizza Pack
+            <span className="h-2.5 w-2.5 rounded-full bg-zion-gold" /> Roots · Pizza Pack
           </span>
           <span className="inline-flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-zion-cyan-300" /> Heart · Lambo Pack
+            <span className="h-2.5 w-2.5 rounded-full bg-zion-cyan" /> Heart · Lambo Pack
           </span>
           <span className="inline-flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-zion-purple-300" /> Crown · Guardian Pack
+            <span className="h-2.5 w-2.5 rounded-full bg-zion-purple" /> Crown · Guardian Pack
           </span>
         </div>
       </div>

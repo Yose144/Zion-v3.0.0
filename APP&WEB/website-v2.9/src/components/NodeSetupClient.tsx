@@ -50,7 +50,7 @@ function CodeBlock({ code, title }: { code: string; title?: string }) {
         className="absolute top-3 right-3 p-1.5 rounded-lg bg-white/5 border border-white/10 text-white/30 hover:text-white/70 transition-all"
       >
         {copied ? (
-          <Check className="w-3.5 h-3.5 text-zion-cyan-400" />
+          <Check className="w-3.5 h-3.5 text-zion-cyan" />
         ) : (
           <Copy className="w-3.5 h-3.5" />
         )}
@@ -65,8 +65,8 @@ const requirements = [
   { icon: Cpu, label: "CPU", value: "2+ cores (ARM64 or x86_64)", color: "text-zion-cyan" },
   { icon: HardDrive, label: "RAM", value: "4 GB minimum (8 GB recommended)", color: "text-zion-gold" },
   { icon: Database, label: "Disk", value: "20 GB SSD (grows ~2 GB/year)", color: "text-zion-purple" },
-  { icon: Wifi, label: "Network", value: "Stable broadband, 10 Mbps+", color: "text-zion-cyan-400" },
-  { icon: Monitor, label: "OS", value: "Linux, macOS, Windows (WSL2)", color: "text-zion-purple-400" },
+  { icon: Wifi, label: "Network", value: "Stable broadband, 10 Mbps+", color: "text-zion-cyan" },
+  { icon: Monitor, label: "OS", value: "Linux, macOS, Windows (WSL2)", color: "text-zion-purple" },
 ];
 
 const ports = [
@@ -80,7 +80,7 @@ const networkConfigs = [
   {
     name: "Mainnet",
     file: "mainnet.toml",
-    badge: "bg-zion-cyan-500/10 text-zion-cyan-400 border-zion-cyan-500/20",
+    badge: "bg-zion-cyan/10 text-zion-cyan border-zion-cyan/20",
     description: "Mainnet launch line — countdown to 31 December 2026",
   },
   {
@@ -332,7 +332,7 @@ bootstrap = [
           transition={{ duration: 0.5, delay: 0.25 }}
         >
           <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2">
-            <Shield className="w-5 h-5 text-zion-cyan-400" />
+            <Shield className="w-5 h-5 text-zion-cyan" />
             Ports & Firewall
           </h2>
 
@@ -353,7 +353,7 @@ bootstrap = [
                 <span className="text-sm text-white/70">{p.purpose}</span>
                 <span className="text-right">
                   {p.required ? (
-                    <span className="text-[10px] bg-zion-cyan-500/10 text-zion-cyan-400 border border-zion-cyan-500/20 px-2 py-0.5 rounded-full">
+                    <span className="text-[10px] bg-zion-cyan/10 text-zion-cyan border border-zion-cyan/20 px-2 py-0.5 rounded-full">
                       Required
                     </span>
                   ) : (
@@ -416,7 +416,7 @@ sudo ufw status`}
           transition={{ duration: 0.5, delay: 0.35 }}
         >
           <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2">
-            <Rocket className="w-5 h-5 text-zion-cyan-400" />
+            <Rocket className="w-5 h-5 text-zion-cyan" />
             Verify Your Node
           </h2>
 
@@ -444,11 +444,11 @@ curl -s http://localhost:8443 \\
 # Expected: "result": 2+ peers`}
             />
 
-            <div className="rounded-xl bg-zion-cyan-500/5 border border-zion-cyan-500/10 p-4">
+            <div className="rounded-xl bg-zion-cyan/5 border border-zion-cyan/10 p-4">
               <div className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-zion-cyan-400 mt-0.5 shrink-0" />
+                <Check className="w-5 h-5 text-zion-cyan mt-0.5 shrink-0" />
                 <div className="text-sm text-white/60">
-                  <p className="font-medium text-zion-cyan-400 mb-1">
+                  <p className="font-medium text-zion-cyan mb-1">
                     Success criteria
                   </p>
                   <ul className="space-y-1 text-white/40">
@@ -474,7 +474,7 @@ curl -s http://localhost:8443 \\
           transition={{ duration: 0.5, delay: 0.4 }}
         >
           <h2 className="text-xl font-bold text-white mb-5 flex items-center gap-2">
-            <Settings className="w-5 h-5 text-zion-gold-400" />
+            <Settings className="w-5 h-5 text-zion-gold" />
             Troubleshooting
           </h2>
 
@@ -534,7 +534,7 @@ curl -s http://localhost:8443 \\
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/mining/guides"
-              className="px-6 py-3 rounded-xl bg-linear-to-r from-zion-gold to-zion-gold-600 text-black font-semibold text-sm hover:brightness-110 transition-all"
+              className="px-6 py-3 rounded-xl bg-linear-to-r from-zion-gold to-zion-gold text-black font-semibold text-sm hover:brightness-110 transition-all"
             >
               Mining Guides →
             </Link>

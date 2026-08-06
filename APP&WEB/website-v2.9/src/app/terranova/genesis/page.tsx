@@ -205,7 +205,7 @@ export default function ZahradaGenesisPage() {
         >
           <Link
             href="/terranova"
-            className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-zion-cyan-400 transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-zion-cyan transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             {TerranovaGenesisCopy.backToTerraNova[cs ? 'cs' : 'en']}
@@ -248,11 +248,11 @@ export default function ZahradaGenesisPage() {
                 <p className="text-lg text-zion-cyan font-medium">Base Camp · Terra Nova ®</p>
 
                 <div className="flex items-center gap-1.5 text-gray-400">
-                  <MapPin className="w-4 h-4 text-zion-cyan-500 shrink-0" />
+                  <MapPin className="w-4 h-4 text-zion-cyan shrink-0" />
                   <span className="text-sm">Algarve / Atlantické pobřeží · Portugalsko</span>
                 </div>
 
-                <blockquote className="mt-4 pl-4 border-l-2 border-zion-cyan-500/40 text-sm text-gray-400 italic leading-relaxed max-w-lg">
+                <blockquote className="mt-4 pl-4 border-l-2 border-zion-cyan/40 text-sm text-gray-400 italic leading-relaxed max-w-lg">
                   {TerranovaGenesisCopy.oneLoveOneHeartTogetherWeCreat[cs ? 'cs' : 'en']}
                 </blockquote>
 
@@ -465,12 +465,12 @@ export default function ZahradaGenesisPage() {
 
             {/* Jídlo */}
             <div className="relative zion-rainbow-sub p-5 space-y-3 overflow-hidden" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
-              <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-[40px] bg-zion-cyan-500/10" />
+              <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-[40px] bg-zion-cyan/10" />
               <div className="flex items-center gap-2 relative z-10">
                 <span className="inline-flex h-9 w-9 items-center justify-center zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                  <Sprout className="h-4 w-4 text-zion-cyan-400" />
+                  <Sprout className="h-4 w-4 text-zion-cyan" />
                 </span>
-                <h3 className="font-bold text-zion-cyan-400 text-sm">{TerranovaGenesisCopy.gardenFood[cs ? 'cs' : 'en']}</h3>
+                <h3 className="font-bold text-zion-cyan text-sm">{TerranovaGenesisCopy.gardenFood[cs ? 'cs' : 'en']}</h3>
               </div>
               <div className="space-y-1.5 relative z-10">
                 {[

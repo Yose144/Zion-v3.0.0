@@ -82,7 +82,7 @@ export default function MiningStats({ address }: MiningStatsProps) {
           <span className="text-sm text-gray-500">Loading mining stats...</span>
         </div>
       ) : error ? (
-        <div className="rounded-xl border border-zion-purple-500/20 bg-zion-purple-500/5 p-4 text-sm text-zion-purple-400">{error}</div>
+        <div className="rounded-xl border border-zion-purple/20 bg-zion-purple/5 p-4 text-sm text-zion-purple">{error}</div>
       ) : !miner ? (
         /* Not mining */
         <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
@@ -132,8 +132,8 @@ export default function MiningStats({ address }: MiningStatsProps) {
           <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-3">
             <div className="flex items-center justify-between text-xs">
               <span className="text-gray-500">Status</span>
-              <span className={`inline-flex items-center gap-1.5 ${miner.online ? 'text-zion-cyan-400' : 'text-gray-500'}`}>
-                <span className={`h-2 w-2 rounded-full ${miner.online ? 'bg-zion-cyan-400 animate-pulse' : 'bg-gray-600'}`} />
+              <span className={`inline-flex items-center gap-1.5 ${miner.online ? 'text-zion-cyan' : 'text-gray-500'}`}>
+                <span className={`h-2 w-2 rounded-full ${miner.online ? 'bg-zion-cyan animate-pulse' : 'bg-gray-600'}`} />
                 {miner.online ? 'Online' : 'Offline'}
               </span>
             </div>
@@ -183,8 +183,8 @@ function StatCard({
 }) {
   const colors = {
     cyan: 'border-zion-cyan/20 bg-zion-cyan/5 text-zion-cyan',
-    green: 'border-zion-cyan-500/20 bg-zion-cyan-500/5 text-zion-cyan-400',
-    red: 'border-zion-purple-500/20 bg-zion-purple-500/5 text-zion-purple-400',
+    green: 'border-zion-cyan/20 bg-zion-cyan/5 text-zion-cyan',
+    red: 'border-zion-purple/20 bg-zion-purple/5 text-zion-purple',
     gold: 'border-zion-gold/20 bg-zion-gold/5 text-zion-gold',
   };
   return (

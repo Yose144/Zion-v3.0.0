@@ -46,10 +46,10 @@ const journeySteps = [
     title: 'Počátek vesmíru',
     description:
       'Z jediného bodu nekonečné hustoty vznikl prostor, čas a hmota. Prvotní záblesk — singularita — jež se rozvinula v celý existující kosmos.',
-    accent: 'from-zion-purple-500 via-zion-purple-400 to-zion-purple-500',
-    border: 'border-zion-purple-500/30',
-    glow: 'bg-zion-purple-500/10',
-    dot: 'bg-zion-purple-400',
+    accent: 'from-zion-purple via-zion-purple to-zion-purple',
+    border: 'border-zion-purple/30',
+    glow: 'bg-zion-purple/10',
+    dot: 'bg-zion-purple',
     symbol: '✦',
   },
   {
@@ -59,10 +59,10 @@ const journeySteps = [
     title: 'Zlaté kosmické vejce',
     description:
       'Prvotní zlaté vejce (Hiranyagarbha) plující v prvotních vodách — zárodek celého stvoření nesoucí Brahmu, duši vesmíru a vědomí.',
-    accent: 'from-zion-gold-400 via-zion-gold-300 to-zion-gold-400',
-    border: 'border-zion-gold-400/30',
-    glow: 'bg-zion-gold-400/10',
-    dot: 'bg-zion-gold-400',
+    accent: 'from-zion-gold via-zion-gold to-zion-gold',
+    border: 'border-zion-gold/30',
+    glow: 'bg-zion-gold/10',
+    dot: 'bg-zion-gold',
     symbol: '◉',
   },
   {
@@ -72,10 +72,10 @@ const journeySteps = [
     title: 'Posvátné místo vědomí',
     description:
       'Ekam — "jedno" v sanskrtu — je živoucí chrám zasvěcený kolektivnímu osvícení. Centrum Deeksha přenosu, kde se vědomí stýká s formou.',
-    accent: 'from-zion-cyan-400 via-zion-cyan-300 to-zion-cyan-400',
-    border: 'border-zion-cyan-400/30',
-    glow: 'bg-zion-cyan-400/10',
-    dot: 'bg-zion-cyan-400',
+    accent: 'from-zion-cyan via-zion-cyan to-zion-cyan',
+    border: 'border-zion-cyan/30',
+    glow: 'bg-zion-cyan/10',
+    dot: 'bg-zion-cyan',
     symbol: '🏛',
   },
   {
@@ -85,10 +85,10 @@ const journeySteps = [
     title: 'Golden Egg on-chain',
     description:
       'ZION Cosmic Harmony kóduje Deeksha princip do proof-of-work. Každý blok je digitální Hiranyagarbha — zárodek nového řádu vědomí v digitálním prostoru.',
-    accent: 'from-zion-cyan-400 via-zion-gold to-zion-gold-400',
-    border: 'border-zion-cyan-400/30',
-    glow: 'bg-zion-cyan-400/10',
-    dot: 'bg-zion-cyan-400',
+    accent: 'from-zion-cyan via-zion-gold to-zion-gold',
+    border: 'border-zion-cyan/30',
+    glow: 'bg-zion-cyan/10',
+    dot: 'bg-zion-cyan',
     symbol: '⬡',
   },
 ] as const;
@@ -197,13 +197,13 @@ export default function EkamMuseumLanding() {
     <div className="relative overflow-hidden">
       {/* ── Background ── */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(252, 209, 22,0.16),_transparent_28%),radial-gradient(circle_at_85%_20%,_rgba(14,165,233,0.10),_transparent_24%),linear-gradient(180deg,_rgba(6,10,18,0.98),_rgba(8,12,26,0.94))]" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-zion-gold-300/40 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-zion-gold/40 to-transparent" />
 
       {/* ═══════════ COSMIC JOURNEY ═══════════ */}
       <section className="relative px-6 pt-24 pb-4 sm:px-8 lg:px-10">
         <div className="mx-auto max-w-3xl">
           <div className="mb-10 text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-zion-purple-400/30 bg-zion-purple-400/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.32em] text-violet-200/80 mb-4">
+            <span className="inline-flex items-center gap-2 rounded-full border border-zion-purple/30 bg-zion-purple/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.32em] text-violet-200/80 mb-4">
               <Sparkles className="h-3.5 w-3.5" />
               Kosmická linie
             </span>
@@ -261,7 +261,7 @@ export default function EkamMuseumLanding() {
           <div className="mx-auto max-w-6xl">
             <div className="max-w-4xl zion-rainbow-card p-6 shadow-[0_22px_64px_rgba(2,6,23,0.30)] sm:p-8 lg:p-10" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <div className="max-w-3xl space-y-5">
-                <span className="inline-flex items-center gap-2 rounded-full border border-zion-gold-300/30 bg-zion-gold-300/12 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.32em] text-amber-100/88">
+                <span className="inline-flex items-center gap-2 rounded-full border border-zion-gold/30 bg-zion-gold/12 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.32em] text-amber-100/88">
                   <Sparkles className="h-3.5 w-3.5 text-zion-gold" />
                   {tr('ekamPage', 'badge', lang)}
                 </span>
@@ -288,7 +288,7 @@ export default function EkamMuseumLanding() {
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {archFacts.map(({ key, Icon }) => (
                 <article key={key} className="zion-rainbow-sub p-5 transition hover:border-amber-200/24" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-200/20 bg-zion-gold-300/10 text-amber-100">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-200/20 bg-zion-gold/10 text-amber-100">
                     <Icon className="h-5 w-5" />
                   </div>
                   <h3 className="mt-4 text-base font-semibold text-white">{tr('ekamPage', `${key}_title`, lang)}</h3>
@@ -311,7 +311,7 @@ export default function EkamMuseumLanding() {
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {geoFacts.map(({ key, Icon }) => (
                 <article key={key} className="zion-rainbow-sub p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-200/20 bg-zion-gold-300/10 text-amber-100">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-200/20 bg-zion-gold/10 text-amber-100">
                     <Icon className="h-5 w-5" />
                   </div>
                   <h3 className="mt-4 text-base font-semibold text-white">{tr('ekamPage', `${key}_title`, lang)}</h3>
@@ -353,7 +353,7 @@ export default function EkamMuseumLanding() {
         <div className="mx-auto max-w-6xl">
           <div className="zion-rainbow-card p-7" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-200/20 bg-zion-gold-300/10 text-amber-100">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-200/20 bg-zion-gold/10 text-amber-100">
                 <Users className="h-5 w-5" />
               </div>
               <div>
@@ -416,7 +416,7 @@ export default function EkamMuseumLanding() {
 
                 {/* ── Quote ── */}
                 <div className="zion-rainbow-sub p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                  <Quote className="mb-2 h-5 w-5 text-zion-gold-300/40" />
+                  <Quote className="mb-2 h-5 w-5 text-zion-gold/40" />
                   <p className="text-sm italic leading-relaxed text-amber-100/80">
                     {tr('ekamPage', 'founders_quote', lang)}
                   </p>
@@ -430,7 +430,7 @@ export default function EkamMuseumLanding() {
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-2">
                 {familyMembers.map(({ key, Icon }) => (
                   <article key={key} className="zion-rainbow-sub p-5 transition hover:border-amber-200/24" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-amber-200/20 bg-zion-gold-300/10 text-amber-100">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-amber-200/20 bg-zion-gold/10 text-amber-100">
                       <Icon className="h-4 w-4" />
                     </div>
                     <h3 className="mt-3 text-sm font-semibold text-white">{tr('ekamPage', `${key}_title`, lang)}</h3>
@@ -448,7 +448,7 @@ export default function EkamMuseumLanding() {
         <div className="mx-auto max-w-6xl">
           <div className="zion-rainbow-card p-7" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-200/20 bg-zion-cyan-300/10 text-sky-100">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-200/20 bg-zion-cyan/10 text-sky-100">
                 <Play className="h-5 w-5" />
               </div>
               <div>
@@ -547,7 +547,7 @@ export default function EkamMuseumLanding() {
                 href={EKAM_SOURCE_URL}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-full border border-amber-200/15 bg-zion-gold-300/8 px-5 py-2.5 text-sm font-semibold text-amber-50 transition hover:border-amber-200/30"
+                className="inline-flex items-center gap-2 rounded-full border border-amber-200/15 bg-zion-gold/8 px-5 py-2.5 text-sm font-semibold text-amber-50 transition hover:border-amber-200/30"
               >
                 <ExternalLink className="h-4 w-4" />
                 {tr('ekamPage', 'tour_cta_website', lang)}
@@ -562,7 +562,7 @@ export default function EkamMuseumLanding() {
         <div className="mx-auto max-w-6xl">
           <div className="zion-rainbow-card p-7" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-200/20 bg-zion-cyan-300/10 text-sky-100">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-sky-200/20 bg-zion-cyan/10 text-sky-100">
                 <Orbit className="h-5 w-5" />
               </div>
               <div>
@@ -578,7 +578,7 @@ export default function EkamMuseumLanding() {
                   className="relative zion-rainbow-sub p-5 transition hover:border-amber-200/24 hover:bg-slate-950/50" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
                 >
                   <span className="absolute right-4 top-4 text-[11px] font-semibold text-amber-100/40">{index + 1}/4</span>
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-200/20 bg-zion-gold-300/10 text-amber-100">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-200/20 bg-zion-gold/10 text-amber-100">
                     <Icon className="h-5 w-5" />
                   </div>
                   <h3 className="mt-4 text-lg font-semibold text-white">{tr('ekamPage', title, lang)}</h3>

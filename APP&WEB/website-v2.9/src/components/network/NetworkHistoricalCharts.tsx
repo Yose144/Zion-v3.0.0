@@ -274,7 +274,7 @@ export default function NetworkHistoricalCharts() {
         labelCs: 'Hashrate',
         series: series.hashrate,
         color: '#10b981',
-        icon: <TrendingUp className="h-4 w-4 text-zion-cyan-400" />,
+        icon: <TrendingUp className="h-4 w-4 text-zion-cyan" />,
         unit: 'H/s',
         type: 'area' as const,
         tip: 'Network hashrate over time — total computational power securing the chain.',
@@ -286,7 +286,7 @@ export default function NetworkHistoricalCharts() {
         labelCs: 'Obtížnost',
         series: series.difficulty,
         color: '#a855f7',
-        icon: <Gauge className="h-4 w-4 text-zion-purple-400" />,
+        icon: <Gauge className="h-4 w-4 text-zion-purple" />,
         type: 'line' as const,
         tip: 'Mining difficulty adjusted by LWMA DAA every block to maintain 60-second target.',
         tipCs: 'Těžební obtížnost upravovaná LWMA DAA každý blok pro udržení 60s cíle.',
@@ -297,7 +297,7 @@ export default function NetworkHistoricalCharts() {
         labelCs: 'Čas bloku',
         series: series.blockTime,
         color: '#22d3ee',
-        icon: <Clock className="h-4 w-4 text-zion-cyan-400" />,
+        icon: <Clock className="h-4 w-4 text-zion-cyan" />,
         unit: 's',
         type: 'line' as const,
         tip: 'Average time between consecutive blocks. Target is 60 seconds.',
@@ -309,7 +309,7 @@ export default function NetworkHistoricalCharts() {
         labelCs: 'Počet peerů',
         series: series.peerCount,
         color: '#f59e0b',
-        icon: <Network className="h-4 w-4 text-zion-gold-400" />,
+        icon: <Network className="h-4 w-4 text-zion-gold" />,
         type: 'line' as const,
         tip: 'Active P2P connections — incoming and outgoing peers.',
         tipCs: 'Aktivní P2P spojení — příchozí a odchozí peery.',
@@ -320,7 +320,7 @@ export default function NetworkHistoricalCharts() {
         labelCs: 'Velikost mempoolu',
         series: series.mempool,
         color: '#ec4899',
-        icon: <Inbox className="h-4 w-4 text-zion-purple-400" />,
+        icon: <Inbox className="h-4 w-4 text-zion-purple" />,
         unit: 'tx',
         type: 'bar' as const,
         tip: 'Transactions waiting for confirmation in the mempool.',
@@ -347,7 +347,7 @@ export default function NetworkHistoricalCharts() {
       <div className="flex flex-wrap items-center gap-2 mb-6">
         <span className="text-xs text-gray-500 mr-2">{NetworkHistoricalChartsCopy.range[cs ? 'cs' : 'en']}</span>
         <span className="zion-badge-gold">24h</span>
-        <span className="text-[10px] text-zion-cyan-400 ml-2">● {NetworkHistoricalChartsCopy.liveData[cs ? 'cs' : 'en']}</span>
+        <span className="text-[10px] text-zion-cyan ml-2">● {NetworkHistoricalChartsCopy.liveData[cs ? 'cs' : 'en']}</span>
       </div>
 
       {/* Charts grid */}
@@ -370,7 +370,7 @@ export default function NetworkHistoricalCharts() {
               </div>
               <button
                 onClick={() => exportCSV(chart.key, chart.series, chart.label)}
-                className="text-gray-500 hover:text-zion-purple-300 transition-colors"
+                className="text-gray-500 hover:text-zion-purple transition-colors"
                 title={NetworkHistoricalChartsCopy.exportCsv[cs ? 'cs' : 'en']}
               >
                 <Download className="h-3.5 w-3.5" />

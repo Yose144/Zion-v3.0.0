@@ -221,7 +221,7 @@ function ReleaseCard({
     <div className="space-y-6">
       {/* ─── Release header ─── */}
       <div
-        className={`zion-rainbow-card p-5 sm:p-6 ${primary ? 'ring-1 ring-zion-cyan-500/30' : ''}`}
+        className={`zion-rainbow-card p-5 sm:p-6 ${primary ? 'ring-1 ring-zion-cyan/30' : ''}`}
         style={{ '--rc': accent } as React.CSSProperties}
       >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -232,11 +232,11 @@ function ReleaseCard({
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-xl sm:text-2xl font-semibold text-white">{release.tag}</h2>
-                <span className="inline-flex items-center gap-1 rounded-full border border-zion-gold-500/30 bg-zion-gold-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-zion-gold-400 uppercase tracking-wider">
+                <span className="inline-flex items-center gap-1 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-2.5 py-0.5 text-[10px] font-semibold text-zion-gold uppercase tracking-wider">
                   {DownloadToolBrowserCopy.preRelease[cs ? 'cs' : 'en']}
                 </span>
                 {primary && (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-zion-cyan-500/30 bg-zion-cyan-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-zion-cyan-400 uppercase tracking-wider">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-2.5 py-0.5 text-[10px] font-semibold text-zion-cyan uppercase tracking-wider">
                     {DownloadToolBrowserCopy.latest[cs ? 'cs' : 'en']}
                   </span>
                 )}
@@ -361,7 +361,7 @@ function ReleaseCard({
       >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
-            <ShieldCheck className="mt-0.5 h-6 w-6 shrink-0 text-zion-cyan-400" />
+            <ShieldCheck className="mt-0.5 h-6 w-6 shrink-0 text-zion-cyan" />
             <div>
               <h3 className="text-sm font-semibold text-white">
                 {DownloadToolBrowserCopy.sha256Verification[cs ? 'cs' : 'en']}
@@ -395,7 +395,7 @@ function ReleaseCard({
           style={{ '--rc': accent } as React.CSSProperties}
         >
           <div className="flex items-center gap-3 mb-3">
-            <Terminal className="h-5 w-5 text-zion-cyan-400" />
+            <Terminal className="h-5 w-5 text-zion-cyan" />
             <h3 className="text-sm font-semibold text-white">
               {DownloadToolBrowserCopy.quickStartBoostMiner[cs ? 'cs' : 'en']}
             </h3>
@@ -415,7 +415,7 @@ function ReleaseCard({
           style={{ '--rc': accent } as React.CSSProperties}
         >
           <div className="flex items-center gap-3 mb-3">
-            <Terminal className="h-5 w-5 text-zion-purple-400" />
+            <Terminal className="h-5 w-5 text-zion-purple" />
             <h3 className="text-sm font-semibold text-white">
               {DownloadToolBrowserCopy.quickStartTripleStreamMiner[cs ? 'cs' : 'en']}
             </h3>
@@ -464,7 +464,7 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
     <section className="space-y-12">
       {/* ─── v3.1.0 — Boost Miner (primary, Linux x86_64) ─── */}
       <div className="space-y-3">
-        <p className="text-sm uppercase tracking-[0.4em] text-zion-cyan-400">
+        <p className="text-sm uppercase tracking-[0.4em] text-zion-cyan">
           {DownloadToolBrowserCopy.latestReleaseBoostMiner[cs ? 'cs' : 'en']}
         </p>
         <ReleaseCard release={LATEST_RELEASE} variant="boost" cs={cs} />
@@ -472,7 +472,7 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
 
       {/* ─── v3.0.6-beta — Trinity Miner (5 platforms, macOS/Windows) ─── */}
       <div className="space-y-3 pt-6 border-t border-white/5">
-        <p className="text-sm uppercase tracking-[0.4em] text-zion-purple-400">
+        <p className="text-sm uppercase tracking-[0.4em] text-zion-purple">
           {DownloadToolBrowserCopy.trinityMinerFivePlatforms[cs ? 'cs' : 'en']}
         </p>
         <ReleaseCard release={TRINITY_RELEASE} variant="trinity" cs={cs} />

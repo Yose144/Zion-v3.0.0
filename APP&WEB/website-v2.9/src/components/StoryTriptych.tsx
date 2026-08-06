@@ -32,7 +32,10 @@ export default function StoryTriptych() {
       title: 'Terra Nova',
       subtitle: StoryTriptychCopy.goldenCompassOfTheNewEarth[cs ? 'cs' : 'en'],
       desc: StoryTriptychCopy.theFourthBookOfZionPublicEntry[cs ? 'cs' : 'en'],
-      rc: '228, 30, 43', // rose
+      rc: '228, 30, 43', // rasta red
+      iconColor: 'text-zion-purple',
+      titleClass:
+        'text-xl font-bold text-gradient transition-colors group-hover:text-zion-gold',
       chapters: StoryTriptychCopy.bookCompassCli[cs ? 'cs' : 'en'],
     },
     {
@@ -41,7 +44,10 @@ export default function StoryTriptych() {
       title: StoryTriptychCopy.quantumRevolution[cs ? 'cs' : 'en'],
       subtitle: StoryTriptychCopy.theBookThatStartedItAll[cs ? 'cs' : 'en'],
       desc: StoryTriptychCopy.aFiresideStoryOfANewEarthWhere[cs ? 'cs' : 'en'],
-      rc: '252, 209, 22', // gold
+      rc: '252, 209, 22', // rasta gold
+      iconColor: 'text-zion-gold',
+      titleClass:
+        'text-xl font-bold text-zion-gold transition-colors group-hover:text-zion-cyan',
       chapters: StoryTriptychCopy.k10Chapters11Languages[cs ? 'cs' : 'en'],
     },
     {
@@ -50,7 +56,10 @@ export default function StoryTriptych() {
       title: 'ZION Genesis',
       subtitle: StoryTriptychCopy.sacredStoryOfTheSameWorld[cs ? 'cs' : 'en'],
       desc: StoryTriptychCopy.aMemoryOfTheFutureTheStoryOf14[cs ? 'cs' : 'en'],
-      rc: '7, 137, 48', // teal
+      rc: '7, 137, 48', // rasta green
+      iconColor: 'text-zion-cyan',
+      titleClass:
+        'text-xl font-bold text-zion-cyan transition-colors group-hover:text-zion-gold',
       chapters: StoryTriptychCopy.k9ChaptersOfAwakening[cs ? 'cs' : 'en'],
     },
   ];
@@ -82,7 +91,7 @@ export default function StoryTriptych() {
               >
                 <Link
                   href={card.href}
-                  className="zion-rainbow-card group block h-full p-6 space-y-4"
+                  className="zion-rainbow-sub group block h-full p-6 space-y-4"
                   style={{ '--rc': card.rc } as React.CSSProperties}
                 >
                   {/* Icon */}
@@ -93,12 +102,12 @@ export default function StoryTriptych() {
                       backgroundColor: `rgba(${card.rc}, 0.12)`,
                     }}
                   >
-                    <Icon className="h-7 w-7" style={{ color: `rgb(${card.rc})` }} />
+                    <Icon className={`h-7 w-7 ${card.iconColor}`} />
                   </div>
 
                   {/* Title */}
                   <div className="space-y-1">
-                    <h3 className="text-xl font-bold text-white">{card.title}</h3>
+                    <h3 className={card.titleClass}>{card.title}</h3>
                     <p className="text-[11px] uppercase tracking-wider" style={{ color: `rgba(${card.rc}, 0.8)` }}>
                       {card.subtitle}
                     </p>

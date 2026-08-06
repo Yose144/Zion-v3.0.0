@@ -95,8 +95,8 @@ export default function HiranyagarbhaChat({ lang = 'cs' }: { lang?: 'cs' | 'en' 
           </p>
         </div>
         <div className="ml-auto flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-zion-cyan-400 animate-pulse" />
-          <span className="text-xs text-zion-cyan-400">Online</span>
+          <span className="w-2 h-2 rounded-full bg-zion-cyan animate-pulse" />
+          <span className="text-xs text-zion-cyan">Online</span>
         </div>
       </div>
 

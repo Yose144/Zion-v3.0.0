@@ -126,7 +126,7 @@ export default function TokenSelector({ label, chain, value, onChange }: Props) 
         <button
           onClick={() => setOpen(!open)}
           disabled={tokens.length === 0}
-          className="w-full flex items-center justify-between px-4 py-3 bg-zinc-900/80 border border-zinc-700/50 rounded-xl hover:border-zion-gold-500/50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-between px-4 py-3 bg-zinc-900/80 border border-zinc-700/50 rounded-xl hover:border-zion-gold/50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <div className="flex items-center gap-2">
             <span className="text-sm font-bold text-white">
@@ -154,7 +154,7 @@ export default function TokenSelector({ label, chain, value, onChange }: Props) 
                   <span className="text-sm font-bold text-white">{token.symbol}</span>
                   <span className="text-xs text-zinc-500">{token.name}</span>
                 </div>
-                {token.symbol === value && <Check className="w-4 h-4 text-zion-gold-500" />}
+                {token.symbol === value && <Check className="w-4 h-4 text-zion-gold" />}
               </button>
             ))}
           </div>

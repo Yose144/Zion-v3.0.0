@@ -574,11 +574,11 @@ export default function TreeOfLifePageClient() {
           style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zion-gold-500/20">
-              <AlertTriangle className="h-5 w-5 text-zion-gold-400" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zion-gold/20">
+              <AlertTriangle className="h-5 w-5 text-zion-gold" />
             </div>
             <div className="space-y-1.5">
-              <h3 className="text-sm font-bold text-zion-gold-300">
+              <h3 className="text-sm font-bold text-zion-gold">
                 {TreeOfLifeTreeOfLifePageClientCopy.projectUnderConstantDevelopmen[cs ? 'cs' : 'en']}
               </h3>
               <p className="text-xs leading-relaxed text-amber-200/70">
@@ -593,7 +593,7 @@ export default function TreeOfLifePageClient() {
                   <Construction className="h-3 w-3" />
                   {TreeOfLifeTreeOfLifePageClientCopy.activelyBuilding[cs ? 'cs' : 'en']}
                 </span>
-                <span className="zion-badge border-zion-purple-500/30 bg-zion-purple-500/10 text-zion-purple-300">
+                <span className="zion-badge border-zion-purple/30 bg-zion-purple/10 text-zion-purple">
                   {TreeOfLifeTreeOfLifePageClientCopy.mainnetBetaAtYourOwnRisk[cs ? 'cs' : 'en']}
                 </span>
               </div>
@@ -614,7 +614,7 @@ export default function TreeOfLifePageClient() {
           </div>
           <h1 className="text-4xl md:text-6xl font-bold leading-tight text-white">
             {TreeOfLifeTreeOfLifePageClientCopy.treeOfLife[cs ? 'cs' : 'en']}
-            <span className="block bg-linear-to-r from-zion-gold via-zion-gold-400 to-zion-cyan bg-clip-text text-transparent">
+            <span className="block bg-linear-to-r from-zion-gold via-zion-gold to-zion-cyan bg-clip-text text-transparent">
               {TreeOfLifeTreeOfLifePageClientCopy.zionLayersL1L6[cs ? 'cs' : 'en']}
             </span>
           </h1>
@@ -631,7 +631,7 @@ export default function TreeOfLifePageClient() {
             </Link>
             <Link
               href="/terranova"
-              className="inline-flex items-center gap-2 rounded-2xl border border-zion-cyan-500/30 bg-zion-cyan-500/5 px-5 py-2.5 text-sm font-medium text-zion-cyan-300 hover:bg-zion-cyan-500/10 transition-all"
+              className="inline-flex items-center gap-2 rounded-2xl border border-zion-cyan/30 bg-zion-cyan/5 px-5 py-2.5 text-sm font-medium text-zion-cyan hover:bg-zion-cyan/10 transition-all"
             >
               <BookOpen className="h-4 w-4" />
               {TreeOfLifeTreeOfLifePageClientCopy.terranovaBook[cs ? 'cs' : 'en']}
@@ -682,19 +682,19 @@ export default function TreeOfLifePageClient() {
               {TreeOfLifeTreeOfLifePageClientCopy.zoharInZionIsNotAReligiousText[cs ? 'cs' : 'en']}
             </p>
             <div className="grid gap-3 sm:grid-cols-2 pt-2">
-              <Link href="/docs/Zohar/README.md" className="inline-flex items-center gap-2 text-sm text-zion-gold hover:text-zion-gold-300 transition-colors">
+              <Link href="/docs/Zohar/README.md" className="inline-flex items-center gap-2 text-sm text-zion-gold hover:text-zion-gold transition-colors">
                 <ArrowRight className="h-3.5 w-3.5" /> docs/Zohar/README.md
               </Link>
-              <Link href="/docs/Zohar/01-SEFIROT-VRSTVY.md" className="inline-flex items-center gap-2 text-sm text-zion-gold hover:text-zion-gold-300 transition-colors">
+              <Link href="/docs/Zohar/01-SEFIROT-VRSTVY.md" className="inline-flex items-center gap-2 text-sm text-zion-gold hover:text-zion-gold transition-colors">
                 <ArrowRight className="h-3.5 w-3.5" /> 01-SEFIROT-VRSTVY.md
               </Link>
-              <Link href="/docs/Zohar/02-ROADMAP.md" className="inline-flex items-center gap-2 text-sm text-zion-gold hover:text-zion-gold-300 transition-colors">
+              <Link href="/docs/Zohar/02-ROADMAP.md" className="inline-flex items-center gap-2 text-sm text-zion-gold hover:text-zion-gold transition-colors">
                 <ArrowRight className="h-3.5 w-3.5" /> 02-ROADMAP.md
               </Link>
-              <Link href="/docs/Zohar/03-O-KNIZE-ZOHAR.md" className="inline-flex items-center gap-2 text-sm text-zion-gold hover:text-zion-gold-300 transition-colors">
+              <Link href="/docs/Zohar/03-O-KNIZE-ZOHAR.md" className="inline-flex items-center gap-2 text-sm text-zion-gold hover:text-zion-gold transition-colors">
                 <ArrowRight className="h-3.5 w-3.5" /> 03-O-KNIZE-ZOHAR.md
               </Link>
-              <Link href="/docs/3.0.5/evoluZion.md" className="inline-flex items-center gap-2 text-sm text-zion-cyan-400 hover:text-zion-cyan-300 transition-colors">
+              <Link href="/docs/3.0.5/evoluZion.md" className="inline-flex items-center gap-2 text-sm text-zion-cyan hover:text-zion-cyan transition-colors">
                 <ArrowRight className="h-3.5 w-3.5" /> evoluZion.md (Strom života metafora)
               </Link>
             </div>
@@ -710,27 +710,27 @@ export default function TreeOfLifePageClient() {
             </p>
             <div className="space-y-2 font-mono text-xs text-gray-400">
               <div className="flex items-center gap-2">
-                <span className="rounded bg-zion-purple-500/20 px-2 py-0.5 text-zion-purple-300">~2. stol.</span>
+                <span className="rounded bg-zion-purple/20 px-2 py-0.5 text-zion-purple">~2. stol.</span>
                 <span className="text-gray-500">→</span>
                 <span><span className="text-white">Sefer Yetzirah</span> — {TreeOfLifeTreeOfLifePageClientCopy.k10SefirotBelimahUnnamedAttribu[cs ? 'cs' : 'en']}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="rounded bg-zion-purple-500/20 px-2 py-0.5 text-zion-purple-300">~1150</span>
+                <span className="rounded bg-zion-purple/20 px-2 py-0.5 text-zion-purple">~1150</span>
                 <span className="text-gray-500">→</span>
                 <span><span className="text-white">Sefer ha-Bahir</span> — {TreeOfLifeTreeOfLifePageClientCopy.sephirotNamedChannelsOfDivineP[cs ? 'cs' : 'en']}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="rounded bg-zion-purple-500/20 px-2 py-0.5 text-zion-purple-300">~1200</span>
+                <span className="rounded bg-zion-purple/20 px-2 py-0.5 text-zion-purple">~1200</span>
                 <span className="text-gray-500">→</span>
                 <span><span className="text-white">Sha&apos;arei Orah</span> — {TreeOfLifeTreeOfLifePageClientCopy.firstTreeOfLifeDiagramIlanRGik[cs ? 'cs' : 'en']}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="rounded bg-zion-gold-500/20 px-2 py-0.5 text-zion-gold-300">~1280</span>
+                <span className="rounded bg-zion-gold/20 px-2 py-0.5 text-zion-gold">~1280</span>
                 <span className="text-gray-500">→</span>
                 <span><span className="text-white">Zohar</span> — {TreeOfLifeTreeOfLifePageClientCopy.fullMysticalSystemMDeLeN[cs ? 'cs' : 'en']}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="rounded bg-zion-cyan-500/20 px-2 py-0.5 text-zion-cyan-300">~1570</span>
+                <span className="rounded bg-zion-cyan/20 px-2 py-0.5 text-zion-cyan">~1570</span>
                 <span className="text-gray-500">→</span>
                 <span><span className="text-white">Etz Chaim</span> — {TreeOfLifeTreeOfLifePageClientCopy.modernFormOfTheTreeRLuriaAri[cs ? 'cs' : 'en']}</span>
               </div>
@@ -775,7 +775,7 @@ export default function TreeOfLifePageClient() {
           {/* Scholem box */}
           <div className="zion-rainbow-card space-y-3 p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <div className="flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-zion-cyan-400" />
+              <BookOpen className="h-4 w-4 text-zion-cyan" />
               <h4 className="text-sm font-bold text-white">
                 {TreeOfLifeTreeOfLifePageClientCopy.gershomScholem18971982[cs ? 'cs' : 'en']}
               </h4>
@@ -907,9 +907,9 @@ export default function TreeOfLifePageClient() {
               })}
 
               {/* Pillar labels */}
-              <div className="absolute bottom-1 left-[28%] -translate-x-1/2 text-[7px] uppercase tracking-wider text-zion-purple-400/70">Severity</div>
-              <div className="absolute bottom-1 left-[50%] -translate-x-1/2 text-[7px] uppercase tracking-wider text-zion-gold-400/70">Equilibrium</div>
-              <div className="absolute bottom-1 left-[72%] -translate-x-1/2 text-[7px] uppercase tracking-wider text-zion-cyan-400/70">Mercy</div>
+              <div className="absolute bottom-1 left-[28%] -translate-x-1/2 text-[7px] uppercase tracking-wider text-zion-purple/70">Severity</div>
+              <div className="absolute bottom-1 left-[50%] -translate-x-1/2 text-[7px] uppercase tracking-wider text-zion-gold/70">Equilibrium</div>
+              <div className="absolute bottom-1 left-[72%] -translate-x-1/2 text-[7px] uppercase tracking-wider text-zion-cyan/70">Mercy</div>
             </div>
 
             {/* Detail panel */}
@@ -1014,15 +1014,15 @@ export default function TreeOfLifePageClient() {
                     </p>
                     <div className="grid grid-cols-3 gap-2 pt-2 text-center">
                       <div className="zion-rainbow-sub p-2" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
-                        <p className="text-[9px] uppercase tracking-wider text-zion-cyan-400">Mercy</p>
+                        <p className="text-[9px] uppercase tracking-wider text-zion-cyan">Mercy</p>
                         <p className="text-[10px] text-gray-500">3 sefirot</p>
                       </div>
                       <div className="zion-rainbow-sub p-2" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                        <p className="text-[9px] uppercase tracking-wider text-zion-purple-400">Severity</p>
+                        <p className="text-[9px] uppercase tracking-wider text-zion-purple">Severity</p>
                         <p className="text-[10px] text-gray-500">3 sefirot</p>
                       </div>
                       <div className="zion-rainbow-sub p-2" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                        <p className="text-[9px] uppercase tracking-wider text-zion-gold-400">Equilibrium</p>
+                        <p className="text-[9px] uppercase tracking-wider text-zion-gold">Equilibrium</p>
                         <p className="text-[10px] text-gray-500">4 sefirot</p>
                       </div>
                     </div>
@@ -1117,7 +1117,7 @@ export default function TreeOfLifePageClient() {
           className="space-y-6"
         >
           <div className="text-center space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-cyan-400">
+            <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-cyan">
               {TreeOfLifeTreeOfLifePageClientCopy.organismDiagnosticsLiveData[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-white">
@@ -1136,24 +1136,24 @@ export default function TreeOfLifePageClient() {
                 <p className="text-4xl font-bold text-zion-gold">{treeHealth.treeHealth}<span className="text-lg text-gray-500">/100</span></p>
                 <div className="mx-auto h-1.5 w-full overflow-hidden rounded-full bg-white/10">
                   <div
-                    className="h-full rounded-full bg-linear-to-r from-zion-gold to-zion-gold-400 transition-all duration-700"
+                    className="h-full rounded-full bg-linear-to-r from-zion-gold to-zion-gold transition-all duration-700"
                     style={{ width: `${treeHealth.treeHealth}%` }}
                   />
                 </div>
               </div>
               <div className="zion-rainbow-card space-y-2 p-5 text-center" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                 <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.pillarOfMercy[cs ? 'cs' : 'en']}</p>
-                <p className="text-3xl font-bold text-zion-cyan-400">{treeHealth.pillars.mercy}<span className="text-base text-gray-500">/100</span></p>
+                <p className="text-3xl font-bold text-zion-cyan">{treeHealth.pillars.mercy}<span className="text-base text-gray-500">/100</span></p>
                 <p className="text-[10px] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.chokmahChesedNetzach[cs ? 'cs' : 'en']}</p>
               </div>
               <div className="zion-rainbow-card space-y-2 p-5 text-center" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                 <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.pillarOfSeverity[cs ? 'cs' : 'en']}</p>
-                <p className="text-3xl font-bold text-zion-purple-400">{treeHealth.pillars.severity}<span className="text-base text-gray-500">/100</span></p>
+                <p className="text-3xl font-bold text-zion-purple">{treeHealth.pillars.severity}<span className="text-base text-gray-500">/100</span></p>
                 <p className="text-[10px] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.binahGevurahHod[cs ? 'cs' : 'en']}</p>
               </div>
               <div className="zion-rainbow-card space-y-2 p-5 text-center" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                 <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.pillarOfEquilibrium[cs ? 'cs' : 'en']}</p>
-                <p className="text-3xl font-bold text-zion-gold-400">{treeHealth.pillars.equilibrium}<span className="text-base text-gray-500">/100</span></p>
+                <p className="text-3xl font-bold text-zion-gold">{treeHealth.pillars.equilibrium}<span className="text-base text-gray-500">/100</span></p>
                 <p className="text-[10px] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.keterTiferetYesodMalkhut[cs ? 'cs' : 'en']}</p>
               </div>
             </div>
@@ -1249,10 +1249,10 @@ export default function TreeOfLifePageClient() {
               <span>{TreeOfLifeTreeOfLifePageClientCopy.sources[cs ? 'cs' : 'en']} {treeHealth.sources.join(', ')}</span>
             )}
             <span className="inline-flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-zion-cyan-400" /> {TreeOfLifeTreeOfLifePageClientCopy.liveInRuntime[cs ? 'cs' : 'en']}
+              <span className="h-2 w-2 rounded-full bg-zion-cyan" /> {TreeOfLifeTreeOfLifePageClientCopy.liveInRuntime[cs ? 'cs' : 'en']}
             </span>
             <span className="inline-flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-zion-gold-400/50" /> {TreeOfLifeTreeOfLifePageClientCopy.partialSeed[cs ? 'cs' : 'en']}
+              <span className="h-2 w-2 rounded-full bg-zion-gold/50" /> {TreeOfLifeTreeOfLifePageClientCopy.partialSeed[cs ? 'cs' : 'en']}
             </span>
             <span className="inline-flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-gray-600" /> {TreeOfLifeTreeOfLifePageClientCopy.horizon[cs ? 'cs' : 'en']}
@@ -1360,7 +1360,7 @@ export default function TreeOfLifePageClient() {
           className="space-y-6"
         >
           <div className="text-center space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-cyan-400">
+            <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-cyan">
               {TreeOfLifeTreeOfLifePageClientCopy.consensusEvolution10YearHybrid[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-white">
@@ -1374,7 +1374,7 @@ export default function TreeOfLifePageClient() {
                 href="https://github.com/Zion-TerraNova/v3-Mainnet/blob/main/evoluZionV2.md"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-2xl border border-zion-cyan-500/30 bg-zion-cyan-500/5 px-5 py-2.5 text-sm font-medium text-zion-cyan-300 hover:bg-zion-cyan-500/10 transition-all"
+                className="inline-flex items-center gap-2 rounded-2xl border border-zion-cyan/30 bg-zion-cyan/5 px-5 py-2.5 text-sm font-medium text-zion-cyan hover:bg-zion-cyan/10 transition-all"
               >
                 <GitBranch className="h-4 w-4" />
                 evoluZionV2.md
@@ -1408,8 +1408,8 @@ export default function TreeOfLifePageClient() {
                     <div className="mt-2 flex items-center gap-2">
                       <div className="h-2 w-32 overflow-hidden rounded-full bg-white/10">
                         <div className="flex h-full">
-                          <div className="h-full bg-zion-gold-400" style={{ width: `${p.powShare}%` }} />
-                          <div className="h-full bg-zion-cyan-400" style={{ width: `${p.pocShare}%` }} />
+                          <div className="h-full bg-zion-gold" style={{ width: `${p.powShare}%` }} />
+                          <div className="h-full bg-zion-cyan" style={{ width: `${p.pocShare}%` }} />
                         </div>
                       </div>
                       <span className="text-[10px] font-mono text-gray-500">
@@ -1471,7 +1471,7 @@ export default function TreeOfLifePageClient() {
           className="space-y-6"
         >
           <div className="text-center space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-cyan-400">
+            <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-cyan">
               {TreeOfLifeTreeOfLifePageClientCopy.protocolOfCareProofOfCare[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-white">
@@ -1523,7 +1523,7 @@ export default function TreeOfLifePageClient() {
           {/* NPU Mining — democratization */}
           <div className="zion-rainbow-card space-y-4 p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <div className="flex items-center gap-2">
-              <Cpu className="h-5 w-5 text-zion-cyan-400" />
+              <Cpu className="h-5 w-5 text-zion-cyan" />
               <h3 className="text-lg font-bold text-white">
                 {TreeOfLifeTreeOfLifePageClientCopy.npuMiningDemocratizingMining[cs ? 'cs' : 'en']}
               </h3>
@@ -1609,7 +1609,7 @@ export default function TreeOfLifePageClient() {
           {/* Care Proof struct */}
           <div className="zion-rainbow-card space-y-3 p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <div className="flex items-center gap-2">
-              <Brain className="h-5 w-5 text-zion-cyan-400" />
+              <Brain className="h-5 w-5 text-zion-cyan" />
               <h3 className="text-lg font-bold text-white">Care Proof</h3>
             </div>
             <p className="text-sm text-gray-400">
@@ -1637,7 +1637,7 @@ export default function TreeOfLifePageClient() {
           className="space-y-6"
         >
           <div className="text-center space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-gold-400">
+            <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-gold">
               {TreeOfLifeTreeOfLifePageClientCopy.ethicalFoundationBodhisattvaVo[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-3xl md:text-4xl font-bold text-white">
@@ -1651,7 +1651,7 @@ export default function TreeOfLifePageClient() {
                 href="https://github.com/Zion-TerraNova/v3-Mainnet/blob/main/docs/ZION_CODEX_BODHISATTVA.md"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-2xl border border-zion-gold-500/30 bg-zion-gold-500/5 px-5 py-2.5 text-sm font-medium text-zion-gold-300 hover:bg-zion-gold-500/10 transition-all"
+                className="inline-flex items-center gap-2 rounded-2xl border border-zion-gold/30 bg-zion-gold/5 px-5 py-2.5 text-sm font-medium text-zion-gold hover:bg-zion-gold/10 transition-all"
               >
                 <BookOpen className="h-4 w-4" />
                 ZION_CODEX_BODHISATTVA.md
@@ -1743,7 +1743,7 @@ export default function TreeOfLifePageClient() {
             <div className="grid gap-2 sm:grid-cols-2">
               {EIGHT_PLEDGES.map((p) => (
                 <div key={p.num} className="zion-rainbow-sub flex items-start gap-3 p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zion-gold-500/15 text-[10px] font-bold text-zion-gold-400">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zion-gold/15 text-[10px] font-bold text-zion-gold">
                     {p.num}
                   </span>
                   <div className="flex-1">
@@ -1760,17 +1760,17 @@ export default function TreeOfLifePageClient() {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="zion-rainbow-card space-y-3 p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <div className="flex items-center gap-2">
-                <HeartHandshake className="h-5 w-5 text-zion-purple-400" />
+                <HeartHandshake className="h-5 w-5 text-zion-purple" />
                 <h4 className="text-sm font-bold text-white">{TreeOfLifeTreeOfLifePageClientCopy.dualVow[cs ? 'cs' : 'en']}</h4>
               </div>
               <p className="text-xs text-gray-400">
                 {TreeOfLifeTreeOfLifePageClientCopy.aGuardianWhoHoldsBothTheSefiro[cs ? 'cs' : 'en']}
               </p>
-              <p className="font-mono text-[10px] text-zion-purple-300">DUAL_VOW_CARE_SCORE_BONUS_BPS = 10_500</p>
+              <p className="font-mono text-[10px] text-zion-purple">DUAL_VOW_CARE_SCORE_BONUS_BPS = 10_500</p>
             </div>
             <div className="zion-rainbow-card space-y-3 p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-zion-gold-400" />
+                <Clock className="h-5 w-5 text-zion-gold" />
                 <h4 className="text-sm font-bold text-white">{TreeOfLifeTreeOfLifePageClientCopy.theThousandBreakings[cs ? 'cs' : 'en']}</h4>
               </div>
               <p className="text-sm italic text-gray-300">
@@ -1787,7 +1787,7 @@ export default function TreeOfLifePageClient() {
             <p className="text-lg italic text-gray-300">
               {TreeOfLifeTreeOfLifePageClientCopy.forAsLongAsSpaceEnduresAndForA[cs ? 'cs' : 'en']}
             </p>
-            <p className="text-xs uppercase tracking-[0.3em] text-zion-cyan-400">— Shantideva, Bodhicharyavatara 10.55</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-zion-cyan">— Shantideva, Bodhicharyavatara 10.55</p>
           </div>
         </motion.section>
 
@@ -1808,7 +1808,7 @@ export default function TreeOfLifePageClient() {
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/terranova"
-              className="inline-flex items-center gap-2 rounded-2xl border border-zion-cyan-500/30 bg-zion-cyan-500/5 px-5 py-2.5 text-sm font-medium text-zion-cyan-300 hover:bg-zion-cyan-500/10 transition-all"
+              className="inline-flex items-center gap-2 rounded-2xl border border-zion-cyan/30 bg-zion-cyan/5 px-5 py-2.5 text-sm font-medium text-zion-cyan hover:bg-zion-cyan/10 transition-all"
             >
               <BookOpen className="h-4 w-4" />
               {TreeOfLifeTreeOfLifePageClientCopy.terranovaBook[cs ? 'cs' : 'en']}
@@ -1823,7 +1823,7 @@ export default function TreeOfLifePageClient() {
             </Link>
             <Link
               href="/l6-issobella"
-              className="inline-flex items-center gap-2 rounded-2xl border border-zion-purple-500/30 bg-zion-purple-500/5 px-5 py-2.5 text-sm font-medium text-zion-purple-300 hover:bg-zion-purple-500/10 transition-all"
+              className="inline-flex items-center gap-2 rounded-2xl border border-zion-purple/30 bg-zion-purple/5 px-5 py-2.5 text-sm font-medium text-zion-purple hover:bg-zion-purple/10 transition-all"
             >
               <Star className="h-4 w-4" />
               {TreeOfLifeTreeOfLifePageClientCopy.l6IssobellaMalkhut[cs ? 'cs' : 'en']}

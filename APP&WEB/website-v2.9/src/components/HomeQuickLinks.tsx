@@ -44,49 +44,49 @@ export default function HomeQuickLinks() {
       label: HomeQuickLinksCopy.explorer[cs ? 'cs' : 'en'],
       desc: HomeQuickLinksCopy.blocksTxAddresses[cs ? 'cs' : 'en'],
       icon: Blocks,
-      rc: '252, 209, 22', // gold
+      rc: '228, 30, 43', // rasta red
     },
     {
       href: '/network',
       label: HomeQuickLinksCopy.network[cs ? 'cs' : 'en'],
       desc: HomeQuickLinksCopy.nodesLatency[cs ? 'cs' : 'en'],
       icon: Globe,
-      rc: '7, 137, 48', // cyan
+      rc: '252, 209, 22', // rasta gold
     },
     {
       href: '/pool',
       label: HomeQuickLinksCopy.pool[cs ? 'cs' : 'en'],
       desc: HomeQuickLinksCopy.hashrateMiners[cs ? 'cs' : 'en'],
       icon: HardHat,
-      rc: '228, 30, 43', // rasta red (was purple)
+      rc: '7, 137, 48', // rasta green
     },
     {
       href: '/docs',
       label: HomeQuickLinksCopy.docs[cs ? 'cs' : 'en'],
       desc: HomeQuickLinksCopy.guidesApi[cs ? 'cs' : 'en'],
       icon: ScrollText,
-      rc: '7, 137, 48', // emerald
+      rc: '228, 30, 43', // rasta red
     },
     {
       href: '/multichain',
       label: 'Multichain',
       desc: cs ? 'Bridge, WARP, swap' : 'Bridge, WARP, swap',
       icon: Globe,
-      rc: '7, 137, 48', // emerald
+      rc: '252, 209, 22', // rasta gold
     },
     {
       href: '/roadmap',
       label: HomeQuickLinksCopy.roadmap[cs ? 'cs' : 'en'],
       desc: HomeQuickLinksCopy.l1L6Vision[cs ? 'cs' : 'en'],
       icon: LayoutDashboard,
-      rc: '228, 30, 43', // pink
+      rc: '7, 137, 48', // rasta green
     },
     {
       href: '/terranova',
       label: HomeQuickLinksCopy.terraNova[cs ? 'cs' : 'en'],
       desc: HomeQuickLinksCopy.bookStory[cs ? 'cs' : 'en'],
       icon: Sparkles,
-      rc: '252, 209, 22', // amber
+      rc: '228, 30, 43', // rasta red
     },
   ];
 
@@ -101,6 +101,10 @@ export default function HomeQuickLinks() {
             <h2 className="max-w-2xl text-2xl font-bold leading-tight text-white sm:text-3xl">
               {HomeQuickLinksCopy.homepageAsACleanControlPanel[cs ? 'cs' : 'en']}
             </h2>
+            <div
+              className="mt-2 h-1 w-24 rounded-full bg-gradient-to-r from-[#e41e2b] via-[#fcd116] to-[#078930]"
+              aria-hidden="true"
+            />
           </div>
           <p className="max-w-xl text-sm leading-relaxed text-gray-400">
             {HomeQuickLinksCopy.lessNoiseClearerDirectionNetwo[cs ? 'cs' : 'en']}
@@ -159,12 +163,12 @@ export default function HomeQuickLinks() {
                 backgroundColor: 'rgba(252, 209, 22, 0.12)',
               }}
             >
-              <Swords className="h-6 w-6 text-zion-gold-400" />
+              <Swords className="h-6 w-6 text-zion-gold" />
             </div>
             <div className="flex-1 space-y-1">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-bold text-white">Doge vs ZION</h3>
-                <span className="rounded-full border border-zion-gold-400/30 bg-zion-gold-400/10 px-2 py-0.5 text-[9px] font-bold text-zion-gold-300">
+                <span className="rounded-full border border-zion-gold/30 bg-zion-gold/10 px-2 py-0.5 text-[9px] font-bold text-zion-gold">
                   {HomeQuickLinksCopy.arcade[cs ? 'cs' : 'en']}
                 </span>
               </div>

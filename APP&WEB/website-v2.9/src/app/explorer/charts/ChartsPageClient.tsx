@@ -272,13 +272,13 @@ export default function ChartsPageClient() {
         label: ExplorerChartsChartsPageClientCopy.difficulty[cs ? 'cs' : 'en'],
         value: stats ? fmtSI(stats.difficulty) : "—",
         icon: TrendingUp,
-        color: "text-zion-cyan-400",
+        color: "text-zion-cyan",
       },
       {
         label: ExplorerChartsChartsPageClientCopy.blockTime[cs ? 'cs' : 'en'],
         value: stats ? `${stats.avg_block_time.toFixed(1)}s` : "—",
         icon: Clock,
-        color: "text-zion-gold-400",
+        color: "text-zion-gold",
       },
       {
         label: ExplorerChartsChartsPageClientCopy.totalTx[cs ? 'cs' : 'en'],
@@ -290,7 +290,7 @@ export default function ChartsPageClient() {
         label: ExplorerChartsChartsPageClientCopy.mempool[cs ? 'cs' : 'en'],
         value: stats ? String(stats.tx_pool_size) : "—",
         icon: Activity,
-        color: "text-zion-purple-400",
+        color: "text-zion-purple",
       },
     ],
     [stats, cs],
@@ -460,7 +460,7 @@ export default function ChartsPageClient() {
                         {values.length > 1 && (
                           <div
                             className={`text-[11px] tabular-nums ${
-                              change >= 0 ? "text-zion-cyan-400" : "text-zion-purple-400"
+                              change >= 0 ? "text-zion-cyan" : "text-zion-purple"
                             }`}
                           >
                             {change >= 0 ? "▲" : "▼"} {Math.abs(change).toFixed(2)}%

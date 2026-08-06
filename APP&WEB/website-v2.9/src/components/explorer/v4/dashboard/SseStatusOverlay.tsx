@@ -30,7 +30,7 @@ export default function SseStatusOverlay() {
             animate={{ opacity: connected ? [1, 0.4, 1] : 0.3 }}
             transition={{ duration: 1.5, repeat: Infinity }}
           >
-            <span className={`inline-flex h-2 w-2 rounded-full ${connected ? "bg-zion-cyan-400" : "bg-gray-500"}`} />
+            <span className={`inline-flex h-2 w-2 rounded-full ${connected ? "bg-zion-cyan" : "bg-gray-500"}`} />
           </motion.span>
           <span className="text-xs text-gray-400">
             {connected
@@ -46,7 +46,7 @@ export default function SseStatusOverlay() {
               {stats.mempool_size > 0 && (
                 <>
                   <span className="text-xs text-gray-600">|</span>
-                  <span className="text-xs text-zion-gold-400">
+                  <span className="text-xs text-zion-gold">
                     {stats.mempool_size} TX
                   </span>
                 </>

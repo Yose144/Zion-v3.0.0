@@ -21,14 +21,14 @@ export default function DocsRail() {
       description: tr('docsRail', 'res_download_body', lang),
       icon: ScrollText,
       href: '/download',
-      accent: 'from-zion-cyan/20 to-zion-purple-500/10',
+      accent: 'from-zion-cyan/20 to-zion-purple/10',
     },
     {
       title: tr('docsRail', 'res_explorer_title', lang),
       description: tr('docsRail', 'res_explorer_body', lang),
       icon: Compass,
       href: '/explorer',
-      accent: 'from-zion-purple-500/20 to-zion-gold-400/10',
+      accent: 'from-zion-purple/20 to-zion-gold/10',
     },
   ];
 

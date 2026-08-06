@@ -222,9 +222,9 @@ const getSwapPairs = (cs: boolean) => [
     from: 'BTC',
     to: 'ZION',
     icon: Bitcoin,
-    color: 'text-zion-gold-400',
-    bg: 'bg-zion-gold-500/10',
-    border: 'border-zion-gold-500/20',
+    color: 'text-zion-gold',
+    bg: 'bg-zion-gold/10',
+    border: 'border-zion-gold/20',
     status: 'planned',
     desc: WarpCopy.bitcoinHtlcBridgeTrustlessBtcZ[cs ? 'cs' : 'en'],
     eta: WarpCopy.adapterReadyAwaitingLndNode[cs ? 'cs' : 'en'],
@@ -233,9 +233,9 @@ const getSwapPairs = (cs: boolean) => [
     from: 'ETH',
     to: 'wZION',
     icon: Droplets,
-    color: 'text-zion-cyan-400',
-    bg: 'bg-zion-cyan-500/10',
-    border: 'border-zion-cyan-500/20',
+    color: 'text-zion-cyan',
+    bg: 'bg-zion-cyan/10',
+    border: 'border-zion-cyan/20',
     status: 'live',
     desc: WarpCopy.uniswapV4PancakeswapV3OnBaseWz[cs ? 'cs' : 'en'],
     eta: WarpCopy.availableNow[cs ? 'cs' : 'en'],
@@ -244,9 +244,9 @@ const getSwapPairs = (cs: boolean) => [
     from: 'SOL',
     to: 'ZION',
     icon: Coins,
-    color: 'text-zion-purple-400',
-    bg: 'bg-zion-purple-500/10',
-    border: 'border-zion-purple-500/20',
+    color: 'text-zion-purple',
+    bg: 'bg-zion-purple/10',
+    border: 'border-zion-purple/20',
     status: 'research',
     desc: WarpCopy.solanaSplProgramPdaSecuredZion[cs ? 'cs' : 'en'],
     eta: WarpCopy.adapterReadyAwaitingDeploy[cs ? 'cs' : 'en'],
@@ -255,9 +255,9 @@ const getSwapPairs = (cs: boolean) => [
     from: 'ZION L1',
     to: 'wZION',
     icon: ArrowLeftRight,
-    color: 'text-zion-cyan-400',
-    bg: 'bg-zion-cyan-500/10',
-    border: 'border-zion-cyan-500/20',
+    color: 'text-zion-cyan',
+    bg: 'bg-zion-cyan/10',
+    border: 'border-zion-cyan/20',
     status: 'live',
     desc: WarpCopy.nativeL1L2BridgeLockZionOnL1Mi[cs ? 'cs' : 'en'],
     eta: WarpCopy.availableNow[cs ? 'cs' : 'en'],
@@ -404,7 +404,7 @@ export default function WarpPage() {
                     <h3 className="text-2xl font-semibold text-white">{row.title}</h3>
                   </div>
                   {row.live ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-zion-cyan-500/30 bg-zion-cyan-500/10 px-3 py-1 text-xs font-semibold text-zion-cyan-300">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-3 py-1 text-xs font-semibold text-zion-cyan">
                       <CheckCircle2 className="h-3.5 w-3.5" />
                       {WarpCopy.live[cs ? 'cs' : 'en']}
                     </span>
@@ -467,9 +467,9 @@ export default function WarpPage() {
             {swapPairs.map((pair) => {
               const PairIcon = pair.icon;
               const statusConfig = {
-                live: { label: WarpCopy.live[cs ? 'cs' : 'en'], color: 'text-zion-cyan-400', bg: 'bg-zion-cyan-500/10', border: 'border-zion-cyan-500/20', icon: CheckCircle2 },
-                planned: { label: WarpCopy.planned[cs ? 'cs' : 'en'], color: 'text-zion-cyan-400', bg: 'bg-zion-cyan-500/10', border: 'border-zion-cyan-500/20', icon: Clock },
-                research: { label: WarpCopy.research[cs ? 'cs' : 'en'], color: 'text-zion-gold-400', bg: 'bg-zion-gold-500/10', border: 'border-zion-gold-500/20', icon: Clock },
+                live: { label: WarpCopy.live[cs ? 'cs' : 'en'], color: 'text-zion-cyan', bg: 'bg-zion-cyan/10', border: 'border-zion-cyan/20', icon: CheckCircle2 },
+                planned: { label: WarpCopy.planned[cs ? 'cs' : 'en'], color: 'text-zion-cyan', bg: 'bg-zion-cyan/10', border: 'border-zion-cyan/20', icon: Clock },
+                research: { label: WarpCopy.research[cs ? 'cs' : 'en'], color: 'text-zion-gold', bg: 'bg-zion-gold/10', border: 'border-zion-gold/20', icon: Clock },
               }[pair.status as 'live' | 'planned' | 'research'];
               const StatusIcon = statusConfig.icon;
               return (
@@ -517,14 +517,14 @@ export default function WarpPage() {
               <div key={item.title} className="zion-rainbow-card p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
                   <div className="flex items-center gap-3 shrink-0">
-                    <div className={`flex h-8 w-8 items-center justify-center rounded-full ${item.done ? 'bg-zion-cyan-500/20' : 'bg-white/5'}`}>
+                    <div className={`flex h-8 w-8 items-center justify-center rounded-full ${item.done ? 'bg-zion-cyan/20' : 'bg-white/5'}`}>
                       {item.done ? (
-                        <CheckCircle2 className="h-4 w-4 text-zion-cyan-400" />
+                        <CheckCircle2 className="h-4 w-4 text-zion-cyan" />
                       ) : (
                         <Clock className="h-4 w-4 text-gray-400" />
                       )}
                     </div>
-                    <span className={`text-xs uppercase tracking-wider font-semibold ${item.done ? 'text-zion-cyan-400' : 'text-gray-400'}`}>
+                    <span className={`text-xs uppercase tracking-wider font-semibold ${item.done ? 'text-zion-cyan' : 'text-gray-400'}`}>
                       {item.phase}
                     </span>
                   </div>
@@ -643,7 +643,7 @@ export default function WarpPage() {
                     >
                       {warpCopied ? (
                         <>
-                          <CheckCircle2 className="h-3.5 w-3.5 text-zion-cyan-400" />
+                          <CheckCircle2 className="h-3.5 w-3.5 text-zion-cyan" />
                           {WarpCopy.copied[cs ? 'cs' : 'en']}
                         </>
                       ) : (

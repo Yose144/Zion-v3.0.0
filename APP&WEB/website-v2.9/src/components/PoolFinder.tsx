@@ -194,7 +194,7 @@ export default function PoolFinder() {
                 className="zion-button-secondary w-8 h-8 p-0 flex items-center justify-center"
               >
                 {copied ? (
-                  <Check className="w-4 h-4 text-zion-cyan-400" />
+                  <Check className="w-4 h-4 text-zion-cyan" />
                 ) : (
                   <Copy className="w-4 h-4 text-gray-400" />
                 )}

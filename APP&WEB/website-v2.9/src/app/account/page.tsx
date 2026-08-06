@@ -281,7 +281,7 @@ export default function AccountPage() {
                   className="zion-button-secondary rounded-full px-4 py-2 text-xs font-mono"
                 >
                   {user.address}
-                  {copied ? <Check className="h-3 w-3 text-zion-cyan-400" /> : <Copy className="h-3 w-3" />}
+                  {copied ? <Check className="h-3 w-3 text-zion-cyan" /> : <Copy className="h-3 w-3" />}
                 </button>
 
                 <div className="flex flex-wrap gap-3 text-xs">
@@ -322,7 +322,7 @@ export default function AccountPage() {
                     </div>
                     <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
                       <div className="flex items-center gap-2 text-sm text-gray-300">
-                        <TrendingUp className="h-4 w-4 text-zion-cyan-400" />
+                        <TrendingUp className="h-4 w-4 text-zion-cyan" />
                         {AccountCopy.created[cs ? 'cs' : 'en']}
                       </div>
                       <span className="font-mono text-white">{formattedCreated}</span>
@@ -342,7 +342,7 @@ export default function AccountPage() {
                     await logout();
                     router.push('/');
                   }}
-                  className="zion-button-secondary w-full items-center justify-center gap-2 text-zion-purple-400 hover:text-zion-purple-300"
+                  className="zion-button-secondary w-full items-center justify-center gap-2 text-zion-purple hover:text-zion-purple"
                 >
                   <LogOut className="h-3.5 w-3.5" /> {AccountCopy.logout[cs ? 'cs' : 'en']}
                 </button>
@@ -361,7 +361,7 @@ export default function AccountPage() {
             <div className="flex flex-col gap-2 mb-6">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{AccountCopy.telemetry[cs ? 'cs' : 'en']}</p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-                <Activity className="h-7 w-7 text-zion-cyan-400" />
+                <Activity className="h-7 w-7 text-zion-cyan" />
                 {AccountCopy.accountStatistics[cs ? 'cs' : 'en']}
               </h2>
             </div>
@@ -389,8 +389,8 @@ export default function AccountPage() {
               />
               <StatCard
                 icon={<ArrowLeftRight className="h-5 w-5" />}
-                colorClass="text-zion-cyan-400"
-                bgClass="bg-zion-cyan-400/10"
+                colorClass="text-zion-cyan"
+                bgClass="bg-zion-cyan/10"
                 rc="7, 137, 48"
                 label={AccountCopy.transactions[cs ? 'cs' : 'en']}
                 value={stats.txCount !== null ? String(stats.txCount) : '—'}
@@ -469,7 +469,7 @@ export default function AccountPage() {
               {activeTab === 'mining' && (
                 <div className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as CSSProperties}>
                   <div className="flex items-center gap-2 mb-6">
-                    <Pickaxe className="h-5 w-5 text-zion-purple-400" />
+                    <Pickaxe className="h-5 w-5 text-zion-purple" />
                     <h2 className="text-lg font-bold text-white">{AccountCopy.miningStats[cs ? 'cs' : 'en']}</h2>
                   </div>
                   <MiningStats address={user.address} />

@@ -67,7 +67,7 @@ function CopyBtn({ text, label }: { text: string; label: string }) {
       className="text-gray-600 hover:text-white transition ml-1.5 shrink-0"
       title={label}
     >
-      {ok ? <Check className="h-3 w-3 text-zion-cyan-400" /> : <Copy className="h-3 w-3" />}
+      {ok ? <Check className="h-3 w-3 text-zion-cyan" /> : <Copy className="h-3 w-3" />}
     </button>
   );
 }
@@ -76,7 +76,7 @@ function TypeBadge({ type, cs }: { type: string; cs: boolean }) {
   const styles: Record<string, string> = {
     coinbase: "bg-zion-gold/15 text-zion-gold border-zion-gold/30",
     transfer: "bg-zion-cyan/15 text-zion-cyan border-zion-cyan/30",
-    payout: "bg-zion-cyan-500/15 text-zion-cyan-400 border-zion-cyan-500/30",
+    payout: "bg-zion-cyan/15 text-zion-cyan border-zion-cyan/30",
   };
   const s = styles[type] || "bg-gray-500/15 text-gray-400 border-gray-500/30";
   return (
@@ -88,9 +88,9 @@ function TypeBadge({ type, cs }: { type: string; cs: boolean }) {
 
 function StatusDot({ status, cs }: { status: string; cs: boolean }) {
   if (status === "pending") {
-    return <span className="inline-block h-1.5 w-1.5 rounded-full bg-zion-gold-400 animate-pulse" title={ProRecentTransactionsCopy.pending[cs ? 'cs' : 'en']} />;
+    return <span className="inline-block h-1.5 w-1.5 rounded-full bg-zion-gold animate-pulse" title={ProRecentTransactionsCopy.pending[cs ? 'cs' : 'en']} />;
   }
-  return <span className="inline-block h-1.5 w-1.5 rounded-full bg-zion-cyan-400" title={ProRecentTransactionsCopy.confirmed[cs ? 'cs' : 'en']} />;
+  return <span className="inline-block h-1.5 w-1.5 rounded-full bg-zion-cyan" title={ProRecentTransactionsCopy.confirmed[cs ? 'cs' : 'en']} />;
 }
 
 export default function ProRecentTransactions() {

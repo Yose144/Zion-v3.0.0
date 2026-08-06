@@ -311,12 +311,12 @@ function StatCard({ label, value, icon: Icon, accent = 'text-zion-cyan', rc = '7
 }
 
 function StatusDot({ up }: { up: number | null }) {
-  const color = up === 1 ? 'bg-zion-cyan-400' : up === 0 ? 'bg-zion-purple-400' : 'bg-gray-500';
+  const color = up === 1 ? 'bg-zion-cyan' : up === 0 ? 'bg-zion-purple' : 'bg-gray-500';
   const pulse = up === 1 ? 'animate-pulse' : '';
   return <span className={`inline-block h-2.5 w-2.5 rounded-full ${color} ${pulse}`} />;
 }
 
-function ProgressBar({ value, max, color = 'bg-zion-cyan-500' }: { value: number; max: number; color?: string }) {
+function ProgressBar({ value, max, color = 'bg-zion-cyan' }: { value: number; max: number; color?: string }) {
   const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
   return (
     <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
@@ -357,7 +357,7 @@ function GroupRow({ name, submits, accepted, color }: {
           <span className="text-sm font-medium text-white capitalize">{name}</span>
           <span className="text-xs text-gray-400">{fmt(submits)} sub / {fmt(accepted)} acc</span>
         </div>
-        <ProgressBar value={a} max={s || 1} color={s > 0 ? 'bg-zion-cyan-500' : 'bg-gray-600'} />
+        <ProgressBar value={a} max={s || 1} color={s > 0 ? 'bg-zion-cyan' : 'bg-gray-600'} />
       </div>
       <span className="text-xs font-mono text-gray-300 w-12 text-right">{s > 0 ? `${rate.toFixed(0)}%` : '—'}</span>
     </div>
@@ -405,7 +405,7 @@ export default function MonitoringClient() {
       {/* Background glows */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-purple/8" />
-        <div className="absolute -right-40 top-2/3 h-[400px] w-[400px] rounded-full blur-[200px] bg-zion-cyan-500/6" />
+        <div className="absolute -right-40 top-2/3 h-[400px] w-[400px] rounded-full blur-[200px] bg-zion-cyan/6" />
         <div className="absolute left-1/2 top-0 h-48 w-full -translate-x-1/2 bg-linear-to-b from-zion-purple/15 to-transparent" />
       </div>
 
@@ -424,7 +424,7 @@ export default function MonitoringClient() {
                 <Monitor className="h-4 w-4" />
                 {SITE_RELEASE_LABEL} · {MonitoringMonitoringClientCopy.monitoring[cs ? 'cs' : 'en']}
               </div>
-              <h1 className="text-3xl md:text-4xl font-bold bg-linear-to-r from-white via-emerald-200 to-zion-cyan-400 bg-clip-text text-transparent">
+              <h1 className="text-3xl md:text-4xl font-bold bg-linear-to-r from-white via-emerald-200 to-zion-cyan bg-clip-text text-transparent">
                 {MonitoringMonitoringClientCopy.networkMonitoring[cs ? 'cs' : 'en']}
               </h1>
               <p className="text-gray-400 max-w-2xl text-sm md:text-base">
@@ -496,12 +496,12 @@ export default function MonitoringClient() {
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             <StatCard icon={Layers}   label="Chain Height"    value={fmt(data?.chainHeight)} accent="text-zion-gold" />
-            <StatCard icon={Layers}   label="Template Height" value={fmt(data?.templateHeight)} accent="text-zion-gold-400" />
+            <StatCard icon={Layers}   label="Template Height" value={fmt(data?.templateHeight)} accent="text-zion-gold" />
             <StatCard icon={Globe}    label="Peers"           value={fmt(data?.peerCount)} accent="text-zion-cyan" />
-            <StatCard icon={Database} label="Mempool Txs"     value={fmt(data?.mempoolSize)} accent="text-zion-purple-400" />
-            <StatCard icon={Sparkles} label="Blocks Accepted" value={fmt(data?.blocksAccepted)} accent="text-zion-cyan-400" />
-            <StatCard icon={Box}      label="Template Txs"    value={fmt(data?.templateTxs)} accent="text-zion-cyan-400" sub="in current block" />
-            <StatCard icon={Coins}    label="Template Fees"   value={data?.templateFees != null ? `${data.templateFees} ZION` : '—'} accent="text-zion-gold-300" sub="pending fees" />
+            <StatCard icon={Database} label="Mempool Txs"     value={fmt(data?.mempoolSize)} accent="text-zion-purple" />
+            <StatCard icon={Sparkles} label="Blocks Accepted" value={fmt(data?.blocksAccepted)} accent="text-zion-cyan" />
+            <StatCard icon={Box}      label="Template Txs"    value={fmt(data?.templateTxs)} accent="text-zion-cyan" sub="in current block" />
+            <StatCard icon={Coins}    label="Template Fees"   value={data?.templateFees != null ? `${data.templateFees} ZION` : '—'} accent="text-zion-gold" sub="pending fees" />
           </div>
           {/* Sparkline */}
           {sparklines && sparklines.chainHeight.length > 1 && (
@@ -525,12 +525,12 @@ export default function MonitoringClient() {
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             <StatCard icon={Users}    label="Active Miners"    value={fmt(data?.poolActiveSessions)} accent="text-zion-gold" rc="7, 137, 48" />
-            <StatCard icon={ArrowUpDown} label="Total Submits" value={fmt(data?.poolSubmitsTotal)} accent="text-zion-cyan-400" rc="7, 137, 48" />
-            <StatCard icon={Sparkles} label="Accepted Shares"  value={fmt(data?.poolAcceptedTotal)} accent="text-zion-cyan-400" rc="7, 137, 48" />
-            <StatCard icon={Activity} label="Rejected Shares"  value={fmt(data?.poolRejectedTotal)} accent="text-zion-purple-400" rc="7, 137, 48" />
-            <StatCard icon={Gauge}    label="Accept Rate"      value={fmtPct(data?.poolAcceptRate)} accent={data?.poolAcceptRate != null && data.poolAcceptRate >= 95 ? 'text-zion-cyan-400' : 'text-zion-gold-400'} rc="7, 137, 48" />
+            <StatCard icon={ArrowUpDown} label="Total Submits" value={fmt(data?.poolSubmitsTotal)} accent="text-zion-cyan" rc="7, 137, 48" />
+            <StatCard icon={Sparkles} label="Accepted Shares"  value={fmt(data?.poolAcceptedTotal)} accent="text-zion-cyan" rc="7, 137, 48" />
+            <StatCard icon={Activity} label="Rejected Shares"  value={fmt(data?.poolRejectedTotal)} accent="text-zion-purple" rc="7, 137, 48" />
+            <StatCard icon={Gauge}    label="Accept Rate"      value={fmtPct(data?.poolAcceptRate)} accent={data?.poolAcceptRate != null && data.poolAcceptRate >= 95 ? 'text-zion-cyan' : 'text-zion-gold'} rc="7, 137, 48" />
             <StatCard icon={Timer}    label="Pool Uptime"      value={fmtUptime(data?.poolUptime)} accent="text-zion-cyan" rc="7, 137, 48" />
-            <StatCard icon={Heart}    label="PPLNS Miners"     value={fmt(data?.pplnsRegisteredMiners)} accent="text-zion-purple-400" rc="7, 137, 48" />
+            <StatCard icon={Heart}    label="PPLNS Miners"     value={fmt(data?.pplnsRegisteredMiners)} accent="text-zion-purple" rc="7, 137, 48" />
           </div>
           {/* Sparklines */}
           {sparklines && (sparklines.poolSessions.length > 1 || sparklines.shares.length > 1) && (
@@ -560,14 +560,14 @@ export default function MonitoringClient() {
           className="zion-rainbow-card p-6"
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <Network className="h-5 w-5 text-zion-cyan-400" />
+            <Network className="h-5 w-5 text-zion-cyan" />
             {MonitoringMonitoringClientCopy.poolGroups[cs ? 'cs' : 'en']}
           </h2>
           <div className="grid md:grid-cols-2 gap-3">
-            <GroupRow name="zion (Main)" submits={data?.groupZionSubmits} accepted={data?.groupZionAccepted} color="bg-zion-cyan-400" />
-            <GroupRow name="revenue (CH3)" submits={data?.groupRevenueSubmits} accepted={data?.groupRevenueAccepted} color="bg-zion-gold-400" />
-            <GroupRow name="ncl (Neural)" submits={data?.groupNclSubmits} accepted={data?.groupNclAccepted} color="bg-zion-purple-400" />
-            <GroupRow name="auto" submits={data?.groupAutoSubmits} accepted={data?.groupAutoAccepted} color="bg-zion-cyan-400" />
+            <GroupRow name="zion (Main)" submits={data?.groupZionSubmits} accepted={data?.groupZionAccepted} color="bg-zion-cyan" />
+            <GroupRow name="revenue (CH3)" submits={data?.groupRevenueSubmits} accepted={data?.groupRevenueAccepted} color="bg-zion-gold" />
+            <GroupRow name="ncl (Neural)" submits={data?.groupNclSubmits} accepted={data?.groupNclAccepted} color="bg-zion-purple" />
+            <GroupRow name="auto" submits={data?.groupAutoSubmits} accepted={data?.groupAutoAccepted} color="bg-zion-cyan" />
           </div>
         </motion.section>
 
@@ -580,26 +580,26 @@ export default function MonitoringClient() {
           className="zion-rainbow-card p-6"
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <CircleDollarSign className="h-5 w-5 text-zion-purple-400" />
+            <CircleDollarSign className="h-5 w-5 text-zion-purple" />
             {MonitoringMonitoringClientCopy.pplnsRewardEngine[cs ? 'cs' : 'en']}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
             <div style={{ '--rc': '7, 137, 48' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2 min-w-0">
               <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Window Size</div>
-              <div className="text-base sm:text-xl font-mono font-bold text-zion-purple-400 truncate">{fmt(data?.pplnsWindowSize)}</div>
+              <div className="text-base sm:text-xl font-mono font-bold text-zion-purple truncate">{fmt(data?.pplnsWindowSize)}</div>
               <div className="text-xs text-gray-500">maximum shares</div>
             </div>
             <div style={{ '--rc': '7, 137, 48' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2 min-w-0">
               <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Window Used</div>
-              <div className="text-base sm:text-xl font-mono font-bold text-zion-purple-300 truncate">{fmt(data?.pplnsWindowUsed)}</div>
+              <div className="text-base sm:text-xl font-mono font-bold text-zion-purple truncate">{fmt(data?.pplnsWindowUsed)}</div>
               {pplnsWindowPct != null && (
-                <ProgressBar value={data?.pplnsWindowUsed ?? 0} max={data?.pplnsWindowSize ?? 1} color="bg-zion-purple-500" />
+                <ProgressBar value={data?.pplnsWindowUsed ?? 0} max={data?.pplnsWindowSize ?? 1} color="bg-zion-purple" />
               )}
               <div className="text-xs text-gray-500">{pplnsWindowPct != null ? (cs ? `${pplnsWindowPct.toFixed(1)} % zaplneno` : `${pplnsWindowPct.toFixed(1)}% full`) : ''}</div>
             </div>
             <div style={{ '--rc': '7, 137, 48' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2 min-w-0">
               <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Registered Miners</div>
-              <div className="text-base sm:text-xl font-mono font-bold text-zion-cyan-400 truncate">{fmt(data?.pplnsRegisteredMiners)}</div>
+              <div className="text-base sm:text-xl font-mono font-bold text-zion-cyan truncate">{fmt(data?.pplnsRegisteredMiners)}</div>
             </div>
             <div style={{ '--rc': '7, 137, 48' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2 min-w-0">
               <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Total Paid</div>
@@ -607,7 +607,7 @@ export default function MonitoringClient() {
             </div>
             <div style={{ '--rc': '7, 137, 48' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2 min-w-0">
               <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Payout Rounds</div>
-              <div className="text-base sm:text-xl font-mono font-bold text-zion-gold-400 truncate">{fmt(data?.pplnsPayoutRounds)}</div>
+              <div className="text-base sm:text-xl font-mono font-bold text-zion-gold truncate">{fmt(data?.pplnsPayoutRounds)}</div>
             </div>
           </div>
         </motion.section>
@@ -643,14 +643,14 @@ export default function MonitoringClient() {
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
                 <Cpu className="h-3 w-3" /> {MonitoringMonitoringClientCopy.memory[cs ? 'cs' : 'en']}
               </div>
-              <div className="text-xl font-mono font-bold text-zion-purple-400">
+              <div className="text-xl font-mono font-bold text-zion-purple">
                 {memUsedPct != null ? `${memUsedPct.toFixed(1)}%` : '—'}
               </div>
               {data?.memTotal && data?.memAvailable && (
                 <ProgressBar
                   value={data.memTotal - data.memAvailable}
                   max={data.memTotal}
-                  color={memUsedPct != null && memUsedPct > 85 ? 'bg-zion-purple-500' : 'bg-zion-purple-500'}
+                  color={memUsedPct != null && memUsedPct > 85 ? 'bg-zion-purple' : 'bg-zion-purple'}
                 />
               )}
               <div className="text-xs text-gray-500">
@@ -663,14 +663,14 @@ export default function MonitoringClient() {
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
                 <HardDrive className="h-3 w-3" /> Disk
               </div>
-              <div className="text-xl font-mono font-bold text-zion-gold-400">
+              <div className="text-xl font-mono font-bold text-zion-gold">
                 {diskUsedPct != null ? `${diskUsedPct.toFixed(1)}%` : '—'}
               </div>
               {data?.diskTotal && data?.diskAvailable && (
                 <ProgressBar
                   value={data.diskTotal - data.diskAvailable}
                   max={data.diskTotal}
-                  color={diskUsedPct != null && diskUsedPct > 85 ? 'bg-zion-purple-500' : 'bg-zion-gold-500'}
+                  color={diskUsedPct != null && diskUsedPct > 85 ? 'bg-zion-purple' : 'bg-zion-gold'}
                 />
               )}
               <div className="text-xs text-gray-500">
@@ -683,7 +683,7 @@ export default function MonitoringClient() {
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
                 <Clock className="h-3 w-3" /> {MonitoringMonitoringClientCopy.serverUptime[cs ? 'cs' : 'en']}
               </div>
-              <div className="text-xl font-mono font-bold text-zion-cyan-400">
+              <div className="text-xl font-mono font-bold text-zion-cyan">
                 {fmtUptime(serverUptime)}
               </div>
               <div className="text-xs text-gray-500">
@@ -702,20 +702,20 @@ export default function MonitoringClient() {
           className="zion-rainbow-card p-6"
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <Shield className="h-5 w-5 text-zion-cyan-400" />
+            <Shield className="h-5 w-5 text-zion-cyan" />
             {MonitoringMonitoringClientCopy.monitoringStack[cs ? 'cs' : 'en']}
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
             {[
-              { name: 'Prometheus', ver: 'v2.53.0', desc: MonitoringMonitoringClientCopy.metricsCollectionAlerting[cs ? 'cs' : 'en'], color: 'text-zion-gold-400' },
+              { name: 'Prometheus', ver: 'v2.53.0', desc: MonitoringMonitoringClientCopy.metricsCollectionAlerting[cs ? 'cs' : 'en'], color: 'text-zion-gold' },
               { name: 'Grafana', ver: 'v11.1.0', desc: MonitoringMonitoringClientCopy.k22PanelV3Dashboard[cs ? 'cs' : 'en'], color: 'text-zion-gold' },
               { name: 'Node Exporter', ver: 'v1.8.1', desc: MonitoringMonitoringClientCopy.hostCpuRamDiskNetwork[cs ? 'cs' : 'en'], color: 'text-zion-cyan' },
-              { name: 'Redis Exporter', ver: 'v1.61.0', desc: MonitoringMonitoringClientCopy.redisPersistenceMetrics[cs ? 'cs' : 'en'], color: 'text-zion-purple-400' },
-              { name: 'Alertmanager', ver: 'v0.27.0', desc: MonitoringMonitoringClientCopy.alertRoutingNotifications[cs ? 'cs' : 'en'], color: 'text-zion-purple-400' },
-              { name: MonitoringMonitoringClientCopy.coreMetrics[cs ? 'cs' : 'en'], ver: ':9115', desc: MonitoringMonitoringClientCopy.v3NodePrometheusEndpoint7Gauge[cs ? 'cs' : 'en'], color: 'text-zion-cyan-400' },
+              { name: 'Redis Exporter', ver: 'v1.61.0', desc: MonitoringMonitoringClientCopy.redisPersistenceMetrics[cs ? 'cs' : 'en'], color: 'text-zion-purple' },
+              { name: 'Alertmanager', ver: 'v0.27.0', desc: MonitoringMonitoringClientCopy.alertRoutingNotifications[cs ? 'cs' : 'en'], color: 'text-zion-purple' },
+              { name: MonitoringMonitoringClientCopy.coreMetrics[cs ? 'cs' : 'en'], ver: ':9115', desc: MonitoringMonitoringClientCopy.v3NodePrometheusEndpoint7Gauge[cs ? 'cs' : 'en'], color: 'text-zion-cyan' },
               { name: MonitoringMonitoringClientCopy.poolMetrics[cs ? 'cs' : 'en'], ver: ':8080', desc: MonitoringMonitoringClientCopy.miningPoolMetrics20CountersGau[cs ? 'cs' : 'en'], color: 'text-zion-gold' },
-              { name: 'API Proxy', ver: '/api/metrics', desc: MonitoringMonitoringClientCopy.secureAllowlistedQueryProxy[cs ? 'cs' : 'en'], color: 'text-zion-cyan-400' },
-              { name: MonitoringMonitoringClientCopy.website[cs ? 'cs' : 'en'], ver: SITE_VERSION, desc: `Next.js 16 + Tailwind CSS 4 · runtime ${SITE_RUNTIME_VERSION}`, color: 'text-zion-purple-400' },
+              { name: 'API Proxy', ver: '/api/metrics', desc: MonitoringMonitoringClientCopy.secureAllowlistedQueryProxy[cs ? 'cs' : 'en'], color: 'text-zion-cyan' },
+              { name: MonitoringMonitoringClientCopy.website[cs ? 'cs' : 'en'], ver: SITE_VERSION, desc: `Next.js 16 + Tailwind CSS 4 · runtime ${SITE_RUNTIME_VERSION}`, color: 'text-zion-purple' },
             ].map((s) => (
               <div key={s.name} style={{ '--rc': '7, 137, 48' } as React.CSSProperties} className="zion-rainbow-sub p-3 flex items-start gap-3">
                 <div className={`mt-0.5 h-2 w-2 rounded-full ${s.color.replace('text-', 'bg-')}`} />

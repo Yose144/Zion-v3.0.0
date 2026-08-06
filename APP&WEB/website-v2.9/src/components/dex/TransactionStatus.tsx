@@ -37,10 +37,10 @@ interface Props {
 
 const STATUS_CONFIG: Record<string, { icon: any; color: string; bg: string; label: string; spin?: boolean }> = {
   pending: { icon: Clock, color: 'text-zinc-400', bg: 'bg-zinc-500/10', label: 'Pending' },
-  executing: { icon: Loader2, color: 'text-zion-gold-400', bg: 'bg-zion-gold-500/10', label: 'Executing', spin: true },
-  completed: { icon: CheckCircle2, color: 'text-zion-cyan-400', bg: 'bg-zion-cyan-500/10', label: 'Completed' },
-  failed: { icon: XCircle, color: 'text-zion-purple-400', bg: 'bg-zion-purple-500/10', label: 'Failed' },
-  refunded: { icon: ArrowRight, color: 'text-zion-gold-400', bg: 'bg-zion-gold-500/10', label: 'Refunded' },
+  executing: { icon: Loader2, color: 'text-zion-gold', bg: 'bg-zion-gold/10', label: 'Executing', spin: true },
+  completed: { icon: CheckCircle2, color: 'text-zion-cyan', bg: 'bg-zion-cyan/10', label: 'Completed' },
+  failed: { icon: XCircle, color: 'text-zion-purple', bg: 'bg-zion-purple/10', label: 'Failed' },
+  refunded: { icon: ArrowRight, color: 'text-zion-gold', bg: 'bg-zion-gold/10', label: 'Refunded' },
 };
 
 export default function TransactionStatus({ swapId, onComplete }: Props) {
@@ -87,8 +87,8 @@ export default function TransactionStatus({ swapId, onComplete }: Props) {
 
   if (error) {
     return (
-      <div className="p-4 bg-zion-purple-500/10 border border-zion-purple-500/30 rounded-xl">
-        <div className="flex items-center gap-2 text-zion-purple-400">
+      <div className="p-4 bg-zion-purple/10 border border-zion-purple/30 rounded-xl">
+        <div className="flex items-center gap-2 text-zion-purple">
           <XCircle className="w-4 h-4" />
           <span className="text-sm">Failed to load swap status: {error}</span>
         </div>
@@ -142,7 +142,7 @@ export default function TransactionStatus({ swapId, onComplete }: Props) {
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   {step.step_type === 'bridge' ? (
-                    <Globe className="w-3 h-3 text-zion-gold-500" />
+                    <Globe className="w-3 h-3 text-zion-gold" />
                   ) : (
                     <Repeat className="w-3 h-3 text-zinc-500" />
                   )}
@@ -156,7 +156,7 @@ export default function TransactionStatus({ swapId, onComplete }: Props) {
                   </div>
                 )}
                 {step.error && (
-                  <div className="text-xs text-zion-purple-400 mt-0.5">{step.error}</div>
+                  <div className="text-xs text-zion-purple mt-0.5">{step.error}</div>
                 )}
               </div>
               <span className={`text-xs ${config.color}`}>{config.label}</span>

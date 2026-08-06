@@ -96,7 +96,7 @@ export default function PriceChart({ token, vsToken = 'USDT', height = 200 }: Pr
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <BarChart3 className="w-4 h-4 text-zion-gold-500" />
+          <BarChart3 className="w-4 h-4 text-zion-gold" />
           <h3 className="text-sm font-semibold text-white">
             {token}/{vsToken}
           </h3>
@@ -105,7 +105,7 @@ export default function PriceChart({ token, vsToken = 'USDT', height = 200 }: Pr
           ) : (
             <div className="flex items-center gap-1.5">
               <span className="text-sm font-bold text-white">${currentPrice.toFixed(4)}</span>
-              <span className={`flex items-center gap-0.5 text-xs ${isUp ? 'text-zion-cyan-400' : 'text-zion-purple-400'}`}>
+              <span className={`flex items-center gap-0.5 text-xs ${isUp ? 'text-zion-cyan' : 'text-zion-purple'}`}>
                 {isUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                 {changePercent >= 0 ? '+' : ''}{changePercent.toFixed(2)}%
               </span>
@@ -121,7 +121,7 @@ export default function PriceChart({ token, vsToken = 'USDT', height = 200 }: Pr
               onClick={() => setTimeframe(tf)}
               className={`px-2 py-1 text-xs rounded transition-colors ${
                 timeframe === tf
-                  ? 'bg-zion-gold-500/20 text-zion-gold-400'
+                  ? 'bg-zion-gold/20 text-zion-gold'
                   : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
@@ -208,7 +208,7 @@ export default function PriceChart({ token, vsToken = 'USDT', height = 200 }: Pr
         </div>
         <div>
           <span className="text-zinc-500">Change: </span>
-          <span className={isUp ? 'text-zion-cyan-400' : 'text-zion-purple-400'}>
+          <span className={isUp ? 'text-zion-cyan' : 'text-zion-purple'}>
             {change >= 0 ? '+' : ''}{change.toFixed(4)}
           </span>
         </div>

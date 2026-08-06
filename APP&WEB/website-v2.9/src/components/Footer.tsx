@@ -10,6 +10,9 @@ export default function Footer() {
   const footerGroups = [
     {
       title: tr('footer', 'group_info', lang),
+      accent: 'text-zion-purple',
+      hover: 'hover:text-zion-purple',
+      bar: 'from-zion-purple',
       links: [
         { href: '/', label: tr('nav', 'home', lang) },
         { href: '/news', label: tr('nav', 'news', lang) },
@@ -27,6 +30,9 @@ export default function Footer() {
     },
     {
       title: tr('footer', 'group_layers', lang),
+      accent: 'text-zion-gold',
+      hover: 'hover:text-zion-gold',
+      bar: 'from-zion-gold',
       links: [
         { href: '/defi', label: `L2 ${tr('nav', 'defi', lang)}` },
         { href: '/cex', label: tr('nav', 'cex_listings', lang) },
@@ -43,6 +49,9 @@ export default function Footer() {
     },
     {
       title: tr('footer', 'group_wiki', lang),
+      accent: 'text-zion-cyan',
+      hover: 'hover:text-zion-cyan',
+      bar: 'from-zion-cyan',
       links: [
         { href: '/wiki', label: tr('nav', 'wiki_group', lang) },
         { href: '/terranova', label: tr('nav', 'terranova', lang) },
@@ -54,31 +63,35 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="relative overflow-hidden border-t border-white/10 bg-[rgba(13,13,13,0.82)] backdrop-blur-xl">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-zion-gold/50 to-transparent" />
+    <footer className="relative overflow-hidden border-t border-white/10 bg-[rgba(13,13,13,0.88)] backdrop-blur-xl">
+      {/* Top rasta tri-color accent line */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-linear-to-r from-zion-purple via-zion-gold to-zion-cyan" />
       <div className="pointer-events-none absolute -left-32 top-0 h-72 w-72 rounded-full bg-zion-purple/10 blur-3xl" />
       <div className="pointer-events-none absolute -right-32 bottom-0 h-72 w-72 rounded-full bg-zion-cyan/10 blur-3xl" />
       <div className="zion-container py-12">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
           {/* Brand column */}
           <div className="md:col-span-2 space-y-4">
-            <h3 className="text-xl font-bold text-gradient-soft">ZION TerraNova</h3>
-            <p className="text-sm text-gray-400 leading-relaxed max-w-sm">
+            <h3 className="text-2xl font-extrabold text-gradient tracking-tight">ZION TerraNova</h3>
+            <p className="text-sm text-zion-gold/70 leading-relaxed max-w-sm font-medium">
               {tr('footer', 'tagline', lang)}
             </p>
-
+            <div className="h-1 w-16 rounded-full bg-linear-to-r from-zion-purple via-zion-gold to-zion-cyan" />
           </div>
 
           {/* Link columns */}
           {footerGroups.map((group) => (
             <div key={group.title}>
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-500 mb-4">{group.title}</p>
+              <div className="flex items-center gap-2 mb-4">
+                <div className={`h-4 w-1 rounded-full bg-linear-to-b ${group.bar} to-transparent`} />
+                <p className={`text-xs uppercase tracking-[0.25em] font-semibold ${group.accent}`}>{group.title}</p>
+              </div>
               <ul className="space-y-2.5">
                 {group.links.map(({ href, label }) => (
                   <li key={href}>
                     <Link
                       href={href}
-                      className="text-sm text-gray-400 hover:text-white transition-colors"
+                      className={`text-sm text-gray-400 ${group.hover} hover:pl-1 transition-all duration-200 inline-block`}
                     >
                       {label}
                     </Link>
@@ -93,10 +106,10 @@ export default function Footer() {
         <hr className="zion-divider mt-10" />
 
         <div className="pt-6">
-          <p className="text-[11px] leading-relaxed text-gray-600 max-w-3xl">
+          <p className="text-[11px] leading-relaxed text-gray-500 max-w-3xl">
             {tr('footer', 'disclaimer', lang)}
             {' '}{tr('footer', 'legal_suffix', lang)}{' '}
-            <Link href="/docs#legal" className="text-gray-500 hover:text-gray-300 underline underline-offset-2 transition-colors">
+            <Link href="/docs#legal" className="text-zion-gold/70 hover:text-zion-gold underline underline-offset-2 transition-colors">
               {tr('footer', 'legal_disclaimer', lang)}
             </Link>{' '}
             {tr('footer', 'legal_suffix_tail', lang)}
@@ -105,10 +118,10 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div className="mt-4 pt-4 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-gray-600">
-            © 2026 ZION Blockchain · {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_VERSION}
+          <p className="text-xs text-gray-500">
+            © 2026 <span className="text-zion-gold">ZION Blockchain</span> · <span className="text-zion-purple">{SITE_RELEASE_LABEL}</span> · runtime <span className="text-zion-cyan">{SITE_RUNTIME_VERSION}</span>
           </p>
-          <span className="text-xs text-gray-500">{tr('footer', 'test_mainnet_active', lang)}</span>
+          <span className="text-xs text-zion-gold/60">{tr('footer', 'test_mainnet_active', lang)}</span>
         </div>
       </div>
     </footer>

@@ -154,7 +154,7 @@ export default function CrossChainSwapWidget() {
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
-            <Zap className="w-5 h-5 text-zion-gold-500" />
+            <Zap className="w-5 h-5 text-zion-gold" />
             <h2 className="text-lg font-bold text-white">ZionDex Swap</h2>
           </div>
           <button
@@ -178,7 +178,7 @@ export default function CrossChainSwapWidget() {
                   onClick={() => setSlippageBps(bps)}
                   className={`px-3 py-1 text-xs rounded-lg transition-colors ${
                     slippageBps === bps
-                      ? 'bg-zion-gold-500/20 text-zion-gold-400 border border-zion-gold-500/40'
+                      ? 'bg-zion-gold/20 text-zion-gold border border-zion-gold/40'
                       : 'bg-zinc-800 text-zinc-400 border border-zinc-700/30 hover:border-zinc-600'
                   }`}
                 >
@@ -212,7 +212,7 @@ export default function CrossChainSwapWidget() {
               value={amount}
               onChange={e => setAmount(e.target.value)}
               placeholder="0.0"
-              className="w-full px-4 py-4 bg-zinc-900/80 border border-zinc-700/50 rounded-xl text-2xl font-bold text-white placeholder-zinc-600 focus:border-zion-gold-500/50 focus:outline-none transition-colors"
+              className="w-full px-4 py-4 bg-zinc-900/80 border border-zinc-700/50 rounded-xl text-2xl font-bold text-white placeholder-zinc-600 focus:border-zion-gold/50 focus:outline-none transition-colors"
             />
           </div>
         </div>
@@ -223,7 +223,7 @@ export default function CrossChainSwapWidget() {
             onClick={swapChains}
             className="p-2 bg-zinc-800 border border-zinc-700/50 rounded-lg hover:bg-zinc-700 hover:rotate-180 transition-all"
           >
-            <ArrowDownUp className="w-4 h-4 text-zion-gold-500" />
+            <ArrowDownUp className="w-4 h-4 text-zion-gold" />
           </button>
         </div>
 
@@ -246,7 +246,7 @@ export default function CrossChainSwapWidget() {
 
           <div className="relative">
             <div className="w-full px-4 py-4 bg-zinc-900/40 border border-zinc-700/30 rounded-xl">
-              <div className="text-2xl font-bold text-zion-gold-400">
+              <div className="text-2xl font-bold text-zion-gold">
                 {quote ? parseFloat(quote.path.expected_output).toFixed(6) : '0.0'}
               </div>
               <div className="text-xs text-zinc-500 mt-1">
@@ -265,7 +265,7 @@ export default function CrossChainSwapWidget() {
             value={recipient}
             onChange={e => setRecipient(e.target.value)}
             placeholder="Recipient address (optional)"
-            className="w-full px-4 py-2.5 bg-zinc-900/80 border border-zinc-700/50 rounded-xl text-sm text-white placeholder-zinc-600 focus:border-zion-gold-500/50 focus:outline-none transition-colors"
+            className="w-full px-4 py-2.5 bg-zinc-900/80 border border-zinc-700/50 rounded-xl text-sm text-white placeholder-zinc-600 focus:border-zion-gold/50 focus:outline-none transition-colors"
           />
         </div>
 
@@ -282,19 +282,19 @@ export default function CrossChainSwapWidget() {
 
         {/* Error */}
         {error && (
-          <div className="mt-3 flex items-start gap-2 p-3 bg-zion-purple-500/10 border border-zion-purple-500/30 rounded-xl">
-            <AlertCircle className="w-4 h-4 text-zion-purple-400 flex-shrink-0 mt-0.5" />
-            <span className="text-sm text-zion-purple-400">{error}</span>
+          <div className="mt-3 flex items-start gap-2 p-3 bg-zion-purple/10 border border-zion-purple/30 rounded-xl">
+            <AlertCircle className="w-4 h-4 text-zion-purple flex-shrink-0 mt-0.5" />
+            <span className="text-sm text-zion-purple">{error}</span>
           </div>
         )}
 
         {/* Success */}
         {phase === 'success' && swapResult && (
-          <div className="mt-3 flex items-start gap-2 p-3 bg-zion-cyan-500/10 border border-zion-cyan-500/30 rounded-xl">
-            <CheckCircle2 className="w-4 h-4 text-zion-cyan-400 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-zion-cyan-400">
+          <div className="mt-3 flex items-start gap-2 p-3 bg-zion-cyan/10 border border-zion-cyan/30 rounded-xl">
+            <CheckCircle2 className="w-4 h-4 text-zion-cyan flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-zion-cyan">
               <div>Swap submitted! ID: {swapResult.swap_id}</div>
-              <div className="text-xs text-zion-cyan-500/70 mt-1">Status: {swapResult.status}</div>
+              <div className="text-xs text-zion-cyan/70 mt-1">Status: {swapResult.status}</div>
             </div>
           </div>
         )}

@@ -17,7 +17,7 @@ const accentMap = {
   gold: { text: "text-zion-gold", glow: "252, 209, 22" },
   cyan: { text: "text-zion-cyan", glow: "34, 211, 238" },
   purple: { text: "text-zion-purple", glow: "228, 30, 43" },
-  green: { text: "text-zion-cyan-400", glow: "74, 222, 128" },
+  green: { text: "text-zion-cyan", glow: "74, 222, 128" },
   blue: { text: "text-zion-blue", glow: "59, 130, 246" },
 };
 

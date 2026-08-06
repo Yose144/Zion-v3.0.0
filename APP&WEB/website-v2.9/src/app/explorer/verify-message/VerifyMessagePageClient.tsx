@@ -111,9 +111,9 @@ export default function VerifyMessagePageClient() {
     <div className="relative min-h-screen pb-24 overflow-x-hidden">
       {/* ── Background glows ── */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-cyan-500/8" />
+        <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-cyan/8" />
         <div className="absolute -right-40 top-2/3 h-[400px] w-[400px] rounded-full blur-[200px] bg-zion-purple/6" />
-        <div className="absolute left-1/2 top-0 h-48 w-full -translate-x-1/2 bg-linear-to-b from-zion-cyan-500/15 to-transparent" />
+        <div className="absolute left-1/2 top-0 h-48 w-full -translate-x-1/2 bg-linear-to-b from-zion-cyan/15 to-transparent" />
       </div>
 
       <div className="relative z-10 zion-container max-w-4xl space-y-10 pt-6 pb-8">
@@ -125,7 +125,7 @@ export default function VerifyMessagePageClient() {
           style={{ "--rc": "74, 222, 128" } as React.CSSProperties}
         >
           <div className="space-y-5">
-            <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan-500/40 bg-zion-cyan-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan-300 uppercase">
+            <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase">
               <ShieldCheck className="h-4 w-4" />
               {SITE_RELEASE_LABEL} · {ExplorerVerifyMessageVerifyMessagePageClientCopy.verify[cs ? 'cs' : 'en']}
             </div>
@@ -165,16 +165,16 @@ export default function VerifyMessagePageClient() {
               {/* Public Key */}
               <div>
                 <label className="flex items-center gap-2 text-sm text-gray-300 mb-2">
-                  <Key className="w-4 h-4 text-zion-cyan-400" />
+                  <Key className="w-4 h-4 text-zion-cyan" />
                   {ExplorerVerifyMessageVerifyMessagePageClientCopy.publicKeyHex[cs ? 'cs' : 'en']}
-                  <span className="text-zion-purple-400">*</span>
+                  <span className="text-zion-purple">*</span>
                 </label>
                 <input
                   type="text"
                   value={publicKey}
                   onChange={(e) => setPublicKey(e.target.value)}
                   placeholder="ed25519 public key in hex (64 bytes = 128 hex chars)"
-                  className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm font-mono text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-zion-cyan-500/40 focus:ring-1 focus:ring-zion-cyan-500/20 transition"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm font-mono text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-zion-cyan/40 focus:ring-1 focus:ring-zion-cyan/20 transition"
                   spellCheck={false}
                 />
               </div>
@@ -184,7 +184,7 @@ export default function VerifyMessagePageClient() {
                 <label className="flex items-center gap-2 text-sm text-gray-300 mb-2">
                   <MessageSquare className="w-4 h-4 text-zion-cyan" />
                   {ExplorerVerifyMessageVerifyMessagePageClientCopy.message[cs ? 'cs' : 'en']}
-                  <span className="text-zion-purple-400">*</span>
+                  <span className="text-zion-purple">*</span>
                 </label>
                 <textarea
                   value={message}
@@ -201,7 +201,7 @@ export default function VerifyMessagePageClient() {
                 <label className="flex items-center gap-2 text-sm text-gray-300 mb-2">
                   <Signature className="w-4 h-4 text-zion-gold" />
                   {ExplorerVerifyMessageVerifyMessagePageClientCopy.signatureHex[cs ? 'cs' : 'en']}
-                  <span className="text-zion-purple-400">*</span>
+                  <span className="text-zion-purple">*</span>
                 </label>
                 <input
                   type="text"
@@ -237,7 +237,7 @@ export default function VerifyMessagePageClient() {
                 <button
                   onClick={handleVerify}
                   disabled={loading || !publicKey.trim() || !message.trim() || !signature.trim()}
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-zion-cyan-500 to-zion-cyan text-white font-semibold text-sm hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-lg shadow-zion-cyan-500/20"
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-zion-cyan to-zion-cyan text-white font-semibold text-sm hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-lg shadow-zion-cyan/20"
                 >
                   {loading ? (
                     <>
@@ -271,24 +271,24 @@ export default function VerifyMessagePageClient() {
             <div
               className={`zion-rainbow-card rounded-3xl bg-black/60 p-6 md:p-8 border-2 ${
                 result.valid
-                  ? "border-zion-cyan-500/30"
-                  : "border-zion-purple-500/30"
+                  ? "border-zion-cyan/30"
+                  : "border-zion-purple/30"
               }`}
               style={{ "--rc": result.valid ? "74, 222, 128" : "251, 113, 133" } as React.CSSProperties}
             >
               {/* Big status */}
               <div className="flex items-center gap-4 mb-6">
                 {result.valid ? (
-                  <div className="w-16 h-16 rounded-2xl bg-zion-cyan-500/10 border border-zion-cyan-500/30 flex items-center justify-center">
-                    <ShieldCheck className="w-8 h-8 text-zion-cyan-400" />
+                  <div className="w-16 h-16 rounded-2xl bg-zion-cyan/10 border border-zion-cyan/30 flex items-center justify-center">
+                    <ShieldCheck className="w-8 h-8 text-zion-cyan" />
                   </div>
                 ) : (
-                  <div className="w-16 h-16 rounded-2xl bg-zion-purple-500/10 border border-zion-purple-500/30 flex items-center justify-center">
-                    <ShieldX className="w-8 h-8 text-zion-purple-400" />
+                  <div className="w-16 h-16 rounded-2xl bg-zion-purple/10 border border-zion-purple/30 flex items-center justify-center">
+                    <ShieldX className="w-8 h-8 text-zion-purple" />
                   </div>
                 )}
                 <div>
-                  <h2 className={`text-3xl font-bold ${result.valid ? "text-zion-cyan-400" : "text-zion-purple-400"}`}>
+                  <h2 className={`text-3xl font-bold ${result.valid ? "text-zion-cyan" : "text-zion-purple"}`}>
                     {result.valid
                       ? ExplorerVerifyMessageVerifyMessagePageClientCopy.signatureValid[cs ? 'cs' : 'en']
                       : ExplorerVerifyMessageVerifyMessagePageClientCopy.signatureInvalid[cs ? 'cs' : 'en']}
@@ -307,15 +307,15 @@ export default function VerifyMessagePageClient() {
                 <div className="zion-rainbow-sub p-4 rounded-xl" style={{ "--rc": result.valid ? "74, 222, 128" : "251, 113, 133" } as React.CSSProperties}>
                   <div className="flex items-center gap-2 mb-2">
                     {result.valid ? (
-                      <CheckCircle2 className="w-4 h-4 text-zion-cyan-400" />
+                      <CheckCircle2 className="w-4 h-4 text-zion-cyan" />
                     ) : (
-                      <XCircle className="w-4 h-4 text-zion-purple-400" />
+                      <XCircle className="w-4 h-4 text-zion-purple" />
                     )}
                     <span className="text-xs text-gray-400 uppercase tracking-wider">
                       {ExplorerVerifyMessageVerifyMessagePageClientCopy.ed25519Signature[cs ? 'cs' : 'en']}
                     </span>
                   </div>
-                  <div className={`text-sm font-bold ${result.valid ? "text-zion-cyan-400" : "text-zion-purple-400"}`}>
+                  <div className={`text-sm font-bold ${result.valid ? "text-zion-cyan" : "text-zion-purple"}`}>
                     {result.valid
                       ? ExplorerVerifyMessageVerifyMessagePageClientCopy.signatureMatchesPublicKey[cs ? 'cs' : 'en']
                       : ExplorerVerifyMessageVerifyMessagePageClientCopy.signatureDoesNotMatchPublicKey[cs ? 'cs' : 'en']}
@@ -327,15 +327,15 @@ export default function VerifyMessagePageClient() {
                   <div className="zion-rainbow-sub p-4 rounded-xl" style={{ "--rc": result.addressMatch ? "74, 222, 128" : "251, 113, 133" } as React.CSSProperties}>
                     <div className="flex items-center gap-2 mb-2">
                       {result.addressMatch ? (
-                        <CheckCircle2 className="w-4 h-4 text-zion-cyan-400" />
+                        <CheckCircle2 className="w-4 h-4 text-zion-cyan" />
                       ) : (
-                        <XCircle className="w-4 h-4 text-zion-purple-400" />
+                        <XCircle className="w-4 h-4 text-zion-purple" />
                       )}
                       <span className="text-xs text-gray-400 uppercase tracking-wider">
                         {ExplorerVerifyMessageVerifyMessagePageClientCopy.addressMatch[cs ? 'cs' : 'en']}
                       </span>
                     </div>
-                    <div className={`text-sm font-bold ${result.addressMatch ? "text-zion-cyan-400" : "text-zion-purple-400"}`}>
+                    <div className={`text-sm font-bold ${result.addressMatch ? "text-zion-cyan" : "text-zion-purple"}`}>
                       {result.addressMatch
                         ? ExplorerVerifyMessageVerifyMessagePageClientCopy.publicKeyAddressOk[cs ? 'cs' : 'en']
                         : ExplorerVerifyMessageVerifyMessagePageClientCopy.publicKeyDoesNotMatchAddress[cs ? 'cs' : 'en']}
@@ -370,11 +370,11 @@ export default function VerifyMessagePageClient() {
 
               {/* Error detail */}
               {result.error && !result.valid && (
-                <div className="mt-4 p-4 rounded-xl bg-zion-purple-500/5 border border-zion-purple-500/20">
-                  <div className="text-xs text-zion-purple-400 uppercase tracking-wider mb-1">
+                <div className="mt-4 p-4 rounded-xl bg-zion-purple/5 border border-zion-purple/20">
+                  <div className="text-xs text-zion-purple uppercase tracking-wider mb-1">
                     {ExplorerVerifyMessageVerifyMessagePageClientCopy.errorDetail[cs ? 'cs' : 'en']}
                   </div>
-                  <code className="text-sm font-mono text-zion-purple-300 break-all">
+                  <code className="text-sm font-mono text-zion-purple break-all">
                     {result.error}
                   </code>
                 </div>
@@ -389,14 +389,14 @@ export default function VerifyMessagePageClient() {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <div className="zion-rainbow-card rounded-2xl bg-black/60 p-6 border-2 border-zion-purple-500/30" style={{ "--rc": "251, 113, 133" } as React.CSSProperties}>
+            <div className="zion-rainbow-card rounded-2xl bg-black/60 p-6 border-2 border-zion-purple/30" style={{ "--rc": "251, 113, 133" } as React.CSSProperties}>
               <div className="flex items-center gap-3">
-                <AlertCircle className="w-6 h-6 text-zion-purple-400" />
+                <AlertCircle className="w-6 h-6 text-zion-purple" />
                 <div>
-                  <h3 className="text-lg font-bold text-zion-purple-400">
+                  <h3 className="text-lg font-bold text-zion-purple">
                     {ExplorerVerifyMessageVerifyMessagePageClientCopy.error[cs ? 'cs' : 'en']}
                   </h3>
-                  <code className="text-sm font-mono text-zion-purple-300 break-all">
+                  <code className="text-sm font-mono text-zion-purple break-all">
                     {error}
                   </code>
                 </div>
@@ -413,8 +413,8 @@ export default function VerifyMessagePageClient() {
         >
           <div className="zion-rainbow-card rounded-2xl bg-black/60 p-6" style={{ "--rc": "74, 222, 128" } as React.CSSProperties}>
             <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-zion-cyan-500/10 border border-zion-cyan-500/20 flex items-center justify-center flex-shrink-0">
-                <Shield className="w-5 h-5 text-zion-cyan-400" />
+              <div className="w-10 h-10 rounded-xl bg-zion-cyan/10 border border-zion-cyan/20 flex items-center justify-center flex-shrink-0">
+                <Shield className="w-5 h-5 text-zion-cyan" />
               </div>
               <div className="space-y-2">
                 <h3 className="text-base font-semibold text-white">

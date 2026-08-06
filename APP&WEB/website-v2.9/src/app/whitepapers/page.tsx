@@ -42,7 +42,7 @@ const categories: Category[] = [
     id: 'overview',
     title: { cs: 'Přehled', en: 'Overview' },
     icon: BookOpen,
-    accentText: 'text-zion-purple-300',
+    accentText: 'text-zion-purple',
     papers: [
       {
         id: 'readme',
@@ -93,7 +93,7 @@ const categories: Category[] = [
     id: 'story',
     title: { cs: 'Příběh / Narrativ', en: 'Story / Narrative' },
     icon: Scroll,
-    accentText: 'text-zion-cyan-400',
+    accentText: 'text-zion-cyan',
     papers: [
       {
         id: 'genesis-cz',
@@ -263,11 +263,11 @@ export default function WhitepapersPage() {
   return (
     <div className="">
       {/* Hero */}
-      <div className="relative overflow-hidden border-b border-white/10 bg-gradient-to-b from-zion-purple-600/10 via-transparent to-transparent">
+      <div className="relative overflow-hidden border-b border-white/10 bg-gradient-to-b from-zion-purple/10 via-transparent to-transparent">
         <div className="zion-container py-20 relative">
           <div className="zion-rainbow-card max-w-4xl mx-auto p-8 md:p-10 text-center" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-            <div className="zion-kicker mx-auto mb-6 w-fit border-zion-purple-400/30 bg-zion-purple-400/10 text-violet-200">
-              <BookOpen className="w-4 h-4 text-zion-purple-300" />
+            <div className="zion-kicker mx-auto mb-6 w-fit border-zion-purple/30 bg-zion-purple/10 text-violet-200">
+              <BookOpen className="w-4 h-4 text-zion-purple" />
               <span className="text-sm text-violet-200 font-semibold">{tr('whitepapers', 'hero_kicker', lang)}</span>
             </div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-gradient">
@@ -293,7 +293,7 @@ export default function WhitepapersPage() {
               href="https://github.com/Zion-TerraNova/v3-Mainnet/tree/main/docs/WP"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-zion-purple-500/30 bg-zion-purple-500/10 px-5 py-2.5 text-sm font-semibold text-violet-100 hover:bg-zion-purple-500/20 transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl border border-zion-purple/30 bg-zion-purple/10 px-5 py-2.5 text-sm font-semibold text-violet-100 hover:bg-zion-purple/20 transition-colors"
             >
               <ExternalLink className="h-4 w-4" />
               {tr('whitepapers', 'source_button', lang)}
@@ -312,7 +312,7 @@ export default function WhitepapersPage() {
             style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
           >
             <div className="flex items-center gap-2 min-w-0">
-              <BookOpen className="w-5 h-5 text-zion-purple-300 shrink-0" />
+              <BookOpen className="w-5 h-5 text-zion-purple shrink-0" />
               <span className="font-semibold min-w-0 break-words">{currentCategory?.title[lang]}</span>
             </div>
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -421,7 +421,7 @@ export default function WhitepapersPage() {
                 <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
                   <span className={currentCategory?.accentText}>{currentCategory?.title[lang]}</span>
                   <ChevronRight className="w-3 h-3" />
-                  <span className="text-zion-purple-300">{currentPaper.title[lang]}</span>
+                  <span className="text-zion-purple">{currentPaper.title[lang]}</span>
                 </div>
                 <h1 className="text-3xl md:text-4xl font-bold mb-4 leading-tight text-gradient">
                   {currentPaper.title[lang]}
@@ -432,7 +432,7 @@ export default function WhitepapersPage() {
                     href={pdfUrl ?? ''}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-4 inline-flex items-center gap-2 rounded-xl bg-zion-cyan-500/20 hover:bg-zion-cyan-500/30 border border-zion-cyan-500/40 px-4 py-2 text-sm font-semibold text-emerald-100 transition-colors"
+                    className="mt-4 inline-flex items-center gap-2 rounded-xl bg-zion-cyan/20 hover:bg-zion-cyan/30 border border-zion-cyan/40 px-4 py-2 text-sm font-semibold text-emerald-100 transition-colors"
                   >
                     <Download className="h-4 w-4" />
                     {tr('whitepapers', 'download_pdf', lang)}

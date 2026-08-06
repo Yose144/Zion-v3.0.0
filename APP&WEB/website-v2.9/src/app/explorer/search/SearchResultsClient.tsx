@@ -86,7 +86,7 @@ export default function SearchResultsClient() {
   const colors: Record<string, { text: string; border: string; bg: string }> = {
     block: { text: "text-zion-gold", border: "border-zion-gold/20", bg: "bg-zion-gold/5" },
     transaction: { text: "text-zion-cyan", border: "border-zion-cyan/20", bg: "bg-zion-cyan/5" },
-    address: { text: "text-zion-purple-400", border: "border-zion-purple-500/20", bg: "bg-zion-purple-500/5" },
+    address: { text: "text-zion-purple", border: "border-zion-purple/20", bg: "bg-zion-purple/5" },
   };
 
   return (
@@ -125,9 +125,9 @@ export default function SearchResultsClient() {
           )}
 
           {error && (
-            <div className="rounded-2xl border border-zion-purple-500/20 bg-zion-purple-500/5 p-6 text-center">
-              <X className="h-6 w-6 text-zion-purple-400 mx-auto mb-2" />
-              <p className="text-sm text-zion-purple-300">{error}</p>
+            <div className="rounded-2xl border border-zion-purple/20 bg-zion-purple/5 p-6 text-center">
+              <X className="h-6 w-6 text-zion-purple mx-auto mb-2" />
+              <p className="text-sm text-zion-purple">{error}</p>
             </div>
           )}
 

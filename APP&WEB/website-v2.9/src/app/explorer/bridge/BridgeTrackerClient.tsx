@@ -143,13 +143,13 @@ function statusBadge(finalized: boolean, confirmations: number, threshold: numbe
   if (finalized) {
     return {
       label: ExplorerBridgeBridgeTrackerClientCopy.finalized[cs ? 'cs' : 'en'],
-      className: "text-zion-cyan-400 bg-zion-cyan-400/10 border-zion-cyan-400/20",
+      className: "text-zion-cyan bg-zion-cyan/10 border-zion-cyan/20",
       icon: CheckCircle2,
     };
   }
   return {
     label: cs ? `Čeká (${confirmations}/${threshold})` : `Pending (${confirmations}/${threshold})`,
-    className: "text-zion-gold-400 bg-zion-gold-400/10 border-zion-gold-400/20",
+    className: "text-zion-gold bg-zion-gold/10 border-zion-gold/20",
     icon: Clock,
   };
 }
@@ -161,7 +161,7 @@ function FinalityProgress({ confirmations, threshold }: { confirmations: number;
     <div className="w-full h-1.5 rounded-full bg-white/5 overflow-hidden">
       <div
         className={`h-full rounded-full transition-all duration-500 ${
-          pct >= 100 ? "bg-zion-cyan-400" : "bg-zion-gold"
+          pct >= 100 ? "bg-zion-cyan" : "bg-zion-gold"
         }`}
         style={{ width: `${pct}%` }}
       />
@@ -227,7 +227,7 @@ function PipelineStep({
         <div className="flex items-center gap-2 mb-2">
           <Icon className={`h-4 w-4 ${color}`} />
           <span className="text-xs font-medium text-white">{label}</span>
-          {done && <CheckCircle2 className="h-3.5 w-3.5 text-zion-cyan-400 ml-auto" />}
+          {done && <CheckCircle2 className="h-3.5 w-3.5 text-zion-cyan ml-auto" />}
         </div>
         <p className="text-[10px] text-gray-500 leading-snug">{sub}</p>
         {count !== undefined && (
@@ -333,11 +333,11 @@ export default function BridgeTrackerClient() {
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 {online ? (
-                  <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan-400/30 bg-zion-cyan-400/10 px-4 py-2 text-zion-cyan-300">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-2 text-zion-cyan">
                     <ShieldCheck className="h-3 w-3" /> {ExplorerBridgeBridgeTrackerClientCopy.online[cs ? 'cs' : 'en']}
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-2 rounded-full border border-zion-purple-400/30 bg-zion-purple-400/10 px-4 py-2 text-zion-purple-300">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-zion-purple/30 bg-zion-purple/10 px-4 py-2 text-zion-purple">
                     <AlertCircle className="h-3 w-3" /> {ExplorerBridgeBridgeTrackerClientCopy.offline[cs ? 'cs' : 'en']}
                   </span>
                 )}
@@ -377,7 +377,7 @@ export default function BridgeTrackerClient() {
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerBridgeBridgeTrackerClientCopy.metrics[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Activity className="h-7 w-7 text-zion-cyan-400" />
+              <Activity className="h-7 w-7 text-zion-cyan" />
               {ExplorerBridgeBridgeTrackerClientCopy.bridgeMetrics[cs ? 'cs' : 'en']}
             </h2>
           </div>
@@ -394,13 +394,13 @@ export default function BridgeTrackerClient() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {[
                 { label: ExplorerBridgeBridgeTrackerClientCopy.locksDetected[cs ? 'cs' : 'en'], icon: Lock, accent: "text-zion-cyan", value: fmtNum(data?.l1_locks_detected ?? 0) },
-                { label: ExplorerBridgeBridgeTrackerClientCopy.locksFinalized[cs ? 'cs' : 'en'], icon: ShieldCheck, accent: "text-zion-cyan-400", value: fmtNum(data?.l1_locks_finalized ?? 0) },
+                { label: ExplorerBridgeBridgeTrackerClientCopy.locksFinalized[cs ? 'cs' : 'en'], icon: ShieldCheck, accent: "text-zion-cyan", value: fmtNum(data?.l1_locks_finalized ?? 0) },
                 { label: ExplorerBridgeBridgeTrackerClientCopy.mintsSubmitted[cs ? 'cs' : 'en'], icon: Zap, accent: "text-zion-gold", value: fmtNum(data?.evm_mints_submitted ?? 0) },
-                { label: ExplorerBridgeBridgeTrackerClientCopy.mintsConfirmed[cs ? 'cs' : 'en'], icon: CheckCircle2, accent: "text-zion-cyan-400", value: fmtNum(data?.evm_mints_confirmed ?? 0) },
-                { label: ExplorerBridgeBridgeTrackerClientCopy.burnsDetected[cs ? 'cs' : 'en'], icon: Flame, accent: "text-zion-gold-400", value: fmtNum(data?.evm_burns_detected ?? 0) },
+                { label: ExplorerBridgeBridgeTrackerClientCopy.mintsConfirmed[cs ? 'cs' : 'en'], icon: CheckCircle2, accent: "text-zion-cyan", value: fmtNum(data?.evm_mints_confirmed ?? 0) },
+                { label: ExplorerBridgeBridgeTrackerClientCopy.burnsDetected[cs ? 'cs' : 'en'], icon: Flame, accent: "text-zion-gold", value: fmtNum(data?.evm_burns_detected ?? 0) },
                 { label: ExplorerBridgeBridgeTrackerClientCopy.unlocksSubmitted[cs ? 'cs' : 'en'], icon: Unlock, accent: "text-zion-purple", value: fmtNum(data?.l1_unlocks_submitted ?? 0) },
-                { label: ExplorerBridgeBridgeTrackerClientCopy.unlocksConfirmed[cs ? 'cs' : 'en'], icon: CheckCircle2, accent: "text-zion-cyan-400", value: fmtNum(data?.l1_unlocks_confirmed ?? 0) },
-                { label: ExplorerBridgeBridgeTrackerClientCopy.errors[cs ? 'cs' : 'en'], icon: AlertCircle, accent: "text-zion-purple-400", value: fmtNum(data?.errors_total ?? 0) },
+                { label: ExplorerBridgeBridgeTrackerClientCopy.unlocksConfirmed[cs ? 'cs' : 'en'], icon: CheckCircle2, accent: "text-zion-cyan", value: fmtNum(data?.l1_unlocks_confirmed ?? 0) },
+                { label: ExplorerBridgeBridgeTrackerClientCopy.errors[cs ? 'cs' : 'en'], icon: AlertCircle, accent: "text-zion-purple", value: fmtNum(data?.errors_total ?? 0) },
               ].map((card) => (
                 <div
                   key={card.label}
@@ -467,8 +467,8 @@ export default function BridgeTrackerClient() {
                   label={ExplorerBridgeBridgeTrackerClientCopy.evmMint[cs ? 'cs' : 'en']}
                   sub={ExplorerBridgeBridgeTrackerClientCopy.mintWzionErc20OnBase[cs ? 'cs' : 'en']}
                   count={data?.evm_mints_confirmed}
-                  color="text-zion-cyan-400"
-                  border="border-zion-cyan-500/20"
+                  color="text-zion-cyan"
+                  border="border-zion-cyan/20"
                   done
                 />
               </div>
@@ -481,7 +481,7 @@ export default function BridgeTrackerClient() {
             {/* Base → L1 */}
             <div className="zion-section p-6 md:p-8">
               <div className="flex items-center gap-2 mb-6">
-                <Flame className="h-5 w-5 text-zion-gold-400" />
+                <Flame className="h-5 w-5 text-zion-gold" />
                 <h3 className="text-lg font-semibold text-white">Base → L1</h3>
                 <span className="ml-auto text-[10px] uppercase tracking-wider text-gray-500">
                   {ExplorerBridgeBridgeTrackerClientCopy.burnUnlock[cs ? 'cs' : 'en']}
@@ -493,8 +493,8 @@ export default function BridgeTrackerClient() {
                   label={ExplorerBridgeBridgeTrackerClientCopy.evmBurn[cs ? 'cs' : 'en']}
                   sub={ExplorerBridgeBridgeTrackerClientCopy.userBurnsWzionOnBase[cs ? 'cs' : 'en']}
                   count={data?.evm_burns_detected}
-                  color="text-zion-gold-400"
-                  border="border-zion-gold-500/20"
+                  color="text-zion-gold"
+                  border="border-zion-gold/20"
                   arrow
                 />
                 <PipelineStep
@@ -512,8 +512,8 @@ export default function BridgeTrackerClient() {
                   label={ExplorerBridgeBridgeTrackerClientCopy.l1Unlock[cs ? 'cs' : 'en']}
                   sub={ExplorerBridgeBridgeTrackerClientCopy.zionUnlockedOnL1Address[cs ? 'cs' : 'en']}
                   count={data?.l1_unlocks_confirmed}
-                  color="text-zion-cyan-400"
-                  border="border-zion-cyan-500/20"
+                  color="text-zion-cyan"
+                  border="border-zion-cyan/20"
                   done
                 />
               </div>
@@ -580,8 +580,8 @@ export default function BridgeTrackerClient() {
               </div>
             ) : txsError ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
-                <AlertCircle className="h-8 w-8 text-zion-purple-400 mb-3" />
-                <p className="text-sm text-zion-purple-300">{txsError}</p>
+                <AlertCircle className="h-8 w-8 text-zion-purple mb-3" />
+                <p className="text-sm text-zion-purple">{txsError}</p>
                 <p className="text-xs text-gray-500 mt-2">
                   {ExplorerBridgeBridgeTrackerClientCopy.l1RpcMayBeOfflineTryAgainLater[cs ? 'cs' : 'en']}
                 </p>
@@ -623,7 +623,7 @@ export default function BridgeTrackerClient() {
                           <td className="px-4 py-3">
                             <Link
                               href={`/explorer/tx?hash=${encodeURIComponent(tx.txid)}`}
-                              className="font-mono text-xs text-zion-cyan-300 hover:text-cyan-200 transition-colors"
+                              className="font-mono text-xs text-zion-cyan hover:text-cyan-200 transition-colors"
                             >
                               {truncateHash(tx.txid)}
                             </Link>

@@ -76,37 +76,37 @@ export default function TerraNovaHomeMilestones() {
           <div className="zion-rainbow-card shadow-2xl shadow-black/60 backdrop-blur-sm" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             {/* Title bar */}
             <div className="flex items-center gap-2 px-4 py-2.5 bg-white/5 border-b border-white/10">
-              <span className="h-3 w-3 rounded-full bg-zion-purple-500/80" />
-              <span className="h-3 w-3 rounded-full bg-zion-gold-400/80" />
-              <span className="h-3 w-3 rounded-full bg-zion-cyan-500/80" />
+              <span className="h-3 w-3 rounded-full bg-zion-purple/80" />
+              <span className="h-3 w-3 rounded-full bg-zion-gold/80" />
+              <span className="h-3 w-3 rounded-full bg-zion-cyan/80" />
               <span className="flex-1 text-center text-[11px] text-gray-400 font-mono tracking-widest select-none">
                 hiranyagarbha — zion-cli v3
               </span>
             </div>
             {/* Body */}
             <div className="p-4 sm:p-6 font-mono text-[10px] sm:text-[11px] leading-snug overflow-x-auto">
-              <p className="text-zion-cyan-400 mb-3">
+              <p className="text-zion-cyan mb-3">
                 <span className="text-zion-gold">zion</span>
                 <span className="text-gray-500">@hiranyagarbha</span>
                 <span className="text-white">:~$</span>
                 {' '}
-                <span className="text-zion-cyan-300">genesis --dedicate --ascii-art</span>
+                <span className="text-zion-cyan">genesis --dedicate --ascii-art</span>
               </p>
               <pre className="text-zion-gold/75 leading-tight select-none whitespace-pre">{BRAILLE_TREE}</pre>
               <pre className="text-zion-gold leading-tight select-none mt-2 whitespace-pre">{ZION_ASCII}</pre>
               <div className="mt-3 space-y-1">
-                <p><span className="text-gray-500">[genesis]</span> <span className="text-zion-cyan-400">Mainnet Launch v3</span> <span className="text-gray-600">✓ block #1</span></p>
+                <p><span className="text-gray-500">[genesis]</span> <span className="text-zion-cyan">Mainnet Launch v3</span> <span className="text-gray-600">✓ block #1</span></p>
                 <p><span className="text-white font-bold">&gt;</span> <span className="text-white">{TerraNovaHomeMilestonesCopy.zionIsYours[cs ? 'cs' : 'en']}</span></p>
                 <p><span className="text-white font-bold">&gt;</span> <span className="text-zion-gold">{TerraNovaHomeMilestonesCopy.theGoldenAgeBegins[cs ? 'cs' : 'en']}</span></p>
                 <p className="text-gray-600 italic text-[10px]">Gate, Gate, Paragate, Parasamgate, Bodhi Swaha</p>
                 <p className="text-gray-700 text-[10px]">— Yeshuae Ben Yose / Zion Creator · Om Namo Hiranyagarbha!</p>
               </div>
-              <p className="mt-3 text-zion-cyan-400">
+              <p className="mt-3 text-zion-cyan">
                 <span className="text-zion-gold">zion</span>
                 <span className="text-gray-500">@hiranyagarbha</span>
                 <span className="text-white">:~$</span>
                 {' '}
-                <span className="inline-block w-2 h-3 bg-zion-cyan-400 align-middle animate-pulse" />
+                <span className="inline-block w-2 h-3 bg-zion-cyan align-middle animate-pulse" />
               </p>
             </div>
           </div>

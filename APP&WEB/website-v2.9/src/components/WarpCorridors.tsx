@@ -24,14 +24,14 @@ const corridorStats = [
 ];
 
 const warpCorridors = [
-  { chain: 'Ethereum', mode: 'LayerZero HTLC', status: 'Planned', liquidity: 'Phase 2', color: 'text-zion-cyan-300' },
-  { chain: 'Solana', mode: 'SPL Warp Program', status: 'Planned', liquidity: 'Phase 2', color: 'text-zion-cyan-300' },
+  { chain: 'Ethereum', mode: 'LayerZero HTLC', status: 'Planned', liquidity: 'Phase 2', color: 'text-zion-cyan' },
+  { chain: 'Solana', mode: 'SPL Warp Program', status: 'Planned', liquidity: 'Phase 2', color: 'text-zion-cyan' },
   { chain: 'Stellar', mode: 'Soroswap Rail', status: 'Research', liquidity: 'Phase 3', color: 'text-zion-gold' },
-  { chain: 'Cardano', mode: 'Hydra Head', status: 'Research', liquidity: 'Phase 3', color: 'text-zion-purple-300' },
-  { chain: 'Cosmos', mode: 'IBC Relayer', status: 'Planned', liquidity: 'Phase 2', color: 'text-zion-cyan-300' },
-  { chain: 'NEAR', mode: 'Rainbow Bridge', status: 'Research', liquidity: 'Phase 3', color: 'text-zion-purple-300' },
-  { chain: 'XRPL', mode: 'Hooks / AMM', status: 'Research', liquidity: 'Phase 3', color: 'text-zion-gold-300' },
-  { chain: 'Avalanche', mode: 'Warp Messaging', status: 'Research', liquidity: 'Phase 3', color: 'text-zion-purple-300' },
+  { chain: 'Cardano', mode: 'Hydra Head', status: 'Research', liquidity: 'Phase 3', color: 'text-zion-purple' },
+  { chain: 'Cosmos', mode: 'IBC Relayer', status: 'Planned', liquidity: 'Phase 2', color: 'text-zion-cyan' },
+  { chain: 'NEAR', mode: 'Rainbow Bridge', status: 'Research', liquidity: 'Phase 3', color: 'text-zion-purple' },
+  { chain: 'XRPL', mode: 'Hooks / AMM', status: 'Research', liquidity: 'Phase 3', color: 'text-zion-gold' },
+  { chain: 'Avalanche', mode: 'Warp Messaging', status: 'Research', liquidity: 'Phase 3', color: 'text-zion-purple' },
 ];
 
 const validatorDeck = [

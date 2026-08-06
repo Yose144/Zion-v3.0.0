@@ -242,7 +242,7 @@ const versions: Version[] = [
     id: 'v3.0.0',
     label: 'v3.0.0',
     tag: 'MAINNET READY',
-    tagColor: 'text-zion-cyan-400 border-zion-cyan-400/30 bg-zion-cyan-400/10',
+    tagColor: 'text-zion-cyan border-zion-cyan/30 bg-zion-cyan/10',
     description: 'V3 mainnet readiness — Docker, systemd, fee split, genesis freeze',
     categories: [
       {
@@ -277,8 +277,8 @@ const sections: Section[] = [
     id: 'live-ops',
     title: 'Mainnet Ops',
     icon: Globe,
-    accentText: 'text-zion-cyan-400',
-    accentBorder: 'border-zion-cyan-400/30',
+    accentText: 'text-zion-cyan',
+    accentBorder: 'border-zion-cyan/30',
     docs: [
       { id: 'live-index', title: 'Live Index: snapshot + verze', file: 'index.md' },
       { id: 'live-mainnet', title: 'Genesis 3.0.6 Status', file: 'mainnet/README.md' },
@@ -326,8 +326,8 @@ const sections: Section[] = [
     id: 'mainnet',
     title: 'Public Launch Path',
     icon: Rocket,
-    accentText: 'text-zion-cyan-400',
-    accentBorder: 'border-zion-cyan-400/30',
+    accentText: 'text-zion-cyan',
+    accentBorder: 'border-zion-cyan/30',
     docs: [
       { id: 'mainnet-plan', title: 'Public Launch Plan 2026', file: 'mainnet/README.md' },
       { id: 'mainnet-genesis-book', title: 'Genesis Book of Awakening', file: 'mainnet/genesis-book.md' },
@@ -338,8 +338,8 @@ const sections: Section[] = [
     id: 'listing',
     title: 'Listing / CoinGecko',
     icon: Map,
-    accentText: 'text-zion-purple-400',
-    accentBorder: 'border-zion-purple-400/30',
+    accentText: 'text-zion-purple',
+    accentBorder: 'border-zion-purple/30',
     docs: [
       { id: 'coingecko-checklist', title: 'CoinGecko Checklist', file: 'mainnet/coingecko.md' },
     ],
@@ -348,8 +348,8 @@ const sections: Section[] = [
     id: 'ai-native',
     title: 'AI Native',
     icon: Sparkles,
-    accentText: 'text-zion-purple-400',
-    accentBorder: 'border-zion-purple-400/30',
+    accentText: 'text-zion-purple',
+    accentBorder: 'border-zion-purple/30',
     docs: [
       { id: 'ai-native-vision', title: 'AI Native — Vize & Manifest', file: 'ai-native/README.md' },
       { id: 'ai-native-cudax', title: 'NVIDIA CUDA-X integrace', file: 'ai-native/cuda-x.md' },
@@ -361,8 +361,8 @@ const sections: Section[] = [
     id: 'legal',
     title: 'Legal',
     icon: AlertTriangle,
-    accentText: 'text-zion-gold-400',
-    accentBorder: 'border-zion-gold-400/30',
+    accentText: 'text-zion-gold',
+    accentBorder: 'border-zion-gold/30',
     docs: [
       { id: 'legal-disclaimer', title: 'Právní disclaimer', file: 'legal/legal-disclaimer.md' },
       { id: 'legal-terms', title: 'Podmínky použití', file: 'legal/terms-of-use.md' },
@@ -376,8 +376,8 @@ const sections: Section[] = [
     id: 'lumi-language',
     title: 'Lumi — Light Language',
     icon: Sparkles,
-    accentText: 'text-zion-gold-300',
-    accentBorder: 'border-zion-gold-300/30',
+    accentText: 'text-zion-gold',
+    accentBorder: 'border-zion-gold/30',
     docs: [
       { id: 'lumi-overview', title: 'Lumi — Light Language Overview', file: 'lumi/README.md' },
       { id: 'lumi-phonetics', title: 'Phonetics & Tones', file: 'lumi/phonetics.md' },
@@ -545,7 +545,7 @@ export default function DocsPage() {
             className="zion-rainbow-card max-w-4xl mx-auto p-8 md:p-10 text-center"
             style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
           >
-            <div className="zion-kicker mx-auto mb-6 w-fit border-zion-cyan-400/30 bg-zion-cyan-400/10 text-cyan-200">
+            <div className="zion-kicker mx-auto mb-6 w-fit border-zion-cyan/30 bg-zion-cyan/10 text-cyan-200">
               <BookOpen className="w-4 h-4 text-zion-cyan" />
               <span className="text-sm text-zion-cyan font-semibold">{tx(docsPageCopy.badge, currentLang)}</span>
             </div>

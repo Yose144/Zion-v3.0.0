@@ -103,7 +103,7 @@ const getFeatures = (cs: boolean) => [
     title: WalletCopy.ed25519[cs ? 'cs' : 'en'],
     desc: WalletCopy.stateOfTheArtCurveCryptography[cs ? 'cs' : 'en'],
     icon: Fingerprint,
-    color: 'text-zion-cyan-400',
+    color: 'text-zion-cyan',
   },
   {
     title: WalletCopy.bip39Mnemonic[cs ? 'cs' : 'en'],
@@ -115,13 +115,13 @@ const getFeatures = (cs: boolean) => [
     title: WalletCopy.utxoModel[cs ? 'cs' : 'en'],
     desc: WalletCopy.nativeZionL1UtxoModelTranspare[cs ? 'cs' : 'en'],
     icon: Zap,
-    color: 'text-zion-cyan-400',
+    color: 'text-zion-cyan',
   },
   {
     title: WalletCopy.onChain[cs ? 'cs' : 'en'],
     desc: WalletCopy.fullyOnChainWalletNoCustodialS[cs ? 'cs' : 'en'],
     icon: Globe2,
-    color: 'text-zion-purple-400',
+    color: 'text-zion-purple',
   },
 ];
 
@@ -337,7 +337,7 @@ export default function WalletPage() {
           >
             <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
               <div className="space-y-5">
-                <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold-300 uppercase">
+                <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
                   <Wallet className="h-4 w-4" />
                   ZION L1 Wallet
                 </div>
@@ -353,7 +353,7 @@ export default function WalletPage() {
                   {WalletCopy.fullyOnChainWalletForZionL1Cre[cs ? 'cs' : 'en']}
                 </p>
                 <div className="flex flex-wrap gap-3 text-xs">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan-500/30 bg-zion-cyan-500/10 px-4 py-2 text-cyan-200">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-2 text-cyan-200">
                     <Fingerprint className="h-3 w-3" /> Ed25519
                   </span>
                   <span className="inline-flex items-center gap-2 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-4 py-2 text-amber-200">
@@ -432,7 +432,7 @@ export default function WalletPage() {
             <div className="flex flex-col gap-2 mb-6">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{WalletCopy.telemetry[cs ? 'cs' : 'en']}</p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-                <Activity className="h-7 w-7 text-zion-cyan-400" />
+                <Activity className="h-7 w-7 text-zion-cyan" />
                 {WalletCopy.walletStatistics[cs ? 'cs' : 'en']}
               </h2>
               <p className="text-sm text-gray-400">
@@ -459,16 +459,16 @@ export default function WalletPage() {
               />
               <StatCard
                 icon={<Fingerprint className="h-5 w-5" />}
-                colorClass="text-zion-cyan-400"
-                bgClass="bg-zion-cyan-400/10"
+                colorClass="text-zion-cyan"
+                bgClass="bg-zion-cyan/10"
                 label={WalletCopy.cryptography[cs ? 'cs' : 'en']}
                 value={ed25519Type}
                 sub="Ed25519"
               />
               <StatCard
                 icon={<Shield className="h-5 w-5" />}
-                colorClass="text-zion-purple-400"
-                bgClass="bg-zion-purple-400/10"
+                colorClass="text-zion-purple"
+                bgClass="bg-zion-purple/10"
                 label={WalletCopy.security[cs ? 'cs' : 'en']}
                 value={securityLevel}
                 sub={WalletCopy.level[cs ? 'cs' : 'en']}
@@ -489,7 +489,7 @@ export default function WalletPage() {
             <div className="flex flex-col gap-2 mb-6">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{WalletCopy.features[cs ? 'cs' : 'en']}</p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-                <Shield className="h-7 w-7 text-zion-cyan-400" />
+                <Shield className="h-7 w-7 text-zion-cyan" />
                 {WalletCopy.whyZionWallet[cs ? 'cs' : 'en']}
               </h2>
             </div>
@@ -509,12 +509,12 @@ export default function WalletPage() {
         <section className="relative z-10 max-w-4xl mx-auto">
           <div className="space-y-8">
             {(error || localError) && (
-              <div className="zion-rainbow-sub p-4 text-zion-purple-300" style={{ '--rc': '228, 30, 43' } as CSSProperties}>
+              <div className="zion-rainbow-sub p-4 text-zion-purple" style={{ '--rc': '228, 30, 43' } as CSSProperties}>
                 {localError || error}
               </div>
             )}
             {successMsg && (
-              <div className="zion-rainbow-sub p-4 text-zion-cyan-300" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
+              <div className="zion-rainbow-sub p-4 text-zion-cyan" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
                 <p>{successMsg}</p>
                 <Link href="/login" className="inline-flex items-center gap-2 text-emerald-200 hover:text-emerald-100 font-medium mt-2">
                   <ArrowRight className="w-4 h-4" />
@@ -556,10 +556,10 @@ export default function WalletPage() {
                 {isHardwareWallet && (
                   <div className="mt-4 zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                     <div className="flex items-start gap-2">
-                      <AlertTriangle className="w-5 h-5 text-zion-gold-400 flex-shrink-0 mt-0.5" />
+                      <AlertTriangle className="w-5 h-5 text-zion-gold flex-shrink-0 mt-0.5" />
                       <div className="text-sm text-amber-200">
                         <p className="font-medium">{WalletCopy.hardwareWalletWatchOnly[cs ? 'cs' : 'en']}</p>
-                        <p className="text-zion-gold-300/80 mt-1">
+                        <p className="text-zion-gold/80 mt-1">
                           {WalletCopy.trezorLedgerFirmwareDoesNotYet[cs ? 'cs' : 'en']}
                         </p>
                       </div>
@@ -597,7 +597,7 @@ export default function WalletPage() {
                       </div>
                       <button
                         onClick={(e) => { e.stopPropagation(); deleteWallet(w.id); }}
-                        className="p-2 hover:bg-zion-purple-500/10 rounded-2xl text-zion-purple-400 transition"
+                        className="p-2 hover:bg-zion-purple/10 rounded-2xl text-zion-purple transition"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -666,14 +666,14 @@ export default function WalletPage() {
                       />
                     </div>
                     {localError && (
-                      <div className="rounded-xl border border-zion-purple-500/20 bg-zion-purple-500/5 px-4 py-3 text-sm text-zion-purple-400">
+                      <div className="rounded-xl border border-zion-purple/20 bg-zion-purple/5 px-4 py-3 text-sm text-zion-purple">
                         {localError}
                       </div>
                     )}
                     {successMsg && (
-                      <div className="rounded-xl border border-zion-cyan-500/20 bg-zion-cyan-500/5 px-4 py-3 text-sm text-zion-cyan-400">
+                      <div className="rounded-xl border border-zion-cyan/20 bg-zion-cyan/5 px-4 py-3 text-sm text-zion-cyan">
                         <p className="mb-2">{successMsg}</p>
-                        <Link href="/login" className="inline-flex items-center gap-2 text-zion-cyan-300 hover:text-emerald-200 font-medium">
+                        <Link href="/login" className="inline-flex items-center gap-2 text-zion-cyan hover:text-emerald-200 font-medium">
                           <ArrowRight className="w-4 h-4" />
                           {WalletCopy.goToLogin[cs ? 'cs' : 'en']}
                         </Link>
@@ -772,7 +772,7 @@ export default function WalletPage() {
                           {loading ? (WalletCopy.connecting[cs ? 'cs' : 'en']) : 'Ledger'}
                         </button>
                       </div>
-                      <p className="text-xs text-zion-gold-300/70 mt-2">
+                      <p className="text-xs text-zion-gold/70 mt-2">
                         {WalletCopy.warningTrezorLedgerFirmwareDoe[cs ? 'cs' : 'en']}
                       </p>
                     </div>
@@ -886,13 +886,13 @@ export default function WalletPage() {
                       {exportedSecret && (
                         <div className="mt-4 zion-rainbow-sub p-4" style={{ '--rc': '228, 30, 43' } as CSSProperties}>
                           <div className="flex items-center justify-between mb-2">
-                            <p className="text-zion-purple-300 text-sm font-medium">{WalletCopy.secretNeverShare[cs ? 'cs' : 'en']}</p>
+                            <p className="text-zion-purple text-sm font-medium">{WalletCopy.secretNeverShare[cs ? 'cs' : 'en']}</p>
                             <div className="flex gap-2">
                               <button onClick={() => setShowSecret(!showSecret)} className="p-1 hover:bg-red-900/30 rounded transition">
-                                {showSecret ? <EyeOff className="w-4 h-4 text-zion-purple-300" /> : <Eye className="w-4 h-4 text-zion-purple-300" />}
+                                {showSecret ? <EyeOff className="w-4 h-4 text-zion-purple" /> : <Eye className="w-4 h-4 text-zion-purple" />}
                               </button>
                               <button onClick={() => copyToClipboard(exportedSecret)} className="p-1 hover:bg-red-900/30 rounded transition">
-                                <Copy className="w-4 h-4 text-zion-purple-300" />
+                                <Copy className="w-4 h-4 text-zion-purple" />
                               </button>
                             </div>
                           </div>

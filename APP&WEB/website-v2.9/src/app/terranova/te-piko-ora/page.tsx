@@ -545,7 +545,7 @@ export default function TePikoOraPage() {
                       backgroundColor: p.active ? 'rgba(34,211,238,0.2)' : 'rgba(0,0,0,0.5)',
                     }}
                   >
-                    {p.active && <div className="w-1.5 h-1.5 rounded-full bg-zion-cyan-400 animate-pulse" />}
+                    {p.active && <div className="w-1.5 h-1.5 rounded-full bg-zion-cyan animate-pulse" />}
                   </div>
 
                   <div
@@ -563,7 +563,7 @@ export default function TePikoOraPage() {
                         {cs ? p.cs : p.en}
                       </span>
                       {p.active && (
-                        <span className="text-zion-cyan-400 text-xs animate-pulse">
+                        <span className="text-zion-cyan text-xs animate-pulse">
                           ⚡ {TerranovaTePikoOraCopy.exploringNow[cs ? 'cs' : 'en']}
                         </span>
                       )}

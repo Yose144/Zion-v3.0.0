@@ -376,16 +376,16 @@ export default function FarmingPanel() {
         style={EMERALD_RAINBOW}
         className="zion-rainbow-card rounded-3xl md:rounded-4xl p-6 md:p-10"
       >
-        <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan-500/40 bg-zion-cyan-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan-300 uppercase mb-4">
+        <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase mb-4">
           <Sprout className="h-4 w-4" />
           DeFi · Farming
         </div>
         {FARM_DEPLOYED ? (
-          <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan-500/30 bg-zion-cyan-500/10 px-3 py-1 text-[10px] font-semibold tracking-wider text-zion-cyan-300 uppercase mb-4 ml-2">
+          <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-3 py-1 text-[10px] font-semibold tracking-wider text-zion-cyan uppercase mb-4 ml-2">
             <CheckCircle2 className="h-3 w-3" /> Base Mainnet
           </div>
         ) : (
-          <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold-500/30 bg-zion-gold-500/10 px-3 py-1 text-[10px] font-semibold tracking-wider text-zion-gold-300 uppercase mb-4 ml-2">
+          <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-3 py-1 text-[10px] font-semibold tracking-wider text-zion-gold uppercase mb-4 ml-2">
             <Clock className="h-3 w-3" /> {FarmingPanelCopy.deployPending[cs ? 'cs' : 'en']}
           </div>
         )}
@@ -398,8 +398,8 @@ export default function FarmingPanel() {
 
         {/* Deploy pending banner */}
         {!FARM_DEPLOYED && (
-          <div className="mt-6 rounded-2xl border border-zion-gold-500/20 bg-zion-gold-500/5 p-4 flex items-center gap-3">
-            <AlertCircle className="h-5 w-5 text-zion-gold-400 shrink-0" />
+          <div className="mt-6 rounded-2xl border border-zion-gold/20 bg-zion-gold/5 p-4 flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-zion-gold shrink-0" />
             <div className="flex-1">
               <p className="text-sm text-gray-300">
                 {FarmingPanelCopy.farmingContractHasNotYetBeenDe[cs ? 'cs' : 'en']}
@@ -409,8 +409,8 @@ export default function FarmingPanel() {
         )}
 
         {paused && FARM_DEPLOYED && (
-          <div className="mt-6 rounded-2xl border border-zion-purple-500/20 bg-zion-purple-500/5 p-4 flex items-center gap-3">
-            <AlertCircle className="h-5 w-5 text-zion-purple-400 shrink-0" />
+          <div className="mt-6 rounded-2xl border border-zion-purple/20 bg-zion-purple/5 p-4 flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-zion-purple shrink-0" />
             <p className="text-sm text-gray-300">
               {FarmingPanelCopy.farmingIsCurrentlyPaused[cs ? 'cs' : 'en']}
             </p>
@@ -419,7 +419,7 @@ export default function FarmingPanel() {
 
         <div className="mt-6 flex flex-wrap gap-3 text-xs">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-            <Zap className="h-3 w-3 text-zion-cyan-400" /> {fmt(rewardPerSecond, 4)} wZION/s
+            <Zap className="h-3 w-3 text-zion-cyan" /> {fmt(rewardPerSecond, 4)} wZION/s
           </span>
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
             <Flame className="h-3 w-3 text-zion-gold" /> MasterChef v2
@@ -427,8 +427,8 @@ export default function FarmingPanel() {
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
             <TrendingUp className="h-3 w-3 text-zion-cyan" /> {FarmingPanelCopy.k90DayHalving[cs ? 'cs' : 'en']}
           </span>
-          <span className={`inline-flex items-center gap-2 rounded-full px-2 py-0.5 ${paused ? 'bg-zion-purple-500/10 text-zion-purple-400' : 'bg-zion-cyan-500/10 text-zion-cyan-400'}`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${paused ? 'bg-zion-purple-400' : 'bg-zion-cyan-400 animate-pulse'}`} />
+          <span className={`inline-flex items-center gap-2 rounded-full px-2 py-0.5 ${paused ? 'bg-zion-purple/10 text-zion-purple' : 'bg-zion-cyan/10 text-zion-cyan'}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${paused ? 'bg-zion-purple' : 'bg-zion-cyan animate-pulse'}`} />
             {paused ? (FarmingPanelCopy.paused[cs ? 'cs' : 'en']) : FarmingPanelCopy.active[cs ? 'cs' : 'en']}
           </span>
         </div>
@@ -438,10 +438,10 @@ export default function FarmingPanel() {
       <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: FarmingPanelCopy.rewardS[cs ? 'cs' : 'en'], value: `${fmt(rewardPerSecond, 4)} wZION`, icon: Zap, color: 'text-zion-cyan-400' },
+            { label: FarmingPanelCopy.rewardS[cs ? 'cs' : 'en'], value: `${fmt(rewardPerSecond, 4)} wZION`, icon: Zap, color: 'text-zion-cyan' },
             { label: FarmingPanelCopy.pools[cs ? 'cs' : 'en'], value: String(poolLength), icon: Layers, color: 'text-zion-cyan' },
             { label: FarmingPanelCopy.totalAlloc[cs ? 'cs' : 'en'], value: totalAllocPoint.toLocaleString(), icon: TrendingUp, color: 'text-zion-gold' },
-            { label: FarmingPanelCopy.contract[cs ? 'cs' : 'en'], value: paused ? (FarmingPanelCopy.paused[cs ? 'cs' : 'en']) : (FarmingPanelCopy.active[cs ? 'cs' : 'en']), icon: Shield, color: paused ? 'text-zion-purple-400' : 'text-zion-cyan-400' },
+            { label: FarmingPanelCopy.contract[cs ? 'cs' : 'en'], value: paused ? (FarmingPanelCopy.paused[cs ? 'cs' : 'en']) : (FarmingPanelCopy.active[cs ? 'cs' : 'en']), icon: Shield, color: paused ? 'text-zion-purple' : 'text-zion-cyan' },
           ].map((card) => (
             <div key={card.label} className="zion-tile">
               <div className="flex items-center gap-2 mb-2">
@@ -462,7 +462,7 @@ export default function FarmingPanel() {
               <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">
                 {FarmingPanelCopy.deposited[cs ? 'cs' : 'en']} · {selectedPool.name}
               </p>
-              <p className="text-xl font-bold text-zion-cyan-400">{fmt(selectedPool.userDeposited, 4)} LP</p>
+              <p className="text-xl font-bold text-zion-cyan">{fmt(selectedPool.userDeposited, 4)} LP</p>
             </div>
             <div className="zion-tile">
               <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{FarmingPanelCopy.pendingReward[cs ? 'cs' : 'en']}</p>
@@ -494,17 +494,17 @@ export default function FarmingPanel() {
                   key={p.pid}
                   onClick={() => setSelectedPid(p.pid)}
                   className={`cursor-pointer zion-tile p-5 ${
-                    selectedPid === p.pid ? '!border-zion-cyan-500/40 !bg-zion-cyan-500/5' : ''
+                    selectedPid === p.pid ? '!border-zion-cyan/40 !bg-zion-cyan/5' : ''
                   }`}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                    <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-zion-cyan-500/10 border border-zion-cyan-500/20">
-                      <Sprout className="h-5 w-5 text-zion-cyan-400" />
+                    <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-zion-cyan/10 border border-zion-cyan/20">
+                      <Sprout className="h-5 w-5 text-zion-cyan" />
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <h3 className="text-sm font-medium text-white">{p.name}</h3>
-                        <span className="rounded-full bg-zion-cyan-500/10 border border-zion-cyan-500/30 px-2 py-0.5 text-[10px] text-zion-cyan-400 uppercase tracking-wider">
+                        <span className="rounded-full bg-zion-cyan/10 border border-zion-cyan/30 px-2 py-0.5 text-[10px] text-zion-cyan uppercase tracking-wider">
                           #{p.pid}
                         </span>
                       </div>
@@ -515,7 +515,7 @@ export default function FarmingPanel() {
                     <div className="flex items-center gap-6 text-sm">
                       <div className="text-right">
                         <p className="text-[10px] text-gray-500 uppercase">APR</p>
-                        <p className="font-bold text-zion-cyan-400">{p.apr !== null ? `${p.apr.toFixed(2)}%` : '—'}</p>
+                        <p className="font-bold text-zion-cyan">{p.apr !== null ? `${p.apr.toFixed(2)}%` : '—'}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-[10px] text-gray-500 uppercase">TVL</p>
@@ -554,14 +554,14 @@ export default function FarmingPanel() {
             </p>
             <button
               onClick={connect}
-              className="rounded-2xl bg-zion-cyan-500/20 border border-zion-cyan-500/30 px-8 py-3 text-sm font-semibold text-zion-cyan-300 hover:bg-zion-cyan-500/30 transition-colors"
+              className="rounded-2xl bg-zion-cyan/20 border border-zion-cyan/30 px-8 py-3 text-sm font-semibold text-zion-cyan hover:bg-zion-cyan/30 transition-colors"
             >
               {FarmingPanelCopy.connectMetamask[cs ? 'cs' : 'en']}
             </button>
           </div>
         ) : !isBaseMainnet ? (
           <div className="text-center py-8">
-            <AlertCircle className="h-12 w-12 text-zion-gold-400 mx-auto mb-4" />
+            <AlertCircle className="h-12 w-12 text-zion-gold mx-auto mb-4" />
             <p className="text-gray-400 mb-4">
               {FarmingPanelCopy.switchToBaseMainnet[cs ? 'cs' : 'en']}
             </p>
@@ -574,7 +574,7 @@ export default function FarmingPanel() {
           </div>
         ) : !FARM_DEPLOYED ? (
           <div className="text-center py-8">
-            <Clock className="h-12 w-12 text-zion-gold-400 mx-auto mb-4" />
+            <Clock className="h-12 w-12 text-zion-gold mx-auto mb-4" />
             <p className="text-gray-400">
               {FarmingPanelCopy.contractAwaitingDeploymentOnBa[cs ? 'cs' : 'en']}
             </p>
@@ -589,7 +589,7 @@ export default function FarmingPanel() {
         ) : (
           <div className="space-y-6">
             <div className="flex items-center gap-2">
-              <Sprout className="h-5 w-5 text-zion-cyan-400" />
+              <Sprout className="h-5 w-5 text-zion-cyan" />
               <h3 className="text-lg font-semibold text-white">
                 {selectedPool.name} <span className="text-gray-500 text-sm">#{selectedPool.pid}</span>
               </h3>
@@ -598,7 +598,7 @@ export default function FarmingPanel() {
             {/* Deposit */}
             <div className="zion-tile">
               <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
-                <Lock className="h-4 w-4 text-zion-cyan-400" />
+                <Lock className="h-4 w-4 text-zion-cyan" />
                 {FarmingPanelCopy.depositLpTokens[cs ? 'cs' : 'en']}
               </h4>
               <div className="space-y-3 max-w-md">
@@ -610,7 +610,7 @@ export default function FarmingPanel() {
                       onChange={(e) => setAmount(e.target.value)}
                       placeholder="0.00"
                       disabled={busy}
-                      className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-zion-cyan-500/40 font-mono disabled:opacity-50"
+                      className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-zion-cyan/40 font-mono disabled:opacity-50"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-500">LP</span>
                   </div>
@@ -621,7 +621,7 @@ export default function FarmingPanel() {
                 <button
                   onClick={handleDeposit}
                   disabled={busy || !amount || parseFloat(amount) <= 0}
-                  className="w-full rounded-2xl bg-zion-cyan-500/20 border border-zion-cyan-500/30 px-6 py-3 text-sm font-semibold text-zion-cyan-300 hover:bg-zion-cyan-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full rounded-2xl bg-zion-cyan/20 border border-zion-cyan/30 px-6 py-3 text-sm font-semibold text-zion-cyan hover:bg-zion-cyan/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {busy && txPhase === 'approving' && <Loader2 className="h-4 w-4 animate-spin" />}
                   {txPhase === 'approving' ? (FarmingPanelCopy.approvingWzion[cs ? 'cs' : 'en']) :
@@ -634,7 +634,7 @@ export default function FarmingPanel() {
             {/* Withdraw */}
             <div className="zion-tile">
               <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
-                <Unlock className="h-4 w-4 text-zion-gold-400" />
+                <Unlock className="h-4 w-4 text-zion-gold" />
                 {FarmingPanelCopy.withdrawLpTokens[cs ? 'cs' : 'en']}
               </h4>
               <div className="space-y-3 max-w-md">
@@ -646,7 +646,7 @@ export default function FarmingPanel() {
                       onChange={(e) => setWithdrawAmount(e.target.value)}
                       placeholder="0.00"
                       disabled={busy}
-                      className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-zion-gold-500/40 font-mono disabled:opacity-50"
+                      className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-zion-gold/40 font-mono disabled:opacity-50"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-500">LP</span>
                   </div>
@@ -658,7 +658,7 @@ export default function FarmingPanel() {
                   <button
                     onClick={handleWithdraw}
                     disabled={busy || !withdrawAmount || parseFloat(withdrawAmount) <= 0}
-                    className="flex-1 rounded-2xl bg-zion-gold-500/20 border border-zion-gold-500/30 px-6 py-3 text-sm font-semibold text-zion-gold-300 hover:bg-zion-gold-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="flex-1 rounded-2xl bg-zion-gold/20 border border-zion-gold/30 px-6 py-3 text-sm font-semibold text-zion-gold hover:bg-zion-gold/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {busy && txPhase === 'withdrawing' && <Loader2 className="h-4 w-4 animate-spin" />}
                     {FarmingPanelCopy.withdraw[cs ? 'cs' : 'en']}
@@ -666,7 +666,7 @@ export default function FarmingPanel() {
                   <button
                     onClick={handleEmergencyWithdraw}
                     disabled={busy || parseFloat(selectedPool.userDeposited) <= 0}
-                    className="rounded-2xl bg-zion-purple-500/20 border border-zion-purple-500/30 px-4 py-3 text-sm font-semibold text-zion-purple-300 hover:bg-zion-purple-500/30 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="rounded-2xl bg-zion-purple/20 border border-zion-purple/30 px-4 py-3 text-sm font-semibold text-zion-purple hover:bg-zion-purple/30 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                     title={FarmingPanelCopy.emergencyWithdrawForfeitsRewar[cs ? 'cs' : 'en']}
                   >
                     {busy && txPhase === 'emergency' && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -701,14 +701,14 @@ export default function FarmingPanel() {
             {/* TX status */}
             {txHash && (txPhase === 'success' || busy) && (
               <div className="zion-tile p-3 flex items-center gap-2 text-xs">
-                {txPhase === 'success' ? <CheckCircle2 className="h-4 w-4 text-zion-cyan-400" /> : <Loader2 className="h-4 w-4 animate-spin text-zion-gold" />}
+                {txPhase === 'success' ? <CheckCircle2 className="h-4 w-4 text-zion-cyan" /> : <Loader2 className="h-4 w-4 animate-spin text-zion-gold" />}
                 <a href={`${EXPLORER}/tx/${txHash}`} target="_blank" rel="noopener" className="text-zion-gold hover:underline flex items-center gap-1">
                   {txHash.slice(0, 10)}...{txHash.slice(-8)} <ExternalLink className="h-3 w-3" />
                 </a>
               </div>
             )}
             {txError && (
-              <div className="rounded-xl border border-zion-purple-500/20 bg-zion-purple-500/5 p-3 flex items-center gap-2 text-xs text-zion-purple-400">
+              <div className="rounded-xl border border-zion-purple/20 bg-zion-purple/5 p-3 flex items-center gap-2 text-xs text-zion-purple">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 <span>{txError}</span>
               </div>

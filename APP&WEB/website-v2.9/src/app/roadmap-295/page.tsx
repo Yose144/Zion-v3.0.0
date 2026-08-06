@@ -271,11 +271,11 @@ export default function Roadmap295Page() {
                 </p>
                 <div className="grid md:grid-cols-3 gap-6 text-center">
                   <div>
-                    <div className="text-4xl font-bold text-zion-purple-400 mb-2">83% → 0%</div>
+                    <div className="text-4xl font-bold text-zion-purple mb-2">83% → 0%</div>
                     <div className="text-sm text-gray-400">{Roadmap295Copy.pythonCode[lang === 'cs' ? 'cs' : 'en']}</div>
                   </div>
                   <div>
-                    <div className="text-4xl font-bold text-zion-cyan-400 mb-2">17% → 100%</div>
+                    <div className="text-4xl font-bold text-zion-cyan mb-2">17% → 100%</div>
                     <div className="text-sm text-gray-400">{Roadmap295Copy.nativeRust[lang === 'cs' ? 'cs' : 'en']}</div>
                   </div>
                   <div>
@@ -305,7 +305,7 @@ export default function Roadmap295Page() {
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
                     {item.status === 'complete' ? (
-                      <CheckCircle2 className="w-5 h-5 text-zion-cyan-400" />
+                      <CheckCircle2 className="w-5 h-5 text-zion-cyan" />
                     ) : (
                       <Circle className="w-5 h-5 text-gray-500" />
                     )}
@@ -313,8 +313,8 @@ export default function Roadmap295Page() {
                   </div>
                   <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                     item.status === 'complete'
-                      ? 'bg-zion-cyan-500/20 text-zion-cyan-400 border border-zion-cyan-500/30'
-                      : 'bg-zion-purple-500/20 text-zion-purple-400 border border-zion-purple-500/30'
+                      ? 'bg-zion-cyan/20 text-zion-cyan border border-zion-cyan/30'
+                      : 'bg-zion-purple/20 text-zion-purple border border-zion-purple/30'
                   }`}>
                     {item.progress}%
                   </span>
@@ -323,7 +323,7 @@ export default function Roadmap295Page() {
                   <div
                     className={`h-full bg-linear-to-r ${
                       item.status === 'complete'
-                        ? 'from-zion-cyan-500 to-zion-cyan-400'
+                        ? 'from-zion-cyan to-zion-cyan'
                         : 'from-gray-700 to-gray-600'
                     }`}
                     style={{ width: `${item.progress}%` }}
@@ -363,7 +363,7 @@ export default function Roadmap295Page() {
                   </div>
                   <div className={`px-3 py-1 rounded-full text-xs font-medium ${
                     quarter.status === 'active'
-                      ? 'bg-zion-cyan-500/20 text-zion-cyan-400 border border-zion-cyan-500/30'
+                      ? 'bg-zion-cyan/20 text-zion-cyan border border-zion-cyan/30'
                       : 'bg-gray-700/50 text-gray-400 border border-gray-600'
                   }`}>
                     {quarter.status === 'active' ? (Roadmap295Copy.inProgress[lang === 'cs' ? 'cs' : 'en']) : (Roadmap295Copy.pending[lang === 'cs' ? 'cs' : 'en'])}
@@ -490,20 +490,20 @@ export default function Roadmap295Page() {
           <div className="zion-rainbow-card p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <div className="prose prose-invert prose-lg text-center max-w-none">
               <div className="flex items-center justify-center gap-3 mb-6">
-                <Zap className="w-8 h-8 text-zion-cyan-400" />
-                <h2 className="text-3xl font-bold text-zion-cyan-400 mb-0">
+                <Zap className="w-8 h-8 text-zion-cyan" />
+                <h2 className="text-3xl font-bold text-zion-cyan mb-0">
                   {Roadmap295Copy.historicalV3LaunchRequirements[lang === 'cs' ? 'cs' : 'en']}
                 </h2>
               </div>
               <div className="text-gray-300 space-y-6">
                 <div className="zion-rainbow-sub p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-                  <p className="text-2xl font-bold text-zion-cyan-400 mb-4 flex items-center justify-center gap-2">
+                  <p className="text-2xl font-bold text-zion-cyan mb-4 flex items-center justify-center gap-2">
                     <Rocket className="w-8 h-8" />
                     <span>{Roadmap295Copy.december312025[lang === 'cs' ? 'cs' : 'en']}</span>
                   </p>
                   <div className="grid md:grid-cols-2 gap-6 text-left">
                     <div>
-                      <h3 className="text-lg font-semibold text-zion-cyan-400 mb-3 flex items-center gap-2">
+                      <h3 className="text-lg font-semibold text-zion-cyan mb-3 flex items-center gap-2">
                         <CheckCircle2 className="w-5 h-5" />
                         {Roadmap295Copy.technical[lang === 'cs' ? 'cs' : 'en']}
                       </h3>
@@ -517,7 +517,7 @@ export default function Roadmap295Page() {
                       </ul>
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-zion-cyan-400 mb-3 flex items-center gap-2">
+                      <h3 className="text-lg font-semibold text-zion-cyan mb-3 flex items-center gap-2">
                         <Activity className="w-5 h-5" />
                         {Roadmap295Copy.performance[lang === 'cs' ? 'cs' : 'en']}
                       </h3>

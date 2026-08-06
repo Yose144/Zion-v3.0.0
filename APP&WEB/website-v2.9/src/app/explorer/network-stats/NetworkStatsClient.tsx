@@ -212,13 +212,13 @@ export default function NetworkStatsClient() {
   const txData = charts.txcount?.data.values ?? [];
 
   const statCards = [
-    { label: ExplorerNetworkStatsNetworkStatsClientCopy.hashrate[cs ? 'cs' : 'en'], value: stats?.network_hashrate_formatted ?? "—", sub: fmtHashrate(stats?.network_hashrate ?? 0), icon: Zap, color: "text-zion-cyan-400", spark: hrData, sparkColor: "rgb(34,211,238)" },
-    { label: ExplorerNetworkStatsNetworkStatsClientCopy.difficulty[cs ? 'cs' : 'en'], value: fmtSI(stats?.difficulty ?? 0), sub: ExplorerNetworkStatsNetworkStatsClientCopy.lwmaDaa[cs ? 'cs' : 'en'], icon: TrendingUp, color: "text-zion-cyan-400", spark: diffData, sparkColor: "rgb(52,211,153)" },
+    { label: ExplorerNetworkStatsNetworkStatsClientCopy.hashrate[cs ? 'cs' : 'en'], value: stats?.network_hashrate_formatted ?? "—", sub: fmtHashrate(stats?.network_hashrate ?? 0), icon: Zap, color: "text-zion-cyan", spark: hrData, sparkColor: "rgb(34,211,238)" },
+    { label: ExplorerNetworkStatsNetworkStatsClientCopy.difficulty[cs ? 'cs' : 'en'], value: fmtSI(stats?.difficulty ?? 0), sub: ExplorerNetworkStatsNetworkStatsClientCopy.lwmaDaa[cs ? 'cs' : 'en'], icon: TrendingUp, color: "text-zion-cyan", spark: diffData, sparkColor: "rgb(52,211,153)" },
     { label: ExplorerNetworkStatsNetworkStatsClientCopy.blockTime[cs ? 'cs' : 'en'], value: stats?.avg_block_time ? `${stats.avg_block_time.toFixed(1)}s` : "—", sub: `${stats?.target_block_time ?? 60}s ${ExplorerNetworkStatsNetworkStatsClientCopy.target[cs ? 'cs' : 'en']}`, icon: Clock, color: "text-zion-gold", spark: btData, sparkColor: "rgb(234,179,8)" },
-    { label: ExplorerNetworkStatsNetworkStatsClientCopy.height[cs ? 'cs' : 'en'], value: (stats?.block_height ?? 0).toLocaleString(), sub: ExplorerNetworkStatsNetworkStatsClientCopy.currentBlock[cs ? 'cs' : 'en'], icon: Blocks, color: "text-zion-purple-400", spark: [], sparkColor: "rgb(228, 30, 43)" },
+    { label: ExplorerNetworkStatsNetworkStatsClientCopy.height[cs ? 'cs' : 'en'], value: (stats?.block_height ?? 0).toLocaleString(), sub: ExplorerNetworkStatsNetworkStatsClientCopy.currentBlock[cs ? 'cs' : 'en'], icon: Blocks, color: "text-zion-purple", spark: [], sparkColor: "rgb(228, 30, 43)" },
     { label: ExplorerNetworkStatsNetworkStatsClientCopy.totalTx[cs ? 'cs' : 'en'], value: (stats?.tx_count ?? 0).toLocaleString(), sub: `${stats?.tx_pool_size ?? 0} ${ExplorerNetworkStatsNetworkStatsClientCopy.inMempool[cs ? 'cs' : 'en']}`, icon: Layers, color: "text-zion-cyan", spark: txData, sparkColor: "rgb(7,137,48)" },
-    { label: ExplorerNetworkStatsNetworkStatsClientCopy.peers[cs ? 'cs' : 'en'], value: (stats?.total_connections ?? 0).toLocaleString(), sub: `${stats?.incoming_connections ?? 0} ${ExplorerNetworkStatsNetworkStatsClientCopy.in[cs ? 'cs' : 'en']} / ${stats?.outgoing_connections ?? 0} ${ExplorerNetworkStatsNetworkStatsClientCopy.out[cs ? 'cs' : 'en']}`, icon: Network, color: "text-zion-purple-400", spark: [], sparkColor: "rgb(251,113,133)" },
-    { label: ExplorerNetworkStatsNetworkStatsClientCopy.poolHashrate[cs ? 'cs' : 'en'], value: stats?.pool_hashrate_formatted ?? "—", sub: `${stats?.active_miners ?? 0} ${ExplorerNetworkStatsNetworkStatsClientCopy.miners[cs ? 'cs' : 'en']}`, icon: Pickaxe, color: "text-zion-gold-400", spark: [], sparkColor: "rgb(252, 209, 22)" },
+    { label: ExplorerNetworkStatsNetworkStatsClientCopy.peers[cs ? 'cs' : 'en'], value: (stats?.total_connections ?? 0).toLocaleString(), sub: `${stats?.incoming_connections ?? 0} ${ExplorerNetworkStatsNetworkStatsClientCopy.in[cs ? 'cs' : 'en']} / ${stats?.outgoing_connections ?? 0} ${ExplorerNetworkStatsNetworkStatsClientCopy.out[cs ? 'cs' : 'en']}`, icon: Network, color: "text-zion-purple", spark: [], sparkColor: "rgb(251,113,133)" },
+    { label: ExplorerNetworkStatsNetworkStatsClientCopy.poolHashrate[cs ? 'cs' : 'en'], value: stats?.pool_hashrate_formatted ?? "—", sub: `${stats?.active_miners ?? 0} ${ExplorerNetworkStatsNetworkStatsClientCopy.miners[cs ? 'cs' : 'en']}`, icon: Pickaxe, color: "text-zion-gold", spark: [], sparkColor: "rgb(252, 209, 22)" },
     { label: ExplorerNetworkStatsNetworkStatsClientCopy.altBlocks[cs ? 'cs' : 'en'], value: (stats?.alt_blocks_count ?? 0).toLocaleString(), sub: ExplorerNetworkStatsNetworkStatsClientCopy.potentialForks[cs ? 'cs' : 'en'], icon: BarChart3, color: "text-slate-400", spark: [], sparkColor: "rgb(148,163,184)" },
   ];
 
@@ -232,9 +232,9 @@ export default function NetworkStatsClient() {
   return (
     <div className="relative min-h-screen pb-24 overflow-x-hidden">
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-purple-500/8" />
-        <div className="absolute -right-40 top-2/3 h-[400px] w-[400px] rounded-full blur-[200px] bg-zion-cyan-500/6" />
-        <div className="absolute left-1/2 top-0 h-48 w-full -translate-x-1/2 bg-linear-to-b from-zion-purple-500/15 to-transparent" />
+        <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-purple/8" />
+        <div className="absolute -right-40 top-2/3 h-[400px] w-[400px] rounded-full blur-[200px] bg-zion-cyan/6" />
+        <div className="absolute left-1/2 top-0 h-48 w-full -translate-x-1/2 bg-linear-to-b from-zion-purple/15 to-transparent" />
       </div>
 
       <div className="relative z-10 zion-container max-w-7xl space-y-14 pt-6">
@@ -242,7 +242,7 @@ export default function NetworkStatsClient() {
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="zion-rainbow-card rounded-3xl md:rounded-4xl bg-black/60 p-6 md:p-10 shadow-[0_30px_120px_rgba(0,0,0,0.45)]" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-5">
-              <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple-500/40 bg-zion-purple-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-purple-300 uppercase">
+              <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-purple uppercase">
                 <Network className="h-4 w-4" />
                 {SITE_RELEASE_LABEL} · {ExplorerNetworkStatsNetworkStatsClientCopy.network[cs ? 'cs' : 'en']}
               </div>
@@ -257,7 +257,7 @@ export default function NetworkStatsClient() {
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Globe className="h-3 w-3 text-zion-cyan-400" /> {stats?.connected ? (ExplorerNetworkStatsNetworkStatsClientCopy.online[cs ? 'cs' : 'en']) : (ExplorerNetworkStatsNetworkStatsClientCopy.offline[cs ? 'cs' : 'en'])}
+                  <Globe className="h-3 w-3 text-zion-cyan" /> {stats?.connected ? (ExplorerNetworkStatsNetworkStatsClientCopy.online[cs ? 'cs' : 'en']) : (ExplorerNetworkStatsNetworkStatsClientCopy.offline[cs ? 'cs' : 'en'])}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <Hash className="h-3 w-3 text-zion-gold" /> {stats?.version || "v3.2.0"}
@@ -272,7 +272,7 @@ export default function NetworkStatsClient() {
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerNetworkStatsNetworkStatsClientCopy.current[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Activity className="h-7 w-7 text-zion-cyan-400" />
+              <Activity className="h-7 w-7 text-zion-cyan" />
               {ExplorerNetworkStatsNetworkStatsClientCopy.networkStatistics[cs ? 'cs' : 'en']}
             </h2>
           </div>
@@ -311,7 +311,7 @@ export default function NetworkStatsClient() {
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerNetworkStatsNetworkStatsClientCopy.trends[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <BarChart3 className="h-7 w-7 text-zion-purple-400" />
+              <BarChart3 className="h-7 w-7 text-zion-purple" />
               {ExplorerNetworkStatsNetworkStatsClientCopy.k24hCharts[cs ? 'cs' : 'en']}
             </h2>
           </div>
@@ -331,11 +331,11 @@ export default function NetworkStatsClient() {
                     </div>
                     <div className="flex items-center gap-1 text-[10px]">
                       {trend >= 0 ? (
-                        <TrendingUp className="h-3 w-3 text-zion-cyan-400" />
+                        <TrendingUp className="h-3 w-3 text-zion-cyan" />
                       ) : (
-                        <TrendingDown className="h-3 w-3 text-zion-purple-400" />
+                        <TrendingDown className="h-3 w-3 text-zion-purple" />
                       )}
-                      <span className={trend >= 0 ? "text-zion-cyan-400" : "text-zion-purple-400"}>
+                      <span className={trend >= 0 ? "text-zion-cyan" : "text-zion-purple"}>
                         {trend >= 0 ? "+" : ""}{fmtSI(trend)}
                       </span>
                     </div>

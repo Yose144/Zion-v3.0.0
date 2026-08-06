@@ -40,6 +40,30 @@ function pad(n: number) {
   return n.toString().padStart(2, '0');
 }
 
+const RASTA_BOX_STYLES = [
+  {
+    name: 'red',
+    text: 'text-zion-purple',
+    border: 'border-zion-purple/30',
+    bg: 'bg-zion-purple/10',
+    rgb: '228, 30, 43',
+  },
+  {
+    name: 'gold',
+    text: 'text-zion-gold',
+    border: 'border-zion-gold/30',
+    bg: 'bg-zion-gold/10',
+    rgb: '252, 209, 22',
+  },
+  {
+    name: 'green',
+    text: 'text-zion-cyan',
+    border: 'border-zion-cyan/30',
+    bg: 'bg-zion-cyan/10',
+    rgb: '7, 137, 48',
+  },
+] as const;
+
 function Wrap({ embedded, children }: { embedded: boolean; children: React.ReactNode }) {
   if (embedded) return <>{children}</>;
   return (
@@ -91,17 +115,21 @@ export default function MainnetCountdown({ embedded = false }: { embedded?: bool
           className={`zion-rainbow-card relative overflow-hidden backdrop-blur-xl ${embedded ? 'p-4' : 'p-6 md:p-8'}`}
           style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
         >
-            <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-zion-cyan-500/10 blur-3xl pointer-events-none" />
+            <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-zion-purple/10 blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-16 -left-16 w-40 h-40 rounded-full bg-zion-gold/10 blur-3xl pointer-events-none" />
 
             <div className="relative flex items-center gap-3">
-              <div className="flex-none w-10 h-10 rounded-lg bg-zion-cyan-500/15 flex items-center justify-center">
-                <Rocket className="w-5 h-5 text-zion-cyan-300 animate-pulse" />
+              <div className="flex-none w-10 h-10 rounded-lg bg-zion-gold/15 flex items-center justify-center">
+                <Rocket className="w-5 h-5 text-zion-gold animate-pulse" />
               </div>
               <div className="flex-1">
                 <h2 className="text-sm font-bold text-white">Mainnet LIVE</h2>
                 <p className="text-[11px] text-gray-400">Edge server · Mining · Bridge</p>
               </div>
-              <span className="text-xs font-bold text-zion-cyan-300 bg-zion-cyan-500/10 border border-zion-cyan-500/20 rounded-full px-2.5 py-1">
+              <span
+                className="text-xs font-bold text-zion-cyan bg-zion-cyan/10 border border-zion-cyan/20 rounded-full px-2.5 py-1"
+                style={{ boxShadow: '0 0 12px rgba(7, 137, 48, 0.15)' }}
+              >
                 GO
               </span>
             </div>
@@ -109,7 +137,7 @@ export default function MainnetCountdown({ embedded = false }: { embedded?: bool
             <div className="relative mt-3">
               <div className="h-1 rounded-full bg-white/5 overflow-hidden">
                 <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-zion-cyan-500 via-zion-purple to-zion-cyan"
+                  className="h-full rounded-full bg-gradient-to-r from-zion-purple via-zion-gold to-zion-cyan"
                   initial={{ width: 0 }}
                   animate={{ width: '100%' }}
                   transition={{ duration: 1.2, ease: 'easeOut' }}
@@ -130,13 +158,17 @@ export default function MainnetCountdown({ embedded = false }: { embedded?: bool
         className={`zion-rainbow-card relative overflow-hidden backdrop-blur-xl ${embedded ? 'p-4' : 'p-6 md:p-8'}`}
         style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
       >
-          {/* ambient glow */}
+          {/* rasta ambient glows */}
           <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-zion-gold/10 blur-3xl pointer-events-none" />
           <div className="absolute -bottom-16 -left-16 w-40 h-40 rounded-full bg-zion-purple/10 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-10 -right-10 w-36 h-36 rounded-full bg-zion-cyan/10 blur-3xl pointer-events-none" />
 
           <div className="relative flex flex-col gap-3">
-            {/* Phase badge — compact */}
-            <div className="flex items-center gap-2 text-[10px] text-zion-purple bg-zion-purple/10 border border-zion-purple/20 rounded-full px-2.5 py-1 self-start">
+            {/* Phase badge — compact, rasta red */}
+            <div
+              className="flex items-center gap-2 text-[10px] text-zion-purple bg-zion-purple/10 border border-zion-purple/20 rounded-full px-2.5 py-1 self-start"
+              style={{ boxShadow: '0 0 12px rgba(228, 30, 43, 0.15)' }}
+            >
               <span className="w-1.5 h-1.5 rounded-full bg-zion-purple animate-pulse" />
               {MainnetCountdownCopy.l2BridgeL3AiDefi[cs ? 'cs' : 'en']}
             </div>
@@ -158,33 +190,42 @@ export default function MainnetCountdown({ embedded = false }: { embedded?: bool
               </div>
             </div>
 
-            {/* Countdown digits — compact row */}
+            {/* Countdown digits — rasta red/gold/green rotation */}
             <div className="flex items-center justify-center gap-1.5">
-              {units.map((unit, i) => (
-                <motion.div
-                  key={unit.label}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.4, delay: i * 0.06 }}
-                  className="flex flex-col items-center"
-                >
-                  <div className="w-12 h-12 rounded-lg border border-white/10 bg-white/5 backdrop-blur-md flex items-center justify-center">
-                    <span className="text-base font-bold text-gradient tabular-nums">
-                      {pad(unit.value)}
+              {units.map((unit, i) => {
+                const s = RASTA_BOX_STYLES[i % 3];
+                return (
+                  <motion.div
+                    key={unit.label}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4, delay: i * 0.06 }}
+                    className="flex flex-col items-center"
+                  >
+                    <div
+                      className={`w-12 h-12 rounded-lg border ${s.border} ${s.bg} backdrop-blur-md flex items-center justify-center`}
+                      style={{ boxShadow: `0 0 18px rgba(${s.rgb}, 0.22)` }}
+                    >
+                      <span
+                        className={`text-base font-bold tabular-nums ${s.text}`}
+                        style={{ textShadow: `0 0 10px rgba(${s.rgb}, 0.55)` }}
+                      >
+                        {pad(unit.value)}
+                      </span>
+                    </div>
+                    <span className="text-[8px] uppercase tracking-wider text-gray-500 mt-1">
+                      {unit.label}
                     </span>
-                  </div>
-                  <span className="text-[8px] uppercase tracking-wider text-gray-500 mt-1">
-                    {unit.label}
-                  </span>
-                </motion.div>
-              ))}
+                  </motion.div>
+                );
+              })}
             </div>
 
             {/* Progress bar */}
             <div className="relative">
               <div className="h-1 rounded-full bg-white/5 overflow-hidden">
                 <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-zion-gold via-zion-purple to-zion-cyan"
+                  className="h-full rounded-full bg-gradient-to-r from-zion-purple via-zion-gold to-zion-cyan"
                   initial={{ width: 0 }}
                   animate={{ width: `${Math.min(100, (29 - time.days) / 29 * 100)}%` }}
                   transition={{ duration: 1.2, ease: 'easeOut' }}

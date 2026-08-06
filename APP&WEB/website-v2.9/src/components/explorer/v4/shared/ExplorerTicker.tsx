@@ -50,13 +50,13 @@ export default function ExplorerTicker() {
       icon: Hash,
       label: ExplorerTickerCopy.mempool[cs ? 'cs' : 'en'],
       value: stats ? String(stats.tx_pool_size || 0) : "—",
-      accent: "text-zion-gold-400",
+      accent: "text-zion-gold",
     },
     {
       icon: Globe,
       label: ExplorerTickerCopy.peers[cs ? 'cs' : 'en'],
       value: stats ? String(stats.total_connections || 0) : "—",
-      accent: "text-zion-cyan-400",
+      accent: "text-zion-cyan",
     },
     {
       icon: Cpu,
@@ -68,7 +68,7 @@ export default function ExplorerTicker() {
       icon: Users,
       label: ExplorerTickerCopy.miners[cs ? 'cs' : 'en'],
       value: stats ? String(stats.active_miners || 0) : "—",
-      accent: "text-zion-purple-400",
+      accent: "text-zion-purple",
     },
   ];
 

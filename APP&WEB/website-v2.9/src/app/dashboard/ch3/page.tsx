@@ -94,12 +94,12 @@ interface CH3Settings {
 }
 
 const STREAM_COLORS: Record<string, string> = {
-  zion: "from-zion-gold to-zion-gold-500",
-  etc: "from-zion-cyan-500 to-zion-cyan-600",
-  nxs: "from-zion-purple-500 to-zion-cyan-600",
-  dynamic_gpu: "from-zion-purple-500 to-zion-purple-600",
-  ncl: "from-zion-purple-500 to-zion-purple-600",
-  pearl: "from-zion-cyan-400 to-zion-cyan-500",
+  zion: "from-zion-gold to-zion-gold",
+  etc: "from-zion-cyan to-zion-cyan",
+  nxs: "from-zion-purple to-zion-cyan",
+  dynamic_gpu: "from-zion-purple to-zion-purple",
+  ncl: "from-zion-purple to-zion-purple",
+  pearl: "from-zion-cyan to-zion-cyan",
 };
 
 const STREAM_ICONS: Record<string, string> = {
@@ -112,11 +112,11 @@ const STREAM_ICONS: Record<string, string> = {
 };
 
 const GPU_COINS = [
-  { id: "ERG", name: "Ergo", algo: "Autolykos2", color: "text-zion-gold-400" },
-  { id: "RVN", name: "Ravencoin", algo: "KawPow", color: "text-zion-purple-400" },
-  { id: "KAS", name: "Kaspa", algo: "KHeavyHash", color: "text-zion-cyan-400" },
-  { id: "ALPH", name: "Alephium", algo: "Blake3", color: "text-zion-purple-400" },
-  { id: "FLUX", name: "Flux", algo: "Equihash", color: "text-zion-purple-400" },
+  { id: "ERG", name: "Ergo", algo: "Autolykos2", color: "text-zion-gold" },
+  { id: "RVN", name: "Ravencoin", algo: "KawPow", color: "text-zion-purple" },
+  { id: "KAS", name: "Kaspa", algo: "KHeavyHash", color: "text-zion-cyan" },
+  { id: "ALPH", name: "Alephium", algo: "Blake3", color: "text-zion-purple" },
+  { id: "FLUX", name: "Flux", algo: "Equihash", color: "text-zion-purple" },
 ];
 
 const DEFAULT_SETTINGS: CH3Settings = {
@@ -342,7 +342,7 @@ export default function CH3SettingsPage() {
                 <button
                   onClick={() => toggleStream(key)}
                   className={`w-10 h-6 rounded-full transition-colors ${
-                    stream.enabled ? "bg-zion-cyan-500" : "bg-white/10"
+                    stream.enabled ? "bg-zion-cyan" : "bg-white/10"
                   }`}
                 >
                   <div
@@ -422,7 +422,7 @@ export default function CH3SettingsPage() {
                     </div>
                   </div>
                   <div className="text-sm text-gray-500">{stream.description}</div>
-                  <div className={`mt-2 text-sm ${stream.enabled ? "text-zion-cyan-400" : "text-zion-purple-400"}`}>
+                  <div className={`mt-2 text-sm ${stream.enabled ? "text-zion-cyan" : "text-zion-purple"}`}>
                     {stream.enabled ? (DashboardCh3Copy.active[lang === 'cs' ? 'cs' : 'en']) : (DashboardCh3Copy.disabled[lang === 'cs' ? 'cs' : 'en'])}
                   </div>
                 </div>
@@ -694,13 +694,13 @@ export default function CH3SettingsPage() {
               {/* Visual split */}
               <div className="flex h-20 mt-4 rounded-lg overflow-hidden">
                 <div 
-                  className="bg-gradient-to-r from-zion-gold-500 to-zion-gold flex items-center justify-center"
+                  className="bg-gradient-to-r from-zion-gold to-zion-gold flex items-center justify-center"
                   style={{ width: `${(settings.streams.ncl.mining_allocation || 0) * 100}%` }}
                 >
                   <span className="font-bold">⛏️ {DashboardCh3Copy.mining[lang === 'cs' ? 'cs' : 'en']}</span>
                 </div>
                 <div 
-                  className="bg-gradient-to-r from-zion-purple-600 to-zion-purple-500 flex items-center justify-center"
+                  className="bg-gradient-to-r from-zion-purple to-zion-purple flex items-center justify-center"
                   style={{ width: `${(settings.streams.ncl.npu_allocation || 0) * 100}%` }}
                 >
                   <span className="font-bold">🧠 AI</span>
@@ -804,17 +804,17 @@ export default function CH3SettingsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="zion-rainbow-sub p-4" style={zionStyle("252, 209, 22")}>
                 <div className="text-gray-400 text-sm">{DashboardCh3Copy.gpuSpeed[lang === 'cs' ? 'cs' : 'en']}</div>
-                <div className="font-bold text-2xl text-zion-cyan-400">657.6</div>
+                <div className="font-bold text-2xl text-zion-cyan">657.6</div>
                 <div className="text-gray-500 text-xs">nonces/s (batch=16)</div>
               </div>
               <div className="zion-rainbow-sub p-4" style={zionStyle("252, 209, 22")}>
                 <div className="text-gray-400 text-sm">{DashboardCh3Copy.vsCpu[lang === 'cs' ? 'cs' : 'en']}</div>
-                <div className="font-bold text-2xl text-zion-cyan-400">14.2x</div>
+                <div className="font-bold text-2xl text-zion-cyan">14.2x</div>
                 <div className="text-gray-500 text-xs">{DashboardCh3Copy.speedup[lang === 'cs' ? 'cs' : 'en']}</div>
               </div>
               <div className="zion-rainbow-sub p-4" style={zionStyle("252, 209, 22")}>
                 <div className="text-gray-400 text-sm">{DashboardCh3Copy.algorithm[lang === 'cs' ? 'cs' : 'en']}</div>
-                <div className="font-bold text-lg text-zion-cyan-400">PearlHash</div>
+                <div className="font-bold text-lg text-zion-cyan">PearlHash</div>
                 <div className="text-gray-500 text-xs">PoUW — INT8 MatMul + ZK</div>
               </div>
             </div>
@@ -824,7 +824,7 @@ export default function CH3SettingsPage() {
 
       {/* Error Banner */}
       {error && (
-        <div className="mt-4 bg-red-900/30 border border-zion-purple-500/50 rounded-xl p-4 text-zion-purple-300 text-sm">
+        <div className="mt-4 bg-red-900/30 border border-zion-purple/50 rounded-xl p-4 text-zion-purple text-sm">
           ⚠️ {error}
         </div>
       )}
@@ -837,7 +837,7 @@ export default function CH3SettingsPage() {
           className={`px-8 py-3 rounded-xl font-bold text-lg ${
             saving || !settings
               ? "bg-white/10 text-gray-400 cursor-wait"
-              : "bg-zion-gold text-black hover:bg-zion-gold-400"
+              : "bg-zion-gold text-black hover:bg-zion-gold"
           }`}
         >
           {saving ? (DashboardCh3Copy.saving[lang === 'cs' ? 'cs' : 'en']) : (DashboardCh3Copy.saveSettings[lang === 'cs' ? 'cs' : 'en'])}

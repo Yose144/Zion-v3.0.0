@@ -167,7 +167,7 @@ export default function NetworkMap({ variant = 'card', className }: NetworkMapPr
   if (!status) {
     return (
       <div className={`${finalWrapper} flex items-center justify-center`} style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-        <Globe className="w-8 h-8 animate-spin text-zion-purple-400" />
+        <Globe className="w-8 h-8 animate-spin text-zion-purple" />
       </div>
     );
   }
@@ -175,10 +175,10 @@ export default function NetworkMap({ variant = 'card', className }: NetworkMapPr
   return (
     <div className={finalWrapper} style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
       {!isHero && (
-        <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-black/70 backdrop-blur px-3 py-2 rounded-2xl border border-zion-purple-400/20">
-          <Globe className="w-5 h-5 text-zion-purple-400" />
+        <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-black/70 backdrop-blur px-3 py-2 rounded-2xl border border-zion-purple/20">
+          <Globe className="w-5 h-5 text-zion-purple" />
           <span className="text-white font-semibold">{NetworkMapCopy.zionNetwork[cs ? 'cs' : 'en']}</span>
-          <span className={`text-sm ${status.summary.inSync ? 'text-zion-cyan-400' : 'text-zion-gold-400'}`}>
+          <span className={`text-sm ${status.summary.inSync ? 'text-zion-cyan' : 'text-zion-gold'}`}>
             {status.summary.online}/{status.summary.total} {NetworkMapCopy.nodes[cs ? 'cs' : 'en']}
           </span>
         </div>
@@ -189,21 +189,21 @@ export default function NetworkMap({ variant = 'card', className }: NetworkMapPr
         <div className="absolute top-4 right-4 z-10 flex flex-col gap-1">
           <button
             onClick={() => handleZoomBtn(1.2)}
-            className="w-8 h-8 flex items-center justify-center rounded-lg bg-black/60 border border-white/10 text-white hover:bg-zion-purple-500/30 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-black/60 border border-white/10 text-white hover:bg-zion-purple/30 transition-colors"
             title={NetworkMapCopy.zoomIn[cs ? 'cs' : 'en']}
           >
             <ZoomIn className="w-4 h-4" />
           </button>
           <button
             onClick={() => handleZoomBtn(0.83)}
-            className="w-8 h-8 flex items-center justify-center rounded-lg bg-black/60 border border-white/10 text-white hover:bg-zion-purple-500/30 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-black/60 border border-white/10 text-white hover:bg-zion-purple/30 transition-colors"
             title={NetworkMapCopy.zoomOut[cs ? 'cs' : 'en']}
           >
             <ZoomOut className="w-4 h-4" />
           </button>
           <button
             onClick={handleReset}
-            className="w-8 h-8 flex items-center justify-center rounded-lg bg-black/60 border border-white/10 text-white hover:bg-zion-purple-500/30 transition-colors text-xs"
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-black/60 border border-white/10 text-white hover:bg-zion-purple/30 transition-colors text-xs"
             title={NetworkMapCopy.reset[cs ? 'cs' : 'en']}
           >
             ⟲
@@ -379,25 +379,25 @@ export default function NetworkMap({ variant = 'card', className }: NetworkMapPr
       </svg>
 
       {!isHero && (
-        <div className="absolute bottom-4 right-4 flex items-center gap-4 bg-black/70 backdrop-blur px-3 py-2 rounded-2xl border border-zion-purple-400/20 text-sm">
+        <div className="absolute bottom-4 right-4 flex items-center gap-4 bg-black/70 backdrop-blur px-3 py-2 rounded-2xl border border-zion-purple/20 text-sm">
           <div className="flex items-center gap-2">
-            <Wifi className="w-4 h-4 text-zion-cyan-400" />
+            <Wifi className="w-4 h-4 text-zion-cyan" />
             <span className="text-gray-400">{NetworkMapCopy.online_2[cs ? 'cs' : 'en']}</span>
           </div>
           <div className="flex items-center gap-2">
-            <WifiOff className="w-4 h-4 text-zion-purple-400" />
+            <WifiOff className="w-4 h-4 text-zion-purple" />
             <span className="text-gray-400">{NetworkMapCopy.offline_2[cs ? 'cs' : 'en']}</span>
           </div>
           <div className="flex items-center gap-2 border-l border-white/10 pl-3">
-            <div className="w-3 h-0.5 bg-zion-cyan-500" />
+            <div className="w-3 h-0.5 bg-zion-cyan" />
             <span className="text-gray-400 text-xs">&lt;50ms</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-0.5 bg-zion-gold-500" />
+            <div className="w-3 h-0.5 bg-zion-gold" />
             <span className="text-gray-400 text-xs">&lt;200ms</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-0.5 bg-zion-purple-500" />
+            <div className="w-3 h-0.5 bg-zion-purple" />
             <span className="text-gray-400 text-xs">&gt;200ms</span>
           </div>
         </div>

@@ -109,13 +109,13 @@ export default function NetworkPeers() {
             <motion.span
               animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
               transition={{ duration: 3, repeat: Infinity }}
-              className="inline-flex h-2 w-2 rounded-full bg-zion-cyan-400"
+              className="inline-flex h-2 w-2 rounded-full bg-zion-cyan"
             />
           </p>
           <h2 className="text-xl font-semibold text-white">{NetworkPeersCopy.networkPeers[cs ? 'cs' : 'en']}</h2>
         </div>
         <div className="rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs uppercase tracking-[0.35em] text-gray-300 flex items-center gap-2">
-          <Power className="w-3 h-3 text-zion-cyan-400 animate-pulse" />
+          <Power className="w-3 h-3 text-zion-cyan animate-pulse" />
           {NetworkPeersCopy.refresh15s[cs ? 'cs' : 'en']}
         </div>
       </div>
@@ -137,7 +137,7 @@ export default function NetworkPeers() {
       <div className="zion-rainbow-card rounded-[24px] bg-black/40 p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm text-gray-300">
-            <Power className="h-4 w-4 text-zion-cyan-300" />
+            <Power className="h-4 w-4 text-zion-cyan" />
             <span>{NetworkPeersCopy.peerDirectory[cs ? 'cs' : 'en']}</span>
             {loading && <span className="text-xs text-gray-500">{cs ? 'Načítám...' : 'Loading...'}</span>}
           </div>
@@ -179,7 +179,7 @@ export default function NetworkPeers() {
                 animate={{ opacity: 1, x: 0 }}
                 className={`zion-rainbow-sub p-4 transition-colors ${
                   peer.connected
-                    ? 'border-zion-cyan-500/20 bg-zion-cyan-500/5'
+                    ? 'border-zion-cyan/20 bg-zion-cyan/5'
                     : ''
                 }`}
                 style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
@@ -188,13 +188,13 @@ export default function NetworkPeers() {
                   <div className="flex items-center gap-3">
                     {/* Connection status indicator */}
                     <div className={`h-2.5 w-2.5 rounded-full ${
-                      peer.connected ? 'bg-zion-cyan-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]' : 'bg-gray-600'
+                      peer.connected ? 'bg-zion-cyan shadow-[0_0_8px_rgba(52,211,153,0.5)]' : 'bg-gray-600'
                     }`} />
                     <div>
                       <p className="text-sm font-semibold text-white font-mono">{peer.host}</p>
                       <div className="flex items-center gap-2 mt-0.5">
                         {peer.connected ? (
-                          <span className="text-[10px] uppercase tracking-wider text-zion-cyan-400 flex items-center gap-1">
+                          <span className="text-[10px] uppercase tracking-wider text-zion-cyan flex items-center gap-1">
                             <Wifi className="h-3 w-3" /> {NetworkPeersCopy.connected_2[cs ? 'cs' : 'en']}
                           </span>
                         ) : (
@@ -203,11 +203,11 @@ export default function NetworkPeers() {
                           </span>
                         )}
                         {peer.incoming ? (
-                          <span className="text-[10px] text-zion-cyan-400 flex items-center gap-0.5">
+                          <span className="text-[10px] text-zion-cyan flex items-center gap-0.5">
                             <ArrowDownLeft className="h-3 w-3" /> IN
                           </span>
                         ) : (
-                          <span className="text-[10px] text-zion-gold-400 flex items-center gap-0.5">
+                          <span className="text-[10px] text-zion-gold flex items-center gap-0.5">
                             <ArrowUpRight className="h-3 w-3" /> OUT
                           </span>
                         )}
@@ -225,11 +225,11 @@ export default function NetworkPeers() {
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400">
                   <span className="flex items-center gap-1">
                     <TrendingUp className="h-3 w-3" />
-                    {NetworkPeersCopy.height[cs ? 'cs' : 'en']}: <span className={`font-mono ${isSynced ? 'text-zion-cyan-400' : 'text-zion-gold-400'}`}>
+                    {NetworkPeersCopy.height[cs ? 'cs' : 'en']}: <span className={`font-mono ${isSynced ? 'text-zion-cyan' : 'text-zion-gold'}`}>
                       {peer.height.toLocaleString(locale)}
                     </span>
                     {!isSynced && data.chain_height > 0 && (
-                      <span className="text-zion-gold-500 text-[10px]">(-{data.chain_height - peer.height})</span>
+                      <span className="text-zion-gold text-[10px]">(-{data.chain_height - peer.height})</span>
                     )}
                   </span>
                   <span className="flex items-center gap-1">
@@ -240,7 +240,7 @@ export default function NetworkPeers() {
                     <span className="text-gray-500">v{peer.sub_version}</span>
                   )}
                   {peer.failed_attempts > 0 && (
-                    <span className="text-zion-purple-400">⚠ {peer.failed_attempts} {NetworkPeersCopy.failures[cs ? 'cs' : 'en']}</span>
+                    <span className="text-zion-purple">⚠ {peer.failed_attempts} {NetworkPeersCopy.failures[cs ? 'cs' : 'en']}</span>
                   )}
                   <span className="text-gray-600">
                     {NetworkPeersCopy.last[cs ? 'cs' : 'en']}: {formatLastSeen(peer.last_seen, locale)}

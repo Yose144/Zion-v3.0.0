@@ -29,7 +29,7 @@ export default function DAOStats({ stats }: DAOStatsProps) {
       label: 'Total Proposals',
       value: stats.governance.total_proposals.toString(),
       icon: Gavel,
-      color: 'text-zion-cyan-400',
+      color: 'text-zion-cyan',
       rc: '7, 137, 48',
     },
     {
@@ -43,7 +43,7 @@ export default function DAOStats({ stats }: DAOStatsProps) {
       label: 'Humanitarian Projects',
       value: stats.humanitarian.total_proposals.toString(),
       icon: TrendingUp,
-      color: 'text-zion-cyan-400',
+      color: 'text-zion-cyan',
       rc: '7, 137, 48',
     },
   ];

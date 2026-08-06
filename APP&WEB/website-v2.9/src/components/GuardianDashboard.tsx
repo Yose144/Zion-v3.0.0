@@ -231,12 +231,12 @@ function WalletGate({ onEnter }: { onEnter: () => void }) {
                   placeholder="Encryption password"
                   className="w-full rounded-xl bg-black/40 border border-white/10 p-3 text-sm text-white placeholder:text-gray-600 outline-none focus:border-zion-gold/40"
                 />
-                {err && <p className="text-xs text-zion-purple-400">{err}</p>}
+                {err && <p className="text-xs text-zion-purple">{err}</p>}
                 <div className="flex gap-2">
                   <button
                     onClick={handleImport}
                     disabled={loading || !mnemonic.trim() || !password}
-                    className="flex-1 py-2.5 rounded-xl bg-zion-gold text-black text-sm font-semibold hover:bg-zion-gold-300 transition-colors disabled:opacity-50"
+                    className="flex-1 py-2.5 rounded-xl bg-zion-gold text-black text-sm font-semibold hover:bg-zion-gold transition-colors disabled:opacity-50"
                   >
                     {loading ? 'Importing…' : 'Import & Continue'}
                   </button>
@@ -418,7 +418,7 @@ function DaoTab() {
       </div>
 
       {err && (
-        <div className="rounded-xl border border-zion-purple-500/20 bg-zion-purple-500/10 p-4 text-sm text-zion-purple-400 flex items-center gap-2">
+        <div className="rounded-xl border border-zion-purple/20 bg-zion-purple/10 p-4 text-sm text-zion-purple flex items-center gap-2">
           <AlertTriangle size={16} /> {err}
         </div>
       )}
@@ -439,9 +439,9 @@ function DaoTab() {
                     <p className="text-sm font-semibold text-white truncate">{p.title}</p>
                     <div className="flex items-center gap-2 mt-1.5">
                       <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
-                        p.status === 'active' ? 'bg-zion-cyan-500/10 text-zion-cyan-400 border-zion-cyan-500/30' :
-                        p.status === 'passed' ? 'bg-zion-cyan-500/10 text-zion-cyan-400 border-zion-cyan-500/30' :
-                        p.status === 'failed' ? 'bg-zion-purple-500/10 text-zion-purple-400 border-zion-purple-500/30' :
+                        p.status === 'active' ? 'bg-zion-cyan/10 text-zion-cyan border-zion-cyan/30' :
+                        p.status === 'passed' ? 'bg-zion-cyan/10 text-zion-cyan border-zion-cyan/30' :
+                        p.status === 'failed' ? 'bg-zion-purple/10 text-zion-purple border-zion-purple/30' :
                         'bg-gray-500/10 text-gray-400 border-gray-500/30'
                       }`}>
                         {p.status}
@@ -453,15 +453,15 @@ function DaoTab() {
                 <div className="mt-4 flex items-center gap-6 text-xs">
                   <div>
                     <span className="text-gray-500">Yes: </span>
-                    <span className="font-mono text-zion-cyan-400">{p.yes_votes.toLocaleString()}</span>
+                    <span className="font-mono text-zion-cyan">{p.yes_votes.toLocaleString()}</span>
                   </div>
                   <div>
                     <span className="text-gray-500">No: </span>
-                    <span className="font-mono text-zion-purple-400">{p.no_votes.toLocaleString()}</span>
+                    <span className="font-mono text-zion-purple">{p.no_votes.toLocaleString()}</span>
                   </div>
                 </div>
                 <div className="mt-2 h-1.5 rounded-full bg-white/10 overflow-hidden">
-                  <div className="h-full bg-zion-cyan-500 rounded-full" style={{ width: `${yesPct}%` }} />
+                  <div className="h-full bg-zion-cyan rounded-full" style={{ width: `${yesPct}%` }} />
                 </div>
               </Card>
             );
@@ -504,15 +504,15 @@ function AlertsTab() {
   const dismiss = (id: string) => setAlerts((prev) => prev.filter((a) => a.id !== id));
 
   const severityIcon = (s: string) => {
-    if (s === 'critical') return <XCircle size={16} className="text-zion-purple-400 shrink-0" />;
-    if (s === 'warning') return <AlertTriangle size={16} className="text-zion-gold-400 shrink-0" />;
-    return <CheckCircle2 size={16} className="text-zion-cyan-400 shrink-0" />;
+    if (s === 'critical') return <XCircle size={16} className="text-zion-purple shrink-0" />;
+    if (s === 'warning') return <AlertTriangle size={16} className="text-zion-gold shrink-0" />;
+    return <CheckCircle2 size={16} className="text-zion-cyan shrink-0" />;
   };
 
   const severityBorder = (s: string) => {
-    if (s === 'critical') return 'border-zion-purple-500/20 bg-zion-purple-500/5';
-    if (s === 'warning') return 'border-zion-gold-500/20 bg-zion-gold-500/5';
-    return 'border-zion-cyan-500/20 bg-zion-cyan-500/5';
+    if (s === 'critical') return 'border-zion-purple/20 bg-zion-purple/5';
+    if (s === 'warning') return 'border-zion-gold/20 bg-zion-gold/5';
+    return 'border-zion-cyan/20 bg-zion-cyan/5';
   };
 
   return (
@@ -529,7 +529,7 @@ function AlertsTab() {
       </div>
 
       {err && (
-        <div className="rounded-xl border border-zion-purple-500/20 bg-zion-purple-500/10 p-4 text-sm text-zion-purple-400 flex items-center gap-2">
+        <div className="rounded-xl border border-zion-purple/20 bg-zion-purple/10 p-4 text-sm text-zion-purple flex items-center gap-2">
           <AlertTriangle size={16} /> {err}
         </div>
       )}
@@ -537,7 +537,7 @@ function AlertsTab() {
       {alerts.length === 0 && !err && !loading ? (
         <Card>
           <p className="text-sm text-gray-400 text-center py-8 flex items-center justify-center gap-2">
-            <CheckCircle2 size={16} className="text-zion-cyan-400" /> No active alerts.
+            <CheckCircle2 size={16} className="text-zion-cyan" /> No active alerts.
           </p>
         </Card>
       ) : (
@@ -606,7 +606,7 @@ function NclTab() {
       </div>
 
       {err && (
-        <div className="rounded-xl border border-zion-purple-500/20 bg-zion-purple-500/10 p-4 text-sm text-zion-purple-400 flex items-center gap-2">
+        <div className="rounded-xl border border-zion-purple/20 bg-zion-purple/10 p-4 text-sm text-zion-purple flex items-center gap-2">
           <AlertTriangle size={16} /> {err}
         </div>
       )}
@@ -621,9 +621,9 @@ function NclTab() {
           leaderboard.map((entry) => (
             <Card key={entry.worker_id ?? entry.rank} className="flex items-center gap-4">
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
-                entry.rank === 1 ? 'bg-zion-gold-500/15 text-zion-gold-400' :
+                entry.rank === 1 ? 'bg-zion-gold/15 text-zion-gold' :
                 entry.rank === 2 ? 'bg-gray-300/15 text-gray-300' :
-                entry.rank === 3 ? 'bg-zion-gold-700/15 text-zion-gold-400' :
+                entry.rank === 3 ? 'bg-zion-gold/15 text-zion-gold' :
                 'bg-white/5 text-gray-400'
               }`}>
                 {entry.rank}
@@ -656,7 +656,7 @@ function NclTab() {
                 <span className="text-sm font-semibold text-white truncate">{w.name ?? w.id}</span>
               </div>
               <div className="flex items-center gap-2 text-xs">
-                <span className={`w-2 h-2 rounded-full ${w.status === 'online' ? 'bg-zion-cyan-400' : w.status === 'busy' ? 'bg-zion-gold-400' : 'bg-gray-500'}`} />
+                <span className={`w-2 h-2 rounded-full ${w.status === 'online' ? 'bg-zion-cyan' : w.status === 'busy' ? 'bg-zion-gold' : 'bg-gray-500'}`} />
                 <span className="text-gray-400 capitalize">{w.status}</span>
               </div>
               <div className="flex justify-between text-xs text-gray-500">
@@ -727,7 +727,7 @@ export default function GuardianDashboard() {
               </div>
               <button
                 onClick={disconnect}
-                className="p-2 rounded-xl border border-white/10 hover:border-zion-purple-500/40 hover:bg-zion-purple-500/10 transition-colors"
+                className="p-2 rounded-xl border border-white/10 hover:border-zion-purple/40 hover:bg-zion-purple/10 transition-colors"
                 title="Disconnect"
               >
                 <Lock size={14} className="text-gray-400" />
@@ -769,10 +769,13 @@ export default function GuardianDashboard() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/10 bg-black/40 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between text-[11px] text-gray-500">
-          <span>Guardian access · {activeWallet.address.slice(0, 12)}…</span>
-          <span>Auto-refresh: 30s</span>
+      <footer className="border-t-2 border-t-transparent mt-auto" style={{ borderImage: 'linear-gradient(90deg, #e41e2b, #fcd116, #078930) 1' }}>
+        <div className="bg-black/60 backdrop-blur-sm">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between text-[11px] text-zion-gold/70">
+            <span className="text-zion-cyan">Guardian access</span>
+            <span>· {activeWallet.address.slice(0, 12)}…</span>
+            <span className="text-zion-purple">Auto-refresh: 30s</span>
+          </div>
         </div>
       </footer>
     </div>

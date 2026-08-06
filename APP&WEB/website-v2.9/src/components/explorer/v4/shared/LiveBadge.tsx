@@ -18,10 +18,10 @@ export default function LiveBadge({ label = "LIVE", className = "" }: LiveBadgeP
         animate={{ opacity: [1, 0.4, 1] }}
         transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
       >
-        <span className="absolute inline-flex h-full w-full rounded-full bg-zion-cyan-400 opacity-75" />
-        <span className="relative inline-flex h-2 w-2 rounded-full bg-zion-cyan-500" />
+        <span className="absolute inline-flex h-full w-full rounded-full bg-zion-cyan opacity-75" />
+        <span className="relative inline-flex h-2 w-2 rounded-full bg-zion-cyan" />
       </motion.span>
-      <span className="text-xs font-bold text-zion-cyan-400 tracking-wider">{label}</span>
+      <span className="text-xs font-bold text-zion-cyan tracking-wider">{label}</span>
     </span>
   );
 }

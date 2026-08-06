@@ -102,7 +102,7 @@ export default function EmissionMonitor() {
           </div>
           <div className="h-2.5 bg-white/4 rounded-full overflow-hidden">
             <div
-              className="h-full rounded-full bg-linear-to-r from-zion-gold/80 via-zion-gold-400 to-zion-gold-300 transition-all duration-1000"
+              className="h-full rounded-full bg-linear-to-r from-zion-gold/80 via-zion-gold to-zion-gold transition-all duration-1000"
               style={{ width: `${progressPct}%` }}
             />
           </div>
@@ -114,10 +114,10 @@ export default function EmissionMonitor() {
         {/* 2×2 metric cards */}
         <div className="grid grid-cols-2 gap-3">
           {[
-            { label: EmissionMonitorCopy.dailyEmission[cs ? 'cs' : 'en'], icon: TrendingUp, color: "text-zion-cyan-400", value: `${fmt(data.daily_emission)} ZION`, sub: `${data.base_reward_per_block} ZION × ${data.blocks_per_day.toLocaleString(locale)} ${EmissionMonitorCopy.blocks[cs ? 'cs' : 'en']}` },
-            { label: EmissionMonitorCopy.miningDuration[cs ? 'cs' : 'en'], icon: Timer, color: "text-zion-cyan-400", value: data.mining_horizon_label ?? (cs ? `~${Math.round(data.estimated_years_remaining)} let` : `~${Math.round(data.estimated_years_remaining)} years`), sub: `${EmissionMonitorCopy.full[cs ? 'cs' : 'en']}: ${data.estimated_full_emission_date}` },
-            { label: EmissionMonitorCopy.totalFees[cs ? 'cs' : 'en'], icon: Flame, color: "text-zion-gold-400", value: `${fmt(data.total_fees)} ZION`, sub: EmissionMonitorCopy.cumulativeNetworkFees[cs ? 'cs' : 'en'] },
-            { label: EmissionMonitorCopy.humanitarianTithe[cs ? 'cs' : 'en'], icon: Heart, color: "text-zion-purple-400", value: `${fmt(data.humanitarian.estimated_total)} ZION`, sub: cs ? `${(data.humanitarian.rate * 100).toFixed(0)}% všech odměn` : `${(data.humanitarian.rate * 100).toFixed(0)}% of all rewards` },
+            { label: EmissionMonitorCopy.dailyEmission[cs ? 'cs' : 'en'], icon: TrendingUp, color: "text-zion-cyan", value: `${fmt(data.daily_emission)} ZION`, sub: `${data.base_reward_per_block} ZION × ${data.blocks_per_day.toLocaleString(locale)} ${EmissionMonitorCopy.blocks[cs ? 'cs' : 'en']}` },
+            { label: EmissionMonitorCopy.miningDuration[cs ? 'cs' : 'en'], icon: Timer, color: "text-zion-cyan", value: data.mining_horizon_label ?? (cs ? `~${Math.round(data.estimated_years_remaining)} let` : `~${Math.round(data.estimated_years_remaining)} years`), sub: `${EmissionMonitorCopy.full[cs ? 'cs' : 'en']}: ${data.estimated_full_emission_date}` },
+            { label: EmissionMonitorCopy.totalFees[cs ? 'cs' : 'en'], icon: Flame, color: "text-zion-gold", value: `${fmt(data.total_fees)} ZION`, sub: EmissionMonitorCopy.cumulativeNetworkFees[cs ? 'cs' : 'en'] },
+            { label: EmissionMonitorCopy.humanitarianTithe[cs ? 'cs' : 'en'], icon: Heart, color: "text-zion-purple", value: `${fmt(data.humanitarian.estimated_total)} ZION`, sub: cs ? `${(data.humanitarian.rate * 100).toFixed(0)}% všech odměn` : `${(data.humanitarian.rate * 100).toFixed(0)}% of all rewards` },
           ].map((m) => (
             <div key={m.label} className="rounded-2xl bg-white/3 border border-white/6 p-4">
               <div className="flex items-center gap-2 mb-2">

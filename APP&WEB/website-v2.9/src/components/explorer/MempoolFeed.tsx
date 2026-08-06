@@ -97,17 +97,17 @@ export default function MempoolFeed() {
           href="/explorer/mempool"
           className="flex items-center gap-3 group"
         >
-          <Flame className="h-5 w-5 text-zion-gold-400 group-hover:text-zion-gold-300 transition-colors" />
+          <Flame className="h-5 w-5 text-zion-gold group-hover:text-zion-gold transition-colors" />
           <div>
             <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{MempoolFeedCopy.live[cs ? 'cs' : 'en']}</p>
-            <h3 className="text-lg font-semibold text-white group-hover:text-zion-gold-300 transition-colors">Mempool →</h3>
+            <h3 className="text-lg font-semibold text-white group-hover:text-zion-gold transition-colors">Mempool →</h3>
           </div>
         </Link>
         <div className="flex items-center gap-2">
           <motion.span
             animate={{ opacity: [0.4, 1, 0.4] }}
             transition={{ duration: 2, repeat: Infinity }}
-            className="inline-flex h-2 w-2 rounded-full bg-zion-cyan-400"
+            className="inline-flex h-2 w-2 rounded-full bg-zion-cyan"
           />
           <span className="text-xs text-gray-500">{MempoolFeedCopy.k15sRefresh[cs ? 'cs' : 'en']}</span>
         </div>
@@ -121,13 +121,13 @@ export default function MempoolFeed() {
         </div>
         <div className="zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
           <p className="text-xs text-gray-400">{MempoolFeedCopy.poolSize[cs ? 'cs' : 'en']}</p>
-          <p className="text-xl font-bold text-zion-cyan-400">
+          <p className="text-xl font-bold text-zion-cyan">
             {formatBytes(data?.pool_size_bytes ?? 0)}
           </p>
         </div>
         <div className="zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
           <p className="text-xs text-gray-400">{MempoolFeedCopy.fees[cs ? 'cs' : 'en']}</p>
-          <p className="text-xl font-bold text-zion-gold-400">
+          <p className="text-xl font-bold text-zion-gold">
             {(data?.total_fees ?? 0).toFixed(4)}
           </p>
         </div>
@@ -141,7 +141,7 @@ export default function MempoolFeed() {
           </div>
         )}
         {error && (
-          <p className="text-center text-sm text-zion-purple-400/80 py-4">{error}</p>
+          <p className="text-center text-sm text-zion-purple/80 py-4">{error}</p>
         )}
         {data && data.transactions.length === 0 && (
           <p className="text-center text-sm text-gray-500 py-4">
@@ -159,7 +159,7 @@ export default function MempoolFeed() {
             <div className="flex items-center justify-between mb-1">
               <Link
                 href={`/explorer/tx?hash=${encodeURIComponent(tx.tx_hash)}`}
-                className="flex items-center gap-1.5 font-mono text-xs text-zion-purple-300 hover:text-purple-200 transition-colors"
+                className="flex items-center gap-1.5 font-mono text-xs text-zion-purple hover:text-purple-200 transition-colors"
               >
                 <Hash className="h-3 w-3 text-gray-500" />
                 {truncate(tx.tx_hash)}
@@ -173,7 +173,7 @@ export default function MempoolFeed() {
               <span className="text-gray-400">
                 {formatBytes(tx.size)}
               </span>
-              <span className="text-zion-gold-400 font-semibold">
+              <span className="text-zion-gold font-semibold">
                 {tx.fee.toFixed(6)} ZION
               </span>
             </div>

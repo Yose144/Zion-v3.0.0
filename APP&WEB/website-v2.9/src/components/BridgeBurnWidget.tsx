@@ -230,7 +230,7 @@ export default function BridgeBurnWidget() {
     return (
       <div className="zion-rainbow-card p-6 space-y-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
         <div className="flex items-center gap-2">
-          <Flame className="h-5 w-5 text-zion-gold-400" />
+          <Flame className="h-5 w-5 text-zion-gold" />
           <h3 className="font-semibold text-white text-sm">{BridgeBurnWidgetCopy.burnWzionReceiveZionOnL1[cs ? 'cs' : 'en']}</h3>
         </div>
 
@@ -239,9 +239,9 @@ export default function BridgeBurnWidget() {
         </p>
 
         {!hasMetaMask && (
-          <div className="flex items-start gap-2 rounded-xl border border-zion-gold-500/30 bg-zion-gold-500/10 p-3">
-            <AlertCircle className="h-4 w-4 text-zion-gold-400 shrink-0 mt-0.5" />
-            <p className="text-xs text-zion-gold-300">
+          <div className="flex items-start gap-2 rounded-xl border border-zion-gold/30 bg-zion-gold/10 p-3">
+            <AlertCircle className="h-4 w-4 text-zion-gold shrink-0 mt-0.5" />
+            <p className="text-xs text-zion-gold">
               {BridgeBurnWidgetCopy.metamaskNotDetectedInstall[cs ? 'cs' : 'en']}
               <a href="https://metamask.io" target="_blank" rel="noreferrer" className="underline">
                 metamask.io
@@ -252,16 +252,16 @@ export default function BridgeBurnWidget() {
         )}
 
         {error && (
-          <div className="flex items-start gap-2 rounded-xl border border-zion-purple-500/30 bg-zion-purple-500/10 p-3">
-            <AlertCircle className="h-4 w-4 text-zion-purple-400 shrink-0 mt-0.5" />
-            <p className="text-xs text-zion-purple-300 wrap-break-word">{error}</p>
+          <div className="flex items-start gap-2 rounded-xl border border-zion-purple/30 bg-zion-purple/10 p-3">
+            <AlertCircle className="h-4 w-4 text-zion-purple shrink-0 mt-0.5" />
+            <p className="text-xs text-zion-purple wrap-break-word">{error}</p>
           </div>
         )}
 
         <button
           onClick={connect}
           disabled={!hasMetaMask || phase !== 'idle'}
-          className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-zion-gold-500/40 bg-zion-gold-500/20 px-5 py-3 text-sm font-semibold text-zion-gold-300 hover:bg-zion-gold-500/30 disabled:opacity-50 transition-colors"
+          className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-zion-gold/40 bg-zion-gold/20 px-5 py-3 text-sm font-semibold text-zion-gold hover:bg-zion-gold/30 disabled:opacity-50 transition-colors"
         >
           {phase === 'connecting' && <RefreshCw className="h-4 w-4 animate-spin" />}
           {phase === 'switching-chain' && <RefreshCw className="h-4 w-4 animate-spin" />}
@@ -277,7 +277,7 @@ export default function BridgeBurnWidget() {
     return (
       <div className="zion-rainbow-card p-6 space-y-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
         <div className="flex items-center gap-2">
-          <CheckCircle2 className="h-5 w-5 text-zion-cyan-400" />
+          <CheckCircle2 className="h-5 w-5 text-zion-cyan" />
           <h3 className="font-semibold text-white text-sm">{BridgeBurnWidgetCopy.burnSubmitted[cs ? 'cs' : 'en']}</h3>
         </div>
 
@@ -293,7 +293,7 @@ export default function BridgeBurnWidget() {
           <div>
             <span className="text-gray-500 block mb-1">TX hash</span>
             <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/30 px-3 py-2">
-              <code className="flex-1 font-mono text-xs text-zion-cyan-300 break-all">{txInfo.hash}</code>
+              <code className="flex-1 font-mono text-xs text-zion-cyan break-all">{txInfo.hash}</code>
               <button onClick={copyHash} className="shrink-0 rounded-lg border border-white/10 bg-white/5 p-1.5 hover:bg-white/10 transition-colors">
                 <Copy className="h-3 w-3 text-gray-400" />
               </button>
@@ -306,12 +306,12 @@ export default function BridgeBurnWidget() {
                 <ExternalLink className="h-3 w-3 text-gray-400" />
               </a>
             </div>
-            {copied && <p className="text-xs text-zion-cyan-400 mt-1">✓ {BridgeBurnWidgetCopy.copied[cs ? 'cs' : 'en']}</p>}
+            {copied && <p className="text-xs text-zion-cyan mt-1">✓ {BridgeBurnWidgetCopy.copied[cs ? 'cs' : 'en']}</p>}
           </div>
         </div>
 
         <p className="text-xs text-gray-400 leading-relaxed">
-          {BridgeBurnWidgetCopy.theRelayWillDetectThe[cs ? 'cs' : 'en']}<code className="text-zion-gold-300">BurnForBridge</code>{BridgeBurnWidgetCopy.eventAfter64EvmBlockConfirmati[cs ? 'cs' : 'en']}
+          {BridgeBurnWidgetCopy.theRelayWillDetectThe[cs ? 'cs' : 'en']}<code className="text-zion-gold">BurnForBridge</code>{BridgeBurnWidgetCopy.eventAfter64EvmBlockConfirmati[cs ? 'cs' : 'en']}
         </p>
 
         <button
@@ -340,7 +340,7 @@ export default function BridgeBurnWidget() {
     <div className="zion-rainbow-card p-6 space-y-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Flame className="h-5 w-5 text-zion-gold-400" />
+          <Flame className="h-5 w-5 text-zion-gold" />
           <h3 className="font-semibold text-white text-sm">{BridgeBurnWidgetCopy.burnWzionZionOnL1[cs ? 'cs' : 'en']}</h3>
         </div>
         <button
@@ -363,7 +363,7 @@ export default function BridgeBurnWidget() {
         </div>
         <div className="text-right">
           <p className="text-xs text-gray-500">{BridgeBurnWidgetCopy.wzionBalance[cs ? 'cs' : 'en']}</p>
-          <p className="font-mono text-sm font-semibold text-zion-gold-300">
+          <p className="font-mono text-sm font-semibold text-zion-gold">
             {phase === 'loading-balance' ? '…' : balance}
           </p>
         </div>
@@ -405,9 +405,9 @@ export default function BridgeBurnWidget() {
       </div>
 
       {error && (
-        <div className="flex items-start gap-2 rounded-xl border border-zion-purple-500/30 bg-zion-purple-500/10 p-3">
-          <AlertCircle className="h-4 w-4 text-zion-purple-400 shrink-0 mt-0.5" />
-          <p className="text-xs text-zion-purple-300 wrap-break-word">{error}</p>
+        <div className="flex items-start gap-2 rounded-xl border border-zion-purple/30 bg-zion-purple/10 p-3">
+          <AlertCircle className="h-4 w-4 text-zion-purple shrink-0 mt-0.5" />
+          <p className="text-xs text-zion-purple wrap-break-word">{error}</p>
         </div>
       )}
 
@@ -423,7 +423,7 @@ export default function BridgeBurnWidget() {
             href={`${BRIDGE_CONTRACTS.explorer_base}${BRIDGE_CONTRACTS.wzion_address}`}
             target="_blank"
             rel="noreferrer"
-            className="text-zion-cyan-400 hover:text-zion-cyan-300 inline-flex items-center gap-1"
+            className="text-zion-cyan hover:text-zion-cyan inline-flex items-center gap-1"
           >
             BaseScan <ExternalLink className="h-3 w-3" />
           </a>
@@ -434,7 +434,7 @@ export default function BridgeBurnWidget() {
       <button
         onClick={burn}
         disabled={isBusy || !amount || !l1Address || amountFloat <= 0}
-        className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-zion-gold-500/40 bg-zion-gold-500/20 px-5 py-3 text-sm font-semibold text-zion-gold-300 hover:bg-zion-gold-500/30 disabled:opacity-40 transition-colors"
+        className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-zion-gold/40 bg-zion-gold/20 px-5 py-3 text-sm font-semibold text-zion-gold hover:bg-zion-gold/30 disabled:opacity-40 transition-colors"
       >
         {isBusy ? (
           <>

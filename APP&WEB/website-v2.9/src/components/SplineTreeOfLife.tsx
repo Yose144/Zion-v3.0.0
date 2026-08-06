@@ -316,7 +316,7 @@ export default function SplineTreeOfLife() {
           </p>
           <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
             Tree of{' '}
-            <span className="bg-linear-to-r from-zion-gold-300 via-zion-gold-400 to-yellow-200 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-zion-gold via-zion-gold to-yellow-200 bg-clip-text text-transparent">
               Life
             </span>
           </h2>

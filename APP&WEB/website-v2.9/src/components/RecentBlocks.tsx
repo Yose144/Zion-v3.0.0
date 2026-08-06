@@ -135,10 +135,10 @@ export default function RecentBlocks() {
 
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <User className="w-4 h-4 text-zion-cyan-400" />
+                    <User className="w-4 h-4 text-zion-cyan" />
                     <span className="text-sm text-gray-400">{RecentBlocksCopy.transactions[cs ? 'cs' : 'en']}</span>
                   </div>
-                  <div className="text-sm text-zion-cyan-400">
+                  <div className="text-sm text-zion-cyan">
                     {block.transactions} tx
                   </div>
                 </div>
