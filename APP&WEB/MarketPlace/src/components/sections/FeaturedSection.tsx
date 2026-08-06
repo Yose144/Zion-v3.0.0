@@ -1,19 +1,27 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import ItemCard, { type ArtifactCardData } from '@/components/ItemCard';
+import { getItems, type ItemsResponse } from '@/lib/market-api';
 import { useLangT } from '@/lib/useTranslation';
-
-const featured: ArtifactCardData[] = [
-  { id: '1', name: 'Tree of Life Avatar', image: '', collection: 'OASIS Genesis', rarity: 'mythic', price: '2,500', listingType: 'fixed' },
-  { id: '2', name: 'Warp Gate Key', image: '', collection: 'OASIS Quest', rarity: 'legendary', price: '800', listingType: 'fixed' },
-  { id: '3', name: 'Galaxy Core Shard', image: '', collection: 'OASIS Genesis', rarity: 'epic', price: '350', listingType: 'fixed' },
-  { id: '4', name: 'Ship HUD Mk-III', image: '', collection: 'OASIS Ships', rarity: 'rare', price: '120', listingType: 'fixed' },
-];
 
 export default function FeaturedSection() {
   const { t } = useLangT();
+  const [featured, setFeatured] = useState<ArtifactCardData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    getItems({ sort: 'recent', page: 1, pageSize: 4 }).then((res: ItemsResponse | null) => {
+      if (cancelled) return;
+      setFeatured(res?.data ?? []);
+      setLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
   return (
     <section>
       <div className="flex items-center justify-between mb-6">
@@ -26,11 +34,22 @@ export default function FeaturedSection() {
           <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
         </Link>
       </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {featured.map((item) => (
-          <ItemCard key={item.id} item={item} />
-        ))}
-      </div>
+
+      {loading ? (
+        <div className="zion-section p-12 text-center">
+          <div className="w-8 h-8 border-2 border-rasta-gold/30 border-t-rasta-gold rounded-full animate-spin mx-auto" />
+        </div>
+      ) : featured.length === 0 ? (
+        <div className="zion-section p-8 text-center text-sm text-gray-500">
+          {t('explore.emptyTitle')}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {featured.map((item) => (
+            <ItemCard key={item.id} item={item} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

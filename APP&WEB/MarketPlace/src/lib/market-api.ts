@@ -10,6 +10,7 @@ export interface ItemDetailData extends ArtifactCardData {
   quantity?: number;
   properties: { trait: string; value: string }[];
   history: { event: string; price: string; from: string; time: string }[];
+  externalUrl?: string;
 }
 
 export interface ApiItem {
@@ -58,6 +59,22 @@ export interface ItemsFilters {
   pageSize?: number;
 }
 
+function getOasisUrl(item: ApiItem): string {
+  const name = encodeURIComponent(item.name);
+  switch (item.category) {
+    case 'avatar':
+      return `https://oasis.zionterranova.com/avatars?search=${name}`;
+    case 'quest_item':
+      return `https://oasis.zionterranova.com/quests?search=${name}`;
+    case 'golden_egg':
+      return `https://oasis.zionterranova.com/golden-egg`;
+    case 'territory':
+      return `https://oasis.zionterranova.com/territories?search=${name}`;
+    default:
+      return 'https://oasis.zionterranova.com';
+  }
+}
+
 function toDetailData(item: ApiItem): ItemDetailData {
   const activeListing = item.listings?.find((l) => l.status === 'active');
   const listingType = activeListing
@@ -104,6 +121,7 @@ function toDetailData(item: ApiItem): ItemDetailData {
     quantity: activeListing?.quantity,
     properties,
     history,
+    externalUrl: getOasisUrl(item),
   };
 }
 

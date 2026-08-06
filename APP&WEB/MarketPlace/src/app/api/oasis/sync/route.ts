@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
               description: avatar.subtitle,
               rarity: avatar.rarity.toLowerCase(),
               source: 'oasis',
-              imageUri: '',
+              imageUri: avatar.image_url ?? '',
               creator: 'oasis-game',
               totalSupply: 1,
               circulatingSupply: 1,
@@ -59,6 +59,7 @@ export async function GET(req: NextRequest) {
               name: avatar.name,
               description: avatar.subtitle,
               rarity: avatar.rarity.toLowerCase(),
+              imageUri: avatar.image_url ?? '',
             },
           });
           count++;
@@ -87,7 +88,7 @@ export async function GET(req: NextRequest) {
               description: quest.description,
               rarity: 'rare',
               source: 'oasis',
-              imageUri: '',
+              imageUri: quest.image_url ?? '',
               creator: 'oasis-game',
               totalSupply: 1,
               circulatingSupply: 1,
@@ -95,6 +96,7 @@ export async function GET(req: NextRequest) {
             update: {
               name: `Quest: ${quest.title}`,
               description: quest.description,
+              imageUri: quest.image_url ?? '',
             },
           });
           count++;
@@ -123,7 +125,7 @@ export async function GET(req: NextRequest) {
               description: `Rank ${tier.rank}: ${tier.zion} ZION + ${tier.flowers} FLOWERS. ${tier.nft_reward}`,
               rarity: tier.rank <= 3 ? 'mythic' : tier.rank <= 10 ? 'legendary' : 'epic',
               source: 'oasis',
-              imageUri: '',
+              imageUri: tier.image_url ?? '',
               creator: 'oasis-game',
               totalSupply: 1,
               circulatingSupply: 1,
@@ -131,6 +133,7 @@ export async function GET(req: NextRequest) {
             update: {
               name: `${tier.title} — Golden Egg Prize`,
               description: `Rank ${tier.rank}: ${tier.zion} ZION + ${tier.flowers} FLOWERS. ${tier.nft_reward}`,
+              imageUri: tier.image_url ?? '',
             },
           });
           count++;
@@ -159,7 +162,7 @@ export async function GET(req: NextRequest) {
               description: territory.description,
               rarity: territory.defense_power > 500 ? 'legendary' : territory.defense_power > 100 ? 'rare' : 'uncommon',
               source: 'oasis',
-              imageUri: '',
+              imageUri: territory.image_url ?? '',
               creator: 'oasis-game',
               totalSupply: 1,
               circulatingSupply: 1,
@@ -167,6 +170,7 @@ export async function GET(req: NextRequest) {
             update: {
               name: `Territory: ${territory.name}`,
               description: territory.description,
+              imageUri: territory.image_url ?? '',
             },
           });
           count++;

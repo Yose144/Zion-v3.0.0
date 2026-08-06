@@ -3,36 +3,29 @@
 import { useParams } from 'next/navigation';
 import { useState, useEffect, useMemo } from 'react';
 import { useAccount } from 'wagmi';
-import { Zap, Coins, Lock, Copy, Check } from 'lucide-react';
+import { Zap, Coins, Lock, Copy, Check, ExternalLink, SearchX } from 'lucide-react';
 import { ZION_BRIDGE_L1_VAULT } from '@/lib/contracts';
 import { getItem, type ItemDetailData } from '@/lib/market-api';
 import { useBuyFixed, useBid, useApproveWZION, useWZIONAllowance, priceToWei } from '@/hooks/useMarket';
 import { useLangT } from '@/lib/useTranslation';
+import { ArtifactPlaceholder } from '@/components/ArtifactPlaceholder';
 
-const mockItem: ItemDetailData = {
-  id: '1',
-  name: 'Tree of Life Avatar',
-  description: 'A sacred avatar born from the Tree of Life in the OASIS Genesis event. Grants the bearer enhanced wisdom stats and unique visual aura in-game. Only 100 will ever be minted.',
-  collection: 'OASIS Genesis',
-  rarity: 'mythic',
+// No mock data — only real OASIS / marketplace artifacts
+
+const EMPTY_ITEM: ItemDetailData = {
+  id: '',
+  name: '',
   image: '',
-  price: '2,500',
-  listingType: 'fixed',
-  tokenId: '42',
+  rarity: 'common',
+  collection: '',
+  category: '',
+  description: '',
+  tokenId: '',
   contractAddress: '',
-  supply: '100',
-  owner: '0x1234…abcd',
-  properties: [
-    { trait: 'Origin', value: 'Genesis Event' },
-    { trait: 'Class', value: 'Avatar' },
-    { trait: 'Wisdom Boost', value: '+25%' },
-    { trait: 'Aura', value: 'Emerald Glow' },
-    { trait: 'Tradeable', value: 'Yes' },
-  ],
-  history: [
-    { event: 'Listed', price: '2,500 wZION', from: '0x1234…abcd', time: '2h ago' },
-    { event: 'Minted', price: '—', from: 'OASIS Quest', time: '5d ago' },
-  ],
+  supply: '',
+  owner: '',
+  properties: [],
+  history: [],
 };
 
 function getEventLabel(event: string, t: (path: string, params?: Record<string, string | number>) => string) {
@@ -57,7 +50,7 @@ export default function ItemDetailPage() {
   const [item, setItem] = useState<ItemDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const { t } = useLangT();
-  const display = item ?? mockItem;
+  const display = item ?? EMPTY_ITEM;
   const price = display.price ?? '';
 
   const listingId = useMemo(() => {
@@ -87,7 +80,7 @@ export default function ItemDetailPage() {
     setLoading(true);
     getItem(params.id).then((data) => {
       if (cancelled) return;
-      setItem(data ?? mockItem);
+      setItem(data);
       setLoading(false);
     });
     return () => { cancelled = true; };
@@ -128,6 +121,19 @@ export default function ItemDetailPage() {
     );
   }
 
+  if (!item) {
+    return (
+      <div className="zion-section p-16 text-center">
+        <SearchX className="w-16 h-16 mx-auto mb-4 opacity-30" />
+        <div className="text-gray-500 mb-1">{t('item.notFoundTitle')}</div>
+        <div className="text-xs text-gray-600 mb-6">{t('item.notFoundSubtitle')}</div>
+        <a href="/explore" className="zion-button-primary inline-block">
+          {t('item.notFoundCta')}
+        </a>
+      </div>
+    );
+  }
+
   const category = display.collection ?? display.category ?? t('item.fallbackCategory');
 
   return (
@@ -149,7 +155,9 @@ export default function ItemDetailPage() {
         >
           <div className="aspect-square rounded-xl overflow-hidden artifact-placeholder flex items-center justify-center relative">
             {imgError || !display.image ? (
-              <span className="text-9xl text-gradient font-black font-display relative z-10">Z</span>
+              <div className="relative z-10 opacity-90">
+                <ArtifactPlaceholder category={display.category} rarity={display.rarity} size={128} />
+              </div>
             ) : (
               <img
                 src={display.image}
@@ -174,6 +182,17 @@ export default function ItemDetailPage() {
               <span className="text-xs text-gray-500 font-mono">
                 {t('item.tokenSupply', { tokenId: display.tokenId, supply: display.supply })}
               </span>
+              {display.externalUrl && (
+                <a
+                  href={display.externalUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-rasta-gold hover:underline"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  {t('item.viewInOasis')}
+                </a>
+              )}
             </div>
           </div>
 

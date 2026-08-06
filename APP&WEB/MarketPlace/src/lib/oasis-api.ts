@@ -28,6 +28,8 @@ export interface AvatarDef {
   consciousness_level_name: string;
   key: string;
   rarity: string;
+  image_url?: string;
+  market_url?: string;
 }
 
 export interface QuestDef {
@@ -38,6 +40,8 @@ export interface QuestDef {
   description: string;
   xp_reward: number;
   min_consciousness_level: number;
+  image_url?: string;
+  market_url?: string;
 }
 
 export interface QuestProgress {
@@ -55,6 +59,8 @@ export interface PrizeTier {
   percentage: number;
   nft_reward: string;
   unlock_condition: string;
+  image_url?: string;
+  market_url?: string;
 }
 
 export interface PrizeConfig {
@@ -79,6 +85,8 @@ export interface Territory {
   capacity: number;
   active_miners: string[];
   last_contested: number;
+  image_url?: string;
+  market_url?: string;
 }
 
 export interface TerritoryMap {
@@ -156,8 +164,8 @@ export function avatarToArtifactMetadata(avatar: AvatarDef) {
   return {
     name: avatar.name,
     description: `${avatar.subtitle} — ${avatar.role}. ${avatar.teaching}. Ability: ${avatar.ability}. Location: ${avatar.location}.`,
-    image: '',  // TODO: generate or fetch avatar image
-    external_url: `https://oasis.zionterranova.com/avatars`,
+    image: avatar.image_url ?? '',
+    external_url: avatar.market_url ?? `https://oasis.zionterranova.com/avatars`,
     attributes: [
       { trait_type: 'Ray', value: avatar.ray },
       { trait_type: 'Role', value: avatar.role },
@@ -186,8 +194,8 @@ export function questToArtifactMetadata(quest: QuestDef, xpReward: number) {
   return {
     name: `Quest: ${quest.title}`,
     description: `${quest.description}. Avatar: ${quest.avatar_name}. XP reward: ${xpReward}. Min consciousness level: ${quest.min_consciousness_level}.`,
-    image: '',
-    external_url: `https://oasis.zionterranova.com/quests`,
+    image: quest.image_url ?? '',
+    external_url: quest.market_url ?? `https://oasis.zionterranova.com/quests`,
     attributes: [
       { trait_type: 'Quest ID', value: quest.quest_id },
       { trait_type: 'Avatar', value: quest.avatar_name },
@@ -212,8 +220,8 @@ export function prizeTierToArtifactMetadata(tier: PrizeTier) {
   return {
     name: `${tier.title} — Golden Egg Prize`,
     description: `Rank ${tier.rank} prize: ${tier.zion} ZION + ${tier.flowers} FLOWERS. NFT reward: ${tier.nft_reward}. Unlock: ${tier.unlock_condition}.`,
-    image: '',
-    external_url: `https://oasis.zionterranova.com/golden-egg`,
+    image: tier.image_url ?? '',
+    external_url: tier.market_url ?? `https://oasis.zionterranova.com/golden-egg`,
     attributes: [
       { trait_type: 'Rank', value: tier.rank },
       { trait_type: 'ZION Reward', value: tier.zion },
@@ -238,8 +246,8 @@ export function territoryToArtifactMetadata(territory: Territory) {
   return {
     name: `Territory: ${territory.name}`,
     description: `${territory.description}. Region: ${territory.region}. Mining bonus: +${territory.mining_bonus}%. XP bonus: +${territory.xp_bonus}%. Defense power: ${territory.defense_power}. Capacity: ${territory.capacity}.`,
-    image: '',
-    external_url: `https://oasis.zionterranova.com`,
+    image: territory.image_url ?? '',
+    external_url: territory.market_url ?? `https://oasis.zionterranova.com/territories`,
     attributes: [
       { trait_type: 'Region', value: territory.region },
       { trait_type: 'Mining Bonus', value: `+${territory.mining_bonus}%` },
