@@ -52,7 +52,7 @@ export default function AdminShippingPage() {
           <tbody>
             {data?.orders.map((order) => (
               <tr key={order.id} className="border-b border-white/5 hover:bg-white/5">
-                <td className="p-3 font-mono text-oasis-cyan">{order.orderId}</td>
+                <td className="p-3 font-mono text-rasta-green">{order.orderId}</td>
                 <td className="p-3">{order.customerName}</td>
                 <td className="p-3">{getShippingLabel(order.shipping, t)}</td>
                 <td className="p-3">
@@ -66,7 +66,7 @@ export default function AdminShippingPage() {
                     />
                     <button
                       onClick={() => handleSave(order.id)}
-                      className="px-3 py-1.5 rounded bg-oasis-cyan/20 text-oasis-cyan hover:bg-oasis-cyan/30 text-sm"
+                      className="px-3 py-1.5 rounded bg-rasta-gold/20 text-rasta-gold hover:bg-rasta-gold/30 text-sm"
                     >
                       {t('admin.save')}
                     </button>

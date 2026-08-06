@@ -100,7 +100,7 @@ export default function ShopProductModal({ product, onClose }: ShopProductModalP
 
           {/* Info */}
           <div className="flex flex-col">
-            <div className="text-xs text-oasis-cyan font-bold uppercase tracking-wider mb-1">
+            <div className="text-xs text-rasta-gold font-bold uppercase tracking-wider mb-1">
               {categoryLabel}
             </div>
             <h2 className="text-2xl font-black font-display mb-3">{product.name}</h2>
@@ -109,15 +109,15 @@ export default function ShopProductModal({ product, onClose }: ShopProductModalP
             <div className="flex flex-wrap gap-3 text-sm text-gray-300 mb-4">
               {product.size && (
                 <span className="inline-flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg">
-                  <Ruler className="w-4 h-4 text-oasis-cyan" /> {product.size}
+                  <Ruler className="w-4 h-4 text-rasta-gold" /> {product.size}
                 </span>
               )}
               <span className="inline-flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg">
-                <Box className="w-4 h-4 text-oasis-cyan" />
+                <Box className="w-4 h-4 text-rasta-gold" />
                 {product.inStock ? t('shop.inStockModal', { stock: product.stock }) : t('shop.outOfStock')}
               </span>
               {tokens > 0 && (
-                <span className="inline-flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg text-oasis-gold">
+                <span className="inline-flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg text-rasta-gold">
                   <Coins className="w-4 h-4" /> {t('shop.tokensModal', { amount: tokens })}
                 </span>
               )}
@@ -128,7 +128,7 @@ export default function ShopProductModal({ product, onClose }: ShopProductModalP
                 {capabilities.map((c, i) => (
                   <span
                     key={i}
-                    className="inline-flex items-center gap-2 text-xs font-semibold bg-oasis-purple/10 text-oasis-purple px-3 py-1.5 rounded-full border border-oasis-purple/20"
+                    className="inline-flex items-center gap-2 text-xs font-semibold bg-rasta-red/10 text-rasta-red px-3 py-1.5 rounded-full border border-rasta-red/20"
                   >
                     <c.icon className="w-3 h-3" /> {c.label}
                   </span>

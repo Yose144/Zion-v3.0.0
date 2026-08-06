@@ -56,7 +56,7 @@ export default function AdminLoginPage() {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           placeholder={t('admin.placeholderUsername')}
-          className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-3 text-sm mb-4 focus:border-oasis-cyan focus:outline-none"
+          className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-3 text-sm mb-4 focus:border-rasta-gold focus:outline-none"
         />
 
         <input
@@ -64,13 +64,13 @@ export default function AdminLoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder={t('admin.placeholderPassword')}
-          className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-3 text-sm mb-4 focus:border-oasis-cyan focus:outline-none"
+          className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-3 text-sm mb-4 focus:border-rasta-gold focus:outline-none"
         />
 
         <button
           type="submit"
           disabled={loading || !username || !password}
-          className="w-full py-3 rounded-lg bg-gradient-to-r from-oasis-cyan to-oasis-purple text-black font-bold text-sm hover:opacity-90 disabled:opacity-40"
+          className="w-full py-3 rounded-lg bg-gradient-to-r from-rasta-gold to-rasta-green text-black font-bold text-sm hover:opacity-90 disabled:opacity-40"
         >
           {loading ? t('admin.verifying') : t('admin.login')}
         </button>

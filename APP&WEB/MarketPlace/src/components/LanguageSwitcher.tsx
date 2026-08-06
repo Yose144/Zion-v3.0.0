@@ -16,7 +16,7 @@ export default function LanguageSwitcher({ variant = 'zion' }: { variant?: 'zion
       title={lang === 'cs' ? tr('nav', 'switchToEnglish', lang) : tr('nav', 'switchToCzech', lang)}
       aria-label={lang === 'cs' ? tr('nav', 'switchToEnglish', lang) : tr('nav', 'switchToCzech', lang)}
     >
-      <Globe className="w-3.5 h-3.5 text-oasis-gold" />
+      <Globe className="w-3.5 h-3.5 text-rasta-gold" />
       <span>{lang === 'cs' ? tr('nav', 'langCs', lang) : tr('nav', 'langEn', lang)}</span>
     </button>
   );

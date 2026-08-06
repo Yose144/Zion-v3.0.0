@@ -168,7 +168,7 @@ export default function CreatePage() {
       </div>
 
       {error && (
-        <div className="p-4 rounded-xl bg-oasis-rose/10 border border-oasis-rose/20 text-sm text-oasis-rose">
+        <div className="p-4 rounded-xl bg-rasta-red/10 border border-rasta-red/20 text-sm text-rasta-red">
           {error}
         </div>
       )}
@@ -179,10 +179,10 @@ export default function CreatePage() {
         {/* Asset */}
         <section
           className="zion-rainbow-card p-6 space-y-5"
-          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
         >
           <h2 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
-            <span className="w-1 h-3 rounded-full bg-oasis-cyan" />
+            <span className="w-1 h-3 rounded-full bg-rasta-gold" />
             {t('create.sectionAsset')}
           </h2>
 
@@ -262,7 +262,7 @@ export default function CreatePage() {
         <section className="zion-section p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
-              <span className="w-1 h-3 rounded-full bg-oasis-purple" />
+              <span className="w-1 h-3 rounded-full bg-rasta-red" />
               {t('create.sectionProperties')}
             </h2>
             <button type="button" onClick={addTrait} className="zion-button-ghost text-xs px-3 py-1.5">
@@ -287,7 +287,7 @@ export default function CreatePage() {
                 <button
                   type="button"
                   onClick={() => removeTrait(i)}
-                  className="zion-button-icon zion-button-ghost text-oasis-rose"
+                  className="zion-button-icon zion-button-ghost text-rasta-red"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -299,7 +299,7 @@ export default function CreatePage() {
         {/* Listing */}
         <section className="zion-section p-6 space-y-5">
           <h2 className="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
-            <span className="w-1 h-3 rounded-full bg-oasis-gold" />
+            <span className="w-1 h-3 rounded-full bg-rasta-gold" />
             {t('create.sectionListing')}
           </h2>
           <div className="flex gap-2">
@@ -310,7 +310,7 @@ export default function CreatePage() {
                 onClick={() => setListingType(t.value)}
                 className={`flex-1 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
                   listingType === t.value
-                    ? 'bg-oasis-purple/20 text-white border border-oasis-purple/40'
+                    ? 'bg-rasta-red/20 text-white border border-rasta-red/40'
                     : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'
                 }`}
               >

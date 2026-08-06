@@ -5,15 +5,15 @@
 /* ═══════════════════════════════════════════════════════════════
    ZION Theme Design System — OASIS MarketPlace
    Aligned with website-v2.9 design tokens for unified ZION visual.
-   Core: Gold #ffd700 · Purple #9333ea · Cyan #06b6d4 · Blue #1e3a8a
+   Core: Gold #fcd116 · Purple #e41e2b · Cyan #078930 · Blue #0f172a
    ═══════════════════════════════════════════════════════════════ */
 
 @layer base {
   :root {
-    --color-zion-gold: 255 215 0;
-    --color-zion-purple: 147 51 234;
-    --color-zion-cyan: 6 182 212;
-    --color-zion-blue: 30 58 138;
+    --color-zion-gold: 252 209 22;
+    --color-zion-purple: 228 30 43;
+    --color-zion-cyan: 7 137 48;
+    --color-zion-blue: 13 13 13;
 
     --zion-radius-sm: 0.85rem;
     --zion-radius-md: 1.2rem;
@@ -27,15 +27,15 @@
     --zion-surface-hover: rgba(255, 255, 255, 0.075);
 
     --zion-shadow-panel: 0 24px 90px rgba(0, 0, 0, 0.42);
-    --zion-shadow-glow: 0 0 42px rgba(147, 51, 234, 0.28);
+    --zion-shadow-glow: 0 0 42px rgba(228, 30, 43, 0.28);
   }
 
   body {
-    /* Maintenance-page background — radial purple/cyan glows over deep navy */
+    /* Rasta background — red/green/gold glows over deep black */
     background:
-      radial-gradient(circle at 18% -8%, rgba(147, 51, 234, 0.18), transparent 34rem),
-      radial-gradient(circle at 86% 8%, rgba(6, 182, 212, 0.12), transparent 30rem),
-      radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+      radial-gradient(circle at 18% -8%, rgba(228, 30, 43, 0.12), transparent 34rem),
+      radial-gradient(circle at 86% 8%, rgba(7, 137, 48, 0.09), transparent 30rem),
+      radial-gradient(ellipse at bottom, #0f0f0f 0%, #000 100%);
     min-height: 100vh;
     color: #fff;
     overflow-x: hidden;
@@ -82,9 +82,9 @@
     z-index: 1;
     opacity: 0.5;
   }
-  .orb-gold { top: -10%; left: -8%; width: 20rem; height: 20rem; background: rgba(255, 215, 0, 0.08); }
-  .orb-purple { top: 15%; right: -12%; width: 22rem; height: 22rem; background: rgba(147, 51, 234, 0.08); }
-  .orb-cyan { bottom: -15%; left: 30%; width: 20rem; height: 20rem; background: rgba(6, 182, 212, 0.07); }
+  .orb-gold { top: -10%; left: -8%; width: 20rem; height: 20rem; background: rgba(252, 209, 22, 0.08); }
+  .orb-purple { top: 15%; right: -12%; width: 22rem; height: 22rem; background: rgba(228, 30, 43, 0.08); }
+  .orb-cyan { bottom: -15%; left: 30%; width: 20rem; height: 20rem; background: rgba(7, 137, 48, 0.07); }
 
   /* ── Starfield canvas — gold warp stars (maintenance-page style) ── */
   .starfield-canvas {
@@ -99,12 +99,12 @@
   /* ── GlassPanel — gradient border card with inner glow ── */
   .glass-panel {
     @apply rounded-2xl p-[1px] transition-all duration-300;
-    background: linear-gradient(135deg, rgba(6, 182, 212, 0.25), rgba(147, 51, 234, 0.25), rgba(255, 215, 0, 0.15));
+    background: linear-gradient(135deg, rgba(228, 30, 43, 0.25), rgba(252, 209, 22, 0.25), rgba(7, 137, 48, 0.25));
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   }
   .glass-panel:hover {
-    background: linear-gradient(135deg, rgba(6, 182, 212, 0.4), rgba(147, 51, 234, 0.4), rgba(255, 215, 0, 0.25));
-    box-shadow: 0 12px 40px rgba(147, 51, 234, 0.15);
+    background: linear-gradient(135deg, rgba(228, 30, 43, 0.4), rgba(252, 209, 22, 0.4), rgba(7, 137, 48, 0.25));
+    box-shadow: 0 12px 40px rgba(252, 209, 22, 0.15);
     transform: translateY(-2px);
   }
   .glass-panel-inner {
@@ -117,11 +117,13 @@
   .card {
     @apply border border-zion-border rounded-2xl backdrop-blur-sm transition-all duration-300;
     background: rgba(7, 10, 20, 0.82);
+    border-color: rgba(252, 209, 22, 0.08);
   }
   .zion-section:hover,
   .card:hover {
     @apply border-zion-border/80;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    border-color: rgba(252, 209, 22, 0.25);
+    box-shadow: 0 4px 20px rgba(252, 209, 22, 0.08);
   }
 
   /* ── ZION Tile — soft inner tile for grids and sub-panels ── */
@@ -134,7 +136,7 @@
     transition: border-color 180ms ease, background-color 180ms ease;
   }
   .zion-tile:hover {
-    border-color: var(--zion-border-strong);
+    border-color: rgba(252, 209, 22, 0.35);
     background-color: rgba(255, 255, 255, 0.075);
   }
 
@@ -142,24 +144,24 @@
   .card-glow {
     @apply card;
     box-shadow:
-      0 0 0 1px rgba(6, 182, 212, 0.1),
-      0 4px 20px rgba(6, 182, 212, 0.08),
+      0 0 0 1px rgba(252, 209, 22, 0.1),
+      0 4px 20px rgba(252, 209, 22, 0.08),
       inset 0 1px 0 rgba(255, 255, 255, 0.03);
   }
   .card-glow:hover {
     box-shadow:
-      0 0 0 1px rgba(6, 182, 212, 0.2),
-      0 8px 30px rgba(6, 182, 212, 0.12),
+      0 0 0 1px rgba(252, 209, 22, 0.2),
+      0 8px 30px rgba(252, 209, 22, 0.12),
       inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 
   /* ═══════════════════════════════════════════════════════════════
      ZION Rainbow Card — color-parameterized via --rc CSS variable
      Pattern from docs/3.0.3/ZIONTHEME.md + maintenance.html .card
-     Usage: <div class="zion-rainbow-card" style="--rc: 16, 185, 129">
+     Usage: <div class="zion-rainbow-card" style="--rc: 7, 137, 48">
      ═══════════════════════════════════════════════════════════════ */
   .zion-rainbow-card {
-    --rc: 16, 185, 129; /* default emerald */
+    --rc: 252, 209, 22; /* default rasta gold */
     position: relative;
     overflow: hidden;
     border-radius: 1.5rem;
@@ -209,7 +211,7 @@
 
   /* Inner sub-card variant — smaller, for grid items */
   .zion-rainbow-sub {
-    --rc: 16, 185, 129;
+    --rc: 252, 209, 22;
     position: relative;
     overflow: hidden;
     border-radius: 1rem;
@@ -238,6 +240,7 @@
     border-radius: clamp(1rem, 2.5vw, 1.5rem);
     border: 1px solid var(--zion-border-subtle);
     background:
+      radial-gradient(circle at top left, rgba(252, 209, 22, 0.1), transparent 28rem),
       linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.028)),
       rgba(7, 10, 20, 0.88);
     backdrop-filter: blur(22px) saturate(140%);
@@ -247,7 +250,7 @@
   .zion-glass {
     border: 1px solid var(--zion-border-subtle);
     background:
-      radial-gradient(circle at top left, rgba(var(--color-zion-gold), 0.12), transparent 28rem),
+      radial-gradient(circle at top left, rgba(252, 209, 22, 0.14), transparent 28rem),
       linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
       rgba(7, 10, 20, 0.85);
     backdrop-filter: blur(24px) saturate(150%);
@@ -256,21 +259,21 @@
   /* ── ZION gradient text ── */
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(90deg, #06b6d4, #9333ea, #ffd700);
+    background-image: linear-gradient(90deg, #e41e2b, #fcd116, #078930);
     background-size: 200% auto;
   }
   .text-gradient-gold {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(90deg, #ffd700, #f59e0b, #ffd700);
+    background-image: linear-gradient(90deg, #fcd116, #f7e47a, #fcd116);
     background-size: 200% auto;
   }
   .text-gradient-cyan {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(90deg, #06b6d4, #22d3ee);
+    background-image: linear-gradient(90deg, #078930, #34d399);
   }
   .text-gradient-animated {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(90deg, #06b6d4, #9333ea, #ffd700, #06b6d4);
+    background-image: linear-gradient(90deg, #e41e2b, #fcd116, #078930, #e41e2b);
     background-size: 300% auto;
     animation: gradientX 6s ease infinite;
   }
@@ -279,14 +282,14 @@
   .zion-button-primary,
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white transition-all duration-200 relative overflow-hidden;
-    background: linear-gradient(110deg, #ffd700, #9333ea 52%, #06b6d4);
+    background: linear-gradient(110deg, #e41e2b, #fcd116 48%, #078930);
     background-size: 200% auto;
-    box-shadow: 0 18px 45px rgba(147, 51, 234, 0.34);
+    box-shadow: 0 18px 45px rgba(252, 209, 22, 0.34);
   }
   .zion-button-primary:hover,
   .btn-primary:hover {
     background-position: right center;
-    box-shadow: 0 24px 60px rgba(147, 51, 234, 0.44);
+    box-shadow: 0 24px 60px rgba(252, 209, 22, 0.44);
     transform: translateY(-1px);
     filter: saturate(1.08);
   }
@@ -304,10 +307,12 @@
   .zion-button-secondary,
   .btn-secondary {
     @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white bg-white/5 border border-white/10 transition-all duration-200;
+    border-color: rgba(252, 209, 22, 0.18);
   }
   .zion-button-secondary:hover,
   .btn-secondary:hover {
     @apply bg-white/10 border-white/20;
+    border-color: rgba(252, 209, 22, 0.4);
     transform: translateY(-1px);
   }
   .zion-button-secondary:disabled,
@@ -320,6 +325,11 @@
   .zion-button-ghost,
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-gray-300 bg-white/5 border border-white/10 transition-all hover:bg-white/10;
+  }
+  .zion-button-ghost:hover,
+  .btn-ghost:hover {
+    border-color: rgba(252, 209, 22, 0.4);
+    color: #fff;
   }
   .zion-button-ghost:hover,
   .btn-ghost:hover {
@@ -337,14 +347,22 @@
     align-items: center;
     gap: 0.5rem;
     border-radius: 9999px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: linear-gradient(90deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.035));
+    border: 1px solid rgba(252, 209, 22, 0.25);
+    background: linear-gradient(90deg, rgba(228, 30, 43, 0.1), rgba(252, 209, 22, 0.08), rgba(7, 137, 48, 0.1));
     padding: 0.3rem 0.8rem;
     font-size: 0.65rem;
     font-weight: 600;
     letter-spacing: 0.28em;
     text-transform: uppercase;
-    color: rgb(209 213 219);
+    color: rgb(252, 209, 22);
+  }
+  .zion-kicker::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--rasta-gold);
+    box-shadow: 0 0 6px var(--rasta-gold);
   }
 
   /* ── ZION badge — colored pill ── */
@@ -363,44 +381,44 @@
     color: rgba(255, 255, 255, 0.8);
   }
   .zion-badge-gold {
-    border-color: rgba(255, 215, 0, 0.35);
-    background: rgba(255, 215, 0, 0.1);
-    color: #ffd700;
+    border-color: rgba(252, 209, 22, 0.35);
+    background: rgba(252, 209, 22, 0.1);
+    color: #fcd116;
   }
   .zion-badge-purple {
-    border-color: rgba(147, 51, 234, 0.35);
-    background: rgba(147, 51, 234, 0.1);
-    color: #c084fc;
+    border-color: rgba(228, 30, 43, 0.35);
+    background: rgba(228, 30, 43, 0.1);
+    color: #f87171;
   }
   .zion-badge-cyan {
-    border-color: rgba(6, 182, 212, 0.35);
-    background: rgba(6, 182, 212, 0.1);
-    color: #22d3ee;
+    border-color: rgba(7, 137, 48, 0.35);
+    background: rgba(7, 137, 48, 0.1);
+    color: #34d399;
   }
 
   /* ── Rarity badges with glow ── */
   .rarity-badge {
     @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border backdrop-blur-sm;
   }
-  .rarity-common { @apply text-zinc-400 border-zinc-600 bg-zinc-900/50; }
-  .rarity-uncommon { @apply text-oasis-emerald border-oasis-emerald/50 bg-oasis-emerald/10; box-shadow: 0 0 8px rgba(16,185,129,0.15); }
-  .rarity-rare { @apply text-blue-400 border-blue-600/50 bg-blue-900/30; box-shadow: 0 0 8px rgba(59,130,246,0.15); }
-  .rarity-epic { @apply text-oasis-purple border-oasis-purple/50 bg-oasis-purple/10; box-shadow: 0 0 10px rgba(147,51,234,0.2); }
-  .rarity-legendary { @apply text-oasis-gold border-oasis-gold/50 bg-oasis-gold/10; box-shadow: 0 0 10px rgba(255,215,0,0.2); }
-  .rarity-mythic { @apply text-oasis-rose border-oasis-rose/50 bg-oasis-rose/10; box-shadow: 0 0 12px rgba(244,63,94,0.25); }
-  .rarity-unique { @apply text-oasis-cyan border-oasis-cyan/50 bg-oasis-cyan/10; box-shadow: 0 0 12px rgba(6,182,212,0.25); }
+  .rarity-common { color: #a1a1aa; border-color: rgba(161,161,170,0.5); background: rgba(161,161,170,0.1); }
+  .rarity-uncommon { color: #078930; border-color: rgba(7,137,48,0.5); background: rgba(7,137,48,0.1); box-shadow: 0 0 8px rgba(7,137,48,0.15); }
+  .rarity-rare { color: #fcd116; border-color: rgba(252,209,22,0.5); background: rgba(252,209,22,0.1); box-shadow: 0 0 8px rgba(252,209,22,0.15); }
+  .rarity-epic { color: #e41e2b; border-color: rgba(228,30,43,0.5); background: rgba(228,30,43,0.1); box-shadow: 0 0 10px rgba(228,30,43,0.2); }
+  .rarity-legendary { color: #fcd116; border-color: rgba(252,209,22,0.5); background: rgba(252,209,22,0.1); box-shadow: 0 0 10px rgba(252,209,22,0.2); }
+  .rarity-mythic { color: #e41e2b; border-color: rgba(228,30,43,0.5); background: rgba(228,30,43,0.1); box-shadow: 0 0 12px rgba(228,30,43,0.25); }
+  .rarity-unique { color: #078930; border-color: rgba(7,137,48,0.5); background: rgba(7,137,48,0.1); box-shadow: 0 0 12px rgba(7,137,48,0.25); }
 
   /* ── Status dots ── */
   .status-dot {
     @apply inline-block w-2 h-2 rounded-full;
   }
-  .status-active { @apply bg-oasis-emerald; box-shadow: 0 0 6px #10b981, 0 0 12px rgba(16,185,129,0.3); }
-  .status-pending { @apply bg-oasis-gold; box-shadow: 0 0 6px #ffd700, 0 0 12px rgba(255,215,0,0.3); }
+  .status-active { background: #078930; box-shadow: 0 0 6px #078930, 0 0 12px rgba(7,137,48,0.3); }
+  .status-pending { background: #fcd116; box-shadow: 0 0 6px #fcd116, 0 0 12px rgba(252,209,22,0.3); }
   .status-inactive { @apply bg-zinc-600; }
 
   /* ── Shimmer loading ── */
   .shimmer {
-    background: linear-gradient(90deg, transparent, rgba(147, 51, 234, 0.1), transparent);
+    background: linear-gradient(90deg, transparent, rgba(252, 209, 22, 0.1), transparent);
     background-size: 200% 100%;
     @apply animate-shimmer;
   }
@@ -408,16 +426,16 @@
   /* ── Artifact placeholder — animated OASIS orb ── */
   .artifact-placeholder {
     background:
-      radial-gradient(circle at 30% 30%, rgba(6, 182, 212, 0.15), transparent 50%),
-      radial-gradient(circle at 70% 70%, rgba(147, 51, 234, 0.15), transparent 50%),
-      radial-gradient(circle at 50% 50%, rgba(255, 215, 0, 0.08), transparent 60%),
+      radial-gradient(circle at 30% 30%, rgba(228, 30, 43, 0.12), transparent 50%),
+      radial-gradient(circle at 70% 70%, rgba(7, 137, 48, 0.12), transparent 50%),
+      radial-gradient(circle at 50% 50%, rgba(252, 209, 22, 0.08), transparent 60%),
       #0a0c14;
   }
   .artifact-placeholder::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: conic-gradient(from 0deg, transparent, rgba(6,182,212,0.05), transparent, rgba(147,51,234,0.05), transparent);
+    background: conic-gradient(from 0deg, transparent, rgba(228,30,43,0.05), transparent, rgba(7,137,48,0.05), transparent, rgba(252,209,22,0.05), transparent);
     animation: spin 15s linear infinite;
     pointer-events: none;
   }
@@ -425,7 +443,7 @@
   /* ── Section divider ── */
   .section-line {
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(6,182,212,0.3), rgba(147,51,234,0.3), transparent);
+    background: linear-gradient(90deg, transparent, rgba(228,30,43,0.35), rgba(252,209,22,0.35), rgba(7,137,48,0.35), transparent);
   }
 
   /* ── ZION CTA banner ── */
@@ -433,24 +451,24 @@
     position: relative;
     overflow: hidden;
     border-radius: clamp(1.5rem, 3.5vw, 2rem);
-    border: 1px solid rgba(255, 215, 0, 0.32);
+    border: 1px solid rgba(252, 209, 22, 0.32);
     background:
       linear-gradient(90deg,
-        rgba(147, 51, 234, 0.28),
-        rgba(255, 215, 0, 0.14) 50%,
-        rgba(147, 51, 234, 0.28)),
+        rgba(228, 30, 43, 0.2),
+        rgba(252, 209, 22, 0.12) 50%,
+        rgba(7, 137, 48, 0.2)),
       rgba(7, 10, 20, 0.85);
     padding: clamp(1.5rem, 5vw, 2.5rem);
     text-align: center;
     backdrop-filter: blur(20px);
-    box-shadow: 0 24px 80px rgba(147, 51, 234, 0.18);
+    box-shadow: 0 24px 80px rgba(252, 209, 22, 0.15);
   }
   .zion-cta-banner::before {
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.6), transparent);
+    background: linear-gradient(90deg, transparent, rgba(252, 209, 22, 0.6), transparent);
     pointer-events: none;
   }
 
@@ -468,7 +486,7 @@
   }
 
   .zion-hero-card {
-    --rc: 16, 185, 129;
+    --rc: 252, 209, 22;
     position: relative;
     overflow: hidden;
     border-radius: var(--zion-radius-lg);
@@ -515,7 +533,7 @@
     transition: background-color 150ms ease;
   }
   .zion-table tbody tr:hover {
-    background-color: rgba(var(--rc, 16, 185, 129), 0.06);
+    background-color: rgba(var(--rc, 252, 209, 22), 0.06);
   }
 
   /* ── Input styles ── */
@@ -523,8 +541,9 @@
     @apply w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm transition-all duration-200;
   }
   .input-zion:focus {
-    @apply border-oasis-cyan/50 outline-none;
-    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+    @apply border-rasta-gold/50 outline-none;
+    box-shadow: 0 0 0 3px rgba(252, 209, 22, 0.1);
+    border-color: rgba(252, 209, 22, 0.5);
   }
   .input-zion::placeholder {
     @apply text-gray-600;
@@ -535,7 +554,7 @@
     @apply px-5 py-2.5 text-sm font-semibold capitalize transition-all border-b-2;
   }
   .tab-zion-active {
-    @apply text-white border-oasis-cyan;
+    @apply text-white border-rasta-gold;
   }
   .tab-zion-inactive {
     @apply text-gray-500 border-transparent hover:text-white;
@@ -551,11 +570,11 @@
   background: #090A0F;
 }
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #1a1d2e, #2a2d3e);
+  background: linear-gradient(180deg, #2a2310, #3d3308);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #2a2d3e, #3a3d4e);
+  background: linear-gradient(180deg, #4a3e0a, #5c4f0a);
 }
 
 /* ── Line clamp utility ── */
@@ -880,7 +899,7 @@
   min-width: 1.15rem;
   height: 1.15rem;
   border-radius: 9999px;
-  background: radial-gradient(circle at 30% 0, #ffffff, #2af598);
+  background: radial-gradient(circle at 30% 0, #ffffff, #078930);
   color: #041016;
   font-size: 0.65rem;
   font-weight: 800;
@@ -983,7 +1002,7 @@
 }
 
 .rasta-wallet-ghost[data-wrong='true'] {
-  border-color: rgba(244, 63, 94, 0.5);
+  border-color: rgba(228, 30, 43, 0.5);
   color: #fda4af;
 }
 
@@ -1356,3 +1375,18 @@ body.zion-shell {
   background: linear-gradient(90deg, transparent, var(--rasta-gold), transparent);
   pointer-events: none;
 }
+
+
+/* ── Rasta footer ── */
+.rasta-footer {
+  border-top: 1px solid rgba(252, 209, 22, 0.12);
+  background: linear-gradient(180deg, rgba(7, 10, 20, 0.9), rgba(0, 0, 0, 0.95));
+}
+.rasta-footer-logo {
+  filter: drop-shadow(0 0 8px rgba(252, 209, 22, 0.35));
+  transition: filter 0.3s ease;
+}
+.rasta-footer-logo:hover {
+  filter: drop-shadow(0 0 12px rgba(252, 209, 22, 0.55));
+}
+

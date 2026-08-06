@@ -115,14 +115,14 @@ export default function ProfilePage() {
       {/* Header */}
       <div
         className="zion-rainbow-card p-6"
-        style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+        style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
       >
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
           <div className="relative">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-oasis-cyan via-oasis-purple to-oasis-gold flex items-center justify-center text-3xl font-black text-oasis-black font-display">
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-rasta-green via-rasta-red to-rasta-gold flex items-center justify-center text-3xl font-black text-rasta-black font-display">
               {addr.slice(2, 4).toUpperCase()}
             </div>
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-oasis-cyan via-oasis-purple to-oasis-gold blur-lg opacity-30" />
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-rasta-green via-rasta-red to-rasta-gold blur-lg opacity-30" />
           </div>
           <div className="flex-1">
             <h1 className="text-2xl font-black text-white mb-2 font-mono">{short}</h1>
@@ -131,7 +131,7 @@ export default function ProfilePage() {
                 href={`https://basescan.org/address/${addr}`}
                 target="_blank"
                 rel="noreferrer"
-                className="hover:text-oasis-cyan transition-colors flex items-center gap-1"
+                className="hover:text-rasta-gold transition-colors flex items-center gap-1"
               >
                 {t('profile.viewOnBasescan')}
               </a>
@@ -140,7 +140,7 @@ export default function ProfilePage() {
           </div>
           <div className="grid grid-cols-3 gap-6 text-center">
             <div>
-              <div className="text-2xl font-black text-oasis-cyan font-display">{stats.owned}</div>
+              <div className="text-2xl font-black text-rasta-red font-display">{stats.owned}</div>
               <div className="text-xs text-gray-500">{t('profile.owned')}</div>
             </div>
             <div>
@@ -148,7 +148,7 @@ export default function ProfilePage() {
               <div className="text-xs text-gray-500">{t('profile.listed')}</div>
             </div>
             <div>
-              <div className="text-2xl font-black text-oasis-emerald font-display">{stats.volume}</div>
+              <div className="text-2xl font-black text-rasta-green font-display">{stats.volume}</div>
               <div className="text-xs text-gray-500">{t('profile.volume')}</div>
             </div>
           </div>
@@ -171,7 +171,7 @@ export default function ProfilePage() {
       {/* Content */}
       {loading ? (
         <div className="zion-section p-16 text-center">
-          <div className="w-10 h-10 border-2 border-oasis-cyan/30 border-t-oasis-cyan rounded-full animate-spin mx-auto mb-4" />
+          <div className="w-10 h-10 border-2 border-rasta-gold/30 border-t-rasta-gold rounded-full animate-spin mx-auto mb-4" />
           <div className="text-gray-500">{t('profile.loading')}</div>
         </div>
       ) : (

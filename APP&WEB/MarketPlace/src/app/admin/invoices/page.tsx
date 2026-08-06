@@ -47,7 +47,7 @@ export default function AdminInvoicesPage() {
             )}
             {invoices.map((inv) => (
               <tr key={inv.id} className="border-b border-white/5 hover:bg-white/5">
-                <td className="p-3 font-mono text-oasis-cyan">{inv.invoiceNumber}</td>
+                <td className="p-3 font-mono text-rasta-gold">{inv.invoiceNumber}</td>
                 <td className="p-3">{inv.orderId}</td>
                 <td className="p-3">{inv.customer}</td>
                 <td className="p-3">
@@ -62,7 +62,7 @@ export default function AdminInvoicesPage() {
                     href={`/api/invoices/${inv.id}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-oasis-cyan hover:underline text-sm"
+                    className="text-rasta-gold hover:underline text-sm"
                   >
                     {t('admin.view')}
                   </a>

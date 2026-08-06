@@ -69,7 +69,7 @@ export default function ShopPage() {
         <aside className="space-y-4">
           <div className="zion-section p-4">
             <h3 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
-              <span className="w-1 h-3 rounded-full bg-oasis-gold" />
+              <span className="w-1 h-3 rounded-full bg-rasta-gold" />
               {t('shop.categoriesTitle')}
             </h3>
             <div className="space-y-1">
@@ -77,7 +77,7 @@ export default function ShopPage() {
                 onClick={() => setCategory('all')}
                 className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${
                   category === 'all'
-                    ? 'bg-oasis-gold/20 text-white border border-oasis-gold/30'
+                    ? 'bg-rasta-gold/20 text-white border border-rasta-gold/30'
                     : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
                 }`}
               >
@@ -89,7 +89,7 @@ export default function ShopPage() {
                   onClick={() => setCategory(c)}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${
                     category === c
-                      ? 'bg-oasis-gold/20 text-white border border-oasis-gold/30'
+                      ? 'bg-rasta-gold/20 text-white border border-rasta-gold/30'
                       : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
                   }`}
                 >
@@ -125,7 +125,7 @@ export default function ShopPage() {
 
           {loading ? (
             <div className="zion-section p-16 text-center">
-              <div className="w-10 h-10 border-2 border-oasis-cyan/30 border-t-oasis-cyan rounded-full animate-spin mx-auto mb-4" />
+              <div className="w-10 h-10 border-2 border-rasta-gold/30 border-t-rasta-gold rounded-full animate-spin mx-auto mb-4" />
               <div className="text-gray-500">{t('shop.loading')}</div>
             </div>
           ) : products.length === 0 ? (

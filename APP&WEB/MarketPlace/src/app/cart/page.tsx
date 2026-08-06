@@ -134,7 +134,7 @@ export default function CartPage() {
   if (items.length === 0 && !showQr) {
     return (
       <div className="zion-section p-16 text-center max-w-2xl mx-auto">
-        <ShoppingCart className="w-16 h-16 mx-auto mb-4 text-oasis-gold opacity-60" />
+        <ShoppingCart className="w-16 h-16 mx-auto mb-4 text-rasta-gold opacity-60" />
         <h1 className="text-2xl font-black font-display mb-2">{t('cart.emptyTitle')}</h1>
         <p className="text-gray-500 mb-6">{t('cart.emptySubtitle')}</p>
         <Link href="/shop" className="zion-button-primary">
@@ -148,7 +148,7 @@ export default function CartPage() {
     <div className="space-y-6">
       <div className="text-center mb-8">
         <h1 className="text-3xl font-black font-display mb-2 inline-flex items-center justify-center gap-3">
-          <ShoppingCart className="w-8 h-8 text-oasis-gold" /> {t('cart.title')}
+          <ShoppingCart className="w-8 h-8 text-rasta-gold" /> {t('cart.title')}
         </h1>
         <p className="text-gray-500">{t('cart.headerCount', { count, total: finalTotal, symbol: t('common.kcSymbol') })}</p>
       </div>
@@ -172,7 +172,7 @@ export default function CartPage() {
               <div className="flex-1 min-w-0">
                 <div className="font-bold text-white truncate">{item.name}</div>
                 <div className="text-xs text-gray-500 capitalize">{item.category}</div>
-                <div className="text-xs text-oasis-gold">{t('cart.tokens', { amount: item.tokens })}</div>
+                <div className="text-xs text-rasta-gold">{t('cart.tokens', { amount: item.tokens })}</div>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -194,7 +194,7 @@ export default function CartPage() {
               </div>
               <button
                 onClick={() => remove(item.id)}
-                className="zion-button-icon zion-button-ghost text-oasis-rose hover:text-oasis-rose/80"
+                className="zion-button-icon zion-button-ghost text-rasta-red hover:text-rasta-red/80"
                 title={t('cart.remove')}
               >
                 <Trash2 className="w-4 h-4" />
@@ -207,7 +207,7 @@ export default function CartPage() {
         <section className="space-y-4">
           {/* Shipping */}
           <div className="zion-section p-5">
-            <h2 className="text-lg font-black font-display mb-4 flex items-center gap-2 text-oasis-emerald">
+            <h2 className="text-lg font-black font-display mb-4 flex items-center gap-2 text-rasta-green">
               <Truck className="w-5 h-5" /> {t('cart.sectionShipping')}
             </h2>
             <div className="space-y-2">
@@ -218,7 +218,7 @@ export default function CartPage() {
                     key={opt.value}
                     className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
                       shipping === opt.value
-                        ? 'border-oasis-emerald bg-oasis-emerald/10'
+                        ? 'border-rasta-green bg-rasta-green/10'
                         : 'border-white/10 bg-white/5 hover:bg-white/10'
                     } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
@@ -229,7 +229,7 @@ export default function CartPage() {
                       checked={shipping === opt.value}
                       onChange={() => setShipping(opt.value)}
                       disabled={disabled}
-                      className="accent-oasis-emerald"
+                      className="accent-rasta-green"
                     />
                     <div className="flex-1">
                       <div className="font-bold text-sm">{t(opt.labelKey)}</div>
@@ -244,7 +244,7 @@ export default function CartPage() {
             </div>
 
             {needsPickup && (
-              <div className="mt-4 p-3 rounded-xl bg-oasis-emerald/5 border border-oasis-emerald/20 text-sm text-gray-300">
+              <div className="mt-4 p-3 rounded-xl bg-rasta-green/5 border border-rasta-green/20 text-sm text-gray-300">
                 {t('cart.pickupNote')}
               </div>
             )}
@@ -252,7 +252,7 @@ export default function CartPage() {
 
           {/* Customer */}
           <div className="zion-section p-5">
-            <h2 className="text-lg font-black font-display mb-4 flex items-center gap-2 text-oasis-gold">
+            <h2 className="text-lg font-black font-display mb-4 flex items-center gap-2 text-rasta-gold">
               <User className="w-5 h-5" /> {t('cart.sectionCustomer')}
             </h2>
             <div className="space-y-3">
@@ -327,12 +327,12 @@ export default function CartPage() {
 
           {/* Payment */}
           <div className="zion-section p-5">
-            <h2 className="text-lg font-black font-display mb-4 flex items-center gap-2 text-oasis-rose">
+            <h2 className="text-lg font-black font-display mb-4 flex items-center gap-2 text-rasta-red">
               <CreditCard className="w-5 h-5" /> {t('cart.sectionPayment')}
             </h2>
             <div className="space-y-2">
               <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                payment === 'transfer' ? 'border-oasis-rose bg-oasis-rose/10' : 'border-white/10 bg-white/5 hover:bg-white/10'
+                payment === 'transfer' ? 'border-rasta-red bg-rasta-red/10' : 'border-white/10 bg-white/5 hover:bg-white/10'
               }`}>
                 <input
                   type="radio"
@@ -340,7 +340,7 @@ export default function CartPage() {
                   value="transfer"
                   checked={payment === 'transfer'}
                   onChange={() => setPayment('transfer')}
-                  className="accent-oasis-rose"
+                  className="accent-rasta-red"
                 />
                 <div className="flex-1">
                   <div className="font-bold text-sm">{t('cart.paymentTransfer')}</div>
@@ -348,7 +348,7 @@ export default function CartPage() {
                 </div>
               </label>
               <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                payment === 'card' ? 'border-oasis-rose bg-oasis-rose/10' : 'border-white/10 bg-white/5 hover:bg-white/10'
+                payment === 'card' ? 'border-rasta-red bg-rasta-red/10' : 'border-white/10 bg-white/5 hover:bg-white/10'
               }`}>
                 <input
                   type="radio"
@@ -356,7 +356,7 @@ export default function CartPage() {
                   value="card"
                   checked={payment === 'card'}
                   onChange={() => setPayment('card')}
-                  className="accent-oasis-rose"
+                  className="accent-rasta-red"
                 />
                 <div className="flex-1">
                   <div className="font-bold text-sm">{t('cart.paymentCard')}</div>
@@ -367,7 +367,7 @@ export default function CartPage() {
           </div>
 
           {/* Summary */}
-          <div className="zion-section p-5 border-2 border-oasis-gold/30 bg-oasis-gold/5">
+          <div className="zion-section p-5 border-2 border-rasta-gold/30 bg-rasta-gold/5">
             <h2 className="text-lg font-black font-display mb-4 flex items-center gap-2 text-gradient-gold">
               <Check className="w-5 h-5" /> {t('cart.sectionSummary')}
             </h2>
@@ -382,7 +382,7 @@ export default function CartPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">{t('cart.summaryBonus')}</span>
-                <span className="font-mono text-oasis-gold">+{zionTokens}</span>
+                <span className="font-mono text-rasta-gold">+{zionTokens}</span>
               </div>
               <div className="flex justify-between text-lg font-black border-t border-white/10 pt-2">
                 <span>{t('cart.summaryTotal')}</span>
@@ -395,11 +395,11 @@ export default function CartPage() {
                 type="checkbox"
                 checked={terms}
                 onChange={(e) => setTerms(e.target.checked)}
-                className="mt-1 accent-oasis-emerald"
+                className="mt-1 accent-rasta-green"
                 required
               />
               <span className="text-gray-400">
-                {termsBefore}<Link href="/terms" className="text-oasis-gold hover:underline">{t('cart.termsLink')}</Link>{termsAfter}
+                {termsBefore}<Link href="/terms" className="text-rasta-gold hover:underline">{t('cart.termsLink')}</Link>{termsAfter}
               </span>
             </label>
 
@@ -408,7 +408,7 @@ export default function CartPage() {
                 type="checkbox"
                 checked={newsletter}
                 onChange={(e) => setNewsletter(e.target.checked)}
-                className="mt-1 accent-oasis-cyan"
+                className="mt-1 accent-rasta-green"
               />
               <span className="text-gray-400">{t('cart.newsletter')}</span>
             </label>

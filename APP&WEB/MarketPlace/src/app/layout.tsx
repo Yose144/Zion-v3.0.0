@@ -54,15 +54,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <main className="zion-container py-6 md:py-8 min-h-[calc(100vh-4rem)]">
               {children}
             </main>
-            <footer className="border-t border-white/5 mt-16 relative py-10 zion-container">
+            <footer className="rasta-footer mt-16 relative py-10 zion-container">
             <div className="section-line absolute top-0 inset-x-0" />
             <div className="flex flex-col items-center text-center">
               <Link href="https://market.zionterranova.com" className="opacity-90 hover:opacity-100 transition-opacity duration-300">
                 <img
                   src="/logo144.png"
                   alt="ZION"
-                  className="w-20 h-auto mx-auto"
-                  style={{ filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.2))' }}
+                  className="w-20 h-auto mx-auto rasta-footer-logo"
                   loading="lazy"
                   decoding="async"
                 />

@@ -24,8 +24,8 @@ export default function HowItWorksSection() {
           return (
             <div key={s.stepKey} className="zion-tile p-6">
               <div className="flex items-center justify-between mb-4">
-                <div className="w-10 h-10 rounded-lg bg-oasis-cyan/10 border border-oasis-cyan/20 flex items-center justify-center">
-                  <Icon className="w-5 h-5 text-oasis-cyan" />
+                <div className="w-10 h-10 rounded-lg bg-rasta-green/10 border border-rasta-green/20 flex items-center justify-center">
+                  <Icon className="w-5 h-5 text-rasta-green" />
                 </div>
                 <span className="text-3xl font-black text-white/5 font-mono">{t(s.stepKey)}</span>
               </div>

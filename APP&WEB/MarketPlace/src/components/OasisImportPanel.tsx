@@ -163,9 +163,9 @@ export default function OasisImportPanel({
   const sources: SourceType[] = ['avatar', 'quest', 'prize', 'territory'];
 
   return (
-    <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+    <div className="zion-rainbow-card p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
       <h2 className="text-xs font-bold text-gray-400 uppercase mb-4 flex items-center gap-2">
-        <span className="w-1 h-3 rounded-full bg-oasis-cyan" />
+        <span className="w-1 h-3 rounded-full bg-rasta-gold" />
         {t('create.importFromOasis')}
       </h2>
 
@@ -177,7 +177,7 @@ export default function OasisImportPanel({
             onClick={() => setSource(s)}
             className={`px-3 py-2 rounded-xl text-xs font-bold capitalize transition-all border ${
               source === s
-                ? 'bg-oasis-cyan/15 border-oasis-cyan/50 text-oasis-cyan'
+                ? 'bg-rasta-gold/15 border-rasta-gold/50 text-rasta-gold'
                 : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
             }`}
           >
@@ -188,11 +188,11 @@ export default function OasisImportPanel({
 
       {loading ? (
         <div className="py-8 text-center">
-          <div className="w-8 h-8 border-2 border-oasis-cyan/30 border-t-oasis-cyan rounded-full animate-spin mx-auto mb-2" />
+          <div className="w-8 h-8 border-2 border-rasta-gold/30 border-t-rasta-gold rounded-full animate-spin mx-auto mb-2" />
           <div className="text-xs text-gray-500">{t('create.oasisLoading', { source: getSourceLabel(source, t) })}</div>
         </div>
       ) : error ? (
-        <div className="p-4 rounded-xl bg-oasis-rose/10 border border-oasis-rose/20 text-sm text-oasis-rose">
+        <div className="p-4 rounded-xl bg-rasta-red/10 border border-rasta-red/20 text-sm text-rasta-red">
           {error}
         </div>
       ) : (
@@ -205,10 +205,10 @@ export default function OasisImportPanel({
                 key={item.id}
                 type="button"
                 onClick={() => handleSelect(item.id)}
-                className="w-full text-left px-4 py-3 rounded-xl bg-white/5 border border-white/5 hover:border-oasis-cyan/30 hover:bg-white/[0.07] transition-all group"
+                className="w-full text-left px-4 py-3 rounded-xl bg-white/5 border border-white/5 hover:border-rasta-gold/30 hover:bg-white/[0.07] transition-all group"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-white font-semibold group-hover:text-oasis-cyan transition-colors">
+                  <span className="text-sm text-white font-semibold group-hover:text-rasta-gold transition-colors">
                     {item.name}
                   </span>
                   <span className={`rarity-badge rarity-${normalizeRarity(item.rarity)} text-[10px]`}>

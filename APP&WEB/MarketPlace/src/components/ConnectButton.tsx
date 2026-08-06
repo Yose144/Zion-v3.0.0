@@ -55,7 +55,7 @@ export default function ConnectButton({ variant = 'zion' }: { variant?: 'zion' |
                 }}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-all"
               >
-                <span className="w-6 h-6 rounded-md bg-gradient-to-br from-oasis-cyan/30 to-oasis-purple/30 flex items-center justify-center text-xs font-bold">
+                <span className="w-6 h-6 rounded-md bg-gradient-to-br from-rasta-green/30 to-rasta-red/30 flex items-center justify-center text-xs font-bold">
                   {c.name.slice(0, 1)}
                 </span>
                 {c.name}
@@ -74,7 +74,7 @@ export default function ConnectButton({ variant = 'zion' }: { variant?: 'zion' |
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className={isRasta ? 'rasta-wallet-ghost' : `zion-button-secondary flex items-center gap-2 ${wrongChain ? 'border-oasis-rose/50 text-oasis-rose' : ''}`}
+        className={isRasta ? 'rasta-wallet-ghost' : `zion-button-secondary flex items-center gap-2 ${wrongChain ? 'border-rasta-red/50 text-rasta-red' : ''}`}
         data-wrong={wrongChain}
       >
         <span className={`status-dot ${wrongChain ? 'status-inactive' : 'status-active'}`} />
@@ -86,7 +86,7 @@ export default function ConnectButton({ variant = 'zion' }: { variant?: 'zion' |
       {open && (
         <div className="absolute right-0 mt-2 w-56 zion-section p-2 z-50">
           {wrongChain && (
-            <div className="px-3 py-2 text-xs text-oasis-rose border-b border-white/5 mb-1">
+            <div className="px-3 py-2 text-xs text-rasta-red border-b border-white/5 mb-1">
               {t('nav.wrongNetwork')}
             </div>
           )}
@@ -106,7 +106,7 @@ export default function ConnectButton({ variant = 'zion' }: { variant?: 'zion' |
           </a>
           <button
             onClick={() => { disconnect(); setOpen(false); }}
-            className="w-full text-left px-3 py-2 rounded-lg text-sm text-oasis-rose hover:bg-oasis-rose/10"
+            className="w-full text-left px-3 py-2 rounded-lg text-sm text-rasta-red hover:bg-rasta-red/10"
           >
             {t('nav.disconnect')}
           </button>

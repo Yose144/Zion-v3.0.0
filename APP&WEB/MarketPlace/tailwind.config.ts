@@ -8,29 +8,35 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // CSS-variable based brand colors aligned with website-v2.9
+        // Rasta brand palette
+        'rasta-red': '#e41e2b',
+        'rasta-gold': '#fcd116',
+        'rasta-green': '#078930',
+        'rasta-black': '#0d0d0d',
+        'rasta-dark': '#1a1a1a',
+        // CSS-variable based brand colors (now mapped to Rasta)
         'zion-gold': 'rgb(var(--color-zion-gold) / <alpha-value>)',
         'zion-purple': 'rgb(var(--color-zion-purple) / <alpha-value>)',
         'zion-cyan': 'rgb(var(--color-zion-cyan) / <alpha-value>)',
         'zion-blue': 'rgb(var(--color-zion-blue) / <alpha-value>)',
-        // Legacy aliases for existing code
+        // Legacy OASIS/ZION aliases remapped to Rasta
         oasis: {
           black: '#090A0F',
-          cyan: '#06b6d4',
-          purple: '#9333ea',
-          emerald: '#10b981',
-          gold: '#ffd700',
-          rose: '#f43f5e',
-          blue: '#1e3a8a',
+          cyan: '#078930',
+          purple: '#e41e2b',
+          emerald: '#078930',
+          gold: '#fcd116',
+          rose: '#e41e2b',
+          blue: '#0f172a',
         },
         zion: {
           dark: '#090A0F',
           card: '#0a0c14',
           border: '#1a1d2e',
-          gold: '#ffd700',
-          purple: '#9333ea',
-          cyan: '#06b6d4',
-          blue: '#1e3a8a',
+          gold: '#fcd116',
+          purple: '#e41e2b',
+          cyan: '#078930',
+          blue: '#0f172a',
         },
       },
       fontFamily: {
@@ -54,8 +60,8 @@ const config: Config = {
       },
       keyframes: {
         glow: {
-          '0%': { boxShadow: '0 0 5px rgba(168, 85, 247, 0.3)' },
-          '100%': { boxShadow: '0 0 20px rgba(168, 85, 247, 0.5)' },
+          '0%': { boxShadow: '0 0 5px rgba(252, 209, 22, 0.3)' },
+          '100%': { boxShadow: '0 0 20px rgba(7, 137, 48, 0.5)' },
         },
         shimmer: {
           '0%': { backgroundPosition: '200% 0' },

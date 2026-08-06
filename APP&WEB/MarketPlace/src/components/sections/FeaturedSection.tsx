@@ -21,7 +21,7 @@ export default function FeaturedSection() {
           <div className="zion-kicker">{t('featured.kicker')}</div>
           <h2 className="text-2xl font-black font-display text-gradient">{t('featured.title')}</h2>
         </div>
-        <Link href="/explore" className="text-sm text-oasis-cyan hover:underline font-semibold inline-flex items-center gap-1 group">
+        <Link href="/explore" className="text-sm text-rasta-gold hover:underline font-semibold inline-flex items-center gap-1 group">
           {t('featured.viewAll')}
           <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
         </Link>

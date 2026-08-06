@@ -76,8 +76,8 @@ function OrderSuccessContent() {
     return t('orderSuccess.statusPending');
   })();
 
-  const statusColor = order?.paymentStatus === 'paid' ? 'text-oasis-emerald' : 'text-oasis-gold';
-  const statusIcon = order?.paymentStatus === 'paid' ? <Check className="w-10 h-10 text-oasis-emerald" /> : <Loader2 className="w-10 h-10 text-oasis-gold animate-spin" />;
+  const statusColor = order?.paymentStatus === 'paid' ? 'text-rasta-green' : 'text-rasta-gold';
+  const statusIcon = order?.paymentStatus === 'paid' ? <Check className="w-10 h-10 text-rasta-green" /> : <Loader2 className="w-10 h-10 text-rasta-gold animate-spin" />;
 
   const paymentMethodText = (() => {
     if (order?.payment === 'card') return t('orderSuccess.paymentCard');
@@ -97,8 +97,8 @@ function OrderSuccessContent() {
   if (!orderId) {
     return (
       <div className="zion-section p-8 md:p-12 text-center max-w-2xl mx-auto">
-        <div className="w-20 h-20 rounded-full bg-oasis-rose/10 border border-oasis-rose/30 flex items-center justify-center mx-auto mb-6">
-          <XCircle className="w-10 h-10 text-oasis-rose" />
+        <div className="w-20 h-20 rounded-full bg-rasta-red/10 border border-rasta-red/30 flex items-center justify-center mx-auto mb-6">
+          <XCircle className="w-10 h-10 text-rasta-red" />
         </div>
         <h1 className="text-3xl font-black font-display mb-3">{t('orderSuccess.missingOrderTitle')}</h1>
         <p className="text-gray-400 mb-6">{t('orderSuccess.missingOrderSubtitle')}</p>
@@ -111,8 +111,8 @@ function OrderSuccessContent() {
 
   return (
     <div className="zion-section p-8 md:p-12 text-center max-w-2xl mx-auto">
-      <div className="w-20 h-20 rounded-full bg-oasis-emerald/10 border border-oasis-emerald/30 flex items-center justify-center mx-auto mb-6">
-        {loading ? <Loader2 className="w-10 h-10 text-oasis-gold animate-spin" /> : statusIcon}
+      <div className="w-20 h-20 rounded-full bg-rasta-green/10 border border-rasta-green/30 flex items-center justify-center mx-auto mb-6">
+        {loading ? <Loader2 className="w-10 h-10 text-rasta-gold animate-spin" /> : statusIcon}
       </div>
 
       <h1 className="text-3xl font-black font-display mb-3">{t('orderSuccess.title')}</h1>
@@ -136,7 +136,7 @@ function OrderSuccessContent() {
           <>
             <div className="flex justify-between text-sm mb-2">
               <span className="text-gray-500">{t('orderSuccess.labelTotal')}</span>
-              <span className="font-mono font-bold text-oasis-gold">{formatPrice(order.totalCzk)}</span>
+              <span className="font-mono font-bold text-rasta-gold">{formatPrice(order.totalCzk)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">{t('orderSuccess.labelPaymentMethod')}</span>
@@ -147,7 +147,7 @@ function OrderSuccessContent() {
       </div>
 
       {sessionId && stripeVerified === false && (
-        <div className="bg-oasis-gold/10 border border-oasis-gold/30 rounded-2xl p-4 mb-6 text-sm text-oasis-gold">
+        <div className="bg-rasta-gold/10 border border-rasta-gold/30 rounded-2xl p-4 mb-6 text-sm text-rasta-gold">
           {t('orderSuccess.stripePending')}
         </div>
       )}
@@ -165,7 +165,7 @@ function OrderSuccessContent() {
         <p className="inline-flex items-center gap-2">
           <HelpCircle className="w-4 h-4" />
           {footerBefore}
-          <a href={`mailto:${supportEmail}`} className="text-oasis-gold">{supportEmail}</a>
+          <a href={`mailto:${supportEmail}`} className="text-rasta-gold">{supportEmail}</a>
           {footerAfter}
         </p>
       </div>

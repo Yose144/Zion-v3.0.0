@@ -23,12 +23,12 @@ const categories: {
 
 const rarityColor: Record<ArtifactCardData['rarity'], string> = {
   common: '163, 163, 177',
-  uncommon: '16, 185, 129',
-  rare: '59, 130, 246',
-  epic: '147, 51, 234',
-  legendary: '255, 215, 0',
-  mythic: '244, 63, 94',
-  unique: '6, 182, 212',
+  uncommon: '7, 137, 48',
+  rare: '252, 209, 22',
+  epic: '228, 30, 43',
+  legendary: '252, 209, 22',
+  mythic: '228, 30, 43',
+  unique: '7, 137, 48',
 };
 
 export default function CategoriesSection() {
