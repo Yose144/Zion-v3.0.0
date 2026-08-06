@@ -503,7 +503,7 @@ function renderV31Banner(st){
   const lag = banner.sync_lag ?? 0;
   if(el('fd-banner-sync-lag')){
     el('fd-banner-sync-lag').textContent = lag === 0 ? 'synced' : lag;
-    el('fd-banner-sync-lag').style.color = lag === 0 ? 'rgb(34 197 94)' : 'rgb(251 191 36)';
+    el('fd-banner-sync-lag').style.color = lag === 0 ? 'rgb(7 137 48)' : 'rgb(252 209 22)';
   }
 
   if(el('fd-banner-pool-hashrate')){
@@ -528,7 +528,7 @@ function renderV31Banner(st){
     const total = banner.multichain_transfers_total ?? 0;
     const pending = banner.multichain_transfers_pending ?? 0;
     el('fd-banner-multichain-health').textContent = mcOk ? 'OK' : 'FAIL';
-    el('fd-banner-multichain-health').style.color = mcOk ? 'rgb(34 197 94)' : 'rgb(239 68 68)';
+    el('fd-banner-multichain-health').style.color = mcOk ? 'rgb(7 137 48)' : 'rgb(228 30 43)';
     const sub = el('fd-banner-multichain-health-sub');
     if(sub) sub.textContent = `total ${Number(total).toLocaleString()} · pending ${Number(pending).toLocaleString()}`;
   }
@@ -589,7 +589,7 @@ function renderV31Production(st){
   if(el('v31-prod-multichain')){
     const ok = mc?.ok ?? false;
     el('v31-prod-multichain').textContent = ok ? 'OK' : 'FAIL';
-    el('v31-prod-multichain').style.color = ok ? 'rgb(34 197 94)' : 'rgb(239 68 68)';
+    el('v31-prod-multichain').style.color = ok ? 'rgb(7 137 48)' : 'rgb(228 30 43)';
     const sub = el('v31-prod-multichain-sub');
     if(sub) sub.textContent = `pending ${mc?.transfers_pending ?? 0}`;
   }
@@ -792,6 +792,68 @@ function updateServiceCards(s){
     } else {
       v31syncEl.textContent = 'Offline';
       v31syncEl.className = 'text-red-400 text-xs';
+    }
+  }
+
+  // ── V31 Node 2 (Follower) ──
+  const v31n2 = s.v31_node2 || {};
+  setBadge('badge-v31-node2', v31n2.running); setCardLive('v31-node2', v31n2.running);
+  const v31n2h = document.getElementById('val-v31-node2-height');
+  if(v31n2h) v31n2h.textContent = v31n2.chain_height != null ? v31n2.chain_height.toLocaleString() : '—';
+  const v31n2hash = document.getElementById('val-v31-node2-hash');
+  if(v31n2hash) v31n2hash.textContent = v31n2.tip_hash ? (v31n2.tip_hash.slice(0,12) + '…' + v31n2.tip_hash.slice(-8)) : '—';
+  const v31n2mp = document.getElementById('val-v31-node2-mempool');
+  if(v31n2mp) v31n2mp.textContent = v31n2.mempool_size ?? '—';
+  const v31n2sys = document.getElementById('val-v31-node2-systemd');
+  if(v31n2sys) v31n2sys.textContent = v31n2.systemd_active || '—';
+  const v31n2mem = document.getElementById('val-v31-node2-mem');
+  if(v31n2mem) v31n2mem.textContent = v31n2.memory_mb != null ? v31n2.memory_mb + ' MB' : '—';
+  const v31n2syncEl = document.getElementById('val-v31-node2-sync');
+  if(v31n2syncEl){
+    const lag = v31n2.sync_lag;
+    if(v31n2.running && lag != null && lag <= 2){
+      v31n2syncEl.textContent = lag === 0 ? '✓ Synced' : '✓ Synced (+' + lag + ')';
+      v31n2syncEl.className = 'text-emerald-400 font-bold text-xs';
+    } else if(v31n2.running && lag != null && lag <= 10){
+      v31n2syncEl.textContent = 'Syncing… (lag ' + lag + ')';
+      v31n2syncEl.className = 'text-amber-400 text-xs';
+    } else if(v31n2.running){
+      v31n2syncEl.textContent = 'Catching up…';
+      v31n2syncEl.className = 'text-amber-400 text-xs';
+    } else {
+      v31n2syncEl.textContent = 'Offline';
+      v31n2syncEl.className = 'text-red-400 text-xs';
+    }
+  }
+
+  // ── V31 Node 3 (Follower) ──
+  const v31n3 = s.v31_node3 || {};
+  setBadge('badge-v31-node3', v31n3.running); setCardLive('v31-node3', v31n3.running);
+  const v31n3h = document.getElementById('val-v31-node3-height');
+  if(v31n3h) v31n3h.textContent = v31n3.chain_height != null ? v31n3.chain_height.toLocaleString() : '—';
+  const v31n3hash = document.getElementById('val-v31-node3-hash');
+  if(v31n3hash) v31n3hash.textContent = v31n3.tip_hash ? (v31n3.tip_hash.slice(0,12) + '…' + v31n3.tip_hash.slice(-8)) : '—';
+  const v31n3mp = document.getElementById('val-v31-node3-mempool');
+  if(v31n3mp) v31n3mp.textContent = v31n3.mempool_size ?? '—';
+  const v31n3sys = document.getElementById('val-v31-node3-systemd');
+  if(v31n3sys) v31n3sys.textContent = v31n3.systemd_active || '—';
+  const v31n3mem = document.getElementById('val-v31-node3-mem');
+  if(v31n3mem) v31n3mem.textContent = v31n3.memory_mb != null ? v31n3.memory_mb + ' MB' : '—';
+  const v31n3syncEl = document.getElementById('val-v31-node3-sync');
+  if(v31n3syncEl){
+    const lag = v31n3.sync_lag;
+    if(v31n3.running && lag != null && lag <= 2){
+      v31n3syncEl.textContent = lag === 0 ? '✓ Synced' : '✓ Synced (+' + lag + ')';
+      v31n3syncEl.className = 'text-emerald-400 font-bold text-xs';
+    } else if(v31n3.running && lag != null && lag <= 10){
+      v31n3syncEl.textContent = 'Syncing… (lag ' + lag + ')';
+      v31n3syncEl.className = 'text-amber-400 text-xs';
+    } else if(v31n3.running){
+      v31n3syncEl.textContent = 'Catching up…';
+      v31n3syncEl.className = 'text-amber-400 text-xs';
+    } else {
+      v31n3syncEl.textContent = 'Offline';
+      v31n3syncEl.className = 'text-red-400 text-xs';
     }
   }
 
@@ -1955,7 +2017,7 @@ async function updateNetworkGrowth(){
     const maxVal = Math.max(...dayCounts, 1);
     const barW = W / dayCounts.length * 0.7;
     const gap = W / dayCounts.length * 0.3;
-    const colors = ['#10b981', '#06b6d4', '#f59e0b', '#a855f7', '#ef4444', '#3b82f6'];
+    const colors = ['#078930', '#078930', '#fcd116', '#e41e2b', '#e41e2b', '#078930'];
     dayCounts.forEach((val, i) => {
       const barH = (val / maxVal) * (H - 20);
       const x = i * (barW + gap) + gap / 2;
@@ -2116,7 +2178,7 @@ async function updateDifficultyForecast(){
     const maxD = Math.max(...diffs);
     const range = maxD - minD || 1;
 
-    ctx.strokeStyle = '#f59e0b';
+    ctx.strokeStyle = '#fcd116';
     ctx.lineWidth = 2;
     ctx.beginPath();
     diffs.forEach((d, i) => {
@@ -2130,7 +2192,7 @@ async function updateDifficultyForecast(){
     ctx.lineTo(W, H);
     ctx.lineTo(0, H);
     ctx.closePath();
-    ctx.fillStyle = 'rgba(245, 158, 11, 0.15)';
+    ctx.fillStyle = 'rgba(252, 209, 22, 0.15)';
     ctx.fill();
   } catch(e){ console.error('updateDifficultyForecast:', e); }
 }
@@ -2660,8 +2722,8 @@ async function updateMiniHashrate(){
     const ctx = document.getElementById('mini-hashrate').getContext('2d');
     charts.mini = new Chart(ctx, {
       type: 'line',
-      data: { labels: data.map(() => ''), datasets: [{ data, borderColor: 'rgb(255 215 0)', backgroundColor: 'rgba(255,215,0,0.1)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 }] },
-      options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } } }, animation: { duration: 300 } }
+      data: { labels: data.map(() => ''), datasets: [{ data, borderColor: 'rgb(252 209 22)', backgroundColor: 'rgba(252,209,22,0.1)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 }] },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { ticks: { color: '#6b6b6b', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } } }, animation: { duration: 300 } }
     });
   } else {
     charts.mini.data.labels = data.map(() => '');
@@ -4280,17 +4342,17 @@ async function loadWallets(){
     const catBars = document.getElementById('wallets-category-bars');
     if(catBars && summary.total_premine_zion){
       const catMeta = {
-        oasis: { label: '🌸 OASIS + Winners', color: '#ffd700' },
-        dao:   { label: '🗳️ DAO Treasury', color: '#9333ea' },
-        infrastructure: { label: '🏗️ Infrastructure', color: '#06b6d4' },
-        humanitarian: { label: '💝 Humanitarian', color: '#10b981' },
-        issobella: { label: '🚀 Issobella Space', color: '#a855f7' },
-        other: { label: '📦 Other', color: '#f59e0b' },
-        bridge_seed: { label: '🌉 Bridge Seed', color: '#f59e0b' },
-        bridge_vault_utxo: { label: '🔒 Bridge Vault UTXO', color: '#f97316' },
+        oasis: { label: '🌸 OASIS + Winners', color: '#fcd116' },
+        dao:   { label: '🗳️ DAO Treasury', color: '#e41e2b' },
+        infrastructure: { label: '🏗️ Infrastructure', color: '#078930' },
+        humanitarian: { label: '💝 Humanitarian', color: '#078930' },
+        issobella: { label: '🚀 Issobella Space', color: '#e41e2b' },
+        other: { label: '📦 Other', color: '#fcd116' },
+        bridge_seed: { label: '🌉 Bridge Seed', color: '#fcd116' },
+        bridge_vault_utxo: { label: '🔒 Bridge Vault UTXO', color: '#e41e2b' },
       };
       catBars.innerHTML = Object.entries(cats).map(([key, val]) => {
-        const meta = catMeta[key] || { label: key, color: '#9ca3af' };
+        const meta = catMeta[key] || { label: key, color: '#a3a3a3' };
         const pct = ((val.total_zion / summary.total_premine_zion) * 100).toFixed(1);
         return `
           <div class="flex items-center gap-3">
@@ -4693,10 +4755,10 @@ async function renderPayoutCharts(){
     const labels = s.map(x => new Date(x.t*1000).toLocaleTimeString().slice(0,5));
     const common = {
       responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{labels:{color:'#cbd5e1'}}},
+      plugins:{legend:{labels:{color:'#d4d4d4'}}},
       scales:{
-        x:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'#1f2942'}},
-        y:{ticks:{color:'#64748b'},grid:{color:'#1f2942'}}
+        x:{ticks:{color:'#6b6b6b',font:{size:9}},grid:{color:'#1a1a1a'}},
+        y:{ticks:{color:'#6b6b6b'},grid:{color:'#1a1a1a'}}
       },
       animation:{duration:300}
     };
@@ -4712,7 +4774,7 @@ async function renderPayoutCharts(){
           datasets: [{
             label: 'Hashrate (KH/s)',
             data: s.map(x => x.hashrate || 0),
-            borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)',
+            borderColor: '#fcd116', backgroundColor: 'rgba(252,209,22,0.1)',
             fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2
           }]
         },
@@ -4735,19 +4797,19 @@ async function renderPayoutCharts(){
             {
               label: 'Blocks Found',
               data: blockDeltas,
-              backgroundColor: 'rgba(16,185,129,0.7)',
+              backgroundColor: 'rgba(7,137,48,0.7)',
               borderRadius: 3, barThickness: 6
             },
             {
               label: 'Valid Shares',
               data: s.map(x => x.shares_ok || 0),
-              backgroundColor: 'rgba(6,182,212,0.5)',
+              backgroundColor: 'rgba(7,137,48,0.5)',
               borderRadius: 3, barThickness: 6
             },
             {
               label: 'Rejected',
               data: s.map(x => x.shares_bad || 0),
-              backgroundColor: 'rgba(239,68,68,0.5)',
+              backgroundColor: 'rgba(228,30,43,0.5)',
               borderRadius: 3, barThickness: 6
             }
           ]
@@ -4873,7 +4935,7 @@ function connectPayoutSse(){
         // Brief flash on accept rate KPI
         const arEl = document.getElementById('payout-kpi-accept-rate');
         if(arEl && status === 'accepted'){
-          arEl.style.textShadow = '0 0 8px rgba(16,185,129,0.6)';
+          arEl.style.textShadow = '0 0 8px rgba(7,137,48,0.6)';
           setTimeout(() => arEl.style.textShadow = '', 800);
         }
       } catch(err) { console.error('SSE share parse error:', err); }
@@ -5502,7 +5564,7 @@ async function loadMonitoringStatus(){
 
     // Pool Metrics dot + stats
     const promDot = document.getElementById('prom-status-dot');
-    if(promDot) promDot.className = 'w-2 h-2 rounded-full ' + (pm.alive ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' : 'bg-red-500');
+    if(promDot) promDot.className = 'w-2 h-2 rounded-full ' + (pm.alive ? 'bg-emerald-400 shadow-[0_0_6px_rgba(7,137,48,0.6)]' : 'bg-red-500');
     const promTargets = document.getElementById('prom-targets');
     if(promTargets) promTargets.textContent = pm.shares != null ? pm.shares.toLocaleString() : '—';
     const promVer = document.getElementById('prom-version');
@@ -5519,7 +5581,7 @@ async function loadMonitoringStatus(){
 
     // Built-in charts dot + text
     const grafDot = document.getElementById('graf-status-dot');
-    if(grafDot) grafDot.className = 'w-2 h-2 rounded-full ' + (bic.alive ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' : 'bg-red-500');
+    if(grafDot) grafDot.className = 'w-2 h-2 rounded-full ' + (bic.alive ? 'bg-emerald-400 shadow-[0_0_6px_rgba(7,137,48,0.6)]' : 'bg-red-500');
     const grafVer = document.getElementById('graf-version');
     if(grafVer) grafVer.textContent = bic.version || '—';
     const grafDb = document.getElementById('graf-db');
@@ -5560,10 +5622,10 @@ async function loadMinerPerformance(){
         window._sharesChart = new Chart(ctx.getContext('2d'), {
           type: 'line',
           data: { labels, datasets: [
-            { label: 'Accepted', data: accepted, borderColor: 'rgb(16,185,129)', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 },
-            { label: 'Rejected', data: rejected, borderColor: 'rgb(239,68,68)', backgroundColor: 'rgba(239,68,68,0.1)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 },
+            { label: 'Accepted', data: accepted, borderColor: 'rgb(7,137,48)', backgroundColor: 'rgba(7,137,48,0.1)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 },
+            { label: 'Rejected', data: rejected, borderColor: 'rgb(228,30,43)', backgroundColor: 'rgba(228,30,43,0.1)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 },
           ]},
-          options: { responsive: true, plugins: { legend: { display: true, labels: { color: '#cbd5e1', font: { size: 10 } } } }, scales: { x: { display: false }, y: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } } }, animation: { duration: 300 } }
+          options: { responsive: true, plugins: { legend: { display: true, labels: { color: '#d4d4d4', font: { size: 10 } } } }, scales: { x: { display: false }, y: { ticks: { color: '#6b6b6b', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } } }, animation: { duration: 300 } }
         });
       } else {
         window._sharesChart.data.labels = labels;
@@ -5737,25 +5799,25 @@ async function renderChartsWithData(s){
   const labels = s.map(x => new Date(x.t * 1000).toLocaleTimeString().slice(0, 5));
   const common = {
     responsive: true,
-    plugins: { legend: { labels: { color: '#cbd5e1' } } },
+    plugins: { legend: { labels: { color: '#d4d4d4' } } },
     scales: {
-      x: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
-      y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.04)' } }
+      x: { ticks: { color: '#6b6b6b', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+      y: { ticks: { color: '#6b6b6b' }, grid: { color: 'rgba(255,255,255,0.04)' } }
     },
     animation: { duration: 300 }
   };
-  mkChart('chart-hashrate', 'line', { labels, datasets: [{ label: 'KH/s', data: s.map(x => x.hashrate || 0), borderColor: 'rgb(255 215 0)', backgroundColor: 'rgba(255,215,0,0.15)', fill: true, tension: 0.3, pointRadius: 0 }] }, common);
+  mkChart('chart-hashrate', 'line', { labels, datasets: [{ label: 'KH/s', data: s.map(x => x.hashrate || 0), borderColor: 'rgb(252 209 22)', backgroundColor: 'rgba(252,209,22,0.15)', fill: true, tension: 0.3, pointRadius: 0 }] }, common);
   mkChart('chart-height', 'line', { labels, datasets: [
-    { label: 'Node1', data: s.map(x => x.n1_height || 0), borderColor: 'rgb(6 182 212)', pointRadius: 0, tension: 0.2 },
-    { label: 'Node2', data: s.map(x => x.n2_height || 0), borderColor: 'rgb(147 51 234)', pointRadius: 0, tension: 0.2, borderDash: [5, 5] }
+    { label: 'Node1', data: s.map(x => x.n1_height || 0), borderColor: 'rgb(7 137 48)', pointRadius: 0, tension: 0.2 },
+    { label: 'Node2', data: s.map(x => x.n2_height || 0), borderColor: 'rgb(228 30 43)', pointRadius: 0, tension: 0.2, borderDash: [5, 5] }
   ]}, common);
   mkChart('chart-shares', 'bar', { labels, datasets: [
-    { label: 'Accepted', data: s.map(x => x.shares_ok || 0), backgroundColor: 'rgb(16 185 129)' },
-    { label: 'Rejected', data: s.map(x => x.shares_bad || 0), backgroundColor: 'rgb(239 68 68)' }
+    { label: 'Accepted', data: s.map(x => x.shares_ok || 0), backgroundColor: 'rgb(7 137 48)' },
+    { label: 'Rejected', data: s.map(x => x.shares_bad || 0), backgroundColor: 'rgb(228 30 43)' }
   ]}, common);
   mkChart('chart-sessions', 'line', { labels, datasets: [
-    { label: 'Sessions', data: s.map(x => x.sessions || 0), borderColor: 'rgb(168 85 247)', pointRadius: 0, tension: 0.3 },
-    { label: 'Node1 Peers', data: s.map(x => x.n1_peers || 0), borderColor: 'rgb(6 182 212)', pointRadius: 0, tension: 0.3 }
+    { label: 'Sessions', data: s.map(x => x.sessions || 0), borderColor: 'rgb(228 30 43)', pointRadius: 0, tension: 0.3 },
+    { label: 'Node1 Peers', data: s.map(x => x.n1_peers || 0), borderColor: 'rgb(7 137 48)', pointRadius: 0, tension: 0.3 }
   ]}, common);
   // Summary stats
   const hrs = s.map(x=>x.hashrate||0).filter(h=>h>0);
@@ -5776,10 +5838,10 @@ async function renderExtraCharts(s){
   const labels = s.map(x => new Date(x.t * 1000).toLocaleTimeString().slice(0, 5));
   const common = {
     responsive: true,
-    plugins: { legend: { labels: { color: '#cbd5e1' } } },
+    plugins: { legend: { labels: { color: '#d4d4d4' } } },
     scales: {
-      x: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
-      y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.04)' } }
+      x: { ticks: { color: '#6b6b6b', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+      y: { ticks: { color: '#6b6b6b' }, grid: { color: 'rgba(255,255,255,0.04)' } }
     },
     animation: { duration: 300 }
   };
@@ -5798,7 +5860,7 @@ async function renderExtraCharts(s){
   if(document.getElementById('chart-blocktime')){
     mkChart('chart-blocktime', 'line', {
       labels: btLabels,
-      datasets: [{label:'Block Time (s)', data: btData, borderColor:'rgb(6 182 212)', backgroundColor:'rgba(6,182,212,0.1)', fill: true, tension:0.3, pointRadius:1, spanGaps:true}]
+      datasets: [{label:'Block Time (s)', data: btData, borderColor:'rgb(7 137 48)', backgroundColor:'rgba(7,137,48,0.1)', fill: true, tension:0.3, pointRadius:1, spanGaps:true}]
     }, common);
   }
   // Avg block time stat
@@ -5813,10 +5875,10 @@ async function renderExtraCharts(s){
         labels: ['CPU Used','CPU Free','RAM Used','RAM Free'],
         datasets: [{
           data: [res.cpu_percent||0, 100-(res.cpu_percent||0), res.ram_percent||0, 100-(res.ram_percent||0)],
-          backgroundColor: ['rgb(239 68 68)','rgba(239,68,68,0.15)','rgb(168 85 247)','rgba(168,85,247,0.15)'],
+          backgroundColor: ['rgb(228 30 43)','rgba(228,30,43,0.15)','rgb(228 30 43)','rgba(228,30,43,0.15)'],
           borderWidth: 0
         }]
-      }, {responsive:true, plugins:{legend:{labels:{color:'#cbd5e1',font:{size:10}}}}});
+      }, {responsive:true, plugins:{legend:{labels:{color:'#d4d4d4',font:{size:10}}}}});
     }
   } catch(e){}
   // Mainnet charts from Rust collector
@@ -5829,10 +5891,10 @@ async function renderMainnetCharts(){
 
   const common = {
     responsive: true,
-    plugins: { legend: { labels: { color: '#cbd5e1' } } },
+    plugins: { legend: { labels: { color: '#d4d4d4' } } },
     scales: {
-      x: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
-      y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.04)' } }
+      x: { ticks: { color: '#6b6b6b', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+      y: { ticks: { color: '#6b6b6b' }, grid: { color: 'rgba(255,255,255,0.04)' } }
     },
     animation: { duration: 300 }
   };
@@ -5848,7 +5910,7 @@ async function renderMainnetCharts(){
       datasets: [{
         label: 'Chain Height',
         data: [en.chain_height || 0, ln.chain_height || 0],
-        backgroundColor: ['rgb(6 182 212)', 'rgb(147 51 234)'],
+        backgroundColor: ['rgb(7 137 48)', 'rgb(228 30 43)'],
         borderRadius: 4
       }]
     }, common);
@@ -5860,7 +5922,7 @@ async function renderMainnetCharts(){
       datasets: [{
         label: 'Count',
         data: [pool.active_miners || 0, pool.blocks_found || 0],
-        backgroundColor: ['rgb(16 185 129)', 'rgb(255 215 0)'],
+        backgroundColor: ['rgb(7 137 48)', 'rgb(252 209 22)'],
         borderRadius: 4
       }]
     }, common);
@@ -5875,7 +5937,7 @@ async function renderMainnetCharts(){
           en.known_peers || 0, en.mempool_size || 0,
           ln.known_peers || 0, ln.mempool_size || 0
         ],
-        backgroundColor: ['rgb(6 182 212)', 'rgb(59 130 246)', 'rgb(147 51 234)', 'rgb(236 72 153)'],
+        backgroundColor: ['rgb(7 137 48)', 'rgb(59 130 246)', 'rgb(228 30 43)', 'rgb(228 30 43)'],
         borderRadius: 4
       }]
     }, common);
@@ -7055,10 +7117,10 @@ async function loadGenesis(){
   // Reward split visualization (horizontal bar)
   const split = C.reward_split;
   const splitData = [
-    { label: 'Miner', pct: split.miner_pct, color: 'rgb(255 215 0)', desc: 'Block solvers' },
-    { label: 'Humanitarian Fund', pct: split.humanitarian_pct, color: 'rgb(16 185 129)', desc: 'Children Future Fund' },
-    { label: 'L5/L6 Issobella', pct: split.issobella_pct, color: 'rgb(147 51 234)', desc: 'Free World + Issobella' },
-    { label: 'Pool Fee', pct: split.pool_fee_pct, color: 'rgb(6 182 212)', desc: 'Pool operator' },
+    { label: 'Miner', pct: split.miner_pct, color: 'rgb(252 209 22)', desc: 'Block solvers' },
+    { label: 'Humanitarian Fund', pct: split.humanitarian_pct, color: 'rgb(7 137 48)', desc: 'Children Future Fund' },
+    { label: 'L5/L6 Issobella', pct: split.issobella_pct, color: 'rgb(228 30 43)', desc: 'Free World + Issobella' },
+    { label: 'Pool Fee', pct: split.pool_fee_pct, color: 'rgb(7 137 48)', desc: 'Pool operator' },
   ];
   document.getElementById('reward-split-viz').innerHTML = splitData.map(d => `
     <div>
@@ -7125,9 +7187,9 @@ async function loadBlockers(){
   const res = await fetch('/api/blockers').then(r => r.json()).catch(()=>({blockers:[],open:0,done:0,ready_for_launch:false}));
   const summary = document.getElementById('blockers-summary');
   summary.innerHTML = `
-    <span class="zion-kicker" style="background:rgba(239,68,68,0.15);color:#fca5a5;border-color:rgba(239,68,68,0.3);">${res.open_critical} critical</span>
-    <span class="zion-kicker" style="background:rgba(245,158,11,0.15);color:#fcd34d;border-color:rgba(245,158,11,0.3);margin-left:8px;">${res.open} open</span>
-    <span class="zion-kicker" style="background:rgba(16,185,129,0.15);color:#6ee7b7;border-color:rgba(16,185,129,0.3);margin-left:8px;">${res.done} done</span>
+    <span class="zion-kicker" style="background:rgba(228,30,43,0.15);color:#e41e2b;border-color:rgba(228,30,43,0.3);">${res.open_critical} critical</span>
+    <span class="zion-kicker" style="background:rgba(252,209,22,0.15);color:#fcd116;border-color:rgba(252,209,22,0.3);margin-left:8px;">${res.open} open</span>
+    <span class="zion-kicker" style="background:rgba(7,137,48,0.15);color:#078930;border-color:rgba(7,137,48,0.3);margin-left:8px;">${res.done} done</span>
   `;
 
   const list = document.getElementById('blockers-list');
@@ -7833,7 +7895,7 @@ async function loadNclFull() {
           const cl = w.consciousness_level || 0;
           const successRate = jobs > 0 ? Math.round(((jobs - failed) / jobs) * 100) : 0;
           const barW = Math.min(score, 100);
-          const gradColors = score >= 80 ? '#10b981,#059669' : score >= 50 ? '#3b82f6,#2563eb' : '#6b7280,#4b5563';
+          const gradColors = score >= 80 ? '#078930,#078930' : score >= 50 ? '#078930,#078930' : '#6b6b6b,#4a4a4a';
           return `<div class="ncl-worker-row p-4 ncl-toggle" data-toggle-detail="1">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
@@ -7982,17 +8044,17 @@ function initNclCharts() {
     const labels = []; const queued = []; const completed = []; const failed = [];
     for (let i = 11; i >= 0; i--) { const d = new Date(); d.setHours(d.getHours() - i); labels.push(d.getHours() + ':00'); queued.push(Math.floor(Math.random() * 5)); completed.push(Math.floor(Math.random() * 8)); failed.push(Math.floor(Math.random() * 2)); }
     _nclJobsChart = new Chart(jCtx, { type: 'bar', data: { labels, datasets: [
-      { label: 'Completed', data: completed, backgroundColor: 'rgba(16,185,129,0.6)', borderRadius: 4 },
-      { label: 'Queued', data: queued, backgroundColor: 'rgba(251,191,36,0.6)', borderRadius: 4 },
-      { label: 'Failed', data: failed, backgroundColor: 'rgba(239,68,68,0.4)', borderRadius: 4 }
-    ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#9ca3af', font: { size: 10 } } } }, scales: { x: { ticks: { color: '#4b5563', font: { size: 9 } }, grid: { display: false } }, y: { ticks: { color: '#4b5563', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } } } } });
+      { label: 'Completed', data: completed, backgroundColor: 'rgba(7,137,48,0.6)', borderRadius: 4 },
+      { label: 'Queued', data: queued, backgroundColor: 'rgba(252,209,22,0.6)', borderRadius: 4 },
+      { label: 'Failed', data: failed, backgroundColor: 'rgba(228,30,43,0.4)', borderRadius: 4 }
+    ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#a3a3a3', font: { size: 10 } } } }, scales: { x: { ticks: { color: '#4a4a4a', font: { size: 9 } }, grid: { display: false } }, y: { ticks: { color: '#4a4a4a', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } } } } });
   }
   const pCtx = document.getElementById('ncl-perf-chart');
   if (pCtx && !_nclPerfChart) {
     _nclPerfChart = new Chart(pCtx, { type: 'radar', data: { labels: ['Score', 'Jobs', 'Speed', 'Uptime', 'Reliability'], datasets: [
-      { label: 'Network Avg', data: [70, 60, 75, 80, 85], borderColor: 'rgba(147,51,234,0.5)', backgroundColor: 'rgba(147,51,234,0.08)', pointBackgroundColor: '#9333ea' },
-      { label: 'Top Worker', data: [95, 90, 88, 96, 92], borderColor: 'rgba(6,182,212,0.7)', backgroundColor: 'rgba(6,182,212,0.08)', pointBackgroundColor: '#06b6d4' }
-    ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#9ca3af', font: { size: 10 } } } }, scales: { r: { ticks: { color: '#4b5563', backdropColor: 'transparent', font: { size: 8 } }, grid: { color: 'rgba(255,255,255,0.04)' }, pointLabels: { color: '#9ca3af', font: { size: 9 } } } } } });
+      { label: 'Network Avg', data: [70, 60, 75, 80, 85], borderColor: 'rgba(228,30,43,0.5)', backgroundColor: 'rgba(228,30,43,0.08)', pointBackgroundColor: '#e41e2b' },
+      { label: 'Top Worker', data: [95, 90, 88, 96, 92], borderColor: 'rgba(7,137,48,0.7)', backgroundColor: 'rgba(7,137,48,0.08)', pointBackgroundColor: '#078930' }
+    ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#a3a3a3', font: { size: 10 } } } }, scales: { r: { ticks: { color: '#4a4a4a', backdropColor: 'transparent', font: { size: 8 } }, grid: { color: 'rgba(255,255,255,0.04)' }, pointLabels: { color: '#a3a3a3', font: { size: 9 } } } } } });
   }
 }
 
@@ -8020,33 +8082,33 @@ function pushOvData(label, data){
 }
 
 function updateOverviewCharts(){
-  const chartOpts = { responsive: true, maintainAspectRatio: false, animation: { duration: 300 }, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { ticks: { color: '#4b5563', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.03)' } } } };
+  const chartOpts = { responsive: true, maintainAspectRatio: false, animation: { duration: 300 }, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { ticks: { color: '#4a4a4a', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.03)' } } } };
   // Height chart
   const hCtx = document.getElementById('chart-overview-height');
   if(hCtx && typeof Chart !== 'undefined'){
     if(!_ovCharts.height){
-      _ovCharts.height = new Chart(hCtx, { type: 'line', data: { labels: _ovHistory.labels, datasets: [{ label: 'Height', data: _ovHistory.heights, borderColor: '#FFD700', backgroundColor: 'rgba(255,215,0,0.08)', tension: 0.3, borderWidth: 2, pointRadius: 0 }] }, options: chartOpts });
+      _ovCharts.height = new Chart(hCtx, { type: 'line', data: { labels: _ovHistory.labels, datasets: [{ label: 'Height', data: _ovHistory.heights, borderColor: '#fcd116', backgroundColor: 'rgba(252,209,22,0.08)', tension: 0.3, borderWidth: 2, pointRadius: 0 }] }, options: chartOpts });
     } else { _ovCharts.height.data.labels = _ovHistory.labels; _ovCharts.height.data.datasets[0].data = _ovHistory.heights; _ovCharts.height.update('none'); }
   }
   // Shares chart
   const sCtx = document.getElementById('chart-overview-shares');
   if(sCtx && typeof Chart !== 'undefined'){
     if(!_ovCharts.shares){
-      _ovCharts.shares = new Chart(sCtx, { type: 'bar', data: { labels: _ovHistory.labels, datasets: [{ label: 'OK', data: _ovHistory.shares_ok, backgroundColor: 'rgba(16,185,129,0.6)', borderRadius: 2 },{ label: 'Rej', data: _ovHistory.shares_rej, backgroundColor: 'rgba(239,68,68,0.5)', borderRadius: 2 }] }, options: { ...chartOpts, plugins: { legend: { display: true, position: 'bottom', labels: { color: '#9ca3af', font: { size: 9 } } } } } });
+      _ovCharts.shares = new Chart(sCtx, { type: 'bar', data: { labels: _ovHistory.labels, datasets: [{ label: 'OK', data: _ovHistory.shares_ok, backgroundColor: 'rgba(7,137,48,0.6)', borderRadius: 2 },{ label: 'Rej', data: _ovHistory.shares_rej, backgroundColor: 'rgba(228,30,43,0.5)', borderRadius: 2 }] }, options: { ...chartOpts, plugins: { legend: { display: true, position: 'bottom', labels: { color: '#a3a3a3', font: { size: 9 } } } } } });
     } else { _ovCharts.shares.data.labels = _ovHistory.labels; _ovCharts.shares.data.datasets[0].data = _ovHistory.shares_ok; _ovCharts.shares.data.datasets[1].data = _ovHistory.shares_rej; _ovCharts.shares.update('none'); }
   }
   // Sessions chart
   const ssCtx = document.getElementById('chart-overview-sessions');
   if(ssCtx && typeof Chart !== 'undefined'){
     if(!_ovCharts.sessions){
-      _ovCharts.sessions = new Chart(ssCtx, { type: 'line', data: { labels: _ovHistory.labels, datasets: [{ label: 'Sessions', data: _ovHistory.sessions, borderColor: '#06B6D4', backgroundColor: 'rgba(6,182,212,0.1)', tension: 0.3, borderWidth: 2, pointRadius: 0, fill: true }] }, options: chartOpts });
+      _ovCharts.sessions = new Chart(ssCtx, { type: 'line', data: { labels: _ovHistory.labels, datasets: [{ label: 'Sessions', data: _ovHistory.sessions, borderColor: '#078930', backgroundColor: 'rgba(7,137,48,0.1)', tension: 0.3, borderWidth: 2, pointRadius: 0, fill: true }] }, options: chartOpts });
     } else { _ovCharts.sessions.data.labels = _ovHistory.labels; _ovCharts.sessions.data.datasets[0].data = _ovHistory.sessions; _ovCharts.sessions.update('none'); }
   }
   // Resources chart
   const rCtx = document.getElementById('chart-overview-resources');
   if(rCtx && typeof Chart !== 'undefined'){
     if(!_ovCharts.resources){
-      _ovCharts.resources = new Chart(rCtx, { type: 'line', data: { labels: _ovHistory.labels, datasets: [{ label: 'CPU%', data: _ovHistory.cpu, borderColor: '#9333EA', backgroundColor: 'rgba(147,51,234,0.08)', tension: 0.3, borderWidth: 2, pointRadius: 0 },{ label: 'MEM%', data: _ovHistory.mem, borderColor: '#06B6D4', backgroundColor: 'rgba(6,182,212,0.05)', tension: 0.3, borderWidth: 2, pointRadius: 0 }] }, options: { ...chartOpts, plugins: { legend: { display: true, position: 'bottom', labels: { color: '#9ca3af', font: { size: 9 } } } } } });
+      _ovCharts.resources = new Chart(rCtx, { type: 'line', data: { labels: _ovHistory.labels, datasets: [{ label: 'CPU%', data: _ovHistory.cpu, borderColor: '#e41e2b', backgroundColor: 'rgba(228,30,43,0.08)', tension: 0.3, borderWidth: 2, pointRadius: 0 },{ label: 'MEM%', data: _ovHistory.mem, borderColor: '#078930', backgroundColor: 'rgba(7,137,48,0.05)', tension: 0.3, borderWidth: 2, pointRadius: 0 }] }, options: { ...chartOpts, plugins: { legend: { display: true, position: 'bottom', labels: { color: '#a3a3a3', font: { size: 9 } } } } } });
     } else { _ovCharts.resources.data.labels = _ovHistory.labels; _ovCharts.resources.data.datasets[0].data = _ovHistory.cpu; _ovCharts.resources.data.datasets[1].data = _ovHistory.mem; _ovCharts.resources.update('none'); }
   }
 }
@@ -9401,7 +9463,7 @@ function renderReadiness(data) {
 
   const score = data.score ?? 0;
   const color = data.color || 'gray';
-  const colorMap = { green: '#22c55e', yellow: '#f59e0b', red: '#ef4444', gray: '#374151' };
+  const colorMap = { green: '#078930', yellow: '#fcd116', red: '#e41e2b', gray: '#3d3d3d' };
   bar.style.width = score + '%';
   bar.style.background = colorMap[color] || colorMap.gray;
   scoreEl.textContent = score;
@@ -9552,7 +9614,7 @@ function renderServiceHealthTimeline(services) {
       const state = _resolveState(states, key);
       const alive = state === true;
       const hasData = state !== undefined && state !== null;
-      const color = alive ? '#22c55e' : (hasData ? '#ef4444' : '#374151');
+      const color = alive ? '#078930' : (hasData ? '#e41e2b' : '#3d3d3d');
       col += `<div style="width:${cellSize}px;height:${cellSize}px;background:${color};border-radius:2px;" title="${escapeHtml(SVC_LABEL_MAP[key]||key)} @ ${tLabel}: ${alive?'online':(hasData?'offline':'no data')}"></div>`;
     }
     col += '</div>';
@@ -9652,8 +9714,8 @@ function renderPayoutDonut(payouts) {
   }
   const data = hasData ? [totals.miner, totals.charity, totals.dev, totals.pool] : [1,1,1,1];
   const labels = ['Miner (89%)','Charity (5%)','Dev (5%)','Burned (1%)'];
-  const colors = ['#22c55e','#f59e0b','#3b82f6','#8b5cf6'];
-  const emptyColors = ['rgba(34,197,94,0.15)','rgba(245,158,11,0.15)','rgba(59,130,246,0.15)','rgba(139,92,246,0.15)'];
+  const colors = ['#078930','#fcd116','#078930','#e41e2b'];
+  const emptyColors = ['rgba(7,137,48,0.15)','rgba(252,209,22,0.15)','rgba(7,137,48,0.15)','rgba(228,30,43,0.15)'];
 
   if (payoutDonutChart) payoutDonutChart.destroy();
   payoutDonutChart = new Chart(ctx, {
@@ -9671,7 +9733,7 @@ function renderPayoutDonut(payouts) {
       responsive: true, maintainAspectRatio: false,
       cutout: '60%',
       plugins: {
-        legend: { position:'right', labels:{color:'#9ca3af',font:{size:10}, boxWidth:10} },
+        legend: { position:'right', labels:{color:'#a3a3a3',font:{size:10}, boxWidth:10} },
         tooltip: {
           enabled: hasData,
           callbacks: {
@@ -9692,7 +9754,7 @@ function renderPayoutDonut(payouts) {
         const cy = (top + bottom) / 2;
         ctx.save();
         ctx.font = 'bold 11px sans-serif';
-        ctx.fillStyle = hasData ? '#e5e7eb' : '#6b7280';
+        ctx.fillStyle = hasData ? '#d4d4d4' : '#6b6b6b';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(hasData ? `${payouts.length} blocks` : 'No blocks yet', cx, cy);
@@ -9722,20 +9784,20 @@ function renderPayoutHistory(payouts) {
     data: {
       labels,
       datasets: [
-        { label:'Miner', data:miner, backgroundColor:'#22c55e', stack:'stack1', borderRadius:2 },
-        { label:'Charity', data:charity, backgroundColor:'#f59e0b', stack:'stack1', borderRadius:2 },
-        { label:'Dev', data:dev, backgroundColor:'#3b82f6', stack:'stack1', borderRadius:2 },
-        { label:'Pool', data:pool, backgroundColor:'#8b5cf6', stack:'stack1', borderRadius:2 },
+        { label:'Miner', data:miner, backgroundColor:'#078930', stack:'stack1', borderRadius:2 },
+        { label:'Charity', data:charity, backgroundColor:'#fcd116', stack:'stack1', borderRadius:2 },
+        { label:'Dev', data:dev, backgroundColor:'#078930', stack:'stack1', borderRadius:2 },
+        { label:'Pool', data:pool, backgroundColor:'#e41e2b', stack:'stack1', borderRadius:2 },
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       scales: {
-        x: { ticks:{color:'#9ca3af',font:{size:7}, maxRotation:45}, grid:{display:false}, stacked:true },
-        y: { ticks:{color:'#9ca3af',font:{size:8}, callback:v=>_zionFmt(v)}, grid:{color:'rgba(255,255,255,0.05)'}, stacked:true }
+        x: { ticks:{color:'#a3a3a3',font:{size:7}, maxRotation:45}, grid:{display:false}, stacked:true },
+        y: { ticks:{color:'#a3a3a3',font:{size:8}, callback:v=>_zionFmt(v)}, grid:{color:'rgba(255,255,255,0.05)'}, stacked:true }
       },
       plugins: {
-        legend: { labels:{color:'#9ca3af',font:{size:9}, boxWidth:10}, position:'top', align:'end' },
+        legend: { labels:{color:'#a3a3a3',font:{size:9}, boxWidth:10}, position:'top', align:'end' },
         tooltip: {
           callbacks: {
             label: (c) => ` ${c.dataset.label}: ${_zionFmt(c.parsed)} ZION`,
@@ -9779,7 +9841,7 @@ function renderMempoolSparkline(mempoolSize) {
 
   const maxVal = Math.max(...data);
   const pointRadii = data.map(v => v === maxVal && maxVal > 0 ? 3 : 0);
-  const pointColors = data.map(v => v === maxVal && maxVal > 0 ? '#ef4444' : 'transparent');
+  const pointColors = data.map(v => v === maxVal && maxVal > 0 ? '#e41e2b' : 'transparent');
   const labels = data.map((_,i) => '');
 
   if (mempoolSparkline) mempoolSparkline.destroy();
@@ -9789,14 +9851,14 @@ function renderMempoolSparkline(mempoolSize) {
       labels,
       datasets: [{
         data,
-        borderColor: '#f59e0b',
+        borderColor: '#fcd116',
         backgroundColor: (ctx) => {
           const chart = ctx.chart;
           const {ctx: c, chartArea} = chart;
-          if (!chartArea) return 'rgba(245,158,11,0.1)';
+          if (!chartArea) return 'rgba(252,209,22,0.1)';
           const grad = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-          grad.addColorStop(0, 'rgba(245,158,11,0.25)');
-          grad.addColorStop(1, 'rgba(245,158,11,0.0)');
+          grad.addColorStop(0, 'rgba(252,209,22,0.25)');
+          grad.addColorStop(1, 'rgba(252,209,22,0.0)');
           return grad;
         },
         fill: true,
@@ -9885,11 +9947,11 @@ const TOPO_ID_MAP = {
 };
 
 function _statusColor(status) {
-  if (status === 'running' || status === 'online' || status === true) return '#22c55e';
-  if (status === 'degraded') return '#f59e0b';
-  if (status === 'stopped' || status === 'offline' || status === false) return '#ef4444';
-  if (status === 'starting' || status === 'restarting') return '#f59e0b';
-  return '#6b7280';
+  if (status === 'running' || status === 'online' || status === true) return '#078930';
+  if (status === 'degraded') return '#fcd116';
+  if (status === 'stopped' || status === 'offline' || status === false) return '#e41e2b';
+  if (status === 'starting' || status === 'restarting') return '#fcd116';
+  return '#6b6b6b';
 }
 
 function renderTopology(services) {
@@ -9952,7 +10014,7 @@ function renderTopology(services) {
     return { ...n, label, status: info.status, color: _statusColor(info.status) };
   });
 
-  let svg = `<svg viewBox="0 0 800 320" width="100%" height="100%" style="background:#0b0f19; border-radius:12px;" id="topo-svg">`;
+  let svg = `<svg viewBox="0 0 800 320" width="100%" height="100%" style="background:#0d0d0d; border-radius:12px;" id="topo-svg">`;
 
   // Background grid
   svg += `<defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/></pattern></defs>`;
@@ -9975,7 +10037,7 @@ function renderTopology(services) {
     const dependencySatisfied = !(depAonB && !bOk) && !(depBonA && !aOk);
     const fullyHealthy = bothAlive && dependencySatisfied;
 
-    const stroke = fullyHealthy ? 'rgba(34,197,94,0.35)' : (bothAlive ? 'rgba(245,158,11,0.3)' : 'rgba(107,114,128,0.15)');
+    const stroke = fullyHealthy ? 'rgba(7,137,48,0.35)' : (bothAlive ? 'rgba(252,209,22,0.3)' : 'rgba(107,114,128,0.15)');
     const sw = fullyHealthy ? 2 : (bothAlive ? 1.8 : 1);
     // Animated dash for degraded dependency
     const dash = !dependencySatisfied ? ' stroke-dasharray="4,3"' : '';
@@ -9992,8 +10054,8 @@ function renderTopology(services) {
 
   // Nodes
   for (const n of nodes) {
-    const isAlive = n.color === '#22c55e';
-    const isDegraded = n.color === '#f59e0b';
+    const isAlive = n.color === '#078930';
+    const isDegraded = n.color === '#fcd116';
     const pulse = isAlive ? `<animate attributeName="r" values="18;22;18" dur="2s" repeatCount="indefinite" />` : '';
     svg += `<g class="topo-node" data-id="${n.id}" data-label="${escapeHtml(n.label)}" data-status="${escapeHtml(n.status)}" style="cursor:pointer;">`;
     // Glow ring (pulsing for alive)
@@ -10001,19 +10063,19 @@ function renderTopology(services) {
     // Outer ring
     svg += `<circle cx="${n.x}" cy="${n.y}" r="14" fill="none" stroke="${n.color}" stroke-width="2" opacity="0.6" />`;
     // Core dot
-    svg += `<circle cx="${n.x}" cy="${n.y}" r="8" fill="${n.color}" stroke="#0b0f19" stroke-width="2" />`;
+    svg += `<circle cx="${n.x}" cy="${n.y}" r="8" fill="${n.color}" stroke="#0d0d0d" stroke-width="2" />`;
     // Status badge (small inner dot)
-    const badgeColor = isAlive ? '#4ade80' : (isDegraded?'#fbbf24':(n.color==='#ef4444'?'#f87171':'#9ca3af'));
-    svg += `<circle cx="${n.x+6}" cy="${n.y-6}" r="3" fill="${badgeColor}" stroke="#0b0f19" stroke-width="1" />`;
+    const badgeColor = isAlive ? '#078930' : (isDegraded?'#fcd116':(n.color==='#e41e2b'?'#e41e2b':'#a3a3a3'));
+    svg += `<circle cx="${n.x+6}" cy="${n.y-6}" r="3" fill="${badgeColor}" stroke="#0d0d0d" stroke-width="1" />`;
     // Degraded warning triangle for degraded nodes
     if (isDegraded) {
-      svg += `<text x="${n.x}" y="${n.y-12}" text-anchor="middle" fill="#fbbf24" font-size="8">⚠</text>`;
+      svg += `<text x="${n.x}" y="${n.y-12}" text-anchor="middle" fill="#fcd116" font-size="8">⚠</text>`;
     }
     // Label
-    svg += `<text x="${n.x}" y="${n.y+26}" text-anchor="middle" fill="#9ca3af" font-size="9" font-family="sans-serif">${escapeHtml(n.label)}</text>`;
+    svg += `<text x="${n.x}" y="${n.y+26}" text-anchor="middle" fill="#a3a3a3" font-size="9" font-family="sans-serif">${escapeHtml(n.label)}</text>`;
     // Layer badge
-    const layerColors = {core:'#3b82f6', L2:'#f59e0b', L3:'#ec4899', L4:'#a855f7', L5:'#10b981', L6:'#06b6d4'};
-    svg += `<text x="${n.x}" y="${n.y+37}" text-anchor="middle" fill="${layerColors[n.kind]||'#6b7280'}" font-size="7" font-family="sans-serif" opacity="0.8">${n.kind.toUpperCase()}</text>`;
+    const layerColors = {core:'#078930', L2:'#fcd116', L3:'#e41e2b', L4:'#e41e2b', L5:'#078930', L6:'#078930'};
+    svg += `<text x="${n.x}" y="${n.y+37}" text-anchor="middle" fill="${layerColors[n.kind]||'#6b6b6b'}" font-size="7" font-family="sans-serif" opacity="0.8">${n.kind.toUpperCase()}</text>`;
     svg += `</g>`;
   }
 
@@ -10988,8 +11050,8 @@ function renderMinerLiveChart(){
       datasets: [{
         label: 'KH/s',
         data: _mlHashrateHistory,
-        borderColor: 'rgba(255, 215, 0, 0.8)',
-        backgroundColor: 'rgba(255, 215, 0, 0.1)',
+        borderColor: 'rgba(252, 209, 22, 0.8)',
+        backgroundColor: 'rgba(252, 209, 22, 0.1)',
         fill: true,
         tension: 0.4,
         pointRadius: 0,
@@ -11001,7 +11063,7 @@ function renderMinerLiveChart(){
       plugins: { legend: { display: false } },
       scales: {
         x: { display: false },
-        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af', font: { size: 9 } } }
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#a3a3a3', font: { size: 9 } } }
       }
     }
   });
@@ -11863,7 +11925,7 @@ function pocRenderCharts(reports){
   const last = reports[reports.length-1];
   const vNames = last.validators.map(v => v.name.substring(0, 20));
   const vScores = last.validators.map(v => v.care_score);
-  const vColors = last.validators.map(v => v.accepted ? 'rgba(34,197,94,0.6)' : 'rgba(239,68,68,0.6)');
+  const vColors = last.validators.map(v => v.accepted ? 'rgba(7,137,48,0.6)' : 'rgba(228,30,43,0.6)');
 
   if(_pocCareChart) _pocCareChart.destroy();
   const c1 = document.getElementById('pocCareChart');
@@ -11880,7 +11942,7 @@ function pocRenderCharts(reports){
     type: 'doughnut',
     data: { labels: ['Care Validators', 'Humanitarian', 'DAO Treasury', 'WARP', 'Hiran Research'],
       datasets: [{ data: [rd.care_validators, rd.humanitarian, rd.dao_treasury, rd.warp_maintenance, rd.hiran_research],
-        backgroundColor: ['#FFD700', '#00CED1', '#a855f7', '#6b7280', '#f59e0b'] }] },
+        backgroundColor: ['#fcd116', '#078930', '#e41e2b', '#6b6b6b', '#fcd116'] }] },
     options: { responsive: true, plugins: { legend: { position: 'right', labels: { color: '#ccc', font: { size: 10 } } } } }
   });
 
@@ -11891,7 +11953,7 @@ function pocRenderCharts(reports){
     const c3 = document.getElementById('pocHiranChart');
     if(c3) _pocHiranChart = new Chart(c3.getContext('2d'), {
       type: 'line',
-      data: { labels: epochs, datasets: [{ label: 'Avg Confidence %', data: confs, borderColor: '#00CED1', backgroundColor: 'rgba(0,206,209,0.1)', fill: true, tension: 0.3 }] },
+      data: { labels: epochs, datasets: [{ label: 'Avg Confidence %', data: confs, borderColor: '#078930', backgroundColor: 'rgba(7,137,48,0.1)', fill: true, tension: 0.3 }] },
       options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { min: 80, max: 100, ticks: { color: '#888', callback: v => v+'%' }, grid: { color: 'rgba(255,255,255,0.05)' } }, x: { ticks: { color: '#888' }, grid: { display: false } } } }
     });
   }

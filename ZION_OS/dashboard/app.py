@@ -3203,13 +3203,66 @@ def _build_status_edge_primary() -> dict:
         except Exception:
             return ("v31_sys", {})
 
+    def _v31_follower_rpc_call(port, key):
+        """RPC call for V31 follower nodes (node2=9446, node3=9447)."""
+        import socket as _sock
+        def _call(method, params=None):
+            req = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params or []}) + "\n"
+            try:
+                with _sock.create_connection(("127.0.0.1", port), timeout=2.0) as s:
+                    s.sendall(req.encode())
+                    resp = b""
+                    while True:
+                        chunk = s.recv(8192)
+                        if not chunk:
+                            break
+                        resp += chunk
+                        if b"\n" in chunk:
+                            break
+                    r = json.loads(resp.decode("utf-8", errors="replace").strip())
+                    if "error" in r and r["error"]:
+                        return None
+                    return r.get("result")
+            except Exception:
+                return None
+        status = _call("getStatus")
+        if status is None:
+            return (key, None)
+        nodeinfo = _call("getNodeInfo")
+        combined = dict(status) if isinstance(status, dict) else {}
+        if isinstance(nodeinfo, dict):
+            combined.update(nodeinfo)
+        return (key, combined)
+
+    def _v31_follower_systemd_call(service, key):
+        """systemd status for V31 follower nodes."""
+        try:
+            import subprocess as _sp
+            r = _sp.run(
+                ["systemctl", "show", service,
+                 "--property=ActiveState,SubState,MainPID,MemoryCurrent"],
+                capture_output=True, text=True, timeout=3
+            )
+            props = {}
+            for line in r.stdout.strip().split("\n"):
+                if "=" in line:
+                    k, v = line.split("=", 1)
+                    props[k] = v
+            return (key, props)
+        except Exception:
+            return (key, {})
+
     edge_node2_info = None
     edge_node2_nodeinfo = None
     edge_peers = None
     edge_nodeinfo = None
     v31_rpc_info = None
     v31_sys_info = {}
-    ex = ThreadPoolExecutor(max_workers=7)
+    v31_node2_rpc_info = None
+    v31_node2_sys_info = {}
+    v31_node3_rpc_info = None
+    v31_node3_sys_info = {}
+    ex = ThreadPoolExecutor(max_workers=11)
     futures = {
         ex.submit(_edge_rpc_call),
         ex.submit(_edge_node2_rpc_call),
@@ -3218,6 +3271,10 @@ def _build_status_edge_primary() -> dict:
         ex.submit(_edge_nodeinfo_call),
         ex.submit(_v31_rpc_call),
         ex.submit(_v31_systemd_call),
+        ex.submit(_v31_follower_rpc_call, 9446, "v31_node2"),
+        ex.submit(_v31_follower_systemd_call, "zion-v31-node2.service", "v31_node2_sys"),
+        ex.submit(_v31_follower_rpc_call, 9447, "v31_node3"),
+        ex.submit(_v31_follower_systemd_call, "zion-v31-node3.service", "v31_node3_sys"),
     }
     try:
         for fut in as_completed(futures, timeout=5.0):
@@ -3237,6 +3294,14 @@ def _build_status_edge_primary() -> dict:
                     v31_rpc_info = val
                 elif key == "v31_sys":
                     v31_sys_info = val or {}
+                elif key == "v31_node2":
+                    v31_node2_rpc_info = val
+                elif key == "v31_node2_sys":
+                    v31_node2_sys_info = val or {}
+                elif key == "v31_node3":
+                    v31_node3_rpc_info = val
+                elif key == "v31_node3_sys":
+                    v31_node3_sys_info = val or {}
             except Exception:
                 pass
     except TimeoutError:
@@ -3339,6 +3404,108 @@ def _build_status_edge_primary() -> dict:
             "count": v31_rpc_info.get("known_peers", 0),
             "peers": v31_rpc_info.get("peers", []),
         }
+
+    # ── V31 Node 2 (Follower) — port 9446 ──────────────────────────────────
+    v31_n2_active = v31_node2_sys_info.get("ActiveState", "unknown")
+    v31_n2_pid = 0
+    try:
+        v31_n2_pid = int(v31_node2_sys_info.get("MainPID", 0))
+    except (ValueError, TypeError):
+        pass
+    v31_n2_mem_mb = None
+    try:
+        mc = v31_node2_sys_info.get("MemoryCurrent", "")
+        if mc and mc != "[not set]":
+            v31_n2_mem_mb = round(int(mc) / 1048576, 1)
+    except (ValueError, TypeError):
+        pass
+    _vr2 = {}
+    v31_n2_height = None
+    v31_n2_tip = None
+    v31_n2_mempool = 0
+    if v31_node2_rpc_info and isinstance(v31_node2_rpc_info, dict):
+        _vr2 = v31_node2_rpc_info.get("result") or v31_node2_rpc_info
+        if isinstance(_vr2, dict):
+            v31_n2_height = _vr2.get("chain_height")
+            v31_n2_tip = _vr2.get("tip_hash") or _vr2.get("tip_hash_hex")
+            v31_n2_mempool = int(_vr2.get("mempool_account_transactions", 0)) + int(_vr2.get("mempool_utxo_transactions", 0))
+            if _vr2.get("mempool_transactions") is not None:
+                v31_n2_mempool = int(_vr2.get("mempool_transactions", 0))
+    v31_node2_status = {
+        "running": v31_n2_active == "active",
+        "systemd_active": v31_n2_active,
+        "systemd_sub": v31_node2_sys_info.get("SubState", "unknown"),
+        "node_pid": v31_n2_pid or None,
+        "memory_mb": v31_n2_mem_mb,
+        "chain_height": v31_n2_height,
+        "tip_hash": v31_n2_tip,
+        "mempool_size": v31_n2_mempool,
+        "network": _vr2.get("network", "mainnet"),
+        "protocol_version": _vr2.get("protocol_version", "zion-v3-node/3.1.0-alpha.2"),
+        "accepted_blocks": _vr2.get("accepted_blocks"),
+        "node_id": _vr2.get("node_id", "zion-edge-v31-node2"),
+        "p2p_bind": _vr2.get("p2p_bind", "0.0.0.0:8336"),
+        "rpc_bind": _vr2.get("rpc_bind", "127.0.0.1:9446"),
+        "host": "127.0.0.1:9446",
+        "version": "3.1.0-alpha.2",
+        "known_peers": _vr2.get("known_peers", 0),
+        "sync_lag": 0,
+    }
+
+    # ── V31 Node 3 (Follower) — port 9447 ──────────────────────────────────
+    v31_n3_active = v31_node3_sys_info.get("ActiveState", "unknown")
+    v31_n3_pid = 0
+    try:
+        v31_n3_pid = int(v31_node3_sys_info.get("MainPID", 0))
+    except (ValueError, TypeError):
+        pass
+    v31_n3_mem_mb = None
+    try:
+        mc = v31_node3_sys_info.get("MemoryCurrent", "")
+        if mc and mc != "[not set]":
+            v31_n3_mem_mb = round(int(mc) / 1048576, 1)
+    except (ValueError, TypeError):
+        pass
+    _vr3 = {}
+    v31_n3_height = None
+    v31_n3_tip = None
+    v31_n3_mempool = 0
+    if v31_node3_rpc_info and isinstance(v31_node3_rpc_info, dict):
+        _vr3 = v31_node3_rpc_info.get("result") or v31_node3_rpc_info
+        if isinstance(_vr3, dict):
+            v31_n3_height = _vr3.get("chain_height")
+            v31_n3_tip = _vr3.get("tip_hash") or _vr3.get("tip_hash_hex")
+            v31_n3_mempool = int(_vr3.get("mempool_account_transactions", 0)) + int(_vr3.get("mempool_utxo_transactions", 0))
+            if _vr3.get("mempool_transactions") is not None:
+                v31_n3_mempool = int(_vr3.get("mempool_transactions", 0))
+    v31_node3_status = {
+        "running": v31_n3_active == "active",
+        "systemd_active": v31_n3_active,
+        "systemd_sub": v31_node3_sys_info.get("SubState", "unknown"),
+        "node_pid": v31_n3_pid or None,
+        "memory_mb": v31_n3_mem_mb,
+        "chain_height": v31_n3_height,
+        "tip_hash": v31_n3_tip,
+        "mempool_size": v31_n3_mempool,
+        "network": _vr3.get("network", "mainnet"),
+        "protocol_version": _vr3.get("protocol_version", "zion-v3-node/3.1.0-alpha.2"),
+        "accepted_blocks": _vr3.get("accepted_blocks"),
+        "node_id": _vr3.get("node_id", "zion-edge-v31-node3"),
+        "p2p_bind": _vr3.get("p2p_bind", "0.0.0.0:8337"),
+        "rpc_bind": _vr3.get("rpc_bind", "127.0.0.1:9447"),
+        "host": "127.0.0.1:9447",
+        "version": "3.1.0-alpha.2",
+        "known_peers": _vr3.get("known_peers", 0),
+        "sync_lag": 0,
+    }
+
+    # Compute sync lag of followers relative to primary
+    if v31_node_status.get("chain_height") is not None:
+        _primary_h = int(v31_node_status["chain_height"])
+        if v31_node2_status.get("chain_height") is not None:
+            v31_node2_status["sync_lag"] = _primary_h - int(v31_node2_status["chain_height"])
+        if v31_node3_status.get("chain_height") is not None:
+            v31_node3_status["sync_lag"] = _primary_h - int(v31_node3_status["chain_height"])
     # ── V31 Pool (PROD) — systemd + share count from journald ──────────────
     v31_pool_sys = _systemctl_show("zion-v31-pool.service")
     v31_pool_active = v31_pool_sys.get("ActiveState", "unknown")
@@ -3713,7 +3880,9 @@ def _build_status_edge_primary() -> dict:
     for _label, _st, _role, _icon in [
         ("Edge Node 1 (Primary)", edge_node1_status, "primary", "🌍"),
         ("Edge Node 2 (Follower)", edge_node2_status, "follower", "🔶"),
-        ("V31 Node (PROD)", v31_node_status, "primary", "🚀"),
+        ("V31 Node 1 (Primary)", v31_node_status, "primary", "🚀"),
+        ("V31 Node 2 (Follower)", v31_node2_status, "follower", "🛰️"),
+        ("V31 Node 3 (Follower)", v31_node3_status, "follower", "📡"),
         ("Local Backup Node", local_backup_status, "backup", "💾"),
     ]:
         # Always include all known nodes — even offline ones — so the overview
@@ -3786,6 +3955,8 @@ def _build_status_edge_primary() -> dict:
         "edge_node": edge_node1_status,
         "edge_node2": edge_node2_status,
         "v31_node": v31_node_status,
+        "v31_node2": v31_node2_status,
+        "v31_node3": v31_node3_status,
         "v31_pool": v31_pool_status,
         "v31_miner": v31_miner_status,
         "v31_multichain": v31_multichain_status,
@@ -5315,6 +5486,12 @@ def run_edge_action(action: str) -> dict:
         "restart-v31-node":       "sudo systemctl restart zion-v31-node.service",
         "stop-v31-node":          "sudo systemctl stop zion-v31-node.service",
         "start-v31-node":         "sudo systemctl start zion-v31-node.service",
+        "restart-v31-node2":      "sudo systemctl restart zion-v31-node2.service",
+        "stop-v31-node2":         "sudo systemctl stop zion-v31-node2.service",
+        "start-v31-node2":        "sudo systemctl start zion-v31-node2.service",
+        "restart-v31-node3":      "sudo systemctl restart zion-v31-node3.service",
+        "stop-v31-node3":         "sudo systemctl stop zion-v31-node3.service",
+        "start-v31-node3":        "sudo systemctl start zion-v31-node3.service",
         "restart-v31-pool":       "sudo systemctl restart zion-v31-pool.service",
         "stop-v31-pool":          "sudo systemctl stop zion-v31-pool.service",
         "start-v31-pool":         "sudo systemctl start zion-v31-pool.service",
