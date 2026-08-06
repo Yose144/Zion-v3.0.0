@@ -2868,6 +2868,9 @@ pub struct GpuScanOutcome {
     /// Mix hash for Ethash/KawPow (needed for eth_submitWork).  None for
     /// algorithms that don't produce a mix hash.
     pub mix_hash: Option<[u8; 32]>,
+    /// Variable-length solution blob for Equihash/BeamHash/VerusHash-style shares.
+    /// None for algorithms that only return a 32-byte hash.
+    pub solution_blob: Option<Vec<u8>>,
     pub nonces_tested: u64,
     pub candidates_found: u64,
     pub candidates_verified: u64,
@@ -3043,6 +3046,7 @@ pub fn gpu_scan_job(
                     return GpuScanOutcome {
                         solution: None,
                         mix_hash,
+                        solution_blob: None,
                         nonces_tested,
                         candidates_found: 1,
                         candidates_verified: 0,
@@ -3060,6 +3064,7 @@ pub fn gpu_scan_job(
                         hash: *gpu_hash,
                     }),
                     mix_hash,
+                    solution_blob: result.solution_blob.clone(),
                     nonces_tested,
                     candidates_found: 1,
                     candidates_verified: 1,
@@ -3070,6 +3075,7 @@ pub fn gpu_scan_job(
                 GpuScanOutcome {
                     solution: None,
                     mix_hash: None,
+                    solution_blob: None,
                     nonces_tested,
                     candidates_found: 0,
                     candidates_verified: 0,
@@ -3083,6 +3089,7 @@ pub fn gpu_scan_job(
             GpuScanOutcome {
                 solution: None,
                 mix_hash: None,
+                solution_blob: None,
                 nonces_tested: 0,
                 candidates_found: 0,
                 candidates_verified: 0,
@@ -3183,6 +3190,7 @@ impl GpuPipelineState {
                             GpuScanOutcome {
                                 solution: None,
                                 mix_hash,
+                                solution_blob: None,
                                 nonces_tested,
                                 candidates_found: 1,
                                 candidates_verified: 0,
@@ -3197,6 +3205,7 @@ impl GpuPipelineState {
                                     hash: *gpu_hash,
                                 }),
                                 mix_hash,
+                                solution_blob: result.solution_blob.clone(),
                                 nonces_tested,
                                 candidates_found: 1,
                                 candidates_verified: 1,
@@ -3208,6 +3217,7 @@ impl GpuPipelineState {
                         GpuScanOutcome {
                             solution: None,
                             mix_hash: None,
+                            solution_blob: None,
                             nonces_tested,
                             candidates_found: 0,
                             candidates_verified: 0,
@@ -3221,6 +3231,7 @@ impl GpuPipelineState {
                     GpuScanOutcome {
                         solution: None,
                         mix_hash: None,
+                        solution_blob: None,
                         nonces_tested: 0,
                         candidates_found: 0,
                         candidates_verified: 0,
@@ -3311,6 +3322,7 @@ impl GpuPipelineState {
                         return Some(GpuScanOutcome {
                             solution: None,
                             mix_hash,
+                            solution_blob: None,
                             nonces_tested,
                             candidates_found: 1,
                             candidates_verified: 0,
@@ -3325,6 +3337,7 @@ impl GpuPipelineState {
                             hash: *gpu_hash,
                         }),
                         mix_hash,
+                        solution_blob: result.solution_blob.clone(),
                         nonces_tested,
                         candidates_found: 1,
                         candidates_verified: 1,
@@ -3335,6 +3348,7 @@ impl GpuPipelineState {
                     Some(GpuScanOutcome {
                         solution: None,
                         mix_hash: None,
+                        solution_blob: None,
                         nonces_tested,
                         candidates_found: 0,
                         candidates_verified: 0,

@@ -190,17 +190,14 @@ export default function Navigation() {
           <Link href="/" className="flex items-center space-x-2 group shrink-0">
             <div className={`rounded-lg flex items-center justify-center relative overflow-hidden border border-white/15 group-hover:border-zion-gold/50 transition-all duration-300 bg-transparent shadow-[0_6px_18px_rgba(0,0,0,0.3)] ${scrolled ? 'w-7 h-7 sm:w-8 sm:h-8' : 'w-8 h-8 sm:w-9 sm:h-9'}`}>
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(111,255,240,0.08),transparent_65%)]" />
-              <picture>
-                <source srcSet="/stargate/Z.webp" type="image/webp" />
-                <img
-                  src="/stargate/Z.gif"
-                  alt="ZION TerraNova"
-                  width={40}
-                  height={40}
-                  fetchPriority="high"
-                  className="relative z-10 w-full h-full object-contain rounded-lg"
-                />
-              </picture>
+              <img
+                src="/images/logo144.png"
+                alt="ZION TerraNova"
+                width={40}
+                height={40}
+                fetchPriority="high"
+                className="relative z-10 w-full h-full object-contain rounded-lg"
+              />
             </div>
             <div className="flex flex-col leading-none transition-all duration-300">
               <span className="text-sm sm:text-base font-bold text-gradient-soft tracking-tight">ZION</span>

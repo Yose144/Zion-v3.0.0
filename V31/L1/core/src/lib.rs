@@ -26,28 +26,47 @@ pub mod propagation;
 pub mod rpc;
 pub mod storage;
 pub mod transaction;
+
+#[cfg(feature = "v3-binaries")]
 pub mod v3_chain;
+#[cfg(feature = "v3-binaries")]
 pub mod v3_checkpoint;
+#[cfg(feature = "v3-binaries")]
 pub mod v3_compat;
+#[cfg(feature = "v3-binaries")]
 pub mod v3_full_checkpoint;
+#[cfg(feature = "v3-binaries")]
 pub mod v3_mempool;
+#[cfg(feature = "v3-binaries")]
 pub mod v3_p2p;
+#[cfg(feature = "v3-binaries")]
 pub mod v3_reorg;
+#[cfg(feature = "v3-binaries")]
 pub mod v3_rpc;
+#[cfg(feature = "v3-binaries")]
 pub mod v3_state;
+#[cfg(feature = "v3-binaries")]
 pub mod v3_template;
+#[cfg(feature = "v3-binaries")]
 pub mod v3_tx;
 
 // Ported V3 core types — ChainState, NodeRuntime, CoreRuntime, etc.
+#[cfg(feature = "v3-binaries")]
 pub mod chain_state;
+#[cfg(feature = "v3-binaries")]
 pub mod node_runtime;
 
 // TODO: These modules need V3 core types (ChainState, NodeRuntime, etc.)
 //       before they can be enabled. Port in Phase B.1.
+#[cfg(feature = "v3-binaries")]
 pub mod launch;
+#[cfg(feature = "v3-binaries")]
 pub mod v3_node_builder;
+#[cfg(feature = "v3-binaries")]
 pub mod v3_wallet;
+#[cfg(feature = "v3-binaries")]
 pub mod v3_bridge;   // needs k256, hex(), SpendableUtxo, MIGRATION_DIVISOR
+#[cfg(feature = "v3-binaries")]
 pub mod v3_validation; // needs crate::tx, crate::genesis::validate_premine
 pub mod websocket;
 
@@ -62,8 +81,11 @@ pub use migration::{migrate_v3_state, MigrationError, MigrationSummary};
 pub use node::{Node, NodeConfig};
 pub use storage::{Storage, StorageError};
 pub use transaction::{Transaction, TransactionInput, TransactionOutput};
+
+#[cfg(feature = "v3-binaries")]
 pub use v3_compat::{
     BlockCandidate, DifficultyTarget as V3DifficultyTarget, MiningHeader, MiningJob,
     MiningSolution, PremineOutput, PREMINE_OUTPUTS, SealedBlock, V3Block,
 };
+#[cfg(feature = "v3-binaries")]
 pub use v3_wallet::MIN_PAYOUT_AMOUNT;
