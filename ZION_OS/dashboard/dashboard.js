@@ -41,7 +41,7 @@
   };
 })();
 
-const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','bridge-validators','genesis','blockers','ops','servers-setup','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','cex','warp-swap','payout','pool-miners','pool-blocks','pool-setup','pool-debug','revenue','backups','topology','miner-live','settings','fleet','agent','warp','ai-agents','ncl-jobs','poc-lab','marketplace-orders','marketplace-invoices','marketplace-shipping','marketplace-stripe'];
+const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','bridge-validators','genesis','blockers','ops','servers-setup','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','cex','multichain','warp-swap','payout','pool-miners','pool-blocks','pool-setup','pool-debug','revenue','backups','topology','miner-live','settings','fleet','agent','warp','ai-agents','ncl-jobs','poc-lab','marketplace-orders','marketplace-invoices','marketplace-shipping','marketplace-stripe'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let _payoutSseSource = null;  // EventSource for real-time payout events
@@ -211,6 +211,7 @@ function switchTab(name){
   else if(name === 'topology'){ clearTabTimers('topology'); loadTopology(); if(!_topologyTimer) _topologyTimer = setInterval(loadTopology, 10000); }
   else if(name === 'dao'){ clearTabTimers('dao'); loadDaoAll(); if(!_daoTimer) _daoTimer = setInterval(loadDaoAll, 10000); }
   else if(name === 'cex'){ clearTabTimers(null); loadCexPanel(); if(!_cexTimer) _cexTimer = setInterval(loadCexPanel, 60000); }
+  else if(name === 'multichain'){ clearTabTimers(null); loadMultichainPanel(); }
   else if(name === 'warp-swap'){ clearTabTimers(null); loadWarpSwapPanel(); }
   else if(name === 'payout'){ clearTabTimers(null); loadPayoutTab(); connectPayoutSse(); if(!_payoutTimer) _payoutTimer = setInterval(loadPayoutTab, 10000); }
   else if(name === 'pool-miners'){ clearTabTimers(null); loadPoolMinersTab(); if(!_poolMinersTimer) _poolMinersTimer = setInterval(loadPoolMinersTab, 10000); }
@@ -4395,11 +4396,11 @@ async function refreshMinerBalances(){
 
     let totalHashrate = 0, totalValid = 0, totalInvalid = 0;
     tbody.innerHTML = poolMiners.map(m => {
-      const name = escapeHtml(m.worker_name || m.miner_id || '—');
-      const rawAddr = m.payout_address || m.miner_id || '';
+      const name = escapeHtml(m.worker_name || m.worker || m.miner_id || m.address || '—');
+      const rawAddr = m.payout_address || m.address || m.miner_id || '';
       const addr = escapeHtml(rawAddr.slice(0, 24) + (rawAddr.length > 24 ? '…' : ''));
       const hr = m.hashrate_hps != null ? m.hashrate_hps : (m.hashrate || 0);
-      const hrStr = hr >= 1000 ? (hr/1000).toFixed(2) + ' KH/s' : hr >= 1e6 ? (hr/1e6).toFixed(2) + ' MH/s' : hr.toFixed(1) + ' H/s';
+      const hrStr = hr >= 1e6 ? (hr/1e6).toFixed(2) + ' MH/s' : hr >= 1000 ? (hr/1000).toFixed(2) + ' KH/s' : hr.toFixed(1) + ' H/s';
       const valid = m.valid_shares ?? 0;
       const invalid = m.invalid_shares ?? 0;
       const blocks = m.blocks_found ?? 0;
@@ -4430,7 +4431,7 @@ async function refreshMinerBalances(){
     }).join('');
 
     if(summary){
-      const thr = totalHashrate >= 1000 ? (totalHashrate/1000).toFixed(2) + ' KH/s' : totalHashrate >= 1e6 ? (totalHashrate/1e6).toFixed(2) + ' MH/s' : totalHashrate.toFixed(1) + ' H/s';
+      const thr = totalHashrate >= 1e6 ? (totalHashrate/1e6).toFixed(2) + ' MH/s' : totalHashrate >= 1000 ? (totalHashrate/1000).toFixed(2) + ' KH/s' : totalHashrate.toFixed(1) + ' H/s';
       const onChainTotal = totals.on_chain_zion > 0 ? _zionFmt(totals.on_chain_zion) + ' ZION' : '—';
       const paidTotal = totals.paid_zion > 0 ? _zionFmt(totals.paid_zion) + ' ZION' : '—';
       const pendingTotal = totals.pending_zion > 0 ? _zionFmt(totals.pending_zion) + ' ZION' : '—';
@@ -4478,9 +4479,9 @@ async function loadPayoutTab(){
     const ps = d.pool_stats || {};
     set('payout-kpi-blocks', d.blocks_found ?? ps.blocks?.found ?? 0);
 
-    // Hashrate: pool_stats.hashrate.pool (H/s) → KH/s; fallback miner_perf
-    const hrRaw = ps.hashrate?.pool ?? ps.pool_hashrate ?? d.miner_perf?.hashrate_hps ?? d.miner_perf?.hashrate ?? null;
-    const hrKhs = hrRaw != null ? (hrRaw >= 1000 ? (hrRaw/1000).toFixed(2)+' KH/s' : hrRaw.toFixed(1)+' H/s') : '—';
+    // Hashrate: prefer pool metrics (H/s) → KH/s/MH/s; fallback miner_perf
+    const hrRaw = d.session_stats?.pool_hashrate_hps ?? ps.hashrate?.pool ?? ps.pool_hashrate ?? d.miner_perf?.hashrate_hps ?? d.miner_perf?.hashrate ?? null;
+    const hrKhs = hrRaw != null ? (hrRaw >= 1e6 ? (hrRaw/1e6).toFixed(2)+' MH/s' : hrRaw >= 1000 ? (hrRaw/1000).toFixed(2)+' KH/s' : hrRaw.toFixed(1)+' H/s') : '—';
     set('payout-kpi-hashrate', hrKhs);
 
     const ss = d.session_stats || {};
@@ -4546,10 +4547,10 @@ async function loadPayoutTab(){
     // Merge /api/payout (on-chain balances) + /api/pool/miners (hashrate, paid_total)
     const balTbody = document.getElementById('payout-miner-balances');
     if(balTbody){
-      // Build pool metrics lookup by worker_name for hashrate enrichment
+      // Build pool metrics lookup by worker/address for hashrate enrichment
       const poolMetrics = new Map();
       miners.forEach(m => {
-        const key = m.worker_name || m.miner_id || '';
+        const key = m.worker_name || m.worker || m.miner_id || m.address || '';
         if(key) poolMetrics.set(key, m);
       });
       // Use payout miners (richer: on_chain_balance, payout_address)
@@ -4558,22 +4559,21 @@ async function loadPayoutTab(){
         balTbody.innerHTML = '<tr><td colspan="8" class="text-gray-500 text-center py-4">No miners connected</td></tr>';
       } else {
         balTbody.innerHTML = payoutMiners.map(m => {
-          const name = m.worker_name || m.miner_id || m.address || '—';
+          const name = m.worker_name || m.worker || m.miner_id || m.address || '—';
           const addr = escapeHtml((m.payout_address || m.address || m.miner_id || '').slice(0, 20) + (((m.payout_address || m.address || m.miner_id || '').length > 20) ? '…' : ''));
           const valid = m.valid_shares ?? 0;
           const invalid = m.invalid_shares ?? m.no_solution ?? 0;
-          // pending_balance from pool/payout APIs is always in atomic flowers
-          const pendingZion = (m.pending_balance != null && m.pending_balance > 0)
-            ? m.pending_balance / 1_000_000
-            : 0;
+          // pending_balance is atomic flowers; prefer pending_balance_zion if backend already converted it
+          const pendingZion = m.pending_balance_zion != null ? m.pending_balance_zion
+            : (m.pending_balance != null && m.pending_balance > 0 ? m.pending_balance / 1_000_000 : 0);
           const pendingStr = pendingZion > 0 ? _zionFmt(pendingZion) + ' ZION' : '—';
           const paidZion = m.paid_total ?? m.total_paid ?? 0;
           const paidStr = paidZion > 0 ? _zionFmt(paidZion) + ' ZION' : '—';
           const onChain = m.on_chain_balance_zion != null ? _zionFmt(m.on_chain_balance_zion) + ' ZION' : '—';
           // Merge hashrate from pool metrics (payout API has null hashrate)
           const poolM = poolMetrics.get(name);
-          const hr = poolM?.hashrate_hps ?? m.hashrate ?? 0;
-          const hrStr = hr >= 1000 ? (hr/1000).toFixed(2)+' KH/s' : hr > 0 ? hr.toFixed(1)+' H/s' : '—';
+          const hr = poolM?.hashrate_hps ?? m.hashrate_hps ?? m.hashrate ?? 0;
+          const hrStr = hr >= 1e6 ? (hr/1e6).toFixed(2)+' MH/s' : hr >= 1000 ? (hr/1000).toFixed(2)+' KH/s' : hr > 0 ? hr.toFixed(1)+' H/s' : '—';
           return `<tr class="border-b border-white/5 hover:bg-white/5">
             <td class="py-2 px-2 text-emerald-300 font-semibold">${escapeHtml(name)}</td>
             <td class="py-2 px-2 text-gray-400 text-[10px] font-mono">${addr}</td>
@@ -9595,6 +9595,10 @@ function setText(id, text) {
   const el = document.getElementById(id);
   if(el) el.textContent = text;
 }
+function setHtml(id, html) {
+  const el = document.getElementById(id);
+  if(el) el.innerHTML = html;
+}
 const set = setText;
 
 function updateNetworkEmission(em){
@@ -11540,6 +11544,65 @@ async function loadWarpSwapPanel(){
           <p class="text-xs text-gray-500 mt-0.5">${r.desc}</p>
         </div>
       </div>`).join('');
+  }
+}
+
+// ── V31 Multichain Panel ─────────────────────────────────────────────
+async function loadMultichainPanel(){
+  try {
+    const data = await apiFetch('/api/multichain');
+    if(!data || !data.ok) throw new Error(data?.error || 'Failed to load multichain');
+
+    const warp = data.warp || {};
+    const chains = data.chains || {};
+    const transfers = data.transfers || {};
+    const dex = data.dex || {};
+
+    setText('mc-warp-status', warp.alive ? (warp.status || 'Online') : (warp.status || 'Offline'));
+    setHtml('mc-warp-version', warp.alive ? (warp.version || '—') : '<span class="text-red-400">offline</span>');
+    setText('mc-warp-total', (warp.transfers_total ?? 0).toLocaleString());
+    setText('mc-warp-pending', (warp.transfers_pending ?? 0).toLocaleString());
+
+    setText('mc-dex-status', dex.alive ? (dex.status || 'Online') : (dex.status || 'Offline'));
+    setText('mc-chains-count', (chains.count ?? 0).toLocaleString());
+    setText('mc-transfers-count', (transfers.count ?? 0).toLocaleString());
+    setText('mc-transfers-pending', (transfers.pending ?? 0).toLocaleString());
+
+    const chainsBody = document.getElementById('mc-chains-body');
+    if(chainsBody){
+      const items = chains.items || [];
+      if(items.length === 0){
+        chainsBody.innerHTML = '<tr><td colspan="4" class="py-4 text-gray-500 italic text-center">No chains registered</td></tr>';
+      } else {
+        chainsBody.innerHTML = items.map(c => `
+          <tr class="border-b border-white/5 hover:bg-white/5">
+            <td class="py-2 px-2 font-mono text-emerald-400">${escapeHtml(c.name || c.id || '—')}</td>
+            <td class="py-2 px-2 text-gray-300">${escapeHtml(c.family || '—')}</td>
+            <td class="py-2 px-2 text-right text-gray-400">${c.decimals !== undefined ? c.decimals : '—'}</td>
+            <td class="py-2 px-2 text-right text-gray-400">${c.finality_blocks !== undefined ? c.finality_blocks + ' blk' : '—'}</td>
+          </tr>`).join('');
+      }
+    }
+
+    const transfersBody = document.getElementById('mc-transfers-body');
+    if(transfersBody){
+      const items = transfers.items || [];
+      if(items.length === 0){
+        transfersBody.innerHTML = '<tr><td colspan="6" class="py-4 text-gray-500 italic text-center">No transfers yet</td></tr>';
+      } else {
+        transfersBody.innerHTML = items.map(t => `
+          <tr class="border-b border-white/5 hover:bg-white/5">
+            <td class="py-2 px-2 font-mono text-cyan-400 text-[10px]">${escapeHtml(t.id || t.tx_id || '—')}</td>
+            <td class="py-2 px-2">${escapeHtml(t.from_chain || '—')}</td>
+            <td class="py-2 px-2">${escapeHtml(t.to_chain || '—')}</td>
+            <td class="py-2 px-2 text-right">${t.amount !== undefined ? escapeHtml(String(t.amount)) : '—'}</td>
+            <td class="py-2 px-2 text-center"><span class="${(t.status || '').toLowerCase() === 'completed' ? 'text-emerald-400' : 'text-amber-400'}">${escapeHtml(t.status || '—')}</span></td>
+            <td class="py-2 px-2 text-[10px] text-gray-500">${t.created_at ? new Date(t.created_at).toLocaleString() : '—'}</td>
+          </tr>`).join('');
+      }
+    }
+  } catch(e){
+    console.error('Multichain panel load failed:', e);
   }
 }
 
