@@ -9,14 +9,14 @@ use async_trait::async_trait;
 use tracing::{debug, info, warn};
 
 /// Docker-compose file path for the Lightning stack (referenced in error messages).
-const LN_DOCKER_PATH: &str = "V3/L3/warp/docker/lightning/docker-compose.yml";
+const LN_DOCKER_PATH: &str = "V31/L2/multichain/docker/lightning/docker-compose.yml";
 
 /// Helper to build an error message that points to the Docker setup.
 fn ln_setup_error(reason: &str) -> WarpError {
     WarpError::AdapterError {
         chain: "lightning".into(),
         reason: format!(
-            "{} — start LND via `docker compose -f {} up -d` and set WARP_LN_NODE_URL + WARP_LN_MACAROON (see V3/L3/warp/docker/lightning/README.md)",
+            "{} — start LND via `docker compose -f {} up -d` and set WARP_LN_NODE_URL + WARP_LN_MACAROON (see V31/L2/multichain/docker/lightning/README.md)",
             reason, LN_DOCKER_PATH
         ),
     }
@@ -29,7 +29,7 @@ fn ln_setup_error(reason: &str) -> WarpError {
 /// - Inbound: Lightning payment triggers ZION mint on L1
 ///
 /// Requires a connected LND node (REST proxy on port 8080).
-/// See `V3/L3/warp/docker/lightning/` for Docker setup instructions.
+/// See `V31/L2/multichain/docker/lightning/` for Docker setup instructions.
 pub struct LightningAdapter {
     lnd: Option<LndClient>,
 }

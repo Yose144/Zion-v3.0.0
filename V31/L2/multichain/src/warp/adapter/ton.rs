@@ -184,8 +184,8 @@ impl TonAdapter {
     /// - `WARP_TON_API_KEY` — optional API key for higher rate limits
     /// - `WARP_TON_BRIDGE_ACCOUNT` — ZION jetton master contract address (EQ.../UQ...)
     ///
-    /// Contract source: V3/L2/bridge/contracts/non-evm/ton/zion_jetton.fc
-    /// Deployment steps: V3/L2/bridge/contracts/non-evm/ton/README.md
+    /// Contract source: V31/L2/multichain/contracts/non-evm/ton/zion_jetton.fc
+    /// Deployment steps: V31/L2/multichain/contracts/non-evm/ton/README.md
     ///
     /// After deploying the TEP-74 jetton master contract (zion_jetton.fc),
     /// set WARP_TON_BRIDGE_ACCOUNT to the master contract address (EQ...).

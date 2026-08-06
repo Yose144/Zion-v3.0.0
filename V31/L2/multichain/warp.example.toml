@@ -1,6 +1,19 @@
 # Example WARP bridge node configuration.
 # Copy this file to `warp.toml` and fill in real RPC endpoints, contract
 # addresses, and validator keys before running `cargo run -p zion-multichain --bin warpd`.
+#
+# Environment overrides (set in the service EnvironmentFile, NOT here, for real
+# relay keys and deployed contract addresses):
+#   WARP_L1_RPC_URL, WARP_L1_VAULT_ADDRESS
+#   WARP_SOLANA_ZION_MINT, WARP_SOLANA_RELAY_KEY
+#   WARP_TRON_CONTRACT, WARP_TRON_RELAY_KEY
+#   WARP_TON_BRIDGE_ACCOUNT, WARP_TON_RELAY_KEY
+#   WARP_NEAR_BRIDGE_CONTRACT, WARP_NEAR_RELAY_KEY
+#   WARP_CARDANO_ZION_ASSET, WARP_CARDANO_PAYMENT_KEY
+#   WARP_BITCOIN_HTLC_ADDRESS, WARP_BTC_RELAY_KEY
+#   WARP_LN_NODE_URL, WARP_LN_MACAROON
+#   WARP_EVM_RELAY_KEY, WARP_VALIDATOR_KEYS
+# See V31/L2/multichain/src/warp/adapter/*.rs for the complete env-var surface.
 
 node_id = "warp-node-1"
 listen_addr = "0.0.0.0"

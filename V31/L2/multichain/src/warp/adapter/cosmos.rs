@@ -12,8 +12,8 @@ use tracing::{debug, info, warn};
 // ─────────────────────────────────────────────────────────────────────────────
 // ZION CosmWasm contract address per network
 // ─────────────────────────────────────────────────────────────────────────────
-// Contract source: V3/L2/bridge/contracts/non-evm/cosmos/zion_cw20.rs
-// Deployment steps: V3/L2/bridge/contracts/non-evm/cosmos/README.md
+// Contract source: V31/L2/multichain/contracts/non-evm/cosmos/zion_cw20.rs
+// Deployment steps: V31/L2/multichain/contracts/non-evm/cosmos/README.md
 //
 // After deploying the CW20 contract (zion_cw20.rs) to a CosmWasm-enabled
 // chain, replace the placeholder addresses below with the real bech32
@@ -34,13 +34,13 @@ fn zion_contract_with_override(network: &str, contract_override: Option<&str>) -
             // TODO: Replace with real cosmoshub-4 ZION CW20 contract address.
             // Deploy zion_cw20.rs via: wasmd tx wasm store + wasmd tx wasm instantiate
             // The contract address will be a cosmos1... bech32 address.
-            warn!("[WARP][cosmos] cosmoshub-4 ZION contract is a placeholder — deploy CW20 from V3/L2/bridge/contracts/non-evm/cosmos/ and update this address");
+            warn!("[WARP][cosmos] cosmoshub-4 ZION contract is a placeholder — deploy CW20 from V31/L2/multichain/contracts/non-evm/cosmos/ and update this address");
             Some("cosmos1zionwarpxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx".to_string())
         }
         "theta-testnet-001" => {
             // TODO: Replace with real theta-testnet ZION CW20 contract address.
             // Deploy zion_cw20.rs to the theta testnet for testing.
-            warn!("[WARP][cosmos] theta-testnet ZION contract is a placeholder — deploy CW20 from V3/L2/bridge/contracts/non-evm/cosmos/ and update this address");
+            warn!("[WARP][cosmos] theta-testnet ZION contract is a placeholder — deploy CW20 from V31/L2/multichain/contracts/non-evm/cosmos/ and update this address");
             Some("cosmos1ziontexxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx".to_string())
         }
         _ => None,

@@ -82,6 +82,7 @@ impl ApiServer {
                             &format!("zion_{}", tpl.template_id),
                             &tpl.header_hex,
                             &tpl.target_hex,
+                            &tpl.target_hex,
                             tpl.block_reward,
                             &template_json,
                         );
@@ -89,7 +90,7 @@ impl ApiServer {
                     Ok(None) => {
                         let header = "00".repeat(80);
                         let target = "f".repeat(64);
-                        stratum_broadcast.broadcast_job("zion_1", &header, &target, 6_000_000, "");
+                        stratum_broadcast.broadcast_job("zion_1", &header, &target, &target, 6_000_000, "");
                     }
                     Err(e) => {
                         tracing::warn!("failed to fetch zion block template: {}", e);

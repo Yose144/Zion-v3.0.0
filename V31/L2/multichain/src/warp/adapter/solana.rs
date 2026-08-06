@@ -14,8 +14,8 @@ use tracing::{debug, info, warn};
 // ─────────────────────────────────────────────────────────────────────────────
 fn zion_mint_with_override(cluster: &str, mint_override: Option<&str>) -> Option<String> {
     // ── ZION SPL Token Mint Address ──────────────────────────────────────
-    // Contract source: V3/L2/bridge/contracts/non-evm/solana/zion_spl_token.rs
-    // Deployment steps: V3/L2/bridge/contracts/non-evm/solana/README.md
+    // Contract source: V31/L2/multichain/contracts/non-evm/solana/zion_spl_token.rs
+    // Deployment steps: V31/L2/multichain/contracts/non-evm/solana/README.md
     //
     // DEPLOYED 2026-07-13: Standard SPL Token (TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA)
     // Mint authority: CwUgTMF4kSydPUJYeQ6itRuq3iaXeJ9XTefBrBQbLWTe (Exodus wallet)

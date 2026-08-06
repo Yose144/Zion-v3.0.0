@@ -126,11 +126,20 @@ impl Pool {
         height: u64,
         difficulty: u64,
     ) -> Result<bool, PoolError> {
+        let target = self.config.zion_target;
+        self.submit_zion_with_target(submission, header, height, difficulty, &target)
+    }
+
+    pub fn submit_zion_with_target(
+        &mut self,
+        submission: ShareSubmission,
+        header: &[u8],
+        height: u64,
+        difficulty: u64,
+        target: &[u8; 32],
+    ) -> Result<bool, PoolError> {
         let nonce = Self::parse_nonce(&submission.nonce_hex)?;
-        if self
-            .validator
-            .validate_zion(header, nonce, &self.config.zion_target)
-        {
+        if self.validator.validate_zion(header, nonce, target) {
             self.record_share(&submission.worker, height, difficulty);
             self.accepted.fetch_add(1, Ordering::Relaxed);
             Ok(true)
@@ -148,11 +157,21 @@ impl Pool {
         height: u64,
         difficulty: u64,
     ) -> Result<bool, PoolError> {
+        let target = self.config.auxpow_target;
+        self.submit_auxpow_with_target(coin, submission, header, height, difficulty, &target)
+    }
+
+    pub fn submit_auxpow_with_target(
+        &mut self,
+        coin: ExternalCoin,
+        submission: ShareSubmission,
+        header: &[u8],
+        height: u64,
+        difficulty: u64,
+        target: &[u8; 32],
+    ) -> Result<bool, PoolError> {
         let nonce = Self::parse_nonce(&submission.nonce_hex)?;
-        if self
-            .validator
-            .validate_auxpow(coin, header, nonce, &self.config.auxpow_target)
-        {
+        if self.validator.validate_auxpow(coin, header, nonce, target) {
             self.record_share(&submission.worker, height, difficulty);
             self.accepted.fetch_add(1, Ordering::Relaxed);
             Ok(true)

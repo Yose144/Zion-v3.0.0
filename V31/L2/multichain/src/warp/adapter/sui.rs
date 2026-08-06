@@ -35,8 +35,8 @@ const DEFAULT_SUI_RPC: &str = "https://fullnode.mainnet.sui.io";
 /// Move bridge module. The fully-qualified event type looks like
 /// `0x<pkg>::bridge::DepositEvent` — we match on the module/event name.
 ///
-/// Contract source: V3/L2/bridge/contracts/non-evm/sui/sources/zion_coin.move
-/// Deployment steps: V3/L2/bridge/contracts/non-evm/sui/README.md
+/// Contract source: V31/L2/multichain/contracts/non-evm/sui/sources/zion_coin.move
+/// Deployment steps: V31/L2/multichain/contracts/non-evm/sui/README.md
 ///
 /// After publishing the Sui Move package, replace the `0x2` placeholder
 /// package ID below with the real package object ID from `sui client publish`.
@@ -426,7 +426,7 @@ impl SuiAdapter {
     async fn query_events(&self, limit: u64) -> WarpResult<Vec<SuiEvent>> {
         // Filter for Move events emitted by the zion_coin bridge module.
         //
-        // Contract: V3/L2/bridge/contracts/non-evm/sui/sources/zion_coin.move
+        // Contract: V31/L2/multichain/contracts/non-evm/sui/sources/zion_coin.move
         //
         // The package ID `0x2` is a placeholder — after deploying the Sui Move
         // package, replace with the real package object ID from `sui client publish`.

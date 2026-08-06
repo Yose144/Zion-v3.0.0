@@ -186,7 +186,7 @@ impl OutboundExecutor {
         .ok_or(WarpError::DecimalOverflow {
             from_decimals: 6,
             to_decimals: transfer.dest_chain.decimals,
-        })? as u128;
+        })?;
 
         // Build mint instruction
         let mint_instruction = MintInstruction {

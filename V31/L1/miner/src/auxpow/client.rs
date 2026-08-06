@@ -1326,7 +1326,14 @@ async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJ
             Ok(h) => h,
             Err(_) => header_hex.as_bytes().to_vec(),
         };
-        let target = hasher::parse_target_hex(target_hex).unwrap_or([0xFF; 32]);
+        // Honor an explicit mining.set_target override (used by the ZION pool's
+        // per-session vardiff). If none was sent, fall back to the target in the
+        // mining.notify message.
+        let target = if let Some(tb) = *state.target_bytes.lock().await {
+            tb
+        } else {
+            hasher::parse_target_hex(target_hex).unwrap_or([0xFF; 32])
+        };
         let height = params.get(3).and_then(Value::as_u64).unwrap_or(0);
         return Some(StratumJob {
             job_id,

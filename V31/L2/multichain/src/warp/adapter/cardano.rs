@@ -13,8 +13,8 @@ use tracing::{debug, info, warn};
 // ─────────────────────────────────────────────────────────────────────────────
 fn zion_asset_with_override(network: &str, asset_override: Option<&str>) -> Option<String> {
     // ── ZION Cardano Native Token (policy_id + asset_name hex) ───────────
-    // Contract source: V3/L2/bridge/contracts/non-evm/cardano/mint_zion_token.hs
-    // Deployment steps: V3/L2/bridge/contracts/non-evm/cardano/README.md
+    // Contract source: V31/L2/multichain/contracts/non-evm/cardano/mint_zion_token.hs
+    // Deployment steps: V31/L2/multichain/contracts/non-evm/cardano/README.md
     //
     // The asset identifier is the concatenation of:
     //   policy_id (28 bytes hex) + asset_name (4 bytes hex: "ZION" = 5a494f4e)
@@ -42,7 +42,7 @@ fn zion_asset_with_override(network: &str, asset_override: Option<&str>) -> Opti
             // Placeholder until the Plutus minting policy is deployed to
             // Cardano mainnet. Set WARP_CARDANO_ZION_ASSET env var after
             // deployment to override without code change.
-            warn!("[WARP][cardano] mainnet ZION asset is a placeholder — deploy minting policy from V3/L2/bridge/contracts/non-evm/cardano/ and set WARP_CARDANO_ZION_ASSET env var");
+            warn!("[WARP][cardano] mainnet ZION asset is a placeholder — deploy minting policy from V31/L2/multichain/contracts/non-evm/cardano/ and set WARP_CARDANO_ZION_ASSET env var");
             Some("5a71011c726573745a494f4e".to_string())
         }
         "preprod" => {

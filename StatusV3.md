@@ -350,6 +350,9 @@ ZION_POOL_NO_SOLUTION_RECONNECT_COOLDOWN_SECS=300  # ban IP on NoSolution rate-l
 > **PPLNS composite keys (2026-07-14):** PPLNS and telemetry registry now key on `miner_id/worker_name` instead of `miner_id` alone. Previously, all workers sharing the same `miner_id` (e.g. `local-miner`) had their payout address overwritten by whichever worker connected last — all payouts went to one worker. Each worker now gets its own PPLNS entry, telemetry entry, and payout address. Verified on-chain: 5070Ti, barker, and vega-smos receive payouts to their respective addresses.
 
 ### WARP (Non-EVM)
+
+> **Update (2026-08-06):** Testnet smoke-test Solana/Stellar/Bitcoin. `warpd` polluje všechny tři devnet/testnet. Stellar `execute_mint` PASS — 0.001 ZION odesláno na testnet (`tx 2cbe550f...8d34e`). Solana a Bitcoin jsou bez funds (devnet faucet `429`, BTC testnet 0 UTXO), takže live `execute_mint` zatím neproběhl. Detail v [`docs/3.0.5/CONTRACT_ADDRESSES.md`](./docs/3.0.5/CONTRACT_ADDRESSES.md) §9 a [`V31/L2/multichain/contracts/non-evm/DEPLOY.md`](./V31/L2/multichain/contracts/non-evm/DEPLOY.md).
+
 ```bash
 WARP_SOL_ZION_MINT=HgfQZpH2JAqPdR3PcP4dEE8WRhznXh1QhJBiiwcHfT8H
 WARP_SOL_RPC=https://api.mainnet-beta.solana.com

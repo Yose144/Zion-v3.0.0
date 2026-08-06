@@ -1,0 +1,76 @@
+# =============================================================================
+# ZION WARP — Lightning Network Docker Stack (LND + bitcoind + Redis)
+# =============================================================================
+# Bitcoin TESTNET for development. Switch to mainnet by changing the
+# BITCOIN_NETWORK and LND_NETWORK env vars below and rebuilding.
+#
+# Services:
+#   bitcoind  — Bitcoin Core full node (testnet, ZMQ enabled for LND)
+#   lnd       — Lightning Network Daemon (REST 8080, gRPC 10009, keysend)
+#   redis     — Invoice tracking / settlement cache for WARP adapter
+#
+# WARP adapter connects to LND REST on port 8080 with a hex-encoded macaroon.
+# See README.md for deployment instructions.
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # bitcoind — Bitcoin Core (testnet, pruned for low disk usage)
+  # ---------------------------------------------------------------------------
+  bitcoind:
+    image: lncm/bitcoind:v25.1
+    container_name: zion-bitcoind
+    restart: unless-stopped
+    volumes:
+      - bitcoin-data:/data/.bitcoin
+      - ./bitcoin.conf:/data/.bitcoin/bitcoin.conf:ro
+    ports:
+      - "18332:18332"   # testnet RPC
+      - "18333:18333"   # testnet P2P
+      - "28332:28332"   # ZMQ tx notifications
+      - "28333:28333"   # ZMQ block notifications
+    networks:
+      - zion-lightning
+
+  # ---------------------------------------------------------------------------
+  # LND — Lightning Network Daemon
+  # ---------------------------------------------------------------------------
+  lnd:
+    image: lightninglabs/lnd:v0.18.2-beta
+    container_name: zion-lnd
+    restart: unless-stopped
+    depends_on:
+      - bitcoind
+    volumes:
+      - lnd-data:/root/.lnd
+      - ./lnd.conf:/root/.lnd/lnd.conf:ro
+    ports:
+      - "8080:8080"     # REST API (WARP adapter uses this)
+      - "10009:10009"   # gRPC API
+      - "9735:9735"     # Lightning P2P
+    networks:
+      - zion-lightning
+
+  # ---------------------------------------------------------------------------
+  # Redis — Invoice tracking / settlement cache
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: zion-ln-redis
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - zion-lightning
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+
+networks:
+  zion-lightning:
+    driver: bridge
+
+volumes:
+  bitcoin-data:
+  lnd-data:
+  redis-data:

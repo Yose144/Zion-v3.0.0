@@ -12,9 +12,9 @@ use tracing::{debug, info, warn};
 // ─────────────────────────────────────────────────────────────────────────────
 // ZION Stellar asset issuer per network
 // ─────────────────────────────────────────────────────────────────────────────
-// Contract source: V3/L2/bridge/contracts/non-evm/stellar/zion_asset.toml
-// Setup script:    V3/L2/bridge/contracts/non-evm/stellar/setup_zion_asset.py
-// Deployment steps: V3/L2/bridge/contracts/non-evm/stellar/README.md
+// Contract source: V31/L2/multichain/contracts/non-evm/stellar/zion_asset.toml
+// Setup script:    V31/L2/multichain/contracts/non-evm/stellar/setup_zion_asset.py
+// Deployment steps: V31/L2/multichain/contracts/non-evm/stellar/README.md
 //
 // ZION on Stellar is a native asset (code="ZION", issuer=bridge account).
 // The issuer account is a 5/5 multisig controlled by WARP validators.
@@ -461,5 +461,30 @@ mod tests {
             warp_message_hash: String::new(),
         };
         assert!(StellarAdapter::new().execute_mint(&inst).await.is_err());
+    }
+
+    /// Live testnet smoke test for the Stellar relay/issuer.
+    /// Requires:
+    ///   WARP_STELLAR_RELAY_KEY  - funded testnet account (this is also the ZION issuer)
+    ///   WARP_STELLAR_ZION_ISSUER - public key of the same issuer
+    ///   WARP_STELLAR_DISTRIBUTION - funded testnet account with a ZION trustline
+    ///   STELLAR_NETWORK=testnet
+    #[tokio::test]
+    #[ignore = "live Stellar testnet — requires funded WARP_STELLAR_RELAY_KEY and WARP_STELLAR_DISTRIBUTION"]
+    async fn test_stellar_execute_mint_live_testnet() {
+        let recipient = std::env::var("WARP_STELLAR_DISTRIBUTION")
+            .expect("set WARP_STELLAR_DISTRIBUTION to a testnet account with a ZION trustline");
+        let inst = MintInstruction {
+            dest_chain: "stellar".into(),
+            recipient,
+            amount_dest_atomic: 1_000, // 0.001 ZION (6 decimals)
+            signatures: vec![],
+            warp_message_hash: "live-test".into(),
+        };
+        let tx_hash = StellarAdapter::new()
+            .execute_mint(&inst)
+            .await
+            .expect("live Stellar payment should succeed");
+        assert!(!tx_hash.is_empty());
     }
 }

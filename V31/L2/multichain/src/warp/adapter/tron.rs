@@ -13,8 +13,8 @@ use tracing::{debug, info, warn};
 // ─────────────────────────────────────────────────────────────────────────────
 fn zion_contract_with_override(network: &str, contract_override: Option<&str>) -> Option<String> {
     // ── ZION TRC-20 Contract Address ─────────────────────────────────────
-    // Contract source: V3/L2/bridge/contracts/non-evm/tron/ZionToken.sol
-    // Deployment steps: V3/L2/bridge/contracts/non-evm/tron/README.md
+    // Contract source: V31/L2/multichain/contracts/non-evm/tron/ZionToken.sol
+    // Deployment steps: V31/L2/multichain/contracts/non-evm/tron/README.md
     //
     // After deploying the TRC-20 contract on Tron, replace the placeholder
     // addresses below with the real T-address (starts with 'T').
@@ -34,13 +34,13 @@ fn zion_contract_with_override(network: &str, contract_override: Option<&str>) -
             // TODO: Replace with real mainnet ZION TRC-20 contract address.
             // Deploy ZionToken.sol via TronBox/TronIDE to Tron mainnet.
             // The deployed contract address will be a T-address (base58).
-            warn!("[WARP][tron] mainnet ZION contract is a placeholder — deploy contract from V3/L2/bridge/contracts/non-evm/tron/ and update this address");
+            warn!("[WARP][tron] mainnet ZION contract is a placeholder — deploy contract from V31/L2/multichain/contracts/non-evm/tron/ and update this address");
             Some("TWZIONxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx".to_string())
         }
         "nile" => {
             // TODO: Replace with real nile testnet ZION contract address.
             // Deploy ZionToken.sol to Tron Nile testnet for testing.
-            warn!("[WARP][tron] nile testnet ZION contract is a placeholder — deploy contract from V3/L2/bridge/contracts/non-evm/tron/ and update this address");
+            warn!("[WARP][tron] nile testnet ZION contract is a placeholder — deploy contract from V31/L2/multichain/contracts/non-evm/tron/ and update this address");
             Some("TXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxtest".to_string())
         }
         _ => None,

@@ -1,0 +1,109 @@
+# ZION Stellar Asset — Asset Code + Issuer Configuration
+# SPDX-License-Identifier: MIT
+#
+# This file documents the ZION asset on the Stellar network.
+# Stellar uses native assets (not smart contracts) — an asset is defined
+# by an asset code + an issuer account.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# Asset Definition
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Asset code (max 12 characters for non-alphanumeric 4-char limit; "ZION" is 4 chars)
+code = "ZION"
+
+# Issuer account — the WARP bridge multisig account on Stellar.
+# This account has the authority to issue (mint) and manage the ZION asset.
+# Replace with the real bridge account public key after key generation.
+# Format: G... (56-character base32 Stellar public key)
+issuer = "GZIONBRIDGEPLACEHOLDERXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Token Parameters
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Decimals: Stellar assets do not have a "decimals" field — amounts are
+# expressed as integer stroops. ZION uses 6 decimal places, meaning
+# 1 ZION = 1,000,000 stroops (matching L1 atomic units).
+# The WARP relay handles the conversion: L1 atomic units map 1:1 to Stellar stroops.
+decimals = 6
+
+# Maximum supply: 144,000,000,000 ZION (144B) = 144,000,000,000,000,000 stroops
+max_supply = 144000000000000000
+
+# Minimum bridge amount: 100 ZION = 100,000,000 stroops
+min_bridge_amount = 100000000
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Bridge Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+
+# The WARP bridge operates via Stellar's built-in multi-sig (5/5 quorum).
+# All 5 WARP validators are signers on the bridge issuer account.
+# Any payment (mint) or clawback (burn) requires 5/5 signatures.
+[bridge]
+validator_quorum = 5
+validator_count = 5
+
+# Validator public keys (replace with real keys after genesis)
+# All 5 must be signers on the issuer account with weight 1 each,
+# and the account's thresholds set to require weight 5 for high-threshold operations.
+validators = [
+    "GVAL1PLACEHOLDERXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "GVAL2PLACEHOLDERXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "GVAL3PLACEHOLDERXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "GVAL4PLACEHOLDERXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "GVAL5PLACEHOLDERXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Asset Flags & Authorization
+# ─────────────────────────────────────────────────────────────────────────────
+
+# The issuer account sets these flags on the ZION asset trustlines:
+[flags]
+# Authorization required: users must be approved to hold ZION
+auth_required = true
+# Authorization revocable: bridge can revoke trustlines (for compliance)
+auth_revocable = true
+# Authorization immutable: flags cannot be changed (security)
+auth_immutable = false
+# Clawback enabled: bridge can clawback ZION (for burn operations)
+clawback_enabled = true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Home Domain (for TOML discovery)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# The issuer account sets its home_domain to serve this TOML file via
+# https://<home_domain>/.well-known/stellar.toml
+home_domain = "zionterranova.com"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Bridge Operations
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Mint (L1 → Stellar):
+#   The bridge issuer account sends a payment of ZION to the recipient.
+#   This requires 5/5 validator signatures (multi-sig).
+#   The payment memo contains the L1 tx hash for replay protection.
+#
+# Burn (Stellar → L1):
+#   The user sends ZION back to the bridge issuer account (or the bridge
+#   uses clawback to reclaim ZION from the user's trustline).
+#   The payment memo contains the L1 recipient bech32 address.
+#   The WARP relay observes the payment and releases ZION on L1.
+#
+# Replay protection:
+#   Stellar transaction sequence numbers + memos provide replay protection.
+#   The bridge tracks processed L1 tx hashes off-chain (in the WARP relay DB).
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Documentation
+# ─────────────────────────────────────────────────────────────────────────────
+
+[documentation]
+name = "ZION"
+description = "Wrapped ZION token on Stellar — bridged from ZION L1 via the WARP cross-chain bridge"
+conditions = "ZION on Stellar is backed 1:1 by native ZION locked on the L1 bridge address. The WARP validator set (5/5 quorum) controls issuance."
+image = "https://zionterranova.com/assets/zion-token-logo.png"
