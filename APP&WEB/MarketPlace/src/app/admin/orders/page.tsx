@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { isAuthenticated } from '@/lib/admin-auth';
 import {
   listAdminOrders,
   updateOrderStatus,
@@ -505,6 +507,7 @@ function OrderModal({ order, onClose, onRefresh }: OrderModalProps) {
 // ── Main Page ────────────────────────────────────────────────────────
 
 export default function AdminOrdersPage() {
+  const router = useRouter();
   const [data, setData] = useState<AdminOrdersListResult['data'] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -516,18 +519,27 @@ export default function AdminOrdersPage() {
   const [tab, setTab] = useState<'all' | 'pending' | 'paid' | 'shipped'>('all');
 
   const load = async () => {
+    if (!isAuthenticated()) {
+      setError('Nejste přihlášeni. Přejděte na /admin/login.');
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const res = await listAdminOrders({ status, paymentStatus, search, page, limit: 100 });
     if (res?.data) {
       setData(res.data);
       setError(null);
     } else {
-      setError('Chyba při načítání objednávek');
+      setError(res?.error ?? 'Chyba při načítání objednávek');
     }
     setLoading(false);
   };
 
   useEffect(() => {
+    if (!isAuthenticated()) {
+      router.replace('/admin/login');
+      return;
+    }
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, paymentStatus, page]);
