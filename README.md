@@ -7,18 +7,20 @@
 
 ## Status
 
-> **Last updated: 2026-08-05**
+> **Last updated: 2026-08-06**
 
 - **Active mainnet track:** `V31/` workspace — version `3.1.0-alpha.2`, clean `cargo test --workspace`.
 - **V3 production line has been archived** to `archive/V3/` after the 2026-08-04 V31 cutover.
+- **Hard genesis reset (2026-08-06):** Complete key rotation — new premine, canonical, admin, DAO guardian, and EVM validator keys. All addresses updated across codebase + Edge server. See [`HARD_RESET_PLAYBOOK.md`](HARD_RESET_PLAYBOOK.md) for the full procedure.
 - **Edge production is V31:**
   - Public RPC: `rpc.zionterranova.com:8443` (V31, nginx TCP proxy → `127.0.0.1:9445`)
   - Public pool stratum: `62.171.141.136:8444`
-  - Chain height: ~11270+ (live in [`StatusV3.md`](StatusV3.md))
+  - Chain height: fresh chain from new genesis (live in [`StatusV3.md`](StatusV3.md))
   - Protocol: `zion-v3-node/3.1.0-alpha.2`
-  - Genesis hash: `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
-- **Latest wins:** V31 pool reaches full V3 parity (160 pool tests), DAO governance runtime with treasury/humanitarian/L1 scanner, GPU backend port (CUDA/OpenCL/Metal/native), cross-chain DEX multi-path routing, CLI wallet + service lifecycle.
-- **Test gate:** 2069 workspace tests pass, `cargo clippy --workspace` is clean.
+  - Genesis hash (V3 compat): `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122`
+  - Genesis hash (V31 native): `21e2b2742ec774a37ea1df4a643b954110dd3f803fa48675416b81d6c5baba60`
+- **Latest wins:** V31 pool reaches full V3 parity (160 pool tests), DAO governance runtime with treasury/humanitarian/L1 scanner, GPU backend port (CUDA/OpenCL/Metal/native), cross-chain DEX multi-path routing, CLI wallet + service lifecycle, OASIS RPC fixed (raw TCP JSON-RPC).
+- **Test gate:** 2069+ workspace tests pass, `cargo clippy --workspace` is clean.
 - **Public launch target:** 31 December 2026.
 
 ---
@@ -35,6 +37,7 @@
 | **V31 detailed status** | [`V31/STATUS.md`](V31/STATUS.md) |
 | **V3 archive (read-only)** | [`archive/V3/`](archive/V3/) |
 | **Historical incidents + public-subtree rules** | [`AGENTS.md`](AGENTS.md) |
+| **Hard reset procedure (genesis + keys)** | [`HARD_RESET_PLAYBOOK.md`](HARD_RESET_PLAYBOOK.md) |
 | **Public (MIT) subtree** | [`public/`](public/) |
 
 ---
@@ -123,4 +126,4 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-*Last updated: 2026-08-05 · Version: v3.1.0-alpha.2 (V31 Mainnet Alpha) · Live status: [`StatusV3.md`](StatusV3.md)*
+*Last updated: 2026-08-06 · Version: v3.1.0-alpha.2 (V31 Mainnet Alpha) · Live status: [`StatusV3.md`](StatusV3.md)*
