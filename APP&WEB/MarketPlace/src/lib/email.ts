@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { buildV2OrderConfirmationHtml } from './v2-email';
+import { buildV2OrderConfirmationEmail } from './v2-email';
 import { getActiveTheme } from './settings';
 
 function emailConfig() {
@@ -171,11 +171,11 @@ export async function sendCustomerOrderConfirmation(
 
   const cfg = emailConfig();
 
-  const subject = `✅ Potvrzení objednávky #${order.orderId} - ${cfg.shopName}`;
+  const subject = `Potvrzení objednávky #${order.orderId} - ${cfg.shopName}`;
 
   try {
     const theme = await getActiveTheme();
-    const html = await buildV2OrderConfirmationHtml(order, theme);
+    const { html, text } = await buildV2OrderConfirmationEmail(order, theme);
     const transporter = createTransporter();
 
     const mailOptions: nodemailer.SendMailOptions = {
@@ -183,6 +183,7 @@ export async function sendCustomerOrderConfirmation(
       to: order.customerEmail,
       replyTo: cfg.shopEmail,
       subject,
+      text,
       html,
     };
 
