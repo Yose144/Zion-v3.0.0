@@ -4745,6 +4745,8 @@ def build_wallets() -> dict:
                 group = "infrastructure"
             elif "Humanitarian" in label or "Children" in label:
                 group = "humanitarian"
+            elif "Issobella" in label or "Space" in label:
+                group = "issobella"
             else:
                 group = "other"
             category_summary.setdefault(group, {"count": 0, "total_zion": 0, "labels": []})
@@ -8552,13 +8554,13 @@ def build_payout_status() -> dict:
     # ── Wallet balances (RPC with Edge→local fallback) ────────────────
     rpc_host = edge_host if (is_edge and edge_rpc_alive) else "127.0.0.1"
     if status["pool_wallet"] and status["pool_wallet"].startswith("zion1"):
-        bal = rpc_call(rpc_host, 9443, "getBalance", {"address": status["pool_wallet"]}, timeout=2.5)
+        bal = rpc_call(rpc_host, rpc_port, "getBalance", {"address": status["pool_wallet"]}, timeout=2.5)
         if bal and not bal.get("_rpc_error"):
             atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
             status["pool_wallet_balance"] = atomic
         elif is_edge and local_rpc_alive:
             # Fallback to local backup node
-            bal = rpc_call("127.0.0.1", 9443, "getBalance", {"address": status["pool_wallet"]}, timeout=2)
+            bal = rpc_call("127.0.0.1", rpc_port, "getBalance", {"address": status["pool_wallet"]}, timeout=2)
             if bal and not bal.get("_rpc_error"):
                 atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
                 status["pool_wallet_balance"] = atomic
@@ -8566,9 +8568,10 @@ def build_payout_status() -> dict:
     balances = {}
     for key, addr in [("miner", status["miner_wallet"]),
                       ("humanitarian", status["humanitarian_wallet"]),
-                      ("issobella", status["issobella_wallet"])]:
+                      ("issobella", status["issobella_wallet"]),
+                      ("pool_fee", status.get("pool_fee_wallet"))]:
         if addr and addr.startswith("zion1"):
-            bal = rpc_call(rpc_host, 9443, "getBalance", {"address": addr}, timeout=2.5)
+            bal = rpc_call(rpc_host, rpc_port, "getBalance", {"address": addr}, timeout=2.5)
             if bal and not bal.get("_rpc_error"):
                 atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
                 balances[key] = {"atomic": atomic, "zion": flowers_to_zion(atomic)}

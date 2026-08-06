@@ -4240,6 +4240,7 @@ async function loadWallets(){
         dao:   { label: '🗳️ DAO Treasury', color: 'text-zion-purple', bg: 'bg-zion-purple/10' },
         infrastructure: { label: '🏗️ Infrastructure', color: 'text-zion-cyan', bg: 'bg-zion-cyan/10' },
         humanitarian: { label: '💝 Humanitarian', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+        issobella: { label: '🚀 Issobella Space', color: 'text-purple-400', bg: 'bg-purple-500/10' },
         other: { label: '📦 Other', color: 'text-amber-400', bg: 'bg-amber-500/10' },
       };
       catDisplay.innerHTML = Object.entries(cats).map(([key, val]) => {
@@ -4265,6 +4266,7 @@ async function loadWallets(){
         dao:   { label: '🗳️ DAO Treasury', color: '#9333ea' },
         infrastructure: { label: '🏗️ Infrastructure', color: '#06b6d4' },
         humanitarian: { label: '💝 Humanitarian', color: '#10b981' },
+        issobella: { label: '🚀 Issobella Space', color: '#a855f7' },
         other: { label: '📦 Other', color: '#f59e0b' },
         bridge_seed: { label: '🌉 Bridge Seed', color: '#f59e0b' },
         bridge_vault_utxo: { label: '🔒 Bridge Vault UTXO', color: '#f97316' },
@@ -4289,18 +4291,21 @@ async function loadWallets(){
     const feeSplitDiv = document.getElementById('wallets-fee-split');
     if(feeSplitDiv){
       const entries = [
-        { label: '⛏️ Miner (89%)', key: 'miner_wallet', color: 'text-emerald-400' },
-        { label: '💝 Humanitarian (5%)', key: 'humanitarian_wallet', color: 'text-pink-400' },
-        { label: '🚀 Issobella Space (5%)', key: 'issobella_wallet', color: 'text-purple-400' },
-        { label: '🔥 Pool Fee / Burn (1%)', key: 'pool_fee_wallet', color: 'text-amber-400' },
+        { label: '⛏️ Miner (89%)', key: 'miner_wallet', balKey: 'miner', color: 'text-emerald-400' },
+        { label: '💝 Humanitarian (5%)', key: 'humanitarian_wallet', balKey: 'humanitarian', color: 'text-pink-400' },
+        { label: '🚀 Issobella Space (5%)', key: 'issobella_wallet', balKey: 'issobella', color: 'text-purple-400' },
+        { label: '🔥 Pool Fee / Burn (1%)', key: 'pool_fee_wallet', balKey: 'pool_fee', color: 'text-amber-400' },
       ];
       feeSplitDiv.innerHTML = entries.map(e => {
         const addr = pay[e.key] || '—';
         const display = addr.length > 36 ? addr.slice(0,18)+'…'+addr.slice(-12) : addr;
+        const balData = pay.balances && pay.balances[e.balKey];
+        const balStr = balData ? `<span class="text-emerald-400 font-bold ml-2">${fmtNum(balData.zion)} ZION</span>` : '';
         return `<div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2">
           <span class="${e.color} font-semibold">${e.label}</span>
           <div class="flex items-center gap-2">
             <span class="font-mono text-white text-[10px]" title="${escapeHtml(addr)}">${escapeHtml(display)}</span>
+            ${balStr}
             ${addr.startsWith('zion1') ? `<button onclick="copyToClipboard('${escapeHtml(addr)}')" class="text-[10px] text-gray-500 hover:text-white">Copy</button>` : ''}
           </div>
         </div>`;
