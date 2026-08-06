@@ -7,7 +7,7 @@
 > **Jak používat:**
 > 1. Po deploy kontraktu na chain doplň adresu do tabulky níže
 > 2. Nastav odpovídající env var na Edge serveru (`/root/.env.warp` nebo systemd unit)
-> 3. Restartuj `zion-warp.service`: `systemctl restart zion-warp`
+> 3. Restartuj `zion-warp.service`: `systemctl restart zion-v31-multichain`
 > 4. Ověř: `curl http://127.0.0.1:8453/health`
 
 ---
@@ -47,7 +47,7 @@ ZION se nepřevádí na BTC — BTC je **watch-only** chain (sleduje BTC deposit
 
 | Položka | Env Var | Hodnota | Status |
 |---------|---------|---------|--------|
-| **HTLC mainnet address** | `WARP_BTC_HTLC_ADDRESS` | `bc1q...` (bech32) | 🔴 Placeholder `bc1qzionhtlcxxx...` |
+| **HTLC mainnet address** | `WARP_BITCOIN_HTLC_ADDRESS` | `bc1q...` (bech32) | 🔴 Placeholder `bc1qzionhtlcxxx...` |
 | **HTLC testnet address** | — | `tb1q...` | 🔴 Placeholder |
 | **BTC API** | `WARP_BITCOIN_API` | `https://mempool.space/api` | ✅ Default |
 | **BTC network** | `BITCOIN_NETWORK` | `mainnet` | ✅ Default |
@@ -127,25 +127,25 @@ echo "WARP_LN_MACAROON=$MACAROON" >> /root/.env.warp
 echo "WARP_LN_TLS_CERT=/root/.lnd/tls.cert" >> /root/.env.warp
 
 # 7. Restart WARP
-systemctl restart zion-warp
+systemctl restart zion-v31-multichain
 ```
 
 ---
 
 ## 4. Non-EVM Chains — 🟡 2/9 DEPLOYED (Solana ✅, Stellar ✅)
 
-Kontrakty jsou v `V3/L2/bridge/contracts/non-evm/`. Po deploy doplň adresy níže.
+Kontrakty jsou v `V31/L2/multichain/contracts/non-evm/`. Po deploy doplň adresy níže.
 
 ### Solana (SPL Token) — ✅ DEPLOYED
 
 | Položka | Env Var | Hodnota | Status |
 |---------|---------|---------|--------|
-| **ZION mint address** | `WARP_SOL_ZION_MINT` | `HgfQZpH2JAqPdR3PcP4dEE8WRhznXh1QhJBiiwcHfT8H` | ✅ Live |
+| **ZION mint address** | `WARP_SOLANA_ZION_MINT` | `HgfQZpH2JAqPdR3PcP4dEE8WRhznXh1QhJBiiwcHfT8H` | ✅ Live |
 | **SPL Token program** | — | `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA` | ✅ Standard SPL |
 | **Mint authority** | — | `CwUgTMF4kSydPUJYeQ6itRuq3iaXeJ9XTefBrBQbLWTe` (Exodus) | ✅ (TODO: transfer to WARP multisig) |
-| **Bridge program ID** | `WARP_SOL_BRIDGE_PROGRAM` | `<base58 program id>` | 🔴 Pending (custom Anchor program) |
-| **Solana RPC** | `WARP_SOL_RPC` | `https://api.mainnet-beta.solana.com` | ✅ Default |
-| **Relay key** | `WARP_SOL_RELAY_KEY` | base58 Ed25519 keypair | 🔴 Not set |
+| **Bridge program ID** |  `WARP_SOLANA_BRIDGE_PROGRAM` (reserved) | `<base58 program id>` | 🔴 Pending (custom Anchor program) |
+| **Solana RPC** | `WARP_SOLANA_RPC` | `https://api.mainnet-beta.solana.com` | ✅ Default |
+| **Relay key** | `WARP_SOLANA_RELAY_KEY` | base58 Ed25519 keypair | 🔴 Not set |
 
 **Deploy TX:** `425qNNcDyWAGCMmEc7D5mJri2wxVxkJmmBGzqfVM7JRNC8PrZa81ASCe3NpqrRhmfzBVyHUYxZKANfvUE3xnTZKp`
 **Deploy date:** 2026-07-13
@@ -153,7 +153,7 @@ Kontrakty jsou v `V3/L2/bridge/contracts/non-evm/`. Po deploy doplň adresy ní�
 **Token account:** `43RFgYnvmUPbaaQJtyoRpVs3tN9sgp4PxHGe3WkR4Rfb`
 **Decimals:** 6
 
-**Kontrakt:** `V3/L2/bridge/contracts/non-evm/solana/zion_spl_token.rs` (Anchor program — pending deploy)
+**Kontrakt:** `V31/L2/multichain/contracts/non-evm/solana/zion_spl_token.rs` (Anchor program — pending deploy)
 **Current:** Standard SPL Token (funguje pro transfers, ale nemá bridge mint/burn events)
 **TODO:** Deploy custom Anchor program pro WARP bridge integration (mint/burn events + validator quorum)
 
@@ -163,11 +163,11 @@ Kontrakty jsou v `V3/L2/bridge/contracts/non-evm/`. Po deploy doplň adresy ní�
 
 | Položka | Env Var | Hodnota | Status |
 |---------|---------|---------|--------|
-| **ZION contract address** | `WARP_TRON_ZION_CONTRACT` | `<hex address T...>` | 🔴 Placeholder |
-| **Tron RPC** | `WARP_TRON_RPC` | `https://api.trongrid.io` | ✅ Default |
+| **ZION contract address** | `WARP_TRON_CONTRACT` | `<hex address T...>` | 🔴 Placeholder |
+| **Tron RPC** | `WARP_TRON_API` | `https://api.trongrid.io` | ✅ Default |
 | **Relay-key** | `WARP_TRON_RELAY_KEY` | hex private key | 🔴 Not set |
 
-**Kontrakt:** `V3/L2/bridge/contracts/non-evm/tron/ZionToken.sol`
+**Kontrakt:** `V31/L2/multichain/contracts/non-evm/tron/ZionToken.sol`
 **Deploy:** `tronbox migrate --network mainnet`
 **Decimals:** 6
 
@@ -178,9 +178,9 @@ Kontrakty jsou v `V3/L2/bridge/contracts/non-evm/`. Po deploy doplň adresy ní�
 | Položka | Env Var | Hodnota | Status |
 |---------|---------|---------|--------|
 | **ZION asset issuer** | `WARP_STELLAR_ZION_ISSUER` | `GDDXUOJ7ERSHHDMUKS6PBIDSXV2PB5J7GOFOKMHW6BRVAS46CFSPAYJT` | ✅ Live |
-| **ZION asset code** | `WARP_STELLAR_ZION_CODE` | `ZION` | ✅ Default |
-| **Bridge account** | `WARP_STELLAR_BRIDGE_ACCOUNT` | `GDDXUOJ7ERSHHDMUKS6PBIDSXV2PB5J7GOFOKMHW6BRVAS46CFSPAYJT` | ✅ Live |
-| **Stellar RPC** | `WARP_STELLAR_RPC` | `https://horizon.stellar.org` | ✅ Default |
+| **ZION asset code** | `WARP_STELLAR_ASSET_CODE` | `ZION` | ✅ Default |
+| **Bridge account** |  `WARP_STELLAR_ZION_ISSUER` (same as issuer) | `GDDXUOJ7ERSHHDMUKS6PBIDSXV2PB5J7GOFOKMHW6BRVAS46CFSPAYJT` | ✅ Live |
+| **Stellar RPC** | `WARP_STELLAR_HORIZON` | `https://horizon.stellar.org` | ✅ Default |
 | **Relay-key** | `WARP_STELLAR_RELAY_KEY` | base64 Ed25519 seed | 🔴 Not set |
 | **Multi-sig** | — | 5/5 WARP validators | 🔴 Pending (currently single-sig) |
 
@@ -192,7 +192,7 @@ Kontrakty jsou v `V3/L2/bridge/contracts/non-evm/`. Po deploy doplň adresy ní�
 **Asset:** `ZION:GDDXUOJ7ERSHHDMUKS6PBIDSXV2PB5J7GOFOKMHW6BRVAS46CFSPAYJT`
 **Decimals:** 6 (1 ZION = 1,000,000 stroops)
 
-**Kontrakt:** `V3/L2/bridge/contracts/non-evm/stellar/zion_asset.toml` + `setup_zion_asset.py`
+**Kontrakt:** `V31/L2/multichain/contracts/non-evm/stellar/zion_asset.toml` + `setup_zion_asset.py`
 **TODO:** Add 5 WARP validators as multi-sig signers (5/5 quorum), set relay key
 
 ---
@@ -201,15 +201,12 @@ Kontrakty jsou v `V3/L2/bridge/contracts/non-evm/`. Po deploy doplň adresy ní�
 
 | Položka | Env Var | Hodnota | Status |
 |---------|---------|---------|--------|
-| **Policy ID** | `WARP_CARDANO_POLICY_ID` | `<hex policy hash>` | 🔴 Placeholder |
-| **Asset name** | `WARP_CARDANO_ASSET_NAME` | `ZION` | ✅ Default |
-| **Policy script** | `WARP_CARDANO_POLICY_SCRIPT` | `<JSON policy>` | 🔴 Placeholder |
+| **ZION asset** |  `WARP_CARDANO_ZION_ASSET` (`<policy_id_hex>` + asset name `5a494f4e`) | `<policy_id_hex>5a494f4e` | 🔴 Placeholder |
 | **Blockfrost URL** | `WARP_BLOCKFROST_URL` | `https://cardano-mainnet.blockfrost.io/api/v0` | ✅ Default |
-| **Blockfrost project ID** | `BLOCKFROST_PROJECT_ID` | `<project key>` | 🔴 Not set |
 | **Payment-key** | `WARP_CARDANO_PAYMENT_KEY` | `<hex skey>` | 🔴 Not set |
 | **Policy-key** | `WARP_CARDANO_POLICY_KEY` | `<hex skey>` | 🔴 Not set |
 
-**Kontrakt:** `V3/L2/bridge/contracts/non-evm/cardano/mint_zion_token.hs`
+**Kontrakt:** `V31/L2/multichain/contracts/non-evm/cardano/mint_zion_token.hs`
 **Deploy:** `cardano-cli transaction mint ...` (viz README v cardano/ adresáři)
 **Decimals:** 6
 
@@ -219,12 +216,11 @@ Kontrakty jsou v `V3/L2/bridge/contracts/non-evm/`. Po deploy doplň adresy ní�
 
 | Položka | Env Var | Hodnota | Status |
 |---------|---------|---------|--------|
-| **CW20 contract address** | `WARP_COSMOS_ZION_CONTRACT` | `<cosmos1... addr>` | 🔴 Placeholder |
-| **Chain ID** | `COSMOS_NETWORK` | `cosmoshub-4` | ✅ Default |
+| **CW20 contract address** | `WARP_COSMOS_CONTRACT` | `<cosmos1... addr>` | 🔴 Placeholder |
 | **REST URL** | `WARP_COSMOS_REST` | `https://lcd.cosmos.cosmoshub-4` | ✅ Default |
 | **Relay-key** | `WARP_COSMOS_RELAY_KEY` | base64 Ed25519 key | 🔴 Not set |
 
-**Kontrakt:** `V3/L2/bridge/contracts/non-evm/cosmos/zion_cw20.rs`
+**Kontrakt:** `V31/L2/multichain/contracts/non-evm/cosmos/zion_cw20.rs`
 **Deploy:** `wasmd store-code zion_cw20.wasm --from relay --chain-id cosmoshub-4`
 **Decimals:** 6
 
@@ -240,7 +236,7 @@ Kontrakty jsou v `V3/L2/bridge/contracts/non-evm/`. Po deploy doplň adresy ní�
 | **Aptos RPC** | `WARP_APTOS_RPC` | `https://fullnode.mainnet.aptoslabs.com/v1` | ✅ Default |
 | **Relay-key** | `WARP_APTOS_RELAY_KEY` | hex Ed25519 seed | 🔴 Not set |
 
-**Kontrakt:** `V3/L2/bridge/contracts/non-evm/aptos/sources/zion_coin.move`
+**Kontrakt:** `V31/L2/multichain/contracts/non-evm/aptos/sources/zion_coin.move`
 **Deploy:** `aptos move publish --named-addresses zion_coin=<bridge_account> --profile mainnet`
 **Decimals:** 6
 
@@ -254,7 +250,7 @@ Kontrakty jsou v `V3/L2/bridge/contracts/non-evm/`. Po deploy doplň adresy ní�
 | **Sui RPC** | `WARP_SUI_RPC` | `https://fullnode.mainnet.sui.io` | ✅ Default |
 | **Relay-key** | `WARP_SUI_RELAY_KEY` | hex Ed25519 seed | 🔴 Not set |
 
-**Kontrakt:** `V3/L2/bridge/contracts/non-evm/sui/sources/zion_coin.move`
+**Kontrakt:** `V31/L2/multichain/contracts/non-evm/sui/sources/zion_coin.move`
 **Deploy:** `sui client publish --gas-budget 100000000`
 **Decimals:** 6
 
@@ -264,12 +260,12 @@ Kontrakty jsou v `V3/L2/bridge/contracts/non-evm/`. Po deploy doplň adresy ní�
 
 | Položka | Env Var | Hodnota | Status |
 |---------|---------|---------|--------|
-| **ZION contract** | `WARP_NEAR_ZION_CONTRACT` | `<account.near>` | 🔴 Placeholder `zion.near` |
+| **ZION contract** | `WARP_NEAR_BRIDGE_CONTRACT` | `<account.near>` | 🔴 Placeholder `zion.near` |
 | **NEAR RPC** | `WARP_NEAR_RPC` | `https://rpc.mainnet.near.org` | ✅ Default |
 | **Relay-key (account)** | `WARP_NEAR_RELAY_KEY` | base64 Ed25519 key | 🔴 Not set |
-| **Signer account** | `WARP_NEAR_SIGNER_ACCOUNT` | `<relay.near>` | 🔴 Not set |
+| **Signer account** | `WARP_NEAR_ACCOUNT` | `<relay.near>` | 🔴 Not set |
 
-**Kontrakt:** `V3/L2/bridge/contracts/non-evm/near/zion_token.rs`
+**Kontrakt:** `V31/L2/multichain/contracts/non-evm/near/zion_token.rs`
 **Deploy:** `near deploy --accountId zion.near --wasmFile zion_token.wasm`
 **Decimals:** 6
 
@@ -279,12 +275,11 @@ Kontrakty jsou v `V3/L2/bridge/contracts/non-evm/`. Po deploy doplň adresy ní�
 
 | Položka | Env Var | Hodnota | Status |
 |---------|---------|---------|--------|
-| **Jetton master** | `WARP_TON_JETTON_MASTER` | `<EQ... address>` | 🔴 Placeholder |
-| **Bridge wallet** | `WARP_TON_BRIDGE_WALLET` | `<EQ... address>` | 🔴 Placeholder |
+| **Jetton master (bridge account)** |  `WARP_TON_BRIDGE_ACCOUNT` | `<EQ... address>` | 🔴 Placeholder |
 | **TON API** | `WARP_TON_API` | `https://toncenter.com/api/v2JSONRPC` | ✅ Default |
 | **Relay-key** | `WARP_TON_RELAY_KEY` | hex Ed25519 key | 🔴 Not set |
 
-**Kontrakt:** `V3/L2/bridge/contracts/non-evm/ton/zion_jetton.fc`
+**Kontrakt:** `V31/L2/multichain/contracts/non-evm/ton/zion_jetton.fc`
 **Deploy:** `toncli deploy -n mainnet` nebo `blueprint run`
 **Decimals:** 9 (TON standard)
 
@@ -375,29 +370,64 @@ Kontrakty jsou v `V3/L2/bridge/contracts/non-evm/`. Po deploy doplň adresy ní�
 3. ~~**ZionDex Phase 4 — Intent crate + Solver daemon + Contracts~~ ✅ Done (88 tests passing, commit `f32c81501`)
 
 ### 🔴 Pending
-4. **BTC WARP HTLC** — vygeneruj 5-of-5 multisig P2WSH address, nastav `WARP_BTC_HTLC_ADDRESS` + `WARP_BTC_RELAY_KEY`
+4. **BTC WARP HTLC** — vygeneruj 5-of-5 multisig P2WSH address, nastav `WARP_BITCOIN_HTLC_ADDRESS` + `WARP_BTC_RELAY_KEY`
 5. **ZionDex Phase 3+4 contracts na Base** — `forge script DeployBase.s.sol --rpc-url base --broadcast` (needs ETH on deployer `0xA737B512...`)
 6. **Solver daemon na Edge** — `cargo build --release` v `ZionDex/solver/`, provision solver key, systemd service na port 8455
-7. ~~**Solana** — `anchor deploy`, nastav `WARP_SOL_ZION_MINT` + `WARP_SOL_BRIDGE_PROGRAM` + `WARP_SOL_RELAY_KEY`~~ ✅ Done (standard SPL Token, mint `HgfQZpH2JAqPdR3PcP4dEE8WRhznXh1QhJBiiwcHfT8H`). TODO: deploy custom Anchor program pro bridge events + transfer mint authority to WARP multisig
-8. **Tron** — `tronbox migrate --network mainnet`, nastav `WARP_TRON_ZION_CONTRACT` + `WARP_TRON_RELAY_KEY`
-9. ~~**Stellar** — `python3 setup_zion_asset.py --network mainnet`, nastav `WARP_STELLAR_ZION_ISSUER` + `WARP_STELLAR_BRIDGE_ACCOUNT` + `WARP_STELLAR_RELAY_KEY`~~ ✅ Done (ZION native asset, issuer `GDDXUOJ7ERSHHDMUKS6PBIDSXV2PB5J7GOFOKMHW6BRVAS46CFSPAYJT`). TODO: add 5/5 multi-sig + relay key
-10. **Cardano** — `cardano-cli transaction mint ...`, nastav `WARP_CARDANO_POLICY_ID` + `WARP_CARDANO_POLICY_SCRIPT` + `BLOCKFROST_PROJECT_ID` + payment/policy keys
-11. **Cosmos** — `wasmd store-code zion_cw20.wasm --from relay --chain-id cosmoshub-4`, nastav `WARP_COSMOS_ZION_CONTRACT` + `WARP_COSMOS_RELAY_KEY`
+7. ~~**Solana** — `anchor deploy`, nastav `WARP_SOLANA_ZION_MINT` +  `WARP_SOLANA_BRIDGE_PROGRAM` (reserved) + `WARP_SOLANA_RELAY_KEY`~~ ✅ Done (standard SPL Token, mint `HgfQZpH2JAqPdR3PcP4dEE8WRhznXh1QhJBiiwcHfT8H`). TODO: deploy custom Anchor program pro bridge events + transfer mint authority to WARP multisig
+8. **Tron** — `tronbox migrate --network mainnet`, nastav `WARP_TRON_CONTRACT` + `WARP_TRON_RELAY_KEY`
+9. ~~**Stellar** — `python3 setup_zion_asset.py --network mainnet`, nastav `WARP_STELLAR_ZION_ISSUER` (issuer + bridge account) + `WARP_STELLAR_RELAY_KEY`~~ ✅ Done (ZION native asset, issuer `GDDXUOJ7ERSHHDMUKS6PBIDSXV2PB5J7GOFOKMHW6BRVAS46CFSPAYJT`). TODO: add 5/5 multi-sig + relay key
+10. **Cardano** — `cardano-cli transaction mint ...`, nastav `WARP_CARDANO_ZION_ASSET` + `WARP_CARDANO_PAYMENT_KEY` + `WARP_CARDANO_POLICY_KEY` + `WARP_BLOCKFROST_URL`
+11. **Cosmos** — `wasmd store-code zion_cw20.wasm --from relay --chain-id cosmoshub-4`, nastav `WARP_COSMOS_CONTRACT` + `WARP_COSMOS_RELAY_KEY`
 12. **Aptos** — `aptos move publish --named-addresses zion_coin=<bridge_account> --profile mainnet`, nastav `WARP_APTOS_BRIDGE_ACCOUNT` + `WARP_APTOS_RELAY_KEY`
-13. **Sui** — `sui client publish --gas-budget 100000000`, nastav `WARP_SUI_PACKAGE` + `WARP_SUI_RELAY_KEY`
-14. **NEAR** — `near deploy --accountId zion.near --wasmFile zion_token.wasm`, nastav `WARP_NEAR_ZION_CONTRACT` + `WARP_NEAR_RELAY_KEY` + `WARP_NEAR_SIGNER_ACCOUNT`
-15. **TON** — `toncli deploy -n mainnet`, nastav `WARP_TON_JETTON_MASTER` + `WARP_TON_BRIDGE_WALLET` + `WARP_TON_RELAY_KEY`
+13. **Sui** — `sui client publish --gas-budget 100000000`, nastav `WARP_SUI_PACKAGE` + `WARP_SUI_BRIDGE_PACKAGE` + `WARP_SUI_RELAY_KEY`
+14. **NEAR** — `near deploy --accountId zion.near --wasmFile zion_token.wasm`, nastav `WARP_NEAR_BRIDGE_CONTRACT` + `WARP_NEAR_RELAY_KEY` + `WARP_NEAR_ACCOUNT`
 
 ### Po každém deploy
 ```bash
 # 1. Nastav env vars v /root/.env.warp
 # 2. Restart WARP
-systemctl restart zion-warp
+systemctl restart zion-v31-multichain
 # 3. Ověř
 curl http://127.0.0.1:8453/health
 # 4. Ověř specifický chain adapter
 curl http://127.0.0.1:8453/health/<chain>
 ```
+
+## 9. Testnet Smoke-Test Log (2026-08-06)
+
+Local `warpd` was started with a minimal `warp.test.toml` (`solana`, `stellar`, `bitcoin` enabled, `quorum = 1`).
+All three adapters registered and polled their respective devnet/testnet endpoints without errors.
+
+### Stellar testnet — ✅ execute_mint OK
+
+| Položka | Hodnota |
+|---------|---------|
+| Issuer / bridge / relay (G...) | `GC4SGOGJWQGBSPJOM5M3RXVWLKWWAZIF4NNPVA4TTBWN36ZW6J7AMEDS` |
+| Distribution test account | `GCSGJDBBDQVLNCEJGAUJ2SBZNCDL4G7HBVD6N2MT754LPZZIIF5TS3KV` |
+| Asset code | `ZION` |
+| Test mint amount | `0.001 ZION` (1,000 stroops) |
+| Live mint TX (latest) | `2cbe550fe7730d2c06abf5ab58c290f95962e39a39c471c7c56881c51c68d34e` |
+| Horizon | `https://horizon-testnet.stellar.org` |
+| Setup script | `V31/L2/multichain/contracts/non-evm/stellar/setup_zion_asset.py` |
+
+The Stellar adapter `execute_mint` test (`test_stellar_execute_mint_live_testnet`) passed and the distribution account received the test ZION payment. Private relay key is stored in the Edge environment file only.
+
+### Solana devnet — 🟡 polling OK, mint not tested
+
+| Položka | Hodnota |
+|---------|---------|
+| Relay public key | `4J2FRDrHFihJ3QdjF3eLAQ7tZDagyAsgVcKFDh7xdmr3` |
+| Placeholder mint | `3XtfWPaLQTLrjTT6hhzo6WVZP73KmW2JpQnU8iaVwLEU` |
+| RPC | `https://api.devnet.solana.com` |
+| Status | Relay balance 0 lamports; `requestAirdrop` rate-limited (`429` faucet dry). `watch_events` polls with 0 BridgeBurn proofs. Live `mint_to` requires devnet SOL + real SPL mint deploy. |
+
+### Bitcoin testnet — 🟡 polling OK, spend not tested
+
+| Položka | Hodnota |
+|---------|---------|
+| Relay / HTLC watch address | `tb1qjkq5gmqp4rm2yj4zefjvw63p3mxle86leflq4z` |
+| API | `https://mempool.space/testnet/api` |
+| Status | Address has 0 UTXOs. `watch_events` polls with 0 HTLC deposits. Live `execute_mint` requires testnet BTC to fund the relay wallet and a real P2WSH HTLC script. |
 
 ### CLI tools potřebné pro non-EVM deploy
 ```bash

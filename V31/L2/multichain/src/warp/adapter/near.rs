@@ -9,8 +9,8 @@
 //! - `WARP_NEAR_BRIDGE_CONTRACT` — ZION NEP-141 token contract address
 //!   (default `warp.near`)
 //!
-//! Contract source: V3/L2/bridge/contracts/non-evm/near/zion_token.rs
-//! Deployment steps: V3/L2/bridge/contracts/non-evm/near/README.md
+//! Contract source: V31/L2/multichain/contracts/non-evm/near/zion_token.rs
+//! Deployment steps: V31/L2/multichain/contracts/non-evm/near/README.md
 //!
 //! After deploying the NEP-141 contract (zion_token.rs), set
 //! WARP_NEAR_BRIDGE_CONTRACT to the contract account ID (e.g. `zion.near`).
@@ -208,7 +208,7 @@ impl NearAdapter {
             std::env::var("WARP_NEAR_BRIDGE_CONTRACT").unwrap_or_else(|_| "warp.near".into());
         // TODO: After deploying zion_token.rs (NEP-141), set this to the
         // real contract account ID (e.g. "zion.near"). See:
-        // V3/L2/bridge/contracts/non-evm/near/README.md
+        // V31/L2/multichain/contracts/non-evm/near/README.md
         Self {
             rpc_url,
             bridge_contract,

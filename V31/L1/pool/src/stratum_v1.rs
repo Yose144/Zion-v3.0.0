@@ -249,6 +249,15 @@ pub fn build_set_difficulty(difficulty: u64) -> StratumNotification {
     }
 }
 
+/// Build a `mining.set_target` notification (explicit 256-bit share target).
+pub fn build_set_target(target: &[u8; 32]) -> StratumNotification {
+    StratumNotification {
+        id: None,
+        method: "mining.set_target".to_string(),
+        params: json!([hex::encode(target)]),
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Submit parser — convert mining.submit to PoolMessage::Submit
 // ---------------------------------------------------------------------------

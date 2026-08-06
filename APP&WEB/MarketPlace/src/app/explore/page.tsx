@@ -22,21 +22,7 @@ function getCollectionLabelKey(c: string) {
   }
 }
 
-// Fallback mock data for dev without a populated DB
-const mockItems: ArtifactCardData[] = [
-  { id: '1', name: 'Tree of Life Avatar', image: '', collection: 'OASIS Genesis', rarity: 'mythic', price: '2,500', listingType: 'fixed' },
-  { id: '2', name: 'Warp Gate Key', image: '', collection: 'OASIS Quest', rarity: 'legendary', price: '800', listingType: 'auction', bestBid: '1,200', endsAt: Date.now() + 36e5 * 5 },
-  { id: '3', name: 'Galaxy Core Shard', image: '', collection: 'OASIS Genesis', rarity: 'epic', price: '350', listingType: 'fixed' },
-  { id: '4', name: 'Ship HUD Mk-III', image: '', collection: 'OASIS Ships', rarity: 'rare', price: '120', listingType: 'fixed' },
-  { id: '5', name: 'Golden Egg #001', image: '', collection: 'Golden Eggs', rarity: 'mythic', price: '5,000', listingType: 'auction', bestBid: '7,500', endsAt: Date.now() + 36e5 * 12 },
-  { id: '6', name: 'Stellar Trail Skin', image: '', collection: 'OASIS Cosmetics', rarity: 'uncommon', price: '20', listingType: 'fixed' },
-  { id: '7', name: 'Sector 7 Deed', image: '', collection: 'OASIS Territory', rarity: 'rare', price: '450', listingType: 'fixed' },
-  { id: '8', name: 'Void Walker Avatar', image: '', collection: 'OASIS Genesis', rarity: 'unique', listingType: 'none' },
-  { id: '9', name: 'Plasma Cannon Mk-II', image: '', collection: 'OASIS Ships', rarity: 'epic', price: '280', listingType: 'fixed' },
-  { id: '10', name: 'Crystal of Insight', image: '', collection: 'OASIS Quest', rarity: 'rare', price: '150', listingType: 'auction', bestBid: '180', endsAt: Date.now() + 36e5 * 2 },
-  { id: '11', name: 'Iron Shield', image: '', collection: 'OASIS Quest', rarity: 'common', price: '5', listingType: 'fixed' },
-  { id: '12', name: 'Genesis Crown', image: '', collection: 'OASIS Genesis', rarity: 'mythic', listingType: 'none' },
-];
+// No mock fallback — only real OASIS / marketplace data
 
 const sortOptions = [
   { value: 'recent', key: 'explore.sortRecent' },
@@ -71,7 +57,7 @@ export default function ExplorePage() {
 
     getItems(filters).then((res: ItemsResponse | null) => {
       if (cancelled) return;
-      const base = res?.data ?? mockItems;
+      const base = res?.data ?? [];
       let data = [...base];
       if (search) {
         const q = search.toLowerCase();

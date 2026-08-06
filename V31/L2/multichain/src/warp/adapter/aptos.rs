@@ -45,8 +45,8 @@ const DEFAULT_EVENT_FIELD: &str = "deposit_events";
 /// Bridge module account that hosts the event handle.
 /// Override with `WARP_APTOS_BRIDGE_ACCOUNT` env var.
 ///
-/// Contract source: V3/L2/bridge/contracts/non-evm/aptos/sources/zion_coin.move
-/// Deployment steps: V3/L2/bridge/contracts/non-evm/aptos/README.md
+/// Contract source: V31/L2/multichain/contracts/non-evm/aptos/sources/zion_coin.move
+/// Deployment steps: V31/L2/multichain/contracts/non-evm/aptos/README.md
 ///
 /// After publishing the Move module and calling `initialize`, replace
 /// this placeholder with the real bridge admin account address.
