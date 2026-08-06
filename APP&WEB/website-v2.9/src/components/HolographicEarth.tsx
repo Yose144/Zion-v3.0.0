@@ -91,9 +91,9 @@ function EarthGlobe() {
           bumpScale={0.04}
           roughness={0.35}
           metalness={0}
-          color={new THREE.Color('#e0f7fa')}
+          color={new THREE.Color('#1a1a1a')}
           emissiveMap={maps.night ?? undefined}
-          emissive={maps.night ? new THREE.Color('#fff5e6') : new THREE.Color('#1a3a5c')}
+          emissive={maps.night ? new THREE.Color('#fcd116') : new THREE.Color('#078930')}
           emissiveIntensity={maps.night ? 2.2 : 0.35}
         />
       </mesh>
@@ -101,7 +101,7 @@ function EarthGlobe() {
       <mesh scale={1.018}>
         <sphereGeometry args={[1, 32, 32]} />
         <meshBasicMaterial
-          color="#4dd0e1"
+          color="#078930"
           transparent
           opacity={0.08}
           depthWrite={false}
@@ -113,7 +113,7 @@ function EarthGlobe() {
       <mesh scale={1.045}>
         <sphereGeometry args={[1, 32, 32]} />
         <meshBasicMaterial
-          color="#b3e5fc"
+          color="#fcd116"
           transparent
           opacity={0.06}
           depthWrite={false}
@@ -145,12 +145,12 @@ function Moon() {
     <group ref={groupRef}>
       <mesh>
         <sphereGeometry args={[0.27, 32, 32]} />
-        <meshStandardMaterial color="#c8c8c8" roughness={0.92} metalness={0.05} />
+        <meshStandardMaterial color="#d4d4d4" roughness={0.92} metalness={0.05} />
       </mesh>
       {/* faint moon glow */}
       <mesh scale={1.35}>
         <sphereGeometry args={[0.27, 16, 16]} />
-        <meshBasicMaterial color="#dceeff" transparent opacity={0.06} depthWrite={false} blending={THREE.AdditiveBlending} />
+        <meshBasicMaterial color="#fcd116" transparent opacity={0.06} depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
     </group>
   );
@@ -170,17 +170,17 @@ function Sun() {
       {/* core sun */}
       <mesh ref={sunRef}>
         <sphereGeometry args={[2.8, 32, 32]} />
-        <meshBasicMaterial color="#ffdb78" />
+        <meshBasicMaterial color="#fcd116" />
       </mesh>
       {/* inner corona */}
       <mesh scale={1.4}>
         <sphereGeometry args={[2.8, 24, 24]} />
-        <meshBasicMaterial color="#ffaa44" transparent opacity={0.18} depthWrite={false} blending={THREE.AdditiveBlending} />
+        <meshBasicMaterial color="#e41e2b" transparent opacity={0.18} depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
       {/* outer corona */}
       <mesh scale={2.2}>
         <sphereGeometry args={[2.8, 16, 16]} />
-        <meshBasicMaterial color="#ffeebb" transparent opacity={0.06} depthWrite={false} blending={THREE.AdditiveBlending} />
+        <meshBasicMaterial color="#fcd116" transparent opacity={0.06} depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
     </group>
   );
@@ -200,13 +200,13 @@ type PlanetData = {
 };
 
 const PLANETS: PlanetData[] = [
-  { name: 'Mercury', color: '#9ca3af', emissive: '#6b7280', radius: 0.035, orbitRadius: 6.5, orbitSpeed: 0.55, orbitTilt: 0.1, startAngle: 0.0 },
-  { name: 'Venus',   color: '#fde68a', emissive: '#d4a373', radius: 0.06,  orbitRadius: 8.0, orbitSpeed: 0.40, orbitTilt: 0.15, startAngle: 1.2 },
-  { name: 'Mars',    color: '#fca5a5', emissive: '#dc2626', radius: 0.045, orbitRadius: 10.0, orbitSpeed: 0.28, orbitTilt: 0.08, startAngle: 2.5 },
-  { name: 'Jupiter', color: '#d4a574', emissive: '#b87333', radius: 0.14,  orbitRadius: 14.0, orbitSpeed: 0.12, orbitTilt: 0.2,  startAngle: 0.8 },
-  { name: 'Saturn',  color: '#fde047', emissive: '#eab308', radius: 0.11,  orbitRadius: 17.0, orbitSpeed: 0.09, orbitTilt: 0.25, startAngle: 3.1, hasRing: true, ringColor: '#fef08a' },
-  { name: 'Uranus',  color: '#67e8f9', emissive: '#078930', radius: 0.07,  orbitRadius: 20.0, orbitSpeed: 0.06, orbitTilt: 0.35, startAngle: 4.4 },
-  { name: 'Neptune', color: '#3b82f6', emissive: '#1d4ed8', radius: 0.065, orbitRadius: 23.0, orbitSpeed: 0.05, orbitTilt: 0.18, startAngle: 5.7 },
+  { name: 'Mercury', color: '#1a1a1a', emissive: '#0d0d0d', radius: 0.035, orbitRadius: 6.5, orbitSpeed: 0.55, orbitTilt: 0.1, startAngle: 0.0 },
+  { name: 'Venus',   color: '#fcd116', emissive: '#e41e2b', radius: 0.06,  orbitRadius: 8.0, orbitSpeed: 0.40, orbitTilt: 0.15, startAngle: 1.2 },
+  { name: 'Mars',    color: '#e41e2b', emissive: '#e41e2b', radius: 0.045, orbitRadius: 10.0, orbitSpeed: 0.28, orbitTilt: 0.08, startAngle: 2.5 },
+  { name: 'Jupiter', color: '#fcd116', emissive: '#e41e2b', radius: 0.14,  orbitRadius: 14.0, orbitSpeed: 0.12, orbitTilt: 0.2,  startAngle: 0.8 },
+  { name: 'Saturn',  color: '#fcd116', emissive: '#fcd116', radius: 0.11,  orbitRadius: 17.0, orbitSpeed: 0.09, orbitTilt: 0.25, startAngle: 3.1, hasRing: true, ringColor: '#fcd116' },
+  { name: 'Uranus',  color: '#078930', emissive: '#078930', radius: 0.07,  orbitRadius: 20.0, orbitSpeed: 0.06, orbitTilt: 0.35, startAngle: 4.4 },
+  { name: 'Neptune', color: '#e41e2b', emissive: '#e41e2b', radius: 0.065, orbitRadius: 23.0, orbitSpeed: 0.05, orbitTilt: 0.18, startAngle: 5.7 },
 ];
 
 function Planet({ data }: { data: PlanetData }) {
@@ -298,18 +298,18 @@ function IssobellaStation() {
       {/* Main torus — ring habitat */}
       <mesh rotation={[Math.PI / 2, 0, 0]}>
         <torusGeometry args={[0.14, 0.035, 12, 24]} />
-        <meshStandardMaterial color="#2dd4bf" emissive="#0d9488" emissiveIntensity={0.8} roughness={0.3} metalness={0.7} />
+        <meshStandardMaterial color="#fcd116" emissive="#078930" emissiveIntensity={0.8} roughness={0.3} metalness={0.7} />
       </mesh>
       {/* Central core */}
       <mesh>
         <sphereGeometry args={[0.06, 16, 16]} />
-        <meshStandardMaterial color="#5eead4" emissive="#14b8a6" emissiveIntensity={1.2} roughness={0.2} metalness={0.5} />
+        <meshStandardMaterial color="#078930" emissive="#078930" emissiveIntensity={1.2} roughness={0.2} metalness={0.5} />
       </mesh>
 
       {/* Issobella glow */}
       <mesh scale={2.5}>
         <sphereGeometry args={[0.14, 16, 16]} />
-        <meshBasicMaterial color="#2dd4bf" transparent opacity={0.08} depthWrite={false} blending={THREE.AdditiveBlending} />
+        <meshBasicMaterial color="#fcd116" transparent opacity={0.08} depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
     </group>
   );
@@ -321,9 +321,9 @@ function HologramShell() {
   const uniforms = useMemo(
     () => ({
       uTime: { value: 0 },
-      uCore: { value: new THREE.Color('#0c3d5c') },
-      uRim: { value: new THREE.Color('#4dd0e1') },
-      uAccent: { value: new THREE.Color('#ffe082') },
+      uCore: { value: new THREE.Color('#1a1a1a') },
+      uRim: { value: new THREE.Color('#078930') },
+      uAccent: { value: new THREE.Color('#fcd116') },
     }),
     [],
   );
@@ -340,7 +340,7 @@ function HologramShell() {
       <mesh scale={1.028}>
         <sphereGeometry args={[1, 24, 24]} />
         <meshBasicMaterial
-          color="#81d4fa"
+          color="#078930"
           wireframe
           transparent
           opacity={0.08}
@@ -381,16 +381,16 @@ type BrightStar = {
 };
 
 const BRIGHT_STARS: BrightStar[] = [
-  { name: 'Sirius',     color: '#dbeafe', emissive: '#60a5fa', radius: 0.055, distance: 42, theta: 0.9,  phi: 1.35, pulseSpeed: 2.1 },
-  { name: 'Rigel',      color: '#e0f2fe', emissive: '#38bdf8', radius: 0.065, distance: 48, theta: 2.4,  phi: 1.15, pulseSpeed: 1.7 },
-  { name: 'Arcturus',   color: '#ffedd5', emissive: '#fb923c', radius: 0.075, distance: 38, theta: 4.2,  phi: 1.05, pulseSpeed: 1.3 },
-  { name: 'Vega',       color: '#f0f9ff', emissive: '#a5f3fc', radius: 0.06,  distance: 44, theta: 5.8,  phi: 0.95, pulseSpeed: 1.9 },
-  { name: 'Betelgeuse', color: '#fee2e2', emissive: '#f87171', radius: 0.09,  distance: 36, theta: 1.6,  phi: 0.85, pulseSpeed: 0.8 },
-  { name: 'Antares',    color: '#ffe4e6', emissive: '#f43f5e', radius: 0.07,  distance: 50, theta: 3.3,  phi: 1.45, pulseSpeed: 1.1 },
-  { name: 'Altair',     color: '#ecfeff', emissive: '#67e8f9', radius: 0.05,  distance: 40, theta: 0.3,  phi: 1.2,  pulseSpeed: 2.4 },
-  { name: 'Spica',      color: '#eef2ff', emissive: '#818cf8', radius: 0.058, distance: 46, theta: 4.9,  phi: 0.75, pulseSpeed: 1.5 },
-  { name: 'Deneb',      color: '#f5f3ff', emissive: '#c4b5fd', radius: 0.062, distance: 52, theta: 5.1,  phi: 0.65, pulseSpeed: 1.2 },
-  { name: 'Pollux',     color: '#fffbeb', emissive: '#fcd34d', radius: 0.068, distance: 35, theta: 2.9,  phi: 1.55, pulseSpeed: 1.0 },
+  { name: 'Sirius',     color: '#078930', emissive: '#078930', radius: 0.055, distance: 42, theta: 0.9,  phi: 1.35, pulseSpeed: 2.1 },
+  { name: 'Rigel',      color: '#078930', emissive: '#078930', radius: 0.065, distance: 48, theta: 2.4,  phi: 1.15, pulseSpeed: 1.7 },
+  { name: 'Arcturus',   color: '#e41e2b', emissive: '#e41e2b', radius: 0.075, distance: 38, theta: 4.2,  phi: 1.05, pulseSpeed: 1.3 },
+  { name: 'Vega',       color: '#fcd116', emissive: '#fcd116', radius: 0.06,  distance: 44, theta: 5.8,  phi: 0.95, pulseSpeed: 1.9 },
+  { name: 'Betelgeuse', color: '#e41e2b', emissive: '#e41e2b', radius: 0.09,  distance: 36, theta: 1.6,  phi: 0.85, pulseSpeed: 0.8 },
+  { name: 'Antares',    color: '#e41e2b', emissive: '#e41e2b', radius: 0.07,  distance: 50, theta: 3.3,  phi: 1.45, pulseSpeed: 1.1 },
+  { name: 'Altair',     color: '#078930', emissive: '#078930', radius: 0.05,  distance: 40, theta: 0.3,  phi: 1.2,  pulseSpeed: 2.4 },
+  { name: 'Spica',      color: '#078930', emissive: '#078930', radius: 0.058, distance: 46, theta: 4.9,  phi: 0.75, pulseSpeed: 1.5 },
+  { name: 'Deneb',      color: '#fcd116', emissive: '#fcd116', radius: 0.062, distance: 52, theta: 5.1,  phi: 0.65, pulseSpeed: 1.2 },
+  { name: 'Pollux',     color: '#fcd116', emissive: '#fcd116', radius: 0.068, distance: 35, theta: 2.9,  phi: 1.55, pulseSpeed: 1.0 },
 ];
 
 function BrightStars() {
@@ -536,10 +536,10 @@ function OrionNebula() {
   const groupRef = useRef<THREE.Group>(null);
 
   const clouds = useMemo(() => [
-    { pos: [18, 6, 22] as [number, number, number], scale: [5.5, 3.2, 4.0] as [number, number, number], color: '#f9a8d4', opacity: 0.035 },
-    { pos: [16, 5, 20] as [number, number, number], scale: [4.0, 2.5, 3.5] as [number, number, number], color: '#c4b5fd', opacity: 0.028 },
-    { pos: [20, 7, 24] as [number, number, number], scale: [3.5, 2.0, 3.0] as [number, number, number], color: '#fca5a5', opacity: 0.022 },
-    { pos: [14, 4, 21] as [number, number, number], scale: [3.0, 1.8, 2.5] as [number, number, number], color: '#86efac', opacity: 0.018 },
+    { pos: [18, 6, 22] as [number, number, number], scale: [5.5, 3.2, 4.0] as [number, number, number], color: '#e41e2b', opacity: 0.035 },
+    { pos: [16, 5, 20] as [number, number, number], scale: [4.0, 2.5, 3.5] as [number, number, number], color: '#fcd116', opacity: 0.028 },
+    { pos: [20, 7, 24] as [number, number, number], scale: [3.5, 2.0, 3.0] as [number, number, number], color: '#e41e2b', opacity: 0.022 },
+    { pos: [14, 4, 21] as [number, number, number], scale: [3.0, 1.8, 2.5] as [number, number, number], color: '#078930', opacity: 0.018 },
   ], []);
 
   useFrame((_state, delta) => {
@@ -648,9 +648,9 @@ function latLonToVector3(lat: number, lon: number, radius: number): [number, num
 }
 
 const TERRA_NOVA_MARKERS = [
-  { lat: 37.0, lon: -8.0, color: '#34D399', glow: '#10B981', nameCs: 'Zahrada Genesis', nameEn: 'Garden of Genesis', href: '/terranova/genesis' },
-  { lat: 28.7, lon: -17.9, color: '#F97316', glow: '#F59E0B', nameCs: 'Dharma Temple', nameEn: 'Dharma Temple', href: '/terranova/dharma-temple' },
-  { lat: -17.0, lon: -150.0, color: '#22D3EE', glow: '#078930', nameCs: 'Te Piko Ora', nameEn: 'Te Piko Ora', href: '/terranova/te-piko-ora' },
+  { lat: 37.0, lon: -8.0, color: '#078930', glow: '#078930', nameCs: 'Zahrada Genesis', nameEn: 'Garden of Genesis', href: '/terranova/genesis' },
+  { lat: 28.7, lon: -17.9, color: '#fcd116', glow: '#fcd116', nameCs: 'Dharma Temple', nameEn: 'Dharma Temple', href: '/terranova/dharma-temple' },
+  { lat: -17.0, lon: -150.0, color: '#e41e2b', glow: '#e41e2b', nameCs: 'Te Piko Ora', nameEn: 'Te Piko Ora', href: '/terranova/te-piko-ora' },
 ];
 
 function TerraNovaMarkers() {
@@ -736,7 +736,7 @@ function StarField() {
     <points geometry={geometry}>
       <pointsMaterial
         size={0.035}
-        color="#c4e0ff"
+        color="#fcd116"
         transparent
         opacity={0.75}
         sizeAttenuation
@@ -750,11 +750,11 @@ function Scene() {
   return (
     <>
       <ambientLight intensity={1.4} />
-      <directionalLight position={[8, 4, 8]} intensity={3.5} color="#fffdf5" />
-      <pointLight position={[-6, -2, 4]} intensity={1.2} color="#a8d8ff" />
-      <pointLight position={[0, 6, 2]} intensity={0.8} color="#ffe8b0" />
-      <pointLight position={[0, -4, 0]} intensity={0.6} color="#4fc3f7" />
-      <hemisphereLight color="#e1f5fe" groundColor="#0d2b4a" intensity={1.0} />
+      <directionalLight position={[8, 4, 8]} intensity={3.5} color="#fcd116" />
+      <pointLight position={[-6, -2, 4]} intensity={1.2} color="#078930" />
+      <pointLight position={[0, 6, 2]} intensity={0.8} color="#fcd116" />
+      <pointLight position={[0, -4, 0]} intensity={0.6} color="#078930" />
+      <hemisphereLight color="#fcd116" groundColor="#0d0d0d" intensity={1.0} />
       <MilkyWay />
       <OrionNebula />
       <StarField />
@@ -799,17 +799,17 @@ export default function HolographicEarth({ className }: HolographicEarthProps) {
     <div
       className={clsx(
         'relative aspect-[5/4] w-full max-h-[300px] overflow-hidden rounded-[22px] sm:max-h-[340px]',
-        'border border-cyan-200/30 bg-gradient-to-b from-[#0f2b4d]/85 via-[#133049]/82 to-[#0c1e33]/86',
-        'shadow-[0_12px_48px_rgba(0,0,0,0.45),0_0_0_1px_rgba(103,243,223,0.06)_inset,0_0_64px_rgba(103,243,223,0.12)]',
-        'ring-1 ring-amber-200/10',
+        'border border-rasta-gold/30 bg-gradient-to-b from-rasta-black/85 via-rasta-dark/82 to-rasta-black/86',
+        'shadow-[0_12px_48px_rgba(0,0,0,0.45),0_0_0_1px_rgba(252,209,22,0.06)_inset,0_0_64px_rgba(7,137,48,0.12)]',
+        'ring-1 ring-rasta-gold/10',
         className,
       )}
     >
-      <div className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(ellipse_at_50%_42%,rgba(103,243,223,0.38),transparent_58%)]" />
-      <div className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(circle_at_50%_88%,rgba(245,215,142,0.14),transparent_45%)]" />
+      <div className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(ellipse_at_50%_42%,rgba(252,209,22,0.38),transparent_58%)]" />
+      <div className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(circle_at_50%_88%,rgba(228,30,43,0.14),transparent_45%)]" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[35%] bg-gradient-to-t from-black/25 to-transparent" />
       <div className="pointer-events-none absolute inset-3 rounded-[16px] border border-white/[0.06]" />
-      <p className="pointer-events-none absolute inset-x-0 top-2.5 z-10 text-center text-[9px] font-medium uppercase tracking-[0.42em] text-cyan-100/50">
+      <p className="pointer-events-none absolute inset-x-0 top-2.5 z-10 text-center text-[9px] font-medium uppercase tracking-[0.42em] text-rasta-gold/50">
         Holographic Earth · Solar System · Milky Way · Orion · Bright Stars · Terra Nova · drag orbit
       </p>
       <div className="absolute inset-x-0 bottom-0 top-9 sm:top-10">
@@ -832,10 +832,10 @@ export default function HolographicEarth({ className }: HolographicEarthProps) {
         ) : (
           <div className="flex h-full w-full items-center justify-center">
             <div className="text-center">
-              <div className="mx-auto mb-2 h-12 w-12 rounded-full border border-cyan-200/20 bg-zion-cyan/10 flex items-center justify-center">
+              <div className="mx-auto mb-2 h-12 w-12 rounded-full border border-rasta-green/20 bg-rasta-green/10 flex items-center justify-center">
                 <span className="text-lg">🌍</span>
               </div>
-              <p className="text-[10px] text-cyan-100/40 uppercase tracking-widest">WebGL unavailable</p>
+              <p className="text-[10px] text-rasta-gold/40 uppercase tracking-widest">WebGL unavailable</p>
             </div>
           </div>
         )}

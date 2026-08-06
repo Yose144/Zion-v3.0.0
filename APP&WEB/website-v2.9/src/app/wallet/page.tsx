@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type CSSProperties } from 'react';
+import { useState, useEffect, useCallback, type CSSProperties } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useZionWallet } from '@/contexts/ZionWalletContext';
@@ -97,6 +97,46 @@ const WalletCopy = {
   download: { cs: `Stáhnout`, en: `Download` },
   documentation: { cs: `Dokumentace`, en: `Documentation` },
 };
+
+// ── Tithe Wallets (89/5/5/1 coinbase fee split) ──────────────────────────
+// These are the canonical subsidy wallets that receive a portion of each
+// block's coinbase. The 1% pool fee is BURNED (never minted, no address).
+const TITHE_WALLETS = [
+  {
+    label: { cs: 'Těžař (89%)', en: 'Miner (89%)' },
+    address: 'zion1d6e3a4s6t856z042q2m6h5h2j4k3v7f8f2a94h7',
+    pct: 89,
+    color: 'text-zion-cyan',
+    bg: 'bg-zion-cyan/10',
+    rc: '6, 182, 212',
+  },
+  {
+    label: { cs: 'Humanitární fond (5%)', en: 'Humanitarian Fund (5%)' },
+    address: 'zion1j0j5d0c70056u678j7g4p686e7r3w5k0y8vy0m0',
+    pct: 5,
+    color: 'text-zion-gold',
+    bg: 'bg-zion-gold/10',
+    rc: '252, 209, 22',
+  },
+  {
+    label: { cs: 'Issobella fond (5%)', en: 'Issobella Fund (5%)' },
+    address: 'zion1g3g0k2j665r075g5j077z0w3u4g3w0d5837j3f6',
+    pct: 5,
+    color: 'text-zion-purple',
+    bg: 'bg-zion-purple/10',
+    rc: '147, 51, 234',
+  },
+  {
+    label: { cs: 'Pool fee — spáleno (1%)', en: 'Pool Fee — Burned (1%)' },
+    address: null, // 1% is burned, never minted
+    pct: 1,
+    color: 'text-red-400',
+    bg: 'bg-red-500/10',
+    rc: '228, 30, 43',
+  },
+] as const;
+
+const RPC_URL = 'https://rpc.zionterranova.com';
 
 const getFeatures = (cs: boolean) => [
   {
@@ -202,6 +242,43 @@ export default function WalletPage() {
   const [txResult, setTxResult] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [localError, setLocalError] = useState('');
+  const [titheBalances, setTitheBalances] = useState<Record<string, number | null>>({});
+  const [titheLoading, setTitheLoading] = useState(false);
+
+  // Fetch tithe wallet balances from RPC
+  const refreshTitheBalances = useCallback(async () => {
+    setTitheLoading(true);
+    const results: Record<string, number | null> = {};
+    await Promise.all(
+      TITHE_WALLETS.filter((w) => w.address).map(async (w) => {
+        try {
+          const res = await fetch(RPC_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              jsonrpc: '2.0',
+              id: 1,
+              method: 'getBalance',
+              params: { address: w.address },
+            }),
+          });
+          const data = await res.json();
+          const bal = data?.result?.balance;
+          results[w.address!] = bal !== undefined ? Number(bal) / 1_000_000 : null;
+        } catch {
+          results[w.address!] = null;
+        }
+      }),
+    );
+    setTitheBalances(results);
+    setTitheLoading(false);
+  }, []);
+
+  useEffect(() => {
+    refreshTitheBalances();
+    const interval = setInterval(refreshTitheBalances, 30_000);
+    return () => clearInterval(interval);
+  }, [refreshTitheBalances]);
 
   if (!initialized) {
     return (
@@ -473,6 +550,72 @@ export default function WalletPage() {
                 value={securityLevel}
                 sub={WalletCopy.level[cs ? 'cs' : 'en']}
               />
+            </div>
+          </motion.div>
+        </section>
+
+        {/* ── TITHE WALLETS (89/5/5/1) ── */}
+        <section className="relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.08 }}
+          >
+            <div className="flex flex-col gap-2 mb-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
+                    {cs ? 'Desátkové peněženky' : 'Tithe Wallets'}
+                  </p>
+                  <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+                    <Shield className="h-7 w-7 text-zion-gold" />
+                    {cs ? 'Rozdělení coinbase 89/5/5/1' : 'Coinbase Split 89/5/5/1'}
+                  </h2>
+                  <p className="text-sm text-gray-400 mt-1">
+                    {cs
+                      ? 'Každý blok rozděluje odměnu: 89 % těžař, 5 % humanitární fond, 5 % Issobella fond, 1 % spáleno.'
+                      : 'Each block splits the reward: 89% miner, 5% humanitarian fund, 5% Issobella fund, 1% burned.'}
+                  </p>
+                </div>
+                <button
+                  onClick={refreshTitheBalances}
+                  className="p-2 hover:bg-white/10 rounded-2xl transition"
+                  disabled={titheLoading}
+                >
+                  <RefreshCw className={`w-5 h-5 text-gray-400 ${titheLoading ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {TITHE_WALLETS.map((w) => {
+                const bal = w.address ? titheBalances[w.address] : null;
+                const display = w.address
+                  ? bal !== null && bal !== undefined
+                    ? `${bal.toFixed(6)} ZION`
+                    : '---'
+                  : cs
+                    ? 'Spáleno (nikdy raženo)'
+                    : 'Burned (never minted)';
+                return (
+                  <div
+                    key={w.label.en}
+                    className="zion-rainbow-sub p-4"
+                    style={{ '--rc': w.rc } as CSSProperties}
+                  >
+                    <div className={`flex items-center justify-center h-8 w-8 rounded-xl ${w.bg} mb-3 ${w.color} [&>svg]:h-4 [&>svg]:w-4`}>
+                      {w.address ? <Wallet className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                    </div>
+                    <p className="text-[11px] text-gray-500 uppercase tracking-wider">
+                      {w.label[cs ? 'cs' : 'en']}
+                    </p>
+                    <p className="text-lg font-bold text-white font-mono mt-0.5">{display}</p>
+                    {w.address && (
+                      <p className="text-[10px] text-gray-600 font-mono mt-1 truncate">{w.address}</p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </motion.div>
         </section>
