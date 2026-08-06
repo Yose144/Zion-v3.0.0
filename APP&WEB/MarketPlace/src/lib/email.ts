@@ -1,6 +1,23 @@
 import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { buildV2OrderConfirmationEmail } from './v2-email';
 import { getActiveTheme } from './settings';
+
+interface AttachmentInput {
+  filename: string;
+  content: string | Buffer;
+  contentType?: string;
+}
+
+interface SendMailOptions {
+  from: string;
+  to: string | string[];
+  replyTo?: string;
+  subject: string;
+  text: string;
+  html?: string;
+  attachments?: AttachmentInput[];
+}
 
 function emailConfig() {
   const host = process.env.SMTP_HOST ?? '127.0.0.1';
@@ -15,11 +32,14 @@ function emailConfig() {
     adminEmail: process.env.ADMIN_EMAIL ?? 'admin@newearth.cz',
     shopEmail: process.env.SHOP_EMAIL ?? 'shop@newearth.cz',
     shopName: process.env.SHOP_NAME ?? 'ZION eShop',
+    resendApiKey: process.env.RESEND_API_KEY ?? '',
+    resendFrom: process.env.RESEND_FROM ?? 'onboarding@resend.dev',
   };
 }
 
 function isEnabled(): boolean {
   const cfg = emailConfig();
+  if (cfg.resendApiKey) return true;
   // Local Postfix doesn't need auth — just need a sender address
   if (cfg.isLocal) return Boolean(cfg.shopEmail);
   return Boolean(cfg.user && cfg.password);
@@ -43,6 +63,45 @@ function createTransporter() {
     };
   }
   return nodemailer.createTransport(transportOpts as nodemailer.TransportOptions);
+}
+
+async function sendWithResend(options: SendMailOptions): Promise<void> {
+  const cfg = emailConfig();
+  if (!cfg.resendApiKey) throw new Error('RESEND_API_KEY not configured');
+  const resend = new Resend(cfg.resendApiKey);
+
+  const result = await resend.emails.send({
+    from: options.from,
+    to: options.to,
+    replyTo: options.replyTo,
+    subject: options.subject,
+    text: options.text,
+    html: options.html,
+    attachments: options.attachments?.map((a) => ({
+      filename: a.filename,
+      content: Buffer.from(a.content).toString('base64'),
+      contentType: a.contentType,
+    })),
+  });
+
+  if (result.error) throw new Error(result.error.message);
+}
+
+export async function sendMail(options: SendMailOptions): Promise<void> {
+  const cfg = emailConfig();
+  if (cfg.resendApiKey) {
+    return sendWithResend(options);
+  }
+  const transporter = createTransporter();
+  await transporter.sendMail({
+    from: options.from,
+    to: options.to,
+    replyTo: options.replyTo,
+    subject: options.subject,
+    text: options.text,
+    html: options.html,
+    attachments: options.attachments,
+  });
 }
 
 function formatPrice(amount: number): string {
@@ -105,7 +164,7 @@ export async function sendAdminOrderNotification(order: OrderEmailData): Promise
     ? 'Zásilkovna - výdejní místo (bude upřesněno)'
     : 'Digitální doručení / online převzetí';
 
-  const subject = `🛒 Nová objednávka #${order.orderId} - ${cfg.shopName}`;
+  const subject = `Nová objednávka #${order.orderId} - ${cfg.shopName}`;
   const body = `=======================================
 NOVÁ OBJEDNÁVKA - ${cfg.shopName}
 =======================================
@@ -146,9 +205,8 @@ Poznámka: ${order.note || '—'}
 `;
 
   try {
-    const transporter = createTransporter();
-    await transporter.sendMail({
-      from: `${cfg.shopName} <${cfg.shopEmail}>`,
+    await sendMail({
+      from: `${cfg.shopName} <${cfg.resendApiKey ? cfg.resendFrom : cfg.shopEmail}>`,
       to: cfg.adminEmail,
       replyTo: order.customerEmail,
       subject,
@@ -176,29 +234,26 @@ export async function sendCustomerOrderConfirmation(
   try {
     const theme = await getActiveTheme();
     const { html, text } = await buildV2OrderConfirmationEmail(order, theme);
-    const transporter = createTransporter();
 
-    const mailOptions: nodemailer.SendMailOptions = {
-      from: `${cfg.shopName} <${cfg.shopEmail}>`,
+    const attachments: AttachmentInput[] | undefined = invoiceHtml
+      ? [
+          {
+            filename: `faktura-${order.orderId.replace(/\s+/g, '_')}.html`,
+            content: invoiceHtml,
+            contentType: 'text/html',
+          },
+        ]
+      : undefined;
+
+    await sendMail({
+      from: `${cfg.shopName} <${cfg.resendApiKey ? cfg.resendFrom : cfg.shopEmail}>`,
       to: order.customerEmail,
       replyTo: cfg.shopEmail,
       subject,
       text,
       html,
-    };
-
-    // Attach invoice as HTML file (like V2 Python sender)
-    if (invoiceHtml) {
-      mailOptions.attachments = [
-        {
-          filename: `faktura-${order.orderId.replace(/\s+/g, '_')}.html`,
-          content: invoiceHtml,
-          contentType: 'text/html',
-        },
-      ];
-    }
-
-    await transporter.sendMail(mailOptions);
+      attachments,
+    });
     console.log(`Customer order confirmation sent for ${order.orderId}${invoiceHtml ? ' (with invoice attachment)' : ''}`);
   } catch (error) {
     console.error('Failed to send customer order confirmation:', error);
@@ -227,9 +282,8 @@ Tým ZION Terra Nova
 `;
 
   try {
-    const transporter = createTransporter();
-    await transporter.sendMail({
-      from: `${cfg.shopName} <${cfg.shopEmail}>`,
+    await sendMail({
+      from: `${cfg.shopName} <${cfg.resendApiKey ? cfg.resendFrom : cfg.shopEmail}>`,
       to: order.customerEmail,
       replyTo: cfg.shopEmail,
       subject,
@@ -249,7 +303,7 @@ export async function sendInvoiceEmail(order: OrderEmailData, invoiceHtml: strin
 
   const cfg = emailConfig();
 
-  const subject = `📄 Faktura k objednávce #${order.orderId} - ${cfg.shopName}`;
+  const subject = `Faktura k objednávce #${order.orderId} - ${cfg.shopName}`;
   const body = `Dobrý den, ${order.customerName},
 
 v příloze Vám zasíláme fakturu k objednávce #${order.orderId}.
@@ -261,9 +315,8 @@ Tým ZION Terra Nova
 `;
 
   try {
-    const transporter = createTransporter();
-    await transporter.sendMail({
-      from: `${cfg.shopName} <${cfg.shopEmail}>`,
+    await sendMail({
+      from: `${cfg.shopName} <${cfg.resendApiKey ? cfg.resendFrom : cfg.shopEmail}>`,
       to: order.customerEmail,
       replyTo: cfg.shopEmail,
       subject,
@@ -316,9 +369,8 @@ Tým ZION Terra Nova
 `;
 
   try {
-    const transporter = createTransporter();
-    await transporter.sendMail({
-      from: `${cfg.shopName} <${cfg.shopEmail}>`,
+    await sendMail({
+      from: `${cfg.shopName} <${cfg.resendApiKey ? cfg.resendFrom : cfg.shopEmail}>`,
       to: order.customerEmail,
       replyTo: cfg.shopEmail,
       subject,

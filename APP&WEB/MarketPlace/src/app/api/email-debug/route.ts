@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import nodemailer from 'nodemailer';
-import { buildV2OrderConfirmationHtml } from '@/lib/v2-email';
+import { buildV2OrderConfirmationEmail, buildV2OrderConfirmationHtml } from '@/lib/v2-email';
 import { getActiveTheme } from '@/lib/settings';
-import type { OrderEmailData } from '@/lib/email';
+import { sendMail, type OrderEmailData } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,62 +33,44 @@ export async function POST(request: Request) {
   };
 
   const theme = await getActiveTheme();
-  const html = await buildV2OrderConfirmationHtml(testOrder, theme);
+  const { html, text } = await buildV2OrderConfirmationEmail(testOrder, theme);
 
   // Log HTML size and first 500 chars
   console.log('DEBUG: HTML length:', html.length);
   console.log('DEBUG: HTML starts with:', html.substring(0, 200));
   console.log('DEBUG: Theme:', theme);
 
-  const cfg = {
-    host: process.env.SMTP_HOST ?? '127.0.0.1',
-    port: parseInt(process.env.SMTP_PORT ?? '25', 10),
-    user: process.env.SMTP_USER ?? 'shop@newearth.cz',
-    password: process.env.SMTP_PASSWORD ?? '',
-    isLocal: (process.env.SMTP_HOST ?? '127.0.0.1') === '127.0.0.1' || (process.env.SMTP_HOST ?? '127.0.0.1') === 'localhost',
-  };
-
-  const transportOpts: Record<string, unknown> = {
-    host: cfg.host,
-    port: cfg.port,
-    secure: cfg.port === 465,
-  };
-  if (cfg.isLocal) {
-    transportOpts.ignoreTLS = true;
-  } else {
-    transportOpts.auth = { user: cfg.user, pass: cfg.password };
-  }
-  const transporter = nodemailer.createTransport(transportOpts as nodemailer.TransportOptions);
-
   try {
-    const info = await transporter.sendMail({
-      from: `ZION eShop <${process.env.SHOP_EMAIL ?? 'shop@newearth.cz'}>`,
+    await sendMail({
+      from: `${process.env.SHOP_NAME ?? 'ZION eShop'} <${process.env.RESEND_FROM ?? process.env.SHOP_EMAIL ?? 'shop@newearth.cz'}>`,
       to: testEmail,
       replyTo: process.env.SHOP_EMAIL ?? 'shop@newearth.cz',
-      subject: `✅ DEBUG TEST - Potvrzení objednávky #${testOrder.orderId}`,
+      subject: `DEBUG TEST - Potvrzeni objednavky #${testOrder.orderId}`,
+      text,
       html,
     });
 
+    const previewHtml = await buildV2OrderConfirmationHtml(testOrder, theme);
     return NextResponse.json({
       success: true,
-      messageId: info.messageId,
-      response: info.response,
-      htmlLength: html.length,
-      htmlPreview: html.substring(0, 500),
+      htmlLength: previewHtml.length,
+      htmlPreview: previewHtml.substring(0, 500),
       theme,
       env: {
-        SMTP_HOST: cfg.host,
-        SMTP_PORT: cfg.port,
-        SMTP_USER: cfg.user,
-        hasPassword: Boolean(cfg.password),
+        SMTP_HOST: process.env.SMTP_HOST ?? '127.0.0.1',
+        SMTP_PORT: process.env.SMTP_PORT ?? '25',
+        SHOP_EMAIL: process.env.SHOP_EMAIL ?? 'shop@newearth.cz',
+        RESEND_FROM: process.env.RESEND_FROM,
+        hasResendKey: Boolean(process.env.RESEND_API_KEY),
       },
     });
   } catch (error) {
+    const previewHtml = await buildV2OrderConfirmationHtml(testOrder, theme);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
-      htmlLength: html.length,
-      htmlPreview: html.substring(0, 500),
+      htmlLength: previewHtml.length,
+      htmlPreview: previewHtml.substring(0, 500),
       theme,
     }, { status: 500 });
   }
