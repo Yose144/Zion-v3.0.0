@@ -3629,7 +3629,7 @@ def _build_status_edge_primary() -> dict:
             pool_edge_health = {"alive": False}
 
 
-    edge_pool_wallet = os.environ.get("ZION_POOL_WALLET", "") or "zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2"
+    edge_pool_wallet = os.environ.get("ZION_POOL_WALLET", "") or "zion177w668f4g5g8s3t844s3f053k8h7r6d540853g6"
     edge_fee_split = "89/5/5/1"
     local_pool = parse_pool_log()
     pool_status = {
@@ -4645,7 +4645,7 @@ def build_wallets() -> dict:
     #    fallback to .env files
     node_addrs = parse_node_startup_addresses()
     # Canonical Edge pool wallet (AGENTS.md) — always include
-    canonical_pool = "zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2"
+    canonical_pool = "zion177w668f4g5g8s3t844s3f053k8h7r6d540853g6"
     op_sources = [
         (canonical_pool, "Pool Canonical (Main Payout)", "canonical"),
         (node_addrs.get("miner") or find_env_value("ZION_MINER_ADDRESS"), "Miner Payout", "node"),
@@ -8093,7 +8093,7 @@ def get_pool_wallet_status() -> dict:
 
     # ── Canonical pool wallet (from env or hardcoded 3.0.4) ─────────────
     if not status["pool_wallet"]:
-        status["pool_wallet"] = os.environ.get("ZION_POOL_WALLET") or "zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2"
+        status["pool_wallet"] = os.environ.get("ZION_POOL_WALLET") or "zion177w668f4g5g8s3t844s3f053k8h7r6d540853g6"
     if not status["payout_enabled"]:
         status["payout_enabled"] = True
     if not status["fee_split"]:
@@ -8336,7 +8336,7 @@ def build_payout_status() -> dict:
 
     if is_edge:
         # Canonical Edge pool wallets (from edge-environment.sh, 3.0.4 hard reset)
-        status["pool_wallet"] = os.environ.get("ZION_POOL_WALLET") or "zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2"
+        status["pool_wallet"] = os.environ.get("ZION_POOL_WALLET") or "zion177w668f4g5g8s3t844s3f053k8h7r6d540853g6"
         status["payout_enabled"] = True
         status["fee_split"] = "89/5/5/1"
         # Try env var first, then edge-environment.sh, then hardcoded canonical
@@ -8344,7 +8344,7 @@ def build_payout_status() -> dict:
         _iss = os.environ.get("ZION_ISSOBELLA_WALLET")
         if not _hum or not _iss:
             # Read from edge-environment.sh
-            for _envpath in ["/root/zion/edge-environment.sh", "/root/zion/edge-node2-environment.sh"]:
+            for _envpath in ["/etc/zion/edge-environment.sh", "/root/zion/edge-environment.sh", "/root/zion/edge-node2-environment.sh"]:
                 try:
                     with open(_envpath) as _f:
                         for _line in _f:
@@ -8356,10 +8356,10 @@ def build_payout_status() -> dict:
                         break
                 except Exception:
                     pass
-        status["humanitarian_wallet"] = _hum or "zion1e0u5q5s660k4m4a634p2c2v358r8g59564054z7"
-        status["issobella_wallet"] = _iss or "zion1f7y7l5k678y0v408e8s654d2282346k375526t2"
+        status["humanitarian_wallet"] = _hum or "zion1j0j5d0c70056u678j7g4p686e7r3w5k0y8vy0m0"
+        status["issobella_wallet"] = _iss or "zion1g3g0k2j665r075g5j077z0w3u4g3w0d5837j3f6"
         status["pool_fee_wallet"] = ""
-        status["miner_wallet"] = os.environ.get("ZION_MINER_ADDRESS") or "zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2"
+        status["miner_wallet"] = os.environ.get("ZION_MINER_ADDRESS") or "zion1d6e3a4s6t856z042q2m6h5h2j4k3v7f8f2a94h7"
     else:
         startup = head_log("pool.log", 50)
         for line in startup:
@@ -8401,11 +8401,11 @@ def build_payout_status() -> dict:
                         break
                 except Exception:
                     pass
-        # Final canonical fallback (3.0.4 hard reset addresses)
+        # Final canonical fallback (V2 mnemonic addresses, 2026-08-06 genesis reset)
         if not status["humanitarian_wallet"]:
-            status["humanitarian_wallet"] = "zion1e0u5q5s660k4m4a634p2c2v358r8g59564054z7"
+            status["humanitarian_wallet"] = "zion1j0j5d0c70056u678j7g4p686e7r3w5k0y8vy0m0"
         if not status["issobella_wallet"]:
-            status["issobella_wallet"] = "zion1f7y7l5k678y0v408e8s654d2282346k375526t2"
+            status["issobella_wallet"] = "zion1g3g0k2j665r075g5j077z0w3u4g3w0d5837j3f6"
         if not status["pool_fee_wallet"]:
             status["pool_fee_wallet"] = os.environ.get("ZION_POOL_FEE_WALLET")
 
@@ -9801,7 +9801,7 @@ PREMINE_GUARD = [
     {"address": "zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4", "label": "DAO Treasury", "min_balance_zion": 2_400_000_000},
     {"address": "zion1d3p5x622m327r060w5z0q5r203v837m6l8pa8x5", "label": "Core Dev Fund", "min_balance_zion": 990_000_000},
     {"address": "zion1z7g4u3s2w3c5z5u4a60864m2y7q8e5j304g46r7", "label": "Children Future Fund", "min_balance_zion": 1_430_000_000},
-    {"address": "zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2", "label": "Pool Wallet", "min_balance_zion": 0},
+    {"address": "zion177w668f4g5g8s3t844s3f053k8h7r6d540853g6", "label": "Pool Wallet", "min_balance_zion": 0},
 ]
 
 ALERT_LOG_FILES = {

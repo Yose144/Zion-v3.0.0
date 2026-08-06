@@ -931,6 +931,24 @@ function updateServiceCards(s){
   const burnPool = document.getElementById('pcc-burned-pool');
   if(burnPool) burnPool.textContent = _zionFmt((p.fee_pool ?? 0) / 1_000_000) + ' ZION';
 
+  // Live tithe wallet balances (from /api/payout balances object)
+  const balances = p.balances || {};
+  const minerAddr = p.miner_wallet || '';
+  const humanAddr = p.humanitarian_wallet || '';
+  const issAddr = p.issobella_wallet || '';
+  const titheMinerBal = document.getElementById('pcc-tithe-miner-bal');
+  if(titheMinerBal) titheMinerBal.textContent = balances.miner ? _zionFmt(balances.miner.zion) + ' ZION' : '— ZION';
+  const titheMinerAddr = document.getElementById('pcc-tithe-miner-addr');
+  if(titheMinerAddr){ titheMinerAddr.textContent = minerAddr ? minerAddr.slice(0,12)+'…'+minerAddr.slice(-8) : '—'; titheMinerAddr.title = minerAddr; }
+  const titheHumanBal = document.getElementById('pcc-tithe-human-bal');
+  if(titheHumanBal) titheHumanBal.textContent = balances.humanitarian ? _zionFmt(balances.humanitarian.zion) + ' ZION' : '— ZION';
+  const titheHumanAddr = document.getElementById('pcc-tithe-human-addr');
+  if(titheHumanAddr){ titheHumanAddr.textContent = humanAddr ? humanAddr.slice(0,12)+'…'+humanAddr.slice(-8) : '—'; titheHumanAddr.title = humanAddr; }
+  const titheIssBal = document.getElementById('pcc-tithe-issobella-bal');
+  if(titheIssBal) titheIssBal.textContent = balances.issobella ? _zionFmt(balances.issobella.zion) + ' ZION' : '— ZION';
+  const titheIssAddr = document.getElementById('pcc-tithe-issobella-addr');
+  if(titheIssAddr){ titheIssAddr.textContent = issAddr ? issAddr.slice(0,12)+'…'+issAddr.slice(-8) : '—'; titheIssAddr.title = issAddr; }
+
   // PPLNS round stats
   const pccPplnsSize = document.getElementById('pcc-pplns-size');
   if(pccPplnsSize) pccPplnsSize.textContent = (p.pplns_window_size ?? 0).toLocaleString();
