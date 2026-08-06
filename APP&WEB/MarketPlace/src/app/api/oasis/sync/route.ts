@@ -35,6 +35,7 @@ export async function GET(req: NextRequest) {
       if (avatars) {
         let count = 0;
         for (const avatar of avatars) {
+          const metadata = avatarToArtifactMetadata(avatar);
           await prisma.artifact.upsert({
             where: {
               contractAddress_tokenId: {
@@ -45,21 +46,21 @@ export async function GET(req: NextRequest) {
             create: {
               tokenId: BigInt(avatar.id),
               contractAddress: 'oasis-avatar',
-              category: 'avatar',
-              name: avatar.name,
-              description: avatar.subtitle,
-              rarity: avatar.rarity.toLowerCase(),
+              category: metadata.properties.category,
+              name: metadata.name,
+              description: metadata.description,
+              rarity: metadata.properties.rarity,
               source: 'oasis',
-              imageUri: avatar.image_url ?? '',
+              imageUri: metadata.image,
               creator: 'oasis-game',
               totalSupply: 1,
               circulatingSupply: 1,
             },
             update: {
-              name: avatar.name,
-              description: avatar.subtitle,
-              rarity: avatar.rarity.toLowerCase(),
-              imageUri: avatar.image_url ?? '',
+              name: metadata.name,
+              description: metadata.description,
+              rarity: metadata.properties.rarity,
+              imageUri: metadata.image,
             },
           });
           count++;
@@ -73,6 +74,7 @@ export async function GET(req: NextRequest) {
       if (quests) {
         let count = 0;
         for (const quest of quests) {
+          const metadata = questToArtifactMetadata(quest, quest.xp_reward);
           await prisma.artifact.upsert({
             where: {
               contractAddress_tokenId: {
@@ -83,20 +85,21 @@ export async function GET(req: NextRequest) {
             create: {
               tokenId: BigInt(hashToId(quest.quest_id)),
               contractAddress: 'oasis-quest',
-              category: 'quest_item',
-              name: `Quest: ${quest.title}`,
-              description: quest.description,
-              rarity: 'rare',
+              category: metadata.properties.category,
+              name: metadata.name,
+              description: metadata.description,
+              rarity: metadata.properties.rarity,
               source: 'oasis',
-              imageUri: quest.image_url ?? '',
+              imageUri: metadata.image,
               creator: 'oasis-game',
               totalSupply: 1,
               circulatingSupply: 1,
             },
             update: {
-              name: `Quest: ${quest.title}`,
-              description: quest.description,
-              imageUri: quest.image_url ?? '',
+              name: metadata.name,
+              description: metadata.description,
+              rarity: metadata.properties.rarity,
+              imageUri: metadata.image,
             },
           });
           count++;
@@ -110,6 +113,7 @@ export async function GET(req: NextRequest) {
       if (prizeConfig) {
         let count = 0;
         for (const tier of prizeConfig.tiers) {
+          const metadata = prizeTierToArtifactMetadata(tier);
           await prisma.artifact.upsert({
             where: {
               contractAddress_tokenId: {
@@ -120,20 +124,21 @@ export async function GET(req: NextRequest) {
             create: {
               tokenId: BigInt(tier.rank),
               contractAddress: 'oasis-golden-egg',
-              category: 'golden_egg',
-              name: `${tier.title} — Golden Egg Prize`,
-              description: `Rank ${tier.rank}: ${tier.zion} ZION + ${tier.flowers} FLOWERS. ${tier.nft_reward}`,
-              rarity: tier.rank <= 3 ? 'mythic' : tier.rank <= 10 ? 'legendary' : 'epic',
+              category: metadata.properties.category,
+              name: metadata.name,
+              description: metadata.description,
+              rarity: metadata.properties.rarity,
               source: 'oasis',
-              imageUri: tier.image_url ?? '',
+              imageUri: metadata.image,
               creator: 'oasis-game',
               totalSupply: 1,
               circulatingSupply: 1,
             },
             update: {
-              name: `${tier.title} — Golden Egg Prize`,
-              description: `Rank ${tier.rank}: ${tier.zion} ZION + ${tier.flowers} FLOWERS. ${tier.nft_reward}`,
-              imageUri: tier.image_url ?? '',
+              name: metadata.name,
+              description: metadata.description,
+              rarity: metadata.properties.rarity,
+              imageUri: metadata.image,
             },
           });
           count++;
@@ -147,6 +152,7 @@ export async function GET(req: NextRequest) {
       if (territoryMap) {
         let count = 0;
         for (const [id, territory] of Object.entries(territoryMap.territories)) {
+          const metadata = territoryToArtifactMetadata(territory);
           await prisma.artifact.upsert({
             where: {
               contractAddress_tokenId: {
@@ -157,20 +163,21 @@ export async function GET(req: NextRequest) {
             create: {
               tokenId: BigInt(hashToId(id)),
               contractAddress: 'oasis-territory',
-              category: 'territory',
-              name: `Territory: ${territory.name}`,
-              description: territory.description,
-              rarity: territory.defense_power > 500 ? 'legendary' : territory.defense_power > 100 ? 'rare' : 'uncommon',
+              category: metadata.properties.category,
+              name: metadata.name,
+              description: metadata.description,
+              rarity: metadata.properties.rarity,
               source: 'oasis',
-              imageUri: territory.image_url ?? '',
+              imageUri: metadata.image,
               creator: 'oasis-game',
               totalSupply: 1,
               circulatingSupply: 1,
             },
             update: {
-              name: `Territory: ${territory.name}`,
-              description: territory.description,
-              imageUri: territory.image_url ?? '',
+              name: metadata.name,
+              description: metadata.description,
+              rarity: metadata.properties.rarity,
+              imageUri: metadata.image,
             },
           });
           count++;
