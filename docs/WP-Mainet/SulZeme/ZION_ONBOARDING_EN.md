@@ -258,7 +258,7 @@ Not everything in the vision is ready yet. **Oasis Web is a live preview — not
 - Golden Egg is currently a collection of clues and story; the 108 clues and reward pools are not fully active.
 - Dharma Credits e-shop and the full 202 avatars in the web client are still being completed.
 
-> **Source:** [`APP&WEB/OasisWeb/README.md`](../../../APP&WEB/OasisWeb/README.md), [`OASIS_WEB_JOURNAL.md`](../../../OASIS_WEB_JOURNAL.md), live API `https://oasis.zionterranova.com/api/v1/oasis/*`.
+> **Source:** [`APP&WEB/OasisWeb/README.md`](../../../APP&WEB/OasisWeb/README.md), [`OASIS_WEB_JOURNAL.md`](../../../docs/oasis/OASIS_WEB_JOURNAL.md), live API `https://oasis.zionterranova.com/api/v1/oasis/*`.
 
 ### 202 avatars
 

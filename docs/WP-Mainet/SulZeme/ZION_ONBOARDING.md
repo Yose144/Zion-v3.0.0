@@ -222,7 +222,7 @@ Ne všechno z vize je už hotové. **Oasis Web je živý preview — ne plná hr
 - Golden Egg je zatím sbírka nápověd a příběh; 108 stop a odměnové pooly nejsou plně aktivní.
 - Dharma Credits eShop a kompletní 202 avatárů ve webovém klientovi se teprve dokončují.
 
-> **Zdroj:** [`APP&WEB/OasisWeb/README.md`](../../../APP&WEB/OasisWeb/README.md), [`OASIS_WEB_JOURNAL.md`](../../../OASIS_WEB_JOURNAL.md), live API `https://oasis.zionterranova.com/api/v1/oasis/*`.
+> **Zdroj:** [`APP&WEB/OasisWeb/README.md`](../../../APP&WEB/OasisWeb/README.md), [`OASIS_WEB_JOURNAL.md`](../../../docs/oasis/OASIS_WEB_JOURNAL.md), live API `https://oasis.zionterranova.com/api/v1/oasis/*`.
 
 ### 202 avatáři
 
