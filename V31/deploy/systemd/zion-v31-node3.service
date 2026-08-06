@@ -1,7 +1,8 @@
 [Unit]
-Description=ZION V31 Node (Primary)
-After=network-online.target
+Description=ZION V31 Node 3 (Follower, P2P sync to Node 1)
+After=network-online.target zion-v31-node.service
 Wants=network-online.target
+Requires=zion-v31-node.service
 
 [Service]
 Type=simple
@@ -9,11 +10,13 @@ User=zion
 Group=zion
 WorkingDirectory=/opt/zion
 EnvironmentFile=/etc/zion/edge-environment.sh
-Environment="RUST_LOG=info,zion_core=debug"
+Environment="RUST_LOG=info"
 ExecStart=/opt/zion/V31/target/release/zion-node \
-    --db-path /opt/zion/data/v31/node.db \
-    --rpc 127.0.0.1:9445 \
-    --p2p 0.0.0.0:8335 \
+    --db-path /opt/zion/data/v31/node3.db \
+    --rpc 127.0.0.1:9447 \
+    --p2p 0.0.0.0:8337 \
+    --node-id zion-v31-node-3 \
+    --peer 127.0.0.1:8335 \
     --v3-no-genesis \
     --human zion1j0j5d0c70056u678j7g4p686e7r3w5k0y8vy0m0 \
     --issobella zion1g3g0k2j665r075g5j077z0w3u4g3w0d5837j3f6
@@ -24,7 +27,6 @@ TimeoutStopSec=30
 StandardOutput=journal
 StandardError=journal
 
-# Security hardening (unprivileged zion user)
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true

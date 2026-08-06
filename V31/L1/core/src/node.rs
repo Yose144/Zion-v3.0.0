@@ -225,25 +225,17 @@ impl Node {
 
         let rpc_addr = self.config.rpc_addr;
         let p2p_addr = self.config.p2p_addr;
-        // V31 native P2P sync uses only V31 peers (empty for now — no other V31
-        // nodes exist).  V3 compat sync uses the V3 seed peers.  This prevents V31
-        // native handshake from hitting V3 nodes and getting banned for protocol
-        // violation.
-        let seed_peers: Vec<SocketAddr> = Vec::new();
-        let v3_seed_peers = self.config.seed_peers.clone();
+        // V31 native P2P sync uses the configured seed peers.  V3 compat sync is
+        // disabled when --v3-no-genesis is set, otherwise it uses the same seed
+        // peers with the legacy V3 wire protocol.
+        let seed_peers = self.config.seed_peers.clone();
+        let v3_no_genesis = self.config.v3_no_genesis;
         let v3_sync = self.v3_sync.clone();
         let v3_p2p_addr = self.config.v3_p2p_addr;
         let peers = Arc::new(crate::peer_manager::PeerManager::default_manager());
-        let v3_p2p_server = crate::v3_p2p::V3P2PServer::new(
-            Arc::new(self.storage.clone()),
-            "zion-v31-node",
-            "3.1.0-alpha",
-            crate::v3_p2p::NetworkId::Mainnet,
-            v3_p2p_addr.to_string(),
-            rpc_addr.to_string(),
-            "0.0.0.0:0".to_string(),
-            Arc::clone(&peers),
-        );
+
+        // Clone self so both the native sync handle and the V3 branch can use it.
+        let node = Arc::clone(&self);
 
         let rpc = RpcServer::new(Arc::clone(&self));
         let rpc_handle = tokio::spawn(async move { rpc.run(rpc_addr, rpc_shutdown).await });
@@ -252,21 +244,51 @@ impl Node {
         let p2p_handle = tokio::spawn(async move { p2p.listen(p2p_addr, p2p_shutdown).await });
 
         let peers_for_sync = Arc::clone(&peers);
+        let v31_seed_peers = seed_peers.clone();
         let sync_handle = tokio::spawn(async move {
-            crate::p2p::sync_loop(Arc::clone(&self), peers_for_sync, seed_peers, sync_shutdown).await;
+            crate::p2p::sync_loop(Arc::clone(&node), peers_for_sync, v31_seed_peers, sync_shutdown).await;
             Ok(()) as Result<(), NodeError>
         });
 
-        // V3 sync loop: periodically download missing V3 blocks from seed peers.
-        let peers_for_v3_sync = Arc::clone(&peers);
-        let v3_sync_handle = tokio::spawn(async move {
-            crate::v3_p2p::sync_loop(v3_sync, peers_for_v3_sync, v3_seed_peers, v3_sync_shutdown).await;
-            Ok(()) as Result<(), NodeError>
-        });
+        // V3 sync loop and P2P listener: only when V3 compat is enabled.
+        let v3_sync_handle = if v3_no_genesis {
+            tokio::spawn(async move {
+                // V3 compat disabled; this future is aborted on shutdown.
+                std::future::pending::<()>().await;
+                Ok(()) as Result<(), NodeError>
+            })
+        } else {
+            let peers_for_v3_sync = Arc::clone(&peers);
+            tokio::spawn(async move {
+                crate::v3_p2p::sync_loop(v3_sync, peers_for_v3_sync, seed_peers, v3_sync_shutdown).await;
+                Ok(()) as Result<(), NodeError>
+            })
+        };
 
-        // V3 P2P listen server: accept inbound V3 peers.
-        let v3_p2p_handle =
-            tokio::spawn(async move { v3_p2p_server.listen(v3_p2p_addr, v3_p2p_shutdown).await });
+        let v3_p2p_handle = if v3_no_genesis {
+            tokio::spawn(async move {
+                // V3 compat disabled; this future is aborted on shutdown.
+                std::future::pending::<()>().await;
+                Ok(()) as Result<(), NodeError>
+            })
+        } else {
+            let v3_p2p_server = crate::v3_p2p::V3P2PServer::new(
+                Arc::new(self.storage.clone()),
+                "zion-v31-node",
+                "3.1.0-alpha",
+                crate::v3_p2p::NetworkId::Mainnet,
+                v3_p2p_addr.to_string(),
+                rpc_addr.to_string(),
+                "0.0.0.0:0".to_string(),
+                Arc::clone(&peers),
+            );
+            tokio::spawn(async move {
+                v3_p2p_server
+                    .listen(v3_p2p_addr, v3_p2p_shutdown)
+                    .await
+                    .map_err(|e| NodeError::V3P2P(e))
+            })
+        };
 
         tokio::pin!(
             rpc_handle,
