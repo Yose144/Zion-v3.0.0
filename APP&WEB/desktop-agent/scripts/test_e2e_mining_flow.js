@@ -123,15 +123,17 @@ class E2EMiningTest {
   }
 
   async runMiner(minerPath, wallet) {
-    log('Step 3: Spawning miner in V31 triple-stream mode...');
+    log('Step 3: Spawning miner in V31 pure-ZION mode...');
 
     const cpuThreads = Math.max(1, os.cpus().length - 1);
     const gpuBackend = 'auto'; // let the compiled miner pick CUDA / OpenCL / CPU
-    const args = [
+    const minerArgs = [
       '--pool', this.pool,
       '--wallet', wallet,
       '--worker', this.worker,
       '--threads', String(cpuThreads),
+      '--no-gpu',
+      '--no-cpu',
       '--metrics', '127.0.0.1:9116',
       '--log-interval', '10'
     ];
@@ -146,15 +148,27 @@ class E2EMiningTest {
       ZION_BACKEND: gpuBackend,
       ZION_MINER_ALGORITHM: 'cosmic_harmony_ekam_deeksha_v2',
       ZION_PROFIT_INTERVAL: '300',
-      ZION_AUTONOMOUS: '0',
-      ZION_STREAM2_FORCE_COIN: this.gpuCoin,
-      ZION_STREAM3_FORCE_COIN: this.cpuCoin
+      ZION_AUTONOMOUS: '0'
     };
+
+    // zion-miner uses tracing_subscriber stdout which is block-buffered when
+    // spawned with a pipe. On Unix, run it inside a `script` pseudo-terminal
+    // so the miner sees a TTY and flushes line-by-line.
+    let spawnArgs, spawnFile;
+    if (process.platform !== 'win32' && process.env.ZION_NO_PTY !== '1') {
+      spawnFile = 'script';
+      const quotedMiner = minerPath.includes(' ') ? `"${minerPath}"` : minerPath;
+      const quotedArgs = minerArgs.map(a => (a.includes(' ') ? `"${a}"` : a)).join(' ');
+      spawnArgs = ['-q', '-c', `${quotedMiner} ${quotedArgs}`, '/dev/null'];
+    } else {
+      spawnFile = minerPath;
+      spawnArgs = minerArgs;
+    }
 
     return new Promise((resolve, reject) => {
       const startTime = Date.now();
       const timeoutMs = this.timeoutSec * 1000;
-      const miner = spawn(minerPath, args, { env, stdio: ['pipe', 'pipe', 'pipe'] });
+      const miner = spawn(spawnFile, spawnArgs, { env, stdio: ['pipe', 'pipe', 'pipe'] });
       this.processes.push(miner);
       this.results.minerSpawned = true;
 
@@ -211,12 +225,12 @@ class E2EMiningTest {
     if (/zion\s+pool\s+stratum\s+connected|pool\s+connected|connected\s+to/i.test(text)) {
       this.results.poolConnected = true;
     }
-    // Coin preference / stream activation (proves triple-stream negotiation)
-    if (/(?:mined\s+auxpow\s+share|stream\s+stats)/i.test(text)) {
+    // Stream telemetry (proves the mining loop is active)
+    if (/(?:mined\s+(?:auxpow|zion)\s+(?:share|block)|stream\s+stats)/i.test(text)) {
       this.results.tripleStreamDetected = true;
     }
-    // Share accepted (V31 auxpow share events)
-    const shareMatch = text.match(/mined\s+auxpow\s+share/gi);
+    // Share / block accepted
+    const shareMatch = text.match(/mined\s+(?:auxpow\s+share|zion\s+block)/gi);
     if (shareMatch) {
       this.results.sharesSubmitted += shareMatch.length;
     }
