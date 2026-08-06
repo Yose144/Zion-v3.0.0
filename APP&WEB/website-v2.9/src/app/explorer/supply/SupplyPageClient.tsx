@@ -298,8 +298,8 @@ function SupplyOverTimeChart({
     >
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-zion-purple-500/10 border border-zion-purple-500/20 flex items-center justify-center">
-            <TrendingUp className="w-4.5 h-4.5 text-zion-purple-400" />
+          <div className="w-9 h-9 rounded-xl bg-zion-purple/10 border border-zion-purple/20 flex items-center justify-center">
+            <TrendingUp className="w-4.5 h-4.5 text-zion-purple" />
           </div>
           <div>
             <h3 className="text-base font-semibold text-white">
@@ -394,11 +394,11 @@ function SupplyOverTimeChart({
       </svg>
       <div className="flex items-center gap-4 mt-3 text-[10px]">
         <span className="flex items-center gap-1.5 text-white/40">
-          <span className="w-3 h-1 rounded-full bg-zion-purple-500" />
+          <span className="w-3 h-1 rounded-full bg-zion-purple" />
           {ExplorerSupplySupplyPageClientCopy.circulatingSupply[cs ? 'cs' : 'en']}
         </span>
         <span className="flex items-center gap-1.5 text-white/40">
-          <span className="w-3 h-px bg-zion-cyan-500" style={{ borderTop: "1px dashed #10b981" }} />
+          <span className="w-3 h-px bg-zion-cyan" style={{ borderTop: "1px dashed #10b981" }} />
           {ExplorerSupplySupplyPageClientCopy.burnProjection[cs ? 'cs' : 'en']}
         </span>
       </div>
@@ -515,10 +515,10 @@ export default function SupplyPageClient() {
                   <Rocket className="h-3 w-3 text-zion-gold" /> 144B {ExplorerSupplySupplyPageClientCopy.max[cs ? 'cs' : 'en']}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Flame className="h-3 w-3 text-zion-gold-400" /> 100% {ExplorerSupplySupplyPageClientCopy.feeBurn[cs ? 'cs' : 'en']}
+                  <Flame className="h-3 w-3 text-zion-gold" /> 100% {ExplorerSupplySupplyPageClientCopy.feeBurn[cs ? 'cs' : 'en']}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Heart className="h-3 w-3 text-zion-purple-400" /> 5% {ExplorerSupplySupplyPageClientCopy.humanitarian[cs ? 'cs' : 'en']}
+                  <Heart className="h-3 w-3 text-zion-purple" /> 5% {ExplorerSupplySupplyPageClientCopy.humanitarian[cs ? 'cs' : 'en']}
                 </span>
               </div>
             </div>
@@ -528,8 +528,8 @@ export default function SupplyPageClient() {
               <DonutChart segments={donutSegments} />
               <div className="space-y-3">
                 {[
-                  { label: ExplorerSupplySupplyPageClientCopy.premine[cs ? 'cs' : 'en'], value: fmtZion(premine), color: "bg-zion-purple-500" },
-                  { label: ExplorerSupplySupplyPageClientCopy.mined[cs ? 'cs' : 'en'], value: fmtZion(mined), color: "bg-zion-cyan-500" },
+                  { label: ExplorerSupplySupplyPageClientCopy.premine[cs ? 'cs' : 'en'], value: fmtZion(premine), color: "bg-zion-purple" },
+                  { label: ExplorerSupplySupplyPageClientCopy.mined[cs ? 'cs' : 'en'], value: fmtZion(mined), color: "bg-zion-cyan" },
                   { label: ExplorerSupplySupplyPageClientCopy.remaining[cs ? 'cs' : 'en'], value: fmtZion(remaining), color: "bg-slate-700" },
                 ].map((item) => (
                   <div key={item.label} className="flex items-center gap-2 text-sm">
@@ -569,7 +569,7 @@ export default function SupplyPageClient() {
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerSupplySupplyPageClientCopy.metrics[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <BarChart3 className="h-7 w-7 text-zion-cyan-400" />
+              <BarChart3 className="h-7 w-7 text-zion-cyan" />
               {ExplorerSupplySupplyPageClientCopy.supplyStatistics[cs ? 'cs' : 'en']}
             </h2>
           </div>
@@ -585,12 +585,12 @@ export default function SupplyPageClient() {
           {!loading && data && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { label: ExplorerSupplySupplyPageClientCopy.circulating[cs ? 'cs' : 'en'], icon: Activity, accent: "text-zion-cyan-400", value: fmtZion(circ), sub: `${emissionPct.toFixed(6)}% ${ExplorerSupplySupplyPageClientCopy.ofMax[cs ? 'cs' : 'en']}` },
+                { label: ExplorerSupplySupplyPageClientCopy.circulating[cs ? 'cs' : 'en'], icon: Activity, accent: "text-zion-cyan", value: fmtZion(circ), sub: `${emissionPct.toFixed(6)}% ${ExplorerSupplySupplyPageClientCopy.ofMax[cs ? 'cs' : 'en']}` },
                 { label: ExplorerSupplySupplyPageClientCopy.maxSupply[cs ? 'cs' : 'en'], icon: Crown, accent: "text-zion-gold", value: fmtZion(max), sub: "144,000,000,000 ZION" },
-                { label: ExplorerSupplySupplyPageClientCopy.mined[cs ? 'cs' : 'en'], icon: Pickaxe, accent: "text-zion-cyan-400", value: fmtZion(mined), sub: `~${data.block_height?.toLocaleString(locale)} ${ExplorerSupplySupplyPageClientCopy.blocks[cs ? 'cs' : 'en']}` },
-                { label: ExplorerSupplySupplyPageClientCopy.premine[cs ? 'cs' : 'en'], icon: Wallet, accent: "text-zion-purple-400", value: fmtZion(premine), sub: ExplorerSupplySupplyPageClientCopy.genesisAllocation[cs ? 'cs' : 'en'] },
+                { label: ExplorerSupplySupplyPageClientCopy.mined[cs ? 'cs' : 'en'], icon: Pickaxe, accent: "text-zion-cyan", value: fmtZion(mined), sub: `~${data.block_height?.toLocaleString(locale)} ${ExplorerSupplySupplyPageClientCopy.blocks[cs ? 'cs' : 'en']}` },
+                { label: ExplorerSupplySupplyPageClientCopy.premine[cs ? 'cs' : 'en'], icon: Wallet, accent: "text-zion-purple", value: fmtZion(premine), sub: ExplorerSupplySupplyPageClientCopy.genesisAllocation[cs ? 'cs' : 'en'] },
                 { label: ExplorerSupplySupplyPageClientCopy.remaining[cs ? 'cs' : 'en'], icon: Timer, accent: "text-slate-400", value: fmtZion(remaining), sub: `${(100 - emissionPct).toFixed(4)}%` },
-                { label: ExplorerSupplySupplyPageClientCopy.burnedFees[cs ? 'cs' : 'en'], icon: Flame, accent: "text-zion-gold-400", value: burned > 0 ? fmtZion(burned) : "—", sub: ExplorerSupplySupplyPageClientCopy.k100FeeBurn[cs ? 'cs' : 'en'] },
+                { label: ExplorerSupplySupplyPageClientCopy.burnedFees[cs ? 'cs' : 'en'], icon: Flame, accent: "text-zion-gold", value: burned > 0 ? fmtZion(burned) : "—", sub: ExplorerSupplySupplyPageClientCopy.k100FeeBurn[cs ? 'cs' : 'en'] },
                 { label: ExplorerSupplySupplyPageClientCopy.dailyEmission[cs ? 'cs' : 'en'], icon: TrendingUp, accent: "text-zion-cyan", value: fmtZion(data.daily_emission), sub: `${data.base_reward_per_block} × ${data.blocks_per_day}` },
                 { label: ExplorerSupplySupplyPageClientCopy.miningHorizon[cs ? 'cs' : 'en'], icon: Rocket, accent: "text-zion-gold", value: data.mining_horizon_label ?? `${Math.round(data.estimated_years_remaining)} ${ExplorerSupplySupplyPageClientCopy.yrs[cs ? 'cs' : 'en']}`, sub: data.estimated_full_emission_date || "—" },
               ].map((card) => (
@@ -630,21 +630,21 @@ export default function SupplyPageClient() {
             {/* Premine bar */}
             <div>
               <div className="flex justify-between text-xs mb-1">
-                <span className="text-zion-purple-400">{ExplorerSupplySupplyPageClientCopy.premine[cs ? 'cs' : 'en']}</span>
+                <span className="text-zion-purple">{ExplorerSupplySupplyPageClientCopy.premine[cs ? 'cs' : 'en']}</span>
                 <span className="text-gray-400 font-mono">{fmtZion(premine)} ZION</span>
               </div>
               <div className="h-3 bg-white/4 rounded-full overflow-hidden">
-                <div className="h-full bg-zion-purple-500 rounded-full" style={{ width: `${(premine / max) * 100}%` }} />
+                <div className="h-full bg-zion-purple rounded-full" style={{ width: `${(premine / max) * 100}%` }} />
               </div>
             </div>
             {/* Mined bar */}
             <div>
               <div className="flex justify-between text-xs mb-1">
-                <span className="text-zion-cyan-400">{ExplorerSupplySupplyPageClientCopy.mined[cs ? 'cs' : 'en']}</span>
+                <span className="text-zion-cyan">{ExplorerSupplySupplyPageClientCopy.mined[cs ? 'cs' : 'en']}</span>
                 <span className="text-gray-400 font-mono">{fmtZion(mined)} ZION</span>
               </div>
               <div className="h-3 bg-white/4 rounded-full overflow-hidden">
-                <div className="h-full bg-zion-cyan-500 rounded-full" style={{ width: `${(mined / max) * 100}%` }} />
+                <div className="h-full bg-zion-cyan rounded-full" style={{ width: `${(mined / max) * 100}%` }} />
               </div>
             </div>
             {/* Remaining bar */}
@@ -689,9 +689,9 @@ export default function SupplyPageClient() {
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { label: ExplorerSupplySupplyPageClientCopy.miner[cs ? 'cs' : 'en'], pct: rewardDist.miner_pct, perBlock: rewardDist.miner_per_block, color: "bg-zion-cyan-500", text: "text-zion-cyan-400", icon: Pickaxe },
-              { label: ExplorerSupplySupplyPageClientCopy.humanitarian_2[cs ? 'cs' : 'en'], pct: rewardDist.humanitarian_pct, perBlock: rewardDist.humanitarian_per_block, color: "bg-zion-purple-500", text: "text-zion-purple-400", icon: Heart },
-              { label: "Issobella Fund", pct: issobellaPct, perBlock: 0, color: "bg-zion-purple-500", text: "text-zion-purple-400", icon: Layers },
+              { label: ExplorerSupplySupplyPageClientCopy.miner[cs ? 'cs' : 'en'], pct: rewardDist.miner_pct, perBlock: rewardDist.miner_per_block, color: "bg-zion-cyan", text: "text-zion-cyan", icon: Pickaxe },
+              { label: ExplorerSupplySupplyPageClientCopy.humanitarian_2[cs ? 'cs' : 'en'], pct: rewardDist.humanitarian_pct, perBlock: rewardDist.humanitarian_per_block, color: "bg-zion-purple", text: "text-zion-purple", icon: Heart },
+              { label: "Issobella Fund", pct: issobellaPct, perBlock: 0, color: "bg-zion-purple", text: "text-zion-purple", icon: Layers },
               { label: ExplorerSupplySupplyPageClientCopy.poolFee[cs ? 'cs' : 'en'], pct: rewardDist.pool_fee_pct, perBlock: rewardDist.pool_fee_per_block, color: "bg-zion-cyan", text: "text-zion-cyan", icon: Wallet },
             ].map((d) => (
               <div key={d.label} className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
@@ -768,7 +768,7 @@ export default function SupplyPageClient() {
                           </span>
                         )}
                         {isPast && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-zion-cyan-500/10 border border-zion-cyan-500/30 px-2 py-0.5 text-[10px] text-zion-cyan-400 uppercase tracking-wider">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-zion-cyan/10 border border-zion-cyan/30 px-2 py-0.5 text-[10px] text-zion-cyan uppercase tracking-wider">
                             <TrendingUp className="h-3 w-3" /> {ExplorerSupplySupplyPageClientCopy.done[cs ? 'cs' : 'en']}
                           </span>
                         )}

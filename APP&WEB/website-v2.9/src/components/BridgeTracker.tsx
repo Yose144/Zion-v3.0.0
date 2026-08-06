@@ -70,16 +70,16 @@ export default function BridgeTracker() {
 
   // L1→L2 pipeline
   const l1ToL2Steps: PipelineStep[] = [
-    { id: 'lock', label: 'L1 Locks Detected', labelCs: 'L1 Locky Detekovány', icon: Lock, count: s.l1_locks_detected ?? 0, color: 'text-zion-cyan-400' },
-    { id: 'confirm', label: 'Locks Finalized (5/5)', labelCs: 'Locky Finalizovány (5/5)', icon: ShieldCheck, count: s.l1_locks_finalized ?? 0, color: 'text-zion-purple-400' },
-    { id: 'mint', label: 'wZION Mints Confirmed', labelCs: 'wZION Minty Potvrzeny', icon: Coins, count: s.evm_mints_confirmed ?? 0, color: 'text-zion-cyan-400' },
+    { id: 'lock', label: 'L1 Locks Detected', labelCs: 'L1 Locky Detekovány', icon: Lock, count: s.l1_locks_detected ?? 0, color: 'text-zion-cyan' },
+    { id: 'confirm', label: 'Locks Finalized (5/5)', labelCs: 'Locky Finalizovány (5/5)', icon: ShieldCheck, count: s.l1_locks_finalized ?? 0, color: 'text-zion-purple' },
+    { id: 'mint', label: 'wZION Mints Confirmed', labelCs: 'wZION Minty Potvrzeny', icon: Coins, count: s.evm_mints_confirmed ?? 0, color: 'text-zion-cyan' },
   ];
 
   // L2→L1 pipeline
   const l2ToL1Steps: PipelineStep[] = [
-    { id: 'burn', label: 'wZION Burns Detected', labelCs: 'wZION Spálení Detekována', icon: Flame, count: s.evm_burns_detected ?? 0, color: 'text-zion-gold-400' },
-    { id: 'submit', label: 'L1 Unlocks Submitted', labelCs: 'L1 Odemčení Odeslána', icon: Eye, count: s.l1_unlocks_submitted ?? 0, color: 'text-zion-gold-400' },
-    { id: 'unlock', label: 'L1 Unlocks Confirmed', labelCs: 'L1 Odemčení Potvrzena', icon: Unlock, count: s.l1_unlocks_confirmed ?? 0, color: 'text-zion-cyan-400' },
+    { id: 'burn', label: 'wZION Burns Detected', labelCs: 'wZION Spálení Detekována', icon: Flame, count: s.evm_burns_detected ?? 0, color: 'text-zion-gold' },
+    { id: 'submit', label: 'L1 Unlocks Submitted', labelCs: 'L1 Odemčení Odeslána', icon: Eye, count: s.l1_unlocks_submitted ?? 0, color: 'text-zion-gold' },
+    { id: 'unlock', label: 'L1 Unlocks Confirmed', labelCs: 'L1 Odemčení Potvrzena', icon: Unlock, count: s.l1_unlocks_confirmed ?? 0, color: 'text-zion-cyan' },
   ];
 
   return (
@@ -87,12 +87,12 @@ export default function BridgeTracker() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className={`relative flex h-10 w-10 items-center justify-center rounded-xl border ${online ? 'border-zion-cyan-500/40 bg-zion-cyan-500/10' : 'border-gray-500/30 bg-gray-500/5'}`}>
-            <Activity className={`h-5 w-5 ${online ? 'text-zion-cyan-400' : 'text-gray-400'}`} />
+          <div className={`relative flex h-10 w-10 items-center justify-center rounded-xl border ${online ? 'border-zion-cyan/40 bg-zion-cyan/10' : 'border-gray-500/30 bg-gray-500/5'}`}>
+            <Activity className={`h-5 w-5 ${online ? 'text-zion-cyan' : 'text-gray-400'}`} />
             {online && (
               <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-zion-cyan-400 opacity-75" />
-                <span className="relative inline-flex h-3 w-3 rounded-full bg-zion-cyan-500" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-zion-cyan opacity-75" />
+                <span className="relative inline-flex h-3 w-3 rounded-full bg-zion-cyan" />
               </span>
             )}
           </div>
@@ -119,7 +119,7 @@ export default function BridgeTracker() {
       {/* L1 → L2 Pipeline */}
       <div>
         <h4 className="text-xs uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
-          <Lock className="h-3 w-3 text-zion-cyan-400" />
+          <Lock className="h-3 w-3 text-zion-cyan" />
           {BridgeTrackerCopy.l1L2LockMint[cs ? 'cs' : 'en']}
         </h4>
         <div className="grid grid-cols-3 gap-3">
@@ -154,7 +154,7 @@ export default function BridgeTracker() {
       {/* L2 → L1 Pipeline */}
       <div>
         <h4 className="text-xs uppercase tracking-wider text-gray-500 mb-3 flex items-center gap-2">
-          <Flame className="h-3 w-3 text-zion-gold-400" />
+          <Flame className="h-3 w-3 text-zion-gold" />
           {BridgeTrackerCopy.l2L1BurnUnlock[cs ? 'cs' : 'en']}
         </h4>
         <div className="grid grid-cols-3 gap-3">
@@ -196,7 +196,7 @@ export default function BridgeTracker() {
           <span className="font-mono text-gray-300">{(s.last_evm_block ?? 0).toLocaleString()}</span>
         </div>
         {(s.errors_total ?? 0) > 0 && (
-          <div className="flex items-center gap-2 text-zion-purple-400">
+          <div className="flex items-center gap-2 text-zion-purple">
             <AlertCircle className="h-3 w-3" />
             <span>{s.errors_total} {BridgeTrackerCopy.errors[cs ? 'cs' : 'en']}</span>
           </div>

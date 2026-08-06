@@ -584,11 +584,11 @@ export default function DefiPage() {
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className={wsConnected ? 'zion-badge-green' : 'zion-badge'}>
-                  <Zap className={`h-3 w-3 ${wsConnected ? 'text-zion-cyan-400' : 'text-zion-gold'}`} />
+                  <Zap className={`h-3 w-3 ${wsConnected ? 'text-zion-cyan' : 'text-zion-gold'}`} />
                   {wsConnected ? (DefiCopy.live[cs ? 'cs' : 'en']) : (DefiCopy.polling[cs ? 'cs' : 'en'])}
                 </span>
                 <span className="zion-badge">
-                  <RefreshCw className="h-3 w-3 text-zion-cyan-400" /> {DefiCopy.autoRefresh60s[cs ? 'cs' : 'en']}
+                  <RefreshCw className="h-3 w-3 text-zion-cyan" /> {DefiCopy.autoRefresh60s[cs ? 'cs' : 'en']}
                 </span>
                 <span className="zion-badge">
                   <Globe className="h-3 w-3 text-zion-cyan" /> Base
@@ -617,7 +617,7 @@ export default function DefiPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
-                      <BarChart3 className="h-4 w-4 text-zion-gold-400" />
+                      <BarChart3 className="h-4 w-4 text-zion-gold" />
                       {DefiCopy.price[cs ? 'cs' : 'en']}
                     </div>
                     {dataLoaded ? (
@@ -630,7 +630,7 @@ export default function DefiPage() {
                   </div>
                   <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
-                      <Droplets className="h-4 w-4 text-zion-gold-400" />
+                      <Droplets className="h-4 w-4 text-zion-gold" />
                       TVL
                     </div>
                     {dataLoaded ? (
@@ -641,7 +641,7 @@ export default function DefiPage() {
                   </div>
                   <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
-                      <Activity className="h-4 w-4 text-zion-gold-400" />
+                      <Activity className="h-4 w-4 text-zion-gold" />
                       {DefiCopy.supply[cs ? 'cs' : 'en']}
                     </div>
                     {dataLoaded ? (
@@ -654,8 +654,8 @@ export default function DefiPage() {
                     <div className="zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="h-2 w-2 rounded-full bg-zion-cyan-400 animate-pulse" />
-                          <span className="font-mono text-xs text-zion-cyan-300">
+                          <div className="h-2 w-2 rounded-full bg-zion-cyan animate-pulse" />
+                          <span className="font-mono text-xs text-zion-cyan">
                             {account?.slice(0, 6)}…{account?.slice(-4)}
                           </span>
                         </div>
@@ -697,9 +697,9 @@ export default function DefiPage() {
 
       {/* ═══════ Early Beta Banner ═══════ */}
       <section className="zion-container relative z-10 mb-6">
-        <div className="zion-rainbow-card p-4 border-zion-gold-500/30 bg-zion-gold-500/10" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+        <div className="zion-rainbow-card p-4 border-zion-gold/30 bg-zion-gold/10" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
           <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-zion-gold-400 shrink-0 mt-0.5" />
+            <AlertTriangle className="h-5 w-5 text-zion-gold shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-amber-200">
                 {DefiCopy.defiHubEarlyBeta[cs ? 'cs' : 'en']}
@@ -761,7 +761,7 @@ export default function DefiPage() {
               style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
             >
               <div className="flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-zion-gold-400 shrink-0 mt-0.5" />
+                <AlertTriangle className="h-5 w-5 text-zion-gold shrink-0 mt-0.5" />
                 <div>
                   <h3 className="text-sm font-semibold text-amber-200 mb-1">
                     {DefiCopy.lowDexLiquidity[cs ? 'cs' : 'en']}
@@ -789,7 +789,7 @@ export default function DefiPage() {
             <div className="flex flex-col gap-2 mb-6">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DefiCopy.telemetry[cs ? 'cs' : 'en']}</p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-                <Activity className="h-7 w-7 text-zion-cyan-400" />
+                <Activity className="h-7 w-7 text-zion-cyan" />
                 {DefiCopy.defiTelemetry[cs ? 'cs' : 'en']}
               </h2>
               <p className="text-sm text-gray-400">
@@ -821,8 +821,8 @@ export default function DefiPage() {
               />
               <StatCard
                 icon={<Activity className="h-5 w-5" />}
-                colorClass="text-zion-cyan-400"
-                bgClass="bg-zion-cyan-400/10"
+                colorClass="text-zion-cyan"
+                bgClass="bg-zion-cyan/10"
 
                 label={DefiCopy.liquidity[cs ? 'cs' : 'en']}
                 value={`${(poolStats?.total_wzion_liquidity ?? 0).toFixed(0)}`}
@@ -831,8 +831,8 @@ export default function DefiPage() {
               />
               <StatCard
                 icon={<Layers className="h-5 w-5" />}
-                colorClass="text-zion-purple-400"
-                bgClass="bg-zion-purple-400/10"
+                colorClass="text-zion-purple"
+                bgClass="bg-zion-purple/10"
 
                 label={DefiCopy.pools[cs ? 'cs' : 'en']}
                 value={String(poolStats?.active_pools ?? 0)}
@@ -841,8 +841,8 @@ export default function DefiPage() {
               />
               <StatCard
                 icon={<Wallet className="h-5 w-5" />}
-                colorClass="text-zion-purple-400"
-                bgClass="bg-zion-purple-400/10"
+                colorClass="text-zion-purple"
+                bgClass="bg-zion-purple/10"
 
                 label={DefiCopy.wzionSupply[cs ? 'cs' : 'en']}
                 value={wZIONSupply ?? '—'}
@@ -851,8 +851,8 @@ export default function DefiPage() {
               />
               <StatCard
                 icon={<ArrowLeftRight className="h-5 w-5" />}
-                colorClass="text-zion-gold-400"
-                bgClass="bg-zion-gold-400/10"
+                colorClass="text-zion-gold"
+                bgClass="bg-zion-gold/10"
 
                 label={DefiCopy.bridge[cs ? 'cs' : 'en']}
                 value={bridgeStatus?.online ? (DefiCopy.online[cs ? 'cs' : 'en']) : (DefiCopy.offline[cs ? 'cs' : 'en'])}
@@ -861,8 +861,8 @@ export default function DefiPage() {
               />
               <StatCard
                 icon={<ShieldCheck className="h-5 w-5" />}
-                colorClass="text-zion-purple-400"
-                bgClass="bg-zion-purple-400/10"
+                colorClass="text-zion-purple"
+                bgClass="bg-zion-purple/10"
 
                 label={DefiCopy.validators[cs ? 'cs' : 'en']}
                 value="5/5"
@@ -871,8 +871,8 @@ export default function DefiPage() {
               />
               <StatCard
                 icon={<Gavel className="h-5 w-5" />}
-                colorClass="text-zion-gold-400"
-                bgClass="bg-zion-gold-400/10"
+                colorClass="text-zion-gold"
+                bgClass="bg-zion-gold/10"
 
                 label={DefiCopy.auction[cs ? 'cs' : 'en']}
                 value={`${(auctionData?.pctSold ?? 0).toFixed(2)}%`}
@@ -909,7 +909,7 @@ export default function DefiPage() {
                   {chartPrices.length >= 2 && (() => {
                     const chg = ((chartPrices[chartPrices.length - 1] - chartPrices[0]) / chartPrices[0]) * 100;
                     return (
-                      <p className={`text-[10px] text-right ${chg >= 0 ? 'text-zion-cyan-400' : 'text-zion-purple-400'}`}>
+                      <p className={`text-[10px] text-right ${chg >= 0 ? 'text-zion-cyan' : 'text-zion-purple'}`}>
                         {chg >= 0 ? '+' : ''}{chg.toFixed(2)}% ({DefiCopy.k1h[cs ? 'cs' : 'en']})
                       </p>
                     );
@@ -971,7 +971,7 @@ export default function DefiPage() {
               </div>
               <div className="zion-rainbow-sub p-2" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                 <p className="text-gray-500 mb-0.5">{DefiCopy.status[cs ? 'cs' : 'en']}</p>
-                <p className={poolStats?.pools?.wzion_usdt?.active ? 'text-zion-cyan-400' : 'text-zion-gold-400'}>
+                <p className={poolStats?.pools?.wzion_usdt?.active ? 'text-zion-cyan' : 'text-zion-gold'}>
                   {poolStats?.pools?.wzion_usdt?.active ? (DefiCopy.active[cs ? 'cs' : 'en']) : (poolStats ? (DefiCopy.inactive[cs ? 'cs' : 'en']) : (DefiCopy.loading[cs ? 'cs' : 'en']))}
                 </p>
               </div>
@@ -1090,15 +1090,15 @@ export default function DefiPage() {
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zion-purple-500/10 border border-zion-purple-500/20">
-                      <RefreshCw className="h-5 w-5 text-zion-purple-400" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zion-purple/10 border border-zion-purple/20">
+                      <RefreshCw className="h-5 w-5 text-zion-purple" />
                     </div>
                     <div>
                       <h3 className="text-base font-semibold text-white">{DefiCopy.swapWzion[cs ? 'cs' : 'en']}</h3>
                       <p className="text-[11px] text-gray-500">{DefiCopy.lifiUniswapIntegration[cs ? 'cs' : 'en']}</p>
                     </div>
                   </div>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-zion-cyan-500/10 border border-zion-cyan-500/20 px-3 py-1 text-[10px] font-semibold text-zion-cyan-400">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-zion-cyan/10 border border-zion-cyan/20 px-3 py-1 text-[10px] font-semibold text-zion-cyan">
                     <CheckCircle2 className="h-3.5 w-3.5" />
                     {DefiCopy.live[cs ? 'cs' : 'en']}
                   </span>
@@ -1119,15 +1119,15 @@ export default function DefiPage() {
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zion-gold-500/10 border border-zion-gold-500/20">
-                      <Droplets className="h-5 w-5 text-zion-gold-400" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zion-gold/10 border border-zion-gold/20">
+                      <Droplets className="h-5 w-5 text-zion-gold" />
                     </div>
                     <div>
                       <h3 className="text-base font-semibold text-white">{DefiCopy.dexPools[cs ? 'cs' : 'en']}</h3>
                       <p className="text-[11px] text-gray-500">{DefiCopy.uniswapV3[cs ? 'cs' : 'en']}</p>
                     </div>
                   </div>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-zion-cyan-500/10 border border-zion-cyan-500/20 px-3 py-1 text-[10px] font-semibold text-zion-cyan-400">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-zion-cyan/10 border border-zion-cyan/20 px-3 py-1 text-[10px] font-semibold text-zion-cyan">
                     <CheckCircle2 className="h-3.5 w-3.5" />
                     {DefiCopy.live[cs ? 'cs' : 'en']}
                   </span>
@@ -1148,15 +1148,15 @@ export default function DefiPage() {
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zion-gold-500/10 border border-zion-gold-500/20">
-                      <Gavel className="h-5 w-5 text-zion-gold-400" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zion-gold/10 border border-zion-gold/20">
+                      <Gavel className="h-5 w-5 text-zion-gold" />
                     </div>
                     <div>
                       <h3 className="text-base font-semibold text-white">{DefiCopy.ccaAuction[cs ? 'cs' : 'en']}</h3>
                       <p className="text-[11px] text-gray-500">{DefiCopy.k6647mWzionForUsdc[cs ? 'cs' : 'en']}</p>
                     </div>
                   </div>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-zion-gold-500/10 border border-zion-gold-500/20 px-3 py-1 text-[10px] font-semibold text-zion-gold-400">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-zion-gold/10 border border-zion-gold/20 px-3 py-1 text-[10px] font-semibold text-zion-gold">
                     <Clock className="h-3.5 w-3.5" />
                     {DefiCopy.active_2[cs ? 'cs' : 'en']}
                   </span>
@@ -1177,15 +1177,15 @@ export default function DefiPage() {
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zion-gold-500/10 border border-zion-gold-500/20">
-                      <ChefHat className="h-5 w-5 text-zion-gold-400" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zion-gold/10 border border-zion-gold/20">
+                      <ChefHat className="h-5 w-5 text-zion-gold" />
                     </div>
                     <div>
                       <h3 className="text-base font-semibold text-white">PancakeSwap V3</h3>
                       <p className="text-[11px] text-gray-500">{DefiCopy.k2ndLargestDexOnBase[cs ? 'cs' : 'en']}</p>
                     </div>
                   </div>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-zion-cyan-500/10 border border-zion-cyan-500/20 px-3 py-1 text-[10px] font-semibold text-zion-cyan-400">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-zion-cyan/10 border border-zion-cyan/20 px-3 py-1 text-[10px] font-semibold text-zion-cyan">
                     <CheckCircle2 className="h-3.5 w-3.5" />
                     {DefiCopy.live[cs ? 'cs' : 'en']}
                   </span>
@@ -1210,7 +1210,7 @@ export default function DefiPage() {
           >
             <div className="zion-rainbow-card p-5 md:p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-4">
-                <RefreshCw className="h-4 w-4 text-zion-purple-400" />
+                <RefreshCw className="h-4 w-4 text-zion-purple" />
                 <h3 className="text-sm font-semibold text-white uppercase tracking-wider">{DefiCopy.crossChainSwap[cs ? 'cs' : 'en']}</h3>
               </div>
               <LiFiWidget />
@@ -1253,7 +1253,7 @@ export default function DefiPage() {
           <div className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <div className="zion-rainbow-sub p-4 mb-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <div className="flex items-center gap-2">
-                <Lock className="h-5 w-5 text-zion-gold-400" />
+                <Lock className="h-5 w-5 text-zion-gold" />
                 <h3 className="text-base font-semibold text-white">{DefiCopy.staking[cs ? 'cs' : 'en']}</h3>
               </div>
             </div>
@@ -1263,7 +1263,7 @@ export default function DefiPage() {
           <div className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <div className="zion-rainbow-sub p-4 mb-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <div className="flex items-center gap-2">
-                <Sprout className="h-5 w-5 text-zion-gold-400" />
+                <Sprout className="h-5 w-5 text-zion-gold" />
                 <h3 className="text-base font-semibold text-white">{DefiCopy.farming[cs ? 'cs' : 'en']}</h3>
               </div>
             </div>
@@ -1298,8 +1298,8 @@ export default function DefiPage() {
               style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
             >
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zion-purple-500/10 border border-zion-purple-500/20">
-                  <ArrowLeftRight className="h-5 w-5 text-zion-purple-400" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zion-purple/10 border border-zion-purple/20">
+                  <ArrowLeftRight className="h-5 w-5 text-zion-purple" />
                 </div>
                 <div>
                   <h3 className="text-base font-semibold text-white">{DefiCopy.wzionBridge[cs ? 'cs' : 'en']}</h3>
@@ -1318,18 +1318,18 @@ export default function DefiPage() {
               style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
             >
               <div className="flex items-center gap-2 mb-4">
-                <Flame className="h-5 w-5 text-zion-gold-400" />
+                <Flame className="h-5 w-5 text-zion-gold" />
                 <h3 className="font-semibold text-white text-sm">
                   {DefiCopy.howBridgeWorks[cs ? 'cs' : 'en']}
                 </h3>
               </div>
               <div className="space-y-3 text-xs text-gray-300 leading-relaxed">
                 <div className="flex gap-3">
-                  <span className="shrink-0 rounded-lg bg-zion-cyan-500/10 border border-zion-cyan-500/20 px-2 py-1 text-zion-cyan-400 font-mono text-[10px]">L1→L2</span>
+                  <span className="shrink-0 rounded-lg bg-zion-cyan/10 border border-zion-cyan/20 px-2 py-1 text-zion-cyan font-mono text-[10px]">L1→L2</span>
                   <p>{DefiCopy.lockZionOnL1RelayMintsWzionOnB[cs ? 'cs' : 'en']}</p>
                 </div>
                 <div className="flex gap-3">
-                  <span className="shrink-0 rounded-lg bg-zion-gold-500/10 border border-zion-gold-500/20 px-2 py-1 text-zion-gold-400 font-mono text-[10px]">L2→L1</span>
+                  <span className="shrink-0 rounded-lg bg-zion-gold/10 border border-zion-gold/20 px-2 py-1 text-zion-gold font-mono text-[10px]">L2→L1</span>
                   <p>{DefiCopy.burnWzionOnBaseRelayUnlocksZio[cs ? 'cs' : 'en']}</p>
                 </div>
               </div>
@@ -1367,16 +1367,16 @@ export default function DefiPage() {
           {/* Bridge Vault Status */}
           <div className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <div className="flex items-center gap-2 mb-4">
-              <Lock className="h-5 w-5 text-zion-purple-400" />
+              <Lock className="h-5 w-5 text-zion-purple" />
               <h3 className="font-semibold text-white text-sm">
                 {DefiCopy.bridgeVault100mZion[cs ? 'cs' : 'en']}
               </h3>
               <span className={`ml-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-semibold ${
                 bridgeStatus?.online
-                  ? 'bg-zion-cyan-500/10 text-zion-cyan-400 border border-zion-cyan-500/20'
+                  ? 'bg-zion-cyan/10 text-zion-cyan border border-zion-cyan/20'
                   : 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
               }`}>
-                <span className={`h-1.5 w-1.5 rounded-full ${bridgeStatus?.online ? 'bg-zion-cyan-400 animate-pulse' : 'bg-gray-500'}`} />
+                <span className={`h-1.5 w-1.5 rounded-full ${bridgeStatus?.online ? 'bg-zion-cyan animate-pulse' : 'bg-gray-500'}`} />
                 {bridgeStatus?.online ? (DefiCopy.relayOnline[cs ? 'cs' : 'en']) : (DefiCopy.relayOffline[cs ? 'cs' : 'en'])}
               </span>
             </div>
@@ -1399,7 +1399,7 @@ export default function DefiPage() {
                 <p className="text-base font-semibold text-white mt-1 flex items-center gap-1">
                   {bridgeStatus?.evm_mints_confirmed ?? '—'}
                   {bridgeStatus && bridgeStatus.evm_mints_confirmed > 0 && (
-                    <CheckCircle2 className="h-3.5 w-3.5 text-zion-cyan-400" />
+                    <CheckCircle2 className="h-3.5 w-3.5 text-zion-cyan" />
                   )}
                 </p>
                 <p className="text-[10px] text-gray-500">{DefiCopy.confirmed[cs ? 'cs' : 'en']}</p>
@@ -1409,7 +1409,7 @@ export default function DefiPage() {
                 <p className="text-base font-semibold text-white mt-1 flex items-center gap-1">
                   {bridgeStatus?.l1_unlocks_confirmed ?? '—'}
                   {bridgeStatus && (bridgeStatus.l1_unlocks_confirmed ?? 0) > 0 && (
-                    <CheckCircle2 className="h-3.5 w-3.5 text-zion-cyan-400" />
+                    <CheckCircle2 className="h-3.5 w-3.5 text-zion-cyan" />
                   )}
                 </p>
                 <p className="text-[10px] text-gray-500">{DefiCopy.confirmed[cs ? 'cs' : 'en']}</p>
@@ -1430,7 +1430,7 @@ export default function DefiPage() {
               <span className="text-gray-600">·</span>
               <span>{DefiCopy.finality60Blocks[cs ? 'cs' : 'en']}</span>
               <span className="text-gray-600">·</span>
-              <span className="inline-flex items-center gap-1 text-zion-cyan-400">
+              <span className="inline-flex items-center gap-1 text-zion-cyan">
                 <CheckCircle2 className="h-3 w-3" />
                 {DefiCopy.reverseBridgeE2eVerified202606[cs ? 'cs' : 'en']}
               </span>
@@ -1442,18 +1442,18 @@ export default function DefiPage() {
             <BridgeBurnWidget />
             <div className="zion-rainbow-card p-6 space-y-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-2">
-                <Flame className="h-5 w-5 text-zion-gold-400" />
+                <Flame className="h-5 w-5 text-zion-gold" />
                 <h3 className="font-semibold text-white text-sm">
                   {DefiCopy.howBridgeWorks[cs ? 'cs' : 'en']}
                 </h3>
               </div>
               <div className="space-y-3 text-xs text-gray-300 leading-relaxed">
                 <div className="flex gap-3">
-                  <span className="shrink-0 rounded-lg bg-zion-cyan-500/10 border border-zion-cyan-500/20 px-2 py-1 text-zion-cyan-400 font-mono text-[10px]">L1→L2</span>
+                  <span className="shrink-0 rounded-lg bg-zion-cyan/10 border border-zion-cyan/20 px-2 py-1 text-zion-cyan font-mono text-[10px]">L1→L2</span>
                   <p>{DefiCopy.lockZionOnL1RelayMintsWzionOnB[cs ? 'cs' : 'en']}</p>
                 </div>
                 <div className="flex gap-3">
-                  <span className="shrink-0 rounded-lg bg-zion-gold-500/10 border border-zion-gold-500/20 px-2 py-1 text-zion-gold-400 font-mono text-[10px]">L2→L1</span>
+                  <span className="shrink-0 rounded-lg bg-zion-gold/10 border border-zion-gold/20 px-2 py-1 text-zion-gold font-mono text-[10px]">L2→L1</span>
                   <p>{DefiCopy.burnWzionOnBaseRelayUnlocksZio[cs ? 'cs' : 'en']}</p>
                 </div>
               </div>
@@ -1494,7 +1494,7 @@ export default function DefiPage() {
             <div className="flex flex-col gap-2 mb-6">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DefiCopy.governance[cs ? 'cs' : 'en']}</p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-                <Scale className="h-7 w-7 text-zion-purple-400" />
+                <Scale className="h-7 w-7 text-zion-purple" />
                 {DefiCopy.wzionGovernance[cs ? 'cs' : 'en']}
               </h2>
               <p className="text-sm text-gray-400">{DefiCopy.voteOnProtocolParametersAndMon[cs ? 'cs' : 'en']}</p>
@@ -1503,7 +1503,7 @@ export default function DefiPage() {
           <div className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <div className="zion-rainbow-sub p-4 mb-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <div className="flex items-center gap-2">
-                <Scale className="h-5 w-5 text-zion-gold-400" />
+                <Scale className="h-5 w-5 text-zion-gold" />
                 <h3 className="text-base font-semibold text-white">{DefiCopy.governancePanel[cs ? 'cs' : 'en']}</h3>
               </div>
             </div>
@@ -1545,7 +1545,7 @@ export default function DefiPage() {
             {/* Header */}
             <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
               <div className="flex items-center gap-3">
-                <ChefHat className="h-6 w-6 text-zion-gold-400" />
+                <ChefHat className="h-6 w-6 text-zion-gold" />
                 <div>
                   <h2 className="text-lg font-bold text-white">
                     PancakeSwap V3
@@ -1556,8 +1556,8 @@ export default function DefiPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-semibold bg-zion-cyan-500/10 text-zion-cyan-400 border border-zion-cyan-500/20">
-                  <span className="h-1.5 w-1.5 rounded-full bg-zion-cyan-400 animate-pulse" />
+                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-semibold bg-zion-cyan/10 text-zion-cyan border border-zion-cyan/20">
+                  <span className="h-1.5 w-1.5 rounded-full bg-zion-cyan animate-pulse" />
                   {DefiCopy.live_2[cs ? 'cs' : 'en']}
                 </span>
                 <a
@@ -1629,7 +1629,7 @@ export default function DefiPage() {
 
             {/* Status note */}
             <div className="mt-4 flex items-start gap-3 zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-              <AlertTriangle className="h-4 w-4 text-zion-gold-400 shrink-0 mt-0.5" />
+              <AlertTriangle className="h-4 w-4 text-zion-gold shrink-0 mt-0.5" />
               <p className="text-[10px] text-gray-400 leading-relaxed">
                 {DefiCopy.pancakeswapV3PoolWasCreatedAnd[cs ? 'cs' : 'en']}
               </p>
@@ -1660,7 +1660,7 @@ export default function DefiPage() {
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-semibold text-white">{poolStats?.pools?.wzion_usdt?.pair ?? 'wZION/USDT'}</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-zion-purple-500/20 text-zion-purple-300 border border-zion-purple-500/30">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-zion-purple/20 text-zion-purple border border-zion-purple/30">
                       {DefiCopy.primary[cs ? 'cs' : 'en']}
                     </span>
                     <span className="text-[10px] text-gray-400">{poolStats?.pools?.wzion_usdt?.feeLabel ?? '0.3%'}</span>
@@ -1697,7 +1697,7 @@ export default function DefiPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">{DefiCopy.status[cs ? 'cs' : 'en']}:</span>
-                    <span className={poolStats?.pools?.wzion_usdt?.active ? 'text-zion-cyan-400' : 'text-zion-gold-400'}>
+                    <span className={poolStats?.pools?.wzion_usdt?.active ? 'text-zion-cyan' : 'text-zion-gold'}>
                       {poolStats?.pools?.wzion_usdt?.active ? (DefiCopy.active[cs ? 'cs' : 'en']) : (DefiCopy.inactive[cs ? 'cs' : 'en'])}
                     </span>
                   </div>
@@ -1720,7 +1720,7 @@ export default function DefiPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">{DefiCopy.status[cs ? 'cs' : 'en']}:</span>
-                    <span className="text-zion-gold-400/70">{DefiCopy.initializedNoLiquidity[cs ? 'cs' : 'en']}</span>
+                    <span className="text-zion-gold/70">{DefiCopy.initializedNoLiquidity[cs ? 'cs' : 'en']}</span>
                   </div>
                 </div>
               </div>
@@ -1741,7 +1741,7 @@ export default function DefiPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">{DefiCopy.status[cs ? 'cs' : 'en']}:</span>
-                    <span className="text-zion-gold-400/70">{DefiCopy.initializedNoLiquidity[cs ? 'cs' : 'en']}</span>
+                    <span className="text-zion-gold/70">{DefiCopy.initializedNoLiquidity[cs ? 'cs' : 'en']}</span>
                   </div>
                 </div>
               </div>
@@ -1763,7 +1763,7 @@ export default function DefiPage() {
             <div className="flex flex-col gap-2 mb-6">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DefiCopy.auction[cs ? 'cs' : 'en']}</p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-                <Gavel className="h-7 w-7 text-zion-gold-400" />
+                <Gavel className="h-7 w-7 text-zion-gold" />
                 {DefiCopy.uniswapCcaAuction[cs ? 'cs' : 'en']}
               </h2>
               <p className="text-sm text-gray-400">{DefiCopy.continuousClearingAuction6647m[cs ? 'cs' : 'en']}</p>
@@ -1783,7 +1783,7 @@ export default function DefiPage() {
             {/* Header */}
             <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
               <div className="flex items-center gap-3">
-                <Gavel className="h-6 w-6 text-zion-gold-400" />
+                <Gavel className="h-6 w-6 text-zion-gold" />
                 <div>
                   <h2 className="text-lg font-bold text-white">
                     {DefiCopy.uniswapCcaAuction[cs ? 'cs' : 'en']}
@@ -1796,10 +1796,10 @@ export default function DefiPage() {
               <div className="flex items-center gap-2">
                 <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-semibold ${
                   auctionData?.isGraduated
-                    ? 'bg-zion-cyan-500/10 text-zion-cyan-400 border border-zion-cyan-500/20'
-                    : 'bg-zion-gold-500/10 text-zion-gold-400 border border-zion-gold-500/20'
+                    ? 'bg-zion-cyan/10 text-zion-cyan border border-zion-cyan/20'
+                    : 'bg-zion-gold/10 text-zion-gold border border-zion-gold/20'
                 }`}>
-                  <span className={`h-1.5 w-1.5 rounded-full ${auctionData?.isGraduated ? 'bg-zion-cyan-400' : 'bg-zion-gold-400 animate-pulse'}`} />
+                  <span className={`h-1.5 w-1.5 rounded-full ${auctionData?.isGraduated ? 'bg-zion-cyan' : 'bg-zion-gold animate-pulse'}`} />
                   {auctionData?.isGraduated
                     ? (DefiCopy.graduated[cs ? 'cs' : 'en'])
                     : (DefiCopy.active_2[cs ? 'cs' : 'en'])}
@@ -1821,7 +1821,7 @@ export default function DefiPage() {
               {/* Clearing price */}
               <div className="zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                 <div className="flex items-center gap-1.5 mb-1">
-                  <TrendingUp className="h-3 w-3 text-zion-gold-400" />
+                  <TrendingUp className="h-3 w-3 text-zion-gold" />
                   <p className="text-[10px] uppercase tracking-wider text-gray-500">{DefiCopy.clearingPrice[cs ? 'cs' : 'en']}</p>
                 </div>
                 <p className="text-lg font-bold text-white font-mono">
@@ -1833,7 +1833,7 @@ export default function DefiPage() {
               {/* USDC raised */}
               <div className="zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                 <div className="flex items-center gap-1.5 mb-1">
-                  <Droplets className="h-3 w-3 text-zion-cyan-400" />
+                  <Droplets className="h-3 w-3 text-zion-cyan" />
                   <p className="text-[10px] uppercase tracking-wider text-gray-500">{DefiCopy.usdcRaised[cs ? 'cs' : 'en']}</p>
                 </div>
                 <p className="text-lg font-bold text-white font-mono">
@@ -1859,7 +1859,7 @@ export default function DefiPage() {
               {/* Time remaining */}
               <div className="zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                 <div className="flex items-center gap-1.5 mb-1">
-                  <Clock className="h-3 w-3 text-zion-gold-400" />
+                  <Clock className="h-3 w-3 text-zion-gold" />
                   <p className="text-[10px] uppercase tracking-wider text-gray-500">{DefiCopy.remaining[cs ? 'cs' : 'en']}</p>
                 </div>
                 <p className="text-lg font-bold text-white font-mono">
@@ -1878,7 +1878,7 @@ export default function DefiPage() {
               </div>
               <div className="h-2 bg-black/40 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-zion-gold-500 to-zion-gold-500 transition-all duration-500"
+                  className="h-full bg-gradient-to-r from-zion-gold to-zion-gold transition-all duration-500"
                   style={{ width: `${Math.min(100, auctionData?.progressPct ?? 0)}%` }}
                 />
               </div>
@@ -1892,19 +1892,19 @@ export default function DefiPage() {
                   {DefiCopy.howCcaAuctionWorks[cs ? 'cs' : 'en']}
                 </h3>
                 <div className="flex gap-2 text-gray-300">
-                  <span className="shrink-0 rounded-lg bg-zion-gold-500/10 border border-zion-gold-500/20 px-1.5 py-0.5 text-zion-gold-400 font-mono text-[9px]">1</span>
+                  <span className="shrink-0 rounded-lg bg-zion-gold/10 border border-zion-gold/20 px-1.5 py-0.5 text-zion-gold font-mono text-[9px]">1</span>
                   <p>{DefiCopy.participantsBidUsdcForWzionWit[cs ? 'cs' : 'en']}</p>
                 </div>
                 <div className="flex gap-2 text-gray-300">
-                  <span className="shrink-0 rounded-lg bg-zion-gold-500/10 border border-zion-gold-500/20 px-1.5 py-0.5 text-zion-gold-400 font-mono text-[9px]">2</span>
+                  <span className="shrink-0 rounded-lg bg-zion-gold/10 border border-zion-gold/20 px-1.5 py-0.5 text-zion-gold font-mono text-[9px]">2</span>
                   <p>{DefiCopy.clearingPriceContinuouslyAdjus[cs ? 'cs' : 'en']}</p>
                 </div>
                 <div className="flex gap-2 text-gray-300">
-                  <span className="shrink-0 rounded-lg bg-zion-gold-500/10 border border-zion-gold-500/20 px-1.5 py-0.5 text-zion-gold-400 font-mono text-[9px]">3</span>
+                  <span className="shrink-0 rounded-lg bg-zion-gold/10 border border-zion-gold/20 px-1.5 py-0.5 text-zion-gold font-mono text-[9px]">3</span>
                   <p>{DefiCopy.afterGraduationLbpPoolOnUniswa[cs ? 'cs' : 'en']}</p>
                 </div>
                 <div className="flex gap-2 text-gray-300">
-                  <span className="shrink-0 rounded-lg bg-zion-gold-500/10 border border-zion-gold-500/20 px-1.5 py-0.5 text-zion-gold-400 font-mono text-[9px]">4</span>
+                  <span className="shrink-0 rounded-lg bg-zion-gold/10 border border-zion-gold/20 px-1.5 py-0.5 text-zion-gold font-mono text-[9px]">4</span>
                   <p>{DefiCopy.noGraduationExitbidRefundsUsdc[cs ? 'cs' : 'en']}</p>
                 </div>
               </div>
@@ -1920,7 +1920,7 @@ export default function DefiPage() {
                     href={CCA_AUCTION_PARAMS.basescanUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-mono text-zion-gold-400/80 hover:text-zion-gold-400 inline-flex items-center gap-1"
+                    className="font-mono text-zion-gold/80 hover:text-zion-gold inline-flex items-center gap-1"
                   >
                     {CCA_AUCTION_PARAMS.auctionContract.slice(0, 8)}…{CCA_AUCTION_PARAMS.auctionContract.slice(-4)}
                     <ExternalLink className="h-2.5 w-2.5" />
@@ -1951,7 +1951,7 @@ export default function DefiPage() {
 
             {/* Warning about 184-day duration */}
             <div className="mt-4 flex items-start gap-3 zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-              <AlertTriangle className="h-4 w-4 text-zion-gold-400 shrink-0 mt-0.5" />
+              <AlertTriangle className="h-4 w-4 text-zion-gold shrink-0 mt-0.5" />
               <p className="text-[10px] text-gray-400 leading-relaxed">
                 {DefiCopy.noteEndBlockIsImmutableAndCann[cs ? 'cs' : 'en']}
               </p>

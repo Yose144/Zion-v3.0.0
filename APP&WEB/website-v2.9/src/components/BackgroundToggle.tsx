@@ -96,7 +96,7 @@ export default function BackgroundToggle() {
             className="absolute bottom-16 right-0 w-72 rounded-2xl border border-white/10 bg-black/80 backdrop-blur-2xl shadow-[0_18px_60px_rgba(0,0,0,0.55)] overflow-hidden"
           >
             {/* Rasta gradient top accent — same as nav */}
-            <div className="h-1 w-full bg-linear-to-r from-zion-cyan-400/60 via-zion-gold/70 to-zion-purple-400/60" />
+            <div className="h-1 w-full bg-linear-to-r from-zion-cyan/60 via-zion-gold/70 to-zion-purple/60" />
 
             {/* Header */}
             <div className="flex items-center gap-2 px-4 pt-3 pb-2">

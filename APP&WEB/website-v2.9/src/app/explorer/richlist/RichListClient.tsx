@@ -93,7 +93,7 @@ function CopyBtn({ text }: { text: string }) {
       className="text-white/20 hover:text-white/60 transition-colors"
     >
       {ok ? (
-        <Check className="w-3.5 h-3.5 text-zion-cyan-400" />
+        <Check className="w-3.5 h-3.5 text-zion-cyan" />
       ) : (
         <Copy className="w-3.5 h-3.5" />
       )}
@@ -107,9 +107,9 @@ function truncAddr(addr: string) {
 }
 
 const rankIcons = [
-  { icon: Crown, color: "text-zion-gold-400" },
+  { icon: Crown, color: "text-zion-gold" },
   { icon: Award, color: "text-gray-300" },
-  { icon: Award, color: "text-zion-gold-600" },
+  { icon: Award, color: "text-zion-gold" },
 ];
 
 const getTypeConfig = (cs: boolean) => ({
@@ -220,7 +220,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
                 label: ExplorerRichlistRichListClientCopy.activeMiners[cs ? 'cs' : 'en'],
                 value: data.stats.miner_addresses.toLocaleString(locale),
                 icon: Pickaxe,
-                accent: "text-zion-cyan-400",
+                accent: "text-zion-cyan",
               },
             ].map((stat, i) => (
               <div
@@ -266,12 +266,12 @@ export default function RichListClient({ embedded = false }: RichListClientProps
                 return (
                   <>
                     <div
-                      className="bg-linear-to-r from-zion-purple to-zion-purple-500 transition-all"
+                      className="bg-linear-to-r from-zion-purple to-zion-purple transition-all"
                       style={{ width: `${preminePerc}%` }}
                       title={`Premine: ${preminePerc.toFixed(1)}%`}
                     />
                     <div
-                      className="bg-linear-to-r from-zion-cyan to-zion-purple-500 transition-all"
+                      className="bg-linear-to-r from-zion-cyan to-zion-purple transition-all"
                       style={{ width: `${minerPerc}%` }}
                       title={`${ExplorerRichlistRichListClientCopy.miners[cs ? 'cs' : 'en']}: ${minerPerc.toFixed(1)}%`}
                     />
@@ -364,7 +364,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
           {/* Error */}
           {error && !loading && (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <p className="text-zion-purple-400 text-sm">{error}</p>
+              <p className="text-zion-purple text-sm">{error}</p>
               <button
                 onClick={fetchRichList}
                 className="mt-4 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 text-sm transition-all"
@@ -428,7 +428,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
                   <div className="text-right hidden md:flex items-center justify-end gap-2">
                     <div className="w-16 h-1.5 rounded-full bg-white/5 overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-linear-to-r from-zion-gold to-zion-gold-500"
+                        className="h-full rounded-full bg-linear-to-r from-zion-gold to-zion-gold"
                         style={{
                           width: `${Math.min(entry.percentage, 100)}%`,
                         }}

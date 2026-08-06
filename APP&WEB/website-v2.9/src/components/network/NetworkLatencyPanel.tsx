@@ -27,7 +27,7 @@ interface Props {
 function latencyBar(ms: number | undefined, max = 500) {
   if (ms == null) return null;
   const pct = Math.min((ms / max) * 100, 100);
-  const color = ms < 100 ? 'bg-zion-cyan-400' : ms < 300 ? 'bg-zion-gold-400' : 'bg-zion-purple-400';
+  const color = ms < 100 ? 'bg-zion-cyan' : ms < 300 ? 'bg-zion-gold' : 'bg-zion-purple';
   return (
     <div className="h-1.5 w-20 rounded-full bg-white/10 overflow-hidden">
       <div className={`h-full ${color}`} style={{ width: `${pct}%` }} />
@@ -45,7 +45,7 @@ export default function NetworkLatencyPanel({ nodes }: Props) {
       <div className="flex flex-col gap-2 mb-6">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkLatencyPanelCopy.latency[cs ? 'cs' : 'en']}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-          <Zap className="h-7 w-7 text-zion-gold-400" />
+          <Zap className="h-7 w-7 text-zion-gold" />
           {NetworkLatencyPanelCopy.networkLatency[cs ? 'cs' : 'en']}
         </h2>
         <p className="text-sm text-gray-400">
@@ -66,7 +66,7 @@ export default function NetworkLatencyPanel({ nodes }: Props) {
             style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
           >
             <div className="flex items-center gap-3 min-w-0 sm:min-w-[140px]">
-              <div className={`w-2.5 h-2.5 rounded-full ${node.online ? 'bg-zion-cyan-400 animate-pulse' : 'bg-zion-purple-500'}`} />
+              <div className={`w-2.5 h-2.5 rounded-full ${node.online ? 'bg-zion-cyan animate-pulse' : 'bg-zion-purple'}`} />
               <span className="text-sm font-medium text-white">{node.name}</span>
             </div>
 
@@ -98,7 +98,7 @@ export default function NetworkLatencyPanel({ nodes }: Props) {
                   {node.blockLag != null && (
                     <div className="h-1.5 w-20 rounded-full bg-white/10 overflow-hidden">
                       <div
-                        className={`h-full ${node.blockLag <= 1 ? 'bg-zion-cyan-400' : node.blockLag <= 3 ? 'bg-zion-gold-400' : 'bg-zion-purple-400'}`}
+                        className={`h-full ${node.blockLag <= 1 ? 'bg-zion-cyan' : node.blockLag <= 3 ? 'bg-zion-gold' : 'bg-zion-purple'}`}
                         style={{ width: `${Math.min((node.blockLag / 5) * 100, 100)}%` }}
                       />
                     </div>

@@ -95,7 +95,7 @@ export default function WikiPage() {
                 className="zion-rainbow-card group block h-full rounded-[32px] p-6"
                 style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
               >
-                <div className="inline-flex items-center justify-center rounded-2xl bg-linear-to-r from-zion-gold to-zion-gold-500 p-3 shadow-lg">
+                <div className="inline-flex items-center justify-center rounded-2xl bg-linear-to-r from-zion-gold to-zion-gold p-3 shadow-lg">
                   <s.icon className="h-6 w-6 text-white" />
                 </div>
                 <h3 className="mt-4 text-xl font-bold text-white">{s.title}</h3>

@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
-import CosmicFlowers from './CosmicFlowers';
 import HolographicEarthLazy from './HolographicEarthLazy';
 import MainnetCountdown from './MainnetCountdown';
 
@@ -37,14 +36,12 @@ export default function Hero() {
 
   return (
     <section className="relative px-4 pt-16 pb-10 sm:pt-20 sm:pb-14 md:pt-24 md:pb-18 overflow-hidden">
-      {/* ── ambient gradients ── */}
-      <div className="absolute inset-0 pointer-events-none opacity-60">
-        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-zion-purple/10 blur-3xl" />
-        <div className="absolute top-40 -right-32 w-[400px] h-[400px] rounded-full bg-zion-cyan/8 blur-3xl" />
+      {/* ── rasta ambient orbs ── */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute -top-48 -left-32 w-[560px] h-[560px] rounded-full bg-zion-purple/12 blur-3xl animate-bubble-drift" />
+        <div className="absolute top-20 -right-40 w-[480px] h-[480px] rounded-full bg-zion-cyan/10 blur-3xl animate-bubble-drift" style={{ animationDelay: '-8s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full bg-zion-gold/6 blur-3xl animate-bubble-drift" style={{ animationDelay: '-16s' }} />
       </div>
-
-      {/* ── lightweight floral composition ── */}
-      <CosmicFlowers className="z-0 hidden md:block" />
 
       <div className="zion-container relative z-10">
         {/* ─── top badge row ─── */}
@@ -58,7 +55,7 @@ export default function Hero() {
             <Sparkles className="w-3.5 h-3.5 animate-pulse" />
             {tr('hero', 'badge_version', lang)}
           </div>
-          <div className="zion-kicker border-zion-purple-500/25 bg-zion-purple-500/10 text-zion-purple-300">
+          <div className="zion-kicker border-zion-purple/25 bg-zion-purple/10 text-zion-purple">
             <BrainCircuit className="w-3.5 h-3.5 animate-pulse" />
             {tr('hero', 'badge_chv4', lang)}
           </div>
@@ -85,13 +82,14 @@ export default function Hero() {
           >
             {/* headline */}
             <div>
-              <p className="text-base md:text-lg text-zion-cyan font-semibold mb-2 tracking-wide">
+              <p className="text-base md:text-lg text-zion-cyan font-semibold mb-3 tracking-wide flex items-center gap-2">
+                <span className="w-8 h-[2px] bg-gradient-to-r from-zion-purple via-zion-gold to-zion-cyan rounded-full" />
                 {tr('hero', 'tagline', lang)}
               </p>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl xl:text-6xl font-extrabold leading-[1.08] tracking-tight">
-                <span className="text-gradient-soft">ZION</span>
-                <span className="block text-white mt-1">Terra Nova</span>
-                <span className="block text-base sm:text-lg md:text-xl xl:text-2xl font-semibold text-white/60 mt-2 tracking-normal">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl xl:text-7xl font-extrabold leading-[1.05] tracking-tight">
+                <span className="text-gradient">ZION</span>
+                <span className="block text-white mt-2">Terra Nova</span>
+                <span className="block text-lg sm:text-xl md:text-2xl xl:text-3xl font-semibold text-zion-gold/90 mt-3 tracking-normal">
                   {tr('hero', 'title_sub', lang)}
                 </span>
               </h1>
@@ -103,44 +101,44 @@ export default function Hero() {
             </p>
 
             {/* CTA buttons */}
-            <div className="flex flex-col sm:flex-row flex-wrap gap-2">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3">
               <Link
                 href="/network"
-                className="zion-button-primary group w-full sm:w-auto justify-center"
-                style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+                className="zion-button-primary group w-full sm:w-auto justify-center rasta-shimmer"
               >
                 {tr('hero', 'btn_warp', lang)}
                 <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
               </Link>
               <Link
                 href="/docs"
-                className="zion-button-secondary w-full sm:w-auto justify-center"
+                className="zion-button-secondary w-full sm:w-auto justify-center border-zion-gold/30 hover:border-zion-gold/60 hover:bg-zion-gold/10 hover:text-zion-gold transition-colors"
               >
-                <ShieldHalf className="w-5 h-5" />
+                <ShieldHalf className="w-5 h-5 text-zion-purple" />
                 {tr('hero', 'btn_guardian_docs', lang)}
               </Link>
               <Link
                 href="/download"
-                className="zion-button-secondary w-full sm:w-auto justify-center"
+                className="zion-button-secondary w-full sm:w-auto justify-center border-zion-cyan/30 hover:border-zion-cyan/60 hover:bg-zion-cyan/10 hover:text-zion-cyan transition-colors"
               >
-                <CircuitBoard className="w-5 h-5" />
+                <CircuitBoard className="w-5 h-5 text-zion-cyan" />
                 {tr('hero', 'btn_native_miner', lang)}
               </Link>
             </div>
 
             {/* metrics strip */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-3">
               {heroMetrics.map((metric, i) => (
                 <motion.div
                   key={metric.label}
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.5 + i * 0.1 }}
-                  className="zion-panel-soft zion-panel-hover group p-2.5 cursor-default min-w-0"
+                  className="zion-panel-soft zion-panel-hover group p-3 cursor-default min-w-0"
+                  style={{ borderTop: '2px solid transparent', borderImage: `linear-gradient(90deg, ${['#e41e2b', '#fcd116', '#078930'][i]}, transparent) 1` } as CSSProperties}
                 >
-                  <metric.icon className="w-3.5 h-3.5 text-zion-gold mb-1" />
+                  <metric.icon className="w-4 h-4 text-zion-gold mb-1.5" />
                   <div className="text-base sm:text-lg font-bold text-white truncate">{metric.value}</div>
-                  <div className="text-[9px] uppercase tracking-wide text-gray-500 mt-0.5 leading-tight">{metric.label}</div>
+                  <div className="text-[9px] uppercase tracking-wide text-zion-gold/70 mt-0.5 leading-tight">{metric.label}</div>
                 </motion.div>
               ))}
             </div>

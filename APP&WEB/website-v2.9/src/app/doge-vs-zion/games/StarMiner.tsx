@@ -650,7 +650,7 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
         </button>
         <div className="text-center">
           <h2 className="text-lg font-bold text-white leading-tight flex items-center gap-1.5 justify-center">
-            <Star size={18} className="text-zion-purple-400" /> Star Miner
+            <Star size={18} className="text-zion-purple" /> Star Miner
           </h2>
           <p className="text-[11px] text-slate-400">{DogeVsZionGamesStarMinerCopy.mineOnTheStarReachIssobella[cs ? 'cs' : 'en']}</p>
         </div>
@@ -670,21 +670,21 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
             <span className="text-2xl">🪙</span>
             <div>
               <div className="text-[10px] uppercase tracking-widest text-slate-400">{DogeVsZionGamesStarMinerCopy.zionBalance[cs ? 'cs' : 'en']}</div>
-              <div className="text-2xl font-black text-zion-purple-300 leading-none">{formatNumber(zion)}</div>
+              <div className="text-2xl font-black text-zion-purple leading-none">{formatNumber(zion)}</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Zap size={18} className="text-zion-cyan-400" />
+            <Zap size={18} className="text-zion-cyan" />
             <div>
               <div className="text-[10px] uppercase tracking-widest text-slate-400">{DogeVsZionGamesStarMinerCopy.zionSec[cs ? 'cs' : 'en']}</div>
-              <div className="text-xl font-bold text-zion-cyan-300 leading-none">{formatNumber(rate)}</div>
+              <div className="text-xl font-bold text-zion-cyan leading-none">{formatNumber(rate)}</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Pickaxe size={18} className="text-zion-gold-400" />
+            <Pickaxe size={18} className="text-zion-gold" />
             <div>
               <div className="text-[10px] uppercase tracking-widest text-slate-400">{DogeVsZionGamesStarMinerCopy.clickPower[cs ? 'cs' : 'en']}</div>
-              <div className="text-xl font-bold text-zion-gold-300 leading-none">{formatNumber(clickPower)}</div>
+              <div className="text-xl font-bold text-zion-gold leading-none">{formatNumber(clickPower)}</div>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -695,7 +695,7 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Trophy size={18} className="text-zion-purple-400" />
+            <Trophy size={18} className="text-zion-purple" />
             <div>
               <div className="text-[10px] uppercase tracking-widest text-slate-400">{DogeVsZionGamesStarMinerCopy.totalMined[cs ? 'cs' : 'en']}</div>
               <div className="text-xl font-bold text-white leading-none">{formatNumber(totalMined)}</div>
@@ -709,7 +709,7 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
         {/* Left: Helpers */}
         <div className="zion-rainbow-sub p-3" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
           <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-1.5">
-            <Cpu size={15} className="text-zion-cyan-400" /> {DogeVsZionGamesStarMinerCopy.miningRigs[cs ? 'cs' : 'en']}
+            <Cpu size={15} className="text-zion-cyan" /> {DogeVsZionGamesStarMinerCopy.miningRigs[cs ? 'cs' : 'en']}
           </h3>
           <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
             {HELPERS.map((def) => {
@@ -726,13 +726,13 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
                   disabled={!affordable}
                   className={`w-full text-left rounded-lg border p-2.5 transition-all ${
                     affordable
-                      ? 'border-zion-cyan-500/30 bg-zion-cyan-500/5 hover:bg-zion-cyan-500/10 hover:border-zion-cyan-500/50 cursor-pointer'
+                      ? 'border-zion-cyan/30 bg-zion-cyan/5 hover:bg-zion-cyan/10 hover:border-zion-cyan/50 cursor-pointer'
                       : 'border-white/10 bg-black/30 opacity-60 cursor-not-allowed'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zion-purple-500/15 border border-zion-purple-500/30">
-                      <Icon size={16} className="text-zion-purple-300" />
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zion-purple/15 border border-zion-purple/30">
+                      <Icon size={16} className="text-zion-purple" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
@@ -740,8 +740,8 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
                         <span className="text-[10px] text-slate-400 shrink-0">×{owned}</span>
                       </div>
                       <div className="flex items-center justify-between gap-2 mt-0.5">
-                        <span className="text-[10px] text-zion-cyan-300">{formatNumber(perSec)} {DogeVsZionGamesStarMinerCopy.zS[cs ? 'cs' : 'en']}</span>
-                        <span className={`text-[11px] font-bold ${affordable ? 'text-zion-gold-300' : 'text-slate-500'}`}>
+                        <span className="text-[10px] text-zion-cyan">{formatNumber(perSec)} {DogeVsZionGamesStarMinerCopy.zS[cs ? 'cs' : 'en']}</span>
+                        <span className={`text-[11px] font-bold ${affordable ? 'text-zion-gold' : 'text-slate-500'}`}>
                           🪙 {formatNumber(cost)}
                         </span>
                       </div>
@@ -822,7 +822,7 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
         {/* Right: Upgrades */}
         <div className="zion-rainbow-sub p-3" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
           <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-1.5">
-            <Sparkles size={15} className="text-zion-purple-400" /> {DogeVsZionGamesStarMinerCopy.upgrades[cs ? 'cs' : 'en']}
+            <Sparkles size={15} className="text-zion-purple" /> {DogeVsZionGamesStarMinerCopy.upgrades[cs ? 'cs' : 'en']}
           </h3>
           <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
             {UPGRADES.map((def) => {
@@ -836,25 +836,25 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
                   disabled={owned || !affordable}
                   className={`w-full text-left rounded-lg border p-2.5 transition-all ${
                     owned
-                      ? 'border-zion-cyan-500/40 bg-zion-cyan-500/10 opacity-70'
+                      ? 'border-zion-cyan/40 bg-zion-cyan/10 opacity-70'
                       : affordable
-                        ? 'border-zion-purple-500/30 bg-zion-purple-500/5 hover:bg-zion-purple-500/10 hover:border-zion-purple-500/50 cursor-pointer'
+                        ? 'border-zion-purple/30 bg-zion-purple/5 hover:bg-zion-purple/10 hover:border-zion-purple/50 cursor-pointer'
                         : 'border-white/10 bg-black/30 opacity-60 cursor-not-allowed'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zion-purple-500/15 border border-zion-purple-500/30">
-                      <Icon size={16} className="text-zion-purple-300" />
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zion-purple/15 border border-zion-purple/30">
+                      <Icon size={16} className="text-zion-purple" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-bold text-white truncate">{cs ? def.nameCs : def.name}</span>
-                        {owned && <span className="text-[10px] text-zion-cyan-400 font-bold shrink-0">✓</span>}
+                        {owned && <span className="text-[10px] text-zion-cyan font-bold shrink-0">✓</span>}
                       </div>
                       <div className="flex items-center justify-between gap-2 mt-0.5">
                         <span className="text-[10px] text-slate-400 truncate">{cs ? def.descCs : def.desc}</span>
                         {!owned && (
-                          <span className={`text-[11px] font-bold shrink-0 ${affordable ? 'text-zion-gold-300' : 'text-slate-500'}`}>
+                          <span className={`text-[11px] font-bold shrink-0 ${affordable ? 'text-zion-gold' : 'text-slate-500'}`}>
                             🪙 {formatNumber(def.cost)}
                           </span>
                         )}
@@ -882,7 +882,7 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
           </div>
           <button
             onClick={() => setShowReset(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zion-purple-500/10 hover:bg-zion-purple-500/20 text-zion-purple-300 border border-zion-purple-500/30 transition-colors text-[11px]"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zion-purple/10 hover:bg-zion-purple/20 text-zion-purple border border-zion-purple/30 transition-colors text-[11px]"
           >
             <RotateCcw size={12} /> {DogeVsZionGamesStarMinerCopy.reset[cs ? 'cs' : 'en']}
           </button>
@@ -927,13 +927,13 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
                 {layerOverlay.emoji}
               </motion.div>
               <h3 className="text-2xl font-black text-white mb-1">{DogeVsZionGamesStarMinerCopy.newLayer[cs ? 'cs' : 'en']}</h3>
-              <p className="text-lg font-bold text-zion-purple-300">{cs ? layerOverlay.nameCs : layerOverlay.name}</p>
+              <p className="text-lg font-bold text-zion-purple">{cs ? layerOverlay.nameCs : layerOverlay.name}</p>
               <p className="text-xs text-slate-400 mt-3 mb-4">
                 {DogeVsZionGamesStarMinerCopy.keepMiningDeeperIntoZion[cs ? 'cs' : 'en']}
               </p>
               <button
                 onClick={() => setLayerOverlay(null)}
-                className="px-6 py-2 rounded-lg bg-zion-purple-500 hover:bg-zion-purple-400 text-white font-semibold transition-colors"
+                className="px-6 py-2 rounded-lg bg-zion-purple hover:bg-zion-purple text-white font-semibold transition-colors"
               >
                 {DogeVsZionGamesStarMinerCopy.continue[cs ? 'cs' : 'en']}
               </button>
@@ -964,7 +964,7 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
               >
                 👑
               </motion.div>
-              <h3 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-zion-purple-400 to-zion-cyan-400 mb-2">
+              <h3 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-zion-purple to-zion-cyan mb-2">
                 {DogeVsZionGamesStarMinerCopy.youReachedIssobella[cs ? 'cs' : 'en']}
               </h3>
               <p className="text-sm text-slate-300 mb-4">
@@ -973,17 +973,17 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
               <div className="grid grid-cols-2 gap-3 mb-4 text-left">
                 <div className="rounded-lg border border-white/10 bg-black/40 p-3">
                   <div className="text-[10px] uppercase tracking-widest text-slate-400">{DogeVsZionGamesStarMinerCopy.totalMined[cs ? 'cs' : 'en']}</div>
-                  <div className="text-lg font-bold text-zion-purple-300">{formatNumber(totalMined)}</div>
+                  <div className="text-lg font-bold text-zion-purple">{formatNumber(totalMined)}</div>
                 </div>
                 <div className="rounded-lg border border-white/10 bg-black/40 p-3">
                   <div className="text-[10px] uppercase tracking-widest text-slate-400">{DogeVsZionGamesStarMinerCopy.zionSec[cs ? 'cs' : 'en']}</div>
-                  <div className="text-lg font-bold text-zion-cyan-300">{formatNumber(rate)}</div>
+                  <div className="text-lg font-bold text-zion-cyan">{formatNumber(rate)}</div>
                 </div>
               </div>
               <div className="flex gap-2 justify-center">
                 <button
                   onClick={() => setShowVictory(false)}
-                  className="px-5 py-2 rounded-lg bg-zion-purple-500 hover:bg-zion-purple-400 text-white font-semibold transition-colors"
+                  className="px-5 py-2 rounded-lg bg-zion-purple hover:bg-zion-purple text-white font-semibold transition-colors"
                 >
                   {DogeVsZionGamesStarMinerCopy.keepPlaying[cs ? 'cs' : 'en']}
                 </button>
@@ -1017,7 +1017,7 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
               className="zion-rainbow-card p-6 text-center max-w-xs mx-4"
               style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
             >
-              <RotateCcw size={32} className="text-zion-purple-400 mx-auto mb-3" />
+              <RotateCcw size={32} className="text-zion-purple mx-auto mb-3" />
               <h3 className="text-lg font-bold text-white mb-1">{DogeVsZionGamesStarMinerCopy.resetGame[cs ? 'cs' : 'en']}</h3>
               <p className="text-xs text-slate-400 mb-4">
                 {DogeVsZionGamesStarMinerCopy.allProgressWillBeLost[cs ? 'cs' : 'en']}
@@ -1031,7 +1031,7 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
                 </button>
                 <button
                   onClick={doReset}
-                  className="px-4 py-2 rounded-lg bg-zion-purple-500 hover:bg-zion-purple-400 text-white text-sm font-semibold transition-colors"
+                  className="px-4 py-2 rounded-lg bg-zion-purple hover:bg-zion-purple text-white text-sm font-semibold transition-colors"
                 >
                   {DogeVsZionGamesStarMinerCopy.reset_2[cs ? 'cs' : 'en']}
                 </button>
@@ -1069,12 +1069,12 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
               <p className="text-xs text-slate-400 mb-3">
                 {DogeVsZionGamesStarMinerCopy.yourRigsMinedWhileYouWereAway[cs ? 'cs' : 'en']}
               </p>
-              <p className="text-2xl font-black text-zion-cyan-300 mb-4">
+              <p className="text-2xl font-black text-zion-cyan mb-4">
                 +{formatNumber(offlineEarnings)} ZION
               </p>
               <button
                 onClick={() => setOfflineEarnings(null)}
-                className="px-5 py-2 rounded-lg bg-zion-purple-500 hover:bg-zion-purple-400 text-white font-semibold transition-colors"
+                className="px-5 py-2 rounded-lg bg-zion-purple hover:bg-zion-purple text-white font-semibold transition-colors"
               >
                 {DogeVsZionGamesStarMinerCopy.awesome[cs ? 'cs' : 'en']}
               </button>

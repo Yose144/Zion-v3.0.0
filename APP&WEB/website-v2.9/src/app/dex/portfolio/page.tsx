@@ -73,7 +73,7 @@ export default function PortfolioPage() {
         <div className="max-w-6xl mx-auto px-6 py-8">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <div className="flex items-center gap-3 mb-2">
-              <Wallet className="w-6 h-6 text-zion-gold-500" />
+              <Wallet className="w-6 h-6 text-zion-gold" />
               <h1 className="text-2xl font-bold text-white">Portfolio</h1>
             </div>
             <p className="text-zinc-400 text-sm">Your swap history and liquidity positions</p>
@@ -83,9 +83,9 @@ export default function PortfolioPage() {
 
       {/* Under Construction Notice */}
       <div className="max-w-6xl mx-auto px-6 pt-6">
-        <div className="rounded-xl border border-zion-gold-500/30 bg-zion-gold-500/10 px-4 py-3">
+        <div className="rounded-xl border border-zion-gold/30 bg-zion-gold/10 px-4 py-3">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-zion-gold-400 shrink-0 mt-0.5" />
+            <AlertTriangle className="h-5 w-5 text-zion-gold shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-amber-200">ZionDex Portfolio — Early Beta</p>
               <p className="text-xs text-amber-200/70 mt-1">
@@ -101,7 +101,7 @@ export default function PortfolioPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
             <div className="flex items-center gap-2 mb-2">
-              <Activity className="w-4 h-4 text-zion-purple-500" />
+              <Activity className="w-4 h-4 text-zion-purple" />
               <span className="text-xs text-zinc-500 uppercase tracking-wider">Total Swaps</span>
             </div>
             <div className="text-2xl font-bold text-white">{totalSwaps}</div>
@@ -109,15 +109,15 @@ export default function PortfolioPage() {
 
           <div className="zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
             <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="w-4 h-4 text-zion-cyan-500" />
+              <TrendingUp className="w-4 h-4 text-zion-cyan" />
               <span className="text-xs text-zinc-500 uppercase tracking-wider">Completed</span>
             </div>
-            <div className="text-2xl font-bold text-zion-cyan-400">{completedSwaps}</div>
+            <div className="text-2xl font-bold text-zion-cyan">{completedSwaps}</div>
           </div>
 
           <div className="zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
             <div className="flex items-center gap-2 mb-2">
-              <Droplets className="w-4 h-4 text-zion-purple-500" />
+              <Droplets className="w-4 h-4 text-zion-purple" />
               <span className="text-xs text-zinc-500 uppercase tracking-wider">LP Positions</span>
             </div>
             <div className="text-2xl font-bold text-white">{positions.length}</div>
@@ -125,10 +125,10 @@ export default function PortfolioPage() {
 
           <div className="zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
             <div className="flex items-center gap-2 mb-2">
-              <Wallet className="w-4 h-4 text-zion-gold-500" />
+              <Wallet className="w-4 h-4 text-zion-gold" />
               <span className="text-xs text-zinc-500 uppercase tracking-wider">Volume</span>
             </div>
-            <div className="text-2xl font-bold text-zion-gold-400">${totalVolume.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-zion-gold">${totalVolume.toFixed(2)}</div>
           </div>
         </div>
 
@@ -140,7 +140,7 @@ export default function PortfolioPage() {
               <div className="text-center py-12 text-zinc-500">
                 <Droplets className="w-8 h-8 mx-auto mb-2 opacity-50" />
                 <p>No active liquidity positions</p>
-                <Link href="/dex/liquidity" className="text-sm text-zion-gold-400 hover:text-zion-gold-300 mt-2 inline-block">
+                <Link href="/dex/liquidity" className="text-sm text-zion-gold hover:text-zion-gold mt-2 inline-block">
                   Add liquidity →
                 </Link>
               </div>
@@ -160,7 +160,7 @@ export default function PortfolioPage() {
                       <td className="px-4 py-3 text-sm text-white">{pos.token_a}/{pos.token_b}</td>
                       <td className="px-4 py-3 text-sm text-zinc-300 capitalize">{pos.chain}</td>
                       <td className="px-4 py-3 text-sm text-white text-right">{pos.liquidity}</td>
-                      <td className="px-4 py-3 text-sm text-zion-gold-400 text-right">{pos.uncollected_fees}</td>
+                      <td className="px-4 py-3 text-sm text-zion-gold text-right">{pos.uncollected_fees}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -181,7 +181,7 @@ export default function PortfolioPage() {
               <div className="text-center py-12 text-zinc-500">
                 <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
                 <p>No swaps yet</p>
-                <Link href="/dex" className="text-sm text-zion-gold-400 hover:text-zion-gold-300 mt-2 inline-block">
+                <Link href="/dex" className="text-sm text-zion-gold hover:text-zion-gold mt-2 inline-block">
                   Start swapping →
                 </Link>
               </div>
@@ -212,7 +212,7 @@ export default function PortfolioPage() {
                         {swap.src_chain} → {swap.dest_chain}
                       </td>
                       <td className="px-4 py-3 text-sm text-white text-right">{swap.amount_in}</td>
-                      <td className="px-4 py-3 text-sm text-zion-gold-400 text-right">{swap.amount_out || '...'}</td>
+                      <td className="px-4 py-3 text-sm text-zion-gold text-right">{swap.amount_out || '...'}</td>
                       <td className="px-4 py-3 text-xs text-zinc-500 text-right">
                         {new Date(swap.created_at).toLocaleString()}
                       </td>
@@ -226,7 +226,7 @@ export default function PortfolioPage() {
 
         {/* Back link */}
         <div className="mt-6 text-center">
-          <Link href="/dex" className="text-sm text-zinc-400 hover:text-zion-gold-400 transition-colors">
+          <Link href="/dex" className="text-sm text-zinc-400 hover:text-zion-gold transition-colors">
             ← Back to Swap
           </Link>
         </div>

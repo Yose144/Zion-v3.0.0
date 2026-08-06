@@ -88,20 +88,20 @@ export default function BridgeStatusBanner() {
       >
         <Link
           href="/bridge"
-          className="group relative block overflow-hidden rounded-3xl border border-zion-cyan-500/20 bg-gradient-to-r from-zion-cyan-500/8 via-zion-cyan-500/4 to-transparent p-5 md:p-6 transition-all hover:border-zion-cyan-500/40 hover:shadow-[0_18px_60px_rgba(7, 137, 48,0.15)]"
+          className="group relative block overflow-hidden rounded-3xl border border-zion-cyan/20 bg-gradient-to-r from-zion-cyan/8 via-zion-cyan/4 to-transparent p-5 md:p-6 transition-all hover:border-zion-cyan/40 hover:shadow-[0_18px_60px_rgba(7, 137, 48,0.15)]"
         >
           {/* Glow accent */}
-          <div className="absolute -top-px left-0 right-0 h-px bg-gradient-to-r from-transparent via-zion-cyan-400/40 to-transparent" />
+          <div className="absolute -top-px left-0 right-0 h-px bg-gradient-to-r from-transparent via-zion-cyan/40 to-transparent" />
 
           <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
             {/* Status indicator */}
             <div className="flex items-center gap-3 shrink-0">
-              <div className={`relative flex h-12 w-12 items-center justify-center rounded-2xl border ${online ? 'border-zion-cyan-500/40 bg-zion-cyan-500/10' : 'border-gray-500/30 bg-gray-500/5'}`}>
-                <Activity className={`h-6 w-6 ${online ? 'text-zion-cyan-400' : 'text-gray-400'}`} />
+              <div className={`relative flex h-12 w-12 items-center justify-center rounded-2xl border ${online ? 'border-zion-cyan/40 bg-zion-cyan/10' : 'border-gray-500/30 bg-gray-500/5'}`}>
+                <Activity className={`h-6 w-6 ${online ? 'text-zion-cyan' : 'text-gray-400'}`} />
                 {online && (
                   <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-zion-cyan-400 opacity-75" />
-                    <span className="relative inline-flex h-3 w-3 rounded-full bg-zion-cyan-500" />
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-zion-cyan opacity-75" />
+                    <span className="relative inline-flex h-3 w-3 rounded-full bg-zion-cyan" />
                   </span>
                 )}
               </div>
@@ -109,7 +109,7 @@ export default function BridgeStatusBanner() {
                 <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
                   {BridgeStatusBannerCopy.bridgeStatus[cs ? 'cs' : 'en']}
                 </p>
-                <p className={`text-sm font-bold ${online ? 'text-zion-cyan-300' : 'text-gray-400'}`}>
+                <p className={`text-sm font-bold ${online ? 'text-zion-cyan' : 'text-gray-400'}`}>
                   {loading
                     ? (BridgeStatusBannerCopy.connecting[cs ? 'cs' : 'en'])
                     : online
@@ -138,14 +138,14 @@ export default function BridgeStatusBanner() {
               {online && (
                 <>
                   <div className="flex items-center gap-2">
-                    <Activity className="h-4 w-4 text-zion-cyan-400 shrink-0" />
+                    <Activity className="h-4 w-4 text-zion-cyan shrink-0" />
                     <div>
                       <p className="text-[10px] uppercase tracking-wider text-gray-500">{BridgeStatusBannerCopy.locksMints[cs ? 'cs' : 'en']}</p>
                       <p className="text-sm font-bold text-white tabular-nums">{locks} / {mints}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Zap className="h-4 w-4 text-zion-cyan-400 shrink-0" />
+                    <Zap className="h-4 w-4 text-zion-cyan shrink-0" />
                     <div>
                       <p className="text-[10px] uppercase tracking-wider text-gray-500">{BridgeStatusBannerCopy.uptime[cs ? 'cs' : 'en']}</p>
                       <p className="text-sm font-bold text-white tabular-nums">{formatUptime(uptime)}</p>
@@ -154,7 +154,7 @@ export default function BridgeStatusBanner() {
                 </>
               )}
               <div className="flex items-center gap-2">
-                <Zap className="h-4 w-4 text-zion-cyan-400 shrink-0" />
+                <Zap className="h-4 w-4 text-zion-cyan shrink-0" />
                 <div>
                   <p className="text-[10px] uppercase tracking-wider text-gray-500">{BridgeStatusBannerCopy.network[cs ? 'cs' : 'en']}</p>
                   <p className="text-sm font-bold text-white">6 chains · Base</p>
@@ -163,7 +163,7 @@ export default function BridgeStatusBanner() {
             </div>
 
             {/* CTA */}
-            <div className="flex items-center gap-2 text-zion-cyan-300 group-hover:gap-3 transition-all shrink-0">
+            <div className="flex items-center gap-2 text-zion-cyan group-hover:gap-3 transition-all shrink-0">
               <span className="text-sm font-semibold">
                 {BridgeStatusBannerCopy.openBridge[cs ? 'cs' : 'en']}
               </span>

@@ -128,7 +128,7 @@ export default function NetworkStatus({ className }: { className?: string }) {
 
   if (error && !status) {
     return (
-      <div className="p-4 rounded-2xl border border-zion-purple-500/40 bg-zion-purple-500/10 text-zion-purple-300">
+      <div className="p-4 rounded-2xl border border-zion-purple/40 bg-zion-purple/10 text-zion-purple">
         {error}
       </div>
     );
@@ -175,11 +175,11 @@ export default function NetworkStatus({ className }: { className?: string }) {
       >
         <div className="flex items-center gap-2">
           {status.summary.inSync ? (
-            <CheckCircle className="w-5 h-5 text-zion-cyan-400" />
+            <CheckCircle className="w-5 h-5 text-zion-cyan" />
           ) : (
-            <XCircle className="w-5 h-5 text-zion-gold-400" />
+            <XCircle className="w-5 h-5 text-zion-gold" />
           )}
-          <span className={status.summary.inSync ? 'text-zion-cyan-400' : 'text-zion-gold-400'}>
+          <span className={status.summary.inSync ? 'text-zion-cyan' : 'text-zion-gold'}>
             {status.summary.inSync ? (NetworkStatusCopy.networkSynchronized[cs ? 'cs' : 'en']) : (NetworkStatusCopy.synchronizing[cs ? 'cs' : 'en'])}
           </span>
         </div>
@@ -213,14 +213,14 @@ export default function NetworkStatus({ className }: { className?: string }) {
       {status.nodes.some((n) => n.online && (n.rpcLatencyMs != null || n.poolLatencyMs != null)) && (
         <div className="zion-rainbow-card p-5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
           <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-4">
-            <Zap className="w-4 h-4 text-zion-gold-400" />
+            <Zap className="w-4 h-4 text-zion-gold" />
             {NetworkStatusCopy.nodeLatency[cs ? 'cs' : 'en']}
           </h3>
           <div className="grid gap-3">
             {status.nodes.filter((n) => n.online).map((node) => (
               <div key={node.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
                 <div className="flex items-center gap-2 min-w-0 sm:min-w-[140px]">
-                  <div className="w-2 h-2 rounded-full bg-zion-cyan-400 animate-pulse" />
+                  <div className="w-2 h-2 rounded-full bg-zion-cyan animate-pulse" />
                   <span className="text-sm text-white">{node.name}</span>
                 </div>
                 <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
@@ -299,7 +299,7 @@ function NodeCard({ node, cs, locale, regionLabels }: { node: NodeStatus; cs: bo
         <div className="flex items-center gap-3">
           {/* Status indicator */}
           <div className={`w-3 h-3 rounded-full ${
-            node.online ? 'bg-zion-cyan-500 animate-pulse' : 'bg-zion-purple-500'
+            node.online ? 'bg-zion-cyan animate-pulse' : 'bg-zion-purple'
           }`} />
           
           <div>
@@ -342,7 +342,7 @@ function NodeCard({ node, cs, locale, regionLabels }: { node: NodeStatus; cs: bo
       </div>
 
       {node.error && !node.online && (
-        <div className="mt-2 text-xs text-zion-purple-400">
+        <div className="mt-2 text-xs text-zion-purple">
           {NetworkStatusCopy.error[cs ? 'cs' : 'en']}: {node.error}
         </div>
       )}

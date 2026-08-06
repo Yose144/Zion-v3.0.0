@@ -22,9 +22,9 @@ const coreInsights = [
     icon: Eye,
     title: 'Kolaps vědomí',
     quote: 'Tvé pozorování mění chování fotonu. Kvantová mechanika potvrzuje: vědomí je fundamentální.',
-    color: 'text-zion-purple-400',
-    border: 'border-zion-purple-400/20',
-    bg: 'bg-zion-purple-400/5',
+    color: 'text-zion-purple',
+    border: 'border-zion-purple/20',
+    bg: 'bg-zion-purple/5',
   },
   {
     icon: Globe,
@@ -46,9 +46,9 @@ const coreInsights = [
     icon: Heart,
     title: 'Vědomá těžba',
     quote: 'ZION odměňuje vědomí, ne jen hashrate. Dva těžaři, stejný HW — ale kdo roste, dostane 2× víc. Blockchain s duší.',
-    color: 'text-zion-cyan-400',
-    border: 'border-zion-cyan-400/20',
-    bg: 'bg-zion-cyan-400/5',
+    color: 'text-zion-cyan',
+    border: 'border-zion-cyan/20',
+    bg: 'bg-zion-cyan/5',
   },
 ];
 
@@ -185,9 +185,9 @@ export default function QuantumRevolution() {
         {/* Verification + Quote + CTA */}
         <div className="grid gap-4 lg:grid-cols-2">
           {/* Book vs Reality verification */}
-          <div className="rounded-2xl border border-zion-cyan-400/20 bg-zion-cyan-400/5 p-6 space-y-4">
+          <div className="rounded-2xl border border-zion-cyan/20 bg-zion-cyan/5 p-6 space-y-4">
             <div className="flex items-center gap-2 mb-1">
-              <Cpu className="h-4 w-4 text-zion-cyan-400" />
+              <Cpu className="h-4 w-4 text-zion-cyan" />
               <span className="text-sm font-semibold text-white">Kniha vs. realita: 98% shoda</span>
             </div>
             <p className="text-xs text-gray-400 leading-relaxed">
@@ -197,7 +197,7 @@ export default function QuantumRevolution() {
             </p>
             <div className="flex flex-wrap gap-2">
               {['9 úrovní vědomí ✅', '10% tithe ✅', '144B zásoba ✅', 'XP systém ✅', 'AI orchestrátor ✅'].map((tag) => (
-                <span key={tag} className="text-[10px] bg-zion-cyan-400/10 text-zion-cyan-300 rounded-full px-2.5 py-1 border border-zion-cyan-400/20">
+                <span key={tag} className="text-[10px] bg-zion-cyan/10 text-zion-cyan rounded-full px-2.5 py-1 border border-zion-cyan/20">
                   {tag}
                 </span>
               ))}

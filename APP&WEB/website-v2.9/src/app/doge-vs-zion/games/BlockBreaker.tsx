@@ -747,10 +747,10 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
           <div className="max-w-md zion-rainbow-card p-5 text-center" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <h3 className="mb-3 text-sm font-bold text-white">{DogeVsZionGamesBlockBreakerCopy.howToPlay[cs ? 'cs' : 'en']}</h3>
             <div className="space-y-2 text-xs text-gray-400">
-              <p>{DogeVsZionGamesBlockBreakerCopy.moveThe[cs ? 'cs' : 'en']}<span className="text-zion-gold-400 font-bold">{DogeVsZionGamesBlockBreakerCopy.firewall[cs ? 'cs' : 'en']}</span>{DogeVsZionGamesBlockBreakerCopy.paddleWithMouseOrArrowKeys[cs ? 'cs' : 'en']}</p>
-              <p>{DogeVsZionGamesBlockBreakerCopy.launchThe[cs ? 'cs' : 'en']}<span className="text-zion-purple-400 font-bold">{DogeVsZionGamesBlockBreakerCopy.validatorNode[cs ? 'cs' : 'en']}</span>{DogeVsZionGamesBlockBreakerCopy.withClickOrSpace[cs ? 'cs' : 'en']}</p>
-              <p>{DogeVsZionGamesBlockBreakerCopy.breakThrough[cs ? 'cs' : 'en']}<span className="text-zion-purple-400 font-bold">{DogeVsZionGamesBlockBreakerCopy.firewallSegments[cs ? 'cs' : 'en']}</span>{DogeVsZionGamesBlockBreakerCopy.toScorePoints[cs ? 'cs' : 'en']}</p>
-              <p>{DogeVsZionGamesBlockBreakerCopy.donu2019tLetTheNodeFallYouHave[cs ? 'cs' : 'en']}<span className="text-zion-purple-400 font-bold">{DogeVsZionGamesBlockBreakerCopy.k3Lives[cs ? 'cs' : 'en']}</span></p>
+              <p>{DogeVsZionGamesBlockBreakerCopy.moveThe[cs ? 'cs' : 'en']}<span className="text-zion-gold font-bold">{DogeVsZionGamesBlockBreakerCopy.firewall[cs ? 'cs' : 'en']}</span>{DogeVsZionGamesBlockBreakerCopy.paddleWithMouseOrArrowKeys[cs ? 'cs' : 'en']}</p>
+              <p>{DogeVsZionGamesBlockBreakerCopy.launchThe[cs ? 'cs' : 'en']}<span className="text-zion-purple font-bold">{DogeVsZionGamesBlockBreakerCopy.validatorNode[cs ? 'cs' : 'en']}</span>{DogeVsZionGamesBlockBreakerCopy.withClickOrSpace[cs ? 'cs' : 'en']}</p>
+              <p>{DogeVsZionGamesBlockBreakerCopy.breakThrough[cs ? 'cs' : 'en']}<span className="text-zion-purple font-bold">{DogeVsZionGamesBlockBreakerCopy.firewallSegments[cs ? 'cs' : 'en']}</span>{DogeVsZionGamesBlockBreakerCopy.toScorePoints[cs ? 'cs' : 'en']}</p>
+              <p>{DogeVsZionGamesBlockBreakerCopy.donu2019tLetTheNodeFallYouHave[cs ? 'cs' : 'en']}<span className="text-zion-purple font-bold">{DogeVsZionGamesBlockBreakerCopy.k3Lives[cs ? 'cs' : 'en']}</span></p>
               <p>{DogeVsZionGamesBlockBreakerCopy.clearAllBlocksToAdvanceToTheNe[cs ? 'cs' : 'en']}</p>
             </div>
           </div>
@@ -824,7 +824,7 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
               <p className="text-[10px] text-gray-500">{DogeVsZionGamesBlockBreakerCopy.lives[cs ? 'cs' : 'en']}</p>
               <div className="flex gap-1">
                 {Array.from({ length: LIVES }).map((_, i) => (
-                  <span key={i} className={i < s.lives ? 'text-zion-purple-400' : 'text-gray-700'}>❤</span>
+                  <span key={i} className={i < s.lives ? 'text-zion-purple' : 'text-gray-700'}>❤</span>
                 ))}
               </div>
             </div>
@@ -867,12 +867,12 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
         {/* Level complete overlay */}
         {s.status === 'level-complete' && (
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-            <div className="rounded-2xl border border-zion-cyan-500/30 bg-gradient-to-br from-black/90 to-zion-cyan-500/10 p-6 text-center max-w-sm">
+            <div className="rounded-2xl border border-zion-cyan/30 bg-gradient-to-br from-black/90 to-zion-cyan/10 p-6 text-center max-w-sm">
               <p className="text-3xl mb-2">🔓</p>
-              <p className="text-lg font-bold text-zion-cyan-300 mb-2">{cs ? `Vrstva ${s.level} proražena!` : `Layer ${s.level} Breached!`}</p>
+              <p className="text-lg font-bold text-zion-cyan mb-2">{cs ? `Vrstva ${s.level} proražena!` : `Layer ${s.level} Breached!`}</p>
               <p className="text-xs text-gray-400 mb-1">{DogeVsZionGamesBlockBreakerCopy.score[cs ? 'cs' : 'en']}: {s.score}</p>
               <p className="text-xs text-gray-500 mb-4">{DogeVsZionGamesBlockBreakerCopy.nextLayerFasterNodeMoreFirewal[cs ? 'cs' : 'en']}</p>
-              <button onClick={nextLevel} className="w-full rounded-xl bg-zion-cyan-500/20 border border-zion-cyan-500/30 px-4 py-2.5 text-sm font-bold text-zion-cyan-300 hover:bg-zion-cyan-500/30 transition-colors">
+              <button onClick={nextLevel} className="w-full rounded-xl bg-zion-cyan/20 border border-zion-cyan/30 px-4 py-2.5 text-sm font-bold text-zion-cyan hover:bg-zion-cyan/30 transition-colors">
                 {cs ? `Postup na vrstvu ${s.level + 1} →` : `Advance to Layer ${s.level + 1} →`}
               </button>
             </div>
@@ -882,9 +882,9 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
         {/* Game over overlay */}
         {s.status === 'game-over' && (
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-            <div className="rounded-2xl border border-zion-purple-500/30 bg-gradient-to-br from-black/90 to-zion-purple-500/10 p-6 text-center max-w-sm">
+            <div className="rounded-2xl border border-zion-purple/30 bg-gradient-to-br from-black/90 to-zion-purple/10 p-6 text-center max-w-sm">
               <p className="text-3xl mb-2">🔥</p>
-              <p className="text-lg font-bold text-zion-purple-300 mb-2">{DogeVsZionGamesBlockBreakerCopy.firewallCompromised[cs ? 'cs' : 'en']}</p>
+              <p className="text-lg font-bold text-zion-purple mb-2">{DogeVsZionGamesBlockBreakerCopy.firewallCompromised[cs ? 'cs' : 'en']}</p>
               <p className="text-xs text-gray-400 mb-1">{DogeVsZionGamesBlockBreakerCopy.finalScore[cs ? 'cs' : 'en']}: {s.score}</p>
               <p className="text-xs text-gray-400 mb-1">{DogeVsZionGamesBlockBreakerCopy.layersBreached[cs ? 'cs' : 'en']}: {s.level - 1}</p>
               {s.score >= highScore && s.score > 0 && (
@@ -899,7 +899,7 @@ export function BlockBreaker({ onBack }: { onBack: () => void }) {
                 <button onClick={onBack} className="flex-1 rounded-xl bg-white/10 border border-white/20 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/20 transition-colors">
                   {DogeVsZionGamesBlockBreakerCopy.back[cs ? 'cs' : 'en']}
                 </button>
-                <button onClick={restartGame} className="flex-1 rounded-xl bg-zion-purple-500/20 border border-zion-purple-500/30 px-4 py-2.5 text-sm font-bold text-zion-purple-300 hover:bg-zion-purple-500/30 transition-colors">
+                <button onClick={restartGame} className="flex-1 rounded-xl bg-zion-purple/20 border border-zion-purple/30 px-4 py-2.5 text-sm font-bold text-zion-purple hover:bg-zion-purple/30 transition-colors">
                   {DogeVsZionGamesBlockBreakerCopy.retry[cs ? 'cs' : 'en']}
                 </button>
               </div>

@@ -141,10 +141,10 @@ interface CexApiResponse {
 }
 
 const STATUS_CONFIG = {
-  listed: { label: 'Listed', labelCs: 'Listováno', icon: CheckCircle2, color: 'text-zion-cyan-400', bg: 'bg-zion-cyan-500/10', border: 'border-zion-cyan-500/20' },
-  applied: { label: 'Applied', labelCs: 'Podáno', icon: Clock, color: 'text-zion-gold-400', bg: 'bg-zion-gold-500/10', border: 'border-zion-gold-500/20' },
-  planned: { label: 'Planned', labelCs: 'Plánováno', icon: Clock, color: 'text-zion-cyan-400', bg: 'bg-zion-cyan-500/10', border: 'border-zion-cyan-500/20' },
-  rejected: { label: 'Rejected', labelCs: 'Odmítnuto', icon: XCircle, color: 'text-zion-purple-400', bg: 'bg-zion-purple-500/10', border: 'border-zion-purple-500/20' },
+  listed: { label: 'Listed', labelCs: 'Listováno', icon: CheckCircle2, color: 'text-zion-cyan', bg: 'bg-zion-cyan/10', border: 'border-zion-cyan/20' },
+  applied: { label: 'Applied', labelCs: 'Podáno', icon: Clock, color: 'text-zion-gold', bg: 'bg-zion-gold/10', border: 'border-zion-gold/20' },
+  planned: { label: 'Planned', labelCs: 'Plánováno', icon: Clock, color: 'text-zion-cyan', bg: 'bg-zion-cyan/10', border: 'border-zion-cyan/20' },
+  rejected: { label: 'Rejected', labelCs: 'Odmítnuto', icon: XCircle, color: 'text-zion-purple', bg: 'bg-zion-purple/10', border: 'border-zion-purple/20' },
 } as const;
 
 // ─── FAQ Items ───────────────────────────────────────────────────────────────
@@ -271,7 +271,7 @@ export default function CexPage() {
               <Activity className="h-3.5 w-3.5 text-zion-gold" />
               <span className="text-gray-300">{CexCopy.dexPrice[cs ? 'cs' : 'en']}:</span>
               <span className="font-mono text-white">${bestPrice.toFixed(6)}</span>
-              <span className={`text-[10px] ${dex?.source === 'dexscreener' ? 'text-zion-cyan-400' : 'text-zion-gold-400'}`}>
+              <span className={`text-[10px] ${dex?.source === 'dexscreener' ? 'text-zion-cyan' : 'text-zion-gold'}`}>
                 {dex?.source === 'dexscreener' ? 'live' : (dex?.source ?? 'seed')}
               </span>
             </div>
@@ -281,7 +281,7 @@ export default function CexPage() {
               <span className="font-mono text-white">{formatVolume(dex?.total_volume_24h ?? 0)}</span>
             </div>
             <div className="zion-rainbow-sub inline-flex items-center gap-2 px-4 py-1.5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
-              <DollarSign className="h-3.5 w-3.5 text-zion-cyan-400" />
+              <DollarSign className="h-3.5 w-3.5 text-zion-cyan" />
               <span className="text-gray-300">{CexCopy.dexLiquidity[cs ? 'cs' : 'en']}:</span>
               <span className="font-mono text-white">{formatVolume(dex?.total_liquidity_usd ?? 0)}</span>
             </div>
@@ -307,7 +307,7 @@ export default function CexPage() {
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-zion-cyan-500/10 border border-zion-cyan-500/20 px-3 py-1 text-[10px] font-semibold text-zion-cyan-400">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-zion-cyan/10 border border-zion-cyan/20 px-3 py-1 text-[10px] font-semibold text-zion-cyan">
                   <CheckCircle2 className="h-3 w-3" />
                   {CexCopy.availableNow[cs ? 'cs' : 'en']}
                 </span>
@@ -350,9 +350,9 @@ export default function CexPage() {
               <p className="text-[10px] uppercase tracking-wider text-gray-500">{CexCopy.txns24h[cs ? 'cs' : 'en']}</p>
               <p className="text-lg font-bold text-white mt-1">{(dex?.total_txns_24h ?? 0).toLocaleString()}</p>
               <p className="text-[10px] text-gray-500">
-                <span className="text-zion-cyan-400">{dex?.total_buys_24h ?? 0} buys</span>
+                <span className="text-zion-cyan">{dex?.total_buys_24h ?? 0} buys</span>
                 {' · '}
-                <span className="text-zion-purple-400">{dex?.total_sells_24h ?? 0} sells</span>
+                <span className="text-zion-purple">{dex?.total_sells_24h ?? 0} sells</span>
               </p>
             </div>
           </div>
@@ -382,7 +382,7 @@ export default function CexPage() {
                       </td>
                       <td className="p-3 text-right font-mono text-white">${pair.price_usd.toFixed(6)}</td>
                       <td className="p-3 text-right">
-                        <span className={`inline-flex items-center gap-1 font-mono ${pair.price_change_24h >= 0 ? 'text-zion-cyan-400' : 'text-zion-purple-400'}`}>
+                        <span className={`inline-flex items-center gap-1 font-mono ${pair.price_change_24h >= 0 ? 'text-zion-cyan' : 'text-zion-purple'}`}>
                           {pair.price_change_24h >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                           {formatPct(pair.price_change_24h)}
                         </span>
@@ -390,9 +390,9 @@ export default function CexPage() {
                       <td className="p-3 text-right font-mono text-gray-300">{formatVolume(pair.liquidity_usd)}</td>
                       <td className="p-3 text-right font-mono text-gray-300">{formatVolume(pair.volume_24h)}</td>
                       <td className="p-3 text-right text-[10px]">
-                        <span className="text-zion-cyan-400">{pair.txns_24h.buys}B</span>
+                        <span className="text-zion-cyan">{pair.txns_24h.buys}B</span>
                         {' / '}
-                        <span className="text-zion-purple-400">{pair.txns_24h.sells}S</span>
+                        <span className="text-zion-purple">{pair.txns_24h.sells}S</span>
                       </td>
                     </tr>
                   ))}
@@ -444,8 +444,8 @@ export default function CexPage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-white">{CexCopy.exchangeListings[cs ? 'cs' : 'en']}</h2>
             <div className="flex gap-3 text-xs text-gray-400">
-              <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-zion-cyan-400" />{summary?.listed ?? 0} {CexCopy.listed[cs ? 'cs' : 'en']}</span>
-              <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-zion-cyan-400" />{summary?.planned ?? 0} {CexCopy.planned[cs ? 'cs' : 'en']}</span>
+              <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-zion-cyan" />{summary?.listed ?? 0} {CexCopy.listed[cs ? 'cs' : 'en']}</span>
+              <span className="flex items-center gap-1"><Clock className="h-3 w-3 text-zion-cyan" />{summary?.planned ?? 0} {CexCopy.planned[cs ? 'cs' : 'en']}</span>
               <span className="flex items-center gap-1"><BarChart3 className="h-3 w-3 text-gray-400" />{summary?.total_pairs ?? 0} {CexCopy.pairs[cs ? 'cs' : 'en']}</span>
             </div>
           </div>
@@ -499,7 +499,7 @@ export default function CexPage() {
                           </div>
                         </td>
                         <td className="p-4">
-                          <span className={`text-[10px] ${ex.kyc_required ? 'text-zion-gold-400' : 'text-zion-cyan-400'}`}>
+                          <span className={`text-[10px] ${ex.kyc_required ? 'text-zion-gold' : 'text-zion-cyan'}`}>
                             {ex.kyc_required ? 'Required' : 'No'}
                           </span>
                         </td>
@@ -538,7 +538,7 @@ export default function CexPage() {
             {/* DEX path */}
             <div className="zion-rainbow-card p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-3">
-                <span className="rounded-lg bg-zion-cyan-500/10 border border-zion-cyan-500/20 px-2 py-1 text-[10px] font-mono text-zion-cyan-400">DEX</span>
+                <span className="rounded-lg bg-zion-cyan/10 border border-zion-cyan/20 px-2 py-1 text-[10px] font-mono text-zion-cyan">DEX</span>
                 <h3 className="font-semibold text-white text-sm">{CexCopy.viaUniswapRecommended[cs ? 'cs' : 'en']}</h3>
               </div>
               <ol className="space-y-2 text-xs text-gray-300">
@@ -561,7 +561,7 @@ export default function CexPage() {
             {/* CEX path */}
             <div className="zion-rainbow-card p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-3">
-                <span className="rounded-lg bg-zion-gold-500/10 border border-zion-gold-500/20 px-2 py-1 text-[10px] font-mono text-zion-gold-400">CEX</span>
+                <span className="rounded-lg bg-zion-gold/10 border border-zion-gold/20 px-2 py-1 text-[10px] font-mono text-zion-gold">CEX</span>
                 <h3 className="font-semibold text-white text-sm">{CexCopy.viaCentralizedExchange[cs ? 'cs' : 'en']}</h3>
               </div>
               <ol className="space-y-2 text-xs text-gray-300">
@@ -571,13 +571,13 @@ export default function CexPage() {
                 <li className="flex gap-2"><span className="text-zion-gold font-bold">4.</span> {CexCopy.tradeZionUsdtPair[cs ? 'cs' : 'en']}</li>
                 <li className="flex gap-2"><span className="text-zion-gold font-bold">5.</span> {CexCopy.withdrawZionToOwnWallet[cs ? 'cs' : 'en']}</li>
               </ol>
-              <p className="mt-4 text-[10px] text-zion-gold-400/70">{CexCopy.cexListingPlannedNotYetAvailab[cs ? 'cs' : 'en']}</p>
+              <p className="mt-4 text-[10px] text-zion-gold/70">{CexCopy.cexListingPlannedNotYetAvailab[cs ? 'cs' : 'en']}</p>
             </div>
 
             {/* Bridge path */}
             <div className="zion-rainbow-card p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-3">
-                <span className="rounded-lg bg-zion-cyan-500/10 border border-zion-cyan-500/20 px-2 py-1 text-[10px] font-mono text-zion-cyan-400">Bridge</span>
+                <span className="rounded-lg bg-zion-cyan/10 border border-zion-cyan/20 px-2 py-1 text-[10px] font-mono text-zion-cyan">Bridge</span>
                 <h3 className="font-semibold text-white text-sm">{CexCopy.l1L2Bridge[cs ? 'cs' : 'en']}</h3>
               </div>
               <ol className="space-y-2 text-xs text-gray-300">

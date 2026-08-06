@@ -68,7 +68,7 @@ function CopyBtn({ text, label }: { text: string; label: string }) {
       className="text-gray-600 hover:text-white transition ml-1.5 shrink-0"
       title={label}
     >
-      {ok ? <Check className="h-3 w-3 text-zion-cyan-400" /> : <Copy className="h-3 w-3" />}
+      {ok ? <Check className="h-3 w-3 text-zion-cyan" /> : <Copy className="h-3 w-3" />}
     </button>
   );
 }
@@ -181,7 +181,7 @@ export default function ProRecentBlocks() {
                       </div>
                     </td>
                     <td className="px-3 py-3 text-right">
-                      <span className={`text-xs font-medium tabular-nums ${block.num_txes > 0 ? "text-zion-cyan-400" : "text-gray-500"}`}>
+                      <span className={`text-xs font-medium tabular-nums ${block.num_txes > 0 ? "text-zion-cyan" : "text-gray-500"}`}>
                         {block.num_txes}
                       </span>
                     </td>

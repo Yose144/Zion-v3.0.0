@@ -126,9 +126,9 @@ export default function BroadcastPageClient() {
     <div className="relative min-h-screen pb-24 overflow-x-hidden">
       {/* ── Background glows ── */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-purple-500/8" />
+        <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-purple/8" />
         <div className="absolute -right-40 top-2/3 h-[400px] w-[400px] rounded-full blur-[200px] bg-zion-cyan/6" />
-        <div className="absolute left-1/2 top-0 h-48 w-full -translate-x-1/2 bg-linear-to-b from-zion-purple-500/15 to-transparent" />
+        <div className="absolute left-1/2 top-0 h-48 w-full -translate-x-1/2 bg-linear-to-b from-zion-purple/15 to-transparent" />
       </div>
 
       <div className="relative z-10 zion-container max-w-4xl space-y-10 pt-6 pb-8">
@@ -140,7 +140,7 @@ export default function BroadcastPageClient() {
           style={{ "--rc": "251, 113, 133" } as React.CSSProperties}
         >
           <div className="space-y-5">
-            <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple-500/40 bg-zion-purple-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-purple-300 uppercase">
+            <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-purple uppercase">
               <Radio className="h-4 w-4" />
               {SITE_RELEASE_LABEL} · {ExplorerBroadcastBroadcastPageClientCopy.broadcast[cs ? 'cs' : 'en']}
             </div>
@@ -156,8 +156,8 @@ export default function BroadcastPageClient() {
               {ExplorerBroadcastBroadcastPageClientCopy.submitASignedTransactionToTheZ[cs ? 'cs' : 'en']}
             </p>
             {/* Warning */}
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-zion-gold-500/5 border border-zion-gold-500/20">
-              <AlertCircle className="w-5 h-5 text-zion-gold-400 flex-shrink-0 mt-0.5" />
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-zion-gold/5 border border-zion-gold/20">
+              <AlertCircle className="w-5 h-5 text-zion-gold flex-shrink-0 mt-0.5" />
               <p className="text-sm text-amber-200/80">
                 {ExplorerBroadcastBroadcastPageClientCopy.transactionsMustBeSignedBefore[cs ? 'cs' : 'en']}
               </p>
@@ -211,7 +211,7 @@ export default function BroadcastPageClient() {
                       onClick={() => setTxModel("account")}
                       className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
                         txModel === "account"
-                          ? "bg-zion-cyan-500/15 text-zion-cyan-400 border border-zion-cyan-500/30"
+                          ? "bg-zion-cyan/15 text-zion-cyan border border-zion-cyan/30"
                           : "bg-white/5 text-white/50 border border-white/10 hover:bg-white/10"
                       }`}
                     >
@@ -261,7 +261,7 @@ export default function BroadcastPageClient() {
               <button
                 onClick={handleBroadcast}
                 disabled={loading || !payload.trim()}
-                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-zion-purple-500 to-zion-cyan text-white font-semibold text-sm hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-lg shadow-zion-purple-500/20"
+                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-zion-purple to-zion-cyan text-white font-semibold text-sm hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-lg shadow-zion-purple/20"
               >
                 {loading ? (
                   <>
@@ -298,19 +298,19 @@ export default function BroadcastPageClient() {
             <div
               className={`zion-rainbow-card rounded-3xl bg-black/60 p-6 md:p-8 border-2 ${
                 result.accepted
-                  ? "border-zion-cyan-500/30"
-                  : "border-zion-purple-500/30"
+                  ? "border-zion-cyan/30"
+                  : "border-zion-purple/30"
               }`}
               style={{ "--rc": result.accepted ? "74, 222, 128" : "251, 113, 133" } as React.CSSProperties}
             >
               <div className="flex items-center gap-4 mb-4">
                 {result.accepted ? (
-                  <CheckCircle2 className="w-8 h-8 text-zion-cyan-400" />
+                  <CheckCircle2 className="w-8 h-8 text-zion-cyan" />
                 ) : (
-                  <AlertCircle className="w-8 h-8 text-zion-purple-400" />
+                  <AlertCircle className="w-8 h-8 text-zion-purple" />
                 )}
                 <div>
-                  <h2 className={`text-2xl font-bold ${result.accepted ? "text-zion-cyan-400" : "text-zion-purple-400"}`}>
+                  <h2 className={`text-2xl font-bold ${result.accepted ? "text-zion-cyan" : "text-zion-purple"}`}>
                     {result.accepted
                       ? ExplorerBroadcastBroadcastPageClientCopy.transactionAccepted[cs ? 'cs' : 'en']
                       : ExplorerBroadcastBroadcastPageClientCopy.transactionRejected[cs ? 'cs' : 'en']}
@@ -343,11 +343,11 @@ export default function BroadcastPageClient() {
               )}
 
               {result.error && (
-                <div className="mt-4 p-4 rounded-xl bg-zion-purple-500/5 border border-zion-purple-500/20">
-                  <div className="text-xs text-zion-purple-400 uppercase tracking-wider mb-1">
+                <div className="mt-4 p-4 rounded-xl bg-zion-purple/5 border border-zion-purple/20">
+                  <div className="text-xs text-zion-purple uppercase tracking-wider mb-1">
                     {ExplorerBroadcastBroadcastPageClientCopy.error[cs ? 'cs' : 'en']}
                   </div>
-                  <code className="text-sm font-mono text-zion-purple-300 break-all">
+                  <code className="text-sm font-mono text-zion-purple break-all">
                     {result.error}
                   </code>
                 </div>
@@ -362,14 +362,14 @@ export default function BroadcastPageClient() {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <div className="zion-rainbow-card rounded-2xl bg-black/60 p-6 border-2 border-zion-purple-500/30" style={{ "--rc": "251, 113, 133" } as React.CSSProperties}>
+            <div className="zion-rainbow-card rounded-2xl bg-black/60 p-6 border-2 border-zion-purple/30" style={{ "--rc": "251, 113, 133" } as React.CSSProperties}>
               <div className="flex items-center gap-3">
-                <AlertCircle className="w-6 h-6 text-zion-purple-400" />
+                <AlertCircle className="w-6 h-6 text-zion-purple" />
                 <div>
-                  <h3 className="text-lg font-bold text-zion-purple-400">
+                  <h3 className="text-lg font-bold text-zion-purple">
                     {ExplorerBroadcastBroadcastPageClientCopy.error[cs ? 'cs' : 'en']}
                   </h3>
-                  <code className="text-sm font-mono text-zion-purple-300 break-all">
+                  <code className="text-sm font-mono text-zion-purple break-all">
                     {error}
                   </code>
                 </div>

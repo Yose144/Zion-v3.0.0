@@ -251,7 +251,7 @@ function CopyBtn({ text, titleLabel = "Copy" }: { text: string; titleLabel?: str
       className="ml-2 text-gray-500 hover:text-white transition-colors"
       title={titleLabel}
     >
-      {copied ? <Check className="h-4 w-4 text-zion-cyan-400" /> : <Copy className="h-4 w-4" />}
+      {copied ? <Check className="h-4 w-4 text-zion-cyan" /> : <Copy className="h-4 w-4" />}
     </button>
   );
 }
@@ -388,8 +388,8 @@ export default function MinerDashboard({ address }: { address: string }) {
             animate={{ opacity: 1, y: 0 }}
             className="zion-rainbow-card p-8 md:p-12 text-center space-y-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
           >
-            <div className="mx-auto h-16 w-16 rounded-2xl bg-zion-purple-500/10 flex items-center justify-center">
-              <XCircle className="h-8 w-8 text-zion-purple-400" />
+            <div className="mx-auto h-16 w-16 rounded-2xl bg-zion-purple/10 flex items-center justify-center">
+              <XCircle className="h-8 w-8 text-zion-purple" />
             </div>
             <h1 className="text-2xl font-semibold text-white">{MinerDashboardCopy.minerNotFound_2[cs ? 'cs' : 'en']}</h1>
             <p className="text-gray-400 max-w-md mx-auto">
@@ -412,8 +412,8 @@ export default function MinerDashboard({ address }: { address: string }) {
   const isActive = data.active;
   const isRecentlyActive = !isActive && (data.recently_active || (s.last_share_time > 0 && Math.floor(Date.now() / 1000) - s.last_share_time < 86400));
   const hasHistory = (s.total_paid > 0 || s.valid_shares > 0 || data.payouts.length > 0 || data.blocks.length > 0);
-  const statusColor = isActive ? 'bg-zion-cyan-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]' : isRecentlyActive ? 'bg-zion-gold-400' : hasHistory ? 'bg-zion-purple-400' : 'bg-zion-purple-400';
-  const statusText = isActive ? 'text-zion-cyan-400' : isRecentlyActive ? 'text-zion-gold-400' : hasHistory ? 'text-zion-purple-400' : 'text-zion-purple-400';
+  const statusColor = isActive ? 'bg-zion-cyan shadow-[0_0_8px_rgba(52,211,153,0.6)]' : isRecentlyActive ? 'bg-zion-gold' : hasHistory ? 'bg-zion-purple' : 'bg-zion-purple';
+  const statusText = isActive ? 'text-zion-cyan' : isRecentlyActive ? 'text-zion-gold' : hasHistory ? 'text-zion-purple' : 'text-zion-purple';
   const statusLabel = isActive
     ? (MinerDashboardCopy.active[cs ? 'cs' : 'en'])
     : isRecentlyActive
@@ -457,7 +457,7 @@ export default function MinerDashboard({ address }: { address: string }) {
                 )}
               </div>
               {!isActive && hasHistory && (
-                <div className="flex items-start gap-2 text-xs text-zion-purple-300/90 bg-zion-purple-500/10 border border-zion-purple-500/20 rounded-lg px-3 py-2 mt-2 max-w-2xl">
+                <div className="flex items-start gap-2 text-xs text-zion-purple/90 bg-zion-purple/10 border border-zion-purple/20 rounded-lg px-3 py-2 mt-2 max-w-2xl">
                   <Activity className="h-4 w-4 flex-shrink-0 mt-0.5" />
                   <span>
                     {cs
@@ -467,7 +467,7 @@ export default function MinerDashboard({ address }: { address: string }) {
                 </div>
               )}
               {isActive && s.pending_balance > 0 && (
-                <div className="flex items-start gap-2 text-xs text-zion-gold-300/90 bg-zion-gold-500/10 border border-zion-gold-500/20 rounded-lg px-3 py-2 mt-2 max-w-2xl">
+                <div className="flex items-start gap-2 text-xs text-zion-gold/90 bg-zion-gold/10 border border-zion-gold/20 rounded-lg px-3 py-2 mt-2 max-w-2xl">
                   <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
                   <span>
                     {cs
@@ -509,7 +509,7 @@ export default function MinerDashboard({ address }: { address: string }) {
               </div>
               <div className="text-right">
                 <p className="text-xs text-gray-500 uppercase tracking-wider">{MinerDashboardCopy.paid[cs ? 'cs' : 'en']}</p>
-                <p className="text-2xl font-semibold text-zion-cyan-400">{fmtZion(s.total_paid)}</p>
+                <p className="text-2xl font-semibold text-zion-cyan">{fmtZion(s.total_paid)}</p>
                 <p className="text-xs text-gray-500">ZION</p>
               </div>
             </div>
@@ -525,7 +525,7 @@ export default function MinerDashboard({ address }: { address: string }) {
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{MinerDashboardCopy.telemetry[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Activity className="h-7 w-7 text-zion-cyan-400" />
+              <Activity className="h-7 w-7 text-zion-cyan" />
               {MinerDashboardCopy.minerStatistics[cs ? 'cs' : 'en']}
             </h2>
             <p className="text-sm text-gray-400">{MinerDashboardCopy.realTimeMetricsForThisMinerAcr[cs ? 'cs' : 'en']}</p>
@@ -534,12 +534,12 @@ export default function MinerDashboard({ address }: { address: string }) {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
             <StatCard icon={<Zap />} label={MinerDashboardCopy.hashrate1h[cs ? 'cs' : 'en']} value={fmtHash(s.hashrate_1h)} accent="text-zion-cyan" />
             <StatCard icon={<TrendingUp />} label={MinerDashboardCopy.hashrate24h[cs ? 'cs' : 'en']} value={fmtHash(s.hashrate_24h)} accent="text-zion-purple" />
-            <StatCard icon={<Layers />} label={MinerDashboardCopy.validShares[cs ? 'cs' : 'en']} value={fmtNum(s.valid_shares)} accent="text-zion-cyan-400" />
-            <StatCard icon={<XCircle />} label={MinerDashboardCopy.invalidShares[cs ? 'cs' : 'en']} value={fmtNum(s.invalid_shares)} accent="text-zion-purple-400" />
+            <StatCard icon={<Layers />} label={MinerDashboardCopy.validShares[cs ? 'cs' : 'en']} value={fmtNum(s.valid_shares)} accent="text-zion-cyan" />
+            <StatCard icon={<XCircle />} label={MinerDashboardCopy.invalidShares[cs ? 'cs' : 'en']} value={fmtNum(s.invalid_shares)} accent="text-zion-purple" />
             <StatCard icon={<Shield />} label={MinerDashboardCopy.efficiency[cs ? 'cs' : 'en']} value={`${s.efficiency}%`} accent="text-zion-gold" />
-            <StatCard icon={<Box />} label={MinerDashboardCopy.blocksFound[cs ? 'cs' : 'en']} value={fmtNum(s.blocks_found)} accent="text-zion-gold-400" />
+            <StatCard icon={<Box />} label={MinerDashboardCopy.blocksFound[cs ? 'cs' : 'en']} value={fmtNum(s.blocks_found)} accent="text-zion-gold" />
             <StatCard icon={<Wallet />} label={MinerDashboardCopy.pending[cs ? 'cs' : 'en']} value={`${fmtZion(s.pending_balance)} ZION`} accent="text-zion-cyan" />
-            <StatCard icon={<Sparkles />} label={MinerDashboardCopy.totalPaid[cs ? 'cs' : 'en']} value={`${fmtZion(s.total_paid)} ZION`} accent="text-zion-cyan-400" />
+            <StatCard icon={<Sparkles />} label={MinerDashboardCopy.totalPaid[cs ? 'cs' : 'en']} value={`${fmtZion(s.total_paid)} ZION`} accent="text-zion-cyan" />
             <StatCard icon={<Hash />} label={MinerDashboardCopy.totalShares[cs ? 'cs' : 'en']} value={fmtNum(s.total_shares)} accent="text-gray-300" />
             <StatCard icon={<Clock />} label={MinerDashboardCopy.lastShare_2[cs ? 'cs' : 'en']} value={s.last_share_time > 0 ? timeAgo(s.last_share_time, cs) : '—'} accent="text-gray-300" />
             <StatCard icon={<Server />} label={MinerDashboardCopy.servers[cs ? 'cs' : 'en']} value={`${data.servers.filter(sv => sv.connected).length} / ${data.servers.length}`} accent="text-zion-purple" />
@@ -586,7 +586,7 @@ export default function MinerDashboard({ address }: { address: string }) {
             <div className="flex flex-col gap-2 mb-6">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{MinerDashboardCopy.mining[cs ? 'cs' : 'en']}</p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-                <Box className="h-7 w-7 text-zion-gold-400" />
+                <Box className="h-7 w-7 text-zion-gold" />
                 {MinerDashboardCopy.blocksFound[cs ? 'cs' : 'en']}
               </h2>
               <p className="text-sm text-gray-400">{MinerDashboardCopy.blocksFoundByThisMinerOnThePoo[cs ? 'cs' : 'en']}</p>
@@ -633,7 +633,7 @@ export default function MinerDashboard({ address }: { address: string }) {
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{MinerDashboardCopy.earnings[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Wallet className="h-7 w-7 text-zion-cyan-400" />
+              <Wallet className="h-7 w-7 text-zion-cyan" />
               {MinerDashboardCopy.payouts[cs ? 'cs' : 'en']}
             </h2>
             <p className="text-sm text-gray-400">{MinerDashboardCopy.historyOfPoolPayoutsToThisMine[cs ? 'cs' : 'en']}</p>
@@ -659,7 +659,7 @@ export default function MinerDashboard({ address }: { address: string }) {
                   <tbody>
                     {data.payouts.map((p, i) => (
                       <tr key={i} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
-                        <td className="px-4 py-3 text-zion-cyan-400 font-semibold">{fmtZion(p.amount)} ZION</td>
+                        <td className="px-4 py-3 text-zion-cyan font-semibold">{fmtZion(p.amount)} ZION</td>
                         <td className="px-4 py-3 font-mono text-gray-400">
                           {p.tx_id ? (
                             <Link href={`/explorer/tx?hash=${encodeURIComponent(p.tx_id)}`} className="text-zion-cyan hover:text-white transition-colors">
@@ -670,7 +670,7 @@ export default function MinerDashboard({ address }: { address: string }) {
                         <td className="px-4 py-3 text-gray-400">{timeAgo(p.timestamp, cs)}</td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${
-                            p.status === 'confirmed' ? 'bg-zion-cyan-500/10 text-zion-cyan-400' : 'bg-zion-gold-500/10 text-zion-gold-400'
+                            p.status === 'confirmed' ? 'bg-zion-cyan/10 text-zion-cyan' : 'bg-zion-gold/10 text-zion-gold'
                           }`}>
                             {p.status ? (p.status === 'confirmed' ? (MinerDashboardCopy.confirmed[cs ? 'cs' : 'en']) : p.status) : (MinerDashboardCopy.pending_2[cs ? 'cs' : 'en'])}
                           </span>
@@ -760,11 +760,11 @@ export default function MinerDashboard({ address }: { address: string }) {
                       </div>
                       <div className="text-center p-3 rounded-xl bg-white/5">
                         <p className="text-xs text-gray-500 uppercase">{MinerDashboardCopy.activeMiners[cs ? 'cs' : 'en']}</p>
-                        <p className="text-lg font-semibold text-zion-cyan-400">{promMetrics.pool_context.active_miners}</p>
+                        <p className="text-lg font-semibold text-zion-cyan">{promMetrics.pool_context.active_miners}</p>
                       </div>
                       <div className="text-center p-3 rounded-xl bg-white/5">
                         <p className="text-xs text-gray-500 uppercase">{MinerDashboardCopy.poolBlocks[cs ? 'cs' : 'en']}</p>
-                        <p className="text-lg font-semibold text-zion-gold-400">{fmtNum(promMetrics.pool_context.total_blocks_found)}</p>
+                        <p className="text-lg font-semibold text-zion-gold">{fmtNum(promMetrics.pool_context.total_blocks_found)}</p>
                       </div>
                     </div>
                     {promMetrics.metrics.hashrate > 0 && promMetrics.pool_context.pool_hashrate > 0 && (

@@ -128,7 +128,7 @@ function CopyBtn({ text, label }: { text: string; label?: string }) {
       onClick={() => { navigator.clipboard.writeText(text); setOk(true); setTimeout(() => setOk(false), 1500); }}
       className="text-gray-600 hover:text-white transition ml-2 flex-shrink-0" title={`Copy ${label || ""}`}
     >
-      {ok ? <Check className="h-3.5 w-3.5 text-zion-cyan-400" /> : <Copy className="h-3.5 w-3.5" />}
+      {ok ? <Check className="h-3.5 w-3.5 text-zion-cyan" /> : <Copy className="h-3.5 w-3.5" />}
     </button>
   );
 }
@@ -226,7 +226,7 @@ export default function BlockDetailClient() {
     return (
       <div className="relative min-h-screen pb-24 flex items-center justify-center">
         <div className="text-center max-w-md px-4">
-          <Box className="h-16 w-16 text-zion-purple-400/50 mx-auto mb-4" />
+          <Box className="h-16 w-16 text-zion-purple/50 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-white mb-2">{ExplorerBlockBlockDetailClientCopy.blockNotFound[cs ? 'cs' : 'en']}</h1>
           <p className="text-gray-500 text-sm mb-6">{error || (ExplorerBlockBlockDetailClientCopy.thisBlockDoesNotExistOnTheZion[cs ? 'cs' : 'en'])}</p>
           <Link href="/explorer" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 
@@ -266,8 +266,8 @@ export default function BlockDetailClient() {
           <div className="sm:ml-auto flex items-center gap-2">
             <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${
               block.orphan_status
-                ? "bg-zion-purple-500/10 text-zion-purple-400 border-zion-purple-500/20"
-                : "bg-zion-cyan-500/10 text-zion-cyan-400 border-zion-cyan-500/20"
+                ? "bg-zion-purple/10 text-zion-purple border-zion-purple/20"
+                : "bg-zion-cyan/10 text-zion-cyan border-zion-cyan/20"
             }`}>
               <Shield className="h-3 w-3" />
               {block.orphan_status ? (ExplorerBlockBlockDetailClientCopy.orphaned[cs ? 'cs' : 'en']) : `${block.confirmations.toLocaleString(locale)} ${ExplorerBlockBlockDetailClientCopy.confirmations[cs ? 'cs' : 'en']}`}
@@ -307,7 +307,7 @@ export default function BlockDetailClient() {
             onClick={() => setShowRaw((v) => !v)}
             className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm transition border ${
               showRaw
-                ? "bg-zion-purple-500/15 text-zion-purple-300 border-zion-purple-500/30"
+                ? "bg-zion-purple/15 text-zion-purple border-zion-purple/30"
                 : "bg-white/5 text-white/60 border-white/10 hover:bg-white/10"
             }`}
           >
@@ -322,7 +322,7 @@ export default function BlockDetailClient() {
             className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
               <div className="flex items-center gap-2">
-                <Code className="h-4 w-4 text-zion-purple-400" />
+                <Code className="h-4 w-4 text-zion-purple" />
                 <span className="text-sm font-semibold text-white">Raw JSON</span>
               </div>
               <CopyBtn text={rawJson} label="JSON" />
@@ -377,7 +377,7 @@ export default function BlockDetailClient() {
             <InfoRow label={ExplorerBlockBlockDetailClientCopy.difficulty[cs ? 'cs' : 'en']} value={block.difficulty.toLocaleString(locale)} />
             <InfoRow label="Nonce" value={block.nonce.toLocaleString()} />
             <InfoRow label={ExplorerBlockBlockDetailClientCopy.blockReward[cs ? 'cs' : 'en']} value={`${block.reward.toFixed(6)} ZION`} color="text-zion-gold" />
-            <InfoRow label={ExplorerBlockBlockDetailClientCopy.totalFees[cs ? 'cs' : 'en']} value={`${block.total_fees.toFixed(6)} ZION`} color="text-zion-gold-400" />
+            <InfoRow label={ExplorerBlockBlockDetailClientCopy.totalFees[cs ? 'cs' : 'en']} value={`${block.total_fees.toFixed(6)} ZION`} color="text-zion-gold" />
             <InfoRow label={ExplorerBlockBlockDetailClientCopy.transactions[cs ? 'cs' : 'en']} value={`${block.tx_count} (${block.num_txes} ${ExplorerBlockBlockDetailClientCopy.user[cs ? 'cs' : 'en']} + 1 coinbase)`} />
             {block.miner && (
               <InfoRow
@@ -385,10 +385,10 @@ export default function BlockDetailClient() {
                 value={block.miner_label || truncHash(block.miner)}
                 mono={!block.miner_label}
                 copyable
-                color={block.is_pool_block ? 'text-zion-cyan-400' : undefined}
+                color={block.is_pool_block ? 'text-zion-cyan' : undefined}
                 link={`/explorer/address?addr=${block.miner}`}
                 badge={block.is_pool_block ? (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider border bg-zion-cyan-500/10 text-zion-cyan-400 border-zion-cyan-500/20">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider border bg-zion-cyan/10 text-zion-cyan border-zion-cyan/20">
                     Pool
                   </span>
                 ) : undefined}
@@ -402,7 +402,7 @@ export default function BlockDetailClient() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
             { label: ExplorerBlockBlockDetailClientCopy.totalOutput[cs ? 'cs' : 'en'], value: `${block.total_output.toFixed(4)} ZION`, color: "text-white" },
-            { label: ExplorerBlockBlockDetailClientCopy.feesCollected[cs ? 'cs' : 'en'], value: `${block.total_fees.toFixed(6)} ZION`, color: "text-zion-gold-400" },
+            { label: ExplorerBlockBlockDetailClientCopy.feesCollected[cs ? 'cs' : 'en'], value: `${block.total_fees.toFixed(6)} ZION`, color: "text-zion-gold" },
             { label: ExplorerBlockBlockDetailClientCopy.blockReward_2[cs ? 'cs' : 'en'], value: `${block.reward.toFixed(4)} ZION`, color: "text-zion-gold" },
             { label: ExplorerBlockBlockDetailClientCopy.txCount[cs ? 'cs' : 'en'], value: `${block.tx_count}`, color: "text-zion-cyan" },
           ].map((item) => (
@@ -417,8 +417,8 @@ export default function BlockDetailClient() {
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
           className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
           <div className="flex items-center gap-3 px-6 py-5 border-b border-white/[0.06]">
-            <div className="h-8 w-8 rounded-xl bg-zion-cyan-500/10 flex items-center justify-center">
-              <Hash className="h-4 w-4 text-zion-cyan-400" />
+            <div className="h-8 w-8 rounded-xl bg-zion-cyan/10 flex items-center justify-center">
+              <Hash className="h-4 w-4 text-zion-cyan" />
             </div>
             <h2 className="text-lg font-semibold text-white">{ExplorerBlockBlockDetailClientCopy.transactions[cs ? 'cs' : 'en']} ({block.txs?.length || 0})</h2>
           </div>

@@ -594,9 +594,9 @@ export default function DogeVsZionPage() {
               transition={{ delay: 0.5, duration: 0.5 }}
               className="mt-6 text-5xl md:text-7xl font-black leading-tight tracking-tight"
             >
-              <span className="bg-gradient-to-r from-zion-gold-400 to-zion-gold-600 bg-clip-text text-transparent">Doge</span>
+              <span className="bg-gradient-to-r from-zion-gold to-zion-gold bg-clip-text text-transparent">Doge</span>
               <span className="text-gray-500 mx-3 font-light">vs</span>
-              <span className="bg-gradient-to-r from-zion-purple-400 to-zion-purple-500 bg-clip-text text-transparent">ZION</span>
+              <span className="bg-gradient-to-r from-zion-purple to-zion-purple bg-clip-text text-transparent">ZION</span>
             </motion.h1>
 
             <motion.p
@@ -626,7 +626,7 @@ export default function DogeVsZionPage() {
                 </span>
               </div>
               <div className={`zion-badge ${zion.connected ? 'zion-badge-green' : ''}`}>
-                <span className={`h-2 w-2 rounded-full ${zion.connected ? 'bg-zion-cyan-400 animate-pulse' : 'bg-gray-500'}`} />
+                <span className={`h-2 w-2 rounded-full ${zion.connected ? 'bg-zion-cyan animate-pulse' : 'bg-gray-500'}`} />
                 <span>{zion.connected ? (DogeVsZionCopy.zionLive[cs ? 'cs' : 'en']) : (DogeVsZionCopy.zionOffline[cs ? 'cs' : 'en'])}</span>
               </div>
             </motion.div>
@@ -685,7 +685,7 @@ export default function DogeVsZionPage() {
                   🐕
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-zion-gold-400">Dogecoin</h3>
+                  <h3 className="text-lg font-bold text-zion-gold">Dogecoin</h3>
                   <p className="text-[10px] uppercase tracking-widest text-gray-500">DOGE · Scrypt PoW</p>
                 </div>
               </div>
@@ -693,7 +693,7 @@ export default function DogeVsZionPage() {
                 {metrics.map((m) => (
                   <div key={m.label} className="zion-rainbow-sub p-2.5 flex items-center justify-between" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                     <span className="text-xs text-gray-500">{cs ? m.labelCs : m.label}</span>
-                    <span className="text-xs font-semibold text-zion-gold-300 text-right">{m.doge}</span>
+                    <span className="text-xs font-semibold text-zion-gold text-right">{m.doge}</span>
                   </div>
                 ))}
               </div>
@@ -744,8 +744,8 @@ export default function DogeVsZionPage() {
                   🐕
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-zion-gold-400">Doge · Dec 2013</p>
-                  <p className="text-lg font-black text-zion-gold-300">$0.0002</p>
+                  <p className="text-xs font-bold text-zion-gold">Doge · Dec 2013</p>
+                  <p className="text-lg font-black text-zion-gold">$0.0002</p>
                 </div>
               </div>
 
@@ -758,7 +758,7 @@ export default function DogeVsZionPage() {
                 >
                   →
                 </motion.div>
-                <p className="text-xs font-bold text-zion-cyan-400 mt-1">600x</p>
+                <p className="text-xs font-bold text-zion-cyan mt-1">600x</p>
                 <p className="text-[10px] text-gray-500">{DogeVsZionCopy.in13Years[cs ? 'cs' : 'en']}</p>
               </div>
 
@@ -768,8 +768,8 @@ export default function DogeVsZionPage() {
                   🐕
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-zion-gold-400">Doge · 2026</p>
-                  <p className="text-lg font-black text-zion-gold-300">$0.12</p>
+                  <p className="text-xs font-bold text-zion-gold">Doge · 2026</p>
+                  <p className="text-lg font-black text-zion-gold">$0.12</p>
                 </div>
               </div>
 
@@ -849,7 +849,7 @@ export default function DogeVsZionPage() {
               const isZionWin = stat.winner === 'zion';
               const isDogeWin = stat.winner === 'doge';
               const isTie = stat.winner === 'tie';
-              const winnerColor = isZionWin ? 'text-zion-gold' : isDogeWin ? 'text-zion-gold-400' : 'text-gray-400';
+              const winnerColor = isZionWin ? 'text-zion-gold' : isDogeWin ? 'text-zion-gold' : 'text-gray-400';
               const winnerRc = isZionWin ? '252, 209, 22' : isDogeWin ? '252, 209, 22' : '107, 114, 128';
               return (
                 <motion.div
@@ -888,7 +888,7 @@ export default function DogeVsZionPage() {
           className="zion-section"
         >
           <div className="mb-6 flex items-center gap-3">
-            <Sparkles className="h-6 w-6 text-zion-gold-400" />
+            <Sparkles className="h-6 w-6 text-zion-gold" />
             <div>
               <h2 className="text-2xl font-bold text-white tracking-tight">
                 {DogeVsZionCopy.theOriginal[cs ? 'cs' : 'en']}
@@ -930,7 +930,7 @@ export default function DogeVsZionPage() {
                   🐕
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-zion-gold-400">Doge Miner 2</h3>
+                  <h3 className="text-lg font-bold text-zion-gold">Doge Miner 2</h3>
                   <p className="text-[10px] uppercase tracking-widest text-gray-500">{DogeVsZionCopy.legendaryClicker[cs ? 'cs' : 'en']}</p>
                 </div>
               </div>

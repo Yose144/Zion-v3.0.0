@@ -148,7 +148,7 @@ const getGrafanaDashboards = (cs: boolean) => [
     description: DashboardCopy.treeOfLifeLedgerForDaoGuardian[cs ? 'cs' : 'en'],
     href: '/dashboard/dao-tree',
     icon: TreeDeciduous,
-    accent: 'text-zion-cyan-300',
+    accent: 'text-zion-cyan',
     pill: DashboardCopy.daoPrototype[cs ? 'cs' : 'en']
   },
   {
@@ -262,10 +262,10 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
               <div className="flex items-center gap-3">
                 <Activity className={`w-6 h-6 ${
                   health?.status === 'ok' || health?.status === 'healthy'
-                    ? 'text-zion-cyan-400'
+                    ? 'text-zion-cyan'
                     : health?.status === 'degraded'
-                    ? 'text-zion-gold-400 animate-pulse'
-                    : 'text-zion-purple-400'
+                    ? 'text-zion-gold animate-pulse'
+                    : 'text-zion-purple'
                 }`} />
                 <div>
                   <h2 className="text-2xl font-semibold text-white">System health</h2>
@@ -288,9 +288,9 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
                 <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Status</p>
                 <p className={`mt-2 text-2xl font-semibold ${
                   health?.status === 'ok' || health?.status === 'operational' || health?.status === 'healthy' 
-                    ? 'text-zion-cyan-400' 
+                    ? 'text-zion-cyan' 
                     : health?.status === 'degraded' 
-                    ? 'text-zion-gold-400' 
+                    ? 'text-zion-gold' 
                     : 'text-gray-400'
                 }`}>
                   {health?.status === 'ok' || health?.status === 'operational' ? '✓ Operational' : 
@@ -311,25 +311,25 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
                 <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Services</p>
                 <div className="mt-2 space-y-1 text-sm text-gray-300">
                   <p>
-                    <span className={health?.dependencies?.rpc_node?.healthy ? 'text-zion-cyan-400' : 'text-gray-600'}>
+                    <span className={health?.dependencies?.rpc_node?.healthy ? 'text-zion-cyan' : 'text-gray-600'}>
                       {health?.dependencies?.rpc_node?.healthy ? '●' : '○'}
                     </span>{' '}
                     RPC Node
                   </p>
                   <p>
-                    <span className={health?.dependencies?.mining_pool?.healthy ? 'text-zion-cyan-400' : 'text-gray-600'}>
+                    <span className={health?.dependencies?.mining_pool?.healthy ? 'text-zion-cyan' : 'text-gray-600'}>
                       {health?.dependencies?.mining_pool?.healthy ? '●' : '○'}
                     </span>{' '}
                     Mining Pool
                   </p>
                   <p>
-                    <span className={health?.dependencies?.prometheus?.healthy ? 'text-zion-cyan-400' : 'text-gray-600'}>
+                    <span className={health?.dependencies?.prometheus?.healthy ? 'text-zion-cyan' : 'text-gray-600'}>
                       {health?.dependencies?.prometheus?.healthy ? '●' : '○'}
                     </span>{' '}
                     Prometheus
                   </p>
                   <p>
-                    <span className={health?.dependencies?.grafana?.healthy ? 'text-zion-cyan-400' : 'text-gray-600'}>
+                    <span className={health?.dependencies?.grafana?.healthy ? 'text-zion-cyan' : 'text-gray-600'}>
                       {health?.dependencies?.grafana?.healthy ? '●' : '○'}
                     </span>{' '}
                     Grafana
@@ -345,7 +345,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
             <div className="flex items-center gap-3 mb-4">
               <TrendingUp className="w-6 h-6 text-zion-gold" />
               <h2 className="text-2xl font-semibold text-white">Blockchain vitals</h2>
-              {!stats && <span className="text-xs text-zion-gold-400">API offline</span>}
+              {!stats && <span className="text-xs text-zion-gold">API offline</span>}
             </div>
             {stats ? (
               <div className="space-y-6">
@@ -554,7 +554,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
                 </ul>
               </div>
               <div>
-                <p className="text-zion-cyan-400 font-semibold">{DashboardCopy.systemResources[cs ? 'cs' : 'en']}</p>
+                <p className="text-zion-cyan font-semibold">{DashboardCopy.systemResources[cs ? 'cs' : 'en']}</p>
                 <ul className="mt-2 space-y-1 text-gray-400">
                   <li>• {DashboardCopy.cpuUsage[cs ? 'cs' : 'en']}</li>
                   <li>• {DashboardCopy.memoryUsage[cs ? 'cs' : 'en']}</li>

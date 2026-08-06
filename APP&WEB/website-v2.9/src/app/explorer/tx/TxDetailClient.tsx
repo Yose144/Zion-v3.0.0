@@ -86,7 +86,7 @@ function CopyBtn({ text }: { text: string }) {
   return (
     <button onClick={() => { navigator.clipboard.writeText(text); setOk(true); setTimeout(() => setOk(false), 1500); }}
       className="text-gray-600 hover:text-white transition ml-2 flex-shrink-0">
-      {ok ? <Check className="h-3.5 w-3.5 text-zion-cyan-400" /> : <Copy className="h-3.5 w-3.5" />}
+      {ok ? <Check className="h-3.5 w-3.5 text-zion-cyan" /> : <Copy className="h-3.5 w-3.5" />}
     </button>
   );
 }
@@ -158,7 +158,7 @@ export default function TxDetailClient() {
     return (
       <div className="relative min-h-screen pb-24 flex items-center justify-center">
         <div className="text-center max-w-md px-4">
-          <ArrowRightLeft className="h-16 w-16 text-zion-purple-400/50 mx-auto mb-4" />
+          <ArrowRightLeft className="h-16 w-16 text-zion-purple/50 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-white mb-2">{ExplorerTxTxDetailClientCopy.transactionNotFound[cs ? 'cs' : 'en']}</h1>
           <p className="text-gray-500 text-sm mb-6">{error || `Hash: ${hash}`}</p>
           <Link href="/explorer" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white hover:bg-white/10 transition">
@@ -200,8 +200,8 @@ export default function TxDetailClient() {
           <div className="sm:ml-auto flex items-center gap-2 flex-wrap">
             <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${
               tx.in_pool
-                ? "bg-zion-gold-500/10 text-zion-gold-400 border-zion-gold-500/20"
-                : "bg-zion-cyan-500/10 text-zion-cyan-400 border-zion-cyan-500/20"
+                ? "bg-zion-gold/10 text-zion-gold border-zion-gold/20"
+                : "bg-zion-cyan/10 text-zion-cyan border-zion-cyan/20"
             }`}>
               {tx.in_pool ? <Clock className="h-3 w-3" /> : <Shield className="h-3 w-3" />}
               {tx.in_pool ? (ExplorerTxTxDetailClientCopy.pending[cs ? 'cs' : 'en']) : `${tx.confirmations.toLocaleString(locale)} ${ExplorerTxTxDetailClientCopy.confirmations[cs ? 'cs' : 'en']}`}
@@ -215,7 +215,7 @@ export default function TxDetailClient() {
               onClick={() => setShowRaw((v) => !v)}
               className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold transition border ${
                 showRaw
-                  ? "bg-zion-purple-500/15 text-zion-purple-300 border-zion-purple-500/30"
+                  ? "bg-zion-purple/15 text-zion-purple border-zion-purple/30"
                   : "bg-white/5 text-white/60 border-white/10 hover:bg-white/10"
               }`}
             >
@@ -231,7 +231,7 @@ export default function TxDetailClient() {
             className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
               <div className="flex items-center gap-2">
-                <Code className="h-4 w-4 text-zion-purple-400" />
+                <Code className="h-4 w-4 text-zion-purple" />
                 <span className="text-sm font-semibold text-white">Raw JSON</span>
               </div>
               <CopyBtn text={rawJson} />
@@ -246,14 +246,14 @@ export default function TxDetailClient() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {(isV3Account ? [
             { label: ExplorerTxTxDetailClientCopy.amount[cs ? 'cs' : 'en'], value: `${tx.amount.toFixed(4)} ZION`, color: "text-white" },
-            { label: "Fee", value: `${tx.fee.toFixed(6)} ZION`, color: "text-zion-gold-400" },
+            { label: "Fee", value: `${tx.fee.toFixed(6)} ZION`, color: "text-zion-gold" },
             { label: "Nonce", value: `${tx.nonce ?? 0}`, color: "text-zion-cyan" },
-            { label: ExplorerTxTxDetailClientCopy.model[cs ? 'cs' : 'en'], value: (tx.transaction_model ?? 'hybrid').toUpperCase(), color: "text-zion-cyan-400" },
+            { label: ExplorerTxTxDetailClientCopy.model[cs ? 'cs' : 'en'], value: (tx.transaction_model ?? 'hybrid').toUpperCase(), color: "text-zion-cyan" },
           ] : [
             { label: ExplorerTxTxDetailClientCopy.amount[cs ? 'cs' : 'en'], value: `${tx.amount.toFixed(4)} ZION`, color: "text-white" },
-            { label: "Fee", value: `${tx.fee.toFixed(6)} ZION`, color: "text-zion-gold-400" },
+            { label: "Fee", value: `${tx.fee.toFixed(6)} ZION`, color: "text-zion-gold" },
             { label: ExplorerTxTxDetailClientCopy.inputs[cs ? 'cs' : 'en'], value: `${tx.inputs.length}`, color: "text-zion-cyan" },
-            { label: ExplorerTxTxDetailClientCopy.outputs[cs ? 'cs' : 'en'], value: `${tx.outputs.length}`, color: "text-zion-cyan-400" },
+            { label: ExplorerTxTxDetailClientCopy.outputs[cs ? 'cs' : 'en'], value: `${tx.outputs.length}`, color: "text-zion-cyan" },
           ]).map((item) => (
             <div key={item.label} className="zion-tile p-4">
               <p className="text-[10px] uppercase tracking-[0.15em] text-gray-500 font-medium mb-1">{item.label}</p>
@@ -273,20 +273,20 @@ export default function TxDetailClient() {
           </div>
           <InfoRow label="TX Hash" value={tx.tx_hash} mono copyable />
           <InfoRow label={ExplorerTxTxDetailClientCopy.status[cs ? 'cs' : 'en']} value={tx.in_pool ? (ExplorerTxTxDetailClientCopy.pendingMempool[cs ? 'cs' : 'en']) : (ExplorerTxTxDetailClientCopy.confirmed[cs ? 'cs' : 'en'])}
-            color={tx.in_pool ? "text-zion-gold-400" : "text-zion-cyan-400"} />
+            color={tx.in_pool ? "text-zion-gold" : "text-zion-cyan"} />
           {tx.block_height > 0 && (
             <InfoRow label={ExplorerTxTxDetailClientCopy.block[cs ? 'cs' : 'en']} value={`#${tx.block_height.toLocaleString(locale)}`}
               link={`/explorer/block?id=${tx.block_height}`} />
           )}
           <InfoRow label={ExplorerTxTxDetailClientCopy.timestamp[cs ? 'cs' : 'en']} value={`${fmtDate(tx.block_timestamp, locale)} (${fmtAge(tx.block_timestamp, cs)})`} />
           <InfoRow label={ExplorerTxTxDetailClientCopy.amount[cs ? 'cs' : 'en']} value={`${tx.amount.toFixed(6)} ZION`} color="text-zion-gold" />
-          <InfoRow label="Fee" value={`${tx.fee.toFixed(6)} ZION`} color="text-zion-gold-400" />
+          <InfoRow label="Fee" value={`${tx.fee.toFixed(6)} ZION`} color="text-zion-gold" />
           {isV3Account ? (
             <>
               <InfoRow label="From" value={tx.from ?? '—'} mono copyable link={`/explorer/address?id=${tx.from}`} />
               <InfoRow label="To" value={tx.to ?? '—'} mono copyable link={`/explorer/address?id=${tx.to}`} />
               <InfoRow label="Nonce" value={`${tx.nonce ?? 0}`} />
-              <InfoRow label={ExplorerTxTxDetailClientCopy.model[cs ? 'cs' : 'en']} value={(tx.transaction_model ?? 'hybrid').toUpperCase()} color="text-zion-cyan-400" />
+              <InfoRow label={ExplorerTxTxDetailClientCopy.model[cs ? 'cs' : 'en']} value={(tx.transaction_model ?? 'hybrid').toUpperCase()} color="text-zion-cyan" />
               {tx.public_key && <InfoRow label={ExplorerTxTxDetailClientCopy.publicKey[cs ? 'cs' : 'en']} value={tx.public_key} mono copyable />}
               {tx.signature && <InfoRow label={ExplorerTxTxDetailClientCopy.signature[cs ? 'cs' : 'en']} value={truncHash(tx.signature, 16)} mono copyable />}
             </>
@@ -305,8 +305,8 @@ export default function TxDetailClient() {
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
             className="zion-rainbow-sub rounded-[28px] bg-black/60 p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <div className="flex items-center gap-3 mb-5">
-              <div className="h-8 w-8 rounded-xl bg-zion-purple-500/10 flex items-center justify-center">
-                <ArrowRight className="h-4 w-4 text-zion-purple-400 rotate-180" />
+              <div className="h-8 w-8 rounded-xl bg-zion-purple/10 flex items-center justify-center">
+                <ArrowRight className="h-4 w-4 text-zion-purple rotate-180" />
               </div>
               <h3 className="text-lg font-semibold text-white">{ExplorerTxTxDetailClientCopy.inputs[cs ? 'cs' : 'en']} ({tx.inputs.length})</h3>
             </div>
@@ -323,7 +323,7 @@ export default function TxDetailClient() {
                   ) : (
                     <>
                       <div className="flex justify-between items-center mb-1">
-                        <span className="text-zion-purple-400 text-[10px] font-mono uppercase tracking-wider">{ExplorerTxTxDetailClientCopy.input[cs ? 'cs' : 'en']} #{i}</span>
+                        <span className="text-zion-purple text-[10px] font-mono uppercase tracking-wider">{ExplorerTxTxDetailClientCopy.input[cs ? 'cs' : 'en']} #{i}</span>
                         <span className="text-white text-sm font-semibold tabular-nums">{inp.amount.toFixed(4)} ZION</span>
                       </div>
                       {inp.key_image && (
@@ -348,8 +348,8 @@ export default function TxDetailClient() {
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
             className="zion-rainbow-sub p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <div className="flex items-center gap-3 mb-5">
-              <div className="h-8 w-8 rounded-xl bg-zion-cyan-500/10 flex items-center justify-center">
-                <ArrowRight className="h-4 w-4 text-zion-cyan-400" />
+              <div className="h-8 w-8 rounded-xl bg-zion-cyan/10 flex items-center justify-center">
+                <ArrowRight className="h-4 w-4 text-zion-cyan" />
               </div>
               <h3 className="text-lg font-semibold text-white">{ExplorerTxTxDetailClientCopy.outputs_2[cs ? 'cs' : 'en']} ({tx.outputs.length})</h3>
             </div>
@@ -357,7 +357,7 @@ export default function TxDetailClient() {
               {tx.outputs.map((out, i) => (
                 <div key={i} className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-zion-cyan-400 text-[10px] font-mono uppercase tracking-wider">{ExplorerTxTxDetailClientCopy.output[cs ? 'cs' : 'en']} #{i}</span>
+                    <span className="text-zion-cyan text-[10px] font-mono uppercase tracking-wider">{ExplorerTxTxDetailClientCopy.output[cs ? 'cs' : 'en']} #{i}</span>
                     <span className="text-zion-gold text-sm font-semibold tabular-nums">{out.amount.toFixed(4)} ZION</span>
                   </div>
                   {out.key && (

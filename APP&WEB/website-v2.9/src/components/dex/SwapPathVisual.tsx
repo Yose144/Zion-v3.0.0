@@ -99,7 +99,7 @@ export default function SwapPathVisual({
         {steps.map((step, i) => (
           <div key={i} className="flex items-center gap-3">
             {/* Step number */}
-            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-zion-gold-500/20 border border-zion-gold-500/40 flex items-center justify-center text-xs font-bold text-zion-gold-500">
+            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-zion-gold/20 border border-zion-gold/40 flex items-center justify-center text-xs font-bold text-zion-gold">
               {i + 1}
             </div>
 
@@ -119,7 +119,7 @@ export default function SwapPathVisual({
               {step.type === 'bridge' && (
                 <>
                   <ChainDot chain={step.from_chain || ''} />
-                  <Globe className="w-3.5 h-3.5 text-zion-gold-500" />
+                  <Globe className="w-3.5 h-3.5 text-zion-gold" />
                   <span className="text-white font-medium">{step.asset}</span>
                   <ArrowRight className="w-3 h-3 text-zinc-500" />
                   <ChainDot chain={step.to_chain || ''} />
@@ -139,7 +139,7 @@ export default function SwapPathVisual({
       <div className="mt-3 pt-3 border-t border-zinc-700/30 grid grid-cols-2 gap-2 text-xs">
         <div className="flex justify-between">
           <span className="text-zinc-500">Expected output:</span>
-          <span className="text-zion-gold-400 font-medium">{expectedOutput}</span>
+          <span className="text-zion-gold font-medium">{expectedOutput}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-zinc-500">Total fee:</span>
@@ -147,7 +147,7 @@ export default function SwapPathVisual({
         </div>
         <div className="flex justify-between">
           <span className="text-zinc-500">Price impact:</span>
-          <span className={priceImpactBps > 100 ? 'text-zion-gold-400' : 'text-zinc-300'}>
+          <span className={priceImpactBps > 100 ? 'text-zion-gold' : 'text-zinc-300'}>
             {(priceImpactBps / 100).toFixed(2)}%
           </span>
         </div>

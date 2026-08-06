@@ -38,7 +38,7 @@ export default function V3InternalAuditNewsPage() {
         <div className="zion-rainbow-card p-7 sm:p-10" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
           <div className="flex items-start gap-4">
             <div className="zion-rainbow-sub flex h-12 w-12 shrink-0 items-center justify-center" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-              <ShieldCheck className="h-6 w-6 text-zion-purple-400" />
+              <ShieldCheck className="h-6 w-6 text-zion-purple" />
             </div>
             <div className="min-w-0">
               <p className="text-xs uppercase tracking-[0.35em] text-red-200/70">
@@ -56,7 +56,7 @@ export default function V3InternalAuditNewsPage() {
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
             <div className="zion-rainbow-sub p-5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
               <div className="flex items-center gap-2 text-sm font-semibold text-white">
-                <ListChecks className="h-4 w-4 text-zion-cyan-400" />
+                <ListChecks className="h-4 w-4 text-zion-cyan" />
                 {NewsV3InternalAuditCopy.closedFindings[cs ? 'cs' : 'en']}
               </div>
               <p className="mt-2 text-sm text-white/60 leading-relaxed">

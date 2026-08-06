@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react';
 type RGBColor = [number, number, number];
 
 interface StarfieldBackgroundProps {
-  starColor?: RGBColor;
+  starColor?: RGBColor | RGBColor[];
   density?: number;
   speed?: number;
   trailOpacity?: number;
@@ -25,11 +25,15 @@ interface StarfieldBackgroundProps {
   fpsLimit?: number;
 }
 
-const DEFAULT_COLOR: RGBColor = [252, 209, 22];
+const DEFAULT_COLORS: RGBColor[] = [
+  [252, 209, 22],  // rasta gold
+  [228, 30, 43],   // rasta red
+  [7, 137, 48],    // rasta green
+];
 const DEFAULT_GRADIENT = 'radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%)';
 
 export default function StarfieldBackground({
-  starColor = DEFAULT_COLOR,
+  starColor = DEFAULT_COLORS,
   density = 350,
   speed = 2,
   trailOpacity = 0.08,
@@ -50,7 +54,10 @@ export default function StarfieldBackground({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const stars: { x: number; y: number; z: number; size: number; px: number; py: number }[] = [];
+    const colorList = Array.isArray(starColor[0]) ? (starColor as RGBColor[]) : [starColor as RGBColor];
+    const pickColor = () => colorList[Math.floor(Math.random() * colorList.length)];
+
+    const stars: { x: number; y: number; z: number; size: number; px: number; py: number; color: RGBColor }[] = [];
 
     let cachedGradient: CanvasGradient | null = null;
     const rebuildGradient = () => {
@@ -84,6 +91,7 @@ export default function StarfieldBackground({
           size: Math.random() * 2 + 0.5,
           px: 0,
           py: 0,
+          color: pickColor(),
         });
       }
     };
@@ -138,6 +146,7 @@ export default function StarfieldBackground({
             star.y = Math.random() * canvas.height - hh;
             star.px = prevX;
             star.py = prevY;
+            star.color = pickColor();
             return;
           }
         } else {
@@ -148,6 +157,7 @@ export default function StarfieldBackground({
             star.y = Math.random() * canvas.height - hh;
             star.px = prevX;
             star.py = prevY;
+            star.color = pickColor();
             return;
           }
         }
@@ -159,9 +169,10 @@ export default function StarfieldBackground({
         const brightness = 1 - star.z / canvas.width;
         const alpha = Math.min(1, lineTrails ? 0.08 + brightness * 0.92 : 0.55 + brightness * 0.45);
 
+        const [r, g, b] = star.color;
         if (lineTrails) {
           // Line trail from previous to current position (desktop-agent style)
-          ctx.strokeStyle = `rgba(${starColor[0]}, ${starColor[1]}, ${starColor[2]}, ${alpha})`;
+          ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
           ctx.lineWidth = Math.max(0.5, size * 0.5);
           ctx.beginPath();
           ctx.moveTo(prevX, prevY);
@@ -169,12 +180,12 @@ export default function StarfieldBackground({
           ctx.stroke();
 
           // Bright head
-          ctx.fillStyle = `rgba(${starColor[0]}, ${starColor[1]}, ${starColor[2]}, ${Math.min(1, alpha + 0.15)})`;
+          ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${Math.min(1, alpha + 0.15)})`;
           ctx.beginPath();
           ctx.arc(x, y, Math.max(size * 0.65, 0.55), 0, Math.PI * 2);
           ctx.fill();
         } else {
-          ctx.fillStyle = `rgba(${starColor[0]}, ${starColor[1]}, ${starColor[2]}, ${alpha})`;
+          ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
           ctx.beginPath();
           ctx.arc(x, y, Math.max(size, 1.0), 0, Math.PI * 2);
           ctx.fill();

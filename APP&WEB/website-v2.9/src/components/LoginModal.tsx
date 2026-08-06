@@ -113,7 +113,7 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
               {/* No wallet */}
               {zionWallet.initialized && zionWallet.wallets.length === 0 && (
                 <div className="text-center py-8">
-                  <AlertCircle className="h-12 w-12 text-zion-gold-500/60 mx-auto mb-3" />
+                  <AlertCircle className="h-12 w-12 text-zion-gold/60 mx-auto mb-3" />
                   <p className="text-sm text-gray-400 mb-4">
                     No ZION wallet found. You need a wallet to sign in.
                   </p>
@@ -128,8 +128,8 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
 
               {/* Hardware wallet selected */}
               {activeWallet && zionWallet.isHardwareWallet && (
-                <div className="rounded-lg border border-zion-gold-500/20 bg-zion-gold-500/5 px-4 py-3 mb-4">
-                  <p className="text-xs text-zion-gold-400">
+                <div className="rounded-lg border border-zion-gold/20 bg-zion-gold/5 px-4 py-3 mb-4">
+                  <p className="text-xs text-zion-gold">
                     Hardware wallets (Trezor/Ledger) are watch-only and cannot sign authentication messages.
                     Please use a software wallet to sign in.
                   </p>
@@ -178,7 +178,7 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
                             <p className="text-[9px] text-gray-500 truncate font-mono">{w.address}</p>
                           </div>
                           {w.keyType === 'trezor' || w.keyType === 'ledger' ? (
-                            <span className="text-[8px] text-zion-gold-500/60 uppercase">HW</span>
+                            <span className="text-[8px] text-zion-gold/60 uppercase">HW</span>
                           ) : null}
                         </button>
                       ))}
@@ -213,9 +213,9 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
                   </div>
 
                   {error && (
-                    <div className="mb-4 rounded-lg border border-zion-purple-500/20 bg-zion-purple-500/5 px-3 py-2 flex items-start gap-2">
-                      <AlertCircle className="h-4 w-4 text-zion-purple-400 shrink-0 mt-0.5" />
-                      <p className="text-xs text-zion-purple-400">{error}</p>
+                    <div className="mb-4 rounded-lg border border-zion-purple/20 bg-zion-purple/5 px-3 py-2 flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 text-zion-purple shrink-0 mt-0.5" />
+                      <p className="text-xs text-zion-purple">{error}</p>
                     </div>
                   )}
 

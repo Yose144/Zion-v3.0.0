@@ -26,7 +26,7 @@ export default function DexPage() {
     <div className="min-h-screen">
       {/* Hero */}
       <div className="relative overflow-hidden border-b border-zinc-800/50">
-        <div className="absolute inset-0 bg-gradient-to-br from-zion-gold-500/5 via-transparent to-zion-cyan-500/5" />
+        <div className="absolute inset-0 bg-gradient-to-br from-zion-gold/5 via-transparent to-zion-cyan/5" />
         <div className="relative max-w-6xl mx-auto px-6 py-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -34,8 +34,8 @@ export default function DexPage() {
             transition={{ duration: 0.5 }}
           >
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-zion-gold-500/20 rounded-xl">
-                <Zap className="w-6 h-6 text-zion-gold-500" />
+              <div className="p-2 bg-zion-gold/20 rounded-xl">
+                <Zap className="w-6 h-6 text-zion-gold" />
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-white">ZionDex</h1>
@@ -68,9 +68,9 @@ export default function DexPage() {
 
       {/* Early Beta / Under Construction Banner */}
       <div className="max-w-6xl mx-auto px-6 pt-6">
-        <div className="rounded-xl border border-zion-gold-500/30 bg-zion-gold-500/10 px-4 py-3">
+        <div className="rounded-xl border border-zion-gold/30 bg-zion-gold/10 px-4 py-3">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-zion-gold-400 shrink-0 mt-0.5" />
+            <AlertTriangle className="h-5 w-5 text-zion-gold shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-amber-200">ZionDex — Under Construction / Early Beta</p>
               <p className="text-xs text-amber-200/70 mt-1">
@@ -125,7 +125,7 @@ export default function DexPage() {
                   style={{ '--rc': '7, 137, 48' } as CSSProperties}
                 >
                   <span className="flex items-center gap-2 text-sm text-zinc-300">
-                    <Info className="w-3.5 h-3.5 text-zion-gold-500" />
+                    <Info className="w-3.5 h-3.5 text-zion-gold" />
                     About ZionDex
                   </span>
                   <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
@@ -191,14 +191,14 @@ export default function DexPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-500">L3 WARP bridge</span>
-                  <span className="flex items-center gap-1 text-zion-cyan-400">
+                  <span className="flex items-center gap-1 text-zion-cyan">
                     <Layers className="w-3 h-3" />
                     port 8453
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-500">ZION pair fee</span>
-                  <span className="text-zion-gold-400">0.15%</span>
+                  <span className="text-zion-gold">0.15%</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-500">Standard fee</span>
@@ -232,7 +232,7 @@ export default function DexPage() {
             L3 WARP Bridge at{' '}
             <code className="text-zinc-400">port 8453</code>
             {' · '}
-            <Link href="/ziondex" className="text-zion-gold-500/80 hover:text-zion-gold-400">
+            <Link href="/ziondex" className="text-zion-gold/80 hover:text-zion-gold">
               Learn more →
             </Link>
           </p>

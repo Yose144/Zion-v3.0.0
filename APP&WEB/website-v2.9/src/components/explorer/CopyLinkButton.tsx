@@ -20,7 +20,7 @@ export default function CopyLinkButton() {
       className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-[11px] text-gray-400 hover:text-white hover:bg-white/10 transition"
       title="Copy link"
     >
-      {ok ? <Check className="h-3.5 w-3.5 text-zion-cyan-400" /> : <Link2 className="h-3.5 w-3.5" />}
+      {ok ? <Check className="h-3.5 w-3.5 text-zion-cyan" /> : <Link2 className="h-3.5 w-3.5" />}
       {ok ? "Copied" : "Copy Link"}
     </button>
   );

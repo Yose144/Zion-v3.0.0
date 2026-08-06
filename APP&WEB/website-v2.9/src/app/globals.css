@@ -56,8 +56,10 @@
   body {
     font-family: var(--font-inter);
     background:
-      radial-gradient(circle at 18% -8%, rgba(228, 30, 43, 0.12), transparent 34rem),
-      radial-gradient(circle at 86% 8%, rgba(7, 137, 48, 0.09), transparent 30rem),
+      /* rasta radial glows */
+      radial-gradient(circle at 22% -5%, rgba(228, 30, 43, 0.16), transparent 38rem),
+      radial-gradient(circle at 82% 5%, rgba(7, 137, 48, 0.12), transparent 34rem),
+      radial-gradient(circle at 50% 40%, rgba(252, 209, 22, 0.06), transparent 50rem),
       radial-gradient(ellipse at bottom, #0f0f0f 0%, #000 100%);
     color: rgb(var(--color-fg));
     text-rendering: optimizeLegibility;
@@ -65,23 +67,27 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
-  /* Subtle rasta grid overlay */
+  /* Subtle diagonal rasta stripes */
   body::before {
     content: '';
     position: fixed;
     inset: 0;
     background-image:
-      linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.014) 1px, transparent 1px);
-    background-size: 96px 96px;
+      repeating-linear-gradient(
+        135deg,
+        rgba(228, 30, 43, 0.025) 0px,
+        rgba(228, 30, 43, 0.025) 3px,
+        rgba(252, 209, 22, 0.020) 3px,
+        rgba(252, 209, 22, 0.020) 6px,
+        rgba(7, 137, 48, 0.025) 6px,
+        rgba(7, 137, 48, 0.025) 9px,
+        transparent 9px,
+        transparent 160px
+      );
+    background-size: 160px 160px;
     pointer-events: none;
     z-index: 0;
     mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
-  }
-
-  ::selection {
-    background: rgba(var(--color-zion-gold), 0.28);
-    color: white;
   }
 
   a,
@@ -219,63 +225,64 @@
     box-shadow: var(--zion-shadow-panel), var(--zion-shadow-glow);
   }
 
-  /* ─── Rainbow Card (Bridge Status Banner style, color-parameterized) ─── */
+  /* 🌟 Rasta Rainbow Card — tri-color glass card with top & bottom rasta glow lines */
   .zion-rainbow-card {
-    --rc: 16, 185, 129; /* default emerald */
+    --rc: 252, 209, 22; /* default rasta gold */
     position: relative;
     overflow: hidden;
     border-radius: 1.5rem;
-    border: 1px solid rgba(var(--rc), 0.2);
-    background: linear-gradient(to right, rgba(var(--rc), 0.08), rgba(var(--rc), 0.04), transparent);
+    border: 1px solid rgba(var(--rc), 0.22);
+    background:
+      linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%),
+      linear-gradient(90deg, rgba(228,30,43,0.06), rgba(252,209,22,0.05), rgba(7,137,48,0.06));
     transition: border-color 250ms ease, box-shadow 250ms ease, transform 250ms ease;
   }
 
-  /* Top glow line */
+  /* Top tri-color glow line */
   .zion-rainbow-card::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
-    height: 1px;
-    background: linear-gradient(to right, transparent, rgba(var(--rc), 0.4), transparent);
+    height: 2px;
+    background: linear-gradient(90deg, rgba(228,30,43,0.85), rgba(252,209,22,0.95), rgba(7,137,48,0.85));
     pointer-events: none;
     z-index: 1;
   }
 
-  /* Hover state */
-  .zion-rainbow-card:hover {
-    border-color: rgba(var(--rc), 0.4);
-    box-shadow: 0 18px 60px rgba(var(--rc), 0.15);
-  }
-
-  /* Corner glow accent */
+  /* Bottom tri-color accent */
   .zion-rainbow-card::after {
     content: '';
     position: absolute;
-    top: -3rem;
-    right: -3rem;
-    width: 10rem;
-    height: 10rem;
-    border-radius: 9999px;
-    background: rgba(var(--rc), 0.06);
-    filter: blur(60px);
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(228,30,43,0.35), rgba(252,209,22,0.45), rgba(7,137,48,0.35));
     pointer-events: none;
-    transition: opacity 250ms ease;
+    z-index: 1;
   }
 
-  .zion-rainbow-card:hover::after {
-    background: rgba(var(--rc), 0.12);
+  .zion-rainbow-card:hover {
+    border-color: rgba(var(--rc), 0.45);
+    box-shadow:
+      0 18px 60px rgba(0,0,0,0.35),
+      0 0 30px rgba(252,209,22,0.12),
+      0 0 60px rgba(228,30,43,0.08);
+    transform: translateY(-2px);
   }
 
   /* Inner sub-card variant — smaller, for grid items inside a section */
   .zion-rainbow-sub {
-    --rc: 16, 185, 129;
+    --rc: 252, 209, 22;
     position: relative;
     overflow: hidden;
     border-radius: 1rem;
-    border: 1px solid rgba(var(--rc), 0.15);
-    background: linear-gradient(135deg, rgba(var(--rc), 0.06), rgba(var(--rc), 0.02));
+    border: 1px solid rgba(var(--rc), 0.16);
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%),
+      linear-gradient(135deg, rgba(228,30,43,0.04), rgba(252,209,22,0.04), rgba(7,137,48,0.04));
     transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
   }
 
@@ -285,14 +292,27 @@
     top: 0;
     left: 0;
     right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, rgba(228,30,43,0.65), rgba(252,209,22,0.75), rgba(7,137,48,0.65));
+    pointer-events: none;
+  }
+
+  .zion-rainbow-sub::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
     height: 1px;
-    background: linear-gradient(to right, transparent, rgba(var(--rc), 0.3), transparent);
+    background: linear-gradient(90deg, rgba(228,30,43,0.25), rgba(252,209,22,0.35), rgba(7,137,48,0.25));
     pointer-events: none;
   }
 
   .zion-rainbow-sub:hover {
-    border-color: rgba(var(--rc), 0.35);
-    box-shadow: 0 8px 30px rgba(var(--rc), 0.12);
+    border-color: rgba(var(--rc), 0.4);
+    box-shadow:
+      0 8px 30px rgba(0,0,0,0.25),
+      0 0 20px rgba(252,209,22,0.1);
     transform: translateY(-2px);
   }
 
@@ -403,9 +423,14 @@
   .zion-section {
     border-radius: clamp(1.25rem, 3vw, 1.75rem);
     border: 1px solid var(--zion-border-subtle);
+    border-top: 2px solid transparent;
+    border-image: linear-gradient(90deg, #e41e2b, #fcd116, #078930) 1;
     background: rgba(0, 0, 0, 0.42);
     padding: clamp(1.5rem, 4vw, 2rem);
     backdrop-filter: blur(20px) saturate(135%);
+    box-shadow:
+      0 24px 80px rgba(0,0,0,0.32),
+      inset 0 1px 0 rgba(255,255,255,0.04);
   }
 
   /* Soft inner tile — for grids within .zion-section */
@@ -510,9 +535,69 @@
     position: absolute;
     inset: -2px;
     border-radius: inherit;
-    background: radial-gradient(circle, rgba(249,217,118,0.25), transparent 70%);
+    background: radial-gradient(circle, rgba(252,209,22,0.25), rgba(228,30,43,0.08), transparent 70%);
     filter: blur(20px);
     z-index: -1;
+  }
+
+  /* Rasta tri-color border utilities */
+  .rasta-border-t {
+    border-top: 2px solid transparent;
+    border-image: linear-gradient(90deg, #e41e2b, #fcd116, #078930) 1;
+  }
+  .rasta-border-b {
+    border-bottom: 2px solid transparent;
+    border-image: linear-gradient(90deg, #e41e2b, #fcd116, #078930) 1;
+  }
+  .rasta-border-l {
+    border-left: 3px solid transparent;
+    border-image: linear-gradient(180deg, #e41e2b, #fcd116, #078930) 1;
+  }
+  .rasta-border-full {
+    border: 1px solid transparent;
+    border-image: linear-gradient(135deg, #e41e2b, #fcd116, #078930) 1;
+  }
+
+  /* Rasta pulse glow animation */
+  @keyframes rasta-pulse {
+    0%, 100% {
+      box-shadow: 0 0 12px rgba(228, 30, 43, 0.3), 0 0 24px rgba(252, 209, 22, 0.15), 0 0 36px rgba(7, 137, 48, 0.1);
+    }
+    50% {
+      box-shadow: 0 0 22px rgba(228, 30, 43, 0.45), 0 0 40px rgba(252, 209, 22, 0.28), 0 0 55px rgba(7, 137, 48, 0.2);
+    }
+  }
+
+  .animate-rasta-pulse {
+    animation: rasta-pulse 3s ease-in-out infinite;
+  }
+
+  @keyframes rasta-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  .rasta-shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(228, 30, 43, 0.1) 0%,
+      rgba(252, 209, 22, 0.15) 25%,
+      rgba(7, 137, 48, 0.1) 50%,
+      rgba(252, 209, 22, 0.15) 75%,
+      rgba(228, 30, 43, 0.1) 100%
+    );
+    background-size: 200% 100%;
+    animation: rasta-shimmer 8s linear infinite;
+  }
+
+  /* Rasta floating orbs background */
+  @keyframes rasta-orb-1 {
+    0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.4; }
+    50% { transform: translate(30px, -40px) scale(1.1); opacity: 0.6; }
+  }
+  @keyframes rasta-orb-2 {
+    0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.35; }
+    50% { transform: translate(-25px, 35px) scale(1.08); opacity: 0.55; }
   }
 
   /* 🌟 Consciousness Tree Animations */

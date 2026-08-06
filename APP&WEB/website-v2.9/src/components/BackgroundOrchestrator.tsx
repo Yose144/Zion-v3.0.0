@@ -8,7 +8,7 @@ type BackgroundOrchestratorVariant = 'default' | 'home';
 const OBSERVATORY_PRESETS: Record<
   string,
   {
-    starColor: [number, number, number];
+    starColor: [number, number, number] | [number, number, number][];
     density: number;
     speed: number;
     trailOpacity: number;
@@ -21,14 +21,18 @@ const OBSERVATORY_PRESETS: Record<
   }
 > = {
   maintenance: {
-    starColor: [252, 209, 22],
+    starColor: [
+      [252, 209, 22],
+      [228, 30, 43],
+      [7, 137, 48],
+    ],
     density: 250,
     speed: 2,
     trailOpacity: 0.08,
-    backgroundGradient: 'radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%)',
+    backgroundGradient: 'radial-gradient(circle at 30% 20%, rgba(228,30,43,0.08) 0%, transparent 40%), radial-gradient(circle at 70% 80%, rgba(7,137,48,0.06) 0%, transparent 40%), radial-gradient(ellipse at bottom, #0a0a0a 0%, #000 100%)',
     lineTrails: true,
     fpsLimit: 24,
-    canvasGradient: { x: 0.5, y: 0.7, inner: 'rgba(27, 39, 53, 1)', outer: 'rgba(9, 10, 15, 1)' },
+    canvasGradient: { x: 0.5, y: 0.7, inner: 'rgba(15, 10, 10, 1)', outer: 'rgba(2, 2, 2, 1)' },
     canvasGradientAlpha: 0.22,
   },
   'planet-orbit': {

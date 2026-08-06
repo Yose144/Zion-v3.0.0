@@ -992,7 +992,7 @@ export default function TerraNovaBookClient() {
     return (
       <div className="zion-container flex min-h-[60vh] items-center justify-center text-center text-gray-400">
         <div>
-          <div className="mb-4 inline-block h-10 w-10 animate-spin rounded-full border-2 border-zion-cyan-400 border-t-transparent" />
+          <div className="mb-4 inline-block h-10 w-10 animate-spin rounded-full border-2 border-zion-cyan border-t-transparent" />
           <p>{cs ? 'Načítání Terra Nova…' : 'Loading Terra Nova…'}</p>
         </div>
       </div>
@@ -1141,9 +1141,9 @@ export default function TerraNovaBookClient() {
                 <div className="overflow-hidden zion-rainbow-sub shadow-[0_20px_80px_rgba(2,8,18,0.6)]" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                   <div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <span className="h-2.5 w-2.5 rounded-full bg-zion-purple-400" />
-                      <span className="h-2.5 w-2.5 rounded-full bg-zion-gold-300" />
-                      <span className="h-2.5 w-2.5 rounded-full bg-zion-cyan-400" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-zion-purple" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-zion-gold" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-zion-cyan" />
                     </div>
                     <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-gray-500">
                       <Terminal className="h-3.5 w-3.5 text-zion-cyan" />
@@ -1175,13 +1175,13 @@ export default function TerraNovaBookClient() {
                             </span>
                           </div>
                           {twRespText && (
-                            <div className="mt-1.5 pl-6 text-[11px] text-zion-cyan-300/80">
+                            <div className="mt-1.5 pl-6 text-[11px] text-zion-cyan/80">
                               ▸ {twRespText}
                             </div>
                           )}
                         </div>
                         <div className="flex items-center gap-2 px-1 text-[11px] uppercase tracking-[0.24em] text-gray-500">
-                          <span className="inline-block h-2 w-2 rounded-full bg-zion-cyan-400 animate-pulse" />
+                          <span className="inline-block h-2 w-2 rounded-full bg-zion-cyan animate-pulse" />
                           {TerranovaTerraNovaBookClientCopy.orbitalReaderOnline[cs ? 'cs' : 'en']}
                         </div>
                       </div>
@@ -1280,7 +1280,7 @@ export default function TerraNovaBookClient() {
                 ))}
               </div>
 
-              <div className="pointer-events-none absolute inset-0 text-zion-cyan-400/15">
+              <div className="pointer-events-none absolute inset-0 text-zion-cyan/15">
                 <svg width="100%" height="100%" className="absolute inset-0">
                   <line x1="12%" y1="0" x2="12%" y2="100%" stroke="currentColor" strokeWidth="1" strokeDasharray="4 8" />
                   <line x1="88%" y1="0" x2="88%" y2="100%" stroke="currentColor" strokeWidth="1" strokeDasharray="4 8" />
@@ -1294,11 +1294,11 @@ export default function TerraNovaBookClient() {
               </div>
 
               <div className="pointer-events-none absolute -bottom-[420px] left-1/2 h-[600px] w-[150%] -translate-x-1/2 rounded-[50%] bg-[radial-gradient(ellipse_at_top,rgba(14,165,233,0.25)_0%,rgba(5,25,50,0.95)_50%,rgba(0,0,0,1)_100%)] shadow-[0_-20px_100px_rgba(14,165,233,0.35)]" />
-              <div className="pointer-events-none absolute -bottom-[420px] left-1/2 h-[600px] w-[150%] -translate-x-1/2 rounded-[50%] border-t-[3px] border-zion-cyan-300/40 shadow-[0_-4px_30px_rgba(56,189,248,0.6),inset_0_20px_40px_rgba(14,165,233,0.2)] blur-[1px]" />
+              <div className="pointer-events-none absolute -bottom-[420px] left-1/2 h-[600px] w-[150%] -translate-x-1/2 rounded-[50%] border-t-[3px] border-zion-cyan/40 shadow-[0_-4px_30px_rgba(56,189,248,0.6),inset_0_20px_40px_rgba(14,165,233,0.2)] blur-[1px]" />
               <div className="pointer-events-none absolute -bottom-[423px] left-1/2 h-[600px] w-[150%] -translate-x-1/2 rounded-[50%] border-t border-white/60 blur-[0.3px]" />
 
               <div className="relative z-10 space-y-3">
-                <p className="text-[10px] uppercase tracking-[0.3em] font-mono text-zion-cyan-300/80">
+                <p className="text-[10px] uppercase tracking-[0.3em] font-mono text-zion-cyan/80">
                   {TerranovaTerraNovaBookClientCopy.issobellaObservationDeck[cs ? 'cs' : 'en']}
                 </p>
                 <p className="max-w-[85%] text-sm leading-relaxed text-gray-200 drop-shadow-md">
@@ -1317,20 +1317,20 @@ export default function TerraNovaBookClient() {
                 </div>
               </div>
 
-              <div className="pointer-events-none absolute bottom-5 left-5 right-5 flex items-end justify-between rounded-xl border border-zion-cyan-400/15 bg-black/30 p-3 backdrop-blur-md shadow-lg">
+              <div className="pointer-events-none absolute bottom-5 left-5 right-5 flex items-end justify-between rounded-xl border border-zion-cyan/15 bg-black/30 p-3 backdrop-blur-md shadow-lg">
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.3em] font-mono text-zion-cyan-300">
+                  <p className="text-[10px] uppercase tracking-[0.3em] font-mono text-zion-cyan">
                     ALT: 420.05 KM
                   </p>
-                  <p className="mt-1 text-[10px] uppercase tracking-[0.3em] font-mono text-zion-cyan-300">
+                  <p className="mt-1 text-[10px] uppercase tracking-[0.3em] font-mono text-zion-cyan">
                     VEL: 7.66 KM/S
                   </p>
                 </div>
                 <div className="flex gap-1.5 opacity-80">
-                  <div className="h-5 w-1.5 rounded-[1px] bg-zion-cyan-300 shadow-[0_0_8px_rgba(125,211,252,0.8)]"></div>
-                  <div className="h-5 w-1.5 rounded-[1px] bg-zion-cyan-400/70 shadow-[0_0_8px_rgba(56,189,248,0.6)]"></div>
-                  <div className="h-5 w-1.5 rounded-[1px] bg-zion-cyan-500/40"></div>
-                  <div className="h-5 w-1.5 rounded-[1px] bg-zion-cyan-600/20"></div>
+                  <div className="h-5 w-1.5 rounded-[1px] bg-zion-cyan shadow-[0_0_8px_rgba(125,211,252,0.8)]"></div>
+                  <div className="h-5 w-1.5 rounded-[1px] bg-zion-cyan/70 shadow-[0_0_8px_rgba(56,189,248,0.6)]"></div>
+                  <div className="h-5 w-1.5 rounded-[1px] bg-zion-cyan/40"></div>
+                  <div className="h-5 w-1.5 rounded-[1px] bg-zion-cyan/20"></div>
                 </div>
               </div>
             </div>
@@ -1346,7 +1346,7 @@ export default function TerraNovaBookClient() {
                   </p>
                 </div>
                 <div className="zion-badge-green">
-                  <span className="h-2 w-2 rounded-full bg-zion-cyan-300 animate-pulse" />
+                  <span className="h-2 w-2 rounded-full bg-zion-cyan animate-pulse" />
                   {TerranovaTerraNovaBookClientCopy.navigationOnline[cs ? 'cs' : 'en']}
                 </div>
               </div>
@@ -1448,7 +1448,7 @@ export default function TerraNovaBookClient() {
                   <div className="zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
-                        <p className="text-[10px] uppercase tracking-[0.28em] text-zion-cyan-300/80">
+                        <p className="text-[10px] uppercase tracking-[0.28em] text-zion-cyan/80">
                           {TerranovaTerraNovaBookClientCopy.dharmachakra[cs ? 'cs' : 'en']}
                         </p>
                         <h3 className="mt-2 text-lg font-semibold text-emerald-200">
@@ -1460,7 +1460,7 @@ export default function TerraNovaBookClient() {
                       </p>
                     </div>
                     <div className="mt-4 grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start">
-                      <div className="mx-auto w-full max-w-[220px] rounded-[28px] border border-zion-cyan-300/10 bg-[radial-gradient(circle_at_center,rgba(253,224,71,0.12),rgba(0,0,0,0)_45%),linear-gradient(180deg,rgba(7, 137, 48,0.08),rgba(0,0,0,0.18))] p-3 shadow-[0_16px_40px_rgba(7, 137, 48,0.08)]">
+                      <div className="mx-auto w-full max-w-[220px] rounded-[28px] border border-zion-cyan/10 bg-[radial-gradient(circle_at_center,rgba(253,224,71,0.12),rgba(0,0,0,0)_45%),linear-gradient(180deg,rgba(7, 137, 48,0.08),rgba(0,0,0,0.18))] p-3 shadow-[0_16px_40px_rgba(7, 137, 48,0.08)]">
                         <motion.svg
                           viewBox="0 0 220 220"
                           className="h-auto w-full"
@@ -1586,7 +1586,7 @@ export default function TerraNovaBookClient() {
                           <text x="110" y="106" textAnchor="middle" className="fill-emerald-100 text-[10px] uppercase tracking-[0.28em]">
                             {TerranovaTerraNovaBookClientCopy.dharma[cs ? 'cs' : 'en']}
                           </text>
-                          <text x="110" y="121" textAnchor="middle" className="fill-zion-cyan-300 text-[8px] uppercase tracking-[0.22em]">
+                          <text x="110" y="121" textAnchor="middle" className="fill-zion-cyan text-[8px] uppercase tracking-[0.22em]">
                             {dharmaSpoke + 1}/8
                           </text>
                         </motion.svg>
@@ -1602,7 +1602,7 @@ export default function TerraNovaBookClient() {
                             className="zion-rainbow-sub px-4 py-3"
                             style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
                           >
-                            <p className="text-[10px] uppercase tracking-[0.24em] text-zion-cyan-300/70">
+                            <p className="text-[10px] uppercase tracking-[0.24em] text-zion-cyan/70">
                               {TerranovaTerraNovaBookClientCopy.activeSpoke[cs ? 'cs' : 'en']}
                             </p>
                             <h4 className="mt-1 text-base font-semibold text-emerald-100">
@@ -1636,7 +1636,7 @@ export default function TerraNovaBookClient() {
                               backgroundColor: isActive ? 'rgba(253,224,71,0.08)' : undefined,
                             } as React.CSSProperties}
                           >
-                            <p className="text-[10px] uppercase tracking-[0.24em] text-zion-cyan-300/70">
+                            <p className="text-[10px] uppercase tracking-[0.24em] text-zion-cyan/70">
                               {index + 1}
                             </p>
                             <p className="mt-1 text-sm font-medium" style={{ color: isActive ? '#FDE047' : 'rgb(209 250 229 / 1)' }}>
@@ -2267,9 +2267,9 @@ export default function TerraNovaBookClient() {
                     <div className="overflow-hidden zion-rainbow-sub" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                       <div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <span className="h-2.5 w-2.5 rounded-full bg-zion-purple-400" />
-                          <span className="h-2.5 w-2.5 rounded-full bg-zion-gold-300" />
-                          <span className="h-2.5 w-2.5 rounded-full bg-zion-cyan-400" />
+                          <span className="h-2.5 w-2.5 rounded-full bg-zion-purple" />
+                          <span className="h-2.5 w-2.5 rounded-full bg-zion-gold" />
+                          <span className="h-2.5 w-2.5 rounded-full bg-zion-cyan" />
                         </div>
                         <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-zion-cyan/70">
                           <Terminal className="h-3.5 w-3.5" />
@@ -2283,7 +2283,7 @@ export default function TerraNovaBookClient() {
                               <span className="text-zion-gold">$</span>
                               <span className="break-all">{line.command}</span>
                             </div>
-                            <div className="mt-2 pl-6 text-[11px] uppercase tracking-[0.22em] text-zion-cyan-300/75">
+                            <div className="mt-2 pl-6 text-[11px] uppercase tracking-[0.22em] text-zion-cyan/75">
                               {cs ? line.responseCs : line.responseEn}
                             </div>
                           </div>

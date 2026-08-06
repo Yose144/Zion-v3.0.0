@@ -172,7 +172,7 @@ function CodeBlock({ code, title }: { code: string; title?: string }) {
         className="absolute top-3 right-3 p-1.5 rounded-lg bg-white/5 border border-white/10 text-white/30 hover:text-white/70 transition-all"
       >
         {copied ? (
-          <Check className="w-3.5 h-3.5 text-zion-cyan-400" />
+          <Check className="w-3.5 h-3.5 text-zion-cyan" />
         ) : (
           <Copy className="w-3.5 h-3.5" />
         )}
@@ -227,7 +227,7 @@ const guideTabs: {
     id: "solo",
     label: "Solo Mining",
     icon: Sparkles,
-    color: "text-zion-cyan-400",
+    color: "text-zion-cyan",
   },
 ];
 
@@ -248,8 +248,8 @@ const nodeRequirements = [
   { icon: Cpu, label: "CPU", value: "2+ cores (ARM64 or x86_64)", color: "text-zion-cyan" },
   { icon: HardDrive, label: "RAM", value: "4 GB minimum (8 GB rec.)", color: "text-zion-gold" },
   { icon: Database, label: "Disk", value: "20 GB SSD (grows ~2 GB/yr)", color: "text-zion-purple" },
-  { icon: Wifi, label: "Network", value: "Stable broadband, 10 Mbps+", color: "text-zion-cyan-400" },
-  { icon: Monitor, label: "OS", value: "Linux, macOS, Windows (WSL2)", color: "text-zion-purple-400" },
+  { icon: Wifi, label: "Network", value: "Stable broadband, 10 Mbps+", color: "text-zion-cyan" },
+  { icon: Monitor, label: "OS", value: "Linux, macOS, Windows (WSL2)", color: "text-zion-purple" },
 ];
 
 const ports = [
@@ -260,7 +260,7 @@ const ports = [
 ];
 
 const networkConfigs = [
-  { name: "Mainnet", file: "mainnet.toml", badge: "bg-zion-cyan-500/10 text-zion-cyan-400 border-zion-cyan-500/20", description: "Mainnet Beta — live since July 2026" },
+  { name: "Mainnet", file: "mainnet.toml", badge: "bg-zion-cyan/10 text-zion-cyan border-zion-cyan/20", description: "Mainnet Beta — live since July 2026" },
   { name: "Testnet", file: "testnet.toml", badge: "bg-zion-gold/10 text-zion-gold border-zion-gold/20", description: "Testing with free test coins" },
   { name: "Devnet", file: "devnet.toml", badge: "bg-zion-purple/10 text-zion-purple border-zion-purple/20", description: "Local development network" },
 ];
@@ -739,7 +739,7 @@ cargo build --release -p zion-public --features metal
 
                 <div className="mb-6">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-zion-cyan-500/10 border border-zion-cyan-500/20 text-zion-cyan-400">NVIDIA</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-zion-cyan/10 border border-zion-cyan/20 text-zion-cyan">NVIDIA</span>
                     <h4 className="text-sm font-medium text-white/80">CUDA (Linux/Windows)</h4>
                   </div>
                   <CodeBlock
@@ -757,7 +757,7 @@ cargo build --release -p zion-public --features cuda
 
                 <div className="mb-6">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-zion-purple-500/10 border border-zion-purple-500/20 text-zion-purple-400">AMD</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-zion-purple/10 border border-zion-purple/20 text-zion-purple">AMD</span>
                     <h4 className="text-sm font-medium text-white/80">OpenCL (Linux/Windows)</h4>
                   </div>
                   <CodeBlock
@@ -854,7 +854,7 @@ cargo build --release -p zion-public --features gpu-opencl
             <motion.div key="solo" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
               <div className="zion-rainbow-sub p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                 <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-zion-cyan-400" />
+                  <Sparkles className="w-5 h-5 text-zion-cyan" />
                   {MiningUnifiedCopy.soloMiningFullBlockRewards[cs ? 'cs' : 'en']}
                 </h3>
                 <p className="text-white/40 text-sm mb-5">
@@ -862,7 +862,7 @@ cargo build --release -p zion-public --features gpu-opencl
                 </p>
 
                 <div className="zion-rainbow-sub p-4 mb-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                  <h4 className="text-sm font-medium text-zion-gold-400 mb-1">⚠️ {MiningUnifiedCopy.whoShouldSoloMine[cs ? 'cs' : 'en']}</h4>
+                  <h4 className="text-sm font-medium text-zion-gold mb-1">⚠️ {MiningUnifiedCopy.whoShouldSoloMine[cs ? 'cs' : 'en']}</h4>
                   <p className="text-sm text-white/40">
                     {MiningUnifiedCopy.recommendedIfYouHaveSignifican[cs ? 'cs' : 'en']}
                   </p>
@@ -885,7 +885,7 @@ cargo build --release -p zion-public --features gpu-opencl
 
                 <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                    <h4 className="text-sm font-medium text-zion-cyan-400 mb-2">✅ {MiningUnifiedCopy.pros[cs ? 'cs' : 'en']}</h4>
+                    <h4 className="text-sm font-medium text-zion-cyan mb-2">✅ {MiningUnifiedCopy.pros[cs ? 'cs' : 'en']}</h4>
                     <ul className="text-sm text-white/40 space-y-1">
                       <li>• {MiningUnifiedCopy.fullCurrentBlockRewardFees[cs ? 'cs' : 'en']}</li>
                       <li>• {MiningUnifiedCopy.noPoolFees[cs ? 'cs' : 'en']}</li>
@@ -894,7 +894,7 @@ cargo build --release -p zion-public --features gpu-opencl
                     </ul>
                   </div>
                   <div className="zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                    <h4 className="text-sm font-medium text-zion-purple-400 mb-2">❌ {MiningUnifiedCopy.cons[cs ? 'cs' : 'en']}</h4>
+                    <h4 className="text-sm font-medium text-zion-purple mb-2">❌ {MiningUnifiedCopy.cons[cs ? 'cs' : 'en']}</h4>
                     <ul className="text-sm text-white/40 space-y-1">
                       <li>• {MiningUnifiedCopy.irregularPayoutsLuckBased[cs ? 'cs' : 'en']}</li>
                       <li>• {MiningUnifiedCopy.needToRunAFullNode[cs ? 'cs' : 'en']}</li>
@@ -1094,7 +1094,7 @@ bootstrap = [
           {/* Ports & Firewall */}
           <div>
             <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-              <Shield className="w-5 h-5 text-zion-cyan-400" />
+              <Shield className="w-5 h-5 text-zion-cyan" />
               {MiningUnifiedCopy.portsFirewall[cs ? 'cs' : 'en']}
             </h3>
 
@@ -1112,7 +1112,7 @@ bootstrap = [
                   <span className="text-sm text-white/70">{p.purpose}</span>
                   <span className="text-right">
                     {p.required ? (
-                      <span className="text-[10px] bg-zion-cyan-500/10 text-zion-cyan-400 border border-zion-cyan-500/20 px-2 py-0.5 rounded-full">{MiningUnifiedCopy.required[cs ? 'cs' : 'en']}</span>
+                      <span className="text-[10px] bg-zion-cyan/10 text-zion-cyan border border-zion-cyan/20 px-2 py-0.5 rounded-full">{MiningUnifiedCopy.required[cs ? 'cs' : 'en']}</span>
                     ) : (
                       <span className="text-[10px] bg-white/5 text-white/30 border border-white/10 px-2 py-0.5 rounded-full">{MiningUnifiedCopy.optional[cs ? 'cs' : 'en']}</span>
                     )}
@@ -1151,7 +1151,7 @@ sudo ufw status`}
           {/* Verify Node */}
           <div className="zion-rainbow-sub p-6 space-y-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Rocket className="w-5 h-5 text-zion-cyan-400" />
+              <Rocket className="w-5 h-5 text-zion-cyan" />
               {MiningUnifiedCopy.verifyYourNode[cs ? 'cs' : 'en']}
             </h3>
             <CodeBlock
@@ -1168,9 +1168,9 @@ sudo ufw status`}
             />
             <div className="zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <div className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-zion-cyan-400 mt-0.5 shrink-0" />
+                <Check className="w-5 h-5 text-zion-cyan mt-0.5 shrink-0" />
                 <div className="text-sm text-white/60">
-                  <p className="font-medium text-zion-cyan-400 mb-1">{MiningUnifiedCopy.successCriteria[cs ? 'cs' : 'en']}</p>
+                  <p className="font-medium text-zion-cyan mb-1">{MiningUnifiedCopy.successCriteria[cs ? 'cs' : 'en']}</p>
                   <ul className="space-y-1 text-white/40">
                     <li>• {MiningUnifiedCopy.blockHeightMatches[cs ? 'cs' : 'en']}<Link href="/explorer" className="text-zion-cyan/60 hover:text-zion-cyan underline">{MiningUnifiedCopy.explorer[cs ? 'cs' : 'en']}</Link></li>
                     <li>• {MiningUnifiedCopy.k2PeersConnected[cs ? 'cs' : 'en']}</li>
@@ -1191,7 +1191,7 @@ sudo ufw status`}
           viewport={{ once: true }}
         >
           <h2 className="text-2xl font-bold text-white mb-5 flex items-center gap-2">
-            <Settings className="w-6 h-6 text-zion-gold-400" />
+            <Settings className="w-6 h-6 text-zion-gold" />
             {MiningUnifiedCopy.faqTroubleshooting[cs ? 'cs' : 'en']}
           </h2>
 

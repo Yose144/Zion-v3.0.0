@@ -22,7 +22,7 @@ function SplineFallbackScene() {
           </p>
           <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
             Tree of{' '}
-            <span className="bg-linear-to-r from-zion-gold-300 via-zion-gold-400 to-yellow-200 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-zion-gold via-zion-gold to-yellow-200 bg-clip-text text-transparent">
               Life
             </span>
           </h2>
@@ -30,7 +30,7 @@ function SplineFallbackScene() {
         <div className="relative mx-auto max-w-5xl zion-rainbow-card shadow-[0_20px_80px_rgba(0,0,0,0.45)] overflow-hidden" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
           <div className="aspect-16/10 min-h-[420px] md:min-h-[560px] w-full flex items-center justify-center">
             <div className="text-center px-8">
-              <div className="mx-auto mb-5 h-20 w-20 rounded-full border border-zion-gold-300/30 flex items-center justify-center animate-pulse">
+              <div className="mx-auto mb-5 h-20 w-20 rounded-full border border-zion-gold/30 flex items-center justify-center animate-pulse">
                 <span className="text-3xl">✦</span>
               </div>
               <p className="text-amber-100/85 text-sm md:text-base font-light tracking-wide">Preparing cinematic 3D scene...</p>

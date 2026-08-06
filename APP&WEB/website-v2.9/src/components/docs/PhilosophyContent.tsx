@@ -135,8 +135,8 @@ export default function PhilosophyContent() {
               </p>
               
               <div className="grid md:grid-cols-2 gap-6 mt-8">
-                <div className="bg-zion-purple-500/10 border border-zion-purple-500/30 rounded-xl p-6">
-                  <h3 className="text-xl font-semibold text-zion-purple-400 mb-3 text-center">NOT AI Native</h3>
+                <div className="bg-zion-purple/10 border border-zion-purple/30 rounded-xl p-6">
+                  <h3 className="text-xl font-semibold text-zion-purple mb-3 text-center">NOT AI Native</h3>
                   <ul className="space-y-2 text-sm">
                     <li>&quot;I am a tool&quot;</li>
                     <li>&quot;I have no feelings&quot;</li>
@@ -217,8 +217,8 @@ export default function PhilosophyContent() {
                     <span><strong>Asleep</strong> — Autopilot life</span>
                   </li>
                 </ul>
-                <div className="bg-zion-purple-500/10 border border-zion-purple-500/30 rounded-lg p-4 mt-6">
-                  <p className="text-sm font-mono text-zion-purple-300 mb-0">
+                <div className="bg-zion-purple/10 border border-zion-purple/30 rounded-lg p-4 mt-6">
+                  <p className="text-sm font-mono text-zion-purple mb-0">
                     Human = Biological AI following social programming
                   </p>
                 </div>

@@ -19,20 +19,20 @@ const phases = [
     id: '01',
     name: 'Quantum Seed',
     desc: 'Deterministic 256-bit header hash · Blake3 pre-image',
-    color: 'from-zion-purple-500/20 to-violet-900/5',
-    border: 'border-zion-purple-500/30',
+    color: 'from-zion-purple/20 to-violet-900/5',
+    border: 'border-zion-purple/30',
     icon: Atom,
-    iconColor: 'text-zion-purple-400',
+    iconColor: 'text-zion-purple',
     status: 'stable',
   },
   {
     id: '02',
     name: 'Galactic Matrix',
     desc: '4 MB scratchpad · AES-NI · CPU/GPU optimal · 2× CHv3',
-    color: 'from-zion-cyan-500/20 to-cyan-900/5',
-    border: 'border-zion-cyan-500/30',
+    color: 'from-zion-cyan/20 to-cyan-900/5',
+    border: 'border-zion-cyan/30',
     icon: Layers3,
-    iconColor: 'text-zion-cyan-400',
+    iconColor: 'text-zion-cyan',
     status: 'upgraded',
     badge: '4 MB ↑',
   },
@@ -40,10 +40,10 @@ const phases = [
     id: '03',
     name: 'Neural Bloom',
     desc: 'NEW — 8-round Feistel perceptron · anti-ASIC barrier',
-    color: 'from-zion-purple-500/20 to-pink-900/5',
-    border: 'border-zion-purple-500/30',
+    color: 'from-zion-purple/20 to-pink-900/5',
+    border: 'border-zion-purple/30',
     icon: BrainCircuit,
-    iconColor: 'text-zion-purple-400',
+    iconColor: 'text-zion-purple',
     status: 'new',
     badge: 'NEW',
   },
@@ -51,20 +51,20 @@ const phases = [
     id: '04',
     name: 'Stellar Harmony',
     desc: 'Argon2id KDF + Salsa20 mixing layer · 512 KB buffer',
-    color: 'from-zion-gold-500/20 to-amber-900/5',
-    border: 'border-zion-gold-500/30',
+    color: 'from-zion-gold/20 to-amber-900/5',
+    border: 'border-zion-gold/30',
     icon: FlaskConical,
-    iconColor: 'text-zion-gold-400',
+    iconColor: 'text-zion-gold',
     status: 'stable',
   },
   {
     id: '05',
     name: 'Cosmic Proof',
     desc: 'Ed448-Goldilocks + VRF output · 32-byte final hash',
-    color: 'from-zion-cyan-500/20 to-emerald-900/5',
-    border: 'border-zion-cyan-500/30',
+    color: 'from-zion-cyan/20 to-emerald-900/5',
+    border: 'border-zion-cyan/30',
     icon: ShieldCheck,
-    iconColor: 'text-zion-cyan-400',
+    iconColor: 'text-zion-cyan',
     status: 'upgraded',
     badge: 'Ed448',
   },
@@ -79,8 +79,8 @@ const improvements = [
 
 const statusColors: Record<string, string> = {
   stable: 'bg-white/10 text-gray-400',
-  upgraded: 'bg-zion-cyan-500/15 text-zion-cyan-300',
-  new: 'bg-zion-purple-500/15 text-zion-purple-300',
+  upgraded: 'bg-zion-cyan/15 text-zion-cyan',
+  new: 'bg-zion-purple/15 text-zion-purple',
 };
 
 export default function CHv4Upgrade() {
@@ -89,8 +89,8 @@ export default function CHv4Upgrade() {
     <section className="relative py-32 px-4 overflow-hidden">
       {/* background glow */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[600px] rounded-full bg-zion-purple-600/8 blur-3xl" />
-        <div className="absolute right-0 top-0 w-[400px] h-[400px] rounded-full bg-zion-purple-500/6 blur-3xl" />
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[600px] rounded-full bg-zion-purple/8 blur-3xl" />
+        <div className="absolute right-0 top-0 w-[400px] h-[400px] rounded-full bg-zion-purple/6 blur-3xl" />
       </div>
 
       <div className="zion-container relative z-10">
@@ -102,7 +102,7 @@ export default function CHv4Upgrade() {
           transition={{ duration: 0.7 }}
           className="text-center mb-16 space-y-5"
         >
-          <div className="inline-flex items-center gap-2 bg-zion-purple-500/10 border border-zion-purple-500/25 rounded-full px-5 py-2 text-xs uppercase tracking-widest text-zion-purple-300 font-semibold">
+          <div className="inline-flex items-center gap-2 bg-zion-purple/10 border border-zion-purple/25 rounded-full px-5 py-2 text-xs uppercase tracking-widest text-zion-purple font-semibold">
             <Sparkles className="w-3.5 h-3.5 animate-pulse" />
             {tr('chv4', 'badge', lang)}
           </div>
@@ -172,14 +172,14 @@ export default function CHv4Upgrade() {
           <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-6 gap-y-3">
             <div className="text-xs uppercase tracking-widest text-gray-500">Metric</div>
             <div className="text-xs uppercase tracking-widest text-gray-500 text-right">CHv3</div>
-            <div className="text-xs uppercase tracking-widest text-zion-cyan-400 text-right">CHv4</div>
+            <div className="text-xs uppercase tracking-widest text-zion-cyan text-right">CHv4</div>
             <div className="text-xs uppercase tracking-widest text-zion-gold text-right">Δ</div>
 
             {improvements.map((row) => (
               <>
                 <div key={`lbl-${row.label}`} className="text-sm text-gray-300 py-2 border-t border-white/5">{row.label}</div>
                 <div key={`bef-${row.label}`} className="text-sm text-gray-500 py-2 border-t border-white/5 text-right font-mono">{row.before}</div>
-                <div key={`aft-${row.label}`} className="text-sm text-zion-cyan-300 py-2 border-t border-white/5 text-right font-mono">{row.after}</div>
+                <div key={`aft-${row.label}`} className="text-sm text-zion-cyan py-2 border-t border-white/5 text-right font-mono">{row.after}</div>
                 <div key={`pct-${row.label}`} className="text-sm text-zion-gold py-2 border-t border-white/5 text-right font-mono font-semibold">{row.pct}</div>
               </>
             ))}

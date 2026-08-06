@@ -234,25 +234,25 @@ export default function ConsensusClient() {
     {
       icon: Pickaxe,
       title: ExplorerConsensusConsensusClientCopy.powAlgorithms[cs ? 'cs' : 'en'],
-      color: "text-zion-cyan-400",
-      border: "border-zion-cyan-500/20",
-      bg: "bg-zion-cyan-500/5",
+      color: "text-zion-cyan",
+      border: "border-zion-cyan/20",
+      bg: "bg-zion-cyan/5",
       content: ExplorerConsensusConsensusClientCopy.zionSupportsThreeAlgorithmsDee[cs ? 'cs' : 'en'],
     },
     {
       icon: Heart,
       title: ExplorerConsensusConsensusClientCopy.k89551RewardSplit[cs ? 'cs' : 'en'],
-      color: "text-zion-purple-400",
-      border: "border-zion-purple-500/20",
-      bg: "bg-zion-purple-500/5",
+      color: "text-zion-purple",
+      border: "border-zion-purple/20",
+      bg: "bg-zion-purple/5",
       content: ExplorerConsensusConsensusClientCopy.everyCoinbaseBlockSplitsTheRew[cs ? 'cs' : 'en'],
     },
     {
       icon: Shield,
       title: ExplorerConsensusConsensusClientCopy.securityValidation[cs ? 'cs' : 'en'],
-      color: "text-zion-purple-400",
-      border: "border-zion-purple-500/20",
-      bg: "bg-zion-purple-500/5",
+      color: "text-zion-purple",
+      border: "border-zion-purple/20",
+      bg: "bg-zion-purple/5",
       content: ExplorerConsensusConsensusClientCopy.utxoModelWithRingSignaturesEve[cs ? 'cs' : 'en'],
     },
   ];
@@ -274,7 +274,7 @@ export default function ConsensusClient() {
   return (
     <div className="relative min-h-screen pb-24 overflow-x-hidden">
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-purple-500/8" />
+        <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-purple/8" />
         <div className="absolute -right-40 top-2/3 h-[400px] w-[400px] rounded-full blur-[200px] bg-zion-cyan/6" />
       </div>
 
@@ -283,7 +283,7 @@ export default function ConsensusClient() {
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
           className="zion-rainbow-card rounded-3xl md:rounded-4xl bg-black/60 p-6 md:p-10 shadow-[0_30px_120px_rgba(0,0,0,0.45)]" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
           <div className="space-y-5">
-            <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple-500/40 bg-zion-purple-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-purple-300 uppercase">
+            <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-purple uppercase">
               <Cpu className="h-4 w-4" />
               {ExplorerConsensusConsensusClientCopy.protocol[cs ? 'cs' : 'en']}
             </div>
@@ -304,7 +304,7 @@ export default function ConsensusClient() {
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerConsensusConsensusClientCopy.details[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Shield className="h-7 w-7 text-zion-purple-400" />
+              <Shield className="h-7 w-7 text-zion-purple" />
               {ExplorerConsensusConsensusClientCopy.protocolParameters[cs ? 'cs' : 'en']}
             </h2>
           </div>

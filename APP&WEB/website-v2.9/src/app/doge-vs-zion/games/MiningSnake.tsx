@@ -463,7 +463,7 @@ export function MiningSnake({ onBack }: { onBack: () => void }) {
           <ArrowLeft size={18} /> {DogeVsZionGamesMiningSnakeCopy.back[cs ? 'cs' : 'en']}
         </button>
         <div className="text-center">
-          <h1 className="text-xl font-bold text-zion-cyan-400 tracking-wide">{DogeVsZionGamesMiningSnakeCopy.miningSnake[cs ? 'cs' : 'en']}</h1>
+          <h1 className="text-xl font-bold text-zion-cyan tracking-wide">{DogeVsZionGamesMiningSnakeCopy.miningSnake[cs ? 'cs' : 'en']}</h1>
           <p className="text-[10px] text-zinc-500">{DogeVsZionGamesMiningSnakeCopy.collectZionDonu2019tCrashYourR[cs ? 'cs' : 'en']}</p>
         </div>
         <button
@@ -477,7 +477,7 @@ export function MiningSnake({ onBack }: { onBack: () => void }) {
 
       {/* Score bar */}
       <div className="flex items-center justify-between w-full text-sm">
-        <div className="flex items-center gap-1.5 text-zion-gold-400">
+        <div className="flex items-center gap-1.5 text-zion-gold">
           <span className="text-base">⛏️</span>
           <span className="font-mono font-bold">{coins}</span>
           <span className="text-zinc-500 text-xs">{DogeVsZionGamesMiningSnakeCopy.coins[cs ? 'cs' : 'en']}</span>
@@ -486,7 +486,7 @@ export function MiningSnake({ onBack }: { onBack: () => void }) {
           <span className="font-mono font-bold">{score}</span>
           <span className="text-zinc-500 text-xs">{DogeVsZionGamesMiningSnakeCopy.pts[cs ? 'cs' : 'en']}</span>
         </div>
-        <div className="flex items-center gap-1.5 text-zion-gold-500">
+        <div className="flex items-center gap-1.5 text-zion-gold">
           <Trophy size={14} />
           <span className="font-mono font-bold">{highScore}</span>
         </div>
@@ -506,7 +506,7 @@ export function MiningSnake({ onBack }: { onBack: () => void }) {
         {status === 'start' && (
           <div className="absolute inset-1 flex flex-col items-center justify-center bg-black/70 rounded-lg backdrop-blur-sm gap-4 p-6 text-center">
             <div className="text-4xl">⛏️</div>
-            <h2 className="text-lg font-bold text-zion-cyan-400">{DogeVsZionGamesMiningSnakeCopy.miningSnake[cs ? 'cs' : 'en']}</h2>
+            <h2 className="text-lg font-bold text-zion-cyan">{DogeVsZionGamesMiningSnakeCopy.miningSnake[cs ? 'cs' : 'en']}</h2>
             <p className="text-xs text-zinc-400 max-w-xs leading-relaxed">
               {DogeVsZionGamesMiningSnakeCopy.pilotYourMiningRigAcrossTheGri[cs ? 'cs' : 'en']}
             </p>
@@ -515,7 +515,7 @@ export function MiningSnake({ onBack }: { onBack: () => void }) {
             </div>
             <button
               onClick={startGame}
-              className="px-6 py-2 rounded-lg bg-zion-cyan-600 hover:bg-zion-cyan-500 text-white font-bold text-sm transition-colors"
+              className="px-6 py-2 rounded-lg bg-zion-cyan hover:bg-zion-cyan text-white font-bold text-sm transition-colors"
             >
               {DogeVsZionGamesMiningSnakeCopy.startMining[cs ? 'cs' : 'en']}
             </button>
@@ -528,7 +528,7 @@ export function MiningSnake({ onBack }: { onBack: () => void }) {
             <h2 className="text-lg font-bold text-white">{DogeVsZionGamesMiningSnakeCopy.paused[cs ? 'cs' : 'en']}</h2>
             <button
               onClick={togglePause}
-              className="px-5 py-2 rounded-lg bg-zion-cyan-600 hover:bg-zion-cyan-500 text-white font-bold text-sm transition-colors"
+              className="px-5 py-2 rounded-lg bg-zion-cyan hover:bg-zion-cyan text-white font-bold text-sm transition-colors"
             >
               {DogeVsZionGamesMiningSnakeCopy.resume[cs ? 'cs' : 'en']}
             </button>
@@ -540,23 +540,23 @@ export function MiningSnake({ onBack }: { onBack: () => void }) {
         {status === 'over' && (
           <div className="absolute inset-1 flex flex-col items-center justify-center bg-black/75 rounded-lg backdrop-blur-sm gap-3 p-6 text-center">
             <div className="text-3xl">💥</div>
-            <h2 className="text-lg font-bold text-zion-purple-400">{DogeVsZionGamesMiningSnakeCopy.rigCrashed[cs ? 'cs' : 'en']}</h2>
+            <h2 className="text-lg font-bold text-zion-purple">{DogeVsZionGamesMiningSnakeCopy.rigCrashed[cs ? 'cs' : 'en']}</h2>
             <div className="flex flex-col gap-1">
               <div className="text-sm text-white">
-                {DogeVsZionGamesMiningSnakeCopy.score[cs ? 'cs' : 'en']}: <span className="font-mono font-bold text-zion-gold-400">{score}</span>
+                {DogeVsZionGamesMiningSnakeCopy.score[cs ? 'cs' : 'en']}: <span className="font-mono font-bold text-zion-gold">{score}</span>
               </div>
               <div className="text-xs text-zinc-400">
-                {DogeVsZionGamesMiningSnakeCopy.coins_2[cs ? 'cs' : 'en']}: <span className="font-mono">{coins}</span> · {DogeVsZionGamesMiningSnakeCopy.best[cs ? 'cs' : 'en']}: <span className="font-mono text-zion-gold-500">{highScore}</span>
+                {DogeVsZionGamesMiningSnakeCopy.coins_2[cs ? 'cs' : 'en']}: <span className="font-mono">{coins}</span> · {DogeVsZionGamesMiningSnakeCopy.best[cs ? 'cs' : 'en']}: <span className="font-mono text-zion-gold">{highScore}</span>
               </div>
               {score >= highScore && score > 0 && (
-                <div className="text-xs text-zion-gold-400 font-bold flex items-center gap-1 justify-center">
+                <div className="text-xs text-zion-gold font-bold flex items-center gap-1 justify-center">
                   <Trophy size={12} /> {DogeVsZionGamesMiningSnakeCopy.newHighScore[cs ? 'cs' : 'en']}
                 </div>
               )}
             </div>
             <button
               onClick={startGame}
-              className="flex items-center gap-2 px-5 py-2 rounded-lg bg-zion-cyan-600 hover:bg-zion-cyan-500 text-white font-bold text-sm transition-colors"
+              className="flex items-center gap-2 px-5 py-2 rounded-lg bg-zion-cyan hover:bg-zion-cyan text-white font-bold text-sm transition-colors"
             >
               <RefreshCw size={14} /> {DogeVsZionGamesMiningSnakeCopy.retry[cs ? 'cs' : 'en']}
             </button>

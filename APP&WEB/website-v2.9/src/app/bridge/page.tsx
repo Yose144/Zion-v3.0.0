@@ -267,12 +267,12 @@ export default function BridgePage() {
                     className={`zion-badge ${
                       status.online
                         ? 'zion-badge-green'
-                        : 'border-zion-purple-500/30 bg-zion-purple-500/10 text-zion-purple-300'
+                        : 'border-zion-purple/30 bg-zion-purple/10 text-zion-purple'
                     }`}
                   >
                     <span
                       className={`h-2 w-2 rounded-full ${
-                        status.online ? 'bg-zion-cyan-400 animate-pulse' : 'bg-zion-purple-400'
+                        status.online ? 'bg-zion-cyan animate-pulse' : 'bg-zion-purple'
                       }`}
                     />
                     {status.online
@@ -289,9 +289,9 @@ export default function BridgePage() {
                 {status?.online && (
                   <span className="zion-badge">
                     {status.online ? (
-                      <Wifi className="h-3.5 w-3.5 text-zion-cyan-400" />
+                      <Wifi className="h-3.5 w-3.5 text-zion-cyan" />
                     ) : (
-                      <WifiOff className="h-3.5 w-3.5 text-zion-gold-400" />
+                      <WifiOff className="h-3.5 w-3.5 text-zion-gold" />
                     )}
                     <span className="text-gray-300">Uptime:</span>
                     <span className="font-mono text-white">{formatUptime(status.uptime_seconds)}</span>
@@ -351,7 +351,7 @@ export default function BridgePage() {
                     style={{ '--rc': '7, 137, 48' } as CSSProperties}
                   >
                     <div className="flex items-center gap-2 text-sm text-gray-300">
-                      <ShieldCheck className="h-4 w-4 text-zion-cyan-400" />
+                      <ShieldCheck className="h-4 w-4 text-zion-cyan" />
                       {BridgeCopy.validators[cs ? 'cs' : 'en']}
                     </div>
                     <span className="font-mono text-white">5/5</span>
@@ -361,10 +361,10 @@ export default function BridgePage() {
                     style={{ '--rc': status?.online ? '7, 137, 48' : '228, 30, 43' } as CSSProperties}
                   >
                     <div className="flex items-center gap-2 text-sm text-gray-300">
-                      <Activity className={`h-4 w-4 ${status?.online ? 'text-zion-cyan-400' : 'text-zion-purple-400'}`} />
+                      <Activity className={`h-4 w-4 ${status?.online ? 'text-zion-cyan' : 'text-zion-purple'}`} />
                       {BridgeCopy.relay[cs ? 'cs' : 'en']}
                     </div>
-                    <span className={`font-mono ${status?.online ? 'text-zion-cyan-300' : 'text-zion-purple-300'}`}>
+                    <span className={`font-mono ${status?.online ? 'text-zion-cyan' : 'text-zion-purple'}`}>
                       {status?.online ? (BridgeCopy.online[cs ? 'cs' : 'en']) : (BridgeCopy.offline[cs ? 'cs' : 'en'])}
                     </span>
                   </div>
@@ -385,7 +385,7 @@ export default function BridgePage() {
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{BridgeCopy.telemetry[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Activity className="h-7 w-7 text-zion-cyan-400" />
+              <Activity className="h-7 w-7 text-zion-cyan" />
               {BridgeCopy.bridgeStatistics[cs ? 'cs' : 'en']}
             </h2>
             <p className="text-sm text-gray-400">
@@ -411,8 +411,8 @@ export default function BridgePage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               <StatCard
                 icon={<Lock className="h-5 w-5" />}
-                colorClass="text-zion-cyan-400"
-                bgClass="bg-zion-cyan-400/10"
+                colorClass="text-zion-cyan"
+                bgClass="bg-zion-cyan/10"
                 rc="7, 137, 48"
                 label={BridgeCopy.mints[cs ? 'cs' : 'en']}
                 value={(status?.evm_mints_confirmed ?? 0).toLocaleString()}
@@ -421,8 +421,8 @@ export default function BridgePage() {
               />
               <StatCard
                 icon={<Flame className="h-5 w-5" />}
-                colorClass="text-zion-gold-400"
-                bgClass="bg-zion-gold-400/10"
+                colorClass="text-zion-gold"
+                bgClass="bg-zion-gold/10"
                 rc="252, 209, 22"
                 label={BridgeCopy.burns[cs ? 'cs' : 'en']}
                 value={(status?.evm_burns_detected ?? 0).toLocaleString()}
@@ -441,8 +441,8 @@ export default function BridgePage() {
               />
               <StatCard
                 icon={<Activity className="h-5 w-5" />}
-                colorClass="text-zion-purple-400"
-                bgClass="bg-zion-purple-400/10"
+                colorClass="text-zion-purple"
+                bgClass="bg-zion-purple/10"
                 rc="59, 130, 246"
                 label={BridgeCopy.errors[cs ? 'cs' : 'en']}
                 value={(status?.errors_total ?? 0).toLocaleString()}
@@ -461,8 +461,8 @@ export default function BridgePage() {
               />
               <StatCard
                 icon={<ShieldCheck className="h-5 w-5" />}
-                colorClass="text-zion-purple-400"
-                bgClass="bg-zion-purple-400/10"
+                colorClass="text-zion-purple"
+                bgClass="bg-zion-purple/10"
                 rc="228, 30, 43"
                 label={BridgeCopy.validators[cs ? 'cs' : 'en']}
                 value="5/5"
@@ -471,8 +471,8 @@ export default function BridgePage() {
               />
               <StatCard
                 icon={<Clock className="h-5 w-5" />}
-                colorClass="text-zion-cyan-400"
-                bgClass="bg-zion-cyan-400/10"
+                colorClass="text-zion-cyan"
+                bgClass="bg-zion-cyan/10"
                 rc="7, 137, 48"
                 label={BridgeCopy.uptime[cs ? 'cs' : 'en']}
                 value={status ? formatUptime(status.uptime_seconds) : '—'}
@@ -480,8 +480,8 @@ export default function BridgePage() {
               />
               <StatCard
                 icon={<TrendingUp className="h-5 w-5" />}
-                colorClass="text-zion-gold-400"
-                bgClass="bg-zion-gold-400/10"
+                colorClass="text-zion-gold"
+                bgClass="bg-zion-gold/10"
                 rc="252, 209, 22"
                 label={BridgeCopy.efficiency[cs ? 'cs' : 'en']}
                 value={`${status ? bridgeEfficiency(status) : 0}%`}
@@ -545,7 +545,7 @@ export default function BridgePage() {
                 style={{ '--rc': '7, 137, 48' } as CSSProperties}
               >
                 <div className="flex items-center gap-2 mb-6">
-                  <Lock className="h-5 w-5 text-zion-cyan-400" />
+                  <Lock className="h-5 w-5 text-zion-cyan" />
                   <h2 className="text-lg font-bold text-white">
                     {BridgeCopy.lockZionOnL1[cs ? 'cs' : 'en']}
                   </h2>
@@ -553,14 +553,14 @@ export default function BridgePage() {
 
                 {/* Step 1: Bridge address */}
                 <div className="mb-5">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-zion-cyan-400 mb-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-zion-cyan mb-2">
                     {BridgeCopy.step1SendZionToBridgeAddress[cs ? 'cs' : 'en']}
                   </p>
                   <div
                     className="flex items-center gap-3 zion-rainbow-sub p-3"
                     style={{ '--rc': '7, 137, 48' } as CSSProperties}
                   >
-                    <code className="flex-1 font-mono text-sm text-zion-cyan-300 break-all">
+                    <code className="flex-1 font-mono text-sm text-zion-cyan break-all">
                       {BRIDGE_CONTRACTS.l1_bridge_address}
                     </code>
                     <button
@@ -571,13 +571,13 @@ export default function BridgePage() {
                     </button>
                   </div>
                   {copied === 'l1addr' && (
-                    <p className="text-xs text-zion-cyan-400 mt-1">✓ {BridgeCopy.copied[cs ? 'cs' : 'en']}</p>
+                    <p className="text-xs text-zion-cyan mt-1">✓ {BridgeCopy.copied[cs ? 'cs' : 'en']}</p>
                   )}
                 </div>
 
                 {/* Step 2: Memo */}
                 <div className="mb-5">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-zion-cyan-400 mb-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-zion-cyan mb-2">
                     {BridgeCopy.step2IncludeMemoWithYourEvmAdd[cs ? 'cs' : 'en']}
                   </p>
                   <div
@@ -596,7 +596,7 @@ export default function BridgePage() {
                     className="flex items-center gap-3 zion-rainbow-sub p-3"
                     style={{ '--rc': '7, 137, 48' } as CSSProperties}
                   >
-                    <code className="flex-1 font-mono text-sm text-zion-cyan-300 break-all">{memoString}</code>
+                    <code className="flex-1 font-mono text-sm text-zion-cyan break-all">{memoString}</code>
                     <button
                       onClick={() => copyText(memoString, 'memo')}
                       className="zion-button-secondary shrink-0 !p-2"
@@ -605,7 +605,7 @@ export default function BridgePage() {
                     </button>
                   </div>
                   {copied === 'memo' && (
-                    <p className="text-xs text-zion-cyan-400 mt-1">✓ {BridgeCopy.copied[cs ? 'cs' : 'en']}</p>
+                    <p className="text-xs text-zion-cyan mt-1">✓ {BridgeCopy.copied[cs ? 'cs' : 'en']}</p>
                   )}
                 </div>
 
@@ -614,7 +614,7 @@ export default function BridgePage() {
                   className="flex items-start gap-3 zion-rainbow-sub p-4 mb-4"
                   style={{ '--rc': '7, 137, 48' } as CSSProperties}
                 >
-                  <Clock className="h-4 w-4 text-zion-cyan-400 shrink-0 mt-0.5" />
+                  <Clock className="h-4 w-4 text-zion-cyan shrink-0 mt-0.5" />
                   <p className="text-sm text-gray-300">
                     {BridgeCopy.wait10MinRelayDetectsLockWaits[cs ? 'cs' : 'en']}
                   </p>
@@ -641,7 +641,7 @@ export default function BridgePage() {
                         icon: Lock,
                         text: BridgeCopy.sendZionToBridgeEscrowAddressW[cs ? 'cs' : 'en'],
                         rc: '7, 137, 48',
-                        color: 'text-zion-cyan-400',
+                        color: 'text-zion-cyan',
                       },
                       {
                         icon: Shield,
@@ -686,7 +686,7 @@ export default function BridgePage() {
                         href={`${BRIDGE_CONTRACTS.explorer_base}${BRIDGE_CONTRACTS.wzion_address}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 text-zion-cyan-400 hover:text-zion-cyan-300"
+                        className="inline-flex items-center gap-1 text-zion-cyan hover:text-zion-cyan"
                       >
                         BaseScan <ExternalLink className="h-3 w-3" />
                       </Link>
@@ -700,7 +700,7 @@ export default function BridgePage() {
                         href={`${BRIDGE_CONTRACTS.explorer_base}${BRIDGE_CONTRACTS.bridge_address}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 text-zion-cyan-400 hover:text-zion-cyan-300"
+                        className="inline-flex items-center gap-1 text-zion-cyan hover:text-zion-cyan"
                       >
                         BaseScan <ExternalLink className="h-3 w-3" />
                       </Link>
@@ -805,7 +805,7 @@ export default function BridgePage() {
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{BridgeCopy.support[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <HelpCircle className="h-7 w-7 text-zion-purple-400" />
+              <HelpCircle className="h-7 w-7 text-zion-purple" />
               {BridgeCopy.faq[cs ? 'cs' : 'en']}
             </h2>
           </div>

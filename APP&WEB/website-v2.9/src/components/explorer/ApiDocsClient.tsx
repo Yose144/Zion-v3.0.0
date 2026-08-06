@@ -356,7 +356,7 @@ function CopyButton({ text, label }: { text: string; label?: string }) {
       onClick={() => { navigator.clipboard.writeText(text); setOk(true); setTimeout(() => setOk(false), 1500); }}
       className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] text-[11px] text-white/60 hover:text-white/90 transition-colors"
     >
-      {ok ? <Check className="w-3.5 h-3.5 text-zion-cyan-400" /> : <Copy className="w-3.5 h-3.5" />}
+      {ok ? <Check className="w-3.5 h-3.5 text-zion-cyan" /> : <Copy className="w-3.5 h-3.5" />}
       {ok ? (label ? "Copied!" : "") : label || "Copy"}
     </button>
   );
@@ -371,7 +371,7 @@ function PathDisplay({ path }: { path: string }) {
       {parts.map((p, i) => {
         const isParam = p.startsWith("?") || p.startsWith("&");
         return (
-          <span key={i} className={isParam ? "text-zion-purple-300" : "text-white/80"}>
+          <span key={i} className={isParam ? "text-zion-purple" : "text-white/80"}>
             {p}
           </span>
         );
@@ -393,7 +393,7 @@ function EndpointAccordion({ ep, cs }: { ep: Endpoint; cs: boolean }) {
         className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-white/[0.02] transition-colors"
       >
         <span className={`flex-shrink-0 px-2 py-0.5 rounded text-[10px] font-bold tracking-wider ${
-          ep.method === "GET" ? "bg-zion-cyan-500/15 text-zion-cyan-400" : "bg-zion-purple-500/15 text-zion-purple-400"
+          ep.method === "GET" ? "bg-zion-cyan/15 text-zion-cyan" : "bg-zion-purple/15 text-zion-purple"
         }`}>
           {ep.method}
         </span>
@@ -426,11 +426,11 @@ function EndpointAccordion({ ep, cs }: { ep: Endpoint; cs: boolean }) {
                   <tbody>
                     {ep.params.map((p) => (
                       <tr key={p.name} className="border-t border-white/[0.04]">
-                        <td className="px-3 py-2 font-mono text-zion-purple-300">{p.name}</td>
+                        <td className="px-3 py-2 font-mono text-zion-purple">{p.name}</td>
                         <td className="px-3 py-2 text-white/50">{p.type}</td>
                         <td className="px-3 py-2">
                           {p.required
-                            ? <span className="text-zion-purple-400 text-[10px] font-semibold uppercase">Yes</span>
+                            ? <span className="text-zion-purple text-[10px] font-semibold uppercase">Yes</span>
                             : <span className="text-white/30 text-[10px] uppercase">No{p.default ? ` · ${p.default}` : ""}</span>}
                         </td>
                         <td className="px-3 py-2 text-white/55">{p.description}</td>
@@ -448,7 +448,7 @@ function EndpointAccordion({ ep, cs }: { ep: Endpoint; cs: boolean }) {
               <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ApiDocsCopy.exampleRequest[cs ? 'cs' : 'en']}</p>
               <CopyButton text={curl} />
             </div>
-            <pre className="rounded-xl bg-black/60 border border-white/[0.06] p-3.5 overflow-x-auto text-[12px] font-mono text-zion-cyan-300/90 leading-relaxed">
+            <pre className="rounded-xl bg-black/60 border border-white/[0.06] p-3.5 overflow-x-auto text-[12px] font-mono text-zion-cyan/90 leading-relaxed">
 {curl}
             </pre>
           </div>
@@ -469,7 +469,7 @@ function EndpointAccordion({ ep, cs }: { ep: Endpoint; cs: boolean }) {
             href={tryUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zion-purple-500/15 border border-zion-purple-500/30 text-[12px] font-semibold text-zion-purple-300 hover:bg-zion-purple-500/25 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zion-purple/15 border border-zion-purple/30 text-[12px] font-semibold text-zion-purple hover:bg-zion-purple/25 transition-colors"
           >
             <ExternalLink className="w-3.5 h-3.5" />
             {ApiDocsCopy.tryIt[cs ? 'cs' : 'en']}
@@ -490,7 +490,7 @@ export default function ApiDocsClient() {
     <div className="relative min-h-screen pb-24 overflow-x-hidden">
       {/* background glow */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-purple-500/8" />
+        <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-purple/8" />
         <div className="absolute -right-40 top-2/3 h-[400px] w-[400px] rounded-full blur-[200px] bg-zion-cyan/6" />
       </div>
 
@@ -505,13 +505,13 @@ export default function ApiDocsClient() {
         {/* header */}
         <div className="zion-rainbow-card p-6 md:p-10" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
           <div className="flex items-center gap-3 mb-4 flex-wrap">
-            <div className="w-12 h-12 rounded-2xl bg-zion-purple-500/15 border border-zion-purple-500/25 flex items-center justify-center">
-              <Code className="w-6 h-6 text-zion-purple-400" />
+            <div className="w-12 h-12 rounded-2xl bg-zion-purple/15 border border-zion-purple/25 flex items-center justify-center">
+              <Code className="w-6 h-6 text-zion-purple" />
             </div>
             <div>
               <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">{ApiDocsCopy.zionBlockchainApi[cs ? 'cs' : 'en']}</h1>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-zion-purple-500/15 text-zion-purple-300 border border-zion-purple-500/30">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-zion-purple/15 text-zion-purple border border-zion-purple/30">
                   v3.0.6
                 </span>
               </div>
@@ -522,14 +522,14 @@ export default function ApiDocsClient() {
           {/* base url */}
           <div className="flex items-center gap-3 flex-wrap mt-6">
             <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">{ApiDocsCopy.baseUrl[cs ? 'cs' : 'en']}</span>
-            <code className="px-3 py-1.5 rounded-lg bg-black/50 border border-white/[0.08] text-[13px] font-mono text-zion-purple-300">{BASE_URL}</code>
+            <code className="px-3 py-1.5 rounded-lg bg-black/50 border border-white/[0.08] text-[13px] font-mono text-zion-purple">{BASE_URL}</code>
             <CopyButton text={BASE_URL} label={ApiDocsCopy.copy[cs ? 'cs' : 'en']} />
           </div>
 
           {/* rate limit banner */}
-          <div className="mt-5 flex items-center gap-3 rounded-xl bg-zion-cyan-500/[0.07] border border-zion-cyan-500/20 px-4 py-3">
-            <span className="w-2 h-2 rounded-full bg-zion-cyan-400 animate-pulse flex-shrink-0" />
-            <p className="text-[13px] text-zion-cyan-300/90">
+          <div className="mt-5 flex items-center gap-3 rounded-xl bg-zion-cyan/[0.07] border border-zion-cyan/20 px-4 py-3">
+            <span className="w-2 h-2 rounded-full bg-zion-cyan animate-pulse flex-shrink-0" />
+            <p className="text-[13px] text-zion-cyan/90">
               <span className="font-semibold">{ApiDocsCopy.rateLimiting[cs ? 'cs' : 'en']}</span>{" "}
               {ApiDocsCopy.noRateLimitFairUse[cs ? 'cs' : 'en']}
             </p>

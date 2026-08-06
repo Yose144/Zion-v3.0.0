@@ -109,7 +109,7 @@ export default function NetworkTicker() {
       icon: Cpu,
       label: "Hashrate",
       value: data.network_hashrate_formatted,
-      color: "text-zion-cyan-400",
+      color: "text-zion-cyan",
     },
     {
       icon: Hash,
@@ -121,19 +121,19 @@ export default function NetworkTicker() {
       icon: Clock,
       label: "Block Time",
       value: `${data.avg_block_time}s`,
-      color: "text-zion-purple-400",
+      color: "text-zion-purple",
     },
     {
       icon: Activity,
       label: "Mempool",
       value: `${data.tx_pool_size} tx`,
-      color: data.tx_pool_size > 0 ? "text-zion-gold-400" : "text-gray-400",
+      color: data.tx_pool_size > 0 ? "text-zion-gold" : "text-gray-400",
     },
     {
       icon: Users,
       label: "Peers",
       value: `${data.total_connections}`,
-      color: "text-zion-purple-400",
+      color: "text-zion-purple",
     },
     {
       icon: Database,
@@ -145,19 +145,19 @@ export default function NetworkTicker() {
       icon: TrendingUp,
       label: "Mined",
       value: `${data.emission_pct}%`,
-      color: "text-zion-purple-400",
+      color: "text-zion-purple",
     },
     {
       icon: Zap,
       label: "Pool Hash",
       value: data.pool_hashrate_formatted || "—",
-      color: "text-zion-cyan-400",
+      color: "text-zion-cyan",
     },
     {
       icon: Globe,
       label: "Miners",
       value: `${data.active_miners ?? 0}`,
-      color: "text-zion-cyan-400",
+      color: "text-zion-cyan",
     },
   ];
 
@@ -187,8 +187,8 @@ export default function NetworkTicker() {
             <div
               className={`h-2 w-2 rounded-full ${
                 data.connected
-                  ? "bg-zion-cyan-400 shadow-zion-cyan-400/50 shadow-sm"
-                  : "bg-zion-purple-400"
+                  ? "bg-zion-cyan shadow-zion-cyan/50 shadow-sm"
+                  : "bg-zion-purple"
               }`}
             />
             <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">

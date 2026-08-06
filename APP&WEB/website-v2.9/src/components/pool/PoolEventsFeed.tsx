@@ -115,8 +115,8 @@ function usePoolEvents() {
 
 const typeIcons: Record<string, React.ReactNode> = {
   block: <Box className="h-4 w-4 text-zion-gold" />,
-  miner: <Users className="h-4 w-4 text-zion-purple-400" />,
-  payout: <Droplets className="h-4 w-4 text-zion-cyan-400" />,
+  miner: <Users className="h-4 w-4 text-zion-purple" />,
+  payout: <Droplets className="h-4 w-4 text-zion-cyan" />,
 };
 
 function timeAgo(ts: number, cs: boolean): string {

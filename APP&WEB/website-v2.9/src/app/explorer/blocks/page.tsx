@@ -65,7 +65,7 @@ function CopyBtn({ text }: { text: string }) {
   return (
     <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(text); setOk(true); setTimeout(() => setOk(false), 1500); }}
       className="text-gray-600 hover:text-white transition ml-1.5 shrink-0">
-      {ok ? <Check className="h-3 w-3 text-zion-cyan-400" /> : <Copy className="h-3 w-3" />}
+      {ok ? <Check className="h-3 w-3 text-zion-cyan" /> : <Copy className="h-3 w-3" />}
     </button>
   );
 }
@@ -201,7 +201,7 @@ export default function BlocksPage() {
               </span>
             )}
             {sse.blockCount > 0 && (
-              <span className="text-[10px] text-zion-cyan-400 tabular-nums">
+              <span className="text-[10px] text-zion-cyan tabular-nums">
                 {cs ? `+${sse.blockCount} nové` : `+${sse.blockCount} new`}
               </span>
             )}
@@ -211,9 +211,9 @@ export default function BlocksPage() {
         {/* Error banner */}
         {error && (
           <div className="zion-rainbow-sub px-4 py-3 flex items-center gap-3" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-            <AlertCircle className="h-5 w-5 text-zion-purple-400 shrink-0" />
+            <AlertCircle className="h-5 w-5 text-zion-purple shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-zion-purple-300 font-medium">{ExplorerBlocksCopy.failedToLoad[cs ? 'cs' : 'en']}</p>
+              <p className="text-sm text-zion-purple font-medium">{ExplorerBlocksCopy.failedToLoad[cs ? 'cs' : 'en']}</p>
               <p className="text-xs text-gray-500 font-mono break-all">{error}</p>
             </div>
             <button
@@ -272,7 +272,7 @@ export default function BlocksPage() {
                           </div>
                         </td>
                         <td className="px-3 py-3 text-right">
-                          <span className={`text-xs font-medium tabular-nums ${(block.num_txes || 0) > 0 ? "text-zion-cyan-400" : "text-gray-500"}`}>
+                          <span className={`text-xs font-medium tabular-nums ${(block.num_txes || 0) > 0 ? "text-zion-cyan" : "text-gray-500"}`}>
                             {(block.num_txes || 0) > 0 ? (block.num_txes + 1) : "1"}
                           </span>
                         </td>

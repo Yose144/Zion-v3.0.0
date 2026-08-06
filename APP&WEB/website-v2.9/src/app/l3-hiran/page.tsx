@@ -71,25 +71,25 @@ const getOrchestration = (cs: boolean) => [
     title: L3HiranCopy.deployment[cs ? 'cs' : 'en'],
     desc: L3HiranCopy.automatedGpuInstanceProvisioni[cs ? 'cs' : 'en'],
     icon: Server,
-    color: 'text-zion-cyan-400',
+    color: 'text-zion-cyan',
   },
   {
     title: L3HiranCopy.monitoring[cs ? 'cs' : 'en'],
     desc: L3HiranCopy.prometheusGrafanaTelemetryInfe[cs ? 'cs' : 'en'],
     icon: Activity,
-    color: 'text-zion-cyan-400',
+    color: 'text-zion-cyan',
   },
   {
     title: L3HiranCopy.ragPipeline[cs ? 'cs' : 'en'],
     desc: L3HiranCopy.chromadbAllMinilmL6V2Embedding[cs ? 'cs' : 'en'],
     icon: Database,
-    color: 'text-zion-purple-400',
+    color: 'text-zion-purple',
   },
   {
     title: L3HiranCopy.fineTuning[cs ? 'cs' : 'en'],
     desc: L3HiranCopy.qloraCurriculum5StagesRank1664[cs ? 'cs' : 'en'],
     icon: Zap,
-    color: 'text-zion-gold-400',
+    color: 'text-zion-gold',
   },
 ];
 
@@ -105,7 +105,7 @@ const getModelCards = (cs: boolean) => [
     hardware: 'RTX 4090 (Vast.ai)',
     dataset: '22,181 pairs · 5 stages',
     tags: ['LLM', 'Fine-tuned', '8B', 'Live'],
-    color: 'border-zion-cyan-500/30 bg-zion-cyan-500/5',
+    color: 'border-zion-cyan/30 bg-zion-cyan/5',
   },
   {
     name: 'Hiran v2.3',
@@ -118,7 +118,7 @@ const getModelCards = (cs: boolean) => [
     hardware: '4x A100 80GB target',
     dataset: '48,436 weighted · 9 stages',
     tags: ['LLM', 'Full FT', '32B', 'RAG'],
-    color: 'border-zion-purple-500/30 bg-zion-purple-500/5',
+    color: 'border-zion-purple/30 bg-zion-purple/5',
   },
 ];
 
@@ -166,25 +166,25 @@ const getRagArch = (cs: boolean) => [
     title: L3HiranCopy.k33KnowledgeDocs[cs ? 'cs' : 'en'],
     desc: L3HiranCopy.religionHistorySciencePhilosop[cs ? 'cs' : 'en'],
     icon: Database,
-    color: 'text-zion-cyan-400',
+    color: 'text-zion-cyan',
   },
   {
     title: 'ChromaDB',
     desc: L3HiranCopy.vectorDbWithAllMinilmL6V2Embed[cs ? 'cs' : 'en'],
     icon: Microchip,
-    color: 'text-zion-cyan-400',
+    color: 'text-zion-cyan',
   },
   {
     title: L3HiranCopy.queryRouter[cs ? 'cs' : 'en'],
     desc: L3HiranCopy.classifiesQueriesZionOnlyKnowl[cs ? 'cs' : 'en'],
     icon: Cable,
-    color: 'text-zion-purple-400',
+    color: 'text-zion-purple',
   },
   {
     title: L3HiranCopy.hybridInference[cs ? 'cs' : 'en'],
     desc: L3HiranCopy.combinesFineTunedModelRetrieve[cs ? 'cs' : 'en'],
     icon: Bot,
-    color: 'text-zion-gold-400',
+    color: 'text-zion-gold',
   },
 ];
 
@@ -195,7 +195,7 @@ const getMarketplace = (cs: boolean) => [
     status: 'live',
     desc: L3HiranCopy.domainSpecificFineTunedModelFo[cs ? 'cs' : 'en'],
     tags: ['LLM', 'Fine-tuned', '8B'],
-    color: 'border-zion-cyan-500/30 bg-zion-cyan-500/5',
+    color: 'border-zion-cyan/30 bg-zion-cyan/5',
   },
   {
     name: 'Hiran v2.3 (WIP)',
@@ -203,7 +203,7 @@ const getMarketplace = (cs: boolean) => [
     status: 'planned',
     desc: L3HiranCopy.fullFineTuningWithHybridRag48k[cs ? 'cs' : 'en'],
     tags: ['LLM', 'Full FT', '32B'],
-    color: 'border-zion-purple-500/30 bg-zion-purple-500/5',
+    color: 'border-zion-purple/30 bg-zion-purple/5',
   },
   {
     name: 'ZION RAG Corpus',
@@ -211,7 +211,7 @@ const getMarketplace = (cs: boolean) => [
     status: 'live',
     desc: L3HiranCopy.knowledgeDocumentsForHybridRet[cs ? 'cs' : 'en'],
     tags: ['Dataset', 'RAG', 'Multilingual'],
-    color: 'border-zion-cyan-500/30 bg-zion-cyan-500/5',
+    color: 'border-zion-cyan/30 bg-zion-cyan/5',
   },
 ];
 
@@ -263,19 +263,19 @@ export default function L3HiranPage() {
         >
           <div className="space-y-5 max-w-3xl">
             <div className="flex flex-wrap items-center gap-3">
-              <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple-500/40 bg-zion-purple-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-purple-300 uppercase">
+              <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-purple uppercase">
                 <Brain className="h-4 w-4" />
                 L3 · Hiran · AI Layer
               </div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan-500/30 bg-zion-cyan-500/10 px-3 py-1 text-xs">
-                {hiranStatus === 'checking' ? <Clock className="h-3 w-3 text-zion-gold-400 animate-spin" /> : hiranStatus === 'online' ? <Wifi className="h-3 w-3 text-zion-cyan-400" /> : <WifiOff className="h-3 w-3 text-zion-purple-400" />}
-                <span className={hiranStatus === 'online' ? 'text-zion-cyan-300' : hiranStatus === 'offline' ? 'text-zion-purple-300' : 'text-zion-gold-300'}>
+              <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-3 py-1 text-xs">
+                {hiranStatus === 'checking' ? <Clock className="h-3 w-3 text-zion-gold animate-spin" /> : hiranStatus === 'online' ? <Wifi className="h-3 w-3 text-zion-cyan" /> : <WifiOff className="h-3 w-3 text-zion-purple" />}
+                <span className={hiranStatus === 'online' ? 'text-zion-cyan' : hiranStatus === 'offline' ? 'text-zion-purple' : 'text-zion-gold'}>
                   Hiran {hiranStatus === 'checking' ? '…' : hiranStatus}
                 </span>
               </div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple-500/30 bg-zion-purple-500/10 px-3 py-1 text-xs">
-                {orchStatus === 'checking' ? <Clock className="h-3 w-3 text-zion-gold-400 animate-spin" /> : orchStatus === 'online' ? <Wifi className="h-3 w-3 text-zion-cyan-400" /> : <WifiOff className="h-3 w-3 text-zion-purple-400" />}
-                <span className={orchStatus === 'online' ? 'text-zion-cyan-300' : orchStatus === 'offline' ? 'text-zion-purple-300' : 'text-zion-gold-300'}>
+              <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple/30 bg-zion-purple/10 px-3 py-1 text-xs">
+                {orchStatus === 'checking' ? <Clock className="h-3 w-3 text-zion-gold animate-spin" /> : orchStatus === 'online' ? <Wifi className="h-3 w-3 text-zion-cyan" /> : <WifiOff className="h-3 w-3 text-zion-purple" />}
+                <span className={orchStatus === 'online' ? 'text-zion-cyan' : orchStatus === 'offline' ? 'text-zion-purple' : 'text-zion-gold'}>
                   Orchestrator {orchStatus === 'checking' ? '…' : orchStatus}{agentCount !== null ? ` · ${agentCount} agent` : ''}
                 </span>
               </div>
@@ -292,10 +292,10 @@ export default function L3HiranPage() {
               {L3HiranCopy.orchestrationHubForZionAiDomai[cs ? 'cs' : 'en']}
             </p>
             <div className="flex flex-wrap gap-3 text-xs">
-              <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan-500/30 bg-zion-cyan-500/10 px-4 py-2 text-cyan-200">
+              <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-2 text-cyan-200">
                 <Cpu className="h-3 w-3" /> 8B · QLoRA · FP16
               </span>
-              <span className="inline-flex items-center gap-2 rounded-full border border-zion-purple-500/30 bg-zion-purple-500/10 px-4 py-2 text-purple-200">
+              <span className="inline-flex items-center gap-2 rounded-full border border-zion-purple/30 bg-zion-purple/10 px-4 py-2 text-purple-200">
                 <Database className="h-3 w-3" /> 33 docs · ChromaDB
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
@@ -316,7 +316,7 @@ export default function L3HiranPage() {
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L3HiranCopy.models[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Microchip className="h-7 w-7 text-zion-cyan-400" />
+              <Microchip className="h-7 w-7 text-zion-cyan" />
               {L3HiranCopy.hiranModelCards[cs ? 'cs' : 'en']}
             </h2>
           </div>
@@ -330,8 +330,8 @@ export default function L3HiranPage() {
                   </div>
                   <span className={`rounded-full px-2.5 py-1 text-xs font-semibold border ${
                     model.status === 'live'
-                      ? 'bg-zion-cyan-500/10 text-zion-cyan-300 border-zion-cyan-500/20'
-                      : 'bg-zion-purple-500/10 text-zion-purple-300 border-zion-purple-500/20'
+                      ? 'bg-zion-cyan/10 text-zion-cyan border-zion-cyan/20'
+                      : 'bg-zion-purple/10 text-zion-purple border-zion-purple/20'
                   }`}>
                     {model.status === 'live' ? 'Live' : 'WIP'}
                   </span>
@@ -365,7 +365,7 @@ export default function L3HiranPage() {
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L3HiranCopy.training[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <FlaskConical className="h-7 w-7 text-zion-gold-400" />
+              <FlaskConical className="h-7 w-7 text-zion-gold" />
               {L3HiranCopy.trainingPhasesV22[cs ? 'cs' : 'en']}
             </h2>
           </div>
@@ -374,16 +374,16 @@ export default function L3HiranPage() {
               <div key={phase.phase} className="zion-rainbow-sub p-5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                 <div className="mb-3 flex items-center justify-between">
                   <span className="text-sm font-bold text-white">{phase.phase}</span>
-                  <span className="rounded-full bg-zion-cyan-500/10 px-2.5 py-1 text-xs font-semibold text-zion-cyan-300 border border-zion-cyan-500/20">
+                  <span className="rounded-full bg-zion-cyan/10 px-2.5 py-1 text-xs font-semibold text-zion-cyan border border-zion-cyan/20">
                     {phase.status === 'done' ? (L3HiranCopy.done[cs ? 'cs' : 'en']) : phase.status}
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 mb-1">{phase.period}</p>
-                <p className="text-xs text-zion-cyan-400 mb-3">Final loss: {phase.loss}</p>
+                <p className="text-xs text-zion-cyan mb-3">Final loss: {phase.loss}</p>
                 <ul className="space-y-2">
                   {phase.items.map((item) => (
                     <li key={item} className="flex items-start gap-2 text-sm text-gray-400">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-zion-cyan-400" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-zion-cyan" />
                       {item}
                     </li>
                   ))}
@@ -404,7 +404,7 @@ export default function L3HiranPage() {
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L3HiranCopy.architecture[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Database className="h-7 w-7 text-zion-purple-400" />
+              <Database className="h-7 w-7 text-zion-purple" />
               {L3HiranCopy.hybridRagV23[cs ? 'cs' : 'en']}
             </h2>
             <p className="text-sm text-gray-400">
@@ -431,7 +431,7 @@ export default function L3HiranPage() {
           style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
         >
           <div className="mx-auto max-w-3xl text-center mb-8">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-zion-cyan-500/30 bg-zion-cyan-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-zion-cyan-300">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-zion-cyan/30 bg-zion-cyan/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-zion-cyan">
               <MessageCircle className="h-3.5 w-3.5" />
               {L3HiranCopy.liveChat[cs ? 'cs' : 'en']}
             </div>
@@ -458,7 +458,7 @@ export default function L3HiranPage() {
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L3HiranCopy.marketplace[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <ShoppingCart className="h-7 w-7 text-zion-cyan-400" />
+              <ShoppingCart className="h-7 w-7 text-zion-cyan" />
               {L3HiranCopy.aiMarketplace[cs ? 'cs' : 'en']}
             </h2>
           </div>
@@ -469,8 +469,8 @@ export default function L3HiranPage() {
                   <span className="text-lg font-bold text-white">{item.name}</span>
                   <span className={`rounded-full px-2.5 py-1 text-xs font-semibold border ${
                     item.status === 'live'
-                      ? 'bg-zion-cyan-500/10 text-zion-cyan-300 border-zion-cyan-500/20'
-                      : 'bg-zion-purple-500/10 text-zion-purple-300 border-zion-purple-500/20'
+                      ? 'bg-zion-cyan/10 text-zion-cyan border-zion-cyan/20'
+                      : 'bg-zion-purple/10 text-zion-purple border-zion-purple/20'
                   }`}>
                     {item.status === 'live' ? 'Live' : (L3HiranCopy.planned[cs ? 'cs' : 'en'])}
                   </span>
@@ -498,7 +498,7 @@ export default function L3HiranPage() {
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L3HiranCopy.operations[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Server className="h-7 w-7 text-zion-cyan-400" />
+              <Server className="h-7 w-7 text-zion-cyan" />
               {L3HiranCopy.orchestrationDeployment[cs ? 'cs' : 'en']}
             </h2>
           </div>
@@ -524,13 +524,13 @@ export default function L3HiranPage() {
             {L3HiranCopy.learnMoreAboutL3AndTheEcosyste[cs ? 'cs' : 'en']}
           </h2>
           <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/ai-native" className="inline-flex items-center gap-2 rounded-2xl border border-zion-cyan-500/30 bg-zion-cyan-500/5 px-6 py-3 text-sm font-semibold text-cyan-200 hover:bg-zion-cyan-500/10 transition-colors">
+            <Link href="/ai-native" className="inline-flex items-center gap-2 rounded-2xl border border-zion-cyan/30 bg-zion-cyan/5 px-6 py-3 text-sm font-semibold text-cyan-200 hover:bg-zion-cyan/10 transition-colors">
               <Brain className="h-4 w-4" /> AI Native
             </Link>
             <Link href="/warp" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
               <Globe className="h-4 w-4" /> L3 WARP
             </Link>
-            <Link href="/l4-oasis" className="inline-flex items-center gap-2 rounded-2xl border border-zion-gold-500/30 bg-zion-gold-500/5 px-6 py-3 text-sm font-semibold text-orange-200 hover:bg-zion-gold-500/10 transition-colors">
+            <Link href="/l4-oasis" className="inline-flex items-center gap-2 rounded-2xl border border-zion-gold/30 bg-zion-gold/5 px-6 py-3 text-sm font-semibold text-orange-200 hover:bg-zion-gold/10 transition-colors">
               <Gamepad2 className="h-4 w-4" /> L4 Oasis
             </Link>
           </div>

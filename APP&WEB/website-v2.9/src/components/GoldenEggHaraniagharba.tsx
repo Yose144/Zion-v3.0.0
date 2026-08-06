@@ -20,7 +20,7 @@ export default function GoldenEggHaraniagharba() {
     <section className="relative px-4 py-8">
       <div className="zion-container">
         <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-          <div className="absolute -right-10 top-[-40px] h-32 w-32 rounded-full bg-zion-gold-300/15 blur-3xl" />
+          <div className="absolute -right-10 top-[-40px] h-32 w-32 rounded-full bg-zion-gold/15 blur-3xl" />
           <div className="absolute -bottom-16 -left-4 h-40 w-40 rounded-full bg-zion-purple/10 blur-3xl" />
 
           <div className="relative grid gap-4 lg:grid-cols-[160px_1fr] lg:items-center">
@@ -41,7 +41,7 @@ export default function GoldenEggHaraniagharba() {
             <div className="space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                 <div>
-                  <div className="inline-flex items-center gap-1.5 rounded-full border border-zion-gold-300/20 bg-amber-200/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.32em] text-amber-200">
+                  <div className="inline-flex items-center gap-1.5 rounded-full border border-zion-gold/20 bg-amber-200/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.32em] text-amber-200">
                     <Orbit className="h-3 w-3" />
                     {GoldenEggHaraniagharbaCopy.hiranHiranyagarbha[cs ? 'cs' : 'en']}
                   </div>

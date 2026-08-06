@@ -42,21 +42,21 @@ const daoNodes = [
     role: "Foundational",
     allocation: "Community flow",
     notes: ["Open onboarding", "Contribution tracking", "Community proposals"],
-    color: "from-zion-purple-500/40 to-zion-gold-400/20",
+    color: "from-zion-purple/40 to-zion-gold/20",
   },
   {
     name: "💠 Builders Circle",
     role: "Core",
     allocation: "Protocol development",
     notes: ["Core roadmap", "Treasury stewardship", "Technical governance"],
-    color: "from-zion-gold-500/40 to-zion-gold-400/20",
+    color: "from-zion-gold/40 to-zion-gold/20",
   },
   {
     name: "👑 Guardians Council",
     role: "Stewardship",
     allocation: "DAO oversight",
     notes: ["Council elections", "Audit reviews", "Guardian attestations"],
-    color: "from-zion-cyan-500/40 to-zion-purple-400/20",
+    color: "from-zion-cyan/40 to-zion-purple/20",
   },
 ];
 
@@ -74,21 +74,21 @@ const treeLevels = [
     level: "Crown",
     title: "Guardians Council",
     description: "Vrchní vrstva správy DAO — dohled nad treasury, bezpečnostní revize a dlouhodobá vize.",
-    color: "from-zion-purple-500/70 to-zion-purple-500/40",
+    color: "from-zion-purple/70 to-zion-purple/40",
     guardians: [guardianHall[2]],
   },
   {
     level: "Heart",
     title: "Builders Circle",
     description: "Srdce ekosystému — vývoj protokolu, core návrhy a koordinace technických misí.",
-    color: "from-zion-cyan-500/60 to-zion-cyan-500/30",
+    color: "from-zion-cyan/60 to-zion-cyan/30",
     guardians: [guardianHall[1]],
   },
   {
     level: "Roots",
     title: "Community Guild",
     description: "Kořeny DAO — otevřená komunita, contribution streamy, komunitní hlasování a růst sítě.",
-    color: "from-zion-gold-500/60 to-zion-gold-500/30",
+    color: "from-zion-gold/60 to-zion-gold/30",
     guardians: [guardianHall[0]],
   },
 ];
@@ -186,7 +186,7 @@ export default function DaoDashboardPage() {
               </p>
             </div>
             <div className="zion-rainbow-sub flex items-center gap-3 px-4 py-2 text-sm" style={emeraldVar}>
-              <TreeDeciduous className="h-5 w-5 text-zion-cyan-300" />
+              <TreeDeciduous className="h-5 w-5 text-zion-cyan" />
               <span>{DashboardDaoTreeCopy.autoRefreshEvery60sTodo[lang === 'cs' ? 'cs' : 'en']}</span>
             </div>
           </div>
@@ -260,7 +260,7 @@ export default function DaoDashboardPage() {
                     }[guardian.realm] || guardian.realm : guardian.realm}</p>
                     <h3 className="text-2xl font-semibold text-white">{guardian.name}</h3>
                   </div>
-                  <ShieldCheck className="h-6 w-6 text-zion-cyan-300" />
+                  <ShieldCheck className="h-6 w-6 text-zion-cyan" />
                 </div>
                 <div className="mt-4 space-y-1 text-sm text-gray-300">
                   <p>{DashboardDaoTreeCopy.role[lang === 'cs' ? 'cs' : 'en']}: <span className="font-semibold text-white">{guardian.role}</span></p>
@@ -296,7 +296,7 @@ export default function DaoDashboardPage() {
             <ul className="space-y-4 text-sm text-gray-200">
               {upcoming.map((item) => (
                 <li key={item.title} className="zion-rainbow-sub p-4">
-                  <p className="text-xs uppercase tracking-[0.3em] text-zion-cyan-300">{item.title}</p>
+                  <p className="text-xs uppercase tracking-[0.3em] text-zion-cyan">{item.title}</p>
                   <p className="mt-2 text-gray-100">{item.detail}</p>
                 </li>
               ))}

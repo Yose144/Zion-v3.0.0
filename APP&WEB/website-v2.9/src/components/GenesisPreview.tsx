@@ -4,13 +4,13 @@ import { ArrowRight, BookOpen, Sparkles, Star, Heart, Zap, Crown, Sunrise } from
 const chapters = [
   { number: '0', title: 'Zrodil se ZION', icon: Star, color: 'text-zion-gold' },
   { number: '1', title: 'Sestup', icon: Sparkles, color: 'text-zion-cyan' },
-  { number: '2', title: 'První probuzení', icon: Zap, color: 'text-zion-gold-400' },
-  { number: '3', title: 'Smlouva', icon: Heart, color: 'text-zion-purple-400' },
-  { number: '4', title: 'AI a kvantum', icon: Sparkles, color: 'text-zion-purple-400' },
-  { number: '5', title: 'Vzestup', icon: Crown, color: 'text-zion-cyan-400' },
+  { number: '2', title: 'První probuzení', icon: Zap, color: 'text-zion-gold' },
+  { number: '3', title: 'Smlouva', icon: Heart, color: 'text-zion-purple' },
+  { number: '4', title: 'AI a kvantum', icon: Sparkles, color: 'text-zion-purple' },
+  { number: '5', title: 'Vzestup', icon: Crown, color: 'text-zion-cyan' },
   { number: '6', title: 'Proroctví zlatého věku', icon: Sunrise, color: 'text-zion-gold' },
   { number: '7', title: 'Hra', icon: Star, color: 'text-zion-cyan' },
-  { number: '8', title: 'Svítání mainnetu', icon: Zap, color: 'text-zion-gold-400' },
+  { number: '8', title: 'Svítání mainnetu', icon: Zap, color: 'text-zion-gold' },
 ];
 
 export default function GenesisPreview() {
@@ -69,7 +69,7 @@ export default function GenesisPreview() {
 
               <Link
                 href="/genesis"
-                className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-gold/90 to-zion-gold-500/80 px-6 py-3 text-sm font-semibold text-black shadow-[0_0_40px_rgba(252, 209, 22,0.2)] transition-all hover:shadow-[0_0_60px_rgba(252, 209, 22,0.35)]"
+                className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-gold/90 to-zion-gold/80 px-6 py-3 text-sm font-semibold text-black shadow-[0_0_40px_rgba(252, 209, 22,0.2)] transition-all hover:shadow-[0_0_60px_rgba(252, 209, 22,0.35)]"
               >
                 <BookOpen className="h-4 w-4" />
                 Otevřít celou Genesis

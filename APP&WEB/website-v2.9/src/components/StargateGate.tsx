@@ -244,16 +244,16 @@ export default function StargateGate() {
           href="https://oasis.zionterranova.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="group flex items-center gap-3 rounded-2xl border border-zion-cyan-500/20 bg-gradient-to-br from-zion-cyan-500/8 via-zion-cyan-500/4 to-transparent px-6 py-3 backdrop-blur-sm transition-all duration-300 hover:border-zion-cyan-400/40 hover:shadow-[0_0_36px_rgba(7, 137, 48,0.15)] hover:scale-[1.03]"
+          className="group flex items-center gap-3 rounded-2xl border border-zion-cyan/20 bg-gradient-to-br from-zion-cyan/8 via-zion-cyan/4 to-transparent px-6 py-3 backdrop-blur-sm transition-all duration-300 hover:border-zion-cyan/40 hover:shadow-[0_0_36px_rgba(7, 137, 48,0.15)] hover:scale-[1.03]"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-zion-cyan-400/25 bg-zion-cyan-500/12 ring-1 ring-zion-cyan-400/15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-            <Leaf className="h-5 w-5 text-zion-cyan-300" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-zion-cyan/25 bg-zion-cyan/12 ring-1 ring-zion-cyan/15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
+            <Leaf className="h-5 w-5 text-zion-cyan" />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-bold text-zion-cyan-300 tracking-wide">ZION Oasis</span>
+            <span className="text-sm font-bold text-zion-cyan tracking-wide">ZION Oasis</span>
             <span className="text-[10px] text-gray-400 group-hover:text-gray-300 transition-colors">UE5 Metaverse · On-chain · Guild DAO</span>
           </div>
-          <ArrowRight className="h-4 w-4 text-gray-500 transition-all duration-300 group-hover:text-zion-cyan-300 group-hover:translate-x-1" />
+          <ArrowRight className="h-4 w-4 text-gray-500 transition-all duration-300 group-hover:text-zion-cyan group-hover:translate-x-1" />
         </a>
       </motion.div>
     </div>

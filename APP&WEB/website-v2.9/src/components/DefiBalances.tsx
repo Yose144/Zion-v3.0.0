@@ -179,12 +179,12 @@ export default function DefiBalances() {
         <>
           {/* Address */}
           <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-zion-cyan-400" />
+            <div className="h-2 w-2 rounded-full bg-zion-cyan" />
             <span className="font-mono text-xs text-gray-300">
               {account?.slice(0, 6)}…{account?.slice(-4)}
             </span>
             <button onClick={copyAddr} className="text-gray-500 hover:text-white transition-colors">
-              {copied ? <CheckCircle2 className="h-3 w-3 text-zion-cyan-400" /> : <Copy className="h-3 w-3" />}
+              {copied ? <CheckCircle2 className="h-3 w-3 text-zion-cyan" /> : <Copy className="h-3 w-3" />}
             </button>
             <a
               href={`https://basescan.org/address/${account}`}

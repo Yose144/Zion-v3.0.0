@@ -223,12 +223,12 @@ export default function SwapWidget() {
       {/* Wrong chain */}
       {connected && !isBaseMainnet && (
         <div className="text-center py-6">
-          <p className="text-sm text-zion-purple-300 mb-4">
+          <p className="text-sm text-zion-purple mb-4">
             {SwapWidgetCopy.switchToBaseMainnet[cs ? 'cs' : 'en']}
           </p>
           <button
             onClick={switchToBase}
-            className="inline-flex items-center gap-2 rounded-xl bg-zion-gold-500/20 border border-zion-gold-500/30 px-5 py-2.5 text-sm font-semibold text-zion-gold-300 hover:bg-zion-gold-500/30 transition-colors"
+            className="inline-flex items-center gap-2 rounded-xl bg-zion-gold/20 border border-zion-gold/30 px-5 py-2.5 text-sm font-semibold text-zion-gold hover:bg-zion-gold/30 transition-colors"
           >
             {SwapWidgetCopy.switchNetwork[cs ? 'cs' : 'en']}
           </button>
@@ -310,23 +310,23 @@ export default function SwapWidget() {
 
           {/* Error */}
           {error && (
-            <div className="flex items-start gap-2 rounded-xl border border-zion-purple-500/30 bg-zion-purple-500/10 p-3">
-              <AlertCircle className="h-4 w-4 text-zion-purple-400 shrink-0 mt-0.5" />
-              <p className="text-xs text-zion-purple-300 break-all">{error}</p>
+            <div className="flex items-start gap-2 rounded-xl border border-zion-purple/30 bg-zion-purple/10 p-3">
+              <AlertCircle className="h-4 w-4 text-zion-purple shrink-0 mt-0.5" />
+              <p className="text-xs text-zion-purple break-all">{error}</p>
             </div>
           )}
 
           {/* Success */}
           {phase === 'success' && txHash && (
-            <div className="flex items-start gap-2 rounded-xl border border-zion-cyan-500/30 bg-zion-cyan-500/10 p-3">
-              <CheckCircle2 className="h-4 w-4 text-zion-cyan-400 shrink-0 mt-0.5" />
-              <div className="text-xs text-zion-cyan-300">
+            <div className="flex items-start gap-2 rounded-xl border border-zion-cyan/30 bg-zion-cyan/10 p-3">
+              <CheckCircle2 className="h-4 w-4 text-zion-cyan shrink-0 mt-0.5" />
+              <div className="text-xs text-zion-cyan">
                 <p className="font-semibold mb-1">{SwapWidgetCopy.swapSuccessful[cs ? 'cs' : 'en']}</p>
                 <a
                   href={`https://basescan.org/tx/${txHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-zion-cyan-400 hover:text-zion-cyan-300"
+                  className="inline-flex items-center gap-1 text-zion-cyan hover:text-zion-cyan"
                 >
                   {txHash.slice(0, 10)}…{txHash.slice(-6)} <ExternalLink className="h-3 w-3" />
                 </a>

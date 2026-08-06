@@ -100,7 +100,7 @@ export default function Pool24hCharts({
         labelCs: 'Hashrate',
         data: hashrateData,
         color: '#10b981',
-        icon: <TrendingUp className="h-4 w-4 text-zion-cyan-400" />,
+        icon: <TrendingUp className="h-4 w-4 text-zion-cyan" />,
         tip: 'Pool hashrate over the last 24 hours — total computational power contributed by all miners.',
         tipCs: 'Hashrate poolu za posledních 24 hodin — celkový výpočetní výkon od všech minerů.',
       },
@@ -109,7 +109,7 @@ export default function Pool24hCharts({
         labelCs: 'Míra přijetí',
         data: acceptRateData,
         color: '#3b82f6',
-        icon: <Activity className="h-4 w-4 text-zion-purple-400" />,
+        icon: <Activity className="h-4 w-4 text-zion-purple" />,
         unit: '%',
         tip: 'Percentage of shares accepted by the pool over the last 24 hours.',
         tipCs: 'Procento share přijatých poolem za posledních 24 hodin.',
@@ -119,7 +119,7 @@ export default function Pool24hCharts({
         labelCs: 'Aktivní mineři',
         data: activeMinersData,
         color: '#a855f7',
-        icon: <Users className="h-4 w-4 text-zion-purple-400" />,
+        icon: <Users className="h-4 w-4 text-zion-purple" />,
         tip: 'Number of actively submitting miners over the last 24 hours.',
         tipCs: 'Počet aktivně odesílajících minerů za posledních 24 hodin.',
       },
@@ -132,7 +132,7 @@ export default function Pool24hCharts({
       <div className="flex flex-col gap-2 mb-6">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Pool24hChartsCopy.history[cs ? 'cs' : 'en']}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-          <Activity className="h-7 w-7 text-zion-cyan-400" />
+          <Activity className="h-7 w-7 text-zion-cyan" />
           {Pool24hChartsCopy.k24HourPoolTrends[cs ? 'cs' : 'en']}
         </h2>
         <p className="text-sm text-gray-400">

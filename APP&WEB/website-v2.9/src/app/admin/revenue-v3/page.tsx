@@ -129,14 +129,14 @@ export default function RevenueSettings() {
       });
   };
 
-  if (loading) return <div className="flex items-center justify-center"><div className="text-zion-gold-400 text-2xl animate-pulse">{AdminRevenueV3Copy.loadingSettings[lang === 'cs' ? 'cs' : 'en']}</div></div>;
-  if (!config) return <div className="flex items-center justify-center"><div className="text-zion-purple-400 text-xl">{AdminRevenueV3Copy.failedToLoadConfiguration[lang === 'cs' ? 'cs' : 'en']}</div></div>;
+  if (loading) return <div className="flex items-center justify-center"><div className="text-zion-gold text-2xl animate-pulse">{AdminRevenueV3Copy.loadingSettings[lang === 'cs' ? 'cs' : 'en']}</div></div>;
+  if (!config) return <div className="flex items-center justify-center"><div className="text-zion-purple text-xl">{AdminRevenueV3Copy.failedToLoadConfiguration[lang === 'cs' ? 'cs' : 'en']}</div></div>;
 
   return (
     <div className="pt-28 md:pt-32 pb-20 overflow-x-hidden">
       <div className="zion-container max-w-4xl space-y-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-zion-purple-400 to-zion-purple-500">
+        <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-zion-purple to-zion-purple">
           {AdminRevenueV3Copy.cosmicHarmonyV3RevenueSettings[lang === 'cs' ? 'cs' : 'en']}
         </h1>
         <div className="flex gap-4">
@@ -171,7 +171,7 @@ export default function RevenueSettings() {
         {/* NCL AI Section */}
         <section className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-zion-purple-300">🤖 {AdminRevenueV3Copy.nclArtificialIntelligence[lang === 'cs' ? 'cs' : 'en']}</h2>
+                <h2 className="text-xl font-bold text-zion-purple">🤖 {AdminRevenueV3Copy.nclArtificialIntelligence[lang === 'cs' ? 'cs' : 'en']}</h2>
                 <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-400">{AdminRevenueV3Copy.enabled[lang === 'cs' ? 'cs' : 'en']}</span>
                     <input
@@ -212,7 +212,7 @@ export default function RevenueSettings() {
         {/* ZION Native Section */}
         <section className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-zion-purple-300">🌌 {AdminRevenueV3Copy.zionNativeChain[lang === 'cs' ? 'cs' : 'en']}</h2>
+                <h2 className="text-xl font-bold text-zion-purple">🌌 {AdminRevenueV3Copy.zionNativeChain[lang === 'cs' ? 'cs' : 'en']}</h2>
                 <div className="flex items-center gap-2">
                    <span className="zion-badge zion-badge-green">{AdminRevenueV3Copy.alwaysEnabled[lang === 'cs' ? 'cs' : 'en']}</span>
                 </div>
@@ -232,7 +232,7 @@ export default function RevenueSettings() {
         {/* ETC Stream */}
         <section className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-zion-cyan-300">⛏️ {AdminRevenueV3Copy.etcExternal[lang === 'cs' ? 'cs' : 'en']}</h2>
+                <h2 className="text-xl font-bold text-zion-cyan">⛏️ {AdminRevenueV3Copy.etcExternal[lang === 'cs' ? 'cs' : 'en']}</h2>
                 <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-400">{AdminRevenueV3Copy.enabled[lang === 'cs' ? 'cs' : 'en']}</span>
                     <input
@@ -270,7 +270,7 @@ export default function RevenueSettings() {
          {/* NXS Stream */}
          <section className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-zion-gold-300">💎 {AdminRevenueV3Copy.nxsExternal[lang === 'cs' ? 'cs' : 'en']}</h2>
+                <h2 className="text-xl font-bold text-zion-gold">💎 {AdminRevenueV3Copy.nxsExternal[lang === 'cs' ? 'cs' : 'en']}</h2>
                 <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-400">{AdminRevenueV3Copy.enabled[lang === 'cs' ? 'cs' : 'en']}</span>
                     <input
@@ -308,7 +308,7 @@ export default function RevenueSettings() {
         {/* Pearl (PRL) Stream */}
         <section className="zion-rainbow-card p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-zion-cyan-300">🐚 {AdminRevenueV3Copy.pearlPrlPouwGpu[lang === 'cs' ? 'cs' : 'en']}</h2>
+                <h2 className="text-xl font-bold text-zion-cyan">🐚 {AdminRevenueV3Copy.pearlPrlPouwGpu[lang === 'cs' ? 'cs' : 'en']}</h2>
                 <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-400">{AdminRevenueV3Copy.enabled[lang === 'cs' ? 'cs' : 'en']}</span>
                     <input
