@@ -54,9 +54,27 @@ impl MultichainService {
             if !cfg.enabled {
                 continue;
             }
-            let adapter = build_adapter(cfg, &keyring)?;
-            let chain_id = chain_id_by_name(&cfg.chain)?;
-            adapters.register(chain_id, adapter);
+            match build_adapter(cfg, &keyring) {
+                Ok(adapter) => match chain_id_by_name(&cfg.chain) {
+                    Ok(chain_id) => {
+                        adapters.register(chain_id, adapter);
+                    }
+                    Err(e) => {
+                        tracing::warn!(
+                            "Skipping adapter for '{}': unknown chain id mapping: {}",
+                            cfg.chain,
+                            e
+                        );
+                    }
+                },
+                Err(e) => {
+                    tracing::warn!(
+                        "Skipping adapter for '{}': no adapter builder: {}",
+                        cfg.chain,
+                        e
+                    );
+                }
+            }
         }
 
         // Always register a ZION L1 adapter if an L1 RPC URL is configured.
@@ -625,6 +643,21 @@ impl MultichainService {
     }
 }
 
+fn evm_chain_id(name: &str) -> Option<ChainId> {
+    match name.to_lowercase().as_str() {
+        "ethereum" | "eth" => Some(ChainId::Ethereum),
+        "base" => Some(ChainId::Base),
+        "arbitrum" => Some(ChainId::Arbitrum),
+        "optimism" | "op" => Some(ChainId::Optimism),
+        "bsc" | "binance-smart-chain" => Some(ChainId::Bsc),
+        "polygon" | "matic" => Some(ChainId::Polygon),
+        "avalanche" | "avax" => Some(ChainId::Avalanche),
+        "zksync" => Some(ChainId::Zksync),
+        "linea" => Some(ChainId::Linea),
+        _ => None,
+    }
+}
+
 fn build_adapter(
     cfg: &AdapterConfig,
     keyring: &Keyring,
@@ -639,44 +672,38 @@ fn build_adapter(
             };
             Ok(Box::new(BitcoinAdapter::new("bitcoin", url, keyring)?))
         }
-        "base" => {
-            let wallet = keyring.evm_wallet(0, 0).ok();
-            let contracts = ZionContracts::for_chain("base");
-            Ok(Box::new(EvmAdapter::new(
-                "base",
-                ChainId::Base,
-                &cfg.rpc_url,
-                wallet,
-                contracts,
-            )?))
-        }
-        "ethereum" | "eth" => {
-            let wallet = keyring.evm_wallet(0, 0).ok();
-            let contracts = ZionContracts::for_chain("ethereum");
-            Ok(Box::new(EvmAdapter::new(
-                "ethereum",
-                ChainId::Ethereum,
-                &cfg.rpc_url,
-                wallet,
-                contracts,
-            )?))
-        }
         "zion-l1" | "zion" | "zionl1" => {
             Ok(Box::new(ZionL1Adapter::new(&cfg.rpc_url, keyring.clone())))
         }
-        _ => Err(MultichainError::AdapterNotFound(format!(
-            "no adapter builder for chain '{}': add it to build_adapter()",
-            cfg.chain
-        ))),
+        _ => {
+            if let Some(chain_id) = evm_chain_id(&name_lower) {
+                let wallet = keyring.evm_wallet(0, 0).ok();
+                let contracts = ZionContracts::for_chain(&cfg.chain)
+                    .unwrap_or_else(ZionContracts::non_base);
+                Ok(Box::new(EvmAdapter::new(
+                    cfg.chain.clone(),
+                    chain_id,
+                    &cfg.rpc_url,
+                    wallet,
+                    Some(contracts),
+                )?))
+            } else {
+                Err(MultichainError::AdapterNotFound(format!(
+                    "no adapter builder for chain '{}': add it to build_adapter()",
+                    cfg.chain
+                )))
+            }
+        }
     }
 }
 
 fn chain_id_by_name(name: &str) -> MultichainResult<ChainId> {
     let name_lower = name.to_lowercase();
+    if let Some(chain_id) = evm_chain_id(&name_lower) {
+        return Ok(chain_id);
+    }
     match name_lower.as_str() {
         "bitcoin" | "btc" => Ok(ChainId::Bitcoin),
-        "base" => Ok(ChainId::Base),
-        "ethereum" | "eth" => Ok(ChainId::Ethereum),
         "zion-l1" | "zion" | "zionl1" => Ok(ChainId::ZionL1),
         _ => Err(MultichainError::AdapterNotFound(format!(
             "unknown chain id mapping for '{}': add it to chain_id_by_name()",
