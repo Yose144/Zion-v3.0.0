@@ -463,4 +463,69 @@ If a key file is lost and no mnemonic exists, the funds at that address are **pe
 
 ---
 
+## Appendix E — Key management architecture (2026-08-06 audit)
+
+### E.1 Two key systems in ZION
+
+ZION has **two independent key systems** that serve different purposes:
+
+| System | Used by | Key format | Mnemonic? | Recovery |
+|--------|---------|-----------|-----------|----------|
+| **L1 Wallet CLI** (`V31/L1/core/src/bin/wallet.rs`) | Node, pool, miner, CLI `wallet send/bridge-lock` | Raw Ed25519 secret key (32 bytes / 64 hex) | **No** | SK is the only recovery material |
+| **Multi-Chain Keyring** (`V31/L2/multichain/src/wallet/mod.rs`) | SDK, bridge, swap, DAO governance via SDK | BIP39 24-word mnemonic → derive Ed25519 + EVM | **Yes** (24-word BIP39) | Mnemonic recovers all derived keys |
+
+### E.2 How the 2026-08-06 keys were generated
+
+The 2026-08-06 hard reset used **`gen-premine-wallets.rs`** and similar generators that call `zion_core::crypto::generate_keypair()` — **direct Ed25519 keypair generation from OS random** (`OsRng`). No BIP39 mnemonics were produced.
+
+Evidence:
+- `/tmp/derive_pubkeys.rs` — a helper script that takes raw Ed25519 secret keys and re-derives pubkeys + addresses via `SigningKey::from_bytes()`. This confirms keys were generated as raw Ed25519, not from mnemonics.
+- `~/Desktop/ZION_KEYS_NEW_GENESIS_2026-08-06/` — no `mnemonic` field in any file. `grep -riE 'mnemonic|seed|bip39'` returns 0 results.
+- `ADMIN_KEYS.txt` has both Ed25519 SK and EVM SK, but they were generated **independently** (not derived from a common mnemonic). The `gen-all-keys-mnemonic.rs` script derives EVM from the same mnemonic as L1, but that script was **not** used.
+
+### E.3 What this means for wallet access
+
+| Key type | What we have | Sufficient for L1? | Sufficient for L2 multi-chain? |
+|----------|-------------|--------------------|-------------------------------|
+| Premine (14) | Ed25519 SK + pubkey | **Yes** — `wallet.rs` uses SK directly | **No** — Keyring needs mnemonic to derive |
+| Canonical (5) | Ed25519 SK + pubkey | **Yes** | **No** |
+| Admin (3) | Ed25519 SK + EVM SK (independent) | **Yes** for L1; EVM SK works for bridge signing | **No** — cannot use `WalletClient::from_mnemonic()` |
+| DAO Guardians (7) | Ed25519 SK + pubkey | **Yes** | **No** |
+| EVM Validators (5) | EVM SK only | N/A (EVM-only) | **Yes** for EVM signing; **No** for Keyring SDK |
+
+### E.4 Practical impact
+
+- **L1 operations (node, pool, miner, send ZION, bridge lock):** Ed25519 SK is sufficient. The `wallet.rs` CLI loads SK from `ZION_WALLET_SK_HEX` or `ZION_WALLET_KEY_FILE` and signs directly. No mnemonic needed.
+- **EVM bridge operations:** EVM SK is sufficient for signing bridge transactions. The `ethers` library can construct a `LocalWallet` from raw SK bytes.
+- **Multi-Chain SDK (`WalletClient`):** Requires a BIP39 mnemonic. Cannot be used with the current keys. If SDK integration is needed, either:
+  1. Generate new keys with `gen-all-keys-mnemonic.rs` (future reset), or
+  2. Construct `Keyring` manually from raw keys (requires code change — add a `Keyring::from_raw_keys()` constructor), or
+  3. Use the L1 wallet CLI + EVM wallet independently (bypass Keyring).
+
+### E.5 Recommendation for future resets
+
+**Always use `gen-all-keys-mnemonic.rs`** for future hard resets. It produces:
+- 24-word BIP39 mnemonic for each wallet (paper-recoverable)
+- Ed25519 SK + pubkey (for L1 wallet CLI)
+- EVM SK + address (for bridge validators/admins)
+
+This ensures both key systems work: L1 CLI uses raw SK, Multi-Chain Keyring uses mnemonic. Store mnemonics on paper in a physical safe; store SK files encrypted offline.
+
+### E.6 Key file inventory (2026-08-06)
+
+All key files are in `~/Desktop/ZION_KEYS_NEW_GENESIS_2026-08-06/` (chmod 700):
+
+| File | Contents | Count |
+|------|----------|-------|
+| `PREMINE_WALLETS.txt` | 14 premine: address + pubkey + Ed25519 SK | 14 |
+| `CANONICAL_WALLETS.txt` | 5 canonical: address + pubkey + Ed25519 SK | 5 |
+| `ADMIN_KEYS.txt` | 3 admin: L1 address + pubkey + Ed25519 SK + EVM address + EVM SK | 3 |
+| `DAO_GUARDIANS.txt` | 7 guardians: L1 address + pubkey + Ed25519 SK | 7 |
+| `EVM_VALIDATORS_AND_ESCROW.txt` | 5 validators: EVM address + EVM SK + 1 escrow: L1 address + pubkey + Ed25519 SK | 6 |
+| `PUBLIC_ADDRESSES.txt` | All public addresses + pubkeys (no SK) — safe to share | 30 |
+
+**Total: 35 keypairs, 0 mnemonics.**
+
+---
+
 *This playbook was created on 2026-08-06 following the second hard genesis reset in ZION's history. The first was 2026-07-20 (block-retention bug). This document ensures future resets follow a verified, repeatable procedure.*
