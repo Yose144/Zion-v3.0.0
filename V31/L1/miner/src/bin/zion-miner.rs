@@ -144,6 +144,7 @@ async fn main() -> Result<()> {
         loop {
             sleep(Duration::from_secs(args.log_interval.max(5))).await;
             let stats = stats_rt.stats().await;
+            let mut total_hr: f64 = 0.0;
             for (id, s) in &stats {
                 let prev = last_stats.get(id).cloned().unwrap_or_else(|| s.clone());
                 let coin = s
@@ -155,6 +156,7 @@ async fn main() -> Result<()> {
                     let delta = s.accepted - prev.accepted;
                     for _ in 0..delta {
                         stats_metrics.inc_accepted();
+                        stats_metrics.inc_submitted();
                     }
                     stats_metrics.set_coin(&coin);
                 }
@@ -163,6 +165,10 @@ async fn main() -> Result<()> {
                     for _ in 0..delta {
                         stats_metrics.inc_rejected();
                     }
+                }
+                // Accumulate hashrate from all active streams
+                if s.active && s.hashrate > 0.0 {
+                    total_hr += s.hashrate;
                 }
                 let active = if s.active { "active" } else { "idle" };
                 info!(
@@ -174,6 +180,11 @@ async fn main() -> Result<()> {
                     status = %active,
                     "stream stats"
                 );
+            }
+            // Update total_hashes based on hashrate * interval (approximate)
+            if total_hr > 0.0 {
+                let hashes_this_interval = (total_hr * args.log_interval.max(5) as f64) as u64;
+                stats_metrics.record_hashes(hashes_this_interval);
             }
             info!("{}", stats_metrics.tui_log());
             last_stats = stats;

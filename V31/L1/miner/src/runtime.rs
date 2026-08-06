@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use chrono::Utc;
 use serde_json::{json, Value};
@@ -170,10 +170,14 @@ impl MinerRuntime {
         };
 
         let target = [0xFFu8; 32];
+        let batch_size = self.config.zion_nonce_batch;
+        let t_start = Instant::now();
         let _hash = self
             .consensus
-            .mine(&mut header, &target, 0, self.config.zion_nonce_batch)
+            .mine(&mut header, &target, 0, batch_size)
             .ok_or_else(|| MinerError::Consensus("no nonce found in batch".to_string()))?;
+        let elapsed = t_start.elapsed().as_secs_f64();
+        self.update_hashrate(StreamId::Zion, batch_size, elapsed).await;
 
         Ok(Block::new(header, transactions))
     }
@@ -231,10 +235,14 @@ impl MinerRuntime {
             .map_err(|e| MinerError::Consensus(format!("stratum job error: {e}")))?;
 
         let job: crate::auxpow::Job = job.into();
+        let batch_size = self.config.zion_nonce_batch;
+        let t_start = Instant::now();
         let (nonce, _hash) = self
             .consensus
-            .mine_header_bytes(&job.header, &job.target, 0, self.config.zion_nonce_batch)
+            .mine_header_bytes(&job.header, &job.target, 0, batch_size)
             .ok_or(MinerError::NoAuxPoWSolution)?;
+        let elapsed = t_start.elapsed().as_secs_f64();
+        self.update_hashrate(StreamId::Zion, batch_size, elapsed).await;
 
         let mut header_hash = [0u8; 32];
         let copy_len = job.header.len().min(32);
@@ -793,6 +801,23 @@ impl MinerRuntime {
         let mut stats = self.stats.lock().await;
         if let Some(s) = stats.get_mut(&stream) {
             s.rejected += 1;
+        }
+    }
+
+    /// Update hashrate for a stream based on nonces searched and elapsed time.
+    async fn update_hashrate(&self, stream: StreamId, nonces_searched: u64, elapsed_secs: f64) {
+        if elapsed_secs < 0.001 {
+            return;
+        }
+        let hr = nonces_searched as f64 / elapsed_secs;
+        let mut stats = self.stats.lock().await;
+        if let Some(s) = stats.get_mut(&stream) {
+            // Exponential moving average for smooth display
+            if s.hashrate > 0.0 {
+                s.hashrate = s.hashrate * 0.7 + hr * 0.3;
+            } else {
+                s.hashrate = hr;
+            }
         }
     }
 
