@@ -134,7 +134,7 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
           <h2 className="text-lg font-semibold text-white">
             {TerranovaComponentsPioneerProjectCardsCopy.l5PioneerProjects[cs ? 'cs' : 'en']}
           </h2>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-zion-gold/65">
             {TerranovaComponentsPioneerProjectCardsCopy.liveTerraNovaNodesAroundTheWor[cs ? 'cs' : 'en']}
           </p>
         </div>
@@ -146,12 +146,12 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
             <div className="space-y-5">
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1">
-                  <p className="text-[10px] uppercase tracking-[0.28em] text-gray-500">
+                  <p className="text-[10px] uppercase tracking-[0.28em] text-zion-gold/65">
                     {project.eyebrow}
                   </p>
                   <div>
                     <h3 className="text-lg font-semibold text-white">{project.title}</h3>
-                    <div className="mt-0.5 inline-flex items-center gap-1.5 text-sm text-gray-400">
+                    <div className="mt-0.5 inline-flex items-center gap-1.5 text-sm text-white/70">
                       <MapPin className="h-3.5 w-3.5" />
                       <span>{project.location}</span>
                     </div>
@@ -163,7 +163,7 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
                 </span>
               </div>
 
-              <p className="text-sm leading-relaxed text-gray-400">
+              <p className="text-sm leading-relaxed text-white/70">
                 {cs ? project.descriptionCs : project.descriptionEn}
               </p>
 
@@ -173,9 +173,9 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
                   return (
                     <div
                       key={feature.labelCs}
-                      className="flex items-center gap-2 zion-tile px-3 py-2 text-xs text-gray-400"
+                      className="flex items-center gap-2 zion-tile px-3 py-2 text-xs text-white/70"
                     >
-                      <Icon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
+                      <Icon className="h-3.5 w-3.5 shrink-0 text-zion-gold/65" />
                       <span>{cs ? feature.labelCs : feature.labelEn}</span>
                     </div>
                   );
@@ -189,7 +189,7 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
                     className="zion-tile px-3 py-2 text-center"
                   >
                     <p className="text-sm font-semibold text-white">{metric.value}</p>
-                    <p className="mt-0.5 text-[10px] uppercase tracking-[0.16em] text-gray-500">
+                    <p className="mt-0.5 text-[10px] uppercase tracking-[0.16em] text-zion-gold/65">
                       {cs ? metric.labelCs : metric.labelEn}
                     </p>
                   </div>

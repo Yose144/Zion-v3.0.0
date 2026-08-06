@@ -242,7 +242,7 @@ export default function Navigation() {
           <div className="flex items-center gap-1 shrink-0">
             <button
               onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
-              className={`flex items-center gap-1 rounded-lg border border-white/15 bg-black/75 text-[10px] font-semibold hover:border-white/30 hover:bg-black transition-colors text-gray-300 hover:text-white ${scrolled ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-1'}`}
+              className={`flex items-center gap-1 rounded-lg border border-white/15 bg-black/75 text-[10px] font-semibold hover:border-white/30 hover:bg-black transition-colors text-zion-gold/85 hover:text-white ${scrolled ? 'px-1.5 py-0.5 text-[9px]' : 'px-2 py-1'}`}
               title={lang === 'cs' ? tr('nav', 'switch_to_en', lang) : tr('nav', 'switch_to_cs', lang)}
             >
               {lang === 'cs' ? tr('nav', 'language_toggle_desktop_cs', lang) : tr('nav', 'language_toggle_desktop_en', lang)}
@@ -264,7 +264,7 @@ export default function Navigation() {
               className={`hidden sm:inline-flex rounded-lg border border-white/15 bg-black/85 items-center justify-center shadow-[0_10px_28px_rgba(0,0,0,0.25)] transition-transform hover:-translate-y-0.5 hover:border-zion-gold/50 group relative ${scrolled ? 'p-1' : 'p-1.5'}`}
             >
               <LayoutDashboard className={`text-white transition-all duration-300 ${scrolled ? 'w-4 h-4' : 'w-3.5 h-3.5'}`} />
-              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">{tr('nav', 'dashboard', lang)}</span>
+              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-zion-gold/85 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">{tr('nav', 'dashboard', lang)}</span>
             </Link>
           </div>
 
@@ -298,7 +298,7 @@ export default function Navigation() {
                         ? 'border-zion-gold/40 bg-zion-gold/10 text-zion-gold shadow-[0_0_12px_rgba(252, 209, 22,0.12)]'
                         : groupHasActiveChild
                           ? 'border-zion-cyan/25 bg-black/50 text-white hover:border-zion-gold/30 hover:bg-black/70'
-                          : 'border-white/[0.08] bg-black/40 text-gray-400 hover:border-zion-gold/25 hover:bg-black/60 hover:text-white'
+                          : 'border-white/[0.08] bg-black/40 text-zion-gold/80 hover:border-zion-gold/25 hover:bg-black/60 hover:text-white'
                     }`}
                     aria-expanded={isActive}
                   >
@@ -325,7 +325,7 @@ export default function Navigation() {
                   <Link
                     href={item.href}
                     className={`rounded-2xl px-4 py-3 text-sm font-semibold transition block ${
-                      navItemMatches(item.href) ? 'bg-white/10 text-white' : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                      navItemMatches(item.href) ? 'bg-white/10 text-white' : 'text-zion-gold/85 hover:bg-white/5 hover:text-white'
                     }`}
                     onClick={() => setOpenGroup(null)}
                   >
@@ -336,7 +336,7 @@ export default function Navigation() {
                       key={child.href}
                       href={child.href}
                       className={`rounded-2xl pl-8 pr-4 py-2.5 text-[13px] transition block ${
-                        pathname === child.href ? 'bg-white/10 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
+                        pathname === child.href ? 'bg-white/10 text-white' : 'text-zion-gold/75 hover:bg-white/5 hover:text-zion-gold'
                       }`}
                       onClick={() => setOpenGroup(null)}
                     >
@@ -379,7 +379,7 @@ export default function Navigation() {
                 <Link
                   href="/"
                   className={`rounded-xl px-3 py-3 text-base font-semibold transition min-h-[48px] flex items-center ${
-                    pathname === '/' ? 'bg-white/10 text-white' : 'text-gray-200 hover:bg-white/5 active:bg-white/10'
+                    pathname === '/' ? 'bg-white/10 text-white' : 'text-zion-gold/90 hover:bg-white/5 active:bg-white/10'
                   }`}
                   onClick={() => setIsOpen(false)}
                 >
@@ -392,7 +392,7 @@ export default function Navigation() {
                       <button
                         type="button"
                         onClick={() => setOpenGroup(isExpanded ? null : group.title)}
-                        className="w-full flex items-center justify-between rounded-xl px-3 py-3 text-sm uppercase tracking-[0.2em] text-gray-300 hover:text-white hover:bg-white/5 min-h-[48px]"
+                        className="w-full flex items-center justify-between rounded-xl px-3 py-3 text-sm uppercase tracking-[0.2em] text-zion-gold/85 hover:text-white hover:bg-white/5 min-h-[48px]"
                         aria-expanded={isExpanded}
                       >
                         <span>{groupLabels[group.title] ?? group.title}</span>
@@ -407,7 +407,7 @@ export default function Navigation() {
                                 className={`rounded-xl px-3 py-3 text-base font-medium transition min-h-[44px] flex items-center ${
                                   navItemMatches(item.href)
                                     ? 'bg-white/10 text-white'
-                                    : 'text-gray-300 hover:bg-white/5 active:bg-white/10'
+                                    : 'text-zion-gold/85 hover:bg-white/5 active:bg-white/10'
                                 }`}
                                 onClick={() => setIsOpen(false)}
                               >
@@ -418,7 +418,7 @@ export default function Navigation() {
                                   key={child.href}
                                   href={child.href}
                                   className={`rounded-xl pl-7 pr-3 py-2.5 text-sm transition min-h-[40px] flex items-center ${
-                                    pathname === child.href ? 'bg-white/10 text-white' : 'text-gray-400 hover:bg-white/5 active:bg-white/10'
+                                    pathname === child.href ? 'bg-white/10 text-white' : 'text-zion-gold/75 hover:bg-white/5 active:bg-white/10'
                                   }`}
                                   onClick={() => setIsOpen(false)}
                                 >
@@ -437,7 +437,7 @@ export default function Navigation() {
                 <div className="flex justify-center">
                   <button
                     onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/15 text-xs font-semibold hover:border-white/30 transition-colors text-gray-300 hover:text-white"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/15 text-xs font-semibold hover:border-white/30 transition-colors text-zion-gold/85 hover:text-white"
                   >
                     {lang === 'cs' ? tr('nav', 'language_toggle_mobile_cs', lang) : tr('nav', 'language_toggle_mobile_en', lang)}
                   </button>
