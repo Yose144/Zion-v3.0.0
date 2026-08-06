@@ -196,9 +196,8 @@ export function buildInvoiceHtml(
     items: CartItemLike[];
     qrCodeData?: string;
   },
-  theme: ShopTheme = 'rasta'
+  _theme: ShopTheme = 'rasta'
 ): string {
-  const t = THEME_STYLES[theme];
   const items = buildItems(opts.items ?? [], opts.shippingCzk);
   const totals = calculateTotals(items);
 
@@ -208,25 +207,26 @@ export function buildInvoiceHtml(
     : '';
 
   const paymentText = paymentMethodText(opts.paymentMethod);
+  const vs = opts.orderId.replace(/\D/g, '').slice(0, 10);
 
   const itemsHtml = items
     .map((item, index) => {
       return `
         <tr>
-          <td style="padding:12px 10px;border-bottom:1px solid ${t.border};color:${t.text};">${index + 1}</td>
-          <td style="padding:12px 10px;border-bottom:1px solid ${t.border};color:${t.text};">${escapeHtml(item.name)}</td>
-          <td style="padding:12px 10px;border-bottom:1px solid ${t.border};color:${t.muted};text-align:center;">${item.quantity} ${item.unit}</td>
-          <td style="padding:12px 10px;border-bottom:1px solid ${t.border};color:${t.text};text-align:right;">${formatPrice(item.unitPriceWithoutVat)}</td>
-          <td style="padding:12px 10px;border-bottom:1px solid ${t.border};color:${t.text};text-align:center;">${item.vatRate}%</td>
-          <td style="padding:12px 10px;border-bottom:1px solid ${t.border};color:${t.text};text-align:right;">${formatPrice(item.vatAmount)}</td>
-          <td style="padding:12px 10px;border-bottom:1px solid ${t.border};color:${t.accent};text-align:right;font-weight:700;">${formatPrice(item.totalPrice)}</td>
+          <td style="padding:12px 10px;border-bottom:1px solid #333;color:#e5e7eb;">${index + 1}</td>
+          <td style="padding:12px 10px;border-bottom:1px solid #333;color:#e5e7eb;">${escapeHtml(item.name)}</td>
+          <td style="padding:12px 10px;border-bottom:1px solid #333;color:#9af59a;text-align:center;">${item.quantity}</td>
+          <td style="padding:12px 10px;border-bottom:1px solid #333;color:#e5e7eb;text-align:right;">${formatPrice(item.unitPriceWithoutVat)}</td>
+          <td style="padding:12px 10px;border-bottom:1px solid #333;color:#e5e7eb;text-align:center;">${item.vatRate}%</td>
+          <td style="padding:12px 10px;border-bottom:1px solid #333;color:#e5e7eb;text-align:right;">${formatPrice(item.vatAmount)}</td>
+          <td style="padding:12px 10px;border-bottom:1px solid #333;color:#FFD700;text-align:right;font-weight:700;">${formatPrice(item.totalPrice)}</td>
         </tr>
       `;
     })
     .join('');
 
   const qrImg = opts.qrCodeData
-    ? `<img src="${opts.qrCodeData}" alt="QR platba" style="max-width:180px;border-radius:8px;background:#fff;padding:6px;" />`
+    ? `<img src="${opts.qrCodeData}" alt="QR platba" style="height:80px;border-radius:50%;background:#fff;padding:4px;" />`
     : '';
 
   return `<!DOCTYPE html>
@@ -234,53 +234,60 @@ export function buildInvoiceHtml(
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Faktura ${opts.invoiceNumber}</title>
+  <title>Faktura ${escapeHtml(opts.invoiceNumber)}</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 13px; line-height: 1.6; color: ${t.text}; background: ${t.bg}; }
-    .invoice { max-width: 800px; margin: 0 auto; padding: 40px; background: ${t.card}; border-radius: 16px; box-shadow: 0 28px 72px rgba(0,0,0,0.6); border: 1px solid ${t.border}; }
-    .invoice-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; padding: 30px; border-radius: 12px; background: ${t.headerGradient}; color: #000; }
-    .company-logo { font-size: 30px; font-weight: 900; color: #000; text-shadow: 0 2px 8px rgba(0,0,0,0.3); }
-    .company-logo span { color: #fff; font-weight: 700; }
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Montserrat', Arial, sans-serif; background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); color: #e0e0e0; min-height: 100vh; padding: 40px; }
+    .invoice-container { max-width: 900px; margin: 0 auto; background: #1f1f1f; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+    .rasta-header { background: linear-gradient(90deg, #1c7b1c 0%, #FFD700 50%, #c01026 100%); height: 8px; }
+    .header { padding: 30px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
+    .logo img { height: 80px; border-radius: 50%; }
     .invoice-title { text-align: right; }
-    .invoice-title h1 { font-size: 36px; color: #000; margin-bottom: 5px; font-weight: 900; }
-    .invoice-number { font-size: 16px; color: #000; font-weight: 600; }
-    .parties { display: flex; gap: 24px; margin-bottom: 30px; }
-    .party { flex: 1; padding: 24px; background: ${t.surface}; border-radius: 12px; border: 1px solid ${t.border}; }
-    .party h3 { color: ${t.accent}; font-size: 14px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid ${t.accent}; text-transform: uppercase; letter-spacing: 1px; }
-    .party p { margin: 6px 0; color: ${t.text}; }
-    .party strong { color: ${t.accent3}; }
-    .invoice-info { display: flex; gap: 16px; margin-bottom: 30px; background: ${t.infoBg}; padding: 24px; border-radius: 12px; color: #fff; border: 1px solid ${t.border}; }
-    .info-item { flex: 1; text-align: center; }
-    .info-item label { display: block; font-size: 10px; text-transform: uppercase; opacity: 0.85; margin-bottom: 6px; letter-spacing: 0.5px; }
-    .info-item span { font-size: 16px; font-weight: 700; }
-    .items-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-    .items-table th { background: ${t.tableHeader}; color: #fff; padding: 14px 10px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .items-table th:first-child { border-radius: 8px 0 0 0; }
-    .items-table th:last-child { border-radius: 0 8px 0 0; }
-    .items-table tr:last-child td { border-bottom: none; }
-    .totals { display: flex; justify-content: flex-end; margin-bottom: 30px; }
-    .totals-box { width: 320px; background: ${t.surface}; border-radius: 12px; overflow: hidden; border: 1px solid ${t.border}; }
-    .totals-row { display: flex; justify-content: space-between; padding: 14px 24px; border-bottom: 1px solid ${t.border}; color: ${t.text}; }
-    .totals-row:last-child { border-bottom: none; background: ${t.totalsBg}; color: #000; font-size: 18px; font-weight: 800; }
-    .payment-info { background: ${t.paymentBg}; border: 1px solid ${t.paymentBorder}; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
-    .payment-info h3 { color: ${t.paymentText}; margin-bottom: 15px; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .payment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; color: ${t.text}; }
-    .payment-grid p { margin: 5px 0; }
-    .payment-grid strong { color: ${t.muted}; }
-    .qr-section { text-align: center; padding: 24px; background: ${t.qrBg}; border-radius: 12px; margin-bottom: 24px; border: 1px solid ${t.border}; }
-    .invoice-footer { text-align: center; padding-top: 24px; border-top: 1px solid ${t.border}; color: ${t.footer}; font-size: 12px; }
-    .invoice-footer a { color: ${t.footerLink}; text-decoration: none; }
-    @media print {
-      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #fff; }
-      .invoice { box-shadow: none; border: none; }
-    }
+    .invoice-title h1 { font-size: 2.5rem; color: #FFD700; margin: 0; }
+    .invoice-number { font-size: 1.1rem; color: #aaa; margin-top: 5px; }
+    .parties { display: flex; justify-content: space-between; padding: 30px 40px; border-bottom: 1px solid #333; }
+    .party { width: 45%; }
+    .party h3 { color: #1c7b1c; font-size: 0.9rem; text-transform: uppercase; margin-bottom: 15px; letter-spacing: 1px; }
+    .party p { line-height: 1.8; color: #ccc; }
+    .party strong { color: #fff; font-size: 1.1rem; }
+    .dates { display: flex; justify-content: space-around; padding: 20px 40px; background: #252525; }
+    .date-item { text-align: center; }
+    .date-item label { display: block; font-size: 0.8rem; color: #888; text-transform: uppercase; margin-bottom: 5px; }
+    .date-item span { font-size: 1.1rem; color: #FFD700; }
+    .items { padding: 30px 40px; }
+    .items table { width: 100%; border-collapse: collapse; }
+    .items th { background: #1c7b1c; color: #fff; padding: 15px 12px; text-align: left; font-size: 0.85rem; text-transform: uppercase; }
+    .items th:nth-child(3), .items th:nth-child(5) { text-align: center; }
+    .items th:nth-child(4), .items th:nth-child(6), .items th:nth-child(7) { text-align: right; }
+    .items td { padding: 12px 10px; border-bottom: 1px solid #333; }
+    .totals { padding: 20px 40px 30px; display: flex; justify-content: flex-end; }
+    .totals-table { width: 300px; }
+    .totals-table tr td { padding: 10px 0; border-bottom: 1px solid #333; }
+    .totals-table tr td:last-child { text-align: right; color: #FFD700; }
+    .totals-table tr.total { font-size: 1.3rem; font-weight: bold; }
+    .totals-table tr.total td { border-top: 2px solid #1c7b1c; border-bottom: none; padding-top: 15px; }
+    .payment { padding: 30px 40px; background: #252525; }
+    .payment h3 { color: #1c7b1c; font-size: 0.9rem; text-transform: uppercase; margin-bottom: 20px; }
+    .payment-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .payment-item label { display: block; font-size: 0.8rem; color: #888; margin-bottom: 5px; }
+    .payment-item span { color: #fff; font-size: 1rem; }
+    .payment-item.highlight span { color: #FFD700; font-weight: bold; }
+    .qr-wrap { padding: 20px 40px; background: #1f1f1f; text-align: center; border-top: 1px solid #333; }
+    .qr-wrap p { color: #FFD700; font-size: 14px; margin-bottom: 12px; }
+    .footer { padding: 20px 40px; text-align: center; border-top: 1px solid #333; color: #888; font-size: 0.85rem; }
+    .rasta-footer { background: linear-gradient(90deg, #1c7b1c 0%, #FFD700 50%, #c01026 100%); height: 4px; }
+    @media print { body { padding: 0; background: #fff; } .invoice-container { box-shadow: none; } }
   </style>
 </head>
 <body>
-  <div class="invoice">
-    <div class="invoice-header">
-      <div class="company-logo">ZION<span> TerraNova</span></div>
+  <div class="invoice-container">
+    <div class="rasta-header"></div>
+
+    <div class="header">
+      <div class="logo">
+        <img src="https://market.zionterranova.com/logo144.png" alt="ZION Logo" onerror="this.style.display='none'" />
+      </div>
       <div class="invoice-title">
         <h1>FAKTURA</h1>
         <div class="invoice-number">${escapeHtml(opts.invoiceNumber)}</div>
@@ -290,71 +297,123 @@ export function buildInvoiceHtml(
     <div class="parties">
       <div class="party">
         <h3>Dodavatel</h3>
-        <p><strong>${escapeHtml(COMPANY.name)}</strong></p>
-        <p>${escapeHtml(COMPANY.address)}</p>
-        <p>${escapeHtml(COMPANY.country)}</p>
-        <p>IČO: ${escapeHtml(COMPANY.ico)}</p>
-        <p>DIČ: ${escapeHtml(COMPANY.dic)}</p>
-        <p>Zapsáno: ${escapeHtml(COMPANY.court)}</p>
+        <p>
+          <strong>${escapeHtml(COMPANY.name)}</strong><br>
+          ${escapeHtml(COMPANY.address)}<br>
+          ${escapeHtml(COMPANY.city)}<br>
+          ${escapeHtml(COMPANY.country)}<br><br>
+          IČO: ${escapeHtml(COMPANY.ico)}<br>
+          DIČ: ${escapeHtml(COMPANY.dic)}<br>
+          Zapsáno: ${escapeHtml(COMPANY.court)}
+        </p>
       </div>
       <div class="party">
         <h3>Odběratel</h3>
-        <p><strong>${escapeHtml(opts.customerName)}</strong></p>
-        <p>${escapeHtml(addressText)}</p>
-        <p>Email: ${escapeHtml(opts.customerEmail)}</p>
-        <p>Tel: ${escapeHtml(opts.customerPhone)}</p>
+        <p>
+          <strong>${escapeHtml(opts.customerName)}</strong><br>
+          ${escapeHtml(addressText)}<br>
+          Email: ${escapeHtml(opts.customerEmail)}<br>
+          Tel: ${escapeHtml(opts.customerPhone)}
+        </p>
       </div>
     </div>
 
-    <div class="invoice-info">
-      <div class="info-item"><label>Datum vystavení</label><span>${formatDate(opts.issueDate)}</span></div>
-      <div class="info-item"><label>Datum splatnosti</label><span>${formatDate(opts.dueDate)}</span></div>
-      <div class="info-item"><label>Způsob platby</label><span>${escapeHtml(paymentText)}</span></div>
-      <div class="info-item"><label>Variabilní symbol</label><span>${escapeHtml(opts.orderId)}</span></div>
+    <div class="dates">
+      <div class="date-item">
+        <label>Datum vystavení</label>
+        <span>${formatDate(opts.issueDate)}</span>
+      </div>
+      <div class="date-item">
+        <label>Datum splatnosti</label>
+        <span>${formatDate(opts.dueDate)}</span>
+      </div>
+      <div class="date-item">
+        <label>Způsob platby</label>
+        <span>${escapeHtml(paymentText)}</span>
+      </div>
+      <div class="date-item">
+        <label>Variabilní symbol</label>
+        <span>${escapeHtml(vs || opts.orderId)}</span>
+      </div>
     </div>
 
-    <table class="items-table">
-      <thead>
-        <tr>
-          <th style="width:30px;">#</th>
-          <th>Položka</th>
-          <th style="width:80px;text-align:center;">Množství</th>
-          <th style="width:100px;text-align:right;">Cena/ks</th>
-          <th style="width:60px;text-align:center;">DPH</th>
-          <th style="width:80px;text-align:right;">DPH Kč</th>
-          <th style="width:100px;text-align:right;">Celkem</th>
-        </tr>
-      </thead>
-      <tbody>${itemsHtml}</tbody>
-    </table>
+    <div class="items">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Položka</th>
+            <th>Množství</th>
+            <th>Cena/ks</th>
+            <th>DPH</th>
+            <th>DPH Kč</th>
+            <th>Celkem</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemsHtml}
+        </tbody>
+      </table>
+    </div>
 
     <div class="totals">
-      <div class="totals-box">
-        <div class="totals-row"><span>Základ DPH:</span><span>${formatPrice(totals.withoutVat)} Kč</span></div>
-        <div class="totals-row"><span>DPH 21%:</span><span>${formatPrice(totals.vat)} Kč</span></div>
-        <div class="totals-row"><span>Celkem k úhradě:</span><span>${formatPrice(totals.withVat)} Kč</span></div>
-      </div>
+      <table class="totals-table">
+        <tr>
+          <td>Základ DPH</td>
+          <td>${formatPrice(totals.withoutVat)} Kč</td>
+        </tr>
+        <tr>
+          <td>DPH 21%</td>
+          <td>${formatPrice(totals.vat)} Kč</td>
+        </tr>
+        <tr class="total">
+          <td>Celkem k úhradě</td>
+          <td>${formatPrice(totals.withVat)} Kč</td>
+        </tr>
+      </table>
     </div>
 
-    <div class="payment-info">
+    <div class="payment">
       <h3>Platební údaje</h3>
       <div class="payment-grid">
-        <p><strong>Číslo účtu:</strong> ${escapeHtml(COMPANY.bankAccount)}</p>
-        <p><strong>IBAN:</strong> ${escapeHtml(COMPANY.iban)}</p>
-        <p><strong>SWIFT:</strong> ${escapeHtml(COMPANY.swift)}</p>
-        <p><strong>Banka:</strong> ${escapeHtml(COMPANY.bankName)}</p>
-        <p><strong>Variabilní symbol:</strong> ${escapeHtml(opts.orderId)}</p>
-        <p><strong>Částka:</strong> ${formatPrice(totals.withVat)} Kč</p>
+        <div class="payment-item">
+          <label>Způsob platby</label>
+          <span>${escapeHtml(paymentText)}</span>
+        </div>
+        <div class="payment-item">
+          <label>Číslo účtu</label>
+          <span>${escapeHtml(COMPANY.bankAccount)}</span>
+        </div>
+        <div class="payment-item highlight">
+          <label>Variabilní symbol</label>
+          <span>${escapeHtml(vs || opts.orderId)}</span>
+        </div>
+        <div class="payment-item">
+          <label>IBAN</label>
+          <span>${escapeHtml(COMPANY.iban)}</span>
+        </div>
+        <div class="payment-item">
+          <label>SWIFT</label>
+          <span>${escapeHtml(COMPANY.swift)}</span>
+        </div>
+        <div class="payment-item highlight">
+          <label>Částka k úhradě</label>
+          <span>${formatPrice(totals.withVat)} Kč</span>
+        </div>
       </div>
     </div>
 
-    <div class="qr-section">${qrImg}</div>
-
-    <div class="invoice-footer">
-      <p style="margin-bottom:8px;">Děkujeme za Vaši objednávku!</p>
-      <p>${escapeHtml(COMPANY.name)} | ${escapeHtml(COMPANY.email)} | <a href="https://${escapeHtml(COMPANY.web)}">${escapeHtml(COMPANY.web)}</a></p>
-      <p style="margin-top:12px;">Faktura byla vystavena elektronicky a je platná bez podpisu.</p>
+    <div class="qr-wrap">
+      ${qrImg ? `<p>📱 QR kód pro platbu</p>${qrImg}` : ''}
     </div>
+
+    <div class="footer">
+      <p>Děkujeme za Váš nákup! • ${escapeHtml(COMPANY.web)} • ${escapeHtml(COMPANY.email)}</p>
+      <p style="margin-top: 10px; color: #FFD700;">🦁 One Love, One Heart, One ZION 🦁</p>
+      <p style="margin-top: 10px; color: #666;">Faktura byla vystavena elektronicky a je platná bez podpisu.</p>
+    </div>
+
+    <div class="rasta-footer"></div>
   </div>
 </body>
 </html>`;
