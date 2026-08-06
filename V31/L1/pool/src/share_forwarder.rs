@@ -116,11 +116,16 @@ impl ShareForwarder {
             }
         }
 
+        let mut header_hash = [0u8; 32];
+        let copy_len = header_bytes.len().min(32);
+        header_hash[..copy_len].copy_from_slice(&header_bytes[..copy_len]);
+
         let share = AuxShare {
             job_id: job_id.to_string(),
             coin: self.coin,
             nonce,
             hash: effective_hash,
+            header_hash,
             mix_hash: mix_hash.copied(),
             solution: solution.map(|s| s.to_vec()),
             extranonce2: "00".to_string(),

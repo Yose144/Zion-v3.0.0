@@ -249,6 +249,38 @@ fn parse_ntime(ntime: &str) -> u64 {
     u64::from_str_radix(ntime, 16).unwrap_or(0)
 }
 
+/// Hash a candidate for the given algorithm, returning the final PoW hash and
+/// an optional mix hash for Ethash/KawPow/ProgPoW-style submissions.
+fn hash_auxpow(
+    coin: zion_cosmic_harmony::ExternalCoin,
+    header: &[u8],
+    nonce: u64,
+    height: u64,
+    extranonce: &[u8],
+    algorithm: &str,
+) -> ([u8; 32], Option<[u8; 32]>) {
+    if algorithm.contains("ethash") || algorithm.contains("etchash") {
+        let mut h32 = [0u8; 32];
+        let copy_len = header.len().min(32);
+        h32[..copy_len].copy_from_slice(&header[..copy_len]);
+        return (crate::auxpow::hasher::hash_ethash(&h32, nonce, height as u32), None);
+    }
+
+    if algorithm.contains("kawpow")
+        || algorithm.contains("progpow")
+        || algorithm == "meowpow"
+        || algorithm == "evrprogpow"
+    {
+        let mut h32 = [0u8; 32];
+        let copy_len = header.len().min(32);
+        h32[..copy_len].copy_from_slice(&header[..copy_len]);
+        let (mix, hash) = crate::auxpow::hasher::hash_kawpow(&h32, nonce, height as u32);
+        return (hash, Some(mix));
+    }
+
+    (dispatch_algorithm(coin, header, nonce, height, extranonce, algorithm), None)
+}
+
 /// Find a valid share for an AuxPoW `Job` using the CPU parallel scanner.
 ///
 /// This is the CPU fallback used by `MinerRuntime` when no GPU backend is
@@ -267,8 +299,16 @@ pub fn find_auxpow_share(
     let algorithm = coin.algorithm();
     // kHeavyHash (KAS) carries the block timestamp in the job height and
     // uses an extranonce1 prefix inside the 8-byte nonce.
+    // DAG-based algorithms (Ethash, KawPow, ProgPoW) use the job height for
+    // epoch/period derivation; the ntime field is a wall-clock timestamp.
     let is_kheavyhash = algorithm.starts_with("kheavyhash");
-    let height = if is_kheavyhash {
+    let is_dag_based = algorithm.contains("ethash")
+        || algorithm.contains("etchash")
+        || algorithm.contains("kawpow")
+        || algorithm.contains("progpow")
+        || algorithm.contains("meowpow")
+        || algorithm == "evrprogpow";
+    let height = if is_kheavyhash || is_dag_based {
         job.height
     } else {
         parse_ntime(&job.ntime)
@@ -328,7 +368,7 @@ pub fn find_auxpow_share(
                 break;
             }
             let nonce = make_nonce(suffix);
-            let hash = dispatch_algorithm(coin, &header, nonce, height, &extranonce, algorithm);
+            let (hash, mix) = hash_auxpow(coin, &header, nonce, height, &extranonce, algorithm);
             if crate::auxpow::hasher::meets_target(&hash, &target) {
                 return Some(crate::auxpow::Share {
                     job_id,
@@ -336,7 +376,7 @@ pub fn find_auxpow_share(
                     nonce,
                     hash,
                     header_hash,
-                    mix_hash: None,
+                    mix_hash: mix,
                     solution: None,
                     extranonce2,
                     ntime,
@@ -366,7 +406,7 @@ pub fn find_auxpow_share(
                 break;
             }
             let nonce = make_nonce(suffix);
-            let hash = dispatch_algorithm(coin, &header, nonce, height, &extranonce, algorithm);
+            let (hash, mix) = hash_auxpow(coin, &header, nonce, height, &extranonce, algorithm);
             if crate::auxpow::hasher::meets_target(&hash, &target) {
                 cancelled.store(true, Ordering::Relaxed);
                 return Some(crate::auxpow::Share {
@@ -375,7 +415,7 @@ pub fn find_auxpow_share(
                     nonce,
                     hash,
                     header_hash,
-                    mix_hash: None,
+                    mix_hash: mix,
                     solution: None,
                     extranonce2: extranonce2.clone(),
                     ntime: ntime.clone(),

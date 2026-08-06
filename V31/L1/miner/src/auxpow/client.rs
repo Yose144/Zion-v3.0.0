@@ -27,6 +27,9 @@ use tracing::{debug, info, warn};
 use super::hasher;
 use zion_cosmic_harmony::{CoinProfile, ExternalCoin};
 
+/// JSON-RPC id used for `eth_getWork` polls.
+const ETH_GETWORK_ID: i64 = 10;
+
 /// Configuration for the AuxPowClient — extracts fields needed for stratum
 /// connection from V31's CoinProfile plus worker credentials.
 #[derive(Clone, Debug)]
@@ -1012,6 +1015,8 @@ pub struct StratumClient {
     pub url: String,
     pub worker: String,
     pub password: String,
+    /// External coin this client is mining (used for EthStratum polling).
+    pub coin: zion_cosmic_harmony::ExternalCoin,
     job_rx: tokio::sync::mpsc::Receiver<StratumJob>,
     submit_tx: tokio::sync::mpsc::Sender<ShareSubmit>,
     next_id: Arc<Mutex<i64>>,
@@ -1031,6 +1036,7 @@ impl StratumClient {
         url: impl Into<String>,
         worker: impl Into<String>,
         password: impl Into<String>,
+        coin: zion_cosmic_harmony::ExternalCoin,
     ) -> Self {
         let (job_tx, job_rx) = tokio::sync::mpsc::channel(8);
         let (submit_tx, submit_rx) = tokio::sync::mpsc::channel(256);
@@ -1048,6 +1054,7 @@ impl StratumClient {
                 url.clone(),
                 worker.clone(),
                 password.clone(),
+                coin,
                 job_tx,
                 submit_rx,
                 StratumState::new(),
@@ -1059,6 +1066,7 @@ impl StratumClient {
             url,
             worker,
             password,
+            coin,
             job_rx,
             submit_tx,
             next_id,
@@ -1158,17 +1166,19 @@ impl StratumState {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn run_stratum_loop(
     url: String,
     worker: String,
     password: String,
+    coin: zion_cosmic_harmony::ExternalCoin,
     job_tx: tokio::sync::mpsc::Sender<StratumJob>,
     mut submit_rx: tokio::sync::mpsc::Receiver<ShareSubmit>,
     state: StratumState,
     pending: Arc<Mutex<HashMap<i64, tokio::sync::oneshot::Sender<ShareResult>>>>,
 ) {
     loop {
-        if let Err(e) = stratum_session(&url, &worker, &password, &job_tx, &mut submit_rx, &state, &pending).await
+        if let Err(e) = stratum_session(&url, &worker, &password, coin, &job_tx, &mut submit_rx, &state, &pending).await
         {
             warn!(url = %url, error = %e, "stratum session failed, reconnecting in 5s");
         } else {
@@ -1185,10 +1195,12 @@ async fn run_stratum_loop(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn stratum_session(
     url: &str,
     worker: &str,
     password: &str,
+    coin: zion_cosmic_harmony::ExternalCoin,
     job_tx: &tokio::sync::mpsc::Sender<StratumJob>,
     submit_rx: &mut tokio::sync::mpsc::Receiver<ShareSubmit>,
     state: &StratumState,
@@ -1206,11 +1218,26 @@ async fn stratum_session(
     let auth = json!({"id": 2, "method": "mining.authorize", "params": [worker, password]});
     send_line(&mut writer, &auth).await?;
 
+    // EthStratum (EthereumStratum / 2miners) uses `eth_getWork` instead of
+    // `mining.notify`. Poll the pool for new work every few seconds.
+    let is_ethstratum = coin_protocol(coin) == StratumProtocol::EthStratum;
+    let mut eth_getwork_interval = tokio::time::interval_at(
+        tokio::time::Instant::now() + Duration::from_secs(3),
+        Duration::from_secs(3),
+    );
+    eth_getwork_interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+
     let mut pending_submits: std::collections::VecDeque<ShareSubmit> =
         std::collections::VecDeque::new();
 
     loop {
         tokio::select! {
+            _tick = eth_getwork_interval.tick(), if is_ethstratum => {
+                let req = json!({"id": ETH_GETWORK_ID, "method": "eth_getWork", "params": []});
+                if let Err(e) = send_line(&mut writer, &req).await {
+                    warn!(error = %e, "failed to send eth_getWork poll");
+                }
+            }
             line = lines.next_line() => match line {
                 Ok(Some(line)) => {
                     if line.trim().is_empty() {
@@ -1275,6 +1302,12 @@ async fn handle_line(
                 info!("stratum authorized");
                 return Ok(());
             }
+            ETH_GETWORK_ID => {
+                if let Some(job) = parse_eth_getwork(&value) {
+                    let _ = job_tx.send(job).await;
+                }
+                return Ok(());
+            }
             _ => {
                 if let Some(sender) = pending.lock().await.remove(&id) {
                     let _ = sender.send(parse_submit_response(&value));
@@ -1320,6 +1353,11 @@ async fn handle_line(
                         info!(target = %hex::encode(target), "stratum set target");
                     }
                 }
+            }
+        }
+        "eth_getWork" | "job" => {
+            if let Some(job) = parse_eth_getwork(&value) {
+                let _ = job_tx.send(job).await;
             }
         }
         _ => {}
@@ -1374,6 +1412,43 @@ fn params_extranonce(value: &Value) -> Option<(Vec<u8>, usize)> {
     let e1 = parse_hex_value(&params[0]).unwrap_or_default();
     let size = params[1].as_u64()? as usize;
     Some((e1, size))
+}
+
+/// Parse an `eth_getWork` JSON-RPC response or notification.
+///
+/// Standard format is `[header_hash, seed_hash, target, block_number]`
+/// where header_hash and target are 64-character (32-byte) hex strings.
+fn parse_eth_getwork(value: &Value) -> Option<StratumJob> {
+    let params = value
+        .get("result")
+        .and_then(Value::as_array)
+        .or_else(|| value.get("params").and_then(Value::as_array))?
+        .clone();
+    if params.len() < 3 {
+        return None;
+    }
+
+    let header = parse_hex_value(&params[0]).unwrap_or_default();
+    let target = hasher::parse_target_hex(params[2].as_str().unwrap_or(""))
+        .unwrap_or([0xFF; 32]);
+    let height = params.get(3).and_then(|v| {
+        v.as_u64().or_else(|| {
+            v.as_str()
+                .and_then(|s| u64::from_str_radix(s.trim_start_matches("0x"), 16).ok())
+        })
+    }).unwrap_or(0);
+
+    Some(StratumJob {
+        job_id: height.to_string(),
+        header,
+        target,
+        extranonce1: Vec::new(),
+        extranonce2_size: 0,
+        ntime: "00000000".to_string(),
+        difficulty: 1.0,
+        coin: zion_cosmic_harmony::ExternalCoin::Bitcoin,
+        height,
+    })
 }
 
 async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJob> {
@@ -1576,11 +1651,16 @@ fn build_submit_params(worker: &str, share: &super::Share, id: i64) -> Value {
         return json!({"id": id, "method": "mining.submit", "params": [worker, share.job_id, nonce]});
     }
 
-    // DAG-based Ethash variants: EthereumStratum uses eth_submitWork with
-    // [nonce, header_hash, mix_hash]. We use the found hash as the header hash
-    // and the mix hash as the third parameter; pools recompute the final hash.
-    if algo.contains("ethash") || algo == "etchash" {
-        let header = format!("0x{}", hex::encode(share.hash));
+    // DAG-based Ethash / ProgPoW variants: EthereumStratum uses eth_submitWork
+    // with [nonce, header_hash, mix_hash]. The original 32-byte header hash is
+    // required, not the final PoW hash; the pool recomputes the final hash.
+    if algo.contains("ethash")
+        || algo == "etchash"
+        || algo == "progpowz"
+        || algo == "epic"
+    {
+        let nonce = format!("0x{nonce}");
+        let header = format!("0x{}", hex::encode(share.header_hash));
         let mix = mix.unwrap_or_else(|| format!("0x{}", hex::encode([0u8; 32])));
         return json!({"id": id, "method": "eth_submitWork", "params": [nonce, header, mix]});
     }
@@ -1704,7 +1784,8 @@ mod tests {
             }
         });
 
-        let mut client = StratumClient::new(format!("127.0.0.1:{}", port), "worker", "x");
+        let mut client =
+            StratumClient::new(format!("127.0.0.1:{}", port), "worker", "x", ExternalCoin::Kaspa);
         let job = client
             .next_job(ExternalCoin::Kaspa, Duration::from_secs(5))
             .await
@@ -1738,12 +1819,14 @@ mod tests {
             }
         });
 
-        let client = StratumClient::new(format!("127.0.0.1:{}", port), "worker", "x");
+        let client =
+            StratumClient::new(format!("127.0.0.1:{}", port), "worker", "x", ExternalCoin::Kaspa);
         let share = super::super::Share {
             job_id: "mock_job".to_string(),
             coin: ExternalCoin::Kaspa,
             nonce: 42,
             hash: [0u8; 32],
+            header_hash: [0u8; 32],
             mix_hash: None,
             solution: None,
             extranonce2: "00".to_string(),

@@ -55,6 +55,9 @@ pub use zion_cosmic_harmony::ExternalCoin;
 /// Brute-force a valid nonce for an AuxPoW job. This is a CPU scaffold; real
 /// mining will use the GPU backends and dedicated external kernels.
 pub fn find_share(coin: ExternalCoin, job: &Job, start: u64, limit: u64) -> Option<Share> {
+    let mut header_hash = [0u8; 32];
+    let copy_len = job.header.len().min(32);
+    header_hash[..copy_len].copy_from_slice(&job.header[..copy_len]);
     for offset in 0..limit {
         let nonce = start.wrapping_add(offset);
         let hash = hasher::hash_for_coin(coin, &job.header, nonce);
@@ -64,6 +67,7 @@ pub fn find_share(coin: ExternalCoin, job: &Job, start: u64, limit: u64) -> Opti
                 coin,
                 nonce,
                 hash,
+                header_hash,
                 mix_hash: None,
                 solution: None,
                 extranonce2: job.extranonce2.clone(),
