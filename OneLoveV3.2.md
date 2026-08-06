@@ -95,6 +95,8 @@ The code-vs-docs audit from [`docs/3.1/PLAN_TO_3.1_RECONCILED.md`](./docs/3.1/PL
 13. All native algorithm features exposed — `cargo build --features full` produces unified binary.
 14. All Solidity contracts ported — wZION, Bridge, AtomicSwap, Governance, Treasury, Staking, Farm, ZionDex.
 15. Pool supports PPLNS + PPS + SOLO with stratum v1 + v2.
+16. Unified ecosystem auth — single ZION wallet login across dashboard, web, market, and OASIS.
+17. Shared ecosystem database — PostgreSQL backing all apps with synchronized user profiles, OASIS game state, marketplace listings, and mining stats.
 
 ### 3.4 Phases
 
@@ -143,6 +145,39 @@ The code-vs-docs audit from [`docs/3.1/PLAN_TO_3.1_RECONCILED.md`](./docs/3.1/PL
 - H14 True AuxPoW consensus integration
 
 > **Full gap analysis:** [`V31/PLAN_TO_3.2.md`](./V31/PLAN_TO_3.2.md) §10 (V3→V31 Migration Gap Analysis)
+
+**Phase I — ZION Identity Service (ZIS)**
+- I1 Design ZIS API (OpenAPI)
+- I2 Implement ZIS server (Next.js, `auth.zionterranova.com`)
+- I3 Unified Prisma schema (User, Session, OasisPlayer, Artifact, MiningWorker, DAO, Bridge, Notifications)
+- I4 Deploy ZIS on Edge
+- I5 Cross-domain cookie SSO (`.zionterranova.com`)
+- I6 EVM wallet auth (SIWE/EIP-4361)
+- I7 Link EVM + ZION addresses
+- I8 API key for programmatic access
+
+**Phase J — Cross-App Integration**
+- J1 Web 2.9 → ZIS migration
+- J2 Market → ZIS migration
+- J3 OASIS → server + ZIS (convert from static export)
+- J4 Dashboard → ZIS
+- J5 OASIS ↔ Market artifact sync (bidirectional)
+- J6 Dashboard ↔ all apps (mining, OASIS, market, DAO, bridge)
+- J7 Mining stats → shared DB
+- J8 DAO → shared DB
+- J9 Notifications system (cross-app)
+- J10 Unified profile page (wallet, OASIS, market, mining, DAO, bridge)
+
+**Phase K — Dashboard Enhancement**
+- K1 Dashboard "My Ecosystem" view
+- K2 Dashboard admin → ZIS roles (RBAC)
+- K3 Dashboard real-time updates (SSE)
+- K4 Dashboard OASIS panel
+- K5 Dashboard market panel
+- K6 Dashboard mining panel
+- K7 Dashboard bridge/DeFi panel
+
+> **Full ecosystem plan:** [`V31/PLAN_TO_3.2.md`](./V31/PLAN_TO_3.2.md) §14 (Unified Ecosystem — Auth, Database & Cross-App Integration)
 
 ---
 

@@ -494,6 +494,10 @@ Week 1:  E1  GPU Go/No-Go on first reference rig
          E4  Bridge Base mainnet round-trip
          H1  Port Solidity contracts (parallel)
          H3  Complete miner Cargo features (parallel)
+         I1  Design ZIS API (parallel)
+         I2  Implement ZIS server (parallel)
+         I3  Unified Prisma schema (parallel)
+         J5  OASIS ↔ Market artifact sync (parallel)
 
 Week 2:  E5  Non-EVM WARP hardening
          E6  Solver network real E2E
@@ -501,25 +505,45 @@ Week 2:  E5  Non-EVM WARP hardening
          E8  XMR/RandomX decision
          H2  Port miner TUI (parallel)
          H4  Port missing CLI commands (parallel)
+         I4  Deploy ZIS on Edge (parallel)
+         I5  Cross-domain cookie config (parallel)
 
 Week 3:  E9  L5/L6 activation decision
          F1  Internal security audit
          F2  Fuzzing infrastructure + 24h run
          H6  Port ZionDex standalone services (parallel)
          H9  Port AuXpow E2E test script (parallel)
+         J1  Web 2.9 → ZIS migration (parallel)
+         J2  Market → ZIS migration (parallel)
 
 Week 4:  F3  Chaos tests (local testnet)
          F4  1000+ miner simulation
          F5  Backup / DR drill
          H10 Stratum v2 pool support (parallel)
          H11 PPS + SOLO pool modes (parallel)
+         J3  OASIS → server + ZIS (parallel)
+         J4  Dashboard → ZIS (parallel)
 
 Week 5:  F6  Start 30-day continuous run
          G1  Feature freeze, G2 release prep
          H5  Port CLI infrastructure (parallel)
          H12 Pool downstream/proxy mode (parallel)
+         J6  Dashboard ↔ all apps (parallel)
+         J7  Mining stats → shared DB (parallel)
 
-Weeks 6-9: 30d run monitoring + bugfix sprints
+Weeks 6-7: 30d run monitoring + bugfix sprints
+           K1  Dashboard "My Ecosystem" view
+           K3  Dashboard real-time updates (SSE)
+           K4-K7 Dashboard panels
+           J8  DAO → shared DB
+           J9  Notifications system
+           J10 Unified profile page
+
+Weeks 8-9: 30d run continues
+           I6  EVM wallet auth (SIWE)
+           I7  Link EVM + ZION addresses
+           I8  API key for programmatic access
+           K2  Dashboard admin → ZIS roles
            H7, H8, H13, H14 (low priority, post-stable)
 
 Week 10: G2-G7 release and launch readiness
@@ -544,10 +568,500 @@ Week 10: G2-G7 release and launch readiness
 13. **All native algorithm features exposed** — `cargo build --features full` produces a unified miner binary.
 14. **All Solidity contracts ported** — wZION, Bridge, AtomicSwap, Governance, Treasury, Staking, Farm, ZionDex contracts.
 15. **Pool supports PPLNS + PPS + SOLO** with stratum v1 + v2.
+16. **Unified ecosystem auth** — single ZION wallet login across dashboard, web, market, and OASIS.
+17. **Shared ecosystem database** — PostgreSQL backing all apps with synchronized user profiles, OASIS game state, marketplace listings, and mining stats.
 
 ---
 
-## 14. Canonical references
+## 14. Unified Ecosystem — Auth, Database & Cross-App Integration
+
+> **Goal:** One login, one database, one user identity across the entire ZION ecosystem — dashboard, web 2.9, marketplace, OASIS, and future apps.
+
+### 14.1 Current state — fragmented auth & data
+
+| App | URL | Auth method | Storage | Tech |
+|-----|-----|-------------|---------|------|
+| **Dashboard** | `dashboard.zionterranova.com` | API key (`DASHBOARD_API_KEY`) + Basic Auth | JSON files, no user DB | Python stdlib HTTP |
+| **Web 2.9** | `app.zionterranova.com` | JWT (jose) + Ed25519 wallet signature challenge | JSON files (`data/auth/users.json`, `data/auth/nonces.json`) | Next.js 16 |
+| **Market** | `market.zionterranova.com` | env-based admin (`ADMIN_USERS=user:pass`) + wagmi/MetaMask wallet | PostgreSQL (Prisma ORM) | Next.js 14 |
+| **OASIS** | `oasis.zionterranova.com` | own wallet impl (`@noble/ed25519`), no server auth | zustand persist (localStorage), OASIS game service SQLite | Next.js 16 (static export) |
+
+**Problems:**
+1. **4 different auth systems** — user must log in separately on each app.
+2. **No shared user identity** — Web 2.9 has JSON users, Market has Prisma users, OASIS has game service players, Dashboard has API key only.
+3. **No cross-app data** — can't show "your OASIS achievements + market purchases + mining stats" in one place.
+4. **OASIS is static export** (`output: 'export'`) — no server-side API routes, no auth backend.
+5. **Dashboard is Python** — different stack from the 3 Next.js apps.
+
+**Existing integrations (partial):**
+- Market → OASIS: `/api/oasis/sync` fetches avatars/quests/prizes/territories from OASIS API (`127.0.0.1:8094`) → upserts to Prisma DB. Works but one-directional.
+- Market → Base L2: wagmi + ERC-1155 contracts, wZION payment (`0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6`).
+- Dashboard → V31 node/pool: RPC scraping for metrics.
+- Web 2.9 → L1 RPC: blockchain API, explorer, wallet, bridge, DAO, DEX.
+
+### 14.2 Target architecture — ZION Identity Service (ZIS)
+
+```
+                    ┌─────────────────────────────────────────┐
+                    │     ZION Identity Service (ZIS)          │
+                    │     auth.zionterranova.com               │
+                    │                                          │
+                    │  • Ed25519 wallet challenge (ZION L1)    │
+                    │  • EVM wallet challenge (Base L2)        │
+                    │  • JWT issuance + refresh                │
+                    │  • Session management                    │
+                    │  • User profile CRUD                     │
+                    │  • API key generation for programmatic   │
+                    └──────────────┬───────────────────────────┘
+                                   │
+                    ┌──────────────┴──────────────┐
+                    │   Shared PostgreSQL DB       │
+                    │   (Prisma, single instance)  │
+                    │                              │
+                    │  • users (wallet → profile)  │
+                    │  • sessions (JWT blacklist)  │
+                    │  • oasis_players             │
+                    │  • oasis_achievements        │
+                    │  • oasis_inventory           │
+                    │  • market_artifacts          │
+                    │  • market_listings           │
+                    │  • market_sales              │
+                    │  • mining_stats              │
+                    │  • mining_workers            │
+                    │  • dao_proposals             │
+                    │  • dao_votes                 │
+                    │  • bridge_transactions       │
+                    │  • dex_orders                │
+                    │  • notifications             │
+                    └──────────────┬──────────────┘
+                                   │
+        ┌──────────────┬───────────┼───────────┬──────────────┐
+        ▼              ▼           ▼           ▼              ▼
+   Dashboard       Web 2.9     Market      OASIS         Future
+   (Python)        (Next.js)   (Next.js)   (Next.js)     apps
+```
+
+**Key principles:**
+1. **ZIS is the single source of truth** for auth — all apps delegate to it.
+2. **One PostgreSQL database** — Prisma schema covers all apps.
+3. **Wallet-based identity** — primary key is wallet address (ZION L1 `zion1...` or EVM `0x...`).
+4. **Cross-domain SSO** — JWT in httpOnly cookie, validated by ZIS, shared across `*.zionterranova.com` subdomains.
+5. **OASIS gets a server** — convert from static export to full Next.js with API routes (or add a thin BFF proxy).
+
+### 14.3 Phase I — ZION Identity Service (ZIS)
+
+| # | Task | Priority | Acceptance | Evidence |
+|---|------|----------|------------|----------|
+| I1 | **Design ZIS API** | CRITICAL | OpenAPI spec for: `/auth/nonce`, `/auth/wallet-verify` (Ed25519), `/auth/evm-verify` (EIP-4361), `/auth/session`, `/auth/refresh`, `/auth/logout`, `/profile`, `/profile/:address`. | OpenAPI spec committed. |
+| I2 | **Implement ZIS server** | CRITICAL | Next.js 16 app at `APP&WEB/identity/`. Uses `jose` for JWT (same as Web 2.9). Supports both ZION L1 Ed25519 and EVM wallet challenges. | `npm run dev` works, auth flow tested. |
+| I3 | **Unified Prisma schema** | CRITICAL | Single `schema.prisma` in `APP&WEB/shared/prisma/` covering: User, Session, OasisPlayer, OasisAchievement, OasisInventory, Artifact, Listing, Sale, MiningWorker, MiningStats, DaoProposal, DaoVote, BridgeTransaction, DexOrder, Notification. Merges Market's existing schema + new tables. | `prisma migrate dev` succeeds. |
+| I4 | **Deploy ZIS on Edge** | HIGH | `auth.zionterranova.com` nginx vhost → `127.0.0.1:3101`. systemd `zion-identity.service`. TLS via Let's Encrypt. | `curl https://auth.zionterranova.com/health` = 200. |
+| I5 | **Cross-domain cookie config** | HIGH | JWT cookie domain = `.zionterranova.com` (all subdomains). httpOnly, secure, sameSite=lax. 7-day expiry with refresh. | Browser devtools show cookie on all subdomains. |
+| I6 | **EVM wallet auth (EIP-4361)** | MEDIUM | "Sign-In with Ethereum" for Market users. Uses `siwe` library. Binds EVM address to ZION user profile. | MetaMask login flow works. |
+| I7 | **Link EVM + ZION addresses** | MEDIUM | User can link their EVM wallet to their ZION wallet in profile. One user, multiple addresses. | Profile page shows linked addresses. |
+| I8 | **API key for programmatic access** | LOW | Users can generate API keys for CLI/scripts. Stored hashed in DB. | `curl -H "X-API-Key: ..." ` works. |
+
+### 14.4 Phase J — Cross-App Integration
+
+| # | Task | Priority | Acceptance | Evidence |
+|---|------|----------|------------|----------|
+| J1 | **Web 2.9 → ZIS migration** | HIGH | Replace Web 2.9's `auth-storage.ts` (JSON files) with ZIS API calls. Keep `AuthContext.tsx` interface, swap backend. | Login on `app.zionterranova.com` uses ZIS. |
+| J2 | **Market → ZIS migration** | HIGH | Replace Market's `admin-auth.ts` (env-based) with ZIS. Keep Prisma but point to shared DB. wagmi stays for on-chain ops. | Login on `market.zionterranova.com` uses ZIS. |
+| J3 | **OASIS → server + ZIS** | HIGH | Convert OASIS from `output: 'export'` to full Next.js with API routes. Add ZIS auth. OASIS game service (`127.0.0.1:8094`) keeps game logic, OASIS web gets auth layer. | Login on `oasis.zionterranova.com` uses ZIS. |
+| J4 | **Dashboard → ZIS** | MEDIUM | Dashboard Python app validates JWT from ZIS instead of API key. Or: replace Python dashboard with Next.js dashboard that uses ZIS. Admin operations require ZIS admin role. | Dashboard login uses ZIS. |
+| J5 | **OASIS ↔ Market artifact sync** | HIGH | Bidirectional: Market syncs OASIS game items as NFTs (exists). OASIS shows market listings for player's artifacts. Player can mint OASIS achievement → NFT → list on market. | Round-trip: OASIS quest complete → mint NFT → list on market → visible in OASIS. |
+| J6 | **Dashboard ↔ all apps** | HIGH | Dashboard shows: user's OASIS player stats, market portfolio, mining stats, DAO proposals, bridge history — all from shared DB. | Dashboard "My Ecosystem" tab. |
+| J7 | **Mining stats → shared DB** | MEDIUM | Pool writes per-miner stats (hashrate, shares, earnings) to shared DB. Dashboard and Web 2.9 can query. | Miner stats visible in dashboard + web. |
+| J8 | **DAO → shared DB** | MEDIUM | DAO proposals/votes synced to shared DB. Web 2.9 DAO page and dashboard show same data. | DAO proposal visible in both. |
+| J9 | **Notifications system** | MEDIUM | Shared notifications table. Events: OASIS achievement, market sale, mining payout, DAO vote result, bridge completion. Web 2.9 + dashboard show notifications. | Notification bell works. |
+| J10 | **Unified profile page** | MEDIUM | One profile page (on Web 2.9 or ZIS) showing: wallet addresses, OASIS level/XP, market portfolio, mining stats, DAO participation, bridge history. | Profile page loads all data. |
+
+### 14.5 Phase K — Dashboard Enhancement
+
+| # | Task | Priority | Acceptance | Evidence |
+|---|------|----------|------------|----------|
+| K1 | **Dashboard "My Ecosystem" view** | HIGH | Authenticated user sees personalized: mining stats, OASIS player, market portfolio, DAO votes, bridge txs. | Screenshot. |
+| K2 | **Dashboard admin → ZIS roles** | MEDIUM | Admin operations (service control, config) require ZIS admin role. RBAC in ZIS. | Non-admin user can't access admin panel. |
+| K3 | **Dashboard real-time updates** | MEDIUM | WebSocket or SSE for live: block height, pool hashrate, OASIS events, market sales. | Live updates without page refresh. |
+| K4 | **Dashboard OASIS panel** | MEDIUM | Live OASIS game state: active players, golden egg status, leaderboard, territory control. | OASIS panel renders. |
+| K5 | **Dashboard market panel** | MEDIUM | Live market: recent sales, floor prices, active listings, volume. | Market panel renders. |
+| K6 | **Dashboard mining panel** | HIGH | Pool hashrate, active miners, share rate, block finds, AuxPoW coin routing. | Mining panel renders (partially exists). |
+| K7 | **Dashboard bridge/DeFi panel** | LOW | Bridge TVL, wZION supply, DEX volume, liquidity pools. | DeFi panel renders. |
+
+### 14.6 Shared Prisma schema — initial design
+
+```prisma
+// ── User identity ──────────────────────────────────────────────────
+
+model User {
+  id              String   @id @default(cuid())
+  primaryAddress  String   @unique  // zion1... or 0x...
+  displayName     String?
+  email           String?
+  avatar          String?
+  bio             String?
+  role            String   @default("user") // "user" | "admin" | "moderator"
+  createdAt       DateTime @default(now())
+  lastLogin       DateTime?
+  loginCount      Int      @default(0)
+
+  linkedAddresses LinkedAddress[]
+  sessions        Session[]
+  apiKeys         ApiKey[]
+  oasisPlayer     OasisPlayer?
+  miningWorkers   MiningWorker[]
+  daoVotes        DaoVote[]
+  notifications   Notification[]
+
+  @@index([role])
+}
+
+model LinkedAddress {
+  id          String   @id @default(cuid())
+  userId      String
+  address     String   @unique
+  chainType   String   // "zion-l1" | "evm" | "bitcoin"
+  chainId     String?  // "base" | "ethereum" | etc.
+  verifiedAt  DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model Session {
+  id          String   @id @default(cuid())
+  userId      String
+  jwtJti      String   @unique  // JWT ID for revocation
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+  revoked     Boolean  @default(false)
+  userAgent   String?
+  ipAddress   String?
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model ApiKey {
+  id          String   @id @default(cuid())
+  userId      String
+  keyHash     String   @unique  // SHA256 of API key
+  label       String   // "CLI" | "Script" | etc.
+  createdAt   DateTime @default(now())
+  lastUsed    DateTime?
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+// ── OASIS game ─────────────────────────────────────────────────────
+
+model OasisPlayer {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  address         String   @unique  // game service player address
+  totalXp         Int      @default(0)
+  level           String   @default("Physical")
+  guildId         String?
+  blocksMined     Int      @default(0)
+  zionEarned      BigInt   @default(0)
+  titheTotal      BigInt   @default(0)
+  challengesDone  Int      @default(0)
+  dailyStreak     Int      @default(0)
+  bestStreak      Int      @default(0)
+  lastActive      DateTime?
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id])
+  achievements    OasisAchievement[]
+  inventory       OasisInventory[]
+
+  @@index([level])
+  @@index([guildId])
+}
+
+model OasisAchievement {
+  id              String   @id @default(cuid())
+  playerId        String
+  achievementType String
+  milestone       Int
+  earnedAt        DateTime @default(now())
+  player          OasisPlayer @relation(fields: [playerId], references: [id])
+
+  @@unique([playerId, achievementType, milestone])
+}
+
+model OasisInventory {
+  id              String   @id @default(cuid())
+  playerId        String
+  itemType        String   // "avatar" | "quest_item" | "prize" | "territory" | "ship"
+  itemId          String
+  quantity        Int      @default(1)
+  acquiredAt      DateTime @default(now())
+  player          OasisPlayer @relation(fields: [playerId], references: [id])
+
+  @@unique([playerId, itemType, itemId])
+}
+
+// ── Marketplace (from existing Market schema) ──────────────────────
+
+model Artifact {
+  id              String   @id @default(cuid())
+  tokenId         BigInt
+  contractAddress String
+  category        String   @default("quest_item")
+  name            String
+  description     String   @db.Text
+  rarity          String   @default("common")
+  source          String   @default("oasis")
+  imageUri        String
+  assetUri        String?
+  metadataUri     String   @default("")
+  stats           Json?
+  creator         String
+  createdAt       DateTime @default(now())
+  mintedAt        DateTime?
+  totalSupply     Int      @default(1)
+  circulatingSupply Int    @default(1)
+  listings        Listing[]
+  sales           Sale[]
+  @@unique([contractAddress, tokenId])
+  @@index([category])
+  @@index([rarity])
+  @@index([creator])
+  @@index([source])
+}
+
+model Listing {
+  id              String   @id @default(cuid())
+  artifactId      String
+  tokenId         BigInt
+  contractAddress String
+  seller          String
+  saleType        String   @default("fixed")
+  price           BigInt
+  priceUsd        Float?
+  quantity        Int      @default(1)
+  status          String   @default("active")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now())
+  expiresAt       DateTime?
+  artifact        Artifact @relation(fields: [artifactId], references: [id])
+  @@index([seller])
+  @@index([status])
+  @@index([saleType])
+}
+
+model Sale {
+  id              String   @id @default(cuid())
+  artifactId      String
+  tokenId         BigInt
+  contractAddress String
+  buyer           String
+  seller          String
+  price           BigInt
+  priceUsd        Float?
+  quantity        Int      @default(1)
+  txHash          String?
+  createdAt       DateTime @default(now())
+  artifact        Artifact @relation(fields: [artifactId], references: [id])
+  @@index([buyer])
+  @@index([seller])
+  @@index([createdAt])
+}
+
+// ── Mining ─────────────────────────────────────────────────────────
+
+model MiningWorker {
+  id          String   @id @default(cuid())
+  userId      String?
+  address     String   @unique  // pool wallet address
+  workerName  String
+  pool        String   @default("zion-pool")
+  coin        String   @default("ZION")
+  algorithm   String   @default("ekam_deeksha")
+  hashrate    Float    @default(0)  // H/s
+  shares      Int      @default(0)
+  accepted    Int      @default(0)
+  rejected    Int      @default(0)
+  stale       Int      @default(0)
+  lastShareAt DateTime?
+  createdAt   DateTime @default(now())
+  user        User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([pool])
+  @@index([coin])
+}
+
+model MiningStats {
+  id          String   @id @default(cuid())
+  workerId    String
+  timestamp   DateTime @default(now())
+  hashrate    Float
+  shares      Int
+  accepted    Int
+  rejected    Int
+  stale       Int
+  uptime      Int      // seconds
+
+  @@index([workerId, timestamp])
+}
+
+// ── DAO ────────────────────────────────────────────────────────────
+
+model DaoProposal {
+  id          String   @id @default(cuid())
+  proposalId  Int      @unique
+  title       String
+  description String   @db.Text
+  proposer    String
+  status      String   @default("active")
+  yesVotes    Int      @default(0)
+  noVotes     Int      @default(0)
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+  votes       DaoVote[]
+
+  @@index([status])
+}
+
+model DaoVote {
+  id          String   @id @default(cuid())
+  proposalId  Int
+  voter       String
+  vote        Boolean  // true=yes, false=no
+  weight      BigInt
+  votedAt     DateTime @default(now())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+
+  @@unique([proposalId, voter])
+}
+
+// ── Bridge ─────────────────────────────────────────────────────────
+
+model BridgeTransaction {
+  id          String   @id @default(cuid())
+  txType      String   // "lock" | "mint" | "burn" | "release"
+  sourceChain String
+  destChain   String
+  amount      BigInt
+  sender      String
+  recipient   String
+  sourceTxHash String?
+  destTxHash   String?
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+  completedAt DateTime?
+
+  @@index([sender])
+  @@index([recipient])
+  @@index([status])
+}
+
+// ── DEX ────────────────────────────────────────────────────────────
+
+model DexOrder {
+  id          String   @id @default(cuid())
+  orderType   String   // "swap" | "add_liquidity" | "remove_liquidity"
+  tokenIn     String
+  tokenOut    String
+  amountIn    BigInt
+  amountOut   BigInt?
+  trader      String
+  txHash      String?
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+
+  @@index([trader])
+  @@index([status])
+}
+
+// ── Notifications ──────────────────────────────────────────────────
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   // "oasis_achievement" | "market_sale" | "mining_payout" | "dao_vote" | "bridge_complete"
+  title       String
+  body        String
+  data        Json?
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, read])
+  @@index([createdAt])
+}
+```
+
+### 14.7 Implementation order
+
+```
+Week 1-2 (parallel with Phase E/H):
+  I1  Design ZIS API
+  I2  Implement ZIS server
+  I3  Unified Prisma schema
+  J5  OASIS ↔ Market artifact sync (bidirectional)
+
+Week 3-4:
+  I4  Deploy ZIS on Edge
+  I5  Cross-domain cookie config
+  J1  Web 2.9 → ZIS migration
+  J2  Market → ZIS migration
+
+Week 5-6:
+  J3  OASIS → server + ZIS
+  J4  Dashboard → ZIS
+  J6  Dashboard ↔ all apps
+  J7  Mining stats → shared DB
+
+Week 7-8:
+  K1  Dashboard "My Ecosystem" view
+  K3  Dashboard real-time updates
+  K4-K7 Dashboard panels
+  J8  DAO → shared DB
+  J9  Notifications system
+  J10 Unified profile page
+
+Week 9-10:
+  I6  EVM wallet auth (SIWE)
+  I7  Link EVM + ZION addresses
+  I8  API key for programmatic access
+  K2  Dashboard admin → ZIS roles
+```
+
+### 14.8 Technical decisions
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Auth server tech | Next.js 16 (same as Web 2.9 + OASIS) | Unified stack, shared code |
+| JWT library | `jose` (already in Web 2.9) | Edge-compatible, proven |
+| Database | PostgreSQL (already in Market) | Single instance, Prisma ORM |
+| Schema management | Prisma (already in Market) | Migrations, type safety |
+| ZION wallet auth | Ed25519 challenge-response (already in Web 2.9) | Same flow, just centralized |
+| EVM wallet auth | EIP-4361 (SIWE) via `siwe` lib | Standard, MetaMask compatible |
+| Cross-domain SSO | JWT cookie on `.zionterranova.com` | All subdomains share cookie |
+| OASIS backend | Convert to full Next.js (remove `output: 'export'`) | Need server for auth + API |
+| Dashboard | Keep Python for now, add ZIS JWT validation | Don't rewrite working code |
+| Real-time | SSE (Server-Sent Events) | Simpler than WebSocket, works with Next.js |
+| Notifications | DB-backed, polled or SSE | Simple, no extra infra |
+
+### 14.9 Risks
+
+| Risk | Mitigation |
+|------|------------|
+| OASIS conversion from static export breaks deploy | Keep static export as fallback; add server-only routes behind feature flag |
+| Dashboard Python can't validate JWT easily | Add a `/auth/verify` endpoint in ZIS that Dashboard calls; or replace Dashboard with Next.js |
+| Shared DB becomes bottleneck | Use read replicas for dashboard/web; connection pooling (PgBouncer) |
+| Cross-domain cookie blocked by browser | Use `.zionterranova.com` domain cookie; all apps on same root domain |
+| EVM + ZION address linking confusion | Clear UI: "Link your MetaMask wallet to your ZION account"; one primary, multiple linked |
+| Migration breaks existing Market users | Port existing Prisma data to shared DB; no data loss |
+
+---
+
+## 15. Canonical references
 
 - Current live status: [`StatusV3.md`](../StatusV3.md)
 - V31 status: [`V31/STATUS.md`](./STATUS.md)
@@ -561,5 +1075,5 @@ Week 10: G2-G7 release and launch readiness
 
 ---
 
-*Generated with [Devin](https://devin.ai) — 2026-08-06, updated 2026-08-06 with deep V3→V31 migration gap analysis*  
+*Generated with [Devin](https://devin.ai) — 2026-08-06, updated 2026-08-06 with V3→V31 gap analysis + unified ecosystem plan*  
 *Dedicated to the vision of unity — 3.2.0 "One Love".
