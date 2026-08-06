@@ -64,7 +64,12 @@ export async function POST(request: NextRequest, context: RouteContext) {
       );
     }
 
-    const body = (await request.json()) as { dueDays?: number };
+    let body: { dueDays?: number } = {};
+    try {
+      body = (await request.json()) as { dueDays?: number };
+    } catch {
+      /* empty body is fine */
+    }
     const { invoice } = await createInvoiceForOrder({
       orderId: order.orderId,
       orderDatabaseId: order.id,
