@@ -20,18 +20,18 @@ const TYPE_ICONS: Record<Quest['type'], typeof Compass> = {
 
 /* ZION-theme-aligned functional colors */
 export const CATEGORY_COLORS: Record<string, string> = {
-  'star-system': '#fbbf24',
-  'planet': '#06b6d4',
-  'sector': '#9333ea',
-  'world': '#10b981',
-  'dimension': '#ec4899',
+  'star-system': '#fcd116',
+  'planet': '#078930',
+  'sector': '#e41e2b',
+  'world': '#078930',
+  'dimension': '#e41e2b',
 };
 
 const CATEGORY_RGB: Record<string, string> = {
-  'star-system': '251, 191, 36',
-  'planet': '6, 182, 212',
-  'sector': '147, 51, 234',
-  'world': '16, 185, 129',
+  'star-system': '252, 209, 22',
+  'planet': '7, 137, 48',
+  'sector': '228, 30, 43',
+  'world': '7, 137, 48',
   'dimension': '236, 72, 153',
 };
 
@@ -49,7 +49,7 @@ const NOVA_ZEME_PROJECTS = [
     id: 'genesis',
     name: 'Zahrada Genesis',
     location: 'Algarve · Portugalsko',
-    color: '#22c55e',
+    color: '#078930',
     status: 'Active',
     desc: 'Atlantický uzel Terra Nova — organická farma, glamping, solar off-grid, surf a sázení stromů. První dlouhodobá komunitní infrastruktura.',
     href: 'https://app.zionterranova.com/terranova/genesis',
@@ -58,7 +58,7 @@ const NOVA_ZEME_PROJECTS = [
     id: 'dharma',
     name: 'Dharma Temple',
     location: 'La Palma · Kanárské ostrovy',
-    color: '#a855f7',
+    color: '#e41e2b',
     status: 'Prep',
     desc: 'Spirituální a vzdělávací uzel — meditace, syntropic zahrada, dharma governance, vulkanická krajina, off-grid voda. UNESCO Biosphere Reserve.',
     href: 'https://app.zionterranova.com/terranova/dharma-temple',
@@ -67,7 +67,7 @@ const NOVA_ZEME_PROJECTS = [
     id: 'piko-ora',
     name: 'Te Pīko Ora',
     location: 'Tahiti · Francouzská Polynésie',
-    color: '#06b6d4',
+    color: '#078930',
     status: 'Planned',
     desc: 'Tichomořský uzel — ochrana mořského i pozemského dědictví, regenerativní komunita, kulturní most mezi Polynésií a ZION.',
     href: 'https://app.zionterranova.com/terranova/te-piko-ora',
@@ -144,7 +144,7 @@ function StatBar({ icon: Icon, label, value, color }: { icon: typeof Shield; lab
   return (
     <div>
       <div className="flex items-center justify-between text-[9px]">
-        <span className="flex items-center gap-1 text-gray-400">
+        <span className="flex items-center gap-1 text-white/70">
           <Icon className="h-2.5 w-2.5" style={{ color }} />
           {label}
         </span>
@@ -265,12 +265,12 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
           >
             {world.name}
           </h2>
-          <div className="mt-1 flex items-center gap-2 text-xs text-gray-400">
+          <div className="mt-1 flex items-center gap-2 text-xs text-white/70">
             <Layers className="h-3 w-3" style={{ color }} />
             <span>Layer {world.layer}</span>
           </div>
           <div className="mt-2 w-24">
-            <div className="flex items-center justify-between text-[10px] text-gray-400">
+            <div className="flex items-center justify-between text-[10px] text-white/70">
               <span>Level {level}</span>
               <span>{credits} Z</span>
             </div>
@@ -281,33 +281,33 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
         </div>
         <button
           onClick={onClose}
-          className="zion-button-ghost !p-2 text-gray-400"
+          className="zion-button-ghost !p-2 text-white/70"
         >
           <X className="h-4 w-4" />
         </button>
       </div>
 
       <div className="space-y-3.5">
-        <div className="flex items-start gap-2.5 text-sm text-gray-300">
+        <div className="flex items-start gap-2.5 text-sm text-white/80">
           <MapPin className="mt-0.5 h-4 w-4 shrink-0" style={{ color }} />
           <span className="leading-snug">{world.location}</span>
         </div>
 
-        <div className="flex items-start gap-2.5 text-sm text-gray-300">
+        <div className="flex items-start gap-2.5 text-sm text-white/80">
           <Eye className="mt-0.5 h-4 w-4 shrink-0" style={{ color }} />
           <span className="leading-snug italic">{world.vibe}</span>
         </div>
 
         <div className="zion-rainbow-sub p-3.5" style={{ '--rc': rc } as React.CSSProperties}>
-          <p className="text-sm leading-relaxed text-gray-200">{world.summary}</p>
+          <p className="text-sm leading-relaxed text-white/90">{world.summary}</p>
         </div>
 
         {/* ── Nova Zeme Pioneer Projects (L5) ── */}
         {world.id === 'NOVA_ZEME' && (
           <div className="zion-rainbow-sub p-3.5" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
             <div className="mb-3 flex items-center gap-1.5">
-              <Sparkles className="h-3 w-3 text-emerald-400" />
-              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+              <Sparkles className="h-3 w-3 text-rasta-green" />
+              <p className="text-[10px] font-bold uppercase tracking-wider text-rasta-green/80">
                 L5 Pioneer Projects · Terra Nova Nodes
               </p>
             </div>
@@ -329,8 +329,8 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
                         />
                         <h4 className="text-sm font-bold text-white">{p.name}</h4>
                       </div>
-                      <p className="mt-0.5 text-[10px] text-gray-500">{p.location}</p>
-                      <p className="mt-1.5 text-[11px] leading-snug text-gray-400">{p.desc}</p>
+                      <p className="mt-0.5 text-[10px] text-white/60">{p.location}</p>
+                      <p className="mt-1.5 text-[11px] leading-snug text-white/70">{p.desc}</p>
                     </div>
                     <span
                       className="shrink-0 rounded-full px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider"
@@ -346,7 +346,7 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
                 </a>
               ))}
             </div>
-            <p className="mt-3 text-[9px] text-gray-500">
+            <p className="mt-3 text-[9px] text-white/60">
               Klikni na projekt → otevře detail na zionterranova.com
             </p>
           </div>
@@ -356,16 +356,16 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
         <div className="zion-rainbow-sub p-3" style={{ '--rc': rc } as React.CSSProperties}>
           <div className="mb-2 flex items-center gap-1.5">
             <Compass className="h-3 w-3" style={{ color }} />
-            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-300">World Intel</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-white/80">World Intel</p>
           </div>
           <div className="space-y-2">
-            <StatBar icon={Shield} label="Danger" value={intel.danger} color="#ef4444" />
-            <StatBar icon={Cpu} label="Tech Level" value={intel.tech} color="#06b6d4" />
-            <StatBar icon={Gem} label="Resources" value={intel.resources} color="#fbbf24" />
+            <StatBar icon={Shield} label="Danger" value={intel.danger} color="#e41e2b" />
+            <StatBar icon={Cpu} label="Tech Level" value={intel.tech} color="#078930" />
+            <StatBar icon={Gem} label="Resources" value={intel.resources} color="#fcd116" />
           </div>
           <div className="mt-2 flex items-center gap-1.5 border-t border-white/5 pt-2 text-[9px]">
             <Users2 className="h-2.5 w-2.5" style={{ color }} />
-            <span className="text-gray-400">Population:</span>
+            <span className="text-white/70">Population:</span>
             <span className="font-semibold text-white">{intel.population}</span>
           </div>
         </div>
@@ -374,9 +374,9 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
         <div className="zion-rainbow-sub p-3.5" style={{ '--rc': rc } as React.CSSProperties}>
           <div className="mb-1.5 flex items-center gap-1.5">
             <ScrollText className="h-3 w-3" style={{ color }} />
-            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-300">Lore Fragment</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-white/80">Lore Fragment</p>
           </div>
-          <p className="text-[11px] italic leading-relaxed text-gray-300">{lore}</p>
+          <p className="text-[11px] italic leading-relaxed text-white/80">{lore}</p>
         </div>
 
         {world.tags.length > 0 && (
@@ -408,7 +408,7 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold text-white">{matchingAvatar.name}</p>
                 <p className="text-[10px] text-oasis-cyan">{matchingAvatar.subtitle}</p>
-                <p className="mt-1 text-[10px] italic leading-snug text-gray-300">“{matchingAvatar.teaching}”</p>
+                <p className="mt-1 text-[10px] italic leading-snug text-white/80">“{matchingAvatar.teaching}”</p>
               </div>
             </div>
           </div>
@@ -417,7 +417,7 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
         <div className="zion-rainbow-sub p-3" style={{ '--rc': rc } as React.CSSProperties}>
           <div className="mb-2 flex items-center gap-1.5">
             <Sparkles className="h-3 w-3" style={{ color }} />
-            <p className="text-[10px] font-bold uppercase tracking-wider text-gray-300">Active Quests</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-white/80">Active Quests</p>
           </div>
           <div className="space-y-2">
             {quests.map((quest) => {
@@ -434,7 +434,7 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <p className={`text-xs font-semibold ${done ? 'text-gray-500 line-through' : 'text-white'}`}>{quest.title}</p>
+                      <p className={`text-xs font-semibold ${done ? 'text-white/60 line-through' : 'text-white'}`}>{quest.title}</p>
                       {quest.real && (
                         <span className="zion-badge zion-badge-gold text-[8px] py-0.5 px-1">LIVE</span>
                       )}
@@ -442,9 +442,9 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
                     {quest.avatarName && (
                       <p className="text-[10px] text-oasis-cyan">From: {quest.avatarName}</p>
                     )}
-                    <p className="text-[10px] text-gray-400">{quest.description}</p>
+                    <p className="text-[10px] text-white/70">{quest.description}</p>
                   </div>
-                  <div className="flex flex-col items-end gap-1 text-right text-[10px] text-gray-400">
+                  <div className="flex flex-col items-end gap-1 text-right text-[10px] text-white/70">
                     <p style={{ color }}>★ {quest.difficulty}</p>
                     <p>{quest.reward} XP</p>
                     <button
@@ -462,7 +462,7 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
                       disabled={done}
                       className={`rounded px-2 py-0.5 text-[10px] font-bold transition ${
                         done
-                          ? 'bg-green-500/20 text-green-400'
+                          ? 'bg-rasta-green/20 text-rasta-green'
                           : 'bg-oasis-cyan/20 text-oasis-cyan hover:bg-oasis-cyan/30'
                       }`}
                     >
@@ -498,7 +498,7 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
                 <p className="text-sm font-semibold text-white">
                   {collectedEggs.includes(world.id) ? 'Collected' : `Clue ${world.goldenEggClue}`}
                 </p>
-                <p className="text-[9px] text-gray-400">
+                <p className="text-[9px] text-white/70">
                   {collectedEggs.includes(world.id) ? '+500 XP' : '100 Z to claim'}
                 </p>
               </div>
@@ -511,7 +511,7 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
           >
             <Sparkles className="h-4 w-4" style={{ color }} />
             <div>
-              <p className="text-[10px] uppercase tracking-wider text-gray-400">Archetype</p>
+              <p className="text-[10px] uppercase tracking-wider text-white/70">Archetype</p>
               <p className="text-sm font-semibold text-white">{CATEGORY_LABELS[world.category]}</p>
             </div>
           </div>
@@ -533,8 +533,8 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
             style={{ '--rc': rc } as React.CSSProperties}
           >
             <ScanLine className="h-4 w-4 text-oasis-cyan" />
-            <span className="text-[9px] font-bold text-gray-300">Scan</span>
-            <span className="text-[8px] text-gray-500">+{25 + shipLoadout.scanner * 10} XP</span>
+            <span className="text-[9px] font-bold text-white/80">Scan</span>
+            <span className="text-[8px] text-white/60">+{25 + shipLoadout.scanner * 10} XP</span>
           </button>
           <button
             onClick={async () => {
@@ -552,8 +552,8 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
             style={{ '--rc': rc } as React.CSSProperties}
           >
             <Compass className="h-4 w-4 text-oasis-emerald" />
-            <span className="text-[9px] font-bold text-gray-300">Explore</span>
-            <span className="text-[8px] text-gray-500">XP + Z</span>
+            <span className="text-[9px] font-bold text-white/80">Explore</span>
+            <span className="text-[8px] text-white/60">XP + Z</span>
           </button>
           <button
             onClick={async () => {
@@ -569,8 +569,8 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
             style={{ '--rc': rc } as React.CSSProperties}
           >
             <Gem className="h-4 w-4 text-oasis-gold" />
-            <span className="text-[9px] font-bold text-gray-300">Harvest</span>
-            <span className="text-[8px] text-gray-500">+{intel.resources * 25 + shipLoadout.cargo * 20} Z</span>
+            <span className="text-[9px] font-bold text-white/80">Harvest</span>
+            <span className="text-[8px] text-white/60">+{intel.resources * 25 + shipLoadout.cargo * 20} Z</span>
           </button>
         </div>
 

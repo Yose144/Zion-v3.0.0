@@ -10,12 +10,12 @@ interface ShipLoadoutProps {
 }
 
 const PRESETS: { name: string; hex: string }[] = [
-  { name: 'Zion Cyan', hex: '#06b6d4' },
-  { name: 'Zion Gold', hex: '#ffd700' },
-  { name: 'Zion Purple', hex: '#9333ea' },
-  { name: 'Zion Emerald', hex: '#10b981' },
-  { name: 'Zion Rose', hex: '#f43f5e' },
-  { name: 'White', hex: '#e2e8f0' },
+  { name: 'Zion Cyan', hex: '#078930' },
+  { name: 'Zion Gold', hex: '#fcd116' },
+  { name: 'Zion Purple', hex: '#e41e2b' },
+  { name: 'Zion Emerald', hex: '#078930' },
+  { name: 'Zion Rose', hex: '#e41e2b' },
+  { name: 'White', hex: '#d4d4d4' },
 ];
 
 const DESCRIPTIONS: Record<keyof ShipLoadout, string> = {
@@ -47,7 +47,7 @@ export default function ShipLoadout({ onClose }: ShipLoadoutProps) {
       className="pointer-events-auto fixed inset-0 z-[60] flex items-center justify-center p-4"
     >
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md overflow-hidden p-5 zion-rainbow-card" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+      <div className="relative w-full max-w-md overflow-hidden p-5 zion-rainbow-card" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="rounded-lg bg-oasis-cyan/10 p-1.5 text-oasis-cyan">
@@ -55,16 +55,16 @@ export default function ShipLoadout({ onClose }: ShipLoadoutProps) {
             </div>
             <div>
               <h2 className="text-lg font-bold text-white">Ship Loadout</h2>
-              <p className="text-[10px] text-gray-400">Configure your multilayer transport</p>
+              <p className="text-[10px] text-white/70">Configure your multilayer transport</p>
             </div>
           </div>
-          <button onClick={onClose} className="zion-button-ghost !p-1.5 text-gray-400">
+          <button onClick={onClose} className="zion-button-ghost !p-1.5 text-white/70">
             <X className="h-4 w-4" />
           </button>
         </div>
 
         <div className="mb-4 flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2">
-          <span className="text-sm text-gray-300">Available credits</span>
+          <span className="text-sm text-white/80">Available credits</span>
           <span className="font-mono text-base font-bold text-oasis-gold">{credits} Z</span>
         </div>
 
@@ -79,7 +79,7 @@ export default function ShipLoadout({ onClose }: ShipLoadoutProps) {
               const Icon = ICONS[key];
 
               return (
-                <div key={key} className="zion-rainbow-sub p-3" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+                <div key={key} className="zion-rainbow-sub p-3" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="rounded-lg bg-oasis-cyan/10 p-1.5 text-oasis-cyan">
@@ -87,7 +87,7 @@ export default function ShipLoadout({ onClose }: ShipLoadoutProps) {
                       </div>
                       <div>
                         <p className="text-sm font-semibold capitalize text-white">{key}</p>
-                        <p className="text-[10px] text-gray-400">{DESCRIPTIONS[key]}</p>
+                        <p className="text-[10px] text-white/70">{DESCRIPTIONS[key]}</p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -102,10 +102,10 @@ export default function ShipLoadout({ onClose }: ShipLoadoutProps) {
                         disabled={!canAfford || maxed}
                         className={`mt-1 rounded px-2 py-0.5 text-[10px] font-bold transition ${
                           maxed
-                            ? 'bg-green-500/20 text-green-400'
+                            ? 'bg-rasta-green/20 text-rasta-green'
                             : canAfford
                             ? 'bg-oasis-gold/20 text-oasis-gold hover:bg-oasis-gold/30'
-                            : 'bg-white/5 text-gray-500'
+                            : 'bg-white/5 text-white/60'
                         }`}
                       >
                         {maxed ? 'Max' : `${cost} Z`}
@@ -113,20 +113,20 @@ export default function ShipLoadout({ onClose }: ShipLoadoutProps) {
                     </div>
                   </div>
                   <div className="zion-progress mt-2">
-                    <div style={{ width: `${(level / 5) * 100}%`, backgroundColor: '#06b6d4' }} />
+                    <div style={{ width: `${(level / 5) * 100}%`, backgroundColor: '#078930' }} />
                   </div>
                 </div>
               );
             })}
 
-          <div className="zion-rainbow-sub p-3" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+          <div className="zion-rainbow-sub p-3" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <div className="flex items-center gap-2">
               <div className="rounded-lg bg-oasis-cyan/10 p-1.5 text-oasis-cyan">
                 <Plane className="h-4 w-4" />
               </div>
               <div className="flex-1">
                 <p className="text-sm font-semibold text-white">Vessel Chassis</p>
-                <p className="text-[10px] text-gray-500">Lv {playerLevel} · {unlockedShips.length}/{SHIP_MODELS.length} unlocked</p>
+                <p className="text-[10px] text-white/60">Lv {playerLevel} · {unlockedShips.length}/{SHIP_MODELS.length} unlocked</p>
               </div>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2">
@@ -164,7 +164,7 @@ export default function ShipLoadout({ onClose }: ShipLoadoutProps) {
                   >
                     <div className="flex w-full items-center justify-between">
                       <span className={`text-xs font-bold ${
-                        selected ? 'text-oasis-cyan' : unlocked ? 'text-gray-300' : canUnlock ? 'text-oasis-gold' : 'text-gray-600'
+                        selected ? 'text-oasis-cyan' : unlocked ? 'text-white/80' : canUnlock ? 'text-oasis-gold' : 'text-white/50'
                       }`}>
                         {ship.label}
                       </span>
@@ -173,13 +173,13 @@ export default function ShipLoadout({ onClose }: ShipLoadoutProps) {
                         style={{ backgroundColor: unlocked ? ship.color : '#333', boxShadow: selected ? `0 0 8px ${ship.color}` : 'none' }}
                       />
                     </div>
-                    <span className="mt-1 text-[10px] leading-tight text-gray-500">{ship.description}</span>
+                    <span className="mt-1 text-[10px] leading-tight text-white/60">{ship.description}</span>
                     <div className="mt-1.5 flex w-full items-center justify-between">
-                      <span className="text-[8px] font-bold uppercase tracking-wider text-gray-600">{ship.class}</span>
+                      <span className="text-[8px] font-bold uppercase tracking-wider text-white/50">{ship.class}</span>
                       {unlocked ? (
                         selected && <span className="text-[8px] font-bold text-oasis-cyan">ACTIVE</span>
                       ) : (
-                        <span className={`text-[8px] font-bold ${canUnlock ? 'text-oasis-gold' : 'text-gray-600'}`}>
+                        <span className={`text-[8px] font-bold ${canUnlock ? 'text-oasis-gold' : 'text-white/50'}`}>
                           {ship.unlockCost > 0 ? `${ship.unlockCost} Z` : 'Free'} · Lv{ship.unlockLevel}
                         </span>
                       )}
@@ -190,7 +190,7 @@ export default function ShipLoadout({ onClose }: ShipLoadoutProps) {
             </div>
           </div>
 
-          <div className="zion-rainbow-sub p-3" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+          <div className="zion-rainbow-sub p-3" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <div className="flex items-center gap-2">
               <div className="rounded-lg bg-oasis-cyan/10 p-1.5 text-oasis-cyan">
                 <Palette className="h-4 w-4" />
@@ -218,7 +218,7 @@ export default function ShipLoadout({ onClose }: ShipLoadoutProps) {
           </div>
         </div>
 
-        <p className="mt-4 text-[10px] text-gray-500">
+        <p className="mt-4 text-[10px] text-white/60">
           Upgrades are stored locally. Max level is 5 for each module.
         </p>
       </div>

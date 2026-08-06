@@ -69,7 +69,7 @@ export default function QuestsPanel() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && saveAddress()}
           placeholder="Pilgrim address"
-          className="flex-1 rounded-xl bg-transparent px-4 py-3 text-sm text-white placeholder-gray-500 outline-none"
+          className="flex-1 rounded-xl bg-transparent px-4 py-3 text-sm text-white placeholder-white/50 outline-none"
         />
         <button
           onClick={saveAddress}
@@ -86,7 +86,7 @@ export default function QuestsPanel() {
             key={t}
             onClick={() => setTab(t)}
             className={`flex-1 rounded-xl py-2.5 text-sm font-semibold capitalize transition-colors ${
-              tab === t ? 'bg-oasis-cyan/20 text-oasis-cyan' : 'text-gray-400 hover:text-white'
+              tab === t ? 'bg-oasis-cyan/20 text-oasis-cyan' : 'text-white/70 hover:text-white'
             }`}
           >
             {t}{' '}
@@ -100,7 +100,7 @@ export default function QuestsPanel() {
       {loading && <Skeleton lines={6} className="mb-4" />}
 
       {!loading && visible.length === 0 && (
-        <p className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-gray-400">
+        <p className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-white/70">
           No {tab} quests found.
         </p>
       )}
@@ -131,8 +131,8 @@ const QuestCard = memo(function QuestCard({ quest: q }: { quest: QuestWithStatus
           <Swords className="h-5 w-5 text-oasis-purple" />
         )}
       </div>
-      <p className="mb-4 text-sm text-gray-400">{q.description}</p>
-      <div className="flex flex-wrap items-center gap-2 text-xs text-gray-300">
+      <p className="mb-4 text-sm text-white/70">{q.description}</p>
+      <div className="flex flex-wrap items-center gap-2 text-xs text-white/80">
         <span className="rounded-full bg-oasis-purple/10 px-2 py-1 text-oasis-purple">{q.avatar_name}</span>
         <span className="rounded-full bg-oasis-gold/10 px-2 py-1 text-oasis-gold">{q.xp_reward} XP</span>
         <span className="rounded-full bg-oasis-emerald/10 px-2 py-1 text-oasis-emerald">CL {q.min_consciousness_level}</span>

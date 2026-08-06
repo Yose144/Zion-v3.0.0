@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { createInvoiceForOrder } from '@/lib/invoice';
+import { requireAdminAuth } from '@/lib/admin-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,7 +16,10 @@ async function findOrder(id: string) {
   });
 }
 
-export async function GET(_request: NextRequest, context: RouteContext) {
+export async function GET(request: NextRequest, context: RouteContext) {
+  const auth = requireAdminAuth(request);
+  if (auth) return auth;
+
   try {
     const { id } = context.params;
     const order = await findOrder(id);
@@ -46,6 +50,9 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 }
 
 export async function POST(request: NextRequest, context: RouteContext) {
+  const auth = requireAdminAuth(request);
+  if (auth) return auth;
+
   try {
     const { id } = context.params;
     const order = await findOrder(id);

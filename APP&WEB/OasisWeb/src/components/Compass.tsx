@@ -145,7 +145,7 @@ export default function Compass({ target, targetName, targetColor, compassRef }:
         <p className="max-w-[150px] truncate text-xs font-semibold" style={{ color: targetColor }}>
           {targetName}
         </p>
-        <p className="text-[10px] font-mono text-gray-400">
+        <p className="text-[10px] font-mono text-white/70">
           {formatDistance(distance)} ly
         </p>
       </div>

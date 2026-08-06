@@ -22,7 +22,7 @@ const CAT_COLORS: Record<ClueCategory, string> = {
   avatar: 'text-oasis-purple',
   world: 'text-oasis-emerald',
   source: 'text-oasis-gold',
-  community: 'text-pink-400',
+  community: 'text-rasta-red',
 };
 
 const MASTER_KEYS = [
@@ -54,12 +54,12 @@ export default function GoldenEggPanel() {
       >
         The Golden Egg
       </motion.h1>
-      <p className="mb-4 text-sm text-gray-400">108 sacred clues · 3 Master Keys · 1 Billion ZION</p>
+      <p className="mb-4 text-sm text-white/70">108 sacred clues · 3 Master Keys · 1 Billion ZION</p>
 
       {loading && <Skeleton lines={4} className="mb-4" />}
 
       {error && !loading && (
-        <div className="mb-4 rounded-2xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200">
+        <div className="mb-4 rounded-2xl border border-rasta-red/30 bg-rasta-red/10 p-4 text-sm text-rasta-red/80">
           {error} <button onClick={retry} className="ml-2 underline">Retry</button>
         </div>
       )}
@@ -84,19 +84,19 @@ export default function GoldenEggPanel() {
             <div className="h-1.5 w-full rounded bg-white/10">
               <div className="h-1.5 rounded bg-oasis-gold" style={{ width: `${(k.found / k.total) * 100}%` }} />
             </div>
-            <p className="mt-1 text-xs text-gray-400">{k.found}/{k.total} clues</p>
+            <p className="mt-1 text-xs text-white/70">{k.found}/{k.total} clues</p>
           </div>
         ))}
       </div>
 
       <div className="mb-4 flex flex-col gap-2 sm:flex-row">
         <div className="flex flex-1 items-center gap-2 rounded-2xl border border-white/10 bg-black/30 p-2">
-          <Search className="ml-2 h-4 w-4 text-gray-500" />
+          <Search className="ml-2 h-4 w-4 text-white/60" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search clues"
-            className="flex-1 bg-transparent px-2 text-sm text-white outline-none placeholder:text-gray-500"
+            className="flex-1 bg-transparent px-2 text-sm text-white outline-none placeholder:text-white/60"
           />
         </div>
         <select
@@ -128,13 +128,13 @@ export default function GoldenEggPanel() {
                 <span className="font-mono text-xs text-oasis-gold">{c.id}</span>
                 <span className={`ml-auto text-[10px] uppercase ${CAT_COLORS[c.category]}`}>{CATEGORIES[c.category]}</span>
               </div>
-              <p className="line-clamp-2 text-xs text-gray-300">{c.hint}</p>
+              <p className="line-clamp-2 text-xs text-white/80">{c.hint}</p>
             </motion.div>
           );
         })}
       </div>
       {filtered.length > 24 && (
-        <p className="mt-3 text-center text-xs text-gray-500">{filtered.length - 24} more clues in this view</p>
+        <p className="mt-3 text-center text-xs text-white/60">{filtered.length - 24} more clues in this view</p>
       )}
     </GlassPanel>
   );

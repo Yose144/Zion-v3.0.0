@@ -1,23 +1,30 @@
 @import "tailwindcss";
 
 @theme {
-  /* Zion core palette — source of truth: docs/3.0.3/ZIONTHEME.md */
-  --color-zion-gold: #ffd700;
-  --color-zion-purple: #9333ea;
-  --color-zion-cyan: #06b6d4;
-  --color-zion-blue: #1e3a8a;
+  /* ═══ RASTA PALETTE — Red / Gold / Green / Black ═══ */
+  --color-zion-gold: #fcd116;
+  --color-zion-purple: #e41e2b;
+  --color-zion-cyan: #078930;
+  --color-zion-blue: #0d0d0d;
 
-  /* OASIS aliases mapped to ZION theme */
-  --color-oasis-black: #05070a;
-  --color-oasis-cyan: #06b6d4;
-  --color-oasis-purple: #9333ea;
-  --color-oasis-emerald: #10b981;
-  --color-oasis-gold: #ffd700;
+  /* OASIS aliases mapped to Rasta theme */
+  --color-oasis-black: #0d0d0d;
+  --color-oasis-cyan: #078930;
+  --color-oasis-purple: #e41e2b;
+  --color-oasis-emerald: #078930;
+  --color-oasis-gold: #fcd116;
 
   /* Functional colors */
-  --color-oasis-rose: #f43f5e;
-  --color-oasis-amber: #fbbf24;
-  --color-oasis-fuchsia: #d946ef;
+  --color-oasis-rose: #e41e2b;
+  --color-oasis-amber: #fcd116;
+  --color-oasis-fuchsia: #e41e2b;
+
+  /* Direct rasta tokens */
+  --color-rasta-red: #e41e2b;
+  --color-rasta-gold: #fcd116;
+  --color-rasta-green: #078930;
+  --color-rasta-dark: #1a1a1a;
+  --color-rasta-black: #0d0d0d;
 }
 
 :root {
@@ -32,12 +39,12 @@
   --zion-surface-soft: rgba(255, 255, 255, 0.045);
   --zion-surface-hover: rgba(255, 255, 255, 0.075);
   --zion-shadow-panel: 0 24px 90px rgba(0, 0, 0, 0.42);
-  --zion-shadow-glow: 0 0 42px rgba(147, 51, 234, 0.28);
+  --zion-shadow-glow: 0 0 42px rgba(228, 30, 43, 0.28);
 }
 
 html,
 body {
-  background: #05070a;
+  background: #0d0d0d;
   color: #fff;
   min-height: 100%;
   font-family: var(--font-inter);
@@ -114,7 +121,7 @@ input, textarea, select {
   }
 
   .zion-rainbow-card {
-    --rc: 16, 185, 129; /* default emerald */
+    --rc: 7, 137, 48; /* default emerald */
     position: relative;
     overflow: hidden;
     border-radius: 1.5rem;
@@ -159,7 +166,7 @@ input, textarea, select {
   }
 
   .zion-rainbow-sub {
-    --rc: 16, 185, 129;
+    --rc: 7, 137, 48;
     position: relative;
     overflow: hidden;
     border-radius: 1rem;
@@ -188,7 +195,7 @@ input, textarea, select {
   .zion-glass {
     border: 1px solid var(--zion-border-subtle);
     background:
-      radial-gradient(circle at top left, rgba(255, 215, 0, 0.12), transparent 28rem),
+      radial-gradient(circle at top left, rgba(252, 209, 22, 0.12), transparent 28rem),
       linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
     backdrop-filter: blur(24px) saturate(150%);
   }
@@ -205,7 +212,7 @@ input, textarea, select {
     font-weight: 600;
     letter-spacing: 0.28em;
     text-transform: uppercase;
-    color: rgb(209 213 219);
+    color: rgb(255 255 255 / 0.85);
   }
 
   .zion-button-primary {
@@ -214,17 +221,17 @@ input, textarea, select {
     justify-content: center;
     gap: 0.55rem;
     border-radius: var(--zion-radius-md);
-    background-image: linear-gradient(110deg, #ffd700, #9333ea 52%, #06b6d4);
+    background-image: linear-gradient(110deg, #fcd116, #e41e2b 52%, #078930);
     padding: 0.75rem 1.1rem;
     font-weight: 700;
     color: white;
-    box-shadow: 0 18px 45px rgba(147, 51, 234, 0.34);
+    box-shadow: 0 18px 45px rgba(228, 30, 43, 0.34);
     transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
   }
 
   .zion-button-primary:hover {
     transform: translateY(-1px);
-    box-shadow: 0 24px 60px rgba(147, 51, 234, 0.44);
+    box-shadow: 0 24px 60px rgba(228, 30, 43, 0.44);
     filter: saturate(1.08);
   }
 
@@ -301,16 +308,16 @@ input, textarea, select {
     position: relative;
     overflow: hidden;
     border-radius: clamp(1.5rem, 3.5vw, 2rem);
-    border: 1px solid rgba(255, 215, 0, 0.32);
+    border: 1px solid rgba(252, 209, 22, 0.32);
     background:
       linear-gradient(90deg,
-        rgba(147, 51, 234, 0.28),
-        rgba(255, 215, 0, 0.14) 50%,
-        rgba(147, 51, 234, 0.28));
+        rgba(228, 30, 43, 0.28),
+        rgba(252, 209, 22, 0.14) 50%,
+        rgba(228, 30, 43, 0.28));
     padding: clamp(1.25rem, 4vw, 2rem);
     text-align: center;
     backdrop-filter: blur(20px);
-    box-shadow: 0 24px 80px rgba(147, 51, 234, 0.18);
+    box-shadow: 0 24px 80px rgba(228, 30, 43, 0.18);
   }
 
   .zion-cta-banner::before {
@@ -320,7 +327,7 @@ input, textarea, select {
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.6), transparent);
+    background: linear-gradient(90deg, transparent, rgba(252, 209, 22, 0.6), transparent);
     pointer-events: none;
   }
 
@@ -340,39 +347,39 @@ input, textarea, select {
   }
 
   .zion-badge-gold {
-    border-color: rgba(255, 215, 0, 0.35);
-    background: rgba(255, 215, 0, 0.1);
-    color: #ffd700;
+    border-color: rgba(252, 209, 22, 0.35);
+    background: rgba(252, 209, 22, 0.1);
+    color: #fcd116;
   }
 
   .zion-badge-cyan {
-    border-color: rgba(6, 182, 212, 0.35);
-    background: rgba(6, 182, 212, 0.1);
-    color: #06b6d4;
+    border-color: rgba(7, 137, 48, 0.35);
+    background: rgba(7, 137, 48, 0.1);
+    color: #078930;
   }
 
   .zion-badge-purple {
-    border-color: rgba(147, 51, 234, 0.35);
-    background: rgba(147, 51, 234, 0.1);
-    color: #9333ea;
+    border-color: rgba(228, 30, 43, 0.35);
+    background: rgba(228, 30, 43, 0.1);
+    color: #e41e2b;
   }
 
   .zion-badge-green {
-    border-color: rgba(16, 185, 129, 0.35);
-    background: rgba(16, 185, 129, 0.1);
-    color: #34d399;
+    border-color: rgba(7, 137, 48, 0.35);
+    background: rgba(7, 137, 48, 0.1);
+    color: #078930;
   }
 
   .zion-badge-amber {
-    border-color: rgba(245, 158, 11, 0.35);
-    background: rgba(245, 158, 11, 0.1);
-    color: #fbbf24;
+    border-color: rgba(252, 209, 22, 0.35);
+    background: rgba(252, 209, 22, 0.1);
+    color: #fcd116;
   }
 
   .zion-badge-red {
-    border-color: rgba(239, 68, 68, 0.35);
-    background: rgba(239, 68, 68, 0.1);
-    color: #f87171;
+    border-color: rgba(228, 30, 43, 0.35);
+    background: rgba(228, 30, 43, 0.1);
+    color: #e41e2b;
   }
 
   .zion-progress {
@@ -386,7 +393,7 @@ input, textarea, select {
   .zion-progress > * {
     height: 100%;
     border-radius: 9999px;
-    background: linear-gradient(90deg, #ffd700, #9333ea, #06b6d4);
+    background: linear-gradient(90deg, #fcd116, #e41e2b, #078930);
     transition: width 400ms ease;
   }
 
@@ -394,28 +401,28 @@ input, textarea, select {
     background-clip: text;
     -webkit-background-clip: text;
     color: transparent;
-    background-image: linear-gradient(to right, #ffd700, #9333ea, #06b6d4);
+    background-image: linear-gradient(to right, #fcd116, #e41e2b, #078930);
   }
 
   .text-gradient-soft {
     background-clip: text;
     -webkit-background-clip: text;
     color: transparent;
-    background-image: linear-gradient(110deg, #fff7c2, #ffd700, #06b6d4);
+    background-image: linear-gradient(110deg, #fcd116, #fcd116, #078930);
   }
 
   .glow {
-    text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    text-shadow: 0 0 20px rgba(252, 209, 22, 0.5);
   }
 
   .card-glow {
-    box-shadow: 0 0 30px rgba(147, 51, 234, 0.3);
+    box-shadow: 0 0 30px rgba(228, 30, 43, 0.3);
   }
 
-  .hud-accent-gold { --rc: 251, 191, 36; }
-  .hud-accent-cyan { --rc: 6, 182, 212; }
-  .hud-accent-purple { --rc: 147, 51, 234; }
-  .hud-accent-emerald { --rc: 16, 185, 129; }
+  .hud-accent-gold { --rc: 252, 209, 22; }
+  .hud-accent-cyan { --rc: 7, 137, 48; }
+  .hud-accent-purple { --rc: 228, 30, 43; }
+  .hud-accent-emerald { --rc: 7, 137, 48; }
   .hud-accent-rose { --rc: 244, 63, 94; }
   .hud-accent-orange { --rc: 249, 115, 22; }
 }

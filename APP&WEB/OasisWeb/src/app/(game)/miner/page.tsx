@@ -45,7 +45,7 @@ export default function MinerPage() {
             <Pickaxe className="h-8 w-8 text-oasis-cyan" />
             Public Desktop Miner
           </h1>
-          <p className="max-w-2xl text-sm text-gray-400 sm:text-base">
+          <p className="max-w-2xl text-sm text-white/70 sm:text-base">
             The ZION Public Desktop Miner is a standalone Electron GUI that lets you mine
             ZION with one click. It tracks real-time hashrate and shares, supports CPU
             and NVIDIA GPU mining, and stores your configuration between sessions.
@@ -57,12 +57,12 @@ export default function MinerPage() {
           <DownloadCard artifact={DOWNLOADS.deb} icon={Download} />
         </section>
 
-        <section className="mb-8 rounded-2xl border border-white/10 bg-[#05060f]/80 p-5 backdrop-blur-xl sm:p-6">
+        <section className="mb-8 rounded-2xl border border-white/10 bg-[#0d0d0d]/80 p-5 backdrop-blur-xl sm:p-6">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
             <Terminal className="h-5 w-5 text-oasis-cyan" />
             Quick Start
           </h2>
-          <ol className="mb-5 list-decimal space-y-2 pl-5 text-sm text-gray-300">
+          <ol className="mb-5 list-decimal space-y-2 pl-5 text-sm text-white/80">
             <li>
               Download the{' '}
               <strong className="text-white">AppImage</strong> or{' '}
@@ -104,7 +104,7 @@ export default function MinerPage() {
               ]}
             />
           </div>
-          <p className="mt-4 text-xs text-gray-500">
+          <p className="mt-4 text-xs text-white/60">
             The AppImage may need{' '}
             <code className="rounded bg-white/10 px-1 py-0.5 font-mono">
               sudo apt install libfuse2
@@ -113,7 +113,7 @@ export default function MinerPage() {
           </p>
         </section>
 
-        <section className="rounded-2xl border border-white/10 bg-[#05060f]/80 p-5 backdrop-blur-xl sm:p-6">
+        <section className="rounded-2xl border border-white/10 bg-[#0d0d0d]/80 p-5 backdrop-blur-xl sm:p-6">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
             <Cpu className="h-5 w-5 text-oasis-gold" />
             Live Mining Dashboard
@@ -121,7 +121,7 @@ export default function MinerPage() {
           <MiningDashboard />
         </section>
 
-        <footer className="mt-8 text-center text-xs text-gray-500">
+        <footer className="mt-8 text-center text-xs text-white/60">
           <a
             href={DOWNLOADS.sha256sums.github}
             target="_blank"
@@ -159,7 +159,7 @@ function DownloadCard({
   icon: React.ComponentType<{ className?: string }>;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#05060f]/80 p-5 backdrop-blur-xl transition hover:border-oasis-cyan/30">
+    <div className="rounded-2xl border border-white/10 bg-[#0d0d0d]/80 p-5 backdrop-blur-xl transition hover:border-oasis-cyan/30">
       <div className="mb-3 flex items-start justify-between">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-oasis-cyan/20 to-oasis-purple/20">
           <Icon className="h-5 w-5 text-oasis-cyan" />
@@ -169,7 +169,7 @@ function DownloadCard({
         </span>
       </div>
       <h3 className="mb-1 text-lg font-bold text-white">{artifact.label}</h3>
-      <p className="mb-4 text-xs text-gray-400">{artifact.note}</p>
+      <p className="mb-4 text-xs text-white/70">{artifact.note}</p>
       <div className="mb-4 flex flex-wrap gap-2">
         <a
           href={artifact.github}
@@ -189,7 +189,7 @@ function DownloadCard({
         </a>
       </div>
       <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-        <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-500">
+        <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-white/60">
           SHA256
         </p>
         <code className="block break-all text-[10px] font-mono text-oasis-gold">
@@ -204,7 +204,7 @@ function CodeBlock({ title, lines }: { title: string; lines: string[] }) {
   return (
     <div className="rounded-xl border border-white/10 bg-black/40 p-3">
       <p className="mb-2 text-xs font-semibold text-oasis-cyan">{title}</p>
-      <pre className="overflow-x-auto rounded-lg bg-black/60 p-3 text-xs text-gray-300">
+      <pre className="overflow-x-auto rounded-lg bg-black/60 p-3 text-xs text-white/80">
         <code>{lines.join('\n')}</code>
       </pre>
     </div>

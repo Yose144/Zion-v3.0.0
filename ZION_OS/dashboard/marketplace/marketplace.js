@@ -260,7 +260,7 @@
     byId('detail-content').innerHTML = `
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <h2 class="text-xl font-bold mb-2">Objednávka <span style="color:rgb(255 215 0)">${o.orderId}</span></h2>
+          <h2 class="text-xl font-bold mb-2">Objednávka <span style="color:rgb(252 209 22)">${o.orderId}</span></h2>
           <p class="text-sm text-gray-400 mb-4">Vytvořeno: ${fmtDate(o.createdAt)} · Aktualizováno: ${fmtDate(o.updatedAt)}</p>
           <div class="card p-4 mb-4">
             <h3 class="text-sm font-bold text-gray-400 uppercase mb-2">Zákazník</h3>
@@ -284,7 +284,7 @@
             ${items}
             <div class="flex justify-between font-bold mt-3 pt-2 border-t border-white/10">
               <span>Celkem</span>
-              <span style="color:rgb(255 215 0)">${money(o.totalCzk)}</span>
+              <span style="color:rgb(252 209 22)">${money(o.totalCzk)}</span>
             </div>
           </div>
           <div class="card p-4">

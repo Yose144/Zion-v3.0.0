@@ -88,13 +88,13 @@ function EarthGlobe() {
         <meshStandardMaterial
           map={maps.color}
           bumpMap={maps.bump}
-          bumpScale={0.04}
-          roughness={0.35}
-          metalness={0}
-          color={new THREE.Color('#1a1a1a')}
+          bumpScale={0.06}
+          roughness={0.5}
+          metalness={0.02}
+          color={new THREE.Color('#e8e8e8')}
           emissiveMap={maps.night ?? undefined}
-          emissive={maps.night ? new THREE.Color('#fcd116') : new THREE.Color('#078930')}
-          emissiveIntensity={maps.night ? 2.2 : 0.35}
+          emissive={maps.night ? new THREE.Color('#ffcc66') : new THREE.Color('#078930')}
+          emissiveIntensity={maps.night ? 0.35 : 0.12}
         />
       </mesh>
       {/* Atmosphere glow — day side */}
@@ -749,12 +749,12 @@ function StarField() {
 function Scene() {
   return (
     <>
-      <ambientLight intensity={1.4} />
-      <directionalLight position={[8, 4, 8]} intensity={3.5} color="#fcd116" />
+      <ambientLight intensity={2.0} />
+      <directionalLight position={[8, 4, 8]} intensity={3.8} color="#fff8e0" />
       <pointLight position={[-6, -2, 4]} intensity={1.2} color="#078930" />
-      <pointLight position={[0, 6, 2]} intensity={0.8} color="#fcd116" />
-      <pointLight position={[0, -4, 0]} intensity={0.6} color="#078930" />
-      <hemisphereLight color="#fcd116" groundColor="#0d0d0d" intensity={1.0} />
+      <pointLight position={[0, 6, 2]} intensity={0.7} color="#fcd116" />
+      <pointLight position={[0, -4, 0]} intensity={0.5} color="#078930" />
+      <hemisphereLight color="#fcd116" groundColor="#1a1a1a" intensity={1.4} />
       <MilkyWay />
       <OrionNebula />
       <StarField />
@@ -805,8 +805,8 @@ export default function HolographicEarth({ className }: HolographicEarthProps) {
         className,
       )}
     >
-      <div className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(ellipse_at_50%_42%,rgba(252,209,22,0.38),transparent_58%)]" />
-      <div className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(circle_at_50%_88%,rgba(228,30,43,0.14),transparent_45%)]" />
+      <div className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(ellipse_at_50%_42%,rgba(252,209,22,0.22),transparent_58%)]" />
+      <div className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(circle_at_50%_88%,rgba(228,30,43,0.10),transparent_45%)]" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[35%] bg-gradient-to-t from-black/25 to-transparent" />
       <div className="pointer-events-none absolute inset-3 rounded-[16px] border border-white/[0.06]" />
       <p className="pointer-events-none absolute inset-x-0 top-2.5 z-10 text-center text-[9px] font-medium uppercase tracking-[0.42em] text-rasta-gold/50">

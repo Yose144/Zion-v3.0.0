@@ -29,7 +29,7 @@ export default function OnboardingPanel() {
         />
       </div>
 
-      <div className="mb-4 flex items-center justify-between text-sm text-gray-400">
+      <div className="mb-4 flex items-center justify-between text-sm text-white/70">
         <span className="flex items-center gap-2">
           <BookOpen className="h-4 w-4 text-oasis-cyan" />
           Kapitola {idx + 1} z {chapters.length}
@@ -54,7 +54,7 @@ export default function OnboardingPanel() {
               </blockquote>
             )}
 
-            <div className="space-y-4 text-sm leading-relaxed text-gray-300">
+            <div className="space-y-4 text-sm leading-relaxed text-white/80">
               {chapter.paragraphs.map((p, i) => (
                 <p key={i}>{p}</p>
               ))}
@@ -67,7 +67,7 @@ export default function OnboardingPanel() {
         <button
           onClick={() => setIdx((i) => Math.max(0, i - 1))}
           disabled={idx === 0}
-          className="rounded-xl px-5 py-3 text-sm font-semibold text-gray-400 transition-colors hover:text-white disabled:opacity-30"
+          className="rounded-xl px-5 py-3 text-sm font-semibold text-white/70 transition-colors hover:text-white disabled:opacity-30"
         >
           Zpět
         </button>

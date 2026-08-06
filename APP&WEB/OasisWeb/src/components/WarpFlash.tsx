@@ -29,7 +29,7 @@ export default function WarpFlash({ active, worldName }: WarpFlashProps) {
             className="absolute inset-0"
             style={{
               background:
-                'radial-gradient(circle at center, rgba(255,250,230,0.95) 0%, rgba(245,158,11,0.35) 30%, rgba(168,85,247,0.15) 60%, transparent 100%)',
+                'radial-gradient(circle at center, rgba(255,250,230,0.95) 0%, rgba(252,209,22,0.35) 30%, rgba(228,30,43,0.15) 60%, transparent 100%)',
             }}
           />
 
@@ -46,7 +46,7 @@ export default function WarpFlash({ active, worldName }: WarpFlashProps) {
                       width: '60vw',
                       height: '2px',
                       background: `linear-gradient(to right, transparent, ${
-                        i % 3 === 0 ? 'rgba(255,215,0,0.8)' : i % 3 === 1 ? 'rgba(6,182,212,0.7)' : 'rgba(168,85,247,0.6)'
+                        i % 3 === 0 ? 'rgba(252,209,22,0.8)' : i % 3 === 1 ? 'rgba(7,137,48,0.7)' : 'rgba(228,30,43,0.6)'
                       }, transparent)`,
                       transform: `rotate(${angle}deg)`,
                     }}
@@ -91,7 +91,7 @@ export default function WarpFlash({ active, worldName }: WarpFlashProps) {
                 </motion.div>
                 <h2
                   className="text-4xl font-bold text-white sm:text-5xl"
-                  style={{ textShadow: '0 0 30px rgba(255,215,0,0.6), 0 0 60px rgba(168,85,247,0.4)' }}
+                  style={{ textShadow: '0 0 30px rgba(252,209,22,0.6), 0 0 60px rgba(228,30,43,0.4)' }}
                 >
                   {worldName}
                 </h2>

@@ -10,19 +10,19 @@ import { getHealth, getPlayer } from '../lib/api';
 import { useGameStore } from '../store/gameStore';
 
 const CATEGORIES: { id: WorldCategory; label: string; color: string; rgb: string; icon: string }[] = [
-  { id: 'star-system', label: 'Stars', color: '#fbbf24', rgb: '251, 191, 36', icon: '★' },
-  { id: 'planet', label: 'Planets', color: '#06b6d4', rgb: '6, 182, 212', icon: '●' },
-  { id: 'sector', label: 'Sectors', color: '#9333ea', rgb: '147, 51, 234', icon: '◆' },
-  { id: 'world', label: 'Worlds', color: '#10b981', rgb: '16, 185, 129', icon: '◈' },
-  { id: 'dimension', label: 'Dimensions', color: '#ec4899', rgb: '236, 72, 153', icon: '◊' },
+  { id: 'star-system', label: 'Stars', color: '#fcd116', rgb: '252, 209, 22', icon: '★' },
+  { id: 'planet', label: 'Planets', color: '#078930', rgb: '7, 137, 48', icon: '●' },
+  { id: 'sector', label: 'Sectors', color: '#e41e2b', rgb: '228, 30, 43', icon: '◆' },
+  { id: 'world', label: 'Worlds', color: '#078930', rgb: '7, 137, 48', icon: '◈' },
+  { id: 'dimension', label: 'Dimensions', color: '#e41e2b', rgb: '236, 72, 153', icon: '◊' },
 ];
 
 const LAYERS: { id: WorldLayer; label: string; color: string; rgb: string; desc: string }[] = [
-  { id: 1, label: 'Layer 1', color: '#fbbf24', rgb: '251, 191, 36', desc: 'Core Galaxy' },
-  { id: 2, label: 'Layer 2', color: '#06b6d4', rgb: '6, 182, 212', desc: 'Inner Rim' },
-  { id: 3, label: 'Layer 3', color: '#9333ea', rgb: '147, 51, 234', desc: 'Temporal' },
-  { id: 4, label: 'Layer 4', color: '#ec4899', rgb: '236, 72, 153', desc: 'Mythic' },
-  { id: 5, label: 'Layer 5', color: '#10b981', rgb: '16, 185, 129', desc: 'Creative' },
+  { id: 1, label: 'Layer 1', color: '#fcd116', rgb: '252, 209, 22', desc: 'Core Galaxy' },
+  { id: 2, label: 'Layer 2', color: '#078930', rgb: '7, 137, 48', desc: 'Inner Rim' },
+  { id: 3, label: 'Layer 3', color: '#e41e2b', rgb: '228, 30, 43', desc: 'Temporal' },
+  { id: 4, label: 'Layer 4', color: '#e41e2b', rgb: '236, 72, 153', desc: 'Mythic' },
+  { id: 5, label: 'Layer 5', color: '#078930', rgb: '7, 137, 48', desc: 'Creative' },
 ];
 
 const MINIMIZED_KEY = 'oasis-filter-minimized';
@@ -71,22 +71,22 @@ function MinerLite() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <Pickaxe className="h-3 w-3 text-oasis-gold" />
-          <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400">Miner</span>
+          <span className="text-[9px] font-bold uppercase tracking-wider text-white/70">Miner</span>
         </div>
         <span
           className={`flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[8px] font-bold ${
             poolOnline
-              ? 'bg-emerald-500/15 text-emerald-400'
+              ? 'bg-rasta-green/15 text-rasta-green'
               : poolOnline === false
-              ? 'bg-red-500/15 text-red-400'
-              : 'bg-white/5 text-gray-500'
+              ? 'bg-rasta-red/15 text-rasta-red'
+              : 'bg-white/5 text-white/60'
           }`}
         >
           <span
             className={`h-1.5 w-1.5 rounded-full ${
-              poolOnline ? 'bg-emerald-400' : poolOnline === false ? 'bg-red-400' : 'bg-gray-500'
+              poolOnline ? 'bg-rasta-green' : poolOnline === false ? 'bg-rasta-red' : 'bg-white/50'
             }`}
-            style={{ boxShadow: poolOnline ? '0 0 6px #34d399' : 'none' }}
+            style={{ boxShadow: poolOnline ? '0 0 6px #078930' : 'none' }}
           />
           {poolOnline ? 'ONLINE' : poolOnline === false ? 'OFFLINE' : '...'}
         </span>
@@ -94,7 +94,7 @@ function MinerLite() {
 
       {/* Pool address */}
       <div className="flex items-center justify-between rounded-md bg-black/30 px-2 py-1">
-        <span className="text-[8px] text-gray-500">Pool</span>
+        <span className="text-[8px] text-white/60">Pool</span>
         <code className="font-mono text-[8px] text-oasis-cyan">{poolAddr}</code>
       </div>
 
@@ -102,11 +102,11 @@ function MinerLite() {
       {address && blocks !== null && (
         <div className="grid grid-cols-2 gap-1.5">
           <div className="rounded-md bg-black/30 px-2 py-1.5 text-center">
-            <p className="text-[8px] uppercase tracking-wider text-gray-500">Blocks</p>
+            <p className="text-[8px] uppercase tracking-wider text-white/60">Blocks</p>
             <p className="font-mono text-xs font-bold text-oasis-cyan">{blocks}</p>
           </div>
           <div className="rounded-md bg-black/30 px-2 py-1.5 text-center">
-            <p className="text-[8px] uppercase tracking-wider text-gray-500">ZION</p>
+            <p className="text-[8px] uppercase tracking-wider text-white/60">ZION</p>
             <p className="font-mono text-xs font-bold text-oasis-gold">{zion}</p>
           </div>
         </div>
@@ -115,7 +115,7 @@ function MinerLite() {
       {/* Loading state */}
       {loading && (
         <div className="flex items-center justify-center py-1">
-          <Activity className="h-3 w-3 animate-pulse text-gray-600" />
+          <Activity className="h-3 w-3 animate-pulse text-white/50" />
         </div>
       )}
 
@@ -130,7 +130,7 @@ function MinerLite() {
         </Link>
         <a
           href="/downloads/zion-public-miner-v3.0.6-linux-x86_64.AppImage"
-          className="flex items-center justify-center gap-1 rounded-md border border-white/10 bg-white/5 px-2 py-1.5 text-[9px] font-bold text-gray-300 transition hover:bg-white/10"
+          className="flex items-center justify-center gap-1 rounded-md border border-white/10 bg-white/5 px-2 py-1.5 text-[9px] font-bold text-white/80 transition hover:bg-white/10"
           title="Download Desktop Miner"
         >
           <Download className="h-3 w-3" />
@@ -208,7 +208,7 @@ export default function WorldFilter({ active, onChange, activeLayers, onLayersCh
       >
         <button
           onClick={() => setMinimized(false)}
-          className="zion-hud-panel flex items-center gap-2 px-3 py-2 text-[10px] font-semibold text-gray-300 transition hover:text-white"
+          className="zion-hud-panel flex items-center gap-2 px-3 py-2 text-[10px] font-semibold text-white/80 transition hover:text-white"
           title="Show world filters"
         >
           <Filter className="h-3.5 w-3.5 text-oasis-cyan" />
@@ -249,7 +249,7 @@ export default function WorldFilter({ active, onChange, activeLayers, onLayersCh
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <Globe2 className="h-3 w-3 text-oasis-gold" />
-            <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400">Categories</span>
+            <span className="text-[9px] font-bold uppercase tracking-wider text-white/70">Categories</span>
           </div>
           <button
             onClick={toggleAll}
@@ -269,7 +269,7 @@ export default function WorldFilter({ active, onChange, activeLayers, onLayersCh
                 style={{
                   borderColor: isActive ? `rgba(${cat.rgb}, 0.35)` : 'rgba(255,255,255,0.06)',
                   backgroundColor: isActive ? `rgba(${cat.rgb}, 0.08)` : 'transparent',
-                  color: isActive ? cat.color : '#6b7280',
+                  color: isActive ? cat.color : '#6b6b6b',
                   boxShadow: isActive ? `0 0 12px rgba(${cat.rgb}, 0.12)` : 'none',
                 }}
               >
@@ -281,7 +281,7 @@ export default function WorldFilter({ active, onChange, activeLayers, onLayersCh
                   className="rounded px-1.5 py-0.5 text-[9px] font-mono"
                   style={{
                     backgroundColor: isActive ? `rgba(${cat.rgb}, 0.12)` : 'rgba(255,255,255,0.04)',
-                    color: isActive ? cat.color : '#4b5563',
+                    color: isActive ? cat.color : '#4a4a4a',
                   }}
                 >
                   {counts[i]}
@@ -298,7 +298,7 @@ export default function WorldFilter({ active, onChange, activeLayers, onLayersCh
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <Layers className="h-3 w-3 text-oasis-purple" />
-              <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400">Galactic Layers</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider text-white/70">Galactic Layers</span>
             </div>
             <button
               onClick={toggleAllLayers}
@@ -318,7 +318,7 @@ export default function WorldFilter({ active, onChange, activeLayers, onLayersCh
                   style={{
                     borderColor: isActive ? `rgba(${layer.rgb}, 0.35)` : 'rgba(255,255,255,0.06)',
                     backgroundColor: isActive ? `rgba(${layer.rgb}, 0.08)` : 'transparent',
-                    color: isActive ? layer.color : '#6b7280',
+                    color: isActive ? layer.color : '#6b6b6b',
                     boxShadow: isActive ? `0 0 12px rgba(${layer.rgb}, 0.12)` : 'none',
                   }}
                 >
@@ -326,7 +326,7 @@ export default function WorldFilter({ active, onChange, activeLayers, onLayersCh
                     className="flex h-4 w-4 items-center justify-center rounded text-[8px] font-bold"
                     style={{
                       backgroundColor: isActive ? `rgba(${layer.rgb}, 0.2)` : 'rgba(255,255,255,0.05)',
-                      color: isActive ? layer.color : '#4b5563',
+                      color: isActive ? layer.color : '#4a4a4a',
                     }}
                   >
                     {layer.id}
@@ -339,7 +339,7 @@ export default function WorldFilter({ active, onChange, activeLayers, onLayersCh
                     className="rounded px-1.5 py-0.5 text-[9px] font-mono"
                     style={{
                       backgroundColor: isActive ? `rgba(${layer.rgb}, 0.12)` : 'rgba(255,255,255,0.04)',
-                      color: isActive ? layer.color : '#4b5563',
+                      color: isActive ? layer.color : '#4a4a4a',
                     }}
                   >
                     {layerCounts[i]}
@@ -353,7 +353,7 @@ export default function WorldFilter({ active, onChange, activeLayers, onLayersCh
 
       {/* Visible count footer */}
       <div className="zion-hud-panel flex shrink-0 items-center justify-between px-3 py-2">
-        <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400">Visible</span>
+        <span className="text-[9px] font-bold uppercase tracking-wider text-white/70">Visible</span>
         <span className="font-mono text-[11px] font-bold text-oasis-cyan">
           {visibleCount} / {WORLDS.length}
         </span>

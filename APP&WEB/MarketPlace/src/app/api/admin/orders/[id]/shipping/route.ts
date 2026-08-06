@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { sendShippingNotification } from '@/lib/email';
+import { requireAdminAuth } from '@/lib/admin-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,6 +12,9 @@ interface RouteContext {
 const VALID_STATUSES = ['pending', 'paid', 'processing', 'shipped', 'completed', 'cancelled'];
 
 export async function POST(request: NextRequest, context: RouteContext) {
+  const auth = requireAdminAuth(request);
+  if (auth) return auth;
+
   try {
     const { id } = context.params;
     const body = (await request.json()) as {

@@ -5,11 +5,11 @@ import { WORLDS } from '../domain/config/worlds';
 import type { World, WorldCategory } from '../domain/types/world';
 
 const CATEGORY_COLORS: Record<WorldCategory, string> = {
-  'star-system': '#f59e0b',
-  planet: '#22d3ee',
-  sector: '#a855f7',
-  world: '#10b981',
-  dimension: '#ec4899',
+  'star-system': '#fcd116',
+  planet: '#078930',
+  sector: '#e41e2b',
+  world: '#078930',
+  dimension: '#e41e2b',
 };
 
 const PADDING = 18;
@@ -110,7 +110,7 @@ function MiniMap({ activeCategories, selectedWorldId, onWorldSelect, cameraPosit
       ctx.beginPath();
       ctx.arc(c.x, c.y, 3, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = '#fbbf24';
+      ctx.strokeStyle = '#fcd116';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.arc(c.x, c.y, 6, 0, Math.PI * 2);

@@ -265,7 +265,7 @@ export default function World({
               {category}
             </div>
             <h3 className="text-sm font-bold text-white" style={{ textShadow: '0 1px 12px rgba(0,0,0,0.8)' }}>{name}</h3>
-            <p className="mt-1.5 text-xs leading-relaxed text-gray-300">{info}</p>
+            <p className="mt-1.5 text-xs leading-relaxed text-white/80">{info}</p>
           </div>
         </Html>
       )}

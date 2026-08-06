@@ -34,14 +34,14 @@ export interface ZoneConfig {
 }
 
 export const ZONES: ZoneConfig[] = [
-  { id: 'dashboard', name: 'Dashboard', color: '#22d3ee', angle: 0, route: '/dashboard', icon: LayoutDashboard },
-  { id: 'avatars', name: 'Avatars', color: '#a855f7', angle: 40, route: '/avatars', icon: Users },
-  { id: 'quests', name: 'Quests', color: '#f59e0b', angle: 80, route: '/quests', icon: Swords },
-  { id: 'leaderboard', name: 'Leaderboard', color: '#10b981', angle: 120, route: '/leaderboard', icon: Trophy },
-  { id: 'territories', name: 'Territories', color: '#14b8a6', angle: 160, route: '/territories', icon: Globe },
-  { id: 'guilds', name: 'Guilds', color: '#ec4899', angle: 200, route: '/guilds', icon: Shield },
-  { id: 'golden-egg', name: 'Golden Egg', color: '#facc15', angle: 240, route: '/golden-egg', icon: Egg },
-  { id: 'ships', name: 'Hangar', color: '#06b6d4', angle: 280, route: '/ships', icon: Rocket },
+  { id: 'dashboard', name: 'Dashboard', color: '#078930', angle: 0, route: '/dashboard', icon: LayoutDashboard },
+  { id: 'avatars', name: 'Avatars', color: '#e41e2b', angle: 40, route: '/avatars', icon: Users },
+  { id: 'quests', name: 'Quests', color: '#fcd116', angle: 80, route: '/quests', icon: Swords },
+  { id: 'leaderboard', name: 'Leaderboard', color: '#078930', angle: 120, route: '/leaderboard', icon: Trophy },
+  { id: 'territories', name: 'Territories', color: '#078930', angle: 160, route: '/territories', icon: Globe },
+  { id: 'guilds', name: 'Guilds', color: '#e41e2b', angle: 200, route: '/guilds', icon: Shield },
+  { id: 'golden-egg', name: 'Golden Egg', color: '#fcd116', angle: 240, route: '/golden-egg', icon: Egg },
+  { id: 'ships', name: 'Hangar', color: '#078930', angle: 280, route: '/ships', icon: Rocket },
   { id: 'onboarding', name: 'Onboarding', color: '#ffffff', angle: 320, route: '/onboarding', icon: BookOpen },
 ];
 

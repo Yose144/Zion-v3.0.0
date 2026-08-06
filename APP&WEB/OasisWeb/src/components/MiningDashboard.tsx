@@ -180,7 +180,7 @@ export default function MiningDashboard() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && save()}
             placeholder="Enter pilgrim address"
-            className="flex-1 rounded-xl bg-black/30 px-3 py-2 text-sm text-white outline-none ring-oasis-cyan/50 placeholder:text-gray-500 focus:ring-2"
+            className="flex-1 rounded-xl bg-black/30 px-3 py-2 text-sm text-white outline-none ring-oasis-cyan/50 placeholder:text-white/60 focus:ring-2"
           />
           <button
             onClick={save}
@@ -235,7 +235,7 @@ export default function MiningDashboard() {
                   <h3 className="text-xl font-bold text-white">
                     {displayedPlayer.display_name || 'Unnamed Pilgrim'}
                   </h3>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-white/70">
                     Consciousness:{' '}
                     <span className="font-semibold text-oasis-gold">
                       {displayedPlayer.level}
@@ -267,18 +267,18 @@ export default function MiningDashboard() {
                   icon={Globe}
                   label="Tithe Total"
                   value={displayedPlayer.tithe_total}
-                  color="text-pink-400"
+                  color="text-rasta-red"
                 />
               </div>
 
               {showPlayerMock && !apiDown && (
-                <p className="mt-3 text-xs text-gray-400">
+                <p className="mt-3 text-xs text-white/70">
                   Player not found. Enter a valid pilgrim address to load live stats.
                 </p>
               )}
             </motion.div>
           ) : (
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-gray-400">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-white/70">
               Enter a pilgrim address and click <strong className="text-white">Load</strong>{' '}
               to see live mining stats.
             </div>
@@ -314,11 +314,11 @@ export default function MiningDashboard() {
                   >
                     <div className="mb-2 flex items-center justify-between">
                       <p className="font-semibold text-white">{territory.name}</p>
-                      <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] text-gray-400">
+                      <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] text-white/70">
                         {territory.region}
                       </span>
                     </div>
-                    <p className="mb-3 text-xs text-gray-500">
+                    <p className="mb-3 text-xs text-white/60">
                       {territory.active_miners.length} active miner
                       {territory.active_miners.length !== 1 ? 's' : ''}
                     </p>
@@ -332,7 +332,7 @@ export default function MiningDashboard() {
                         </span>
                       ))}
                       {territory.active_miners.length > 6 && (
-                        <span className="rounded-lg bg-white/5 px-2 py-1 text-[10px] text-gray-400">
+                        <span className="rounded-lg bg-white/5 px-2 py-1 text-[10px] text-white/70">
                           +{territory.active_miners.length - 6}
                         </span>
                       )}
@@ -341,13 +341,13 @@ export default function MiningDashboard() {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-400">No active miners reported by OASIS.</p>
+              <p className="text-white/70">No active miners reported by OASIS.</p>
             )}
           </motion.div>
         </>
       )}
 
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-white/60">
         Pool hashrate is not currently exposed by the public OASIS API. Watch this
         dashboard for on-chain player and territory activity.
       </p>
@@ -369,7 +369,7 @@ function StatCard({
   return (
     <div className="rounded-xl border border-white/10 bg-black/20 p-3">
       <Icon className={`mb-1.5 h-5 w-5 ${color}`} />
-      <p className="text-xs text-gray-400">{label}</p>
+      <p className="text-xs text-white/70">{label}</p>
       <p className="text-lg font-bold text-white">{value.toLocaleString()}</p>
     </div>
   );

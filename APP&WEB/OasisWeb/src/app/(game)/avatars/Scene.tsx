@@ -44,7 +44,7 @@ export default function AvatarsScene() {
         {error && (
           <Html transform center distanceFactor={8} position={[0, 1.5, 0]} className="pointer-events-auto">
             <GlassPanel>
-              <p className="text-sm text-red-300">{error}</p>
+              <p className="text-sm text-rasta-red/80">{error}</p>
               <button onClick={retry} className="mt-2 rounded bg-oasis-cyan/20 px-3 py-1 text-xs text-oasis-cyan hover:bg-oasis-cyan/30">
                 Retry
               </button>
@@ -101,8 +101,8 @@ const AvatarNode = memo(function AvatarNode({
       <mesh>
         <sphereGeometry args={[0.22, 32, 32]} />
         <meshStandardMaterial
-          color="#a855f7"
-          emissive="#a855f7"
+          color="#e41e2b"
+          emissive="#e41e2b"
           emissiveIntensity={0.25}
           roughness={0.3}
           metalness={0.4}
@@ -117,7 +117,7 @@ function AvatarDetail({ avatar, onClose }: { avatar: AvatarDef; onClose: () => v
     <div className="space-y-2 text-sm">
       <h3 className="text-lg font-bold text-oasis-cyan">{avatar.name}</h3>
       <p className="text-oasis-gold">{avatar.subtitle}</p>
-      <p className="text-gray-300">{avatar.ability}</p>
+      <p className="text-white/80">{avatar.ability}</p>
       <button
         onClick={onClose}
         className="mt-2 rounded-lg bg-oasis-purple/20 px-3 py-1.5 text-xs text-oasis-purple transition hover:bg-oasis-purple/30"

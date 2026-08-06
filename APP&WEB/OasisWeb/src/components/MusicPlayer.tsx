@@ -89,7 +89,7 @@ export default function MusicPlayer({ music }: MusicPlayerProps) {
               <button
                 onClick={() => setActiveTab('spotify')}
                 className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition ${
-                  activeTab === 'spotify' ? 'bg-oasis-cyan/20 text-oasis-cyan' : 'text-gray-400 hover:text-white'
+                  activeTab === 'spotify' ? 'bg-oasis-cyan/20 text-oasis-cyan' : 'text-white/70 hover:text-white'
                 }`}
               >
                 <Music className="h-3.5 w-3.5" />
@@ -98,7 +98,7 @@ export default function MusicPlayer({ music }: MusicPlayerProps) {
               <button
                 onClick={() => setActiveTab('oasis')}
                 className={`flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-semibold transition ${
-                  activeTab === 'oasis' ? 'bg-oasis-gold/20 text-oasis-gold' : 'text-gray-400 hover:text-white'
+                  activeTab === 'oasis' ? 'bg-oasis-gold/20 text-oasis-gold' : 'text-white/70 hover:text-white'
                 }`}
               >
                 <ListMusic className="h-3.5 w-3.5" />
@@ -115,7 +115,7 @@ export default function MusicPlayer({ music }: MusicPlayerProps) {
                     onChange={(e) => setPlaylistInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="https://open.spotify.com/playlist/..."
-                    className="flex-1 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-white placeholder-gray-500 outline-none focus:border-oasis-cyan focus:ring-1 focus:ring-oasis-cyan"
+                    className="flex-1 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-white placeholder-white/50 outline-none focus:border-oasis-cyan focus:ring-1 focus:ring-oasis-cyan"
                   />
                   <button
                     onClick={handlePlaylistApply}
@@ -138,15 +138,15 @@ export default function MusicPlayer({ music }: MusicPlayerProps) {
                     />
                   </div>
                 ) : (
-                  <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-center text-xs text-gray-400">
+                  <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-center text-xs text-white/70">
                     <p>Zadej platné Spotify playlist URL.</p>
-                    <p className="mt-1 text-[10px] text-gray-500">
+                    <p className="mt-1 text-[10px] text-white/60">
                       Pro skutečné přehrávání se přihlas na Spotify.
                     </p>
                   </div>
                 )}
 
-                <p className="text-[10px] text-gray-500">
+                <p className="text-[10px] text-white/60">
                   Embed přehrávač. Pro tvoje vlastní playlisty a ovládání z OASIS potřebujeme Spotify Client ID (Web Playback SDK + OAuth).
                 </p>
               </div>
@@ -154,7 +154,7 @@ export default function MusicPlayer({ music }: MusicPlayerProps) {
 
             {activeTab === 'oasis' && (
               <div className="space-y-2">
-                <div className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                <div className="mb-1.5 flex items-center gap-1.5 px-1 text-[10px] font-bold uppercase tracking-wider text-white/60">
                   <ListMusic className="h-3 w-3" />
                   <span>Stations</span>
                 </div>
@@ -163,7 +163,7 @@ export default function MusicPlayer({ music }: MusicPlayerProps) {
                     key={track.id}
                     onClick={() => music.setTrack(i)}
                     className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs transition ${
-                      i === music.trackIndex ? 'bg-white/10 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                      i === music.trackIndex ? 'bg-white/10 text-white' : 'text-white/70 hover:bg-white/5 hover:text-white'
                     }`}
                   >
                     <span className="h-2 w-2 rounded-full" style={{ backgroundColor: track.color }} />
@@ -172,7 +172,7 @@ export default function MusicPlayer({ music }: MusicPlayerProps) {
                 ))}
 
                 <div className="rounded-lg border border-white/10 bg-white/5 p-2">
-                  <div className="mb-2 flex items-center justify-between text-[10px] text-gray-400">
+                  <div className="mb-2 flex items-center justify-between text-[10px] text-white/70">
                     <span>Volume</span>
                     <span className="font-mono text-oasis-cyan">{Math.round(music.volume * 100)}%</span>
                   </div>
@@ -187,7 +187,7 @@ export default function MusicPlayer({ music }: MusicPlayerProps) {
                   />
                 </div>
 
-                <p className="text-[10px] text-gray-500">
+                <p className="text-[10px] text-white/60">
                   Procedurální hudba — laděná jako fallback. Může být nahrazena plným Spotify propojením.
                 </p>
               </div>
@@ -199,14 +199,14 @@ export default function MusicPlayer({ music }: MusicPlayerProps) {
       <div className="flex items-center gap-1 rounded-full border border-white/10 bg-black/80 px-2 py-1.5 shadow-2xl backdrop-blur-md">
         <span
           className="ml-1 h-2.5 w-2.5 rounded-full"
-          style={{ backgroundColor: activeTab === 'spotify' ? '#1db954' : current.color }}
+          style={{ backgroundColor: activeTab === 'spotify' ? '#078930' : current.color }}
         />
 
         {activeTab === 'oasis' && (
           <>
             <button
               onClick={() => music.prev()}
-              className="rounded-full p-1.5 text-gray-300 transition hover:bg-white/10 hover:text-white"
+              className="rounded-full p-1.5 text-white/80 transition hover:bg-white/10 hover:text-white"
               aria-label="Previous station"
             >
               <SkipBack className="h-3.5 w-3.5" />
@@ -222,7 +222,7 @@ export default function MusicPlayer({ music }: MusicPlayerProps) {
 
             <button
               onClick={() => music.next()}
-              className="rounded-full p-1.5 text-gray-300 transition hover:bg-white/10 hover:text-white"
+              className="rounded-full p-1.5 text-white/80 transition hover:bg-white/10 hover:text-white"
               aria-label="Next station"
             >
               <SkipForward className="h-3.5 w-3.5" />
@@ -237,7 +237,7 @@ export default function MusicPlayer({ music }: MusicPlayerProps) {
           className="ml-1 flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium text-white transition hover:bg-white/10"
         >
           {activeTab === 'spotify' ? (
-            <Music className="h-3.5 w-3.5 text-[#1db954]" />
+            <Music className="h-3.5 w-3.5 text-[#078930]" />
           ) : (
             <ListMusic className="h-3.5 w-3.5 text-oasis-cyan" />
           )}
@@ -248,7 +248,7 @@ export default function MusicPlayer({ music }: MusicPlayerProps) {
         {activeTab === 'oasis' && (
           <button
             onClick={() => (music.volume > 0 ? music.setVolume(0) : music.setVolume(0.5))}
-            className="rounded-full p-1.5 text-gray-300 transition hover:bg-white/10 hover:text-white"
+            className="rounded-full p-1.5 text-white/80 transition hover:bg-white/10 hover:text-white"
             aria-label="Music volume"
           >
             {music.volume > 0 ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
@@ -260,7 +260,7 @@ export default function MusicPlayer({ music }: MusicPlayerProps) {
             href={`https://open.spotify.com/playlist/${playlistId}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-full p-1.5 text-gray-300 transition hover:bg-white/10 hover:text-white"
+            className="rounded-full p-1.5 text-white/80 transition hover:bg-white/10 hover:text-white"
             aria-label="Open in Spotify"
           >
             <ExternalLink className="h-3.5 w-3.5" />

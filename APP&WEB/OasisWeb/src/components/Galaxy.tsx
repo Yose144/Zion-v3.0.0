@@ -15,9 +15,9 @@ const PARAMETERS = {
   spin: 1.35,
   randomness: 0.45,
   randomnessPower: 3.5,
-  insideColor: '#fde68a',
-  midColor: '#c084fc',
-  outsideColor: '#60a5fa',
+  insideColor: '#fcd116',
+  midColor: '#e41e2b',
+  outsideColor: '#078930',
   size: 0.16,
 };
 

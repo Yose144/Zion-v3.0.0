@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { requireAdminAuth } from '@/lib/admin-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,7 +8,10 @@ function isValidTheme(value: unknown): value is 'rasta' | 'zion' {
   return value === 'rasta' || value === 'zion';
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = requireAdminAuth(request);
+  if (auth) return auth;
+
   try {
     const all = await prisma.shopSetting.findMany({ orderBy: { key: 'asc' } });
     const theme = all.find((s) => s.key === 'shop_theme')?.value ?? 'rasta';
@@ -19,6 +23,9 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
+  const auth = requireAdminAuth(request);
+  if (auth) return auth;
+
   try {
     const body = (await request.json()) as { theme?: unknown };
     if (!isValidTheme(body.theme)) {

@@ -14,7 +14,7 @@ import { useGameStore } from '../store/gameStore';
  * makes planets read as atmospheric bodies rather than painted balls.
  */
 const AtmosphereMaterial = shaderMaterial(
-  { uColor: new THREE.Color('#22d3ee'), uIntensity: 1.0, uPower: 2.2 },
+  { uColor: new THREE.Color('#078930'), uIntensity: 1.0, uPower: 2.2 },
   /* vertex */ `
     varying vec3 vNormal;
     varying vec3 vViewDir;
@@ -48,11 +48,11 @@ declare module '@react-three/fiber' {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  'star-system': '#f59e0b',
-  'planet': '#22d3ee',
-  'sector': '#a855f7',
-  'world': '#10b981',
-  'dimension': '#ec4899',
+  'star-system': '#fcd116',
+  'planet': '#078930',
+  'sector': '#e41e2b',
+  'world': '#078930',
+  'dimension': '#e41e2b',
 };
 
 const SIZES: Record<string, number> = {
@@ -442,8 +442,8 @@ export default function WorldEnvironment({ world, isMobile = false }: { world: W
 
   const planetTexture = useMemo(() => {
     if (world.category === 'planet' || world.category === 'world') {
-      const base = world.category === 'world' ? '#1f4e45' : color;
-      const secondary = world.category === 'world' ? '#4ade80' : planetSecondaryColor(color);
+      const base = world.category === 'world' ? '#078930' : color;
+      const secondary = world.category === 'world' ? '#078930' : planetSecondaryColor(color);
       return createPlanetTexture(base, secondary, seed);
     }
     return null;
@@ -459,10 +459,10 @@ export default function WorldEnvironment({ world, isMobile = false }: { world: W
       {world.category === 'star-system' && (
         <>
           <mesh geometry={centralGeometry}>
-            <meshBasicMaterial color="#fff7d6" toneMapped={false} />
+            <meshBasicMaterial color="#fcd116" toneMapped={false} />
           </mesh>
           <StarCorona color={color} size={size} />
-          <SatelliteRing count={Math.floor(8 * mobileFactor)} color="#22d3ee" distance={4.2} sizeBase={0.1} />
+          <SatelliteRing count={Math.floor(8 * mobileFactor)} color="#078930" distance={4.2} sizeBase={0.1} />
           <OrbitRing radius={4.2} color={color} />
           <WorldParticles count={Math.floor(260 * mobileFactor)} color={color} seed={seed} radius={9} />
           <AvatarHologram world={world} color={color} size={size} />
@@ -486,7 +486,7 @@ export default function WorldEnvironment({ world, isMobile = false }: { world: W
           </mesh>
           <AtmosphereSphere color={color} size={size} />
           <OrbitRing radius={size * 2.2} color={color} texture={ringTexture} />
-          {world.category === 'planet' && <SatelliteRing count={Math.max(1, Math.floor(3 * mobileFactor))} color="#cbd5e1" distance={size * 2.4} sizeBase={0.06} />}
+          {world.category === 'planet' && <SatelliteRing count={Math.max(1, Math.floor(3 * mobileFactor))} color="#d4d4d4" distance={size * 2.4} sizeBase={0.06} />}
           <WorldParticles count={Math.floor(200 * mobileFactor)} color={color} seed={seed} radius={6} />
           <AvatarHologram world={world} color={color} size={size} />
         </>

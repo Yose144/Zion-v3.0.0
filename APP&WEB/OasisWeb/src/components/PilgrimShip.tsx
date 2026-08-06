@@ -140,23 +140,23 @@ export default function PilgrimShip({ speed = 0 }: PilgrimShipProps) {
       {/* Main hull */}
       <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.05]}>
         <coneGeometry args={[0.04, 0.22, 12]} />
-        <meshStandardMaterial color="#e2e8f0" metalness={0.6} roughness={0.3} emissive={color} emissiveIntensity={0.15} />
+        <meshStandardMaterial color="#d4d4d4" metalness={0.6} roughness={0.3} emissive={color} emissiveIntensity={0.15} />
       </mesh>
 
       {/* Cockpit */}
       <mesh position={[0, 0.02, -0.02]}>
         <sphereGeometry args={[0.022, 16, 16]} />
-        <meshStandardMaterial color="#0f172a" metalness={0.8} roughness={0.1} />
+        <meshStandardMaterial color="#0d0d0d" metalness={0.8} roughness={0.1} />
       </mesh>
 
       {/* Wings */}
       <mesh position={[-0.06, 0, 0.04]} rotation={[0, 0.4, 0]}>
         <boxGeometry args={[0.08, 0.01, 0.04]} />
-        <meshStandardMaterial color="#cbd5e1" metalness={0.5} roughness={0.4} />
+        <meshStandardMaterial color="#d4d4d4" metalness={0.5} roughness={0.4} />
       </mesh>
       <mesh position={[0.06, 0, 0.04]} rotation={[0, -0.4, 0]}>
         <boxGeometry args={[0.08, 0.01, 0.04]} />
-        <meshStandardMaterial color="#cbd5e1" metalness={0.5} roughness={0.4} />
+        <meshStandardMaterial color="#d4d4d4" metalness={0.5} roughness={0.4} />
       </mesh>
 
       {/* Engine glow */}

@@ -30,7 +30,7 @@ export default function LeaderboardScene() {
         {error && (
           <Html transform center distanceFactor={8} position={[0, 1.5, 0]} className="pointer-events-auto">
             <GlassPanel>
-              <p className="text-sm text-red-300">{error}</p>
+              <p className="text-sm text-rasta-red/80">{error}</p>
               <button onClick={retry} className="mt-2 rounded bg-oasis-cyan/20 px-3 py-1 text-xs text-oasis-cyan hover:bg-oasis-cyan/30">
                 Retry
               </button>
@@ -41,7 +41,7 @@ export default function LeaderboardScene() {
         {top3.map((entry, i) => {
           const x = (i - 1) * 1.2;
           const h = 0.5 + (3 - i) * 0.35;
-          const colors = ['#f59e0b', '#a1a1aa', '#b45309'];
+          const colors = ['#fcd116', '#a3a3a3', '#e41e2b'];
           const pos = new THREE.Vector3(x, h / 2, 0);
           return (
             <InteractiveObject

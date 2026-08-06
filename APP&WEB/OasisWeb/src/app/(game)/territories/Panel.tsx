@@ -38,26 +38,26 @@ export default function TerritoriesPanel() {
       >
         Territory Map
       </motion.h1>
-      <p className="mb-6 text-sm text-gray-400">
+      <p className="mb-6 text-sm text-white/70">
         {territories.length} regions · {claimed} claimed
       </p>
 
       {loading && <Skeleton lines={5} className="mb-4" />}
 
       {error && !loading && (
-        <div className="mb-4 rounded-2xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200">
+        <div className="mb-4 rounded-2xl border border-rasta-red/30 bg-rasta-red/10 p-4 text-sm text-rasta-red/80">
           {error}
           <button onClick={retry} className="ml-2 underline">Retry</button>
         </div>
       )}
 
       <div className="mb-4 flex items-center gap-2 rounded-2xl border border-white/10 bg-black/30 p-2">
-        <Search className="ml-2 h-4 w-4 text-gray-500" />
+        <Search className="ml-2 h-4 w-4 text-white/60" />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search territories"
-          className="flex-1 bg-transparent px-2 text-sm text-white outline-none placeholder:text-gray-500"
+          className="flex-1 bg-transparent px-2 text-sm text-white outline-none placeholder:text-white/60"
         />
       </div>
 
@@ -73,8 +73,8 @@ export default function TerritoriesPanel() {
               <Globe className="h-4 w-4 text-oasis-emerald" />
               <h3 className="font-bold text-oasis-cyan">{t.name}</h3>
             </div>
-            <p className="mb-2 text-xs text-gray-400">{t.region}</p>
-            <div className="flex items-center gap-2 text-xs text-gray-300">
+            <p className="mb-2 text-xs text-white/70">{t.region}</p>
+            <div className="flex items-center gap-2 text-xs text-white/80">
               <Shield className="h-3 w-3" />
               {t.controller ?? 'Unclaimed'}
             </div>

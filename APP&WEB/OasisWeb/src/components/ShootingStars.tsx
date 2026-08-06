@@ -67,7 +67,7 @@ export default function ShootingStars({ count = 4, isMobile = false }: { count?:
       const geo = new THREE.PlaneGeometry(3.2, 0.05);
       const mat = new THREE.MeshBasicMaterial({
         map: texture,
-        color: '#e0f2fe',
+        color: '#078930',
         transparent: true,
         opacity: 0,
         blending: THREE.AdditiveBlending,

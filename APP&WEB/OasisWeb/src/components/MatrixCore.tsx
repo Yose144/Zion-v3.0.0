@@ -28,7 +28,7 @@ export default function MatrixCore() {
   const icoMaterial = useMemo(
     () =>
       new THREE.MeshBasicMaterial({
-        color: '#0a0a1a',
+        color: '#0d0d0d',
         transparent: true,
         opacity: 0.6,
         depthWrite: false,
@@ -41,7 +41,7 @@ export default function MatrixCore() {
   const wireMaterial = useMemo(
     () =>
       new THREE.LineBasicMaterial({
-        color: '#ffd700',
+        color: '#fcd116',
         transparent: true,
         opacity: 0.7,
         blending: THREE.AdditiveBlending,
@@ -58,9 +58,9 @@ export default function MatrixCore() {
     const colors = new Float32Array(count * 3);
     const orbits: { radius: number; speed: number; phase: number; yOffset: number; tilt: number }[] = [];
 
-    const goldColor = new THREE.Color('#ffd700');
-    const cyanColor = new THREE.Color('#06b6d4');
-    const purpleColor = new THREE.Color('#a855f7');
+    const goldColor = new THREE.Color('#fcd116');
+    const cyanColor = new THREE.Color('#078930');
+    const purpleColor = new THREE.Color('#e41e2b');
     const temp = new THREE.Color();
 
     for (let i = 0; i < count; i++) {
@@ -128,7 +128,7 @@ export default function MatrixCore() {
       const radius = 1.8;
       return {
         position: [Math.cos(angle) * radius, 0, Math.sin(angle) * radius] as [number, number, number],
-        color: i % 3 === 0 ? '#ffd700' : i % 3 === 1 ? '#06b6d4' : '#a855f7',
+        color: i % 3 === 0 ? '#fcd116' : i % 3 === 1 ? '#078930' : '#e41e2b',
         height: 4 + rng.next() * 2,
       };
     });
@@ -206,8 +206,8 @@ export default function MatrixCore() {
       ))}
 
       {/* Central point light */}
-      <pointLight ref={lightRef} color="#ffd700" intensity={3} distance={25} decay={1.2} position={[0, 0, 0]} />
-      <pointLight color="#06b6d4" intensity={1.5} distance={15} decay={1.5} position={[0, 0, 0]} />
+      <pointLight ref={lightRef} color="#fcd116" intensity={3} distance={25} decay={1.2} position={[0, 0, 0]} />
+      <pointLight color="#078930" intensity={1.5} distance={15} decay={1.5} position={[0, 0, 0]} />
     </group>
   );
 }

@@ -43,7 +43,7 @@ export default function QuestsScene() {
         {error && (
           <Html transform center distanceFactor={8} position={[0, 1.5, 0]} className="pointer-events-auto">
             <GlassPanel>
-              <p className="text-sm text-red-300">{error}</p>
+              <p className="text-sm text-rasta-red/80">{error}</p>
               <button onClick={retry} className="mt-2 rounded bg-oasis-cyan/20 px-3 py-1 text-xs text-oasis-cyan hover:bg-oasis-cyan/30">
                 Retry
               </button>
@@ -95,8 +95,8 @@ const QuestNode = memo(function QuestNode({
       <mesh>
         <boxGeometry args={[0.6, 0.12, 0.18]} />
         <meshStandardMaterial
-          color="#f59e0b"
-          emissive="#f59e0b"
+          color="#fcd116"
+          emissive="#fcd116"
           emissiveIntensity={0.25}
           roughness={0.4}
           metalness={0.3}
@@ -110,7 +110,7 @@ function QuestDetail({ quest, onClose }: { quest: QuestDef; onClose: () => void 
   return (
     <div className="space-y-2 text-sm">
       <h3 className="text-lg font-bold text-oasis-cyan">{quest.title}</h3>
-      <p className="text-gray-300">{quest.description}</p>
+      <p className="text-white/80">{quest.description}</p>
       <p className="text-oasis-gold">{quest.xp_reward} XP · {quest.avatar_name}</p>
       <button
         onClick={onClose}

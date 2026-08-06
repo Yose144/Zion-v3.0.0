@@ -30,11 +30,11 @@ const ALL_LAYERS: WorldLayer[] = [1, 2, 3, 4, 5];
 const MAX_FLIGHT_SPEED = 18;
 
 const CATEGORY_COLORS: Record<WorldCategory, string> = {
-  'star-system': '#f59e0b',
-  'planet': '#22d3ee',
-  'sector': '#a855f7',
-  'world': '#10b981',
-  'dimension': '#ec4899',
+  'star-system': '#fcd116',
+  'planet': '#078930',
+  'sector': '#e41e2b',
+  'world': '#078930',
+  'dimension': '#e41e2b',
 };
 
 export default function OasisClient() {
@@ -175,7 +175,7 @@ export default function OasisClient() {
         color: CATEGORY_COLORS[selectedWorld.category],
       };
     }
-    return { pos: { x: 0, y: 0, z: 0 }, name: 'Galactic Core', color: '#a855f7' };
+    return { pos: { x: 0, y: 0, z: 0 }, name: 'Galactic Core', color: '#e41e2b' };
   }, [flightMode, landTarget, selectedWorld, view]);
 
   useEffect(() => {
@@ -205,7 +205,7 @@ export default function OasisClient() {
 
   if (!mounted) {
     return (
-      <div className="flex h-full w-full items-center justify-center text-gray-500">
+      <div className="flex h-full w-full items-center justify-center text-white/60">
         <div className="text-center">
           <div className="mb-2 h-8 w-8 animate-spin rounded-full border-2 border-oasis-cyan border-t-transparent mx-auto" />
           <p className="text-sm">Loading OASIS universe…</p>

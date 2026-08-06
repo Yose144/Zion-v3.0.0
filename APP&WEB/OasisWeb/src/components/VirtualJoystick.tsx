@@ -77,7 +77,7 @@ export default function VirtualJoystick({ onChange, onEnd, label, size = 96 }: V
         </span>
       )}
       <div
-        className="rounded-full bg-oasis-cyan/80 shadow-[0_0_12px_rgba(34,211,238,0.6)] transition-transform"
+        className="rounded-full bg-oasis-cyan/80 shadow-[0_0_12px_rgba(7,137,48,0.6)] transition-transform"
         style={{
           width: size * 0.36,
           height: size * 0.36,

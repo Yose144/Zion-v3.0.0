@@ -43,12 +43,12 @@ export default function GuildsPanel() {
       >
         Guild Hall
       </motion.h1>
-      <p className="mb-6 text-sm text-gray-400">{guilds.length} guilds · forge your alliance</p>
+      <p className="mb-6 text-sm text-white/70">{guilds.length} guilds · forge your alliance</p>
 
       {loading && <Skeleton lines={5} className="mb-4" />}
 
       {error && !loading && (
-        <div className="mb-4 rounded-2xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200">
+        <div className="mb-4 rounded-2xl border border-rasta-red/30 bg-rasta-red/10 p-4 text-sm text-rasta-red/80">
           {error} <button onClick={retry} className="ml-2 underline">Retry</button>
         </div>
       )}
@@ -58,19 +58,19 @@ export default function GuildsPanel() {
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           placeholder="Guild name"
-          className="rounded-xl bg-oasis-black/40 px-3 py-2 text-sm text-white outline-none placeholder:text-gray-500"
+          className="rounded-xl bg-oasis-black/40 px-3 py-2 text-sm text-white outline-none placeholder:text-white/60"
         />
         <input
           value={form.founder}
           onChange={(e) => setForm({ ...form, founder: e.target.value })}
           placeholder="Founder address"
-          className="rounded-xl bg-oasis-black/40 px-3 py-2 text-sm text-white outline-none placeholder:text-gray-500"
+          className="rounded-xl bg-oasis-black/40 px-3 py-2 text-sm text-white outline-none placeholder:text-white/60"
         />
         <input
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
           placeholder="Description"
-          className="rounded-xl bg-oasis-black/40 px-3 py-2 text-sm text-white outline-none placeholder:text-gray-500"
+          className="rounded-xl bg-oasis-black/40 px-3 py-2 text-sm text-white outline-none placeholder:text-white/60"
         />
         <button
           onClick={onCreate}
@@ -83,12 +83,12 @@ export default function GuildsPanel() {
       {status && <p className="mb-3 text-xs text-oasis-gold">{status}</p>}
 
       <div className="mb-4 flex items-center gap-2 rounded-2xl border border-white/10 bg-black/30 p-2">
-        <Search className="ml-2 h-4 w-4 text-gray-500" />
+        <Search className="ml-2 h-4 w-4 text-white/60" />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search guilds"
-          className="flex-1 bg-transparent px-2 text-sm text-white outline-none placeholder:text-gray-500"
+          className="flex-1 bg-transparent px-2 text-sm text-white outline-none placeholder:text-white/60"
         />
       </div>
 
@@ -112,8 +112,8 @@ function GuildCard({ guild }: { guild: Guild }) {
         <h3 className="font-bold text-oasis-cyan">{guild.name}</h3>
         <Crown className="h-4 w-4 text-oasis-gold" />
       </div>
-      <p className="mb-2 line-clamp-2 text-xs text-gray-400">{guild.description}</p>
-      <div className="flex items-center gap-3 text-xs text-gray-300">
+      <p className="mb-2 line-clamp-2 text-xs text-white/70">{guild.description}</p>
+      <div className="flex items-center gap-3 text-xs text-white/80">
         <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {guild.members.length}</span>
         <span className="flex items-center gap-1"><Shield className="h-3 w-3" /> L{guild.guild_level}</span>
         <span>{guild.territories.length} territories</span>

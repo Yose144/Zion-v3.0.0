@@ -60,16 +60,16 @@ const GALAXIES: {
   color: string;
   scale: [number, number, number];
 }[] = [
-  { name: 'Andromeda', position: [0, 1.8, -95], color: '#dbeafe', scale: [20, 12, 1] },
-  { name: 'Triangulum', position: [82, -1.2, 43], color: '#e0f2fe', scale: [18, 11, 1] },
-  { name: 'Sombrero', position: [-64, 1.0, -75], color: '#f3f4f6', scale: [18, 11, 1] },
-  { name: 'Cartwheel', position: [78, -1.5, -61], color: '#c7d2fe', scale: [20, 12, 1] },
-  { name: 'Whirlpool', position: [-88, 2.5, 20], color: '#bfdbfe', scale: [16, 10, 1] },
-  { name: 'Sunflower', position: [55, 3.0, -88], color: '#fef3c7', scale: [15, 9, 1] },
-  { name: 'Pinwheel', position: [-45, -3.5, 65], color: '#ddd6fe', scale: [17, 10, 1] },
-  { name: 'Cigar', position: [92, -2.0, -30], color: '#e0e7ff', scale: [14, 8, 1] },
-  { name: 'Centaurus-A', position: [-72, -2.5, -40], color: '#fce7f3', scale: [16, 10, 1] },
-  { name: 'NGC-1300', position: [40, 4.5, 80], color: '#ccfbf1', scale: [15, 9, 1] },
+  { name: 'Andromeda', position: [0, 1.8, -95], color: '#078930', scale: [20, 12, 1] },
+  { name: 'Triangulum', position: [82, -1.2, 43], color: '#078930', scale: [18, 11, 1] },
+  { name: 'Sombrero', position: [-64, 1.0, -75], color: '#f5f5f5', scale: [18, 11, 1] },
+  { name: 'Cartwheel', position: [78, -1.5, -61], color: '#e41e2b', scale: [20, 12, 1] },
+  { name: 'Whirlpool', position: [-88, 2.5, 20], color: '#078930', scale: [16, 10, 1] },
+  { name: 'Sunflower', position: [55, 3.0, -88], color: '#fcd116', scale: [15, 9, 1] },
+  { name: 'Pinwheel', position: [-45, -3.5, 65], color: '#e41e2b', scale: [17, 10, 1] },
+  { name: 'Cigar', position: [92, -2.0, -30], color: '#e41e2b', scale: [14, 8, 1] },
+  { name: 'Centaurus-A', position: [-72, -2.5, -40], color: '#e41e2b', scale: [16, 10, 1] },
+  { name: 'NGC-1300', position: [40, 4.5, 80], color: '#078930', scale: [15, 9, 1] },
 ];
 
 export default function DistantGalaxies() {

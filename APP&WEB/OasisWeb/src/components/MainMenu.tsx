@@ -83,7 +83,7 @@ function MainMenu({
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         onClick={() => setOpen(true)}
-        className="pointer-events-auto fixed left-2 top-2 z-[75] flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/70 text-gray-300 backdrop-blur-md transition hover:bg-white/10 hover:text-white sm:left-5 sm:top-5"
+        className="pointer-events-auto fixed left-2 top-2 z-[75] flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/70 text-white/80 backdrop-blur-md transition hover:bg-white/10 hover:text-white sm:left-5 sm:top-5"
         title="Main menu (M)"
       >
         <Menu className="h-5 w-5" />
@@ -112,17 +112,17 @@ function MainMenu({
               {/* Header */}
               <div className="flex items-center justify-between border-b border-white/10 p-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-oasis-gold to-oasis-purple text-sm font-bold text-white shadow-[0_0_20px_rgba(147,51,234,0.35)]">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-oasis-gold to-oasis-purple text-sm font-bold text-white shadow-[0_0_20px_rgba(228,30,43,0.35)]">
                     {level}
                   </div>
                   <div>
                     <h2 className="text-sm font-bold text-white">Pilgrim Menu</h2>
-                    <p className="text-[10px] text-gray-400">{credits} Z · Lv {level} · {Math.round(progress * 100)}%</p>
+                    <p className="text-[10px] text-white/70">{credits} Z · Lv {level} · {Math.round(progress * 100)}%</p>
                   </div>
                 </div>
                 <button
                   onClick={onClose}
-                  className="rounded-full p-2 text-gray-400 transition hover:bg-white/10 hover:text-white"
+                  className="rounded-full p-2 text-white/70 transition hover:bg-white/10 hover:text-white"
               >
                   <X className="h-5 w-5" />
                 </button>
@@ -138,7 +138,7 @@ function MainMenu({
                       key={t.id}
                       onClick={() => setTab(t.id)}
                       className={`flex flex-col items-center gap-0.5 rounded-lg py-2 text-[9px] font-semibold transition ${
-                        active ? 'bg-white/10 text-oasis-cyan' : 'text-gray-500 hover:text-white'
+                        active ? 'bg-white/10 text-oasis-cyan' : 'text-white/60 hover:text-white'
                       }`}
                     >
                       <Icon className="h-4 w-4" />
@@ -173,19 +173,19 @@ function MainMenu({
                 <QuickAction
                   icon={Plane}
                   label="Flight"
-                  color="text-amber-300"
+                  color="text-rasta-gold/80"
                   onClick={() => { onEnterFlight(); onClose(); }}
                 />
                 <QuickAction
                   icon={muted ? VolumeX : Volume2}
                   label={muted ? 'Unmute' : 'Mute'}
-                  color={muted ? 'text-gray-400' : 'text-oasis-cyan'}
+                  color={muted ? 'text-white/70' : 'text-oasis-cyan'}
                   onClick={onToggleMute}
                 />
                 <QuickAction
                   icon={uiHidden ? Eye : EyeOff}
                   label={uiHidden ? 'Show UI' : 'Hide UI'}
-                  color="text-gray-300"
+                  color="text-white/80"
                   onClick={onToggleUiHidden}
                 />
                 <QuickAction
@@ -258,7 +258,7 @@ function WorldsTab({
     <div className="space-y-4">
       {/* Minimap */}
       <div className="zion-hud-panel !relative p-2.5">
-        <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+        <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-white/70">
           <Compass className="h-3 w-3" /> Galaxy Map
         </p>
         <MiniMap
@@ -269,7 +269,7 @@ function WorldsTab({
         {selectedWorld && (
           <button
             onClick={onCloseWorld}
-            className="mt-2 w-full rounded-lg border border-white/5 bg-white/[0.03] py-1.5 text-[10px] text-gray-400 transition hover:text-white"
+            className="mt-2 w-full rounded-lg border border-white/5 bg-white/[0.03] py-1.5 text-[10px] text-white/70 transition hover:text-white"
           >
             Clear selected world
           </button>
@@ -278,7 +278,7 @@ function WorldsTab({
 
       {/* Category filters */}
       <div>
-        <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">Filter categories</p>
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-white/70">Filter categories</p>
         <div className="grid grid-cols-2 gap-2">
           {WORLD_CATEGORIES.map((cat) => {
             const active = activeCategories.includes(cat);
@@ -292,7 +292,7 @@ function WorldsTab({
                 style={{
                   borderColor: active ? `${color}60` : 'rgba(255,255,255,0.05)',
                   background: active ? `${color}15` : 'rgba(255,255,255,0.03)',
-                  color: active ? color : '#9ca3af',
+                  color: active ? color : '#a3a3a3',
                 }}
               >
                 <span className="h-2 w-2 rounded-full" style={{ background: color, boxShadow: active ? `0 0 8px ${color}` : 'none' }} />
@@ -305,7 +305,7 @@ function WorldsTab({
 
       {/* Layer filters */}
       <div>
-        <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">Filter layers</p>
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-white/70">Filter layers</p>
         <div className="flex flex-wrap gap-1.5">
           {LAYERS.map((layer) => {
             const active = activeLayers.includes(layer);
@@ -316,7 +316,7 @@ function WorldsTab({
                 className={`flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-semibold transition ${
                   active
                     ? 'bg-oasis-cyan text-black'
-                    : 'border border-white/10 bg-white/[0.03] text-gray-400 hover:text-white'
+                    : 'border border-white/10 bg-white/[0.03] text-white/70 hover:text-white'
                 }`}
               >
                 {layer}
@@ -337,12 +337,12 @@ function DiscoveryStats() {
   const total = WORLDS.length;
   return (
     <div className="zion-hud-panel !relative p-3">
-      <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">Discovery</p>
+      <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-white/70">Discovery</p>
       <div className="grid grid-cols-2 gap-3">
-        <Stat value={discoveredWorlds.length} total={total} label="Worlds" color="#06b6d4" />
-        <Stat value={scannedWorlds.length} total={total} label="Scanned" color="#10b981" />
-        <Stat value={collectedEggs.length} label="Eggs" color="#fbbf24" />
-        <Stat value={completedQuests.length} label="Quests" color="#a855f7" />
+        <Stat value={discoveredWorlds.length} total={total} label="Worlds" color="#078930" />
+        <Stat value={scannedWorlds.length} total={total} label="Scanned" color="#078930" />
+        <Stat value={collectedEggs.length} label="Eggs" color="#fcd116" />
+        <Stat value={completedQuests.length} label="Quests" color="#e41e2b" />
       </div>
     </div>
   );
@@ -352,7 +352,7 @@ function Stat({ value, total, label, color }: { value: number; total?: number; l
   return (
     <div className="rounded-lg border border-white/5 bg-white/[0.03] p-2.5 text-center">
       <p className="text-lg font-bold" style={{ color }}>{value}</p>
-      <p className="text-[9px] text-gray-500">{total !== undefined ? `${value}/${total} ${label}` : label}</p>
+      <p className="text-[9px] text-white/60">{total !== undefined ? `${value}/${total} ${label}` : label}</p>
     </div>
   );
 }

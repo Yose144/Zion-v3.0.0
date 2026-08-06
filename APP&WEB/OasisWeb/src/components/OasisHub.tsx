@@ -20,8 +20,8 @@ export default function OasisHub() {
       <mesh>
         <torusKnotGeometry args={[0.7, 0.22, 128, 32]} />
         <meshStandardMaterial
-          color="#22d3ee"
-          emissive="#22d3ee"
+          color="#078930"
+          emissive="#078930"
           emissiveIntensity={0.45}
           roughness={0.2}
           metalness={0.6}
@@ -31,7 +31,7 @@ export default function OasisHub() {
         <sphereGeometry args={[0.3, 32, 32]} />
         <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.9} />
       </mesh>
-      <pointLight position={[0, 0, 0]} intensity={1.5} color="#22d3ee" distance={12} />
+      <pointLight position={[0, 0, 0]} intensity={1.5} color="#078930" distance={12} />
     </group>
   );
 }

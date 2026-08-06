@@ -12,9 +12,9 @@ import type { World } from '../domain/types/world';
 import { useGameStore, type ShipLoadout } from '../store/gameStore';
 import { useToastStore } from '../store/toastStore';
 
-const ZION_CYAN = '#06b6d4';
-const ZION_PURPLE = '#9333ea';
-const ZION_GOLD = '#fbbf24';
+const ZION_CYAN = '#078930';
+const ZION_PURPLE = '#e41e2b';
+const ZION_GOLD = '#fcd116';
 
 function normalizeAngle(a: number) {
   while (a > Math.PI) a -= Math.PI * 2;
@@ -151,7 +151,7 @@ function ControlHud({
     return t;
   }, []);
 
-  const throttleColor = throttle > 0.7 ? '#ef4444' : throttle > 0.35 ? ZION_GOLD : ZION_CYAN;
+  const throttleColor = throttle > 0.7 ? '#e41e2b' : throttle > 0.35 ? ZION_GOLD : ZION_CYAN;
   const throttleCirc = 2 * Math.PI * throttleR;
   const speedCirc = 2 * Math.PI * speedArcRadius;
   const speedHalf = speedCirc / 2;
@@ -206,12 +206,12 @@ function ControlHud({
           {/* Hull color indicator */}
           <div className="flex items-center gap-1.5 rounded-lg border border-white/5 bg-white/[0.03] px-2 py-1">
             <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: shipLoadout.color, boxShadow: `0 0 8px ${shipLoadout.color}` }} />
-            <span className="text-[9px] text-gray-400">Hull</span>
+            <span className="text-[9px] text-white/70">Hull</span>
           </div>
 
           {/* Credits */}
           <div className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.03] px-2 py-1">
-            <span className="flex items-center gap-1 text-[9px] text-gray-400">
+            <span className="flex items-center gap-1 text-[9px] text-white/70">
               <Fuel className="h-2.5 w-2.5" />
               Fuel
             </span>
@@ -224,12 +224,12 @@ function ControlHud({
               animate={{ opacity: 1 }}
               className="space-y-1.5 border-t border-white/5 pt-2"
             >
-              <p className="text-[8px] font-bold uppercase tracking-wider text-gray-500">Quick Tune</p>
+              <p className="text-[8px] font-bold uppercase tracking-wider text-white/60">Quick Tune</p>
               {(['boost', 'cargo', 'scanner'] as (keyof ShipLoadout)[]).map((k) => {
                 const lvl = shipLoadout[k] as number;
                 return (
                   <div key={k} className="flex items-center justify-between text-[9px]">
-                    <span className="capitalize text-gray-400">{k}</span>
+                    <span className="capitalize text-white/70">{k}</span>
                     <div className="flex items-center gap-1">
                       <div className="flex gap-0.5">
                         {[1, 2, 3, 4, 5].map((n) => (
@@ -267,8 +267,8 @@ function ControlHud({
                   <stop offset="100%" stopColor={ZION_CYAN} />
                 </linearGradient>
                 <radialGradient id="ctrlHudGlow" cx="0.5" cy="0.5" r="0.5">
-                  <stop offset="0%" stopColor="rgba(6, 182, 212, 0.15)" />
-                  <stop offset="100%" stopColor="rgba(6, 182, 212, 0)" />
+                  <stop offset="0%" stopColor="rgba(7, 137, 48, 0.15)" />
+                  <stop offset="100%" stopColor="rgba(7, 137, 48, 0)" />
                 </radialGradient>
               </defs>
 
@@ -292,7 +292,7 @@ function ControlHud({
                     strokeLinecap="round"
                     strokeDasharray={`${2 * Math.PI * 95 * warpCharge} ${2 * Math.PI * 95}`}
                     transform="rotate(-90)"
-                    style={{ filter: 'drop-shadow(0 0 6px rgba(168, 85, 247, 0.6))' }}
+                    style={{ filter: 'drop-shadow(0 0 6px rgba(228, 30, 43, 0.6))' }}
                   />
                 </>
               )}
@@ -403,7 +403,7 @@ function ControlHud({
             <p className="max-w-[160px] truncate text-xs font-semibold" style={{ color: targetColor }}>
               {targetName}
             </p>
-            <p className="text-[10px] font-mono text-gray-400">
+            <p className="text-[10px] font-mono text-white/70">
               {formatDistance(distance)} ly · {heading}°
             </p>
           </div>
@@ -426,24 +426,24 @@ function ControlHud({
           {flightMode ? (
             <div className="rounded-lg border border-white/5 bg-white/[0.03] px-2 py-1.5">
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1 text-[9px] text-gray-400">
+                <span className="flex items-center gap-1 text-[9px] text-white/70">
                   <Gauge className="h-3 w-3 text-oasis-cyan" />
                   SPD
                 </span>
                 <div className="text-right">
                   <span className="text-sm font-bold tabular-nums text-white">{flightSpeed.toFixed(1)}</span>
-                  <span className="ml-0.5 text-[9px] text-gray-500">/{Math.round(maxSpeed)}</span>
+                  <span className="ml-0.5 text-[9px] text-white/60">/{Math.round(maxSpeed)}</span>
                 </div>
               </div>
             </div>
           ) : (
             <div className="rounded-lg border border-white/5 bg-white/[0.03] px-2 py-1.5">
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1 text-[9px] text-gray-400">
+                <span className="flex items-center gap-1 text-[9px] text-white/70">
                   <Radar className="h-3 w-3 text-oasis-purple" />
                   Scan
                 </span>
-                <span className="text-[9px] text-gray-500">Idle</span>
+                <span className="text-[9px] text-white/60">Idle</span>
               </div>
             </div>
           )}
@@ -451,7 +451,7 @@ function ControlHud({
           {/* Throttle slider (flight mode) */}
           {flightMode && (
             <div>
-              <div className="mb-1 flex items-center justify-between text-[9px] text-gray-400">
+              <div className="mb-1 flex items-center justify-between text-[9px] text-white/70">
                 <span className="flex items-center gap-1">
                   <Rocket className="h-2.5 w-2.5" /> Throttle
                 </span>
@@ -480,7 +480,7 @@ function ControlHud({
                 ? 'border-oasis-purple/40 bg-oasis-purple/20 text-oasis-purple'
                 : canWarp
                 ? 'border-oasis-gold/30 bg-oasis-gold/10 text-oasis-gold hover:bg-oasis-gold/20'
-                : 'border-white/10 bg-black/40 text-gray-600'
+                : 'border-white/10 bg-black/40 text-white/50'
             }`}
             title={canWarp ? 'Warp to target' : 'Warp unavailable'}
           >
@@ -511,7 +511,7 @@ function ControlHud({
             ) : (
               <button
                 disabled
-                className="flex items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-[10px] font-bold text-gray-600"
+                className="flex items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-[10px] font-bold text-white/50"
               >
                 <Navigation className="h-3 w-3" />
                 LAND
@@ -533,7 +533,7 @@ function ControlHud({
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="space-y-0.5 border-t border-white/5 pt-1.5 text-[8px] text-gray-500"
+              className="space-y-0.5 border-t border-white/5 pt-1.5 text-[8px] text-white/60"
             >
               <div className="flex justify-between"><span>WASD</span><span>move</span></div>
               <div className="flex justify-between"><span>Q/E</span><span>up/down</span></div>
@@ -549,7 +549,7 @@ function ControlHud({
       {/* Expand/collapse toggle */}
       <button
         onClick={() => setMode((m) => (m === 'compact' ? 'expanded' : 'compact'))}
-        className="mt-2 flex items-center gap-1 rounded-full border border-white/10 bg-black/60 px-3 py-1 text-[9px] font-semibold text-gray-400 backdrop-blur-md transition hover:bg-white/10 hover:text-white"
+        className="mt-2 flex items-center gap-1 rounded-full border border-white/10 bg-black/60 px-3 py-1 text-[9px] font-semibold text-white/70 backdrop-blur-md transition hover:bg-white/10 hover:text-white"
       >
         <Settings className="h-3 w-3" />
         {mode === 'expanded' ? 'Collapse' : 'Expand'}
