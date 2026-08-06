@@ -81,7 +81,7 @@ export default function GeographyMenu({ cs }: { cs: boolean }) {
       className="mt-6"
     >
       <div className="mb-4 flex items-center justify-between gap-3">
-        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
+        <p className="text-[10px] uppercase tracking-[0.3em] text-zion-gold/65">
           {TerranovaComponentsGeographyMenuCopy.culturalInsertsByGeography[cs ? 'cs' : 'en']}
         </p>
       </div>

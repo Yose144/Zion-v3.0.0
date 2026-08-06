@@ -100,10 +100,10 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-white">Sign in with ZION Wallet</h2>
-                  <p className="text-xs text-gray-500">Prove ownership to access dashboard</p>
+                  <p className="text-xs text-zion-gold/70">Prove ownership to access dashboard</p>
                 </div>
               </div>
-              <button onClick={handleClose} className="text-gray-500 hover:text-white transition-colors">
+              <button onClick={handleClose} className="text-zion-gold/70 hover:text-white transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -114,7 +114,7 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
               {zionWallet.initialized && zionWallet.wallets.length === 0 && (
                 <div className="text-center py-8">
                   <AlertCircle className="h-12 w-12 text-zion-gold/60 mx-auto mb-3" />
-                  <p className="text-sm text-gray-400 mb-4">
+                  <p className="text-sm text-zion-gold/85 mb-4">
                     No ZION wallet found. You need a wallet to sign in.
                   </p>
                   <a
@@ -139,7 +139,7 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
               {/* Wallet selector */}
               {zionWallet.initialized && zionWallet.wallets.length > 0 && (
                 <div className="mb-4">
-                  <label className="text-xs text-gray-500 mb-1.5 block uppercase tracking-wider">Wallet</label>
+                  <label className="text-xs text-zion-gold/70 mb-1.5 block uppercase tracking-wider">Wallet</label>
                   <button
                     type="button"
                     onClick={() => setShowWalletList(!showWalletList)}
@@ -150,12 +150,12 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
                       <Wallet className="h-4 w-4 text-zion-gold shrink-0" />
                       <div className="min-w-0">
                         <p className="text-sm text-white truncate">{activeWallet?.name ?? 'Select wallet'}</p>
-                        <p className="text-[10px] text-gray-500 truncate font-mono">
+                        <p className="text-[10px] text-zion-gold/70 truncate font-mono">
                           {activeWallet?.address ?? '—'}
                         </p>
                       </div>
                     </div>
-                    <ChevronDown className={`h-4 w-4 text-gray-400 shrink-0 transition-transform ${showWalletList ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`h-4 w-4 text-zion-gold/85 shrink-0 transition-transform ${showWalletList ? 'rotate-180' : ''}`} />
                   </button>
                   {showWalletList && (
                     <div className="mt-1 rounded-lg border border-white/10 bg-black/60 overflow-hidden">
@@ -175,7 +175,7 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
                           <Wallet className="h-3.5 w-3.5 text-zion-gold shrink-0" />
                           <div className="min-w-0 flex-1">
                             <p className="text-xs text-white truncate">{w.name}</p>
-                            <p className="text-[9px] text-gray-500 truncate font-mono">{w.address}</p>
+                            <p className="text-[9px] text-zion-gold/70 truncate font-mono">{w.address}</p>
                           </div>
                           {w.keyType === 'trezor' || w.keyType === 'ledger' ? (
                             <span className="text-[8px] text-zion-gold/60 uppercase">HW</span>
@@ -191,11 +191,11 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
               {activeWallet && !zionWallet.isHardwareWallet && (
                 <form onSubmit={handleSubmit}>
                   <div className="mb-4">
-                    <label className="text-xs text-gray-500 mb-1.5 block uppercase tracking-wider">
+                    <label className="text-xs text-zion-gold/70 mb-1.5 block uppercase tracking-wider">
                       Wallet Password
                     </label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zion-gold/70" />
                       <input
                         type="password"
                         value={password}
@@ -203,10 +203,10 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
                         disabled={loading}
                         autoFocus
                         placeholder="Enter your wallet password"
-                        className="w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-3 py-2.5 text-sm text-white placeholder:text-gray-600 focus:border-zion-cyan/40 focus:outline-none focus:ring-1 focus:ring-zion-cyan/20 disabled:opacity-50"
+                        className="w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-3 py-2.5 text-sm text-white placeholder:text-zion-gold/55 focus:border-zion-cyan/40 focus:outline-none focus:ring-1 focus:ring-zion-cyan/20 disabled:opacity-50"
                       />
                     </div>
-                    <p className="text-[10px] text-gray-600 mt-1.5">
+                    <p className="text-[10px] text-zion-gold/55 mt-1.5">
                       Your password decrypts your private key locally to sign the auth challenge.
                       It is never sent to the server.
                     </p>
@@ -250,7 +250,7 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
 
             {/* Footer */}
             <div className="border-t border-white/5 px-6 py-3 bg-black/30">
-              <p className="text-[10px] text-gray-600 text-center">
+              <p className="text-[10px] text-zion-gold/55 text-center">
                 Secured by Ed25519 signature · No private keys leave your browser
               </p>
             </div>

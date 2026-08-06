@@ -11,7 +11,7 @@ export default function Loading() {
             <Orbit className="w-8 h-8 text-zion-gold animate-spin" style={{ animationDuration: '3s' }} />
           </div>
         </div>
-        <p className="text-sm uppercase tracking-[0.4em] text-gray-500 animate-pulse">
+        <p className="text-sm uppercase tracking-[0.4em] text-zion-gold/70 animate-pulse">
           Loading...
         </p>
       </div>

@@ -35,10 +35,10 @@ export default class GlobalErrorBoundary extends Component<Props, State> {
               </svg>
             </div>
             <h1 className="text-2xl font-bold">ZION TerraNova</h1>
-            <p className="text-gray-400">
+            <p className="text-zion-gold/80">
               Došlo k chybě při načítání stránky. Zkuste obnovit stránku nebo deaktivovat rozšíření prohlížeče (MetaMask, ad-blockery).
             </p>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-zion-gold/55">
               A client-side error occurred. Try refreshing or disabling browser extensions.
             </p>
             <button

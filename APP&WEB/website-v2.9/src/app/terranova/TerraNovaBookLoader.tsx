@@ -7,7 +7,7 @@ const TerraNovaBookClient = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="zion-container py-20 text-center text-gray-400">
+      <div className="zion-container py-20 text-center text-white/70">
         Načítání Terra Nova…
       </div>
     ),

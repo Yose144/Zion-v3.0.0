@@ -57,8 +57,8 @@ export default function NavAuthButton() {
           <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-zion-gold to-zion-purple flex items-center justify-center text-[11px] font-bold text-white">
             {initial}
           </div>
-          <span className="hidden lg:inline text-[11px] font-mono text-gray-400">{shortAddr}</span>
-          <ChevronDown className={`w-3.5 h-3.5 text-gray-500 transition-transform ${showMenu ? 'rotate-180' : ''}`} />
+          <span className="hidden lg:inline text-[11px] font-mono text-zion-gold/85">{shortAddr}</span>
+          <ChevronDown className={`w-3.5 h-3.5 text-zion-gold/70 transition-transform ${showMenu ? 'rotate-180' : ''}`} />
         </button>
         {showMenu && (
           <>
@@ -68,14 +68,14 @@ export default function NavAuthButton() {
                 <p className="text-xs font-semibold text-white truncate">
                   {user?.displayName || 'ZION User'}
                 </p>
-                <p className="text-[10px] font-mono text-gray-500 truncate">{user?.address}</p>
+                <p className="text-[10px] font-mono text-zion-gold/70 truncate">{user?.address}</p>
               </div>
               <button
                 onClick={() => {
                   setShowMenu(false);
                   router.push('/account');
                 }}
-                className="flex w-full items-center gap-2 px-4 py-2.5 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-xs text-zion-gold/85 hover:bg-white/5 hover:text-white transition-colors"
               >
                 <LayoutDashboard className="w-3.5 h-3.5" /> My Account
               </button>
@@ -84,7 +84,7 @@ export default function NavAuthButton() {
                   setShowMenu(false);
                   router.push('/wallet');
                 }}
-                className="flex w-full items-center gap-2 px-4 py-2.5 text-xs text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-xs text-zion-gold/85 hover:bg-white/5 hover:text-white transition-colors"
               >
                 <User className="w-3.5 h-3.5" /> My Wallet
               </button>

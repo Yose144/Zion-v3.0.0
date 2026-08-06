@@ -122,7 +122,7 @@ export default function BackgroundToggle() {
                     </div>
                     <div className="flex-1 text-left min-w-0">
                       <div className="font-semibold text-sm text-white truncate">{config.label}</div>
-                      <div className="text-xs text-gray-400 truncate">{config.description}</div>
+                      <div className="text-xs text-zion-gold/80 truncate">{config.description}</div>
                     </div>
                     {isActive && <Check className="w-4 h-4 shrink-0" style={{ color: `rgb(${config.color})` }} />}
                   </button>
@@ -132,7 +132,7 @@ export default function BackgroundToggle() {
 
             {/* Footer */}
             <div className="border-t border-white/8 px-4 py-2.5 bg-black/40">
-              <p className="text-[10px] text-gray-500 text-center uppercase tracking-wider">Switches instantly</p>
+              <p className="text-[10px] text-zion-gold/70 text-center uppercase tracking-wider">Switches instantly</p>
             </div>
           </motion.div>
         )}

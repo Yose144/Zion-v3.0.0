@@ -48,7 +48,7 @@ export default function GeographyRegionPage({ data }: { data: RegionData }) {
         >
           <Link
             href="/terranova"
-            className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-zion-gold transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-zion-gold/65 hover:text-zion-gold transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             {TerranovaGeographyComponentsGeographyRegionPageCopy.backToTerraNova[cs ? 'cs' : 'en']}
@@ -83,7 +83,7 @@ export default function GeographyRegionPage({ data }: { data: RegionData }) {
           className="mb-16"
         >
           <div className="text-center mb-8">
-            <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
+            <p className="text-[10px] uppercase tracking-[0.45em] text-zion-gold/65 mb-2">
               {TerranovaGeographyComponentsGeographyRegionPageCopy.availableInserts[cs ? 'cs' : 'en']}
             </p>
             <h2 className="text-2xl font-bold text-white">
@@ -110,7 +110,7 @@ export default function GeographyRegionPage({ data }: { data: RegionData }) {
                 <h3 className="font-bold relative z-10 text-zion-gold">
                   {cs ? insert.titleCs : insert.titleEn}
                 </h3>
-                <p className="text-gray-400 text-sm leading-relaxed relative z-10">
+                <p className="text-white/70 text-sm leading-relaxed relative z-10">
                   {cs ? insert.descCs : insert.descEn}
                 </p>
               </motion.div>

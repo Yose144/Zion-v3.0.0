@@ -91,7 +91,7 @@ export default function Footer() {
                   <li key={href}>
                     <Link
                       href={href}
-                      className={`text-sm text-gray-400 ${group.hover} hover:pl-1 transition-all duration-200 inline-block`}
+                      className={`text-sm text-zion-gold/70 ${group.hover} hover:pl-1 transition-all duration-200 inline-block`}
                     >
                       {label}
                     </Link>
@@ -106,7 +106,7 @@ export default function Footer() {
         <hr className="zion-divider mt-10" />
 
         <div className="pt-6">
-          <p className="text-[11px] leading-relaxed text-gray-500 max-w-3xl">
+          <p className="text-[11px] leading-relaxed text-zion-gold/55 max-w-3xl">
             {tr('footer', 'disclaimer', lang)}
             {' '}{tr('footer', 'legal_suffix', lang)}{' '}
             <Link href="/docs#legal" className="text-zion-gold/70 hover:text-zion-gold underline underline-offset-2 transition-colors">
@@ -118,7 +118,7 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div className="mt-4 pt-4 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-zion-gold/55">
             © 2026 <span className="text-zion-gold">ZION Blockchain</span> · <span className="text-zion-purple">{SITE_RELEASE_LABEL}</span> · runtime <span className="text-zion-cyan">{SITE_RUNTIME_VERSION}</span>
           </p>
           <span className="text-xs text-zion-gold/60">{tr('footer', 'test_mainnet_active', lang)}</span>
