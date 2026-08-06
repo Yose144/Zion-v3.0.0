@@ -7,7 +7,7 @@
 
 ## Status
 
-> **Last updated: 2026-08-06**
+> **Last updated: 2026-08-07**
 
 - **Active mainnet track:** `V31/` workspace — version `3.1.0-alpha.2`, clean `cargo test --workspace`.
 - **V3 production line has been archived** to `archive/V3/` after the 2026-08-04 V31 cutover.
@@ -17,10 +17,10 @@
   - Public pool stratum: `62.171.141.136:8444`
   - Chain height: fresh chain from new genesis (live in [`StatusV3.md`](StatusV3.md))
   - Protocol: `zion-v3-node/3.1.0-alpha.2`
-  - Genesis hash (V3 compat): `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122`
-  - Genesis hash (V31 native): `21e2b2742ec774a37ea1df4a643b954110dd3f803fa48675416b81d6c5baba60`
-- **Latest wins:** V31 pool reaches full V3 parity (160 pool tests), DAO governance runtime with treasury/humanitarian/L1 scanner, GPU backend port (CUDA/OpenCL/Metal/native), cross-chain DEX multi-path routing, CLI wallet + service lifecycle, OASIS RPC fixed (raw TCP JSON-RPC).
-- **Test gate:** 2069+ workspace tests pass, `cargo clippy --workspace` is clean.
+  - Genesis hash (V3 compat): `b0e95b135b736373430a3ff25d773329a3a3bd4b72ee66bb02d5a1583a77ecff`
+  - Genesis hash (V31 native): `065eaf8e85e2808bda876db360c6d4ec1092d6048ab48b30c8a40e468bc10dd6`
+- **Latest wins:** V31 pool reaches full V3 parity (160 pool tests), DAO governance runtime with treasury/humanitarian/L1 scanner, GPU backend port (CUDA/OpenCL/Metal/native) with Ekam Deeksha v3.2 (512 KiB scratchpad, 128 random reads, 2 AES passes), cross-chain DEX multi-path routing + HTTP solver network, CLI with 21 subcommands (DAO/WARP/HTLC/monitor/topology/explorer/onboard), ZION Identity Service (ZIS) + unified Prisma schema, OASIS RPC fixed (raw TCP JSON-RPC).
+- **Test gate:** 2079 workspace tests pass, `cargo clippy --workspace` is clean.
 - **Public launch target:** 31 December 2026.
 
 ---
