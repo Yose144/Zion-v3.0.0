@@ -9,7 +9,7 @@ Description=ZION V31 Edge Maintenance (disk + RAM optimization)
 Type=oneshot
 # Runs as root: docker prune, apt clean, drop_caches, journalctl vacuum
 User=root
-ExecStart=/opt/zion/V31/deploy/scripts/edge-maintenance.sh all --force
+ExecStart=/opt/zion/scripts/edge-maintenance.sh all --force
 StandardOutput=journal
 StandardError=journal
 

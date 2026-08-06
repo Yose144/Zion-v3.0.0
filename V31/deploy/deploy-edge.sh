@@ -68,10 +68,10 @@ if ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "test -d '${REMOTE_ROOT}'" 2>/dev/n
         # (full repo backups fill the disk — repo is in git anyway)
         if command -v rsync >/dev/null 2>&1; then
             rsync -a '${REMOTE_ROOT}/V31/deploy/' '${BACKUP_PATH}/V31-deploy/' 2>/dev/null || true
-            rsync -a '${REMOTE_ROOT}/V31/L2/multichain/bridge/config/' '${BACKUP_PATH}/bridge-config/' 2>/dev/null || true
-            rsync -a '${REMOTE_ROOT}/V31/L2/dao/config/' '${BACKUP_PATH}/dao-config/' 2>/dev/null || true
-            rsync -a '${REMOTE_ROOT}/V31/L2/multichain/swap/config/' '${BACKUP_PATH}/swap-config/' 2>/dev/null || true
-            rsync -a '${REMOTE_ROOT}/V31/L2/multichain/warp/config/' '${BACKUP_PATH}/warp-config/' 2>/dev/null || true
+            rsync -a '${REMOTE_ROOT}/V31/L1/core/config/' '${BACKUP_PATH}/core-config/' 2>/dev/null || true
+            rsync -a '${REMOTE_ROOT}/V31/L1/miner/config/' '${BACKUP_PATH}/miner-config/' 2>/dev/null || true
+            rsync -a '${REMOTE_ROOT}/V31/L1/pool/config/' '${BACKUP_PATH}/pool-config/' 2>/dev/null || true
+            rsync -a '${REMOTE_ROOT}/V31/multichain.example.toml' '${BACKUP_PATH}/multichain.example.toml' 2>/dev/null || true
         fi
     " 2>/dev/null || warn "Backup step failed (continuing anyway)"
 else
@@ -99,7 +99,6 @@ RSYNC_EXCLUDES=(
     '--exclude=/zion-miner-smos'
     '--exclude=/APP&WEB'
     '--exclude=/config'
-    '--exclude=/V3/config'
 )
 
 if command -v rsync &>/dev/null; then
@@ -112,25 +111,20 @@ else
     tar czf - \
         --exclude='.git' --exclude='data' --exclude='logs' --exclude='target' \
         --exclude='node_modules' --exclude='.next' --exclude='out' \
-        --exclude='V3/config' \
         -C "${REPO_ROOT}" \
-        V31/ ZION_OS/ ZionDex/ edge-deploy/ scripts/ 2>/dev/null | \
+        V31/ ZION_OS/ edge-deploy/ scripts/ 2>/dev/null | \
         ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "mkdir -p '${REMOTE_ROOT}' && cd '${REMOTE_ROOT}' && tar xzf -"
 fi
 
 # ── Step 2b: Ensure zion user, directories, and permissions ──
-log "Running migration/user setup on Edge..."
+log "Running user setup on Edge..."
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
-    if [[ -f '${REMOTE_ROOT}/V31/deploy/scripts/migrate-to-zion-user.sh' ]]; then
-        bash '${REMOTE_ROOT}/V31/deploy/scripts/migrate-to-zion-user.sh'
-    else
-        id -u zion >/dev/null 2>&1 || useradd --system --home-dir /opt/zion --create-home zion
-        mkdir -p /opt/zion/data /opt/zion/logs /opt/zion/backups /var/log/zion /etc/zion /etc/zion/keys
-        chmod 750 /opt/zion
-        chmod 700 /etc/zion/keys
-        chown -R zion:zion /opt/zion /var/log/zion /etc/zion
-        ln -sfn /opt/zion/data /data/zion || true
-    fi
+    id -u zion >/dev/null 2>&1 || useradd --system --home-dir /opt/zion --create-home zion
+    mkdir -p /opt/zion/data /opt/zion/logs /opt/zion/backups /var/log/zion /etc/zion /etc/zion/keys
+    chmod 750 /opt/zion
+    chmod 700 /etc/zion/keys
+    chown -R zion:zion /opt/zion /var/log/zion /etc/zion
+    ln -sfn /opt/zion/data /data/zion || true
 "
 
 # ── Step 3: Ensure /opt/zion ownership ──
@@ -163,23 +157,7 @@ log "Rebuilding V31 binaries on Edge..."
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
     . /root/.cargo/env || . /opt/zion/.cargo/env
     cd '${REMOTE_ROOT}/V31'
-    # Free-world / issobella / ai-native / native-ffi / cli / smoke are not part of the Edge build set
-    if [ ! -d L5/free-world ]; then
-        sed -i '/\"L5\/free-world\",/d;/\"L6\/issobella\",/d;/\"L4\/oasis\",/d' Cargo.toml 2>/dev/null || true
-        sed -i '/\"L1\/native-ffi\",/d' Cargo.toml 2>/dev/null || true
-        sed -i '/\"L3\/ai-native\",/d' Cargo.toml 2>/dev/null || true
-        sed -i '/\"cli\",/d;/\"smoke\",/d' Cargo.toml 2>/dev/null || true
-    fi
-    cargo build --release --bin zion-node --bin zion-pool --bin zion-miner --bin zion-universal-miner --bin zion-dao --bin warpd --bin zion-oasis 2>&1
-    # Build agent
-    cd '${REMOTE_ROOT}/ZION_OS/agent'
-    cargo build --release 2>&1
-    # Build dashboard
-    cd '${REMOTE_ROOT}/ZION_OS/dashboard/infra'
-    cargo build --release 2>&1
-    # Build DEX router
-    cd '${REMOTE_ROOT}/ZionDex/router'
-    cargo build --release 2>&1
+    cargo build --release --bin zion-node --bin zion-pool --bin zion-miner --bin zion-universal-miner --bin zion-dao --bin zion-oasis 2>&1
 "
 
 # ── Step 5b: Stop standalone services and copy binaries to /usr/local/bin ──
@@ -191,21 +169,28 @@ ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
 
 log "Installing standalone binaries to /usr/local/bin..."
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
-    cp -f '${REMOTE_ROOT}/ZION_OS/agent/target/release/zion-agent' /usr/local/bin/zion-agent
-    cp -f '${REMOTE_ROOT}/ZION_OS/dashboard/infra/target/release/zionos-dashboard' /usr/local/bin/zionos-dashboard
-    cp -f '${REMOTE_ROOT}/ZionDex/router/target/release/ziondex-router' /usr/local/bin/ziondex-router
-    chmod 755 /usr/local/bin/zion-agent /usr/local/bin/zionos-dashboard /usr/local/bin/ziondex-router
+    if [[ -f '${REMOTE_ROOT}/ZION_OS/agent/target/release/zion-agent' ]]; then
+        cp -f '${REMOTE_ROOT}/ZION_OS/agent/target/release/zion-agent' /usr/local/bin/zion-agent
+        chmod 755 /usr/local/bin/zion-agent
+    fi
+    if [[ -f '${REMOTE_ROOT}/ZION_OS/dashboard/infra/target/release/zionos-dashboard' ]]; then
+        cp -f '${REMOTE_ROOT}/ZION_OS/dashboard/infra/target/release/zionos-dashboard' /usr/local/bin/zionos-dashboard
+        chmod 755 /usr/local/bin/zionos-dashboard
+    fi
+    if [[ -f '${REMOTE_ROOT}/ZionDex/router/target/release/ziondex-router' ]]; then
+        cp -f '${REMOTE_ROOT}/ZionDex/router/target/release/ziondex-router' /usr/local/bin/ziondex-router
+        chmod 755 /usr/local/bin/ziondex-router
+    fi
 "
 
 # ── Step 6: Deploy website via Docker ──
 log "Deploying website (Docker)..."
-WEB_DEPLOY_SCRIPT="${REPO_ROOT}/APP&WEB/website-v2.9/scripts/deploy.sh"
-if [[ -x "$WEB_DEPLOY_SCRIPT" ]]; then
-    # The dedicated web deploy script rsyncs source, rebuilds the image, and recreates the container.
+WEB_DEPLOY_SCRIPT="${REMOTE_ROOT}/APP&WEB/website-v2.9/scripts/deploy.sh"
+if ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "test -x '${WEB_DEPLOY_SCRIPT}'" 2>/dev/null; then
     REMOTE_HOST="$EDGE_HOST" REMOTE_USER="$EDGE_USER" SSH_KEY="$SSH_KEY" \
         bash "$WEB_DEPLOY_SCRIPT" --remote-src "$REMOTE_WEB" --remote-compose "$REMOTE_WEB"
 else
-    warn "Website deploy script not found at $WEB_DEPLOY_SCRIPT — skipping web deploy"
+    warn "Website deploy script not found on Edge at ${WEB_DEPLOY_SCRIPT} — skipping web deploy (APP&WEB excluded from rsync)"
 fi
 
 # ── Step 7: Install systemd services and timers ──
@@ -220,8 +205,6 @@ SERVICES=(
     zion-v31-watchdog
     zion-edge-backup
     zion-edge-maintenance
-    zion-edge-agent
-    zion-edge-python-dashboard
 )
 
 for svc in "${SERVICES[@]}"; do
@@ -341,7 +324,7 @@ sleep 10
 
 echo ""
 echo "=== Deployment Status ==="
-for svc in zion-v31-node zion-v31-pool zion-v31-multichain zion-v31-dao zion-v31-oasis zion-v31-miner zion-edge-agent zion-edge-python-dashboard; do
+for svc in zion-v31-node zion-v31-pool zion-v31-multichain zion-v31-dao zion-v31-oasis zion-v31-miner zion-edge-backup zion-edge-maintenance; do
     STATUS=$(ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl is-active ${svc}" 2>/dev/null || true)
     if [[ "$STATUS" == "active" ]]; then
         echo -e "${GREEN}  ${svc} : ACTIVE${NC}"
@@ -357,12 +340,12 @@ else
     echo -e "${RED}  zion-website : OFFLINE${NC}"
 fi
 
-# Agent health check
-AGENT_HEALTH=$(ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "curl -s http://127.0.0.1:8767/health" 2>/dev/null || true)
-if [[ "$AGENT_HEALTH" == "OK" ]]; then
-    echo -e "${GREEN}  zion-agent : HEALTHY (port 8767)${NC}"
+# Dashboard health check
+DASHBOARD_HEALTH=$(ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "curl -s http://127.0.0.1:8766/health" 2>/dev/null || true)
+if [[ "$DASHBOARD_HEALTH" == *"ok"* || "$DASHBOARD_HEALTH" == *"healthy"* ]]; then
+    echo -e "${GREEN}  dashboard : HEALTHY (port 8766)${NC}"
 else
-    echo -e "${RED}  zion-agent : NO RESPONSE${NC}"
+    echo -e "${RED}  dashboard : NO RESPONSE${NC}"
 fi
 
 echo ""
@@ -373,7 +356,6 @@ echo "Quick checks:"
 echo "  ssh ${EDGE_USER}@${EDGE_HOST} 'curl -s http://127.0.0.1:9445/health'"
 echo "  ssh ${EDGE_USER}@${EDGE_HOST} 'curl -s http://127.0.0.1:8080/metrics'"
 echo "  ssh ${EDGE_USER}@${EDGE_HOST} 'curl -s http://127.0.0.1:8453/health'"
-echo "  ssh ${EDGE_USER}@${EDGE_HOST} 'curl -s http://127.0.0.1:8456/health'"
 echo "  ssh ${EDGE_USER}@${EDGE_HOST} 'curl -s http://127.0.0.1:8766/health'"
 echo ""
 echo "Pool endpoint: ${EDGE_HOST}:8444"
