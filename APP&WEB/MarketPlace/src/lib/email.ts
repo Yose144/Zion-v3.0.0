@@ -92,11 +92,19 @@ async function sendWithResend(options: SendMailOptions): Promise<{ messageId?: s
 export async function sendMail(options: SendMailOptions): Promise<{ messageId?: string }> {
   const cfg = emailConfig();
   if (cfg.resendApiKey) {
-    return sendWithResend(options);
+    try {
+      return await sendWithResend(options);
+    } catch (error) {
+      console.warn('Resend failed, falling back to local SMTP:', error);
+    }
   }
   const transporter = createTransporter();
+  // Fallback to the configured shop email when Resend's default/onboarding from address is used
+  const from = options.from.includes('@resend.dev')
+    ? `${cfg.shopName} <${cfg.shopEmail}>`
+    : options.from;
   const info = await transporter.sendMail({
-    from: options.from,
+    from,
     to: options.to,
     replyTo: options.replyTo,
     subject: options.subject,
