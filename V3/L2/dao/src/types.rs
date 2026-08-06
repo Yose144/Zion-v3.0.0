@@ -11,9 +11,9 @@ use serde::{Deserialize, Serialize};
 /// DAO Treasury address on L1 (from genesis premine)
 /// Total: 4,000,000,000 ZION across 3 addresses
 pub const DAO_TREASURY_ADDRESSES: &[&str] = &[
-    "zion1u5u7k43240d5l4d0x7q5m3c4a838z4k000cv3q0", // Community Governance (main) — 2.5B ZION
-    "zion1m8d235x268h8d887s036m8c3x7s356d3r37k6m6", // Grants & Bounties — 1.0B ZION
-    "zion102s8k4k0w783d657j255z865e47054s342u87v3", // Ecosystem Bootstrap — 0.5B ZION
+    "zion1j5a327c7d3w7h4e474n5p4z0z827f8p874mr2p7", // Community Governance (main) — 2.5B ZION
+    "zion1f7g4h034m5l0x3g6q4l5d298d597v5a4q3wc3t7", // Grants & Bounties — 1.0B ZION
+    "zion1a6s5y727s0d5m5s3u448d5g3g60032s6p5xy2l5", // Ecosystem Bootstrap — 0.5B ZION
 ];
 
 /// Flowers per ZION — V3 canonical 6-decimal precision (post-3.0.3 fork).

@@ -9459,7 +9459,7 @@ mod tests {
                 miner_id: "test-miner".to_string(),
                 worker_name: "rig-test".to_string(),
                 algorithm: zion_core::consensus_profile().to_string(),
-                payout_address: "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604".to_string(),
+                payout_address: "zion1k4g2d8s3y4m5v238k0l3v6y5n48894n357uv064".to_string(),
                 backend: "cpu".to_string(),
             },
         )?;
@@ -9701,7 +9701,7 @@ mod tests {
                 miner_id: "test-miner".to_string(),
                 worker_name: "rig-test".to_string(),
                 algorithm: "kheavyhash".to_string(),
-                payout_address: "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604".to_string(),
+                payout_address: "zion1k4g2d8s3y4m5v238k0l3v6y5n48894n357uv064".to_string(),
                 backend: "cpu".to_string(),
             },
         )
@@ -9982,7 +9982,7 @@ mod tests {
                 miner_id: "e2e-miner".to_string(),
                 worker_name: "rig-e2e".to_string(),
                 algorithm: "blake3".to_string(),
-                payout_address: "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604".to_string(),
+                payout_address: "zion1k4g2d8s3y4m5v238k0l3v6y5n48894n357uv064".to_string(),
                 backend: "cpu".to_string(),
             },
         )

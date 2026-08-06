@@ -368,7 +368,7 @@ In the spirit of radical transparency for a pre-launch project, ZION will publis
 10. **L3 WARP** — `V3/L3/warp/src/` — 12-chain cross-chain bridge (BCS, CBOR, TL-B serializers)
 11. **EVM contracts** — `V3/L2/bridge/contracts/` — Solidity sources (wZION, ZIONBridge, Governance, Treasury, Staking, Farm)
 12. **Diff of all security fixes** — git patches for F1, F5, L2 security hardening
-13. **New genesis hash** — `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
+13. **New genesis hash** — `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122`
 14. **Audit checklist** — reproducible verification steps for anyone to validate the new genesis
 
 ### Publication format
@@ -413,7 +413,7 @@ Git history was scrubbed using `git filter-repo --replace-text` on 2026-07-08. 8
 
 1. **Transparency.** After a security incident, trust must be rebuilt through verifiability. Anyone should be able to audit the consensus code, verify the genesis block, and confirm the fix for every vulnerability.
 
-2. **Reproducibility.** The new genesis hash must be independently reproducible. Publishing `genesis.rs` allows anyone to `cargo build` and verify `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`.
+2. **Reproducibility.** The new genesis hash must be independently reproducible. Publishing `genesis.rs` allows anyone to `cargo build` and verify `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122`.
 
 3. **Community.** ZION's vision (Proof-of-Care, humanitarian subsidy model, multi-chain WARP bridge) benefits from open collaboration. Security through obscurity has already failed; security through transparency is the path forward.
 
