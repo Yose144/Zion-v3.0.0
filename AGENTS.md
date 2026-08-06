@@ -2243,3 +2243,15 @@ ZION_POOL_AUXPOW_POOL_PORT_KAS=1206
 - `systemctl is-active zion-v31-node zion-v31-pool zion-v31-multichain zion-v31-dao zion-v31-miner` → all `active`.
 - `curl -s http://127.0.0.1:8453/health` on Edge returns `{"ok":true,"node":"zion-edge-warp-v31",...}`.
 - Pool stratum is live on `62.171.141.136:8444` and broadcasts `mining.notify` to connected miners.
+
+## MarketPlace ↔ OASIS integration
+
+MarketPlace (`APP&WEB/MarketPlace/`) pulls live OASIS game data and surfaces it as tradeable artifacts.
+
+- **OASIS API source:** `http://127.0.0.1:8094` on the Edge server (browser via public proxy `https://oasis.zionterranova.com`). Endpoints used: `/api/v1/oasis/avatars`, `/quests`, `/prize-tiers`, `/map`.
+- **Client library:** `src/lib/oasis-api.ts` defines `AvatarDef`, `QuestDef`, `PrizeTier`, `Territory` and mapping helpers (`avatarToArtifactMetadata`, `questToArtifactMetadata`, `prizeTierToArtifactMetadata`, `territoryToArtifactMetadata`). The mappings read optional `image_url` and `market_url` fields and fall back to sensible category defaults.
+- **Sync route:** `src/app/api/oasis/sync/route.ts` (GET `/api/oasis/sync?type=all|avatars|quests|prizes|territories`) upserts OASIS data into the Prisma `Artifact` table with `contractAddress` keys `oasis-avatar`, `oasis-quest`, `oasis-golden-egg`, `oasis-territory`. It persists `image_url` into `Artifact.imageUri` so the market UI can render real OASIS assets.
+- **Mint route:** `src/app/api/oasis/mint/route.ts` (POST) builds artifact metadata, uploads to IPFS when Pinata keys are configured, and returns `mintParams` for client-side `ZIONArtifact.mint(...)`.
+- **Market API:** `src/lib/market-api.ts` transforms `Artifact` rows (and active `Listing` rows) into `ArtifactCardData` / `ItemDetailData`. It exposes `externalUrl` linking each artifact back to its OASIS category page (`/avatars`, `/quests`, `/golden-egg`, `/territories`). `getItems` and `getItem` call `/api/items` and `/api/items/{id}`.
+- **Fallback UI:** If an artifact has no `imageUri` (or the image fails to load), `src/components/ArtifactPlaceholder.tsx` renders a category-specific Lucide icon colored by the artifact rarity. This replaces the previous generic "Z" placeholder.
+- **Deploy:** after any change, run `npm run build` in `APP&WEB/MarketPlace/`, then `rsync -az --delete APP&WEB/MarketPlace/.next zion-new:/opt/zion/APP&WEB/MarketPlace/` and `systemctl restart zion-marketplace.service`.

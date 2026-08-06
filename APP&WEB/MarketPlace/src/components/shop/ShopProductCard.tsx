@@ -6,6 +6,7 @@ import type { ShopProductData } from '@/types/shop';
 import { getTokens } from '@/lib/shop-api';
 import { useCart } from './CartContext';
 import { useLangT } from '@/lib/useTranslation';
+import { ArtifactPlaceholder } from '@/components/ArtifactPlaceholder';
 
 interface ShopProductCardProps {
   product: ShopProductData;
@@ -48,7 +49,7 @@ export default function ShopProductCard({ product, onOpen }: ShopProductCardProp
       <div className="relative aspect-square rounded-xl overflow-hidden mb-3 artifact-placeholder">
         {imgError || !product.image ? (
           <div className="w-full h-full flex items-center justify-center">
-            <span className="text-5xl text-gradient font-black font-display">Z</span>
+            <ArtifactPlaceholder category={product.category} size={56} />
           </div>
         ) : (
           <img

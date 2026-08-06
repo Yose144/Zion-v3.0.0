@@ -4,8 +4,10 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Zap, Gavel } from 'lucide-react';
 import { useLangT } from '@/lib/useTranslation';
+import { ArtifactPlaceholder, rarityColor, type Rarity } from './ArtifactPlaceholder';
 
-export type Rarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic' | 'unique';
+export type { Rarity };
+export { rarityColor };
 
 export interface ArtifactCardData {
   id: string;
@@ -19,20 +21,6 @@ export interface ArtifactCardData {
   listingType?: 'fixed' | 'auction' | 'none';
   endsAt?: number;       // auction end timestamp
 }
-
-const rarityOrder: Record<Rarity, number> = {
-  common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4, mythic: 5, unique: 6,
-};
-
-const rarityColor: Record<Rarity, string> = {
-  common: '163, 163, 177',
-  uncommon: '7, 137, 48',
-  rare: '252, 209, 22',
-  epic: '228, 30, 43',
-  legendary: '252, 209, 22',
-  mythic: '228, 30, 43',
-  unique: '7, 137, 48',
-};
 
 function timeLeft(ts: number | undefined, t: (key: string, params?: Record<string, string | number>) => string): string | null {
   if (!ts) return null;
@@ -58,9 +46,9 @@ export default function ItemCard({ item }: { item: ArtifactCardData }) {
         <div className="relative aspect-square rounded-xl overflow-hidden mb-3 artifact-placeholder">
           {imgError || !item.image ? (
             <div className="w-full h-full flex items-center justify-center relative">
-              <span className="text-5xl text-gradient font-black font-display relative z-10 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
-                Z
-              </span>
+              <div className="relative z-10 group-hover:scale-110 transition-all duration-500 opacity-90">
+                <ArtifactPlaceholder category={item.category} rarity={item.rarity} size={56} />
+              </div>
             </div>
           ) : (
             <img
@@ -143,5 +131,3 @@ export default function ItemCard({ item }: { item: ArtifactCardData }) {
     </Link>
   );
 }
-
-export { rarityOrder };

@@ -205,6 +205,10 @@ const t = {
     eventSale: { cs: 'Prodej', en: 'Sale' },
     eventPurchase: { cs: 'Nákup', en: 'Purchase' },
     eventBid: { cs: 'Nabídka', en: 'Bid' },
+    viewInOasis: { cs: 'Zobrazit v OASIS', en: 'View in OASIS' },
+    notFoundTitle: { cs: 'Artefakt nenalezen', en: 'Artifact not found' },
+    notFoundSubtitle: { cs: 'Tento předmět není na tržišti nebo nebyl zatím synchronizován z OASIS.', en: 'This item is not on the marketplace or has not been synced from OASIS yet.' },
+    notFoundCta: { cs: 'Prozkoumat tržiště', en: 'Explore marketplace' },
   },
 
   create: {
