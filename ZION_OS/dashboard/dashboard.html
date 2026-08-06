@@ -923,6 +923,10 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       <div class="zhc-value" id="hero-network-status">Loading…</div>
       <div class="zhc-sub" id="hero-network-sub">—</div>
       <div class="zhc-extra" id="hero-network-extra" style="margin-top:0.5rem;display:flex;gap:0.75rem;flex-wrap:wrap;"></div>
+      <div style="margin-top:0.6rem;display:flex;gap:0.4rem;flex-wrap:wrap;">
+        <button onclick="switchTab('topology')" class="text-[9px] px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">Topology</button>
+        <button onclick="heroOpenLogs('v31-node')" class="text-[9px] px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">📋 Node Logs</button>
+      </div>
     </div>
     <div class="zion-hero-card" style="--rc:228 30 43;">
       <div class="zhc-icon">⛏</div>
@@ -930,6 +934,10 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       <div class="zhc-value" id="hero-pool-sessions">—</div>
       <div class="zhc-sub" id="hero-pool-sub">active sessions</div>
       <div class="zhc-extra" id="hero-pool-extra" style="margin-top:0.5rem;display:flex;gap:0.75rem;flex-wrap:wrap;"></div>
+      <div style="margin-top:0.6rem;display:flex;gap:0.4rem;flex-wrap:wrap;">
+        <button onclick="switchTab('payout')" class="text-[9px] px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">Payouts</button>
+        <button onclick="heroOpenLogs('v31-pool')" class="text-[9px] px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">📋 Pool Logs</button>
+      </div>
     </div>
     <div class="zion-hero-card" style="--rc:252 209 22;">
       <div class="zhc-icon">🔗</div>
@@ -937,6 +945,10 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       <div class="zhc-value" id="hero-chain-height">—</div>
       <div class="zhc-sub" id="hero-block-sub">chain height</div>
       <div class="zhc-extra" id="hero-block-extra" style="margin-top:0.5rem;display:flex;gap:0.75rem;flex-wrap:wrap;"></div>
+      <div style="margin-top:0.6rem;display:flex;gap:0.4rem;flex-wrap:wrap;">
+        <button onclick="switchTab('explorer')" class="text-[9px] px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">Explorer</button>
+        <button onclick="switchTab('overview')" class="text-[9px] px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">Overview</button>
+      </div>
     </div>
     <div class="zion-hero-card" style="--rc:7 137 48;">
       <div class="zhc-icon">⚡</div>
@@ -944,6 +956,10 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       <div class="zhc-value" id="hero-active-miners">—</div>
       <div class="zhc-sub" id="hero-miner-sub">connected workers</div>
       <div class="zhc-extra" id="hero-miner-extra" style="margin-top:0.5rem;display:flex;gap:0.75rem;flex-wrap:wrap;"></div>
+      <div style="margin-top:0.6rem;display:flex;gap:0.4rem;flex-wrap:wrap;">
+        <button onclick="switchTab('controls')" class="text-[9px] px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">Controls</button>
+        <button onclick="heroOpenLogs('v31-miner')" class="text-[9px] px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">📋 Miner Logs</button>
+      </div>
     </div>
   </section>
 
@@ -6411,8 +6427,9 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
           <option value="v31-node2">v31-node2</option>
           <option value="v31-node3">v31-node3</option>
           <option value="local-backup">local-backup</option>
-          <option value="pool">pool</option>
-          <option value="miner">miner</option>
+          <option value="v31-pool">v31-pool</option>
+          <option value="v31-miner">v31-miner</option>
+          <option value="miner">miner (legacy)</option>
           <option value="miner-gpu">miner-gpu</option>
           <option value="hiranyagarbha">hiranyagarbha</option>
           <option value="hiran">hiran</option>

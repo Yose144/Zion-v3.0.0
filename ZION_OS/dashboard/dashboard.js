@@ -254,6 +254,16 @@ function switchTab(name){
   if(name === 'poc-lab'){ pocCheckStatus(); }
 }
 
+// ── Hero card quick-log shortcut: switch to Logs tab + select service + start streaming ──
+function heroOpenLogs(svcId){
+  switchTab('logs');
+  // initLogPane is called synchronously by switchTab; wait one tick for DOM
+  setTimeout(() => {
+    logSelectSvc(svcId);
+    logStreamStart();
+  }, 50);
+}
+
 // ─────────────────────────────────────────────────────────────────────
 // Main refresh (overview)
 // ─────────────────────────────────────────────────────────────────────
@@ -9085,9 +9095,11 @@ const LOG_SERVICES = [
   { id: 'v31-node2',     label: 'V31 Node 2',    icon: '🛰️', color: 'amber',   group: 'node'  },
   { id: 'v31-node3',     label: 'V31 Node 3',    icon: '📡', color: 'purple',  group: 'node'  },
   { id: 'local-backup',  label: 'Local Backup',  icon: '💎', color: 'cyan',    group: 'node'  },
-  // L1 services
-  { id: 'pool',          label: 'Pool',          icon: '🏊', color: 'cyan',    group: 'L1'    },
-  { id: 'miner',         label: 'Miner',         icon: '⛏️', color: 'amber',   group: 'L1'    },
+  // L1 services — V31 (journalctl-backed)
+  { id: 'v31-pool',      label: 'V31 Pool',      icon: '🏊', color: 'cyan',    group: 'L1'    },
+  { id: 'v31-miner',     label: 'V31 Miner',     icon: '⛏️', color: 'amber',   group: 'L1'    },
+  // L1 services — legacy
+  { id: 'miner',         label: 'Miner (legacy)',icon: '⛏️', color: 'amber',   group: 'L1'    },
   { id: 'miner-gpu',     label: 'Miner GPU',     icon: '⛏️', color: 'amber',   group: 'L1'    },
   // AI
   { id: 'hiranyagarbha', label: 'Hiranyagarbha', icon: '🧠', color: 'purple',  group: 'AI'    },
@@ -9108,7 +9120,7 @@ const LOG_SERVICES = [
   { id: 'control-audit', label: 'Audit Log',     icon: '📝', color: 'gray',    group: 'infra' },
 ];
 
-let _logActiveSvc   = 'local-backup';
+let _logActiveSvc   = 'v31-node';
 let _logSseSource   = null;   // current EventSource
 let _logLineCount   = 0;
 let _logAutoScroll  = true;
@@ -9160,7 +9172,7 @@ function initLogPane() {
   });
 
   // Select first by default
-  logSelectSvc('local-backup');
+  logSelectSvc('v31-node');
   refreshLogFiles();
 }
 
