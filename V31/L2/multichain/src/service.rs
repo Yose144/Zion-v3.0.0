@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex as StdMutex};
 
 use tokio::sync::{Mutex, RwLock};
 use zion_l1_types::{Address, Amount, Asset, ChainId, Hash};
+use zion_pool::telemetry::MinerTelemetryRegistry;
 use zion_pool::Pool as MiningPool;
 
 use crate::bridge::Bridge;
@@ -88,7 +89,10 @@ impl MultichainService {
         let htlc = HtlcSwap::with_db(Arc::clone(&adapters), Arc::clone(&db));
         let pool = config.pool.as_ref().and_then(|p| {
             if p.enabled {
-                Some(Arc::new(StdMutex::new(MiningPool::new(p.to_pool_config()))))
+                Some(Arc::new(StdMutex::new(MiningPool::new(
+                    p.to_pool_config(),
+                    Arc::new(StdMutex::new(MinerTelemetryRegistry::new())),
+                ))))
             } else {
                 None
             }
