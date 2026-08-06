@@ -222,6 +222,15 @@ impl L1Scanner {
             let block = match self.get_block(height).await {
                 Ok(b) => b,
                 Err(e) => {
+                    let msg = e.to_string();
+                    if msg.contains("null result") {
+                        // Block was pruned (block retention) — skip and advance cursor
+                        debug!("[DAO-SCANNER] Block {} pruned (null result), skipping", height);
+                        let db = self.db.lock().await;
+                        db.set_last_scanned_block(height)?;
+                        drop(db);
+                        continue;
+                    }
                     warn!("[DAO-SCANNER] Failed to fetch block {}: {}", height, e);
                     break;
                 }
