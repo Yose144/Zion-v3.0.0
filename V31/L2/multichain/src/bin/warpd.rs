@@ -123,6 +123,11 @@ async fn main() -> ExitCode {
     if let Some(db) = &cli.db {
         config.database_path = db.clone();
     }
+    if let Ok(l1_rpc_url) = std::env::var("ZION_L1_RPC_URL") {
+        if !l1_rpc_url.is_empty() {
+            config.l1_rpc_url = l1_rpc_url;
+        }
+    }
 
     let runtime = match WarpRuntime::new(config.clone()) {
         Ok(r) => r,

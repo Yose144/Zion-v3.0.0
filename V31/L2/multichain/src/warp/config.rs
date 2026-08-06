@@ -56,7 +56,7 @@ impl Default for WarpConfig {
             quorum: 3,
             daily_limit_zion: 10_000_000,
             timelock_threshold_zion: 1_000_000,
-            l1_rpc_url: "http://localhost:8443".into(),
+            l1_rpc_url: "http://127.0.0.1:9445".into(),
             l1_vault_address: "zion1warp_vault_address".into(),
             chains: vec![],
             poll_interval_secs: None,
