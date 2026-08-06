@@ -4,7 +4,7 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use zion_cosmic_harmony::ExternalCoin;
 use zion_miner::auxpow::hasher::{hash_for_coin, meets_target};
-use zion_miner::auxpow::{Share as AuxShare, StratumClient};
+use zion_miner::auxpow::{Share as AuxShare, ShareResult, StratumClient};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ShareForwardResult {
@@ -128,7 +128,9 @@ impl ShareForwarder {
         };
 
         match self.client.submit_share(&share).await {
-            Ok(()) => Ok(ShareForwardResult::Accepted),
+            Ok(ShareResult::Accepted) => Ok(ShareForwardResult::Accepted),
+            Ok(ShareResult::Rejected(reason)) => Ok(ShareForwardResult::Rejected(reason)),
+            Ok(ShareResult::Unknown) | Ok(ShareResult::NoShare) => Ok(ShareForwardResult::Unknown),
             Err(e) => {
                 tracing::warn!("auxpow: submit_share error: {e}");
                 Ok(ShareForwardResult::Unknown)
