@@ -3667,7 +3667,7 @@ pub mod opencl_deeksha {
                 return Ok((platform, device, platform_name, device_name));
             }
 
-            candidates.sort_by(|a, b| b.0.cmp(&a.0));
+            candidates.sort_by_key(|b| std::cmp::Reverse(b.0));
             let (_, pidx, didx, platform, device, platform_name, device_name) =
                 candidates.swap_remove(0);
             println!(

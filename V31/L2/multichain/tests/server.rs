@@ -175,3 +175,69 @@ async fn intent_http_lifecycle_happy_path() {
         "executed"
     );
 }
+
+#[tokio::test]
+async fn http_solver_endpoint_returns_bid_for_valid_intent() {
+    let service = test_service();
+    let server = ApiServer::new(ServerConfig::default(), service);
+    let app = server.router();
+
+    // Deploy a ZION/USDC pool.
+    let zion = Asset::native(zion_l1_types::ChainId::ZionL1, "ZION", 6, "ZION");
+    let usdc = Asset::native(zion_l1_types::ChainId::ZionL1, "USDC", 6, "USD Coin");
+    let pool_body = serde_json::json!({
+        "id": 1,
+        "asset_a": zion,
+        "asset_b": usdc,
+        "reserve_a": 100000000000_u64,
+        "reserve_b": 1000000000000_u64,
+        "fee_bps": 30,
+    });
+    let response = app
+        .clone()
+        .oneshot(build_request(
+            "POST",
+            "/v1/swap/pool/deploy",
+            pool_body.to_string(),
+        ))
+        .await
+        .expect("request ok");
+    assert_eq!(response.status(), StatusCode::OK);
+
+    // Ask the local solver endpoint to price a same-chain intent.
+    let intent_id = uuid::Uuid::new_v4();
+    let min_amount_out = 900_000_u128;
+    let solve_body = serde_json::json!({
+        "id": intent_id,
+        "user": "zion1user",
+        "from_asset": zion.id,
+        "to_asset": usdc.id,
+        "amount_in": 1_000_000_u64,
+        "min_amount_out": min_amount_out,
+        "deadline": u64::MAX,
+        "nonce": 1,
+        "signature": [],
+        "status": "pending",
+    });
+    let response = app
+        .clone()
+        .oneshot(build_request(
+            "POST",
+            "/v1/swap/solve",
+            solve_body.to_string(),
+        ))
+        .await
+        .expect("request ok");
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .expect("read body");
+    let bid: zion_multichain::swap::dex::intent::SolverBid =
+        serde_json::from_slice(&bytes).expect("valid SolverBid");
+    assert_eq!(bid.intent_id, intent_id);
+    assert_eq!(bid.path.len(), 1);
+    assert_eq!(bid.path[0].from_token, zion.id);
+    assert_eq!(bid.path[0].to_token, usdc.id);
+    assert!(bid.amount_out.0 >= min_amount_out);
+}
