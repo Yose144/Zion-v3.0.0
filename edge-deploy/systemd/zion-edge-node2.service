@@ -1,17 +1,18 @@
 [Unit]
-Description=ZION Edge Node 2 (Follower / P2P Peer)
-After=network-online.target zion-edge-node1.service
+Description=ZION V31 Edge Node 2 (P2P Peer of primary)
+After=network-online.target zion-v31-node.service
 Wants=network-online.target
-Requires=zion-edge-node1.service
+Requires=zion-v31-node.service
 
 [Service]
 Type=simple
 User=zion
 Group=zion
 WorkingDirectory=/opt/zion
-EnvironmentFile=/etc/zion/edge-node2-environment.sh
+EnvironmentFile=/etc/zion/edge-environment.sh
 Environment="RUST_LOG=info,zion_core=debug"
-ExecStart=/opt/zion/V3/target/release/node
+Environment="ZION_SEED_PEERS=127.0.0.1:8335"
+ExecStart=/opt/zion/V31/target/release/zion-node --db-path /opt/zion/data/v31/node2.db --rpc 127.0.0.1:9447 --p2p 0.0.0.0:8337 --node-id zion-edge-node2 --peer 127.0.0.1:8335
 Restart=always
 RestartSec=10
 KillMode=process

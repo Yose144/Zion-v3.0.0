@@ -116,7 +116,8 @@ pub async fn get_chain_height(rpc_addr: &str) -> anyhow::Result<u64> {
     .await?;
 
     result
-        .get("chain_height")
+        .get("result")
+        .and_then(|r| r.get("chain_height"))
         .and_then(|v| v.as_u64())
         .ok_or_else(|| anyhow::anyhow!("missing chain_height in getChainInfo response"))
 }
@@ -140,7 +141,11 @@ pub async fn get_chain_difficulty(rpc_addr: &str) -> u64 {
         Ok(b) => b,
         Err(_) => return 0,
     };
-    block.get("difficulty").and_then(|v| v.as_u64()).unwrap_or(0)
+    block
+        .get("result")
+        .and_then(|r| r.get("difficulty"))
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0)
 }
 
 // ── Fee payout ─────────────────────────────────────────────────────
