@@ -20,12 +20,12 @@
 # ── Canonical Fee Split Addresses (89/5/5/1 burn model — no pool fee wallet) ──
 # NOTE: ZION_MINER_ADDRESS = default_miner canonical wallet (89% coinbase).
 # Local miners should set their own ZION_MINER_ADDRESS in launch scripts.
-ZION_MINER_ADDRESS=zion1d6m0h2r8m7k8k2d8n072y7j3j4m0254323vq0e3
+ZION_MINER_ADDRESS=zion1u4a82230m0a267r785m822u5a3g7n753d7eu5n0
 
 # Edge CPU miner payout address (must be a valid 44-char zion1 address)
-ZION_PAYOUT_ADDRESS=zion1d6m0h2r8m7k8k2d8n072y7j3j4m0254323vq0e3
-ZION_HUMANITARIAN_WALLET=zion1e0u5q5s660k4m4a634p2c2v358r8g59564054z7
-ZION_ISSOBELLA_WALLET=zion1f7y7l5k678y0v408e8s654d2282346k375526t2
+ZION_PAYOUT_ADDRESS=zion1u4a82230m0a267r785m822u5a3g7n753d7eu5n0
+ZION_HUMANITARIAN_WALLET=zion136m4u7f8s5w3l0e00342s7a4r282275442vm2w3
+ZION_ISSOBELLA_WALLET=zion173g835z228z6u303z59603y236r5e854l36g604
 # Network configuration
 ZION_NETWORK=Mainnet
 ZION_SEED_PEERS=127.0.0.1:8334
