@@ -11,7 +11,7 @@ Group=zion
 WorkingDirectory=/opt/zion
 EnvironmentFile=/etc/zion/edge-environment.sh
 Environment="RUST_LOG=info,zion_multichain=debug"
-ExecStart=/opt/zion/V31/target/release/warpd
+ExecStart=/opt/zion/V31/target/release/warpd --config /etc/zion/warp.toml --listen 127.0.0.1:8453 --db /data/zion/warp.db
 Restart=always
 RestartSec=10
 KillMode=process

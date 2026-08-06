@@ -205,7 +205,7 @@ impl DexRouter {
         }
 
         // Sort by expected_out descending
-        all_paths.sort_by(|a, b| b.expected_out.cmp(&a.expected_out));
+        all_paths.sort_by_key(|b| std::cmp::Reverse(b.expected_out));
         all_paths.truncate(n);
         Ok(all_paths)
     }

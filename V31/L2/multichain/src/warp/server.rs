@@ -7,7 +7,7 @@
 //! | Method | Path                       | Description                  |
 //! |--------|----------------------------|------------------------------|
 //! | GET    | `/health`                  | Liveness check               |
-//! | GET    | `/metrics`                 | Bridge metrics snapshot      |
+//! | GET    | `/metrics`                 | Prometheus metrics (JSON with `Accept: application/json`) |
 //! | GET    | `/chains`                  | Registered chains            |
 //! | GET    | `/transfers`               | List transfers (newest first) |
 //! | GET    | `/transfers/pending`       | Pending transfers only       |
@@ -20,7 +20,7 @@ use std::sync::Arc;
 
 use axum::{
     extract::{Path, State},
-    http::StatusCode,
+    http::{header, HeaderMap, HeaderValue, StatusCode},
     response::IntoResponse,
     routing::{get, post},
     Json, Router,
@@ -204,9 +204,30 @@ async fn health(State(s): State<WarpState>) -> impl IntoResponse {
     })
 }
 
-async fn metrics(State(s): State<WarpState>) -> impl IntoResponse {
+async fn metrics(State(s): State<WarpState>, headers: HeaderMap) -> impl IntoResponse {
     let r = s.router.lock().await;
-    Json(r.metrics.snapshot())
+    let accepts_json = headers
+        .get(header::ACCEPT)
+        .and_then(|v| v.to_str().ok())
+        .map(|v| v.contains("application/json"))
+        .unwrap_or(false);
+
+    if accepts_json {
+        Json(r.metrics.snapshot()).into_response()
+    } else {
+        let body = r.metrics.prometheus_output(&s.config.node_id);
+        (
+            StatusCode::OK,
+            [(
+                header::CONTENT_TYPE,
+                HeaderValue::from_static(
+                    "text/plain; version=0.0.4; charset=utf-8",
+                ),
+            )],
+            body,
+        )
+            .into_response()
+    }
 }
 
 async fn chains(State(s): State<WarpState>) -> impl IntoResponse {

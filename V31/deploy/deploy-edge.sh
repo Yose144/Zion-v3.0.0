@@ -71,7 +71,8 @@ if ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "test -d '${REMOTE_ROOT}'" 2>/dev/n
             rsync -a '${REMOTE_ROOT}/V31/L1/core/config/' '${BACKUP_PATH}/core-config/' 2>/dev/null || true
             rsync -a '${REMOTE_ROOT}/V31/L1/miner/config/' '${BACKUP_PATH}/miner-config/' 2>/dev/null || true
             rsync -a '${REMOTE_ROOT}/V31/L1/pool/config/' '${BACKUP_PATH}/pool-config/' 2>/dev/null || true
-            rsync -a '${REMOTE_ROOT}/V31/multichain.example.toml' '${BACKUP_PATH}/multichain.example.toml' 2>/dev/null || true
+            test -f /etc/zion/warp.toml && cp -a /etc/zion/warp.toml '${BACKUP_PATH}/warp.toml' 2>/dev/null || true
+            rsync -a '${REMOTE_ROOT}/V31/L2/multichain/warp.example.toml' '${BACKUP_PATH}/warp.example.toml' 2>/dev/null || true
         fi
     " 2>/dev/null || warn "Backup step failed (continuing anyway)"
 else
@@ -152,12 +153,31 @@ if [[ "${LIVE_ENV_CHECK}" != "0" && -n "${LIVE_ENV_CHECK}" ]]; then
 fi
 log "Live env file verified: no placeholders detected."
 
+# ── Step 4b: Install WARP config if missing (never overwrite live config) ──
+log "Checking WARP configuration..."
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
+    if [[ ! -f /etc/zion/warp.toml ]]; then
+        cp -f '${REMOTE_ROOT}/V31/L2/multichain/warp.example.toml' /etc/zion/warp.toml
+        chown zion:zion /etc/zion/warp.toml
+        chmod 640 /etc/zion/warp.toml
+        echo 'Installed /etc/zion/warp.toml from example — review and set real contract addresses before mainnet use.'
+    fi
+"
+
+# Verify live warp.toml has real contract addresses (not placeholders)
+LIVE_WARP_CHECK=$(ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
+    grep -cE 'placeholder|<SET_VIA_DEPLOYMENT>|zion1warp_vault_address' /etc/zion/warp.toml 2>/dev/null || true
+" 2>/dev/null | tr -d '[:space:]')
+if [[ "${LIVE_WARP_CHECK}" != "0" && -n "${LIVE_WARP_CHECK}" ]]; then
+    warn "/etc/zion/warp.toml contains ${LIVE_WARP_CHECK} placeholder(s) — non-EVM relay will be disabled until real contract addresses are set."
+fi
+
 # ── Step 5: Rebuild binaries on Edge ──
 log "Rebuilding V31 binaries on Edge..."
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
     . /root/.cargo/env || . /opt/zion/.cargo/env
     cd '${REMOTE_ROOT}/V31'
-    cargo build --release --bin zion-node --bin zion-pool --bin zion-miner --bin zion-universal-miner --bin zion-dao --bin zion-oasis 2>&1
+    cargo build --release --bin zion-node --bin zion-pool --bin zion-miner --bin zion-universal-miner --bin zion-dao --bin zion-oasis --bin warpd 2>&1
 "
 
 # ── Step 5b: Stop standalone services and copy binaries to /usr/local/bin ──
@@ -176,10 +196,6 @@ ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
     if [[ -f '${REMOTE_ROOT}/ZION_OS/dashboard/infra/target/release/zionos-dashboard' ]]; then
         cp -f '${REMOTE_ROOT}/ZION_OS/dashboard/infra/target/release/zionos-dashboard' /usr/local/bin/zionos-dashboard
         chmod 755 /usr/local/bin/zionos-dashboard
-    fi
-    if [[ -f '${REMOTE_ROOT}/ZionDex/router/target/release/ziondex-router' ]]; then
-        cp -f '${REMOTE_ROOT}/ZionDex/router/target/release/ziondex-router' /usr/local/bin/ziondex-router
-        chmod 755 /usr/local/bin/ziondex-router
     fi
 "
 

@@ -50,6 +50,33 @@ impl WarpMetrics {
         self.failed.load(Ordering::Relaxed)
     }
 
+    /// Render counters and gauges in the Prometheus exposition format.
+    pub fn prometheus_output(&self, node_id: &str) -> String {
+        let s = self.snapshot();
+        format!(
+            "# HELP warp_transfers_initiated_total Total WARP transfers initiated.\n\
+             # TYPE warp_transfers_initiated_total counter\n\
+             warp_transfers_initiated_total{{node=\"{}\"}} {}\n\
+             # HELP warp_transfers_completed_total Total WARP transfers completed.\n\
+             # TYPE warp_transfers_completed_total counter\n\
+             warp_transfers_completed_total{{node=\"{}\"}} {}\n\
+             # HELP warp_transfers_failed_total Total WARP transfers failed.\n\
+             # TYPE warp_transfers_failed_total counter\n\
+             warp_transfers_failed_total{{node=\"{}\"}} {}\n\
+             # HELP warp_transfers_pending Current WARP transfers pending completion.\n\
+             # TYPE warp_transfers_pending gauge\n\
+             warp_transfers_pending{{node=\"{}\"}} {}\n\
+             # HELP warp_success_rate Ratio of completed to initiated transfers.\n\
+             # TYPE warp_success_rate gauge\n\
+             warp_success_rate{{node=\"{}\"}} {:.6}\n",
+            node_id, s.transfers_initiated,
+            node_id, s.transfers_completed,
+            node_id, s.transfers_failed,
+            node_id, s.transfers_pending,
+            node_id, s.success_rate,
+        )
+    }
+
     pub fn snapshot(&self) -> MetricsSnapshot {
         let initiated = self.transfers_initiated();
         let completed = self.transfers_completed();
@@ -131,5 +158,17 @@ mod tests {
         let snap = m.snapshot();
         let json = serde_json::to_string(&snap).unwrap();
         assert!(json.contains("transfers_initiated"));
+    }
+
+    #[test]
+    fn test_prometheus_output() {
+        let m = WarpMetrics::new();
+        m.record_transfer_initiated();
+        m.record_transfer_completed();
+        m.record_transfer_failed();
+        let out = m.prometheus_output("warp-node-1");
+        assert!(out.contains("# HELP warp_transfers_initiated_total"));
+        assert!(out.contains("warp_transfers_initiated_total{node=\"warp-node-1\"} 1"));
+        assert!(out.contains("# TYPE warp_success_rate gauge"));
     }
 }

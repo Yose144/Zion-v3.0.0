@@ -32,6 +32,7 @@ Vše ostatní je uzavřené za firewallem, proxované přes nginx s IP allowlist
 - Na serveru `62.171.141.136` (Contabo, IPv6 `2a02:c207:2342:5821::1`) používej default-deny `ufw` nebo `nftables`.
 - Input chain: `DROP` jako výchozí politika, pak explicitní `ALLOW` pro známé služby a zdroje.
 - Nepoužívej `ACCEPT` pro RPC port `9443` z internetu — ten je lokální (`127.0.0.1:9443`) a veřejný přístup jde přes nginx na `rpc.zionterranova.com:8443` s operátorským allowlistem.
+- WARP / multichain API (`warpd`) běží na `127.0.0.1:8453` — není veřejně dostupné. Veřejný přístup jde přes nginx `location /api/warp/` na `zionterranova.com`.
 - P2P porty `8333`/`8334` jsou otevřené jen pro známé peery / bootstrap seznam. Pokud možno filtruj podle whitelisted peer IPs a používej `fail2ban` jail `zion-p2p` pro detekci port scanu / reconnect stormu.
 - SSH autentizace výhradně přes klíč. Žádné root heslo. SSH běží na portech `22` a `2222`, IPv4 i IPv6. Port `22` a `2222` musí mít `AddressFamily any` a správné `ListenStream` v `systemd` drop-ins (`/etc/systemd/system/ssh.socket.d/`), aby nedošlo k IPv6-only situaci.
 - `fail2ban` musí být aktivní se jménem `zion-p2p` (maxretry=50/10min, bantime=24h dle provozní zkušenosti) a s aktuálními `ignoreip`.
