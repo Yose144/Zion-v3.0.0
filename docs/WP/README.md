@@ -1,7 +1,7 @@
 # ZION Whitepapers & Documentation
 
 This directory contains the canonical whitepapers and documentation for
-ZION TerraNova v3 — Mainnet Alpha 3.1.
+ZION TerraNova v3 — Mainnet Stable 3.2 "One Love."
 
 ## Documents
 
@@ -9,8 +9,10 @@ ZION TerraNova v3 — Mainnet Alpha 3.1.
 
 | Document | Language | Format | Description |
 |----------|----------|--------|-------------|
-| `ZION_MASTER_WHITEPAPER_3.1_CZ.md` | Czech | Markdown | The Golden Book — canonical synthesis of all four books (Genesis, Quantum Revolution, Ekam Deeksha, Terra Nova) for Mainnet Alpha 3.1 |
-| `ZION_MASTER_WHITEPAPER_3.1_EN.md` | English | Markdown | English translation of the Golden Book |
+| `ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_EN.md` | English | Markdown | **One Love** — canonical synthesis of all four books for Mainnet Stable 3.2. Inspired by the spirit of Bob Marley. |
+| `ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_CZ.md` | Czech | Markdown | Czech translation of the One Love whitepaper |
+| `ZION_MASTER_WHITEPAPER_3.1_EN.md` | English | Markdown | The Golden Book — canonical synthesis for Mainnet Alpha 3.1 (previous) |
+| `ZION_MASTER_WHITEPAPER_3.1_CZ.md` | Czech | Markdown | Czech translation of the Golden Book (previous) |
 
 ### Story / Narrative
 
@@ -32,9 +34,9 @@ ZION TerraNova v3 — Mainnet Alpha 3.1.
 
 ## How to Read
 
-- **Want the whole picture?** Read the Master Whitepaper (Golden Book) —
+- **Want the whole picture?** Read the One Love Whitepaper (3.2) —
   the canonical synthesis of all four books with the technical anchor
-  facts and the Mainnet Alpha 3.1 roadmap.
+  facts and the Mainnet Stable 3.2 roadmap.
 - **Want the story?** Start with the Fable Edition (WpLite) — a fairy tale
   with verifiable facts after each chapter.
 - **Want the technical details?** Read the Technical Whitepaper — the
@@ -47,7 +49,8 @@ ZION TerraNova v3 — Mainnet Alpha 3.1.
 
 All essential facts are public and verifiable:
 
-- **Genesis hash**: `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
+- **Genesis hash (V3 compat)**: `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122`
+- **Genesis hash (V31 native)**: `21e2b2742ec774a37ea1df4a643b954110dd3f803fa48675416b81d6c5baba60`
 - **Total supply**: 144,000,000,000 ZION
 - **Premine**: 16,780,000,000 ZION (transparent outputs in block 0)
 - **Block reward split**: 89/5/5/1 (consensus-enforced)
@@ -60,4 +63,5 @@ ZION v3 open-source project.
 
 ---
 
+*One love. One heart. One Zion.*
 *Gate, Gate, Paragate, Parasamgate, Bodhi Svaha.*

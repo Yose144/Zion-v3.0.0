@@ -5,7 +5,7 @@ ZION v3 Genesis Block — Prohlášení tvůrce
 
 Já, Yose, tvůrce ZION, tímto potvrzuji:
 
-1. Genesis blok s hashem 4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e je kanonický genesis blok ZION v3 mainnet.
+1. Genesis blok s hashem 08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122 je kanonický genesis blok ZION v3 mainnet.
 
 2. Všech 14 premine outputů v celkové hodnotě 16 780 000 000 ZION bylo alokováno v souladu s designem protokolu.
 

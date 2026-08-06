@@ -20,7 +20,7 @@
 | `DECAY_DENOMINATOR` | `5` | Decay factor denominator |
 | `MAX_DECAY_DECADES` | `10` | Decades before tail emission |
 | `BASE_REWARD` | `5_400_067_000` flowers | Initial block reward (5,400.067 ZION) — 6-decimal scale (3.0.3 fork) |
-| `GENESIS_HASH` | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` | Current canonical genesis (3.0.4 hard reset, 2026-07-06) |
+| `GENESIS_HASH` | `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122` | Current canonical genesis (3.0.4 hard reset, 2026-07-06) |
 | `TAIL_REWARD` | `724_784_723` flowers | Perpetual tail emission (~724.7847 ZION) — 6-decimal scale (3.0.3 fork) |
 | `COINBASE_MATURITY` | `100` | Blocks before coinbase spendable |
 | `MINER_PCT` | `89` | Miner share of block reward (%) |
@@ -61,11 +61,11 @@
 
 | Label | Address |
 |-------|---------|
-| `MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET` | `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4` |
-| `MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET` | `zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702` |
-| `MAINNET_CANONICAL_POOL_FEE_SUBSIDY_WALLET` | `zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342` |
-| `MAINNET_CANONICAL_DEFAULT_MINER_WALLET` | `zion1w523a76830x2t5m7f3j023w265e8g5c400a4790` |
-| `MAINNET_CANONICAL_POOL_PAYOUT_WALLET` | `zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604` |
+| `MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET` | `zion136m4u7f8s5w3l0e00342s7a4r282275442vm2w3` |
+| `MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET` | `zion173g835z228z6u303z59603y236r5e854l36g604` |
+| `MAINNET_CANONICAL_POOL_FEE_SUBSIDY_WALLET` | `zion1e6r72872w0y5w6c3h4e6z847g8z4z7l0n4rj607` |
+| `MAINNET_CANONICAL_DEFAULT_MINER_WALLET` | `zion1u4a82230m0a267r785m822u5a3g7n753d7eu5n0` |
+| `MAINNET_CANONICAL_POOL_PAYOUT_WALLET` | `zion1k4g2d8s3y4m5v238k0l3v6y5n48894n357uv064` |
 
 > These addresses are hardcoded in `genesis.rs` and derived deterministically from canonical labels.
 > Premine addresses are in `PREMINE_ADDRESSES_PUBLIC.txt`.
