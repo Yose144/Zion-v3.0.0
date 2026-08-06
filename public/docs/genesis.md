@@ -1,6 +1,6 @@
 # ZION v3 — Genesis Blok
 
-> **Genesis hash**: `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
+> **Genesis hash**: `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122`
 > **Timestamp**: `1767225600` (2026-01-01 00:00:00 UTC)
 > **Zdroj**: [`V3/L1/core/src/genesis.rs`](../V3/L1/core/src/genesis.rs)
 
@@ -35,7 +35,7 @@ Genesis blok obsahuje:
 ### Hash
 
 ```
-4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e
+08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122
 ```
 
 Tento hash je **deterministický** — je vypočítán z konstrukce genesis bloku
@@ -121,11 +121,11 @@ Všech 14 premine outputů je **admin-locked** (vyžaduje 3-of-3 admin multisig
 
 | # | Adresa | Částka (ZION) |
 |---|--------|---------------|
-| 1 | `zion1n3t6v6w3m8g4v6q8g7h7j4j6f7s8q2m7g7un8u0` | 1 650 000 000 |
-| 2 | `zion16854w6h7a800k6h8n052s0h4k2v625x0w0z2320` | 1 650 000 000 |
-| 3 | `zion1j8s2d6s6f248j7z3m80676p6m074x2q5p5er3w2` | 1 650 000 000 |
-| 4 | `zion155k300w6x726p4x0w473s704d5k35865r2q75z8` | 1 650 000 000 |
-| 5 | `zion1y293r8c6l5p3u0y7j8q8366372t7y070n3rp5r8` | 1 650 000 000 |
+| 1 | `zion172h3y7d6m7d7y7d8q2d4x363t0m55227n2rt2v2` | 1 650 000 000 |
+| 2 | `zion1e7n6j8r28324y487w826s7f3547290m8p0y54t4` | 1 650 000 000 |
+| 3 | `zion1m0c7n2v060r6r4x6d4a2u4u5t305f677w6ws0p4` | 1 650 000 000 |
+| 4 | `zion15647n3n8u696t548u0028868p746c838f59g7a3` | 1 650 000 000 |
+| 5 | `zion190p6f0k0r3c2j4h0k8p340t5s6m5z75287d72d2` | 1 650 000 000 |
 
 **Účel**: OASIS platforma odměny + Golden Egg/XP výherní ceny.
 
@@ -133,9 +133,9 @@ Všech 14 premine outputů je **admin-locked** (vyžaduje 3-of-3 admin multisig
 
 | # | Adresa | Částka (ZION) | Účel |
 |---|--------|---------------|------|
-| 6 | `zion1u5u7k43240d5l4d0x7q5m3c4a838z4k000cv3q0` | 2 500 000 000 | Komunitní governance (hlavní) |
-| 7 | `zion1m8d235x268h8d887s036m8c3x7s356d3r37k6m6` | 1 000 000 000 | Granty & Bounties |
-| 8 | `zion102s8k4k0w783d657j255z865e47054s342u87v3` | 500 000 000 | Ecosystem Bootstrap |
+| 6 | `zion1j5a327c7d3w7h4e474n5p4z0z827f8p874mr2p7` | 2 500 000 000 | Komunitní governance (hlavní) |
+| 7 | `zion1f7g4h034m5l0x3g6q4l5d298d597v5a4q3wc3t7` | 1 000 000 000 | Granty & Bounties |
+| 8 | `zion1a6s5y727s0d5m5s3u448d5g3g60032s6p5xy2l5` | 500 000 000 | Ecosystem Bootstrap |
 
 **Time-lock**: Blok 144 000 (~100 dní při 60s/blok).
 
@@ -143,27 +143,27 @@ Všech 14 premine outputů je **admin-locked** (vyžaduje 3-of-3 admin multisig
 
 | # | Adresa | Částka (ZION) | Účel |
 |---|--------|---------------|------|
-| 9 | `zion1e8j5z6v8e4c6s5x7r0w7e2r673h8k3a6d4xx877` | 1 000 000 000 | Core Development Fund |
-| 10 | `zion1f7z374q068r3p657m8z220v7y6k045q255xp2d3` | 1 000 000 000 | Síťová infrastruktura (P2P seed nody) |
-| 11 | `zion1s2j5s2a6f5k740k4d8s2k3y8v0t8d4k0u6my2k0` | 590 000 000 | Genesis Projects — Dharma Temple, Piko de Ora + DAO |
+| 9 | `zion172k256y2f6y6k6r3q5e3j0v382f694e3q59e4w0` | 1 000 000 000 | Core Development Fund |
+| 10 | `zion1g2k605u0n838t3j2j0j203u0e5m556a8l6fl8n8` | 1 000 000 000 | Síťová infrastruktura (P2P seed nody) |
+| 11 | `zion1s646m4g6d8u8j4t06332w6j4w6q2y0z3x5hv4w4` | 590 000 000 | Genesis Projects — Dharma Temple, Piko de Ora + DAO |
 
 ### Humanitární (1 slot = 1,44B ZION)
 
 | # | Adresa | Částka (ZION) | Účel |
 |---|--------|---------------|------|
-| 12 | `zion10797m0k3u356f2l443r062d4e49665f6n20j6x0` | 1 440 000 000 | Children Future Fund — Humanitarian DAO |
+| 12 | `zion1f0t7e2y3t340g3j4h470q0z7e5j7w7y4q49u5t6` | 1 440 000 000 | Children Future Fund — Humanitarian DAO |
 
 ### Bridge Seed (1 slot = 0,4B ZION)
 
 | # | Adresa | Částka (ZION) | Účel |
 |---|--------|---------------|------|
-| 13 | `zion1p3y7w4z7d2m3j0f00657r354y4f3q5k6y8ca0g7` | 400 000 000 | EVM Bridge likvidita |
+| 13 | `zion1j8c7h0a2r377v5n0y757n8j5w6y2n2d8005f750` | 400 000 000 | EVM Bridge likvidita |
 
 ### Bridge Vault UTXO (1 slot = 0,1B ZION)
 
 | # | Adresa | Částka (ZION) | Účel |
 |---|--------|---------------|------|
-| 14 | `zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7` | 100 000 000 | Bridge Vault UTXO — EVM Bridge Unlock likvidita |
+| 14 | `zion1x2f2u5p560a0e5a5u8g7m837m78856v5f8e45l7` | 100 000 000 | Bridge Vault UTXO — EVM Bridge Unlock likvidita |
 
 Tento output je **UTXO transakce** (ne account-model) s 6 outputy
 pro vejení částky do `u64` limitů. Adresa je odvozena z
@@ -190,11 +190,11 @@ Tyto **nejsou** premine outputy — jsou to příjemci průběžné blokové dot
 
 | Označení | Adresa |
 |----------|--------|
-| Humanitarian Subsidy (5 %) | `zion1e0u5q5s660k4m4a634p2c2v358r8g59564054z7` |
-| Issobella Subsidy (5 %) | `zion1f7y7l5k678y0v408e8s654d2282346k375526t2` |
-| Pool Fee Subsidy (1 %, spáleno) | `zion1062522x6a083x6r4d24303l5h20698z7j8qk433` |
-| Default Miner (89 %) | `zion1d6m0h2r8m7k8k2d8n072y7j3j4m0254323vq0e3` |
-| Pool PPLNS Payout | `zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2` |
+| Humanitarian Subsidy (5 %) | `zion136m4u7f8s5w3l0e00342s7a4r282275442vm2w3` |
+| Issobella Subsidy (5 %) | `zion173g835z228z6u303z59603y236r5e854l36g604` |
+| Pool Fee Subsidy (1 %, spáleno) | `zion1e6r72872w0y5w6c3h4e6z847g8z4z7l0n4rj607` |
+| Default Miner (89 %) | `zion1u4a82230m0a267r785m822u5a3g7n753d7eu5n0` |
+| Pool PPLNS Payout | `zion1k4g2d8s3y4m5v238k0l3v6y5n48894n357uv064` |
 
 > Issobella, pool-fee, default-miner a pool-payout adresy jsou odvozeny
 > deterministicky z UTF-8 labelů přes `crypto::canonical_address_for_label`
@@ -281,9 +281,9 @@ za běhu z env/config, nejsou hardcodovány v `genesis.rs`.
 
 | Role | Jméno | L1 adresa | EVM adresa |
 |------|-------|-----------|------------|
-| Admin-1 (protocol governance, emergency pause) | **Rama** | `zion1m300z2f424k4m0k6c4l0v6v6w8l6j855s7je6e4` | `0xf354ccae30d6e9787e23e987e893e825f312f5c9` |
-| Admin-2 (treasury oversight, DAO guardian) | **Sita** | `zion1d7z398t0n5c7j874a5n8v4h0d5c8j754z78t7m6` | `0x07e720245cdabc33a265df5bcdc504897ddf0b01` |
-| Admin-3 (bridge admin, EVM multisig) | **Hanuman** | `zion1a363k2y366f6w4z2n2q4h2y822f3s5w2w56y3y4` | `0x9ab8ee6b874578e431aeb45bf28f8ca6041e1de6` |
+| Admin-1 (protocol governance, emergency pause) | **Rama** | `zion1u2r4n87572t2f3n8f2j006f2a540y7r8m84p887` | `0x0a495d5553eda624fe43fb5d2de1ebe3c031199c` |
+| Admin-2 (treasury oversight, DAO guardian) | **Sita** | `zion1r4t6v7a8j6v4u86208d3g8k6t6q4q4g5y0kc3p8` | `0xfa9853790bac782fd1fd0558d9b282a89bee867d` |
+| Admin-3 (bridge admin, EVM multisig) | **Hanuman** | `zion19086w6d026y8z2f7u7v2x68054g8d4y5n3e70q4` | `0x8403a79b5ba7cc138b0a018109484649aa541574` |
 
 Nástupci (Gen Z): Maitreya Buddha → Rama, Sarah Issobela → Sita, Elizabeth → Hanuman. Viz §Zpráva pro Generaci Z.
 
@@ -358,13 +358,13 @@ Viz: `is_premine_transfer_allowed()` v `genesis.rs`
 
 | # | Adresa | Složení |
 |---|--------|---------|
-| 1 | `zion1v330m245u4j2v6z8t485c8f472f8u5z3a82q0y4` | Admin-1 (Rama → Maitreya Buddha) |
-| 2 | `zion186r522w0l538v030r0m297w43426z4v094lu5e8` | Admin-2 (Sita → Sarah Issobela) |
-| 3 | `zion1g40723c645s038p0w7t8h0d7r8d325j7x0gc8j0` | Admin-3 (Hanuman → Elizabeth) |
-| 4 | `zion1r3m3g8q6y4u2f8r4y2w4c3f02335d8j7v5dy064` | Jmenován DAO |
-| 5 | `zion1u53766x73897r0z0z854c4p2f7v773g3e0z27v7` | Jmenován DAO |
-| 6 | `zion144r475y5u58508y7f0a8d4g5c3a593m5q23e3a2` | Jmenován DAO |
-| 7 | `zion1d8t2e3e3l3a684l578d894w5k8x2h2k3z6e63m7` | Jmenován DAO |
+| 1 | `zion1u5u7j0g08463h556w0p6j8a7354272d3t3sl4h6` | Admin-1 (Rama → Maitreya Buddha) |
+| 2 | `zion1j4j4h6p866k0c55456x2j6t2g7h425p7w68j8a3` | Admin-2 (Sita → Sarah Issobela) |
+| 3 | `zion1g8j3m4z036m0m5v6t3g6f0m0q7a3e8a232ps8e3` | Admin-3 (Hanuman → Elizabeth) |
+| 4 | `zion12093g4c63364a8z5c6h6j824k8t6v4c2a7cd7m3` | Jmenován DAO |
+| 5 | `zion150r884c478e24304d2z0f34023a3w5j6a0yr756` | Jmenován DAO |
+| 6 | `zion1h04698s446d7g7f0k6j888c777z746c6r63k4k4` | Jmenován DAO |
+| 7 | `zion1m4j3t7y688n333x4628226a0v58325h7q25s576` | Jmenován DAO |
 
 Zdroj: `V3/L2/dao/config/dao-mainnet.toml`
 

@@ -85,7 +85,7 @@ Kompas není návod, jak bez přemýšlení dojít k cíli. Je to ochrana před 
 ## ŽIVÉ: kořen
 
 - **L1 Proof-of-Work blockchain** v Rustu; blokový cíl je 60 sekund a konsensus používá paměťově náročnou rodinu Ekam Deeksha / CosmicHarmony.
-- **Veřejný genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`.
+- **Veřejný genesis hash:** `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122`.
 - **Emise s hard capem 144 miliard ZION.** Konsensus definuje rozdělení odměny: 89 % těžaři, 5 % humanitárnímu fondu, 5 % fondu Issobella a 1 % burn/pool fee podle nastavení nasazení.
 - **Otevřený zdrojový kód MIT** v repozitáři `Zion-TerraNova/v3-Mainnet`.
 - **L2 na Base a dalších EVM sítích:** wZION, bridge, governance, treasury, staking, farm a atomic swap jsou dokumentované v kanonickém technickém whitepaperu, včetně adres kontraktů a informace o ověření na Basescan.

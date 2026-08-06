@@ -2514,7 +2514,7 @@ mod tests {
         let resp = rpc_call(
             &router,
             "getTransactionHistory",
-            json!({"address": "zion1n3t6v6w3m8g4v6q8g7h7j4j6f7s8q2m7g7un8u0", "limit": 100}),
+            json!({"address": "zion172h3y7d6m7d7y7d8q2d4x363t0m55227n2rt2v2", "limit": 100}),
         );
         assert!(
             resp.error.is_none(),

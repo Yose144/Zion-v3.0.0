@@ -30,7 +30,7 @@ ZION Mainnet is live as **Mainnet Beta**. The current runtime is **v3.0.6 Ekam D
 | Parameter | Mainnet |
 |-----------|---------|
 | **Chain ID** | `zion-mainnet-1` |
-| **Genesis hash** | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
+| **Genesis hash** | `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122` |
 | **Protocol version** | `zion-v3-node/3.0.6` |
 | **Algorithm** | Ekam Deeksha v2 (multi-algo PoW) |
 | **Block time** | 60 s |

@@ -60,16 +60,30 @@ const categories: Category[] = [
     accentText: 'text-zion-gold',
     papers: [
       {
+        id: 'master-3.2-cz',
+        title: { cs: 'One Love 3.2 (CZ)', en: 'One Love 3.2 (CZ)' },
+        description: { cs: 'Kanonická syntéza všech čtyř knih pro Mainnet Stable 3.2 "One Love". Inspirováno duchem Boba Marleye.', en: 'Canonical synthesis of all four books for Mainnet Stable 3.2 "One Love." Inspired by the spirit of Bob Marley.' },
+        file: 'ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_CZ.md',
+        format: 'md',
+      },
+      {
+        id: 'master-3.2-en',
+        title: { cs: 'One Love 3.2 (EN)', en: 'One Love 3.2 (EN)' },
+        description: { cs: 'Anglický překlad One Love.', en: 'English translation of the One Love whitepaper.' },
+        file: 'ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_EN.md',
+        format: 'md',
+      },
+      {
         id: 'master-cz',
-        title: { cs: 'Zlatá kniha (CZ)', en: 'Golden Book (CZ)' },
-        description: { cs: 'Kanonická syntéza všech čtyř knih pro Mainnet Alpha 3.1.', en: 'Canonical synthesis of all four books for Mainnet Alpha 3.1.' },
+        title: { cs: 'Zlatá kniha 3.1 (CZ)', en: 'Golden Book 3.1 (CZ)' },
+        description: { cs: 'Kanonická syntéza všech čtyř knih pro Mainnet Alpha 3.1 (předchozí).', en: 'Canonical synthesis of all four books for Mainnet Alpha 3.1 (previous).' },
         file: 'ZION_MASTER_WHITEPAPER_3.1_CZ.md',
         format: 'md',
       },
       {
         id: 'master-en',
-        title: { cs: 'Golden Book (EN)', en: 'Golden Book (EN)' },
-        description: { cs: 'Anglický překlad Zlaté knihy.', en: 'English translation of the Golden Book.' },
+        title: { cs: 'Golden Book 3.1 (EN)', en: 'Golden Book 3.1 (EN)' },
+        description: { cs: 'Anglický překlad Zlaté knihy (předchozí).', en: 'English translation of the Golden Book (previous).' },
         file: 'ZION_MASTER_WHITEPAPER_3.1_EN.md',
         format: 'md',
       },
@@ -150,7 +164,7 @@ const categories: Category[] = [
 ];
 
 const quickFacts = [
-  { label: { cs: 'Genesishash', en: 'Genesis hash' }, value: '4f75a0df…79bd6e', full: '4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e' },
+  { label: { cs: 'Genesishash', en: 'Genesis hash' }, value: '4f75a0df…79bd6e', full: '08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122' },
   { label: { cs: 'Total supply', en: 'Total supply' }, value: '144B ZION' },
   { label: { cs: 'Premine', en: 'Premine' }, value: '16.78B ZION' },
   { label: { cs: 'Block split', en: 'Block split' }, value: '89/5/5/1' },

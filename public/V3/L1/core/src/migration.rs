@@ -126,7 +126,7 @@ pub fn dao_treasury_address() -> String {
         .iter()
         .find(|o| o.category == "dao_treasury")
         .map(|o| o.address.to_string())
-        .unwrap_or_else(|| "zion1u5u7k43240d5l4d0x7q5m3c4a838z4k000cv3q0".to_string())
+        .unwrap_or_else(|| "zion1j5a327c7d3w7h4e474n5p4z0z827f8p874mr2p7".to_string())
 }
 
 /// Build the migration coinbase transaction.

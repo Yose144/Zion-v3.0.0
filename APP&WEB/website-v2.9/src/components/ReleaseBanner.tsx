@@ -5,7 +5,7 @@ import { Rocket, Download, ExternalLink } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
 const ReleaseBannerCopy = {
-  zionV310TerminalMinerIsLive: { cs: `ZION v3.1.0 Terminal Miner je live`, en: `ZION v3.1.0 Terminal Miner is live` },
+  zionV310TerminalMinerIsLive: { cs: `ZION v3.2.0 "One Love" — Mainnet Stable je live`, en: `ZION v3.2.0 "One Love" — Mainnet Stable is live` },
   fourPlatformsAutoGpu: { cs: `4 platformy: Linux, macOS (Apple Silicon + Intel), Windows. Auto GPU backend (CUDA + OpenCL + Metal). One-click GPU auto-detect.`, en: `4 platforms: Linux, macOS (Apple Silicon + Intel), Windows. Auto GPU backend (CUDA + OpenCL + Metal). One-click GPU auto-detect.` },
   downloadFromGithub: { cs: `Stáhnout z GitHub`, en: `Download from GitHub` },
 };

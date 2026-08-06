@@ -1,7 +1,9 @@
 /**
  * GitHub Release data for ZION v3-Mainnet public repo.
  * Source: https://github.com/Zion-TerraNova/v3-Mainnet/releases
- * Updated: 2026-08-03 — v3.1.0-cli (Terminal Miner, 4 platforms) + v3.1.0-desktop (Desktop GUI)
+ * Updated: 2026-08-06 — network version v3.2.0 "One Love" (Mainnet Stable).
+ *   Latest binary release: v3.1.0-cli (Terminal Miner, 4 platforms) + v3.1.0-desktop (Desktop GUI).
+ *   v3.2.0 is the network/protocol version; binary releases track separately.
  */
 
 export const GITHUB_REPO = 'Zion-TerraNova/v3-Mainnet';
@@ -209,12 +211,12 @@ export const COMMUNITY_CLI_RELEASE: Release = {
 };
 
 export const NETWORK_PARAMS = [
-  { label: 'Genesis hash', value: '4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e', mono: true },
+  { label: 'Genesis hash', value: '08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122', mono: true },
   { label: 'Consensus', value: 'PoW (Ekam Deeksha dual-algo: BLAKE3 + RandomNPU)' },
   { label: 'Block target', value: '60 seconds' },
   { label: 'Supply', value: '144 billion ZION (144,000,000,000)' },
   { label: 'Decimals', value: '6 (1 ZION = 1,000,000 flowers)' },
   { label: 'Emission split', value: '89% miner / 5% humanitarian / 5% issobella / 1% burn' },
   { label: 'Pool', value: 'stratum.zionterranova.com:8444', mono: true },
-  { label: 'RPC (localhost)', value: '127.0.0.1:8443', mono: true },
+  { label: 'RPC (public)', value: 'rpc.zionterranova.com:8443', mono: true },
 ];
