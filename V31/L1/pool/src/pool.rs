@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, Mutex};
 
 use ed25519_dalek::SigningKey;
 use zion_cosmic_harmony::ExternalCoin;
@@ -7,6 +8,7 @@ use zion_l1_types::{Address, ChainId};
 
 use crate::config::PoolConfig;
 use crate::share::ShareSubmission;
+use crate::telemetry::MinerTelemetryRegistry;
 use crate::validator::ShareValidator;
 use crate::v3_pplns::{PayoutEntry, PplnsConfig, PplnsEngine};
 
@@ -40,10 +42,12 @@ pub struct Pool {
     pub pending_payouts: Vec<(u64, PayoutEntry)>,
     /// (block_height, address) pairs already submitted to the wallet.
     pub sent_payouts: HashSet<(u64, String)>,
+    /// Shared per-worker telemetry registry (hashrate, shares, blocks).
+    pub telemetry: Arc<Mutex<MinerTelemetryRegistry>>,
 }
 
 impl Pool {
-    pub fn new(config: PoolConfig) -> Self {
+    pub fn new(config: PoolConfig, telemetry: Arc<Mutex<MinerTelemetryRegistry>>) -> Self {
         let pplns_config = PplnsConfig {
             window_size: config.pplns_window_size,
             min_payout_flowers: config.min_payout_flowers,
@@ -75,6 +79,7 @@ impl Pool {
             signing_key,
             pending_payouts: Vec::new(),
             sent_payouts: HashSet::new(),
+            telemetry,
         }
     }
 
@@ -239,9 +244,13 @@ mod tests {
         PoolConfig::default()
     }
 
+    fn telemetry() -> Arc<Mutex<MinerTelemetryRegistry>> {
+        Arc::new(Mutex::new(MinerTelemetryRegistry::new()))
+    }
+
     #[test]
     fn submits_valid_zion_share() {
-        let mut pool = Pool::new(config());
+        let mut pool = Pool::new(config(), telemetry());
         let header = b"zion_header";
         let nonce = 0u64;
         let submission = ShareSubmission {
@@ -255,7 +264,7 @@ mod tests {
 
     #[test]
     fn rejects_invalid_zion_share() {
-        let mut pool = Pool::new(config());
+        let mut pool = Pool::new(config(), telemetry());
         let submission = ShareSubmission {
             worker: "worker1".into(),
             job_id: "zion_1".into(),
@@ -266,7 +275,7 @@ mod tests {
 
     #[test]
     fn submits_valid_auxpow_share() {
-        let mut pool = Pool::new(config());
+        let mut pool = Pool::new(config(), telemetry());
         let submission = ShareSubmission {
             worker: "worker1".into(),
             job_id: "aux_1".into(),
@@ -283,7 +292,7 @@ mod tests {
         let mut pool = Pool::new(PoolConfig {
             auxpow_target: [0x00u8; 32],
             ..config()
-        });
+        }, telemetry());
         let submission = ShareSubmission {
             worker: "worker1".into(),
             job_id: "aux_1".into(),
@@ -299,7 +308,7 @@ mod tests {
         let mut pool = Pool::new(PoolConfig {
             min_payout_flowers: 1,
             ..config()
-        });
+        }, telemetry());
         let header = b"payout_header";
         for i in 0..4 {
             let submission = ShareSubmission {
@@ -318,14 +327,14 @@ mod tests {
 
     #[test]
     fn next_job_id_increments() {
-        let pool = Pool::new(config());
+        let pool = Pool::new(config(), telemetry());
         assert_eq!(pool.next_job_id(), 2);
         assert_eq!(pool.next_job_id(), 3);
     }
 
     #[test]
     fn anonymous_worker_address_parsed_from_username() {
-        let mut pool = Pool::new(config());
+        let mut pool = Pool::new(config(), telemetry());
         pool.register_worker("zion1abc.worker1");
         let addr = pool.worker_address("zion1abc.worker1");
         assert_eq!(addr.encoded, "zion1abc");
