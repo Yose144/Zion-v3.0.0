@@ -4460,7 +4460,7 @@ def _get_node_rpc_addr() -> tuple:
             return (h or "127.0.0.1", int(p))
         except Exception:
             pass
-    return ("127.0.0.1", 9443)
+    return ("127.0.0.1", 9445)
 
 def rpc_call(host: str, port: int, method: str, params: dict, timeout: float = 2.0) -> dict:
     """JSON-RPC call to ZION node.
@@ -4549,9 +4549,14 @@ def parse_premine_from_genesis(rpc_host: str = "127.0.0.1", rpc_port: int = 9443
 
 def parse_premine_from_file() -> list:
     """Parse PREMINE_ADDRESSES_PUBLIC.txt for canonical premine wallet list."""
-    path = REPO_ROOT / "PREMINE_ADDRESSES_PUBLIC.txt"
+    for path in [REPO_ROOT / "PREMINE_ADDRESSES_PUBLIC.txt",
+                 REPO_ROOT / "docs" / "PREMINE_ADDRESSES_PUBLIC.txt"]:
+        if path.exists():
+            break
+    else:
+        path = None
     wallets = []
-    if not path.exists():
+    if not path:
         return wallets
     try:
         with open(path, "r", encoding="utf-8", errors="ignore") as f:
@@ -6110,7 +6115,7 @@ def get_pool_registered_miners() -> dict:
         try:
             bal = rpc_call(EDGE_RPC_HOST, 9443, "getBalance", {"address": addr}, timeout=2.0)
             if bal and not bal.get("_rpc_error"):
-                atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
+                atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
                 balance_map[addr] = flowers_to_zion(atomic)
         except Exception:
             pass
@@ -6211,7 +6216,7 @@ def enrich_miner_balances(miners: list) -> list:
             try:
                 bal = rpc_call(EDGE_RPC_HOST, 9443, "getBalance", {"address": addr}, timeout=2.0)
                 if bal and not bal.get("_rpc_error"):
-                    atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
+                    atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
                     m["on_chain_balance_zion"] = flowers_to_zion(atomic)
             except Exception:
                 pass
@@ -6539,6 +6544,22 @@ def get_revenue_dashboard() -> dict:
         pool_hashrate = float(stats.get("hashrate", {}).get("pool", 0))
     except Exception:
         pass
+    # V31 pool exposes hashrate + blocks on /metrics if /stats lacks it
+    _metrics_blocks = 0
+    if pool_hashrate <= 0 or blocks_found <= 0:
+        try:
+            import urllib.request as _ur2
+            _mhost = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
+            with _ur2.urlopen(f"http://{_mhost}:{V31_POOL_API_PORT}/metrics", timeout=1.5) as _r:
+                for _ln in _r.read().decode("utf-8", errors="ignore").splitlines():
+                    if _ln.startswith("zion_pool_hashrate_hps "):
+                        pool_hashrate = float(_ln.split()[-1])
+                    elif _ln.startswith("zion_pool_blocks_found_total "):
+                        _metrics_blocks = int(float(_ln.split()[-1]))
+        except Exception:
+            pass
+    if blocks_found <= 0 and _metrics_blocks > 0:
+        blocks_found = _metrics_blocks
     fee_split = stats.get("fee_split", {}) if isinstance(stats.get("fee_split"), dict) else {}
     pplns = stats.get("pplns", {}) if isinstance(stats.get("pplns"), dict) else {}
 
@@ -6843,6 +6864,54 @@ def get_revenue_report() -> dict:
 def get_revenue_streams() -> dict:
     """Per-stream telemetry — Deeksha Chv3 pipeline weights and work distribution."""
     return _fetch_pool_revenue_streams()
+
+
+def get_multichain_dashboard() -> dict:
+    """V31 Multichain service dashboard: WARP health, chains, transfers, DEX status."""
+    host = "127.0.0.1"
+    warp_port = 8453
+    dex_port = 8454
+
+    warp_alive = check_port_open(host, warp_port, timeout=1.5)
+    warp_health = fetch_service_json(host, warp_port, "/health") if warp_alive else {}
+    chains_resp = fetch_service_json(host, warp_port, "/chains") if warp_alive else {}
+    transfers_resp = fetch_service_json(host, warp_port, "/transfers") if warp_alive else {}
+
+    chains = chains_resp.get("data", []) if isinstance(chains_resp, dict) else []
+    transfers = transfers_resp.get("data", []) if isinstance(transfers_resp, dict) else []
+
+    dex_alive = check_port_open(host, dex_port, timeout=1.0)
+    dex_health = {}
+    if dex_alive:
+        try:
+            dex_health = fetch_service_json(host, dex_port, "/v1/multichain/health", timeout=1.5)
+        except Exception:
+            pass
+
+    return {
+        "ok": True,
+        "warp": {
+            "alive": warp_alive,
+            "status": "online" if warp_alive else "offline",
+            "version": warp_health.get("version", "—") if isinstance(warp_health, dict) else "—",
+            "transfers_total": warp_health.get("transfers_total", 0) if isinstance(warp_health, dict) else 0,
+            "transfers_pending": warp_health.get("transfers_pending", 0) if isinstance(warp_health, dict) else 0,
+        },
+        "chains": {
+            "count": len(chains),
+            "items": chains,
+        },
+        "transfers": {
+            "count": len(transfers),
+            "pending": len([t for t in transfers if isinstance(t, dict) and t.get("status") in ("pending", "initiated", "awaiting")]),
+            "items": transfers[:20],
+        },
+        "dex": {
+            "alive": dex_alive,
+            "status": "online" if dex_alive else "offline",
+            "health": dex_health if isinstance(dex_health, dict) else {},
+        },
+    }
 
 
 # ── AuxPow / external-pool configuration helpers ─────────────────────────────
@@ -7781,7 +7850,7 @@ def get_pool_miner_detail(address: str) -> dict:
     try:
         bal = rpc_call(EDGE_RPC_HOST, 9443, "getBalance", {"address": address}, timeout=2.0)
         if bal and not bal.get("_rpc_error"):
-            atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
+            atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
             result["on_chain_balance_zion"] = flowers_to_zion(atomic)
         else:
             result["on_chain_balance_zion"] = 0
@@ -8054,7 +8123,7 @@ def get_pool_wallet_status() -> dict:
     if wallet and wallet.startswith("zion1"):
         bal = rpc_call("127.0.0.1", 9443, "getBalance", {"address": wallet})
         if bal and not bal.get("_rpc_error"):
-            atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
+            atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
             status["balance_zion"] = bal.get("balance_zion") if isinstance(bal.get("balance_zion"), (int, float)) else flowers_to_zion(atomic)
             # UTXO count from RPC if available
             if bal.get("utxo_count"):
@@ -8485,13 +8554,13 @@ def build_payout_status() -> dict:
     if status["pool_wallet"] and status["pool_wallet"].startswith("zion1"):
         bal = rpc_call(rpc_host, 9443, "getBalance", {"address": status["pool_wallet"]}, timeout=2.5)
         if bal and not bal.get("_rpc_error"):
-            atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
+            atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
             status["pool_wallet_balance"] = atomic
         elif is_edge and local_rpc_alive:
             # Fallback to local backup node
             bal = rpc_call("127.0.0.1", 9443, "getBalance", {"address": status["pool_wallet"]}, timeout=2)
             if bal and not bal.get("_rpc_error"):
-                atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
+                atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
                 status["pool_wallet_balance"] = atomic
 
     balances = {}
@@ -8501,7 +8570,7 @@ def build_payout_status() -> dict:
         if addr and addr.startswith("zion1"):
             bal = rpc_call(rpc_host, 9443, "getBalance", {"address": addr}, timeout=2.5)
             if bal and not bal.get("_rpc_error"):
-                atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
+                atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
                 balances[key] = {"atomic": atomic, "zion": flowers_to_zion(atomic)}
     status["balances"] = balances
 
@@ -8540,12 +8609,12 @@ def build_payout_status() -> dict:
         if addr and addr.startswith("zion1"):
             bal = rpc_call(rpc_host, 9443, "getBalance", {"address": addr}, timeout=2.0)
             if bal and not bal.get("_rpc_error"):
-                atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
+                atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
                 m["on_chain_balance_zion"] = flowers_to_zion(atomic)
             elif is_edge and local_rpc_alive:
                 bal = rpc_call("127.0.0.1", 9443, "getBalance", {"address": addr}, timeout=2.0)
                 if bal and not bal.get("_rpc_error"):
-                    atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
+                    atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
                     m["on_chain_balance_zion"] = flowers_to_zion(atomic)
 
     # ── Network-wide emission totals from block 0 (consensus schedule) ──
@@ -8562,9 +8631,11 @@ def build_payout_status() -> dict:
 
     # Session stats
     active_sessions = pool_stats.get("miners", {}).get("active", len(miners)) if isinstance(pool_stats.get("miners"), dict) else len(miners)
-    # accept_rate_pct: prefer live Prometheus metrics (port V31_POOL_API_PORT) over pool /stats endpoint
+    # accept_rate_pct + hashrate: prefer live Prometheus metrics (port V31_POOL_API_PORT) over pool /stats endpoint
     _routing_accept = pool_stats.get("routing", {}).get("accept_rate_pct") if isinstance(pool_stats.get("routing"), dict) else None
     _metrics_accept = None
+    _metrics_hashrate = None
+    _metrics_blocks = 0
     try:
         import urllib.request as _ur2
         _mhost = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
@@ -8572,15 +8643,30 @@ def build_payout_status() -> dict:
             for _ln in _r.read().decode("utf-8", errors="ignore").splitlines():
                 if _ln.startswith("zion_pool_accept_rate_pct "):
                     _metrics_accept = float(_ln.split()[-1])
-                    break
+                elif _ln.startswith("zion_pool_hashrate_hps "):
+                    _metrics_hashrate = float(_ln.split()[-1])
+                elif _ln.startswith("zion_pool_blocks_found_total "):
+                    _metrics_blocks = int(float(_ln.split()[-1]))
     except Exception:
         pass
+    if _metrics_blocks > 0 and status["blocks_found"] == 0:
+        status["blocks_found"] = _metrics_blocks
+        total_blocks = _metrics_blocks
+    # Recompute burned total now that we have a definitive block count from metrics
+    if total_blocks > 0:
+        per_block_burned_zion = block_subsidy(status["last_block_height"] or 1) / 100 / 1_000_000
+        status["burned_total"] = total_blocks * per_block_burned_zion
     status["session_stats"] = {
         "active_sessions": active_sessions,
         "total_shares_1h": sum(m.get("valid_shares", 0) for m in miners),
         "blocks_24h": total_blocks,
         "accept_rate_pct": _metrics_accept if _metrics_accept is not None else _routing_accept,
+        "pool_hashrate_hps": _metrics_hashrate,
     }
+    if _metrics_hashrate is not None:
+        if not isinstance(pool_stats, dict):
+            pool_stats = {}
+        pool_stats.setdefault("hashrate", {})["pool"] = _metrics_hashrate
 
     # JS miner_stats compatibility
     miner_stats = []
@@ -8591,8 +8677,8 @@ def build_payout_status() -> dict:
             "algorithm": m.get("algorithm") or "—",
             "backend": m.get("backend") or "cpu",
             "valid_shares": m.get("valid_shares", 0),
-            "hashrate": m.get("hashrate", 0),
-            "hashrate_1h": m.get("hashrate_1h", 0),
+            "hashrate": m.get("hashrate_hps", m.get("hashrate", 0)),
+            "hashrate_1h": m.get("hashrate_1h_hps", m.get("hashrate_1h", 0)),
             "total_paid": m.get("paid_total", 0),
             "on_chain_balance_zion": m.get("on_chain_balance_zion"),
             "pending_balance": m.get("pending_balance", 0),
@@ -10979,6 +11065,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         "version": health.get("version", "—") if health else "—",
                         "transfers_total": health.get("transfers_total", 0) if health else 0,
                         "transfers_pending": health.get("transfers_pending", 0) if health else 0})
+        elif route == "/api/multichain":
+            self._json(get_multichain_dashboard())
         elif route == "/api/oasis/stats":
             alive = check_port_open("127.0.0.1", 8094, timeout=1.5)
             health = fetch_service_json("127.0.0.1", 8094, "/health") if alive else {}

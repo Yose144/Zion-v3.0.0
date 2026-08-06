@@ -894,6 +894,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       <button onclick="switchTab('dao')" id="tab-dao" class="zion-quick-link zql-dao"><i class="fas fa-landmark"></i> DAO</button>
       <button onclick="switchTab('bridge')" id="tab-bridge" class="zion-quick-link zql-bridge"><i class="fas fa-bridge"></i> Bridge</button>
       <button onclick="switchTab('bridge-validators')" id="tab-bridge-validators" class="zion-quick-link zql-bridge"><i class="fas fa-user-shield"></i> Validators</button>
+      <button onclick="switchTab('multichain')" id="tab-multichain" class="zion-quick-link zql-bridge"><i class="fas fa-globe"></i> Multichain</button>
       <button onclick="switchTab('warp-swap')" id="tab-warp-swap" class="zion-quick-link zql-bridge"><i class="fas fa-arrow-right-arrow-left"></i> Swap</button>
       <button onclick="switchTab('cex')" id="tab-cex" class="zion-quick-link zql-ops"><i class="fas fa-building-columns"></i> CEX</button>
       <button onclick="switchTab('charts')" id="tab-charts" class="zion-quick-link zql-ops"><i class="fas fa-chart-line"></i> Charts</button>
@@ -7873,6 +7874,73 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
     </div>
   </div>
 
+  <!-- ═════════ TAB: V31 Multichain ═════════ -->
+  <div id="pane-multichain" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">🌀 V31 Multichain</h1>
+        <p class="text-xs text-gray-400 mt-1">WARP bridge · cross-chain transfers · DEX router</p>
+      </div>
+      <button onclick="loadMultichainPanel()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+    </div>
+
+    <!-- KPIs -->
+    <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div class="bg-black/25 rounded-xl p-3 text-center border border-white/5">
+        <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">WARP Status</div>
+        <div id="mc-warp-status" class="text-lg font-bold">—</div>
+      </div>
+      <div class="bg-black/25 rounded-xl p-3 text-center border border-white/5">
+        <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">WARP Version</div>
+        <div id="mc-warp-version" class="text-lg font-bold">—</div>
+      </div>
+      <div class="bg-black/25 rounded-xl p-3 text-center border border-white/5">
+        <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Chains</div>
+        <div id="mc-chains-count" class="text-lg font-bold text-cyan-400">—</div>
+      </div>
+      <div class="bg-black/25 rounded-xl p-3 text-center border border-white/5">
+        <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Transfers</div>
+        <div id="mc-transfers-count" class="text-lg font-bold text-emerald-400">—</div>
+      </div>
+      <div class="bg-black/25 rounded-xl p-3 text-center border border-white/5">
+        <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Pending</div>
+        <div id="mc-transfers-pending" class="text-lg font-bold text-amber-400">—</div>
+      </div>
+      <div class="bg-black/25 rounded-xl p-3 text-center border border-white/5">
+        <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">DEX</div>
+        <div id="mc-dex-status" class="text-lg font-bold">—</div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+      <div class="zion-panel p-5">
+        <h2 class="text-base font-bold mb-3">Connected Chains</h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead><tr class="text-gray-500 border-b border-white/10"><th class="py-2 px-2">Chain</th><th class="py-2 px-2">Family</th><th class="py-2 px-2 text-right">Decimals</th><th class="py-2 px-2 text-right">Finality</th></tr></thead>
+            <tbody id="mc-chains-body"><tr><td colspan="4" class="py-4 text-gray-500 italic text-center">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="zion-panel p-5">
+        <h2 class="text-base font-bold mb-3">Recent WARP Transfers</h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead><tr class="text-gray-500 border-b border-white/10"><th class="py-2 px-2">TX</th><th class="py-2 px-2">From</th><th class="py-2 px-2">To</th><th class="py-2 px-2 text-right">Amount</th><th class="py-2 px-2 text-center">Status</th><th class="py-2 px-2">Created</th></tr></thead>
+            <tbody id="mc-transfers-body"><tr><td colspan="6" class="py-4 text-gray-500 italic text-center">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="zion-panel p-4 flex flex-wrap items-center gap-3 text-xs">
+      <span class="text-gray-500">Quick links:</span>
+      <a href="https://zion.cz/warp" target="_blank" class="text-purple-400 hover:text-white">WARP Page ↗</a>
+      <a href="https://zion.cz/bridge" target="_blank" class="text-blue-400 hover:text-white">Bridge ↗</a>
+      <a href="https://zion.cz/defi" target="_blank" class="text-cyan-400 hover:text-white">DeFi Hub ↗</a>
+    </div>
+  </div>
+
   <!-- ═════════ TAB: WARP Relay ═════════ -->
   <div id="pane-warp" class="hidden space-y-4">
     <div class="flex items-center justify-between">
@@ -8065,7 +8133,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
   </div>
 </div>
 
-<script src="/dashboard.js?v=126" defer></script>
+<script src="/dashboard.js?v=127" defer></script>
 <script>
 // ═══ Supported AuxPoW coin tickers (keep in sync with app.py AUXPOW_SUPPORTED_COINS) ═══
 const STREAM_COIN_TICKERS = [
@@ -8114,6 +8182,7 @@ const STREAM_COIN_TICKERS = [
     'pane-agent':             {rc:'16 185 129',  icon:'🤖', label:'Agent',            sub:'Edge agent status'},
     'pane-dao':               {rc:'147 51 234',  icon:'🗳️', label:'DAO',              sub:'Proposals & governance'},
     'pane-cex':               {rc:'245 158 11',  icon:'📊', label:'CEX+DEX',         sub:'Exchange listings & trading'},
+    'pane-multichain':        {rc:'6 182 212',   icon:'🌀', label:'Multichain',      sub:'V31 WARP · chains · transfers · DEX'},
     'pane-warp-swap':         {rc:'217 70 239',  icon:'🔄', label:'Cross-Chain',     sub:'BTC · ETH · SOL · XLM · wZION'},
     'pane-warp':              {rc:'147 51 234',  icon:'🌀', label:'WARP',             sub:'L3 WARP relay'},
     'pane-ai-agents':         {rc:'217 70 239',  icon:'🤖', label:'AI Agents',        sub:'AI agent management'},
