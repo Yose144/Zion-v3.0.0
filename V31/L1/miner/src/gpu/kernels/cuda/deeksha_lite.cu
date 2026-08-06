@@ -584,8 +584,22 @@ extern "C" __global__ void deeksha_lite_debug(
     st[16] ^= (0x80ULL << 56);
     keccak_f1600(st);
 
+    /* Write debug output: s1, final hash, s2 (acc), s3 — for KAT verification */
     uint8_t *out = output_hash;
+    /* s1 at offset 0 */
+    uint8_t *s1b = (uint8_t*)s1;
+    #pragma unroll
+    for (int i = 0; i < 32; i++) out[i] = s1b[i];
+    /* final hash at offset 32 */
     uint8_t *hb = (uint8_t*)st;
     #pragma unroll
-    for (int i = 0; i < 32; i++) out[i] = hb[i];
+    for (int i = 0; i < 32; i++) out[32+i] = hb[i];
+    /* s2 (acc after random reads) at offset 64 */
+    uint8_t *accb = (uint8_t*)acc;
+    #pragma unroll
+    for (int i = 0; i < 32; i++) out[64+i] = accb[i];
+    /* s3 (after AES mix) at offset 96 */
+    uint8_t *s3b = (uint8_t*)s3;
+    #pragma unroll
+    for (int i = 0; i < 32; i++) out[96+i] = s3b[i];
 }

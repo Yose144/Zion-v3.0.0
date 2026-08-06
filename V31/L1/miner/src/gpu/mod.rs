@@ -7135,7 +7135,7 @@ pub mod cuda_deeksha_lite {
     const SCRATCHPAD_BYTES: usize = 524_288; // 512 KiB per thread (v3.2 ASIC-hardened)
     const SENTINEL: u64 = 0xFFFF_FFFF_FFFF_FFFF;
     const DEFAULT_WORK_SIZE_CAP: usize = 65_536; // 16GB VRAM for 24GB GPU
-    const OPTIMAL_TPB: u32 = 128; // Must match __launch_bounds__(128, 8) in kernel
+    const OPTIMAL_TPB: u32 = 128; // Must match __launch_bounds__(128, 2) in kernel
 
     pub struct CudaDeekshaLiteMiner {
         dev: Arc<CudaDevice>,
@@ -7337,21 +7337,9 @@ pub mod cuda_deeksha_lite {
                 current_nonce += chunk as u64;
                 left = left.saturating_sub(chunk as u64);
 
-                // Early exit: sync and check if a solution was found in this chunk.
-                // Avoids launching remaining chunks whose kernels would just
-                // early-exit via the in-kernel result_nonce guard anyway.
-                if left > 0 && target_u32 != 0 {
-                    self.dev
-                        .synchronize()
-                        .map_err(|e| anyhow::anyhow!("device sync (early-exit): {e}"))?;
-                    let peek = self
-                        .dev
-                        .dtoh_sync_copy(&self.result_nonce)
-                        .map_err(|e| anyhow::anyhow!("result_nonce peek: {e}"))?;
-                    if peek[0] != SENTINEL {
-                        break;
-                    }
-                }
+                // No inter-chunk sync here — the in-kernel sentinel (atomicAdd
+                // check at kernel entry) handles early-exit for remaining chunks.
+                // All chunks are launched back-to-back; single sync at the end.
             }
 
             self.dev
@@ -7517,13 +7505,17 @@ pub mod cuda_deeksha_lite {
             let start = Instant::now();
             let mut total: u64 = 0;
             let mut nonce: u64 = 0;
+            // Use 4× work_size to amortize host-side overhead across multiple chunks.
+            let bench_batch = (self.work_size as u64) * 4;
+            // Use launch_batch/collect_batch (pipelined path, same as pool mode)
             while start.elapsed().as_secs_f64() < secs {
                 let header = MiningHeader::from_bytes([0u8; 80]);
                 // Use impossible target to force full-batch compute (no early exit).
                 let target = DifficultyTarget { bytes: [0u8; 32] };
-                let result = self.mine_batch(header, target, nonce, 4096)?;
+                let _ = self.launch_batch(header, target, nonce, bench_batch)?;
+                let result = self.collect_batch(0)?;
                 total += result.nonces_tested;
-                nonce += 4096;
+                nonce += bench_batch;
             }
             let elapsed = start.elapsed().as_secs_f64();
             let khps = if elapsed > 0.0 {
