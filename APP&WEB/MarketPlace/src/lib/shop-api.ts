@@ -227,10 +227,13 @@ export async function listAdminOrders(params?: {
     const res = await fetch(`/api/admin/orders?${q.toString()}`, {
       headers: adminHeaders(),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      return { success: false, error: body.error ?? `HTTP ${res.status}` };
+    }
     return (await res.json()) as AdminOrdersListResult;
-  } catch {
-    return null;
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Network error' };
   }
 }
 
