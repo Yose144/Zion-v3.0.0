@@ -66,7 +66,7 @@ export default function WarpCorridors() {
           <div className="flex flex-col sm:flex-row gap-4">
             <Link
               href="/warp"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan text-lg font-semibold shadow-[0_0_40px_rgba(147,51,234,0.35)]"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan text-lg font-semibold shadow-[0_0_40px_rgba(228,30,43,0.35)]"
             >
               Launch Warp Deck
               <ArrowRight className="w-5 h-5" />

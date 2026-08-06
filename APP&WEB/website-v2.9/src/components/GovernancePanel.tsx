@@ -147,7 +147,7 @@ export default function GovernancePanel() {
   const activeCount = proposals.filter((p) => p.status === 'active').length;
   const passedCount = proposals.filter((p) => p.status === 'passed').length;
 
-  const purpleRc = { '--rc': '147, 51, 234' } as React.CSSProperties;
+  const purpleRc = { '--rc': '228, 30, 43' } as React.CSSProperties;
 
   return (
     <div className="zion-section space-y-8">

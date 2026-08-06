@@ -5,10 +5,12 @@ import WhitepapersBanner from '@/components/WhitepapersBanner';
 import OnboardBanner from '@/components/OnboardBanner';
 import BridgeStatusBanner from '@/components/BridgeStatusBanner';
 import HomeQuickLinks from '@/components/HomeQuickLinks';
-import WebTerminal from '@/components/WebTerminal';
 import StoryTriptych from '@/components/StoryTriptych';
 import ReleaseHighlightBanner from '@/components/ReleaseHighlightBanner';
 
+const WebTerminal = dynamicImport(() => import('@/components/WebTerminal'), {
+  loading: () => null,
+});
 const NewsFeed = dynamicImport(() => import('@/components/NewsFeed'));
 const LiveDashboard = dynamicImport(() => import('@/components/LiveDashboard'));
 const GoldenEggHaraniagharba = dynamicImport(() => import('@/components/GoldenEggHaraniagharba'));

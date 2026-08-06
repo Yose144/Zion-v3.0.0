@@ -13,6 +13,14 @@ const config: Config = {
         'zion-purple': 'rgb(var(--color-zion-purple) / <alpha-value>)',
         'zion-cyan': 'rgb(var(--color-zion-cyan) / <alpha-value>)',
         'zion-blue': 'rgb(var(--color-zion-blue) / <alpha-value>)',
+        /* Rasta palette — direct hex tokens */
+        'rasta-red': '#e41e2b',
+        'rasta-gold': '#fcd116',
+        'rasta-green': '#078930',
+        'rasta-dark': '#1a1a1a',
+        'rasta-black': '#0d0d0d',
+        'quantum-blue': '#00d4ff',
+        'matrix-green': '#00ff41',
       },
       animation: {
         'float': 'float 6s ease-in-out infinite',

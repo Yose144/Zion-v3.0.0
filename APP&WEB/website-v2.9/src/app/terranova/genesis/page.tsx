@@ -134,8 +134,8 @@ const FEATURES: FeatureItem[] = [
     descCs: 'Propojení oceánu, pohybu a vědomého stylu. Surf jako praxe přítomnosti — vlna jako učitel.',
     descEn: 'Connecting ocean, movement and conscious lifestyle. Surf as a practice of presence — the wave as teacher.',
     status: 'planned' as const,
-    color: '#06B6D4',
-    rgb: '6,182,212',
+    color: '#078930',
+    rgb: '7,137,48',
   },
   {
     icon: Sun,
@@ -364,8 +364,8 @@ export default function ZahradaGenesisPage() {
                   <div
                     className="absolute -left-10 top-3 w-4 h-4 rounded-full border-2 flex items-center justify-center"
                     style={{
-                      borderColor: p.done ? 'rgb(255,215,0)' : p.active ? 'rgb(6,182,212)' : 'rgba(255,255,255,0.15)',
-                      backgroundColor: p.done ? 'rgba(255,215,0,0.2)' : p.active ? 'rgba(6,182,212,0.2)' : 'rgba(0,0,0,0.5)',
+                      borderColor: p.done ? 'rgb(252,209,22)' : p.active ? 'rgb(7,137,48)' : 'rgba(255,255,255,0.15)',
+                      backgroundColor: p.done ? 'rgba(252,209,22,0.2)' : p.active ? 'rgba(7,137,48,0.2)' : 'rgba(0,0,0,0.5)',
                     }}
                   >
                     {p.done && <div className="w-1.5 h-1.5 rounded-full bg-zion-gold" />}
@@ -376,7 +376,7 @@ export default function ZahradaGenesisPage() {
                     <div className="flex items-center gap-3">
                       <span
                         className="text-xs font-bold tracking-wider"
-                        style={{ color: p.done ? 'rgb(255,215,0)' : p.active ? 'rgb(6,182,212)' : 'rgba(255,255,255,0.3)' }}
+                        style={{ color: p.done ? 'rgb(252,209,22)' : p.active ? 'rgb(7,137,48)' : 'rgba(255,255,255,0.3)' }}
                       >
                         {cs ? `Fáze ${p.num}` : `Phase ${p.num}`}
                       </span>

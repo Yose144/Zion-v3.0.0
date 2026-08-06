@@ -396,7 +396,7 @@ export async function GET() {
           humanitarian_tithe: HUMANITARIAN_TITHE_PCT,
           issobella_fund: ISSOBELLA_FUND_PCT,
           miner_share: MINER_SHARE_PCT,
-          version: poolStats?.pool?.version ?? '2.9.9',
+          version: poolStats?.pool?.version ?? '3.2.0',
           uptime_secs: poolUptimeSeconds,
         },
         pplns_window_size: pplnsWindowSize,

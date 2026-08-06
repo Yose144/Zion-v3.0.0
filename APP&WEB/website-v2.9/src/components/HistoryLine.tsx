@@ -136,7 +136,7 @@ export default function HistoryLine() {
                 className={`relative flex ${isLeft ? "justify-start" : "justify-end"}`}
               >
                 {/* Node */}
-                <div className="absolute left-1/2 -translate-x-1/2 -mt-1.5 w-3 h-3 rounded-full bg-zion-gold shadow-[0_0_12px_rgba(255,215,0,0.55)]" />
+                <div className="absolute left-1/2 -translate-x-1/2 -mt-1.5 w-3 h-3 rounded-full bg-zion-gold shadow-[0_0_12px_rgba(252,209,22,0.55)]" />
 
                 {/* Card */}
                 <div

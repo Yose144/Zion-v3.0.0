@@ -300,17 +300,17 @@ function HashrateSpark({ data, width = 600, height = 120, emptyLabel = "Not enou
     <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto" preserveAspectRatio="none">
       <defs>
         <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="rgba(147,51,234,0.4)" />
-          <stop offset="100%" stopColor="rgba(147,51,234,0)" />
+          <stop offset="0%" stopColor="rgba(228,30,43,0.4)" />
+          <stop offset="100%" stopColor="rgba(228,30,43,0)" />
         </linearGradient>
       </defs>
       <path d={areaPath} fill="url(#sparkGrad)" />
-      <polyline fill="none" stroke="rgba(147,51,234,0.8)" strokeWidth="2" points={points} />
+      <polyline fill="none" stroke="rgba(228,30,43,0.8)" strokeWidth="2" points={points} />
       {/* current value dot */}
       {data.length > 0 && (() => {
         const lastX = (data.length - 1) * step;
         const lastY = height - 10 - ((data[data.length - 1] - min) / range) * (height - 20);
-        return <circle cx={lastX} cy={lastY} r="4" fill="#9333ea" stroke="white" strokeWidth="1.5" />;
+        return <circle cx={lastX} cy={lastY} r="4" fill="#e41e2b" stroke="white" strokeWidth="1.5" />;
       })()}
     </svg>
   );
@@ -808,7 +808,7 @@ export default function MinerDashboard({ address }: { address: string }) {
                 <Link
                   href="/pool"
                   className="zion-button-primary group text-sm"
-                  style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+                  style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
                 >
                   <Pickaxe className="h-4 w-4" /> {MinerDashboardCopy.poolDashboard[cs ? 'cs' : 'en']}
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />

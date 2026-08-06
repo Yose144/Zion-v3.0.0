@@ -56,6 +56,7 @@ export default function DogeVsZionBanner({ cs = true }: DogeVsZionBannerProps) {
             alt="Dogecoin"
             width={64}
             height={64}
+            sizes="64px"
             className="h-14 w-14 object-contain"
           />
           <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full border border-white/10 bg-black/70 px-2 py-0.5 text-[8px] font-bold text-amber-300">
@@ -75,7 +76,7 @@ export default function DogeVsZionBanner({ cs = true }: DogeVsZionBannerProps) {
             <span className="rounded-full border border-zion-gold/20 bg-black/40 px-2 py-0.5 text-[8px] font-bold text-zion-gold backdrop-blur-sm">
               💰 $0.0002
             </span>
-            <span className="rounded-full border border-cyan-400/20 bg-black/40 px-2 py-0.5 text-[8px] font-bold text-cyan-300 backdrop-blur-sm">
+            <span className="rounded-full border border-zion-cyan/20 bg-black/40 px-2 py-0.5 text-[8px] font-bold text-zion-cyan backdrop-blur-sm">
               🔒 100M ZION
             </span>
           </div>

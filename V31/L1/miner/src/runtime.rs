@@ -27,6 +27,11 @@ use crate::gpu::{create_gpu_backend, GpuBackendKind};
 #[cfg(feature = "auxpow")]
 use zion_core::V3DifficultyTarget as DifficultyTarget;
 
+// GPU mining for Stream 1 (ZION) — available even without the `auxpow` feature
+// so that a CUDA/OpenCL build can GPU-mine ZION blocks in pool mode.
+use crate::gpu::{GpuMiner, GpuBatchResult};
+use zion_core::v3_compat::{MiningHeader, DifficultyTarget as V3DiffTarget};
+
 #[derive(Debug, thiserror::Error)]
 pub enum MinerError {
     #[error("consensus error: {0}")]
@@ -52,6 +57,9 @@ pub struct MinerRuntime {
     config: Arc<MinerConfig>,
     consensus: Arc<ConsensusEngine>,
     stats: Arc<Mutex<HashMap<StreamId, StreamStats>>>,
+    /// GPU backend for Stream 1 (ZION deeksha). `None` = CPU-only.
+    /// Initialized when `config.gpu_backend` is not "cpu".
+    gpu_zion: Arc<std::sync::Mutex<Option<Box<dyn GpuMiner>>>>,
     #[cfg(feature = "auxpow")]
     scheduler: Arc<Mutex<AuxPoWScheduler>>,
     #[cfg(feature = "auxpow")]
@@ -92,6 +100,39 @@ impl MinerRuntime {
         let stats = Arc::new(Mutex::new(map));
         let config = Arc::new(config);
 
+        // ── Initialize GPU backend for Stream 1 (ZION deeksha) ──
+        // When gpu_backend is not "cpu", create a GPU miner (CUDA/OpenCL/Metal)
+        // for the canonical deeksha_lite_v1 algorithm. Falls back to CPU if init fails.
+        let gpu_backend_str = config.gpu_backend.clone();
+        let gpu_zion: Arc<std::sync::Mutex<Option<Box<dyn GpuMiner>>>> =
+            Arc::new(std::sync::Mutex::new(None));
+        if gpu_backend_str != "cpu" && !gpu_backend_str.is_empty() {
+            let kind = parse_gpu_backend(&gpu_backend_str);
+            let work_size = std::env::var("ZION_GPU_WORK_SIZE")
+                .ok()
+                .and_then(|v| v.trim().parse::<usize>().ok())
+                .unwrap_or(8192);
+            let algorithm = std::env::var("ZION_MINER_ALGORITHM")
+                .unwrap_or_else(|_| "deeksha_lite_v1".to_string());
+            match create_gpu_backend(kind, work_size, &algorithm, "") {
+                Ok(miner) => {
+                    let name = miner.device_name();
+                    let backend = miner.backend_kind().as_str();
+                    println!(
+                        "gpu_zion_init backend={} device=\"{}\" work_size={} algorithm={}",
+                        backend, name, work_size, algorithm
+                    );
+                    *gpu_zion.lock().unwrap() = Some(miner);
+                }
+                Err(e) => {
+                    eprintln!(
+                        "gpu_zion_init_failed backend={} reason=\"{}\" — falling back to CPU",
+                        gpu_backend_str, e
+                    );
+                }
+            }
+        }
+
         #[cfg(feature = "auxpow")]
         {
             let mut profit_router =
@@ -110,6 +151,7 @@ impl MinerRuntime {
                 config,
                 consensus,
                 stats,
+                gpu_zion,
                 scheduler: Arc::new(Mutex::new(AuxPoWScheduler::new(
                     hashrate_per_unit,
                     stream2_force_coin,
@@ -126,6 +168,7 @@ impl MinerRuntime {
                 config,
                 consensus,
                 stats,
+                gpu_zion,
             }
         }
     }
@@ -237,10 +280,50 @@ impl MinerRuntime {
         let job: crate::auxpow::Job = job.into();
         let batch_size = self.config.zion_nonce_batch;
         let t_start = Instant::now();
-        let (nonce, _hash) = self
-            .consensus
-            .mine_header_bytes(&job.header, &job.target, 0, batch_size)
-            .ok_or(MinerError::NoAuxPoWSolution)?;
+
+        // ── Try GPU first (Stream 1 ZION deeksha), fall back to CPU ──
+        let (nonce, _hash) = {
+            let mut gpu_guard = self.gpu_zion.lock().unwrap();
+            if let Some(ref mut gpu) = gpu_guard.as_mut() {
+                // Build MiningHeader from the 80-byte job header
+                let mut header_bytes = [0u8; 80];
+                let copy_len = job.header.len().min(80);
+                header_bytes[..copy_len].copy_from_slice(&job.header[..copy_len]);
+                let mining_header = MiningHeader::from_bytes(header_bytes);
+                let target = V3DiffTarget { bytes: job.target };
+
+                // GPU mine_batch is synchronous CUDA/OpenCL — blocks ~0.5-2s per batch.
+                // This is fine in the async mining loop since there's nothing else to do
+                // while waiting for the GPU result.
+                match gpu.mine_batch(mining_header, target, 0, batch_size) {
+                    Ok(result) => {
+                        if let Some((found_nonce, found_hash, _mix)) = result.solutions.into_iter().next() {
+                            (found_nonce, Hash::new(found_hash))
+                        } else {
+                            // GPU found no solution in this batch — fall back to CPU
+                            drop(gpu_guard);
+                            self.consensus
+                                .mine_header_bytes(&job.header, &job.target, 0, batch_size)
+                                .ok_or(MinerError::NoAuxPoWSolution)?
+                        }
+                    }
+                    Err(e) => {
+                        warn!(error = %e, "gpu_zion_batch_failed — falling back to CPU");
+                        drop(gpu_guard);
+                        self.consensus
+                            .mine_header_bytes(&job.header, &job.target, 0, batch_size)
+                            .ok_or(MinerError::NoAuxPoWSolution)?
+                    }
+                }
+            } else {
+                // No GPU backend — CPU mining
+                drop(gpu_guard);
+                self.consensus
+                    .mine_header_bytes(&job.header, &job.target, 0, batch_size)
+                    .ok_or(MinerError::NoAuxPoWSolution)?
+            }
+        };
+
         let elapsed = t_start.elapsed().as_secs_f64();
         self.update_hashrate(StreamId::Zion, batch_size, elapsed).await;
 
@@ -843,7 +926,6 @@ impl MinerRuntime {
     }
 }
 
-#[cfg(feature = "auxpow")]
 fn parse_gpu_backend(s: &str) -> GpuBackendKind {
     match s.trim().to_ascii_lowercase().as_str() {
         "opencl" | "ocl" => GpuBackendKind::OpenCL,

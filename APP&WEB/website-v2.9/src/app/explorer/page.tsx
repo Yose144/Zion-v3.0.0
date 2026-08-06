@@ -63,7 +63,7 @@ const ExplorerCopy = {
   latestConfirmedBlocksAndTransa: { cs: `Nejnovější potvrzené bloky a tok transakcí ze chainu ZION.`, en: `Latest confirmed blocks and transaction feed from the ZION chain.` },
   quickNavigation: { cs: `Rychlá navigace`, en: `Quick Navigation` },
   jumpToSection: { cs: `Skok do sekce`, en: `Jump to section` },
-  v306Ledger: { cs: `Ledger v3.0.6`, en: `v3.0.6 Ledger` },
+  v32Ledger: { cs: `Ledger v3.2.0`, en: `v3.2.0 Ledger` },
   newFeaturesAndSecurityPatchesV: { cs: `Nové vlastnosti a bezpečnostní patche ověřené end-to-end na živém mainnetu.`, en: `New features and security patches verified end-to-end on the live mainnet.` },
   accountModelMemo: { cs: `Account-model memo`, en: `Account-model memo` },
   txMemoFieldForBridgeDaoAndSwap: { cs: `TX pole memo pro BRIDGE, DAO a SWAP — E2E potvrzeno v bloku 752.`, en: `TX memo field for BRIDGE, DAO, and SWAP — E2E confirmed in block 752.` },
@@ -202,7 +202,7 @@ export default function ExplorerPage() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           className="zion-rainbow-card p-6 md:p-10"
-          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-5">
@@ -346,17 +346,17 @@ export default function ExplorerPage() {
           </div>
         </motion.section>
 
-        {/* ═══════ v3.0.6 E2E LEDGER FEATURES ═══════ */}
+        {/* ═══════ v3.2.0 E2E LEDGER FEATURES ═══════ */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.12 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">v3.0.6 E2E</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">v3.2.0 E2E</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Sparkles className="h-7 w-7 text-zion-gold" />
-              {ExplorerCopy.v306Ledger[cs ? 'cs' : 'en']}
+              {ExplorerCopy.v32Ledger[cs ? 'cs' : 'en']}
             </h2>
             <p className="text-sm text-gray-400">
               {ExplorerCopy.newFeaturesAndSecurityPatchesV[cs ? 'cs' : 'en']}
@@ -527,8 +527,8 @@ export default function ExplorerPage() {
 
         <p className="text-center text-xs text-gray-600">
           {cs
-            ? `ZION TerraNova ${SITE_RELEASE_LABEL} - Blockchain Explorer Pro · Živá data z 2-uzlového Rust runtime · v3.0.6 E2E Trinity`
-            : `ZION TerraNova ${SITE_RELEASE_LABEL} - Blockchain Explorer Pro · Live data from 2-node Rust runtime · v3.0.6 E2E Trinity`}
+            ? `ZION TerraNova ${SITE_RELEASE_LABEL} - Blockchain Explorer Pro · Živá data z 2-uzlového Rust runtime · v3.2.0 E2E Trinity`
+            : `ZION TerraNova ${SITE_RELEASE_LABEL} - Blockchain Explorer Pro · Live data from 2-node Rust runtime · v3.2.0 E2E Trinity`}
         </p>
       </div>
     </div>

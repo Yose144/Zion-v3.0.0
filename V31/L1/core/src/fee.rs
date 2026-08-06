@@ -97,7 +97,7 @@ pub fn total_fees_burned(fees: &[u64]) -> u64 {
 pub const BURN_ADDRESS: &str = "zion1burn0000000000000000000000000000000dead";
 
 /// DAO treasury address (main — Community Governance, 2.5B ZION).
-pub const DAO_ADDRESS: &str = "zion1j5a327c7d3w7h4e474n5p4z0z827f8p874mr2p7";
+pub const DAO_ADDRESS: &str = "zion1x8g2z2v3v5n08542a5u7v7q365l4852048qv6w6";
 
 /// Bridge vault address.
 ///

@@ -11,8 +11,8 @@ export default function SearchPage() {
     <Suspense fallback={
       <div className="pt-28 md:pt-32 pb-24">
         <div className="zion-container max-w-5xl animate-pulse space-y-10">
-          <div className="zion-rainbow-card h-40" style={{ '--rc': '6, 182, 212' } as React.CSSProperties} />
-          <div className="zion-rainbow-card h-60" style={{ '--rc': '6, 182, 212' } as React.CSSProperties} />
+          <div className="zion-rainbow-card h-40" style={{ '--rc': '7, 137, 48' } as React.CSSProperties} />
+          <div className="zion-rainbow-card h-60" style={{ '--rc': '7, 137, 48' } as React.CSSProperties} />
         </div>
       </div>
     }>

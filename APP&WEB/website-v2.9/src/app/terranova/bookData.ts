@@ -97,8 +97,8 @@ export const CHAPTERS: BookChapter[] = [
     subtitleEn: 'Year 2040. Altitude 420 kilometers.',
     epigraphCs: 'Z výšky zůstává viditelné jen to, co bylo na Zemi neseno pravdivě.',
     epigraphEn: 'From altitude, only what was carried truthfully on Earth remains visible.',
-    color: '#FFD700',
-    rgb: '255,215,0',
+    color: '#fcd116',
+    rgb: '252,209,22',
     sectionsCs: [
       {
         body: 'První věc, kterou ve vesmíru ztratíš, není gravitace.\n\nJe to iluze, že hranice na mapách něco znamenají.\n\nZ orbitální stanice Issobella vypadá Země skoro nesnesitelně křehce. Modrá, bílá, zlatá, bez jediného viditelného vlastnictví. Nikde žádné ploty. Žádná cla. Žádná ideologie. Jen jeden dýchající organismus, ponořený do tmy, která ho neohrožuje, ale nese.',
@@ -683,8 +683,8 @@ export const CHAPTERS: BookChapter[] = [
     titleEn: 'Golden Compass',
     epigraphCs: 'Kompas není slib cíle, ale disciplína směru.',
     epigraphEn: 'The compass is not a promise of arrival, but a discipline of direction.',
-    color: '#FFD700',
-    rgb: '255,215,0',
+    color: '#fcd116',
+    rgb: '252,209,22',
     sectionsCs: [
       {
         body: 'Kniha, která skončí jen dojmem, nakonec nikam nevede. Proto Terra Nova musí skončit Kompasem.\n\nNe jako manažerskou tabulkou. Ne jako seznamem KPI. Ale jako formou orientace pro lidi, kteří chtějí vědět, kde je začátek.',

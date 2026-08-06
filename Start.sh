@@ -60,6 +60,11 @@ if [[ -z "$WALLET_ADDRESS" ]]; then
 fi
 
 # ── Stream configuration ────────────────────────────────────────────────────
+# GPU backend for Stream 1 (ZION deeksha) — CUDA for NVIDIA GPUs
+GPU_BACKEND="${ZION_GPU_BACKEND:-cuda}"
+GPU_FLAG="--gpu ${GPU_BACKEND}"
+
+# Stream 2/3 (AuxPoW external coins) — disabled by default, enable with --autonomous
 STREAM2_FLAG=""
 STREAM3_FLAG=""
 
@@ -182,6 +187,7 @@ while true; do
         --wallet '${WALLET_ADDRESS}' \\
         --worker '${ZION_MINER_WORKER}' \\
         --threads '${ZION_MINER_THREADS}' \\
+        --gpu '${GPU_BACKEND}' \\
         --no-tui \\
         ${STREAM2_FLAG} ${STREAM3_FLAG} \\
         --metrics '${ZION_METRICS_BIND}' \\
@@ -234,6 +240,7 @@ while true; do
         --wallet "$WALLET_ADDRESS" \
         --worker "$ZION_MINER_WORKER" \
         --threads "$ZION_MINER_THREADS" \
+        --gpu "$GPU_BACKEND" \
         --interactive \
         ${STREAM2_FLAG} ${STREAM3_FLAG} \
         --metrics "$ZION_METRICS_BIND" \

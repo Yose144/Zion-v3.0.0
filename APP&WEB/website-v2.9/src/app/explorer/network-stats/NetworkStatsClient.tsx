@@ -216,7 +216,7 @@ export default function NetworkStatsClient() {
     { label: ExplorerNetworkStatsNetworkStatsClientCopy.difficulty[cs ? 'cs' : 'en'], value: fmtSI(stats?.difficulty ?? 0), sub: ExplorerNetworkStatsNetworkStatsClientCopy.lwmaDaa[cs ? 'cs' : 'en'], icon: TrendingUp, color: "text-emerald-400", spark: diffData, sparkColor: "rgb(52,211,153)" },
     { label: ExplorerNetworkStatsNetworkStatsClientCopy.blockTime[cs ? 'cs' : 'en'], value: stats?.avg_block_time ? `${stats.avg_block_time.toFixed(1)}s` : "—", sub: `${stats?.target_block_time ?? 60}s ${ExplorerNetworkStatsNetworkStatsClientCopy.target[cs ? 'cs' : 'en']}`, icon: Clock, color: "text-zion-gold", spark: btData, sparkColor: "rgb(234,179,8)" },
     { label: ExplorerNetworkStatsNetworkStatsClientCopy.height[cs ? 'cs' : 'en'], value: (stats?.block_height ?? 0).toLocaleString(), sub: ExplorerNetworkStatsNetworkStatsClientCopy.currentBlock[cs ? 'cs' : 'en'], icon: Blocks, color: "text-purple-400", spark: [], sparkColor: "rgb(168,85,247)" },
-    { label: ExplorerNetworkStatsNetworkStatsClientCopy.totalTx[cs ? 'cs' : 'en'], value: (stats?.tx_count ?? 0).toLocaleString(), sub: `${stats?.tx_pool_size ?? 0} ${ExplorerNetworkStatsNetworkStatsClientCopy.inMempool[cs ? 'cs' : 'en']}`, icon: Layers, color: "text-zion-cyan", spark: txData, sparkColor: "rgb(6,182,212)" },
+    { label: ExplorerNetworkStatsNetworkStatsClientCopy.totalTx[cs ? 'cs' : 'en'], value: (stats?.tx_count ?? 0).toLocaleString(), sub: `${stats?.tx_pool_size ?? 0} ${ExplorerNetworkStatsNetworkStatsClientCopy.inMempool[cs ? 'cs' : 'en']}`, icon: Layers, color: "text-zion-cyan", spark: txData, sparkColor: "rgb(7,137,48)" },
     { label: ExplorerNetworkStatsNetworkStatsClientCopy.peers[cs ? 'cs' : 'en'], value: (stats?.total_connections ?? 0).toLocaleString(), sub: `${stats?.incoming_connections ?? 0} ${ExplorerNetworkStatsNetworkStatsClientCopy.in[cs ? 'cs' : 'en']} / ${stats?.outgoing_connections ?? 0} ${ExplorerNetworkStatsNetworkStatsClientCopy.out[cs ? 'cs' : 'en']}`, icon: Network, color: "text-rose-400", spark: [], sparkColor: "rgb(251,113,133)" },
     { label: ExplorerNetworkStatsNetworkStatsClientCopy.poolHashrate[cs ? 'cs' : 'en'], value: stats?.pool_hashrate_formatted ?? "—", sub: `${stats?.active_miners ?? 0} ${ExplorerNetworkStatsNetworkStatsClientCopy.miners[cs ? 'cs' : 'en']}`, icon: Pickaxe, color: "text-amber-400", spark: [], sparkColor: "rgb(251,191,36)" },
     { label: ExplorerNetworkStatsNetworkStatsClientCopy.altBlocks[cs ? 'cs' : 'en'], value: (stats?.alt_blocks_count ?? 0).toLocaleString(), sub: ExplorerNetworkStatsNetworkStatsClientCopy.potentialForks[cs ? 'cs' : 'en'], icon: BarChart3, color: "text-slate-400", spark: [], sparkColor: "rgb(148,163,184)" },
@@ -226,7 +226,7 @@ export default function NetworkStatsClient() {
     { key: "hashrate", title: ExplorerNetworkStatsNetworkStatsClientCopy.hashrate24h[cs ? 'cs' : 'en'], icon: Zap, color: "#22d3ee", data: hrData },
     { key: "difficulty", title: ExplorerNetworkStatsNetworkStatsClientCopy.difficulty24h[cs ? 'cs' : 'en'], icon: TrendingUp, color: "#34d399", data: diffData },
     { key: "blocktime", title: ExplorerNetworkStatsNetworkStatsClientCopy.blockTime24h[cs ? 'cs' : 'en'], icon: Clock, color: "#eab308", data: btData },
-    { key: "txcount", title: ExplorerNetworkStatsNetworkStatsClientCopy.txBlock24h[cs ? 'cs' : 'en'], icon: Layers, color: "#06b6d4", data: txData },
+    { key: "txcount", title: ExplorerNetworkStatsNetworkStatsClientCopy.txBlock24h[cs ? 'cs' : 'en'], icon: Layers, color: "#078930", data: txData },
   ];
 
   return (
@@ -260,7 +260,7 @@ export default function NetworkStatsClient() {
                   <Globe className="h-3 w-3 text-emerald-400" /> {stats?.connected ? (ExplorerNetworkStatsNetworkStatsClientCopy.online[cs ? 'cs' : 'en']) : (ExplorerNetworkStatsNetworkStatsClientCopy.offline[cs ? 'cs' : 'en'])}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Hash className="h-3 w-3 text-zion-gold" /> {stats?.version || "v3.0.6"}
+                  <Hash className="h-3 w-3 text-zion-gold" /> {stats?.version || "v3.2.0"}
                 </span>
               </div>
             </div>

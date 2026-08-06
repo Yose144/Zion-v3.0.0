@@ -299,7 +299,7 @@ function StatCard({
     rose: "from-rose-500/80 to-pink-600/80",
   };
   return (
-    <div className="zion-rainbow-sub p-5" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
+    <div className="zion-rainbow-sub p-5" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
       <div className="flex items-center gap-3 mb-3">
         <div className={`flex items-center justify-center h-9 w-9 rounded-lg bg-linear-to-br ${accentMap[accent]}`}>
           {icon}
@@ -757,7 +757,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
       <div className={embedded ? "space-y-10" : "zion-container max-w-7xl space-y-10"}>
         {!embedded && (
           <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}>
-            <div className="zion-rainbow-card p-8 md:p-10" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
+            <div className="zion-rainbow-card p-8 md:p-10" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                 <div className="flex items-start gap-4">
                   <div className="flex items-center justify-center h-14 w-14 rounded-2xl bg-linear-to-br from-purple-500/80 to-indigo-600/80 flex-shrink-0">
@@ -789,7 +789,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
 
         {/* ═══════ B. FILTER BAR ═══════ */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
-          <div className="zion-rainbow-sub p-4 md:p-5" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
+          <div className="zion-rainbow-sub p-4 md:p-5" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs uppercase tracking-wider text-gray-500 mr-2">
@@ -898,7 +898,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
               {PoolBlocksCopy.numberOfBlocksDiscoveredByTheP[cs ? 'cs' : 'en']}
             </p>
           </div>
-          <div className="zion-rainbow-card p-6" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
             {hasEnough ? <DiscoveryChart data={buckets} cs={cs} /> : <InsufficientData height={220} cs={cs} />}
           </div>
         </motion.section>
@@ -915,7 +915,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
               {PoolBlocksCopy.cumulativeRatioOfFoundVsExpect[cs ? 'cs' : 'en']}
             </p>
           </div>
-          <div className="zion-rainbow-card p-6" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
             <div className="flex items-center gap-4 mb-3 text-xs">
               <span className="flex items-center gap-1.5">
                 <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-400" />
@@ -946,7 +946,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
               {PoolBlocksCopy.totalZionRewardedEachDayOverTh[cs ? 'cs' : 'en']}
             </p>
           </div>
-          <div className="zion-rainbow-card p-6" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
             {hasEnough ? <RewardChart data={buckets} cs={cs} /> : <InsufficientData height={220} cs={cs} />}
           </div>
         </motion.section>
@@ -963,7 +963,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
               {PoolBlocksCopy.timelineOfPoolHashratePurpleVs[cs ? 'cs' : 'en']}
             </p>
           </div>
-          <div className="zion-rainbow-card p-6" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
             <div className="flex items-center gap-4 mb-3 text-xs">
               <span className="flex items-center gap-1.5">
                 <span className="inline-block h-2.5 w-2.5 rounded-full bg-purple-400" />
@@ -991,7 +991,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
             </p>
           </div>
 
-          <div className="zion-rainbow-card overflow-hidden" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
+          <div className="zion-rainbow-card overflow-hidden" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -1098,7 +1098,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
 
         {!embedded && (
           <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.36 }}>
-            <div className="zion-cta-banner p-8 md:p-10" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
+            <div className="zion-cta-banner p-8 md:p-10" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                 <div className="flex items-start gap-4">
                   <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-linear-to-br from-purple-500/80 to-indigo-600/80 flex-shrink-0">

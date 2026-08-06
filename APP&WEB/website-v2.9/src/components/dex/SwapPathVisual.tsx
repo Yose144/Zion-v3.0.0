@@ -44,7 +44,7 @@ const CHAIN_COLORS: Record<string, string> = {
   stellar: '#7d5fff',
   cardano: '#0033ad',
   cosmos: '#2e3148',
-  aptos: '#06b6d4',
+  aptos: '#078930',
   sui: '#4da2ff',
   near: '#00ec97',
   ton: '#0098ea',

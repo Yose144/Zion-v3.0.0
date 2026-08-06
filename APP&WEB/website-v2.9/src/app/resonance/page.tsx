@@ -172,8 +172,8 @@ const SECTIONS: SectionData[] = [
       'Minimální on-chain registr tónových záměrů. Každý návrh může nést 30sekundový zvukový záznam své podstaty (ne čtení, ale vtělený výraz). Frekvenční Keepers extrahují základní frekvenci a harmonickou koherenci; spektrální hash slouží jako lehká biometrická identita.',
     descEn:
       'Minimal on-chain registry of tonal intentions. Every proposal may carry a 30-second audio recording of its essence (not a reading, but an embodied expression). Frequency Keepers extract fundamental frequency and harmonic coherence; spectral hash serves as lightweight biometric identity.',
-    color: '#06B6D4',
-    rgb: '6,182,212',
+    color: '#078930',
+    rgb: '7,137,48',
   },
 ];
 
@@ -259,7 +259,7 @@ export default function ResonancePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {FREQUENCIES.map((f, i) => (
               <FadeIn key={f.layer} delay={i * 0.05}>
-                <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+                <div className="zion-rainbow-sub p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                   <div className="flex items-center justify-between mb-4">
                     <span
                       className="inline-flex items-center justify-center w-10 h-10 rounded-2xl text-sm font-bold"
@@ -303,7 +303,7 @@ export default function ResonancePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {SECTIONS.map((s, i) => (
               <FadeIn key={s.titleEn} delay={i * 0.08}>
-                <div className="zion-rainbow-card p-6 md:p-8 h-full" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+                <div className="zion-rainbow-card p-6 md:p-8 h-full" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                   <div className="flex items-center gap-3 mb-4">
                     <span
                       className="inline-flex items-center justify-center w-10 h-10 rounded-2xl"
@@ -369,12 +369,12 @@ export default function ResonancePage() {
                   'Miska vody z místního zdroje stojí v centru kruhu. Každý člen položí ruku na nádobu a promluví jedno slovo. Voda se vrátí zpět do země nebo moře s on-chain GPS a časovým hash-em.',
                 descEn:
                   'A bowl of water from the local source stands in the center of the circle. Each member places a hand on the vessel and speaks one word. The water returns to the earth or sea with an on-chain GPS and timestamp hash.',
-                color: '#06B6D4',
-                rgb: '6,182,212',
+                color: '#078930',
+                rgb: '7,137,48',
               },
             ].map((g, i) => (
               <FadeIn key={g.gate} delay={i * 0.08}>
-                <div className="zion-rainbow-card p-6 md:p-8 h-full" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+                <div className="zion-rainbow-card p-6 md:p-8 h-full" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                   <div className="flex items-center gap-3 mb-4">
                     <span
                       className="inline-flex items-center justify-center w-10 h-10 rounded-2xl text-sm font-bold"

@@ -21,7 +21,7 @@ const OBSERVATORY_PRESETS: Record<
   }
 > = {
   maintenance: {
-    starColor: [255, 215, 0],
+    starColor: [252, 209, 22],
     density: 250,
     speed: 2,
     trailOpacity: 0.08,
@@ -46,7 +46,7 @@ const OBSERVATORY_PRESETS: Record<
     speed: 2.6,
     trailOpacity: 0.06,
     backgroundGradient:
-      'radial-gradient(circle at 50% 20%, rgba(10,12,28,0.45), rgba(0,0,0,0.85)), radial-gradient(ellipse at 20% 30%, rgba(147,51,234,0.12), transparent 50%), radial-gradient(ellipse at 80% 70%, rgba(6,182,212,0.08), transparent 50%), rgb(0,0,0)',
+      'radial-gradient(circle at 50% 20%, rgba(10,12,28,0.45), rgba(0,0,0,0.85)), radial-gradient(ellipse at 20% 30%, rgba(228,30,43,0.12), transparent 50%), radial-gradient(ellipse at 80% 70%, rgba(7,137,48,0.08), transparent 50%), rgb(0,0,0)',
     lineTrails: true,
     fpsLimit: 24,
   },

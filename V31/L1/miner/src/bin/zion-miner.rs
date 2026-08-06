@@ -93,6 +93,11 @@ struct Args {
     #[arg(long)]
     no_cpu: bool,
 
+    /// GPU backend for ZION Stream 1 mining: cuda, opencl, metal, cpu, auto.
+    /// Also read from `ZION_GPU_BACKEND`. Default: auto (tries CUDA → OpenCL → CPU).
+    #[arg(long)]
+    gpu: Option<String>,
+
     /// Prometheus metrics server bind address.
     #[arg(long, default_value = "127.0.0.1:9101")]
     metrics: SocketAddr,
@@ -211,6 +216,10 @@ async fn main() -> Result<()> {
     config.stream1_enabled = !args.no_zion;
     config.stream2_enabled = !args.no_gpu;
     config.stream3_enabled = !args.no_cpu;
+    // GPU backend for Stream 1 (ZION deeksha) — CLI overrides env
+    if let Some(ref gpu) = args.gpu {
+        config.gpu_backend = gpu.clone();
+    }
     config.autonomous = args.autonomous;
     config.profit_interval_sec = args.profit_interval;
     config.zion_nonce_batch = args.threads as u64 * 100_000;
@@ -233,6 +242,10 @@ async fn main() -> Result<()> {
             println!("  worker      {}", args.worker);
             println!("  streams     ZION={} GPU={} CPU={}",
                 !args.no_zion, !args.no_gpu, !args.no_cpu);
+            let gpu_backend_display = args.gpu.clone()
+                .or_else(|| std::env::var("ZION_GPU_BACKEND").ok())
+                .unwrap_or_else(|| "cpu".to_string());
+            println!("  gpu_backend {} (Stream 1 ZION)", gpu_backend_display);
             if args.autonomous {
                 println!("  autonomous  ON (profit switching every {}s)", args.profit_interval);
             }

@@ -109,7 +109,7 @@ export default function MainnetCountdown({ embedded = false }: { embedded?: bool
             <div className="relative mt-3">
               <div className="h-1 rounded-full bg-white/5 overflow-hidden">
                 <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-violet-500 to-zion-cyan"
+                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-zion-purple to-zion-cyan"
                   initial={{ width: 0 }}
                   animate={{ width: '100%' }}
                   transition={{ duration: 1.2, ease: 'easeOut' }}
@@ -136,8 +136,8 @@ export default function MainnetCountdown({ embedded = false }: { embedded?: bool
 
           <div className="relative flex flex-col gap-3">
             {/* Phase badge — compact */}
-            <div className="flex items-center gap-2 text-[10px] text-violet-300 bg-violet-500/10 border border-violet-500/20 rounded-full px-2.5 py-1 self-start">
-              <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
+            <div className="flex items-center gap-2 text-[10px] text-zion-purple bg-zion-purple/10 border border-zion-purple/20 rounded-full px-2.5 py-1 self-start">
+              <span className="w-1.5 h-1.5 rounded-full bg-zion-purple animate-pulse" />
               {MainnetCountdownCopy.l2BridgeL3AiDefi[cs ? 'cs' : 'en']}
             </div>
 

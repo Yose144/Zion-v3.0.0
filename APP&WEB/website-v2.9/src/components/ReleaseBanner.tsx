@@ -22,7 +22,7 @@ export default function ReleaseBanner() {
       className="relative z-20 mx-auto max-w-5xl px-4 -mt-4 mb-4"
     >
       <div className="relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.08] px-5 py-4 backdrop-blur-sm">
-        <div className="absolute inset-0 pointer-events-none bg-gradient-to-r from-emerald-500/5 via-transparent to-cyan-500/5" />
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-r from-emerald-500/5 via-transparent to-zion-cyan/5" />
         <div className="relative flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5">
           <div className="flex items-start gap-3 flex-1 min-w-0">
             <div className="rounded-full bg-emerald-500/20 p-2 shrink-0">

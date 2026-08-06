@@ -7,7 +7,7 @@ import { useLang } from '@/contexts/LanguageContext';
 const RoadmapPulseCopy = {
   roadmap: { cs: `Roadmapa`, en: `Roadmap` },
   currentStatus: { cs: `Aktuální stav`, en: `Current status` },
-  v31CutoverComplete: { cs: `V31 cutover dokončen — node, pool i multichain běží v produkci. MainNet Genesis 11. 6. 2026 úspěšný, Bridge/DeFi Run 3.0.6 nasazen, wZION token live na Base Mainnet. Zbývá finální bezpečnostní audit, bridge validator provisioning a komunitní příprava na veřejný launch 31. 12. 2026.`, en: `V31 cutover complete — node, pool, and multichain are production. MainNet Genesis 11 Jun 2026 successful, Bridge/DeFi Run 3.0.6 deployed, wZION token live on Base Mainnet. Final security audit, bridge validator provisioning, and community preparation for public launch 31 Dec 2026 remain.` },
+  v31CutoverComplete: { cs: `One Love Mainnet Stable — node, pool i multichain běží v produkci. MainNet Genesis 11. 6. 2026 úspěšný, Bridge/DeFi Run 3.0.6 nasazen, wZION token live na Base Mainnet. Zbývá finální bezpečnostní audit, bridge validator provisioning a komunitní příprava na veřejný launch 31. 12. 2026.`, en: `One Love Mainnet Stable — node, pool, and multichain are production. MainNet Genesis 11 Jun 2026 successful, Bridge/DeFi Run 3.0.6 deployed, wZION token live on Base Mainnet. Final security audit, bridge validator provisioning, and community preparation for public launch 31 Dec 2026 remain.` },
   fullRoadmap: { cs: `Celá roadmapa`, en: `Full Roadmap` },
   blockExplorer: { cs: `Průzkumník blockchainu`, en: `Block Explorer` },
   phases: {
@@ -32,12 +32,12 @@ const RoadmapPulseCopy = {
       ],
     },
     phase3: {
-      name: { cs: `Fáze 3 · V31 Cutover`, en: `Phase 3 · V31 Cutover` },
+      name: { cs: `Fáze 3 · One Love Cutover`, en: `Phase 3 · One Love Cutover` },
       window: { cs: `Dokončeno 4. 8. 2026`, en: `Completed 4 Aug 2026` },
       progress: 100,
       highlights: [
-        { cs: `V31 node a pool v produkci`, en: `V31 node and pool in production` },
-        { cs: `V31 multichain /health OK`, en: `V31 multichain /health OK` },
+        { cs: `Node a pool v produkci`, en: `Node and pool in production` },
+        { cs: `Multichain /health OK`, en: `Multichain /health OK` },
         { cs: `Decimal fork 1e12→1e6 dokončen`, en: `Decimal fork 1e12→1e6 complete` },
       ],
     },

@@ -167,7 +167,7 @@ export default function Navigation() {
   return (
     <nav
       className={`fixed left-0 right-0 z-50 transition-all duration-300 ease-out ${
-        scrolled ? 'top-0' : 'top-14 sm:top-20 md:top-24 lg:top-28'
+        scrolled ? 'top-0' : 'top-3 sm:top-4 md:top-5'
       }`}
     >
       {/* Subtle ambient glow */}
@@ -189,7 +189,7 @@ export default function Navigation() {
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 group shrink-0">
             <div className={`rounded-lg flex items-center justify-center relative overflow-hidden border border-white/15 group-hover:border-zion-gold/50 transition-all duration-300 bg-transparent shadow-[0_6px_18px_rgba(0,0,0,0.3)] ${scrolled ? 'w-7 h-7 sm:w-8 sm:h-8' : 'w-8 h-8 sm:w-9 sm:h-9'}`}>
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(111,255,240,0.08),transparent_65%)]" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(7,137,48,0.08),transparent_65%)]" />
               <img
                 src="/symbol-200x200.png"
                 alt="ZION TerraNova"
@@ -487,7 +487,7 @@ export default function Navigation() {
                   onClick={() => setIsOpen(false)}
                   className="mt-2 rounded-xl border border-zion-gold/30 bg-linear-to-r from-zion-gold/10 to-amber-600/8 px-3 py-3 inline-flex items-center justify-center min-h-[44px] text-zion-gold font-semibold shadow-[0_0_14px_rgba(251,191,36,0.12)]"
                 >
-                  GitHub · Mainnet Beta
+                  GitHub · Mainnet Stable
                 </a>
               </div>
             </div>

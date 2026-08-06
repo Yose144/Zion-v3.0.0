@@ -106,7 +106,7 @@ const editions = [
   '🇧🇷 PT', '🇯🇵 JP', '🇮🇳 Hindi', '🕉️ Sanskrit', '🌺 Hawaiian', '🏛️ Latin',
 ];
 
-const PURPLE = '147, 51, 234';
+const PURPLE = '228, 30, 43';
 const GOLD = '251, 191, 36';
 
 export default function QuantumRevolutionClient() {
@@ -311,6 +311,7 @@ export default function QuantumRevolutionClient() {
                   alt={QuantumRevolutionQuantumRevolutionClientCopy.quantumRevolutionBookCover[cs ? 'cs' : 'en']}
                   width={220}
                   height={310}
+                  sizes="220px"
                   className="rounded-2xl border shadow-[0_8px_40px_rgba(251,191,36,0.15)] transition-transform hover:scale-[1.03]"
                   style={{ borderColor: `rgba(${GOLD}, 0.3)` }}
                   loading="lazy"

@@ -664,7 +664,7 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
       </div>
 
       {/* Top stats bar */}
-      <div className="w-full zion-rainbow-card zion-rainbow-sub p-3 mb-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+      <div className="w-full zion-rainbow-card zion-rainbow-sub p-3 mb-3" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <span className="text-2xl">🪙</span>
@@ -707,7 +707,7 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
       {/* Main play area: left helpers, center star, right upgrades */}
       <div className="w-full grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-3 items-start">
         {/* Left: Helpers */}
-        <div className="zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+        <div className="zion-rainbow-sub p-3" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
           <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-1.5">
             <Cpu size={15} className="text-emerald-400" /> {DogeVsZionGamesStarMinerCopy.miningRigs[cs ? 'cs' : 'en']}
           </h3>
@@ -755,7 +755,7 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
 
         {/* Center: The Star */}
         <div className="flex flex-col items-center justify-center w-full lg:w-[340px]">
-          <div className="relative zion-rainbow-card zion-rainbow-sub p-6 flex flex-col items-center" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+          <div className="relative zion-rainbow-card zion-rainbow-sub p-6 flex flex-col items-center" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             {/* Clickable star */}
             <button
               onClick={handleStarClick}
@@ -765,7 +765,7 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
               {/* Glow rings */}
               <motion.div
                 className="absolute inset-0 rounded-full"
-                style={{ boxShadow: '0 0 60px 20px rgba(147,51,234,0.45)' }}
+                style={{ boxShadow: '0 0 60px 20px rgba(228,30,43,0.45)' }}
                 animate={{ scale: [1, 1.08, 1], opacity: [0.6, 0.9, 0.6] }}
                 transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
               />
@@ -787,7 +787,7 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
                   height: 180,
                   background: 'radial-gradient(circle at 35% 30%, #c084fc, #7e22ce 55%, #2e1065 100%)',
                   border: '2px solid rgba(216,180,254,0.6)',
-                  boxShadow: 'inset 0 0 40px rgba(255,255,255,0.15), 0 0 80px rgba(147,51,234,0.5)',
+                  boxShadow: 'inset 0 0 40px rgba(255,255,255,0.15), 0 0 80px rgba(228,30,43,0.5)',
                 }}
               >
                 <span className="text-7xl drop-shadow-[0_0_12px_rgba(255,255,255,0.6)] select-none" style={{ pointerEvents: 'none' }}>⭐</span>
@@ -820,7 +820,7 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
         </div>
 
         {/* Right: Upgrades */}
-        <div className="zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+        <div className="zion-rainbow-sub p-3" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
           <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-1.5">
             <Sparkles size={15} className="text-purple-400" /> {DogeVsZionGamesStarMinerCopy.upgrades[cs ? 'cs' : 'en']}
           </h3>
@@ -869,7 +869,7 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
       </div>
 
       {/* Bottom: Layer progress + reset */}
-      <div className="w-full mt-3 zion-rainbow-sub p-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+      <div className="w-full mt-3 zion-rainbow-sub p-3" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <span className="text-lg">{currentLayer.emoji}</span>
@@ -917,7 +917,7 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
               exit={{ scale: 0.6, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 200 }}
               className="zion-rainbow-card p-8 text-center max-w-sm mx-4"
-              style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+              style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
             >
               <motion.div
                 animate={{ scale: [1, 1.2, 1], rotate: [0, 10, -10, 0] }}
@@ -955,7 +955,7 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
               animate={{ scale: 1, y: 0 }}
               transition={{ type: 'spring', stiffness: 180 }}
               className="zion-rainbow-card p-8 text-center max-w-md mx-4"
-              style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+              style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
             >
               <motion.div
                 animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.15, 1] }}
@@ -1056,7 +1056,7 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.8, opacity: 0 }}
               className="zion-rainbow-card p-6 text-center max-w-xs mx-4"
-              style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+              style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
             >
               <motion.div
                 animate={{ y: [0, -8, 0] }}

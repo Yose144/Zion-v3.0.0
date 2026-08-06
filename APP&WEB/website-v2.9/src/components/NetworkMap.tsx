@@ -166,14 +166,14 @@ export default function NetworkMap({ variant = 'card', className }: NetworkMapPr
 
   if (!status) {
     return (
-      <div className={`${finalWrapper} flex items-center justify-center`} style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+      <div className={`${finalWrapper} flex items-center justify-center`} style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
         <Globe className="w-8 h-8 animate-spin text-purple-400" />
       </div>
     );
   }
 
   return (
-    <div className={finalWrapper} style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+    <div className={finalWrapper} style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
       {!isHero && (
         <div className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-black/70 backdrop-blur px-3 py-2 rounded-2xl border border-purple-400/20">
           <Globe className="w-5 h-5 text-purple-400" />

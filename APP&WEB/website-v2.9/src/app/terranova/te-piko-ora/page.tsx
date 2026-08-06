@@ -101,8 +101,8 @@ const FEATURES: FeatureItem[] = [
     descCs: 'Regenerativní péče o laguny, korálové útesy a mořské ekosystémy. Potravní souverenita komunity z oceánu i ze země.',
     descEn: 'Regenerative care for lagoons, coral reefs and marine ecosystems. Community food sovereignty from ocean and land.',
     status: 'planned' as const,
-    color: '#06B6D4',
-    rgb: '6,182,212',
+    color: '#078930',
+    rgb: '7,137,48',
   },
   {
     icon: Globe,
@@ -550,7 +550,7 @@ export default function TePikoOraPage() {
 
                   <div
                     className="zion-rainbow-sub p-4 space-y-1"
-                    style={{ '--rc': p.active ? '6, 182, 212' : '16, 185, 129' } as React.CSSProperties}
+                    style={{ '--rc': p.active ? '7, 137, 48' : '16, 185, 129' } as React.CSSProperties}
                   >
                     <div className="flex items-center gap-3">
                       <span

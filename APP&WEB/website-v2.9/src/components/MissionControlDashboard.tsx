@@ -1270,7 +1270,7 @@ function V3MetricsSection({
         {sparks.chainHeight.length > 1 && (
           <div className="mt-2 zion-tile p-3">
             <div className="text-[10px] text-gray-500 mb-1">{MissionControlDashboardCopy.chainHeight1h[cs ? 'cs' : 'en']}</div>
-            <MiniSparkline data={sparks.chainHeight} color="#FFD700" height={32} />
+            <MiniSparkline data={sparks.chainHeight} color="#fcd116" height={32} />
           </div>
         )}
       </div>
@@ -1289,7 +1289,7 @@ function V3MetricsSection({
         </div>
         {(sparks.poolSessions.length > 1 || sparks.shares.length > 1) && (
           <div className="mt-2 grid md:grid-cols-2 gap-2.5">
-            {sparks.poolSessions.length > 1 && (<div className="zion-tile p-3"><div className="text-[10px] text-gray-500 mb-1">{MissionControlDashboardCopy.activeMiners1h[cs ? 'cs' : 'en']}</div><MiniSparkline data={sparks.poolSessions} color="#FFD700" /></div>)}
+            {sparks.poolSessions.length > 1 && (<div className="zion-tile p-3"><div className="text-[10px] text-gray-500 mb-1">{MissionControlDashboardCopy.activeMiners1h[cs ? 'cs' : 'en']}</div><MiniSparkline data={sparks.poolSessions} color="#fcd116" /></div>)}
             {sparks.shares.length > 1 && (<div className="zion-tile p-3"><div className="text-[10px] text-gray-500 mb-1">{MissionControlDashboardCopy.acceptedShares1h[cs ? 'cs' : 'en']}</div><MiniSparkline data={sparks.shares} color="#10b981" /></div>)}
           </div>
         )}
@@ -2376,8 +2376,8 @@ export default function MissionControlDashboard() {
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="zion-section border-amber-500/40 bg-amber-500/10 p-3 sm:p-4 flex items-center gap-3">
               <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0" />
               <div>
-                <p className="text-sm font-semibold text-amber-300">Testovací metriky / Test Metrics</p>
-                <p className="text-xs text-amber-200/70">Tato data pochází z testovacího provozu. Hodnoty nereprezentují produkční mainnet. · These are test-environment metrics, not production mainnet data.</p>
+                <p className="text-sm font-semibold text-amber-300">{cs ? 'Testovací metriky' : 'Test Metrics'}</p>
+                <p className="text-xs text-amber-200/70">{cs ? 'Tato data pochází z testovacího provozu. Hodnoty nereprezentují produkční mainnet.' : 'These are test-environment metrics, not production mainnet data.'}</p>
               </div>
             </motion.div>
 
@@ -2434,7 +2434,7 @@ export default function MissionControlDashboard() {
                       <MiniMetric label="Alertmanagers" value={fmt(stackSummary.alertmanagersDiscovered)} color="text-emerald-400" />
                       <MiniMetric label="Queue Length" value={fmt(stackSummary.prometheusQueueLength)} color="text-cyan-400" />
                     </div>
-                    <div className="mt-2 text-[10px] text-gray-500">Alertmanager není scrape target v tomto stacku, stav se čte přes Prometheus notification pipeline.</div>
+                    <div className="mt-2 text-[10px] text-gray-500">{cs ? 'Alertmanager není scrape target v tomto stacku, stav se čte přes Prometheus notification pipeline.' : 'Alertmanager is not a scrape target in this stack; status is read via the Prometheus notification pipeline.'}</div>
                   </div>
                   <div className="zion-section p-4">
                     <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-2">Remote Coverage</div>
@@ -2442,7 +2442,7 @@ export default function MissionControlDashboard() {
                       <MiniMetric label="Core Pool" value={stackSummary.corePoolUp === 1 ? 'UP' : stackSummary.corePoolUp === 0 ? 'DOWN' : '—'} color={stackSummary.corePoolUp === 1 ? 'text-emerald-400' : 'text-red-400'} />
                       <MiniMetric label="Core Node" value={stackSummary.coreNodeUp === 1 ? 'UP' : stackSummary.coreNodeUp === 0 ? 'DOWN' : '—'} color={stackSummary.coreNodeUp === 1 ? 'text-emerald-400' : 'text-red-400'} />
                     </div>
-                    <div className="mt-2 text-[10px] text-gray-500">Veřejně scrapeované targety z Helsinek Promethea.</div>
+                    <div className="mt-2 text-[10px] text-gray-500">{cs ? 'Veřejně scrapeované targety z Helsinek Promethea.' : 'Publicly scraped targets from Helsinki Prometheus.'}</div>
                   </div>
                 </div>
                 {opsAlerts.length > 0 && (
@@ -2540,11 +2540,11 @@ export default function MissionControlDashboard() {
                   </div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
-                  <AreaChart data={v3Charts.chainHeight} timestamps={v3Charts.timestamps} label={`Chain Height — ${chartRange}`} color="#FFD700" />
+                  <AreaChart data={v3Charts.chainHeight} timestamps={v3Charts.timestamps} label={`Chain Height — ${chartRange}`} color="#fcd116" />
                   <AreaChart data={v3Charts.poolSessions} timestamps={v3Charts.timestamps} label={`Active Miners — ${chartRange}`} color="#a855f7" />
                   <AreaChart data={v3Charts.shares} timestamps={v3Charts.timestamps} label={`Accepted Shares (cumul.) — ${chartRange}`} color="#10b981" />
                   <AreaChart data={v3Charts.minerHashrate} timestamps={v3Charts.timestamps} label={`Miner Hashrate — ${chartRange}`} color="#22c55e" unit=" H/s" />
-                  <AreaChart data={v3Charts.cpuLoad} timestamps={v3Charts.timestamps} label={`CPU Load (1m avg) — ${chartRange}`} color="#06b6d4" />
+                  <AreaChart data={v3Charts.cpuLoad} timestamps={v3Charts.timestamps} label={`CPU Load (1m avg) — ${chartRange}`} color="#078930" />
                   <AreaChart data={v3Charts.memPct} timestamps={v3Charts.timestamps} label={`Memory Usage % — ${chartRange}`} color="#ec4899" unit="%" />
                   <AreaChart data={v3Charts.redisMemory} timestamps={v3Charts.timestamps} label={`Redis Memory — ${chartRange}`} color="#f97316" />
                 </div>
@@ -2653,14 +2653,12 @@ export default function MissionControlDashboard() {
                   Ekam Deeksha — ASIC Resistance Upgrade
                 </h2>
                 <p className="text-sm text-gray-400">
-                  Ekam Deeksha je dvouúrovňový upgrade ASIC rezistence pro Cosmic Harmony v3.
-                  Tier 1 zpevňuje scratchpad paměťový vzor, Tier 2 přidává epoch-rotující NPU váhy.
-                  Oba tiery jsou nasazeny a validovány na controlled mainnetu; veřejná produkční linka se připravuje na launch 20. června 2026.
+                  {cs ? 'Ekam Deeksha je dvouúrovňový upgrade ASIC rezistence pro Cosmic Harmony v3. Tier 1 zpevňuje scratchpad paměťový vzor, Tier 2 přidává epoch-rotující NPU váhy. Oba tiery jsou nasazeny a validovány na controlled mainnetu; veřejná produkční linka se připravuje na launch 20. června 2026.' : 'Ekam Deeksha is a two-tier ASIC resistance upgrade for Cosmic Harmony v3. Tier 1 hardens the scratchpad memory pattern, Tier 2 adds epoch-rotating NPU weights. Both tiers are deployed and validated on the controlled mainnet; the public production line is preparing for launch on 20 June 2026.'}
                 </p>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                <Stat label="Verze" value={SITE_VERSION} sub={`mainnet launch line · ${SITE_RUNTIME_LABEL}`} color="text-zion-gold" />
-                <Stat label="Nové testy" value="122" sub="108 Tier 1 + 14 Tier 2" color="text-emerald-400" mono />
+                <Stat label={cs ? 'Verze' : 'Version'} value={SITE_VERSION} sub={`mainnet launch line · ${SITE_RUNTIME_LABEL}`} color="text-zion-gold" />
+                <Stat label={cs ? 'Nové testy' : 'New tests'} value="122" sub="108 Tier 1 + 14 Tier 2" color="text-emerald-400" mono />
                 <Stat label="Pool Accept" value="100%" sub="10/10 accepted · 0 rejected" color="text-emerald-400" mono />
                 <Stat label="Hashrate" value="166 H/s" sub="testnet canary miner" color="text-cyan-400" mono />
               </div>
@@ -2693,11 +2691,11 @@ export default function MissionControlDashboard() {
                   </div>
                   <div className="space-y-2 text-sm">
                     {[
-                      { done: true, text: 'Scratchpad 256 KiB (zvýšení z 64 KiB)' },
-                      { done: true, text: '4 hashovací průchody (z 3)' },
-                      { done: true, text: '256 paměťových čtení (z 128)' },
-                      { done: true, text: 'Memory-hard vzor — ASIC penalizace' },
-                      { done: true, text: '108 unit testů — deterministika, vektory' },
+                      { done: true, text: cs ? 'Scratchpad 256 KiB (zvýšení z 64 KiB)' : 'Scratchpad 256 KiB (increased from 64 KiB)' },
+                      { done: true, text: cs ? '4 hashovací průchody (z 3)' : '4 hash passes (from 3)' },
+                      { done: true, text: cs ? '256 paměťových čtení (z 128)' : '256 memory reads (from 128)' },
+                      { done: true, text: cs ? 'Memory-hard vzor — ASIC penalizace' : 'Memory-hard pattern — ASIC penalty' },
+                      { done: true, text: cs ? '108 unit testů — deterministika, vektory' : '108 unit tests — determinism, vectors' },
                       { done: true, text: 'Commit c423a5e' },
                     ].map(item => (
                       <div key={item.text} className="flex items-center gap-2">
@@ -2719,10 +2717,10 @@ export default function MissionControlDashboard() {
                   <div className="space-y-2 text-sm">
                     {[
                       { done: true, text: 'NPU_EPOCH_LENGTH: 2016 (mainnet) / 100 (testnet)' },
-                      { done: true, text: 'Deterministické váhy z epoch seed' },
-                      { done: true, text: 'Rotace každých 2016 bloků (jako BTC retarget)' },
-                      { done: true, text: 'algorithms_npu.rs — +370 řádků' },
-                      { done: true, text: '14 testů — epoch boundaries, přechody' },
+                      { done: true, text: cs ? 'Deterministické váhy z epoch seed' : 'Deterministic weights from epoch seed' },
+                      { done: true, text: cs ? 'Rotace každých 2016 bloků (jako BTC retarget)' : 'Rotation every 2016 blocks (like BTC retarget)' },
+                      { done: true, text: cs ? 'algorithms_npu.rs — +370 řádků' : 'algorithms_npu.rs — +370 lines' },
+                      { done: true, text: cs ? '14 testů — epoch boundaries, přechody' : '14 tests — epoch boundaries, transitions' },
                       { done: true, text: 'Commit 79c903a' },
                     ].map(item => (
                       <div key={item.text} className="flex items-center gap-2">
@@ -2798,20 +2796,20 @@ export default function MissionControlDashboard() {
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Technical</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Code2 className="h-7 w-7 text-cyan-400" />
-                  Ekam Deeksha — Technické parametry
+                  {cs ? 'Ekam Deeksha — Technické parametry' : 'Ekam Deeksha — Technical Parameters'}
                 </h2>
               </div>
               <div className="grid gap-5 md:grid-cols-2">
                 <div className="zion-rainbow-sub p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
-                  <h3 className="text-base font-semibold text-white mb-4">Scratchpad Ekam (Tier 1)</h3>
+                  <h3 className="text-base font-semibold text-white mb-4">{cs ? 'Scratchpad Ekam (Tier 1)' : 'Scratchpad Ekam (Tier 1)'}</h3>
                   <div className="space-y-2">
                     {[
-                      ['Velikost', '256 KiB (262,144 B)'],
-                      ['Průchody', '4 (z 3)'],
-                      ['Paměťová čtení', '256 (z 128)'],
-                      ['Hash funkce', 'Blake3 + Keccak256'],
-                      ['Soubor', 'scratchpad_ekam.rs'],
-                      ['ASIC skóre', '65/100 → odhadovaný 78/100'],
+                      [cs ? 'Velikost' : 'Size', '256 KiB (262,144 B)'],
+                      [cs ? 'Průchody' : 'Passes', cs ? '4 (z 3)' : '4 (from 3)'],
+                      [cs ? 'Paměťová čtení' : 'Memory reads', cs ? '256 (z 128)' : '256 (from 128)'],
+                      [cs ? 'Hash funkce' : 'Hash function', 'Blake3 + Keccak256'],
+                      [cs ? 'Soubor' : 'File', 'scratchpad_ekam.rs'],
+                      [cs ? 'ASIC skóre' : 'ASIC score', cs ? '65/100 → odhadovaný 78/100' : '65/100 → estimated 78/100'],
                     ].map(([k, v]) => (
                       <div key={k} className="flex justify-between text-sm border-b border-white/5 pb-1.5">
                         <span className="text-gray-400">{k}</span>
@@ -2824,12 +2822,12 @@ export default function MissionControlDashboard() {
                   <h3 className="text-base font-semibold text-white mb-4">Epoch NPU (Tier 2)</h3>
                   <div className="space-y-2">
                     {[
-                      ['Epoch délka', '2016 bloků (mainnet)'],
-                      ['Testnet epoch', '100 bloků'],
-                      ['Rotace vah', 'Deterministická z epoch seed'],
-                      ['NPU operace', '16 (add/sub/xor/rot/mul/...)'],
-                      ['Soubor', 'algorithms_npu.rs (+370 LOC)'],
-                      ['Test vektor', 'd043e26b...35c3'],
+                      [cs ? 'Epoch délka' : 'Epoch length', cs ? '2016 bloků (mainnet)' : '2016 blocks (mainnet)'],
+                      [cs ? 'Testnet epoch' : 'Testnet epoch', cs ? '100 bloků' : '100 blocks'],
+                      [cs ? 'Rotace vah' : 'Weight rotation', cs ? 'Deterministická z epoch seed' : 'Deterministic from epoch seed'],
+                      [cs ? 'NPU operace' : 'NPU operations', '16 (add/sub/xor/rot/mul/...)'],
+                      [cs ? 'Soubor' : 'File', 'algorithms_npu.rs (+370 LOC)'],
+                      [cs ? 'Test vektor' : 'Test vector', 'd043e26b...35c3'],
                     ].map(([k, v]) => (
                       <div key={k} className="flex justify-between text-sm border-b border-white/5 pb-1.5">
                         <span className="text-gray-400">{k}</span>
@@ -2853,19 +2851,19 @@ export default function MissionControlDashboard() {
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Changed Files</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Construction className="h-7 w-7 text-orange-400" />
-                  Dotčené soubory
+                  {cs ? 'Dotčené soubory' : 'Changed Files'}
                 </h2>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
                 {[
-                  { file: 'L1/cosmic-harmony/src/scratchpad_ekam.rs', change: 'Nový — 256 KiB scratchpad', type: 'new' },
-                  { file: 'L1/cosmic-harmony/src/algorithms_npu.rs', change: 'Nový — epoch NPU weights (+370 LOC)', type: 'new' },
-                  { file: 'L1/cosmic-harmony/src/deeksha.rs', change: 'Upraven — v2 pipeline + block_height', type: 'mod' },
-                  { file: 'L1/cosmic-harmony/src/algorithms_opt.rs', change: 'Upraven — apply_npu_weights()', type: 'mod' },
-                  { file: 'L1/cosmic-harmony/src/lib.rs', change: 'Upraven — export nových modulů', type: 'mod' },
-                  { file: 'L1/miner/src/native_algos.rs', change: 'Upraven — deeksha_v2_hash()', type: 'mod' },
+                  { file: 'L1/cosmic-harmony/src/scratchpad_ekam.rs', change: cs ? 'Nový — 256 KiB scratchpad' : 'New — 256 KiB scratchpad', type: 'new' },
+                  { file: 'L1/cosmic-harmony/src/algorithms_npu.rs', change: cs ? 'Nový — epoch NPU weights (+370 LOC)' : 'New — epoch NPU weights (+370 LOC)', type: 'new' },
+                  { file: 'L1/cosmic-harmony/src/deeksha.rs', change: cs ? 'Upraven — v2 pipeline + block_height' : 'Modified — v2 pipeline + block_height', type: 'mod' },
+                  { file: 'L1/cosmic-harmony/src/algorithms_opt.rs', change: cs ? 'Upraven — apply_npu_weights()' : 'Modified — apply_npu_weights()', type: 'mod' },
+                  { file: 'L1/cosmic-harmony/src/lib.rs', change: cs ? 'Upraven — export nových modulů' : 'Modified — export of new modules', type: 'mod' },
+                  { file: 'L1/miner/src/native_algos.rs', change: cs ? 'Upraven — deeksha_v2_hash()' : 'Modified — deeksha_v2_hash()', type: 'mod' },
                   { file: '3x GPU kernels', change: 'CUDA/OpenCL/Metal — NPU weights', type: 'mod' },
-                  { file: 'L1/pool/ E2E testy', change: 'Nové — pool-side validace Tier 1+2', type: 'new' },
+                  { file: cs ? 'L1/pool/ E2E testy' : 'L1/pool/ E2E tests', change: cs ? 'Nové — pool-side validace Tier 1+2' : 'New — pool-side validation Tier 1+2', type: 'new' },
                   { file: 'docker/Dockerfile.{core,pool,miner}', change: 'FEATURES build arg + testnet', type: 'mod' },
                   { file: 'docker/docker-compose.testnet.yml', change: 'Testnet feature flag v2.9.8', type: 'mod' },
                 ].map(f => (
@@ -2934,7 +2932,7 @@ export default function MissionControlDashboard() {
                   <Target className="h-7 w-7 text-zion-gold" />
                   Roadmap — Launch Countdown
                 </h2>
-                <p className="text-sm text-gray-400">Fáze 0–4 hotové, fáze 5 v přípravě. V3 Mainnet target 31. prosince 2026 (Silvestr). Edge server topology v testování.</p>
+                <p className="text-sm text-gray-400">{cs ? 'Fáze 0–4 hotové, fáze 5 v přípravě. V3 Mainnet target 31. prosince 2026 (Silvestr). Edge server topology v testování.' : 'Phases 0–4 complete, phase 5 in preparation. V3 Mainnet target 31 December 2026 (New Year\'s Eve). Edge server topology in testing.'}</p>
               </div>
               <div className="relative h-9 zion-section overflow-hidden">
                 <motion.div className="absolute inset-y-0 left-0 rounded-2xl bg-linear-to-r from-amber-400 via-cyan-400 to-purple-400" initial={{ width: 0 }} animate={{ width: '65%' }} transition={{ duration: 1.2 }} />
@@ -2950,20 +2948,20 @@ export default function MissionControlDashboard() {
               className="space-y-5"
             >
               <PhaseAccordion icon={<CheckCircle2 className="h-6 w-6 text-emerald-400" />} title={MissionControlDashboardCopy.phase0SpecFreezeCoreRewrite[cs ? 'cs' : 'en']} pct={100} status={MissionControlDashboardCopy.completed[cs ? 'cs' : 'en']} statusColor="border-emerald-400/30 bg-emerald-400/10 text-emerald-200" defaultOpen>
-                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Únor 2026 — 155 testů, 8 commitů</p>
+                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> {cs ? 'Únor 2026 — 155 testů, 8 commitů' : 'February 2026 — 155 tests, 8 commits'}</p>
                 <div className="overflow-x-auto"><table className="w-full text-left"><tbody>
-                  <SprintRow name="0.0 Repo Migrace" content="Čisté repo, workspace, Docker, CI/CD" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
+                  <SprintRow name="0.0 Repo Migrace" content={cs ? 'Čisté repo, workspace, Docker, CI/CD' : 'Clean repo, workspace, Docker, CI/CD'} status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="0.1 Emission & Genesis" content="5,400.067 ZION/block, 16.28B premine" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
-                  <SprintRow name="0.2 DAA & Consensus" content="LWMA 60-blok, ±25%, fork-choice" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
+                  <SprintRow name="0.2 DAA & Consensus" content={cs ? 'LWMA 60-blok, ±25%, fork-choice' : 'LWMA 60-block, ±25%, fork-choice'} status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="0.3 Fee Market" content="Fee burning, double-spend, min fee" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="0.4 Wallet & TX" content="UTXO select, Ed25519, broadcast" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="0.5 Consensus Hardening" content="Maturity=100, reorg=10, finality=60" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                 </tbody></table></div>
               </PhaseAccordion>
 
-              <PhaseAccordion icon={<RefreshCw className="h-6 w-6 text-cyan-400" />} title="Fáze 1 — Mainnet Stability & Launch Gate" pct={100} status="DOKONČENO" statusColor="border-emerald-400/30 bg-emerald-400/10 text-emerald-200" defaultOpen>
-                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Březen — Květen 2026 | Stability run + closure evidence uzavřena | Security gate PASS</p>
-                <div className="overflow-x-auto"><table className="w-full text-left"><thead><tr><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Sprint</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Obsah</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Testy</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Stav</th></tr></thead><tbody>
+              <PhaseAccordion icon={<RefreshCw className="h-6 w-6 text-cyan-400" />} title={cs ? 'Fáze 1 — Mainnet Stability & Launch Gate' : 'Phase 1 — Mainnet Stability & Launch Gate'} pct={100} status={cs ? 'DOKONČENO' : 'COMPLETED'} statusColor="border-emerald-400/30 bg-emerald-400/10 text-emerald-200" defaultOpen>
+                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> {cs ? 'Březen — Květen 2026 | Stability run + closure evidence uzavřena | Security gate PASS' : 'March — May 2026 | Stability run + closure evidence closed | Security gate PASS'}</p>
+                <div className="overflow-x-auto"><table className="w-full text-left"><thead><tr><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Sprint</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">{cs ? 'Obsah' : 'Content'}</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">{cs ? 'Testy' : 'Tests'}</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">{cs ? 'Stav' : 'Status'}</th></tr></thead><tbody>
                   <SprintRow name="1.0 Network Deploy" content="Chain reset, Docker, historical 3-server rollout baseline" tests="—" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="1.1 Config Validation" content="TOML parsing, boundary checks" tests="70" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="1.2 Security Edge-Case" content="Reorg, double-spend, fork-choice" tests="29" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
@@ -2974,20 +2972,20 @@ export default function MissionControlDashboard() {
                   <SprintRow name="1.7 P2P Rate-Limit" content="200 msgs/peer/60s, escalating bans" tests="13" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="1.8 Health & Metrics" content="getHealthCheck, getMetrics" tests="8" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="1.9 Stress Tests" content="High-throughput TX, rapid blocks" tests="21" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
-                  <SprintRow name="1.10 72h Mainnet Stability Run" content="Edge server tip agreement, restart discipline a pool recovery evidence (private network)" tests="—" status={<span className={`${stabilityStatusColor} inline-flex items-center gap-1`}><RefreshCw className="h-3.5 w-3.5" /> {stabilityStatus}</span>} highlight />
-                  <SprintRow name="1.11 Partition Test" content="Izolace node 30 min, reconnect" tests="—" status={<Square className="h-4 w-4 text-gray-500" />} />
-                  <SprintRow name="1.12 100 Miners" content="Simulace 100 Stratum klientů" tests="—" status={<Square className="h-4 w-4 text-gray-500" />} />
+                  <SprintRow name="1.10 72h Mainnet Stability Run" content={cs ? 'Edge server tip agreement, restart discipline a pool recovery evidence (private network)' : 'Edge server tip agreement, restart discipline, and pool recovery evidence (private network)'} tests="—" status={<span className={`${stabilityStatusColor} inline-flex items-center gap-1`}><RefreshCw className="h-3.5 w-3.5" /> {stabilityStatus}</span>} highlight />
+                  <SprintRow name="1.11 Partition Test" content={cs ? 'Izolace node 30 min, reconnect' : 'Node isolation 30 min, reconnect'} tests="—" status={<Square className="h-4 w-4 text-gray-500" />} />
+                  <SprintRow name="1.12 100 Miners" content={cs ? 'Simulace 100 Stratum klientů' : 'Simulation of 100 Stratum clients'} tests="—" status={<Square className="h-4 w-4 text-gray-500" />} />
                   <SprintRow name="1.13 Ekam Tier 1" content="Scratchpad 256 KiB, 4 passes, 256 reads" tests="108" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} highlight />
                   <SprintRow name="1.14 Ekam Tier 2" content="Epoch NPU weights, rotate per 2016/100 blocks" tests="14" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} highlight />
                   <SprintRow name="1.15 Testnet Flag" content="Conditional compile NPU_EPOCH_LENGTH" tests="—" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
-                  <SprintRow name="1.16 Collector Evidence" content="Stability collector uzavřen — vzorky, tip agreement a pool recovery evidence potvrzeny" tests="—" status={<span className="text-emerald-400 inline-flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> CLOSED</span>} highlight />
+                  <SprintRow name="1.16 Collector Evidence" content={cs ? 'Stability collector uzavřen — vzorky, tip agreement a pool recovery evidence potvrzeny' : 'Stability collector closed — samples, tip agreement, and pool recovery evidence confirmed'} tests="—" status={<span className="text-emerald-400 inline-flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> CLOSED</span>} highlight />
                   <SprintRow name="1.17 On-chain Reward Split" content="89/5/5/1 enforced live on blocks 465 / 471 / 472" tests="—" status={<span className="text-emerald-400 inline-flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> LIVE</span>} highlight />
-                  <SprintRow name="1.18 Closure Evidence" content="Chain growth, tip agreement, reject rate a recovery verdict — launch gate uzavřen" tests="—" status={<span className="text-emerald-400 inline-flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> READY</span>} highlight />
+                  <SprintRow name="1.18 Closure Evidence" content={cs ? 'Chain growth, tip agreement, reject rate a recovery verdict — launch gate uzavřen' : 'Chain growth, tip agreement, reject rate, and recovery verdict — launch gate closed'} tests="—" status={<span className="text-emerald-400 inline-flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> READY</span>} highlight />
                 </tbody></table></div>
               </PhaseAccordion>
 
-              <PhaseAccordion icon={<CheckCircle2 className="h-6 w-6 text-emerald-400" />} title="Fáze 2 — Node UX & Mining" pct={100} status="DOKONČENO" statusColor="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">
-                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Červen — Červenec 2026 — Node setup, mining guides, explorer live</p>
+              <PhaseAccordion icon={<CheckCircle2 className="h-6 w-6 text-emerald-400" />} title={cs ? 'Fáze 2 — Node UX & Mining' : 'Phase 2 — Node UX & Mining'} pct={100} status={cs ? 'DOKONČENO' : 'COMPLETED'} statusColor="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">
+                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> {cs ? 'Červen — Červenec 2026 — Node setup, mining guides, explorer live' : 'June — July 2026 — Node setup, mining guides, explorer live'}</p>
                 <div className="overflow-x-auto"><table className="w-full text-left"><tbody>
                   <SprintRow name="2.1 Node UX" content="10-min setup, config.toml, structured logging, CLI → /mining/node-setup" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="2.2 Mining Polish" content="CPU bench, GPU stability, failover, solo → /mining/guides" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
@@ -2995,34 +2993,34 @@ export default function MissionControlDashboard() {
                 </tbody></table></div>
               </PhaseAccordion>
 
-              <PhaseAccordion icon={<CheckCircle2 className="h-6 w-6 text-emerald-400" />} title="Fáze 3 — Launch Ops & Security Closure" pct={100} status="DOKONČENO" statusColor="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">
-                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Duben — Květen 2026 | Všechny closure položky uzavřeny</p>
+              <PhaseAccordion icon={<CheckCircle2 className="h-6 w-6 text-emerald-400" />} title={cs ? 'Fáze 3 — Launch Ops & Security Closure' : 'Phase 3 — Launch Ops & Security Closure'} pct={100} status={cs ? 'DOKONČENO' : 'COMPLETED'} statusColor="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">
+                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> {cs ? 'Duben — Květen 2026 | Všechny closure položky uzavřeny' : 'April — May 2026 | All closure items closed'}</p>
                 <div className="overflow-x-auto"><table className="w-full text-left"><tbody>
-                  <SprintRow name="3.1 Node Set Audit" content="Edge server potvrzené po fee-split rolloutu, privátní síť" status={<span className="text-emerald-400">SYNCED</span>} />
+                  <SprintRow name="3.1 Node Set Audit" content={cs ? 'Edge server potvrzené po fee-split rolloutu, privátní síť' : 'Edge server confirmed after fee-split rollout, private network'} status={<span className="text-emerald-400">SYNCED</span>} />
                   <SprintRow name="3.2 Release Artefacts" content="runbook ✅, operator guide ✅, checksums ✅, release tag ✅" status={<span className="text-emerald-400">4/4</span>} />
-                  <SprintRow name="3.3 Security Hygiene" content="fuzz harnessy ✅, BFG scrub ✅, boundary review ✅" status={<span className="text-emerald-400">3/3</span>} />
+                  <SprintRow name="3.3 Security Hygiene" content={cs ? 'fuzz harnessy ✅, BFG scrub ✅, boundary review ✅' : 'fuzz harnesses ✅, BFG scrub ✅, boundary review ✅'} status={<span className="text-emerald-400">3/3</span>} />
                   <SprintRow name="3.4 Recovery & Alerts" content="metrics ✅, alert routing ✅, backup/restore ✅" status={<span className="text-emerald-400">3/3</span>} />
                 </tbody></table></div>
               </PhaseAccordion>
 
-              <PhaseAccordion icon={<CheckCircle2 className="h-6 w-6 text-emerald-400" />} title="Fáze 4 — Public Launch Gate" pct={100} status="PASS · GO" statusColor="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">
+              <PhaseAccordion icon={<CheckCircle2 className="h-6 w-6 text-emerald-400" />} title={cs ? 'Fáze 4 — Public Launch Gate' : 'Phase 4 — Public Launch Gate'} pct={100} status="PASS · GO" statusColor="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">
                 <div className="overflow-x-auto"><table className="w-full text-left"><tbody>
-                  <SprintRow name="4.1 Closure Report" content="Stability verdict pro chain growth, rejects a recovery — uzavřen" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
-                  <SprintRow name="4.2 Exit Criteria Sign-off" content="MAINNET_EXIT_CRITERIA.md uzavřen, waiver log potvrzen" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
-                  <SprintRow name="4.3 Genesis Artefacts" content="Offline genesis hash, checksums, release tag a artifact chain — kompletní" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
+                  <SprintRow name="4.1 Closure Report" content={cs ? 'Stability verdict pro chain growth, rejects a recovery — uzavřen' : 'Stability verdict for chain growth, rejects, and recovery — closed'} status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
+                  <SprintRow name="4.2 Exit Criteria Sign-off" content={cs ? 'MAINNET_EXIT_CRITERIA.md uzavřen, waiver log potvrzen' : 'MAINNET_EXIT_CRITERIA.md closed, waiver log confirmed'} status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
+                  <SprintRow name="4.3 Genesis Artefacts" content={cs ? 'Offline genesis hash, checksums, release tag a artifact chain — kompletní' : 'Offline genesis hash, checksums, release tag, and artifact chain — complete'} status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                 </tbody></table></div>
               </PhaseAccordion>
 
-              <PhaseAccordion icon={<Rocket className="h-6 w-6 text-emerald-400" />} title="Fáze 5 — Production Mainnet Genesis" pct={15} status="20. 6. 2026" statusColor="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">
-                <div className="overflow-x-auto"><table className="w-full text-left"><thead><tr><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Den</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Aktivita</th></tr></thead><tbody>
+              <PhaseAccordion icon={<Rocket className="h-6 w-6 text-emerald-400" />} title={cs ? 'Fáze 5 — Production Mainnet Genesis' : 'Phase 5 — Production Mainnet Genesis'} pct={15} status="20. 6. 2026" statusColor="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">
+                <div className="overflow-x-auto"><table className="w-full text-left"><thead><tr><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">{cs ? 'Den' : 'Day'}</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">{cs ? 'Aktivita' : 'Activity'}</th></tr></thead><tbody>
                   {[
-                    ['T-14', 'Genesis freeze — parametry zmrazeny'],
-                    ['T-10', 'Seed nody deployed a sync'],
-                    ['T-7', 'Community announcement + wallety'],
+                    ['T-14', cs ? 'Genesis freeze — parametry zmrazeny' : 'Genesis freeze — parameters frozen'],
+                    ['T-10', cs ? 'Seed nody deployed a sync' : 'Seed nodes deployed and synced'],
+                    ['T-7', cs ? 'Community announcement + wallety' : 'Community announcement + wallets'],
                     ['T-5', 'Wallet release (desktop + CLI)'],
-                    ['T-3', 'Mining guide publikován'],
+                    ['T-3', cs ? 'Mining guide publikován' : 'Mining guide published'],
                     ['T-2', 'Final node software release'],
-                    ['T-1', 'Genesis block vytvořen OFFLINE'],
+                    ['T-1', cs ? 'Genesis block vytvořen OFFLINE' : 'Genesis block created OFFLINE'],
                   ].map(([day, act]) => <tr key={day}><td className="py-2.5 px-4 text-sm font-semibold text-white rounded-l-lg">{day}</td><td className="py-2.5 px-4 text-sm text-gray-400 rounded-r-lg">{act}</td></tr>)}
                   <tr className="bg-pink-500/5"><td className="py-2.5 px-4 text-sm font-semibold text-pink-400 rounded-l-lg"><span className="inline-flex items-center gap-1">T-0 <Rocket className="h-3.5 w-3.5" /></span></td><td className="py-2.5 px-4 text-sm font-bold text-pink-400 rounded-r-lg">PRODUCTION MAINNET GENESIS</td></tr>
                 </tbody></table></div>
@@ -3049,16 +3047,16 @@ export default function MissionControlDashboard() {
                   <Layers className="h-7 w-7 text-zion-gold" />
                   {MissionControlDashboardCopy.layerStack[cs ? 'cs' : 'en']}
                 </h2>
-                <p className="text-sm text-gray-400 italic">&quot;Jednoduchý L1 blockchain, který funguje bezchybně, je základem pro nekonečný ekosystém nad ním.&quot;</p>
+                <p className="text-sm text-gray-400 italic">{cs ? '&quot;Jednoduchý L1 blockchain, který funguje bezchybně, je základem pro nekonečný ekosystém nad ním.&quot;' : '&quot;A simple L1 blockchain that works flawlessly is the foundation for an infinite ecosystem above it.&quot;'}</p>
               </div>
               <div className="space-y-3">
                 {[
-                  { label: 'L6 — ZION ISSOBELLA', color: 'border-l-rose-400 bg-rose-500/5', title: 'Orbital Consciousness Station', desc: 'Vesmírná stanice ZION Issobella — decentralizovaný výzkum, orbital mining, 5% block reward fund', tags: ['Space Station', 'Orbital Mining', '5% Fund', 'Deep Research'], date: '2040+', labelColor: 'text-rose-400', active: false, Icon: Rocket },
-                  { label: 'L5 — FREE WORLD', color: 'border-l-amber-400 bg-amber-500/5', title: 'Sovereign Governance Layer', desc: 'Plně decentralizovaná správa, komunitní governance, svobodný ekosystém bez hranic', tags: ['Governance', 'Sovereignty', 'Community', 'Freedom'], date: '2030+', labelColor: 'text-amber-400', active: false, Icon: Globe2 },
-                  { label: 'L4 — ZION OASIS', color: 'border-l-pink-400 bg-pink-500/5', title: 'Consciousness Mining as Gameplay', desc: 'UE5 open-world, XP/Consciousness levels, NFT avatary, Play-to-Mine', tags: ['UE5 World', 'XP System', 'NFT Avatars', 'Play-to-Mine'], date: '2029+', labelColor: 'text-pink-400', active: false, Icon: Gamepad2 },
-                  { label: 'L3 — WARP & AI NATIVE', color: 'border-l-purple-400 bg-purple-500/5', title: 'Neural Compute Layer & AI Agents', desc: 'WARP adapters 7/7 hotovo, NCL gateway online, AI Native SDK navazuje', tags: ['WARP 7/7', 'NCL Gateway', 'AI Orchestrátor', 'GPU za ZION'], date: '2026 Q1–Q2 (testnet hotovo)', labelColor: 'text-purple-400', active: true, Icon: Brain },
-                  { label: 'L2 — DEX & DeFi', color: 'border-l-blue-400 bg-blue-500/5', title: 'Atomic Swaps, AMM & DAO', desc: 'wZION bridge na Base Sepolia testnet ready, další DeFi kroky navazují', tags: ['HTLC Swaps', 'wZION Bridge', 'Base Sepolia', 'DAO Voting'], date: '2026 Q1–Q2 (testnet ready)', labelColor: 'text-blue-400', active: true, Icon: ArrowLeftRight },
-                  { label: 'L1 — ZION BLOCKCHAIN ← ZDE', color: 'border-l-cyan-400 bg-cyan-500/[0.08] border-2 border-cyan-500/20 shadow-[0_0_30px_rgba(34,211,238,0.12)]', title: 'PoW Cosmic Harmony v3 — Ekam Deeksha', desc: 'UTXO + Ed25519, Decade Decay emise (-20%/dekádu), LWMA DAA, fee burning, dual-mining ZION+VRSC. Ekam Deeksha: 256 KiB scratchpad + epoch NPU weights (ASIC resistance Tier 1+2 deployed).', tags: ['Ekam Deeksha', 'ASIC-resistant', 'UTXO Model', 'Ed25519', 'Decade Decay', 'Fee Burn', 'Dual Mining'], date: 'Test mainnet now · production target 31. 12. 2026', labelColor: 'text-cyan-400', active: true, Icon: Link },
+                  { label: 'L6 — ZION ISSOBELLA', color: 'border-l-rose-400 bg-rose-500/5', title: 'Orbital Consciousness Station', desc: cs ? 'Vesmírná stanice ZION Issobella — decentralizovaný výzkum, orbital mining, 5% block reward fund' : 'ZION Issobella space station — decentralized research, orbital mining, 5% block reward fund', tags: ['Space Station', 'Orbital Mining', '5% Fund', 'Deep Research'], date: '2040+', labelColor: 'text-rose-400', active: false, Icon: Rocket },
+                  { label: 'L5 — FREE WORLD', color: 'border-l-amber-400 bg-amber-500/5', title: 'Sovereign Governance Layer', desc: cs ? 'Plně decentralizovaná správa, komunitní governance, svobodný ekosystém bez hranic' : 'Fully decentralized governance, community governance, free ecosystem without borders', tags: ['Governance', 'Sovereignty', 'Community', 'Freedom'], date: '2030+', labelColor: 'text-amber-400', active: false, Icon: Globe2 },
+                  { label: 'L4 — ZION OASIS', color: 'border-l-pink-400 bg-pink-500/5', title: 'Consciousness Mining as Gameplay', desc: cs ? 'UE5 open-world, XP/Consciousness levels, NFT avatary, Play-to-Mine' : 'UE5 open-world, XP/Consciousness levels, NFT avatars, Play-to-Mine', tags: ['UE5 World', 'XP System', 'NFT Avatars', 'Play-to-Mine'], date: '2029+', labelColor: 'text-pink-400', active: false, Icon: Gamepad2 },
+                  { label: 'L3 — WARP & AI NATIVE', color: 'border-l-purple-400 bg-purple-500/5', title: 'Neural Compute Layer & AI Agents', desc: cs ? 'WARP adapters 7/7 hotovo, NCL gateway online, AI Native SDK navazuje' : 'WARP adapters 7/7 done, NCL gateway online, AI Native SDK follows', tags: ['WARP 7/7', 'NCL Gateway', cs ? 'AI Orchestrátor' : 'AI Orchestrator', cs ? 'GPU za ZION' : 'GPU for ZION'], date: cs ? '2026 Q1–Q2 (testnet hotovo)' : '2026 Q1–Q2 (testnet done)', labelColor: 'text-purple-400', active: true, Icon: Brain },
+                  { label: 'L2 — DEX & DeFi', color: 'border-l-blue-400 bg-blue-500/5', title: 'Atomic Swaps, AMM & DAO', desc: cs ? 'wZION bridge na Base Sepolia testnet ready, další DeFi kroky navazují' : 'wZION bridge on Base Sepolia testnet ready, further DeFi steps follow', tags: ['HTLC Swaps', 'wZION Bridge', 'Base Sepolia', 'DAO Voting'], date: '2026 Q1–Q2 (testnet ready)', labelColor: 'text-blue-400', active: true, Icon: ArrowLeftRight },
+                  { label: cs ? 'L1 — ZION BLOCKCHAIN ← ZDE' : 'L1 — ZION BLOCKCHAIN ← HERE', color: 'border-l-cyan-400 bg-cyan-500/[0.08] border-2 border-cyan-500/20 shadow-[0_0_30px_rgba(34,211,238,0.12)]', title: 'PoW Cosmic Harmony v3 — Ekam Deeksha', desc: cs ? 'UTXO + Ed25519, Decade Decay emise (-20%/dekádu), LWMA DAA, fee burning, dual-mining ZION+VRSC. Ekam Deeksha: 256 KiB scratchpad + epoch NPU weights (ASIC resistance Tier 1+2 deployed).' : 'UTXO + Ed25519, Decade Decay emission (-20%/decade), LWMA DAA, fee burning, dual-mining ZION+VRSC. Ekam Deeksha: 256 KiB scratchpad + epoch NPU weights (ASIC resistance Tier 1+2 deployed).', tags: ['Ekam Deeksha', 'ASIC-resistant', 'UTXO Model', 'Ed25519', 'Decade Decay', 'Fee Burn', 'Dual Mining'], date: cs ? 'Test mainnet now · production target 31. 12. 2026' : 'Test mainnet now · production target 31 Dec 2026', labelColor: 'text-cyan-400', active: true, Icon: Link },
                 ].map((l, idx) => (
                   <motion.div
                     key={l.label}
@@ -3097,7 +3095,7 @@ export default function MissionControlDashboard() {
                   <Lock className="h-6 w-6 text-zion-gold" />
                   <div>
                     <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-white">Target Mainnet Constitution</h2>
-                    <p className="text-xs sm:text-sm text-gray-400">Plánované produkční parametry; tento dashboard sleduje Edge server mainnet proti nim</p>
+                    <p className="text-xs sm:text-sm text-gray-400">{cs ? 'Plánované produkční parametry; tento dashboard sleduje Edge server mainnet proti nim' : 'Planned production parameters; this dashboard tracks the Edge server mainnet against them'}</p>
                   </div>
                 </div>
                 <div className="space-y-0">
@@ -3110,19 +3108,19 @@ export default function MissionControlDashboard() {
                     [MissionControlDashboardCopy.emissionModel[cs ? 'cs' : 'en'], 'Decade Decay (-20%/10y)'],
                     [MissionControlDashboardCopy.tailEmission[cs ? 'cs' : 'en'], '724.785 ZION/block ∞'],
                     [MissionControlDashboardCopy.blockTime[cs ? 'cs' : 'en'], MissionControlDashboardCopy.k60Seconds[cs ? 'cs' : 'en']],
-                    ['DAA', 'LWMA (60 bloků, ±25%)'],
+                    ['DAA', cs ? 'LWMA (60 bloků, ±25%)' : 'LWMA (60 blocks, ±25%)'],
                     [MissionControlDashboardCopy.maxReorg[cs ? 'cs' : 'en'], MissionControlDashboardCopy.k10Blocks[cs ? 'cs' : 'en']],
                     [MissionControlDashboardCopy.softFinality[cs ? 'cs' : 'en'], MissionControlDashboardCopy.k60Blocks[cs ? 'cs' : 'en']],
                     [MissionControlDashboardCopy.coinbaseMaturity[cs ? 'cs' : 'en'], MissionControlDashboardCopy.k100Blocks[cs ? 'cs' : 'en']],
                     ['Consensus', 'PoW CHv3 + VRSC dual'],
                     [MissionControlDashboardCopy.distribution[cs ? 'cs' : 'en'], MissionControlDashboardCopy.k89Miner5Humanitarian5Issobella[cs ? 'cs' : 'en']],
-                    ['Presale', 'NEEXISTUJE'],
+                    ['Presale', cs ? 'NEEXISTUJE' : 'NONE'],
                     [MissionControlDashboardCopy.atomicUnits[cs ? 'cs' : 'en'], MissionControlDashboardCopy.k1mPerZion[cs ? 'cs' : 'en']],
                     [MissionControlDashboardCopy.miningHorizon[cs ? 'cs' : 'en'], MissionControlDashboardCopy.k100YearsTail[cs ? 'cs' : 'en']],
                   ].map(([param, value]) => (
                     <div key={param} className="flex items-center justify-between py-2 sm:py-2.5 border-b border-white/5 text-xs sm:text-sm gap-2">
                       <span className="text-gray-400 shrink-0">{param}</span>
-                      <span className={`font-mono text-white flex items-center gap-1 sm:gap-1.5 text-right ${value === 'NEEXISTUJE' ? 'text-red-400' : ''}`}>
+                      <span className={`font-mono text-white flex items-center gap-1 sm:gap-1.5 text-right ${(value === 'NEEXISTUJE' || value === 'NONE') ? 'text-red-400' : ''}`}>
                         <Lock className="h-3 w-3 text-zion-gold/60" />
                         {value}
                       </span>
@@ -3137,13 +3135,13 @@ export default function MissionControlDashboard() {
                   <Scale className="h-6 w-6 text-zion-purple" />
                   <div>
                     <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-white">Genesis Premine</h2>
-                    <p className="text-xs sm:text-sm text-gray-400">16,280,000,000 ZION — plánovaná transparentní alokace pro public genesis</p>
+                    <p className="text-xs sm:text-sm text-gray-400">{cs ? '16,280,000,000 ZION — plánovaná transparentní alokace pro public genesis' : '16,280,000,000 ZION — planned transparent allocation for public genesis'}</p>
                   </div>
                 </div>
                 <div className="space-y-4">
                   {[
                     { cat: 'ZION OASIS + Winners Golden Egg/Xp', Icon: Pickaxe, amount: '8,250,000,000', pct: 50.7, lock: MissionControlDashboardCopy.immediatelyAvailable[cs ? 'cs' : 'en'], lockColor: 'text-emerald-400' },
-                    { cat: 'DAO Treasury', Icon: Database, amount: '4,000,000,000', pct: 24.6, lock: 'Okamžitě dostupné', lockColor: 'text-emerald-400' },
+                    { cat: 'DAO Treasury', Icon: Database, amount: '4,000,000,000', pct: 24.6, lock: cs ? 'Okamžitě dostupné' : 'Immediately available', lockColor: 'text-emerald-400' },
                     { cat: MissionControlDashboardCopy.infrastructureDev[cs ? 'cs' : 'en'], Icon: Wrench, amount: '2,500,000,000', pct: 15.4, lock: MissionControlDashboardCopy.immediatelyAvailable[cs ? 'cs' : 'en'], lockColor: 'text-emerald-400' },
                     { cat: MissionControlDashboardCopy.humanitarianFund[cs ? 'cs' : 'en'], Icon: Heart, amount: '1,530,000,000', pct: 9.4, lock: MissionControlDashboardCopy.immediatelyAvailable[cs ? 'cs' : 'en'], lockColor: 'text-emerald-400' },
                   ].map(p => (
@@ -3278,25 +3276,25 @@ export default function MissionControlDashboard() {
                   <Shield className="h-7 w-7 text-emerald-400" />
                   Mainnet Security Gate
                 </h2>
-                <p className="text-sm text-gray-400">Všechny security gate položky uzavřeny. V3 Mainnet připraven pro veřejný launch.</p>
+                <p className="text-sm text-gray-400">{cs ? 'Všechny security gate položky uzavřeny. V3 Mainnet připraven pro veřejný launch.' : 'All security gate items are closed. V3 Mainnet is ready for public launch.'}</p>
               </div>
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {[
-                  'Ed25519 signature verification + UTXO double-spend protection',
-                  'Reorg lock, anti-fork choice a 60-block soft finality',
-                  'P2P rate limiting + pool deadlock fixes',
-                  'Coinbase maturity, timestamp validation a fee floor',
-                  'Ekam Deeksha Tier 1 + Tier 2 deployed',
-                  'On-chain 89/5/5/1 reward split validation',
-                  'Metrics endpoints, runbook a operator guide aligned',
-                  'Core + pool fuzz harnesses jsou přítomné',
-                  'BFG scrub / git history hygiene',
-                  'Genesis artefakty, release tag a checksumy',
-                  'Exit criteria sign-off',
-                  'Measured stability closure report',
-                  'RPC/P2P boundary review sign-off',
-                  'Backup/restore rehearsal',
-                  'Alert routing confirmation',
+                  cs ? 'Ed25519 verifikace podpisů + UTXO ochrana proti double-spend' : 'Ed25519 signature verification + UTXO double-spend protection',
+                  cs ? 'Reorg lock, anti-fork choice a 60-block soft finality' : 'Reorg lock, anti-fork choice, and 60-block soft finality',
+                  cs ? 'P2P rate limiting + opravy pool deadlocků' : 'P2P rate limiting + pool deadlock fixes',
+                  cs ? 'Coinbase maturity, timestamp validace a fee floor' : 'Coinbase maturity, timestamp validation, and fee floor',
+                  cs ? 'Ekam Deeksha Tier 1 + Tier 2 nasazeno' : 'Ekam Deeksha Tier 1 + Tier 2 deployed',
+                  cs ? 'Validace on-chain 89/5/5/1 rozdělení odměn' : 'On-chain 89/5/5/1 reward split validation',
+                  cs ? 'Metrics endpointy, runbook a operator guide zarovnány' : 'Metrics endpoints, runbook, and operator guide aligned',
+                  cs ? 'Core + pool fuzz harnesses jsou přítomné' : 'Core + pool fuzz harnesses present',
+                  cs ? 'BFG scrub / git history hygiene' : 'BFG scrub / git history hygiene',
+                  cs ? 'Genesis artefakty, release tag a checksumy' : 'Genesis artifacts, release tag, and checksums',
+                  cs ? 'Exit criteria sign-off' : 'Exit criteria sign-off',
+                  cs ? 'Změřený stability closure report' : 'Measured stability closure report',
+                  cs ? 'RPC/P2P boundary review sign-off' : 'RPC/P2P boundary review sign-off',
+                  cs ? 'Backup/restore zkouška' : 'Backup/restore rehearsal',
+                  cs ? 'Potvrzení alert routingu' : 'Alert routing confirmation',
                 ].map((text) => (
                   <div key={text} className="flex items-center gap-3 text-sm py-2.5 px-4 zion-tile">
                     <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
@@ -3307,15 +3305,15 @@ export default function MissionControlDashboard() {
               <div className="mt-6 grid gap-3 lg:grid-cols-3">
                 <div className="zion-rainbow-sub p-4 text-sm text-gray-300" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                   <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-300">Edge server Active</p>
-                  <p className="mt-2">Consensus, reward split, metrics a deploy docs jsou potvrzeny pro production mainnet běh.</p>
+                  <p className="mt-2">{cs ? 'Consensus, reward split, metrics a deploy docs jsou potvrzeny pro production mainnet běh.' : 'Consensus, reward split, metrics, and deploy docs are confirmed for production mainnet operation.'}</p>
                 </div>
                 <div className="zion-rainbow-sub p-4 text-sm text-gray-300" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                   <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-300">Launch Gate · PASS</p>
-                  <p className="mt-2">Všechny P0 blokatoři jsou uzavřeni. BFG scrub, genesis artefakty, exit criteria a closure report kompletní.</p>
+                  <p className="mt-2">{cs ? 'Všechny P0 blokatoři jsou uzavřeni. BFG scrub, genesis artefakty, exit criteria a closure report kompletní.' : 'All P0 blockers are closed. BFG scrub, genesis artifacts, exit criteria, and closure report are complete.'}</p>
                 </div>
                 <div className="zion-rainbow-sub p-4 text-sm text-gray-300" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
                   <p className="text-xs font-semibold uppercase tracking-[0.3em] text-cyan-300">Post-Launch</p>
-                  <p className="mt-2">Externí audit, exchange onboarding a L2/L3 bridge jsou prioritou po veřejném launchi.</p>
+                  <p className="mt-2">{cs ? 'Externí audit, exchange onboarding a L2/L3 bridge jsou prioritou po veřejném launchi.' : 'External audit, exchange onboarding, and L2/L3 bridge are priorities after public launch.'}</p>
                 </div>
               </div>
             </motion.section>
@@ -3346,10 +3344,10 @@ export default function MissionControlDashboard() {
                   <h3 className="font-semibold text-white text-base sm:text-lg mb-4 sm:mb-5 flex items-center gap-2"><CalendarDays className="h-5 w-5 text-zion-gold" /> 2026 — V3 Mainnet & Launch</h3>
                   <div className="relative pl-6 sm:pl-8 border-l-2 border-white/20 space-y-4 sm:space-y-6">
                     {[
-                      { done: true, date: 'Únor 2026', title: 'Fáze 0 — Spec Freeze', desc: 'Core rewrite, consensus hardening a základní test floor', color: 'text-emerald-400' },
-                      { done: true, date: 'Březen 2026', title: 'Mainnet Stability Run', desc: 'Edge server live, on-chain reward split ověřený, closure evidence uzavřena', color: 'text-emerald-400' },
-                      { done: true, date: 'Duben — Květen 2026', title: 'Launch Gate Closure', desc: 'BFG scrub, exit criteria, checksumy, backup/alerts, closure report — vše PASS', color: 'text-emerald-400' },
-                      { active: true, date: '20. Června 2026', title: 'PRODUCTION MAINNET GENESIS', desc: 'V3 Mainnet GO — veřejný launch countdown aktivní', color: 'text-cyan-400' },
+                      { done: true, date: cs ? 'Únor 2026' : 'February 2026', title: cs ? 'Fáze 0 — Spec Freeze' : 'Phase 0 — Spec Freeze', desc: cs ? 'Core rewrite, consensus hardening a základní test floor' : 'Core rewrite, consensus hardening, and basic test floor', color: 'text-emerald-400' },
+                      { done: true, date: cs ? 'Březen 2026' : 'March 2026', title: 'Mainnet Stability Run', desc: cs ? 'Edge server live, on-chain reward split ověřený, closure evidence uzavřena' : 'Edge server live, on-chain reward split verified, closure evidence closed', color: 'text-emerald-400' },
+                      { done: true, date: cs ? 'Duben — Květen 2026' : 'April — May 2026', title: 'Launch Gate Closure', desc: cs ? 'BFG scrub, exit criteria, checksumy, backup/alerts, closure report — vše PASS' : 'BFG scrub, exit criteria, checksums, backup/alerts, closure report — all PASS', color: 'text-emerald-400' },
+                      { active: true, date: cs ? '20. Června 2026' : '20 June 2026', title: 'PRODUCTION MAINNET GENESIS', desc: cs ? 'V3 Mainnet GO — veřejný launch countdown aktivní' : 'V3 Mainnet GO — public launch countdown active', color: 'text-cyan-400' },
                     ].map((item, i) => (
                       <div key={i} className="relative">
                         <div className={`absolute -left-[21px] sm:-left-[25px] top-1.5 w-3 h-3 rounded-full border-2 ${item.done ? 'bg-emerald-400 border-emerald-400' : item.active ? 'bg-cyan-400 border-cyan-400 shadow-[0_0_12px_var(--color-cyan-400)]' : 'bg-black border-gray-600'}`} />
@@ -3364,11 +3362,11 @@ export default function MissionControlDashboard() {
                   <h3 className="font-semibold text-white text-base sm:text-lg mb-4 sm:mb-5 flex items-center gap-2"><CalendarDays className="h-5 w-5 text-zion-gold" /> Post-Launch Queue — Not Blocking Today</h3>
                   <div className="relative pl-6 sm:pl-8 border-l-2 border-gray-700 space-y-4 sm:space-y-6">
                     {[
-                      { date: 'Po public genesis', title: 'Post-Launch Ops', desc: 'Longer canaries, exchange onboarding, public binaries', color: 'text-white' },
-                      { date: 'Po L1 gate', title: 'L2 — DEX & DeFi', desc: 'wZION bridge a další DeFi vrstvy nejsou dnešní launch blockers', color: 'text-blue-400' },
-                      { date: 'Po L1 gate', title: 'L3 — Warp & AI Native', desc: 'NCL a AI runtime navazují po stabilním L1 základu', color: 'text-purple-400' },
+                      { date: cs ? 'Po public genesis' : 'After public genesis', title: 'Post-Launch Ops', desc: 'Longer canaries, exchange onboarding, public binaries', color: 'text-white' },
+                      { date: cs ? 'Po L1 gate' : 'After L1 gate', title: 'L2 — DEX & DeFi', desc: cs ? 'wZION bridge a další DeFi vrstvy nejsou dnešní launch blockers' : 'wZION bridge and further DeFi layers are not today\'s launch blockers', color: 'text-blue-400' },
+                      { date: cs ? 'Po L1 gate' : 'After L1 gate', title: 'L3 — Warp & AI Native', desc: cs ? 'NCL a AI runtime navazují po stabilním L1 základu' : 'NCL and AI runtime follow after a stable L1 foundation', color: 'text-purple-400' },
                       { date: '2029+', title: 'L4 — ZION Oasis', desc: 'UE5 World, XP System, Play-to-Mine', color: 'text-pink-400' },
-                      { date: '2030+', title: 'L5 — Free World', desc: 'Sovereignty, decentralizovaná governance', color: 'text-amber-400' },
+                      { date: '2030+', title: 'L5 — Free World', desc: cs ? 'Sovereignty, decentralizovaná governance' : 'Sovereignty, decentralized governance', color: 'text-amber-400' },
                       { date: '2040+', title: 'L6 — ZION Issobella', desc: 'Orbital station, 5% block reward fund', color: 'text-rose-400' },
                     ].map((item, i) => (
                       <div key={i} className="relative">
@@ -3446,34 +3444,34 @@ export default function MissionControlDashboard() {
                   <Zap className="h-7 w-7 text-yellow-400" />
                   Launch Priority Map
                 </h2>
-                <p className="text-sm text-gray-400">Jedna tabulka pro hotovo, blockers a věci, které dnes nejsou launch gate.</p>
+                <p className="text-sm text-gray-400">{cs ? 'Jedna tabulka pro hotovo, blockers a věci, které dnes nejsou launch gate.' : 'One table for completed items, blockers, and things that are not launch gate today.'}</p>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-white/10">
                       <th className="text-xs uppercase tracking-[0.3em] text-gray-400 font-medium px-4 py-3">Prio</th>
-                      <th className="text-xs uppercase tracking-[0.3em] text-gray-400 font-medium px-4 py-3">Úkol</th>
-                      <th className="text-xs uppercase tracking-[0.3em] text-gray-400 font-medium px-4 py-3">Fáze</th>
-                      <th className="text-xs uppercase tracking-[0.3em] text-gray-400 font-medium px-4 py-3">Stav</th>
+                      <th className="text-xs uppercase tracking-[0.3em] text-gray-400 font-medium px-4 py-3">{cs ? 'Úkol' : 'Task'}</th>
+                      <th className="text-xs uppercase tracking-[0.3em] text-gray-400 font-medium px-4 py-3">{cs ? 'Fáze' : 'Phase'}</th>
+                      <th className="text-xs uppercase tracking-[0.3em] text-gray-400 font-medium px-4 py-3">{cs ? 'Stav' : 'Status'}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {[
-                      { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'On-chain reward split 89/5/5/1 ověřen live bloky', phase: 'RUNTIME', status: 'VERIFIED', sColor: 'text-emerald-400' },
+                      { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: cs ? 'On-chain reward split 89/5/5/1 ověřen live bloky' : 'On-chain reward split 89/5/5/1 verified on live blocks', phase: 'RUNTIME', status: 'VERIFIED', sColor: 'text-emerald-400' },
                       { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'PPLNS payout logic + fee split wiring', phase: 'POOL', status: 'VERIFIED', sColor: 'text-emerald-400' },
-                      { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'Edge server rollout bez divergence (privátní síť)', phase: 'OPS', status: 'SYNCED', sColor: 'text-emerald-400' },
+                      { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: cs ? 'Edge server rollout bez divergence (privátní síť)' : 'Edge server rollout without divergence (private network)', phase: 'OPS', status: 'SYNCED', sColor: 'text-emerald-400' },
                       { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'Runbook + operator guide + go/no-go report', phase: 'DOCS', status: 'ALIGNED', sColor: 'text-emerald-400' },
                       { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'BFG scrub / git history hygiene', phase: 'R1', status: 'CLOSED', sColor: 'text-emerald-400' },
-                      { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'Genesis artefakty + checksumy + release tag', phase: 'R2', status: 'CLOSED', sColor: 'text-emerald-400' },
+                      { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: cs ? 'Genesis artefakty + checksumy + release tag' : 'Genesis artifacts + checksums + release tag', phase: 'R2', status: 'CLOSED', sColor: 'text-emerald-400' },
                       { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'Exit criteria sign-off', phase: 'R3', status: 'CLOSED', sColor: 'text-emerald-400' },
-                      { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'Stability closure report uzavřen', phase: 'R4', status: 'CLOSED', sColor: 'text-emerald-400' },
+                      { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: cs ? 'Stability closure report uzavřen' : 'Stability closure report closed', phase: 'R4', status: 'CLOSED', sColor: 'text-emerald-400' },
                       { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'RPC/P2P boundary review + fuzz smoke campaign', phase: 'A1', status: 'CLOSED', sColor: 'text-emerald-400' },
                       { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'Backup/restore + alert routing', phase: 'A3', status: 'CLOSED', sColor: 'text-emerald-400' },
-                      { prio: 'BLOCKER', prioColor: 'text-red-400 font-bold', task: 'Security audit — externí firma', phase: 'AUDIT', status: 'SCHEDULED', sColor: 'text-amber-400' },
+                      { prio: 'BLOCKER', prioColor: 'text-red-400 font-bold', task: cs ? 'Security audit — externí firma' : 'Security audit — external firm', phase: 'AUDIT', status: 'SCHEDULED', sColor: 'text-amber-400' },
                       { prio: 'BLOCKER', prioColor: 'text-red-400 font-bold', task: 'Bridge validator key provisioning (3/5 threshold)', phase: 'L2', status: 'IN-PROGRESS', sColor: 'text-amber-400' },
                       { prio: 'BLOCKER', prioColor: 'text-red-400 font-bold', task: 'CI billing resolution (GitHub Actions)', phase: 'INFRA', status: 'PENDING', sColor: 'text-red-400' },
-                      { prio: 'NB', prioColor: 'text-cyan-400 font-semibold', task: 'L2/L3 bridge, exchange onboarding a mobile polish', phase: 'POST-L1', status: 'NOT BLOCKING', sColor: 'text-cyan-400' },
+                      { prio: 'NB', prioColor: 'text-cyan-400 font-semibold', task: cs ? 'L2/L3 bridge, exchange onboarding a mobile polish' : 'L2/L3 bridge, exchange onboarding, and mobile polish', phase: 'POST-L1', status: 'NOT BLOCKING', sColor: 'text-cyan-400' },
                     ].map((row, i) => (
                       <tr key={i} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                         <td className={`px-4 py-3 rounded-l-lg ${row.prioColor}`}>{row.prio}</td>

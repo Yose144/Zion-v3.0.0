@@ -27,7 +27,7 @@ const speeds = {
 
 export default function FloatingBubbles({ 
   count = 15, 
-  colors = ['rgba(255, 215, 0, 0.1)', 'rgba(157, 78, 221, 0.1)', 'rgba(0, 255, 255, 0.1)'],
+  colors = ['rgba(252, 209, 22, 0.1)', 'rgba(157, 78, 221, 0.1)', 'rgba(0, 255, 255, 0.1)'],
   intensity = 'medium'
 }: FloatingBubblesProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);

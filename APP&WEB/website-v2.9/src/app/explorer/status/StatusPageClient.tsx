@@ -240,7 +240,7 @@ export default function StatusPageClient() {
   ];
 
   const nodeInfo = [
-    { label: ExplorerStatusStatusPageClientCopy.protocolVersion[cs ? 'cs' : 'en'], value: stats?.version || "v3.0.6", icon: Hash, color: "text-zion-gold" },
+    { label: ExplorerStatusStatusPageClientCopy.protocolVersion[cs ? 'cs' : 'en'], value: stats?.version || "v3.2.0", icon: Hash, color: "text-zion-gold" },
     { label: ExplorerStatusStatusPageClientCopy.consensusProfile[cs ? 'cs' : 'en'], value: "deeksha_lite_fire", icon: Shield, color: "text-emerald-400" },
     { label: ExplorerStatusStatusPageClientCopy.network[cs ? 'cs' : 'en'], value: stats?.mainnet ? "Mainnet" : "Testnet", icon: Network, color: "text-zion-cyan" },
     { label: ExplorerStatusStatusPageClientCopy.runtime[cs ? 'cs' : 'en'], value: SITE_RUNTIME_LABEL, icon: Cpu, color: "text-zion-purple" },
@@ -461,7 +461,7 @@ export default function StatusPageClient() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.14 + i * 0.02 }}
                 className="zion-rainbow-sub p-4 rounded-2xl"
-                style={{ "--rc": "6, 182, 212" } as React.CSSProperties}
+                style={{ "--rc": "7, 137, 48" } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[10px] text-gray-400 uppercase tracking-wider">

@@ -24,7 +24,7 @@ export default function StargatePortal({ size = 80, className = '', active = fal
         <defs>
           <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#8b5cf6" />
-            <stop offset="50%" stopColor="#06b6d4" />
+            <stop offset="50%" stopColor="#078930" />
             <stop offset="100%" stopColor="#f59e0b" />
           </linearGradient>
         </defs>
@@ -61,7 +61,7 @@ export default function StargatePortal({ size = 80, className = '', active = fal
         animate={{ rotate: -360 }}
         transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
       >
-        <circle cx="50" cy="50" r="28" fill="none" stroke="#06b6d4" strokeWidth="1" opacity="0.5" strokeDasharray="4 4" />
+        <circle cx="50" cy="50" r="28" fill="none" stroke="#078930" strokeWidth="1" opacity="0.5" strokeDasharray="4 4" />
       </motion.svg>
 
       {/* Pulsing core */}

@@ -101,7 +101,7 @@ const PoolBenchmarksCopy = {
    GPU & CPU performance results for Cosmic Harmony PoW
    ═══════════════════════════════════════════════════════════ */
 
-const RC = '147, 51, 234'; // purple for pool
+const RC = '228, 30, 43'; // purple for pool
 const rcStyle = { '--rc': RC } as React.CSSProperties;
 
 /* ─── Types ─────────────────────────────────────────────────── */
@@ -357,7 +357,7 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
                 <Gauge className="w-7 h-7 text-purple-400" />
               </div>
               <div className="flex-1">
-                <div className="zion-kicker mb-3" style={{ borderColor: 'rgba(147,51,234,0.3)' }}>
+                <div className="zion-kicker mb-3" style={{ borderColor: 'rgba(228,30,43,0.3)' }}>
                   <Cpu className="w-3.5 h-3.5 text-purple-400" />
                   {PoolBenchmarksCopy.cosmicHarmonyPow[cs ? 'cs' : 'en']}
                 </div>
@@ -707,7 +707,7 @@ export default function PoolBenchmarksClient({ embedded = false }: { embedded?: 
                       className="h-full rounded-md transition-all duration-500"
                       style={{
                         width: `${Math.min(pct, 100)}%`,
-                        background: 'linear-gradient(90deg, rgba(147,51,234,0.4), rgba(147,51,234,0.9))',
+                        background: 'linear-gradient(90deg, rgba(228,30,43,0.4), rgba(228,30,43,0.9))',
                       }}
                     />
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-mono text-white/80">

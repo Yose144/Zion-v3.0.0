@@ -34,7 +34,7 @@ export default function NotFound() {
           <Link
             href="/"
             className="zion-button-primary group text-sm"
-            style={{ '--rc': '255, 215, 0' } as CSSProperties}
+            style={{ '--rc': '252, 209, 22' } as CSSProperties}
           >
             <Home className="w-4 h-4" />
             {tr('notFound', 'btn_home', lang)}
@@ -43,7 +43,7 @@ export default function NotFound() {
           <Link
             href="/dashboard"
             className="zion-button-secondary group text-sm"
-            style={{ '--rc': '6, 182, 212' } as CSSProperties}
+            style={{ '--rc': '7, 137, 48' } as CSSProperties}
           >
             <Rocket className="w-4 h-4" />
             {tr('notFound', 'btn_dashboard', lang)}
@@ -52,7 +52,7 @@ export default function NotFound() {
           <Link
             href="/explorer"
             className="zion-button-secondary group text-sm"
-            style={{ '--rc': '147, 51, 234' } as CSSProperties}
+            style={{ '--rc': '228, 30, 43' } as CSSProperties}
           >
             <Search className="w-4 h-4" />
             {tr('notFound', 'btn_explorer', lang)}

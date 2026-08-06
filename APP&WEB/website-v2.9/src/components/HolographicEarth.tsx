@@ -205,7 +205,7 @@ const PLANETS: PlanetData[] = [
   { name: 'Mars',    color: '#fca5a5', emissive: '#dc2626', radius: 0.045, orbitRadius: 10.0, orbitSpeed: 0.28, orbitTilt: 0.08, startAngle: 2.5 },
   { name: 'Jupiter', color: '#d4a574', emissive: '#b87333', radius: 0.14,  orbitRadius: 14.0, orbitSpeed: 0.12, orbitTilt: 0.2,  startAngle: 0.8 },
   { name: 'Saturn',  color: '#fde047', emissive: '#eab308', radius: 0.11,  orbitRadius: 17.0, orbitSpeed: 0.09, orbitTilt: 0.25, startAngle: 3.1, hasRing: true, ringColor: '#fef08a' },
-  { name: 'Uranus',  color: '#67e8f9', emissive: '#06b6d4', radius: 0.07,  orbitRadius: 20.0, orbitSpeed: 0.06, orbitTilt: 0.35, startAngle: 4.4 },
+  { name: 'Uranus',  color: '#67e8f9', emissive: '#078930', radius: 0.07,  orbitRadius: 20.0, orbitSpeed: 0.06, orbitTilt: 0.35, startAngle: 4.4 },
   { name: 'Neptune', color: '#3b82f6', emissive: '#1d4ed8', radius: 0.065, orbitRadius: 23.0, orbitSpeed: 0.05, orbitTilt: 0.18, startAngle: 5.7 },
 ];
 
@@ -650,7 +650,7 @@ function latLonToVector3(lat: number, lon: number, radius: number): [number, num
 const TERRA_NOVA_MARKERS = [
   { lat: 37.0, lon: -8.0, color: '#34D399', glow: '#10B981', nameCs: 'Zahrada Genesis', nameEn: 'Garden of Genesis', href: '/terranova/genesis' },
   { lat: 28.7, lon: -17.9, color: '#F97316', glow: '#F59E0B', nameCs: 'Dharma Temple', nameEn: 'Dharma Temple', href: '/terranova/dharma-temple' },
-  { lat: -17.0, lon: -150.0, color: '#22D3EE', glow: '#06B6D4', nameCs: 'Te Piko Ora', nameEn: 'Te Piko Ora', href: '/terranova/te-piko-ora' },
+  { lat: -17.0, lon: -150.0, color: '#22D3EE', glow: '#078930', nameCs: 'Te Piko Ora', nameEn: 'Te Piko Ora', href: '/terranova/te-piko-ora' },
 ];
 
 function TerraNovaMarkers() {

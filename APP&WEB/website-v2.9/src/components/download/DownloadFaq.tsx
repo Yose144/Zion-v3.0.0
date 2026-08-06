@@ -101,7 +101,7 @@ export default function DownloadFaq({ cs }: { cs: boolean }) {
       </div>
       <div className="space-y-3">
         {faqItems.map((faq, index) => (
-          <div key={faq.q} className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+          <div key={faq.q} className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <button
               onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
               className="w-full flex items-center justify-between p-5 text-left hover:bg-white/5 transition-colors"

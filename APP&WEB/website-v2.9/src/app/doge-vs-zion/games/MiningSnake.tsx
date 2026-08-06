@@ -493,7 +493,7 @@ export function MiningSnake({ onBack }: { onBack: () => void }) {
       </div>
 
       {/* Canvas + overlays */}
-      <div className="relative zion-rainbow-card zion-rainbow-sub p-1" style={{ '--rc': '147, 51, 234', width: CANVAS_SIZE + 8, height: CANVAS_SIZE + 8 } as React.CSSProperties}>
+      <div className="relative zion-rainbow-card zion-rainbow-sub p-1" style={{ '--rc': '228, 30, 43', width: CANVAS_SIZE + 8, height: CANVAS_SIZE + 8 } as React.CSSProperties}>
         <canvas
           ref={canvasRef}
           width={CANVAS_SIZE}

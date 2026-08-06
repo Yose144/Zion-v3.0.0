@@ -20,12 +20,12 @@
 # ── Canonical Fee Split Addresses (89/5/5/1 burn model — no pool fee wallet) ──
 # NOTE: ZION_MINER_ADDRESS = default_miner canonical wallet (89% coinbase).
 # Local miners should set their own ZION_MINER_ADDRESS in launch scripts.
-ZION_MINER_ADDRESS=zion1d6m0h2r8m7k8k2d8n072y7j3j4m0254323vq0e3
+ZION_MINER_ADDRESS=zion1d6e3a4s6t856z042q2m6h5h2j4k3v7f8f2a94h7
 
 # Edge CPU miner payout address (must be a valid 44-char zion1 address)
-ZION_PAYOUT_ADDRESS=zion1d6m0h2r8m7k8k2d8n072y7j3j4m0254323vq0e3
-ZION_HUMANITARIAN_WALLET=zion1e0u5q5s660k4m4a634p2c2v358r8g59564054z7
-ZION_ISSOBELLA_WALLET=zion1f7y7l5k678y0v408e8s654d2282346k375526t2
+ZION_PAYOUT_ADDRESS=zion1d6e3a4s6t856z042q2m6h5h2j4k3v7f8f2a94h7
+ZION_HUMANITARIAN_WALLET=zion1j0j5d0c70056u678j7g4p686e7r3w5k0y8vy0m0
+ZION_ISSOBELLA_WALLET=zion1g3g0k2j665r075g5j077z0w3u4g3w0d5837j3f6
 # Network configuration
 ZION_NETWORK=Mainnet
 ZION_SEED_PEERS=127.0.0.1:8334
@@ -85,8 +85,8 @@ ZION_STREAM_HYSTERESIS_PCT=15.0
 ZION_STREAM_PROFIT_SOURCES=zion,keccak_bonus,sha3_bonus,ncl_ai,deeksha_lite,thermal_bonus
 
 # Pool wallet (Edge primary — handles all payouts)
-# Address: zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2 (pool_payout canonical wallet)
-ZION_POOL_WALLET=zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2
+# Address: zion177w668f4g5g8s3t844s3f053k8h7r6d540853g6 (pool_payout canonical wallet)
+ZION_POOL_WALLET=zion177w668f4g5g8s3t844s3f053k8h7r6d540853g6
 ZION_POOL_PAYOUT_SK_HEX=<SET_VIA_SECURE_ENVIRONMENT_DO_NOT_COMMIT>
 
 # Atomic Swap escrow key (air-gapped — set via secure environment)

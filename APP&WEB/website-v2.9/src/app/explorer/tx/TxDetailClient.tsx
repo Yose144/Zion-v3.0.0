@@ -228,7 +228,7 @@ export default function TxDetailClient() {
         {/* Raw JSON View */}
         {showRaw && rawJson && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
-            className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
               <div className="flex items-center gap-2">
                 <Code className="h-4 w-4 text-purple-400" />

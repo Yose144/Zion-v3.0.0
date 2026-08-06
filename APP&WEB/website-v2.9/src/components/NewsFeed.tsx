@@ -32,10 +32,25 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'zion-v320-one-love-mainnet-stable',
+    date: '2026-08-06',
+    tag: { cs: 'Release', en: 'Release' },
+    tagColor: 'text-emerald-400',
+    title: {
+      cs: 'ZION v3.2.0 "One Love" — Mainnet Stable je live',
+      en: 'ZION v3.2.0 "One Love" — Mainnet Stable is live',
+    },
+    summary: {
+      cs: 'ZION TerraNova v3.2.0 "One Love" je oficiálně Mainnet Stable. Node, pool, multichain, DAO a OASIS běží v produkci na Edge serveru. Nový genesis po hard resetu (kompletní rotace klíčů), kanonický Ekam Deeksha PoW, triple-stream mining (GPU + CPU), cross-chain bridge na Base Mainnet, ZionDex multi-path routing a OASIS game API. Veřejný launch zůstává 31. prosince 2026 — do té doby probíhá kontinuální testování a security audit. One love, one chain, one road.',
+      en: 'ZION TerraNova v3.2.0 "One Love" is officially Mainnet Stable. Node, pool, multichain, DAO, and OASIS are running in production on the Edge server. New genesis after a hard reset (complete key rotation), canonical Ekam Deeksha PoW, triple-stream mining (GPU + CPU), cross-chain bridge on Base Mainnet, ZionDex multi-path routing, and OASIS game API. Public launch remains 31 December 2026 — continuous testing and security audit are underway until then. One love, one chain, one road.',
+    },
+    href: '/roadmap',
+  },
+  {
     slug: 'zion-v310-mainnet-alpha-unified-update',
     date: '2026-08-03',
     tag: { cs: 'Aktualizace', en: 'Update' },
-    tagColor: 'text-cyan-400',
+    tagColor: 'text-zion-cyan',
     title: {
       cs: 'ZION v3.1.0 — OASIS preview, dokončení backendu a trvalý genesis',
       en: 'ZION v3.1.0 — OASIS preview, backend completion and permanent genesis',
@@ -50,7 +65,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     slug: 'nvidia-cuda-gpu-benchmark-300khs',
     date: '2026-08-02',
     tag: { cs: 'Mining', en: 'Mining' },
-    tagColor: 'text-cyan-400',
+    tagColor: 'text-zion-cyan',
     title: {
       cs: 'Nvidia + CUDA vede na ZIONu — až 300 kH/s (RTX 3060 Ti), AMD/OpenCL se ladí',
       en: 'Nvidia + CUDA leads on ZION — up to 300 kH/s (RTX 3060 Ti), AMD/OpenCL being tuned',
@@ -145,7 +160,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     slug: 'warp-13-chain-families',
     date: '2026-06-30',
     tag: { cs: 'WARP', en: 'WARP' },
-    tagColor: 'text-purple-400',
+    tagColor: 'text-zion-purple',
     title: {
       cs: 'WARP pokrývá všech 13 chain rodin! — 408 testů prošlo',
       en: 'WARP covers all 13 chain families! — 408 tests pass',
@@ -191,7 +206,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     slug: 'hiran-v2.3-trained',
     date: '2026-06-18',
     tag: { cs: 'AI', en: 'AI' },
-    tagColor: 'text-purple-400',
+    tagColor: 'text-zion-purple',
     title: {
       cs: 'Hiran v2.3 úspěšně natrénován — QLoRA fine-tuning dokončen',
       en: 'Hiran v2.3 successfully trained — QLoRA fine-tuning completed',
@@ -251,7 +266,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     slug: 'l3-hiran-orchestration',
     date: '2026-05-23',
     tag: { cs: 'AI', en: 'AI' },
-    tagColor: 'text-purple-400',
+    tagColor: 'text-zion-purple',
     title: {
       cs: 'L3 Hiran v2.2 — AI orchestrace, chat a marketplace',
       en: 'L3 Hiran v2.2 — AI orchestration, chat & marketplace',
@@ -341,7 +356,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     slug: 'gpu-benchmark-matrix',
     date: '2026-04-02',
     tag: { cs: 'Mining', en: 'Mining' },
-    tagColor: 'text-cyan-400',
+    tagColor: 'text-zion-cyan',
     title: {
       cs: 'GPU Benchmark Matrix — 8 GPU od GTX 1060 po H100 SXM (81.7 KH/s)',
       en: 'GPU Benchmark Matrix — 8 GPUs from GTX 1060 to H100 SXM (81.7 KH/s)',
@@ -431,7 +446,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     slug: 'bridge-testnet-deploy',
     date: '2026-03-10',
     tag: { cs: 'L2', en: 'L2' },
-    tagColor: 'text-purple-400',
+    tagColor: 'text-zion-purple',
     title: {
       cs: 'L1↔L2 Bridge nasazen — relay propojuje ZION s Base',
       en: 'L1↔L2 Bridge deployed — relay connects ZION with Base',
@@ -447,16 +462,16 @@ export const NEWS_ARTICLES: NewsArticle[] = [
 // ─── Card accent gradients ────────────────────────────────────────────────────
 const CARD_ACCENT: Record<string, { from: string; to: string; glow: string }> = {
   Mainnet:   { from: 'from-amber-500/20', to: 'to-orange-500/5', glow: 'shadow-amber-500/10' },
-  AI:        { from: 'from-purple-500/20', to: 'to-pink-500/5', glow: 'shadow-purple-500/10' },
+  AI:        { from: 'from-zion-purple/20', to: 'to-pink-500/5', glow: 'shadow-zion-purple/10' },
   Wiki:      { from: 'from-emerald-500/20', to: 'to-teal-500/5', glow: 'shadow-emerald-500/10' },
   Layers:    { from: 'from-orange-500/20', to: 'to-amber-500/5', glow: 'shadow-orange-500/10' },
   Audit:     { from: 'from-emerald-500/20', to: 'to-green-500/5', glow: 'shadow-emerald-500/10' },
-  CLI:       { from: 'from-cyan-500/20', to: 'to-blue-500/5', glow: 'shadow-cyan-500/10' },
+  CLI:       { from: 'from-zion-cyan/20', to: 'to-blue-500/5', glow: 'shadow-zion-cyan/10' },
   Kniha:     { from: 'from-yellow-500/20', to: 'to-amber-500/5', glow: 'shadow-yellow-500/10' },
   Book:      { from: 'from-yellow-500/20', to: 'to-amber-500/5', glow: 'shadow-yellow-500/10' },
-  Mining:    { from: 'from-cyan-500/20', to: 'to-sky-500/5', glow: 'shadow-cyan-500/10' },
-  Aktualizace: { from: 'from-cyan-500/20', to: 'to-sky-500/5', glow: 'shadow-cyan-500/10' },
-  Update:    { from: 'from-cyan-500/20', to: 'to-sky-500/5', glow: 'shadow-cyan-500/10' },
+  Mining:    { from: 'from-zion-cyan/20', to: 'to-sky-500/5', glow: 'shadow-zion-cyan/10' },
+  Aktualizace: { from: 'from-zion-cyan/20', to: 'to-sky-500/5', glow: 'shadow-zion-cyan/10' },
+  Update:    { from: 'from-zion-cyan/20', to: 'to-sky-500/5', glow: 'shadow-zion-cyan/10' },
   DeFi:      { from: 'from-gold-500/20', to: 'to-yellow-500/5', glow: 'shadow-yellow-500/10' },
   Launch:    { from: 'from-amber-500/20', to: 'to-yellow-500/5', glow: 'shadow-amber-500/10' },
   Listing:   { from: 'from-green-500/20', to: 'to-emerald-500/5', glow: 'shadow-green-500/10' },

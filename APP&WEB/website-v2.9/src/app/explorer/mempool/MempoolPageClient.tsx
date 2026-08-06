@@ -156,7 +156,7 @@ function FeeHistogram({ txs, cs }: { txs: MempoolTx[]; cs: boolean }) {
   const barW = slot * 0.72;
 
   return (
-    <div className="zion-rainbow-sub p-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+    <div className="zion-rainbow-sub p-4" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
       <div className="flex items-center justify-between mb-3">
         <p className="text-[10px] uppercase tracking-[0.3em] text-white/40">
           {ExplorerMempoolMempoolPageClientCopy.feeDistribution[cs ? 'cs' : 'en']}
@@ -166,8 +166,8 @@ function FeeHistogram({ txs, cs }: { txs: MempoolTx[]; cs: boolean }) {
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-32" preserveAspectRatio="none">
         <defs>
           <linearGradient id="feeBarGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#9333ea" stopOpacity="0.9" />
-            <stop offset="100%" stopColor="#9333ea" stopOpacity="0.15" />
+            <stop offset="0%" stopColor="#e41e2b" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#e41e2b" stopOpacity="0.15" />
           </linearGradient>
         </defs>
         {/* Grid lines */}
@@ -198,7 +198,7 @@ function FeeHistogram({ txs, cs }: { txs: MempoolTx[]; cs: boolean }) {
               />
               {hovered === i && b.count > 0 && (
                 <>
-                  <rect x={Math.min(x + barW / 2 - 48, W - 100)} y={Math.max(y - 26, 2)} width="96" height="20" rx="5" fill="rgba(0,0,0,0.9)" stroke="#9333ea" strokeWidth="0.5" />
+                  <rect x={Math.min(x + barW / 2 - 48, W - 100)} y={Math.max(y - 26, 2)} width="96" height="20" rx="5" fill="rgba(0,0,0,0.9)" stroke="#e41e2b" strokeWidth="0.5" />
                   <text x={Math.min(x + barW / 2, W - 52)} y={Math.max(y - 12, 13)} textAnchor="middle" fill="white" fontSize="7" fontWeight="600" fontFamily="monospace">
                     {b.count} tx · {b.lo.toFixed(1)}–{b.hi.toFixed(1)}
                   </text>

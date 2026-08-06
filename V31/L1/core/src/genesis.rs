@@ -3,8 +3,9 @@
 //! V31 keeps the same launch timestamp and constitutional supply constants as V3.
 //! The merkle hashing and block layout are the V31-canonical model.
 //!
-//! V3 mainnet genesis hash (current beta, 2026-07-20 hard reset):
-//! `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`.
+//! V3 mainnet genesis hash (v3.2 One Love reset 2026-08-06):
+//! `b0e95b135b736373430a3ff25d773329a3a3bd4b72ee66bb02d5a1583a77ecff`.
+//! V31 native genesis hash: `065eaf8e85e2808bda876db360c6d4ec1092d6048ab48b30c8a40e468bc10dd6`.
 //! V31 still uses a different canonical block layout, so the computed
 //! `genesis_hash()` below intentionally differs. See `V31/V3_SYNC_ASSESSMENT.md`.
 
@@ -22,13 +23,18 @@ pub use crate::v3_compat::{PremineOutput, PREMINE_OUTPUTS};
 /// Genesis timestamp (seconds since UNIX epoch): 2026-01-01 00:00:00 UTC.
 pub const GENESIS_TIMESTAMP: u64 = 1_767_225_600;
 
-/// Genesis message embedded in the coinbase.
+/// Genesis message embedded in the coinbase (short form).
 pub const GENESIS_MESSAGE: &str = concat!(
-    "ZION Mainnet Launch v3 — ",
+    "ZION Mainnet Launch v3.2 — One Love — ",
     "For Sarah Issobel, Maitreya Buddha, Radha & Sita, Meriam, Friends, Family, ",
     "Freedom Humanity and all the children of this world: ZION is yours. ",
-    "One Earth. One Love. One Network."
+    "Build a better world where you reach for the Stars. The Golden Age begins. ",
+    "Peace & One Love 4ever. One Earth. One Love. One Network. ",
+    "— Yose / Zion Creator"
 );
+
+/// Full genesis message including ASCII art tree, embedded at compile time.
+pub const GENESIS_MESSAGE_FULL: &str = include_str!("GENESIS_MESSAGE.txt");
 
 /// Genesis difficulty used for the first block.
 pub use crate::difficulty::GENESIS_DIFFICULTY;
@@ -43,7 +49,7 @@ pub fn genesis_block() -> Block {
         version: 1,
         inputs: vec![],
         outputs,
-        memo: GENESIS_MESSAGE.as_bytes().to_vec(),
+        memo: GENESIS_MESSAGE_FULL.as_bytes().to_vec(),
     }];
     let merkle_root = merkle_root(&transactions);
 
@@ -74,32 +80,32 @@ pub fn genesis_hash() -> Hash {
 /// Total: 16,780,000,000 ZION.
 fn premine_outputs() -> Vec<TransactionOutput> {
     vec![
-        // OASIS + Golden Egg (8.25 B) — slot 1 address
+        // OASIS + Golden Egg (8.25 B) — slot 1 address (consolidates slots 1-5)
         output(
-            "zion172h3y7d6m7d7y7d8q2d4x363t0m55227n2rt2v2",
+            "zion1c5h8r0m7h3c853n6w0p397k0q6e896f2f5266n3",
             8_250_000_000,
         ),
-        // DAO Treasury (4.0 B) — slot 6 address (main)
+        // DAO Treasury (4.0 B) — slot 6 address (consolidates slots 6-8)
         output(
-            "zion1j5a327c7d3w7h4e474n5p4z0z827f8p874mr2p7",
+            "zion1x8g2z2v3v5n08542a5u7v7q365l4852048qv6w6",
             4_000_000_000,
         ),
-        // Infrastructure (2.59 B) — slot 9 address (dev fund)
+        // Infrastructure (2.59 B) — slot 9 address (consolidates slots 9-11)
         output(
-            "zion172k256y2f6y6k6r3q5e3j0v382f694e3q59e4w0",
+            "zion1a8p47253k7q3j35327f3j3v0u0g5r774s3wg5e3",
             2_590_000_000,
         ),
         // Humanitarian (1.0 B) — slot 12 address
         output(
-            "zion1f0t7e2y3t340g3j4h470q0z7e5j7w7y4q49u5t6",
+            "zion194h4f524x6p498w560u5q3j638f7s806a0fe8l5",
             1_000_000_000,
         ),
         // Bridge Seed (0.4 B) — slot 13 address
-        output("zion1j8c7h0a2r377v5n0y757n8j5w6y2n2d8005f750", 400_000_000),
+        output("zion1y6d8d547s3y7y302n4d7u497x0p3q3m878q52v2", 400_000_000),
         // Bridge Vault UTXO (0.1 B) — slot 14 address
-        output("zion1x2f2u5p560a0e5a5u8g7m837m78856v5f8e45l7", 100_000_000),
+        output("zion1d0d0656456f62394p2w8x59762g6e538t47q548", 100_000_000),
         // Liquidity bootstrap (0.44 B) — humanitarian overflow
-        output("zion1f0t7e2y3t340g3j4h470q0z7e5j7w7y4q49u5t6", 440_000_000),
+        output("zion194h4f524x6p498w560u5q3j638f7s806a0fe8l5", 440_000_000),
     ]
 }
 
@@ -149,5 +155,23 @@ mod tests {
         let tx = &block.transactions[0];
         let total: u128 = tx.outputs.iter().map(|o| o.amount.0).sum();
         assert_eq!(total, 16_780_000_000u128 * 1_000_000);
+    }
+
+    #[test]
+    fn genesis_message_full_contains_ascii_art() {
+        assert!(GENESIS_MESSAGE_FULL.contains("ZION"));
+        assert!(GENESIS_MESSAGE_FULL.contains("Mainnet Launch v3.2"));
+        assert!(GENESIS_MESSAGE_FULL.contains("Golden Age begins"));
+        assert!(GENESIS_MESSAGE_FULL.contains("One Love"));
+        assert!(GENESIS_MESSAGE_FULL.contains("Yose / Zion Creator"));
+    }
+
+    #[test]
+    fn genesis_block_memo_contains_full_message() {
+        let block = genesis_block();
+        let memo = std::str::from_utf8(&block.transactions[0].memo).unwrap();
+        assert!(memo.contains("ZION"));
+        assert!(memo.contains("Mainnet Launch v3.2"));
+        assert!(memo.contains("Yose / Zion Creator"));
     }
 }

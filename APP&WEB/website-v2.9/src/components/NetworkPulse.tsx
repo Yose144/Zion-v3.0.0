@@ -45,7 +45,7 @@ export default function NetworkPulse() {
   const latestMetric = metrics[metrics.length - 1];
 
   return (
-    <div className="zion-rainbow-card p-6 space-y-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+    <div className="zion-rainbow-card p-6 space-y-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="relative">

@@ -214,7 +214,7 @@ function ReleaseCard({
   const binaries = release.assets.filter((a) => a.platform !== 'checksum');
   const checksum = release.assets.find((a) => a.platform === 'checksum');
   const features = variant === 'boost' ? getBoostMinerFeatures(cs) : variant === 'trinity' ? getTripleStreamFeatures(cs) : getCliFeatures(cs);
-  const accent = variant === 'cli' ? '6, 182, 212' : variant === 'trinity' ? '168, 85, 247' : '16, 185, 129';
+  const accent = variant === 'cli' ? '7, 137, 48' : variant === 'trinity' ? '168, 85, 247' : '16, 185, 129';
   const primary = variant === 'boost';
 
   return (
@@ -493,7 +493,7 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
         </p>
         <div
           className="zion-rainbow-sub p-5 overflow-x-auto"
-          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
         >
           <table className="w-full text-sm">
             <tbody>
@@ -515,7 +515,7 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
       {/* ─── Build from source ─── */}
       <div
         className="zion-rainbow-sub p-5"
-        style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+        style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
       >
         <div className="flex items-center gap-3 mb-3">
           <Cpu className="h-5 w-5 text-zion-cyan" />

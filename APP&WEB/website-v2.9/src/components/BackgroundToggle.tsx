@@ -6,7 +6,7 @@ import { Check, Globe, Orbit, Radio, Sparkles, Palette } from 'lucide-react';
 import { useObservatory, type ObservatoryMode } from '@/contexts/ObservatoryContext';
 
 const backgroundConfig: Record<ObservatoryMode, { icon: typeof Sparkles; label: string; description: string; color: string }> = {
-  'maintenance': { icon: Sparkles, label: 'Maintenance Starfield', description: 'Gold starfield — clean and fast', color: '255, 215, 0' },
+  'maintenance': { icon: Sparkles, label: 'Maintenance Starfield', description: 'Gold starfield — clean and fast', color: '252, 209, 22' },
   'planet-orbit': { icon: Globe, label: 'Turquoise Core', description: 'Default turquoise atmosphere', color: '45, 212, 191' },
   'galaxy-core': { icon: Sparkles, label: 'Galaxy Core', description: 'Contact approach — inward starflow', color: '180, 220, 255' },
   'desktop-agent': { icon: Radio, label: 'Desktop Agent', description: 'Purple starfield — desktop agent match', color: '200, 118, 255' },
@@ -19,7 +19,7 @@ export default function BackgroundToggle() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const CurrentIcon = backgroundConfig[mode]?.icon || Sparkles;
-  const currentColor = backgroundConfig[mode]?.color || '6, 182, 212';
+  const currentColor = backgroundConfig[mode]?.color || '7, 137, 48';
   const currentLabel = backgroundConfig[mode]?.label || mode;
 
   /* Close on click outside */

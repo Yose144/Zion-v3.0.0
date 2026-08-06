@@ -278,7 +278,7 @@ function StatCard({
   loading?: boolean;
 }) {
   return (
-    <div className="zion-rainbow-sub p-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+    <div className="zion-rainbow-sub p-4" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
       <div className={`flex items-center justify-center h-8 w-8 rounded-xl ${bgClass} mb-3 ${colorClass}`}>
         {icon}
       </div>
@@ -565,7 +565,7 @@ export default function DefiPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="zion-rainbow-card p-6 md:p-10"
-          style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+          style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-5">
@@ -612,7 +612,7 @@ export default function DefiPage() {
 
             {/* Quick info / connect side card */}
             <div className="w-full lg:max-w-md space-y-3">
-              <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+              <div className="zion-rainbow-sub p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{DefiCopy.quickOverview[cs ? 'cs' : 'en']}</p>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
@@ -719,7 +719,7 @@ export default function DefiPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.02 }}
           className="zion-rainbow-card p-4 md:p-5"
-          style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+          style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
         >
           <div className="flex flex-wrap items-center gap-2 md:gap-3">
             <span className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mr-1 hidden sm:inline">
@@ -737,7 +737,7 @@ export default function DefiPage() {
                       ? 'zion-rainbow-sub'
                       : 'border border-white/10 bg-black/40 text-gray-300 hover:border-white/25 hover:text-white'
                   }`}
-                  style={isActive ? ({ '--rc': '147, 51, 234' } as React.CSSProperties) : undefined}
+                  style={isActive ? ({ '--rc': '228, 30, 43' } as React.CSSProperties) : undefined}
                 >
                   <Icon className="h-3.5 w-3.5" />
                   {cs ? s.labelCs : s.labelEn}
@@ -784,7 +784,7 @@ export default function DefiPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.04 }}
             className="zion-rainbow-card p-5 md:p-6"
-            style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+            style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
           >
             <div className="flex flex-col gap-2 mb-6">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DefiCopy.telemetry[cs ? 'cs' : 'en']}</p>
@@ -890,7 +890,7 @@ export default function DefiPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.06 }}
             className="zion-rainbow-card p-5"
-            style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+            style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2 flex-wrap">
@@ -993,7 +993,7 @@ export default function DefiPage() {
                 {DefiCopy.baseMainnetContracts[cs ? 'cs' : 'en']}
               </h2>
             </div>
-            <div className="zion-rainbow-card overflow-hidden p-0" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            <div className="zion-rainbow-card overflow-hidden p-0" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -1086,7 +1086,7 @@ export default function DefiPage() {
             <div className="grid gap-5 sm:grid-cols-2">
               <div
                 className="zion-rainbow-card p-5"
-                style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+                style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
@@ -1208,14 +1208,14 @@ export default function DefiPage() {
             transition={{ delay: 0.05 }}
             className="space-y-6 max-w-5xl"
           >
-            <div className="zion-rainbow-card p-5 md:p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            <div className="zion-rainbow-card p-5 md:p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-4">
                 <RefreshCw className="h-4 w-4 text-purple-400" />
                 <h3 className="text-sm font-semibold text-white uppercase tracking-wider">{DefiCopy.crossChainSwap[cs ? 'cs' : 'en']}</h3>
               </div>
               <LiFiWidget />
             </div>
-            <div className="zion-rainbow-card p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            <div className="zion-rainbow-card p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-4">
                 <Droplets className="h-4 w-4 text-zion-purple" />
                 <h3 className="text-sm font-semibold text-white uppercase tracking-wider">{DefiCopy.directSwapBalances[cs ? 'cs' : 'en']}</h3>
@@ -1250,7 +1250,7 @@ export default function DefiPage() {
             <p className="text-sm text-gray-400">{DefiCopy.stakeOrFarmWzionToEarnRegularR[cs ? 'cs' : 'en']}</p>
           </motion.div>
 
-          <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <div className="zion-rainbow-sub p-4 mb-4" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <div className="flex items-center gap-2">
                 <Lock className="h-5 w-5 text-amber-400" />
@@ -1260,7 +1260,7 @@ export default function DefiPage() {
             <StakingPanel />
           </div>
 
-          <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <div className="zion-rainbow-sub p-4 mb-4" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <div className="flex items-center gap-2">
                 <Sprout className="h-5 w-5 text-amber-400" />
@@ -1295,7 +1295,7 @@ export default function DefiPage() {
             <Link
               href="/bridge"
               className="zion-rainbow-card p-6 transition-transform duration-200 hover:scale-[1.01] block"
-              style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+              style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
             >
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/20">
@@ -1365,7 +1365,7 @@ export default function DefiPage() {
           className="space-y-6 max-w-5xl"
         >
           {/* Bridge Vault Status */}
-          <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <div className="flex items-center gap-2 mb-4">
               <Lock className="h-5 w-5 text-purple-400" />
               <h3 className="font-semibold text-white text-sm">
@@ -1500,7 +1500,7 @@ export default function DefiPage() {
               <p className="text-sm text-gray-400">{DefiCopy.voteOnProtocolParametersAndMon[cs ? 'cs' : 'en']}</p>
             </div>
           </motion.div>
-          <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <div className="zion-rainbow-sub p-4 mb-4" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
               <div className="flex items-center gap-2">
                 <Scale className="h-5 w-5 text-amber-400" />
@@ -1655,7 +1655,7 @@ export default function DefiPage() {
               {/* wZION/USDT — active V3 pool */}
               <div
                 className="zion-rainbow-card p-4"
-                style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+                style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-semibold text-white">{poolStats?.pools?.wzion_usdt?.pair ?? 'wZION/USDT'}</span>

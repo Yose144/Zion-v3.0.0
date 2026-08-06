@@ -333,7 +333,7 @@ export default function WalletPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             className="zion-rainbow-card p-6 md:p-10"
-            style={{ '--rc': '147, 51, 234' } as CSSProperties}
+            style={{ '--rc': '228, 30, 43' } as CSSProperties}
           >
             <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
               <div className="space-y-5">
@@ -484,7 +484,7 @@ export default function WalletPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             className="zion-rainbow-card p-6 md:p-8"
-            style={{ '--rc': '147, 51, 234' } as CSSProperties}
+            style={{ '--rc': '228, 30, 43' } as CSSProperties}
           >
             <div className="flex flex-col gap-2 mb-6">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{WalletCopy.features[cs ? 'cs' : 'en']}</p>
@@ -529,7 +529,7 @@ export default function WalletPage() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="zion-rainbow-card p-6"
-                style={{ '--rc': '147, 51, 234' } as CSSProperties}
+                style={{ '--rc': '228, 30, 43' } as CSSProperties}
               >
                 <div className="flex items-center justify-between mb-4">
                   <div>
@@ -576,7 +576,7 @@ export default function WalletPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
                 className="zion-rainbow-card p-6"
-                style={{ '--rc': '147, 51, 234' } as CSSProperties}
+                style={{ '--rc': '228, 30, 43' } as CSSProperties}
               >
                 <h2 className="text-lg font-semibold text-white mb-4">{WalletCopy.yourWallets[cs ? 'cs' : 'en']} ({wallets.length})</h2>
                 <div className="space-y-2">
@@ -613,7 +613,7 @@ export default function WalletPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
               className="zion-rainbow-card p-6"
-              style={{ '--rc': '147, 51, 234' } as CSSProperties}
+              style={{ '--rc': '228, 30, 43' } as CSSProperties}
             >
               <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-6">
                 <span className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mr-1 hidden sm:inline">
@@ -718,7 +718,7 @@ export default function WalletPage() {
                           onClick={handleImportMnemonic}
                           disabled={loading}
                           className="zion-button-primary text-sm"
-                          style={{ '--rc': '6, 182, 212' } as CSSProperties}
+                          style={{ '--rc': '7, 137, 48' } as CSSProperties}
                         >
                           {loading ? (WalletCopy.importing[cs ? 'cs' : 'en']) : (WalletCopy.importFromMnemonic[cs ? 'cs' : 'en'])}
                         </button>
@@ -745,7 +745,7 @@ export default function WalletPage() {
                           onClick={handleImportPrivateKey}
                           disabled={loading}
                           className="zion-button-primary text-sm"
-                          style={{ '--rc': '6, 182, 212' } as CSSProperties}
+                          style={{ '--rc': '7, 137, 48' } as CSSProperties}
                         >
                           {loading ? (WalletCopy.importing[cs ? 'cs' : 'en']) : (WalletCopy.importFromPrivateKey[cs ? 'cs' : 'en'])}
                         </button>
@@ -767,7 +767,7 @@ export default function WalletPage() {
                           onClick={handleImportLedger}
                           disabled={loading}
                           className="zion-button-secondary text-sm"
-                          style={{ '--rc': '147, 51, 234' } as CSSProperties}
+                          style={{ '--rc': '228, 30, 43' } as CSSProperties}
                         >
                           {loading ? (WalletCopy.connecting[cs ? 'cs' : 'en']) : 'Ledger'}
                         </button>
@@ -878,7 +878,7 @@ export default function WalletPage() {
                         <button
                           onClick={handleExportPrivateKey}
                           className="zion-button-secondary text-sm"
-                          style={{ '--rc': '6, 182, 212' } as CSSProperties}
+                          style={{ '--rc': '7, 137, 48' } as CSSProperties}
                         >
                           <Fingerprint className="h-4 w-4" /> {WalletCopy.exportPrivateKey[cs ? 'cs' : 'en']}
                         </button>
@@ -921,7 +921,7 @@ export default function WalletPage() {
               {WalletCopy.learnMoreAboutZionWallet[cs ? 'cs' : 'en']}
             </h2>
             <div className="flex flex-wrap justify-center gap-4">
-              <Link href="/explorer" className="zion-button-secondary group text-sm" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
+              <Link href="/explorer" className="zion-button-secondary group text-sm" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
                 <Globe2 className="h-4 w-4" /> Explorer
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>

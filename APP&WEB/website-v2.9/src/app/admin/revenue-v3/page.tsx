@@ -169,7 +169,7 @@ export default function RevenueSettings() {
       <div className="grid gap-6">
         
         {/* NCL AI Section */}
-        <section className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+        <section className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-purple-300">🤖 {AdminRevenueV3Copy.nclArtificialIntelligence[lang === 'cs' ? 'cs' : 'en']}</h2>
                 <div className="flex items-center gap-2">
@@ -183,7 +183,7 @@ export default function RevenueSettings() {
                 </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+                <div className="zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                     <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.npuAllocation0010[lang === 'cs' ? 'cs' : 'en']}</label>
                     <input
                         type="number"
@@ -196,7 +196,7 @@ export default function RevenueSettings() {
                     />
                     <p className="text-xs text-gray-400 mt-1">{AdminRevenueV3Copy.percentageOfNpuResourcesDedica[lang === 'cs' ? 'cs' : 'en']}</p>
                 </div>
-                <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+                <div className="zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                     <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.revenueTargetShare[lang === 'cs' ? 'cs' : 'en']}</label>
                     <input
                         type="number"
@@ -210,14 +210,14 @@ export default function RevenueSettings() {
         </section>
 
         {/* ZION Native Section */}
-        <section className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+        <section className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-blue-300">🌌 {AdminRevenueV3Copy.zionNativeChain[lang === 'cs' ? 'cs' : 'en']}</h2>
                 <div className="flex items-center gap-2">
                    <span className="zion-badge zion-badge-green">{AdminRevenueV3Copy.alwaysEnabled[lang === 'cs' ? 'cs' : 'en']}</span>
                 </div>
             </div>
-            <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                  <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.targetShare[lang === 'cs' ? 'cs' : 'en']}</label>
                  <input
                      type="number"
@@ -230,7 +230,7 @@ export default function RevenueSettings() {
         </section>
 
         {/* ETC Stream */}
-        <section className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+        <section className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
              <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-green-300">⛏️ {AdminRevenueV3Copy.etcExternal[lang === 'cs' ? 'cs' : 'en']}</h2>
                 <div className="flex items-center gap-2">
@@ -245,7 +245,7 @@ export default function RevenueSettings() {
             </div>
             <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                         <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.poolStratumUrl[lang === 'cs' ? 'cs' : 'en']}</label>
                         <input
                             type="text"
@@ -254,7 +254,7 @@ export default function RevenueSettings() {
                             className="w-full bg-black/40 border border-white/10 rounded p-2 font-mono text-sm text-white"
                         />
                      </div>
-                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                         <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.walletAddress[lang === 'cs' ? 'cs' : 'en']}</label>
                         <input
                             type="text"
@@ -268,7 +268,7 @@ export default function RevenueSettings() {
         </section>
 
          {/* NXS Stream */}
-         <section className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+         <section className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
              <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-orange-300">💎 {AdminRevenueV3Copy.nxsExternal[lang === 'cs' ? 'cs' : 'en']}</h2>
                 <div className="flex items-center gap-2">
@@ -283,7 +283,7 @@ export default function RevenueSettings() {
             </div>
             <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                         <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.poolStratumUrl[lang === 'cs' ? 'cs' : 'en']}</label>
                         <input
                             type="text"
@@ -292,7 +292,7 @@ export default function RevenueSettings() {
                             className="w-full bg-black/40 border border-white/10 rounded p-2 font-mono text-sm text-white"
                         />
                      </div>
-                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                         <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.walletAddress[lang === 'cs' ? 'cs' : 'en']}</label>
                         <input
                             type="text"
@@ -321,7 +321,7 @@ export default function RevenueSettings() {
             </div>
             <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                         <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.poolStratumUrl[lang === 'cs' ? 'cs' : 'en']}</label>
                         <input
                             type="text"
@@ -331,7 +331,7 @@ export default function RevenueSettings() {
                             placeholder="stratum+tcp://us2.alphapool.tech:5566"
                         />
                      </div>
-                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+                     <div className="zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                         <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.walletAddress[lang === 'cs' ? 'cs' : 'en']}</label>
                         <input
                             type="text"
@@ -342,7 +342,7 @@ export default function RevenueSettings() {
                         />
                      </div>
                 </div>
-                <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+                <div className="zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                     <label className="block text-sm font-medium mb-1">{AdminRevenueV3Copy.revenueTargetShare[lang === 'cs' ? 'cs' : 'en']}</label>
                     <input
                         type="number"

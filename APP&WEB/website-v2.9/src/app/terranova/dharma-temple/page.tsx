@@ -120,8 +120,8 @@ const FEATURES: FeatureItem[] = [
     descCs: 'Solar + mikrohydro ze srážek. La Palma má vydatné deště a výškový profil ideální pro průtočné turbíny.',
     descEn: 'Solar + micro-hydro from rainfall. La Palma has generous rain and elevation ideal for run-of-river turbines.',
     status: 'planned' as const,
-    color: '#06B6D4',
-    rgb: '6,182,212',
+    color: '#078930',
+    rgb: '7,137,48',
   },
   {
     icon: Landmark,
@@ -379,8 +379,8 @@ export default function DharmaTemplePage() {
                   <div
                     className="absolute -left-10 top-3 w-4 h-4 rounded-full border-2 flex items-center justify-center"
                     style={{
-                      borderColor: p.active ? 'rgb(255,215,0)' : 'rgba(255,255,255,0.15)',
-                      backgroundColor: p.active ? 'rgba(255,215,0,0.2)' : 'rgba(0,0,0,0.5)',
+                      borderColor: p.active ? 'rgb(252,209,22)' : 'rgba(255,255,255,0.15)',
+                      backgroundColor: p.active ? 'rgba(252,209,22,0.2)' : 'rgba(0,0,0,0.5)',
                     }}
                   >
                     {p.active && <div className="w-1.5 h-1.5 rounded-full bg-zion-cyan animate-pulse" />}
@@ -393,7 +393,7 @@ export default function DharmaTemplePage() {
                     <div className="flex items-center gap-3">
                       <span
                         className="text-xs font-bold tracking-wider"
-                        style={{ color: p.active ? 'rgb(6,182,212)' : 'rgba(255,255,255,0.3)' }}
+                        style={{ color: p.active ? 'rgb(7,137,48)' : 'rgba(255,255,255,0.3)' }}
                       >
                         {cs ? `Fáze ${p.num}` : `Phase ${p.num}`}
                       </span>

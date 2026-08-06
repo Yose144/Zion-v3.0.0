@@ -63,7 +63,7 @@ function fmtDuration(secs?: number) {
 function copy(text: string) { navigator.clipboard.writeText(text); }
 
 function Card({ children, className = '', variant = 'cyan' }: { children: React.ReactNode; className?: string; variant?: 'cyan' | 'purple' }) {
-  const rc = variant === 'purple' ? '147, 51, 234' : '6, 182, 212';
+  const rc = variant === 'purple' ? '228, 30, 43' : '7, 137, 48';
   return (
     <div className={"zion-rainbow-sub p-6 " + className} style={{ '--rc': rc } as React.CSSProperties}>
       {children}
@@ -94,7 +94,7 @@ function Stat({ label, value, unit, icon: Icon, color }: {
 
 function MiniStat({ label, value, icon: Icon, color }: { label: string; value: string | number; icon: React.ComponentType<{ size?: number; className?: string; style?: React.CSSProperties }>; color: string }) {
   return (
-    <div className="zion-rainbow-sub p-3" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+    <div className="zion-rainbow-sub p-3" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
       <div className="flex items-center gap-2 mb-1.5">
         <Icon size={12} style={{ color }} />
         <span className="text-[10px] text-gray-400 uppercase tracking-wider">{label}</span>
@@ -133,7 +133,7 @@ function WalletGate({ onEnter }: { onEnter: () => void }) {
   return (
     <div className="min-h-[40vh] flex items-center justify-center p-6">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
-        <div className="zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+        <div className="zion-rainbow-card p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-xl bg-zion-gold/15 flex items-center justify-center">
               <LayoutDashboard size={18} className="text-zion-gold" />
@@ -156,7 +156,7 @@ function WalletGate({ onEnter }: { onEnter: () => void }) {
                         onClick={() => { setActiveWallet(w.id); onEnter(); }}
                         disabled={loading}
                         className="w-full text-left flex items-center justify-between p-3 zion-rainbow-sub"
-                        style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+                        style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
                       >
                         <div>
                           <p className="text-sm font-medium text-white">{w.name}</p>
@@ -239,7 +239,7 @@ function MissionControlLite({ metrics }: { metrics: V3Metrics | null }) {
         <h3 className="text-sm font-semibold text-white">Mission Control</h3>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <MiniStat label="Block Height" value={metrics?.chain?.height?.toLocaleString() ?? '—'} icon={Server} color="#FFD700" />
+        <MiniStat label="Block Height" value={metrics?.chain?.height?.toLocaleString() ?? '—'} icon={Server} color="#fcd116" />
         <MiniStat label="Difficulty"   value={metrics?.chain?.difficulty ? metrics.chain.difficulty.toLocaleString() : '—'} icon={Database} color="#F59E0B" />
         <MiniStat label="Pool HR"      value={fmtHashrate(metrics?.pool?.hashrate_hps)} icon={Pickaxe} color="#22C55E" />
         <MiniStat label="Blocks Found" value={metrics?.pool?.blocks_found?.toLocaleString() ?? '—'} icon={CheckCircle2} color="#10B981" />
@@ -252,17 +252,17 @@ function MonitoringTab({ metrics }: { metrics: V3Metrics | null }) {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Stat label="Block Height" value={m?.chain?.height?.toLocaleString() ?? '—'} icon={Server} color="#FFD700" />
+        <Stat label="Block Height" value={m?.chain?.height?.toLocaleString() ?? '—'} icon={Server} color="#fcd116" />
         <Stat label="Difficulty"   value={m?.chain?.difficulty ? m.chain.difficulty.toLocaleString() : '—'} icon={Database} color="#F59E0B" />
-        <Stat label="Pool Sessions"value={m?.pool?.sessions ?? '—'}                    icon={Layers} color="#9333EA" />
+        <Stat label="Pool Sessions"value={m?.pool?.sessions ?? '—'}                    icon={Layers} color="#e41e2b" />
         <Stat label="Pool Hashrate"value={fmtHashrate(m?.pool?.hashrate_hps)}         icon={Pickaxe} color="#22C55E" />
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Stat label="Accept Rate"   value={m?.pool?.accept_rate_pct?.toFixed(1) ?? '—'} unit="%" icon={CheckCircle2} color="#22C55E" />
-        <Stat label="Network HR"    value={fmtHashrate(m?.chain?.network_hashrate)}       icon={Globe}          color="#06B6D4" />
+        <Stat label="Network HR"    value={fmtHashrate(m?.chain?.network_hashrate)}       icon={Globe}          color="#078930" />
         <Stat label="Mempool"       value={m?.chain?.mempool ?? '—'}                       unit="txs" icon={Database} color="#F59E0B" />
-        <Stat label="Blocks Found"  value={m?.pool?.blocks_found?.toLocaleString() ?? '—'} icon={Server}         color="#FFD700" />
+        <Stat label="Blocks Found"  value={m?.pool?.blocks_found?.toLocaleString() ?? '—'} icon={Server}         color="#fcd116" />
       </div>
 
       <Card>
@@ -571,7 +571,7 @@ function WalletTab() {
                 className={'flex items-center justify-between p-3 rounded-xl border transition cursor-pointer ' +
                   (activeWallet?.id === w.id ? 'zion-rainbow-sub' : 'bg-black/40 border-white/10 hover:border-white/20')}
                 onClick={() => setActiveWallet(w.id)}
-                style={activeWallet?.id === w.id ? { '--rc': '147, 51, 234' } as React.CSSProperties : undefined}
+                style={activeWallet?.id === w.id ? { '--rc': '228, 30, 43' } as React.CSSProperties : undefined}
               >
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-white">{w.name}</p>
@@ -595,7 +595,7 @@ function WalletTab() {
           <button key={t} onClick={() => { setSubTab(t); setExportedSecret(''); setTxResult(''); }}
             className={'flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all whitespace-nowrap ' +
               (subTab === t ? 'zion-rainbow-sub text-white' : 'text-gray-400 hover:text-white bg-black/40 border border-white/10')}
-            style={subTab === t ? { '--rc': '6, 182, 212' } as React.CSSProperties : undefined}>
+            style={subTab === t ? { '--rc': '7, 137, 48' } as React.CSSProperties : undefined}>
             {t === 'overview' && <Wallet size={13} />}
             {t === 'create' && <Plus size={13} />}
             {t === 'import' && <Import size={13} />}
@@ -612,7 +612,7 @@ function WalletTab() {
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-white">Receive</h3>
               <p className="text-xs text-gray-400">Share your address to receive ZION tokens.</p>
-              <div className="flex items-center gap-2 p-3 zion-rainbow-sub" style={{'--rc': '6, 182, 212'} as React.CSSProperties}>
+              <div className="flex items-center gap-2 p-3 zion-rainbow-sub" style={{'--rc': '7, 137, 48'} as React.CSSProperties}>
                 <code className="text-sm font-mono text-zion-gold flex-1 break-all">{activeWallet.address}</code>
                 <button onClick={() => handleCopy(activeWallet.address)} className="p-2 rounded-lg hover:bg-white/10 transition">
                   <Copy size={14} className="text-gray-400" />
@@ -736,7 +736,7 @@ function WalletTab() {
                 <button onClick={handleExportPrivateKey} className="px-4 py-2.5 rounded-2xl border border-white/10 text-gray-300 text-sm hover:border-white/20 hover:bg-white/5 transition-colors">Export Private Key</button>
               </div>
               {exportedSecret && (
-                <div className="p-3 zion-rainbow-sub" style={{'--rc': '6, 182, 212'} as React.CSSProperties}>
+                <div className="p-3 zion-rainbow-sub" style={{'--rc': '7, 137, 48'} as React.CSSProperties}>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs text-gray-400">Secret</span>
                     <div className="flex gap-2">
@@ -784,7 +784,7 @@ export default function DashboardMain() {
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         className="zion-rainbow-card p-6 md:p-10"
-        style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+        style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
       >
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="space-y-4">
@@ -815,7 +815,7 @@ export default function DashboardMain() {
 
           {activeWallet && (
             <div className="flex items-center gap-3 shrink-0">
-              <div className="flex items-center gap-2 px-3 py-1.5 zion-rainbow-sub" style={{'--rc': '6, 182, 212'} as React.CSSProperties}>
+              <div className="flex items-center gap-2 px-3 py-1.5 zion-rainbow-sub" style={{'--rc': '7, 137, 48'} as React.CSSProperties}>
                 <Wallet size={12} className="text-zion-gold" />
                 <span className="text-xs font-mono text-gray-300">{activeWallet.address.slice(0, 10)}...{activeWallet.address.slice(-4)}</span>
               </div>
@@ -840,7 +840,7 @@ export default function DashboardMain() {
                 onClick={() => setActiveTab(t.id as any)}
                 className={'flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-medium transition-all whitespace-nowrap ' +
                   (isActive ? 'zion-rainbow-sub text-white' : 'text-gray-400 hover:text-white bg-black/40 border border-white/10')}
-                style={isActive ? { '--rc': '6, 182, 212' } as React.CSSProperties : undefined}
+                style={isActive ? { '--rc': '7, 137, 48' } as React.CSSProperties : undefined}
               >
                 <Icon size={14} /> {t.label}
               </button>

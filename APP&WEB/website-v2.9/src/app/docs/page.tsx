@@ -42,21 +42,25 @@ type LocalizedText = { cs: string; en: string };
 const docsPageCopy = {
   badge: { cs: 'Znalostní báze', en: 'Knowledge Base' },
   overviewNotice: {
-    cs: 'Aktuální veřejná linka je v3.1.0 Mainnet Alpha nad kanonickou runtime v3.1.0 V31. Decimal fork 1e12→1e6 (6-decimal flowers) dokončen. Síť běží na novém genesis hash po hard resetu z července 2026 — viz hlavní dokument [Mainnet Status](#mainnet). Pool aktivní, mining live, 11/11 služeb green. Veřejný launch zůstává 31. prosince 2026.',
-    en: 'The current public line is v3.1.0 Mainnet Alpha on the canonical v3.1.0 V31 runtime. Decimal fork 1e12→1e6 (6-decimal flowers) complete. The network is running on a new genesis hash after the July 2026 hard reset — see the main document [Mainnet Status](#mainnet). Pool active, mining live, 11/11 services green. Public launch remains 31 December 2026.',
+    cs: 'Aktuální veřejná linka je v3.2.0 "One Love" Mainnet Stable. Decimal fork 1e12→1e6 (6-decimal flowers) dokončen. Síť běží na novém genesis hash po hard resetu ze srpna 2026 — viz hlavní dokument [Mainnet Status](#mainnet). Pool aktivní, mining live, 5/5 služeb green. Veřejný launch zůstává 31. prosince 2026.',
+    en: 'The current public line is v3.2.0 "One Love" Mainnet Stable. Decimal fork 1e12→1e6 (6-decimal flowers) complete. The network is running on a new genesis hash after the August 2026 hard reset — see the main document [Mainnet Status](#mainnet). Pool active, mining live, 5/5 services green. Public launch remains 31 December 2026.',
   },
   githubLabel: { cs: 'GitHub', en: 'GitHub' },
   apiHealthLabel: { cs: 'Zdraví API', en: 'API Health' },
 } as const satisfies Record<string, LocalizedText>;
 
 const versionText: Record<string, { tag?: LocalizedText; description?: LocalizedText }> = {
-  'v3.1.0': {
+  'v3.2.0': {
     tag: { cs: 'AKTUÁLNÍ', en: 'CURRENT' },
-    description: { cs: 'Current public line — v3.1.0 Mainnet Alpha, nový genesis hash po červencovém hard resetu, 11/11 služeb active, E2E memo testy v bloku 752', en: 'Current public line — v3.1.0 Mainnet Alpha, new genesis hash after the July hard reset, 11/11 services active, E2E memo tests in block 752' },
+    description: { cs: 'Current public line — v3.2.0 "One Love" Mainnet Stable, nový genesis hash po srpnovém hard resetu (kompletní rotace klíčů), 5/5 služeb active, kanonický Ekam Deeksha PoW', en: 'Current public line — v3.2.0 "One Love" Mainnet Stable, new genesis hash after the August hard reset (complete key rotation), 5/5 services active, canonical Ekam Deeksha PoW' },
+  },
+  'v3.1.0': {
+    tag: { cs: 'PŘEDCHOZÍ', en: 'PREVIOUS' },
+    description: { cs: 'Mainnet Alpha — první V31 produkční cutover, Terminal Miner release, OASIS preview', en: 'Mainnet Alpha — first production cutover, Terminal Miner release, OASIS preview' },
   },
   'v3.0.6': {
     tag: { cs: 'PŘEDCHOZÍ', en: 'PREVIOUS' },
-    description: { cs: 'Trinity / Mainnet Beta — poslední stabilní vydání před V31 Mainnet Alpha', en: 'Trinity / Mainnet Beta — last stable release before V31 Mainnet Alpha' },
+    description: { cs: 'Trinity / Mainnet Beta — poslední stabilní vydání před Mainnet Stable', en: 'Trinity / Mainnet Beta — last stable release before Mainnet Stable' },
   },
   'v3.0.2': {
     tag: { cs: 'PŘEDCHOZÍ', en: 'PREVIOUS' },
@@ -539,7 +543,7 @@ export default function DocsPage() {
         <div className="zion-container py-20 relative">
           <div
             className="zion-rainbow-card max-w-4xl mx-auto p-8 md:p-10 text-center"
-            style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+            style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
           >
             <div className="zion-kicker mx-auto mb-6 w-fit border-cyan-400/30 bg-cyan-400/10 text-cyan-200">
               <BookOpen className="w-4 h-4 text-zion-cyan" />
@@ -553,7 +557,7 @@ export default function DocsPage() {
             </p>
             <div
               className="zion-rainbow-sub mx-auto mb-8 max-w-3xl px-5 py-4 text-left text-sm text-gray-300"
-              style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+              style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
             >
               {tx(docsPageCopy.overviewNotice, currentLang)}
             </div>
@@ -620,7 +624,7 @@ export default function DocsPage() {
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="w-full flex items-center justify-between px-4 py-3 zion-rainbow-sub text-white transition-colors"
-            style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+            style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
           >
             <div className="flex items-center gap-2 min-w-0">
               <GitBranch className="w-5 h-5 text-zion-cyan shrink-0" />
@@ -631,7 +635,7 @@ export default function DocsPage() {
 
           {/* Mobile Navigation Dropdown */}
           {mobileMenuOpen && (
-            <div className="mt-4 zion-rainbow-card p-4 space-y-3 max-h-[70vh] overflow-y-auto" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+            <div className="mt-4 zion-rainbow-card p-4 space-y-3 max-h-[70vh] overflow-y-auto" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
               {/* Resources / History tabs */}
               <div className="flex border-b border-white/10 mb-2">
                 <button
@@ -641,7 +645,7 @@ export default function DocsPage() {
                       ? 'zion-rainbow-sub text-zion-cyan'
                       : 'text-gray-500 hover:text-gray-300'
                   }`}
-                  style={sidebarTab === 'resources' ? { '--rc': '6, 182, 212' } as React.CSSProperties : undefined}
+                  style={sidebarTab === 'resources' ? { '--rc': '7, 137, 48' } as React.CSSProperties : undefined}
                 >
                   <LayoutList className="w-3.5 h-3.5" />
                   {tr('docs', 'resources_tab', lang)}
@@ -675,7 +679,7 @@ export default function DocsPage() {
                               ? 'zion-rainbow-sub text-white'
                               : 'rounded-lg text-gray-400 hover:text-white hover:bg-white/5'
                           }`}
-                          style={hasActiveDoc ? { '--rc': '6, 182, 212' } as React.CSSProperties : undefined}
+                          style={hasActiveDoc ? { '--rc': '7, 137, 48' } as React.CSSProperties : undefined}
                         >
                           <div className="flex items-center gap-2">
                             <Icon className={`w-4 h-4 ${section.accentText}`} />
@@ -756,7 +760,7 @@ export default function DocsPage() {
                                         ? 'zion-rainbow-sub text-zion-cyan'
                                         : 'rounded-lg text-gray-400 hover:text-white hover:bg-white/5'
                                     }`}
-                                    style={isActiveCat ? { '--rc': '6, 182, 212' } as React.CSSProperties : undefined}
+                                    style={isActiveCat ? { '--rc': '7, 137, 48' } as React.CSSProperties : undefined}
                                   >
                                     <div className="flex items-center gap-2">
                                       <Icon className="w-4 h-4" />
@@ -799,7 +803,7 @@ export default function DocsPage() {
         <div className="flex gap-8">
           {/* ═══ Sidebar — Version Tree ═══ */}
           <aside className="hidden lg:block w-72 shrink-0">
-            <div className="sticky top-24 zion-rainbow-card overflow-hidden" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+            <div className="sticky top-24 zion-rainbow-card overflow-hidden" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
               {/* Sidebar Tab Switcher */}
               <div className="flex border-b border-white/10">
                 <button
@@ -809,7 +813,7 @@ export default function DocsPage() {
                       ? 'zion-rainbow-sub text-zion-cyan'
                       : 'text-gray-500 hover:text-gray-300'
                   }`}
-                  style={sidebarTab === 'resources' ? { '--rc': '6, 182, 212' } as React.CSSProperties : undefined}
+                  style={sidebarTab === 'resources' ? { '--rc': '7, 137, 48' } as React.CSSProperties : undefined}
                 >
                   <LayoutList className="w-3.5 h-3.5" />
                   {tr('docs', 'resources_tab', lang)}
@@ -846,7 +850,7 @@ export default function DocsPage() {
                                 ? 'zion-rainbow-sub text-white'
                                 : 'rounded-lg text-gray-400 hover:text-white hover:bg-white/5'
                             }`}
-                            style={hasActiveDoc ? { '--rc': '6, 182, 212' } as React.CSSProperties : undefined}
+                            style={hasActiveDoc ? { '--rc': '7, 137, 48' } as React.CSSProperties : undefined}
                           >
                             <div className="flex items-center gap-2">
                               <Icon className={`w-4 h-4 ${section.accentText}`} />
@@ -931,7 +935,7 @@ export default function DocsPage() {
                                       ? 'zion-rainbow-sub text-zion-cyan'
                                       : 'rounded-lg text-gray-400 hover:text-white hover:bg-white/5'
                                   }`}
-                                  style={isActiveCat ? { '--rc': '6, 182, 212' } as React.CSSProperties : undefined}
+                                  style={isActiveCat ? { '--rc': '7, 137, 48' } as React.CSSProperties : undefined}
                                 >
                                   <div className="flex items-center gap-2">
                                     <Icon className="w-4 h-4" />

@@ -46,13 +46,13 @@ const CHART_ORDER: ChartType[] = ["hashrate", "difficulty", "blocktime", "emissi
 
 const getChartConfig = (cs: boolean): Record<ChartType, { label: string; color: string; unit: string; kind: "line" | "bar"; formatFn?: (v: number) => string }> => ({
   difficulty:      { label: ExplorerChartsCopy.difficulty[cs ? 'cs' : 'en'], color: "#ef4444", unit: "", kind: "line", formatFn: formatSI },
-  hashrate:        { label: ExplorerChartsCopy.hashrate[cs ? 'cs' : 'en'], color: "#06b6d4", unit: "H/s", kind: "line", formatFn: formatHashrate },
+  hashrate:        { label: ExplorerChartsCopy.hashrate[cs ? 'cs' : 'en'], color: "#078930", unit: "H/s", kind: "line", formatFn: formatHashrate },
   blocktime:       { label: ExplorerChartsCopy.blockTime[cs ? 'cs' : 'en'], color: "#22c55e", unit: "s", kind: "line" },
   emission:        { label: ExplorerChartsCopy.circulatingSupply[cs ? 'cs' : 'en'], color: "#eab308", unit: "ZION", kind: "line", formatFn: formatSI },
   blocksize:       { label: ExplorerChartsCopy.blockSize[cs ? 'cs' : 'en'], color: "#a855f7", unit: "B", kind: "line", formatFn: formatBytes },
   txcount:         { label: ExplorerChartsCopy.txBlock[cs ? 'cs' : 'en'], color: "#14b8a6", unit: "tx", kind: "line" },
   txvolume:        { label: ExplorerChartsCopy.txVolume[cs ? 'cs' : 'en'], color: "#14b8a6", unit: "tx", kind: "bar" },
-  activeaddresses: { label: ExplorerChartsCopy.activeAddresses[cs ? 'cs' : 'en'], color: "#06b6d4", unit: "", kind: "line" },
+  activeaddresses: { label: ExplorerChartsCopy.activeAddresses[cs ? 'cs' : 'en'], color: "#078930", unit: "", kind: "line" },
 });
 
 const getTimeRanges = (cs: boolean): { value: TimeRange; label: string }[] => [

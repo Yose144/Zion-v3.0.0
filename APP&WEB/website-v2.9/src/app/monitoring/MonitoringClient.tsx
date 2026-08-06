@@ -290,7 +290,7 @@ async function fetchSparklines(): Promise<SparklineData> {
 
 /* ═══════════════════════ COMPONENTS ═══════════════════════ */
 
-function StatCard({ label, value, icon: Icon, accent = 'text-zion-cyan', rc = '6, 182, 212', sub }: {
+function StatCard({ label, value, icon: Icon, accent = 'text-zion-cyan', rc = '7, 137, 48', sub }: {
   label: string;
   value: string;
   icon: LucideIcon;
@@ -415,7 +415,7 @@ export default function MonitoringClient() {
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
           className="zion-rainbow-card p-6 md:p-10"
         >
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -505,9 +505,9 @@ export default function MonitoringClient() {
           </div>
           {/* Sparkline */}
           {sparklines && sparklines.chainHeight.length > 1 && (
-            <div style={{ '--rc': '6, 182, 212' } as React.CSSProperties} className="mt-3 zion-rainbow-sub p-4">
+            <div style={{ '--rc': '7, 137, 48' } as React.CSSProperties} className="mt-3 zion-rainbow-sub p-4">
               <div className="text-xs text-gray-400 mb-2">{MonitoringMonitoringClientCopy.chainHeightLast1Hour[cs ? 'cs' : 'en']}</div>
-              <Sparkline data={sparklines.chainHeight} color="#FFD700" height={40} />
+              <Sparkline data={sparklines.chainHeight} color="#fcd116" height={40} />
             </div>
           )}
         </motion.section>
@@ -538,7 +538,7 @@ export default function MonitoringClient() {
               {sparklines.poolSessions.length > 1 && (
                 <div style={{ '--rc': '16, 185, 129' } as React.CSSProperties} className="zion-rainbow-sub p-4">
                   <div className="text-xs text-gray-400 mb-2">{MonitoringMonitoringClientCopy.activeMinersLast1Hour[cs ? 'cs' : 'en']}</div>
-                  <Sparkline data={sparklines.poolSessions} color="#FFD700" height={36} />
+                  <Sparkline data={sparklines.poolSessions} color="#fcd116" height={36} />
                 </div>
               )}
               {sparklines.shares.length > 1 && (
@@ -617,7 +617,7 @@ export default function MonitoringClient() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
           className="zion-rainbow-card p-6"
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
@@ -627,7 +627,7 @@ export default function MonitoringClient() {
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {/* CPU Load */}
-            <div style={{ '--rc': '6, 182, 212' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2">
+            <div style={{ '--rc': '7, 137, 48' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2">
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
                 <Flame className="h-3 w-3" /> {MonitoringMonitoringClientCopy.cpuLoad[cs ? 'cs' : 'en']}
               </div>
@@ -639,7 +639,7 @@ export default function MonitoringClient() {
             </div>
 
             {/* Memory */}
-            <div style={{ '--rc': '6, 182, 212' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2">
+            <div style={{ '--rc': '7, 137, 48' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2">
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
                 <Cpu className="h-3 w-3" /> {MonitoringMonitoringClientCopy.memory[cs ? 'cs' : 'en']}
               </div>
@@ -659,7 +659,7 @@ export default function MonitoringClient() {
             </div>
 
             {/* Disk */}
-            <div style={{ '--rc': '6, 182, 212' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2">
+            <div style={{ '--rc': '7, 137, 48' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2">
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
                 <HardDrive className="h-3 w-3" /> Disk
               </div>
@@ -679,7 +679,7 @@ export default function MonitoringClient() {
             </div>
 
             {/* Server Uptime */}
-            <div style={{ '--rc': '6, 182, 212' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2">
+            <div style={{ '--rc': '7, 137, 48' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2">
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
                 <Clock className="h-3 w-3" /> {MonitoringMonitoringClientCopy.serverUptime[cs ? 'cs' : 'en']}
               </div>

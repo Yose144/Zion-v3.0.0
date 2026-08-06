@@ -76,7 +76,7 @@ export default function ExplorerV4Layout({ children, showTicker = true }: Explor
       {/* Live network ticker */}
       {showTicker && (
         <div className="zion-container max-w-[1400px]">
-          <div className="zion-rainbow-card overflow-hidden" style={{ "--rc": "6, 182, 212" } as React.CSSProperties}>
+          <div className="zion-rainbow-card overflow-hidden" style={{ "--rc": "7, 137, 48" } as React.CSSProperties}>
             <ExplorerTicker />
           </div>
         </div>
@@ -89,7 +89,7 @@ export default function ExplorerV4Layout({ children, showTicker = true }: Explor
         transition={{ delay: 0.02 }}
         className="zion-container max-w-[1400px] mt-4"
       >
-        <div className="zion-rainbow-card p-4 md:p-6" style={{ "--rc": "6, 182, 212" } as React.CSSProperties}>
+        <div className="zion-rainbow-card p-4 md:p-6" style={{ "--rc": "7, 137, 48" } as React.CSSProperties}>
           <div className="flex flex-wrap items-center gap-2 md:gap-3">
             <span className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mr-1 hidden sm:inline">
               {ExplorerV4layoutCopy.explorerSections[cs ? 'cs' : 'en']}
@@ -114,7 +114,7 @@ export default function ExplorerV4Layout({ children, showTicker = true }: Explor
                         ? "zion-rainbow-sub text-white"
                         : "border border-white/10 bg-white/5 text-gray-300 hover:border-white/25 hover:text-white"
                     }`}
-                    style={isActive ? ({ "--rc": "6, 182, 212" } as React.CSSProperties) : undefined}
+                    style={isActive ? ({ "--rc": "7, 137, 48" } as React.CSSProperties) : undefined}
                   >
                     <item.icon className="h-3.5 w-3.5" />
                     {cs ? item.labelCs : item.labelEn}
