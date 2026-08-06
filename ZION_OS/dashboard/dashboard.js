@@ -539,7 +539,7 @@ function renderV31Banner(st){
   }
 
   // Feed the expanded V31 Production panel
-  renderV31Production(statusData);
+  renderV31Production(st);
 }
 
 // ── V31 Production panel (metrics + logs + Grafana) ────────────────────
@@ -554,6 +554,8 @@ function renderV31Production(st){
   const pool = st.pool || st.pool_edge || st.v31_pool || {};
   const node = st.v31_node || st.edge_node || {};
   const miner = st.v31_miner || {};
+  const m = st.miner || {};
+  const mhash = miner.hashrate ?? (m.hashrate ? m.hashrate * 1000 : null);
   const mc = st.v31_multichain || {};
   const dao = st.v31_dao || {};
   const oasis = st.v31_oasis || {};
@@ -600,7 +602,7 @@ function renderV31Production(st){
   // Service status list
   if(el('v31-stat-node')) el('v31-stat-node').innerHTML = `<span class="${node?.running ? 'text-emerald-400' : 'text-red-400'}">${node?.running ? 'LIVE' : 'DOWN'}</span> <span class="text-gray-500">h ${node?.chain_height ?? '—'}</span>`;
   if(el('v31-stat-pool')) el('v31-stat-pool').innerHTML = `<span class="${pool?.running ? 'text-emerald-400' : 'text-red-400'}">${pool?.running ? 'LIVE' : 'DOWN'}</span> <span class="text-gray-500">${activeMiners || 0} miners</span>`;
-  if(el('v31-stat-miner')) el('v31-stat-miner').innerHTML = `<span class="${miner?.running ? 'text-emerald-400' : 'text-gray-500'}">${miner?.running ? 'LIVE' : '—'}</span> <span class="text-gray-500">${miner?.hashrate ? miner.hashrate : '—'}</span>`;
+  if(el('v31-stat-miner')) el('v31-stat-miner').innerHTML = `<span class="${miner?.running ? 'text-emerald-400' : 'text-gray-500'}">${miner?.running ? 'LIVE' : '—'}</span> <span class="text-gray-500">${mhash != null ? Math.round(mhash).toLocaleString() + ' H/s' : '—'}</span>`;
   if(el('v31-stat-multichain')) el('v31-stat-multichain').innerHTML = `<span class="${mc?.ok ? 'text-emerald-400' : 'text-red-400'}">${mc?.ok ? 'OK' : 'FAIL'}</span> <span class="text-gray-500">t ${mc?.transfers_total ?? 0}</span>`;
 
   // DAO status (may be in v31_node or banner)
@@ -794,9 +796,10 @@ function updateServiceCards(s){
 
   // V31 Pool
   const v31p = s.v31_pool || {};
+  const pMain = s.pool || {};
   setBadge('badge-v31-pool', v31p.running); setCardLive('v31-pool', v31p.running);
   const v31ps = document.getElementById('val-v31-pool-shares');
-  if(v31ps) v31ps.textContent = v31p.shares_accepted ?? '—';
+  if(v31ps) v31ps.textContent = v31p.shares_accepted ?? pMain.shares_accepted ?? '—';
   const v31pj = document.getElementById('val-v31-pool-jobs');
   if(v31pj) v31pj.textContent = v31p.jobs_broadcast ?? '—';
   const v31psys = document.getElementById('val-v31-pool-systemd');
@@ -804,9 +807,11 @@ function updateServiceCards(s){
 
   // V31 Miner
   const v31m = s.v31_miner || {};
+  const mMain = s.miner || {};
+  const mhr = v31m.hashrate ?? (mMain.hashrate ? mMain.hashrate * 1000 : null);
   setBadge('badge-v31-miner', v31m.running); setCardLive('v31-miner', v31m.running);
   const v31mh = document.getElementById('val-v31-miner-hashrate');
-  if(v31mh) v31mh.textContent = v31m.hashrate ? Math.round(v31m.hashrate).toLocaleString() : '—';
+  if(v31mh) v31mh.textContent = mhr != null ? (mhr >= 1000 ? (mhr/1000).toFixed(2) + ' kH/s' : Math.round(mhr).toLocaleString() + ' H/s') : '—';
   const v31ms = document.getElementById('val-v31-miner-shares');
   if(v31ms) v31ms.textContent = v31m.shares_submitted ?? '—';
   const v31ma = document.getElementById('val-v31-miner-accepted');
@@ -9805,15 +9810,15 @@ const TOPO_EDGES = [
 ];
 
 const TOPO_ID_MAP = {
-  'edge-node1':'edge-node1', 'edge_node1':'edge-node1', node1:'edge-node1', 'node-1':'edge-node1', node:'edge-node1',
+  'edge-node1':'edge-node1', 'edge_node1':'edge-node1', 'v31-node':'edge-node1', 'v31_node':'edge-node1', 'v31node':'edge-node1', node1:'edge-node1', 'node-1':'edge-node1', node:'edge-node1',
   'edge-node2':'edge-node2', 'edge_node2':'edge-node2', node2:'edge-node2', 'node-2':'edge-node2',
-  'local-backup':'local-backup', 'local_backup':'local-backup', localbackup:'local-backup',
-  'pool-edge':'pool-edge', 'pool_edge':'pool-edge', pool:'pool-edge',
-  miner:'miner', 'miner-1':'miner', miner1:'miner',
+  'local-backup':'local-backup', 'local_backup':'local-backup', 'local-backup-node':'local-backup', localbackup:'local-backup',
+  'pool-edge':'pool-edge', 'pool_edge':'pool-edge', 'v31-pool':'pool-edge', 'v31_pool':'pool-edge', 'v31pool':'pool-edge', pool:'pool-edge',
+  miner:'miner', 'miner-1':'miner', miner1:'miner', 'v31-miner':'miner', 'v31_miner':'miner', 'v31miner':'miner',
   bridge:'bridge',
-  dao:'dao',
-  warp:'warp',
-  oasis:'oasis',
+  dao:'dao', 'v31-dao':'dao', 'v31_dao':'dao', 'v31dao':'dao',
+  warp:'warp', 'v31-multichain':'warp', 'v31_multichain':'warp', 'v31multichain':'warp',
+  oasis:'oasis', 'v31-oasis':'oasis', 'v31_oasis':'oasis', 'v31oasis':'oasis',
   'free-world':'free-world', 'free_world':'free-world', freeworld:'free-world',
   issobella:'issobella',
   dashboard:'dashboard',
@@ -9834,20 +9839,47 @@ function renderTopology(services) {
   const tooltip = document.getElementById('topology-tooltip');
 
   // Build rich status map: id -> {status, derived, depends_on}
+  // V31 services (e.g. v31-pool, v31-miner) and legacy services can map to the same
+  // topology node; keep the healthiest status and merge dependency lists.
   const svcMap = {};
+  const _statusPri = { running:2, online:2, true:2, degraded:1, starting:1, restarting:1, stopped:0, offline:0, false:0 };
+  const _mapDep = d => TOPO_ID_MAP[d] || TOPO_ID_MAP[d.replace(/[-_]/g,'')] || d;
   if (services && services.length) {
     for (const s of services) {
       const mapped = TOPO_ID_MAP[s.id] || TOPO_ID_MAP[s.id.replace(/[-_]/g,'')] || s.id;
-      const info = { status: s.status, derived: s.derived, depends_on: s.depends_on || [] };
-      svcMap[mapped] = info;
-      svcMap[s.id] = info;
+      const pri = _statusPri[s.status] ?? 0;
+      const existing = svcMap[mapped];
+      const existingPri = existing ? (_statusPri[existing.status] ?? 0) : -1;
+      const rawDeps = s.depends_on || [];
+      const mappedDeps = rawDeps.map(_mapDep);
+      const deps = Array.from(new Set(mappedDeps.concat(rawDeps)));
+      if (existing) {
+        // Merge dependency lists so V31 depends_on are preserved
+        const allDeps = Array.from(new Set((existing.depends_on || []).concat(deps)));
+        if (pri <= existingPri) {
+          existing.depends_on = allDeps;
+          continue;
+        }
+        // New mapping is healthier: overwrite but keep merged deps
+        svcMap[mapped] = { status: s.status, derived: s.derived, depends_on: allDeps };
+      } else {
+        svcMap[mapped] = { status: s.status, derived: s.derived, depends_on: deps };
+      }
+      svcMap[s.id] = { status: s.status, derived: s.derived, depends_on: deps };
     }
   }
+
+  // Show connected worker count on the pool node
+  const poolWorkers = window.currentStatus?.pool?.active_sessions ?? window.currentStatus?.pool?.miners_tracked ?? null;
 
   // Update node state
   const nodes = TOPO_NODES.map(n => {
     const info = svcMap[n.id] || svcMap[n.id.replace(/[-_]/g,'')] || {status:'unknown'};
-    return { ...n, status: info.status, color: _statusColor(info.status) };
+    let label = n.label;
+    if (n.id === 'pool-edge' && poolWorkers != null) {
+      label = n.label + ' (' + poolWorkers + ')';
+    }
+    return { ...n, label, status: info.status, color: _statusColor(info.status) };
   });
 
   let svg = `<svg viewBox="0 0 800 320" width="100%" height="100%" style="background:#0b0f19; border-radius:12px;" id="topo-svg">`;
