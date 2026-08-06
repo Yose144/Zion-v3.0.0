@@ -322,6 +322,13 @@ impl MinerRuntime {
         let kind = parse_gpu_backend(&self.config.gpu_backend);
         let work_size = batch as usize;
         let algorithm = job.coin.algorithm();
+        // TODO: the CUDA kheavyhash kernel needs extranonce1 + timestamp support
+        // for live KaspaStratum pools.  Use the CPU scanner for KAS until the
+        // kernel is updated to shift the scanned suffix and read the timestamp
+        // from the raw header.
+        if algorithm.starts_with("kheavyhash") {
+            return None;
+        }
         let coin_ticker = job.coin.ticker();
         let header = job.header.clone();
         let target = DifficultyTarget { bytes: job.target };
@@ -677,11 +684,15 @@ impl MinerRuntime {
         let mut guard = client_cell.lock().await;
         let should_recreate = guard.as_ref().map(|c| c.url != url).unwrap_or(true);
         if should_recreate {
-            *guard = Some(StratumClient::new(
-                &url,
-                &self.config.worker,
-                &self.config.password,
-            ));
+            // Upstream AuxPoW pools expect username = payout_wallet.worker so
+            // shares can be credited.  Fall back to the bare worker name if no
+            // reward address is configured.
+            let worker = if self.config.reward_address.as_str().is_empty() {
+                self.config.worker.clone()
+            } else {
+                format!("{}.{}", self.config.reward_address.as_str(), self.config.worker)
+            };
+            *guard = Some(StratumClient::new(&url, &worker, &self.config.password));
         }
         let client = guard
             .as_mut()
@@ -1030,6 +1041,113 @@ mod tests {
         config.stream2_enabled = true;
         config.stream3_enabled = false;
         config.auxpow_pool = Some(format!("127.0.0.1:{}", port));
+        config.stream2_batch = 1_000_000;
+
+        let runtime = Arc::new(MinerRuntime::new(config));
+        let (shutdown_tx, shutdown_rx) = watch::channel(false);
+
+        let handle = {
+            let runtime = Arc::clone(&runtime);
+            tokio::spawn(async move { runtime.run(shutdown_rx).await })
+        };
+
+        for _ in 0..80 {
+            if runtime.total_shares().await >= 1 {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+
+        shutdown_tx.send(true).unwrap();
+        handle.await.unwrap().unwrap();
+        server.abort();
+
+        assert!(runtime.total_shares().await >= 1);
+    }
+
+    #[cfg(feature = "auxpow")]
+    #[tokio::test]
+    async fn kas_stratum_stream_runs() {
+        use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+
+        // Pre_pow_hash = 32 zero bytes, timestamp = 1234567890 ms.
+        let pre_pow_hash = [0u8; 32];
+        let timestamp: u64 = 1_234_567_890;
+        let u64s: Vec<u64> = pre_pow_hash
+            .chunks_exact(8)
+            .map(|b| u64::from_le_bytes(b.try_into().unwrap()))
+            .collect();
+        let en1 = "03da";
+        let en2_size = 6;
+
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let (reader, mut writer) = socket.split();
+            let mut lines = BufReader::new(reader).lines();
+
+            let mut got = 0;
+            while let Ok(Some(line)) = lines.next_line().await {
+                let _ = line;
+                got += 1;
+                if got == 2 {
+                    // Standard subscribe response with extranonce1.
+                    let sub = format!(
+                        r#"{{"id":1,"result":[["mining.notify","kas"],"{}",{}],"error":null}}"#,
+                        en1, en2_size
+                    );
+                    let _ = writer.write_all(sub.as_bytes()).await;
+                    let _ = writer.write_all(b"\n").await;
+                    // Set an easy target for the test.
+                    let target = "ff".repeat(32);
+                    let set_target = format!(
+                        r#"{{"id":null,"method":"mining.set_target","params":["{}"]}}"#,
+                        target
+                    );
+                    let _ = writer.write_all(set_target.as_bytes()).await;
+                    let _ = writer.write_all(b"\n").await;
+                    // KaspaStratum 3-param notify.
+                    let notify = format!(
+                        r#"{{"id":null,"method":"mining.notify","params":["kas_job",[{},{},{},{}],{}]}}"#,
+                        u64s[0], u64s[1], u64s[2], u64s[3], timestamp
+                    );
+                    let _ = writer.write_all(notify.as_bytes()).await;
+                    let _ = writer.write_all(b"\n").await;
+                    let _ = writer.flush().await;
+                    break;
+                }
+            }
+
+            // Verify the share we receive has the extranonce1 prefix in the low bytes.
+            while let Ok(Some(line)) = lines.next_line().await {
+                if let Ok(msg) = serde_json::from_str::<serde_json::Value>(&line) {
+                    if msg.get("method").and_then(|m| m.as_str()) == Some("mining.submit") {
+                        let params = msg.get("params").and_then(|p| p.as_array()).cloned().unwrap_or_default();
+                        if params.len() >= 3 {
+                            let nonce_hex = params[2].as_str().unwrap_or("");
+                            let full = u64::from_str_radix(nonce_hex, 16).unwrap_or(0).to_le_bytes();
+                            assert_eq!(&full[..2], hex::decode(en1).unwrap().as_slice(), "KAS nonce must start with extranonce1");
+                        }
+                        let resp = r#"{"id":100,"result":true,"error":null}"#;
+                        let _ = writer.write_all(resp.as_bytes()).await;
+                        let _ = writer.write_all(b"\n").await;
+                        let _ = writer.flush().await;
+                        break;
+                    }
+                }
+            }
+        });
+
+        let mut config = MinerConfig::new(test_address());
+        config.auxpow_enabled = true;
+        config.stream1_enabled = false;
+        config.stream2_enabled = true;
+        config.stream3_enabled = false;
+        config.auxpow_pool = Some(format!("127.0.0.1:{}", port));
+        config.stream2_force_coin = Some(zion_cosmic_harmony::ExternalCoin::Kaspa);
         config.stream2_batch = 1_000_000;
 
         let runtime = Arc::new(MinerRuntime::new(config));

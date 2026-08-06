@@ -1170,7 +1170,13 @@ impl GpuMiner for CudaExternalMiner {
     ) -> Result<GpuBatchResult> {
         if self.algo == CudaExtAlgo::Kheavyhash {
             let pre_pow_hash = &raw_header[..32.min(raw_header.len())];
-            self.kheavy_timestamp = 0;
+            // For live KaspaStratum the raw header is the 32-byte pre_pow_hash
+            // followed by the 8-byte little-endian block timestamp.
+            self.kheavy_timestamp = if raw_header.len() >= 40 {
+                u64::from_le_bytes(raw_header[32..40].try_into().unwrap_or([0u8; 8]))
+            } else {
+                0
+            };
             return self.run_kernel(pre_pow_hash, &target.bytes, nonce_start, batch_size);
         }
 
