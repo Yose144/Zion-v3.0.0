@@ -32,7 +32,7 @@ impl Default for MultichainConfig {
 }
 
 fn default_l1_rpc_url() -> String {
-    "http://127.0.0.1:9443".to_string()
+    "http://127.0.0.1:9445".to_string()
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]

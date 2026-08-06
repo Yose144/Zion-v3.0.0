@@ -24,7 +24,7 @@ quorum = 3
 daily_limit_zion = 10000000      # 10 000 000 ZION per 24h
 timelock_threshold_zion = 1000000 # ZION timelock above 1M
 
-l1_rpc_url = "http://127.0.0.1:9443"
+l1_rpc_url = "http://127.0.0.1:9445"  # V31 node RPC; override with ZION_L1_RPC_URL env
 l1_vault_address = "zion1warp_vault_address"
 
 poll_interval_secs = 15
