@@ -299,9 +299,13 @@ impl MinerRuntime {
                 let target = V3DiffTarget { bytes: target_for_gpu };
                 match gpu.mine_batch(mining_header, target, 0, batch_for_gpu) {
                     Ok(result) => {
+                        let nonces_tested = result.nonces_tested;
                         if let Some((found_nonce, found_hash, _mix)) = result.solutions.into_iter().next() {
-                            return Some((found_nonce, found_hash));
+                            return Some((found_nonce, found_hash, nonces_tested));
                         }
+                        // GPU found no solution — return how many nonces were tested
+                        // so the hashrate is still accurate for the CPU fallback.
+                        return None;
                     }
                     Err(e) => {
                         eprintln!("gpu_zion_batch_failed reason=\"{}\" — falling back to CPU", e);
@@ -313,17 +317,26 @@ impl MinerRuntime {
         .await
         .map_err(|e| MinerError::Consensus(format!("gpu task join: {e}")))?;
 
-        let (nonce, _hash) = if let Some((found_nonce, found_hash)) = gpu_result {
-            (found_nonce, Hash::new(found_hash))
+        let (nonce, _hash, nonces_searched) = if let Some((found_nonce, found_hash, gpu_tested)) = gpu_result {
+            // GPU found a solution — nonces_searched = actual GPU nonces tested
+            (found_nonce, Hash::new(found_hash), gpu_tested)
         } else {
             // No GPU or GPU found no solution — CPU mining
-            self.consensus
-                .mine_header_bytes(&job.header, &job.target, 0, batch_size)
-                .ok_or(MinerError::NoAuxPoWSolution)?
+            // CPU find_nonce stops at first solution, so we track actual nonces
+            // by checking the nonce offset from start (0).
+            let cpu_start_nonce = 0u64;
+            let result = self
+                .consensus
+                .mine_header_bytes(&job.header, &job.target, cpu_start_nonce, batch_size)
+                .ok_or(MinerError::NoAuxPoWSolution)?;
+            let (found_nonce, found_hash) = result;
+            // Nonces actually searched = found_nonce - start_nonce + 1
+            let actual_searched = found_nonce.saturating_sub(cpu_start_nonce) + 1;
+            (found_nonce, found_hash, actual_searched)
         };
 
         let elapsed = t_start.elapsed().as_secs_f64();
-        self.update_hashrate(StreamId::Zion, batch_size, elapsed).await;
+        self.update_hashrate(StreamId::Zion, nonces_searched, elapsed).await;
 
         let mut header_hash = [0u8; 32];
         let copy_len = job.header.len().min(32);
