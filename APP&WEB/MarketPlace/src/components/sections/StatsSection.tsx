@@ -4,10 +4,10 @@ import { Package, BarChart3, Gavel, Users } from 'lucide-react';
 import { useLangT } from '@/lib/useTranslation';
 
 const stats = [
-  { labelKey: 'stats.itemsListed', value: '12,847', icon: Package, rc: '6, 182, 212' },
-  { labelKey: 'stats.totalVolume', value: '847k', subKey: 'stats.wzion', icon: BarChart3, rc: '255, 215, 0' },
-  { labelKey: 'stats.activeAuctions', value: '34', icon: Gavel, rc: '147, 51, 234' },
-  { labelKey: 'stats.holders', value: '2,193', icon: Users, rc: '16, 185, 129' },
+  { labelKey: 'stats.itemsListed', value: '12,847', icon: Package, rc: '7, 137, 48' },
+  { labelKey: 'stats.totalVolume', value: '847k', subKey: 'stats.wzion', icon: BarChart3, rc: '252, 209, 22' },
+  { labelKey: 'stats.activeAuctions', value: '34', icon: Gavel, rc: '228, 30, 43' },
+  { labelKey: 'stats.holders', value: '2,193', icon: Users, rc: '7, 137, 48' },
 ];
 
 export default function StatsSection() {

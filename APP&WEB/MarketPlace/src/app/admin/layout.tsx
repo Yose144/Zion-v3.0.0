@@ -59,18 +59,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   if (!ready) {
-    return <div className="min-h-screen bg-oasis-black" />;
+    return <div className="min-h-screen bg-rasta-black" />;
   }
 
   const isLogin = pathname === '/admin/login';
 
   return (
-    <div className="min-h-screen bg-oasis-black text-oasis-white">
+    <div className="min-h-screen bg-rasta-black text-white">
       {!isLogin && (
-        <header className="border-b border-white/10 bg-oasis-black/80 backdrop-blur-md sticky top-0 z-50">
+        <header className="border-b border-white/10 bg-rasta-black/80 backdrop-blur-md sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-oasis-cyan via-oasis-purple to-oasis-gold flex items-center justify-center font-black text-oasis-black text-sm">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rasta-green via-rasta-red to-rasta-gold flex items-center justify-center font-black text-rasta-black text-sm">
                 Z
               </div>
               <span className="text-lg font-black text-gradient">{t('admin.layoutTitle')}</span>
@@ -80,7 +80,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <a href="/admin/invoices" className="px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors">{t('admin.navInvoices')}</a>
               <a href="/admin/shipping" className="px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors">{t('admin.navShipping')}</a>
               <a href="/admin/stripe" className="px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors">{t('admin.navStripe')}</a>
-              <a href="/" className="px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors text-oasis-cyan">{t('admin.navStore')}</a>
+              <a href="/" className="px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors text-rasta-gold">{t('admin.navStore')}</a>
               <div className="flex items-center gap-2 ml-2 pl-3 border-l border-white/10">
                 <label htmlFor="admin-theme" className="text-xs text-white/60">{t('admin.themeLabel')}</label>
                 <select
@@ -88,7 +88,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   value={theme}
                   disabled={saving}
                   onChange={(e) => saveTheme(e.target.value as ShopTheme)}
-                  className="bg-white/5 border border-white/10 rounded-md text-xs px-2 py-1.5 focus:outline-none focus:border-oasis-cyan"
+                  className="bg-white/5 border border-white/10 rounded-md text-xs px-2 py-1.5 focus:outline-none focus:border-rasta-gold"
                 >
                   <option value="rasta">{t('admin.themeRasta')}</option>
                   <option value="zion">{t('admin.themeZion')}</option>

@@ -91,7 +91,7 @@ export default function AdminOrdersPage() {
         <select
           value={status}
           onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-          className="bg-zion-card border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-oasis-cyan focus:outline-none"
+          className="bg-zion-card border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-rasta-gold focus:outline-none"
         >
           <option value="">{t('admin.allStatuses')}</option>
           {ORDER_STATUSES.map((s) => (
@@ -102,7 +102,7 @@ export default function AdminOrdersPage() {
         <select
           value={paymentStatus}
           onChange={(e) => { setPaymentStatus(e.target.value); setPage(1); }}
-          className="bg-zion-card border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-oasis-cyan focus:outline-none"
+          className="bg-zion-card border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-rasta-gold focus:outline-none"
         >
           <option value="">{t('admin.allPayments')}</option>
           {PAYMENT_STATUSES.map((s) => (
@@ -114,7 +114,7 @@ export default function AdminOrdersPage() {
           type="text"
           placeholder={t('admin.searchPlaceholder')}
           onChange={(e) => debouncedSearch(e.target.value)}
-          className="bg-zion-card border border-white/10 rounded-lg px-3 py-2 text-sm min-w-[260px] focus:border-oasis-cyan focus:outline-none"
+          className="bg-zion-card border border-white/10 rounded-lg px-3 py-2 text-sm min-w-[260px] focus:border-rasta-gold focus:outline-none"
         />
       </div>
 
@@ -146,7 +146,7 @@ export default function AdminOrdersPage() {
                       className="border-b border-white/5 hover:bg-white/5 cursor-pointer"
                       onClick={() => setExpanded(expanded === order.id ? null : order.id)}
                     >
-                      <td className="p-3 font-mono text-oasis-cyan">{order.orderId}</td>
+                      <td className="p-3 font-mono text-rasta-green">{order.orderId}</td>
                       <td className="p-3">{order.customerName}</td>
                       <td className="p-3 text-gray-400">{order.customerEmail}</td>
                       <td className="p-3 font-mono">{formatPrice(order.totalCzk)}</td>
@@ -174,7 +174,7 @@ export default function AdminOrdersPage() {
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            className="text-oasis-cyan hover:underline"
+                            className="text-rasta-gold hover:underline"
                           >
                             {order.invoices[0].invoiceNumber}
                           </a>
@@ -197,7 +197,7 @@ export default function AdminOrdersPage() {
                         <td colSpan={9} className="p-4">
                           <div className="grid md:grid-cols-2 gap-4">
                             <div>
-                              <h4 className="font-bold text-oasis-gold mb-2">{t('admin.trackingTitle')}</h4>
+                              <h4 className="font-bold text-rasta-gold mb-2">{t('admin.trackingTitle')}</h4>
                               <div className="flex gap-2">
                                 <input
                                   type="text"
@@ -208,14 +208,14 @@ export default function AdminOrdersPage() {
                                 />
                                 <button
                                   onClick={() => handleTracking(order.id)}
-                                  className="px-3 py-2 rounded bg-oasis-cyan/20 text-oasis-cyan hover:bg-oasis-cyan/30 text-sm"
+                                  className="px-3 py-2 rounded bg-rasta-gold/20 text-rasta-gold hover:bg-rasta-gold/30 text-sm"
                                 >
                                   {t('admin.save')}
                                 </button>
                               </div>
                             </div>
                             <div>
-                              <h4 className="font-bold text-oasis-gold mb-2">{t('admin.invoiceSection')}</h4>
+                              <h4 className="font-bold text-rasta-gold mb-2">{t('admin.invoiceSection')}</h4>
                               <div className="flex gap-2 flex-wrap">
                                 {order.invoices[0] ? (
                                   <>
@@ -229,7 +229,7 @@ export default function AdminOrdersPage() {
                                     </a>
                                     <button
                                       onClick={() => handleSendInvoice(order.id)}
-                                      className="px-3 py-2 rounded bg-oasis-cyan/20 text-oasis-cyan hover:bg-oasis-cyan/30 text-sm"
+                                      className="px-3 py-2 rounded bg-rasta-gold/20 text-rasta-gold hover:bg-rasta-gold/30 text-sm"
                                     >
                                       {t('admin.sendInvoice')}
                                     </button>
@@ -237,7 +237,7 @@ export default function AdminOrdersPage() {
                                 ) : (
                                   <button
                                     onClick={() => handleRegenerateInvoice(order.id)}
-                                    className="px-3 py-2 rounded bg-oasis-gold/20 text-oasis-gold hover:bg-oasis-gold/30 text-sm"
+                                    className="px-3 py-2 rounded bg-rasta-gold/20 text-rasta-gold hover:bg-rasta-gold/30 text-sm"
                                   >
                                     {t('admin.createInvoice')}
                                   </button>

@@ -144,7 +144,7 @@ export default function ExplorePage() {
           {/* Collection */}
           <div className="zion-section p-4">
             <h3 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
-              <span className="w-1 h-3 rounded-full bg-oasis-purple" />
+              <span className="w-1 h-3 rounded-full bg-rasta-red" />
               {t('explore.collectionTitle')}
             </h3>
             <div className="space-y-1">
@@ -154,7 +154,7 @@ export default function ExplorePage() {
                   onClick={() => setCollection(c)}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
                     collection === c
-                      ? 'bg-oasis-purple/20 text-white border border-oasis-purple/30'
+                      ? 'bg-rasta-red/20 text-white border border-rasta-red/30'
                       : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
                   }`}
                 >
@@ -167,7 +167,7 @@ export default function ExplorePage() {
           {/* Rarity */}
           <div className="zion-section p-4">
             <h3 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
-              <span className="w-1 h-3 rounded-full bg-oasis-gold" />
+              <span className="w-1 h-3 rounded-full bg-rasta-gold" />
               {t('explore.rarityTitle')}
             </h3>
             <div className="flex flex-wrap gap-2">
@@ -188,7 +188,7 @@ export default function ExplorePage() {
           {/* Listing type */}
           <div className="zion-section p-4">
             <h3 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
-              <span className="w-1 h-3 rounded-full bg-oasis-cyan" />
+              <span className="w-1 h-3 rounded-full bg-rasta-green" />
               {t('explore.listingTitle')}
             </h3>
             <div className="space-y-1">
@@ -198,7 +198,7 @@ export default function ExplorePage() {
                   onClick={() => setListingFilter(o.value)}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm capitalize transition-all duration-200 ${
                     listingFilter === o.value
-                      ? 'bg-oasis-cyan/20 text-white border border-oasis-cyan/30'
+                      ? 'bg-rasta-green/20 text-white border border-rasta-green/30'
                       : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'
                   }`}
                 >
@@ -231,7 +231,7 @@ export default function ExplorePage() {
 
           {loading ? (
             <div className="zion-section p-16 text-center">
-              <div className="w-10 h-10 border-2 border-oasis-cyan/30 border-t-oasis-cyan rounded-full animate-spin mx-auto mb-4" />
+              <div className="w-10 h-10 border-2 border-rasta-gold/30 border-t-rasta-gold rounded-full animate-spin mx-auto mb-4" />
               <div className="text-gray-500">{t('explore.loading')}</div>
             </div>
           ) : items.length === 0 ? (

@@ -122,7 +122,7 @@ export default function ItemDetailPage() {
   if (loading) {
     return (
       <div className="zion-section p-16 text-center">
-        <div className="w-10 h-10 border-2 border-oasis-cyan/30 border-t-oasis-cyan rounded-full animate-spin mx-auto mb-4" />
+        <div className="w-10 h-10 border-2 border-rasta-gold/30 border-t-rasta-gold rounded-full animate-spin mx-auto mb-4" />
         <div className="text-gray-500">{t('item.loading')}</div>
       </div>
     );
@@ -134,7 +134,7 @@ export default function ItemDetailPage() {
     <div className="space-y-8">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-gray-500">
-        <a href="/explore" className="hover:text-oasis-cyan transition-colors">{t('item.backToExplore')}</a>
+        <a href="/explore" className="hover:text-rasta-gold transition-colors">{t('item.backToExplore')}</a>
         <span>/</span>
         <span className="text-gray-400">{category}</span>
         <span>/</span>
@@ -145,7 +145,7 @@ export default function ItemDetailPage() {
         {/* Image */}
         <div
           className="zion-rainbow-card p-4"
-          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
         >
           <div className="aspect-square rounded-xl overflow-hidden artifact-placeholder flex items-center justify-center relative">
             {imgError || !display.image ? (
@@ -180,7 +180,7 @@ export default function ItemDetailPage() {
           {/* Price card */}
           <div
             className="zion-rainbow-card p-6"
-            style={{ '--rc': '255, 215, 0' } as React.CSSProperties}
+            style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
           >
             {display.listingType === 'fixed' && (
               <>
@@ -195,7 +195,7 @@ export default function ItemDetailPage() {
                     onClick={() => setPaymentMethod('l2')}
                     className={`flex-1 px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 ${
                       paymentMethod === 'l2'
-                        ? 'bg-oasis-cyan/20 border border-oasis-cyan/50 text-oasis-cyan'
+                        ? 'bg-rasta-green/20 border border-rasta-green/50 text-rasta-green'
                         : 'bg-white/5 border border-white/10 text-gray-500 hover:text-gray-300'
                     }`}
                   >
@@ -207,7 +207,7 @@ export default function ItemDetailPage() {
                     onClick={() => setPaymentMethod('l1')}
                     className={`flex-1 px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 ${
                       paymentMethod === 'l1'
-                        ? 'bg-oasis-gold/20 border border-oasis-gold/50 text-oasis-gold'
+                        ? 'bg-rasta-gold/20 border border-rasta-gold/50 text-rasta-gold'
                         : 'bg-white/5 border border-white/10 text-gray-500 hover:text-gray-300'
                     }`}
                   >
@@ -228,8 +228,8 @@ export default function ItemDetailPage() {
                   </button>
                 ) : (
                   <div className="space-y-3">
-                    <div className="rounded-xl bg-oasis-gold/5 border border-oasis-gold/20 p-4 space-y-3">
-                      <div className="text-xs text-oasis-gold font-bold flex items-center gap-2">
+                    <div className="rounded-xl bg-rasta-gold/5 border border-rasta-gold/20 p-4 space-y-3">
+                      <div className="text-xs text-rasta-gold font-bold flex items-center gap-2">
                         <span className="status-dot status-active" />
                         {t('item.l1Title')}
                       </div>
@@ -246,7 +246,7 @@ export default function ItemDetailPage() {
                         </div>
                         <div>
                           <div className="text-[10px] text-gray-500 uppercase mb-1">{t('item.memo')}</div>
-                          <div className="font-mono text-[11px] text-oasis-cyan break-all bg-black/40 rounded-lg px-3 py-2 border border-white/5">
+                          <div className="font-mono text-[11px] text-rasta-green break-all bg-black/40 rounded-lg px-3 py-2 border border-white/5">
                             {l1Memo}
                           </div>
                         </div>
@@ -264,7 +264,7 @@ export default function ItemDetailPage() {
 
                       <button
                         onClick={copyL1Instructions}
-                        className="w-full mt-2 px-3 py-2 rounded-xl bg-oasis-gold/10 border border-oasis-gold/30 text-xs text-oasis-gold font-bold hover:bg-oasis-gold/20 transition-all"
+                        className="w-full mt-2 px-3 py-2 rounded-xl bg-rasta-gold/10 border border-rasta-gold/30 text-xs text-rasta-gold font-bold hover:bg-rasta-gold/20 transition-all"
                       >
                         {copied ? (
                           <span className="inline-flex items-center justify-center gap-1.5">
@@ -295,12 +295,12 @@ export default function ItemDetailPage() {
               <>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs text-gray-500">{t('item.topBid')}</span>
-                  <span className="text-xs text-oasis-gold flex items-center gap-1">
+                  <span className="text-xs text-rasta-gold flex items-center gap-1">
                     <span className="status-dot status-pending" />
                     {t('item.timeLeft', { time: `${t('common.hours', { n: 5 })} ${t('common.minutes', { n: 23 })}` })}
                   </span>
                 </div>
-                <div className="text-3xl font-black text-oasis-cyan mb-4 font-display">
+                <div className="text-3xl font-black text-rasta-gold mb-4 font-display">
                   {t('common.price', { price: price, symbol: t('common.wzion') })}
                 </div>
                 <div className="flex gap-2">
@@ -334,7 +334,7 @@ export default function ItemDetailPage() {
           {/* Description */}
           <div className="zion-section p-5">
             <h3 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
-              <span className="w-1 h-3 rounded-full bg-oasis-cyan" />
+              <span className="w-1 h-3 rounded-full bg-rasta-green" />
               {t('item.description')}
             </h3>
             <p className="text-sm text-gray-300 leading-relaxed">{display.description}</p>
@@ -343,14 +343,14 @@ export default function ItemDetailPage() {
           {/* Properties */}
           <div className="zion-section p-5">
             <h3 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
-              <span className="w-1 h-3 rounded-full bg-oasis-purple" />
+              <span className="w-1 h-3 rounded-full bg-rasta-red" />
               {t('item.properties')}
             </h3>
             <div className="grid grid-cols-2 gap-2">
               {display.properties.map((p) => (
-                <div key={p.trait} className="rounded-xl bg-white/5 border border-white/5 p-3 hover:border-oasis-cyan/20 transition-colors">
+                <div key={p.trait} className="rounded-xl bg-white/5 border border-white/5 p-3 hover:border-rasta-green/20 transition-colors">
                   <div className="text-[10px] text-gray-500 uppercase">{p.trait}</div>
-                  <div className="text-sm text-oasis-cyan font-semibold">{p.value}</div>
+                  <div className="text-sm text-rasta-gold font-semibold">{p.value}</div>
                 </div>
               ))}
             </div>
@@ -361,7 +361,7 @@ export default function ItemDetailPage() {
       {/* History */}
       <div className="zion-section p-5">
         <h3 className="text-xs font-bold text-gray-400 uppercase mb-4 flex items-center gap-2">
-          <span className="w-1 h-3 rounded-full bg-oasis-gold" />
+          <span className="w-1 h-3 rounded-full bg-rasta-gold" />
           {t('item.activity')}
         </h3>
         <div className="space-y-1">

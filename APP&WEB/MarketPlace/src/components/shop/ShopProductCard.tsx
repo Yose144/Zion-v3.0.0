@@ -34,7 +34,7 @@ export default function ShopProductCard({ product, onOpen }: ShopProductCardProp
   return (
     <div
       className="zion-rainbow-sub h-full p-4 cursor-pointer"
-      style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+      style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
       onClick={() => onOpen(product)}
       role="button"
       tabIndex={0}
@@ -70,12 +70,12 @@ export default function ShopProductCard({ product, onOpen }: ShopProductCardProp
             </span>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-oasis-black/60 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 bg-gradient-to-t from-rasta-black/60 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300" />
       </div>
 
       <div className="flex-1 flex flex-col">
         <div className="text-xs text-gray-500 mb-0.5 capitalize">{categoryLabel}</div>
-        <h3 className="font-bold text-white text-sm leading-tight mb-2 line-clamp-1 hover:text-oasis-cyan transition-colors">
+        <h3 className="font-bold text-white text-sm leading-tight mb-2 line-clamp-1 hover:text-rasta-gold transition-colors">
           {product.name}
         </h3>
 
@@ -89,7 +89,7 @@ export default function ShopProductCard({ product, onOpen }: ShopProductCardProp
             <Box className="w-3 h-3" /> {product.inStock ? t('shop.inStock', { stock: product.stock }) : t('shop.outOfStock')}
           </span>
           {tokens > 0 && (
-            <span className="inline-flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded text-oasis-gold">
+            <span className="inline-flex items-center gap-1 bg-white/5 px-1.5 py-0.5 rounded text-rasta-gold">
               <Coins className="w-3 h-3" /> {t('shop.tokens', { amount: tokens })}
             </span>
           )}
@@ -111,12 +111,12 @@ export default function ShopProductCard({ product, onOpen }: ShopProductCardProp
               onClick={handleAdd}
               disabled={isOut}
               className={`zion-button-icon ${
-                isOut ? 'opacity-50 cursor-not-allowed' : 'zion-button-ghost hover:bg-oasis-gold/20'
+                isOut ? 'opacity-50 cursor-not-allowed' : 'zion-button-ghost hover:bg-rasta-gold/20'
               }`}
               title={isOut ? t('shop.outOfStock') : t('shop.addToCart')}
             >
               {added ? (
-                <span className="text-oasis-emerald text-xs font-bold">{t('shop.added')}</span>
+                <span className="text-rasta-green text-xs font-bold">{t('shop.added')}</span>
               ) : (
                 <ShoppingCart className="w-4 h-4" />
               )}

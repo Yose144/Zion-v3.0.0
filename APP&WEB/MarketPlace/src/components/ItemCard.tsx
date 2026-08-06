@@ -26,12 +26,12 @@ const rarityOrder: Record<Rarity, number> = {
 
 const rarityColor: Record<Rarity, string> = {
   common: '163, 163, 177',
-  uncommon: '16, 185, 129',
-  rare: '59, 130, 246',
-  epic: '147, 51, 234',
-  legendary: '255, 215, 0',
-  mythic: '244, 63, 94',
-  unique: '6, 182, 212',
+  uncommon: '7, 137, 48',
+  rare: '252, 209, 22',
+  epic: '228, 30, 43',
+  legendary: '252, 209, 22',
+  mythic: '228, 30, 43',
+  unique: '7, 137, 48',
 };
 
 function timeLeft(ts: number | undefined, t: (key: string, params?: Record<string, string | number>) => string): string | null {
@@ -97,13 +97,13 @@ export default function ItemCard({ item }: { item: ArtifactCardData }) {
             </div>
           )}
           {/* Hover overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-oasis-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute inset-0 bg-gradient-to-t from-rasta-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </div>
 
         {/* Info */}
         <div className="flex-1 flex flex-col">
           <div className="text-xs text-gray-500 mb-0.5">{item.collection ?? item.category ?? t('common.unknown')}</div>
-          <h3 className="font-bold text-white text-sm leading-tight mb-2 line-clamp-1 group-hover:text-oasis-cyan transition-colors">
+          <h3 className="font-bold text-white text-sm leading-tight mb-2 line-clamp-1 group-hover:text-rasta-gold transition-colors">
             {item.name}
           </h3>
 
@@ -123,11 +123,11 @@ export default function ItemCard({ item }: { item: ArtifactCardData }) {
                   {item.bestBid ? t('item.topBid') : t('item.starting')}
                 </span>
                 <div className="text-right">
-                  <div className="font-mono text-sm text-oasis-cyan font-bold">
+                  <div className="font-mono text-sm text-rasta-gold font-bold">
                     {item.bestBid || item.price || '—'} <span className="text-gray-500 text-xs">{t('common.wzion')}</span>
                   </div>
                   {timeLeft(item.endsAt, t) && (
-                    <div className={`text-[10px] ${timeLeft(item.endsAt, t) === t('item.ended') ? 'text-oasis-rose' : 'text-gray-500'}`}>
+                    <div className={`text-[10px] ${timeLeft(item.endsAt, t) === t('item.ended') ? 'text-rasta-red' : 'text-gray-500'}`}>
                       {timeLeft(item.endsAt, t)}
                     </div>
                   )}
