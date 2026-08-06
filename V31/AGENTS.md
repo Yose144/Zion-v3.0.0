@@ -346,3 +346,35 @@ V31 je aktivní mainnet-track workspace. Tato pravidla zajišťují, že zůstan
       ControlPersist 10m
   ```
 **Autorita:** Provozní pravidla pro Devin a operátory. Jakýkoliv rozpor s kořenovým `AGENTS.md` řešte aktualizací obou souborů; tento soubor má přednost pro V31, kořenový `AGENTS.md` pro historii a globální topologii.
+
+---
+
+## 13. DEX HTTP solver client, GPU OpenCL build a Desktop Agent V31 binaries (2026-08-06)
+
+### 13.1 DEX off-chain solver network
+- `HttpSolverClient` v `V31/L2/multichain/src/swap/dex/solver_network.rs` používá `reqwest` s timeoutem, posílá `SwapIntent` JSON na `{solver.url}/v1/swap/solve` a očekává `SolverBid` JSON.
+- `204 No Content` = solver odmítl bid; HTTP/parse chyby se mapují na `MultichainError::Internal`.
+- `V31/L2/multichain/src/server.rs` vystavuje:
+  - `POST /v1/swap/solve` — solver strana, běží `DexRouter::quote`, vrací `SolverBid` s `PathHop` cestou (bridge hops `is_bridge=true`, AMM hops `dex: "amm"`).
+  - `POST /v1/swap/intent/:id/broadcast` — buyer rozesílá pending intent všem registrovaným solverům a automaticky submitne vítězný bid.
+- Env proměnné: `ZION_DEX_SOLVER_NAME`, `ZION_DEX_SOLVER_FEE_BPS`.
+- Kanonické testy: `cargo test -p zion-multichain --test server -- http_solver_endpoint_returns_bid_for_valid_intent`, `cargo test -p zion-multichain --test solver_network_http`.
+
+### 13.2 GPU miner build verification
+- Build: `cargo build --release -p zion-miner --features auxpow,gpu-opencl,native-hashers,native-kheavyhash,native-blake3-algo,native-verushash` (`gpu-cuda` se automaticky povolí, když je `libnvrtc`).
+- Lokální Go/No-Go: `cargo test -p zion-miner --features gpu-opencl --test gpu_opencl_detect -- --ignored --nocapture`.
+- Výsledek na lokálním stroji (2026-08-06): **GO** — NVIDIA GeForce GTX 1070 Ti, Deeksha jádro zkompilováno a spuštěno, benchmark ~132 kh/s.
+
+### 13.3 Desktop Agent V31 binaries
+- Příprava: v `APP&WEB/desktop-agent/` spusť `npm run prepare:rust-miner` (volá `scripts/prepare-rust-miner.js --auto`); kopíruje V31 binárky do `APP&WEB/desktop-agent/resources/`.
+- Test: `npm test`.
+- Build Linux balíčků: `npm run build:linux` vytvoří `dist/zion-desktop-agent-v3.1.0-linux-x86_64.AppImage` a `dist/zion-desktop-agent-v3.1.0-linux-amd64.deb`.
+- Pro jiné platformy viz `package.json` skripty (`build:win`, `build:mac`) a `.github/workflows/desktop-release.yml`.
+
+### 13.4 Před každým nasazením těchto částí
+- [ ] `cargo test --workspace` prochází.
+- [ ] `cargo clippy --workspace -- -D warnings` je čisté.
+- [ ] `cargo test -p zion-miner --features gpu-opencl` je zelené a `gpu_opencl_detect.rs` --ignored pass na cílovém GPU.
+- [ ] `npm test` v `APP&WEB/desktop-agent/` je zelené.
+- [ ] `npm run build:linux` vyprodukuje balíčky bez chyb.
+- [ ] Binárky v `APP&WEB/desktop-agent/resources/` odpovídají V31 (`zion-miner --help`, `node --help`, `zion --help` vracejí V31 volby).

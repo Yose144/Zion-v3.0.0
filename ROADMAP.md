@@ -1,10 +1,10 @@
 # ZION Roadmap — From 3.0.5 to Public Mainnet Launch
 
-> **⚠️ This roadmap is historical / V3-centric. The active Mainnet Alpha execution plan is [`PLAN_TO_3.1_RECONCILED.md`](./PLAN_TO_3.1_RECONCILED.md). Live status is in [`StatusV3.md`](./StatusV3.md). The current development workspace is `V31/`.**
+> **⚠️ This roadmap is historical / V3-centric. The active 3.2 "One Love" / Mainnet Stable execution plan is [`V31/PLAN_TO_3.2.md`](./V31/PLAN_TO_3.2.md). Previous plan: [`PLAN_TO_3.1_RECONCILED.md`](./PLAN_TO_3.1_RECONCILED.md). Live status is in [`StatusV3.md`](./StatusV3.md). The current development workspace is `V31/`.**
 
-> **Version:** 3.0.7 "Trinity All Green" / 3.1.0-alpha.2 V31 Mainnet Alpha  
-> **Last updated:** 2026-08-05
-> **One source of truth:** [`PLAN_TO_3.1_RECONCILED.md`](./PLAN_TO_3.1_RECONCILED.md) · Previous: [`docs/3.0.7/3.0.7.md`](./docs/3.0.7/3.0.7.md) + [`TRINITY_ALL_GREEN_PLAN.md`](./docs/3.0.7/TRINITY_ALL_GREEN_PLAN.md) · Live status: [`StatusV3.md`](./StatusV3.md) · V31 rules: [`V31/AGENTS.md`](./V31/AGENTS.md)  
+> **Version:** 3.0.7 "Trinity All Green" / 3.1.0-alpha.2 V31 Mainnet Alpha / 3.2.0 "One Love" (Mainnet Stable) in progress  
+> **Last updated:** 2026-08-06
+> **One source of truth:** [`V31/PLAN_TO_3.2.md`](./V31/PLAN_TO_3.2.md) · Previous: [`PLAN_TO_3.1_RECONCILED.md`](./PLAN_TO_3.1_RECONCILED.md) · Live status: [`StatusV3.md`](./StatusV3.md) · V31 rules: [`V31/AGENTS.md`](./V31/AGENTS.md)  
 > **Engineering detail:** [`V3/ROADMAP.md`](./archive/V3/ROADMAP.md) (archived)
 
 ---

@@ -1,8 +1,31 @@
 # V31 Mainnet Alpha — Status
 
 > **Verze:** 3.1.0-alpha.2 (post-Phase A+B+C+D — E2E mining + web health green)
-> **Datum:** 2026-08-05
-> **Stav:** workspace builduje, **2079 testů prochází (0 failures)**, `cargo clippy --workspace` čisté. **Fáze A i Fáze B jsou kompletní** — `EkamDeeksha` v2 běží na všech výškách (128 KiB scratchpad, 1 pass, 32 random reads, 2 AES rounds), CPU KAT vektory a GPU OpenCL/CUDA/Metal kernely jsou synchronizovány, `zion-miner` mapuje `ekam_deeksha` na kanonické `deeksha_lite`/`deeksha_chv3` GPU backendy. **V31 je nasazen na Edge** (public RPC, pool, multichain, dashboard). **Go/No-Go testy na reálném GPU/rigu (OpenCL/CUDA/Metal) zůstávají pending.** Fáze C1-C8 hotová (DAO + CLI + ZionDex + Dashboard wiring). **Pool FULL V3 feature parity dokončena**. **Dashboard UI/UX update do V31 hotov, `/health` OK. V31 banner KPIs + V31 Production panel (metriky, logy, Grafana) + pool metrics port 8080 + Prometheus/Grafana provisioning nasazeny na Edge. V31 cutover proveden: V3 služby zastaveny a maskovány, `zion-v31-node` osamostatněn od V3. **Fáze D E2E: cargo test --workspace pass, V31 miner našel a odevzdal pool share (block height 50+), web `/api/health` `ok` s rpc_node i mining_pool healthy, e2e API scénáře zelené. Git tag `v3.1.0-alpha.2-phase-D`.
+> **Datum:** 2026-08-06
+> **Stav:** workspace builduje, **2079 testů prochází (0 failures)**, `cargo clippy --workspace` čisté. **Fáze A i Fáze B jsou kompletní** — `EkamDeeksha` v2 běží na všech výškách (128 KiB scratchpad, 1 pass, 32 random reads, 2 AES rounds), CPU KAT vektory a GPU OpenCL/CUDA/Metal kernely jsou synchronizovány, `zion-miner` mapuje `ekam_deeksha` na kanonické `deeksha_lite`/`deeksha_chv3` GPU backendy. **V31 je nasazen na Edge** (public RPC, pool, multichain, dashboard). **Lokální GPU OpenCL build + benchmark GO na NVIDIA GTX 1070 Ti (~132 kh/s, 2026-08-06); reálný rig E2E stále pending.** Fáze C1-C8 hotová (DAO + CLI + ZionDex + Dashboard wiring). **Pool FULL V3 feature parity dokončena**. **Dashboard UI/UX update do V31 hotov, `/health` OK. V31 banner KPIs + V31 Production panel (metriky, logy, Grafana) + pool metrics port 8080 + Prometheus/Grafana provisioning nasazeny na Edge. V31 cutover proveden: V3 služby zastaveny a maskovány, `zion-v31-node` osamostatněn od V3. **Fáze D E2E: cargo test --workspace pass, V31 miner našel a odevzdal pool share (block height 50+), web `/api/health` `ok` s rpc_node i mining_pool healthy, e2e API scénáře zelené. Git tag `v3.1.0-alpha.2-phase-D`.
+
+## Update 2026-08-06 — DEX HTTP solver client, GPU OpenCL build, Desktop Agent V31 binaries
+
+- **DEX solver network — GO**:
+  - Implementován `HttpSolverClient` v `V31/L2/multichain/src/swap/dex/solver_network.rs` (používá `reqwest` s timeoutem, posílá `SwapIntent` JSON na `{solver.url}/v1/swap/solve`, očekává `SolverBid` JSON, `204 No Content` znamená odmítnutí, HTTP/parse chyby se mapují na `MultichainError::Internal`).
+  - Do `V31/L2/multichain/src/server.rs` přidány endpointy `POST /v1/swap/solve` (solver strana běží `DexRouter::quote` a vrací `SolverBid` s `PathHop` cestou) a `POST /v1/swap/intent/:id/broadcast` (buyer rozesílá pending intent všem registrovaným solverům a automaticky submitne vítězný bid).
+  - `AppState` rozšířena o `solver_name` a `solver_fee_bps` z env proměnných `ZION_DEX_SOLVER_NAME` a `ZION_DEX_SOLVER_FEE_BPS`.
+  - Testy: `http_solver_endpoint_returns_bid_for_valid_intent` v `tests/server.rs` a end-to-end `solver_network_http` v `tests/solver_network_http.rs` procházejí. `cargo test -p zion-multichain` je čisté.
+
+- **GPU OpenCL build — GO (lokálně)**:
+  - `zion-miner` se buildne s featurami `auxpow,gpu-opencl,native-hashers,native-kheavyhash,native-blake3-algo,native-verushash` (+ `gpu-cuda`, pokud je přítomen NVRTC runtime). `zion-miner --help` potvrzuje triple-stream volby.
+  - Přidán test `V31/L1/miner/tests/gpu_opencl_detect.rs` (ignored by default). Spuštění:
+    `cargo test -p zion-miner --features gpu-opencl --test gpu_opencl_detect -- --ignored --nocapture`
+  - Výsledek na lokálním stroji: **GO** — NVIDIA GeForce GTX 1070 Ti detekována, Deeksha jádro zkompilováno a spuštěno, benchmark ~132 kh/s.
+
+- **Desktop Agent V31 binaries — GO**:
+  - `prepare-rust-miner.js` (volaný přes `npm run prepare:rust-miner` v `APP&WEB/desktop-agent/`) zkopíruje V31 binárky `zion-miner`, `zion-universal-miner`, `zion-node` (alias `node`) a `zion` do `APP&WEB/desktop-agent/resources/`.
+  - `npm test` a `npm run build:linux` procházejí; v `APP&WEB/desktop-agent/dist/` vzniknou:
+    - `zion-desktop-agent-v3.1.0-linux-x86_64.AppImage`
+    - `zion-desktop-agent-v3.1.0-linux-amd64.deb`
+  - Verifikace: `zion-miner --help`, `node --help`, `zion --help` vracejí V31 volby.
+
+- **Přehled verifikace**: `cargo test --workspace` pass, `cargo clippy --workspace` clean, `npm test` pass, `npm run build:linux` pass. Commit `23e4fbd8e` obsahuje zdrojové změny.
 
 ## Co je hotovo v `v3.1.0-alpha.2` (post-Phase A+B.1)
 
