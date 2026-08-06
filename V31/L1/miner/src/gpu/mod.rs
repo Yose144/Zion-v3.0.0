@@ -3373,7 +3373,7 @@ pub mod opencl_deeksha {
     use std::time::Instant;
     use zion_cosmic_harmony::gpu::opencl_kernel;
 
-    const SCRATCHPAD_BYTES: usize = 131_072; // 128 KiB per thread (Ekam v2)
+    const SCRATCHPAD_BYTES: usize = 524_288; // 512 KiB per thread (Ekam v2 lite, v3.2 ASIC-hardened)
     const SENTINEL: u64 = 0xFFFF_FFFF_FFFF_FFFF;
 
     pub struct OpenClDeekshaMiner {
@@ -3405,7 +3405,7 @@ pub mod opencl_deeksha {
     }
 
     /// Determine max work_size that fits in GPU VRAM.
-    /// Each thread needs SCRATCHPAD_BYTES (128 KiB).
+    /// Each thread needs SCRATCHPAD_BYTES (512 KiB, v3.2 ASIC-hardened).
     /// Reserve VRAM for NPU buffers, driver overhead, and other allocations.
     fn vram_aware_work_size(device: &Device, requested: usize) -> usize {
         let global_mem = device
@@ -4502,7 +4502,7 @@ pub mod opencl_deeksha_lite {
     use std::time::Instant;
     use zion_cosmic_harmony::gpu::opencl_kernel;
 
-    const DL_SCRATCHPAD_BYTES: usize = 128 * 1024; // 128 KiB per thread (Ekam v2)
+    const DL_SCRATCHPAD_BYTES: usize = 512 * 1024; // 512 KiB per thread (Ekam v2 lite, v3.2 ASIC-hardened)
     const SENTINEL: u64 = 0xFFFF_FFFF_FFFF_FFFF;
 
     pub struct OpenClDeekshaLiteMiner {
@@ -7132,7 +7132,7 @@ pub mod cuda_deeksha_lite {
     use std::time::Instant;
 
     const CUDA_KERNEL_SRC: &str = include_str!("kernels/cuda/deeksha_lite.cu");
-    const SCRATCHPAD_BYTES: usize = 131_072; // 128 KiB per thread (Ekam v2)
+    const SCRATCHPAD_BYTES: usize = 524_288; // 512 KiB per thread (v3.2 ASIC-hardened)
     const SENTINEL: u64 = 0xFFFF_FFFF_FFFF_FFFF;
     const DEFAULT_WORK_SIZE_CAP: usize = 65_536; // 16GB VRAM for 24GB GPU
     const OPTIMAL_TPB: u32 = 128; // Must match __launch_bounds__(128, 8) in kernel
@@ -7336,6 +7336,22 @@ pub mod cuda_deeksha_lite {
                 total_tested += chunk as u64;
                 current_nonce += chunk as u64;
                 left = left.saturating_sub(chunk as u64);
+
+                // Early exit: sync and check if a solution was found in this chunk.
+                // Avoids launching remaining chunks whose kernels would just
+                // early-exit via the in-kernel result_nonce guard anyway.
+                if left > 0 && target_u32 != 0 {
+                    self.dev
+                        .synchronize()
+                        .map_err(|e| anyhow::anyhow!("device sync (early-exit): {e}"))?;
+                    let peek = self
+                        .dev
+                        .dtoh_sync_copy(&self.result_nonce)
+                        .map_err(|e| anyhow::anyhow!("result_nonce peek: {e}"))?;
+                    if peek[0] != SENTINEL {
+                        break;
+                    }
+                }
             }
 
             self.dev
