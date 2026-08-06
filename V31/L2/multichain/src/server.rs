@@ -1,7 +1,7 @@
 //! HTTP API gateway for the Multi-Chain layer.
 
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use axum::{
     extract::{Path, State},
@@ -23,6 +23,7 @@ use crate::error::{MultichainError, MultichainResult};
 use crate::rate_limit::{auth_rate_limit, RateLimiter};
 use crate::service::MultichainService;
 use crate::swap::dex::intent::{PathHop, SolverBid, SwapIntent};
+use crate::swap::dex::solver_network::HttpSolverClient;
 use crate::swap::Pool;
 use crate::types::{Transfer, TransferDirection, TransferEndpoint};
 use zion_pool::StratumServer;
@@ -32,6 +33,8 @@ use zion_pool::StratumServer;
 pub struct AppState {
     service: Arc<MultichainService>,
     limiter: RateLimiter,
+    solver_name: String,
+    solver_fee_bps: u16,
 }
 
 /// HTTP API gateway for `zion-multichain`.
@@ -118,6 +121,12 @@ impl ApiServer {
         let state = AppState {
             service: Arc::clone(&self.service),
             limiter: RateLimiter::new(&self.config),
+            solver_name: std::env::var("ZION_DEX_SOLVER_NAME")
+                .unwrap_or_else(|_| "zion-solver".to_string()),
+            solver_fee_bps: std::env::var("ZION_DEX_SOLVER_FEE_BPS")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(0),
         };
 
         Router::new()
@@ -141,6 +150,8 @@ impl ApiServer {
             .route("/v1/swap/intent/:id/settle", post(settle_intent))
             .route("/v1/swap/intent/:id/execute", post(execute_intent))
             .route("/v1/swap/intent/solver/register", post(register_solver))
+            .route("/v1/swap/intent/:id/broadcast", post(broadcast_intent))
+            .route("/v1/swap/solve", post(solve_intent))
             .route("/v1/bridge/submit", post(bridge_submit))
             .route("/v1/multichain/swaps/htlc/lock", post(htlc_lock))
             .route("/v1/multichain/swaps/htlc/claim", post(htlc_claim))
@@ -784,6 +795,93 @@ async fn register_solver(
         .await
     {
         Ok(added) => Ok(Json(serde_json::json!({ "registered": added }))),
+        Err(_) => Err(StatusCode::BAD_REQUEST),
+    }
+}
+
+async fn solve_intent(
+    State(state): State<AppState>,
+    Json(intent): Json<SwapIntent>,
+) -> Result<Json<SolverBid>, StatusCode> {
+    if intent.status != crate::swap::dex::intent::IntentStatus::Pending {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+    let from = zion_l1_types::Asset {
+        id: intent.from_asset.clone(),
+        decimals: 0,
+        name: intent.from_asset.ticker.clone(),
+    };
+    let to = zion_l1_types::Asset {
+        id: intent.to_asset.clone(),
+        decimals: 0,
+        name: intent.to_asset.ticker.clone(),
+    };
+
+    let quote = match state.service.dex_quote(&from, &to, intent.amount_in).await {
+        Ok(q) => q,
+        Err(_) => return Err(StatusCode::NO_CONTENT),
+    };
+
+    if quote.route.len() < 2 {
+        return Err(StatusCode::NO_CONTENT);
+    }
+
+    let mut path = Vec::with_capacity(quote.route.len().saturating_sub(1));
+    for window in quote.route.windows(2) {
+        let from_token = window[0].clone();
+        let to_token = window[1].clone();
+        let is_bridge = from_token.chain != to_token.chain;
+        path.push(PathHop {
+            chain: from_token.chain.as_str().to_string(),
+            dex: if is_bridge { "warp" } else { "amm" }.to_string(),
+            from_token,
+            to_token,
+            is_bridge,
+        });
+    }
+
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+    let bid = SolverBid::new(
+        intent.id,
+        &state.solver_name,
+        quote.expected_out,
+        path,
+        state.solver_fee_bps,
+        now,
+    );
+
+    Ok(Json(bid))
+}
+
+async fn broadcast_intent(
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let client = Arc::new(HttpSolverClient::new());
+    match state.service.broadcast_intent::<HttpSolverClient>(id, client).await {
+        Ok(results) => {
+            let out: Vec<serde_json::Value> = results
+                .into_iter()
+                .map(|r| match r {
+                    Ok(Some(bid)) => serde_json::json!({
+                        "status": "bid",
+                        "bid": bid,
+                    }),
+                    Ok(None) => serde_json::json!({
+                        "status": "declined",
+                    }),
+                    Err(e) => serde_json::json!({
+                        "status": "error",
+                        "error": e.to_string(),
+                    }),
+                })
+                .collect();
+            Ok(Json(serde_json::json!({ "results": out })))
+        }
         Err(_) => Err(StatusCode::BAD_REQUEST),
     }
 }

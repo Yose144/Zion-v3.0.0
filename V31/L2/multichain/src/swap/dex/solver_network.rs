@@ -8,6 +8,7 @@
 
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::Duration;
 
 use async_trait::async_trait;
 use tokio::task::JoinSet;
@@ -28,12 +29,28 @@ pub trait SolverClient: Send + Sync {
 }
 
 /// Default HTTP client for off-chain solvers.
-#[derive(Debug, Default, Clone)]
-pub struct HttpSolverClient;
+#[derive(Debug, Clone)]
+pub struct HttpSolverClient {
+    client: reqwest::Client,
+    timeout: Duration,
+}
+
+impl Default for HttpSolverClient {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl HttpSolverClient {
     pub fn new() -> Self {
-        Self
+        Self::with_timeout(Duration::from_secs(10))
+    }
+
+    pub fn with_timeout(timeout: Duration) -> Self {
+        Self {
+            client: reqwest::Client::new(),
+            timeout,
+        }
     }
 }
 
@@ -41,14 +58,64 @@ impl HttpSolverClient {
 impl SolverClient for HttpSolverClient {
     async fn request_bid(
         &self,
-        _intent: &SwapIntent,
-        _solver: &SolverInfo,
+        intent: &SwapIntent,
+        solver: &SolverInfo,
     ) -> MultichainResult<Option<SolverBid>> {
-        // TODO: POST intent JSON to solver.url and parse SolverBid response.
-        // Kept as a placeholder until solver REST protocol is finalized.
-        Err(MultichainError::Unsupported(
-            "HTTP off-chain solver client not yet active".to_string(),
-        ))
+        let base = solver.url.as_deref().ok_or_else(|| {
+            MultichainError::Config(format!("solver '{}' has no advertised URL", solver.name))
+        })?;
+        let base = base.trim_end_matches('/');
+        let url = format!("{}/v1/swap/solve", base);
+
+        tracing::debug!(
+            "requesting solver bid from {} at {} for intent {}",
+            solver.name,
+            url,
+            intent.id
+        );
+
+        let res = self
+            .client
+            .post(&url)
+            .timeout(self.timeout)
+            .json(intent)
+            .send()
+            .await
+            .map_err(|e| {
+                MultichainError::Internal(format!(
+                    "solver {} HTTP request failed: {}",
+                    solver.name, e
+                ))
+            })?;
+
+        if res.status() == reqwest::StatusCode::NO_CONTENT {
+            tracing::debug!("solver {} declined intent {}", solver.name, intent.id);
+            return Ok(None);
+        }
+
+        if !res.status().is_success() {
+            return Err(MultichainError::Internal(format!(
+                "solver {} returned HTTP {}",
+                solver.name,
+                res.status()
+            )));
+        }
+
+        let bid = res.json::<SolverBid>().await.map_err(|e| {
+            MultichainError::Internal(format!(
+                "solver {} returned invalid bid: {}",
+                solver.name, e
+            ))
+        })?;
+
+        tracing::debug!(
+            "solver {} returned bid for intent {}: amount_out={}",
+            solver.name,
+            bid.intent_id,
+            bid.amount_out.0
+        );
+
+        Ok(Some(bid))
     }
 }
 
