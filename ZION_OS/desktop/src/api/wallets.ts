@@ -192,7 +192,7 @@ export async function fetchWallets(): Promise<WalletsResponse> {
 
   // 2. Operational wallets
   const nodeAddrs = await parseNodeStartupAddresses();
-  const canonicalPool = 'zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2';
+  const canonicalPool = 'zion1k4g2d8s3y4m5v238k0l3v6y5n48894n357uv064';
   const opSources: [string | undefined, string, string][] = [
     [canonicalPool, 'Pool Canonical (Main Payout)', 'canonical'],
     [nodeAddrs.miner || (await findEnvValue('ZION_MINER_ADDRESS')), 'Miner Payout', 'node'],

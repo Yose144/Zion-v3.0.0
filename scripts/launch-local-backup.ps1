@@ -70,9 +70,9 @@ Stop-ByBinaryPath $NodeExe
 [Environment]::SetEnvironmentVariable('ZION_ACCOUNT_TX_MEMO_V1_HEIGHT', '0', 'Process')
 
 # Canonical fee split addresses (mirror edge-deploy/config/edge-environment.sh)
-[Environment]::SetEnvironmentVariable('ZION_MINER_ADDRESS', 'zion1d6m0h2r8m7k8k2d8n072y7j3j4m0254323vq0e3', 'Process')
-[Environment]::SetEnvironmentVariable('ZION_HUMANITARIAN_WALLET', 'zion1e0u5q5s660k4m4a634p2c2v358r8g59564054z7', 'Process')
-[Environment]::SetEnvironmentVariable('ZION_ISSOBELLA_WALLET', 'zion1f7y7l5k678y0v408e8s654d2282346k375526t2', 'Process')
+[Environment]::SetEnvironmentVariable('ZION_MINER_ADDRESS', 'zion1u4a82230m0a267r785m822u5a3g7n753d7eu5n0', 'Process')
+[Environment]::SetEnvironmentVariable('ZION_HUMANITARIAN_WALLET', 'zion136m4u7f8s5w3l0e00342s7a4r282275442vm2w3', 'Process')
+[Environment]::SetEnvironmentVariable('ZION_ISSOBELLA_WALLET', 'zion173g835z228z6u303z59603y236r5e854l36g604', 'Process')
 
 # Bridge validator allowlist (same as Edge) — required for bridge-unlock validation
 [Environment]::SetEnvironmentVariable('ZION_BRIDGE_VALIDATOR_PUBKEYS', '0x02d6406dab8cc71d88f55abca3fe8bae91c26a60162ad3dd1ee55a6aa9cfc96368,0x03e45622f0bad22e34bd1f331219f8d39ed20c4720ce70363b65560df408fc2081,0x025e4b708a7c6dacd484c4fb2a93e80c18f0288aa9b736d4251c6eb8f09d045611,0x02eb3f020ac5a4a647061ffc38b69013a7969c21241e7153a3b196186efd3b185e,0x02a6b18aa50814ac9e9e1f70a69e49ee9a61407a48f83ad2ae914e7676f440ca97', 'Process')

@@ -25,7 +25,7 @@ from collections import defaultdict
 DEFAULTS = {
     "db_path": "/data/zion/pool-store.db",
     "pplns_path": "/data/zion/pplns-state.json",
-    "pool_wallet": "zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2",
+    "pool_wallet": "zion1k4g2d8s3y4m5v238k0l3v6y5n48894n357uv064",
     "node_rpc": ("127.0.0.1", 9443),
     "pool_api": ("127.0.0.1", 8455),
     "dashboard_api": ("127.0.0.1", 8766),

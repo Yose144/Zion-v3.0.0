@@ -56,7 +56,7 @@ const L5FreeWorldCopy = {
   network: { cs: `Síť`, en: `Network` },
 };
 
-const HUMANITARIAN_WALLET = 'zion1e0u5q5s660k4m4a634p2c2v358r8g59564054z7';
+const HUMANITARIAN_WALLET = 'zion136m4u7f8s5w3l0e00342s7a4r282275442vm2w3';
 
 const getCommunities = (cs: boolean) => [
   {
