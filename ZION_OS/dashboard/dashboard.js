@@ -1278,201 +1278,175 @@ async function updateServiceTelemetryDetails(s){
   const svcMap = {};
   for(const svc of svcList) svcMap[svc.id] = svc;
 
-  const isEdge = s.topology === 'edge-primary';
-  const en = s.edge_node, n1 = s.node1, p = s.pool, m = s.miner;
-  const en2 = s.edge_node2 ?? {};
-  const lb  = s.local_backup ?? {};
-  const pe  = s.pool_edge ?? {};
+  const v31n = s.v31_node || s.edge_node || {};
+  const v31p = s.pool || s.pool_edge || s.v31_pool || {};
+  const v31m = s.v31_miner || s.miner || {};
+  const v31mc = s.v31_multichain || s.warp || {};
+  const v31dao = s.v31_dao || s.dao || {};
+  const v31o = s.v31_oasis || s.oasis || {};
+  const lb = s.local_backup || {};
+
+  const portStr = (sv) => sv ? ((sv.ports_open?.length ?? 0)+'/'+((sv.ports_open?.length??0)+(sv.ports_closed?.length??0))) : '—';
+  const detailStr = (sv) => sv?.details ?? '—';
+  const shortTip = (h) => h ? h.slice(0,12)+'…' : '—';
+  const isRunning = (d, sv) => !!(d?.running || d?.ok || sv?.alive);
 
   // Build service list from local status + services data
   const services = [];
 
-  // Edge Node 1 (Primary)
-  services.push({
-    key:'edge-node1', label:'Edge Node 1', cls:'tdc-node',
-    running: en && en.running,
-    data: en,
-    svc: svcMap['edge-node1'],
-    fields: (d, sv)=>[
-      ['Height', d?.chain_height ?? '—'],
-      ['Peers', d?.known_peers ?? '—'],
-      ['Network', d?.network ?? 'Mainnet'],
-      ['Protocol', d?.protocol_version ?? '—'],
-      ['Tip', d?.tip_hash ? d.tip_hash.slice(0,12)+'…' : '—'],
-      ...(sv ? [['Ports', (sv.ports_open?.length ?? 0)+'/'+((sv.ports_open?.length??0)+(sv.ports_closed?.length??0))], ['Details', sv.details ?? '—']] : []),
-    ],
-  });
+  // V31 Node (primary)
+  if (Object.keys(v31n).length || svcMap['v31-node'] || svcMap['edge-node1']) {
+    const sv = svcMap['v31-node'] || svcMap['edge-node1'] || null;
+    services.push({
+      key:'v31-node', label:'V31 Node', cls:'tdc-node',
+      running: isRunning(v31n, sv),
+      data: v31n, svc: sv,
+      fields: (d, svv)=>[
+        ['Height', d?.chain_height ?? '—'],
+        ['Peers', d?.known_peers ?? '—'],
+        ['Network', d?.network ?? 'Mainnet'],
+        ['Protocol', d?.protocol_version ?? '—'],
+        ['Tip', shortTip(d?.tip_hash)],
+        ...(svv ? [['Ports', portStr(svv)], ['Details', detailStr(svv)]] : []),
+      ],
+    });
+  }
 
-  // Edge Node 2 (Follower)
-  services.push({
-    key:'edge-node2', label:'Edge Node 2', cls:'tdc-node',
-    running: en2 && en2.running,
-    data: en2,
-    svc: svcMap['edge-node2'],
-    fields: (d, sv)=>[
-      ['Height', d?.chain_height ?? '—'],
-      ['Peers', d?.known_peers ?? '—'],
-      ['Node ID', d?.node_id ?? '—'],
-      ['P2P', d?.p2p_bind ?? '—'],
-      ['Tip', d?.tip_hash ? d.tip_hash.slice(0,12)+'…' : '—'],
-      ...(sv ? [['Ports', (sv.ports_open?.length ?? 0)+'/'+((sv.ports_open?.length??0)+(sv.ports_closed?.length??0))], ['Details', sv.details ?? '—']] : []),
-    ],
-  });
+
 
   // Local Backup
-  services.push({
-    key:'local-backup', label:'Local Backup', cls:'tdc-node',
-    running: lb && lb.running,
-    data: lb,
-    svc: svcMap['local-backup'],
-    fields: (d, sv)=>[
-      ['Height', d?.chain_height ?? '—'],
-      ['Peers', d?.known_peers ?? '—'],
-      ['Node ID', d?.node_id ?? '—'],
-      ['P2P', d?.p2p_bind ?? '—'],
-      ['Tip', d?.tip_hash ? d.tip_hash.slice(0,12)+'…' : '—'],
-      ...(sv ? [['Ports', (sv.ports_open?.length ?? 0)+'/'+((sv.ports_open?.length??0)+(sv.ports_closed?.length??0))], ['Details', sv.details ?? '—']] : []),
-    ],
-  });
-
-  // Pool
-  const poolSvc = svcMap['pool-edge'];
-  services.push({
-    key:'pool-edge', label:'Pool', cls:'tdc-pool',
-    running: (pe && pe.running) || (p && p.running),
-    data: pe && pe.running ? pe : p,
-    svc: poolSvc,
-    fields: (d, sv)=>[
-      ['Hashrate', d?.hashrate ? (typeof d.hashrate === 'number' ? d.hashrate.toFixed(2)+' KH/s' : d.hashrate) : '—'],
-      ['Miners', d?.active_miners ?? '—'],
-      ['Blocks', d?.blocks_found ?? '—'],
-      ['Port', safePortFromAddr(d?.bind_addr) ?? '8444'],
-      ['Wallet', d?.pool_wallet ? d.pool_wallet.slice(0,16)+'…' : '—'],
-      ...(sv ? [['Ports', (sv.ports_open?.length ?? 0)+'/'+((sv.ports_open?.length??0)+(sv.ports_closed?.length??0))]] : []),
-    ],
-  });
-
-  // Miner
-  services.push({
-    key:'miner', label:'Miner', cls:'tdc-agent',
-    running: m && m.running,
-    data: m,
-    svc: svcMap['miner'],
-    fields: (d, sv)=>[
-      ['Hashrate', d?.hashrate ? (typeof d.hashrate === 'number' ? d.hashrate.toFixed(2)+' H/s' : d.hashrate) : '—'],
-      ['Backend', d?.gpu_backend ?? 'cpu'],
-      ['Device', d?.gpu_device ?? '—'],
-      ['Pool', d?.pool_addr ?? '—'],
-      ['Shares', d?.shares_accepted ?? '—'],
-      ...(sv ? [['Ports', (sv.ports_open?.length ?? 0)+'/'+((sv.ports_open?.length??0)+(sv.ports_closed?.length??0))]] : []),
-    ],
-  });
-
-  // Bridge
-  if(s.bridge || svcMap['bridge']){
-    const sv = svcMap['bridge'];
+  if (Object.keys(lb).length || svcMap['local-backup']) {
+    const sv = svcMap['local-backup'] || null;
     services.push({
-      key:'bridge', label:'Bridge', cls:'tdc-warp',
-      running: s.bridge ? s.bridge.running : (sv?.alive ?? false),
-      data: s.bridge || {},
-      svc: sv,
-      fields: (d, sv)=>[
-        ['Status', d?.status ?? (sv?.alive ? 'running' : '—')],
-        ['Ports', (sv?.ports_open?.length ?? 0)+' / '+((sv?.ports_open?.length??0)+(sv?.ports_closed?.length??0))],
-        ['Details', sv?.details ?? d?.details ?? '—'],
+      key:'local-backup', label:'Local Backup', cls:'tdc-node',
+      running: isRunning(lb, sv),
+      data: lb, svc: sv,
+      fields: (d, svv)=>[
+        ['Height', d?.chain_height ?? '—'],
+        ['Peers', d?.known_peers ?? '—'],
+        ['Node ID', d?.node_id ?? '—'],
+        ['P2P', d?.p2p_bind ?? '—'],
+        ['Tip', shortTip(d?.tip_hash)],
+        ...(svv ? [['Ports', portStr(svv)], ['Details', detailStr(svv)]] : []),
       ],
     });
   }
 
-  // DAO
-  if(s.dao || svcMap['dao']){
-    const sv = svcMap['dao'];
+  // V31 Pool
+  if (Object.keys(v31p).length || svcMap['v31-pool'] || svcMap['pool-edge']) {
+    const sv = svcMap['v31-pool'] || svcMap['pool-edge'] || null;
     services.push({
-      key:'dao', label:'DAO', cls:'tdc-dao',
-      running: s.dao ? s.dao.running : (sv?.alive ?? false),
-      data: s.dao || {},
-      svc: sv,
-      fields: (d, sv)=>[
-        ['Status', d?.status ?? (sv?.alive ? 'running' : '—')],
-        ['Ports', (sv?.ports_open?.length ?? 0)+' / '+((sv?.ports_open?.length??0)+(sv?.ports_closed?.length??0))],
-        ['Details', sv?.details ?? d?.details ?? '—'],
+      key:'v31-pool', label:'V31 Pool', cls:'tdc-pool',
+      running: isRunning(v31p, sv),
+      data: v31p, svc: sv,
+      fields: (d, svv)=>[
+        ['Hashrate', d?.hashrate ? (typeof d.hashrate === 'number' ? d.hashrate.toFixed(2)+' KH/s' : d.hashrate) : '—'],
+        ['Miners', d?.active_miners ?? d?.active_sessions ?? d?.miners_tracked ?? '—'],
+        ['Blocks', d?.blocks_found ?? '—'],
+        ['Port', safePortFromAddr(d?.bind_addr) ?? '8444'],
+        ['Wallet', d?.pool_wallet ? d.pool_wallet.slice(0,16)+'…' : '—'],
+        ...(svv ? [['Ports', portStr(svv)]] : []),
       ],
     });
   }
 
-  // WARP
-  if(s.warp || svcMap['warp']){
-    const sv = svcMap['warp'];
+  // V31 Miner
+  if (Object.keys(v31m).length || svcMap['v31-miner'] || svcMap['miner']) {
+    const sv = svcMap['v31-miner'] || svcMap['miner'] || null;
+    const mergedMiner = {
+      ...v31m,
+      hashrate: v31m.hashrate ?? s.miner?.hashrate ?? null,
+      shares_accepted: v31m.shares_accepted ?? s.miner?.shares_accepted ?? null,
+      pool_addr: v31m.pool_addr ?? s.miner?.pool_addr ?? null,
+      gpu_backend: v31m.gpu_backend ?? s.miner?.gpu_backend ?? 'cpu',
+      gpu_device: v31m.gpu_device ?? s.miner?.gpu_device ?? '—',
+      worker: v31m.worker ?? s.miner?.worker_name ?? '—'
+    };
     services.push({
-      key:'warp', label:'WARP', cls:'tdc-warp',
-      running: s.warp ? s.warp.running : (sv?.alive ?? false),
-      data: s.warp || {},
-      svc: sv,
-      fields: (d, sv)=>[
-        ['Status', d?.status ?? (sv?.alive ? 'running' : '—')],
-        ['Ports', (sv?.ports_open?.length ?? 0)+' / '+((sv?.ports_open?.length??0)+(sv?.ports_closed?.length??0))],
-        ['Details', sv?.details ?? d?.details ?? '—'],
+      key:'v31-miner', label:'V31 Miner', cls:'tdc-agent',
+      running: isRunning(v31m, sv),
+      data: mergedMiner, svc: sv,
+      fields: (d, svv)=>[
+        ['Hashrate', d?.hashrate ? (typeof d.hashrate === 'number' ? d.hashrate.toFixed(2)+' H/s' : d.hashrate) : '—'],
+        ['Backend', d?.gpu_backend ?? 'cpu'],
+        ['Device', d?.gpu_device ?? '—'],
+        ['Pool', d?.pool_addr ?? '—'],
+        ['Worker', d?.worker ?? '—'],
+        ['Shares', d?.shares_accepted ?? '—'],
+        ...(svv ? [['Ports', portStr(svv)]] : []),
       ],
     });
   }
 
-  // Oasis
-  if(s.oasis || svcMap['oasis']){
-    const sv = svcMap['oasis'];
+  // V31 Multi-Chain (unified bridge/warp/atomic-swap/dex)
+  if (Object.keys(v31mc).length || svcMap['v31-multichain'] || svcMap['warp'] || svcMap['bridge'] || svcMap['atomic-swap'] || svcMap['dex']) {
+    const sv = svcMap['v31-multichain'] || svcMap['warp'] || svcMap['bridge'] || svcMap['atomic-swap'] || svcMap['dex'] || null;
     services.push({
-      key:'oasis', label:'Oasis (L4)', cls:'tdc-dao',
-      running: s.oasis ? s.oasis.running : (sv?.alive ?? false),
-      data: s.oasis || {},
-      svc: sv,
-      fields: (d, sv)=>[
-        ['Status', d?.status ?? (sv?.alive ? 'running' : '—')],
-        ['Ports', (sv?.ports_open?.length ?? 0)+' / '+((sv?.ports_open?.length??0)+(sv?.ports_closed?.length??0))],
+      key:'v31-multichain', label:'V31 Multi-Chain', cls:'tdc-warp',
+      running: isRunning(v31mc, sv),
+      data: v31mc, svc: sv,
+      fields: (d, svv)=>[
+        ['Status', (d?.ok || d?.running) ? 'running' : (svv?.alive ? 'running' : '—')],
+        ['Transfers', d?.transfers_total ?? '—'],
+        ['Pending', d?.transfers_pending ?? '—'],
+        ['Version', d?.version ?? '—'],
+        ...(svv ? [['Ports', portStr(svv)], ['Details', detailStr(svv)]] : []),
       ],
     });
   }
 
-  // Free World
-  if(s.free_world || svcMap['free-world']){
-    const sv = svcMap['free-world'];
+  // V31 DAO
+  if (Object.keys(v31dao).length || svcMap['v31-dao'] || svcMap['dao']) {
+    const sv = svcMap['v31-dao'] || svcMap['dao'] || null;
     services.push({
-      key:'free-world', label:'Free World (L5)', cls:'tdc-dao',
-      running: s.free_world ? s.free_world.running : (sv?.alive ?? false),
-      data: s.free_world || {},
-      svc: sv,
-      fields: (d, sv)=>[
-        ['Status', d?.status ?? (sv?.alive ? 'running' : '—')],
-        ['Ports', (sv?.ports_open?.length ?? 0)+' / '+((sv?.ports_open?.length??0)+(sv?.ports_closed?.length??0))],
+      key:'v31-dao', label:'V31 DAO', cls:'tdc-dao',
+      running: isRunning(v31dao, sv),
+      data: v31dao, svc: sv,
+      fields: (d, svv)=>[
+        ['Status', (d?.ok || d?.running) ? 'running' : (svv?.alive ? 'running' : '—')],
+        ['Proposals', d?.proposals_total ?? '—'],
+        ['Active', d?.proposals_active ?? '—'],
+        ...(svv ? [['Ports', portStr(svv)], ['Details', detailStr(svv)]] : []),
       ],
     });
   }
 
-  // Issobella
-  if(s.issobella || svcMap['issobella']){
-    const sv = svcMap['issobella'];
+
+
+  // V31 OASIS
+  if (Object.keys(v31o).length || svcMap['v31-oasis'] || svcMap['oasis']) {
+    const sv = svcMap['v31-oasis'] || svcMap['oasis'] || null;
     services.push({
-      key:'issobella', label:'Issobella (L6)', cls:'tdc-dao',
-      running: s.issobella ? s.issobella.running : (sv?.alive ?? false),
-      data: s.issobella || {},
-      svc: sv,
-      fields: (d, sv)=>[
-        ['Status', d?.status ?? (sv?.alive ? 'running' : '—')],
-        ['Ports', (sv?.ports_open?.length ?? 0)+' / '+((sv?.ports_open?.length??0)+(sv?.ports_closed?.length??0))],
+      key:'v31-oasis', label:'V31 OASIS', cls:'tdc-dao',
+      running: isRunning(v31o, sv),
+      data: v31o, svc: sv,
+      fields: (d, svv)=>[
+        ['Status', (d?.ok || d?.running) ? 'running' : (svv?.alive ? 'running' : '—')],
+        ...(svv ? [['Ports', portStr(svv)], ['Details', detailStr(svv)]] : []),
       ],
     });
   }
 
-  // Dashboard
-  if(svcMap['dashboard']){
-    const sv = svcMap['dashboard'];
+
+
+
+
+  // Infrastructure services from /api/services not already rendered
+  const seenKeys = new Set(services.map(x => x.key));
+  for (const svc of svcList) {
+    if (seenKeys.has(svc.id)) continue;
+    if (svc.level !== 'Infra') continue;
     services.push({
-      key:'dashboard', label:'Dashboard', cls:'tdc-website',
-      running: sv?.alive ?? false,
+      key: svc.id,
+      label: SVC_LABEL_MAP[svc.id] || svc.name || svc.id,
+      cls: 'tdc-website',
+      running: svc.alive,
       data: {},
-      svc: sv,
-      fields: (d, sv)=>[
-        ['Status', sv?.alive ? 'running' : 'stopped'],
-        ['Ports', (sv?.ports_open?.length ?? 0)+' / '+((sv?.ports_open?.length??0)+(sv?.ports_closed?.length??0))],
-        ['Details', sv?.details ?? '—'],
+      svc: svc,
+      fields: (d, svv)=>[
+        ['Status', svv?.alive ? 'running' : (svv?.status || '—')],
+        ['Ports', portStr(svv)],
+        ['Details', detailStr(svv)]
       ],
     });
   }
@@ -9426,8 +9400,31 @@ function renderReadiness(data) {
 // FEATURE C — Service Health Timeline (24h heatmap)
 // ════════════════════════════════════════════════════════════════════════
 // All service IDs that backend can persist in health history (ordered by layer L1→L2→L3→Infra)
-const SERVICE_HISTORY_LABELS = ['edge-node1','edge-node2','local-backup','pool-edge','miner','bridge','dao','warp','oasis','free-world','issobella','dashboard','nginx','web-next'];
-const SVC_LABEL_MAP = { 'edge-node1':'Edge Node 1', 'edge-node2':'Edge Node 2', 'local-backup':'Local Backup', 'pool-edge':'Pool Edge', miner:'Miner', bridge:'Bridge', dao:'DAO', warp:'WARP', oasis:'OASIS', 'free-world':'Free World', issobella:'Issobella', dashboard:'Dashboard', nginx:'Nginx', 'web-next':'Website' };
+const SERVICE_HISTORY_LABELS = ['v31-node','v31-pool','v31-miner','v31-multichain','v31-dao','v31-oasis','local-backup','dashboard','nginx','web-next','grafana','prometheus','marketplace'];
+const SVC_LABEL_MAP = {
+  'v31-node':'V31 Node', 'v31-pool':'V31 Pool', 'v31-miner':'V31 Miner', 'v31-dao':'V31 DAO', 'v31-multichain':'V31 Multi-Chain', 'v31-oasis':'V31 OASIS',
+  'edge-node1':'Edge Node 1', 'edge-node2':'Edge Node 2', 'local-backup':'Local Backup', 'pool-edge':'Pool Edge', miner:'Miner', bridge:'Bridge', dao:'DAO', warp:'WARP', oasis:'OASIS', 'free-world':'Free World', issobella:'Issobella',
+  dashboard:'Dashboard', nginx:'Nginx', 'web-next':'Website', grafana:'Grafana', prometheus:'Prometheus', marketplace:'Marketplace'
+};
+// Map legacy/duplicate service IDs to their V31 canonical ID for the timeline.
+const V31_SVC_REPLACEMENT = {
+  'edge-node1':'v31-node','edge_node1':'v31-node','node1':'v31-node',
+  'edge-node2':'v31-node','edge_node2':'v31-node','node2':'v31-node',
+  'pool-edge':'v31-pool','pool_edge':'v31-pool','pool':'v31-pool',
+  'miner':'v31-miner','miner-1':'v31-miner','miner1':'v31-miner',
+  'bridge':'v31-multichain','atomic-swap':'v31-multichain','dex':'v31-multichain','warp':'v31-multichain',
+  'dao':'v31-dao',
+  'oasis':'v31-oasis','free-world':'v31-oasis','issobella':'v31-oasis'
+};
+// For a canonical V31 ID, which legacy IDs can provide a historical state if the V31 ID is missing?
+const SVC_HISTORY_FALLBACKS = {
+  'v31-node':   ['edge-node1','node1','edge-node2','node2'],
+  'v31-pool':   ['pool-edge','pool'],
+  'v31-miner':  ['miner','miner-1','miner1'],
+  'v31-multichain':['warp','bridge','atomic-swap','dex'],
+  'v31-dao':    ['dao'],
+  'v31-oasis':  ['oasis','free-world','issobella']
+};
 const SVC_LEVEL_ORDER = { 'L1':0, 'L2':1, 'L3':2, 'L4':3, 'L5':4, 'L6':5, 'Infra':6 };
 let serviceHealthData = null;
 let healthRangeBuckets = 48; // default 4h
@@ -9451,23 +9448,57 @@ function _fmtTime(ts) {
   return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
 }
 
+function _resolveState(states, key) {
+  if (states[key] !== undefined && states[key] !== null) return states[key];
+  const fallbacks = SVC_HISTORY_FALLBACKS[key];
+  if (fallbacks) {
+    for (const fb of fallbacks) {
+      if (states[fb] !== undefined && states[fb] !== null) return states[fb];
+    }
+  }
+  return undefined;
+}
+
 function _uptimePct(states, key, total) {
   if (!total) return '—';
   let up = 0;
-  for (const s of states) { if (s[key] === true) up++; }
+  for (const s of states) { if (_resolveState(s, key) === true) up++; }
   return Math.round((up / total) * 100) + '%';
 }
 
 function _getOrderedLabels(services) {
-  // Order by layer then name
   if (!services || !services.length) return SERVICE_HISTORY_LABELS;
-  const order = [...services].sort((a,b) => {
+  const present = new Set(services.map(s => s.id));
+  const selected = [];
+  const seen = new Set();
+  // Prefer V31 primary; fall back to legacy counterpart only when V31 is absent.
+  const groups = [
+    ['v31-node','edge-node1','edge-node2','node1','node2','local-backup'],
+    ['v31-pool','pool-edge','pool'],
+    ['v31-miner','miner','miner-1','miner1'],
+    ['v31-multichain','warp','bridge','atomic-swap','dex'],
+    ['v31-dao','dao'],
+    ['v31-oasis','oasis','free-world','issobella'],
+    ['dashboard','nginx','web-next','grafana','prometheus','marketplace']
+  ];
+  for (const g of groups) {
+    for (const id of g) {
+      if (present.has(id) && !seen.has(id)) {
+        seen.add(id);
+        selected.push(services.find(s => s.id === id));
+        break;
+      }
+    }
+  }
+  // Append any remaining services, sorted by layer then name
+  const rest = [...services].filter(s => !seen.has(s.id)).sort((a,b) => {
     const la = SVC_LEVEL_ORDER[a.level] ?? 99;
     const lb = SVC_LEVEL_ORDER[b.level] ?? 99;
     if (la !== lb) return la - lb;
     return (a.name||a.id).localeCompare(b.name||b.id);
   });
-  return order.map(s => s.id);
+  selected.push(...rest);
+  return selected.map(s => s.id);
 }
 
 function renderServiceHealthTimeline(services) {
@@ -9495,8 +9526,9 @@ function renderServiceHealthTimeline(services) {
     let col = `<div style="display:flex;flex-direction:column;gap:1.5px;min-width:${cellSize}px;" title="${tLabel}">`;
     for (let s = 0; s < svcCount; s++) {
       const key = orderedLabels[s];
-      const alive = states[key] === true;
-      const hasData = states[key] !== undefined && states[key] !== null;
+      const state = _resolveState(states, key);
+      const alive = state === true;
+      const hasData = state !== undefined && state !== null;
       const color = alive ? '#22c55e' : (hasData ? '#ef4444' : '#374151');
       col += `<div style="width:${cellSize}px;height:${cellSize}px;background:${color};border-radius:2px;" title="${escapeHtml(SVC_LABEL_MAP[key]||key)} @ ${tLabel}: ${alive?'online':(hasData?'offline':'no data')}"></div>`;
     }
@@ -9514,8 +9546,8 @@ function renderServiceHealthTimeline(services) {
       html += `<div class="text-[9px] uppercase tracking-wider text-gray-500 mt-1 mb-0.5 font-semibold">${lvl}</div>`;
       lastLevel = lvl;
     }
-    const last = recent.length ? (recent[recent.length-1].services || recent[recent.length-1].states || {})[svc] : null;
-    const statusDot = last === true ? '<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>' : (last === false ? '<span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>' : '<span class="w-2 h-2 rounded-full bg-gray-600 inline-block"></span>');
+    const lastState = recent.length ? _resolveState(recent[recent.length-1].services || recent[recent.length-1].states || {}, svc) : null;
+    const statusDot = lastState === true ? '<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>' : (lastState === false ? '<span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>' : '<span class="w-2 h-2 rounded-full bg-gray-600 inline-block"></span>');
     const uptime = _uptimePct(recent.map(b => b.services || b.states || {}), svc, recent.length);
     html += `<div class="flex items-center justify-between text-[10px] text-gray-400 hover:bg-white/5 rounded px-1 transition">
       <span class="flex items-center gap-1.5">${statusDot} <span class="text-gray-300 font-medium">${escapeHtml(SVC_LABEL_MAP[svc]||svc)}</span></span>
@@ -9872,12 +9904,23 @@ function renderTopology(services) {
   // Show connected worker count on the pool node
   const poolWorkers = window.currentStatus?.pool?.active_sessions ?? window.currentStatus?.pool?.miners_tracked ?? null;
 
+  // V31 service IDs that should override legacy topology labels when present
+  const v31Present = new Set((services || []).map(s => s.id));
+  const v31LabelOverride = {
+    'edge-node1':'v31-node','pool-edge':'v31-pool','miner':'v31-miner',
+    'dao':'v31-dao','warp':'v31-multichain','oasis':'v31-oasis'
+  };
+
   // Update node state
   const nodes = TOPO_NODES.map(n => {
     const info = svcMap[n.id] || svcMap[n.id.replace(/[-_]/g,'')] || {status:'unknown'};
     let label = n.label;
+    const v31Id = v31LabelOverride[n.id];
+    if (v31Id && v31Present.has(v31Id)) {
+      label = SVC_LABEL_MAP[v31Id] || label;
+    }
     if (n.id === 'pool-edge' && poolWorkers != null) {
-      label = n.label + ' (' + poolWorkers + ')';
+      label = label + ' (' + poolWorkers + ')';
     }
     return { ...n, label, status: info.status, color: _statusColor(info.status) };
   });
