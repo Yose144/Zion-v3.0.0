@@ -304,3 +304,92 @@ export function isVirtualOnlyCart(items: CartItem[]): boolean {
   if (!items.length) return false;
   return items.every((i) => i.digital || i.category === 'digital');
 }
+
+// ── Trivi Accounting Integration ────────────────────────────────────
+
+export interface TriviSyncResult {
+  success: boolean;
+  trivi_id?: string;
+  document_number?: string;
+  error?: string;
+}
+
+export async function syncOrderToTrivi(id: string): Promise<TriviSyncResult | null> {
+  try {
+    const res = await fetch(`/api/admin/trivi/sync/${encodeURIComponent(id)}`, {
+      method: 'POST',
+      headers: { ...adminHeaders(), 'Content-Type': 'application/json' },
+    });
+    return (await res.json()) as TriviSyncResult;
+  } catch {
+    return null;
+  }
+}
+
+export interface TriviStatusResult {
+  synced: boolean;
+  status?: 'success' | 'failed' | 'pending';
+  trivi_id?: string;
+  document_number?: string;
+  error_message?: string;
+  can_retry?: boolean;
+  created_at?: string;
+}
+
+export async function checkTriviStatus(id: string): Promise<TriviStatusResult | null> {
+  try {
+    const res = await fetch(`/api/admin/trivi/status/${encodeURIComponent(id)}`, {
+      headers: adminHeaders(),
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as TriviStatusResult;
+  } catch {
+    return null;
+  }
+}
+
+// ── Token Distribution ──────────────────────────────────────────────
+
+export interface TokenDistributionResult {
+  success: boolean;
+  orderId?: string;
+  tokens?: number;
+  status?: string;
+  error?: string;
+}
+
+export async function distributeTokens(
+  id: string,
+  txHash?: string
+): Promise<TokenDistributionResult | null> {
+  try {
+    const res = await fetch(`/api/admin/tokens/distribute/${encodeURIComponent(id)}`, {
+      method: 'POST',
+      headers: { ...adminHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ txHash }),
+    });
+    return (await res.json()) as TokenDistributionResult;
+  } catch {
+    return null;
+  }
+}
+
+export interface TokenStatusResult {
+  found: boolean;
+  tokens?: number;
+  status?: 'pending' | 'distributed';
+  txHash?: string;
+  distributedAt?: string;
+}
+
+export async function getTokenStatus(id: string): Promise<TokenStatusResult | null> {
+  try {
+    const res = await fetch(`/api/admin/tokens/distribute/${encodeURIComponent(id)}`, {
+      headers: adminHeaders(),
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as TokenStatusResult;
+  } catch {
+    return null;
+  }
+}
