@@ -144,6 +144,110 @@ export const getPrizeTiers = () =>
 export const getTerritories = () =>
   fetchJson<TerritoryMap>('/api/v1/oasis/map');
 
+// ── Reverse sync: Market → OASIS ─────────────────────────────────────
+// These functions send marketplace events back to the OASIS game service
+// so the game state stays in sync with marketplace activity.
+
+async function postJson<T>(path: string, body: unknown): Promise<T | null> {
+  try {
+    const res = await fetch(`${OASIS_API}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: typeof AbortController !== 'undefined' ? AbortSignal.timeout(5000) : undefined,
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as ApiResponse<T>;
+    return json.success ? (json.data ?? null) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Notify OASIS that a marketplace sale occurred.
+ * The game can use this to award XP, update inventory, or update territory ownership.
+ */
+export function notifyMarketSale(params: {
+  buyerAddress: string;
+  sellerAddress: string;
+  artifactCategory: string;
+  artifactName: string;
+  contractAddress: string;
+  tokenId: string;
+  price: string;
+  txHash?: string;
+}) {
+  return postJson<{ awarded: boolean; xpGained?: number; message?: string }>(
+    '/api/v1/oasis/market/sale',
+    params,
+  );
+}
+
+/**
+ * Notify OASIS that a new listing was created for an OASIS artifact.
+ * The game can update the market_url on the artifact.
+ */
+export function notifyMarketListing(params: {
+  sellerAddress: string;
+  artifactCategory: string;
+  contractAddress: string;
+  tokenId: string;
+  price: string;
+  saleType: string;
+}) {
+  return postJson<{ updated: boolean }>(
+    '/api/v1/oasis/market/listing',
+    params,
+  );
+}
+
+/**
+ * Notify OASIS that a territory NFT was transferred (sold/claimed).
+ * The game should update the territory controller.
+ */
+export function notifyTerritoryTransfer(params: {
+  territoryId: string;
+  newController: string;
+  previousController?: string;
+  txHash?: string;
+}) {
+  return postJson<{ updated: boolean }>(
+    '/api/v1/oasis/territory/transfer',
+    params,
+  );
+}
+
+/**
+ * Notify OASIS that a golden egg prize NFT was claimed/sold.
+ * The game can verify the prize claim and update prize distribution state.
+ */
+export function notifyGoldenEggClaim(params: {
+  buyerAddress: string;
+  tierRank: number;
+  txHash?: string;
+}) {
+  return postJson<{ verified: boolean; message?: string }>(
+    '/api/v1/oasis/golden-egg/claim',
+    params,
+  );
+}
+
+/**
+ * Notify OASIS that an avatar NFT was minted/purchased.
+ * The game can update the avatar's market_url and ownership.
+ */
+export function notifyAvatarMint(params: {
+  avatarId: number;
+  owner: string;
+  txHash?: string;
+}) {
+  return postJson<{ updated: boolean }>(
+    '/api/v1/oasis/avatar/mint',
+    params,
+  );
+}
+
 // ── Mapping helpers: OASIS → Marketplace artifact ──────────────────
 
 /**
