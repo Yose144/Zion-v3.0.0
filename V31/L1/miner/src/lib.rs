@@ -23,6 +23,16 @@ pub mod stream;
 pub mod stream_profit;
 pub mod thread_affinity;
 
+// TUI modules — interactive terminal UI (feature-gated, requires crossterm).
+#[cfg(feature = "tui")]
+pub mod banner;
+#[cfg(feature = "tui")]
+pub mod interactive;
+#[cfg(feature = "tui")]
+pub mod setup_menu;
+#[cfg(feature = "tui")]
+pub mod ui;
+
 // parallel.rs provides multi-algorithm hashing and is only useful when
 // AuxPoW / external mining is enabled.
 #[cfg(feature = "auxpow")]

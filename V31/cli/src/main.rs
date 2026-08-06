@@ -8,7 +8,10 @@ use tokio::sync::watch;
 use std::net::SocketAddr;
 use zion_l1_types::{Address, Amount, Asset, ChainId};
 
+mod commands;
 mod menu;
+mod rpc;
+mod ui;
 
 use zion_core::node::{Node, NodeConfig};
 use zion_miner::config::MinerConfig;
@@ -22,7 +25,7 @@ use zion_multichain::MultichainService;
 #[command(name = "zion")]
 #[command(about = "ZION V31 Mainnet Alpha CLI")]
 #[command(version)]
-struct Cli {
+pub struct Cli {
     /// Path to the multichain TOML config.
     #[arg(short, long, global = true, value_name = "FILE")]
     config: Option<PathBuf>,
@@ -55,6 +58,141 @@ enum Command {
     Node(NodeArgs),
     /// Manage V31 systemd services (start/stop/status/restart/logs).
     Service(ServiceArgs),
+    /// DAO governance commands.
+    Dao(DaoArgs),
+    /// Atomic swap (HTLC) commands.
+    AtomicSwap(AtomicSwapArgs),
+    /// Warp bridge commands.
+    Warp(WarpArgs),
+    /// Monitor service health.
+    Monitor(MonitorArgs),
+    /// Network topology — peers, chains, bridges.
+    Topology(TopologyArgs),
+    /// Block explorer — query blocks, transactions, addresses.
+    Explorer(ExplorerArgs),
+    /// First-run onboarding wizard.
+    Onboard(OnboardArgs),
+    /// Deploy smart contracts.
+    Deploy(DeployArgs),
+    /// Self-update the ZION CLI.
+    Update(UpdateArgs),
+    /// Docker Compose management.
+    Compose(ComposeArgs),
+    /// Shell completions.
+    Completions {
+        /// Shell (bash, zsh, fish, powershell, elvish)
+        shell: clap_complete::Shell,
+    },
+    /// AI Agent commands (L4 — not yet migrated).
+    Agent(AgentArgs),
+    /// Hiran AI oracle commands (L4 — not yet migrated).
+    Hiran(HiranArgs),
+    /// Issobella layer commands (L5 — not yet migrated).
+    Issobella(IssobellaArgs),
+    /// Free World layer commands (L5 — not yet migrated).
+    FreeWorld(FreeWorldArgs),
+    /// NCL (Network Command Layer) commands (not yet migrated).
+    Ncl(NclArgs),
+    /// AuxPoW commands (integrated into miner).
+    Auxpow(AuxpowArgs),
+}
+
+// ── Wrapper arg structs for subcommand modules ─────────────────────────────
+
+#[derive(Parser)]
+struct DaoArgs {
+    #[command(subcommand)]
+    command: commands::dao::DaoCmd,
+}
+
+#[derive(Parser)]
+struct AtomicSwapArgs {
+    #[command(subcommand)]
+    command: commands::atomic_swap::AtomicSwapCmd,
+}
+
+#[derive(Parser)]
+struct WarpArgs {
+    #[command(subcommand)]
+    command: commands::warp::WarpCmd,
+}
+
+#[derive(Parser)]
+struct MonitorArgs {
+    #[command(subcommand)]
+    command: commands::monitor::MonitorCmd,
+}
+
+#[derive(Parser)]
+struct TopologyArgs {
+    #[command(subcommand)]
+    command: commands::topology::TopologyCmd,
+}
+
+#[derive(Parser)]
+struct ExplorerArgs {
+    #[command(subcommand)]
+    command: commands::explorer::ExplorerCmd,
+}
+
+#[derive(Parser)]
+struct OnboardArgs {
+    #[command(subcommand)]
+    command: commands::onboard::OnboardCmd,
+}
+
+#[derive(Parser)]
+struct DeployArgs {
+    #[command(subcommand)]
+    command: commands::deploy::DeployCmd,
+}
+
+#[derive(Parser)]
+struct UpdateArgs {
+    #[command(subcommand)]
+    command: commands::update::UpdateCmd,
+}
+
+#[derive(Parser)]
+struct ComposeArgs {
+    #[command(subcommand)]
+    command: commands::compose::ComposeCmd,
+}
+
+#[derive(Parser)]
+struct AgentArgs {
+    #[command(subcommand)]
+    command: commands::agent::AgentCmd,
+}
+
+#[derive(Parser)]
+struct HiranArgs {
+    #[command(subcommand)]
+    command: commands::hiran::HiranCmd,
+}
+
+#[derive(Parser)]
+struct IssobellaArgs {
+    #[command(subcommand)]
+    command: commands::issobella::IssobellaCmd,
+}
+
+#[derive(Parser)]
+struct FreeWorldArgs {
+    #[command(subcommand)]
+    command: commands::free_world::FreeWorldCmd,
+}
+
+#[derive(Parser)]
+struct NclArgs {
+    #[command(subcommand)]
+    command: commands::ncl::NclCmd,
+}
+
+#[derive(Parser)]
+struct AuxpowArgs {
+    #[command(subcommand)]
+    command: commands::auxpow::AuxpowCmd,
 }
 
 #[derive(Parser)]
@@ -780,6 +918,25 @@ async fn main() -> anyhow::Result<()> {
             NodeCommand::Restart => systemctl_all("restart", "node")?,
         },
         Command::Service(svc) => handle_service_command(svc)?,
+        Command::Dao(args) => commands::dao::run(args.command, "http://127.0.0.1:8092").await?,
+        Command::AtomicSwap(args) => commands::atomic_swap::run(args.command, "http://127.0.0.1:8093").await?,
+        Command::Warp(args) => commands::warp::run(args.command, "http://127.0.0.1:8453").await?,
+        Command::Monitor(args) => {
+            commands::monitor::run(args.command, "127.0.0.1:9445", "127.0.0.1:8444", "127.0.0.1:8453", "127.0.0.1:8092").await?;
+        }
+        Command::Topology(args) => commands::topology::run(args.command, "127.0.0.1:9445", "127.0.0.1:8453").await?,
+        Command::Explorer(args) => commands::explorer::run(args.command, "127.0.0.1:9445").await?,
+        Command::Onboard(args) => commands::onboard::run(args.command).await?,
+        Command::Deploy(args) => commands::deploy::run(args.command).await?,
+        Command::Update(args) => commands::update::run(args.command).await?,
+        Command::Compose(args) => commands::compose::run(args.command).await?,
+        Command::Completions { shell } => commands::completions::run(shell)?,
+        Command::Agent(args) => commands::agent::run(args.command).await?,
+        Command::Hiran(args) => commands::hiran::run(args.command).await?,
+        Command::Issobella(args) => commands::issobella::run(args.command).await?,
+        Command::FreeWorld(args) => commands::free_world::run(args.command).await?,
+        Command::Ncl(args) => commands::ncl::run(args.command).await?,
+        Command::Auxpow(args) => commands::auxpow::run(args.command).await?,
     }
 
     Ok(())

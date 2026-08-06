@@ -97,3 +97,63 @@ pub struct HealthResponse {
 pub const API_VERSION: &str = "v1";
 pub const API_PREFIX: &str = "/api/v1/oasis";
 pub const DEFAULT_PORT: u16 = 8094;
+
+// ── Market webhook types (reverse sync: Market → OASIS) ──────────────
+
+/// Marketplace sale notification from the MarketPlace app.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MarketSaleEvent {
+    pub buyer_address: String,
+    pub seller_address: String,
+    pub artifact_category: String,
+    pub artifact_name: String,
+    pub contract_address: String,
+    pub token_id: String,
+    pub price: String,
+    pub tx_hash: Option<String>,
+}
+
+/// Marketplace listing notification.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MarketListingEvent {
+    pub seller_address: String,
+    pub artifact_category: String,
+    pub contract_address: String,
+    pub token_id: String,
+    pub price: String,
+    pub sale_type: String,
+}
+
+/// Territory transfer notification from marketplace.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TerritoryTransferEvent {
+    pub territory_id: String,
+    pub new_controller: String,
+    pub previous_controller: Option<String>,
+    pub tx_hash: Option<String>,
+}
+
+/// Golden egg claim notification from marketplace.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GoldenEggClaimEvent {
+    pub buyer_address: String,
+    pub tier_rank: u32,
+    pub tx_hash: Option<String>,
+}
+
+/// Avatar mint notification from marketplace.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AvatarMintEvent {
+    pub avatar_id: u32,
+    pub owner: String,
+    pub tx_hash: Option<String>,
+}
+
+/// Response for market webhook events.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MarketWebhookResponse {
+    pub updated: bool,
+    pub awarded: bool,
+    pub xp_gained: u64,
+    pub message: String,
+}

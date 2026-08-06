@@ -1,0 +1,33 @@
+{
+  "name": "zion-identity-service",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ZION Identity Service (ZIS) — auth.zionterranova.com. Ed25519 + EVM SIWE auth, JWT SSO across .zionterranova.com apps.",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "db:push": "prisma db push --schema ../shared/prisma/schema.prisma",
+    "db:generate": "prisma generate --schema ../shared/prisma/schema.prisma",
+    "db:migrate": "prisma migrate dev --schema ../shared/prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^9.3.1",
+    "@fastify/cors": "^9.0.1",
+    "@fastify/jwt": "^8.0.0",
+    "@fastify/rate-limit": "^9.1.5",
+    "@prisma/client": "^5.18.0",
+    "fastify": "^4.28.1",
+    "noble-ed25519": "^1.3.0",
+    "pino-pretty": "^11.2.2",
+    "siwe": "^2.3.2",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "prisma": "^5.18.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.4",
+    "@types/node": "^22.5.0"
+  }
+}

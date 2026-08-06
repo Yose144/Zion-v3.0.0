@@ -1,0 +1,362 @@
+// ── ZION Unified Ecosystem Database Schema ─────────────────────────
+// PostgreSQL — single instance backing all ZION apps:
+//   • ZIS (auth.zionterranova.com)
+//   • Web 2.9 (app.zionterranova.com)
+//   • Market (market.zionterranova.com)
+//   • OASIS (oasis.zionterranova.com)
+//   • Dashboard (dashboard.zionterranova.com)
+//
+// This schema merges the existing Market schema (APP&WEB/MarketPlace/prisma)
+// with new tables for unified auth, OASIS game state, mining stats, DAO,
+// bridge, DEX, and notifications.
+//
+// Generated 2026-08-06 as part of Phase I3 (PLAN_TO_3.2.md §14.3).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ════════════════════════════════════════════════════════════════════
+// §1  User Identity  (ZIS — auth.zionterranova.com)
+// ════════════════════════════════════════════════════════════════════
+
+model User {
+  id              String   @id @default(cuid())
+  primaryAddress  String   @unique // zion1... or 0x...
+  displayName     String?
+  email           String?
+  avatar          String?
+  bio             String?
+  role            String   @default("user") // "user" | "admin" | "moderator"
+  createdAt       DateTime @default(now())
+  lastLogin       DateTime?
+  loginCount      Int      @default(0)
+
+  linkedAddresses LinkedAddress[]
+  sessions        Session[]
+  apiKeys         ApiKey[]
+  oasisPlayer     OasisPlayer?
+  miningWorkers   MiningWorker[]
+  daoVotes        DaoVote[]
+  notifications   Notification[]
+
+  @@index([role])
+}
+
+model LinkedAddress {
+  id          String   @id @default(cuid())
+  userId      String
+  address     String   @unique
+  chainType   String // "zion-l1" | "evm" | "bitcoin"
+  chainId     String? // "base" | "ethereum" | etc.
+  verifiedAt  DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Session {
+  id          String   @id @default(cuid())
+  userId      String
+  jwtJti      String   @unique // JWT ID for revocation
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+  revoked     Boolean  @default(false)
+  userAgent   String?
+  ipAddress   String?
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model ApiKey {
+  id          String   @id @default(cuid())
+  userId      String
+  keyHash     String   @unique // SHA256 of API key
+  label       String // "CLI" | "Script" | etc.
+  createdAt   DateTime @default(now())
+  lastUsed    DateTime?
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ════════════════════════════════════════════════════════════════════
+// §2  OASIS Game  (oasis.zionterranova.com + OASIS service :8094)
+// ════════════════════════════════════════════════════════════════════
+
+model OasisPlayer {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  address         String   @unique // game service player address
+  totalXp         Int      @default(0)
+  level           String   @default("Physical")
+  guildId         String?
+  blocksMined     Int      @default(0)
+  zionEarned      BigInt   @default(0)
+  titheTotal      BigInt   @default(0)
+  challengesDone  Int      @default(0)
+  dailyStreak     Int      @default(0)
+  bestStreak      Int      @default(0)
+  lastActive      DateTime?
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievements    OasisAchievement[]
+  inventory       OasisInventory[]
+
+  @@index([level])
+  @@index([guildId])
+}
+
+model OasisAchievement {
+  id              String   @id @default(cuid())
+  playerId        String
+  achievementType String
+  milestone       Int
+  earnedAt        DateTime @default(now())
+  player          OasisPlayer @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, achievementType, milestone])
+}
+
+model OasisInventory {
+  id              String   @id @default(cuid())
+  playerId        String
+  itemType        String // "avatar" | "quest_item" | "prize" | "territory" | "ship"
+  itemId          String
+  quantity        Int      @default(1)
+  acquiredAt      DateTime @default(now())
+  player          OasisPlayer @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, itemType, itemId])
+}
+
+// ════════════════════════════════════════════════════════════════════
+// §3  Marketplace  (market.zionterranova.com — from existing schema)
+// ════════════════════════════════════════════════════════════════════
+
+model Artifact {
+  id                String   @id @default(cuid())
+  tokenId           BigInt
+  contractAddress   String
+  category          String   @default("quest_item")
+  name              String
+  description       String   @db.Text
+  rarity            String   @default("common")
+  source            String   @default("oasis")
+  imageUri          String
+  assetUri          String?
+  metadataUri       String   @default("")
+  stats             Json?
+  creator           String
+  createdAt         DateTime @default(now())
+  mintedAt          DateTime?
+  totalSupply       Int      @default(1)
+  circulatingSupply Int      @default(1)
+
+  listings          Listing[]
+  sales             Sale[]
+
+  @@unique([contractAddress, tokenId])
+  @@index([category])
+  @@index([rarity])
+  @@index([creator])
+  @@index([source])
+}
+
+model Collection {
+  id            String   @id @default(cuid())
+  name          String
+  description   String   @db.Text
+  bannerImage   String
+  logoImage     String
+  creator       String
+  artifactCount Int      @default(0)
+  floorPrice    BigInt?
+  totalVolume   BigInt?
+  createdAt     DateTime @default(now())
+
+  @@index([creator])
+}
+
+model Listing {
+  id              String   @id @default(cuid())
+  artifactId      String
+  tokenId         BigInt
+  contractAddress String
+  seller          String
+  saleType        String   @default("fixed") // "fixed" | "auction"
+  price           BigInt // wZION wei
+  priceUsd        Float?
+  quantity        Int      @default(1)
+  status          String   @default("active") // "active" | "sold" | "cancelled" | "expired"
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now())
+  expiresAt       DateTime?
+  artifact        Artifact @relation(fields: [artifactId], references: [id], onDelete: Cascade)
+
+  @@index([seller])
+  @@index([status])
+  @@index([saleType])
+}
+
+model Sale {
+  id              String   @id @default(cuid())
+  artifactId      String
+  tokenId         BigInt
+  contractAddress String
+  buyer           String
+  seller          String
+  price           BigInt
+  priceUsd        Float?
+  quantity        Int      @default(1)
+  txHash          String?
+  createdAt       DateTime @default(now())
+  artifact        Artifact @relation(fields: [artifactId], references: [id], onDelete: Cascade)
+
+  @@index([buyer])
+  @@index([seller])
+  @@index([createdAt])
+}
+
+// ════════════════════════════════════════════════════════════════════
+// §4  Mining  (pool → shared DB)
+// ════════════════════════════════════════════════════════════════════
+
+model MiningWorker {
+  id          String   @id @default(cuid())
+  userId      String?
+  address     String   @unique // pool wallet address
+  workerName  String
+  pool        String   @default("zion-pool")
+  coin        String   @default("ZION")
+  algorithm   String   @default("ekam_deeksha")
+  hashrate    Float    @default(0) // H/s
+  shares      Int      @default(0)
+  accepted    Int      @default(0)
+  rejected    Int      @default(0)
+  stale       Int      @default(0)
+  lastShareAt DateTime?
+  createdAt   DateTime @default(now())
+  user        User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([pool])
+  @@index([coin])
+}
+
+model MiningStats {
+  id          String   @id @default(cuid())
+  workerId    String
+  timestamp   DateTime @default(now())
+  hashrate    Float
+  shares      Int
+  accepted    Int
+  rejected    Int
+  stale       Int
+  uptime      Int // seconds
+
+  @@index([workerId, timestamp])
+}
+
+// ════════════════════════════════════════════════════════════════════
+// §5  DAO  (dao.zionterranova.com / V31/L2/dao)
+// ════════════════════════════════════════════════════════════════════
+
+model DaoProposal {
+  id          String   @id @default(cuid())
+  proposalId  Int      @unique
+  title       String
+  description String   @db.Text
+  proposer    String
+  status      String   @default("active") // "active" | "passed" | "rejected" | "executed"
+  yesVotes    Int      @default(0)
+  noVotes     Int      @default(0)
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+  votes       DaoVote[]
+
+  @@index([status])
+}
+
+model DaoVote {
+  id          String   @id @default(cuid())
+  proposalId  Int
+  voter       String
+  vote        Boolean // true=yes, false=no
+  weight      BigInt
+  votedAt     DateTime @default(now())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  proposal    DaoProposal @relation(fields: [proposalId], references: [proposalId])
+
+  @@unique([proposalId, voter])
+}
+
+// ════════════════════════════════════════════════════════════════════
+// §6  Bridge  (V31/L2/multichain bridge)
+// ════════════════════════════════════════════════════════════════════
+
+model BridgeTransaction {
+  id           String   @id @default(cuid())
+  txType       String // "lock" | "mint" | "burn" | "release"
+  sourceChain  String
+  destChain    String
+  amount       BigInt
+  sender       String
+  recipient    String
+  sourceTxHash String?
+  destTxHash   String?
+  status       String   @default("pending") // "pending" | "confirmed" | "failed"
+  createdAt    DateTime @default(now())
+  completedAt  DateTime?
+
+  @@index([sender])
+  @@index([recipient])
+  @@index([status])
+}
+
+// ════════════════════════════════════════════════════════════════════
+// §7  DEX  (V31/L2/multichain swap/dex)
+// ════════════════════════════════════════════════════════════════════
+
+model DexOrder {
+  id          String   @id @default(cuid())
+  orderType   String // "swap" | "add_liquidity" | "remove_liquidity"
+  tokenIn     String
+  tokenOut    String
+  amountIn    BigInt
+  amountOut   BigInt?
+  trader      String
+  txHash      String?
+  status      String   @default("pending") // "pending" | "executed" | "failed"
+  createdAt   DateTime @default(now())
+
+  @@index([trader])
+  @@index([status])
+}
+
+// ════════════════════════════════════════════════════════════════════
+// §8  Notifications  (cross-app)
+// ════════════════════════════════════════════════════════════════════
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String // "oasis_achievement" | "market_sale" | "mining_payout" | "dao_vote" | "bridge_complete"
+  title       String
+  body        String
+  data        Json?
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([createdAt])
+}
