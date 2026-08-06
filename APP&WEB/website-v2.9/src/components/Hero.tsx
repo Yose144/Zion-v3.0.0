@@ -23,7 +23,7 @@ import HolographicEarthLazy from './HolographicEarthLazy';
 import MainnetCountdown from './MainnetCountdown';
 
 const HeroCopy = {
-  mainnetBetaGithub: { cs: `Mainnet Beta · GitHub`, en: `Mainnet Beta · GitHub` },
+  mainnetBetaGithub: { cs: `Mainnet Stable · GitHub`, en: `Mainnet Stable · GitHub` },
 };
 
 export default function Hero() {

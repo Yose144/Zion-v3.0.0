@@ -6,7 +6,7 @@
 > **Stav:** Mainnet Beta — live, pool aktivní, mining v provozu
 > **Oficiální veřejný launch:** 31. prosince 2026
 > **Síť:** `zion-mainnet-1`
-> **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
+> **Genesis hash:** `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122`
 
 ---
 
@@ -158,7 +158,7 @@ Po resetu byl `zion-node` dvakrát ukončen z důvodu nedostatku paměti (OOM), 
 | Těžební horizont | 100+ let + tail ∞ |
 | DAA | LWMA (60 bloků, ±25 %) |
 | Poplatky | Split 89/5/5/1 |
-| Genesis hash | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
+| Genesis hash | `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122` |
 
 ---
 

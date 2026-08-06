@@ -80,7 +80,7 @@ The Mainnet Beta period runs until the official public launch on **31.12.2026**,
 |-----------|-------|
 | Status | **Mainnet Beta** |
 | Protocol | 3.0.6 |
-| Genesis hash | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
+| Genesis hash | `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122` |
 | Official launch | 2026-12-31 |
 | Mining | Active (at your own risk) |
 
@@ -407,7 +407,7 @@ cargo run --release -p zion-core --bin zion-node
 
 | Constant | Value |
 |----------|-------|
-| Genesis hash | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
+| Genesis hash | `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122` |
 | `FLOWERS_PER_ZION` | 1,000,000 (6 decimals) |
 | `BASE_REWARD` | 5,400,067,000 flowers (5,400.067 ZION) |
 | `TAIL_REWARD` | 724,784,723 flowers (~724.785 ZION) |

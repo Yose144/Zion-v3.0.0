@@ -80,7 +80,7 @@ O período Mainnet Beta dura até o lançamento público oficial em **31.12.2026
 |-----------|-------|
 | Status | **Mainnet Beta** |
 | Protocolo | 3.0.6 |
-| Hash do gênesis | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
+| Hash do gênesis | `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122` |
 | Lançamento oficial | 2026-12-31 |
 | Mineração | Ativa (por sua própria conta e risco) |
 
@@ -405,7 +405,7 @@ cargo run --release -p zion-core --bin zion-node
 
 | Constante | Valor |
 |-----------|-------|
-| Hash do gênesis | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
+| Hash do gênesis | `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122` |
 | `FLOWERS_PER_ZION` | 1.000.000 (6 decimais) |
 | `BASE_REWARD` | 5.400.067.000 flowers (5.400,067 ZION) |
 | `TAIL_REWARD` | 724.784.723 flowers (~724,785 ZION) |

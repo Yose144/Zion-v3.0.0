@@ -9,7 +9,7 @@ import { useLang } from '@/contexts/LanguageContext';
 const ReleaseHighlightBannerCopy = {
   dismiss: { cs: `Zavřít`, en: `Dismiss` },
   newRelease: { cs: `Nový release`, en: `New release` },
-  zionV310ReleaseHub: { cs: `ZION v3.1.0 — Terminal Miner & Desktop App`, en: `ZION v3.1.0 — Terminal Miner & Desktop App` },
+  zionV310ReleaseHub: { cs: `ZION v3.2.0 "One Love" — Mainnet Stable`, en: `ZION v3.2.0 "One Love" — Mainnet Stable` },
   oneClickGuiMining: { cs: `GUI těžba na jedno kliknutí`, en: `One-click GUI mining` },
   builtInWalletDashboard: { cs: `Vestavěná peněženka a dashboard`, en: `Built-in wallet & dashboard` },
   allPlatformsAvailable: { cs: `Linux + macOS + Windows`, en: `Linux + macOS + Windows` },
@@ -96,11 +96,11 @@ export default function ReleaseHighlightBanner() {
           <p className="text-base text-gray-300 leading-relaxed mb-5 max-w-3xl">
             {cs ? (
               <>
-                ZION v3.1.0 přináší dvě hlavní novinky: <strong className="text-white font-semibold">Terminal Miner</strong> — one-click GPU auto-detect (CUDA → OpenCL → Metal → CPU) na <strong className="text-white font-semibold">4 platformách</strong> (Linux, macOS Apple Silicon/Intel, Windows) — a <strong className="text-white font-semibold">Desktop App</strong> — GUI aplikaci s vestavěným minerem, peněženkou a dashboardem v reálném čase. Desktop App dostupná pro <strong className="text-white font-semibold">Linux, macOS a Windows</strong>.
+                ZION v3.2.0 "One Love" přináší Mainnet Stable: <strong className="text-white font-semibold">Terminal Miner</strong> — one-click GPU auto-detect (CUDA → OpenCL → Metal → CPU) na <strong className="text-white font-semibold">4 platformách</strong> (Linux, macOS Apple Silicon/Intel, Windows) — a <strong className="text-white font-semibold">Desktop App</strong> — GUI aplikaci s vestavěným minerem, peněženkou a dashboardem v reálném čase. Desktop App dostupná pro <strong className="text-white font-semibold">Linux, macOS a Windows</strong>.
               </>
             ) : (
               <>
-                ZION v3.1.0 brings two main updates: <strong className="text-white font-semibold">Terminal Miner</strong> — one-click GPU auto-detect (CUDA → OpenCL → Metal → CPU) on <strong className="text-white font-semibold">4 platforms</strong> (Linux, macOS Apple Silicon/Intel, Windows) — and <strong className="text-white font-semibold">Desktop App</strong> — a GUI app with built-in miner, wallet, and real-time dashboard. Desktop App available for <strong className="text-white font-semibold">Linux, macOS and Windows</strong>.
+                ZION v3.2.0 "One Love" brings Mainnet Stable: <strong className="text-white font-semibold">Terminal Miner</strong> — one-click GPU auto-detect (CUDA → OpenCL → Metal → CPU) on <strong className="text-white font-semibold">4 platforms</strong> (Linux, macOS Apple Silicon/Intel, Windows) — and <strong className="text-white font-semibold">Desktop App</strong> — a GUI app with built-in miner, wallet, and real-time dashboard. Desktop App available for <strong className="text-white font-semibold">Linux, macOS and Windows</strong>.
               </>
             )}
           </p>

@@ -247,7 +247,7 @@ Udělal tři věci, v tomto pořadí:
 Nový kanonický kořen sítě:
 
 ```text
-4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e
+08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122
 ```
 
 Důvěra se nebuduje tvrzením, že chyba je nemožná. Buduje se veřejnou
@@ -429,7 +429,7 @@ Je to **žijící infrastruktura + kompas**.
 | Typ | nativní L1 coin (Proof-of-Work) |
 | Konsensus | Ekam Deeksha / CosmicHarmony (paměťově náročný PoW) |
 | Protokol | `zion-v3-node/3.0.6` → 3.1 |
-| Genesis hash | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
+| Genesis hash | `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122` |
 | První blok | 4. 12. 2025 |
 | Celková nabídka | 144 000 000 000 ZION |
 | Premine | 16 780 000 000 ZION (transparentní on-chain výstupy) |

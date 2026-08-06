@@ -1,7 +1,7 @@
 # ZION v3 — Kanonický technický whitepaper
 
 > **Verze 3.1** · Mainnet Beta v3.0.6 → Mainnet Alpha 3.1 · červenec 2026 · Licence MIT
-> Genesis hash: `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
+> Genesis hash: `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122`
 > Stav sítě: **Mainnet Beta v3.0.6 → Mainnet Alpha 3.1** (veřejný launch cíl: 31. 12. 2026)
 
 ---
@@ -230,7 +230,7 @@ Genesis blok (výška 0) obsahuje **14 premine výstupů** v celkové hodnotě
 16 780 000 000 ZION. Ve výšce 0 není žádná těžební dotace — premine je
 jediný coinbase.
 
-- **Genesis hash**: `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
+- **Genesis hash**: `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122`
 - **Timestamp**: `1767225600` (2026-01-01 00:00:00 UTC)
 - **Previous hash**: `0000...0000` (samé nuly)
 - **Algoritmus**: `deeksha_lite_v1`
@@ -488,7 +488,7 @@ rozestavěné, ne hotové.
 | Co si ověřit | Kde |
 |---------------|-----|
 | Protokol | `zion-v3-node/3.0.6` |
-| Genesis hash | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
+| Genesis hash | `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122` |
 | Celková nabídka | 144 000 000 000 ZION (`emission.rs`) |
 | Premine | 16 780 000 000 ZION, transparentní výstupy v bloku 0 |
 | Split 89/5/5/1 | Čtyřvýstupová coinbase, vynuceno konsensem |

@@ -27,16 +27,16 @@ export type MiningPoolConfig = {
   lon: number;
 };
 
-// V31 Mainnet Alpha topology: single canonical node on Edge (StatusV3.md).
-//   - V31 Node (Primary / Mainnet Alpha / Pool) — P2P 8335, RPC 9445, Stratum 8444, Pool API 8080
+// One Love Mainnet Stable topology: single canonical node on Edge (StatusV3.md).
+//   - Primary Node (Mainnet Stable / Pool) — P2P 8335, RPC 9445, Stratum 8444, Pool API 8080
 // NOTE: These are built lazily (functions) so that env-var overrides in site.ts
 // (which use bracket notation to avoid Next.js build-time inlining) are read
 // at runtime, not at build time.
 function buildDefaultSeedNodes(): SeedNodeConfig[] {
   return [
     {
-      id: 'v31-edge',
-      name: 'V31 Edge Node',
+      id: 'edge-primary',
+      name: 'Edge Primary Node',
       host: SITE_PRIMARY_HOST,
       region: 'EU',
       lat: 50.08,

@@ -151,7 +151,7 @@ Odpověď je v přestání věřit, že jsem oddělený bod, který musí neust�
 V chrámu Ekam stojí **Golden Orb** — zlatá koule, symbol zlatého vejce, **Hiranyagarbhy**.
 Je to kosmologický klíč: na počátku je zárodek, který obsahuje celek.
 V ZIONu je tím zárodkem **Genesis blok**.
-Má hash `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` a obsahuje záměr celé sítě.
+Má hash `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122` a obsahuje záměr celé sítě.
 Každý další blok nese jeho stopu.
 V zárodku je celá síť — a v každém bloku je celý zárodek.
 
@@ -729,7 +729,7 @@ To je smysl celé knihy: **příběh končí tam, kde začíná tvůj.**
 
 | Tvrzení v příběhu | Realita v kódu / síti | Status |
 |---|---|---|
-| **Genesis blok ZIONu** | Hash `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`, timestamp 1767225600 (1. 1. 2026), algoritmus `deeksha_lite_v1`. | Kód v `V3/L1/core/src/genesis.rs` |
+| **Genesis blok ZIONu** | Hash `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122`, timestamp 1767225600 (1. 1. 2026), algoritmus `deeksha_lite_v1`. | Kód v `V3/L1/core/src/genesis.rs` |
 | **144 miliard ZION, 60s blok** | `max_supply = 144_000_000_000`, block time 60 s. | Hard-coded v kódu |
 | **89/5/5/1 split** | `MINER_SHARE_PERCENT = 0.89`, humanitární 5 %, Issobella 5 %, pool fee 1 %. | `rewards.rs` |
 | **Ekam Deeksha PoW** | Šestifázový pipeline: Hiranyagarbha, Brahma, Yantra, Karma, Chit, Samadhi. | `V31/L1/cosmic-harmony-v3/src/deeksha.rs` |

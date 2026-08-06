@@ -264,7 +264,7 @@ It did three things, in this order:
 The network's new canonical root:
 
 ```text
-4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e
+08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122
 ```
 
 Trust is not built by claiming a mistake is impossible. It is built by
@@ -450,7 +450,7 @@ It is **living infrastructure + a compass**.
 | Type | native L1 coin (Proof-of-Work) |
 | Consensus | Ekam Deeksha / CosmicHarmony (memory-hard PoW) |
 | Protocol | `zion-v3-node/3.0.6` → 3.1 |
-| Genesis hash | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
+| Genesis hash | `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122` |
 | First block | 4 Dec 2025 |
 | Total supply | 144,000,000,000 ZION |
 | Premine | 16,780,000,000 ZION (transparent on-chain outputs) |

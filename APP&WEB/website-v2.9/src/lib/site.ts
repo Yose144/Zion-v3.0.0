@@ -1,18 +1,18 @@
-export const SITE_VERSION = 'v3.1.0';
-export const SITE_RELEASE_NAME = 'Mainnet Alpha';
-export const SITE_RELEASE_TAGLINE = 'V31';
+export const SITE_VERSION = 'v3.2.0';
+export const SITE_RELEASE_NAME = 'One Love';
+export const SITE_RELEASE_TAGLINE = 'Mainnet Stable';
 export const SITE_RELEASE_LABEL = `${SITE_VERSION} "${SITE_RELEASE_NAME}"`;
-export const SITE_RUNTIME_VERSION = 'v3.1.0';
-export const SITE_RUNTIME_NAME = 'V31 canonical · 6-decimal flowers';
+export const SITE_RUNTIME_VERSION = 'v3.2.0';
+export const SITE_RUNTIME_NAME = 'One Love · 6-decimal flowers';
 export const SITE_RUNTIME_LABEL = `${SITE_RUNTIME_VERSION} ${SITE_RUNTIME_NAME}`;
-export const SITE_ENVIRONMENT_LABEL = 'V31 Mainnet Alpha';
-export const SITE_PUBLIC_LAUNCH_STATUS = 'Mainnet Alpha';
+export const SITE_ENVIRONMENT_LABEL = 'One Love Mainnet Stable';
+export const SITE_PUBLIC_LAUNCH_STATUS = 'Mainnet Stable';
 export const SITE_LAUNCH_DATE = '2026-12-31T00:00:00Z';
 export const SITE_LAUNCH_DATE_DISPLAY = '31 December 2026 (New Year\'s Eve)';
 export const SITE_NETWORK_LABEL = `${SITE_ENVIRONMENT_LABEL} · ${SITE_RELEASE_LABEL}`;
 
-// ── Infrastructure (V31 Mainnet Alpha, 2026-08-05) ─────────────────────────
-// Edge server — cloud VPS, public-facing V31 node + pool stratum
+// ── Infrastructure (One Love Mainnet Stable, 2026-08-06) ───────────────────
+// Edge server — cloud VPS, public-facing node + pool stratum
 export const SITE_PRIMARY_HOST = process.env.NEXT_PUBLIC_ZION_RPC_HOST || 'rpc.zionterranova.com';
 export const SITE_PRIMARY_RPC_PORT = 9445;
 export const SITE_PRIMARY_RPC_URL = `${SITE_PRIMARY_HOST}:${SITE_PRIMARY_RPC_PORT}`;
@@ -24,7 +24,7 @@ export const SITE_PRIMARY_DAO_API_URL = process.env.ZION_DAO_API_URL || `http://
 export const SITE_POOL_PRIMARY = `${SITE_PRIMARY_HOST}:8444`;
 
 // Network topology descriptor (operational details are injected via environment variables only)
-export const SITE_NETWORK_TOPOLOGY = 'V31 single-node Mainnet Alpha (V3 archived to archive/V3/)';
+export const SITE_NETWORK_TOPOLOGY = 'single-node Mainnet Stable';
 export const EKAM_GOLDEN_EGG_IMAGE = 'https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/themes/2147915250/settings_images/8802b3-c826-05c7-bcd2-12b608d18d1_ABOUT-ONENESS.webp';
 export const EKAM_BANNER_IMAGE = 'https://onenessoceania.org/wp-content/uploads/2024/04/Ekam-Banner.jpg';
 export const EKAM_FOUNDERS_BANNER_IMAGE = 'https://onenessoceania.org/wp-content/uploads/2024/03/Sri-Amma-Bhagavan-1920x600-1.jpg';
