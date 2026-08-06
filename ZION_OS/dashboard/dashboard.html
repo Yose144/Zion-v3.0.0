@@ -7,7 +7,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>ZION V31 — Mainnet Alpha Command Center</title>
-<meta name="theme-color" content="#0f172a">
+<meta name="theme-color" content="#0d0d0d">
 <link rel="icon" type="image/x-icon" href="/v31/favicon.ico">
 <link rel="apple-touch-icon" href="/v31/symbol-200x200.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,17 +22,17 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
 <script>
 tailwind.config={theme:{extend:{colors:{
-  'zion-gold':'rgb(255 215 0 / <alpha-value>)',
-  'zion-purple':'rgb(147 51 234 / <alpha-value>)',
-  'zion-cyan':'rgb(6 182 212 / <alpha-value>)',
+  'zion-gold':'rgb(252 209 22 / <alpha-value>)',
+  'zion-purple':'rgb(228 30 43 / <alpha-value>)',
+  'zion-cyan':'rgb(7 137 48 / <alpha-value>)',
   'zion-blue':'rgb(30 58 138 / <alpha-value>)',
 }}}};
 </script>
 <style>
 :root{
-  --color-zion-gold:255 215 0;
-  --color-zion-purple:147 51 234;
-  --color-zion-cyan:6 182 212;
+  --color-zion-gold:252 209 22;
+  --color-zion-purple:228 30 43;
+  --color-zion-cyan:7 137 48;
   --color-zion-blue:30 58 138;
   --zion-radius-md:1.2rem;
   --zion-radius-lg:1.65rem;
@@ -42,7 +42,7 @@ tailwind.config={theme:{extend:{colors:{
   --zion-surface-soft:rgba(255,255,255,0.045);
   --zion-surface-hover:rgba(255,255,255,0.075);
   --zion-shadow-panel:0 24px 90px rgba(0,0,0,0.42);
-  --zion-shadow-glow:0 0 42px rgba(147,51,234,0.28);
+  --zion-shadow-glow:0 0 42px rgba(228,30,43,0.28);
 }
 /* Light theme overrides */
 body.light-theme{
@@ -52,12 +52,12 @@ body.light-theme{
   --zion-surface-soft:rgba(0,0,0,0.04);
   --zion-surface-hover:rgba(0,0,0,0.07);
   --zion-shadow-panel:0 12px 40px rgba(0,0,0,0.12);
-  --zion-shadow-glow:0 0 30px rgba(147,51,234,0.12);
-  color:#1a1a2e;
+  --zion-shadow-glow:0 0 30px rgba(228,30,43,0.12);
+  color:#1a1a1a;
   background:
-    radial-gradient(circle at 18% -8%,rgba(147,51,234,0.12),transparent 34rem),
-    radial-gradient(circle at 86% 8%,rgba(6,182,212,0.10),transparent 30rem),
-    radial-gradient(circle at 50% 110%,rgba(255,215,0,0.08),transparent 40rem),
+    radial-gradient(circle at 18% -8%,rgba(228,30,43,0.12),transparent 34rem),
+    radial-gradient(circle at 86% 8%,rgba(7,137,48,0.10),transparent 30rem),
+    radial-gradient(circle at 50% 110%,rgba(252,209,22,0.08),transparent 40rem),
     linear-gradient(180deg,rgba(240,242,248,0.94),rgba(225,228,238,0.94)),
     url('nebula.jpg') center/cover no-repeat fixed;
 }
@@ -68,7 +68,7 @@ body.light-theme .zion-panel{
 body.light-theme .zion-panel-soft{background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.06);}
 body.light-theme .text-gray-400{color:rgba(60,60,80,0.85)!important;}
 body.light-theme .text-gray-500{color:rgba(60,60,80,0.7)!important;}
-body.light-theme .text-white{color:#1a1a2e!important;}
+body.light-theme .text-white{color:#1a1a1a!important;}
 body.light-theme .bg-black\/30{background:rgba(0,0,0,0.05)!important;}
 body.light-theme .bg-black\/40{background:rgba(0,0,0,0.04)!important;}
 body.light-theme .bg-white\/5{background:rgba(0,0,0,0.05)!important;}
@@ -83,10 +83,10 @@ body.light-theme .zion-shell::before{
 body{
   font-family:'Inter',system-ui,sans-serif;
   background:
-    radial-gradient(circle at 18% -8%,rgba(147,51,234,0.22),transparent 34rem),
-    radial-gradient(circle at 86% 8%,rgba(6,182,212,0.16),transparent 30rem),
-    radial-gradient(circle at 50% 110%,rgba(255,215,0,0.12),transparent 40rem),
-    linear-gradient(180deg,rgba(2,4,12,0.82),rgba(0,0,0,0.88)),
+    radial-gradient(circle at 18% -8%,rgba(228,30,43,0.22),transparent 34rem),
+    radial-gradient(circle at 86% 8%,rgba(7,137,48,0.16),transparent 30rem),
+    radial-gradient(circle at 50% 110%,rgba(252,209,22,0.12),transparent 40rem),
+    linear-gradient(180deg,rgba(0,0,0,0.82),rgba(0,0,0,0.88)),
     url('nebula.jpg') center/cover no-repeat fixed;
   color:#fff;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;min-height:100vh;
 }
@@ -118,30 +118,30 @@ body.light-theme .warp-starfield{opacity:0.06;}
 /* Top accent line */
 .zion-panel::before{
   content:"";position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,rgba(255,215,0,0.5),rgba(147,51,234,0.25),transparent 70%);
+  background:linear-gradient(90deg,rgba(252,209,22,0.5),rgba(228,30,43,0.25),transparent 70%);
   border-radius:clamp(1rem,2.5vw,1.5rem) clamp(1rem,2.5vw,1.5rem) 0 0;
   pointer-events:none;z-index:1;
 }
 /* Corner glow */
 .zion-panel::after{
   content:"";position:absolute;top:-4rem;right:-4rem;width:10rem;height:10rem;
-  background:radial-gradient(circle,rgba(255,215,0,0.07),transparent 70%);
+  background:radial-gradient(circle,rgba(252,209,22,0.07),transparent 70%);
   filter:blur(40px);pointer-events:none;z-index:0;opacity:0.6;
 }
 /* Accent-aware: when inside a pane-accent, panels get the pane's color */
 .pane-accent .zion-panel{
-  border-color:rgba(var(--rc,255 215 0),0.15);
-  background:linear-gradient(145deg,rgba(var(--rc,255 215 0),0.06),rgba(15,20,35,0.92));
+  border-color:rgba(var(--rc,252 209 22),0.15);
+  background:linear-gradient(145deg,rgba(var(--rc,252 209 22),0.06),rgba(15,20,35,0.92));
 }
 .pane-accent .zion-panel:hover{
-  border-color:rgba(var(--rc,255 215 0),0.35);
-  box-shadow:0 20px 60px rgba(0,0,0,0.4),0 0 36px rgba(var(--rc,255 215 0),0.12);
+  border-color:rgba(var(--rc,252 209 22),0.35);
+  box-shadow:0 20px 60px rgba(0,0,0,0.4),0 0 36px rgba(var(--rc,252 209 22),0.12);
 }
 .pane-accent .zion-panel::before{
-  background:linear-gradient(90deg,rgb(var(--rc,255 215 0) / 0.55),rgb(var(--rc,255 215 0) / 0.18),transparent 70%);
+  background:linear-gradient(90deg,rgb(var(--rc,252 209 22) / 0.55),rgb(var(--rc,252 209 22) / 0.18),transparent 70%);
 }
 .pane-accent .zion-panel::after{
-  background:radial-gradient(circle,rgba(var(--rc,255 215 0),0.10),transparent 70%);
+  background:radial-gradient(circle,rgba(var(--rc,252 209 22),0.10),transparent 70%);
 }
 .zion-panel-soft{
   position:relative;overflow:hidden;
@@ -151,145 +151,145 @@ body.light-theme .warp-starfield{opacity:0.06;}
   backdrop-filter:blur(10px) saturate(120%);
 }
 .pane-accent .zion-panel-soft{
-  border-color:rgba(var(--rc,255 215 0),0.12);
-  background:rgba(var(--rc,255 215 0),0.03);
+  border-color:rgba(var(--rc,252 209 22),0.12);
+  background:rgba(var(--rc,252 209 22),0.03);
 }
 .zion-panel-hover{transition:border-color 180ms ease,background-color 180ms ease,transform 180ms ease,box-shadow 180ms ease;}
 .zion-panel-hover:hover{transform:translateY(-2px);border-color:var(--zion-border-strong);background-color:var(--zion-surface-hover);box-shadow:var(--zion-shadow-panel),var(--zion-shadow-glow);}
-.zion-kicker{display:inline-flex;align-items:center;gap:0.5rem;border-radius:9999px;border:1px solid rgba(255,255,255,0.12);background:linear-gradient(90deg,rgba(255,255,255,0.07),rgba(255,255,255,0.035));padding:0.3rem 0.8rem;font-size:0.65rem;font-weight:600;letter-spacing:0.28em;text-transform:uppercase;color:#d1d5db;}
-.zion-button-primary{display:inline-flex !important;align-items:center;justify-content:center;gap:0.55rem;border-radius:var(--zion-radius-md);background:linear-gradient(110deg,#ffd700,#9333ea 52%,#06b6d4);padding:0.9rem 1.35rem;font-weight:700;color:#fff !important;box-shadow:0 18px 45px rgba(147,51,234,0.34);transition:transform 180ms ease,box-shadow 180ms ease,filter 180ms ease;border:none;cursor:pointer;}
-.zion-button-primary:hover{transform:translateY(-1px);box-shadow:0 24px 60px rgba(147,51,234,0.44);filter:saturate(1.08);}
+.zion-kicker{display:inline-flex;align-items:center;gap:0.5rem;border-radius:9999px;border:1px solid rgba(255,255,255,0.12);background:linear-gradient(90deg,rgba(255,255,255,0.07),rgba(255,255,255,0.035));padding:0.3rem 0.8rem;font-size:0.65rem;font-weight:600;letter-spacing:0.28em;text-transform:uppercase;color:#d4d4d4;}
+.zion-button-primary{display:inline-flex !important;align-items:center;justify-content:center;gap:0.55rem;border-radius:var(--zion-radius-md);background:linear-gradient(110deg,#fcd116,#e41e2b 52%,#078930);padding:0.9rem 1.35rem;font-weight:700;color:#fff !important;box-shadow:0 18px 45px rgba(228,30,43,0.34);transition:transform 180ms ease,box-shadow 180ms ease,filter 180ms ease;border:none;cursor:pointer;}
+.zion-button-primary:hover{transform:translateY(-1px);box-shadow:0 24px 60px rgba(228,30,43,0.44);filter:saturate(1.08);}
 .zion-button-secondary{display:inline-flex !important;align-items:center;justify-content:center;gap:0.55rem;border-radius:var(--zion-radius-md);border:1px solid rgba(255,255,255,0.18);background:rgba(255,255,255,0.12);padding:0.7rem 1.1rem;font-weight:600;color:#fff !important;transition:border-color 180ms ease,background-color 180ms ease,transform 180ms ease;cursor:pointer;}
 .zion-button-secondary:hover{transform:translateY(-1px);border-color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.2);}
 button{display:inline-flex;align-items:center;justify-content:center;cursor:pointer;}
-.text-gradient{background-clip:text;-webkit-background-clip:text;color:transparent;background-image:linear-gradient(to right,#ffd700,#9333ea,#06b6d4);}
-.text-gradient-soft{background-clip:text;-webkit-background-clip:text;color:transparent;background-image:linear-gradient(110deg,#fff7c2,#ffd700,#06b6d4);}
-.glow{text-shadow:0 0 20px rgba(255,215,0,0.5);}
+.text-gradient{background-clip:text;-webkit-background-clip:text;color:transparent;background-image:linear-gradient(to right,#fcd116,#e41e2b,#078930);}
+.text-gradient-soft{background-clip:text;-webkit-background-clip:text;color:transparent;background-image:linear-gradient(110deg,#fcd116,#fcd116,#078930);}
+.glow{text-shadow:0 0 20px rgba(252,209,22,0.5);}
 .zion-divider{height:1px;border:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.14),transparent);}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
 @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
-@keyframes pulse-glow{0%,100%{box-shadow:0 0 5px rgba(255,215,0,0.3)}50%{box-shadow:0 0 30px rgba(255,215,0,0.6)}}
+@keyframes pulse-glow{0%,100%{box-shadow:0 0 5px rgba(252,209,22,0.3)}50%{box-shadow:0 0 30px rgba(252,209,22,0.6)}}
 .float{animation:float 6s ease-in-out infinite;}
-.shimmer{background:linear-gradient(90deg,transparent 0%,rgba(255,215,0,0.2) 50%,transparent 100%);background-size:200% 100%;animation:shimmer 3s infinite;}
+.shimmer{background:linear-gradient(90deg,transparent 0%,rgba(252,209,22,0.2) 50%,transparent 100%);background-size:200% 100%;animation:shimmer 3s infinite;}
 .pulse-gold{animation:pulse-glow 3s infinite;}
-.tab-btn{position:relative;padding:0.7rem 1.1rem;font-size:0.85rem;font-weight:600;color:#9ca3af;border-radius:0.75rem;transition:all 180ms;cursor:pointer;background:transparent;border:1px solid transparent;white-space:nowrap;}
+.tab-btn{position:relative;padding:0.7rem 1.1rem;font-size:0.85rem;font-weight:600;color:#a3a3a3;border-radius:0.75rem;transition:all 180ms;cursor:pointer;background:transparent;border:1px solid transparent;white-space:nowrap;}
 .tab-btn:hover{color:#fff;background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.08);}
-.tab-active{color:#fff;background:linear-gradient(135deg,rgba(255,215,0,0.08),rgba(147,51,234,0.08));border-color:rgba(255,215,0,0.3) !important;box-shadow:0 4px 20px rgba(147,51,234,0.2);}
+.tab-active{color:#fff;background:linear-gradient(135deg,rgba(252,209,22,0.08),rgba(228,30,43,0.08));border-color:rgba(252,209,22,0.3) !important;box-shadow:0 4px 20px rgba(228,30,43,0.2);}
 /* Accent-aware tab active */
 .pane-accent .tab-active{
-  background:linear-gradient(135deg,rgba(var(--rc,255 215 0),0.1),rgba(var(--rc,255 215 0),0.04));
-  border-color:rgba(var(--rc,255 215 0),0.35) !important;
-  box-shadow:0 4px 20px rgba(var(--rc,255 215 0),0.15);
+  background:linear-gradient(135deg,rgba(var(--rc,252 209 22),0.1),rgba(var(--rc,252 209 22),0.04));
+  border-color:rgba(var(--rc,252 209 22),0.35) !important;
+  box-shadow:0 4px 20px rgba(var(--rc,252 209 22),0.15);
 }
 .pane-accent .tab-btn:hover{
-  color:rgb(var(--rc,255 215 0));
-  background:rgba(var(--rc,255 215 0),0.04);
-  border-color:rgba(var(--rc,255 215 0),0.1);
+  color:rgb(var(--rc,252 209 22));
+  background:rgba(var(--rc,252 209 22),0.04);
+  border-color:rgba(var(--rc,252 209 22),0.1);
 }
 /* Accent-aware kicker */
 .pane-accent .zion-kicker{
-  border-color:rgba(var(--rc,255 215 0),0.2);
-  background:linear-gradient(90deg,rgba(var(--rc,255 215 0),0.08),rgba(var(--rc,255 215 0),0.03));
-  color:rgb(var(--rc,255 215 0));
+  border-color:rgba(var(--rc,252 209 22),0.2);
+  background:linear-gradient(90deg,rgba(var(--rc,252 209 22),0.08),rgba(var(--rc,252 209 22),0.03));
+  color:rgb(var(--rc,252 209 22));
 }
 .log-tail{font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.6;}
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:3px;}
 ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.2);}
 .svc-card{position:relative;overflow:hidden;}
-.svc-card::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 80% 0%,rgba(255,215,0,0.08),transparent 60%);pointer-events:none;}
+.svc-card::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 80% 0%,rgba(252,209,22,0.08),transparent 60%);pointer-events:none;}
 /* Accent-aware svc card glow */
 .pane-accent .svc-card::before{
-  background:radial-gradient(circle at 80% 0%,rgba(var(--rc,255 215 0),0.08),transparent 60%);
+  background:radial-gradient(circle at 80% 0%,rgba(var(--rc,252 209 22),0.08),transparent 60%);
 }
-.svc-live{border-color:rgba(16,185,129,0.5) !important;box-shadow:0 0 30px rgba(16,185,129,0.2);}
-.alert-critical{background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(239,68,68,0.05));border-color:rgba(239,68,68,0.4);}
-.alert-warning{background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.05));border-color:rgba(245,158,11,0.4);}
-.alert-info{background:linear-gradient(135deg,rgba(59,130,246,0.15),rgba(59,130,246,0.05));border-color:rgba(59,130,246,0.4);}
-.alert-success{background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(16,185,129,0.05));border-color:rgba(16,185,129,0.4);}
+.svc-live{border-color:rgba(7,137,48,0.5) !important;box-shadow:0 0 30px rgba(7,137,48,0.2);}
+.alert-critical{background:linear-gradient(135deg,rgba(228,30,43,0.15),rgba(228,30,43,0.05));border-color:rgba(228,30,43,0.4);}
+.alert-warning{background:linear-gradient(135deg,rgba(252,209,22,0.15),rgba(252,209,22,0.05));border-color:rgba(252,209,22,0.4);}
+.alert-info{background:linear-gradient(135deg,rgba(7,137,48,0.15),rgba(7,137,48,0.05));border-color:rgba(7,137,48,0.4);}
+.alert-success{background:linear-gradient(135deg,rgba(7,137,48,0.15),rgba(7,137,48,0.05));border-color:rgba(7,137,48,0.4);}
 .tooltip{position:relative;}
 .tooltip:hover .tip{visibility:visible;opacity:1;}
-.tip{visibility:hidden;opacity:0;position:absolute;bottom:130%;left:50%;transform:translateX(-50%);background:rgba(7,10,20,0.95);border:1px solid rgba(255,255,255,0.15);padding:6px 10px;border-radius:6px;font-size:11px;white-space:nowrap;z-index:50;transition:opacity 0.2s;font-weight:500;color:#e5e7eb;}
+.tip{visibility:hidden;opacity:0;position:absolute;bottom:130%;left:50%;transform:translateX(-50%);background:rgba(7,10,20,0.95);border:1px solid rgba(255,255,255,0.15);padding:6px 10px;border-radius:6px;font-size:11px;white-space:nowrap;z-index:50;transition:opacity 0.2s;font-weight:500;color:#d4d4d4;}
 .hero-orb{position:absolute;border-radius:50%;filter:blur(60px);pointer-events:none;}
 /* ── Top Navbar ── */
 .top-nav{display:flex;align-items:center;gap:0.25rem;flex-wrap:wrap;padding:0.5rem 1rem;margin-bottom:1rem;background:rgba(15,20,35,0.85);border:1px solid rgba(255,255,255,0.1);border-radius:1rem;backdrop-filter:blur(10px);position:sticky;top:0;z-index:50;}
 .nav-group{position:relative;}
-.nav-group>button{padding:0.4rem 0.7rem;font-size:0.78rem;font-weight:600;color:#9ca3af;background:transparent;border:1px solid transparent;border-radius:0.5rem;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.nav-group>button{padding:0.4rem 0.7rem;font-size:0.78rem;font-weight:600;color:#a3a3a3;background:transparent;border:1px solid transparent;border-radius:0.5rem;cursor:pointer;transition:all .15s;white-space:nowrap;}
 .nav-group>button:hover{color:#fff;background:rgba(255,255,255,0.05);}
-.nav-group>button.tab-active{color:#fff;background:linear-gradient(135deg,rgba(255,215,0,0.12),rgba(147,51,234,0.12));border-color:rgba(255,215,0,0.3);box-shadow:0 4px 20px rgba(147,51,234,0.2);}
+.nav-group>button.tab-active{color:#fff;background:linear-gradient(135deg,rgba(252,209,22,0.12),rgba(228,30,43,0.12));border-color:rgba(252,209,22,0.3);box-shadow:0 4px 20px rgba(228,30,43,0.2);}
 /* Accent-aware nav active */
 .pane-accent .nav-group>button.tab-active{
-  background:linear-gradient(135deg,rgba(var(--rc,255 215 0),0.12),rgba(var(--rc,255 215 0),0.04));
-  border-color:rgba(var(--rc,255 215 0),0.3);
-  box-shadow:0 4px 20px rgba(var(--rc,255 215 0),0.15);
+  background:linear-gradient(135deg,rgba(var(--rc,252 209 22),0.12),rgba(var(--rc,252 209 22),0.04));
+  border-color:rgba(var(--rc,252 209 22),0.3);
+  box-shadow:0 4px 20px rgba(var(--rc,252 209 22),0.15);
 }
 .nav-dropdown{display:none;position:absolute;top:100%;left:0;min-width:200px;background:rgba(7,10,20,0.98);border:1px solid rgba(255,255,255,0.12);border-radius:0.75rem;padding:0.5rem;z-index:100;box-shadow:0 24px 60px rgba(0,0,0,0.5);}
 .nav-group:hover .nav-dropdown{display:block;}
-.nav-dropdown button{display:block;width:100%;text-align:left;padding:0.4rem 0.7rem;font-size:0.75rem;font-weight:500;color:#9ca3af;background:transparent;border:1px solid transparent;border-radius:0.4rem;cursor:pointer;transition:all .1s;white-space:nowrap;}
+.nav-dropdown button{display:block;width:100%;text-align:left;padding:0.4rem 0.7rem;font-size:0.75rem;font-weight:500;color:#a3a3a3;background:transparent;border:1px solid transparent;border-radius:0.4rem;cursor:pointer;transition:all .1s;white-space:nowrap;}
 .nav-dropdown button:hover{color:#fff;background:rgba(255,255,255,0.05);}
-.nav-dropdown button.tab-active{color:#fff;background:linear-gradient(135deg,rgba(255,215,0,0.08),rgba(147,51,234,0.08));}
+.nav-dropdown button.tab-active{color:#fff;background:linear-gradient(135deg,rgba(252,209,22,0.08),rgba(228,30,43,0.08));}
 [id^="pane-"]{max-width:100%;}
 @media(max-width:1024px){.top-nav{gap:0.15rem;padding:0.4rem;}.nav-group>button{font-size:0.7rem;padding:0.3rem 0.5rem;}}
 /* NCL Panel styles */
-.ncl-tab-btn{padding:0.5rem 0.85rem;font-size:0.75rem;font-weight:600;border-radius:0.65rem;cursor:pointer;transition:all 180ms;color:#9ca3af;background:transparent;border:1px solid transparent;}
+.ncl-tab-btn{padding:0.5rem 0.85rem;font-size:0.75rem;font-weight:600;border-radius:0.65rem;cursor:pointer;transition:all 180ms;color:#a3a3a3;background:transparent;border:1px solid transparent;}
 .ncl-tab-btn:hover{color:#fff;background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.08);}
-.ncl-tab-btn.active{color:#e9d5ff;background:linear-gradient(135deg,rgba(147,51,234,0.12),rgba(6,182,212,0.08));border-color:rgba(147,51,234,0.35);box-shadow:0 4px 16px rgba(147,51,234,0.2);}
+.ncl-tab-btn.active{color:#e41e2b;background:linear-gradient(135deg,rgba(228,30,43,0.12),rgba(7,137,48,0.08));border-color:rgba(228,30,43,0.35);box-shadow:0 4px 16px rgba(228,30,43,0.2);}
 /* Accent-aware NCL tabs */
 .pane-accent .ncl-tab-btn.active{
-  background:linear-gradient(135deg,rgba(var(--rc,255 215 0),0.12),rgba(var(--rc,255 215 0),0.04));
-  border-color:rgba(var(--rc,255 215 0),0.35);
-  box-shadow:0 4px 16px rgba(var(--rc,255 215 0),0.15);
+  background:linear-gradient(135deg,rgba(var(--rc,252 209 22),0.12),rgba(var(--rc,252 209 22),0.04));
+  border-color:rgba(var(--rc,252 209 22),0.35);
+  box-shadow:0 4px 16px rgba(var(--rc,252 209 22),0.15);
 }
 .pane-accent .ncl-tab-btn:hover{
-  color:rgb(var(--rc,255 215 0));
-  background:rgba(var(--rc,255 215 0),0.04);
+  color:rgb(var(--rc,252 209 22));
+  background:rgba(var(--rc,252 209 22),0.04);
 }
-@keyframes ncl-heartbeat{0%,100%{box-shadow:0 0 4px rgba(16,185,129,0.3)}50%{box-shadow:0 0 14px rgba(16,185,129,0.8)}}
-.ncl-dot-live{width:8px;height:8px;border-radius:50%;background:#10b981;animation:ncl-heartbeat 2s infinite;}
-.ncl-dot-off{width:8px;height:8px;border-radius:50%;background:#ef4444;}
+@keyframes ncl-heartbeat{0%,100%{box-shadow:0 0 4px rgba(7,137,48,0.3)}50%{box-shadow:0 0 14px rgba(7,137,48,0.8)}}
+.ncl-dot-live{width:8px;height:8px;border-radius:50%;background:#078930;animation:ncl-heartbeat 2s infinite;}
+.ncl-dot-off{width:8px;height:8px;border-radius:50%;background:#e41e2b;}
 .ncl-worker-row{transition:background 150ms,transform 150ms;cursor:pointer;}
 .ncl-worker-row:hover{background:rgba(255,255,255,0.03);transform:translateX(2px);}
-.ncl-medal-gold{background:linear-gradient(135deg,#fbbf24,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;}
-.ncl-medal-silver{background:linear-gradient(135deg,#d1d5db,#9ca3af);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;}
-.ncl-medal-bronze{background:linear-gradient(135deg,#f59e0b,#b45309);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;}
+.ncl-medal-gold{background:linear-gradient(135deg,#fcd116,#fcd116);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;}
+.ncl-medal-silver{background:linear-gradient(135deg,#d4d4d4,#a3a3a3);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;}
+.ncl-medal-bronze{background:linear-gradient(135deg,#fcd116,#e41e2b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;}
 .ncl-status-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:9999px;font-size:10px;font-weight:700;letter-spacing:0.04em;}
-.ncl-st-queued{background:rgba(251,191,36,0.12);color:#fbbf24;border:1px solid rgba(251,191,36,0.2);}
-.ncl-st-running{background:rgba(96,165,250,0.12);color:#60a5fa;border:1px solid rgba(96,165,250,0.2);}
-.ncl-st-completed{background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.2);}
-.ncl-st-failed{background:rgba(248,113,113,0.12);color:#f87171;border:1px solid rgba(248,113,113,0.2);}
+.ncl-st-queued{background:rgba(252,209,22,0.12);color:#fcd116;border:1px solid rgba(252,209,22,0.2);}
+.ncl-st-running{background:rgba(7,137,48,0.12);color:#078930;border:1px solid rgba(7,137,48,0.2);}
+.ncl-st-completed{background:rgba(7,137,48,0.12);color:#078930;border:1px solid rgba(7,137,48,0.2);}
+.ncl-st-failed{background:rgba(228,30,43,0.12);color:#e41e2b;border:1px solid rgba(228,30,43,0.2);}
 .ncl-score-bar{height:5px;border-radius:9999px;background:rgba(255,255,255,0.06);overflow:hidden;}
-.ncl-score-fill{height:100%;border-radius:9999px;background:linear-gradient(90deg,#9333ea,#06b6d4);transition:width 400ms ease;}
-input[type=range].ncl-slider{-webkit-appearance:none;height:6px;border-radius:9999px;background:linear-gradient(90deg,#3b82f6,#9333ea,#ef4444);outline:none;}
-input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 0 8px rgba(147,51,234,0.5);cursor:pointer;}
+.ncl-score-fill{height:100%;border-radius:9999px;background:linear-gradient(90deg,#e41e2b,#078930);transition:width 400ms ease;}
+input[type=range].ncl-slider{-webkit-appearance:none;height:6px;border-radius:9999px;background:linear-gradient(90deg,#078930,#e41e2b,#e41e2b);outline:none;}
+input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 0 8px rgba(228,30,43,0.5);cursor:pointer;}
 
 /* ── Service Telemetry Detail Cards (Overview) ── */
 .telemetry-detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;}
 .telemetry-detail-card{background:rgba(15,20,35,0.92);border:1px solid rgba(255,255,255,0.1);border-radius:1.2rem;padding:1rem;position:relative;overflow:hidden;transition:border-color .2s,box-shadow .2s;backdrop-filter:blur(8px);}
-.telemetry-detail-card:hover{border-color:rgba(255,255,255,0.2);box-shadow:0 20px 60px rgba(0,0,0,0.4),0 0 30px rgba(var(--rc,255 215 0),0.08);}
+.telemetry-detail-card:hover{border-color:rgba(255,255,255,0.2);box-shadow:0 20px 60px rgba(0,0,0,0.4),0 0 30px rgba(var(--rc,252 209 22),0.08);}
 /* Accent-aware telemetry cards */
 .pane-accent .telemetry-detail-card{
-  border-color:rgba(var(--rc,255 215 0),0.1);
+  border-color:rgba(var(--rc,252 209 22),0.1);
 }
 .pane-accent .telemetry-detail-card:hover{
-  border-color:rgba(var(--rc,255 215 0),0.28);
-  box-shadow:0 20px 60px rgba(0,0,0,0.4),0 0 30px rgba(var(--rc,255 215 0),0.1);
+  border-color:rgba(var(--rc,252 209 22),0.28);
+  box-shadow:0 20px 60px rgba(0,0,0,0.4),0 0 30px rgba(var(--rc,252 209 22),0.1);
 }
 .telemetry-detail-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;}
-.tdc-node::before{background:linear-gradient(90deg,#10b981,#059669);}
-.tdc-pool::before{background:linear-gradient(90deg,#ffd700,#b8981a);}
-.tdc-dao::before{background:linear-gradient(90deg,#9333ea,#6b21a8);}
-.tdc-warp::before{background:linear-gradient(90deg,#06b6d4,#0891b2);}
-.tdc-agent::before{background:linear-gradient(90deg,#10b981,#059669);}
-.tdc-website::before{background:linear-gradient(90deg,#ffd700,#b8981a);}
+.tdc-node::before{background:linear-gradient(90deg,#078930,#078930);}
+.tdc-pool::before{background:linear-gradient(90deg,#fcd116,#fcd116);}
+.tdc-dao::before{background:linear-gradient(90deg,#e41e2b,#e41e2b);}
+.tdc-warp::before{background:linear-gradient(90deg,#078930,#078930);}
+.tdc-agent::before{background:linear-gradient(90deg,#078930,#078930);}
+.tdc-website::before{background:linear-gradient(90deg,#fcd116,#fcd116);}
 .tdc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;}
 .tdc-name{font-weight:700;font-size:.9rem;color:#fff;display:flex;align-items:center;gap:.5rem;}
 .tdc-status{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:.15rem .5rem;border-radius:9999px;}
-.tdc-online{color:#10b981;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);}
-.tdc-offline{color:#ef4444;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);}
+.tdc-online{color:#078930;background:rgba(7,137,48,0.1);border:1px solid rgba(7,137,48,0.25);}
+.tdc-offline{color:#e41e2b;background:rgba(228,30,43,0.1);border:1px solid rgba(228,30,43,0.25);}
 .tdc-body{display:grid;grid-template-columns:1fr 1fr;gap:.5rem .75rem;}
 .tdc-row{display:flex;flex-direction:column;gap:.1rem;}
 .tdc-label{font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;color:#888;}
-.tdc-value{font-size:.8rem;font-weight:600;color:#e0e0e0;font-family:'JetBrains Mono',monospace;word-break:break-word;}
+.tdc-value{font-size:.8rem;font-weight:600;color:#d4d4d4;font-family:'JetBrains Mono',monospace;word-break:break-word;}
 .tdc-value.small{font-size:.65rem;}
 @media(max-width:1024px){.telemetry-detail-grid{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:640px){.telemetry-detail-grid{grid-template-columns:1fr;}}
@@ -329,7 +329,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 .zion-rainbow-card{
   position:relative;
   border-radius:clamp(1.2rem,2vw,1.65rem);
-  border:1px solid rgba(var(--rc,255 215 0),0.18);
+  border:1px solid rgba(var(--rc,252 209 22),0.18);
   background:rgba(15,20,35,0.92);
   backdrop-filter:blur(12px);
   box-shadow:0 20px 60px rgba(0,0,0,0.4);
@@ -338,24 +338,24 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 }
 .zion-rainbow-card::before{
   content:"";position:absolute;top:0;left:0;right:0;height:3px;
-  background:linear-gradient(90deg,rgb(var(--rc,255 215 0) / 0.8),rgb(var(--rc,255 215 0) / 0.3),transparent);
+  background:linear-gradient(90deg,rgb(var(--rc,252 209 22) / 0.8),rgb(var(--rc,252 209 22) / 0.3),transparent);
 }
 .zion-rainbow-card:hover{
-  border-color:rgba(var(--rc,255 215 0),0.38);
-  box-shadow:0 24px 80px rgba(0,0,0,0.45),0 0 40px rgba(var(--rc,255 215 0),0.12);
+  border-color:rgba(var(--rc,252 209 22),0.38);
+  box-shadow:0 24px 80px rgba(0,0,0,0.45),0 0 40px rgba(var(--rc,252 209 22),0.12);
   transform:translateY(-2px);
 }
 
 /* ── Rainbow Sub-card — inner tile with color accent ── */
 .zion-rainbow-sub{
   border-radius:1.2rem;
-  border:1px solid rgba(var(--rc,255 215 0),0.12);
-  background:rgba(var(--rc,255 215 0),0.04);
+  border:1px solid rgba(var(--rc,252 209 22),0.12);
+  background:rgba(var(--rc,252 209 22),0.04);
   transition:border-color 180ms ease,background 180ms ease;
 }
 .zion-rainbow-sub:hover{
-  border-color:rgba(var(--rc,255 215 0),0.25);
-  background:rgba(var(--rc,255 215 0),0.07);
+  border-color:rgba(var(--rc,252 209 22),0.25);
+  background:rgba(var(--rc,252 209 22),0.07);
 }
 
 /* ── Section — standard content panel ── */
@@ -383,30 +383,30 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 .zion-cta-banner{
   border-radius:clamp(1.2rem,2vw,1.65rem);
   border:1px solid rgba(255,255,255,0.12);
-  background:linear-gradient(135deg,rgba(147,51,234,0.12),rgba(255,215,0,0.06),rgba(6,182,212,0.08));
+  background:linear-gradient(135deg,rgba(228,30,43,0.12),rgba(252,209,22,0.06),rgba(7,137,48,0.08));
   backdrop-filter:blur(10px);
 }
 
 /* ── Pane accent system — auto-applied per pane ID ── */
 .pane-accent{
-  --rc:255 215 0; /* default gold */
+  --rc:252 209 22; /* default gold */
 }
 .pane-accent .zion-pane-header{
   display:flex;align-items:center;gap:0.6rem;margin-bottom:1rem;
   padding-bottom:0.75rem;
-  border-bottom:1px solid rgba(var(--rc,255 215 0),0.15);
+  border-bottom:1px solid rgba(var(--rc,252 209 22),0.15);
 }
 .pane-accent .zion-pane-header .pane-icon{
   width:2.5rem;height:2.5rem;border-radius:0.75rem;
   display:flex;align-items:center;justify-content:center;font-size:1.3rem;
-  background:rgba(var(--rc,255 215 0),0.12);
-  border:1px solid rgba(var(--rc,255 215 0),0.2);
+  background:rgba(var(--rc,252 209 22),0.12);
+  border:1px solid rgba(var(--rc,252 209 22),0.2);
 }
 .pane-accent .zion-pane-header h2{
   font-size:1.5rem;font-weight:800;color:#fff;
 }
 .pane-accent .zion-pane-header .pane-sub{
-  font-size:0.75rem;color:#9ca3af;font-weight:500;
+  font-size:0.75rem;color:#a3a3a3;font-weight:500;
 }
 
 /* ── Stat card — unified metric display ── */
@@ -418,7 +418,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   transition:border-color 180ms,transform 180ms;
 }
 .zion-stat-card:hover{
-  border-color:rgba(var(--rc,255 215 0),0.25);
+  border-color:rgba(var(--rc,252 209 22),0.25);
   transform:translateY(-1px);
 }
 .zion-stat-card .stat-label{
@@ -430,7 +430,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   font-family:'JetBrains Mono',monospace;
 }
 .zion-stat-card .stat-sub{
-  font-size:0.7rem;color:#9ca3af;
+  font-size:0.7rem;color:#a3a3a3;
 }
 
 /* ── Badge system ── */
@@ -439,11 +439,11 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   padding:0.15rem 0.6rem;border-radius:9999px;
   font-size:0.65rem;font-weight:700;letter-spacing:0.04em;
 }
-.zion-badge-success{background:rgba(16,185,129,0.12);color:#34d399;border:1px solid rgba(16,185,129,0.25);}
-.zion-badge-warning{background:rgba(251,191,36,0.12);color:#fbbf24;border:1px solid rgba(251,191,36,0.25);}
-.zion-badge-danger{background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.25);}
-.zion-badge-info{background:rgba(59,130,246,0.12);color:#60a5fa;border:1px solid rgba(59,130,246,0.25);}
-.zion-badge-accent{background:rgba(var(--rc,255 215 0),0.12);color:rgb(var(--rc,255 215 0));border:1px solid rgba(var(--rc,255 215 0),0.25);}
+.zion-badge-success{background:rgba(7,137,48,0.12);color:#078930;border:1px solid rgba(7,137,48,0.25);}
+.zion-badge-warning{background:rgba(252,209,22,0.12);color:#fcd116;border:1px solid rgba(252,209,22,0.25);}
+.zion-badge-danger{background:rgba(228,30,43,0.12);color:#e41e2b;border:1px solid rgba(228,30,43,0.25);}
+.zion-badge-info{background:rgba(7,137,48,0.12);color:#078930;border:1px solid rgba(7,137,48,0.25);}
+.zion-badge-accent{background:rgba(var(--rc,252 209 22),0.12);color:rgb(var(--rc,252 209 22));border:1px solid rgba(var(--rc,252 209 22),0.25);}
 
 /* ── Table styling ── */
 .zion-table{width:100%;border-collapse:collapse;}
@@ -455,11 +455,11 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 }
 .zion-table td{
   padding:0.6rem 0.75rem;
-  font-size:0.8rem;color:#d1d5db;
+  font-size:0.8rem;color:#d4d4d4;
   border-bottom:1px solid rgba(255,255,255,0.04);
 }
 .zion-table tr:hover td{
-  background:rgba(var(--rc,255 215 0),0.03);
+  background:rgba(var(--rc,252 209 22),0.03);
 }
 
 /* ═══ ZION 2-Floor Navigation ═══ */
@@ -498,27 +498,27 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   display:flex;align-items:center;gap:0.6rem;
   font-weight:800;font-size:0.95rem;
   background-clip:text;-webkit-background-clip:text;color:transparent;
-  background-image:linear-gradient(to right,#ffd700,#9333ea,#06b6d4);
+  background-image:linear-gradient(to right,#fcd116,#e41e2b,#078930);
   margin-right:auto;
 }
 .zion-nav-brand .logo-mark{
   width:1.9rem;height:1.9rem;border-radius:0.55rem;
   display:flex;align-items:center;justify-content:center;
-  background:linear-gradient(135deg,rgb(255 215 0),rgb(147 51 234) 50%,rgb(6 182 212));
+  background:linear-gradient(135deg,rgb(252 209 22),rgb(228 30 43) 50%,rgb(7 137 48));
   color:#000;font-weight:900;font-size:1rem;
 }
 .zion-nav-group{position:relative;z-index:60;}
 .zion-nav-group > button{
   padding:0.35rem 0.6rem;font-size:0.74rem;font-weight:600;
-  color:#9ca3af;background:transparent;border:1px solid transparent;
+  color:#a3a3a3;background:transparent;border:1px solid transparent;
   border-radius:0.55rem;cursor:pointer;transition:all .15s;white-space:nowrap;
 }
 .zion-nav-group > button:hover{color:#fff;background:rgba(255,255,255,0.05);}
 .zion-nav-group > button.tab-active{
   color:#fff;
-  background:linear-gradient(135deg,rgba(255,215,0,0.12),rgba(147,51,234,0.12));
-  border-color:rgba(255,215,0,0.35);
-  box-shadow:0 4px 20px rgba(147,51,234,0.2);
+  background:linear-gradient(135deg,rgba(252,209,22,0.12),rgba(228,30,43,0.12));
+  border-color:rgba(252,209,22,0.35);
+  box-shadow:0 4px 20px rgba(228,30,43,0.2);
 }
 .zion-nav-dropdown{
   display:none;position:absolute;top:100%;left:0;min-width:200px;
@@ -531,13 +531,13 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 .zion-nav-dropdown button{
   display:block;width:100%;text-align:left;
   padding:0.4rem 0.7rem;font-size:0.75rem;font-weight:500;
-  color:#9ca3af;background:transparent;border:1px solid transparent;
+  color:#a3a3a3;background:transparent;border:1px solid transparent;
   border-radius:0.4rem;cursor:pointer;transition:all .1s;white-space:nowrap;
 }
 .zion-nav-dropdown button:hover{color:#fff;background:rgba(255,255,255,0.05);}
 .zion-nav-dropdown button.tab-active{
   color:#fff;
-  background:linear-gradient(135deg,rgba(255,215,0,0.08),rgba(147,51,234,0.08));
+  background:linear-gradient(135deg,rgba(252,209,22,0.08),rgba(228,30,43,0.08));
 }
 .zion-nav-group > button i,
 .zion-nav-dropdown button i,
@@ -548,25 +548,25 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 .zion-quick-link{
   display:flex;align-items:center;gap:0.35rem;
   padding:0.35rem 0.55rem;font-size:0.7rem;font-weight:600;
-  color:#9ca3af;background:transparent;border:1px solid transparent;
+  color:#a3a3a3;background:transparent;border:1px solid transparent;
   border-radius:0.55rem;cursor:pointer;transition:all .15s;white-space:nowrap;
 }
 .zion-quick-link:hover{color:#fff;background:rgba(255,255,255,0.05);}
 .zion-quick-link .zql-dot{
   width:0.45rem;height:0.45rem;border-radius:50%;
-  background:rgb(var(--qrc,255 215 0));
-  box-shadow:0 0 8px rgb(var(--qrc,255 215 0)/0.6);
+  background:rgb(var(--qrc,252 209 22));
+  box-shadow:0 0 8px rgb(var(--qrc,252 209 22)/0.6);
 }
 .zion-quick-link.tab-active{
-  color:rgb(var(--qrc,255 215 0));
-  background:rgba(var(--qrc,255 215 0),0.08);
-  border-color:rgba(var(--qrc,255 215 0),0.3);
+  color:rgb(var(--qrc,252 209 22));
+  background:rgba(var(--qrc,252 209 22),0.08);
+  border-color:rgba(var(--qrc,252 209 22),0.3);
 }
 .zion-action-bar{display:flex;align-items:center;gap:0.4rem;margin-left:auto;}
 .zion-action-btn{
   width:2rem;height:2rem;border-radius:0.55rem;
   display:flex;align-items:center;justify-content:center;
-  font-size:0.85rem;color:#d1d5db;background:rgba(255,255,255,0.05);
+  font-size:0.85rem;color:#d4d4d4;background:rgba(255,255,255,0.05);
   border:1px solid rgba(255,255,255,0.1);cursor:pointer;transition:all .15s;
 }
 .zion-action-btn:hover{background:rgba(255,255,255,0.1);color:#fff;transform:translateY(-1px);}
@@ -579,8 +579,8 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 @media(min-width:1024px){.zion-hero-grid{grid-template-columns:repeat(4,minmax(0,1fr));}}
 .zion-hero-card{
   position:relative;border-radius:clamp(1rem,2vw,1.5rem);
-  border:1px solid rgba(var(--rc,255 215 0),0.18);
-  background:linear-gradient(145deg,rgba(var(--rc,255 215 0),0.09),rgba(15,20,35,0.92));
+  border:1px solid rgba(var(--rc,252 209 22),0.18);
+  background:linear-gradient(145deg,rgba(var(--rc,252 209 22),0.09),rgba(15,20,35,0.92));
   backdrop-filter:blur(14px) saturate(120%);
   box-shadow:0 16px 50px rgba(0,0,0,0.3);
   overflow:hidden;transition:border-color 220ms,box-shadow 220ms,transform 220ms;
@@ -588,34 +588,34 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 }
 .zion-hero-card::before{
   content:"";position:absolute;top:0;left:0;right:0;height:3px;
-  background:linear-gradient(90deg,rgb(var(--rc,255 215 0)/0.85),rgb(var(--rc,255 215 0)/0.25),transparent);
+  background:linear-gradient(90deg,rgb(var(--rc,252 209 22)/0.85),rgb(var(--rc,252 209 22)/0.25),transparent);
 }
 .zion-hero-card::after{
   content:"";position:absolute;top:-3.5rem;right:-3.5rem;width:8rem;height:8rem;
-  background:radial-gradient(circle,rgba(var(--rc,255 215 0),0.12),transparent 70%);
+  background:radial-gradient(circle,rgba(var(--rc,252 209 22),0.12),transparent 70%);
   filter:blur(36px);pointer-events:none;opacity:0.7;
 }
 .zion-hero-card:hover{
-  border-color:rgba(var(--rc,255 215 0),0.42);
-  box-shadow:0 24px 70px rgba(0,0,0,0.4),0 0 40px rgba(var(--rc,255 215 0),0.14);
+  border-color:rgba(var(--rc,252 209 22),0.42);
+  box-shadow:0 24px 70px rgba(0,0,0,0.4),0 0 40px rgba(var(--rc,252 209 22),0.14);
   transform:translateY(-2px);
 }
 .zion-hero-card .zhc-icon{
   width:2.25rem;height:2.25rem;border-radius:0.65rem;
   display:flex;align-items:center;justify-content:center;font-size:1.1rem;
-  background:rgba(var(--rc,255 215 0),0.12);border:1px solid rgba(var(--rc,255 215 0),0.2);
+  background:rgba(var(--rc,252 209 22),0.12);border:1px solid rgba(var(--rc,252 209 22),0.2);
   margin-bottom:0.75rem;
 }
-.zion-hero-card .zhc-title{font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#9ca3af;margin-bottom:0.35rem;}
+.zion-hero-card .zhc-title{font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#a3a3a3;margin-bottom:0.35rem;}
 .zion-hero-card .zhc-value{font-size:1.65rem;font-weight:800;color:#fff;font-family:'JetBrains Mono',monospace;margin-bottom:0.25rem;}
-.zion-hero-card .zhc-sub{font-size:0.75rem;color:#9ca3af;}
-.zion-hero-card .zhc-extra .zhc-mini{display:inline-flex;align-items:center;gap:0.25rem;font-size:0.7rem;font-weight:600;color:#d1d5db;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:0.4rem;padding:0.15rem 0.45rem;}
-.zion-hero-card .zhc-extra .zhc-mini .zhc-mini-label{color:#6b7280;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.05em;}
-.zion-hero-card .zhc-extra .zhc-mini .zhc-mini-val{color:#f3f4f6;font-family:'JetBrains Mono',monospace;font-size:0.72rem;}
+.zion-hero-card .zhc-sub{font-size:0.75rem;color:#a3a3a3;}
+.zion-hero-card .zhc-extra .zhc-mini{display:inline-flex;align-items:center;gap:0.25rem;font-size:0.7rem;font-weight:600;color:#d4d4d4;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:0.4rem;padding:0.15rem 0.45rem;}
+.zion-hero-card .zhc-extra .zhc-mini .zhc-mini-label{color:#6b6b6b;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.05em;}
+.zion-hero-card .zhc-extra .zhc-mini .zhc-mini-val{color:#f5f5f5;font-family:'JetBrains Mono',monospace;font-size:0.72rem;}
 
 /* ═══ ZION Website-style components (pool page) ═══ */
 .zion-rainbow-card{
-  --rc:16,185,129;
+  --rc:7,137,48;
   position:relative;overflow:hidden;
   border-radius:clamp(1.25rem,3vw,1.75rem);
   border:1px solid rgba(var(--rc),0.2);
@@ -641,7 +641,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   transform:translateY(-2px);
 }
 .zion-rainbow-sub{
-  --rc:255,215,0;
+  --rc:252,209,22;
   position:relative;overflow:hidden;
   border-radius:1rem;
   border:1px solid rgba(var(--rc),0.15);
@@ -687,7 +687,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   font-size:clamp(1.4rem,3vw,2rem);font-weight:700;color:#fff;letter-spacing:-0.02em;line-height:1.15;
 }
 .zion-section-sub{
-  margin-top:0.5rem;font-size:clamp(0.85rem,1.5vw,1rem);color:#9ca3af;line-height:1.6;max-width:65ch;
+  margin-top:0.5rem;font-size:clamp(0.85rem,1.5vw,1rem);color:#a3a3a3;line-height:1.6;max-width:65ch;
 }
 .zion-subsection-grid{
   display:grid;gap:1rem;
@@ -704,11 +704,11 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 @media(max-width:1023px){.zion-overview-col-8,.zion-overview-col-4{grid-column:span 1 / span 1;}}
 
 /* Quick-link active colors */
-.zql-network{--qrc:6 182 212;}
-.zql-pool{--qrc:147 51 234;}
-.zql-explorer{--qrc:251 191 36;}
-.zql-services{--qrc:16 185 129;}
-.zql-dao{--qrc:236 72 153;}
+.zql-network{--qrc:7 137 48;}
+.zql-pool{--qrc:228 30 43;}
+.zql-explorer{--qrc:252 209 22;}
+.zql-services{--qrc:7 137 48;}
+.zql-dao{--qrc:228 30 43;}
 .zql-bridge{--qrc:59 130 246;}
 .zql-ops{--qrc:245 158 11;}
 .zql-layers{--qrc:139 92 246;}
@@ -917,28 +917,28 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
 
   <!-- ZION Hero — Rainbow Status Cards -->
   <section class="zion-hero-grid mb-6" id="zion-hero">
-    <div class="zion-hero-card" style="--rc:6 182 212;">
+    <div class="zion-hero-card" style="--rc:7 137 48;">
       <div class="zhc-icon">🌐</div>
       <div class="zhc-title">Network Status</div>
       <div class="zhc-value" id="hero-network-status">Loading…</div>
       <div class="zhc-sub" id="hero-network-sub">—</div>
       <div class="zhc-extra" id="hero-network-extra" style="margin-top:0.5rem;display:flex;gap:0.75rem;flex-wrap:wrap;"></div>
     </div>
-    <div class="zion-hero-card" style="--rc:147 51 234;">
+    <div class="zion-hero-card" style="--rc:228 30 43;">
       <div class="zhc-icon">⛏</div>
       <div class="zhc-title">Pool</div>
       <div class="zhc-value" id="hero-pool-sessions">—</div>
       <div class="zhc-sub" id="hero-pool-sub">active sessions</div>
       <div class="zhc-extra" id="hero-pool-extra" style="margin-top:0.5rem;display:flex;gap:0.75rem;flex-wrap:wrap;"></div>
     </div>
-    <div class="zion-hero-card" style="--rc:251 191 36;">
+    <div class="zion-hero-card" style="--rc:252 209 22;">
       <div class="zhc-icon">🔗</div>
       <div class="zhc-title">Latest Block</div>
       <div class="zhc-value" id="hero-chain-height">—</div>
       <div class="zhc-sub" id="hero-block-sub">chain height</div>
       <div class="zhc-extra" id="hero-block-extra" style="margin-top:0.5rem;display:flex;gap:0.75rem;flex-wrap:wrap;"></div>
     </div>
-    <div class="zion-hero-card" style="--rc:16 185 129;">
+    <div class="zion-hero-card" style="--rc:7 137 48;">
       <div class="zhc-icon">⚡</div>
       <div class="zhc-title">Active Miners</div>
       <div class="zhc-value" id="hero-active-miners">—</div>
@@ -949,11 +949,11 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
 
   <!-- V31 Mainnet Alpha Banner — integrated from /api/status v31_banner -->
   <section class="zion-hero-grid mb-6" id="fd-v31-banner" style="display:none;">
-    <div class="zion-hero-card" style="--rc:255 215 0; grid-column:1 / -1;">
+    <div class="zion-hero-card" style="--rc:252 209 22; grid-column:1 / -1;">
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-2">
-          <div class="zhc-icon" style="--rc:255 215 0;">🚀</div>
-          <div class="zhc-title" style="color:rgb(255 215 0); font-size:0.75rem;">V31 Mainnet Alpha</div>
+          <div class="zhc-icon" style="--rc:252 209 22;">🚀</div>
+          <div class="zhc-title" style="color:rgb(252 209 22); font-size:0.75rem;">V31 Mainnet Alpha</div>
         </div>
         <div class="flex items-center gap-2">
           <span id="fd-banner-version" class="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">3.1.0-alpha.2</span>
@@ -1003,10 +1003,10 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
   <div id="pane-overview" class="space-y-5">
 
     <!-- V31 Production — metrics, logs, Grafana -->
-    <div id="v31-production-panel" class="zion-panel p-5" style="border-color:rgba(255,215,0,0.25);">
+    <div id="v31-production-panel" class="zion-panel p-5" style="border-color:rgba(252,209,22,0.25);">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-base font-bold flex items-center gap-2">
-          <span style="color:rgb(255 215 0)">🚀 V31 Production</span>
+          <span style="color:rgb(252 209 22)">🚀 V31 Production</span>
           <span class="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">v3.1.0-alpha.2</span>
         </h2>
         <div class="flex items-center gap-2">
@@ -1103,7 +1103,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         <span id="readiness-label" class="text-xs text-gray-400">Computing...</span>
       </div>
       <div class="relative w-full h-6 bg-black/30 rounded-full overflow-hidden mb-2">
-        <div id="readiness-bar" class="h-full rounded-full transition-all duration-700 ease-out" style="width:0%; background:#374151;"></div>
+        <div id="readiness-bar" class="h-full rounded-full transition-all duration-700 ease-out" style="width:0%; background:#3d3d3d;"></div>
         <div class="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white">
           <span id="readiness-score">—</span>%
         </div>
@@ -1162,7 +1162,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
           <div id="edge-disk-detail" class="text-[10px] text-gray-500 mt-0.5">— GB free</div>
           <!-- Disk usage bar -->
           <div class="mt-2 w-full h-2 bg-white/5 rounded-full overflow-hidden">
-            <div id="edge-h-disk-bar" class="h-full rounded-full transition-all duration-500" style="width: 0%; background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444);"></div>
+            <div id="edge-h-disk-bar" class="h-full rounded-full transition-all duration-500" style="width: 0%; background: linear-gradient(90deg, #078930, #fcd116, #e41e2b);"></div>
           </div>
         </div>
         <div class="bg-black/30 rounded-xl p-3 text-center">
@@ -1324,6 +1324,48 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         <div class="flex gap-1.5 relative z-10">
           <button onclick="edgeAction('restart-v31-node')" class="text-[10px] px-2.5 py-1 bg-purple-700/50 hover:bg-purple-600 rounded-md font-semibold transition">⟳ Restart</button>
           <button onclick="edgeAction('stop-v31-node')" class="text-[10px] px-2.5 py-1 bg-red-700/50 hover:bg-red-600 rounded-md font-semibold transition">⏹ Stop</button>
+        </div>
+      </div>
+
+      <!-- V31 Node 2 (Follower) -->
+      <div id="card-v31-node2" class="zion-panel zion-panel-hover svc-card p-5">
+        <div class="flex items-center justify-between mb-3 relative z-10">
+          <span class="zion-kicker">🛰️ V31 Node 2</span>
+          <span id="badge-v31-node2" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
+        </div>
+        <div class="text-4xl font-bold mb-1 text-gradient relative z-10" id="val-v31-node2-height">—</div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">Chain Height <span class="text-purple-400 text-[9px] ml-1">follower</span></div>
+        <div class="text-xs font-mono text-gray-300 truncate mb-1 relative z-10" id="val-v31-node2-hash">—</div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">P2P: <span id="val-v31-node2-p2p" class="font-mono">0.0.0.0:8336</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">RPC: <span id="val-v31-node2-rpc" class="font-mono">127.0.0.1:9446</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Mempool: <span id="val-v31-node2-mempool" class="text-amber-400 font-semibold">—</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Sync lag: <span id="val-v31-node2-sync" class="text-gray-400">—</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">systemd: <span id="val-v31-node2-systemd" class="font-mono text-emerald-400">—</span></div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">Mem: <span id="val-v31-node2-mem" class="text-cyan-400 font-mono">—</span></div>
+        <div class="flex gap-1.5 relative z-10">
+          <button onclick="edgeAction('restart-v31-node2')" class="text-[10px] px-2.5 py-1 bg-purple-700/50 hover:bg-purple-600 rounded-md font-semibold transition">⟳ Restart</button>
+          <button onclick="edgeAction('stop-v31-node2')" class="text-[10px] px-2.5 py-1 bg-red-700/50 hover:bg-red-600 rounded-md font-semibold transition">⏹ Stop</button>
+        </div>
+      </div>
+
+      <!-- V31 Node 3 (Follower) -->
+      <div id="card-v31-node3" class="zion-panel zion-panel-hover svc-card p-5">
+        <div class="flex items-center justify-between mb-3 relative z-10">
+          <span class="zion-kicker">📡 V31 Node 3</span>
+          <span id="badge-v31-node3" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
+        </div>
+        <div class="text-4xl font-bold mb-1 text-gradient relative z-10" id="val-v31-node3-height">—</div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">Chain Height <span class="text-purple-400 text-[9px] ml-1">follower</span></div>
+        <div class="text-xs font-mono text-gray-300 truncate mb-1 relative z-10" id="val-v31-node3-hash">—</div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">P2P: <span id="val-v31-node3-p2p" class="font-mono">0.0.0.0:8337</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">RPC: <span id="val-v31-node3-rpc" class="font-mono">127.0.0.1:9447</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Mempool: <span id="val-v31-node3-mempool" class="text-amber-400 font-semibold">—</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Sync lag: <span id="val-v31-node3-sync" class="text-gray-400">—</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">systemd: <span id="val-v31-node3-systemd" class="font-mono text-emerald-400">—</span></div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">Mem: <span id="val-v31-node3-mem" class="text-cyan-400 font-mono">—</span></div>
+        <div class="flex gap-1.5 relative z-10">
+          <button onclick="edgeAction('restart-v31-node3')" class="text-[10px] px-2.5 py-1 bg-purple-700/50 hover:bg-purple-600 rounded-md font-semibold transition">⟳ Restart</button>
+          <button onclick="edgeAction('stop-v31-node3')" class="text-[10px] px-2.5 py-1 bg-red-700/50 hover:bg-red-600 rounded-md font-semibold transition">⏹ Stop</button>
         </div>
       </div>
 
@@ -2267,7 +2309,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       </div>
       <div id="topology-svg-container" class="flex justify-center relative" style="min-height:320px;">
         <svg id="topology-svg" width="800" height="320" viewBox="0 0 800 320" class="max-w-full" style="background:rgba(0,0,0,0.3);border-radius:12px;">
-          <text x="400" y="160" text-anchor="middle" fill="#6b7280" font-size="12">Loading topology…</text>
+          <text x="400" y="160" text-anchor="middle" fill="#6b6b6b" font-size="12">Loading topology…</text>
         </svg>
         <div id="topology-tooltip" class="absolute hidden bg-gray-900 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-gray-200 shadow-lg pointer-events-none z-50" style="transform:translate(-50%,-120%);"></div>
       </div>
@@ -4557,15 +4599,15 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
 
     <!-- Alert summary cards -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <div class="zion-panel p-4 text-center" style="border-color:rgba(239,68,68,0.3)">
+      <div class="zion-panel p-4 text-center" style="border-color:rgba(228,30,43,0.3)">
         <div id="alert-count-critical" class="text-2xl font-bold text-red-400">0</div>
         <div class="text-[10px] text-gray-500 uppercase tracking-wider mt-1">Critical</div>
       </div>
-      <div class="zion-panel p-4 text-center" style="border-color:rgba(245,158,11,0.3)">
+      <div class="zion-panel p-4 text-center" style="border-color:rgba(252,209,22,0.3)">
         <div id="alert-count-warning" class="text-2xl font-bold text-amber-400">0</div>
         <div class="text-[10px] text-gray-500 uppercase tracking-wider mt-1">Warning</div>
       </div>
-      <div class="zion-panel p-4 text-center" style="border-color:rgba(59,130,246,0.3)">
+      <div class="zion-panel p-4 text-center" style="border-color:rgba(7,137,48,0.3)">
         <div id="alert-count-info" class="text-2xl font-bold text-blue-400">0</div>
         <div class="text-[10px] text-gray-500 uppercase tracking-wider mt-1">Info</div>
       </div>
@@ -4611,7 +4653,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         </div>
         <div class="flex gap-2">
           <button onclick="controlAction('launch-full')" class="zion-button-primary text-sm">🚀 Launch ALL</button>
-          <button onclick="if(confirm('Stop everything?')) controlAction('stop-all')" class="zion-button-secondary text-sm" style="color:#fca5a5;">⏹ Stop ALL</button>
+          <button onclick="if(confirm('Stop everything?')) controlAction('stop-all')" class="zion-button-secondary text-sm" style="color:#e41e2b;">⏹ Stop ALL</button>
         </div>
       </div>
       <!-- Quick stats row -->
@@ -6448,7 +6490,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
 
       <!-- Terminal output -->
       <pre id="log-terminal-output"
-        class="bg-[#0a0a0f] text-[11px] font-mono text-gray-300 p-4 min-h-[480px] max-h-[600px] overflow-y-auto leading-5 whitespace-pre-wrap break-all"
+        class="bg-[#0d0d0d] text-[11px] font-mono text-gray-300 p-4 min-h-[480px] max-h-[600px] overflow-y-auto leading-5 whitespace-pre-wrap break-all"
         style="tab-size:2">Select a service on the left and click ▶ Stream…</pre>
     </div>
 
@@ -6855,7 +6897,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
     </div>
 
     <!-- 🎼 Maestro v2.4 Orchestrator Panel -->
-    <div class="zion-panel p-6 border-amber-500/30" style="border-color: rgba(245,158,11,0.3);">
+    <div class="zion-panel p-6 border-amber-500/30" style="border-color: rgba(252,209,22,0.3);">
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-3">
           <div class="text-3xl">🎼</div>
@@ -6999,12 +7041,12 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
            ════════════════════════════════════════════════════════════════════ -->
 
       <!-- NCL Hero Header -->
-      <div class="relative overflow-hidden rounded-2xl mt-6" style="border:1px solid rgba(147,51,234,0.25);background:linear-gradient(135deg,rgba(15,20,35,0.96) 0%,rgba(30,18,60,0.92) 40%,rgba(35,20,68,0.88) 70%,rgba(15,20,35,0.96) 100%);box-shadow:0 24px 60px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05);">
-        <div class="absolute inset-0 opacity-20 pointer-events-none" style="background:radial-gradient(circle at 20% 50%,rgba(147,51,234,0.35) 0%,transparent 50%),radial-gradient(circle at 80% 50%,rgba(6,182,212,0.25) 0%,transparent 50%)"></div>
+      <div class="relative overflow-hidden rounded-2xl mt-6" style="border:1px solid rgba(228,30,43,0.25);background:linear-gradient(135deg,rgba(15,20,35,0.96) 0%,rgba(30,18,60,0.92) 40%,rgba(35,20,68,0.88) 70%,rgba(15,20,35,0.96) 100%);box-shadow:0 24px 60px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05);">
+        <div class="absolute inset-0 opacity-20 pointer-events-none" style="background:radial-gradient(circle at 20% 50%,rgba(228,30,43,0.35) 0%,transparent 50%),radial-gradient(circle at 80% 50%,rgba(7,137,48,0.25) 0%,transparent 50%)"></div>
         <div class="relative p-6">
           <div class="flex items-center justify-between mb-5">
             <div class="flex items-center gap-4">
-              <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl" style="background:linear-gradient(135deg,#9333ea,#06b6d4);box-shadow:0 0 28px rgba(147,51,234,0.35);">&#x1f9e0;</div>
+              <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl" style="background:linear-gradient(135deg,#e41e2b,#078930);box-shadow:0 0 28px rgba(228,30,43,0.35);">&#x1f9e0;</div>
               <div>
                 <h2 class="text-xl font-bold text-white tracking-tight">Neural Compute Layer</h2>
                 <div class="flex items-center gap-2 mt-1">
@@ -7175,7 +7217,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
             </div>
           </details>
           <!-- Cost estimate -->
-          <div class="flex items-center justify-between p-3.5 rounded-xl mb-5" style="background:linear-gradient(135deg,rgba(147,51,234,0.08),rgba(6,182,212,0.06));border:1px solid rgba(147,51,234,0.15);">
+          <div class="flex items-center justify-between p-3.5 rounded-xl mb-5" style="background:linear-gradient(135deg,rgba(228,30,43,0.08),rgba(7,137,48,0.06));border:1px solid rgba(228,30,43,0.15);">
             <div class="text-xs text-gray-400 font-medium">Estimated cost</div>
             <div class="text-sm font-bold text-purple-300" id="ncl-est-cost">0.02 ZION</div>
           </div>
@@ -8177,52 +8219,52 @@ const STREAM_COIN_TICKERS = [
 // ═══ ZION Theme — Auto-apply accent colors per pane ═══
 (function(){
   const PANE_ACCENTS = {
-    'pane-overview':          {rc:'255 215 0',   icon:'📊', label:'Overview',         sub:'Real-time network status'},
-    'pane-nodes':             {rc:'16 185 129',  icon:'🔗', label:'Nodes',            sub:'L1 node status & P2P'},
-    'pane-orchestrator':      {rc:'6 182 212',   icon:'🎭', label:'Orchestrator',     sub:'Service orchestration'},
-    'pane-payout':            {rc:'251 191 36',  icon:'💰', label:'Payouts',          sub:'Miner payouts & fee split'},
-    'pane-wallets':           {rc:'251 191 36',  icon:'👛', label:'Wallets',          sub:'Wallet balances & UTXO'},
-    'pane-explorer':          {rc:'6 182 212',   icon:'🔍', label:'Explorer',         sub:'Block & tx explorer'},
+    'pane-overview':          {rc:'252 209 22',   icon:'📊', label:'Overview',         sub:'Real-time network status'},
+    'pane-nodes':             {rc:'7 137 48',  icon:'🔗', label:'Nodes',            sub:'L1 node status & P2P'},
+    'pane-orchestrator':      {rc:'7 137 48',   icon:'🎭', label:'Orchestrator',     sub:'Service orchestration'},
+    'pane-payout':            {rc:'252 209 22',  icon:'💰', label:'Payouts',          sub:'Miner payouts & fee split'},
+    'pane-wallets':           {rc:'252 209 22',  icon:'👛', label:'Wallets',          sub:'Wallet balances & UTXO'},
+    'pane-explorer':          {rc:'7 137 48',   icon:'🔍', label:'Explorer',         sub:'Block & tx explorer'},
     'pane-alerts':            {rc:'244 63 94',   icon:'🚨', label:'Alerts',           sub:'Active alerts & warnings'},
     'pane-services':          {rc:'99 102 241',  icon:'⚙️', label:'Services',         sub:'Systemd service control'},
     'pane-backups':           {rc:'59 130 246',  icon:'💾', label:'Backups',          sub:'Genesis backups & recovery'},
     'pane-genesis':           {rc:'20 184 166',  icon:'🌱', label:'Genesis',          sub:'Premine & emission schedule'},
-    'pane-blockers':          {rc:'239 68 68',   icon:'🚧', label:'P0 Blockers',      sub:'Launch blockers tracker'},
-    'pane-l1':                {rc:'16 185 129',  icon:'🟢', label:'L1 Core',          sub:'Consensus & validation'},
-    'pane-l2':                {rc:'147 51 234',  icon:'🟣', label:'L2 DeFi',          sub:'Bridge, swap, DAO, atomic'},
+    'pane-blockers':          {rc:'228 30 43',   icon:'🚧', label:'P0 Blockers',      sub:'Launch blockers tracker'},
+    'pane-l1':                {rc:'7 137 48',  icon:'🟢', label:'L1 Core',          sub:'Consensus & validation'},
+    'pane-l2':                {rc:'228 30 43',  icon:'🟣', label:'L2 DeFi',          sub:'Bridge, swap, DAO, atomic'},
     'pane-l3':                {rc:'139 92 246',  icon:'🧠', label:'L3 Hiran',         sub:'AI inference layer'},
     'pane-l4':                {rc:'249 115 22',  icon:'🌸', label:'L4 Oasis',         sub:'Consciousness mining game'},
     'pane-l5':                {rc:'245 158 11',  icon:'🌍', label:'L5 Free World',    sub:'Humanitarian fund scanner'},
     'pane-l6':                {rc:'244 63 94',   icon:'⚡', label:'L6 Issobella',     sub:'Issobella fund scanner'},
-    'pane-charts':            {rc:'6 182 212',   icon:'📈', label:'Charts',           sub:'Hashrate & block charts'},
+    'pane-charts':            {rc:'7 137 48',   icon:'📈', label:'Charts',           sub:'Hashrate & block charts'},
     'pane-events':            {rc:'56 189 248',  icon:'📡', label:'Events',           sub:'Block events feed'},
     'pane-env':               {rc:'100 116 139', icon:'🔑', label:'Env Vars',         sub:'Environment configuration'},
     'pane-database':          {rc:'59 130 246',  icon:'🗄️', label:'Database',         sub:'Chain state & DB tools'},
     'pane-metrics':           {rc:'99 102 241',  icon:'📊', label:'Metrics',          sub:'Pool Metrics & Charts'},
-    'pane-launch-day':        {rc:'255 215 0',   icon:'🚀', label:'Launch Day',       sub:'Genesis rotation & launch'},
-    'pane-wizard':            {rc:'147 51 234',  icon:'🧙', label:'Setup Wizard',     sub:'Guided mainnet setup'},
-    'pane-miner-live':        {rc:'251 191 36',  icon:'⛏️', label:'Miner Live',       sub:'Real-time miner monitor'},
-    'pane-pool-debug':        {rc:'34 197 94',   icon:'🐛', label:'Pool Debug',       sub:'Raw metrics · PPLNS · logs · RPC tests'},
-    'pane-pool-blocks':       {rc:'251 191 36',  icon:'🧱', label:'Pool Blocks',      sub:'Historical blocks · status · luck · orphans'},
+    'pane-launch-day':        {rc:'252 209 22',   icon:'🚀', label:'Launch Day',       sub:'Genesis rotation & launch'},
+    'pane-wizard':            {rc:'228 30 43',  icon:'🧙', label:'Setup Wizard',     sub:'Guided mainnet setup'},
+    'pane-miner-live':        {rc:'252 209 22',  icon:'⛏️', label:'Miner Live',       sub:'Real-time miner monitor'},
+    'pane-pool-debug':        {rc:'7 137 48',   icon:'🐛', label:'Pool Debug',       sub:'Raw metrics · PPLNS · logs · RPC tests'},
+    'pane-pool-blocks':       {rc:'252 209 22',  icon:'🧱', label:'Pool Blocks',      sub:'Historical blocks · status · luck · orphans'},
     'pane-settings':          {rc:'100 116 139', icon:'⚙️', label:'Settings',         sub:'Dashboard configuration'},
-    'pane-fleet':             {rc:'6 182 212',   icon:'🚢', label:'Fleet',            sub:'Rig fleet management'},
+    'pane-fleet':             {rc:'7 137 48',   icon:'🚢', label:'Fleet',            sub:'Rig fleet management'},
     'pane-logs':              {rc:'156 163 175', icon:'📜', label:'Logs',             sub:'Service log viewer'},
-    'pane-bridge':            {rc:'251 191 36',  icon:'🌉', label:'Bridge',           sub:'L2 cross-chain bridge'},
+    'pane-bridge':            {rc:'252 209 22',  icon:'🌉', label:'Bridge',           sub:'L2 cross-chain bridge'},
     'pane-bridge-validators': {rc:'59 130 246',  icon:'🔐', label:'Bridge Validators',sub:'Validator set & multisig'},
     'pane-hiran':             {rc:'139 92 246',  icon:'🧠', label:'Hiran AI',         sub:'Local inference & GGUF'},
     'pane-ops':               {rc:'249 115 22',  icon:'🛠️', label:'Ops',              sub:'Operational tooling'},
-    'pane-topology':          {rc:'6 182 212',   icon:'🗺️', label:'Topology',         sub:'Network topology map'},
-    'pane-agent':             {rc:'16 185 129',  icon:'🤖', label:'Agent',            sub:'Edge agent status'},
-    'pane-dao':               {rc:'147 51 234',  icon:'🗳️', label:'DAO',              sub:'Proposals & governance'},
+    'pane-topology':          {rc:'7 137 48',   icon:'🗺️', label:'Topology',         sub:'Network topology map'},
+    'pane-agent':             {rc:'7 137 48',  icon:'🤖', label:'Agent',            sub:'Edge agent status'},
+    'pane-dao':               {rc:'228 30 43',  icon:'🗳️', label:'DAO',              sub:'Proposals & governance'},
     'pane-cex':               {rc:'245 158 11',  icon:'📊', label:'CEX+DEX',         sub:'Exchange listings & trading'},
-    'pane-multichain':        {rc:'6 182 212',   icon:'🌀', label:'Multichain',      sub:'V31 WARP · chains · transfers · DEX'},
+    'pane-multichain':        {rc:'7 137 48',   icon:'🌀', label:'Multichain',      sub:'V31 WARP · chains · transfers · DEX'},
     'pane-warp-swap':         {rc:'217 70 239',  icon:'🔄', label:'Cross-Chain',     sub:'BTC · ETH · SOL · XLM · wZION'},
-    'pane-warp':              {rc:'147 51 234',  icon:'🌀', label:'WARP',             sub:'L3 WARP relay'},
+    'pane-warp':              {rc:'228 30 43',  icon:'🌀', label:'WARP',             sub:'L3 WARP relay'},
     'pane-ai-agents':         {rc:'217 70 239',  icon:'🤖', label:'AI Agents',        sub:'AI agent management'},
-    'pane-ncl-jobs':          {rc:'147 51 234',  icon:'📋', label:'NCL Jobs',         sub:'NCL compute jobs'},
-    'pane-marketplace-orders':   {rc:'255 215 0',   icon:'🛒', label:'Marketplace Orders',   sub:'Orders · status · payments'},
+    'pane-ncl-jobs':          {rc:'228 30 43',  icon:'📋', label:'NCL Jobs',         sub:'NCL compute jobs'},
+    'pane-marketplace-orders':   {rc:'252 209 22',   icon:'🛒', label:'Marketplace Orders',   sub:'Orders · status · payments'},
     'pane-marketplace-invoices': {rc:'245 158 11',  icon:'🧾', label:'Marketplace Invoices', sub:'Invoice generation & PDF'},
-    'pane-marketplace-shipping': {rc:'6 182 212',   icon:'🚚', label:'Marketplace Shipping', sub:'Tracking & shipments'},
+    'pane-marketplace-shipping': {rc:'7 137 48',   icon:'🚚', label:'Marketplace Shipping', sub:'Tracking & shipments'},
     'pane-marketplace-stripe':   {rc:'99 102 241',  icon:'💳', label:'Marketplace Stripe',   sub:'Card payments & webhooks'},
   };
 
@@ -8282,8 +8324,8 @@ const STREAM_COIN_TICKERS = [
 
   const rebuildGradient = () => {
     const g = ctx.createRadialGradient(w * 0.4, h * 0.6, 0, w * 0.4, h * 0.6, Math.max(w, h));
-    g.addColorStop(0, 'rgba(22, 8, 32, 0.90)');
-    g.addColorStop(1, 'rgba(4, 2, 12, 0.98)');
+    g.addColorStop(0, 'rgba(0, 0, 0, 0.90)');
+    g.addColorStop(1, 'rgba(0, 0, 0, 0.98)');
     cachedGradient = g;
   };
 
