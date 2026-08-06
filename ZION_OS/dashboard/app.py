@@ -5471,9 +5471,8 @@ def get_pool_miners() -> dict:
 
     Uses the JSON /miners endpoint as the primary source for per-miner data;
     extracts aggregate counters (active_sessions, miners_tracked, shares) from
-    Prometheus metrics and enriches each miner with PPLNS state data when the
-    state file is available. V31 does not expose per-worker hashrate, so
-    hashrate is left at 0 and the UI treats that as "hashrate not reported".
+    Prometheus metrics and enriches each miner with PPLNS state data and live
+    telemetry (hashrate, shares, blocks_found) when available.
     """
     active_sessions = 0
     miners_tracked = 0
@@ -5555,19 +5554,55 @@ def get_pool_miners() -> dict:
             except Exception:
                 unpaid_flowers = 0
 
+        # Prefer live telemetry from the pool /miners endpoint over PPLNS state.
+        hashrate_hps = float(m.get("hashrate_hps", 0.0) or 0.0)
+        hashrate_1h_hps = float(m.get("hashrate_1h_hps", 0.0) or 0.0)
+        hashrate_24h_hps = float(m.get("hashrate_24h_hps", 0.0) or 0.0)
+        valid_shares_telemetry = int(m.get("valid_shares", 0) or 0)
+        invalid_shares_telemetry = int(m.get("invalid_shares", 0) or 0)
+        blocks_found_telemetry = int(m.get("blocks_found", 0) or 0)
+        last_share_telemetry = m.get("last_share_time", 0) or 0
+        last_seen_telemetry = m.get("last_seen_s", 0) or 0
+        first_seen_telemetry = m.get("first_seen_s", 0) or 0
+        algorithm = m.get("algorithm", "")
+        backend = m.get("backend", "")
+        paid_total_atomic_telemetry = int(m.get("paid_total_atomic", 0) or 0)
+        streams = m.get("streams", {}) or {}
+
+        # Use telemetry when it exists, else PPLNS state.
+        if valid_shares_telemetry or invalid_shares_telemetry:
+            valid_shares = valid_shares_telemetry
+            invalid_shares = invalid_shares_telemetry
+            blocks_found = blocks_found_telemetry
+            last_share = last_share_telemetry if last_share_telemetry else last_share
+        else:
+            valid_shares = int(stats.get("valid", 0)) if isinstance(stats, dict) else 0
+            invalid_shares = int(stats.get("invalid", 0)) if isinstance(stats, dict) else 0
+            blocks_found = int(stats.get("blocks", 0)) if isinstance(stats, dict) else 0
+
+        paid_total = paid_total_atomic_telemetry if paid_total_atomic_telemetry else paid_flowers
+
         enriched = {
             "miner_id": miner_id,
             "address": address or miner_id,
             "worker_name": worker_name,
             "worker": worker,
-            "valid_shares": int(stats.get("valid", 0)) if isinstance(stats, dict) else 0,
-            "invalid_shares": int(stats.get("invalid", 0)) if isinstance(stats, dict) else 0,
-            "blocks_found": int(stats.get("blocks", 0)) if isinstance(stats, dict) else 0,
+            "valid_shares": valid_shares,
+            "invalid_shares": invalid_shares,
+            "blocks_found": blocks_found,
             "last_share_time": last_share,
-            "total_paid_flowers": paid_flowers,
-            "paid_total": flowers_to_zion(paid_flowers),
+            "first_seen_s": first_seen_telemetry if first_seen_telemetry else 0,
+            "last_seen_s": last_seen_telemetry if last_seen_telemetry else 0,
+            "total_paid_flowers": paid_total,
+            "paid_total": flowers_to_zion(paid_total),
+            "paid_total_atomic": paid_total,
             "unpaid_total": flowers_to_zion(unpaid_flowers),
-            "hashrate_hps": 0.0,
+            "hashrate_hps": hashrate_hps,
+            "hashrate_1h_hps": hashrate_1h_hps,
+            "hashrate_24h_hps": hashrate_24h_hps,
+            "algorithm": algorithm,
+            "backend": backend,
+            "streams": streams,
             "active": True,
         }
         normalized.append(enriched)
@@ -5580,15 +5615,19 @@ def get_pool_miners() -> dict:
     if active_sessions == 0 and (shares_accepted or total_shares) and miners_tracked > 0:
         active_sessions = miners_tracked
 
+    total_hashrate_khs = sum(m.get("hashrate_hps", 0.0) or 0.0 for m in normalized) / 1000.0
+    total_valid = sum(m.get("valid_shares", 0) or 0 for m in normalized)
+    total_invalid = sum(m.get("invalid_shares", 0) or 0 for m in normalized)
+
     return {
         "ok": True,
         "miners": normalized,
         "active_sessions": active_sessions,
         "miners_tracked": miners_tracked,
-        "shares_accepted": shares_accepted,
-        "shares_rejected": shares_rejected,
-        "total_shares": total_shares,
-        "total_hashrate_khs": 0.0,
+        "shares_accepted": shares_accepted if shares_accepted else total_valid,
+        "shares_rejected": shares_rejected if shares_rejected else total_invalid,
+        "total_shares": total_valid + total_invalid,
+        "total_hashrate_khs": total_hashrate_khs,
     }
 
 # ── Pool connection history (from Edge journald) ───────────────────────
