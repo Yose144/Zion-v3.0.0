@@ -4348,7 +4348,7 @@ ipcMain.handle('node-start', async (event, options = {}) => {
   }
 
   const dataDir = options.dataDir ?? path.join(app.getPath('userData'), 'zion-node-data');
-  const p2pPort = options.p2pPort ?? 8334;
+  const p2pPort = options.p2pPort ?? 8335;
   const rpcPort = options.rpcPort ?? 8545;
   const network = options.network ?? 'mainnet';
 
@@ -4416,7 +4416,7 @@ ipcMain.handle('get-gpu-info', () => {
   }
 });
 
-// ── Ekam Deeksha v3.0.5 — GPU device enumeration ──
+// ── Ekam Deeksha v3.1.0 — GPU device enumeration ──
 ipcMain.handle('get-gpu-devices', () => {
   try {
     const info = detectGPU();
@@ -4426,7 +4426,7 @@ ipcMain.handle('get-gpu-devices', () => {
   }
 });
 
-// ── Ekam Deeksha v3.0.5 — GPU benchmark (runs miner in benchmark mode) ──
+// ── Ekam Deeksha v3.1.0 — GPU benchmark (runs miner in benchmark mode) ──
 ipcMain.handle('run-gpu-benchmark', async (_event, options = {}) => {
   try {
     const gpuInfo = detectGPU();

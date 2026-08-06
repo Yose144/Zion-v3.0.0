@@ -1,5 +1,5 @@
 // ZION V3 UTXO Transaction Builder — Desktop Agent
-// Matches V3/L1/core/src/tx.rs + V3/L1/core/src/crypto.rs
+// Matches V31/L1/core/src/tx.rs + V31/L1/core/src/crypto.rs
 
 const crypto = require('crypto');
 let blake3Fn;
@@ -11,7 +11,7 @@ try {
 }
 
 /**
- * BLAKE3 hash (32 bytes). Matches V3/L1/core/src/crypto.rs blake3_hash().
+ * BLAKE3 hash (32 bytes). Matches V31/L1/core/src/crypto.rs blake3_hash().
  * @param {Buffer|Uint8Array} data
  * @returns {Buffer} 32-byte hash
  */
@@ -22,7 +22,7 @@ function blake3Hash(data) {
 
 /**
  * Compute the canonical SegWit-style transaction hash.
- * Matches V3/L1/core/src/tx.rs Transaction::calculate_hash_v2()
+ * Matches V31/L1/core/src/tx.rs Transaction::calculate_hash_v2()
  * (active from genesis for TX_HASH_V2_VERSION = 2).
  *
  * v2 preimage (length-prefixed, domain-separated):

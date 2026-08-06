@@ -128,19 +128,19 @@ This exercises wallet generation, deterministic mnemonic recovery, encryption, b
 **macOS:**
 ```bash
 npm run build:mac
-# Output: dist/ZION-Desktop-Agent-3.0.5.dmg
+# Output: dist/ZION-Desktop-Agent-3.1.0.dmg
 ```
 
 **Windows:**
 ```bash
 npm run build:win
-# Output: dist/ZION-Desktop-Agent-Setup-3.0.5.exe
+# Output: dist/ZION-Desktop-Agent-Setup-3.1.0.exe
 ```
 
 **Linux:**
 ```bash
 npm run build:linux
-# Output: dist/ZION-Desktop-Agent-3.0.5.AppImage
+# Output: dist/ZION-Desktop-Agent-3.1.0.AppImage
 ```
 
 ---

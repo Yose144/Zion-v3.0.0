@@ -13,7 +13,7 @@
  * Translated from canonical OpenCL kernel: cosmic_harmony_deeksha.cl
  *
  * Author: ZION AI Native Team
- * Version: 3.0.5
+ * Version: 3.1.0
  */
 
 #include <metal_stdlib>
