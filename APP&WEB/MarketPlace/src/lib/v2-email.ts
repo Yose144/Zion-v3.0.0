@@ -72,6 +72,18 @@ interface ThemePalette {
   footerGradient: string;
   footerFallback: string;
   successIconText: string;
+  // Gmail-safe solid colors (no gradients/shadows — Gmail strips those)
+  successIconBg: string;
+  orderBoxBg: string;
+  itemsBoxBg: string;
+  tokenBoxBg: string;
+  tokenBadgeBg: string;
+  paymentBoxBg: string;
+  nextBoxBg: string;
+  innerBg: string;
+  outerBg: string;
+  warningBg: string;
+  subBoxBg: string;
 }
 
 function themePalette(theme: ShopTheme): ThemePalette {
@@ -99,6 +111,17 @@ function themePalette(theme: ShopTheme): ThemePalette {
       footerGradient: 'linear-gradient(135deg, #078930 0%, #e41e2b 50%, #fcd116 100%)',
       footerFallback: '#e41e2b',
       successIconText: '#000000',
+      successIconBg: '#078930',
+      orderBoxBg: '#0d1219',
+      itemsBoxBg: '#1a0d10',
+      tokenBoxBg: '#0d2a1a',
+      tokenBadgeBg: '#078930',
+      paymentBoxBg: '#1a160d',
+      nextBoxBg: '#0d1a10',
+      innerBg: '#0a0c12',
+      outerBg: '#050608',
+      warningBg: '#2a2008',
+      subBoxBg: '#11141c',
     };
   }
   return {
@@ -124,6 +147,17 @@ function themePalette(theme: ShopTheme): ThemePalette {
     footerGradient: 'linear-gradient(135deg, #078930 0%, #fcd116 50%, #e41e2b 100%)',
     footerFallback: '#078930',
     successIconText: '#000000',
+    successIconBg: '#0a7a2a',
+    orderBoxBg: '#0d1a0f',
+    itemsBoxBg: '#1a0d10',
+    tokenBoxBg: '#0d2a1a',
+    tokenBadgeBg: '#00b34a',
+    paymentBoxBg: '#1a160d',
+    nextBoxBg: '#0d1a10',
+    innerBg: '#080808',
+    outerBg: '#050505',
+    warningBg: '#2a2008',
+    subBoxBg: '#161616',
   };
 }
 
@@ -180,10 +214,10 @@ function formatShippingHtml(order: OrderEmailData, theme: ShopTheme): string {
   }
 
   return `
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-bottom:36px;background:${t.paymentBg};border:2px solid ${t.paymentBorder};border-radius:18px;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.paymentBoxBg}" style="border-collapse:collapse;margin-bottom:36px;background-color:${t.paymentBoxBg};border:2px solid ${t.paymentBorder};border-radius:18px;">
       <tr><td style="padding:32px 28px;">
         <h3 style="color:${t.accent};margin:0 0 20px 0;font-size:22px;text-align:center;letter-spacing:1px;font-weight:700;">📦 Dodací adresa</h3>
-        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;background:rgba(0,0,0,0.35);border:1px solid ${t.borderSubtle};border-radius:12px;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.subBoxBg}" style="border-collapse:collapse;background-color:${t.subBoxBg};border:1px solid ${t.borderSubtle};border-radius:12px;">
           <tr><td style="padding:20px;color:${t.text};font-size:15px;line-height:1.7;">
             ${escapeHtml(order.customerName)}<br>
             ${address}<br><br>
@@ -213,7 +247,7 @@ async function paymentInstructionsHtml(order: OrderEmailData, theme: ShopTheme):
     return `
       <tr>
         <td colspan="2" style="padding-top:16px;">
-          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;background:${t.paymentBg};border:1px solid ${t.paymentBorder};border-radius:8px;">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.subBoxBg}" style="border-collapse:collapse;background-color:${t.subBoxBg};border:1px solid ${t.paymentBorder};border-radius:8px;">
             <tr><td style="padding:16px;">
               <p style="color:${t.accent};font-size:14px;margin:0 0 12px 0;font-weight:600;">💳 Instrukce k platbě:</p>
               <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
@@ -226,7 +260,7 @@ async function paymentInstructionsHtml(order: OrderEmailData, theme: ShopTheme):
                     <strong>Zpráva:</strong> Objednávka ${escapeHtml(order.orderId)}<br>
                   </td>
                   <td style="vertical-align:top;text-align:center;" width="45%">
-                    <img src="${qrDataUrl}" alt="QR platba" width="150" height="150" style="border-radius:8px;background:#ffffff;padding:4px;display:block;margin:0 auto;" />
+                    <img src="${qrDataUrl}" alt="QR platba" width="150" height="150" style="border-radius:8px;background-color:#ffffff;padding:4px;display:block;margin:0 auto;" />
                     <p style="color:${t.muted};font-size:11px;margin:8px 0 0 0;">Naskenujte v bankovní aplikaci</p>
                   </td>
                 </tr>
@@ -254,18 +288,18 @@ function zionTokenSectionHtml(order: OrderEmailData, theme: ShopTheme): string {
   if (tokens === 0) return '';
 
   return `
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-bottom:36px;background:linear-gradient(145deg, rgba(0,255,127,0.2), rgba(0,0,0,0.5));border:3px solid rgba(0,255,127,0.5);border-radius:18px;box-shadow:0 0 30px rgba(0,255,127,0.3), inset 0 2px 12px rgba(0,255,127,0.15);">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.tokenBoxBg}" style="border-collapse:collapse;margin-bottom:36px;background-color:${t.tokenBoxBg};border:3px solid #00ff7f;border-radius:18px;">
       <tr><td style="padding:32px 28px;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
           <tr><td style="text-align:center;padding-bottom:20px;">
-            <table align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;display:inline-table;">
-              <tr><td style="padding:8px 20px;background:linear-gradient(135deg, #00ff7f, #32cd32);border-radius:999px;box-shadow:0 4px 12px rgba(0,255,127,0.4);">
+            <table align="center" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.tokenBadgeBg}" style="border-collapse:collapse;display:inline-table;background-color:${t.tokenBadgeBg};border-radius:999px;">
+              <tr><td style="padding:8px 20px;">
                 <span style="font-size:28px;">⚡</span>
               </td></tr>
             </table>
           </td></tr>
           <tr><td style="text-align:center;">
-            <h3 style="color:#00ff7f;margin:0 0 20px 0;font-size:24px;letter-spacing:1.2px;font-weight:700;text-shadow:0 2px 8px rgba(0,255,127,0.5);">
+            <h3 style="color:#00ff7f;margin:0 0 20px 0;font-size:24px;letter-spacing:1.2px;font-weight:700;">
               🎁 ZION TOKEN BONUS 🎁
             </h3>
             <p style="color:#9af59a;font-size:16px;margin:0 0 24px 0;line-height:1.6;">
@@ -273,12 +307,12 @@ function zionTokenSectionHtml(order: OrderEmailData, theme: ShopTheme): string {
             </p>
           </td></tr>
           <tr><td>
-            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;background:rgba(0,0,0,0.4);border-radius:12px;border:2px solid rgba(0,255,127,0.3);">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.subBoxBg}" style="border-collapse:collapse;background-color:${t.subBoxBg};border-radius:12px;border:2px solid rgba(0,255,127,0.3);">
               <tr><td style="padding:28px;">
                 <table width="100%" cellpadding="10" cellspacing="0" border="0" style="border-collapse:collapse;">
                   <tr>
                     <td style="color:#9af59a;font-size:16px;font-weight:600;">💎 Bonus tokeny:</td>
-                    <td style="color:#00ff7f;font-size:26px;font-weight:700;text-align:right;text-shadow:0 0 20px rgba(0,255,127,0.6);">${tokens.toLocaleString('cs-CZ')} ZION ⚡</td>
+                    <td style="color:#00ff7f;font-size:26px;font-weight:700;text-align:right;">${tokens.toLocaleString('cs-CZ')} ZION ⚡</td>
                   </tr>
                 </table>
                 <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-top:20px;border-top:1px solid rgba(0,255,127,0.2);padding-top:20px;">
@@ -288,14 +322,14 @@ function zionTokenSectionHtml(order: OrderEmailData, theme: ShopTheme): string {
             </table>
           </td></tr>
           <tr><td style="padding-top:24px;">
-            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;background:rgba(255,215,0,0.1);border-left:4px solid #FFD700;padding:16px;border-radius:8px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.warningBg}" style="border-collapse:collapse;background-color:${t.warningBg};border-left:4px solid #FFD700;padding:16px;border-radius:8px;">
               <tr><td style="color:#FFD700;font-size:14px;line-height:1.6;">
                 ⚠️ <strong>DŮLEŽITÉ:</strong> Uložte si Wallet ID na bezpečné místo! Po spuštění MainNetu budou tokeny zaslány na vaši ZION peněženku.
               </td></tr>
             </table>
           </td></tr>
           <tr><td style="padding-top:24px;">
-            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;background:rgba(0,0,0,0.3);border-radius:12px;border:1px solid rgba(0,255,127,0.2);">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.subBoxBg}" style="border-collapse:collapse;background-color:${t.subBoxBg};border-radius:12px;border:1px solid rgba(0,255,127,0.2);">
               <tr><td style="padding:20px;">
                 <h4 style="color:${t.accent};margin:0 0 14px 0;font-size:16px;text-align:center;">📖 Co s tokeny můžete dělat?</h4>
                 <ul style="color:#a8ffb0;font-size:14px;line-height:1.8;margin:0;padding-left:24px;">
@@ -308,8 +342,8 @@ function zionTokenSectionHtml(order: OrderEmailData, theme: ShopTheme): string {
             </table>
           </td></tr>
           <tr><td style="text-align:center;padding-top:24px;">
-            <table align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;display:inline-table;">
-              <tr><td style="padding:14px 32px;background:linear-gradient(135deg, #00ff7f, #32cd32);border-radius:999px;box-shadow:0 6px 20px rgba(0,255,127,0.4);border:2px solid rgba(255,215,0,0.5);">
+            <table align="center" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.tokenBadgeBg}" style="border-collapse:collapse;display:inline-table;background-color:${t.tokenBadgeBg};border-radius:999px;border:2px solid rgba(255,215,0,0.5);">
+              <tr><td style="padding:14px 32px;">
                 <a href="https://zionterranova.com/dashboard" style="color:#000000;text-decoration:none;font-weight:700;font-size:16px;letter-spacing:0.5px;">🎯 Zjistit více o ZION</a>
               </td></tr>
             </table>
@@ -348,33 +382,33 @@ export async function buildV2OrderConfirmationHtml(
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ZION - Potvrzení objednávky #${escapeHtml(order.orderId)}</title>
 </head>
-<body style="margin:0;padding:0;font-family:'Trebuchet MS','Verdana',sans-serif;background:radial-gradient(circle at 20% 20%, rgba(0,255,0,0.15), transparent 40%), radial-gradient(circle at 80% 15%, rgba(255,215,0,0.15), transparent 45%), radial-gradient(circle at 50% 90%, rgba(220,20,60,0.18), transparent 40%), ${t.bg};">
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:linear-gradient(145deg, rgba(0,0,0,0.85), rgba(0,0,0,0.96));padding:50px 20px;border-collapse:collapse;">
+<body style="margin:0;padding:0;font-family:'Trebuchet MS','Verdana',sans-serif;background-color:${t.bg};">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.outerBg}" style="background-color:${t.outerBg};padding:50px 20px;border-collapse:collapse;">
     <tr><td align="center">
-      <table width="680" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.card}" style="background:${t.card};border-radius:24px;overflow:hidden;box-shadow:0 28px 72px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.06);max-width:680px;width:100%;border-collapse:collapse;">
+      <table width="680" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.card}" style="background-color:${t.card};border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);max-width:680px;width:100%;border-collapse:collapse;">
         <tr>
-          <td style="background:${t.headerGradient};padding:4px;">
-            <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.card}" style="background:${t.card};border-collapse:collapse;">
+          <td bgcolor="${t.headerFallback}" style="background-color:${t.headerFallback};padding:4px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.card}" style="background-color:${t.card};border-collapse:collapse;">
               <tr><td style="padding:38px 32px;text-align:center;">
                 <table align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;display:inline-table;">
-                  <tr><td style="padding:11px 22px;border-radius:999px;background:rgba(0,0,0,0.4);color:${t.accent};font-size:13px;letter-spacing:3.5px;border:1px solid rgba(${theme === 'zion' ? '252,209,22' : '255,215,0'},0.5);text-transform:uppercase;font-weight:600;text-align:center;">
+                  <tr><td style="padding:11px 22px;border-radius:999px;background-color:${t.subBoxBg};color:${t.accent};font-size:13px;letter-spacing:3.5px;border:1px solid rgba(255,215,0,0.5);text-transform:uppercase;font-weight:600;text-align:center;">
                     ⚡ ESHOP OBJEDNÁVKA ⚡
                   </td></tr>
                 </table>
-                <h1 style="color:${t.accent};margin:18px 0 8px 0;font-size:38px;font-weight:700;text-shadow:0 8px 24px rgba(0,0,0,0.5), 0 0 40px rgba(255,215,0,0.3);">ZION TERRA NOVA</h1>
+                <h1 style="color:${t.accent};margin:18px 0 8px 0;font-size:38px;font-weight:700;">ZION TERRA NOVA</h1>
                 <p style="color:${t.muted};margin:0;font-size:16px;letter-spacing:1.5px;font-weight:500;">🌿 One Love • One Chain • One Future 🌿</p>
               </td></tr>
             </table>
           </td>
         </tr>
         <tr>
-          <td style="padding:50px 40px 30px 40px;background:linear-gradient(180deg, #0a0a0a 0%, #050505 100%);">
+          <td bgcolor="${t.innerBg}" style="background-color:${t.innerBg};padding:50px 40px 30px 40px;">
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
               <tr><td align="center" style="text-align:center;padding-bottom:36px;">
-                <table align="center" width="96" height="96" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.successBg}" style="background:linear-gradient(145deg, #1f9b1f, #00ff7f);border-radius:50%;border:3px solid rgba(255,215,0,0.4);box-shadow:0 0 50px rgba(0,255,0,0.45), 0 12px 32px rgba(0,0,0,0.4);border-collapse:collapse;">
+                <table align="center" width="96" height="96" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.successIconBg}" style="background-color:${t.successIconBg};border-radius:50%;border:3px solid rgba(255,215,0,0.4);border-collapse:collapse;">
                   <tr><td align="center" valign="middle" style="text-align:center;vertical-align:middle;color:${t.successIconText};font-size:52px;font-weight:bold;">✓</td></tr>
                 </table>
-                <h2 style="color:${t.accent};margin:22px 0 0 0;font-size:30px;letter-spacing:0.8px;font-weight:700;text-shadow:0 4px 16px rgba(0,0,0,0.5);">Jah Bless! 🙏 Objednávka přijata</h2>
+                <h2 style="color:${t.accent};margin:22px 0 0 0;font-size:30px;letter-spacing:0.8px;font-weight:700;">Jah Bless! 🙏 Objednávka přijata</h2>
                 <p style="color:#a8ffb0;margin:16px 0 0 0;font-size:16px;line-height:1.6;">
                   Díky za důvěru! 💚 Vaše objednávka byla úspěšně zpracována.<br>
                   <span style="color:${t.accent};font-weight:600;">ZION rodina</span> se rozrůstá o dalšího strážce světla. ✨
@@ -382,7 +416,7 @@ export async function buildV2OrderConfirmationHtml(
               </td></tr>
             </table>
 
-            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-bottom:36px;background:linear-gradient(145deg, rgba(34,139,34,0.2), rgba(0,0,0,0.4));border:2px solid rgba(0,255,0,0.35);border-radius:18px;box-shadow:inset 0 2px 8px rgba(0,255,0,0.1);">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.orderBoxBg}" style="border-collapse:collapse;margin-bottom:36px;background-color:${t.orderBoxBg};border:2px solid rgba(0,255,0,0.35);border-radius:18px;">
               <tr><td style="padding:32px 28px;">
                 <h3 style="color:${t.accent};margin:0 0 24px 0;font-size:22px;text-align:center;letter-spacing:1px;font-weight:700;border-bottom:2px solid rgba(255,215,0,0.3);padding-bottom:16px;">📋 Detaily objednávky</h3>
                 <table width="100%" cellpadding="12" cellspacing="0" border="0" style="border-collapse:collapse;">
@@ -410,7 +444,7 @@ export async function buildV2OrderConfirmationHtml(
               </td></tr>
             </table>
 
-            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-bottom:36px;background:linear-gradient(145deg, rgba(220,20,60,0.15), rgba(0,0,0,0.4));border:2px solid rgba(220,20,60,0.3);border-radius:18px;box-shadow:inset 0 2px 8px rgba(220,20,60,0.1);">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.itemsBoxBg}" style="border-collapse:collapse;margin-bottom:36px;background-color:${t.itemsBoxBg};border:2px solid rgba(220,20,60,0.3);border-radius:18px;">
               <tr><td style="padding:32px 28px;">
                 <h3 style="color:${t.accent};margin:0 0 24px 0;font-size:22px;text-align:center;letter-spacing:1px;font-weight:700;border-bottom:2px solid rgba(255,215,0,0.3);padding-bottom:16px;">🛒 Položky objednávky</h3>
                 ${itemsHtml}
@@ -421,10 +455,10 @@ export async function buildV2OrderConfirmationHtml(
             ${digitalDownloadsHtml(order)}
             ${shippingHtml}
 
-            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-bottom:36px;background:linear-gradient(145deg, rgba(255,215,0,0.15), rgba(0,0,0,0.4));border:2px solid rgba(255,215,0,0.35);border-radius:18px;box-shadow:inset 0 2px 8px rgba(255,215,0,0.1);">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.paymentBoxBg}" style="border-collapse:collapse;margin-bottom:36px;background-color:${t.paymentBoxBg};border:2px solid rgba(255,215,0,0.35);border-radius:18px;">
               <tr><td style="padding:32px 28px;">
                 <h3 style="color:${t.accent};margin:0 0 20px 0;font-size:22px;text-align:center;letter-spacing:1px;font-weight:700;">💳 Informace o platbě</h3>
-                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;background:rgba(0,0,0,0.3);border:1px solid rgba(255,215,0,0.2);border-radius:12px;">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.subBoxBg}" style="border-collapse:collapse;background-color:${t.subBoxBg};border:1px solid rgba(255,215,0,0.2);border-radius:12px;">
                   <tr><td style="padding:24px;">
                     <table width="100%" cellpadding="8" cellspacing="0" border="0" style="border-collapse:collapse;">
                       <tr>
@@ -434,7 +468,7 @@ export async function buildV2OrderConfirmationHtml(
                       <tr>
                         <td style="color:${t.muted};font-size:15px;font-weight:600;padding-top:8px;">Status platby:</td>
                         <td style="text-align:right;padding-top:8px;">
-                          <span style="display:inline-block;padding:6px 16px;background:${statusColor};color:#000000;font-weight:700;border-radius:999px;font-size:14px;">${escapeHtml(paymentStatus)}</span>
+                          <span style="display:inline-block;padding:6px 16px;background-color:${statusColor};color:#000000;font-weight:700;border-radius:999px;font-size:14px;">${escapeHtml(paymentStatus)}</span>
                         </td>
                       </tr>
                       ${paymentInstructions}
@@ -444,7 +478,7 @@ export async function buildV2OrderConfirmationHtml(
               </td></tr>
             </table>
 
-            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-bottom:24px;background:linear-gradient(145deg, rgba(34,139,34,0.15), rgba(0,0,0,0.3));border:2px solid rgba(0,255,0,0.25);border-radius:18px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.nextBoxBg}" style="border-collapse:collapse;margin-bottom:24px;background-color:${t.nextBoxBg};border:2px solid rgba(0,255,0,0.25);border-radius:18px;">
               <tr><td style="padding:28px;">
                 <h3 style="color:${t.accent};margin:0 0 18px 0;font-size:20px;text-align:center;letter-spacing:0.8px;font-weight:700;">⚡ Co bude dál?</h3>
                 <ul style="color:#a8ffb0;font-size:15px;line-height:1.8;margin:0;padding-left:24px;">
@@ -458,16 +492,16 @@ export async function buildV2OrderConfirmationHtml(
           </td>
         </tr>
         <tr>
-          <td style="background:${t.footerGradient};padding:3px;">
-            <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.bg}" style="background:${t.bg};border-collapse:collapse;">
+          <td bgcolor="${t.footerFallback}" style="background-color:${t.footerFallback};padding:3px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.bg}" style="background-color:${t.bg};border-collapse:collapse;">
               <tr><td style="padding:32px;text-align:center;">
                 <p style="color:${t.muted};font-size:16px;margin:0 0 12px 0;font-weight:600;letter-spacing:0.5px;">☮️ Peace & One Love ☮️</p>
                 <p style="color:#999999;font-size:13px;margin:0 0 8px 0;line-height:1.6;">
                   Tento email byl odeslán z <strong style="color:${t.accent};">ZION eShop</strong><br>
                   Pokud máte jakékoliv dotazy, neváhejte nás kontaktovat
                 </p>
-                <table align="center" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:16px 0;">
-                  <tr><td style="padding:12px 28px;background:linear-gradient(135deg, #1f9b1f, #00ff7f);border-radius:999px;text-align:center;box-shadow:0 6px 20px rgba(0,255,0,0.3);border:2px solid rgba(255,215,0,0.4);">
+                <table align="center" cellpadding="0" cellspacing="0" border="0" bgcolor="${t.successIconBg}" style="border-collapse:collapse;margin:16px 0;background-color:${t.successIconBg};border-radius:999px;text-align:center;border:2px solid rgba(255,215,0,0.4);">
+                  <tr><td style="padding:12px 28px;">
                     <a href="${escapeHtml(COMPANY.shopUrl)}" style="color:#000000;text-decoration:none;font-weight:700;font-size:15px;letter-spacing:0.5px;">🛒 Přejít do eshopu</a>
                   </td></tr>
                 </table>
