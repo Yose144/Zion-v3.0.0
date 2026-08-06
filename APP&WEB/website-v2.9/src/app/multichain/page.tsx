@@ -179,10 +179,10 @@ export default function MultichainPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             className="zion-rainbow-card p-6 sm:p-8 md:p-10"
-            style={{ '--rc': '16, 185, 129' } as CSSProperties}
+            style={{ '--rc': '7, 137, 48' } as CSSProperties}
           >
             <div className="flex flex-col gap-6">
-              <div className="zion-kicker border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
+              <div className="zion-kicker border-zion-cyan-500/30 bg-zion-cyan-500/10 text-zion-cyan-400">
                 <Layers className="h-4 w-4" />
                 ZION Multichain
               </div>
@@ -199,10 +199,10 @@ export default function MultichainPage() {
               {/* Stats row */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
-                  { label: t('chains'), value: '13', icon: Globe2, color: 'text-emerald-400' },
+                  { label: t('chains'), value: '13', icon: Globe2, color: 'text-zion-cyan-400' },
                   { label: t('validators'), value: '5/7', icon: ShieldCheck, color: 'text-zion-gold' },
                   { label: t('endpoints'), value: '30+', icon: Code2, color: 'text-zion-cyan' },
-                  { label: t('tests'), value: '562', icon: Activity, color: 'text-emerald-400' },
+                  { label: t('tests'), value: '562', icon: Activity, color: 'text-zion-cyan-400' },
                 ].map((s) => (
                   <div key={s.label} className="rounded-xl border border-white/10 bg-black/30 p-3">
                     <s.icon className={`h-5 w-5 ${s.color} mb-1`} />
@@ -234,14 +234,14 @@ export default function MultichainPage() {
         {/* ═══════════════ BRIDGE ═══════════════ */}
         <section id="bridge" className="space-y-6 scroll-mt-20">
           <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-emerald-500/10 p-2.5 border border-emerald-500/20">
-              <ArrowLeftRight className="h-6 w-6 text-emerald-400" />
+            <div className="rounded-xl bg-zion-cyan-500/10 p-2.5 border border-zion-cyan-500/20">
+              <ArrowLeftRight className="h-6 w-6 text-zion-cyan-400" />
             </div>
             <div>
               <h2 className="text-2xl sm:text-3xl font-bold text-white">{t('bridge')}</h2>
               <p className="text-sm text-gray-400 mt-0.5">{t('bridgeDesc')}</p>
             </div>
-            <span className={`ml-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${relayOnline ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/15 text-red-400 border border-red-500/30'}`}>
+            <span className={`ml-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${relayOnline ? 'bg-zion-cyan-500/15 text-zion-cyan-400 border border-zion-cyan-500/30' : 'bg-zion-purple-500/15 text-zion-purple-400 border border-zion-purple-500/30'}`}>
               <Activity className="h-3 w-3" />
               {relayOnline ? t('relayOnline') : t('relayOffline')}
             </span>
@@ -265,7 +265,7 @@ export default function MultichainPage() {
           )}
 
           {/* Bridge widget — link to /defi for full widget */}
-          <div className="zion-rainbow-card p-5 sm:p-6" style={{ '--rc': '16, 185, 129' } as CSSProperties}>
+          <div className="zion-rainbow-card p-5 sm:p-6" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-white">{cs ? 'Bridge operace' : 'Bridge operations'}</h3>
@@ -312,15 +312,15 @@ export default function MultichainPage() {
                 key={cf.name}
                 className={`rounded-xl border p-4 transition-all ${
                   cf.status === 'live'
-                    ? 'border-emerald-500/25 bg-emerald-500/[0.06]'
+                    ? 'border-zion-cyan-500/25 bg-zion-cyan-500/[0.06]'
                     : 'border-white/10 bg-black/30'
                 }`}
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <cf.icon className={`h-5 w-5 ${cf.status === 'live' ? 'text-emerald-400' : 'text-gray-400'}`} />
+                  <cf.icon className={`h-5 w-5 ${cf.status === 'live' ? 'text-zion-cyan-400' : 'text-gray-400'}`} />
                   <span className="font-semibold text-white text-sm">{cf.name}</span>
                   {cf.status === 'live' && (
-                    <span className="ml-auto text-[10px] font-bold uppercase tracking-wider text-emerald-400">● Live</span>
+                    <span className="ml-auto text-[10px] font-bold uppercase tracking-wider text-zion-cyan-400">● Live</span>
                   )}
                 </div>
                 <p className="text-xs text-gray-500">{cf.chains}</p>
@@ -352,11 +352,11 @@ export default function MultichainPage() {
               <div className="space-y-2 text-sm">
                 <div className="flex items-center justify-between rounded-lg border border-white/10 bg-black/30 px-3 py-2">
                   <span className="text-gray-400">{cs ? 'Chain rodiny' : 'Chain families'}</span>
-                  <span className="font-mono text-emerald-400">13</span>
+                  <span className="font-mono text-zion-cyan-400">13</span>
                 </div>
                 <div className="flex items-center justify-between rounded-lg border border-white/10 bg-black/30 px-3 py-2">
                   <span className="text-gray-400">{cs ? 'Živé koridory' : 'Live corridors'}</span>
-                  <span className="font-mono text-emerald-400">EVM (6)</span>
+                  <span className="font-mono text-zion-cyan-400">EVM (6)</span>
                 </div>
                 <div className="flex items-center justify-between rounded-lg border border-white/10 bg-black/30 px-3 py-2">
                   <span className="text-gray-400">{cs ? 'Quorum' : 'Quorum'}</span>
@@ -405,7 +405,7 @@ export default function MultichainPage() {
 
           {/* HTLC pending table */}
           {pendingHtlcs.length > 0 && (
-            <div className="zion-rainbow-sub p-4" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
+            <div className="zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
               <h3 className="text-sm font-semibold text-white mb-3">{cs ? 'Aktivní HTLC zámky' : 'Active HTLC Locks'}</h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
@@ -433,7 +433,7 @@ export default function MultichainPage() {
           )}
 
           {/* HTLC info — full swap functionality is embedded above via widgets */}
-          <div className="zion-rainbow-card p-5" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
+          <div className="zion-rainbow-card p-5" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
             <h3 className="text-lg font-semibold text-white mb-2">{cs ? 'HTLC Atomic Swap' : 'HTLC Atomic Swap'}</h3>
             <p className="text-sm text-gray-400">
               {cs ? 'Vytvoř lock, claim nebo refund pomocí SHA-256 hashlock + timelock. Escrow adresa drží tokeny do claimu/refundu. Minimum 100 ZION na lock.' : 'Create lock, claim, or refund using SHA-256 hashlock + timelock. Escrow holds tokens until claim/refund. Minimum 100 ZION per lock.'}
@@ -458,8 +458,8 @@ export default function MultichainPage() {
         {/* ═══════════════ DEX ═══════════════ */}
         <section id="dex" className="space-y-6 scroll-mt-20">
           <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-purple-500/10 p-2.5 border border-purple-500/20">
-              <Cpu className="h-6 w-6 text-purple-400" />
+            <div className="rounded-xl bg-zion-purple-500/10 p-2.5 border border-zion-purple-500/20">
+              <Cpu className="h-6 w-6 text-zion-purple-400" />
             </div>
             <div>
               <h2 className="text-2xl sm:text-3xl font-bold text-white">{t('dex')}</h2>
@@ -469,7 +469,7 @@ export default function MultichainPage() {
 
           {/* DEX widgets — link to /defi for full widgets */}
           <div className="grid gap-4 lg:grid-cols-2">
-            <div className="zion-rainbow-card p-5" style={{ '--rc': '168, 85, 247' } as CSSProperties}>
+            <div className="zion-rainbow-card p-5" style={{ '--rc': '228, 30, 43' } as CSSProperties}>
               <h3 className="text-lg font-semibold text-white mb-2">{cs ? 'Cross-chain swap' : 'Cross-chain swap'}</h3>
               <p className="text-sm text-gray-400 mb-4">
                 {cs ? 'ZionDex Router API. Multi-hop routing. Top-N quote paths.' : 'ZionDex Router API. Multi-hop routing. Top-N quote paths.'}
@@ -479,7 +479,7 @@ export default function MultichainPage() {
                 {cs ? 'Otevřít swap' : 'Open swap'}
               </Link>
             </div>
-            <div className="zion-rainbow-card p-5" style={{ '--rc': '168, 85, 247' } as CSSProperties}>
+            <div className="zion-rainbow-card p-5" style={{ '--rc': '228, 30, 43' } as CSSProperties}>
               <h3 className="text-lg font-semibold text-white mb-2">{cs ? 'wZION / ETH na Base' : 'wZION / ETH on Base'}</h3>
               <p className="text-sm text-gray-400 mb-4">
                 {cs ? 'Uniswap V3 pool. 0.3% fee. 1% slippage tolerance.' : 'Uniswap V3 pool. 0.3% fee. 1% slippage tolerance.'}
@@ -492,7 +492,7 @@ export default function MultichainPage() {
           </div>
 
           {/* ZionDex Dashboard link */}
-          <div className="zion-rainbow-card p-5" style={{ '--rc': '168, 85, 247' } as CSSProperties}>
+          <div className="zion-rainbow-card p-5" style={{ '--rc': '228, 30, 43' } as CSSProperties}>
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-white">ZionDex Dashboard</h3>
@@ -511,8 +511,8 @@ export default function MultichainPage() {
         {/* ═══════════════ DAO ═══════════════ */}
         <section id="dao" className="space-y-6 scroll-mt-20">
           <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-blue-500/10 p-2.5 border border-blue-500/20">
-              <ShieldCheck className="h-6 w-6 text-blue-400" />
+            <div className="rounded-xl bg-zion-purple-500/10 p-2.5 border border-zion-purple-500/20">
+              <ShieldCheck className="h-6 w-6 text-zion-purple-400" />
             </div>
             <div>
               <h2 className="text-2xl sm:text-3xl font-bold text-white">{t('dao')}</h2>
@@ -524,8 +524,8 @@ export default function MultichainPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               { label: cs ? 'Treasury' : 'Treasury', value: daoStats ? `${(daoStats.treasury_balance / 1e6).toFixed(2)}M ZION` : '—', icon: Coins, color: 'text-zion-gold' },
-              { label: cs ? 'Proposals' : 'Proposals', value: daoStats?.governance?.total_proposals?.toString() ?? '—', icon: ShieldCheck, color: 'text-blue-400' },
-              { label: cs ? 'Active' : 'Active', value: daoStats?.active?.toString() ?? '—', icon: Activity, color: 'text-emerald-400' },
+              { label: cs ? 'Proposals' : 'Proposals', value: daoStats?.governance?.total_proposals?.toString() ?? '—', icon: ShieldCheck, color: 'text-zion-purple-400' },
+              { label: cs ? 'Active' : 'Active', value: daoStats?.active?.toString() ?? '—', icon: Activity, color: 'text-zion-cyan-400' },
               { label: cs ? 'Quorum' : 'Quorum', value: daoStats ? `${daoStats.quorum_percent}%` : '—', icon: Layers, color: 'text-zion-cyan' },
             ].map((s) => (
               <div key={s.label} className="rounded-xl border border-white/10 bg-black/30 p-3 text-center">
@@ -539,7 +539,7 @@ export default function MultichainPage() {
           {/* DAO info */}
           <div className="zion-rainbow-sub p-4" style={{ '--rc': '59, 130, 246' } as CSSProperties}>
             <p className="text-sm text-gray-300">
-              <span className="text-blue-400 font-semibold">{cs ? 'Governance fáze:' : 'Governance phases:'}</span>{' '}
+              <span className="text-zion-purple-400 font-semibold">{cs ? 'Governance fáze:' : 'Governance phases:'}</span>{' '}
               {cs ? 'Fáze 1 (Stewardship 2025) → Fáze 2 (Hybrid DAO 2026) → Fáze 3 (Full DAO 2026+). L1 memo scanner parsuje \'DAO:vote:<id>:yes\' formát. Multi-sig treasury 5-of-7 s daily limits.' : 'Phase 1 (Stewardship 2025) → Phase 2 (Hybrid DAO 2026) → Phase 3 (Full DAO 2026+). L1 memo scanner parses \'DAO:vote:<id>:yes\' format. Multi-sig treasury 5-of-7 with daily limits.'}
             </p>
           </div>
@@ -573,7 +573,7 @@ export default function MultichainPage() {
                         className="flex items-center gap-3 rounded-lg border border-white/5 bg-black/20 px-3 py-2 text-xs"
                       >
                         <span className={`font-mono font-bold w-12 shrink-0 ${
-                          ep.m === 'GET' ? 'text-emerald-400' :
+                          ep.m === 'GET' ? 'text-zion-cyan-400' :
                           ep.m === 'POST' ? 'text-zion-gold' : 'text-gray-400'
                         }`}>
                           {ep.m}

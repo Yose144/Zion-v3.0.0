@@ -638,7 +638,7 @@ export const CHAPTERS: BookChapter[] = [
     epigraphCs: 'Forma je prázdnota, prázdnota je forma.',
     epigraphEn: 'Form is emptiness, emptiness is form.',
     color: '#8B5CF6',
-    rgb: '139,92,246',
+    rgb: '228, 30, 43',
     sectionsCs: [
       {
         body: 'WARP je jedno slovo se třemi vrstvami reality.\n\nPrvní vrstva: technický protokol L3, který propojuje sítě a zajišťuje interoperabilitu mezi různými blockchain ekosystémy. Druhá vrstva: fyzikální propulze — Alcubierre drive a výzkum prostorové křivosti pro mezihvězdný let. Třetí vrstva: přechod vědomí — WARP jako metafora pro skok mimo dosavadní hranice lidského myšlení a bytí.',

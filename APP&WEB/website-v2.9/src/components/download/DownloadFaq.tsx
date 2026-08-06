@@ -94,7 +94,7 @@ export default function DownloadFaq({ cs }: { cs: boolean }) {
   const faqItems = getFaqItems(cs);
 
   return (
-    <section className="zion-rainbow-card p-8" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+    <section className="zion-rainbow-card p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DownloadFaqCopy.support[cs ? 'cs' : 'en']}</p>
         <h2 className="text-3xl font-semibold text-white">FAQ</h2>

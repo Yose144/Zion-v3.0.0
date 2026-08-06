@@ -7,10 +7,10 @@ import { useObservatory, type ObservatoryMode } from '@/contexts/ObservatoryCont
 
 const backgroundConfig: Record<ObservatoryMode, { icon: typeof Sparkles; label: string; description: string; color: string }> = {
   'maintenance': { icon: Sparkles, label: 'Maintenance Starfield', description: 'Gold starfield — clean and fast', color: '252, 209, 22' },
-  'planet-orbit': { icon: Globe, label: 'Turquoise Core', description: 'Default turquoise atmosphere', color: '45, 212, 191' },
-  'galaxy-core': { icon: Sparkles, label: 'Galaxy Core', description: 'Contact approach — inward starflow', color: '180, 220, 255' },
-  'desktop-agent': { icon: Radio, label: 'Desktop Agent', description: 'Purple starfield — desktop agent match', color: '200, 118, 255' },
-  'warp-speed': { icon: Orbit, label: 'Warp', description: 'Warp tunnel effect', color: '111, 255, 240' },
+  'planet-orbit': { icon: Globe, label: 'Turquoise Core', description: 'Default turquoise atmosphere', color: '7, 137, 48' },
+  'galaxy-core': { icon: Sparkles, label: 'Galaxy Core', description: 'Contact approach — inward starflow', color: '252, 209, 22' },
+  'desktop-agent': { icon: Radio, label: 'Desktop Agent', description: 'Purple starfield — desktop agent match', color: '228, 30, 43' },
+  'warp-speed': { icon: Orbit, label: 'Warp', description: 'Warp tunnel effect', color: '7, 137, 48' },
 };
 
 export default function BackgroundToggle() {
@@ -96,7 +96,7 @@ export default function BackgroundToggle() {
             className="absolute bottom-16 right-0 w-72 rounded-2xl border border-white/10 bg-black/80 backdrop-blur-2xl shadow-[0_18px_60px_rgba(0,0,0,0.55)] overflow-hidden"
           >
             {/* Rasta gradient top accent — same as nav */}
-            <div className="h-1 w-full bg-linear-to-r from-emerald-400/60 via-zion-gold/70 to-red-400/60" />
+            <div className="h-1 w-full bg-linear-to-r from-zion-cyan-400/60 via-zion-gold/70 to-zion-purple-400/60" />
 
             {/* Header */}
             <div className="flex items-center gap-2 px-4 pt-3 pb-2">

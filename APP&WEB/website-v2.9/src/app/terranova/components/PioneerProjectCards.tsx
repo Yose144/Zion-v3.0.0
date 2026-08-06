@@ -208,7 +208,7 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
               <div
                 key={project.title}
                 className="zion-rainbow-sub p-5 opacity-60"
-                style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+                style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
                 aria-disabled="true"
               >
                 {CardContent}
@@ -221,7 +221,7 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
               key={project.title}
               href={project.href}
               className="group zion-rainbow-sub p-5"
-              style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+              style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
             >
               {CardContent}
             </Link>

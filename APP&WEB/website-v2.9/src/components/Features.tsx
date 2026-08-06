@@ -36,7 +36,7 @@ export default function Features() {
   return (
     <section className="relative px-4 py-6">
       <div className="zion-container">
-        <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+        <div className="zion-rainbow-card p-4 md:p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
           <div className="mb-4">
             <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-gray-400">{copy.badge}</p>
             <h2 className="text-xl font-bold text-white">{copy.title}</h2>
@@ -47,11 +47,11 @@ export default function Features() {
               <div
                 key={track.id}
                 className="zion-rainbow-sub p-3 ring-1 ring-white/5"
-                style={{ '--rc': '99, 102, 241' } as React.CSSProperties}
+                style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between">
                   <track.icon className="h-4 w-4 text-zion-cyan" />
-                  <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-400/10 text-emerald-300">
+                  <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-zion-cyan-400/10 text-zion-cyan-300">
                     {statusLabel.active[cs ? 'cs' : 'en']}
                   </span>
                 </div>

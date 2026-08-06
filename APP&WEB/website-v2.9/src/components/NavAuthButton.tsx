@@ -95,7 +95,7 @@ export default function NavAuthButton() {
                   await logout();
                   router.push('/');
                 }}
-                className="flex w-full items-center gap-2 px-4 py-2.5 text-xs text-red-400 hover:bg-red-500/10 transition-colors"
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-xs text-zion-purple-400 hover:bg-zion-purple-500/10 transition-colors"
               >
                 <LogOut className="w-3.5 h-3.5" /> Logout
               </button>

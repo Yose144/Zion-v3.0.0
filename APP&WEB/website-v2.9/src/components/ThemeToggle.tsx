@@ -81,7 +81,7 @@ export default function ThemeToggle() {
                         </div>
                       </div>
                       {currentTheme.name === theme.name && (
-                        <Check className="w-5 h-5 text-green-400" />
+                        <Check className="w-5 h-5 text-zion-cyan-400" />
                       )}
                     </button>
                   );

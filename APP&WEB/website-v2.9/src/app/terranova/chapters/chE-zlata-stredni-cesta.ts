@@ -10,7 +10,7 @@ const chapter: BookChapter = {
   epigraphEn:
     '"Between the two extremes lies a path.\nThis path leads to insight, to wisdom,\nto calm, to awakening, to nirvana."\n— Siddhartha Gautama Buddha, First Sermon at Sarnath, ~500 BCE\n\n"The middle path is not compromise.\nIt is precision — the exact place where the law ceases to be a burden\nand becomes natural."',
   color: '#10B981',
-  rgb: '16,185,129',
+  rgb: '7, 137, 48',
   sectionsCs: [
     {
       heading: 'Úvod — Příběh prince a Zlatá Střední Cesta',

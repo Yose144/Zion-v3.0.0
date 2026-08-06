@@ -41,8 +41,8 @@ export default function LiveToast({ currentHeight }: { currentHeight: number }) 
             style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
           >
             <div className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-zion-cyan-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-zion-cyan-400" />
             </div>
             <Box className="h-4 w-4 text-zion-gold" />
             <Link

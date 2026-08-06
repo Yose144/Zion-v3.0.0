@@ -86,7 +86,7 @@ export default function LiquidityPage() {
         <div className="max-w-6xl mx-auto px-6 py-8">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <div className="flex items-center gap-3 mb-2">
-              <Droplets className="w-6 h-6 text-cyan-500" />
+              <Droplets className="w-6 h-6 text-zion-cyan-500" />
               <h1 className="text-2xl font-bold text-white">Liquidity Pools</h1>
             </div>
             <p className="text-zinc-400 text-sm">Provide liquidity to ZionDex AMM pools and earn ZDX rewards</p>
@@ -96,9 +96,9 @@ export default function LiquidityPage() {
 
       {/* Under Construction Notice */}
       <div className="max-w-6xl mx-auto px-6 pt-6">
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+        <div className="rounded-xl border border-zion-gold-500/30 bg-zion-gold-500/10 px-4 py-3">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+            <AlertTriangle className="h-5 w-5 text-zion-gold-400 shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-amber-200">ZionDex Liquidity — Under Construction</p>
               <p className="text-xs text-amber-200/70 mt-1">
@@ -118,10 +118,10 @@ export default function LiquidityPage() {
               onClick={() => setTab(t)}
               className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                 tab === t
-                  ? 'zion-rainbow-sub text-amber-400'
+                  ? 'zion-rainbow-sub text-zion-gold-400'
                   : 'border border-white/10 bg-white/5 text-gray-400 hover:text-white'
               }`}
-              style={tab === t ? { '--rc': '245, 158, 11' } as CSSProperties : undefined}
+              style={tab === t ? { '--rc': '252, 209, 22' } as CSSProperties : undefined}
             >
               {t === 'list' && 'Pool List'}
               {t === 'add' && 'Add Liquidity'}
@@ -132,7 +132,7 @@ export default function LiquidityPage() {
 
         {/* Pool List */}
         {tab === 'list' && (
-          <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '245, 158, 11' } as CSSProperties}>
+          <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
             <table className="w-full">
               <thead>
                 <tr className="border-b border-zinc-700/30">
@@ -181,9 +181,9 @@ export default function LiquidityPage() {
         {/* Add Liquidity */}
         {tab === 'add' && (
           <div className="max-w-lg mx-auto">
-            <div className="zion-rainbow-card p-6" style={{ '--rc': '245, 158, 11' } as CSSProperties}>
+            <div className="zion-rainbow-card p-6" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
               <div className="flex items-center gap-2 mb-5">
-                <Plus className="w-5 h-5 text-amber-500" />
+                <Plus className="w-5 h-5 text-zion-gold-500" />
                 <h2 className="text-lg font-bold text-white">Add Liquidity</h2>
               </div>
 
@@ -249,10 +249,10 @@ export default function LiquidityPage() {
                   <div
                     className="zion-rainbow-sub p-3 text-sm"
                     style={{
-                      '--rc': result.startsWith('Error') ? '239, 68, 68' : '16, 185, 129',
+                      '--rc': result.startsWith('Error') ? '228, 30, 43' : '7, 137, 48',
                     } as CSSProperties}
                   >
-                    <span className={result.startsWith('Error') ? 'text-red-400' : 'text-green-400'}>{result}</span>
+                    <span className={result.startsWith('Error') ? 'text-zion-purple-400' : 'text-zion-cyan-400'}>{result}</span>
                   </div>
                 )}
 
@@ -272,9 +272,9 @@ export default function LiquidityPage() {
         {/* Remove Liquidity */}
         {tab === 'remove' && (
           <div className="max-w-lg mx-auto">
-            <div className="zion-rainbow-card p-6" style={{ '--rc': '245, 158, 11' } as CSSProperties}>
+            <div className="zion-rainbow-card p-6" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
               <div className="flex items-center gap-2 mb-5">
-                <Minus className="w-5 h-5 text-amber-500" />
+                <Minus className="w-5 h-5 text-zion-gold-500" />
                 <h2 className="text-lg font-bold text-white">Remove Liquidity</h2>
               </div>
               <div className="text-center py-12 text-zinc-500">
@@ -287,7 +287,7 @@ export default function LiquidityPage() {
 
         {/* Back link */}
         <div className="mt-6 text-center">
-          <Link href="/dex" className="text-sm text-zinc-400 hover:text-amber-400 transition-colors">
+          <Link href="/dex" className="text-sm text-zinc-400 hover:text-zion-gold-400 transition-colors">
             ← Back to Swap
           </Link>
         </div>

@@ -139,8 +139,8 @@ function useNetworkEvents() {
 const typeIcons: Record<string, React.ReactNode> = {
   block: <Box className="h-4 w-4 text-zion-gold" />,
   tx: <ArrowRightLeft className="h-4 w-4 text-zion-cyan" />,
-  peer: <Radio className="h-4 w-4 text-emerald-400" />,
-  miner: <Users className="h-4 w-4 text-purple-400" />,
+  peer: <Radio className="h-4 w-4 text-zion-cyan-400" />,
+  miner: <Users className="h-4 w-4 text-zion-purple-400" />,
 };
 
 function timeAgo(ts: number, cs: boolean): string {

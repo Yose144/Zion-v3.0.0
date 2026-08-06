@@ -43,10 +43,10 @@ export default function ShowdownHero({ className = '' }: { className?: string })
 
       {/* Nebula clouds — purple left, amber right */}
       <motion.div style={{ x: nebulaX }} className="absolute inset-0">
-        <div className="absolute left-[5%] top-[10%] h-[300px] w-[300px] rounded-full bg-purple-600/10 blur-[80px]" />
-        <div className="absolute left-[15%] top-[30%] h-[200px] w-[200px] rounded-full bg-fuchsia-600/8 blur-[60px]" />
-        <div className="absolute right-[5%] top-[15%] h-[280px] w-[280px] rounded-full bg-amber-500/8 blur-[80px]" />
-        <div className="absolute right-[20%] top-[40%] h-[180px] w-[180px] rounded-full bg-orange-500/6 blur-[60px]" />
+        <div className="absolute left-[5%] top-[10%] h-[300px] w-[300px] rounded-full bg-zion-purple-600/10 blur-[80px]" />
+        <div className="absolute left-[15%] top-[30%] h-[200px] w-[200px] rounded-full bg-zion-purple-600/8 blur-[60px]" />
+        <div className="absolute right-[5%] top-[15%] h-[280px] w-[280px] rounded-full bg-zion-gold-500/8 blur-[80px]" />
+        <div className="absolute right-[20%] top-[40%] h-[180px] w-[180px] rounded-full bg-zion-gold-500/6 blur-[60px]" />
       </motion.div>
 
       {/* Stars (parallax) */}
@@ -74,7 +74,7 @@ export default function ShowdownHero({ className = '' }: { className?: string })
       {/* Collision center — energy crack */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
         <motion.div
-          className="h-[2px] w-[400px] bg-gradient-to-r from-amber-500/0 via-white/30 to-purple-500/0"
+          className="h-[2px] w-[400px] bg-gradient-to-r from-zion-gold-500/0 via-white/30 to-zion-purple-500/0"
           animate={{ scaleX: [0.3, 1, 0.3], opacity: [0.2, 0.5, 0.2] }}
           transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
         />
@@ -83,14 +83,14 @@ export default function ShowdownHero({ className = '' }: { className?: string })
       {/* Doge energy core (left, amber) */}
       <motion.div style={{ x: dogeX }} className="absolute left-[12%] top-1/2 -translate-y-1/2">
         <div className="relative h-32 w-32">
-          <div className="absolute inset-0 rounded-full bg-amber-500/15 blur-[40px]" />
+          <div className="absolute inset-0 rounded-full bg-zion-gold-500/15 blur-[40px]" />
           <motion.div
-            className="absolute inset-4 rounded-full border border-amber-500/30"
+            className="absolute inset-4 rounded-full border border-zion-gold-500/30"
             animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.6, 0.3] }}
             transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
           />
           <motion.div
-            className="absolute inset-8 rounded-full bg-gradient-to-br from-amber-400/20 to-amber-600/10 blur-md"
+            className="absolute inset-8 rounded-full bg-gradient-to-br from-zion-gold-400/20 to-zion-gold-600/10 blur-md"
             animate={{ scale: [1, 1.2, 1] }}
             transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
           />
@@ -100,14 +100,14 @@ export default function ShowdownHero({ className = '' }: { className?: string })
       {/* ZION energy core (right, purple) */}
       <motion.div style={{ x: zionX }} className="absolute right-[12%] top-1/2 -translate-y-1/2">
         <div className="relative h-32 w-32">
-          <div className="absolute inset-0 rounded-full bg-purple-500/15 blur-[40px]" />
+          <div className="absolute inset-0 rounded-full bg-zion-purple-500/15 blur-[40px]" />
           <motion.div
-            className="absolute inset-4 rounded-full border border-purple-500/30"
+            className="absolute inset-4 rounded-full border border-zion-purple-500/30"
             animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.6, 0.3] }}
             transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
           />
           <motion.div
-            className="absolute inset-8 rounded-full bg-gradient-to-br from-purple-400/20 to-fuchsia-600/10 blur-md"
+            className="absolute inset-8 rounded-full bg-gradient-to-br from-zion-purple-400/20 to-zion-purple-600/10 blur-md"
             animate={{ scale: [1, 1.2, 1] }}
             transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
           />
@@ -131,7 +131,7 @@ export default function ShowdownHero({ className = '' }: { className?: string })
           animate={{ rotate: -360 }}
           transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
         >
-          <circle cx="100" cy="100" r="60" fill="none" stroke="rgba(245,158,11,0.3)" strokeWidth="1" strokeDasharray="2 8" />
+          <circle cx="100" cy="100" r="60" fill="none" stroke="rgba(252, 209, 22,0.3)" strokeWidth="1" strokeDasharray="2 8" />
         </motion.svg>
       </motion.div>
 

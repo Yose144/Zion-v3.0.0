@@ -19,7 +19,7 @@ export default function DeekshaLiteNews() {
   const articles = NEWS_ARTICLES.slice(0, LITE_LIMIT);
 
   return (
-    <section className="py-12 px-4 border-y-2 border-dashed border-rose-500/50 bg-black/30">
+    <section className="py-12 px-4 border-y-2 border-dashed border-zion-purple-500/50 bg-black/30">
       <div className="zion-container">
         {/* Header */}
         <div className="mb-8">
@@ -46,7 +46,7 @@ export default function DeekshaLiteNews() {
               target={article.external ? '_blank' : undefined}
               rel={article.external ? 'noopener noreferrer' : undefined}
               className="group flex items-start gap-4 zion-rainbow-sub hover:bg-white/[0.05] transition-colors p-4"
-              style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
+              style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
             >
               {/* Date block */}
               <div className="flex-none w-14 text-center">

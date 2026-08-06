@@ -94,7 +94,7 @@ function statusBadge(status: Proposal['status'], cs: boolean) {
   switch (status) {
     case 'active':
       return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[10px] text-emerald-400 uppercase tracking-wider">
+        <span className="inline-flex items-center gap-1 rounded-full bg-zion-cyan-500/10 border border-zion-cyan-500/30 px-2 py-0.5 text-[10px] text-zion-cyan-400 uppercase tracking-wider">
           <Vote className="h-3 w-3" /> {GovernancePanelCopy.active[cs ? 'cs' : 'en']}
         </span>
       );
@@ -106,7 +106,7 @@ function statusBadge(status: Proposal['status'], cs: boolean) {
       );
     case 'rejected':
       return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 border border-red-500/30 px-2 py-0.5 text-[10px] text-red-400 uppercase tracking-wider">
+        <span className="inline-flex items-center gap-1 rounded-full bg-zion-purple-500/10 border border-zion-purple-500/30 px-2 py-0.5 text-[10px] text-zion-purple-400 uppercase tracking-wider">
           <Flame className="h-3 w-3" /> {GovernancePanelCopy.rejected[cs ? 'cs' : 'en']}
         </span>
       );
@@ -158,7 +158,7 @@ export default function GovernancePanel() {
         className="zion-rainbow-card p-6 md:p-8"
         style={purpleRc}
       >
-        <div className="inline-flex items-center gap-2 rounded-full border border-rose-500/40 bg-rose-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-rose-300 uppercase mb-4">
+        <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple-500/40 bg-zion-purple-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-purple-300 uppercase mb-4">
           <Scale className="h-4 w-4" />
           {GovernancePanelCopy.governance[cs ? 'cs' : 'en']}
         </div>
@@ -184,7 +184,7 @@ export default function GovernancePanel() {
 
         <div className="mt-6 flex flex-wrap gap-3 text-xs">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-            <Vote className="h-3 w-3 text-emerald-400" /> {GovernancePanelCopy.k1Token1Vote[cs ? 'cs' : 'en']}
+            <Vote className="h-3 w-3 text-zion-cyan-400" /> {GovernancePanelCopy.k1Token1Vote[cs ? 'cs' : 'en']}
           </span>
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
             <Shield className="h-3 w-3 text-zion-cyan" /> {GovernancePanelCopy.quorumBased[cs ? 'cs' : 'en']}
@@ -195,8 +195,8 @@ export default function GovernancePanel() {
         </div>
 
         {!GOVERNANCE_DEPLOYED && (
-          <div className="mt-6 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 flex items-center gap-3">
-            <Clock className="h-5 w-5 text-amber-400 shrink-0" />
+          <div className="mt-6 rounded-2xl border border-zion-gold-500/20 bg-zion-gold-500/5 p-4 flex items-center gap-3">
+            <Clock className="h-5 w-5 text-zion-gold-400 shrink-0" />
             <p className="text-sm text-gray-300">
               {GovernancePanelCopy.governanceContractAwaitingDepl[cs ? 'cs' : 'en']}
             </p>
@@ -213,9 +213,9 @@ export default function GovernancePanel() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { label: GovernancePanelCopy.totalProposals[cs ? 'cs' : 'en'], value: totalProposals.toString(), icon: Layers, color: 'text-zion-cyan' },
-            { label: GovernancePanelCopy.active[cs ? 'cs' : 'en'], value: activeCount.toString(), icon: Vote, color: 'text-emerald-400' },
+            { label: GovernancePanelCopy.active[cs ? 'cs' : 'en'], value: activeCount.toString(), icon: Vote, color: 'text-zion-cyan-400' },
             { label: GovernancePanelCopy.passed[cs ? 'cs' : 'en'], value: passedCount.toString(), icon: CheckCircle2, color: 'text-zion-gold' },
-            { label: GovernancePanelCopy.quorum[cs ? 'cs' : 'en'], value: '2B', icon: Users, color: 'text-purple-400' },
+            { label: GovernancePanelCopy.quorum[cs ? 'cs' : 'en'], value: '2B', icon: Users, color: 'text-zion-purple-400' },
           ].map((card) => (
             <div key={card.label} className="zion-rainbow-sub p-5" style={purpleRc}>
               <div className="flex items-center gap-2 mb-2">
@@ -235,7 +235,7 @@ export default function GovernancePanel() {
         transition={{ delay: 0.1 }}
       >
         <h2 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
-          <Vote className="h-6 w-6 text-emerald-400" />
+          <Vote className="h-6 w-6 text-zion-cyan-400" />
           {GovernancePanelCopy.proposals[cs ? 'cs' : 'en']}
         </h2>
         {loading ? (
@@ -262,20 +262,20 @@ export default function GovernancePanel() {
                     {/* For / Against bars */}
                     <div>
                       <div className="flex justify-between text-[10px] mb-1">
-                        <span className="text-emerald-400">{GovernancePanelCopy.for[cs ? 'cs' : 'en']}</span>
+                        <span className="text-zion-cyan-400">{GovernancePanelCopy.for[cs ? 'cs' : 'en']}</span>
                         <span className="text-gray-400">{forPct.toFixed(1)}%</span>
                       </div>
                       <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${forPct}%` }} />
+                        <div className="h-full bg-zion-cyan-500 rounded-full" style={{ width: `${forPct}%` }} />
                       </div>
                     </div>
                     <div>
                       <div className="flex justify-between text-[10px] mb-1">
-                        <span className="text-red-400">{GovernancePanelCopy.against[cs ? 'cs' : 'en']}</span>
+                        <span className="text-zion-purple-400">{GovernancePanelCopy.against[cs ? 'cs' : 'en']}</span>
                         <span className="text-gray-400">{againstPct.toFixed(1)}%</span>
                       </div>
                       <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                        <div className="h-full bg-red-500 rounded-full" style={{ width: `${againstPct}%` }} />
+                        <div className="h-full bg-zion-purple-500 rounded-full" style={{ width: `${againstPct}%` }} />
                       </div>
                     </div>
 

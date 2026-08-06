@@ -107,7 +107,7 @@ const editions = [
 ];
 
 const PURPLE = '228, 30, 43';
-const GOLD = '251, 191, 36';
+const GOLD = '252, 209, 22';
 
 export default function QuantumRevolutionClient() {
   const { lang } = useLang();
@@ -312,7 +312,7 @@ export default function QuantumRevolutionClient() {
                   width={220}
                   height={310}
                   sizes="220px"
-                  className="rounded-2xl border shadow-[0_8px_40px_rgba(251,191,36,0.15)] transition-transform hover:scale-[1.03]"
+                  className="rounded-2xl border shadow-[0_8px_40px_rgba(252, 209, 22,0.15)] transition-transform hover:scale-[1.03]"
                   style={{ borderColor: `rgba(${GOLD}, 0.3)` }}
                   loading="lazy"
                 />

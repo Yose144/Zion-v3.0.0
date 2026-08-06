@@ -125,11 +125,11 @@ export default function LiveDashboard() {
   const staleTelemetry = loadedAtLeastOnce && !!error;
 
   const metrics = [
-    { icon: Database, label: LiveDashboardCopy.totalBlocks[cs ? 'cs' : 'en'], value: (stats.total_blocks ?? 0).toLocaleString(locale), tip: LiveDashboardCopy.totalNumberOfMinedBlocksSinceM[cs ? 'cs' : 'en'], color: 'text-zion-gold', rc: '251, 191, 36' },
+    { icon: Database, label: LiveDashboardCopy.totalBlocks[cs ? 'cs' : 'en'], value: (stats.total_blocks ?? 0).toLocaleString(locale), tip: LiveDashboardCopy.totalNumberOfMinedBlocksSinceM[cs ? 'cs' : 'en'], color: 'text-zion-gold', rc: '252, 209, 22' },
     { icon: Gauge, label: LiveDashboardCopy.totalSupply[cs ? 'cs' : 'en'], value: formattedSupply, tip: LiveDashboardCopy.maximumZionSupplyIs144BillionI[cs ? 'cs' : 'en'], color: 'text-zion-purple', rc: '228, 30, 43' },
     { icon: Atom, label: LiveDashboardCopy.transactions[cs ? 'cs' : 'en'], value: (stats.total_transactions ?? 0).toLocaleString(locale), tip: LiveDashboardCopy.totalNumberOfTransactionsRecor[cs ? 'cs' : 'en'], color: 'text-zion-cyan', rc: '7, 137, 48' },
-    { icon: Shield, label: LiveDashboardCopy.difficulty[cs ? 'cs' : 'en'], value: (stats.difficulty ?? 0).toLocaleString(locale), tip: LiveDashboardCopy.currentMiningDifficultySetByLw[cs ? 'cs' : 'en'], color: 'text-emerald-400', rc: '16, 185, 129' },
-    { icon: Braces, label: LiveDashboardCopy.mempoolSize[cs ? 'cs' : 'en'], value: (stats.mempool_size ?? stats.tx_pool_size ?? 0).toLocaleString(locale), tip: LiveDashboardCopy.transactionsWaitingForConfirma[cs ? 'cs' : 'en'], color: 'text-amber-400', rc: '245, 158, 11' },
+    { icon: Shield, label: LiveDashboardCopy.difficulty[cs ? 'cs' : 'en'], value: (stats.difficulty ?? 0).toLocaleString(locale), tip: LiveDashboardCopy.currentMiningDifficultySetByLw[cs ? 'cs' : 'en'], color: 'text-zion-cyan-400', rc: '7, 137, 48' },
+    { icon: Braces, label: LiveDashboardCopy.mempoolSize[cs ? 'cs' : 'en'], value: (stats.mempool_size ?? stats.tx_pool_size ?? 0).toLocaleString(locale), tip: LiveDashboardCopy.transactionsWaitingForConfirma[cs ? 'cs' : 'en'], color: 'text-zion-gold-400', rc: '252, 209, 22' },
   ];
 
   return (
@@ -138,7 +138,7 @@ export default function LiveDashboard() {
         <div className="flex items-center gap-3">
           <Activity className="w-4 h-4 text-zion-gold" />
           <h2 className="text-lg font-semibold text-white">{LiveDashboardCopy.missionConsole[cs ? 'cs' : 'en']}</h2>
-          <span className={`ml-auto inline-flex h-2 w-2 rounded-full ${staleTelemetry ? 'bg-amber-400' : 'bg-emerald-400'} animate-pulse`} />
+          <span className={`ml-auto inline-flex h-2 w-2 rounded-full ${staleTelemetry ? 'bg-zion-gold-400' : 'bg-zion-cyan-400'} animate-pulse`} />
           <span className="text-xs text-gray-400">
             {staleTelemetry
               ? (LiveDashboardCopy.snapshotActive[cs ? 'cs' : 'en'])
@@ -174,7 +174,7 @@ export default function LiveDashboard() {
             <p className="font-mono text-[10px] text-zion-cyan break-all mt-1">{latestBlock?.hash ?? (LiveDashboardCopy.waitingForSignal[cs ? 'cs' : 'en'])}</p>
           </div>
 
-          <div className="zion-rainbow-card p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <div className="flex items-center justify-between">
               <p className="text-[10px] text-gray-400 uppercase tracking-wide">{LiveDashboardCopy.defiPool[cs ? 'cs' : 'en']}</p>
               <TrendingUp className="w-4 h-4 text-zion-cyan" />

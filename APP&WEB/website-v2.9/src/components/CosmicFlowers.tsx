@@ -117,7 +117,7 @@ export default function CosmicFlowers({ className = '' }: { className?: string }
           initialAngle={15}
           colors={[
             'rgba(228,30,43,0.55)',
-            'rgba(168,85,247,0.45)',
+            'rgba(228, 30, 43,0.45)',
             'rgba(129,0,255,0.40)',
             'rgba(196,128,255,0.35)',
           ]}
@@ -147,7 +147,7 @@ export default function CosmicFlowers({ className = '' }: { className?: string }
           colors={[
             'rgba(252,209,22,0.5)',
             'rgba(249,168,38,0.4)',
-            'rgba(251,191,36,0.35)',
+            'rgba(252, 209, 22,0.35)',
           ]}
         />
 

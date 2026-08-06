@@ -272,13 +272,13 @@ export default function ChartsPageClient() {
         label: ExplorerChartsChartsPageClientCopy.difficulty[cs ? 'cs' : 'en'],
         value: stats ? fmtSI(stats.difficulty) : "—",
         icon: TrendingUp,
-        color: "text-emerald-400",
+        color: "text-zion-cyan-400",
       },
       {
         label: ExplorerChartsChartsPageClientCopy.blockTime[cs ? 'cs' : 'en'],
         value: stats ? `${stats.avg_block_time.toFixed(1)}s` : "—",
         icon: Clock,
-        color: "text-amber-400",
+        color: "text-zion-gold-400",
       },
       {
         label: ExplorerChartsChartsPageClientCopy.totalTx[cs ? 'cs' : 'en'],
@@ -290,7 +290,7 @@ export default function ChartsPageClient() {
         label: ExplorerChartsChartsPageClientCopy.mempool[cs ? 'cs' : 'en'],
         value: stats ? String(stats.tx_pool_size) : "—",
         icon: Activity,
-        color: "text-rose-400",
+        color: "text-zion-purple-400",
       },
     ],
     [stats, cs],
@@ -313,7 +313,7 @@ export default function ChartsPageClient() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           className="zion-rainbow-card rounded-3xl md:rounded-4xl bg-black/60 p-6 md:p-10 shadow-[0_30px_120px_rgba(0,0,0,0.45)]"
-          style={{ "--rc": "168, 85, 247" } as React.CSSProperties}
+          style={{ "--rc": "228, 30, 43" } as React.CSSProperties}
         >
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-5">
@@ -381,7 +381,7 @@ export default function ChartsPageClient() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.06 + i * 0.02 }}
                 className="zion-rainbow-sub p-4 rounded-2xl"
-                style={{ "--rc": "168, 85, 247" } as React.CSSProperties}
+                style={{ "--rc": "228, 30, 43" } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[10px] text-gray-400 uppercase tracking-wider">
@@ -429,7 +429,7 @@ export default function ChartsPageClient() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 + idx * 0.04 }}
                   className="zion-rainbow-card rounded-3xl bg-black/60 p-6"
-                  style={{ "--rc": ct.color.replace("#", "").match(/.{2}/g)?.map((h) => parseInt(h, 16)).join(", ") || "168, 85, 247" } as React.CSSProperties}
+                  style={{ "--rc": ct.color.replace("#", "").match(/.{2}/g)?.map((h) => parseInt(h, 16)).join(", ") || "228, 30, 43" } as React.CSSProperties}
                 >
                   {/* chart header */}
                   <div className="flex items-center justify-between mb-4">
@@ -460,7 +460,7 @@ export default function ChartsPageClient() {
                         {values.length > 1 && (
                           <div
                             className={`text-[11px] tabular-nums ${
-                              change >= 0 ? "text-emerald-400" : "text-rose-400"
+                              change >= 0 ? "text-zion-cyan-400" : "text-zion-purple-400"
                             }`}
                           >
                             {change >= 0 ? "▲" : "▼"} {Math.abs(change).toFixed(2)}%
@@ -506,7 +506,7 @@ export default function ChartsPageClient() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.14 }}
         >
-          <div className="zion-rainbow-card rounded-2xl bg-black/60 p-6" style={{ "--rc": "168, 85, 247" } as React.CSSProperties}>
+          <div className="zion-rainbow-card rounded-2xl bg-black/60 p-6" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
             <div className="flex items-start gap-4">
               <div className="w-10 h-10 rounded-xl bg-zion-purple/10 border border-zion-purple/20 flex items-center justify-center flex-shrink-0">
                 <BarChart3 className="w-5 h-5 text-zion-purple" />

@@ -99,7 +99,7 @@ export default function SystemHealth() {
         className="bg-white/5 backdrop-blur border border-white/10 rounded-xl p-8"
       >
         <div className="flex items-center gap-2 mb-6">
-          <Activity className="w-6 h-6 text-green-400" />
+          <Activity className="w-6 h-6 text-zion-cyan-400" />
           <h2 className="text-3xl font-bold">{SystemHealthCopy.systemHealth[cs ? 'cs' : 'en']}</h2>
         </div>
 
@@ -108,11 +108,11 @@ export default function SystemHealth() {
             <div className="text-sm text-gray-400 mb-1">{SystemHealthCopy.status[cs ? 'cs' : 'en']}</div>
             <div className="flex items-center gap-2">
               {health.status === 'ok' || health.status === 'healthy' ? (
-                <CheckCircle className="w-5 h-5 text-green-400" />
+                <CheckCircle className="w-5 h-5 text-zion-cyan-400" />
               ) : health.status === 'degraded' ? (
-                <Activity className="w-5 h-5 text-yellow-400 animate-pulse" />
+                <Activity className="w-5 h-5 text-zion-gold-400 animate-pulse" />
               ) : (
-                <XCircle className="w-5 h-5 text-red-400" />
+                <XCircle className="w-5 h-5 text-zion-purple-400" />
               )}
               <span className="text-lg font-semibold capitalize">{getStatusLabel(health.status)}</span>
             </div>
@@ -140,9 +140,9 @@ export default function SystemHealth() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-semibold">{SystemHealthCopy.rpcNode[cs ? 'cs' : 'en']}</span>
                     {health.dependencies.rpc.healthy ? (
-                      <CheckCircle className="w-5 h-5 text-green-400" />
+                      <CheckCircle className="w-5 h-5 text-zion-cyan-400" />
                     ) : (
-                      <XCircle className="w-5 h-5 text-red-400" />
+                      <XCircle className="w-5 h-5 text-zion-purple-400" />
                     )}
                   </div>
                   <div className="text-sm text-gray-400">
@@ -156,9 +156,9 @@ export default function SystemHealth() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-semibold">{SystemHealthCopy.miningPool[cs ? 'cs' : 'en']}</span>
                     {health.dependencies.mining_pool.healthy ? (
-                      <CheckCircle className="w-5 h-5 text-green-400" />
+                      <CheckCircle className="w-5 h-5 text-zion-cyan-400" />
                     ) : (
-                      <XCircle className="w-5 h-5 text-red-400" />
+                      <XCircle className="w-5 h-5 text-zion-purple-400" />
                     )}
                   </div>
                   <div className="text-sm text-gray-400">

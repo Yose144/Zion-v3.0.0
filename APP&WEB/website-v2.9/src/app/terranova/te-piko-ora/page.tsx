@@ -112,7 +112,7 @@ const FEATURES: FeatureItem[] = [
     descEn: 'Reo Māohi language, tatau as living ledger, va\'a (canoe) governance. Polynesian wisdom and ZION blockchain — two ways of recording memory.',
     status: 'planned' as const,
     color: '#F59E0B',
-    rgb: '245,158,11',
+    rgb: '252, 209, 22',
   },
   {
     icon: Sun,
@@ -122,7 +122,7 @@ const FEATURES: FeatureItem[] = [
     descEn: 'Energy self-sufficiency — solar, wind and tidal energy. ZION node running locally, data stays in the community.',
     status: 'planned' as const,
     color: '#FBBF24',
-    rgb: '251,191,36',
+    rgb: '252, 209, 22',
   },
   {
     icon: Heart,
@@ -132,7 +132,7 @@ const FEATURES: FeatureItem[] = [
     descEn: 'Community fund powered by ZION tithe — 5% of every mined block flows automatically to communities in need.',
     status: 'planned' as const,
     color: '#EC4899',
-    rgb: '236,72,153',
+    rgb: '228, 30, 43',
   },
   {
     icon: Shield,
@@ -142,7 +142,7 @@ const FEATURES: FeatureItem[] = [
     descEn: 'Records on ZION blockchain — immutable ledger for cultural heritage, land rights and community decisions.',
     status: 'vision' as const,
     color: '#8B5CF6',
-    rgb: '139,92,246',
+    rgb: '228, 30, 43',
   },
 ];
 
@@ -275,10 +275,10 @@ export default function TePikoOraPage() {
           transition={{ duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start">
               {/* Ocean symbol */}
-              <div className="shrink-0 w-20 h-20 flex items-center justify-center text-4xl zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+              <div className="shrink-0 w-20 h-20 flex items-center justify-center text-4xl zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                 🌊
               </div>
 
@@ -313,7 +313,7 @@ export default function TePikoOraPage() {
                   {SIGNALS.map((signal) => {
                     const Icon = signal.icon;
                     return (
-                      <div key={signal.labelCs} className="zion-rainbow-sub px-3 py-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+                      <div key={signal.labelCs} className="zion-rainbow-sub px-3 py-3" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                         <div className="flex items-center gap-2 text-zion-gold">
                           <Icon className="h-4 w-4" />
                           <span className="text-sm font-semibold">{signal.value}</span>
@@ -337,7 +337,7 @@ export default function TePikoOraPage() {
           transition={{ delay: 0.15, duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <div className="relative z-10 grid md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-3">
                 <h3 className="text-lg font-bold text-zion-gold">
@@ -357,7 +357,7 @@ export default function TePikoOraPage() {
                   { label: TerranovaTePikoOraCopy.ocean[cs ? 'cs' : 'en'], val: '4M km²' },
                   { label: TerranovaTePikoOraCopy.culture[cs ? 'cs' : 'en'], val: TerranovaTePikoOraCopy.polynesia[cs ? 'cs' : 'en'] },
                 ].map((s) => (
-                  <div key={s.label} className="text-center p-3 zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                  <div key={s.label} className="text-center p-3 zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                     <p className="text-gray-300 font-bold text-xs">{s.val}</p>
                     <p className="text-gray-600 text-[10px]">{s.label}</p>
                   </div>
@@ -383,7 +383,7 @@ export default function TePikoOraPage() {
             </h2>
           </div>
 
-          <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[10px] uppercase tracking-[0.3em] font-semibold border-b border-white/10">
               <div className="p-3 text-gray-500">{TerranovaTePikoOraCopy.polynesia[cs ? 'cs' : 'en']}</div>
               <div className="p-3 text-gray-300 sm:border-l border-white/10">{TerranovaTePikoOraCopy.principle[cs ? 'cs' : 'en']}</div>
@@ -447,14 +447,14 @@ export default function TePikoOraPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 + i * 0.07, duration: 0.5 }}
                   className="relative zion-rainbow-sub p-5 space-y-3 overflow-hidden group hover:scale-[1.02] transition-transform duration-300"
-                  style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+                  style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
                 >
                   <div
                     className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-[50px] opacity-20 group-hover:opacity-35 transition-opacity duration-500 bg-zion-gold"
                     
                   />
                   <div className="flex items-start justify-between relative z-10 gap-3">
-                    <span className="inline-flex h-11 w-11 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                    <span className="inline-flex h-11 w-11 items-center justify-center zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                       <Icon className="h-5 w-5 text-zion-gold" />
                     </span>
                     <span
@@ -483,7 +483,7 @@ export default function TePikoOraPage() {
           transition={{ delay: 0.25, duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <div className="relative z-10 space-y-4">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">🗿</span>
@@ -545,12 +545,12 @@ export default function TePikoOraPage() {
                       backgroundColor: p.active ? 'rgba(34,211,238,0.2)' : 'rgba(0,0,0,0.5)',
                     }}
                   >
-                    {p.active && <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />}
+                    {p.active && <div className="w-1.5 h-1.5 rounded-full bg-zion-cyan-400 animate-pulse" />}
                   </div>
 
                   <div
                     className="zion-rainbow-sub p-4 space-y-1"
-                    style={{ '--rc': p.active ? '7, 137, 48' : '16, 185, 129' } as React.CSSProperties}
+                    style={{ '--rc': p.active ? '7, 137, 48' : '7, 137, 48' } as React.CSSProperties}
                   >
                     <div className="flex items-center gap-3">
                       <span
@@ -563,7 +563,7 @@ export default function TePikoOraPage() {
                         {cs ? p.cs : p.en}
                       </span>
                       {p.active && (
-                        <span className="text-cyan-400 text-xs animate-pulse">
+                        <span className="text-zion-cyan-400 text-xs animate-pulse">
                           ⚡ {TerranovaTePikoOraCopy.exploringNow[cs ? 'cs' : 'en']}
                         </span>
                       )}
@@ -590,14 +590,14 @@ export default function TePikoOraPage() {
             <h2 className="text-2xl font-bold text-white">ZION Network</h2>
           </div>
 
-          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <div className="relative z-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {ZION_ITEMS.map((item) => (
                 <div
                   key={item.label}
-                  className="flex items-center gap-3 zion-rainbow-sub p-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+                  className="flex items-center gap-3 zion-rainbow-sub p-3" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
                 >
-                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                     <item.icon className="h-4 w-4 text-zion-gold" />
                   </span>
                   <div>
@@ -623,7 +623,7 @@ export default function TePikoOraPage() {
           transition={{ delay: 0.45, duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <h3 className="text-lg font-bold text-zion-gold">
               {TerranovaTePikoOraCopy.openQuestionsLookingForGuardia[cs ? 'cs' : 'en']}
             </h3>

@@ -103,7 +103,7 @@ const getFeatures = (cs: boolean) => [
     title: WalletCopy.ed25519[cs ? 'cs' : 'en'],
     desc: WalletCopy.stateOfTheArtCurveCryptography[cs ? 'cs' : 'en'],
     icon: Fingerprint,
-    color: 'text-cyan-400',
+    color: 'text-zion-cyan-400',
   },
   {
     title: WalletCopy.bip39Mnemonic[cs ? 'cs' : 'en'],
@@ -115,13 +115,13 @@ const getFeatures = (cs: boolean) => [
     title: WalletCopy.utxoModel[cs ? 'cs' : 'en'],
     desc: WalletCopy.nativeZionL1UtxoModelTranspare[cs ? 'cs' : 'en'],
     icon: Zap,
-    color: 'text-emerald-400',
+    color: 'text-zion-cyan-400',
   },
   {
     title: WalletCopy.onChain[cs ? 'cs' : 'en'],
     desc: WalletCopy.fullyOnChainWalletNoCustodialS[cs ? 'cs' : 'en'],
     icon: Globe2,
-    color: 'text-purple-400',
+    color: 'text-zion-purple-400',
   },
 ];
 
@@ -141,7 +141,7 @@ function StatCard({
   label,
   value,
   sub,
-  rc = '251, 191, 36',
+  rc = '252, 209, 22',
 }: {
   icon: React.ReactNode;
   colorClass: string;
@@ -337,7 +337,7 @@ export default function WalletPage() {
           >
             <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
               <div className="space-y-5">
-                <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-amber-300 uppercase">
+                <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/40 bg-zion-gold/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold-300 uppercase">
                   <Wallet className="h-4 w-4" />
                   ZION L1 Wallet
                 </div>
@@ -353,7 +353,7 @@ export default function WalletPage() {
                   {WalletCopy.fullyOnChainWalletForZionL1Cre[cs ? 'cs' : 'en']}
                 </p>
                 <div className="flex flex-wrap gap-3 text-xs">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-cyan-200">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan-500/30 bg-zion-cyan-500/10 px-4 py-2 text-cyan-200">
                     <Fingerprint className="h-3 w-3" /> Ed25519
                   </span>
                   <span className="inline-flex items-center gap-2 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-4 py-2 text-amber-200">
@@ -369,7 +369,7 @@ export default function WalletPage() {
               <div className="w-full lg:max-w-md space-y-3">
                 <div
                   className="zion-rainbow-sub p-5"
-                  style={{ '--rc': '251, 191, 36' } as CSSProperties}
+                  style={{ '--rc': '252, 209, 22' } as CSSProperties}
                 >
                   <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">
                     {WalletCopy.quickOverview[cs ? 'cs' : 'en']}
@@ -377,7 +377,7 @@ export default function WalletPage() {
                   <div className="space-y-3">
                     <div
                       className="flex items-center justify-between zion-rainbow-sub p-3"
-                      style={{ '--rc': '251, 191, 36' } as CSSProperties}
+                      style={{ '--rc': '252, 209, 22' } as CSSProperties}
                     >
                       <div className="flex items-center gap-2 text-sm text-gray-300">
                         <Wallet className="h-4 w-4 text-zion-gold" />
@@ -387,7 +387,7 @@ export default function WalletPage() {
                     </div>
                     <div
                       className="flex items-center justify-between zion-rainbow-sub p-3"
-                      style={{ '--rc': '251, 191, 36' } as CSSProperties}
+                      style={{ '--rc': '252, 209, 22' } as CSSProperties}
                     >
                       <div className="flex items-center gap-2 text-sm text-gray-300">
                         <Copy className="h-4 w-4 text-zion-gold" />
@@ -397,7 +397,7 @@ export default function WalletPage() {
                     </div>
                     <div
                       className="flex items-center justify-between zion-rainbow-sub p-3"
-                      style={{ '--rc': '251, 191, 36' } as CSSProperties}
+                      style={{ '--rc': '252, 209, 22' } as CSSProperties}
                     >
                       <div className="flex items-center gap-2 text-sm text-gray-300">
                         <Activity className="h-4 w-4 text-zion-gold" />
@@ -407,7 +407,7 @@ export default function WalletPage() {
                     </div>
                     <div
                       className="flex items-center justify-between zion-rainbow-sub p-3"
-                      style={{ '--rc': '251, 191, 36' } as CSSProperties}
+                      style={{ '--rc': '252, 209, 22' } as CSSProperties}
                     >
                       <div className="flex items-center gap-2 text-sm text-gray-300">
                         <Usb className="h-4 w-4 text-zion-gold" />
@@ -432,7 +432,7 @@ export default function WalletPage() {
             <div className="flex flex-col gap-2 mb-6">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{WalletCopy.telemetry[cs ? 'cs' : 'en']}</p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-                <Activity className="h-7 w-7 text-emerald-400" />
+                <Activity className="h-7 w-7 text-zion-cyan-400" />
                 {WalletCopy.walletStatistics[cs ? 'cs' : 'en']}
               </h2>
               <p className="text-sm text-gray-400">
@@ -459,16 +459,16 @@ export default function WalletPage() {
               />
               <StatCard
                 icon={<Fingerprint className="h-5 w-5" />}
-                colorClass="text-emerald-400"
-                bgClass="bg-emerald-400/10"
+                colorClass="text-zion-cyan-400"
+                bgClass="bg-zion-cyan-400/10"
                 label={WalletCopy.cryptography[cs ? 'cs' : 'en']}
                 value={ed25519Type}
                 sub="Ed25519"
               />
               <StatCard
                 icon={<Shield className="h-5 w-5" />}
-                colorClass="text-purple-400"
-                bgClass="bg-purple-400/10"
+                colorClass="text-zion-purple-400"
+                bgClass="bg-zion-purple-400/10"
                 label={WalletCopy.security[cs ? 'cs' : 'en']}
                 value={securityLevel}
                 sub={WalletCopy.level[cs ? 'cs' : 'en']}
@@ -489,13 +489,13 @@ export default function WalletPage() {
             <div className="flex flex-col gap-2 mb-6">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{WalletCopy.features[cs ? 'cs' : 'en']}</p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-                <Shield className="h-7 w-7 text-cyan-400" />
+                <Shield className="h-7 w-7 text-zion-cyan-400" />
                 {WalletCopy.whyZionWallet[cs ? 'cs' : 'en']}
               </h2>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
               {features.map((f) => (
-                <div key={f.title} className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
+                <div key={f.title} className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                   <f.icon className={`h-8 w-8 ${f.color} mb-3`} />
                   <h3 className="font-semibold text-white mb-2">{f.title}</h3>
                   <p className="text-sm text-gray-400">{f.desc}</p>
@@ -509,12 +509,12 @@ export default function WalletPage() {
         <section className="relative z-10 max-w-4xl mx-auto">
           <div className="space-y-8">
             {(error || localError) && (
-              <div className="zion-rainbow-sub p-4 text-red-300" style={{ '--rc': '239, 68, 68' } as CSSProperties}>
+              <div className="zion-rainbow-sub p-4 text-zion-purple-300" style={{ '--rc': '228, 30, 43' } as CSSProperties}>
                 {localError || error}
               </div>
             )}
             {successMsg && (
-              <div className="zion-rainbow-sub p-4 text-emerald-300" style={{ '--rc': '16, 185, 129' } as CSSProperties}>
+              <div className="zion-rainbow-sub p-4 text-zion-cyan-300" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
                 <p>{successMsg}</p>
                 <Link href="/login" className="inline-flex items-center gap-2 text-emerald-200 hover:text-emerald-100 font-medium mt-2">
                   <ArrowRight className="w-4 h-4" />
@@ -554,12 +554,12 @@ export default function WalletPage() {
                   {balance !== null ? `${balance.toFixed(6)} ZION` : '---'}
                 </p>
                 {isHardwareWallet && (
-                  <div className="mt-4 zion-rainbow-sub p-4" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
+                  <div className="mt-4 zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                     <div className="flex items-start gap-2">
-                      <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                      <AlertTriangle className="w-5 h-5 text-zion-gold-400 flex-shrink-0 mt-0.5" />
                       <div className="text-sm text-amber-200">
                         <p className="font-medium">{WalletCopy.hardwareWalletWatchOnly[cs ? 'cs' : 'en']}</p>
-                        <p className="text-amber-300/80 mt-1">
+                        <p className="text-zion-gold-300/80 mt-1">
                           {WalletCopy.trezorLedgerFirmwareDoesNotYet[cs ? 'cs' : 'en']}
                         </p>
                       </div>
@@ -588,7 +588,7 @@ export default function WalletPage() {
                           ? 'zion-rainbow-sub p-3'
                           : 'zion-panel-soft p-3 border border-white/5 hover:border-white/15'
                       }`}
-                      style={activeWallet?.id === w.id ? ({ '--rc': '251, 191, 36' } as CSSProperties) : undefined}
+                      style={activeWallet?.id === w.id ? ({ '--rc': '252, 209, 22' } as CSSProperties) : undefined}
                       onClick={() => setActiveWallet(w.id)}
                     >
                       <div>
@@ -597,7 +597,7 @@ export default function WalletPage() {
                       </div>
                       <button
                         onClick={(e) => { e.stopPropagation(); deleteWallet(w.id); }}
-                        className="p-2 hover:bg-red-500/10 rounded-2xl text-red-400 transition"
+                        className="p-2 hover:bg-zion-purple-500/10 rounded-2xl text-zion-purple-400 transition"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -631,7 +631,7 @@ export default function WalletPage() {
                           ? 'zion-rainbow-sub'
                           : 'border border-white/10 bg-white/5 text-gray-300 hover:border-white/25 hover:text-white'
                       }`}
-                      style={active ? ({ '--rc': '251, 191, 36' } as CSSProperties) : undefined}
+                      style={active ? ({ '--rc': '252, 209, 22' } as CSSProperties) : undefined}
                     >
                       <Icon className="h-3.5 w-3.5" />
                       {cs ? t.labelCs : t.labelEn}
@@ -642,7 +642,7 @@ export default function WalletPage() {
 
               {/* Create tab */}
               {tab === 'create' && (
-                <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
+                <div className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                     <Plus className="w-5 h-5 text-zion-gold" /> {WalletCopy.createNewWallet[cs ? 'cs' : 'en']}
                   </h3>
@@ -666,14 +666,14 @@ export default function WalletPage() {
                       />
                     </div>
                     {localError && (
-                      <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-400">
+                      <div className="rounded-xl border border-zion-purple-500/20 bg-zion-purple-500/5 px-4 py-3 text-sm text-zion-purple-400">
                         {localError}
                       </div>
                     )}
                     {successMsg && (
-                      <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm text-emerald-400">
+                      <div className="rounded-xl border border-zion-cyan-500/20 bg-zion-cyan-500/5 px-4 py-3 text-sm text-zion-cyan-400">
                         <p className="mb-2">{successMsg}</p>
-                        <Link href="/login" className="inline-flex items-center gap-2 text-emerald-300 hover:text-emerald-200 font-medium">
+                        <Link href="/login" className="inline-flex items-center gap-2 text-zion-cyan-300 hover:text-emerald-200 font-medium">
                           <ArrowRight className="w-4 h-4" />
                           {WalletCopy.goToLogin[cs ? 'cs' : 'en']}
                         </Link>
@@ -683,7 +683,7 @@ export default function WalletPage() {
                       onClick={handleCreate}
                       disabled={loading}
                       className="zion-button-primary text-sm"
-                      style={{ '--rc': '251, 191, 36' } as CSSProperties}
+                      style={{ '--rc': '252, 209, 22' } as CSSProperties}
                     >
                       {loading ? (WalletCopy.creating[cs ? 'cs' : 'en']) : (WalletCopy.createWallet[cs ? 'cs' : 'en'])}
                     </button>
@@ -693,12 +693,12 @@ export default function WalletPage() {
 
               {/* Import tab */}
               {tab === 'import' && (
-                <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
+                <div className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                     <Import className="w-5 h-5 text-zion-gold" /> {WalletCopy.importWallet[cs ? 'cs' : 'en']}
                   </h3>
                   <div className="space-y-6">
-                    <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
+                    <div className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                       <p className="text-sm font-medium text-gray-300 mb-3">{WalletCopy.fromMnemonicBip39[cs ? 'cs' : 'en']}</p>
                       <textarea
                         value={mnemonic}
@@ -724,7 +724,7 @@ export default function WalletPage() {
                         </button>
                       </div>
                     </div>
-                    <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
+                    <div className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                       <p className="text-sm font-medium text-gray-300 mb-3">{WalletCopy.fromPrivateKeyHex[cs ? 'cs' : 'en']}</p>
                       <input
                         type="text"
@@ -751,7 +751,7 @@ export default function WalletPage() {
                         </button>
                       </div>
                     </div>
-                    <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
+                    <div className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                       <p className="text-sm font-medium text-gray-300 mb-3">{WalletCopy.hardwareWalletWatchOnly_2[cs ? 'cs' : 'en']}</p>
                       <p className="text-xs text-gray-400 mb-3">{WalletCopy.importPublicKeyFromTrezorOrLed[cs ? 'cs' : 'en']}</p>
                       <div className="flex flex-wrap gap-3">
@@ -759,7 +759,7 @@ export default function WalletPage() {
                           onClick={handleImportTrezor}
                           disabled={loading}
                           className="zion-button-secondary text-sm"
-                          style={{ '--rc': '34, 197, 94' } as CSSProperties}
+                          style={{ '--rc': '7, 137, 48' } as CSSProperties}
                         >
                           {loading ? (WalletCopy.connecting[cs ? 'cs' : 'en']) : 'Trezor'}
                         </button>
@@ -772,7 +772,7 @@ export default function WalletPage() {
                           {loading ? (WalletCopy.connecting[cs ? 'cs' : 'en']) : 'Ledger'}
                         </button>
                       </div>
-                      <p className="text-xs text-amber-300/70 mt-2">
+                      <p className="text-xs text-zion-gold-300/70 mt-2">
                         {WalletCopy.warningTrezorLedgerFirmwareDoe[cs ? 'cs' : 'en']}
                       </p>
                     </div>
@@ -782,7 +782,7 @@ export default function WalletPage() {
 
               {/* Send tab */}
               {tab === 'send' && (
-                <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
+                <div className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                     <Send className="w-5 h-5 text-zion-gold" /> {WalletCopy.sendZion[cs ? 'cs' : 'en']}
                   </h3>
@@ -835,12 +835,12 @@ export default function WalletPage() {
                         onClick={handleSend}
                         disabled={loading}
                         className="zion-button-primary text-sm"
-                        style={{ '--rc': '16, 185, 129' } as CSSProperties}
+                        style={{ '--rc': '7, 137, 48' } as CSSProperties}
                       >
                         {loading ? (WalletCopy.sending[cs ? 'cs' : 'en']) : (WalletCopy.sendZion[cs ? 'cs' : 'en'])}
                       </button>
                       {txResult && (
-                        <p className="text-zion-cyan text-sm mt-2 zion-rainbow-sub p-3 font-mono" style={{ '--rc': '251, 191, 36' } as CSSProperties}>{txResult}</p>
+                        <p className="text-zion-cyan text-sm mt-2 zion-rainbow-sub p-3 font-mono" style={{ '--rc': '252, 209, 22' } as CSSProperties}>{txResult}</p>
                       )}
                     </div>
                   )}
@@ -849,7 +849,7 @@ export default function WalletPage() {
 
               {/* Export tab */}
               {tab === 'export' && (
-                <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
+                <div className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                     <Download className="w-5 h-5 text-zion-gold" /> {WalletCopy.exportWalletSecrets[cs ? 'cs' : 'en']}
                   </h3>
@@ -871,7 +871,7 @@ export default function WalletPage() {
                         <button
                           onClick={handleExportMnemonic}
                           className="zion-button-secondary text-sm"
-                          style={{ '--rc': '251, 191, 36' } as CSSProperties}
+                          style={{ '--rc': '252, 209, 22' } as CSSProperties}
                         >
                           <KeyRound className="h-4 w-4" /> {WalletCopy.exportMnemonic[cs ? 'cs' : 'en']}
                         </button>
@@ -884,15 +884,15 @@ export default function WalletPage() {
                         </button>
                       </div>
                       {exportedSecret && (
-                        <div className="mt-4 zion-rainbow-sub p-4" style={{ '--rc': '239, 68, 68' } as CSSProperties}>
+                        <div className="mt-4 zion-rainbow-sub p-4" style={{ '--rc': '228, 30, 43' } as CSSProperties}>
                           <div className="flex items-center justify-between mb-2">
-                            <p className="text-red-300 text-sm font-medium">{WalletCopy.secretNeverShare[cs ? 'cs' : 'en']}</p>
+                            <p className="text-zion-purple-300 text-sm font-medium">{WalletCopy.secretNeverShare[cs ? 'cs' : 'en']}</p>
                             <div className="flex gap-2">
                               <button onClick={() => setShowSecret(!showSecret)} className="p-1 hover:bg-red-900/30 rounded transition">
-                                {showSecret ? <EyeOff className="w-4 h-4 text-red-300" /> : <Eye className="w-4 h-4 text-red-300" />}
+                                {showSecret ? <EyeOff className="w-4 h-4 text-zion-purple-300" /> : <Eye className="w-4 h-4 text-zion-purple-300" />}
                               </button>
                               <button onClick={() => copyToClipboard(exportedSecret)} className="p-1 hover:bg-red-900/30 rounded transition">
-                                <Copy className="w-4 h-4 text-red-300" />
+                                <Copy className="w-4 h-4 text-zion-purple-300" />
                               </button>
                             </div>
                           </div>
@@ -925,11 +925,11 @@ export default function WalletPage() {
                 <Globe2 className="h-4 w-4" /> Explorer
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
-              <Link href="/download" className="zion-button-secondary group text-sm" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
+              <Link href="/download" className="zion-button-secondary group text-sm" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                 <Download className="h-4 w-4" /> {WalletCopy.download[cs ? 'cs' : 'en']}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
-              <Link href="/docs" className="zion-button-secondary group text-sm" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
+              <Link href="/docs" className="zion-button-secondary group text-sm" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                 <BookOpen className="h-4 w-4" /> {WalletCopy.documentation[cs ? 'cs' : 'en']}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>

@@ -61,18 +61,18 @@ function StatusDot({ status }: { status: string }) {
   if (status === "pending")
     return (
       <span className="relative flex h-2.5 w-2.5">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-400" />
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-zion-gold-400 opacity-75" />
+        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-zion-gold-400" />
       </span>
     );
-  return <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />;
+  return <span className="inline-flex h-2.5 w-2.5 rounded-full bg-zion-cyan-400" />;
 }
 
 function TypeBadge({ type, cs }: { type: string; cs: boolean }) {
   const map: Record<string, string> = {
     coinbase: "bg-zion-gold/15 text-zion-gold",
-    payout: "bg-emerald-500/15 text-emerald-400",
-    transfer: "bg-cyan-500/15 text-cyan-300",
+    payout: "bg-zion-cyan-500/15 text-zion-cyan-400",
+    transfer: "bg-zion-cyan-500/15 text-zion-cyan-300",
   };
   const cls = map[type] || "bg-white/10 text-white/60";
   const label =
@@ -267,7 +267,7 @@ export default function TxsPageClient() {
                     <Zap className="h-3 w-3" /> SSE {ExplorerTxsTxsPageClientCopy.connected[cs ? 'cs' : 'en']}
                   </span>
                 ) : (
-                  <span className="zion-badge text-amber-400 border-amber-500/40 bg-amber-500/10">
+                  <span className="zion-badge text-zion-gold-400 border-zion-gold-500/40 bg-zion-gold-500/10">
                     SSE {ExplorerTxsTxsPageClientCopy.connecting[cs ? 'cs' : 'en']}
                   </span>
                 )}
@@ -330,9 +330,9 @@ export default function TxsPageClient() {
             </div>
             {/* Address filter display */}
             {addressFilter && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-cyan-500/5 border border-cyan-500/10">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zion-cyan-500/5 border border-zion-cyan-500/10">
                 <span className="text-[11px] text-white/40">{ExplorerTxsTxsPageClientCopy.address[cs ? 'cs' : 'en']}</span>
-                <span className="text-[11px] text-cyan-300 font-mono">{truncateHash(addressFilter, 14, 6)}</span>
+                <span className="text-[11px] text-zion-cyan-300 font-mono">{truncateHash(addressFilter, 14, 6)}</span>
                 <Link
                   href={typeFilter ? `/explorer/txs?type=${typeFilter}` : "/explorer/txs"}
                   className="text-white/30 hover:text-white/60"
@@ -412,7 +412,7 @@ export default function TxsPageClient() {
                 {(addressFilter || typeFilter) && (
                   <Link
                     href="/explorer/txs"
-                    className="text-cyan-400 text-xs hover:underline"
+                    className="text-zion-cyan-400 text-xs hover:underline"
                   >
                     {ExplorerTxsTxsPageClientCopy.clearFilter[cs ? 'cs' : 'en']}
                   </Link>
@@ -435,7 +435,7 @@ export default function TxsPageClient() {
 
                   {/* hash */}
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-[13px] font-mono text-cyan-300 group-hover:text-cyan-200 truncate transition-colors">
+                    <span className="text-[13px] font-mono text-zion-cyan-300 group-hover:text-cyan-200 truncate transition-colors">
                       {tx.hash.slice(0, 16)}…{tx.hash.slice(-8)}
                     </span>
                     <CopyButton text={tx.hash} />
@@ -462,7 +462,7 @@ export default function TxsPageClient() {
                         #{tx.block_height?.toLocaleString()}
                       </Link>
                     ) : (
-                      <span className="text-[12px] text-amber-400/60 italic">
+                      <span className="text-[12px] text-zion-gold-400/60 italic">
                         {ExplorerTxsTxsPageClientCopy.pending[cs ? 'cs' : 'en']}
                       </span>
                     )}

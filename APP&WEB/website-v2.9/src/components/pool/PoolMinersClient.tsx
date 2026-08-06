@@ -232,7 +232,7 @@ function CopyButton({ text }: { text: string }) {
   };
   return (
     <button onClick={copy} className="ml-2 text-gray-500 hover:text-white transition-colors" title="Copy">
-      {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+      {copied ? <Check className="h-4 w-4 text-zion-cyan-400" /> : <Copy className="h-4 w-4" />}
     </button>
   );
 }
@@ -544,9 +544,9 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
   };
 
   const podiumStyles = [
-    { gradient: "from-amber-300 via-yellow-400 to-amber-600", label: PoolMinersCopy.gold[cs ? 'cs' : 'en'], icon: <Crown className="h-5 w-5" /> },
+    { gradient: "from-zion-gold-300 via-zion-gold-400 to-zion-gold-600", label: PoolMinersCopy.gold[cs ? 'cs' : 'en'], icon: <Crown className="h-5 w-5" /> },
     { gradient: "from-slate-200 via-gray-300 to-slate-500", label: PoolMinersCopy.silver[cs ? 'cs' : 'en'], icon: <Medal className="h-5 w-5" /> },
-    { gradient: "from-orange-300 via-amber-500 to-orange-700", label: PoolMinersCopy.bronze[cs ? 'cs' : 'en'], icon: <Medal className="h-5 w-5" /> },
+    { gradient: "from-zion-gold-300 via-zion-gold-500 to-zion-gold-700", label: PoolMinersCopy.bronze[cs ? 'cs' : 'en'], icon: <Medal className="h-5 w-5" /> },
   ];
 
   return (
@@ -589,7 +589,7 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Activity className="h-3 w-3 text-emerald-400" /> {PoolMinersCopy.liveData[cs ? 'cs' : 'en']}
+                  <Activity className="h-3 w-3 text-zion-cyan-400" /> {PoolMinersCopy.liveData[cs ? 'cs' : 'en']}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <Gauge className="h-3 w-3 text-zion-cyan" /> {PoolMinersCopy.autoRefresh15s[cs ? 'cs' : 'en']}
@@ -605,7 +605,7 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <p className="text-[11px] text-gray-500">{PoolMinersCopy.activeMiners[cs ? 'cs' : 'en']}</p>
-                    <p className="text-2xl font-bold text-emerald-400 font-mono">{activeCount}</p>
+                    <p className="text-2xl font-bold text-zion-cyan-400 font-mono">{activeCount}</p>
                   </div>
                   <div>
                     <p className="text-[11px] text-gray-500">{PoolMinersCopy.total[cs ? 'cs' : 'en']}</p>
@@ -641,10 +641,10 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                   value={minerSearch}
                   onChange={(e) => { setMinerSearch(e.target.value); setSearchError(""); }}
                   placeholder={PoolMinersCopy.enterAZionAddressToViewMinerDe[cs ? 'cs' : 'en']}
-                  className={`w-full rounded-xl border ${searchError ? "border-red-500/60" : "border-white/10"} bg-white/5 pl-12 pr-4 py-3 text-sm text-white placeholder:text-gray-500 outline-none focus:border-zion-cyan/50 focus:ring-1 focus:ring-zion-cyan/30 transition-colors font-mono`}
+                  className={`w-full rounded-xl border ${searchError ? "border-zion-purple-500/60" : "border-white/10"} bg-white/5 pl-12 pr-4 py-3 text-sm text-white placeholder:text-gray-500 outline-none focus:border-zion-cyan/50 focus:ring-1 focus:ring-zion-cyan/30 transition-colors font-mono`}
                 />
                 {searchError && (
-                  <p className="absolute -bottom-5 left-0 text-xs text-red-400">{searchError}</p>
+                  <p className="absolute -bottom-5 left-0 text-xs text-zion-purple-400">{searchError}</p>
                 )}
               </div>
               <button
@@ -668,7 +668,7 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
           </div>
         ) : !data ? (
           <div className="zion-rainbow-card p-10 text-center" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
-            <XCircle className="h-8 w-8 text-red-400 mx-auto mb-3" />
+            <XCircle className="h-8 w-8 text-zion-purple-400 mx-auto mb-3" />
             <p className="text-gray-400">{PoolMinersCopy.poolDataUnavailableServersMayB[cs ? 'cs' : 'en']}</p>
           </div>
         ) : (
@@ -709,7 +709,7 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                           </div>
                           <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-widest border ${
                             m.isActive
-                              ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+                              ? "border-zion-cyan-400/30 bg-zion-cyan-400/10 text-zion-cyan-300"
                               : "border-gray-500/30 bg-white/5 text-gray-400"
                           }`}>
                             <CircleDot className="h-3 w-3" />
@@ -740,9 +740,9 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                             <p className="text-[11px] text-gray-500 uppercase tracking-wider">{PoolMinersCopy.poolShare[cs ? 'cs' : 'en']}</p>
                             <p className="text-lg font-bold text-white font-mono">{m.sharePct.toFixed(2)}%</p>
                           </div>
-                          <div className="col-span-2 rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2.5 flex items-center justify-between">
+                          <div className="col-span-2 rounded-xl border border-zion-cyan-400/20 bg-zion-cyan-400/10 px-3 py-2.5 flex items-center justify-between">
                             <span className="text-emerald-200 text-[11px] uppercase tracking-wider">{PoolMinersCopy.estDaily[cs ? 'cs' : 'en']}</span>
-                            <span className="text-emerald-300 font-bold font-mono">{m.estDailyZion.toFixed(4)} ZION</span>
+                            <span className="text-zion-cyan-300 font-bold font-mono">{m.estDailyZion.toFixed(4)} ZION</span>
                           </div>
                         </div>
                       </motion.div>
@@ -825,11 +825,11 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                             {fmtNum(m.validShares)}<span className="text-gray-600"> / {fmtNum(m.totalShares)}</span>
                           </td>
                           <td className="px-4 py-3.5 text-gray-400 font-mono text-xs whitespace-nowrap">{timeAgo(m.last_share, cs)}</td>
-                          <td className="px-4 py-3.5 text-right font-mono text-emerald-400 text-xs whitespace-nowrap">{m.estDailyZion.toFixed(4)}</td>
+                          <td className="px-4 py-3.5 text-right font-mono text-zion-cyan-400 text-xs whitespace-nowrap">{m.estDailyZion.toFixed(4)}</td>
                           <td className="px-4 py-3.5">
                             <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium ${
                               m.isActive
-                                ? "text-emerald-300 bg-emerald-400/10 border border-emerald-400/20"
+                                ? "text-zion-cyan-300 bg-zion-cyan-400/10 border border-zion-cyan-400/20"
                                 : "text-gray-500 bg-white/5 border border-white/[0.06]"
                             }`}>
                               <CircleDot className="h-3 w-3" />
@@ -868,16 +868,16 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
 
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="zion-rainbow-sub p-5" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
-                  <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-emerald-400/10 mb-3">
-                    <Activity className="h-4 w-4 text-emerald-400" />
+                  <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-zion-cyan-400/10 mb-3">
+                    <Activity className="h-4 w-4 text-zion-cyan-400" />
                   </div>
                   <p className="text-[11px] text-gray-500 uppercase tracking-wider">{PoolMinersCopy.activeMiners[cs ? 'cs' : 'en']}</p>
                   <p className="mt-1 text-2xl font-bold text-white font-mono">{activeCount}</p>
                   <p className="text-[11px] text-gray-500 mt-1">{PoolMinersCopy.shareInLast10Min[cs ? 'cs' : 'en']}</p>
                 </div>
                 <div className="zion-rainbow-sub p-5" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
-                  <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-purple-400/10 mb-3">
-                    <Users className="h-4 w-4 text-purple-400" />
+                  <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-zion-purple-400/10 mb-3">
+                    <Users className="h-4 w-4 text-zion-purple-400" />
                   </div>
                   <p className="text-[11px] text-gray-500 uppercase tracking-wider">{PoolMinersCopy.registeredMiners[cs ? 'cs' : 'en']}</p>
                   <p className="mt-1 text-2xl font-bold text-white font-mono">{data.pplns?.registered_miners ?? totalCount}</p>

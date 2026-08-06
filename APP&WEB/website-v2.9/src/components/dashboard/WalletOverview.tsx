@@ -72,7 +72,7 @@ export default function WalletOverview({ address }: WalletOverviewProps) {
               <span className="text-sm text-gray-500">Loading balance...</span>
             </div>
           ) : error ? (
-            <div className="py-4 text-sm text-red-400">{error}</div>
+            <div className="py-4 text-sm text-zion-purple-400">{error}</div>
           ) : (
             <>
               <div className="text-4xl font-bold text-white mb-1">

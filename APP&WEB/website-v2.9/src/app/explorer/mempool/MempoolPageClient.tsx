@@ -111,7 +111,7 @@ function CopyBtn({ text }: { text: string }) {
       }}
       className="text-white/20 hover:text-white/60 transition-colors"
     >
-      {ok ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+      {ok ? <Check className="w-3.5 h-3.5 text-zion-cyan-400" /> : <Copy className="w-3.5 h-3.5" />}
     </button>
   );
 }
@@ -296,7 +296,7 @@ export default function MempoolPageClient() {
   /* ── render ───────────────────────────────────────────────────── */
   return (
     <div className="relative min-h-screen pb-24 overflow-x-hidden">
-      <div className="pointer-events-none absolute inset-0 bg-linear-to-b from-amber-500/5 via-transparent to-transparent" />
+      <div className="pointer-events-none absolute inset-0 bg-linear-to-b from-zion-gold-500/5 via-transparent to-transparent" />
 
       <div className="relative z-10 zion-container max-w-[1400px] py-8 pt-6">
         {/* breadcrumb */}
@@ -310,8 +310,8 @@ export default function MempoolPageClient() {
 
         {/* title */}
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
-            <Flame className="w-5 h-5 text-amber-400" />
+          <div className="w-10 h-10 rounded-xl bg-zion-gold-500/10 border border-zion-gold-500/20 flex items-center justify-center">
+            <Flame className="w-5 h-5 text-zion-gold-400" />
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Mempool</h1>
           <span className="text-[11px] text-white/30 font-mono tabular-nums ml-1">
@@ -321,7 +321,7 @@ export default function MempoolPageClient() {
             <motion.span
               animate={{ opacity: [0.4, 1, 0.4] }}
               transition={{ duration: 2, repeat: Infinity }}
-              className={`h-2 w-2 rounded-full ${wsConnected ? "bg-emerald-400" : "bg-amber-400"}`}
+              className={`h-2 w-2 rounded-full ${wsConnected ? "bg-zion-cyan-400" : "bg-zion-gold-400"}`}
             />
             <span className="text-[10px] text-white/50">
               {wsConnected ? (ExplorerMempoolMempoolPageClientCopy.wsLive[cs ? 'cs' : 'en']) : (ExplorerMempoolMempoolPageClientCopy.polling5s[cs ? 'cs' : 'en'])}
@@ -338,25 +338,25 @@ export default function MempoolPageClient() {
           <StatCard
             label={ExplorerMempoolMempoolPageClientCopy.pendingTx[cs ? 'cs' : 'en']}
             value={String(data?.count ?? 0)}
-            icon={<Activity className="w-4 h-4 text-cyan-400" />}
+            icon={<Activity className="w-4 h-4 text-zion-cyan-400" />}
             accent="cyan"
           />
           <StatCard
             label={ExplorerMempoolMempoolPageClientCopy.poolSize[cs ? 'cs' : 'en']}
             value={formatBytes(data?.pool_size_bytes ?? 0)}
-            icon={<Hash className="w-4 h-4 text-purple-400" />}
+            icon={<Hash className="w-4 h-4 text-zion-purple-400" />}
             accent="purple"
           />
           <StatCard
             label={ExplorerMempoolMempoolPageClientCopy.totalFees[cs ? 'cs' : 'en']}
             value={`${(data?.total_fees ?? 0).toFixed(4)} ZION`}
-            icon={<Flame className="w-4 h-4 text-amber-400" />}
+            icon={<Flame className="w-4 h-4 text-zion-gold-400" />}
             accent="amber"
           />
           <StatCard
             label={ExplorerMempoolMempoolPageClientCopy.avgFee[cs ? 'cs' : 'en']}
             value={`${(data?.fee_stats.avg ?? 0).toFixed(6)} ZION`}
-            icon={<TrendingUp className="w-4 h-4 text-emerald-400" />}
+            icon={<TrendingUp className="w-4 h-4 text-zion-cyan-400" />}
             accent="emerald"
           />
         </div>
@@ -364,7 +364,7 @@ export default function MempoolPageClient() {
         {/* histogram + fee stats */}
         <div className="grid md:grid-cols-2 gap-4 mb-6">
           <FeeHistogram txs={data?.transactions ?? []} cs={cs} />
-          <div className="zion-rainbow-sub p-4" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+          <div className="zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <p className="text-[10px] uppercase tracking-[0.3em] text-white/40 mb-3">
               {ExplorerMempoolMempoolPageClientCopy.feeStatistics[cs ? 'cs' : 'en']}
             </p>
@@ -378,7 +378,7 @@ export default function MempoolPageClient() {
         </div>
 
         {/* search + table */}
-        <div className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-x-auto overflow-y-hidden" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+        <div className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-x-auto overflow-y-hidden" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
           {/* toolbar */}
           <div className="px-5 py-3 border-b border-white/6 flex items-center gap-3">
             <div className="flex-1 relative">
@@ -388,7 +388,7 @@ export default function MempoolPageClient() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={ExplorerMempoolMempoolPageClientCopy.searchTxHash[cs ? 'cs' : 'en']}
-                className="w-full pl-9 pr-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-amber-500/50"
+                className="w-full pl-9 pr-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-zion-gold-500/50"
               />
             </div>
             <span className="text-[10px] text-white/30 tabular-nums">
@@ -429,11 +429,11 @@ export default function MempoolPageClient() {
           {/* states */}
           {loading && !data && (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin text-amber-400" />
+              <Loader2 className="w-6 h-6 animate-spin text-zion-gold-400" />
             </div>
           )}
           {error && !data && (
-            <p className="text-center text-sm text-red-400/80 py-8">{error}</p>
+            <p className="text-center text-sm text-zion-purple-400/80 py-8">{error}</p>
           )}
           {!loading && data && filteredAndSorted.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
@@ -459,12 +459,12 @@ export default function MempoolPageClient() {
                 <div className="flex items-center justify-center">
                   {tx.double_spend_seen ? (
                     <span title="double-spend seen">
-                      <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+                      <AlertTriangle className="w-3.5 h-3.5 text-zion-purple-400" />
                     </span>
                   ) : (
                     <span className="relative flex h-2.5 w-2.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-400" />
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-zion-gold-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-zion-gold-400" />
                     </span>
                   )}
                 </div>
@@ -472,7 +472,7 @@ export default function MempoolPageClient() {
                 {/* hash */}
                 <div className="flex items-center gap-2 min-w-0">
                   <Hash className="w-3 h-3 text-white/30 shrink-0" />
-                  <span className="text-[13px] font-mono text-amber-300 group-hover:text-amber-200 truncate transition-colors">
+                  <span className="text-[13px] font-mono text-zion-gold-300 group-hover:text-amber-200 truncate transition-colors">
                     {truncate(tx.tx_hash)}
                   </span>
                   <CopyBtn text={tx.tx_hash} />
@@ -489,24 +489,24 @@ export default function MempoolPageClient() {
                 </div>
 
                 {/* fee */}
-                <div className="flex items-center justify-end text-[12px] text-yellow-400 font-semibold tabular-nums">
+                <div className="flex items-center justify-end text-[12px] text-zion-gold-400 font-semibold tabular-nums">
                   {tx.fee > 0 ? tx.fee.toFixed(6) : "—"}
                 </div>
 
                 {/* status */}
                 <div className="flex items-center justify-end gap-1">
                   {tx.double_spend_seen && (
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider bg-red-500/15 text-red-400">
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider bg-zion-purple-500/15 text-zion-purple-400">
                       double-spend
                     </span>
                   )}
                   {tx.kept_by_block && (
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider bg-cyan-500/15 text-cyan-300">
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider bg-zion-cyan-500/15 text-zion-cyan-300">
                       kept
                     </span>
                   )}
                   {tx.relayed && !tx.double_spend_seen && !tx.kept_by_block && (
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider bg-emerald-500/15 text-emerald-400">
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider bg-zion-cyan-500/15 text-zion-cyan-400">
                       relayed
                     </span>
                   )}
@@ -541,13 +541,13 @@ function StatCard({
   accent: "cyan" | "purple" | "amber" | "emerald";
 }) {
   const accentMap = {
-    cyan: "border-cyan-500/20 bg-cyan-500/5",
-    purple: "border-purple-500/20 bg-purple-500/5",
-    amber: "border-amber-500/20 bg-amber-500/5",
-    emerald: "border-emerald-500/20 bg-emerald-500/5",
+    cyan: "border-zion-cyan-500/20 bg-zion-cyan-500/5",
+    purple: "border-zion-purple-500/20 bg-zion-purple-500/5",
+    amber: "border-zion-gold-500/20 bg-zion-gold-500/5",
+    emerald: "border-zion-cyan-500/20 bg-zion-cyan-500/5",
   } as const;
   return (
-    <div className="zion-rainbow-sub p-4" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+    <div className="zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
       <div className="flex items-center gap-2 mb-2">
         {icon}
         <p className="text-[10px] uppercase tracking-[0.3em] text-white/40">{label}</p>
@@ -561,7 +561,7 @@ function FeeStat({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-lg bg-white/5 p-3">
       <p className="text-[10px] uppercase tracking-[0.2em] text-white/40 mb-1">{label}</p>
-      <p className="text-sm font-mono text-amber-300 tabular-nums">{value.toFixed(6)}</p>
+      <p className="text-sm font-mono text-zion-gold-300 tabular-nums">{value.toFixed(6)}</p>
     </div>
   );
 }
@@ -583,7 +583,7 @@ function SortHeader({
     <button
       onClick={onClick}
       className={`flex items-center gap-1 text-[10px] uppercase tracking-[0.15em] font-medium transition-colors ${
-        active ? "text-amber-300" : "text-white/30 hover:text-white/60"
+        active ? "text-zion-gold-300" : "text-white/30 hover:text-white/60"
       } ${align === "right" ? "justify-end" : "justify-start"}`}
     >
       {label}

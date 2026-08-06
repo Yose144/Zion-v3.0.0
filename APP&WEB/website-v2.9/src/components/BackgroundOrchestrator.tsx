@@ -32,7 +32,7 @@ const OBSERVATORY_PRESETS: Record<
     canvasGradientAlpha: 0.22,
   },
   'planet-orbit': {
-    starColor: [45, 212, 191],
+    starColor: [7, 137, 48],
     density: 220,
     speed: 2.4,
     trailOpacity: 0.07,
@@ -41,7 +41,7 @@ const OBSERVATORY_PRESETS: Record<
     fpsLimit: 24,
   },
   'desktop-agent': {
-    starColor: [200, 118, 255],
+    starColor: [228, 30, 43],
     density: 180,
     speed: 2.6,
     trailOpacity: 0.06,
@@ -51,7 +51,7 @@ const OBSERVATORY_PRESETS: Record<
     fpsLimit: 24,
   },
   'warp-speed': {
-    starColor: [111, 255, 240],
+    starColor: [7, 137, 48],
     density: 300,
     speed: 12,
     trailOpacity: 0.05,

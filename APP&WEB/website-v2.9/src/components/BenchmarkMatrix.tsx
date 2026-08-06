@@ -162,7 +162,7 @@ export default function BenchmarkMatrix() {
                     <td className="px-4 py-3 font-mono text-white/60">{g.tpb}</td>
                     <td className="px-4 py-3 font-mono text-white/60">{g.wc}</td>
                     <td className="px-4 py-3 text-white/50">{g.price}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-green-400">{g.khDollar} <span className="text-xs text-green-400/50 font-normal">KH/$</span></td>
+                    <td className="px-4 py-3 text-right font-semibold text-zion-cyan-400">{g.khDollar} <span className="text-xs text-zion-cyan-400/50 font-normal">KH/$</span></td>
                   </tr>
                 ))}
               </tbody>

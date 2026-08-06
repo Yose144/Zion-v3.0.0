@@ -74,28 +74,28 @@ const getFeatures = (cs: boolean) => [
     title: L4OasisCopy.ue5Metaverse[cs ? 'cs' : 'en'],
     desc: L4OasisCopy.unrealEngine5WorldBuiltOnZionP[cs ? 'cs' : 'en'],
     icon: Palette,
-    color: 'text-orange-400',
+    color: 'text-zion-gold-400',
     active: false,
   },
   {
     title: L4OasisCopy.xpEconomy[cs ? 'cs' : 'en'],
     desc: L4OasisCopy.gameXpConvertsToZionTokensSkil[cs ? 'cs' : 'en'],
     icon: Gem,
-    color: 'text-yellow-400',
+    color: 'text-zion-gold-400',
     active: false,
   },
   {
     title: L4OasisCopy.onChainInventory[cs ? 'cs' : 'en'],
     desc: L4OasisCopy.allGameItemsAreNftsOnZionL1Tru[cs ? 'cs' : 'en'],
     icon: Cpu,
-    color: 'text-cyan-400',
+    color: 'text-zion-cyan-400',
     active: false,
   },
   {
     title: L4OasisCopy.guildDao[cs ? 'cs' : 'en'],
     desc: L4OasisCopy.playerGuildsAsDaosSharedTreasu[cs ? 'cs' : 'en'],
     icon: Users,
-    color: 'text-purple-400',
+    color: 'text-zion-purple-400',
     active: false,
   },
 ];
@@ -106,32 +106,32 @@ const getAvatarTypes = (cs: boolean) => [
     count: `${AVATAR_COUNT_CORE}`,
     desc: L4OasisCopy.k51UniqueCoreAvatarsWithFullAni[cs ? 'cs' : 'en'],
     icon: Star,
-    color: 'border-orange-500/30 bg-orange-500/5',
-    badge: 'border-orange-500/30 bg-orange-500/10 text-orange-300',
+    color: 'border-zion-gold-500/30 bg-zion-gold-500/5',
+    badge: 'border-zion-gold-500/30 bg-zion-gold-500/10 text-zion-gold-300',
   },
   {
     name: L4OasisCopy.extendedAvatars[cs ? 'cs' : 'en'],
     count: `${AVATAR_COUNT_EXTENDED}`,
     desc: L4OasisCopy.k151ExtendedAvatarsWithUniqueTr[cs ? 'cs' : 'en'],
     icon: Sparkles,
-    color: 'border-purple-500/30 bg-purple-500/5',
-    badge: 'border-purple-500/30 bg-purple-500/10 text-purple-300',
+    color: 'border-zion-purple-500/30 bg-zion-purple-500/5',
+    badge: 'border-zion-purple-500/30 bg-zion-purple-500/10 text-zion-purple-300',
   },
   {
     name: L4OasisCopy.questEngine[cs ? 'cs' : 'en'],
     count: '5',
     desc: L4OasisCopy.k5QuestsPerAvatarPveExploration[cs ? 'cs' : 'en'],
     icon: Swords,
-    color: 'border-cyan-500/30 bg-cyan-500/5',
-    badge: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-300',
+    color: 'border-zion-cyan-500/30 bg-zion-cyan-500/5',
+    badge: 'border-zion-cyan-500/30 bg-zion-cyan-500/10 text-zion-cyan-300',
   },
 ];
 
 const getGoldenEgg = (cs: boolean) => [
   { label: L4OasisCopy.totalPrizePool[cs ? 'cs' : 'en'], value: `${GOLDEN_EGG_PRIZE} ZION`, color: 'text-zion-gold' },
-  { label: L4OasisCopy.clues[cs ? 'cs' : 'en'], value: `${GOLDEN_EGG_CLUES}`, color: 'text-orange-400' },
-  { label: L4OasisCopy.estimatedStart[cs ? 'cs' : 'en'], value: '2027', color: 'text-cyan-400' },
-  { label: L4OasisCopy.type[cs ? 'cs' : 'en'], value: L4OasisCopy.globalTreasureHunt[cs ? 'cs' : 'en'], color: 'text-purple-400' },
+  { label: L4OasisCopy.clues[cs ? 'cs' : 'en'], value: `${GOLDEN_EGG_CLUES}`, color: 'text-zion-gold-400' },
+  { label: L4OasisCopy.estimatedStart[cs ? 'cs' : 'en'], value: '2027', color: 'text-zion-cyan-400' },
+  { label: L4OasisCopy.type[cs ? 'cs' : 'en'], value: L4OasisCopy.globalTreasureHunt[cs ? 'cs' : 'en'], color: 'text-zion-purple-400' },
 ];
 
 const getRoadmap = (cs: boolean) => [
@@ -166,37 +166,37 @@ const getProtocols = (cs: boolean) => [
     title: L4OasisCopy.avatarMinting[cs ? 'cs' : 'en'],
     desc: L4OasisCopy.everyAvatarIsAnNftOnZionL1Erc7[cs ? 'cs' : 'en'],
     icon: Star,
-    color: 'text-orange-400',
+    color: 'text-zion-gold-400',
   },
   {
     title: L4OasisCopy.questEngine_2[cs ? 'cs' : 'en'],
     desc: L4OasisCopy.k5QuestsPerAvatarGenerativeCont[cs ? 'cs' : 'en'],
     icon: Swords,
-    color: 'text-cyan-400',
+    color: 'text-zion-cyan-400',
   },
   {
     title: L4OasisCopy.nftInventory[cs ? 'cs' : 'en'],
     desc: L4OasisCopy.itemsWeaponsArmorAllAsNftsWith[cs ? 'cs' : 'en'],
     icon: Shield,
-    color: 'text-emerald-400',
+    color: 'text-zion-cyan-400',
   },
   {
     title: L4OasisCopy.guildTreasury[cs ? 'cs' : 'en'],
     desc: L4OasisCopy.guildsAsSubDaosOnChainTreasury[cs ? 'cs' : 'en'],
     icon: Coins,
-    color: 'text-purple-400',
+    color: 'text-zion-purple-400',
   },
   {
     title: L4OasisCopy.territoryClaims[cs ? 'cs' : 'en'],
     desc: L4OasisCopy.digitalTerritoriesOnZionMapL1R[cs ? 'cs' : 'en'],
     icon: MapPin,
-    color: 'text-amber-400',
+    color: 'text-zion-gold-400',
   },
   {
     title: L4OasisCopy.xpZionBridge[cs ? 'cs' : 'en'],
     desc: L4OasisCopy.xpFromQuestsConvertibleToZionT[cs ? 'cs' : 'en'],
     icon: Zap,
-    color: 'text-yellow-400',
+    color: 'text-zion-gold-400',
   },
 ];
 
@@ -218,10 +218,10 @@ export default function L4OasisPage() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           className="zion-rainbow-card p-6 md:p-10"
-          style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
         >
           <div className="space-y-5 max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/40 bg-orange-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-orange-300 uppercase">
+            <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold-500/40 bg-zion-gold-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold-300 uppercase">
               <Gamepad2 className="h-4 w-4" />
               L4 · ZION Oasis · Game Layer
             </div>
@@ -237,7 +237,7 @@ export default function L4OasisPage() {
               {L4OasisCopy.metaverseBuiltOnTheZionBlockch[cs ? 'cs' : 'en']}
             </p>
             <div className="flex flex-wrap gap-3 text-xs">
-              <span className="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-orange-200">
+              <span className="inline-flex items-center gap-2 rounded-full border border-zion-gold-500/30 bg-zion-gold-500/10 px-4 py-2 text-orange-200">
                 <Star className="h-3 w-3" /> {cs ? `${AVATAR_COUNT_CORE + AVATAR_COUNT_EXTENDED} avatarů aktivních` : `${AVATAR_COUNT_CORE + AVATAR_COUNT_EXTENDED} avatars active`}
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-4 py-2 text-amber-200">
@@ -256,12 +256,12 @@ export default function L4OasisPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="zion-rainbow-card p-8"
-          style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L4OasisCopy.liveSystem[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Star className="h-7 w-7 text-orange-400" />
+              <Star className="h-7 w-7 text-zion-gold-400" />
               {L4OasisCopy.avatarSystemActive[cs ? 'cs' : 'en']}
             </h2>
             <p className="text-sm text-gray-400">
@@ -270,7 +270,7 @@ export default function L4OasisPage() {
           </div>
           <div className="grid md:grid-cols-3 gap-4 mb-6">
             {avatarTypes.map((a) => (
-              <div key={a.name} className="zion-rainbow-sub p-5" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+              <div key={a.name} className="zion-rainbow-sub p-5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <a.icon className="h-5 w-5 text-gray-300" />
@@ -284,7 +284,7 @@ export default function L4OasisPage() {
               </div>
             ))}
           </div>
-          <div className="zion-rainbow-sub p-4 text-sm text-gray-400 font-mono" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-sub p-4 text-sm text-gray-400 font-mono" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">API</p>
             GET /avatars · GET /quests · POST /quests/complete · GET /avatars/&#123;id&#125;/stats
           </div>
@@ -296,7 +296,7 @@ export default function L4OasisPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="zion-rainbow-card p-8"
-          style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L4OasisCopy.treasure[cs ? 'cs' : 'en']}</p>
@@ -307,7 +307,7 @@ export default function L4OasisPage() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             {goldenEgg.map((stat) => (
-              <div key={stat.label} className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+              <div key={stat.label} className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                 <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{stat.label}</p>
                 <p className={`text-xl md:text-2xl font-bold ${stat.color}`}>{stat.value}</p>
               </div>
@@ -324,12 +324,12 @@ export default function L4OasisPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="zion-rainbow-card p-8"
-          style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L4OasisCopy.baselineProtocols[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Shield className="h-7 w-7 text-cyan-400" />
+              <Shield className="h-7 w-7 text-zion-cyan-400" />
               {L4OasisCopy.oasisGameProtocols[cs ? 'cs' : 'en']}
             </h2>
             <p className="text-sm text-gray-400">
@@ -338,7 +338,7 @@ export default function L4OasisPage() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {protocols.map((p) => (
-              <div key={p.title} className="zion-rainbow-sub p-5" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+              <div key={p.title} className="zion-rainbow-sub p-5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                 <div className="flex items-center gap-2 mb-2">
                   <p.icon className={`h-5 w-5 ${p.color}`} />
                   <h3 className="font-semibold text-white">{p.title}</h3>
@@ -355,18 +355,18 @@ export default function L4OasisPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="zion-rainbow-card p-8"
-          style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L4OasisCopy.vision[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Palette className="h-7 w-7 text-yellow-400" />
+              <Palette className="h-7 w-7 text-zion-gold-400" />
               {L4OasisCopy.oasisKeyPillars[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             {features.map((f) => (
-              <div key={f.title} className="zion-rainbow-sub p-5" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+              <div key={f.title} className="zion-rainbow-sub p-5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                 <f.icon className={`h-8 w-8 ${f.color} mb-3`} />
                 <h3 className="font-semibold text-white mb-2">{f.title}</h3>
                 <p className="text-sm text-gray-400">{f.desc}</p>
@@ -381,24 +381,24 @@ export default function L4OasisPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="zion-rainbow-card p-8"
-          style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L4OasisCopy.developmentPath[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Clock className="h-7 w-7 text-emerald-400" />
+              <Clock className="h-7 w-7 text-zion-cyan-400" />
               {L4OasisCopy.l4OasisRoadmap[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-5">
             {roadmap.map((phase) => (
-              <div key={phase.phase} className="zion-rainbow-sub p-5" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+              <div key={phase.phase} className="zion-rainbow-sub p-5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                 <div className="mb-4 flex items-center justify-between">
                   <span className="text-lg font-bold text-white">{phase.phase}</span>
                   <span className={`rounded-full px-3 py-1 text-xs font-semibold border ${
                     phase.status === 'planned'
-                      ? 'bg-yellow-500/10 text-yellow-300 border-yellow-500/20'
-                      : 'bg-purple-500/10 text-purple-300 border-purple-500/20'
+                      ? 'bg-zion-gold-500/10 text-zion-gold-300 border-zion-gold-500/20'
+                      : 'bg-zion-purple-500/10 text-zion-purple-300 border-zion-purple-500/20'
                   }`}>
                     {phase.period}
                   </span>
@@ -407,9 +407,9 @@ export default function L4OasisPage() {
                   {phase.items.map((item) => (
                     <li key={item} className="flex items-start gap-2 text-sm text-gray-400">
                       {phase.status === 'planned' ? (
-                        <Clock className="mt-0.5 h-4 w-4 shrink-0 text-yellow-400" />
+                        <Clock className="mt-0.5 h-4 w-4 shrink-0 text-zion-gold-400" />
                       ) : (
-                        <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-purple-400" />
+                        <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-zion-purple-400" />
                       )}
                       {item}
                     </li>
@@ -431,13 +431,13 @@ export default function L4OasisPage() {
             {L4OasisCopy.learnMoreAboutL4AndTheEcosyste[cs ? 'cs' : 'en']}
           </h2>
           <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/l3-hiran" className="inline-flex items-center gap-2 rounded-2xl border border-purple-500/30 bg-purple-500/5 px-6 py-3 text-sm font-semibold text-purple-200 hover:bg-purple-500/10 transition-colors">
+            <Link href="/l3-hiran" className="inline-flex items-center gap-2 rounded-2xl border border-zion-purple-500/30 bg-zion-purple-500/5 px-6 py-3 text-sm font-semibold text-purple-200 hover:bg-zion-purple-500/10 transition-colors">
               <Sparkles className="h-4 w-4" /> L3 Hiran
             </Link>
-            <Link href="/l5-free-world" className="inline-flex items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/5 px-6 py-3 text-sm font-semibold text-amber-200 hover:bg-amber-500/10 transition-colors">
+            <Link href="/l5-free-world" className="inline-flex items-center gap-2 rounded-2xl border border-zion-gold-500/30 bg-zion-gold-500/5 px-6 py-3 text-sm font-semibold text-amber-200 hover:bg-zion-gold-500/10 transition-colors">
               L5 Free World <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link href="/terranova" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+            <Link href="/terranova" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
               <BookOpen className="h-4 w-4" /> TerraNova Book
             </Link>
           </div>

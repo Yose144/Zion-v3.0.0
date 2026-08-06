@@ -203,12 +203,12 @@ function WalletGate({ onEnter }: { onEnter: () => void }) {
                   placeholder="Encryption password"
                   className="w-full rounded-xl bg-black/40 border border-white/10 p-3 text-sm text-white placeholder:text-gray-600 outline-none focus:border-zion-gold/40"
                 />
-                {err && <p className="text-xs text-red-400">{err}</p>}
+                {err && <p className="text-xs text-zion-purple-400">{err}</p>}
                 <div className="flex gap-2">
                   <button
                     onClick={handleImport}
                     disabled={loading || !mnemonic.trim() || !password}
-                    className="flex-1 py-2.5 rounded-2xl bg-gradient-to-r from-zion-gold to-amber-500 text-black text-sm font-semibold shadow-lg shadow-zion-gold/20 transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+                    className="flex-1 py-2.5 rounded-2xl bg-gradient-to-r from-zion-gold to-zion-gold-500 text-black text-sm font-semibold shadow-lg shadow-zion-gold/20 transition-transform hover:-translate-y-0.5 disabled:opacity-50"
                   >
                     {loading ? 'Importing...' : 'Import & Continue'}
                   </button>
@@ -400,7 +400,7 @@ function DaoTab() {
       </div>
 
       {err && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400 flex items-center gap-2">
+        <div className="rounded-xl border border-zion-purple-500/20 bg-zion-purple-500/10 p-4 text-sm text-zion-purple-400 flex items-center gap-2">
           <AlertTriangle size={16} /> {err}
         </div>
       )}
@@ -419,9 +419,9 @@ function DaoTab() {
                     <p className="text-sm font-semibold text-white truncate">{p.title}</p>
                     <div className="flex items-center gap-2 mt-1.5">
                       <span className={'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ' +
-                        (p.status === 'active'  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' :
-                         p.status === 'passed'  ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30' :
-                         p.status === 'failed'  ? 'bg-red-500/10 text-red-400 border-red-500/30' :
+                        (p.status === 'active'  ? 'bg-zion-cyan-500/10 text-zion-cyan-400 border-zion-cyan-500/30' :
+                         p.status === 'passed'  ? 'bg-zion-cyan-500/10 text-zion-cyan-400 border-zion-cyan-500/30' :
+                         p.status === 'failed'  ? 'bg-zion-purple-500/10 text-zion-purple-400 border-zion-purple-500/30' :
                          'bg-gray-500/10 text-gray-400 border-gray-500/30')}>
                         {p.status}
                       </span>
@@ -430,11 +430,11 @@ function DaoTab() {
                   </div>
                 </div>
                 <div className="mt-4 flex items-center gap-6 text-xs">
-                  <div><span className="text-gray-500">Yes: </span><span className="font-mono text-emerald-400">{p.yes_votes.toLocaleString()}</span></div>
-                  <div><span className="text-gray-500">No: </span><span className="font-mono text-red-400">{p.no_votes.toLocaleString()}</span></div>
+                  <div><span className="text-gray-500">Yes: </span><span className="font-mono text-zion-cyan-400">{p.yes_votes.toLocaleString()}</span></div>
+                  <div><span className="text-gray-500">No: </span><span className="font-mono text-zion-purple-400">{p.no_votes.toLocaleString()}</span></div>
                 </div>
                 <div className="mt-2 h-1.5 rounded-full bg-white/10 overflow-hidden">
-                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: yesPct + '%' }} />
+                  <div className="h-full bg-zion-cyan-500 rounded-full" style={{ width: yesPct + '%' }} />
                 </div>
               </Card>
             );
@@ -531,7 +531,7 @@ function WalletTab() {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
       {error && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">{error}</div>
+        <div className="rounded-xl border border-zion-purple-500/20 bg-zion-purple-500/10 p-4 text-sm text-zion-purple-400">{error}</div>
       )}
 
       {activeWallet && (
@@ -546,7 +546,7 @@ function WalletTab() {
                 <button onClick={() => handleCopy(activeWallet.address)} className="p-1.5 rounded-lg hover:bg-white/10 transition" title="Copy">
                   <Copy size={14} className="text-gray-400" />
                 </button>
-                {copyOk && <span className="text-[10px] text-emerald-400">Copied</span>}
+                {copyOk && <span className="text-[10px] text-zion-cyan-400">Copied</span>}
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -579,7 +579,7 @@ function WalletTab() {
                 </div>
                 <button
                   onClick={(e) => { e.stopPropagation(); if (confirm('Delete wallet "' + w.name + '"?')) deleteWallet(w.id); }}
-                  className="p-2 hover:bg-red-500/10 rounded-xl text-red-400 transition shrink-0"
+                  className="p-2 hover:bg-zion-purple-500/10 rounded-xl text-zion-purple-400 transition shrink-0"
                   title="Delete"
                 >
                   <Trash2 size={14} />
@@ -637,7 +637,7 @@ function WalletTab() {
               <label className="block text-xs text-gray-400 mb-1">Password (min 8 chars)</label>
               <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full rounded-xl bg-black/40 border border-white/10 p-3 text-sm text-white outline-none focus:border-zion-gold/40" />
             </div>
-            <button onClick={handleCreate} disabled={loading} className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-zion-gold to-amber-500 text-black text-sm font-semibold shadow-lg shadow-zion-gold/20 transition-transform hover:-translate-y-0.5 disabled:opacity-50">
+            <button onClick={handleCreate} disabled={loading} className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-zion-gold to-zion-gold-500 text-black text-sm font-semibold shadow-lg shadow-zion-gold/20 transition-transform hover:-translate-y-0.5 disabled:opacity-50">
               {loading ? 'Creating...' : 'Create Wallet'}
             </button>
           </div>
@@ -656,7 +656,7 @@ function WalletTab() {
               <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Encryption password"
                 className="w-full rounded-xl bg-black/40 border border-white/10 p-3 text-sm text-white outline-none focus:border-zion-cyan/40" />
               <button onClick={handleImportMnemonic} disabled={loading}
-                className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm font-semibold shadow-lg shadow-cyan-500/20 transition-transform hover:-translate-y-0.5 disabled:opacity-50">
+                className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-zion-cyan-500 to-zion-purple-500 text-white text-sm font-semibold shadow-lg shadow-zion-cyan-500/20 transition-transform hover:-translate-y-0.5 disabled:opacity-50">
                 {loading ? 'Importing...' : 'Import from Mnemonic'}
               </button>
             </div>
@@ -671,7 +671,7 @@ function WalletTab() {
               <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Encryption password"
                 className="w-full rounded-xl bg-black/40 border border-white/10 p-3 text-sm text-white outline-none focus:border-zion-purple/40" />
               <button onClick={handleImportPrivateKey} disabled={loading}
-                className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-zion-purple to-violet-500 text-white text-sm font-semibold shadow-lg shadow-zion-purple/20 transition-transform hover:-translate-y-0.5 disabled:opacity-50">
+                className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-zion-purple to-zion-purple-500 text-white text-sm font-semibold shadow-lg shadow-zion-purple/20 transition-transform hover:-translate-y-0.5 disabled:opacity-50">
                 {loading ? 'Importing...' : 'Import from Private Key'}
               </button>
             </div>
@@ -681,7 +681,7 @@ function WalletTab() {
 
       {subTab === 'send' && (
         <Card>
-          <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2"><Send size={14} className="text-emerald-400" /> Send ZION</h3>
+          <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2"><Send size={14} className="text-zion-cyan-400" /> Send ZION</h3>
           {!activeWallet ? (
             <p className="text-sm text-gray-400">Select or create a wallet first.</p>
           ) : (
@@ -689,30 +689,30 @@ function WalletTab() {
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Recipient Address</label>
                 <input type="text" value={sendTo} onChange={(e) => setSendTo(e.target.value)} placeholder="zion1..."
-                  className="w-full rounded-xl bg-black/40 border border-white/10 p-3 text-sm text-white placeholder:text-gray-600 outline-none focus:border-emerald-400/40 font-mono" />
+                  className="w-full rounded-xl bg-black/40 border border-white/10 p-3 text-sm text-white placeholder:text-gray-600 outline-none focus:border-zion-cyan-400/40 font-mono" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs text-gray-400 mb-1">Amount (ZION)</label>
                   <input type="number" value={sendAmount} onChange={(e) => setSendAmount(e.target.value)} placeholder="0.0"
-                    className="w-full rounded-xl bg-black/40 border border-white/10 p-3 text-sm text-white outline-none focus:border-emerald-400/40" />
+                    className="w-full rounded-xl bg-black/40 border border-white/10 p-3 text-sm text-white outline-none focus:border-zion-cyan-400/40" />
                 </div>
                 <div>
                   <label className="block text-xs text-gray-400 mb-1">Memo (optional)</label>
                   <input type="text" value={sendMemo} onChange={(e) => setSendMemo(e.target.value)} placeholder="Memo..."
-                    className="w-full rounded-xl bg-black/40 border border-white/10 p-3 text-sm text-white outline-none focus:border-emerald-400/40" />
+                    className="w-full rounded-xl bg-black/40 border border-white/10 p-3 text-sm text-white outline-none focus:border-zion-cyan-400/40" />
                 </div>
               </div>
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Wallet Password</label>
                 <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password"
-                  className="w-full rounded-xl bg-black/40 border border-white/10 p-3 text-sm text-white outline-none focus:border-emerald-400/40" />
+                  className="w-full rounded-xl bg-black/40 border border-white/10 p-3 text-sm text-white outline-none focus:border-zion-cyan-400/40" />
               </div>
               <button onClick={handleSend} disabled={loading}
-                className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-semibold shadow-lg shadow-emerald-500/20 transition-transform hover:-translate-y-0.5 disabled:opacity-50">
+                className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-zion-cyan-500 to-zion-cyan-500 text-white text-sm font-semibold shadow-lg shadow-zion-cyan-500/20 transition-transform hover:-translate-y-0.5 disabled:opacity-50">
                 {loading ? 'Sending...' : 'Send Transaction'}
               </button>
-              {txResult && <p className="text-xs text-emerald-400 font-mono break-all">{txResult}</p>}
+              {txResult && <p className="text-xs text-zion-cyan-400 font-mono break-all">{txResult}</p>}
             </div>
           )}
         </Card>
@@ -800,13 +800,13 @@ export default function DashboardMain() {
             </p>
             <div className="flex flex-wrap gap-3 text-xs">
               <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                <Activity className="h-3 w-3 text-emerald-400" /> Auto-refresh 30s
+                <Activity className="h-3 w-3 text-zion-cyan-400" /> Auto-refresh 30s
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                 <Globe className="h-3 w-3 text-zion-cyan" /> Edge server
               </span>
               {metricsSource === 'fallback' && (
-                <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-amber-400">
+                <span className="inline-flex items-center gap-2 rounded-full border border-zion-gold-500/30 bg-zion-gold-500/10 px-4 py-2 text-zion-gold-400">
                   <AlertTriangle className="h-3 w-3" /> Core offline — showing cached/empty metrics
                 </span>
               )}
@@ -819,7 +819,7 @@ export default function DashboardMain() {
                 <Wallet size={12} className="text-zion-gold" />
                 <span className="text-xs font-mono text-gray-300">{activeWallet.address.slice(0, 10)}...{activeWallet.address.slice(-4)}</span>
               </div>
-              <button onClick={disconnect} className="p-2 rounded-xl border border-white/10 hover:border-red-500/40 hover:bg-red-500/10 transition-colors" title="Disconnect">
+              <button onClick={disconnect} className="p-2 rounded-xl border border-white/10 hover:border-zion-purple-500/40 hover:bg-zion-purple-500/10 transition-colors" title="Disconnect">
                 <Lock size={14} className="text-gray-400" />
               </button>
             </div>

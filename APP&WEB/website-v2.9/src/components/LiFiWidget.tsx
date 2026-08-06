@@ -103,9 +103,9 @@ export default function LiFiWidget() {
   }, [account]);
 
   return (
-    <div className="zion-rainbow-card p-4" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+    <div className="zion-rainbow-card p-4" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
       <div className="flex items-center gap-2 mb-3">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-indigo-400">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-zion-purple-400">
           <path d="M3 12h4l3-9 4 18 3-9h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
         <h3 className="font-semibold text-white text-sm">

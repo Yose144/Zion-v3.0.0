@@ -66,12 +66,12 @@ export default function DaoStatsClient() {
 
   if (error) {
     return (
-      <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6 text-center">
-        <p className="text-red-400 text-sm">Failed to load DAO stats</p>
+      <div className="rounded-2xl border border-zion-purple-500/20 bg-zion-purple-500/5 p-6 text-center">
+        <p className="text-zion-purple-400 text-sm">Failed to load DAO stats</p>
         <p className="text-gray-500 text-xs mt-2">{error}</p>
         <button
           onClick={fetchStats}
-          className="mt-4 px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 text-sm transition-colors"
+          className="mt-4 px-4 py-2 rounded-lg bg-zion-purple-500/20 hover:bg-zion-purple-500/30 text-zion-purple-300 text-sm transition-colors"
         >
           Retry
         </button>

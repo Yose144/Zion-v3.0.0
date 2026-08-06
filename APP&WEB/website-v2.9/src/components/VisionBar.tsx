@@ -10,32 +10,32 @@ const VISIONS = [
     icon: Flower2,
     label: 'Oasis',
     desc: 'Portal do L4 Oasis — vědomí, Ekam a Deeksha v bezpečném prostoru.',
-    rc: '249, 115, 22', // orange
-    accent: 'text-orange-300',
+    rc: '252, 209, 22', // orange
+    accent: 'text-zion-gold-300',
   },
   {
     href: '/terranova/genesis',
     icon: Sprout,
     label: 'Zahrada Genesis',
     desc: 'Původní blockchainový kód, první blok, seed vědomí.',
-    rc: '6, 182, 212', // cyan
-    accent: 'text-cyan-300',
+    rc: '7, 137, 48', // cyan
+    accent: 'text-zion-cyan-300',
   },
   {
     href: '/terranova/dharma-temple',
     icon: Landmark,
     label: 'Dharma Temple',
     desc: 'Chrám Dharmy — Ekam, Deeksha, Oneness, posvátná geometrie v kódu.',
-    rc: '139, 92, 246', // violet
-    accent: 'text-violet-300',
+    rc: '228, 30, 43', // violet
+    accent: 'text-zion-purple-300',
   },
   {
     href: '/terranova/te-piko-ora',
     icon: Crown,
     label: 'Te Piko Ora',
     desc: 'Koruna života — vrcholná komunitní vize, Rapa Nui, Guardian Edge.',
-    rc: '245, 158, 11', // amber
-    accent: 'text-amber-300',
+    rc: '252, 209, 22', // amber
+    accent: 'text-zion-gold-300',
   },
 ];
 

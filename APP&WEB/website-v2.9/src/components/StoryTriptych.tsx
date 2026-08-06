@@ -32,7 +32,7 @@ export default function StoryTriptych() {
       title: 'Terra Nova',
       subtitle: StoryTriptychCopy.goldenCompassOfTheNewEarth[cs ? 'cs' : 'en'],
       desc: StoryTriptychCopy.theFourthBookOfZionPublicEntry[cs ? 'cs' : 'en'],
-      rc: '244, 63, 94', // rose
+      rc: '228, 30, 43', // rose
       chapters: StoryTriptychCopy.bookCompassCli[cs ? 'cs' : 'en'],
     },
     {
@@ -41,7 +41,7 @@ export default function StoryTriptych() {
       title: StoryTriptychCopy.quantumRevolution[cs ? 'cs' : 'en'],
       subtitle: StoryTriptychCopy.theBookThatStartedItAll[cs ? 'cs' : 'en'],
       desc: StoryTriptychCopy.aFiresideStoryOfANewEarthWhere[cs ? 'cs' : 'en'],
-      rc: '251, 191, 36', // gold
+      rc: '252, 209, 22', // gold
       chapters: StoryTriptychCopy.k10Chapters11Languages[cs ? 'cs' : 'en'],
     },
     {
@@ -50,7 +50,7 @@ export default function StoryTriptych() {
       title: 'ZION Genesis',
       subtitle: StoryTriptychCopy.sacredStoryOfTheSameWorld[cs ? 'cs' : 'en'],
       desc: StoryTriptychCopy.aMemoryOfTheFutureTheStoryOf14[cs ? 'cs' : 'en'],
-      rc: '20, 184, 166', // teal
+      rc: '7, 137, 48', // teal
       chapters: StoryTriptychCopy.k9ChaptersOfAwakening[cs ? 'cs' : 'en'],
     },
   ];

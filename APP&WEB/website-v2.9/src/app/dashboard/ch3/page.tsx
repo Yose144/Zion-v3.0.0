@@ -94,12 +94,12 @@ interface CH3Settings {
 }
 
 const STREAM_COLORS: Record<string, string> = {
-  zion: "from-zion-gold to-amber-500",
-  etc: "from-green-500 to-emerald-600",
-  nxs: "from-blue-500 to-cyan-600",
-  dynamic_gpu: "from-purple-500 to-violet-600",
-  ncl: "from-pink-500 to-rose-600",
-  pearl: "from-teal-400 to-cyan-500",
+  zion: "from-zion-gold to-zion-gold-500",
+  etc: "from-zion-cyan-500 to-zion-cyan-600",
+  nxs: "from-zion-purple-500 to-zion-cyan-600",
+  dynamic_gpu: "from-zion-purple-500 to-zion-purple-600",
+  ncl: "from-zion-purple-500 to-zion-purple-600",
+  pearl: "from-zion-cyan-400 to-zion-cyan-500",
 };
 
 const STREAM_ICONS: Record<string, string> = {
@@ -112,11 +112,11 @@ const STREAM_ICONS: Record<string, string> = {
 };
 
 const GPU_COINS = [
-  { id: "ERG", name: "Ergo", algo: "Autolykos2", color: "text-orange-400" },
-  { id: "RVN", name: "Ravencoin", algo: "KawPow", color: "text-blue-400" },
-  { id: "KAS", name: "Kaspa", algo: "KHeavyHash", color: "text-teal-400" },
-  { id: "ALPH", name: "Alephium", algo: "Blake3", color: "text-purple-400" },
-  { id: "FLUX", name: "Flux", algo: "Equihash", color: "text-indigo-400" },
+  { id: "ERG", name: "Ergo", algo: "Autolykos2", color: "text-zion-gold-400" },
+  { id: "RVN", name: "Ravencoin", algo: "KawPow", color: "text-zion-purple-400" },
+  { id: "KAS", name: "Kaspa", algo: "KHeavyHash", color: "text-zion-cyan-400" },
+  { id: "ALPH", name: "Alephium", algo: "Blake3", color: "text-zion-purple-400" },
+  { id: "FLUX", name: "Flux", algo: "Equihash", color: "text-zion-purple-400" },
 ];
 
 const DEFAULT_SETTINGS: CH3Settings = {
@@ -331,7 +331,7 @@ export default function CH3SettingsPage() {
             className={`zion-rainbow-card p-4 ${
               stream.enabled ? "" : "opacity-60"
             }`}
-            style={zionStyle("251, 191, 36")}
+            style={zionStyle("252, 209, 22")}
           >
             {/* Gradient bar */}
             <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${STREAM_COLORS[key]}`} />
@@ -342,7 +342,7 @@ export default function CH3SettingsPage() {
                 <button
                   onClick={() => toggleStream(key)}
                   className={`w-10 h-6 rounded-full transition-colors ${
-                    stream.enabled ? "bg-emerald-500" : "bg-white/10"
+                    stream.enabled ? "bg-zion-cyan-500" : "bg-white/10"
                   }`}
                 >
                   <div
@@ -358,7 +358,7 @@ export default function CH3SettingsPage() {
             <div className="text-gray-400 text-sm">~{stream.target_share * 100}%</div>
             
             {key === "dynamic_gpu" && stream.current_coin && (
-              <div className="mt-2 text-xs zion-rainbow-sub px-2 py-1 inline-block" style={zionStyle("245, 158, 11")}>
+              <div className="mt-2 text-xs zion-rainbow-sub px-2 py-1 inline-block" style={zionStyle("252, 209, 22")}>
                 Mining: {stream.current_coin}
               </div>
             )}
@@ -377,7 +377,7 @@ export default function CH3SettingsPage() {
                 ? "zion-rainbow-sub"
                 : "rounded-lg bg-black/40 text-gray-400 hover:bg-white/10"
             }`}
-            style={activeTab === tab ? zionStyle("251, 191, 36") : undefined}
+            style={activeTab === tab ? zionStyle("252, 209, 22") : undefined}
           >
             {tab === "overview" && (DashboardCh3Copy.overview[lang === 'cs' ? 'cs' : 'en'])}
             {tab === "merged" && (DashboardCh3Copy.mergedMining[lang === 'cs' ? 'cs' : 'en'])}
@@ -389,7 +389,7 @@ export default function CH3SettingsPage() {
       </div>
 
       {/* Tab Content */}
-      <div className="zion-rainbow-card p-6" style={zionStyle("251, 191, 36")}>
+      <div className="zion-rainbow-card p-6" style={zionStyle("252, 209, 22")}>
         {/* Overview Tab */}
         {activeTab === "overview" && (
           <div>
@@ -413,7 +413,7 @@ export default function CH3SettingsPage() {
             {/* Stream details */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {Object.entries(settings.streams).map(([key, stream]) => (
-                <div key={key} className="zion-rainbow-sub p-4" style={zionStyle("245, 158, 11")}>
+                <div key={key} className="zion-rainbow-sub p-4" style={zionStyle("252, 209, 22")}>
                   <div className="flex items-center gap-3 mb-2">
                     <span className="text-2xl">{STREAM_ICONS[key]}</span>
                     <div>
@@ -422,7 +422,7 @@ export default function CH3SettingsPage() {
                     </div>
                   </div>
                   <div className="text-sm text-gray-500">{stream.description}</div>
-                  <div className={`mt-2 text-sm ${stream.enabled ? "text-emerald-400" : "text-red-400"}`}>
+                  <div className={`mt-2 text-sm ${stream.enabled ? "text-zion-cyan-400" : "text-zion-purple-400"}`}>
                     {stream.enabled ? (DashboardCh3Copy.active[lang === 'cs' ? 'cs' : 'en']) : (DashboardCh3Copy.disabled[lang === 'cs' ? 'cs' : 'en'])}
                   </div>
                 </div>
@@ -441,7 +441,7 @@ export default function CH3SettingsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* ETC */}
-              <div className="zion-rainbow-card p-6" style={zionStyle("245, 158, 11")}>
+              <div className="zion-rainbow-card p-6" style={zionStyle("252, 209, 22")}>
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <span className="text-3xl">💎</span>
@@ -457,7 +457,7 @@ export default function CH3SettingsPage() {
                         ? "zion-rainbow-sub text-white"
                         : "rounded-lg bg-black/40 text-gray-400"
                     }`}
-                    style={settings.streams.etc.enabled ? zionStyle("251, 191, 36") : undefined}
+                    style={settings.streams.etc.enabled ? zionStyle("252, 209, 22") : undefined}
                   >
                     {settings.streams.etc.enabled ? (DashboardCh3Copy.enabled[lang === 'cs' ? 'cs' : 'en']) : (DashboardCh3Copy.disabled_2[lang === 'cs' ? 'cs' : 'en'])}
                   </button>
@@ -490,7 +490,7 @@ export default function CH3SettingsPage() {
               </div>
 
               {/* NXS */}
-              <div className="zion-rainbow-card p-6" style={zionStyle("245, 158, 11")}>
+              <div className="zion-rainbow-card p-6" style={zionStyle("252, 209, 22")}>
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <span className="text-3xl">🔷</span>
@@ -506,7 +506,7 @@ export default function CH3SettingsPage() {
                         ? "zion-rainbow-sub text-white"
                         : "rounded-lg bg-black/40 text-gray-400"
                     }`}
-                    style={settings.streams.nxs.enabled ? zionStyle("251, 191, 36") : undefined}
+                    style={settings.streams.nxs.enabled ? zionStyle("252, 209, 22") : undefined}
                   >
                     {settings.streams.nxs.enabled ? (DashboardCh3Copy.enabled[lang === 'cs' ? 'cs' : 'en']) : (DashboardCh3Copy.disabled_2[lang === 'cs' ? 'cs' : 'en'])}
                   </button>
@@ -562,7 +562,7 @@ export default function CH3SettingsPage() {
                         ? "zion-rainbow-sub text-white"
                         : "rounded-lg bg-black/40 text-gray-400"
                     }`}
-                    style={settings.streams.dynamic_gpu.mode === mode ? zionStyle("251, 191, 36") : undefined}
+                    style={settings.streams.dynamic_gpu.mode === mode ? zionStyle("252, 209, 22") : undefined}
                   >
                     {mode === "auto" && "🤖 "}
                     {mode === "manual" && "👆 "}
@@ -604,7 +604,7 @@ export default function CH3SettingsPage() {
                           ? "zion-rainbow-sub"
                           : "bg-black/40 border border-white/10 hover:border-white/20"
                       }`}
-                      style={isCurrent ? zionStyle("251, 191, 36") : isSelected ? zionStyle("245, 158, 11") : undefined}
+                      style={isCurrent ? zionStyle("252, 209, 22") : isSelected ? zionStyle("252, 209, 22") : undefined}
                     >
                       <div className={`font-bold text-xl ${coin.color}`}>{coin.id}</div>
                       <div className="text-gray-400 text-sm">{coin.name}</div>
@@ -694,13 +694,13 @@ export default function CH3SettingsPage() {
               {/* Visual split */}
               <div className="flex h-20 mt-4 rounded-lg overflow-hidden">
                 <div 
-                  className="bg-gradient-to-r from-amber-500 to-zion-gold flex items-center justify-center"
+                  className="bg-gradient-to-r from-zion-gold-500 to-zion-gold flex items-center justify-center"
                   style={{ width: `${(settings.streams.ncl.mining_allocation || 0) * 100}%` }}
                 >
                   <span className="font-bold">⛏️ {DashboardCh3Copy.mining[lang === 'cs' ? 'cs' : 'en']}</span>
                 </div>
                 <div 
-                  className="bg-gradient-to-r from-pink-600 to-pink-500 flex items-center justify-center"
+                  className="bg-gradient-to-r from-zion-purple-600 to-zion-purple-500 flex items-center justify-center"
                   style={{ width: `${(settings.streams.ncl.npu_allocation || 0) * 100}%` }}
                 >
                   <span className="font-bold">🧠 AI</span>
@@ -718,7 +718,7 @@ export default function CH3SettingsPage() {
                   { id: "image_classification", name: "Image Classification", reward: "0.002" },
                   { id: "code_analysis", name: "Code Analysis", reward: "0.003" },
                 ].map((task) => (
-                  <div key={task.id} className="zion-rainbow-sub p-4" style={zionStyle("245, 158, 11")}>
+                  <div key={task.id} className="zion-rainbow-sub p-4" style={zionStyle("252, 209, 22")}>
                     <div className="flex items-center gap-2 mb-2">
                       <input type="checkbox" defaultChecked className="w-4 h-4" />
                       <span className="font-medium">{task.name}</span>
@@ -741,7 +741,7 @@ export default function CH3SettingsPage() {
               {DashboardCh3Copy.pearlCoinPrlUsesProofOfUsefulW[lang === 'cs' ? 'cs' : 'en']}
             </p>
 
-            <div className="zion-rainbow-card p-6 mb-6" style={zionStyle("245, 158, 11")}>
+            <div className="zion-rainbow-card p-6 mb-6" style={zionStyle("252, 209, 22")}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <span className="text-3xl">🐚</span>
@@ -757,7 +757,7 @@ export default function CH3SettingsPage() {
                       ? "zion-rainbow-sub text-white"
                       : "rounded-lg bg-black/40 text-gray-400"
                   }`}
-                  style={settings.streams.pearl.enabled ? zionStyle("251, 191, 36") : undefined}
+                  style={settings.streams.pearl.enabled ? zionStyle("252, 209, 22") : undefined}
                 >
                   {settings.streams.pearl.enabled ? (DashboardCh3Copy.enabled[lang === 'cs' ? 'cs' : 'en']) : (DashboardCh3Copy.disabled_2[lang === 'cs' ? 'cs' : 'en'])}
                 </button>
@@ -802,19 +802,19 @@ export default function CH3SettingsPage() {
 
             {/* GPU Performance Info */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="zion-rainbow-sub p-4" style={zionStyle("245, 158, 11")}>
+              <div className="zion-rainbow-sub p-4" style={zionStyle("252, 209, 22")}>
                 <div className="text-gray-400 text-sm">{DashboardCh3Copy.gpuSpeed[lang === 'cs' ? 'cs' : 'en']}</div>
-                <div className="font-bold text-2xl text-teal-400">657.6</div>
+                <div className="font-bold text-2xl text-zion-cyan-400">657.6</div>
                 <div className="text-gray-500 text-xs">nonces/s (batch=16)</div>
               </div>
-              <div className="zion-rainbow-sub p-4" style={zionStyle("245, 158, 11")}>
+              <div className="zion-rainbow-sub p-4" style={zionStyle("252, 209, 22")}>
                 <div className="text-gray-400 text-sm">{DashboardCh3Copy.vsCpu[lang === 'cs' ? 'cs' : 'en']}</div>
-                <div className="font-bold text-2xl text-teal-400">14.2x</div>
+                <div className="font-bold text-2xl text-zion-cyan-400">14.2x</div>
                 <div className="text-gray-500 text-xs">{DashboardCh3Copy.speedup[lang === 'cs' ? 'cs' : 'en']}</div>
               </div>
-              <div className="zion-rainbow-sub p-4" style={zionStyle("245, 158, 11")}>
+              <div className="zion-rainbow-sub p-4" style={zionStyle("252, 209, 22")}>
                 <div className="text-gray-400 text-sm">{DashboardCh3Copy.algorithm[lang === 'cs' ? 'cs' : 'en']}</div>
-                <div className="font-bold text-lg text-teal-400">PearlHash</div>
+                <div className="font-bold text-lg text-zion-cyan-400">PearlHash</div>
                 <div className="text-gray-500 text-xs">PoUW — INT8 MatMul + ZK</div>
               </div>
             </div>
@@ -824,7 +824,7 @@ export default function CH3SettingsPage() {
 
       {/* Error Banner */}
       {error && (
-        <div className="mt-4 bg-red-900/30 border border-red-500/50 rounded-xl p-4 text-red-300 text-sm">
+        <div className="mt-4 bg-red-900/30 border border-zion-purple-500/50 rounded-xl p-4 text-zion-purple-300 text-sm">
           ⚠️ {error}
         </div>
       )}
@@ -837,7 +837,7 @@ export default function CH3SettingsPage() {
           className={`px-8 py-3 rounded-xl font-bold text-lg ${
             saving || !settings
               ? "bg-white/10 text-gray-400 cursor-wait"
-              : "bg-zion-gold text-black hover:bg-yellow-400"
+              : "bg-zion-gold text-black hover:bg-zion-gold-400"
           }`}
         >
           {saving ? (DashboardCh3Copy.saving[lang === 'cs' ? 'cs' : 'en']) : (DashboardCh3Copy.saveSettings[lang === 'cs' ? 'cs' : 'en'])}

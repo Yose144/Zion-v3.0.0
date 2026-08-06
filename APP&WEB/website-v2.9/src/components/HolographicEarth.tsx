@@ -832,7 +832,7 @@ export default function HolographicEarth({ className }: HolographicEarthProps) {
         ) : (
           <div className="flex h-full w-full items-center justify-center">
             <div className="text-center">
-              <div className="mx-auto mb-2 h-12 w-12 rounded-full border border-cyan-200/20 bg-cyan-500/10 flex items-center justify-center">
+              <div className="mx-auto mb-2 h-12 w-12 rounded-full border border-cyan-200/20 bg-zion-cyan-500/10 flex items-center justify-center">
                 <span className="text-lg">🌍</span>
               </div>
               <p className="text-[10px] text-cyan-100/40 uppercase tracking-widest">WebGL unavailable</p>

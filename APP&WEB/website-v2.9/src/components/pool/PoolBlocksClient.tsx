@@ -291,12 +291,12 @@ function StatCard({
   accent?: "purple" | "emerald" | "amber" | "cyan" | "gold" | "rose";
 }) {
   const accentMap: Record<string, string> = {
-    purple: "from-purple-500/80 to-indigo-600/80",
-    emerald: "from-emerald-500/80 to-teal-600/80",
-    amber: "from-amber-500/80 to-orange-600/80",
-    cyan: "from-cyan-500/80 to-blue-600/80",
-    gold: "from-amber-400/80 to-yellow-600/80",
-    rose: "from-rose-500/80 to-pink-600/80",
+    purple: "from-zion-purple-500/80 to-zion-purple-600/80",
+    emerald: "from-zion-cyan-500/80 to-zion-cyan-600/80",
+    amber: "from-zion-gold-500/80 to-zion-gold-600/80",
+    cyan: "from-zion-cyan-500/80 to-zion-purple-600/80",
+    gold: "from-zion-gold-400/80 to-zion-gold-600/80",
+    rose: "from-zion-purple-500/80 to-zion-purple-600/80",
   };
   return (
     <div className="zion-rainbow-sub p-5" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
@@ -371,11 +371,11 @@ function DiscoveryChart({ data, height = 220, cs = false }: { data: DayBucket[];
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ height }} preserveAspectRatio="none">
       <defs>
         <linearGradient id="discoveryGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="rgb(168, 85, 247)" stopOpacity="0.45" />
-          <stop offset="100%" stopColor="rgb(168, 85, 247)" stopOpacity="0" />
+          <stop offset="0%" stopColor="rgb(228, 30, 43)" stopOpacity="0.45" />
+          <stop offset="100%" stopColor="rgb(228, 30, 43)" stopOpacity="0" />
         </linearGradient>
         <linearGradient id="discoveryLine" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="rgb(168, 85, 247)" />
+          <stop offset="0%" stopColor="rgb(228, 30, 43)" />
           <stop offset="100%" stopColor="rgb(52, 211, 153)" />
         </linearGradient>
       </defs>
@@ -404,7 +404,7 @@ function DiscoveryChart({ data, height = 220, cs = false }: { data: DayBucket[];
       <path d={areaPath} fill="url(#discoveryGrad)" />
       <path d={linePath} fill="none" stroke="url(#discoveryLine)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
       {points.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y} r="2.5" fill="rgb(168,85,247)" opacity={0.8} />
+        <circle key={i} cx={p.x} cy={p.y} r="2.5" fill="rgb(228, 30, 43)" opacity={0.8} />
       ))}
     </svg>
   );
@@ -446,7 +446,7 @@ function LuckChart({ data, height = 220, cs = false }: { data: DayBucket[]; heig
   const linePath = `M${points.map((p) => `${p.x},${p.y}`).join(" L")}`;
 
   const luckColor = (v: number) =>
-    v >= 1 ? "rgb(52, 211, 153)" : v >= 0.8 ? "rgb(251, 191, 36)" : "rgb(244, 63, 94)";
+    v >= 1 ? "rgb(52, 211, 153)" : v >= 0.8 ? "rgb(252, 209, 22)" : "rgb(228, 30, 43)";
   const finalLuck = cum[cum.length - 1];
   const lineColor = luckColor(finalLuck);
 
@@ -515,7 +515,7 @@ function RewardChart({ data, height = 220, cs = false }: { data: DayBucket[]; he
       <defs>
         <linearGradient id="rewardBar" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="rgb(52, 211, 153)" stopOpacity="0.9" />
-          <stop offset="100%" stopColor="rgb(16, 185, 129)" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="rgb(7, 137, 48)" stopOpacity="0.4" />
         </linearGradient>
       </defs>
       {tickVals.map((tv, i) => {
@@ -588,8 +588,8 @@ function HashrateTimeline({ data, height = 240, cs = false }: { data: DayBucket[
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ height }} preserveAspectRatio="none">
       <defs>
         <linearGradient id="poolHashGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="rgb(168, 85, 247)" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="rgb(168, 85, 247)" stopOpacity="0" />
+          <stop offset="0%" stopColor="rgb(228, 30, 43)" stopOpacity="0.3" />
+          <stop offset="100%" stopColor="rgb(228, 30, 43)" stopOpacity="0" />
         </linearGradient>
       </defs>
       {tickVals.map((tv, i) => {
@@ -616,7 +616,7 @@ function HashrateTimeline({ data, height = 240, cs = false }: { data: DayBucket[
       <path d={netPath} fill="none" stroke="rgb(34, 211, 238)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.85" />
       {/* pool area + line (purple) */}
       <path d={`${poolPath} L${poolPts[poolPts.length - 1].x},${padY + plotH} L${poolPts[0].x},${padY + plotH} Z`} fill="url(#poolHashGrad)" />
-      <path d={poolPath} fill="none" stroke="rgb(168, 85, 247)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={poolPath} fill="none" stroke="rgb(228, 30, 43)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -748,9 +748,9 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
   ];
 
   const luckColor = (v: number) =>
-    v >= 1 ? "text-emerald-400" : v >= 0.8 ? "text-amber-400" : "text-rose-400";
+    v >= 1 ? "text-zion-cyan-400" : v >= 0.8 ? "text-zion-gold-400" : "text-zion-purple-400";
   const luckBadge = (v: number) =>
-    v >= 1 ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" : v >= 0.8 ? "bg-amber-500/15 text-amber-300 border-amber-500/30" : "bg-rose-500/15 text-rose-300 border-rose-500/30";
+    v >= 1 ? "bg-zion-cyan-500/15 text-zion-cyan-300 border-zion-cyan-500/30" : v >= 0.8 ? "bg-zion-gold-500/15 text-zion-gold-300 border-zion-gold-500/30" : "bg-zion-purple-500/15 text-zion-purple-300 border-zion-purple-500/30";
 
   return (
     <div className={embedded ? "" : "zion-shell min-h-screen pt-28 md:pt-32 pb-24"}>
@@ -760,7 +760,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
             <div className="zion-rainbow-card p-8 md:p-10" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                 <div className="flex items-start gap-4">
-                  <div className="flex items-center justify-center h-14 w-14 rounded-2xl bg-linear-to-br from-purple-500/80 to-indigo-600/80 flex-shrink-0">
+                  <div className="flex items-center justify-center h-14 w-14 rounded-2xl bg-linear-to-br from-zion-purple-500/80 to-zion-purple-600/80 flex-shrink-0">
                     <Pickaxe className="h-7 w-7 text-white" />
                   </div>
                   <div>
@@ -801,7 +801,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
                     onClick={() => setRange(opt.key)}
                     className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                       range === opt.key
-                        ? "bg-purple-500/20 text-purple-200 border border-purple-500/40"
+                        ? "bg-zion-purple-500/20 text-purple-200 border border-zion-purple-500/40"
                         : "bg-white/[0.03] text-gray-400 border border-white/[0.06] hover:text-white hover:border-white/20"
                     }`}
                   >
@@ -812,7 +812,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
               <div className="flex items-center gap-3">
                 {loading && <Loader2 className="h-4 w-4 text-gray-500 animate-spin" />}
                 {error && (
-                  <span className="text-xs text-rose-400">
+                  <span className="text-xs text-zion-purple-400">
                     {PoolBlocksCopy.loadError[cs ? 'cs' : 'en']}: {error}
                   </span>
                 )}
@@ -918,15 +918,15 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
           <div className="zion-rainbow-card p-6" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
             <div className="flex items-center gap-4 mb-3 text-xs">
               <span className="flex items-center gap-1.5">
-                <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-400" />
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-zion-cyan-400" />
                 <span className="text-gray-400">{PoolBlocksCopy.lucky100[cs ? 'cs' : 'en']}</span>
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="inline-block h-2.5 w-2.5 rounded-full bg-amber-400" />
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-zion-gold-400" />
                 <span className="text-gray-400">{PoolBlocksCopy.average80100[cs ? 'cs' : 'en']}</span>
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="inline-block h-2.5 w-2.5 rounded-full bg-rose-400" />
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-zion-purple-400" />
                 <span className="text-gray-400">{PoolBlocksCopy.unlucky80[cs ? 'cs' : 'en']}</span>
               </span>
             </div>
@@ -966,11 +966,11 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
           <div className="zion-rainbow-card p-6" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
             <div className="flex items-center gap-4 mb-3 text-xs">
               <span className="flex items-center gap-1.5">
-                <span className="inline-block h-2.5 w-2.5 rounded-full bg-purple-400" />
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-zion-purple-400" />
                 <span className="text-gray-400">{PoolBlocksCopy.pool[cs ? 'cs' : 'en']}</span>
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="inline-block h-2.5 w-2.5 rounded-full bg-cyan-400" />
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-zion-cyan-400" />
                 <span className="text-gray-400">{PoolBlocksCopy.network[cs ? 'cs' : 'en']}</span>
               </span>
             </div>
@@ -1044,7 +1044,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
                         <td className="px-5 py-3.5 text-gray-400 font-mono text-xs">
                           {b.difficulty > 0 ? fmtDifficulty(b.difficulty) : "—"}
                         </td>
-                        <td className="px-5 py-3.5 text-emerald-400 font-mono text-xs">
+                        <td className="px-5 py-3.5 text-zion-cyan-400 font-mono text-xs">
                           {b.reward > 0 ? `${atomicToZion(b.reward)} ZION` : "—"}
                         </td>
                         <td className="px-5 py-3.5">
@@ -1101,7 +1101,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
             <div className="zion-cta-banner p-8 md:p-10" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                 <div className="flex items-start gap-4">
-                  <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-linear-to-br from-purple-500/80 to-indigo-600/80 flex-shrink-0">
+                  <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-linear-to-br from-zion-purple-500/80 to-zion-purple-600/80 flex-shrink-0">
                     <Pickaxe className="h-6 w-6 text-white" />
                   </div>
                   <div>
@@ -1116,7 +1116,7 @@ export default function PoolBlocksClient({ embedded = false }: { embedded?: bool
                 <div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
                   <Link
                     href="/pool"
-                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-linear-to-br from-purple-500/80 to-indigo-600/80 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-linear-to-br from-zion-purple-500/80 to-zion-purple-600/80 text-sm font-medium text-white hover:opacity-90 transition-opacity"
                   >
                     <ArrowLeft className="h-4 w-4" />
                     {PoolBlocksCopy.poolDashboard[cs ? 'cs' : 'en']}

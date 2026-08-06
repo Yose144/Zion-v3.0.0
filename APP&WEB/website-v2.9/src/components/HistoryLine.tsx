@@ -30,7 +30,7 @@ const MILESTONES: Milestone[] = [
     date: "Apr 2024",
     icon: "star",
     color: "purple",
-    accent: "from-purple-500 to-fuchsia-500",
+    accent: "from-zion-purple-500 to-zion-purple-500",
     summary: "4 ASIC‑resistant algos, DAO governance, 14.34B premine",
   },
   {
@@ -39,7 +39,7 @@ const MILESTONES: Milestone[] = [
     date: "May 2024",
     icon: "zap",
     color: "blue",
-    accent: "from-blue-500 to-cyan-500",
+    accent: "from-zion-purple-500 to-zion-cyan-500",
     summary: "Cosmic Harmony algorithm, Zero‑Point Energy integration",
   },
   {
@@ -48,7 +48,7 @@ const MILESTONES: Milestone[] = [
     date: "Aug 2024",
     icon: "brain",
     color: "cyan",
-    accent: "from-cyan-500 to-teal-500",
+    accent: "from-zion-cyan-500 to-zion-cyan-500",
     summary: "KRISTUS Quantum Engine, AI Orchestrator v1.0",
   },
   {
@@ -57,7 +57,7 @@ const MILESTONES: Milestone[] = [
     date: "Sep 2024",
     icon: "rocket",
     color: "yellow",
-    accent: "from-yellow-500 to-amber-500",
+    accent: "from-zion-gold-500 to-zion-gold-500",
     summary: "WARP Engine POC via Ankr RPC (23 chains, <$300/mo)",
   },
   {
@@ -66,7 +66,7 @@ const MILESTONES: Milestone[] = [
     date: "Oct 2024",
     icon: "shield",
     color: "green",
-    accent: "from-green-500 to-emerald-500",
+    accent: "from-zion-cyan-500 to-zion-cyan-500",
     summary: "WARP Production (8+ chains, 50k+ users, ~$2M/month)",
   },
   {
@@ -75,7 +75,7 @@ const MILESTONES: Milestone[] = [
     date: "Nov 2024",
     icon: "zap",
     color: "orange",
-    accent: "from-orange-500 to-rose-500",
+    accent: "from-zion-gold-500 to-zion-purple-500",
     summary: "Stratum v2, GPU optimization, pool infrastructure",
   },
   {
@@ -84,7 +84,7 @@ const MILESTONES: Milestone[] = [
     date: "Dec 2024",
     icon: "shield",
     color: "pink",
-    accent: "from-pink-500 to-rose-500",
+    accent: "from-zion-purple-500 to-zion-purple-500",
     summary: "Database +75%, Docker −60%, prod hardening",
   },
   {
@@ -93,7 +93,7 @@ const MILESTONES: Milestone[] = [
     date: "Jan 2025",
     icon: "star",
     color: "indigo",
-    accent: "from-indigo-500 to-violet-500",
+    accent: "from-zion-purple-500 to-zion-purple-500",
     summary: "400+ tests, WebSocket API, 548k H/s native",
   },
   {
@@ -187,11 +187,11 @@ export default function HistoryLine() {
           <div className="text-xs text-gray-400 mt-1">H/s Performance</div>
         </div>
         <div className="bg-white/5 rounded-lg p-4 text-center border border-white/10">
-          <div className="text-2xl font-bold text-green-400">50k+</div>
+          <div className="text-2xl font-bold text-zion-cyan-400">50k+</div>
           <div className="text-xs text-gray-400 mt-1">WARP Users</div>
         </div>
         <div className="bg-white/5 rounded-lg p-4 text-center border border-white/10">
-          <div className="text-2xl font-bold text-purple-400">$2M</div>
+          <div className="text-2xl font-bold text-zion-purple-400">$2M</div>
           <div className="text-xs text-gray-400 mt-1">Monthly Volume</div>
         </div>
       </motion.div>

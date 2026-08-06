@@ -369,9 +369,9 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
               </div>
               <div className="flex shrink-0 items-center justify-center">
                 <div className="relative">
-                  <div className="absolute inset-0 rounded-full bg-purple-500/20 blur-3xl" />
-                  <div className="relative grid h-28 w-28 place-items-center rounded-3xl border border-purple-400/30 bg-purple-500/10">
-                    <TrendingUp className="h-12 w-12 text-purple-300" />
+                  <div className="absolute inset-0 rounded-full bg-zion-purple-500/20 blur-3xl" />
+                  <div className="relative grid h-28 w-28 place-items-center rounded-3xl border border-zion-purple-400/30 bg-zion-purple-500/10">
+                    <TrendingUp className="h-12 w-12 text-zion-purple-300" />
                   </div>
                 </div>
               </div>
@@ -390,7 +390,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
           <div className="relative z-[1]">
             <div className="mb-6 flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
-                <Gauge className="h-5 w-5 text-purple-300" />
+                <Gauge className="h-5 w-5 text-zion-purple-300" />
                 {PoolCalculatorCopy.inputParameters[cs ? 'cs' : 'en']}
               </h2>
               <button
@@ -410,7 +410,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
                   value={hashrateInput}
                   onChange={(e) => setHashrateInput(e.target.value)}
                   placeholder="18 K"
-                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-purple-400/50 w-full"
+                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-zion-purple-400/50 w-full"
                 />
                 <div className="mt-1 text-[11px] text-gray-500 font-mono">
                   {fmtHash(myHashrate)}
@@ -422,7 +422,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
                 <select
                   value={hardwareType}
                   onChange={(e) => setHardwareType(e.target.value as HardwareType)}
-                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-purple-400/50 w-full"
+                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-zion-purple-400/50 w-full"
                 >
                   <option value="cpu" className="bg-zinc-900">CPU</option>
                   <option value="gpu" className="bg-zinc-900">GPU</option>
@@ -437,7 +437,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
                   value={powerW}
                   min={0}
                   onChange={(e) => setPowerW(Number(e.target.value) || 0)}
-                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-purple-400/50 w-full"
+                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-zion-purple-400/50 w-full"
                 />
               </Field>
 
@@ -449,7 +449,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
                   value={elecCost}
                   min={0}
                   onChange={(e) => setElecCost(Number(e.target.value) || 0)}
-                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-purple-400/50 w-full"
+                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-zion-purple-400/50 w-full"
                 />
               </Field>
 
@@ -461,7 +461,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
                   value={zionPrice}
                   min={0}
                   onChange={(e) => setZionPrice(Number(e.target.value) || 0)}
-                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-purple-400/50 w-full"
+                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-zion-purple-400/50 w-full"
                 />
               </Field>
 
@@ -473,7 +473,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
                   value={poolFee}
                   min={0}
                   onChange={(e) => setPoolFee(Number(e.target.value) || 0)}
-                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-purple-400/50 w-full"
+                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-zion-purple-400/50 w-full"
                 />
               </Field>
 
@@ -485,7 +485,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
                   value={difficulty}
                   min={0}
                   onChange={(e) => setDifficulty(Number(e.target.value) || 0)}
-                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-purple-400/50 w-full"
+                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-zion-purple-400/50 w-full"
                 />
               </Field>
 
@@ -497,7 +497,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
                   value={hardwareCost}
                   min={0}
                   onChange={(e) => setHardwareCost(Number(e.target.value) || 0)}
-                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-purple-400/50 w-full"
+                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-zion-purple-400/50 w-full"
                 />
               </Field>
 
@@ -509,7 +509,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
                   value={rewardPerBlock}
                   min={0}
                   onChange={(e) => setRewardPerBlock(Number(e.target.value) || 0)}
-                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-purple-400/50 w-full"
+                  className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none transition-colors focus:border-zion-purple-400/50 w-full"
                 />
               </Field>
             </div>
@@ -521,7 +521,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
                 <button
                   key={hw.id}
                   onClick={() => applyPreset(hw)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-gray-300 transition-colors hover:border-purple-400/40 hover:text-white"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-gray-300 transition-colors hover:border-zion-purple-400/40 hover:text-white"
                 >
                   {hw.type === 'cpu' ? <Cpu className="h-3 w-3" /> : hw.type === 'gpu' ? <Server className="h-3 w-3" /> : <Zap className="h-3 w-3" />}
                   {hw.label}
@@ -531,7 +531,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
 
             {/* Live data status */}
             <div className="mt-4 flex items-center gap-2 text-xs text-gray-500">
-              <span className={`inline-block h-2 w-2 rounded-full ${loading ? 'bg-amber-400' : poolStats ? 'bg-emerald-400' : 'bg-gray-600'}`} />
+              <span className={`inline-block h-2 w-2 rounded-full ${loading ? 'bg-zion-gold-400' : poolStats ? 'bg-zion-cyan-400' : 'bg-gray-600'}`} />
               {loading
                 ? PoolCalculatorCopy.loadingPoolData[cs ? 'cs' : 'en']
                 : poolStats
@@ -549,7 +549,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
           className="space-y-4"
         >
           <h2 className="flex items-center gap-2 text-xl font-semibold text-white">
-            <Activity className="h-5 w-5 text-purple-300" />
+            <Activity className="h-5 w-5 text-zion-purple-300" />
             {PoolCalculatorCopy.resultsDashboard[cs ? 'cs' : 'en']}
           </h2>
 
@@ -557,7 +557,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             {/* Daily rewards */}
             <ResultCard
               style={purpleStyle}
-              icon={<Coins className="h-4 w-4 text-purple-300" />}
+              icon={<Coins className="h-4 w-4 text-zion-purple-300" />}
               title={PoolCalculatorCopy.dailyRewards[cs ? 'cs' : 'en']}
               big={fmtZion(calc.myZionPerDay)}
               bigLabel="ZION/day"
@@ -568,7 +568,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             {/* Monthly rewards */}
             <ResultCard
               style={purpleStyle}
-              icon={<Coins className="h-4 w-4 text-purple-300" />}
+              icon={<Coins className="h-4 w-4 text-zion-purple-300" />}
               title={PoolCalculatorCopy.monthlyRewards[cs ? 'cs' : 'en']}
               big={fmtZion(calc.myZionPerMonth)}
               bigLabel="ZION/month"
@@ -579,7 +579,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             {/* Yearly rewards */}
             <ResultCard
               style={purpleStyle}
-              icon={<Coins className="h-4 w-4 text-purple-300" />}
+              icon={<Coins className="h-4 w-4 text-zion-purple-300" />}
               title={PoolCalculatorCopy.yearlyRewards[cs ? 'cs' : 'en']}
               big={fmtZion(calc.myZionPerYear)}
               bigLabel="ZION/year"
@@ -590,7 +590,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             {/* Electricity cost */}
             <ResultCard
               style={purpleStyle}
-              icon={<Zap className="h-4 w-4 text-amber-400" />}
+              icon={<Zap className="h-4 w-4 text-zion-gold-400" />}
               title={PoolCalculatorCopy.electricityCost[cs ? 'cs' : 'en']}
               big={fmtUsd(calc.electricityPerDay)}
               bigLabel="$/day"
@@ -601,7 +601,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             {/* Net profit */}
             <ResultCard
               style={purpleStyle}
-              icon={<DollarSign className="h-4 w-4 text-emerald-400" />}
+              icon={<DollarSign className="h-4 w-4 text-zion-cyan-400" />}
               title={PoolCalculatorCopy.netProfit[cs ? 'cs' : 'en']}
               big={fmtUsd(calc.netProfitPerDay)}
               bigLabel="$/day"
@@ -613,7 +613,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             {/* ROI */}
             <ResultCard
               style={purpleStyle}
-              icon={<TrendingUp className="h-4 w-4 text-cyan-300" />}
+              icon={<TrendingUp className="h-4 w-4 text-zion-cyan-300" />}
               title={PoolCalculatorCopy.roiBreakEven[cs ? 'cs' : 'en']}
               big={breakEvenDay !== null ? `${fmtNum(breakEvenDay)} d` : '—'}
               bigLabel={PoolCalculatorCopy.daysToBreakEven[cs ? 'cs' : 'en']}
@@ -624,7 +624,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             {/* Pool share */}
             <ResultCard
               style={purpleStyle}
-              icon={<Server className="h-4 w-4 text-purple-300" />}
+              icon={<Server className="h-4 w-4 text-zion-purple-300" />}
               title={PoolCalculatorCopy.poolShare[cs ? 'cs' : 'en']}
               big={`${calc.mySharePct.toFixed(4)}%`}
               bigLabel={PoolCalculatorCopy.ofPoolHashrate[cs ? 'cs' : 'en']}
@@ -635,7 +635,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             {/* Blocks per day */}
             <ResultCard
               style={purpleStyle}
-              icon={<Activity className="h-4 w-4 text-purple-300" />}
+              icon={<Activity className="h-4 w-4 text-zion-purple-300" />}
               title={PoolCalculatorCopy.blocksPerDay[cs ? 'cs' : 'en']}
               big={calc.myBlocksPerDay > 0 ? calc.myBlocksPerDay.toFixed(6) : '0'}
               bigLabel={PoolCalculatorCopy.expectedBlocks[cs ? 'cs' : 'en']}
@@ -655,7 +655,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
         >
           <div className="relative z-[1]">
             <h2 className="mb-5 flex items-center gap-2 text-lg font-semibold text-white">
-              <Cpu className="h-5 w-5 text-purple-300" />
+              <Cpu className="h-5 w-5 text-zion-purple-300" />
               {PoolCalculatorCopy.hardwareComparison[cs ? 'cs' : 'en']}
             </h2>
             <div className="overflow-x-auto">
@@ -678,7 +678,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
                       <tr
                         key={hw.id}
                         className={`border-b border-white/5 transition-colors ${
-                          isSelected ? 'bg-purple-500/10' : 'hover:bg-white/[0.03]'
+                          isSelected ? 'bg-zion-purple-500/10' : 'hover:bg-white/[0.03]'
                         }`}
                       >
                         <td className="py-3 pr-4">
@@ -686,7 +686,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
                             {hw.type === 'cpu' ? <Cpu className="h-4 w-4 text-gray-400" /> : hw.type === 'gpu' ? <Server className="h-4 w-4 text-gray-400" /> : <Zap className="h-4 w-4 text-gray-400" />}
                             <span className={isSelected ? 'font-semibold text-white' : 'text-gray-200'}>{hw.label}</span>
                             {isSelected && (
-                              <span className="rounded bg-purple-500/20 px-1.5 py-0.5 text-[10px] font-medium text-purple-300">
+                              <span className="rounded bg-zion-purple-500/20 px-1.5 py-0.5 text-[10px] font-medium text-zion-purple-300">
                                 {PoolCalculatorCopy.selected[cs ? 'cs' : 'en']}
                               </span>
                             )}
@@ -697,7 +697,7 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
                         <td className="py-3 pr-4 font-mono text-gray-300">{fmtZion(hw.zionDay)}</td>
                         <td className="py-3 pr-4 font-mono text-gray-300">{fmtUsd(hw.usdDay)}</td>
                         <td className="py-3 pr-4 font-mono text-gray-300">{fmtUsd(hw.usdDay * 30)}</td>
-                        <td className={`py-3 pr-4 font-mono font-semibold ${hw.netMonth >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                        <td className={`py-3 pr-4 font-mono font-semibold ${hw.netMonth >= 0 ? 'text-zion-cyan-400' : 'text-zion-purple-400'}`}>
                           {fmtUsd(hw.netMonth)}
                         </td>
                       </tr>
@@ -725,13 +725,13 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             <div className="relative z-[1]">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="flex items-center gap-2 text-base font-semibold text-white">
-                  <TrendingUp className="h-4 w-4 text-emerald-400" />
+                  <TrendingUp className="h-4 w-4 text-zion-cyan-400" />
                   {PoolCalculatorCopy.currentZionPrice[cs ? 'cs' : 'en']}
                 </h3>
-                <span className="font-mono text-sm text-emerald-400">${zionPrice.toFixed(6)}</span>
+                <span className="font-mono text-sm text-zion-cyan-400">${zionPrice.toFixed(6)}</span>
               </div>
               <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] py-10">
-                <span className="text-4xl font-bold font-mono text-emerald-400">
+                <span className="text-4xl font-bold font-mono text-zion-cyan-400">
                   ${zionPrice.toFixed(6)}
                 </span>
                 <span className="text-xs text-gray-500">
@@ -760,11 +760,11 @@ export default function PoolCalculatorClient({ embedded = false }: { embedded?: 
             <div className="relative z-[1]">
               <div className="mb-4 flex items-center justify-between">
                 <h3 className="flex items-center gap-2 text-base font-semibold text-white">
-                  <Activity className="h-4 w-4 text-purple-300" />
+                  <Activity className="h-4 w-4 text-zion-purple-300" />
                   {PoolCalculatorCopy.profitabilityTimeline365d[cs ? 'cs' : 'en']}
                 </h3>
                 {breakEvenDay !== null && (
-                  <span className="rounded-full bg-purple-500/20 px-2.5 py-1 text-xs text-purple-300">
+                  <span className="rounded-full bg-zion-purple-500/20 px-2.5 py-1 text-xs text-zion-purple-300">
                     {cs ? `Break-even: ${breakEvenDay}d` : `Break-even: ${breakEvenDay}d`}
                   </span>
                 )}
@@ -863,9 +863,9 @@ function ResultCard({
 }) {
   const bigColor =
     highlight === 'positive'
-      ? 'text-emerald-400'
+      ? 'text-zion-cyan-400'
       : highlight === 'negative'
-      ? 'text-red-400'
+      ? 'text-zion-purple-400'
       : 'text-white';
   return (
     <div className="zion-rainbow-sub p-5" style={style}>

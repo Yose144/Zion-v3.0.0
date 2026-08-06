@@ -169,7 +169,7 @@ export default function PoolFinder() {
         >
           {/* Recommended Pool */}
           {result.recommended ? (
-          <div className="zion-rainbow-sub p-4" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+          <div className="zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <span className="text-lg">⭐</span>
@@ -185,7 +185,7 @@ export default function PoolFinder() {
               )}
             </div>
 
-            <div className="zion-rainbow-sub p-3 flex items-center gap-2" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-3 flex items-center gap-2" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <code className="text-sm text-zion-gold flex-1 font-mono">
                 {result.recommended.host}:{result.recommended.port}
               </code>
@@ -194,7 +194,7 @@ export default function PoolFinder() {
                 className="zion-button-secondary w-8 h-8 p-0 flex items-center justify-center"
               >
                 {copied ? (
-                  <Check className="w-4 h-4 text-emerald-400" />
+                  <Check className="w-4 h-4 text-zion-cyan-400" />
                 ) : (
                   <Copy className="w-4 h-4 text-gray-400" />
                 )}
@@ -222,7 +222,7 @@ export default function PoolFinder() {
                 <div
                   key={pool.id}
                   className="zion-rainbow-sub p-3 flex items-center justify-between"
-                  style={{ '--rc': index === 0 ? '251, 191, 36' : '7, 137, 48' } as React.CSSProperties}
+                  style={{ '--rc': index === 0 ? '252, 209, 22' : '7, 137, 48' } as React.CSSProperties}
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-gray-500 font-mono text-sm">#{index + 1}</span>

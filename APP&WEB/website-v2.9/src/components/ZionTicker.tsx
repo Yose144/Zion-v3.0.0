@@ -8,18 +8,18 @@ import {
 } from 'lucide-react';
 
 const TICKER_ITEMS = [
-  { label: 'ZION L1', icon: Cpu, color: 'text-emerald-300' },
-  { label: 'TerraNova', icon: Globe, color: 'text-cyan-300' },
-  { label: 'Consciousness Mining', icon: Zap, color: 'text-amber-300' },
-  { label: 'Hiran v2.2', icon: Sparkles, color: 'text-purple-300' },
-  { label: 'Guardian Edge', icon: Shield, color: 'text-emerald-300' },
-  { label: '144k Nodes', icon: Satellite, color: 'text-cyan-300' },
-  { label: 'PoW + Deeksha', icon: Pickaxe, color: 'text-amber-300' },
-  { label: 'WARP Bridge', icon: Orbit, color: 'text-purple-300' },
-  { label: 'AI Native', icon: BrainCircuit, color: 'text-emerald-300' },
-  { label: 'Dharma Temple', icon: Landmark, color: 'text-cyan-300' },
-  { label: 'ZION Oasis', icon: Leaf, color: 'text-emerald-300' },
-  { label: 'Te Piko Ora', icon: Crown, color: 'text-amber-300' },
+  { label: 'ZION L1', icon: Cpu, color: 'text-zion-cyan-300' },
+  { label: 'TerraNova', icon: Globe, color: 'text-zion-cyan-300' },
+  { label: 'Consciousness Mining', icon: Zap, color: 'text-zion-gold-300' },
+  { label: 'Hiran v2.2', icon: Sparkles, color: 'text-zion-purple-300' },
+  { label: 'Guardian Edge', icon: Shield, color: 'text-zion-cyan-300' },
+  { label: '144k Nodes', icon: Satellite, color: 'text-zion-cyan-300' },
+  { label: 'PoW + Deeksha', icon: Pickaxe, color: 'text-zion-gold-300' },
+  { label: 'WARP Bridge', icon: Orbit, color: 'text-zion-purple-300' },
+  { label: 'AI Native', icon: BrainCircuit, color: 'text-zion-cyan-300' },
+  { label: 'Dharma Temple', icon: Landmark, color: 'text-zion-cyan-300' },
+  { label: 'ZION Oasis', icon: Leaf, color: 'text-zion-cyan-300' },
+  { label: 'Te Piko Ora', icon: Crown, color: 'text-zion-gold-300' },
 ];
 
 export default function ZionTicker() {

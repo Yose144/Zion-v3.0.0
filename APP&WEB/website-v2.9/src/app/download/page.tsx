@@ -142,10 +142,10 @@ export default function DownloadPage() {
         {/* ─── Hero ─── */}
         <section
           className="zion-rainbow-card p-5 sm:p-8 md:p-10"
-          style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-6">
-            <div className="zion-kicker border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
+            <div className="zion-kicker border-zion-cyan-500/30 bg-zion-cyan-500/10 text-zion-cyan-400">
               <ArrowDownToLine className="h-4 w-4" />
               {SITE_RELEASE_LABEL}
             </div>
@@ -184,13 +184,13 @@ export default function DownloadPage() {
         {/* ─── Desktop App — top spotlight ─── */}
         <section className="space-y-6">
           <div className="flex flex-col gap-2">
-            <p className="text-sm uppercase tracking-[0.4em] text-emerald-400">Desktop App</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-zion-cyan-400">Desktop App</p>
             <h2 className="text-3xl font-semibold text-white">ZION Desktop App · {SITE_VERSION}</h2>
             <p className="text-gray-400">{DownloadCopy.oneClickGuiForMiningWalletMana[cs ? 'cs' : 'en']}</p>
           </div>
 
-          <div className="relative overflow-hidden zion-rainbow-card p-8" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
-            <div className="absolute top-4 right-4 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold tracking-wider text-emerald-400">
+          <div className="relative overflow-hidden zion-rainbow-card p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="absolute top-4 right-4 rounded-full border border-zion-cyan-500/40 bg-zion-cyan-500/10 px-3 py-1 text-xs font-semibold tracking-wider text-zion-cyan-400">
               ✅ {DownloadCopy.allPlatforms[cs ? 'cs' : 'en']}
             </div>
             <div className="flex items-start gap-4 mb-6">
@@ -262,23 +262,23 @@ export default function DownloadPage() {
 
             <div className="mt-4 flex flex-wrap gap-4 text-xs text-gray-400">
               <span className="flex items-center gap-1.5">
-                <Package className="h-3.5 w-3.5 text-emerald-400" />
+                <Package className="h-3.5 w-3.5 text-zion-cyan-400" />
                 {DownloadCopy.desktopLinuxAppImageDesc[cs ? 'cs' : 'en']}
               </span>
               <span className="flex items-center gap-1.5">
-                <Package className="h-3.5 w-3.5 text-emerald-400" />
+                <Package className="h-3.5 w-3.5 text-zion-cyan-400" />
                 {DownloadCopy.desktopLinuxDebDesc[cs ? 'cs' : 'en']}
               </span>
               <span className="flex items-center gap-1.5">
-                <Package className="h-3.5 w-3.5 text-emerald-400" />
+                <Package className="h-3.5 w-3.5 text-zion-cyan-400" />
                 {DownloadCopy.desktopWindowsExeDesc[cs ? 'cs' : 'en']}
               </span>
               <span className="flex items-center gap-1.5">
-                <Package className="h-3.5 w-3.5 text-emerald-400" />
+                <Package className="h-3.5 w-3.5 text-zion-cyan-400" />
                 {DownloadCopy.desktopWindowsZipDesc[cs ? 'cs' : 'en']}
               </span>
               <span className="flex items-center gap-1.5">
-                <Package className="h-3.5 w-3.5 text-emerald-400" />
+                <Package className="h-3.5 w-3.5 text-zion-cyan-400" />
                 {DownloadCopy.desktopMacDmgDesc[cs ? 'cs' : 'en']}
               </span>
               <Link

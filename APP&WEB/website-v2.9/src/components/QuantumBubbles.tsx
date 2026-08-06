@@ -27,7 +27,7 @@ const BUBBLE_PRESETS: Record<ObservatoryMode, Bubble[]> = {
     { id: "da-3", size: 220, x: 52, y: 24, color: "rgba(252,209,22,0.1)", blur: 76, opacity: 0.42 },
   ],
   "warp-speed": [
-    { id: "ws-1", size: 320, x: 45, y: 45, color: "rgba(180,220,255,0.2)", blur: 80 },
+    { id: "ws-1", size: 320, x: 45, y: 45, color: "rgba(252, 209, 22,0.2)", blur: 80 },
     { id: "ws-2", size: 240, x: 50, y: 50, color: "rgba(120,180,255,0.15)", blur: 70 },
   ],
   "galaxy-core": [

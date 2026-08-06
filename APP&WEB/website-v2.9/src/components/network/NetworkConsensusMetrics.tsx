@@ -368,7 +368,7 @@ export default function NetworkConsensusMetrics() {
           label={NetworkConsensusMetricsCopy.finality_2[cs ? 'cs' : 'en']}
           value={`${metrics.pctToFinality.toFixed(0)}%`}
           sub={cs ? `Soft ${SOFT_FINALITY_BLOCKS} bloků` : `Soft ${SOFT_FINALITY_BLOCKS} blocks`}
-          color="text-emerald-400"
+          color="text-zion-cyan-400"
           cs={cs}
         />
 
@@ -378,7 +378,7 @@ export default function NetworkConsensusMetrics() {
           label={NetworkConsensusMetricsCopy.reorgs1h[cs ? 'cs' : 'en']}
           value={`${reorgCount}`}
           sub={reorgCount === 0 ? (NetworkConsensusMetricsCopy.noReorgs[cs ? 'cs' : 'en']) : (NetworkConsensusMetricsCopy.detected[cs ? 'cs' : 'en'])}
-          color={reorgCount > 0 ? 'text-amber-400' : 'text-emerald-400'}
+          color={reorgCount > 0 ? 'text-zion-gold-400' : 'text-zion-cyan-400'}
           cs={cs}
         />
 
@@ -388,7 +388,7 @@ export default function NetworkConsensusMetrics() {
           label={NetworkConsensusMetricsCopy.fork[cs ? 'cs' : 'en']}
           value={metrics.forkDetected ? (NetworkConsensusMetricsCopy.yes[cs ? 'cs' : 'en']) : (NetworkConsensusMetricsCopy.no[cs ? 'cs' : 'en'])}
           sub={`${metrics.altBlocks} ${NetworkConsensusMetricsCopy.altBlocks[cs ? 'cs' : 'en']}`}
-          color={metrics.forkDetected ? 'text-amber-400' : 'text-emerald-400'}
+          color={metrics.forkDetected ? 'text-zion-gold-400' : 'text-zion-cyan-400'}
           cs={cs}
         />
 
@@ -398,7 +398,7 @@ export default function NetworkConsensusMetrics() {
           label={NetworkConsensusMetricsCopy.orphanRate[cs ? 'cs' : 'en']}
           value={`${metrics.orphanRate.toFixed(2)}%`}
           sub={NetworkConsensusMetricsCopy.altTotalBlocks[cs ? 'cs' : 'en']}
-          color={metrics.orphanRate > 1 ? 'text-amber-400' : 'text-emerald-400'}
+          color={metrics.orphanRate > 1 ? 'text-zion-gold-400' : 'text-zion-cyan-400'}
           cs={cs}
         />
 
@@ -408,7 +408,7 @@ export default function NetworkConsensusMetrics() {
           label={NetworkConsensusMetricsCopy.diffAdj[cs ? 'cs' : 'en']}
           value={`${metrics.estNextChangePct > 0 ? '+' : ''}${metrics.estNextChangePct.toFixed(1)}%`}
           sub={NetworkConsensusMetricsCopy.nextBlockEst[cs ? 'cs' : 'en']}
-          color={Math.abs(metrics.estNextChangePct) > 10 ? 'text-amber-400' : 'text-purple-400'}
+          color={Math.abs(metrics.estNextChangePct) > 10 ? 'text-zion-gold-400' : 'text-zion-purple-400'}
           cs={cs}
         />
 
@@ -418,7 +418,7 @@ export default function NetworkConsensusMetrics() {
           label={NetworkConsensusMetricsCopy.lastBlock[cs ? 'cs' : 'en']}
           value={lastBlockAge != null ? fmtAgo(lastBlockAge) : '—'}
           sub={`${NetworkConsensusMetricsCopy.avg[cs ? 'cs' : 'en']}: ${metrics.avgBt.toFixed(0)}s ±${metrics.stdDev.toFixed(0)}s`}
-          color={lastBlockAge != null && lastBlockAge > 180 ? 'text-amber-400' : 'text-cyan-400'}
+          color={lastBlockAge != null && lastBlockAge > 180 ? 'text-zion-gold-400' : 'text-zion-cyan-400'}
           cs={cs}
         />
       </div>
@@ -434,11 +434,11 @@ export default function NetworkConsensusMetrics() {
           </div>
           <div className="flex items-center gap-3 text-[10px]">
             <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-emerald-500 rounded-sm" />
+              <div className="w-2 h-2 bg-zion-cyan-500 rounded-sm" />
               <span className="text-gray-500">{NetworkConsensusMetricsCopy.finalized[cs ? 'cs' : 'en']}</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-purple-500 rounded-sm" />
+              <div className="w-2 h-2 bg-zion-purple-500 rounded-sm" />
               <span className="text-gray-500">{NetworkConsensusMetricsCopy.pending[cs ? 'cs' : 'en']}</span>
             </div>
             <div className="flex items-center gap-1">
@@ -459,15 +459,15 @@ export default function NetworkConsensusMetrics() {
           </div>
           <div>
             <span className="text-gray-500">{NetworkConsensusMetricsCopy.finalityFrom[cs ? 'cs' : 'en']}: </span>
-            <span className="font-mono text-emerald-400">#{fmtNum(metrics.finalityHeight)}</span>
+            <span className="font-mono text-zion-cyan-400">#{fmtNum(metrics.finalityHeight)}</span>
           </div>
           <div>
             <span className="text-gray-500">{NetworkConsensusMetricsCopy.difficulty[cs ? 'cs' : 'en']}: </span>
-            <span className="font-mono text-purple-400">{fmtLarge(stats.difficulty)}</span>
+            <span className="font-mono text-zion-purple-400">{fmtLarge(stats.difficulty)}</span>
           </div>
           <div>
             <span className="text-gray-500">{NetworkConsensusMetricsCopy.blockTarget[cs ? 'cs' : 'en']}: </span>
-            <span className="font-mono text-cyan-400">{stats.target_block_time ?? 60}s</span>
+            <span className="font-mono text-zion-cyan-400">{stats.target_block_time ?? 60}s</span>
           </div>
         </div>
       </div>

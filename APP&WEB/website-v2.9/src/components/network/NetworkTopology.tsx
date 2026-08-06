@@ -559,14 +559,14 @@ export default function NetworkTopology() {
           {NetworkTopologyCopy.interactiveForceDirectedGraphO[cs ? 'cs' : 'en']}
         </p>
         {peers.length === 0 && !peersError && (
-          <p className="text-xs text-amber-400/80 inline-flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+          <p className="text-xs text-zion-gold-400/80 inline-flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-zion-gold-400" />
             {NetworkTopologyCopy.noPeersConnectedShowingSeedNod[cs ? 'cs' : 'en']}
           </p>
         )}
         {peersError && (
-          <p className="text-xs text-red-400/80 inline-flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+          <p className="text-xs text-zion-purple-400/80 inline-flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-zion-purple-400" />
             {NetworkTopologyCopy.peerDataUnavailableShowingSeed[cs ? 'cs' : 'en']}
           </p>
         )}
@@ -722,7 +722,7 @@ export default function NetworkTopology() {
 
           {/* Tooltip */}
           {hovered && (
-            <div className="absolute top-2 left-2 z-10 bg-black/85 backdrop-blur border border-purple-400/20 rounded-xl p-3 text-xs space-y-1 min-w-0 sm:min-w-[180px]">
+            <div className="absolute top-2 left-2 z-10 bg-black/85 backdrop-blur border border-zion-purple-400/20 rounded-xl p-3 text-xs space-y-1 min-w-0 sm:min-w-[180px]">
               <p className="text-white font-semibold text-sm">{hovered.label}</p>
               <p className="text-gray-400 font-mono">{hovered.shortAddr}</p>
               <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 pt-1">
@@ -746,15 +746,15 @@ export default function NetworkTopology() {
           <div className="flex flex-wrap items-center gap-4 mt-3 text-xs">
             <span className="text-gray-500">{NetworkTopologyCopy.latency_2[cs ? 'cs' : 'en']}</span>
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-0.5 bg-emerald-500" />
+              <div className="w-3 h-0.5 bg-zion-cyan-500" />
               <span className="text-gray-400">&lt;50ms</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-0.5 bg-amber-500" />
+              <div className="w-3 h-0.5 bg-zion-gold-500" />
               <span className="text-gray-400">&lt;200ms</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-0.5 bg-red-500" />
+              <div className="w-3 h-0.5 bg-zion-purple-500" />
               <span className="text-gray-400">&gt;200ms</span>
             </div>
             <div className="flex items-center gap-1.5">
@@ -766,7 +766,7 @@ export default function NetworkTopology() {
               <span className="text-gray-400">{NetworkTopologyCopy.seedNode[cs ? 'cs' : 'en']}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-purple-600" />
+              <div className="w-3 h-3 rounded-full bg-zion-purple-600" />
               <span className="text-gray-400">{NetworkTopologyCopy.peer[cs ? 'cs' : 'en']}</span>
             </div>
           </div>

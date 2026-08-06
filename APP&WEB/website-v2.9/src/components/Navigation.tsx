@@ -40,7 +40,7 @@ export default function Navigation() {
   const navGroups: NavGroup[] = [
     {
       title: tr('nav', 'network_group', lang),
-      color: '16, 185, 129',
+      color: '7, 137, 48',
       items: [
         { href: '/network', label: tr('nav', 'network', lang) },
         { href: '/explorer', label: tr('nav', 'explorer', lang) },
@@ -51,7 +51,7 @@ export default function Navigation() {
     },
     {
       title: tr('nav', 'defi_group', lang),
-      color: '251, 191, 36',
+      color: '252, 209, 22',
       items: [
         { href: '/multichain', label: 'Multichain' },
         { href: '/defi', label: tr('nav', 'defi', lang) },
@@ -61,7 +61,7 @@ export default function Navigation() {
     },
     {
       title: tr('nav', 'layers_group', lang),
-      color: '239, 68, 68',
+      color: '228, 30, 43',
       items: [
         { href: '/l3-hiran', label: tr('nav', 'l3_hiran', lang) },
         { href: '/l4-oasis', label: tr('nav', 'l4_oasis', lang) },
@@ -71,7 +71,7 @@ export default function Navigation() {
     },
     {
       title: tr('nav', 'learn_group', lang),
-      color: '16, 185, 129',
+      color: '7, 137, 48',
       items: [
         { href: '/docs', label: tr('nav', 'docs', lang) },
         { href: '/whitepapers', label: tr('nav', 'whitepapers', lang) },
@@ -93,11 +93,11 @@ export default function Navigation() {
   /* ── HERO icons — top panel, RASTA colored ── */
   /* Rasta: green (emerald) → gold (zion-gold) → red (rose/red) */
   const heroIcons = [
-    { href: '/explorer', icon: Orbit, color: '16, 185, 129', label: tr('nav', 'explorer', lang) },       /* green */
-    { href: '/pool', icon: Pickaxe, color: '251, 191, 36', label: tr('nav', 'pool', lang) },               /* gold */
-    { href: '/network', icon: SignalHigh, color: '239, 68, 68', label: tr('nav', 'network', lang) },      /* red */
-    { href: '/docs', icon: BookOpen, color: '16, 185, 129', label: tr('nav', 'docs', lang) },             /* green */
-    { href: '/wallet', icon: Wallet, color: '251, 191, 36', label: tr('nav', 'wallet', lang) },            /* gold */
+    { href: '/explorer', icon: Orbit, color: '7, 137, 48', label: tr('nav', 'explorer', lang) },       /* green */
+    { href: '/pool', icon: Pickaxe, color: '252, 209, 22', label: tr('nav', 'pool', lang) },               /* gold */
+    { href: '/network', icon: SignalHigh, color: '228, 30, 43', label: tr('nav', 'network', lang) },      /* red */
+    { href: '/docs', icon: BookOpen, color: '7, 137, 48', label: tr('nav', 'docs', lang) },             /* green */
+    { href: '/wallet', icon: Wallet, color: '252, 209, 22', label: tr('nav', 'wallet', lang) },            /* gold */
   ];
 
   const groupLabels: Record<string, string> = {
@@ -171,7 +171,7 @@ export default function Navigation() {
       }`}
     >
       {/* Subtle ambient glow */}
-      <div className={`pointer-events-none absolute inset-x-0 top-0 bg-linear-to-r from-emerald-500/10 via-zion-gold/12 to-amber-600/10 blur-2xl opacity-60 transition-all duration-300 ${scrolled ? 'h-10' : 'h-16'}`} />
+      <div className={`pointer-events-none absolute inset-x-0 top-0 bg-linear-to-r from-zion-cyan-500/10 via-zion-gold/12 to-zion-gold-600/10 blur-2xl opacity-60 transition-all duration-300 ${scrolled ? 'h-10' : 'h-16'}`} />
       <div className={`relative mx-auto w-[min(96vw,1080px)] transition-all duration-300 ${scrolled ? 'py-0' : 'py-1'}`} data-nav-desktop>
         {/* ═══════════════════════════════════════════════════
             FLOOR 1 — MAIN BAR
@@ -179,7 +179,7 @@ export default function Navigation() {
             ═══════════════════════════════════════════════════ */}
         <div className="relative rounded-2xl border border-white/10 bg-black/50 backdrop-blur-xl p-[1px] shadow-[0_16px_60px_rgba(0,0,0,0.35)] transition-all duration-300">
           {/* Rasta gradient top accent line — thicker and narrower */}
-          <div className={`pointer-events-none absolute -top-px left-12 right-12 rounded-t-2xl bg-linear-to-r from-emerald-400/60 via-zion-gold/70 to-red-400/60 transition-all duration-300 ${scrolled ? 'h-0.5 left-10 right-10' : 'h-1'}`} />
+          <div className={`pointer-events-none absolute -top-px left-12 right-12 rounded-t-2xl bg-linear-to-r from-zion-cyan-400/60 via-zion-gold/70 to-zion-purple-400/60 transition-all duration-300 ${scrolled ? 'h-0.5 left-10 right-10' : 'h-1'}`} />
           <div className={`relative flex items-center justify-between gap-1.5 rounded-[15px] bg-black/70 px-2 sm:px-3 transition-all duration-300 ${scrolled ? 'py-1' : 'py-1'}`}
             style={{
               boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
@@ -252,7 +252,7 @@ export default function Navigation() {
               target="_blank"
               rel="noreferrer"
               title="GitHub"
-              className={`hidden sm:inline-flex rounded-lg border border-zion-gold/30 bg-linear-to-br from-zion-gold/10 to-amber-600/8 items-center justify-center shadow-[0_0_10px_rgba(251,191,36,0.12)] hover:shadow-[0_0_18px_rgba(251,191,36,0.28)] hover:border-zion-gold/50 transition-all group relative ${scrolled ? 'p-1' : 'p-1.5'}`}
+              className={`hidden sm:inline-flex rounded-lg border border-zion-gold/30 bg-linear-to-br from-zion-gold/10 to-zion-gold-600/8 items-center justify-center shadow-[0_0_10px_rgba(252, 209, 22,0.12)] hover:shadow-[0_0_18px_rgba(252, 209, 22,0.28)] hover:border-zion-gold/50 transition-all group relative ${scrolled ? 'p-1' : 'p-1.5'}`}
             >
               <Github className={`text-zion-gold transition-all duration-300 ${scrolled ? 'w-4 h-4' : 'w-3.5 h-3.5'}`} />
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-zion-gold/20 rounded px-2 py-0.5 text-zion-gold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">GitHub</span>
@@ -295,9 +295,9 @@ export default function Navigation() {
                     onClick={() => setOpenGroup(isActive ? null : group.title)}
                     className={`group inline-flex items-center gap-0.5 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.22em] transition-all ${
                       isActive
-                        ? 'border-zion-gold/40 bg-zion-gold/10 text-zion-gold shadow-[0_0_12px_rgba(251,191,36,0.12)]'
+                        ? 'border-zion-gold/40 bg-zion-gold/10 text-zion-gold shadow-[0_0_12px_rgba(252, 209, 22,0.12)]'
                         : groupHasActiveChild
-                          ? 'border-emerald-500/25 bg-black/50 text-white hover:border-zion-gold/30 hover:bg-black/70'
+                          ? 'border-zion-cyan-500/25 bg-black/50 text-white hover:border-zion-gold/30 hover:bg-black/70'
                           : 'border-white/[0.08] bg-black/40 text-gray-400 hover:border-zion-gold/25 hover:bg-black/60 hover:text-white'
                     }`}
                     aria-expanded={isActive}
@@ -315,7 +315,7 @@ export default function Navigation() {
         {/* ═══ GROUP DROPDOWN PANEL ═══ */}
         {activeGroup && (
           <div className="mt-1 absolute left-1/2 -translate-x-1/2 w-[min(20rem,90vw)] rounded-2xl border border-white/10 bg-black/90 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl z-50">
-            <div className="mb-2 h-0.5 w-full rounded-full bg-linear-to-r from-emerald-500/50 via-zion-gold/60 to-red-500/40" />
+            <div className="mb-2 h-0.5 w-full rounded-full bg-linear-to-r from-zion-cyan-500/50 via-zion-gold/60 to-zion-purple-500/40" />
             <div className="mb-3">
               <p className="text-[10px] uppercase tracking-[0.35em] text-zion-gold/70">{groupLabels[activeGroup.title] ?? activeGroup.title}</p>
             </div>
@@ -361,7 +361,7 @@ export default function Navigation() {
               
             />
             {/* Slide-in panel */}
-            <div className="fixed top-0 right-0 bottom-0 w-[min(420px,94vw)] bg-black/95 backdrop-blur-xl border-l-2 border-zion-gold/30 z-50 overflow-y-auto overscroll-contain animate-[slideIn_0.25s_ease-out]" style={{ borderImage: 'linear-gradient(to bottom, rgba(16,185,129,0.4), rgba(251,191,36,0.5), rgba(239,68,68,0.4)) 1' }}>
+            <div className="fixed top-0 right-0 bottom-0 w-[min(420px,94vw)] bg-black/95 backdrop-blur-xl border-l-2 border-zion-gold/30 z-50 overflow-y-auto overscroll-contain animate-[slideIn_0.25s_ease-out]" style={{ borderImage: 'linear-gradient(to bottom, rgba(7, 137, 48,0.4), rgba(252, 209, 22,0.5), rgba(228, 30, 43,0.4)) 1' }}>
               <div className="flex items-center justify-between p-4 border-b border-white/10">
                 <span className="text-sm font-bold text-gradient">{tr('nav', 'menu_title', lang)}</span>
                 <button
@@ -373,7 +373,7 @@ export default function Navigation() {
                 </button>
               </div>
               {/* Rasta accent line */}
-              <div className="h-0.5 w-full bg-linear-to-r from-emerald-500/50 via-zion-gold/60 to-red-500/40" />
+              <div className="h-0.5 w-full bg-linear-to-r from-zion-cyan-500/50 via-zion-gold/60 to-zion-purple-500/40" />
               <div className="p-4 space-y-2">
                 {/* Home shortcut — always visible */}
                 <Link
@@ -485,7 +485,7 @@ export default function Navigation() {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setIsOpen(false)}
-                  className="mt-2 rounded-xl border border-zion-gold/30 bg-linear-to-r from-zion-gold/10 to-amber-600/8 px-3 py-3 inline-flex items-center justify-center min-h-[44px] text-zion-gold font-semibold shadow-[0_0_14px_rgba(251,191,36,0.12)]"
+                  className="mt-2 rounded-xl border border-zion-gold/30 bg-linear-to-r from-zion-gold/10 to-zion-gold-600/8 px-3 py-3 inline-flex items-center justify-center min-h-[44px] text-zion-gold font-semibold shadow-[0_0_14px_rgba(252, 209, 22,0.12)]"
                 >
                   GitHub · Mainnet Stable
                 </a>

@@ -87,11 +87,11 @@ const CONSCIOUSNESS_NAMES: Record<number, string> = {
 
 const CONSCIOUSNESS_COLORS: Record<number, string> = {
   1: "text-gray-400",
-  2: "text-pink-400",
-  3: "text-blue-400",
-  4: "text-purple-400",
-  5: "text-yellow-400",
-  6: "text-amber-300",
+  2: "text-zion-purple-400",
+  3: "text-zion-purple-400",
+  4: "text-zion-purple-400",
+  5: "text-zion-gold-400",
+  6: "text-zion-gold-300",
 };
 
 function rc(color: 'cyan' | 'purple'): React.CSSProperties {
@@ -196,7 +196,7 @@ export default function NCLDashboard() {
           </div>
         </div>
         {source === 'fallback' && (
-          <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-1.5 text-xs text-amber-400">
+          <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-zion-gold-500/30 bg-zion-gold-500/10 px-4 py-1.5 text-xs text-zion-gold-400">
             <AlertTriangle className="h-3 w-3" /> {DashboardNclCopy.hiranyagarbhaOfflineShowingCac[lang === 'cs' ? 'cs' : 'en']}
           </div>
         )}
@@ -206,7 +206,7 @@ export default function NCLDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <Card style={rc('cyan')}>
           <div className="flex items-center gap-2 mb-3">
-            <Activity size={14} className="text-emerald-400" />
+            <Activity size={14} className="text-zion-cyan-400" />
             <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">{DashboardNclCopy.activeWorkers[lang === 'cs' ? 'cs' : 'en']}</span>
           </div>
           <div className="text-3xl font-bold font-mono text-white">
@@ -340,7 +340,7 @@ export default function NCLDashboard() {
                     <div className={`text-lg font-bold font-mono ${
                       entry.rank === 1 ? 'text-zion-gold' :
                       entry.rank === 2 ? 'text-gray-300' :
-                      entry.rank === 3 ? 'text-amber-600' :
+                      entry.rank === 3 ? 'text-zion-gold-600' :
                       'text-gray-600'
                     }`}>
                       #{entry.rank}
@@ -415,7 +415,7 @@ export default function NCLDashboard() {
           <div>
             <h3 className="text-xs text-zion-gold font-medium uppercase tracking-wider mb-2">{DashboardNclCopy.option1MinerFlag[lang === 'cs' ? 'cs' : 'en']}</h3>
             <pre style={rc('purple')} className="zion-rainbow-sub p-4 text-sm overflow-x-auto">
-              <code className="text-emerald-400">
+              <code className="text-zion-cyan-400">
 {`./zion_miner \
   --pool ${process.env.NEXT_PUBLIC_ZION_POOL_HOST || 'pool.zionterranova.com'}:8444 \
   --wallet ZION_YOUR_ADDRESS \
@@ -428,7 +428,7 @@ export default function NCLDashboard() {
           <div>
             <h3 className="text-xs text-zion-cyan font-medium uppercase tracking-wider mb-2">{DashboardNclCopy.option2ConfigFile[lang === 'cs' ? 'cs' : 'en']}</h3>
             <pre style={rc('purple')} className="zion-rainbow-sub p-4 text-sm overflow-x-auto">
-              <code className="text-emerald-400">
+              <code className="text-zion-cyan-400">
 {`# miner_config.json
 {
   "ncl": {

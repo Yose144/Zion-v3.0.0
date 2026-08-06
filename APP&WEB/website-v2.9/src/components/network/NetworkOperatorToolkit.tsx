@@ -50,7 +50,7 @@ export default function NetworkOperatorToolkit({ primaryPool }: { primaryPool: s
         <div className="zion-rainbow-sub p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
           <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{NetworkOperatorToolkitCopy.primaryMining[cs ? 'cs' : 'en']}</p>
           <p className="text-sm text-gray-300 mb-3">{NetworkOperatorToolkitCopy.currentPublicStratumEndpointOn[cs ? 'cs' : 'en']}</p>
-          <code className="block zion-rainbow-sub p-3 text-xs text-zion-gold break-all" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>{xmrigConnect}</code>
+          <code className="block zion-rainbow-sub p-3 text-xs text-zion-gold break-all" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>{xmrigConnect}</code>
           <button onClick={() => copyText('xmrig-connect', xmrigConnect)} className="mt-3 inline-flex items-center gap-2 text-xs text-zion-cyan hover:text-white transition">
             <Copy className="h-3.5 w-3.5" /> {copied === 'xmrig-connect' ? (NetworkOperatorToolkitCopy.copied[cs ? 'cs' : 'en']) : NetworkOperatorToolkitCopy.copyCommand[cs ? 'cs' : 'en']}
           </button>
@@ -59,8 +59,8 @@ export default function NetworkOperatorToolkit({ primaryPool }: { primaryPool: s
         <div className="zion-rainbow-sub p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
           <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{NetworkOperatorToolkitCopy.healthProbes[cs ? 'cs' : 'en']}</p>
           <div className="space-y-2">
-            <code className="block zion-rainbow-sub p-3 text-xs text-zion-gold break-all" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>{healthCurl}</code>
-            <code className="block zion-rainbow-sub p-3 text-xs text-zion-gold break-all" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>{networkCurl}</code>
+            <code className="block zion-rainbow-sub p-3 text-xs text-zion-gold break-all" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>{healthCurl}</code>
+            <code className="block zion-rainbow-sub p-3 text-xs text-zion-gold break-all" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>{networkCurl}</code>
           </div>
           <div className="mt-3 flex gap-2">
             <button onClick={() => copyText('health-curl', healthCurl)} className="inline-flex items-center gap-1.5 text-xs text-zion-cyan hover:text-white transition"><Copy className="h-3.5 w-3.5" />{copied === 'health-curl' ? (NetworkOperatorToolkitCopy.copied[cs ? 'cs' : 'en']) : NetworkOperatorToolkitCopy.copyHealth[cs ? 'cs' : 'en']}</button>

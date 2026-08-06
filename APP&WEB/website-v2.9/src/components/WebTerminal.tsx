@@ -422,15 +422,15 @@ export default function WebTerminal() {
           <div className="flex items-center gap-2">
             {/* Traffic lights */}
             <div className="flex gap-1.5">
-              <div className="h-3 w-3 rounded-full bg-red-500/70" />
-              <div className="h-3 w-3 rounded-full bg-yellow-500/70" />
-              <div className="h-3 w-3 rounded-full bg-green-500/70" />
+              <div className="h-3 w-3 rounded-full bg-zion-purple-500/70" />
+              <div className="h-3 w-3 rounded-full bg-zion-gold-500/70" />
+              <div className="h-3 w-3 rounded-full bg-zion-cyan-500/70" />
             </div>
             <span className="ml-3 text-xs font-mono text-gray-400">zion@terranova:~</span>
             {/* Status indicator */}
             <div className="ml-2 flex items-center gap-1" title={nodeOnline === null ? 'Checking…' : nodeOnline ? 'Node online' : 'Node offline'}>
               <motion.div
-                className={`h-2 w-2 rounded-full ${nodeOnline === null ? 'bg-gray-500' : nodeOnline ? 'bg-green-500' : 'bg-red-500'}`}
+                className={`h-2 w-2 rounded-full ${nodeOnline === null ? 'bg-gray-500' : nodeOnline ? 'bg-zion-cyan-500' : 'bg-zion-purple-500'}`}
                 animate={nodeOnline ? { opacity: [1, 0.4, 1] } : {}}
                 transition={{ duration: 2, repeat: Infinity }}
               />
@@ -568,14 +568,14 @@ export default function WebTerminal() {
                         className="absolute right-0 top-0 hidden rounded bg-white/5 p-1 text-gray-500 opacity-0 transition-opacity hover:text-zion-cyan group-hover:opacity-100 sm:block"
                         title="Copy output"
                       >
-                        {copiedId === line.id ? <Check className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3" />}
+                        {copiedId === line.id ? <Check className="h-3 w-3 text-zion-cyan-400" /> : <Copy className="h-3 w-3" />}
                       </button>
                     </div>
                   )}
                   {line.type === 'error' && (
                     <div className="relative">
-                      <div className="flex items-start gap-1.5 whitespace-pre-wrap break-words text-red-400">
-                        <span className="shrink-0 text-red-500">✗</span>
+                      <div className="flex items-start gap-1.5 whitespace-pre-wrap break-words text-zion-purple-400">
+                        <span className="shrink-0 text-zion-purple-500">✗</span>
                         <span>{line.text}</span>
                       </div>
                       <button
@@ -583,7 +583,7 @@ export default function WebTerminal() {
                         className="absolute right-0 top-0 hidden rounded bg-white/5 p-1 text-gray-500 opacity-0 transition-opacity hover:text-zion-cyan group-hover:opacity-100 sm:block"
                         title="Copy error"
                       >
-                        {copiedId === line.id ? <Check className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3" />}
+                        {copiedId === line.id ? <Check className="h-3 w-3 text-zion-cyan-400" /> : <Copy className="h-3 w-3" />}
                       </button>
                     </div>
                   )}

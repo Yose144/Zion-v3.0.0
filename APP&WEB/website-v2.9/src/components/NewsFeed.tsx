@@ -35,7 +35,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     slug: 'zion-v320-one-love-mainnet-stable',
     date: '2026-08-06',
     tag: { cs: 'Release', en: 'Release' },
-    tagColor: 'text-emerald-400',
+    tagColor: 'text-zion-cyan-400',
     title: {
       cs: 'ZION v3.2.0 "One Love" — Mainnet Stable je live',
       en: 'ZION v3.2.0 "One Love" — Mainnet Stable is live',
@@ -81,7 +81,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     slug: 'marketplace-oasis-artefacts-construction',
     date: '2026-08-01',
     tag: { cs: 'Marketplace', en: 'Marketplace' },
-    tagColor: 'text-fuchsia-400',
+    tagColor: 'text-zion-purple-400',
     title: {
       cs: 'Marketplace pro ZION ekosystém — stavba začala (OASIS artefakty, NFT, avataři)',
       en: 'Marketplace for ZION ecosystem — construction started (OASIS artefacts, NFTs, avatars)',
@@ -97,7 +97,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     slug: 'v3.0.6-beta-trinity-released',
     date: '2026-07-21',
     tag: { cs: 'Release', en: 'Release' },
-    tagColor: 'text-emerald-400',
+    tagColor: 'text-zion-cyan-400',
     title: {
       cs: 'ZION v3.0.6-beta Trinity — veřejný miner release',
       en: 'ZION v3.0.6-beta Trinity — public miner release',
@@ -113,7 +113,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     slug: 'v3.0.5-beta-simplified-community-cli',
     date: '2026-07-10',
     tag: { cs: 'Release', en: 'Release' },
-    tagColor: 'text-emerald-400',
+    tagColor: 'text-zion-cyan-400',
     title: {
       cs: 'ZION v3.0.5-beta — Simplified Community CLI: jeden binary, 4 platformy, interaktivní menu',
       en: 'ZION v3.0.5-beta — Simplified Community CLI: one binary, 4 platforms, interactive menu',
@@ -129,7 +129,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     slug: '3.0.5-all-green-mainnet-beta-github-public',
     date: '2026-07-09',
     tag: { cs: 'Security', en: 'Security' },
-    tagColor: 'text-rose-400',
+    tagColor: 'text-zion-purple-400',
     title: {
       cs: 'ZION 3.0.5 "All Green" Mainnet Beta — hard reset po hacku, 11/11 služeb aktivních, zdroj na GitHubu',
       en: 'ZION 3.0.5 "All Green" Mainnet Beta — hard reset after hack, 11/11 services active, source on GitHub',
@@ -175,7 +175,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     slug: 'zion-3.0.4-decimal-fork',
     date: '2026-06-27',
     tag: { cs: 'Hard Fork', en: 'Hard Fork' },
-    tagColor: 'text-rose-400',
+    tagColor: 'text-zion-purple-400',
     title: {
       cs: 'ZION 3.0.4 — Decimal Fork: 10¹² → 10⁶ flowers, historie bloků zachována',
       en: 'ZION 3.0.4 — Decimal Fork: 10¹² → 10⁶ flowers, block history preserved',
@@ -236,7 +236,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     slug: 'fire-hard-fork-5000',
     date: '2026-06-13',
     tag: { cs: 'Hard Fork', en: 'Hard Fork' },
-    tagColor: 'text-rose-400',
+    tagColor: 'text-zion-purple-400',
     title: {
       cs: 'Deeksha Lite Fire hard fork — aktivace na bloku 5000',
       en: 'Deeksha Lite Fire hard fork — activation at block 5000',
@@ -251,7 +251,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     slug: 'deeksha-fire-announcement',
     date: '2026-06-07',
     tag: { cs: 'Oznámení', en: 'Announcement' },
-    tagColor: 'text-rose-400',
+    tagColor: 'text-zion-purple-400',
     title: {
       cs: 'Deeksha Fire & Lite — sezónní těžební módy ZION',
       en: 'Deeksha Fire & Lite — seasonal mining modes for ZION',
@@ -281,7 +281,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     slug: 'wiki-section-launch',
     date: '2026-05-23',
     tag: { cs: 'Wiki', en: 'Wiki' },
-    tagColor: 'text-emerald-400',
+    tagColor: 'text-zion-cyan-400',
     title: {
       cs: 'Wiki sekce — TerraNova, Genesis, Dokumentace na jednom místě',
       en: 'Wiki section — TerraNova, Genesis, Docs in one place',
@@ -296,7 +296,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     slug: 'l4-oasis-page',
     date: '2026-05-23',
     tag: { cs: 'Layers', en: 'Layers' },
-    tagColor: 'text-orange-400',
+    tagColor: 'text-zion-gold-400',
     title: {
       cs: 'L4 Oasis — UE5 metaverse stránka a reorganizace menu',
       en: 'L4 Oasis — UE5 metaverse page and menu reorganization',
@@ -311,7 +311,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     slug: 'v3-internal-audit-complete',
     date: '2026-05-04',
     tag: { cs: 'Audit', en: 'Audit' },
-    tagColor: 'text-emerald-400',
+    tagColor: 'text-zion-cyan-400',
     title: {
       cs: 'Interní audit ZION V3 dokončen — shrnutí nálezů a launch readiness',
       en: 'ZION V3 internal audit completed — findings summary and launch readiness',
@@ -416,7 +416,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     slug: 'coingecko-listing',
     date: '2026-03-30',
     tag: { cs: 'Listing', en: 'Listing' },
-    tagColor: 'text-green-400',
+    tagColor: 'text-zion-cyan-400',
     title: {
       cs: 'CoinGecko registrace — ZION se připravuje na listing',
       en: 'CoinGecko registration — ZION prepares for listing',
@@ -431,7 +431,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     slug: 'v3-testnet-live',
     date: '2026-03-15',
     tag: { cs: 'Mainnet', en: 'Mainnet' },
-    tagColor: 'text-blue-400',
+    tagColor: 'text-zion-purple-400',
     title: {
       cs: 'V3 Mainnet — Edge server topologie v provozu',
       en: 'V3 Mainnet — Edge server topology operational',
@@ -461,23 +461,23 @@ export const NEWS_ARTICLES: NewsArticle[] = [
 
 // ─── Card accent gradients ────────────────────────────────────────────────────
 const CARD_ACCENT: Record<string, { from: string; to: string; glow: string }> = {
-  Mainnet:   { from: 'from-amber-500/20', to: 'to-orange-500/5', glow: 'shadow-amber-500/10' },
-  AI:        { from: 'from-zion-purple/20', to: 'to-pink-500/5', glow: 'shadow-zion-purple/10' },
-  Wiki:      { from: 'from-emerald-500/20', to: 'to-teal-500/5', glow: 'shadow-emerald-500/10' },
-  Layers:    { from: 'from-orange-500/20', to: 'to-amber-500/5', glow: 'shadow-orange-500/10' },
-  Audit:     { from: 'from-emerald-500/20', to: 'to-green-500/5', glow: 'shadow-emerald-500/10' },
-  CLI:       { from: 'from-zion-cyan/20', to: 'to-blue-500/5', glow: 'shadow-zion-cyan/10' },
-  Kniha:     { from: 'from-yellow-500/20', to: 'to-amber-500/5', glow: 'shadow-yellow-500/10' },
-  Book:      { from: 'from-yellow-500/20', to: 'to-amber-500/5', glow: 'shadow-yellow-500/10' },
-  Mining:    { from: 'from-zion-cyan/20', to: 'to-sky-500/5', glow: 'shadow-zion-cyan/10' },
-  Aktualizace: { from: 'from-zion-cyan/20', to: 'to-sky-500/5', glow: 'shadow-zion-cyan/10' },
-  Update:    { from: 'from-zion-cyan/20', to: 'to-sky-500/5', glow: 'shadow-zion-cyan/10' },
-  DeFi:      { from: 'from-gold-500/20', to: 'to-yellow-500/5', glow: 'shadow-yellow-500/10' },
-  Launch:    { from: 'from-amber-500/20', to: 'to-yellow-500/5', glow: 'shadow-amber-500/10' },
-  Listing:   { from: 'from-green-500/20', to: 'to-emerald-500/5', glow: 'shadow-green-500/10' },
-  'Hard Fork': { from: 'from-rose-500/20', to: 'to-red-500/5', glow: 'shadow-rose-500/10' },
-  History:    { from: 'from-amber-500/20', to: 'to-yellow-500/5', glow: 'shadow-amber-500/10' },
-  Security:   { from: 'from-rose-500/20', to: 'to-red-500/5', glow: 'shadow-rose-500/10' },
+  Mainnet:   { from: 'from-zion-gold-500/20', to: 'to-zion-gold-500/5', glow: 'shadow-zion-gold-500/10' },
+  AI:        { from: 'from-zion-purple/20', to: 'to-zion-purple-500/5', glow: 'shadow-zion-purple/10' },
+  Wiki:      { from: 'from-zion-cyan-500/20', to: 'to-zion-cyan-500/5', glow: 'shadow-zion-cyan-500/10' },
+  Layers:    { from: 'from-zion-gold-500/20', to: 'to-zion-gold-500/5', glow: 'shadow-zion-gold-500/10' },
+  Audit:     { from: 'from-zion-cyan-500/20', to: 'to-zion-cyan-500/5', glow: 'shadow-zion-cyan-500/10' },
+  CLI:       { from: 'from-zion-cyan/20', to: 'to-zion-purple-500/5', glow: 'shadow-zion-cyan/10' },
+  Kniha:     { from: 'from-zion-gold-500/20', to: 'to-zion-gold-500/5', glow: 'shadow-zion-gold-500/10' },
+  Book:      { from: 'from-zion-gold-500/20', to: 'to-zion-gold-500/5', glow: 'shadow-zion-gold-500/10' },
+  Mining:    { from: 'from-zion-cyan/20', to: 'to-zion-cyan-500/5', glow: 'shadow-zion-cyan/10' },
+  Aktualizace: { from: 'from-zion-cyan/20', to: 'to-zion-cyan-500/5', glow: 'shadow-zion-cyan/10' },
+  Update:    { from: 'from-zion-cyan/20', to: 'to-zion-cyan-500/5', glow: 'shadow-zion-cyan/10' },
+  DeFi:      { from: 'from-gold-500/20', to: 'to-zion-gold-500/5', glow: 'shadow-zion-gold-500/10' },
+  Launch:    { from: 'from-zion-gold-500/20', to: 'to-zion-gold-500/5', glow: 'shadow-zion-gold-500/10' },
+  Listing:   { from: 'from-zion-cyan-500/20', to: 'to-zion-cyan-500/5', glow: 'shadow-zion-cyan-500/10' },
+  'Hard Fork': { from: 'from-zion-purple-500/20', to: 'to-zion-purple-500/5', glow: 'shadow-zion-purple-500/10' },
+  History:    { from: 'from-zion-gold-500/20', to: 'to-zion-gold-500/5', glow: 'shadow-zion-gold-500/10' },
+  Security:   { from: 'from-zion-purple-500/20', to: 'to-zion-purple-500/5', glow: 'shadow-zion-purple-500/10' },
 };
 
 function getAccent(tag: string) {

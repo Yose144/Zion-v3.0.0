@@ -42,7 +42,7 @@ const categories: Category[] = [
     id: 'overview',
     title: { cs: 'Přehled', en: 'Overview' },
     icon: BookOpen,
-    accentText: 'text-violet-300',
+    accentText: 'text-zion-purple-300',
     papers: [
       {
         id: 'readme',
@@ -93,7 +93,7 @@ const categories: Category[] = [
     id: 'story',
     title: { cs: 'Příběh / Narrativ', en: 'Story / Narrative' },
     icon: Scroll,
-    accentText: 'text-emerald-400',
+    accentText: 'text-zion-cyan-400',
     papers: [
       {
         id: 'genesis-cz',
@@ -263,11 +263,11 @@ export default function WhitepapersPage() {
   return (
     <div className="">
       {/* Hero */}
-      <div className="relative overflow-hidden border-b border-white/10 bg-gradient-to-b from-violet-600/10 via-transparent to-transparent">
+      <div className="relative overflow-hidden border-b border-white/10 bg-gradient-to-b from-zion-purple-600/10 via-transparent to-transparent">
         <div className="zion-container py-20 relative">
-          <div className="zion-rainbow-card max-w-4xl mx-auto p-8 md:p-10 text-center" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
-            <div className="zion-kicker mx-auto mb-6 w-fit border-violet-400/30 bg-violet-400/10 text-violet-200">
-              <BookOpen className="w-4 h-4 text-violet-300" />
+          <div className="zion-rainbow-card max-w-4xl mx-auto p-8 md:p-10 text-center" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
+            <div className="zion-kicker mx-auto mb-6 w-fit border-zion-purple-400/30 bg-zion-purple-400/10 text-violet-200">
+              <BookOpen className="w-4 h-4 text-zion-purple-300" />
               <span className="text-sm text-violet-200 font-semibold">{tr('whitepapers', 'hero_kicker', lang)}</span>
             </div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-gradient">
@@ -276,7 +276,7 @@ export default function WhitepapersPage() {
             <p className="text-xl text-gray-400 mb-4">
               {tr('whitepapers', 'hero_subtitle', lang)}
             </p>
-            <div className="zion-rainbow-sub mx-auto mb-8 max-w-3xl px-5 py-4 text-left text-sm text-gray-300" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub mx-auto mb-8 max-w-3xl px-5 py-4 text-left text-sm text-gray-300" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               {tr('whitepapers', 'hero_description', lang)}
             </div>
 
@@ -293,7 +293,7 @@ export default function WhitepapersPage() {
               href="https://github.com/Zion-TerraNova/v3-Mainnet/tree/main/docs/WP"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 px-5 py-2.5 text-sm font-semibold text-violet-100 hover:bg-violet-500/20 transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl border border-zion-purple-500/30 bg-zion-purple-500/10 px-5 py-2.5 text-sm font-semibold text-violet-100 hover:bg-zion-purple-500/20 transition-colors"
             >
               <ExternalLink className="h-4 w-4" />
               {tr('whitepapers', 'source_button', lang)}
@@ -309,17 +309,17 @@ export default function WhitepapersPage() {
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="w-full flex items-center justify-between px-4 py-3 zion-rainbow-sub text-white transition-colors"
-            style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
+            style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
           >
             <div className="flex items-center gap-2 min-w-0">
-              <BookOpen className="w-5 h-5 text-violet-300 shrink-0" />
+              <BookOpen className="w-5 h-5 text-zion-purple-300 shrink-0" />
               <span className="font-semibold min-w-0 break-words">{currentCategory?.title[lang]}</span>
             </div>
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
 
           {mobileMenuOpen && (
-            <div className="mt-4 zion-rainbow-card p-4 space-y-2 max-h-[70vh] overflow-y-auto" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
+            <div className="mt-4 zion-rainbow-card p-4 space-y-2 max-h-[70vh] overflow-y-auto" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               {categories.map(category => {
                 const Icon = category.icon;
                 const isExpanded = expanded[category.id];
@@ -331,7 +331,7 @@ export default function WhitepapersPage() {
                       className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold transition-all ${
                         isActive ? 'zion-rainbow-sub text-white' : 'rounded-lg border border-white/10 bg-black/40 text-gray-400 hover:border-white/20 hover:text-gray-300'
                       }`}
-                      style={isActive ? { '--rc': '139, 92, 246' } as React.CSSProperties : undefined}
+                      style={isActive ? { '--rc': '228, 30, 43' } as React.CSSProperties : undefined}
                     >
                       <div className="flex items-center gap-2">
                         <Icon className={`w-4 h-4 ${category.accentText}`} />
@@ -348,7 +348,7 @@ export default function WhitepapersPage() {
                             ? 'zion-rainbow-sub text-violet-200 font-medium'
                             : 'rounded text-gray-500 hover:text-gray-300'
                         }`}
-                        style={selectedPaper === paper.id ? { '--rc': '139, 92, 246' } as React.CSSProperties : undefined}
+                        style={selectedPaper === paper.id ? { '--rc': '228, 30, 43' } as React.CSSProperties : undefined}
                       >
                         {paper.title[lang]}
                       </button>
@@ -363,7 +363,7 @@ export default function WhitepapersPage() {
         <div className="flex gap-8">
           {/* Sidebar */}
           <aside className="hidden lg:block w-80 shrink-0">
-            <div className="sticky top-24 zion-rainbow-card overflow-hidden" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
+            <div className="sticky top-24 zion-rainbow-card overflow-hidden" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <nav className="px-3 py-3 max-h-[calc(100vh-140px)] overflow-y-auto space-y-2">
                 {categories.map(category => {
                   const Icon = category.icon;
@@ -379,7 +379,7 @@ export default function WhitepapersPage() {
                             ? 'zion-rainbow-sub text-white'
                             : 'rounded-lg text-gray-400 hover:text-white hover:bg-white/5'
                         }`}
-                        style={isActive ? { '--rc': '139, 92, 246' } as React.CSSProperties : undefined}
+                        style={isActive ? { '--rc': '228, 30, 43' } as React.CSSProperties : undefined}
                       >
                         <div className="flex items-center gap-2">
                           <Icon className={`w-4 h-4 ${category.accentText}`} />
@@ -399,7 +399,7 @@ export default function WhitepapersPage() {
                                   ? 'zion-rainbow-sub text-violet-200 font-medium'
                                   : 'rounded-lg text-gray-400 hover:text-white hover:bg-white/5'
                               }`}
-                              style={selectedPaper === paper.id ? { '--rc': '139, 92, 246' } as React.CSSProperties : undefined}
+                              style={selectedPaper === paper.id ? { '--rc': '228, 30, 43' } as React.CSSProperties : undefined}
                             >
                               {paper.format === 'pdf' ? <Download className="w-3.5 h-3.5 shrink-0" /> : <FileText className="w-3.5 h-3.5 shrink-0" />}
                               {paper.title[lang]}
@@ -421,7 +421,7 @@ export default function WhitepapersPage() {
                 <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
                   <span className={currentCategory?.accentText}>{currentCategory?.title[lang]}</span>
                   <ChevronRight className="w-3 h-3" />
-                  <span className="text-violet-300">{currentPaper.title[lang]}</span>
+                  <span className="text-zion-purple-300">{currentPaper.title[lang]}</span>
                 </div>
                 <h1 className="text-3xl md:text-4xl font-bold mb-4 leading-tight text-gradient">
                   {currentPaper.title[lang]}
@@ -432,7 +432,7 @@ export default function WhitepapersPage() {
                     href={pdfUrl ?? ''}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 px-4 py-2 text-sm font-semibold text-emerald-100 transition-colors"
+                    className="mt-4 inline-flex items-center gap-2 rounded-xl bg-zion-cyan-500/20 hover:bg-zion-cyan-500/30 border border-zion-cyan-500/40 px-4 py-2 text-sm font-semibold text-emerald-100 transition-colors"
                   >
                     <Download className="h-4 w-4" />
                     {tr('whitepapers', 'download_pdf', lang)}

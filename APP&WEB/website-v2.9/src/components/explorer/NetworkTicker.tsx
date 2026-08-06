@@ -109,7 +109,7 @@ export default function NetworkTicker() {
       icon: Cpu,
       label: "Hashrate",
       value: data.network_hashrate_formatted,
-      color: "text-emerald-400",
+      color: "text-zion-cyan-400",
     },
     {
       icon: Hash,
@@ -121,19 +121,19 @@ export default function NetworkTicker() {
       icon: Clock,
       label: "Block Time",
       value: `${data.avg_block_time}s`,
-      color: "text-blue-400",
+      color: "text-zion-purple-400",
     },
     {
       icon: Activity,
       label: "Mempool",
       value: `${data.tx_pool_size} tx`,
-      color: data.tx_pool_size > 0 ? "text-amber-400" : "text-gray-400",
+      color: data.tx_pool_size > 0 ? "text-zion-gold-400" : "text-gray-400",
     },
     {
       icon: Users,
       label: "Peers",
       value: `${data.total_connections}`,
-      color: "text-purple-400",
+      color: "text-zion-purple-400",
     },
     {
       icon: Database,
@@ -145,19 +145,19 @@ export default function NetworkTicker() {
       icon: TrendingUp,
       label: "Mined",
       value: `${data.emission_pct}%`,
-      color: "text-pink-400",
+      color: "text-zion-purple-400",
     },
     {
       icon: Zap,
       label: "Pool Hash",
       value: data.pool_hashrate_formatted || "—",
-      color: "text-cyan-400",
+      color: "text-zion-cyan-400",
     },
     {
       icon: Globe,
       label: "Miners",
       value: `${data.active_miners ?? 0}`,
-      color: "text-emerald-400",
+      color: "text-zion-cyan-400",
     },
   ];
 
@@ -187,8 +187,8 @@ export default function NetworkTicker() {
             <div
               className={`h-2 w-2 rounded-full ${
                 data.connected
-                  ? "bg-emerald-400 shadow-emerald-400/50 shadow-sm"
-                  : "bg-red-400"
+                  ? "bg-zion-cyan-400 shadow-zion-cyan-400/50 shadow-sm"
+                  : "bg-zion-purple-400"
               }`}
             />
             <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">

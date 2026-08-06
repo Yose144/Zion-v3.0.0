@@ -24,7 +24,7 @@ const HomeTreePortalCopy = {
 const TreeOfLifeSwitch = dynamic(() => import('@/components/TreeOfLifeSwitch'), {
   ssr: false,
   loading: () => (
-    <div className="flex min-h-[420px] items-center justify-center zion-rainbow-card text-gray-400" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
+    <div className="flex min-h-[420px] items-center justify-center zion-rainbow-card text-gray-400" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
       <LoaderCircle className="h-5 w-5 animate-spin text-zion-gold" />
     </div>
   ),
@@ -33,15 +33,15 @@ const TreeOfLifeSwitch = dynamic(() => import('@/components/TreeOfLifeSwitch'), 
 /* ── Kabbalah Tree of Life — 10 Sephirot mapped to ZION layers ── */
 const sephirot = [
   { id: 'keter',     name: 'Keter',     meaning: 'Koruna',         zionLayer: 'L1 Consensus / Genesis',  x: 50, y: 8,  color: '255, 255, 255' },
-  { id: 'chochmah',  name: 'Chochmah',  meaning: 'Moudrost',       zionLayer: 'L1 Cosmic Harmony PoW',  x: 72, y: 22, color: '180, 220, 255' },
+  { id: 'chochmah',  name: 'Chochmah',  meaning: 'Moudrost',       zionLayer: 'L1 Cosmic Harmony PoW',  x: 72, y: 22, color: '252, 209, 22' },
   { id: 'binah',     name: 'Binah',     meaning: 'Porozumění',     zionLayer: 'L1 Validation',          x: 28, y: 22, color: '228, 30, 43' },
   { id: 'chesed',    name: 'Chesed',    meaning: 'Milosrdenství',  zionLayer: 'L2 DeFi',                x: 72, y: 42, color: '7, 137, 48' },
-  { id: 'gevurah',   name: 'Gevurah',   meaning: 'Síla',           zionLayer: 'L2 DAO / Treasury Lock', x: 28, y: 42, color: '239, 68, 68' },
-  { id: 'tiferet',   name: 'Tiferet',   meaning: 'Krása',          zionLayer: 'L3 WARP / Bridge',       x: 50, y: 52, color: '251, 191, 36' },
-  { id: 'netzach',   name: 'Netzach',   meaning: 'Věčnost',        zionLayer: 'L3 AI / Hiran',          x: 72, y: 68, color: '16, 185, 129' },
-  { id: 'hod',       name: 'Hod',       meaning: 'Sláva',          zionLayer: 'L4 Oasis',               x: 28, y: 68, color: '249, 115, 22' },
-  { id: 'yesod',     name: 'Yesod',     meaning: 'Základ',         zionLayer: 'L5 Free World',          x: 50, y: 80, color: '99, 102, 241' },
-  { id: 'malkuth',   name: 'Malkuth',   meaning: 'Království',     zionLayer: 'L6 Issobella',           x: 50, y: 94, color: '34, 197, 94' },
+  { id: 'gevurah',   name: 'Gevurah',   meaning: 'Síla',           zionLayer: 'L2 DAO / Treasury Lock', x: 28, y: 42, color: '228, 30, 43' },
+  { id: 'tiferet',   name: 'Tiferet',   meaning: 'Krása',          zionLayer: 'L3 WARP / Bridge',       x: 50, y: 52, color: '252, 209, 22' },
+  { id: 'netzach',   name: 'Netzach',   meaning: 'Věčnost',        zionLayer: 'L3 AI / Hiran',          x: 72, y: 68, color: '7, 137, 48' },
+  { id: 'hod',       name: 'Hod',       meaning: 'Sláva',          zionLayer: 'L4 Oasis',               x: 28, y: 68, color: '252, 209, 22' },
+  { id: 'yesod',     name: 'Yesod',     meaning: 'Základ',         zionLayer: 'L5 Free World',          x: 50, y: 80, color: '228, 30, 43' },
+  { id: 'malkuth',   name: 'Malkuth',   meaning: 'Království',     zionLayer: 'L6 Issobella',           x: 50, y: 94, color: '7, 137, 48' },
 ];
 
 /* 22 connecting paths */
@@ -72,7 +72,7 @@ export default function HomeTreePortal() {
       <div className="zion-container space-y-4">
         {/* Header */}
         <div className="text-center space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-400">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-zion-cyan-400">
             {HomeTreePortalCopy.kabbalah10Sephirot22Paths[cs ? 'cs' : 'en']}
           </p>
           <h2 className="text-2xl font-bold leading-tight text-white sm:text-3xl">
@@ -90,11 +90,11 @@ export default function HomeTreePortal() {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <div className="zion-rainbow-card relative overflow-hidden p-4" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
+            <div className="zion-rainbow-card relative overflow-hidden p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
               <div className="grid gap-4 lg:grid-cols-[1fr_1fr] lg:items-center">
                 {/* Left: text */}
                 <div className="space-y-3">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs uppercase tracking-[0.3em] text-emerald-300">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan-500/30 bg-zion-cyan-500/10 px-4 py-2 text-xs uppercase tracking-[0.3em] text-zion-cyan-300">
                     <Sparkles className="h-4 w-4" />
                     {HomeTreePortalCopy.quickPreview[cs ? 'cs' : 'en']}
                   </div>
@@ -105,15 +105,15 @@ export default function HomeTreePortal() {
                     {HomeTreePortalCopy.theSameStructureRepeatsIn14400[cs ? 'cs' : 'en']}
                   </p>
                   <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="zion-rainbow-sub p-3" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
+                    <div className="zion-rainbow-sub p-3" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                       <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{HomeTreePortalCopy.spheres[cs ? 'cs' : 'en']}</p>
                       <p className="mt-1 text-lg font-bold text-white">10</p>
                     </div>
-                    <div className="zion-rainbow-sub p-3" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
+                    <div className="zion-rainbow-sub p-3" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                       <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{HomeTreePortalCopy.paths[cs ? 'cs' : 'en']}</p>
                       <p className="mt-1 text-lg font-bold text-white">22</p>
                     </div>
-                    <div className="zion-rainbow-sub p-3" style={{ '--rc': '34, 197, 94' } as React.CSSProperties}>
+                    <div className="zion-rainbow-sub p-3" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                       <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{HomeTreePortalCopy.pillars[cs ? 'cs' : 'en']}</p>
                       <p className="mt-1 text-lg font-bold text-white">3</p>
                     </div>
@@ -121,7 +121,7 @@ export default function HomeTreePortal() {
                   <button
                     type="button"
                     onClick={() => setRevealed(true)}
-                    className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-emerald-500 via-zion-gold to-zion-cyan px-6 py-3 text-sm font-semibold text-white shadow-[0_0_40px_rgba(34,197,94,0.25)] transition-all hover:shadow-[0_0_60px_rgba(34,197,94,0.4)]"
+                    className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-cyan-500 via-zion-gold to-zion-cyan px-6 py-3 text-sm font-semibold text-white shadow-[0_0_40px_rgba(7, 137, 48,0.25)] transition-all hover:shadow-[0_0_60px_rgba(7, 137, 48,0.4)]"
                   >
                     <Leaf className="h-4 w-4" />
                     {HomeTreePortalCopy.loadInteractiveScene[cs ? 'cs' : 'en']}
@@ -138,7 +138,7 @@ export default function HomeTreePortal() {
                 </div>
 
                 {/* Right: Kabbalah Tree visualization */}
-                <div className="relative mx-auto aspect-[3/4] w-full max-w-md overflow-hidden rounded-2xl border border-emerald-500/15 bg-[radial-gradient(circle_at_50%_15%,rgba(34,197,94,0.15),rgba(10,12,24,0.04)_30%,rgba(1,3,6,0.98)_75%)]">
+                <div className="relative mx-auto aspect-[3/4] w-full max-w-md overflow-hidden rounded-2xl border border-zion-cyan-500/15 bg-[radial-gradient(circle_at_50%_15%,rgba(7, 137, 48,0.15),rgba(10,12,24,0.04)_30%,rgba(1,3,6,0.98)_75%)]">
                   {/* SVG paths */}
                   <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
                     {paths.map(([from, to], i) => {
@@ -149,7 +149,7 @@ export default function HomeTreePortal() {
                         <line
                           key={i}
                           x1={a.x} y1={a.y} x2={b.x} y2={b.y}
-                          stroke={isHovered ? 'rgba(251,191,36,0.6)' : 'rgba(255,255,255,0.12)'}
+                          stroke={isHovered ? 'rgba(252, 209, 22,0.6)' : 'rgba(255,255,255,0.12)'}
                           strokeWidth={isHovered ? 0.5 : 0.25}
                           vectorEffect="non-scaling-stroke"
                           className="transition-all duration-300"

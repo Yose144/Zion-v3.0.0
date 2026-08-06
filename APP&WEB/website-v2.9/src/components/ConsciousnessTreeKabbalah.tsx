@@ -15,7 +15,7 @@ export const CONSCIOUSNESS_SEPHIROT = [
     xpThreshold: 1000000,
     position: { x: 400, y: 60 },
     color: '#fbbf24',
-    gradient: 'from-yellow-400 via-amber-500 to-orange-500',
+    gradient: 'from-zion-gold-400 via-zion-gold-500 to-zion-gold-500',
     daoCircle: 'Guardians Council',
     description: 'Maitreya\'s Realm. Absolutní jednota. Guardians Council a dlouhodobé stewardství. 10× REWARDS!',
     icon: Crown,
@@ -31,7 +31,7 @@ export const CONSCIOUSNESS_SEPHIROT = [
     xpThreshold: 500000,
     position: { x: 220, y: 160 },
     color: '#8b5cf6',
-    gradient: 'from-purple-500 via-violet-600 to-fuchsia-600',
+    gradient: 'from-zion-purple-500 via-zion-purple-600 to-zion-purple-600',
     daoCircle: 'Guardians Council',
     description: 'Beyond Duality. Governance voting power. Stewardship role.',
     icon: Eye,
@@ -47,7 +47,7 @@ export const CONSCIOUSNESS_SEPHIROT = [
     xpThreshold: 500000,
     position: { x: 580, y: 160 },
     color: '#8b5cf6',
-    gradient: 'from-violet-500 via-purple-600 to-indigo-600',
+    gradient: 'from-zion-purple-500 via-zion-purple-600 to-zion-purple-600',
     daoCircle: 'Guardians Council',
     description: 'Cosmic Wisdom. Council alignment and DAO guardianship.',
     icon: Sparkles,
@@ -63,7 +63,7 @@ export const CONSCIOUSNESS_SEPHIROT = [
     xpThreshold: 375000,
     position: { x: 400, y: 240 },
     color: '#6366f1',
-    gradient: 'from-indigo-600 via-blue-700 to-slate-800',
+    gradient: 'from-zion-purple-600 via-zion-purple-700 to-slate-800',
     daoCircle: 'Transition',
     description: 'The Abyss. Test between circles. Upgrade threshold.',
     icon: Shield,
@@ -80,7 +80,7 @@ export const CONSCIOUSNESS_SEPHIROT = [
     xpThreshold: 250000,
     position: { x: 200, y: 320 },
     color: '#078930',
-    gradient: 'from-cyan-400 via-teal-500 to-emerald-500',
+    gradient: 'from-zion-cyan-400 via-zion-cyan-500 to-zion-cyan-500',
     daoCircle: 'Builders Circle',
     description: 'Builders Circle. Core development and technical stewardship.',
     icon: Crown,
@@ -96,7 +96,7 @@ export const CONSCIOUSNESS_SEPHIROT = [
     xpThreshold: 100000,
     position: { x: 600, y: 320 },
     color: '#ec4899',
-    gradient: 'from-pink-500 via-rose-600 to-red-600',
+    gradient: 'from-zion-purple-500 via-zion-purple-600 to-zion-purple-600',
     daoCircle: 'Builders Circle',
     description: 'Governance access. Protection of the realm.',
     icon: Sword,
@@ -112,7 +112,7 @@ export const CONSCIOUSNESS_SEPHIROT = [
     xpThreshold: 40000,
     position: { x: 400, y: 420 },
     color: '#fbbf24',
-    gradient: 'from-yellow-400 via-orange-500 to-amber-600',
+    gradient: 'from-zion-gold-400 via-zion-gold-500 to-zion-gold-600',
     daoCircle: 'Community Guild',
     description: 'Heart Bodhisattva. Balance point. Community core.',
     icon: Heart,
@@ -128,7 +128,7 @@ export const CONSCIOUSNESS_SEPHIROT = [
     xpThreshold: 15000,
     position: { x: 240, y: 540 },
     color: '#f59e0b',
-    gradient: 'from-orange-400 via-amber-500 to-yellow-500',
+    gradient: 'from-zion-gold-400 via-zion-gold-500 to-zion-gold-500',
     daoCircle: 'Community Guild',
     description: 'Community energy. Collaboration and shared growth.',
     icon: Zap,
@@ -144,7 +144,7 @@ export const CONSCIOUSNESS_SEPHIROT = [
     xpThreshold: 5000,
     position: { x: 560, y: 540 },
     color: '#078930',
-    gradient: 'from-cyan-400 via-blue-500 to-indigo-500',
+    gradient: 'from-zion-cyan-400 via-zion-purple-500 to-zion-purple-500',
     daoCircle: 'Community Guild',
     description: 'Understanding blockchain. Entry point. Community member.',
     icon: Brain,
@@ -160,7 +160,7 @@ export const CONSCIOUSNESS_SEPHIROT = [
     xpThreshold: 1000,
     position: { x: 400, y: 660 },
     color: '#a78bfa',
-    gradient: 'from-purple-400 via-violet-500 to-purple-600',
+    gradient: 'from-zion-purple-400 via-zion-purple-500 to-zion-purple-600',
     daoCircle: 'Seekers',
     description: 'First steps. Seeker. Curiosity awakens.',
     icon: TreePine,
@@ -176,7 +176,7 @@ export const CONSCIOUSNESS_SEPHIROT = [
     xpThreshold: 0,
     position: { x: 400, y: 760 },
     color: '#10b981',
-    gradient: 'from-emerald-400 via-green-500 to-teal-600',
+    gradient: 'from-zion-cyan-400 via-zion-cyan-500 to-zion-cyan-600',
     daoCircle: 'Seekers',
     description: 'Physical realm. Beginning. Invitation to join.',
     icon: Mountain,
@@ -242,12 +242,12 @@ export default function ConsciousnessTreeKabbalah({ guardianData }: Consciousnes
           <div className="text-4xl font-bold text-zion-purple">9 Levels</div>
           <div className="text-sm text-gray-400">Consciousness Path</div>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-emerald-500/10 to-black/80 p-6 text-center backdrop-blur-xl">
+        <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-zion-cyan-500/10 to-black/80 p-6 text-center backdrop-blur-xl">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <Crown className="w-5 h-5 text-emerald-400" />
+            <Crown className="w-5 h-5 text-zion-cyan-400" />
             <span className="text-xs uppercase tracking-wider text-gray-400">Max Power</span>
           </div>
-          <div className="text-4xl font-bold text-emerald-400">10× Max</div>
+          <div className="text-4xl font-bold text-zion-cyan-400">10× Max</div>
           <div className="text-sm text-gray-400">Reward Multiplier</div>
         </div>
       </div>
@@ -415,7 +415,7 @@ export default function ConsciousnessTreeKabbalah({ guardianData }: Consciousnes
 
         {/* Hover Tooltip */}
         {hoveredSephira && (
-          <div className="absolute top-4 right-4 max-w-sm zion-rainbow-sub p-6 shadow-2xl animate-fadeIn" style={{ '--rc': '139, 92, 246' } as React.CSSProperties}>
+          <div className="absolute top-4 right-4 max-w-sm zion-rainbow-sub p-6 shadow-2xl animate-fadeIn" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             {(() => {
               const s = hoveredSephira ? sephirotById.get(hoveredSephira) : null;
               if (!s) return null;
@@ -448,7 +448,7 @@ export default function ConsciousnessTreeKabbalah({ guardianData }: Consciousnes
                       </div>
                       <div className="rounded-lg bg-white/5 p-3">
                         <div className="text-xs text-gray-400 mb-1">Guardians</div>
-                        <div className="font-semibold text-emerald-400">{s.guardianCount || 0}</div>
+                        <div className="font-semibold text-zion-cyan-400">{s.guardianCount || 0}</div>
                       </div>
                     </div>
                     <div className="pt-3 border-t border-white/10">
@@ -471,31 +471,31 @@ export default function ConsciousnessTreeKabbalah({ guardianData }: Consciousnes
           {
             label: "Guardians Council",
             icon: Crown,
-            gradient: "from-purple-500 to-fuchsia-600",
+            gradient: "from-zion-purple-500 to-zion-purple-600",
             count: guardianData?.byTier["Guardians Council"] || 0,
           },
           {
             label: "Builders Circle",
             icon: Zap,
-            gradient: "from-cyan-400 to-emerald-500",
+            gradient: "from-zion-cyan-400 to-zion-cyan-500",
             count: guardianData?.byTier["Builders Circle"] || 0,
           },
           {
             label: "Community Guild",
             icon: Heart,
-            gradient: "from-orange-400 to-yellow-500",
+            gradient: "from-zion-gold-400 to-zion-gold-500",
             count: guardianData?.byTier["Community Guild"] || 0,
           },
           {
             label: "Transition",
             icon: Shield,
-            gradient: "from-indigo-600 to-slate-800",
+            gradient: "from-zion-purple-600 to-slate-800",
             count: 0,
           },
           {
             label: "Seekers",
             icon: Eye,
-            gradient: "from-emerald-400 to-teal-600",
+            gradient: "from-zion-cyan-400 to-zion-cyan-600",
             count: 0,
           },
         ].map((item) => (

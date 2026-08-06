@@ -115,7 +115,7 @@ const FEATURES: FeatureItem[] = [
     descEn: 'Diverse organic crops, biodiversity restoration, seasonal harvests. Every visitor can lend a hand.',
     status: 'active' as const,
     color: '#10B981',
-    rgb: '16,185,129',
+    rgb: '7, 137, 48',
   },
   {
     icon: Trees,
@@ -145,7 +145,7 @@ const FEATURES: FeatureItem[] = [
     descEn: 'Photovoltaic system, rainwater collection, composting. Physical manifestation of energy freedom.',
     status: 'active' as const,
     color: '#F59E0B',
-    rgb: '245,158,11',
+    rgb: '252, 209, 22',
   },
   {
     icon: Network,
@@ -155,7 +155,7 @@ const FEATURES: FeatureItem[] = [
     descEn: 'Workshops, retreats, ceremonies and festivals. A space where people meet with authentic intention.',
     status: 'active' as const,
     color: '#8B5CF6',
-    rgb: '139,92,246',
+    rgb: '228, 30, 43',
   },
 ];
 
@@ -184,7 +184,7 @@ const SIGNALS = [
 
 const STATUS_LABEL = {
   open: { cs: 'Otevřeno', en: 'Open', color: '#34D399', bg: 'rgba(52,211,153,0.1)', border: 'rgba(52,211,153,0.25)' },
-  active: { cs: 'Aktivní', en: 'Active', color: '#10B981', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.25)' },
+  active: { cs: 'Aktivní', en: 'Active', color: '#10B981', bg: 'rgba(7, 137, 48,0.1)', border: 'rgba(7, 137, 48,0.25)' },
   planned: { cs: 'Plánováno', en: 'Planned', color: '#60A5FA', bg: 'rgba(96,165,250,0.1)', border: 'rgba(96,165,250,0.25)' },
 };
 
@@ -205,7 +205,7 @@ export default function ZahradaGenesisPage() {
         >
           <Link
             href="/terranova"
-            className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-emerald-400 transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-zion-cyan-400 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             {TerranovaGenesisCopy.backToTerraNova[cs ? 'cs' : 'en']}
@@ -219,11 +219,11 @@ export default function ZahradaGenesisPage() {
           transition={{ duration: 0.7 }}
           className="mb-20 relative"
         >
-          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-8">
               {/* Icon column */}
               <div className="shrink-0">
-                <div className="relative flex h-28 w-28 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                <div className="relative flex h-28 w-28 items-center justify-center zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                   <div className="absolute inset-3 rounded-[26px] border border-white/5" />
                   <div className="absolute h-20 w-20 rounded-full bg-zion-gold/10 blur-2xl" />
                   <Leaf className="relative z-10 h-10 w-10 text-zion-gold" />
@@ -248,11 +248,11 @@ export default function ZahradaGenesisPage() {
                 <p className="text-lg text-zion-cyan font-medium">Base Camp · Terra Nova ®</p>
 
                 <div className="flex items-center gap-1.5 text-gray-400">
-                  <MapPin className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <MapPin className="w-4 h-4 text-zion-cyan-500 shrink-0" />
                   <span className="text-sm">Algarve / Atlantické pobřeží · Portugalsko</span>
                 </div>
 
-                <blockquote className="mt-4 pl-4 border-l-2 border-emerald-500/40 text-sm text-gray-400 italic leading-relaxed max-w-lg">
+                <blockquote className="mt-4 pl-4 border-l-2 border-zion-cyan-500/40 text-sm text-gray-400 italic leading-relaxed max-w-lg">
                   {TerranovaGenesisCopy.oneLoveOneHeartTogetherWeCreat[cs ? 'cs' : 'en']}
                 </blockquote>
 
@@ -260,7 +260,7 @@ export default function ZahradaGenesisPage() {
                   {SIGNALS.map((signal) => {
                     const Icon = signal.icon;
                     return (
-                      <div key={signal.labelCs} className="zion-rainbow-sub px-3 py-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+                      <div key={signal.labelCs} className="zion-rainbow-sub px-3 py-3" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                         <div className="flex items-center gap-2 text-zion-gold">
                           <Icon className="h-4 w-4" />
                           <span className="text-sm font-semibold">{signal.value}</span>
@@ -304,12 +304,12 @@ export default function ZahradaGenesisPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 + i * 0.07, duration: 0.5 }}
                   className="relative zion-rainbow-sub p-5 space-y-3 overflow-hidden group hover:scale-[1.02] transition-transform duration-300"
-                  style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+                  style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
                 >
                   <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-[50px] bg-white/5 group-hover:bg-white/10 transition-colors duration-500" />
 
                   <div className="flex items-start justify-between relative z-10 gap-3">
-                    <span className="inline-flex h-11 w-11 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                    <span className="inline-flex h-11 w-11 items-center justify-center zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                       <Icon className="h-5 w-5" style={{ color: f.color }} />
                     </span>
                     <span
@@ -372,7 +372,7 @@ export default function ZahradaGenesisPage() {
                     {p.active && <div className="w-1.5 h-1.5 rounded-full bg-zion-cyan animate-pulse" />}
                   </div>
 
-                  <div className="zion-rainbow-sub p-4 space-y-1" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+                  <div className="zion-rainbow-sub p-4 space-y-1" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                     <div className="flex items-center gap-3">
                       <span
                         className="text-xs font-bold tracking-wider"
@@ -412,10 +412,10 @@ export default function ZahradaGenesisPage() {
 
           <div className="grid md:grid-cols-3 gap-4">
             {/* Energie */}
-            <div className="relative zion-rainbow-sub p-5 space-y-3 overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+            <div className="relative zion-rainbow-sub p-5 space-y-3 overflow-hidden" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
               <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-[40px] bg-zion-gold/10" />
               <div className="flex items-center gap-2 relative z-10">
-                <span className="inline-flex h-9 w-9 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                <span className="inline-flex h-9 w-9 items-center justify-center zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                   <Sun className="h-4 w-4 text-zion-gold" />
                 </span>
                 <h3 className="font-bold text-zion-gold text-sm">{TerranovaGenesisCopy.energy[cs ? 'cs' : 'en']}</h3>
@@ -438,10 +438,10 @@ export default function ZahradaGenesisPage() {
             </div>
 
             {/* Voda */}
-            <div className="relative zion-rainbow-sub p-5 space-y-3 overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+            <div className="relative zion-rainbow-sub p-5 space-y-3 overflow-hidden" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
               <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-[40px] bg-zion-cyan/10" />
               <div className="flex items-center gap-2 relative z-10">
-                <span className="inline-flex h-9 w-9 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                <span className="inline-flex h-9 w-9 items-center justify-center zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                   <Droplets className="h-4 w-4 text-zion-cyan" />
                 </span>
                 <h3 className="font-bold text-zion-cyan text-sm">{TerranovaGenesisCopy.water[cs ? 'cs' : 'en']}</h3>
@@ -464,13 +464,13 @@ export default function ZahradaGenesisPage() {
             </div>
 
             {/* Jídlo */}
-            <div className="relative zion-rainbow-sub p-5 space-y-3 overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
-              <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-[40px] bg-emerald-500/10" />
+            <div className="relative zion-rainbow-sub p-5 space-y-3 overflow-hidden" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+              <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-[40px] bg-zion-cyan-500/10" />
               <div className="flex items-center gap-2 relative z-10">
-                <span className="inline-flex h-9 w-9 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
-                  <Sprout className="h-4 w-4 text-emerald-400" />
+                <span className="inline-flex h-9 w-9 items-center justify-center zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+                  <Sprout className="h-4 w-4 text-zion-cyan-400" />
                 </span>
-                <h3 className="font-bold text-emerald-400 text-sm">{TerranovaGenesisCopy.gardenFood[cs ? 'cs' : 'en']}</h3>
+                <h3 className="font-bold text-zion-cyan-400 text-sm">{TerranovaGenesisCopy.gardenFood[cs ? 'cs' : 'en']}</h3>
               </div>
               <div className="space-y-1.5 relative z-10">
                 {[
@@ -507,7 +507,7 @@ export default function ZahradaGenesisPage() {
             </h2>
           </div>
 
-          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <div className="relative z-10 grid md:grid-cols-2 gap-8">
               <div className="space-y-4">
                 <h3 className="text-zion-cyan font-bold text-sm uppercase tracking-widest">
@@ -531,7 +531,7 @@ export default function ZahradaGenesisPage() {
                 <h3 className="text-zion-gold font-bold text-sm uppercase tracking-widest">
                   {TerranovaGenesisCopy.humanitarianCommitment[cs ? 'cs' : 'en']}
                 </h3>
-                <div className="relative zion-rainbow-sub p-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+                <div className="relative zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                   <div className="text-3xl font-black text-zion-gold mb-1">10 %</div>
                   <p className="text-gray-400 text-sm">
                     {TerranovaGenesisCopy.ofZionNetworkNodeRewardsGoToTh[cs ? 'cs' : 'en']}
@@ -552,7 +552,7 @@ export default function ZahradaGenesisPage() {
           transition={{ delay: 0.39, duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <div className="relative z-10 max-w-2xl space-y-4">
               <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500">
                 {TerranovaGenesisCopy.characterOfPlace[cs ? 'cs' : 'en']}
@@ -596,14 +596,14 @@ export default function ZahradaGenesisPage() {
             <h2 className="text-2xl font-bold text-white">ZION Network</h2>
           </div>
 
-          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <div className="relative z-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {ZION_ITEMS.map((item) => (
                 <div
                   key={item.label}
-                  className="flex items-center gap-3 zion-rainbow-sub p-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+                  className="flex items-center gap-3 zion-rainbow-sub p-3" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
                 >
-                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                     <item.icon className="h-4 w-4 text-zion-gold" />
                   </span>
                   <div>
@@ -629,7 +629,7 @@ export default function ZahradaGenesisPage() {
           transition={{ delay: 0.5, duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <h3 className="text-lg font-bold text-zion-gold">
               {TerranovaGenesisCopy.resourcesContact[cs ? 'cs' : 'en']}
             </h3>

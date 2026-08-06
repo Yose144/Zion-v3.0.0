@@ -468,7 +468,7 @@ export default function RoadmapPage() {
                   <CalendarDays className="h-3 w-3 text-zion-cyan" /> {copy.publicLaunch}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <ShieldCheck className="h-3 w-3 text-emerald-400" /> {copy.testsPassing}
+                  <ShieldCheck className="h-3 w-3 text-zion-cyan-400" /> {copy.testsPassing}
                 </span>
               </div>
             </div>
@@ -521,7 +521,7 @@ export default function RoadmapPage() {
                       <div className="flex items-center gap-3">
                         <div className="h-2 w-24 rounded-full bg-white/10">
                           <div
-                            className={`h-2 rounded-full ${comp.readiness >= 85 ? 'bg-emerald-400' : comp.readiness >= 70 ? 'bg-yellow-400' : 'bg-red-400'}`}
+                            className={`h-2 rounded-full ${comp.readiness >= 85 ? 'bg-zion-cyan-400' : comp.readiness >= 70 ? 'bg-zion-gold-400' : 'bg-zion-purple-400'}`}
                             style={{ width: `${comp.readiness}%` }}
                           />
                         </div>
@@ -552,18 +552,18 @@ export default function RoadmapPage() {
           </div>
 
           <div className="relative">
-            <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-emerald-400 via-zion-purple to-zion-gold hidden md:block" />
+            <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-zion-cyan-400 via-zion-purple to-zion-gold hidden md:block" />
             <div className="space-y-6">
               {phases.map((phase, idx) => {
                 const statusColor =
                   phase.status === 'done'
-                    ? 'border-emerald-500/40 bg-emerald-500/5'
+                    ? 'border-zion-cyan-500/40 bg-zion-cyan-500/5'
                     : phase.status === 'active'
                     ? 'border-zion-cyan/40 bg-zion-cyan/5'
                     : 'border-white/10 bg-black/30';
                 const statusBadge =
                   phase.status === 'done'
-                    ? { text: copy.done, cls: 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200' }
+                    ? { text: copy.done, cls: 'border-zion-cyan-400/30 bg-zion-cyan-400/10 text-emerald-200' }
                     : phase.status === 'active'
                     ? { text: copy.active, cls: 'border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan' }
                     : { text: copy.upcoming, cls: 'border-white/20 bg-white/5 text-gray-300' };
@@ -600,7 +600,7 @@ export default function RoadmapPage() {
                             whileInView={{ width: `${phase.progress}%` }}
                             viewport={{ once: true }}
                             transition={{ duration: 0.8, delay: 0.1 }}
-                            className={`h-2 rounded-full ${phase.status === 'done' ? 'bg-emerald-400' : 'bg-gradient-to-r from-blue-500 via-zion-cyan to-zion-purple'}`}
+                            className={`h-2 rounded-full ${phase.status === 'done' ? 'bg-zion-cyan-400' : 'bg-gradient-to-r from-zion-purple-500 via-zion-cyan to-zion-purple'}`}
                           />
                         </div>
                         <span className="text-sm font-mono text-gray-300">{phase.progress}%</span>
@@ -610,7 +610,7 @@ export default function RoadmapPage() {
                         {phase.sprints.map((sprint) => (
                           <div key={sprint.id} className="flex items-start gap-2 text-sm">
                             {sprint.done ? (
-                              <CheckCircle2 className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" />
+                              <CheckCircle2 className="h-4 w-4 text-zion-cyan-400 mt-0.5 shrink-0" />
                             ) : (
                               <Clock className="h-4 w-4 text-gray-600 mt-0.5 shrink-0" />
                             )}
@@ -631,7 +631,7 @@ export default function RoadmapPage() {
                           {phase.exitCriteria.map((ec) => (
                             <div key={ec.text} className="flex items-start gap-2 text-sm">
                               {ec.done ? (
-                                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 mt-0.5 shrink-0" />
+                                <CheckCircle2 className="h-3.5 w-3.5 text-zion-cyan-400 mt-0.5 shrink-0" />
                               ) : (
                                 <Clock className="h-3.5 w-3.5 text-gray-600 mt-0.5 shrink-0" />
                               )}
@@ -692,10 +692,10 @@ export default function RoadmapPage() {
             <p className="text-xs uppercase tracking-[0.3em] text-gray-400 mb-3">{copy.exchangeSequence}</p>
             <div className="flex flex-wrap gap-3 text-sm">
               {[
-                { n: '1️⃣', label: 'Base / Arbitrum (Uni v3)', cls: 'text-emerald-300' },
-                { n: '2️⃣', label: 'BNB Chain (PancakeSwap)', cls: 'text-yellow-300' },
-                { n: '3️⃣', label: 'CoinGecko + CMC', cls: 'text-blue-300' },
-                { n: '4️⃣', label: 'Tier-3 CEX (MEXC, XT)', cls: 'text-purple-300' },
+                { n: '1️⃣', label: 'Base / Arbitrum (Uni v3)', cls: 'text-zion-cyan-300' },
+                { n: '2️⃣', label: 'BNB Chain (PancakeSwap)', cls: 'text-zion-gold-300' },
+                { n: '3️⃣', label: 'CoinGecko + CMC', cls: 'text-zion-purple-300' },
+                { n: '4️⃣', label: 'Tier-3 CEX (MEXC, XT)', cls: 'text-zion-purple-300' },
                 { n: '5️⃣', label: cs ? 'Tier-2 CEX (po volume)' : 'Tier-2 CEX (after volume)', cls: 'text-gray-400' },
               ].map((step) => (
                 <span key={step.n} className={`inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 ${step.cls}`}>
@@ -776,7 +776,7 @@ export default function RoadmapPage() {
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{copy.security}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Shield className="h-7 w-7 text-emerald-400" />
+              <Shield className="h-7 w-7 text-zion-cyan-400" />
               {copy.securityTitle}
             </h2>
           </div>
@@ -784,7 +784,7 @@ export default function RoadmapPage() {
             {securityChecklist.map((item) => (
               <div key={item.text} className="flex items-center gap-3 text-sm py-2">
                 {item.done ? (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                  <CheckCircle2 className="h-4 w-4 text-zion-cyan-400 shrink-0" />
                 ) : (
                   <Clock className="h-4 w-4 text-gray-600 shrink-0" />
                 )}
@@ -793,12 +793,12 @@ export default function RoadmapPage() {
             ))}
           </div>
           <div className="mt-4 flex items-center gap-3 text-sm text-gray-400">
-            <span className="font-mono text-emerald-400">{secDone}</span>
+            <span className="font-mono text-zion-cyan-400">{secDone}</span>
             <span>/</span>
             <span className="font-mono">{secTotal}</span>
             <span>{copy.securityCompleted}</span>
             <div className="h-2 flex-1 max-w-xs rounded-full bg-white/10">
-              <div className="h-2 rounded-full bg-emerald-400" style={{ width: `${(secDone / secTotal) * 100}%` }} />
+              <div className="h-2 rounded-full bg-zion-cyan-400" style={{ width: `${(secDone / secTotal) * 100}%` }} />
             </div>
           </div>
         </motion.section>

@@ -55,14 +55,14 @@ export default function ReleaseHighlightBanner() {
       className="relative z-10 mx-auto max-w-5xl px-4 py-10"
     >
       <div
-        className="relative overflow-hidden rounded-3xl border border-emerald-500/25 bg-linear-to-br from-emerald-500/[0.08] via-zion-gold/[0.04] to-transparent backdrop-blur-sm"
-        style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+        className="relative overflow-hidden rounded-3xl border border-zion-cyan-500/25 bg-linear-to-br from-zion-cyan-500/[0.08] via-zion-gold/[0.04] to-transparent backdrop-blur-sm"
+        style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
       >
         {/* Top accent bar */}
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-linear-to-r from-emerald-400 via-zion-gold to-emerald-400" />
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-linear-to-r from-zion-cyan-400 via-zion-gold to-zion-cyan-400" />
 
         {/* Decorative glow */}
-        <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-zion-cyan-500/10 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-zion-gold/10 blur-3xl pointer-events-none" />
 
         <div className="relative p-6 sm:p-8">
@@ -77,7 +77,7 @@ export default function ReleaseHighlightBanner() {
 
           {/* Meta row */}
           <div className="flex items-center gap-3 mb-4 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[10px] font-semibold text-emerald-400 uppercase tracking-wider">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-zion-cyan-500/30 bg-zion-cyan-500/10 px-3 py-1 text-[10px] font-semibold text-zion-cyan-400 uppercase tracking-wider">
               <Rocket className="h-3 w-3" />
               {ReleaseHighlightBannerCopy.newRelease[cs ? 'cs' : 'en']}
             </span>
@@ -108,11 +108,11 @@ export default function ReleaseHighlightBanner() {
           {/* Feature pills */}
           <div className="flex flex-wrap gap-2 mb-6">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-300">
-              <Zap className="h-3 w-3 text-emerald-400" />
+              <Zap className="h-3 w-3 text-zion-cyan-400" />
               {ReleaseHighlightBannerCopy.boostStreams[cs ? 'cs' : 'en']}
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-300">
-              <Monitor className="h-3 w-3 text-emerald-400" />
+              <Monitor className="h-3 w-3 text-zion-cyan-400" />
               {ReleaseHighlightBannerCopy.oneClickGuiMining[cs ? 'cs' : 'en']}
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-gray-300">
@@ -123,12 +123,12 @@ export default function ReleaseHighlightBanner() {
               <Cpu className="h-3 w-3 text-zion-gold" />
               {ReleaseHighlightBannerCopy.autoGpuBackend[cs ? 'cs' : 'en']}
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-300">
-              <Cpu className="h-3 w-3 text-emerald-400" />
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-zion-cyan-500/20 bg-zion-cyan-500/10 px-3 py-1 text-xs text-zion-cyan-300">
+              <Cpu className="h-3 w-3 text-zion-cyan-400" />
               {ReleaseHighlightBannerCopy.fourPlatforms[cs ? 'cs' : 'en']}
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-300">
-              <Monitor className="h-3 w-3 text-emerald-400" />
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-zion-cyan-500/20 bg-zion-cyan-500/10 px-3 py-1 text-xs text-zion-cyan-300">
+              <Monitor className="h-3 w-3 text-zion-cyan-400" />
               {ReleaseHighlightBannerCopy.allPlatformsAvailable[cs ? 'cs' : 'en']}
             </span>
           </div>
@@ -137,7 +137,7 @@ export default function ReleaseHighlightBanner() {
           <div className="flex flex-wrap gap-3">
             <Link
               href="/download"
-              className="group inline-flex items-center gap-2 rounded-xl bg-emerald-500/15 border border-emerald-400/40 px-5 py-2.5 text-sm font-semibold text-emerald-100 transition-all duration-200 hover:bg-emerald-500/25 hover:border-emerald-300/60 hover:shadow-[0_0_24px_rgba(16,185,129,0.25)]"
+              className="group inline-flex items-center gap-2 rounded-xl bg-zion-cyan-500/15 border border-zion-cyan-400/40 px-5 py-2.5 text-sm font-semibold text-emerald-100 transition-all duration-200 hover:bg-zion-cyan-500/25 hover:border-zion-cyan-300/60 hover:shadow-[0_0_24px_rgba(7, 137, 48,0.25)]"
             >
               <ArrowDownToLine className="h-4 w-4 transition-transform group-hover:translate-y-0.5" />
               {ReleaseHighlightBannerCopy.downloadDesktopApp[cs ? 'cs' : 'en']}

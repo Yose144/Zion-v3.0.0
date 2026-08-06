@@ -86,7 +86,7 @@ const FREQUENCIES: FrequencyItem[] = [
     roleCs: 'Spojení · „Já tkám"',
     roleEn: 'Connection · "I weave"',
     color: '#EC4899',
-    rgb: '236,72,153',
+    rgb: '228, 30, 43',
   },
   {
     ray: 'White (Purity)',
@@ -106,7 +106,7 @@ const FREQUENCIES: FrequencyItem[] = [
     roleCs: 'Komunita · „Já živím"',
     roleEn: 'Community · "I nourish"',
     color: '#22C55E',
-    rgb: '34,197,94',
+    rgb: '7, 137, 48',
   },
   {
     ray: 'Ruby (Service)',
@@ -116,7 +116,7 @@ const FREQUENCIES: FrequencyItem[] = [
     roleCs: 'Ekosystém · „Já chráním"',
     roleEn: 'Ecosystem · "I protect"',
     color: '#EF4444',
-    rgb: '239,68,68',
+    rgb: '228, 30, 43',
   },
   {
     ray: 'Violet (Freedom)',
@@ -126,7 +126,7 @@ const FREQUENCIES: FrequencyItem[] = [
     roleCs: 'Protokol · „Já rozpouštím"',
     roleEn: 'Protocol · "I dissolve"',
     color: '#A855F7',
-    rgb: '168,85,247',
+    rgb: '228, 30, 43',
   },
 ];
 
@@ -151,7 +151,7 @@ const SECTIONS: SectionData[] = [
     descEn:
       'At every Fibonacci block height an empty capsule is created automatically. Elders ask questions, youth record visions, Guardians synthesize a document — and after Council witness the content is locked until the next Fibonacci number, when the youngest Sapling unlocks it.',
     color: '#F59E0B',
-    rgb: '245,158,11',
+    rgb: '252, 209, 22',
   },
   {
     icon: GitBranch,
@@ -197,7 +197,7 @@ export default function ResonancePage() {
     <main className="relative overflow-hidden zion-page">
       {/* HERO */}
       <section className="relative">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-96 bg-[radial-gradient(ellipse_at_50%_0%,rgba(168,85,247,0.18),transparent_70%)]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-96 bg-[radial-gradient(ellipse_at_50%_0%,rgba(228, 30, 43,0.18),transparent_70%)]" />
         <div className="zion-container relative">
           <FadeIn>
             <div className="flex items-center gap-3 mb-6">
@@ -243,7 +243,7 @@ export default function ResonancePage() {
 
       {/* SEVEN FREQUENCIES */}
       <section className="relative py-20 border-t border-white/5">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(ellipse_at_50%_0%,rgba(236,72,153,0.12),transparent_70%)]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(ellipse_at_50%_0%,rgba(228, 30, 43,0.12),transparent_70%)]" />
         <div className="zion-container relative">
           <FadeIn>
             <div className="mb-12">
@@ -280,8 +280,8 @@ export default function ResonancePage() {
 
             {/* Carrier wave card */}
             <FadeIn delay={FREQUENCIES.length * 0.05}>
-              <div className="zion-rainbow-sub p-5 flex flex-col justify-center items-center text-center" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
-                <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-500/15 text-amber-400 mb-3">
+              <div className="zion-rainbow-sub p-5 flex flex-col justify-center items-center text-center" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+                <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-zion-gold-500/15 text-zion-gold-400 mb-3">
                   <Waves className="h-6 w-6" />
                 </span>
                 <h3 className="text-lg font-bold text-white mb-1">108 Hz</h3>
@@ -323,7 +323,7 @@ export default function ResonancePage() {
 
       {/* THREE GATES */}
       <section className="relative py-20 border-t border-white/5">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(ellipse_at_50%_0%,rgba(34,197,94,0.10),transparent_70%)]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(ellipse_at_50%_0%,rgba(7, 137, 48,0.10),transparent_70%)]" />
         <div className="zion-container relative">
           <FadeIn>
             <h2 className="text-3xl md:text-4xl font-bold text-gradient-soft mb-3">
@@ -358,7 +358,7 @@ export default function ResonancePage() {
                 descEn:
                   'The Council collectively tones 108 Hz for 3 minutes, then the layer frequency for 2 minutes, then 7 minutes of silence. Each member says: "I resonate", "I dissonate", or "I harmonize".',
                 color: '#22C55E',
-                rgb: '34,197,94',
+                rgb: '7, 137, 48',
               },
               {
                 gate: 'C',
@@ -394,7 +394,7 @@ export default function ResonancePage() {
 
       {/* CLOSING CTA */}
       <section className="relative py-20 border-t border-white/5">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(ellipse_at_50%_0%,rgba(251,191,36,0.12),transparent_70%)]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(ellipse_at_50%_0%,rgba(252, 209, 22,0.12),transparent_70%)]" />
         <div className="zion-container relative">
           <FadeIn>
             <div className="zion-cta-banner">

@@ -318,9 +318,9 @@ const getInfraFeatures = (cs: boolean) => [
     detail: NetworkCopy.publicP2p8333Stratum8444Rpc844[cs ? 'cs' : 'en'],
     ip: SITE_PRIMARY_HOST,
     status: NetworkCopy.active[cs ? 'cs' : 'en'],
-    color: 'text-emerald-400',
-    border: 'border-emerald-500/30',
-    bg: 'bg-emerald-500/5',
+    color: 'text-zion-cyan-400',
+    border: 'border-zion-cyan-500/30',
+    bg: 'bg-zion-cyan-500/5',
   },
   {
     icon: Server,
@@ -329,8 +329,8 @@ const getInfraFeatures = (cs: boolean) => [
     ip: `${SITE_PRIMARY_HOST}:8334`,
     status: NetworkCopy.active[cs ? 'cs' : 'en'],
     color: 'text-zion-cyan',
-    border: 'border-cyan-500/30',
-    bg: 'bg-cyan-500/5',
+    border: 'border-zion-cyan-500/30',
+    bg: 'bg-zion-cyan-500/5',
   },
   {
     icon: Server,
@@ -364,7 +364,7 @@ const getRuntimePanels = (cs: boolean) => [
     label: 'P2P Mesh',
     value: `${SITE_PRIMARY_HOST}:8333`,
     detail: NetworkCopy.k2NodeMesh83338334Backup8335Off[cs ? 'cs' : 'en'],
-    accent: 'text-emerald-400',
+    accent: 'text-zion-cyan-400',
   },
   {
     icon: BookOpen,
@@ -380,7 +380,7 @@ const getRuntimePanels = (cs: boolean) => [
     label: NetworkCopy.v306E2eStatus[cs ? 'cs' : 'en'],
     value: NetworkCopy.trinity_2[cs ? 'cs' : 'en'],
     detail: NetworkCopy.k1111ServicesActiveF47F5ActiveM[cs ? 'cs' : 'en'],
-    accent: 'text-amber-400',
+    accent: 'text-zion-gold-400',
   },
 ];
 
@@ -626,7 +626,7 @@ export default function NetworkPage() {
         >
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-5">
-              <div className="zion-kicker border-cyan-400/35 bg-cyan-400/10 text-cyan-200">
+              <div className="zion-kicker border-zion-cyan-400/35 bg-zion-cyan-400/10 text-cyan-200">
                 <Radio className="h-4 w-4" />
                 {SITE_RELEASE_LABEL} · {NetworkCopy.network[cs ? 'cs' : 'en']}
               </div>
@@ -647,7 +647,7 @@ export default function NetworkPage() {
                   <Orbit className="h-3 w-3 text-zion-cyan" /> Runtime: {SITE_RUNTIME_LABEL}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200 backdrop-blur-sm">
-                  <ShieldCheck className="h-3 w-3 text-emerald-400" /> {NetworkCopy.k1PublicHost2InternalSeeds[cs ? 'cs' : 'en']}
+                  <ShieldCheck className="h-3 w-3 text-zion-cyan-400" /> {NetworkCopy.k1PublicHost2InternalSeeds[cs ? 'cs' : 'en']}
                 </span>
               </div>
             </div>
@@ -656,7 +656,7 @@ export default function NetworkPage() {
                 <div
                   key={chip.label}
                   className="zion-rainbow-sub px-5 py-4 backdrop-blur"
-                  style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+                  style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
                 >
                   <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{chip.label}</p>
                   <p className="text-3xl font-semibold text-white mt-2">{chip.value}</p>
@@ -702,7 +702,7 @@ export default function NetworkPage() {
           <div className="flex flex-col gap-2 mb-8">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkCopy.health[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <ShieldCheck className="h-7 w-7 text-emerald-400" />
+              <ShieldCheck className="h-7 w-7 text-zion-cyan-400" />
               {NetworkCopy.networkHealthScore[cs ? 'cs' : 'en']}
             </h2>
             <p className="text-sm text-gray-400">{NetworkCopy.aggregateHealthIndicatorBasedO[cs ? 'cs' : 'en']}</p>
@@ -720,9 +720,9 @@ export default function NetworkPage() {
               { label: NetworkCopy.poolOnline[cs ? 'cs' : 'en'], ok: chainStats.pool_hashrate > 0 || chainStats.active_miners > 0, weight: 5 },
             ];
             const score = checks.reduce((acc, c) => acc + (c.ok ? c.weight : 0), 0);
-            const scoreColor = score >= 90 ? 'text-emerald-400' : score >= 70 ? 'text-zion-gold' : score >= 50 ? 'text-amber-400' : 'text-red-400';
-            const scoreBorder = score >= 90 ? 'border-emerald-400/30' : score >= 70 ? 'border-zion-gold/30' : score >= 50 ? 'border-amber-400/30' : 'border-red-400/30';
-            const scoreGlow = score >= 90 ? 'shadow-emerald-400/20' : score >= 70 ? 'shadow-zion-gold/20' : score >= 50 ? 'shadow-amber-400/20' : 'shadow-red-400/20';
+            const scoreColor = score >= 90 ? 'text-zion-cyan-400' : score >= 70 ? 'text-zion-gold' : score >= 50 ? 'text-zion-gold-400' : 'text-zion-purple-400';
+            const scoreBorder = score >= 90 ? 'border-zion-cyan-400/30' : score >= 70 ? 'border-zion-gold/30' : score >= 50 ? 'border-zion-gold-400/30' : 'border-zion-purple-400/30';
+            const scoreGlow = score >= 90 ? 'shadow-zion-cyan-400/20' : score >= 70 ? 'shadow-zion-gold/20' : score >= 50 ? 'shadow-zion-gold-400/20' : 'shadow-zion-purple-400/20';
 
             return (
               <div className="grid gap-6 lg:grid-cols-[1fr_2fr]">
@@ -752,10 +752,10 @@ export default function NetworkPage() {
                   {checks.map((c) => (
                     <div key={c.label} className="zion-rainbow-sub p-4" style={{ '--rc': c.ok ? '52, 211, 153' : '248, 113, 113' } as React.CSSProperties}>
                       <div className="flex items-center gap-2 mb-2">
-                        <div className={`w-2 h-2 rounded-full ${c.ok ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                        <div className={`w-2 h-2 rounded-full ${c.ok ? 'bg-zion-cyan-400' : 'bg-zion-purple-400'}`} />
                         <span className="text-[11px] text-gray-400 uppercase tracking-wider">{c.label}</span>
                       </div>
-                      <p className={`text-lg font-bold ${c.ok ? 'text-emerald-400' : 'text-red-400'}`}>{c.ok ? (NetworkCopy.ok[cs ? 'cs' : 'en']) : (NetworkCopy.fail[cs ? 'cs' : 'en'])}</p>
+                      <p className={`text-lg font-bold ${c.ok ? 'text-zion-cyan-400' : 'text-zion-purple-400'}`}>{c.ok ? (NetworkCopy.ok[cs ? 'cs' : 'en']) : (NetworkCopy.fail[cs ? 'cs' : 'en'])}</p>
                       <p className="text-[10px] text-gray-500 mt-0.5">{c.weight} {NetworkCopy.pts[cs ? 'cs' : 'en']}</p>
                     </div>
                   ))}
@@ -784,7 +784,7 @@ export default function NetworkPage() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wider">{NetworkCopy.networkHashrate[cs ? 'cs' : 'en']}</p>
-                  <p className="text-2xl font-bold text-emerald-400 font-mono mt-1">{chainStats.network_hashrate_formatted}</p>
+                  <p className="text-2xl font-bold text-zion-cyan-400 font-mono mt-1">{chainStats.network_hashrate_formatted}</p>
                 </div>
               </div>
               <NetSparkline data={hashrateHistory.map(p => p.value)} color="rgb(52, 211, 153)" height={80} />
@@ -806,7 +806,7 @@ export default function NetworkPage() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wider">{NetworkCopy.avgBlockTime[cs ? 'cs' : 'en']}</p>
-                  <p className="text-2xl font-bold text-blue-400 font-mono mt-1">{chainStats.avg_block_time}s</p>
+                  <p className="text-2xl font-bold text-zion-purple-400 font-mono mt-1">{chainStats.avg_block_time}s</p>
                 </div>
                 <span className="text-xs text-gray-500">{NetworkCopy.target[cs ? 'cs' : 'en']}: {chainStats.target_block_time ?? BLOCK_TIME_SECONDS}s</span>
               </div>
@@ -844,22 +844,22 @@ export default function NetworkPage() {
             <ChainStatCard label={NetworkCopy.difficulty[cs ? 'cs' : 'en']} value={fmtLargeNum(chainStats.difficulty)} color="text-zion-cyan" tip={NetworkCopy.currentMiningDifficultySetByLw[cs ? 'cs' : 'en']} />
             <ChainStatCard label={NetworkCopy.cumulativeDiff[cs ? 'cs' : 'en']} value={fmtLargeNum(chainStats.cumulative_difficulty)} color="text-zion-cyan" tip={NetworkCopy.sumOfDifficultyAcrossAllBlocks[cs ? 'cs' : 'en']} />
             <ChainStatCard label={NetworkCopy.circulatingSupply[cs ? 'cs' : 'en']} value={`${fmtLargeNum(chainStats.circulating_supply)} ZION`} color="text-zion-gold" tip={NetworkCopy.totalZionInCirculationIncludin[cs ? 'cs' : 'en']} />
-            <ChainStatCard label={NetworkCopy.emission[cs ? 'cs' : 'en']} value={`${chainStats.emission_pct}%`} color="text-pink-400" tip={NetworkCopy.percentageOfTotalSupplyMinedAc[cs ? 'cs' : 'en']} />
-            <ChainStatCard label={NetworkCopy.totalTx[cs ? 'cs' : 'en']} value={chainStats.tx_count.toLocaleString(locale)} color="text-purple-400" tip={NetworkCopy.totalNumberOfTransactionsRecor[cs ? 'cs' : 'en']} />
-            <ChainStatCard label="Mempool" value={`${chainStats.tx_pool_size} tx`} color={chainStats.tx_pool_size > 0 ? 'text-amber-400' : 'text-gray-400'} tip={NetworkCopy.transactionsWaitingForConfirma[cs ? 'cs' : 'en']} />
-            <ChainStatCard label={NetworkCopy.totalPeers[cs ? 'cs' : 'en']} value={`${chainStats.total_connections}`} sub={`↓${chainStats.incoming_connections} ↑${chainStats.outgoing_connections}`} color="text-purple-400" tip={NetworkCopy.activeP2pConnectionsIncomingAn[cs ? 'cs' : 'en']} />
-            <ChainStatCard label={NetworkCopy.knownPeers[cs ? 'cs' : 'en']} value={`${chainStats.white_peerlist_size}`} sub={`${chainStats.grey_peerlist_size} grey`} color="text-indigo-400" tip={NetworkCopy.knownWhiteAndUnknownGreyPeerLi[cs ? 'cs' : 'en']} />
-            <ChainStatCard label={NetworkCopy.blockSizeLimit[cs ? 'cs' : 'en']} value={fmtBytes(chainStats.block_size_limit)} sub={`${NetworkCopy.median[cs ? 'cs' : 'en']}: ${fmtBytes(chainStats.block_size_median)}`} color="text-cyan-400" tip={NetworkCopy.maximumAndMedianBlockSizeInByt[cs ? 'cs' : 'en']} />
-            <ChainStatCard label={NetworkCopy.database[cs ? 'cs' : 'en']} value={fmtBytes(chainStats.database_size)} color="text-pink-400" tip={NetworkCopy.sizeOfTheLocalBlockchainDataba[cs ? 'cs' : 'en']} />
+            <ChainStatCard label={NetworkCopy.emission[cs ? 'cs' : 'en']} value={`${chainStats.emission_pct}%`} color="text-zion-purple-400" tip={NetworkCopy.percentageOfTotalSupplyMinedAc[cs ? 'cs' : 'en']} />
+            <ChainStatCard label={NetworkCopy.totalTx[cs ? 'cs' : 'en']} value={chainStats.tx_count.toLocaleString(locale)} color="text-zion-purple-400" tip={NetworkCopy.totalNumberOfTransactionsRecor[cs ? 'cs' : 'en']} />
+            <ChainStatCard label="Mempool" value={`${chainStats.tx_pool_size} tx`} color={chainStats.tx_pool_size > 0 ? 'text-zion-gold-400' : 'text-gray-400'} tip={NetworkCopy.transactionsWaitingForConfirma[cs ? 'cs' : 'en']} />
+            <ChainStatCard label={NetworkCopy.totalPeers[cs ? 'cs' : 'en']} value={`${chainStats.total_connections}`} sub={`↓${chainStats.incoming_connections} ↑${chainStats.outgoing_connections}`} color="text-zion-purple-400" tip={NetworkCopy.activeP2pConnectionsIncomingAn[cs ? 'cs' : 'en']} />
+            <ChainStatCard label={NetworkCopy.knownPeers[cs ? 'cs' : 'en']} value={`${chainStats.white_peerlist_size}`} sub={`${chainStats.grey_peerlist_size} grey`} color="text-zion-purple-400" tip={NetworkCopy.knownWhiteAndUnknownGreyPeerLi[cs ? 'cs' : 'en']} />
+            <ChainStatCard label={NetworkCopy.blockSizeLimit[cs ? 'cs' : 'en']} value={fmtBytes(chainStats.block_size_limit)} sub={`${NetworkCopy.median[cs ? 'cs' : 'en']}: ${fmtBytes(chainStats.block_size_median)}`} color="text-zion-cyan-400" tip={NetworkCopy.maximumAndMedianBlockSizeInByt[cs ? 'cs' : 'en']} />
+            <ChainStatCard label={NetworkCopy.database[cs ? 'cs' : 'en']} value={fmtBytes(chainStats.database_size)} color="text-zion-purple-400" tip={NetworkCopy.sizeOfTheLocalBlockchainDataba[cs ? 'cs' : 'en']} />
             <ChainStatCard label={NetworkCopy.version[cs ? 'cs' : 'en']} value={chainStats.version ? `v${chainStats.version}` : '—'} color="text-gray-300" tip={NetworkCopy.nodeSoftwareVersion[cs ? 'cs' : 'en']} />
-            <ChainStatCard label={NetworkCopy.altBlocks[cs ? 'cs' : 'en']} value={`${chainStats.alt_blocks_count ?? 0}`} color="text-amber-400" tip={NetworkCopy.numberOfAlternativeBranchesOrp[cs ? 'cs' : 'en']} />
-            <ChainStatCard label={NetworkCopy.activeMiners[cs ? 'cs' : 'en']} value={`${chainStats.active_miners}`} color="text-emerald-400" tip={NetworkCopy.numberOfActiveMinersConnectedT[cs ? 'cs' : 'en']} />
-            <ChainStatCard label={NetworkCopy.poolHashrate[cs ? 'cs' : 'en']} value={chainStats.pool_hashrate_formatted || '—'} color="text-emerald-400" tip={NetworkCopy.totalComputationalPowerOfAllMi[cs ? 'cs' : 'en']} />
+            <ChainStatCard label={NetworkCopy.altBlocks[cs ? 'cs' : 'en']} value={`${chainStats.alt_blocks_count ?? 0}`} color="text-zion-gold-400" tip={NetworkCopy.numberOfAlternativeBranchesOrp[cs ? 'cs' : 'en']} />
+            <ChainStatCard label={NetworkCopy.activeMiners[cs ? 'cs' : 'en']} value={`${chainStats.active_miners}`} color="text-zion-cyan-400" tip={NetworkCopy.numberOfActiveMinersConnectedT[cs ? 'cs' : 'en']} />
+            <ChainStatCard label={NetworkCopy.poolHashrate[cs ? 'cs' : 'en']} value={chainStats.pool_hashrate_formatted || '—'} color="text-zion-cyan-400" tip={NetworkCopy.totalComputationalPowerOfAllMi[cs ? 'cs' : 'en']} />
             <ChainStatCard label={NetworkCopy.poolBlocks[cs ? 'cs' : 'en']} value={`${chainStats.pool_blocks_found ?? 0}`} color="text-zion-gold" tip={NetworkCopy.numberOfBlocksFoundByThisPool[cs ? 'cs' : 'en']} />
             {chainStats.last_block && (
               <>
                 <ChainStatCard label={NetworkCopy.lastBlock[cs ? 'cs' : 'en']} value={`#${chainStats.last_block.height.toLocaleString(locale)}`} sub={new Date(chainStats.last_block.timestamp * 1000).toLocaleTimeString(locale)} color="text-zion-gold" tip={NetworkCopy.latestConfirmedBlockAndItsMini[cs ? 'cs' : 'en']} />
-                <ChainStatCard label={NetworkCopy.lastReward[cs ? 'cs' : 'en']} value={`${(chainStats.last_block.reward / 1e6).toFixed(2)} ZION`} color="text-emerald-400" tip={NetworkCopy.rewardForTheLatestBlockPerDeca[cs ? 'cs' : 'en']} />
+                <ChainStatCard label={NetworkCopy.lastReward[cs ? 'cs' : 'en']} value={`${(chainStats.last_block.reward / 1e6).toFixed(2)} ZION`} color="text-zion-cyan-400" tip={NetworkCopy.rewardForTheLatestBlockPerDeca[cs ? 'cs' : 'en']} />
               </>
             )}
           </div>
@@ -888,7 +888,7 @@ export default function NetworkPage() {
               <span className="text-sm text-gray-400">{fmtLargeNum(chainStats.circulating_supply)} / {fmtLargeNum(TOTAL_SUPPLY_ZION)} ZION</span>
             </div>
             <div className="h-4 rounded-full bg-white/5 overflow-hidden">
-              <div className="h-full rounded-full bg-gradient-to-r from-zion-gold via-emerald-400 to-zion-cyan transition-all duration-500" style={{ width: `${Math.min(100, Number(chainStats.emission_pct))}%` }} />
+              <div className="h-full rounded-full bg-gradient-to-r from-zion-gold via-zion-cyan-400 to-zion-cyan transition-all duration-500" style={{ width: `${Math.min(100, Number(chainStats.emission_pct))}%` }} />
             </div>
           </div>
 
@@ -902,13 +902,13 @@ export default function NetworkPage() {
               const isCurrent = i === currentDecade;
               const isPast = i < currentDecade;
               return (
-                <div key={i} className="zion-rainbow-sub p-4" style={{ '--rc': isCurrent ? '251, 191, 36' : isPast ? '52, 211, 153' : '255, 255, 255' } as React.CSSProperties}>
+                <div key={i} className="zion-rainbow-sub p-4" style={{ '--rc': isCurrent ? '252, 209, 22' : isPast ? '52, 211, 153' : '255, 255, 255' } as React.CSSProperties}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[11px] uppercase tracking-wider text-gray-500">{NetworkCopy.decade[cs ? 'cs' : 'en']} {i + 1}</span>
                     {isCurrent && <span className="text-[9px] font-bold uppercase tracking-widest text-zion-gold bg-zion-gold/20 px-2 py-0.5 rounded-full">{NetworkCopy.now[cs ? 'cs' : 'en']}</span>}
-                    {isPast && <span className="text-[9px] text-emerald-400">✓</span>}
+                    {isPast && <span className="text-[9px] text-zion-cyan-400">✓</span>}
                   </div>
-                  <p className={`text-lg font-bold font-mono ${isCurrent ? 'text-zion-gold' : isPast ? 'text-emerald-400' : 'text-gray-400'}`}>{reward.toFixed(2)}</p>
+                  <p className={`text-lg font-bold font-mono ${isCurrent ? 'text-zion-gold' : isPast ? 'text-zion-cyan-400' : 'text-gray-400'}`}>{reward.toFixed(2)}</p>
                   <p className="text-[10px] text-gray-500">ZION/{NetworkCopy.block[cs ? 'cs' : 'en']}</p>
                   <p className="text-[10px] text-gray-500 mt-1 font-mono">{fmtLargeNum(decadeStart)}–{fmtLargeNum(decadeEnd)}</p>
                 </div>
@@ -1025,7 +1025,7 @@ export default function NetworkPage() {
                 detail: NetworkCopy.edge1AndEdge2Within2BlockSyncL[cs ? 'cs' : 'en'],
               },
             ].map((item) => (
-              <div key={item.title} className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+              <div key={item.title} className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                 <item.icon className="h-6 w-6 text-zion-gold mb-3" />
                 <h3 className="text-base font-semibold text-white mb-1">{item.title}</h3>
                 <p className="text-sm text-gray-400">{item.detail}</p>
@@ -1045,7 +1045,7 @@ export default function NetworkPage() {
           <div className="flex flex-col gap-2 mb-8">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkCopy.liveTelemetry[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Activity className="h-7 w-7 text-emerald-400" />
+              <Activity className="h-7 w-7 text-zion-cyan-400" />
               {NetworkCopy.nodeStatus[cs ? 'cs' : 'en']}
             </h2>
             <p className="text-sm text-gray-400">{NetworkCopy.realTimeHealthBlockHeightHashr[cs ? 'cs' : 'en']}</p>
@@ -1117,25 +1117,25 @@ export default function NetworkPage() {
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkCopy.status[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <ShieldCheck className="h-7 w-7 text-emerald-400" />
+              <ShieldCheck className="h-7 w-7 text-zion-cyan-400" />
               {NetworkCopy.networkReadiness[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="grid gap-2 md:grid-cols-3">
             {networkFacts.map((item) => (
               <div key={item.text} className="flex items-center gap-3 text-sm py-2">
-                <CheckCircle2 className={`h-4 w-4 shrink-0 ${item.done ? 'text-emerald-400' : 'text-gray-600'}`} />
+                <CheckCircle2 className={`h-4 w-4 shrink-0 ${item.done ? 'text-zion-cyan-400' : 'text-gray-600'}`} />
                 <span className={item.done ? 'text-gray-300' : 'text-gray-500'}>{item.text}</span>
               </div>
             ))}
           </div>
           <div className="mt-4 flex items-center gap-3 text-sm text-gray-400">
-            <span className="font-mono text-emerald-400">{factsDone}</span>
+            <span className="font-mono text-zion-cyan-400">{factsDone}</span>
             <span>/</span>
             <span className="font-mono">{factsTotal}</span>
             <span>{NetworkCopy.completed[cs ? 'cs' : 'en']}</span>
             <div className="h-2 flex-1 max-w-xs rounded-full bg-white/10">
-              <div className="h-2 rounded-full bg-emerald-400" style={{ width: `${(factsDone / factsTotal) * 100}%` }} />
+              <div className="h-2 rounded-full bg-zion-cyan-400" style={{ width: `${(factsDone / factsTotal) * 100}%` }} />
             </div>
           </div>
         </section>
@@ -1148,7 +1148,7 @@ export default function NetworkPage() {
           <div className="flex flex-col gap-2 mb-8">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">FAQ</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Hash className="h-7 w-7 text-purple-400" />
+              <Hash className="h-7 w-7 text-zion-purple-400" />
               {NetworkCopy.frequentlyAskedQuestions[cs ? 'cs' : 'en']}
             </h2>
             <p className="text-sm text-gray-400">{NetworkCopy.everythingAboutTheZionNetworkI[cs ? 'cs' : 'en']}</p>

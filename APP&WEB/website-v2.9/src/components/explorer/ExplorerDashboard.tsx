@@ -46,17 +46,17 @@ export default function ExplorerDashboard() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "healthy": return "text-green-400";
-      case "warning": return "text-yellow-400";
-      default: return "text-red-400";
+      case "healthy": return "text-zion-cyan-400";
+      case "warning": return "text-zion-gold-400";
+      default: return "text-zion-purple-400";
     }
   };
 
   const getStatusDot = (status: string) => {
     switch (status) {
-      case "healthy": return "bg-green-400";
-      case "warning": return "bg-yellow-400";
-      default: return "bg-red-400";
+      case "healthy": return "bg-zion-cyan-400";
+      case "warning": return "bg-zion-gold-400";
+      default: return "bg-zion-purple-400";
     }
   };
 
@@ -73,7 +73,7 @@ export default function ExplorerDashboard() {
 
   if (loading && !stats) {
     return (
-      <div className="zion-rainbow-card rounded-[28px] bg-black/60 p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+      <div className="zion-rainbow-card rounded-[28px] bg-black/60 p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
         <div className="animate-pulse">
           <div className="h-5 bg-white/10 rounded mb-4 w-2/3" />
           <div className="grid grid-cols-2 gap-3">
@@ -91,8 +91,8 @@ export default function ExplorerDashboard() {
 
   if (!stats) {
     return (
-      <div className="zion-rainbow-card rounded-[28px] border-red-500/20 bg-black/60 p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
-        <div className="flex items-center gap-2 text-red-400 mb-2">
+      <div className="zion-rainbow-card rounded-[28px] border-zion-purple-500/20 bg-black/60 p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+        <div className="flex items-center gap-2 text-zion-purple-400 mb-2">
           <Activity className="w-5 h-5" />
           <span className="font-semibold">{ExplorerDashboardCopy.networkDashboard[cs ? 'cs' : 'en']}</span>
         </div>
@@ -132,31 +132,31 @@ export default function ExplorerDashboard() {
     {
       label: ExplorerDashboardCopy.miners[cs ? 'cs' : 'en'],
       value: data.active_miners.toString(),
-      color: "text-blue-400",
+      color: "text-zion-purple-400",
       icon: Users,
     },
     {
       label: ExplorerDashboardCopy.poolHash[cs ? 'cs' : 'en'],
       value: data.pool_hashrate,
-      color: "text-green-400",
+      color: "text-zion-cyan-400",
       icon: TrendingUp,
     },
     {
       label: ExplorerDashboardCopy.blockTime[cs ? 'cs' : 'en'],
       value: `${data.block_time_avg}s`,
-      color: "text-cyan-400",
+      color: "text-zion-cyan-400",
       icon: Activity,
     },
     {
       label: ExplorerDashboardCopy.mempool[cs ? 'cs' : 'en'],
       value: data.tx_pool_size.toString(),
-      color: "text-orange-400",
+      color: "text-zion-gold-400",
       icon: Zap,
     },
     {
       label: ExplorerDashboardCopy.peers[cs ? 'cs' : 'en'],
       value: data.connections.toString(),
-      color: "text-purple-400",
+      color: "text-zion-purple-400",
       icon: Globe,
     },
   ];
@@ -165,10 +165,10 @@ export default function ExplorerDashboard() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="zion-rainbow-card rounded-[28px] bg-black/60 p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
+      className="zion-rainbow-card rounded-[28px] bg-black/60 p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
     >
       <div className="flex items-center gap-3 mb-5">
-        <Activity className="h-5 w-5 text-purple-400" />
+        <Activity className="h-5 w-5 text-zion-purple-400" />
         <div>
           <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{ExplorerDashboardCopy.live[cs ? 'cs' : 'en']}</p>
           <h3 className="text-lg font-semibold text-white">{ExplorerDashboardCopy.networkDashboard[cs ? 'cs' : 'en']}</h3>
@@ -179,7 +179,7 @@ export default function ExplorerDashboard() {
         {metrics.map((m) => (
           <div
             key={m.label}
-            className="zion-rainbow-sub p-3" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
+            className="zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
           >
             <div className="flex items-center gap-2 mb-1">
               <m.icon className={`h-3.5 w-3.5 ${m.color}`} />
@@ -198,7 +198,7 @@ export default function ExplorerDashboard() {
       </div>
 
       {/* Block reward info */}
-      <div className="mt-4 zion-rainbow-sub p-3" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+      <div className="mt-4 zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
         <p className="text-xs uppercase tracking-[0.3em] text-gray-400 mb-2">
           {ExplorerDashboardCopy.rewardDistribution[cs ? 'cs' : 'en']}
         </p>
@@ -206,10 +206,10 @@ export default function ExplorerDashboard() {
           {[
             { label: ExplorerDashboardCopy.reward[cs ? 'cs' : 'en'], value: "5,400 ZION", color: "text-zion-gold" },
             { label: ExplorerDashboardCopy.emission[cs ? 'cs' : 'en'], value: ExplorerDashboardCopy.decadeDecay[cs ? 'cs' : 'en'], color: "text-gray-300" },
-            { label: ExplorerDashboardCopy.miner89[cs ? 'cs' : 'en'], value: "4,806 ZION", color: "text-emerald-400" },
-            { label: ExplorerDashboardCopy.humanitarian[cs ? 'cs' : 'en'], value: "5% (270)", color: "text-blue-400" },
-            { label: ExplorerDashboardCopy.issobella[cs ? 'cs' : 'en'], value: "5% (270)", color: "text-purple-400" },
-            { label: ExplorerDashboardCopy.poolFee[cs ? 'cs' : 'en'], value: "1% (54)", color: "text-amber-400" },
+            { label: ExplorerDashboardCopy.miner89[cs ? 'cs' : 'en'], value: "4,806 ZION", color: "text-zion-cyan-400" },
+            { label: ExplorerDashboardCopy.humanitarian[cs ? 'cs' : 'en'], value: "5% (270)", color: "text-zion-purple-400" },
+            { label: ExplorerDashboardCopy.issobella[cs ? 'cs' : 'en'], value: "5% (270)", color: "text-zion-purple-400" },
+            { label: ExplorerDashboardCopy.poolFee[cs ? 'cs' : 'en'], value: "1% (54)", color: "text-zion-gold-400" },
           ].map((c) => (
             <div key={c.label} className="flex items-center justify-between">
               <span className="text-gray-500">{c.label}</span>

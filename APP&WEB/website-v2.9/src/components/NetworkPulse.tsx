@@ -62,10 +62,10 @@ export default function NetworkPulse() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {trend === 'up' && <TrendingUp className="w-4 h-4 text-emerald-400" />}
-          {trend === 'down' && <TrendingUp className="w-4 h-4 text-red-400 rotate-180" />}
+          {trend === 'up' && <TrendingUp className="w-4 h-4 text-zion-cyan-400" />}
+          {trend === 'down' && <TrendingUp className="w-4 h-4 text-zion-purple-400 rotate-180" />}
           <span className={`text-sm font-semibold ${
-            trend === 'up' ? 'text-emerald-400' : trend === 'down' ? 'text-red-400' : 'text-gray-400'
+            trend === 'up' ? 'text-zion-cyan-400' : trend === 'down' ? 'text-zion-purple-400' : 'text-gray-400'
           }`}>
             {currentHashrate.toFixed(1)} H/s
           </span>
@@ -118,7 +118,7 @@ export default function NetworkPulse() {
         <div className="text-center">
           <p className="text-xs text-gray-400">Updates</p>
           <div className="flex items-center justify-center gap-1">
-            <Zap className="w-3 h-3 text-emerald-400 animate-pulse" />
+            <Zap className="w-3 h-3 text-zion-cyan-400 animate-pulse" />
             <p className="text-sm font-semibold text-white">3s</p>
           </div>
         </div>

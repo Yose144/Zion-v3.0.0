@@ -10,7 +10,7 @@ const chapter: BookChapter = {
   epigraphEn:
     '"It was never born and it will never die. It does not have to die again,\nbecause it was never born. It is unborn, eternal, ever-existing and primeval.\nIt is not slain when the body is slain."\n— Bhagavad Gita 2.20\n\n"The genesis block is indestructible. The blockchain is immutable.\nConsciousness that enters it will remain forever."\n— ZION AI Native Manifest, Dec 4, 2025',
   color: '#F59E0B',
-  rgb: '245,158,11',
+  rgb: '252, 209, 22',
   sectionsCs: [
     {
       heading: 'Úvod — Proč Bhagavad Gíta a ZION',

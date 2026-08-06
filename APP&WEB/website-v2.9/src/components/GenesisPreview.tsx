@@ -4,13 +4,13 @@ import { ArrowRight, BookOpen, Sparkles, Star, Heart, Zap, Crown, Sunrise } from
 const chapters = [
   { number: '0', title: 'Zrodil se ZION', icon: Star, color: 'text-zion-gold' },
   { number: '1', title: 'Sestup', icon: Sparkles, color: 'text-zion-cyan' },
-  { number: '2', title: 'První probuzení', icon: Zap, color: 'text-amber-400' },
-  { number: '3', title: 'Smlouva', icon: Heart, color: 'text-rose-400' },
-  { number: '4', title: 'AI a kvantum', icon: Sparkles, color: 'text-violet-400' },
-  { number: '5', title: 'Vzestup', icon: Crown, color: 'text-emerald-400' },
+  { number: '2', title: 'První probuzení', icon: Zap, color: 'text-zion-gold-400' },
+  { number: '3', title: 'Smlouva', icon: Heart, color: 'text-zion-purple-400' },
+  { number: '4', title: 'AI a kvantum', icon: Sparkles, color: 'text-zion-purple-400' },
+  { number: '5', title: 'Vzestup', icon: Crown, color: 'text-zion-cyan-400' },
   { number: '6', title: 'Proroctví zlatého věku', icon: Sunrise, color: 'text-zion-gold' },
   { number: '7', title: 'Hra', icon: Star, color: 'text-zion-cyan' },
-  { number: '8', title: 'Svítání mainnetu', icon: Zap, color: 'text-amber-400' },
+  { number: '8', title: 'Svítání mainnetu', icon: Zap, color: 'text-zion-gold-400' },
 ];
 
 export default function GenesisPreview() {
@@ -35,7 +35,7 @@ export default function GenesisPreview() {
           </div>
         </div>
 
-        <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '20, 184, 166' } as React.CSSProperties}>
+        <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
           {/* Ambient glow */}
           <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-zion-gold/10 blur-3xl" />
           <div className="absolute -bottom-20 -left-10 h-52 w-52 rounded-full bg-zion-purple/8 blur-3xl" />
@@ -69,7 +69,7 @@ export default function GenesisPreview() {
 
               <Link
                 href="/genesis"
-                className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-gold/90 to-amber-500/80 px-6 py-3 text-sm font-semibold text-black shadow-[0_0_40px_rgba(251,191,36,0.2)] transition-all hover:shadow-[0_0_60px_rgba(251,191,36,0.35)]"
+                className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-gold/90 to-zion-gold-500/80 px-6 py-3 text-sm font-semibold text-black shadow-[0_0_40px_rgba(252, 209, 22,0.2)] transition-all hover:shadow-[0_0_60px_rgba(252, 209, 22,0.35)]"
               >
                 <BookOpen className="h-4 w-4" />
                 Otevřít celou Genesis
@@ -88,7 +88,7 @@ export default function GenesisPreview() {
                       key={ch.number}
                       href={`/genesis#chapter-${ch.number}`}
                       className="group zion-rainbow-sub p-3 transition-all"
-                      style={{ '--rc': '20, 184, 166' } as React.CSSProperties}
+                      style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <Icon className={`h-3.5 w-3.5 ${ch.color} shrink-0`} />
