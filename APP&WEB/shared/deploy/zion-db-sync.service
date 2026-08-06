@@ -1,0 +1,20 @@
+[Unit]
+Description=ZION DB Sync Service — syncs V31 services to shared PostgreSQL
+After=network.target postgresql.service zion-v31-pool.service zion-v31-multichain.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=zion
+Group=zion
+WorkingDirectory=/opt/zion/shared
+EnvironmentFile=/opt/zion/shared/.env
+ExecStart=/usr/bin/npx tsx /opt/zion/shared/db-sync.ts
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=zion-db-sync
+
+[Install]
+WantedBy=multi-user.target

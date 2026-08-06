@@ -37,3 +37,8 @@ pub use pplns::{Payout, PplnsState, ShareRecord};
 pub use share::{Share, ShareSubmission};
 pub use stratum::StratumServer;
 pub use validator::ShareValidator;
+
+/// Return the stratum protocol version string (used by TUI banner).
+pub fn protocol_version() -> &'static str {
+    v3_protocol::PROTOCOL_VERSION
+}

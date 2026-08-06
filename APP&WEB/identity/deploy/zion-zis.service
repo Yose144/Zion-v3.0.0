@@ -1,0 +1,27 @@
+[Unit]
+Description=ZION Identity Service (ZIS) — auth.zionterranova.com
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=zion
+Group=zion
+WorkingDirectory=/opt/zion/identity
+EnvironmentFile=/opt/zion/identity/.env
+ExecStart=/usr/bin/node /opt/zion/identity/dist/server.js
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=zion-zis
+
+# Security
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/zion/identity
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

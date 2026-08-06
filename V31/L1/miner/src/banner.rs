@@ -4,22 +4,22 @@ use crate::ui;
 
 /// Print the startup banner with version, consensus, and hardware info.
 pub fn print_banner(threads: usize) {
-    let backend = crate::gpu_backend::GpuBackendKind::from_env();
-    ui::print_fancy_banner(threads, "3.0.7", backend.as_str());
+    let backend = crate::gpu::GpuBackendKind::from_env();
+    ui::print_fancy_banner(threads, "3.1.0", backend.as_str());
 
     // ── System info table ──
     let mut rows: Vec<(String, String)> = Vec::new();
     #[cfg(not(feature = "public_build"))]
-    rows.push(("version".to_string(), "3.0.7 Trinity".to_string()));
+    rows.push(("version".to_string(), "3.1.0 V31 Mainnet Alpha".to_string()));
     #[cfg(feature = "public_build")]
-    rows.push(("version".to_string(), "3.0.7".to_string()));
+    rows.push(("version".to_string(), "3.1.0".to_string()));
     rows.push((
         "consensus".to_string(),
-        zion_core::consensus_profile().to_string(),
+        zion_core::node_runtime::consensus_profile().to_string(),
     ));
     rows.push((
         "protocol".to_string(),
-        zion_pool::protocol_version().to_string(),
+        "zion-v3-stratum/0.2".to_string(),
     ));
 
     let logical_cpus = num_cpus::get();
@@ -63,7 +63,7 @@ pub fn print_banner(threads: usize) {
     // GPU detection with rich details
     #[cfg(any(feature = "gpu-opencl", feature = "gpu-cuda", feature = "gpu-metal"))]
     {
-        let gpus = crate::gpu_backend::query_gpu_details();
+        let gpus = crate::gpu::query_gpu_details();
         if gpus.is_empty() {
             rows.push(("gpu".to_string(), "none".to_string()));
         } else {
