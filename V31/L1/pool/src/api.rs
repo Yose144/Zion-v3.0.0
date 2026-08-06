@@ -11,6 +11,7 @@ use tracing::{error, info};
 use crate::auxpow_bridge::MultiAuxPowBridge;
 use crate::pool::Pool;
 use crate::store::ShareStore;
+use crate::telemetry::now_unix_seconds;
 
 pub struct PoolApi {
     pool: Arc<Mutex<Pool>>,
@@ -453,25 +454,50 @@ impl PoolApi {
 
     /// Build per-miner detail payload.
     fn build_miner_detail_payload(&self, miner_id: &str) -> String {
-        let pool = self.pool.lock().expect("pool lock poisoned");
-        let worker_info = pool.worker_addresses.get(miner_id);
+        let (worker_addresses, telemetry) = {
+            let pool = self.pool.lock().expect("pool lock poisoned");
+            (
+                pool.worker_addresses.clone(),
+                pool.telemetry.clone(),
+            )
+        };
 
-        match worker_info {
-            Some(addr) => {
-                json!({
-                    "ok": true,
-                    "miner_id": miner_id,
-                    "address": addr.encoded,
-                })
-                .to_string()
-            }
-            None => {
-                format!(
-                    "{{\"ok\":false,\"error\":\"miner not found\",\"miner_id\":\"{}\"}}",
-                    miner_id
-                )
-            }
-        }
+        let (full_worker, address) = worker_addresses
+            .get(miner_id)
+            .map(|addr| (miner_id.to_string(), addr.encoded.clone()))
+            .or_else(|| {
+                let (m, w) = split_worker(miner_id);
+                let full = if w == "default" || w.is_empty() {
+                    m.clone()
+                } else {
+                    format!("{m}.{w}")
+                };
+                worker_addresses.get(&full).map(|addr| (full, addr.encoded.clone()))
+            })
+            .unwrap_or_else(|| {
+                let (m, w) = split_worker(miner_id);
+                let full = if w == "default" || w.is_empty() {
+                    m.clone()
+                } else {
+                    format!("{m}.{w}")
+                };
+                (full, m)
+            });
+
+        let (miner_id_parsed, worker_short) = split_worker(&full_worker);
+        let key = format!("{miner_id_parsed}/{worker_short}");
+        let now_s = now_unix_seconds();
+        let reg = telemetry.lock().expect("telemetry lock poisoned");
+        let miner = reg.get_miner(&key);
+
+        json!({
+            "ok": true,
+            "miner_id": miner_id,
+            "worker": full_worker,
+            "address": address,
+            "miner": miner_to_json(&full_worker, &address, miner, now_s),
+        })
+        .to_string()
     }
 
     /// Build admin ops payload — pool operational status.
@@ -501,37 +527,92 @@ impl PoolApi {
     }
 
     fn build_miners_payload(&self, limit: usize) -> String {
-        let pool = self.pool.lock().expect("pool lock poisoned");
-        let workers: Vec<String> = pool
-            .worker_addresses
-            .iter()
-            .take(limit)
-            .map(|(name, addr)| {
-                format!(
-                    "{{\"worker\":\"{}\",\"address\":\"{}\"}}",
-                    name, addr.encoded
-                )
-            })
-            .collect();
-        format!(
-            "{{\"ok\":true,\"count\":{},\"miners\":[{}]}}",
-            pool.worker_addresses.len(),
-            workers.join(",")
-        )
+        let (worker_addresses, telemetry) = {
+            let pool = self.pool.lock().expect("pool lock poisoned");
+            (
+                pool.worker_addresses.clone(),
+                pool.telemetry.clone(),
+            )
+        };
+
+        let now_s = now_unix_seconds();
+        let reg = telemetry.lock().expect("telemetry lock poisoned");
+
+        let mut miners = Vec::new();
+        let mut count = 0usize;
+
+        // Prefer telemetry registry for live data, but fall back to worker_addresses
+        // for workers that have not submitted yet.
+        for (key, miner) in reg.all_miners() {
+            let (miner_id, worker_short) = split_worker_key(key);
+            let full_worker = if worker_short == "default" || worker_short.is_empty() {
+                miner_id.clone()
+            } else {
+                format!("{miner_id}.{worker_short}")
+            };
+            let address = worker_addresses
+                .get(&full_worker)
+                .map(|a| a.encoded.clone())
+                .unwrap_or_else(|| miner_id.clone());
+
+            if count < limit {
+                miners.push(miner_to_json(&full_worker, &address, Some(miner), now_s));
+            }
+            count = count.saturating_add(1);
+        }
+
+        for (full_worker, addr) in worker_addresses.iter() {
+            let (miner_id, worker_short) = split_worker(full_worker);
+            let key = format!("{miner_id}/{worker_short}");
+            if reg.get_miner(&key).is_some() {
+                continue; // already emitted from telemetry
+            }
+            if count < limit {
+                miners.push(miner_to_json(full_worker, &addr.encoded, None, now_s));
+            }
+            count = count.saturating_add(1);
+        }
+
+        json!({
+            "ok": true,
+            "count": count,
+            "miners": miners,
+        })
+        .to_string()
     }
 
     fn build_prometheus_payload(&self) -> String {
-        let pool = self.pool.lock().expect("pool lock poisoned");
-        let (accepted, rejected) = pool.stats();
+        let (accepted, rejected, telemetry, stats, fees) = {
+            let pool = self.pool.lock().expect("pool lock poisoned");
+            (
+                pool.stats().0,
+                pool.stats().1,
+                pool.telemetry.clone(),
+                pool.pplns.stats(),
+                pool.pplns.fee_stats(),
+            )
+        };
         let sessions = self.active_sessions.load(Ordering::Relaxed);
         let uptime_s = self.started_at.elapsed().as_secs();
-        let stats = pool.pplns.stats();
-        let fees = pool.pplns.fee_stats();
+        let now_s = now_unix_seconds();
+
+        let reg = telemetry.lock().expect("telemetry lock poisoned");
+        let hashrate_hps = reg.pool_hashrate_live();
+        let hashrate_1h_hps = reg.pool_hashrate_1h();
+        let miners_tracked = reg.miner_count();
+        let blocks_found_total = reg.total_blocks_found();
+
         let mut body = String::new();
         body.push_str(&format!("zion_pool_uptime_s {uptime_s}\n"));
         body.push_str(&format!("zion_pool_active_sessions {sessions}\n"));
+        body.push_str(&format!("zion_pool_miners_tracked {miners_tracked}\n"));
+        body.push_str(&format!("zion_pool_hashrate_hps {hashrate_hps}\n"));
+        body.push_str(&format!("zion_pool_hashrate_1h_hps {hashrate_1h_hps}\n"));
         body.push_str(&format!("zion_pool_shares_accepted {accepted}\n"));
         body.push_str(&format!("zion_pool_shares_rejected {rejected}\n"));
+        body.push_str(&format!(
+            "zion_pool_blocks_found_total {blocks_found_total}\n"
+        ));
         body.push_str(&format!(
             "zion_pool_pplns_window_size {}\n",
             stats.window_size
@@ -563,6 +644,44 @@ impl PoolApi {
         body.push_str(&format!("zion_fee_issobella_pct {}\n", fees.issobella_pct));
         body.push_str(&format!("zion_fee_pool_pct {}\n", fees.pool_fee_pct));
         body.push_str(&format!("zion_fee_miner_pct {}\n", fees.miner_pct));
+
+        // Per-worker metrics
+        for (key, miner) in reg.all_miners() {
+            let (miner_id, worker_short) = split_worker_key(key);
+            let full_worker = if worker_short == "default" || worker_short.is_empty() {
+                miner_id.clone()
+            } else {
+                format!("{miner_id}.{worker_short}")
+            };
+            let worker_label = sanitize_prometheus_label(&full_worker);
+            let hashrate = miner.hashrate_live(now_s);
+            let hashrate_1h = miner.hashrate_1h(now_s);
+
+            body.push_str(&format!(
+                "zion_pool_worker_hashrate_hps{{worker=\"{}\"}} {}\n",
+                worker_label, hashrate
+            ));
+            body.push_str(&format!(
+                "zion_pool_worker_hashrate_1h_hps{{worker=\"{}\"}} {}\n",
+                worker_label, hashrate_1h
+            ));
+            body.push_str(&format!(
+                "zion_pool_worker_valid_shares{{worker=\"{}\"}} {}\n",
+                worker_label, miner.valid_shares
+            ));
+            body.push_str(&format!(
+                "zion_pool_worker_invalid_shares{{worker=\"{}\"}} {}\n",
+                worker_label, miner.invalid_shares
+            ));
+            body.push_str(&format!(
+                "zion_pool_worker_blocks_found{{worker=\"{}\"}} {}\n",
+                worker_label, miner.blocks_found
+            ));
+            body.push_str(&format!(
+                "zion_pool_worker_last_share_time{{worker=\"{}\"}} {}\n",
+                worker_label, miner.last_share_time_s
+            ));
+        }
 
         // AuxPoW bridge metrics
         if let Some(ref bridge) = self.auxpow_bridge {
@@ -656,6 +775,93 @@ impl PoolApi {
         });
         json.to_string()
     }
+}
+
+/// Split "wallet.worker" or "wallet" into (wallet, worker_name).
+fn split_worker(username: &str) -> (String, String) {
+    if let Some(dot) = username.find('.') {
+        let (wallet, worker) = username.split_at(dot);
+        (wallet.to_string(), worker[1..].to_string())
+    } else {
+        (username.to_string(), "default".to_string())
+    }
+}
+
+/// Split a telemetry registry key "{miner_id}/{worker_name}".
+fn split_worker_key(key: &str) -> (String, String) {
+    if let Some(slash) = key.find('/') {
+        let (miner, worker) = key.split_at(slash);
+        (miner.to_string(), worker[1..].to_string())
+    } else {
+        (key.to_string(), "default".to_string())
+    }
+}
+
+/// Render a miner telemetry record as a JSON value.
+fn miner_to_json(
+    worker: &str,
+    address: &str,
+    miner: Option<&crate::telemetry::MinerTelemetry>,
+    now_s: u64,
+) -> serde_json::Value {
+    match miner {
+        Some(m) => {
+            let mut streams = serde_json::Map::new();
+            for (stream, stats) in &m.streams {
+                let mut obj = serde_json::Map::new();
+                obj.insert("valid_shares".to_string(), json!(stats.valid_shares));
+                obj.insert("invalid_shares".to_string(), json!(stats.invalid_shares));
+                obj.insert(
+                    "last_share_time".to_string(),
+                    json!(stats.last_share_time_s),
+                );
+                streams.insert(stream.clone(), serde_json::Value::Object(obj));
+            }
+            json!({
+                "worker": worker,
+                "address": address,
+                "hashrate_hps": m.hashrate_live(now_s),
+                "hashrate_1h_hps": m.hashrate_1h(now_s),
+                "hashrate_24h_hps": m.hashrate_for_window(crate::telemetry::HASHRATE_WINDOW_24H_S, now_s),
+                "valid_shares": m.valid_shares,
+                "invalid_shares": m.invalid_shares,
+                "blocks_found": m.blocks_found,
+                "completed_jobs": m.completed_jobs,
+                "last_share_time": m.last_share_time_s,
+                "first_seen_s": m.first_seen_s,
+                "last_seen_s": m.last_seen_s,
+                "algorithm": m.algorithm,
+                "backend": m.backend,
+                "paid_total_atomic": m.paid_total_atomic,
+                "streams": serde_json::Value::Object(streams),
+            })
+        }
+        None => {
+            json!({
+                "worker": worker,
+                "address": address,
+                "hashrate_hps": 0.0,
+                "hashrate_1h_hps": 0.0,
+                "hashrate_24h_hps": 0.0,
+                "valid_shares": 0u64,
+                "invalid_shares": 0u64,
+                "blocks_found": 0u64,
+                "completed_jobs": 0u64,
+                "last_share_time": 0u64,
+                "first_seen_s": 0u64,
+                "last_seen_s": 0u64,
+                "algorithm": "",
+                "backend": "",
+                "paid_total_atomic": 0u64,
+                "streams": serde_json::Value::Object(serde_json::Map::new()),
+            })
+        }
+    }
+}
+
+/// Escape a Prometheus label value: backslash and double-quote must be escaped.
+fn sanitize_prometheus_label(value: &str) -> String {
+    value.replace('\\', "\\\\").replace('"', "\\\"")
 }
 
 fn parse_query_limit(path: &str, default: u32) -> u32 {
