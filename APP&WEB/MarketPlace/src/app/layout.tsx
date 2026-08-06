@@ -45,9 +45,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${inter.variable} ${mono.variable} ${display.variable}`}>
       <body className="antialiased font-sans zion-shell">
         <StarfieldCanvas />
-        <div className="orb orb-gold" aria-hidden="true" />
-        <div className="orb orb-purple" aria-hidden="true" />
-        <div className="orb orb-cyan" aria-hidden="true" />
+        <div className="orb orb-rasta-red" aria-hidden="true" />
+        <div className="orb orb-rasta-gold" aria-hidden="true" />
+        <div className="orb orb-rasta-green" aria-hidden="true" />
         <Providers>
           <CartProvider>
             <Navbar />

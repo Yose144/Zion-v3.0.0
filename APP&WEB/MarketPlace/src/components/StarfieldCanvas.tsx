@@ -3,11 +3,10 @@
 import { useEffect, useRef } from 'react';
 
 /**
- * StarfieldCanvas — gold warp-star animation ported from the ZION
- * maintenance page (APP&WEB/website-v2.9/public/maintenance.html).
+ * StarfieldCanvas — rasta gold warp-star animation, lite version.
  *
- * Renders a fixed full-viewport <canvas> at z-index 0 with a radial
- * gradient haze and ~280 gold stars streaking toward the viewer.
+ * Renders a fixed full-viewport <canvas> at z-index 0 with a neutral
+ * dark haze and ~280 warm gold stars streaking toward the viewer.
  */
 export default function StarfieldCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -18,7 +17,7 @@ export default function StarfieldCanvas() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const STAR_COLOR = [255, 215, 0]; // ZION gold
+    const STAR_COLOR = [252, 209, 22]; // rasta gold
     const DENSITY = 280;
     const SPEED = 1.4;
     const TRAIL_OPACITY = 0.08;
@@ -35,8 +34,8 @@ export default function StarfieldCanvas() {
         canvas.width * 0.5, canvas.height * 0.7, 0,
         canvas.width * 0.5, canvas.height * 0.7, Math.max(canvas.width, canvas.height),
       );
-      g.addColorStop(0, 'rgba(27, 39, 53, 1)');
-      g.addColorStop(1, 'rgba(9, 10, 15, 1)');
+      g.addColorStop(0, 'rgba(26, 26, 26, 1)');
+      g.addColorStop(1, 'rgba(8, 8, 8, 1)');
       cachedGradient = g;
     };
 
