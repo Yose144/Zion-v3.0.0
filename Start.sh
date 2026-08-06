@@ -61,8 +61,15 @@ fi
 
 # ── Stream configuration ────────────────────────────────────────────────────
 # GPU backend for Stream 1 (ZION deeksha) — CUDA for NVIDIA GPUs
+# Override with: ZION_GPU_BACKEND=opencl|cuda|cpu|auto
 GPU_BACKEND="${ZION_GPU_BACKEND:-cuda}"
 GPU_FLAG="--gpu ${GPU_BACKEND}"
+
+# CUDA work size — number of GPU threads per kernel launch.
+# Each thread uses 128 KiB scratchpad, so work_size=4096 = 512 MB VRAM.
+# GTX 1070 Ti (8GB): 4096 is optimal. Smaller GPUs: use 2048 or 1024.
+export ZION_CUDA_WORK_CAP="${ZION_CUDA_WORK_CAP:-4096}"
+export ZION_GPU_WORK_SIZE="${ZION_GPU_WORK_SIZE:-4096}"
 
 # Stream 2/3 (AuxPoW external coins) — disabled by default, enable with --autonomous
 STREAM2_FLAG=""

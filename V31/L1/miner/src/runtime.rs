@@ -29,7 +29,7 @@ use zion_core::V3DifficultyTarget as DifficultyTarget;
 
 // GPU mining for Stream 1 (ZION) — available even without the `auxpow` feature
 // so that a CUDA/OpenCL build can GPU-mine ZION blocks in pool mode.
-use crate::gpu::{GpuMiner, GpuBatchResult};
+use crate::gpu::GpuMiner;
 use zion_core::v3_compat::{MiningHeader, DifficultyTarget as V3DiffTarget};
 
 #[derive(Debug, thiserror::Error)]
@@ -282,46 +282,44 @@ impl MinerRuntime {
         let t_start = Instant::now();
 
         // ── Try GPU first (Stream 1 ZION deeksha), fall back to CPU ──
-        let (nonce, _hash) = {
-            let mut gpu_guard = self.gpu_zion.lock().unwrap();
+        // GPU mine_batch is synchronous CUDA/OpenCL and blocks for ~0.5-2s per batch.
+        // We run it on a blocking thread so it doesn't stall the tokio runtime
+        // (which would prevent the stratum client from reading pool messages).
+        let gpu_zion = self.gpu_zion.clone();
+        let header_for_gpu = job.header.clone();
+        let target_for_gpu = job.target;
+        let batch_for_gpu = batch_size;
+        let gpu_result = task::spawn_blocking(move || {
+            let mut gpu_guard = gpu_zion.lock().unwrap();
             if let Some(ref mut gpu) = gpu_guard.as_mut() {
-                // Build MiningHeader from the 80-byte job header
                 let mut header_bytes = [0u8; 80];
-                let copy_len = job.header.len().min(80);
-                header_bytes[..copy_len].copy_from_slice(&job.header[..copy_len]);
+                let copy_len = header_for_gpu.len().min(80);
+                header_bytes[..copy_len].copy_from_slice(&header_for_gpu[..copy_len]);
                 let mining_header = MiningHeader::from_bytes(header_bytes);
-                let target = V3DiffTarget { bytes: job.target };
-
-                // GPU mine_batch is synchronous CUDA/OpenCL — blocks ~0.5-2s per batch.
-                // This is fine in the async mining loop since there's nothing else to do
-                // while waiting for the GPU result.
-                match gpu.mine_batch(mining_header, target, 0, batch_size) {
+                let target = V3DiffTarget { bytes: target_for_gpu };
+                match gpu.mine_batch(mining_header, target, 0, batch_for_gpu) {
                     Ok(result) => {
                         if let Some((found_nonce, found_hash, _mix)) = result.solutions.into_iter().next() {
-                            (found_nonce, Hash::new(found_hash))
-                        } else {
-                            // GPU found no solution in this batch — fall back to CPU
-                            drop(gpu_guard);
-                            self.consensus
-                                .mine_header_bytes(&job.header, &job.target, 0, batch_size)
-                                .ok_or(MinerError::NoAuxPoWSolution)?
+                            return Some((found_nonce, found_hash));
                         }
                     }
                     Err(e) => {
-                        warn!(error = %e, "gpu_zion_batch_failed — falling back to CPU");
-                        drop(gpu_guard);
-                        self.consensus
-                            .mine_header_bytes(&job.header, &job.target, 0, batch_size)
-                            .ok_or(MinerError::NoAuxPoWSolution)?
+                        eprintln!("gpu_zion_batch_failed reason=\"{}\" — falling back to CPU", e);
                     }
                 }
-            } else {
-                // No GPU backend — CPU mining
-                drop(gpu_guard);
-                self.consensus
-                    .mine_header_bytes(&job.header, &job.target, 0, batch_size)
-                    .ok_or(MinerError::NoAuxPoWSolution)?
             }
+            None
+        })
+        .await
+        .map_err(|e| MinerError::Consensus(format!("gpu task join: {e}")))?;
+
+        let (nonce, _hash) = if let Some((found_nonce, found_hash)) = gpu_result {
+            (found_nonce, Hash::new(found_hash))
+        } else {
+            // No GPU or GPU found no solution — CPU mining
+            self.consensus
+                .mine_header_bytes(&job.header, &job.target, 0, batch_size)
+                .ok_or(MinerError::NoAuxPoWSolution)?
         };
 
         let elapsed = t_start.elapsed().as_secs_f64();
