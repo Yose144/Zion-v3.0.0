@@ -35,10 +35,10 @@ export default function V3InternalAuditNewsPage() {
           {NewsV3InternalAuditCopy.backToNews[cs ? 'cs' : 'en']}
         </Link>
 
-        <div className="zion-rainbow-card p-7 sm:p-10" style={{ '--rc': '239, 68, 68' } as React.CSSProperties}>
+        <div className="zion-rainbow-card p-7 sm:p-10" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
           <div className="flex items-start gap-4">
-            <div className="zion-rainbow-sub flex h-12 w-12 shrink-0 items-center justify-center" style={{ '--rc': '239, 68, 68' } as React.CSSProperties}>
-              <ShieldCheck className="h-6 w-6 text-red-400" />
+            <div className="zion-rainbow-sub flex h-12 w-12 shrink-0 items-center justify-center" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
+              <ShieldCheck className="h-6 w-6 text-zion-purple-400" />
             </div>
             <div className="min-w-0">
               <p className="text-xs uppercase tracking-[0.35em] text-red-200/70">
@@ -54,16 +54,16 @@ export default function V3InternalAuditNewsPage() {
           </div>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
-            <div className="zion-rainbow-sub p-5" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
               <div className="flex items-center gap-2 text-sm font-semibold text-white">
-                <ListChecks className="h-4 w-4 text-emerald-400" />
+                <ListChecks className="h-4 w-4 text-zion-cyan-400" />
                 {NewsV3InternalAuditCopy.closedFindings[cs ? 'cs' : 'en']}
               </div>
               <p className="mt-2 text-sm text-white/60 leading-relaxed">
                 {NewsV3InternalAuditCopy.criticalFixesAreImplementedAnd[cs ? 'cs' : 'en']}
               </p>
             </div>
-            <div className="zion-rainbow-sub p-5" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <div className="flex items-center gap-2 text-sm font-semibold text-white">
                 <AlertTriangle className="h-4 w-4 text-zion-gold" />
                 {NewsV3InternalAuditCopy.whatStillBlocks[cs ? 'cs' : 'en']}

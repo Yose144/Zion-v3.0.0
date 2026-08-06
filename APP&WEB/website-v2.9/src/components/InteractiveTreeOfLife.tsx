@@ -771,7 +771,7 @@ export default function InteractiveTreeOfLife() {
           </p>
           <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
             Tree of{' '}
-            <span className="bg-linear-to-r from-yellow-300 via-amber-400 to-yellow-200 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-zion-gold-300 via-zion-gold-400 to-yellow-200 bg-clip-text text-transparent">
               Life
             </span>
           </h2>
@@ -789,7 +789,7 @@ export default function InteractiveTreeOfLife() {
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 2, ease: 'easeOut' }}
-          style={{ rotateY, rotateX, perspective: 1200, '--rc': '16, 185, 129' } as React.CSSProperties}
+          style={{ rotateY, rotateX, perspective: 1200, '--rc': '7, 137, 48' } as React.CSSProperties}
           className="relative mx-auto max-w-4xl cursor-crosshair zion-rainbow-card p-2 md:p-4 shadow-[0_20px_80px_rgba(0,0,0,0.35)]"
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}

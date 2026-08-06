@@ -86,7 +86,7 @@ export default function SearchResultsClient() {
   const colors: Record<string, { text: string; border: string; bg: string }> = {
     block: { text: "text-zion-gold", border: "border-zion-gold/20", bg: "bg-zion-gold/5" },
     transaction: { text: "text-zion-cyan", border: "border-zion-cyan/20", bg: "bg-zion-cyan/5" },
-    address: { text: "text-purple-400", border: "border-purple-500/20", bg: "bg-purple-500/5" },
+    address: { text: "text-zion-purple-400", border: "border-zion-purple-500/20", bg: "bg-zion-purple-500/5" },
   };
 
   return (
@@ -98,7 +98,7 @@ export default function SearchResultsClient() {
 
       <div className="relative z-10 zion-container max-w-5xl space-y-10 pt-6">
         {/* HERO */}
-        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="zion-rainbow-card rounded-3xl md:rounded-4xl bg-black/60 p-6 md:p-10" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="zion-rainbow-card rounded-3xl md:rounded-4xl bg-black/60 p-6 md:p-10" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
           <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase mb-4">
             <Search className="h-4 w-4" />
             {SITE_RELEASE_LABEL} · {ExplorerSearchSearchResultsClientCopy.search[cs ? 'cs' : 'en']}
@@ -125,9 +125,9 @@ export default function SearchResultsClient() {
           )}
 
           {error && (
-            <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6 text-center">
-              <X className="h-6 w-6 text-red-400 mx-auto mb-2" />
-              <p className="text-sm text-red-300">{error}</p>
+            <div className="rounded-2xl border border-zion-purple-500/20 bg-zion-purple-500/5 p-6 text-center">
+              <X className="h-6 w-6 text-zion-purple-400 mx-auto mb-2" />
+              <p className="text-sm text-zion-purple-300">{error}</p>
             </div>
           )}
 

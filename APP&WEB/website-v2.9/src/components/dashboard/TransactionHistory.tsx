@@ -85,7 +85,7 @@ export default function TransactionHistory({ address }: TransactionHistoryProps)
           <span className="text-sm text-gray-500">Loading transactions...</span>
         </div>
       ) : error ? (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-400">{error}</div>
+        <div className="rounded-xl border border-zion-purple-500/20 bg-zion-purple-500/5 p-4 text-sm text-zion-purple-400">{error}</div>
       ) : txs.length === 0 ? (
         <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
           <ArrowLeftRight className="h-10 w-10 text-gray-600 mx-auto mb-2" />
@@ -103,17 +103,17 @@ export default function TransactionHistory({ address }: TransactionHistoryProps)
                 className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3 hover:border-white/20 transition-colors"
               >
                 <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
-                  isIn ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/10 border border-red-500/20'
+                  isIn ? 'bg-zion-cyan-500/10 border border-zion-cyan-500/20' : 'bg-zion-purple-500/10 border border-zion-purple-500/20'
                 }`}>
                   {isIn ? (
-                    <ArrowDownLeft className="h-4 w-4 text-green-400" />
+                    <ArrowDownLeft className="h-4 w-4 text-zion-cyan-400" />
                   ) : (
-                    <ArrowUpRight className="h-4 w-4 text-red-400" />
+                    <ArrowUpRight className="h-4 w-4 text-zion-purple-400" />
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <p className={`text-sm font-mono font-semibold ${isIn ? 'text-green-400' : 'text-red-400'}`}>
+                    <p className={`text-sm font-mono font-semibold ${isIn ? 'text-zion-cyan-400' : 'text-zion-purple-400'}`}>
                       {isIn ? '+' : '-'}{amount} ZION
                     </p>
                     <span className="text-[10px] text-gray-600">{formatTime(tx.block_timestamp)}</span>

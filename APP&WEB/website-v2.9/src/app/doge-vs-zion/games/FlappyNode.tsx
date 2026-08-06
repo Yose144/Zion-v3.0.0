@@ -299,7 +299,7 @@ function render(s: GameState, canvas: HTMLCanvasElement, t: number) {
 
   // Crash flash
   if (s.flash > 0) {
-    ctx.fillStyle = `rgba(239,68,68,${(s.flash * 0.5).toFixed(3)})`;
+    ctx.fillStyle = `rgba(228, 30, 43,${(s.flash * 0.5).toFixed(3)})`;
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
   }
 }
@@ -315,7 +315,7 @@ function drawPillar(ctx: CanvasRenderingContext2D, x: number, y: number, w: numb
   ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
   ctx.shadowBlur = 0;
   // Segment lines
-  ctx.strokeStyle = 'rgba(16,185,129,0.25)';
+  ctx.strokeStyle = 'rgba(7, 137, 48,0.25)';
   ctx.lineWidth = 1;
   for (let sy = y + 20; sy < y + h; sy += 24) {
     ctx.beginPath();
@@ -493,11 +493,11 @@ export function FlappyNode({ onBack }: { onBack: () => void }) {
             </p>
             <button
               onClick={doFlap}
-              className="px-6 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-white font-semibold transition-colors shadow-lg shadow-emerald-500/30"
+              className="px-6 py-2.5 rounded-lg bg-zion-cyan-500 hover:bg-zion-cyan-400 text-white font-semibold transition-colors shadow-lg shadow-zion-cyan-500/30"
             >
               {DogeVsZionGamesFlappyNodeCopy.start[cs ? 'cs' : 'en']}
             </button>
-            <div className="mt-4 flex items-center gap-1.5 text-xs text-amber-300">
+            <div className="mt-4 flex items-center gap-1.5 text-xs text-zion-gold-300">
               <Trophy size={13} /> {DogeVsZionGamesFlappyNodeCopy.best[cs ? 'cs' : 'en']}: {highScore}
             </div>
           </div>
@@ -509,7 +509,7 @@ export function FlappyNode({ onBack }: { onBack: () => void }) {
             <h3 className="text-2xl font-bold text-white mb-4">{DogeVsZionGamesFlappyNodeCopy.paused[cs ? 'cs' : 'en']}</h3>
             <button
               onClick={doTogglePause}
-              className="px-6 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-white font-semibold transition-colors shadow-lg shadow-emerald-500/30"
+              className="px-6 py-2.5 rounded-lg bg-zion-cyan-500 hover:bg-zion-cyan-400 text-white font-semibold transition-colors shadow-lg shadow-zion-cyan-500/30"
             >
               {DogeVsZionGamesFlappyNodeCopy.resume[cs ? 'cs' : 'en']}
             </button>
@@ -520,7 +520,7 @@ export function FlappyNode({ onBack }: { onBack: () => void }) {
         {/* Game over screen */}
         {uiStatus === 'over' && (
           <div className="absolute inset-1 flex flex-col items-center justify-center bg-black/65 rounded-xl backdrop-blur-sm">
-            <h3 className="text-2xl font-bold text-red-400 mb-2">{DogeVsZionGamesFlappyNodeCopy.nodeDown[cs ? 'cs' : 'en']}</h3>
+            <h3 className="text-2xl font-bold text-zion-purple-400 mb-2">{DogeVsZionGamesFlappyNodeCopy.nodeDown[cs ? 'cs' : 'en']}</h3>
             <div className="flex items-center gap-4 mb-4">
               <div className="text-center">
                 <div className="text-[11px] text-slate-400 uppercase tracking-wide">{DogeVsZionGamesFlappyNodeCopy.score[cs ? 'cs' : 'en']}</div>
@@ -529,17 +529,17 @@ export function FlappyNode({ onBack }: { onBack: () => void }) {
               <div className="w-px h-10 bg-white/15" />
               <div className="text-center">
                 <div className="text-[11px] text-slate-400 uppercase tracking-wide">{DogeVsZionGamesFlappyNodeCopy.best[cs ? 'cs' : 'en']}</div>
-                <div className="text-3xl font-black text-amber-300 flex items-center gap-1">
+                <div className="text-3xl font-black text-zion-gold-300 flex items-center gap-1">
                   <Trophy size={20} /> {highScore}
                 </div>
               </div>
             </div>
             {score > 0 && score >= highScore && (
-              <div className="mb-3 text-xs text-emerald-400 font-semibold">{DogeVsZionGamesFlappyNodeCopy.newHighScore[cs ? 'cs' : 'en']}</div>
+              <div className="mb-3 text-xs text-zion-cyan-400 font-semibold">{DogeVsZionGamesFlappyNodeCopy.newHighScore[cs ? 'cs' : 'en']}</div>
             )}
             <button
               onClick={restart}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-white font-semibold transition-colors shadow-lg shadow-emerald-500/30"
+              className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-zion-cyan-500 hover:bg-zion-cyan-400 text-white font-semibold transition-colors shadow-lg shadow-zion-cyan-500/30"
             >
               <RefreshCw size={16} /> {DogeVsZionGamesFlappyNodeCopy.retry[cs ? 'cs' : 'en']}
             </button>

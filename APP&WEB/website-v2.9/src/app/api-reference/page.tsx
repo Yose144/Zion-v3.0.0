@@ -94,7 +94,7 @@ function ApiQuickstartPanels({ cs }: { cs: boolean }) {
             key={p.href}
             href={p.href}
             className="group zion-rainbow-sub p-5"
-            style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
+            style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
           >
             <div className="flex items-center gap-3">
               <p.icon className="h-5 w-5 text-zion-gold" />
@@ -269,7 +269,7 @@ export default function ApiReferencePage() {
           {apiStats.map((stat) => {
             const Icon = stat.icon;
             return (
-              <div key={stat.label} className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+              <div key={stat.label} className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                 <Icon className="h-5 w-5 text-zion-gold" />
                 <p className="mt-2 text-3xl font-semibold text-white">{stat.value}</p>
                 <p className="text-sm text-gray-400">{stat.label} · {stat.detail}</p>
@@ -303,7 +303,7 @@ export default function ApiReferencePage() {
                       style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
                     >
                       <div className="flex flex-wrap items-center gap-3">
-                        <span className="zion-rainbow-sub px-3 py-1 text-xs font-semibold text-zion-gold" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                        <span className="zion-rainbow-sub px-3 py-1 text-xs font-semibold text-zion-gold" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                           {endpoint.method}
                         </span>
                         <code className="text-sm text-white/90">{endpoint.path}</code>

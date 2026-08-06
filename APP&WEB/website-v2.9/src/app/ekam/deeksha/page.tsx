@@ -208,11 +208,11 @@ export default function EkamDeekshaPage() {
   ], [lang]);
 
   const algoSteps = [
-    { id: 0, name: 'Hiranyagarbha', color: 'text-amber-300',   border: 'border-amber-300/40',   bg: 'bg-amber-300/10',   desc: EkamDeekshaCopy.initializationOfTheGoldenSeedB[lang === 'cs' ? 'cs' : 'en'] },
-    { id: 1, name: 'Brahma',        color: 'text-violet-300',  border: 'border-violet-300/40',  bg: 'bg-violet-300/10',  desc: EkamDeekshaCopy.expansionOfCreationReadingFrom[lang === 'cs' ? 'cs' : 'en'] },
-    { id: 2, name: 'Yantra',        color: 'text-sky-300',     border: 'border-sky-300/40',     bg: 'bg-sky-300/10',     desc: EkamDeekshaCopy.k4Passes256RandomReadsGeometryO[lang === 'cs' ? 'cs' : 'en'] },
-    { id: 3, name: 'Karma',         color: 'text-emerald-300', border: 'border-emerald-300/40', bg: 'bg-emerald-300/10', desc: EkamDeekshaCopy.lawOfCauseEpochNpuWeightsRotat[lang === 'cs' ? 'cs' : 'en'] },
-    { id: 4, name: 'Chit',          color: 'text-rose-300',    border: 'border-rose-300/40',    bg: 'bg-rose-300/10',    desc: EkamDeekshaCopy.pureConsciousnessFinalMixOfWei[lang === 'cs' ? 'cs' : 'en'] },
+    { id: 0, name: 'Hiranyagarbha', color: 'text-zion-gold-300',   border: 'border-zion-gold-300/40',   bg: 'bg-zion-gold-300/10',   desc: EkamDeekshaCopy.initializationOfTheGoldenSeedB[lang === 'cs' ? 'cs' : 'en'] },
+    { id: 1, name: 'Brahma',        color: 'text-zion-purple-300',  border: 'border-zion-purple-300/40',  bg: 'bg-zion-purple-300/10',  desc: EkamDeekshaCopy.expansionOfCreationReadingFrom[lang === 'cs' ? 'cs' : 'en'] },
+    { id: 2, name: 'Yantra',        color: 'text-zion-cyan-300',     border: 'border-zion-cyan-300/40',     bg: 'bg-zion-cyan-300/10',     desc: EkamDeekshaCopy.k4Passes256RandomReadsGeometryO[lang === 'cs' ? 'cs' : 'en'] },
+    { id: 3, name: 'Karma',         color: 'text-zion-cyan-300', border: 'border-zion-cyan-300/40', bg: 'bg-zion-cyan-300/10', desc: EkamDeekshaCopy.lawOfCauseEpochNpuWeightsRotat[lang === 'cs' ? 'cs' : 'en'] },
+    { id: 4, name: 'Chit',          color: 'text-zion-purple-300',    border: 'border-zion-purple-300/40',    bg: 'bg-zion-purple-300/10',    desc: EkamDeekshaCopy.pureConsciousnessFinalMixOfWei[lang === 'cs' ? 'cs' : 'en'] },
     { id: 5, name: 'Samadhi',       color: 'text-amber-200',   border: 'border-amber-200/40',   bg: 'bg-amber-200/10',   desc: EkamDeekshaCopy.unification32ByteResultCompare[lang === 'cs' ? 'cs' : 'en'] },
   ];
 
@@ -249,7 +249,7 @@ export default function EkamDeekshaPage() {
         <div className="zion-container py-20 relative">
           <div className="max-w-4xl mx-auto text-center">
             <div className="zion-badge-gold mb-6">
-              <Sparkles className="w-4 h-4 text-amber-300" />
+              <Sparkles className="w-4 h-4 text-zion-gold-300" />
               <span>{EkamDeekshaCopy.continuesTheQuantumRevolution[lang === 'cs' ? 'cs' : 'en']}</span>
             </div>
             <h1 className="text-4xl sm:text-6xl md:text-7xl font-bold mb-6 text-gradient">
@@ -280,10 +280,10 @@ export default function EkamDeekshaPage() {
         <div className="lg:hidden mb-6">
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="w-full flex items-center justify-between px-4 py-3 zion-section text-white hover:border-amber-300/30 transition-colors"
+            className="w-full flex items-center justify-between px-4 py-3 zion-section text-white hover:border-zion-gold-300/30 transition-colors"
           >
             <div className="flex items-center gap-2">
-              <Book className="w-5 h-5 text-amber-300" />
+              <Book className="w-5 h-5 text-zion-gold-300" />
               <span className="font-semibold">{EkamDeekshaCopy.chapters[lang === 'cs' ? 'cs' : 'en']}</span>
             </div>
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -296,7 +296,7 @@ export default function EkamDeekshaPage() {
                   onClick={() => { scrollTo(ch.id); setMobileMenuOpen(false); }}
                   className={`w-full text-left px-3 py-2 rounded-lg transition-all text-sm ${
                     activeChapter === ch.id
-                      ? 'bg-amber-300/10 text-amber-200 border-l-2 border-amber-300'
+                      ? 'bg-zion-gold-300/10 text-amber-200 border-l-2 border-zion-gold-300'
                       : 'text-gray-400 hover:text-white hover:bg-white/5'
                   }`}
                 >
@@ -324,7 +324,7 @@ export default function EkamDeekshaPage() {
                     onClick={() => scrollTo(ch.id)}
                     className={`w-full text-left px-3 py-2 rounded-lg transition-all text-sm leading-snug ${
                       activeChapter === ch.id
-                        ? 'bg-amber-300/10 text-amber-200 border-l-2 border-amber-300'
+                        ? 'bg-zion-gold-300/10 text-amber-200 border-l-2 border-zion-gold-300'
                         : 'text-gray-400 hover:text-white hover:bg-white/5'
                     }`}
                   >
@@ -342,7 +342,7 @@ export default function EkamDeekshaPage() {
             {/* PŘEDMLUVA */}
             <section id="predmluva" className="mb-24 scroll-mt-24">
               <div className="mb-8 text-center">
-                <h2 className="text-4xl md:text-5xl font-bold text-amber-300 mb-3">{EkamDeekshaCopy.preface[lang === 'cs' ? 'cs' : 'en']}</h2>
+                <h2 className="text-4xl md:text-5xl font-bold text-zion-gold-300 mb-3">{EkamDeekshaCopy.preface[lang === 'cs' ? 'cs' : 'en']}</h2>
                 <p className="text-gray-400 text-lg italic">{EkamDeekshaCopy.secondBreathOfTheQuantumRevolu[lang === 'cs' ? 'cs' : 'en']}</p>
               </div>
               <div className="space-y-6 text-center">
@@ -353,14 +353,14 @@ export default function EkamDeekshaPage() {
                 </p>
                 <p className="text-base leading-8 text-gray-400">
                   {EkamDeekshaCopy.thisBookFollowsThatMapButItDoe[lang === 'cs' ? 'cs' : 'en']}<br />
-                  {EkamDeekshaCopy.itTurnsTheGaze[lang === 'cs' ? 'cs' : 'en'] }<strong className="text-amber-300">{EkamDeekshaCopy.inward[lang === 'cs' ? 'cs' : 'en']}</strong>.
+                  {EkamDeekshaCopy.itTurnsTheGaze[lang === 'cs' ? 'cs' : 'en'] }<strong className="text-zion-gold-300">{EkamDeekshaCopy.inward[lang === 'cs' ? 'cs' : 'en']}</strong>.
                 </p>
                 <p className="text-base leading-8 text-gray-400">
                   {EkamDeekshaCopy.itAsksMorePreciselyWhatMustHap[lang === 'cs' ? 'cs' : 'en']}<br />
                   {EkamDeekshaCopy.betterSystemsAreNotEnoughAQuan[lang === 'cs' ? 'cs' : 'en']}<br />
                   {EkamDeekshaCopy.whatIsNeededIsTheEndOfOneStruc[lang === 'cs' ? 'cs' : 'en']}
                 </p>
-                <div className="my-10 p-8 zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                <div className="my-10 p-8 zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                   <p className="text-lg italic text-gray-300 leading-relaxed">
                     {EkamDeekshaCopy.ekamMeansOne[lang === 'cs' ? 'cs' : 'en']}<br />
                     {EkamDeekshaCopy.deekshaMeansTransmissionInitia[lang === 'cs' ? 'cs' : 'en']}<br />
@@ -372,7 +372,7 @@ export default function EkamDeekshaPage() {
                   {EkamDeekshaCopy.behindThisBookStandsTheLineage[lang === 'cs' ? 'cs' : 'en']}<br />
                   {EkamDeekshaCopy.behindThisLineageStandAmmaAndB[lang === 'cs' ? 'cs' : 'en']}<br />
                   {EkamDeekshaCopy.andBehindAllOfThisStandsTheOld[lang === 'cs' ? 'cs' : 'en']}<br />
-                  <strong className="text-amber-300">Hiranyagarbha</strong> — {EkamDeekshaCopy.theGoldenSeedFromWhichTheUnive[lang === 'cs' ? 'cs' : 'en']}
+                  <strong className="text-zion-gold-300">Hiranyagarbha</strong> — {EkamDeekshaCopy.theGoldenSeedFromWhichTheUnive[lang === 'cs' ? 'cs' : 'en']}
                 </p>
               </div>
             </section>
@@ -380,7 +380,7 @@ export default function EkamDeekshaPage() {
             {/* KAP 1 */}
             <section id="kapitel-1" className="mb-24 scroll-mt-24">
               <div className="mb-8 text-center">
-                <div className="text-sm text-amber-300 uppercase tracking-wider mb-2">{EkamDeekshaCopy.chapter1[lang === 'cs' ? 'cs' : 'en']}</div>
+                <div className="text-sm text-zion-gold-300 uppercase tracking-wider mb-2">{EkamDeekshaCopy.chapter1[lang === 'cs' ? 'cs' : 'en']}</div>
                 <h2 className="text-4xl md:text-5xl font-bold text-white mb-3">{EkamDeekshaCopy.theEndOfTheSeparateHuman[lang === 'cs' ? 'cs' : 'en']}</h2>
                 <p className="text-gray-400 text-lg italic">{EkamDeekshaCopy.crisisOfTheSeparateSelf[lang === 'cs' ? 'cs' : 'en']}</p>
               </div>
@@ -394,8 +394,8 @@ export default function EkamDeekshaPage() {
                 <p>
                   {EkamDeekshaCopy.thatIsWhyThereIsSoMuchTechnolo[lang === 'cs' ? 'cs' : 'en']}
                 </p>
-                <div className="zion-rainbow-sub p-6 my-6" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
-                  <p className="text-amber-200 font-semibold mb-2 flex items-center gap-2"><Layers className="w-4 h-4 text-amber-300" /> {EkamDeekshaCopy.coreThesis[lang === 'cs' ? 'cs' : 'en']}</p>
+                <div className="zion-rainbow-sub p-6 my-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+                  <p className="text-amber-200 font-semibold mb-2 flex items-center gap-2"><Layers className="w-4 h-4 text-zion-gold-300" /> {EkamDeekshaCopy.coreThesis[lang === 'cs' ? 'cs' : 'en']}</p>
                   <p className="text-gray-300 text-sm leading-7">
                     {EkamDeekshaCopy.sufferingDoesNotAriseBecauseTh[lang === 'cs' ? 'cs' : 'en']}
                   </p>
@@ -412,7 +412,7 @@ export default function EkamDeekshaPage() {
             {/* KAP 2 */}
             <section id="kapitel-2" className="mb-24 scroll-mt-24">
               <div className="mb-8 text-center">
-                <div className="text-sm text-amber-300 uppercase tracking-wider mb-2">{EkamDeekshaCopy.chapter2[lang === 'cs' ? 'cs' : 'en']}</div>
+                <div className="text-sm text-zion-gold-300 uppercase tracking-wider mb-2">{EkamDeekshaCopy.chapter2[lang === 'cs' ? 'cs' : 'en']}</div>
                 <h2 className="text-4xl md:text-5xl font-bold text-white mb-3">{EkamDeekshaCopy.whyOldMapsAreNotEnough[lang === 'cs' ? 'cs' : 'en']}</h2>
                 <p className="text-gray-400 text-lg italic">{EkamDeekshaCopy.fourLimitsOfModernSeeking[lang === 'cs' ? 'cs' : 'en']}</p>
               </div>
@@ -427,10 +427,10 @@ export default function EkamDeekshaPage() {
                     { n: '03', title: EkamDeekshaCopy.dreamOfTechnicalSalvation[lang === 'cs' ? 'cs' : 'en'],   body: EkamDeekshaCopy.technologyWithoutConsciousness[lang === 'cs' ? 'cs' : 'en'], Icon: Cpu },
                     { n: '04', title: EkamDeekshaCopy.selfInterpretation[lang === 'cs' ? 'cs' : 'en'],       body: EkamDeekshaCopy.understandingAMechanismDoesNot[lang === 'cs' ? 'cs' : 'en'], Icon: Layers },
                   ] as const).map(({ n, title, body, Icon }) => (
-                    <div key={n} className="zion-rainbow-sub p-5" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+                    <div key={n} className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                       <div className="flex items-center gap-3 mb-3">
                         <span className="text-xs font-bold text-gray-500">{n}</span>
-                        <Icon className="w-4 h-4 text-amber-300" />
+                        <Icon className="w-4 h-4 text-zion-gold-300" />
                         <h3 className="text-base font-semibold text-white">{title}</h3>
                       </div>
                       <p className="text-sm leading-7 text-gray-400">{body}</p>
@@ -446,7 +446,7 @@ export default function EkamDeekshaPage() {
             {/* KAP 3 */}
             <section id="kapitel-3" className="mb-24 scroll-mt-24">
               <div className="mb-8 text-center">
-                <div className="text-sm text-amber-300 uppercase tracking-wider mb-2">{EkamDeekshaCopy.chapter3[lang === 'cs' ? 'cs' : 'en']}</div>
+                <div className="text-sm text-zion-gold-300 uppercase tracking-wider mb-2">{EkamDeekshaCopy.chapter3[lang === 'cs' ? 'cs' : 'en']}</div>
                 <h2 className="text-4xl md:text-5xl font-bold text-white mb-3">{EkamDeekshaCopy.historicalLineage[lang === 'cs' ? 'cs' : 'en']}</h2>
                 <p className="text-gray-400 text-lg italic">Jeevashram · Satyaloka · Oneness University</p>
               </div>
@@ -461,9 +461,9 @@ export default function EkamDeekshaPage() {
                     { name: 'Oneness University', era: EkamDeekshaCopy.globalization[lang === 'cs' ? 'cs' : 'en'],    text: EkamDeekshaCopy.theLocalExperimentTransformsIn[lang === 'cs' ? 'cs' : 'en'] },
                     { name: 'Ekam',               era: EkamDeekshaCopy.livingFieldToday[lang === 'cs' ? 'cs' : 'en'], text: EkamDeekshaCopy.behindTodaySSymbolismOfTheTemp[lang === 'cs' ? 'cs' : 'en'] },
                   ] as const).map(({ name, era, text }) => (
-                    <div key={name} className="flex gap-4 zion-rainbow-sub p-5" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+                    <div key={name} className="flex gap-4 zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                       <div className="shrink-0 mt-3">
-                        <div className="w-2 h-2 rounded-full bg-amber-300" />
+                        <div className="w-2 h-2 rounded-full bg-zion-gold-300" />
                       </div>
                       <div>
                         <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{era}</p>
@@ -482,7 +482,7 @@ export default function EkamDeekshaPage() {
             {/* KAP 4 */}
             <section id="kapitel-4" className="mb-24 scroll-mt-24">
               <div className="mb-8 text-center">
-                <div className="text-sm text-amber-300 uppercase tracking-wider mb-2">{EkamDeekshaCopy.chapter4[lang === 'cs' ? 'cs' : 'en']}</div>
+                <div className="text-sm text-zion-gold-300 uppercase tracking-wider mb-2">{EkamDeekshaCopy.chapter4[lang === 'cs' ? 'cs' : 'en']}</div>
                 <h2 className="text-4xl md:text-5xl font-bold text-white mb-3">Amma a Bhagavan</h2>
                 <p className="text-gray-400 text-lg italic">{EkamDeekshaCopy.dualUnityPrincipleOfLoveAndIns[lang === 'cs' ? 'cs' : 'en']}</p>
               </div>
@@ -491,15 +491,15 @@ export default function EkamDeekshaPage() {
                   {EkamDeekshaCopy.ammaAndBhagavanAreNotMerelyFou[lang === 'cs' ? 'cs' : 'en']}
                 </p>
                 <div className="grid sm:grid-cols-2 gap-4 my-6">
-                  <div className="zion-rainbow-sub p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
-                    <Heart className="w-6 h-6 text-amber-300 mb-3" />
+                  <div className="zion-rainbow-sub p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+                    <Heart className="w-6 h-6 text-zion-gold-300 mb-3" />
                     <h3 className="text-xl font-bold text-white mb-2">{EkamDeekshaCopy.ammaPrincipleOfLove[lang === 'cs' ? 'cs' : 'en']}</h3>
                     <p className="text-sm leading-7 text-gray-300">
                       {EkamDeekshaCopy.ammaEmbodiesUnconditionalAccep[lang === 'cs' ? 'cs' : 'en']}
                     </p>
                   </div>
-                  <div className="zion-rainbow-sub p-6" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
-                    <Sun className="w-6 h-6 text-amber-300 mb-3" />
+                  <div className="zion-rainbow-sub p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+                    <Sun className="w-6 h-6 text-zion-gold-300 mb-3" />
                     <h3 className="text-xl font-bold text-white mb-2">{EkamDeekshaCopy.bhagavanPrincipleOfInsight[lang === 'cs' ? 'cs' : 'en']}</h3>
                     <p className="text-sm leading-7 text-gray-300">
                       {EkamDeekshaCopy.bhagavanSriKalkiRepresentsPene[lang === 'cs' ? 'cs' : 'en']}
@@ -518,7 +518,7 @@ export default function EkamDeekshaPage() {
             {/* KAP 5 */}
             <section id="kapitel-5" className="mb-24 scroll-mt-24">
               <div className="mb-8 text-center">
-                <div className="text-sm text-amber-300 uppercase tracking-wider mb-2">{EkamDeekshaCopy.chapter5[lang === 'cs' ? 'cs' : 'en']}</div>
+                <div className="text-sm text-zion-gold-300 uppercase tracking-wider mb-2">{EkamDeekshaCopy.chapter5[lang === 'cs' ? 'cs' : 'en']}</div>
                 <h2 className="text-4xl md:text-5xl font-bold text-white mb-3">Deeksha</h2>
                 <p className="text-gray-400 text-lg italic">{EkamDeekshaCopy.transmissionAsConsciousnessTec[lang === 'cs' ? 'cs' : 'en']}</p>
               </div>
@@ -529,7 +529,7 @@ export default function EkamDeekshaPage() {
                 <p>
                   {EkamDeekshaCopy.inThePracticeOfOnenessAndEkamD[lang === 'cs' ? 'cs' : 'en']}
                 </p>
-                <div className="zion-rainbow-sub p-6 my-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                <div className="zion-rainbow-sub p-6 my-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                   <p className="text-amber-200 font-semibold mb-3">{EkamDeekshaCopy.whatDeekshaClaimsToDo[lang === 'cs' ? 'cs' : 'en']}</p>
                   <ul className="space-y-2 text-sm text-gray-300">
                     {[
@@ -540,7 +540,7 @@ export default function EkamDeekshaPage() {
                       EkamDeekshaCopy.doesNotCreateANewSpiritualPerf[lang === 'cs' ? 'cs' : 'en'],
                     ].map((item) => (
                       <li key={item} className="flex items-start gap-2">
-                        <ChevronRight className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
+                        <ChevronRight className="w-4 h-4 text-zion-gold-300 shrink-0 mt-0.5" />
                         {item}
                       </li>
                     ))}
@@ -555,7 +555,7 @@ export default function EkamDeekshaPage() {
             {/* KAP 6 */}
             <section id="kapitel-6" className="mb-24 scroll-mt-24">
               <div className="mb-8 text-center">
-                <div className="text-sm text-amber-300 uppercase tracking-wider mb-2">{EkamDeekshaCopy.chapter6[lang === 'cs' ? 'cs' : 'en']}</div>
+                <div className="text-sm text-zion-gold-300 uppercase tracking-wider mb-2">{EkamDeekshaCopy.chapter6[lang === 'cs' ? 'cs' : 'en']}</div>
                 <h2 className="text-4xl md:text-5xl font-bold text-white mb-3">Ekam a Golden Orb</h2>
                 <p className="text-gray-400 text-lg italic">{EkamDeekshaCopy.templeAndGoldenCenter[lang === 'cs' ? 'cs' : 'en']}</p>
               </div>
@@ -564,13 +564,13 @@ export default function EkamDeekshaPage() {
                   {EkamDeekshaCopy.theEkamTempleInAndhraPradeshIs[lang === 'cs' ? 'cs' : 'en']}
                 </p>
                 <div className="text-center py-6">
-                  <p className="text-2xl text-amber-300 font-bold mb-3">{EkamDeekshaCopy.theGoldenSeedOfConsciousnessIs[lang === 'cs' ? 'cs' : 'en']}</p>
+                  <p className="text-2xl text-zion-gold-300 font-bold mb-3">{EkamDeekshaCopy.theGoldenSeedOfConsciousnessIs[lang === 'cs' ? 'cs' : 'en']}</p>
                   <p className="text-gray-400">{EkamDeekshaCopy.theGoldenAgeIsNotAFutureThatWi[lang === 'cs' ? 'cs' : 'en']}<br />{EkamDeekshaCopy.itIsAStateOfConsciousnessThatM[lang === 'cs' ? 'cs' : 'en']}</p>
                 </div>
                 <p>
                   {EkamDeekshaCopy.goldenOrbTheGoldenSphereInTheC[lang === 'cs' ? 'cs' : 'en']}
                 </p>
-                <div className="zion-rainbow-sub p-6 my-4" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+                <div className="zion-rainbow-sub p-6 my-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                   <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{EkamDeekshaCopy.ekamAsPlanetaryField[lang === 'cs' ? 'cs' : 'en']}</p>
                   <p className="text-sm leading-7 text-gray-300">
                     {EkamDeekshaCopy.thePhysicalTempleIsOneNodeEkam[lang === 'cs' ? 'cs' : 'en']}
@@ -582,7 +582,7 @@ export default function EkamDeekshaPage() {
             {/* KAP 7 */}
             <section id="kapitel-7" className="mb-24 scroll-mt-24">
               <div className="mb-8 text-center">
-                <div className="text-sm text-amber-300 uppercase tracking-wider mb-2">{EkamDeekshaCopy.chapter7[lang === 'cs' ? 'cs' : 'en']}</div>
+                <div className="text-sm text-zion-gold-300 uppercase tracking-wider mb-2">{EkamDeekshaCopy.chapter7[lang === 'cs' ? 'cs' : 'en']}</div>
                 <h2 className="text-4xl md:text-5xl font-bold text-white mb-3">Hiranyagarbha</h2>
                 <p className="text-gray-400 text-lg italic">{EkamDeekshaCopy.goldenSeedCosmologyOfCreation[lang === 'cs' ? 'cs' : 'en']}</p>
               </div>
@@ -590,8 +590,8 @@ export default function EkamDeekshaPage() {
                 <p>
                   {EkamDeekshaCopy.hiranyagarbhaGoldenWombGoldenE[lang === 'cs' ? 'cs' : 'en']}
                 </p>
-                <div className="zion-rainbow-sub p-6 my-6 text-center" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
-                  <Orbit className="w-8 h-8 text-amber-300 mx-auto mb-3" />
+                <div className="zion-rainbow-sub p-6 my-6 text-center" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+                  <Orbit className="w-8 h-8 text-zion-gold-300 mx-auto mb-3" />
                   <p className="text-amber-200 italic text-lg">
                     {EkamDeekshaCopy.inTheBeginningWasTheGoldenEggT[lang === 'cs' ? 'cs' : 'en']}<br />
                     {EkamDeekshaCopy.fromItWasBornTheWholeWorldHeav[lang === 'cs' ? 'cs' : 'en']}
@@ -607,8 +607,8 @@ export default function EkamDeekshaPage() {
                     { dim: EkamDeekshaCopy.ekamLineage[lang === 'cs' ? 'cs' : 'en'],        t: EkamDeekshaCopy.goldenOrbAsTheCenterOfTheTempl[lang === 'cs' ? 'cs' : 'en'] },
                     { dim: EkamDeekshaCopy.zionPow[lang === 'cs' ? 'cs' : 'en'],          t: EkamDeekshaCopy.ekamDeekshaHashPipelineBeginsW[lang === 'cs' ? 'cs' : 'en'] },
                   ] as const).map(({ dim, t }) => (
-                    <div key={dim} className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
-                      <p className="text-xs text-amber-300 font-semibold uppercase tracking-wider mb-2">{dim}</p>
+                    <div key={dim} className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+                      <p className="text-xs text-zion-gold-300 font-semibold uppercase tracking-wider mb-2">{dim}</p>
                       <p className="text-sm text-gray-400 leading-6">{t}</p>
                     </div>
                   ))}
@@ -619,7 +619,7 @@ export default function EkamDeekshaPage() {
             {/* KAP 8 */}
             <section id="kapitel-8" className="mb-24 scroll-mt-24">
               <div className="mb-8 text-center">
-                <div className="text-sm text-amber-300 uppercase tracking-wider mb-2">{EkamDeekshaCopy.chapter8[lang === 'cs' ? 'cs' : 'en']}</div>
+                <div className="text-sm text-zion-gold-300 uppercase tracking-wider mb-2">{EkamDeekshaCopy.chapter8[lang === 'cs' ? 'cs' : 'en']}</div>
                 <h2 className="text-4xl md:text-5xl font-bold text-white mb-3">Ekam Deeksha PoW</h2>
                 <p className="text-gray-400 text-lg italic">{EkamDeekshaCopy.algorithmAsGoldenSeedCosmicHar[lang === 'cs' ? 'cs' : 'en']}</p>
               </div>
@@ -633,12 +633,12 @@ export default function EkamDeekshaPage() {
                 <div className="my-6 space-y-2">
                   <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{EkamDeekshaCopy.k6StageEkamDeekshaPipeline[lang === 'cs' ? 'cs' : 'en']}</p>
                   {algoSteps.map((step, i) => (
-                    <div key={step.id} className="zion-rainbow-sub p-4 flex gap-4" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
-                      <div className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full border border-amber-300/40 text-xs font-bold text-amber-300">
+                    <div key={step.id} className="zion-rainbow-sub p-4 flex gap-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+                      <div className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full border border-zion-gold-300/40 text-xs font-bold text-zion-gold-300">
                         {i}
                       </div>
                       <div>
-                        <p className="font-bold text-base text-amber-300 mb-1">{step.name}</p>
+                        <p className="font-bold text-base text-zion-gold-300 mb-1">{step.name}</p>
                         <p className="text-sm text-gray-400 leading-6">{step.desc}</p>
                       </div>
                     </div>
@@ -647,15 +647,15 @@ export default function EkamDeekshaPage() {
                 <p className="text-base font-semibold text-white mt-6 mb-3">{EkamDeekshaCopy.asicResistanceTwoLayerProtecti[lang === 'cs' ? 'cs' : 'en']}</p>
                 <div className="grid sm:grid-cols-2 gap-4">
                   {algoTiers.map(({ tier, title, desc }) => (
-                    <div key={tier} className="zion-rainbow-sub p-5" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
-                      <p className="text-xs font-bold text-amber-300 uppercase tracking-wider mb-1">{tier}</p>
+                    <div key={tier} className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+                      <p className="text-xs font-bold text-zion-gold-300 uppercase tracking-wider mb-1">{tier}</p>
                       <h3 className="text-lg font-semibold text-white mb-2">{title}</h3>
                       <p className="text-sm text-gray-400 leading-6">{desc}</p>
                     </div>
                   ))}
                 </div>
-                <div className="zion-rainbow-sub p-6 mt-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
-                  <Atom className="w-6 h-6 text-amber-300 mb-3" />
+                <div className="zion-rainbow-sub p-6 mt-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+                  <Atom className="w-6 h-6 text-zion-gold-300 mb-3" />
                   <p className="text-amber-200 font-semibold mb-2">{EkamDeekshaCopy.whyThisNamingIsNotJustDecorati[lang === 'cs' ? 'cs' : 'en']}</p>
                   <p className="text-sm leading-7 text-gray-300">
                     {EkamDeekshaCopy.hiranyagarbhaInitializesTheSee[lang === 'cs' ? 'cs' : 'en']}
@@ -670,7 +670,7 @@ export default function EkamDeekshaPage() {
             {/* KAP 9 */}
             <section id="kapitel-9" className="mb-24 scroll-mt-24">
               <div className="mb-8 text-center">
-                <div className="text-sm text-amber-300 uppercase tracking-wider mb-2">{EkamDeekshaCopy.chapter9[lang === 'cs' ? 'cs' : 'en']}</div>
+                <div className="text-sm text-zion-gold-300 uppercase tracking-wider mb-2">{EkamDeekshaCopy.chapter9[lang === 'cs' ? 'cs' : 'en']}</div>
                 <h2 className="text-4xl md:text-5xl font-bold text-white mb-3">{EkamDeekshaCopy.algorithmOfTheGoldenAge[lang === 'cs' ? 'cs' : 'en']}</h2>
                 <p className="text-gray-400 text-lg italic">{EkamDeekshaCopy.tenStepsFromSeparationToUnity[lang === 'cs' ? 'cs' : 'en']}</p>
               </div>
@@ -691,8 +691,8 @@ export default function EkamDeekshaPage() {
                     { n: 9,  step: EkamDeekshaCopy.networking[lang === 'cs' ? 'cs' : 'en'],                  desc: EkamDeekshaCopy.connectingLocalFieldsIntoAMutu[lang === 'cs' ? 'cs' : 'en'] },
                     { n: 10, step: EkamDeekshaCopy.civilizationalManifestation[lang === 'cs' ? 'cs' : 'en'],   desc: EkamDeekshaCopy.newEducationNewEconomyNewPolit[lang === 'cs' ? 'cs' : 'en'] },
                   ] as const).map(({ n, step, desc }) => (
-                    <div key={n} className="flex gap-4 zion-rainbow-sub p-4" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
-                      <div className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-amber-300/10 border border-amber-300/30 text-amber-300 text-xs font-bold">
+                    <div key={n} className="flex gap-4 zion-rainbow-sub p-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+                      <div className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-zion-gold-300/10 border border-zion-gold-300/30 text-zion-gold-300 text-xs font-bold">
                         {n}
                       </div>
                       <div>
@@ -711,7 +711,7 @@ export default function EkamDeekshaPage() {
             {/* ZÁVĚR */}
             <section id="zaver" className="mb-24 scroll-mt-24">
               <div className="mb-8 text-center">
-                <h2 className="text-4xl md:text-5xl font-bold text-amber-300 mb-3">{EkamDeekshaCopy.conclusion[lang === 'cs' ? 'cs' : 'en']}</h2>
+                <h2 className="text-4xl md:text-5xl font-bold text-zion-gold-300 mb-3">{EkamDeekshaCopy.conclusion[lang === 'cs' ? 'cs' : 'en']}</h2>
                 <p className="text-gray-400 text-lg italic">{EkamDeekshaCopy.whenTheGoldenAgeBegins[lang === 'cs' ? 'cs' : 'en']}</p>
               </div>
               <div className="space-y-6 text-center">
@@ -726,8 +726,8 @@ export default function EkamDeekshaPage() {
                   {EkamDeekshaCopy.andThisIsPreciselyWhatTheEkamD[lang === 'cs' ? 'cs' : 'en']}<br />
                   {EkamDeekshaCopy.fromTheFirstDaysOfJeevashramTo[lang === 'cs' ? 'cs' : 'en']}
                 </p>
-                <div className="my-10 p-8 zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
-                  <Globe className="w-8 h-8 text-amber-300 mx-auto mb-4" />
+                <div className="my-10 p-8 zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+                  <Globe className="w-8 h-8 text-zion-gold-300 mx-auto mb-4" />
                   <p className="text-lg italic text-gray-300 leading-relaxed">
                     {EkamDeekshaCopy.theQuantumRevolutionShowedThat[lang === 'cs' ? 'cs' : 'en']}<br /><br />
                     {EkamDeekshaCopy.ekamDeekshaShowsWhatThisInnerT[lang === 'cs' ? 'cs' : 'en']}<br />
@@ -741,7 +741,7 @@ export default function EkamDeekshaPage() {
                   {EkamDeekshaCopy.oneSpeaksAboutTheWorldTheOther[lang === 'cs' ? 'cs' : 'en']}<br />
                   {EkamDeekshaCopy.withoutBothFieldsNoMapIsSuffic[lang === 'cs' ? 'cs' : 'en']}
                 </p>
-                <p className="text-center text-amber-300 font-semibold text-2xl mt-10">
+                <p className="text-center text-zion-gold-300 font-semibold text-2xl mt-10">
                   {EkamDeekshaCopy.ekamOneHereNowYou[lang === 'cs' ? 'cs' : 'en']}
                 </p>
               </div>

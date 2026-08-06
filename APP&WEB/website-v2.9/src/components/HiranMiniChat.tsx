@@ -92,27 +92,27 @@ export default function HiranMiniChat({ lang = 'cs' }: { lang?: 'cs' | 'en' }) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="group flex items-center gap-3 w-full rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-500/8 via-cyan-500/4 to-transparent p-4 backdrop-blur-sm transition-all duration-300 hover:border-purple-400/40 hover:shadow-[0_0_32px_rgba(139,92,246,0.12)]"
+        className="group flex items-center gap-3 w-full rounded-2xl border border-zion-purple-500/20 bg-gradient-to-br from-zion-purple-500/8 via-zion-cyan-500/4 to-transparent p-4 backdrop-blur-sm transition-all duration-300 hover:border-zion-purple-400/40 hover:shadow-[0_0_32px_rgba(228, 30, 43,0.12)]"
       >
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-purple-400/25 bg-purple-500/12 ring-1 ring-purple-400/15 transition-transform duration-300 group-hover:scale-110">
-          <Brain className="h-5 w-5 text-purple-300" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-zion-purple-400/25 bg-zion-purple-500/12 ring-1 ring-zion-purple-400/15 transition-transform duration-300 group-hover:scale-110">
+          <Brain className="h-5 w-5 text-zion-purple-300" />
         </div>
         <div className="flex-1 text-left">
-          <span className="text-sm font-bold text-purple-300 tracking-wide">Hiran v2.2</span>
+          <span className="text-sm font-bold text-zion-purple-300 tracking-wide">Hiran v2.2</span>
           <p className="text-[11px] text-gray-400 group-hover:text-gray-300 transition-colors">
             {HiranMiniChatCopy.askAiAnythingAboutZion[lang === 'cs' ? 'cs' : 'en']}
           </p>
         </div>
-        <MessageCircle className="h-4 w-4 text-gray-500 transition-colors group-hover:text-purple-300" />
+        <MessageCircle className="h-4 w-4 text-gray-500 transition-colors group-hover:text-zion-purple-300" />
       </button>
     );
   }
 
   return (
-    <div className="bg-black/70 backdrop-blur-xl rounded-2xl border border-purple-500/25 overflow-hidden flex flex-col" style={{ height: '320px' }}>
+    <div className="bg-black/70 backdrop-blur-xl rounded-2xl border border-zion-purple-500/25 overflow-hidden flex flex-col" style={{ height: '320px' }}>
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10 bg-black/40">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-zion-purple-500 to-zion-cyan-500 flex items-center justify-center">
           <Brain className="w-4 h-4 text-white" />
         </div>
         <div className="flex-1 min-w-0">
@@ -122,8 +122,8 @@ export default function HiranMiniChat({ lang = 'cs' }: { lang?: 'cs' | 'en' }) {
           </p>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-          <span className="text-[10px] text-green-400">Online</span>
+          <span className="w-2 h-2 rounded-full bg-zion-cyan-400 animate-pulse" />
+          <span className="text-[10px] text-zion-cyan-400">Online</span>
         </div>
         <button
           onClick={() => setOpen(false)}
@@ -146,7 +146,7 @@ export default function HiranMiniChat({ lang = 'cs' }: { lang?: 'cs' | 'en' }) {
                 <button
                   key={i}
                   onClick={() => sendMessage(lang === 'cs' ? q.cs : q.en)}
-                  className="text-[10px] px-2.5 py-1 rounded-full border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10 transition-colors"
+                  className="text-[10px] px-2.5 py-1 rounded-full border border-zion-cyan-500/30 text-zion-cyan-300 hover:bg-zion-cyan-500/10 transition-colors"
                 >
                   {lang === 'cs' ? q.cs : q.en}
                 </button>
@@ -158,22 +158,22 @@ export default function HiranMiniChat({ lang = 'cs' }: { lang?: 'cs' | 'en' }) {
         {messages.map((msg, i) => (
           <div key={i} className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             {msg.role === 'assistant' && (
-              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-zion-purple-500 to-zion-cyan-500 flex items-center justify-center flex-shrink-0 mt-0.5">
                 <Brain className="w-3 h-3 text-white" />
               </div>
             )}
             <div
               className={`max-w-[85%] rounded-xl px-3 py-2 text-xs leading-relaxed ${
                 msg.role === 'user'
-                  ? 'bg-purple-500/15 border border-purple-500/25 text-gray-200'
+                  ? 'bg-zion-purple-500/15 border border-zion-purple-500/25 text-gray-200'
                   : 'bg-white/5 border border-white/10 text-gray-300'
               }`}
             >
               <p className="whitespace-pre-wrap break-words">{msg.content}</p>
             </div>
             {msg.role === 'user' && (
-              <div className="w-6 h-6 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <User className="w-3 h-3 text-purple-300" />
+              <div className="w-6 h-6 rounded-full bg-zion-purple-500/20 border border-zion-purple-500/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <User className="w-3 h-3 text-zion-purple-300" />
               </div>
             )}
           </div>
@@ -181,11 +181,11 @@ export default function HiranMiniChat({ lang = 'cs' }: { lang?: 'cs' | 'en' }) {
 
         {loading && (
           <div className="flex gap-2 justify-start">
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-zion-purple-500 to-zion-cyan-500 flex items-center justify-center flex-shrink-0 mt-0.5">
               <Brain className="w-3 h-3 text-white" />
             </div>
             <div className="bg-white/5 border border-white/10 rounded-xl px-3 py-2">
-              <Loader2 className="w-3 h-3 text-cyan-300 animate-spin" />
+              <Loader2 className="w-3 h-3 text-zion-cyan-300 animate-spin" />
             </div>
           </div>
         )}
@@ -202,12 +202,12 @@ export default function HiranMiniChat({ lang = 'cs' }: { lang?: 'cs' | 'en' }) {
             placeholder={HiranMiniChatCopy.typeAMessage[lang === 'cs' ? 'cs' : 'en']}
             disabled={loading}
             maxLength={2000}
-            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 disabled:opacity-50 transition-colors"
+            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-zion-cyan-500/50 disabled:opacity-50 transition-colors"
           />
           <button
             type="submit"
             disabled={loading || !input.trim()}
-            className="w-8 h-8 rounded-lg bg-gradient-to-r from-purple-500 to-cyan-500 flex items-center justify-center disabled:opacity-30 hover:shadow-lg hover:shadow-purple-500/30 transition-all"
+            className="w-8 h-8 rounded-lg bg-gradient-to-r from-zion-purple-500 to-zion-cyan-500 flex items-center justify-center disabled:opacity-30 hover:shadow-lg hover:shadow-zion-purple-500/30 transition-all"
           >
             <Send className="w-3 h-3 text-white" />
           </button>

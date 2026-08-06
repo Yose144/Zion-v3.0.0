@@ -68,7 +68,7 @@ const REGIONS: Region[] = [
     href: '/terranova/geography/oceania',
     icon: Sparkles,
     color: '#FBBF24',
-    rgb: '251,191,36',
+    rgb: '252, 209, 22',
   },
 ];
 

@@ -44,14 +44,14 @@ export default function HomeQuickLinks() {
       label: HomeQuickLinksCopy.explorer[cs ? 'cs' : 'en'],
       desc: HomeQuickLinksCopy.blocksTxAddresses[cs ? 'cs' : 'en'],
       icon: Blocks,
-      rc: '251, 191, 36', // gold
+      rc: '252, 209, 22', // gold
     },
     {
       href: '/network',
       label: HomeQuickLinksCopy.network[cs ? 'cs' : 'en'],
       desc: HomeQuickLinksCopy.nodesLatency[cs ? 'cs' : 'en'],
       icon: Globe,
-      rc: '6, 182, 212', // cyan
+      rc: '7, 137, 48', // cyan
     },
     {
       href: '/pool',
@@ -65,28 +65,28 @@ export default function HomeQuickLinks() {
       label: HomeQuickLinksCopy.docs[cs ? 'cs' : 'en'],
       desc: HomeQuickLinksCopy.guidesApi[cs ? 'cs' : 'en'],
       icon: ScrollText,
-      rc: '16, 185, 129', // emerald
+      rc: '7, 137, 48', // emerald
     },
     {
       href: '/multichain',
       label: 'Multichain',
       desc: cs ? 'Bridge, WARP, swap' : 'Bridge, WARP, swap',
       icon: Globe,
-      rc: '16, 185, 129', // emerald
+      rc: '7, 137, 48', // emerald
     },
     {
       href: '/roadmap',
       label: HomeQuickLinksCopy.roadmap[cs ? 'cs' : 'en'],
       desc: HomeQuickLinksCopy.l1L6Vision[cs ? 'cs' : 'en'],
       icon: LayoutDashboard,
-      rc: '236, 72, 153', // pink
+      rc: '228, 30, 43', // pink
     },
     {
       href: '/terranova',
       label: HomeQuickLinksCopy.terraNova[cs ? 'cs' : 'en'],
       desc: HomeQuickLinksCopy.bookStory[cs ? 'cs' : 'en'],
       icon: Sparkles,
-      rc: '245, 158, 11', // amber
+      rc: '252, 209, 22', // amber
     },
   ];
 
@@ -150,21 +150,21 @@ export default function HomeQuickLinks() {
           <Link
             href="/doge-vs-zion"
             className="zion-rainbow-sub group relative flex items-center gap-4 overflow-hidden p-5"
-            style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
+            style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
           >
             <div
               className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition-transform group-hover:scale-110"
               style={{
-                borderColor: 'rgba(245, 158, 11, 0.4)',
-                backgroundColor: 'rgba(245, 158, 11, 0.12)',
+                borderColor: 'rgba(252, 209, 22, 0.4)',
+                backgroundColor: 'rgba(252, 209, 22, 0.12)',
               }}
             >
-              <Swords className="h-6 w-6 text-amber-400" />
+              <Swords className="h-6 w-6 text-zion-gold-400" />
             </div>
             <div className="flex-1 space-y-1">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-bold text-white">Doge vs ZION</h3>
-                <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[9px] font-bold text-amber-300">
+                <span className="rounded-full border border-zion-gold-400/30 bg-zion-gold-400/10 px-2 py-0.5 text-[9px] font-bold text-zion-gold-300">
                   {HomeQuickLinksCopy.arcade[cs ? 'cs' : 'en']}
                 </span>
               </div>

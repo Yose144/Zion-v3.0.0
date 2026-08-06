@@ -30,7 +30,7 @@ const LAYERS: Layer[] = [
     href: '/l5-free-world',
     icon: Globe2,
     color: '#F59E0B',
-    rgb: '245,158,11',
+    rgb: '252, 209, 22',
   },
   {
     id: 'l6',
@@ -39,7 +39,7 @@ const LAYERS: Layer[] = [
     href: '/l6-issobella',
     icon: Rocket,
     color: '#F43F5E',
-    rgb: '244,63,94',
+    rgb: '228, 30, 43',
   },
 ];
 

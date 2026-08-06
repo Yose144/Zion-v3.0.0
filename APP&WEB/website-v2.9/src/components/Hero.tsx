@@ -58,7 +58,7 @@ export default function Hero() {
             <Sparkles className="w-3.5 h-3.5 animate-pulse" />
             {tr('hero', 'badge_version', lang)}
           </div>
-          <div className="zion-kicker border-pink-500/25 bg-pink-500/10 text-pink-300">
+          <div className="zion-kicker border-zion-purple-500/25 bg-zion-purple-500/10 text-zion-purple-300">
             <BrainCircuit className="w-3.5 h-3.5 animate-pulse" />
             {tr('hero', 'badge_chv4', lang)}
           </div>
@@ -107,7 +107,7 @@ export default function Hero() {
               <Link
                 href="/network"
                 className="zion-button-primary group w-full sm:w-auto justify-center"
-                style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+                style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
               >
                 {tr('hero', 'btn_warp', lang)}
                 <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />

@@ -44,7 +44,7 @@ export default function CopyButton({ text, label, className = "", iconSize = 14 
       type="button"
     >
       {copied ? (
-        <Check className="text-green-400" style={{ width: iconSize, height: iconSize }} />
+        <Check className="text-zion-cyan-400" style={{ width: iconSize, height: iconSize }} />
       ) : (
         <Copy style={{ width: iconSize, height: iconSize }} />
       )}

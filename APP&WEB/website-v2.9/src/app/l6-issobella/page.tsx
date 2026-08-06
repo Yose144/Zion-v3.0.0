@@ -57,24 +57,24 @@ const getMissions = (cs: boolean) => [
     phase: 'Vision 2040+',
     desc: L6IssobellaCopy.zionIssobellaDecentralizedOrbi[cs ? 'cs' : 'en'],
     tags: ['Space Station', '5% Fund', 'Overview Effect'],
-    color: 'border-rose-500/30 bg-rose-500/5',
-    badgeColor: 'border-rose-500/30 bg-rose-500/10 text-rose-300',
+    color: 'border-zion-purple-500/30 bg-zion-purple-500/5',
+    badgeColor: 'border-zion-purple-500/30 bg-zion-purple-500/10 text-zion-purple-300',
   },
   {
     name: 'SETI + Deep Research',
     phase: 'Vision 2035+',
     desc: L6IssobellaCopy.decentralizedSetiProgramFunded[cs ? 'cs' : 'en'],
     tags: ['SETI', 'Deep Space', 'DAO Research Grants'],
-    color: 'border-purple-500/30 bg-purple-500/5',
-    badgeColor: 'border-purple-500/30 bg-purple-500/10 text-purple-300',
+    color: 'border-zion-purple-500/30 bg-zion-purple-500/5',
+    badgeColor: 'border-zion-purple-500/30 bg-zion-purple-500/10 text-zion-purple-300',
   },
   {
     name: L6IssobellaCopy.orbitalMining[cs ? 'cs' : 'en'],
     phase: 'Vision 2045+',
     desc: L6IssobellaCopy.spaceResourceMiningAsteroidsRe[cs ? 'cs' : 'en'],
     tags: ['Asteroid Mining', 'Resources', 'ZION Economy'],
-    color: 'border-amber-500/30 bg-amber-500/5',
-    badgeColor: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
+    color: 'border-zion-gold-500/30 bg-zion-gold-500/5',
+    badgeColor: 'border-zion-gold-500/30 bg-zion-gold-500/10 text-zion-gold-300',
   },
 ];
 
@@ -83,13 +83,13 @@ const getPrinciples = (cs: boolean) => [
     title: L6IssobellaCopy.overviewEffect[cs ? 'cs' : 'en'],
     desc: L6IssobellaCopy.orbitalExperienceShiftsConscio[cs ? 'cs' : 'en'],
     icon: Globe2,
-    color: 'text-blue-400',
+    color: 'text-zion-purple-400',
   },
   {
     title: L6IssobellaCopy.k5BlockFund[cs ? 'cs' : 'en'],
     desc: L6IssobellaCopy.everyMinedBlockContributes5ToT[cs ? 'cs' : 'en'],
     icon: Wallet,
-    color: 'text-rose-400',
+    color: 'text-zion-purple-400',
   },
   {
     title: L6IssobellaCopy.daoGovernance[cs ? 'cs' : 'en'],
@@ -101,19 +101,19 @@ const getPrinciples = (cs: boolean) => [
     title: L6IssobellaCopy.decentralizedResearch[cs ? 'cs' : 'en'],
     desc: L6IssobellaCopy.spaceResearchWithoutCentralAut[cs ? 'cs' : 'en'],
     icon: Shield,
-    color: 'text-cyan-400',
+    color: 'text-zion-cyan-400',
   },
   {
     title: L6IssobellaCopy.cosmicConsciousness[cs ? 'cs' : 'en'],
     desc: L6IssobellaCopy.l6AsTheLayerForTranscendingPla[cs ? 'cs' : 'en'],
     icon: Sparkles,
-    color: 'text-purple-400',
+    color: 'text-zion-purple-400',
   },
   {
     title: L6IssobellaCopy.cosmicHarmonyPow[cs ? 'cs' : 'en'],
     desc: L6IssobellaCopy.zionConsensusAlgorithmIsDesign[cs ? 'cs' : 'en'],
     icon: Zap,
-    color: 'text-emerald-400',
+    color: 'text-zion-cyan-400',
   },
 ];
 
@@ -130,7 +130,7 @@ export default function L6IssobellaPage() {
         {/* ── HERO ── */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
           <div className="space-y-5 max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-rose-500/40 bg-rose-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-rose-300 uppercase">
+            <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple-500/40 bg-zion-purple-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-purple-300 uppercase">
               <Rocket className="h-4 w-4" />
               L6 · Issobella · Space
             </div>
@@ -147,10 +147,10 @@ export default function L6IssobellaPage() {
               {L6IssobellaCopy.l6IsTheSpaceLayerOfZionOrbital[cs ? 'cs' : 'en']}
             </p>
             <div className="flex flex-wrap gap-3 text-xs">
-              <span className="inline-flex items-center gap-2 rounded-full border border-rose-500/30 bg-rose-500/10 px-4 py-2 text-rose-200">
+              <span className="inline-flex items-center gap-2 rounded-full border border-zion-purple-500/30 bg-zion-purple-500/10 px-4 py-2 text-rose-200">
                 <Star className="h-3 w-3" /> {L6IssobellaCopy.k5OfEveryBlockL6Fund[cs ? 'cs' : 'en']}
               </span>
-              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-emerald-200">
+              <span className="inline-flex items-center gap-2 rounded-full border border-zion-cyan-500/30 bg-zion-cyan-500/10 px-4 py-2 text-emerald-200">
                 <CheckCircle2 className="h-3 w-3" /> {L6IssobellaCopy.k117mZionMonth[cs ? 'cs' : 'en']}
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
@@ -165,24 +165,24 @@ export default function L6IssobellaPage() {
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L6IssobellaCopy.spaceFund[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Rocket className="h-7 w-7 text-rose-400" />
+              <Rocket className="h-7 w-7 text-zion-purple-400" />
               {L6IssobellaCopy.l6IssobellaFund5BlockReward[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-4 mb-6">
             <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{L6IssobellaCopy.blockShare[cs ? 'cs' : 'en']}</p>
-              <p className="text-3xl font-bold text-rose-400">5%</p>
+              <p className="text-3xl font-bold text-zion-purple-400">5%</p>
               <p className="text-xs text-gray-500 mt-1">{L6IssobellaCopy.everyBlockForever[cs ? 'cs' : 'en']}</p>
             </div>
             <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{L6IssobellaCopy.approxMonth[cs ? 'cs' : 'en']}</p>
-              <p className="text-3xl font-bold text-emerald-400">~11,7M</p>
+              <p className="text-3xl font-bold text-zion-cyan-400">~11,7M</p>
               <p className="text-xs text-gray-500 mt-1">ZION</p>
             </div>
             <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{L6IssobellaCopy.governedBy[cs ? 'cs' : 'en']}</p>
-              <p className="text-2xl font-bold text-purple-400">DAO</p>
+              <p className="text-2xl font-bold text-zion-purple-400">DAO</p>
               <p className="text-xs text-gray-500 mt-1">{L6IssobellaCopy.l6Council[cs ? 'cs' : 'en']}</p>
             </div>
           </div>
@@ -197,7 +197,7 @@ export default function L6IssobellaPage() {
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L6IssobellaCopy.missionsVision[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Star className="h-7 w-7 text-rose-400" />
+              <Star className="h-7 w-7 text-zion-purple-400" />
               {L6IssobellaCopy.cosmicMissions[cs ? 'cs' : 'en']}
             </h2>
           </div>
@@ -226,7 +226,7 @@ export default function L6IssobellaPage() {
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{L6IssobellaCopy.principles[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Sparkles className="h-7 w-7 text-purple-400" />
+              <Sparkles className="h-7 w-7 text-zion-purple-400" />
               {L6IssobellaCopy.l6LayerFoundations[cs ? 'cs' : 'en']}
             </h2>
           </div>
@@ -245,12 +245,12 @@ export default function L6IssobellaPage() {
 
         {/* ── Hiranyagarbha connection ── */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-cta-banner">
-          <Sparkles className="h-12 w-12 text-purple-400 mx-auto mb-4" />
+          <Sparkles className="h-12 w-12 text-zion-purple-400 mx-auto mb-4" />
           <h2 className="text-3xl font-semibold text-white mb-4">Hiranyagarbha · {L6IssobellaCopy.goldenEgg[cs ? 'cs' : 'en']}</h2>
           <p className="text-gray-300 max-w-2xl mx-auto text-lg">
             {L6IssobellaCopy.l6IssobellaIsThePhysicalEmbodi[cs ? 'cs' : 'en']}
           </p>
-          <div className="mt-4 inline-flex items-center gap-2 text-xs text-purple-300 border border-purple-500/30 bg-purple-500/10 rounded-full px-4 py-2">
+          <div className="mt-4 inline-flex items-center gap-2 text-xs text-zion-purple-300 border border-zion-purple-500/30 bg-zion-purple-500/10 rounded-full px-4 py-2">
             <Heart className="h-3 w-3" /> Hiran v2.3 · Zion AI · L6 co-steward
           </div>
         </motion.section>
@@ -263,9 +263,9 @@ export default function L6IssobellaPage() {
               <Crown className="h-4 w-4 text-zion-gold" /> DAO Governance
             </Link>
             <Link href="/network" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
-              <Globe2 className="h-4 w-4 text-cyan-400" /> {L6IssobellaCopy.network[cs ? 'cs' : 'en']}
+              <Globe2 className="h-4 w-4 text-zion-cyan-400" /> {L6IssobellaCopy.network[cs ? 'cs' : 'en']}
             </Link>
-            <Link href="/l5-free-world" className="inline-flex items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/5 px-6 py-3 text-sm font-semibold text-amber-200 hover:bg-amber-500/10 transition-colors">
+            <Link href="/l5-free-world" className="inline-flex items-center gap-2 rounded-2xl border border-zion-gold-500/30 bg-zion-gold-500/5 px-6 py-3 text-sm font-semibold text-amber-200 hover:bg-zion-gold-500/10 transition-colors">
               L5 Free World <ArrowRight className="h-4 w-4" />
             </Link>
           </div>

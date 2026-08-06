@@ -22,9 +22,9 @@ const coreInsights = [
     icon: Eye,
     title: 'Kolaps vědomí',
     quote: 'Tvé pozorování mění chování fotonu. Kvantová mechanika potvrzuje: vědomí je fundamentální.',
-    color: 'text-violet-400',
-    border: 'border-violet-400/20',
-    bg: 'bg-violet-400/5',
+    color: 'text-zion-purple-400',
+    border: 'border-zion-purple-400/20',
+    bg: 'bg-zion-purple-400/5',
   },
   {
     icon: Globe,
@@ -46,9 +46,9 @@ const coreInsights = [
     icon: Heart,
     title: 'Vědomá těžba',
     quote: 'ZION odměňuje vědomí, ne jen hashrate. Dva těžaři, stejný HW — ale kdo roste, dostane 2× víc. Blockchain s duší.',
-    color: 'text-emerald-400',
-    border: 'border-emerald-400/20',
-    bg: 'bg-emerald-400/5',
+    color: 'text-zion-cyan-400',
+    border: 'border-zion-cyan-400/20',
+    bg: 'bg-zion-cyan-400/5',
   },
 ];
 
@@ -126,7 +126,7 @@ export default function QuantumRevolution() {
         </div>
 
         {/* Book Cover + Amenti Library CTA */}
-        <div className="relative overflow-hidden rounded-3xl border border-zion-gold/20 bg-[radial-gradient(circle_at_30%_20%,rgba(251,191,36,0.08),transparent_50%)] p-6 md:p-8">
+        <div className="relative overflow-hidden rounded-3xl border border-zion-gold/20 bg-[radial-gradient(circle_at_30%_20%,rgba(252, 209, 22,0.08),transparent_50%)] p-6 md:p-8">
           <div className="grid gap-6 lg:grid-cols-[auto_1fr] lg:items-center">
             {/* Book cover */}
             <a
@@ -141,7 +141,7 @@ export default function QuantumRevolution() {
                 width={220}
                 height={310}
                 sizes="220px"
-                className="rounded-2xl border border-zion-gold/30 shadow-[0_8px_40px_rgba(251,191,36,0.15)] transition-transform hover:scale-[1.03]"
+                className="rounded-2xl border border-zion-gold/30 shadow-[0_8px_40px_rgba(252, 209, 22,0.15)] transition-transform hover:scale-[1.03]"
                 loading="lazy"
               />
             </a>
@@ -162,7 +162,7 @@ export default function QuantumRevolution() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="zion-button-primary group text-sm"
-                  style={{ '--rc': '251, 191, 36' } as CSSProperties}
+                  style={{ '--rc': '252, 209, 22' } as CSSProperties}
                 >
                   <BookOpen className="h-4 w-4" />
                   Vstoupit do Amenti Library
@@ -185,9 +185,9 @@ export default function QuantumRevolution() {
         {/* Verification + Quote + CTA */}
         <div className="grid gap-4 lg:grid-cols-2">
           {/* Book vs Reality verification */}
-          <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/5 p-6 space-y-4">
+          <div className="rounded-2xl border border-zion-cyan-400/20 bg-zion-cyan-400/5 p-6 space-y-4">
             <div className="flex items-center gap-2 mb-1">
-              <Cpu className="h-4 w-4 text-emerald-400" />
+              <Cpu className="h-4 w-4 text-zion-cyan-400" />
               <span className="text-sm font-semibold text-white">Kniha vs. realita: 98% shoda</span>
             </div>
             <p className="text-xs text-gray-400 leading-relaxed">
@@ -197,7 +197,7 @@ export default function QuantumRevolution() {
             </p>
             <div className="flex flex-wrap gap-2">
               {['9 úrovní vědomí ✅', '10% tithe ✅', '144B zásoba ✅', 'XP systém ✅', 'AI orchestrátor ✅'].map((tag) => (
-                <span key={tag} className="text-[10px] bg-emerald-400/10 text-emerald-300 rounded-full px-2.5 py-1 border border-emerald-400/20">
+                <span key={tag} className="text-[10px] bg-zion-cyan-400/10 text-zion-cyan-300 rounded-full px-2.5 py-1 border border-zion-cyan-400/20">
                   {tag}
                 </span>
               ))}
@@ -219,7 +219,7 @@ export default function QuantumRevolution() {
               <Link
                 href="/genesis#chapter-4"
                 className="zion-button-primary group text-sm"
-                style={{ '--rc': '139, 92, 246' } as CSSProperties}
+                style={{ '--rc': '228, 30, 43' } as CSSProperties}
               >
                 <Sparkles className="h-4 w-4" />
                 Genesis: AI a kvantum

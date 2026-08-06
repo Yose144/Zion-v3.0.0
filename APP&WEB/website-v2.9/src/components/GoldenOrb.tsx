@@ -85,8 +85,8 @@ export default function GoldenOrb({ className = '' }: { className?: string }) {
         style={{
           background: `
             radial-gradient(ellipse 60% 40% at 30% 30%, rgba(99,52,237,0.12) 0%, transparent 60%),
-            radial-gradient(ellipse 50% 35% at 70% 65%, rgba(168,85,247,0.08) 0%, transparent 55%),
-            radial-gradient(ellipse 40% 30% at 50% 80%, rgba(251,191,36,0.06) 0%, transparent 60%)
+            radial-gradient(ellipse 50% 35% at 70% 65%, rgba(228, 30, 43,0.08) 0%, transparent 55%),
+            radial-gradient(ellipse 40% 30% at 50% 80%, rgba(252, 209, 22,0.06) 0%, transparent 60%)
           `,
         }}
       />
@@ -98,7 +98,7 @@ export default function GoldenOrb({ className = '' }: { className?: string }) {
         fill="none"
         style={{ opacity: hovered ? 0.14 : 0.08, transition: 'opacity 1s' }}
       >
-        <g stroke="rgba(251,191,36,0.9)" strokeWidth="0.4" strokeLinejoin="round">
+        <g stroke="rgba(252, 209, 22,0.9)" strokeWidth="0.4" strokeLinejoin="round">
           {/* ── Outer square with 4 gates (Bhupura) ── */}
           <rect x="14" y="14" width="172" height="172" rx="1" />
           <rect x="18" y="18" width="164" height="164" rx="1" />
@@ -178,7 +178,7 @@ export default function GoldenOrb({ className = '' }: { className?: string }) {
         className="pointer-events-none absolute inset-0 opacity-30"
         style={{
           background:
-            'radial-gradient(circle at 20% 70%, rgba(255,255,255,0.04) 0%, transparent 30%), radial-gradient(circle at 80% 20%, rgba(251,191,36,0.04) 0%, transparent 30%)',
+            'radial-gradient(circle at 20% 70%, rgba(255,255,255,0.04) 0%, transparent 30%), radial-gradient(circle at 80% 20%, rgba(252, 209, 22,0.04) 0%, transparent 30%)',
         }}
       />
 
@@ -188,7 +188,7 @@ export default function GoldenOrb({ className = '' }: { className?: string }) {
         className="pointer-events-none absolute left-1/2 top-1/2 h-[55%] w-[55%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl transition-opacity duration-700"
         style={{
           background:
-            'radial-gradient(circle, rgba(251,191,36,0.4) 0%, rgba(245,158,11,0.2) 40%, transparent 70%)',
+            'radial-gradient(circle, rgba(252, 209, 22,0.4) 0%, rgba(252, 209, 22,0.2) 40%, transparent 70%)',
           opacity: hovered ? 1 : 0.55,
         }}
       />
@@ -202,9 +202,9 @@ export default function GoldenOrb({ className = '' }: { className?: string }) {
       >
         <defs>
           <radialGradient id="rayFade" cx="50%" cy="50%" r="50%">
-            <stop offset="40%" stopColor="rgba(251,191,36,0)" />
-            <stop offset="65%" stopColor="rgba(251,191,36,0.3)" />
-            <stop offset="100%" stopColor="rgba(251,191,36,0)" />
+            <stop offset="40%" stopColor="rgba(252, 209, 22,0)" />
+            <stop offset="65%" stopColor="rgba(252, 209, 22,0.3)" />
+            <stop offset="100%" stopColor="rgba(252, 209, 22,0)" />
           </radialGradient>
         </defs>
         {Array.from({ length: 12 }).map((_, i) => (
@@ -254,7 +254,7 @@ export default function GoldenOrb({ className = '' }: { className?: string }) {
           className="absolute inset-[-12%] rounded-full animate-[pulse-glow_3s_ease-in-out_infinite]"
           style={{
             background:
-              'radial-gradient(circle, transparent 52%, rgba(251,191,36,0.15) 60%, transparent 72%)',
+              'radial-gradient(circle, transparent 52%, rgba(252, 209, 22,0.15) 60%, transparent 72%)',
           }}
         />
 
@@ -267,9 +267,9 @@ export default function GoldenOrb({ className = '' }: { className?: string }) {
             boxShadow: `
               inset -18px -28px 55px rgba(28,10,2,0.85),
               inset 16px 20px 45px rgba(255,251,230,0.5),
-              inset 0 0 30px rgba(251,191,36,0.15),
-              0 0 50px rgba(251,191,36,0.45),
-              0 0 100px rgba(245,158,11,0.25),
+              inset 0 0 30px rgba(252, 209, 22,0.15),
+              0 0 50px rgba(252, 209, 22,0.45),
+              0 0 100px rgba(252, 209, 22,0.25),
               0 8px 40px rgba(0,0,0,0.6)
             `,
             transform: 'translateZ(0)',
@@ -280,7 +280,7 @@ export default function GoldenOrb({ className = '' }: { className?: string }) {
             className="absolute inset-0 rounded-full opacity-50 mix-blend-screen animate-[spin_80s_linear_infinite]"
             style={{
               background:
-                'conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgba(255,215,128,0.25) 60deg, transparent 120deg, rgba(251,191,36,0.18) 180deg, transparent 240deg, rgba(255,237,180,0.22) 300deg, transparent 360deg)',
+                'conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgba(255,215,128,0.25) 60deg, transparent 120deg, rgba(252, 209, 22,0.18) 180deg, transparent 240deg, rgba(255,237,180,0.22) 300deg, transparent 360deg)',
             }}
           />
 
@@ -311,7 +311,7 @@ export default function GoldenOrb({ className = '' }: { className?: string }) {
             className="absolute inset-0 rounded-full"
             style={{
               background:
-                'radial-gradient(circle at 50% 50%, transparent 85%, rgba(251,191,36,0.35) 94%, transparent 100%)',
+                'radial-gradient(circle at 50% 50%, transparent 85%, rgba(252, 209, 22,0.35) 94%, transparent 100%)',
               transform: 'translateZ(5px)',
             }}
           />
@@ -366,7 +366,7 @@ export default function GoldenOrb({ className = '' }: { className?: string }) {
             top: `${40 + s.y * 0.2}%`,
             width: '2.5px',
             height: '2.5px',
-            boxShadow: '0 0 8px rgba(251,191,36,0.9)',
+            boxShadow: '0 0 8px rgba(252, 209, 22,0.9)',
             animation: `sparkle-float ${5 + s.delay}s ease-in-out ${s.delay}s infinite`,
             opacity: hovered ? 0.85 : 0.45,
             transition: 'opacity 0.4s',

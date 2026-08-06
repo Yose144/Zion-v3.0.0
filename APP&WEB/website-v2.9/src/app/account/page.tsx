@@ -58,7 +58,7 @@ type Tab = 'wallet' | 'mining' | 'transactions' | 'ai';
 const TABS: { id: Tab; labelCs: string; labelEn: string; icon: typeof Wallet; rc: string }[] = [
   { id: 'wallet', labelCs: 'Peněženka', labelEn: 'Wallet', icon: Wallet, rc: '7, 137, 48' },
   { id: 'mining', labelCs: 'Těžení', labelEn: 'Mining', icon: Pickaxe, rc: '228, 30, 43' },
-  { id: 'transactions', labelCs: 'Transakce', labelEn: 'Transactions', icon: ArrowLeftRight, rc: '251, 191, 36' },
+  { id: 'transactions', labelCs: 'Transakce', labelEn: 'Transactions', icon: ArrowLeftRight, rc: '252, 209, 22' },
   { id: 'ai', labelCs: 'AI Chat', labelEn: 'AI Chat', icon: Sparkles, rc: '7, 137, 48' },
 ];
 
@@ -281,7 +281,7 @@ export default function AccountPage() {
                   className="zion-button-secondary rounded-full px-4 py-2 text-xs font-mono"
                 >
                   {user.address}
-                  {copied ? <Check className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3" />}
+                  {copied ? <Check className="h-3 w-3 text-zion-cyan-400" /> : <Copy className="h-3 w-3" />}
                 </button>
 
                 <div className="flex flex-wrap gap-3 text-xs">
@@ -304,7 +304,7 @@ export default function AccountPage() {
                     {AccountCopy.accountOverview[cs ? 'cs' : 'en']}
                   </p>
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
+                    <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                       <div className="flex items-center gap-2 text-sm text-gray-300">
                         <Activity className="h-4 w-4 text-zion-gold" />
                         {AccountCopy.logins[cs ? 'cs' : 'en']}
@@ -320,9 +320,9 @@ export default function AccountPage() {
                         {user.address.slice(0, 10)}…{user.address.slice(-6)}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '16, 185, 129' } as CSSProperties}>
+                    <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
                       <div className="flex items-center gap-2 text-sm text-gray-300">
-                        <TrendingUp className="h-4 w-4 text-emerald-400" />
+                        <TrendingUp className="h-4 w-4 text-zion-cyan-400" />
                         {AccountCopy.created[cs ? 'cs' : 'en']}
                       </div>
                       <span className="font-mono text-white">{formattedCreated}</span>
@@ -342,7 +342,7 @@ export default function AccountPage() {
                     await logout();
                     router.push('/');
                   }}
-                  className="zion-button-secondary w-full items-center justify-center gap-2 text-red-400 hover:text-red-300"
+                  className="zion-button-secondary w-full items-center justify-center gap-2 text-zion-purple-400 hover:text-zion-purple-300"
                 >
                   <LogOut className="h-3.5 w-3.5" /> {AccountCopy.logout[cs ? 'cs' : 'en']}
                 </button>
@@ -361,7 +361,7 @@ export default function AccountPage() {
             <div className="flex flex-col gap-2 mb-6">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{AccountCopy.telemetry[cs ? 'cs' : 'en']}</p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-                <Activity className="h-7 w-7 text-emerald-400" />
+                <Activity className="h-7 w-7 text-zion-cyan-400" />
                 {AccountCopy.accountStatistics[cs ? 'cs' : 'en']}
               </h2>
             </div>
@@ -381,7 +381,7 @@ export default function AccountPage() {
                 icon={<Pickaxe className="h-5 w-5" />}
                 colorClass="text-zion-gold"
                 bgClass="bg-zion-gold/10"
-                rc="251, 191, 36"
+                rc="252, 209, 22"
                 label={AccountCopy.miningRewards[cs ? 'cs' : 'en']}
                 value={stats.miningRewards !== null ? `${stats.miningRewards.toFixed(8)} ZION` : '—'}
                 sub={AccountCopy.totalEarned[cs ? 'cs' : 'en']}
@@ -389,9 +389,9 @@ export default function AccountPage() {
               />
               <StatCard
                 icon={<ArrowLeftRight className="h-5 w-5" />}
-                colorClass="text-emerald-400"
-                bgClass="bg-emerald-400/10"
-                rc="16, 185, 129"
+                colorClass="text-zion-cyan-400"
+                bgClass="bg-zion-cyan-400/10"
+                rc="7, 137, 48"
                 label={AccountCopy.transactions[cs ? 'cs' : 'en']}
                 value={stats.txCount !== null ? String(stats.txCount) : '—'}
                 sub={AccountCopy.last50[cs ? 'cs' : 'en']}
@@ -469,14 +469,14 @@ export default function AccountPage() {
               {activeTab === 'mining' && (
                 <div className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as CSSProperties}>
                   <div className="flex items-center gap-2 mb-6">
-                    <Pickaxe className="h-5 w-5 text-purple-400" />
+                    <Pickaxe className="h-5 w-5 text-zion-purple-400" />
                     <h2 className="text-lg font-bold text-white">{AccountCopy.miningStats[cs ? 'cs' : 'en']}</h2>
                   </div>
                   <MiningStats address={user.address} />
                 </div>
               )}
               {activeTab === 'transactions' && (
-                <div className="zion-rainbow-card p-6" style={{ '--rc': '251, 191, 36' } as CSSProperties}>
+                <div className="zion-rainbow-card p-6" style={{ '--rc': '252, 209, 22' } as CSSProperties}>
                   <div className="flex items-center gap-2 mb-6">
                     <ArrowLeftRight className="h-5 w-5 text-zion-gold" />
                     <h2 className="text-lg font-bold text-white">{AccountCopy.transactionHistory[cs ? 'cs' : 'en']}</h2>

@@ -153,12 +153,12 @@ function DifficultyChart({ cs }: { cs: boolean }) {
         </g>
       ))}
       {/* LWMA bands */}
-      <line x1={PAD.left} x2={W - PAD.right} y1={yFor(upperBand)} y2={yFor(upperBand)} stroke="rgba(239,68,68,0.3)" strokeWidth="1" strokeDasharray="6 3" />
-      <line x1={PAD.left} x2={W - PAD.right} y1={yFor(lowerBand)} y2={yFor(lowerBand)} stroke="rgba(34,197,94,0.3)" strokeWidth="1" strokeDasharray="6 3" />
+      <line x1={PAD.left} x2={W - PAD.right} y1={yFor(upperBand)} y2={yFor(upperBand)} stroke="rgba(228, 30, 43,0.3)" strokeWidth="1" strokeDasharray="6 3" />
+      <line x1={PAD.left} x2={W - PAD.right} y1={yFor(lowerBand)} y2={yFor(lowerBand)} stroke="rgba(7, 137, 48,0.3)" strokeWidth="1" strokeDasharray="6 3" />
       <line x1={PAD.left} x2={W - PAD.right} y1={yFor(mean)} y2={yFor(mean)} stroke="rgba(255,255,255,0.12)" strokeWidth="0.8" strokeDasharray="2 2" />
       {/* Band labels */}
-      <text x={W - PAD.right - 4} y={yFor(upperBand) - 3} textAnchor="end" fill="rgba(239,68,68,0.5)" fontSize="7" fontFamily="monospace">+20%</text>
-      <text x={W - PAD.right - 4} y={yFor(lowerBand) + 9} textAnchor="end" fill="rgba(34,197,94,0.5)" fontSize="7" fontFamily="monospace">-20%</text>
+      <text x={W - PAD.right - 4} y={yFor(upperBand) - 3} textAnchor="end" fill="rgba(228, 30, 43,0.5)" fontSize="7" fontFamily="monospace">+20%</text>
+      <text x={W - PAD.right - 4} y={yFor(lowerBand) + 9} textAnchor="end" fill="rgba(7, 137, 48,0.5)" fontSize="7" fontFamily="monospace">-20%</text>
       {/* Area + line */}
       <path d={areaD} fill="url(#diffAreaGrad)" />
       <path d={pathD} fill="none" stroke="#a855f7" strokeWidth="1.8" strokeLinejoin="round" opacity="0.9" />
@@ -234,25 +234,25 @@ export default function ConsensusClient() {
     {
       icon: Pickaxe,
       title: ExplorerConsensusConsensusClientCopy.powAlgorithms[cs ? 'cs' : 'en'],
-      color: "text-emerald-400",
-      border: "border-emerald-500/20",
-      bg: "bg-emerald-500/5",
+      color: "text-zion-cyan-400",
+      border: "border-zion-cyan-500/20",
+      bg: "bg-zion-cyan-500/5",
       content: ExplorerConsensusConsensusClientCopy.zionSupportsThreeAlgorithmsDee[cs ? 'cs' : 'en'],
     },
     {
       icon: Heart,
       title: ExplorerConsensusConsensusClientCopy.k89551RewardSplit[cs ? 'cs' : 'en'],
-      color: "text-rose-400",
-      border: "border-rose-500/20",
-      bg: "bg-rose-500/5",
+      color: "text-zion-purple-400",
+      border: "border-zion-purple-500/20",
+      bg: "bg-zion-purple-500/5",
       content: ExplorerConsensusConsensusClientCopy.everyCoinbaseBlockSplitsTheRew[cs ? 'cs' : 'en'],
     },
     {
       icon: Shield,
       title: ExplorerConsensusConsensusClientCopy.securityValidation[cs ? 'cs' : 'en'],
-      color: "text-purple-400",
-      border: "border-purple-500/20",
-      bg: "bg-purple-500/5",
+      color: "text-zion-purple-400",
+      border: "border-zion-purple-500/20",
+      bg: "bg-zion-purple-500/5",
       content: ExplorerConsensusConsensusClientCopy.utxoModelWithRingSignaturesEve[cs ? 'cs' : 'en'],
     },
   ];
@@ -274,16 +274,16 @@ export default function ConsensusClient() {
   return (
     <div className="relative min-h-screen pb-24 overflow-x-hidden">
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-purple-500/8" />
+        <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-purple-500/8" />
         <div className="absolute -right-40 top-2/3 h-[400px] w-[400px] rounded-full blur-[200px] bg-zion-cyan/6" />
       </div>
 
       <div className="relative z-10 zion-container max-w-5xl space-y-14 pt-6">
         {/* HERO */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
-          className="zion-rainbow-card rounded-3xl md:rounded-4xl bg-black/60 p-6 md:p-10 shadow-[0_30px_120px_rgba(0,0,0,0.45)]" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+          className="zion-rainbow-card rounded-3xl md:rounded-4xl bg-black/60 p-6 md:p-10 shadow-[0_30px_120px_rgba(0,0,0,0.45)]" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
           <div className="space-y-5">
-            <div className="inline-flex items-center gap-2 rounded-full border border-purple-500/40 bg-purple-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-purple-300 uppercase">
+            <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple-500/40 bg-zion-purple-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-purple-300 uppercase">
               <Cpu className="h-4 w-4" />
               {ExplorerConsensusConsensusClientCopy.protocol[cs ? 'cs' : 'en']}
             </div>
@@ -304,13 +304,13 @@ export default function ConsensusClient() {
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerConsensusConsensusClientCopy.details[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Shield className="h-7 w-7 text-purple-400" />
+              <Shield className="h-7 w-7 text-zion-purple-400" />
               {ExplorerConsensusConsensusClientCopy.protocolParameters[cs ? 'cs' : 'en']}
             </h2>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             {sections.map((s) => (
-              <div key={s.title} className="zion-rainbow-sub p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+              <div key={s.title} className="zion-rainbow-sub p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                 <div className="flex items-center gap-2 mb-3">
                   <s.icon className={`h-5 w-5 ${s.color}`} />
                   <h3 className="text-base font-semibold text-white">{s.title}</h3>

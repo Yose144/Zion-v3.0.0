@@ -114,8 +114,8 @@ export default function ExplorerCharts() {
       {/* Header */}
       <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
-            <BarChart3 className="w-4.5 h-4.5 text-purple-400" />
+          <div className="w-9 h-9 rounded-xl bg-zion-purple-500/10 border border-zion-purple-500/20 flex items-center justify-center">
+            <BarChart3 className="w-4.5 h-4.5 text-zion-purple-400" />
           </div>
           <div>
             <h2 className="text-base font-semibold text-white">{ExplorerChartsCopy.networkCharts[cs ? 'cs' : 'en']}</h2>
@@ -247,7 +247,7 @@ export default function ExplorerCharts() {
       {!multiView && chartData[activeChart] && (chartData[activeChart]?.data.values.length ?? 0) > 0 && (
         <div className="grid grid-cols-3 border-t border-white/[0.06]">
           {[
-            { label: ExplorerChartsCopy.min[cs ? 'cs' : 'en'], value: Math.min(...chartData[activeChart]!.data.values), color: "text-cyan-400" },
+            { label: ExplorerChartsCopy.min[cs ? 'cs' : 'en'], value: Math.min(...chartData[activeChart]!.data.values), color: "text-zion-cyan-400" },
             { label: ExplorerChartsCopy.avg[cs ? 'cs' : 'en'], value: chartData[activeChart]!.data.values.reduce((a, b) => a + b, 0) / chartData[activeChart]!.data.values.length, color: "text-white" },
             { label: ExplorerChartsCopy.max[cs ? 'cs' : 'en'], value: Math.max(...chartData[activeChart]!.data.values), color: "text-zion-gold" },
           ].map((s, i) => (

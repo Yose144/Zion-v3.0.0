@@ -20,11 +20,11 @@ interface SwapRecord {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  completed: 'text-green-400 bg-green-500/10',
-  executing: 'text-amber-400 bg-amber-500/10',
+  completed: 'text-zion-cyan-400 bg-zion-cyan-500/10',
+  executing: 'text-zion-gold-400 bg-zion-gold-500/10',
   pending: 'text-zinc-400 bg-zinc-500/10',
-  failed: 'text-red-400 bg-red-500/10',
-  refunded: 'text-orange-400 bg-orange-500/10',
+  failed: 'text-zion-purple-400 bg-zion-purple-500/10',
+  refunded: 'text-zion-gold-400 bg-zion-gold-500/10',
 };
 
 export default function RecentSwaps() {
@@ -55,7 +55,7 @@ export default function RecentSwaps() {
     <div className="bg-zinc-900/60 border border-zinc-700/30 rounded-xl p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Activity className="w-4 h-4 text-amber-500" />
+          <Activity className="w-4 h-4 text-zion-gold-500" />
           <h3 className="text-sm font-semibold text-white">Recent Swaps</h3>
         </div>
         <button

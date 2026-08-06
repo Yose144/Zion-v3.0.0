@@ -89,7 +89,7 @@ export default function RoadmapPulse() {
             <Link
               href="/explorer"
               className="zion-rainbow-sub inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold"
-              style={{ '--rc': '249, 115, 22' } as React.CSSProperties}
+              style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
             >
               <CalendarDays className="w-4 h-4 text-zion-cyan" />
               {RoadmapPulseCopy.blockExplorer[cs ? 'cs' : 'en']}
@@ -102,7 +102,7 @@ export default function RoadmapPulse() {
             <div
               key={phase.name[cs ? 'cs' : 'en']}
               className="zion-rainbow-card p-4 space-y-3 backdrop-blur"
-              style={{ '--rc': '249, 115, 22' } as React.CSSProperties}
+              style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
             >
               <div className="flex items-center justify-between">
                 <div>

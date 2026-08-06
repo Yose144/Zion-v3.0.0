@@ -24,7 +24,7 @@ export default function DogeVsZionBanner({ cs = true }: DogeVsZionBannerProps) {
       href="/doge-vs-zion"
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      className="group relative block w-full overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-amber-500/10 via-black/40 to-emerald-500/5 p-5 transition-all hover:border-amber-400/30 hover:shadow-[0_20px_60px_rgba(245,158,11,0.18)]"
+      className="group relative block w-full overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-zion-gold-500/10 via-black/40 to-zion-cyan-500/5 p-5 transition-all hover:border-zion-gold-400/30 hover:shadow-[0_20px_60px_rgba(252, 209, 22,0.18)]"
     >
       {/* Starfield background */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -49,7 +49,7 @@ export default function DogeVsZionBanner({ cs = true }: DogeVsZionBannerProps) {
         <motion.div
           animate={hover ? { rotate: [0, -8, 8, 0], scale: 1.05 } : { rotate: [0, -3, 3, 0] }}
           transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-          className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 border-amber-400/30 bg-gradient-to-br from-amber-500/20 to-amber-700/20 shadow-[0_12px_40px_rgba(245,158,11,0.25)]"
+          className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 border-zion-gold-400/30 bg-gradient-to-br from-zion-gold-500/20 to-zion-gold-700/20 shadow-[0_12px_40px_rgba(252, 209, 22,0.25)]"
         >
           <Image
             src="/dogecoin-logo.png"
@@ -59,7 +59,7 @@ export default function DogeVsZionBanner({ cs = true }: DogeVsZionBannerProps) {
             sizes="64px"
             className="h-14 w-14 object-contain"
           />
-          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full border border-white/10 bg-black/70 px-2 py-0.5 text-[8px] font-bold text-amber-300">
+          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full border border-white/10 bg-black/70 px-2 py-0.5 text-[8px] font-bold text-zion-gold-300">
             DOGE
           </span>
         </motion.div>
@@ -67,10 +67,10 @@ export default function DogeVsZionBanner({ cs = true }: DogeVsZionBannerProps) {
         {/* Center content */}
         <div className="flex-1 text-center">
           <div className="mb-1.5 flex flex-wrap items-center justify-center gap-1.5">
-            <span className="rounded-full border border-amber-400/20 bg-black/40 px-2 py-0.5 text-[8px] font-bold text-amber-300 backdrop-blur-sm">
+            <span className="rounded-full border border-zion-gold-400/20 bg-black/40 px-2 py-0.5 text-[8px] font-bold text-zion-gold-300 backdrop-blur-sm">
               🐕 1 sig
             </span>
-            <span className="rounded-full border border-emerald-400/20 bg-black/40 px-2 py-0.5 text-[8px] font-bold text-emerald-300 backdrop-blur-sm">
+            <span className="rounded-full border border-zion-cyan-400/20 bg-black/40 px-2 py-0.5 text-[8px] font-bold text-zion-cyan-300 backdrop-blur-sm">
               🛡️ 5/5 sigs
             </span>
             <span className="rounded-full border border-zion-gold/20 bg-black/40 px-2 py-0.5 text-[8px] font-bold text-zion-gold backdrop-blur-sm">
@@ -92,16 +92,16 @@ export default function DogeVsZionBanner({ cs = true }: DogeVsZionBannerProps) {
         <motion.div
           animate={hover ? { scale: 1.05 } : { scale: 1 }}
           transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
-          className="relative flex h-28 w-28 shrink-0 items-center justify-center rounded-full border-2 border-emerald-400/30 bg-black/40 shadow-[0_12px_40px_rgba(16,185,129,0.25)] overflow-hidden"
+          className="relative flex h-28 w-28 shrink-0 items-center justify-center rounded-full border-2 border-zion-cyan-400/30 bg-black/40 shadow-[0_12px_40px_rgba(7, 137, 48,0.25)] overflow-hidden"
         >
           <StargateLogo className="w-full h-full" />
-          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full border border-white/10 bg-black/70 px-2 py-0.5 text-[8px] font-bold text-emerald-300 z-20">
+          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full border border-white/10 bg-black/70 px-2 py-0.5 text-[8px] font-bold text-zion-cyan-300 z-20">
             ZION
           </span>
         </motion.div>
 
         {/* Arrow on desktop */}
-        <ArrowRight className="hidden md:block h-5 w-5 text-white/30 group-hover:text-amber-300 group-hover:translate-x-1 transition-all" />
+        <ArrowRight className="hidden md:block h-5 w-5 text-white/30 group-hover:text-zion-gold-300 group-hover:translate-x-1 transition-all" />
       </div>
     </Link>
   );

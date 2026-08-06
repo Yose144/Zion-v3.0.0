@@ -36,7 +36,7 @@ export default function NetworkAlgorithmPanel({ cs }: { cs: boolean }) {
       id: 'deeksha_lite_v1',
       name: 'Deeksha Lite v1',
       nameCs: 'Deeksha Lite v1',
-      icon: <Snowflake className="h-5 w-5 text-cyan-400" />,
+      icon: <Snowflake className="h-5 w-5 text-zion-cyan-400" />,
       scratchpad: '2 MiB',
       aesRounds: '3 + 3',
       thermal: 'Low',
@@ -48,7 +48,7 @@ export default function NetworkAlgorithmPanel({ cs }: { cs: boolean }) {
       id: 'deeksha_lite_fire',
       name: 'Deeksha Lite Fire',
       nameCs: 'Deeksha Lite Fire',
-      icon: <Flame className="h-5 w-5 text-orange-400" />,
+      icon: <Flame className="h-5 w-5 text-zion-gold-400" />,
       scratchpad: '512 KiB',
       aesRounds: '4 + 4',
       thermal: 'High',
@@ -60,7 +60,7 @@ export default function NetworkAlgorithmPanel({ cs }: { cs: boolean }) {
       id: 'cosmic_harmony_ekam',
       name: 'Cosmic Harmony Ekam',
       nameCs: 'Cosmic Harmony Ekam',
-      icon: <Cpu className="h-5 w-5 text-purple-400" />,
+      icon: <Cpu className="h-5 w-5 text-zion-purple-400" />,
       scratchpad: '4 MiB',
       aesRounds: '5 + 5',
       thermal: 'Medium',
@@ -88,7 +88,7 @@ export default function NetworkAlgorithmPanel({ cs }: { cs: boolean }) {
           <div
             key={algo.id}
             className="zion-rainbow-sub p-6 transition-all"
-            style={{ '--rc': algo.active ? '251, 191, 36' : '7, 137, 48' } as React.CSSProperties}
+            style={{ '--rc': algo.active ? '252, 209, 22' : '7, 137, 48' } as React.CSSProperties}
           >
             <div className="flex items-center gap-3 mb-4">
               <div className="inline-flex h-10 w-10 items-center justify-center zion-tile">
@@ -97,7 +97,7 @@ export default function NetworkAlgorithmPanel({ cs }: { cs: boolean }) {
               <div>
                 <p className="text-sm font-semibold text-white">{cs ? algo.nameCs : algo.name}</p>
                 {algo.active && (
-                  <span className="text-[10px] uppercase tracking-wider text-emerald-400 font-semibold">
+                  <span className="text-[10px] uppercase tracking-wider text-zion-cyan-400 font-semibold">
                     {NetworkAlgorithmPanelCopy.active[cs ? 'cs' : 'en']}
                   </span>
                 )}
@@ -120,7 +120,7 @@ export default function NetworkAlgorithmPanel({ cs }: { cs: boolean }) {
               </div>
               <div className="zion-tile px-3 py-2 text-center">
                 <p className="text-gray-500 mb-0.5">{NetworkAlgorithmPanelCopy.thermal[cs ? 'cs' : 'en']}</p>
-                <p className={`font-mono ${algo.thermal === 'High' ? 'text-orange-400' : algo.thermal === 'Low' ? 'text-cyan-400' : 'text-yellow-400'}`}>
+                <p className={`font-mono ${algo.thermal === 'High' ? 'text-zion-gold-400' : algo.thermal === 'Low' ? 'text-zion-cyan-400' : 'text-zion-gold-400'}`}>
                   {algo.thermal}
                 </p>
               </div>

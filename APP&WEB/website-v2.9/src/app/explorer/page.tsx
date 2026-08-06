@@ -113,70 +113,70 @@ const getQuickLinks = (cs: boolean) => [
     title: ExplorerCopy.blockArchive[cs ? 'cs' : 'en'],
     description: ExplorerCopy.completeLedgerOfAllValidatedBl[cs ? 'cs' : 'en'],
     href: '/explorer/blocks',
-    accent: 'from-zion-gold/80 to-amber-600/80',
+    accent: 'from-zion-gold/80 to-zion-gold-600/80',
     icon: Layers,
   },
   {
     title: ExplorerCopy.transactionFeed[cs ? 'cs' : 'en'],
     description: ExplorerCopy.realTimeFlowOfFundsAndFees[cs ? 'cs' : 'en'],
     href: '/explorer/transactions',
-    accent: 'from-zion-cyan/80 to-blue-600/80',
+    accent: 'from-zion-cyan/80 to-zion-purple-600/80',
     icon: Activity,
   },
   {
     title: ExplorerCopy.mempool[cs ? 'cs' : 'en'],
     description: ExplorerCopy.pendingTransactionsFeeHistogra[cs ? 'cs' : 'en'],
     href: '/explorer/mempool',
-    accent: 'from-amber-500/80 to-orange-600/80',
+    accent: 'from-zion-gold-500/80 to-zion-gold-600/80',
     icon: Flame,
   },
   {
     title: ExplorerCopy.bridgeTracker[cs ? 'cs' : 'en'],
     description: ExplorerCopy.liveL1BaseBridgeStatusLockMint[cs ? 'cs' : 'en'],
     href: '/explorer/bridge',
-    accent: 'from-blue-500/80 to-cyan-600/80',
+    accent: 'from-zion-purple-500/80 to-zion-cyan-600/80',
     icon: ArrowLeftRight,
   },
   {
     title: ExplorerCopy.networkPeers[cs ? 'cs' : 'en'],
     description: ExplorerCopy.globalNodeConnectivityMap[cs ? 'cs' : 'en'],
     href: '#peers',
-    accent: 'from-purple-500/80 to-indigo-600/80',
+    accent: 'from-zion-purple-500/80 to-zion-purple-600/80',
     icon: Globe,
   },
   {
     title: ExplorerCopy.supplyDashboard[cs ? 'cs' : 'en'],
     description: ExplorerCopy.circulatingMinedPremineDecadeD[cs ? 'cs' : 'en'],
     href: '/explorer/supply',
-    accent: 'from-emerald-500/80 to-teal-600/80',
+    accent: 'from-zion-cyan-500/80 to-zion-cyan-600/80',
     icon: BarChart3,
   },
   {
     title: ExplorerCopy.chartsAnalytics[cs ? 'cs' : 'en'],
     description: ExplorerCopy.historicalDifficultyHashrateEm[cs ? 'cs' : 'en'],
     href: '#charts',
-    accent: 'from-rose-500/80 to-pink-600/80',
+    accent: 'from-zion-purple-500/80 to-zion-purple-600/80',
     icon: TrendingUp,
   },
   {
     title: ExplorerCopy.networkStats[cs ? 'cs' : 'en'],
     description: ExplorerCopy.hashrateDifficultyBlockTimeTxT[cs ? 'cs' : 'en'],
     href: '/explorer/network-stats',
-    accent: 'from-violet-500/80 to-purple-600/80',
+    accent: 'from-zion-purple-500/80 to-zion-purple-600/80',
     icon: Network,
   },
   {
     title: ExplorerCopy.search[cs ? 'cs' : 'en'],
     description: ExplorerCopy.unifiedSearchForBlocksTransact[cs ? 'cs' : 'en'],
     href: '/explorer/search',
-    accent: 'from-zion-cyan/80 to-blue-600/80',
+    accent: 'from-zion-cyan/80 to-zion-purple-600/80',
     icon: Search,
   },
   {
     title: ExplorerCopy.explorerApi[cs ? 'cs' : 'en'],
     description: ExplorerCopy.directJsonEndpointsForIntegrat[cs ? 'cs' : 'en'],
     href: '/api-reference',
-    accent: 'from-fuchsia-500/80 to-violet-600/80',
+    accent: 'from-zion-purple-500/80 to-zion-purple-600/80',
     icon: ExternalLink,
   },
 ];
@@ -256,7 +256,7 @@ export default function ExplorerPage() {
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerCopy.telemetry[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Activity className="h-7 w-7 text-emerald-400" />
+              <Activity className="h-7 w-7 text-zion-cyan-400" />
               {ExplorerCopy.networkStatistics[cs ? 'cs' : 'en']}
             </h2>
             <p className="text-sm text-gray-400">{ExplorerCopy.realTimeMetricsFromTheZionBloc[cs ? 'cs' : 'en']}</p>
@@ -265,7 +265,7 @@ export default function ExplorerPage() {
             fallback={
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
                 {[...Array(12)].map((_, i) => (
-                  <div key={i} className="zion-rainbow-sub p-4 animate-pulse" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                  <div key={i} className="zion-rainbow-sub p-4 animate-pulse" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                     <div className="h-8 w-8 bg-white/5 rounded-xl mb-3" />
                     <div className="h-3 w-16 bg-white/5 rounded mb-2" />
                     <div className="h-6 w-20 bg-white/5 rounded" />
@@ -312,7 +312,7 @@ export default function ExplorerPage() {
               </Suspense>
 
               {/* Quick Navigator */}
-              <div className="zion-rainbow-card p-6" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+              <div className="zion-rainbow-card p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                 <div className="flex items-center gap-3 mb-5">
                   <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-zion-gold/10">
                     <Compass className="h-4.5 w-4.5 text-zion-gold" />
@@ -328,7 +328,7 @@ export default function ExplorerPage() {
                       key={link.title}
                       href={link.href}
                       className="group flex items-center gap-3 zion-rainbow-sub p-3 transition-all duration-200"
-                      style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
+                      style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
                     >
                       <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br ${link.accent}
                         opacity-80 transition group-hover:opacity-100`}>
@@ -372,20 +372,20 @@ export default function ExplorerPage() {
               {
                 title: ExplorerCopy.f47F5Patches[cs ? 'cs' : 'en'],
                 detail: ExplorerCopy.maxTxAmountCapAndSenderBalance[cs ? 'cs' : 'en'],
-                accent: 'text-emerald-400',
+                accent: 'text-zion-cyan-400',
               },
               {
                 title: ExplorerCopy.k2NodeRpcMesh[cs ? 'cs' : 'en'],
                 detail: ExplorerCopy.rpcAutoFailoverAcrossEdge18443[cs ? 'cs' : 'en'],
-                accent: 'text-purple-400',
+                accent: 'text-zion-purple-400',
               },
               {
                 title: ExplorerCopy.memoryLeakFix[cs ? 'cs' : 'en'],
                 detail: ExplorerCopy.poolNodeMemoryLeaksFixedWatchd[cs ? 'cs' : 'en'],
-                accent: 'text-amber-400',
+                accent: 'text-zion-gold-400',
               },
             ].map((card) => (
-              <div key={card.title} className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+              <div key={card.title} className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                 <h3 className={`text-base font-semibold mb-1 ${card.accent}`}>{card.title}</h3>
                 <p className="text-sm text-gray-400">{card.detail}</p>
               </div>
@@ -403,7 +403,7 @@ export default function ExplorerPage() {
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerCopy.analytics[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <BarChart3 className="h-7 w-7 text-purple-400" />
+              <BarChart3 className="h-7 w-7 text-zion-purple-400" />
               {ExplorerCopy.networkCharts[cs ? 'cs' : 'en']}
             </h2>
             <p className="text-sm text-gray-400">{ExplorerCopy.historicalDifficultyHashrateEm_2[cs ? 'cs' : 'en']}</p>

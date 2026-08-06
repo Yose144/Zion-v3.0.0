@@ -114,7 +114,7 @@ export default function KompasPageClient() {
         >
           <div className="grid lg:grid-cols-[1fr_340px] gap-6 items-start">
             {/* Compass panel */}
-            <div style={{ '--rc': '251, 191, 36' } as React.CSSProperties} className="zion-rainbow-card rounded-3xl md:rounded-4xl p-6 md:p-8 relative overflow-hidden">
+            <div style={{ '--rc': '252, 209, 22' } as React.CSSProperties} className="zion-rainbow-card rounded-3xl md:rounded-4xl p-6 md:p-8 relative overflow-hidden">
               <div className="absolute inset-0 pointer-events-none opacity-[0.03]">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(252,209,22,0.15),transparent_70%)]" />
               </div>
@@ -281,7 +281,7 @@ export default function KompasPageClient() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
+          style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
           className="zion-rainbow-card rounded-3xl p-6 md:p-10 text-center"
         >
           <div className="inline-flex items-center gap-2 text-zion-gold mb-4">
@@ -303,7 +303,7 @@ export default function KompasPageClient() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
+            style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
             className="zion-rainbow-sub rounded-2xl p-6 space-y-4"
           >
             <div className="flex items-center gap-3">
@@ -325,7 +325,7 @@ export default function KompasPageClient() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
+            style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
             className="zion-rainbow-sub rounded-2xl p-6 space-y-4"
           >
             <div className="flex items-center gap-3">
@@ -348,7 +348,7 @@ export default function KompasPageClient() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
+          style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
           className="zion-rainbow-card rounded-3xl p-6 md:p-10"
         >
           <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-3">
@@ -356,7 +356,7 @@ export default function KompasPageClient() {
             {t('movement_title', lang)}
           </h2>
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-zion-gold mb-2 font-semibold">
                 {KompasKompasPageClientCopy.inner[cs ? 'cs' : 'en']}
               </p>
@@ -364,7 +364,7 @@ export default function KompasPageClient() {
                 {t('movement_inner', lang)}
               </p>
             </div>
-            <div className="zion-rainbow-sub p-5" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-zion-cyan mb-2 font-semibold">
                 {KompasKompasPageClientCopy.outer[cs ? 'cs' : 'en']}
               </p>

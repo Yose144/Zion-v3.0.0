@@ -492,7 +492,7 @@ function renderCanvas(s: GameState, canvasRef: React.RefObject<HTMLCanvasElement
       s.zion >= def.cost;
     const hx = s.hoverGrid.x * CELL_SIZE + CANVAS_PADDING;
     const hy = s.hoverGrid.y * CELL_SIZE + CANVAS_PADDING;
-    ctx.fillStyle = canPlace ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)';
+    ctx.fillStyle = canPlace ? 'rgba(7, 137, 48,0.3)' : 'rgba(228, 30, 43,0.3)';
     ctx.fillRect(hx, hy, CELL_SIZE, CELL_SIZE);
     ctx.strokeStyle = canPlace ? '#10b981' : '#ef4444';
     ctx.lineWidth = 2;
@@ -524,8 +524,8 @@ function renderCanvas(s: GameState, canvasRef: React.RefObject<HTMLCanvasElement
         ctx.fill(); ctx.stroke();
       }
       if (stats.auraRange > 0) {
-        ctx.strokeStyle = 'rgba(168,85,247,0.4)';
-        ctx.fillStyle = 'rgba(168,85,247,0.05)';
+        ctx.strokeStyle = 'rgba(228, 30, 43,0.4)';
+        ctx.fillStyle = 'rgba(228, 30, 43,0.05)';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.arc(tx, ty, stats.auraRange * CELL_SIZE, 0, Math.PI * 2);
@@ -934,7 +934,7 @@ export function ZionDefense() {
         </div>
 
         {/* Game info bar */}
-        <div style={{ '--rc': '245, 158, 11' } as React.CSSProperties} className="zion-rainbow-card p-3 flex items-center justify-between gap-4 flex-wrap">
+        <div style={{ '--rc': '252, 209, 22' } as React.CSSProperties} className="zion-rainbow-card p-3 flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <span className="text-xl">{level.emoji}</span>
             <div>
@@ -944,12 +944,12 @@ export function ZionDefense() {
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5">
-              <Coins className="h-4 w-4 text-emerald-400" />
-              <span className="text-sm font-bold tabular-nums text-emerald-300">{Math.floor(s.zion)}</span>
+              <Coins className="h-4 w-4 text-zion-cyan-400" />
+              <span className="text-sm font-bold tabular-nums text-zion-cyan-300">{Math.floor(s.zion)}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <Heart className="h-4 w-4 text-red-400" />
-              <span className="text-sm font-bold tabular-nums text-red-300">{s.nodeHp}/{s.maxNodeHp}</span>
+              <Heart className="h-4 w-4 text-zion-purple-400" />
+              <span className="text-sm font-bold tabular-nums text-zion-purple-300">{s.nodeHp}/{s.maxNodeHp}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Trophy className="h-4 w-4 text-zion-gold" />
@@ -961,7 +961,7 @@ export function ZionDefense() {
         {/* Canvas + side panel */}
         <div className="flex flex-col lg:flex-row gap-3">
           {/* Canvas */}
-          <div className="flex-1 overflow-auto zion-rainbow-card" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+          <div className="flex-1 overflow-auto zion-rainbow-card" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <canvas
               ref={canvasRef}
               onClick={handleCanvasClick}
@@ -994,7 +994,7 @@ export function ZionDefense() {
         {/* Wave break / victory / defeat overlay */}
         {s.status === 'wave-break' && (
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="zion-rainbow-sub p-6 text-center max-w-sm" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-6 text-center max-w-sm" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <p className="text-sm font-bold text-zion-gold mb-2">{cs ? `Vlna ${s.waveIndex + 1} vyčištěna!` : `Wave ${s.waveIndex + 1} cleared!`}</p>
               <p className="text-xs text-gray-400 mb-4">{cs ? `Bonus: +${level.waves[s.waveIndex]?.reward ?? 0} ZION` : `Bonus: +${level.waves[s.waveIndex]?.reward ?? 0} ZION`}</p>
               <button onClick={startNextWave} className="w-full rounded-xl bg-zion-gold/20 border border-zion-gold/30 px-4 py-2.5 text-sm font-bold text-zion-gold hover:bg-zion-gold/30 transition-colors">
@@ -1007,9 +1007,9 @@ export function ZionDefense() {
 
         {s.status === 'victory' && (
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-            <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-black/90 to-emerald-500/10 p-6 text-center max-w-sm">
+            <div className="rounded-2xl border border-zion-cyan-500/30 bg-gradient-to-br from-black/90 to-zion-cyan-500/10 p-6 text-center max-w-sm">
               <p className="text-3xl mb-2">🎉</p>
-              <p className="text-lg font-bold text-emerald-300 mb-2">{DogeVsZionGamesZionDefenseCopy.victory[cs ? 'cs' : 'en']}</p>
+              <p className="text-lg font-bold text-zion-cyan-300 mb-2">{DogeVsZionGamesZionDefenseCopy.victory[cs ? 'cs' : 'en']}</p>
               <div className="flex justify-center gap-1 mb-4">
                 {Array.from({ length: 3 }).map((_, i) => (
                   <Star key={i} className={`h-6 w-6 ${i < (s.nodeHp === s.maxNodeHp ? 3 : s.nodeHp >= s.maxNodeHp * 0.6 ? 2 : 1) ? 'text-zion-gold fill-zion-gold' : 'text-gray-700'}`} />
@@ -1021,7 +1021,7 @@ export function ZionDefense() {
                   {DogeVsZionGamesZionDefenseCopy.menu[cs ? 'cs' : 'en']}
                 </button>
                 {s.currentLevel < LEVELS.length - 1 && (
-                  <button onClick={() => startLevel(s.currentLevel + 1)} className="flex-1 rounded-xl bg-emerald-500/20 border border-emerald-500/30 px-4 py-2.5 text-sm font-bold text-emerald-300 hover:bg-emerald-500/30 transition-colors">
+                  <button onClick={() => startLevel(s.currentLevel + 1)} className="flex-1 rounded-xl bg-zion-cyan-500/20 border border-zion-cyan-500/30 px-4 py-2.5 text-sm font-bold text-zion-cyan-300 hover:bg-zion-cyan-500/30 transition-colors">
                     {DogeVsZionGamesZionDefenseCopy.next[cs ? 'cs' : 'en']}
                   </button>
                 )}
@@ -1032,15 +1032,15 @@ export function ZionDefense() {
 
         {s.status === 'defeat' && (
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-            <div className="rounded-2xl border border-red-500/30 bg-gradient-to-br from-black/90 to-red-500/10 p-6 text-center max-w-sm">
+            <div className="rounded-2xl border border-zion-purple-500/30 bg-gradient-to-br from-black/90 to-zion-purple-500/10 p-6 text-center max-w-sm">
               <p className="text-3xl mb-2">💀</p>
-              <p className="text-lg font-bold text-red-300 mb-2">{DogeVsZionGamesZionDefenseCopy.nodeCompromised[cs ? 'cs' : 'en']}</p>
+              <p className="text-lg font-bold text-zion-purple-300 mb-2">{DogeVsZionGamesZionDefenseCopy.nodeCompromised[cs ? 'cs' : 'en']}</p>
               <p className="text-xs text-gray-400 mb-4">{cs ? `Přežil jsi ${s.waveIndex + 1} vln` : `You survived ${s.waveIndex + 1} waves`}</p>
               <div className="flex gap-2">
                 <button onClick={backToMenu} className="flex-1 rounded-xl bg-white/10 border border-white/20 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/20 transition-colors">
                   {DogeVsZionGamesZionDefenseCopy.menu[cs ? 'cs' : 'en']}
                 </button>
-                <button onClick={() => startLevel(s.currentLevel)} className="flex-1 rounded-xl bg-red-500/20 border border-red-500/30 px-4 py-2.5 text-sm font-bold text-red-300 hover:bg-red-500/30 transition-colors">
+                <button onClick={() => startLevel(s.currentLevel)} className="flex-1 rounded-xl bg-zion-purple-500/20 border border-zion-purple-500/30 px-4 py-2.5 text-sm font-bold text-zion-purple-300 hover:bg-zion-purple-500/30 transition-colors">
                   {DogeVsZionGamesZionDefenseCopy.retry[cs ? 'cs' : 'en']}
                 </button>
               </div>
@@ -1050,7 +1050,7 @@ export function ZionDefense() {
 
         {s.status === 'paused' && (
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="zion-rainbow-card p-6 text-center" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+            <div className="zion-rainbow-card p-6 text-center" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
               <p className="text-lg font-bold text-white mb-4">{DogeVsZionGamesZionDefenseCopy.paused[cs ? 'cs' : 'en']}</p>
               <button onClick={togglePause} className="rounded-xl bg-white/10 border border-white/20 px-6 py-2.5 text-sm font-bold text-white hover:bg-white/20 transition-colors">
                 {DogeVsZionGamesZionDefenseCopy.resume[cs ? 'cs' : 'en']}
@@ -1122,7 +1122,7 @@ function LevelSelect({ cs, saveData, onStart, muted, setMuted }: {
                     ? 'cursor-pointer'
                     : 'opacity-50 cursor-not-allowed'
                 }`}
-                style={{ '--rc': '245, 158, 11' } as React.CSSProperties}
+                style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
@@ -1151,7 +1151,7 @@ function LevelSelect({ cs, saveData, onStart, muted, setMuted }: {
         </div>
 
         {/* Tower reference */}
-        <div className="zion-rainbow-card p-5" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+        <div className="zion-rainbow-card p-5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
           <h3 className="mb-3 text-sm font-bold text-white">{DogeVsZionGamesZionDefenseCopy.towers[cs ? 'cs' : 'en']}</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {Object.values(TOWERS).map((tower: TowerDef) => (
@@ -1159,7 +1159,7 @@ function LevelSelect({ cs, saveData, onStart, muted, setMuted }: {
                 <div className="text-2xl mb-1">{tower.emoji}</div>
                 <p className="text-xs font-bold text-white">{tower.name}</p>
                 <p className="text-[9px] text-gray-500 mt-1 line-clamp-2">{tower.description}</p>
-                <p className="text-[10px] text-emerald-400 mt-1">{tower.cost} ZION</p>
+                <p className="text-[10px] text-zion-cyan-400 mt-1">{tower.cost} ZION</p>
               </div>
             ))}
           </div>
@@ -1178,7 +1178,7 @@ function TowerShop({ cs, zion, selected, onSelect }: {
   onSelect: (t: TowerType) => void;
 }) {
   return (
-    <div className="zion-rainbow-card p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+    <div className="zion-rainbow-card p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
       <p className="mb-2 text-xs font-bold text-white/80">{DogeVsZionGamesZionDefenseCopy.buildTower[cs ? 'cs' : 'en']}</p>
       <div className="space-y-2">
         {Object.values(TOWERS).map((tower: TowerDef) => {
@@ -1203,7 +1203,7 @@ function TowerShop({ cs, zion, selected, onSelect }: {
                 <p className="text-[9px] text-gray-500 truncate">{tower.description}</p>
               </div>
               <div className="shrink-0 text-right">
-                <p className={`text-xs font-bold ${canAfford ? 'text-emerald-300' : 'text-red-400'}`}>{tower.cost}</p>
+                <p className={`text-xs font-bold ${canAfford ? 'text-zion-cyan-300' : 'text-zion-purple-400'}`}>{tower.cost}</p>
                 <p className="text-[8px] text-gray-600">ZION</p>
               </div>
             </button>
@@ -1227,7 +1227,7 @@ function UpgradePanel({ cs, tower, def, stats, zion, onUpgrade, onSell, onClose 
   onClose: () => void;
 }) {
   return (
-    <div className="zion-rainbow-card p-3" style={{ '--rc': '245, 158, 11' } as React.CSSProperties}>
+    <div className="zion-rainbow-card p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="text-2xl">{def.emoji}</span>
@@ -1308,7 +1308,7 @@ function UpgradePanel({ cs, tower, def, stats, zion, onUpgrade, onSell, onClose 
                   </button>
                 </>
               ) : (
-                <p className="text-[10px] text-emerald-400 flex items-center gap-1"><Check className="h-3 w-3" /> {DogeVsZionGamesZionDefenseCopy.maxLevel[cs ? 'cs' : 'en']}</p>
+                <p className="text-[10px] text-zion-cyan-400 flex items-center gap-1"><Check className="h-3 w-3" /> {DogeVsZionGamesZionDefenseCopy.maxLevel[cs ? 'cs' : 'en']}</p>
               )}
               {/* Tier indicators */}
               <div className="mt-1.5 flex gap-1">
@@ -1324,7 +1324,7 @@ function UpgradePanel({ cs, tower, def, stats, zion, onUpgrade, onSell, onClose 
       {/* Sell button */}
       <button
         onClick={onSell}
-        className="w-full rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-[10px] font-bold text-red-400 hover:bg-red-500/20 transition-colors"
+        className="w-full rounded-lg border border-zion-purple-500/20 bg-zion-purple-500/10 px-3 py-2 text-[10px] font-bold text-zion-purple-400 hover:bg-zion-purple-500/20 transition-colors"
       >
         {DogeVsZionGamesZionDefenseCopy.sell[cs ? 'cs' : 'en']} (+{getSellValue(def, tower.upgradePath, tower.upgradeTier)} ZION)
       </button>

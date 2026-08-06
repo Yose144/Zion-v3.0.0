@@ -37,11 +37,11 @@ export default function ProposalCard({ proposal, onVote }: ProposalCardProps) {
 
   const statusClass =
     status === 'ACTIVE'
-      ? 'text-emerald-400 border-emerald-500/20 bg-emerald-500/10'
+      ? 'text-zion-cyan-400 border-zion-cyan-500/20 bg-zion-cyan-500/10'
       : status === 'PASSED' || status === 'EXECUTED'
       ? 'text-zion-gold border-zion-gold/20 bg-zion-gold/10'
       : status === 'REJECTED'
-      ? 'text-red-400 border-red-500/20 bg-red-500/10'
+      ? 'text-zion-purple-400 border-zion-purple-500/20 bg-zion-purple-500/10'
       : 'text-gray-400 border-white/10 bg-white/5';
 
   const formatNumber = (n: number) => (n ? n.toLocaleString() : '—');
@@ -54,7 +54,7 @@ export default function ProposalCard({ proposal, onVote }: ProposalCardProps) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       className="zion-rainbow-sub p-5 transition-colors"
-      style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+      style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
     >
       {/* Header */}
       <div className="flex items-start gap-3 mb-4">
@@ -76,20 +76,20 @@ export default function ProposalCard({ proposal, onVote }: ProposalCardProps) {
       <div className="space-y-3 mb-4">
         <div>
           <div className="flex justify-between text-[10px] mb-1">
-            <span className="text-emerald-400">For</span>
+            <span className="text-zion-cyan-400">For</span>
             <span className="text-gray-400">{forPercent.toFixed(1)}%</span>
           </div>
           <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-            <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${forPercent}%` }} />
+            <div className="h-full bg-zion-cyan-500 rounded-full" style={{ width: `${forPercent}%` }} />
           </div>
         </div>
         <div>
           <div className="flex justify-between text-[10px] mb-1">
-            <span className="text-red-400">Against</span>
+            <span className="text-zion-purple-400">Against</span>
             <span className="text-gray-400">{againstPercent.toFixed(1)}%</span>
           </div>
           <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-            <div className="h-full bg-red-500 rounded-full" style={{ width: `${againstPercent}%` }} />
+            <div className="h-full bg-zion-purple-500 rounded-full" style={{ width: `${againstPercent}%` }} />
           </div>
         </div>
         <div>
@@ -105,12 +105,12 @@ export default function ProposalCard({ proposal, onVote }: ProposalCardProps) {
 
       {/* Vote counts */}
       <div className="grid grid-cols-3 gap-2 mb-4 text-center">
-        <div className="zion-rainbow-sub p-2" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
-          <p className="text-xs font-semibold text-emerald-400">{formatNumber(votesFor)}</p>
+        <div className="zion-rainbow-sub p-2" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+          <p className="text-xs font-semibold text-zion-cyan-400">{formatNumber(votesFor)}</p>
           <p className="text-[10px] text-gray-500">For</p>
         </div>
-        <div className="zion-rainbow-sub p-2" style={{ '--rc': '239, 68, 68' } as React.CSSProperties}>
-          <p className="text-xs font-semibold text-red-400">{formatNumber(votesAgainst)}</p>
+        <div className="zion-rainbow-sub p-2" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
+          <p className="text-xs font-semibold text-zion-purple-400">{formatNumber(votesAgainst)}</p>
           <p className="text-[10px] text-gray-500">Against</p>
         </div>
         <div className="zion-rainbow-sub p-2" style={{ '--rc': '107, 114, 128' } as React.CSSProperties}>

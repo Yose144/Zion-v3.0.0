@@ -79,7 +79,7 @@ export default function StargatePortal({ size = 80, className = '', active = fal
         animate={{ rotate: [0, 180, 360] }}
         transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
       >
-        <svg viewBox="0 0 24 24" className="h-full w-full text-zion-gold drop-shadow-[0_0_8px_rgba(245,158,11,0.6)]">
+        <svg viewBox="0 0 24 24" className="h-full w-full text-zion-gold drop-shadow-[0_0_8px_rgba(252, 209, 22,0.6)]">
           <path fill="currentColor" d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6-4.8-6 4.8 2.4-7.2-6-4.8h7.6z" />
         </svg>
       </motion.div>

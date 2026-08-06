@@ -111,7 +111,7 @@ const FEATURES: FeatureItem[] = [
     descEn: 'La Palma — UNESCO biosphere reserve island. Volcanic landscape as a natural partner for spiritual practice.',
     status: 'place' as const,
     color: '#F97316',
-    rgb: '249,115,22',
+    rgb: '252, 209, 22',
   },
   {
     icon: Droplets,
@@ -166,9 +166,9 @@ const COMPARE = [
 
 const STATUS_LABEL = {
   open: { cs: 'Otevřeno', en: 'Open', color: '#34D399', bg: 'rgba(52,211,153,0.1)', border: 'rgba(52,211,153,0.25)' },
-  active: { cs: 'Aktivní', en: 'Active', color: '#10B981', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.25)' },
+  active: { cs: 'Aktivní', en: 'Active', color: '#10B981', bg: 'rgba(7, 137, 48,0.1)', border: 'rgba(7, 137, 48,0.25)' },
   planned: { cs: 'Plánováno', en: 'Planned', color: '#60A5FA', bg: 'rgba(96,165,250,0.1)', border: 'rgba(96,165,250,0.25)' },
-  place: { cs: 'Místo', en: 'Place', color: '#F97316', bg: 'rgba(249,115,22,0.1)', border: 'rgba(249,115,22,0.25)' },
+  place: { cs: 'Místo', en: 'Place', color: '#F97316', bg: 'rgba(252, 209, 22,0.1)', border: 'rgba(252, 209, 22,0.25)' },
 };
 
 export default function DharmaTemplePage() {
@@ -202,11 +202,11 @@ export default function DharmaTemplePage() {
           transition={{ duration: 0.7 }}
           className="mb-20 relative"
         >
-          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-10" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-8">
               {/* Icon column */}
               <div className="shrink-0">
-                <div className="relative flex h-28 w-28 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                <div className="relative flex h-28 w-28 items-center justify-center zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                   <Orbit className="relative z-10 h-10 w-10 text-zion-gold" />
                   <Mountain className="absolute bottom-5 right-5 h-4 w-4 text-zion-cyan" />
                 </div>
@@ -241,7 +241,7 @@ export default function DharmaTemplePage() {
                   {SIGNALS.map((signal) => {
                     const Icon = signal.icon;
                     return (
-                      <div key={signal.labelCs} className="zion-rainbow-sub px-3 py-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+                      <div key={signal.labelCs} className="zion-rainbow-sub px-3 py-3" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                         <div className="flex items-center gap-2 text-zion-gold">
                           <Icon className="h-4 w-4" />
                           <span className="text-sm font-semibold">{signal.value}</span>
@@ -265,7 +265,7 @@ export default function DharmaTemplePage() {
           transition={{ delay: 0.15, duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <div className="relative z-10 grid md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-3">
                 <h3 className="text-lg font-bold text-zion-gold">
@@ -285,7 +285,7 @@ export default function DharmaTemplePage() {
                   { label: TerranovaDharmaTempleCopy.soil[cs ? 'cs' : 'en'], val: TerranovaDharmaTempleCopy.volcanic[cs ? 'cs' : 'en'] },
                   { label: TerranovaDharmaTempleCopy.observatory[cs ? 'cs' : 'en'], val: 'ORM' },
                 ].map((s) => (
-                  <div key={s.label} className="text-center p-3 zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                  <div key={s.label} className="text-center p-3 zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                     <p className="text-gray-300 font-bold text-sm">{s.val}</p>
                     <p className="text-gray-600 text-[10px]">{s.label}</p>
                   </div>
@@ -322,12 +322,12 @@ export default function DharmaTemplePage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 + i * 0.07, duration: 0.5 }}
                   className="relative zion-rainbow-sub p-5 space-y-3 overflow-hidden group hover:scale-[1.02] transition-transform duration-300"
-                  style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+                  style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
                 >
                   <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-[50px] bg-white/5 group-hover:bg-white/10 transition-opacity duration-500" />
 
                   <div className="flex items-start justify-between relative z-10 gap-3">
-                    <span className="inline-flex h-11 w-11 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                    <span className="inline-flex h-11 w-11 items-center justify-center zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                       <Icon className="h-5 w-5 text-zion-gold" />
                     </span>
                     <span
@@ -388,7 +388,7 @@ export default function DharmaTemplePage() {
 
                   <div
                     className="zion-rainbow-sub p-4 space-y-1"
-                    style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+                    style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
                   >
                     <div className="flex items-center gap-3">
                       <span
@@ -426,7 +426,7 @@ export default function DharmaTemplePage() {
             </h2>
           </div>
 
-          <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card overflow-hidden" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             {/* Header row */}
             <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[10px] uppercase tracking-[0.3em] font-semibold border-b border-white/10">
               <div className="p-3 text-gray-500">{TerranovaDharmaTempleCopy.dimension[cs ? 'cs' : 'en']}</div>
@@ -464,14 +464,14 @@ export default function DharmaTemplePage() {
             <h2 className="text-2xl font-bold text-white">ZION Network</h2>
           </div>
 
-          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <div className="relative z-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {ZION_ITEMS.map((item) => (
                 <div
                   key={item.label}
-                  className="flex items-center gap-3 zion-rainbow-sub p-3" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+                  className="flex items-center gap-3 zion-rainbow-sub p-3" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
                 >
-                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                     <item.icon className="h-4 w-4 text-zion-gold" />
                   </span>
                   <div>
@@ -497,7 +497,7 @@ export default function DharmaTemplePage() {
           transition={{ delay: 0.45, duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <h3 className="text-lg font-bold text-zion-gold">
               {TerranovaDharmaTempleCopy.openQuestionsLookingForGuardia[cs ? 'cs' : 'en']}
             </h3>

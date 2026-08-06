@@ -316,7 +316,7 @@ export default function SplineTreeOfLife() {
           </p>
           <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
             Tree of{' '}
-            <span className="bg-linear-to-r from-yellow-300 via-amber-400 to-yellow-200 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-zion-gold-300 via-zion-gold-400 to-yellow-200 bg-clip-text text-transparent">
               Life
             </span>
           </h2>
@@ -330,7 +330,7 @@ export default function SplineTreeOfLife() {
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, ease: 'easeOut' }}
-          className="relative mx-auto max-w-5xl zion-rainbow-card shadow-[0_20px_80px_rgba(0,0,0,0.45)] overflow-hidden" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+          className="relative mx-auto max-w-5xl zion-rainbow-card shadow-[0_20px_80px_rgba(0,0,0,0.45)] overflow-hidden" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
         >
           <div className="absolute inset-2 rounded-[22px] border border-amber-200/20 pointer-events-none z-20" />
           <div className="absolute inset-6 rounded-[18px] border border-white/8 pointer-events-none z-20" />

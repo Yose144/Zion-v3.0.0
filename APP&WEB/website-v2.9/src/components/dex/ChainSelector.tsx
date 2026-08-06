@@ -64,7 +64,7 @@ export default function ChainSelector({ label, value, onChange, excludeChain }: 
       <div className="relative">
         <button
           onClick={() => setOpen(!open)}
-          className="w-full flex items-center justify-between px-4 py-3 bg-zinc-900/80 border border-zinc-700/50 rounded-xl hover:border-amber-500/50 transition-colors"
+          className="w-full flex items-center justify-between px-4 py-3 bg-zinc-900/80 border border-zinc-700/50 rounded-xl hover:border-zion-gold-500/50 transition-colors"
         >
           <div className="flex items-center gap-2.5">
             {selected && (
@@ -99,7 +99,7 @@ export default function ChainSelector({ label, value, onChange, excludeChain }: 
                   <span className="text-sm text-white">{chain.name}</span>
                   <span className="text-xs text-zinc-500">{chain.symbol}</span>
                 </div>
-                {chain.id === value && <Check className="w-4 h-4 text-amber-500" />}
+                {chain.id === value && <Check className="w-4 h-4 text-zion-gold-500" />}
               </button>
             ))}
           </div>

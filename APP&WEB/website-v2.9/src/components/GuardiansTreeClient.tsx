@@ -61,7 +61,7 @@ export default function GuardiansTreeClient() {
 
   if (error && !data) {
     return (
-      <div className="zion-rainbow-card p-8 text-center" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+      <div className="zion-rainbow-card p-8 text-center" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
         <p className="text-sm text-gray-400 mb-2">{error}</p>
         <p className="text-xs text-gray-500">
           The 144k Guardians registry is under development. Live data will appear once the registry contract is deployed.
@@ -81,7 +81,7 @@ export default function GuardiansTreeClient() {
       {/* Refresh Status Bar */}
       <div className="flex items-center justify-between zion-section px-4 py-3">
         <div className="flex items-center gap-2 text-sm text-gray-400">
-          <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+          <div className="h-2 w-2 rounded-full bg-zion-cyan-400 animate-pulse" />
           <span>Live data · Auto-refresh 60s</span>
         </div>
         <button
@@ -115,9 +115,9 @@ export default function GuardiansTreeClient() {
             {data.recentGuardians.map((guardian, idx) => {
               // Get gradient based on CL level
               const gradients = [
-                'from-purple-500/20 to-fuchsia-600/20', // CL8+
-                'from-cyan-400/20 to-emerald-500/20',   // CL6-7
-                'from-orange-400/20 to-yellow-500/20',  // CL3-4
+                'from-zion-purple-500/20 to-zion-purple-600/20', // CL8+
+                'from-zion-cyan-400/20 to-zion-cyan-500/20',   // CL6-7
+                'from-zion-gold-400/20 to-zion-gold-500/20',  // CL3-4
               ];
               const gradient = guardian.cl >= 8 ? gradients[0] : guardian.cl >= 6 ? gradients[1] : gradients[2];
               

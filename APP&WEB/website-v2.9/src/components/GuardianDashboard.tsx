@@ -102,7 +102,7 @@ function fmtDuration(secs?: number) {
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`zion-rainbow-sub backdrop-blur-sm p-5 ${className}`} style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+    <div className={`zion-rainbow-sub backdrop-blur-sm p-5 ${className}`} style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
       {children}
     </div>
   );
@@ -162,7 +162,7 @@ function WalletGate({ onEnter }: { onEnter: () => void }) {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
-        <div className="zion-rainbow-card backdrop-blur-md p-8" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+        <div className="zion-rainbow-card backdrop-blur-md p-8" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-xl bg-zion-gold/15 flex items-center justify-center">
               <Shield size={18} className="text-zion-gold" />
@@ -231,12 +231,12 @@ function WalletGate({ onEnter }: { onEnter: () => void }) {
                   placeholder="Encryption password"
                   className="w-full rounded-xl bg-black/40 border border-white/10 p-3 text-sm text-white placeholder:text-gray-600 outline-none focus:border-zion-gold/40"
                 />
-                {err && <p className="text-xs text-red-400">{err}</p>}
+                {err && <p className="text-xs text-zion-purple-400">{err}</p>}
                 <div className="flex gap-2">
                   <button
                     onClick={handleImport}
                     disabled={loading || !mnemonic.trim() || !password}
-                    className="flex-1 py-2.5 rounded-xl bg-zion-gold text-black text-sm font-semibold hover:bg-yellow-300 transition-colors disabled:opacity-50"
+                    className="flex-1 py-2.5 rounded-xl bg-zion-gold text-black text-sm font-semibold hover:bg-zion-gold-300 transition-colors disabled:opacity-50"
                   >
                     {loading ? 'Importing…' : 'Import & Continue'}
                   </button>
@@ -418,7 +418,7 @@ function DaoTab() {
       </div>
 
       {err && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400 flex items-center gap-2">
+        <div className="rounded-xl border border-zion-purple-500/20 bg-zion-purple-500/10 p-4 text-sm text-zion-purple-400 flex items-center gap-2">
           <AlertTriangle size={16} /> {err}
         </div>
       )}
@@ -439,9 +439,9 @@ function DaoTab() {
                     <p className="text-sm font-semibold text-white truncate">{p.title}</p>
                     <div className="flex items-center gap-2 mt-1.5">
                       <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
-                        p.status === 'active' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' :
-                        p.status === 'passed' ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30' :
-                        p.status === 'failed' ? 'bg-red-500/10 text-red-400 border-red-500/30' :
+                        p.status === 'active' ? 'bg-zion-cyan-500/10 text-zion-cyan-400 border-zion-cyan-500/30' :
+                        p.status === 'passed' ? 'bg-zion-cyan-500/10 text-zion-cyan-400 border-zion-cyan-500/30' :
+                        p.status === 'failed' ? 'bg-zion-purple-500/10 text-zion-purple-400 border-zion-purple-500/30' :
                         'bg-gray-500/10 text-gray-400 border-gray-500/30'
                       }`}>
                         {p.status}
@@ -453,15 +453,15 @@ function DaoTab() {
                 <div className="mt-4 flex items-center gap-6 text-xs">
                   <div>
                     <span className="text-gray-500">Yes: </span>
-                    <span className="font-mono text-emerald-400">{p.yes_votes.toLocaleString()}</span>
+                    <span className="font-mono text-zion-cyan-400">{p.yes_votes.toLocaleString()}</span>
                   </div>
                   <div>
                     <span className="text-gray-500">No: </span>
-                    <span className="font-mono text-red-400">{p.no_votes.toLocaleString()}</span>
+                    <span className="font-mono text-zion-purple-400">{p.no_votes.toLocaleString()}</span>
                   </div>
                 </div>
                 <div className="mt-2 h-1.5 rounded-full bg-white/10 overflow-hidden">
-                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${yesPct}%` }} />
+                  <div className="h-full bg-zion-cyan-500 rounded-full" style={{ width: `${yesPct}%` }} />
                 </div>
               </Card>
             );
@@ -504,15 +504,15 @@ function AlertsTab() {
   const dismiss = (id: string) => setAlerts((prev) => prev.filter((a) => a.id !== id));
 
   const severityIcon = (s: string) => {
-    if (s === 'critical') return <XCircle size={16} className="text-red-400 shrink-0" />;
-    if (s === 'warning') return <AlertTriangle size={16} className="text-amber-400 shrink-0" />;
-    return <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />;
+    if (s === 'critical') return <XCircle size={16} className="text-zion-purple-400 shrink-0" />;
+    if (s === 'warning') return <AlertTriangle size={16} className="text-zion-gold-400 shrink-0" />;
+    return <CheckCircle2 size={16} className="text-zion-cyan-400 shrink-0" />;
   };
 
   const severityBorder = (s: string) => {
-    if (s === 'critical') return 'border-red-500/20 bg-red-500/5';
-    if (s === 'warning') return 'border-amber-500/20 bg-amber-500/5';
-    return 'border-emerald-500/20 bg-emerald-500/5';
+    if (s === 'critical') return 'border-zion-purple-500/20 bg-zion-purple-500/5';
+    if (s === 'warning') return 'border-zion-gold-500/20 bg-zion-gold-500/5';
+    return 'border-zion-cyan-500/20 bg-zion-cyan-500/5';
   };
 
   return (
@@ -529,7 +529,7 @@ function AlertsTab() {
       </div>
 
       {err && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400 flex items-center gap-2">
+        <div className="rounded-xl border border-zion-purple-500/20 bg-zion-purple-500/10 p-4 text-sm text-zion-purple-400 flex items-center gap-2">
           <AlertTriangle size={16} /> {err}
         </div>
       )}
@@ -537,7 +537,7 @@ function AlertsTab() {
       {alerts.length === 0 && !err && !loading ? (
         <Card>
           <p className="text-sm text-gray-400 text-center py-8 flex items-center justify-center gap-2">
-            <CheckCircle2 size={16} className="text-emerald-400" /> No active alerts.
+            <CheckCircle2 size={16} className="text-zion-cyan-400" /> No active alerts.
           </p>
         </Card>
       ) : (
@@ -606,7 +606,7 @@ function NclTab() {
       </div>
 
       {err && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400 flex items-center gap-2">
+        <div className="rounded-xl border border-zion-purple-500/20 bg-zion-purple-500/10 p-4 text-sm text-zion-purple-400 flex items-center gap-2">
           <AlertTriangle size={16} /> {err}
         </div>
       )}
@@ -621,9 +621,9 @@ function NclTab() {
           leaderboard.map((entry) => (
             <Card key={entry.worker_id ?? entry.rank} className="flex items-center gap-4">
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
-                entry.rank === 1 ? 'bg-amber-500/15 text-amber-400' :
+                entry.rank === 1 ? 'bg-zion-gold-500/15 text-zion-gold-400' :
                 entry.rank === 2 ? 'bg-gray-300/15 text-gray-300' :
-                entry.rank === 3 ? 'bg-orange-700/15 text-orange-400' :
+                entry.rank === 3 ? 'bg-zion-gold-700/15 text-zion-gold-400' :
                 'bg-white/5 text-gray-400'
               }`}>
                 {entry.rank}
@@ -656,7 +656,7 @@ function NclTab() {
                 <span className="text-sm font-semibold text-white truncate">{w.name ?? w.id}</span>
               </div>
               <div className="flex items-center gap-2 text-xs">
-                <span className={`w-2 h-2 rounded-full ${w.status === 'online' ? 'bg-emerald-400' : w.status === 'busy' ? 'bg-amber-400' : 'bg-gray-500'}`} />
+                <span className={`w-2 h-2 rounded-full ${w.status === 'online' ? 'bg-zion-cyan-400' : w.status === 'busy' ? 'bg-zion-gold-400' : 'bg-gray-500'}`} />
                 <span className="text-gray-400 capitalize">{w.status}</span>
               </div>
               <div className="flex justify-between text-xs text-gray-500">
@@ -727,7 +727,7 @@ export default function GuardianDashboard() {
               </div>
               <button
                 onClick={disconnect}
-                className="p-2 rounded-xl border border-white/10 hover:border-red-500/40 hover:bg-red-500/10 transition-colors"
+                className="p-2 rounded-xl border border-white/10 hover:border-zion-purple-500/40 hover:bg-zion-purple-500/10 transition-colors"
                 title="Disconnect"
               >
                 <Lock size={14} className="text-gray-400" />

@@ -93,7 +93,7 @@ function CopyBtn({ text }: { text: string }) {
       className="text-white/20 hover:text-white/60 transition-colors"
     >
       {ok ? (
-        <Check className="w-3.5 h-3.5 text-emerald-400" />
+        <Check className="w-3.5 h-3.5 text-zion-cyan-400" />
       ) : (
         <Copy className="w-3.5 h-3.5" />
       )}
@@ -107,9 +107,9 @@ function truncAddr(addr: string) {
 }
 
 const rankIcons = [
-  { icon: Crown, color: "text-yellow-400" },
+  { icon: Crown, color: "text-zion-gold-400" },
   { icon: Award, color: "text-gray-300" },
-  { icon: Award, color: "text-amber-600" },
+  { icon: Award, color: "text-zion-gold-600" },
 ];
 
 const getTypeConfig = (cs: boolean) => ({
@@ -220,13 +220,13 @@ export default function RichListClient({ embedded = false }: RichListClientProps
                 label: ExplorerRichlistRichListClientCopy.activeMiners[cs ? 'cs' : 'en'],
                 value: data.stats.miner_addresses.toLocaleString(locale),
                 icon: Pickaxe,
-                accent: "text-emerald-400",
+                accent: "text-zion-cyan-400",
               },
             ].map((stat, i) => (
               <div
                 key={i}
                 className="zion-rainbow-sub p-5"
-                style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
+                style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
               >
                 <div className="flex items-center gap-2 mb-2">
                   <stat.icon className={`w-4 h-4 ${stat.accent}`} />
@@ -266,12 +266,12 @@ export default function RichListClient({ embedded = false }: RichListClientProps
                 return (
                   <>
                     <div
-                      className="bg-linear-to-r from-zion-purple to-indigo-500 transition-all"
+                      className="bg-linear-to-r from-zion-purple to-zion-purple-500 transition-all"
                       style={{ width: `${preminePerc}%` }}
                       title={`Premine: ${preminePerc.toFixed(1)}%`}
                     />
                     <div
-                      className="bg-linear-to-r from-zion-cyan to-blue-500 transition-all"
+                      className="bg-linear-to-r from-zion-cyan to-zion-purple-500 transition-all"
                       style={{ width: `${minerPerc}%` }}
                       title={`${ExplorerRichlistRichListClientCopy.miners[cs ? 'cs' : 'en']}: ${minerPerc.toFixed(1)}%`}
                     />
@@ -364,7 +364,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
           {/* Error */}
           {error && !loading && (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <p className="text-red-400 text-sm">{error}</p>
+              <p className="text-zion-purple-400 text-sm">{error}</p>
               <button
                 onClick={fetchRichList}
                 className="mt-4 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 text-sm transition-all"
@@ -428,7 +428,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
                   <div className="text-right hidden md:flex items-center justify-end gap-2">
                     <div className="w-16 h-1.5 rounded-full bg-white/5 overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-linear-to-r from-zion-gold to-amber-500"
+                        className="h-full rounded-full bg-linear-to-r from-zion-gold to-zion-gold-500"
                         style={{
                           width: `${Math.min(entry.percentage, 100)}%`,
                         }}
@@ -510,7 +510,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="relative zion-rainbow-card rounded-4xl bg-black/60 p-8 md:p-12 overflow-hidden" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
+          className="relative zion-rainbow-card rounded-4xl bg-black/60 p-8 md:p-12 overflow-hidden" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
         >
           <div className="absolute inset-0 bg-linear-to-br from-zion-gold/5 via-transparent to-zion-purple/5 pointer-events-none" />
           <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">

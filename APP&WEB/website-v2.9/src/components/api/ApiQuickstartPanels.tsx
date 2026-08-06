@@ -80,13 +80,13 @@ export default function ApiQuickstartPanels({ cs }: { cs: boolean }) {
 
   return (
     <section className="grid gap-6 lg:grid-cols-2">
-      <div className="zion-rainbow-card p-6" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+      <div className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
         <h3 className="text-2xl font-semibold text-white flex items-center gap-3">
           <Terminal className="h-6 w-6 text-zion-gold" /> {ApiQuickstartPanelsCopy.quickstartSnippets[cs ? 'cs' : 'en']}
         </h3>
         <div className="mt-4 space-y-4">
           {codeSamples.map((sample) => (
-            <div key={sample.id} className="zion-rainbow-sub p-4" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+            <div key={sample.id} className="zion-rainbow-sub p-4" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <div className="mb-2 flex items-center justify-between text-sm text-gray-300">
                 <span>{sample.label}</span>
                 <button
@@ -112,13 +112,13 @@ export default function ApiQuickstartPanels({ cs }: { cs: boolean }) {
         </div>
       </div>
 
-      <div className="zion-rainbow-card p-6" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+      <div className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
         <h3 className="text-2xl font-semibold text-white flex items-center gap-3">
           <Server className="h-6 w-6 text-zion-gold" /> {ApiQuickstartPanelsCopy.onboardingChecklist[cs ? 'cs' : 'en']}
         </h3>
         <div className="mt-4 space-y-4">
           {onboardingSteps.map((step) => (
-            <div key={step.title} className="zion-rainbow-sub p-4" style={{ '--rc': '99, 102, 241' } as React.CSSProperties}>
+            <div key={step.title} className="zion-rainbow-sub p-4" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <p className="text-sm uppercase tracking-[0.3em] text-gray-500">{step.title}</p>
               <p className="text-sm text-gray-300 mt-2">{step.detail}</p>
             </div>

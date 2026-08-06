@@ -117,7 +117,7 @@ function StatCard({ icon: Icon, label, value, sub, color, bgColor, delay = 0 }: 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay }}
       className="group relative zion-rainbow-sub p-4 
-        transition-all duration-300 overflow-hidden" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}
+        transition-all duration-300 overflow-hidden" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
     >
       <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 
         bg-gradient-to-br ${bgColor} pointer-events-none`} />
@@ -145,7 +145,7 @@ export default function ProExplorerStats() {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
         {[...Array(12)].map((_, i) => (
-          <div key={i} className="zion-rainbow-sub p-4 animate-pulse" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+          <div key={i} className="zion-rainbow-sub p-4 animate-pulse" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <div className="h-8 w-8 bg-white/5 rounded-xl mb-3" />
             <div className="h-3 w-16 bg-white/5 rounded mb-2" />
             <div className="h-6 w-20 bg-white/5 rounded" />
@@ -157,9 +157,9 @@ export default function ProExplorerStats() {
 
   if (error || !stats) {
     return (
-      <div className="zion-rainbow-sub p-6 text-center" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
-        <Server className="h-8 w-8 text-red-400 mx-auto mb-2" />
-        <p className="text-red-400 text-sm">{ProExplorerStatsCopy.unableToConnectToZionNetwork[cs ? 'cs' : 'en']}</p>
+      <div className="zion-rainbow-sub p-6 text-center" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+        <Server className="h-8 w-8 text-zion-purple-400 mx-auto mb-2" />
+        <p className="text-zion-purple-400 text-sm">{ProExplorerStatsCopy.unableToConnectToZionNetwork[cs ? 'cs' : 'en']}</p>
       </div>
     );
   }
@@ -168,65 +168,65 @@ export default function ProExplorerStats() {
     {
       icon: Box, label: ProExplorerStatsCopy.blockHeight[cs ? 'cs' : 'en'], value: fmt(stats.block_height),
       sub: stats.last_block ? `${ProExplorerStatsCopy.last[cs ? 'cs' : 'en']}: ${new Date(stats.last_block.timestamp * 1000).toLocaleTimeString(locale)}` : undefined,
-      color: "text-zion-gold", bgColor: "from-yellow-500/5 to-transparent",
+      color: "text-zion-gold", bgColor: "from-zion-gold-500/5 to-transparent",
     },
     {
       icon: Cpu, label: ProExplorerStatsCopy.networkHashrate[cs ? 'cs' : 'en'], value: stats.network_hashrate_formatted,
       sub: stats.pool_hashrate_formatted ? `${ProExplorerStatsCopy.pool[cs ? 'cs' : 'en']}: ${stats.pool_hashrate_formatted}` : undefined,
-      color: "text-emerald-400", bgColor: "from-emerald-500/5 to-transparent",
+      color: "text-zion-cyan-400", bgColor: "from-zion-cyan-500/5 to-transparent",
     },
     {
       icon: Hash, label: ProExplorerStatsCopy.difficulty[cs ? 'cs' : 'en'], value: fmt(stats.difficulty),
-      color: "text-zion-cyan", bgColor: "from-cyan-500/5 to-transparent",
+      color: "text-zion-cyan", bgColor: "from-zion-cyan-500/5 to-transparent",
     },
     {
       icon: Wallet, label: ProExplorerStatsCopy.circulatingSupply[cs ? 'cs' : 'en'], value: `${fmt(stats.circulating_supply)} ZION`,
-      sub: cs ? `${stats.emission_pct}% maxima` : `${stats.emission_pct}% of max`, color: "text-zion-gold", bgColor: "from-yellow-500/5 to-transparent",
+      sub: cs ? `${stats.emission_pct}% maxima` : `${stats.emission_pct}% of max`, color: "text-zion-gold", bgColor: "from-zion-gold-500/5 to-transparent",
     },
     {
       icon: Clock, label: ProExplorerStatsCopy.avgBlockTime[cs ? 'cs' : 'en'], value: `${stats.avg_block_time}s`,
-      sub: `${ProExplorerStatsCopy.target[cs ? 'cs' : 'en']}: ${stats.target_block_time}s`, color: "text-blue-400", bgColor: "from-blue-500/5 to-transparent",
+      sub: `${ProExplorerStatsCopy.target[cs ? 'cs' : 'en']}: ${stats.target_block_time}s`, color: "text-zion-purple-400", bgColor: "from-zion-purple-500/5 to-transparent",
     },
     {
       icon: Layers, label: ProExplorerStatsCopy.totalTransactions[cs ? 'cs' : 'en'], value: fmt(stats.tx_count),
-      color: "text-purple-400", bgColor: "from-purple-500/5 to-transparent",
+      color: "text-zion-purple-400", bgColor: "from-zion-purple-500/5 to-transparent",
     },
     {
       icon: Zap, label: "Mempool", value: `${stats.tx_pool_size} tx`,
-      color: stats.tx_pool_size > 10 ? "text-amber-400" : "text-gray-400", bgColor: "from-amber-500/5 to-transparent",
+      color: stats.tx_pool_size > 10 ? "text-zion-gold-400" : "text-gray-400", bgColor: "from-zion-gold-500/5 to-transparent",
     },
     {
       icon: Users, label: ProExplorerStatsCopy.connections[cs ? 'cs' : 'en'], value: `${stats.total_connections}`,
       sub: `↓${stats.incoming_connections} ↑${stats.outgoing_connections}`,
-      color: "text-purple-400", bgColor: "from-purple-500/5 to-transparent",
+      color: "text-zion-purple-400", bgColor: "from-zion-purple-500/5 to-transparent",
     },
     {
       icon: TrendingUp, label: ProExplorerStatsCopy.activeMiners[cs ? 'cs' : 'en'], value: `${stats.active_miners}`,
       sub: stats.pool_blocks_found ? `${stats.pool_blocks_found} ${ProExplorerStatsCopy.blocksFound[cs ? 'cs' : 'en']}` : undefined,
-      color: "text-emerald-400", bgColor: "from-emerald-500/5 to-transparent",
+      color: "text-zion-cyan-400", bgColor: "from-zion-cyan-500/5 to-transparent",
     },
     {
       icon: Banknote, label: ProExplorerStatsCopy.poolPayouts[cs ? 'cs' : 'en'],
       value: stats.pool_pending_payouts_atomic ? `${(stats.pool_pending_payouts_atomic / 1e6).toFixed(2)} ZION` : "0 ZION",
       sub: stats.pool_pending_miners ? `${stats.pool_pending_miners} ${ProExplorerStatsCopy.minersPending[cs ? 'cs' : 'en']}` : undefined,
-      color: "text-amber-400", bgColor: "from-amber-500/5 to-transparent",
+      color: "text-zion-gold-400", bgColor: "from-zion-gold-500/5 to-transparent",
     },
     {
       icon: Gauge, label: ProExplorerStatsCopy.blockSize[cs ? 'cs' : 'en'],
       value: stats.last_block ? fmtBytes(stats.last_block.block_size) : "—",
       sub: `${ProExplorerStatsCopy.median[cs ? 'cs' : 'en']}: ${fmtBytes(stats.block_size_median)}`,
-      color: "text-cyan-400", bgColor: "from-cyan-500/5 to-transparent",
+      color: "text-zion-cyan-400", bgColor: "from-zion-cyan-500/5 to-transparent",
     },
     {
       icon: Database, label: ProExplorerStatsCopy.database[cs ? 'cs' : 'en'],
       value: stats.database_size ? fmtBytes(stats.database_size) : "—",
       sub: stats.version ? `v${stats.version}` : undefined,
-      color: "text-pink-400", bgColor: "from-pink-500/5 to-transparent",
+      color: "text-zion-purple-400", bgColor: "from-zion-purple-500/5 to-transparent",
     },
     {
       icon: Globe, label: ProExplorerStatsCopy.knownPeers[cs ? 'cs' : 'en'], value: `${stats.white_peerlist_size}`,
       sub: stats.alt_blocks_count ? `${stats.alt_blocks_count} ${ProExplorerStatsCopy.altBlocks[cs ? 'cs' : 'en']}` : undefined,
-      color: "text-indigo-400", bgColor: "from-indigo-500/5 to-transparent",
+      color: "text-zion-purple-400", bgColor: "from-zion-purple-500/5 to-transparent",
     },
   ];
 

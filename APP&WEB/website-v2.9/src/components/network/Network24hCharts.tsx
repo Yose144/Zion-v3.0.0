@@ -102,7 +102,7 @@ export default function Network24hCharts({
         labelCs: 'Hashrate',
         data: hashrateData,
         color: '#10b981',
-        icon: <TrendingUp className="h-4 w-4 text-emerald-400" />,
+        icon: <TrendingUp className="h-4 w-4 text-zion-cyan-400" />,
         unit: 'H/s',
         tip: 'Network hashrate over the last 24 hours — total computational power securing the chain.',
         tipCs: 'Síťový hashrate za posledních 24 hodin — celkový výpočetní výkon zabezpečující řetězec.',
@@ -112,7 +112,7 @@ export default function Network24hCharts({
         labelCs: 'Obtížnost',
         data: difficultyData,
         color: '#3b82f6',
-        icon: <Gauge className="h-4 w-4 text-blue-400" />,
+        icon: <Gauge className="h-4 w-4 text-zion-purple-400" />,
         tip: 'Mining difficulty adjusted by LWMA DAA every block to maintain 60-second target.',
         tipCs: 'Těžební obtížnost upravovaná LWMA DAA každý blok pro udržení 60s cíle.',
       },
@@ -121,7 +121,7 @@ export default function Network24hCharts({
         labelCs: 'Čas bloku',
         data: blockTimeData,
         color: '#a855f7',
-        icon: <Timer className="h-4 w-4 text-purple-400" />,
+        icon: <Timer className="h-4 w-4 text-zion-purple-400" />,
         unit: 's',
         tip: 'Average time between consecutive blocks. Target is 60 seconds.',
         tipCs: 'Průměrný čas mezi po sobě jdoucími bloky. Cíl je 60 sekund.',
@@ -135,7 +135,7 @@ export default function Network24hCharts({
       <div className="flex flex-col gap-2 mb-6">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Network24hChartsCopy.history[cs ? 'cs' : 'en']}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-          <Activity className="h-7 w-7 text-emerald-400" />
+          <Activity className="h-7 w-7 text-zion-cyan-400" />
           {Network24hChartsCopy.k24HourTrends[cs ? 'cs' : 'en']}
         </h2>
         <p className="text-sm text-gray-400">

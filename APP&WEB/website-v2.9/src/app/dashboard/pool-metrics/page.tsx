@@ -26,7 +26,7 @@ export default function PoolMetricsPage() {
           <p className="mt-2 text-sm text-gray-300">Hashrate · workers · shares · block discovery rate</p>
         </div>
 
-        <div className="zion-rainbow-card p-3" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+        <div className="zion-rainbow-card p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
           <iframe
             src={IFRAME_SRC}
             title="Pool Metrics Dashboard"

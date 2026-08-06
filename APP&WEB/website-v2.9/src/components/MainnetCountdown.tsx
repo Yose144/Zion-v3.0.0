@@ -89,19 +89,19 @@ export default function MainnetCountdown({ embedded = false }: { embedded?: bool
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className={`zion-rainbow-card relative overflow-hidden backdrop-blur-xl ${embedded ? 'p-4' : 'p-6 md:p-8'}`}
-          style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
         >
-            <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+            <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-zion-cyan-500/10 blur-3xl pointer-events-none" />
 
             <div className="relative flex items-center gap-3">
-              <div className="flex-none w-10 h-10 rounded-lg bg-emerald-500/15 flex items-center justify-center">
-                <Rocket className="w-5 h-5 text-emerald-300 animate-pulse" />
+              <div className="flex-none w-10 h-10 rounded-lg bg-zion-cyan-500/15 flex items-center justify-center">
+                <Rocket className="w-5 h-5 text-zion-cyan-300 animate-pulse" />
               </div>
               <div className="flex-1">
                 <h2 className="text-sm font-bold text-white">Mainnet LIVE</h2>
                 <p className="text-[11px] text-gray-400">Edge server · Mining · Bridge</p>
               </div>
-              <span className="text-xs font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-1">
+              <span className="text-xs font-bold text-zion-cyan-300 bg-zion-cyan-500/10 border border-zion-cyan-500/20 rounded-full px-2.5 py-1">
                 GO
               </span>
             </div>
@@ -109,7 +109,7 @@ export default function MainnetCountdown({ embedded = false }: { embedded?: bool
             <div className="relative mt-3">
               <div className="h-1 rounded-full bg-white/5 overflow-hidden">
                 <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-zion-purple to-zion-cyan"
+                  className="h-full rounded-full bg-gradient-to-r from-zion-cyan-500 via-zion-purple to-zion-cyan"
                   initial={{ width: 0 }}
                   animate={{ width: '100%' }}
                   transition={{ duration: 1.2, ease: 'easeOut' }}
@@ -128,7 +128,7 @@ export default function MainnetCountdown({ embedded = false }: { embedded?: bool
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         className={`zion-rainbow-card relative overflow-hidden backdrop-blur-xl ${embedded ? 'p-4' : 'p-6 md:p-8'}`}
-        style={{ '--rc': '139, 92, 246' } as React.CSSProperties}
+        style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
       >
           {/* ambient glow */}
           <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-zion-gold/10 blur-3xl pointer-events-none" />

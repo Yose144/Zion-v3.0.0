@@ -118,7 +118,7 @@ export default function DefiBalances() {
   };
 
   return (
-    <div className="zion-rainbow-card backdrop-blur-xl p-6 space-y-5" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+    <div className="zion-rainbow-card backdrop-blur-xl p-6 space-y-5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-white">
           {DefiBalancesCopy.portfolio[cs ? 'cs' : 'en']}
@@ -179,12 +179,12 @@ export default function DefiBalances() {
         <>
           {/* Address */}
           <div className="flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-emerald-400" />
+            <div className="h-2 w-2 rounded-full bg-zion-cyan-400" />
             <span className="font-mono text-xs text-gray-300">
               {account?.slice(0, 6)}…{account?.slice(-4)}
             </span>
             <button onClick={copyAddr} className="text-gray-500 hover:text-white transition-colors">
-              {copied ? <CheckCircle2 className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+              {copied ? <CheckCircle2 className="h-3 w-3 text-zion-cyan-400" /> : <Copy className="h-3 w-3" />}
             </button>
             <a
               href={`https://basescan.org/address/${account}`}

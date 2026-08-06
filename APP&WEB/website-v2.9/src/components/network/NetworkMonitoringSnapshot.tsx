@@ -252,14 +252,14 @@ export default function NetworkMonitoringSnapshot() {
           label={NetworkMonitoringSnapshotCopy.coreTarget[cs ? 'cs' : 'en']}
           value={monitoring?.coreUp === 1 ? (NetworkMonitoringSnapshotCopy.up[cs ? 'cs' : 'en']) : monitoring?.coreUp === 0 ? (NetworkMonitoringSnapshotCopy.down[cs ? 'cs' : 'en']) : '—'}
           detail={`${NetworkMonitoringSnapshotCopy.height[cs ? 'cs' : 'en']} ${fmtMetric(monitoring?.chainHeight, 0, locale)}`}
-          accent={monitoring?.coreUp === 1 ? 'text-emerald-400' : 'text-red-400'}
+          accent={monitoring?.coreUp === 1 ? 'text-zion-cyan-400' : 'text-zion-purple-400'}
           icon={<Server className="h-5 w-5" />}
         />
         <MetricPanel
           label={NetworkMonitoringSnapshotCopy.poolTarget[cs ? 'cs' : 'en']}
           value={monitoring?.poolUp === 1 ? (NetworkMonitoringSnapshotCopy.up[cs ? 'cs' : 'en']) : monitoring?.poolUp === 0 ? (NetworkMonitoringSnapshotCopy.down[cs ? 'cs' : 'en']) : '—'}
           detail={`${fmtMetric(monitoring?.poolSessions, 0, locale)} ${NetworkMonitoringSnapshotCopy.activeSessions[cs ? 'cs' : 'en']}`}
-          accent={monitoring?.poolUp === 1 ? 'text-emerald-400' : 'text-red-400'}
+          accent={monitoring?.poolUp === 1 ? 'text-zion-cyan-400' : 'text-zion-purple-400'}
           icon={<Radio className="h-5 w-5" />}
         />
         <MetricPanel
@@ -287,14 +287,14 @@ export default function NetworkMonitoringSnapshot() {
           label={NetworkMonitoringSnapshotCopy.memoryFree[cs ? 'cs' : 'en']}
           value={fmtBytes(monitoring?.memAvailable)}
           detail={monitoring?.memTotal != null ? `${fmtBytes(monitoring?.memTotal)} ${NetworkMonitoringSnapshotCopy.total[cs ? 'cs' : 'en']}` : NetworkMonitoringSnapshotCopy.nodeExporterMemory[cs ? 'cs' : 'en']}
-          accent="text-emerald-400"
+          accent="text-zion-cyan-400"
           icon={<Database className="h-5 w-5" />}
         />
         <MetricPanel
           label={NetworkMonitoringSnapshotCopy.diskFree[cs ? 'cs' : 'en']}
           value={fmtBytes(monitoring?.diskAvailable)}
           detail={monitoring?.diskTotal != null ? `${fmtBytes(monitoring?.diskTotal)} ${NetworkMonitoringSnapshotCopy.total[cs ? 'cs' : 'en']}` : NetworkMonitoringSnapshotCopy.rootFilesystem[cs ? 'cs' : 'en']}
-          accent="text-blue-400"
+          accent="text-zion-purple-400"
           icon={<HardDrive className="h-5 w-5" />}
         />
         <div className="zion-rainbow-sub p-6 flex flex-col justify-between" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>

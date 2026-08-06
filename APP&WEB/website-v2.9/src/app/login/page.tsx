@@ -63,7 +63,7 @@ export default function LoginPage() {
             <p className="text-[10px] text-gray-400 uppercase tracking-wider">Secure</p>
             <p className="text-[10px] text-gray-600 mt-1">Ed25519 signature</p>
           </div>
-          <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+          <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
             <Lock className="h-5 w-5 text-zion-gold mx-auto mb-2" />
             <p className="text-[10px] text-gray-400 uppercase tracking-wider">Private</p>
             <p className="text-[10px] text-gray-600 mt-1">Keys never leave browser</p>

@@ -35,8 +35,8 @@ export default function GeographyRegionPage({ data }: { data: RegionData }) {
   return (
     <div className="zion-page">
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute -left-40 top-1/3 h-[600px] w-[600px] rounded-full blur-[240px] bg-violet-500/8" />
-        <div className="absolute -right-40 top-2/3 h-[500px] w-[500px] rounded-full blur-[200px] bg-purple-500/6" />
+        <div className="absolute -left-40 top-1/3 h-[600px] w-[600px] rounded-full blur-[240px] bg-zion-purple-500/8" />
+        <div className="absolute -right-40 top-2/3 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-purple-500/6" />
       </div>
 
       <div className="relative z-10 zion-container max-w-5xl">
@@ -61,7 +61,7 @@ export default function GeographyRegionPage({ data }: { data: RegionData }) {
           transition={{ duration: 0.7 }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-8 md:p-12" style={{ '--rc': '16, 185, 129' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-8 md:p-12" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <div className="relative z-10 space-y-3">
               <span className="zion-badge-gold">
                 {TerranovaGeographyComponentsGeographyRegionPageCopy.culturalInserts[cs ? 'cs' : 'en']}
@@ -99,11 +99,11 @@ export default function GeographyRegionPage({ data }: { data: RegionData }) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 + i * 0.07, duration: 0.5 }}
                 className="relative zion-rainbow-sub p-5 space-y-3 overflow-hidden group hover:scale-[1.02] transition-transform duration-300"
-                style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+                style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
               >
                 <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-[50px] opacity-20 group-hover:opacity-35 transition-opacity duration-500 bg-zion-gold" />
                 <div className="flex items-start justify-between relative z-10 gap-3">
-                  <span className="inline-flex h-11 w-11 items-center justify-center zion-rainbow-sub" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                  <span className="inline-flex h-11 w-11 items-center justify-center zion-rainbow-sub" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                     <FolderOpen className="h-5 w-5 text-zion-gold" />
                   </span>
                 </div>

@@ -114,7 +114,7 @@ export default function MinerStatsClient() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent">
+          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-zion-purple-400 via-zion-purple-400 to-zion-cyan-400 bg-clip-text text-transparent">
             Miner Statistics
           </h1>
           <p className="text-gray-400 text-lg">
@@ -136,9 +136,9 @@ export default function MinerStatsClient() {
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               placeholder="Enter ZION address (e.g., zion1test)"
-              className="w-full px-6 py-4 pl-14 bg-black/60 border border-purple-500/30 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
+              className="w-full px-6 py-4 pl-14 bg-black/60 border border-zion-purple-500/30 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-zion-purple-500 transition-colors"
             />
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-400" />
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-zion-purple-400" />
             <button
               type="submit"
               disabled={loading}
@@ -155,7 +155,7 @@ export default function MinerStatsClient() {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="max-w-2xl mx-auto mb-8 p-4 bg-red-900/20 border border-red-500/50 rounded-xl text-red-400 text-center"
+            className="max-w-2xl mx-auto mb-8 p-4 bg-red-900/20 border border-zion-purple-500/50 rounded-xl text-zion-purple-400 text-center"
           >
             {error}
           </motion.div>
@@ -172,9 +172,9 @@ export default function MinerStatsClient() {
             <div className="max-w-2xl mx-auto mb-6 flex items-center justify-center gap-2">
               <div className={`w-3 h-3 rounded-full ${
                 stats.is_active
-                  ? 'bg-green-400 animate-pulse'
+                  ? 'bg-zion-cyan-400 animate-pulse'
                   : stats.balance.pending > 0
-                    ? 'bg-amber-400'
+                    ? 'bg-zion-gold-400'
                     : 'bg-gray-500'
               }`} />
               <span className="text-gray-400">
@@ -191,7 +191,7 @@ export default function MinerStatsClient() {
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="max-w-2xl mx-auto mb-8 p-4 bg-amber-900/20 border border-amber-500/50 rounded-xl text-amber-200 text-center"
+                className="max-w-2xl mx-auto mb-8 p-4 bg-amber-900/20 border border-zion-gold-500/50 rounded-xl text-amber-200 text-center"
               >
                 This payout address is registered with the pool but has no active worker right now.
                 <br />
@@ -206,13 +206,13 @@ export default function MinerStatsClient() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 border border-purple-500/30 rounded-xl p-6"
+                className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 border border-zion-purple-500/30 rounded-xl p-6"
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <Zap className="w-8 h-8 text-purple-400" />
+                  <Zap className="w-8 h-8 text-zion-purple-400" />
                   <h3 className="text-xl font-semibold">Hashrate</h3>
                 </div>
-                <div className="text-3xl font-bold text-purple-300">
+                <div className="text-3xl font-bold text-zion-purple-300">
                   {formatHashrate(stats.stats.current_hashrate)}
                 </div>
                 <p className="text-gray-400 text-sm mt-2">Current mining power</p>
@@ -223,13 +223,13 @@ export default function MinerStatsClient() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.35 }}
-                className="bg-gradient-to-br from-blue-900/20 to-cyan-900/20 border border-blue-500/30 rounded-xl p-6"
+                className="bg-gradient-to-br from-blue-900/20 to-cyan-900/20 border border-zion-purple-500/30 rounded-xl p-6"
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <Activity className="w-8 h-8 text-blue-400" />
+                  <Activity className="w-8 h-8 text-zion-purple-400" />
                   <h3 className="text-xl font-semibold">Shares</h3>
                 </div>
-                <div className="text-3xl font-bold text-blue-300">
+                <div className="text-3xl font-bold text-zion-purple-300">
                   {stats.stats?.total_shares ? stats.stats.total_shares.toLocaleString() : '0'}
                 </div>
                 <p className="text-gray-400 text-sm mt-2">
@@ -242,13 +242,13 @@ export default function MinerStatsClient() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="bg-gradient-to-br from-cyan-900/20 to-teal-900/20 border border-cyan-500/30 rounded-xl p-6"
+                className="bg-gradient-to-br from-cyan-900/20 to-teal-900/20 border border-zion-cyan-500/30 rounded-xl p-6"
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <TrendingUp className="w-8 h-8 text-cyan-400" />
+                  <TrendingUp className="w-8 h-8 text-zion-cyan-400" />
                   <h3 className="text-xl font-semibold">Efficiency</h3>
                 </div>
-                <div className="text-3xl font-bold text-cyan-300">
+                <div className="text-3xl font-bold text-zion-cyan-300">
                   {stats.efficiency.acceptance_rate.toFixed(2)}%
                 </div>
                 <p className="text-gray-400 text-sm mt-2">Share acceptance rate</p>
@@ -259,13 +259,13 @@ export default function MinerStatsClient() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.45 }}
-                className="bg-gradient-to-br from-yellow-900/20 to-orange-900/20 border border-yellow-500/30 rounded-xl p-6"
+                className="bg-gradient-to-br from-yellow-900/20 to-orange-900/20 border border-zion-gold-500/30 rounded-xl p-6"
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <Award className="w-8 h-8 text-yellow-400" />
+                  <Award className="w-8 h-8 text-zion-gold-400" />
                   <h3 className="text-xl font-semibold">Blocks</h3>
                 </div>
-                <div className="text-3xl font-bold text-yellow-300">
+                <div className="text-3xl font-bold text-zion-gold-300">
                   {stats.stats?.blocks_found ? stats.stats.blocks_found.toLocaleString() : '0'}
                 </div>
                 <p className="text-gray-400 text-sm mt-2">Blocks found</p>
@@ -276,13 +276,13 @@ export default function MinerStatsClient() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className="bg-gradient-to-br from-green-900/20 to-emerald-900/20 border border-green-500/30 rounded-xl p-6"
+                className="bg-gradient-to-br from-green-900/20 to-emerald-900/20 border border-zion-cyan-500/30 rounded-xl p-6"
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <Activity className="w-8 h-8 text-green-400" />
+                  <Activity className="w-8 h-8 text-zion-cyan-400" />
                   <h3 className="text-xl font-semibold">Balance</h3>
                 </div>
-                <div className="text-3xl font-bold text-green-300">
+                <div className="text-3xl font-bold text-zion-cyan-300">
                   {stats.balance.pending.toFixed(2)} ZION
                 </div>
                 <p className="text-gray-400 text-sm mt-2">Pending payout</p>
@@ -293,13 +293,13 @@ export default function MinerStatsClient() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.55 }}
-                className="bg-gradient-to-br from-pink-900/20 to-purple-900/20 border border-pink-500/30 rounded-xl p-6"
+                className="bg-gradient-to-br from-pink-900/20 to-purple-900/20 border border-zion-purple-500/30 rounded-xl p-6"
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <Clock className="w-8 h-8 text-pink-400" />
+                  <Clock className="w-8 h-8 text-zion-purple-400" />
                   <h3 className="text-xl font-semibold">Mining Since</h3>
                 </div>
-                <div className="text-lg font-bold text-pink-300">
+                <div className="text-lg font-bold text-zion-purple-300">
                   {formatTimestamp(stats.stats.first_seen)}
                 </div>
                 <p className="text-gray-400 text-sm mt-2">First share submitted</p>
@@ -312,17 +312,17 @@ export default function MinerStatsClient() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
-                className="bg-black/60 border border-purple-500/30 rounded-xl p-6 mb-8"
+                className="bg-black/60 border border-zion-purple-500/30 rounded-xl p-6 mb-8"
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <Users className="w-6 h-6 text-purple-400" />
+                  <Users className="w-6 h-6 text-zion-purple-400" />
                   <h3 className="text-xl font-semibold">Active Workers ({stats.workers.length})</h3>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {stats.workers.map((worker, i) => (
                     <span
                       key={i}
-                      className="px-4 py-2 bg-purple-900/30 border border-purple-500/50 rounded-lg text-purple-300"
+                      className="px-4 py-2 bg-purple-900/30 border border-zion-purple-500/50 rounded-lg text-zion-purple-300"
                     >
                       {worker}
                     </span>
@@ -337,14 +337,14 @@ export default function MinerStatsClient() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.7 }}
-                className="bg-black/60 border border-cyan-500/30 rounded-xl p-6"
+                className="bg-black/60 border border-zion-cyan-500/30 rounded-xl p-6"
               >
                 <h3 className="text-xl font-semibold mb-4">Payment History</h3>
                 <div className="space-y-3">
                   {stats.payments.map((payment, i) => (
                     <div key={i} className="flex justify-between items-center p-3 bg-cyan-900/20 rounded-lg">
                       <div>
-                        <div className="font-semibold text-cyan-300">{payment.amount.toFixed(2)} ZION</div>
+                        <div className="font-semibold text-zion-cyan-300">{payment.amount.toFixed(2)} ZION</div>
                         <div className="text-sm text-gray-400">{formatTimestamp(payment.timestamp)}</div>
                       </div>
                       <div className="text-xs text-gray-500 font-mono">
@@ -367,7 +367,7 @@ export default function MinerStatsClient() {
         >
           <a
             href="/dashboard"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-purple-900/30 border border-purple-500/50 rounded-xl hover:bg-purple-900/50 transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-purple-900/30 border border-zion-purple-500/50 rounded-xl hover:bg-purple-900/50 transition-colors"
           >
             ← Back to Dashboard
           </a>

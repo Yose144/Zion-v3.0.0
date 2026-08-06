@@ -54,7 +54,7 @@ export default async function Image() {
             width: '400px',
             height: '400px',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(251,191,36,0.15) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(252, 209, 22,0.15) 0%, transparent 70%)',
           }}
         />
 
