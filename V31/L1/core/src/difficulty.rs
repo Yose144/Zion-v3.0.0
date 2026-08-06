@@ -23,7 +23,7 @@ pub const MIN_SOLVE_TIME: u64 = 30;
 pub const MAX_SOLVE_TIME: u64 = 120;
 
 /// Absolute difficulty floor.
-pub const MIN_DIFFICULTY: u64 = 1_000;
+pub const MIN_DIFFICULTY: u64 = 10;
 
 /// Absolute difficulty ceiling.
 pub const MAX_DIFFICULTY: u64 = u64::MAX / 1_000;

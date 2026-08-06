@@ -406,7 +406,9 @@ impl ExternalCoin {
             ExternalCoin::PhoenixCoin => "neoscrypt.eu.mine.zpool.ca:4233",
             ExternalCoin::Keryx => "keryxhash.eu.mine.zpool.ca:4233",
             ExternalCoin::Neoxa => "neox.2miners.com:4040",
-            ExternalCoin::Bitcoin => "stratum+tcp://bitcoin.pool.example:3333",
+            // Bitcoin SHA-256d merge-mining is not via standard stratum pools;
+            // leave empty so auxpow_runtime skips it until a real endpoint is configured.
+            ExternalCoin::Bitcoin => "",
         }
     }
 
@@ -630,16 +632,31 @@ impl CoinProfile {
             enabled: true,
             disabled: false,
             disabled_reason: None,
-            stratum_urls: vec![format!(
-                "stratum+tcp://{}.pool.example:3333",
-                coin.as_str().to_lowercase()
-            )],
+            stratum_urls: vec![default_pool_url(&coin)],
             block_reward: Amount::new(0),
             network_difficulty: 1.0,
             device,
             worker_name: String::new(),
             password: String::new(),
         }
+    }
+}
+
+/// Default Stratum pool URL (with `stratum+tcp://` prefix) for a coin.
+/// Wraps `ExternalCoin::default_pool()`; coins with no known pool (empty
+/// string) get a placeholder so the profile is still constructable —
+/// `auxpow_runtime` skips placeholder endpoints.
+fn default_pool_url(coin: &ExternalCoin) -> String {
+    let host_port = coin.default_pool();
+    if host_port.is_empty() {
+        format!(
+            "stratum+tcp://{}.pool.example:3333",
+            coin.as_str().to_lowercase()
+        )
+    } else if host_port.starts_with("stratum+") {
+        host_port.to_string()
+    } else {
+        format!("stratum+tcp://{}", host_port)
     }
 }
 

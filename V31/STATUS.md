@@ -1,8 +1,10 @@
 # V31 Mainnet Alpha — Status
 
 > **Verze:** 3.1.0-alpha.2 (post-Phase A+B+C+D — E2E mining + web health green) / směřujeme k **3.2.0 "One Love" (Mainnet Stable)**
-> **Datum:** 2026-08-06
-> **Stav:** workspace builduje, **2079 testů prochází (0 failures)**, `cargo clippy --workspace` čisté. **Fáze A i Fáze B jsou kompletní** — `EkamDeeksha` v2 běží na všech výškách (128 KiB scratchpad, 1 pass, 32 random reads, 2 AES rounds), CPU KAT vektory a GPU OpenCL/CUDA/Metal kernely jsou synchronizovány, `zion-miner` mapuje `ekam_deeksha` na kanonické `deeksha_lite`/`deeksha_chv3` GPU backendy. **V31 je nasazen na Edge** (public RPC, pool, multichain, dashboard). **Lokální GPU OpenCL build + benchmark GO na NVIDIA GTX 1070 Ti (~132 kh/s, 2026-08-06); reálný rig E2E stále pending.** Fáze C1-C8 hotová (DAO + CLI + ZionDex + Dashboard wiring). **Pool FULL V3 feature parity dokončena**. **Dashboard UI/UX update do V31 hotov, `/health` OK. V31 banner KPIs + V31 Production panel (metriky, logy, Grafana) + pool metrics port 8080 + Prometheus/Grafana provisioning nasazeny na Edge. V31 cutover proveden: V3 služby zastaveny a maskovány, `zion-v31-node` osamostatněn od V3. **Fáze D E2E: cargo test --workspace pass, V31 miner našel a odevzdal pool share (block height 50+), web `/api/health` `ok` s rpc_node i mining_pool healthy, e2e API scénáře zelené. Git tag `v3.1.0-alpha.2-phase-D`.
+> **Datum:** 2026-08-07
+> **Stav:** workspace builduje, **2079 testů prochází (0 failures)**, `cargo clippy --workspace` čisté. **Fáze A i Fáze B jsou kompletní** — `EkamDeeksha` v2 běží na všech výškách (kód `ekam_deeksha.rs` nyní obsahuje i v3.2 ASIC-hardening konstanty: 512 KiB scratchpad, 2 passy, 128 random reads, 2 AES rounds), CPU KAT vektory a GPU OpenCL/CUDA/Metal kernely jsou synchronizovány, `zion-miner` mapuje `ekam_deeksha` na kanonické `deeksha_lite`/`deeksha_chv3` GPU backendy. **V31 je nasazen na Edge** (public RPC, pool, multichain, dashboard). **Lokální GPU OpenCL build + benchmark GO na NVIDIA GTX 1070 Ti (~132 kh/s, 2026-08-06); reálný rig E2E stále pending.** Fáze C1-C8 hotová (DAO + CLI + ZionDex + Dashboard wiring). **Pool FULL V3 feature parity dokončena**. **Dashboard UI/UX update do V31 hotov, `/health` OK. V31 banner KPIs + V31 Production panel (metriky, logy, Grafana) + pool metrics port 8080 + Prometheus/Grafana provisioning nasazeny na Edge. V31 cutover proveden: V3 služby zastaveny a maskovány, `zion-v31-node` osamostatněn od V3. **Fáze D E2E: cargo test --workspace pass, V31 miner našel a odevzdal pool share (block height 50+), web `/api/health` `ok` s rpc_node i mining_pool healthy, e2e API scénáře zelené. Git tag `v3.1.0-alpha.2-phase-D`.
+>
+> **PLAN_TO_3.2 audit 2026-08-07:** CLI (`zion`) má 21 subcommandů (včetně `dao`, `atomic-swap`, `warp`, `monitor`, `topology`, `explorer`, `onboard`, `deploy`, `update`, `compose`, `auxpow`), některé jsou stále stub; miner TUI (`ui.rs`, `interactive.rs`, `setup_menu.rs`, `banner.rs`) je zapojená pod `tui` feature a Cargo.toml obsahuje `full`/`native-all`/`gpu-all`/`public_build`; EVM a ZionDex Solidity kontrakty jsou přítomny v `V31/L2/multichain/contracts/`, ale chybí Foundry/Hardhat projektová konfigurace pro `zion deploy`. **Otevřené zůstává:** non-EVM WARP placeholdery (31 TODO markerů v adapterech), OASIS `output: 'export'` blokuje server-side ZIS route, `deploy-edge.sh` neinstaluje `zion-zis` službu (i když `APP&WEB/identity/` existuje), sync `public/` subtree, reálný GPU rig E2E a 30d continuous run.
 
 ## Update 2026-08-06 — DEX HTTP solver client, GPU OpenCL build, Desktop Agent V31 binaries
 
@@ -26,6 +28,28 @@
   - Verifikace: `zion-miner --help`, `node --help`, `zion --help` vracejí V31 volby.
 
 - **Přehled verifikace**: `cargo test --workspace` pass, `cargo clippy --workspace` clean, `npm test` pass, `npm run build:linux` pass. Commit `23e4fbd8e` obsahuje zdrojové změny.
+
+## Update 2026-08-07 — PLAN_TO_3.2 audit (CLI, miner TUI, contracts, ZIS)
+
+Rekonciliace `V31/PLAN_TO_3.2.md` s aktuálním kódem ukazuje, že řada položek označených v plánu jako chybějící je již v kódu. Zároveň se objevily nové mezery, které musíme dořešit před `3.2.0 "One Love"`.
+
+**Potvrzeno v kódu:**
+
+- **CLI (`V31/cli/src/main.rs`)** — 21 subcommandů: `menu`, `status`, `wallet`, `bridge`, `swap`, `pool`, `miner`, `doctor`, `api`, `node`, `service`, `dao`, `atomic-swap`, `warp`, `monitor`, `topology`, `explorer`, `onboard`, `deploy`, `update`, `compose`, `auxpow`, `completions` a migrační `agent`/`hiran`/`issobella`/`free-world`/`ncl`. Některé subcommandy (např. `deploy`, `topology`, `explorer`, L4/L5/L6 migrační) jsou stále částečně stub nebo vyžadují dořešení.
+- **Miner TUI** — `V31/L1/miner/src/ui.rs`, `interactive.rs`, `setup_menu.rs`, `banner.rs` zapojeny za `tui` feature. `Cargo.toml` obsahuje featury `full`, `native-all`, `gpu-all`, `public_build`.
+- **Ekam Deeksha v3.2 ASIC-hardening** — `V31/L1/cosmic-harmony/src/algorithm/ekam_deeksha.rs` používá 512 KiB scratchpad, 2 passy, 128 random reads, 2 AES rounds (dokumentační komentář nahoře souboru stále uvádí "v2, 128 KiB" a měl by se aktualizovat).
+- **EVM + ZionDex kontrakty** — `V31/L2/multichain/contracts/evm/` má 8 Solidity kontraktů (`wZION.sol`, `ZIONBridge.sol`, `ZIONAtomicSwap.sol`, ...), `contracts/dex/` má 7 ZionDex kontraktů (`ZionDexRouter.sol`, `ZionDexPoolManager.sol`, ...).
+- **ZIS (ZION Identity Service)** — `APP&WEB/identity/` Fastify auth server existuje, má vlastní `deploy-zis.sh`, `nginx-zis.conf` a `zion-zis.service`. `APP&WEB/shared/prisma/schema.prisma` obsahuje unified ZIS schema; dashboard používá `zis_auth.py` a webové projekty `zis.ts`.
+
+**Zůstává otevřené / blokuje `zion deploy` a plnou integraci:**
+
+- **Chybí Foundry/Hardhat projektová konfigurace** v `V31/L2/multichain/contracts/` — `zion deploy` nemá jak kompilovat/deployovat EVM kontrakty.
+- **Non-EVM WARP adaptery jsou placeholdery** — 31 TODO/placeholder markerů v `solana.rs`, `tron.rs`, `stellar.rs`, `bitcoin.rs`, `cardano.rs`, `cosmos.rs`, `aptos.rs`, `sui.rs`, `near.rs`.
+- **OASIS Web `output: 'export'`** v `APP&WEB/OasisWeb/next.config.ts` blokuje server-side ZIS routes (např. `/api/...`).
+- **Edge deploy neinstaluje ZIS** — `V31/deploy/deploy-edge.sh` nezapíná `zion-zis.service`.
+- **Public subtree sync** — `public/` není zero-diff; potřebuje audit a push.
+- **Reálný GPU rig E2E** — lokální OpenCL benchmark GO, ale Edge pool s referenčními rigy (≥90 % accept rate) je stále pending.
+- **30d continuous run** — není zahájen.
 
 ## Co je hotovo v `v3.1.0-alpha.2` (post-Phase A+B.1)
 
@@ -315,12 +339,17 @@ Dokončeny všechny 11 chybějících V3 pool funkcí. Pool je teď **FULL V3 fe
 
 1. ~~GPU miner backend~~ — `zion-miner/src/auxpow/gpu_miner.rs` OpenCL backend ported; CPU/GPU match test ready (Phase B2).
 2. ~~4 feature-gated binaries~~ — completed; `v3-binaries` is default.
-3. **Realné non-EVM WARP kontrakty** — Tron, Solana, Cosmos, Stellar, Cardano, Aptos, Sui, TON, NEAR, Bitcoin.
+3. **Realné non-EVM WARP kontrakty** — Tron, Solana, Cosmos, Stellar, Cardano, Aptos, Sui, TON, NEAR, Bitcoin. V kódu je 31 placeholder/TODO markerů.
 4. **PoC algoritmus** — `PocAlgorithm` vrací nyní bezpečně `Hash::default()`; aktivace až po governance.
 5. **30d continuous run / mainnet beta** — vyžaduje nasazený Edge node a monitoring.
 6. ~~**Production cut-over V3 → V31**~~ — ✅ COMPLETE (2026-08-05, Fáze D E2E green).
 7. **macOS aarch64 release build** — `cargo build --release` OK, balíček `zion-macos-aarch64-3.1.0-alpha.2.tar.gz` (16 MB, SHA256) připraven v `V31/releases/macos-aarch64/`.
 8. **Security audit a chaos testy** — naplánováno v 3.0.9 / 3.1.0-beta.
+9. **Foundry/Hardhat projektová konfigurace** — chybí v `V31/L2/multichain/contracts/`, blokuje `zion deploy` pro EVM/ZionDex kontrakty.
+10. **OASIS Web static export** — `next.config.ts` má `output: 'export'`, což blokuje server-side ZIS routes.
+11. **ZIS Edge deploy** — `APP&WEB/identity/` existuje, ale `V31/deploy/deploy-edge.sh` neinstaluje `zion-zis.service`.
+12. **Public subtree sync** — `public/` není zero-diff; potřeba audit a push do veřejného repa.
+13. **Reálný GPU rig E2E** — lokální OpenCL benchmark GO, ale Edge pool E2E s referenčními rigy (≥90 % accept rate) pending.
 
 ## Edge staging E2E
 
@@ -338,10 +367,14 @@ Dokončeny všechny 11 chybějících V3 pool funkcí. Pool je teď **FULL V3 fe
 - **Multi-Platform Release Build ✅ COMPLETE** — macOS aarch64/x86_64, Linux x86_64 (musl), Windows x86_64. Všechny balíčky + SHA256 připraveny, draft release na GitHubu, viz [`REPORT_2026-08-04_SESSION.md`](./REPORT_2026-08-04_SESSION.md).
 - **Release Runbook ✅ COMPLETE** — `V31/RELEASE_RUNBOOK.md`, `V31/30D_RUN_PLAN.md`, `V31/CHAOS_TEST_PLAN.md`.
 - **Clippy / Warning Cleanup ✅ COMPLETE** — `cargo clippy --workspace` clean, `cargo test --workspace` 2043+ testů pass.
-- **Public Subtree Sync ✅ COMPLETE** — `git subtree push --prefix=public public main` up-to-date.
+- **Public Subtree Sync 🔄 IN PROGRESS** — `public/` není zero-diff; potřebuje audit a `git subtree push --prefix=public public main`.
 - **Fáze D ✅ COMPLETE** — E2E mining (`zion-v31-miner` → pool → `share accepted`, block height 50+), web `/api/health` green, **Playwright UI E2E 3/3 pass**, **30min smoke test PASS**, **Edge backup + off-site sync COMPLETE**, **dashboard `https://dashboard.zionterranova.com` komplexně napojen na V31 služby** (`/api/services`, `/api/health`, `/api/readiness`, `/api/v2/status` ukazují V31 node/pool/miner/multichain/DAO/OASIS zelené, readiness 100 %). Git tag `v3.1.0-alpha.2-phase-D`.
-- **Co zbývá pro mainnet beta:**
-  - Non-EVM WARP kontrakty (Tron, Solana, Cosmos, ...)
+- **Co zbývá pro mainnet beta / 3.2.0 "One Love":**
+  - Non-EVM WARP kontrakty (Tron, Solana, Cosmos, ...) — 31 placeholderů v kódu
+  - Foundry/Hardhat projekt pro `zion deploy` EVM/ZionDex kontraktů
+  - OASIS Web `output: 'export'` → statický export blokuje ZIS server routes
+  - ZIS Edge deploy — přidat `zion-zis.service` do `deploy-edge.sh`
+  - Public subtree sync
+  - Reálný GPU rig E2E (≥90 % accept rate) a 30d continuous run
   - Security audit + chaos testy (3.0.9 / 3.1.0-beta)
-  - 30d continuous run / mainnet beta
   - Publikace GitHub release z draftu

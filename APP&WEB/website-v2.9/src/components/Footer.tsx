@@ -49,9 +49,9 @@ export default function Footer() {
     },
     {
       title: tr('footer', 'group_wiki', lang),
-      accent: 'text-zion-cyan',
-      hover: 'hover:text-zion-cyan',
-      bar: 'from-zion-cyan',
+      accent: 'text-zion-gold',
+      hover: 'hover:text-white',
+      bar: 'from-zion-gold',
       links: [
         { href: '/wiki', label: tr('nav', 'wiki_group', lang) },
         { href: '/terranova', label: tr('nav', 'terranova', lang) },
@@ -119,7 +119,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="mt-4 pt-4 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-zion-gold/55">
-            © 2026 <span className="text-zion-gold">ZION Blockchain</span> · <span className="text-zion-purple">{SITE_RELEASE_LABEL}</span> · runtime <span className="text-zion-cyan">{SITE_RUNTIME_VERSION}</span>
+            © 2026 <span className="text-zion-gold">ZION Blockchain</span> · <span className="text-zion-purple">{SITE_RELEASE_LABEL}</span> · runtime <span className="text-zion-gold">{SITE_RUNTIME_VERSION}</span>
           </p>
           <span className="text-xs text-zion-gold/60">{tr('footer', 'test_mainnet_active', lang)}</span>
         </div>

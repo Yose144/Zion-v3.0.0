@@ -57,10 +57,10 @@ fi
 
 if [[ "${1:-}" == "--foreground" ]]; then
   # systemd mode — run in foreground, logs to stdout
-  exec "${NODE_BIN}"
+  exec "${NODE_BIN}" --v3-no-genesis
 else
   # standalone mode — background with nohup
-  nohup "${NODE_BIN}" >> "${REPO_ROOT}/logs/v31-backup-node.log" 2>&1 &
+  nohup "${NODE_BIN}" --v3-no-genesis >> "${REPO_ROOT}/logs/v31-backup-node.log" 2>&1 &
   PID=$!
   echo "[OK] V31 backup node started  PID=$PID"
   echo "[OK] Log: ${REPO_ROOT}/logs/v31-backup-node.log"

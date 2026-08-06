@@ -1,9 +1,9 @@
 # ZION 3.2 "One Love" — Mainnet Stable Canonical Execution Plan
 
 > **Version:** 3.2.0 "One Love" — Mainnet Stable / production ready  
-> **Datum:** 2026-08-06  
+> **Datum:** 2026-08-07  
 > **Status:** canonical plan, supersedes `PLAN_TO_3.1_RECONCILED.md` for forward work  
-> **Update 2026-08-06:** pulled latest remote; DEX HTTP solver client, local GPU OpenCL build/benchmark, and Desktop Agent V31 binaries are now GO.  
+> **Update 2026-08-07:** CLI migration, miner TUI, native Cargo features, and V3/V31 Solidity + ZionDex contracts are now present in code. Non-EVM WARP placeholders, OASIS static export, ZIS Edge deploy, public subtree sync, real GPU E2E, and 30d run remain open.  
 > **Active workspace:** `V31/`  
 > **Live status:** [`StatusV3.md`](../StatusV3.md) · [`V31/STATUS.md`](./STATUS.md)  
 > **Agent rules:** [`V31/AGENTS.md`](./AGENTS.md) · [`../AGENTS.md`](../AGENTS.md)
@@ -27,7 +27,7 @@ This document is the **single canonical plan** for moving from `3.1.0-alpha.2/be
 | Area | Evidence | Status |
 |------|----------|--------|
 | V31 workspace | `cargo test --workspace` 2079 pass, `cargo clippy --workspace` clean | verified 2026-08-06 |
-| V31 node on Edge | `zion-v31-node` P2P 8335, RPC 9445, height ~11270, sync_lag 0 | verified 2026-08-05 |
+| V31 node on Edge | `zion-v31-node` P2P 8335, RPC 9445, fresh chain from 2026-08-06 reset | verified 2026-08-07 |
 | V31 pool on Edge | `zion-v31-pool` stratum 8444, HTTP API 8080, shares accepted | verified 2026-08-05 |
 | V31 multichain | `/health` 200, DEX + HTLC endpoints wired | verified 2026-08-06 |
 | V31 DAO | runtime loads/persists proposals, L1 scanner, HTTP API + metrics | verified 2026-08-05 |
@@ -52,7 +52,7 @@ This document is the **single canonical plan** for moving from `3.1.0-alpha.2/be
 | G8 | **30d continuous run not started** | `V31/30D_RUN_PLAN.md` §4 | Cannot call 3.2 "Stable" without 30 days of production uptime evidence. |
 | G9 | **External audit / security review not done** | `ROADMAP.md` 5.7, `LAUNCH_CHECKLIST.md` 1.1 | Internal tests pass; no external security review is on record. |
 | G10 | **L5 Free World / L6 Issobella inactive** | `StatusV3.md` service table | Layer 5 and 6 services are disabled in production. For a full L1-L6 mainnet, they must at least have a defined run mode. |
-| G11 | **V3→V31 migration incomplete** | §10 deep audit | 8 Solidity contracts, miner TUI, 11 Cargo features, 18 CLI commands, ZionDex contracts, native-libs all missing from V31. See §10 for full gap analysis and Phase H for remediation. |
+| G11 | **V3→V31 migration — code present, deployment/tooling incomplete** | §10 deep audit | Solidity contracts, miner TUI, Cargo features, and CLI commands are now in V31 code. Missing: Foundry/Hardhat project config for `zion deploy`, some CLI subcommands are stubs, non-EVM WARP contracts are placeholders, `public/` subtree is out of sync, ZIS is not installed by `deploy-edge.sh`, OASIS Web uses static export. See §10 for full gap analysis and Phase H for remediation. |
 
 ### 2.3 What is deliberately **not** a 3.2 blocker
 
@@ -207,9 +207,9 @@ Week 10: G2-G7 release and launch readiness
 
 ---
 
-## 10. V3 → V31 Migration Gap Analysis (2026-08-06 deep audit)
+## 10. V3 → V31 Migration Gap Analysis (2026-08-07 re-audit)
 
-> **Method:** systematic comparison of `archive/V3/` + `archive/AuXpow/` + `archive/ZionDex/` vs `V31/` — every crate, every source file, every Cargo feature, every GPU kernel, every Solidity contract, every CLI command.
+> **Method:** systematic comparison of `archive/V3/` + `archive/AuXpow/` + `archive/ZionDex/` vs `V31/` — every crate, every source file, every Cargo feature, every GPU kernel, every Solidity contract, every CLI command. **Re-audit result:** most of the originally flagged "missing" items (CLI commands, miner TUI, Cargo features, EVM/ZionDex contracts) are now present in code; the remaining gaps are mostly tooling/deployment integration (Foundry/Hardhat, non-EVM WARP contracts, OASIS static export, ZIS Edge deploy, public subtree sync).
 
 ### 10.1 Migration status summary
 
@@ -220,13 +220,13 @@ Week 10: G2-G7 release and launch readiness
 | L1/native-ffi | `archive/V3/L1/native-ffi` | `V31/L1/native-ffi` (identical features: 9 native-* + native-all) | ✅ MIGRATED |
 | L1/native-libs | `archive/V3/L1/native-libs/` (OpenCL.lib, algorithms/, build scripts, ABI header) | — | ❌ MISSING |
 | L1/pool | `archive/V3/L1/pool` (8 files) | `V31/L1/pool` (32 files) | ✅ MIGRATED + massively expanded |
-| L1/miner | `archive/V3/L1/miner` (15 files) | `V31/L1/miner` (30+ files + auxpow/ + gpu/ + csrc/) | ⚠️ PARTIAL (see §10.3) |
+| L1/miner | `archive/V3/L1/miner` (15 files) | `V31/L1/miner` (30+ files + auxpow/ + gpu/ + csrc/) | ✅ MIGRATED + expanded; TUI wired behind `tui` feature (see §10.3) |
 | AuXpow | `archive/AuXpow/` (25 Rust files + 90+ GPU kernels) | merged into `V31/L1/miner/src/auxpow/` + `V31/L1/miner/csrc/` | ⚠️ PARTIAL (see §10.4) |
 | L2/bridge | `archive/V3/L2/bridge` (14 files) | `V31/L2/multichain/src/bridge/` | ✅ MIGRATED (unified into multichain) |
 | L2/atomic-swap | `archive/V3/L2/atomic-swap` (10 files) | `V31/L2/multichain/src/swap/htlc.rs` | ✅ MIGRATED (unified into multichain) |
 | L2/swap-aggregator | `archive/V3/L2/swap-aggregator` (6 files) | `V31/L2/multichain/src/swap/dex/aggregator.rs` | ✅ MIGRATED (unified into multichain) |
 | L2/dao | `archive/V3/L2/dao` (20 files) | `V31/L2/dao` (21 files, + runtime.rs) | ✅ MIGRATED + enhanced |
-| L2/contracts | `archive/V3/L2/contracts/hardhat/sol/` (9 .sol files) | `V31/L2/multichain/contracts/non-evm/tron/ZionToken.sol` | ❌ MISSING (8 of 9 contracts) |
+| L2/contracts | `archive/V3/L2/contracts/hardhat/sol/` (9 .sol files) | `V31/L2/multichain/contracts/evm/` (8 .sol) + `contracts/dex/` (7 .sol) | ✅ MIGRATED; Foundry/Hardhat project config missing (blocks `zion deploy`) |
 | L3/warp | `archive/V3/L3/warp` (49 files) | `V31/L2/multichain/src/warp/` (49+ files) | ✅ MIGRATED (moved to L2 multichain) |
 | L3/ai-native | `archive/V3/L3/ai-native` (29 files) | `V31/L3/ai-native` (29 files, identical) | ✅ MIGRATED |
 | L3/ncl | `archive/V3/L3/ncl` (9 files) | `V31/L3/ncl` (9 files, identical) | ✅ MIGRATED |
@@ -235,82 +235,90 @@ Week 10: G2-G7 release and launch readiness
 | L5/free-world | `archive/V3/L5/free-world` (10 files) | `V31/L5/free-world` (10 files, identical) | ✅ MIGRATED |
 | L5/docs | `archive/V3/L5/docs/` (ARCHITECTURE, COMMUNITIES, GOVERNANCE, PROTOCOLS, TECH, TEMPLATES) | — | ❌ MISSING (design docs) |
 | L6/issobella | `archive/V3/L6/issobella` (10 files) | `V31/L6/issobella` (10 files, identical) | ✅ MIGRATED |
-| ZionDex | `archive/ZionDex/` (contracts + router + solver + intent + sdk) | `V31/L2/multichain/src/swap/dex/` (aggregator, executor, intent, intent_engine, solver_network) | ⚠️ PARTIAL (see §10.5) |
+| ZionDex | `archive/ZionDex/` (contracts + router + solver + intent + sdk) | `V31/L2/multichain/src/swap/dex/` (aggregator, executor, intent, intent_engine, solver_network) + `V31/L2/multichain/contracts/dex/` (7 .sol) | ✅ MIGRATED (contracts + Rust logic in multichain; see §10.5) |
 | sdk | `archive/V3/sdk` (7 files) | `V31/sdk` (7 files, identical) | ✅ MIGRATED |
-| cli | `archive/V3/cli` (35 files: 25 commands + rpc + ui + auto_detect + config) | `V31/cli` (2 files: main.rs + menu.rs) | ❌ MISSING (see §10.2) |
+| cli | `archive/V3/cli` (35 files: 25 commands + rpc + ui + auto_detect + config) | `V31/cli` (`main.rs` + `menu.rs` + `commands/` + `ui/` + `rpc/`) | ✅ MIGRATED; 21 subcommands present, some are stubs (see §10.2) |
 | smoke | — | `V31/smoke` (new, 8 cross-layer tests) | ✅ NEW in V31 |
 
-### 10.2 CLI — missing commands (CRITICAL)
+### 10.2 CLI — commands present, some stubs / supporting modules partial
 
-V31 CLI (`V31/cli/src/main.rs`) has inline subcommands: Menu, Status, Wallet, Bridge, Swap, Pool, Miner, Doctor, Api, Node, Service.
+V31 CLI (`V31/cli/src/main.rs`) now defines **21 subcommands** and `V31/cli/src/commands/` contains per-command modules. The original "all missing" audit is out of date; the remaining gaps are functional depth (some subcommands are stubs) and supporting infrastructure (`auto_detect.rs`, full `config.rs`, `rpc/` module).
 
-V3 CLI had **25 command modules** in `archive/V3/cli/src/commands/` — the following are **MISSING** from V31:
+**Subcommands present in `V31/cli/src/main.rs`:**
 
-| V3 command | Purpose | V31 status | Priority |
+| Subcommand | Purpose | V31 status | Priority |
 |------------|---------|------------|----------|
-| `agent.rs` | AI agent control (start/stop/status maestro) | MISSING | Medium |
-| `atomic_swap.rs` | HTLC atomic swap initiation/claim/refund | MISSING | High |
-| `auxpow.rs` | AuxPoW merged mining status/control | MISSING | High |
-| `completions.rs` | Shell completion generation (bash/zsh/fish) | MISSING | Low |
-| `compose.rs` | Docker Compose orchestration | MISSING | Medium |
-| `dao.rs` | DAO proposal/vote/treasury commands | MISSING | High |
-| `deploy.rs` | Edge deployment commands | MISSING | Medium |
-| `explorer.rs` | Block explorer queries | MISSING | Low |
-| `free_world.rs` | L5 Free World service control | MISSING | Low |
-| `hiran.rs` | AI/Hiran layer control | MISSING | Low |
-| `issobella.rs` | L6 Issobella service control | MISSING | Low |
-| `mine.rs` | Mining start/stop/status (standalone) | MISSING (partially in Miner subcommand) | Medium |
-| `monitor.rs` | Live monitoring dashboard | MISSING | Medium |
-| `ncl.rs` | NCL (Network Compute Layer) commands | MISSING | Low |
-| `onboard.rs` | Interactive onboarding wizard | MISSING | Medium |
-| `topology.rs` | Network topology visualization | MISSING | Low |
-| `update.rs` | Self-update / version check | MISSING | Medium |
-| `warp.rs` | Cross-chain WARP transfer commands | MISSING | High |
+| `menu` | Interactive operator menu | ✅ functional | — |
+| `status` | Multi-Chain layer status | ✅ functional | — |
+| `wallet` | Wallet file management (create/load/send) | ✅ functional | — |
+| `bridge` | Cross-chain bridge commands | ✅ wired to multichain | — |
+| `swap` | DEX swap commands | ✅ wired to multichain | — |
+| `pool` | Mining pool commands | ✅ functional | — |
+| `miner` | Miner commands | ✅ functional | — |
+| `doctor` | Config / adapter connectivity check | ✅ present | — |
+| `api` | Serve V31 HTTP API gateway | ✅ present | — |
+| `node` | Start/stop/status L1 node | ✅ functional | — |
+| `service` | Manage V31 systemd services + logs | ✅ functional | — |
+| `dao` | DAO proposal/vote/treasury commands | ✅ present; may be stub | High |
+| `atomic-swap` | HTLC atomic swap commands | ✅ present; may be stub | High |
+| `warp` | Cross-chain WARP transfer commands | ✅ present; may be stub | High |
+| `monitor` | Live monitoring dashboard | ✅ present; may be stub | Medium |
+| `topology` | Network topology visualization | ✅ present; may be stub | Medium |
+| `explorer` | Block explorer queries | ✅ present; may be stub | Medium |
+| `onboard` | First-run onboarding wizard | ✅ present; may be stub | Medium |
+| `deploy` | Smart-contract / Edge deployment | ✅ present; **needs Foundry/Hardhat config to be functional** | High |
+| `update` | Self-update / version check | ✅ present | Low |
+| `compose` | Docker Compose management | ✅ present | Medium |
+| `auxpow` | AuxPoW merged mining commands | ✅ present | Medium |
+| `completions` | Shell completion generation | ✅ present | Low |
+| `agent` / `hiran` / `issobella` / `free-world` / `ncl` | L4/L5/L6 migration stubs | ⚠️ placeholder / not yet migrated | Low |
 
-Also missing supporting modules:
-- `auto_detect.rs` — hardware/config auto-detection
-- `config.rs` — config file management
-- `rpc/` — `agent_rpc.rs`, `hiran_rpc.rs`, `node_rpc.rs`
-- `ui.rs` — CLI UI helpers
+**Still incomplete / missing supporting modules:**
+- `auto_detect.rs` — hardware/config auto-detection is not present.
+- `config.rs` — full config file management module is not present.
+- `rpc/` — `agent_rpc.rs`, `hiran_rpc.rs` are missing; `node_rpc.rs` exists via `V31/cli/src/rpc/`.
+- `ui.rs` — exists as `V31/cli/src/ui.rs`, but coverage is partial.
 
-### 10.3 Miner — missing features and TUI (HIGH)
+### 10.3 Miner — features and TUI present, Ekam v3.2 constants landed (HIGH)
 
-#### 10.3.1 Missing Cargo features
+#### 10.3.1 Cargo features
 
-V31 miner Cargo.toml exposes: `auxpow`, `native-hashers`, `native-kheavyhash`, `native-blake3-algo`, `native-verushash`, `gpu-opencl`, `gpu-cuda`, `gpu-metal`, `gpu`.
-
-V3 miner exposed additionally (all supported by `V31/L1/native-ffi` but NOT wired in miner):
+`V31/L1/miner/Cargo.toml` now exposes the full feature matrix:
 
 | Feature | Purpose | Status |
 |---------|---------|--------|
-| `native-etchash` | Etchash (ETC) native C hasher | ❌ not exposed in V31 miner |
-| `native-kawpow` | KawPow (RVN) native C hasher | ❌ not exposed |
-| `native-autolykos` | Autolykos (ERG) native C hasher | ❌ not exposed |
-| `native-cosmic-harmony` | Cosmic Harmony native C hasher | ❌ not exposed |
-| `native-randomx` | RandomX (XMR) native C hasher | ❌ not exposed |
-| `native-ghostrider` | GhostRider (RTM) native C hasher | ❌ not exposed |
-| `native-all` | Convenience: all native algorithms | ❌ not exposed |
-| `gpu-all` | Convenience: all GPU backends | ❌ not exposed |
-| `full` | GPU + all native + hashers (unified binary) | ❌ not exposed |
-| `public_build` | Hides Trinity/AuxPow details in TUI for public release | ❌ not exposed |
-| `testnet_fork_rehearsal` | Hard-fork rehearsal gates | ❌ not exposed |
+| `auxpow` | AuxPoW merged mining | ✅ default |
+| `native-hashers` | Enables RandomX, Ghostrider, VerusHash, Autolykos, kHeavyHash, Blake3, Ethash, KawPow, Cosmic Harmony via `zion-native-ffi` | ✅ present |
+| `native-etchash` | Etchash (ETC) native C hasher | ✅ present |
+| `native-kawpow` | KawPow (RVN) native C hasher | ✅ present |
+| `native-autolykos` | Autolykos (ERG) native C hasher | ✅ present |
+| `native-cosmic-harmony` | Cosmic Harmony native C hasher | ✅ present |
+| `native-randomx` | RandomX (XMR) native C hasher | ✅ present |
+| `native-ghostrider` | GhostRider (RTM) native C hasher | ✅ present |
+| `native-all` | Convenience: all native algorithms | ✅ present |
+| `gpu-opencl` / `gpu-cuda` / `gpu-metal` | GPU backends | ✅ present |
+| `gpu` / `gpu-all` | Convenience: all GPU backends | ✅ present |
+| `full` | GPU + all native + hashers (unified binary) | ✅ present |
+| `public_build` | Hides Trinity/AuxPow details in TUI for public release | ✅ present |
+| `tui` | Interactive terminal UI (`crossterm`) | ✅ present |
+| `testnet_fork_rehearsal` | Hard-fork rehearsal gates | ❌ not exposed (deferred / low priority) |
 
-**Action:** Add all missing features to `V31/L1/miner/Cargo.toml [features]`, wiring them to `zion-native-ffi` like V3 did.
+**Action:** `testnet_fork_rehearsal` remains low priority; verify `cargo build --features full` works on all target platforms.
 
-#### 10.3.2 Missing TUI / interactive UI
+#### 10.3.2 TUI / interactive UI
 
-V3 miner had professional TUI modules — **ALL MISSING** from V31:
+V3 miner TUI modules are now present in V31 and wired behind the `tui` Cargo feature:
 
-| V3 file | Purpose | Lines | V31 status |
-|---------|---------|-------|------------|
-| `ui.rs` | Professional colored miner UI (XMRig/GMiner style), ANSI, sticky header, /dev/tty redirect | ~500+ | ❌ MISSING |
-| `interactive.rs` | Cross-platform keyboard TUI (crossterm): h=hashrate, a=algorithm cycle, c=CPU toggle, g=GPU toggle, d=dual mode, i=hardware, p=pause, r=reconnect, v=verbose, 1-9=threads, q=quit | ~400+ | ❌ MISSING |
-| `setup_menu.rs` | Interactive setup menu for first-run (asks pool/wallet/threads, writes env vars) | ~200+ | ❌ MISSING |
-| `banner.rs` | ASCII art banner + version display | ~100+ | ❌ MISSING |
-| `gpu_backend.rs` | GPU backend abstraction (V31 has `gpu/mod.rs` instead) | — | ✅ replaced |
-| `gpu_kat_bench.rs` | GPU KAT benchmark binary | — | ❌ MISSING |
+| V3/V31 file | Purpose | V31 status |
+|-------------|---------|------------|
+| `ui.rs` | Professional colored miner UI (XMRig/GMiner style), ANSI, sticky header, `/dev/tty` redirect | ✅ present in `V31/L1/miner/src/ui.rs` |
+| `interactive.rs` | Cross-platform keyboard TUI (`crossterm`): h=hashrate, a=algorithm cycle, c=CPU toggle, g=GPU toggle, d=dual mode, i=hardware, p=pause, r=reconnect, v=verbose, 1-9=threads, q=quit | ✅ present in `V31/L1/miner/src/interactive.rs` |
+| `setup_menu.rs` | Interactive setup menu for first-run (asks pool/wallet/threads, writes env vars) | ✅ present in `V31/L1/miner/src/setup_menu.rs` |
+| `banner.rs` | ASCII art banner + version display | ✅ present in `V31/L1/miner/src/banner.rs` |
+| `gpu/mod.rs` | GPU backend abstraction | ✅ V31-native replacement for V3 `gpu_backend.rs` |
+| `gpu_kat_bench.rs` | GPU KAT benchmark binary | ❌ not present |
 
-**Action:** Port `ui.rs`, `interactive.rs`, `setup_menu.rs`, `banner.rs` from `archive/V3/L1/miner/src/` to `V31/L1/miner/src/`. Add `crossterm` dependency. Wire TUI into `zion-miner.rs` binary.
+**Action:** Verify `cargo build -p zion-miner --features tui` and run an interactive TUI session. Port `gpu_kat_bench.rs` or integrate KAT GPU benchmark into `zion-miner` test suite.
 
 ### 10.4 AuXpow — merged but standalone tooling lost (MEDIUM)
 
@@ -330,47 +338,43 @@ AuXpow was a standalone crate with:
 
 **Action:** Port `run_e2e_8coins.sh` as a V31 test script. Archive the design doc into `docs/`. The Pearl PoUW code can remain deferred.
 
-### 10.5 ZionDex — partially migrated (MEDIUM)
+### 10.5 ZionDex — migrated into multichain (MEDIUM)
 
-ZionDex had 4 standalone components:
+ZionDex components are now present in V31:
 
 | Component | V3 path | V31 status |
 |-----------|---------|------------|
-| **contracts/** | 7 Solidity contracts: IntentSettlement, SolverRegistry, ZDXToken, ZionDexHooks, ZionDexPoolManager, ZionDexRouter, ZionDexStaking + DeployBase.s.sol | ❌ MISSING (not in V31) |
-| **router/** | 13 Rust files: aggregator, api, config, db, executor, intent, monitor, price, quote, router, types | ⚠️ PARTIAL (aggregator, executor, intent in multichain swap/dex/) |
-| **solver/** | 9 Rust files: api, config, errors, node, router_client, strategy, types | ⚠️ PARTIAL (solver_network.rs in multichain) |
-| **intent/** | 6 Rust files: auction, errors, signing, solver, types | ⚠️ PARTIAL (intent.rs, intent_engine.rs in multichain) |
+| **contracts/** | 7 Solidity contracts: `IntentSettlement`, `SolverRegistry`, `ZDXToken`, `ZionDexHooks`, `ZionDexPoolManager`, `ZionDexRouter`, `ZionDexStaking` + `DeployBase.s.sol` | ✅ present in `V31/L2/multichain/contracts/dex/` |
+| **router/** | 13 Rust files: aggregator, api, config, db, executor, intent, monitor, price, quote, router, types | ✅ absorbed into `V31/L2/multichain/src/swap/dex/` (`aggregator.rs`, `executor.rs`, `intent.rs`, `intent_engine.rs`, quote/multi endpoint) |
+| **solver/** | 9 Rust files: api, config, errors, node, router_client, strategy, types | ✅ `solver_network.rs` + `HttpSolverClient` + solver-side `/v1/swap/solve` endpoint |
+| **intent/** | 6 Rust files: auction, errors, signing, solver, types | ✅ `intent.rs` + `intent_engine.rs` with SQLite persistence, auction, bid, settle, execute |
 | **sdk/** | empty | — |
 
-**Missing from V31:**
-- All 7 ZionDex Solidity contracts (IntentSettlement, SolverRegistry, ZDXToken, ZionDexHooks, ZionDexPoolManager, ZionDexRouter, ZionDexStaking)
-- Standalone router service (price oracle, quote API, monitor)
-- Standalone solver service (strategy engine, router_client, node)
-- Intent auction + signing logic
+**Remaining gaps:**
+- Standalone price oracle / quote API service can remain absorbed into multichain if `GET /quote/multi` and `POST /v1/swap/solve` are sufficient.
+- Real multi-party E2E with an independent solver over the internet is still pending.
 
-**Action:** Port ZionDex Solidity contracts into `V31/L2/multichain/contracts/dex/`. Port standalone router/solver services or document that they're absorbed into multichain.
+**Action:** Add Foundry/Hardhat project config so `zion deploy` can compile/deploy ZionDex contracts. Run a real solver-network E2E test.
 
-### 10.6 Solidity smart contracts — 8 of 9 missing (CRITICAL)
+### 10.6 Solidity smart contracts — present, missing Foundry/Hardhat tooling (CRITICAL)
 
-V3 had 9 Solidity contracts in `archive/V3/L2/contracts/hardhat/sol/`:
+V3/V31 EVM contracts are now in `V31/L2/multichain/contracts/evm/`:
 
 | Contract | Purpose | V31 status |
 |----------|---------|------------|
-| `wZION.sol` | Wrapped ZION ERC-20 on Base L2 | ❌ MISSING |
-| `ZIONBridge.sol` | Bridge lock/mint/burn/release contract | ❌ MISSING |
-| `ZIONAtomicSwap.sol` | HTLC atomic swap contract | ❌ MISSING |
-| `ZIONGovernance.sol` | DAO governance contract | ❌ MISSING |
-| `ZIONTreasury.sol` | DAO treasury contract | ❌ MISSING |
-| `ZIONStaking.sol` | Staking contract | ❌ MISSING |
-| `ZIONFarm.sol` | Liquidity farming contract | ❌ MISSING |
-| `SefirotVowRegistry.sol` | Sefirot vow registry | ❌ MISSING |
-| `SefirotVowToken.sol` | Sefirot vow token | ❌ MISSING |
+| `wZION.sol` | Wrapped ZION ERC-20 on Base L2 | ✅ present |
+| `ZIONBridge.sol` | Bridge lock/mint/burn/release contract | ✅ present |
+| `ZIONAtomicSwap.sol` | HTLC atomic swap contract | ✅ present |
+| `ZIONGovernance.sol` | DAO governance contract | ✅ present |
+| `ZIONTreasury.sol` | DAO treasury contract | ✅ present |
+| `ZIONStaking.sol` | Staking contract | ✅ present |
+| `ZIONFarm.sol` | Liquidity farming contract | ✅ present |
+| `SefirotVowRegistry.sol` | Sefirot vow registry | ✅ present |
+| `SefirotVowToken.sol` | Sefirot vow token | ✅ present |
 
-V31 has only: `V31/L2/multichain/contracts/non-evm/tron/ZionToken.sol`
+**Note:** The AGENTS.md mentions wZION address `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` on Base. Contract sources are now in V31, but there is **no Foundry/Hardhat project** (`foundry.toml`, `hardhat.config.*`, `package.json`) in `V31/L2/multichain/contracts/`. This blocks the `zion deploy` subcommand from compiling or deploying EVM and ZionDex contracts.
 
-**Note:** The AGENTS.md mentions wZION address `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` on Base — so wZION is deployed but the contract source is not in V31.
-
-**Action:** Port all 9 Solidity contracts from `archive/V3/L2/contracts/hardhat/sol/` into `V31/L2/multichain/contracts/evm/`. Set up Foundry/Hardhat project structure.
+**Action:** Add a Foundry (or Hardhat) project structure under `V31/L2/multichain/contracts/` with remappings, dependencies, and a `forge test` / `forge script` workflow. Wire the build/deploy output into `V31/cli/src/commands/deploy.rs`.
 
 ### 10.7 native-libs directory — missing (LOW)
 
@@ -463,12 +467,12 @@ Goal: close all migration gaps from §10 so V31 is a true superset of V3.
 
 | # | Task | Priority | Acceptance | Evidence |
 |---|------|----------|------------|----------|
-| H1 | **Port Solidity contracts** | CRITICAL | All 9 V3 contracts + 7 ZionDex contracts in `V31/L2/multichain/contracts/`. Foundry project setup. | `forge test` passes. |
-| H2 | **Port miner TUI** | HIGH | `ui.rs`, `interactive.rs`, `setup_menu.rs`, `banner.rs` in V31 miner. Keyboard controls work. | TUI demo screenshot. |
-| H3 | **Complete miner Cargo features** | HIGH | All native-* features exposed in miner Cargo.toml. `full` and `gpu-all` convenience features work. | `cargo build --features full` succeeds. |
-| H4 | **Port missing CLI commands** | HIGH | `dao`, `warp`, `atomic_swap`, `auxpow`, `onboard`, `update`, `monitor`, `deploy`, `compose` commands in V31 CLI. | `zion <cmd> --help` works for each. |
+| H1 | **Port Solidity contracts + Foundry setup** | CRITICAL | All 9 V3 contracts + 7 ZionDex contracts in `V31/L2/multichain/contracts/`. Foundry project setup. | `forge test` passes; `zion deploy` compiles & deploys. |
+| H2 | **Verify miner TUI** | HIGH | `ui.rs`, `interactive.rs`, `setup_menu.rs`, `banner.rs` in V31 miner. Keyboard controls work. | TUI demo screenshot. |
+| H3 | **Verify miner Cargo features** | HIGH | All native-* features exposed in miner Cargo.toml. `full` and `gpu-all` convenience features work. | `cargo build --features full` succeeds. |
+| H4 | **Verify / complete CLI commands** | HIGH | `dao`, `warp`, `atomic-swap`, `auxpow`, `onboard`, `update`, `monitor`, `deploy`, `compose` in V31 CLI. | `zion <cmd> --help` works for each; deploy compiles contracts. |
 | H5 | **Port CLI infrastructure** | MEDIUM | `auto_detect.rs`, `config.rs`, `rpc/` module, `ui.rs` in V31 CLI. | CLI auto-detection works. |
-| H6 | **Port ZionDex standalone services** | MEDIUM | Router price oracle + solver strategy engine in V31 (either standalone or in multichain). | DEX quote API returns live prices. |
+| H6 | **Verify ZionDex solver network E2E** | MEDIUM | Router price oracle + solver strategy engine in V31 (absorbed into multichain). | DEX quote API returns live prices; real solver bid/execute over internet works. |
 | H7 | **Port native-libs** | LOW | `zion_native_abi.h` + build scripts in V31. | Cross-platform build works. |
 | H8 | **Port L4/L5 design docs** | LOW | OASIS + Free World design docs in V31 or `docs/`. | Docs accessible. |
 | H9 | **Port AuXpow E2E test script** | MEDIUM | `run_e2e_8coins.sh` adapted for V31 miner. | Script runs and tests 8 coins. |
