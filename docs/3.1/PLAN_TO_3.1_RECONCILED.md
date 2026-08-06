@@ -4,7 +4,7 @@
 > **Autor:** Devin  
 > **Verze:** 1.0  
 > **Status:** kanonický root plán pro dokončení V31 / 3.1.0 Mainnet Alpha  
-> **Zdroje:** [`PLAN_TO_3.1.md`](./PLAN_TO_3.1.md), [`V31_V3_FULL_AUDIT.md`](./V31_V3_FULL_AUDIT.md), [`V31/STATUS.md`](./V31/STATUS.md), [`V31/CUTOVER_PLAN.md`](./V31/CUTOVER_PLAN.md), [`V31/AGENTS.md`](./V31/AGENTS.md), [`StatusV3.md`](./StatusV3.md)
+> **Zdroje:** [`PLAN_TO_3.1.md`](./PLAN_TO_3.1.md), [`V31_V3_FULL_AUDIT.md`](./V31_V3_FULL_AUDIT.md), [`V31/STATUS.md`](../../V31/STATUS.md), [`V31/CUTOVER_PLAN.md`](../../V31/CUTOVER_PLAN.md), [`V31/AGENTS.md`](../../V31/AGENTS.md), [`StatusV3.md`](../../StatusV3.md)
 
 ---
 
@@ -257,10 +257,10 @@ Týden 6-8: [C8] Dashboard                — monitoring
 
 ## 10. Odkazy
 
-- Zdroje: [`PLAN_TO_3.1.md`](./PLAN_TO_3.1.md), [`V31_V3_FULL_AUDIT.md`](./V31_V3_FULL_AUDIT.md), [`V31/STATUS.md`](./V31/STATUS.md)
-- Pravidla: [`AGENTS.md`](./AGENTS.md), [`V31/AGENTS.md`](./V31/AGENTS.md)
-- Status: [`StatusV3.md`](./StatusV3.md)
-- Cutover: [`V31/CUTOVER_PLAN.md`](./V31/CUTOVER_PLAN.md)
+- Zdroje: [`PLAN_TO_3.1.md`](./PLAN_TO_3.1.md), [`V31_V3_FULL_AUDIT.md`](./V31_V3_FULL_AUDIT.md), [`V31/STATUS.md`](../../V31/STATUS.md)
+- Pravidla: [`AGENTS.md`](../../AGENTS.md), [`V31/AGENTS.md`](../../V31/AGENTS.md)
+- Status: [`StatusV3.md`](../../StatusV3.md)
+- Cutover: [`V31/CUTOVER_PLAN.md`](../../V31/CUTOVER_PLAN.md)
 
 ---
 
