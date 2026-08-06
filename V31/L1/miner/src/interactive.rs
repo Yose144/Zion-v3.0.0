@@ -1087,7 +1087,7 @@ pub(crate) fn draw_dashboard(
     uptime_secs: u64,
     pool_height: u64,
     gpu_info: &[GpuInfoLine],
-    metrics: &Arc<Mutex<crate::MinerMetricsSnapshot>>,
+    metrics: &Arc<Mutex<crate::tui_compat::MinerMetricsSnapshot>>,
     hashrate: &Arc<HashrateTracker>,
 ) -> io::Result<()> {
     let mut out = tty();
@@ -1932,7 +1932,7 @@ pub(crate) fn draw_dashboard_redesign(
     uptime_secs: u64,
     pool_height: u64,
     gpu_info: &[GpuInfoLine],
-    metrics: &Arc<Mutex<crate::MinerMetricsSnapshot>>,
+    metrics: &Arc<Mutex<crate::tui_compat::MinerMetricsSnapshot>>,
     hashrate: &Arc<HashrateTracker>,
 ) -> io::Result<()> {
     let mut out = tty();
@@ -2493,7 +2493,7 @@ pub fn spawn_input_thread(control: Arc<Mutex<MinerControl>>) -> thread::JoinHand
 pub(crate) fn run_interactive(
     control: Arc<Mutex<MinerControl>>,
     hashrate: Arc<HashrateTracker>,
-    metrics: Arc<Mutex<crate::MinerMetricsSnapshot>>,
+    metrics: Arc<Mutex<crate::tui_compat::MinerMetricsSnapshot>>,
     pool_addr: String,
 ) -> io::Result<()> {
     TUI_ACTIVE.store(true, Ordering::Relaxed);

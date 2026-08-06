@@ -1,0 +1,19 @@
+{
+  "name": "zion-shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ZION shared modules — ZIS client, DB sync, notifications",
+  "type": "module",
+  "scripts": {
+    "db-sync": "tsx db-sync.ts",
+    "db-sync:start": "tsx db-sync.ts &"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.18.0"
+  },
+  "devDependencies": {
+    "prisma": "^5.18.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.4"
+  }
+}

@@ -31,6 +31,8 @@ pub mod interactive;
 #[cfg(feature = "tui")]
 pub mod setup_menu;
 #[cfg(feature = "tui")]
+pub mod tui_compat;
+#[cfg(feature = "tui")]
 pub mod ui;
 
 // parallel.rs provides multi-algorithm hashing and is only useful when
