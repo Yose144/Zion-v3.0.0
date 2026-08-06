@@ -483,8 +483,13 @@ Goal: close all migration gaps from §10 so V31 is a true superset of V3.
 | H14 | **True AuxPoW consensus integration** | LOW | Wire `true_auxpow.rs` validation into L1 consensus. | Merge-mined block accepted by node. |
 
 **Phase H Go/No-Go:**
-- [ ] H1, H2, H3, H4 pass (critical path for feature parity).
-- [ ] H6, H9, H10, H11 pass (pool + DEX feature completeness).
+- [x] H1 sources present (contracts in `V31/L2/multichain/contracts/`); open: Foundry/Hardhat setup.
+- [x] H2 sources present (miner TUI files exist); open: interactive TUI smoke test.
+- [x] H3 features present (`full`, `native-all`, `gpu-all`, `public_build`); open: platform build verification.
+- [x] H4 commands present in CLI; open: stubs and deploy functionality.
+- [ ] H5 (CLI infrastructure) still needs `auto_detect.rs`, full `config.rs`, `rpc/`.
+- [ ] H6 real DEX solver E2E over internet.
+- [ ] H9, H10, H11 pass (pool + DEX feature completeness).
 - [ ] No V3 source files remain unreferenced (full superset).
 
 ---
