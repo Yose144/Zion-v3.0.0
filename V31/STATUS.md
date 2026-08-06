@@ -1,6 +1,6 @@
 # V31 Mainnet Alpha — Status
 
-> **Verze:** 3.1.0-alpha.2 (post-Phase A+B+C+D — E2E mining + web health green)
+> **Verze:** 3.1.0-alpha.2 (post-Phase A+B+C+D — E2E mining + web health green) / směřujeme k **3.2.0 "One Love" (Mainnet Stable)**
 > **Datum:** 2026-08-06
 > **Stav:** workspace builduje, **2079 testů prochází (0 failures)**, `cargo clippy --workspace` čisté. **Fáze A i Fáze B jsou kompletní** — `EkamDeeksha` v2 běží na všech výškách (128 KiB scratchpad, 1 pass, 32 random reads, 2 AES rounds), CPU KAT vektory a GPU OpenCL/CUDA/Metal kernely jsou synchronizovány, `zion-miner` mapuje `ekam_deeksha` na kanonické `deeksha_lite`/`deeksha_chv3` GPU backendy. **V31 je nasazen na Edge** (public RPC, pool, multichain, dashboard). **Lokální GPU OpenCL build + benchmark GO na NVIDIA GTX 1070 Ti (~132 kh/s, 2026-08-06); reálný rig E2E stále pending.** Fáze C1-C8 hotová (DAO + CLI + ZionDex + Dashboard wiring). **Pool FULL V3 feature parity dokončena**. **Dashboard UI/UX update do V31 hotov, `/health` OK. V31 banner KPIs + V31 Production panel (metriky, logy, Grafana) + pool metrics port 8080 + Prometheus/Grafana provisioning nasazeny na Edge. V31 cutover proveden: V3 služby zastaveny a maskovány, `zion-v31-node` osamostatněn od V3. **Fáze D E2E: cargo test --workspace pass, V31 miner našel a odevzdal pool share (block height 50+), web `/api/health` `ok` s rpc_node i mining_pool healthy, e2e API scénáře zelené. Git tag `v3.1.0-alpha.2-phase-D`.
 
