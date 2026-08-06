@@ -655,3 +655,492 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Rasta Navbar — red/gold/green pill design from public_html/V2
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  --rasta-red: #e41e2b;
+  --rasta-gold: #fcd116;
+  --rasta-green: #078930;
+  --rasta-black: #0d0d0d;
+  --rasta-dark: #1a1a1a;
+}
+
+.rasta-text-gradient {
+  background: linear-gradient(90deg, var(--rasta-red), var(--rasta-gold), var(--rasta-green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Header shell */
+.rasta-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  padding: 0.75rem 1rem;
+}
+
+/* Floating pill */
+.rasta-nav-pill {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 0.5rem 0.75rem 0.5rem 1rem;
+  border-radius: 9999px;
+  background-image:
+    linear-gradient(#0a0c14, #0a0c14),
+    linear-gradient(90deg, var(--rasta-red), var(--rasta-gold), var(--rasta-green));
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  border: 2px solid transparent;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.45),
+    0 0 30px rgba(252, 209, 22, 0.12);
+  backdrop-filter: blur(22px) saturate(140%);
+}
+
+/* Logo */
+.rasta-nav-logo-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.rasta-nav-logo-img {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--rasta-gold);
+  box-shadow: 0 0 12px rgba(252, 209, 22, 0.4);
+  transition: all 0.3s ease;
+}
+
+.rasta-nav-logo-img:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 18px rgba(252, 209, 22, 0.6);
+  border-color: var(--rasta-green);
+}
+
+.rasta-nav-logo-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.rasta-nav-brand {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, var(--rasta-red), var(--rasta-gold), var(--rasta-green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.rasta-nav-kicker {
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(252, 209, 22, 0.85);
+}
+
+/* Pill menu (red/gold/green outer) */
+.rasta-nav-menu {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: linear-gradient(110deg, rgba(228, 30, 43, 0.85), rgba(252, 209, 22, 0.75), rgba(7, 137, 48, 0.85));
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.4),
+    0 0 22px rgba(252, 209, 22, 0.3);
+}
+
+.rasta-nav-menu::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 9999px;
+  background: rgba(0, 0, 0, 0.7);
+  box-shadow: inset 0 0 22px rgba(0, 0, 0, 0.55);
+  z-index: 0;
+}
+
+.rasta-nav-menu > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Nav links */
+.rasta-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 1rem;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #f7f7f7;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(4, 6, 16, 0.55);
+  transition: all 0.25s ease;
+  cursor: pointer;
+}
+
+.rasta-nav-link:hover,
+.rasta-nav-link:focus-visible {
+  color: #0b0c08;
+  background: linear-gradient(120deg, rgba(228, 30, 43, 0.75), rgba(252, 209, 22, 0.75), rgba(7, 137, 48, 0.75));
+  border-color: rgba(255, 255, 255, 0.65);
+  box-shadow:
+    0 0 14px rgba(228, 30, 43, 0.45),
+    0 0 22px rgba(252, 209, 22, 0.35),
+    0 0 14px rgba(7, 137, 48, 0.45);
+}
+
+.rasta-nav-link.active {
+  color: #fff;
+  border-color: var(--rasta-gold);
+  background: linear-gradient(120deg, rgba(228, 30, 43, 0.45), rgba(252, 209, 22, 0.45), rgba(7, 137, 48, 0.45));
+  box-shadow: 0 0 18px rgba(252, 209, 22, 0.35);
+}
+
+/* Right-side actions */
+.rasta-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
+.rasta-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Cart */
+.rasta-cart {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-width: 44px;
+  height: 36px;
+  padding: 0 0.7rem;
+  border-radius: 9999px;
+  background:
+    radial-gradient(circle at 10% 0, rgba(255, 255, 255, 0.2), transparent 55%),
+    linear-gradient(135deg, rgba(8, 15, 30, 0.98), rgba(4, 10, 22, 0.95));
+  border: 1px solid rgba(210, 255, 244, 0.6);
+  box-shadow:
+    0 0 10px rgba(0, 0, 0, 0.65),
+    0 0 18px rgba(42, 245, 152, 0.45);
+  color: #e5fdf7;
+  transition: all 0.25s ease;
+}
+
+.rasta-cart:hover,
+.rasta-cart:focus-visible {
+  box-shadow:
+    0 0 18px rgba(42, 245, 152, 0.8),
+    0 0 26px rgba(8, 174, 234, 0.7);
+  transform: translateY(-1px);
+}
+
+.rasta-cart-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.rasta-cart-badge {
+  position: absolute;
+  top: -0.35rem;
+  right: -0.35rem;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 30% 0, #ffffff, #2af598);
+  color: #041016;
+  font-size: 0.65rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 6px rgba(42, 245, 152, 0.8);
+}
+
+/* Language switcher */
+.rasta-lang-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(4, 6, 16, 0.65);
+  color: #f7f7f7;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: all 0.25s ease;
+  cursor: pointer;
+}
+
+.rasta-lang-switch:hover,
+.rasta-lang-switch:focus-visible {
+  background: rgba(252, 209, 22, 0.15);
+  border-color: var(--rasta-gold);
+  color: #fff;
+}
+
+.rasta-lang-switch svg {
+  width: 14px;
+  height: 14px;
+  color: var(--rasta-gold);
+}
+
+/* Wallet buttons */
+.rasta-wallet-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background: linear-gradient(120deg, var(--rasta-red), var(--rasta-gold), var(--rasta-green));
+  color: #0d0d0d;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 8px 22px rgba(252, 209, 22, 0.25);
+}
+
+.rasta-wallet-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+  box-shadow: 0 12px 28px rgba(252, 209, 22, 0.35);
+}
+
+.rasta-wallet-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.rasta-wallet-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(4, 6, 16, 0.55);
+  color: #f7f7f7;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.rasta-wallet-ghost:hover:not(:disabled),
+.rasta-wallet-ghost:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.rasta-wallet-ghost .status-dot {
+  box-shadow: 0 0 6px rgba(42, 245, 152, 0.8);
+}
+
+.rasta-wallet-ghost .status-dot.status-inactive {
+  background: var(--rasta-red);
+  box-shadow: 0 0 6px rgba(228, 30, 43, 0.8);
+}
+
+.rasta-wallet-ghost[data-wrong='true'] {
+  border-color: rgba(244, 63, 94, 0.5);
+  color: #fda4af;
+}
+
+/* Hamburger */
+.rasta-hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rasta-hamburger:hover,
+.rasta-hamburger:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.rasta-hamburger .bar {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: #fff;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.rasta-hamburger.active .bar:nth-child(2) {
+  opacity: 0;
+}
+
+.rasta-hamburger.active .bar:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.rasta-hamburger.active .bar:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* Mobile menu */
+.rasta-mobile-menu {
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: min(320px, 85vw);
+  height: 100vh;
+  height: 100dvh;
+  padding: 5.5rem 1.5rem 2rem;
+  gap: 0.5rem;
+  background: rgba(4, 8, 18, 0.98);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 15px 0 45px rgba(0, 0, 0, 0.55);
+  z-index: 49;
+  transform: translateX(-110%);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+}
+
+.rasta-mobile-menu.open {
+  transform: translateX(0);
+}
+
+.rasta-mobile-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding-bottom: 1rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.rasta-mobile-menu .rasta-nav-link {
+  width: 100%;
+  justify-content: flex-start;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  font-size: 0.82rem;
+  text-align: left;
+}
+
+.rasta-mobile-actions {
+  display: none;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.rasta-menu-open {
+  overflow: hidden;
+}
+
+/* Responsive */
+@media (max-width: 868px) {
+  .rasta-nav {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .rasta-nav-pill {
+    padding: 0.5rem 0.75rem;
+    border-radius: 22px;
+  }
+
+  .rasta-desktop-menu,
+  .rasta-nav-actions {
+    display: none;
+  }
+
+  .rasta-hamburger {
+    display: flex;
+  }
+
+  .rasta-mobile-actions {
+    display: flex;
+  }
+
+  .rasta-nav-logo-img {
+    width: 34px;
+    height: 34px;
+  }
+
+  .rasta-nav-brand {
+    font-size: 0.95rem;
+  }
+
+  .rasta-nav-kicker {
+    display: none;
+  }
+}
+
+@media (max-width: 400px) {
+  .rasta-nav-pill {
+    padding: 0.45rem 0.6rem;
+  }
+
+  .rasta-nav-logo-img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .rasta-cart {
+    min-width: 40px;
+    height: 34px;
+  }
+
+  .rasta-hamburger {
+    width: 38px;
+    height: 38px;
+  }
+}

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ShoppingCart } from 'lucide-react';
 import ConnectButton from './ConnectButton';
 import { useCart } from './shop/CartContext';
@@ -22,104 +22,106 @@ export default function Navbar() {
   const { count } = useCart();
   const { t } = useLangT();
 
+  useEffect(() => {
+    document.body.classList.toggle('rasta-menu-open', open);
+    return () => document.body.classList.remove('rasta-menu-open');
+  }, [open]);
+
+  const isActive = (href: string) =>
+    pathname === href || (href !== '/' && pathname.startsWith(href));
+
   return (
-    <nav className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5" style={{ background: 'rgba(9, 10, 15, 0.92)' }}>
-      {/* Top accent line */}
-      <div className="section-line absolute top-0 inset-x-0" />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 group">
+    <>
+      <nav className="rasta-nav">
+        <div className="rasta-nav-pill">
+          <Link href="/" className="rasta-nav-logo-link" onClick={() => setOpen(false)}>
             <img
               src="/symbol-200x200.png"
               alt="ZION"
-              width={36}
-              height={36}
-              className="w-9 h-9 rounded-lg object-contain group-hover:scale-110 transition-transform duration-300"
+              width={38}
+              height={38}
+              className="rasta-nav-logo-img"
             />
-            <div className="flex flex-col leading-none">
-              <span className="text-lg font-black tracking-tight text-gradient font-display">
-                {t('nav.logoPrimary')}
-              </span>
-              <span className="zion-kicker mt-1" style={{ padding: '0.1rem 0.5rem', fontSize: '0.55rem' }}>
-                {t('nav.logoSecondary')}
-              </span>
+            <div className="rasta-nav-logo-text">
+              <span className="rasta-nav-brand">{t('nav.logoPrimary')}</span>
+              <span className="rasta-nav-kicker">{t('nav.logoSecondary')}</span>
             </div>
           </Link>
 
-          {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-1">
-            {navLinkKeys.map((link) => {
-              const active = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${
-                    active
-                      ? 'text-white bg-white/10 shadow-sm'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  {t(link.key as 'nav.home' | 'nav.explore' | 'nav.shop' | 'nav.create')}
-                </Link>
-              );
-            })}
+          <div className="rasta-nav-menu rasta-desktop-menu">
+            {navLinkKeys.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`rasta-nav-link ${isActive(link.href) ? 'active' : ''}`}
+              >
+                {t(link.key as 'nav.home' | 'nav.explore' | 'nav.shop' | 'nav.create')}
+              </Link>
+            ))}
           </div>
 
-          {/* Right side */}
-          <div className="flex items-center gap-3">
+          <div className="rasta-nav-right">
             <Link
               href="/cart"
-              className="relative zion-button-icon zion-button-ghost text-gray-300 hover:text-white"
+              className="rasta-cart"
               aria-label={t('nav.cartAria')}
+              onClick={() => setOpen(false)}
             >
-              <ShoppingCart className="w-5 h-5" />
+              <ShoppingCart className="rasta-cart-icon" />
               {count > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center bg-oasis-gold text-oasis-black text-[10px] font-black rounded-full">
+                <span className="rasta-cart-badge">
                   {count > 99 ? '99+' : count}
                 </span>
               )}
             </Link>
-            <LanguageSwitcher />
-            <ConnectButton />
+
+            <div className="rasta-nav-actions">
+              <LanguageSwitcher variant="rasta" />
+              <ConnectButton variant="rasta" />
+            </div>
+
             <button
               onClick={() => setOpen(!open)}
-              className="md:hidden zion-button-icon zion-button-ghost"
+              className={`rasta-hamburger ${open ? 'active' : ''}`}
               aria-label={open ? t('nav.close') : t('nav.open')}
+              aria-expanded={open}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                {open ? (
-                  <path d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path d="M4 6h16M4 12h16M4 18h16" />
-                )}
-              </svg>
+              <span className="bar" />
+              <span className="bar" />
+              <span className="bar" />
             </button>
           </div>
         </div>
+      </nav>
 
-        {/* Mobile menu */}
-        {open && (
-          <div className="md:hidden pb-4 flex flex-col gap-1 animate-fade-in">
-            {navLinkKeys.map((link) => {
-              const active = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setOpen(false)}
-                  className={`px-4 py-2.5 rounded-lg font-semibold text-sm transition-all ${
-                    active ? 'text-white bg-white/10' : 'text-gray-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  {t(link.key as 'nav.home' | 'nav.explore' | 'nav.shop' | 'nav.create')}
-                </Link>
-              );
-            })}
-          </div>
-        )}
+      <div className={`rasta-mobile-menu ${open ? 'open' : ''}`} aria-hidden={!open}>
+        <div className="rasta-mobile-brand">
+          <img
+            src="/symbol-200x200.png"
+            alt="ZION"
+            width={34}
+            height={34}
+            className="rasta-nav-logo-img"
+          />
+          <span className="rasta-nav-brand">{t('nav.logoPrimary')}</span>
+        </div>
+
+        {navLinkKeys.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            onClick={() => setOpen(false)}
+            className={`rasta-nav-link ${isActive(link.href) ? 'active' : ''}`}
+          >
+            {t(link.key as 'nav.home' | 'nav.explore' | 'nav.shop' | 'nav.create')}
+          </Link>
+        ))}
+
+        <div className="rasta-mobile-actions">
+          <LanguageSwitcher variant="rasta" />
+          <ConnectButton variant="rasta" />
+        </div>
       </div>
-    </nav>
+    </>
   );
 }
