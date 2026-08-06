@@ -358,6 +358,8 @@ export interface TokenDistributionResult {
   orderId?: string;
   tokens?: number;
   status?: string;
+  txHash?: string;
+  distributedAt?: string;
   error?: string;
 }
 
@@ -371,9 +373,13 @@ export async function distributeTokens(
       headers: { ...adminHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ txHash }),
     });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      return { success: false, error: body.error ?? `HTTP ${res.status}` };
+    }
     return (await res.json()) as TokenDistributionResult;
-  } catch {
-    return null;
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Network error' };
   }
 }
 
@@ -383,6 +389,7 @@ export interface TokenStatusResult {
   status?: 'pending' | 'distributed';
   txHash?: string;
   distributedAt?: string;
+  error?: string;
 }
 
 export async function getTokenStatus(id: string): Promise<TokenStatusResult | null> {
@@ -390,9 +397,12 @@ export async function getTokenStatus(id: string): Promise<TokenStatusResult | nu
     const res = await fetch(`/api/admin/tokens/distribute/${encodeURIComponent(id)}`, {
       headers: adminHeaders(),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      return { found: false, error: body.error ?? `HTTP ${res.status}` };
+    }
     return (await res.json()) as TokenStatusResult;
-  } catch {
-    return null;
+  } catch (err) {
+    return { found: false, error: err instanceof Error ? err.message : 'Network error' };
   }
 }
