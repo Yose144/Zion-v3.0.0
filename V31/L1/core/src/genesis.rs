@@ -74,32 +74,32 @@ pub fn genesis_hash() -> Hash {
 /// Total: 16,780,000,000 ZION.
 fn premine_outputs() -> Vec<TransactionOutput> {
     vec![
-        // OASIS + Golden Egg (8.25 B)
+        // OASIS + Golden Egg (8.25 B) — slot 1 address
         output(
             "zion172h3y7d6m7d7y7d8q2d4x363t0m55227n2rt2v2",
             8_250_000_000,
         ),
-        // DAO Treasury (4.0 B)
+        // DAO Treasury (4.0 B) — slot 6 address (main)
         output(
-            "zion1d4o9q2w3e4r5t6y7u8i9o0p1a2s3d4f5g6h7j8k9",
+            "zion1j5a327c7d3w7h4e474n5p4z0z827f8p874mr2p7",
             4_000_000_000,
         ),
-        // Infrastructure (2.59 B)
+        // Infrastructure (2.59 B) — slot 9 address (dev fund)
         output(
-            "zion1i2f3r4a5c6t7y8u9i0o1p2a3s4d5f6g7h8j9k0l1",
+            "zion172k256y2f6y6k6r3q5e3j0v382f694e3q59e4w0",
             2_590_000_000,
         ),
-        // Humanitarian (1.0 B)
+        // Humanitarian (1.0 B) — slot 12 address
         output(
-            "zion1h3u4m5a6n7i8t9a0r1i2a3n4s5h6i7p8e9r0o1r2",
+            "zion1f0t7e2y3t340g3j4h470q0z7e5j7w7y4q49u5t6",
             1_000_000_000,
         ),
-        // Bridge Seed (0.4 B)
-        output("zion1b4r5i6d7g8e9s0e1d2s3e4e5d6f7g8h9i0j1k2l3", 400_000_000),
-        // Bridge Vault UTXO (0.1 B)
-        output("zion1v5a6u7l8t9u0t1o2p3i4u5t6s7p8u9t0a1b2c3d4", 100_000_000),
-        // Liquidity bootstrap (0.44 B)
-        output("zion1l6i7q8u9i0d1i2t3y4b5o6o7t8s9t0r1a2p3i4d5", 440_000_000),
+        // Bridge Seed (0.4 B) — slot 13 address
+        output("zion1j8c7h0a2r377v5n0y757n8j5w6y2n2d8005f750", 400_000_000),
+        // Bridge Vault UTXO (0.1 B) — slot 14 address
+        output("zion1x2f2u5p560a0e5a5u8g7m837m78856v5f8e45l7", 100_000_000),
+        // Liquidity bootstrap (0.44 B) — humanitarian overflow
+        output("zion1f0t7e2y3t340g3j4h470q0z7e5j7w7y4q49u5t6", 440_000_000),
     ]
 }
 
