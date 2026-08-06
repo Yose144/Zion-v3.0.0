@@ -1,8 +1,8 @@
 # Deeksha v3.2 — ASIC Hardening (512 KiB Scratchpad)
 
-**Datum:** 2026-08-06
-**Stav:** Lokálně implementováno + otestováno, **NENÍ nasazeno na Edge**
-**Status:** ⚠️ PENDING EDGE DEPLOYMENT
+**Datum:** 2026-08-06 (updated 2026-08-07)
+**Stav:** ✅ Nasazeno na Edge (commit `79b8e9d11`), CPU↔GPU bit-identical KAT verified
+**Status:** PRODUCTION — V31 Mainnet Alpha
 
 ---
 
