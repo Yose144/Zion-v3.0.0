@@ -279,7 +279,7 @@ async function refreshAll(){
     // ── Phase 1: Fetch /api/status FIRST (critical path) ──
     const statusData = await apiFetch('/api/status');
     window.currentStatus = statusData;
-    console.log('[REFRESH] status received:', statusData.topology, 'height:', statusData.edge_node?.chain_height ?? statusData.node1?.chain_height);
+    console.log('[REFRESH] status received:', statusData.topology, 'height:', statusData.v31_node?.chain_height ?? statusData.node1?.chain_height);
 
     // ── Render critical UI immediately ──
     _renderCriticalUI(statusData);
@@ -307,7 +307,7 @@ async function refreshAll(){
 
       // Update hero kicker with blocker info
       const isEdge = statusData.topology === 'edge-primary';
-      const heroHeight = isEdge ? (statusData.edge_node?.chain_height ?? statusData.node1?.chain_height) : statusData.node1?.chain_height;
+      const heroHeight = isEdge ? (statusData.v31_node?.chain_height ?? statusData.node1?.chain_height) : statusData.node1?.chain_height;
       const heroKicker = document.getElementById('hero-status-kicker');
       if(heroKicker) heroKicker.textContent = blockersData.ready_for_launch
         ? '✅ Ready · All P0 Blockers Resolved'
@@ -399,10 +399,10 @@ function _renderCriticalUI(statusData){
   if(netExtra){
     const allInSync = statusData.all_in_sync;
     const mempool = isEdge
-      ? (statusData.edge_node?.mempool_size ?? 0)
+      ? (statusData.v31_node?.mempool_size ?? 0)
       : (statusData.node1?.mempool_size ?? 0);
     const peers = isEdge
-      ? (statusData.edge_node?.known_peers ?? 0)
+      ? (statusData.v31_node?.known_peers ?? 0)
       : (statusData.node1?.known_peers ?? 0);
     netExtra.innerHTML = [
       `<span class="zhc-mini"><span class="zhc-mini-label">Sync</span><span class="zhc-mini-val">${allInSync ? '✅' : '⚠️'}</span></span>`,
@@ -435,16 +435,16 @@ function _renderCriticalUI(statusData){
   }
 
   // ── Hero Card 3: Latest Block ──
-  const heroHeight = isEdge ? (statusData.edge_node?.chain_height ?? statusData.node1?.chain_height) : statusData.node1?.chain_height;
+  const heroHeight = isEdge ? (statusData.v31_node?.chain_height ?? statusData.node1?.chain_height) : statusData.node1?.chain_height;
   const heroH = document.getElementById('hero-chain-height');
   if(heroH) heroH.textContent = heroHeight != null ? Number(heroHeight).toLocaleString() : '—';
   const blockSub = document.getElementById('hero-block-sub');
-  if(blockSub) blockSub.textContent = heroHeight != null ? 'chain height · ' + (statusData.edge_node?.consensus_profile || 'mainnet') : 'chain height';
+  if(blockSub) blockSub.textContent = heroHeight != null ? 'chain height · ' + (statusData.v31_node?.consensus_profile || 'mainnet') : 'chain height';
   const blockExtra = document.getElementById('hero-block-extra');
   if(blockExtra){
-    const tipHash = isEdge ? (statusData.edge_node?.tip_hash) : (statusData.node1?.tip_hash);
-    const consensus = isEdge ? (statusData.edge_node?.consensus_profile) : (statusData.node1?.consensus_profile);
-    const net = isEdge ? (statusData.edge_node?.network) : (statusData.node1?.network);
+    const tipHash = isEdge ? (statusData.v31_node?.tip_hash) : (statusData.node1?.tip_hash);
+    const consensus = isEdge ? (statusData.v31_node?.consensus_profile) : (statusData.node1?.consensus_profile);
+    const net = isEdge ? (statusData.v31_node?.network) : (statusData.node1?.network);
     blockExtra.innerHTML = [
       `<span class="zhc-mini"><span class="zhc-mini-label">Tip</span><span class="zhc-mini-val">${tipHash ? tipHash.substring(0,10) + '…' : '—'}</span></span>`,
       `<span class="zhc-mini"><span class="zhc-mini-label">Net</span><span class="zhc-mini-val">${net || '—'}</span></span>`,
@@ -4150,10 +4150,10 @@ async function loadCliNodeStatus(){
       return;
     }
   } catch(e) { /* CLI unavailable, fall through to RPC */ }
-  // Fallback: use /api/status RPC data directly
+  // Fallback: use /api/status RPC data directly (V31 node)
   try {
     const st = await fetch('/api/status').then(r => r.json());
-    const n1 = st.node1 || {};
+    const n1 = st.v31_node || st.node1 || {};
     if(n1.running){
       badge.className = 'text-xs px-2 py-0.5 rounded-md bg-blue-700 text-blue-300';
       badge.textContent = 'RPC Direct';
@@ -5861,7 +5861,7 @@ async function renderMainnetCharts(){
     animation: { duration: 300 }
   };
 
-  const en = res.edge_node || {};
+  const en = res.v31_node || res.edge_node || {};
   const ln = res.local_node || {};
   const pool = res.pool || {};
 
@@ -6557,20 +6557,20 @@ async function loadLayerFull(layer){
 async function populateL1(){
   const [status, events, collector] = await Promise.all([
     fetch('/api/status').then(r=>r.json()).catch(() => ({
-      node1:{}, edge_node:{}, pool:{}, miner:{}, pool_edge:{}, topology:'edge-primary'
+      node1:{}, v31_node:{}, edge_node:{}, pool:{}, miner:{}, pool_edge:{}, topology:'edge-primary'
     })),
     fetch('/api/events').then(r=>r.json()).catch(()=>({events:[]})),
     fetch('/api/metrics/collector').then(r=>r.json()).catch(()=>null)
   ]);
   const n1 = status.node1 || {};
-  const en = status.edge_node || {};
+  const en = status.v31_node || status.edge_node || {};
   const pool = status.pool || {};
   const miner = status.miner || {};
   const pe = status.pool_edge || {};
   const el = id => document.getElementById(id);
 
   // L1 KPIs — prefer collector data for mainnet metrics
-  const cEdge = collector?.edge_node || {};
+  const cEdge = collector?.v31_node || collector?.edge_node || {};
   const cLocal = collector?.local_node || {};
   const cPool = collector?.pool || {};
 
@@ -6987,7 +6987,7 @@ async function loadMetricsCollector(){
     }
     const ts = new Date(res.timestamp * 1000).toLocaleTimeString();
     const age = res._file_age_sec != null ? res._file_age_sec + 's ago' : 'unknown';
-    const en = res.edge_node || {};
+    const en = res.v31_node || res.edge_node || {};
     const ln = res.local_node || {};
     const pool = res.pool || {};
 
