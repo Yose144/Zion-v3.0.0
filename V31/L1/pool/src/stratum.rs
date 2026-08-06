@@ -9,6 +9,7 @@ use serde_json::{json, Value};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpListener;
 use tokio::sync::broadcast;
+use zion_core::difficulty::target_to_difficulty;
 use zion_core::node::BlockTemplate as CoreBlockTemplate;
 use zion_core::{Block, BlockHeader};
 use zion_cosmic_harmony::ExternalCoin;
@@ -236,6 +237,24 @@ impl StratumServer {
         };
 
         let (miner_id, worker_short) = split_worker(&worker_name);
+        let telemetry_key = format!("{miner_id}/{worker_short}");
+        let now_s = crate::telemetry::now_unix_seconds();
+        let share_difficulty = target_to_difficulty(&target);
+        let (attempted_hashes, elapsed_ms) = {
+            let reg = self.telemetry.lock().unwrap();
+            if let Some(miner) = reg.get_miner(&telemetry_key) {
+                if miner.last_share_time_s > 0 && now_s > miner.last_share_time_s {
+                    (
+                        share_difficulty,
+                        (now_s - miner.last_share_time_s).saturating_mul(1000),
+                    )
+                } else {
+                    (0, 0)
+                }
+            } else {
+                (0, 0)
+            }
+        };
 
         match result {
             Ok(true) => {
@@ -249,10 +268,16 @@ impl StratumServer {
                 self.telemetry
                     .lock()
                     .unwrap()
-                    .record_job_result(&miner_id, &worker_short, true, 0, 0);
+                    .record_job_result(
+                        &miner_id,
+                        &worker_short,
+                        true,
+                        attempted_hashes,
+                        elapsed_ms,
+                    );
                 // Record share for block tracker luck
                 self.block_tracker.lock().unwrap().record_share();
-                self.check_and_record_block(&job_id, &header, nonce, &target, reward, template);
+                self.check_and_record_block(&job_id, &worker_name, &header, nonce, &target, reward, template);
                 success_response(id, Value::Bool(true))
             }
             Ok(false) => {
@@ -265,7 +290,13 @@ impl StratumServer {
                 self.telemetry
                     .lock()
                     .unwrap()
-                    .record_job_result(&miner_id, &worker_short, false, 0, 0);
+                    .record_job_result(
+                        &miner_id,
+                        &worker_short,
+                        false,
+                        attempted_hashes,
+                        elapsed_ms,
+                    );
                 success_response(id, Value::Bool(false))
             }
             Err(e) => {
@@ -279,7 +310,13 @@ impl StratumServer {
                 self.telemetry
                     .lock()
                     .unwrap()
-                    .record_job_result(&miner_id, &worker_short, false, 0, 0);
+                    .record_job_result(
+                        &miner_id,
+                        &worker_short,
+                        false,
+                        attempted_hashes,
+                        elapsed_ms,
+                    );
                 error_response(Some(id), -32000, &format!("share error: {}", e))
             }
         }
@@ -296,6 +333,7 @@ impl StratumServer {
     fn check_and_record_block(
         &self,
         job_id: &str,
+        worker_full: &str,
         header: &[u8],
         nonce: u64,
         target: &[u8; 32],
@@ -322,7 +360,7 @@ impl StratumServer {
         pool.on_block_found(block_height, block_reward);
 
         // Record block in tracker
-        let (miner_id, worker_name) = split_worker(job_id);
+        let (miner_id, worker_name) = split_worker(worker_full);
         self.block_tracker.lock().unwrap().record_block_found(
             block_height,
             &miner_id,
@@ -1245,7 +1283,7 @@ impl StratumServer {
             }
         };
 
-        let interval = Duration::from_secs(15);
+        let interval = Duration::from_secs(5);
         let mut job_counter: u64 = 0u64;
         let mut first = true;
 
@@ -1398,6 +1436,13 @@ async fn submit_block_rpc(rpc_url: &str, block: &Block) -> anyhow::Result<()> {
         "params": serde_json::to_value(block).expect("block serializes"),
     });
     let response: serde_json::Value = jsonrpc_call(rpc_addr, &payload).await?;
+
+    if let Some(err) = response.get("error") {
+        if !err.is_null() {
+            return Err(anyhow::anyhow!("submitBlock returned error: {}", err));
+        }
+    }
+
     tracing::info!("submitBlock response: {}", response);
     Ok(())
 }
