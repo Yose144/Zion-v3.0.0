@@ -7135,6 +7135,7 @@ pub mod cuda_deeksha_lite {
     const SCRATCHPAD_BYTES: usize = 131_072; // 128 KiB per thread (Ekam v2)
     const SENTINEL: u64 = 0xFFFF_FFFF_FFFF_FFFF;
     const DEFAULT_WORK_SIZE_CAP: usize = 65_536; // 16GB VRAM for 24GB GPU
+    const OPTIMAL_TPB: u32 = 128; // Must match __launch_bounds__(128, 8) in kernel
 
     pub struct CudaDeekshaLiteMiner {
         dev: Arc<CudaDevice>,
@@ -7219,15 +7220,20 @@ pub mod cuda_deeksha_lite {
             let result_hash = dev
                 .alloc_zeros::<u8>(32)
                 .map_err(|e| anyhow::anyhow!("result_hash alloc: {e}"))?;
+            // output_hashes_buf: kernel no longer writes per-thread hashes to global
+            // memory (eliminated as pure overhead). We keep a minimal 1-byte allocation
+            // so the kernel parameter pointer is valid. This frees actual_work_size*32
+            // bytes of VRAM (e.g., 512KB at work_size=16384).
             let output_hashes_buf = dev
-                .alloc_zeros::<u8>(actual_work_size * 32)
+                .alloc_zeros::<u8>(1)
                 .map_err(|e| anyhow::anyhow!("output_hashes alloc: {e}"))?;
 
             println!(
-                "gpu_cuda_lite_init device=\"{}\" work_size={} scratchpad_mb={}",
+                "gpu_cuda_lite_init device=\"{}\" work_size={} scratchpad_mb={} tpb={}",
                 device_name,
                 actual_work_size,
                 actual_work_size * SCRATCHPAD_BYTES / (1024 * 1024),
+                OPTIMAL_TPB,
             );
 
             Ok(Self {
@@ -7294,7 +7300,7 @@ pub mod cuda_deeksha_lite {
             let threads_per_block: u32 = std::env::var("ZION_CUDA_TPB")
                 .ok()
                 .and_then(|v| v.trim().parse().ok())
-                .unwrap_or(64);
+                .unwrap_or(OPTIMAL_TPB);
 
             self.dev
                 .htod_copy_into(vec![SENTINEL], &mut self.result_nonce)
@@ -7405,7 +7411,7 @@ pub mod cuda_deeksha_lite {
             let threads_per_block: u32 = std::env::var("ZION_CUDA_TPB")
                 .ok()
                 .and_then(|v| v.trim().parse().ok())
-                .unwrap_or(64);
+                .unwrap_or(OPTIMAL_TPB);
 
             self.dev
                 .htod_copy_into(vec![SENTINEL], &mut self.result_nonce)
