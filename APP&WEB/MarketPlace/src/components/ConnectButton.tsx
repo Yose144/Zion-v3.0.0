@@ -5,8 +5,9 @@ import { base } from 'wagmi/chains';
 import { useState, useRef, useEffect } from 'react';
 import { useLangT } from '@/lib/useTranslation';
 
-export default function ConnectButton() {
+export default function ConnectButton({ variant = 'zion' }: { variant?: 'zion' | 'rasta' } = {}) {
   const { t } = useLangT();
+  const isRasta = variant === 'rasta';
   const { address, isConnected } = useAccount();
   const { connectors, connectAsync, isPending } = useConnect();
   const { disconnect } = useDisconnect();
@@ -32,7 +33,7 @@ export default function ConnectButton() {
         <button
           onClick={() => setWalletMenu(!walletMenu)}
           disabled={isPending}
-          className="zion-button-primary text-sm"
+          className={isRasta ? 'rasta-wallet-btn' : 'zion-button-primary text-sm'}
         >
           {isPending ? t('nav.connecting') : t('nav.connectWallet')}
         </button>
@@ -73,7 +74,8 @@ export default function ConnectButton() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className={`zion-button-secondary flex items-center gap-2 ${wrongChain ? 'border-oasis-rose/50 text-oasis-rose' : ''}`}
+        className={isRasta ? 'rasta-wallet-ghost' : `zion-button-secondary flex items-center gap-2 ${wrongChain ? 'border-oasis-rose/50 text-oasis-rose' : ''}`}
+        data-wrong={wrongChain}
       >
         <span className={`status-dot ${wrongChain ? 'status-inactive' : 'status-active'}`} />
         <span className="font-mono text-sm">{short}</span>
