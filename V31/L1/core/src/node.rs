@@ -150,6 +150,35 @@ impl Node {
         } else if !config.v3_no_genesis && storage_arc.v3_tip().await?.is_none() {
             let v3_genesis = crate::v3_compat::build_v3_genesis_block();
             storage_arc.put_v3_block(&v3_genesis).await?;
+
+            // Seed account balances and UTXOs from the genesis premine transactions.
+            // put_v3_block only stores the block body — it does NOT index the
+            // transactions into v3_accounts / v3_utxos. Without this, getBalance
+            // returns 0 for all premine addresses.
+            let accounts: Vec<(String, u128, u64)> = v3_genesis
+                .transactions
+                .iter()
+                .map(|tx| (tx.to.clone(), tx.amount_zion, tx.nonce))
+                .collect();
+            if !accounts.is_empty() {
+                storage_arc.put_v3_accounts(&accounts).await?;
+                info!(count = accounts.len(), "seeded V3 genesis account balances");
+            }
+
+            let utxos: Vec<([u8; 32], u32, u64, String)> = v3_genesis
+                .utxo_transactions
+                .iter()
+                .flat_map(|tx| {
+                    tx.outputs.iter().enumerate().map(move |(i, out)| {
+                        (tx.id, i as u32, out.amount, out.address.clone())
+                    })
+                })
+                .collect();
+            if !utxos.is_empty() {
+                storage_arc.put_v3_utxos(&utxos).await?;
+                info!(count = utxos.len(), "seeded V3 genesis UTXOs");
+            }
+
             info!(hash = %crate::v3_compat::hex(&v3_genesis.header_hash()), "seeded V3 genesis block");
         }
 
