@@ -3,11 +3,15 @@ import { buildV2OrderConfirmationHtml } from './v2-email';
 import { getActiveTheme } from './settings';
 
 function emailConfig() {
+  const host = process.env.SMTP_HOST ?? '127.0.0.1';
+  const port = parseInt(process.env.SMTP_PORT ?? '25', 10);
+  const isLocal = host === '127.0.0.1' || host === 'localhost';
   return {
-    host: process.env.SMTP_HOST ?? 'smtp.forpsi.com',
-    port: parseInt(process.env.SMTP_PORT ?? '587', 10),
+    host,
+    port,
     user: process.env.SMTP_USER ?? 'shop@newearth.cz',
     password: process.env.SMTP_PASSWORD ?? '',
+    isLocal,
     adminEmail: process.env.ADMIN_EMAIL ?? 'admin@newearth.cz',
     shopEmail: process.env.SHOP_EMAIL ?? 'shop@newearth.cz',
     shopName: process.env.SHOP_NAME ?? 'ZION eShop',
@@ -16,20 +20,29 @@ function emailConfig() {
 
 function isEnabled(): boolean {
   const cfg = emailConfig();
+  // Local Postfix doesn't need auth — just need a sender address
+  if (cfg.isLocal) return Boolean(cfg.shopEmail);
   return Boolean(cfg.user && cfg.password);
 }
 
 function createTransporter() {
   const cfg = emailConfig();
-  return nodemailer.createTransport({
+  const transportOpts: Record<string, unknown> = {
     host: cfg.host,
     port: cfg.port,
     secure: cfg.port === 465,
-    auth: {
+  };
+  if (cfg.isLocal) {
+    // Local Postfix — no auth, no TLS needed (localhost is trusted)
+    transportOpts.ignoreTLS = true;
+  } else {
+    // External SMTP — require auth
+    transportOpts.auth = {
       user: cfg.user,
       pass: cfg.password,
-    },
-  });
+    };
+  }
+  return nodemailer.createTransport(transportOpts as nodemailer.TransportOptions);
 }
 
 function formatPrice(amount: number): string {
@@ -147,7 +160,10 @@ Poznámka: ${order.note || '—'}
   }
 }
 
-export async function sendCustomerOrderConfirmation(order: OrderEmailData): Promise<void> {
+export async function sendCustomerOrderConfirmation(
+  order: OrderEmailData,
+  invoiceHtml?: string | null
+): Promise<void> {
   if (!isEnabled()) {
     console.log('Email notifications disabled: SMTP not configured');
     return;
@@ -156,32 +172,33 @@ export async function sendCustomerOrderConfirmation(order: OrderEmailData): Prom
   const cfg = emailConfig();
 
   const subject = `✅ Potvrzení objednávky #${order.orderId} - ${cfg.shopName}`;
-  const plainText = `Dobrý den, ${order.customerName}!
-
-Děkujeme za Vaši objednávku v ${cfg.shopName}.
-
-Číslo objednávky: ${order.orderId}
-Celková částka: ${formatPrice(order.totalCzk)}
-
-O průběhu objednávky Vás budeme informovat emailem.
-
-S pozdravem,
-Tým ZION Terra Nova
-`;
 
   try {
     const theme = await getActiveTheme();
     const html = await buildV2OrderConfirmationHtml(order, theme);
     const transporter = createTransporter();
-    await transporter.sendMail({
+
+    const mailOptions: nodemailer.SendMailOptions = {
       from: `${cfg.shopName} <${cfg.shopEmail}>`,
       to: order.customerEmail,
       replyTo: cfg.shopEmail,
       subject,
-      text: plainText,
       html,
-    });
-    console.log(`Customer order confirmation sent for ${order.orderId}`);
+    };
+
+    // Attach invoice as HTML file (like V2 Python sender)
+    if (invoiceHtml) {
+      mailOptions.attachments = [
+        {
+          filename: `faktura-${order.orderId.replace(/\s+/g, '_')}.html`,
+          content: invoiceHtml,
+          contentType: 'text/html',
+        },
+      ];
+    }
+
+    await transporter.sendMail(mailOptions);
+    console.log(`Customer order confirmation sent for ${order.orderId}${invoiceHtml ? ' (with invoice attachment)' : ''}`);
   } catch (error) {
     console.error('Failed to send customer order confirmation:', error);
   }
