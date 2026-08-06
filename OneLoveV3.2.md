@@ -76,6 +76,7 @@ The code-vs-docs audit from [`docs/3.1/PLAN_TO_3.1_RECONCILED.md`](./docs/3.1/PL
 | G8 | 30-day continuous run | No critical incident for 30 days |
 | G9 | External security audit | Reviewed, mitigated or accepted |
 | G10 | L5/L6 activation decision | Defined run mode or post-3.2 deferral |
+| G11 | V3→V31 migration incomplete | All V3 features in V31 (contracts, TUI, CLI, features) — see §10 of `V31/PLAN_TO_3.2.md` |
 
 ### 3.3 Definition of Done for 3.2.0
 
@@ -89,6 +90,11 @@ The code-vs-docs audit from [`docs/3.1/PLAN_TO_3.1_RECONCILED.md`](./docs/3.1/PL
 8. Monitoring, alerting, backup/DR, and runbooks tested and current.
 9. Public docs and community channels ready for public mainnet.
 10. `cargo test --workspace` and `cargo clippy --workspace` remain clean.
+11. V31 is a true superset of V3 — all crates, features, contracts, CLI commands, GPU kernels present.
+12. Miner TUI works — interactive keyboard control, sticky header, setup menu.
+13. All native algorithm features exposed — `cargo build --features full` produces unified binary.
+14. All Solidity contracts ported — wZION, Bridge, AtomicSwap, Governance, Treasury, Staking, Farm, ZionDex.
+15. Pool supports PPLNS + PPS + SOLO with stratum v1 + v2.
 
 ### 3.4 Phases
 
@@ -119,6 +125,24 @@ The code-vs-docs audit from [`docs/3.1/PLAN_TO_3.1_RECONCILED.md`](./docs/3.1/PL
 - G5 Public docs update
 - G6 Community + bug bounty
 - G7 Monitoring & alerting
+
+**Phase H — V3→V31 Migration Completion (parallel with E-F)**
+- H1 Port Solidity contracts (9 V3 + 7 ZionDex)
+- H2 Port miner TUI (ui, interactive, setup_menu, banner)
+- H3 Complete miner Cargo features (native-all, gpu-all, full, public_build)
+- H4 Port missing CLI commands (dao, warp, atomic_swap, auxpow, onboard, update, monitor, deploy, compose)
+- H5 Port CLI infrastructure (auto_detect, config, rpc, ui)
+- H6 Port ZionDex standalone services (router, solver, intent)
+- H7 Port native-libs (ABI header, build scripts)
+- H8 Port L4/L5 design docs
+- H9 Port AuXpow E2E test script
+- H10 Stratum v2 pool support
+- H11 PPS + SOLO pool modes
+- H12 Pool downstream/proxy mode
+- H13 B2B revenue sharing
+- H14 True AuxPoW consensus integration
+
+> **Full gap analysis:** [`V31/PLAN_TO_3.2.md`](./V31/PLAN_TO_3.2.md) §10 (V3→V31 Migration Gap Analysis)
 
 ---
 
