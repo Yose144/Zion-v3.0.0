@@ -159,6 +159,7 @@ class E2EMiningTest {
 
     const env = {
       ...process.env,
+      RUST_LOG: process.env.RUST_LOG || 'info',
       ZION_POOL_ADDR: this.pool,
       ZION_WORKER: this.worker,
       ZION_WORKER_NAME: this.worker,

@@ -27,9 +27,9 @@ on:
         default: true
         type: boolean
       build_linux:
-        description: 'Build Linux packages (already built for v3.1.0)'
+        description: 'Build Linux packages'
         required: false
-        default: false
+        default: true
         type: boolean
       build_windows:
         description: 'Build Windows packages'
@@ -47,20 +47,18 @@ on:
       - 'desktop-v*'
 
 env:
-  DESKTOP_DIR: DesktopAgentP3.0.6
+  DESKTOP_DIR: 'APP&WEB/desktop-agent'
   PUBLIC_REPO: Zion-TerraNova/v3-Mainnet
 
 defaults:
   run:
-    working-directory: DesktopAgentP3.0.6
+    working-directory: APP&WEB/desktop-agent
 
 jobs:
   build-linux:
     name: Build Linux (AppImage + DEB)
     if: github.event_name == 'push' || inputs.build_linux == true
     runs-on: ubuntu-latest
-    env:
-      ZION_FORCE_CUDA: 1
     steps:
       - uses: actions/checkout@v6
 
@@ -68,7 +66,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: DesktopAgentP3.0.6/package-lock.json
+          cache-dependency-path: APP&WEB/desktop-agent/package-lock.json
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -90,17 +88,15 @@ jobs:
         with:
           name: desktop-linux
           path: |
-            DesktopAgentP3.0.6/dist/*.AppImage
-            DesktopAgentP3.0.6/dist/*.deb
-            DesktopAgentP3.0.6/dist/latest-linux.yml
+            APP&WEB/desktop-agent/dist/*.AppImage
+            APP&WEB/desktop-agent/dist/*.deb
+            APP&WEB/desktop-agent/dist/latest-linux.yml
           if-no-files-found: error
 
   build-windows:
     name: Build Windows (NSIS + ZIP)
     if: github.event_name == 'push' || inputs.build_windows == true
     runs-on: windows-latest
-    env:
-      ZION_FORCE_CUDA: 1
     steps:
       - uses: actions/checkout@v6
 
@@ -108,7 +104,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: DesktopAgentP3.0.6/package-lock.json
+          cache-dependency-path: APP&WEB/desktop-agent/package-lock.json
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -138,7 +134,7 @@ jobs:
           LIB: ${{ env.LIB }}
           INCLUDE: ${{ env.INCLUDE }}
         run: |
-          node scripts/prepare-rust-miner.js --features "full,gpu-cuda"
+          node scripts/prepare-rust-miner.js --auto
           npx electron-builder --win --x64 --publish never
 
       - name: Upload Windows artifacts
@@ -146,10 +142,10 @@ jobs:
         with:
           name: desktop-windows
           path: |
-            DesktopAgentP3.0.6/dist/*.exe
-            DesktopAgentP3.0.6/dist/*.zip
-            DesktopAgentP3.0.6/dist/*.exe.blockmap
-            DesktopAgentP3.0.6/dist/latest.yml
+            APP&WEB/desktop-agent/dist/*.exe
+            APP&WEB/desktop-agent/dist/*.zip
+            APP&WEB/desktop-agent/dist/*.exe.blockmap
+            APP&WEB/desktop-agent/dist/latest.yml
           if-no-files-found: error
 
   build-macos:
@@ -163,7 +159,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: DesktopAgentP3.0.6/package-lock.json
+          cache-dependency-path: APP&WEB/desktop-agent/package-lock.json
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -172,7 +168,7 @@ jobs:
 
       - name: Build macOS package
         run: |
-          node scripts/prepare-rust-miner.js --features "full,gpu-metal"
+          node scripts/prepare-rust-miner.js --auto
           npx electron-builder --mac --publish never
 
       - name: Upload macOS artifacts
@@ -180,9 +176,9 @@ jobs:
         with:
           name: desktop-macos
           path: |
-            DesktopAgentP3.0.6/dist/*.dmg
-            DesktopAgentP3.0.6/dist/*.dmg.blockmap
-            DesktopAgentP3.0.6/dist/latest-mac.yml
+            APP&WEB/desktop-agent/dist/*.dmg
+            APP&WEB/desktop-agent/dist/*.dmg.blockmap
+            APP&WEB/desktop-agent/dist/latest-mac.yml
           if-no-files-found: error
 
   release:
@@ -230,7 +226,7 @@ jobs:
           GH_TOKEN: ${{ secrets.PUBLIC_RELEASE_TOKEN }}
           RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
           DRAFT_FLAG: ${{ inputs.draft == true && '--draft' || '' }}
-          NOTES_FILE: ${{ github.workspace }}/DesktopAgentP3.0.6/RELEASE_NOTES.md
+          NOTES_FILE: ${{ github.workspace }}/APP&WEB/desktop-agent/RELEASE_NOTES.md
         run: |
           set -e
           mapfile -t assets < <(find . -maxdepth 1 -type f -printf '%P\n' | sort)

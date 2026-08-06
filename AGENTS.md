@@ -112,30 +112,32 @@ For future releases (e.g. v3.0.4-beta, v3.1.0, etc.):
 
 There are **two separate public releases** on `github.com/Zion-TerraNova/v3-Mainnet`:
 
-- **Desktop App** — source in `DesktopAgentP3.0.6/`, release tag `v3.1.0-desktop`.
+- **Desktop App** — source in `APP&WEB/desktop-agent/`, release tag `v3.1.0-desktop`.
   - Packages: `*.dmg` (macOS arm64), `*.AppImage`, `*.deb` (Linux x86_64), `*.exe` + `*.zip` (Windows x64).
-  - Build: `DesktopAgentP3.0.6/scripts/build-release-local.sh --all` on an Apple Silicon Mac.
+  - Build: `npm run build:all` in `APP&WEB/desktop-agent/` on an Apple Silicon Mac, or via `.github/workflows/desktop-release.yml`.
   - Bundles `zion-miner`, `zion-universal-miner`, `node`, `zion` inside the Electron app.
 
-- **Terminal Miner** — source in `MinerP3.0.6/`, release tag `v3.1.0-cli`.
+- **Terminal Miner** — source in `V31/L1/miner/`, release tag `v3.1.0-cli`.
   - Packages: `zion-miner-<platform>-<arch>.tar.gz` / `.zip`.
-  - Build: `MinerP3.0.6/build-all-local.sh` on an Apple Silicon Mac.
+  - Build: `cargo build --release -p zion-miner --features <platform-features>` in `V31/`, or via `.github/workflows/miner-release.yml`.
 
-Both must be built with these feature flags for one-click GPU auto-detect and full public branding:
+Both must be built with these V31 feature flags for one-click GPU auto-detect and full public branding:
 
 | Platform | Features |
 |----------|----------|
-| Linux x86_64 | `public_build,full,gpu-cuda` (OpenCL + CUDA + native-all + native-hashers) |
-| Windows x86_64 | `public_build,full,gpu-cuda` (OpenCL + CUDA + native-all + native-hashers) |
-| macOS aarch64 / x86_64 | `public_build,full,gpu-metal` (OpenCL/Metal + native-all + native-hashers) |
+| Linux x86_64 | `auxpow,gpu-opencl,gpu-cuda,native-hashers,native-kheavyhash,native-blake3-algo,native-verushash` |
+| Windows x86_64 | `auxpow,gpu-opencl,native-hashers,native-kheavyhash,native-blake3-algo,native-verushash` |
+| macOS arm64 | `auxpow,gpu-metal,native-hashers,native-kheavyhash,native-blake3-algo,native-verushash` |
+| macOS x86_64 | `auxpow,gpu-opencl,native-hashers,native-kheavyhash,native-blake3-algo,native-verushash` |
 
-- `public_build` hides Trinity/AuxPoW coin names (VRSC, ZANO, etc.) from the TUI, logs and status screens. The internal multi-stream logic still runs in the background, but the user sees only **ZION / Boost**.
-- `full` enables OpenCL + all native algorithms.
-- `gpu-cuda` adds NVIDIA CUDA support on Linux/Windows.
-- `gpu-metal` adds Apple Metal support on macOS.
+- `auxpow` enables merged-mining / external stratum pool support.
+- `gpu-opencl` adds AMD/Intel OpenCL support.
+- `gpu-cuda` adds NVIDIA CUDA support (Linux/Windows, requires NVRTC at runtime).
+- `gpu-metal` adds Apple Metal support on Apple Silicon.
+- `native-hashers` and the per-algorithm native features (kheavyhash, blake3, verushash) enable CPU-optimized hashing for AuxPoW coins.
 - `ZION_DISABLE_OPENMP=1` must be set so packages do not depend on Homebrew `libomp`.
 
-**Linux cross-compile caveat:** `cargo-zigbuild` with `x86_64-unknown-linux-gnu` needs a real x86_64 OpenCL loader at link time. The repository ships `V3/L1/native-libs/libOpenCL.so.incompatible` for this purpose; build scripts copy it to `libOpenCL.so` before linking. The resulting binary dynamically loads the target machine's `libOpenCL.so.1` (ocl-icd) at runtime, so the bundled `.so` is not redistributed.
+**Linux cross-compile caveat:** V31 `gpu-opencl` builds link against the system OpenCL loader (`libOpenCL.so`) at build time. The resulting binary dynamically loads the target machine's `libOpenCL.so.1` (ocl-icd) at runtime, so the build artifact does not redistribute the loader.
 
 **Notes:**
 - Metal is physically unavailable on Linux/Windows — those builds get OpenCL + CUDA.
