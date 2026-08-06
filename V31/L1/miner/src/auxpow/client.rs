@@ -1057,6 +1057,8 @@ struct StratumState {
     extranonce2_size: Arc<Mutex<usize>>,
     difficulty: Arc<Mutex<f64>>,
     ntime: Arc<Mutex<String>>,
+    /// Optional explicit target override sent by mining.set_target (2miners).
+    target_bytes: Arc<Mutex<Option<[u8; 32]>>>,
 }
 
 impl StratumState {
@@ -1066,6 +1068,7 @@ impl StratumState {
             extranonce2_size: Arc::new(Mutex::new(0usize)),
             difficulty: Arc::new(Mutex::new(1.0f64)),
             ntime: Arc::new(Mutex::new("00000000".to_string())),
+            target_bytes: Arc::new(Mutex::new(None)),
         }
     }
 }
@@ -1194,12 +1197,23 @@ async fn handle_line(
                 info!(difficulty = d, "stratum set difficulty");
             }
         }
-        "mining.set_extranonce" => {
+        "mining.set_extranonce" | "set_extranonce" => {
             if let Some((en1, en2_size)) = params_extranonce(&value) {
                 let mut e1 = state.extranonce1.lock().await;
                 *e1 = en1;
                 let mut e2 = state.extranonce2_size.lock().await;
                 *e2 = en2_size;
+                info!(extranonce1 = %hex::encode(&*e1), extranonce2_size = en2_size, "stratum set extranonce");
+            }
+        }
+        "mining.set_target" | "set_target" => {
+            if let Some(params) = value.get("params").and_then(Value::as_array) {
+                if let Some(target_hex) = params.first().and_then(Value::as_str) {
+                    if let Some(target) = hasher::parse_target_hex(target_hex) {
+                        *state.target_bytes.lock().await = Some(target);
+                        info!(target = %hex::encode(target), "stratum set target");
+                    }
+                }
             }
         }
         _ => {}
@@ -1209,7 +1223,8 @@ async fn handle_line(
 
 async fn parse_subscribe_response(value: &Value, state: &StratumState) -> Result<()> {
     if let Some(arr) = value.get("result").and_then(Value::as_array) {
-        if arr.len() >= 3 {
+        if arr.len() >= 3 && arr[1].is_string() && arr[2].is_u64() {
+            // Standard Stratum v1 subscribe: [session_id, extranonce1, extranonce2_size]
             let e1 = parse_hex_value(&arr[1]).unwrap_or_default();
             let size = arr[2].as_u64().unwrap_or(0) as usize;
             let mut e1_lock = state.extranonce1.lock().await;
@@ -1217,6 +1232,13 @@ async fn parse_subscribe_response(value: &Value, state: &StratumState) -> Result
             let mut size_lock = state.extranonce2_size.lock().await;
             *size_lock = size;
             info!(extranonce2_size = size, "stratum subscribed");
+        } else if arr.len() >= 2 && arr[0].as_bool() == Some(true) && arr[1].is_string() {
+            // EthereumStratum/1.0.0 subscribe: [true, "EthereumStratum/1.0.0"]
+            // The pool sends the real extranonce1 via a later set_extranonce
+            // notification (e.g. 2miners KAS/ALPH).
+            info!(result = %arr[1], "stratum subscribed (EthereumStratum/1.0.0)");
+        } else if !arr.is_empty() && arr[0].as_bool() == Some(true) {
+            info!("stratum subscribed");
         }
     }
     Ok(())
@@ -1249,6 +1271,51 @@ fn params_extranonce(value: &Value) -> Option<(Vec<u8>, usize)> {
 }
 
 async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJob> {
+    // KaspaStratum / EthereumStratum/1.0.0 variant:
+    //   [job_id, [u64_le x 4], timestamp_ms]
+    // The four u64s are the 32-byte pre_pow_hash in little-endian u64s.
+    // The timestamp is the block timestamp in milliseconds.
+    if params.len() == 3 {
+        if let Some(u64s) = params[1].as_array() {
+            if u64s.len() == 4 {
+                let job_id = params[0].as_str().unwrap_or("").to_string();
+                let timestamp = params[2].as_u64().unwrap_or(0);
+                let mut pre_pow_hash = Vec::with_capacity(32);
+                for v in u64s {
+                    let n = v.as_u64().unwrap_or(0);
+                    pre_pow_hash.extend_from_slice(&n.to_le_bytes());
+                }
+
+                // The GPU/CPU kheavyhash path needs the 32-byte pre_pow_hash
+                // and the timestamp.  Pack them into the header so both paths
+                // can extract what they need (first 32 bytes for the hash,
+                // bytes 32..40 for the timestamp on the GPU path).
+                let mut header = pre_pow_hash;
+                header.extend_from_slice(&timestamp.to_le_bytes());
+
+                let difficulty = *state.difficulty.lock().await;
+                let target = if let Some(target) = *state.target_bytes.lock().await {
+                    target
+                } else {
+                    let max_target = hasher::algorithm_max_target("kheavyhash");
+                    hasher::difficulty_to_target_with_max(difficulty, &max_target)
+                };
+
+                return Some(StratumJob {
+                    job_id,
+                    header,
+                    target,
+                    extranonce1: state.extranonce1.lock().await.clone(),
+                    extranonce2_size: *state.extranonce2_size.lock().await,
+                    ntime: format!("{:016x}", timestamp),
+                    difficulty,
+                    coin: zion_cosmic_harmony::ExternalCoin::Bitcoin,
+                    height: timestamp,
+                });
+            }
+        }
+    }
+
     if params.len() == 3 || params.len() == 5 {
         // 3-param: [job_id, header_hex, target_hex]
         // 5-param (ZION simplified): [job_id, header_hex, target_hex, height, clean_jobs]
@@ -1380,6 +1447,14 @@ fn build_submit_params(worker: &str, share: &super::Share) -> Value {
     let nonce = share.nonce_hex();
     let mix = share.mix_hash_hex();
     let sol = share.solution_hex();
+
+    // Kaspa / kHeavyHash (KaspaStratum / 2miners):
+    //   mining.submit params = [worker, job_id, full_nonce_hex]
+    // The nonce is the full 8-byte value (extranonce1 prefix + scanned suffix)
+    // rendered as a 16-character big-endian hex number.
+    if algo.contains("kheavyhash") {
+        return json!({"id": 100, "method": "mining.submit", "params": [worker, share.job_id, nonce]});
+    }
 
     // DAG-based Ethash variants: EthereumStratum uses eth_submitWork with
     // [nonce, header_hash, mix_hash]. We use the found hash as the header hash

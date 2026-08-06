@@ -882,6 +882,46 @@ pub fn algorithm_max_target(algorithm: &str) -> [u8; 32] {
     }
 }
 
+/// Convert a Stratum difficulty value to a 32-byte big-endian target using
+/// the supplied max target.  This lets per-coin max targets (e.g. KAS's
+/// 224-bit limit) be honored instead of the full 256-bit max.
+pub fn difficulty_to_target_with_max(difficulty: f64, max_target: &[u8; 32]) -> [u8; 32] {
+    use num_bigint::BigUint;
+
+    if difficulty <= 1.0 || !difficulty.is_finite() || difficulty.is_nan() {
+        return *max_target;
+    }
+
+    let max = BigUint::from_bytes_be(max_target);
+    // Convert difficulty to a rational approximation from its IEEE-754 bits.
+    let bits = difficulty.to_bits();
+    let mantissa = bits & 0x000F_FFFF_FFFF_FFFF;
+    let exponent = ((bits >> 52) & 0x7FF) as i32 - 1023;
+    let significand = if exponent == -1023 {
+        // subnormal
+        BigUint::from(mantissa)
+    } else {
+        BigUint::from(mantissa | 0x0010_0000_0000_0000u64)
+    };
+    let mut diff_int = significand;
+    if exponent >= 52 {
+        diff_int <<= (exponent - 52) as usize;
+    } else {
+        diff_int >>= (52 - exponent) as usize;
+    }
+
+    if diff_int == BigUint::from(0u32) {
+        return [0xFF; 32];
+    }
+
+    let target = &max / diff_int;
+    let bytes = target.to_bytes_be();
+    let mut out = [0u8; 32];
+    let start = out.len().saturating_sub(bytes.len());
+    out[start..].copy_from_slice(&bytes);
+    out
+}
+
 // ── Algorithm dispatch by coin ───────────────────────────────────────
 
 /// Dispatch hash by algorithm name string (used by dual_stratum).

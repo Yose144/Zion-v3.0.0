@@ -263,15 +263,52 @@ pub fn find_auxpow_share(
         return None;
     }
     let threads = threads.max(1);
-    let height = parse_ntime(&job.ntime);
     let coin = job.coin;
     let algorithm = coin.algorithm();
+    // kHeavyHash (KAS) carries the block timestamp in the job height and
+    // uses an extranonce1 prefix inside the 8-byte nonce.
+    let is_kheavyhash = algorithm.starts_with("kheavyhash");
+    let height = if is_kheavyhash {
+        job.height
+    } else {
+        parse_ntime(&job.ntime)
+    };
     let extranonce = job.extranonce.clone();
     let header = job.header.clone();
     let target = job.target;
     let job_id = job.job_id.clone();
     let extranonce2 = job.extranonce2.clone();
     let ntime = job.ntime.clone();
+
+    // Build the nonce base and shift for kHeavyHash so the extranonce1
+    // prefix stays in the low bytes and the scanned suffix occupies the
+    // high bytes (matching KaspaStratum / 2miners).
+    let (nonce_base, nonce_shift, max_suffix, nonce_count) = if is_kheavyhash {
+        let en1_len = extranonce.len().min(8);
+        let mut base_bytes = [0u8; 8];
+        base_bytes[..en1_len].copy_from_slice(&extranonce[..en1_len]);
+        let base = u64::from_le_bytes(base_bytes);
+        let shift = en1_len * 8;
+        let max_suffix = if en1_len == 0 {
+            u64::MAX
+        } else {
+            (1u64 << ((8 - en1_len) * 8)).saturating_sub(1)
+        };
+        (base, shift, max_suffix, nonce_count.min(max_suffix.saturating_add(1)))
+    } else {
+        (0u64, 0usize, u64::MAX, nonce_count)
+    };
+    if nonce_count == 0 {
+        return None;
+    }
+
+    let make_nonce = |suffix: u64| {
+        if is_kheavyhash {
+            nonce_base + (suffix << nonce_shift)
+        } else {
+            suffix
+        }
+    };
 
     // VerusHash v2.2 uses a full 1487-byte block header with a 15-byte
     // nonceSpace; the generic nonce-per-hash path cannot produce valid shares.
@@ -280,8 +317,11 @@ pub fn find_auxpow_share(
     }
 
     if threads == 1 || nonce_count < threads as u64 {
-        for offset in 0..nonce_count {
-            let nonce = offset;
+        for suffix in 0..nonce_count {
+            if suffix > max_suffix {
+                break;
+            }
+            let nonce = make_nonce(suffix);
             let hash = dispatch_algorithm(coin, &header, nonce, height, &extranonce, algorithm);
             if crate::auxpow::hasher::meets_target(&hash, &target) {
                 return Some(crate::auxpow::Share {
@@ -303,9 +343,9 @@ pub fn find_auxpow_share(
     let cancelled = Arc::new(AtomicBool::new(false));
 
     (0..threads).into_par_iter().find_map_any(|thread_idx| {
-        let start = thread_idx as u64 * chunk_size;
+        let start_suffix = thread_idx as u64 * chunk_size;
         let count = if thread_idx == threads - 1 {
-            nonce_count - start
+            nonce_count - start_suffix
         } else {
             chunk_size
         };
@@ -314,7 +354,11 @@ pub fn find_auxpow_share(
             if offset % 4096 == 0 && cancelled.load(Ordering::Relaxed) {
                 return None;
             }
-            let nonce = start.wrapping_add(offset);
+            let suffix = start_suffix + offset;
+            if suffix > max_suffix {
+                break;
+            }
+            let nonce = make_nonce(suffix);
             let hash = dispatch_algorithm(coin, &header, nonce, height, &extranonce, algorithm);
             if crate::auxpow::hasher::meets_target(&hash, &target) {
                 cancelled.store(true, Ordering::Relaxed);
