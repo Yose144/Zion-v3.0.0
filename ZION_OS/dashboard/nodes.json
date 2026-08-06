@@ -17,15 +17,15 @@
     },
     "local-backup": {
       "id": "local-backup",
-      "name": "Local Backup Node",
+      "name": "Local V31 Backup Node",
       "host": "127.0.0.1",
-      "rpc_port": 9445,
-      "p2p_port": 8335,
-      "platform": "windows",
+      "rpc_port": 8446,
+      "p2p_port": 8333,
+      "platform": "linux",
       "location": "Local",
       "role": "backup",
       "connection": "local",
-      "auto_detect": false,
+      "auto_detect": true,
       "priority": 2
     },
     "macos-local": {
