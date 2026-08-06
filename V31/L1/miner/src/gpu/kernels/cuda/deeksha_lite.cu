@@ -421,7 +421,7 @@ __constant__ uint8_t AES_SBOX_DATA[256] = {
 /* INTERLEAVED + shared memory S-box + high register budget                    */
 /* ========================================================================== */
 
-extern "C" __global__ void deeksha_lite_mine(
+extern "C" __launch_bounds__(128, 8) __global__ void deeksha_lite_mine(
     const uint64_t *header_keccak_state,
     uint64_t nonce_base,
     uint32_t nonce_count,
@@ -480,9 +480,10 @@ extern "C" __global__ void deeksha_lite_mine(
     uint64_t hash[4];
     hash[0] = st[0]; hash[1] = st[1]; hash[2] = st[2]; hash[3] = st[3];
 
-    /* Write output hash */
-    uint64_t *slot = (uint64_t*)(output_hashes + (uint64_t)tid * 32);
-    slot[0] = hash[0]; slot[1] = hash[1]; slot[2] = hash[2]; slot[3] = hash[3];
+    /* Skip writing to output_hashes — the host only reads result_nonce/result_hash.
+     * Writing 32 bytes per thread to global memory was pure overhead (4096×32 = 128KB
+     * of useless global writes per batch). The output_hashes buffer is kept in the
+     * kernel signature for ABI compatibility but is never written to. */
 
     /* Target check */
     if (target_u32 != 0) {
