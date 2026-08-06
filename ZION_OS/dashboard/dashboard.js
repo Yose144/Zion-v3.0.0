@@ -9090,33 +9090,22 @@ async function loadL6Missions() {
 // ═══════════════════════════════════════════════════════════════════════
 
 const LOG_SERVICES = [
-  // Blockchain nodes (V31 P2P — 3 nodes + local backup)
+  // Blockchain nodes (V31 P2P — 3 nodes)
   { id: 'v31-node',      label: 'V31 Node 1',    icon: '🚀', color: 'emerald', group: 'node'  },
   { id: 'v31-node2',     label: 'V31 Node 2',    icon: '🛰️', color: 'amber',   group: 'node'  },
   { id: 'v31-node3',     label: 'V31 Node 3',    icon: '📡', color: 'purple',  group: 'node'  },
-  { id: 'local-backup',  label: 'Local Backup',  icon: '💎', color: 'cyan',    group: 'node'  },
-  // L1 services — V31 (journalctl-backed)
-  { id: 'v31-pool',      label: 'V31 Pool',      icon: '🏊', color: 'cyan',    group: 'L1'    },
-  { id: 'v31-miner',     label: 'V31 Miner',     icon: '⛏️', color: 'amber',   group: 'L1'    },
-  // L1 services — legacy
-  { id: 'miner',         label: 'Miner (legacy)',icon: '⛏️', color: 'amber',   group: 'L1'    },
-  { id: 'miner-gpu',     label: 'Miner GPU',     icon: '⛏️', color: 'amber',   group: 'L1'    },
-  // AI
-  { id: 'hiranyagarbha', label: 'Hiranyagarbha', icon: '🧠', color: 'purple',  group: 'AI'    },
-  { id: 'hiran',         label: 'Hiran AI',      icon: '🤖', color: 'violet',  group: 'AI'    },
-  // L2
-  { id: 'bridge',        label: 'Bridge',        icon: '🌉', color: 'indigo',  group: 'L2'    },
-  { id: 'dao-daemon',    label: 'DAO Daemon',    icon: '🗳️', color: 'purple',  group: 'L2'    },
-  { id: 'atomic-swap',   label: 'Atomic Swap',   icon: '⚡', color: 'amber',   group: 'L2'    },
-  // L3
-  { id: 'warp',          label: 'WARP',          icon: '🌀', color: 'cyan',    group: 'L3'    },
-  // L4-L6
-  { id: 'oasis',         label: 'Oasis (L4)',    icon: '🏝️', color: 'emerald', group: 'L4'    },
-  { id: 'free-world',    label: 'Free World',    icon: '🕊️', color: 'blue',    group: 'L5'    },
-  { id: 'issobella',     label: 'Issobella',     icon: '🛰️', color: 'violet',  group: 'L6'    },
+  // L1 services
+  { id: 'v31-pool',      label: 'Pool',          icon: '🏊', color: 'cyan',    group: 'L1'    },
+  { id: 'v31-miner',     label: 'Miner',         icon: '⛏️', color: 'amber',   group: 'L1'    },
+  // L2 — Multichain (bridge/warp/swap unified)
+  { id: 'multichain',    label: 'Multichain',    icon: '🌀', color: 'cyan',    group: 'L2'    },
+  { id: 'dao-daemon',    label: 'DAO',           icon: '🗳️', color: 'purple',  group: 'L2'    },
+  // L4 — OASIS
+  { id: 'oasis',         label: 'OASIS',         icon: '🏝️', color: 'emerald', group: 'L4'    },
   // Infrastructure
   { id: 'dashboard',     label: 'Dashboard',     icon: '📊', color: 'gray',    group: 'infra' },
-  { id: 'watchdog',      label: 'Watchdog',      icon: '🐕', color: 'gray',    group: 'infra' },
+  { id: 'marketplace',   label: 'Marketplace',   icon: '🛒', color: 'indigo',  group: 'infra' },
+  { id: 'website',       label: 'Website',       icon: '🌐', color: 'blue',    group: 'infra' },
   { id: 'control-audit', label: 'Audit Log',     icon: '📝', color: 'gray',    group: 'infra' },
 ];
 
