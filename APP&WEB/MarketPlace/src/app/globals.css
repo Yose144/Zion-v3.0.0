@@ -541,7 +541,7 @@
     @apply w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm transition-all duration-200;
   }
   .input-zion:focus {
-    @apply border-rasta-gold/50 outline-none;
+    @apply outline-none;
     box-shadow: 0 0 0 3px rgba(252, 209, 22, 0.1);
     border-color: rgba(252, 209, 22, 0.5);
   }
@@ -554,7 +554,8 @@
     @apply px-5 py-2.5 text-sm font-semibold capitalize transition-all border-b-2;
   }
   .tab-zion-active {
-    @apply text-white border-rasta-gold;
+    @apply text-white;
+    border-color: #fcd116;
   }
   .tab-zion-inactive {
     @apply text-gray-500 border-transparent hover:text-white;
