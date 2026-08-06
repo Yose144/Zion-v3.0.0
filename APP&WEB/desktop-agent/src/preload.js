@@ -1,4 +1,4 @@
-// ZION Ekam Deeksha v3.0.5 - Preload Script
+// ZION Ekam Deeksha v3.1.0 - Preload Script
 // IPC bridge between main process and renderer (security layer)
 
 const { contextBridge, ipcRenderer } = require('electron');
@@ -128,7 +128,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   nclSubmitJob: (data) => ipcRenderer.invoke('ncl-submit-job', data),
   nclGetPrice: () => ipcRenderer.invoke('ncl-get-price'),
 
-  // ── Ekam Deeksha v3.0.5 GPU + Dual Mining ──────────────────────────────
+  // ── Ekam Deeksha v3.1.0 GPU + Dual Mining ──────────────────────────────
   runGpuBenchmark: (options) => ipcRenderer.invoke('run-gpu-benchmark', options),
   getGpuDevices: () => ipcRenderer.invoke('get-gpu-devices'),
 

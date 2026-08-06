@@ -220,7 +220,7 @@ class ZionWalletGenerator {
   /**
    * Derive ZION address from public key (V3-compatible).
    *
-   * Must match V3/L1/core/src/crypto.rs derive_address():
+   * Must match V31/L1/core/src/crypto.rs derive_address():
    *   1. SHA-256(pubkey) → RIPEMD-160 → 20 bytes
    *   2. Each byte → 2 base32 chars → 40 chars
    *   3. Truncate to 35 body chars

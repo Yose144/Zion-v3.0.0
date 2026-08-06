@@ -3573,7 +3573,7 @@ async function refreshPeerList() {
       const failStr = p.failed_attempts > 0 ? `<span style="color:#f87171;font-size:10px;margin-left:6px;">⚠ ${Number(p.failed_attempts)} fails</span>` : '';
       const safeHost = escapeHtml(String(p.host || p.address || ''));
       const safeSource = p.source_node ? `<span style="color:rgba(255,255,255,0.25);font-size:10px;">via ${escapeHtml(String(p.source_node))}</span>` : '';
-      const safePort = escapeHtml(String(p.port || '8334'));
+      const safePort = escapeHtml(String(p.port || '8335'));
 
       return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:${bgColor};border-radius:10px;border:1px solid ${borderColor};transition:border-color 0.3s;">
         <div style="display:flex;align-items:center;gap:10px;">
@@ -4319,7 +4319,7 @@ function initNodeView() {
         toggleBtn.disabled = false;
       } else {
         // Gather config
-        const p2pPort = Number(document.getElementById('node-cfg-p2p')?.value || 8334);
+        const p2pPort = Number(document.getElementById('node-cfg-p2p')?.value || 8335);
         const rpcPort = Number(document.getElementById('node-cfg-rpc')?.value || 8545);
         const network = document.getElementById('node-cfg-network')?.value || 'mainnet';
         toggleBtn.disabled = true;
