@@ -14,7 +14,7 @@ const OASIS_ACCENT = '249, 115, 22'; /* L4 Orange per ZIONTHEME.md */
 const MINIMIZED_KEY = 'oasis-hud-minimized';
 
 function StatusDot({ status }: { status: 'loading' | 'ok' | 'error' }) {
-  const color = status === 'ok' ? '#34d399' : status === 'error' ? '#f87171' : '#fbbf24';
+  const color = status === 'ok' ? '#078930' : status === 'error' ? '#e41e2b' : '#fcd116';
   return (
     <span
       className="h-2 w-2 rounded-full"
@@ -182,7 +182,7 @@ export default function OasisHud({ onEnterFlight }: OasisHudProps) {
               </div>
 
               {/* Status + quick stats */}
-              <div className="space-y-2 text-[10px] text-gray-300">
+              <div className="space-y-2 text-[10px] text-white/80">
                 <div className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.03] px-2.5 py-1.5">
                   <div className="flex items-center gap-1.5">
                     <StatusDot status={status} />
@@ -192,19 +192,19 @@ export default function OasisHud({ onEnterFlight }: OasisHudProps) {
                 </div>
 
                 {status === 'error' && (
-                  <p className="text-[9px] text-red-300">Backend unreachable. Check connection and refresh.</p>
+                  <p className="text-[9px] text-rasta-red/80">Backend unreachable. Check connection and refresh.</p>
                 )}
 
                 {player && (
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="zion-rainbow-sub p-2" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-                      <p className="text-[9px] text-gray-400">Pilgrim</p>
+                    <div className="zion-rainbow-sub p-2" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+                      <p className="text-[9px] text-white/70">Pilgrim</p>
                       <p className="truncate text-xs font-semibold text-white">
                         {player.display_name || player.address.slice(0, 8)}
                       </p>
                     </div>
-                    <div className="zion-rainbow-sub p-2" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
-                      <p className="text-[9px] text-gray-400">XP</p>
+                    <div className="zion-rainbow-sub p-2" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+                      <p className="text-[9px] text-white/70">XP</p>
                       <p className="text-xs font-semibold text-white">{player.total_xp}</p>
                     </div>
                   </div>
@@ -214,21 +214,21 @@ export default function OasisHud({ onEnterFlight }: OasisHudProps) {
                   <div className="flex items-center gap-1.5 rounded-lg border border-white/5 bg-white/[0.03] px-2 py-1.5">
                     <Feather className="h-3.5 w-3.5 text-oasis-purple" />
                     <div>
-                      <p className="text-[9px] text-gray-400">Avatars</p>
+                      <p className="text-[9px] text-white/70">Avatars</p>
                       <p className="font-mono text-xs text-white">{avatarCount}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 rounded-lg border border-white/5 bg-white/[0.03] px-2 py-1.5">
                     <Trophy className="h-3.5 w-3.5 text-oasis-gold" />
                     <div>
-                      <p className="text-[9px] text-gray-400">Quests</p>
+                      <p className="text-[9px] text-white/70">Quests</p>
                       <p className="font-mono text-xs text-white">{realQuests.length}</p>
                     </div>
                   </div>
                 </div>
 
                 {territories.length > 0 && (
-                  <div className="zion-rainbow-sub p-2" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+                  <div className="zion-rainbow-sub p-2" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                     <div className="mb-1.5 flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-oasis-purple">
                       <Map className="h-3 w-3" />
                       Hot Territories
@@ -240,7 +240,7 @@ export default function OasisHud({ onEnterFlight }: OasisHudProps) {
                         .slice(0, 3)
                         .map((t: any) => (
                           <div key={t.id} className="flex items-center justify-between text-[10px]">
-                            <span className="truncate text-gray-300">{t.name}</span>
+                            <span className="truncate text-white/80">{t.name}</span>
                             <span className="zion-badge zion-badge-cyan text-[8px] py-0.5 px-1.5">
                               {t.controller ?? 'Unclaimed'}
                             </span>
@@ -251,7 +251,7 @@ export default function OasisHud({ onEnterFlight }: OasisHudProps) {
                 )}
 
                 {leaders.length > 0 && (
-                  <div className="zion-rainbow-sub p-2" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+                  <div className="zion-rainbow-sub p-2" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                     <div className="mb-1.5 flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-oasis-cyan">
                       <Trophy className="h-3 w-3" />
                       Top Pilgrims
@@ -259,7 +259,7 @@ export default function OasisHud({ onEnterFlight }: OasisHudProps) {
                     <div className="space-y-1">
                       {leaders.map((entry, i) => (
                         <div key={entry.address} className="flex items-center justify-between text-[10px]">
-                          <span className="truncate text-gray-300">
+                          <span className="truncate text-white/80">
                             {i + 1}. {entry.display_name || entry.address.slice(0, 8)}
                           </span>
                           <span className="font-mono text-oasis-cyan">{entry.total_xp ?? entry.value ?? 0}</span>

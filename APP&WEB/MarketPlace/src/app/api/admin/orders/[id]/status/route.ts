@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { requireAdminAuth } from '@/lib/admin-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,6 +12,9 @@ const VALID_STATUSES = ['pending', 'paid', 'processing', 'shipped', 'completed',
 const VALID_PAYMENT_STATUSES = ['pending', 'paid', 'failed'];
 
 export async function POST(request: NextRequest, context: RouteContext) {
+  const auth = requireAdminAuth(request);
+  if (auth) return auth;
+
   try {
     const { id } = context.params;
     const body = (await request.json()) as {
@@ -28,7 +32,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
         );
       }
       update.status = body.status;
-      if (body.status === 'paid') update.paidAt = new Date();
+      if (body.status === 'paid') {
+        update.paymentStatus = 'paid';
+        update.paidAt = new Date();
+      }
       if (body.status === 'shipped' && !('shippedAt' in update)) {
         update.shippedAt = new Date();
       }

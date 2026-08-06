@@ -452,6 +452,14 @@ function OrderModal({ order, onClose, onRefresh }: OrderModalProps) {
                     >
                       👁️ Zobrazit {order.invoices[0].invoiceNumber}
                     </a>
+                    <a
+                      href={`/api/invoice/${order.invoices[0].id}/download?format=pdf`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block w-full text-center px-3 py-2 rounded bg-rasta-gold/20 text-rasta-gold hover:bg-rasta-gold/30 text-sm font-bold"
+                    >
+                      ⬇️ Stáhnout PDF
+                    </a>
                     <button
                       onClick={handleRegenerateInvoice}
                       disabled={busy === 'invoice-regen'}

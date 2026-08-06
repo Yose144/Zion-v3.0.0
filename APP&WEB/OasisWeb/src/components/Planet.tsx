@@ -19,7 +19,7 @@ export default function Planet({
   variant = 'earth' as 'earth' | 'mars' | 'ice' | 'gas' | 'jungle' | 'ocean',
   hasAtmosphere = true,
   hasOrbit = false,
-  orbitColor = '#fbbf24',
+  orbitColor = '#fcd116',
   rotationSpeed = 0.05,
   onClick,
   label,
@@ -72,16 +72,16 @@ export default function Planet({
     canvas.height = 128;
     const ctx = canvas.getContext('2d')!;
     const colors: Record<string, string> = {
-      earth: 'rgba(100, 180, 255, 0.4)',
-      mars: 'rgba(255, 140, 80, 0.3)',
-      ice: 'rgba(200, 230, 255, 0.4)',
-      gas: 'rgba(255, 200, 120, 0.3)',
-      jungle: 'rgba(100, 220, 120, 0.35)',
-      ocean: 'rgba(80, 160, 240, 0.4)',
+      earth: 'rgba(7, 137, 48, 0.4)',
+      mars: 'rgba(228, 30, 43, 0.3)',
+      ice: 'rgba(252, 209, 22, 0.4)',
+      gas: 'rgba(252, 209, 22, 0.3)',
+      jungle: 'rgba(7, 137, 48, 0.35)',
+      ocean: 'rgba(7, 137, 48, 0.4)',
     };
     const grad = ctx.createRadialGradient(64, 64, 30, 64, 64, 64);
     grad.addColorStop(0, colors[variant] || colors.earth);
-    grad.addColorStop(0.5, colors[variant]?.replace(/[\d.]+\)/, '0.15)') || 'rgba(80, 150, 220, 0.15)');
+    grad.addColorStop(0.5, colors[variant]?.replace(/[\d.]+\)/, '0.15)') || 'rgba(7, 137, 48, 0.15)');
     grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 128, 128);
@@ -105,7 +105,7 @@ export default function Planet({
       <group position={position}>
         <mesh>
           <sphereGeometry args={[radius, isMobile ? 16 : 32, isMobile ? 12 : 24]} />
-          <meshStandardMaterial color="#1a3a5c" emissive="#0a2a4a" emissiveIntensity={0.3} />
+          <meshStandardMaterial color="#078930" emissive="#078930" emissiveIntensity={0.3} />
         </mesh>
       </group>
     );
@@ -131,7 +131,7 @@ export default function Planet({
               metalness={0}
               color={new THREE.Color('#ffffff')}
               emissiveMap={textures.night}
-              emissive={new THREE.Color('#fff5e6')}
+              emissive={new THREE.Color('#fcd116')}
               emissiveIntensity={3.0}
             />
           ) : (
@@ -225,7 +225,7 @@ const PIONEER_PROJECTS: PioneerProject[] = [
     id: 'genesis',
     name: 'Zahrada Genesis',
     location: 'Algarve · Portugalsko',
-    color: '#22c55e',
+    color: '#078930',
     rgb: '34, 197, 94',
     descCs: 'Atlantický uzel Terra Nova — farma, glamping, voda, energie, komunita.',
     descEn: 'Atlantic Terra Nova node — farm, glamping, water, energy, community.',
@@ -236,8 +236,8 @@ const PIONEER_PROJECTS: PioneerProject[] = [
     id: 'dharma',
     name: 'Dharma Temple',
     location: 'La Palma · Kanárské ostrovy',
-    color: '#a855f7',
-    rgb: '168, 85, 247',
+    color: '#e41e2b',
+    rgb: '228, 30, 43',
     descCs: 'Spirituální uzel — meditace, syntropic zahrada, dharma governance.',
     descEn: 'Spiritual node — meditation, syntropic garden, dharma governance.',
     lat: 28,
@@ -247,8 +247,8 @@ const PIONEER_PROJECTS: PioneerProject[] = [
     id: 'piko-ora',
     name: 'Te Pīko Ora',
     location: 'Tahiti · Francouzská Polynésie',
-    color: '#06b6d4',
-    rgb: '6, 182, 212',
+    color: '#078930',
+    rgb: '7, 137, 48',
     descCs: 'Tichomořský uzel — ochrana mořského dědictví, regenerativní komunita.',
     descEn: 'Pacific node — marine heritage protection, regenerative community.',
     lat: -17,
@@ -320,7 +320,7 @@ export function NovaZeme({
           variant="earth"
           hasAtmosphere
           hasOrbit
-          orbitColor="#fbbf24"
+          orbitColor="#fcd116"
           rotationSpeed={0.08}
         />
 
@@ -380,8 +380,8 @@ export function NovaZeme({
       <mesh ref={issobelaRef}>
         <boxGeometry args={[0.08, 0.08, 0.08]} />
         <meshStandardMaterial
-          color="#fbbf24"
-          emissive="#fbbf24"
+          color="#fcd116"
+          emissive="#fcd116"
           emissiveIntensity={1.5}
         />
       </mesh>
@@ -393,7 +393,7 @@ export function NovaZeme({
             style={{
               background: 'rgba(0,0,0,0.7)',
               border: '1px solid rgba(34,197,94,0.5)',
-              color: '#86efac',
+              color: '#078930',
               padding: '4px 12px',
               borderRadius: '12px',
               fontSize: '12px',
@@ -415,26 +415,26 @@ export function NovaZeme({
 
 function getVariantColor(variant: string): string {
   const colors: Record<string, string> = {
-    mars: '#ff8855',
-    ice: '#a0d8ff',
-    gas: '#ffc070',
-    jungle: '#50d878',
-    ocean: '#4090e0',
-    earth: '#86efac',
+    mars: '#e41e2b',
+    ice: '#fcd116',
+    gas: '#fcd116',
+    jungle: '#078930',
+    ocean: '#078930',
+    earth: '#078930',
   };
   return colors[variant] || '#ffffff';
 }
 
 function getVariantEmissive(variant: string): THREE.Color {
   const colors: Record<string, string> = {
-    mars: '#5a2010',
-    ice: '#1a3a5c',
-    gas: '#4a2a10',
-    jungle: '#0a3a1a',
-    ocean: '#0a2a4a',
-    earth: '#1a3a5c',
+    mars: '#e41e2b',
+    ice: '#078930',
+    gas: '#e41e2b',
+    jungle: '#078930',
+    ocean: '#078930',
+    earth: '#078930',
   };
-  return new THREE.Color(colors[variant] || '#1a3a5c');
+  return new THREE.Color(colors[variant] || '#078930');
 }
 
 function generatePlanetTexture(variant: string): THREE.CanvasTexture {
@@ -445,11 +445,11 @@ function generatePlanetTexture(variant: string): THREE.CanvasTexture {
   const rng = mulberry32(variant.charCodeAt(0) * 137);
 
   const palettes: Record<string, { base: string; land: string; ice: string }> = {
-    mars: { base: '#8B3A1A', land: '#C25028', ice: '#E8D0B0' },
-    ice: { base: '#A0C8E8', land: '#C8E0F0', ice: '#FFFFFF' },
-    gas: { base: '#D4A050', land: '#E8C070', ice: '#F0E0C0' },
-    jungle: { base: '#1A5A2A', land: '#2A7A3A', ice: '#C0E0C0' },
-    ocean: { base: '#1A4A7A', land: '#2A6A9A', ice: '#A0C8E8' },
+    mars: { base: '#e41e2b', land: '#e41e2b', ice: '#fcd116' },
+    ice: { base: '#078930', land: '#d4d4d4', ice: '#ffffff' },
+    gas: { base: '#fcd116', land: '#fcd116', ice: '#fcd116' },
+    jungle: { base: '#078930', land: '#078930', ice: '#078930' },
+    ocean: { base: '#078930', land: '#078930', ice: '#078930' },
   };
 
   const pal = palettes[variant] || palettes.mars;

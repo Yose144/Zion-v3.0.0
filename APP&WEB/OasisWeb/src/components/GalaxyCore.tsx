@@ -59,9 +59,9 @@ function createLensTexture(): THREE.Texture {
 
   const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
   g.addColorStop(0, 'rgba(255, 255, 255, 1)');
-  g.addColorStop(0.15, 'rgba(220, 240, 255, 0.85)');
-  g.addColorStop(0.35, 'rgba(120, 180, 255, 0.35)');
-  g.addColorStop(0.7, 'rgba(80, 120, 255, 0.08)');
+  g.addColorStop(0.15, 'rgba(252, 209, 22, 0.85)');
+  g.addColorStop(0.35, 'rgba(7, 137, 48, 0.35)');
+  g.addColorStop(0.7, 'rgba(7, 137, 48, 0.08)');
   g.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
   ctx.fillStyle = g;
@@ -91,9 +91,9 @@ export default function GalaxyCore() {
     const speeds = new Float32Array(count);
     const offsets = new Float32Array(count);
 
-    const coreColor = new THREE.Color('#60a5fa');
-    const edgeColor = new THREE.Color('#1e3a8a');
-    const goldColor = new THREE.Color('#fbbf24');
+    const coreColor = new THREE.Color('#078930');
+    const edgeColor = new THREE.Color('#0d0d0d');
+    const goldColor = new THREE.Color('#fcd116');
     const temp = new THREE.Color();
 
     for (let i = 0; i < count; i++) {
@@ -132,7 +132,7 @@ export default function GalaxyCore() {
     return Array.from({ length: 10 }).map((_, i) => {
       const radius = 0.7 + i * 0.5;
       const tube = 0.02 + i * 0.003;
-      const color = i % 3 === 0 ? '#60a5fa' : i % 3 === 1 ? '#fbbf24' : '#a855f7';
+      const color = i % 3 === 0 ? '#078930' : i % 3 === 1 ? '#fcd116' : '#e41e2b';
       return { radius, tube, color, speed: (0.05 + i * 0.012) * (i % 2 === 0 ? 1 : -1) };
     });
   }, []);
@@ -169,7 +169,7 @@ export default function GalaxyCore() {
       <mesh>
         <sphereGeometry args={[0.72, 32, 32]} />
         <meshBasicMaterial
-          color="#fbbf24"
+          color="#fcd116"
           transparent
           opacity={0.3}
           blending={THREE.AdditiveBlending}
@@ -182,7 +182,7 @@ export default function GalaxyCore() {
       <mesh>
         <sphereGeometry args={[1.1, 24, 24]} />
         <meshBasicMaterial
-          color="#60a5fa"
+          color="#078930"
           transparent
           opacity={0.2}
           blending={THREE.AdditiveBlending}
@@ -195,7 +195,7 @@ export default function GalaxyCore() {
       <mesh>
         <sphereGeometry args={[2.2, 16, 16]} />
         <meshBasicMaterial
-          color="#1e40af"
+          color="#0d0d0d"
           transparent
           opacity={0.08}
           blending={THREE.AdditiveBlending}
@@ -242,17 +242,17 @@ export default function GalaxyCore() {
 
       {/* Secondary warm lens flare */}
       <sprite position={[0, 0, 0]} scale={[5, 5, 1]}>
-        <spriteMaterial map={lensTexture} transparent opacity={0.35} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} color="#fbbf24" />
+        <spriteMaterial map={lensTexture} transparent opacity={0.35} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} color="#fcd116" />
       </sprite>
 
       {/* Tertiary purple flare */}
       <sprite position={[0, 0, 0]} scale={[3, 3, 1]}>
-        <spriteMaterial map={lensTexture} transparent opacity={0.25} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} color="#a855f7" />
+        <spriteMaterial map={lensTexture} transparent opacity={0.25} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} color="#e41e2b" />
       </sprite>
 
-      <pointLight ref={lightRef} color="#93c5fd" intensity={4.5} distance={50} decay={1.0} position={[0, 0, 0]} />
-      <pointLight color="#fbbf24" intensity={1.8} distance={30} decay={1.2} position={[0, 0.4, 0]} />
-      <pointLight color="#a855f7" intensity={1.0} distance={20} decay={1.5} position={[0, 0, 0]} />
+      <pointLight ref={lightRef} color="#078930" intensity={4.5} distance={50} decay={1.0} position={[0, 0, 0]} />
+      <pointLight color="#fcd116" intensity={1.8} distance={30} decay={1.2} position={[0, 0.4, 0]} />
+      <pointLight color="#e41e2b" intensity={1.0} distance={20} decay={1.5} position={[0, 0, 0]} />
     </group>
   );
 }

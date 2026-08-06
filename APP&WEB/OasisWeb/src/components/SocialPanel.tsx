@@ -51,7 +51,7 @@ export default function SocialPanel({ onClose }: SocialPanelProps) {
                   key={t.id}
                   onClick={() => setTab(t.id)}
                   className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                    active ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white'
+                    active ? 'bg-white/10 text-white' : 'text-white/70 hover:text-white'
                   }`}
                 >
                   <Icon className="h-3.5 w-3.5" />
@@ -60,7 +60,7 @@ export default function SocialPanel({ onClose }: SocialPanelProps) {
               );
             })}
           </div>
-          <button onClick={onClose} className="rounded-lg p-1.5 text-gray-400 transition hover:bg-white/10 hover:text-white">
+          <button onClick={onClose} className="rounded-lg p-1.5 text-white/70 transition hover:bg-white/10 hover:text-white">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -100,8 +100,8 @@ function LeaderboardTab() {
   }, [entries, filter]);
 
   if (loading) return <div className="space-y-2">{Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)}</div>;
-  if (error) return <p className="py-8 text-center text-sm text-red-400">{error}</p>;
-  if (visible.length === 0) return <p className="py-8 text-center text-sm text-gray-400">No leaderboard data available.</p>;
+  if (error) return <p className="py-8 text-center text-sm text-rasta-red">{error}</p>;
+  if (visible.length === 0) return <p className="py-8 text-center text-sm text-white/70">No leaderboard data available.</p>;
 
   return (
     <div>
@@ -113,7 +113,7 @@ function LeaderboardTab() {
               key={f}
               onClick={() => setFilter(f)}
               className={`rounded-md px-2.5 py-1 text-[10px] font-semibold transition ${
-                filter === f ? 'bg-oasis-cyan/20 text-oasis-cyan' : 'text-gray-400 hover:text-white'
+                filter === f ? 'bg-oasis-cyan/20 text-oasis-cyan' : 'text-white/70 hover:text-white'
               }`}
             >
               {f === 'all' ? 'All' : f === 'top10' ? 'Top 10' : 'Top 50'}
@@ -123,7 +123,7 @@ function LeaderboardTab() {
       </div>
       <div className="overflow-hidden rounded-xl border border-white/10">
         <table className="w-full text-left text-xs">
-          <thead className="border-b border-white/10 bg-white/5 text-gray-400">
+          <thead className="border-b border-white/10 bg-white/5 text-white/70">
             <tr>
               <th className="px-3 py-2 font-medium">Rank</th>
               <th className="px-3 py-2 font-medium">Pilgrim</th>
@@ -143,7 +143,7 @@ function LeaderboardTab() {
                 <td className="px-3 py-2">
                   <div className="flex items-center gap-1.5">
                     {entry.rank <= 3 ? (
-                      <Medal className={`h-3.5 w-3.5 ${entry.rank === 1 ? 'text-oasis-gold' : entry.rank === 2 ? 'text-gray-300' : 'text-amber-600'}`} />
+                      <Medal className={`h-3.5 w-3.5 ${entry.rank === 1 ? 'text-oasis-gold' : entry.rank === 2 ? 'text-white/80' : 'text-rasta-gold'}`} />
                     ) : (
                       <Trophy className="h-3.5 w-3.5 text-oasis-cyan/50" />
                     )}
@@ -158,7 +158,7 @@ function LeaderboardTab() {
                     )}
                   </div>
                 </td>
-                <td className="px-3 py-2 text-gray-300">{entry.level}</td>
+                <td className="px-3 py-2 text-white/80">{entry.level}</td>
                 <td className="px-3 py-2 text-right font-mono font-semibold text-oasis-gold">
                   {(entry.total_xp ?? entry.value ?? 0).toLocaleString()}
                 </td>
@@ -223,7 +223,7 @@ function GuildsTab({ address, addToast, onSync }: { address: string | null; addT
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-bold text-white">Guild Hall <span className="text-sm font-normal text-gray-400">({guilds.length})</span></h2>
+        <h2 className="text-lg font-bold text-white">Guild Hall <span className="text-sm font-normal text-white/70">({guilds.length})</span></h2>
         <button
           onClick={() => setShowCreate(!showCreate)}
           className="flex items-center gap-1 rounded-lg bg-oasis-cyan/20 px-3 py-1.5 text-xs font-semibold text-oasis-cyan transition hover:bg-oasis-cyan/30"
@@ -244,13 +244,13 @@ function GuildsTab({ address, addToast, onSync }: { address: string | null; addT
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             placeholder="Guild name"
-            className="w-full rounded-lg bg-oasis-black/40 px-3 py-2 text-sm text-white outline-none placeholder:text-gray-500"
+            className="w-full rounded-lg bg-oasis-black/40 px-3 py-2 text-sm text-white outline-none placeholder:text-white/60"
           />
           <input
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             placeholder="Description (optional)"
-            className="w-full rounded-lg bg-oasis-black/40 px-3 py-2 text-sm text-white outline-none placeholder:text-gray-500"
+            className="w-full rounded-lg bg-oasis-black/40 px-3 py-2 text-sm text-white outline-none placeholder:text-white/60"
           />
           <button
             onClick={handleCreate}
@@ -259,17 +259,17 @@ function GuildsTab({ address, addToast, onSync }: { address: string | null; addT
           >
             Create Guild
           </button>
-          {!address && <p className="text-[10px] text-gray-500">Set your pilgrim address in Identity tab first.</p>}
+          {!address && <p className="text-[10px] text-white/60">Set your pilgrim address in Identity tab first.</p>}
         </motion.div>
       )}
 
       <div className="mb-3 flex items-center gap-2 rounded-xl border border-white/10 bg-black/30 p-2">
-        <Search className="ml-1 h-3.5 w-3.5 text-gray-500" />
+        <Search className="ml-1 h-3.5 w-3.5 text-white/60" />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search guilds..."
-          className="flex-1 bg-transparent px-2 text-sm text-white outline-none placeholder:text-gray-500"
+          className="flex-1 bg-transparent px-2 text-sm text-white outline-none placeholder:text-white/60"
         />
       </div>
 
@@ -286,8 +286,8 @@ function GuildsTab({ address, addToast, onSync }: { address: string | null; addT
               <h3 className="font-bold text-oasis-cyan">{g.name}</h3>
               <Crown className="h-3.5 w-3.5 text-oasis-gold" />
             </div>
-            <p className="mb-2 line-clamp-1 text-[11px] text-gray-400">{g.description || 'No description'}</p>
-            <div className="flex items-center gap-3 text-[10px] text-gray-300">
+            <p className="mb-2 line-clamp-1 text-[11px] text-white/70">{g.description || 'No description'}</p>
+            <div className="flex items-center gap-3 text-[10px] text-white/80">
               <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {g.members.length}</span>
               <span className="flex items-center gap-1"><Shield className="h-3 w-3" /> L{g.guild_level}</span>
               <span>{g.territories.length} territories</span>
@@ -296,7 +296,7 @@ function GuildsTab({ address, addToast, onSync }: { address: string | null; addT
         ))}
       </div>
 
-      {filtered.length === 0 && <p className="py-6 text-center text-sm text-gray-400">No guilds found.</p>}
+      {filtered.length === 0 && <p className="py-6 text-center text-sm text-white/70">No guilds found.</p>}
 
       {/* Guild detail modal */}
       <AnimatePresence>
@@ -321,35 +321,35 @@ function GuildsTab({ address, addToast, onSync }: { address: string | null; addT
                   <Crown className="h-5 w-5 text-oasis-gold" />
                   <h3 className="text-xl font-bold text-white">{selectedGuild.name}</h3>
                 </div>
-                <button onClick={() => setSelectedGuild(null)} className="text-gray-400 hover:text-white"><X className="h-4 w-4" /></button>
+                <button onClick={() => setSelectedGuild(null)} className="text-white/70 hover:text-white"><X className="h-4 w-4" /></button>
               </div>
-              <p className="mb-4 text-sm text-gray-300">{selectedGuild.description || 'No description'}</p>
+              <p className="mb-4 text-sm text-white/80">{selectedGuild.description || 'No description'}</p>
               <div className="mb-4 grid grid-cols-3 gap-3 text-center">
                 <div className="rounded-lg bg-white/5 p-2">
                   <p className="text-lg font-bold text-oasis-cyan">{selectedGuild.members.length}</p>
-                  <p className="text-[9px] uppercase text-gray-400">Members</p>
+                  <p className="text-[9px] uppercase text-white/70">Members</p>
                 </div>
                 <div className="rounded-lg bg-white/5 p-2">
                   <p className="text-lg font-bold text-oasis-gold">{selectedGuild.guild_level}</p>
-                  <p className="text-[9px] uppercase text-gray-400">Level</p>
+                  <p className="text-[9px] uppercase text-white/70">Level</p>
                 </div>
                 <div className="rounded-lg bg-white/5 p-2">
                   <p className="text-lg font-bold text-oasis-purple">{selectedGuild.quests_completed}</p>
-                  <p className="text-[9px] uppercase text-gray-400">Quests</p>
+                  <p className="text-[9px] uppercase text-white/70">Quests</p>
                 </div>
               </div>
               <div className="mb-4">
-                <p className="mb-1.5 text-[10px] uppercase tracking-wider text-gray-400">Founder</p>
+                <p className="mb-1.5 text-[10px] uppercase tracking-wider text-white/70">Founder</p>
                 <p className="font-mono text-xs text-white">{shorten(selectedGuild.founder)}</p>
               </div>
               {selectedGuild.members.length > 0 && (
                 <div className="mb-4">
-                  <p className="mb-1.5 text-[10px] uppercase tracking-wider text-gray-400">Members ({selectedGuild.members.length})</p>
+                  <p className="mb-1.5 text-[10px] uppercase tracking-wider text-white/70">Members ({selectedGuild.members.length})</p>
                   <div className="flex flex-wrap gap-1.5">
                     {selectedGuild.members.slice(0, 10).map((m, i) => (
-                      <span key={i} className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-mono text-gray-300">{shorten(m)}</span>
+                      <span key={i} className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-mono text-white/80">{shorten(m)}</span>
                     ))}
-                    {selectedGuild.members.length > 10 && <span className="text-[10px] text-gray-500">+{selectedGuild.members.length - 10} more</span>}
+                    {selectedGuild.members.length > 10 && <span className="text-[10px] text-white/60">+{selectedGuild.members.length - 10} more</span>}
                   </div>
                 </div>
               )}
@@ -428,7 +428,7 @@ function QuestsTab({ address, addToast, addXp, onSync }: { address: string | nul
             key={t}
             onClick={() => setSubtab(t)}
             className={`flex-1 rounded-lg py-1.5 text-xs font-semibold capitalize transition ${
-              subtab === t ? 'bg-oasis-cyan/20 text-oasis-cyan' : 'text-gray-400 hover:text-white'
+              subtab === t ? 'bg-oasis-cyan/20 text-oasis-cyan' : 'text-white/70 hover:text-white'
             }`}
           >
             {t} ({merged.filter((q) => q.status === t).length})
@@ -466,7 +466,7 @@ function QuestsTab({ address, addToast, addXp, onSync }: { address: string | nul
                 <Swords className="h-4 w-4 shrink-0 text-oasis-purple" />
               )}
             </div>
-            <p className="mb-2 text-[11px] leading-snug text-gray-400">{q.description}</p>
+            <p className="mb-2 text-[11px] leading-snug text-white/70">{q.description}</p>
             <div className="flex flex-wrap items-center gap-1.5 text-[9px]">
               <span className="rounded-full bg-oasis-purple/10 px-2 py-0.5 text-oasis-purple">{q.avatar_name}</span>
               <span className="rounded-full bg-oasis-gold/10 px-2 py-0.5 text-oasis-gold">{q.xp_reward} XP</span>
@@ -484,7 +484,7 @@ function QuestsTab({ address, addToast, addXp, onSync }: { address: string | nul
         ))}
       </div>
 
-      {visible.length === 0 && <p className="py-6 text-center text-sm text-gray-400">No {subtab} quests.</p>}
+      {visible.length === 0 && <p className="py-6 text-center text-sm text-white/70">No {subtab} quests.</p>}
     </div>
   );
 }

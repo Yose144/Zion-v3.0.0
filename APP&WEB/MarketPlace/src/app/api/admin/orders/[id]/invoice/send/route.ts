@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { sendInvoiceEmail } from '@/lib/email';
+import { requireAdminAuth } from '@/lib/admin-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,7 +9,10 @@ interface RouteContext {
   params: { id: string };
 }
 
-export async function POST(_request: NextRequest, context: RouteContext) {
+export async function POST(request: NextRequest, context: RouteContext) {
+  const auth = requireAdminAuth(request);
+  if (auth) return auth;
+
   try {
     const { id } = context.params;
     const order = await prisma.shopOrder.findFirst({

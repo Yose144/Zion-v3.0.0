@@ -6,8 +6,8 @@ import { X, Gauge, Target, Navigation, Rocket } from 'lucide-react';
 import type { CompassData } from './Compass';
 import type { World } from '../domain/types/world';
 
-const ZION_CYAN = '#06b6d4';
-const ZION_PURPLE = '#9333ea';
+const ZION_CYAN = '#078930';
+const ZION_PURPLE = '#e41e2b';
 
 function normalizeAngle(a: number) {
   while (a > Math.PI) a -= Math.PI * 2;
@@ -105,7 +105,7 @@ export default function ShipHud({
     return t;
   }, []);
 
-  const throttleColor = throttle > 0.7 ? '#ef4444' : throttle > 0.35 ? '#fbbf24' : ZION_CYAN;
+  const throttleColor = throttle > 0.7 ? '#e41e2b' : throttle > 0.35 ? '#fcd116' : ZION_CYAN;
   const throttleCirc = 2 * Math.PI * throttleR;
   const speedCirc = 2 * Math.PI * speedArcRadius;
   const speedHalf = speedCirc / 2;
@@ -290,7 +290,7 @@ export default function ShipHud({
           <p className="truncate text-sm font-semibold" style={{ color: targetColor }}>
             {targetName}
           </p>
-          <p className="text-xs font-mono text-gray-400">
+          <p className="text-xs font-mono text-white/70">
             {formatDistance(distance)} ly · {heading}°
           </p>
         </div>
@@ -298,16 +298,16 @@ export default function ShipHud({
         <div className="mt-2 flex w-full items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/60 px-3 py-1.5">
           <div className="flex items-center gap-1.5 text-oasis-cyan">
             <Gauge className="h-4 w-4" />
-            <span className="text-[10px] uppercase tracking-wider text-gray-400">SPD</span>
+            <span className="text-[10px] uppercase tracking-wider text-white/70">SPD</span>
           </div>
           <div className="text-right">
             <span className="text-lg font-bold tabular-nums text-white">{flightSpeed.toFixed(1)}</span>
-            <span className="ml-1 text-xs text-gray-500">/ {Math.round(maxSpeed)}</span>
+            <span className="ml-1 text-xs text-white/60">/ {Math.round(maxSpeed)}</span>
           </div>
         </div>
 
         <div className="mt-3 w-full">
-          <div className="mb-1.5 flex items-center justify-between text-xs text-gray-400">
+          <div className="mb-1.5 flex items-center justify-between text-xs text-white/70">
             <span className="flex items-center gap-1">
               <Rocket className="h-3 w-3" /> Throttle
             </span>
@@ -357,14 +357,14 @@ export default function ShipHud({
           ) : (
             <button
               disabled
-              className="rounded-xl border border-white/10 bg-black/40 px-1 py-1.5 text-[10px] font-bold text-gray-600 sm:text-xs"
+              className="rounded-xl border border-white/10 bg-black/40 px-1 py-1.5 text-[10px] font-bold text-white/50 sm:text-xs"
             >
               <Navigation className="mx-auto h-3.5 w-3.5" />
             </button>
           )}
         </div>
 
-        <div className="mt-2 hidden flex-wrap justify-center gap-x-3 gap-y-1 text-[10px] text-gray-500 sm:flex">
+        <div className="mt-2 hidden flex-wrap justify-center gap-x-3 gap-y-1 text-[10px] text-white/60 sm:flex">
           <span>WASD · move</span>
           <span>Q/E · up/down</span>
           <span>Space · boost</span>

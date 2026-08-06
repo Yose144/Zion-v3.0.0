@@ -25,10 +25,10 @@ const CONSCIOUSNESS_NAMES = [
 ];
 
 const CATEGORY_PALETTE: Record<string, string> = {
-  gold: '251, 191, 36',
-  cyan: '6, 182, 212',
-  purple: '147, 51, 234',
-  emerald: '16, 185, 129',
+  gold: '252, 209, 22',
+  cyan: '7, 137, 48',
+  purple: '228, 30, 43',
+  emerald: '7, 137, 48',
 };
 
 interface StatTileProps {
@@ -50,7 +50,7 @@ function StatTile({ icon: Icon, value, label, color }: StatTileProps) {
         style={{ color: `rgb(${rc})` }}
       />
       <p className="mt-1 text-sm font-bold tabular-nums text-white">{value}</p>
-      <p className="text-[9px] font-semibold uppercase tracking-wider text-gray-400">{label}</p>
+      <p className="text-[9px] font-semibold uppercase tracking-wider text-white/70">{label}</p>
     </div>
   );
 }
@@ -82,7 +82,7 @@ export default function PlayerHud() {
       >
         {/* Header row: avatar, identity, level badge */}
         <div className="flex items-start gap-3">
-          <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-oasis-gold to-oasis-purple text-base font-bold text-white shadow-[0_0_20px_rgba(147,51,234,0.35)]">
+          <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-oasis-gold to-oasis-purple text-base font-bold text-white shadow-[0_0_20px_rgba(228,30,43,0.35)]">
             {level}
             <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full border border-white/10 bg-oasis-black text-[9px] text-oasis-cyan">
               {Math.round(progress * 100)}%
@@ -98,7 +98,7 @@ export default function PlayerHud() {
             <div className="mt-2">
               <div className="flex items-center justify-between text-[10px]">
                 <span className="font-mono text-oasis-cyan">{xp} / {level * XP_PER_LEVEL} XP</span>
-                <span className="text-gray-400">Lv {level}</span>
+                <span className="text-white/70">Lv {level}</span>
               </div>
               <div className="zion-progress mt-1.5">
                 <div style={{ width: `${progress * 100}%` }} />
@@ -106,7 +106,7 @@ export default function PlayerHud() {
             </div>
 
             {address && (
-              <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-gray-300">
+              <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-white/80">
                 <Wallet className="h-3 w-3 text-oasis-cyan" />
                 <span className="font-mono truncate" title={address}>
                   {address.length > 18 ? `${address.slice(0, 12)}...${address.slice(-6)}` : address}
@@ -121,7 +121,7 @@ export default function PlayerHud() {
 
         {/* Discovery banner */}
         <div className="mt-3 flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.03] px-2.5 py-1.5">
-          <div className="flex items-center gap-1.5 text-[10px] text-gray-300">
+          <div className="flex items-center gap-1.5 text-[10px] text-white/80">
             <ScanLine className="h-3 w-3 text-oasis-emerald" />
             <span>Worlds scanned</span>
           </div>

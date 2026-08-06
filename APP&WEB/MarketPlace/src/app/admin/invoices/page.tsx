@@ -57,7 +57,7 @@ export default function AdminInvoicesPage() {
                       : inv.status}
                   </span>
                 </td>
-                <td className="p-3">
+                <td className="p-3 space-x-3">
                   <a
                     href={`/api/invoices/${inv.id}`}
                     target="_blank"
@@ -65,6 +65,14 @@ export default function AdminInvoicesPage() {
                     className="text-rasta-gold hover:underline text-sm"
                   >
                     {t('admin.view')}
+                  </a>
+                  <a
+                    href={`/api/invoices/${inv.id}?format=pdf`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-emerald-400 hover:underline text-sm font-bold"
+                  >
+                    PDF
                   </a>
                 </td>
               </tr>

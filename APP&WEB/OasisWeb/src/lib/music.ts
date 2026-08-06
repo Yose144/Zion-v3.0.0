@@ -315,9 +315,9 @@ function buildNebulaChoir(ctx: AudioContext, destination: AudioNode): MusicRunti
 }
 
 export const MUSIC_STATIONS: MusicStation[] = [
-  { id: 'oasis-drift', name: 'OASIS Drift', color: '#22d3ee', build: buildOasisDrift },
-  { id: 'crystal-fields', name: 'Crystal Fields', color: '#a855f7', build: buildCrystalFields },
-  { id: 'nebula-choir', name: 'Nebula Choir', color: '#ec4899', build: buildNebulaChoir },
+  { id: 'oasis-drift', name: 'OASIS Drift', color: '#078930', build: buildOasisDrift },
+  { id: 'crystal-fields', name: 'Crystal Fields', color: '#e41e2b', build: buildCrystalFields },
+  { id: 'nebula-choir', name: 'Nebula Choir', color: '#e41e2b', build: buildNebulaChoir },
 ];
 
 export class MusicEngine {

@@ -54,7 +54,7 @@ export default function OnboardingScene() {
             <div className="space-y-2 text-sm">
               <h3 className="text-lg font-bold text-oasis-cyan">{chapters[idx].title}</h3>
               {chapters[idx].quote && <p className="italic text-oasis-gold">{chapters[idx].quote}</p>}
-              <p className="line-clamp-4 text-gray-300">{chapters[idx].paragraphs[0]}</p>
+              <p className="line-clamp-4 text-white/80">{chapters[idx].paragraphs[0]}</p>
             </div>
           </GlassPanel>
         </Html>
@@ -86,7 +86,7 @@ const OnboardingNode = memo(function OnboardingNode({
         <sphereGeometry args={[0.15, 24, 24]} />
         <meshStandardMaterial
           color="#ffffff"
-          emissive={active ? '#a855f7' : '#ffffff'}
+          emissive={active ? '#e41e2b' : '#ffffff'}
           emissiveIntensity={active ? 0.45 : 0.2}
           roughness={0.3}
         />

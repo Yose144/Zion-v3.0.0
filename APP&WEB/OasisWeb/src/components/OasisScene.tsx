@@ -163,11 +163,11 @@ function UniverseRotator({
 }
 
 const CATEGORY_COLORS: Record<WorldCategory, string> = {
-  'star-system': '#f59e0b',
-  'planet': '#22d3ee',
-  'sector': '#a855f7',
-  'world': '#10b981',
-  'dimension': '#ec4899',
+  'star-system': '#fcd116',
+  'planet': '#078930',
+  'sector': '#e41e2b',
+  'world': '#078930',
+  'dimension': '#e41e2b',
 };
 
 interface OasisSceneProps {
@@ -229,20 +229,20 @@ export default function OasisScene({
           failIfMajorPerformanceCaveat: false,
         }}
         onCreated={({ gl, camera }) => {
-          gl.setClearColor(isMobile ? '#001a33' : '#02030a');
+          gl.setClearColor(isMobile ? '#0d0d0d' : '#0d0d0d');
           if (isMobile) {
             camera.lookAt(0, 0.5, 0);
           }
         }}
       >
-        <color attach="background" args={[isMobile ? '#001a33' : '#02030a']} />
-        {!isMobile && <fog attach="fog" args={['#02030a', 80, 200]} />}
+        <color attach="background" args={[isMobile ? '#0d0d0d' : '#0d0d0d']} />
+        {!isMobile && <fog attach="fog" args={['#0d0d0d', 80, 200]} />}
 
         {/* Lighting */}
         <ambientLight intensity={isMobile ? 0.8 : 0.15} />
         <pointLight position={[10, 8, 10]} intensity={1.0} color="#ffffff" />
-        <pointLight position={[-12, -6, -12]} intensity={0.65} color="#a855f7" />
-        <pointLight position={[0, 10, 0]} intensity={0.5} color="#22d3ee" />
+        <pointLight position={[-12, -6, -12]} intensity={0.65} color="#e41e2b" />
+        <pointLight position={[0, 10, 0]} intensity={0.5} color="#078930" />
 
         {/* HDRI environment — desktop only */}
         {!isMobile && (

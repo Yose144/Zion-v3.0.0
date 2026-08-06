@@ -13,14 +13,14 @@ import Skeleton from '@/components/Skeleton';
 const zonePos = getZonePosition('territories');
 
 const REGION_STYLE: Record<string, { color: string; shape: 'crystal' | 'sphere' | 'plateau' | 'torus' }> = {
-  Mountains: { color: '#94a3b8', shape: 'crystal' },
-  Forest: { color: '#22c55e', shape: 'plateau' },
-  Desert: { color: '#facc15', shape: 'sphere' },
-  Ocean: { color: '#0ea5e9', shape: 'torus' },
-  Volcano: { color: '#ef4444', shape: 'crystal' },
-  CrystalCaves: { color: '#a855f7', shape: 'crystal' },
-  Temple: { color: '#f59e0b', shape: 'plateau' },
-  Nexus: { color: '#22d3ee', shape: 'torus' },
+  Mountains: { color: '#a3a3a3', shape: 'crystal' },
+  Forest: { color: '#078930', shape: 'plateau' },
+  Desert: { color: '#fcd116', shape: 'sphere' },
+  Ocean: { color: '#078930', shape: 'torus' },
+  Volcano: { color: '#e41e2b', shape: 'crystal' },
+  CrystalCaves: { color: '#e41e2b', shape: 'crystal' },
+  Temple: { color: '#fcd116', shape: 'plateau' },
+  Nexus: { color: '#078930', shape: 'torus' },
 };
 
 function Artifact({ region }: { region: string }) {
@@ -98,7 +98,7 @@ export default function TerritoriesScene() {
         {error && (
           <Html transform center distanceFactor={8} position={[0, 1, 0]} className="pointer-events-auto">
             <GlassPanel>
-              <p className="text-sm text-red-300">{error}</p>
+              <p className="text-sm text-rasta-red/80">{error}</p>
               <button
                 onClick={retry}
                 className="mt-2 rounded bg-oasis-cyan/20 px-3 py-1 text-xs text-oasis-cyan hover:bg-oasis-cyan/30"
@@ -150,8 +150,8 @@ function TerritoryDetail({ territory, onClose }: { territory: Territory; onClose
         {territory.name}
       </h3>
       <p className="text-xs text-oasis-gold">{territory.region}</p>
-      <p className="text-gray-300">{territory.description || 'No description available.'}</p>
-      <div className="grid grid-cols-2 gap-2 text-xs text-gray-400">
+      <p className="text-white/80">{territory.description || 'No description available.'}</p>
+      <div className="grid grid-cols-2 gap-2 text-xs text-white/70">
         <span>Controller:</span>
         <span className="text-white">{territory.controller ?? 'Unclaimed'}</span>
         <span>Mining bonus:</span>

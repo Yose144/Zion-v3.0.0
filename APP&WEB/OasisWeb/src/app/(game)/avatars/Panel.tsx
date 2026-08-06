@@ -51,7 +51,7 @@ export default function AvatarsPanel() {
 
       <div className="mb-6 grid gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/60" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -100,13 +100,13 @@ export default function AvatarsPanel() {
       {loading && <Skeleton lines={6} className="mb-4" />}
 
       {error && !loading && (
-        <div className="mb-4 rounded-2xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200">
+        <div className="mb-4 rounded-2xl border border-rasta-red/30 bg-rasta-red/10 p-4 text-sm text-rasta-red/80">
           {error} <button onClick={retry} className="ml-2 underline">Retry</button>
         </div>
       )}
 
       {!loading && (
-        <p className="mb-4 text-sm text-gray-400">
+        <p className="mb-4 text-sm text-white/70">
           Showing {filtered.length} of {avatars.length} avatars
         </p>
       )}
@@ -135,7 +135,7 @@ export default function AvatarsPanel() {
             >
               <button
                 onClick={() => setSelected(null)}
-                className="absolute right-4 top-4 rounded-full p-2 text-gray-400 hover:bg-white/10 hover:text-white"
+                className="absolute right-4 top-4 rounded-full p-2 text-white/70 hover:bg-white/10 hover:text-white"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -148,10 +148,10 @@ export default function AvatarsPanel() {
                 <Badge icon={Star} text={selected.rarity} color="text-oasis-gold" />
                 <Badge icon={Star} text={`CL ${selected.consciousness_level_required}`} color="text-oasis-emerald" />
                 <Badge text={selected.role} color="text-oasis-cyan" />
-                <Badge text={selected.location} color="text-gray-300" />
+                <Badge text={selected.location} color="text-white/80" />
               </div>
 
-              <div className="space-y-4 text-sm leading-relaxed text-gray-300">
+              <div className="space-y-4 text-sm leading-relaxed text-white/80">
                 <p>
                   <span className="font-semibold text-white">Quest line:</span>{' '}
                   {selected.quest_line}
@@ -197,7 +197,7 @@ const AvatarCard = memo(function AvatarCard({
           {avatar.rarity}
         </span>
       </div>
-      <p className="mb-4 text-sm text-gray-400">{avatar.subtitle}</p>
+      <p className="mb-4 text-sm text-white/70">{avatar.subtitle}</p>
       <div className="flex flex-wrap gap-2 text-xs">
         <Badge icon={Sparkles} text={avatar.ray} color="text-oasis-purple" />
         <Badge icon={Star} text={`CL ${avatar.consciousness_level_required}`} color="text-oasis-emerald" />

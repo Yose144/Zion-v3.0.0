@@ -1,7 +1,7 @@
 @import url(fontawesome-all.min.css);
 @import url("https://fonts.googleapis.com/css?family=Source+Sans+Pro:300italic,600italic,300,600");
-
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
 
 * {
 	box-sizing: border-box;
@@ -142,7 +142,7 @@ input, select, textarea {
 
 	body, input, select, textarea {
 		color: #ffffff;
-		font-family: "Source Sans Pro", sans-serif;
+		font-family: "Inter", "Source Sans Pro", sans-serif;
 		font-weight: 300;
 		font-size: 1rem;
 		line-height: 1.65;
@@ -153,12 +153,13 @@ input, select, textarea {
 		-webkit-transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out, border-bottom-color 0.2s ease-in-out;
 		-ms-transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out, border-bottom-color 0.2s ease-in-out;
 		transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out, border-bottom-color 0.2s ease-in-out;
-		border-bottom: dotted 1px rgba(255, 255, 255, 0.5);
+		border-bottom: dotted 1px rgba(252, 209, 22, 0.5);
 		text-decoration: none;
-		color: inherit;
+		color: #fcd116;
 	}
 
 		a:hover {
+			color: #e41e2b;
 			border-bottom-color: transparent;
 		}
 
@@ -176,12 +177,14 @@ input, select, textarea {
 	}
 
 	h1, h2, h3, h4, h5, h6 {
-		color: #ffffff;
-		font-weight: 600;
+		color: #fcd116;
+		font-family: "Inter", "Montserrat", sans-serif;
+		font-weight: 700;
 		line-height: 1.5;
 		margin: 0 0 1rem 0;
 		text-transform: uppercase;
-		letter-spacing: 0.2rem;
+		letter-spacing: 0.12rem;
+		text-shadow: 0 0 18px rgba(252, 209, 22, 0.25), 0 0 6px rgba(228, 30, 43, 0.15);
 	}
 
 		h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
@@ -190,7 +193,7 @@ input, select, textarea {
 		}
 
 		h1.major, h2.major, h3.major, h4.major, h5.major, h6.major {
-			border-bottom: solid 1px #ffffff;
+			border-bottom: solid 1px rgba(252, 209, 22, 0.6);
 			width: -moz-max-content;
 			width: -webkit-max-content;
 			width: -ms-max-content;
@@ -1008,24 +1011,24 @@ input, select, textarea {
 		-webkit-appearance: none;
 		-ms-appearance: none;
 		appearance: none;
-		-moz-transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
-		-webkit-transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
-		-ms-transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
-		transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+		-moz-transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
+		-webkit-transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
+		-ms-transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
+		transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
 		background-color: transparent;
 		border-radius: 4px;
 		border: 0;
-		box-shadow: inset 0 0 0 1px #ffffff;
-		color: #ffffff !important;
+		box-shadow: inset 0 0 0 1px rgba(252, 209, 22, 0.6);
+		color: #fcd116 !important;
 		cursor: pointer;
 		display: inline-block;
-		font-size: 0.8rem;
-		font-weight: 300;
+		font-size: 0.75rem;
+		font-weight: 500;
 		height: 2.75rem;
-		letter-spacing: 0.2rem;
+		letter-spacing: 0.12rem;
 		line-height: 2.75rem;
 		outline: 0;
-		padding: 0 1.25rem 0 1.35rem;
+		padding: 0 1.5rem 0 1.5rem;
 		text-align: center;
 		text-decoration: none;
 		text-transform: uppercase;
@@ -1037,7 +1040,9 @@ input, select, textarea {
 		input[type="button"]:hover,
 		button:hover,
 		.button:hover {
-			background-color: rgba(255, 255, 255, 0.075);
+			background-color: rgba(252, 209, 22, 0.1);
+			box-shadow: inset 0 0 0 1px rgba(252, 209, 22, 0.85), 0 0 18px rgba(252, 209, 22, 0.2);
+			transform: translateY(-1px);
 		}
 
 		input[type="submit"]:active,
@@ -1045,7 +1050,8 @@ input, select, textarea {
 		input[type="button"]:active,
 		button:active,
 		.button:active {
-			background-color: rgba(255, 255, 255, 0.175);
+			background-color: rgba(252, 209, 22, 0.2);
+			transform: translateY(0);
 		}
 
 		input[type="submit"].icon:before,
@@ -1079,9 +1085,59 @@ input, select, textarea {
 		input[type="button"].primary,
 		button.primary,
 		.button.primary {
-			background-color: #ffffff;
-			color: #1b1f22 !important;
+			background-color: #fcd116;
+			box-shadow: inset 0 0 0 1px #fcd116, 0 0 18px rgba(252, 209, 22, 0.35);
+			color: #0d0d0d !important;
 			font-weight: 600;
+		}
+
+		input[type="submit"].primary:hover,
+		input[type="reset"].primary:hover,
+		input[type="button"].primary:hover,
+		button.primary:hover,
+		.button.primary:hover {
+			background-color: #e41e2b;
+			box-shadow: inset 0 0 0 1px #e41e2b, 0 0 24px rgba(228, 30, 43, 0.45);
+			color: #ffffff !important;
+		}
+
+		input[type="submit"].primary.rasta-red,
+		input[type="reset"].primary.rasta-red,
+		input[type="button"].primary.rasta-red,
+		button.primary.rasta-red,
+		.button.primary.rasta-red {
+			background-color: #e41e2b;
+			box-shadow: inset 0 0 0 1px #e41e2b, 0 0 18px rgba(228, 30, 43, 0.35);
+			color: #ffffff !important;
+		}
+
+		input[type="submit"].primary.rasta-red:hover,
+		input[type="reset"].primary.rasta-red:hover,
+		input[type="button"].primary.rasta-red:hover,
+		button.primary.rasta-red:hover,
+		.button.primary.rasta-red:hover {
+			background-color: #078930;
+			box-shadow: inset 0 0 0 1px #078930, 0 0 24px rgba(7, 137, 48, 0.45);
+		}
+
+		input[type="submit"].primary.rasta-green,
+		input[type="reset"].primary.rasta-green,
+		input[type="button"].primary.rasta-green,
+		button.primary.rasta-green,
+		.button.primary.rasta-green {
+			background-color: #078930;
+			box-shadow: inset 0 0 0 1px #078930, 0 0 18px rgba(7, 137, 48, 0.35);
+			color: #ffffff !important;
+		}
+
+		input[type="submit"].primary.rasta-green:hover,
+		input[type="reset"].primary.rasta-green:hover,
+		input[type="button"].primary.rasta-green:hover,
+		button.primary.rasta-green:hover,
+		.button.primary.rasta-green:hover {
+			background-color: #fcd116;
+			box-shadow: inset 0 0 0 1px #fcd116, 0 0 24px rgba(252, 209, 22, 0.45);
+			color: #0d0d0d !important;
 		}
 
 		input[type="submit"].disabled, input[type="submit"]:disabled,

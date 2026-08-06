@@ -41,7 +41,7 @@ function setBanner(st) {
   const lag = st.sync_lag ?? 0;
   if (el('banner-sync-lag')) {
     el('banner-sync-lag').textContent = lag === 0 ? 'synced' : lag;
-    el('banner-sync-lag').style.color = lag === 0 ? 'rgb(34 197 94)' : 'rgb(251 191 36)';
+    el('banner-sync-lag').style.color = lag === 0 ? 'rgb(7 137 48)' : 'rgb(252 209 22)';
   }
 
   if (el('banner-pool-hashrate')) {
@@ -65,7 +65,7 @@ function setBanner(st) {
     const total = st.multichain_transfers_total ?? 0;
     const pending = st.multichain_transfers_pending ?? 0;
     el('banner-multichain-health').innerHTML = (mcOk ? dot('status-up') : dot('status-down')) + (mcOk ? 'OK' : 'FAIL');
-    el('banner-multichain-health').style.color = mcOk ? 'rgb(34 197 94)' : 'rgb(239 68 68)';
+    el('banner-multichain-health').style.color = mcOk ? 'rgb(7 137 48)' : 'rgb(228 30 43)';
     if (el('banner-multichain-health-sub')) el('banner-multichain-health-sub').textContent = `total ${Number(total).toLocaleString()} · pending ${Number(pending).toLocaleString()}`;
   }
 

@@ -58,17 +58,17 @@ export default function ShipsScene() {
       {/* Hangar platform */}
       <mesh position={[0, -0.5, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[1.5, 3.5, 32]} />
-        <meshStandardMaterial color="#1e293b" metalness={0.6} roughness={0.4} emissive="#06b6d4" emissiveIntensity={0.05} />
+        <meshStandardMaterial color="#1a1a1a" metalness={0.6} roughness={0.4} emissive="#078930" emissiveIntensity={0.05} />
       </mesh>
 
       {/* Central hologram pedestal */}
       <mesh position={[0, -0.35, 0]}>
         <cylinderGeometry args={[0.3, 0.4, 0.3, 16]} />
-        <meshStandardMaterial color="#334155" metalness={0.7} roughness={0.3} />
+        <meshStandardMaterial color="#3d3d3d" metalness={0.7} roughness={0.3} />
       </mesh>
       <mesh position={[0, -0.15, 0]}>
         <cylinderGeometry args={[0.15, 0.2, 0.15, 16]} />
-        <meshStandardMaterial color="#06b6d4" emissive="#06b6d4" emissiveIntensity={0.3} transparent opacity={0.6} />
+        <meshStandardMaterial color="#078930" emissive="#078930" emissiveIntensity={0.3} transparent opacity={0.6} />
       </mesh>
 
       {SHIP_MODELS.map((ship, i) => {
@@ -118,7 +118,7 @@ export default function ShipsScene() {
         return (
           <mesh position={[bwingPos.x, bwingPos.y + 0.45, bwingPos.z]}>
             <octahedronGeometry args={[0.04, 0]} />
-            <meshStandardMaterial color="#fbbf24" emissive="#fbbf24" emissiveIntensity={0.8} toneMapped={false} />
+            <meshStandardMaterial color="#fcd116" emissive="#fcd116" emissiveIntensity={0.8} toneMapped={false} />
           </mesh>
         );
       })()}
@@ -164,8 +164,8 @@ function QuantumCoreKey({ position }: { position: THREE.Vector3 }) {
       >
         <octahedronGeometry args={[0.05, 0]} />
         <meshStandardMaterial
-          color="#fbbf24"
-          emissive="#fbbf24"
+          color="#fcd116"
+          emissive="#fcd116"
           emissiveIntensity={0.8}
           toneMapped={false}
           transparent
@@ -176,11 +176,11 @@ function QuantumCoreKey({ position }: { position: THREE.Vector3 }) {
       {/* Inner glow */}
       <mesh>
         <sphereGeometry args={[0.08, 16, 16]} />
-        <meshBasicMaterial color="#fbbf24" transparent opacity={0.15} blending={THREE.AdditiveBlending} />
+        <meshBasicMaterial color="#fcd116" transparent opacity={0.15} blending={THREE.AdditiveBlending} />
       </mesh>
 
       {/* Light */}
-      <pointLight color="#fbbf24" intensity={0.8} distance={1.5} />
+      <pointLight color="#fcd116" intensity={0.8} distance={1.5} />
 
       {/* Hint label on hover */}
       {showHint && (
@@ -239,7 +239,7 @@ const ShipDisplay = memo(function ShipDisplay({
     }
   });
 
-  const color = isUnlocked ? ship.color : '#475569';
+  const color = isUnlocked ? ship.color : '#4a4a4a';
   const opacity = isUnlocked ? 1 : 0.5;
 
   return (
@@ -247,12 +247,12 @@ const ShipDisplay = memo(function ShipDisplay({
       {/* Pedestal */}
       <mesh position={[0, -0.35, 0]}>
         <cylinderGeometry args={[0.2, 0.25, 0.1, 12]} />
-        <meshStandardMaterial color="#1e293b" metalness={0.6} roughness={0.4} />
+        <meshStandardMaterial color="#1a1a1a" metalness={0.6} roughness={0.4} />
       </mesh>
       {/* Hologram ring */}
       <mesh position={[0, -0.28, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.18, 0.22, 24]} />
-        <meshBasicMaterial color={isSelected ? '#06b6d4' : isUnlocked ? ship.color : '#64748b'} transparent opacity={0.4} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
+        <meshBasicMaterial color={isSelected ? '#078930' : isUnlocked ? ship.color : '#6b6b6b'} transparent opacity={0.4} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
       </mesh>
 
       {/* Ship model */}
@@ -279,9 +279,9 @@ const ShipDisplay = memo(function ShipDisplay({
           onClick={onSelect}
           className="cursor-pointer select-none whitespace-nowrap rounded-full px-3 py-1 text-[10px] font-bold transition"
           style={{
-            background: isSelected ? 'rgba(6,182,212,0.3)' : isUnlocked ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.5)',
-            color: isSelected ? '#06b6d4' : isUnlocked ? '#ffffff' : '#64748b',
-            border: `1px solid ${isSelected ? '#06b6d4' : isUnlocked ? ship.color : '#334155'}`,
+            background: isSelected ? 'rgba(7,137,48,0.3)' : isUnlocked ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.5)',
+            color: isSelected ? '#078930' : isUnlocked ? '#ffffff' : '#6b6b6b',
+            border: `1px solid ${isSelected ? '#078930' : isUnlocked ? ship.color : '#3d3d3d'}`,
           }}
         >
           {ship.label}
@@ -310,20 +310,20 @@ function ShipDetail({ shipId, onClose }: { shipId: ShipModelId; onClose: () => v
     <div className="space-y-3 text-sm">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold" style={{ color: ship.color }}>{ship.label}</h3>
-        <button onClick={onClose} className="text-gray-400 hover:text-white">✕</button>
+        <button onClick={onClose} className="text-white/70 hover:text-white">✕</button>
       </div>
-      <p className="text-xs text-gray-400">{ship.description}</p>
+      <p className="text-xs text-white/70">{ship.description}</p>
       <div className="flex gap-2 text-[10px]">
         <span className="rounded-full bg-white/5 px-2 py-0.5 text-oasis-cyan">{ship.class}</span>
-        <span className="rounded-full bg-white/5 px-2 py-0.5 text-gray-300">Lv {ship.unlockLevel}+</span>
+        <span className="rounded-full bg-white/5 px-2 py-0.5 text-white/80">Lv {ship.unlockLevel}+</span>
         <span className="rounded-full bg-white/5 px-2 py-0.5 text-oasis-gold">{ship.unlockCost} Z</span>
       </div>
       {/* Stats */}
       <div className="grid grid-cols-4 gap-2 text-center">
-        <StatBar label="Boost" value={ship.stats.boost} max={5} color="#ef4444" />
-        <StatBar label="Cargo" value={ship.stats.cargo} max={5} color="#f59e0b" />
-        <StatBar label="Scan" value={ship.stats.scanner} max={5} color="#22d3ee" />
-        <StatBar label="Hull" value={ship.stats.hp} max={500} color="#10b981" />
+        <StatBar label="Boost" value={ship.stats.boost} max={5} color="#e41e2b" />
+        <StatBar label="Cargo" value={ship.stats.cargo} max={5} color="#fcd116" />
+        <StatBar label="Scan" value={ship.stats.scanner} max={5} color="#078930" />
+        <StatBar label="Hull" value={ship.stats.hp} max={500} color="#078930" />
       </div>
       {/* Actions */}
       <div className="flex gap-2">
@@ -352,7 +352,7 @@ function ShipDetail({ shipId, onClose }: { shipId: ShipModelId; onClose: () => v
           </button>
         )}
         {!isUnlocked && !canUnlock && (
-          <div className="flex-1 rounded-lg bg-white/5 py-2 text-center text-xs text-gray-500">
+          <div className="flex-1 rounded-lg bg-white/5 py-2 text-center text-xs text-white/60">
             {level < ship.unlockLevel ? `Requires Level ${ship.unlockLevel}` : `Need ${ship.unlockCost} Z`}
           </div>
         )}
@@ -365,7 +365,7 @@ function StatBar({ label, value, max, color }: { label: string; value: number; m
   const pct = Math.min(1, value / max);
   return (
     <div className="flex flex-col items-center gap-1">
-      <span className="text-[8px] text-gray-500">{label}</span>
+      <span className="text-[8px] text-white/60">{label}</span>
       <div className="h-12 w-1.5 overflow-hidden rounded-full bg-white/10">
         <div className="w-full rounded-full" style={{ height: `${pct * 100}%`, backgroundColor: color, marginTop: `${(1 - pct) * 100}%` }} />
       </div>

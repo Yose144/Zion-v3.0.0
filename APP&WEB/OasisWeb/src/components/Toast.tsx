@@ -13,10 +13,10 @@ const ICONS = {
 };
 
 const COLORS = {
-  success: 'border-green-400/30 bg-green-400/10 text-green-400',
+  success: 'border-rasta-green/30 bg-rasta-green/10 text-rasta-green',
   info: 'border-oasis-cyan/30 bg-oasis-cyan/10 text-oasis-cyan',
   warning: 'border-oasis-gold/30 bg-oasis-gold/10 text-oasis-gold',
-  error: 'border-red-400/30 bg-red-400/10 text-red-400',
+  error: 'border-rasta-red/30 bg-rasta-red/10 text-rasta-red',
 };
 
 export default function ToastContainer() {

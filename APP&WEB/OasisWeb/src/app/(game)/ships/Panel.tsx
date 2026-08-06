@@ -35,7 +35,7 @@ export default function ShipsPanel() {
       >
         Starfighter Hangar
       </motion.h1>
-      <p className="mb-6 text-sm text-gray-400">
+      <p className="mb-6 text-sm text-white/70">
         Browse, unlock, and pilot legendary starfighters. Inspired by wooden laser-cut models from{' '}
         <a href="https://eigenbloom.com/woodenstarfighter/" target="_blank" rel="noopener" className="text-oasis-cyan underline">
           eigenbloom.com
@@ -49,7 +49,7 @@ export default function ShipsPanel() {
             key={f}
             onClick={() => setFilter(f)}
             className={`rounded-full px-4 py-1.5 text-xs font-semibold transition ${
-              filter === f ? 'bg-oasis-cyan/20 text-oasis-cyan' : 'bg-white/5 text-gray-400 hover:text-white'
+              filter === f ? 'bg-oasis-cyan/20 text-oasis-cyan' : 'bg-white/5 text-white/70 hover:text-white'
             }`}
           >
             {f === 'all' ? `All (${SHIP_MODELS.length})` : f === 'unlocked' ? `Owned (${unlockedShips.length})` : `Locked (${SHIP_MODELS.length - unlockedShips.length})`}
@@ -144,23 +144,23 @@ const ShipCard = memo(function ShipCard({
             </span>
           )}
           {!isUnlocked && (
-            <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-gray-400">
+            <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-white/70">
               <Lock className="mr-1 inline h-3 w-3" />Locked
             </span>
           )}
         </div>
       </div>
 
-      <h3 className="mb-1 text-lg font-bold" style={{ color: isUnlocked ? ship.color : '#94a3b8' }}>
+      <h3 className="mb-1 text-lg font-bold" style={{ color: isUnlocked ? ship.color : '#a3a3a3' }}>
         {ship.label}
       </h3>
-      <p className="mb-3 text-xs text-gray-400">{ship.description}</p>
+      <p className="mb-3 text-xs text-white/70">{ship.description}</p>
 
       {/* Class + cost */}
       <div className="mb-3 flex flex-wrap gap-2 text-[10px]">
         <span className="rounded-full bg-white/5 px-2 py-0.5 text-oasis-cyan">{ship.class}</span>
         {!isUnlocked && (
-          <span className={`rounded-full px-2 py-0.5 ${canUnlock ? 'text-oasis-gold' : 'text-gray-500'}`}>
+          <span className={`rounded-full px-2 py-0.5 ${canUnlock ? 'text-oasis-gold' : 'text-white/60'}`}>
             {ship.unlockCost} Z · Lv {ship.unlockLevel}+
           </span>
         )}
@@ -168,10 +168,10 @@ const ShipCard = memo(function ShipCard({
 
       {/* Stats bars */}
       <div className="grid grid-cols-4 gap-1.5">
-        <Stat icon={Zap} label="Boost" value={ship.stats.boost} max={5} color="#ef4444" />
-        <Stat icon={Package} label="Cargo" value={ship.stats.cargo} max={5} color="#f59e0b" />
-        <Stat icon={ScanLine} label="Scan" value={ship.stats.scanner} max={5} color="#22d3ee" />
-        <Stat icon={Heart} label="Hull" value={ship.stats.hp} max={500} color="#10b981" />
+        <Stat icon={Zap} label="Boost" value={ship.stats.boost} max={5} color="#e41e2b" />
+        <Stat icon={Package} label="Cargo" value={ship.stats.cargo} max={5} color="#fcd116" />
+        <Stat icon={ScanLine} label="Scan" value={ship.stats.scanner} max={5} color="#078930" />
+        <Stat icon={Heart} label="Hull" value={ship.stats.hp} max={500} color="#078930" />
       </div>
     </motion.button>
   );
@@ -185,7 +185,7 @@ function Stat({ icon: Icon, label, value, max, color }: { icon: typeof Zap; labe
       <div className="h-8 w-1 overflow-hidden rounded-full bg-white/10">
         <div className="w-full rounded-full" style={{ height: `${pct * 100}%`, backgroundColor: color, marginTop: `${(1 - pct) * 100}%` }} />
       </div>
-      <span className="text-[7px] text-gray-500">{label}</span>
+      <span className="text-[7px] text-white/60">{label}</span>
     </div>
   );
 }

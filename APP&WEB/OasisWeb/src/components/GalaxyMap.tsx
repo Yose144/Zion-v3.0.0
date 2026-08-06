@@ -8,11 +8,11 @@ import WorldNode from './World';
 import Hyperlanes from './Hyperlanes';
 
 const CATEGORY_COLORS: Record<string, string> = {
-  'star-system': '#f59e0b',
-  'planet': '#22d3ee',
-  'sector': '#a855f7',
-  'world': '#10b981',
-  'dimension': '#ec4899',
+  'star-system': '#fcd116',
+  'planet': '#078930',
+  'sector': '#e41e2b',
+  'world': '#078930',
+  'dimension': '#e41e2b',
 };
 
 const CATEGORY_SIZES: Record<string, number> = {

@@ -54,12 +54,12 @@ function GameWorld({ mode, panel, children }: GameWorldProps) {
     <div className="absolute inset-0 bg-oasis-black">
       <ErrorBoundary>
         <Canvas camera={{ position: [0, 9, 20], fov: 55 }} dpr={[1, 2]}>
-          <color attach="background" args={['#02030a']} />
-          <fog attach="fog" args={['#02030a', 14, 48]} />
+          <color attach="background" args={['#0d0d0d']} />
+          <fog attach="fog" args={['#0d0d0d', 14, 48]} />
           <ambientLight intensity={0.18} />
           <pointLight position={[10, 8, 10]} intensity={0.9} color="#ffffff" />
-          <pointLight position={[-12, -6, -12]} intensity={0.6} color="#a855f7" />
-          <pointLight position={[0, 10, 0]} intensity={0.5} color="#22d3ee" />
+          <pointLight position={[-12, -6, -12]} intensity={0.6} color="#e41e2b" />
+          <pointLight position={[0, 10, 0]} intensity={0.5} color="#078930" />
 
           <Stars radius={160} depth={120} count={8000} factor={4} saturation={0} fade speed={0.3} />
 

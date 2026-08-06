@@ -5,8 +5,8 @@ import { motion } from 'framer-motion';
 export default function OasisBackground() {
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden bg-oasis-black">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(34,211,238,0.10),transparent_50%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(168,85,247,0.10),transparent_50%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(7,137,48,0.10),transparent_50%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(228,30,43,0.10),transparent_50%)]" />
       <motion.div
         animate={{
           x: [0, 40, 0],

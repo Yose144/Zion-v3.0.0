@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { requireAdminAuth } from '@/lib/admin-guard';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +19,9 @@ interface RouteContext {
 
 // Mark a single order's tokens as distributed
 export async function POST(request: NextRequest, context: RouteContext) {
+  const auth = requireAdminAuth(request);
+  if (auth) return auth;
+
   try {
     const { id } = context.params;
     const body = await request.json().catch(() => ({}));
@@ -73,7 +77,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
 }
 
 // Get distribution status for an order
-export async function GET(_request: NextRequest, context: RouteContext) {
+export async function GET(request: NextRequest, context: RouteContext) {
+  const auth = requireAdminAuth(request);
+  if (auth) return auth;
+
   try {
     const { id } = context.params;
 

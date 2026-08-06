@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { generateInvoicePdf } from '@/lib/invoice-pdf';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,18 +8,15 @@ interface RouteContext {
   params: { id: string };
 }
 
-// GET /api/invoice/[id]/download — serve invoice HTML for viewing/printing
-export async function GET(_request: NextRequest, context: RouteContext) {
+// GET /api/invoice/[id]/download — serve invoice HTML or PDF
+export async function GET(request: NextRequest, context: RouteContext) {
   try {
     const { id } = context.params;
+    const format = request.nextUrl.searchParams.get('format') ?? 'html';
 
-    // Find by invoice number or database id
     const invoice = await prisma.invoice.findFirst({
       where: {
-        OR: [
-          { id },
-          { invoiceNumber: id },
-        ],
+        OR: [{ id }, { invoiceNumber: id }],
       },
       include: { order: true },
     });
@@ -37,7 +35,18 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       );
     }
 
-    // Return as HTML page (viewable in browser, printable to PDF)
+    if (format === 'pdf') {
+      const pdf = await generateInvoicePdf(invoice.html);
+      return new NextResponse(new Uint8Array(pdf), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `inline; filename="${invoice.invoiceNumber}.pdf"`,
+          'Cache-Control': 'no-store',
+        },
+      });
+    }
+
     return new NextResponse(invoice.html, {
       status: 200,
       headers: {

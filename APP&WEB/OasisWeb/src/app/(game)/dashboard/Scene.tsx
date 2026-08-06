@@ -24,7 +24,7 @@ export default function DashboardScene() {
         const r = 1.6 + Math.sin(i) * 0.15;
         const x = Math.cos(a) * r;
         const z = Math.sin(a) * r;
-        const colors = ['#22d3ee', '#a855f7', '#f59e0b', '#10b981'];
+        const colors = ['#078930', '#e41e2b', '#fcd116', '#078930'];
         const labels = ['XP', 'Streak', 'Blocks', 'Tithe'];
         return (
           <InteractiveObject

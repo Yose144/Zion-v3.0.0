@@ -103,7 +103,7 @@ export default function PlayerSettings({ onClose }: PlayerSettingsProps) {
       className="pointer-events-auto fixed inset-0 z-[60] flex items-center justify-center p-4"
     >
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md overflow-hidden p-5 zion-rainbow-card" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+      <div className="relative w-full max-w-md overflow-hidden p-5 zion-rainbow-card" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="rounded-lg bg-oasis-purple/10 p-1.5 text-oasis-purple">
@@ -111,10 +111,10 @@ export default function PlayerSettings({ onClose }: PlayerSettingsProps) {
             </div>
             <div>
               <h2 className="text-lg font-bold text-white">Pilgrim Identity</h2>
-              <p className="text-[10px] text-gray-400">Link wallet or set pilgrim ID</p>
+              <p className="text-[10px] text-white/70">Link wallet or set pilgrim ID</p>
             </div>
           </div>
-          <button onClick={onClose} className="zion-button-ghost !p-1.5 text-gray-400">
+          <button onClick={onClose} className="zion-button-ghost !p-1.5 text-white/70">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -123,7 +123,7 @@ export default function PlayerSettings({ onClose }: PlayerSettingsProps) {
           <button
             onClick={() => setTab('pilgrim')}
             className={`flex-1 rounded-lg py-2 text-sm font-semibold transition ${
-              tab === 'pilgrim' ? 'bg-oasis-purple/20 text-oasis-purple' : 'text-gray-400 hover:text-white'
+              tab === 'pilgrim' ? 'bg-oasis-purple/20 text-oasis-purple' : 'text-white/70 hover:text-white'
             }`}
           >
             Pilgrim
@@ -131,7 +131,7 @@ export default function PlayerSettings({ onClose }: PlayerSettingsProps) {
           <button
             onClick={() => setTab('zion')}
             className={`flex-1 rounded-lg py-2 text-sm font-semibold transition ${
-              tab === 'zion' ? 'bg-oasis-purple/20 text-oasis-purple' : 'text-gray-400 hover:text-white'
+              tab === 'zion' ? 'bg-oasis-purple/20 text-oasis-purple' : 'text-white/70 hover:text-white'
             }`}
           >
             ZION Wallet
@@ -140,7 +140,7 @@ export default function PlayerSettings({ onClose }: PlayerSettingsProps) {
 
         {tab === 'pilgrim' && (
           <>
-            <p className="mb-3 text-sm text-gray-400">
+            <p className="mb-3 text-sm text-white/70">
               Enter your pilgrim ID or a ZION address to load profile data.
             </p>
             <input
@@ -148,9 +148,9 @@ export default function PlayerSettings({ onClose }: PlayerSettingsProps) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="pilgrim-0001 or zion1..."
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-oasis-purple focus:ring-1 focus:ring-oasis-purple"
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder-white/50 outline-none focus:border-oasis-purple focus:ring-1 focus:ring-oasis-purple"
             />
-            <p className="mt-1 text-[10px] text-gray-500">
+            <p className="mt-1 text-[10px] text-white/60">
               Current type: <span className="text-oasis-purple">{getAddressType(input) || 'empty'}</span>
             </p>
             <div className="mt-4 flex items-center gap-2">
@@ -162,7 +162,7 @@ export default function PlayerSettings({ onClose }: PlayerSettingsProps) {
               </button>
               <button
                 onClick={handleReset}
-                className="zion-button-ghost border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20"
+                className="zion-button-ghost border-rasta-red/30 bg-rasta-red/10 text-rasta-red hover:bg-rasta-red/20"
               >
                 <RotateCcw className="h-4 w-4" />
                 Reset
@@ -174,14 +174,14 @@ export default function PlayerSettings({ onClose }: PlayerSettingsProps) {
         {tab === 'zion' && (
           <div className="space-y-4">
             <div>
-              <p className="mb-2 text-sm text-gray-400">Paste an existing zion1 address (read-only login):</p>
+              <p className="mb-2 text-sm text-white/70">Paste an existing zion1 address (read-only login):</p>
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={zionInput}
                   onChange={(e) => setZionInput(e.target.value)}
                   placeholder="zion1..."
-                  className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-oasis-purple focus:ring-1 focus:ring-oasis-purple"
+                  className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder-white/50 outline-none focus:border-oasis-purple focus:ring-1 focus:ring-oasis-purple"
                 />
                 <button
                   onClick={handleSaveZionAddress}
@@ -193,15 +193,15 @@ export default function PlayerSettings({ onClose }: PlayerSettingsProps) {
               </div>
             </div>
 
-            <div className="zion-rainbow-sub p-3" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
-              <p className="mb-2 text-sm text-gray-400">Import from 12-word mnemonic:</p>
+            <div className="zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+              <p className="mb-2 text-sm text-white/70">Import from 12-word mnemonic:</p>
               <div className="flex gap-2">
                 <input
                   type={showSeed ? 'text' : 'password'}
                   value={mnemonic}
                   onChange={(e) => setMnemonic(e.target.value)}
                   placeholder="abandon ability able ..."
-                  className="flex-1 rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white placeholder-gray-500 outline-none focus:border-oasis-gold focus:ring-1 focus:ring-oasis-gold"
+                  className="flex-1 rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white placeholder-white/50 outline-none focus:border-oasis-gold focus:ring-1 focus:ring-oasis-gold"
                 />
                 <button
                   onClick={() => setShowSeed((s) => !s)}
@@ -216,27 +216,27 @@ export default function PlayerSettings({ onClose }: PlayerSettingsProps) {
               >
                 Import Mnemonic
               </button>
-              <p className="mt-1 text-[10px] text-gray-500">Seed is used locally to derive address. It is not sent or stored.</p>
+              <p className="mt-1 text-[10px] text-white/60">Seed is used locally to derive address. It is not sent or stored.</p>
             </div>
 
-            <div className="zion-rainbow-sub p-3" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-              <p className="mb-2 text-sm text-gray-400">No wallet? Generate a new ZION address:</p>
+            <div className="zion-rainbow-sub p-3" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+              <p className="mb-2 text-sm text-white/70">No wallet? Generate a new ZION address:</p>
               {generated ? (
                 <div className="space-y-2">
-                  <div className="zion-rainbow-sub flex items-center gap-2 p-2" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+                  <div className="zion-rainbow-sub flex items-center gap-2 p-2" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                     <Wallet className="h-4 w-4 text-oasis-cyan" />
                     <code className="flex-1 text-xs text-white">{generated.address}</code>
-                    <button onClick={() => copy(generated.address, 'Address')} className="text-gray-400 hover:text-white">
+                    <button onClick={() => copy(generated.address, 'Address')} className="text-white/70 hover:text-white">
                       <Copy className="h-4 w-4" />
                     </button>
                   </div>
-                  <div className="zion-rainbow-sub flex items-center gap-2 p-2" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
+                  <div className="zion-rainbow-sub flex items-center gap-2 p-2" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                     <code className="flex-1 text-[10px] text-oasis-gold">{generated.mnemonic}</code>
-                    <button onClick={() => copy(generated.mnemonic, 'Mnemonic')} className="text-gray-400 hover:text-white">
+                    <button onClick={() => copy(generated.mnemonic, 'Mnemonic')} className="text-white/70 hover:text-white">
                       <Copy className="h-4 w-4" />
                     </button>
                   </div>
-                  <p className="text-[10px] text-red-300">Save this seed phrase. It is shown only once.</p>
+                  <p className="text-[10px] text-rasta-red/80">Save this seed phrase. It is shown only once.</p>
                 </div>
               ) : (
                 <button
@@ -252,7 +252,7 @@ export default function PlayerSettings({ onClose }: PlayerSettingsProps) {
           </div>
         )}
 
-        <p className="mt-4 text-[10px] text-gray-500">
+        <p className="mt-4 text-[10px] text-white/60">
           Default <code>pilgrim-0001</code> is used if no address is set. Local progress stays in this browser unless reset.
         </p>
       </div>

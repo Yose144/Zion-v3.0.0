@@ -68,7 +68,7 @@ export default function Navbar() {
                 className={`group relative flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                   active
                     ? 'text-oasis-cyan'
-                    : 'text-gray-300 hover:text-white'
+                    : 'text-white/80 hover:text-white'
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -96,7 +96,7 @@ export default function Navbar() {
                 key={href}
                 href={href}
                 className={`shrink-0 rounded-lg p-2 transition-colors ${
-                  active ? 'text-oasis-cyan' : 'text-gray-300 hover:text-white'
+                  active ? 'text-oasis-cyan' : 'text-white/80 hover:text-white'
                 }`}
                 title={href === '/' ? 'Home' : href.slice(1).charAt(0).toUpperCase() + href.slice(2)}
               >
@@ -109,7 +109,7 @@ export default function Navbar() {
         {/* Mobile: hamburger menu (< sm) */}
         <button
           onClick={() => setMobileOpen((v) => !v)}
-          className="rounded-lg p-2 text-gray-300 transition hover:bg-white/10 hover:text-white sm:hidden"
+          className="rounded-lg p-2 text-white/80 transition hover:bg-white/10 hover:text-white sm:hidden"
           aria-label="Toggle menu"
           aria-expanded={mobileOpen}
         >
@@ -138,7 +138,7 @@ export default function Navbar() {
                     className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                       active
                         ? 'bg-oasis-cyan/10 text-oasis-cyan ring-1 ring-oasis-cyan/30'
-                        : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                        : 'text-white/80 hover:bg-white/5 hover:text-white'
                     }`}
                   >
                     <Icon className="h-4 w-4 shrink-0" />

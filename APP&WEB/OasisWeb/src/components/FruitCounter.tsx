@@ -22,11 +22,11 @@ export default function FruitCounter() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
         className="zion-rainbow-card w-40 p-2.5 sm:w-48 sm:p-3"
-        style={{ '--rc': '16, 185, 129' } as React.CSSProperties}
+        style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
       >
         <div className="mb-1.5 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <Apple className="h-3.5 w-3.5 text-emerald-400" />
+            <Apple className="h-3.5 w-3.5 text-rasta-green" />
             <span className="zion-kicker text-[9px] py-0.5 px-1.5">Fruit of the Tree</span>
           </div>
           {fruitBlessings > 0 && (
@@ -42,8 +42,8 @@ export default function FruitCounter() {
             className="h-full rounded-full"
             style={{
               background: isComplete
-                ? 'linear-gradient(90deg, #fbbf24, #f59e0b, #fbbf24)'
-                : 'linear-gradient(90deg, #10b981, #22d3ee)',
+                ? 'linear-gradient(90deg, #fcd116, #fcd116, #fcd116)'
+                : 'linear-gradient(90deg, #078930, #078930)',
             }}
             animate={{ width: `${progress * 100}%` }}
             transition={{ duration: 0.3 }}
@@ -51,7 +51,7 @@ export default function FruitCounter() {
         </div>
 
         <div className="mt-1.5 flex items-center justify-between text-[10px]">
-          <span className="text-gray-400">
+          <span className="text-white/70">
             {count} / {fruitThreshold}
           </span>
           <AnimatePresence>
@@ -60,17 +60,17 @@ export default function FruitCounter() {
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
-                className="font-semibold text-amber-400"
+                className="font-semibold text-rasta-gold"
               >
                 Blessing!
               </motion.span>
             ) : (
-              <span className="text-gray-500">+50 XP each</span>
+              <span className="text-white/60">+50 XP each</span>
             )}
           </AnimatePresence>
         </div>
 
-        <p className="mt-1 hidden text-[9px] text-gray-500 sm:block">
+        <p className="mt-1 hidden text-[9px] text-white/60 sm:block">
           Click glowing fruits on the Tree to collect
         </p>
       </motion.div>

@@ -47,7 +47,7 @@ export default function DashboardPanel() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && saveAddress()}
           placeholder="Enter pilgrim address"
-          className="flex-1 rounded-xl bg-black/30 px-4 py-2 text-sm text-white outline-none ring-oasis-cyan/50 placeholder:text-gray-500 focus:ring-2"
+          className="flex-1 rounded-xl bg-black/30 px-4 py-2 text-sm text-white outline-none ring-oasis-cyan/50 placeholder:text-white/60 focus:ring-2"
         />
         <button
           onClick={saveAddress}
@@ -60,13 +60,13 @@ export default function DashboardPanel() {
       {loading && <Skeleton lines={6} className="mb-6" />}
 
       {prizesError && !loading && (
-        <div className="mb-4 rounded-2xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200">
+        <div className="mb-4 rounded-2xl border border-rasta-red/30 bg-rasta-red/10 p-4 text-sm text-rasta-red/80">
           {prizesError} <button onClick={retryPrizes} className="ml-2 underline">Retry</button>
         </div>
       )}
 
       {!loading && !player && (
-        <p className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-gray-400">
+        <p className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-white/70">
           Pilgrim not found. Enter an address to begin.
         </p>
       )}
@@ -85,7 +85,7 @@ export default function DashboardPanel() {
               <div>
                 <p className="font-mono text-sm text-oasis-cyan">{player.address}</p>
                 <h2 className="text-2xl font-bold text-white">{player.display_name || 'Unnamed Pilgrim'}</h2>
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-white/70">
                   Consciousness: <span className="font-semibold text-oasis-gold">{player.level}</span>
                 </p>
               </div>
@@ -94,12 +94,12 @@ export default function DashboardPanel() {
 
           <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
             <StatCard icon={Sparkles} label="Total XP" value={player.total_xp.toLocaleString()} color="text-oasis-gold" />
-            <StatCard icon={Flame} label="Daily Streak" value={player.daily_streak} color="text-orange-400" />
+            <StatCard icon={Flame} label="Daily Streak" value={player.daily_streak} color="text-rasta-gold" />
             <StatCard icon={Pickaxe} label="Blocks Mined" value={player.blocks_mined} color="text-oasis-cyan" />
-            <StatCard icon={Heart} label="Tithe Total" value={player.tithe_total} color="text-pink-400" />
+            <StatCard icon={Heart} label="Tithe Total" value={player.tithe_total} color="text-rasta-red" />
             <StatCard icon={Award} label="Challenges" value={player.challenges_completed} color="text-oasis-purple" />
             <StatCard icon={Crown} label="Best Streak" value={player.best_streak} color="text-oasis-gold" />
-            <StatCard icon={Globe} label="Referrals" value={player.referrals} color="text-green-400" />
+            <StatCard icon={Globe} label="Referrals" value={player.referrals} color="text-rasta-green" />
             <StatCard icon={Sparkles} label="Achievements" value={player.achievements.length} color="text-oasis-cyan" />
           </div>
 
@@ -117,14 +117,14 @@ export default function DashboardPanel() {
                     key={tier.rank}
                     className="rounded-2xl border border-white/10 bg-black/20 p-4 transition hover:border-oasis-cyan/30"
                   >
-                    <p className="text-xs text-gray-400">{tier.title}</p>
+                    <p className="text-xs text-white/70">{tier.title}</p>
                     <p className="text-xl font-bold text-oasis-gold">{tier.zion.toLocaleString()} ZION</p>
-                    <p className="text-xs text-gray-500">{tier.unlock_condition}</p>
+                    <p className="text-xs text-white/60">{tier.unlock_condition}</p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-gray-400">Pool data unavailable.</p>
+              <p className="text-white/70">Pool data unavailable.</p>
             )}
           </motion.div>
         </>
@@ -151,7 +151,7 @@ function StatCard({
       className="rounded-2xl border border-white/10 bg-white/5 p-4"
     >
       <Icon className={`mb-2 h-5 w-5 ${color}`} />
-      <p className="text-xs text-gray-400">{label}</p>
+      <p className="text-xs text-white/70">{label}</p>
       <p className="text-lg font-bold text-white">{value}</p>
     </motion.div>
   );

@@ -27,13 +27,13 @@ export default function LeaderboardPanel() {
       {loading && <Skeleton lines={6} className="mb-4" />}
 
       {error && !loading && (
-        <div className="mb-4 rounded-2xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200">
+        <div className="mb-4 rounded-2xl border border-rasta-red/30 bg-rasta-red/10 p-4 text-sm text-rasta-red/80">
           {error} <button onClick={retry} className="ml-2 underline">Retry</button>
         </div>
       )}
 
       {!loading && top100.length === 0 && (
-        <p className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-gray-400">
+        <p className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-white/70">
           No leaderboard data available.
         </p>
       )}
@@ -43,7 +43,7 @@ export default function LeaderboardPanel() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-white/10 text-gray-400">
+                <tr className="border-b border-white/10 text-white/70">
                   <th className="px-4 py-3 font-medium">Rank</th>
                   <th className="px-4 py-3 font-medium">Pilgrim</th>
                   <th className="px-4 py-3 font-medium">Level</th>
@@ -82,7 +82,7 @@ const LeaderboardRow = memo(function LeaderboardRow({
           {entry.rank <= 3 ? (
             <Medal
               className={`h-4 w-4 ${
-                entry.rank === 1 ? 'text-oasis-gold' : entry.rank === 2 ? 'text-gray-300' : 'text-amber-600'
+                entry.rank === 1 ? 'text-oasis-gold' : entry.rank === 2 ? 'text-white/80' : 'text-rasta-gold'
               }`}
             />
           ) : (
@@ -102,7 +102,7 @@ const LeaderboardRow = memo(function LeaderboardRow({
           )}
         </div>
       </td>
-      <td className="px-4 py-3 text-gray-300">{entry.level}</td>
+      <td className="px-4 py-3 text-white/80">{entry.level}</td>
       <td className="px-4 py-3 text-right font-mono font-semibold text-oasis-gold">
         {(entry.total_xp ?? entry.value ?? 0).toLocaleString()}
       </td>

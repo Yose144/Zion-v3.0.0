@@ -8,25 +8,25 @@
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
 <style>
-:root{--gold:255 215 0;--purple:147 51 234;--cyan:6 182 212;}
+:root{--gold:252 209 22;--purple:228 30 43;--cyan:7 137 48;}
 body{font-family:'Inter',system-ui,sans-serif;background:
-  radial-gradient(circle at 18% -8%,rgba(147,51,234,0.22),transparent 34rem),
-  radial-gradient(circle at 86% 8%,rgba(6,182,212,0.16),transparent 30rem),
-  radial-gradient(circle at 50% 110%,rgba(255,215,0,0.12),transparent 40rem),
-  linear-gradient(180deg,rgba(2,4,12,0.92),rgba(0,0,0,0.95));color:#fff;min-height:100vh;}
+  radial-gradient(circle at 18% -8%,rgba(228,30,43,0.22),transparent 34rem),
+  radial-gradient(circle at 86% 8%,rgba(7,137,48,0.16),transparent 30rem),
+  radial-gradient(circle at 50% 110%,rgba(252,209,22,0.12),transparent 40rem),
+  linear-gradient(180deg,rgba(0,0,0,0.92),rgba(0,0,0,0.95));color:#fff;min-height:100vh;}
 .card{background:linear-gradient(145deg,rgba(15,20,35,0.9),rgba(10,14,26,0.95));border:1px solid rgba(255,255,255,0.1);border-radius:1.25rem;box-shadow:0 16px 50px rgba(0,0,0,0.35);}
 .table-wrap{overflow-x:auto;}
 table{width:100%;border-collapse:collapse;font-size:0.85rem;}
 th,td{padding:0.75rem 1rem;text-align:left;border-bottom:1px solid rgba(255,255,255,0.08);}
-th{font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:#94a3b8;background:rgba(255,255,255,0.03);}
+th{font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:#a3a3a3;background:rgba(255,255,255,0.03);}
 .row-archived{opacity:0.65;background:rgba(255,255,255,0.02);}
 .btn{border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#fff;border-radius:0.6rem;padding:0.55rem 1rem;font-weight:600;transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;}
 .btn:hover{background:rgba(255,255,255,0.1);}
 .badge{font-size:0.65rem;padding:0.15rem 0.5rem;border-radius:0.35rem;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;}
-.badge-green{background:rgba(34,197,94,0.2);color:#4ade80;border:1px solid rgba(34,197,94,0.3);}
-.badge-red{background:rgba(239,68,68,0.2);color:#fca5a5;border:1px solid rgba(239,68,68,0.3);}
-.badge-yellow{background:rgba(234,179,8,0.2);color:#fde047;border:1px solid rgba(234,179,8,0.3);}
-.badge-gray{background:rgba(255,255,255,0.08);color:#94a3b8;border:1px solid rgba(255,255,255,0.15);}
+.badge-green{background:rgba(7,137,48,0.2);color:#078930;border:1px solid rgba(7,137,48,0.3);}
+.badge-red{background:rgba(228,30,43,0.2);color:#e41e2b;border:1px solid rgba(228,30,43,0.3);}
+.badge-yellow{background:rgba(252,209,22,0.2);color:#fcd116;border:1px solid rgba(252,209,22,0.3);}
+.badge-gray{background:rgba(255,255,255,0.08);color:#a3a3a3;border:1px solid rgba(255,255,255,0.15);}
 </style>
 </head>
 <body class="p-4 md:p-8">
@@ -34,7 +34,7 @@ th{font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:#94a3b8
   <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
     <div>
       <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">
-        <span style="color:rgb(255 215 0)">Legacy</span> V3 Services
+        <span style="color:rgb(252 209 22)">Legacy</span> V3 Services
         <span class="badge badge-gray ml-2">Archived</span>
       </h1>
       <p class="text-sm text-gray-400 mt-1">
@@ -49,7 +49,7 @@ th{font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:#94a3b8
 
   <div class="card p-5 mb-6">
     <div class="flex items-center justify-between mb-3">
-      <h2 class="text-lg font-bold"><i class="fas fa-box-archive mr-2" style="color:rgb(255 215 0)"></i>Archived Service Registry</h2>
+      <h2 class="text-lg font-bold"><i class="fas fa-box-archive mr-2" style="color:rgb(252 209 22)"></i>Archived Service Registry</h2>
       <div class="flex gap-2">
         <button id="btn-live" class="btn text-xs" onclick="filterTable('all')">All</button>
         <button id="btn-down" class="btn text-xs" onclick="filterTable('down')">Down</button>

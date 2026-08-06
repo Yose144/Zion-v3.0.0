@@ -70,10 +70,10 @@ export default function WarpIntro({ speed = BASE_SPEED, onEnter }: WarpIntroProp
 
     const drawNebula = () => {
       const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) * 0.65);
-      g.addColorStop(0, 'rgba(10, 15, 35, 0.55)');
-      g.addColorStop(0.35, 'rgba(15, 8, 30, 0.35)');
-      g.addColorStop(0.7, 'rgba(5, 3, 12, 0.2)');
-      g.addColorStop(1, 'rgba(2, 3, 10, 0)');
+      g.addColorStop(0, 'rgba(13, 13, 13, 0.55)');
+      g.addColorStop(0.35, 'rgba(26, 26, 26, 0.35)');
+      g.addColorStop(0.7, 'rgba(0, 0, 0, 0.2)');
+      g.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, w, h);
     };
@@ -91,7 +91,7 @@ export default function WarpIntro({ speed = BASE_SPEED, onEnter }: WarpIntroProp
       currentSpeed.current += (targetSpeed.current - currentSpeed.current) * 0.035;
 
       const fade = 0.92 - (currentSpeed.current / WARP_SPEED) * 0.78;
-      ctx.fillStyle = `rgba(2, 3, 10, ${fade})`;
+      ctx.fillStyle = `rgba(0, 0, 0, ${fade})`;
       ctx.fillRect(0, 0, w, h);
 
       drawNebula();
@@ -191,7 +191,7 @@ export default function WarpIntro({ speed = BASE_SPEED, onEnter }: WarpIntroProp
       initial={{ opacity: 1 }}
       animate={{ opacity: exiting ? 0 : 1 }}
       transition={{ duration: 0.7, ease: 'easeInOut' }}
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#02030a]"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#0d0d0d]"
     >
       <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 h-full w-full" />
 
@@ -209,7 +209,7 @@ export default function WarpIntro({ speed = BASE_SPEED, onEnter }: WarpIntroProp
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.2 }}
           className="mb-6 text-[10px] font-semibold uppercase tracking-[0.55em] text-oasis-gold"
-          style={{ textShadow: '0 0 20px rgba(245,158,11,0.4)' }}
+          style={{ textShadow: '0 0 20px rgba(252,209,22,0.4)' }}
         >
           ZION · OASIS
         </motion.p>
@@ -241,7 +241,7 @@ export default function WarpIntro({ speed = BASE_SPEED, onEnter }: WarpIntroProp
                 onClick={handleEnter}
                 whileHover={{ scale: 1.06 }}
                 whileTap={{ scale: 0.97 }}
-                className="group mt-7 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-oasis-gold via-oasis-purple to-oasis-cyan px-8 py-3.5 text-sm font-bold text-white shadow-[0_0_60px_rgba(245,158,11,0.25)] transition-shadow hover:shadow-[0_0_90px_rgba(168,85,247,0.55)]"
+                className="group mt-7 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-oasis-gold via-oasis-purple to-oasis-cyan px-8 py-3.5 text-sm font-bold text-white shadow-[0_0_60px_rgba(252,209,22,0.25)] transition-shadow hover:shadow-[0_0_90px_rgba(228,30,43,0.55)]"
               >
                 Enter the OASIS
                 <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -259,7 +259,7 @@ export default function WarpIntro({ speed = BASE_SPEED, onEnter }: WarpIntroProp
             className="absolute inset-0 flex items-center justify-center"
           >
             <div className="text-center">
-              <p className="text-xs uppercase tracking-[0.35em] text-oasis-gold" style={{ textShadow: '0 0 30px rgba(245,158,11,0.6)' }}>
+              <p className="text-xs uppercase tracking-[0.35em] text-oasis-gold" style={{ textShadow: '0 0 30px rgba(252,209,22,0.6)' }}>
                 Approaching the galactic center…
               </p>
               <div className="mx-auto mt-4 h-1 w-32 overflow-hidden rounded-full bg-white/10">

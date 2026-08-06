@@ -66,7 +66,7 @@ declare module '@react-three/fiber' {
 
 // Realistic-ish spectral colors (blue-white / white / warm gold) instead of
 // uniform white — real starfields have visible color variety.
-const STAR_PALETTE = ['#dbeafe', '#ffffff', '#fef3c7', '#bfdbfe', '#fde68a'];
+const STAR_PALETTE = ['#078930', '#ffffff', '#fcd116', '#078930', '#fcd116'];
 
 interface TwinkleStarsProps {
   count?: number;

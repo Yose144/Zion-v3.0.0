@@ -26,19 +26,19 @@ const CONSCIOUSNESS_NAMES = [
 ];
 
 const CATEGORY_PALETTE: Record<string, string> = {
-  gold: '251, 191, 36',
-  cyan: '6, 182, 212',
-  purple: '147, 51, 234',
-  emerald: '16, 185, 129',
+  gold: '252, 209, 22',
+  cyan: '7, 137, 48',
+  purple: '228, 30, 43',
+  emerald: '7, 137, 48',
 };
 
 const SHIP_PRESETS: { name: string; hex: string }[] = [
-  { name: 'Zion Cyan', hex: '#06b6d4' },
-  { name: 'Zion Gold', hex: '#ffd700' },
-  { name: 'Zion Purple', hex: '#9333ea' },
-  { name: 'Zion Emerald', hex: '#10b981' },
-  { name: 'Zion Rose', hex: '#f43f5e' },
-  { name: 'White', hex: '#e2e8f0' },
+  { name: 'Zion Cyan', hex: '#078930' },
+  { name: 'Zion Gold', hex: '#fcd116' },
+  { name: 'Zion Purple', hex: '#e41e2b' },
+  { name: 'Zion Emerald', hex: '#078930' },
+  { name: 'Zion Rose', hex: '#e41e2b' },
+  { name: 'White', hex: '#d4d4d4' },
 ];
 
 const SHIP_DESCRIPTIONS: Record<keyof ShipLoadout, string> = {
@@ -72,13 +72,13 @@ function StatTile({ icon: Icon, value, label, color }: StatTileProps) {
     <div className="zion-rainbow-sub p-2" style={{ '--rc': rc } as React.CSSProperties}>
       <Icon className="h-3 w-3" style={{ color: `rgb(${rc})` }} />
       <p className="mt-0.5 text-xs font-bold tabular-nums text-white">{value}</p>
-      <p className="text-[8px] font-semibold uppercase tracking-wider text-gray-400">{label}</p>
+      <p className="text-[8px] font-semibold uppercase tracking-wider text-white/70">{label}</p>
     </div>
   );
 }
 
 function StatusDot({ status }: { status: 'loading' | 'ok' | 'error' }) {
-  const color = status === 'ok' ? '#34d399' : status === 'error' ? '#f87171' : '#fbbf24';
+  const color = status === 'ok' ? '#078930' : status === 'error' ? '#e41e2b' : '#fcd116';
   return <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color, boxShadow: `0 0 8px ${color}` }} />;
 }
 
@@ -91,19 +91,19 @@ export function ShipTab() {
   return (
     <div className="space-y-2.5">
       <div className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.03] px-2.5 py-1.5">
-        <span className="text-[10px] text-gray-300">Credits</span>
+        <span className="text-[10px] text-white/80">Credits</span>
         <span className="font-mono text-sm font-bold text-oasis-gold">{credits} Z</span>
       </div>
 
       {/* Ship Model Selector */}
-      <div className="zion-rainbow-sub p-2.5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+      <div className="zion-rainbow-sub p-2.5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
         <div className="flex items-center gap-2">
           <div className="rounded-lg bg-oasis-cyan/10 p-1 text-oasis-cyan">
             <Plane className="h-3.5 w-3.5" />
           </div>
           <div className="flex-1">
             <p className="text-xs font-semibold text-white">Vessel Chassis</p>
-            <p className="text-[8px] text-gray-500">Lv {playerLevel} · {unlockedShips.length}/{SHIP_MODELS.length} unlocked</p>
+            <p className="text-[8px] text-white/60">Lv {playerLevel} · {unlockedShips.length}/{SHIP_MODELS.length} unlocked</p>
           </div>
         </div>
         <div className="mt-2 grid grid-cols-2 gap-1.5">
@@ -142,7 +142,7 @@ export function ShipTab() {
               >
                 <div className="flex w-full items-center justify-between">
                   <span className={`text-[10px] font-bold ${
-                    selected ? 'text-oasis-cyan' : unlocked ? 'text-gray-300' : canUnlock ? 'text-oasis-gold' : 'text-gray-600'
+                    selected ? 'text-oasis-cyan' : unlocked ? 'text-white/80' : canUnlock ? 'text-oasis-gold' : 'text-white/50'
                   }`}>
                     {ship.label}
                   </span>
@@ -154,13 +154,13 @@ export function ShipTab() {
                     }}
                   />
                 </div>
-                <span className="mt-0.5 text-[8px] leading-tight text-gray-500">{ship.description}</span>
+                <span className="mt-0.5 text-[8px] leading-tight text-white/60">{ship.description}</span>
                 <div className="mt-1 flex w-full items-center justify-between">
-                  <span className="text-[7px] font-bold uppercase tracking-wider text-gray-600">{ship.class}</span>
+                  <span className="text-[7px] font-bold uppercase tracking-wider text-white/50">{ship.class}</span>
                   {unlocked ? (
                     selected && <span className="text-[7px] font-bold text-oasis-cyan">ACTIVE</span>
                   ) : (
-                    <span className={`text-[7px] font-bold ${canUnlock ? 'text-oasis-gold' : 'text-gray-600'}`}>
+                    <span className={`text-[7px] font-bold ${canUnlock ? 'text-oasis-gold' : 'text-white/50'}`}>
                       {ship.unlockCost > 0 ? `${ship.unlockCost} Z` : 'Free'} · Lv{ship.unlockLevel}
                     </span>
                   )}
@@ -181,7 +181,7 @@ export function ShipTab() {
           const Icon = SHIP_ICONS[key];
 
           return (
-            <div key={key} className="zion-rainbow-sub p-2.5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+            <div key={key} className="zion-rainbow-sub p-2.5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="rounded-lg bg-oasis-cyan/10 p-1 text-oasis-cyan">
@@ -189,7 +189,7 @@ export function ShipTab() {
                   </div>
                   <div>
                     <p className="text-xs font-semibold capitalize text-white">{key}</p>
-                    <p className="text-[9px] text-gray-400">{SHIP_DESCRIPTIONS[key]}</p>
+                    <p className="text-[9px] text-white/70">{SHIP_DESCRIPTIONS[key]}</p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -204,10 +204,10 @@ export function ShipTab() {
                     disabled={!canAfford || maxed}
                     className={`mt-0.5 rounded px-1.5 py-0.5 text-[9px] font-bold transition ${
                       maxed
-                        ? 'bg-green-500/20 text-green-400'
+                        ? 'bg-rasta-green/20 text-rasta-green'
                         : canAfford
                         ? 'bg-oasis-gold/20 text-oasis-gold hover:bg-oasis-gold/30'
-                        : 'bg-white/5 text-gray-500'
+                        : 'bg-white/5 text-white/60'
                     }`}
                   >
                     {maxed ? 'Max' : `${cost} Z`}
@@ -215,13 +215,13 @@ export function ShipTab() {
                 </div>
               </div>
               <div className="zion-progress mt-1.5">
-                <div style={{ width: `${(level / 5) * 100}%`, backgroundColor: '#06b6d4' }} />
+                <div style={{ width: `${(level / 5) * 100}%`, backgroundColor: '#078930' }} />
               </div>
             </div>
           );
         })}
 
-      <div className="zion-rainbow-sub p-2.5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+      <div className="zion-rainbow-sub p-2.5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
         <div className="flex items-center gap-2">
           <div className="rounded-lg bg-oasis-cyan/10 p-1 text-oasis-cyan">
             <Palette className="h-3.5 w-3.5" />
@@ -313,15 +313,15 @@ export function IdentityTab() {
   return (
     <div className="space-y-2.5">
       <div>
-        <p className="mb-1 text-[10px] text-gray-400">Pilgrim ID or ZION address</p>
+        <p className="mb-1 text-[10px] text-white/70">Pilgrim ID or ZION address</p>
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="pilgrim-0001 or zion1..."
-          className="w-full rounded-lg border border-white/10 bg-white/5 px-2.5 py-2 text-xs text-white placeholder-gray-500 outline-none focus:border-oasis-purple focus:ring-1 focus:ring-oasis-purple"
+          className="w-full rounded-lg border border-white/10 bg-white/5 px-2.5 py-2 text-xs text-white placeholder-white/50 outline-none focus:border-oasis-purple focus:ring-1 focus:ring-oasis-purple"
         />
-        <p className="mt-0.5 text-[9px] text-gray-500">
+        <p className="mt-0.5 text-[9px] text-white/60">
           Type: <span className="text-oasis-purple">{getAddressType(input) || 'empty'}</span>
         </p>
         <button onClick={handleSave} className="zion-button-primary mt-1.5 w-full text-[10px]">
@@ -332,30 +332,30 @@ export function IdentityTab() {
       {/* Avatar Configuration */}
       <div className="zion-rainbow-sub p-2.5" style={{ '--rc': '217, 70, 239' } as React.CSSProperties}>
         <div className="flex items-center gap-2">
-          <div className="rounded-lg bg-[#d946ef]/10 p-1 text-[#d946ef]">
+          <div className="rounded-lg bg-[#e41e2b]/10 p-1 text-[#e41e2b]">
             <User className="h-3.5 w-3.5" />
           </div>
           <p className="text-xs font-semibold text-white">Avatar</p>
         </div>
         <div className="mt-2 space-y-1">
           <div className="flex items-center justify-between text-[10px]">
-            <span className="text-gray-400">Callsign</span>
+            <span className="text-white/70">Callsign</span>
             <span className="font-semibold text-white">{avatarConfig.callsign || 'Unnamed'}</span>
           </div>
           <div className="flex items-center justify-between text-[10px]">
-            <span className="text-gray-400">Body</span>
+            <span className="text-white/70">Body</span>
             <span className="font-semibold capitalize text-white">{avatarConfig.bodyType}</span>
           </div>
           <div className="flex items-center justify-between text-[10px]">
-            <span className="text-gray-400">Augment</span>
+            <span className="text-white/70">Augment</span>
             <span className="font-semibold capitalize text-white">{avatarConfig.augmentation}</span>
           </div>
           <div className="flex items-center justify-between text-[10px]">
-            <span className="text-gray-400">Archetype</span>
+            <span className="text-white/70">Archetype</span>
             <span className="font-semibold capitalize text-white">{archetype ?? '—'}</span>
           </div>
           <div className="flex items-center justify-between text-[10px]">
-            <span className="text-gray-400">Neon</span>
+            <span className="text-white/70">Neon</span>
             <span className="flex items-center gap-1">
               <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: avatarConfig.neonColor, boxShadow: `0 0 6px ${avatarConfig.neonColor}` }} />
               <span className="font-semibold text-white">Active</span>
@@ -364,15 +364,15 @@ export function IdentityTab() {
         </div>
       </div>
 
-      <div className="zion-rainbow-sub p-2.5" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
-        <p className="mb-1.5 text-[10px] text-gray-400">Import from 12-word mnemonic:</p>
+      <div className="zion-rainbow-sub p-2.5" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+        <p className="mb-1.5 text-[10px] text-white/70">Import from 12-word mnemonic:</p>
         <div className="flex gap-1.5">
           <input
             type={showSeed ? 'text' : 'password'}
             value={mnemonic}
             onChange={(e) => setMnemonic(e.target.value)}
             placeholder="abandon ability ..."
-            className="flex-1 rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-[10px] text-white placeholder-gray-500 outline-none focus:border-oasis-gold"
+            className="flex-1 rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-[10px] text-white placeholder-white/50 outline-none focus:border-oasis-gold"
           />
           <button onClick={() => setShowSeed((s) => !s)} className="zion-button-ghost !p-1.5">
             {showSeed ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
@@ -386,24 +386,24 @@ export function IdentityTab() {
         </button>
       </div>
 
-      <div className="zion-rainbow-sub p-2.5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-        <p className="mb-1.5 text-[10px] text-gray-400">Generate new ZION wallet:</p>
+      <div className="zion-rainbow-sub p-2.5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+        <p className="mb-1.5 text-[10px] text-white/70">Generate new ZION wallet:</p>
         {generated ? (
           <div className="space-y-1.5">
             <div className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/30 p-1.5">
               <Wallet className="h-3 w-3 text-oasis-cyan" />
               <code className="flex-1 text-[9px] text-white">{generated.address}</code>
-              <button onClick={() => copy(generated.address, 'Address')} className="text-gray-400 hover:text-white">
+              <button onClick={() => copy(generated.address, 'Address')} className="text-white/70 hover:text-white">
                 <Copy className="h-3 w-3" />
               </button>
             </div>
             <div className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/30 p-1.5">
               <code className="flex-1 text-[8px] text-oasis-gold">{generated.mnemonic}</code>
-              <button onClick={() => copy(generated.mnemonic, 'Mnemonic')} className="text-gray-400 hover:text-white">
+              <button onClick={() => copy(generated.mnemonic, 'Mnemonic')} className="text-white/70 hover:text-white">
                 <Copy className="h-3 w-3" />
               </button>
             </div>
-            <p className="text-[9px] text-red-300">Save this seed. Shown only once.</p>
+            <p className="text-[9px] text-rasta-red/80">Save this seed. Shown only once.</p>
           </div>
         ) : (
           <button
@@ -419,7 +419,7 @@ export function IdentityTab() {
 
       <button
         onClick={handleReset}
-        className="zion-button-ghost w-full border-red-500/30 bg-red-500/10 text-[10px] text-red-400 hover:bg-red-500/20"
+        className="zion-button-ghost w-full border-rasta-red/30 bg-rasta-red/10 text-[10px] text-rasta-red hover:bg-rasta-red/20"
       >
         <RotateCcw className="h-3 w-3" />
         Reset Progress
@@ -440,14 +440,14 @@ export function AudioTab({ music, muted, onToggleMute }: {
     <div className="space-y-2.5">
       <div className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.03] px-2.5 py-2">
         <div className="flex items-center gap-2">
-          {muted ? <VolumeX className="h-4 w-4 text-gray-400" /> : <Volume2 className="h-4 w-4 text-oasis-cyan" />}
-          <span className="text-xs text-gray-300">Master Audio</span>
+          {muted ? <VolumeX className="h-4 w-4 text-white/70" /> : <Volume2 className="h-4 w-4 text-oasis-cyan" />}
+          <span className="text-xs text-white/80">Master Audio</span>
         </div>
         <button
           onClick={onToggleMute}
           className={`rounded-full px-3 py-1 text-[10px] font-bold transition ${
             muted
-              ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30'
+              ? 'bg-rasta-red/20 text-rasta-red hover:bg-rasta-red/30'
               : 'bg-oasis-cyan/20 text-oasis-cyan hover:bg-oasis-cyan/30'
           }`}
         >
@@ -455,14 +455,14 @@ export function AudioTab({ music, muted, onToggleMute }: {
         </button>
       </div>
 
-      <div className="zion-rainbow-sub p-2.5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+      <div className="zion-rainbow-sub p-2.5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
         <div className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-oasis-cyan">
           <ListMusic className="h-3 w-3" />
           OASIS Radio
         </div>
 
         <div className="mb-2 flex items-center justify-center gap-2">
-          <button onClick={() => music.prev()} className="rounded-full p-1.5 text-gray-300 transition hover:bg-white/10 hover:text-white">
+          <button onClick={() => music.prev()} className="rounded-full p-1.5 text-white/80 transition hover:bg-white/10 hover:text-white">
             <SkipBack className="h-3.5 w-3.5" />
           </button>
           <button
@@ -471,12 +471,12 @@ export function AudioTab({ music, muted, onToggleMute }: {
           >
             {music.playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           </button>
-          <button onClick={() => music.next()} className="rounded-full p-1.5 text-gray-300 transition hover:bg-white/10 hover:text-white">
+          <button onClick={() => music.next()} className="rounded-full p-1.5 text-white/80 transition hover:bg-white/10 hover:text-white">
             <SkipForward className="h-3.5 w-3.5" />
           </button>
         </div>
 
-        <div className="mb-2 flex items-center gap-1.5 text-[10px] text-gray-400">
+        <div className="mb-2 flex items-center gap-1.5 text-[10px] text-white/70">
           <span className="h-2 w-2 rounded-full" style={{ backgroundColor: current.color }} />
           <span className="truncate">{current.name}</span>
         </div>
@@ -487,7 +487,7 @@ export function AudioTab({ music, muted, onToggleMute }: {
               key={track.id}
               onClick={() => music.setTrack(i)}
               className={`flex w-full items-center gap-1.5 rounded-lg px-2 py-1 text-left text-[10px] transition ${
-                i === music.trackIndex ? 'bg-white/10 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                i === music.trackIndex ? 'bg-white/10 text-white' : 'text-white/70 hover:bg-white/5 hover:text-white'
               }`}
             >
               <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: track.color }} />
@@ -497,7 +497,7 @@ export function AudioTab({ music, muted, onToggleMute }: {
         </div>
 
         <div className="mt-2 rounded-lg border border-white/10 bg-white/5 p-2">
-          <div className="mb-1 flex items-center justify-between text-[9px] text-gray-400">
+          <div className="mb-1 flex items-center justify-between text-[9px] text-white/70">
             <span>Volume</span>
             <span className="font-mono text-oasis-cyan">{Math.round(music.volume * 100)}%</span>
           </div>
@@ -547,7 +547,7 @@ export function OasisTab({ onEnterFlight }: { onEnterFlight?: () => void }) {
       <div className="flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.03] px-2.5 py-1.5">
         <div className="flex items-center gap-1.5">
           <StatusDot status={status} />
-          <span className="text-[10px] text-gray-300">{statusLabel}</span>
+          <span className="text-[10px] text-white/80">{statusLabel}</span>
         </div>
         <button onClick={load} className="zion-button-ghost !p-1" title="Refresh">
           <RefreshCw className="h-3 w-3" />
@@ -556,14 +556,14 @@ export function OasisTab({ onEnterFlight }: { onEnterFlight?: () => void }) {
 
       {player && (
         <div className="grid grid-cols-2 gap-2">
-          <div className="zion-rainbow-sub p-2" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
-            <p className="text-[9px] text-gray-400">Pilgrim</p>
+          <div className="zion-rainbow-sub p-2" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <p className="text-[9px] text-white/70">Pilgrim</p>
             <p className="truncate text-xs font-semibold text-white">
               {player.display_name || player.address.slice(0, 8)}
             </p>
           </div>
-          <div className="zion-rainbow-sub p-2" style={{ '--rc': '251, 191, 36' } as React.CSSProperties}>
-            <p className="text-[9px] text-gray-400">Total XP</p>
+          <div className="zion-rainbow-sub p-2" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+            <p className="text-[9px] text-white/70">Total XP</p>
             <p className="text-xs font-semibold text-white">{player.total_xp}</p>
           </div>
         </div>
@@ -573,21 +573,21 @@ export function OasisTab({ onEnterFlight }: { onEnterFlight?: () => void }) {
         <div className="flex items-center gap-1.5 rounded-lg border border-white/5 bg-white/[0.03] px-2 py-1.5">
           <User className="h-3 w-3 text-oasis-purple" />
           <div>
-            <p className="text-[9px] text-gray-400">Avatars</p>
+            <p className="text-[9px] text-white/70">Avatars</p>
             <p className="font-mono text-xs text-white">{avatarCount}</p>
           </div>
         </div>
         <div className="flex items-center gap-1.5 rounded-lg border border-white/5 bg-white/[0.03] px-2 py-1.5">
           <Trophy className="h-3 w-3 text-oasis-gold" />
           <div>
-            <p className="text-[9px] text-gray-400">Quests</p>
+            <p className="text-[9px] text-white/70">Quests</p>
             <p className="font-mono text-xs text-white">{realQuests.length}</p>
           </div>
         </div>
       </div>
 
       {territories.length > 0 && (
-        <div className="zion-rainbow-sub p-2" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+        <div className="zion-rainbow-sub p-2" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
           <div className="mb-1.5 flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-oasis-purple">
             <MapIcon className="h-3 w-3" />
             Hot Territories
@@ -595,7 +595,7 @@ export function OasisTab({ onEnterFlight }: { onEnterFlight?: () => void }) {
           <div className="space-y-1">
             {territories.slice().sort((a: any, b: any) => (b.defense_power ?? 0) - (a.defense_power ?? 0)).slice(0, 3).map((t: any) => (
               <div key={t.id} className="flex items-center justify-between text-[10px]">
-                <span className="truncate text-gray-300">{t.name}</span>
+                <span className="truncate text-white/80">{t.name}</span>
                 <span className="zion-badge zion-badge-cyan text-[8px] py-0.5 px-1.5">{t.controller ?? 'Unclaimed'}</span>
               </div>
             ))}
@@ -604,7 +604,7 @@ export function OasisTab({ onEnterFlight }: { onEnterFlight?: () => void }) {
       )}
 
       {leaders.length > 0 && (
-        <div className="zion-rainbow-sub p-2" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+        <div className="zion-rainbow-sub p-2" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
           <div className="mb-1.5 flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-oasis-cyan">
             <Trophy className="h-3 w-3" />
             Top Pilgrims
@@ -612,7 +612,7 @@ export function OasisTab({ onEnterFlight }: { onEnterFlight?: () => void }) {
           <div className="space-y-1">
             {leaders.map((entry, i) => (
               <div key={entry.address} className="flex items-center justify-between text-[10px]">
-                <span className="truncate text-gray-300">{i + 1}. {entry.display_name || entry.address.slice(0, 8)}</span>
+                <span className="truncate text-white/80">{i + 1}. {entry.display_name || entry.address.slice(0, 8)}</span>
                 <span className="font-mono text-oasis-cyan">{entry.total_xp ?? entry.value ?? 0}</span>
               </div>
             ))}
@@ -690,7 +690,7 @@ export default function GamePanel({
           title="Show game panel"
         >
           <Rocket className="h-4 w-4 text-oasis-cyan" />
-          <span className="font-mono text-[10px] text-gray-400">Lv{level}</span>
+          <span className="font-mono text-[10px] text-white/70">Lv{level}</span>
         </button>
       )}
 
@@ -717,7 +717,7 @@ export default function GamePanel({
 
           {/* Player identity */}
           <div className="mt-3 flex items-start gap-2.5">
-            <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-oasis-gold to-oasis-purple text-sm font-bold text-white shadow-[0_0_20px_rgba(147,51,234,0.35)]">
+            <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-oasis-gold to-oasis-purple text-sm font-bold text-white shadow-[0_0_20px_rgba(228,30,43,0.35)]">
               {level}
               <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full border border-white/10 bg-oasis-black text-[8px] text-oasis-cyan">
                 {Math.round(progress * 100)}%
@@ -733,7 +733,7 @@ export default function GamePanel({
               <div className="mt-1.5">
                 <div className="flex items-center justify-between text-[9px]">
                   <span className="font-mono text-oasis-cyan">{xp} / {level * XP_PER_LEVEL} XP</span>
-                  <span className="text-gray-400">Lv {level}</span>
+                  <span className="text-white/70">Lv {level}</span>
                 </div>
                 <div className="zion-progress mt-1">
                   <div style={{ width: `${progress * 100}%` }} />
@@ -741,7 +741,7 @@ export default function GamePanel({
               </div>
 
               {address && (
-                <div className="mt-1 flex items-center gap-1 text-[9px] text-gray-300">
+                <div className="mt-1 flex items-center gap-1 text-[9px] text-white/80">
                   <Wallet className="h-2.5 w-2.5 text-oasis-cyan" />
                   <span className="font-mono truncate" title={address}>
                     {address.length > 16 ? `${address.slice(0, 10)}...${address.slice(-4)}` : address}
@@ -753,7 +753,7 @@ export default function GamePanel({
 
           {/* Discovery banner */}
           <div className="mt-2.5 flex items-center justify-between rounded-lg border border-white/5 bg-white/[0.03] px-2 py-1">
-            <div className="flex items-center gap-1.5 text-[9px] text-gray-300">
+            <div className="flex items-center gap-1.5 text-[9px] text-white/80">
               <ScanLine className="h-2.5 w-2.5 text-oasis-emerald" />
               <span>Scanned</span>
             </div>
@@ -829,7 +829,7 @@ export default function GamePanel({
           {/* Expand/collapse button */}
           <button
             onClick={() => setExpanded((e) => !e)}
-            className="mt-2.5 flex w-full items-center justify-center gap-1 rounded-lg border border-white/5 bg-white/[0.03] py-1.5 text-[9px] font-semibold text-gray-400 transition hover:bg-white/10 hover:text-white"
+            className="mt-2.5 flex w-full items-center justify-center gap-1 rounded-lg border border-white/5 bg-white/[0.03] py-1.5 text-[9px] font-semibold text-white/70 transition hover:bg-white/10 hover:text-white"
           >
             <Settings className="h-3 w-3" />
             {expanded ? 'Collapse' : 'Game Settings'}
@@ -858,7 +858,7 @@ export default function GamePanel({
                         key={t.id}
                         onClick={() => setTab(t.id)}
                         className={`flex flex-1 flex-col items-center gap-0.5 rounded-lg py-1.5 text-[9px] font-semibold transition ${
-                          active ? `bg-white/10 text-${t.color}` : 'text-gray-400 hover:text-white'
+                          active ? `bg-white/10 text-${t.color}` : 'text-white/70 hover:text-white'
                         }`}
                       >
                         <Icon className="h-3.5 w-3.5" />

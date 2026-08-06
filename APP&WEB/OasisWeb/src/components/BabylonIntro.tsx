@@ -136,7 +136,7 @@ export default function BabylonIntro({ onEnter }: BabylonIntroProps) {
     title.fontFamily = 'Inter, ui-sans-serif, system-ui';
     title.fontWeight = 'bold';
     title.top = '-42%';
-    title.shadowColor = 'rgba(6,182,212,0.8)';
+    title.shadowColor = 'rgba(7,137,48,0.8)';
     title.shadowBlur = 24;
     uiTexture.addControl(title);
 
@@ -160,18 +160,18 @@ export default function BabylonIntro({ onEnter }: BabylonIntroProps) {
     enterBtn.fontFamily = 'Inter, ui-sans-serif, system-ui';
     enterBtn.fontWeight = 'bold';
     enterBtn.cornerRadius = 12;
-    enterBtn.background = 'rgba(6, 182, 212, 0.25)';
+    enterBtn.background = 'rgba(7, 137, 48, 0.25)';
     enterBtn.thickness = 1;
     enterBtn.linkOffsetX = 0;
     enterBtn.linkOffsetY = 0;
     enterBtn.top = '34%';
-    enterBtn.shadowColor = 'rgba(6, 182, 212, 0.5)';
+    enterBtn.shadowColor = 'rgba(7, 137, 48, 0.5)';
     enterBtn.shadowBlur = 20;
     enterBtn.onPointerEnterObservable.add(() => {
-      enterBtn.background = 'rgba(6, 182, 212, 0.45)';
+      enterBtn.background = 'rgba(7, 137, 48, 0.45)';
     });
     enterBtn.onPointerOutObservable.add(() => {
-      enterBtn.background = 'rgba(6, 182, 212, 0.25)';
+      enterBtn.background = 'rgba(7, 137, 48, 0.25)';
     });
     enterBtn.onPointerClickObservable.add(() => {
       setWarping(true);
@@ -233,7 +233,7 @@ export default function BabylonIntro({ onEnter }: BabylonIntroProps) {
             exit={{ opacity: 0 }}
             className="pointer-events-none fixed bottom-6 left-1/2 -translate-x-1/2 text-center"
           >
-            <p className="text-[10px] text-gray-500">Babylon.js rendering</p>
+            <p className="text-[10px] text-white/60">Babylon.js rendering</p>
           </motion.div>
         )}
       </AnimatePresence>

@@ -52,13 +52,13 @@ export default function OnboardingHint({ onClose }: { onClose?: () => void }) {
             <div className="min-w-0">
               <span className="zion-kicker text-[9px] py-1 px-2">Onboarding</span>
               <h2 className="mt-1.5 text-lg font-bold text-white">Welcome, Pilgrim</h2>
-              <p className="mt-0.5 text-[11px] leading-relaxed text-gray-300">
+              <p className="mt-0.5 text-[11px] leading-relaxed text-white/80">
                 Explore 55 OASIS worlds, complete quests, and collect Golden Eggs.
               </p>
             </div>
             <button
               onClick={dismiss}
-              className="shrink-0 rounded-full p-1.5 text-gray-400 transition hover:bg-white/10 hover:text-white"
+              className="shrink-0 rounded-full p-1.5 text-white/70 transition hover:bg-white/10 hover:text-white"
               aria-label="Dismiss onboarding"
               title="Dismiss"
             >
@@ -71,14 +71,14 @@ export default function OnboardingHint({ onClose }: { onClose?: () => void }) {
               <div
                 key={title}
                 className="zion-rainbow-sub flex items-start gap-2.5 p-2"
-                style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+                style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
               >
                 <div className="mt-0.5 shrink-0 rounded-lg bg-oasis-purple/10 p-1.5 text-oasis-purple">
                   <Icon className="h-3.5 w-3.5" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-[11px] font-semibold text-white">{title}</p>
-                  <p className="text-[10px] leading-relaxed text-gray-300">{text}</p>
+                  <p className="text-[10px] leading-relaxed text-white/80">{text}</p>
                 </div>
               </div>
             ))}

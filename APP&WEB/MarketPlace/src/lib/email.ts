@@ -2,6 +2,7 @@ import nodemailer from 'nodemailer';
 import { Resend } from 'resend';
 import { buildV2OrderConfirmationEmail } from './v2-email';
 import { getActiveTheme } from './settings';
+import { generateInvoicePdf } from './invoice-pdf';
 
 interface AttachmentInput {
   filename: string;
@@ -240,9 +241,9 @@ export async function sendCustomerOrderConfirmation(
     const attachments: AttachmentInput[] | undefined = invoiceHtml
       ? [
           {
-            filename: `faktura-${order.orderId.replace(/\s+/g, '_')}.html`,
-            content: invoiceHtml,
-            contentType: 'text/html',
+            filename: `faktura-${order.orderId.replace(/\s+/g, '_')}.pdf`,
+            content: await generateInvoicePdf(invoiceHtml),
+            contentType: 'application/pdf',
           },
         ]
       : undefined;
@@ -317,6 +318,7 @@ Tým ZION Terra Nova
 `;
 
   try {
+    const pdf = await generateInvoicePdf(invoiceHtml);
     await sendMail({
       from: `${cfg.shopName} <${cfg.resendApiKey ? cfg.resendFrom : cfg.shopEmail}>`,
       to: order.customerEmail,
@@ -326,9 +328,9 @@ Tým ZION Terra Nova
       html: `<p>Dobrý den ${escapeHtml(order.customerName)},</p><p>v příloze Vám zasíláme fakturu k objednávce <strong>#${escapeHtml(order.orderId)}</strong>.</p><p>Celková částka: <strong>${formatPrice(order.totalCzk)}</strong></p><p>S pozdravem,<br>Tým ZION Terra Nova</p>`,
       attachments: [
         {
-          filename: `faktura-${order.orderId.replace(/\s+/g, '_')}.html`,
-          content: invoiceHtml,
-          contentType: 'text/html',
+          filename: `faktura-${order.orderId.replace(/\s+/g, '_')}.pdf`,
+          content: pdf,
+          contentType: 'application/pdf',
         },
       ],
     });
