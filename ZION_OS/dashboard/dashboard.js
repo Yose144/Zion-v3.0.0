@@ -1191,8 +1191,8 @@ function _renderEdgeServerCard(d) {
 // ── Edge action buttons ──────────────────────────────────────────────
 async function edgeAction(action) {
   const ACTION_LABELS = {
-    'restart-node1': 'Restart Edge Node 1',
-    'restart-node2': 'Restart Edge Node 2',
+    'restart-node1': 'Restart V31 Node 1',
+    'restart-node2': 'Restart V31 Node 2',
     'restart-pool': 'Restart Edge Pool',
     'restart-dao': 'Restart Edge DAO',
     'restart-warp': 'Restart Edge WARP',
@@ -5343,10 +5343,12 @@ async function loadTopology(){
     const h4 = data.local_backup?.height ?? 0;
     if (el('topo-sync-n1')) el('topo-sync-n1').textContent = h1 ? h1.toLocaleString() : '—';
     if (el('topo-sync-n2')) el('topo-sync-n2').textContent = h2 ? h2.toLocaleString() : '—';
-    if (el('topo-sync-n3')) el('topo-sync-n3').textContent = h3 ? h3.toLocaleString() : '—';
+    if (el('topo-sync-n4')) el('topo-sync-n4').textContent = h3 ? h3.toLocaleString() : '—';
+    if (el('topo-sync-n3')) el('topo-sync-n3').textContent = h4 ? h4.toLocaleString() : '—';
     if (el('topo-sync-bar-n1')) el('topo-sync-bar-n1').style.width = (h1/maxH*100)+'%';
     if (el('topo-sync-bar-n2')) el('topo-sync-bar-n2').style.width = (h2/maxH*100)+'%';
-    if (el('topo-sync-bar-n3')) el('topo-sync-bar-n3').style.width = (h3/maxH*100)+'%';
+    if (el('topo-sync-bar-n4')) el('topo-sync-bar-n4').style.width = (h3/maxH*100)+'%';
+    if (el('topo-sync-bar-n3')) el('topo-sync-bar-n3').style.width = (h4/maxH*100)+'%';
 
     // ── Port status ───────────────────────────────────────────────────────
     const portMap = {p2p:'v31_node_p2p', rpc:'v31_node_rpc', pool:'pool_stratum', dash:'dashboard'};
@@ -5866,7 +5868,7 @@ async function renderMainnetCharts(){
   // Single-point bar charts for current mainnet state
   if(document.getElementById('chart-mainnet-height')){
     mkChart('chart-mainnet-height', 'bar', {
-      labels: ['Edge Node', 'Local Backup'],
+      labels: ['V31 Node', 'Local Backup'],
       datasets: [{
         label: 'Chain Height',
         data: [en.chain_height || 0, ln.chain_height || 0],
@@ -6992,8 +6994,8 @@ async function loadMetricsCollector(){
     let html = '<div class="text-xs text-emerald-400 mb-2">✓ Rust collector snapshot (' + escapeHtml(age) + ') @ ' + escapeHtml(ts) + '</div>';
     html += '<div class="grid grid-cols-1 md:grid-cols-3 gap-3">';
 
-    // Edge Node
-    html += '<div class="zion-panel p-3"><div class="text-[10px] text-gray-400 uppercase mb-1">Edge Node</div>';
+    // V31 Node
+    html += '<div class="zion-panel p-3"><div class="text-[10px] text-gray-400 uppercase mb-1">V31 Node</div>';
     html += '<div class="text-lg font-bold">' + (en.chain_height != null ? fmtNum(en.chain_height) : '—') + '</div>';
     html += '<div class="text-[10px] text-gray-400">Height</div>';
     html += '<div class="text-xs mt-1">Peers: <span class="text-white">' + (en.known_peers ?? '—') + '</span> · Mempool: <span class="text-white">' + (en.mempool_size ?? '—') + '</span></div>';
@@ -9848,13 +9850,13 @@ function renderMempoolSparkline(mempoolSize) {
 // FEATURE F — Network topology SVG map
 // ════════════════════════════════════════════════════════════════════════
 // ── V31 P2P topology + service mesh ────────────────────────────────────────
-// Layout: 3 V31 blockchain nodes across the top, services branching down.
+// Layout: 4 nodes (3 V31 + local backup) across the top, services branching down.
 const TOPO_NODES = [
   // Row 1: Blockchain nodes (V31 P2P mesh)
+  { id:'local-backup',label:'Local Backup',  x:100, y:55,  kind:'core' },
   { id:'v31-node',    label:'V31 Node 1',    x:300, y:55,  kind:'core' },
-  { id:'v31-node2',   label:'V31 Node 2',    x:520, y:55,  kind:'core' },
-  { id:'v31-node3',   label:'V31 Node 3',    x:640, y:55,  kind:'core' },
-  { id:'local-backup',label:'Local Backup',  x:120, y:55,  kind:'core' },
+  { id:'v31-node2',   label:'V31 Node 2',    x:500, y:55,  kind:'core' },
+  { id:'v31-node3',   label:'V31 Node 3',    x:700, y:55,  kind:'core' },
   // Row 2: L1 services
   { id:'pool-edge',   label:'Pool',          x:300, y:140, kind:'core' },
   { id:'miner',       label:'Miner',         x:160, y:140, kind:'core' },
@@ -9875,6 +9877,7 @@ const TOPO_EDGES = [
   // P2P mesh (V31 3-node + local backup)
   ['v31-node','v31-node2'],
   ['v31-node','v31-node3'],
+  ['v31-node2','v31-node3'],
   ['v31-node','local-backup'],
   ['v31-node2','local-backup'],
   // L1 service dependencies
