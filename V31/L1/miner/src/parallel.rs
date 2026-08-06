@@ -280,6 +280,12 @@ pub fn find_auxpow_share(
     let extranonce2 = job.extranonce2.clone();
     let ntime = job.ntime.clone();
 
+    // Cache the first 32 bytes of the header for Ethash/KawPow/ProgPoW
+    // `eth_submitWork` submissions.
+    let mut header_hash = [0u8; 32];
+    let copy_len = header.len().min(32);
+    header_hash[..copy_len].copy_from_slice(&header[..copy_len]);
+
     // Build the nonce base and shift for kHeavyHash so the extranonce1
     // prefix stays in the low bytes and the scanned suffix occupies the
     // high bytes (matching KaspaStratum / 2miners).
@@ -329,6 +335,7 @@ pub fn find_auxpow_share(
                     coin,
                     nonce,
                     hash,
+                    header_hash,
                     mix_hash: None,
                     solution: None,
                     extranonce2,
@@ -367,6 +374,7 @@ pub fn find_auxpow_share(
                     coin,
                     nonce,
                     hash,
+                    header_hash,
                     mix_hash: None,
                     solution: None,
                     extranonce2: extranonce2.clone(),
@@ -397,6 +405,12 @@ fn find_verushash_share(
     let coin = job.coin;
     let ntime = job.ntime.clone();
 
+    // Cache the first 32 bytes of the header for `eth_submitWork`-style
+    // submissions, even though VerusHash uses the solution directly.
+    let mut header_hash = [0u8; 32];
+    let copy_len = header.len().min(32);
+    header_hash[..copy_len].copy_from_slice(&header[..copy_len]);
+
     (0..threads).into_par_iter().find_map_any(|thread_idx| {
         let start = thread_idx as u64 * chunk_size;
         let count = if thread_idx == threads - 1 {
@@ -424,6 +438,7 @@ fn find_verushash_share(
                 coin,
                 nonce,
                 hash,
+                header_hash,
                 mix_hash: None,
                 solution: Some(solution),
                 extranonce2,
@@ -551,5 +566,47 @@ mod tests {
         let share = find_auxpow_share(&job, 2, 1_000).expect("should find share with max target");
         assert_eq!(share.coin, job.coin);
         assert_eq!(share.job_id, job.job_id);
+    }
+
+    #[test]
+    #[cfg(feature = "native-verushash")]
+    fn find_auxpow_share_verushash_finds_share() {
+        let en1 = [0x01u8, 0x02, 0x03, 0x04];
+        let mut header = vec![0u8; crate::auxpow::hasher::VERUS_HEADER_SIZE];
+        // version
+        header[0..4].copy_from_slice(&[4, 0, 0, 0]);
+        // nTime / nBits
+        header[100..104].copy_from_slice(&[0x00, 0xC0, 0x5A, 0x5A]);
+        header[104..108].copy_from_slice(&[0x1b, 0x00, 0xff, 0xff]);
+        // nonce field
+        header[108..108 + en1.len()].copy_from_slice(&en1);
+        // varint
+        header[140..143].copy_from_slice(&[0xfd, 0x40, 0x05]);
+        // solution
+        let sol_offset = crate::auxpow::hasher::VERUS_SOLUTION_OFFSET;
+        header[sol_offset] = 7;
+        header[sol_offset + 5] = 1;
+        for b in &mut header[sol_offset + 8..sol_offset + 72] {
+            *b = 0xAB;
+        }
+        // nonceSpace en1
+        let ns_offset = crate::auxpow::hasher::VERUS_NONCE_SPACE_OFFSET;
+        header[ns_offset..ns_offset + en1.len()].copy_from_slice(&en1);
+
+        let job = crate::auxpow::Job {
+            job_id: "vrsc_test".to_string(),
+            coin: zion_cosmic_harmony::ExternalCoin::Verus,
+            header,
+            target: [0xFF; 32],
+            extranonce: en1.to_vec(),
+            extranonce2: "00".to_string(),
+            ntime: "5a5ac000".to_string(),
+            height: 0,
+        };
+        let share = find_auxpow_share(&job, 2, 1_000)
+            .expect("verushash CPU scanner should find a share with max target");
+        assert_eq!(share.coin, job.coin);
+        assert!(share.solution.is_some());
+        assert_eq!(share.solution.as_ref().unwrap().len(), 3 + 1344);
     }
 }
