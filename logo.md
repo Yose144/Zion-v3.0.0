@@ -16,10 +16,8 @@ This file tracks where the **original company logo** (historic ZION mark) and th
 ## Where the original company logo is used
 
 - `APP&WEB/MarketPlace/public/logo144.png` → served as `/logo144.png`
-- `APP&WEB/MarketPlace/src/components/Navbar.tsx` → top-left nav image
 - `APP&WEB/MarketPlace/src/app/layout.tsx` → footer logo image
 - `APP&WEB/website-v2.9/public/images/logo144.png` → served as `/images/logo144.png`
-- `APP&WEB/website-v2.9/src/components/Navigation.tsx` → top-left nav image
 - `APP&WEB/website-v2.9/public/maintenance.html` → footer logo (`images/logo144.png`)
 - `APP&WEB/website-v2.9/public/maintenance.html` → stargate center logo (`stargate/Z.gif`)
 - `APP&WEB/website-v2.9/src/components/StargateLogo.tsx` → homepage stargate center (`stargate/Z.gif`)
@@ -27,8 +25,10 @@ This file tracks where the **original company logo** (historic ZION mark) and th
 ## Where the canonical new symbol is used
 
 - `APP&WEB/OasisWeb/src/app/layout.tsx` → favicon (`/favicon.ico`) + apple-touch (`/symbol-200x200.png`)
+- `APP&WEB/MarketPlace/src/components/Navbar.tsx` → top-left nav image (`/symbol-200x200.png`)
 - `APP&WEB/MarketPlace/src/app/layout.tsx` → favicon (`/favicon.ico`) + apple-touch (`/symbol-200x200.png`)
 - `APP&WEB/MarketPlace/public/symbol-200x200.png` + `zion-social-banner.png`
+- `APP&WEB/website-v2.9/src/components/Navigation.tsx` → top-left nav image (`/symbol-200x200.png`)
 - `APP&WEB/website-v2.9/public/maintenance.html` → favicon + apple-touch (`symbol-200x200.png`)
 - `APP&WEB/website-v2.9/public/maintenance.html` → OpenGraph (`zion-social-banner.png`)
 - `ZION_OS/dashboard/dashboard.html` + `v31/index.html` → `/v31/favicon.ico` + `/v31/symbol-200x200.png` header icon
@@ -38,11 +38,10 @@ This file tracks where the **original company logo** (historic ZION mark) and th
 
 ## Recent changes (2026-08-06)
 
-1. Restored original company logo in the intro hub (`maintenance.html`) stargate center.
+1. Restored original company logo in the intro hub (`maintenance.html`) stargate center and footer.
 2. Restored `logo144.png` to the original 500×500 company mark in MarketPlace and website-v2.9.
-3. Updated MarketPlace top navigation to use `/logo144.png`.
-4. Updated website-v2.9 top navigation to use `/images/logo144.png`.
-5. Created this `logo.md` to keep track of logo usage.
+3. Updated MarketPlace and website-v2.9 top navigation to use the canonical new symbol `/symbol-200x200.png`.
+4. Created this `logo.md` to keep track of logo usage.
 
 ## Notes
 
