@@ -222,7 +222,13 @@ async fn main() -> Result<()> {
     }
     config.autonomous = args.autonomous;
     config.profit_interval_sec = args.profit_interval;
-    config.zion_nonce_batch = args.threads as u64 * 100_000;
+    // Nonce batch: when CPU threads > 0, scale with threads. When GPU-only
+    // (threads=0), use a generous default so the GPU kernel actually launches.
+    config.zion_nonce_batch = if args.threads > 0 {
+        args.threads as u64 * 100_000
+    } else {
+        100_000 // GPU-only mode: large enough for multiple GPU chunks
+    };
 
     // ── Startup banner (ZION ASCII art + hardware table) ──
     #[cfg(feature = "tui")]

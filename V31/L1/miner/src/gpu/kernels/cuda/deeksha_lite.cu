@@ -28,11 +28,11 @@ typedef long long          int64_t;
 /* Constants                                                                   */
 /* ========================================================================== */
 
-#define SCRATCHPAD_SIZE  131072   /* 128 KiB = 4096 * 32 */
+#define SCRATCHPAD_SIZE  524288   /* 512 KiB = 16384 * 32 (v3.2 ASIC-hardened) */
 #define BLOCK_SIZE       32       /* bytes per block */
-#define BLOCK_COUNT      4096
-#define RANDOM_READS     32
-#define PASSES           1
+#define BLOCK_COUNT      16384    /* 512 KiB / 32B = 16384 blocks */
+#define RANDOM_READS     128      /* 4× more serial bottleneck (was 32) */
+#define PASSES           2        /* forward + backward (was 1) */
 #define TPB              128      /* threads per block (must match launch config) */
 
 #define ROL64(x, n) (((x) << (n)) | ((x) >> (64 - (n))))
@@ -421,7 +421,7 @@ __constant__ uint8_t AES_SBOX_DATA[256] = {
 /* INTERLEAVED + shared memory S-box + high register budget                    */
 /* ========================================================================== */
 
-extern "C" __launch_bounds__(128, 8) __global__ void deeksha_lite_mine(
+extern "C" __launch_bounds__(128, 4) __global__ void deeksha_lite_mine(
     const uint64_t *header_keccak_state,
     uint64_t nonce_base,
     uint32_t nonce_count,
@@ -565,7 +565,8 @@ extern "C" __global__ void deeksha_lite_debug(
 
     /* AES mix (load S-box to shared first) */
     __shared__ uint8_t sbox[256];
-    if (threadIdx.x < 256) sbox[threadIdx.x] = AES_SBOX_DATA[threadIdx.x];
+    /* Debug kernel runs with 1 thread — load S-box in a loop, not per-thread */
+    for (int i = 0; i < 256; i++) sbox[i] = AES_SBOX_DATA[i];
     __syncthreads();
 
     uint64_t s3[4];

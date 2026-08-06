@@ -29,11 +29,11 @@
 /* Constants                                                                   */
 /* ========================================================================== */
 
-#define SCRATCHPAD_SIZE  131072   /* 128 KiB = 4096 * 32 */
+#define SCRATCHPAD_SIZE  524288   /* 512 KiB = 16384 * 32 (v3.2 ASIC-hardened) */
 #define BLOCK_SIZE       32
-#define BLOCK_COUNT      4096
-#define PASSES           1
-#define RANDOM_READS     32
+#define BLOCK_COUNT      16384    /* 512 KiB / 32B = 16384 blocks */
+#define PASSES           2        /* forward + backward (was 1) */
+#define RANDOM_READS     128      /* 4× more serial bottleneck (was 32) */
 
 /* Local work group size — overridden via build options for the real miner. */
 #ifndef LOCAL_SIZE

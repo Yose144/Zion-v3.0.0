@@ -66,12 +66,13 @@ GPU_BACKEND="${ZION_GPU_BACKEND:-cuda}"
 GPU_FLAG="--gpu ${GPU_BACKEND}"
 
 # CUDA work size — number of GPU threads per kernel launch.
-# Each thread uses 128 KiB scratchpad, so work_size=4096 = 512 MB VRAM.
-# GTX 1070 Ti (8GB, 19 SMs): 4096 is optimal with __launch_bounds__(128, 8) + TPB=128.
-# Benchmark: 4096→2.52 MH/s, 8192→1.72 MH/s, 16384→1.01 MH/s (memory-bound kernel).
-# Larger GPUs (16GB+): can try 8192. Smaller GPUs (4GB): use 2048.
-export ZION_CUDA_WORK_CAP="${ZION_CUDA_WORK_CAP:-4096}"
-export ZION_GPU_WORK_SIZE="${ZION_GPU_WORK_SIZE:-4096}"
+# Each thread uses 512 KiB scratchpad (v3.2 ASIC-hardened), so:
+#   work_size=2048 → 1 GB VRAM (leaves 7 GB for Stream 2 AuxPoW)
+#   work_size=4096 → 2 GB VRAM (leaves 6 GB for Stream 2)
+# GTX 1070 Ti (8GB, 19 SMs): 2048 recommended (balance ZION + Stream 2).
+# Smaller GPUs (4GB): use 1024. Larger GPUs (16GB+): can try 4096.
+export ZION_CUDA_WORK_CAP="${ZION_CUDA_WORK_CAP:-2048}"
+export ZION_GPU_WORK_SIZE="${ZION_GPU_WORK_SIZE:-2048}"
 
 # Stream 2/3 (AuxPoW external coins) — disabled by default, enable with --autonomous
 STREAM2_FLAG=""
