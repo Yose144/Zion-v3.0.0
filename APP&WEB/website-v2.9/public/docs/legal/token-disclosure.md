@@ -172,9 +172,9 @@ prostředky.
 
 | Slot | Adresa | Částka | Lock |
 |------|--------|--------|------|
-| 6 | `zion1u5u7k43240d5l4d0x7q5m3c4a838z4k000cv3q0` | 2,5B | blok 144 000 + admin + DAO |
-| 7 | `zion1m8d235x268h8d887s036m8c3x7s356d3r37k6m6` | 1,0B | blok 144 000 + admin + DAO |
-| 8 | `zion102s8k4k0w783d657j255z865e47054s342u87v3` | 0,5B | blok 144 000 + admin + DAO |
+| 6 | `zion1j5a327c7d3w7h4e474n5p4z0z827f8p874mr2p7` | 2,5B | blok 144 000 + admin + DAO |
+| 7 | `zion1f7g4h034m5l0x3g6q4l5d298d597v5a4q3wc3t7` | 1,0B | blok 144 000 + admin + DAO |
+| 8 | `zion1a6s5y727s0d5m5s3u448d5g3g60032s6p5xy2l5` | 0,5B | blok 144 000 + admin + DAO |
 
 DAO treasury (4B ZION) je **trojí zámek**:
 1. Time-lock: blok 144 000 (~100 dní)

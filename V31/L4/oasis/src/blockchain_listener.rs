@@ -22,8 +22,57 @@
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use std::net::SocketAddr;
 use std::time::Duration;
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::net::TcpStream;
 use tracing::{error, info, warn};
+
+/// Parse an RPC URL into a TCP socket address.
+///
+/// Accepts `http://host:port`, `host:port` or `host` (defaulting to 9443).
+fn parse_rpc_addr(rpc_url: &str) -> Result<SocketAddr, String> {
+    let s = rpc_url.trim();
+    let s = s
+        .strip_prefix("http://")
+        .or(s.strip_prefix("https://"))
+        .unwrap_or(s);
+    let s = s.split_once('/').map(|(h, _)| h).unwrap_or(s);
+
+    if let Ok(addr) = s.parse::<SocketAddr>() {
+        return Ok(addr);
+    }
+    if !s.contains(':') {
+        return format!("{}:9443", s)
+            .parse::<SocketAddr>()
+            .map_err(|e| format!("invalid RPC address: {} ({})", rpc_url, e));
+    }
+    Err(format!("invalid RPC address: {}", rpc_url))
+}
+
+/// Send a single JSON-RPC request over raw TCP and return the parsed response.
+async fn jsonrpc_tcp_call(addr: SocketAddr, request: &Value) -> Result<Value, String> {
+    let mut stream = TcpStream::connect(addr)
+        .await
+        .map_err(|e| format!("TCP connect to {} failed: {}", addr, e))?;
+
+    let payload = format!("{}\n", request);
+    stream
+        .write_all(payload.as_bytes())
+        .await
+        .map_err(|e| format!("TCP write failed: {}", e))?;
+    stream.flush().await.map_err(|e| format!("TCP flush failed: {}", e))?;
+
+    let (reader, _) = stream.split();
+    let mut reader = BufReader::new(reader);
+    let mut line = String::new();
+    reader
+        .read_line(&mut line)
+        .await
+        .map_err(|e| format!("TCP read failed: {}", e))?;
+
+    serde_json::from_str(&line).map_err(|e| format!("JSON parse failed: {}", e))
+}
 
 /// Event emitted when a new block is mined on L1.
 ///
@@ -63,7 +112,7 @@ pub struct BlockInfo {
 /// Polls an L1 node for newly mined blocks and emits `BlockMinedEvent`s.
 pub struct L1BlockListener {
     rpc_url: String,
-    client: reqwest::Client,
+    rpc_addr: SocketAddr,
     last_height: u64,
     poll_interval_secs: u64,
 }
@@ -71,14 +120,15 @@ pub struct L1BlockListener {
 impl L1BlockListener {
     /// Create a new listener targeting a single L1 RPC endpoint.
     pub fn new(rpc_url: String) -> Self {
-        let client = reqwest::Client::builder()
-            .timeout(Duration::from_secs(15))
-            .build()
-            .unwrap_or_else(|_| reqwest::Client::new());
+        let rpc_addr = parse_rpc_addr(&rpc_url).unwrap_or_else(|_| {
+            "127.0.0.1:9443"
+                .parse::<SocketAddr>()
+                .expect("fallback RPC addr")
+        });
 
         Self {
             rpc_url,
-            client,
+            rpc_addr,
             last_height: 0,
             poll_interval_secs: 10,
         }
@@ -194,18 +244,7 @@ impl L1BlockListener {
             "id": 1,
         });
 
-        let resp = self
-            .client
-            .post(&self.rpc_url)
-            .json(&body)
-            .send()
-            .await
-            .map_err(|e| format!("HTTP request failed: {}", e))?;
-
-        let val: Value = resp
-            .json()
-            .await
-            .map_err(|e| format!("JSON decode failed: {}", e))?;
+        let val = jsonrpc_tcp_call(self.rpc_addr, &body).await?;
 
         let h = rpc_result_field(&val, "chain_height")
             .and_then(|v| v.as_u64())
@@ -223,18 +262,7 @@ impl L1BlockListener {
             "id": 1,
         });
 
-        let resp = self
-            .client
-            .post(&self.rpc_url)
-            .json(&body)
-            .send()
-            .await
-            .map_err(|e| format!("HTTP request failed: {}", e))?;
-
-        let val: Value = resp
-            .json()
-            .await
-            .map_err(|e| format!("JSON decode failed: {}", e))?;
+        let val = jsonrpc_tcp_call(self.rpc_addr, &body).await?;
 
         let result = rpc_result(&val)?;
 

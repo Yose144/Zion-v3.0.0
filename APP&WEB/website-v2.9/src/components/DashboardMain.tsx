@@ -28,10 +28,10 @@ interface TreasuryItem { label: string; address: string; share: string; role: st
 interface DaoProposal { id: string; title: string; status: 'active' | 'passed' | 'failed' | 'pending'; yes_votes: number; no_votes: number; deadline: string; }
 
 const TREASURY: TreasuryItem[] = [
-  { label: 'Miner',       address: 'zion1d6m0h2r8m7k8k2d8n072y7j3j4m0254323vq0e3', share: '89%', role: 'Mining rewards' },
-  { label: 'Humanitarian',address: 'zion1e0u5q5s660k4m4a634p2c2v358r8g59564054z7', share: '5%',  role: 'Charity tithe' },
-  { label: 'Issobella',   address: 'zion1f7y7l5k678y0v408e8s654d2282346k375526t2', share: '5%',  role: 'Issobella fund' },
-  { label: 'Pool Fee',    address: 'zion1062522x6a083x6r4d24303l5h20698z7j8qk433', share: '1%',  role: 'Pool operator' },
+  { label: 'Miner',       address: 'zion1u4a82230m0a267r785m822u5a3g7n753d7eu5n0', share: '89%', role: 'Mining rewards' },
+  { label: 'Humanitarian',address: 'zion136m4u7f8s5w3l0e00342s7a4r282275442vm2w3', share: '5%',  role: 'Charity tithe' },
+  { label: 'Issobella',   address: 'zion173g835z228z6u303z59603y236r5e854l36g604', share: '5%',  role: 'Issobella fund' },
+  { label: 'Pool Fee',    address: 'zion1e6r72872w0y5w6c3h4e6z847g8z4z7l0n4rj607', share: '1%',  role: 'Pool operator' },
 ];
 
 const TABS = [
