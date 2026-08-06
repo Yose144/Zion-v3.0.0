@@ -18,7 +18,7 @@ use zion_l1_types::{Amount, Hash};
 #[cfg(feature = "auxpow")]
 use crate::autonomous::{AutonomousProfitRouter, HardwareProfile};
 #[cfg(feature = "auxpow")]
-use crate::auxpow::{AuxPoWScheduler, Job, Share, StratumClient};
+use crate::auxpow::{AuxPoWScheduler, Job, Share, ShareResult, StratumClient};
 use crate::config::MinerConfig;
 use crate::stream::{StreamId, StreamStats};
 
@@ -247,8 +247,22 @@ impl MinerRuntime {
             ntime: job.ntime,
         };
 
-        if let Err(e) = client.submit_share(&share).await {
-            warn!(error = %e, "zion pool share submit failed");
+        match client.submit_share(&share).await {
+            Ok(ShareResult::Accepted) => {
+                self.record_accepted(StreamId::Zion).await;
+                info!(nonce = nonce, "zion pool share accepted");
+            }
+            Ok(ShareResult::Rejected(reason)) => {
+                self.record_rejected(StreamId::Zion).await;
+                warn!(nonce = nonce, reason = %reason, "zion pool share rejected");
+            }
+            Ok(ShareResult::Unknown) => {
+                warn!(nonce = nonce, "zion pool share response unknown");
+            }
+            Ok(ShareResult::NoShare) => {}
+            Err(e) => {
+                warn!(error = %e, nonce = nonce, "zion pool share submit failed");
+            }
         }
 
         // Return a dummy block for stats tracking; real block assembly happens
@@ -519,7 +533,9 @@ impl MinerRuntime {
                                     if !use_node {
                                         parent = block.header.clone();
                                     }
-                                    this.record_accepted(StreamId::Zion).await;
+                                    if !use_pool {
+                                        this.record_accepted(StreamId::Zion).await;
+                                    }
                                     info!(
                                         height = block.header.height,
                                         nonce = block.header.nonce,
@@ -715,16 +731,33 @@ impl MinerRuntime {
 
         let share = self.mine_auxpow_share_batch(stream, &job, batch).await?;
 
-        let guard = client_cell.lock().await;
-        if let Some(client) = guard.as_ref() {
-            if let Err(e) = client.submit_share(&share).await {
-                warn!(error = %e, "submit share failed");
+        let result = {
+            let guard = client_cell.lock().await;
+            if let Some(client) = guard.as_ref() {
+                match client.submit_share(&share).await {
+                    Ok(r) => r,
+                    Err(e) => {
+                        warn!(error = %e, "submit share failed");
+                        ShareResult::Rejected(e.to_string())
+                    }
+                }
+            } else {
+                ShareResult::Rejected("stratum client missing".to_string())
+            }
+        };
+
+        self.record_share_result(stream, coin, &result).await;
+        match result {
+            ShareResult::Accepted => {
+                info!(stream = ?stream, coin = %coin, nonce = share.nonce, "mined auxpow share accepted");
+            }
+            ShareResult::Rejected(reason) => {
+                warn!(stream = ?stream, coin = %coin, nonce = share.nonce, reason = %reason, "auxpow share rejected");
+            }
+            _ => {
+                info!(stream = ?stream, coin = %coin, nonce = share.nonce, "mined auxpow share");
             }
         }
-        drop(guard);
-
-        self.record_share(stream, coin).await;
-        info!(stream = ?stream, coin = %coin, nonce = share.nonce, "mined auxpow share");
         Ok(())
     }
 
@@ -742,15 +775,31 @@ impl MinerRuntime {
         }
     }
 
+    async fn record_rejected(&self, stream: StreamId) {
+        let mut stats = self.stats.lock().await;
+        if let Some(s) = stats.get_mut(&stream) {
+            s.rejected += 1;
+        }
+    }
+
     #[cfg(feature = "auxpow")]
-    async fn record_share(&self, stream: StreamId, coin: zion_cosmic_harmony::ExternalCoin) {
+    async fn record_share_result(
+        &self,
+        stream: StreamId,
+        coin: zion_cosmic_harmony::ExternalCoin,
+        result: &ShareResult,
+    ) {
         let mut stats = self.stats.lock().await;
         if let Some(s) = stats.get_mut(&stream) {
             s.active = true;
             s.coin = Some(coin);
             s.algorithm = Some(coin.algorithm().to_string());
-            s.accepted += 1;
             s.shares_found += 1;
+            match result {
+                ShareResult::Accepted => s.accepted += 1,
+                ShareResult::Rejected(_) => s.rejected += 1,
+                _ => {}
+            }
         }
     }
 }
@@ -1030,8 +1079,18 @@ mod tests {
                 }
             }
 
-            while let Ok(Some(_line)) = lines.next_line().await {
-                // Accept silently.
+            while let Ok(Some(line)) = lines.next_line().await {
+                // Echo a standard accepted response for any share submission.
+                if let Ok(msg) = serde_json::from_str::<serde_json::Value>(&line) {
+                    if msg.get("method").and_then(|m| m.as_str()) == Some("mining.submit") {
+                        if let Some(id) = msg.get("id").and_then(serde_json::Value::as_i64) {
+                            let resp = format!(r#"{{"id":{},"result":true,"error":null}}"#, id);
+                            let _ = writer.write_all(resp.as_bytes()).await;
+                            let _ = writer.write_all(b"\n").await;
+                            let _ = writer.flush().await;
+                        }
+                    }
+                }
             }
         });
 

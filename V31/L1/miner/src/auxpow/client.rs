@@ -834,29 +834,7 @@ impl AuxPowClient {
         };
 
         match self.send_request(&req).await {
-            Ok(resp) => {
-                if let Some(result) = resp.get("result").and_then(Value::as_bool) {
-                    if result {
-                        Ok(ShareResult::Accepted)
-                    } else {
-                        let err = resp
-                            .get("error")
-                            .and_then(|e| e.as_str())
-                            .unwrap_or("rejected")
-                            .to_string();
-                        Ok(ShareResult::Rejected(err))
-                    }
-                } else if resp.get("error").is_none_or(|e| e.is_null()) {
-                    Ok(ShareResult::Accepted)
-                } else {
-                    let err = resp
-                        .get("error")
-                        .and_then(|e| e.as_str())
-                        .unwrap_or("unknown")
-                        .to_string();
-                    Ok(ShareResult::Rejected(err))
-                }
-            }
+            Ok(resp) => Ok(parse_submit_response(&resp)),
             Err(e) => Ok(ShareResult::Rejected(e.to_string())),
         }
     }
@@ -920,6 +898,70 @@ fn is_authorize_ok(value: &Value) -> bool {
     value.get("error").is_none()
 }
 
+/// Parse a standard JSON-RPC `mining.submit` or `eth_submitWork` response and
+/// map it to a `ShareResult`.
+fn parse_submit_response(value: &Value) -> ShareResult {
+    let result = value.get("result");
+    let error = value.get("error");
+
+    match result {
+        Some(v) if v.is_boolean() => {
+            if v.as_bool() == Some(true) {
+                ShareResult::Accepted
+            } else {
+                ShareResult::Rejected(error_message(value))
+            }
+        }
+        Some(v) if v.is_null() => {
+            if error.is_none_or(|e| e.is_null()) {
+                ShareResult::Accepted
+            } else {
+                ShareResult::Rejected(error_message(value))
+            }
+        }
+        _ => {
+            if error.is_none_or(|e| e.is_null()) {
+                ShareResult::Accepted
+            } else {
+                ShareResult::Rejected(error_message(value))
+            }
+        }
+    }
+}
+
+/// Extract a human-readable error message from a JSON-RPC `error` field.
+/// Pools may return errors as a string, an array `[code, message, ...]`, or
+/// an object with a `message` key.
+fn error_message(value: &Value) -> String {
+    match value.get("error") {
+        None | Some(Value::Null) => "rejected".to_string(),
+        Some(v) if v.is_string() => v.as_str().unwrap_or("rejected").to_string(),
+        Some(v @ Value::Array(arr)) => {
+            if let Some(msg) = arr.get(1).and_then(Value::as_str) {
+                msg.to_string()
+            } else if let Some(msg) = arr.first().and_then(Value::as_str) {
+                msg.to_string()
+            } else if let Some(code) = arr.first().and_then(Value::as_i64) {
+                format!("rejected (code {code})")
+            } else {
+                format!(
+                    "rejected: {}",
+                    v.to_string().chars().take(128).collect::<String>()
+                )
+            }
+        }
+        Some(v @ Value::Object(_)) => v
+            .get("message")
+            .and_then(Value::as_str)
+            .unwrap_or("rejected")
+            .to_string(),
+        Some(v) => format!(
+            "rejected: {}",
+            v.to_string().chars().take(128).collect::<String>()
+        ),
+    }
+}
+
 fn parse_hex_value(value: &Value) -> Option<Vec<u8>> {
     value
         .as_str()
@@ -958,13 +1000,21 @@ impl From<StratumJob> for super::Job {
     }
 }
 
+/// Share submission envelope used to pair a share with its response channel.
+struct ShareSubmit {
+    id: i64,
+    share: super::Share,
+    response: tokio::sync::oneshot::Sender<ShareResult>,
+}
+
 /// Simple Stratum v1 client for an external (AuxPoW) pool.
 pub struct StratumClient {
     pub url: String,
     pub worker: String,
     pub password: String,
     job_rx: tokio::sync::mpsc::Receiver<StratumJob>,
-    submit_tx: tokio::sync::mpsc::Sender<super::Share>,
+    submit_tx: tokio::sync::mpsc::Sender<ShareSubmit>,
+    next_id: Arc<Mutex<i64>>,
 }
 
 impl std::fmt::Debug for StratumClient {
@@ -983,12 +1033,17 @@ impl StratumClient {
         password: impl Into<String>,
     ) -> Self {
         let (job_tx, job_rx) = tokio::sync::mpsc::channel(8);
-        let (submit_tx, submit_rx) = tokio::sync::mpsc::channel(8);
+        let (submit_tx, submit_rx) = tokio::sync::mpsc::channel(256);
         let url = url.into();
         let worker = worker.into();
         let password = password.into();
+        let next_id = Arc::new(Mutex::new(100i64));
 
         if !url.is_empty() {
+            let pending = Arc::new(Mutex::new(HashMap::<
+                i64,
+                tokio::sync::oneshot::Sender<ShareResult>,
+            >::new()));
             tokio::spawn(run_stratum_loop(
                 url.clone(),
                 worker.clone(),
@@ -996,6 +1051,7 @@ impl StratumClient {
                 job_tx,
                 submit_rx,
                 StratumState::new(),
+                pending,
             ));
         }
 
@@ -1005,6 +1061,7 @@ impl StratumClient {
             password,
             job_rx,
             submit_tx,
+            next_id,
         }
     }
 
@@ -1030,11 +1087,39 @@ impl StratumClient {
         }
     }
 
-    pub async fn submit_share(&self, share: &super::Share) -> Result<()> {
-        if self.submit_tx.send(share.clone()).await.is_err() {
-            bail!("stratum submit channel closed");
+    /// Submit a share and wait for the pool's accepted/rejected response.
+    pub async fn submit_share(&self, share: &super::Share) -> Result<ShareResult> {
+        let id = {
+            let mut id = self.next_id.lock().await;
+            let current = *id;
+            *id = id.wrapping_add(1);
+            if *id <= 2 {
+                *id = 3;
+            }
+            current
+        };
+
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        let submit = ShareSubmit {
+            id,
+            share: share.clone(),
+            response: tx,
+        };
+
+        if let Err(e) = self.submit_tx.try_send(submit) {
+            let (reason, submit) = match e {
+                tokio::sync::mpsc::error::TrySendError::Full(s) => ("submit queue full", s),
+                tokio::sync::mpsc::error::TrySendError::Closed(s) => ("submit channel closed", s),
+            };
+            let _ = submit.response.send(ShareResult::Rejected(reason.to_string()));
+            return Ok(ShareResult::Rejected(reason.to_string()));
         }
-        Ok(())
+
+        match tokio::time::timeout(Duration::from_secs(30), rx).await {
+            Ok(Ok(result)) => Ok(result),
+            Ok(Err(_)) => Ok(ShareResult::Rejected("response channel closed".to_string())),
+            Err(_) => Ok(ShareResult::Rejected("response timeout".to_string())),
+        }
     }
 }
 
@@ -1078,17 +1163,24 @@ async fn run_stratum_loop(
     worker: String,
     password: String,
     job_tx: tokio::sync::mpsc::Sender<StratumJob>,
-    mut submit_rx: tokio::sync::mpsc::Receiver<super::Share>,
+    mut submit_rx: tokio::sync::mpsc::Receiver<ShareSubmit>,
     state: StratumState,
+    pending: Arc<Mutex<HashMap<i64, tokio::sync::oneshot::Sender<ShareResult>>>>,
 ) {
     loop {
-        if let Err(e) =
-            stratum_session(&url, &worker, &password, &job_tx, &mut submit_rx, &state).await
+        if let Err(e) = stratum_session(&url, &worker, &password, &job_tx, &mut submit_rx, &state, &pending).await
         {
             warn!(url = %url, error = %e, "stratum session failed, reconnecting in 5s");
         } else {
             warn!(url = %url, "stratum session ended, reconnecting in 5s");
         }
+
+        // Reject any outstanding submissions before reconnecting.
+        let mut p = pending.lock().await;
+        for (_, sender) in p.drain() {
+            let _ = sender.send(ShareResult::Rejected("stratum connection reset".to_string()));
+        }
+
         tokio::time::sleep(Duration::from_secs(5)).await;
     }
 }
@@ -1098,8 +1190,9 @@ async fn stratum_session(
     worker: &str,
     password: &str,
     job_tx: &tokio::sync::mpsc::Sender<StratumJob>,
-    submit_rx: &mut tokio::sync::mpsc::Receiver<super::Share>,
+    submit_rx: &mut tokio::sync::mpsc::Receiver<ShareSubmit>,
     state: &StratumState,
+    pending: &Mutex<HashMap<i64, tokio::sync::oneshot::Sender<ShareResult>>>,
 ) -> Result<()> {
     let (host, port) = parse_url(url)?;
     info!(host = %host, port = port, "connecting to stratum pool");
@@ -1113,7 +1206,7 @@ async fn stratum_session(
     let auth = json!({"id": 2, "method": "mining.authorize", "params": [worker, password]});
     send_line(&mut writer, &auth).await?;
 
-    let mut pending_submits: std::collections::VecDeque<super::Share> =
+    let mut pending_submits: std::collections::VecDeque<ShareSubmit> =
         std::collections::VecDeque::new();
 
     loop {
@@ -1123,7 +1216,7 @@ async fn stratum_session(
                     if line.trim().is_empty() {
                         continue;
                     }
-                    if let Err(e) = handle_line(&line, job_tx, state).await {
+                    if let Err(e) = handle_line(&line, job_tx, state, pending).await {
                         warn!(line = %line, error = %e, "stratum line parse failed");
                     }
                 }
@@ -1133,14 +1226,18 @@ async fn stratum_session(
                 }
                 Err(e) => return Err(e.into()),
             },
-            share = submit_rx.recv() => match share {
-                Some(share) => {
-                    pending_submits.push_back(share);
-                    while let Some(s) = pending_submits.pop_front() {
-                        if let Err(e) = send_submit(&mut writer, worker, &s).await {
-                            warn!(error = %e, "failed to send share");
-                            pending_submits.push_front(s);
-                            break;
+            submit = submit_rx.recv() => match submit {
+                Some(req) => {
+                    pending_submits.push_back(req);
+                    while let Some(req) = pending_submits.pop_front() {
+                        match send_submit(&mut writer, worker, req.id, &req.share).await {
+                            Ok(()) => {
+                                pending.lock().await.insert(req.id, req.response);
+                            }
+                            Err(e) => {
+                                warn!(error = %e, "failed to send share");
+                                let _ = req.response.send(ShareResult::Rejected("failed to send share".to_string()));
+                            }
                         }
                     }
                 }
@@ -1162,19 +1259,28 @@ async fn handle_line(
     line: &str,
     job_tx: &tokio::sync::mpsc::Sender<StratumJob>,
     state: &StratumState,
+    pending: &Mutex<HashMap<i64, tokio::sync::oneshot::Sender<ShareResult>>>,
 ) -> Result<()> {
     let value: Value = serde_json::from_str(line)?;
     if let Some(id) = value.get("id").and_then(Value::as_i64) {
-        if id == 1 {
-            parse_subscribe_response(&value, state).await?;
-            return Ok(());
-        }
-        if id == 2 {
-            if !is_authorize_ok(&value) {
-                bail!("stratum authorize failed");
+        match id {
+            1 => {
+                parse_subscribe_response(&value, state).await?;
+                return Ok(());
             }
-            info!("stratum authorized");
-            return Ok(());
+            2 => {
+                if !is_authorize_ok(&value) {
+                    bail!("stratum authorize failed");
+                }
+                info!("stratum authorized");
+                return Ok(());
+            }
+            _ => {
+                if let Some(sender) = pending.lock().await.remove(&id) {
+                    let _ = sender.send(parse_submit_response(&value));
+                    return Ok(());
+                }
+            }
         }
     }
 
@@ -1366,9 +1472,16 @@ async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJ
             let nbits = params[6].as_str().unwrap_or("");
             let solution = parse_hex_value(&params[8]).unwrap_or_default();
 
-            let target = hasher::parse_target_hex(nbits)
-                .or_else(|| hasher::nbits_to_target(nbits))
-                .unwrap_or([0xFF; 32]);
+            // Honor an explicit mining.set_target override (used by the ZION pool's
+            // per-session vardiff and mock pools). If none was sent, fall back to
+            // the target encoded in nbits.
+            let target = if let Some(tb) = *state.target_bytes.lock().await {
+                tb
+            } else {
+                hasher::parse_target_hex(nbits)
+                    .or_else(|| hasher::nbits_to_target(nbits))
+                    .unwrap_or([0xFF; 32])
+            };
 
             let en1 = state.extranonce1.lock().await.clone();
             let mut nonce_field = [0u8; 32];
@@ -1449,7 +1562,7 @@ async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJ
 
 /// Build the `mining.submit` / `eth_submitWork` params for a given share,
 /// taking into account the coin/algorithm-specific requirements.
-fn build_submit_params(worker: &str, share: &super::Share) -> Value {
+fn build_submit_params(worker: &str, share: &super::Share, id: i64) -> Value {
     let algo = share.coin.algorithm();
     let nonce = share.nonce_hex();
     let mix = share.mix_hash_hex();
@@ -1460,7 +1573,7 @@ fn build_submit_params(worker: &str, share: &super::Share) -> Value {
     // The nonce is the full 8-byte value (extranonce1 prefix + scanned suffix)
     // rendered as a 16-character big-endian hex number.
     if algo.contains("kheavyhash") {
-        return json!({"id": 100, "method": "mining.submit", "params": [worker, share.job_id, nonce]});
+        return json!({"id": id, "method": "mining.submit", "params": [worker, share.job_id, nonce]});
     }
 
     // DAG-based Ethash variants: EthereumStratum uses eth_submitWork with
@@ -1469,7 +1582,7 @@ fn build_submit_params(worker: &str, share: &super::Share) -> Value {
     if algo.contains("ethash") || algo == "etchash" {
         let header = format!("0x{}", hex::encode(share.hash));
         let mix = mix.unwrap_or_else(|| format!("0x{}", hex::encode([0u8; 32])));
-        return json!({"id": 100, "method": "eth_submitWork", "params": [nonce, header, mix]});
+        return json!({"id": id, "method": "eth_submitWork", "params": [nonce, header, mix]});
     }
 
     // KawPow / ProgPow variants: many pools expect mix_hash as a 6th param.
@@ -1485,7 +1598,7 @@ fn build_submit_params(worker: &str, share: &super::Share) -> Value {
                 .unwrap()
                 .push(json!(format!("0x{mix}")));
         }
-        return json!({"id": 100, "method": "mining.submit", "params": params});
+        return json!({"id": id, "method": "mining.submit", "params": params});
     }
 
     // VerusHash (VRSC / ZcashStratum): submit the 5-param Zcash format
@@ -1493,27 +1606,28 @@ fn build_submit_params(worker: &str, share: &super::Share) -> Value {
     // is all zeros because the found nonce lives in the solution nonceSpace.
     if algo.contains("verushash") {
         if let Some(sol) = sol {
-            return json!({"id": 100, "method": "mining.submit", "params": [worker, share.job_id, share.ntime, share.extranonce2, sol]});
+            return json!({"id": id, "method": "mining.submit", "params": [worker, share.job_id, share.ntime, share.extranonce2, sol]});
         }
     }
 
     // Equihash / BeamHash / ZelHash: the actual solution is the proof.
     if algo.contains("equihash") || algo.contains("zelhash") || algo.contains("beamhash") {
         if let Some(sol) = sol {
-            return json!({"id": 100, "method": "mining.submit", "params": [worker, share.job_id, share.ntime, share.extranonce2, sol]});
+            return json!({"id": id, "method": "mining.submit", "params": [worker, share.job_id, share.ntime, share.extranonce2, sol]});
         }
     }
 
     // Default Bitcoin-style / kHeavyHash / blake3 stratum submit.
-    json!({"id": 100, "method": "mining.submit", "params": [worker, share.job_id, share.extranonce2, share.ntime, nonce]})
+    json!({"id": id, "method": "mining.submit", "params": [worker, share.job_id, share.extranonce2, share.ntime, nonce]})
 }
 
 async fn send_submit(
     writer: &mut tokio::net::tcp::WriteHalf<'_>,
     worker: &str,
+    id: i64,
     share: &super::Share,
 ) -> Result<()> {
-    send_line(writer, &build_submit_params(worker, share)).await
+    send_line(writer, &build_submit_params(worker, share, id)).await
 }
 
 #[cfg(test)]
@@ -1635,8 +1749,8 @@ mod tests {
             extranonce2: "00".to_string(),
             ntime: "00000000".to_string(),
         };
-        client.submit_share(&share).await.unwrap();
-        tokio::time::sleep(Duration::from_millis(200)).await;
+        let result = client.submit_share(&share).await.unwrap();
+        assert_eq!(result, ShareResult::Accepted);
         server.abort();
     }
 }
