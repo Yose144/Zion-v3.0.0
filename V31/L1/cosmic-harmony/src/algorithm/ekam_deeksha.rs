@@ -27,6 +27,12 @@ use zion_l1_types::Hash;
 
 use super::PowAlgorithm;
 
+// ── Scratchpad reuse ───────────────────────────────────────────────────────
+// The original code allocated `vec![0u8; 128 KiB]` on EVERY nonce, causing
+// massive allocation pressure (128 KiB × H/s). We now allocate the scratchpad
+// once per batch (or per thread in parallel mode) and pass it as a parameter,
+// eliminating per-nonce allocation entirely with zero TLS overhead.
+
 /// Local replacement for the V3 `crate::algorithms_opt::Hash32` type.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Hash32 {
@@ -148,16 +154,16 @@ fn step1_keccak(header: &[u8], nonce: u64) -> [u8; 32] {
 // ============================================================
 // Step 2: Memory-hard scratchpad (128 KiB) → acc[32]
 // ============================================================
-fn step2_memory_hard(seed: &[u8; 32]) -> [u8; 32] {
-    let mut scratchpad = vec![0u8; SCRATCHPAD_SIZE];
-
+// OPTIMIZED: Takes a reusable scratchpad buffer instead of allocating
+// 128 KiB on every nonce. The buffer is allocated once per batch/thread.
+fn step2_memory_hard_with_scratchpad(seed: &[u8; 32], scratchpad: &mut [u8]) -> [u8; 32] {
     // Phase A: SHA3-512 chain fill
     // state = seed || 0×32; inp[64] = blk & 0xFF; hash 65 bytes
     let mut state = [0u8; 64];
     state[..32].copy_from_slice(seed);
 
+    let mut inp = [0u8; 65];
     for blk in 0..BLOCK_COUNT {
-        let mut inp = [0u8; 65];
         inp[..64].copy_from_slice(&state);
         inp[64] = (blk & 0xFF) as u8;
         let out = sha3_512(&inp[..65]);
@@ -205,6 +211,12 @@ fn step2_memory_hard(seed: &[u8; 32]) -> [u8; 32] {
     }
 
     acc
+}
+
+/// Original step2 that allocates its own scratchpad (for single-hash API).
+fn step2_memory_hard(seed: &[u8; 32]) -> [u8; 32] {
+    let mut scratchpad = vec![0u8; SCRATCHPAD_SIZE];
+    step2_memory_hard_with_scratchpad(seed, &mut scratchpad)
 }
 
 // ============================================================
@@ -268,16 +280,28 @@ pub fn hash(header: &[u8], nonce: u64) -> [u8; 32] {
     step4_keccak(&s3)
 }
 
+/// Full Ekam Deeksha hash using a pre-allocated scratchpad buffer.
+/// Avoids the 128 KiB allocation per nonce — pass a reusable buffer.
+#[inline]
+pub fn hash_with_scratchpad(header: &[u8], nonce: u64, scratchpad: &mut [u8]) -> [u8; 32] {
+    let s1 = step1_keccak(header, nonce);
+    let s2 = step2_memory_hard_with_scratchpad(&s1, scratchpad);
+    let s3 = step3_aes_mix(&s2, nonce);
+    step4_keccak(&s3)
+}
+
 /// Sequential nonce search (bit-identical to V3 `deeksha_lite_find_nonce`).
+/// Allocates a scratchpad once and reuses it across all nonces in the batch.
 pub fn find_nonce(
     header: &[u8],
     start_nonce: u64,
     count: u64,
     target: &[u8; 32],
 ) -> Option<(u64, [u8; 32])> {
+    let mut scratchpad = vec![0u8; SCRATCHPAD_SIZE];
     for offset in 0..count {
         let nonce = start_nonce.wrapping_add(offset);
-        let hash = hash(header, nonce);
+        let hash = hash_with_scratchpad(header, nonce, &mut scratchpad);
         if meets_target(&hash, target) {
             return Some((nonce, hash));
         }
@@ -589,6 +613,42 @@ mod tests {
             differing >= 8,
             "Avalanche: single-bit input change must affect >= 8 bytes of hash (got {})",
             differing
+        );
+    }
+
+    // ── Benchmark (run with: cargo test --release -- --nocapture bench_) ──
+
+    #[test]
+    fn bench_single_hash_latency() {
+        let header = [0x42u8; 80];
+        let n = 200u64;
+        let t0 = std::time::Instant::now();
+        for i in 0..n {
+            let _ = EkamDeeksha::hash_bytes(&header, i);
+        }
+        let elapsed = t0.elapsed();
+        let per_hash_us = elapsed.as_secs_f64() / n as f64 * 1e6;
+        let hps = n as f64 / elapsed.as_secs_f64();
+        eprintln!(
+            "\n=== BASELINE single hash: {:.2} µs/hash, {:.1} H/s (1 thread) ===",
+            per_hash_us, hps
+        );
+    }
+
+    #[test]
+    fn bench_find_nonce_500() {
+        let header = [0x42u8; 80];
+        let target = [0x00u8; 32]; // impossible → all nonces tested
+        let batch = 500u64;
+        let t0 = std::time::Instant::now();
+        let _ = find_nonce(&header, 0, batch, &target);
+        let elapsed = t0.elapsed();
+        let hps = batch as f64 / elapsed.as_secs_f64();
+        eprintln!(
+            "\n=== OPTIMIZED find_nonce({}): {:.2} ms, {:.1} H/s (1 thread) ===",
+            batch,
+            elapsed.as_secs_f64() * 1e3,
+            hps
         );
     }
 }

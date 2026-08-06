@@ -32,6 +32,93 @@ use zion_core::V3DifficultyTarget as DifficultyTarget;
 use crate::gpu::GpuMiner;
 use zion_core::v3_compat::{MiningHeader, DifficultyTarget as V3DiffTarget};
 
+/// Parallel CPU nonce search for ZION (Ekam Deeksha).
+///
+/// Splits the nonce range across `threads` rayon workers. Each worker
+/// allocates its own 128 KiB scratchpad once and reuses it for all nonces
+/// in its chunk, eliminating per-nonce allocation.
+///
+/// Fast path: tries the first 64 nonces sequentially before launching the
+/// rayon thread pool. This avoids thread pool overhead when the target is
+/// trivially easy (e.g. pool max-difficulty target where nonce=0 passes).
+///
+/// Returns the first solution found (cancelling other workers via AtomicBool).
+fn parallel_zion_find_nonce(
+    header: &[u8],
+    target: &[u8; 32],
+    start_nonce: u64,
+    count: u64,
+    threads: usize,
+) -> Option<(u64, Hash)> {
+    use rayon::prelude::*;
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use zion_cosmic_harmony::algorithm::ekam_deeksha::{
+        hash, hash_with_scratchpad, meets_target, SCRATCHPAD_SIZE,
+    };
+
+    // Fast path: try first few nonces with the original hash() function.
+    // This avoids scratchpad allocation + rayon overhead when the target is
+    // trivially easy (e.g. pool max-difficulty target where nonce=0 passes).
+    let fast_count = count.min(8);
+    for offset in 0..fast_count {
+        let nonce = start_nonce.wrapping_add(offset);
+        let h = hash(header, nonce);
+        if meets_target(&h, target) {
+            return Some((nonce, Hash::new(h)));
+        }
+    }
+
+    // Remaining nonces — use parallel search with reusable scratchpad
+    let remaining_start = start_nonce.wrapping_add(fast_count);
+    let remaining_count = count.saturating_sub(fast_count);
+    if remaining_count == 0 {
+        return None;
+    }
+
+    let threads = threads.max(1);
+    if threads == 1 || remaining_count < threads as u64 * 4 {
+        // Sequential fallback for remaining nonces
+        let mut scratchpad = vec![0u8; SCRATCHPAD_SIZE];
+        for offset in 0..remaining_count {
+            let nonce = remaining_start.wrapping_add(offset);
+            let h = hash_with_scratchpad(header, nonce, &mut scratchpad);
+            if meets_target(&h, target) {
+                return Some((nonce, Hash::new(h)));
+            }
+        }
+        return None;
+    }
+
+    let cancelled = std::sync::Arc::new(AtomicBool::new(false));
+    let chunk_size = remaining_count / threads as u64;
+
+    (0..threads)
+        .into_par_iter()
+        .find_map_any(|thread_idx| {
+            let start = remaining_start.wrapping_add(thread_idx as u64 * chunk_size);
+            let this_count = if thread_idx == threads - 1 {
+                remaining_count - (thread_idx as u64 * chunk_size)
+            } else {
+                chunk_size
+            };
+
+            let mut pad = vec![0u8; SCRATCHPAD_SIZE];
+
+            for offset in 0..this_count {
+                if offset % 256 == 0 && cancelled.load(Ordering::Relaxed) {
+                    return None;
+                }
+                let nonce = start.wrapping_add(offset);
+                let h = hash_with_scratchpad(header, nonce, &mut pad);
+                if meets_target(&h, target) {
+                    cancelled.store(true, Ordering::Relaxed);
+                    return Some((nonce, Hash::new(h)));
+                }
+            }
+            None
+        })
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum MinerError {
     #[error("consensus error: {0}")]
@@ -322,16 +409,20 @@ impl MinerRuntime {
             (found_nonce, Hash::new(found_hash), gpu_tested)
         } else {
             // No GPU or GPU found no solution — CPU mining
-            // CPU find_nonce stops at first solution, so we track actual nonces
-            // by checking the nonce offset from start (0).
-            let cpu_start_nonce = 0u64;
-            let result = self
-                .consensus
-                .mine_header_bytes(&job.header, &job.target, cpu_start_nonce, batch_size)
-                .ok_or(MinerError::NoAuxPoWSolution)?;
+            // Use parallel search across all CPU threads via spawn_blocking
+            // (prevents blocking the tokio runtime while rayon workers mine).
+            let header = job.header.clone();
+            let target = job.target;
+            let threads = self.config.miner_threads.max(1);
+            let result = task::spawn_blocking(move || {
+                parallel_zion_find_nonce(&header, &target, 0, batch_size, threads)
+            })
+            .await
+            .map_err(|e| MinerError::Consensus(format!("cpu parallel join: {e}")))?
+            .ok_or(MinerError::NoAuxPoWSolution)?;
             let (found_nonce, found_hash) = result;
-            // Nonces actually searched = found_nonce - start_nonce + 1
-            let actual_searched = found_nonce.saturating_sub(cpu_start_nonce) + 1;
+            // Nonces actually searched = found_nonce - 0 + 1
+            let actual_searched = found_nonce.saturating_sub(0) + 1;
             (found_nonce, found_hash, actual_searched)
         };
 

@@ -66,6 +66,8 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 walkdir = "2"
 zeroize = { version = "1", features = ["derive"] }
+rayon = "1"
+num_cpus = "1"
 
 zion-core = { path = "L1/core" }
 zion-cosmic-harmony = { path = "L1/cosmic-harmony" }
