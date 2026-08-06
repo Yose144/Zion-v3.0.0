@@ -11762,9 +11762,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
             cmd = params.get("cmd", [""])[0].strip()
             self._json(run_zion_cli(cmd))
         elif route == "/api/cli/node-status":
-            # Return node status from RPC (no CLI script needed)
+            # Return V31 node status from RPC (no CLI script needed)
             st = build_status()
-            n1 = st.get("node1", {})
+            n1 = st.get("v31_node", {}) or st.get("node1", {})
             if n1.get("running"):
                 output = (f"Height    {n1.get('chain_height', '?')}\n"
                           f"Peers     {n1.get('known_peers', 0)}\n"
