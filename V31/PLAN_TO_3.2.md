@@ -210,7 +210,7 @@ Week 10: G2-G7 release and launch readiness
 
 - Current live status: [`StatusV3.md`](../StatusV3.md)
 - V31 status: [`V31/STATUS.md`](./STATUS.md)
-- Reconciled 3.1 plan: [`PLAN_TO_3.1_RECONCILED.md`](../PLAN_TO_3.1_RECONCILED.md)
+- Reconciled 3.1 plan: [`PLAN_TO_3.1_RECONCILED.md`](../docs/3.1/PLAN_TO_3.1_RECONCILED.md)
 - 30d run: [`V31/30D_RUN_PLAN.md`](./30D_RUN_PLAN.md)
 - Chaos tests: [`V31/CHAOS_TEST_PLAN.md`](./CHAOS_TEST_PLAN.md)
 - V31 build plan: [`V31/ALPHA_BUILD_PLAN.md`](./ALPHA_BUILD_PLAN.md)

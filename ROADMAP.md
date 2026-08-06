@@ -1,10 +1,10 @@
 # ZION Roadmap — From 3.0.5 to Public Mainnet Launch
 
-> **⚠️ This roadmap is historical / V3-centric. The active 3.2 "One Love" / Mainnet Stable execution plan is [`V31/PLAN_TO_3.2.md`](./V31/PLAN_TO_3.2.md). Previous plan: [`PLAN_TO_3.1_RECONCILED.md`](./PLAN_TO_3.1_RECONCILED.md). Live status is in [`StatusV3.md`](./StatusV3.md). The current development workspace is `V31/`.**
+> **⚠️ This roadmap is historical / V3-centric. The active 3.2 "One Love" / Mainnet Stable execution plan is [`V31/PLAN_TO_3.2.md`](./V31/PLAN_TO_3.2.md). Previous plan: [`PLAN_TO_3.1_RECONCILED.md`](./docs/3.1/PLAN_TO_3.1_RECONCILED.md). Live status is in [`StatusV3.md`](./StatusV3.md). The current development workspace is `V31/`.**
 
 > **Version:** 3.0.7 "Trinity All Green" / 3.1.0-alpha.2 V31 Mainnet Alpha / 3.2.0 "One Love" (Mainnet Stable) in progress  
 > **Last updated:** 2026-08-06
-> **One source of truth:** [`V31/PLAN_TO_3.2.md`](./V31/PLAN_TO_3.2.md) · Previous: [`PLAN_TO_3.1_RECONCILED.md`](./PLAN_TO_3.1_RECONCILED.md) · Live status: [`StatusV3.md`](./StatusV3.md) · V31 rules: [`V31/AGENTS.md`](./V31/AGENTS.md)  
+> **One source of truth:** [`V31/PLAN_TO_3.2.md`](./V31/PLAN_TO_3.2.md) · Previous: [`PLAN_TO_3.1_RECONCILED.md`](./docs/3.1/PLAN_TO_3.1_RECONCILED.md) · Live status: [`StatusV3.md`](./StatusV3.md) · V31 rules: [`V31/AGENTS.md`](./V31/AGENTS.md)  
 > **Engineering detail:** [`V3/ROADMAP.md`](./archive/V3/ROADMAP.md) (archived)
 
 ---
@@ -17,8 +17,8 @@ This is the **forward-looking** root roadmap. Historical detail lives in [`docs/
 |----------------|---------|
 | Complete 3.0.4 state | [`3.0.4.md`](./docs/3.0.4/3.0.4.md) |
 | Live status + blockers | [`StatusV3.md`](./StatusV3.md) |
-| Engineering tasks per layer | [`V3/ROADMAP.md`](./V3/ROADMAP.md) |
-| Start scripts | [`ZionStart/README.md`](./ZionStart/README.md) |
+| Engineering tasks per layer | [`archive/V3/ROADMAP.md`](./archive/V3/ROADMAP.md) |
+| Start scripts | [`archive/ZionStart/README.md`](./archive/ZionStart/README.md) |
 | Agent rules | [`AGENTS.md`](./AGENTS.md) |
 | Historical context | [`docs/3.0.3/README.md`](./docs/3.0.3/README.md) |
 
@@ -221,7 +221,7 @@ Goal: ship the user-facing stack (wallet, mobile, explorer, L4) before public la
 
 ## 5. Phase 3 — Public Mainnet Launch (31 December 2026)
 
-Final checklist. Full procedure in [`V3/docs/MAINNET_LAUNCH_SEQUENCE.md`](./V3/docs/MAINNET_LAUNCH_SEQUENCE.md) if available, otherwise derive from `StatusV3.md`.
+Final checklist. Full procedure in [`docs/3.0.0/MAINNET_LAUNCH_SEQUENCE.md`](./docs/3.0.0/MAINNET_LAUNCH_SEQUENCE.md) if available, otherwise derive from `StatusV3.md`.
 
 | # | Gate | Status |
 |---|------|--------|
@@ -268,5 +268,5 @@ Final checklist. Full procedure in [`V3/docs/MAINNET_LAUNCH_SEQUENCE.md`](./V3/d
 
 ---
 
-*Generated from [`docs/3.0.3/`](./docs/3.0.3/) + [`3.0.4.md`](./docs/3.0.4/3.0.4.md) + [`archive/V3/ROADMAP.md`](./archive/V3/ROADMAP.md) + [`StatusV3.md`](./StatusV3.md) + [`PLAN_TO_3.1_RECONCILED.md`](./PLAN_TO_3.1_RECONCILED.md).*
+*Generated from [`docs/3.0.3/`](./docs/3.0.3/) + [`3.0.4.md`](./docs/3.0.4/3.0.4.md) + [`archive/V3/ROADMAP.md`](./archive/V3/ROADMAP.md) + [`StatusV3.md`](./StatusV3.md) + [`PLAN_TO_3.1_RECONCILED.md`](./docs/3.1/PLAN_TO_3.1_RECONCILED.md).*
 *V31 is the active mainnet track in [`V31/`](./V31/).*

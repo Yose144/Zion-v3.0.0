@@ -31,7 +31,7 @@
 | **V31 build / cutover plan** | [`V31/ALPHA_BUILD_PLAN.md`](V31/ALPHA_BUILD_PLAN.md) |
 | **V31 operational rules** | [`V31/AGENTS.md`](V31/AGENTS.md) |
 | **Live status + topology** | [`StatusV3.md`](StatusV3.md) |
-| **Post-cutover execution plan** | [`PLAN_TO_3.1_RECONCILED.md`](PLAN_TO_3.1_RECONCILED.md) |
+| **Post-cutover execution plan** | [`PLAN_TO_3.1_RECONCILED.md`](./docs/3.1/PLAN_TO_3.1_RECONCILED.md) |
 | **V31 detailed status** | [`V31/STATUS.md`](V31/STATUS.md) |
 | **V3 archive (read-only)** | [`archive/V3/`](archive/V3/) |
 | **Historical incidents + public-subtree rules** | [`AGENTS.md`](AGENTS.md) |
@@ -111,7 +111,7 @@ This repository has one source of truth per topic:
 | **Live operational status** | [`StatusV3.md`](StatusV3.md) |
 | **V31 workspace + build notes** | [`V31/README.md`](V31/README.md) |
 | **V31 security / ops rules** | [`V31/AGENTS.md`](V31/AGENTS.md) |
-| **Post-cutover execution plan** | [`PLAN_TO_3.1_RECONCILED.md`](PLAN_TO_3.1_RECONCILED.md) |
+| **Post-cutover execution plan** | [`PLAN_TO_3.1_RECONCILED.md`](./docs/3.1/PLAN_TO_3.1_RECONCILED.md) |
 | **V3 archive** | [`archive/V3/README.md`](archive/V3/README.md) |
 | **Historical incidents + backup rules** | [`AGENTS.md`](AGENTS.md) |
 
