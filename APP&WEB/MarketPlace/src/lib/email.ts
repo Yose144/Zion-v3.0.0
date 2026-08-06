@@ -357,6 +357,58 @@ function escapeHtml(input: string): string {
     .replace(/'/g, '&#039;');
 }
 
+interface TokenBonusInput {
+  orderId: string;
+  customerName: string;
+  customerEmail: string;
+  tokens: number;
+  txHash?: string;
+}
+
+export async function sendTokenBonusEmail(input: TokenBonusInput): Promise<void> {
+  if (!isEnabled()) {
+    console.log('Email notifications disabled: SMTP not configured');
+    return;
+  }
+
+  const cfg = emailConfig();
+  const subject = `ZION token bonus - objednávka #${input.orderId}`;
+  const txInfo = input.txHash && input.txHash !== 'pending'
+    ? `Tx hash: ${input.txHash}`
+    : 'Tx hash bude doplněn po zapsání on-chain.';
+
+  const body = `Dobrý den, ${input.customerName},
+
+děkujeme za Vaši objednávku #${input.orderId}.
+
+Jako bonus Vám bylo připsáno ${input.tokens.toLocaleString('cs-CZ')} ZION tokenů.
+
+${txInfo}
+
+S pozdravem,
+Tým ZION Terra Nova
+`;
+
+  const html = `<p>Dobrý den ${escapeHtml(input.customerName)},</p>
+<p>jako bonus za objednávku <strong>#${escapeHtml(input.orderId)}</strong> Vám bylo připsáno <strong>${input.tokens.toLocaleString('cs-CZ')} ZION tokenů</strong>.</p>
+<p>${escapeHtml(txInfo)}</p>
+<p>S pozdravem,<br>Tým ZION Terra Nova</p>`;
+
+  try {
+    await sendMail({
+      from: `${cfg.shopName} <${cfg.resendApiKey ? cfg.resendFrom : cfg.shopEmail}>`,
+      to: input.customerEmail,
+      replyTo: cfg.shopEmail,
+      subject,
+      text: body,
+      html,
+    });
+    console.log(`Token bonus email sent for ${input.orderId}`);
+  } catch (error) {
+    console.error('Failed to send token bonus email:', error);
+  }
+}
+
 export async function sendShippingNotification(order: OrderEmailData): Promise<void> {
   if (!isEnabled()) {
     console.log('Email notifications disabled: SMTP not configured');
