@@ -1,23 +1,18 @@
 name: ZION Boost Miner — Multi-Platform Release
 
-# Builds the public ZION Boost Miner binary for Linux x86_64, Linux ARM64,
+# Builds the public ZION V31 miner binary for Linux x86_64, Linux ARM64,
 # Windows x86_64, macOS Apple Silicon and macOS Intel, then uploads the
 # artifacts to the public repository:
 #   https://github.com/Zion-TerraNova/v3-Mainnet
 #
 # Required repository secret:
 #   PUBLIC_RELEASE_TOKEN  -- GitHub PAT with 'repo' or 'public_repo' scope
-#
-# Usage:
-#   1. Run the workflow manually and choose the release tag.
-#   2. If a release with the same tag already exists, assets are uploaded
-#      with --clobber and release notes are updated.
 
 on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag, e.g. v3.1.0'
+        description: 'Release tag, e.g. v3.1.0-cli'
         required: true
         type: string
       draft:
@@ -46,7 +41,7 @@ on:
         default: true
         type: boolean
       build_macos_x86_64:
-        description: 'Build macOS Intel'
+        description: 'Build macOS Intel (cross from ARM64)'
         required: false
         default: true
         type: boolean
@@ -59,12 +54,15 @@ on:
 env:
   PUBLIC_REPO: Zion-TerraNova/v3-Mainnet
   VERSION: "3.1.0"
+  ZION_DISABLE_OPENMP: "1"
 
 jobs:
   build-linux-x86_64:
     name: Build Linux x86_64
     if: github.event_name == 'push' || inputs.build_linux_x86_64 == true
     runs-on: ubuntu-latest
+    env:
+      ZION_CPU_TARGET: x86-64
     steps:
       - uses: actions/checkout@v4
 
@@ -76,17 +74,16 @@ jobs:
           sudo apt-get install -y -qq build-essential cmake ocl-icd-opencl-dev libssl-dev pkg-config
 
       - name: Build miner
-        working-directory: MinerP3.0.6/miner
-        env:
-          ZION_CPU_TARGET: x86-64
-          ZION_DISABLE_OPENMP: "1"
-        run: cargo build --release
+        working-directory: V31
+        run: |
+          cargo build --release -p zion-miner \
+            --features "auxpow,gpu-opencl,native-hashers,native-kheavyhash,native-blake3-algo,native-verushash"
 
       - name: Package
         run: |
-          mkdir -p MinerP3.0.6/dist
-          cp MinerP3.0.6/miner/target/release/zion-miner MinerP3.0.6/dist/
-          cd MinerP3.0.6/dist
+          mkdir -p V31/dist
+          cp V31/target/release/zion-miner V31/dist/
+          cd V31/dist
           tar czf zion-miner-v${{ env.VERSION }}-linux-x86_64.tar.gz zion-miner
           sha256sum zion-miner-v${{ env.VERSION }}-linux-x86_64.tar.gz
 
@@ -94,13 +91,15 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: miner-linux-x86_64
-          path: MinerP3.0.6/dist/zion-miner-v${{ env.VERSION }}-linux-x86_64.tar.gz
+          path: V31/dist/zion-miner-v${{ env.VERSION }}-linux-x86_64.tar.gz
           if-no-files-found: error
 
   build-linux-arm64:
     name: Build Linux ARM64
     if: github.event_name == 'push' || inputs.build_linux_arm64 == true
     runs-on: ubuntu-latest
+    env:
+      ZION_CPU_TARGET: armv8-a
     steps:
       - uses: actions/checkout@v4
 
@@ -111,23 +110,22 @@ jobs:
       - name: Install cross-toolchain
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq gcc-aarch64-linux-gnu g++-aarch64-linux-gnu build-essential cmake ocl-icd-opencl-dev libssl-dev pkg-config
+          sudo apt-get install -y -qq gcc-aarch64-linux-gnu g++-aarch64-linux-gnu build-essential cmake libssl-dev pkg-config
 
       - name: Build miner
-        working-directory: MinerP3.0.6/miner
+        working-directory: V31
         env:
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
           CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
           CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
-          ZION_CPU_TARGET: x86-64
-          ZION_DISABLE_OPENMP: "1"
-        run: cargo build --release --target aarch64-unknown-linux-gnu
+        run: |
+          cargo build --release -p zion-miner --target aarch64-unknown-linux-gnu --features "auxpow"
 
       - name: Package
         run: |
-          mkdir -p MinerP3.0.6/dist
-          cp MinerP3.0.6/miner/target/aarch64-unknown-linux-gnu/release/zion-miner MinerP3.0.6/dist/
-          cd MinerP3.0.6/dist
+          mkdir -p V31/dist
+          cp V31/target/aarch64-unknown-linux-gnu/release/zion-miner V31/dist/
+          cd V31/dist
           tar czf zion-miner-v${{ env.VERSION }}-linux-arm64.tar.gz zion-miner
           sha256sum zion-miner-v${{ env.VERSION }}-linux-arm64.tar.gz
 
@@ -135,13 +133,15 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: miner-linux-arm64
-          path: MinerP3.0.6/dist/zion-miner-v${{ env.VERSION }}-linux-arm64.tar.gz
+          path: V31/dist/zion-miner-v${{ env.VERSION }}-linux-arm64.tar.gz
           if-no-files-found: error
 
   build-windows:
     name: Build Windows x86_64
     if: github.event_name == 'push' || inputs.build_windows == true
     runs-on: windows-latest
+    env:
+      ZION_CPU_TARGET: x86-64
     steps:
       - uses: actions/checkout@v4
 
@@ -157,20 +157,21 @@ jobs:
           echo "INCLUDE=$openclInc;${env:INCLUDE}" >> ${env:GITHUB_ENV}
 
       - name: Build miner
-        working-directory: MinerP3.0.6/miner
+        working-directory: V31
         shell: bash
         env:
           LIB: ${{ env.LIB }}
           INCLUDE: ${{ env.INCLUDE }}
-          ZION_DISABLE_OPENMP: "1"
-        run: cargo build --release
+        run: |
+          cargo build --release -p zion-miner \
+            --features "auxpow,gpu-opencl,native-hashers,native-kheavyhash,native-blake3-algo,native-verushash"
 
       - name: Package
         shell: bash
         run: |
-          mkdir -p MinerP3.0.6/dist
-          cp MinerP3.0.6/miner/target/release/zion-miner.exe MinerP3.0.6/dist/
-          cd MinerP3.0.6/dist
+          mkdir -p V31/dist
+          cp V31/target/release/zion-miner.exe V31/dist/
+          cd V31/dist
           7z a -tzip zion-miner-v${{ env.VERSION }}-windows-x86_64.zip zion-miner.exe
           sha256sum zion-miner-v${{ env.VERSION }}-windows-x86_64.zip
 
@@ -178,29 +179,31 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: miner-windows-x86_64
-          path: MinerP3.0.6/dist/zion-miner-v${{ env.VERSION }}-windows-x86_64.zip
+          path: V31/dist/zion-miner-v${{ env.VERSION }}-windows-x86_64.zip
           if-no-files-found: error
 
   build-macos-arm64:
     name: Build macOS Apple Silicon
     if: github.event_name == 'push' || inputs.build_macos_arm64 == true
     runs-on: macos-latest
+    env:
+      ZION_CPU_TARGET: armv8-a
     steps:
       - uses: actions/checkout@v4
 
       - uses: dtolnay/rust-toolchain@stable
 
       - name: Build miner
-        working-directory: MinerP3.0.6/miner
-        env:
-          ZION_DISABLE_OPENMP: "1"
-        run: cargo build --release
+        working-directory: V31
+        run: |
+          cargo build --release -p zion-miner \
+            --features "auxpow,gpu-metal,native-hashers,native-kheavyhash,native-blake3-algo,native-verushash"
 
       - name: Package
         run: |
-          mkdir -p MinerP3.0.6/dist
-          cp MinerP3.0.6/miner/target/release/zion-miner MinerP3.0.6/dist/
-          cd MinerP3.0.6/dist
+          mkdir -p V31/dist
+          cp V31/target/release/zion-miner V31/dist/
+          cd V31/dist
           tar czf zion-miner-v${{ env.VERSION }}-macos-arm64.tar.gz zion-miner
           shasum -a 256 zion-miner-v${{ env.VERSION }}-macos-arm64.tar.gz
 
@@ -208,13 +211,15 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: miner-macos-arm64
-          path: MinerP3.0.6/dist/zion-miner-v${{ env.VERSION }}-macos-arm64.tar.gz
+          path: V31/dist/zion-miner-v${{ env.VERSION }}-macos-arm64.tar.gz
           if-no-files-found: error
 
   build-macos-x86_64:
     name: Build macOS Intel (cross from ARM64)
     if: github.event_name == 'push' || inputs.build_macos_x86_64 == true
     runs-on: macos-latest
+    env:
+      ZION_CPU_TARGET: x86-64
     steps:
       - uses: actions/checkout@v4
 
@@ -223,16 +228,16 @@ jobs:
           targets: x86_64-apple-darwin
 
       - name: Build miner
-        working-directory: MinerP3.0.6/miner
-        env:
-          ZION_DISABLE_OPENMP: "1"
-        run: cargo build --release --target x86_64-apple-darwin
+        working-directory: V31
+        run: |
+          cargo build --release -p zion-miner --target x86_64-apple-darwin \
+            --features "auxpow,gpu-opencl,native-hashers,native-kheavyhash,native-blake3-algo,native-verushash"
 
       - name: Package
         run: |
-          mkdir -p MinerP3.0.6/dist
-          cp MinerP3.0.6/miner/target/x86_64-apple-darwin/release/zion-miner MinerP3.0.6/dist/
-          cd MinerP3.0.6/dist
+          mkdir -p V31/dist
+          cp V31/target/x86_64-apple-darwin/release/zion-miner V31/dist/
+          cd V31/dist
           tar czf zion-miner-v${{ env.VERSION }}-macos-x86_64.tar.gz zion-miner
           shasum -a 256 zion-miner-v${{ env.VERSION }}-macos-x86_64.tar.gz
 
@@ -240,7 +245,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: miner-macos-x86_64
-          path: MinerP3.0.6/dist/zion-miner-v${{ env.VERSION }}-macos-x86_64.tar.gz
+          path: V31/dist/zion-miner-v${{ env.VERSION }}-macos-x86_64.tar.gz
           if-no-files-found: error
 
   release:
@@ -296,7 +301,7 @@ jobs:
               --title "ZION v3.1.0 — Boost Miner" \
               --notes "## ZION v3.1.0 — Boost Miner
 
-          Multi-platform release of the ZION Boost Miner.
+          Multi-platform release of the ZION V31 Boost Miner.
 
           ### Downloads
           | File | Platform |
