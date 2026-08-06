@@ -157,4 +157,4 @@ export async function PATCH(req: NextRequest, ctx: Ctx): Promise<NextResponse> {
 }
 
 // Re-export the cookie name for convenience in route consumers
-export { ZIS_SESSION_COOKIE };
+// (removed — Next.js route files cannot export non-route values)
