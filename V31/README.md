@@ -90,6 +90,12 @@ Pro plný Mainnet Alpha release použij `cargo build --release` — profil má `
 - **Wallet keyring + Dharma Credits** — multichain vrstva spravuje wallet a Dharma Credits.
 - **SQLite storage napříč L1** — chain state, mempool index, account store, pool PPLNS a HTLC sdílí jednotný přístup k SQLite.
 
+- **DEX solver HTTP client + broadcast** — `HttpSolverClient` posílá `SwapIntent` JSON na `{solver_url}/v1/swap/solve`, očekává `SolverBid` JSON, `204 No Content` znamená odmítnutí. `zion-multichain` server má endpointy `POST /v1/swap/solve` a `POST /v1/swap/intent/:id/broadcast`. Testy v `tests/server.rs` a `tests/solver_network_http.rs`.
+
+- **GPU OpenCL build verification** — `zion-miner` se buildne s `gpu-opencl` (a `gpu-cuda`, pokud je `libnvrtc`), test `tests/gpu_opencl_detect.rs` ověřuje detekci platformy a spuštění Deeksha jádra na lokální GPU.
+
+- **Desktop Agent V31 binaries** — `APP&WEB/desktop-agent` balí V31 `zion-miner`, `zion-universal-miner`, `zion-node`/`node` a CLI `zion`. Příprava: `npm run prepare:rust-miner`; build balíčků: `npm run build:linux` → `.AppImage` a `.deb`.
+
 ## Co ještě běží / E2E
 
 Všechny naplánované E2E položky pro `v3.1.0-alpha.2` jsou hotové. Zbývá ops/externí krok:
