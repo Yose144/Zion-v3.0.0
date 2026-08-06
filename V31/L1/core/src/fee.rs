@@ -102,7 +102,7 @@ pub const DAO_ADDRESS: &str = "zion1x8g2z2v3v5n08542a5u7v7q365l4852048qv6w6";
 /// Bridge vault address.
 ///
 /// Derived deterministically from `BRIDGE_VAULT_SEED` via SHA-256 → derive_address.
-pub const BRIDGE_VAULT_ADDRESS: &str = "zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7";
+pub const BRIDGE_VAULT_ADDRESS: &str = "zion1j3w3h7k8m635h734y786j5804305m822t5uk546";
 
 #[cfg(test)]
 mod tests {
