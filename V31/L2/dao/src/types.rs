@@ -3,9 +3,9 @@
 use serde::{Deserialize, Serialize};
 
 pub const DAO_TREASURY_ADDRESSES: &[&str] = &[
-    "zion1u5u7k43240d5l4d0x7q5m3c4a838z4k000cv3q0",
-    "zion1m8d235x268h8d887s036m8c3x7s356d3r37k6m6",
-    "zion102s8k4k0w783d657j255z865e47054s342u87v3",
+    "zion1j5a327c7d3w7h4e474n5p4z0z827f8p874mr2p7",
+    "zion1f7g4h034m5l0x3g6q4l5d298d597v5a4q3wc3t7",
+    "zion1a6s5y727s0d5m5s3u448d5g3g60032s6p5xy2l5",
 ];
 
 pub const FLOWERS_PER_ZION: u64 = 1_000_000;

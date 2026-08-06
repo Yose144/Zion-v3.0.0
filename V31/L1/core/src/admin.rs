@@ -198,6 +198,58 @@ impl AdminSet {
 }
 
 // ---------------------------------------------------------------------------
+// Mainnet admin set — hardcoded public keys
+// ---------------------------------------------------------------------------
+
+/// The canonical mainnet admin set with hardcoded public keys.
+///
+/// Public keys are generated offline and hardcoded here. Secret keys are
+/// stored offline only. This set is activated at genesis (height 0).
+///
+/// See `v3_compat::ADMIN_*` constants for the raw key material.
+#[cfg(feature = "v3-binaries")]
+pub fn mainnet_admin_set() -> AdminSet {
+    use crate::v3_compat;
+
+    AdminSet::new(
+        vec![
+            Admin {
+                name: "Rama".to_string(),
+                role: "Protocol governance, emergency pause".to_string(),
+                public_key_hex: v3_compat::ADMIN_RAMA_PUBLIC_KEY_HEX.to_string(),
+                l1_address: v3_compat::ADMIN_RAMA_L1_ADDRESS.to_string(),
+                evm_address: v3_compat::ADMIN_RAMA_EVM_ADDRESS.to_string(),
+                successor: "Maitreya Buddha".to_string(),
+                activated_at_height: 0,
+                last_activity_ts: 0,
+            },
+            Admin {
+                name: "Sita".to_string(),
+                role: "Treasury oversight, DAO guardian".to_string(),
+                public_key_hex: v3_compat::ADMIN_SITA_PUBLIC_KEY_HEX.to_string(),
+                l1_address: v3_compat::ADMIN_SITA_L1_ADDRESS.to_string(),
+                evm_address: v3_compat::ADMIN_SITA_EVM_ADDRESS.to_string(),
+                successor: "Sarah Issobela".to_string(),
+                activated_at_height: 0,
+                last_activity_ts: 0,
+            },
+            Admin {
+                name: "Hanuman".to_string(),
+                role: "Bridge admin, EVM multisig".to_string(),
+                public_key_hex: v3_compat::ADMIN_HANUMAN_PUBLIC_KEY_HEX.to_string(),
+                l1_address: v3_compat::ADMIN_HANUMAN_L1_ADDRESS.to_string(),
+                evm_address: v3_compat::ADMIN_HANUMAN_EVM_ADDRESS.to_string(),
+                successor: "Elizabeth".to_string(),
+                activated_at_height: 0,
+                last_activity_ts: 0,
+            },
+        ],
+        0,
+    )
+    .expect("hardcoded mainnet admin set must be valid")
+}
+
+// ---------------------------------------------------------------------------
 // Admin operation proposal
 // ---------------------------------------------------------------------------
 
@@ -1224,5 +1276,55 @@ mod tests {
         let json = serde_json::to_string(&proposal).unwrap();
         let deserialized: AdminProposal = serde_json::from_str(&json).unwrap();
         assert_eq!(proposal, deserialized);
+    }
+
+    #[cfg(feature = "v3-binaries")]
+    #[test]
+    fn mainnet_admin_set_is_valid() {
+        let set = mainnet_admin_set();
+        assert_eq!(set.admins.len(), ADMIN_COUNT);
+        assert_eq!(set.activated_at_height, 0);
+
+        // Verify all three admins are present with correct names
+        assert!(set.find_by_name("Rama").is_some());
+        assert!(set.find_by_name("Sita").is_some());
+        assert!(set.find_by_name("Hanuman").is_some());
+
+        // Verify successors match constitutional line
+        assert_eq!(set.successor_for("Rama"), Some("Maitreya Buddha"));
+        assert_eq!(set.successor_for("Sita"), Some("Sarah Issobela"));
+        assert_eq!(set.successor_for("Hanuman"), Some("Elizabeth"));
+
+        // Verify all public keys are 32 bytes (64 hex chars)
+        for admin in &set.admins {
+            let pk = crypto::from_hex(&admin.public_key_hex);
+            assert!(pk.is_some(), "invalid hex for {}", admin.name);
+            assert_eq!(
+                pk.unwrap().len(),
+                32,
+                "public key must be 32 bytes for {}",
+                admin.name
+            );
+        }
+
+        // Verify L1 addresses are non-empty and start with "zion1"
+        for admin in &set.admins {
+            assert!(
+                admin.l1_address.starts_with("zion1"),
+                "invalid L1 address for {}: {}",
+                admin.name,
+                admin.l1_address
+            );
+        }
+
+        // Verify EVM addresses start with "0x"
+        for admin in &set.admins {
+            assert!(
+                admin.evm_address.starts_with("0x"),
+                "invalid EVM address for {}: {}",
+                admin.name,
+                admin.evm_address
+            );
+        }
     }
 }

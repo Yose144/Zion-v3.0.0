@@ -240,6 +240,14 @@ pub struct ValidationContext {
     pub median_time_past: u64,
     /// Current time (for future timestamp check).
     pub current_time: u64,
+    /// Set of premine addresses that have been unlocked by admin governance.
+    ///
+    /// Addresses in this set have passed the 3-of-3 admin multisig + DAO vote
+    /// (if required) and may be spent. Addresses NOT in this set remain
+    /// admin-locked. An empty set means all admin-locked premine is frozen.
+    ///
+    /// Defaults to empty (no unlocks) when constructed via `Default`.
+    pub admin_unlocked_addresses: std::collections::HashSet<String>,
 }
 
 // ── Step functions ─────────────────────────────────────────────────────
@@ -601,9 +609,12 @@ pub fn validate_block(
     }
 
     // Step 11: Premine lock enforcement (DAO Treasury + admin-lock)
-    // Default: no admin unlocks (all admin-locked premine is frozen).
-    // Chain state should override with a real unlock registry when available.
-    validate_premine_locks(transactions, ctx.height, utxo_lookup, &|_| false)?;
+    // Admin-locked premine can only be spent if the address is in the
+    // admin_unlocked_addresses set (populated by executed admin proposals).
+    let unlocked = &ctx.admin_unlocked_addresses;
+    validate_premine_locks(transactions, ctx.height, utxo_lookup, &|addr| {
+        unlocked.contains(addr)
+    })?;
 
     Ok(())
 }
@@ -883,6 +894,7 @@ mod tests {
             expected_difficulty: 1_000,
             median_time_past: 1_699_999_900,
             current_time: 1_700_000_000,
+            admin_unlocked_addresses: std::collections::HashSet::new(),
         };
 
         let sizes = vec![200, 300]; // estimated sizes
@@ -904,6 +916,7 @@ mod tests {
             expected_difficulty: 1_000,
             median_time_past: 1_699_999_900,
             current_time: 1_700_000_000,
+            admin_unlocked_addresses: std::collections::HashSet::new(),
         };
 
         let sizes = vec![200, 300];

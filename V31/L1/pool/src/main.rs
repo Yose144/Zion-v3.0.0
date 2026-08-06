@@ -10,7 +10,7 @@ use std::time::Duration;
 use clap::Parser;
 use tokio::net::TcpListener;
 use tokio::sync::watch;
-use tracing::{info, warn};
+use tracing::{error, info, warn};
 use zion_l1_types::{Address, ChainId};
 
 use zion_pool::api::PoolApi;
@@ -94,6 +94,11 @@ struct Args {
     /// Pool fee in basis points.
     #[arg(long, env = "ZION_POOL_FEE_BPS", default_value_t = 100)]
     pool_fee_bps: u16,
+
+    /// SQLite database path for persistent share/block/payout history.
+    /// When set, enables /api/v1/blocks, /api/v1/payouts, /api/v1/miners endpoints.
+    #[arg(long, env = "ZION_POOL_STORE_DB_PATH")]
+    store_db_path: Option<String>,
 }
 
 fn parse_address(encoded: &str) -> anyhow::Result<Address> {
@@ -381,8 +386,23 @@ async fn main() -> anyhow::Result<()> {
     let api_pool = Arc::clone(&pool);
     let api_bind = args.api_bind.clone();
     let api_bridge = multi_bridge.clone();
+    let store_db_path = args.store_db_path.clone();
     let api_handle = tokio::task::spawn_blocking(move || {
-        let api = PoolApi::new(api_pool, None, Some(api_bridge));
+        let share_store = store_db_path
+            .as_ref()
+            .and_then(|path| {
+                match zion_pool::store::ShareStore::open(path) {
+                    Ok(s) => {
+                        info!("pool share store opened: {}", path);
+                        Some(Arc::new(s))
+                    }
+                    Err(e) => {
+                        error!("failed to open share store at {}: {} — API history endpoints disabled", path, e);
+                        None
+                    }
+                }
+            });
+        let api = PoolApi::new(api_pool, share_store, Some(api_bridge));
         if let Err(e) = api.serve(&api_bind) {
             tracing::error!("pool API server error: {}", e);
         }

@@ -76,7 +76,7 @@ fn premine_outputs() -> Vec<TransactionOutput> {
     vec![
         // OASIS + Golden Egg (8.25 B)
         output(
-            "zion1n3t6v6w3m8g4v6q8g7h7j4j6f7s8q2m7g7un8u0",
+            "zion172h3y7d6m7d7y7d8q2d4x363t0m55227n2rt2v2",
             8_250_000_000,
         ),
         // DAO Treasury (4.0 B)
