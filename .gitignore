@@ -35,6 +35,15 @@ V31/releases/
 *.o
 *.a
 
+# Root-level release binaries (kept out of git; ship via GitHub Releases)
+/zion-miner-smos
+/zion-miner-built
+/zion-miner-public-release
+/zion-miner-linux-x86_64.tar.gz
+/zion-miner-*.tar.gz
+/zion-miner-*.zip
+/zion-all-*.tar.gz
+
 # IDE
 .idea/
 .vscode/
