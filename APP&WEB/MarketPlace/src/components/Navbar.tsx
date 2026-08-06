@@ -30,12 +30,13 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="relative">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-oasis-cyan via-oasis-purple to-oasis-gold flex items-center justify-center font-black text-oasis-black text-base group-hover:scale-110 transition-transform duration-300">
-                Z
-              </div>
-              <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-oasis-cyan via-oasis-purple to-oasis-gold blur-md opacity-40 group-hover:opacity-60 transition-opacity" />
-            </div>
+            <img
+              src="/logo144.png"
+              alt="ZION"
+              width={36}
+              height={36}
+              className="w-9 h-9 rounded-lg object-contain group-hover:scale-110 transition-transform duration-300"
+            />
             <div className="flex flex-col leading-none">
               <span className="text-lg font-black tracking-tight text-gradient font-display">
                 {t('nav.logoPrimary')}
