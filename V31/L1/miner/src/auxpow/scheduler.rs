@@ -56,10 +56,9 @@ impl AuxPoWScheduler {
         }
 
         if let Some(coin) = self.stream2_force_coin {
-            if let Some(profile) = profiles
-                .iter()
-                .find(|p| p.coin == coin && p.enabled && p.device.is_compatible_with(Device::Gpu))
-            {
+            // Forced coins override the profit/device heuristic as long as the
+            // coin exists in the active profile set.
+            if let Some(profile) = profiles.iter().find(|p| p.coin == coin && p.enabled) {
                 self.current_gpu = Some(coin);
                 self.profile_gpu = Some(profile.clone());
             }
@@ -73,10 +72,9 @@ impl AuxPoWScheduler {
         }
 
         if let Some(coin) = self.stream3_force_coin {
-            if let Some(profile) = profiles
-                .iter()
-                .find(|p| p.coin == coin && p.enabled && p.device.is_compatible_with(Device::Cpu))
-            {
+            // Forced coins override the profit/device heuristic as long as the
+            // coin exists in the active profile set.
+            if let Some(profile) = profiles.iter().find(|p| p.coin == coin && p.enabled) {
                 self.current_cpu = Some(coin);
                 self.profile_cpu = Some(profile.clone());
             }
@@ -196,6 +194,20 @@ mod tests {
         scheduler.refresh(&profiles);
 
         assert_eq!(scheduler.current_cpu(), Some(ExternalCoin::Verus));
+        assert!(scheduler.profile_cpu().is_some());
+        assert!(scheduler.cpu_url().1.is_some());
+    }
+
+    #[test]
+    fn stream3_force_coin_allows_gpu_coin_on_cpu() {
+        // kHeavyHash (KAS) is a GPU coin by default, but the CPU scanner
+        // supports it.  A forced stream3 coin should be accepted even if the
+        // profile's device category is not CPU.
+        let mut scheduler = AuxPoWScheduler::new(1000.0, None, Some(ExternalCoin::Kaspa));
+        let profiles = CoinProfile::defaults();
+        scheduler.refresh(&profiles);
+
+        assert_eq!(scheduler.current_cpu(), Some(ExternalCoin::Kaspa));
         assert!(scheduler.profile_cpu().is_some());
         assert!(scheduler.cpu_url().1.is_some());
     }
