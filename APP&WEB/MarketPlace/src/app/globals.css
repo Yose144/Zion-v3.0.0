@@ -1210,7 +1210,7 @@ body.zion-shell {
   left: 50%;
   width: 100vw;
   transform: translateX(-50%);
-  min-height: clamp(320px, 55vh, 520px);
+  min-height: clamp(260px, 45vh, 440px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1218,11 +1218,11 @@ body.zion-shell {
   padding: clamp(4.5rem, 12vw, 8rem) 1rem clamp(3.5rem, 8vw, 5rem);
   margin-top: -1.5rem;
   background-image: url('/rasta-hero.jpg');
-  background-size: cover;
-  background-position: 25% center;
+  background-size: contain;
+  background-position: center;
   background-repeat: no-repeat;
-  background-blend-mode: overlay;
-  background-color: rgba(0, 0, 0, 0.58);
+  background-blend-mode: normal;
+  background-color: transparent;
   border-bottom: 3px solid transparent;
   border-image: linear-gradient(90deg, var(--rasta-red), var(--rasta-gold), var(--rasta-green)) 1;
   overflow: hidden;
@@ -1244,7 +1244,7 @@ body.zion-shell {
 @media (min-width: 768px) {
   .rasta-hero {
     margin-top: -2rem;
-    background-position: 30% center;
+    background-position: center;
   }
 }
 
@@ -1293,15 +1293,17 @@ body.zion-shell {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin-bottom: 1rem;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.55);
 }
 
 .rasta-hero-desc {
-  color: #d4d4d4;
+  color: #f0f0f0;
   font-size: clamp(0.95rem, 2vw, 1.15rem);
   max-width: 680px;
   margin: 0 auto 1.75rem;
   line-height: 1.7;
-  opacity: 0.92;
+  opacity: 0.95;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
 }
 
 .rasta-hero-btn {
