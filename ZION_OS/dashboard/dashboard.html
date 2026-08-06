@@ -1254,56 +1254,20 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
 
     <!-- Service Cards (top 4) -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div id="card-node1" class="zion-panel zion-panel-hover svc-card p-5">
+      <!-- Local Backup Node -->
+      <div id="card-local-backup" class="zion-panel zion-panel-hover svc-card p-5">
         <div class="flex items-center justify-between mb-3 relative z-10">
-          <span class="zion-kicker">🔷 Node 1</span>
-          <span id="badge-node1" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
+          <span class="zion-kicker">💾 Local Backup</span>
+          <span id="badge-local-backup" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
         </div>
-        <div class="text-4xl font-bold mb-1 text-gradient relative z-10" id="val-node1-height">—</div>
+        <div class="text-4xl font-bold mb-1 text-gradient relative z-10" id="val-local-backup-height">—</div>
         <div class="text-xs text-gray-400 mb-3 relative z-10">Chain Height</div>
-        <div class="text-xs font-mono text-gray-300 truncate mb-1 relative z-10" id="val-node1-id">—</div>
-        <div class="text-xs text-gray-400 mb-1 relative z-10">Peers: <span id="val-node1-peers" class="text-white font-semibold">—</span></div>
-        <div class="text-xs text-gray-400 mb-1 relative z-10">P2P: <span id="val-node1-p2p" class="font-mono">—</span></div>
-        <div class="text-xs text-gray-400 mb-1 relative z-10">Mempool: <span id="val-node1-mempool" class="text-amber-400 font-semibold">—</span></div>
-        <div class="text-xs text-gray-400 mb-1 relative z-10">Sync: <span id="val-node1-sync" class="text-gray-400">—</span></div>
-        <div class="text-xs text-gray-400 mb-3 relative z-10">Uptime: <span id="val-node1-uptime" class="text-emerald-400 font-mono">—</span></div>
-        <div class="flex gap-1.5 relative z-10">
-          <button onclick="controlAction('start-node1')" class="text-[10px] px-2.5 py-1 bg-emerald-700/50 hover:bg-emerald-600 rounded-md font-semibold transition">▶ Start</button>
-          <button onclick="controlAction('restart-node1')" class="text-[10px] px-2.5 py-1 bg-amber-700/50 hover:bg-amber-600 rounded-md font-semibold transition">⟳ Restart</button>
-        </div>
-      </div>
-
-      <div id="card-edge-node" class="zion-panel zion-panel-hover svc-card p-5 hidden">
-        <div class="flex items-center justify-between mb-3 relative z-10">
-          <span class="zion-kicker">🌍 Edge Node (Primary)</span>
-          <span id="badge-edge-node" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
-        </div>
-        <div class="text-4xl font-bold mb-1 text-gradient relative z-10" id="val-edge-node-height">—</div>
-        <div class="text-xs text-gray-400 mb-3 relative z-10">Chain Height</div>
-        <div class="text-xs font-mono text-gray-300 truncate mb-1 relative z-10" id="val-edge-node-hash">—</div>
-        <div class="text-xs text-gray-400 mb-1 relative z-10">Peers: <span id="val-edge-node-peers" class="text-white font-semibold">—</span></div>
-        <div class="text-xs text-gray-400 mb-1 relative z-10">Host: <span id="val-edge-node-host" class="font-mono">62.171.141.136</span></div>
-        <div class="flex gap-1.5 relative z-10">
-          <button onclick="window.open('https://rpc.zionterranova.com:8443/jsonrpc','_blank')" class="flex-1 text-[10px] px-2.5 py-1 bg-zinc-700/50 hover:bg-zinc-600 rounded-md font-semibold transition">🔗 RPC</button>
-        </div>
-      </div>
-
-      <div id="card-node2" class="zion-panel zion-panel-hover svc-card p-5">
-        <div class="flex items-center justify-between mb-3 relative z-10">
-          <span class="zion-kicker">🔶 Node 2</span>
-          <span id="badge-node2" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
-        </div>
-        <div class="text-4xl font-bold mb-1 text-gradient relative z-10" id="val-node2-height">—</div>
-        <div class="text-xs text-gray-400 mb-3 relative z-10">Chain Height</div>
-        <div class="text-xs font-mono text-gray-300 truncate mb-1 relative z-10" id="val-node2-id">—</div>
-        <div class="text-xs text-gray-400 mb-1 relative z-10">Peers: <span id="val-node2-peers" class="text-white font-semibold">—</span></div>
-        <div class="text-xs text-gray-400 mb-1 relative z-10">Sync: <span id="val-node2-sync">—</span></div>
-        <div class="text-xs text-gray-400 mb-1 relative z-10">Mempool: <span id="val-node2-mempool" class="text-amber-400 font-semibold">—</span></div>
-        <div class="text-xs text-gray-400 mb-3 relative z-10">Uptime: <span id="val-node2-uptime" class="text-emerald-400 font-mono">—</span></div>
-        <div class="flex gap-1.5 relative z-10">
-          <button onclick="controlAction('start-node2')" class="text-[10px] px-2.5 py-1 bg-emerald-700/50 hover:bg-emerald-600 rounded-md font-semibold transition">▶ Start</button>
-          <button onclick="controlAction('restart-node2')" class="text-[10px] px-2.5 py-1 bg-amber-700/50 hover:bg-amber-600 rounded-md font-semibold transition">⟳ Restart</button>
-        </div>
+        <div class="text-xs font-mono text-gray-300 truncate mb-1 relative z-10" id="val-local-backup-id">—</div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Peers: <span id="val-local-backup-peers" class="text-white font-semibold">—</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">P2P: <span id="val-local-backup-p2p" class="font-mono">—</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Mempool: <span id="val-local-backup-mempool" class="text-amber-400 font-semibold">—</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Sync: <span id="val-local-backup-sync" class="text-gray-400">—</span></div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">Uptime: <span id="val-local-backup-uptime" class="text-emerald-400 font-mono">—</span></div>
       </div>
 
       <!-- V31 Alpha Node -->

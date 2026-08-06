@@ -3119,36 +3119,7 @@ def _build_status_edge_primary() -> dict:
 
 
     # ── Parallel RPC probes ─────────────────────────────────────────────────
-    edge_rpc_info = None
-
-    def _edge_rpc_call():
-        # When dashboard runs ON Edge, use localhost (RPC bound to 127.0.0.1 after security hardening)
-        host = "127.0.0.1" if EDGE_IS_LOCAL else "127.0.0.1"
-        r = rpc_call(host, 9443, "getChainInfo", {}, timeout=2.5)
-        if r and not r.get("_rpc_error"):
-            return ("edge", r)
-        return ("edge", None)
-
-    def _edge_node2_rpc_call():
-        # Edge Node 2 (Follower) — RPC on port 8448 (via SSH tunnel)
-        r = rpc_call("127.0.0.1", 8448, "getChainInfo", {}, timeout=2.0)
-        return ("edge2", r if r and not r.get("_rpc_error") else None)
-
-    # Local backup node status is received via /api/backup-beacon POST from
-    # the operator's local machine (where the backup node actually runs).
-    # The beacon is cached with a 60s TTL — if no beacon arrives, the node
-    # is shown as offline.
-    def _edge_node2_nodeinfo_call():
-        r = rpc_call("127.0.0.1", 8448, "getNodeInfo", {}, timeout=2.0)
-        return ("edge2_info", r if r and not r.get("_rpc_error") else None)
-
-    def _edge_peerinfo_call():
-        r = rpc_call("127.0.0.1", 9443, "getPeerInfo", {}, timeout=2.0)
-        return ("edge_peers", r if r and not r.get("_rpc_error") else None)
-
-    def _edge_nodeinfo_call():
-        r = rpc_call("127.0.0.1", 9443, "getNodeInfo", {}, timeout=2.0)
-        return ("edge_info", r if r and not r.get("_rpc_error") else None)
+    # V3 nodes (port 9443, 8448) are archived — only V31 nodes are probed.
 
     def _v31_rpc_call():
         # V31 Node — TCP JSON-RPC on port 9445 (not HTTP)
@@ -3252,23 +3223,14 @@ def _build_status_edge_primary() -> dict:
         except Exception:
             return (key, {})
 
-    edge_node2_info = None
-    edge_node2_nodeinfo = None
-    edge_peers = None
-    edge_nodeinfo = None
     v31_rpc_info = None
     v31_sys_info = {}
     v31_node2_rpc_info = None
     v31_node2_sys_info = {}
     v31_node3_rpc_info = None
     v31_node3_sys_info = {}
-    ex = ThreadPoolExecutor(max_workers=11)
+    ex = ThreadPoolExecutor(max_workers=6)
     futures = {
-        ex.submit(_edge_rpc_call),
-        ex.submit(_edge_node2_rpc_call),
-        ex.submit(_edge_node2_nodeinfo_call),
-        ex.submit(_edge_peerinfo_call),
-        ex.submit(_edge_nodeinfo_call),
         ex.submit(_v31_rpc_call),
         ex.submit(_v31_systemd_call),
         ex.submit(_v31_follower_rpc_call, 9446, "v31_node2"),
@@ -3280,17 +3242,7 @@ def _build_status_edge_primary() -> dict:
         for fut in as_completed(futures, timeout=5.0):
             try:
                 key, val = fut.result()
-                if key == "edge":
-                    edge_rpc_info = val
-                elif key == "edge2":
-                    edge_node2_info = val
-                elif key == "edge2_info":
-                    edge_node2_nodeinfo = val
-                elif key == "edge_peers":
-                    edge_peers = val
-                elif key == "edge_info":
-                    edge_nodeinfo = val
-                elif key == "v31":
+                if key == "v31":
                     v31_rpc_info = val
                 elif key == "v31_sys":
                     v31_sys_info = val or {}
@@ -3311,42 +3263,6 @@ def _build_status_edge_primary() -> dict:
         # for a node response. Running threads will time out on their own.
         ex.shutdown(wait=False, cancel_futures=True)
 
-    # ── Edge Node status ─────────────────────────────────────────────────────
-    edge_node1_status = {
-        "running": bool(edge_rpc_info),
-        "chain_height": edge_rpc_info.get("chain_height") if edge_rpc_info else None,
-        "tip_hash": edge_rpc_info.get("tip_hash") if edge_rpc_info else None,
-        "known_peers": (
-            edge_rpc_info.get("known_peers")
-            or (edge_nodeinfo or {}).get("known_peers")
-            or (edge_peers or {}).get("count", 0)
-            or 0
-        ) if edge_rpc_info else 0,
-        "mempool_size": edge_rpc_info.get("mempool_transactions", 0) if edge_rpc_info else 0,
-        "network": edge_rpc_info.get("network") if edge_rpc_info else None,
-        "protocol_version": edge_rpc_info.get("protocol_version") if edge_rpc_info else None,
-        "consensus_profile": edge_rpc_info.get("consensus_profile") if edge_rpc_info else None,
-        "accepted_blocks": edge_rpc_info.get("accepted_blocks") if edge_rpc_info else None,
-        "node_id": (edge_nodeinfo or {}).get("node_id") if edge_rpc_info else None,
-        "p2p_bind": (edge_nodeinfo or {}).get("p2p_bind") if edge_rpc_info else None,
-        "rpc_bind": (edge_nodeinfo or {}).get("rpc_bind") if edge_rpc_info else None,
-        "host": "127.0.0.1:9443",
-    }
-    edge_node2_status = {
-        "running": bool(edge_node2_info),
-        "chain_height": edge_node2_info.get("chain_height") if edge_node2_info else None,
-        "tip_hash": edge_node2_info.get("tip_hash") if edge_node2_info else None,
-        "known_peers": (edge_node2_nodeinfo or {}).get("known_peers", 0) if edge_node2_info else 0,
-        "mempool_size": edge_node2_info.get("mempool_transactions", 0) if edge_node2_info else 0,
-        "network": edge_node2_info.get("network") if edge_node2_info else None,
-        "protocol_version": edge_node2_info.get("protocol_version") if edge_node2_info else None,
-        "consensus_profile": edge_node2_info.get("consensus_profile") if edge_node2_info else None,
-        "accepted_blocks": edge_node2_info.get("accepted_blocks") if edge_node2_info else None,
-        "node_id": (edge_node2_nodeinfo or {}).get("node_id") if edge_node2_info else None,
-        "p2p_bind": (edge_node2_nodeinfo or {}).get("p2p_bind") if edge_node2_info else None,
-        "rpc_bind": (edge_node2_nodeinfo or {}).get("rpc_bind") if edge_node2_info else None,
-        "host": "127.0.0.1:8448",
-    }
     # ── V31 Alpha Node — V3-compatible P2P sync ─────────────────────────────
     v31_active = v31_sys_info.get("ActiveState", "unknown")
     v31_pid = 0
@@ -3394,12 +3310,9 @@ def _build_status_edge_primary() -> dict:
         "sync_lag": 0,
     }
 
-    # V31 is the live Edge primary — promote it into the legacy edge_node slot
-    # when the old V3 RPC (9443) is no longer responding, and expose its peers.
-    if not edge_node1_status.get("running") and v31_node_status.get("running"):
-        edge_node1_status = dict(v31_node_status)
-        edge_node1_status["host"] = "127.0.0.1:9445"
-    if v31_rpc_info and isinstance(v31_rpc_info, dict) and not edge_peers:
+    # Peer discovery from V31 primary node (replaces old V3 edge_peers)
+    edge_peers = None
+    if v31_rpc_info and isinstance(v31_rpc_info, dict):
         edge_peers = {
             "count": v31_rpc_info.get("known_peers", 0),
             "peers": v31_rpc_info.get("peers", []),
@@ -3687,12 +3600,6 @@ def _build_status_edge_primary() -> dict:
         n1["p2p_bind"] = local_backup_status.get("p2p_bind") or "0.0.0.0:8333"
         n1["rpc_bind"] = local_backup_status.get("rpc_bind") or "127.0.0.1:8446"
 
-    # Proxy local height to Edge if Edge RPC failed entirely
-    if edge_node1_status["chain_height"] is None and n1.get("chain_height"):
-        edge_node1_status["chain_height"] = n1["chain_height"]
-        edge_node1_status["tip_hash"] = n1.get("tip_hash")
-        edge_node1_status["known_peers"] = n1.get("known_peers", 0)
-
     # ── Edge Pool ────────────────────────────────────────────────────────────
     # Skip slow local check_service_health — probe Edge pool metrics directly
     pool_edge_svc = get_service("pool-edge")
@@ -3831,10 +3738,10 @@ def _build_status_edge_primary() -> dict:
         "miner_balances": edge_payout["miner_balances"],
     }
 
-    # Sync gap
+    # Sync gap (local backup vs V31 primary)
     sync_gap = None
-    if n1.get("chain_height") and edge_node1_status.get("chain_height"):
-        sync_gap = abs(n1["chain_height"] - edge_node1_status["chain_height"])
+    if n1.get("chain_height") and v31_node_status.get("chain_height"):
+        sync_gap = abs(n1["chain_height"] - v31_node_status["chain_height"])
 
     # v3.0.4: No Tailscale — single server topology, not needed
 
@@ -3878,8 +3785,6 @@ def _build_status_edge_primary() -> dict:
     # Combines our 3 known nodes + any external P2P peers discovered via getPeerInfo.
     all_nodes = []
     for _label, _st, _role, _icon in [
-        ("Edge Node 1 (Primary)", edge_node1_status, "primary", "🌍"),
-        ("Edge Node 2 (Follower)", edge_node2_status, "follower", "🔶"),
         ("V31 Node 1 (Primary)", v31_node_status, "primary", "🚀"),
         ("V31 Node 2 (Follower)", v31_node2_status, "follower", "🛰️"),
         ("V31 Node 3 (Follower)", v31_node3_status, "follower", "📡"),
@@ -3952,8 +3857,6 @@ def _build_status_edge_primary() -> dict:
         "v31_banner": v31_banner,
         "node1": n1,
         "node2": {"running": False, "chain_height": None, "tip_hash": None, "known_peers": 0, "mempool_size": 0},
-        "edge_node": edge_node1_status,
-        "edge_node2": edge_node2_status,
         "v31_node": v31_node_status,
         "v31_node2": v31_node2_status,
         "v31_node3": v31_node3_status,
@@ -4194,7 +4097,7 @@ def build_checklist(status: dict) -> dict:
         v31_node = status.get("v31_node", {})
         v31_pool = status.get("v31_pool", {})
         v31_miner = status.get("v31_miner", {})
-        chain_height = v31_node.get("chain_height") or status["edge_node"].get("chain_height")
+        chain_height = v31_node.get("chain_height") or status.get("v31_node", {}).get("chain_height")
         checks = [
             {"id": "keys",       "label": "Offline key generation complete",          "ok": True},
             {"id": "env",        "label": "Env file assembled (.env.mainnet)",        "ok": True},
@@ -4208,9 +4111,6 @@ def build_checklist(status: dict) -> dict:
             {"id": "payout",     "label": "Payout mechanism ready (fee split active)", "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/1"},
             {"id": "fee_split",  "label": "Fee split 89/5/5/1 (burn model) active",    "ok": status["pool"]["fee_split"] == "89/5/5/1"},
             {"id": "logs",       "label": "Log directory writable",                   "ok": LOG_DIR.exists()},
-            # Optional / archived V3 services
-            {"id": "edge-node1", "label": "Edge Node 1 (V3 archived)",                "ok": status["edge_node"]["running"] and status["edge_node"]["chain_height"] is not None},
-            {"id": "edge-node2", "label": "Edge Node 2 (V3 archived)",                "ok": status.get("edge_node2", {}).get("running", False) and status.get("edge_node2", {}).get("known_peers", 0) > 0},
             {"id": "node1",      "label": "Local Backup Node P2P synced",             "ok": status.get("local_backup", {}).get("running", False) and status.get("local_backup", {}).get("known_peers", 0) > 0},
             {"id": "miner",      "label": "Local GPU miner (optional)",               "ok": True},
             {"id": "edge-backup","label": "Edge database auto-backup (optional)",     "ok": edge_backup_ok},
@@ -4311,41 +4211,46 @@ def build_alerts(status: dict) -> list:
     alerts = []
     topology = status.get("topology", TOPOLOGY)
     n1, n2, pool, miner = status["node1"], status["node2"], status["pool"], status["miner"]
-    edge_node1 = status.get("edge_node", {})
-    edge_node2 = status.get("edge_node2", {})
+    v31_node = status.get("v31_node", {})
+    v31_node2 = status.get("v31_node2", {})
+    v31_node3 = status.get("v31_node3", {})
 
     def _sev(svc_id: str, default: str = "warning") -> str:
         svc = get_service(svc_id)
         return svc.get("severity", default) if svc else default
 
     if topology == "edge-primary":
-        # Edge Node 1 (Primary) alerts
-        if not edge_node1.get("running"):
-            alerts.append({"severity": _sev("edge-node1", "critical"), "title": "Edge Node 1 (Primary) not reachable",
-                           "detail": "Primary node on Edge (127.0.0.1:8333) is not responding. Check Edge systemd services.",
+        # V31 Node 1 (Primary) alerts
+        if not v31_node.get("running"):
+            alerts.append({"severity": _sev("v31-node", "critical"), "title": "V31 Node 1 (Primary) not reachable",
+                           "detail": "V31 primary node on Edge (127.0.0.1:9445) is not responding. Check: systemctl status zion-v31-node",
                            "action": None})
-        elif edge_node1.get("chain_height") == 0:
-            alerts.append({"severity": _sev("edge-node1", "warning"), "title": "Edge chain stuck at height 0",
-                           "detail": "Edge node 1 is up but no blocks have been mined yet.",
-                           "action": None})
-
-        # Edge Node 2 (Follower) alerts
-        if not edge_node2.get("running"):
-            alerts.append({"severity": _sev("edge-node2", "warning"), "title": "Edge Node 2 (Follower) not reachable",
-                           "detail": "Follower node on Edge (127.0.0.1:8448) is not responding. Check: ssh zion-new systemctl status zion-node2",
-                           "action": None})
-        elif edge_node2.get("chain_height") == 0:
-            alerts.append({"severity": _sev("edge-node2", "warning"), "title": "Edge Node 2 chain stuck at height 0",
-                           "detail": "Edge node 2 is up but no blocks have been synced yet.",
+        elif v31_node.get("chain_height") == 0:
+            alerts.append({"severity": _sev("v31-node", "warning"), "title": "V31 chain stuck at height 0",
+                           "detail": "V31 node 1 is up but no blocks have been mined yet.",
                            "action": None})
 
-        # Sync gap: Edge Node 1 vs Edge Node 2
-        if edge_node1.get("running") and edge_node2.get("running") and edge_node1.get("chain_height") and edge_node2.get("chain_height"):
-            gap = abs(edge_node1["chain_height"] - edge_node2["chain_height"])
-            if gap > 10:
-                alerts.append({"severity": _sev("edge-node2", "warning"), "title": "Edge Node 2 far behind Node 1",
-                               "detail": f"Edge1@{edge_node1['chain_height']} vs Edge2@{edge_node2['chain_height']} — gap {gap}",
-                               "action": None})
+        # V31 Node 2 (Follower) alerts
+        if not v31_node2.get("running"):
+            alerts.append({"severity": _sev("v31-node2", "warning"), "title": "V31 Node 2 (Follower) not reachable",
+                           "detail": "V31 follower node 2 (127.0.0.1:9446) is not responding. Check: systemctl status zion-v31-node2",
+                           "action": None})
+
+        # V31 Node 3 (Follower) alerts
+        if not v31_node3.get("running"):
+            alerts.append({"severity": _sev("v31-node3", "warning"), "title": "V31 Node 3 (Follower) not reachable",
+                           "detail": "V31 follower node 3 (127.0.0.1:9447) is not responding. Check: systemctl status zion-v31-node3",
+                           "action": None})
+
+        # Sync gap: V31 Node 1 vs followers
+        if v31_node.get("running") and v31_node.get("chain_height") is not None:
+            for _fn, _fs in [("V31 Node 2", v31_node2), ("V31 Node 3", v31_node3)]:
+                if _fs.get("running") and _fs.get("chain_height") is not None:
+                    gap = abs(v31_node["chain_height"] - _fs["chain_height"])
+                    if gap > 10:
+                        alerts.append({"severity": "warning", "title": f"{_fn} far behind Node 1",
+                                       "detail": f"Node1@{v31_node['chain_height']} vs {_fn}@{_fs['chain_height']} — gap {gap}",
+                                       "action": None})
 
         # NOTE: Local backup node is intentionally not monitored on Edge (it lives
         # on the operator's local PC, not on the Edge server), so no alerts here.
@@ -9845,9 +9750,9 @@ def _build_health_map() -> dict:
     v31_multichain = status.get("v31_multichain", {})
     health["v31-multichain"] = "up" if v31_multichain.get("running") and v31_multichain.get("ok") else "down"
 
-    # Legacy V3 services (archived/masked)
-    edge_node = status.get("edge_node", {})
-    health["edge-node"] = "up" if edge_node.get("running") and edge_node.get("chain_height") is not None else "down"
+    # V31 node health (replaces legacy V3 edge-node)
+    v31_node_h = status.get("v31_node", {})
+    health["edge-node"] = "up" if v31_node_h.get("running") and v31_node_h.get("chain_height") is not None else "down"
 
     pool_edge = status.get("pool_edge", {})
     health["pool-edge"] = "up" if pool_edge.get("running") else "down"
@@ -10645,7 +10550,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     "reachable": True,
                     "edge_host": EDGE_PUBLIC_IP,
                     "topology": _st.get("topology", "edge-primary"),
-                    "chain_height": _st.get("edge_node", {}).get("chain_height"),
+                    "chain_height": _st.get("v31_node", {}).get("chain_height"),
                     "pool_running": _st.get("pool_edge", {}).get("running", False),
                     "active_miners": _st.get("pool_edge", {}).get("active_miners"),
                     "hashrate": _st.get("pool_edge", {}).get("hashrate"),
@@ -10653,7 +10558,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     "blocks_found": _st.get("pool_edge", {}).get("blocks_found"),
                     "services": _health,
                     "local_backup": _st.get("local_backup", {}),
-                    "edge_node": _st.get("edge_node", {}),
+                    "v31_node": _st.get("v31_node", {}),
                 }
                 self._json(_overview)
             except Exception as ex:
@@ -10985,23 +10890,23 @@ class DashboardHandler(BaseHTTPRequestHandler):
             try:
                 s = build_status()
                 if layer == "l1":
-                    result["ok"] = s.get("node1", {}).get("running", False) or s.get("edge_node", {}).get("running", False)
-                    result["block_height"] = s.get("edge_node", {}).get("chain_height", s.get("node1", {}).get("chain_height", 0))
-                    result["peers"] = s.get("edge_node", {}).get("known_peers", s.get("node1", {}).get("known_peers", 0))
+                    result["ok"] = s.get("v31_node", {}).get("running", False) or s.get("node1", {}).get("running", False)
+                    result["block_height"] = s.get("v31_node", {}).get("chain_height", s.get("node1", {}).get("chain_height", 0))
+                    result["peers"] = s.get("v31_node", {}).get("known_peers", s.get("node1", {}).get("known_peers", 0))
                     result["hashrate"] = s.get("miner", {}).get("hashrate", 0)
                     result["shares_accepted"] = s.get("pool", {}).get("shares_accepted", 0)
                     result["pool_alive"] = s.get("pool", {}).get("running", False)
                     result["miner_alive"] = s.get("miner", {}).get("running", False)
-                    # In edge-primary topology, node2 refers to edge_node2; in local-dev, it's the local node2.
                     topo = s.get("topology", "edge-primary")
                     if topo == "edge-primary":
-                        result["node2_alive"] = s.get("edge_node2", {}).get("running", False)
+                        result["node2_alive"] = s.get("v31_node2", {}).get("running", False)
                     else:
                         result["node2_alive"] = s.get("node2", {}).get("running", False)
-                    result["edge_alive"] = s.get("edge_node", {}).get("running", False)
+                    result["edge_alive"] = s.get("v31_node", {}).get("running", False)
                     result["services"] = {
-                        "edge-node": s.get("edge_node", {}).get("running", False),
-                        "edge-node2": s.get("edge_node2", {}).get("running", False) if topo == "edge-primary" else False,
+                        "v31-node": s.get("v31_node", {}).get("running", False),
+                        "v31-node2": s.get("v31_node2", {}).get("running", False) if topo == "edge-primary" else False,
+                        "v31-node3": s.get("v31_node3", {}).get("running", False) if topo == "edge-primary" else False,
                         "node1": s.get("node1", {}).get("running", False),
                         "node2": s.get("node2", {}).get("running", False),
                         "pool": s.get("pool", {}).get("running", False),
@@ -11069,68 +10974,52 @@ class DashboardHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
         elif route == "/api/topology":
-            # 3-node P2P topology (v3.0.4): Edge Node 1, Edge Node 2, Local Backup
+            # V31 P2P topology: V31 Node 1 (primary), Node 2, Node 3 (followers), Local Backup
             import time as _time
             from concurrent.futures import ThreadPoolExecutor, as_completed
+            import socket as _sock
 
-            def _probe_node(label, host, port):
-                """Probe a node via RPC getChainInfo + getNodeInfo, return status dict.
-                On Edge the Local Backup node is not on localhost; use the backup beacon instead."""
-                if label == "Local Backup" and TOPOLOGY == "edge-primary":
-                    beacon = {}
-                    beacon_age = None
-                    with _BACKUP_BEACON_LOCK:
-                        beacon_age = _time.time() - _BACKUP_BEACON_TIME
-                        if beacon_age < BACKUP_BEACON_TTL_SEC:
-                            beacon = dict(_BACKUP_BEACON)
-                    if beacon:
-                        return {
-                            "label": label,
-                            "host": beacon.get("host", "local-pc"),
-                            "rpc_port": beacon.get("rpc_bind", "127.0.0.1:8446").split(":")[-1],
-                            "alive": True,
-                            "latency_ms": None,
-                            "height": beacon.get("chain_height"),
-                            "tip_hash": beacon.get("tip_hash"),
-                            "node_id": beacon.get("node_id", "local-backup-node"),
-                            "p2p_bind": beacon.get("p2p_bind", "0.0.0.0:8333"),
-                            "known_peers": beacon.get("known_peers", 0) or 0,
-                            "beacon_age_s": round(beacon_age, 1),
-                        }
-                    return {
-                        "label": label,
-                        "host": "local-pc",
-                        "rpc_port": 8446,
-                        "alive": False,
-                        "latency_ms": None,
-                        "height": None,
-                        "tip_hash": None,
-                        "node_id": None,
-                        "p2p_bind": None,
-                        "known_peers": 0,
-                    }
-
+            def _probe_v31_node(label, port):
+                """Probe a V31 node via TCP JSON-RPC."""
+                def _call(method, params=None):
+                    req = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params or []}) + "\n"
+                    try:
+                        with _sock.create_connection(("127.0.0.1", port), timeout=2.5) as s:
+                            s.sendall(req.encode())
+                            resp = b""
+                            while True:
+                                chunk = s.recv(8192)
+                                if not chunk:
+                                    break
+                                resp += chunk
+                                if b"\n" in chunk:
+                                    break
+                            r = json.loads(resp.decode("utf-8", errors="replace").strip())
+                            if "error" in r and r["error"]:
+                                return None
+                            return r.get("result")
+                    except Exception:
+                        return None
                 t0 = _time.time()
-                chain = rpc_call(host, port, "getChainInfo", {}, timeout=2.5)
-                latency = round((_time.time() - t0) * 1000) if chain and not chain.get("_rpc_error") else None
-                alive = bool(chain and not chain.get("_rpc_error"))
+                status = _call("getStatus")
+                latency = round((_time.time() - t0) * 1000) if status else None
+                alive = bool(status)
                 height = None
                 tip_hash = None
                 node_id = None
                 p2p_bind = None
                 known_peers = 0
                 if alive:
-                    height = chain.get("chain_height") or chain.get("height") or chain.get("best_height")
-                    tip_hash = chain.get("tip_hash") or chain.get("best_hash")
-                    # Also get node info for peer count
-                    info = rpc_call(host, port, "getNodeInfo", {}, timeout=2.0)
-                    if info and not info.get("_rpc_error"):
-                        node_id = info.get("node_id")
-                        p2p_bind = info.get("p2p_bind")
-                        known_peers = info.get("known_peers", 0) or 0
+                    height = status.get("chain_height")
+                    tip_hash = status.get("tip_hash") or status.get("tip_hash_hex")
+                    nodeinfo = _call("getNodeInfo")
+                    if nodeinfo:
+                        node_id = nodeinfo.get("node_id")
+                        p2p_bind = nodeinfo.get("p2p_bind")
+                        known_peers = nodeinfo.get("known_peers", 0) or 0
                 return {
                     "label": label,
-                    "host": host,
+                    "host": "127.0.0.1",
                     "rpc_port": port,
                     "alive": alive,
                     "latency_ms": latency,
@@ -11141,12 +11030,48 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     "known_peers": known_peers,
                 }
 
-            ex = ThreadPoolExecutor(max_workers=3)
+            def _probe_local_backup():
+                """Get local backup from beacon."""
+                beacon = {}
+                beacon_age = None
+                with _BACKUP_BEACON_LOCK:
+                    beacon_age = _time.time() - _BACKUP_BEACON_TIME
+                    if beacon_age < BACKUP_BEACON_TTL_SEC:
+                        beacon = dict(_BACKUP_BEACON)
+                if beacon:
+                    return {
+                        "label": "Local Backup",
+                        "host": beacon.get("host", "local-pc"),
+                        "rpc_port": beacon.get("rpc_bind", "127.0.0.1:8446").split(":")[-1],
+                        "alive": True,
+                        "latency_ms": None,
+                        "height": beacon.get("chain_height"),
+                        "tip_hash": beacon.get("tip_hash"),
+                        "node_id": beacon.get("node_id", "local-backup-node"),
+                        "p2p_bind": beacon.get("p2p_bind", "0.0.0.0:8333"),
+                        "known_peers": beacon.get("known_peers", 0) or 0,
+                        "beacon_age_s": round(beacon_age, 1),
+                    }
+                return {
+                    "label": "Local Backup",
+                    "host": "local-pc",
+                    "rpc_port": 8446,
+                    "alive": False,
+                    "latency_ms": None,
+                    "height": None,
+                    "tip_hash": None,
+                    "node_id": None,
+                    "p2p_bind": None,
+                    "known_peers": 0,
+                }
+
+            ex = ThreadPoolExecutor(max_workers=4)
             try:
                 futs = {
-                    ex.submit(_probe_node, "Edge Node 1", "127.0.0.1", 9443),
-                    ex.submit(_probe_node, "Edge Node 2", "127.0.0.1", 8448),
-                    ex.submit(_probe_node, "Local Backup", "127.0.0.1", 8446),
+                    ex.submit(_probe_v31_node, "V31 Node 1", 9445),
+                    ex.submit(_probe_v31_node, "V31 Node 2", 9446),
+                    ex.submit(_probe_v31_node, "V31 Node 3", 9447),
+                    ex.submit(_probe_local_backup),
                 }
                 results = {}
                 for fut in as_completed(futs, timeout=6.0):
@@ -11158,28 +11083,29 @@ class DashboardHandler(BaseHTTPRequestHandler):
             finally:
                 ex.shutdown(wait=False, cancel_futures=True)
 
-            edge1 = results.get("Edge Node 1", {})
-            edge2 = results.get("Edge Node 2", {})
+            v31n1 = results.get("V31 Node 1", {})
+            v31n2 = results.get("V31 Node 2", {})
+            v31n3 = results.get("V31 Node 3", {})
             local = results.get("Local Backup", {})
 
             # Compute sync gaps
-            heights = [h for h in [edge1.get("height"), edge2.get("height"), local.get("height")] if h is not None]
+            heights = [h for h in [v31n1.get("height"), v31n2.get("height"), v31n3.get("height"), local.get("height")] if h is not None]
             max_h = max(heights) if heights else 0
             min_h = min(heights) if heights else 0
             sync_gap = max_h - min_h
 
-            # All 3 nodes in sync?
-            all_in_sync = sync_gap == 0 and len(heights) == 3
+            all_in_sync = sync_gap == 0 and len(heights) >= 2
 
-            # Port checks (via SSH tunnel to Edge)
+            # Port checks
             ports = {}
-            for name, port in [("node_p2p", 8333), ("node_rpc", 9443), ("pool_stratum", 8444),
-                               ("dashboard", 8766), ("hiran_inference", 8002), ("hiranyagarbha", 8001)]:
+            for name, port in [("v31_node_p2p", 8335), ("v31_node_rpc", 9445), ("pool_stratum", 8444),
+                               ("dashboard", 8766)]:
                 ports[name] = check_port_open("127.0.0.1", port, timeout=1.0)
 
             self._json({
-                "edge_node1": edge1,
-                "edge_node2": edge2,
+                "v31_node1": v31n1,
+                "v31_node2": v31n2,
+                "v31_node3": v31n3,
                 "local_backup": local,
                 "sync_gap": sync_gap,
                 "all_in_sync": all_in_sync,
@@ -11542,21 +11468,22 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "node2_height": status.get("local_backup", {}).get("chain_height") if status.get("topology") == "edge-primary" else status["node2"]["chain_height"],
                 "node1_running": status["node1"]["running"],
                 "node2_running": status.get("local_backup", {}).get("running", False) if status.get("topology") == "edge-primary" else status["node2"]["running"],
-                "edge_node_running": status.get("edge_node", {}).get("running", False),
-                "edge_node2_running": status.get("edge_node2", {}).get("running", False),
-                "edge_node2_height": status.get("edge_node2", {}).get("chain_height"),
-                "edge_node2_peers": status.get("edge_node2", {}).get("known_peers", 0),
+                "v31_node_running": status.get("v31_node", {}).get("running", False),
+                "v31_node2_running": status.get("v31_node2", {}).get("running", False),
+                "v31_node2_height": status.get("v31_node2", {}).get("chain_height"),
+                "v31_node3_running": status.get("v31_node3", {}).get("running", False),
+                "v31_node3_height": status.get("v31_node3", {}).get("chain_height"),
                 "local_backup_running": status.get("local_backup", {}).get("running", False),
                 "local_backup_height": status.get("local_backup", {}).get("chain_height"),
                 "local_backup_peers": status.get("local_backup", {}).get("known_peers", 0),
-                "edge_node_height": status.get("edge_node", {}).get("chain_height"),
+                "v31_node_height": status.get("v31_node", {}).get("chain_height"),
                 "pool_running": status["pool"]["running"],
                 "miner_running": status["miner"]["running"],
                 "git_status": git_status,
                 "ready_for_launch": all([
                     genesis_hash is not None and genesis_hash != "Unknown" and len(str(genesis_hash)) == 64,
                     all(fee_split_match.values()),
-                    status.get("edge_node", {}).get("running", False) if status.get("topology") == "edge-primary" else status["node1"]["running"],
+                    status.get("v31_node", {}).get("running", False) if status.get("topology") == "edge-primary" else status["node1"]["running"],
                     status.get("local_backup", {}).get("running", False) if status.get("topology") == "edge-primary" else status["node2"]["running"],
                     status["pool"]["running"],
                     git_status["clean"],
@@ -11975,7 +11902,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         _sysd[svc] = "unknown"
 
                 _lb = _st.get("local_backup", {})
-                _en = _st.get("edge_node", {})
+                _en = _st.get("v31_node", {})
                 _pe = _st.get("pool_edge", {})
 
                 issues = []

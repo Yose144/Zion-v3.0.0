@@ -379,7 +379,7 @@ function _renderCriticalUI(statusData){
 
   const isEdge = statusData.topology === 'edge-primary';
   const live = isEdge
-    ? [statusData.edge_node, statusData.edge_node2, statusData.local_backup, statusData.pool, statusData.miner].filter(x => x && x.running).length
+    ? [statusData.v31_node, statusData.v31_node2, statusData.v31_node3, statusData.local_backup, statusData.pool, statusData.miner].filter(x => x && x.running).length
     : [statusData.node1, statusData.node2, statusData.pool, statusData.miner].filter(x => x && x.running).length;
   const heroUp = document.getElementById('hero-services-up');
   if(heroUp) heroUp.textContent = live;
@@ -389,7 +389,7 @@ function _renderCriticalUI(statusData){
   const runningNodes = allNodes.filter(n => n.running).length;
   const totalNodes = allNodes.length;
   const protoVer = isEdge
-    ? (statusData.edge_node?.protocol_version || statusData.edge_node2?.protocol_version || '—')
+    ? (statusData.v31_node?.protocol_version || statusData.v31_node2?.protocol_version || '—')
     : (statusData.node1?.protocol_version || '—');
   const netStatus = document.getElementById('hero-network-status');
   if(netStatus) netStatus.textContent = runningNodes > 0 ? 'Live' : 'Down';
@@ -677,92 +677,50 @@ function formatUptime(sec){
 }
 
 function updateServiceCards(s){
-  const en = s.edge_node, n1 = s.node1, n2 = s.node2, p = s.pool, m = s.miner;
-  const en2 = s.edge_node2 || {};
+  const n1 = s.node1, n2 = s.node2, p = s.pool, m = s.miner;
   const lb = s.local_backup || {};
   const isEdgePrimary = s.topology === 'edge-primary';
-  // In edge-primary: node1 card = local_backup, node2 card = edge_node2 (follower)
-  // In local-dev: node1 = genesis, node2 = follower
-  const n1data = isEdgePrimary ? (lb || n1) : n1;
-  const n2data = isEdgePrimary ? (en2 || n2) : n2;
-  // Topology-aware visibility
-  const node2Card = document.getElementById('card-node2');
-  if(node2Card) node2Card.classList.toggle('hidden', false);
-  const edgeNodeCard = document.getElementById('card-edge-node');
-  if(edgeNodeCard) edgeNodeCard.classList.toggle('hidden', !isEdgePrimary);
+  const v31nRef = s.v31_node || {};
 
-  // Edge Node (Primary)
-  setBadge('badge-edge-node', en && en.running); setCardLive('edge-node', en && en.running);
-  const enh = document.getElementById('val-edge-node-height');
-  if(enh) enh.textContent = en ? (en.chain_height ?? '—') : '—';
-  const enhash = document.getElementById('val-edge-node-hash');
-  if(enhash) enhash.textContent = en ? (en.tip_hash ?? '—') : '—';
-  const enp = document.getElementById('val-edge-node-peers');
-  if(enp) enp.textContent = en ? (en.known_peers ?? '—') : '—';
-
-  // Local Backup Node (node1 card in edge-primary)
-  const n1kicker = document.querySelector('#card-node1 .zion-kicker');
-  if(n1kicker) n1kicker.textContent = isEdgePrimary ? '💾 Local Backup' : '🔷 Node 1';
-  setBadge('badge-node1', n1data && n1data.running); setCardLive('node1', n1data && n1data.running);
-  const n1h = document.getElementById('val-node1-height');
-  if(n1h) n1h.textContent = n1data ? (n1data.chain_height != null ? n1data.chain_height.toLocaleString() : (n1data.running ? '—' : 'Offline')) : 'Offline';
-  const n1id = document.getElementById('val-node1-id');
-  if(n1id) n1id.textContent = n1data ? (n1data.node_id ?? 'local-backup-node') : 'local-backup-node';
-  const n1p = document.getElementById('val-node1-peers');
-  if(n1p) n1p.textContent = n1data ? (n1data.known_peers ?? 0) : 0;
-  const n1p2p = document.getElementById('val-node1-p2p');
-  if(n1p2p) n1p2p.textContent = n1data ? (n1data.p2p_bind ?? '0.0.0.0:8333') : '0.0.0.0:8333';
-  const n1m = document.getElementById('val-node1-mempool');
-  if(n1m) n1m.textContent = n1data ? (n1data.mempool_size ?? 0) : 0;
-  const n1u = document.getElementById('val-node1-uptime');
-  if(n1u) n1u.textContent = formatUptime(n1data ? n1data.uptime_seconds : null);
+  // Local Backup Node card
+  const lbData = isEdgePrimary ? lb : n1;
+  setBadge('badge-local-backup', lbData && lbData.running); setCardLive('local-backup', lbData && lbData.running);
+  const lbh = document.getElementById('val-local-backup-height');
+  if(lbh) lbh.textContent = lbData ? (lbData.chain_height != null ? lbData.chain_height.toLocaleString() : (lbData.running ? '—' : 'Offline')) : 'Offline';
+  const lbid = document.getElementById('val-local-backup-id');
+  if(lbid) lbid.textContent = lbData ? (lbData.node_id ?? 'local-backup-node') : 'local-backup-node';
+  const lbp = document.getElementById('val-local-backup-peers');
+  if(lbp) lbp.textContent = lbData ? (lbData.known_peers ?? 0) : 0;
+  const lbp2p = document.getElementById('val-local-backup-p2p');
+  if(lbp2p) lbp2p.textContent = lbData ? (lbData.p2p_bind ?? '0.0.0.0:8333') : '0.0.0.0:8333';
+  const lbm = document.getElementById('val-local-backup-mempool');
+  if(lbm) lbm.textContent = lbData ? (lbData.mempool_size ?? 0) : 0;
+  const lbu = document.getElementById('val-local-backup-uptime');
+  if(lbu) lbu.textContent = formatUptime(lbData ? lbData.uptime_seconds : null);
   // Sync status for Local Backup Node
-  const n1syncEl = document.getElementById('val-node1-sync');
-  if(n1syncEl){
-    if(n1data && n1data.running){
-      const refHeight = isEdgePrimary ? (en ? (en.chain_height ?? 0) : 0) : (n2 ? (n2.chain_height ?? 0) : 0);
-      const localH = n1data ? (n1data.chain_height ?? 0) : 0;
+  const lbsyncEl = document.getElementById('val-local-backup-sync');
+  if(lbsyncEl){
+    if(lbData && lbData.running){
+      const refHeight = v31nRef ? (v31nRef.chain_height ?? 0) : 0;
+      const localH = lbData ? (lbData.chain_height ?? 0) : 0;
       const gap = refHeight > 0 && localH > 0 ? Math.abs(refHeight - localH) : null;
-      const serverGap = n1data ? (n1data.sync_gap ?? gap) : gap;
+      const serverGap = lbData ? (lbData.sync_gap ?? gap) : gap;
       const synced = serverGap !== null && serverGap !== undefined && serverGap <= 5;
       if(serverGap === null || serverGap === undefined){
-        n1syncEl.textContent = localH > 0 ? 'Syncing…' : 'No data';
-        n1syncEl.className = 'text-gray-400';
+        lbsyncEl.textContent = localH > 0 ? 'Syncing…' : 'No data';
+        lbsyncEl.className = 'text-gray-400';
       } else if(synced){
-        n1syncEl.textContent = '✓ Synced (gap: ' + serverGap + ')';
-        n1syncEl.className = 'text-emerald-400 font-bold text-xs';
+        lbsyncEl.textContent = '✓ Synced (gap: ' + serverGap + ')';
+        lbsyncEl.className = 'text-emerald-400 font-bold text-xs';
       } else {
-        n1syncEl.textContent = '⚠ Behind (gap: ' + serverGap + ')';
-        n1syncEl.className = 'text-amber-400 text-xs';
+        lbsyncEl.textContent = '⚠ Behind (gap: ' + serverGap + ')';
+        lbsyncEl.className = 'text-amber-400 text-xs';
       }
     } else {
-      n1syncEl.textContent = '🔴 Offline (on local PC)';
-      n1syncEl.className = 'text-red-400 text-xs';
+      lbsyncEl.textContent = '🔴 Offline (on local PC)';
+      lbsyncEl.className = 'text-red-400 text-xs';
     }
   }
-
-  // Node 2 card: Edge Node 2 (Follower) in edge-primary, Node 2 in local-dev
-  const n2label = isEdgePrimary ? 'Edge Node 2' : 'Node 2';
-  const n2kicker = node2Card ? node2Card.querySelector('.zion-kicker') : null;
-  if(n2kicker) n2kicker.textContent = isEdgePrimary ? '🔶 ' + n2label : '🔶 Node 2';
-  setBadge('badge-node2', n2data && n2data.running); setCardLive('node2', n2data && n2data.running);
-  const n2h = document.getElementById('val-node2-height');
-  if(n2h) n2h.textContent = n2data ? (n2data.chain_height ?? '—') : '—';
-  const n2id = document.getElementById('val-node2-id');
-  if(n2id) n2id.textContent = n2data ? (n2data.node_id ?? '—') : '—';
-  const n2p = document.getElementById('val-node2-peers');
-  if(n2p) n2p.textContent = n2data ? (n2data.known_peers ?? '—') : '—';
-  const n2ref = isEdgePrimary ? en : n1;
-  const synced = n2ref && n2ref.chain_height && n2data && n2data.chain_height && n2data.chain_height >= n2ref.chain_height - 5;
-  const syncEl = document.getElementById('val-node2-sync');
-  if(syncEl){
-    syncEl.textContent = synced ? '✓ Synced' : (n2data && n2data.known_peers > 0 ? 'Syncing…' : 'No peers');
-    syncEl.className = synced ? 'text-emerald-400 font-bold' : 'text-amber-400';
-  }
-  const n2m = document.getElementById('val-node2-mempool');
-  if(n2m) n2m.textContent = n2data ? (n2data.mempool_size ?? '—') : '—';
-  const n2u = document.getElementById('val-node2-uptime');
-  if(n2u) n2u.textContent = formatUptime(n2data ? n2data.uptime_seconds : null);
 
   // ── V31 Production Stack (Node + Pool + Miner + Multichain) ──
   const v31n = s.v31_node || {};
@@ -5334,10 +5292,11 @@ async function loadTopology(){
     const data = await fetch('/api/topology', { signal: AbortSignal.timeout(8000) }).then(r=>r.json());
     const el = id => document.getElementById(id);
 
-    // ── 3-node P2P topology (v3.0.4) ─────────────────────────────────────
+    // ── V31 P2P topology ─────────────────────────────────────────────────
     const nodes = [
-      { key: 'edge_node1', prefix: 'topo-edge1' },
-      { key: 'edge_node2', prefix: 'topo-edge2' },
+      { key: 'v31_node1', prefix: 'topo-edge1' },
+      { key: 'v31_node2', prefix: 'topo-edge2' },
+      { key: 'v31_node3', prefix: 'topo-edge3' },
       { key: 'local_backup', prefix: 'topo-local' },
     ];
 
@@ -5371,16 +5330,17 @@ async function loadTopology(){
       el('topo-sync-gap').className = 'text-lg font-bold ' + (gap === 0 ? 'text-emerald-400' : gap < 10 ? 'text-amber-400' : 'text-red-400');
     }
     if (el('topo-sync-verdict')){
-      if (allInSync){ el('topo-sync-verdict').textContent = '✓ All 3 nodes synced'; el('topo-sync-verdict').className = 'font-bold text-sm text-emerald-400'; }
+      if (allInSync){ el('topo-sync-verdict').textContent = '✓ All nodes synced'; el('topo-sync-verdict').className = 'font-bold text-sm text-emerald-400'; }
       else if (gap <= 2){ el('topo-sync-verdict').textContent = 'Near sync ('+gap+' block gap)'; el('topo-sync-verdict').className = 'font-bold text-sm text-amber-400'; }
       else { el('topo-sync-verdict').textContent = 'Out of sync ('+gap+' blocks behind)'; el('topo-sync-verdict').className = 'font-bold text-sm text-red-400'; }
     }
 
-    // Sync bars (3 nodes)
+    // Sync bars (V31 nodes)
     const maxH = Math.max(...heights, 1);
-    const h1 = data.edge_node1?.height ?? 0;
-    const h2 = data.edge_node2?.height ?? 0;
-    const h3 = data.local_backup?.height ?? 0;
+    const h1 = data.v31_node1?.height ?? 0;
+    const h2 = data.v31_node2?.height ?? 0;
+    const h3 = data.v31_node3?.height ?? 0;
+    const h4 = data.local_backup?.height ?? 0;
     if (el('topo-sync-n1')) el('topo-sync-n1').textContent = h1 ? h1.toLocaleString() : '—';
     if (el('topo-sync-n2')) el('topo-sync-n2').textContent = h2 ? h2.toLocaleString() : '—';
     if (el('topo-sync-n3')) el('topo-sync-n3').textContent = h3 ? h3.toLocaleString() : '—';
@@ -5389,7 +5349,7 @@ async function loadTopology(){
     if (el('topo-sync-bar-n3')) el('topo-sync-bar-n3').style.width = (h3/maxH*100)+'%';
 
     // ── Port status ───────────────────────────────────────────────────────
-    const portMap = {p2p:'node_p2p', rpc:'node_rpc', pool:'pool_stratum', dash:'dashboard', hiran:'hiran_inference', orch:'hiranyagarbha'};
+    const portMap = {p2p:'v31_node_p2p', rpc:'v31_node_rpc', pool:'pool_stratum', dash:'dashboard'};
     for(const [key, apiKey] of Object.entries(portMap)){
       const pe = el('topo-port-' + key);
       if(pe){ pe.textContent = data.ports?.[apiKey] ? 'Open' : 'Closed'; pe.className = 'text-xs font-bold ' + (data.ports?.[apiKey] ? 'text-emerald-400' : 'text-red-400'); }
@@ -9118,9 +9078,10 @@ async function loadL6Missions() {
 // ═══════════════════════════════════════════════════════════════════════
 
 const LOG_SERVICES = [
-  // Blockchain nodes (3-node P2P)
-  { id: 'edge-node1',    label: 'Edge Node 1',   icon: '🌍', color: 'emerald', group: 'node'  },
-  { id: 'edge-node2',    label: 'Edge Node 2',   icon: '🔥', color: 'amber',   group: 'node'  },
+  // Blockchain nodes (V31 P2P — 3 nodes + local backup)
+  { id: 'v31-node',      label: 'V31 Node 1',    icon: '🚀', color: 'emerald', group: 'node'  },
+  { id: 'v31-node2',     label: 'V31 Node 2',    icon: '🛰️', color: 'amber',   group: 'node'  },
+  { id: 'v31-node3',     label: 'V31 Node 3',    icon: '📡', color: 'purple',  group: 'node'  },
   { id: 'local-backup',  label: 'Local Backup',  icon: '💎', color: 'cyan',    group: 'node'  },
   // L1 services
   { id: 'pool',          label: 'Pool',          icon: '🏊', color: 'cyan',    group: 'L1'    },
@@ -9485,16 +9446,16 @@ function renderReadiness(data) {
 // FEATURE C — Service Health Timeline (24h heatmap)
 // ════════════════════════════════════════════════════════════════════════
 // All service IDs that backend can persist in health history (ordered by layer L1→L2→L3→Infra)
-const SERVICE_HISTORY_LABELS = ['v31-node','v31-pool','v31-miner','v31-multichain','v31-dao','v31-oasis','local-backup','dashboard','nginx','web-next','grafana','prometheus','marketplace'];
+const SERVICE_HISTORY_LABELS = ['v31-node','v31-node2','v31-node3','v31-pool','v31-miner','v31-multichain','v31-dao','v31-oasis','local-backup','dashboard','nginx','web-next','grafana','prometheus','marketplace'];
 const SVC_LABEL_MAP = {
-  'v31-node':'V31 Node', 'v31-pool':'V31 Pool', 'v31-miner':'V31 Miner', 'v31-dao':'V31 DAO', 'v31-multichain':'V31 Multi-Chain', 'v31-oasis':'V31 OASIS',
-  'edge-node1':'Edge Node 1', 'edge-node2':'Edge Node 2', 'local-backup':'Local Backup', 'pool-edge':'Pool Edge', miner:'Miner', bridge:'Bridge', dao:'DAO', warp:'WARP', oasis:'OASIS', 'free-world':'Free World', issobella:'Issobella',
+  'v31-node':'V31 Node 1', 'v31-node2':'V31 Node 2', 'v31-node3':'V31 Node 3', 'v31-pool':'V31 Pool', 'v31-miner':'V31 Miner', 'v31-dao':'V31 DAO', 'v31-multichain':'V31 Multi-Chain', 'v31-oasis':'V31 OASIS',
+  'edge-node1':'V31 Node 1', 'edge-node2':'V31 Node 2', 'local-backup':'Local Backup', 'pool-edge':'Pool Edge', miner:'Miner', bridge:'Bridge', dao:'DAO', warp:'WARP', oasis:'OASIS', 'free-world':'Free World', issobella:'Issobella',
   dashboard:'Dashboard', nginx:'Nginx', 'web-next':'Website', grafana:'Grafana', prometheus:'Prometheus', marketplace:'Marketplace'
 };
 // Map legacy/duplicate service IDs to their V31 canonical ID for the timeline.
 const V31_SVC_REPLACEMENT = {
   'edge-node1':'v31-node','edge_node1':'v31-node','node1':'v31-node',
-  'edge-node2':'v31-node','edge_node2':'v31-node','node2':'v31-node',
+  'edge-node2':'v31-node2','edge_node2':'v31-node2','node2':'v31-node2',
   'pool-edge':'v31-pool','pool_edge':'v31-pool','pool':'v31-pool',
   'miner':'v31-miner','miner-1':'v31-miner','miner1':'v31-miner',
   'bridge':'v31-multichain','atomic-swap':'v31-multichain','dex':'v31-multichain','warp':'v31-multichain',
@@ -9558,7 +9519,7 @@ function _getOrderedLabels(services) {
   const seen = new Set();
   // Prefer V31 primary; fall back to legacy counterpart only when V31 is absent.
   const groups = [
-    ['v31-node','edge-node1','edge-node2','node1','node2','local-backup'],
+    ['v31-node','v31-node2','v31-node3','edge-node1','edge-node2','node1','node2','local-backup'],
     ['v31-pool','pool-edge','pool'],
     ['v31-miner','miner','miner-1','miner1'],
     ['v31-multichain','warp','bridge','atomic-swap','dex'],
@@ -9886,12 +9847,13 @@ function renderMempoolSparkline(mempoolSize) {
 // ════════════════════════════════════════════════════════════════════════
 // FEATURE F — Network topology SVG map
 // ════════════════════════════════════════════════════════════════════════
-// ── 3-node P2P topology + service mesh (v3.0.4) ───────────────────────────
-// Layout: 3 blockchain nodes across the top, services branching down.
+// ── V31 P2P topology + service mesh ────────────────────────────────────────
+// Layout: 3 V31 blockchain nodes across the top, services branching down.
 const TOPO_NODES = [
-  // Row 1: Blockchain nodes (P2P mesh)
-  { id:'edge-node1',  label:'Edge Node 1',  x:300, y:55,  kind:'core' },
-  { id:'edge-node2',  label:'Edge Node 2',  x:520, y:55,  kind:'core' },
+  // Row 1: Blockchain nodes (V31 P2P mesh)
+  { id:'v31-node',    label:'V31 Node 1',    x:300, y:55,  kind:'core' },
+  { id:'v31-node2',   label:'V31 Node 2',    x:520, y:55,  kind:'core' },
+  { id:'v31-node3',   label:'V31 Node 3',    x:640, y:55,  kind:'core' },
   { id:'local-backup',label:'Local Backup',  x:120, y:55,  kind:'core' },
   // Row 2: L1 services
   { id:'pool-edge',   label:'Pool',          x:300, y:140, kind:'core' },
@@ -9910,29 +9872,31 @@ const TOPO_NODES = [
 ];
 
 const TOPO_EDGES = [
-  // P2P mesh (3-node)
-  ['edge-node1','edge-node2'],
-  ['edge-node1','local-backup'],
-  ['edge-node2','local-backup'],
+  // P2P mesh (V31 3-node + local backup)
+  ['v31-node','v31-node2'],
+  ['v31-node','v31-node3'],
+  ['v31-node','local-backup'],
+  ['v31-node2','local-backup'],
   // L1 service dependencies
-  ['edge-node1','pool-edge'],
+  ['v31-node','pool-edge'],
   ['pool-edge','miner'],
-  // L2 dependencies (on edge-node1)
-  ['edge-node1','bridge'],
-  ['edge-node1','dao'],
+  // L2 dependencies (on v31-node)
+  ['v31-node','bridge'],
+  ['v31-node','dao'],
   // L3-L6 dependencies
-  ['edge-node1','warp'],
-  ['edge-node1','oasis'],
-  ['edge-node1','free-world'],
-  ['edge-node1','issobella'],
+  ['v31-node','warp'],
+  ['v31-node','oasis'],
+  ['v31-node','free-world'],
+  ['v31-node','issobella'],
   // Infrastructure
-  ['edge-node1','dashboard'],
+  ['v31-node','dashboard'],
   ['dashboard','nginx'],
 ];
 
 const TOPO_ID_MAP = {
-  'edge-node1':'edge-node1', 'edge_node1':'edge-node1', 'v31-node':'edge-node1', 'v31_node':'edge-node1', 'v31node':'edge-node1', node1:'edge-node1', 'node-1':'edge-node1', node:'edge-node1',
-  'edge-node2':'edge-node2', 'edge_node2':'edge-node2', node2:'edge-node2', 'node-2':'edge-node2',
+  'v31-node':'v31-node', 'v31_node':'v31-node', 'v31node':'v31-node', 'edge-node1':'v31-node', 'edge_node1':'v31-node', node1:'v31-node', 'node-1':'v31-node', node:'v31-node',
+  'v31-node2':'v31-node2', 'v31_node2':'v31-node2', 'edge-node2':'v31-node2', 'edge_node2':'v31-node2', node2:'v31-node2', 'node-2':'v31-node2',
+  'v31-node3':'v31-node3', 'v31_node3':'v31-node3',
   'local-backup':'local-backup', 'local_backup':'local-backup', 'local-backup-node':'local-backup', localbackup:'local-backup',
   'pool-edge':'pool-edge', 'pool_edge':'pool-edge', 'v31-pool':'pool-edge', 'v31_pool':'pool-edge', 'v31pool':'pool-edge', pool:'pool-edge',
   miner:'miner', 'miner-1':'miner', miner1:'miner', 'v31-miner':'miner', 'v31_miner':'miner', 'v31miner':'miner',
@@ -11379,7 +11343,7 @@ async function loadEdgeBackupStatus() {
 }
 
 async function applyEdgeMemoryLimit(){
-  if(!confirm('🔒 Apply Memory Limit\n\nThis will add MemoryMax=3G to zion-edge-node1.service and reload systemd.\nNode will restart if it exceeds 3 GB RAM.\n\nContinue?')) return;
+  if(!confirm('🔒 Apply Memory Limit\n\nThis will add MemoryMax=3G to zion-v31-node.service and reload systemd.\nNode will restart if it exceeds 3 GB RAM.\n\nContinue?')) return;
   const btn = document.getElementById('btn-edge-mem-limit');
   if(btn) { btn.disabled = true; btn.textContent = '⏳ Applying…'; }
   try {
