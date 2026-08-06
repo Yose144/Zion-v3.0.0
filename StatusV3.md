@@ -2,6 +2,8 @@
 
 > **Datum poslední aktualizace:** 2026-08-06
 > **Update (2026-08-06):** WARP non-EVM production hardening: `deploy-edge.sh` nyní builduje `warpd` a automaticky instaluje `/etc/zion/warp.toml` z `V31/L2/multichain/warp.example.toml`, `zion-v31-multichain.service` běží `warpd --config /etc/zion/warp.toml --listen 127.0.0.1:8453 --db /data/zion/warp.db`, nginx proxy `/api/warp/` → `127.0.0.1:8453`. Přidán Prometheus `/metrics` endpoint do `warp/server.rs` (text/plain s `Accept: application/json` fallback). Opraven clippy warning v `swap/dex.rs`. `cargo test -p zion-multichain` a `cargo clippy -p zion-multichain` čisté.
+>
+> **Update (2026-08-06):** ZionDex E2E integrace s `warpd` (Option 1): `warpd` nyní startuje i `MultichainService` a `ApiServer` DEX endpointy (`/v1/swap/quote`, `/v1/swap/intent`, `/v1/swap/intent/:id/bid`, `/v1/swap/intent/:id/settle`, `/v1/swap/intent/:id/execute`) na portu `listen_port + 1` (8454). `MultichainService` rozšířen o podporu EVM chainů (Arbitrum, Optimism, BSC, Polygon, Avalanche, zkSync, Linea) a tolerantně přeskakuje nepodporované adaptéry. nginx získá `/v1/` proxy na `127.0.0.1:8454`. `cargo test -p zion-multichain` a `cargo clippy -p zion-multichain` čisté.
 
 > **Datum poslední aktualizace:** 2026-08-07
 > **Update (2026-08-07):** V31 kanonický `EkamDeeksha` v2 aktivní na Edge: 128 KiB scratchpad, 1 XOR pass, 32 random reads, 2 AES rounds, Keccak256 final hash. CPU `ekam_deeksha.rs`, OpenCL/CUDA/Metal kernely a `zion-miner` GPU backend mapování synchronizovány. `cargo test -p zion-cosmic-harmony -p zion-core -p zion-pool -p zion-miner` a `cargo clippy --workspace` čisté.
@@ -83,8 +85,8 @@
 | zion-edge-bridge | 9101 (metrics) | 127.0.0.1 | L2 | ✅ active |
 | zion-edge-dao | 8450 (API) | 127.0.0.1 | L2 | ✅ active |
 | zion-edge-atomic-swap | 8452 (API) | 0.0.0.0 | L2 | ✅ active |
-| zion-edge-warp | 8453 (WARP API) | 0.0.0.0 | L3 | ✅ active |
-| zion-edge-dex | 8454 (DEX Router API) | 0.0.0.0 | L3 | ✅ active |
+| zion-edge-warp | 8453 (WARP API), 8454 (DEX API via `warpd`) | 0.0.0.0 | L3 | ✅ active |
+| zion-edge-dex | 8454 (DEX Router API, nyní součástí `warpd`) | 0.0.0.0 | L3 | ✅ active |
 | zion-edge-oasis | 8094 (API), 9102 (metrics) | 127.0.0.1 | L4 | ✅ active |
 | zion-free-world | — | — | L5 | ⚠️ inactive (disabled) |
 | zion-issobella | — | — | L6 | ⚠️ inactive (disabled) |

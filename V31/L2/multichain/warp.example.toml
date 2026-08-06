@@ -17,8 +17,8 @@
 
 node_id = "warp-node-1"
 listen_addr = "0.0.0.0"
-listen_port = 9333
-database_path = "data/warp.db"
+listen_port = 9333              # WARP API port; DEX API runs on listen_port + 1
+database_path = "data/warp.db"  # multi-chain DB will be <stem>_multichain.db next to this file
 
 quorum = 3
 daily_limit_zion = 10000000      # 10 000 000 ZION per 24h

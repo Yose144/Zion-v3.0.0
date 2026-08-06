@@ -190,12 +190,10 @@ impl Maestro {
                         dep_failed = true;
                         break;
                     }
-                    None => {
-                        // Dependency was skipped earlier
-                        if skipped_steps.contains(dep_id) {
-                            dep_failed = true;
-                            break;
-                        }
+                    // Dependency was skipped earlier.
+                    None if skipped_steps.contains(dep_id) => {
+                        dep_failed = true;
+                        break;
                     }
                     _ => {}
                 }
