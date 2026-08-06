@@ -125,8 +125,9 @@ SERVICE_LOG_MAP = {
     "dao-daemon":      "dao.log",
     "dao":             "dao.log",
     "atomic-swap":     "atomic-swap.log",
-    # L3
-    "warp":            "warp.log",
+    # L3 — Multichain (bridge/warp/swap unified)
+    "multichain":      "warp.log",             # V31 multichain (journalctl-backed)
+    "warp":            "warp.log",             # alias
     # L4-L6
     "oasis":           "oasis.log",
     "free-world":      "free-world.log",
@@ -146,9 +147,12 @@ V31_JOURNAL_MAP = {
     "v31-node3":     "zion-v31-node3.service",
     "v31-pool":      "zion-v31-pool.service",
     "v31-miner":     "zion-v31-miner.service",
-    "warp":          "zion-v31-multichain.service",
+    "multichain":    "zion-v31-multichain.service",
     "dao-daemon":    "zion-v31-dao.service",
     "oasis":         "zion-v31-oasis.service",
+    "dashboard":     "zion-edge-python-dashboard.service",
+    "marketplace":   "zion-marketplace.service",
+    "website":       "zion-website.service",
 }
 
 # ── ANSI escape strip ─────────────────────────────────────────────────────
