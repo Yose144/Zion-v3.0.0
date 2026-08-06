@@ -151,9 +151,9 @@ export default function StargateGate() {
         <svg viewBox="-210 -210 420 420" className="h-full w-full">
           <defs>
             <radialGradient id="portalGrad" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="rgba(6,182,212,0.4)" />
-              <stop offset="40%" stopColor="rgba(147,51,234,0.25)" />
-              <stop offset="80%" stopColor="rgba(6,182,212,0.08)" />
+              <stop offset="0%" stopColor="rgba(7,137,48,0.4)" />
+              <stop offset="40%" stopColor="rgba(228,30,43,0.25)" />
+              <stop offset="80%" stopColor="rgba(7,137,48,0.08)" />
               <stop offset="100%" stopColor="transparent" />
             </radialGradient>
             <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%">
@@ -177,15 +177,15 @@ export default function StargateGate() {
 
           {/* Sri Yantra inspired inner rings (like rotate23-28 in original) */}
           <RotatingRing radius={165} segments={6} speed={3} direction="cw" color="rgba(139,92,246,0.2)" opacity={0.3} strokeWidth={1.5} />
-          <RotatingRing radius={160} segments={6} speed={5} direction="ccw" color="rgba(6,182,212,0.15)" opacity={0.25} strokeWidth={1} />
+          <RotatingRing radius={160} segments={6} speed={5} direction="ccw" color="rgba(7,137,48,0.15)" opacity={0.25} strokeWidth={1} />
 
           {/* Main rotating segmented rings (like rotate1-22 in original) */}
           <RotatingRing radius={155} segments={12} speed={4} direction="cw" color="rgba(111,255,240,0.4)" opacity={0.55} strokeWidth={2} glow />
           <RotatingRing radius={148} segments={18} speed={6} direction="ccw" color="rgba(139,92,246,0.3)" opacity={0.45} strokeWidth={1.5} glow />
           <RotatingRing radius={140} segments={24} speed={2.5} direction="cw" color="rgba(245,215,142,0.25)" opacity={0.4} strokeWidth={1} glow />
           <RotatingRing radius={134} segments={9} speed={8} direction="ccw" color="rgba(111,255,240,0.2)" opacity={0.35} strokeWidth={2.5} glow />
-          <RotatingRing radius={128} segments={15} speed={5} direction="cw" color="rgba(147,51,234,0.18)" opacity={0.3} strokeWidth={1} />
-          <RotatingRing radius={122} segments={8} speed={7} direction="ccw" color="rgba(6,182,212,0.15)" opacity={0.25} strokeWidth={1.5} />
+          <RotatingRing radius={128} segments={15} speed={5} direction="cw" color="rgba(228,30,43,0.18)" opacity={0.3} strokeWidth={1} />
+          <RotatingRing radius={122} segments={8} speed={7} direction="ccw" color="rgba(7,137,48,0.15)" opacity={0.25} strokeWidth={1.5} />
 
           {/* Inner event horizon glow */}
           <circle r={115} fill="url(#centerGlow)" opacity={0.5}>
@@ -202,10 +202,10 @@ export default function StargateGate() {
           </circle>
 
           {/* Event horizon center */}
-          <circle r={80} fill="none" stroke="rgba(6,182,212,0.18)" strokeWidth={1} opacity={0.5}>
+          <circle r={80} fill="none" stroke="rgba(7,137,48,0.18)" strokeWidth={1} opacity={0.5}>
             <animate attributeName="r" values="80;90;80" dur="5s" repeatCount="indefinite" />
           </circle>
-          <circle r={55} fill="rgba(6,182,212,0.06)" opacity={0.4}>
+          <circle r={55} fill="rgba(7,137,48,0.06)" opacity={0.4}>
             <animate attributeName="r" values="55;65;55" dur="3.5s" repeatCount="indefinite" />
           </circle>
           <circle r={35} fill="rgba(111,255,240,0.04)" opacity={0.3}>

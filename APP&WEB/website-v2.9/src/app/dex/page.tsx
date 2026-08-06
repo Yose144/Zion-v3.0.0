@@ -122,7 +122,7 @@ export default function DexPage() {
                 <Link
                   href="/ziondex"
                   className="zion-rainbow-sub flex items-center justify-between p-2"
-                  style={{ '--rc': '6, 182, 212' } as CSSProperties}
+                  style={{ '--rc': '7, 137, 48' } as CSSProperties}
                 >
                   <span className="flex items-center gap-2 text-sm text-zinc-300">
                     <Info className="w-3.5 h-3.5 text-amber-500" />
@@ -133,7 +133,7 @@ export default function DexPage() {
                 <Link
                   href="/dex/liquidity"
                   className="zion-rainbow-sub flex items-center justify-between p-2"
-                  style={{ '--rc': '6, 182, 212' } as CSSProperties}
+                  style={{ '--rc': '7, 137, 48' } as CSSProperties}
                 >
                   <span className="text-sm text-zinc-300">Liquidity Pools</span>
                   <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
@@ -141,7 +141,7 @@ export default function DexPage() {
                 <Link
                   href="/dex/portfolio"
                   className="zion-rainbow-sub flex items-center justify-between p-2"
-                  style={{ '--rc': '6, 182, 212' } as CSSProperties}
+                  style={{ '--rc': '7, 137, 48' } as CSSProperties}
                 >
                   <span className="text-sm text-zinc-300">My Portfolio</span>
                   <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
@@ -149,7 +149,7 @@ export default function DexPage() {
                 <Link
                   href="/defi"
                   className="zion-rainbow-sub flex items-center justify-between p-2"
-                  style={{ '--rc': '6, 182, 212' } as CSSProperties}
+                  style={{ '--rc': '7, 137, 48' } as CSSProperties}
                 >
                   <span className="text-sm text-zinc-300">DeFi Hub</span>
                   <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
@@ -157,7 +157,7 @@ export default function DexPage() {
                 <Link
                   href="/bridge"
                   className="zion-rainbow-sub flex items-center justify-between p-2"
-                  style={{ '--rc': '6, 182, 212' } as CSSProperties}
+                  style={{ '--rc': '7, 137, 48' } as CSSProperties}
                 >
                   <span className="text-sm text-zinc-300">Bridge (wZION ↔ ZION)</span>
                   <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
@@ -165,7 +165,7 @@ export default function DexPage() {
                 <Link
                   href="/swap"
                   className="zion-rainbow-sub flex items-center justify-between p-2"
-                  style={{ '--rc': '6, 182, 212' } as CSSProperties}
+                  style={{ '--rc': '7, 137, 48' } as CSSProperties}
                 >
                   <span className="text-sm text-zinc-300">Atomic Swap (HTLC)</span>
                   <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
@@ -173,7 +173,7 @@ export default function DexPage() {
                 <Link
                   href="/defi"
                   className="zion-rainbow-sub flex items-center justify-between p-2"
-                  style={{ '--rc': '6, 182, 212' } as CSSProperties}
+                  style={{ '--rc': '7, 137, 48' } as CSSProperties}
                 >
                   <span className="text-sm text-zinc-300">Staking & Farming (in DeFi Hub)</span>
                   <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />

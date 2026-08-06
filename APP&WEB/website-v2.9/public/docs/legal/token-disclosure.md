@@ -157,8 +157,8 @@ Mining inflace > fee burn → **net inflace** v čase, ale klesající
 
 | Parametr | Hodnota |
 |----------|---------|
-| L1 adresa | `zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7` |
-| Seed | `ZION Bridge Vault V3 Mainnet v2 2026-07-06-HARD-RESET` |
+| L1 adresa | `zion1d0d0656456f62394p2w8x59762g6e538t47q548` |
+| Seed | `ZION Mainnet v3.2 One Love Genesis 2026-08-06` |
 | Počáteční UTXO | 100 000 000 ZION (6 outputů) |
 | Odemčení | 5/5 validator quorum (ne admin klíče) |
 
@@ -172,9 +172,7 @@ prostředky.
 
 | Slot | Adresa | Částka | Lock |
 |------|--------|--------|------|
-| 6 | `zion1j5a327c7d3w7h4e474n5p4z0z827f8p874mr2p7` | 2,5B | blok 144 000 + admin + DAO |
-| 7 | `zion1f7g4h034m5l0x3g6q4l5d298d597v5a4q3wc3t7` | 1,0B | blok 144 000 + admin + DAO |
-| 8 | `zion1a6s5y727s0d5m5s3u448d5g3g60032s6p5xy2l5` | 0,5B | blok 144 000 + admin + DAO |
+| 6 | `zion1x8g2z2v3v5n08542a5u7v7q365l4852048qv6w6` | 4,0B | blok 144 000 + admin + DAO |
 
 DAO treasury (4B ZION) je **trojí zámek**:
 1. Time-lock: blok 144 000 (~100 dní)

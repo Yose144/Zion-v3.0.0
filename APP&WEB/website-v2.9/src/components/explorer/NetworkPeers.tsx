@@ -139,7 +139,7 @@ export default function NetworkPeers() {
           <div className="flex items-center gap-2 text-sm text-gray-300">
             <Power className="h-4 w-4 text-emerald-300" />
             <span>{NetworkPeersCopy.peerDirectory[cs ? 'cs' : 'en']}</span>
-            {loading && <span className="text-xs text-gray-500">Načítám...</span>}
+            {loading && <span className="text-xs text-gray-500">{cs ? 'Načítám...' : 'Loading...'}</span>}
           </div>
           {data && data.chain_height > 0 && (
             <span className="text-xs text-gray-500">

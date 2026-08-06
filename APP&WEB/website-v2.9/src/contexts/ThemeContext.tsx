@@ -26,9 +26,9 @@ const themes: Record<ThemeName, Theme> = {
     name: 'cosmic',
     displayName: 'Cosmic (Default)',
     colors: {
-      primary: '#FFD700', // Gold
-      secondary: '#9333EA', // Purple
-      accent: '#06B6D4', // Cyan
+      primary: '#fcd116', // Gold
+      secondary: '#e41e2b', // Purple
+      accent: '#078930', // Cyan
       background: '#0a0118',
       text: '#e0e0e0',
     },

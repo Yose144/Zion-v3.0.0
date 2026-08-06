@@ -24,7 +24,7 @@ export default function ThemeToggle() {
         onClick={() => setIsOpen(!isOpen)}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className="fixed bottom-4 right-4 z-50 h-12 w-12 rounded-full border border-white/20 bg-black/60 backdrop-blur flex items-center justify-center hover:border-zion-gold/60 hover:shadow-[0_0_20px_rgba(255,215,0,0.35)] transition-all"
+        className="fixed bottom-4 right-4 z-50 h-12 w-12 rounded-full border border-white/20 bg-black/60 backdrop-blur flex items-center justify-center hover:border-zion-gold/60 hover:shadow-[0_0_20px_rgba(252,209,22,0.35)] transition-all"
         aria-label="Toggle theme menu"
       >
         <CurrentIcon className="w-6 h-6 text-zion-gold" />

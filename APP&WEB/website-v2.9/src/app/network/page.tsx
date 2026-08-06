@@ -60,11 +60,11 @@ const NetworkCopy = {
   telemetry: { cs: `Telemetrie`, en: `Telemetry` },
   autoRefreshInterval: { cs: `Interval auto-obnovení`, en: `Auto-refresh interval` },
   topology: { cs: `Topologie`, en: `Topology` },
-  v306E2e: { cs: `v3.0.6 E2E`, en: `v3.0.6 E2E` },
+  v306E2e: { cs: `v3.2.0 E2E`, en: `v3.2.0 E2E` },
   sshTunnelsApparmorUfwRpcAuditL: { cs: `SSH tunely, AppArmor, UFW, RPC audit log — vše aktivní`, en: `SSH tunnels, AppArmor, UFW, RPC audit log — all active` },
   network: { cs: `Síť`, en: `Network` },
   trinity: { cs: `Trinity`, en: `Trinity` },
-  mainnetBeta1111ServicesProtoco: { cs: `Mainnet Beta · 11/11 služeb · protocol 3.0.6`, en: `Mainnet Beta · 11/11 services · protocol 3.0.6` },
+  mainnetBeta1111ServicesProtoco: { cs: `Mainnet Stable · 11/11 služeb · protocol 3.2.0`, en: `Mainnet Stable · 11/11 services · protocol 3.2.0` },
   edgeNode1PrimaryPool: { cs: `Edge Node 1 (Primary / Pool)`, en: `Edge Node 1 (Primary / Pool)` },
   publicP2p8333Stratum8444Rpc844: { cs: `Veřejný P2P 8333, stratum 8444, RPC 8443, pool API 8455 — pool live`, en: `Public P2P 8333, stratum 8444, RPC 8443, pool API 8455 — pool live` },
   active: { cs: `Aktivní`, en: `Active` },
@@ -79,7 +79,7 @@ const NetworkCopy = {
   nativeRustJsonRpcForExplorersA: { cs: `Nativní Rust JSON-RPC pro explorer a tooling (2-uzlový mesh)`, en: `Native Rust JSON-RPC for explorers and tooling (2-node mesh)` },
   k2NodeMesh83338334Backup8335Off: { cs: `2-uzlový mesh: 8333, 8334 · backup 8335 offline`, en: `2-node mesh: 8333, 8334 · backup 8335 offline` },
   releaseContext: { cs: `Kontext releasu`, en: `Release Context` },
-  v306E2eStatus: { cs: `v3.0.6 E2E Status`, en: `v3.0.6 E2E Status` },
+  v306E2eStatus: { cs: `v3.2.0 E2E Status`, en: `v3.2.0 E2E Status` },
   trinity_2: { cs: `Trinity ✓`, en: `Trinity ✓` },
   k1111ServicesActiveF47F5ActiveM: { cs: `11/11 služeb aktivních · F4.7 + F5 aktivní · memory leak fix`, en: `11/11 services active · F4.7 + F5 active · memory leak fix` },
   mining: { cs: `Těžba`, en: `Mining` },
@@ -93,7 +93,7 @@ const NetworkCopy = {
   backupPeerTunnel: { cs: `Backup peer (tunel)`, en: `Backup peer (tunnel)` },
   hardcodedSeedPeers: { cs: `Hardcoded seed peers`, en: `Hardcoded seed peers` },
   nativeRustP2p2NodeMesh: { cs: `Nativní Rust P2P — 2-uzlový mesh`, en: `Native Rust P2P — 2-node mesh` },
-  v306TrinityMainnetBeta1111Serv: { cs: `v3.0.6 "Trinity, Mainnet Beta" — 11/11 služeb aktivních`, en: `v3.0.6 "Trinity, Mainnet Beta" — 11/11 services active` },
+  v306TrinityMainnetBeta1111Serv: { cs: `v3.2.0 "One Love, Mainnet Stable" — 11/11 služeb aktivních`, en: `v3.2.0 "One Love, Mainnet Stable" — 11/11 services active` },
   jsonRpcEndpointsLive84438448Ba: { cs: `JSON-RPC endpointy live (8443, 8448; backup 8446 offline)`, en: `JSON-RPC endpoints live (8443, 8448; backup 8446 offline)` },
   e2eMemoTestsConfirmedInBlock75: { cs: `E2E memo testy potvrzené v bloku 752`, en: `E2E memo tests confirmed in block 752` },
   f47MaxTxAmountCapF5SenderBalan: { cs: `F4.7 max-tx-amount cap + F5 sender balance check aktivní`, en: `F4.7 max-tx-amount cap + F5 sender balance check active` },
@@ -105,7 +105,7 @@ const NetworkCopy = {
   enUs: { cs: `cs-CZ`, en: `en-US` },
   liveStatus: { cs: `Živý stav`, en: `Live Status` },
   p2pNetwork: { cs: `P2P Síť`, en: `P2P Network` },
-  realTimeTelemetryFromTheCurren: { cs: `Telemetrie v reálném čase z aktuálního veřejného runtime v3.0.6. Živá topologie je 2-uzlový P2P mesh — Edge 1 (primary + pool), Edge 2 (follower); Local Backup Node (Prague) je offline.`, en: `Real-time telemetry from the current public v3.0.6 runtime. The live topology is a 2-node P2P mesh — Edge 1 (primary + pool), Edge 2 (follower); Local Backup Node (Prague) is offline.` },
+  realTimeTelemetryFromTheCurren: { cs: `Telemetrie v reálném čase z aktuálního veřejného runtime v3.2.0. Živá topologie je 2-uzlový P2P mesh — Edge 1 (primary + pool), Edge 2 (follower); Local Backup Node (Prague) je offline.`, en: `Real-time telemetry from the current public v3.2.0 runtime. The live topology is a 2-node P2P mesh — Edge 1 (primary + pool), Edge 2 (follower); Local Backup Node (Prague) is offline.` },
   nativeRust: { cs: `Nativní Rust`, en: `Native Rust` },
   k1PublicHost2InternalSeeds: { cs: `1 veřejný host · 2 interní seedy`, en: `1 Public Host · 2 Internal Seeds` },
   runtimeSnapshot: { cs: `Runtime přehled`, en: `Runtime Snapshot` },
@@ -180,12 +180,12 @@ const NetworkCopy = {
   block: { cs: `blok`, en: `block` },
   infrastructure: { cs: `Infrastruktura`, en: `Infrastructure` },
   currentRuntime: { cs: `Aktuální runtime`, en: `Current Runtime` },
-  currentPublicRuntimeIsA2NodeV3: { cs: `Aktuální veřejný runtime tvoří 2-uzlový P2P mesh v3.0.6 — Edge 1 (primary + pool) a Edge 2 (follower). Local Backup Node (Prague) je offline.`, en: `Current public runtime is a 2-node v3.0.6 P2P mesh — Edge 1 (primary + pool) and Edge 2 (follower). Local Backup Node (Prague) is offline.` },
+  currentPublicRuntimeIsA2NodeV3: { cs: `Aktuální veřejný runtime tvoří 2-uzlový P2P mesh v3.2.0 — Edge 1 (primary + pool) a Edge 2 (follower). Local Backup Node (Prague) je offline.`, en: `Current public runtime is a 2-node v3.2.0 P2P mesh — Edge 1 (primary + pool) and Edge 2 (follower). Local Backup Node (Prague) is offline.` },
   portEndpointsSeeNodeDescriptio: { cs: `Endpointy portů viz popis uzlu nahoře`, en: `Port endpoints see node description above` },
   rpcAutoFailoverAcross2NodeMesh: { cs: `RPC auto-failover přes 2-uzlový mesh`, en: `RPC auto-failover across 2-node mesh` },
   p2pMesh83338334Backup8335Offli: { cs: `P2P mesh: 8333, 8334 · backup 8335 offline`, en: `P2P mesh: 8333, 8334 · backup 8335 offline` },
   e2eStack: { cs: `E2E Stack`, en: `E2E Stack` },
-  allV306ComponentsHaveBeenVerif: { cs: `Všechny komponenty v3.0.6 byly ověřeny end-to-end na živé mainnet síti.`, en: `All v3.0.6 components have been verified end-to-end on the live mainnet.` },
+  allV306ComponentsHaveBeenVerif: { cs: `Všechny komponenty v3.2.0 byly ověřeny end-to-end na živé mainnet síti.`, en: `All v3.2.0 components have been verified end-to-end on the live mainnet.` },
   k1111Services: { cs: `11/11 služeb`, en: `11/11 services` },
   nodePoolWatchersBridgeWebDashb: { cs: `Node, pool, watchers, bridge, web, dashboard, monitoring — vše active.`, en: `Node, pool, watchers, bridge, web, dashboard, monitoring — all active.` },
   f47F5Active: { cs: `F4.7 + F5 aktivní`, en: `F4.7 + F5 active` },
@@ -235,7 +235,7 @@ const NetworkCopy = {
   whatPoolFeeDoesZionCharge: { cs: `Jaký pool fee si ZION účtuje?`, en: `What pool fee does ZION charge?` },
   k89GoesToTheMiner5ToTheHumanita: { cs: `89 % putuje minerovi, 5 % do humanitarian fondu, 5 % do fondu Issobella a 1 % pool provozní poplatek.`, en: `89% goes to the miner, 5% to the humanitarian fund, 5% to the Issobella fund, and 1% pool operational fee.` },
   isTheNetworkPubliclyLaunched: { cs: `Je síť veřejně spuštěna?`, en: `Is the network publicly launched?` },
-  mainnetGenesisTookPlaceOn11Jun: { cs: `MainNet Genesis proběhl 11. června 2026. Veřejný plný launch je naplánován na 31. prosince 2026 (Silvestr). v3.0.6 "Trinity" běží na 2-uzlovém P2P meshi s aktivním poolem, bridge je nasazený na Base Mainnet a E2E memo testy byly potvrzené v bloku 752.`, en: `MainNet Genesis took place on 11 June 2026. The public full launch is scheduled for 31 December 2026 (New Year\'s Eve). v3.0.6 "Trinity" runs on a 2-node P2P mesh with an active pool, the bridge is deployed on Base Mainnet, and E2E memo tests were confirmed in block 752.` },
+  mainnetGenesisTookPlaceOn11Jun: { cs: `MainNet Genesis proběhl 11. června 2026. Veřejný plný launch je naplánován na 31. prosince 2026 (Silvestr). v3.2.0 "One Love" běží na 2-uzlovém P2P meshi s aktivním poolem, bridge je nasazený na Base Mainnet a E2E memo testy byly potvrzené v bloku 752.`, en: `MainNet Genesis took place on 11 June 2026. The public full launch is scheduled for 31 December 2026 (New Year\'s Eve). v3.2.0 "One Love" runs on a 2-node P2P mesh with an active pool, the bridge is deployed on Base Mainnet, and E2E memo tests were confirmed in block 752.` },
 };
 
 const NetworkStatus = dynamic(() => import('@/components/NetworkStatus'), {
@@ -622,7 +622,7 @@ export default function NetworkPage() {
         {/* ═══════ HERO ═══════ */}
         <section
           className="zion-rainbow-card p-6 md:p-10"
-          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-5">
@@ -683,7 +683,7 @@ export default function NetworkPage() {
               <div
                 key={panel.label}
                 className="zion-rainbow-sub p-6"
-                style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+                style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
               >
                 <div className="flex items-center gap-3 mb-4">
                   <panel.icon className={`h-5 w-5 ${panel.accent}`} />
@@ -780,7 +780,7 @@ export default function NetworkPage() {
 
           <div className="grid gap-5 lg:grid-cols-3">
             {/* Hashrate */}
-            <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wider">{NetworkCopy.networkHashrate[cs ? 'cs' : 'en']}</p>
@@ -791,7 +791,7 @@ export default function NetworkPage() {
             </div>
 
             {/* Difficulty */}
-            <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wider">{NetworkCopy.difficulty[cs ? 'cs' : 'en']}</p>
@@ -802,7 +802,7 @@ export default function NetworkPage() {
             </div>
 
             {/* Block Time */}
-            <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wider">{NetworkCopy.avgBlockTime[cs ? 'cs' : 'en']}</p>
@@ -933,7 +933,7 @@ export default function NetworkPage() {
               <div
                 key={node.title}
                 className="relative overflow-hidden zion-rainbow-sub p-6"
-                style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+                style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
@@ -970,10 +970,10 @@ export default function NetworkPage() {
           </div>
         </section>
 
-        {/* ═══════ v3.0.6 E2E STACK ═══════ */}
+        {/* ═══════ v3.2.0 E2E STACK ═══════ */}
         <section className="zion-section">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">v3.0.6 E2E</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">v3.2.0 E2E</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Sparkles className="h-7 w-7 text-zion-gold" />
               {NetworkCopy.e2eStack[cs ? 'cs' : 'en']}
@@ -1070,7 +1070,7 @@ export default function NetworkPage() {
             <p className="text-sm text-gray-400">{NetworkCopy.visualizeTheCurrentTopologyAnd[cs ? 'cs' : 'en']}</p>
           </div>
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-            <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            <div className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <NetworkMap />
             </div>
             <PoolFinder />
@@ -1095,14 +1095,14 @@ export default function NetworkPage() {
               <div
                 key={block.title}
                 className="zion-rainbow-sub p-6 space-y-4"
-                style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+                style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
               >
                 <div className="flex items-center gap-3">
                   <block.icon className="h-5 w-5 text-zion-gold" />
                   <h3 className="text-lg font-semibold text-white">{block.title}</h3>
                 </div>
                 <p className="text-sm text-gray-400">{block.description}</p>
-                <div className="zion-rainbow-sub p-4 space-y-1 overflow-x-auto" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+                <div className="zion-rainbow-sub p-4 space-y-1 overflow-x-auto" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                   {block.items.map((line) => (
                     <code key={line} className="block text-sm font-mono text-zion-gold whitespace-nowrap">{line}</code>
                   ))}
@@ -1199,8 +1199,8 @@ export default function NetworkPage() {
 
         <p className="text-center text-xs text-gray-600">
           {cs
-            ? `ZION TerraNova ${SITE_RELEASE_LABEL} - P2P Síť Pro · 2-uzlový mesh · v3.0.6 E2E Trinity`
-            : `ZION TerraNova ${SITE_RELEASE_LABEL} - P2P Network Pro · 2-node mesh · v3.0.6 E2E Trinity`}
+            ? `ZION TerraNova ${SITE_RELEASE_LABEL} - P2P Síť Pro · 2-uzlový mesh · v3.2.0 E2E Trinity`
+            : `ZION TerraNova ${SITE_RELEASE_LABEL} - P2P Network Pro · 2-node mesh · v3.2.0 E2E Trinity`}
         </p>
       </div>
 
@@ -1211,7 +1211,7 @@ export default function NetworkPage() {
 
 function SurfaceSkeleton({ lines = 4 }: { lines?: number }) {
   return (
-    <div className="zion-rainbow-sub p-6 space-y-3" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+    <div className="zion-rainbow-sub p-6 space-y-3" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
       <div className="h-5 w-32 rounded bg-white/10 animate-pulse" />
       {Array.from({ length: lines }).map((_, index) => (
         <div key={index} className="h-4 w-full rounded bg-white/5 animate-pulse" />
@@ -1245,7 +1245,7 @@ function NetSparkline({ data, color, height = 60 }: { data: number[]; color: str
 /* ─── ChainStatCard ─── */
 function ChainStatCard({ label, value, sub, color, tip }: { label: string; value: string; sub?: string; color: string; tip?: string }) {
   return (
-    <div className="zion-rainbow-sub p-4 transition-colors" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+    <div className="zion-rainbow-sub p-4 transition-colors" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
       <div className="flex items-center gap-1.5 mb-1">
         <p className="text-[11px] text-gray-500 uppercase tracking-wider">{label}</p>
         {tip && (

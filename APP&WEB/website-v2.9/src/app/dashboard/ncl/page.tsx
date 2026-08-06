@@ -95,7 +95,7 @@ const CONSCIOUSNESS_COLORS: Record<number, string> = {
 };
 
 function rc(color: 'cyan' | 'purple'): React.CSSProperties {
-  return { '--rc': color === 'cyan' ? '6, 182, 212' : '147, 51, 234' } as React.CSSProperties;
+  return { '--rc': color === 'cyan' ? '7, 137, 48' : '228, 30, 43' } as React.CSSProperties;
 }
 
 function Card({ children, className = '', style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {

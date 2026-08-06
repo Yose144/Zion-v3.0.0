@@ -58,7 +58,7 @@ export default function LoginPage() {
 
         {/* Features */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
-          <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+          <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <Shield className="h-5 w-5 text-zion-cyan mx-auto mb-2" />
             <p className="text-[10px] text-gray-400 uppercase tracking-wider">Secure</p>
             <p className="text-[10px] text-gray-600 mt-1">Ed25519 signature</p>
@@ -68,7 +68,7 @@ export default function LoginPage() {
             <p className="text-[10px] text-gray-400 uppercase tracking-wider">Private</p>
             <p className="text-[10px] text-gray-600 mt-1">Keys never leave browser</p>
           </div>
-          <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+          <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <Sparkles className="h-5 w-5 text-zion-purple mx-auto mb-2" />
             <p className="text-[10px] text-gray-400 uppercase tracking-wider">No Email</p>
             <p className="text-[10px] text-gray-600 mt-1">Wallet = identity</p>

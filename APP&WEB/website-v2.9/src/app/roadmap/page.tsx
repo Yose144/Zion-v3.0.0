@@ -28,15 +28,15 @@ const t = {
     badge: `${SITE_RELEASE_LABEL} · Roadmap`,
     missionControl: 'Mission Control',
     title: 'Plán letu k veřejnému launchi',
-    subtitle: 'V31 cutover dokončen 4. 8. 2026 — node, pool i multichain běží v produkci. MainNet Genesis 11. 6. 2026 úspěšný, Bridge/DeFi Run 3.0.6 nasazen, wZION token live na Base Mainnet. Cíl veřejného launchi zůstává ',
+    subtitle: 'One Love Mainnet Stable — node, pool i multichain běží v produkci. MainNet Genesis 11. 6. 2026 úspěšný, Bridge/DeFi Run 3.0.6 nasazen, wZION token live na Base Mainnet. Cíl veřejného launchi zůstává ',
     subtitleStrong: '31. 12. 2026',
-    updated: 'Aktualizováno 5. 8. 2026',
+    updated: 'Aktualizováno 6. 8. 2026',
     publicLaunch: 'Cíl veřejného launchi · 31. 12. 2026',
-    testsPassing: '1 945+ testů prochází',
+    testsPassing: '2 155+ testů prochází',
     heroStats: [
-      { label: 'Rust LOC', value: '50 000+', descriptor: 'V31 workspace' },
-      { label: 'Testů', value: '1 945+', descriptor: '100 % pass rate' },
-      { label: 'Síť', value: 'MainNet', descriptor: 'V31 · Edge topologie' },
+      { label: 'Rust LOC', value: '176 000+', descriptor: 'workspace' },
+      { label: 'Testů', value: '2 155+', descriptor: '100 % pass rate' },
+      { label: 'Síť', value: 'MainNet', descriptor: 'Edge topologie' },
       { label: 'Status', value: 'Genesis 11. 6. 2026', descriptor: 'Launch 31. 12. 2026' },
     ],
     componentStatus: 'Stav komponent',
@@ -99,15 +99,15 @@ const t = {
     badge: `${SITE_RELEASE_LABEL} · Roadmap`,
     missionControl: 'Mission Control',
     title: 'Flight plan to public launch',
-    subtitle: 'V31 cutover completed 4 Aug 2026 — node, pool, and multichain are in production. MainNet Genesis 11 Jun 2026 successful, Bridge/DeFi Run 3.0.6 deployed, wZION token live on Base Mainnet. Public launch target remains ',
+    subtitle: 'One Love Mainnet Stable — node, pool, and multichain are in production. MainNet Genesis 11 Jun 2026 successful, Bridge/DeFi Run 3.0.6 deployed, wZION token live on Base Mainnet. Public launch target remains ',
     subtitleStrong: '31 Dec 2026',
-    updated: 'Updated 5 Aug 2026',
+    updated: 'Updated 6 Aug 2026',
     publicLaunch: 'Public launch target · 31 Dec 2026',
-    testsPassing: '1,945+ tests passing',
+    testsPassing: '2,155+ tests passing',
     heroStats: [
-      { label: 'Rust LOC', value: '50,000+', descriptor: 'V31 workspace' },
-      { label: 'Tests', value: '1,945+', descriptor: '100% pass rate' },
-      { label: 'Network', value: 'MainNet', descriptor: 'V31 · Edge topology' },
+      { label: 'Rust LOC', value: '176,000+', descriptor: 'workspace' },
+      { label: 'Tests', value: '2,155+', descriptor: '100% pass rate' },
+      { label: 'Network', value: 'MainNet', descriptor: 'Edge topology' },
       { label: 'Status', value: 'Genesis 11 Jun 2026', descriptor: 'Launch 31 Dec 2026' },
     ],
     componentStatus: 'Component Status',
@@ -220,7 +220,7 @@ export default function RoadmapPage() {
     { name: 'miner/ (universal)', loc: '~14.5k', tests: 79, status: '✅', readiness: 90 },
     { name: 'bridge/ (L2 wZION)', loc: '~7k', tests: 167, status: '✅', readiness: 88 },
     { name: 'dao/ (L2 governance)', loc: '~5k', tests: 63, status: '✅', readiness: 80 },
-    { name: 'multichain/ (V31)', loc: '~12k', tests: 554, status: '✅', readiness: 92 },
+    { name: 'multichain/', loc: '~29k', tests: 574, status: '✅', readiness: 92 },
     { name: 'ncl + ai-native/ (L3 AI)', loc: '~6.6k', tests: 119, status: '✅', readiness: 75 },
     { name: 'oasis/ (L4 game)', loc: '~3.5k', tests: 49, status: '✅', readiness: 70 },
     { name: 'desktop-agent/', loc: '~3k', tests: 0, status: '✅', readiness: 80 },
@@ -347,7 +347,7 @@ export default function RoadmapPage() {
         { text: cs ? 'Legal docs complete' : 'Legal docs complete', done: true },
         { text: cs ? 'wZION + Bridge deployed on Base Mainnet' : 'wZION + Bridge deployed on Base Mainnet', done: true },
         { text: cs ? 'L2 contracts deployed (Staking, Governance, Farm, AtomicSwap)' : 'L2 contracts deployed (Staking, Governance, Farm, AtomicSwap)', done: true },
-        { text: cs ? 'V31 multichain /health OK' : 'V31 multichain /health OK', done: true },
+        { text: cs ? 'multichain /health OK' : 'multichain /health OK', done: true },
       ],
     },
     {
@@ -442,7 +442,7 @@ export default function RoadmapPage() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           className="zion-rainbow-card p-6 md:p-10"
-          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-5">
@@ -474,7 +474,7 @@ export default function RoadmapPage() {
             </div>
             <div className="grid w-full gap-4 sm:grid-cols-2 lg:w-auto">
               {heroStats.map((chip) => (
-                <div key={chip.label} className="zion-rainbow-sub px-5 py-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+                <div key={chip.label} className="zion-rainbow-sub px-5 py-4" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                   <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{chip.label}</p>
                   <p className="text-3xl font-semibold text-white mt-2">{chip.value}</p>
                   <p className="text-sm text-gray-300">{chip.descriptor}</p>
@@ -490,7 +490,7 @@ export default function RoadmapPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.08 }}
           className="zion-rainbow-card p-8"
-          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{copy.componentStatusSub}</p>
@@ -581,7 +581,7 @@ export default function RoadmapPage() {
                       {phase.id}
                     </div>
 
-                    <div className={`flex-1 zion-rainbow-sub p-6 ${statusColor}`} style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+                    <div className={`flex-1 zion-rainbow-sub p-6 ${statusColor}`} style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                         <div>
                           <h3 className="text-xl font-semibold text-white">{copy.phase} {phase.id} — {phase.title}</h3>
@@ -654,7 +654,7 @@ export default function RoadmapPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.16 }}
           className="zion-rainbow-card p-8"
-          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{copy.afterLaunch}</p>
@@ -673,7 +673,7 @@ export default function RoadmapPage() {
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.05 }}
                 className="zion-rainbow-sub p-5"
-                style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+                style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
               >
                 <h3 className="text-base font-semibold text-white">{block.title}</h3>
                 <p className="text-xs text-gray-500 mt-1">{block.sub}</p>
@@ -688,7 +688,7 @@ export default function RoadmapPage() {
               </motion.div>
             ))}
           </div>
-          <div className="mt-6 zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+          <div className="mt-6 zion-rainbow-sub p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <p className="text-xs uppercase tracking-[0.3em] text-gray-400 mb-3">{copy.exchangeSequence}</p>
             <div className="flex flex-wrap gap-3 text-sm">
               {[
@@ -713,7 +713,7 @@ export default function RoadmapPage() {
           transition={{ delay: 0.2 }}
           className="grid gap-6 lg:grid-cols-2"
         >
-          <div className="zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <div className="flex items-center gap-3 mb-5">
               <Lock className="h-6 w-6 text-zion-gold" />
               <div>
@@ -744,7 +744,7 @@ export default function RoadmapPage() {
             </div>
             <div className="space-y-4">
               {premineAllocation.map((row) => (
-                <div key={row.category} className="zion-rainbow-sub p-4" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+                <div key={row.category} className="zion-rainbow-sub p-4" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-semibold text-white">{row.category}</h4>
                     <span className="text-xs text-zion-gold font-mono">{row.share}</span>
@@ -771,7 +771,7 @@ export default function RoadmapPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.24 }}
           className="zion-rainbow-card p-8"
-          style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{copy.security}</p>
@@ -850,7 +850,7 @@ export default function RoadmapPage() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          ZION TerraNova {SITE_RELEASE_LABEL} · V31 MainNet · {copy.lastUpdated}: 2026-08-05
+          ZION TerraNova {SITE_RELEASE_LABEL} · MainNet · {copy.lastUpdated}: 2026-08-06
         </p>
       </div>
     </div>

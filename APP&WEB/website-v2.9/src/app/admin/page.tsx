@@ -39,7 +39,7 @@ export default function AdminDashboard() {
   return (
     <div className="pt-28 pb-20 overflow-x-hidden">
       <div className="zion-container max-w-7xl space-y-12">
-        <div className="zion-rainbow-card p-5 sm:p-8 md:p-10" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+        <div className="zion-rainbow-card p-5 sm:p-8 md:p-10" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{AdminCopy.controlPlane[lang === 'cs' ? 'cs' : 'en']}</p>
@@ -66,22 +66,22 @@ export default function AdminDashboard() {
           </div>
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminCopy.miners[lang === 'cs' ? 'cs' : 'en']}</p>
               <p className="mt-2 text-3xl font-semibold text-white">—</p>
               <p className="text-sm text-gray-300">{AdminCopy.liveViaApi[lang === 'cs' ? 'cs' : 'en']}</p>
             </div>
-            <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminCopy.hashrate[lang === 'cs' ? 'cs' : 'en']}</p>
               <p className="mt-2 text-3xl font-semibold text-white">—</p>
               <p className="text-sm text-gray-300">{AdminCopy.poolAggregate[lang === 'cs' ? 'cs' : 'en']}</p>
             </div>
-            <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminCopy.activeAlgo[lang === 'cs' ? 'cs' : 'en']}</p>
               <p className="mt-2 text-3xl font-semibold text-white">—</p>
               <p className="text-sm text-gray-300">{AdminCopy.autoManual[lang === 'cs' ? 'cs' : 'en']}</p>
             </div>
-            <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminCopy.build[lang === 'cs' ? 'cs' : 'en']}</p>
               <p className="mt-2 text-3xl font-semibold text-white">{SITE_VERSION}</p>
               <p className="text-sm text-gray-300">{AdminCopy.adminUxShell[lang === 'cs' ? 'cs' : 'en']}</p>
@@ -90,7 +90,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          <Link href="/admin/algo-manager" className="group zion-rainbow-card p-6 hover:border-white/25" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+          <Link href="/admin/algo-manager" className="group zion-rainbow-card p-6 hover:border-white/25" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminCopy.mining[lang === 'cs' ? 'cs' : 'en']}</p>
             <h2 className="mt-2 text-2xl font-semibold text-white">{AdminCopy.algorithmManager[lang === 'cs' ? 'cs' : 'en']}</h2>
             <p className="mt-3 text-gray-300">
@@ -102,7 +102,7 @@ export default function AdminDashboard() {
             </div>
           </Link>
 
-          <Link href="/admin/pool-config" className="group zion-rainbow-card p-6 hover:border-white/25" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+          <Link href="/admin/pool-config" className="group zion-rainbow-card p-6 hover:border-white/25" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminCopy.routing[lang === 'cs' ? 'cs' : 'en']}</p>
             <h2 className="mt-2 text-2xl font-semibold text-white">{AdminCopy.poolConfiguration[lang === 'cs' ? 'cs' : 'en']}</h2>
             <p className="mt-3 text-gray-300">
@@ -115,7 +115,7 @@ export default function AdminDashboard() {
           </Link>
         </div>
 
-        <div className="zion-rainbow-card p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+        <div className="zion-rainbow-card p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">NCL</p>
@@ -127,17 +127,17 @@ export default function AdminDashboard() {
           </div>
 
           <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminCopy.mining[lang === 'cs' ? 'cs' : 'en']}</p>
               <p className="mt-2 text-3xl font-semibold text-white">50%</p>
               <p className="text-sm text-gray-300">{AdminCopy.primaryPowWork[lang === 'cs' ? 'cs' : 'en']}</p>
             </div>
-            <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminCopy.aiCompute[lang === 'cs' ? 'cs' : 'en']}</p>
               <p className="mt-2 text-3xl font-semibold text-white">30%</p>
               <p className="text-sm text-gray-300">{AdminCopy.npuTaskGateway[lang === 'cs' ? 'cs' : 'en']}</p>
             </div>
-            <div className="zion-rainbow-sub p-5" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{AdminCopy.mergedMining[lang === 'cs' ? 'cs' : 'en']}</p>
               <p className="mt-2 text-3xl font-semibold text-white">20%</p>
               <p className="text-sm text-gray-300">{AdminCopy.hybridBridgeWork[lang === 'cs' ? 'cs' : 'en']}</p>

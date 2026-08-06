@@ -331,7 +331,7 @@ export default function NetworkHistoricalCharts() {
   );
 
   return (
-    <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+    <section className="zion-rainbow-card p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkHistoricalChartsCopy.trends[cs ? 'cs' : 'en']}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -359,7 +359,7 @@ export default function NetworkHistoricalCharts() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
             className="zion-rainbow-sub p-5 flex flex-col"
-            style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+            style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
           >
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">

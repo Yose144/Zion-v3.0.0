@@ -242,7 +242,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
                   onClick={() => setActiveTab(tab.id)}
                   className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-semibold transition-all ${
                     isActive
-                      ? 'border-zion-gold/40 bg-zion-gold/10 text-zion-gold shadow-[0_4px_20px_rgba(147,51,234,0.2)]'
+                      ? 'border-zion-gold/40 bg-zion-gold/10 text-zion-gold shadow-[0_4px_20px_rgba(228,30,43,0.2)]'
                       : 'border-white/8 bg-white/5 text-gray-400 hover:border-white/18 hover:bg-white/8 hover:text-white'
                   }`}
                 >

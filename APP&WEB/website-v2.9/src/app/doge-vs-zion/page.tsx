@@ -128,7 +128,7 @@ const GAMES: GameEntry[] = [
     genre: 'Arcade',
     description: 'Keep the node alive. Dodge the firewalls. One tap at a time.',
     descriptionCs: 'Udrž node při životě. Vyhýbej se firewallům. Jedno klepnutí.',
-    color: '#06b6d4',
+    color: '#078930',
     glowColor: '#22d3ee',
     hsKey: 'flappy-node-hs',
     badge: 'RETRO',
@@ -140,7 +140,7 @@ const GAMES: GameEntry[] = [
     genre: 'Idle / Clicker',
     description: 'ZION\'s answer to Doge Miner 2. Mine on the star, build rigs, reach Issobella.',
     descriptionCs: 'ZION odpověď na Doge Miner 2. Těž na hvězdě, stavej rigy, dosáhni Issobelly.',
-    color: '#9333ea',
+    color: '#e41e2b',
     glowColor: '#a855f7',
     hsKey: 'star-miner-save',
     badge: 'NEW',
@@ -173,7 +173,7 @@ const COMING_SOON: ComingSoonEntry[] = [
     emoji: '♟️',
     description: 'Chess with quantum moves — pieces can be in two places at once.',
     descriptionCs: 'Šachy s kvantovými tahy — figurky mohou být na dvou místech najednou.',
-    color: '#9333ea',
+    color: '#e41e2b',
   },
   {
     title: 'Bridge Runner',
@@ -181,7 +181,7 @@ const COMING_SOON: ComingSoonEntry[] = [
     emoji: '🌉',
     description: 'Cross-chain obstacle course. Race assets from Base to ZION L1.',
     descriptionCs: 'Cross-chain překážková dráha. Přenes aktiva z Base na ZION L1.',
-    color: '#06b6d4',
+    color: '#078930',
   },
 ];
 
@@ -665,7 +665,7 @@ export default function DogeVsZionPage() {
                 whileInView={{ scale: 1, rotate: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
-                className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-white/20 bg-black text-lg font-black text-white shadow-[0_0_30px_rgba(147,51,234,0.5)]"
+                className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-white/20 bg-black text-lg font-black text-white shadow-[0_0_30px_rgba(228,30,43,0.5)]"
               >
                 VS
               </motion.div>

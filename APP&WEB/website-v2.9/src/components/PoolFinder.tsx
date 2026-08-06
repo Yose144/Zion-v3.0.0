@@ -104,7 +104,7 @@ export default function PoolFinder() {
   }, []);
 
   return (
-    <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+    <div className="zion-rainbow-card p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
       <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
         <Zap className="w-5 h-5 text-zion-gold" />
         {PoolFinderCopy.findBestMiningPool[cs ? 'cs' : 'en']}
@@ -222,7 +222,7 @@ export default function PoolFinder() {
                 <div
                   key={pool.id}
                   className="zion-rainbow-sub p-3 flex items-center justify-between"
-                  style={{ '--rc': index === 0 ? '251, 191, 36' : '6, 182, 212' } as React.CSSProperties}
+                  style={{ '--rc': index === 0 ? '251, 191, 36' : '7, 137, 48' } as React.CSSProperties}
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-gray-500 font-mono text-sm">#{index + 1}</span>

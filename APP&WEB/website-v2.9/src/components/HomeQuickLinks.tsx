@@ -58,7 +58,7 @@ export default function HomeQuickLinks() {
       label: HomeQuickLinksCopy.pool[cs ? 'cs' : 'en'],
       desc: HomeQuickLinksCopy.hashrateMiners[cs ? 'cs' : 'en'],
       icon: HardHat,
-      rc: '147, 51, 234', // purple
+      rc: '228, 30, 43', // rasta red (was purple)
     },
     {
       href: '/docs',

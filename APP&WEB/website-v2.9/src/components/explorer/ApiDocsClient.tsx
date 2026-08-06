@@ -386,7 +386,7 @@ function EndpointAccordion({ ep, cs }: { ep: Endpoint; cs: boolean }) {
   const tryUrl = `${BASE_URL.replace("/api/blockchain", "")}${ep.path}${ep.params.length ? "?" + ep.params.filter(p => p.required).map(p => `${p.name}=${p.default || "1"}`).join("&") : ""}`;
 
   return (
-    <div className="zion-rainbow-sub rounded-2xl bg-black/40 overflow-hidden" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
+    <div className="zion-rainbow-sub rounded-2xl bg-black/40 overflow-hidden" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
       {/* header row (click to expand) */}
       <button
         onClick={() => setOpen((o) => !o)}
@@ -503,7 +503,7 @@ export default function ApiDocsClient() {
         </nav>
 
         {/* header */}
-        <div className="zion-rainbow-card p-6 md:p-10" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
+        <div className="zion-rainbow-card p-6 md:p-10" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
           <div className="flex items-center gap-3 mb-4 flex-wrap">
             <div className="w-12 h-12 rounded-2xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center">
               <Code className="w-6 h-6 text-purple-400" />

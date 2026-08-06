@@ -32,12 +32,12 @@ const DownloadCopy = {
   needAWalletUseV305CliBelow: { cs: `Potřebuješ peněženku? Použij v3.0.5-beta Community CLI níže`, en: `Need a wallet? Use the v3.0.5-beta Community CLI below` },
   tripleStreamMinerGpuCpuZionLiq: { cs: `Terminal Miner · GPU + CPU · Zion Liquidity`, en: `Terminal Miner · GPU + CPU · Zion Liquidity` },
   downloadMineEarn: { cs: `Stáhni. Těž. Vydělávej.`, en: `Download. Mine. Earn.` },
-  zionV310BoostMinerThreeStream: { cs: `ZION v3.1.0 — Terminal Miner. One-click GPU auto-detect na 4 platformách. `, en: `ZION v3.1.0 — Terminal Miner. One-click GPU auto-detect on 4 platforms. ` },
+  zionV310BoostMinerThreeStream: { cs: `ZION v3.2.0 "One Love" — Terminal Miner. One-click GPU auto-detect na 4 platformách. `, en: `ZION v3.2.0 "One Love" — Terminal Miner. One-click GPU auto-detect on 4 platforms. ` },
   invertsTraditionalMiningMineHo: { cs: `Auto GPU backend (CUDA + OpenCL + Metal) a nativní algoritmy (VerusHash, RandomX, BLAKE3, GhostRider, Etchash, KawPow, Autolykos, kHeavyHash, Cosmic Harmony). Linux x86_64, macOS Apple Silicon/Intel, Windows x86_64.`, en: `Auto GPU backend (CUDA + OpenCL + Metal) and native algorithms (VerusHash, RandomX, BLAKE3, GhostRider, Etchash, KawPow, Autolykos, kHeavyHash, Cosmic Harmony). Linux x86_64, macOS Apple Silicon/Intel, Windows x86_64.` },
   downloadBinaries: { cs: `Stáhnout binárky`, en: `Download binaries` },
   githubReleases: { cs: `GitHub Releases`, en: `GitHub Releases` },
   publicMainnetRelease: { cs: `Veřejný mainnet release`, en: `Public mainnet release` },
-  theLatestReleaseBringsTheTripl: { cs: `Nejnovější release v3.1.0-cli přináší Terminal Miner — one-click GPU auto-detect (CUDA → OpenCL → Metal → CPU). Nativní algoritmy: VerusHash, RandomX, BLAKE3, GhostRider, Etchash, KawPow, Autolykos, kHeavyHash, Cosmic Harmony. 4 platformy: Linux x86_64, macOS Apple Silicon/Intel, Windows x86_64. SHA256 verifikace.`, en: `The latest v3.1.0-cli release brings Terminal Miner — one-click GPU auto-detect (CUDA → OpenCL → Metal → CPU). Native algorithms: VerusHash, RandomX, BLAKE3, GhostRider, Etchash, KawPow, Autolykos, kHeavyHash, Cosmic Harmony. 4 platforms: Linux x86_64, macOS Apple Silicon/Intel, Windows x86_64. SHA256 verification.` },
+  theLatestReleaseBringsTheTripl: { cs: `Nejnovější release v3.2.0 "One Love" přináší Terminal Miner — one-click GPU auto-detect (CUDA → OpenCL → Metal → CPU). Nativní algoritmy: VerusHash, RandomX, BLAKE3, GhostRider, Etchash, KawPow, Autolykos, kHeavyHash, Cosmic Harmony. 4 platformy: Linux x86_64, macOS Apple Silicon/Intel, Windows x86_64. SHA256 verifikace.`, en: `The latest v3.2.0 "One Love" release brings Terminal Miner — one-click GPU auto-detect (CUDA → OpenCL → Metal → CPU). Native algorithms: VerusHash, RandomX, BLAKE3, GhostRider, Etchash, KawPow, Autolykos, kHeavyHash, Cosmic Harmony. 4 platforms: Linux x86_64, macOS Apple Silicon/Intel, Windows x86_64. SHA256 verification.` },
   sourceOfTruth: { cs: `Zdroj pravdy:`, en: `Source of truth:` },
   operatorCommandsGuideFaqRefere: { cs: `operátorské příkazy, guide, FAQ, reference a troubleshooting jsou v sekci `, en: `operator commands, guide, FAQ, reference, and troubleshooting live in the ` },
   sectionOfTheDocsSourceCodeIsOp: { cs: ` v dokumentaci. Zdrojový kód je open-source na `, en: ` section of the docs. Source code is open-source on ` },
@@ -292,7 +292,7 @@ export default function DownloadPage() {
               </Link>
             </div>
 
-            <div className="mt-6 zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+            <div className="mt-6 zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
               <p className="text-sm text-gray-300">
                 <span className="text-zion-gold font-semibold">💡 {DownloadCopy.desktopNeedHelp[cs ? 'cs' : 'en']}</span>{' '}
                 {DownloadCopy.desktopJoinDiscordForSupport[cs ? 'cs' : 'en']}{' '}
@@ -307,13 +307,13 @@ export default function DownloadPage() {
         <section className="space-y-6">
           <div className="flex flex-col gap-2">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DownloadCopy.publicMainnetRelease[cs ? 'cs' : 'en']}</p>
-            <h2 className="text-3xl font-semibold text-white">ZION v3.1.0 · Terminal Miner</h2>
+            <h2 className="text-3xl font-semibold text-white">ZION v3.2.0 "One Love" · Terminal Miner</h2>
             <p className="text-gray-400 max-w-3xl">
               {DownloadCopy.theLatestReleaseBringsTheTripl[cs ? 'cs' : 'en']}
             </p>
           </div>
 
-          <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+          <div className="zion-rainbow-sub p-5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <p className="text-sm text-gray-300">
               <span className="text-zion-cyan font-semibold">{DownloadCopy.sourceOfTruth[cs ? 'cs' : 'en']}</span>{' '}
               {DownloadCopy.operatorCommandsGuideFaqRefere[cs ? 'cs' : 'en']}
@@ -337,7 +337,7 @@ export default function DownloadPage() {
           </div>
           <div className="grid gap-6 md:grid-cols-3">
             {cliQuickstartSteps.map((step) => (
-              <div key={step.title} className="zion-rainbow-sub p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+              <div key={step.title} className="zion-rainbow-sub p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                 <div className="flex items-center gap-3">
                   <Shield className="h-5 w-5 text-zion-cyan" />
                   <p className="text-xs uppercase tracking-[0.35em] text-gray-400">{DownloadCopy.step[cs ? 'cs' : 'en']}</p>
@@ -369,7 +369,7 @@ export default function DownloadPage() {
               { label: DownloadCopy.supportedOs[cs ? 'cs' : 'en'], value: DownloadCopy.windows1011LinuxX8664Arm64Maco[cs ? 'cs' : 'en'] },
               { label: DownloadCopy.network[cs ? 'cs' : 'en'], value: DownloadCopy.stableInternetOutboundTcpPort8[cs ? 'cs' : 'en'] },
             ].map((req) => (
-              <div key={req.label} className="zion-rainbow-sub p-5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+              <div key={req.label} className="zion-rainbow-sub p-5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                 <div className="flex items-center gap-3">
                   <Cpu className="h-5 w-5 text-zion-gold" />
                   <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{req.label}</p>

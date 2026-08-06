@@ -71,7 +71,7 @@ export default function NetworkAlgorithmPanel({ cs }: { cs: boolean }) {
   ];
 
   return (
-    <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+    <section className="zion-rainbow-card p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkAlgorithmPanelCopy.algorithm[cs ? 'cs' : 'en']}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -88,7 +88,7 @@ export default function NetworkAlgorithmPanel({ cs }: { cs: boolean }) {
           <div
             key={algo.id}
             className="zion-rainbow-sub p-6 transition-all"
-            style={{ '--rc': algo.active ? '251, 191, 36' : '6, 182, 212' } as React.CSSProperties}
+            style={{ '--rc': algo.active ? '251, 191, 36' : '7, 137, 48' } as React.CSSProperties}
           >
             <div className="flex items-center gap-3 mb-4">
               <div className="inline-flex h-10 w-10 items-center justify-center zion-tile">

@@ -25,7 +25,7 @@ interface StarfieldBackgroundProps {
   fpsLimit?: number;
 }
 
-const DEFAULT_COLOR: RGBColor = [255, 215, 0];
+const DEFAULT_COLOR: RGBColor = [252, 209, 22];
 const DEFAULT_GRADIENT = 'radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%)';
 
 export default function StarfieldBackground({

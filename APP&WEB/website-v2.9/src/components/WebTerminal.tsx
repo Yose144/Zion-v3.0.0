@@ -127,7 +127,7 @@ The Golden Age begins. Peace & One Love 4ever.
 `;
 
 const WELCOME_TEXT = `${GENESIS_BANNER}
-ZION Web CLI v3.0.6 — Mainnet
+ZION Web CLI v3.2.0 — Mainnet
 6-decimal flowers (1 ZION = 1,000,000 flowers)
 Fee split: 89% miner / 5% humanitarian / 5% Issobella / 1% burned
 Type "help" or "?" for all commands. Press Tab for autocomplete.`;
@@ -374,7 +374,7 @@ export default function WebTerminal() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="relative mx-auto max-w-6xl overflow-hidden rounded-[28px] border border-zion-cyan/20 bg-gradient-to-br from-black/85 via-[#081019] to-zion-purple/10 shadow-[0_24px_80px_rgba(6,182,212,0.12)]"
+          className="relative mx-auto max-w-6xl overflow-hidden rounded-[28px] border border-zion-cyan/20 bg-gradient-to-br from-black/85 via-[#081019] to-zion-purple/10 shadow-[0_24px_80px_rgba(7,137,48,0.12)]"
         >
           <div className="absolute -left-10 -top-10 h-32 w-32 rounded-full bg-zion-cyan/10 blur-3xl" />
           <button
@@ -415,7 +415,7 @@ export default function WebTerminal() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative mx-auto max-w-6xl overflow-hidden rounded-[28px] border border-zion-cyan/30 bg-black/92 shadow-[0_24px_80px_rgba(6,182,212,0.14)]"
+        className="relative mx-auto max-w-6xl overflow-hidden rounded-[28px] border border-zion-cyan/30 bg-black/92 shadow-[0_24px_80px_rgba(7,137,48,0.14)]"
       >
         {/* Title bar */}
         <div className="flex items-center justify-between border-b border-white/10 bg-gradient-to-r from-zion-purple/10 to-zion-cyan/10 px-4 py-2.5">

@@ -151,7 +151,7 @@ export default function ProRecentBlocks() {
               : blocks.slice(0, 15).map((block, i) => (
                   <motion.tr
                     key={block.height}
-                    initial={i === 0 ? { backgroundColor: "rgba(255,215,0,0.08)" } : {}}
+                    initial={i === 0 ? { backgroundColor: "rgba(252,209,22,0.08)" } : {}}
                     animate={{ backgroundColor: "rgba(0,0,0,0)" }}
                     transition={{ duration: 3 }}
                     className="border-b border-white/3 hover:bg-white/3 transition-colors group"

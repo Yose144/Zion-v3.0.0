@@ -239,7 +239,7 @@ export default function TxsPageClient() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           className="zion-rainbow-card rounded-3xl md:rounded-4xl bg-black/60 p-6 md:p-10 shadow-[0_30px_120px_rgba(0,0,0,0.45)]"
-          style={{ "--rc": "6, 182, 212" } as React.CSSProperties}
+          style={{ "--rc": "7, 137, 48" } as React.CSSProperties}
         >
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-5">
@@ -281,7 +281,7 @@ export default function TxsPageClient() {
             <div className="flex flex-col gap-3">
               <LiveBadge label={ExplorerTxsTxsPageClientCopy.live[cs ? 'cs' : 'en']} />
               {sse.stats && (
-                <div className="zion-rainbow-sub p-4 rounded-2xl" style={{ "--rc": "6, 182, 212" } as React.CSSProperties}>
+                <div className="zion-rainbow-sub p-4 rounded-2xl" style={{ "--rc": "7, 137, 48" } as React.CSSProperties}>
                   <div className="text-xs text-gray-400 mb-1">{ExplorerTxsTxsPageClientCopy.currentHeight[cs ? 'cs' : 'en']}</div>
                   <div className="text-2xl font-bold text-zion-cyan tabular-nums">
                     #{sse.stats.height.toLocaleString()}
@@ -301,7 +301,7 @@ export default function TxsPageClient() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.06 }}
         >
-          <div className="zion-rainbow-card rounded-2xl bg-black/60 p-4 flex flex-wrap items-center gap-3" style={{ "--rc": "6, 182, 212" } as React.CSSProperties}>
+          <div className="zion-rainbow-card rounded-2xl bg-black/60 p-4 flex flex-wrap items-center gap-3" style={{ "--rc": "7, 137, 48" } as React.CSSProperties}>
             <div className="flex items-center gap-2 text-sm text-gray-400">
               <Filter className="h-4 w-4" />
               {ExplorerTxsTxsPageClientCopy.filter[cs ? 'cs' : 'en']}
@@ -371,7 +371,7 @@ export default function TxsPageClient() {
             </span>
           </div>
 
-          <div className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-x-auto overflow-y-hidden" style={{ "--rc": "6, 182, 212" } as React.CSSProperties}>
+          <div className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-x-auto overflow-y-hidden" style={{ "--rc": "7, 137, 48" } as React.CSSProperties}>
             {/* table header */}
             <div className="grid grid-cols-[32px_1fr_90px_80px_100px_80px_110px] min-w-[520px] gap-3 px-5 py-3 border-b border-white/6">
               <span />

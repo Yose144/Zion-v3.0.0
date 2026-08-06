@@ -122,16 +122,16 @@ export const POOL_FEE_PCT = 1;
 // ─── Tithe Wallet Addresses (mainnet canonical, 2026-07-06 hard reset) ────
 
 /** Humanitarian fund wallet (Children Future Fund) — mainnet canonical */
-export const HUMANITARIAN_WALLET = 'zion136m4u7f8s5w3l0e00342s7a4r282275442vm2w3';
+export const HUMANITARIAN_WALLET = 'zion1j0j5d0c70056u678j7g4p686e7r3w5k0y8vy0m0';
 
 /** L5/L6 Issobella fund wallet — mainnet canonical */
-export const ISSOBELLA_WALLET = 'zion173g835z228z6u303z59603y236r5e854l36g604';
+export const ISSOBELLA_WALLET = 'zion1g3g0k2j665r075g5j077z0w3u4g3w0d5837j3f6';
 
 /** Pool fee wallet — BURNED (no address; 1% is permanently removed at coinbase) */
 export const POOL_FEE_WALLET = '';
 
 /** Pool / miner payout wallet — mainnet canonical (receives 89% miner slice) */
-export const POOL_WALLET = 'zion1k4g2d8s3y4m5v238k0l3v6y5n48894n357uv064';
+export const POOL_WALLET = 'zion177w668f4g5g8s3t844s3f053k8h7r6d540853g6';
 
 /** Miner reward per block in ZION (Decade 1) */
 export const MINER_REWARD_ZION = BLOCK_REWARD_ZION * MINER_SHARE_PCT / 100;

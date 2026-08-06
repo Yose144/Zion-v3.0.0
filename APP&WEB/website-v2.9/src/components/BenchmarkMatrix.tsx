@@ -124,7 +124,7 @@ export default function BenchmarkMatrix() {
         </div>
 
         {/* ── Main results table ─────────────────────────────── */}
-        <div className="zion-rainbow-card overflow-hidden mb-16" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+        <div className="zion-rainbow-card overflow-hidden mb-16" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
           <div className="p-4 border-b border-white/10">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
               <Cpu className="w-5 h-5 text-zion-gold" />
@@ -184,7 +184,7 @@ export default function BenchmarkMatrix() {
               return (
                 <div
                   key={i}
-                  className="zion-rainbow-sub p-6 hover:bg-white/[0.04] transition-colors" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+                  className="zion-rainbow-sub p-6 hover:bg-white/[0.04] transition-colors" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
                 >
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-8 h-8 rounded-lg bg-zion-gold/10 flex items-center justify-center">
@@ -200,7 +200,7 @@ export default function BenchmarkMatrix() {
         </div>
 
         {/* ── Tuning defaults table ──────────────────────────── */}
-        <div className="zion-rainbow-card overflow-hidden mb-16" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+        <div className="zion-rainbow-card overflow-hidden mb-16" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
           <div className="p-4 border-b border-white/10">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
               <Zap className="w-5 h-5 text-zion-gold" />
@@ -232,7 +232,7 @@ export default function BenchmarkMatrix() {
         </div>
 
         {/* ── Bandwidth efficiency chart (text) ──────────────── */}
-        <div className="zion-rainbow-card p-6 mb-16" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+        <div className="zion-rainbow-card p-6 mb-16" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-zion-gold" />
             {BenchmarkMatrixCopy.bandwidthEfficiency[cs ? 'cs' : 'en']}

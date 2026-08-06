@@ -415,7 +415,7 @@ export default function AddressDetailClient() {
           const fees = txs.reduce((s, t) => s + (t.fee || 0), 0);
           const total = received + sent;
           return (
-            <div className="zion-rainbow-sub rounded-[28px] bg-black/60 p-6 mb-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub rounded-[28px] bg-black/60 p-6 mb-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <h2 className="text-sm font-semibold text-white/70 mb-4 flex items-center gap-2">
                 <Activity className="w-4 h-4 text-purple-400" />
                 {ExplorerAddressAddressDetailClientCopy.transactionSummary[cs ? 'cs' : 'en']}
@@ -668,7 +668,7 @@ export default function AddressDetailClient() {
 
         {/* ── Watchlist panel ─────────────────────────────────── */}
         {mounted && watchlist.length > 0 && (
-          <div className="zion-rainbow-sub rounded-[28px] bg-black/60 p-6 mt-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+          <div className="zion-rainbow-sub rounded-[28px] bg-black/60 p-6 mt-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <h2 className="text-sm font-semibold text-white/70 mb-4 flex items-center gap-2">
               <Star className="w-4 h-4 text-zion-gold fill-current" />
               {ExplorerAddressAddressDetailClientCopy.watchlist[cs ? 'cs' : 'en']} ({watchlist.length})

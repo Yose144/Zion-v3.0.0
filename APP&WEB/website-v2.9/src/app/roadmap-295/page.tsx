@@ -262,10 +262,10 @@ export default function Roadmap295Page() {
       {/* Vision Statement */}
       <section className="py-16 px-6">
         <div className="zion-container">
-          <div className="zion-section p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+          <div className="zion-section p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <div className="prose prose-invert prose-lg text-center max-w-none">
               <h2 className="text-3xl font-bold text-zion-cyan mb-6">🎯 {Roadmap295Copy.visionStatement[lang === 'cs' ? 'cs' : 'en']}</h2>
-              <div className="zion-rainbow-sub p-8" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+              <div className="zion-rainbow-sub p-8" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                 <p className="text-3xl font-bold text-white mb-6">
                   ZION 2.9.5 = 100% {Roadmap295Copy.nativeConsciousness[lang === 'cs' ? 'cs' : 'en']}
                 </p>
@@ -300,7 +300,7 @@ export default function Roadmap295Page() {
               <div
                 key={idx}
                 className="zion-rainbow-sub p-6"
-                style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+                style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
@@ -346,7 +346,7 @@ export default function Roadmap295Page() {
           </h2>
           <div className="grid lg:grid-cols-2 gap-8">
             {quarters.map((quarter) => {
-              const rc = quarter.color === 'cyan' ? '6, 182, 212' : quarter.color === 'purple' ? '147, 51, 234' : quarter.color === 'gold' ? '255, 215, 0' : '34, 197, 94';
+              const rc = quarter.color === 'cyan' ? '7, 137, 48' : quarter.color === 'purple' ? '228, 30, 43' : quarter.color === 'gold' ? '252, 209, 22' : '34, 197, 94';
               return (
                 <div
                   key={quarter.id}
@@ -451,7 +451,7 @@ export default function Roadmap295Page() {
             {/* Milestone Items */}
             <div className="space-y-8">
               {milestones.map((milestone, idx) => {
-                const rc = milestone.color === 'cyan' ? '6, 182, 212' : milestone.color === 'purple' ? '147, 51, 234' : milestone.color === 'gold' ? '255, 215, 0' : milestone.color === 'green' ? '34, 197, 94' : '255, 255, 255';
+                const rc = milestone.color === 'cyan' ? '7, 137, 48' : milestone.color === 'purple' ? '228, 30, 43' : milestone.color === 'gold' ? '252, 209, 22' : milestone.color === 'green' ? '34, 197, 94' : '255, 255, 255';
                 const IconComponent = milestone.icon;
                 return (
                   <div key={idx} className="relative flex items-start gap-6">
@@ -487,7 +487,7 @@ export default function Roadmap295Page() {
       {/* Historical V3 launch requirements */}
       <section className="py-16 px-6">
         <div className="zion-container">
-          <div className="zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <div className="prose prose-invert prose-lg text-center max-w-none">
               <div className="flex items-center justify-center gap-3 mb-6">
                 <Zap className="w-8 h-8 text-green-400" />
@@ -496,7 +496,7 @@ export default function Roadmap295Page() {
                 </h2>
               </div>
               <div className="text-gray-300 space-y-6">
-                <div className="zion-rainbow-sub p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+                <div className="zion-rainbow-sub p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                   <p className="text-2xl font-bold text-green-400 mb-4 flex items-center justify-center gap-2">
                     <Rocket className="w-8 h-8" />
                     <span>{Roadmap295Copy.december312025[lang === 'cs' ? 'cs' : 'en']}</span>
@@ -541,7 +541,7 @@ export default function Roadmap295Page() {
       {/* MainNet Vision */}
       <section className="py-16 px-6">
         <div className="zion-container">
-          <div className="zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <div className="prose prose-invert prose-lg text-center max-w-none">
               <div className="flex items-center justify-center gap-3 mb-6">
                 <TrendingUp className="w-8 h-8 text-zion-gold" />
@@ -557,21 +557,21 @@ export default function Roadmap295Page() {
                   </span>
                 </p>
                 <div className="grid md:grid-cols-3 gap-6">
-                  <div className="zion-rainbow-sub p-6" style={{ '--rc': '255, 215, 0' } as React.CSSProperties}>
+                  <div className="zion-rainbow-sub p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
                     <div className="flex justify-center mb-3">
                       <Zap className="w-12 h-12 text-zion-gold" />
                     </div>
                     <div className="text-2xl font-bold text-zion-gold mb-2">1,000+ TPS</div>
                     <div className="text-sm text-gray-400">{Roadmap295Copy.historicalTarget[lang === 'cs' ? 'cs' : 'en']}</div>
                   </div>
-                  <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+                  <div className="zion-rainbow-sub p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
                     <div className="flex justify-center mb-3">
                       <Link2 className="w-12 h-12 text-zion-cyan" />
                     </div>
                     <div className="text-2xl font-bold text-zion-cyan mb-2">44 Chains</div>
                     <div className="text-sm text-gray-400">{Roadmap295Copy.rainbowBridge[lang === 'cs' ? 'cs' : 'en']}</div>
                   </div>
-                  <div className="zion-rainbow-sub p-6" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+                  <div className="zion-rainbow-sub p-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                     <div className="flex justify-center mb-3">
                       <Users className="w-12 h-12 text-zion-purple" />
                     </div>

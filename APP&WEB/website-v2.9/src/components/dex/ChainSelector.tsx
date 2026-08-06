@@ -28,7 +28,7 @@ const CHAINS: ChainOption[] = [
   { id: 'stellar', name: 'Stellar', symbol: 'XLM', color: '#7d5fff' },
   { id: 'cardano', name: 'Cardano', symbol: 'ADA', color: '#0033ad' },
   { id: 'cosmos', name: 'Cosmos', symbol: 'ATOM', color: '#2e3148' },
-  { id: 'aptos', name: 'Aptos', symbol: 'APT', color: '#06b6d4' },
+  { id: 'aptos', name: 'Aptos', symbol: 'APT', color: '#078930' },
   { id: 'sui', name: 'Sui', symbol: 'SUI', color: '#4da2ff' },
   { id: 'near', name: 'NEAR', symbol: 'NEAR', color: '#00ec97' },
   { id: 'ton', name: 'TON', symbol: 'TON', color: '#0098ea' },

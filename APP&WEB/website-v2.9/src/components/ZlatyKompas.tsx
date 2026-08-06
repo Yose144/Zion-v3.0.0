@@ -31,8 +31,8 @@ export const DIRECTIONS: Direction[] = [
     titleEn: 'Truthfulness',
     descCs: 'Nepsat nic, co odporuje skutečnosti jen proto, že to zní krásněji.',
     descEn: 'Never write anything that contradicts reality just because it sounds more beautiful.',
-    color: '#FFD700',
-    rgb: '255,215,0',
+    color: '#fcd116',
+    rgb: '252,209,22',
     symbol: '◈',
   },
   {
@@ -166,8 +166,8 @@ export default function ZlatyKompas({ selected, onSelect }: ZlatyKompasProps) {
       <defs>
         {/* Central radial glow */}
         <radialGradient id="zk-center" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="rgba(255,215,0,0.25)" />
-          <stop offset="40%" stopColor="rgba(147,51,234,0.08)" />
+          <stop offset="0%" stopColor="rgba(252,209,22,0.25)" />
+          <stop offset="40%" stopColor="rgba(228,30,43,0.08)" />
           <stop offset="100%" stopColor="rgba(0,0,0,0)" />
         </radialGradient>
 
@@ -195,7 +195,7 @@ export default function ZlatyKompas({ selected, onSelect }: ZlatyKompasProps) {
         {/* Gradient spokes */}
         {DIRECTIONS.map((d) => (
           <linearGradient key={`lg-${d.id}`} id={`lg-${d.id}`} x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="rgba(255,215,0,0.15)" />
+            <stop offset="0%" stopColor="rgba(252,209,22,0.15)" />
             <stop offset="100%" stopColor={`rgba(${d.rgb},0.5)`} />
           </linearGradient>
         ))}
@@ -230,7 +230,7 @@ export default function ZlatyKompas({ selected, onSelect }: ZlatyKompasProps) {
             <line
               key={`tick-${i}`}
               x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
-              stroke={major ? 'rgba(255,215,0,0.3)' : 'rgba(255,255,255,0.08)'}
+              stroke={major ? 'rgba(252,209,22,0.3)' : 'rgba(255,255,255,0.08)'}
               strokeWidth={major ? 1.5 : 0.8}
             />
           );
@@ -239,16 +239,16 @@ export default function ZlatyKompas({ selected, onSelect }: ZlatyKompasProps) {
 
       {/* ── Layer 2: Static outer orbit ring ── */}
       <circle cx={CX} cy={CY} r={R_RING} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-      <circle cx={CX} cy={CY} r={R_RING - 4} fill="none" stroke="rgba(255,215,0,0.06)" strokeWidth="0.5" strokeDasharray="2 6" />
+      <circle cx={CX} cy={CY} r={R_RING - 4} fill="none" stroke="rgba(252,209,22,0.06)" strokeWidth="0.5" strokeDasharray="2 6" />
 
       {/* ── Layer 3: Inner decorative ring ── */}
       <circle cx={CX} cy={CY} r={R_INNER} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="0.8" />
-      <circle cx={CX} cy={CY} r={R_INNER - 20} fill="none" stroke="rgba(147,51,234,0.06)" strokeWidth="0.5" strokeDasharray="3 8" />
+      <circle cx={CX} cy={CY} r={R_INNER - 20} fill="none" stroke="rgba(228,30,43,0.06)" strokeWidth="0.5" strokeDasharray="3 8" />
 
       {/* ── Layer 4: Heptagon + inner star web ── */}
       <polygon points={heptStr} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-      <polygon points={heptStr} fill="rgba(255,215,0,0.015)" />
-      <polygon points={starStr} fill="none" stroke="rgba(255,215,0,0.06)" strokeWidth="0.7" />
+      <polygon points={heptStr} fill="rgba(252,209,22,0.015)" />
+      <polygon points={starStr} fill="none" stroke="rgba(252,209,22,0.06)" strokeWidth="0.7" />
 
       {/* ── Layer 5: Gradient spokes from center to nodes ── */}
       {DIRECTIONS.map((d, i) => {
@@ -262,7 +262,7 @@ export default function ZlatyKompas({ selected, onSelect }: ZlatyKompasProps) {
         return (
           <g key={`spoke-${d.id}`}>
             <linearGradient id={gid} x1={CX / 700} y1={CY / 700} x2={p.x / 700} y2={p.y / 700} gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor={isHl ? `rgba(${d.rgb},0.5)` : 'rgba(255,215,0,0.08)'} />
+              <stop offset="0%" stopColor={isHl ? `rgba(${d.rgb},0.5)` : 'rgba(252,209,22,0.08)'} />
               <stop offset="100%" stopColor={isHl ? `rgba(${d.rgb},0.8)` : `rgba(${d.rgb},0.15)`} />
             </linearGradient>
             <line
@@ -291,8 +291,8 @@ export default function ZlatyKompas({ selected, onSelect }: ZlatyKompasProps) {
       {/* ── Layer 6: Center compass rose ── */}
       <g>
         {/* Outer ring */}
-        <circle cx={CX} cy={CY} r={42} fill="rgba(0,0,0,0.5)" stroke="rgba(255,215,0,0.25)" strokeWidth="1.5" />
-        <circle cx={CX} cy={CY} r={36} fill="rgba(0,0,0,0.7)" stroke="rgba(255,215,0,0.15)" strokeWidth="1" />
+        <circle cx={CX} cy={CY} r={42} fill="rgba(0,0,0,0.5)" stroke="rgba(252,209,22,0.25)" strokeWidth="1.5" />
+        <circle cx={CX} cy={CY} r={36} fill="rgba(0,0,0,0.7)" stroke="rgba(252,209,22,0.15)" strokeWidth="1" />
 
         {/* Cardinal compass arms (decorative cross) */}
         {[0, 90, 180, 270].map((a) => {
@@ -300,7 +300,7 @@ export default function ZlatyKompas({ selected, onSelect }: ZlatyKompasProps) {
           const outer = pt(CX, CY, 30, a);
           return (
             <line key={`arm-${a}`} x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y}
-              stroke={a === 0 ? 'rgba(255,215,0,0.7)' : 'rgba(255,255,255,0.2)'}
+              stroke={a === 0 ? 'rgba(252,209,22,0.7)' : 'rgba(255,255,255,0.2)'}
               strokeWidth={a === 0 ? 2 : 1}
             />
           );
@@ -309,7 +309,7 @@ export default function ZlatyKompas({ selected, onSelect }: ZlatyKompasProps) {
         {/* North arrow */}
         <polygon
           points={`${CX},${CY - 32} ${CX - 6},${CY - 18} ${CX + 6},${CY - 18}`}
-          fill="rgba(255,215,0,0.8)"
+          fill="rgba(252,209,22,0.8)"
           filter="url(#zk-glow-sm)"
         />
         <polygon
@@ -320,12 +320,12 @@ export default function ZlatyKompas({ selected, onSelect }: ZlatyKompasProps) {
         {/* Center diamond */}
         <polygon
           points={`${CX},${CY - 6} ${CX + 6},${CY} ${CX},${CY + 6} ${CX - 6},${CY}`}
-          fill="#FFD700"
+          fill="#fcd116"
           opacity={0.9}
         />
 
         {/* N / S labels */}
-        <text x={CX} y={CY - 39} textAnchor="middle" fill="rgba(255,215,0,0.6)" fontSize="9" fontWeight="700" fontFamily="var(--font-mono), monospace">N</text>
+        <text x={CX} y={CY - 39} textAnchor="middle" fill="rgba(252,209,22,0.6)" fontSize="9" fontWeight="700" fontFamily="var(--font-mono), monospace">N</text>
         <text x={CX} y={CY + 47} textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize="8" fontWeight="600" fontFamily="var(--font-mono), monospace">S</text>
       </g>
 

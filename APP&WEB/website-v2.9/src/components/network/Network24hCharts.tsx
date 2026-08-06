@@ -131,7 +131,7 @@ export default function Network24hCharts({
   );
 
   return (
-    <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+    <section className="zion-rainbow-card p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{Network24hChartsCopy.history[cs ? 'cs' : 'en']}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -145,7 +145,7 @@ export default function Network24hCharts({
 
       <div className="grid gap-5 lg:grid-cols-3">
         {charts.map((chart) => (
-          <div key={chart.label} className="zion-rainbow-sub p-5 flex flex-col" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+          <div key={chart.label} className="zion-rainbow-sub p-5 flex flex-col" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
             <div className="flex items-center gap-2 mb-1">
               {chart.icon}
               <span className="text-[10px] uppercase tracking-[0.2em] text-gray-500">{cs ? chart.labelCs : chart.label}</span>

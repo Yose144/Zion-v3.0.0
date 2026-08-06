@@ -63,7 +63,7 @@ export default function NavAuthButton() {
         {showMenu && (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-            <div className="absolute right-0 mt-2 w-56 rounded-xl border border-white/10 bg-[rgba(4,7,16,0.95)] backdrop-blur-xl shadow-[0_18px_60px_rgba(0,0,0,0.55)] z-50 overflow-hidden">
+            <div className="absolute right-0 mt-2 w-56 rounded-xl border border-white/10 bg-[rgba(13,13,13,0.95)] backdrop-blur-xl shadow-[0_18px_60px_rgba(0,0,0,0.55)] z-50 overflow-hidden">
               <div className="px-4 py-3 border-b border-white/5">
                 <p className="text-xs font-semibold text-white truncate">
                   {user?.displayName || 'ZION User'}

@@ -25,9 +25,9 @@ export ZION_NODE_STATE_PATH="${REPO_ROOT}/V3/data/zion-node-state.db"
 export ZION_SEED_PEERS='62.171.141.136:8333,62.171.141.136:8334'
 
 # ── Wallets (same as Edge — constitutional emission) ───────────────────────
-export ZION_MINER_ADDRESS='zion1u4a82230m0a267r785m822u5a3g7n753d7eu5n0'
-export ZION_HUMANITARIAN_WALLET='zion136m4u7f8s5w3l0e00342s7a4r282275442vm2w3'
-export ZION_ISSOBELLA_WALLET='zion173g835z228z6u303z59603y236r5e854l36g604'
+export ZION_MINER_ADDRESS='zion1d6e3a4s6t856z042q2m6h5h2j4k3v7f8f2a94h7'
+export ZION_HUMANITARIAN_WALLET='zion1j0j5d0c70056u678j7g4p686e7r3w5k0y8vy0m0'
+export ZION_ISSOBELLA_WALLET='zion1g3g0k2j665r075g5j077z0w3u4g3w0d5837j3f6'
 
 # ── Security (same as Edge — active from genesis) ──────────────────────────
 export ZION_MAX_TX_AMOUNT_HEIGHT=1

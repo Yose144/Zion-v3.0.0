@@ -79,7 +79,7 @@ export default function PoolRewardDonut({ cs, minerShare, humanitarianTithe, iss
   const CY = 60;
 
   return (
-    <section className="zion-rainbow-card p-8" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+    <section className="zion-rainbow-card p-8" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{PoolRewardDonutCopy.economics[cs ? 'cs' : 'en']}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -118,7 +118,7 @@ export default function PoolRewardDonut({ cs, minerShare, humanitarianTithe, iss
 
         <div className="flex-1 grid grid-cols-2 gap-3 w-full">
           {slices.map((slice) => (
-            <div key={slice.label} className="zion-rainbow-sub p-4 flex items-center gap-3" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            <div key={slice.label} className="zion-rainbow-sub p-4 flex items-center gap-3" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <div
                 className="h-8 w-8 rounded-xl flex items-center justify-center text-white"
                 style={{ backgroundColor: slice.color + '25', border: `1px solid ${slice.color}40` }}

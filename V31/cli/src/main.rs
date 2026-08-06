@@ -419,10 +419,10 @@ struct NodeStartArgs {
     #[arg(short, long, default_value = "0.0.0.0:8333")]
     p2p: SocketAddr,
     /// Humanitarian coinbase recipient.
-    #[arg(long, default_value = "zion136m4u7f8s5w3l0e00342s7a4r282275442vm2w3")]
+    #[arg(long, default_value = "zion1j0j5d0c70056u678j7g4p686e7r3w5k0y8vy0m0")]
     human: String,
     /// Issobella coinbase recipient.
-    #[arg(long, default_value = "zion173g835z228z6u303z59603y236r5e854l36g604")]
+    #[arg(long, default_value = "zion1g3g0k2j665r075g5j077z0w3u4g3w0d5837j3f6")]
     issobella: String,
     /// Skip seeding the genesis block (used when importing a migration snapshot).
     #[arg(long, default_value_t = false)]

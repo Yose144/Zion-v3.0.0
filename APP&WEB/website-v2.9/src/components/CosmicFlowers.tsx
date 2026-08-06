@@ -88,16 +88,16 @@ export default function CosmicFlowers({ className = '' }: { className?: string }
       >
         <defs>
           <radialGradient id="glowA" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="rgba(147,51,234,0.6)" />
-            <stop offset="100%" stopColor="rgba(147,51,234,0)" />
+            <stop offset="0%" stopColor="rgba(228,30,43,0.6)" />
+            <stop offset="100%" stopColor="rgba(228,30,43,0)" />
           </radialGradient>
           <radialGradient id="glowB" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="rgba(6,182,212,0.6)" />
-            <stop offset="100%" stopColor="rgba(6,182,212,0)" />
+            <stop offset="0%" stopColor="rgba(7,137,48,0.6)" />
+            <stop offset="100%" stopColor="rgba(7,137,48,0)" />
           </radialGradient>
           <radialGradient id="glowC" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="rgba(255,215,0,0.55)" />
-            <stop offset="100%" stopColor="rgba(255,215,0,0)" />
+            <stop offset="0%" stopColor="rgba(252,209,22,0.55)" />
+            <stop offset="100%" stopColor="rgba(252,209,22,0)" />
           </radialGradient>
           <filter id="blur-soft">
             <feGaussianBlur stdDeviation="2.5" />
@@ -116,7 +116,7 @@ export default function CosmicFlowers({ className = '' }: { className?: string }
           size={1.05}
           initialAngle={15}
           colors={[
-            'rgba(147,51,234,0.55)',
+            'rgba(228,30,43,0.55)',
             'rgba(168,85,247,0.45)',
             'rgba(129,0,255,0.40)',
             'rgba(196,128,255,0.35)',
@@ -131,7 +131,7 @@ export default function CosmicFlowers({ className = '' }: { className?: string }
           size={0.82}
           initialAngle={0}
           colors={[
-            'rgba(6,182,212,0.55)',
+            'rgba(7,137,48,0.55)',
             'rgba(34,211,238,0.45)',
             'rgba(0,230,255,0.40)',
           ]}
@@ -145,15 +145,15 @@ export default function CosmicFlowers({ className = '' }: { className?: string }
           size={0.68}
           initialAngle={30}
           colors={[
-            'rgba(255,215,0,0.5)',
+            'rgba(252,209,22,0.5)',
             'rgba(249,168,38,0.4)',
             'rgba(251,191,36,0.35)',
           ]}
         />
 
-        <circle cx={760} cy={840} r={36} fill="rgba(255,215,0,0.08)" />
-        <circle cx={60} cy={600} r={24} fill="rgba(6,182,212,0.08)" />
-        <circle cx={720} cy={60} r={28} fill="rgba(255,215,0,0.1)" />
+        <circle cx={760} cy={840} r={36} fill="rgba(252,209,22,0.08)" />
+        <circle cx={60} cy={600} r={24} fill="rgba(7,137,48,0.08)" />
+        <circle cx={720} cy={60} r={28} fill="rgba(252,209,22,0.1)" />
       </svg>
     </div>
   );

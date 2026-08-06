@@ -143,7 +143,7 @@ export default function MinerStatsClient() {
               type="submit"
               disabled={loading}
               className="absolute right-2 top-1/2 -translate-y-1/2 zion-button-primary text-sm disabled:opacity-50"
-              style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+              style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
             >
               {loading ? 'Searching...' : 'Search'}
             </button>

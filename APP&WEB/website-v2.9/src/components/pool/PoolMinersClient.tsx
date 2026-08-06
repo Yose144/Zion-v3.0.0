@@ -511,7 +511,7 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
   /* Distribution donut: top 10 + rest */
   const donutSlices = useMemo(() => {
     const purplePalette = [
-      "#9333ea", "#a855f7", "#c084fc", "#d8b4fe", "#7c3aed",
+      "#e41e2b", "#a855f7", "#c084fc", "#d8b4fe", "#7c3aed",
       "#8b5cf6", "#6d28d9", "#5b21b6", "#4c1d95", "#3b0764",
     ];
     const top = [...minerRows].sort((a, b) => b.sharePct - a.sharePct).slice(0, 10);
@@ -569,7 +569,7 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             className="zion-rainbow-card p-6 md:p-10"
-            style={{ "--rc": "147, 51, 234" } as React.CSSProperties}
+            style={{ "--rc": "228, 30, 43" } as React.CSSProperties}
           >
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-5">
@@ -600,7 +600,7 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
               </div>
             </div>
             <div className="w-full lg:max-w-sm space-y-3">
-              <div className="zion-rainbow-sub p-5" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
+              <div className="zion-rainbow-sub p-5" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{PoolMinersCopy.quickSnapshot[cs ? 'cs' : 'en']}</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -632,7 +632,7 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.04 }}
         >
-          <form onSubmit={onSearchSubmit} className="zion-rainbow-card p-4 md:p-6" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
+          <form onSubmit={onSearchSubmit} className="zion-rainbow-card p-4 md:p-6" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1 relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
@@ -650,7 +650,7 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
               <button
                 type="submit"
                 className="zion-button-primary text-sm whitespace-nowrap"
-                style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+                style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
               >
                 <Search className="h-4 w-4" />
                 {PoolMinersCopy.searchMiner[cs ? 'cs' : 'en']}
@@ -660,14 +660,14 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
         </motion.section>
 
         {loading ? (
-          <div className="zion-rainbow-card p-10 text-center" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-10 text-center" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
             <div className="inline-flex items-center gap-3 text-gray-400">
               <Activity className="h-5 w-5 animate-pulse text-zion-purple" />
               {PoolMinersCopy.loadingMinerLeaderboard[cs ? 'cs' : 'en']}
             </div>
           </div>
         ) : !data ? (
-          <div className="zion-rainbow-card p-10 text-center" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-10 text-center" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
             <XCircle className="h-8 w-8 text-red-400 mx-auto mb-3" />
             <p className="text-gray-400">{PoolMinersCopy.poolDataUnavailableServersMayB[cs ? 'cs' : 'en']}</p>
           </div>
@@ -700,7 +700,7 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.08 + i * 0.06 }}
                         className={`zion-rainbow-sub p-6 relative overflow-hidden ${i === 0 ? "md:scale-105 md:-translate-y-2" : ""}`}
-                        style={{ "--rc": "147, 51, 234" } as React.CSSProperties}
+                        style={{ "--rc": "228, 30, 43" } as React.CSSProperties}
                       >
                         <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full opacity-20 blur-2xl" style={{ background: i === 0 ? "#fbbf24" : i === 1 ? "#cbd5e1" : "#f97316" }} />
                         <div className="flex items-center justify-between mb-4">
@@ -769,7 +769,7 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                 </p>
               </div>
 
-              <div className="zion-rainbow-card overflow-hidden" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
+              <div className="zion-rainbow-card overflow-hidden" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
@@ -867,7 +867,7 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
               </div>
 
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="zion-rainbow-sub p-5" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
+                <div className="zion-rainbow-sub p-5" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
                   <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-emerald-400/10 mb-3">
                     <Activity className="h-4 w-4 text-emerald-400" />
                   </div>
@@ -875,7 +875,7 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                   <p className="mt-1 text-2xl font-bold text-white font-mono">{activeCount}</p>
                   <p className="text-[11px] text-gray-500 mt-1">{PoolMinersCopy.shareInLast10Min[cs ? 'cs' : 'en']}</p>
                 </div>
-                <div className="zion-rainbow-sub p-5" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
+                <div className="zion-rainbow-sub p-5" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
                   <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-purple-400/10 mb-3">
                     <Users className="h-4 w-4 text-purple-400" />
                   </div>
@@ -883,7 +883,7 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                   <p className="mt-1 text-2xl font-bold text-white font-mono">{data.pplns?.registered_miners ?? totalCount}</p>
                   <p className="text-[11px] text-gray-500 mt-1">{PoolMinersCopy.inPplnsWindow[cs ? 'cs' : 'en']}</p>
                 </div>
-                <div className="zion-rainbow-sub p-5" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
+                <div className="zion-rainbow-sub p-5" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
                   <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-zion-cyan/10 mb-3">
                     <Gauge className="h-4 w-4 text-zion-cyan" />
                   </div>
@@ -891,7 +891,7 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                   <p className="mt-1 text-2xl font-bold text-white font-mono">{fmtHash(avgHashrate)}</p>
                   <p className="text-[11px] text-gray-500 mt-1">{PoolMinersCopy.perActiveMiner[cs ? 'cs' : 'en']}</p>
                 </div>
-                <div className="zion-rainbow-sub p-5" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
+                <div className="zion-rainbow-sub p-5" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
                   <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-zion-gold/10 mb-3">
                     <Trophy className="h-4 w-4 text-zion-gold" />
                   </div>
@@ -925,7 +925,7 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                   <p className="text-sm text-gray-400">{PoolMinersCopy.top10MinersVsTheRestOfThePool[cs ? 'cs' : 'en']}</p>
                 </div>
 
-                <div className="zion-rainbow-card p-6 md:p-8" style={{ "--rc": "147, 51, 234" } as React.CSSProperties}>
+                <div className="zion-rainbow-card p-6 md:p-8" style={{ "--rc": "228, 30, 43" } as React.CSSProperties}>
                   <DistributionDonut slices={donutSlices} cs={cs} />
                 </div>
               </motion.section>
@@ -948,7 +948,7 @@ export default function PoolMinersClient({ embedded = false }: { embedded?: bool
                 {PoolMinersCopy.startMiningZionAndAppearOnTheL[cs ? 'cs' : 'en']}
               </p>
               <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-                <Link href="/pool" className="zion-button-primary group text-sm" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+                <Link href="/pool" className="zion-button-primary group text-sm" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
                   <Pickaxe className="h-4 w-4" /> {PoolMinersCopy.poolDashboard[cs ? 'cs' : 'en']}
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>

@@ -40,7 +40,7 @@ import { getDAOStats, type DAOStats as DAOStatsType } from '@/lib/dao-api';
 const MC = {
   hero: { cs: `Multichain · L2 Value Layer`, en: `Multichain · L2 Value Layer` },
   heroSub: { cs: `Jeden unified servis. Pět protokolů. Tridaštní cross-chain infrastruktura.`, en: `One unified service. Five protocols. Cross-chain infrastructure done right.` },
-  heroDesc: { cs: `V31 'zion-multichain' crate spojuje Bridge, WARP, HTLC Swap, ZionDex a DAO do jednoho servisu na portu 8453. 13 chain rodin, 5/7 validator consensus, trustless atomic swaps, AMM routing s intent-based settlement.`, en: `The V31 'zion-multichain' crate unifies Bridge, WARP, HTLC Swap, ZionDex, and DAO into a single service on port 8453. 13 chain families, 5/7 validator consensus, trustless atomic swaps, AMM routing with intent-based settlement.` },
+  heroDesc: { cs: `Unified multichain servis spojuje Bridge, WARP, HTLC Swap, ZionDex a DAO do jednoho servisu. 13 chain rodin, 5/7 validator consensus, trustless atomic swaps, AMM routing s intent-based settlement.`, en: `The unified multichain service unifies Bridge, WARP, HTLC Swap, ZionDex, and DAO into a single service. 13 chain families, 5/7 validator consensus, trustless atomic swaps, AMM routing with intent-based settlement.` },
   /* sections */
   bridge: { cs: `Bridge · L1 ↔ L2`, en: `Bridge · L1 ↔ L2` },
   bridgeDesc: { cs: `Lock-mint / burn-release. 1:1 peg, 5/7 Guardian validátory, 60-block L1 finalita. Žádné protokolové poplatky.`, en: `Lock-mint / burn-release. 1:1 peg, 5/7 Guardian validators, 60-block L1 finality. No protocol fees.` },
@@ -60,7 +60,7 @@ const MC = {
   endpoints: { cs: `API endpoints`, en: `API endpoints` },
   tests: { cs: `Testy`, en: `Tests` },
   /* CTA */
-  github: { cs: `GitHub · V31 Multi-Chain`, en: `GitHub · V31 Multi-Chain` },
+  github: { cs: `GitHub · Multi-Chain`, en: `GitHub · Multi-Chain` },
   docs: { cs: `Dokumentace`, en: `Documentation` },
   explorer: { cs: `Explorer`, en: `Explorer` },
   /* status */
@@ -184,7 +184,7 @@ export default function MultichainPage() {
             <div className="flex flex-col gap-6">
               <div className="zion-kicker border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
                 <Layers className="h-4 w-4" />
-                V31 · zion-multichain
+                ZION Multichain
               </div>
               <div>
                 <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
@@ -281,7 +281,7 @@ export default function MultichainPage() {
           </div>
 
           {/* Contracts */}
-          <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
+          <div className="zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
             <p className="text-sm text-gray-300">
               <span className="text-zion-cyan font-semibold">{cs ? 'Kontrakty:' : 'Contracts:'}</span>{' '}
               {Object.entries(BRIDGE_CONTRACTS).map(([chain, addr]) => (
@@ -330,7 +330,7 @@ export default function MultichainPage() {
 
           {/* WARP status + cross-chain swap link */}
           <div className="grid gap-4 lg:grid-cols-2">
-            <div className="zion-rainbow-card p-5" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
+            <div className="zion-rainbow-card p-5" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
               <h3 className="text-lg font-semibold text-white mb-3">
                 {cs ? 'Cross-chain swap (LiFi)' : 'Cross-chain swap (LiFi)'}
               </h3>
@@ -342,7 +342,7 @@ export default function MultichainPage() {
                 {cs ? 'Otevřít LiFi widget' : 'Open LiFi widget'}
               </Link>
             </div>
-            <div className="zion-rainbow-card p-5" style={{ '--rc': '6, 182, 212' } as CSSProperties}>
+            <div className="zion-rainbow-card p-5" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
               <h3 className="text-lg font-semibold text-white mb-3">
                 {cs ? 'WARP Transfer Status' : 'WARP Transfer Status'}
               </h3>

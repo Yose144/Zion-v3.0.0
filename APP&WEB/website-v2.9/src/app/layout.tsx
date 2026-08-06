@@ -11,7 +11,6 @@ import { WalletProvider } from "@/contexts/WalletContext";
 import { ZionWalletProvider } from "@/contexts/ZionWalletContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import HeroSection from "@/components/HeroSection";
-import AlohaOverlay from "@/components/AlohaOverlay";
 import BackgroundToggle from "@/components/BackgroundToggle";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import PerformanceShell from "@/components/PerformanceShell";
@@ -82,7 +81,6 @@ export default function RootLayout({
                     <PerformanceShell />
                     <BackgroundToggle />
                     <div className="relative z-10 overflow-x-clip w-full">
-                      <AlohaOverlay />
                       <Navigation />
                       <div className="site-hero">
                         <HeroSection />
@@ -94,30 +92,6 @@ export default function RootLayout({
                         <Footer />
                       </div>
                     </div>
-                    <script dangerouslySetInnerHTML={{__html: `
-                      (function() {
-                        function findOverflow() {
-                          const docWidth = document.documentElement.clientWidth;
-                          const overflowing = [];
-                          document.querySelectorAll('*').forEach(function(el) {
-                            if (el.scrollWidth > docWidth) {
-                              overflowing.push({tag: el.tagName, class: el.className, id: el.id, scrollWidth: el.scrollWidth, docWidth: docWidth});
-                            }
-                          });
-                          if (overflowing.length > 0) {
-                            console.warn('[OVERFLOW DETECTOR] Elements wider than viewport:', overflowing);
-                          } else {
-                            console.log('[OVERFLOW DETECTOR] No overflow found');
-                          }
-                        }
-                        if (document.readyState === 'loading') {
-                          document.addEventListener('DOMContentLoaded', findOverflow);
-                        } else {
-                          findOverflow();
-                        }
-                        setTimeout(findOverflow, 3000);
-                      })();
-                    `}} />
                     </AuthProvider>
                   </ZionWalletProvider>
                 </WalletProvider>

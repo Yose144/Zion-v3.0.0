@@ -304,8 +304,8 @@ export const ACCELERATION_DIRECTIONS: AccelerationDirection[] = [
       'External security audit',
       'PUBLIC LAUNCH WINDOW ← Q4 2026',
     ],
-    color: '#FFD700',
-    rgb: '255,215,0',
+    color: '#fcd116',
+    rgb: '252,209,22',
     symbol: 'L1',
   },
   {
@@ -515,8 +515,8 @@ function IssobellaCompass({ selected, onSelect, cs }: { selected: number | null,
     <svg viewBox="0 0 700 700" className="w-full h-auto select-none" role="img">
       <defs>
         <radialGradient id="zk-center-acc" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="rgba(255,215,0,0.25)" />
-          <stop offset="40%" stopColor="rgba(147,51,234,0.08)" />
+          <stop offset="0%" stopColor="rgba(252,209,22,0.25)" />
+          <stop offset="40%" stopColor="rgba(228,30,43,0.08)" />
           <stop offset="100%" stopColor="rgba(0,0,0,0)" />
         </radialGradient>
         <filter id="zk-glow-acc" x="-50%" y="-50%" width="200%" height="200%">
@@ -529,7 +529,7 @@ function IssobellaCompass({ selected, onSelect, cs }: { selected: number | null,
         </filter>
         {ACCELERATION_DIRECTIONS.map((d) => (
           <linearGradient key={`lg-acc-${d.id}`} id={`lg-acc-${d.id}`} x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="rgba(255,215,0,0.15)" />
+            <stop offset="0%" stopColor="rgba(252,209,22,0.15)" />
             <stop offset="100%" stopColor={`rgba(${d.rgb},0.5)`} />
           </linearGradient>
         ))}
@@ -547,7 +547,7 @@ function IssobellaCompass({ selected, onSelect, cs }: { selected: number | null,
             <line
               key={`tick-${i}`}
               x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
-              stroke={major ? 'rgba(255,215,0,0.3)' : 'rgba(255,255,255,0.08)'}
+              stroke={major ? 'rgba(252,209,22,0.3)' : 'rgba(255,255,255,0.08)'}
               strokeWidth={major ? 1.5 : 0.8}
             />
           );
@@ -555,16 +555,16 @@ function IssobellaCompass({ selected, onSelect, cs }: { selected: number | null,
       </g>
 
       <circle cx={CX} cy={CY} r={R_RING} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-      <circle cx={CX} cy={CY} r={R_RING - 4} fill="none" stroke="rgba(255,215,0,0.06)" strokeWidth="0.5" strokeDasharray="2 6" />
+      <circle cx={CX} cy={CY} r={R_RING - 4} fill="none" stroke="rgba(252,209,22,0.06)" strokeWidth="0.5" strokeDasharray="2 6" />
       <circle cx={CX} cy={CY} r={R_INNER} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="0.8" />
-      <circle cx={CX} cy={CY} r={R_INNER - 20} fill="none" stroke="rgba(147,51,234,0.06)" strokeWidth="0.5" strokeDasharray="3 8" />
+      <circle cx={CX} cy={CY} r={R_INNER - 20} fill="none" stroke="rgba(228,30,43,0.06)" strokeWidth="0.5" strokeDasharray="3 8" />
 
-      <polygon points={polyStr} fill="rgba(255,215,0,0.015)" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-      <polygon points={starStr1} fill="none" stroke="rgba(255,215,0,0.08)" strokeWidth="0.8" />
-      <polygon points={starStr2} fill="none" stroke="rgba(255,215,0,0.08)" strokeWidth="0.8" />
+      <polygon points={polyStr} fill="rgba(252,209,22,0.015)" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+      <polygon points={starStr1} fill="none" stroke="rgba(252,209,22,0.08)" strokeWidth="0.8" />
+      <polygon points={starStr2} fill="none" stroke="rgba(252,209,22,0.08)" strokeWidth="0.8" />
 
       {/* ── Holografická Metatronova kostka ── */}
-      <g opacity="0.07" stroke="rgba(255,215,0,0.55)" fill="none">
+      <g opacity="0.07" stroke="rgba(252,209,22,0.55)" fill="none">
         {metEdges.map(([x1, y1, x2, y2], idx) => (
           <line key={`mc-${idx}`} x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth="0.4" />
         ))}
@@ -595,7 +595,7 @@ function IssobellaCompass({ selected, onSelect, cs }: { selected: number | null,
         return (
           <g key={`spoke-${d.id}`}>
             <linearGradient id={gid} x1={CX / 700} y1={CY / 700} x2={p.x / 700} y2={p.y / 700} gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor={isHl ? `rgba(${d.rgb},0.5)` : 'rgba(255,215,0,0.08)'} />
+              <stop offset="0%" stopColor={isHl ? `rgba(${d.rgb},0.5)` : 'rgba(252,209,22,0.08)'} />
               <stop offset="100%" stopColor={isHl ? `rgba(${d.rgb},0.8)` : `rgba(${d.rgb},0.15)`} />
             </linearGradient>
             <line x1={CX} y1={CY} x2={p.x} y2={p.y} stroke={`url(#${gid})`} strokeWidth={isHl ? 2.5 : 1.2} filter={isHl ? 'url(#zk-glow-sm-acc)' : undefined} style={{ transition: 'stroke-width 0.4s' }} />
@@ -605,15 +605,15 @@ function IssobellaCompass({ selected, onSelect, cs }: { selected: number | null,
       })}
 
       <g>
-        <circle cx={CX} cy={CY} r={42} fill="rgba(0,0,0,0.5)" stroke="rgba(255,215,0,0.25)" strokeWidth="1.5" />
-        <circle cx={CX} cy={CY} r={36} fill="rgba(0,0,0,0.7)" stroke="rgba(255,215,0,0.15)" strokeWidth="1" />
+        <circle cx={CX} cy={CY} r={42} fill="rgba(0,0,0,0.5)" stroke="rgba(252,209,22,0.25)" strokeWidth="1.5" />
+        <circle cx={CX} cy={CY} r={36} fill="rgba(0,0,0,0.7)" stroke="rgba(252,209,22,0.15)" strokeWidth="1" />
         {[0, 90, 180, 270].map((a) => (
-          <line key={`arm-${a}`} x1={pt(CX, CY, 10, a).x} y1={pt(CX, CY, 10, a).y} x2={pt(CX, CY, 30, a).x} y2={pt(CX, CY, 30, a).y} stroke={a === 0 ? 'rgba(255,215,0,0.7)' : 'rgba(255,255,255,0.2)'} strokeWidth={a === 0 ? 2 : 1} />
+          <line key={`arm-${a}`} x1={pt(CX, CY, 10, a).x} y1={pt(CX, CY, 10, a).y} x2={pt(CX, CY, 30, a).x} y2={pt(CX, CY, 30, a).y} stroke={a === 0 ? 'rgba(252,209,22,0.7)' : 'rgba(255,255,255,0.2)'} strokeWidth={a === 0 ? 2 : 1} />
         ))}
-        <polygon points={`${CX},${CY - 32} ${CX - 6},${CY - 18} ${CX + 6},${CY - 18}`} fill="rgba(255,215,0,0.8)" filter="url(#zk-glow-sm-acc)" />
+        <polygon points={`${CX},${CY - 32} ${CX - 6},${CY - 18} ${CX + 6},${CY - 18}`} fill="rgba(252,209,22,0.8)" filter="url(#zk-glow-sm-acc)" />
         <polygon points={`${CX},${CY + 32} ${CX - 5},${CY + 20} ${CX + 5},${CY + 20}`} fill="rgba(255,255,255,0.15)" />
-        <polygon points={`${CX},${CY - 6} ${CX + 6},${CY} ${CX},${CY + 6} ${CX - 6},${CY}`} fill="#FFD700" opacity={0.9} />
-        <text x={CX} y={CY - 39} textAnchor="middle" fill="rgba(255,215,0,0.6)" fontSize="9" fontWeight="700" fontFamily="var(--font-mono), monospace">N</text>
+        <polygon points={`${CX},${CY - 6} ${CX + 6},${CY} ${CX},${CY + 6} ${CX - 6},${CY}`} fill="#fcd116" opacity={0.9} />
+        <text x={CX} y={CY - 39} textAnchor="middle" fill="rgba(252,209,22,0.6)" fontSize="9" fontWeight="700" fontFamily="var(--font-mono), monospace">N</text>
         <text x={CX} y={CY + 47} textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize="8" fontWeight="600" fontFamily="var(--font-mono), monospace">S</text>
       </g>
 
@@ -696,8 +696,8 @@ const CLI_PRESET = [
 const BOOT_SEQUENCE = [
   {
     command: 'zion version',
-    responseCs: 'zion v3.0.6 "Trinity, Mainnet Beta" · mainnet · 6-decimal flowers · build 2026-07-15',
-    responseEn: 'zion v3.0.6 "Trinity, Mainnet Beta" · mainnet · 6-decimal flowers · build 2026-07-15',
+    responseCs: 'zion v3.2.0 "One Love, Mainnet Stable" · mainnet · 6-decimal flowers · build 2026-08-06',
+    responseEn: 'zion v3.2.0 "One Love, Mainnet Stable" · mainnet · 6-decimal flowers · build 2026-08-06',
   },
   {
     command: 'zion status --layer all',
@@ -993,7 +993,7 @@ export default function TerraNovaBookClient() {
       <div className="zion-container flex min-h-[60vh] items-center justify-center text-center text-gray-400">
         <div>
           <div className="mb-4 inline-block h-10 w-10 animate-spin rounded-full border-2 border-cyan-400 border-t-transparent" />
-          <p>Načítání Terra Nova…</p>
+          <p>{cs ? 'Načítání Terra Nova…' : 'Loading Terra Nova…'}</p>
         </div>
       </div>
     );
@@ -1205,7 +1205,7 @@ export default function TerraNovaBookClient() {
                   </div>
                 </div>
 
-                <div className="rounded-[1.75rem] border border-zion-gold/15 bg-[linear-gradient(180deg,rgba(255,215,0,0.08),rgba(255,255,255,0.02))] p-5 shadow-[0_18px_70px_rgba(0,0,0,0.32)]">
+                <div className="rounded-[1.75rem] border border-zion-gold/15 bg-[linear-gradient(180deg,rgba(252,209,22,0.08),rgba(255,255,255,0.02))] p-5 shadow-[0_18px_70px_rgba(0,0,0,0.32)]">
                   <p className="text-[10px] uppercase tracking-[0.32em] text-zion-gold/70">
                     Genesis.md
                   </p>
@@ -1356,7 +1356,7 @@ export default function TerraNovaBookClient() {
                   <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
                     {TerranovaTerraNovaBookClientCopy.l1ToL6CompassNodes[cs ? 'cs' : 'en']}
                   </p>
-                  <p className="text-[10px] uppercase tracking-[0.24em]" style={{ color: selectedDirection?.color ?? '#FFD700' }}>
+                  <p className="text-[10px] uppercase tracking-[0.24em]" style={{ color: selectedDirection?.color ?? '#fcd116' }}>
                     {selectedDirection ? `${selectedDirection.symbol} · ${cs ? selectedDirection.titleCs : selectedDirection.titleEn}` : ''}
                   </p>
                 </div>

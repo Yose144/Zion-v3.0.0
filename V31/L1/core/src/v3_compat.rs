@@ -15,9 +15,9 @@ use zion_cosmic_harmony_v3::{
     FIRE_FORK_HEIGHT,
 };
 
-/// V31 mainnet genesis hash (hard reset 2026-08-06 with new premine + admin keys).
+/// V31 mainnet genesis hash (v3.2 One Love genesis reset 2026-08-06 with mnemonic keys).
 pub const V3_GENESIS_HASH: &str =
-    "08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122";
+    "b0e95b135b736373430a3ff25d773329a3a3bd4b72ee66bb02d5a1583a77ecff";
 
 /// Serde helper for u128 values that may be represented as strings in JSON
 /// (V3 `amount_zion` is serialized as a decimal string).
@@ -430,7 +430,7 @@ pub struct PremineOutput {
 pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
     // --- OASIS + Golden Egg (5 × 1.65B = 8.25B) ---
     PremineOutput {
-        address: "zion172h3y7d6m7d7y7d8q2d4x363t0m55227n2rt2v2",
+        address: "zion1c5h8r0m7h3c853n6w0p397k0q6e896f2f5266n3",
         purpose: "ZION OASIS + Winners Golden Egg/Xp (Slot 1)",
         amount_zion: 1_650_000_000,
         amount_flowers: 1_650_000_000_000_000_000_000,
@@ -439,7 +439,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         admin_locked: true,
     },
     PremineOutput {
-        address: "zion1e7n6j8r28324y487w826s7f3547290m8p0y54t4",
+        address: "zion192v3a7t7q7x59706262396d877z3w5j2m24y636",
         purpose: "ZION OASIS + Winners Golden Egg/Xp (Slot 2)",
         amount_zion: 1_650_000_000,
         amount_flowers: 1_650_000_000_000_000_000_000,
@@ -448,7 +448,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         admin_locked: true,
     },
     PremineOutput {
-        address: "zion1m0c7n2v060r6r4x6d4a2u4u5t305f677w6ws0p4",
+        address: "zion1l8a8x3r324t8j6u7c2c880e0x834e7q447dy6c6",
         purpose: "ZION OASIS + Winners Golden Egg/Xp (Slot 3)",
         amount_zion: 1_650_000_000,
         amount_flowers: 1_650_000_000_000_000_000_000,
@@ -457,7 +457,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         admin_locked: true,
     },
     PremineOutput {
-        address: "zion15647n3n8u696t548u0028868p746c838f59g7a3",
+        address: "zion16887k05036z3k0e8t06634r3n8y4486802hp8d6",
         purpose: "ZION OASIS + Winners Golden Egg/Xp (Slot 4)",
         amount_zion: 1_650_000_000,
         amount_flowers: 1_650_000_000_000_000_000_000,
@@ -466,7 +466,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         admin_locked: true,
     },
     PremineOutput {
-        address: "zion190p6f0k0r3c2j4h0k8p340t5s6m5z75287d72d2",
+        address: "zion1f892r6m3p8c7c2w3l035x088m20084a2r7wm5v8",
         purpose: "ZION OASIS + Winners Golden Egg/Xp (Slot 5)",
         amount_zion: 1_650_000_000,
         amount_flowers: 1_650_000_000_000_000_000_000,
@@ -476,7 +476,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
     },
     // --- DAO Treasury (3 slots = 4.0B) — locked until height 144,000 ---
     PremineOutput {
-        address: "zion1j5a327c7d3w7h4e474n5p4z0z827f8p874mr2p7",
+        address: "zion1x8g2z2v3v5n08542a5u7v7q365l4852048qv6w6",
         purpose: "DAO Treasury — Community Governance (main)",
         amount_zion: 2_500_000_000,
         amount_flowers: 2_500_000_000_000_000_000_000,
@@ -485,7 +485,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         admin_locked: true,
     },
     PremineOutput {
-        address: "zion1f7g4h034m5l0x3g6q4l5d298d597v5a4q3wc3t7",
+        address: "zion1q4n03368p4n0f0w3x2u3a5a5g46363g2d64v4r0",
         purpose: "DAO Treasury — Grants & Bounties",
         amount_zion: 1_000_000_000,
         amount_flowers: 1_000_000_000_000_000_000_000,
@@ -494,7 +494,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         admin_locked: true,
     },
     PremineOutput {
-        address: "zion1a6s5y727s0d5m5s3u448d5g3g60032s6p5xy2l5",
+        address: "zion1j765h3r6x4u8l222v8u278c406m4e755g0pt0f0",
         purpose: "DAO Treasury — Ecosystem Bootstrap",
         amount_zion: 500_000_000,
         amount_flowers: 500_000_000_000_000_000_000,
@@ -504,7 +504,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
     },
     // --- Infrastructure (3 slots = 2.59B) ---
     PremineOutput {
-        address: "zion172k256y2f6y6k6r3q5e3j0v382f694e3q59e4w0",
+        address: "zion1a8p47253k7q3j35327f3j3v0u0g5r774s3wg5e3",
         purpose: "Core Development Fund",
         amount_zion: 1_000_000_000,
         amount_flowers: 1_000_000_000_000_000_000_000,
@@ -513,7 +513,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         admin_locked: true,
     },
     PremineOutput {
-        address: "zion1g2k605u0n838t3j2j0j203u0e5m556a8l6fl8n8",
+        address: "zion1d8z2g5d022c6z224u6w7j2937844p7g4z3a62v6",
         purpose: "Network Infrastructure — P2P Seed Nodes",
         amount_zion: 1_000_000_000,
         amount_flowers: 1_000_000_000_000_000_000_000,
@@ -522,7 +522,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         admin_locked: true,
     },
     PremineOutput {
-        address: "zion1s646m4g6d8u8j4t06332w6j4w6q2y0z3x5hv4w4",
+        address: "zion1c0l5e3k8k6t65355v243g6n8w3q303v5t4mu6f3",
         purpose: "Genesis Projects — Dharma Temple, Piko de Ora + DAO",
         amount_zion: 590_000_000,
         amount_flowers: 590_000_000_000_000_000_000,
@@ -532,7 +532,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
     },
     // --- Humanitarian (1 slot = 1.44B) ---
     PremineOutput {
-        address: "zion1f0t7e2y3t340g3j4h470q0z7e5j7w7y4q49u5t6",
+        address: "zion194h4f524x6p498w560u5q3j638f7s806a0fe8l5",
         purpose: "Children Future Fund — Humanitarian DAO",
         amount_zion: 1_440_000_000,
         amount_flowers: 1_440_000_000_000_000_000_000,
@@ -542,7 +542,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
     },
     // --- Bridge Seed Fund (1 slot = 0.4B) — immediate unlock for EVM bridge liquidity ---
     PremineOutput {
-        address: "zion1j8c7h0a2r377v5n0y757n8j5w6y2n2d8005f750",
+        address: "zion1y6d8d547s3y7y302n4d7u497x0p3q3m878q52v2",
         purpose: "Bridge Seed Fund — EVM Bridge Liquidity",
         amount_zion: 400_000_000,
         amount_flowers: 400_000_000_000_000_000_000,
@@ -552,7 +552,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
     },
     // --- Bridge Vault UTXO Seed (1 slot = 0.1B) — UTXO liquidity for bridge unlocks ---
     PremineOutput {
-        address: "zion1x2f2u5p560a0e5a5u8g7m837m78856v5f8e45l7",
+        address: "zion1d0d0656456f62394p2w8x59762g6e538t47q548",
         purpose: "Bridge Vault UTXO Seed — EVM Bridge Unlock Liquidity",
         amount_zion: 100_000_000,
         amount_flowers: 100_000_000_000_000_000_000,
@@ -564,39 +564,39 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
 
 /// V3 canonical subsidy / operational wallet addresses.
 pub const MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET: &str =
-    "zion136m4u7f8s5w3l0e00342s7a4r282275442vm2w3";
+    "zion1j0j5d0c70056u678j7g4p686e7r3w5k0y8vy0m0";
 pub const MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET: &str =
-    "zion173g835z228z6u303z59603y236r5e854l36g604";
+    "zion1g3g0k2j665r075g5j077z0w3u4g3w0d5837j3f6";
 pub const MAINNET_CANONICAL_POOL_FEE_SUBSIDY_WALLET: &str =
-    "zion1e6r72872w0y5w6c3h4e6z847g8z4z7l0n4rj607";
+    "zion1y0j6a7h7y7e345u5a2d6d3d667n8d002k4wa374";
 pub const MAINNET_CANONICAL_DEFAULT_MINER_WALLET: &str =
-    "zion1u4a82230m0a267r785m822u5a3g7n753d7eu5n0";
+    "zion1d6e3a4s6t856z042q2m6h5h2j4k3v7f8f2a94h7";
 pub const MAINNET_CANONICAL_POOL_PAYOUT_WALLET: &str =
-    "zion1k4g2d8s3y4m5v238k0l3v6y5n48894n357uv064";
+    "zion177w668f4g5g8s3t844s3f053k8h7r6d540853g6";
 
 // ── Admin governance public keys (3-of-3 multisig) ──────────────────────
 //
 // Generated 2026-08-06 for V31 hard genesis reset.
-// Secret keys are stored offline (~/Desktop/ZION_KEYS_NEW_GENESIS_2026-08-06/ADMIN_KEYS.txt).
+// Secret keys are stored offline (~/Desktop/ZION_KEYS_GENESIS_V2_2026-08-06/ADMIN_KEYS.txt).
 // These are PUBLIC keys only — safe to commit.
 
 /// Rama — Admin-1 (protocol governance, emergency pause).
 pub const ADMIN_RAMA_PUBLIC_KEY_HEX: &str =
-    "c2afeacc3667af82404bc79f488ed0950a252545ad8871b5573851bdcc8fc2a8";
-pub const ADMIN_RAMA_L1_ADDRESS: &str = "zion1u2r4n87572t2f3n8f2j006f2a540y7r8m84p887";
-pub const ADMIN_RAMA_EVM_ADDRESS: &str = "0x0a495d5553eda624fe43fb5d2de1ebe3c031199c";
+    "f60ca5bbb6a5e71ddd7e4b317afa94654af5aea7b52802e76269b463e6ee57d2";
+pub const ADMIN_RAMA_L1_ADDRESS: &str = "zion1v4v3g8s205f6g682m5w894g2h3n45350s6kl4a6";
+pub const ADMIN_RAMA_EVM_ADDRESS: &str = "0x98cc66915c33dcd771553262abfd5a53ea27e32e";
 
 /// Sita — Admin-2 (treasury oversight, DAO guardian).
 pub const ADMIN_SITA_PUBLIC_KEY_HEX: &str =
-    "927418de493fb669b83c0da04cd04a62bbf83d7f5611a02b460a1dde01c58ee9";
-pub const ADMIN_SITA_L1_ADDRESS: &str = "zion1r4t6v7a8j6v4u86208d3g8k6t6q4q4g5y0kc3p8";
-pub const ADMIN_SITA_EVM_ADDRESS: &str = "0xfa9853790bac782fd1fd0558d9b282a89bee867d";
+    "31a8fde77e4ce9219d2c2b34d1eb897e7b860ae838c3e636e66858e973217359";
+pub const ADMIN_SITA_L1_ADDRESS: &str = "zion1t6a3t0d5z5s6u823l2w4x002505738r4968w042";
+pub const ADMIN_SITA_EVM_ADDRESS: &str = "0x3d485d1e7ef904631cd493c2a5cfceb81d39662e";
 
 /// Hanuman — Admin-3 (bridge admin, EVM multisig).
 pub const ADMIN_HANUMAN_PUBLIC_KEY_HEX: &str =
-    "21b829a34ad73e14246e4db955066d767056c0385484234c8cbdc98b83df6173";
-pub const ADMIN_HANUMAN_L1_ADDRESS: &str = "zion19086w6d026y8z2f7u7v2x68054g8d4y5n3e70q4";
-pub const ADMIN_HANUMAN_EVM_ADDRESS: &str = "0x8403a79b5ba7cc138b0a018109484649aa541574";
+    "669658a175a8228aac072895607f45548340a7889d1a11ebced040da25ced75b";
+pub const ADMIN_HANUMAN_L1_ADDRESS: &str = "zion1c528m3y7j6z6m728u643c8e0v7z5c02702kd565";
+pub const ADMIN_HANUMAN_EVM_ADDRESS: &str = "0x1e821cb228ba11f7c65f1c6ebea5bfa1a865c17f";
 
 /// Check whether a premine output may be spent.
 ///

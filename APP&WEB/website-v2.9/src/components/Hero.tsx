@@ -39,8 +39,8 @@ export default function Hero() {
     <section className="relative px-4 pt-16 pb-10 sm:pt-20 sm:pb-14 md:pt-24 md:pb-18 overflow-hidden">
       {/* ── ambient gradients ── */}
       <div className="absolute inset-0 pointer-events-none opacity-60">
-        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-violet-700/10 blur-3xl" />
-        <div className="absolute top-40 -right-32 w-[400px] h-[400px] rounded-full bg-cyan-500/8 blur-3xl" />
+        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-zion-purple/10 blur-3xl" />
+        <div className="absolute top-40 -right-32 w-[400px] h-[400px] rounded-full bg-zion-cyan/8 blur-3xl" />
       </div>
 
       {/* ── lightweight floral composition ── */}
@@ -154,7 +154,7 @@ export default function Hero() {
             className="relative"
           >
             {/* outer halo glow */}
-            <div className="absolute -inset-6 rounded-[32px] bg-gradient-to-br from-violet-600/25 via-cyan-500/15 to-transparent blur-3xl pointer-events-none" />
+            <div className="absolute -inset-6 rounded-[32px] bg-gradient-to-br from-zion-purple/25 via-zion-cyan/15 to-transparent blur-3xl pointer-events-none" />
 
             <div className="mb-4 z-10 mx-auto flex w-full max-w-sm justify-center lg:mx-0 lg:max-w-md">
               <HolographicEarthLazy className="w-full shrink-0" />

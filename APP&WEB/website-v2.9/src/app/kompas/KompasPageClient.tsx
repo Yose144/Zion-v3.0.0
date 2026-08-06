@@ -116,7 +116,7 @@ export default function KompasPageClient() {
             {/* Compass panel */}
             <div style={{ '--rc': '251, 191, 36' } as React.CSSProperties} className="zion-rainbow-card rounded-3xl md:rounded-4xl p-6 md:p-8 relative overflow-hidden">
               <div className="absolute inset-0 pointer-events-none opacity-[0.03]">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,215,0,0.15),transparent_70%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(252,209,22,0.15),transparent_70%)]" />
               </div>
               <div className="relative">
                 <p className="text-center text-xs uppercase tracking-[0.4em] text-gray-500 mb-4">

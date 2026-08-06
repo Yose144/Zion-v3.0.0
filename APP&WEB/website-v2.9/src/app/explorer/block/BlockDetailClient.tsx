@@ -283,7 +283,7 @@ export default function BlockDetailClient() {
               disabled={block.height <= 1}
               className="zion-rainbow-sub flex items-center gap-2 px-4 py-2 rounded-full text-sm text-white
                 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
-              style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+              style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
             >
               <ArrowLeft className="h-4 w-4" />
               <span className="hidden sm:inline">{ExplorerBlockBlockDetailClientCopy.previousBlock[cs ? 'cs' : 'en']}</span>
@@ -295,7 +295,7 @@ export default function BlockDetailClient() {
               disabled={chainHeight !== null && block.height >= chainHeight}
               className="zion-rainbow-sub flex items-center gap-2 px-4 py-2 rounded-full text-sm text-white
                 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
-              style={{ '--rc': '147, 51, 234' } as React.CSSProperties}
+              style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
             >
               <span className="hidden sm:inline tabular-nums text-gray-400">#{(block.height + 1).toLocaleString(locale)}</span>
               <span className="sm:hidden">#{(block.height + 1).toLocaleString(locale)}</span>
@@ -319,7 +319,7 @@ export default function BlockDetailClient() {
         {/* Raw JSON View */}
         {showRaw && rawJson && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
-            className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden" style={{ '--rc': '147, 51, 234' } as React.CSSProperties}>
+            className="zion-rainbow-card rounded-[28px] bg-black/60 overflow-hidden" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
               <div className="flex items-center gap-2">
                 <Code className="h-4 w-4 text-purple-400" />

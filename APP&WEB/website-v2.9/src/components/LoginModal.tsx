@@ -90,7 +90,7 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
             transition={{ type: 'spring', duration: 0.3 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-md overflow-hidden rounded-2xl border border-zion-cyan/30 bg-gradient-to-br from-zion-dark to-black shadow-[0_20px_80px_rgba(6,182,212,0.15)]"
+            className="relative w-full max-w-md overflow-hidden rounded-2xl border border-zion-cyan/30 bg-gradient-to-br from-zion-dark to-black shadow-[0_20px_80px_rgba(7,137,48,0.15)]"
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
@@ -223,7 +223,7 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
                     type="submit"
                     disabled={loading || !password}
                     className="zion-button-primary w-full text-sm"
-                    style={{ '--rc': '6, 182, 212' } as React.CSSProperties}
+                    style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
                   >
                     {loading ? (
                       <>

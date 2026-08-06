@@ -294,7 +294,7 @@ function SupplyOverTimeChart({
   return (
     <div
       className="zion-rainbow-card rounded-3xl bg-black/60 p-6 md:p-8"
-      style={{ "--rc": "147, 51, 234" } as React.CSSProperties}
+      style={{ "--rc": "228, 30, 43" } as React.CSSProperties}
     >
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div className="flex items-center gap-3">
@@ -330,7 +330,7 @@ function SupplyOverTimeChart({
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-56" preserveAspectRatio="none">
         <defs>
           <linearGradient id="supplyAreaGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#9333ea" stopOpacity="0.25" />
+            <stop offset="0%" stopColor="#e41e2b" stopOpacity="0.25" />
             <stop offset="50%" stopColor="#10b981" stopOpacity="0.12" />
             <stop offset="100%" stopColor="#10b981" stopOpacity="0.01" />
           </linearGradient>
@@ -360,7 +360,7 @@ function SupplyOverTimeChart({
         ))}
         {/* Supply area + line */}
         <path d={supplyArea} fill="url(#supplyAreaGrad)" />
-        <path d={supplyPath} fill="none" stroke="#9333ea" strokeWidth="1.8" strokeLinejoin="round" opacity="0.9" />
+        <path d={supplyPath} fill="none" stroke="#e41e2b" strokeWidth="1.8" strokeLinejoin="round" opacity="0.9" />
         {/* Burn line (dashed emerald) */}
         <path d={burnPath} fill="none" stroke="#10b981" strokeWidth="1.2" strokeDasharray="4 2" opacity="0.7" />
         {/* Hover */}
@@ -378,9 +378,9 @@ function SupplyOverTimeChart({
             {hovered === i && (
               <>
                 <line x1={xFor(i)} x2={xFor(i)} y1={PAD.top} y2={PAD.top + chartH} stroke="rgba(255,255,255,0.1)" strokeDasharray="2" />
-                <circle cx={xFor(i)} cy={ySupply(d.supply)} r="3.5" fill="#9333ea" stroke="rgba(0,0,0,0.6)" strokeWidth="1.5" />
+                <circle cx={xFor(i)} cy={ySupply(d.supply)} r="3.5" fill="#e41e2b" stroke="rgba(0,0,0,0.6)" strokeWidth="1.5" />
                 <circle cx={xFor(i)} cy={yBurn(d.burn)} r="2.5" fill="#10b981" stroke="rgba(0,0,0,0.6)" strokeWidth="1" />
-                <rect x={Math.min(xFor(i) - 62, W - 130)} y={Math.max(ySupply(d.supply) - 38, 2)} width="124" height="34" rx="6" fill="rgba(0,0,0,0.9)" stroke="#9333ea" strokeWidth="0.5" />
+                <rect x={Math.min(xFor(i) - 62, W - 130)} y={Math.max(ySupply(d.supply) - 38, 2)} width="124" height="34" rx="6" fill="rgba(0,0,0,0.9)" stroke="#e41e2b" strokeWidth="0.5" />
                 <text x={Math.min(xFor(i), W - 68)} y={Math.max(ySupply(d.supply) - 24, 14)} textAnchor="middle" fill="white" fontSize="7.5" fontWeight="600" fontFamily="monospace">
                   {fmtZion(d.supply)} ZION
                 </text>

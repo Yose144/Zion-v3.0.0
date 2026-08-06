@@ -60,7 +60,7 @@ export default function QuantumRevolution() {
       <div className="zion-container space-y-8">
         <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
           <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.36em] text-violet-300">
+            <p className="text-xs font-semibold uppercase tracking-[0.36em] text-zion-purple">
               Kniha, která to celé odstartovala
             </p>
             <h2 className="text-3xl font-bold leading-tight text-white sm:text-4xl md:text-5xl">
@@ -71,8 +71,8 @@ export default function QuantumRevolution() {
               blockchain je meditace a každý z nás je Guardian probouzející Golden Age.
             </p>
           </div>
-          <div className="rounded-2xl border border-violet-400/20 bg-violet-400/6 p-4">
-            <p className="text-[10px] uppercase tracking-[0.28em] text-violet-200/70">Vstup do světa</p>
+          <div className="rounded-2xl border border-zion-purple/20 bg-zion-purple/6 p-4">
+            <p className="text-[10px] uppercase tracking-[0.28em] text-zion-purple/70">Vstup do světa</p>
             <p className="mt-2 text-sm leading-relaxed text-gray-300">
               Publikováno v {editions.length} jazycích. Tahle sekce má na homepage vysvětlit duchovní a filozofický základ stejně čitelně, jako Terra Nova vysvětluje síť a Hiran AI vrstvu.
             </p>
@@ -99,7 +99,7 @@ export default function QuantumRevolution() {
 
         {/* Ten Chapters */}
         <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '217, 70, 239' } as React.CSSProperties}>
-          <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-violet-400/40 to-transparent" />
+          <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-zion-purple/40 to-transparent" />
 
           <div className="space-y-5">
             <div className="flex items-center justify-between">
@@ -140,6 +140,7 @@ export default function QuantumRevolution() {
                 alt="Kvantová Revoluce — obálka knihy"
                 width={220}
                 height={310}
+                sizes="220px"
                 className="rounded-2xl border border-zion-gold/30 shadow-[0_8px_40px_rgba(251,191,36,0.15)] transition-transform hover:scale-[1.03]"
                 loading="lazy"
               />
@@ -204,7 +205,7 @@ export default function QuantumRevolution() {
           </div>
 
           {/* Quote + CTA */}
-          <div className="rounded-2xl border border-violet-400/20 bg-violet-400/5 p-6 flex flex-col justify-between space-y-4">
+          <div className="rounded-2xl border border-zion-purple/20 bg-zion-purple/5 p-6 flex flex-col justify-between space-y-4">
             <blockquote className="text-center space-y-2">
               <p className="text-base italic text-gray-300 leading-relaxed">
                 &bdquo;Kde roadmapa říká &apos;Pool Native Rewrite 49%&apos;,

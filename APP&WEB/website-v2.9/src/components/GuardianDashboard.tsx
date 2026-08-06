@@ -263,9 +263,9 @@ function MonitoringTab({ metrics }: { metrics: V3Metrics | null }) {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Stat label="Block Height" value={m?.chain?.height?.toLocaleString() ?? '—'} icon={Server} color="#FFD700" />
-        <Stat label="Peers" value={m?.chain?.peers ?? '—'} icon={Globe} color="#06B6D4" />
-        <Stat label="Pool Sessions" value={m?.pool?.sessions ?? '—'} icon={Layers} color="#9333EA" />
+        <Stat label="Block Height" value={m?.chain?.height?.toLocaleString() ?? '—'} icon={Server} color="#fcd116" />
+        <Stat label="Peers" value={m?.chain?.peers ?? '—'} icon={Globe} color="#078930" />
+        <Stat label="Pool Sessions" value={m?.pool?.sessions ?? '—'} icon={Layers} color="#e41e2b" />
         <Stat label="Pool Hashrate" value={fmtHashrate(m?.pool?.hashrate_hps)} icon={Pickaxe} color="#22C55E" />
       </div>
 

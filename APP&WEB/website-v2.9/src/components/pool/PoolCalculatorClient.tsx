@@ -88,7 +88,7 @@ const PoolCalculatorCopy = {
    Self-contained · purple theme · reactive
    ═══════════════════════════════════════════════════════════ */
 
-const PURPLE_RC = '147, 51, 234' as const;
+const PURPLE_RC = '228, 30, 43' as const;
 const purpleStyle = { '--rc': PURPLE_RC } as React.CSSProperties;
 
 /* ─── Helpers (copied from PoolDashboard) ─── */
@@ -907,8 +907,8 @@ function ProfitTimeline({ points }: { points: { day: number; cum: number }[] }) 
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" preserveAspectRatio="none" style={{ height: 160 }}>
       <defs>
         <linearGradient id="profit-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#9333ea" stopOpacity="0.35" />
-          <stop offset="100%" stopColor="#9333ea" stopOpacity="0.02" />
+          <stop offset="0%" stopColor="#e41e2b" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="#e41e2b" stopOpacity="0.02" />
         </linearGradient>
       </defs>
       {/* zero line */}

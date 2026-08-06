@@ -2,7 +2,7 @@
 
 > **Canonical procedure for a complete key rotation + genesis reset on ZION V31 mainnet.**
 >
-> **Last executed:** 2026-08-06 (from 2026-07-20 chain).
+> **Last executed:** 2026-08-06 (v3.2 One Love genesis reset — from 2026-08-06 V31 cutover chain, with BIP39 mnemonic keys).
 > **Authority:** This document is the single source of truth for future hard resets. Read it end-to-end before starting.
 
 ---
@@ -167,11 +167,14 @@ Always record the old→new mapping for audit trail. Example from 2026-08-06 res
 
 | Role | Old address | New address |
 |------|------------|-------------|
-| default_miner | `zion1d6m0h2r8m7k8k2d8n072y7j3j4m0254323vq0e3` | `zion1u4a82230m0a267r785m822u5a3g7n753d7eu5n0` |
-| humanitarian | `zion1e0u5q5s660k4m4a634p2c2v358r8g59564054z7` | `zion136m4u7f8s5w3l0e00342s7a4r282275442vm2w3` |
-| issobella | `zion1f7y7l5k678y0v408e8s654d2282346k375526t2` | `zion173g835z228z6u303z59603y236r5e854l36g604` |
-| pool_payout | `zion1e4489793c5x2r0a0a4d8z7r4u5d6k0s4k3ht5m2` | `zion1k4g2d8s3y4m5v238k0l3v6y5n48894n357uv064` |
-| pool_fee | `zion1062522x6a083x6r4d24303l5h20698z7j8qk433` | `zion1e6r72872w0y5w6c3h4e6z847g8z4z7l0n4rj607` |
+| default_miner | `zion1u4a82230m0a267r785m822u5a3g7n753d7eu5n0` | `zion1d6e3a4s6t856z042q2m6h5h2j4k3v7f8f2a94h7` |
+| humanitarian | `zion136m4u7f8s5w3l0e00342s7a4r282275442vm2w3` | `zion1j0j5d0c70056u678j7g4p686e7r3w5k0y8vy0m0` |
+| issobella | `zion173g835z228z6u303z59603y236r5e854l36g604` | `zion1g3g0k2j665r075g5j077z0w3u4g3w0d5837j3f6` |
+| pool_payout | `zion1k4g2d8s3y4m5v238k0l3v6y5n48894n357uv064` | `zion177w668f4g5g8s3t844s3f053k8h7r6d540853g6` |
+| pool_fee | `zion1e6r72872w0y5w6c3h4e6z847g8z4z7l0n4rj607` | `zion1y0j6a7h7y7e345u5a2d6d3d667n8d002k4wa374` |
+| Rama (admin L1) | `zion1u2r4n87572t2f3n8f2j006f2a540y7r8m84p887` | `zion1v4v3g8s205f6g682m5w894g2h3n45350s6kl4a6` |
+| Sita (admin L1) | `zion1r4t6v7a8j6v4u86208d3g8k6t6q4q4g5y0kc3p8` | `zion1t6a3t0d5z5s6u823l2w4x002505738r4968w042` |
+| Hanuman (admin L1) | `zion19086w6d026y8z2f7u7v2x68054g8d4y5n3e70q4` | `zion1c528m3y7j6z6m728u643c8e0v7z5c02702kd565` |
 
 *(Full 14-premine + 5-canonical + 3-admin + 7-guardian + 5-validator mapping kept in the key directory's `PUBLIC_ADDRESSES.txt`.)*
 
@@ -194,6 +197,10 @@ cargo run --release -p zion-core --bin print-genesis-hash 2>/dev/null || \
 ```
 
 The V31 native genesis hash is `genesis_hash()` in `V31/L1/core/src/genesis.rs` (Keccak256 of the PoW header + nonce). The V3 compat hash is the V3 chain's actual block-0 hash, which must be set in `V3_GENESIS_HASH` after the V3 node recomputes it with the new premine.
+
+**v3.2 One Love genesis hashes (2026-08-06):**
+- V31 native: `065eaf8e85e2808bda876db360c6d4ec1092d6048ab48b30c8a40e468bc10dd6`
+- V3 compat: `b0e95b135b736373430a3ff25d773329a3a3bd4b72ee66bb02d5a1583a77ecff`
 
 **Record both hashes** — they go into `StatusV3.md`, `AGENTS.md`, `README.md`, and `v3_compat.rs`.
 
@@ -455,11 +462,13 @@ All services use `127.0.0.1:9445` (V31 node RPC) internally. Public exposure is 
 
 ## Appendix D — Mnemonic recovery note
 
-**Keys generated before 2026-08-06 do not have mnemonics.** They were produced by `generate_keypair()` (OS random → BLAKE3 one-way). There is no way to recover them from the secret key or any other data.
+**Keys generated before 2026-08-06 (v1) do not have mnemonics.** They were produced by `generate_keypair()` (OS random → BLAKE3 one-way). There is no way to recover them from the secret key or any other data.
 
-For all future resets, use `gen-all-keys-mnemonic.rs` which produces BIP39 24-word mnemonics alongside the raw keys. Store the mnemonics **separately** from the key files (ideally on paper in a physical safe, or metal plate for fire resistance).
+**Keys generated on 2026-08-06 (v3.2 One Love reset) DO have mnemonics.** They were produced by `gen-all-keys-mnemonic.rs` which generates BIP39 24-word mnemonics alongside the raw Ed25519 + EVM keys. All 35 keypairs have mnemonics stored in `~/Desktop/ZION_KEYS_GENESIS_V2_2026-08-06/all_keys.json` and individual `.txt` files.
 
-If a key file is lost and no mnemonic exists, the funds at that address are **permanently unrecoverable**. This is why the pre-flight checklist (§1) requires an offline backup.
+For all future resets, **always use `gen-all-keys-mnemonic.rs`** which produces BIP39 24-word mnemonics alongside the raw keys. Store the mnemonics **separately** from the key files (ideally on paper in a physical safe, or metal plate for fire resistance).
+
+If a key file is lost but the mnemonic exists, all keys can be re-derived from the 24-word mnemonic. If neither the key file nor the mnemonic exists, the funds at that address are **permanently unrecoverable**. This is why the pre-flight checklist (§1) requires an offline backup.
 
 ---
 
@@ -474,33 +483,32 @@ ZION has **two independent key systems** that serve different purposes:
 | **L1 Wallet CLI** (`V31/L1/core/src/bin/wallet.rs`) | Node, pool, miner, CLI `wallet send/bridge-lock` | Raw Ed25519 secret key (32 bytes / 64 hex) | **No** | SK is the only recovery material |
 | **Multi-Chain Keyring** (`V31/L2/multichain/src/wallet/mod.rs`) | SDK, bridge, swap, DAO governance via SDK | BIP39 24-word mnemonic → derive Ed25519 + EVM | **Yes** (24-word BIP39) | Mnemonic recovers all derived keys |
 
-### E.2 How the 2026-08-06 keys were generated
+### E.2 How the 2026-08-06 v3.2 One Love keys were generated
 
-The 2026-08-06 hard reset used **`gen-premine-wallets.rs`** and similar generators that call `zion_core::crypto::generate_keypair()` — **direct Ed25519 keypair generation from OS random** (`OsRng`). No BIP39 mnemonics were produced.
+The 2026-08-06 v3.2 One Love hard reset used **`gen-all-keys-mnemonic.rs`** which generates BIP39 24-word mnemonics and derives both Ed25519 (L1) and EVM (secp256k1) keys from each mnemonic. All 35 keypairs have mnemonics.
 
 Evidence:
-- `/tmp/derive_pubkeys.rs` — a helper script that takes raw Ed25519 secret keys and re-derives pubkeys + addresses via `SigningKey::from_bytes()`. This confirms keys were generated as raw Ed25519, not from mnemonics.
-- `~/Desktop/ZION_KEYS_NEW_GENESIS_2026-08-06/` — no `mnemonic` field in any file. `grep -riE 'mnemonic|seed|bip39'` returns 0 results.
-- `ADMIN_KEYS.txt` has both Ed25519 SK and EVM SK, but they were generated **independently** (not derived from a common mnemonic). The `gen-all-keys-mnemonic.rs` script derives EVM from the same mnemonic as L1, but that script was **not** used.
+- `~/Desktop/ZION_KEYS_GENESIS_V2_2026-08-06/all_keys.json` — every wallet has a `mnemonic` field with 24 BIP39 words.
+- `gen-all-keys-mnemonic.rs` uses `bip39::Mnemonic::generate(24, Language::English)` → BLAKE3 derive Ed25519, secp256k1 derive EVM.
+- Both L1 and EVM keys are derived from the **same mnemonic** per wallet, enabling full Multi-Chain Keyring compatibility.
+
+Previous (v1) keys from the 2026-08-06 first reset used `gen-premine-wallets.rs` (no mnemonics). Those have been superseded by the v3.2 One Love keys.
 
 ### E.3 What this means for wallet access
 
 | Key type | What we have | Sufficient for L1? | Sufficient for L2 multi-chain? |
 |----------|-------------|--------------------|-------------------------------|
-| Premine (14) | Ed25519 SK + pubkey | **Yes** — `wallet.rs` uses SK directly | **No** — Keyring needs mnemonic to derive |
-| Canonical (5) | Ed25519 SK + pubkey | **Yes** | **No** |
-| Admin (3) | Ed25519 SK + EVM SK (independent) | **Yes** for L1; EVM SK works for bridge signing | **No** — cannot use `WalletClient::from_mnemonic()` |
-| DAO Guardians (7) | Ed25519 SK + pubkey | **Yes** | **No** |
-| EVM Validators (5) | EVM SK only | N/A (EVM-only) | **Yes** for EVM signing; **No** for Keyring SDK |
+| Premine (14) | Ed25519 SK + pubkey + **BIP39 mnemonic** | **Yes** — `wallet.rs` uses SK directly | **Yes** — Keyring can derive from mnemonic |
+| Canonical (5) | Ed25519 SK + pubkey + **BIP39 mnemonic** | **Yes** | **Yes** |
+| Admin (3) | Ed25519 SK + EVM SK + **BIP39 mnemonic** (both derived from same mnemonic) | **Yes** for L1; EVM SK works for bridge signing | **Yes** — `WalletClient::from_mnemonic()` works |
+| DAO Guardians (7) | Ed25519 SK + pubkey + **BIP39 mnemonic** | **Yes** | **Yes** |
+| EVM Validators (5) | EVM SK + address + **BIP39 mnemonic** | N/A (EVM-only) | **Yes** — mnemonic derives both EVM and Ed25519 |
 
 ### E.4 Practical impact
 
 - **L1 operations (node, pool, miner, send ZION, bridge lock):** Ed25519 SK is sufficient. The `wallet.rs` CLI loads SK from `ZION_WALLET_SK_HEX` or `ZION_WALLET_KEY_FILE` and signs directly. No mnemonic needed.
 - **EVM bridge operations:** EVM SK is sufficient for signing bridge transactions. The `ethers` library can construct a `LocalWallet` from raw SK bytes.
-- **Multi-Chain SDK (`WalletClient`):** Requires a BIP39 mnemonic. Cannot be used with the current keys. If SDK integration is needed, either:
-  1. Generate new keys with `gen-all-keys-mnemonic.rs` (future reset), or
-  2. Construct `Keyring` manually from raw keys (requires code change — add a `Keyring::from_raw_keys()` constructor), or
-  3. Use the L1 wallet CLI + EVM wallet independently (bypass Keyring).
+- **Multi-Chain SDK (`WalletClient`):** Requires a BIP39 mnemonic. **Now works** with the v3.2 One Love keys — all 35 keypairs have 24-word BIP39 mnemonics. Use `WalletClient::from_mnemonic()` to construct a Keyring that derives both L1 (Ed25519) and EVM (secp256k1) keys.
 
 ### E.5 Recommendation for future resets
 
@@ -511,21 +519,22 @@ Evidence:
 
 This ensures both key systems work: L1 CLI uses raw SK, Multi-Chain Keyring uses mnemonic. Store mnemonics on paper in a physical safe; store SK files encrypted offline.
 
-### E.6 Key file inventory (2026-08-06)
+### E.6 Key file inventory (2026-08-06 v3.2 One Love)
 
-All key files are in `~/Desktop/ZION_KEYS_NEW_GENESIS_2026-08-06/` (chmod 700):
+All key files are in `~/Desktop/ZION_KEYS_GENESIS_V2_2026-08-06/` (chmod 700):
 
 | File | Contents | Count |
 |------|----------|-------|
-| `PREMINE_WALLETS.txt` | 14 premine: address + pubkey + Ed25519 SK | 14 |
-| `CANONICAL_WALLETS.txt` | 5 canonical: address + pubkey + Ed25519 SK | 5 |
-| `ADMIN_KEYS.txt` | 3 admin: L1 address + pubkey + Ed25519 SK + EVM address + EVM SK | 3 |
-| `DAO_GUARDIANS.txt` | 7 guardians: L1 address + pubkey + Ed25519 SK | 7 |
-| `EVM_VALIDATORS_AND_ESCROW.txt` | 5 validators: EVM address + EVM SK + 1 escrow: L1 address + pubkey + Ed25519 SK | 6 |
-| `PUBLIC_ADDRESSES.txt` | All public addresses + pubkeys (no SK) — safe to share | 30 |
+| `all_keys.json` | All 35 keypairs with BIP39 mnemonics, Ed25519 SK/pubkey, EVM SK/address | 35 |
+| `PREMINE_*.txt` (14 files) | Individual premine wallet: mnemonic + Ed25519 SK + pubkey + address | 14 |
+| `CANONICAL_*.txt` (5 files) | Individual canonical wallet: mnemonic + Ed25519 SK + pubkey + address | 5 |
+| `ADMIN_*.txt` (3 files) | Individual admin: mnemonic + Ed25519 SK + pubkey + L1 address + EVM SK + EVM address | 3 |
+| `DAO_GUARDIAN_*.txt` (7 files) | Individual guardian: mnemonic + Ed25519 SK + pubkey + address | 7 |
+| `EVM_VALIDATOR_*.txt` (5 files) | Individual validator: mnemonic + EVM SK + address | 5 |
+| `ATOMIC_SWAP_ESCROW.txt` | Escrow: mnemonic + Ed25519 SK + pubkey + address | 1 |
 
-**Total: 35 keypairs, 0 mnemonics.**
+**Total: 35 keypairs, 35 BIP39 mnemonics (24-word each).**
 
 ---
 
-*This playbook was created on 2026-08-06 following the second hard genesis reset in ZION's history. The first was 2026-07-20 (block-retention bug). This document ensures future resets follow a verified, repeatable procedure.*
+*This playbook was created on 2026-08-06 following the third hard genesis reset in ZION's history. The first was 2026-07-20 (block-retention bug), the second was 2026-08-06 (V31 cutover, no mnemonics), and the third was 2026-08-06 (v3.2 One Love, with BIP39 mnemonic keys). This document ensures future resets follow a verified, repeatable procedure.*
