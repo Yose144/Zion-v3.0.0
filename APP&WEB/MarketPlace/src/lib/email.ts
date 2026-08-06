@@ -65,7 +65,7 @@ function createTransporter() {
   return nodemailer.createTransport(transportOpts as nodemailer.TransportOptions);
 }
 
-async function sendWithResend(options: SendMailOptions): Promise<void> {
+async function sendWithResend(options: SendMailOptions): Promise<{ messageId?: string }> {
   const cfg = emailConfig();
   if (!cfg.resendApiKey) throw new Error('RESEND_API_KEY not configured');
   const resend = new Resend(cfg.resendApiKey);
@@ -85,15 +85,16 @@ async function sendWithResend(options: SendMailOptions): Promise<void> {
   });
 
   if (result.error) throw new Error(result.error.message);
+  return { messageId: result.data?.id };
 }
 
-export async function sendMail(options: SendMailOptions): Promise<void> {
+export async function sendMail(options: SendMailOptions): Promise<{ messageId?: string }> {
   const cfg = emailConfig();
   if (cfg.resendApiKey) {
     return sendWithResend(options);
   }
   const transporter = createTransporter();
-  await transporter.sendMail({
+  const info = await transporter.sendMail({
     from: options.from,
     to: options.to,
     replyTo: options.replyTo,
@@ -102,6 +103,7 @@ export async function sendMail(options: SendMailOptions): Promise<void> {
     html: options.html,
     attachments: options.attachments,
   });
+  return { messageId: info.messageId };
 }
 
 function formatPrice(amount: number): string {

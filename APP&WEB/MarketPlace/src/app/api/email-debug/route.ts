@@ -41,7 +41,7 @@ export async function POST(request: Request) {
   console.log('DEBUG: Theme:', theme);
 
   try {
-    await sendMail({
+    const { messageId } = await sendMail({
       from: `${process.env.SHOP_NAME ?? 'ZION eShop'} <${process.env.RESEND_FROM ?? process.env.SHOP_EMAIL ?? 'shop@newearth.cz'}>`,
       to: testEmail,
       replyTo: process.env.SHOP_EMAIL ?? 'shop@newearth.cz',
@@ -53,6 +53,7 @@ export async function POST(request: Request) {
     const previewHtml = await buildV2OrderConfirmationHtml(testOrder, theme);
     return NextResponse.json({
       success: true,
+      messageId,
       htmlLength: previewHtml.length,
       htmlPreview: previewHtml.substring(0, 500),
       theme,
