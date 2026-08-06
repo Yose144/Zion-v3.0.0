@@ -175,18 +175,36 @@ export interface AdminOrdersListResult {
       paymentStatus: string;
       customerName: string;
       customerEmail: string;
+      customerPhone: string;
       totalCzk: number;
       shippingCzk: number;
       shipping: string;
       payment: string;
       trackingNumber: string | null;
+      zionTokens: number;
+      items: unknown;
+      addressStreet: string | null;
+      addressCity: string | null;
+      addressZip: string | null;
+      note: string | null;
+      newsletter: boolean;
       createdAt: string;
-      invoices: { id: string; invoiceNumber: string; status: string; pdfUrl: string | null }[];
+      updatedAt: string;
+      invoices: { id: string; invoiceNumber: string; status: string; pdfUrl: string | null; totalCzk: number; issuedAt: string }[];
     }[];
     page: number;
     limit: number;
     total: number;
     pages: number;
+    stats?: {
+      totalOrders: number;
+      totalRevenue: number;
+      totalTokens: number;
+      pendingPayment: number;
+      paid: number;
+      byStatus: Record<string, number>;
+      byPayment: Record<string, number>;
+    };
   };
   error?: string;
 }
