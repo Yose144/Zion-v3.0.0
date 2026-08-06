@@ -1220,8 +1220,9 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       <div class="mt-4 space-y-3 relative z-10">
         <div class="text-[10px] text-gray-500 uppercase tracking-wider">Service Control</div>
         <div class="flex flex-wrap gap-2">
-          <button onclick="edgeAction('restart-node1')" class="text-[10px] px-2.5 py-1.5 bg-emerald-700/40 hover:bg-emerald-600/60 border border-emerald-500/30 rounded-md font-semibold transition">⟳ Node 1</button>
-          <button onclick="edgeAction('restart-node2')" class="text-[10px] px-2.5 py-1.5 bg-emerald-700/40 hover:bg-emerald-600/60 border border-emerald-500/30 rounded-md font-semibold transition">⟳ Node 2</button>
+          <button onclick="edgeAction('restart-v31-node')" class="text-[10px] px-2.5 py-1.5 bg-emerald-700/40 hover:bg-emerald-600/60 border border-emerald-500/30 rounded-md font-semibold transition">⟳ V31 Node 1</button>
+          <button onclick="edgeAction('restart-v31-node2')" class="text-[10px] px-2.5 py-1.5 bg-emerald-700/40 hover:bg-emerald-600/60 border border-emerald-500/30 rounded-md font-semibold transition">⟳ V31 Node 2</button>
+          <button onclick="edgeAction('restart-v31-node3')" class="text-[10px] px-2.5 py-1.5 bg-emerald-700/40 hover:bg-emerald-600/60 border border-emerald-500/30 rounded-md font-semibold transition">⟳ V31 Node 3</button>
           <button onclick="edgeAction('restart-v31-pool')" class="text-[10px] px-2.5 py-1.5 bg-emerald-700/40 hover:bg-emerald-600/60 border border-emerald-500/30 rounded-md font-semibold transition">⟳ V31 Pool</button>
           <button onclick="edgeAction('restart-dao')" class="text-[10px] px-2.5 py-1.5 bg-purple-700/40 hover:bg-purple-600/60 border border-purple-500/30 rounded-md font-semibold transition">⟳ DAO</button>
           <button onclick="edgeAction('restart-warp')" class="text-[10px] px-2.5 py-1.5 bg-cyan-700/40 hover:bg-cyan-600/60 border border-cyan-500/30 rounded-md font-semibold transition">⟳ WARP</button>
@@ -1875,8 +1876,9 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         <h2 class="text-base font-bold flex items-center gap-2">📋 Live Logs</h2>
         <div class="flex gap-2 items-center">
           <select id="overview-log-svc" class="text-[10px] px-2 py-1 bg-black/40 border border-white/10 rounded text-white" onchange="overviewLogSwitch(this.value)">
-            <option value="node1">Node 1</option>
-            <option value="node2">Node 2</option>
+            <option value="v31-node">V31 Node 1</option>
+            <option value="v31-node2">V31 Node 2</option>
+            <option value="v31-node3">V31 Node 3</option>
             <option value="pool">Pool</option>
             <option value="miner">Miner</option>
             <option value="miner-low">Miner Low</option>
@@ -4838,7 +4840,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
     <div class="zion-panel p-3 text-center"><div class="text-lg font-bold text-purple-400" id="l1-rt-shares">—</div><div class="text-[10px] text-gray-400">Shares Acc.</div></div>
     <div class="zion-panel p-3 text-center">
       <div class="text-lg font-bold" id="l1-rt-node1-badge">—</div>
-      <div class="text-[10px] text-gray-400">Node 1</div>
+      <div class="text-[10px] text-gray-400">V31 Node</div>
     </div>
     <div class="zion-panel p-3 text-center">
       <div class="text-lg font-bold" id="l1-rt-pool-badge">—</div>
@@ -4857,7 +4859,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       <div class="flex items-center justify-between mb-5">
         <div>
           <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">🔷 L1 — Consensus Layer</span></h2>
-          <p class="text-sm text-gray-400 mt-1">Node 1, Node 2, Pool, Miner — live chain data, PoW mining, block production.</p>
+          <p class="text-sm text-gray-400 mt-1">V31 Node 1/2/3, Pool, Miner — live chain data, PoW mining, block production.</p>
         </div>
         <button onclick="loadLayerFull('l1')" class="zion-button-secondary text-xs px-3 py-1.5">Refresh</button>
       </div>
@@ -6405,8 +6407,9 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         </select>
         <select id="log-svc-filter" class="bg-black/40 border border-white/10 rounded-lg px-2 py-2 text-xs text-white focus:outline-none">
           <option value="">All services</option>
-          <option value="edge-node1">edge-node1</option>
-          <option value="edge-node2">edge-node2</option>
+          <option value="v31-node">v31-node</option>
+          <option value="v31-node2">v31-node2</option>
+          <option value="v31-node3">v31-node3</option>
           <option value="local-backup">local-backup</option>
           <option value="pool">pool</option>
           <option value="miner">miner</option>
@@ -7317,51 +7320,70 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-gradient">🌐 Topology</h1>
-        <p class="text-xs text-gray-400 mt-1">3-Node P2P Mesh · Sync Status · Service Ports</p>
+        <p class="text-xs text-gray-400 mt-1">4-Node P2P Mesh · Sync Status · Service Ports</p>
       </div>
       <button onclick="loadTopology()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
     </div>
 
-    <!-- 3-Node P2P Topology -->
+    <!-- 4-Node P2P Topology -->
     <div class="zion-panel p-5">
-      <h2 class="text-lg font-bold mb-3">⛓️ 3-Node P2P Mesh</h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <!-- Edge Node 1 -->
+      <h2 class="text-lg font-bold mb-3">⛓️ 4-Node P2P Mesh</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        <!-- V31 Node 1 (Primary) -->
         <div class="bg-black/20 rounded-lg p-4 border border-white/5">
           <div class="flex items-center justify-between mb-2">
             <div class="flex items-center gap-2">
               <div id="topo-edge1-dot" class="w-3 h-3 rounded-full bg-gray-600"></div>
-              <span class="text-sm font-bold text-white">🌍 Edge Node 1</span>
+              <span class="text-sm font-bold text-white">🌍 V31 Node 1</span>
             </div>
             <span id="topo-edge1-status" class="text-[10px] font-bold text-gray-400">—</span>
           </div>
           <div class="space-y-1 text-xs text-gray-400">
             <div>Role: <span class="text-emerald-400 font-semibold">Primary / Genesis</span></div>
             <div>Host: <span class="text-gray-300 font-mono">62.171.141.136</span></div>
-            <div>P2P: <span class="text-gray-300 font-mono">8333</span> · RPC: <span class="text-gray-300 font-mono">8443</span></div>
+            <div>P2P: <span class="text-gray-300 font-mono">8335</span> · RPC: <span class="text-gray-300 font-mono">9445</span></div>
             <div>Height: <span id="topo-edge1-height" class="text-emerald-400 font-bold">—</span></div>
             <div>Peers: <span id="topo-edge1-peers" class="text-gray-300">—</span></div>
             <div>Latency: <span id="topo-edge1-latency" class="text-gray-300">—</span></div>
             <div>Node ID: <span id="topo-edge1-nodeid" class="text-gray-300 font-mono text-[10px]">—</span></div>
           </div>
         </div>
-        <!-- Edge Node 2 -->
+        <!-- V31 Node 2 (Follower) -->
         <div class="bg-black/20 rounded-lg p-4 border border-white/5">
           <div class="flex items-center justify-between mb-2">
             <div class="flex items-center gap-2">
               <div id="topo-edge2-dot" class="w-3 h-3 rounded-full bg-gray-600"></div>
-              <span class="text-sm font-bold text-white">🔥 Edge Node 2</span>
+              <span class="text-sm font-bold text-white">🔥 V31 Node 2</span>
             </div>
             <span id="topo-edge2-status" class="text-[10px] font-bold text-gray-400">—</span>
           </div>
           <div class="space-y-1 text-xs text-gray-400">
             <div>Role: <span class="text-amber-400 font-semibold">Follower</span></div>
             <div>Host: <span class="text-gray-300 font-mono">62.171.141.136</span></div>
-            <div>P2P: <span class="text-gray-300 font-mono">8334</span> · RPC: <span class="text-gray-300 font-mono">8448</span></div>
+            <div>P2P: <span class="text-gray-300 font-mono">8336</span> · RPC: <span class="text-gray-300 font-mono">9446</span></div>
             <div>Height: <span id="topo-edge2-height" class="text-emerald-400 font-bold">—</span></div>
             <div>Peers: <span id="topo-edge2-peers" class="text-gray-300">—</span></div>
             <div>Latency: <span id="topo-edge2-latency" class="text-gray-300">—</span></div>
             <div>Node ID: <span id="topo-edge2-nodeid" class="text-gray-300 font-mono text-[10px]">—</span></div>
+          </div>
+        </div>
+        <!-- V31 Node 3 (Follower) -->
+        <div class="bg-black/20 rounded-lg p-4 border border-white/5">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <div id="topo-edge3-dot" class="w-3 h-3 rounded-full bg-gray-600"></div>
+              <span class="text-sm font-bold text-white">⚡ V31 Node 3</span>
+            </div>
+            <span id="topo-edge3-status" class="text-[10px] font-bold text-gray-400">—</span>
+          </div>
+          <div class="space-y-1 text-xs text-gray-400">
+            <div>Role: <span class="text-amber-400 font-semibold">Follower</span></div>
+            <div>Host: <span class="text-gray-300 font-mono">62.171.141.136</span></div>
+            <div>P2P: <span class="text-gray-300 font-mono">8337</span> · RPC: <span class="text-gray-300 font-mono">9447</span></div>
+            <div>Height: <span id="topo-edge3-height" class="text-emerald-400 font-bold">—</span></div>
+            <div>Peers: <span id="topo-edge3-peers" class="text-gray-300">—</span></div>
+            <div>Latency: <span id="topo-edge3-latency" class="text-gray-300">—</span></div>
+            <div>Node ID: <span id="topo-edge3-nodeid" class="text-gray-300 font-mono text-[10px]">—</span></div>
           </div>
         </div>
         <!-- Local Backup -->
@@ -7412,15 +7434,19 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
     <!-- Sync Gap Detail + Service Latency -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div class="zion-panel p-5">
-        <h3 class="text-sm font-bold mb-3 zion-kicker">Sync Gap (3-Node Comparison)</h3>
+        <h3 class="text-sm font-bold mb-3 zion-kicker">Sync Gap (4-Node Comparison)</h3>
         <div class="space-y-3">
           <div>
-            <div class="flex justify-between text-[10px] text-gray-500 mb-1"><span>Edge Node 1</span><span id="topo-sync-n1">—</span></div>
+            <div class="flex justify-between text-[10px] text-gray-500 mb-1"><span>V31 Node 1</span><span id="topo-sync-n1">—</span></div>
             <div class="h-2.5 rounded-full bg-black/40 overflow-hidden"><div id="topo-sync-bar-n1" class="h-full rounded-full bg-emerald-500 transition-all" style="width:50%"></div></div>
           </div>
           <div>
-            <div class="flex justify-between text-[10px] text-gray-500 mb-1"><span>Edge Node 2</span><span id="topo-sync-n2">—</span></div>
+            <div class="flex justify-between text-[10px] text-gray-500 mb-1"><span>V31 Node 2</span><span id="topo-sync-n2">—</span></div>
             <div class="h-2.5 rounded-full bg-black/40 overflow-hidden"><div id="topo-sync-bar-n2" class="h-full rounded-full bg-amber-500 transition-all" style="width:50%"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between text-[10px] text-gray-500 mb-1"><span>V31 Node 3</span><span id="topo-sync-n4">—</span></div>
+            <div class="h-2.5 rounded-full bg-black/40 overflow-hidden"><div id="topo-sync-bar-n4" class="h-full rounded-full bg-amber-500 transition-all" style="width:50%"></div></div>
           </div>
           <div>
             <div class="flex justify-between text-[10px] text-gray-500 mb-1"><span>Local Backup</span><span id="topo-sync-n3">—</span></div>
