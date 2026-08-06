@@ -41,7 +41,8 @@ pub struct StratumServer {
     /// Stored jobs: job_id -> (header bytes, 32-byte network target, reward, template).
     jobs: Arc<Mutex<HashMap<String, JobEntry>>>,
     notify_tx: broadcast::Sender<String>,
-    /// Miner telemetry registry — hashrate windows, per-worker stats.
+    /// Miner telemetry registry — shared with the Pool so the HTTP API can
+    /// expose per-worker hashrate and shares.
     telemetry: Arc<Mutex<MinerTelemetryRegistry>>,
     /// Block tracker — orphan monitoring, pool luck.
     block_tracker: Arc<Mutex<BlockTracker>>,
@@ -73,7 +74,10 @@ pub struct StratumServer {
 
 impl StratumServer {
     pub fn new(pool: Arc<Mutex<Pool>>) -> Self {
-        let config = pool.lock().unwrap().config.clone();
+        let (config, telemetry) = {
+            let pool = pool.lock().unwrap();
+            (pool.config.clone(), pool.telemetry.clone())
+        };
         let (notify_tx, _notify_rx) = broadcast::channel(256);
 
         let vardiff_config = VarDiffConfig {
@@ -94,7 +98,7 @@ impl StratumServer {
             config,
             jobs: Arc::new(Mutex::new(HashMap::new())),
             notify_tx,
-            telemetry: Arc::new(Mutex::new(MinerTelemetryRegistry::new())),
+            telemetry,
             block_tracker: Arc::new(Mutex::new(BlockTracker::new())),
             template_cache: Arc::new(Mutex::new(TemplateCache::new(Duration::from_secs(15)))),
             ip_sessions: Arc::new(Mutex::new(HashMap::new())),
@@ -1422,7 +1426,8 @@ mod tests {
     use crate::rate_limit::IpRateLimiter;
 
     fn make_server() -> StratumServer {
-        let pool = Arc::new(Mutex::new(Pool::new(PoolConfig::default())));
+        let telemetry = Arc::new(Mutex::new(MinerTelemetryRegistry::new()));
+        let pool = Arc::new(Mutex::new(Pool::new(PoolConfig::default(), telemetry)));
         StratumServer::new(pool)
     }
 

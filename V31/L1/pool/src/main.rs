@@ -25,6 +25,7 @@ use zion_pool::notifications::{Notifier, NotificationsConfig};
 use zion_pool::payout::PayoutSweeper;
 use zion_pool::revenue_scheduler::RevenueScheduler;
 use zion_pool::share_relay::ShareRelayConfig;
+use zion_pool::telemetry::MinerTelemetryRegistry;
 use zion_pool::tls::{ExtraPortConfig, TlsConfig};
 use zion_pool::v3_pplns::FeeConfig;
 use zion_pool::{Pool, PoolConfig, StratumServer};
@@ -147,7 +148,8 @@ async fn main() -> anyhow::Result<()> {
         payout_tx_fee_flowers: zion_core::fee::MIN_TX_FEE.max(1),
     };
 
-    let pool = Arc::new(Mutex::new(Pool::new(config)));
+    let telemetry = Arc::new(Mutex::new(MinerTelemetryRegistry::new()));
+    let pool = Arc::new(Mutex::new(Pool::new(config, telemetry.clone())));
     let server = StratumServer::new(pool.clone());
 
     // ── Notifications (Telegram/SMTP/OASIS/webhook) ───────────────────────

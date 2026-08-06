@@ -1,20 +1,19 @@
 #!/usr/bin/env node
 /**
- * ZION Desktop Agent — Trinity / Triple-Stream E2E Mining Flow Test (W11 ready)
+ * ZION Desktop Agent — V31 Pure-ZION E2E Mining Flow Test
  *
  * Tests the full V31 mining pipeline on the host platform:
  *   1. Build/prepare the Rust miner binary for the current platform.
  *   2. Generate a temporary zion1 wallet.
- *   3. Spawn the miner in triple-stream mode (ZION GPU + external GPU coin +
- *      external CPU coin) against the live mainnet Edge pool.
- *   4. Wait for telemetry (stdout + stats file) proving all three streams are
- *      recognised and at least one stream reports hashrate.
+ *   3. Spawn the miner in pure-ZION mode against the live mainnet Edge pool.
+ *   4. Wait for telemetry (stdout + Prometheus metrics) proving the ZION
+ *      stream is recognised and has submitted/accepted work.
  *   5. Clean shutdown and JSON report.
  *
  * Usage:
  *   node scripts/test_e2e_mining_flow.js [--timeout 120] [--pool 62.171.141.136:8444]
  *
- * Exit code 0 = triple-stream telemetry observed, 1 = failure.
+ * Exit code 0 = ZION telemetry and at least one accepted share observed, 1 = failure.
  */
 
 const { spawn, execFileSync } = require('child_process');
@@ -22,11 +21,11 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const http = require('http');
+const net = require('net');
 
 const WalletGenerator = require('../src/wallet-generator');
 
 const TEST_TIMEOUT_DEFAULT = 120; // seconds
-const ELECTRON_READY_TIMEOUT = 15000; // ms
 const STATS_POLL_MS = 2500;
 const PRIMARY_POOL = '62.171.141.136:8444';
 
@@ -36,22 +35,43 @@ function log(message, level = 'info') {
   console.log(`[${timestamp}] ${prefix} ${message}`);
 }
 
+/** Quote a single argument for POSIX shell. */
+function shellQuote(arg) {
+  if (arg === '') {
+    return "''";
+  }
+  if (/^[A-Za-z0-9_/@=.,:+-]+$/.test(arg)) {
+    return arg;
+  }
+  return `'${arg.replace(/'/g, "'\\''")}'`;
+}
+
+/** Find an ephemeral TCP port on 127.0.0.1. */
+function findFreePort() {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.on('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const port = server.address().port;
+      server.close(() => resolve(port));
+    });
+  });
+}
+
 class E2EMiningTest {
   constructor(options = {}) {
     this.timeoutSec = options.timeout || TEST_TIMEOUT_DEFAULT;
     this.pool = options.pool || PRIMARY_POOL;
-    this.cpuCoin = options.cpuCoin || 'XMR';
-    this.gpuCoin = options.gpuCoin || 'KAS';
-    this.worker = `e2e-w11-${Date.now()}`;
+    this.worker = `e2e-v31-${Date.now()}`;
+    this.metricsPort = 0;
     this.results = {
       binaryPrepared: false,
       minerSpawned: false,
       poolConnected: false,
-      tripleStreamNegotiated: false,
-      tripleStreamDetected: false,
+      streamActive: false,
       sharesSubmitted: 0,
+      sharesAccepted: 0,
       hashrateHs: 0,
-      streams: [],
       errors: []
     };
     this.processes = [];
@@ -59,10 +79,12 @@ class E2EMiningTest {
   }
 
   async run() {
-    log('Starting ZION Trinity E2E mining flow test');
+    log('Starting ZION V31 pure-ZION E2E mining flow test');
     log(`Timeout: ${this.timeoutSec}s, Pool: ${this.pool}, Worker: ${this.worker}`);
 
     try {
+      this.metricsPort = await findFreePort();
+      log(`Metrics server will bind to 127.0.0.1:${this.metricsPort}`);
       const minerPath = await this.prepareMiner();
       const wallet = await this.generateWallet();
       await this.runMiner(minerPath, wallet);
@@ -82,8 +104,6 @@ class E2EMiningTest {
     const prepareScript = path.join(__dirname, '..', 'scripts', 'prepare-rust-miner.js');
 
     try {
-      // Try a no-build copy first; this is fine even if node/zion cli binaries
-      // are missing — the E2E test only needs the miner binary.
       execFileSync('node', [prepareScript, '--no-build'], {
         cwd: path.join(__dirname, '..'),
         stdio: 'pipe'
@@ -126,7 +146,6 @@ class E2EMiningTest {
     log('Step 3: Spawning miner in V31 pure-ZION mode...');
 
     const cpuThreads = Math.max(1, os.cpus().length - 1);
-    const gpuBackend = 'auto'; // let the compiled miner pick CUDA / OpenCL / CPU
     const minerArgs = [
       '--pool', this.pool,
       '--wallet', wallet,
@@ -134,7 +153,7 @@ class E2EMiningTest {
       '--threads', String(cpuThreads),
       '--no-gpu',
       '--no-cpu',
-      '--metrics', '127.0.0.1:9116',
+      '--metrics', `127.0.0.1:${this.metricsPort}`,
       '--log-interval', '10'
     ];
 
@@ -144,8 +163,6 @@ class E2EMiningTest {
       ZION_WORKER: this.worker,
       ZION_WORKER_NAME: this.worker,
       ZION_MINER_THREADS: String(cpuThreads),
-      ZION_GPU_BACKEND: gpuBackend,
-      ZION_BACKEND: gpuBackend,
       ZION_MINER_ALGORITHM: 'cosmic_harmony_ekam_deeksha_v2',
       ZION_PROFIT_INTERVAL: '300',
       ZION_AUTONOMOUS: '0'
@@ -154,12 +171,11 @@ class E2EMiningTest {
     // zion-miner uses tracing_subscriber stdout which is block-buffered when
     // spawned with a pipe. On Unix, run it inside a `script` pseudo-terminal
     // so the miner sees a TTY and flushes line-by-line.
-    let spawnArgs, spawnFile;
+    let spawnFile, spawnArgs;
     if (process.platform !== 'win32' && process.env.ZION_NO_PTY !== '1') {
       spawnFile = 'script';
-      const quotedMiner = minerPath.includes(' ') ? `"${minerPath}"` : minerPath;
-      const quotedArgs = minerArgs.map(a => (a.includes(' ') ? `"${a}"` : a)).join(' ');
-      spawnArgs = ['-q', '-c', `${quotedMiner} ${quotedArgs}`, '/dev/null'];
+      const cmd = shellQuote(minerPath) + ' ' + minerArgs.map(shellQuote).join(' ');
+      spawnArgs = ['-q', '-c', `sh -c ${shellQuote(cmd)}`, '/dev/null'];
     } else {
       spawnFile = minerPath;
       spawnArgs = minerArgs;
@@ -205,7 +221,7 @@ class E2EMiningTest {
 
       const statsTimer = setInterval(async () => {
         await this.pollMetrics();
-        if (this.results.tripleStreamDetected && this.results.sharesSubmitted > 0) {
+        if (this.results.streamActive && (this.results.sharesAccepted > 0 || this.results.hashrateHs > 0)) {
           clearInterval(statsTimer);
           finish();
         }
@@ -215,24 +231,32 @@ class E2EMiningTest {
         }
       }, STATS_POLL_MS);
 
-      // Give the miner a bit of time before the first metrics poll
       setTimeout(() => this.pollMetrics(), 3000);
     });
   }
 
   scanLog(text) {
-    // Pool connection
+    // Pool connection / stratum connect
     if (/zion\s+pool\s+stratum\s+connected|pool\s+connected|connected\s+to/i.test(text)) {
       this.results.poolConnected = true;
     }
     // Stream telemetry (proves the mining loop is active)
-    if (/(?:mined\s+(?:auxpow|zion)\s+(?:share|block)|stream\s+stats)/i.test(text)) {
-      this.results.tripleStreamDetected = true;
+    if (/(?:mined\s+(?:auxpow|zion)\s+(?:share|block)|stream\s+stats|hashrate=)/i.test(text)) {
+      this.results.streamActive = true;
     }
     // Share / block accepted
     const shareMatch = text.match(/mined\s+(?:auxpow\s+share|zion\s+block)/gi);
     if (shareMatch) {
       this.results.sharesSubmitted += shareMatch.length;
+      this.results.sharesAccepted += shareMatch.length;
+    }
+    // Also accept stratum `accepted=...` style log lines
+    const acceptedMatch = text.match(/accepted[=:]\s*(\d+)/gi);
+    if (acceptedMatch) {
+      for (const m of acceptedMatch) {
+        const n = parseInt(m.replace(/accepted[=:]/i, '').trim(), 10);
+        if (!Number.isNaN(n)) this.results.sharesAccepted = Math.max(this.results.sharesAccepted, n);
+      }
     }
   }
 
@@ -250,7 +274,7 @@ class E2EMiningTest {
   async pollMetrics() {
     try {
       const data = await new Promise((resolve) => {
-        const req = http.get('http://127.0.0.1:9116/metrics', { timeout: 1500 }, (res) => {
+        const req = http.get(`http://127.0.0.1:${this.metricsPort}/metrics`, { timeout: 1500 }, (res) => {
           let body = '';
           res.on('data', (chunk) => { body += chunk; });
           res.on('end', () => resolve(res.statusCode === 200 ? body : null));
@@ -264,13 +288,16 @@ class E2EMiningTest {
         this.results.hashrateHs = pm.zion_miner_hash_rate;
       }
       if (typeof pm.zion_miner_shares_accepted === 'number') {
-        this.results.sharesSubmitted = pm.zion_miner_shares_accepted;
+        this.results.sharesAccepted = pm.zion_miner_shares_accepted;
       }
-      if (typeof pm.zion_miner_shares_submitted === 'number' && pm.zion_miner_shares_submitted > 0) {
-        this.results.tripleStreamDetected = true;
+      if (typeof pm.zion_miner_shares_submitted === 'number') {
+        this.results.sharesSubmitted = pm.zion_miner_shares_submitted;
       }
-      if (this.results.tripleStreamDetected && this.results.hashrateHs > 0) {
-        log(`Telemetry: hashrate=${this.results.hashrateHs.toFixed(2)} H/s, accepted=${this.results.sharesSubmitted}`, 'success');
+      if (typeof pm.zion_miner_total_hashes === 'number' && pm.zion_miner_total_hashes > 0) {
+        this.results.streamActive = true;
+      }
+      if (this.results.streamActive && (this.results.sharesAccepted > 0 || this.results.hashrateHs > 0)) {
+        log(`Telemetry: hashrate=${this.results.hashrateHs.toFixed(2)} H/s, accepted=${this.results.sharesAccepted}`, 'success');
       }
     } catch {
       // metrics may not be ready yet; ignore and retry
@@ -280,7 +307,7 @@ class E2EMiningTest {
   generateReport() {
     log('Step 4: Generating E2E report...');
 
-    const passed = this.results.tripleStreamDetected;
+    const passed = this.results.streamActive && this.results.sharesAccepted > 0;
     const report = {
       timestamp: new Date().toISOString(),
       durationSec: this.timeoutSec,
@@ -288,16 +315,16 @@ class E2EMiningTest {
       nodeVersion: process.version,
       pool: this.pool,
       worker: this.worker,
+      metricsPort: this.metricsPort,
       results: this.results,
       summary: {
         passed,
-        totalChecks: 5,
+        totalChecks: 4,
         passedChecks: [
           this.results.binaryPrepared,
           this.results.minerSpawned,
           this.results.poolConnected,
-          this.results.tripleStreamDetected,
-          this.results.sharesSubmitted > 0 || this.results.hashrateHs > 0
+          this.results.sharesAccepted > 0 || this.results.hashrateHs > 0
         ].filter(Boolean).length
       }
     };
@@ -307,18 +334,12 @@ class E2EMiningTest {
     log(`Test report saved to: ${reportPath}`);
 
     console.log('\n' + '='.repeat(60));
-    console.log('TRINITY E2E MINING FLOW TEST RESULTS');
+    console.log('V31 PURE-ZION E2E MINING FLOW TEST RESULTS');
     console.log('='.repeat(60));
     console.log(`Platform: ${report.platform}`);
     console.log(`Duration: ${report.durationSec}s`);
     console.log(`Passed: ${report.summary.passedChecks}/${report.summary.totalChecks} checks`);
     console.log(`Overall: ${passed ? 'PASS' : 'FAIL'}`);
-    if (this.results.streams.length) {
-      console.log('\nPer-stream telemetry:');
-      for (const s of this.results.streams) {
-        console.log(`  [${s.index}] ${s.label || s.coin || '—'} | ${s.algorithm || '—'} | active=${s.active} | hr10s=${s.hashrate_10s || 0}`);
-      }
-    }
     if (this.results.errors.length > 0) {
       console.log('\nErrors:');
       this.results.errors.forEach(error => console.log(`  - ${error}`));
@@ -350,16 +371,10 @@ if (require.main === module) {
   for (let i = 0; i < args.length; i++) {
     switch (args[i]) {
       case '--timeout':
-        options.timeout = parseInt(args[++i]);
+        options.timeout = parseInt(args[++i], 10);
         break;
       case '--pool':
         options.pool = args[++i];
-        break;
-      case '--cpu-coin':
-        options.cpuCoin = args[++i];
-        break;
-      case '--gpu-coin':
-        options.gpuCoin = args[++i];
         break;
       default:
         console.error(`Unknown argument: ${args[i]}`);
@@ -369,7 +384,7 @@ if (require.main === module) {
 
   const test = new E2EMiningTest(options);
   test.run().then((results) => {
-    const passed = results.tripleStreamDetected;
+    const passed = results.streamActive && results.sharesAccepted > 0;
     process.exit(passed ? 0 : 1);
   }).catch(error => {
     console.error('Test failed:', error);
