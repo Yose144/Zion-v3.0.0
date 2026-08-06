@@ -77,7 +77,7 @@ jobs:
         working-directory: V31
         run: |
           cargo build --release -p zion-miner \
-            --features "auxpow,gpu-opencl,native-hashers,native-kheavyhash,native-blake3-algo,native-verushash"
+            --features "auxpow,gpu-opencl,gpu-cuda,native-hashers,native-kheavyhash,native-blake3-algo,native-verushash"
 
       - name: Package
         run: |
