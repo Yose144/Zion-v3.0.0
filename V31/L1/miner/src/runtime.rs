@@ -236,11 +236,15 @@ impl MinerRuntime {
             .mine_header_bytes(&job.header, &job.target, 0, self.config.zion_nonce_batch)
             .ok_or(MinerError::NoAuxPoWSolution)?;
 
+        let mut header_hash = [0u8; 32];
+        let copy_len = job.header.len().min(32);
+        header_hash[..copy_len].copy_from_slice(&job.header[..copy_len]);
         let share = crate::auxpow::Share {
             job_id: job.job_id,
             coin: zion_cosmic_harmony::ExternalCoin::Bitcoin,
             nonce,
             hash: _hash.0,
+            header_hash,
             mix_hash: None,
             solution: None,
             extranonce2: job.extranonce2,
@@ -353,6 +357,10 @@ impl MinerRuntime {
         let ntime = job.ntime.clone();
         let height = job.height;
 
+        let mut header_hash = [0u8; 32];
+        let copy_len = header.len().min(32);
+        header_hash[..copy_len].copy_from_slice(&header[..copy_len]);
+
         let gpu_result = task::spawn_blocking(move || {
             let mut miner = create_gpu_backend(kind, work_size, algorithm, coin_ticker)
                 .map_err(|e| anyhow::anyhow!("{e}"))?;
@@ -388,6 +396,7 @@ impl MinerRuntime {
                         coin,
                         nonce,
                         hash,
+                        header_hash,
                         mix_hash: mix,
                         solution,
                         extranonce2,
@@ -498,7 +507,12 @@ impl MinerRuntime {
                         this.config.worker
                     );
                     let password = this.config.password.clone();
-                    let client = crate::auxpow::StratumClient::new(&url, &worker, &password);
+                    let client = crate::auxpow::StratumClient::new(
+                        &url,
+                        &worker,
+                        &password,
+                        zion_cosmic_harmony::ExternalCoin::Bitcoin,
+                    );
                     if let Err(e) = client.connect().await {
                         warn!(error = %e, "zion pool stratum connect failed, falling back to solo");
                         None
@@ -708,7 +722,7 @@ impl MinerRuntime {
             } else {
                 format!("{}.{}", self.config.reward_address.as_str(), self.config.worker)
             };
-            *guard = Some(StratumClient::new(&url, &worker, &self.config.password));
+            *guard = Some(StratumClient::new(&url, &worker, &self.config.password, coin));
         }
         let client = guard
             .as_mut()

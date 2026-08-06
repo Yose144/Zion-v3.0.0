@@ -97,12 +97,14 @@ impl Default for Job {
 }
 
 /// A found share ready for submission.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub struct Share {
     pub job_id: String,
     pub coin: ExternalCoin,
     pub nonce: u64,
     pub hash: [u8; 32],
+    /// Original header hash for Ethash/KawPow/ProgPow `eth_submitWork` shares.
+    pub header_hash: [u8; 32],
     /// Mix hash for Ethash/KawPow/ProgPow-style shares (needed by upstream pool).
     pub mix_hash: Option<[u8; 32]>,
     /// Variable-length solution blob for Equihash/BeamHash/VerusHash-style shares.
