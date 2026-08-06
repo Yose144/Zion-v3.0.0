@@ -1,6 +1,11 @@
 # Example configuration for `zion-multichain` (V31 Mainnet Alpha).
-# Copy to `multichain.toml` and edit RPC endpoints before running `zion` or
-# the `zion-multichain` server.
+# This is a `MultichainConfig` example used by the in-crate `MultichainService`
+# and its integration tests (`cargo test -p zion-multichain`).
+#
+# The production Edge `zion-v31-multichain.service` runs the `warpd` binary,
+# which expects a `WarpConfig` in /etc/zion/warp.toml. Use
+# `V31/L2/multichain/warp.example.toml` as the canonical WARP bridge config
+# template and do NOT point `warpd` at this file.
 
 [server]
 bind = "127.0.0.1"

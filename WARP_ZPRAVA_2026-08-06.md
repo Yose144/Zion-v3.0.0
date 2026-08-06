@@ -78,6 +78,28 @@ Relay secret key je uložen pouze v `/tmp/zion-warp-test/secrets.env` a v Edge `
 - `StatusV3.md`
   - Aktualizována sekce `WARP (Non-EVM)` o výsledky testu.
 
+## Produkční hardening WARP (2026-08-06)
+
+- `V31/deploy/deploy-edge.sh`
+  - Build V31 nyní zahrnuje `--bin warpd`.
+  - Přidán Step 4b pro instalaci `/etc/zion/warp.toml` z `V31/L2/multichain/warp.example.toml` (pouze pokud chybí, nikdy nepřepisuje live konfiguraci).
+  - Backup na Edge zálohuje `/etc/zion/warp.toml` a `V31/L2/multichain/warp.example.toml`.
+- `V31/deploy/systemd/zion-v31-multichain.service`
+  - `ExecStart` nyní `warpd --config /etc/zion/warp.toml --listen 127.0.0.1:8453 --db /data/zion/warp.db`.
+  - WARP API běží pouze na localhost (nginx proxy `/api/warp/` pro veřejný přístup).
+- `V31/deploy/nginx/zion-nginx.conf`
+  - Přidán `location /api/warp/` jako reverzní proxy na `127.0.0.1:8453` s prefix strip.
+- `V31/L2/multichain/src/warp/server.rs`
+  - `/metrics` nyní vrací Prometheus text exposition (`text/plain; version=0.0.4`) a JSON jen při `Accept: application/json`.
+- `V31/L2/multichain/src/warp/metrics.rs`
+  - Přidána metoda `prometheus_output()` s `warp_transfers_*` metrikami a labelem `node`.
+- `V31/L2/multichain/src/swap/dex.rs`
+  - Clippy fix: `sort_by` → `sort_by_key`.
+- `V31/multichain.example.toml`
+  - Přidán komentář upozorňující, že jde o `MultichainConfig` příklad, nikoli o konfiguraci pro `warpd`.
+
+Výsledkem je: `cargo test -p zion-multichain` a `cargo clippy -p zion-multichain` čisté.
+
 ## Testovací klíče a konfigurace
 
 Všechny testovací privátní klíče (Solana relay, Stellar relay, Bitcoin WIF) a `warp.test.toml` jsou uloženy v `/tmp/zion-warp-test/` — **mimo repozitář** a nebudou commitnuty.
