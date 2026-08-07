@@ -60,9 +60,13 @@ impl ExternalPoolClient {
         stats: Arc<ExternalPoolStats>,
     ) -> Arc<Self> {
         let (submit_tx, submit_rx) = mpsc::channel(256);
+        // Strip stratum+tcp:// prefix so TcpStream::connect gets plain host:port.
+        let clean_addr = pool_addr
+            .trim_start_matches("stratum+tcp://")
+            .trim_start_matches("stratum2+tcp://");
         Arc::new(Self {
             name: name.to_string(),
-            pool_addr: pool_addr.to_string(),
+            pool_addr: clean_addr.to_string(),
             wallet: wallet.to_string(),
             worker: worker.to_string(),
             submit_tx,
@@ -262,9 +266,15 @@ impl ProxyListener {
         worker: impl Into<String>,
         stats: Arc<ExternalPoolStats>,
     ) -> Self {
+        // Strip stratum+tcp:// prefix so TcpStream::connect gets plain host:port.
+        let clean_pool: String = pool_addr
+            .into()
+            .trim_start_matches("stratum+tcp://")
+            .trim_start_matches("stratum2+tcp://")
+            .to_string();
         Self {
             listen_addr: listen_addr.into(),
-            pool_addr: pool_addr.into(),
+            pool_addr: clean_pool,
             wallet: wallet.into(),
             worker: worker.into(),
             stats,

@@ -310,7 +310,11 @@ impl AuxPowClient {
     }
 
     async fn connect_tcp(&self) -> Result<()> {
-        let addr = self.config.pool_address.clone();
+        let raw = self.config.pool_address.clone();
+        // Strip the stratum+tcp:// prefix so tokio gets a plain host:port.
+        let addr = raw
+            .trim_start_matches("stratum+tcp://")
+            .trim_start_matches("stratum2+tcp://");
         info!(
             "AuxPow: connecting to {} ({}) for {}",
             addr,
@@ -318,7 +322,7 @@ impl AuxPowClient {
             self.config.coin
         );
 
-        let tcp_stream = timeout(Duration::from_secs(15), TcpStream::connect(&addr))
+        let tcp_stream = timeout(Duration::from_secs(15), TcpStream::connect(addr))
             .await
             .map_err(|_| anyhow!("connect timeout to {}", addr))?
             .context("TCP connect failed")?;
