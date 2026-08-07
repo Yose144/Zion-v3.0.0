@@ -4797,10 +4797,11 @@ def build_wallets() -> dict:
     for w in premine:
         wallets.append(w)
 
-    # 2. Operational wallets — prefer env / canonical V31 addresses.
-    # Only trust node startup log when a V31 node RPC is actually reachable,
-    # otherwise stale local logs can inject pre-reset addresses.
+    # 2. Operational wallets — prefer actual recipients from the latest block,
+    #    then env / canonical V31 addresses. We use real on-chain balances, so
+    #    we need the real payout addresses from the current chain tip.
     node_addrs = parse_node_startup_addresses()
+    latest_recipients = _get_latest_block_recipients(timeout=3.0)
     rpc_host, rpc_port = _get_node_rpc_addr()
     _ping = rpc_call(rpc_host, rpc_port, "getChainInfo", {}, timeout=1.5)
     rpc_reachable = _ping and not _ping.get("_rpc_error")
@@ -4810,9 +4811,9 @@ def build_wallets() -> dict:
     canonical_pool = V31_CANONICAL_POOL_PAYOUT_WALLET
     op_sources = [
         (canonical_pool, "Pool Canonical (Main Payout)", "canonical"),
-        (find_env_value("ZION_MINER_ADDRESS") or node_addrs.get("miner") or V31_CANONICAL_DEFAULT_MINER_WALLET, "Miner Payout", "node"),
-        (find_env_value("ZION_HUMANITARIAN_WALLET") or node_addrs.get("humanitarian") or V31_CANONICAL_HUMANITARIAN_WALLET, "Humanitarian Tithe", "node"),
-        (find_env_value("ZION_ISSOBELLA_WALLET") or node_addrs.get("issobella") or V31_CANONICAL_ISSOBELLA_WALLET, "Issobella Fund", "node"),
+        (find_env_value("ZION_MINER_ADDRESS") or latest_recipients.get("miner") or node_addrs.get("miner") or V31_CANONICAL_DEFAULT_MINER_WALLET, "Miner Payout", "node"),
+        (find_env_value("ZION_HUMANITARIAN_WALLET") or latest_recipients.get("humanitarian") or node_addrs.get("humanitarian") or V31_CANONICAL_HUMANITARIAN_WALLET, "Humanitarian Tithe", "node"),
+        (find_env_value("ZION_ISSOBELLA_WALLET") or latest_recipients.get("issobella") or node_addrs.get("issobella") or V31_CANONICAL_ISSOBELLA_WALLET, "Issobella Fund", "node"),
         (find_env_value("ZION_POOL_FEE_WALLET") or node_addrs.get("pool_fee") or V31_CANONICAL_POOL_FEE_WALLET, "Pool Fee Recipient", "node"),
         (find_env_value("ZION_POOL_WALLET"), "Pool Operational", "env"),
     ]
@@ -5327,6 +5328,50 @@ def _get_on_chain_balance(address: str, scan: dict = None) -> tuple[int, bool]:
     if scan is None:
         scan = _scan_all_utxo_balances()
     return int(scan.get(address, 0)), bool(scan)
+
+
+def _get_latest_block_recipients(timeout: float = 5.0) -> dict:
+    """Return {miner, humanitarian, issobella} from the tip block.
+
+    V31 coinbase transactions have outputs ordered [miner, humanitarian,
+    issobella]. If the order is ambiguous (e.g. equal 5% outputs), we prefer
+    the first coinbase tx output for the miner and the remaining two for
+    humanitarian / issobella.
+    """
+    try:
+        info, _, _ = _rpc_with_fallback("getChainInfo", {}, timeout=timeout)
+        height = (info or {}).get("chain_height", 0) if isinstance(info, dict) else 0
+        if not height:
+            return {}
+        blk, _, _ = _rpc_with_fallback("getBlockByHeight", {"height": height}, timeout=timeout)
+        if not blk or not isinstance(blk, dict) or blk.get("_rpc_error"):
+            return {}
+        miner = blk.get("miner_address")
+        txs = blk.get("transactions", [])
+        coinbase = None
+        for tx in txs:
+            if not isinstance(tx, dict):
+                continue
+            if not tx.get("inputs"):
+                coinbase = tx
+                break
+        if not coinbase:
+            coinbase = txs[0] if txs else None
+        outputs = (coinbase or {}).get("outputs", []) if isinstance(coinbase, dict) else []
+        out_addrs = [o.get("address") for o in outputs if isinstance(o, dict)]
+        recipients = {}
+        if miner:
+            recipients["miner"] = miner
+        if out_addrs:
+            if not recipients.get("miner"):
+                recipients["miner"] = out_addrs[0]
+            if len(out_addrs) >= 2:
+                recipients["humanitarian"] = out_addrs[1]
+            if len(out_addrs) >= 3:
+                recipients["issobella"] = out_addrs[2]
+        return recipients
+    except Exception:
+        return {}
 
 
 # ── Explorer data builder ──────────────────────────────────────────────
@@ -8692,6 +8737,18 @@ def build_payout_status() -> dict:
             status["issobella_wallet"] = V31_CANONICAL_ISSOBELLA_WALLET
         if not status["pool_fee_wallet"]:
             status["pool_fee_wallet"] = os.environ.get("ZION_POOL_FEE_WALLET")
+
+    # Override with actual addresses from the current chain tip when possible.
+    try:
+        latest_recipients = _get_latest_block_recipients(timeout=3.0)
+        if latest_recipients.get("miner"):
+            status["miner_wallet"] = latest_recipients["miner"]
+        if latest_recipients.get("humanitarian"):
+            status["humanitarian_wallet"] = latest_recipients["humanitarian"]
+        if latest_recipients.get("issobella"):
+            status["issobella_wallet"] = latest_recipients["issobella"]
+    except Exception:
+        pass
 
     # ── Parse logs (local + miner log for cross-topology visibility) ──
     recent_pool = tail_log("pool.log", 500)
