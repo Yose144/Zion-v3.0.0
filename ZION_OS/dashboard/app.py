@@ -8953,9 +8953,7 @@ def build_payout_status() -> dict:
 
     # ── Network-wide emission totals from block 0 (consensus schedule) ──
     try:
-        chain_info = rpc_call(rpc_host, rpc_port, "getChainInfo", {}, timeout=2.0)
-        if not chain_info or chain_info.get("_rpc_error"):
-            chain_info = rpc_call("127.0.0.1", 9445, "getChainInfo", {}, timeout=2.0) if (is_edge and local_rpc_alive) else None
+        chain_info, _, _ = _rpc_with_fallback("getChainInfo", {}, timeout=3.0)
         if chain_info and not chain_info.get("_rpc_error"):
             status["network_emission"] = calculate_emission_totals(chain_info.get("chain_height", 0))
         else:
