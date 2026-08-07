@@ -4691,7 +4691,7 @@ function updateDefiPoolsUI(poolData) {
       const priceStr = pool.price?.usd_per_wzion != null ? `$${Number(pool.price.usd_per_wzion).toFixed(4)}` : '—';
       const liqStr = pool.liquidity ?? '—';
       const label = key === 'wzion_usdt' ? 'wZION / USDT (0.3%)' : key === 'wzion_weth' ? 'wZION / WETH (0.3%)' : key;
-      const borderColor = key === 'wzion_usdt' ? 'rgba(99,102,241,0.6)' : 'rgba(16,185,129,0.6)';
+      const borderColor = key === 'wzion_usdt' ? 'rgba(252,209,22,0.6)' : 'rgba(16,185,129,0.6)';
       rows.push(`<div class="control-panel panel-tight" style="border-left:3px solid ${borderColor}">
         <div class="stack-col" style="gap:4px">
           <span style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.85)">${escapeHtml(label)}</span>
