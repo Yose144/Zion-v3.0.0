@@ -1,10 +1,15 @@
 # V3 Trinity Progress Report — 2026-08-07
 
-## Stav: Funkční E2E s probíhajícím debuggem externích streamů
+## Stav: Architektura opravena, ProgPoW OpenCL kernel čeká na port
 
 Tento report shrnuje progres implementace V3 Trinity trojstreamového těžení
 (ZION + ZANO + VRSC) na SMOS rigu. Práce vychází z referenčního mineru
 v `archive/V3/` kde E2E fungoval, a aplikuje stejné patterny do V31.
+
+**Kritické zjištění:** V31's OpenCL backend má jen deeksha kernels.
+ProgPoW/Ethash/KawPow OpenCL kernel kód (7657 řádků v `AuXpow/src/gpu_miner.rs`)
+nebyl portován do V31. Kernel soubory (`csrc/opencl/progpow_kernel.cl`) existují,
+ale `OpenClExternalMiner` v `gpu/mod.rs` je stub.**
 
 ---
 
@@ -63,13 +68,18 @@ v `archive/V3/` kde E2E fungoval, a aplikuje stejné patterny do V31.
 
 ## Co se debuguje (YELLOW)
 
-### Stream 2: ZANO (CPU ProgPoWZ)
-- `header_len=32` — ProgPoWZ pool posílá 32-bajtový pre-hashed header_hash
-  (EthStratum `eth_getWork` format: `[header_hash, seed_hash, target, block_number]`)
-- `no AuxPoW solution` — CPU ProgPoW je extrémně pomalý (~KH/s vs GPU MH/s)
-- **Další krok:** ZANO ProgPoW na CPU nedá smysl — potřebuje GPU.
-  Pro single-GPU rig (SMOS) je GPU vyhrazeno pro ZION.
-  Možnosti: (a) dual-GPU setup, (b) ZANO vypnout a těžit jen ZION+VRSC
+### Stream 2: ZANO (GPU ProgPoWZ) — Architektura opravena, kernel čeká
+- **Architektura opravena (commit d51258c72):** Stream 2 nyní používá GPU
+  s persistent `gpu_ext` backendem + burst/gap duty-cycle time-slicing
+  (50/50 split, gap_ms=300ms). To mirrors V3 reference `external_gpu_thread`.
+- **BLOCKER:** V31's `OpenClExternalMiner` je stub — vrací
+  `"OpenCL external AuxPoW mining is not yet ported for V31 (algorithm=progpow_zano)"`
+- V31 má `csrc/opencl/progpow_kernel.cl` (kernel soubor existuje),
+  ale `gpu/mod.rs:OpenClExternalMiner::new()` vždy bailuje
+- V3's `AuXpow/src/gpu_miner.rs` (7657 řádků) má plnou ProgPoW/Ethash/KawPow
+  OpenCL implementaci s DAG managementem
+- **Další krok:** Port ProgPoW OpenCL kódu z `archive/AuXpow/src/gpu_miner.rs`
+  do V31's `auxpow/gpu_miner.rs` nebo `gpu/mod.rs`
 
 ### Stream 3: VRSC (CPU VerusHash)
 - `header_len=1487` — správně!
@@ -99,11 +109,14 @@ v `archive/V3/` kde E2E fungoval, a aplikuje stejné patterny do V31.
 - **Pool I/O thread:** Pre-fetch jobů + async submit response
 - **Adaptive duty-cycle:** GPU time-slicing mezi Stream 1 a Stream 2
 
-### V31 (aktuální) — tokio async
+### V31 (aktuální) — tokio async + GPU time-slicing
 - **tokio::spawn tasks:** Stream 1/2/3 jako async tasky s broadcast channel
-- **GPU mutex:** Single GPU → Stream 2 používá CPU (avoid mutex contention)
+- **GPU time-slicing:** Stream 2 (gpu_ext) používá persistent GPU backend
+  s burst/gap duty-cycle (gap_ms=300ms default). Stream 1 (gpu_zion) dostává
+  GPU čas během gap. To mirrors V3 reference architecture.
 - **Auto-reconnect:** Vnější reconnect smyčka s backoffem
 - **Nonce cursor:** AtomicU64 pro nonce progression
+- **BLOCKER:** OpenClExternalMiner je stub — ProgPoW kernel není portován
 
 ---
 
@@ -118,6 +131,7 @@ v `archive/V3/` kde E2E fungoval, a aplikuje stejné patterny do V31.
 | 877882ffc  | feat(trinity): nonce progression, GPU time-slicing, docs |
 | 1768f20f7  | fix: ZANO 0x prefix + VRSC full header construction      |
 | f0dde84db  | fix: VRSC solution padding to 1344 bytes                 |
+| d51258c72  | fix(trinity): Stream 2 GPU time-slicing (V3 reference)   |
 
 ---
 
@@ -138,10 +152,13 @@ v `archive/V3/` kde E2E fungoval, a aplikuje stejné patterny do V31.
 
 ## Další kroky
 
-1. **VRSC target parsing** — Opravit `nbits → target` konverzi v pool's
+1. **Port ProgPoW OpenCL kernel** (KRITICKÉ) — Port ProgPoW/Ethash/KawPow
+   OpenCL kódu z `archive/AuXpow/src/gpu_miner.rs` (7657 řádků) do V31.
+   Kernel soubory existují (`csrc/opencl/progpow_kernel.cl`), ale
+   `OpenClExternalMiner` v `gpu/mod.rs` je stub. Bez tohoto portu Stream 2
+   (ZANO) nemůže těžit na GPU.
+2. **VRSC target parsing** — Opravit `nbits → target` konverzi v pool's
    `build_external_stream_cpu()` aby VRSC měl správný difficulty target
-2. **ZANO GPU mining** — Pro single-GPU rig není ProgPoW na CPU smysluplné.
-   Buď vypnout ZANO stream, nebo přidat druhou GPU
 3. **VRSC VerusHash native** — Ověřit že `native-verushash` feature je
    zapnutý v buildu (jinak `mine_verushash` vrací None)
 4. **ZION GPU hashrate** — Ověřit že GPU skutečně hashuje (Hash=0.00 v SMOS
