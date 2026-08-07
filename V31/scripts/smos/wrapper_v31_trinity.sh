@@ -1,0 +1,97 @@
+#!/bin/bash
+set -euo pipefail
+
+# ── V31 Trinity Miner Wrapper for SMOS ──────────────────────────────────────
+# Triple-stream: ZION (GPU) + ZANO (GPU AuxPoW) + VRSC (CPU AuxPoW)
+# V31 architecture: direct stratum connections per stream (no pool bridge needed)
+# Date: 2026-08-07
+
+WALLET_ADDR="zion1s6m204400290l660k622r3r0c6u040g5j6cu2x5"
+WORKER_NAME="vega-smos"
+export ZION_MINER_ID="vega-smos"
+
+# ── Core miner config ─────────────────────────────────────────────────────
+export ZION_GPU_BACKEND="${ZION_GPU_BACKEND:-opencl}"
+export ZION_PROFILE="${ZION_PROFILE:-pool}"
+export ZION_VERBOSE=0
+export ZION_INTERACTIVE=0
+export ZION_NO_STICKY=1
+export ZION_METRICS_REPORT_SECS=15
+export ZION_STATS_FILE="/tmp/zion-miner-stats.json"
+
+# ── GPU / autotune ────────────────────────────────────────────────────────
+export ZION_AUTOTUNE=1
+export ZION_AUTOTUNE_SECS=3
+export ZION_IGNORE_GPU_SELF_TEST_FAIL=1
+export ZION_OCL_BUILD_OPTS="${ZION_OCL_BUILD_OPTS:--cl-std=CL1.2 -cl-mad-enable}"
+
+# Deeksha (ZION) GPU stream
+export ZION_MINER_ALGORITHM=deeksha_lite_v1
+export ZION_GPU_WORK_SIZE=16384
+export ZION_NONCE_AUTOTUNE=1
+export ZION_NONCE_COUNT=65536
+export ZION_NONCE_COUNT_MIN=32768
+export ZION_NONCE_COUNT_MAX=262144
+export ZION_GPU_MAX_BATCH=65536
+export ZION_GPU_EARLY_BREAK=0
+export ZION_GPU_NO_STREAM_BYPRODUCT=1
+
+# ── Triple-stream (ZION GPU + ZANO GPU + VRSC CPU) ───────────────────────────
+# V31 uses direct stratum connections per stream.
+# Stream 1 (ZION): connects to ZION pool via --pool
+# Stream 2 (GPU AuxPoW): connects directly to ZANO pool via --stream2-url
+# Stream 3 (CPU AuxPoW): connects directly to VRSC pool via --stream3-url
+export ZION_STREAM1_ENABLED=1
+export ZION_STREAM2_ENABLED=1
+export ZION_STREAM3_ENABLED=1
+export ZION_STREAM2_FORCE_COIN=ZANO
+export ZION_STREAM3_FORCE_COIN=VRSC
+export ZION_STREAM2_URL="de.zano.herominers.com:1110"
+export ZION_STREAM3_URL="eu.luckpool.net:3956"
+
+# ZANO wallet (per-coin wallet for Stream 2)
+export ZION_AUXPOW_WALLET_ZANO="ZxCj5kQhNdW7xtt4hDTotBPGUsWYKRdtdPTFXjzFpPpf6q42rCVXcYnTtHRYGj3pzz2LUqCnvVoRzFn9zfZdCSzC1CkBiHYrg"
+
+# VRSC wallet (per-coin wallet for Stream 3)
+export ZION_AUXPOW_WALLET_VRSC="RLFQYsdd8wGGUgMgk17WrqdGNtkAVSCfDQ"
+
+# GPU AuxPoW tuning (ZANO ProgPoWZ)
+export ZION_STREAM2_BATCH=2097152
+export ZION_EXT_GPU_BATCH_SIZE=2097152
+export ZION_AUXPOW_GPU_WORK_SIZE=1048576
+export ZION_AUXPOW_GPU_GROUP_SIZE=128
+export ZION_AUXPOW_GPU_VRAM_PCT=50
+export ZION_AUXPOW_GPU_BYTES_PER_ITEM=64
+
+# CPU AuxPoW tuning (VRSC VerusHash)
+export ZION_STREAM3_BATCH=2000000
+export ZION_EXT_CPU_NONCE_COUNT=2000000
+export ZION_MINER_THREADS=4
+
+# ── Download V31 miner binary ─────────────────────────────────────────────
+LOCAL_MINER="/tmp/zion-miner-v31"
+rm -f "${LOCAL_MINER}"
+
+EDGE_BASE="http://62.171.141.136/zion-miner"
+echo "[smos-wrapper] downloading V31 miner binary ..."
+rm -f "${LOCAL_MINER}.tmp"
+curl --http1.1 --retry 20 --retry-delay 5 --connect-timeout 30 \
+     --speed-time 60 --speed-limit 10000 \
+     -fsSL -o "${LOCAL_MINER}.tmp" "${EDGE_BASE}/zion-miner-v31" || {
+    echo "[smos-wrapper] FATAL: could not download V31 miner binary"
+    exit 1
+}
+chmod +x "${LOCAL_MINER}.tmp"
+mv "${LOCAL_MINER}.tmp" "${LOCAL_MINER}"
+echo "[smos-wrapper] V31 miner binary ready ($(stat -c%s "${LOCAL_MINER}") bytes)"
+
+echo "[smos-wrapper] starting TRIPLE STREAM (V31): ZION + ZANO + VRSC"
+exec "${LOCAL_MINER}" \
+  --pool "${ZION_POOL_ADDR:-62.171.141.136:8444}" \
+  --wallet "${WALLET_ADDR}" \
+  --worker "${WORKER_NAME}" \
+  --stream2-url "${ZION_STREAM2_URL}" \
+  --stream3-url "${ZION_STREAM3_URL}" \
+  --gpu "${ZION_GPU_BACKEND}" \
+  --threads "${ZION_MINER_THREADS}" \
+  "$@"
