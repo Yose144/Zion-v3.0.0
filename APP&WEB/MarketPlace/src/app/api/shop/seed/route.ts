@@ -6,7 +6,8 @@ import { shopProducts } from '@/data/shopProducts';
 export async function POST(req: NextRequest) {
   try {
     const auth = req.headers.get('authorization');
-    const secret = process.env.SHOP_SEED_SECRET ?? 'zion-dev-seed';
+    const secret =
+      process.env.SHOP_SEED_SECRET ?? process.env.SHOP_SEED ?? 'zion-dev-seed';
     if (auth !== `Bearer ${secret}`) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
