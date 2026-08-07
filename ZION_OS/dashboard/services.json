@@ -2,7 +2,7 @@
   "_comment": "ZION dashboard service manifest — LOCAL PC services only.\nEdge server (62.171.141.136) runs: 2 nodes + pool + bridge + DAO + atomic-swap + WARP.\nLocal PC runs: backup node + miners + AI services (Hiran + Hiranyagarbha).",
 
   "node1": {
-    "bin": "node",
+    "bin": "zion-node",
     "log": "node1",
     "service_id": "zion-v31-node",
     "mkdirs": ["V31/data"],
