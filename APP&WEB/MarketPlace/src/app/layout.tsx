@@ -29,8 +29,8 @@ export const metadata: Metadata = {
     images: ['/zion-social-banner.png'],
   },
   icons: {
-    icon: '/favicon.ico',
-    apple: '/symbol-200x200.png',
+    icon: '/logo/org/favicon.ico',
+    apple: '/logo/org/symbol-200x200.png',
   },
 };
 
@@ -59,9 +59,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <div className="flex flex-col items-center text-center">
               <Link href="https://market.zionterranova.com" className="opacity-90 hover:opacity-100 transition-opacity duration-300">
                 <img
-                  src="/logo144.png"
-                  alt="ZION"
-                  className="w-20 h-auto mx-auto rasta-footer-logo"
+                  src="/logo/org/zion-wordmark-dark.png"
+                  alt="ZION Terra Nova"
+                  className="w-48 h-auto mx-auto rasta-footer-logo"
                   loading="lazy"
                   decoding="async"
                 />
