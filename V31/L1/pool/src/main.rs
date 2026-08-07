@@ -207,7 +207,7 @@ async fn main() -> anyhow::Result<()> {
             "auxpow_runtime: {} coins enabled",
             auxpow_cfg.enabled_coins.len()
         );
-        auxpow_runtime::spawn_auxpow_runtime(multi_bridge.clone(), auxpow_cfg);
+        auxpow_runtime::spawn_auxpow_runtime(multi_bridge.clone(), auxpow_cfg.clone());
     } else {
         info!("auxpow_runtime: disabled (no coins configured)");
     }
