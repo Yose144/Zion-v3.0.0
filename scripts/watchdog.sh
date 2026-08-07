@@ -3,10 +3,10 @@
 # ZION Unified Watchdog
 #
 # Single script for all deployment modes:
-#   edge       — Edge primary node/pool (system services, default)
+#   edge       — Edge primary V31 node/pool (system services, default)
 #   backup     — local backup node + SSH tunnels (user services, P2P sync check)
-#   new-server — bare-bones new-server node/pool (system services)
-#   v31        — V31 Alpha node (TCP JSON-RPC, V3 sync-lag check, checkpoint)
+#   new-server — bare-bones new-server V31 node/pool (system services)
+#   v31        — legacy alias for edge (V31 production TCP JSON-RPC)
 #
 # Usage:
 #   scripts/watchdog.sh [edge|backup|new-server|v31]
@@ -25,16 +25,19 @@ MODE="${1:-${ZION_WATCHDOG_MODE:-edge}}"
 LOG_FILE="${ZION_WATCHDOG_LOG:-}"
 USE_USER_SYSTEMD=0
 
-NODE_RPC="http://127.0.0.1:9443/health"
-NODE_JSONRPC="http://127.0.0.1:9443/jsonrpc"
+V31_RPC_PORT="9445"
+V31_P2P_PORT="8335"
+NODE_RPC_PORT="${V31_RPC_PORT}"
+NODE_RPC="tcp://127.0.0.1:${NODE_RPC_PORT}"
+NODE_JSONRPC="tcp://127.0.0.1:${NODE_RPC_PORT}"
 POOL_HOST="127.0.0.1"
 POOL_PORT="8444"
-NODE_SERVICE="zion-edge-node1"
-POOL_SERVICE="zion-edge-pool"
+NODE_SERVICE="zion-v31-node"
+POOL_SERVICE="zion-v31-pool"
 SSH_TUNNEL_SERVICE="zion-ssh-tunnel"
 BACKUP_NODE_SERVICE="zion-backup-node"
-DASHBOARD_SERVICE="zion-edge-python-dashboard"
-SSH_TUNNEL_PORTS=(9443 8453 9101)
+DASHBOARD_SERVICE=""
+SSH_TUNNEL_PORTS=(9445 9446 9447 8080)
 
 # Mode-specific defaults.
 case "$MODE" in
@@ -44,26 +47,20 @@ case "$MODE" in
   backup)
     USE_USER_SYSTEMD=1
     # Local backup node RPC; edge RPC used as sync reference.
-    NODE_RPC="http://127.0.0.1:8448/health"
-    NODE_JSONRPC="http://127.0.0.1:8448/jsonrpc"
-    EDGE_JSONRPC="http://127.0.0.1:9443/jsonrpc"
-    POOL_PORT="8445"
+    NODE_RPC_PORT="8446"
+    NODE_RPC="tcp://127.0.0.1:${NODE_RPC_PORT}"
+    NODE_JSONRPC="tcp://127.0.0.1:${NODE_RPC_PORT}"
+    EDGE_RPC_PORT="9445"
+    POOL_PORT="8444"
     NODE_SERVICE="zion-backup-node"
     POOL_SERVICE=""
     ;;
   new-server)
-    NODE_SERVICE="zion-edge-node1"
-    POOL_SERVICE="zion-edge-pool"
+    : # keep defaults above (V31 production services)
     ;;
   v31)
-    NODE_SERVICE="zion-v31-node"
-    POOL_SERVICE=""
-    V31_RPC_PORT="9445"
-    V31_P2P_PORT="8335"
-    V31_DATA_DIR="/opt/zion/data/v31"
-    V31_CHECKPOINT="${V31_DATA_DIR}/v3-checkpoint.json"
-    V3_JSONRPC="http://127.0.0.1:9443/jsonrpc"
-    V31_SYNC_LAG_THRESHOLD=10
+    # V31 production Edge node (legacy "v31" alias, now same as edge).
+    : # keep defaults above
     ;;
   *)
     echo "Unknown watchdog mode: $MODE" >&2
@@ -106,8 +103,23 @@ restart_service() {
   fi
 }
 
+# Talk to the V31 raw TCP JSON-RPC port and extract a single field from the
+# first response line. Returns the empty string on any failure.
+v31_tcp_rpc() {
+  local method="$1"
+  local path="$2"
+  local port="${3:-${NODE_RPC_PORT:-${V31_RPC_PORT:-9445}}}"
+  local resp
+  resp=$(printf '{"jsonrpc":"2.0","id":1,"method":"%s","params":[]}\n' "$method" | timeout 5 bash -c "exec 3<>/dev/tcp/127.0.0.1/${port}; cat >&3; head -1 <&3" 2>/dev/null)
+  if [[ -z "$resp" ]]; then echo ""; return; fi
+  echo "$resp" | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('result',{}).get('${path}',''))" 2>/dev/null || echo ""
+}
+
+# V31 nodes speak raw TCP JSON-RPC, not HTTP.
 check_node_http() {
-  curl -sf --max-time 5 "$NODE_RPC" >/dev/null 2>&1
+  local version
+  version=$(v31_tcp_rpc "getNodeInfo" "protocol_version" "${NODE_RPC_PORT:-${V31_RPC_PORT:-9445}}")
+  [[ -n "$version" ]]
 }
 
 check_pool_tcp() {
@@ -125,21 +137,12 @@ rpc_get() {
     | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('result',{}).get('${path}',0))" 2>/dev/null || echo 0
 }
 
-v31_tcp_rpc() {
-  local method="$1"
-  local path="$2"
-  local port="${V31_RPC_PORT:-9445}"
-  local resp
-  resp=$(printf '{"jsonrpc":"2.0","id":1,"method":"%s","params":[]}\n' "$method" | timeout 5 bash -c "exec 3<>/dev/tcp/127.0.0.1/${port}; cat >&3; cat <&3" 2>/dev/null | head -1)
-  if [[ -z "$resp" ]]; then echo 0; return; fi
-  echo "$resp" | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('result',{}).get('${path}',0))" 2>/dev/null || echo 0
-}
-
 # ── Mode-specific checks ───────────────────────────────────────────────────
 
 check_services() {
   if [[ "$MODE" == "backup" ]]; then
     for svc in "$SSH_TUNNEL_SERVICE" "$BACKUP_NODE_SERVICE" "$DASHBOARD_SERVICE"; do
+      [[ -n "$svc" ]] || continue
       local status
       status=$(_systemctl is-active "$svc" 2>/dev/null || echo "failed")
       if [[ "$status" != "active" ]]; then
@@ -155,7 +158,7 @@ check_services() {
       fi
     done
   else
-    # edge / new-server: check node and pool services
+    # edge / new-server / v31: check node and pool services
     for svc in "$NODE_SERVICE" "$POOL_SERVICE"; do
       [[ -n "$svc" ]] || continue
       local status
@@ -169,7 +172,7 @@ check_services() {
 
 check_health() {
   if ! check_node_http; then
-    restart_service "$NODE_SERVICE" "health endpoint ${NODE_RPC} not reachable"
+    restart_service "$NODE_SERVICE" "V31 RPC on ${NODE_RPC} not reachable"
     return
   fi
 
@@ -182,11 +185,11 @@ check_sync() {
   [[ "$MODE" == "backup" ]] || return 0
 
   local edge_height local_height gap peers
-  edge_height=$(rpc_get "$EDGE_JSONRPC" "getChainInfo" "chain_height")
-  local_height=$(rpc_get "$NODE_JSONRPC" "getChainInfo" "chain_height")
-  peers=$(rpc_get "$NODE_JSONRPC" "getNodeInfo" "known_peers")
+  edge_height=$(v31_tcp_rpc "getChainInfo" "native_chain_height" "${EDGE_RPC_PORT:-9445}")
+  local_height=$(v31_tcp_rpc "getChainInfo" "native_chain_height" "${NODE_RPC_PORT:-8446}")
+  peers=$(v31_tcp_rpc "getPeerInfo" "count" "${NODE_RPC_PORT:-8446}")
 
-  if [[ "$edge_height" -gt 0 && "$local_height" -gt 0 ]]; then
+  if [[ -n "$edge_height" && -n "$local_height" ]]; then
     gap=$(( edge_height - local_height ))
     if [[ $gap -lt 0 ]]; then
       gap=$(( -gap ))
@@ -198,8 +201,8 @@ check_sync() {
     fi
   fi
 
-  if [[ "$peers" -eq 0 && "$local_height" -gt 0 ]]; then
-    restart_service "$BACKUP_NODE_SERVICE" "0 P2P peers"
+  if [[ -n "$peers" && "$peers" -eq 0 && -n "$local_height" && "$local_height" -gt 0 ]]; then
+    log "WARN: 0 P2P peers (local=${local_height})"
   fi
 
   log "OK: edge=${edge_height} local=${local_height} peers=${peers}"
@@ -215,31 +218,27 @@ check_v31() {
     return
   fi
 
-  local v31_height v3_height sync_lag
-  v31_height=$(v31_tcp_rpc "getStatus" "chain_height")
-  v3_height=$(rpc_get "$V3_JSONRPC" "getChainInfo" "chain_height")
-
-  if [[ "$v31_height" -eq 0 ]]; then
-    restart_service "$NODE_SERVICE" "V31 RPC (TCP ${V31_RPC_PORT}) unreachable or returned 0"
+  # Use getNodeInfo to confirm the TCP RPC is alive; protocol_version is a string.
+  local v31_version
+  v31_version=$(v31_tcp_rpc "getNodeInfo" "protocol_version")
+  if [[ -z "$v31_version" ]]; then
+    restart_service "$NODE_SERVICE" "V31 RPC (TCP ${NODE_RPC_PORT:-${V31_RPC_PORT}}) unreachable"
     return
   fi
 
-  sync_lag=$(( v3_height - v31_height ))
-  if [[ $sync_lag -lt 0 ]]; then
-    sync_lag=0
+  # Native V31 chain height. Height 0 is valid on a fresh genesis.
+  local v31_height
+  v31_height=$(v31_tcp_rpc "getChainInfo" "native_chain_height")
+  if [[ -z "$v31_height" ]]; then
+    restart_service "$NODE_SERVICE" "V31 RPC did not return native_chain_height"
+    return
   fi
 
-  if [[ $sync_lag -gt $V31_SYNC_LAG_THRESHOLD ]]; then
-    restart_service "$NODE_SERVICE" "sync lag ${sync_lag} > ${V31_SYNC_LAG_THRESHOLD} (v3=${v3_height} v31=${v31_height})"
-  elif [[ $sync_lag -gt 0 ]]; then
-    log "INFO: v31 sync lag ${sync_lag} (v3=${v3_height} v31=${v31_height}) — monitoring"
+  if [[ -n "$POOL_SERVICE" ]] && ! check_pool_tcp; then
+    restart_service "$POOL_SERVICE" "pool TCP ${POOL_HOST}:${POOL_PORT} not reachable"
   fi
 
-  if [[ ! -f "$V31_CHECKPOINT" ]]; then
-    log "WARN: V31 checkpoint missing: ${V31_CHECKPOINT}"
-  fi
-
-  log "OK: v31=${v31_height} v3=${v3_height} lag=${sync_lag}"
+  log "OK: v31=${v31_height} version=${v31_version}"
 }
 
 main() {

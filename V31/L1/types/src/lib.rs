@@ -10,6 +10,7 @@ pub mod asset;
 pub mod chain;
 pub mod error;
 pub mod hash;
+pub mod u128_str;
 
 pub use address::Address;
 pub use amount::Amount;

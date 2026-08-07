@@ -39,11 +39,10 @@ pub async fn run(cmd: DeployCmd) -> Result<()> {
         DeployCmd::Contract { name, chain, args, dry_run } => {
             ui::print_header(&format!("Deploy {} → {}", name, chain));
             let contracts_dir = std::path::Path::new("V31/L2/multichain/contracts");
-            let evm_dir = contracts_dir.join("evm");
-            let dex_dir = contracts_dir.join("dex");
+            let src_dir = contracts_dir.join("src");
 
-            // Search for contract file
-            let search_dirs = [&evm_dir, &dex_dir];
+            // Search for contract file in src/evm and src/dex
+            let search_dirs = [src_dir.join("evm"), src_dir.join("dex")];
             let mut found = None;
             for dir in &search_dirs {
                 if let Ok(entries) = std::fs::read_dir(dir) {
@@ -83,7 +82,7 @@ pub async fn run(cmd: DeployCmd) -> Result<()> {
         DeployCmd::List => {
             ui::print_header("Available Contracts");
             let contracts_dir = std::path::Path::new("V31/L2/multichain/contracts");
-            for subdir in ["evm", "dex"] {
+            for subdir in ["src/evm", "src/dex"] {
                 let dir = contracts_dir.join(subdir);
                 if let Ok(entries) = std::fs::read_dir(&dir) {
                     println!("  [{}/]", subdir);

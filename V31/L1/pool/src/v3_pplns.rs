@@ -32,6 +32,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
 use tracing::{error, warn};
+use zion_l1_types::u128_str;
 
 /// Single accepted share recorded in the PPLNS window (serialization format).
 ///
@@ -260,12 +261,15 @@ pub struct PplnsEngine {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PplnsSnapshot {
     pub window: Vec<PplnsShare>,
+    #[serde(with = "u128_str")]
     pub window_total_difficulty: u128,
     pub addresses: HashMap<String, String>,
     pub unpaid: HashMap<String, u64>,
+    #[serde(with = "u128_str::map")]
     pub paid_per_miner: HashMap<String, u128>,
     pub shares_per_miner: HashMap<String, MinerShareStats>,
     pub last_share_time_per_miner: HashMap<String, u64>,
+    #[serde(with = "u128_str")]
     pub total_paid_flowers: u128,
     pub payout_rounds: u64,
     pub fee_humanitarian_flowers: u64,

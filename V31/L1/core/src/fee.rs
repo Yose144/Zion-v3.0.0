@@ -97,12 +97,12 @@ pub fn total_fees_burned(fees: &[u64]) -> u64 {
 pub const BURN_ADDRESS: &str = "zion1burn0000000000000000000000000000000dead";
 
 /// DAO treasury address (main — Community Governance, 2.5B ZION).
-pub const DAO_ADDRESS: &str = "zion1x8g2z2v3v5n08542a5u7v7q365l4852048qv6w6";
+pub const DAO_ADDRESS: &str = "zion1j5a327c7d3w7h4e474n5p4z0z827f8p874mr2p7";
 
 /// Bridge vault address.
 ///
 /// Derived deterministically from `BRIDGE_VAULT_SEED` via SHA-256 → derive_address.
-pub const BRIDGE_VAULT_ADDRESS: &str = "zion1j3w3h7k8m635h734y786j5804305m822t5uk546";
+pub const BRIDGE_VAULT_ADDRESS: &str = "zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7";
 
 #[cfg(test)]
 mod tests {

@@ -256,9 +256,19 @@ impl ChainAdapter for BitcoinAdapter {
     }
 
     async fn health_check(&self) -> WarpResult<bool> {
+        // Guard: refuse to report healthy if the HTLC watch address is not configured
+        // or is still the placeholder string.
+        let htlc = match htlc_address_with_override(&self.network, self.htlc_override.as_deref()) {
+            Some(addr) if !addr.contains("zionhtlc") && !addr.is_empty() => addr,
+            _ => {
+                warn!("[WARP][bitcoin] Health FAIL: no real HTLC address configured (set WARP_BITCOIN_HTLC_ADDRESS or chain.contract_address)");
+                return Ok(false);
+            }
+        };
+
         match self.get_tip_height().await {
             Ok(h) => {
-                info!("[WARP][bitcoin] Health OK — block #{}", h);
+                info!("[WARP][bitcoin] Health OK — block #{} (HTLC: {})", h, htlc);
                 Ok(true)
             }
             Err(e) => {
@@ -271,9 +281,9 @@ impl ChainAdapter for BitcoinAdapter {
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
         let address = match htlc_address_with_override(&self.network, self.htlc_override.as_deref())
         {
-            Some(a) => a,
-            None => {
-                debug!("[WARP][bitcoin] No HTLC address configured");
+            Some(a) if !a.contains("zionhtlc") && !a.is_empty() => a,
+            _ => {
+                debug!("[WARP][bitcoin] No real HTLC address configured; skipping watch");
                 return Ok(vec![]);
             }
         };

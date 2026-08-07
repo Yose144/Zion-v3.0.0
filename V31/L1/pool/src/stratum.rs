@@ -1947,4 +1947,19 @@ mod tests {
         tokio::time::advance(Duration::from_secs(61)).await;
         assert!(limiter.allow(ip));
     }
+
+    #[test]
+    fn parse_real_edge_block_template() {
+        let template_json = r#"{"block_reward":5400067000,"difficulty":10,"header_hex":"874a54ccfa860f9aee5273dfd99cc6f897946e3c4fab40aa7421f2ae4225eda55aa25269fdfcfa052d7cd0aa34b5140b1a78299f2f9572b915a62ba35a9759b902000000000000003230756a00000000","header_json":"{\"previous_hash\":[135,74,84,204,250,134,15,154,238,82,115,223,217,156,198,248,151,148,110,60,79,171,64,170,116,33,242,174,66,37,237,165],\"merkle_root\":[90,162,82,105,253,252,250,5,45,124,208,170,52,181,20,11,26,120,41,159,47,149,114,185,21,166,43,163,90,151,89,185],\"height\":2,\"timestamp\":1786064946,\"nonce\":0,\"difficulty\":10}","height":2,"previous_hash":"874a54ccfa860f9aee5273dfd99cc6f897946e3c4fab40aa7421f2ae4225eda5","target":"1999999999999999999999999999999999999999999999999999999999999999","target_hex":"1999999999999999999999999999999999999999999999999999999999999999","template_id":253,"transactions":[{"inputs":[],"memo":[99,111,105,110,98,97,115,101],"outputs":[{"address":{"bytes":[],"chain":"zion_l1","encoded":"zion177w668f4g5g8s3t844s3f053k8h7r6d540853g6"},"amount":"4806059630"},{"address":{"bytes":[],"chain":"zion_l1","encoded":"zion1j0j5d0c70056u678j7g4p686e7r3w5k0y8vy0m0"},"amount":"270003350"},{"address":{"bytes":[],"chain":"zion_l1","encoded":"zion1g3g0k2j665r075g5j077z0w3u4g3w0d5837j3f6"},"amount":"270003350"}],"version":1}]}"#;
+        match serde_json::from_str::<zion_core::node::BlockTemplate>(template_json) {
+            Ok(t) => {
+                assert_eq!(t.height, 2);
+                assert_eq!(t.transactions.len(), 1);
+                assert_eq!(t.transactions[0].outputs.len(), 3);
+            }
+            Err(e) => {
+                panic!("failed to parse template: {} at line {} col {}", e, e.line(), e.column());
+            }
+        }
+    }
 }

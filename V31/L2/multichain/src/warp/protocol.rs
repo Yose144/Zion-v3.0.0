@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use zion_l1_types;
 
 use crate::warp::error::{WarpError, WarpResult};
 
@@ -56,6 +57,7 @@ impl WarpMessage {
 pub struct MintInstruction {
     pub dest_chain: String,
     pub recipient: String,
+    #[serde(with = "zion_l1_types::u128_str")]
     pub amount_dest_atomic: u128,
     pub signatures: Vec<ValidatorSignature>,
     pub warp_message_hash: String,

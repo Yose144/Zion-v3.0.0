@@ -305,9 +305,19 @@ impl ChainAdapter for SolanaAdapter {
     }
 
     async fn health_check(&self) -> WarpResult<bool> {
+        // Guard: refuse to report healthy if the ZION mint is not configured
+        // or is still a placeholder string.
+        let mint = match zion_mint_with_override(&self.cluster, self.mint_override.as_deref()) {
+            Some(m) if !m.contains("XXXXX") && !m.is_empty() => m,
+            _ => {
+                warn!("[WARP][solana] Health FAIL: no real ZION mint configured (set WARP_SOLANA_ZION_MINT or chain.contract_address)");
+                return Ok(false);
+            }
+        };
+
         match self.get_slot().await {
             Ok(s) => {
-                info!("[WARP][solana] Health OK — slot {}", s);
+                info!("[WARP][solana] Health OK — slot {} (mint: {})", s, mint);
                 Ok(true)
             }
             Err(e) => {
@@ -319,9 +329,9 @@ impl ChainAdapter for SolanaAdapter {
 
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
         let mint = match zion_mint_with_override(&self.cluster, self.mint_override.as_deref()) {
-            Some(m) => m,
-            None => {
-                debug!("[WARP][solana] No ZION mint configured");
+            Some(m) if !m.contains("XXXXX") && !m.is_empty() => m,
+            _ => {
+                debug!("[WARP][solana] No real ZION mint configured; skipping watch");
                 return Ok(vec![]);
             }
         };
@@ -348,11 +358,14 @@ impl ChainAdapter for SolanaAdapter {
 
     async fn execute_mint(&self, instruction: &MintInstruction) -> WarpResult<String> {
         let mint = match zion_mint_with_override(&self.cluster, self.mint_override.as_deref()) {
-            Some(m) => m,
-            None => {
+            Some(m) if !m.contains("XXXXX") && !m.is_empty() => m,
+            _ => {
                 return Err(WarpError::AdapterError {
                     chain: "solana".into(),
-                    reason: format!("no ZION mint configured for cluster '{}'", self.cluster),
+                    reason: format!(
+                        "no real ZION mint configured for cluster '{}'; set WARP_SOLANA_ZION_MINT or chain.contract_address",
+                        self.cluster
+                    ),
                 });
             }
         };

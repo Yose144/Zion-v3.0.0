@@ -2,13 +2,13 @@
 pragma solidity ^0.8.24;
 
 import {Script, console} from "forge-std/Script.sol";
-import {ZionDexPoolManager} from "../src/ZionDexPoolManager.sol";
-import {ZionDexHooks} from "../src/ZionDexHooks.sol";
-import {ZionDexRouter} from "../src/ZionDexRouter.sol";
-import {ZDXToken} from "../src/ZDXToken.sol";
-import {ZionDexStaking} from "../src/ZionDexStaking.sol";
-import {SolverRegistry} from "../src/SolverRegistry.sol";
-import {IntentSettlement} from "../src/IntentSettlement.sol";
+import {ZionDexPoolManager} from "../src/dex/ZionDexPoolManager.sol";
+import {ZionDexHooks} from "../src/dex/ZionDexHooks.sol";
+import {ZionDexRouter} from "../src/dex/ZionDexRouter.sol";
+import {ZDXToken} from "../src/dex/ZDXToken.sol";
+import {ZionDexStaking} from "../src/dex/ZionDexStaking.sol";
+import {SolverRegistry} from "../src/dex/SolverRegistry.sol";
+import {IntentSettlement} from "../src/dex/IntentSettlement.sol";
 
 /// @title DeployBase
 /// @notice Deploy all ZionDex contracts on Base mainnet
