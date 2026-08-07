@@ -451,7 +451,7 @@ function initWarpStarfield() {
   const canvas = document.getElementById('warp-starfield');
   if (!(canvas instanceof HTMLCanvasElement)) return;
 
-  const ctx = canvas.getContext('2d', { alpha: false });
+  const ctx = canvas.getContext('2d', { alpha: true });
   if (!ctx) return;
 
   const starColors = [[252, 209, 22], [228, 30, 43], [7, 137, 48]]; // rasta One Love
@@ -470,8 +470,8 @@ function initWarpStarfield() {
   let cachedGradient = null;
   const rebuildGradient = () => {
     const g = ctx.createRadialGradient(w * 0.4, h * 0.6, 0, w * 0.4, h * 0.6, Math.max(w, h));
-    g.addColorStop(0, 'rgba(26, 26, 26, 0.90)');
-    g.addColorStop(1, 'rgba(13, 13, 13, 0.98)');
+    g.addColorStop(0, 'rgba(26, 26, 26, 0.16)');
+    g.addColorStop(1, 'rgba(13, 13, 13, 0.08)');
     cachedGradient = g;
   };
 
@@ -522,12 +522,11 @@ function initWarpStarfield() {
     if (delta < FRAME_INTERVAL) return;
     lastFrameTime = timestamp - (delta % FRAME_INTERVAL);
 
-    ctx.fillStyle = `rgba(0, 0, 0, ${Math.min(Math.max(trailOpacity, 0.02), 0.3)})`;
-    ctx.fillRect(0, 0, w, h);
+    ctx.clearRect(0, 0, w, h);
 
     ctx.globalCompositeOperation = 'source-over';
     ctx.fillStyle = cachedGradient;
-    ctx.globalAlpha = 0.22;
+    ctx.globalAlpha = 0.18;
     ctx.fillRect(0, 0, w, h);
     ctx.globalAlpha = 1;
 
