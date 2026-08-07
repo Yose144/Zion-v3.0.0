@@ -606,11 +606,20 @@ def status():
             out["difficulty"] = int(r.get("difficulty", 0))
             out["target"] = r.get("target")
 
-        # V3 chain height from the V3 RPC layer.
+        # Native chain height from getChainInfo (V3 height is 0 with --v3-no-genesis).
+        ci = _tcp_jsonrpc("getChainInfo", [])
+        if "result" in ci and isinstance(ci["result"], dict):
+            r = ci["result"]
+            native_h = r.get("native_chain_height")
+            if native_h and int(native_h) > 0:
+                out["canonical_height"] = max(out["canonical_height"], int(native_h))
+            out["tip_hash"] = r.get("tip_hash") or r.get("tip_hash_hex")
+            out["mempool_account"] = int(r.get("mempool_transactions", 0))
+
+        # Also try getStatus for mempool detail (V3 layer).
         st = _tcp_jsonrpc("getStatus", [])
         if "result" in st and isinstance(st["result"], dict):
             r = st["result"]
-            out["tip_hash"] = r.get("tip_hash") or r.get("tip_hash_hex")
             out["mempool_account"] = int(r.get("mempool_account_transactions", 0))
             out["mempool_utxo"] = int(r.get("mempool_utxo_transactions", 0))
 
