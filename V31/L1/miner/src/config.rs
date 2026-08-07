@@ -100,7 +100,7 @@ impl MinerConfig {
             stream1_enabled: true,
             stream2_enabled: true,
             stream3_enabled: true,
-            stream2_batch: 100_000,
+            stream2_batch: 1_048_576, // 1M nonces per batch for ProgPoW GPU mining
             stream3_batch: 1_000_000,
             stream2_force_coin: std::env::var("ZION_STREAM2_FORCE_COIN")
                 .ok()

@@ -7,6 +7,8 @@
 pub mod client;
 pub mod dual_stratum;
 pub mod gpu_miner;
+#[cfg(feature = "gpu-opencl")]
+pub mod gpu_opencl_full;
 pub mod hasher;
 #[cfg(feature = "native-hashers")]
 pub mod native;
