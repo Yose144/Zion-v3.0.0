@@ -20,6 +20,39 @@
   --zion-surface: rgba(13, 13, 13, 0.68);
 }
 
+/* ── Rasta energy keyframes ─────────────────────────────────────────────── */
+@keyframes rasta-shimmer {
+  0%,
+  100% {
+    background-position: 0% 0%, 0% 0%;
+  }
+  50% {
+    background-position: 0% 0%, 100% 0%;
+  }
+}
+
+@keyframes one-love-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 22px rgba(228, 30, 43, 0.18), 0 0 42px rgba(252, 209, 22, 0.1);
+  }
+  40% {
+    box-shadow: 0 0 28px rgba(7, 137, 48, 0.22), 0 0 52px rgba(252, 209, 22, 0.16);
+  }
+  70% {
+    box-shadow: 0 0 32px rgba(228, 30, 43, 0.2), 0 0 48px rgba(7, 137, 48, 0.14);
+  }
+}
+
+@keyframes rasta-line-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
 /* ── Base typography: Inter, no system font fallbacks as default ─────────── */
 html {
   -webkit-font-smoothing: antialiased;
@@ -211,9 +244,11 @@ h3.major {
 html body #main article {
   position: relative;
   overflow: hidden;
-  background:
+  background-image:
     linear-gradient(145deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%),
-    linear-gradient(90deg, rgba(228, 30, 43, 0.06), rgba(252, 209, 22, 0.05), rgba(7, 137, 48, 0.06));
+    linear-gradient(90deg, rgba(228, 30, 43, 0.08), rgba(252, 209, 22, 0.07), rgba(7, 137, 48, 0.08), rgba(228, 30, 43, 0.08));
+  background-size: auto, 200% 100%;
+  background-position: 0% 0%, 0% 0%;
   border: 1px solid rgba(252, 209, 22, 0.16);
   border-radius: var(--zion-radius-lg);
   box-shadow:
@@ -226,6 +261,7 @@ html body #main article {
   max-width: calc(100% - 1.25rem);
   backdrop-filter: blur(20px) saturate(135%);
   -webkit-backdrop-filter: blur(20px) saturate(135%);
+  animation: rasta-shimmer 7s ease-in-out infinite, one-love-glow 6s ease-in-out infinite;
 }
 
 html body #main article::before,
@@ -240,12 +276,16 @@ html body #main article::after {
 
 html body #main article::before {
   top: 0;
-  background: linear-gradient(90deg, rgba(228, 30, 43, 0.85), rgba(252, 209, 22, 0.95), rgba(7, 137, 48, 0.85));
+  background-image: linear-gradient(90deg, rgba(228, 30, 43, 0.85), rgba(252, 209, 22, 0.95), rgba(7, 137, 48, 0.85), rgba(228, 30, 43, 0.85), rgba(252, 209, 22, 0.95), rgba(7, 137, 48, 0.85));
+  background-size: 200% 100%;
+  animation: rasta-line-shimmer 6s linear infinite;
 }
 
 html body #main article::after {
   bottom: 0;
-  background: linear-gradient(90deg, rgba(228, 30, 43, 0.35), rgba(252, 209, 22, 0.45), rgba(7, 137, 48, 0.35));
+  background-image: linear-gradient(90deg, rgba(228, 30, 43, 0.35), rgba(252, 209, 22, 0.45), rgba(7, 137, 48, 0.35), rgba(228, 30, 43, 0.35), rgba(252, 209, 22, 0.45), rgba(7, 137, 48, 0.35));
+  background-size: 200% 100%;
+  animation: rasta-line-shimmer 7s linear infinite reverse;
 }
 
 html body #main article p,
@@ -258,12 +298,19 @@ html body #main article a:not(.button) {
 
 html body #main article a:not(.button) {
   color: var(--rasta-gold);
-  border-bottom-color: rgba(252, 209, 22, 0.5);
+  border-bottom: 1px solid transparent;
+  background-image: linear-gradient(90deg, var(--rasta-red), var(--rasta-gold), var(--rasta-green));
+  background-size: 0% 1px;
+  background-position: left bottom;
+  background-repeat: no-repeat;
+  text-decoration: none;
+  transition: color 0.25s ease, background-size 0.35s ease, text-shadow 0.25s ease;
 }
 
 html body #main article a:not(.button):hover {
-  color: var(--rasta-green);
-  border-bottom-color: transparent;
+  color: #fff;
+  background-size: 100% 1px;
+  text-shadow: 0 0 12px rgba(252, 209, 22, 0.45);
 }
 
 html body #main article strong {
@@ -320,6 +367,7 @@ html body #main article .close:before {
 
 html body #main article .close:hover:before {
   background-color: rgba(228, 30, 43, 0.25);
+  box-shadow: 0 0 18px rgba(252, 209, 22, 0.35), 0 0 32px rgba(228, 30, 43, 0.18);
 }
 
 /* ── Buttons: rasta tri-color primary + rounded corners ──────────────────── */
@@ -643,35 +691,47 @@ html body textarea:focus {
   flex: 1 1 0;
 }
 
-/* ZION logo inside the background menu group */
-.floating-menu-logo {
-  display: block;
-  width: 3.25rem;
-  height: 3.25rem;
-  margin: 0 auto 0.65rem;
-  border-radius: 50%;
-  transition: transform 0.25s ease, filter 0.25s ease;
-  filter: drop-shadow(0 0 10px rgba(252, 209, 22, 0.3));
+/* Center line in the top nav (use-middle from main.js) */
+#header nav.use-middle:after {
+  display: none;
 }
 
-.floating-menu-logo img {
+/* ZION logo under the hero subtitle, above the CTA buttons */
+.hero-logo {
+  display: block;
+  width: 5rem;
+  height: 5rem;
+  margin: 0.5rem auto 0.25rem;
+  border-radius: 50%;
+  transition: transform 0.3s ease, filter 0.3s ease;
+  filter: drop-shadow(0 0 14px rgba(252, 209, 22, 0.35));
+}
+
+.hero-logo img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: 50%;
   display: block;
-  border: 2px solid rgba(252, 209, 22, 0.45);
-  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  border: 2px solid rgba(252, 209, 22, 0.5);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.floating-menu-logo:hover {
-  transform: scale(1.15) rotate(6deg);
-  filter: drop-shadow(0 0 22px rgba(252, 209, 22, 0.55));
+.hero-logo:hover {
+  transform: scale(1.12) rotate(5deg);
+  filter: drop-shadow(0 0 28px rgba(252, 209, 22, 0.7));
 }
 
-.floating-menu-logo:hover img {
-  border-color: rgba(252, 209, 22, 0.9);
-  box-shadow: 0 0 18px rgba(252, 209, 22, 0.45);
+.hero-logo:hover img {
+  border-color: rgba(252, 209, 22, 0.95);
+  box-shadow: 0 0 26px rgba(252, 209, 22, 0.55);
+}
+
+@media screen and (max-width: 736px) {
+  .hero-logo {
+    width: 4rem;
+    height: 4rem;
+  }
 }
 
 /* Mobile: keep the button small and panel compact */
@@ -699,6 +759,48 @@ html body textarea:focus {
     padding: 0.55rem 0.4rem;
     font-size: 0.7rem;
   }
+}
+
+/* ── Footer quick-link icon strip ─────────────────────────────────────────── */
+footer .footer-quick-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0 1.25rem;
+}
+
+footer .quick-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.65rem;
+  height: 2.65rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(252, 209, 22, 0.18);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1.05rem;
+  text-decoration: none;
+  transition: transform 0.25s ease, background 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+footer .quick-link:hover {
+  background: rgba(252, 209, 22, 0.12);
+  border-color: rgba(252, 209, 22, 0.65);
+  color: #fff;
+  transform: translateY(-3px) scale(1.1);
+  box-shadow:
+    0 0 16px rgba(252, 209, 22, 0.35),
+    0 0 26px rgba(228, 30, 43, 0.15);
+}
+
+footer .quick-link .icon {
+  display: inline-block;
+  line-height: 1;
 }
 
 /* ── Footer / logo chip ──────────────────────────────────────────────────── */
