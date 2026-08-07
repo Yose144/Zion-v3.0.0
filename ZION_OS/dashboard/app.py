@@ -9328,6 +9328,33 @@ def run_zion_cli(command: str) -> dict:
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
+
+def run_cli_core_util(cmd: str, db: str = "V3/data/zion-node-state.db") -> dict:
+    """Run a core-util subcommand and return stdout/stderr/returncode."""
+    if not cmd:
+        return {"ok": False, "error": "cmd required"}
+    allowed_cmds = ("export-state", "verify-db", "dump-blocks", "tip-height", "get-block")
+    first_word = cmd.split()[0].lower()
+    if first_word not in allowed_cmds:
+        return {"ok": False, "error": f"Command '{first_word}' not in whitelist. Allowed: {allowed_cmds}"}
+    script = SCRIPTS_DIR / ("core-util-run" + _SCRIPT_EXT)
+    full_cmd = cmd + " " + db
+    try:
+        proc = subprocess.Popen(
+            _script_cmd(script, "-Cmd", full_cmd),
+            cwd=str(REPO_ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        stdout, stderr = proc.communicate(timeout=30)
+        out_text = stdout.decode("utf-8", errors="ignore").strip()
+        try:
+            parsed = json.loads(out_text)
+            return parsed
+        except Exception:
+            return {"ok": True, "stdout": out_text, "stderr": stderr.decode("utf-8", errors="ignore"), "exit_code": proc.returncode, "cmd": full_cmd}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
 # ── Alert config persistence ─────────────────────────────────────────────
 
 ALERT_CONFIG_PATH = LOG_DIR / "alert-config.json"
@@ -12050,6 +12077,16 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/cli/run":
             cmd = params.get("cmd", [""])[0].strip()
             self._json(run_zion_cli(cmd))
+        elif route == "/api/cli/core-util":
+            cmd = params.get("cmd", [""])[0].strip()
+            db = params.get("db", ["V3/data/zion-node-state.db"])[0].strip()
+            self._json(run_cli_core_util(cmd, db))
+        elif route == "/api/chain-info":
+            info, _, _ = _rpc_with_fallback("getChainInfo", {}, timeout=5.0)
+            if info and not info.get("_rpc_error"):
+                self._json({"ok": True, "chain_height": info.get("chain_height", 0), "network": info.get("network", "mainnet"), "protocol_version": info.get("protocol_version", ""), "difficulty": info.get("difficulty", 0)})
+            else:
+                self._json({"ok": False, "error": "RPC unavailable"})
         elif route == "/api/cli/node-status":
             # Return V31 node status from RPC (no CLI script needed)
             st = build_status()
@@ -13147,30 +13184,27 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/cli/core-util":
             cmd = payload.get("cmd", "").strip()
             db = payload.get("db", "V3/data/zion-node-state.db").strip()
-            if not cmd:
-                self._json({"ok": False, "error": "cmd required"})
-                return
-            allowed_cmds = ("export-state", "verify-db", "dump-blocks", "tip-height", "get-block")
-            first_word = cmd.split()[0].lower()
-            if first_word not in allowed_cmds:
-                self._json({"ok": False, "error": f"Command '{first_word}' not in whitelist. Allowed: {allowed_cmds}"})
-                return
-            script = SCRIPTS_DIR / ("core-util-run" + _SCRIPT_EXT)
-            full_cmd = cmd + " " + db
+            self._json(run_cli_core_util(cmd, db))
+        elif route == "/api/ncl/submit":
+            # Proxy NCL job submit to Hiranyagarbha on port 8001
             try:
-                proc = subprocess.Popen(
-                    _script_cmd(script, "-Cmd", full_cmd),
-                    cwd=str(REPO_ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE
-                )
-                stdout, stderr = proc.communicate(timeout=30)
-                out_text = stdout.decode("utf-8", errors="ignore").strip()
-                try:
-                    parsed = json.loads(out_text)
-                    self._json(parsed)
-                except Exception:
-                    self._json({"ok": True, "stdout": out_text, "stderr": stderr.decode("utf-8", errors="ignore"), "exit_code": proc.returncode, "cmd": full_cmd})
+                body_data = json.dumps({
+                    "job_type": payload.get("job_type", "inference"),
+                    "payload": payload.get("payload", ""),
+                    "params": payload.get("params", {}),
+                    "priority": payload.get("priority", 0),
+                    "submitter": payload.get("submitter", "dashboard"),
+                    "input_hash": payload.get("input_hash", ""),
+                    "reward_flowers": payload.get("reward_flowers", 0),
+                    "max_duration_secs": payload.get("max_duration_secs", 300),
+                    "submitted_via": "dashboard"
+                }).encode()
+                req = urllib.request.Request("http://127.0.0.1:8001/ncl/schedule",
+                    data=body_data, headers={"Content-Type": "application/json"}, method="POST")
+                with urllib.request.urlopen(req, timeout=8) as r:
+                    self._json(json.loads(r.read()))
             except Exception as e:
-                self._json({"ok": False, "error": str(e)})
+                self._json({"ok": False, "offline": True, "error": str(e)[:120]})
         elif route == "/api/payout/trigger":
             self._json(trigger_payout())
         elif route == "/api/backup/trigger":
