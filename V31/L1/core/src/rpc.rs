@@ -235,12 +235,23 @@ async fn dispatch_request(line: &str, node: &Node) -> Value {
         };
     }
 
+    // V31 native block lookup. Falls back to the V3 handler when the block is
+    // not a V31 native block (i.e. V3-compat chain).
+    if method == "getBlockByHeight" || method == "getBlock" || method == "getBlockByHash" {
+        return match get_native_block(node, &params).await {
+            Ok(Some(v)) => success_response(id, v),
+            Ok(None) => {
+                let v3_method = if method == "getBlock" { "getBlock" } else { method };
+                let result = node.v3_rpc.dispatch(v3_method, params).await;
+                wrap_v3_response(id, result)
+            }
+            Err(e) => error_response(id, -32000, &e.to_string()),
+        };
+    }
+
     // V3 methods are dispatched to the V3 RPC handler.
     let v3_methods = [
         "getStatus",
-        "getBlockByHeight",
-        "getBlockByHash",
-        "getBlock",
         "submitAccountTransaction",
         "sendRawTransaction",
         "getBalance",
@@ -333,13 +344,25 @@ async fn get_chain_info(node: &Node) -> Result<Value, NodeError> {
     };
     let native_status = node.status().await?;
     let mempool_size = node.mempool.len().await;
+    // When the V3-compat chain is empty (--v3-no-genesis), surface the native
+    // V31 chain as the canonical chain_height/tip_hash so legacy explorer and
+    // dashboard clients see the real chain without code changes.
+    let (effective_height, effective_hash) = if v3_height == 0 {
+        (native_status.height, native_status.tip_hash.to_hex())
+    } else {
+        (v3_height, v3_hash)
+    };
     Ok(json!({
         "network": "mainnet",
         "consensus_profile": "cosmic_harmony_v3",
-        "chain_height": v3_height,
+        "chain_height": effective_height,
         "native_chain_height": native_status.height,
-        "tip_hash": v3_hash,
-        "accepted_blocks": v3_height + 1,
+        "v3_chain_height": v3_height,
+        "tip_hash": effective_hash,
+        "native_tip_hash": native_status.tip_hash.to_hex(),
+        "difficulty": native_status.difficulty,
+        "target": native_status.target,
+        "accepted_blocks": effective_height + 1,
         "mempool_transactions": mempool_size,
         "protocol_version": "3.1.0-alpha",
         "transaction_model": "hybrid",
@@ -418,6 +441,102 @@ async fn submit_utxo_tx(node: &Node, params: &Value) -> Result<Value, NodeError>
         "tx_id": tx_hash.to_hex(),
         "model": "v31-native",
     }))
+}
+
+/// Look up a V31 native block by height or hash and map it to the V3-compatible
+/// JSON shape that the explorer and dashboard expect.
+async fn get_native_block(node: &Node, params: &Value) -> Result<Option<Value>, NodeError> {
+    // Resolve height or hash from params.
+    let block = if let Some(height) = params.get("height").and_then(Value::as_u64) {
+        node.block_by_height(height).await?
+    } else if let Some(hash_hex) = params
+        .get("hash")
+        .or_else(|| params.get("block_hash"))
+        .and_then(Value::as_str)
+    {
+        let hash = decode_hash_32(hash_hex)?;
+        node.block_by_hash(&hash).await?
+    } else {
+        return Err(NodeError::Task("height or hash required".to_string()));
+    };
+
+    let Some(block) = block else {
+        return Ok(None);
+    };
+
+    let header = &block.header;
+    let hash_hex = header.header_hash().to_hex();
+    let prev_hex = header.previous_hash.to_hex();
+    let subsidy = crate::emission::block_subsidy(header.height);
+    let (miner, humanitarian, issobella, _pool_fee) = crate::emission::fee_split(subsidy);
+    let miner_address = block
+        .transactions
+        .first()
+        .and_then(|tx| tx.outputs.first())
+        .map(|o| o.address.encoded.clone())
+        .unwrap_or_default();
+
+    let transaction_ids: Vec<String> = block.transactions.iter().map(|tx| tx.hash().to_hex()).collect();
+    let transactions: Vec<Value> = block
+        .transactions
+        .iter()
+        .map(|tx| {
+            json!({
+                "tx_id": tx.hash().to_hex(),
+                "version": tx.version,
+                "inputs": tx.inputs.iter().map(|i| {
+                    json!({
+                        "previous_output": i.previous_output.to_hex(),
+                        "index": i.index,
+                    })
+                }).collect::<Vec<_>>(),
+                "outputs": tx.outputs.iter().map(|o| {
+                    json!({
+                        "amount": o.amount.0,
+                        "address": o.address.encoded,
+                    })
+                }).collect::<Vec<_>>(),
+            })
+        })
+        .collect();
+
+    Ok(Some(json!({
+        "height": header.height,
+        "hash_hex": hash_hex,
+        "previous_hash_hex": prev_hex,
+        "prev_hash_hex": prev_hex,
+        "timestamp": header.timestamp,
+        "difficulty": header.difficulty,
+        "nonce": header.nonce,
+        "merkle_root": header.merkle_root.to_hex(),
+        "miner_reward_zion": miner as f64 / crate::emission::FLOWERS_PER_ZION as f64,
+        "subsidy_zion": subsidy as f64 / crate::emission::FLOWERS_PER_ZION as f64,
+        "humanitarian_zion": humanitarian as f64 / crate::emission::FLOWERS_PER_ZION as f64,
+        "issobella_zion": issobella as f64 / crate::emission::FLOWERS_PER_ZION as f64,
+        "reward": miner,
+        "transaction_ids": transaction_ids,
+        "transactions": transactions,
+        "transaction_model": "v31-native",
+        "miner_address": miner_address,
+        "block_size": serde_json::to_string(&block).map(|s| s.len()).unwrap_or(0),
+        "num_txes": block.transactions.len(),
+    })))
+}
+
+/// Decode a 32-byte hash from a hex string.
+fn decode_hash_32(hex_str: &str) -> Result<zion_l1_types::Hash, NodeError> {
+    let hex_str = hex_str.strip_prefix("0x").unwrap_or(hex_str);
+    let bytes = hex::decode(hex_str)
+        .map_err(|e| NodeError::Task(format!("invalid hash hex: {e}")))?;
+    if bytes.len() != 32 {
+        return Err(NodeError::Task(format!(
+            "hash must be 32 bytes, got {}",
+            bytes.len()
+        )));
+    }
+    let mut arr = [0u8; 32];
+    arr.copy_from_slice(&bytes);
+    Ok(zion_l1_types::Hash::new(arr))
 }
 
 /// Look up a V31 native transaction by id.

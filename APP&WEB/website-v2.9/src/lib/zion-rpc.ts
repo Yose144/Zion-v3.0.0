@@ -527,22 +527,26 @@ class ZionRpcClient {
       this.rpcCallNode<any>(nodeId, 'getNodeInfo').catch(() => null),
       this.rpcCallNode<any>(nodeId, 'getPeerInfo').catch(() => null),
     ]);
-    let difficulty = 0;
-    const tipHeight = chainInfo.chain_height || 0;
-    if (tipHeight >= 0) {
+    // V31 hybrid: prefer native_chain_height when V3-compat chain is empty.
+    const effectiveHeight =
+      (chainInfo.native_chain_height ?? 0) > 0
+        ? (chainInfo.native_chain_height as number)
+        : (chainInfo.chain_height ?? 0);
+    let difficulty = chainInfo.difficulty ?? 0;
+    if (effectiveHeight > 0 && difficulty === 0) {
       try {
-        const tip = await this.rpcCallNode<any>(nodeId, 'getBlockByHeight', { height: tipHeight });
+        const tip = await this.rpcCallNode<any>(nodeId, 'getBlockByHeight', { height: effectiveHeight });
         difficulty = tip?.difficulty ?? 0;
       } catch { /* use 0 */ }
     }
     const peerCount = peerInfo?.count ?? nodeInfo?.known_peers ?? 0;
     const nettype = chainInfo.network ?? 'mainnet';
     return {
-      height: chainInfo.chain_height ?? 0,
-      top_block_hash: chainInfo.tip_hash ?? '',
+      height: effectiveHeight,
+      top_block_hash: chainInfo.tip_hash ?? chainInfo.native_tip_hash ?? '',
       difficulty,
       target: 60,
-      tx_count: chainInfo.accepted_blocks ?? chainInfo.chain_height ?? 0,
+      tx_count: chainInfo.accepted_blocks ?? effectiveHeight ?? 0,
       tx_pool_size: chainInfo.mempool_transactions ?? 0,
       alt_blocks_count: 0,
       outgoing_connections_count: peerCount,
@@ -572,13 +576,20 @@ class ZionRpcClient {
       this.rpcCall<any>('getPeerInfo').catch(() => null),
     ]);
 
+    // V31 hybrid node: prefer native_chain_height when the V3-compat chain is
+    // empty (chain_height == 0). The RPC layer also surfaces the effective
+    // height as chain_height, but we guard here for older node builds.
+    const effectiveHeight =
+      (chainInfo.native_chain_height ?? 0) > 0
+        ? (chainInfo.native_chain_height as number)
+        : (chainInfo.chain_height ?? 0);
+
     // Get tip block for difficulty and real TX count
-    let difficulty = 0;
+    let difficulty = chainInfo.difficulty ?? 0;
     let txCount = 0;
-    const tipHeight = chainInfo.chain_height || 0;
-    if (tipHeight >= 0) {
+    if (effectiveHeight > 0 && difficulty === 0) {
       try {
-        const tip = await this.rpcCall<any>('getBlockByHeight', { height: tipHeight });
+        const tip = await this.rpcCall<any>('getBlockByHeight', { height: effectiveHeight });
         difficulty = tip?.difficulty ?? 0;
         txCount = Array.isArray(tip?.transaction_ids)
           ? tip.transaction_ids.length
@@ -592,8 +603,8 @@ class ZionRpcClient {
     const nettype = chainInfo.network ?? 'mainnet';
 
     return {
-      height: chainInfo.chain_height ?? 0,
-      top_block_hash: chainInfo.tip_hash ?? '',
+      height: effectiveHeight,
+      top_block_hash: chainInfo.tip_hash ?? chainInfo.native_tip_hash ?? '',
       difficulty,
       target: 60,
       tx_count: txCount,
@@ -645,7 +656,13 @@ class ZionRpcClient {
   /** Get last block header using chain height from getChainInfo */
   async getLastBlockHeader(): Promise<ZionBlockHeader> {
     const chainInfo = await this.rpcCall<any>('getChainInfo');
-    const height = Math.max(0, chainInfo.chain_height ?? 0);
+    // V31 hybrid: prefer native_chain_height when V3-compat chain is empty.
+    const height = Math.max(
+      0,
+      (chainInfo.native_chain_height ?? 0) > 0
+        ? (chainInfo.native_chain_height as number)
+        : (chainInfo.chain_height ?? 0),
+    );
     return this.getBlockHeaderByHeight(height);
   }
 
@@ -734,7 +751,10 @@ class ZionRpcClient {
   /** Get chain height */
   async getBlockCount(): Promise<number> {
     const chainInfo = await this.rpcCall<any>('getChainInfo');
-    return chainInfo.chain_height ?? 0;
+    // V31 hybrid: prefer native_chain_height when V3-compat chain is empty.
+    return (chainInfo.native_chain_height ?? 0) > 0
+      ? (chainInfo.native_chain_height as number)
+      : (chainInfo.chain_height ?? 0);
   }
 
   /** Get transactions by hash via V3 getTransaction */
