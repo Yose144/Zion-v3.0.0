@@ -651,8 +651,31 @@ const t = {
     v2FooterRights: { cs: '© 2026 ZION Terra Nova • All Rights Reserved', en: '© 2026 ZION Terra Nova • All Rights Reserved' },
   },
 
+  info: {
+    kicker: { cs: 'Informace', en: 'Information' },
+    backHome: { cs: 'Zpět domů', en: 'Back home' },
+    termsTitle: { cs: 'Obchodní podmínky', en: 'Terms and Conditions' },
+    termsSubtitle: { cs: 'ZION Market', en: 'ZION Market' },
+    gdprTitle: { cs: 'GDPR', en: 'GDPR' },
+    gdprSubtitle: { cs: 'Ochrana osobních údajů', en: 'Privacy Policy' },
+    legalTitle: { cs: 'Právní informace', en: 'Legal Information' },
+    legalSubtitle: { cs: 'ZION Terra Nova', en: 'ZION Terra Nova' },
+    aboutTitle: { cs: 'O nás', en: 'About Us' },
+    aboutSubtitle: { cs: 'Firemní údaje a kontakt', en: 'Company details and contact' },
+    guideTitle: { cs: 'Nákupní řád', en: 'Shopping Guide' },
+    guideSubtitle: { cs: 'Jak nakupovat na ZION Marketu', en: 'How to shop on ZION Market' },
+    faqTitle: { cs: 'Časté dotazy', en: 'FAQ' },
+    faqSubtitle: { cs: 'Odpovědi na nejčastější otázky', en: 'Answers to frequently asked questions' },
+  },
+
   footer: {
     copyright: { cs: '© 2026 ZION ® Terra Nova ∞ Oasis', en: '© 2026 ZION ® Terra Nova ∞ Oasis' },
+    legal: { cs: 'Právní info', en: 'Legal' },
+    terms: { cs: 'Obchodní podmínky', en: 'Terms' },
+    gdpr: { cs: 'GDPR', en: 'GDPR' },
+    about: { cs: 'O nás', en: 'About' },
+    guide: { cs: 'Nákupní řád', en: 'Shopping Guide' },
+    faq: { cs: 'FAQ', en: 'FAQ' },
   },
 
   common: {
