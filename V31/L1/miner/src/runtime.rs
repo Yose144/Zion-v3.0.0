@@ -150,6 +150,16 @@ pub struct MinerRuntime {
     /// GPU backend for Stream 1 (ZION deeksha). `None` = CPU-only.
     /// Initialized when `config.gpu_backend` is not "cpu".
     gpu_zion: Arc<std::sync::Mutex<Option<Box<dyn GpuMiner>>>>,
+    /// GPU backend for Stream 2 (external GPU coin, e.g. ZANO ProgPoW).
+    /// Lazily initialized on first external GPU job. Separate from
+    /// gpu_zion because the algorithm (progpow_zano) and work_size differ.
+    /// On single-GPU rigs, time-slicing via burst/gap duty-cycle yields
+    /// GPU to Stream 1 between batches.
+    #[cfg(feature = "auxpow")]
+    gpu_ext: Arc<std::sync::Mutex<Option<Box<dyn GpuMiner>>>>,
+    /// Current algorithm for gpu_ext (for DAG/epoch reload detection).
+    #[cfg(feature = "auxpow")]
+    gpu_ext_algo: Arc<std::sync::Mutex<Option<String>>>,
     /// ZION nonce cursor — advances between batches so we don't always
     /// re-scan from 0. Wrapped in a mutex for safe concurrent access.
     zion_nonce_cursor: Arc<std::sync::atomic::AtomicU64>,
@@ -245,6 +255,8 @@ impl MinerRuntime {
                 consensus,
                 stats,
                 gpu_zion,
+                gpu_ext: Arc::new(std::sync::Mutex::new(None)),
+                gpu_ext_algo: Arc::new(std::sync::Mutex::new(None)),
                 zion_nonce_cursor: Arc::new(std::sync::atomic::AtomicU64::new(0)),
                 scheduler: Arc::new(Mutex::new(AuxPoWScheduler::new(
                     hashrate_per_unit,
@@ -511,27 +523,39 @@ impl MinerRuntime {
     #[cfg(feature = "auxpow")]
     /// Mine a single AuxPoW share for `job` using a custom batch.
     ///
-    /// Stream 2 first attempts GPU mining when `gpu_backend` is not "cpu";
-    /// on failure or for Stream 3 it falls back to the CPU `parallel` scanner.
+    /// Stream 2 (GpuExternal) uses GPU mining with burst/gap duty-cycle
+    /// time-slicing — after each batch, sleeps gap_ms to yield GPU to
+    /// Stream 1 (ZION). This mirrors the V3 reference `external_gpu_thread`.
+    /// Stream 3 (CpuExternal) uses CPU `parallel` scanner (VerusHash).
     pub async fn mine_auxpow_share_batch(
         &self,
         stream: StreamId,
         job: &Job,
         batch: u64,
     ) -> Result<Share, MinerError> {
-        // In V3 Trinity mode (single GPU rig), the GPU is dedicated to ZION
-        // Stream 1. External streams (ZANO/VRSC) use CPU to avoid GPU mutex
-        // contention. Set ZION_TRINITY_EXT_GPU=1 to enable GPU for Stream 2.
-        let ext_gpu_enabled = std::env::var("ZION_TRINITY_EXT_GPU")
-            .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
-            .unwrap_or(false);
-        let try_gpu = stream == StreamId::GpuExternal
-            && self.config.gpu_backend != "cpu"
-            && ext_gpu_enabled;
-        if try_gpu {
-            if let Some(share) = self.try_gpu_auxpow_share(job, batch).await {
+        // Stream 2: GPU with duty-cycle time-slicing (like V3 reference)
+        if stream == StreamId::GpuExternal && self.config.gpu_backend != "cpu" {
+            if let Some(share) = self.try_gpu_ext_share(job, batch).await {
+                // Duty-cycle yield: sleep gap_ms so Stream 1 (ZION) gets GPU.
+                // Time-based: gap = batch_ms * (100 - duty) / duty
+                let duty_pct = std::env::var("ZION_EXT_GPU_TIME_DUTY_PCT")
+                    .ok()
+                    .and_then(|v| v.parse::<u64>().ok())
+                    .unwrap_or(50);
+                let max_gap_ms = std::env::var("ZION_EXT_GPU_MAX_GAP_MS")
+                    .ok()
+                    .and_then(|v| v.parse::<u64>().ok())
+                    .unwrap_or(5000);
+                // We don't know exact batch_ms here, use fixed gap from env
+                let gap_ms = std::env::var("ZION_EXT_GPU_GAP_MS")
+                    .ok()
+                    .and_then(|v| v.parse::<u64>().ok())
+                    .unwrap_or(300);
+                let _ = (duty_pct, max_gap_ms); // used in time-based mode
+                tokio::time::sleep(Duration::from_millis(gap_ms)).await;
                 return Ok(share);
             }
+            // GPU failed — fall through to CPU
         }
 
         let job = job.clone();
@@ -544,18 +568,18 @@ impl MinerRuntime {
         Ok(share)
     }
 
+    /// Try GPU mining for Stream 2 (external GPU coin) using a persistent
+    /// GPU backend. The backend is lazily initialized on first call and
+    /// reused across batches (avoiding expensive DAG reload + kernel
+    /// compile per batch). When the algorithm changes, the backend is
+    /// recreated.
     #[cfg(feature = "auxpow")]
-    async fn try_gpu_auxpow_share(&self, job: &Job, batch: u64) -> Option<Share> {
-        let kind = parse_gpu_backend(&self.config.gpu_backend);
-        let work_size = batch as usize;
+    async fn try_gpu_ext_share(&self, job: &Job, batch: u64) -> Option<Share> {
         let algorithm = job.coin.algorithm();
-        // TODO: the CUDA kheavyhash kernel needs extranonce1 + timestamp support
-        // for live KaspaStratum pools.  Use the CPU scanner for KAS until the
-        // kernel is updated to shift the scanned suffix and read the timestamp
-        // from the raw header.
         if algorithm.starts_with("kheavyhash") {
-            return None;
+            return None; // CPU-only for now
         }
+
         let coin_ticker = job.coin.ticker();
         let header = job.header.clone();
         let target = DifficultyTarget { bytes: job.target };
@@ -565,31 +589,54 @@ impl MinerRuntime {
         let extranonce1 = job.extranonce.clone();
         let ntime = job.ntime.clone();
         let height = job.height;
+        let work_size = batch as usize;
 
         let mut header_hash = [0u8; 32];
         let copy_len = header.len().min(32);
         header_hash[..copy_len].copy_from_slice(&header[..copy_len]);
 
+        let gpu_ext = self.gpu_ext.clone();
+        let gpu_ext_algo = self.gpu_ext_algo.clone();
+        let kind = parse_gpu_backend(&self.config.gpu_backend);
+
         let gpu_result = task::spawn_blocking(move || {
-            let mut miner = create_gpu_backend(kind, work_size, algorithm, coin_ticker)
-                .map_err(|e| anyhow::anyhow!("{e}"))?;
-            // Load the correct DAG/epoch and, for ProgPoW, recompile the kernel
-            // when the period changes. This must happen before mine_batch_raw.
-            miner
-                .update_epoch(height)
-                .map_err(|e| anyhow::anyhow!("{e}"))?;
-            let result = miner
+            // Check if we need to (re)create the GPU backend for this algorithm
+            let need_recreate = {
+                let algo_guard = gpu_ext_algo.lock().unwrap();
+                algo_guard.as_deref() != Some(algorithm)
+            };
+            if need_recreate {
+                eprintln!(
+                    "gpu_ext_init algo={} coin={} work_size={} — creating persistent backend",
+                    algorithm, coin_ticker, work_size
+                );
+                let miner = create_gpu_backend(kind, work_size, algorithm, coin_ticker)
+                    .map_err(|e| anyhow::anyhow!("{e}"))?;
+                *gpu_ext.lock().unwrap() = Some(miner);
+                *gpu_ext_algo.lock().unwrap() = Some(algorithm.to_string());
+                eprintln!("gpu_ext_init ok algo={}", algorithm);
+            }
+
+            let mut gpu_guard = gpu_ext.lock().unwrap();
+            let gpu = match gpu_guard.as_mut() {
+                Some(g) => g,
+                None => return Ok::<_, anyhow::Error>(None),
+            };
+
+            // Update epoch/DAG when height changes (ProgPoW period = 50 blocks)
+            gpu.update_epoch(height)
+                .map_err(|e| anyhow::anyhow!("epoch update: {e}"))?;
+
+            let result = gpu
                 .mine_batch_raw(&header, target, 0, batch)
-                .map_err(|e| anyhow::anyhow!("{e}"))?;
-            Ok::<_, anyhow::Error>(result)
+                .map_err(|e| anyhow::anyhow!("mine_batch_raw: {e}"))?;
+            Ok(Some(result))
         })
         .await;
 
         match gpu_result {
-            Ok(Ok(gpu_result)) => {
+            Ok(Ok(Some(gpu_result))) => {
                 if let Some((nonce, hash, mix)) = gpu_result.solutions.into_iter().next() {
-                    // Some algorithms (VerusHash, ZelHash, Equihash) need a
-                    // variable-length solution blob in addition to the 32-byte hash.
                     let solution =
                         if algorithm == "verushash" || algorithm.starts_with("verushash_") {
                             crate::auxpow::hasher::build_verushash_solution(
@@ -613,11 +660,14 @@ impl MinerRuntime {
                     });
                 }
             }
+            Ok(Ok(None)) => {} // no solution in batch — normal
             Ok(Err(e)) => {
-                warn!(stream = "gpu", error = %e, "gpu auxpow mining failed; falling back to cpu");
+                eprintln!("gpu_ext_batch_failed algo={} err=\"{}\"", algorithm, e);
+                warn!(stream = "gpu_ext", error = %e, "gpu ext mining failed");
             }
             Err(e) => {
-                warn!(stream = "gpu", error = %e, "gpu auxpow task failed; falling back to cpu");
+                eprintln!("gpu_ext_task_failed algo={} err=\"{}\"", algorithm, e);
+                warn!(stream = "gpu_ext", error = %e, "gpu ext task failed");
             }
         }
         None

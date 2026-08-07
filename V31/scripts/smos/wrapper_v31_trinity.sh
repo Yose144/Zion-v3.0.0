@@ -51,13 +51,22 @@ export ZION_STREAM1_ENABLED=1
 export ZION_STREAM2_ENABLED=1
 export ZION_STREAM3_ENABLED=1
 
-# GPU AuxPoW tuning (ZANO ProgPoWZ — pool sends jobs, miner mines)
+# GPU AuxPoW tuning (ZANO ProgPoWZ — GPU time-slicing with Stream 1)
+# Stream 2 uses GPU with burst/gap duty-cycle: runs batch, then sleeps
+# gap_ms to yield GPU to Stream 1 (ZION deeksha). This mirrors the V3
+# reference external_gpu_thread architecture.
 export ZION_STREAM2_BATCH=2097152
 export ZION_EXT_GPU_BATCH_SIZE=2097152
 export ZION_AUXPOW_GPU_WORK_SIZE=1048576
 export ZION_AUXPOW_GPU_GROUP_SIZE=128
 export ZION_AUXPOW_GPU_VRAM_PCT=50
 export ZION_AUXPOW_GPU_BYTES_PER_ITEM=64
+
+# Duty-cycle: 50% GPU time for Stream 2, 50% for Stream 1
+# gap_ms = sleep after each Stream 2 batch (300ms default)
+export ZION_EXT_GPU_TIME_DUTY_PCT=50
+export ZION_EXT_GPU_GAP_MS=300
+export ZION_EXT_GPU_MAX_GAP_MS=5000
 
 # CPU AuxPoW tuning (VRSC VerusHash — pool sends jobs, miner mines)
 export ZION_STREAM3_BATCH=2000000
