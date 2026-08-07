@@ -918,6 +918,7 @@ impl MinerRuntime {
             worker = %worker_name,
             "V3 Trinity connected — all 3 streams through pool"
         );
+        eprintln!("v3_trinity connected pool={} miner={}", pool_addr, miner_id);
 
         // Broadcast channel: Stream 1 receives jobs from pool, broadcasts to 2 & 3
         let (job_tx, _) = broadcast::channel::<crate::v3_pool_client::V3JobBundle>(32);
@@ -939,10 +940,10 @@ impl MinerRuntime {
 
                             // Broadcast to Stream 2/3 workers (ignore lag errors)
                             if let Some(ref ext) = bundle.gpu_external {
-                                tracing::debug!(coin = %ext.coin, "V3 Trinity: GPU external stream job");
+                                eprintln!("v3_trinity gpu_external coin={} job_id={} height={}", ext.coin, ext.job_id, ext.height);
                             }
                             if let Some(ref ext) = bundle.cpu_external {
-                                tracing::debug!(coin = %ext.coin, "V3 Trinity: CPU external stream job");
+                                eprintln!("v3_trinity cpu_external coin={} job_id={} height={}", ext.coin, ext.job_id, ext.height);
                             }
                             let _ = job_tx.send(bundle.clone());
 
@@ -1180,6 +1181,7 @@ impl MinerRuntime {
         };
 
         let share = self.mine_auxpow_share_batch(stream, &job, batch).await?;
+        eprintln!("v3_trinity mined_ext_share stream={:?} coin={} nonce={}", stream, coin, share.nonce);
 
         // Submit via V3PoolClient → pool forwards to external pool
         let hash_hex = hex::encode(&share.hash);
