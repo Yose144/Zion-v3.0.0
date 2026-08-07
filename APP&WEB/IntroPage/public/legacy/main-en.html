@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="./img/favicon.png" />
+    <link rel="apple-touch-icon" href="./img/apple-touch-icon.png" />
+    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./slider.css" />
+    <link rel="stylesheet" href="./rasta.css" />
+    <script src="./sliders.js" defer></script>
+    <script src="./script.js" defer></script>
+    <script src="./video.js" defer></script>
+    <script src="https://kit.fontawesome.com/16464afad1.js" crossorigin="anonymous"></script>
+    <title>ZION TerraNova® | v3.1.0 MAINNET ALPHA · OASIS</title>
+    <style>
+      .zion-banner-wrap {
+        width: 100%;
+        max-width: 1400px;
+        margin: 0 auto;
+        border-radius: 18px;
+        overflow: hidden;
+        border: 1px solid var(--rasta-gold);
+        background: rgba(0, 0, 0, 0.35);
+      }
+
+      .zion-banner-frame {
+        width: 100%;
+        aspect-ratio: 1200 / 630;
+        border: 0;
+        display: block;
+      }
+
+      @media (max-width: 520px) {
+        .zion-banner-frame {
+          aspect-ratio: auto;
+          height: clamp(520px, 140vw, 920px);
+        }
+      }
+    </style>
+  </head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-NHF25ZZ97S"></script>
+  <script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NHF25ZZ97S');
+  </script> 
+  
+  <body>
+    <header id="header">
+      <div class="container">
+        <div class="subcontainer">
+  
+          <nav class="navbar-container">
+            <div class="navbar-left">
+              <a href="./main-en.html" class="nav-branding-1">ZION TerraNova®</a>
+              <div class="nav-menu">
+                <a href="#" class="nav-branding-2">Gene<span>sis</span></a>
+                <a href="./main-en.html" class="nav-link active">Home</a>
+                <a href="./mining-start-en.html" class="nav-link presale-nav-link">
+                  <span class="presale-badge-nav">⛏️</span> Start Mining
+                </a>
+                <a href="./dashboard-en.html" class="nav-link">Dashboard</a>
+                <a href="./whitepaper-en.html" class="nav-link">Whitepaper</a>
+                <a href="./roadmap-en.html" class="nav-link">Roadmap</a>
+                <a href="./shop-en.html" class="nav-link">Shop</a>
+                <span class="nav-link lang-switch"><a href="./main.html">CZ</a> | <span class="active-lang">EN</span></span>
+                <a href="./cart-en.html" class="nav-link cart-link">
+                  <span class="cart-icon-wrapper">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span id="cart-count" class="cart-badge">0</span>
+                  </span>
+                </a>
+              </div>
+            </div>
+            <div class="navbar-right">
+              <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+              </div>
+            </div>
+          </nav>
+        </div>
+      </div>
+    </header>
+
+    <!-- === HERO SECTION === -->
+    <section class="rasta-hero" style="background-image: url('./img/org1.jpg');">
+      <div class="rasta-hero-inner">
+        <span class="version-badge">⚡ v3.1.0 MAINNET ALPHA</span>
+        <h1>ZION</h1>
+        <h2>TerraNova® Oasis</h2>
+        <p class="subtitle">Multi-Chain Dharma Ecosystem | Game ®evoluZion</p>
+        <br>
+        <div style="display: flex; flex-direction: column; gap: 10px; align-items: center; max-width: 300px; margin: 0 auto;">
+          <a href="https://www.zionterranova.com" class="rasta-btn-small" target="_blank" rel="noopener" style="width: 100%; text-align: center; padding: 10px 20px; font-size: 0.9rem;">
+            <i class="fa-solid fa-rocket"></i> zionterranova.com
+          </a>
+          <a href="https://github.com/Zion-TerraNova" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.5); border: 1px solid var(--rasta-gold); color: var(--rasta-gold); padding: 8px 20px; border-radius: 20px; text-decoration: none; font-size: 0.85rem; transition: all 0.3s ease;">
+            <i class="fa-brands fa-github"></i> GitHub
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- === ZION BANNER (UNDER HERO) === -->
+    <section style="background: rgba(0, 0, 0, 0.88); padding: 34px 16px;">
+      <div class="zion-banner-wrap">
+        <iframe
+          class="zion-banner-frame"
+          src="./assets/banner.html"
+          title="ZION Mainnet Alpha banner"
+          loading="lazy"
+          referrerpolicy="no-referrer"
+          scrolling="no"
+        ></iframe>
+      </div>
+    </section>
+
+    <!-- === DIVIDER === -->
+    <div class="rasta-divider">
+      <div class="line"></div>
+      <span class="icon">🦁</span>
+      <div class="line"></div>
+    </div>
+
+    <!-- === NETWORK STATS === -->
+    <div class="rasta-stats" style="margin-top: 20px;">
+      <div class="stat-item">
+        <div class="stat-number">144B</div>
+        <div class="stat-label">Total Supply</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">16.692B</div>
+        <div class="stat-label">Circulating</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">7342+</div>
+        <div class="stat-label">Block Height</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">5400.067</div>
+        <div class="stat-label">Block Reward (ZION)</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">89/5/5/1</div>
+        <div class="stat-label">Fee Split</div>
+      </div>
+    </div>
+
+    <!-- === ABOUT SECTION === -->
+    <section class="rasta-section">
+      <h2>What is <span>ZION?</span></h2>
+      
+      <p class="rasta-text">
+        <strong>ZION</strong> is the first <em>Multi-Chain Dharma Ecosystem</em> — a blockchain project that organically 
+        blends technical excellence with ethical philosophy and humanitarian mission. Built on a robust 
+        <strong>Deeksha multi-algo Proof-of-Work</strong> core with <strong>hybrid account/UTXO</strong> privacy protocol.
+      </p>
+
+      <div class="rasta-quote">
+        Emancipate yourself from mental slavery. None but ourselves can free our minds. 
+        We are building technology for liberation, not control.
+      </div>
+
+      <p class="rasta-text">
+        ZION expands through <strong>Rainbow Bridge</strong> architecture into a multi-chain ecosystem 
+        connecting 11+ blockchains with <strong>DAO governance</strong> and <strong>consciousness mining</strong>.
+      </p>
+    </section>    <!-- === DIVIDER === -->
+    <div class="rasta-divider">
+      <div class="line"></div>
+      <span class="icon">🙏</span>
+      <div class="line"></div>
+    </div>
+
+    <!-- === HUMANITY SECTION === -->
+    <section class="rasta-section humanity-section">
+      <h2>Humanity <span>First</span></h2>
+      
+      <p class="rasta-text">
+        ZION is not just a blockchain — it is a <strong>humanitarian movement</strong>. We believe that technology should serve 
+        humanity, not the other way around. Our ecosystem is designed with a focus on <em>ethics, transparency, and social responsibility</em>.
+      </p>
+
+      <div class="humanity-pillars">
+        <div class="humanity-pillar">
+          <i class="fa-solid fa-hand-holding-heart"></i>
+          <h4>Charity Fund</h4>
+          <p class="rasta-text" style="margin-top: 30px;">Multi-Chain L2 unification: bridge, DEX, atomic swap and WARP API. Validators stream proofs with automatic anomaly alerts.</p>
+    </section>
+
+    <!-- === DIVIDER === -->
+    <div class="rasta-divider">
+      <div class="line"></div>
+      <span class="icon">⚡</span>
+      <div class="line"></div>
+    </div>
+
+    <!-- === PILLARS OF ZION === -->
+    <section class="rasta-section">
+      <h2>Pillars of <span>ZION Stack</span></h2>
+
+      <div class="pillar-grid">
+        <div class="pillar-card">
+          <div class="icon"><i class="fa-solid fa-brain"></i></div>
+          <h4>AI Warp Engine</h4>
+          <p>32-model afterburner with conscious prompt weighting and automatic miner retargeting for optimal performance.</p>
+          <span class="status">548k H/s</span>
+        </div>
+
+        <div class="pillar-card">
+          <div class="icon"><i class="fa-solid fa-microchip"></i></div>
+          <h4>Sacred Miner Fleet</h4>
+          <p>Native Deeksha, Yescrypt cores with vector quantization. CPU-friendly, ASIC-resistant for fair mining.</p>
+          <span class="status">Council v3</span>
+        </div>
+
+        <div class="pillar-card">
+          <div class="icon"><i class="fa-solid fa-landmark"></i></div>
+          <h4>DAO Orbit Council</h4>
+          <p>On-chain rituals for treasury unlocks and WARP-corridor approvals with 11-seat holographic voting.</p>
+          <span class="status">11 Seats</span>
+        </div>
+
+        <div class="pillar-card">
+          <div class="icon"><i class="fa-solid fa-route"></i></div>
+          <h4>WARP Corridors</h4>
+          <p>8 live chains: Base, Arbitrum, Optimism, BSC, Polygon, Avalanche, Solana, Stellar.</p>
+          <span class="status">8 Live</span>
+        </div>
+
+        <div class="pillar-card">
+          <div class="icon"><i class="fa-solid fa-shield-halved"></i></div>
+          <h4>Sentinel Mesh</h4>
+          <p>Matrix-grade anomaly detection, Prometheus telemetry, and real-time failover orchestrated via Redis streams.</p>
+          <span class="status">Guardian</span>
+        </div>
+
+        <div class="pillar-card">
+          <div class="icon"><i class="fa-solid fa-om"></i></div>
+          <h4>Consciousness Mining</h4>
+          <p>7-dimension proof-of-consciousness curve connecting Physical → Divine states with dynamic block rewards.</p>
+          <span class="status">Sacred 7</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- === DIVIDER === -->
+    <div class="rasta-divider">
+      <div class="line"></div>
+      <span class="icon">🥚</span>
+      <div class="line"></div>
+    </div>
+
+    <!-- === OASIS GAME === -->
+    <div class="oasis-section">
+      <h2 style="color: var(--rasta-gold); text-align: center;">ZION Oasis</h2>
+      <h3 style="color: var(--rasta-green); margin-bottom: 10px; text-align: center;">Game for Future Generations</h3>
+      <p style="color: #888; font-size: 1.2rem; text-align: center;">2028+</p>
+      
+      <div style="display:flex; justify-content:center;">
+        <img src="./img2/golden.jpg" alt="Golden Egg" class="golden-egg" />
+      </div>
+      
+      <p class="rasta-text" style="margin: 20px auto;">
+        The game for the golden egg <strong>HIRANYAGARBHA</strong> is just beginning...
+      </p>
+
+      <p class="rasta-text" style="margin: 20px auto;">
+        <strong>ZION Oasis</strong> is a revolutionary GameFi platform that connects gameplay with real economic impact. 
+        Players build virtual oases, mine ZION tokens, and contribute to humanitarian projects in the real world.
+      </p>
+
+      <div class="oasis-features">
+        <div class="oasis-feature">
+          <i class="fa-solid fa-gamepad"></i>
+          <span>Play-to-Earn</span>
+        </div>
+        <div class="oasis-feature">
+          <i class="fa-solid fa-tree"></i>
+          <span>Build Oases</span>
+        </div>
+        <div class="oasis-feature">
+          <i class="fa-solid fa-coins"></i>
+          <span>Token Rewards</span>
+        </div>
+        <div class="oasis-feature">
+          <i class="fa-solid fa-heart"></i>
+          <span>Real Impact</span>
+        </div>
+      </div>
+
+      <div class="dao-winners">
+        <h4>🏆 DAO Winners (1.75B ZION)</h4>
+        <div class="dao-winners-list">
+          <p><span style="color: gold;">🥇</span> 1st place: <strong>1B ZION</strong> (15% votes)</p>
+          <p><span style="color: silver;">🥈</span> 2nd place: <strong>500M ZION</strong> (10% votes)</p>
+          <p><span style="color: #cd7f32;">🥉</span> 3rd place: <strong>250M ZION</strong> (5% votes)</p>
+        </div>
+        <p class="quest-end">HIRANYAGARBHA Quest ends 2037</p>
+      </div>
+    </div>
+
+    <!-- === DIVIDER === -->
+    <div class="rasta-divider">
+      <div class="line"></div>
+      <span class="icon">🌌</span>
+      <div class="line"></div>
+    </div>
+
+    <!-- === COSMIC MAP === -->
+    <section class="rasta-section cosmic-section">
+      <h2>Cosmic <span>Map</span></h2>
+      <h3>Navigate the ZION Universe</h3>
+      
+      <p class="rasta-text">
+        <strong>Cosmic Map</strong> is an interactive visualization of the entire ZION ecosystem — from the base blockchain 
+        through WARP corridors to individual planets (projects) and moons (sub-tokens).
+      </p>
+
+      <div class="cosmic-grid">
+        <div class="cosmic-body sun">
+          <i class="fa-solid fa-sun"></i>
+          <h4>ZION Core</h4>
+          <p>Central blockchain</p>
+        </div>
+        <div class="cosmic-body planet">
+          <i class="fa-solid fa-globe"></i>
+          <h4>Terra Nova</h4>
+          <p>Main network</p>
+        </div>
+        <div class="cosmic-body planet">
+          <i class="fa-solid fa-circle"></i>
+          <h4>Oasis</h4>
+          <p>GameFi platform</p>
+        </div>
+        <div class="cosmic-body planet">
+          <i class="fa-solid fa-ring"></i>
+          <h4>Rainbow Bridge</h4>
+          <p>Cross-chain hub</p>
+        </div>
+        <div class="cosmic-body moon">
+          <i class="fa-solid fa-moon"></i>
+          <h4>DAO Council</h4>
+          <p>Governance</p>
+        </div>
+        <div class="cosmic-body moon">
+          <i class="fa-solid fa-star"></i>
+          <h4>Amenti</h4>
+          <p>Knowledge base</p>
+        </div>
+      </div>
+
+      <div class="rasta-quote">
+        "The cosmos is within us. We are made of star-stuff. We are a way for the universe to know itself."
+        <br><small style="color: #888;">— Carl Sagan</small>
+      </div>
+
+      <p class="rasta-text">
+        Explore the entire ZION universe map and discover new planets, missions, and opportunities.
+      </p>
+
+      <a href="https://zionterranova.com/docs#cosmic-map-full" class="rasta-btn" target="_blank" rel="noopener">
+        <i class="fa-solid fa-map"></i> Explore Map
+      </a>
+    </section>
+
+    <!-- === MANTRA === -->
+    <section class="mantra-section">
+      <div class="logo">
+        <a href="./blog/5.html">
+          <img id="kalacakra" class="zoom" src="./img/kalacakra1.png" alt="Kalacakra" style="width: 150px; opacity: 0.9;" />
+        </a>
+      </div>
+      <br>
+      <h1>ཨོཾ་མ་ཎི་པདྨེ་ཧཱུྃ</h1>
+      <p style="color: #888; font-style: italic;">Om Mani Padme Hum</p>
+      <br>
+      <p class="rasta-text">JAY RAM SITA HANUMAN! ON THE STAR!</p>
+    </section>
+
+    <!-- === DIVIDER === -->
+    <div class="rasta-divider">
+      <div class="line"></div>
+      <span class="icon">☥</span>
+      <div class="line"></div>
+    </div>
+
+    <!-- === THREE LINKS === -->
+    <section class="rasta-section">
+      <h2>Explore <span>Realms</span></h2>
+
+      <div class="three-links">
+        <a href="https://watch.thechosen.tv/" target="_blank">
+          <img src="./img/lion.jpg" alt="The Chosen" style="width: 100%; max-width: 150px; opacity: 0.9;" />
+          <div class="link-title">🦁 The Chosen</div>
+        </a>
+        <a href="./shop.html">
+          <img src="./img/logo.jpg" alt="eShop" style="width: 100%; max-width: 200px; opacity: 0.9;" />
+          <div class="link-title">🛒 Shop</div>
+        </a>
+        <a href="https://projektnewearth.blogspot.com" target="_blank">
+          <img src="./img/Tibet.jpg" alt="Little Tibet" style="width: 100%; max-width: 150px; opacity: 0.9;" />
+          <div class="link-title">🏔️ Little Tibet</div>
+        </a>
+      </div>
+    </section>
+
+    <!-- === MORE LINKS === -->
+    <section class="rasta-section">
+      <div class="three-links" style="flex-direction: column; align-items: center;">
+        <a href="./halls.html" style="flex: 0 0 auto; width: 100%; max-width: 700px;">
+          <img src="./img/144Halls.jpg" alt="Amenti Library" style="width: 100%; max-width: 400px; opacity: 0.9;" />
+          <div class="link-title">📚 Amenti Library</div>
+        </a>
+        <a href="./woodart.html" style="flex: 0 0 auto; width: 100%; max-width: 300px;">
+          <img src="./img/J&H.jpg" alt="WoodArt" style="width: 100%; max-width: 250px; opacity: 0.9;" />
+          <div class="link-title">🪵 WoodArt</div>
+        </a>
+      </div>
+
+      <div class="quote-container" style="margin-top: 30px;">
+        <div id="quote" class="quote-text"></div>
+      </div>
+    </section>
+
+    <!-- === DIVIDER === -->
+    <div class="rasta-divider">
+      <div class="line"></div>
+      <span class="icon">💬</span>
+      <div class="line"></div>
+    </div>
+
+    <!-- === DISCORD === -->
+    <section class="rasta-section" style="text-align: center;">
+      <h2>Genesis Hub <span>v2.0</span></h2>
+      <h3>Discord server</h3>
+      <br>
+      <a href="https://discord.gg/eatGYDbd" target="_blank">
+        <div class="rasta-frame">
+          <img src="./img/discoard.jpg" alt="Discord Server Genesis" style="width: 100%; max-width: 150px;" />
+        </div>
+      </a>
+      <br>
+      <a href="https://discord.gg/eatGYDbd" class="rasta-btn" target="_blank">
+        <i class="fa-brands fa-discord"></i> Join Community
+      </a>
+    </section>
+
+    <!-- === DIVIDER === -->
+    <div class="rasta-divider">
+      <div class="line"></div>
+      <span class="icon">🎵</span>
+      <div class="line"></div>
+    </div>
+
+    <!-- === GALLERY SLIDER === -->
+    <section class="rasta-section">
+      <h2>Sacred <span>Gallery</span></h2>
+      <br>
+      <div class="slideshow-container" id="slider1">
+
+        <!-- Full-width images with number and caption text -->
+              <div class="mySlides fade">
+                <div class="numbertext">1 / 5</div>
+                <img src="./img/mount-kailash-sunset.jpg" style="width:100%; opacity: 0.9;">
+              <div class="text">Kaliash, Tibet</div>
+              </div>
+      
+              <div class="mySlides fade">
+                <div class="numbertext">2 / 5</div>
+                <img src="./img/maitreya-buddha2.jpg" style="width:100%">
+                <div class="text">Maiteya Buddha, Nubra Valley</div>
+              </div>
+      
+              <div class="mySlides fade">
+                <div class="numbertext">3 / 5</div>
+                <img src="./img/kundun.jpg" style="width:100%">
+                <div class="text">Kundun/14.Dalajlama : „Subham astu sarvadžagatam“</div>
+              </div>
+      
+              <div class="mySlides fade">
+                <div class="numbertext">4 / 5</div>
+                <img src="./img/lotos.jpg" style="width:100%">
+                <div class="text">Heart Sutra : „Gate, Gate, Paragate, Parasamgate, Bodhi, Svaha"</div>
+              </div>
+      
+              <div class="mySlides fade">
+                <div class="numbertext">5 / 5</div>
+                <img src="./img/Heart2012.jpg" style="width:70%">
+                <div class="text">Heart of Amenti : "Om namo Bhagavate Vasudevaya"</div>
+              </div>
+      
+        <!-- Next and previous buttons -->
+              <a class="prev" onclick="plusSlides(-1,'slider1')">&#10094;</a>
+              <a class="next" onclick="plusSlides(1,'slider1')">&#10095;</a>
+              </div>
+              <br>
+      
+      <!-- The dots/circles -->
+              <div style="text-align:center">
+                <span class="dot" onclick="currentSlide(1,'slider1')"></span>
+                <span class="dot" onclick="currentSlide(2,'slider1')"></span>
+                <span class="dot" onclick="currentSlide(3,'slider1')"></span>
+                <span class="dot" onclick="currentSlide(4,'slider1')"></span>
+                <span class="dot" onclick="currentSlide(5,'slider1')"></span>
+              </div>
+    </section>
+
+    <!-- === DIVIDER === -->
+    <div class="rasta-divider">
+      <div class="line"></div>
+      <span class="icon">💚</span>
+      <div class="line"></div>
+    </div>
+
+    <!-- === SUPPORT SECTION === -->
+    <section class="rasta-section">
+      <h2>Financial <span>Support</span></h2>
+
+      <div class="support-section">
+        <h3><i class="fa-solid fa-building-columns"></i> Transparent Account</h3>
+        <p style="color: var(--rasta-gold);">CZ</p>
+        <p>259251079/0600</p>
+        <p>IBAN: CZ68 0600 0000 0002 5925 1079</p>
+        <p>BIC: AGBACZPP</p>
+        <img src="./img/TransAcc.jpeg" alt="Bank Account QR" />
+      </div>
+
+      <div class="support-section">
+        <h3><i class="fa-brands fa-bitcoin"></i> Bitcoin</h3>
+        <p>bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw</p>
+        <img src="./img/bitcoin.png" alt="BTC QR" />
+      </div>
+    </section>
+
+    <!-- === SPOTIFY === -->
+    <section class="rasta-section" style="text-align: center;">
+      <h2>Sacred <span>Sounds</span></h2>
+      <br>
+      <iframe style="border-radius:12px; border: 2px solid var(--rasta-gold);" 
+              src="https://open.spotify.com/embed/playlist/4HvwefPlEhGlLM1LOpKlnV?utm_source=generator&theme=0" 
+              width="100%" 
+              max-width="400px"
+              height="352" 
+              frameBorder="0" 
+              allowfullscreen="" 
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+              loading="lazy">
+      </iframe>
+    </section>
+
+    <!-- === CTA FINAL === -->
+    <section class="rasta-section" style="text-align: center; padding-bottom: 60px;">
+      <h2>Join the <span>Revolution</span></h2>
+      <p class="rasta-text" style="margin-bottom: 30px;">
+        Become part of the ZION community. Mine, vote in DAO, explore WARP corridors, and contribute to building a new economy.
+      </p>
+      <a href="https://www.zionterranova.com" class="rasta-btn" target="_blank">
+        <i class="fa-solid fa-rocket"></i> Launch App
+      </a>
+      <a href="./shop.html" class="rasta-btn rasta-btn-outline">
+        <i class="fa-solid fa-cart-shopping"></i> Visit Shop
+      </a>
+      <a href="https://github.com/Zion-TerraNova" class="rasta-btn rasta-btn-quantum" target="_blank">
+        <i class="fa-brands fa-github"></i> Contribute
+      </a>
+    </section>
+
+    <br>
+
+      <div id="videoOverlay" class="video-overlay" aria-hidden="true">
+        <video id="promoVideo" playsinline>
+          <source src="" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+
+        <div id="videoControls" class="video-control-bar">
+          <button id="rewBtn" class="video-control-btn" title="Rewind 10s">⟲ 10s</button>
+          <button id="playBtn" class="video-control-btn" title="Play / Pause">Play</button>
+          <button id="fwdBtn" class="video-control-btn" title="Forward 10s">10s ⟳</button>
+
+          <input id="progress" class="video-control-progress" type="range" min="0" max="100" value="0" step="0.1" />
+
+          <div id="timeDisplay" class="video-control-time">00:00 / 00:00</div>
+
+          <button id="skipBtn" class="video-control-btn btn-rasta-ghost">Skip</button>
+        </div>
+      </div>
+
+      <script>
+        document.addEventListener('DOMContentLoaded', () => {
+          const video = document.getElementById('promoVideo');
+          const overlay = document.getElementById('videoOverlay');
+          const playBtn = document.getElementById('playBtn');
+          const rewBtn = document.getElementById('rewBtn');
+          const fwdBtn = document.getElementById('fwdBtn');
+          const progress = document.getElementById('progress');
+          const timeDisplay = document.getElementById('timeDisplay');
+          const skipBtn = document.getElementById('skipBtn');
+
+          function formatTime(s){
+            if (!isFinite(s)) return '00:00';
+            const m = Math.floor(s/60).toString().padStart(2,'0');
+            const sec = Math.floor(s%60).toString().padStart(2,'0');
+            return `${m}:${sec}`;
+          }
+
+          // set slider according to video duration
+          video.addEventListener('loadedmetadata', () => {
+            progress.max = 100;
+            timeDisplay.textContent = `${formatTime(0)} / ${formatTime(video.duration)}`;
+          });
+
+          // update during playback
+          video.addEventListener('timeupdate', () => {
+            if (video.duration) {
+              const pct = (video.currentTime / video.duration) * 100;
+              progress.value = pct;
+              timeDisplay.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
+            }
+          });
+
+          // seek using slider
+          let seeking = false;
+          progress.addEventListener('input', (e) => {
+            seeking = true;
+            const pct = parseFloat(e.target.value);
+            if (video.duration) {
+              timeDisplay.textContent = `${formatTime((pct/100)*video.duration)} / ${formatTime(video.duration)}`;
+            }
+          });
+          progress.addEventListener('change', (e) => {
+            if (video.duration) {
+              video.currentTime = (parseFloat(e.target.value)/100) * video.duration;
+            }
+            seeking = false;
+          });
+
+          // play/pause
+          playBtn.addEventListener('click', () => {
+            if (video.paused) {
+              video.play().catch(()=>{/* autoplay blocked */});
+            } else {
+              video.pause();
+            }
+            playBtn.textContent = video.paused ? 'Play' : 'Pause';
+          });
+          video.addEventListener('play', () => playBtn.textContent = 'Pause');
+          video.addEventListener('pause', () => playBtn.textContent = 'Play');
+
+          // rewind / forward 10s
+          rewBtn.addEventListener('click', () => {
+            video.currentTime = Math.max(0, video.currentTime - 10);
+          });
+          fwdBtn.addEventListener('click', () => {
+            video.currentTime = Math.min(video.duration || Infinity, video.currentTime + 10);
+          });
+
+          // stop overlay + navigation (skip)
+          skipBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            video.pause();
+            overlay.style.display = 'none';
+            // if you have pendingHref, navigate here (residual behavior from existing script)
+            if (window.pendingHref) window.location.assign(window.pendingHref);
+          });
+
+          // if you click outside video, close and navigate
+          overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+              video.pause();
+              overlay.style.display = 'none';
+              if (window.pendingHref) window.location.assign(window.pendingHref);
+            }
+          });
+
+          // ESC closes
+          document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && overlay.style.display === 'flex') {
+              video.pause();
+              overlay.style.display = 'none';
+              if (window.pendingHref) window.location.assign(window.pendingHref);
+            }
+          });
+        });
+      </script>
+  <footer>
+    <div class="footer-content">
+      <br>
+      <div class="rasta-divider" style="margin: 20px 0;">
+        <div class="line"></div>
+        <span class="icon">🦁</span>
+        <div class="line"></div>
+      </div>
+      <div class="logo">
+        <a href="./shop.html">
+          <img class="zoom" src="./img/logo.jpg" alt="Logo" style="width: 25%; max-width: 150px; border-radius: 50%;" />
+        </a>
+      </div>
+      <br>
+      <p style="color: var(--rasta-gold); font-style: italic; margin-bottom: 20px;">
+        "One good thing about music, when it hits you, you feel no pain."
+      </p>
+      <br>
+      <div class="social-icons" style="font-size: 1.5rem;">
+        <a href="https://www.facebook.com/ZionTerraNova/" style="color: var(--rasta-green); margin: 0 15px;"><i class="fa-brands fa-facebook"></i></a>
+        <a href="https://x.com/ZionTerraNova" style="color: var(--rasta-gold); margin: 0 15px;"><i class="fa-brands fa-twitter"></i></a>
+        <a href="https://www.instagram.com/terranova_project/" style="color: var(--rasta-red); margin: 0 15px;"><i class="fa-brands fa-instagram"></i></a>
+        <a href="https://github.com/Zion-TerraNova" style="color: #fff; margin: 0 15px;"><i class="fa-brands fa-github"></i></a>
+        <a href="https://discord.gg/eatGYDbd" style="color: #7289da; margin: 0 15px;"><i class="fa-brands fa-discord"></i></a>
+      </div>
+    </div>
+    <div class="footer-bottom" style="border-top: 3px solid; border-image: linear-gradient(90deg, var(--rasta-red), var(--rasta-gold), var(--rasta-green)) 1; padding-top: 20px; margin-top: 20px;">
+      <p>&copy; 2026 ZION TerraNova® | <a href="./terms-en.html" style="color: var(--rasta-gold);">Terms</a> | <a href="./legal-en.html" style="color: var(--rasta-gold);">Legal</a> | <a href="./gdpr-en.html" style="color: var(--rasta-green);">GDPR</a> | One Love</p>
+    </div>
+  </footer> 
+  </body>
+</html>
