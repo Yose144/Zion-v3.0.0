@@ -4853,29 +4853,22 @@ def build_wallets() -> dict:
         except Exception:
             pass
 
-    # 4. Try to enrich with live balances — prefer local RPC, fallback to Edge/public
-    rpc_host, rpc_port = _get_node_rpc_addr()
-    _ping = rpc_call(rpc_host, rpc_port, "getChainInfo", {}, timeout=1.5)
-    rpc_reachable = _ping and not _ping.get("_rpc_error")
-    if not rpc_reachable:
-        # Fallback to public Edge RPC (nginx TCP stream on 8443 -> V31 node)
-        _ping = rpc_call(EDGE_PUBLIC_IP, 8443, "getChainInfo", {}, timeout=2.0)
-        if _ping and not _ping.get("_rpc_error"):
-            rpc_host, rpc_port = EDGE_PUBLIC_IP, 8443
-            rpc_reachable = True
+    # 4. On-chain UTXO balance scan (replaces getBalance, which only returns
+    #    wallet-local data on V31). Scan the whole chain once, look up all
+    #    wallet addresses, then fall back to genesis estimates when the scan
+    #    cannot be completed.
+    scan = _scan_all_utxo_balances()
+    scan_ok = bool(scan)
 
     for w in wallets:
         addr = w.get("address", "")
         if addr and addr.startswith("zion1"):
-            bal = rpc_call(rpc_host, rpc_port, "getBalance", {"address": addr})
-            if bal and not bal.get("_rpc_error"):
-                # V31 getBalance returns "balance" as a string of flowers; V3 used balance_flowers/balance_atomic
-                raw_balance = (bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or "0")
-                atomic = int(raw_balance) if isinstance(raw_balance, (int, float, str)) and str(raw_balance).isdigit() else 0
-                w["balance_zion"] = bal.get("balance_zion") if isinstance(bal.get("balance_zion"), (int, float)) else flowers_to_zion(atomic)
+            atomic, _ = _get_on_chain_balance(addr, scan=scan)
+            if scan_ok:
+                w["balance_zion"] = flowers_to_zion(atomic)
                 w["balance_atomic"] = atomic
+                w["balance_source"] = "utxo"
                 w["rpc_ok"] = True
-                w["balance_source"] = "rpc"
             else:
                 w["balance_zion"] = None
                 w["balance_atomic"] = None
@@ -4885,19 +4878,20 @@ def build_wallets() -> dict:
             w["balance_atomic"] = None
             w["rpc_ok"] = False
 
-    # 5. Fallback for offline / UTXO-unaware balance RPC:
+    # 5. Fallback if UTXO scan failed:
     #    - Premine wallets: use the genesis output amount (authoritative from block 0).
     #    - Operational wallets: show 0 when no live data is available.
-    for w in wallets:
-        if w.get("category") == "premine" and w.get("amount_zion"):
-            w["balance_zion"] = float(w["amount_zion"])
-            w["balance_atomic"] = int(w["amount_zion"] * FLOWERS_PER_ZION)
-            w["balance_source"] = "genesis"
-            w["rpc_ok"] = False
-        elif w.get("category") == "operational" and not w.get("rpc_ok"):
-            w["balance_zion"] = 0.0
-            w["balance_atomic"] = 0
-            w["balance_source"] = "estimated"
+    if not scan_ok:
+        for w in wallets:
+            if w.get("category") == "premine" and w.get("amount_zion"):
+                w["balance_zion"] = float(w["amount_zion"])
+                w["balance_atomic"] = int(w["amount_zion"] * FLOWERS_PER_ZION)
+                w["balance_source"] = "genesis"
+                w["rpc_ok"] = False
+            elif w.get("category") == "operational" and not w.get("rpc_ok"):
+                w["balance_zion"] = 0.0
+                w["balance_atomic"] = 0
+                w["balance_source"] = "estimated"
 
     total_premine = sum(w.get("amount_zion", 0) for w in wallets if w.get("category") == "premine")
     with_balance = [w for w in wallets if w.get("balance_zion") is not None]
@@ -4961,7 +4955,7 @@ def build_wallets() -> dict:
             "total_operational_zion": round(op_total, 6),
         },
         "category_summary": category_summary,
-        "rpc": {"host": rpc_host, "port": rpc_port, "reachable": rpc_reachable},
+        "rpc": {"host": EDGE_PUBLIC_IP if scan_ok else "127.0.0.1", "port": 8443 if scan_ok else 9445, "reachable": scan_ok},
     }
 
 # ── Block detail ────────────────────────────────────────────────────────
@@ -5241,6 +5235,98 @@ def _rpc_with_fallback(method: str, params: dict, timeout: float = 2.0):
     if result and not result.get("_rpc_error"):
         return result, EDGE_PUBLIC_IP, 8443
     return None, rpc_host, rpc_port
+
+
+# ── On-chain UTXO balance scanner ──────────────────────────────────────
+
+_UTXO_BALANCE_CACHE: dict[str, tuple[float, dict]] = {}
+_UTXO_BALANCE_CACHE_LOCK = threading.Lock()
+
+@_ttl_cache_fn(15.0)
+def _scan_all_utxo_balances(timeout_per_block: float = 3.0, max_total_time: float = 60.0) -> dict:
+    """Scan the whole chain for unspent UTXO outputs and return address -> flowers.
+
+    V31 nodes may not expose arbitrary address balance lookups (getBalance /
+    getAddressInfo only return wallet-local balances). This function walks the
+    chain itself: genesis -> tip, collects all outputs, marks inputs as spent,
+    and returns the sum of unspent outputs per address.
+    """
+    start = time.monotonic()
+    chain_info, _, _ = _rpc_with_fallback("getChainInfo", {}, timeout=5.0)
+    height = (chain_info or {}).get("chain_height", 0) if isinstance(chain_info, dict) else 0
+    if height <= 0:
+        return {}
+
+    utxo: dict[tuple[str, int], tuple[str, int]] = {}  # (txid, idx) -> (address, amount_flowers)
+    spent: set[tuple[str, int]] = set()
+
+    for h in range(0, height + 1):
+        if time.monotonic() - start > max_total_time:
+            break
+        blk, _, _ = _rpc_with_fallback("getBlockByHeight", {"height": h}, timeout=timeout_per_block)
+        if not blk or (isinstance(blk, dict) and blk.get("_rpc_error")):
+            continue
+        if not isinstance(blk, dict):
+            continue
+        tx_lists = [blk.get("transactions", []), blk.get("utxo_transactions", [])]
+        for tx_group in tx_lists:
+            if not isinstance(tx_group, list):
+                continue
+            for tx in tx_group:
+                if not isinstance(tx, dict):
+                    continue
+                tx_id = tx.get("tx_id") or tx.get("transaction_id")
+                if not tx_id:
+                    continue
+                # Mark inputs as spent
+                for inp in tx.get("inputs", []):
+                    if not isinstance(inp, dict):
+                        continue
+                    po = inp.get("previous_output")
+                    if po is None:
+                        continue
+                    if isinstance(po, dict):
+                        prev_tx = po.get("tx_id") or po.get("transaction_id")
+                        vout = po.get("index", po.get("vout", 0))
+                    elif isinstance(po, str):
+                        prev_tx = po
+                        vout = 0
+                    else:
+                        continue
+                    if prev_tx:
+                        spent.add((prev_tx, vout))
+                # Record outputs
+                for idx, out in enumerate(tx.get("outputs", [])):
+                    if not isinstance(out, dict):
+                        continue
+                    addr = out.get("address") or out.get("to")
+                    if not addr:
+                        continue
+                    try:
+                        amount = int(out.get("amount", 0))
+                    except (ValueError, TypeError):
+                        amount = 0
+                    if amount < 0:
+                        amount = 0
+                    utxo[(tx_id, idx)] = (addr, amount)
+
+    balances: dict[str, int] = {}
+    for (tx_id, idx), (addr, amount) in utxo.items():
+        if (tx_id, idx) in spent:
+            continue
+        balances[addr] = balances.get(addr, 0) + amount
+    return balances
+
+
+def _get_on_chain_balance(address: str, scan: dict = None) -> tuple[int, bool]:
+    """Return (balance_flowers, ok) for a single address using the UTXO scan.
+    If scan is not provided, it will be computed on demand.
+    """
+    if not address or not address.startswith("zion1"):
+        return 0, False
+    if scan is None:
+        scan = _scan_all_utxo_balances()
+    return int(scan.get(address, 0)), bool(scan)
 
 
 # ── Explorer data builder ──────────────────────────────────────────────
@@ -6309,12 +6395,14 @@ def get_pool_registered_miners() -> dict:
             unique_addrs.add(addr)
 
     balance_map = {}
+    try:
+        scan = _scan_all_utxo_balances()
+    except Exception:
+        scan = {}
     for addr in unique_addrs:
         try:
-            bal = rpc_call(EDGE_RPC_HOST, 9445, "getBalance", {"address": addr}, timeout=2.0)
-            if bal and not bal.get("_rpc_error"):
-                atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
-                balance_map[addr] = flowers_to_zion(atomic)
+            atomic, _ = _get_on_chain_balance(addr, scan=scan)
+            balance_map[addr] = flowers_to_zion(atomic)
         except Exception:
             pass
 
@@ -6402,20 +6490,24 @@ def get_pool_registered_miners() -> dict:
 
 
 def enrich_miner_balances(miners: list) -> list:
-    """Query node RPC for on-chain balance of each miner's payout address.
+    """Query on-chain UTXO balance for each miner payout address.
 
     Updates each miner dict in-place with:
       - on_chain_balance_zion (float)
       - pending_balance_zion (float) if pending_balance is in atomic flowers
     """
+    if not miners:
+        return miners
+    try:
+        scan = _scan_all_utxo_balances()
+    except Exception:
+        scan = {}
     for m in miners:
         addr = m.get("payout_address") or m.get("address") or ""
         if addr and isinstance(addr, str) and addr.startswith("zion1"):
             try:
-                bal = rpc_call(EDGE_RPC_HOST, 9445, "getBalance", {"address": addr}, timeout=2.0)
-                if bal and not bal.get("_rpc_error"):
-                    atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
-                    m["on_chain_balance_zion"] = flowers_to_zion(atomic)
+                atomic, _ = _get_on_chain_balance(addr, scan=scan)
+                m["on_chain_balance_zion"] = flowers_to_zion(atomic)
             except Exception:
                 pass
         # Normalize pending_balance to ZION
@@ -8048,12 +8140,8 @@ def get_pool_miner_detail(address: str) -> dict:
 
     # On-chain balance
     try:
-        bal = rpc_call(EDGE_RPC_HOST, 9445, "getBalance", {"address": address}, timeout=2.0)
-        if bal and not bal.get("_rpc_error"):
-            atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
-            result["on_chain_balance_zion"] = flowers_to_zion(atomic)
-        else:
-            result["on_chain_balance_zion"] = 0
+        atomic, _ = _get_on_chain_balance(address)
+        result["on_chain_balance_zion"] = flowers_to_zion(atomic)
     except Exception:
         result["on_chain_balance_zion"] = 0
 
@@ -8318,16 +8406,14 @@ def get_pool_wallet_status() -> dict:
             if m := re.search(r'balance_zion=(\d+\.?\d*)', line):
                 status["balance_zion"] = float(m.group(1))
 
-    # ── Tertiary: RPC for pool wallet balance ────────────────────────────
+    # ── Tertiary: UTXO scan for pool wallet balance ─────────────────────
     wallet = status["pool_wallet"]
     if wallet and wallet.startswith("zion1"):
-        bal = rpc_call("127.0.0.1", 9445, "getBalance", {"address": wallet}, timeout=2.0)
-        if bal and not bal.get("_rpc_error"):
-            atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
-            status["balance_zion"] = bal.get("balance_zion") if isinstance(bal.get("balance_zion"), (int, float)) else flowers_to_zion(atomic)
-            # UTXO count from RPC if available
-            if bal.get("utxo_count"):
-                status["utxo_count"] = bal["utxo_count"]
+        try:
+            atomic, _ = _get_on_chain_balance(wallet)
+            status["balance_zion"] = flowers_to_zion(atomic)
+        except Exception:
+            pass
     status["ok"] = True
     return status
 
@@ -8749,23 +8835,11 @@ def build_payout_status() -> dict:
     recent_payouts.sort(key=lambda x: x["block_height"], reverse=True)
     status["recent_payouts"] = recent_payouts[:20]
 
-    # ── Wallet balances (RPC with Edge→public fallback) ────────────────
-    rpc_host, _ = _get_node_rpc_addr()
-    _ping = rpc_call(rpc_host, rpc_port, "getChainInfo", {}, timeout=1.5)
-    if not _ping or _ping.get("_rpc_error"):
-        _ping = rpc_call(EDGE_PUBLIC_IP, 8443, "getChainInfo", {}, timeout=2.0)
-        if _ping and not _ping.get("_rpc_error"):
-            rpc_host = EDGE_PUBLIC_IP
-            rpc_port = 8443
-
+    # ── Wallet balances (on-chain UTXO scan) ───────────────────────────
+    scan = _scan_all_utxo_balances()
     if status["pool_wallet"] and status["pool_wallet"].startswith("zion1"):
-        bal = rpc_call(rpc_host, rpc_port, "getBalance", {"address": status["pool_wallet"]}, timeout=2.5)
-        if bal and not bal.get("_rpc_error"):
-            atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
-            status["pool_wallet_balance"] = atomic
-        else:
-            # No live data available: show 0 instead of null so the UI renders a balance.
-            status["pool_wallet_balance"] = 0
+        atomic, _ = _get_on_chain_balance(status["pool_wallet"], scan=scan)
+        status["pool_wallet_balance"] = atomic
 
     balances = {}
     for key, addr in [("miner", status["miner_wallet"]),
@@ -8773,13 +8847,8 @@ def build_payout_status() -> dict:
                       ("issobella", status["issobella_wallet"]),
                       ("pool_fee", status.get("pool_fee_wallet"))]:
         if addr and addr.startswith("zion1"):
-            bal = rpc_call(rpc_host, rpc_port, "getBalance", {"address": addr}, timeout=2.5)
-            if bal and not bal.get("_rpc_error"):
-                atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
-                balances[key] = {"atomic": atomic, "zion": flowers_to_zion(atomic)}
-            else:
-                # No live data: show 0 so the UI does not leave the balance blank.
-                balances[key] = {"atomic": 0, "zion": 0.0}
+            atomic, _ = _get_on_chain_balance(addr, scan=scan)
+            balances[key] = {"atomic": atomic, "zion": flowers_to_zion(atomic)}
     status["balances"] = balances
 
     # ── Pool stats / miners from Edge or local ──────────────────────────
@@ -8811,19 +8880,19 @@ def build_payout_status() -> dict:
     else:
         status["burned_total"] = 0.0
 
-    # ── On-chain balances for each miner payout address ───────────────────
+    # ── On-chain UTXO balances for each miner payout address ───────────────
+    try:
+        scan = _scan_all_utxo_balances()
+    except Exception:
+        scan = {}
     for m in miners:
         addr = m.get("payout_address")
         if addr and addr.startswith("zion1"):
-            bal = rpc_call(rpc_host, rpc_port, "getBalance", {"address": addr}, timeout=2.0)
-            if bal and not bal.get("_rpc_error"):
-                atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
+            try:
+                atomic, _ = _get_on_chain_balance(addr, scan=scan)
                 m["on_chain_balance_zion"] = flowers_to_zion(atomic)
-            elif is_edge and local_rpc_alive:
-                bal = rpc_call("127.0.0.1", 9445, "getBalance", {"address": addr}, timeout=2.0)
-                if bal and not bal.get("_rpc_error"):
-                    atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
-                    m["on_chain_balance_zion"] = flowers_to_zion(atomic)
+            except Exception:
+                pass
 
     # ── Network-wide emission totals from block 0 (consensus schedule) ──
     try:
@@ -10018,10 +10087,17 @@ ALERT_LOG_FILES = {
 
 
 def _rpc_get_balance(address: str) -> dict | None:
-    """Query node RPC for balance. Returns None on error."""
-    result = rpc_call("127.0.0.1", 9445, "getBalance", {"address": address}, timeout=2.0)
-    if result and not result.get("_rpc_error"):
-        return result
+    """Query on-chain UTXO balance. Returns dict with balance_zion / balance_flowers on success."""
+    try:
+        atomic, ok = _get_on_chain_balance(address)
+        if ok:
+            return {
+                "balance_flowers": str(atomic),
+                "balance_atomic": atomic,
+                "balance_zion": flowers_to_zion(atomic),
+            }
+    except Exception:
+        pass
     return None
 
 
