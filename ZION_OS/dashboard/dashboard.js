@@ -1925,19 +1925,19 @@ async function updateBlockRewardBreakdown(){
     const data = await fetch('/api/explorer').then(r => r.ok ? r.json() : null);
     if(!data) return;
     const reward = data.block_reward_zion || 5400;
-    // Parse fee split 89/5/5/1
-    const fsText = '89/5/5/1';
+    // Parse V31 fee split 89/5/5/1 — the 1% is burned as pool fee, not minted.
+    const fsText = data.fee_split || '89/5/5/1';
     const parts = fsText.split('/').map(x => parseFloat(x) || 0);
-    const [minerPct, humPct, issoPct, poolPct] = parts;
+    const [minerPct, humPct, issoPct, burnPct] = parts;
     const minerAmt = (reward * minerPct / 100).toFixed(1);
     const humAmt = (reward * humPct / 100).toFixed(1);
     const issoAmt = (reward * issoPct / 100).toFixed(1);
-    const poolAmt = (reward * poolPct / 100).toFixed(1);
+    const burnAmt = (reward * burnPct / 100).toFixed(1);
     const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
     set('reward-amt-miner', minerAmt + ' ZION');
     set('reward-amt-humanitarian', humAmt + ' ZION');
     set('reward-amt-issobella', issoAmt + ' ZION');
-    set('reward-amt-pool', poolAmt + ' ZION');
+    set('reward-amt-pool', burnAmt + ' ZION');
   } catch(e){ console.error('updateBlockRewardBreakdown:', e); }
 }
 
@@ -7099,7 +7099,7 @@ async function loadGenesis(){
     { label: 'Miner', pct: split.miner_pct, color: 'rgb(252 209 22)', desc: 'Block solvers' },
     { label: 'Humanitarian Fund', pct: split.humanitarian_pct, color: 'rgb(7 137 48)', desc: 'Children Future Fund' },
     { label: 'L5/L6 Issobella', pct: split.issobella_pct, color: 'rgb(228 30 43)', desc: 'Free World + Issobella' },
-    { label: 'Pool Fee', pct: split.pool_fee_pct, color: 'rgb(7 137 48)', desc: 'Pool operator' },
+    { label: 'Burned (Pool Fee)', pct: split.pool_fee_pct, color: 'rgb(7 137 48)', desc: 'Not minted' },
   ];
   document.getElementById('reward-split-viz').innerHTML = splitData.map(d => `
     <div>

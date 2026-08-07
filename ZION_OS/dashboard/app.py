@@ -5137,6 +5137,8 @@ _MAX_DECAY_DECADES_PY = 10
 _TAIL_REWARD_ZION_PY = 724.785
 _TOTAL_SUPPLY_ZION_PY = 144_000_000_000
 _GENESIS_PREMINE_ZION_PY = 16_780_000_000
+# V31 fee_split burns 1% of the block subsidy as pool fee; only 99% is minted.
+_MINTED_SUBSIDY_PCT_PY = 0.99
 
 
 def _block_reward_at_height(height: int) -> float:
@@ -5154,11 +5156,12 @@ def _estimate_mined_supply_at_height(height: int) -> float:
     decade = 0
     while remaining > 0 and decade < _MAX_DECAY_DECADES_PY:
         blocks_this_decade = min(remaining, _BLOCKS_PER_DECADE_PY)
-        mined += blocks_this_decade * _block_reward_at_height(max(1, decade * _BLOCKS_PER_DECADE_PY + 1))
+        # Only 99% of each block subsidy is minted; 1% is burned as pool fee.
+        mined += blocks_this_decade * _block_reward_at_height(max(1, decade * _BLOCKS_PER_DECADE_PY + 1)) * _MINTED_SUBSIDY_PCT_PY
         remaining -= blocks_this_decade
         decade += 1
     if remaining > 0:
-        mined += remaining * _TAIL_REWARD_ZION_PY
+        mined += remaining * _TAIL_REWARD_ZION_PY * _MINTED_SUBSIDY_PCT_PY
     max_mineable = max(0.0, _TOTAL_SUPPLY_ZION_PY - _GENESIS_PREMINE_ZION_PY)
     return max(0.0, min(mined, max_mineable))
 
@@ -5283,6 +5286,7 @@ def build_explorer() -> dict:
         "recent_blocks": recent_blocks,
         "peer_count": peer_count,
         "protocol_version": info.get("protocol_version", "") if info else "",
+        "fee_split": "89/5/5/1",
     }
 
 # ── Edge server system status ───────────────────────────────────────────
