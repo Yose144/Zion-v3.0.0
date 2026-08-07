@@ -116,6 +116,7 @@ This repository has one source of truth per topic:
 | **V31 security / ops rules** | [`V31/AGENTS.md`](V31/AGENTS.md) |
 | **Post-cutover execution plan** | [`PLAN_TO_3.1_RECONCILED.md`](./docs/3.1/PLAN_TO_3.1_RECONCILED.md) |
 | **V3 archive** | [`archive/V3/README.md`](archive/V3/README.md) |
+| **MarketPlace ZION L1 bonus payout** | [`APP&WEB/MarketPlace/PAYOUT.md`](APP&WEB/MarketPlace/PAYOUT.md) |
 | **Historical incidents + backup rules** | [`AGENTS.md`](AGENTS.md) |
 
 ---
