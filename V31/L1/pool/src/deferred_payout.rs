@@ -117,8 +117,7 @@ pub async fn get_chain_height(rpc_addr: &str) -> anyhow::Result<u64> {
 
     result
         .get("result")
-        .and_then(|r| r.get("chain_height"))
-        .and_then(|v| v.as_u64())
+        .and_then(|r| r.get("native_chain_height").and_then(|v| v.as_u64()).or_else(|| r.get("chain_height").and_then(|v| v.as_u64())))
         .ok_or_else(|| anyhow::anyhow!("missing chain_height in getChainInfo response"))
 }
 

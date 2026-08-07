@@ -179,6 +179,21 @@ async fn dispatch_request(line: &str, node: &Node) -> Value {
         };
     }
 
+    // V31 native UTXO RPCs.
+    if method == "getUtxos" {
+        return match get_utxos(node, &params).await {
+            Ok(v) => success_response(id, v),
+            Err(e) => error_response(id, -32000, &e.to_string()),
+        };
+    }
+
+    if method == "submitUtxoTransaction" || method == "submitTransaction" {
+        return match submit_utxo_tx(node, &params).await {
+            Ok(v) => success_response(id, v),
+            Err(e) => error_response(id, -32000, &e.to_string()),
+        };
+    }
+
     // V3 methods are dispatched to the V3 RPC handler.
     let v3_methods = [
         "getStatus",
@@ -186,12 +201,9 @@ async fn dispatch_request(line: &str, node: &Node) -> Value {
         "getBlockByHash",
         "getBlock",
         "submitAccountTransaction",
-        "submitUtxoTransaction",
         "sendRawTransaction",
-        "submitTransaction",
         "getBalance",
         "getAccountBalance",
-        "getUtxos",
         "getTransaction",
         "getAccountTransaction",
         "getTransactionHistory",
@@ -326,6 +338,46 @@ async fn get_peer_info(node: &Node) -> Result<Value, NodeError> {
         .map(|p| json!({ "address": p.to_string() }))
         .collect();
     Ok(json!({ "peers": peers, "count": peers.len() }))
+}
+
+async fn get_utxos(node: &Node, params: &Value) -> Result<Value, NodeError> {
+    let address = params
+        .get("address")
+        .or_else(|| params.get(0))
+        .and_then(Value::as_str)
+        .ok_or_else(|| NodeError::Address("address required".to_string()))?;
+    let utxos = node.get_utxos_for_address(address).await;
+    let out: Vec<Value> = utxos
+        .into_iter()
+        .map(|(hash, idx, amount)| {
+            json!({
+                "tx_hash": hash.to_hex(),
+                "output_index": idx,
+                "amount": amount,
+            })
+        })
+        .collect();
+    Ok(json!({
+        "address": address,
+        "utxos": out,
+        "count": out.len(),
+        "model": "v31-native",
+    }))
+}
+
+async fn submit_utxo_tx(node: &Node, params: &Value) -> Result<Value, NodeError> {
+    let tx_value = params
+        .get("transaction")
+        .cloned()
+        .unwrap_or_else(|| params.clone());
+    let tx: crate::Transaction =
+        serde_json::from_value(tx_value).map_err(|e| NodeError::Task(format!("parse error: {e}")))?;
+    let tx_hash = node.submit_utxo_transaction(tx).await?;
+    Ok(json!({
+        "accepted": true,
+        "tx_id": tx_hash.to_hex(),
+        "model": "v31-native",
+    }))
 }
 
 fn success_response(id: Option<Value>, result: Value) -> Value {

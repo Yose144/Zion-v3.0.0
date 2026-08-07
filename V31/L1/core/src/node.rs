@@ -21,6 +21,7 @@ use crate::mempool::Mempool;
 use crate::rpc::RpcServer;
 use crate::storage::{Storage, StorageError};
 use crate::transaction::{Transaction, TransactionOutput};
+use crate::utxo::{Outpoint, UtxoError, UtxoSet};
 
 /// Node configuration.
 #[derive(Clone, Debug)]
@@ -101,6 +102,8 @@ pub enum NodeError {
     Task(String),
     #[error("V3 P2P error: {0}")]
     V3P2P(#[from] crate::v3_p2p::V3P2PError),
+    #[error("UTXO error: {0}")]
+    Utxo(#[from] UtxoError),
 }
 
 /// Chain node.
@@ -108,6 +111,8 @@ pub struct Node {
     pub storage: Storage,
     pub mempool: Mempool,
     pub consensus: ConsensusEngine,
+    /// V31 native UTXO set.
+    pub utxo_set: Arc<tokio::sync::Mutex<UtxoSet>>,
     /// V3 RPC handler (parallel V3 chain path).
     pub v3_rpc: Arc<crate::v3_rpc::V3RpcHandler>,
     /// V3 P2P sync client.
@@ -201,10 +206,22 @@ impl Node {
         );
 
         let consensus = ConsensusEngine::new(Arc::new(EkamDeeksha::new()));
+
+        // Rebuild the V31 UTXO set from storage.
+        let mut utxo_set = UtxoSet::new();
+        let height = storage.height().await?;
+        for h in 0..=height {
+            if let Some(block) = storage.get_by_height(h).await? {
+                utxo_set.apply_block(&block)?;
+            }
+        }
+        let utxo_set = Arc::new(tokio::sync::Mutex::new(utxo_set));
+
         Ok(Self {
             storage,
             mempool: Mempool::new(),
             consensus,
+            utxo_set,
             v3_rpc,
             v3_sync,
             config,
@@ -286,7 +303,7 @@ impl Node {
                 v3_p2p_server
                     .listen(v3_p2p_addr, v3_p2p_shutdown)
                     .await
-                    .map_err(|e| NodeError::V3P2P(e))
+                    .map_err(NodeError::V3P2P)
             })
         };
 
@@ -375,6 +392,41 @@ impl Node {
         self.mempool.add(tx).await;
     }
 
+    /// Return unspent V31 UTXOs for an address.
+    pub async fn get_utxos_for_address(&self, address: &str) -> Vec<(Hash, u32, u64)> {
+        let set = self.utxo_set.lock().await;
+        set.get_utxos_for_address(address)
+    }
+
+    /// Submit a V31 UTXO transaction to the mempool.
+    pub async fn submit_utxo_transaction(&self, tx: Transaction) -> Result<Hash, NodeError> {
+        // Reject coinbase transactions submitted as user transactions.
+        if tx.is_coinbase() {
+            return Err(NodeError::Utxo(UtxoError::InputNotFound(Outpoint::new(
+                Hash::default(),
+                0,
+            ))));
+        }
+
+        // Reject mempool double-spends.
+        for input in &tx.inputs {
+            let outpoint = Outpoint::new(input.previous_output, input.index);
+            if self.mempool.is_spent(&outpoint).await {
+                return Err(NodeError::Utxo(UtxoError::AlreadySpent(outpoint)));
+            }
+        }
+
+        // Validate against the current confirmed UTXO set.
+        {
+            let set = self.utxo_set.lock().await;
+            set.validate_transaction(&tx)?;
+        }
+
+        let tx_hash = tx.hash();
+        self.mempool.add(tx).await;
+        Ok(tx_hash)
+    }
+
     /// Build a block template for miners.
     pub async fn block_template(&self, miner: Address) -> Result<BlockTemplate, NodeError> {
         let (tip_header, _tip_hash) = self.storage.tip().await?.unwrap_or_else(|| {
@@ -411,10 +463,33 @@ impl Node {
                     address: self.config.issobella_address.clone(),
                 },
             ],
-            memo: b"coinbase".to_vec(),
+            memo: format!("coinbase:height={}", next_height).into_bytes(),
         };
 
-        let mut txs = self.mempool.pending().await;
+        // Filter mempool: drop transactions that are no longer valid against the
+        // current UTXO set or that conflict with earlier transactions in the
+        // same template.
+        let mempool_txs = self.mempool.pending().await;
+        let mut selected = Vec::with_capacity(mempool_txs.len());
+        let mut invalid = Vec::with_capacity(mempool_txs.len());
+        {
+            let set = self.utxo_set.lock().await;
+            let mut view = set.clone();
+            for tx in mempool_txs {
+                match view.apply_transaction(&tx) {
+                    Ok(_) => selected.push(tx),
+                    Err(e) => {
+                        warn!(%e, tx_hash = %tx.hash().to_hex(), "mempool tx invalid for template");
+                        invalid.push(tx.hash());
+                    }
+                }
+            }
+        }
+        if !invalid.is_empty() {
+            self.mempool.remove(&invalid).await;
+        }
+
+        let mut txs = selected;
         txs.insert(0, coinbase);
 
         let merkle_root = merkle_root(&txs);
@@ -482,11 +557,35 @@ impl Node {
             }
         }
 
+        // Validate and apply the block's transactions to the V31 UTXO set.
+        {
+            let mut set = self.utxo_set.lock().await;
+            set.apply_block(&block)?;
+        }
+
         self.storage.put(&block).await?;
 
         // Remove included transactions from mempool.
         let included: Vec<Hash> = block.transactions.iter().map(|t| t.hash()).collect();
         self.mempool.remove(&included).await;
+
+        // Revalidate the remaining mempool against the updated UTXO set and
+        // drop any transactions that are no longer valid (e.g. outpoints spent
+        // by a block received over P2P).
+        {
+            let set = self.utxo_set.lock().await;
+            let remaining = self.mempool.pending().await;
+            let mut view = set.clone();
+            let mut invalid = Vec::new();
+            for tx in remaining {
+                if view.apply_transaction(&tx).is_err() {
+                    invalid.push(tx.hash());
+                }
+            }
+            if !invalid.is_empty() {
+                self.mempool.remove(&invalid).await;
+            }
+        }
 
         info!(
             height = block.header.height,

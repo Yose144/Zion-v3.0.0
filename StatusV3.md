@@ -12,8 +12,8 @@
 > **Update (2026-08-06):** V31 DAO governance runtime rozšířen o treasury, humanitarian, db, l1_scanner, metrics, executor, consent, co_admin, cross_layer a prizes. `zion-dao` má nyní 74 testů. `zion-dao` binárka otevírá SQLite DB, načítá návrhy/hlasy do `GovernanceRuntime`, persistuje všechny změny, spouští L1 memo scanner a předává mu hlasy přímo do runtimeu, vystavuje `/metrics`. Dashboard (`ZION_OS/dashboard/v31.py`) nyní zobrazuje i DAO metriky/health/stats a má `dao_api` port v `nodes.json`. **Fáze B hotova z hlediska kódu a testů** — GPU OpenCL/CUDA/Metal kompiluje, `zion-miner` triple-stream běží, profit switching a TUI/metriky zapojeny, `cargo test -p zion-miner` 92 pass. **Go/No-Go testy na reálném GPU/rigu (OpenCL/CUDA/Metal) zůstávají pending.** **Fáze C COMPLETE** — DAO governance runtime, ZionDex C2, HTLC endpoints, live profit oracle, bridge consensus, CLI wallet/tx/lifecycle, dashboard metriky. `zion-multichain` má 574 testů, celý `V31` workspace 2079 testů, `cargo clippy --workspace` čisté. **Dashboard UI/UX update do V31 hotov, nasazen na Edge a `/health` OK. V31 banner KPIs integrovány do full dashboardu. Nový "V31 Production" panel přidává detailní metriky, live log viewer pro V31 služby a vložený Grafana dashboard (`v31-mainnet`) přímo v `/dashboard`. Pool API/metrics port opraven z 8455 na 8080, Prometheus scrape target a Grafana provisioning nasazeny na Edge. **V31 cutover proveden**: V3 služby zastaveny a maskovány, `zion-v31-node` osamostatněn od V3, dashboard registry nastavena V31-first.** V31 GPU backend port — CUDA, OpenCL, Metal a nativní CPU shims nyní kompilují v `V31/L1/miner`. Kompletní report: [`REPORT_2026-08-06.md`](./docs/3.1/REPORT_2026-08-06.md). `cargo clippy --workspace` je čisté a `cargo test -p zion-multichain` prochází. Opraveny cudarc 0.12.1 závislosti, `progpow_codegen` viditelnost, `auxpow` feature gating, `kheavyhash::mine` argument order a macOS `block`/`objc` závislosti. `native-verushash` linkuje `-lomp` (vyžaduje libomp na macOS, na Linuxu bezproblémové). Viz `V31/STATUS.md`.
 > **Verze:** 3.0.7 "Trinity All Green" (V3 archiv) / 3.1.0-alpha.2 (V31 Alpha — LIVE na Edge) / 3.2.0 "One Love" (Mainnet Stable — ve vývoji)
 > **Protokol:** `zion-v3-node/3.0.7` (V3 archiv) / `zion-v3-node/3.1.0-alpha.2` (V31)
-> **Genesis hash (V3 compat, production):** `b0e95b135b736373430a3ff25d773329a3a3bd4b72ee66bb02d5a1583a77ecff`
-> **Genesis hash (V31 native):** `065eaf8e85e2808bda876db360c6d4ec1092d6048ab48b30c8a40e468bc10dd6`
+> **Genesis hash (V3 compat, production):** `4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71`
+> **Genesis hash (V31 native):** `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`
 > **Status:** Mainnet Beta — oficiální public launch **2026-12-31**
 > **HARD GENESIS RESET (2026-08-06):** Kompletní rotace klíčů — nové premine (14), canonical (5), admin (3), DAO guardian (7), EVM validator (5) + escrow. Všechny adresy aktualizovány v kódu i na Edge serveru. Všech 5 V31 služeb active (node, pool, multichain, dao, oasis). OASIS RPC opraven (raw TCP místo HTTP). Klíče uloženy v `~/Desktop/ZION_KEYS_NEW_GENESIS_2026-08-06/` (chmod 600). Kompletní procedura: [`HARD_RESET_PLAYBOOK.md`](./HARD_RESET_PLAYBOOK.md). Předchozí genesis: `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` (2026-07-20 reset).
 > **V31 CUTOVER (2026-08-04):** **V31 JE NYNÍ PRODUKČNÍ!** Public RPC (rpc.zionterranova.com:8443) ukazuje na V31 node. V31 pool běží na produkčním portu 8444. V31 miner těží (~800k H/s, 100 shares accepted za 5 min). V3 pool disabled. **D.2 Cutover COMPLETE** (D2.1-D2.4), **D.3 Post-cutover** (D3.1-D3.4 PASS, D3.5 running), **D.4 V3 archivace COMPLETE** (D4.1-D4.4, D4.6), **D.5 GitHub release v3.1.0-beta PUBLISHED**. V31 multichain /health 200 OK. Pool share logging: `share accepted — job=zion_8, worker=..., nonce=0000fc3e`. Miner response handling: `share accepted by pool`. Stratum v1 param order: [worker, job_id, extranonce2, ntime, nonce]. **Phase B+C+S+D COMPLETE**. Tags: `pre-v31-cutover`, `v3.1.0-beta`. Viz [`V31_P2P_SYNC_REPORT_2026-08-03.md`](./docs/3.1/V31_P2P_SYNC_REPORT_2026-08-03.md).
@@ -52,8 +52,8 @@
 |--------|-------|
 | **Height** | fresh chain (2026-08-06 hard genesis reset, 4-node V31 P2P mesh on Edge + local backup) |
 | **Protocol** | `zion-v3-node/3.1.0-alpha.2` (V31) |
-| **Genesis (V3 compat)** | `b0e95b135b736373430a3ff25d773329a3a3bd4b72ee66bb02d5a1583a77ecff` |
-| **Genesis (V31 native)** | `065eaf8e85e2808bda876db360c6d4ec1092d6048ab48b30c8a40e468bc10dd6` |
+| **Genesis (V3 compat)** | `4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71` |
+| **Genesis (V31 native)** | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
 | **Decimals** | 6 (1 ZION = 1,000,000 flowers) |
 | **Total Supply** | 144B ZION (144e15 flowers) |
 | **Circulating** | ~16.78B ZION premine (přesné rozdělení viz `V31/L1/core/src/genesis.rs`) |
@@ -199,7 +199,7 @@ Deployed on: Base, Arbitrum, Optimism, BSC, Polygon, Avalanche (6 chains live)
 **Status:** 2/9 non-EVM chains deployed. 6 EVM chains + 2 non-EVM = 8 chains total live.
 
 ### L1 Bridge Vault
-- Address: `zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7` (keyless)
+- Address: `zion1j3w3h7k8m635h734y786j5804305m822t5uk546` (premine slot 14, mnemonic wallet)
 - Balance: ~100M ZION
 
 ---

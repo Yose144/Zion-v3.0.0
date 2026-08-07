@@ -17,8 +17,8 @@
   - Public pool stratum: `62.171.141.136:8444`
   - Chain height: fresh chain from new genesis (live in [`StatusV3.md`](StatusV3.md))
   - Protocol: `zion-v3-node/3.1.0-alpha.2`
-  - Genesis hash (V3 compat): `b0e95b135b736373430a3ff25d773329a3a3bd4b72ee66bb02d5a1583a77ecff`
-  - Genesis hash (V31 native): `065eaf8e85e2808bda876db360c6d4ec1092d6048ab48b30c8a40e468bc10dd6`
+  - Genesis hash (V3 compat): `4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71`
+  - Genesis hash (V31 native): `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`
 - **Latest wins:** V31 pool reaches full V3 parity (160 pool tests), DAO governance runtime with treasury/humanitarian/L1 scanner, GPU backend port (CUDA/OpenCL/Metal/native) with Ekam Deeksha v3.2 (512 KiB scratchpad, 128 random reads, 2 AES passes), cross-chain DEX multi-path routing + HTTP solver network, CLI with 21 subcommands (DAO/WARP/HTLC/monitor/topology/explorer/onboard), ZION Identity Service (ZIS) + unified Prisma schema, OASIS RPC fixed (raw TCP JSON-RPC).
 - **Test gate:** 2079 workspace tests pass, `cargo clippy --workspace` is clean.
 - **Public launch target:** 31 December 2026.

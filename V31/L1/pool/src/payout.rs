@@ -1,8 +1,8 @@
 //! Payout sweep thread for the ZION stratum pool.
 //!
 //! Periodically drains the pool's pending PPLNS payouts, builds a single
-//! multi-output UTXO transaction, signs it with the pool wallet key, and
-//! submits it to the connected Zion L1 node.
+//! multi-output V31 UTXO transaction, signs it with the pool wallet key, and
+//! submits it to the connected Zion V31 L1 node.
 
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
@@ -12,12 +12,13 @@ use anyhow::{anyhow, Context, Result};
 use serde_json::json;
 use tokio::time::interval;
 use tracing::{info, warn};
-use zion_core::v3_compat::{TxInput as UtxoTxInput, TxOutput as UtxoTxOutput, UtxoTransaction};
-use zion_core::v3_wallet::{build_batch_payout, BatchRecipient, SpendableUtxo};
+use zion_core::transaction::Transaction;
+use zion_core::v31_wallet::{build_batch_payout, BatchRecipient, SpendableUtxo};
 
 use crate::notifications::Notifier;
 use crate::pool::Pool;
 use crate::rpc_client::{jsonrpc_call, parse_rpc_addr};
+use crate::store::{PayoutRecord, ShareStore};
 use crate::v3_pplns::PayoutEntry;
 
 /// Background task that sweeps pending payouts to the chain.
@@ -25,6 +26,7 @@ pub struct PayoutSweeper {
     pool: Arc<Mutex<Pool>>,
     interval: Duration,
     notifier: Option<Arc<Notifier>>,
+    share_store: Option<Arc<ShareStore>>,
 }
 
 impl PayoutSweeper {
@@ -33,12 +35,19 @@ impl PayoutSweeper {
             pool,
             interval,
             notifier: None,
+            share_store: None,
         }
     }
 
     /// Set a Notifier for payout failure alerts.
     pub fn with_notifier(mut self, notifier: Arc<Notifier>) -> Self {
         self.notifier = Some(notifier);
+        self
+    }
+
+    /// Attach an optional `ShareStore` to record confirmed payouts.
+    pub fn with_share_store(mut self, store: Option<Arc<ShareStore>>) -> Self {
+        self.share_store = store;
         self
     }
 
@@ -104,8 +113,8 @@ impl PayoutSweeper {
         }
 
         // Respect the batch recipient cap imposed by the wallet.
-        if payouts.len() > zion_core::v3_wallet::MAX_BATCH_RECIPIENTS {
-            let overflow = payouts.split_off(zion_core::v3_wallet::MAX_BATCH_RECIPIENTS);
+        if payouts.len() > zion_core::v31_wallet::MAX_BATCH_RECIPIENTS {
+            let overflow = payouts.split_off(zion_core::v31_wallet::MAX_BATCH_RECIPIENTS);
             self.requeue(overflow);
         }
 
@@ -124,27 +133,48 @@ impl PayoutSweeper {
         ))
         .max(fee_flowers);
 
-        // Use the first pending block height as the chain tip hint for version selection.
-        let chain_tip = payouts.first().map(|(h, _)| *h).unwrap_or(0);
-
         let build_result = build_batch_payout(
             &signing_key,
             &pool_encoded,
             &recipients,
             fee,
             &utxos,
-            chain_tip,
         )
         .map_err(|e| anyhow!("failed to build batch payout: {}", e))?;
 
-        let utxo_tx = into_utxo_transaction(build_result.transaction)?;
-        let response = submit_utxo_transaction(rpc_addr, &utxo_tx).await?;
+        let tx = build_result.transaction;
+        let response = submit_utxo_transaction(rpc_addr, &tx).await?;
 
         let tx_id = response
             .get("tx_id")
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string();
+
+        let block_height = payouts.first().map(|(h, _)| *h).unwrap_or(0);
+
+        // Record payouts in the share store so /api/v1/payouts populates.
+        if let Some(ref store) = self.share_store {
+            let records: Vec<PayoutRecord> = payouts
+                .iter()
+                .map(|(_, p)| PayoutRecord {
+                    miner_id: p.miner_id.clone(),
+                    address: p.address.clone(),
+                    amount_flowers: p.amount,
+                    tx_id: tx_id.clone(),
+                    height: block_height,
+                    block_hash: String::new(),
+                })
+                .collect();
+            let store = Arc::clone(store);
+            tokio::task::spawn_blocking(move || {
+                for rec in records {
+                    if let Err(e) = store.record_payout(&rec) {
+                        warn!("share_store record_payout failed: {}", e);
+                    }
+                }
+            });
+        }
 
         {
             let mut pool = self.pool.lock().expect("pool lock poisoned");
@@ -217,10 +247,10 @@ async fn fetch_utxos(rpc_addr: SocketAddr, address: &str) -> Result<Vec<Spendabl
     Ok(out)
 }
 
-/// Submit a signed UTXO transaction to the node.
+/// Submit a signed V31 UTXO transaction to the node.
 async fn submit_utxo_transaction(
     rpc_addr: SocketAddr,
-    tx: &UtxoTransaction,
+    tx: &Transaction,
 ) -> Result<serde_json::Value> {
     let tx_json = serde_json::to_value(tx)?;
     let payload = json!({
@@ -243,39 +273,3 @@ async fn submit_utxo_transaction(
         .cloned()
         .context("missing result in submitUtxoTransaction response")
 }
-
-/// Convert the native `v3_tx::Transaction` used by the wallet into the
-/// `v3_compat::UtxoTransaction` shape expected by the RPC.
-fn into_utxo_transaction(tx: zion_core::v3_tx::Transaction) -> Result<UtxoTransaction> {
-    let inputs: Vec<UtxoTxInput> = tx
-        .inputs
-        .into_iter()
-        .map(|i| UtxoTxInput {
-            prev_tx_hash: i.prev_tx_hash,
-            output_index: i.output_index,
-            signature: i.signature,
-            public_key: i.public_key,
-        })
-        .collect();
-
-    let outputs: Vec<UtxoTxOutput> = tx
-        .outputs
-        .into_iter()
-        .map(|o| UtxoTxOutput {
-            amount: o.amount,
-            address: o.address,
-            memo: o.memo,
-        })
-        .collect();
-
-    Ok(UtxoTransaction {
-        id: tx.id,
-        version: tx.version,
-        inputs,
-        outputs,
-        fee: tx.fee,
-        timestamp: tx.timestamp,
-    })
-}
-
-

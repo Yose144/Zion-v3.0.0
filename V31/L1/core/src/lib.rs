@@ -26,6 +26,8 @@ pub mod propagation;
 pub mod rpc;
 pub mod storage;
 pub mod transaction;
+pub mod utxo;
+pub mod v31_wallet;
 
 #[cfg(feature = "v3-binaries")]
 pub mod v3_chain;
@@ -81,11 +83,11 @@ pub use migration::{migrate_v3_state, MigrationError, MigrationSummary};
 pub use node::{Node, NodeConfig};
 pub use storage::{Storage, StorageError};
 pub use transaction::{Transaction, TransactionInput, TransactionOutput};
+pub use utxo::{Outpoint, UtxoError, UtxoSet};
+pub use v31_wallet::{build_batch_payout, BatchRecipient, BuildResult, SpendableUtxo, WalletError, MAX_BATCH_RECIPIENTS, MIN_PAYOUT_AMOUNT};
 
 #[cfg(feature = "v3-binaries")]
 pub use v3_compat::{
     BlockCandidate, DifficultyTarget as V3DifficultyTarget, MiningHeader, MiningJob,
     MiningSolution, PremineOutput, PREMINE_OUTPUTS, SealedBlock, V3Block,
 };
-#[cfg(feature = "v3-binaries")]
-pub use v3_wallet::MIN_PAYOUT_AMOUNT;

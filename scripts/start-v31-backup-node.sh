@@ -27,9 +27,9 @@ export ZION_NODE_P2P='0.0.0.0:8333'
 export ZION_SEED_PEERS='62.171.141.136:8335'
 
 # ── Wallets (same as Edge — constitutional emission) ───────────────────────
-export ZION_MINER_ADDRESS='zion1d6e3a4s6t856z042q2m6h5h2j4k3v7f8f2a94h7'
-export ZION_HUMANITARIAN_WALLET='zion1j0j5d0c70056u678j7g4p686e7r3w5k0y8vy0m0'
-export ZION_ISSOBELLA_WALLET='zion1g3g0k2j665r075g5j077z0w3u4g3w0d5837j3f6'
+export ZION_MINER_ADDRESS='zion1074344t7k686j6n8a0l6t0f4c8d828y083xh4m2'
+export ZION_HUMANITARIAN_WALLET='zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8'
+export ZION_ISSOBELLA_WALLET='zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0'
 
 # ── Security (same as Edge — active from genesis) ──────────────────────────
 export ZION_MAX_TX_AMOUNT_HEIGHT=1

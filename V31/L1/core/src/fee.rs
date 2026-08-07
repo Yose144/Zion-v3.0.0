@@ -110,6 +110,7 @@ pub const BRIDGE_VAULT_ADDRESS: &str = "zion1j3w3h7k8m635h734y786j5804305m822t5u
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::crypto;
 
     #[test]
     fn burn_address_is_rejected_by_is_valid_address() {

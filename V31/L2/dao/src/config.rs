@@ -83,9 +83,9 @@ impl Default for DaoConfig {
             voting_period_days: 7,
             timelock_hours: 48,
             treasury_addresses: vec![
-                "zion1x8g2z2v3v5n08542a5u7v7q365l4852048qv6w6".into(),
-                "zion1q4n03368p4n0f0w3x2u3a5a5g46363g2d64v4r0".into(),
-                "zion1j765h3r6x4u8l222v8u278c406m4e755g0pt0f0".into(),
+                "zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5".into(),
+                "zion1s27490u7n823g098w42077h8f2n824w0y75w0s3".into(),
+                "zion1n0r7k274z3t030h4v4g3g5h704c737z658aa238".into(),
             ],
             daily_spend_limit: 100_000_000,
             multisig_threshold: 5,
