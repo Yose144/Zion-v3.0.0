@@ -108,7 +108,7 @@ const DAOScreen = () => {
           ))}
         </View>
         <View style={styles.multisigRow}>
-          <Icon name="shield-account" size={16} color={colors.primary.cyan} />
+          <Icon name="shield-account" size={16} color={colors.primary.green} />
           <Text style={styles.multisigText}> Multisig: {stats.multisig}</Text>
         </View>
       </GlassCard>
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
   },
   multisigText: {
     ...typography.caption,
-    color: colors.primary.cyan,
+    color: colors.primary.green,
   },
   treasuryRow: {
     flexDirection: 'row',

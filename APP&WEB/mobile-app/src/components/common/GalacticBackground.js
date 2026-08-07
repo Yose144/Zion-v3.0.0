@@ -12,16 +12,16 @@ import {View, StyleSheet, Platform} from 'react-native';
  *          + CSS force-transparent na VŠECHNY RNW vrstvy
  */
 
-const STAR_COLOR = [200, 118, 255]; // galactic-core purple
+const STAR_COLOR = [252, 209, 22]; // rasta gold stars
 const STAR_COUNT = 220;
 const SPEED = 2.8;
 const TRAIL_OPACITY = 0.05;
 
 const NEBULA_BUBBLES = [
-  {size: 320, x: 0.08, y: 0.18, color: 'rgba(249,217,118,0.12)', dur: 28000},
-  {size: 260, x: 0.72, y: 0.24, color: 'rgba(50,230,255,0.10)', dur: 32000},
-  {size: 220, x: 0.45, y: 0.74, color: 'rgba(155,92,255,0.14)', dur: 26000},
-  {size: 160, x: 0.12, y: 0.70, color: 'rgba(255,128,229,0.08)', dur: 30000},
+  {size: 320, x: 0.08, y: 0.18, color: 'rgba(252,209,22,0.12)', dur: 28000},   // rasta gold
+  {size: 260, x: 0.72, y: 0.24, color: 'rgba(7,137,48,0.10)', dur: 32000},      // rasta green
+  {size: 220, x: 0.45, y: 0.74, color: 'rgba(228,30,43,0.14)', dur: 26000},     // rasta red
+  {size: 160, x: 0.12, y: 0.70, color: 'rgba(252,209,22,0.08)', dur: 30000},    // rasta gold
 ];
 
 const WarpCanvas = memo(() => {
@@ -37,7 +37,7 @@ const WarpCanvas = memo(() => {
       html, body {
         margin: 0 !important;
         padding: 0 !important;
-        background-color: #04020c !important;
+        background-color: #0d0d0d !important;
         overflow: hidden !important;
       }
       #root,
@@ -52,11 +52,11 @@ const WarpCanvas = memo(() => {
         background-color: transparent !important;
         background: transparent !important;
       }
-      /* Navigation header */
+      /* Navigation header — rasta dark */
       [data-testid="header-back"],
       header,
       [style*="background-color: rgba(10"] {
-        background-color: rgba(10, 12, 28, 0.6) !important;
+        background-color: rgba(13, 13, 13, 0.6) !important;
       }
       /* Warp canvas */
       #zion-warp-canvas {
@@ -134,13 +134,13 @@ const WarpCanvas = memo(() => {
         w() * 0.4, h() * 0.6, 0,
         w() * 0.4, h() * 0.6, Math.max(w(), h()),
       );
-      gradient.addColorStop(0, 'rgba(22, 8, 32, 0.90)');
-      gradient.addColorStop(1, 'rgba(4, 2, 12, 0.98)');
+      gradient.addColorStop(0, 'rgba(13, 13, 13, 0.90)');
+      gradient.addColorStop(1, 'rgba(0, 0, 0, 0.98)');
     };
     buildGradient();
 
-    // Fill initial background black
-    ctx.fillStyle = '#04020c';
+    // Fill initial background — rasta black
+    ctx.fillStyle = '#0d0d0d';
     ctx.fillRect(0, 0, w(), h());
 
     let lastTime = 0;

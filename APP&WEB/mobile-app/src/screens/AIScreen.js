@@ -39,7 +39,7 @@ const MessageBubble = ({message}) => {
     <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleAI]}>
       {!isUser && (
         <View style={styles.bubbleHeader}>
-          <Icon name="brain" size={14} color={colors.primary.purple} />
+          <Icon name="brain" size={14} color={colors.primary.red} />
           <Text style={styles.bubbleSender}>Hiran</Text>
         </View>
       )}
@@ -131,7 +131,7 @@ const AIScreen = () => {
           <StatusDot online={hiranOnline} label="Hiran v2.2" />
           <StatusDot online={hiranyaOnline} label="Orchestrator" />
           <View style={styles.nclBadge}>
-            <Icon name="chip" size={14} color={colors.primary.cyan} />
+            <Icon name="chip" size={14} color={colors.primary.green} />
             <Text style={styles.nclBadgeText}>NCL: {nclWorkerCount} workers</Text>
           </View>
         </View>
@@ -149,7 +149,7 @@ const AIScreen = () => {
         ))}
         {sending && (
           <View style={styles.thinking}>
-            <ActivityIndicator size="small" color={colors.primary.purple} />
+            <ActivityIndicator size="small" color={colors.primary.red} />
             <Text style={styles.thinkingText}>Thinking...</Text>
           </View>
         )}
@@ -192,23 +192,23 @@ const styles = StyleSheet.create({
   statusLabel: {...typography.caption, color: colors.text.secondary},
   statusValue: {...typography.caption, fontWeight: '600'},
   nclBadge: {flexDirection: 'row', alignItems: 'center', gap: spacing.xs},
-  nclBadgeText: {...typography.caption, color: colors.primary.cyan},
+  nclBadgeText: {...typography.caption, color: colors.primary.green},
 
   chatArea: {flex: 1},
   chatContent: {paddingHorizontal: spacing.md, paddingVertical: spacing.sm, gap: spacing.sm},
 
   bubble: {maxWidth: '82%', borderRadius: borderRadius.md, padding: spacing.md, marginBottom: 2},
-  bubbleUser: {alignSelf: 'flex-end', backgroundColor: 'rgba(147,51,234,0.2)', borderWidth: 1, borderColor: 'rgba(147,51,234,0.35)'},
-  bubbleAI: {alignSelf: 'flex-start', backgroundColor: 'rgba(6,182,212,0.1)', borderWidth: 1, borderColor: 'rgba(6,182,212,0.2)'},
+  bubbleUser: {alignSelf: 'flex-end', backgroundColor: 'rgba(228, 30, 43,0.2)', borderWidth: 1, borderColor: 'rgba(228, 30, 43,0.35)'},
+  bubbleAI: {alignSelf: 'flex-start', backgroundColor: 'rgba(7, 137, 48,0.1)', borderWidth: 1, borderColor: 'rgba(7, 137, 48,0.2)'},
   bubbleHeader: {flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.xs},
-  bubbleSender: {...typography.caption, color: colors.primary.purple, fontSize: 11},
+  bubbleSender: {...typography.caption, color: colors.primary.red, fontSize: 11},
   bubbleText: {...typography.body, color: colors.text.primary, lineHeight: 22},
 
   systemMsg: {alignSelf: 'center', backgroundColor: 'rgba(245,158,11,0.1)', borderRadius: borderRadius.sm, padding: spacing.sm, maxWidth: '90%'},
   systemMsgText: {...typography.caption, color: colors.status.warning, textAlign: 'center'},
 
   thinking: {flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.sm, alignSelf: 'flex-start'},
-  thinkingText: {...typography.caption, color: colors.primary.purple, fontStyle: 'italic'},
+  thinkingText: {...typography.caption, color: colors.primary.red, fontStyle: 'italic'},
 
   inputCard: {margin: spacing.md, marginTop: spacing.sm},
   inputRow: {flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm},
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
   },
   sendBtn: {
     width: 44, height: 44, borderRadius: 22,
-    backgroundColor: 'rgba(255,215,0,0.15)', borderWidth: 1, borderColor: 'rgba(255,215,0,0.3)',
+    backgroundColor: 'rgba(252, 209, 22,0.15)', borderWidth: 1, borderColor: 'rgba(252, 209, 22,0.3)',
     alignItems: 'center', justifyContent: 'center',
   },
   sendBtnDisabled: {backgroundColor: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)'},

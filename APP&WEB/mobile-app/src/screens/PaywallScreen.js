@@ -199,7 +199,7 @@ const PaywallScreen = ({ navigation }) => {
         <View style={styles.featureList}>
           {boostFeatures.map((feature, i) => (
             <View key={i} style={styles.featureRow}>
-              <Icon name="check-circle" size={18} color={colors.primary.cyan} />
+              <Icon name="check-circle" size={18} color={colors.primary.green} />
               <Text style={styles.featureText}>{feature}</Text>
             </View>
           ))}
@@ -340,14 +340,14 @@ const styles = StyleSheet.create({
   proBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,215,0,0.1)',
+    backgroundColor: 'rgba(252, 209, 22,0.1)',
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     marginBottom: spacing.md,
     gap: spacing.sm,
     borderWidth: 1,
-    borderColor: 'rgba(255,215,0,0.3)',
+    borderColor: 'rgba(252, 209, 22,0.3)',
   },
   proBadgeText: {
     ...typography.body,
@@ -384,13 +384,13 @@ const styles = StyleSheet.create({
   },
   planCard: {
     flex: 1,
-    backgroundColor: 'rgba(255,215,0,0.06)',
+    backgroundColor: 'rgba(252, 209, 22,0.06)',
     borderRadius: borderRadius.md,
     padding: spacing.md,
     alignItems: 'center',
     gap: spacing.xs,
     borderWidth: 1,
-    borderColor: 'rgba(255,215,0,0.15)',
+    borderColor: 'rgba(252, 209, 22,0.15)',
   },
   planCardDisabled: {
     opacity: 0.5,
@@ -410,7 +410,7 @@ const styles = StyleSheet.create({
   },
   planCta: {
     fontSize: 13,
-    color: colors.primary.cyan,
+    color: colors.primary.green,
     fontWeight: '600',
     marginTop: spacing.xs,
   },
@@ -435,7 +435,7 @@ const styles = StyleSheet.create({
   boostPrice: {
     ...typography.h3,
     fontSize: 20,
-    color: colors.primary.cyan,
+    color: colors.primary.green,
   },
   boostNote: {
     fontSize: 12,
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
   },
   boostCta: {
     fontSize: 14,
-    color: colors.primary.cyan,
+    color: colors.primary.green,
     fontWeight: '700',
   },
   donationRow: {
@@ -475,7 +475,7 @@ const styles = StyleSheet.create({
   },
   restoreText: {
     ...typography.body,
-    color: colors.primary.cyan,
+    color: colors.primary.green,
     fontWeight: '600',
   },
   termsText: {

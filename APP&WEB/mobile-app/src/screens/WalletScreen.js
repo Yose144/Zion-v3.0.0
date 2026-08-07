@@ -240,7 +240,7 @@ const WalletScreen = ({navigation}) => {
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => navigation.navigate('Send')}>
-            <Icon name="arrow-up" size={24} color={colors.primary.cyan} />
+            <Icon name="arrow-up" size={24} color={colors.primary.green} />
             <Text style={styles.actionText}>Send</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -252,7 +252,7 @@ const WalletScreen = ({navigation}) => {
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => navigation.navigate('Transactions')}>
-            <Icon name="format-list-bulleted" size={24} color={colors.primary.purple} />
+            <Icon name="format-list-bulleted" size={24} color={colors.primary.red} />
             <Text style={styles.actionText}>History</Text>
           </TouchableOpacity>
           {activeWallet.walletType !== 'external' && (
@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
   },
   linkText: {
     ...typography.body,
-    color: colors.primary.cyan,
+    color: colors.primary.green,
     textDecorationLine: 'underline',
   },
   headerCard: {
@@ -584,7 +584,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.03)',
   },
   activeWalletItem: {
-    backgroundColor: 'rgba(249,217,118,0.1)',
+    backgroundColor: 'rgba(252, 209, 22,0.1)',
     borderWidth: 1,
     borderColor: colors.primary.gold,
   },
@@ -652,7 +652,7 @@ const styles = StyleSheet.create({
   },
   chainChipActive: {
     borderColor: colors.primary.gold,
-    backgroundColor: 'rgba(249,217,118,0.12)',
+    backgroundColor: 'rgba(252, 209, 22,0.12)',
   },
   chainChipText: {
     ...typography.caption,

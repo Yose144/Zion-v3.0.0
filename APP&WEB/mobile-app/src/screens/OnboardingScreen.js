@@ -109,7 +109,7 @@ const OnboardingScreen = ({navigation, route}) => {
             <TouchableOpacity
               style={styles.optionButton}
               onPress={() => handleImportWallet(pendingImport)}>
-              <Icon name="link-variant" size={40} color={colors.primary.cyan} />
+              <Icon name="link-variant" size={40} color={colors.primary.green} />
               <Text style={styles.optionTitle}>Import from Deep Link</Text>
               <Text style={styles.optionDesc}>
                 A wallet was shared via a ZION link. Tap to import it now.
@@ -140,7 +140,7 @@ const OnboardingScreen = ({navigation, route}) => {
                 'plain-text'
               );
             }}>
-            <Icon name="import" size={40} color={colors.primary.cyan} />
+            <Icon name="import" size={40} color={colors.primary.green} />
             <Text style={styles.optionTitle}>Import Existing</Text>
             <Text style={styles.optionDesc}>Restore from seed phrase or private key</Text>
           </TouchableOpacity>
@@ -167,7 +167,7 @@ const OnboardingScreen = ({navigation, route}) => {
               <Icon
                 name={mnemonicVisible ? 'eye-off' : 'eye'}
                 size={22}
-                color={colors.primary.cyan}
+                color={colors.primary.green}
               />
             </TouchableOpacity>
           </View>
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: 'rgba(249,217,118,0.1)',
+    backgroundColor: 'rgba(252, 209, 22,0.1)',
     borderRadius: 8,
   },
   copyText: {

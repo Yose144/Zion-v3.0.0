@@ -120,12 +120,12 @@ const ReceiveScreen = ({ navigation }) => {
         {/* Action Buttons */}
         <View style={styles.actionRow}>
           <TouchableOpacity style={styles.actionButton} onPress={copyAddress}>
-            <Icon name="content-copy" size={24} color={colors.primary.cyan} />
+            <Icon name="content-copy" size={24} color={colors.primary.green} />
             <Text style={styles.actionText}>Copy</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionButton} onPress={shareAddress}>
-            <Icon name="share-variant" size={24} color={colors.primary.cyan} />
+            <Icon name="share-variant" size={24} color={colors.primary.green} />
             <Text style={styles.actionText}>Share</Text>
           </TouchableOpacity>
 
@@ -172,19 +172,19 @@ const ReceiveScreen = ({ navigation }) => {
       <GlassCard style={styles.instructionsCard}>
         <Text style={styles.instructionsTitle}>How to Receive ZION</Text>
         <View style={styles.instruction}>
-          <Icon name="numeric-1-circle" size={20} color={colors.primary.cyan} />
+          <Icon name="numeric-1-circle" size={20} color={colors.primary.green} />
           <Text style={styles.instructionText}>
             Share your address or QR code with the sender
           </Text>
         </View>
         <View style={styles.instruction}>
-          <Icon name="numeric-2-circle" size={20} color={colors.primary.cyan} />
+          <Icon name="numeric-2-circle" size={20} color={colors.primary.green} />
           <Text style={styles.instructionText}>
             They scan the QR or paste the address in their wallet
           </Text>
         </View>
         <View style={styles.instruction}>
-          <Icon name="numeric-3-circle" size={20} color={colors.primary.cyan} />
+          <Icon name="numeric-3-circle" size={20} color={colors.primary.green} />
           <Text style={styles.instructionText}>
             Funds arrive after network confirmation (~1 min)
           </Text>

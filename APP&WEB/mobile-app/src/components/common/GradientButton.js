@@ -4,13 +4,14 @@ import LinearGradient from 'react-native-linear-gradient';
 import {colors, gradients, borderRadius, typography, shadows} from '../../constants/theme';
 
 /**
- * Gradient Button — Unified with desktop-agent & website
+ * Gradient Button — Unified with desktop-agent & website (rasta palette)
  * Matches desktop .btn-primary with gradient + glow
+ * Variants: gold, red, green, rasta (tri-color)
  */
 const GradientButton = ({
   title,
   onPress,
-  variant = 'gold', // gold, cyan, purple
+  variant = 'gold', // gold, red, green, rasta
   disabled = false,
   loading = false,
   style,
@@ -21,8 +22,9 @@ const GradientButton = ({
 
   const glowMap = {
     gold: colors.glow.gold,
-    purple: colors.glow.purple,
-    cyan: colors.glow.cyan,
+    red: colors.glow.red,
+    green: colors.glow.green,
+    rasta: colors.glow.gold,
   };
   const webGlow = Platform.OS === 'web' ? {
     boxShadow: `0 0 30px ${glowMap[variant] || glowMap.gold}`,
