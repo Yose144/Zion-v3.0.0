@@ -445,3 +445,58 @@ Tým ZION Terra Nova
     console.error('Failed to send shipping notification:', error);
   }
 }
+
+interface CustomerWalletInput {
+  orderId: string;
+  customerName: string;
+  customerEmail: string;
+  address: string;
+  seed: string;
+}
+
+export async function sendCustomerWalletEmail(input: CustomerWalletInput): Promise<void> {
+  if (!isEnabled()) {
+    console.log('Email notifications disabled: SMTP not configured');
+    return;
+  }
+
+  const cfg = emailConfig();
+  const subject = `Vaše ZION peněženka - objednávka #${input.orderId}`;
+
+  const body = `Dobrý den, ${input.customerName},
+
+k objednávce #${input.orderId} jsme pro Vás automaticky vytvořili ZION L1 peněženku,
+na kterou Vám bude po zaplacení odeslán bonus v ZION tokenech.
+
+Vaše adresa: ${input.address}
+Seed phrase (12 slov): ${input.seed}
+
+⚠️ DŮLEŽITÉ: Uložte si seed phrase na bezpečném místu. Toto je jediný způsob,
+jak získat plný přístup k Vašim tokenům v budoucnu. Nikomu jej neukazujte.
+
+S pozdravem,
+Tým ZION Terra Nova
+`;
+
+  const html = `<p>Dobrý den ${escapeHtml(input.customerName)},</p>
+<p>k objednávce <strong>#${escapeHtml(input.orderId)}</strong> jsme pro Vás vytvořili ZION L1 peněženku, na kterou Vám bude po zaplacení odeslán bonus v ZION tokenech.</p>
+<p><strong>Vaše adresa:</strong> <code>${escapeHtml(input.address)}</code></p>
+<p><strong>Seed phrase (12 slov):</strong></p>
+<p style="font-size:1.1em; background:#f5f5f5; padding:12px; border-radius:6px; word-break:break-all;">${escapeHtml(input.seed)}</p>
+<p style="color:#b91c1c;"><strong>DŮLEŽITÉ:</strong> Uložte si seed phrase na bezpečném místu. Toto je jediný způsob, jak získat plný přístup k Vašim tokenům v budoucnu. Nikomu jej neukazujte.</p>
+<p>S pozdravem,<br>Tým ZION Terra Nova</p>`;
+
+  try {
+    await sendMail({
+      from: `${cfg.shopName} <${cfg.resendApiKey ? cfg.resendFrom : cfg.shopEmail}>`,
+      to: input.customerEmail,
+      replyTo: cfg.shopEmail,
+      subject,
+      text: body,
+      html,
+    });
+    console.log(`Customer wallet email sent for ${input.orderId}`);
+  } catch (error) {
+    console.error('Failed to send customer wallet email:', error);
+  }
+}

@@ -216,15 +216,19 @@ model ShopOrder {
   totalCzk       Int
   shippingCzk    Int
   items          Json
-  zionTokens     Int      @default(0)
-  trackingNumber String?
-  shippedAt      DateTime?
-  paidAt         DateTime?
-  termsAccepted  Boolean  @default(false)
-  newsletter     Boolean  @default(false)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  invoices       Invoice[]
+  zionTokens           Int      @default(0)
+  customerWalletAddress String?
+  customerWalletSeed   String?  @db.Text
+  customerWalletPublicKey String?
+  customerWalletSecretKey String?  @db.Text
+  trackingNumber       String?
+  shippedAt            DateTime?
+  paidAt               DateTime?
+  termsAccepted        Boolean  @default(false)
+  newsletter           Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  invoices             Invoice[]
 
   @@index([status])
   @@index([paymentStatus])

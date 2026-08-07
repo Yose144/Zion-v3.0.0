@@ -6,6 +6,7 @@ import {
   recordTokenDistribution,
 } from '@/lib/tokens';
 import { sendTokenBonusEmail } from '@/lib/email';
+import { sendZionPayout } from '@/lib/zion-l1';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +21,7 @@ function orderSelect() {
     zionTokens: true,
     customerEmail: true,
     customerName: true,
+    customerWalletAddress: true,
     status: true,
     paymentStatus: true,
   } as const;
@@ -93,11 +95,32 @@ export async function POST(request: NextRequest, context: RouteContext) {
       }, { status: 409 });
     }
 
+    let txHash: string | undefined = body.txHash;
+
+    // If the order has a customer L1 wallet, broadcast the ZION payout on-chain.
+    if (!txHash && order.customerWalletAddress) {
+      const memo = `BONUS:${order.orderId}`;
+      const amountZion = order.zionTokens / 1_000_000; // tokens are flowers (6 decimals)
+      const payout = await sendZionPayout(
+        order.customerWalletAddress,
+        amountZion,
+        undefined,
+        memo
+      );
+      if (!payout.success) {
+        return NextResponse.json(
+          { success: false, error: payout.error ?? 'On-chain payout failed' },
+          { status: 502 }
+        );
+      }
+      txHash = payout.txHash;
+    }
+
     const distribution = await recordTokenDistribution(
       order.orderId,
       order.zionTokens,
       order.customerEmail,
-      body.txHash
+      txHash
     );
 
     // Notify customer in the background
