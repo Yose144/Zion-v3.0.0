@@ -86,9 +86,12 @@ impl PeerManager {
         *self.local_addr.lock().unwrap_or_else(|e| e.into_inner()) = Some(addr);
     }
 
-    /// Return true if the IP is currently banned.
+    /// Return true if the IP is currently banned (loopback is never banned).
     pub async fn is_banned(&self, addr: SocketAddr) -> bool {
         let ip = addr.ip();
+        if ip.is_loopback() {
+            return false;
+        }
         let mut banned = self.banned.lock().unwrap_or_else(|e| e.into_inner());
         if let Some(ban) = banned.get(&ip) {
             if Instant::now() < ban.until {
@@ -144,9 +147,12 @@ impl PeerManager {
     }
 
     /// Record a bad interaction. If the peer exceeds the ban threshold, it is
-    /// banned for the configured duration.
+    /// banned for the configured duration. Loopback is never banned.
     pub async fn record_bad(&self, addr: SocketAddr, score: u32) {
         let ip = addr.ip();
+        if ip.is_loopback() {
+            return;
+        }
         let mut peers = self.peers.lock().unwrap_or_else(|e| e.into_inner());
         let mut banned = self.banned.lock().unwrap_or_else(|e| e.into_inner());
 
@@ -225,7 +231,7 @@ mod tests {
     #[tokio::test]
     async fn peer_manager_bans_bad_actor() {
         let pm = PeerManager::new(2, 3, Duration::from_secs(60));
-        let addr: SocketAddr = "127.0.0.1:1111".parse().unwrap();
+        let addr: SocketAddr = "192.0.2.1:1111".parse().unwrap();
 
         pm.add_known(addr, PeerSource::Inbound).await;
         pm.record_bad(addr, 2).await;
@@ -233,6 +239,17 @@ mod tests {
         pm.record_bad(addr, 1).await;
         assert!(pm.is_banned(addr).await);
         assert!(!pm.can_accept(addr).await);
+    }
+
+    #[tokio::test]
+    async fn peer_manager_never_bans_loopback() {
+        let pm = PeerManager::new(2, 3, Duration::from_secs(60));
+        let addr: SocketAddr = "127.0.0.1:1111".parse().unwrap();
+
+        pm.add_known(addr, PeerSource::Inbound).await;
+        pm.record_bad(addr, 100).await;
+        assert!(!pm.is_banned(addr).await);
+        assert!(pm.can_accept(addr).await);
     }
 
     #[tokio::test]
