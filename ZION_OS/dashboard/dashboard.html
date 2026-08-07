@@ -801,6 +801,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
     </div>
     <div class="flex flex-wrap gap-2 items-center">
       <span id="topology-badge" class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-purple-700/50 text-purple-300">🌍 Edge-Primary</span>
+      <span id="timestamp" class="text-[10px] text-gray-400 font-mono">—</span>
       <span id="connection-badge" class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-700/50 text-emerald-300">● Connected</span>
       <span id="alertCount" class="hidden px-3 py-1.5 bg-red-600 rounded-full text-xs font-bold animate-pulse">0 alerts</span>
       <div class="zion-action-bar">
@@ -960,6 +961,24 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       <div style="margin-top:0.6rem;display:flex;gap:0.4rem;flex-wrap:wrap;">
         <button onclick="switchTab('controls')" class="text-[9px] px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">Controls</button>
         <button onclick="heroOpenLogs('v31-miner')" class="text-[9px] px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">📋 Miner Logs</button>
+      </div>
+    </div>
+    <div class="zion-hero-card" style="--rc:59 130 246;">
+      <div class="zhc-icon">🛟</div>
+      <div class="zhc-title">Live Services</div>
+      <div class="zhc-value" id="hero-services-up">—</div>
+      <div class="zhc-sub" id="hero-services-sub">services up</div>
+      <div style="margin-top:0.6rem;display:flex;gap:0.4rem;flex-wrap:wrap;">
+        <button onclick="switchTab('services')" class="text-[9px] px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">Services</button>
+      </div>
+    </div>
+    <div class="zion-hero-card" style="--rc:228 30 43;">
+      <div class="zhc-icon">🚧</div>
+      <div class="zhc-title">P0 Blockers</div>
+      <div class="zhc-value" id="hero-blockers-open">—</div>
+      <div class="zhc-sub" id="hero-blockers-sub">open blockers</div>
+      <div style="margin-top:0.6rem;display:flex;gap:0.4rem;flex-wrap:wrap;">
+        <button onclick="switchTab('blockers')" class="text-[9px] px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">Blockers</button>
       </div>
     </div>
   </section>
@@ -1684,6 +1703,12 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       </div>
       <div class="zion-panel p-5">
         <h2 class="text-base font-bold mb-4 flex items-center gap-2">✅ Checklist</h2>
+        <div class="mb-3 flex items-center justify-between text-xs text-gray-400">
+          <span id="progressText">—</span>
+        </div>
+        <div class="h-1.5 w-full bg-black/40 rounded-full overflow-hidden mb-3">
+          <div id="progressBar" class="h-full bg-emerald-500 transition-all duration-500" style="width:0%"></div>
+        </div>
         <div id="checklist" class="space-y-1.5"></div>
       </div>
     </div>

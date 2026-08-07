@@ -234,6 +234,15 @@ function switchTab(name){
   if(name === 'backups'){ clearTabTimers('backups'); loadBackups(); if(!_backupsTimer) _backupsTimer = setInterval(loadBackups, 15000); }
   if(['l1','l2','l3','l4','l5','l6'].includes(name)) loadLayerFull(name);
   if(name === 'launch-day'){ loadLaunchDayStatus(); if(typeof startLaunchCountdown==='function') startLaunchCountdown(); loadGenesisBackupList(); }
+  if(name === 'orchestrator'){ refreshOrchestrator(); }
+  if(name === 'marketplace-orders' || name === 'marketplace-invoices' || name === 'marketplace-shipping' || name === 'marketplace-stripe'){
+    const c = document.getElementById('pane-' + name);
+    if(c) c.innerHTML = '<div class="zion-panel p-8 text-center text-gray-400"><div class="text-3xl mb-3">🛒</div><h3 class="text-lg font-bold text-white mb-2">Marketplace</h3><p>Tato sekce bude dostupná po spuštění OASIS Marketplace služby.</p><div class="text-xs text-gray-500 mt-2">Service not yet deployed</div></div>';
+  }
+  if(name === 'ncl-jobs'){ loadNclJobs && loadNclJobs(); }
+  if(name === 'poc-lab'){ loadPocLab && loadPocLab(); }
+  if(name === 'agent'){ loadAgent && loadAgent(); }
+  if(name === 'ai-agents'){ loadAiAgents && loadAiAgents(); }
 
   // ── NCL / Hiran auto-refresh ────────────────────────────────────────
   if(name === 'hiran'){
