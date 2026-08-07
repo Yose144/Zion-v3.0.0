@@ -19,6 +19,10 @@ fn feat(name: &str) -> bool {
 /// invoked from a plain terminal (not a VS Developer Command Prompt).
 /// Detect and add them explicitly so C standard headers are resolved.
 fn add_msvc_includes(b: &mut cc::Build) {
+    // 0. Define NOMINMAX globally — windows.h defines min/max macros that
+    //    break std::numeric_limits<T>::max() in C++ code (RandomX, VerusHash).
+    b.define("NOMINMAX", None);
+
     // 1. VCToolsInstallDir env var (set by vcvarsall.bat / developer prompt)
     if let Ok(v) = env::var("VCToolsInstallDir") {
         let inc = PathBuf::from(&v).join("include");
@@ -27,8 +31,9 @@ fn add_msvc_includes(b: &mut cc::Build) {
         }
     }
 
-    // 2. Walk known VS installation roots (VS 2022 + VS 2026)
+    // 2. Walk known VS installation roots (VS 2022 + VS 2026 + VS 18)
     let roots: &[&str] = &[
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC",
         "C:\\Program Files\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC",
         "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC",
         "C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\VC\\Tools\\MSVC",
@@ -77,7 +82,10 @@ fn add_msvc_includes(b: &mut cc::Build) {
 
     // 4. Force-include the POSIX compat shim (provides clock_gettime etc.)
     b.include("csrc/compat");
-    b.flag_if_supported("/FIzion_time_compat.h");
+    // Use flag() not flag_if_supported() — cc-rs's flag_if_supported
+    // tests the flag with a dummy compilation that may not include the
+    // compat dir, causing /FI to fail the support check.
+    b.flag("/FIzion_time_compat.h");
 
     // 5. Treat source files as UTF-8 (some ghostrider sphlib sources contain
     //    em-dash/en-dash in comments; without /utf-8 MSVC fails silently).

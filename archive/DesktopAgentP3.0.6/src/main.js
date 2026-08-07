@@ -1026,6 +1026,9 @@ function findRustMiner() {
     : [
         // Prefer explicit refreshed dev copies and alternate target dirs first.
         path.join(APP_ROOT, 'resources'),
+        // V31 miner build outputs (primary development track)
+        path.join(APP_ROOT, '..', '..', 'V31', 'target', 'release'),
+        path.join(APP_ROOT, '..', '..', 'V31', 'L1', 'miner', 'target', 'release'),
         path.join(APP_ROOT, '..', '..', 'V3', 'target-vega-fix', 'release'),
         // V3 miner build outputs
         path.join(APP_ROOT, '..', '..', 'V3', 'L1', 'miner', 'target', 'release'),
@@ -2323,34 +2326,60 @@ function startMiningV3(config, v3Path) {
     : explicitGpuBackend || 'auto';
 
   // ── 6. Build CLI args ──────────────────────────────────────────────────────
+  // V31 (3.1.0-beta) miner uses a different CLI surface than V3 3.0.7:
+  //   - No --stats-file, --algorithm, --cpu-coin, --gpu-coin flags
+  //   - Uses --v3-trinity for unified 3-stream mode
+  //   - Stats file is set via ZION_STATS_FILE env var
+  //   - Coin preferences are set via env vars (ZION_MINER_CPU_COIN, etc.)
+  const isV31Miner = isV3MinerBinary(v3Path) && (() => {
+    try {
+      const verOut = execFileSync(v3Path, ['--version'], { encoding: 'utf8', windowsHide: true, timeout: 8000 });
+      return /3\.1\.0/i.test(verOut);
+    } catch { return false; }
+  })();
+
   const args = ['--pool', pool, '--wallet', wallet];
   if (worker) args.push('--worker', worker);
   if (effectiveThreads > 0) args.push('--threads', String(effectiveThreads));
   if (wantsGpu) {
     args.push('--gpu', selectedGpuBackend);
   }
-  args.push('--stats-file', STATS_PATH);
+  // V31 uses --v3-trinity for unified 3-stream mode; V3 3.0.7 uses --stats-file
+  if (isV31Miner) {
+    args.push('--v3-trinity');
+  } else {
+    args.push('--stats-file', STATS_PATH);
+  }
   // The miner is launched non-interactively from Electron; keep the TUI off so
   // stdout is a clean stream of logs/telemetry for the agent to parse.
   args.push('--no-tui');
+  // V31: shorter log interval for responsive UI updates (default is 30s)
+  if (isV31Miner) {
+    args.push('--log-interval', '5');
+  }
 
   // ── 6a. Boost CLI flags ──────────
   // Forward the user's algorithm / coin preferences to the V3 miner so the
   // pool can assign the correct Stream 2 (GPU external) and Stream 3 (CPU
   // external) jobs. "auto" = let the pool's profit router decide.
+  // V31 miner doesn't support these CLI flags — coin prefs go via env vars.
   const tripleStreamEnabled = config.tripleStream !== false;
   const algoForMiner = normalizeAlgorithmName(config.algorithm || DEFAULT_CONFIG.algorithm);
-  if (algoForMiner) {
+  if (algoForMiner && !isV31Miner) {
     args.push('--algorithm', algoForMiner);
   }
   if (tripleStreamEnabled) {
     const cpuCoin = String(config.cpuCoin || 'auto').trim();
     const gpuCoin = String(config.gpuCoin || 'auto').trim();
-    if (cpuCoin && cpuCoin.toLowerCase() !== 'auto') {
-      args.push('--cpu-coin', cpuCoin);
-    }
-    if (wantsGpu && gpuCoin && gpuCoin.toLowerCase() !== 'auto') {
-      args.push('--gpu-coin', gpuCoin);
+    // V31 miner doesn't support --cpu-coin/--gpu-coin CLI flags;
+    // coin preferences are forwarded via env vars (see section 7 below).
+    if (!isV31Miner) {
+      if (cpuCoin && cpuCoin.toLowerCase() !== 'auto') {
+        args.push('--cpu-coin', cpuCoin);
+      }
+      if (wantsGpu && gpuCoin && gpuCoin.toLowerCase() !== 'auto') {
+        args.push('--gpu-coin', gpuCoin);
+      }
     }
   }
 
@@ -2370,6 +2399,8 @@ function startMiningV3(config, v3Path) {
     ZION_RECONNECT: 'true',
     ZION_METRICS_REPORT_SECS: '10',
     ZION_STATS_FILE: STATS_PATH,
+    // V31 Trinity mode: unified 3-stream connection (ZION + GPU AuxPoW + CPU AuxPoW)
+    ...(isV31Miner ? { ZION_V3_TRINITY: '1' } : {}),
     ZION_MINER_METRICS_BIND: '127.0.0.1:9116',
     ZION_NO_DASHBOARD: '1', // desktop agent renders its own Boost UI; suppress SMOS compact dashboard
     ZION_NO_FANCY: '1',     // suppress ASCII banner and block-found art; keep machine-parseable logs
@@ -2520,9 +2551,9 @@ function startMiningV3(config, v3Path) {
   log(`[V3-FAST] Args: ${args.join(' ')}\n`);
 
   // ── 8. Determine cwd ──────────────────────────────────────────────────────
-  const minerCwd = IS_PACKAGED
-    ? process.resourcesPath
-    : path.join(APP_ROOT, '..');
+  // V31 miner + CUDA runtime needs NVRTC DLLs in the same dir; run from the
+  // miner's own directory so Windows finds them and the binary has its resources.
+  const minerCwd = path.dirname(v3Path);
 
   // ── 9. Unix execute bit ────────────────────────────────────────────────────
   if (process.platform !== 'win32') {
@@ -2534,7 +2565,9 @@ function startMiningV3(config, v3Path) {
     minerProcess = spawn(v3Path, args, {
       cwd: minerCwd,
       env,
-      stdio: ['pipe', 'pipe', 'pipe'],
+      // stdin 'ignore' instead of pipe: V31 miner does not read commands from
+      // stdin, and a pipe can trigger premature EOF on some Windows builds.
+      stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true
     });
   } catch (spawnErr) {
@@ -2580,28 +2613,42 @@ function startMiningV3(config, v3Path) {
     } catch {}
   };
 
-  // ── 14. Stdout handler ─────────────────────────────────────────────────────
+  // ── 14. Stdout/stderr line buffering ───────────────────────────────────────
+  // V31 miner (and V3) emits multi-line log records that can be split across
+  // Node 'data' chunks. Buffer incomplete lines and process complete lines only
+  // so the regex parsers receive whole tokens.
+  let stdoutBuf = '';
+  let stderrBuf = '';
+  const flushLines = (raw, streamName, lineBufRef) => {
+    const combined = lineBufRef.val + raw;
+    const lines = combined.split(/\r?\n/);
+    lineBufRef.val = lines.pop() || ''; // keep tail (possibly incomplete)
+    for (const line of lines) {
+      if (!line) continue;
+      const output = line + '\n';
+      const skip = shouldSkipFileLogLine(output);
+      if (!skip) safeMinerLogWriteV3(`[${streamName}] ${output}`);
+      if (!skip) enqueueMinerOutputToRenderer(streamName.toLowerCase(), output);
+      maybeEmitBlockFound(output);
+      maybeEmitShareEvent(output);
+      parseMinerOutput(output);
+    }
+  };
+
   minerProcess.stdout.on('data', (data) => {
-    const output = data.toString();
-    const skip = shouldSkipFileLogLine(output);
-    if (!skip) safeMinerLogWriteV3(`[STDOUT] ${output}`);
-    if (!skip) enqueueMinerOutputToRenderer('stdout', output);
-    maybeEmitBlockFound(output);
-    maybeEmitShareEvent(output);
-    parseMinerOutput(output);
+    flushLines(data.toString(), 'STDOUT', { get val() { return stdoutBuf; }, set val(v) { stdoutBuf = v; } });
   });
 
   // ── 15. Stderr handler ─────────────────────────────────────────────────────
   minerProcess.stderr.on('data', (data) => {
-    const output = data.toString();
-    const skip = shouldSkipFileLogLine(output);
-    if (!skip) safeMinerLogWriteV3(`[STDERR] ${output}`);
-    if (!skip) enqueueMinerOutputToRenderer('stderr', output);
-    parseMinerOutput(output);
+    flushLines(data.toString(), 'STDERR', { get val() { return stderrBuf; }, set val(v) { stderrBuf = v; } });
   });
 
   // ── 16. Close handler ──────────────────────────────────────────────────────
   minerProcess.on('close', (code, signal) => {
+    // Flush any remaining buffered stdout/stderr lines before the process exits
+    if (stdoutBuf) flushLines('', 'STDOUT', { get val() { return stdoutBuf; }, set val(v) { stdoutBuf = v; } });
+    if (stderrBuf) flushLines('', 'STDERR', { get val() { return stderrBuf; }, set val(v) { stderrBuf = v; } });
     flushBufferedFileAppendsSync();
     const exitMsg = `[V3] Miner exited code=${code}${signal ? ` signal=${signal}` : ''}\n`;
     console.log(exitMsg.trim());
@@ -3832,6 +3879,147 @@ function parseMinerOutput(output) {
   const v3ReconnectMatch = output.match(/reconnect_attempt=(\d+)/);
   if (v3ReconnectMatch) {
     minerStats.reconnect_attempts = parseInt(v3ReconnectMatch[1]);
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // V31 MINER OUTPUT PARSERS (zion-miner v3.1.0-beta Trinity mode)
+  // V31 uses a completely different output format than V3 3.0.7:
+  //   - "stream stats stream=zion coin=zion accepted=N rejected=N hashrate=X status=active"
+  //   - "hashrate=X H/s submitted=N accepted=N rejected=N jobs=N reconnects=N coin=zion pool=..."
+  //   - "V3 Trinity: ZION share accepted job=N nonce=N height=N"
+  //   - "gpu_cuda_lite_init device=\"...\" work_size=N scratchpad_mb=N"
+  //   - "gpu_zion_init backend=cuda device=\"...\" work_size=N algorithm=..."
+  // ═══════════════════════════════════════════════════════════════
+
+  // ─── V31 stream stats: per-stream hashrate + accepted/rejected ───
+  const v31StreamMatch = output.match(/stream stats\s+stream=(\S+)\s+coin=(\S+)\s+accepted=(\d+)\s+rejected=(\d+)\s+hashrate=([\d.]+)\s+status=(\S+)/);
+  if (v31StreamMatch) {
+    const stream = v31StreamMatch[1];
+    const accepted = parseInt(v31StreamMatch[3]);
+    const rejected = parseInt(v31StreamMatch[4]);
+    const hashrate = parseFloat(v31StreamMatch[5]);
+    const status = v31StreamMatch[6];
+
+    if (stream === 'zion') {
+      minerStats.accepted = accepted;
+      minerStats.rejected = rejected;
+      minerStats.shares = accepted + rejected;
+      minerStats.hashrate = hashrate;
+      minerStats.hashrate_10s = hashrate;
+      minerStats.hashrate_60s = hashrate;
+      minerStats.hashrate_15m = hashrate;
+      if (!Number.isFinite(Number(minerStats.hashrate_max)) || hashrate > Number(minerStats.hashrate_max)) {
+        minerStats.hashrate_max = hashrate;
+      }
+      minerStats.accept_rate = (accepted + rejected) > 0
+        ? (accepted / (accepted + rejected)) * 100 : 100;
+    }
+    // Track GPU/CPU external streams for Boost UI
+    if (stream === 'gpu-external') {
+      minerStats.gpu_accepted = accepted;
+      minerStats.gpu_rejected = rejected;
+      minerStats.gpu_hashrate = hashrate;
+    }
+    if (stream === 'cpu-external') {
+      minerStats.cpu_accepted = accepted;
+      minerStats.cpu_rejected = rejected;
+      minerStats.cpu_hashrate = hashrate;
+    }
+  }
+
+  // ─── V31 overall hashrate line: "hashrate=X H/s submitted=N accepted=N rejected=N ..." ───
+  const v31OverallMatch = output.match(/hashrate=([\d.]+)\s+H\/s\s+submitted=(\d+)\s+accepted=(\d+)\s+rejected=(\d+)\s+jobs=(\d+)\s+reconnects=(\d+)\s+coin=(\S+)\s+pool=(\S+)/);
+  if (v31OverallMatch) {
+    const hr = parseFloat(v31OverallMatch[1]);
+    const accepted = parseInt(v31OverallMatch[3]);
+    const rejected = parseInt(v31OverallMatch[4]);
+    // V31 overall line is the authoritative source for total stats
+    minerStats.accepted = accepted;
+    minerStats.rejected = rejected;
+    minerStats.shares = accepted + rejected;
+    if (hr > 0) {
+      minerStats.hashrate = hr;
+      minerStats.hashrate_10s = hr;
+      minerStats.hashrate_60s = hr;
+      minerStats.hashrate_15m = hr;
+      if (!Number.isFinite(Number(minerStats.hashrate_max)) || hr > Number(minerStats.hashrate_max)) {
+        minerStats.hashrate_max = hr;
+      }
+    }
+    minerStats.accept_rate = (accepted + rejected) > 0
+      ? (accepted / (accepted + rejected)) * 100 : 100;
+  }
+
+  // ─── V31 ZION share accepted/rejected: "V3 Trinity: ZION share accepted job=N nonce=N height=N" ───
+  if (/V3 Trinity:\s+ZION share accepted/i.test(output)) {
+    const m = output.match(/V3 Trinity:\s+ZION share accepted\s+job=(\d+)\s+nonce=(\d+)\s+height=(\d+)/i);
+    if (m) {
+      minerStats.last_job_id = m[1];
+      minerStats.last_job_height = m[3];
+    }
+    minerStats.last_share_time = Date.now();
+    // Don't double-count — stream stats already tracks accepted
+  }
+  if (/V3 Trinity:\s+ZION share rejected/i.test(output)) {
+    const m = output.match(/V3 Trinity:\s+ZION share rejected\s+job=(\d+)\s+nonce=(\d+)\s+status=(\S+)/i);
+    if (m) {
+      minerStats.last_job_id = m[1];
+      minerStats.last_reject_reason = m[3];
+    }
+    minerStats.last_share_time = Date.now();
+  }
+
+  // ─── V31 GPU init: "gpu_cuda_lite_init device=\"...\" work_size=N scratchpad_mb=N" ───
+  const v31GpuInitMatch = output.match(/gpu_cuda_lite_init\s+device="([^"]+)"\s+work_size=(\d+)\s+scratchpad_mb=(\d+)/);
+  if (v31GpuInitMatch) {
+    minerStats.gpu_backend = 'cuda';
+    minerStats.runtime_backend = 'cuda';
+    minerStats.gpu_detected = true;
+    minerStats.gpu_type = 'cuda';
+    minerStats.cpu_only_mode = false;
+    minerStats.gpu_device = v31GpuInitMatch[1];
+    minerStats.gpu_work_size = parseInt(v31GpuInitMatch[2]);
+    minerStats.gpu_vram_mib = parseInt(v31GpuInitMatch[3]);
+  }
+
+  // ─── V31 GPU ZION init: "gpu_zion_init backend=cuda device=\"...\" work_size=N algorithm=..." ───
+  const v31GpuZionMatch = output.match(/gpu_zion_init\s+backend=(\S+)\s+device="([^"]+)"\s+work_size=(\d+)\s+algorithm=(\S+)/);
+  if (v31GpuZionMatch) {
+    minerStats.gpu_backend = v31GpuZionMatch[1];
+    minerStats.runtime_backend = v31GpuZionMatch[1];
+    minerStats.gpu_detected = true;
+    minerStats.gpu_type = v31GpuZionMatch[1];
+    minerStats.cpu_only_mode = false;
+    minerStats.gpu_device = v31GpuZionMatch[2];
+    minerStats.stream_algorithm = v31GpuZionMatch[4];
+  }
+
+  // ─── V31 version: "zion-miner 3.1.0-beta" ───
+  const v31VersionMatch = output.match(/zion-miner\s+([\d.]+(?:-\w+)?)/);
+  if (v31VersionMatch) {
+    minerStats.miner_version = v31VersionMatch[1];
+  }
+
+  // ─── V31 Trinity connected: "V3 Trinity connected" ───
+  if (/V3 Trinity connected/i.test(output)) {
+    minerStats.pool_connected = true;
+    minerStats.stream_algorithm = 'deeksha_lite_v1';
+  }
+
+  // ─── V31 ext_mine_start: track external coin/stream activity ───
+  const v31ExtMatch = output.match(/ext_mine_start\s+stream=(\S+)\s+coin=(\S+)\s+algo=(\S+)/);
+  if (v31ExtMatch) {
+    const stream = v31ExtMatch[1];
+    const coin = v31ExtMatch[2];
+    const algo = v31ExtMatch[3];
+    if (stream === 'GpuExternal') {
+      minerStats.gpu_coin = coin;
+      minerStats.gpu_algorithm = algo;
+      minerStats.gpu_detected = true;
+    } else if (stream === 'CpuExternal') {
+      minerStats.cpu_coin = coin;
+      minerStats.cpu_algorithm = algo;
+    }
   }
 
   // ─── V3 GPU device: "gpu[0]=metal:Apple M1" ───
