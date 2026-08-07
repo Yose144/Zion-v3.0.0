@@ -44,26 +44,95 @@ var {
   font-family: var(--font-mono), 'JetBrains Mono', 'Courier New', monospace;
 }
 
-/* ── Background: rasta radial glows over deep black ──────────────────────── */
+/* ── Web2.9 background system ────────────────────────────────────────────── */
+body {
+  background: #000;
+}
+
+/* Subtle diagonal rasta stripes over the background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(
+      135deg,
+      rgba(228, 30, 43, 0.022) 0px,
+      rgba(228, 30, 43, 0.022) 3px,
+      rgba(252, 209, 22, 0.018) 3px,
+      rgba(252, 209, 22, 0.018) 6px,
+      rgba(7, 137, 48, 0.022) 6px,
+      rgba(7, 137, 48, 0.022) 9px,
+      transparent 9px,
+      transparent 160px
+    );
+  background-size: 160px 160px;
+  mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
+}
+
 #bg:after {
   background-image:
     radial-gradient(circle at 22% -5%, rgba(228, 30, 43, 0.18), transparent 38rem),
     radial-gradient(circle at 82% 5%, rgba(7, 137, 48, 0.12), transparent 34rem),
     radial-gradient(circle at 50% 40%, rgba(252, 209, 22, 0.07), transparent 50rem),
     radial-gradient(ellipse at bottom, #0f0f0f 0%, #000 100%);
+  background-size: cover, cover, cover, cover;
+  background-position: center, center, center, center;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
+  background-attachment: fixed;
+}
+
+#bg:before {
+  background-image:
+    linear-gradient(to top, rgba(13, 13, 13, 0.12), rgba(13, 13, 13, 0.28)),
+    url('../../images/overlay.png');
+  background-size: auto, 256px 256px;
+  background-position: center, center;
+  background-repeat: no-repeat, repeat;
+}
+
+/* Background modes (Rasta is default, selected via JS) */
+body.bg-stargate::before,
+body.bg-matrix::before,
+body.bg-cyber::before {
+  background-image: none;
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
+body.bg-stargate #bg:after {
+  background-image: url('../../images/nebula.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   background-attachment: fixed;
 }
 
-#bg:before {
+body.bg-matrix #bg:after {
   background-image:
-    linear-gradient(to top, rgba(13, 13, 13, 0.2), rgba(13, 13, 13, 0.45)),
-    url('../../images/overlay.png');
-  background-size: auto, 256px 256px;
-  background-position: center, center;
-  background-repeat: no-repeat, repeat;
+    radial-gradient(circle at 22% -5%, rgba(0, 255, 65, 0.18), transparent 38rem),
+    radial-gradient(circle at 82% 5%, rgba(0, 180, 90, 0.12), transparent 34rem),
+    radial-gradient(circle at 50% 40%, rgba(0, 255, 120, 0.07), transparent 50rem),
+    radial-gradient(ellipse at bottom, #001a0a 0%, #000 100%);
+  background-size: cover, cover, cover, cover;
+  background-position: center, center, center, center;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
+  background-attachment: fixed;
+}
+
+body.bg-cyber #bg:after {
+  background-image:
+    radial-gradient(circle at 22% -5%, rgba(255, 0, 128, 0.18), transparent 38rem),
+    radial-gradient(circle at 82% 5%, rgba(168, 85, 247, 0.12), transparent 34rem),
+    radial-gradient(circle at 50% 40%, rgba(34, 211, 238, 0.07), transparent 50rem),
+    radial-gradient(ellipse at bottom, #0f0018 0%, #000 100%);
+  background-size: cover, cover, cover, cover;
+  background-position: center, center, center, center;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
+  background-attachment: fixed;
 }
 
 /* ── Headings: web2.9 style, rasta gradient on major headings ────────────── */
@@ -416,96 +485,201 @@ html body textarea:focus {
   box-shadow: 0 0 14px rgba(252, 209, 22, 0.15);
 }
 
-/* ── Bottom tab menu ─────────────────────────────────────────────────────── */
-.bottom-tabs {
+/* ── Floating menu (bottom-right hamburger) ──────────────────────────────── */
+.floating-menu {
   position: fixed;
   bottom: 1rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1000;
+  right: 1rem;
+  z-index: 1001;
   display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.45rem;
-  background: rgba(13, 13, 13, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--zion-radius-lg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45), 0 0 42px rgba(252, 209, 22, 0.15);
-  transition: opacity 0.325s ease-in-out, transform 0.325s ease-in-out;
+  flex-direction: column;
+  align-items: flex-end;
 }
 
-.bottom-tab {
+.floating-menu-toggle {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.65rem 1.15rem;
-  border-radius: var(--zion-radius-md);
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 0.72rem;
-  font-weight: 650;
-  text-transform: none;
-  letter-spacing: 0.01em;
-  text-decoration: none;
-  transition: all 0.2s ease-in-out;
-  white-space: nowrap;
+  background: rgba(13, 13, 13, 0.85);
+  border: 1px solid rgba(252, 209, 22, 0.45);
+  color: var(--rasta-gold);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.45), 0 0 22px rgba(252, 209, 22, 0.22);
+  cursor: pointer;
+  transition: all 0.25s ease;
 }
 
-.bottom-tab:hover,
-.bottom-tab:focus {
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-  box-shadow: 0 0 12px rgba(252, 209, 22, 0.12);
+.floating-menu-toggle:hover {
+  transform: scale(1.08);
+  border-color: rgba(252, 209, 22, 0.75);
+  box-shadow: 0 0 28px rgba(252, 209, 22, 0.35);
 }
 
-.bottom-tab.active {
+.floating-menu-toggle .icon-menu,
+.floating-menu-toggle .icon-close {
+  width: 1.5rem;
+  height: 1.5rem;
+  position: absolute;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.floating-menu-toggle .icon-close {
+  opacity: 0;
+  transform: rotate(-45deg) scale(0.8);
+}
+
+.floating-menu.open .floating-menu-toggle {
   background-image: linear-gradient(110deg, var(--rasta-red), var(--rasta-gold) 48%, var(--rasta-green));
   background-size: 200% auto;
   color: #ffffff;
-  box-shadow: 0 0 18px rgba(252, 209, 22, 0.35);
+  border-color: transparent;
+}
+
+.floating-menu.open .floating-menu-toggle .icon-menu {
+  opacity: 0;
+  transform: rotate(45deg) scale(0.8);
+}
+
+.floating-menu.open .floating-menu-toggle .icon-close {
+  opacity: 1;
+  transform: rotate(0) scale(1);
+}
+
+.floating-menu-panel {
+  position: absolute;
+  bottom: calc(100% + 0.75rem);
+  right: 0;
+  width: 17.5rem;
+  max-width: calc(100vw - 2rem);
+  max-height: calc(100vh - 6rem);
+  overflow-y: auto;
+  background: rgba(13, 13, 13, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--zion-radius-lg);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55), 0 0 42px rgba(252, 209, 22, 0.15);
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(12px) scale(0.96);
+  transform-origin: bottom right;
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+}
+
+.floating-menu.open .floating-menu-panel {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+  visibility: visible;
+}
+
+.floating-menu-accent {
+  height: 2px;
+  width: 100%;
+  background: linear-gradient(90deg, rgba(228, 30, 43, 0.85), rgba(252, 209, 22, 0.95), rgba(7, 137, 48, 0.85));
+  flex-shrink: 0;
+}
+
+.floating-menu-body {
+  padding: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.floating-menu-group-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0 0 0.3rem 0;
+  padding: 0 0.25rem;
+}
+
+.floating-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.4rem;
+}
+
+.floating-menu-row {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.floating-menu-item,
+.floating-menu-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.6rem 0.5rem;
+  border-radius: var(--zion-radius-md);
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.75rem;
+  font-weight: 650;
+  text-decoration: none;
+  letter-spacing: 0.01em;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid transparent;
+  transition: all 0.18s ease;
+  cursor: pointer;
+  border: none;
+}
+
+.floating-menu-item:hover,
+.floating-menu-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.floating-menu-item.active,
+.floating-menu-option.active {
+  background-image: linear-gradient(110deg, var(--rasta-red), var(--rasta-gold) 48%, var(--rasta-green));
+  background-size: 200% auto;
+  color: #ffffff;
+  border-color: rgba(252, 209, 22, 0.35);
+  box-shadow: 0 0 14px rgba(252, 209, 22, 0.25);
   font-weight: 700;
 }
 
-/* Mobile bottom tabs */
-@media screen and (max-width: 736px) {
-  .bottom-tabs {
-    bottom: 0.6rem;
-    padding: 0.35rem;
-    gap: 0.25rem;
-  }
-
-  .bottom-tab {
-    padding: 0.55rem 0.85rem;
-    font-size: 0.62rem;
-  }
-
-  html body #main article {
-    padding-bottom: 6.5rem;
-  }
+.floating-menu-row .floating-menu-option {
+  flex: 1 1 0;
 }
 
-@media screen and (max-width: 480px) {
-  .bottom-tabs {
-    width: calc(100% - 1.25rem);
-    max-width: 28rem;
-    justify-content: space-around;
+/* Mobile: keep the button small and panel compact */
+@media screen and (max-width: 736px) {
+  .floating-menu {
+    bottom: 0.75rem;
+    right: 0.75rem;
   }
 
-  .bottom-tab {
-    flex: 1 1 0;
-    padding: 0.55rem 0.2rem;
+  .floating-menu-toggle {
+    width: 2.85rem;
+    height: 2.85rem;
   }
 
-  #header nav ul {
-    flex-wrap: wrap;
-    justify-content: center;
-    max-width: 90%;
+  .floating-menu-panel {
+    width: 15.5rem;
   }
 
-  #header nav ul li a {
-    padding: 0.5rem 0.85rem;
-    font-size: 0.72rem;
+  .floating-menu-body {
+    padding: 0.5rem;
+  }
+
+  .floating-menu-item,
+  .floating-menu-option {
+    padding: 0.55rem 0.4rem;
+    font-size: 0.7rem;
   }
 }
 
