@@ -14,10 +14,11 @@ Environment="RUST_LOG=info,zion_pool=debug"
 ExecStart=/opt/zion/V31/target/release/zion-pool \
     --bind 0.0.0.0:8444 \
     --l1-rpc-url http://127.0.0.1:9445 \
-    --miner-address zion1pool \
+    --miner-address ${ZION_POOL_WALLET} \
     --state-path /opt/zion/data/v31/pool-pplns.json \
     --pool-fee-bps 100 \
-    --pplns-window-size 10000
+    --pplns-window-size 10000 \
+    --store-db-path /opt/zion/data/v31/pool-store.db
 Restart=always
 RestartSec=10
 KillMode=process
