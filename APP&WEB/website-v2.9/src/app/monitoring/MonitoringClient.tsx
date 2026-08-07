@@ -290,7 +290,7 @@ async function fetchSparklines(): Promise<SparklineData> {
 
 /* ═══════════════════════ COMPONENTS ═══════════════════════ */
 
-function StatCard({ label, value, icon: Icon, accent = 'text-zion-cyan', rc = '7, 137, 48', sub }: {
+function StatCard({ label, value, icon: Icon, accent = 'text-zion-cyan', rc = '6, 105, 40', sub }: {
   label: string;
   value: string;
   icon: LucideIcon;
@@ -350,7 +350,7 @@ function GroupRow({ name, submits, accepted, color }: {
   const a = accepted ?? 0;
   const rate = s > 0 ? ((a / s) * 100) : 0;
   return (
-    <div style={{ '--rc': '7, 137, 48' } as React.CSSProperties} className="zion-rainbow-sub p-3 flex items-center gap-3">
+    <div style={{ '--rc': '6, 105, 40' } as React.CSSProperties} className="zion-rainbow-sub p-3 flex items-center gap-3">
       <div className={`h-2.5 w-2.5 rounded-full ${color}`} />
       <div className="flex-1">
         <div className="flex items-center justify-between mb-1">
@@ -415,7 +415,7 @@ export default function MonitoringClient() {
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+          style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
           className="zion-rainbow-card p-6 md:p-10"
         >
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
@@ -505,7 +505,7 @@ export default function MonitoringClient() {
           </div>
           {/* Sparkline */}
           {sparklines && sparklines.chainHeight.length > 1 && (
-            <div style={{ '--rc': '7, 137, 48' } as React.CSSProperties} className="mt-3 zion-rainbow-sub p-4">
+            <div style={{ '--rc': '6, 105, 40' } as React.CSSProperties} className="mt-3 zion-rainbow-sub p-4">
               <div className="text-xs text-gray-400 mb-2">{MonitoringMonitoringClientCopy.chainHeightLast1Hour[cs ? 'cs' : 'en']}</div>
               <Sparkline data={sparklines.chainHeight} color="#fcd116" height={40} />
             </div>
@@ -524,25 +524,25 @@ export default function MonitoringClient() {
             {MonitoringMonitoringClientCopy.miningPool[cs ? 'cs' : 'en']}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            <StatCard icon={Users}    label="Active Miners"    value={fmt(data?.poolActiveSessions)} accent="text-zion-gold" rc="7, 137, 48" />
-            <StatCard icon={ArrowUpDown} label="Total Submits" value={fmt(data?.poolSubmitsTotal)} accent="text-zion-cyan" rc="7, 137, 48" />
-            <StatCard icon={Sparkles} label="Accepted Shares"  value={fmt(data?.poolAcceptedTotal)} accent="text-zion-cyan" rc="7, 137, 48" />
-            <StatCard icon={Activity} label="Rejected Shares"  value={fmt(data?.poolRejectedTotal)} accent="text-zion-purple" rc="7, 137, 48" />
-            <StatCard icon={Gauge}    label="Accept Rate"      value={fmtPct(data?.poolAcceptRate)} accent={data?.poolAcceptRate != null && data.poolAcceptRate >= 95 ? 'text-zion-cyan' : 'text-zion-gold'} rc="7, 137, 48" />
-            <StatCard icon={Timer}    label="Pool Uptime"      value={fmtUptime(data?.poolUptime)} accent="text-zion-cyan" rc="7, 137, 48" />
-            <StatCard icon={Heart}    label="PPLNS Miners"     value={fmt(data?.pplnsRegisteredMiners)} accent="text-zion-purple" rc="7, 137, 48" />
+            <StatCard icon={Users}    label="Active Miners"    value={fmt(data?.poolActiveSessions)} accent="text-zion-gold" rc="6, 105, 40" />
+            <StatCard icon={ArrowUpDown} label="Total Submits" value={fmt(data?.poolSubmitsTotal)} accent="text-zion-cyan" rc="6, 105, 40" />
+            <StatCard icon={Sparkles} label="Accepted Shares"  value={fmt(data?.poolAcceptedTotal)} accent="text-zion-cyan" rc="6, 105, 40" />
+            <StatCard icon={Activity} label="Rejected Shares"  value={fmt(data?.poolRejectedTotal)} accent="text-zion-purple" rc="6, 105, 40" />
+            <StatCard icon={Gauge}    label="Accept Rate"      value={fmtPct(data?.poolAcceptRate)} accent={data?.poolAcceptRate != null && data.poolAcceptRate >= 95 ? 'text-zion-cyan' : 'text-zion-gold'} rc="6, 105, 40" />
+            <StatCard icon={Timer}    label="Pool Uptime"      value={fmtUptime(data?.poolUptime)} accent="text-zion-cyan" rc="6, 105, 40" />
+            <StatCard icon={Heart}    label="PPLNS Miners"     value={fmt(data?.pplnsRegisteredMiners)} accent="text-zion-purple" rc="6, 105, 40" />
           </div>
           {/* Sparklines */}
           {sparklines && (sparklines.poolSessions.length > 1 || sparklines.shares.length > 1) && (
             <div className="mt-3 grid md:grid-cols-2 gap-3">
               {sparklines.poolSessions.length > 1 && (
-                <div style={{ '--rc': '7, 137, 48' } as React.CSSProperties} className="zion-rainbow-sub p-4">
+                <div style={{ '--rc': '6, 105, 40' } as React.CSSProperties} className="zion-rainbow-sub p-4">
                   <div className="text-xs text-gray-400 mb-2">{MonitoringMonitoringClientCopy.activeMinersLast1Hour[cs ? 'cs' : 'en']}</div>
                   <Sparkline data={sparklines.poolSessions} color="#fcd116" height={36} />
                 </div>
               )}
               {sparklines.shares.length > 1 && (
-                <div style={{ '--rc': '7, 137, 48' } as React.CSSProperties} className="zion-rainbow-sub p-4">
+                <div style={{ '--rc': '6, 105, 40' } as React.CSSProperties} className="zion-rainbow-sub p-4">
                   <div className="text-xs text-gray-400 mb-2">{MonitoringMonitoringClientCopy.acceptedSharesLast1Hour[cs ? 'cs' : 'en']}</div>
                   <Sparkline data={sparklines.shares} color="#10b981" height={36} />
                 </div>
@@ -556,7 +556,7 @@ export default function MonitoringClient() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+          style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
           className="zion-rainbow-card p-6"
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
@@ -576,7 +576,7 @@ export default function MonitoringClient() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+          style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
           className="zion-rainbow-card p-6"
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
@@ -584,12 +584,12 @@ export default function MonitoringClient() {
             {MonitoringMonitoringClientCopy.pplnsRewardEngine[cs ? 'cs' : 'en']}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-            <div style={{ '--rc': '7, 137, 48' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2 min-w-0">
+            <div style={{ '--rc': '6, 105, 40' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2 min-w-0">
               <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Window Size</div>
               <div className="text-base sm:text-xl font-mono font-bold text-zion-purple truncate">{fmt(data?.pplnsWindowSize)}</div>
               <div className="text-xs text-gray-500">maximum shares</div>
             </div>
-            <div style={{ '--rc': '7, 137, 48' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2 min-w-0">
+            <div style={{ '--rc': '6, 105, 40' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2 min-w-0">
               <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Window Used</div>
               <div className="text-base sm:text-xl font-mono font-bold text-zion-purple truncate">{fmt(data?.pplnsWindowUsed)}</div>
               {pplnsWindowPct != null && (
@@ -597,15 +597,15 @@ export default function MonitoringClient() {
               )}
               <div className="text-xs text-gray-500">{pplnsWindowPct != null ? (cs ? `${pplnsWindowPct.toFixed(1)} % zaplneno` : `${pplnsWindowPct.toFixed(1)}% full`) : ''}</div>
             </div>
-            <div style={{ '--rc': '7, 137, 48' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2 min-w-0">
+            <div style={{ '--rc': '6, 105, 40' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2 min-w-0">
               <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Registered Miners</div>
               <div className="text-base sm:text-xl font-mono font-bold text-zion-cyan truncate">{fmt(data?.pplnsRegisteredMiners)}</div>
             </div>
-            <div style={{ '--rc': '7, 137, 48' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2 min-w-0">
+            <div style={{ '--rc': '6, 105, 40' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2 min-w-0">
               <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Total Paid</div>
               <div className="text-base sm:text-xl font-mono font-bold text-zion-gold truncate">{fmt(data?.pplnsTotalPaid)} <span className="text-xs text-gray-500">ZION</span></div>
             </div>
-            <div style={{ '--rc': '7, 137, 48' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2 min-w-0">
+            <div style={{ '--rc': '6, 105, 40' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2 min-w-0">
               <div className="text-xs text-gray-400 uppercase tracking-wider truncate">Payout Rounds</div>
               <div className="text-base sm:text-xl font-mono font-bold text-zion-gold truncate">{fmt(data?.pplnsPayoutRounds)}</div>
             </div>
@@ -617,7 +617,7 @@ export default function MonitoringClient() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+          style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
           className="zion-rainbow-card p-6"
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
@@ -627,7 +627,7 @@ export default function MonitoringClient() {
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {/* CPU Load */}
-            <div style={{ '--rc': '7, 137, 48' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2">
+            <div style={{ '--rc': '6, 105, 40' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2">
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
                 <Flame className="h-3 w-3" /> {MonitoringMonitoringClientCopy.cpuLoad[cs ? 'cs' : 'en']}
               </div>
@@ -639,7 +639,7 @@ export default function MonitoringClient() {
             </div>
 
             {/* Memory */}
-            <div style={{ '--rc': '7, 137, 48' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2">
+            <div style={{ '--rc': '6, 105, 40' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2">
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
                 <Cpu className="h-3 w-3" /> {MonitoringMonitoringClientCopy.memory[cs ? 'cs' : 'en']}
               </div>
@@ -659,7 +659,7 @@ export default function MonitoringClient() {
             </div>
 
             {/* Disk */}
-            <div style={{ '--rc': '7, 137, 48' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2">
+            <div style={{ '--rc': '6, 105, 40' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2">
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
                 <HardDrive className="h-3 w-3" /> Disk
               </div>
@@ -679,7 +679,7 @@ export default function MonitoringClient() {
             </div>
 
             {/* Server Uptime */}
-            <div style={{ '--rc': '7, 137, 48' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2">
+            <div style={{ '--rc': '6, 105, 40' } as React.CSSProperties} className="zion-rainbow-sub p-4 space-y-2">
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
                 <Clock className="h-3 w-3" /> {MonitoringMonitoringClientCopy.serverUptime[cs ? 'cs' : 'en']}
               </div>
@@ -698,7 +698,7 @@ export default function MonitoringClient() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
-          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+          style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
           className="zion-rainbow-card p-6"
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
@@ -717,7 +717,7 @@ export default function MonitoringClient() {
               { name: 'API Proxy', ver: '/api/metrics', desc: MonitoringMonitoringClientCopy.secureAllowlistedQueryProxy[cs ? 'cs' : 'en'], color: 'text-zion-cyan' },
               { name: MonitoringMonitoringClientCopy.website[cs ? 'cs' : 'en'], ver: SITE_VERSION, desc: `Next.js 16 + Tailwind CSS 4 · runtime ${SITE_RUNTIME_VERSION}`, color: 'text-zion-purple' },
             ].map((s) => (
-              <div key={s.name} style={{ '--rc': '7, 137, 48' } as React.CSSProperties} className="zion-rainbow-sub p-3 flex items-start gap-3">
+              <div key={s.name} style={{ '--rc': '6, 105, 40' } as React.CSSProperties} className="zion-rainbow-sub p-3 flex items-start gap-3">
                 <div className={`mt-0.5 h-2 w-2 rounded-full ${s.color.replace('text-', 'bg-')}`} />
                 <div>
                   <div className="font-medium text-white">

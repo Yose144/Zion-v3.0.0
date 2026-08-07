@@ -211,7 +211,7 @@ export default function PoolConfigPage() {
               <div
                 key={config.algo}
                 className={`zion-rainbow-sub p-5 ${config.enabled ? '' : 'opacity-70'}`}
-                style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+                style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
               >
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <label className="flex items-center gap-3 cursor-pointer">
@@ -238,7 +238,7 @@ export default function PoolConfigPage() {
                       value={config.priority}
                       onChange={(e) => updateConfig(config.algo, 'priority', parseInt(e.target.value))}
                       className="zion-rainbow-sub px-4 py-2 text-sm text-white disabled:opacity-50"
-                      style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+                      style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
                       disabled={!config.enabled}
                     >
                       <option value={1}>{AdminPoolConfigCopy.high[lang === 'cs' ? 'cs' : 'en']}</option>
@@ -257,7 +257,7 @@ export default function PoolConfigPage() {
                       onChange={(e) => updateConfig(config.algo, 'poolUrl', e.target.value)}
                       disabled={!config.enabled}
                       className="zion-rainbow-sub mt-2 w-full px-4 py-3 text-sm text-white disabled:opacity-50"
-                      style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+                      style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
                       placeholder="pool.example.com:port"
                     />
                   </div>
@@ -269,7 +269,7 @@ export default function PoolConfigPage() {
                       onChange={(e) => updateConfig(config.algo, 'wallet', e.target.value)}
                       disabled={!config.enabled}
                       className="zion-rainbow-sub mt-2 w-full px-4 py-3 text-sm text-white disabled:opacity-50"
-                      style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+                      style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
                       placeholder={AdminPoolConfigCopy.walletAddress[lang === 'cs' ? 'cs' : 'en']}
                     />
                   </div>
@@ -282,7 +282,7 @@ export default function PoolConfigPage() {
                         onChange={(e) => updateConfig(config.algo, 'workerPrefix', e.target.value)}
                         disabled={!config.enabled}
                         className="zion-rainbow-sub mt-2 w-full px-4 py-3 text-sm text-white disabled:opacity-50"
-                        style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+                        style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
                         placeholder="zion"
                       />
                     </div>
@@ -310,7 +310,7 @@ export default function PoolConfigPage() {
               <div
                 key={config.algo}
                 className={`zion-rainbow-sub p-5 ${config.enabled ? '' : 'opacity-70'}`}
-                style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+                style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
               >
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <label className="flex items-center gap-3 cursor-pointer">
@@ -341,7 +341,7 @@ export default function PoolConfigPage() {
                       onChange={(e) => updateConfig(config.algo, 'poolUrl', e.target.value)}
                       disabled={!config.enabled}
                       className="zion-rainbow-sub mt-2 w-full px-4 py-3 text-sm text-white disabled:opacity-50"
-                      style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+                      style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
                     />
                   </div>
                   <div>
@@ -352,7 +352,7 @@ export default function PoolConfigPage() {
                       onChange={(e) => updateConfig(config.algo, 'wallet', e.target.value)}
                       disabled={!config.enabled}
                       className="zion-rainbow-sub mt-2 w-full px-4 py-3 text-sm text-white disabled:opacity-50"
-                      style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+                      style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
                     />
                   </div>
                   <div className="flex items-end gap-3">
@@ -364,7 +364,7 @@ export default function PoolConfigPage() {
                         onChange={(e) => updateConfig(config.algo, 'workerPrefix', e.target.value)}
                         disabled={!config.enabled}
                         className="zion-rainbow-sub mt-2 w-full px-4 py-3 text-sm text-white disabled:opacity-50"
-                        style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+                        style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
                       />
                     </div>
                     <button

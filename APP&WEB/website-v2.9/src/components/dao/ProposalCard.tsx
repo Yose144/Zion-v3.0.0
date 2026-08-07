@@ -54,7 +54,7 @@ export default function ProposalCard({ proposal, onVote }: ProposalCardProps) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       className="zion-rainbow-sub p-5 transition-colors"
-      style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+      style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
     >
       {/* Header */}
       <div className="flex items-start gap-3 mb-4">
@@ -105,7 +105,7 @@ export default function ProposalCard({ proposal, onVote }: ProposalCardProps) {
 
       {/* Vote counts */}
       <div className="grid grid-cols-3 gap-2 mb-4 text-center">
-        <div className="zion-rainbow-sub p-2" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+        <div className="zion-rainbow-sub p-2" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
           <p className="text-xs font-semibold text-zion-cyan">{formatNumber(votesFor)}</p>
           <p className="text-[10px] text-gray-500">For</p>
         </div>

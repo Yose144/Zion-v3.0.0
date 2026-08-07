@@ -93,7 +93,7 @@ function EarthGlobe() {
           metalness={0.02}
           color={new THREE.Color('#e8e8e8')}
           emissiveMap={maps.night ?? undefined}
-          emissive={maps.night ? new THREE.Color('#ffcc66') : new THREE.Color('#078930')}
+          emissive={maps.night ? new THREE.Color('#ffcc66') : new THREE.Color('#066928')}
           emissiveIntensity={maps.night ? 0.35 : 0.12}
         />
       </mesh>
@@ -101,7 +101,7 @@ function EarthGlobe() {
       <mesh scale={1.018}>
         <sphereGeometry args={[1, 32, 32]} />
         <meshBasicMaterial
-          color="#078930"
+          color="#066928"
           transparent
           opacity={0.08}
           depthWrite={false}
@@ -205,7 +205,7 @@ const PLANETS: PlanetData[] = [
   { name: 'Mars',    color: '#e41e2b', emissive: '#e41e2b', radius: 0.045, orbitRadius: 10.0, orbitSpeed: 0.28, orbitTilt: 0.08, startAngle: 2.5 },
   { name: 'Jupiter', color: '#fcd116', emissive: '#e41e2b', radius: 0.14,  orbitRadius: 14.0, orbitSpeed: 0.12, orbitTilt: 0.2,  startAngle: 0.8 },
   { name: 'Saturn',  color: '#fcd116', emissive: '#fcd116', radius: 0.11,  orbitRadius: 17.0, orbitSpeed: 0.09, orbitTilt: 0.25, startAngle: 3.1, hasRing: true, ringColor: '#fcd116' },
-  { name: 'Uranus',  color: '#078930', emissive: '#078930', radius: 0.07,  orbitRadius: 20.0, orbitSpeed: 0.06, orbitTilt: 0.35, startAngle: 4.4 },
+  { name: 'Uranus',  color: '#066928', emissive: '#066928', radius: 0.07,  orbitRadius: 20.0, orbitSpeed: 0.06, orbitTilt: 0.35, startAngle: 4.4 },
   { name: 'Neptune', color: '#e41e2b', emissive: '#e41e2b', radius: 0.065, orbitRadius: 23.0, orbitSpeed: 0.05, orbitTilt: 0.18, startAngle: 5.7 },
 ];
 
@@ -298,12 +298,12 @@ function IssobellaStation() {
       {/* Main torus — ring habitat */}
       <mesh rotation={[Math.PI / 2, 0, 0]}>
         <torusGeometry args={[0.14, 0.035, 12, 24]} />
-        <meshStandardMaterial color="#fcd116" emissive="#078930" emissiveIntensity={0.8} roughness={0.3} metalness={0.7} />
+        <meshStandardMaterial color="#fcd116" emissive="#066928" emissiveIntensity={0.8} roughness={0.3} metalness={0.7} />
       </mesh>
       {/* Central core */}
       <mesh>
         <sphereGeometry args={[0.06, 16, 16]} />
-        <meshStandardMaterial color="#078930" emissive="#078930" emissiveIntensity={1.2} roughness={0.2} metalness={0.5} />
+        <meshStandardMaterial color="#066928" emissive="#066928" emissiveIntensity={1.2} roughness={0.2} metalness={0.5} />
       </mesh>
 
       {/* Issobella glow */}
@@ -322,7 +322,7 @@ function HologramShell() {
     () => ({
       uTime: { value: 0 },
       uCore: { value: new THREE.Color('#1a1a1a') },
-      uRim: { value: new THREE.Color('#078930') },
+      uRim: { value: new THREE.Color('#066928') },
       uAccent: { value: new THREE.Color('#fcd116') },
     }),
     [],
@@ -340,7 +340,7 @@ function HologramShell() {
       <mesh scale={1.028}>
         <sphereGeometry args={[1, 24, 24]} />
         <meshBasicMaterial
-          color="#078930"
+          color="#066928"
           wireframe
           transparent
           opacity={0.08}
@@ -381,14 +381,14 @@ type BrightStar = {
 };
 
 const BRIGHT_STARS: BrightStar[] = [
-  { name: 'Sirius',     color: '#078930', emissive: '#078930', radius: 0.055, distance: 42, theta: 0.9,  phi: 1.35, pulseSpeed: 2.1 },
-  { name: 'Rigel',      color: '#078930', emissive: '#078930', radius: 0.065, distance: 48, theta: 2.4,  phi: 1.15, pulseSpeed: 1.7 },
+  { name: 'Sirius',     color: '#066928', emissive: '#066928', radius: 0.055, distance: 42, theta: 0.9,  phi: 1.35, pulseSpeed: 2.1 },
+  { name: 'Rigel',      color: '#066928', emissive: '#066928', radius: 0.065, distance: 48, theta: 2.4,  phi: 1.15, pulseSpeed: 1.7 },
   { name: 'Arcturus',   color: '#e41e2b', emissive: '#e41e2b', radius: 0.075, distance: 38, theta: 4.2,  phi: 1.05, pulseSpeed: 1.3 },
   { name: 'Vega',       color: '#fcd116', emissive: '#fcd116', radius: 0.06,  distance: 44, theta: 5.8,  phi: 0.95, pulseSpeed: 1.9 },
   { name: 'Betelgeuse', color: '#e41e2b', emissive: '#e41e2b', radius: 0.09,  distance: 36, theta: 1.6,  phi: 0.85, pulseSpeed: 0.8 },
   { name: 'Antares',    color: '#e41e2b', emissive: '#e41e2b', radius: 0.07,  distance: 50, theta: 3.3,  phi: 1.45, pulseSpeed: 1.1 },
-  { name: 'Altair',     color: '#078930', emissive: '#078930', radius: 0.05,  distance: 40, theta: 0.3,  phi: 1.2,  pulseSpeed: 2.4 },
-  { name: 'Spica',      color: '#078930', emissive: '#078930', radius: 0.058, distance: 46, theta: 4.9,  phi: 0.75, pulseSpeed: 1.5 },
+  { name: 'Altair',     color: '#066928', emissive: '#066928', radius: 0.05,  distance: 40, theta: 0.3,  phi: 1.2,  pulseSpeed: 2.4 },
+  { name: 'Spica',      color: '#066928', emissive: '#066928', radius: 0.058, distance: 46, theta: 4.9,  phi: 0.75, pulseSpeed: 1.5 },
   { name: 'Deneb',      color: '#fcd116', emissive: '#fcd116', radius: 0.062, distance: 52, theta: 5.1,  phi: 0.65, pulseSpeed: 1.2 },
   { name: 'Pollux',     color: '#fcd116', emissive: '#fcd116', radius: 0.068, distance: 35, theta: 2.9,  phi: 1.55, pulseSpeed: 1.0 },
 ];
@@ -539,7 +539,7 @@ function OrionNebula() {
     { pos: [18, 6, 22] as [number, number, number], scale: [5.5, 3.2, 4.0] as [number, number, number], color: '#e41e2b', opacity: 0.035 },
     { pos: [16, 5, 20] as [number, number, number], scale: [4.0, 2.5, 3.5] as [number, number, number], color: '#fcd116', opacity: 0.028 },
     { pos: [20, 7, 24] as [number, number, number], scale: [3.5, 2.0, 3.0] as [number, number, number], color: '#e41e2b', opacity: 0.022 },
-    { pos: [14, 4, 21] as [number, number, number], scale: [3.0, 1.8, 2.5] as [number, number, number], color: '#078930', opacity: 0.018 },
+    { pos: [14, 4, 21] as [number, number, number], scale: [3.0, 1.8, 2.5] as [number, number, number], color: '#066928', opacity: 0.018 },
   ], []);
 
   useFrame((_state, delta) => {
@@ -648,7 +648,7 @@ function latLonToVector3(lat: number, lon: number, radius: number): [number, num
 }
 
 const TERRA_NOVA_MARKERS = [
-  { lat: 37.0, lon: -8.0, color: '#078930', glow: '#078930', nameCs: 'Zahrada Genesis', nameEn: 'Garden of Genesis', href: '/terranova/genesis' },
+  { lat: 37.0, lon: -8.0, color: '#066928', glow: '#066928', nameCs: 'Zahrada Genesis', nameEn: 'Garden of Genesis', href: '/terranova/genesis' },
   { lat: 28.7, lon: -17.9, color: '#fcd116', glow: '#fcd116', nameCs: 'Dharma Temple', nameEn: 'Dharma Temple', href: '/terranova/dharma-temple' },
   { lat: -17.0, lon: -150.0, color: '#e41e2b', glow: '#e41e2b', nameCs: 'Te Piko Ora', nameEn: 'Te Piko Ora', href: '/terranova/te-piko-ora' },
 ];
@@ -751,9 +751,9 @@ function Scene() {
     <>
       <ambientLight intensity={2.0} />
       <directionalLight position={[8, 4, 8]} intensity={3.8} color="#fff8e0" />
-      <pointLight position={[-6, -2, 4]} intensity={1.2} color="#078930" />
+      <pointLight position={[-6, -2, 4]} intensity={1.2} color="#066928" />
       <pointLight position={[0, 6, 2]} intensity={0.7} color="#fcd116" />
-      <pointLight position={[0, -4, 0]} intensity={0.5} color="#078930" />
+      <pointLight position={[0, -4, 0]} intensity={0.5} color="#066928" />
       <hemisphereLight color="#fcd116" groundColor="#1a1a1a" intensity={1.4} />
       <MilkyWay />
       <OrionNebula />
@@ -800,7 +800,7 @@ export default function HolographicEarth({ className }: HolographicEarthProps) {
       className={clsx(
         'relative aspect-[5/4] w-full max-h-[300px] overflow-hidden rounded-[22px] sm:max-h-[340px]',
         'border border-rasta-gold/30 bg-gradient-to-b from-rasta-black/85 via-rasta-dark/82 to-rasta-black/86',
-        'shadow-[0_12px_48px_rgba(0,0,0,0.45),0_0_0_1px_rgba(252,209,22,0.06)_inset,0_0_64px_rgba(7,137,48,0.12)]',
+        'shadow-[0_12px_48px_rgba(0,0,0,0.45),0_0_0_1px_rgba(252,209,22,0.06)_inset,0_0_64px_rgba(6,105,40,0.12)]',
         'ring-1 ring-rasta-gold/10',
         className,
       )}

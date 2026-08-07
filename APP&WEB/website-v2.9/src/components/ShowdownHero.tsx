@@ -123,7 +123,7 @@ export default function ShowdownHero({ className = '' }: { className?: string })
           transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
         >
           <circle cx="100" cy="100" r="90" fill="none" stroke="rgba(228,30,43,0.3)" strokeWidth="1" strokeDasharray="3 6" />
-          <circle cx="100" cy="100" r="75" fill="none" stroke="rgba(7,137,48,0.2)" strokeWidth="0.5" />
+          <circle cx="100" cy="100" r="75" fill="none" stroke="rgba(6,105,40,0.2)" strokeWidth="0.5" />
         </motion.svg>
         <motion.svg
           viewBox="0 0 200 200"

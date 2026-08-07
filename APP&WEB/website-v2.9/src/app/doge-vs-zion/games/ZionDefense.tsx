@@ -492,7 +492,7 @@ function renderCanvas(s: GameState, canvasRef: React.RefObject<HTMLCanvasElement
       s.zion >= def.cost;
     const hx = s.hoverGrid.x * CELL_SIZE + CANVAS_PADDING;
     const hy = s.hoverGrid.y * CELL_SIZE + CANVAS_PADDING;
-    ctx.fillStyle = canPlace ? 'rgba(7, 137, 48,0.3)' : 'rgba(228, 30, 43,0.3)';
+    ctx.fillStyle = canPlace ? 'rgba(6, 105, 40,0.3)' : 'rgba(228, 30, 43,0.3)';
     ctx.fillRect(hx, hy, CELL_SIZE, CELL_SIZE);
     ctx.strokeStyle = canPlace ? '#10b981' : '#ef4444';
     ctx.lineWidth = 2;

@@ -461,7 +461,7 @@ export default function StatusPageClient() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.14 + i * 0.02 }}
                 className="zion-rainbow-sub p-4 rounded-2xl"
-                style={{ "--rc": "7, 137, 48" } as React.CSSProperties}
+                style={{ "--rc": "6, 105, 40" } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[10px] text-gray-400 uppercase tracking-wider">

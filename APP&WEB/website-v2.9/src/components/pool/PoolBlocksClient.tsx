@@ -515,7 +515,7 @@ function RewardChart({ data, height = 220, cs = false }: { data: DayBucket[]; he
       <defs>
         <linearGradient id="rewardBar" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="rgb(52, 211, 153)" stopOpacity="0.9" />
-          <stop offset="100%" stopColor="rgb(7, 137, 48)" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="rgb(6, 105, 40)" stopOpacity="0.4" />
         </linearGradient>
       </defs>
       {tickVals.map((tv, i) => {

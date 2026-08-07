@@ -17,7 +17,7 @@ export default function OasisBanner() {
         target="_blank"
         rel="noopener noreferrer"
         className="zion-rainbow-card group relative flex flex-col sm:flex-row items-center gap-4 sm:gap-6 p-6 sm:p-8 transition-all duration-500"
-        style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+        style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
       >
         {/* animated glow orb */}
         <div className="absolute top-1/2 left-8 -translate-y-1/2 w-24 h-24 rounded-full bg-zion-cyan/10 blur-2xl opacity-60 group-hover:opacity-100 group-hover:scale-125 transition-all duration-700" />

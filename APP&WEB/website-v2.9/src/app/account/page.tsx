@@ -56,10 +56,10 @@ const AccountCopy = {
 type Tab = 'wallet' | 'mining' | 'transactions' | 'ai';
 
 const TABS: { id: Tab; labelCs: string; labelEn: string; icon: typeof Wallet; rc: string }[] = [
-  { id: 'wallet', labelCs: 'Peněženka', labelEn: 'Wallet', icon: Wallet, rc: '7, 137, 48' },
+  { id: 'wallet', labelCs: 'Peněženka', labelEn: 'Wallet', icon: Wallet, rc: '6, 105, 40' },
   { id: 'mining', labelCs: 'Těžení', labelEn: 'Mining', icon: Pickaxe, rc: '228, 30, 43' },
   { id: 'transactions', labelCs: 'Transakce', labelEn: 'Transactions', icon: ArrowLeftRight, rc: '252, 209, 22' },
-  { id: 'ai', labelCs: 'AI Chat', labelEn: 'AI Chat', icon: Sparkles, rc: '7, 137, 48' },
+  { id: 'ai', labelCs: 'AI Chat', labelEn: 'AI Chat', icon: Sparkles, rc: '6, 105, 40' },
 ];
 
 interface DashboardStats {
@@ -311,7 +311,7 @@ export default function AccountPage() {
                       </div>
                       <span className="font-mono text-white">{user.loginCount ?? 0}</span>
                     </div>
-                    <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
+                    <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                       <div className="flex items-center gap-2 text-sm text-gray-300">
                         <Wallet className="h-4 w-4 text-zion-cyan" />
                         {AccountCopy.address[cs ? 'cs' : 'en']}
@@ -320,14 +320,14 @@ export default function AccountPage() {
                         {user.address.slice(0, 10)}…{user.address.slice(-6)}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
+                    <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                       <div className="flex items-center gap-2 text-sm text-gray-300">
                         <TrendingUp className="h-4 w-4 text-zion-cyan" />
                         {AccountCopy.created[cs ? 'cs' : 'en']}
                       </div>
                       <span className="font-mono text-white">{formattedCreated}</span>
                     </div>
-                    <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
+                    <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                       <div className="flex items-center gap-2 text-sm text-gray-300">
                         <Sparkles className="h-4 w-4 text-zion-cyan" />
                         {AccountCopy.lastLogin[cs ? 'cs' : 'en']}
@@ -371,7 +371,7 @@ export default function AccountPage() {
                 icon={<Wallet className="h-5 w-5" />}
                 colorClass="text-zion-cyan"
                 bgClass="bg-zion-cyan/10"
-                rc="7, 137, 48"
+                rc="6, 105, 40"
                 label={AccountCopy.balance[cs ? 'cs' : 'en']}
                 value={stats.balance !== null ? `${stats.balance.toFixed(8)} ZION` : '—'}
                 sub={AccountCopy.onChain_2[cs ? 'cs' : 'en']}
@@ -391,7 +391,7 @@ export default function AccountPage() {
                 icon={<ArrowLeftRight className="h-5 w-5" />}
                 colorClass="text-zion-cyan"
                 bgClass="bg-zion-cyan/10"
-                rc="7, 137, 48"
+                rc="6, 105, 40"
                 label={AccountCopy.transactions[cs ? 'cs' : 'en']}
                 value={stats.txCount !== null ? String(stats.txCount) : '—'}
                 sub={AccountCopy.last50[cs ? 'cs' : 'en']}
@@ -401,7 +401,7 @@ export default function AccountPage() {
                 icon={<Bot className="h-5 w-5" />}
                 colorClass="text-zion-cyan"
                 bgClass="bg-zion-cyan/10"
-                rc="7, 137, 48"
+                rc="6, 105, 40"
                 label={AccountCopy.aiSessions[cs ? 'cs' : 'en']}
                 value={stats.aiSessions !== null ? String(stats.aiSessions) : '—'}
                 sub={AccountCopy.hiranyagarbha[cs ? 'cs' : 'en']}
@@ -458,7 +458,7 @@ export default function AccountPage() {
               transition={{ duration: 0.3 }}
             >
               {activeTab === 'wallet' && (
-                <div className="zion-rainbow-card p-6" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
+                <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                   <div className="flex items-center gap-2 mb-6">
                     <Wallet className="h-5 w-5 text-zion-cyan" />
                     <h2 className="text-lg font-bold text-white">{AccountCopy.walletOverview[cs ? 'cs' : 'en']}</h2>
@@ -485,7 +485,7 @@ export default function AccountPage() {
                 </div>
               )}
               {activeTab === 'ai' && (
-                <div className="zion-rainbow-card p-6" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
+                <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                   <div className="flex items-center gap-2 mb-6">
                     <Sparkles className="h-5 w-5 text-zion-cyan" />
                     <h2 className="text-lg font-bold text-white">{AccountCopy.hiranyagarbhaAi[cs ? 'cs' : 'en']}</h2>

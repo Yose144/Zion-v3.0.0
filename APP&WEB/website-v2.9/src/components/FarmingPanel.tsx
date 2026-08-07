@@ -77,7 +77,7 @@ const EXPLORER = 'https://basescan.org';
 const SECONDS_PER_YEAR = 365 * 24 * 3600;
 const MAX_POOLS = 5;
 
-const EMERALD_RAINBOW: CSSProperties = { '--rc': '7, 137, 48' } as CSSProperties;
+const EMERALD_RAINBOW: CSSProperties = { '--rc': '6, 105, 40' } as CSSProperties;
 
 interface PoolData {
   pid: number;

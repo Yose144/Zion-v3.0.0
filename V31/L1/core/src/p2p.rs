@@ -241,8 +241,52 @@ async fn sync_peer(
     peer: SocketAddr,
 ) -> Result<(), crate::node::NodeError> {
     manager.add_known(peer, PeerSource::Seed).await;
-    let (peer_height, _peer_hash) = get_status(peer).await?;
+    let (peer_height, peer_tip_hash) = get_status(peer).await?;
     let our_height = node.storage.height().await?;
+
+    // ── Genesis verification ─────────────────────────────────────────────
+    // If our DB has a genesis block, compare its hash against the canonical
+    // genesis.  A mismatch means the local DB is from an older chain and
+    // cannot sync — operator must delete the DB and restart.
+    if our_height > 0 {
+        if let Ok(Some(our_genesis)) = node.storage.get_by_height(0).await {
+            let our_genesis_hash = our_genesis.header.header_hash().to_hex();
+            let canonical = crate::genesis::genesis_hash().to_hex();
+            if our_genesis_hash != canonical {
+                warn!(
+                    "local genesis {} != canonical {}; local DB is stale — \
+                     delete the DB file and restart to sync from peer {}",
+                    our_genesis_hash, canonical, peer
+                );
+                return Err(crate::node::NodeError::Task(format!(
+                    "stale local DB: genesis {} != canonical {}",
+                    our_genesis_hash, canonical
+                )));
+            }
+        }
+    }
+
+    // ── Tip comparison ───────────────────────────────────────────────────
+    // If we have a tip, compare its hash with the peer's tip.  Matching tips
+    // mean we are fully synced — no action needed.
+    if let Ok(Some((_our_tip_header, our_tip_hash))) = node.storage.tip().await {
+        let our_tip_hex = our_tip_hash.to_hex();
+        if our_tip_hex == peer_tip_hash {
+            return Ok(()); // already on the same tip
+        }
+        // Tips differ but our height >= peer height: we are on a different
+        // fork.  Log a warning — the sync below only helps when peer is
+        // ahead.  A proper reorg would compare cumulative work, but for the
+        // backup-node use case the operator should wipe the DB.
+        if our_height >= peer_height {
+            warn!(
+                "chain divergence: our tip {} (h={}) != peer tip {} (h={}); \
+                 local chain may be stale — consider deleting the DB to re-sync",
+                our_tip_hex, our_height, peer_tip_hash, peer_height
+            );
+            return Ok(());
+        }
+    }
 
     if peer_height > our_height {
         info!(

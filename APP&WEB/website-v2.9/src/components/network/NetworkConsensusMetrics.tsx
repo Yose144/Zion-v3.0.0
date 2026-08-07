@@ -119,7 +119,7 @@ function StatCard({
   cs: boolean;
 }) {
   return (
-    <div className="zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+    <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
       <div className="flex items-center gap-2 mb-2">
         <span className={color}>{icon}</span>
         <span className="text-[10px] uppercase tracking-wider text-gray-500">{label}</span>
@@ -332,7 +332,7 @@ export default function NetworkConsensusMetrics() {
 
   if (!stats || !metrics) {
     return (
-      <section className="zion-rainbow-card p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+      <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
         <div className="flex flex-col gap-2 mb-6">
           <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkConsensusMetricsCopy.consensus[cs ? 'cs' : 'en']}</p>
           <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -348,7 +348,7 @@ export default function NetworkConsensusMetrics() {
   }
 
   return (
-    <section className="zion-rainbow-card p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+    <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkConsensusMetricsCopy.consensus[cs ? 'cs' : 'en']}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -424,7 +424,7 @@ export default function NetworkConsensusMetrics() {
       </div>
 
       {/* Block timeline with finality markers */}
-      <div className="zion-rainbow-sub p-5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+      <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-zion-cyan" />

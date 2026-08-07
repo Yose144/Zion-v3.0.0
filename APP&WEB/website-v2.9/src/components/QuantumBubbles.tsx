@@ -23,7 +23,7 @@ const BUBBLE_PRESETS: Record<ObservatoryMode, Bubble[]> = {
   ],
   "desktop-agent": [
     { id: "da-1", size: 360, x: 20, y: 30, color: "rgba(228,30,43,0.16)", blur: 95, opacity: 0.52 },
-    { id: "da-2", size: 300, x: 78, y: 68, color: "rgba(7,137,48,0.14)", blur: 88, opacity: 0.48 },
+    { id: "da-2", size: 300, x: 78, y: 68, color: "rgba(6,105,40,0.14)", blur: 88, opacity: 0.48 },
     { id: "da-3", size: 220, x: 52, y: 24, color: "rgba(252,209,22,0.1)", blur: 76, opacity: 0.42 },
   ],
   "warp-speed": [

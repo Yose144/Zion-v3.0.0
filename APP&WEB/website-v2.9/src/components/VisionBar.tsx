@@ -26,7 +26,7 @@ const VISIONS = [
     icon: Landmark,
     label: 'Dharma Temple',
     desc: 'Chrám Dharmy — Ekam, Deeksha, Oneness, posvátná geometrie v kódu.',
-    rc: '7, 137, 48', // rasta green
+    rc: '6, 105, 40', // rasta green
     accent: 'text-zion-cyan',
   },
   {

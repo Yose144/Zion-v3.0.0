@@ -69,7 +69,7 @@ const StakingPanelCopy = {
 };
 
 const RPC_URL = 'https://mainnet.base.org';
-const EMERALD_RC = '7, 137, 48';
+const EMERALD_RC = '6, 105, 40';
 
 export default function StakingPanel() {
   const { lang } = useLang();

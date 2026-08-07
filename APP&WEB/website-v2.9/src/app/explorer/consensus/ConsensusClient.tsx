@@ -154,11 +154,11 @@ function DifficultyChart({ cs }: { cs: boolean }) {
       ))}
       {/* LWMA bands */}
       <line x1={PAD.left} x2={W - PAD.right} y1={yFor(upperBand)} y2={yFor(upperBand)} stroke="rgba(228, 30, 43,0.3)" strokeWidth="1" strokeDasharray="6 3" />
-      <line x1={PAD.left} x2={W - PAD.right} y1={yFor(lowerBand)} y2={yFor(lowerBand)} stroke="rgba(7, 137, 48,0.3)" strokeWidth="1" strokeDasharray="6 3" />
+      <line x1={PAD.left} x2={W - PAD.right} y1={yFor(lowerBand)} y2={yFor(lowerBand)} stroke="rgba(6, 105, 40,0.3)" strokeWidth="1" strokeDasharray="6 3" />
       <line x1={PAD.left} x2={W - PAD.right} y1={yFor(mean)} y2={yFor(mean)} stroke="rgba(255,255,255,0.12)" strokeWidth="0.8" strokeDasharray="2 2" />
       {/* Band labels */}
       <text x={W - PAD.right - 4} y={yFor(upperBand) - 3} textAnchor="end" fill="rgba(228, 30, 43,0.5)" fontSize="7" fontFamily="monospace">+20%</text>
-      <text x={W - PAD.right - 4} y={yFor(lowerBand) + 9} textAnchor="end" fill="rgba(7, 137, 48,0.5)" fontSize="7" fontFamily="monospace">-20%</text>
+      <text x={W - PAD.right - 4} y={yFor(lowerBand) + 9} textAnchor="end" fill="rgba(6, 105, 40,0.5)" fontSize="7" fontFamily="monospace">-20%</text>
       {/* Area + line */}
       <path d={areaD} fill="url(#diffAreaGrad)" />
       <path d={pathD} fill="none" stroke="#a855f7" strokeWidth="1.8" strokeLinejoin="round" opacity="0.9" />

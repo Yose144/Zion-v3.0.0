@@ -43,7 +43,7 @@ export default function NotFound() {
           <Link
             href="/dashboard"
             className="zion-button-secondary group text-sm"
-            style={{ '--rc': '7, 137, 48' } as CSSProperties}
+            style={{ '--rc': '6, 105, 40' } as CSSProperties}
           >
             <Rocket className="w-4 h-4" />
             {tr('notFound', 'btn_dashboard', lang)}

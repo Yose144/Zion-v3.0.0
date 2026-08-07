@@ -128,7 +128,7 @@ const GAMES: GameEntry[] = [
     genre: 'Arcade',
     description: 'Keep the node alive. Dodge the firewalls. One tap at a time.',
     descriptionCs: 'Udrž node při životě. Vyhýbej se firewallům. Jedno klepnutí.',
-    color: '#078930',
+    color: '#066928',
     glowColor: '#22d3ee',
     hsKey: 'flappy-node-hs',
     badge: 'RETRO',
@@ -181,7 +181,7 @@ const COMING_SOON: ComingSoonEntry[] = [
     emoji: '🌉',
     description: 'Cross-chain obstacle course. Race assets from Base to ZION L1.',
     descriptionCs: 'Cross-chain překážková dráha. Přenes aktiva z Base na ZION L1.',
-    color: '#078930',
+    color: '#066928',
   },
 ];
 

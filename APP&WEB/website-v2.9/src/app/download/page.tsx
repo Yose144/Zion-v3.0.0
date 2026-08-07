@@ -142,7 +142,7 @@ export default function DownloadPage() {
         {/* ─── Hero ─── */}
         <section
           className="zion-rainbow-card p-5 sm:p-8 md:p-10"
-          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+          style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-6">
             <div className="zion-kicker border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan">
@@ -189,7 +189,7 @@ export default function DownloadPage() {
             <p className="text-gray-400">{DownloadCopy.oneClickGuiForMiningWalletMana[cs ? 'cs' : 'en']}</p>
           </div>
 
-          <div className="relative overflow-hidden zion-rainbow-card p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+          <div className="relative overflow-hidden zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="absolute top-4 right-4 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-3 py-1 text-xs font-semibold tracking-wider text-zion-cyan">
               ✅ {DownloadCopy.allPlatforms[cs ? 'cs' : 'en']}
             </div>
@@ -292,7 +292,7 @@ export default function DownloadPage() {
               </Link>
             </div>
 
-            <div className="mt-6 zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="mt-6 zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <p className="text-sm text-gray-300">
                 <span className="text-zion-gold font-semibold">💡 {DownloadCopy.desktopNeedHelp[cs ? 'cs' : 'en']}</span>{' '}
                 {DownloadCopy.desktopJoinDiscordForSupport[cs ? 'cs' : 'en']}{' '}
@@ -313,7 +313,7 @@ export default function DownloadPage() {
             </p>
           </div>
 
-          <div className="zion-rainbow-sub p-5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+          <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <p className="text-sm text-gray-300">
               <span className="text-zion-cyan font-semibold">{DownloadCopy.sourceOfTruth[cs ? 'cs' : 'en']}</span>{' '}
               {DownloadCopy.operatorCommandsGuideFaqRefere[cs ? 'cs' : 'en']}
@@ -337,7 +337,7 @@ export default function DownloadPage() {
           </div>
           <div className="grid gap-6 md:grid-cols-3">
             {cliQuickstartSteps.map((step) => (
-              <div key={step.title} className="zion-rainbow-sub p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+              <div key={step.title} className="zion-rainbow-sub p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                 <div className="flex items-center gap-3">
                   <Shield className="h-5 w-5 text-zion-cyan" />
                   <p className="text-xs uppercase tracking-[0.35em] text-gray-400">{DownloadCopy.step[cs ? 'cs' : 'en']}</p>
@@ -369,7 +369,7 @@ export default function DownloadPage() {
               { label: DownloadCopy.supportedOs[cs ? 'cs' : 'en'], value: DownloadCopy.windows1011LinuxX8664Arm64Maco[cs ? 'cs' : 'en'] },
               { label: DownloadCopy.network[cs ? 'cs' : 'en'], value: DownloadCopy.stableInternetOutboundTcpPort8[cs ? 'cs' : 'en'] },
             ].map((req) => (
-              <div key={req.label} className="zion-rainbow-sub p-5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+              <div key={req.label} className="zion-rainbow-sub p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                 <div className="flex items-center gap-3">
                   <Cpu className="h-5 w-5 text-zion-gold" />
                   <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{req.label}</p>

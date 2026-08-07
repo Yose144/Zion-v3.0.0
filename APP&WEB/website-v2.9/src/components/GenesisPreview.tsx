@@ -35,7 +35,7 @@ export default function GenesisPreview() {
           </div>
         </div>
 
-        <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+        <div className="zion-rainbow-card p-6 md:p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
           {/* Ambient glow */}
           <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-zion-gold/10 blur-3xl" />
           <div className="absolute -bottom-20 -left-10 h-52 w-52 rounded-full bg-zion-purple/8 blur-3xl" />
@@ -88,7 +88,7 @@ export default function GenesisPreview() {
                       key={ch.number}
                       href={`/genesis#chapter-${ch.number}`}
                       className="group zion-rainbow-sub p-3 transition-all"
-                      style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+                      style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <Icon className={`h-3.5 w-3.5 ${ch.color} shrink-0`} />

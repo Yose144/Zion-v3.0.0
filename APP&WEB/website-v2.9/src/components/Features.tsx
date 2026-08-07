@@ -31,7 +31,7 @@ const statusLabel = { active: { cs: 'Aktivní', en: 'Active' }, upcoming: { cs: 
 const RASTA_CYCLE = [
   { rc: '228, 30, 43', icon: 'text-zion-purple', badge: 'bg-zion-purple/10 text-zion-purple', id: 'text-zion-purple' },
   { rc: '252, 209, 22', icon: 'text-zion-gold', badge: 'bg-zion-gold/10 text-zion-gold', id: 'text-zion-gold' },
-  { rc: '7, 137, 48', icon: 'text-zion-cyan', badge: 'bg-zion-cyan/10 text-zion-cyan', id: 'text-zion-cyan' },
+  { rc: '6, 105, 40', icon: 'text-zion-cyan', badge: 'bg-zion-cyan/10 text-zion-cyan', id: 'text-zion-cyan' },
 ];
 
 export default function Features() {

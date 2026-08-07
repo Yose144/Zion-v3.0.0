@@ -61,7 +61,7 @@ export default function GuardiansTreeClient() {
 
   if (error && !data) {
     return (
-      <div className="zion-rainbow-card p-8 text-center" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+      <div className="zion-rainbow-card p-8 text-center" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
         <p className="text-sm text-gray-400 mb-2">{error}</p>
         <p className="text-xs text-gray-500">
           The 144k Guardians registry is under development. Live data will appear once the registry contract is deployed.

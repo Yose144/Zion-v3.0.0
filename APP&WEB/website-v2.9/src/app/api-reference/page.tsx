@@ -239,7 +239,7 @@ export default function ApiReferencePage() {
   return (
     <div className="pt-28 pb-20 overflow-x-hidden">
       <div className="zion-container max-w-6xl space-y-12">
-        <section className="zion-rainbow-card p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+        <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
           <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-zion-gold">
             <Sparkles className="h-4 w-4" /> API v2.9 · Orion Mesh
           </div>
@@ -300,7 +300,7 @@ export default function ApiReferencePage() {
                     <div
                       key={`${group.title}-${endpoint.path}`}
                       className="zion-rainbow-sub p-4"
-                      style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+                      style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
                     >
                       <div className="flex flex-wrap items-center gap-3">
                         <span className="zion-rainbow-sub px-3 py-1 text-xs font-semibold text-zion-gold" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>

@@ -351,7 +351,7 @@ function SupplyOverTimeChart({
             x={W - PAD.right + 6}
             y={PAD.top + chartH - pct * chartH + 3}
             textAnchor="start"
-            fill="rgba(7, 137, 48,0.45)"
+            fill="rgba(6, 105, 40,0.45)"
             fontSize="7"
             fontFamily="monospace"
           >

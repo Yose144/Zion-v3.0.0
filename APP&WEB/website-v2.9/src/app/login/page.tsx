@@ -58,7 +58,7 @@ export default function LoginPage() {
 
         {/* Features */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
-          <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+          <div className="zion-rainbow-sub p-4 text-center" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <Shield className="h-5 w-5 text-zion-cyan mx-auto mb-2" />
             <p className="text-[10px] text-gray-400 uppercase tracking-wider">Secure</p>
             <p className="text-[10px] text-gray-600 mt-1">Ed25519 signature</p>

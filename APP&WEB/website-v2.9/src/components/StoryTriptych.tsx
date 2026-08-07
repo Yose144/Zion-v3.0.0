@@ -56,7 +56,7 @@ export default function StoryTriptych() {
       title: 'ZION Genesis',
       subtitle: StoryTriptychCopy.sacredStoryOfTheSameWorld[cs ? 'cs' : 'en'],
       desc: StoryTriptychCopy.aMemoryOfTheFutureTheStoryOf14[cs ? 'cs' : 'en'],
-      rc: '7, 137, 48', // rasta green
+      rc: '6, 105, 40', // rasta green
       iconColor: 'text-zion-cyan',
       titleClass:
         'text-xl font-bold text-zion-cyan transition-colors group-hover:text-zion-gold',

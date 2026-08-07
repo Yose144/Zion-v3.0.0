@@ -60,7 +60,7 @@ const RASTA_BOX_STYLES = [
     text: 'text-zion-cyan',
     border: 'border-zion-cyan/30',
     bg: 'bg-zion-cyan/10',
-    rgb: '7, 137, 48',
+    rgb: '6, 105, 40',
   },
 ] as const;
 
@@ -113,7 +113,7 @@ export default function MainnetCountdown({ embedded = false }: { embedded?: bool
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className={`zion-rainbow-card relative overflow-hidden backdrop-blur-xl ${embedded ? 'p-4' : 'p-6 md:p-8'}`}
-          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+          style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
         >
             <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-zion-purple/10 blur-3xl pointer-events-none" />
             <div className="absolute -bottom-16 -left-16 w-40 h-40 rounded-full bg-zion-gold/10 blur-3xl pointer-events-none" />
@@ -128,7 +128,7 @@ export default function MainnetCountdown({ embedded = false }: { embedded?: bool
               </div>
               <span
                 className="text-xs font-bold text-zion-cyan bg-zion-cyan/10 border border-zion-cyan/20 rounded-full px-2.5 py-1"
-                style={{ boxShadow: '0 0 12px rgba(7, 137, 48, 0.15)' }}
+                style={{ boxShadow: '0 0 12px rgba(6, 105, 40, 0.15)' }}
               >
                 GO
               </span>

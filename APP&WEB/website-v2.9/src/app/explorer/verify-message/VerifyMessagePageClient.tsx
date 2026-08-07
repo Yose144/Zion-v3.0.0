@@ -345,7 +345,7 @@ export default function VerifyMessagePageClient() {
 
                 {/* Derived address */}
                 {result.address && (
-                  <div className="zion-rainbow-sub p-4 rounded-xl" style={{ "--rc": "7, 137, 48" } as React.CSSProperties}>
+                  <div className="zion-rainbow-sub p-4 rounded-xl" style={{ "--rc": "6, 105, 40" } as React.CSSProperties}>
                     <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">
                       {ExplorerVerifyMessageVerifyMessagePageClientCopy.derivedAddress[cs ? 'cs' : 'en']}
                     </div>

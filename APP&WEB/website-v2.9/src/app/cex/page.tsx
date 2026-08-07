@@ -267,7 +267,7 @@ export default function CexPage() {
 
           {/* Quick stats */}
           <div className="flex flex-wrap items-center gap-3 text-sm">
-            <div className="zion-rainbow-sub inline-flex items-center gap-2 px-4 py-1.5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub inline-flex items-center gap-2 px-4 py-1.5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <Activity className="h-3.5 w-3.5 text-zion-gold" />
               <span className="text-gray-300">{CexCopy.dexPrice[cs ? 'cs' : 'en']}:</span>
               <span className="font-mono text-white">${bestPrice.toFixed(6)}</span>
@@ -275,17 +275,17 @@ export default function CexPage() {
                 {dex?.source === 'dexscreener' ? 'live' : (dex?.source ?? 'seed')}
               </span>
             </div>
-            <div className="zion-rainbow-sub inline-flex items-center gap-2 px-4 py-1.5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub inline-flex items-center gap-2 px-4 py-1.5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <DollarSign className="h-3.5 w-3.5 text-zion-cyan" />
               <span className="text-gray-300">{CexCopy.dexVolume24h[cs ? 'cs' : 'en']}:</span>
               <span className="font-mono text-white">{formatVolume(dex?.total_volume_24h ?? 0)}</span>
             </div>
-            <div className="zion-rainbow-sub inline-flex items-center gap-2 px-4 py-1.5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub inline-flex items-center gap-2 px-4 py-1.5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <DollarSign className="h-3.5 w-3.5 text-zion-cyan" />
               <span className="text-gray-300">{CexCopy.dexLiquidity[cs ? 'cs' : 'en']}:</span>
               <span className="font-mono text-white">{formatVolume(dex?.total_liquidity_usd ?? 0)}</span>
             </div>
-            <div className="zion-rainbow-sub inline-flex items-center gap-2 px-4 py-1.5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub inline-flex items-center gap-2 px-4 py-1.5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <Building2 className="h-3.5 w-3.5 text-zion-purple" />
               <span className="text-gray-300">{CexCopy.exchanges[cs ? 'cs' : 'en']}:</span>
               <span className="font-mono text-white">{summary?.listed ?? 0}/{summary?.total_exchanges ?? 0}</span>
@@ -302,7 +302,7 @@ export default function CexPage() {
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
           className="zion-rainbow-card p-6"
-          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+          style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
         >
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div>
@@ -331,22 +331,22 @@ export default function CexPage() {
 
           {/* DEX aggregate stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <p className="text-[10px] uppercase tracking-wider text-gray-500">{CexCopy.price[cs ? 'cs' : 'en']}</p>
               <p className="text-lg font-bold text-white mt-1">${bestPrice.toFixed(6)}</p>
               <p className="text-[10px] text-gray-500">USD / wZION</p>
             </div>
-            <div className="zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <p className="text-[10px] uppercase tracking-wider text-gray-500">{CexCopy.volume24h[cs ? 'cs' : 'en']}</p>
               <p className="text-lg font-bold text-white mt-1">{formatVolume(dex?.total_volume_24h ?? 0)}</p>
               <p className="text-[10px] text-gray-500">{CexCopy.total[cs ? 'cs' : 'en']}</p>
             </div>
-            <div className="zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <p className="text-[10px] uppercase tracking-wider text-gray-500">{CexCopy.liquidity[cs ? 'cs' : 'en']}</p>
               <p className="text-lg font-bold text-white mt-1">{formatVolume(dex?.total_liquidity_usd ?? 0)}</p>
               <p className="text-[10px] text-gray-500">{CexCopy.inPools[cs ? 'cs' : 'en']}</p>
             </div>
-            <div className="zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <p className="text-[10px] uppercase tracking-wider text-gray-500">{CexCopy.txns24h[cs ? 'cs' : 'en']}</p>
               <p className="text-lg font-bold text-white mt-1">{(dex?.total_txns_24h ?? 0).toLocaleString()}</p>
               <p className="text-[10px] text-gray-500">
@@ -359,7 +359,7 @@ export default function CexPage() {
 
           {/* Per-pair breakdown from DexScreener */}
           {dexPairs.length > 0 && (
-            <div className="overflow-hidden zion-rainbow-sub" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="overflow-hidden zion-rainbow-sub" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/10 bg-white/2">
@@ -407,7 +407,7 @@ export default function CexPage() {
               target="_blank"
               rel="noopener noreferrer"
               className="zion-rainbow-sub inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
-              style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+              style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
             >
               <BarChart3 className="h-3 w-3" /> DexScreener <ExternalLink className="h-2.5 w-2.5" />
             </a>
@@ -416,7 +416,7 @@ export default function CexPage() {
               target="_blank"
               rel="noopener noreferrer"
               className="zion-rainbow-sub inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
-              style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+              style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
             >
               wZION Contract <ExternalLink className="h-2.5 w-2.5" />
             </a>
@@ -425,7 +425,7 @@ export default function CexPage() {
               target="_blank"
               rel="noopener noreferrer"
               className="zion-rainbow-sub inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors"
-              style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+              style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
             >
               Uniswap Pools <ExternalLink className="h-2.5 w-2.5" />
             </a>
@@ -450,7 +450,7 @@ export default function CexPage() {
             </div>
           </div>
 
-          <div className="overflow-hidden zion-rainbow-card" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+          <div className="overflow-hidden zion-rainbow-card" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -536,7 +536,7 @@ export default function CexPage() {
           <h2 className="mb-4 text-lg font-semibold text-white">{CexCopy.howToBuyZion[cs ? 'cs' : 'en']}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* DEX path */}
-            <div className="zion-rainbow-card p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-3">
                 <span className="rounded-lg bg-zion-cyan/10 border border-zion-cyan/20 px-2 py-1 text-[10px] font-mono text-zion-cyan">DEX</span>
                 <h3 className="font-semibold text-white text-sm">{CexCopy.viaUniswapRecommended[cs ? 'cs' : 'en']}</h3>
@@ -575,7 +575,7 @@ export default function CexPage() {
             </div>
 
             {/* Bridge path */}
-            <div className="zion-rainbow-card p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <div className="flex items-center gap-2 mb-3">
                 <span className="rounded-lg bg-zion-cyan/10 border border-zion-cyan/20 px-2 py-1 text-[10px] font-mono text-zion-cyan">Bridge</span>
                 <h3 className="font-semibold text-white text-sm">{CexCopy.l1L2Bridge[cs ? 'cs' : 'en']}</h3>
@@ -609,7 +609,7 @@ export default function CexPage() {
           <h2 className="mb-4 text-lg font-semibold text-white">{CexCopy.faq[cs ? 'cs' : 'en']}</h2>
           <div className="space-y-2 max-w-3xl">
             {FAQ_ITEMS.map((item, i) => (
-              <div key={i} className="zion-rainbow-card overflow-hidden" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+              <div key={i} className="zion-rainbow-card overflow-hidden" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   className="flex w-full items-center justify-between gap-4 p-4 text-left"

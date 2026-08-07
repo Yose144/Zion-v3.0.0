@@ -622,7 +622,7 @@ export default function NetworkPage() {
         {/* ═══════ HERO ═══════ */}
         <section
           className="zion-rainbow-card p-6 md:p-10"
-          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+          style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-5">
@@ -656,7 +656,7 @@ export default function NetworkPage() {
                 <div
                   key={chip.label}
                   className="zion-rainbow-sub px-5 py-4 backdrop-blur"
-                  style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+                  style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
                 >
                   <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{chip.label}</p>
                   <p className="text-3xl font-semibold text-white mt-2">{chip.value}</p>
@@ -683,7 +683,7 @@ export default function NetworkPage() {
               <div
                 key={panel.label}
                 className="zion-rainbow-sub p-6"
-                style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+                style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
               >
                 <div className="flex items-center gap-3 mb-4">
                   <panel.icon className={`h-5 w-5 ${panel.accent}`} />
@@ -780,7 +780,7 @@ export default function NetworkPage() {
 
           <div className="grid gap-5 lg:grid-cols-3">
             {/* Hashrate */}
-            <div className="zion-rainbow-sub p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wider">{NetworkCopy.networkHashrate[cs ? 'cs' : 'en']}</p>
@@ -791,7 +791,7 @@ export default function NetworkPage() {
             </div>
 
             {/* Difficulty */}
-            <div className="zion-rainbow-sub p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wider">{NetworkCopy.difficulty[cs ? 'cs' : 'en']}</p>
@@ -802,7 +802,7 @@ export default function NetworkPage() {
             </div>
 
             {/* Block Time */}
-            <div className="zion-rainbow-sub p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wider">{NetworkCopy.avgBlockTime[cs ? 'cs' : 'en']}</p>
@@ -933,7 +933,7 @@ export default function NetworkPage() {
               <div
                 key={node.title}
                 className="relative overflow-hidden zion-rainbow-sub p-6"
-                style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+                style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
@@ -1095,14 +1095,14 @@ export default function NetworkPage() {
               <div
                 key={block.title}
                 className="zion-rainbow-sub p-6 space-y-4"
-                style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+                style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
               >
                 <div className="flex items-center gap-3">
                   <block.icon className="h-5 w-5 text-zion-gold" />
                   <h3 className="text-lg font-semibold text-white">{block.title}</h3>
                 </div>
                 <p className="text-sm text-gray-400">{block.description}</p>
-                <div className="zion-rainbow-sub p-4 space-y-1 overflow-x-auto" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+                <div className="zion-rainbow-sub p-4 space-y-1 overflow-x-auto" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                   {block.items.map((line) => (
                     <code key={line} className="block text-sm font-mono text-zion-gold whitespace-nowrap">{line}</code>
                   ))}
@@ -1211,7 +1211,7 @@ export default function NetworkPage() {
 
 function SurfaceSkeleton({ lines = 4 }: { lines?: number }) {
   return (
-    <div className="zion-rainbow-sub p-6 space-y-3" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+    <div className="zion-rainbow-sub p-6 space-y-3" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
       <div className="h-5 w-32 rounded bg-white/10 animate-pulse" />
       {Array.from({ length: lines }).map((_, index) => (
         <div key={index} className="h-4 w-full rounded bg-white/5 animate-pulse" />
@@ -1245,7 +1245,7 @@ function NetSparkline({ data, color, height = 60 }: { data: number[]; color: str
 /* ─── ChainStatCard ─── */
 function ChainStatCard({ label, value, sub, color, tip }: { label: string; value: string; sub?: string; color: string; tip?: string }) {
   return (
-    <div className="zion-rainbow-sub p-4 transition-colors" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+    <div className="zion-rainbow-sub p-4 transition-colors" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
       <div className="flex items-center gap-1.5 mb-1">
         <p className="text-[11px] text-gray-500 uppercase tracking-wider">{label}</p>
         {tip && (

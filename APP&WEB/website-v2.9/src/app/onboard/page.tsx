@@ -332,7 +332,7 @@ export default function OnboardPage() {
       {/* Hero */}
       <div className="relative overflow-hidden border-b border-white/10 bg-gradient-to-b from-zion-cyan/10 via-transparent to-transparent">
         <div className="zion-container py-20 relative">
-          <div className="zion-rainbow-card max-w-4xl mx-auto p-8 md:p-10 text-center" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+          <div className="zion-rainbow-card max-w-4xl mx-auto p-8 md:p-10 text-center" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="zion-kicker mx-auto mb-6 w-fit border-zion-cyan/30 bg-zion-cyan/10 text-emerald-200">
               <Rocket className="w-4 h-4 text-zion-cyan" />
               <span className="text-sm text-emerald-200 font-semibold">{tr('onboard', 'hero_kicker', lang)}</span>
@@ -343,7 +343,7 @@ export default function OnboardPage() {
             <p className="text-xl text-gray-400 mb-4">
               {tr('onboard', 'hero_subtitle', lang)}
             </p>
-            <div className="zion-rainbow-sub mx-auto mb-8 max-w-3xl px-5 py-4 text-left text-sm text-gray-300" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub mx-auto mb-8 max-w-3xl px-5 py-4 text-left text-sm text-gray-300" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               {tr('onboard', 'hero_description', lang)}
             </div>
 
@@ -390,7 +390,7 @@ export default function OnboardPage() {
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="w-full flex items-center justify-between px-4 py-3 zion-rainbow-sub text-white transition-colors"
-            style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+            style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
           >
             <div className="flex items-center gap-2 min-w-0">
               <Rocket className="w-5 h-5 text-zion-cyan shrink-0" />
@@ -400,7 +400,7 @@ export default function OnboardPage() {
           </button>
 
           {mobileMenuOpen && (
-            <div className="mt-4 zion-rainbow-card p-4 space-y-2 max-h-[70vh] overflow-y-auto" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="mt-4 zion-rainbow-card p-4 space-y-2 max-h-[70vh] overflow-y-auto" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               {categories.map(category => {
                 const Icon = category.icon;
                 const isExpanded = expanded[category.id];
@@ -412,7 +412,7 @@ export default function OnboardPage() {
                       className={`w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold transition-all ${
                         isActive ? 'zion-rainbow-sub text-white' : 'rounded-lg border border-white/10 bg-black/40 text-gray-400 hover:border-white/20 hover:text-gray-300'
                       }`}
-                      style={isActive ? { '--rc': '7, 137, 48' } as React.CSSProperties : undefined}
+                      style={isActive ? { '--rc': '6, 105, 40' } as React.CSSProperties : undefined}
                     >
                       <div className="flex items-center gap-2">
                         <Icon className={`w-4 h-4 ${category.accentText}`} />
@@ -429,7 +429,7 @@ export default function OnboardPage() {
                             ? 'zion-rainbow-sub text-emerald-200 font-medium'
                             : 'rounded text-gray-500 hover:text-gray-300'
                         }`}
-                        style={selectedPaper === paper.id ? { '--rc': '7, 137, 48' } as React.CSSProperties : undefined}
+                        style={selectedPaper === paper.id ? { '--rc': '6, 105, 40' } as React.CSSProperties : undefined}
                       >
                         {paper.title[lang]}
                       </button>
@@ -444,7 +444,7 @@ export default function OnboardPage() {
         <div className="flex gap-8">
           {/* Sidebar */}
           <aside className="hidden lg:block w-80 shrink-0">
-            <div className="sticky top-24 zion-rainbow-card overflow-hidden" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="sticky top-24 zion-rainbow-card overflow-hidden" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <nav className="px-3 py-3 max-h-[calc(100vh-140px)] overflow-y-auto space-y-2">
                 {categories.map(category => {
                   const Icon = category.icon;
@@ -460,7 +460,7 @@ export default function OnboardPage() {
                             ? 'zion-rainbow-sub text-white'
                             : 'rounded-lg text-gray-400 hover:text-white hover:bg-white/5'
                         }`}
-                        style={isActive ? { '--rc': '7, 137, 48' } as React.CSSProperties : undefined}
+                        style={isActive ? { '--rc': '6, 105, 40' } as React.CSSProperties : undefined}
                       >
                         <div className="flex items-center gap-2">
                           <Icon className={`w-4 h-4 ${category.accentText}`} />
@@ -480,7 +480,7 @@ export default function OnboardPage() {
                                   ? 'zion-rainbow-sub text-emerald-200 font-medium'
                                   : 'rounded-lg text-gray-400 hover:text-white hover:bg-white/5'
                               }`}
-                              style={selectedPaper === paper.id ? { '--rc': '7, 137, 48' } as React.CSSProperties : undefined}
+                              style={selectedPaper === paper.id ? { '--rc': '6, 105, 40' } as React.CSSProperties : undefined}
                             >
                               {paper.format === 'pdf' ? <ExternalLink className="w-3.5 h-3.5 shrink-0" /> : <FileText className="w-3.5 h-3.5 shrink-0" />}
                               {paper.title[lang]}

@@ -94,14 +94,14 @@ export default function DownloadFaq({ cs }: { cs: boolean }) {
   const faqItems = getFaqItems(cs);
 
   return (
-    <section className="zion-rainbow-card p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+    <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DownloadFaqCopy.support[cs ? 'cs' : 'en']}</p>
         <h2 className="text-3xl font-semibold text-white">FAQ</h2>
       </div>
       <div className="space-y-3">
         {faqItems.map((faq, index) => (
-          <div key={faq.q} className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+          <div key={faq.q} className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <button
               onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
               className="w-full flex items-center justify-between p-5 text-left hover:bg-white/5 transition-colors"

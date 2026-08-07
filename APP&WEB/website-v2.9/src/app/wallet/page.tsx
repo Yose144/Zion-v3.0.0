@@ -657,7 +657,7 @@ export default function WalletPage() {
               </div>
             )}
             {successMsg && (
-              <div className="zion-rainbow-sub p-4 text-zion-cyan" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
+              <div className="zion-rainbow-sub p-4 text-zion-cyan" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                 <p>{successMsg}</p>
                 <Link href="/login" className="inline-flex items-center gap-2 text-emerald-200 hover:text-emerald-100 font-medium mt-2">
                   <ArrowRight className="w-4 h-4" />
@@ -861,7 +861,7 @@ export default function WalletPage() {
                           onClick={handleImportMnemonic}
                           disabled={loading}
                           className="zion-button-primary text-sm"
-                          style={{ '--rc': '7, 137, 48' } as CSSProperties}
+                          style={{ '--rc': '6, 105, 40' } as CSSProperties}
                         >
                           {loading ? (WalletCopy.importing[cs ? 'cs' : 'en']) : (WalletCopy.importFromMnemonic[cs ? 'cs' : 'en'])}
                         </button>
@@ -888,7 +888,7 @@ export default function WalletPage() {
                           onClick={handleImportPrivateKey}
                           disabled={loading}
                           className="zion-button-primary text-sm"
-                          style={{ '--rc': '7, 137, 48' } as CSSProperties}
+                          style={{ '--rc': '6, 105, 40' } as CSSProperties}
                         >
                           {loading ? (WalletCopy.importing[cs ? 'cs' : 'en']) : (WalletCopy.importFromPrivateKey[cs ? 'cs' : 'en'])}
                         </button>
@@ -902,7 +902,7 @@ export default function WalletPage() {
                           onClick={handleImportTrezor}
                           disabled={loading}
                           className="zion-button-secondary text-sm"
-                          style={{ '--rc': '7, 137, 48' } as CSSProperties}
+                          style={{ '--rc': '6, 105, 40' } as CSSProperties}
                         >
                           {loading ? (WalletCopy.connecting[cs ? 'cs' : 'en']) : 'Trezor'}
                         </button>
@@ -978,7 +978,7 @@ export default function WalletPage() {
                         onClick={handleSend}
                         disabled={loading}
                         className="zion-button-primary text-sm"
-                        style={{ '--rc': '7, 137, 48' } as CSSProperties}
+                        style={{ '--rc': '6, 105, 40' } as CSSProperties}
                       >
                         {loading ? (WalletCopy.sending[cs ? 'cs' : 'en']) : (WalletCopy.sendZion[cs ? 'cs' : 'en'])}
                       </button>
@@ -1021,7 +1021,7 @@ export default function WalletPage() {
                         <button
                           onClick={handleExportPrivateKey}
                           className="zion-button-secondary text-sm"
-                          style={{ '--rc': '7, 137, 48' } as CSSProperties}
+                          style={{ '--rc': '6, 105, 40' } as CSSProperties}
                         >
                           <Fingerprint className="h-4 w-4" /> {WalletCopy.exportPrivateKey[cs ? 'cs' : 'en']}
                         </button>
@@ -1064,7 +1064,7 @@ export default function WalletPage() {
               {WalletCopy.learnMoreAboutZionWallet[cs ? 'cs' : 'en']}
             </h2>
             <div className="flex flex-wrap justify-center gap-4">
-              <Link href="/explorer" className="zion-button-secondary group text-sm" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
+              <Link href="/explorer" className="zion-button-secondary group text-sm" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                 <Globe2 className="h-4 w-4" /> Explorer
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>

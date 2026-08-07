@@ -127,8 +127,8 @@ export default function LiveDashboard() {
   const metrics = [
     { icon: Database, label: LiveDashboardCopy.totalBlocks[cs ? 'cs' : 'en'], value: (stats.total_blocks ?? 0).toLocaleString(locale), tip: LiveDashboardCopy.totalNumberOfMinedBlocksSinceM[cs ? 'cs' : 'en'], color: 'text-zion-gold', rc: '252, 209, 22' },
     { icon: Gauge, label: LiveDashboardCopy.totalSupply[cs ? 'cs' : 'en'], value: formattedSupply, tip: LiveDashboardCopy.maximumZionSupplyIs144BillionI[cs ? 'cs' : 'en'], color: 'text-zion-purple', rc: '228, 30, 43' },
-    { icon: Atom, label: LiveDashboardCopy.transactions[cs ? 'cs' : 'en'], value: (stats.total_transactions ?? 0).toLocaleString(locale), tip: LiveDashboardCopy.totalNumberOfTransactionsRecor[cs ? 'cs' : 'en'], color: 'text-zion-cyan', rc: '7, 137, 48' },
-    { icon: Shield, label: LiveDashboardCopy.difficulty[cs ? 'cs' : 'en'], value: (stats.difficulty ?? 0).toLocaleString(locale), tip: LiveDashboardCopy.currentMiningDifficultySetByLw[cs ? 'cs' : 'en'], color: 'text-zion-cyan', rc: '7, 137, 48' },
+    { icon: Atom, label: LiveDashboardCopy.transactions[cs ? 'cs' : 'en'], value: (stats.total_transactions ?? 0).toLocaleString(locale), tip: LiveDashboardCopy.totalNumberOfTransactionsRecor[cs ? 'cs' : 'en'], color: 'text-zion-cyan', rc: '6, 105, 40' },
+    { icon: Shield, label: LiveDashboardCopy.difficulty[cs ? 'cs' : 'en'], value: (stats.difficulty ?? 0).toLocaleString(locale), tip: LiveDashboardCopy.currentMiningDifficultySetByLw[cs ? 'cs' : 'en'], color: 'text-zion-cyan', rc: '6, 105, 40' },
     { icon: Braces, label: LiveDashboardCopy.mempoolSize[cs ? 'cs' : 'en'], value: (stats.mempool_size ?? stats.tx_pool_size ?? 0).toLocaleString(locale), tip: LiveDashboardCopy.transactionsWaitingForConfirma[cs ? 'cs' : 'en'], color: 'text-zion-gold', rc: '252, 209, 22' },
   ];
 

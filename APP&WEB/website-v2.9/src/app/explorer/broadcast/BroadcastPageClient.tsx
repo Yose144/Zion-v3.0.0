@@ -384,7 +384,7 @@ export default function BroadcastPageClient() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <div className="zion-rainbow-card rounded-2xl bg-black/60 p-6" style={{ "--rc": "7, 137, 48" } as React.CSSProperties}>
+          <div className="zion-rainbow-card rounded-2xl bg-black/60 p-6" style={{ "--rc": "6, 105, 40" } as React.CSSProperties}>
             <div className="flex items-start gap-4">
               <div className="w-10 h-10 rounded-xl bg-zion-cyan/10 border border-zion-cyan/20 flex items-center justify-center flex-shrink-0">
                 <Zap className="w-5 h-5 text-zion-cyan" />

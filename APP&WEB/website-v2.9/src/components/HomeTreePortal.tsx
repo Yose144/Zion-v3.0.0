@@ -35,13 +35,13 @@ const sephirot = [
   { id: 'keter',     name: 'Keter',     meaning: 'Koruna',         zionLayer: 'L1 Consensus / Genesis',  x: 50, y: 8,  color: '255, 255, 255' },
   { id: 'chochmah',  name: 'Chochmah',  meaning: 'Moudrost',       zionLayer: 'L1 Cosmic Harmony PoW',  x: 72, y: 22, color: '228, 30, 43' },
   { id: 'binah',     name: 'Binah',     meaning: 'Porozumění',     zionLayer: 'L1 Validation',          x: 28, y: 22, color: '252, 209, 22' },
-  { id: 'chesed',    name: 'Chesed',    meaning: 'Milosrdenství',  zionLayer: 'L2 DeFi',                x: 72, y: 42, color: '7, 137, 48' },
+  { id: 'chesed',    name: 'Chesed',    meaning: 'Milosrdenství',  zionLayer: 'L2 DeFi',                x: 72, y: 42, color: '6, 105, 40' },
   { id: 'gevurah',   name: 'Gevurah',   meaning: 'Síla',           zionLayer: 'L2 DAO / Treasury Lock', x: 28, y: 42, color: '228, 30, 43' },
   { id: 'tiferet',   name: 'Tiferet',   meaning: 'Krása',          zionLayer: 'L3 WARP / Bridge',       x: 50, y: 52, color: '252, 209, 22' },
-  { id: 'netzach',   name: 'Netzach',   meaning: 'Věčnost',        zionLayer: 'L3 AI / Hiran',          x: 72, y: 68, color: '7, 137, 48' },
+  { id: 'netzach',   name: 'Netzach',   meaning: 'Věčnost',        zionLayer: 'L3 AI / Hiran',          x: 72, y: 68, color: '6, 105, 40' },
   { id: 'hod',       name: 'Hod',       meaning: 'Sláva',          zionLayer: 'L4 Oasis',               x: 28, y: 68, color: '228, 30, 43' },
   { id: 'yesod',     name: 'Yesod',     meaning: 'Základ',         zionLayer: 'L5 Free World',          x: 50, y: 80, color: '252, 209, 22' },
-  { id: 'malkuth',   name: 'Malkuth',   meaning: 'Království',     zionLayer: 'L6 Issobella',           x: 50, y: 94, color: '7, 137, 48' },
+  { id: 'malkuth',   name: 'Malkuth',   meaning: 'Království',     zionLayer: 'L6 Issobella',           x: 50, y: 94, color: '6, 105, 40' },
 ];
 
 /* 22 connecting paths */
@@ -113,7 +113,7 @@ export default function HomeTreePortal() {
                       <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{HomeTreePortalCopy.paths[cs ? 'cs' : 'en']}</p>
                       <p className="mt-1 text-lg font-bold text-white">22</p>
                     </div>
-                    <div className="zion-rainbow-sub p-3" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+                    <div className="zion-rainbow-sub p-3" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                       <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{HomeTreePortalCopy.pillars[cs ? 'cs' : 'en']}</p>
                       <p className="mt-1 text-lg font-bold text-white">3</p>
                     </div>
@@ -138,7 +138,7 @@ export default function HomeTreePortal() {
                 </div>
 
                 {/* Right: Kabbalah Tree visualization */}
-                <div className="relative mx-auto aspect-[3/4] w-full max-w-md overflow-hidden rounded-2xl border border-zion-cyan/15 bg-[radial-gradient(circle_at_50%_15%,rgba(7, 137, 48,0.15),rgba(10,12,24,0.04)_30%,rgba(1,3,6,0.98)_75%)]">
+                <div className="relative mx-auto aspect-[3/4] w-full max-w-md overflow-hidden rounded-2xl border border-zion-cyan/15 bg-[radial-gradient(circle_at_50%_15%,rgba(6, 105, 40,0.15),rgba(10,12,24,0.04)_30%,rgba(1,3,6,0.98)_75%)]">
                   {/* SVG paths */}
                   <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
                     {paths.map(([from, to], i) => {

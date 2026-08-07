@@ -378,7 +378,7 @@ export default function WarpPage() {
             </div>
             <div className="grid w-full gap-4 sm:grid-cols-2 lg:w-auto">
               {warpStats.map((chip) => (
-                <div key={chip.label} className="zion-rainbow-sub px-5 py-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+                <div key={chip.label} className="zion-rainbow-sub px-5 py-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                   <chip.icon className="h-6 w-6 text-zion-gold" />
                   <p className="mt-3 text-xs uppercase tracking-[0.3em] text-gray-400">{chip.label}</p>
                   <p className="text-3xl font-semibold text-white">{chip.value}</p>
@@ -416,7 +416,7 @@ export default function WarpPage() {
                 </div>
                 <div className="mt-5 grid gap-4 md:grid-cols-3">
                   {row.entries.map((entry) => (
-                    <div key={entry.label} className="zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+                    <div key={entry.label} className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                       <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{entry.label}</p>
                       <p className="mt-2 text-sm text-gray-200 leading-relaxed">{entry.value}</p>
                     </div>
@@ -435,7 +435,7 @@ export default function WarpPage() {
           </div>
           <div className="mt-6 grid gap-6 md:grid-cols-3">
             {onboarding.map((block, idx) => (
-              <div key={block.title} className="zion-rainbow-sub p-5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+              <div key={block.title} className="zion-rainbow-sub p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                 <div className="flex items-center gap-3">
                   <CircuitBoard className="h-5 w-5 text-zion-cyan" />
                   <p className="text-xs uppercase tracking-[0.35em] text-gray-400">{WarpCopy.stage[cs ? 'cs' : 'en']} {idx + 1}</p>
@@ -549,7 +549,7 @@ export default function WarpPage() {
           </div>
           <div className="mt-6 grid gap-6 md:grid-cols-3">
             {onboarding.map((block, idx) => (
-              <div key={block.title} className="zion-rainbow-sub p-5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+              <div key={block.title} className="zion-rainbow-sub p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                 <div className="flex items-center gap-3">
                   <CircuitBoard className="h-5 w-5 text-zion-cyan" />
                   <p className="text-xs uppercase tracking-[0.35em] text-gray-400">{WarpCopy.stage[cs ? 'cs' : 'en']} {idx + 1}</p>
@@ -633,7 +633,7 @@ export default function WarpPage() {
                 </div>
 
                 {/* Generated memo */}
-                <div className="zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+                <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                   <div className="flex items-center justify-between">
                     <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{WarpCopy.generatedMemo[cs ? 'cs' : 'en']}</p>
                     <button
@@ -660,7 +660,7 @@ export default function WarpPage() {
                 </div>
 
                 {/* Instructions */}
-                <div className="zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+                <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                   <div className="flex items-start gap-2">
                     <ArrowRight className="h-4 w-4 text-zion-gold mt-0.5 shrink-0" />
                   <p className="text-sm text-gray-300">
@@ -672,7 +672,7 @@ export default function WarpPage() {
             </div>
 
             {/* Transfer Status Tracker */}
-            <div className="zion-rainbow-card p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="zion-rainbow-card p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-5">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zion-cyan/10 border border-zion-cyan/20">
                   <Search className="h-5 w-5 text-zion-cyan" />
@@ -717,7 +717,7 @@ export default function WarpPage() {
 
                 {/* Status response */}
                 {warpTransferStatus !== null && (
-                  <div className="zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+                  <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                     <p className="text-xs uppercase tracking-[0.3em] text-gray-400 mb-2">{WarpCopy.response[cs ? 'cs' : 'en']}</p>
                     <pre className="overflow-x-auto rounded-lg bg-black/50 p-3 text-xs text-gray-200 font-mono leading-relaxed">
                       <code>{JSON.stringify(warpTransferStatus, null, 2)}</code>
@@ -726,7 +726,7 @@ export default function WarpPage() {
                 )}
 
                 {warpTransferStatus === null && (
-                  <div className="zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+                  <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                     <div className="flex items-start gap-2">
                       <Lock className="h-4 w-4 text-gray-500 mt-0.5 shrink-0" />
                     <p className="text-sm text-gray-400">

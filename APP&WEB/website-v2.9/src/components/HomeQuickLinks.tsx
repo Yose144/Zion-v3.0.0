@@ -58,7 +58,7 @@ export default function HomeQuickLinks() {
       label: HomeQuickLinksCopy.pool[cs ? 'cs' : 'en'],
       desc: HomeQuickLinksCopy.hashrateMiners[cs ? 'cs' : 'en'],
       icon: HardHat,
-      rc: '7, 137, 48', // rasta green
+      rc: '6, 105, 40', // rasta green
     },
     {
       href: '/docs',
@@ -79,7 +79,7 @@ export default function HomeQuickLinks() {
       label: HomeQuickLinksCopy.roadmap[cs ? 'cs' : 'en'],
       desc: HomeQuickLinksCopy.l1L6Vision[cs ? 'cs' : 'en'],
       icon: LayoutDashboard,
-      rc: '7, 137, 48', // rasta green
+      rc: '6, 105, 40', // rasta green
     },
     {
       href: '/terranova',
@@ -102,7 +102,7 @@ export default function HomeQuickLinks() {
               {HomeQuickLinksCopy.homepageAsACleanControlPanel[cs ? 'cs' : 'en']}
             </h2>
             <div
-              className="mt-2 h-1 w-24 rounded-full bg-gradient-to-r from-[#e41e2b] via-[#fcd116] to-[#078930]"
+              className="mt-2 h-1 w-24 rounded-full bg-gradient-to-r from-[#e41e2b] via-[#fcd116] to-[#066928]"
               aria-hidden="true"
             />
           </div>

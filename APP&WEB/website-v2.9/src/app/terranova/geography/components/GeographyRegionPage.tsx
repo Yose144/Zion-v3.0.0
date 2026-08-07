@@ -61,7 +61,7 @@ export default function GeographyRegionPage({ data }: { data: RegionData }) {
           transition={{ duration: 0.7 }}
           className="mb-16"
         >
-          <div className="zion-rainbow-card p-8 md:p-12" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-8 md:p-12" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="relative z-10 space-y-3">
               <span className="zion-badge-gold">
                 {TerranovaGeographyComponentsGeographyRegionPageCopy.culturalInserts[cs ? 'cs' : 'en']}
@@ -99,7 +99,7 @@ export default function GeographyRegionPage({ data }: { data: RegionData }) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 + i * 0.07, duration: 0.5 }}
                 className="relative zion-rainbow-sub p-5 space-y-3 overflow-hidden group hover:scale-[1.02] transition-transform duration-300"
-                style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+                style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
               >
                 <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-[50px] opacity-20 group-hover:opacity-35 transition-opacity duration-500 bg-zion-gold" />
                 <div className="flex items-start justify-between relative z-10 gap-3">

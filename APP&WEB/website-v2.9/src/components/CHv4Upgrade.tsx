@@ -158,7 +158,7 @@ export default function CHv4Upgrade() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.7, delay: 0.2 }}
-          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+          style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
           className="zion-rainbow-card max-w-3xl mx-auto p-6 md:p-8 space-y-6"
         >
           <div className="flex items-center justify-between">

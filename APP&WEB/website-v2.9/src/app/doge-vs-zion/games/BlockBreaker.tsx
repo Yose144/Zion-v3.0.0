@@ -68,7 +68,7 @@ const ROW_DEFS: RowDef[] = [
   { label: 'L6 Issobella', color: '#a855f7', borderColor: '#c084fc', points: 50 },
   { label: 'L5 Free World', color: '#3b82f6', borderColor: '#0a1a2a', points: 40 },
   { label: 'L4 Oasis', color: '#f59e0b', borderColor: '#fbbf24', points: 30 },
-  { label: 'L3 Hiran', color: '#078930', borderColor: '#22d3ee', points: 20 },
+  { label: 'L3 Hiran', color: '#066928', borderColor: '#22d3ee', points: 20 },
   { label: 'L1 Earth', color: '#10b981', borderColor: '#34d399', points: 10 },
 ];
 

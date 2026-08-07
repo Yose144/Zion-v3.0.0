@@ -275,7 +275,7 @@ export default function BridgeBurnWidget() {
   // Success state
   if (phase === 'success' && txInfo) {
     return (
-      <div className="zion-rainbow-card p-6 space-y-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+      <div className="zion-rainbow-card p-6 space-y-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
         <div className="flex items-center gap-2">
           <CheckCircle2 className="h-5 w-5 text-zion-cyan" />
           <h3 className="font-semibold text-white text-sm">{BridgeBurnWidgetCopy.burnSubmitted[cs ? 'cs' : 'en']}</h3>

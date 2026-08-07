@@ -33,7 +33,7 @@ const DashboardDaoTreeCopy = {
   comingSoon: { cs: `Co chystáme`, en: `Coming soon` },
 };
 
-const emeraldVar = { '--rc': '7, 137, 48' } as React.CSSProperties;
+const emeraldVar = { '--rc': '6, 105, 40' } as React.CSSProperties;
 const goldVar = { '--rc': '252, 209, 22' } as React.CSSProperties;
 
 const daoNodes = [

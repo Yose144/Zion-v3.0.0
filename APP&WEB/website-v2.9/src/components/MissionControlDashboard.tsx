@@ -2544,7 +2544,7 @@ export default function MissionControlDashboard() {
                   <AreaChart data={v3Charts.poolSessions} timestamps={v3Charts.timestamps} label={`Active Miners — ${chartRange}`} color="#a855f7" />
                   <AreaChart data={v3Charts.shares} timestamps={v3Charts.timestamps} label={`Accepted Shares (cumul.) — ${chartRange}`} color="#10b981" />
                   <AreaChart data={v3Charts.minerHashrate} timestamps={v3Charts.timestamps} label={`Miner Hashrate — ${chartRange}`} color="#22c55e" unit=" H/s" />
-                  <AreaChart data={v3Charts.cpuLoad} timestamps={v3Charts.timestamps} label={`CPU Load (1m avg) — ${chartRange}`} color="#078930" />
+                  <AreaChart data={v3Charts.cpuLoad} timestamps={v3Charts.timestamps} label={`CPU Load (1m avg) — ${chartRange}`} color="#066928" />
                   <AreaChart data={v3Charts.memPct} timestamps={v3Charts.timestamps} label={`Memory Usage % — ${chartRange}`} color="#ec4899" unit="%" />
                   <AreaChart data={v3Charts.redisMemory} timestamps={v3Charts.timestamps} label={`Redis Memory — ${chartRange}`} color="#f97316" />
                 </div>

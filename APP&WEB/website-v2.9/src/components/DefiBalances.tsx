@@ -118,7 +118,7 @@ export default function DefiBalances() {
   };
 
   return (
-    <div className="zion-rainbow-card backdrop-blur-xl p-6 space-y-5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+    <div className="zion-rainbow-card backdrop-blur-xl p-6 space-y-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-white">
           {DefiBalancesCopy.portfolio[cs ? 'cs' : 'en']}

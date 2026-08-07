@@ -15,11 +15,11 @@
       /* ═══ RASTA PALETTE — Red / Gold / Green / Black (synced with web2.9) ═══ */
       --zion-gold: rgb(252, 209, 22);       /* #fcd116 — Rasta Gold */
       --zion-purple: rgb(228, 30, 43);      /* #e41e2b — Rasta Red (replaces purple) */
-      --zion-cyan: rgb(7, 137, 48);         /* #078930 — Rasta Green (replaces cyan) */
+      --zion-cyan: rgb(6, 105, 40);         /* #066928 — Rasta Green (replaces cyan) */
       --zion-blue: rgb(13, 13, 13);         /* #0d0d0d — Rasta Black (replaces blue) */
       --rasta-red: #e41e2b;
       --rasta-gold: #fcd116;
-      --rasta-green: #078930;
+      --rasta-green: #066928;
       --rasta-dark: #1a1a1a;
       --rasta-black: #0d0d0d;
       --quantum-gold: #fcd116;
@@ -33,12 +33,12 @@
       --card-shadow-hover: 0 28px 90px rgba(0,0,0,0.55), 0 0 40px rgba(252,209,22,0.25);
       --glass-bg: rgba(13, 13, 13, 0.72);
       --glass-border: rgba(255,255,255,0.12);
-      --glow-gradient: linear-gradient(135deg, rgba(252,209,22,0.25), rgba(228,30,43,0.15), rgba(7,137,48,0.35));
+      --glow-gradient: linear-gradient(135deg, rgba(252,209,22,0.25), rgba(228,30,43,0.15), rgba(6,105,40,0.35));
 
       /* web2.9-style tokens (rasta-mapped) */
       --color-zion-gold: 252 209 22;
       --color-zion-purple: 228 30 43;
-      --color-zion-cyan: 7 137 48;
+      --color-zion-cyan: 6 105 40;
       --color-zion-blue: 13 13 13;
       --color-bg: 0 0 0;
       --color-fg: 255 255 255;
@@ -89,9 +89,9 @@
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background:
         /* rasta radial glows — green forward */
-        radial-gradient(circle at 15% 18%, rgba(7, 137, 48, 0.34), transparent 42rem),
-        radial-gradient(circle at 85% 12%, rgba(7, 137, 48, 0.30), transparent 40rem),
-        radial-gradient(circle at 45% 55%, rgba(7, 137, 48, 0.18), transparent 52rem),
+        radial-gradient(circle at 15% 18%, rgba(6, 105, 40, 0.28), transparent 42rem),
+        radial-gradient(circle at 85% 12%, rgba(6, 105, 40, 0.24), transparent 40rem),
+        radial-gradient(circle at 45% 55%, rgba(6, 105, 40, 0.14), transparent 52rem),
         radial-gradient(circle at 18% 15%, rgba(228, 30, 43, 0.18), transparent 45rem),
         radial-gradient(circle at 50% 78%, rgba(252, 209, 22, 0.12), transparent 55rem),
         radial-gradient(circle at 76% 88%, rgba(228, 30, 43, 0.08), transparent 48rem),
@@ -235,7 +235,7 @@
       to { opacity: 1; }
     }
     .wizard-card {
-      background: linear-gradient(145deg, rgba(255,255,255,0.042) 0%, rgba(255,255,255,0.017) 100%), linear-gradient(90deg, rgba(228,30,43,0.022), rgba(252,209,22,0.017), rgba(7,137,48,0.03));
+      background: linear-gradient(145deg, rgba(255,255,255,0.042) 0%, rgba(255,255,255,0.017) 100%), linear-gradient(90deg, rgba(228,30,43,0.022), rgba(252,209,22,0.017), rgba(6,105,40,0.03));
       border: 1px solid rgba(252, 209, 22,0.15);
       border-radius: 28px;
       padding: 40px 36px;
@@ -285,7 +285,7 @@
       padding: 12px 16px;
       border-radius: 14px;
       border: 1px solid rgba(255,255,255,0.10);
-      background: linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.014) 100%), linear-gradient(90deg, rgba(228,30,43,0.017), rgba(252,209,22,0.014), rgba(7,137,48,0.022));
+      background: linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.014) 100%), linear-gradient(90deg, rgba(228,30,43,0.017), rgba(252,209,22,0.014), rgba(6,105,40,0.022));
       color: #fff;
       font-size: 14px;
       outline: none;
@@ -318,7 +318,7 @@
       color: var(--zion-cyan);
       word-break: break-all;
       padding: 12px;
-      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(7,137,48,0.018));
+      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(6,105,40,0.018));
       border-radius: 12px;
       border: 1px solid rgba(255,255,255,0.06);
       backdrop-filter: blur(8px);
@@ -397,7 +397,7 @@
       padding: 8px 18px;
       margin: 0 auto 12px;
       max-width: 100%;
-      background: linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.014) 100%), linear-gradient(90deg, rgba(228,30,43,0.017), rgba(252,209,22,0.014), rgba(7,137,48,0.022));
+      background: linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.014) 100%), linear-gradient(90deg, rgba(228,30,43,0.017), rgba(252,209,22,0.014), rgba(6,105,40,0.022));
       border: 1px solid rgba(255,255,255,0.08);
       border-radius: 20px;
       box-shadow: 0 -8px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
@@ -735,7 +735,7 @@
       padding: 5px 6px;
       margin-bottom: 20px;
       border-radius: 16px;
-      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(7,137,48,0.018));
+      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(6,105,40,0.018));
       border: 1px solid rgba(255,255,255,0.06);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
@@ -832,7 +832,7 @@
       padding: 16px 20px;
       border-radius: 24px;
       border: 1px solid rgba(255,255,255,0.08);
-      background: linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.014) 100%), linear-gradient(90deg, rgba(228,30,43,0.017), rgba(252,209,22,0.014), rgba(7,137,48,0.022));
+      background: linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.014) 100%), linear-gradient(90deg, rgba(228,30,43,0.017), rgba(252,209,22,0.014), rgba(6,105,40,0.022));
       box-shadow: 0 12px 40px rgba(0,0,0,0.20);
       backdrop-filter: blur(40px);
       -webkit-backdrop-filter: blur(40px);
@@ -866,7 +866,7 @@
       padding: 20px 22px;
       border-radius: 20px;
       border: 1px solid rgba(255,255,255,0.07);
-      background: linear-gradient(145deg, rgba(255,255,255,0.021) 0%, rgba(255,255,255,0.007) 100%), linear-gradient(90deg, rgba(228,30,43,0.011), rgba(252,209,22,0.008), rgba(7,137,48,0.015));
+      background: linear-gradient(145deg, rgba(255,255,255,0.021) 0%, rgba(255,255,255,0.007) 100%), linear-gradient(90deg, rgba(228,30,43,0.011), rgba(252,209,22,0.008), rgba(6,105,40,0.015));
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       box-shadow: 0 8px 28px rgba(0,0,0,0.12);
@@ -979,7 +979,7 @@
       padding: 12px 16px;
       border-radius: 20px;
       border: 1px solid rgba(255,255,255,0.06);
-      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(7,137,48,0.018));
+      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(6,105,40,0.018));
       box-shadow: 0 10px 30px rgba(0,0,0,0.20);
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
@@ -1052,7 +1052,7 @@
     }
 
     .stat-card {
-      background: linear-gradient(145deg, rgba(255,255,255,0.021) 0%, rgba(255,255,255,0.007) 100%), linear-gradient(90deg, rgba(228,30,43,0.011), rgba(252,209,22,0.008), rgba(7,137,48,0.015));
+      background: linear-gradient(145deg, rgba(255,255,255,0.021) 0%, rgba(255,255,255,0.007) 100%), linear-gradient(90deg, rgba(228,30,43,0.011), rgba(252,209,22,0.008), rgba(6,105,40,0.015));
       border: 1px solid rgba(255,255,255,0.07);
       border-radius: 20px;
       padding: 18px 20px;
@@ -1145,7 +1145,7 @@
     .stat-sub .sub-value.accent-green { color: #22c55e; }
     .stat-sub .sub-value.accent-red { color: #ef4444; }
     .stat-sub .sub-value.accent-gold { color: var(--zion-gold); }
-    .stat-sub .sub-value.accent-cyan { color: #078930; }
+    .stat-sub .sub-value.accent-cyan { color: #066928; }
     .stat-sub .sub-value.accent-purple { color: #ff4d5a; }
 
     /* Wide stat card spanning full row */
@@ -1163,7 +1163,7 @@
 
     /* ═══ Trinity Panel (DeekshaChv3 parallel streaming) ═══ */
     .trinity-panel {
-      background: linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.014) 100%), linear-gradient(90deg, rgba(228,30,43,0.017), rgba(252,209,22,0.014), rgba(7,137,48,0.022));
+      background: linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.014) 100%), linear-gradient(90deg, rgba(228,30,43,0.017), rgba(252,209,22,0.014), rgba(6,105,40,0.022));
       border: 1px solid rgba(255,255,255,0.07);
       border-radius: 24px;
       padding: 20px 24px;
@@ -1377,7 +1377,7 @@
     /* ═══ Session Metrics (interactive stream panel) ═══
        Live Trinity stream rows with a console-metrics-like compact layout. */
     .session-metrics {
-      background: linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.014) 100%), linear-gradient(90deg, rgba(228,30,43,0.017), rgba(252,209,22,0.014), rgba(7,137,48,0.022));
+      background: linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.014) 100%), linear-gradient(90deg, rgba(228,30,43,0.017), rgba(252,209,22,0.014), rgba(6,105,40,0.022));
       border: 1px solid rgba(255,255,255,0.07);
       border-radius: 24px;
       padding: 20px 24px;
@@ -1506,7 +1506,7 @@
 
     /* Control Panel — pool-style glass */
     .control-panel {
-      background: linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.014) 100%), linear-gradient(90deg, rgba(228,30,43,0.017), rgba(252,209,22,0.014), rgba(7,137,48,0.022));
+      background: linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.014) 100%), linear-gradient(90deg, rgba(228,30,43,0.017), rgba(252,209,22,0.014), rgba(6,105,40,0.022));
       border: 1px solid rgba(255,255,255,0.07);
       border-radius: 24px;
       padding: 24px;
@@ -1542,7 +1542,7 @@
       padding: 22px;
       border-radius: 20px;
       border: 1px solid rgba(255,255,255,0.07);
-      background: linear-gradient(145deg, rgba(255,255,255,0.021) 0%, rgba(255,255,255,0.007) 100%), linear-gradient(90deg, rgba(228,30,43,0.011), rgba(252,209,22,0.008), rgba(7,137,48,0.015));
+      background: linear-gradient(145deg, rgba(255,255,255,0.021) 0%, rgba(255,255,255,0.007) 100%), linear-gradient(90deg, rgba(228,30,43,0.011), rgba(252,209,22,0.008), rgba(6,105,40,0.015));
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1869,7 +1869,7 @@
       flex: 1;
       font-family: monospace;
       padding: 12px 16px;
-      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(7,137,48,0.018));
+      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(6,105,40,0.018));
       border: 1px solid rgba(255,255,255,0.08);
       border-radius: 14px;
       color: #ffffff;
@@ -1904,7 +1904,7 @@
       width: 120px;
       height: 120px;
       border-radius: 14px;
-      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(7,137,48,0.018));
+      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(6,105,40,0.018));
       border: 1px solid rgba(255,255,255,0.06);
       display: grid;
       place-items: center;
@@ -1945,7 +1945,7 @@
     .tx-lookup-result {
       margin-top: 12px;
       padding: 14px;
-      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(7,137,48,0.018));
+      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(6,105,40,0.018));
       border-radius: 14px;
       border: 1px solid rgba(255,255,255,0.06);
       font-family: monospace;
@@ -1977,7 +1977,7 @@
     }
     .wallet-display-card {
       padding: 24px;
-      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(7,137,48,0.018));
+      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(6,105,40,0.018));
       border-radius: 20px;
       border: 1px solid rgba(212,175,55,0.20);
       backdrop-filter: blur(16px);
@@ -2006,14 +2006,14 @@
     .generated-address-input {
       flex: 1;
       font-family: monospace;
-      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(7,137,48,0.018));
+      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(6,105,40,0.018));
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
     }
     .wallet-display-mnemonic {
       width: 100%;
       padding: 12px;
-      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(7,137,48,0.018));
+      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(6,105,40,0.018));
       border: 1px solid rgba(228, 30, 43,0.15);
       border-radius: 12px;
       color: #fff;
@@ -2052,7 +2052,7 @@
       resize: none;
       width: 100%;
       padding: 12px 16px;
-      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(7,137,48,0.018));
+      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(6,105,40,0.018));
       border: 1px solid rgba(255,255,255,0.08);
       border-radius: 14px;
       color: #ffffff;
@@ -2091,7 +2091,7 @@
 
     .info-card {
       padding: 20px;
-      background: linear-gradient(145deg, rgba(255,255,255,0.021) 0%, rgba(255,255,255,0.007) 100%), linear-gradient(90deg, rgba(228,30,43,0.011), rgba(252,209,22,0.008), rgba(7,137,48,0.015));
+      background: linear-gradient(145deg, rgba(255,255,255,0.021) 0%, rgba(255,255,255,0.007) 100%), linear-gradient(90deg, rgba(228,30,43,0.011), rgba(252,209,22,0.008), rgba(6,105,40,0.015));
       border-radius: 18px;
       border: 1px solid rgba(255,255,255,0.07);
       backdrop-filter: blur(16px);
@@ -2149,7 +2149,7 @@
       align-items: center;
       justify-content: space-between;
       padding: 14px 20px;
-      background: linear-gradient(145deg, rgba(255,255,255,0.021) 0%, rgba(255,255,255,0.007) 100%), linear-gradient(90deg, rgba(228,30,43,0.011), rgba(252,209,22,0.008), rgba(7,137,48,0.015));
+      background: linear-gradient(145deg, rgba(255,255,255,0.021) 0%, rgba(255,255,255,0.007) 100%), linear-gradient(90deg, rgba(228,30,43,0.011), rgba(252,209,22,0.008), rgba(6,105,40,0.015));
       border-radius: 16px;
       border: 1px solid rgba(255,255,255,0.06);
       gap: 12px;
@@ -2208,7 +2208,7 @@
 
     .metric-card {
       padding: 18px;
-      background: linear-gradient(145deg, rgba(255,255,255,0.021) 0%, rgba(255,255,255,0.007) 100%), linear-gradient(90deg, rgba(228,30,43,0.011), rgba(252,209,22,0.008), rgba(7,137,48,0.015));
+      background: linear-gradient(145deg, rgba(255,255,255,0.021) 0%, rgba(255,255,255,0.007) 100%), linear-gradient(90deg, rgba(228,30,43,0.011), rgba(252,209,22,0.008), rgba(6,105,40,0.015));
       border-radius: 18px;
       border: 1px solid rgba(255,255,255,0.07);
       backdrop-filter: blur(16px);
@@ -2257,7 +2257,7 @@
     .sync-bar {
       padding: 10px 14px;
       border-radius: 12px;
-      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(7,137,48,0.018));
+      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(6,105,40,0.018));
       border: 1px solid rgba(255,255,255,0.05);
       display: flex;
       align-items: center;
@@ -2378,7 +2378,7 @@
     .form-group select {
       width: 100%;
       padding: 12px 16px;
-      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(7,137,48,0.018));
+      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(6,105,40,0.018));
       border: 1px solid rgba(255,255,255,0.08);
       border-radius: 14px;
       color: #ffffff;
@@ -2498,7 +2498,7 @@
       padding: 26px;
       border-radius: 24px;
       border: 1px solid rgba(255,255,255,0.07);
-      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(7,137,48,0.018));
+      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(6,105,40,0.018));
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
       box-shadow: 0 12px 40px rgba(0,0,0,0.18);
@@ -2672,7 +2672,7 @@
 
     .pool-card-body {
       padding: 22px;
-      background: linear-gradient(145deg, rgba(255,255,255,0.021) 0%, rgba(255,255,255,0.007) 100%), linear-gradient(90deg, rgba(228,30,43,0.011), rgba(252,209,22,0.008), rgba(7,137,48,0.015));
+      background: linear-gradient(145deg, rgba(255,255,255,0.021) 0%, rgba(255,255,255,0.007) 100%), linear-gradient(90deg, rgba(228,30,43,0.011), rgba(252,209,22,0.008), rgba(6,105,40,0.015));
       transition: border-color 0.3s ease, box-shadow 0.3s ease;
       border-radius: 20px;
       border: 1px solid rgba(255,255,255,0.06);
@@ -2714,7 +2714,7 @@
     }
 
     .pill-gold { border-color: rgba(252, 209, 22,0.4); color: var(--zion-gold); }
-    .pill-cyan { border-color: rgba(7, 137, 48,0.65); color: var(--zion-cyan); }
+    .pill-cyan { border-color: rgba(6, 105, 40,0.65); color: var(--zion-cyan); }
     .pill-purple { border-color: rgba(228, 30, 43,0.4); color: var(--zion-purple); }
 
     .custom-pool-input {
@@ -2728,7 +2728,7 @@
       padding: 12px 14px;
       border-radius: 14px;
       border: 1px solid rgba(255,255,255,0.08);
-      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(7,137,48,0.018));
+      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(6,105,40,0.018));
       color: #fff;
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
@@ -2818,7 +2818,7 @@
     #wallet-display input,
     #wallet-display textarea {
       color: #ffffff;
-      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(7,137,48,0.018));
+      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(6,105,40,0.018));
       border: 1px solid rgba(255, 255, 255, 0.08) !important;
       border-radius: 14px;
       padding: 12px 16px;
@@ -2850,7 +2850,7 @@
     }
 
     .progress-container {
-      background: linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.014) 100%), linear-gradient(90deg, rgba(228,30,43,0.017), rgba(252,209,22,0.014), rgba(7,137,48,0.022));
+      background: linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.014) 100%), linear-gradient(90deg, rgba(228,30,43,0.017), rgba(252,209,22,0.014), rgba(6,105,40,0.022));
       border: 1px solid rgba(228, 30, 43, 0.20);
       border-radius: 14px;
       padding: 6px;
@@ -2891,7 +2891,7 @@
 
     /* Log Viewer */
     .log-viewer {
-      background: linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.014) 100%), linear-gradient(90deg, rgba(228,30,43,0.017), rgba(252,209,22,0.014), rgba(7,137,48,0.022));
+      background: linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.014) 100%), linear-gradient(90deg, rgba(228,30,43,0.017), rgba(252,209,22,0.014), rgba(6,105,40,0.022));
       border: 1px solid rgba(255,255,255,0.06);
       border-radius: 20px;
       padding: 24px;
@@ -2947,7 +2947,7 @@
 
     /* ═══ Live Mining Console (XMRig/SRBMiner-style) — glass ═══ */
     .mining-console {
-      background: linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.014) 100%), linear-gradient(90deg, rgba(228,30,43,0.017), rgba(252,209,22,0.014), rgba(7,137,48,0.022));
+      background: linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.014) 100%), linear-gradient(90deg, rgba(228,30,43,0.017), rgba(252,209,22,0.014), rgba(6,105,40,0.022));
       border: 1px solid rgba(255,255,255,0.06);
       border-radius: 22px;
       margin-bottom: 24px;
@@ -3000,7 +3000,7 @@
       position: sticky;
       top: 0;
       z-index: 10;
-      background: linear-gradient(145deg, rgba(255,255,255,0.042) 0%, rgba(255,255,255,0.017) 100%), linear-gradient(90deg, rgba(228,30,43,0.022), rgba(252,209,22,0.017), rgba(7,137,48,0.03));
+      background: linear-gradient(145deg, rgba(255,255,255,0.042) 0%, rgba(255,255,255,0.017) 100%), linear-gradient(90deg, rgba(228,30,43,0.022), rgba(252,209,22,0.017), rgba(6,105,40,0.03));
       border: 1px solid rgba(0,255,136,0.18);
       border-radius: 12px;
       padding: 10px 14px;
@@ -3130,7 +3130,7 @@
       align-items: center;
       gap: 10px;
       padding: 12px 18px;
-      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(7,137,48,0.018));
+      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(6,105,40,0.018));
       border: 1px solid rgba(228, 30, 43,0.20);
       border-radius: 14px;
       font-size: 13px;
@@ -3184,7 +3184,7 @@
     }
     .server-card {
       padding: 22px;
-      background: linear-gradient(145deg, rgba(255,255,255,0.021) 0%, rgba(255,255,255,0.007) 100%), linear-gradient(90deg, rgba(228,30,43,0.011), rgba(252,209,22,0.008), rgba(7,137,48,0.015));
+      background: linear-gradient(145deg, rgba(255,255,255,0.021) 0%, rgba(255,255,255,0.007) 100%), linear-gradient(90deg, rgba(228,30,43,0.011), rgba(252,209,22,0.008), rgba(6,105,40,0.015));
       border: 1px solid rgba(255,255,255,0.07);
       border-radius: 20px;
       backdrop-filter: blur(20px);
@@ -3284,7 +3284,7 @@
     .territory-card {
       border-radius: 20px;
       border: 1px solid rgba(255,255,255,0.08);
-      background: linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.014) 100%), linear-gradient(90deg, rgba(228,30,43,0.017), rgba(252,209,22,0.014), rgba(7,137,48,0.022));
+      background: linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.014) 100%), linear-gradient(90deg, rgba(228,30,43,0.017), rgba(252,209,22,0.014), rgba(6,105,40,0.022));
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       overflow: hidden;
@@ -3321,7 +3321,7 @@
       text-transform: uppercase;
       letter-spacing: 2px;
       color: rgba(255,255,255,0.7);
-      background: linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.014) 100%), linear-gradient(90deg, rgba(228,30,43,0.017), rgba(252,209,22,0.014), rgba(7,137,48,0.022));
+      background: linear-gradient(145deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.014) 100%), linear-gradient(90deg, rgba(228,30,43,0.017), rgba(252,209,22,0.014), rgba(6,105,40,0.022));
       padding: 4px 10px;
       border-radius: 8px;
       backdrop-filter: blur(4px);
@@ -3363,7 +3363,7 @@
       padding: 24px;
       border-radius: 22px;
       border: 1px solid rgba(228, 30, 43,0.2);
-      background: linear-gradient(135deg, rgba(228, 30, 43,0.05), rgba(7, 137, 48,0.12));
+      background: linear-gradient(135deg, rgba(228, 30, 43,0.05), rgba(6, 105, 40,0.12));
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       margin-bottom: 16px;
@@ -3464,16 +3464,16 @@
       padding: 20px;
       border-radius: 18px;
       border: 1px solid rgba(255,255,255,0.06);
-      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(7,137,48,0.018));
+      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(6,105,40,0.018));
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: default;
     }
     .challenge-card:hover {
-      border-color: rgba(7, 137, 48,0.55);
+      border-color: rgba(6, 105, 40,0.55);
       transform: translateY(-2px);
-      box-shadow: 0 12px 40px rgba(0,0,0,0.3), 0 0 20px rgba(7, 137, 48,0.2);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3), 0 0 20px rgba(6, 105, 40,0.2);
     }
     .challenge-category {
       font-size: 9px;
@@ -3507,7 +3507,7 @@
       letter-spacing: 1px;
     }
     .diff-beginner    { background: rgba(0,255,136,0.1);  color: #00ff88; }
-    .diff-intermediate { background: rgba(7, 137, 48,0.22);  color: var(--zion-cyan); }
+    .diff-intermediate { background: rgba(6, 105, 40,0.22);  color: var(--zion-cyan); }
     .diff-advanced    { background: rgba(252, 209, 22,0.1);  color: var(--zion-gold); }
     .diff-master      { background: rgba(239,68,68,0.1);  color: #f87171; }
     .challenge-xp {
@@ -3527,7 +3527,7 @@
       padding: 22px 18px;
       border-radius: 18px;
       border: 1px solid rgba(255,255,255,0.06);
-      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(7,137,48,0.018));
+      background: linear-gradient(145deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 100%), linear-gradient(90deg, rgba(228,30,43,0.014), rgba(252,209,22,0.011), rgba(6,105,40,0.018));
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       text-align: center;
@@ -3629,13 +3629,13 @@
 
     /* Gradient sheen for territory banners */
     .bg-mountains   { background: linear-gradient(135deg, #2d3436, #636e72, #b2bec3); --territory-glow: rgba(178,190,195,0.15); }
-    .bg-forest      { background: linear-gradient(135deg, #078930, #4ade80, #22c55e); --territory-glow: rgba(7, 137, 48,0.35); }
+    .bg-forest      { background: linear-gradient(135deg, #066928, #4ade80, #22c55e); --territory-glow: rgba(6, 105, 40,0.35); }
     .bg-desert      { background: linear-gradient(135deg, #fdcb6e, #e17055, #d63031); --territory-glow: rgba(253,203,110,0.15); }
-    .bg-ocean       { background: linear-gradient(135deg, #0d0d0d, #078930, #4ade80); --territory-glow: rgba(7, 137, 48,0.35); }
+    .bg-ocean       { background: linear-gradient(135deg, #0d0d0d, #066928, #4ade80); --territory-glow: rgba(6, 105, 40,0.35); }
     .bg-volcano     { background: linear-gradient(135deg, #d63031, #e17055, #fdcb6e); --territory-glow: rgba(214,48,49,0.15); }
     .bg-crystal     { background: linear-gradient(135deg, #fcd116, #fdcb6e, #f0c060); --territory-glow: rgba(252, 209, 22,0.15); }
     .bg-temple      { background: linear-gradient(135deg, #fcd116, #f0c060, #e41e2b); --territory-glow: rgba(252, 209, 22,0.15); }
-    .bg-nexus       { background: linear-gradient(135deg, #0d0d0d, #e41e2b, #078930); --territory-glow: rgba(7, 137, 48,0.35); }
+    .bg-nexus       { background: linear-gradient(135deg, #0d0d0d, #e41e2b, #066928); --territory-glow: rgba(6, 105, 40,0.35); }
 
     /* ═══ OASIS Cosmic Mine — Full Space Scene ═══ */
     #oasis-game { padding:0 0 12px; }
@@ -3753,7 +3753,7 @@
     .dao-proposal-title { font-size:15px; font-weight:600; }
     .dao-status-badge { font-size:10px; padding:4px 10px; border-radius:20px; flex-shrink:0; }
     .dao-status-active   { background:rgba(0,255,136,0.1); color:#00ff88; }
-    .dao-status-passed   { background:rgba(7, 137, 48,0.22); color:var(--zion-cyan); }
+    .dao-status-passed   { background:rgba(6, 105, 40,0.22); color:var(--zion-cyan); }
     .dao-status-executed { background:rgba(252, 209, 22,0.1); color:var(--zion-gold); }
     .dao-status-failed   { background:rgba(239,68,68,0.1); color:#f87171; }
     .dao-status-timelocked { background:rgba(228, 30, 43,0.1); color:var(--zion-purple); }
@@ -3944,8 +3944,8 @@
       font-size: 13px; color: rgba(255,255,255,0.6);
     }
     .sync-bar.ibd {
-      background: rgba(7, 137, 48,0.16);
-      border-color: rgba(7, 137, 48,0.45);
+      background: rgba(6, 105, 40,0.16);
+      border-color: rgba(6, 105, 40,0.45);
     }
     .sync-bar.synced {
       background: rgba(16,185,129,0.06);
@@ -4064,7 +4064,7 @@
       .dex-container { grid-template-columns: 1fr; }
     }
     .dex-swap-card {
-      background: linear-gradient(145deg, rgba(255,255,255,0.042) 0%, rgba(255,255,255,0.017) 100%), linear-gradient(90deg, rgba(228,30,43,0.022), rgba(252,209,22,0.017), rgba(7,137,48,0.03));
+      background: linear-gradient(145deg, rgba(255,255,255,0.042) 0%, rgba(255,255,255,0.017) 100%), linear-gradient(90deg, rgba(228,30,43,0.022), rgba(252,209,22,0.017), rgba(6,105,40,0.03));
       border: 1px solid rgba(255,255,255,0.08);
       border-radius: 16px;
       padding: 24px;

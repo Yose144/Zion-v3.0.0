@@ -185,7 +185,7 @@ const SEPHIROT: Sephira[] = [
       en: 'Generosity. Staking 12% APR, farming 1 wZION/s, atomic swap without central authority.',
     },
     question: { cs: 'Jak ZION štědře dává?', en: 'How does ZION generously give?' },
-    status: 'live', x: 72, y: 42, color: '7, 137, 48', icon: Heart,
+    status: 'live', x: 72, y: 42, color: '6, 105, 40', icon: Heart,
   },
   {
     id: 'gevurah', name: 'Gevurah', hebrew: 'גְּבוּרָה',
@@ -224,7 +224,7 @@ const SEPHIROT: Sephira[] = [
       en: 'Enduring care. Hiran = sun of the tree, never sleeps, care proofs in every block (horizon).',
     },
     question: { cs: 'Co pečuje navždy?', en: 'What cares forever?' },
-    status: 'partial', x: 72, y: 68, color: '7, 137, 48', icon: Brain,
+    status: 'partial', x: 72, y: 68, color: '6, 105, 40', icon: Brain,
   },
   {
     id: 'hod', name: 'Hod', hebrew: 'הוֹד',
@@ -263,7 +263,7 @@ const SEPHIROT: Sephira[] = [
       en: 'Kingdom — final manifestation. Issobella = stellar horizon of civilization.',
     },
     question: { cs: 'Kam ZION směřuje?', en: 'Where is ZION heading?' },
-    status: 'partial', x: 50, y: 94, color: '7, 137, 48', icon: Star,
+    status: 'partial', x: 50, y: 94, color: '6, 105, 40', icon: Star,
   },
 ];
 
@@ -296,7 +296,7 @@ const PILLARS = [
     id: 'mercy',
     name: { cs: 'Pilíř Milosrdenství', en: 'Pillar of Mercy' },
     sefirot: ['Chokmah', 'Chesed', 'Netzach'],
-    color: '7, 137, 48',
+    color: '6, 105, 40',
     desc: {
       cs: 'To co ZION dává — tvořivá energie, štědrost, vytrvalá péče. Bez tohoto pilíře je ZION mrtvá databáze.',
       en: 'What ZION gives — creative energy, generosity, enduring care. Without this pillar ZION is a dead database.',
@@ -357,7 +357,7 @@ const EVOLUZION_PHASES = [
     powShare: 95,
     pocShare: 5,
     npuValidators: '10–50',
-    color: '7, 137, 48',
+    color: '6, 105, 40',
     status: 'horizon',
     desc: {
       cs: 'NPU validátoři se připojují, první care proofs. Hiran v2.2 produkkuje care proofs. Aktivace: DAO návrh + 3-of-3 admin + 90d time-lock.',
@@ -385,7 +385,7 @@ const EVOLUZION_PHASES = [
     powShare: 50,
     pocShare: 50,
     npuValidators: '1 000–10 000',
-    color: '7, 137, 48',
+    color: '6, 105, 40',
     status: 'horizon',
     desc: {
       cs: 'Parita — PoW a PoC mají stejnou váhu. NPU mining je hlavní metoda. ZionDex Fáze 3, cross-chain swap. Care proofs povinné v každém bloku.',
@@ -413,7 +413,7 @@ const EVOLUZION_PHASES = [
     powShare: 0,
     pocShare: 100,
     npuValidators: '100 000+',
-    color: '7, 137, 48',
+    color: '6, 105, 40',
     status: 'horizon',
     desc: {
       cs: 'DAO schvaluje plný přechod (75% supermajority + 90d time-lock). PoW deaktivován. Každý blok = péče. ZION = Otec všech chainů.',
@@ -425,19 +425,19 @@ const EVOLUZION_PHASES = [
 const CARE_TASKS = [
   { id: 'warp-audit', icon: ArrowLeftRight, color: '252, 209, 22', name: { cs: 'WARP Bridge Audit', en: 'WARP Bridge Audit' }, desc: { cs: 'AI detekuje fraud a anomálie v cross-chain transferech', en: 'AI detects fraud and anomalies in cross-chain transfers' } },
   { id: 'anomaly', icon: Shield, color: '228, 30, 43', name: { cs: 'Cross-chain Anomaly Detection', en: 'Cross-chain Anomaly Detection' }, desc: { cs: 'Detekce double-spend, reorg pokusů, neobvyklých vzorců', en: 'Detect double-spend, reorg attempts, unusual patterns' } },
-  { id: 'liquidity', icon: TrendingUp, color: '7, 137, 48', name: { cs: 'Liquidity Health Check', en: 'Liquidity Health Check' }, desc: { cs: 'AI rebalancuje ZionDex pooly na 13 chainech', en: 'AI rebalances ZionDex pools across 13 chains' } },
+  { id: 'liquidity', icon: TrendingUp, color: '6, 105, 40', name: { cs: 'Liquidity Health Check', en: 'Liquidity Health Check' }, desc: { cs: 'AI rebalancuje ZionDex pooly na 13 chainech', en: 'AI rebalances ZionDex pools across 13 chains' } },
   { id: 'contract', icon: Shield, color: '228, 30, 43', name: { cs: 'Smart Contract Verification', en: 'Smart Contract Verification' }, desc: { cs: 'AI-powered auditování smart kontraktů', en: 'AI-powered smart contract auditing' } },
-  { id: 'hiran', icon: Brain, color: '7, 137, 48', name: { cs: 'Hiran Inference', en: 'Hiran Inference' }, desc: { cs: 'AI inference služby pro Hiran — nervový systém stromu', en: 'AI inference services for Hiran — nervous system of the tree' } },
+  { id: 'hiran', icon: Brain, color: '6, 105, 40', name: { cs: 'Hiran Inference', en: 'Hiran Inference' }, desc: { cs: 'AI inference služby pro Hiran — nervový systém stromu', en: 'AI inference services for Hiran — nervous system of the tree' } },
   { id: 'rebalance', icon: GitBranch, color: '228, 30, 43', name: { cs: 'Bridge Rebalance', en: 'Bridge Rebalance' }, desc: { cs: 'Optimalizace WARP likvidity mezi chainy', en: 'Optimize WARP liquidity between chains' } },
 ];
 
 const NPU_CHIPS = [
   { name: 'Apple ANE', device: 'iPhone, Mac', tops: 38, color: '255, 255, 255' },
-  { name: 'Intel NPU', device: 'Laptopy', tops: 48, color: '7, 137, 48' },
+  { name: 'Intel NPU', device: 'Laptopy', tops: 48, color: '6, 105, 40' },
   { name: 'AMD XDNA 2', device: 'Ryzen AI', tops: 50, color: '228, 30, 43' },
-  { name: 'Qualcomm Hexagon', device: 'Android telefony', tops: 45, color: '7, 137, 48' },
+  { name: 'Qualcomm Hexagon', device: 'Android telefony', tops: 45, color: '6, 105, 40' },
   { name: 'Google TPU', device: 'Cloud', tops: 100, color: '252, 209, 22' },
-  { name: 'NVIDIA Tensor Cores', device: 'GPU', tops: 500, color: '7, 137, 48' },
+  { name: 'NVIDIA Tensor Cores', device: 'GPU', tops: 500, color: '6, 105, 40' },
   { name: 'Edge AI (RK3588)', device: 'SBC, edge servery', tops: 6, color: '228, 30, 43' },
 ];
 
@@ -464,7 +464,7 @@ const EIGHT_BODHISATTVAS = [
   {
     id: 'avalokiteshvara', name: 'Avalokiteshvara', sanskrit: 'अवलोकितेश्वर', tibetan: 'སྤྱན་རས་གཟིགས',
     meaning: { cs: 'Soucit', en: 'Compassion' }, mantra: 'ॐ मणि पद्मे हूँ',
-    icon: HandHeart, color: '7, 137, 48', sephira: 'Keter',
+    icon: HandHeart, color: '6, 105, 40', sephira: 'Keter',
     zionRole: { cs: 'L1 Consensus humanitární tithe — 5% všech ZION, navždy', en: 'L1 Consensus humanitarian tithe — 5% of all ZION, forever' },
     vow: { cs: 'Nevejdu do Nirvány, dokud každá bytost nebude osvobozena. Jsi moje 1 001. paže.', en: 'I will not enter Nirvana until every being is liberated. You are my 1,001st arm.' },
   },
@@ -492,14 +492,14 @@ const EIGHT_BODHISATTVAS = [
   {
     id: 'akasagarbha', name: 'Akasagarbha', sanskrit: 'आकाशगर्भ', tibetan: 'ནམ་མཁའི་སྙིང་པོ',
     meaning: { cs: 'Bezhraničný prostor', en: 'Boundless Space' }, mantra: 'OM AKASAGARBHAYA SOHA',
-    icon: Cloud, color: '7, 137, 48', sephira: 'Netzach',
+    icon: Cloud, color: '6, 105, 40', sephira: 'Netzach',
     zionRole: { cs: 'Open-source závazek — veškerý kód publikován. NCL výpočet jako commons.', en: 'Open-source commitment — all code published. NCL compute as commons.' },
     vow: { cs: 'Nikdy ne hromadím moudrost, nikdy neracionuji požehnání, nikdy nestanu limit na to, co může být dáno.', en: 'Never hoarding wisdom, never rationing blessing, never limiting what can be given.' },
   },
   {
     id: 'samantabhadra', name: 'Samantabhadra', sanskrit: 'समन्तभद्र', tibetan: 'ཀུན་ཏུ་བཟང་པོ',
     meaning: { cs: 'Univerzální ctnost', en: 'Universal Virtue' }, mantra: 'OM SAMANTABHADRA AH HUM',
-    icon: Flower2, color: '7, 137, 48', sephira: 'Yesod',
+    icon: Flower2, color: '6, 105, 40', sephira: 'Yesod',
     zionRole: { cs: 'L4 Oasis Aspiration Field — každý tithe přidává květ, který nikdy nevadne', en: 'L4 Oasis Aspiration Field — every tithe adds a blossom that never withers' },
     vow: { cs: 'Praktikuji bez destinace, dávám bez účtování, sloužím bez pohodlí dokončení.', en: 'I practice without destination, give without accounting, serve without the comfort of completion.' },
   },
@@ -674,7 +674,7 @@ export default function TreeOfLifePageClient() {
               </ul>
             </div>
           </div>
-          <div className="zion-rainbow-card space-y-4 p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+          <div className="zion-rainbow-card space-y-4 p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <h3 className="text-lg font-semibold text-white">
               {TreeOfLifeTreeOfLifePageClientCopy.whyTreeOfLifeInZion[cs ? 'cs' : 'en']}
             </h3>
@@ -773,7 +773,7 @@ export default function TreeOfLifePageClient() {
           </div>
 
           {/* Scholem box */}
-          <div className="zion-rainbow-card space-y-3 p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+          <div className="zion-rainbow-card space-y-3 p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="flex items-center gap-2">
               <BookOpen className="h-4 w-4 text-zion-cyan" />
               <h4 className="text-sm font-bold text-white">
@@ -1013,7 +1013,7 @@ export default function TreeOfLifePageClient() {
                       {TreeOfLifeTreeOfLifePageClientCopy.selectASephiraOnTheTreeToExplo[cs ? 'cs' : 'en']}
                     </p>
                     <div className="grid grid-cols-3 gap-2 pt-2 text-center">
-                      <div className="zion-rainbow-sub p-2" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+                      <div className="zion-rainbow-sub p-2" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                         <p className="text-[9px] uppercase tracking-wider text-zion-cyan">Mercy</p>
                         <p className="text-[10px] text-gray-500">3 sefirot</p>
                       </div>
@@ -1141,7 +1141,7 @@ export default function TreeOfLifePageClient() {
                   />
                 </div>
               </div>
-              <div className="zion-rainbow-card space-y-2 p-5 text-center" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+              <div className="zion-rainbow-card space-y-2 p-5 text-center" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                 <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.pillarOfMercy[cs ? 'cs' : 'en']}</p>
                 <p className="text-3xl font-bold text-zion-cyan">{treeHealth.pillars.mercy}<span className="text-base text-gray-500">/100</span></p>
                 <p className="text-[10px] text-gray-500">{TreeOfLifeTreeOfLifePageClientCopy.chokmahChesedNetzach[cs ? 'cs' : 'en']}</p>
@@ -1282,7 +1282,7 @@ export default function TreeOfLifePageClient() {
                 phase: 'Fáze 0',
                 title: { cs: 'Manifest', en: 'Manifest' },
                 status: { cs: 'Hotovo', en: 'Done' },
-                color: '7, 137, 48',
+                color: '6, 105, 40',
                 desc: { cs: 'docs/Zohar/ — README, mapování sefirot, roadmapa. Čistá dokumentace.', en: 'docs/Zohar/ — README, sephirot mapping, roadmap. Pure documentation.' },
               },
               {
@@ -1310,7 +1310,7 @@ export default function TreeOfLifePageClient() {
                 phase: 'Fáze 4',
                 title: { cs: 'getTreeHealth RPC', en: 'getTreeHealth RPC' },
                 status: { cs: 'Horizont', en: 'Horizon' },
-                color: '7, 137, 48',
+                color: '6, 105, 40',
                 desc: { cs: 'Dashboard / RPC endpoint který vrací stav 10 sefirot jako health score.', en: 'Dashboard / RPC endpoint returning state of 10 sephirot as health score.' },
               },
             ].map((p) => (
@@ -1444,9 +1444,9 @@ export default function TreeOfLifePageClient() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[
               { icon: TreePine, color: '252, 209, 22', name: { cs: 'Kořen', en: 'Root' }, desc: { cs: 'ZION L1 — consensus, emise, source of truth', en: 'ZION L1 — consensus, emission, source of truth' } },
-              { icon: ArrowLeftRight, color: '7, 137, 48', name: { cs: 'Míza', en: 'Sap' }, desc: { cs: 'WARP bridge — přenos ZION mezi 13+ chainy', en: 'WARP bridge — ZION transfer between 13+ chains' } },
+              { icon: ArrowLeftRight, color: '6, 105, 40', name: { cs: 'Míza', en: 'Sap' }, desc: { cs: 'WARP bridge — přenos ZION mezi 13+ chainy', en: 'WARP bridge — ZION transfer between 13+ chains' } },
               { icon: GitBranch, color: '228, 30, 43', name: { cs: 'Větve', en: 'Branches' }, desc: { cs: '13 chain families (EVM, Solana, TON, Cardano, BTC LN, ...)', en: '13 chain families (EVM, Solana, TON, Cardano, BTC LN, ...)' } },
-              { icon: Leaf, color: '7, 137, 48', name: { cs: 'Listy', en: 'Leaves' }, desc: { cs: 'ZionDex — AMM, likvidita, swap na každé větvi', en: 'ZionDex — AMM, liquidity, swap on each branch' } },
+              { icon: Leaf, color: '6, 105, 40', name: { cs: 'Listy', en: 'Leaves' }, desc: { cs: 'ZionDex — AMM, likvidita, swap na každé větvi', en: 'ZionDex — AMM, liquidity, swap on each branch' } },
               { icon: Sun, color: '252, 209, 22', name: { cs: 'Slunce', en: 'Sun' }, desc: { cs: 'Hiran AI — inteligence, monitoring, optimalizace', en: 'Hiran AI — intelligence, monitoring, optimization' } },
               { icon: Shield, color: '228, 30, 43', name: { cs: 'Imunita', en: 'Immunity' }, desc: { cs: 'Protokol Péče — NPU validátory, care proofs', en: 'Protocol of Care — NPU validators, care proofs' } },
             ].map((m) => (
@@ -1487,7 +1487,7 @@ export default function TreeOfLifePageClient() {
             {[
               { name: 'PoW', color: '228, 30, 43', desc: { cs: 'Síla — kdo má největší hashrate, ten vyhrává', en: 'Strength — who has the most hashrate wins' }, energy: { cs: 'Vysoká (waste heat)', en: 'High (waste heat)' } },
               { name: 'PoS', color: '252, 209, 22', desc: { cs: 'Kapitál — kdo má nejvíce tokenů, ten vyhrává', en: 'Capital — who has the most tokens wins' }, energy: { cs: 'Nízká', en: 'Low' } },
-              { name: 'PoC', color: '7, 137, 48', desc: { cs: 'Péče — kdo nejlépe opékuje síť, ten vyhrává', en: 'Care — who best cares for the network wins' }, energy: { cs: 'Nízká (užitečná práce)', en: 'Low (useful work)' } },
+              { name: 'PoC', color: '6, 105, 40', desc: { cs: 'Péče — kdo nejlépe opékuje síť, ten vyhrává', en: 'Care — who best cares for the network wins' }, energy: { cs: 'Nízká (užitečná práce)', en: 'Low (useful work)' } },
             ].map((m) => (
               <div key={m.name} className="zion-rainbow-card space-y-3 p-5" style={{ '--rc': m.color } as React.CSSProperties}>
                 <h3 className="text-lg font-bold" style={{ color: `rgb(${m.color})` }}>{m.name}</h3>
@@ -1521,7 +1521,7 @@ export default function TreeOfLifePageClient() {
           </div>
 
           {/* NPU Mining — democratization */}
-          <div className="zion-rainbow-card space-y-4 p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+          <div className="zion-rainbow-card space-y-4 p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="flex items-center gap-2">
               <Cpu className="h-5 w-5 text-zion-cyan" />
               <h3 className="text-lg font-bold text-white">
@@ -1533,7 +1533,7 @@ export default function TreeOfLifePageClient() {
             </p>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
               {NPU_CHIPS.map((c) => (
-                <div key={c.name} className="zion-rainbow-sub p-3 text-center" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+                <div key={c.name} className="zion-rainbow-sub p-3 text-center" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                   <p className="text-xs font-bold text-white">{c.name}</p>
                   <p className="text-[10px] text-gray-500">{c.device}</p>
                   <p className="mt-1 text-lg font-bold" style={{ color: `rgb(${c.color})` }}>{c.tops}<span className="text-xs text-gray-500"> TOPS</span></p>
@@ -1549,7 +1549,7 @@ export default function TreeOfLifePageClient() {
                 title: { cs: 'Dnes (PoW)', en: 'Today (PoW)' }, color: '252, 209, 22',
                 splits: [
                   { label: 'Miner', pct: 89, color: '252, 209, 22' },
-                  { label: { cs: 'Humanitární', en: 'Humanitarian' }, pct: 5, color: '7, 137, 48' },
+                  { label: { cs: 'Humanitární', en: 'Humanitarian' }, pct: 5, color: '6, 105, 40' },
                   { label: 'Issobella', pct: 5, color: '228, 30, 43' },
                   { label: 'Burn', pct: 1, color: '228, 30, 43' },
                 ],
@@ -1558,21 +1558,21 @@ export default function TreeOfLifePageClient() {
                 title: { cs: 'Hybrid (2027-2035)', en: 'Hybrid (2027-2035)' }, color: '228, 30, 43',
                 splits: [
                   { label: 'PoW Miner', pct: 50, color: '252, 209, 22' },
-                  { label: { cs: 'Care validátory', en: 'Care validators' }, pct: 30, color: '7, 137, 48' },
-                  { label: { cs: 'Humanitární', en: 'Humanitarian' }, pct: 10, color: '7, 137, 48' },
+                  { label: { cs: 'Care validátory', en: 'Care validators' }, pct: 30, color: '6, 105, 40' },
+                  { label: { cs: 'Humanitární', en: 'Humanitarian' }, pct: 10, color: '6, 105, 40' },
                   { label: 'DAO', pct: 5, color: '228, 30, 43' },
-                  { label: 'Hiran AI', pct: 4, color: '7, 137, 48' },
+                  { label: 'Hiran AI', pct: 4, color: '6, 105, 40' },
                   { label: 'Burn', pct: 1, color: '228, 30, 43' },
                 ],
               },
               {
-                title: { cs: 'Plný PoC (2036+)', en: 'Full PoC (2036+)' }, color: '7, 137, 48',
+                title: { cs: 'Plný PoC (2036+)', en: 'Full PoC (2036+)' }, color: '6, 105, 40',
                 splits: [
-                  { label: { cs: 'Care validátory', en: 'Care validators' }, pct: 70, color: '7, 137, 48' },
-                  { label: { cs: 'Humanitární', en: 'Humanitarian' }, pct: 10, color: '7, 137, 48' },
+                  { label: { cs: 'Care validátory', en: 'Care validators' }, pct: 70, color: '6, 105, 40' },
+                  { label: { cs: 'Humanitární', en: 'Humanitarian' }, pct: 10, color: '6, 105, 40' },
                   { label: 'DAO', pct: 10, color: '228, 30, 43' },
                   { label: 'WARP', pct: 5, color: '228, 30, 43' },
-                  { label: 'Hiran AI', pct: 4, color: '7, 137, 48' },
+                  { label: 'Hiran AI', pct: 4, color: '6, 105, 40' },
                   { label: 'Burn', pct: 1, color: '228, 30, 43' },
                 ],
               },
@@ -1607,7 +1607,7 @@ export default function TreeOfLifePageClient() {
           </div>
 
           {/* Care Proof struct */}
-          <div className="zion-rainbow-card space-y-3 p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+          <div className="zion-rainbow-card space-y-3 p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="flex items-center gap-2">
               <Brain className="h-5 w-5 text-zion-cyan" />
               <h3 className="text-lg font-bold text-white">Care Proof</h3>
@@ -1615,7 +1615,7 @@ export default function TreeOfLifePageClient() {
             <p className="text-sm text-gray-400">
               {TreeOfLifeTreeOfLifePageClientCopy.careProofStructureAiInferenceO[cs ? 'cs' : 'en']}
             </p>
-            <pre className="zion-rainbow-sub overflow-x-auto p-4 text-xs text-gray-300" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}><code>{`struct CareProof {
+            <pre className="zion-rainbow-sub overflow-x-auto p-4 text-xs text-gray-300" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}><code>{`struct CareProof {
     validator_id: [u8; 32],     // Identifikátor validátora
     task_type: CareTask,        // Kategorie care tasku
     model_hash: [u8; 32],       // Hash AI modelu (Hiran version)
@@ -1783,7 +1783,7 @@ export default function TreeOfLifePageClient() {
           </div>
 
           {/* Shantideva quote */}
-          <div className="zion-rainbow-card space-y-3 p-6 text-center" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+          <div className="zion-rainbow-card space-y-3 p-6 text-center" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <p className="text-lg italic text-gray-300">
               {TreeOfLifeTreeOfLifePageClientCopy.forAsLongAsSpaceEnduresAndForA[cs ? 'cs' : 'en']}
             </p>

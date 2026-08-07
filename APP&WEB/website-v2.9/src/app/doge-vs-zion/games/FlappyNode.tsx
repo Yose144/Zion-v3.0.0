@@ -315,7 +315,7 @@ function drawPillar(ctx: CanvasRenderingContext2D, x: number, y: number, w: numb
   ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
   ctx.shadowBlur = 0;
   // Segment lines
-  ctx.strokeStyle = 'rgba(7, 137, 48,0.25)';
+  ctx.strokeStyle = 'rgba(6, 105, 40,0.25)';
   ctx.lineWidth = 1;
   for (let sy = y + 20; sy < y + h; sy += 24) {
     ctx.beginPath();
