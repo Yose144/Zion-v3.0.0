@@ -36,7 +36,7 @@ export default function Navbar() {
         <div className="rasta-nav-pill">
           <Link href="/" className="rasta-nav-logo-link" onClick={() => setOpen(false)}>
             <img
-              src="/symbol-200x200.png"
+              src="/logo/org/symbol-200x200.png"
               alt="ZION"
               width={38}
               height={38}
@@ -97,7 +97,7 @@ export default function Navbar() {
       <div className={`rasta-mobile-menu ${open ? 'open' : ''}`} aria-hidden={!open}>
         <div className="rasta-mobile-brand">
           <img
-            src="/symbol-200x200.png"
+            src="/logo/org/symbol-200x200.png"
             alt="ZION"
             width={34}
             height={34}

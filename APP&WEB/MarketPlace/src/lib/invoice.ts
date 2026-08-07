@@ -286,7 +286,7 @@ export function buildInvoiceHtml(
 
     <div class="header">
       <div class="logo">
-        <img src="https://market.zionterranova.com/logo144.png" alt="ZION Logo" onerror="this.style.display='none'" />
+        <img src="https://market.zionterranova.com/logo/org/zion-wordmark-dark.png" alt="ZION Logo" onerror="this.style.display='none'" />
       </div>
       <div class="invoice-title">
         <h1>FAKTURA</h1>
