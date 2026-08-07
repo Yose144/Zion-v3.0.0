@@ -214,11 +214,15 @@ impl Pool {
     }
 
     /// Persist the current PPLNS state, if a state path is configured.
-    pub fn save(&self) -> std::io::Result<()> {
+    ///
+    /// Returns `Ok(true)` if a snapshot was written because the state was dirty,
+    /// `Ok(false)` if there was nothing to save, and `Err` only on I/O failure.
+    pub fn save(&mut self) -> std::io::Result<bool> {
         if let Some(path) = self.config.state_path.as_ref() {
-            self.pplns.save_to_path(path)?;
+            self.pplns.save_if_dirty(path)
+        } else {
+            Ok(false)
         }
-        Ok(())
     }
 
     /// Restore PPLNS state from the configured path, if any.

@@ -418,11 +418,33 @@ async fn main() -> anyhow::Result<()> {
             .await;
     });
 
+    // ── PPLNS state persistence ───────────────────────────────────────────
+    let persist_pool = Arc::clone(&pool);
+    let persist_handle = tokio::spawn(async move {
+        let mut interval = tokio::time::interval(Duration::from_secs(30));
+        interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+        loop {
+            interval.tick().await;
+            let pool = Arc::clone(&persist_pool);
+            let _ = tokio::task::spawn_blocking(move || {
+                if let Ok(mut p) = pool.lock() {
+                    match p.save() {
+                        Ok(true) => info!("pplns state persisted"),
+                        Ok(false) => {}
+                        Err(e) => warn!("failed to save pplns state: {}", e),
+                    }
+                }
+            })
+            .await;
+        }
+    });
+
     tokio::select! {
         _ = feed_handle => {},
         _ = run_handle => {},
         _ = api_handle => {},
         _ = sweep_handle => {},
+        _ = persist_handle => {},
     }
 
     info!("zion-pool stopped");
