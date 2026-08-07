@@ -1068,7 +1068,6 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         </div>
       </div>
 
-      <!-- Grafana iframe placeholder + node/pool stat row -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div id="v31-grafana-wrap" class="lg:col-span-2 bg-black/25 rounded-xl p-3 border border-white/5 hidden">
           <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-2 flex items-center justify-between">
@@ -1456,7 +1455,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
           <div class="space-y-1.5 text-xs">
             <div class="flex justify-between"><span class="text-gray-400">Stratum</span><span id="pcc-stratum" class="font-mono text-white">—</span></div>
             <div class="flex justify-between"><span class="text-gray-400">Public IP</span><span id="pcc-public-ip" class="font-mono text-white">62.171.141.136</span></div>
-            <div class="flex justify-between"><span class="text-gray-400">RPC Port</span><span class="font-mono text-white">8443</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">RPC Port</span><span class="font-mono text-white">9445</span></div>
             <div class="flex justify-between"><span class="text-gray-400">Metrics Port</span><span class="font-mono text-white">— (V31)</span></div>
             <div class="flex justify-between"><span class="text-gray-400">Pool Wallet</span><span id="pcc-wallet" class="font-mono text-white truncate max-w-[200px]" title="">—</span></div>
             <div class="flex justify-between"><span class="text-gray-400">Payout</span><span id="pcc-payout" class="text-emerald-400">—</span></div>
@@ -4248,7 +4247,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       <div class="text-xs text-gray-400 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
         <div>✅ OS: Ubuntu 24.04 LTS</div>
         <div>✅ SSH key-only auth</div>
-        <div>✅ UFW firewall (22/80/443/8333/8444)</div>
+        <div>✅ UFW firewall (22/80/443/8335/8444/9445/8080/8453/8456/8001/8002/9090/3000/3100/8766)</div>
         <div>✅ Fail2Ban (SSH protection)</div>
         <div>✅ Rust toolchain (rustup)</div>
         <div>✅ Docker + docker-compose</div>
@@ -5041,7 +5040,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         <span id="l2-bridge-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Offline</span>
       </div>
       <div class="grid grid-cols-2 gap-3 mb-4 text-xs">
-        <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">L1 RPC</div><div class="text-white font-mono">127.0.0.1:8443</div></div>
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">L1 RPC</div><div class="text-white font-mono">127.0.0.1:9445</div></div>
         <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">EVM RPC</div><div class="text-white font-mono" id="l2-bridge-evm">—</div></div>
         <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">API Port</div><div class="text-white font-mono">8082</div></div>
         <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">Confirmations</div><div class="text-white font-mono" id="l2-bridge-confirms">12</div></div>
@@ -5078,7 +5077,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         <div class="flex justify-between"><span class="text-gray-400">Voting Period</span><span class="text-white">14 days</span></div>
         <div class="flex justify-between"><span class="text-gray-400">Timelock</span><span class="text-white">72 hours</span></div>
         <div class="flex justify-between"><span class="text-gray-400">Proposal Threshold</span><span class="text-white">10M ZION</span></div>
-        <div class="flex justify-between"><span class="text-gray-400">DAO API</span><span class="text-white font-mono">:8450</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">DAO API</span><span class="text-white font-mono">:8456</span></div>
       </div>
       <div class="flex gap-2">
         <button onclick="controlAction('start-dao')" class="text-xs px-3 py-1.5 bg-emerald-700/50 hover:bg-emerald-600 rounded-lg font-semibold transition">▶ Start DAO</button>
@@ -5254,7 +5253,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
           <div>• 5-of-7 multisig</div>
           <div>• 100M ZION daily limit</div>
           <div>• On-chain voting 1 ZION = 1 vote</div>
-          <div class="text-gray-500 mt-2">API: <span class="font-mono">:8450</span></div>
+          <div class="text-gray-500 mt-2">API: <span class="font-mono">:8456</span></div>
         </div>
       </div>
     </div>
@@ -5296,7 +5295,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       </div>
       <div class="grid grid-cols-2 gap-3 mb-4 text-xs">
         <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">API Port</div><div class="text-white font-mono">8084</div></div>
-        <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">L1 RPC</div><div class="text-white font-mono">127.0.0.1:8443</div></div>
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">L1 RPC</div><div class="text-white font-mono">127.0.0.1:9445</div></div>
         <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">Relayed Txs</div><div class="text-emerald-400 font-bold" id="l3-warp-relayed">—</div></div>
         <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">Pending</div><div class="text-amber-400 font-bold" id="l3-warp-pending">—</div></div>
       </div>
@@ -6315,9 +6314,9 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         <div class="zion-panel-soft p-4">
           <h3 class="text-sm font-bold mb-3">Node Configuration</h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div><label class="text-xs text-gray-400 block mb-1">Seed Peers</label><input id="st-seed-peers" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="62.171.141.136:8333"></div>
-            <div><label class="text-xs text-gray-400 block mb-1">RPC Bind</label><input id="st-rpc-bind" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="0.0.0.0:8443"></div>
-            <div><label class="text-xs text-gray-400 block mb-1">P2P Bind</label><input id="st-p2p-bind" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="0.0.0.0:8333"></div>
+            <div><label class="text-xs text-gray-400 block mb-1">Seed Peers</label><input id="st-seed-peers" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="62.171.141.136:8335"></div>
+            <div><label class="text-xs text-gray-400 block mb-1">RPC Bind</label><input id="st-rpc-bind" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="0.0.0.0:9445"></div>
+            <div><label class="text-xs text-gray-400 block mb-1">P2P Bind</label><input id="st-p2p-bind" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="0.0.0.0:8335"></div>
             <div><label class="text-xs text-gray-400 block mb-1">Node ID</label><input id="st-node-id" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="local-backup-node"></div>
           </div>
           <div class="flex gap-2 mt-3">
@@ -7408,7 +7407,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
           <div class="space-y-1 text-xs text-gray-400">
             <div>Role: <span class="text-cyan-400 font-semibold">Backup (zionserver)</span></div>
             <div>Host: <span class="text-gray-300 font-mono">localhost</span></div>
-            <div>P2P: <span class="text-gray-300 font-mono">8333</span> · RPC: <span class="text-gray-300 font-mono">8446</span></div>
+            <div>P2P: <span class="text-gray-300 font-mono">8335</span> · RPC: <span class="text-gray-300 font-mono">9445</span></div>
             <div>Height: <span id="topo-local-height" class="text-emerald-400 font-bold">—</span></div>
             <div>Peers: <span id="topo-local-peers" class="text-gray-300">—</span></div>
             <div>Latency: <span id="topo-local-latency" class="text-gray-300">—</span></div>
@@ -7688,7 +7687,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
           <div class="flex justify-between"><span class="text-gray-400">Min vote weight</span><span class="text-white">1 ZION</span></div>
           <div class="flex justify-between"><span class="text-gray-400">Quorum</span><span class="text-white">15%</span></div>
           <div class="flex justify-between"><span class="text-gray-400">Finality blocks</span><span class="text-white">12</span></div>
-          <div class="flex justify-between"><span class="text-gray-400">DAO API port</span><span class="text-white font-mono">8450</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">DAO API port</span><span class="text-white font-mono">8456</span></div>
         </div>
       </div>
     </div>
@@ -7737,10 +7736,10 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       <span id="dao-daemon-badge" class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Unknown</span>
     </div>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 text-xs">
-      <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">API Port</div><div class="text-white font-mono">8450</div></div>
+      <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">API Port</div><div class="text-white font-mono">8456</div></div>
       <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">L1 Scan Interval</div><div class="text-white font-mono">15s</div></div>
       <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">DB Path</div><div class="text-white font-mono truncate">/data/dao/dao.db</div></div>
-      <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">L1 RPC</div><div class="text-white font-mono">127.0.0.1:8443</div></div>
+      <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">L1 RPC</div><div class="text-white font-mono">127.0.0.1:9445</div></div>
     </div>
     <div class="flex gap-2">
       <button onclick="controlAction('start-dao')" class="text-xs px-4 py-2 bg-emerald-700/50 hover:bg-emerald-600 rounded-lg font-semibold transition">▶ Start</button>
