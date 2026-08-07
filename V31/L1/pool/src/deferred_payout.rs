@@ -5,12 +5,14 @@
 //! background processor from the V3 pool server
 //! (`archive/V3/L1/pool/src/bin/server.rs`).
 
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use serde_json::json;
 use tracing::{info, warn};
 
+use crate::store::{PayoutRow, ShareStore};
 use crate::v3_pplns::PayoutEntry;
 
 // ── DeferredPayout ─────────────────────────────────────────────────
@@ -246,7 +248,7 @@ pub async fn execute_fee_payout(
     let addr = crate::rpc_client::parse_rpc_addr(rpc_addr)?;
     let resp = crate::rpc_client::jsonrpc_call(
         addr,
-        &rpc_request("submitTransaction", json!({ "tx": tx_json })),
+        &rpc_request("submitUtxoTransaction", json!({ "transaction": tx_json })),
     )
     .await?;
 
@@ -413,7 +415,7 @@ pub fn spawn_deferred_payout_processor(
                             };
                             match crate::rpc_client::jsonrpc_call(
                                 addr,
-                                &rpc_request("submitTransaction", json!({ "tx": tx_json })),
+                                &rpc_request("submitUtxoTransaction", json!({ "transaction": tx_json })),
                             )
                             .await
                             {
@@ -475,16 +477,58 @@ pub fn spawn_deferred_payout_processor(
 
 // ── Payout confirmation sweep ──────────────────────────────────────
 
+/// Check whether a transaction is present in the chain by looking for one of
+/// its outputs in the recipient's UTXO set.
+///
+/// This is a fallback for nodes where `getTransaction` is not implemented or
+/// returns null.  The UTXO `tx_hash` equals the transaction id, so a matching
+/// unspent output proves the tx is on-chain.
+async fn check_tx_on_chain_via_utxos(rpc_addr: &str, address: &str, tx_id: &str) -> anyhow::Result<bool> {
+    let addr = crate::rpc_client::parse_rpc_addr(rpc_addr)?;
+    let request = rpc_request(
+        "getUtxos",
+        json!({ "address": address }),
+    );
+    let resp = crate::rpc_client::jsonrpc_call(addr, &request).await?;
+
+    if let Some(utxos) = resp
+        .get("result")
+        .and_then(|r| r.get("utxos"))
+        .and_then(|v| v.as_array())
+    {
+        for utxo in utxos {
+            if let Some(tx_hash) = utxo.get("tx_hash").and_then(|v| v.as_str()) {
+                if tx_hash == tx_id {
+                    return Ok(true);
+                }
+            }
+        }
+    }
+    Ok(false)
+}
+
 /// Spawn a background task that periodically checks submitted payouts
 /// against the chain and marks them as confirmed.
+///
+/// Confirmations are computed from the payout block height when the exact
+/// transaction block height is unavailable.  This is intentionally conservative:
+/// a payout transaction can only appear in a block *at or after* the block it
+/// pays out, so `chain_height - payout_height + 1` is a safe upper bound on the
+/// number of confirmations.
 pub fn spawn_payout_confirmation_sweep(
     rpc_addr: Option<String>,
     interval_secs: u64,
+    share_store: Option<Arc<ShareStore>>,
 ) {
     let interval = Duration::from_secs(interval_secs);
+    let maturity_confirmations = std::env::var("ZION_PAYOUT_MATURITY")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(6u32);
+
     info!(
-        "payout_confirmation_sweep: enabled interval_secs={}",
-        interval_secs
+        "payout_confirmation_sweep: enabled interval_secs={} maturity_confirmations={}",
+        interval_secs, maturity_confirmations
     );
 
     tokio::spawn(async move {
@@ -496,6 +540,11 @@ pub fn spawn_payout_confirmation_sweep(
                 None => continue,
             };
 
+            let store = match &share_store {
+                Some(s) => s.clone(),
+                None => continue,
+            };
+
             let chain_height = match get_chain_height(&rpc).await {
                 Ok(h) => h,
                 Err(e) => {
@@ -504,10 +553,67 @@ pub fn spawn_payout_confirmation_sweep(
                 }
             };
 
-            tracing::debug!(
-                "payout_confirmation_sweep: chain_height={}",
-                chain_height
-            );
+            let payouts = match store.query_unconfirmed_payouts() {
+                Ok(p) => p,
+                Err(e) => {
+                    tracing::debug!("payout_confirmation_sweep: query_unconfirmed_payouts failed: {e}");
+                    continue;
+                }
+            };
+
+            if payouts.is_empty() {
+                continue;
+            }
+
+            // Group by tx_id so a single UTXO check can confirm a whole batch.
+            let mut by_tx: HashMap<String, Vec<PayoutRow>> = HashMap::new();
+            for p in payouts {
+                by_tx.entry(p.tx_id.clone()).or_default().push(p);
+            }
+
+            for (tx_id, group) in by_tx {
+                // First try the exact getTransaction RPC.
+                let tx_height = match check_tx_on_chain(&rpc, &tx_id).await {
+                    Ok(Some(h)) => Some(h),
+                    Ok(None) => {
+                        // Fallback: look for the tx hash in any recipient UTXO set.
+                        let representative = &group[0];
+                        match check_tx_on_chain_via_utxos(&rpc, &representative.address, &tx_id).await {
+                            Ok(true) => Some(representative.height),
+                            Ok(false) => None,
+                            Err(e) => {
+                                tracing::debug!("payout_confirmation_sweep: getUtxos fallback failed for {}: {e}", representative.address);
+                                None
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        tracing::debug!("payout_confirmation_sweep: check_tx_on_chain failed for {}: {e}", tx_id);
+                        None
+                    }
+                };
+
+                let Some(tx_height) = tx_height else {
+                    continue;
+                };
+
+                let confirmations = if chain_height >= tx_height {
+                    (chain_height - tx_height + 1) as u32
+                } else {
+                    0u32
+                };
+
+                if confirmations >= maturity_confirmations {
+                    if let Err(e) = store.confirm_payout(&tx_id, confirmations) {
+                        warn!("payout_confirmation_sweep: confirm_payout failed for {}: {}", tx_id, e);
+                    } else {
+                        info!(
+                            "payout_confirmed tx_id={} height={} chain_height={} confirmations={}",
+                            tx_id, tx_height, chain_height, confirmations
+                        );
+                    }
+                }
+            }
         }
     });
 }
