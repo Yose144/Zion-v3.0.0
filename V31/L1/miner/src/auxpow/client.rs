@@ -848,7 +848,18 @@ impl AuxPowClient {
                 let merkle = parse_hex_value(&params[3]).unwrap_or_default();
                 let reserved = parse_hex_value(&params[4]).unwrap_or_default();
                 let ntime = params[5].as_str().unwrap_or("00000000").to_string();
-                let nbits = params[6].as_str().unwrap_or("");
+                // nbits may be sent as a hex string ("1d00ffff") or as a JSON
+                // number. Handle both cases to avoid falling back to 0xFF target.
+                let nbits = params[6]
+                    .as_str()
+                    .map(|s| s.to_string())
+                    .or_else(|| {
+                        params[6].as_u64().map(|n| format!("{:08x}", n))
+                    })
+                    .or_else(|| {
+                        params[6].as_i64().map(|n| format!("{:08x}", n))
+                    })
+                    .unwrap_or_default();
                 let mut solution = parse_hex_value(&params[8]).unwrap_or_default();
                 // Pad solution to VERUS_SOLUTION_SIZE (1344 bytes) — the pool
                 // may send an empty or partial solution; the miner fills the
@@ -858,9 +869,15 @@ impl AuxPowClient {
                     solution.resize(VERUS_SOLUTION_SIZE, 0);
                 }
 
-                let target = hasher::parse_target_hex(nbits)
-                    .or_else(|| hasher::nbits_to_target(nbits))
-                    .unwrap_or([0xFF; 32]);
+                let target = hasher::parse_target_hex(&nbits)
+                    .or_else(|| hasher::nbits_to_target(&nbits))
+                    .unwrap_or_else(|| {
+                        eprintln!(
+                            "vrsc_target_parse_fail nbits=\"{}\" params6={:?} — using 0xFF fallback",
+                            nbits, params[6]
+                        );
+                        [0xFF; 32]
+                    });
 
                 let en1 = self.extranonce1.lock().await.clone();
                 let mut nonce_field = [0u8; 32];

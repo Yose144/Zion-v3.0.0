@@ -8453,22 +8453,36 @@ pub mod metal_deeksha_lite_fire {
     }
 }
 
-/// OpenCL miner for external AuxPoW algorithms (Blake3, kHeavyHash, etc.).
-/// STUB: V31 does not yet expose a generic OpenCL AuxPoW miner.
+/// OpenCL miner for external AuxPoW algorithms (ProgPoW, Ethash, KawPow, etc.).
+/// Wraps the full `ExtGpuMiner` from `auxpow::gpu_opencl_full` which has
+/// ProgPoW/Ethash/KawPow OpenCL kernel support with DAG management.
 #[cfg(feature = "gpu-opencl")]
 pub mod opencl_external {
     use super::*;
+    use crate::auxpow::gpu_opencl_full::ExtGpuMiner;
 
     pub struct OpenClExternalMiner {
         algorithm: String,
+        miner: ExtGpuMiner,
         work_size: usize,
+        device_name_cached: String,
+        block_height: u64,
     }
 
     impl OpenClExternalMiner {
-        pub fn new(algorithm: &str, _work_size: usize) -> Result<Self> {
-            anyhow::bail!(
-                "OpenCL external AuxPoW mining is not yet ported for V31 (algorithm={algorithm})"
-            )
+        pub fn new(algorithm: &str, work_size: usize) -> Result<Self> {
+            let mut miner = ExtGpuMiner::new().map_err(|e| {
+                anyhow::anyhow!("auxpow_gpu_init_failed algorithm={algorithm} err={e}")
+            })?;
+            miner.work_size = work_size;
+            let device_name = miner.device_name().to_string();
+            Ok(Self {
+                algorithm: algorithm.to_string(),
+                miner,
+                work_size,
+                device_name_cached: device_name,
+                block_height: 0,
+            })
         }
     }
 
@@ -8482,17 +8496,126 @@ pub mod opencl_external {
         fn algorithm(&self) -> String {
             self.algorithm.clone()
         }
+
+        fn update_epoch(&mut self, height: u64) -> Result<()> {
+            self.block_height = height;
+            if matches!(
+                self.algorithm.as_str(),
+                "progpow" | "progpow_epic" | "progpow_zano"
+                    | "kawpow" | "kawpow_rvn" | "kawpow_clore"
+            ) {
+                self.miner.set_block_height(height);
+            }
+
+            let epoch = if matches!(self.algorithm.as_str(), "ethash" | "etchash" | "ethash_etc") {
+                Some((height / 30000) as u32)
+            } else if matches!(
+                self.algorithm.as_str(),
+                "kawpow" | "kawpow_rvn" | "kawpow_clore"
+            ) {
+                Some((height / 7500) as u32)
+            } else if matches!(
+                self.algorithm.as_str(),
+                "progpow" | "progpow_epic" | "progpow_zano"
+            ) {
+                Some((height / 30000) as u32)
+            } else {
+                None
+            };
+
+            if let Some(ep) = epoch {
+                #[cfg(feature = "native-hashers")]
+                {
+                    if matches!(self.algorithm.as_str(), "progpow" | "progpow_epic" | "progpow_zano") {
+                        self.miner.generate_progpow_dag_on_gpu(ep)?;
+                    } else if matches!(self.algorithm.as_str(), "ethash" | "etchash" | "ethash_etc") {
+                        self.miner.generate_ethash_dag_on_gpu(ep)?;
+                    }
+                }
+            }
+            Ok(())
+        }
+
         fn mine_batch(
             &mut self,
-            _header: MiningHeader,
-            _target: DifficultyTarget,
-            _nonce_start: u64,
-            _batch_size: u64,
+            header: MiningHeader,
+            target: DifficultyTarget,
+            nonce_start: u64,
+            batch_size: u64,
         ) -> Result<GpuBatchResult> {
-            anyhow::bail!("OpenCL external AuxPoW mining is not yet ported")
+            let header_bytes = header.to_bytes();
+            let found = self.miner.mine(
+                &self.algorithm,
+                &header_bytes,
+                &[],
+                &target.bytes,
+                nonce_start,
+                batch_size,
+            )?;
+
+            if let Some(fs) = found {
+                Ok(GpuBatchResult {
+                    solutions: vec![(fs.nonce, fs.hash, fs.mix_hash)],
+                    solution_blob: fs.solution,
+                    nonces_tested: batch_size,
+                    device_name: self.device_name_cached.clone(),
+                })
+            } else {
+                Ok(GpuBatchResult {
+                    solutions: Vec::new(),
+                    solution_blob: None,
+                    nonces_tested: batch_size,
+                    device_name: self.device_name_cached.clone(),
+                })
+            }
         }
-        fn benchmark(&mut self, _secs: f64) -> Result<(u64, f64, f64)> {
-            anyhow::bail!("OpenCL external AuxPoW mining is not yet ported")
+
+        fn mine_batch_raw(
+            &mut self,
+            raw_header: &[u8],
+            target: DifficultyTarget,
+            nonce_start: u64,
+            batch_size: u64,
+        ) -> Result<GpuBatchResult> {
+            let found = self.miner.mine(
+                &self.algorithm,
+                raw_header,
+                &[],
+                &target.bytes,
+                nonce_start,
+                batch_size,
+            )?;
+
+            if let Some(fs) = found {
+                Ok(GpuBatchResult {
+                    solutions: vec![(fs.nonce, fs.hash, fs.mix_hash)],
+                    solution_blob: fs.solution,
+                    nonces_tested: batch_size,
+                    device_name: self.device_name_cached.clone(),
+                })
+            } else {
+                Ok(GpuBatchResult {
+                    solutions: Vec::new(),
+                    solution_blob: None,
+                    nonces_tested: batch_size,
+                    device_name: self.device_name_cached.clone(),
+                })
+            }
+        }
+
+        fn benchmark(&mut self, secs: f64) -> Result<(u64, f64, f64)> {
+            let header = [0u8; 80];
+            let target = [0xFFu8; 32];
+            let start = std::time::Instant::now();
+            let mut nonces: u64 = 0;
+            while start.elapsed().as_secs_f64() < secs {
+                let batch = 65536u64;
+                let _ = self.mine_batch_raw(&header, DifficultyTarget { bytes: target }, nonces, batch)?;
+                nonces += batch;
+            }
+            let elapsed = start.elapsed().as_secs_f64();
+            let hps = nonces as f64 / elapsed;
+            Ok((nonces, hps, elapsed))
         }
     }
 }
