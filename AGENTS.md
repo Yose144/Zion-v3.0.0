@@ -2257,3 +2257,15 @@ MarketPlace (`APP&WEB/MarketPlace/`) pulls live OASIS game data and surfaces it 
 - **Market API:** `src/lib/market-api.ts` transforms `Artifact` rows (and active `Listing` rows) into `ArtifactCardData` / `ItemDetailData`. It exposes `externalUrl` linking each artifact back to its OASIS category page (`/avatars`, `/quests`, `/golden-egg`, `/territories`). `getItems` and `getItem` call `/api/items` and `/api/items/{id}`.
 - **Fallback UI:** If an artifact has no `imageUri` (or the image fails to load), `src/components/ArtifactPlaceholder.tsx` renders a category-specific Lucide icon colored by the artifact rarity. This replaces the previous generic "Z" placeholder.
 - **Deploy:** after any change, run `npm run build` in `APP&WEB/MarketPlace/`, then `rsync -az --delete APP&WEB/MarketPlace/.next zion-new:/opt/zion/APP&WEB/MarketPlace/` and `systemctl restart zion-marketplace.service`.
+
+## MarketPlace ZION L1 Bonus Payout
+
+MarketPlace can pay customer ZION token bonuses directly on ZION L1.
+
+- **Docs:** [`APP&WEB/MarketPlace/PAYOUT.md`](./APP&WEB/MarketPlace/PAYOUT.md)
+- **Library:** `src/lib/zion-l1.ts` — BIP39 seed generation, Ed25519 key derivation, `zion1` address encoding, and `zion wallet send` wrapper.
+- **Customer flow:** Each order with `zionTokens > 0` gets a fresh `zion1` address + 12-word seed stored in `ShopOrder.customerWallet*`. The seed is emailed to the customer.
+- **Admin flow:** `/admin/orders` shows the customer address and a **Distribuovat tokeny** button. Clicking it calls `/api/admin/tokens/distribute/{id}`, which broadcasts a UTXO transaction from the pool wallet and records the tx hash.
+- **Configuration:** see `.env.example` (`ZION_L1_RPC_URL`, `ZION_L1_POOL_WALLET_PATH`, `ZION_L1_POOL_WALLET_SECRET_KEY`, `ZION_L1_POOL_WALLET_MNEMONIC`, `ZION_L1_PAYOUT_FEE`, `ZION_CLI_PATH`).
+- **Database:** `prisma/schema.prisma` has new `customerWalletAddress`, `customerWalletSeed`, `customerWalletPublicKey`, `customerWalletSecretKey` columns. Run `npx prisma db push` after deploy.
+- **Security:** pool wallet secret keys / mnemonics must live in `.env` or a 600-permission file, never in git. Customer seeds are custodial; they are stored in the DB and emailed.
