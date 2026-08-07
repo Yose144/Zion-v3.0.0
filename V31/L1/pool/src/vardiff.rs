@@ -181,10 +181,11 @@ pub fn difficulty_to_target(difficulty: u64) -> [u8; 32] {
     }
 
     // Bit-level right shift with carry propagation (big-endian).
-    // For each byte (high → low index), the bits that fall off the right
-    // edge become the high bits of the next-lower-significance byte.
+    // For each byte (most significant → least significant), the bits that
+    // fall off the right edge of the current byte become the high bits of
+    // the next-less-significant byte.
     let mut carry: u8 = 0;
-    for i in (0..32).rev() {
+    for i in 0..32 {
         let val = tmp[i];
         out[i] = (val >> bit_shift) | carry;
         carry = val << (8 - bit_shift);
@@ -299,5 +300,32 @@ mod tests {
         assert_eq!(t256[0], 0x00);
         // The remaining bytes should still be 0xFF (shifted by exactly 1 byte).
         assert_eq!(t256[1], 0xff);
+    }
+
+    #[test]
+    fn test_difficulty_to_target_100_has_correct_leading_bits() {
+        // Difficulty 100 → log2(100) ≈ 6.6 → 6 leading zero bits.
+        // Target should be 0x03FFFF...FF (first byte 0x03 = 00000011).
+        let t100 = difficulty_to_target(100);
+        assert_eq!(
+            t100[0], 0x03,
+            "difficulty 100 should produce target starting with 0x03, got 0x{:02x}",
+            t100[0]
+        );
+        assert_eq!(t100[1], 0xff);
+        assert_eq!(t100[31], 0xff);
+    }
+
+    #[test]
+    fn test_difficulty_to_target_10_first_byte() {
+        // Difficulty 10 → log2(10) ≈ 3.3 → 3 leading zero bits.
+        // Target should be 0x1FFFF...FF (first byte 0x1F = 00011111).
+        let t10 = difficulty_to_target(10);
+        assert_eq!(
+            t10[0], 0x1f,
+            "difficulty 10 should produce target starting with 0x1F, got 0x{:02x}",
+            t10[0]
+        );
+        assert_eq!(t10[1], 0xff);
     }
 }
