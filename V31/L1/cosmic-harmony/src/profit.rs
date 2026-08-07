@@ -166,7 +166,7 @@ impl ExternalCoin {
             ExternalCoin::Ravencoin => "kawpow",
             ExternalCoin::Monero => "randomx",
             ExternalCoin::EpicCash => "progpow",
-            ExternalCoin::Zano => "progpowz",
+            ExternalCoin::Zano => "progpow_zano",
             ExternalCoin::Meowcoin => "meowpow",
             ExternalCoin::Clore => "kawpow",
             ExternalCoin::Flux => "zelhash",
