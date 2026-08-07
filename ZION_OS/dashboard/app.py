@@ -2503,7 +2503,7 @@ def detect_nodes() -> dict:
             "id": node_id,
             "name": node_config.get("name", node_id),
             "host": node_config.get("host"),
-            "rpc_port": node_config.get("rpc_port", 9443),
+            "rpc_port": node_config.get("rpc_port", 9445),
             "p2p_port": node_config.get("p2p_port", 8333),
             "platform": node_config.get("platform"),
             "location": node_config.get("location"),
