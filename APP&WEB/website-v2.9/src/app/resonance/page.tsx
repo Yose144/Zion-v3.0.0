@@ -106,7 +106,7 @@ const FREQUENCIES: FrequencyItem[] = [
     roleCs: 'Komunita · „Já živím"',
     roleEn: 'Community · "I nourish"',
     color: '#22C55E',
-    rgb: '7, 137, 48',
+    rgb: '6, 105, 40',
   },
   {
     ray: 'Ruby (Service)',
@@ -172,8 +172,8 @@ const SECTIONS: SectionData[] = [
       'Minimální on-chain registr tónových záměrů. Každý návrh může nést 30sekundový zvukový záznam své podstaty (ne čtení, ale vtělený výraz). Frekvenční Keepers extrahují základní frekvenci a harmonickou koherenci; spektrální hash slouží jako lehká biometrická identita.',
     descEn:
       'Minimal on-chain registry of tonal intentions. Every proposal may carry a 30-second audio recording of its essence (not a reading, but an embodied expression). Frequency Keepers extract fundamental frequency and harmonic coherence; spectral hash serves as lightweight biometric identity.',
-    color: '#078930',
-    rgb: '7,137,48',
+    color: '#066928',
+    rgb: '6,105,40',
   },
 ];
 
@@ -323,7 +323,7 @@ export default function ResonancePage() {
 
       {/* THREE GATES */}
       <section className="relative py-20 border-t border-white/5">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(ellipse_at_50%_0%,rgba(7, 137, 48,0.10),transparent_70%)]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(ellipse_at_50%_0%,rgba(6, 105, 40,0.10),transparent_70%)]" />
         <div className="zion-container relative">
           <FadeIn>
             <h2 className="text-3xl md:text-4xl font-bold text-gradient-soft mb-3">
@@ -358,7 +358,7 @@ export default function ResonancePage() {
                 descEn:
                   'The Council collectively tones 108 Hz for 3 minutes, then the layer frequency for 2 minutes, then 7 minutes of silence. Each member says: "I resonate", "I dissonate", or "I harmonize".',
                 color: '#22C55E',
-                rgb: '7, 137, 48',
+                rgb: '6, 105, 40',
               },
               {
                 gate: 'C',
@@ -369,8 +369,8 @@ export default function ResonancePage() {
                   'Miska vody z místního zdroje stojí v centru kruhu. Každý člen položí ruku na nádobu a promluví jedno slovo. Voda se vrátí zpět do země nebo moře s on-chain GPS a časovým hash-em.',
                 descEn:
                   'A bowl of water from the local source stands in the center of the circle. Each member places a hand on the vessel and speaks one word. The water returns to the earth or sea with an on-chain GPS and timestamp hash.',
-                color: '#078930',
-                rgb: '7,137,48',
+                color: '#066928',
+                rgb: '6,105,40',
               },
             ].map((g, i) => (
               <FadeIn key={g.gate} delay={i * 0.08}>

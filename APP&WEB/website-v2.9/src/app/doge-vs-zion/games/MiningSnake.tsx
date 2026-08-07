@@ -210,7 +210,7 @@ function renderCanvas(s: GameState, canvas: HTMLCanvasElement | null) {
   ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
   // Grid lines (subtle green)
-  ctx.strokeStyle = 'rgba(7, 137, 48,0.08)';
+  ctx.strokeStyle = 'rgba(6, 105, 40,0.08)';
   ctx.lineWidth = 1;
   for (let i = 0; i <= GRID; i++) {
     ctx.beginPath();

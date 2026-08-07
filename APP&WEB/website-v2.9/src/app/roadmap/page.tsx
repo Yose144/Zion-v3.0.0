@@ -442,7 +442,7 @@ export default function RoadmapPage() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           className="zion-rainbow-card p-6 md:p-10"
-          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+          style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-5">
@@ -490,7 +490,7 @@ export default function RoadmapPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.08 }}
           className="zion-rainbow-card p-8"
-          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+          style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{copy.componentStatusSub}</p>
@@ -654,7 +654,7 @@ export default function RoadmapPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.16 }}
           className="zion-rainbow-card p-8"
-          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+          style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{copy.afterLaunch}</p>
@@ -713,7 +713,7 @@ export default function RoadmapPage() {
           transition={{ delay: 0.2 }}
           className="grid gap-6 lg:grid-cols-2"
         >
-          <div className="zion-rainbow-card p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="flex items-center gap-3 mb-5">
               <Lock className="h-6 w-6 text-zion-gold" />
               <div>
@@ -771,7 +771,7 @@ export default function RoadmapPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.24 }}
           className="zion-rainbow-card p-8"
-          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+          style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
         >
           <div className="flex flex-col gap-2 mb-6">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{copy.security}</p>

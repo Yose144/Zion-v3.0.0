@@ -211,7 +211,7 @@ export default function NetworkStatus({ className }: { className?: string }) {
 
       {/* Latency Panel */}
       {status.nodes.some((n) => n.online && (n.rpcLatencyMs != null || n.poolLatencyMs != null)) && (
-        <div className="zion-rainbow-card p-5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+        <div className="zion-rainbow-card p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
           <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-4">
             <Zap className="w-4 h-4 text-zion-gold" />
             {NetworkStatusCopy.nodeLatency[cs ? 'cs' : 'en']}
@@ -278,7 +278,7 @@ function SummaryCard({
   const accentClasses = accentMap[accent];
 
   return (
-    <div className="zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+    <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
       <div className="flex items-center gap-2 mb-2 text-gray-400">
         <Icon className="w-4 h-4" />
         <span className="text-xs uppercase tracking-[0.3em]">{label}</span>
@@ -293,7 +293,7 @@ function NodeCard({ node, cs, locale, regionLabels }: { node: NodeStatus; cs: bo
   return (
     <div
       className="zion-rainbow-sub p-4 transition-all"
-      style={{ '--rc': node.online ? '7, 137, 48' : '248, 113, 113' } as React.CSSProperties}
+      style={{ '--rc': node.online ? '6, 105, 40' : '248, 113, 113' } as React.CSSProperties}
     >
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">

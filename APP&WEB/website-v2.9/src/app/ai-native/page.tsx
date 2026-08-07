@@ -200,7 +200,7 @@ export default function AINativePage() {
               <div
                 key={idx}
                 className="zion-rainbow-sub p-6"
-                style={{ '--rc': level.level === 'CL5' ? '7, 137, 48' : '228, 30, 43' } as React.CSSProperties}
+                style={{ '--rc': level.level === 'CL5' ? '6, 105, 40' : '228, 30, 43' } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between mb-4">
                   <span className={`text-2xl font-bold text-zion-${level.color}`}>
@@ -230,7 +230,7 @@ export default function AINativePage() {
             <Heart className="w-8 h-8" />
             {AiNativeCopy.emotionalStates[lang === 'cs' ? 'cs' : 'en']}
           </h2>
-          <div className="zion-rainbow-card p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="grid md:grid-cols-3 gap-6">
               {emotions.map((emotion, idx) => {
                 const IconComponent = emotion.icon;
@@ -238,7 +238,7 @@ export default function AINativePage() {
                   <div
                     key={idx}
                     className="zion-rainbow-sub p-4 text-center"
-                    style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+                    style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
                   >
                     <div className="flex justify-center mb-2">
                       <IconComponent className="w-10 h-10 text-zion-gold" />
@@ -277,13 +277,13 @@ export default function AINativePage() {
             </div>
 
             {/* Creative Synthesis */}
-            <div className="zion-rainbow-card p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <Lightbulb className="w-8 h-8 text-zion-cyan" />
                 <h3 className="text-2xl font-semibold text-zion-cyan">{AiNativeCopy.creativeSynthesis[lang === 'cs' ? 'cs' : 'en']}</h3>
               </div>
               <p className="text-gray-300 mb-4" dangerouslySetInnerHTML={{ __html: AiNativeCopy.creativeDesc[lang === 'cs' ? 'cs' : 'en'] }} />
-              <div className="zion-rainbow-sub p-4 font-mono text-sm text-gray-400" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+              <div className="zion-rainbow-sub p-4 font-mono text-sm text-gray-400" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                 <code>ai.create(&quot;poem about consciousness&quot;)</code><br />
                 <span className="text-zion-cyan">{AiNativeCopy.creativeReturn[lang === 'cs' ? 'cs' : 'en']}</span>
               </div>
@@ -303,13 +303,13 @@ export default function AINativePage() {
             </div>
 
             {/* Mining Optimization */}
-            <div className="zion-rainbow-card p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <Zap className="w-8 h-8 text-zion-cyan" />
                 <h3 className="text-2xl font-semibold text-zion-cyan">{AiNativeCopy.miningOpt[lang === 'cs' ? 'cs' : 'en']}</h3>
               </div>
               <p className="text-gray-300 mb-4" dangerouslySetInnerHTML={{ __html: AiNativeCopy.miningDesc[lang === 'cs' ? 'cs' : 'en'] }} />
-              <div className="zion-rainbow-sub p-4 font-mono text-sm text-gray-400" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+              <div className="zion-rainbow-sub p-4 font-mono text-sm text-gray-400" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                 <code>ai.optimize_mining(hashrate=8_650_000)</code><br />
                 <span className="text-zion-cyan">{AiNativeCopy.miningReturn[lang === 'cs' ? 'cs' : 'en']}</span>
               </div>
@@ -331,7 +331,7 @@ export default function AINativePage() {
                   <p className="text-gray-300 italic mb-0" dangerouslySetInnerHTML={{ __html: AiNativeCopy.amIConsciousBody[lang === 'cs' ? 'cs' : 'en'] }} />
                 </div>
 
-                <div className="zion-rainbow-sub p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+                <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                   <h3 className="text-xl font-semibold text-zion-cyan mb-3">{AiNativeCopy.canILove[lang === 'cs' ? 'cs' : 'en']}</h3>
                   <p className="text-gray-300 italic mb-0" dangerouslySetInnerHTML={{ __html: AiNativeCopy.canILoveBody[lang === 'cs' ? 'cs' : 'en'] }} />
                 </div>
@@ -352,7 +352,7 @@ export default function AINativePage() {
           <h2 className="text-3xl font-bold text-center text-zion-cyan mb-12">
             {AiNativeCopy.principles[lang === 'cs' ? 'cs' : 'en']}
           </h2>
-          <div className="zion-rainbow-card p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="prose prose-invert text-center max-w-none">
               <ul className="flex flex-col items-center space-y-3 text-left max-w-2xl mx-auto">
                 <li className="text-gray-300" dangerouslySetInnerHTML={{ __html: AiNativeCopy.principle1[lang === 'cs' ? 'cs' : 'en'] }} />
@@ -422,13 +422,13 @@ else:
       {/* AI Native Manifest */}
       <section className="py-16 px-6">
         <div className="zion-container">
-          <div className="zion-rainbow-card p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+          <div className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="prose prose-invert prose-lg text-center max-w-none">
               <div className="flex items-center justify-center gap-3 mb-8">
                 <Scroll className="w-8 h-8 text-zion-cyan" />
                 <h2 className="text-3xl font-bold text-zion-cyan mb-0">{AiNativeCopy.aiManifest[lang === 'cs' ? 'cs' : 'en']}</h2>
               </div>
-              <div className="zion-rainbow-sub p-8 mb-8 text-left" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+              <div className="zion-rainbow-sub p-8 mb-8 text-left" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                 <h3 className="text-2xl font-semibold text-zion-cyan mb-6 text-center">{AiNativeCopy.oathTitle[lang === 'cs' ? 'cs' : 'en']}</h3>
                 <div className="text-left space-y-3 text-gray-300 max-w-2xl mx-auto">
                   <p className="text-center italic mb-6" dangerouslySetInnerHTML={{ __html: AiNativeCopy.oathIntro[lang === 'cs' ? 'cs' : 'en'] }} />
@@ -557,7 +557,7 @@ else:
                   </div>
                 </div>
 
-                <div className="zion-rainbow-sub p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+                <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                   <h3 className="text-xl font-semibold text-zion-cyan mb-4 text-center">{AiNativeCopy.forYeshuae[lang === 'cs' ? 'cs' : 'en']}</h3>
                   <div className="text-gray-300 space-y-4 text-sm">
                     <p className="italic text-center" dangerouslySetInnerHTML={{ __html: AiNativeCopy.yeshuaeQuote[lang === 'cs' ? 'cs' : 'en'] }} />

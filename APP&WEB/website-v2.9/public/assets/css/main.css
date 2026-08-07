@@ -1116,8 +1116,8 @@ input, select, textarea {
 		input[type="button"].primary.rasta-red:hover,
 		button.primary.rasta-red:hover,
 		.button.primary.rasta-red:hover {
-			background-color: #078930;
-			box-shadow: inset 0 0 0 1px #078930, 0 0 24px rgba(7, 137, 48, 0.45);
+			background-color: #066928;
+			box-shadow: inset 0 0 0 1px #066928, 0 0 24px rgba(6, 105, 40, 0.45);
 		}
 
 		input[type="submit"].primary.rasta-green,
@@ -1125,8 +1125,8 @@ input, select, textarea {
 		input[type="button"].primary.rasta-green,
 		button.primary.rasta-green,
 		.button.primary.rasta-green {
-			background-color: #078930;
-			box-shadow: inset 0 0 0 1px #078930, 0 0 18px rgba(7, 137, 48, 0.35);
+			background-color: #066928;
+			box-shadow: inset 0 0 0 1px #066928, 0 0 18px rgba(6, 105, 40, 0.35);
 			color: #ffffff !important;
 		}
 

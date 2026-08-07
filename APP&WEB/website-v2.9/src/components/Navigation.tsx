@@ -40,7 +40,7 @@ export default function Navigation() {
   const navGroups: NavGroup[] = [
     {
       title: tr('nav', 'network_group', lang),
-      color: '7, 137, 48',
+      color: '6, 105, 40',
       items: [
         { href: '/network', label: tr('nav', 'network', lang) },
         { href: '/explorer', label: tr('nav', 'explorer', lang) },
@@ -71,7 +71,7 @@ export default function Navigation() {
     },
     {
       title: tr('nav', 'learn_group', lang),
-      color: '7, 137, 48',
+      color: '6, 105, 40',
       items: [
         { href: '/docs', label: tr('nav', 'docs', lang) },
         { href: '/whitepapers', label: tr('nav', 'whitepapers', lang) },
@@ -93,10 +93,10 @@ export default function Navigation() {
   /* ── HERO icons — top panel, RASTA colored ── */
   /* Rasta: green (emerald) → gold (zion-gold) → red (rose/red) */
   const heroIcons = [
-    { href: '/explorer', icon: Orbit, color: '7, 137, 48', label: tr('nav', 'explorer', lang) },       /* green */
+    { href: '/explorer', icon: Orbit, color: '6, 105, 40', label: tr('nav', 'explorer', lang) },       /* green */
     { href: '/pool', icon: Pickaxe, color: '252, 209, 22', label: tr('nav', 'pool', lang) },               /* gold */
     { href: '/network', icon: SignalHigh, color: '228, 30, 43', label: tr('nav', 'network', lang) },      /* red */
-    { href: '/docs', icon: BookOpen, color: '7, 137, 48', label: tr('nav', 'docs', lang) },             /* green */
+    { href: '/docs', icon: BookOpen, color: '6, 105, 40', label: tr('nav', 'docs', lang) },             /* green */
     { href: '/wallet', icon: Wallet, color: '252, 209, 22', label: tr('nav', 'wallet', lang) },            /* gold */
   ];
 
@@ -189,7 +189,7 @@ export default function Navigation() {
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 group shrink-0">
             <div className={`rounded-lg flex items-center justify-center relative overflow-hidden border border-white/15 group-hover:border-zion-gold/50 transition-all duration-300 bg-transparent shadow-[0_6px_18px_rgba(0,0,0,0.3)] ${scrolled ? 'w-7 h-7 sm:w-8 sm:h-8' : 'w-8 h-8 sm:w-9 sm:h-9'}`}>
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(7,137,48,0.08),transparent_65%)]" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(6,105,40,0.08),transparent_65%)]" />
               <img
                 src="/symbol-200x200.png"
                 alt="ZION TerraNova"
@@ -361,7 +361,7 @@ export default function Navigation() {
               
             />
             {/* Slide-in panel */}
-            <div className="fixed top-0 right-0 bottom-0 w-[min(420px,94vw)] bg-black/95 backdrop-blur-xl border-l-2 border-zion-gold/30 z-50 overflow-y-auto overscroll-contain animate-[slideIn_0.25s_ease-out]" style={{ borderImage: 'linear-gradient(to bottom, rgba(7, 137, 48,0.4), rgba(252, 209, 22,0.5), rgba(228, 30, 43,0.4)) 1' }}>
+            <div className="fixed top-0 right-0 bottom-0 w-[min(420px,94vw)] bg-black/95 backdrop-blur-xl border-l-2 border-zion-gold/30 z-50 overflow-y-auto overscroll-contain animate-[slideIn_0.25s_ease-out]" style={{ borderImage: 'linear-gradient(to bottom, rgba(6, 105, 40,0.4), rgba(252, 209, 22,0.5), rgba(228, 30, 43,0.4)) 1' }}>
               <div className="flex items-center justify-between p-4 border-b border-white/10">
                 <span className="text-sm font-bold text-gradient">{tr('nav', 'menu_title', lang)}</span>
                 <button

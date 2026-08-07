@@ -127,7 +127,7 @@ export default function NodeSetupClient() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="relative zion-rainbow-card backdrop-blur-xl p-8 md:p-12 overflow-hidden"
-          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+          style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
         >
           <div className="absolute inset-0 bg-linear-to-br from-zion-cyan/5 via-transparent to-zion-purple/5 pointer-events-none" />
           <div className="relative">
@@ -167,7 +167,7 @@ export default function NodeSetupClient() {
               <div
                 key={i}
                 className="zion-rainbow-sub p-5"
-                style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+                style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
               >
                 <div className="flex items-center gap-2 mb-2">
                   <req.icon className={`w-4 h-4 ${req.color}`} />
@@ -194,7 +194,7 @@ export default function NodeSetupClient() {
 
           <div className="space-y-6">
             {/* Step 1 */}
-            <div className="zion-rainbow-sub p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <span className="flex items-center justify-center w-7 h-7 rounded-full bg-zion-gold/10 border border-zion-gold/20 text-zion-gold text-xs font-bold">
                   1
@@ -210,7 +210,7 @@ cargo build --release -p zion-node
             </div>
 
             {/* Step 2 — Docker */}
-            <div className="zion-rainbow-sub p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <span className="flex items-center justify-center w-7 h-7 rounded-full bg-zion-cyan/10 border border-zion-cyan/20 text-zion-cyan text-xs font-bold">
                   2
@@ -235,7 +235,7 @@ docker run -d \\
             </div>
 
             {/* Step 3 — Docker Compose */}
-            <div className="zion-rainbow-sub p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <div className="flex items-center gap-3 mb-4">
                 <span className="flex items-center justify-center w-7 h-7 rounded-full bg-zion-purple/10 border border-zion-purple/20 text-zion-purple text-xs font-bold">
                   3
@@ -283,7 +283,7 @@ docker compose -f docker/docker-compose.mainnet.yml logs -f zion-node`}
             ))}
           </div>
 
-          <div className="zion-rainbow-sub p-6 space-y-5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+          <div className="zion-rainbow-sub p-6 space-y-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <p className="text-white/50 text-sm">
               {networkConfigs[activeNetwork].description} — config file:{" "}
               <code className="text-zion-cyan/80 bg-zion-cyan/5 px-2 py-0.5 rounded text-xs">
@@ -336,7 +336,7 @@ bootstrap = [
             Ports & Firewall
           </h2>
 
-          <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+          <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 px-6 py-3 border-b border-white/10 bg-white/[0.02]">
               <span className="text-[11px] text-white/30 uppercase tracking-wider">Port</span>
               <span className="text-[11px] text-white/30 uppercase tracking-wider hidden sm:block">Protocol</span>
@@ -392,7 +392,7 @@ sudo ufw status`}
             CLI Reference
           </h2>
 
-          <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+          <div className="zion-rainbow-sub overflow-hidden" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             {cliCommands.map((c, i) => (
               <div
                 key={i}
@@ -420,7 +420,7 @@ sudo ufw status`}
             Verify Your Node
           </h2>
 
-          <div className="zion-rainbow-sub p-6 space-y-5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+          <div className="zion-rainbow-sub p-6 space-y-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             <p className="text-white/50 text-sm">
               After your node starts, verify it&apos;s syncing correctly:
             </p>
@@ -500,7 +500,7 @@ curl -s http://localhost:8443 \\
               <details
                 key={i}
                 className="zion-rainbow-sub group"
-                style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+                style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
               >
                 <summary className="flex items-center justify-between px-6 py-4 cursor-pointer list-none">
                   <span className="text-sm text-white/80 font-medium">
@@ -522,7 +522,7 @@ curl -s http://localhost:8443 \\
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.45 }}
           className="zion-cta-banner p-8 text-center"
-          style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+          style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
         >
           <h2 className="text-xl font-bold text-gradient mb-3">
             Node Running? Start Mining!

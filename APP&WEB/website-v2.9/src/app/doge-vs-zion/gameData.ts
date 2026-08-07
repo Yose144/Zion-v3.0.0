@@ -163,7 +163,7 @@ export const TOWERS: Record<TowerType, TowerDef> = {
     fireRate: 1.5,
     damageType: 'ice',
     projectileSpeed: 6,
-    color: '#078930',
+    color: '#066928',
     glowColor: '#22d3ee',
     slow: 0.5,
     slowDuration: 2,
@@ -347,7 +347,7 @@ export const ENEMIES: Record<EnemyType, EnemyDef> = {
     speed: 1.8,
     reward: 50,
     damage: 4,
-    color: '#078930',
+    color: '#066928',
     size: 15,
     resistances: { physical: 0.3, fire: 0.3, ice: 0.5 },
   },
@@ -554,7 +554,7 @@ export const CANVAS_PADDING = 20;
 export const DAMAGE_COLORS: Record<DamageType, string> = {
   physical: '#3b82f6',
   fire: '#ef4444',
-  ice: '#078930',
+  ice: '#066928',
   energy: '#10b981',
   pure: '#f59e0b',
 };

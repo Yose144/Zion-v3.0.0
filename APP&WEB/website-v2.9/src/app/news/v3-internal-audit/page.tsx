@@ -54,7 +54,7 @@ export default function V3InternalAuditNewsPage() {
           </div>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
-            <div className="zion-rainbow-sub p-5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <div className="flex items-center gap-2 text-sm font-semibold text-white">
                 <ListChecks className="h-4 w-4 text-zion-cyan" />
                 {NewsV3InternalAuditCopy.closedFindings[cs ? 'cs' : 'en']}
@@ -72,7 +72,7 @@ export default function V3InternalAuditNewsPage() {
                 {NewsV3InternalAuditCopy.operationalHygieneRotateCompro[cs ? 'cs' : 'en']}
               </p>
             </div>
-            <div className="zion-rainbow-sub p-5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="zion-rainbow-sub p-5" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <div className="flex items-center gap-2 text-sm font-semibold text-white">
                 <ShieldCheck className="h-4 w-4 text-zion-cyan" />
                 {NewsV3InternalAuditCopy.activationPlan[cs ? 'cs' : 'en']}

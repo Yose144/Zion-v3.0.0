@@ -21,7 +21,7 @@ function Chevron({ angle, active }: { angle: number; active: boolean }) {
         strokeWidth={active ? 3 : 2}
         strokeLinecap="round"
         strokeLinejoin="round"
-        style={{ filter: active ? 'drop-shadow(0 0 6px rgba(7, 137, 48,0.7))' : 'none' }}
+        style={{ filter: active ? 'drop-shadow(0 0 6px rgba(6, 105, 40,0.7))' : 'none' }}
       />
       {/* inner chevron */}
       <path
@@ -151,13 +151,13 @@ export default function StargateGate() {
         <svg viewBox="-210 -210 420 420" className="h-full w-full">
           <defs>
             <radialGradient id="portalGrad" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="rgba(7,137,48,0.4)" />
+              <stop offset="0%" stopColor="rgba(6,105,40,0.4)" />
               <stop offset="40%" stopColor="rgba(228,30,43,0.25)" />
-              <stop offset="80%" stopColor="rgba(7,137,48,0.08)" />
+              <stop offset="80%" stopColor="rgba(6,105,40,0.08)" />
               <stop offset="100%" stopColor="transparent" />
             </radialGradient>
             <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="rgba(7, 137, 48,0.3)" />
+              <stop offset="0%" stopColor="rgba(6, 105, 40,0.3)" />
               <stop offset="50%" stopColor="rgba(228, 30, 43,0.15)" />
               <stop offset="100%" stopColor="transparent" />
             </radialGradient>
@@ -177,15 +177,15 @@ export default function StargateGate() {
 
           {/* Sri Yantra inspired inner rings (like rotate23-28 in original) */}
           <RotatingRing radius={165} segments={6} speed={3} direction="cw" color="rgba(228, 30, 43,0.2)" opacity={0.3} strokeWidth={1.5} />
-          <RotatingRing radius={160} segments={6} speed={5} direction="ccw" color="rgba(7,137,48,0.15)" opacity={0.25} strokeWidth={1} />
+          <RotatingRing radius={160} segments={6} speed={5} direction="ccw" color="rgba(6,105,40,0.15)" opacity={0.25} strokeWidth={1} />
 
           {/* Main rotating segmented rings (like rotate1-22 in original) */}
-          <RotatingRing radius={155} segments={12} speed={4} direction="cw" color="rgba(7, 137, 48,0.4)" opacity={0.55} strokeWidth={2} glow />
+          <RotatingRing radius={155} segments={12} speed={4} direction="cw" color="rgba(6, 105, 40,0.4)" opacity={0.55} strokeWidth={2} glow />
           <RotatingRing radius={148} segments={18} speed={6} direction="ccw" color="rgba(228, 30, 43,0.3)" opacity={0.45} strokeWidth={1.5} glow />
           <RotatingRing radius={140} segments={24} speed={2.5} direction="cw" color="rgba(245,215,142,0.25)" opacity={0.4} strokeWidth={1} glow />
-          <RotatingRing radius={134} segments={9} speed={8} direction="ccw" color="rgba(7, 137, 48,0.2)" opacity={0.35} strokeWidth={2.5} glow />
+          <RotatingRing radius={134} segments={9} speed={8} direction="ccw" color="rgba(6, 105, 40,0.2)" opacity={0.35} strokeWidth={2.5} glow />
           <RotatingRing radius={128} segments={15} speed={5} direction="cw" color="rgba(228,30,43,0.18)" opacity={0.3} strokeWidth={1} />
-          <RotatingRing radius={122} segments={8} speed={7} direction="ccw" color="rgba(7,137,48,0.15)" opacity={0.25} strokeWidth={1.5} />
+          <RotatingRing radius={122} segments={8} speed={7} direction="ccw" color="rgba(6,105,40,0.15)" opacity={0.25} strokeWidth={1.5} />
 
           {/* Inner event horizon glow */}
           <circle r={115} fill="url(#centerGlow)" opacity={0.5}>
@@ -193,7 +193,7 @@ export default function StargateGate() {
           </circle>
 
           {/* Pulsing rings */}
-          <circle r={105} fill="none" stroke="rgba(7, 137, 48,0.12)" strokeWidth={1} opacity={0.4}>
+          <circle r={105} fill="none" stroke="rgba(6, 105, 40,0.12)" strokeWidth={1} opacity={0.4}>
             <animate attributeName="r" values="105;112;105" dur="3s" repeatCount="indefinite" />
             <animate attributeName="opacity" values="0.12;0.3;0.12" dur="3s" repeatCount="indefinite" />
           </circle>
@@ -202,13 +202,13 @@ export default function StargateGate() {
           </circle>
 
           {/* Event horizon center */}
-          <circle r={80} fill="none" stroke="rgba(7,137,48,0.18)" strokeWidth={1} opacity={0.5}>
+          <circle r={80} fill="none" stroke="rgba(6,105,40,0.18)" strokeWidth={1} opacity={0.5}>
             <animate attributeName="r" values="80;90;80" dur="5s" repeatCount="indefinite" />
           </circle>
-          <circle r={55} fill="rgba(7,137,48,0.06)" opacity={0.4}>
+          <circle r={55} fill="rgba(6,105,40,0.06)" opacity={0.4}>
             <animate attributeName="r" values="55;65;55" dur="3.5s" repeatCount="indefinite" />
           </circle>
-          <circle r={35} fill="rgba(7, 137, 48,0.04)" opacity={0.3}>
+          <circle r={35} fill="rgba(6, 105, 40,0.04)" opacity={0.3}>
             <animate attributeName="r" values="35;42;35" dur="2.5s" repeatCount="indefinite" />
           </circle>
 
@@ -230,7 +230,7 @@ export default function StargateGate() {
 
         {/* Hover overlay glow */}
         <div className={`absolute inset-0 rounded-full transition-opacity duration-500 pointer-events-none ${hovered ? 'opacity-100' : 'opacity-0'}`}>
-          <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_center,rgba(7, 137, 48,0.08),transparent_70%)]" />
+          <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_center,rgba(6, 105, 40,0.08),transparent_70%)]" />
         </div>
       </motion.div>
 
@@ -244,7 +244,7 @@ export default function StargateGate() {
           href="https://oasis.zionterranova.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="group flex items-center gap-3 rounded-2xl border border-zion-cyan/20 bg-gradient-to-br from-zion-cyan/8 via-zion-cyan/4 to-transparent px-6 py-3 backdrop-blur-sm transition-all duration-300 hover:border-zion-cyan/40 hover:shadow-[0_0_36px_rgba(7, 137, 48,0.15)] hover:scale-[1.03]"
+          className="group flex items-center gap-3 rounded-2xl border border-zion-cyan/20 bg-gradient-to-br from-zion-cyan/8 via-zion-cyan/4 to-transparent px-6 py-3 backdrop-blur-sm transition-all duration-300 hover:border-zion-cyan/40 hover:shadow-[0_0_36px_rgba(6, 105, 40,0.15)] hover:scale-[1.03]"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-zion-cyan/25 bg-zion-cyan/12 ring-1 ring-zion-cyan/15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
             <Leaf className="h-5 w-5 text-zion-cyan" />

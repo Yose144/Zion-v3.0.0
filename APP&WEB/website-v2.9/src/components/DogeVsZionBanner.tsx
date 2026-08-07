@@ -99,7 +99,7 @@ export default function DogeVsZionBanner({ cs = true }: DogeVsZionBannerProps) {
         <motion.div
           animate={hover ? { scale: 1.05 } : { scale: 1 }}
           transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
-          className="relative flex h-28 w-28 shrink-0 items-center justify-center rounded-full border-2 border-zion-cyan/30 bg-zion-cyan/10 shadow-[0_12px_40px_rgba(7,137,48,0.25)] overflow-hidden"
+          className="relative flex h-28 w-28 shrink-0 items-center justify-center rounded-full border-2 border-zion-cyan/30 bg-zion-cyan/10 shadow-[0_12px_40px_rgba(6,105,40,0.25)] overflow-hidden"
         >
           <StargateLogo className="w-full h-full" />
           <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full border border-zion-cyan/30 bg-zion-blue/70 px-2 py-0.5 text-[8px] font-bold text-zion-cyan z-20 animate-pulse-glow">

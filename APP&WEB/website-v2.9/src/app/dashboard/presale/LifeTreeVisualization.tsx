@@ -34,7 +34,7 @@ export default function LifeTreeVisualization({
     <>
       <div className="relative mx-auto mt-12 max-w-5xl rounded-[40px] border border-white/10 bg-black/80 p-10 shadow-[0_30px_120px_rgba(8,8,20,0.65)]">
         <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[40px]">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(228, 30, 43,0.25),_transparent_55%),radial-gradient(circle_at_bottom,_rgba(7, 137, 48,0.2),_transparent_60%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(228, 30, 43,0.25),_transparent_55%),radial-gradient(circle_at_bottom,_rgba(6, 105, 40,0.2),_transparent_60%)]" />
           <div
             className="absolute inset-0 opacity-40"
             style={{
@@ -94,7 +94,7 @@ export default function LifeTreeVisualization({
                   </div>
                 </div>
               </div>
-              <div className="tree-node-pin relative mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-white/40 bg-black/70 text-white shadow-[0_0_30px_rgba(7, 137, 48,0.5)]">
+              <div className="tree-node-pin relative mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-white/40 bg-black/70 text-white shadow-[0_0_30px_rgba(6, 105, 40,0.5)]">
                 <span className="text-lg font-semibold">{node.level.slice(0, 1)}</span>
                 <div className="absolute inset-0 -z-10 rounded-full bg-zion-cyan/20" />
               </div>
@@ -151,7 +151,7 @@ export default function LifeTreeVisualization({
         .tree-node-card { animation: pulseGlow 6s ease-in-out infinite; }
         .tree-node-pin { animation: pulseGlow 3s ease-in-out infinite; }
         @keyframes pulseGlow {
-          0%, 100% { box-shadow: 0 0 25px rgba(7, 137, 48,0.25); }
+          0%, 100% { box-shadow: 0 0 25px rgba(6, 105, 40,0.25); }
           50% { box-shadow: 0 0 35px rgba(234,179,8,0.45); }
         }
       `}</style>

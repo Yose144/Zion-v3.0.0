@@ -133,7 +133,7 @@ function StatCard({
   value,
   sub,
   tip,
-  rc = '7, 137, 48',
+  rc = '6, 105, 40',
 }: {
   icon: React.ReactNode;
   colorClass: string;
@@ -405,7 +405,7 @@ export default function SwapPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="zion-rainbow-card p-6 md:p-10"
-          style={{ '--rc': '7, 137, 48' } as CSSProperties}
+          style={{ '--rc': '6, 105, 40' } as CSSProperties}
         >
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-5">
@@ -464,7 +464,7 @@ export default function SwapPage() {
                       {escrowLoading ? (SwapCopy.loading[cs ? 'cs' : 'en']) : (escrowAddress || (SwapCopy.unavailable[cs ? 'cs' : 'en']))}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
+                  <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
                       <Unlock className="h-4 w-4 text-zion-cyan" />
                       {SwapCopy.activeLocks[cs ? 'cs' : 'en']}
@@ -478,7 +478,7 @@ export default function SwapPage() {
                     </div>
                     <span className="font-mono text-white">{totalLocked.toLocaleString()} ZION</span>
                   </div>
-                  <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
+                  <div className="flex items-center justify-between zion-rainbow-sub p-3" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                     <div className="flex items-center gap-2 text-sm text-gray-300">
                       <Activity className={`h-4 w-4 ${escrowOnline ? 'text-zion-cyan' : 'text-zion-purple'}`} />
                       {SwapCopy.relayer[cs ? 'cs' : 'en']}
@@ -515,7 +515,7 @@ export default function SwapPage() {
           {pendingLoading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {[...Array(8)].map((_, i) => (
-                <div key={i} className="zion-rainbow-sub p-4 animate-pulse" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
+                <div key={i} className="zion-rainbow-sub p-4 animate-pulse" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                   <div className="h-8 w-8 bg-white/5 rounded-xl mb-3" />
                   <div className="h-3 w-16 bg-white/5 rounded mb-2" />
                   <div className="h-6 w-20 bg-white/5 rounded" />
@@ -528,7 +528,7 @@ export default function SwapPage() {
                 icon={<Lock className="h-5 w-5" />}
                 colorClass="text-zion-cyan"
                 bgClass="bg-zion-cyan/10"
-                rc="7, 137, 48"
+                rc="6, 105, 40"
                 label={SwapCopy.totalLocks[cs ? 'cs' : 'en']}
                 value={pendingHtlcs.length.toLocaleString()}
                 sub={SwapCopy.allHtlcs[cs ? 'cs' : 'en']}
@@ -548,7 +548,7 @@ export default function SwapPage() {
                 icon={<CheckCircle2 className="h-5 w-5" />}
                 colorClass="text-zion-cyan"
                 bgClass="bg-zion-cyan/10"
-                rc="7, 137, 48"
+                rc="6, 105, 40"
                 label={SwapCopy.claimed[cs ? 'cs' : 'en']}
                 value={claimedCount.toLocaleString()}
                 sub={SwapCopy.successfulSwaps[cs ? 'cs' : 'en']}
@@ -558,7 +558,7 @@ export default function SwapPage() {
                 icon={<Activity className="h-5 w-5" />}
                 colorClass="text-zion-cyan"
                 bgClass="bg-zion-cyan/10"
-                rc="7, 137, 48"
+                rc="6, 105, 40"
                 label={SwapCopy.active[cs ? 'cs' : 'en']}
                 value={activeCount.toLocaleString()}
                 sub={SwapCopy.pending[cs ? 'cs' : 'en']}
@@ -588,7 +588,7 @@ export default function SwapPage() {
                 icon={<Shield className="h-5 w-5" />}
                 colorClass="text-zion-cyan"
                 bgClass="bg-zion-cyan/10"
-                rc="7, 137, 48"
+                rc="6, 105, 40"
                 label={SwapCopy.hashAlgorithm[cs ? 'cs' : 'en']}
                 value="SHA-256"
                 sub={SwapCopy.security[cs ? 'cs' : 'en']}
@@ -616,7 +616,7 @@ export default function SwapPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.08 }}
           className="zion-rainbow-card p-4"
-          style={{ '--rc': '7, 137, 48' } as CSSProperties}
+          style={{ '--rc': '6, 105, 40' } as CSSProperties}
         >
           <div className="flex flex-wrap gap-2">
             {SECTIONS.map((s) => {
@@ -631,7 +631,7 @@ export default function SwapPage() {
                       ? 'zion-rainbow-sub'
                       : 'border border-white/10 bg-black/30 text-gray-300 hover:border-white/25 hover:text-white'
                   }`}
-                  style={isActive ? ({ '--rc': '7, 137, 48' } as CSSProperties) : undefined}
+                  style={isActive ? ({ '--rc': '6, 105, 40' } as CSSProperties) : undefined}
                 >
                   <Icon className={`h-3.5 w-3.5 ${isActive ? 'text-zion-cyan' : 'text-gray-400'}`} />
                   {cs ? s.labelCs : s.labelEn}
@@ -653,10 +653,10 @@ export default function SwapPage() {
               exit={{ opacity: 0, y: -16 }}
               transition={{ duration: 0.2 }}
               className="zion-rainbow-card p-6 md:p-8 space-y-6"
-              style={{ '--rc': '7, 137, 48' } as CSSProperties}
+              style={{ '--rc': '6, 105, 40' } as CSSProperties}
             >
               <div className="flex items-center gap-3">
-                <div className="zion-rainbow-sub p-3 text-zion-cyan" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
+                <div className="zion-rainbow-sub p-3 text-zion-cyan" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                   <Zap className="h-6 w-6" />
                 </div>
                 <div>
@@ -726,7 +726,7 @@ export default function SwapPage() {
 
                 <div className="space-y-4">
                   {/* Preimage Generator */}
-                  <div className="zion-rainbow-sub p-4 space-y-3" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
+                  <div className="zion-rainbow-sub p-4 space-y-3" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-gray-300">
                         {SwapCopy.k1GenerateHashKeys[cs ? 'cs' : 'en']}
@@ -768,7 +768,7 @@ export default function SwapPage() {
 
                   {/* Memo Builder */}
                   {generatedHash && initRecipient && (
-                    <div className="zion-rainbow-sub p-4 space-y-2 text-xs" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
+                    <div className="zion-rainbow-sub p-4 space-y-2 text-xs" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                       <div className="flex items-center gap-1.5 text-zion-cyan font-semibold mb-1">
                         <Info className="h-4 w-4" />
                         {SwapCopy.k2SendTransactionOnZionL1[cs ? 'cs' : 'en']}
@@ -896,7 +896,7 @@ export default function SwapPage() {
                     className={`p-4 rounded-xl text-xs flex gap-2 max-w-3xl zion-rainbow-sub ${
                       actionMessage.success ? 'text-zion-cyan' : 'text-zion-purple'
                     }`}
-                    style={{ '--rc': actionMessage.success ? '7, 137, 48' : '228, 30, 43' } as CSSProperties}
+                    style={{ '--rc': actionMessage.success ? '6, 105, 40' : '228, 30, 43' } as CSSProperties}
                   >
                     {actionMessage.success ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <Info className="h-4 w-4 shrink-0" />}
                     <span className="break-all">{actionMessage.text}</span>
@@ -916,7 +916,7 @@ export default function SwapPage() {
               className="space-y-6"
             >
               {/* Query panel */}
-              <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
+              <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                 <h3 className="text-base font-bold flex items-center gap-2">
                   <Search className="h-4 w-4 text-zion-cyan" />
                   {SwapCopy.trackHtlcLock[cs ? 'cs' : 'en']}
@@ -983,7 +983,7 @@ export default function SwapPage() {
               </div>
 
               {/* Active pending locks table */}
-              <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
+              <div className="zion-rainbow-card p-6 md:p-8 space-y-4" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-bold flex items-center gap-2">
@@ -1119,10 +1119,10 @@ export default function SwapPage() {
             <a href="/bridge" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '228, 30, 43' } as CSSProperties}>
               <ArrowLeftRight className="h-4 w-4 text-zion-cyan" /> {SwapCopy.bridge[cs ? 'cs' : 'en']}
             </a>
-            <a href="/defi" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
+            <a href="/defi" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
               <TrendingUp className="h-4 w-4 text-zion-cyan" /> {SwapCopy.defiHub[cs ? 'cs' : 'en']}
             </a>
-            <a href="/docs" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
+            <a href="/docs" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
               <ExternalLink className="h-4 w-4 text-zion-cyan" /> {SwapCopy.documentation[cs ? 'cs' : 'en']}
             </a>
           </div>

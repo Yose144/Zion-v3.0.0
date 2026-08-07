@@ -16,7 +16,7 @@ const config: Config = {
         /* Rasta palette — direct hex tokens */
         'rasta-red': '#e41e2b',
         'rasta-gold': '#fcd116',
-        'rasta-green': '#078930',
+        'rasta-green': '#066928',
         'rasta-dark': '#1a1a1a',
         'rasta-black': '#0d0d0d',
         'quantum-blue': '#00d4ff',

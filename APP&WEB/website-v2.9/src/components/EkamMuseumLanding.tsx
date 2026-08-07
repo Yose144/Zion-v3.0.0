@@ -609,7 +609,7 @@ export default function EkamMuseumLanding() {
           <Link
             href="/#tree-of-life"
             className="zion-button-primary text-sm"
-            style={{ '--rc': '7, 137, 48' } as CSSProperties}
+            style={{ '--rc': '6, 105, 40' } as CSSProperties}
           >
             {tr('ekamPage', 'cta_tree', lang)}
           </Link>

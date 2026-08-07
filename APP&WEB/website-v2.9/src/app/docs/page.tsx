@@ -543,7 +543,7 @@ export default function DocsPage() {
         <div className="zion-container py-20 relative">
           <div
             className="zion-rainbow-card max-w-4xl mx-auto p-8 md:p-10 text-center"
-            style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+            style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
           >
             <div className="zion-kicker mx-auto mb-6 w-fit border-zion-cyan/30 bg-zion-cyan/10 text-cyan-200">
               <BookOpen className="w-4 h-4 text-zion-cyan" />
@@ -557,7 +557,7 @@ export default function DocsPage() {
             </p>
             <div
               className="zion-rainbow-sub mx-auto mb-8 max-w-3xl px-5 py-4 text-left text-sm text-gray-300"
-              style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+              style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
             >
               {tx(docsPageCopy.overviewNotice, currentLang)}
             </div>
@@ -624,7 +624,7 @@ export default function DocsPage() {
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="w-full flex items-center justify-between px-4 py-3 zion-rainbow-sub text-white transition-colors"
-            style={{ '--rc': '7, 137, 48' } as React.CSSProperties}
+            style={{ '--rc': '6, 105, 40' } as React.CSSProperties}
           >
             <div className="flex items-center gap-2 min-w-0">
               <GitBranch className="w-5 h-5 text-zion-cyan shrink-0" />
@@ -635,7 +635,7 @@ export default function DocsPage() {
 
           {/* Mobile Navigation Dropdown */}
           {mobileMenuOpen && (
-            <div className="mt-4 zion-rainbow-card p-4 space-y-3 max-h-[70vh] overflow-y-auto" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="mt-4 zion-rainbow-card p-4 space-y-3 max-h-[70vh] overflow-y-auto" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               {/* Resources / History tabs */}
               <div className="flex border-b border-white/10 mb-2">
                 <button
@@ -645,7 +645,7 @@ export default function DocsPage() {
                       ? 'zion-rainbow-sub text-zion-cyan'
                       : 'text-gray-500 hover:text-gray-300'
                   }`}
-                  style={sidebarTab === 'resources' ? { '--rc': '7, 137, 48' } as React.CSSProperties : undefined}
+                  style={sidebarTab === 'resources' ? { '--rc': '6, 105, 40' } as React.CSSProperties : undefined}
                 >
                   <LayoutList className="w-3.5 h-3.5" />
                   {tr('docs', 'resources_tab', lang)}
@@ -679,7 +679,7 @@ export default function DocsPage() {
                               ? 'zion-rainbow-sub text-white'
                               : 'rounded-lg text-gray-400 hover:text-white hover:bg-white/5'
                           }`}
-                          style={hasActiveDoc ? { '--rc': '7, 137, 48' } as React.CSSProperties : undefined}
+                          style={hasActiveDoc ? { '--rc': '6, 105, 40' } as React.CSSProperties : undefined}
                         >
                           <div className="flex items-center gap-2">
                             <Icon className={`w-4 h-4 ${section.accentText}`} />
@@ -760,7 +760,7 @@ export default function DocsPage() {
                                         ? 'zion-rainbow-sub text-zion-cyan'
                                         : 'rounded-lg text-gray-400 hover:text-white hover:bg-white/5'
                                     }`}
-                                    style={isActiveCat ? { '--rc': '7, 137, 48' } as React.CSSProperties : undefined}
+                                    style={isActiveCat ? { '--rc': '6, 105, 40' } as React.CSSProperties : undefined}
                                   >
                                     <div className="flex items-center gap-2">
                                       <Icon className="w-4 h-4" />
@@ -803,7 +803,7 @@ export default function DocsPage() {
         <div className="flex gap-8">
           {/* ═══ Sidebar — Version Tree ═══ */}
           <aside className="hidden lg:block w-72 shrink-0">
-            <div className="sticky top-24 zion-rainbow-card overflow-hidden" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div className="sticky top-24 zion-rainbow-card overflow-hidden" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               {/* Sidebar Tab Switcher */}
               <div className="flex border-b border-white/10">
                 <button
@@ -813,7 +813,7 @@ export default function DocsPage() {
                       ? 'zion-rainbow-sub text-zion-cyan'
                       : 'text-gray-500 hover:text-gray-300'
                   }`}
-                  style={sidebarTab === 'resources' ? { '--rc': '7, 137, 48' } as React.CSSProperties : undefined}
+                  style={sidebarTab === 'resources' ? { '--rc': '6, 105, 40' } as React.CSSProperties : undefined}
                 >
                   <LayoutList className="w-3.5 h-3.5" />
                   {tr('docs', 'resources_tab', lang)}
@@ -850,7 +850,7 @@ export default function DocsPage() {
                                 ? 'zion-rainbow-sub text-white'
                                 : 'rounded-lg text-gray-400 hover:text-white hover:bg-white/5'
                             }`}
-                            style={hasActiveDoc ? { '--rc': '7, 137, 48' } as React.CSSProperties : undefined}
+                            style={hasActiveDoc ? { '--rc': '6, 105, 40' } as React.CSSProperties : undefined}
                           >
                             <div className="flex items-center gap-2">
                               <Icon className={`w-4 h-4 ${section.accentText}`} />
@@ -935,7 +935,7 @@ export default function DocsPage() {
                                       ? 'zion-rainbow-sub text-zion-cyan'
                                       : 'rounded-lg text-gray-400 hover:text-white hover:bg-white/5'
                                   }`}
-                                  style={isActiveCat ? { '--rc': '7, 137, 48' } as React.CSSProperties : undefined}
+                                  style={isActiveCat ? { '--rc': '6, 105, 40' } as React.CSSProperties : undefined}
                                 >
                                   <div className="flex items-center gap-2">
                                     <Icon className="w-4 h-4" />

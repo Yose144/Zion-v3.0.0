@@ -42,7 +42,7 @@ export default async function Image() {
             width: '600px',
             height: '600px',
             borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(7,137,48,0.2) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(6,105,40,0.2) 0%, transparent 70%)',
           }}
         />
         <div
@@ -83,7 +83,7 @@ export default async function Image() {
           style={{
             fontSize: '80px',
             fontWeight: 800,
-            background: 'linear-gradient(135deg, #fbbf24, #e41e2b, #078930)',
+            background: 'linear-gradient(135deg, #fbbf24, #e41e2b, #066928)',
             backgroundClip: 'text',
             color: 'transparent',
             letterSpacing: '-0.02em',

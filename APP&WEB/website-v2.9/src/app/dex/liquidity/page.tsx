@@ -240,7 +240,7 @@ export default function LiquidityPage() {
                   </div>
                 </div>
 
-                <div className="zion-rainbow-sub p-3 text-xs text-zinc-500" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
+                <div className="zion-rainbow-sub p-3 text-xs text-zinc-500" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                   💡 Full range (-887220 to 887220) provides liquidity across all prices.
                   Narrow ranges concentrate liquidity for higher returns but more risk.
                 </div>
@@ -249,7 +249,7 @@ export default function LiquidityPage() {
                   <div
                     className="zion-rainbow-sub p-3 text-sm"
                     style={{
-                      '--rc': result.startsWith('Error') ? '228, 30, 43' : '7, 137, 48',
+                      '--rc': result.startsWith('Error') ? '228, 30, 43' : '6, 105, 40',
                     } as CSSProperties}
                   >
                     <span className={result.startsWith('Error') ? 'text-zion-purple' : 'text-zion-cyan'}>{result}</span>

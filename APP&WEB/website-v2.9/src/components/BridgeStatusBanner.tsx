@@ -88,7 +88,7 @@ export default function BridgeStatusBanner() {
       >
         <Link
           href="/bridge"
-          className="group relative block overflow-hidden rounded-3xl border border-zion-cyan/20 bg-gradient-to-r from-zion-cyan/8 via-zion-cyan/4 to-transparent p-5 md:p-6 transition-all hover:border-zion-cyan/40 hover:shadow-[0_18px_60px_rgba(7, 137, 48,0.15)]"
+          className="group relative block overflow-hidden rounded-3xl border border-zion-cyan/20 bg-gradient-to-r from-zion-cyan/8 via-zion-cyan/4 to-transparent p-5 md:p-6 transition-all hover:border-zion-cyan/40 hover:shadow-[0_18px_60px_rgba(6, 105, 40,0.15)]"
         >
           {/* Glow accent */}
           <div className="absolute -top-px left-0 right-0 h-px bg-gradient-to-r from-transparent via-zion-cyan/40 to-transparent" />

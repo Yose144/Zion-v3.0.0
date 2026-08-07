@@ -570,7 +570,7 @@ export default function BridgeTrackerClient() {
           </div>
 
           {/* Transaction table */}
-          <div className="zion-rainbow-card rounded-2xl overflow-hidden" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+          <div className="zion-rainbow-card rounded-2xl overflow-hidden" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
             {txsLoading ? (
               <div className="flex items-center justify-center py-16">
                 <Loader2 className="h-6 w-6 text-zion-cyan animate-spin" />
@@ -764,7 +764,7 @@ export default function BridgeTrackerClient() {
             {ExplorerBridgeBridgeTrackerClientCopy.bridgeBetweenZionL1AndBaseMain[cs ? 'cs' : 'en']}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Link href="/bridge" className="zion-button-primary group text-sm" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <Link href="/bridge" className="zion-button-primary group text-sm" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <Lock className="h-4 w-4" /> {ExplorerBridgeBridgeTrackerClientCopy.bridgeUi[cs ? 'cs' : 'en']}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>

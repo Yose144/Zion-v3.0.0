@@ -264,7 +264,7 @@ function MonitoringTab({ metrics }: { metrics: V3Metrics | null }) {
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Stat label="Block Height" value={m?.chain?.height?.toLocaleString() ?? '—'} icon={Server} color="#fcd116" />
-        <Stat label="Peers" value={m?.chain?.peers ?? '—'} icon={Globe} color="#078930" />
+        <Stat label="Peers" value={m?.chain?.peers ?? '—'} icon={Globe} color="#066928" />
         <Stat label="Pool Sessions" value={m?.pool?.sessions ?? '—'} icon={Layers} color="#e41e2b" />
         <Stat label="Pool Hashrate" value={fmtHashrate(m?.pool?.hashrate_hps)} icon={Pickaxe} color="#22C55E" />
       </div>
@@ -769,7 +769,7 @@ export default function GuardianDashboard() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t-2 border-t-transparent mt-auto" style={{ borderImage: 'linear-gradient(90deg, #e41e2b, #fcd116, #078930) 1' }}>
+      <footer className="border-t-2 border-t-transparent mt-auto" style={{ borderImage: 'linear-gradient(90deg, #e41e2b, #fcd116, #066928) 1' }}>
         <div className="bg-black/60 backdrop-blur-sm">
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between text-[11px] text-zion-gold/70">
             <span className="text-zion-cyan">Guardian access</span>

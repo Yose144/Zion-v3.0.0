@@ -27,7 +27,7 @@ export default function SystemMetricsPage() {
           <p className="mt-2 text-sm text-gray-300">CPU/RAM · RPC latency · API health · uptime</p>
         </div>
 
-        <div className="zion-rainbow-card p-3" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+        <div className="zion-rainbow-card p-3" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
           <iframe
             src={IFRAME_SRC}
             title="Full System Dashboard"

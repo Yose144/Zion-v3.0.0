@@ -7,10 +7,10 @@ import { useObservatory, type ObservatoryMode } from '@/contexts/ObservatoryCont
 
 const backgroundConfig: Record<ObservatoryMode, { icon: typeof Sparkles; label: string; description: string; color: string }> = {
   'maintenance': { icon: Sparkles, label: 'Maintenance Starfield', description: 'Gold starfield — clean and fast', color: '252, 209, 22' },
-  'planet-orbit': { icon: Globe, label: 'Turquoise Core', description: 'Default turquoise atmosphere', color: '7, 137, 48' },
+  'planet-orbit': { icon: Globe, label: 'Turquoise Core', description: 'Default turquoise atmosphere', color: '6, 105, 40' },
   'galaxy-core': { icon: Sparkles, label: 'Galaxy Core', description: 'Contact approach — inward starflow', color: '252, 209, 22' },
   'desktop-agent': { icon: Radio, label: 'Desktop Agent', description: 'Purple starfield — desktop agent match', color: '228, 30, 43' },
-  'warp-speed': { icon: Orbit, label: 'Warp', description: 'Warp tunnel effect', color: '7, 137, 48' },
+  'warp-speed': { icon: Orbit, label: 'Warp', description: 'Warp tunnel effect', color: '6, 105, 40' },
 };
 
 export default function BackgroundToggle() {
@@ -19,7 +19,7 @@ export default function BackgroundToggle() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const CurrentIcon = backgroundConfig[mode]?.icon || Sparkles;
-  const currentColor = backgroundConfig[mode]?.color || '7, 137, 48';
+  const currentColor = backgroundConfig[mode]?.color || '6, 105, 40';
   const currentLabel = backgroundConfig[mode]?.label || mode;
 
   /* Close on click outside */

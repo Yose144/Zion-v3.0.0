@@ -25,7 +25,7 @@ export default function AdvancedPoolPage() {
           <p className="mt-2 text-sm text-gray-300">PromQL explorer · custom queries · live metrics</p>
         </div>
 
-        <div className="zion-rainbow-card p-3" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+        <div className="zion-rainbow-card p-3" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
           <iframe
             src={IFRAME_SRC}
             title="Prometheus Graph"

@@ -134,7 +134,7 @@ export default function Hero() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.5 + i * 0.1 }}
                   className="zion-panel-soft zion-panel-hover group p-3 cursor-default min-w-0"
-                  style={{ borderTop: '2px solid transparent', borderImage: `linear-gradient(90deg, ${['#e41e2b', '#fcd116', '#078930'][i]}, transparent) 1` } as CSSProperties}
+                  style={{ borderTop: '2px solid transparent', borderImage: `linear-gradient(90deg, ${['#e41e2b', '#fcd116', '#066928'][i]}, transparent) 1` } as CSSProperties}
                 >
                   <metric.icon className="w-4 h-4 text-zion-gold mb-1.5" />
                   <div className="text-base sm:text-lg font-bold text-white truncate">{metric.value}</div>

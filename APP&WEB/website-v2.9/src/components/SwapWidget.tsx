@@ -200,7 +200,7 @@ export default function SwapWidget() {
   const inputBal = direction === 'eth-to-wzion' ? ethBalance : wzionBalance;
 
   return (
-    <div className="zion-rainbow-card p-6 space-y-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+    <div className="zion-rainbow-card p-6 space-y-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
       <h3 className="text-lg font-semibold text-white">
         {SwapWidgetCopy.swap[cs ? 'cs' : 'en']}
       </h3>

@@ -30,7 +30,7 @@ export default function DAOStats({ stats }: DAOStatsProps) {
       value: stats.governance.total_proposals.toString(),
       icon: Gavel,
       color: 'text-zion-cyan',
-      rc: '7, 137, 48',
+      rc: '6, 105, 40',
     },
     {
       label: 'Active Voters',
@@ -44,7 +44,7 @@ export default function DAOStats({ stats }: DAOStatsProps) {
       value: stats.humanitarian.total_proposals.toString(),
       icon: TrendingUp,
       color: 'text-zion-cyan',
-      rc: '7, 137, 48',
+      rc: '6, 105, 40',
     },
   ];
 

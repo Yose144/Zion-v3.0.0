@@ -771,7 +771,7 @@ export function StarMiner({ onBack }: { onBack: () => void }) {
               />
               <motion.div
                 className="absolute inset-0 rounded-full"
-                style={{ boxShadow: '0 0 30px 10px rgba(7, 137, 48,0.35)' }}
+                style={{ boxShadow: '0 0 30px 10px rgba(6, 105, 40,0.35)' }}
                 animate={{ scale: [1.1, 1, 1.1], opacity: [0.4, 0.7, 0.4] }}
                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
               />

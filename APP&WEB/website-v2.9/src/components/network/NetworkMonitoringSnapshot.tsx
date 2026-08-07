@@ -210,7 +210,7 @@ function MetricPanel({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="zion-rainbow-sub p-6" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+    <div className="zion-rainbow-sub p-6" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
       <div className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-black/40 ${accent}`}>
         {icon}
       </div>
@@ -237,7 +237,7 @@ export default function NetworkMonitoringSnapshot() {
   usePolling(refreshMonitoring, 30_000);
 
   return (
-    <section className="zion-rainbow-card p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+    <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-8">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkMonitoringSnapshotCopy.observability[cs ? 'cs' : 'en']}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -297,7 +297,7 @@ export default function NetworkMonitoringSnapshot() {
           accent="text-zion-purple"
           icon={<HardDrive className="h-5 w-5" />}
         />
-        <div className="zion-rainbow-sub p-6 flex flex-col justify-between" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+        <div className="zion-rainbow-sub p-6 flex flex-col justify-between" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-gray-500 mb-2">{NetworkMonitoringSnapshotCopy.deepDrilldown[cs ? 'cs' : 'en']}</p>
             <p className="text-sm text-gray-300">{NetworkMonitoringSnapshotCopy.forSparklinesRawPrometheusBack[cs ? 'cs' : 'en']}</p>

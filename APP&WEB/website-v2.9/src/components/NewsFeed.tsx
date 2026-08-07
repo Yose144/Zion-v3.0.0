@@ -521,7 +521,7 @@ export default function NewsFeed() {
         {/* Articles grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {visibleArticles.map((article, i) => {
-            const rastaAccents = ['228, 30, 43', '252, 209, 22', '7, 137, 48'];
+            const rastaAccents = ['228, 30, 43', '252, 209, 22', '6, 105, 40'];
             const rc = rastaAccents[i % rastaAccents.length];
             return (
               <motion.div

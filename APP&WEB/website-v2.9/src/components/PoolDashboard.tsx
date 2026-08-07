@@ -1020,7 +1020,7 @@ export default function PoolDashboard() {
                   </div>
                 </div>
 
-                <div className="zion-rainbow-sub p-4 text-sm text-zion-cyan" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+                <div className="zion-rainbow-sub p-4 text-sm text-zion-cyan" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                   <div className="flex items-center justify-between gap-3">
                     <span>{PoolDashboardCopy.telemetryStatus[cs ? 'cs' : 'en']}</span>
                     <span className="font-mono text-xs text-white">
@@ -1602,7 +1602,7 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
                   </div>
                 )}
                 {miningMode === 'gpu' && (
-                  <div className="zion-rainbow-sub p-3 text-xs text-zion-cyan/90 flex items-start gap-2" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+                  <div className="zion-rainbow-sub p-3 text-xs text-zion-cyan/90 flex items-start gap-2" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
                     <Zap className="h-3.5 w-3.5 mt-0.5" />
                     <span>{PoolDashboardCopy.gpuZionGpuBackendOpenclOrCudaM[cs ? 'cs' : 'en']}</span>
                   </div>
@@ -1820,7 +1820,7 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`}
             {PoolDashboardCopy.k89Miner5Humanitarian5Issobella[cs ? 'cs' : 'en']}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <a href="#start-mining" className="zion-button-primary group text-sm" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <a href="#start-mining" className="zion-button-primary group text-sm" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
               <Zap className="h-4 w-4" /> {PoolDashboardCopy.startMining[cs ? 'cs' : 'en']}
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </a>

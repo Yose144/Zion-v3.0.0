@@ -374,7 +374,7 @@ export default function WebTerminal() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="relative mx-auto max-w-6xl overflow-hidden rounded-[28px] border border-zion-cyan/20 bg-gradient-to-br from-black/85 via-[#081019] to-zion-purple/10 shadow-[0_24px_80px_rgba(7,137,48,0.12)]"
+          className="relative mx-auto max-w-6xl overflow-hidden rounded-[28px] border border-zion-cyan/20 bg-gradient-to-br from-black/85 via-[#081019] to-zion-purple/10 shadow-[0_24px_80px_rgba(6,105,40,0.12)]"
         >
           <div className="absolute -left-10 -top-10 h-32 w-32 rounded-full bg-zion-cyan/10 blur-3xl" />
           <button
@@ -415,7 +415,7 @@ export default function WebTerminal() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative mx-auto max-w-6xl overflow-hidden rounded-[28px] border border-zion-cyan/30 bg-black/92 shadow-[0_24px_80px_rgba(7,137,48,0.14)]"
+        className="relative mx-auto max-w-6xl overflow-hidden rounded-[28px] border border-zion-cyan/30 bg-black/92 shadow-[0_24px_80px_rgba(6,105,40,0.14)]"
       >
         {/* Title bar */}
         <div className="flex items-center justify-between border-b border-white/10 bg-gradient-to-r from-zion-purple/10 to-zion-cyan/10 px-4 py-2.5">

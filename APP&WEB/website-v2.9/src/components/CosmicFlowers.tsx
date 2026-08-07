@@ -92,8 +92,8 @@ export default function CosmicFlowers({ className = '' }: { className?: string }
             <stop offset="100%" stopColor="rgba(228,30,43,0)" />
           </radialGradient>
           <radialGradient id="glowB" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="rgba(7,137,48,0.6)" />
-            <stop offset="100%" stopColor="rgba(7,137,48,0)" />
+            <stop offset="0%" stopColor="rgba(6,105,40,0.6)" />
+            <stop offset="100%" stopColor="rgba(6,105,40,0)" />
           </radialGradient>
           <radialGradient id="glowC" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="rgba(252,209,22,0.55)" />
@@ -131,7 +131,7 @@ export default function CosmicFlowers({ className = '' }: { className?: string }
           size={0.82}
           initialAngle={0}
           colors={[
-            'rgba(7,137,48,0.55)',
+            'rgba(6,105,40,0.55)',
             'rgba(34,211,238,0.45)',
             'rgba(0,230,255,0.40)',
           ]}
@@ -152,7 +152,7 @@ export default function CosmicFlowers({ className = '' }: { className?: string }
         />
 
         <circle cx={760} cy={840} r={36} fill="rgba(252,209,22,0.08)" />
-        <circle cx={60} cy={600} r={24} fill="rgba(7,137,48,0.08)" />
+        <circle cx={60} cy={600} r={24} fill="rgba(6,105,40,0.08)" />
         <circle cx={720} cy={60} r={28} fill="rgba(252,209,22,0.1)" />
       </svg>
     </div>

@@ -28,7 +28,7 @@ const themes: Record<ThemeName, Theme> = {
     colors: {
       primary: '#fcd116', // Gold
       secondary: '#e41e2b', // Purple
-      accent: '#078930', // Cyan
+      accent: '#066928', // Cyan
       background: '#0a0118',
       text: '#e0e0e0',
     },

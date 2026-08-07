@@ -179,7 +179,7 @@ export default function MultichainPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             className="zion-rainbow-card p-6 sm:p-8 md:p-10"
-            style={{ '--rc': '7, 137, 48' } as CSSProperties}
+            style={{ '--rc': '6, 105, 40' } as CSSProperties}
           >
             <div className="flex flex-col gap-6">
               <div className="zion-kicker border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan">
@@ -265,7 +265,7 @@ export default function MultichainPage() {
           )}
 
           {/* Bridge widget — link to /defi for full widget */}
-          <div className="zion-rainbow-card p-5 sm:p-6" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
+          <div className="zion-rainbow-card p-5 sm:p-6" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-white">{cs ? 'Bridge operace' : 'Bridge operations'}</h3>
@@ -281,7 +281,7 @@ export default function MultichainPage() {
           </div>
 
           {/* Contracts */}
-          <div className="zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
+          <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
             <p className="text-sm text-gray-300">
               <span className="text-zion-cyan font-semibold">{cs ? 'Kontrakty:' : 'Contracts:'}</span>{' '}
               {Object.entries(BRIDGE_CONTRACTS).map(([chain, addr]) => (
@@ -330,7 +330,7 @@ export default function MultichainPage() {
 
           {/* WARP status + cross-chain swap link */}
           <div className="grid gap-4 lg:grid-cols-2">
-            <div className="zion-rainbow-card p-5" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
+            <div className="zion-rainbow-card p-5" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
               <h3 className="text-lg font-semibold text-white mb-3">
                 {cs ? 'Cross-chain swap (LiFi)' : 'Cross-chain swap (LiFi)'}
               </h3>
@@ -342,7 +342,7 @@ export default function MultichainPage() {
                 {cs ? 'Otevřít LiFi widget' : 'Open LiFi widget'}
               </Link>
             </div>
-            <div className="zion-rainbow-card p-5" style={{ '--rc': '7, 137, 48' } as CSSProperties}>
+            <div className="zion-rainbow-card p-5" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
               <h3 className="text-lg font-semibold text-white mb-3">
                 {cs ? 'WARP Transfer Status' : 'WARP Transfer Status'}
               </h3>

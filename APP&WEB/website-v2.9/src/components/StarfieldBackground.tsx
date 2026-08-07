@@ -28,7 +28,7 @@ interface StarfieldBackgroundProps {
 const DEFAULT_COLORS: RGBColor[] = [
   [252, 209, 22],  // rasta gold
   [228, 30, 43],   // rasta red
-  [7, 137, 48],    // rasta green
+  [6, 105, 40],    // rasta green
 ];
 const DEFAULT_GRADIENT = 'radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%)';
 

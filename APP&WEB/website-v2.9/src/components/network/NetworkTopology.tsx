@@ -507,7 +507,7 @@ export default function NetworkTopology() {
   /* ── Loading ── */
   if (!status && !error) {
     return (
-      <section className="zion-rainbow-card p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+      <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
         <div className="flex flex-col gap-2 mb-6">
           <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkTopologyCopy.topology[cs ? 'cs' : 'en']}</p>
           <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -525,7 +525,7 @@ export default function NetworkTopology() {
   /* ── No peers / error ── */
   if (error || (status && status.summary.online === 0)) {
     return (
-      <section className="zion-rainbow-card p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+      <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
         <div className="flex flex-col gap-2 mb-6">
           <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkTopologyCopy.topology[cs ? 'cs' : 'en']}</p>
           <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -548,7 +548,7 @@ export default function NetworkTopology() {
   }
 
   return (
-    <section className="zion-rainbow-card p-8" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+    <section className="zion-rainbow-card p-8" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
       <div className="flex flex-col gap-2 mb-6">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{NetworkTopologyCopy.topology[cs ? 'cs' : 'en']}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
@@ -572,7 +572,7 @@ export default function NetworkTopology() {
         )}
       </div>
 
-      <div className="zion-rainbow-sub p-4" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+      <div className="zion-rainbow-sub p-4" style={{ '--rc': '6, 105, 40' } as React.CSSProperties}>
         <div className="relative">
           {/* Zoom controls */}
           <div className="absolute top-2 right-2 z-10 flex flex-col gap-1">
