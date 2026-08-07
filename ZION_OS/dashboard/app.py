@@ -2517,7 +2517,7 @@ def detect_nodes() -> dict:
             rpc_info = rpc_call(node_config["host"], node_config["rpc_port"], "getChainInfo", {}, timeout=2.0)
             if rpc_info and not rpc_info.get("_rpc_error"):
                 node_status["running"] = True
-                node_status["chain_height"] = rpc_info.get("chain_height")
+                node_status["chain_height"] = rpc_info.get("native_chain_height") or rpc_info.get("chain_height")
                 node_status["tip_hash"] = rpc_info.get("tip_hash")
                 node_status["known_peers"] = rpc_info.get("known_peers", 0)
                 node_status["mempool_size"] = rpc_info.get("mempool_transactions", 0)
@@ -3171,12 +3171,20 @@ def _build_status_edge_primary() -> dict:
             return ("v31", None)
         nodeinfo = _call("getNodeInfo")
         peers = _call("getPeerInfo")
+        chaininfo = _call("getChainInfo")
         combined = dict(status) if isinstance(status, dict) else {}
         if isinstance(nodeinfo, dict):
             combined.update(nodeinfo)
         if isinstance(peers, dict):
             combined["known_peers"] = peers.get("count", 0)
             combined["peers"] = peers.get("peers", [])
+        if isinstance(chaininfo, dict):
+            # getChainInfo returns native_chain_height (real height) vs chain_height (V3=0)
+            if chaininfo.get("native_chain_height") is not None:
+                combined["native_chain_height"] = chaininfo["native_chain_height"]
+                combined["chain_height"] = chaininfo["native_chain_height"]
+            if chaininfo.get("tip_hash"):
+                combined["tip_hash"] = chaininfo["tip_hash"]
         return ("v31", combined)
 
     def _v31_systemd_call():
@@ -3223,9 +3231,16 @@ def _build_status_edge_primary() -> dict:
         if status is None:
             return (key, None)
         nodeinfo = _call("getNodeInfo")
+        chaininfo = _call("getChainInfo")
         combined = dict(status) if isinstance(status, dict) else {}
         if isinstance(nodeinfo, dict):
             combined.update(nodeinfo)
+        if isinstance(chaininfo, dict):
+            if chaininfo.get("native_chain_height") is not None:
+                combined["native_chain_height"] = chaininfo["native_chain_height"]
+                combined["chain_height"] = chaininfo["native_chain_height"]
+            if chaininfo.get("tip_hash"):
+                combined["tip_hash"] = chaininfo["tip_hash"]
         return (key, combined)
 
     def _v31_follower_systemd_call(service, key):
@@ -3307,7 +3322,7 @@ def _build_status_edge_primary() -> dict:
     if v31_rpc_info and isinstance(v31_rpc_info, dict):
         _vr = v31_rpc_info.get("result") or v31_rpc_info
         if isinstance(_vr, dict):
-            v31_chain_height = _vr.get("chain_height")
+            v31_chain_height = _vr.get("native_chain_height") or _vr.get("chain_height")
             v31_tip_hash = _vr.get("tip_hash") or _vr.get("tip_hash_hex")
             v31_mempool = int(_vr.get("mempool_account_transactions", 0)) + int(_vr.get("mempool_utxo_transactions", 0))
             if _vr.get("mempool_transactions") is not None:
@@ -3362,7 +3377,7 @@ def _build_status_edge_primary() -> dict:
     if v31_node2_rpc_info and isinstance(v31_node2_rpc_info, dict):
         _vr2 = v31_node2_rpc_info.get("result") or v31_node2_rpc_info
         if isinstance(_vr2, dict):
-            v31_n2_height = _vr2.get("chain_height")
+            v31_n2_height = _vr2.get("native_chain_height") or _vr2.get("chain_height")
             v31_n2_tip = _vr2.get("tip_hash") or _vr2.get("tip_hash_hex")
             v31_n2_mempool = int(_vr2.get("mempool_account_transactions", 0)) + int(_vr2.get("mempool_utxo_transactions", 0))
             if _vr2.get("mempool_transactions") is not None:
@@ -3409,7 +3424,7 @@ def _build_status_edge_primary() -> dict:
     if v31_node3_rpc_info and isinstance(v31_node3_rpc_info, dict):
         _vr3 = v31_node3_rpc_info.get("result") or v31_node3_rpc_info
         if isinstance(_vr3, dict):
-            v31_n3_height = _vr3.get("chain_height")
+            v31_n3_height = _vr3.get("native_chain_height") or _vr3.get("chain_height")
             v31_n3_tip = _vr3.get("tip_hash") or _vr3.get("tip_hash_hex")
             v31_n3_mempool = int(_vr3.get("mempool_account_transactions", 0)) + int(_vr3.get("mempool_utxo_transactions", 0))
             if _vr3.get("mempool_transactions") is not None:
@@ -11063,6 +11078,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         return None
                 t0 = _time.time()
                 status = _call("getStatus")
+                chain_info = _call("getChainInfo")
                 latency = round((_time.time() - t0) * 1000) if status else None
                 alive = bool(status)
                 height = None
@@ -11071,7 +11087,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 p2p_bind = None
                 known_peers = 0
                 if alive:
-                    height = status.get("chain_height")
+                    # Prefer native_chain_height from getChainInfo (V3 chain_height
+                    # is 0 when running with --v3-no-genesis).
+                    if chain_info:
+                        height = chain_info.get("native_chain_height") or chain_info.get("chain_height")
+                    if height is None:
+                        height = status.get("chain_height")
                     tip_hash = status.get("tip_hash") or status.get("tip_hash_hex")
                     nodeinfo = _call("getNodeInfo")
                     if nodeinfo:
