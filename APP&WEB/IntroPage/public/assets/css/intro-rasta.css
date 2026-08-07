@@ -44,9 +44,22 @@ var {
   font-family: var(--font-mono), 'JetBrains Mono', 'Courier New', monospace;
 }
 
-/* ── Web2.9 background system ────────────────────────────────────────────── */
+/* ── Web2.9 background: rasta radial glows directly on body ──────────────── */
+html,
 body {
-  background: #000;
+  min-height: 100vh;
+  height: auto;
+  width: 100%;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+body {
+  background:
+    radial-gradient(circle at 22% -5%, rgba(228, 30, 43, 0.16), transparent 38rem),
+    radial-gradient(circle at 82% 5%, rgba(7, 137, 48, 0.12), transparent 34rem),
+    radial-gradient(circle at 50% 40%, rgba(252, 209, 22, 0.06), transparent 50rem),
+    radial-gradient(ellipse at bottom, #0f0f0f 0%, #000 100%);
 }
 
 /* Subtle diagonal rasta stripes over the background */
@@ -59,12 +72,12 @@ body::before {
   background-image:
     repeating-linear-gradient(
       135deg,
-      rgba(228, 30, 43, 0.022) 0px,
-      rgba(228, 30, 43, 0.022) 3px,
-      rgba(252, 209, 22, 0.018) 3px,
-      rgba(252, 209, 22, 0.018) 6px,
-      rgba(7, 137, 48, 0.022) 6px,
-      rgba(7, 137, 48, 0.022) 9px,
+      rgba(228, 30, 43, 0.025) 0px,
+      rgba(228, 30, 43, 0.025) 3px,
+      rgba(252, 209, 22, 0.020) 3px,
+      rgba(252, 209, 22, 0.020) 6px,
+      rgba(7, 137, 48, 0.025) 6px,
+      rgba(7, 137, 48, 0.025) 9px,
       transparent 9px,
       transparent 160px
     );
@@ -73,28 +86,19 @@ body::before {
   -webkit-mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
 }
 
-#bg:after {
-  background-image:
-    radial-gradient(circle at 22% -5%, rgba(228, 30, 43, 0.18), transparent 38rem),
-    radial-gradient(circle at 82% 5%, rgba(7, 137, 48, 0.12), transparent 34rem),
-    radial-gradient(circle at 50% 40%, rgba(252, 209, 22, 0.07), transparent 50rem),
-    radial-gradient(ellipse at bottom, #0f0f0f 0%, #000 100%);
-  background-size: cover, cover, cover, cover;
-  background-position: center, center, center, center;
-  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
-  background-attachment: fixed;
-}
-
+/* #bg is kept transparent so the body background stays visible through it */
+#bg:after,
 #bg:before {
-  background-image:
-    linear-gradient(to top, rgba(13, 13, 13, 0.12), rgba(13, 13, 13, 0.28)),
-    url('../../images/overlay.png');
-  background-size: auto, 256px 256px;
-  background-position: center, center;
-  background-repeat: no-repeat, repeat;
+  background-image: none;
 }
 
 /* Background modes (Rasta is default, selected via JS) */
+body.bg-stargate,
+body.bg-matrix,
+body.bg-cyber {
+  background-color: #000;
+}
+
 body.bg-stargate::before,
 body.bg-matrix::before,
 body.bg-cyber::before {
@@ -103,36 +107,25 @@ body.bg-cyber::before {
   -webkit-mask-image: none;
 }
 
-body.bg-stargate #bg:after {
-  background-image: url('../../images/nebula.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
+body.bg-stargate {
+  background:
+    #000 url('../../images/nebula.jpg') center center / cover no-repeat fixed;
 }
 
-body.bg-matrix #bg:after {
-  background-image:
+body.bg-matrix {
+  background:
     radial-gradient(circle at 22% -5%, rgba(0, 255, 65, 0.18), transparent 38rem),
     radial-gradient(circle at 82% 5%, rgba(0, 180, 90, 0.12), transparent 34rem),
     radial-gradient(circle at 50% 40%, rgba(0, 255, 120, 0.07), transparent 50rem),
     radial-gradient(ellipse at bottom, #001a0a 0%, #000 100%);
-  background-size: cover, cover, cover, cover;
-  background-position: center, center, center, center;
-  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
-  background-attachment: fixed;
 }
 
-body.bg-cyber #bg:after {
-  background-image:
+body.bg-cyber {
+  background:
     radial-gradient(circle at 22% -5%, rgba(255, 0, 128, 0.18), transparent 38rem),
     radial-gradient(circle at 82% 5%, rgba(168, 85, 247, 0.12), transparent 34rem),
     radial-gradient(circle at 50% 40%, rgba(34, 211, 238, 0.07), transparent 50rem),
     radial-gradient(ellipse at bottom, #0f0018 0%, #000 100%);
-  background-size: cover, cover, cover, cover;
-  background-position: center, center, center, center;
-  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
-  background-attachment: fixed;
 }
 
 /* ── Headings: web2.9 style, rasta gradient on major headings ────────────── */
