@@ -481,6 +481,16 @@
 				</div>
 			</nav>
 
+		<!-- Market under-construction banner -->
+			<div id="market-banner" style="display:none; position:fixed; inset:0; z-index:10000; align-items:center; justify-content:center; background:rgba(0,0,0,0.85); padding:1rem;">
+				<div style="position:relative; max-width:420px; width:100%; border:1px solid #fcd116; border-radius:16px; background:#111; padding:1.5rem; text-align:center; box-shadow:0 0 40px rgba(252,209,22,0.25);">
+					<button id="market-banner-close" type="button" style="position:absolute; top:0.5rem; right:0.75rem; background:none; border:none; color:#fcd116; font-size:1.5rem; cursor:pointer;" aria-label="Zavřít">&times;</button>
+					<h3 style="margin:0 0 1rem 0; color:#fcd116;">&#128679; Market</h3>
+					<p id="market-banner-cs" style="color:#fff; margin:0.5rem 0;">Market je moment&#225;ln&#283; ve v&#253;stavb&#283;.</p>
+					<p id="market-banner-en" style="color:#aaa; margin:0.5rem 0; display:none;">Market is currently under construction.</p>
+				</div>
+			</div>
+
 		<!-- Scripts -->
 			<script src="assets/js/jquery.min.js" defer></script>
 			<script src="assets/js/browser.min.js" defer></script>
@@ -489,6 +499,39 @@
 			<script src="assets/js/main.js" defer></script>
 			<script src="assets/js/starfield-bg.js" defer></script>
 			<script src="assets/js/intro-tabs.js" defer></script>
+			<script>
+				(function () {
+					var banner = document.getElementById('market-banner');
+					var closeBtn = document.getElementById('market-banner-close');
+					var cs = document.getElementById('market-banner-cs');
+					var en = document.getElementById('market-banner-en');
+
+					function showMarketBanner() {
+						var lang = document.documentElement.lang || 'cs';
+						if (lang === 'en') {
+							cs.style.display = 'none';
+							en.style.display = 'block';
+						} else {
+							cs.style.display = 'block';
+							en.style.display = 'none';
+						}
+						banner.style.display = 'flex';
+					}
+
+					function hideMarketBanner() {
+						banner.style.display = 'none';
+					}
+
+					if (closeBtn) closeBtn.addEventListener('click', hideMarketBanner);
+					document.addEventListener('click', function (e) {
+						var link = e.target.closest('a[href*="market.zionterranova.com"]');
+						if (link) {
+							e.preventDefault();
+							showMarketBanner();
+						}
+					});
+				})();
+			</script>
 
 	</body>
 </html>
