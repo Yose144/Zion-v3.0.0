@@ -599,7 +599,7 @@ def status():
 
     if node_reachable:
         # Canonical chain height from the new-chain block template.
-        tpl = _tcp_jsonrpc("getTemplate", {"miner_address": "zion1dashboard"})
+        tpl = _tcp_jsonrpc("getTemplate", {"miner_address": "zion1074344t7k686j6n8a0l6t0f4c8d828y083xh4m2"})
         if "result" in tpl and isinstance(tpl["result"], dict):
             r = tpl["result"]
             out["canonical_height"] = max(0, int(r.get("height", 0)) - 1)
