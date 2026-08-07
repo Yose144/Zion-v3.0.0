@@ -21,8 +21,10 @@ export ZION_NODE_DB="${REPO_ROOT}/V31/data/v31-backup-node.db"
 export ZION_NODE_RPC='127.0.0.1:8446'
 export ZION_NODE_P2P='0.0.0.0:8333'
 
-# ── Network — peer with Edge V31 nodes ──────────────────────────────────────
-export ZION_SEED_PEERS='62.171.141.136:8335,62.171.141.136:8336,62.171.141.136:8337'
+# ── Network — peer with Edge V31 primary node ───────────────────────────────
+# Only 8335 is active; 8336/8337 are not listening and repeated refused
+# connections trigger fail2ban / P2P reconnect-storm rate limits.
+export ZION_SEED_PEERS='62.171.141.136:8335'
 
 # ── Wallets (same as Edge — constitutional emission) ───────────────────────
 export ZION_MINER_ADDRESS='zion1d6e3a4s6t856z042q2m6h5h2j4k3v7f8f2a94h7'
@@ -43,7 +45,7 @@ export RUST_LOG='info'
 
 echo "==========================================================="
 echo "  ZION V31 Backup Node :: P2P 0.0.0.0:8333  RPC 127.0.0.1:8446"
-echo "  Seed: 62.171.141.136:8335,8336,8337 (Edge V31)"
+echo "  Seed: 62.171.141.136:8335 (Edge V31 primary)"
 echo "  DB: ${ZION_NODE_DB}"
 echo "  Started: $(date)"
 echo "==========================================================="
