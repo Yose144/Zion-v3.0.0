@@ -1,5 +1,6 @@
 import InfoPage from '@/components/info/InfoPage';
 import { tr } from '@/lib/translations';
+import { COMPANY } from '@/lib/invoice';
 
 export const metadata = {
   title: 'Právní informace | ZION Market',
@@ -16,6 +17,7 @@ export default function LegalPage() {
 
       <h2>1. Úvod</h2>
       <p>ZION Terra Nova (dále jen „ZION" nebo „projekt") je experimentální open-source iniciativa, která kombinuje decentralizované technologie s filozofickými a duchovními principy. Projekt slouží jako prostor pro výzkum, tvorbu a sdílení vědomých technologií.</p>
+      <p>Provozovatelem tohoto webu je {COMPANY.name}, IČ {COMPANY.ico}, se sídlem {COMPANY.address}, {COMPANY.city}. Kontakt: <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>.</p>
 
       <div className="highlight-box">
         <p>ZION není klasická kryptoměna ani investiční produkt. Je to technologický experiment zaměřený na podporu vědomého rozvoje jednotlivců i komunit.</p>

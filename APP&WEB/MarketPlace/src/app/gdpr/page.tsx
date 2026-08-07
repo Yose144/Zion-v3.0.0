@@ -1,5 +1,6 @@
 import InfoPage from '@/components/info/InfoPage';
 import { tr } from '@/lib/translations';
+import { COMPANY } from '@/lib/invoice';
 
 export const metadata = {
   title: 'GDPR | ZION Market',
@@ -20,14 +21,13 @@ export default function GdprPage() {
 
       <h2>1. Správce osobních údajů</h2>
       <ul>
-        <li>ZION TerraNova® (provozovatel ZION Market)</li>
-        <li>IČ: 09120050</li>
-        <li>DIČ: CZ09120050</li>
-        <li>Sídlo: Horní Čermná, 561 56, Česká republika</li>
-        <li>Zápis: Krajský soud v Hradci Králové</li>
-        <li>Č. j.: 00215716</li>
-        <li>E-mail: <a href="mailto:hello@zionterranova.com">hello@zionterranova.com</a></li>
-        <li>GDPR kontakt: <a href="mailto:gdpr@zionterranova.com">gdpr@zionterranova.com</a></li>
+        <li>{COMPANY.name} (provozovatel ZION Market)</li>
+        <li>IČ: {COMPANY.ico}</li>
+        <li>DIČ: {COMPANY.dic}</li>
+        <li>Sídlo: {COMPANY.address}, {COMPANY.city}, {COMPANY.country}</li>
+        <li>Zápis: {COMPANY.court}</li>
+        <li>Č. j.: {COMPANY.fileNo}</li>
+        <li>E-mail: <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></li>
       </ul>
 
       <h2>2. Jaké osobní údaje zpracováváme</h2>
@@ -120,7 +120,7 @@ export default function GdprPage() {
         <li>Odvolání souhlasu – kdykoliv odvolat souhlas (newsletter)</li>
       </ul>
 
-      <p>Jak uplatnit svá práva: E-mail: <a href="mailto:gdpr@zionterranova.com">gdpr@zionterranova.com</a> nebo <a href="mailto:shop@zionterranova.com">shop@zionterranova.com</a>. Lhůta reakce: do 30 dnů od obdržení žádosti.</p>
+      <p>Jak uplatnit svá práva: E-mail: <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>. Lhůta reakce: do 30 dnů od obdržení žádosti.</p>
 
       <h3>5.2 Právo podat stížnost</h3>
       <p>Máte právo podat stížnost u dozorového úřadu:</p>
@@ -167,7 +167,7 @@ export default function GdprPage() {
       </ul>
 
       <h3>8.2 Jak se odhlásit</h3>
-      <p>V každém emailu je odkaz pro odhlášení (Unsubscribe). Nebo nám napište na <a href="mailto:shop@zionterranova.com">shop@zionterranova.com</a>.</p>
+      <p>V každém emailu je odkaz pro odhlášení (Unsubscribe). Nebo nám napište na <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>.</p>
 
       <h2>9. Děti</h2>
       <p>Neposkytujeme služby dětem mladším 18 let bez souhlasu zákonného zástupce. Pokud zjistíme, že jsme shromáždili údaje od dítěte bez souhlasu, údaje smažeme.</p>
@@ -176,7 +176,7 @@ export default function GdprPage() {
       <p>Tuto informaci můžeme aktualizovat. Vždy na této stránce najdete nejnovější verzi. Poslední aktualizace: 1. 1. 2026.</p>
 
       <h2>11. Kontakt</h2>
-      <p>Máte otázky k GDPR? GDPR specialista: <a href="mailto:gdpr@zionterranova.com">gdpr@zionterranova.com</a>. Obecný kontakt: <a href="mailto:shop@zionterranova.com">shop@zionterranova.com</a>.</p>
+      <p>Máte otázky k GDPR? Kontaktujte nás na <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>.</p>
     </InfoPage>
   );
 }

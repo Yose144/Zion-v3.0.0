@@ -1,14 +1,15 @@
 import { prisma } from './db';
 import { getActiveTheme, type ShopTheme } from './settings';
 
-const COMPANY = {
+export const COMPANY = {
   name: 'Omnity.One s.r.o.',
   ico: '09120050',
   dic: 'CZ09120050',
-  address: 'Horní Čermná',
+  address: 'Horní Čermná 229',
   city: '56156',
-  court: 'Krajský soud v Hradci Králové',
   country: 'Česká republika',
+  court: 'Krajský soud v Hradci Králové',
+  fileNo: '00215716',
   bankAccount: '2901809148 / 2010',
   iban: 'CZ63 2010 0000 0029 0180 9148',
   swift: 'FIOBCZPPXXX',

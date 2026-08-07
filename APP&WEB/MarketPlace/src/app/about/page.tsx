@@ -1,9 +1,10 @@
 import InfoPage from '@/components/info/InfoPage';
 import { tr } from '@/lib/translations';
+import { COMPANY } from '@/lib/invoice';
 
 export const metadata = {
   title: 'O nás | ZION Market',
-  description: 'Firemní údaje a kontakt ZION Terra Nova.',
+  description: 'Firemní údaje a kontakt ZION Market.',
 };
 
 export default function AboutPage() {
@@ -12,40 +13,38 @@ export default function AboutPage() {
       title={tr('info', 'aboutTitle', 'cs')}
       subtitle={tr('info', 'aboutSubtitle', 'cs')}
     >
-      <h2>ZION TerraNova®</h2>
+      <h2>ZION Market</h2>
       <p>Technologie | Umění | Vědomá komunita</p>
 
-      <h2>Firemní údaje</h2>
+      <h2>Provozovatel</h2>
 
       <h3>Společnost</h3>
       <ul>
-        <li>ZION TerraNova®</li>
-        <li>IČ: 09120050</li>
-        <li>DIČ: CZ09120050</li>
+        <li>{COMPANY.name}</li>
+        <li>IČ: {COMPANY.ico}</li>
+        <li>DIČ: {COMPANY.dic}</li>
       </ul>
 
       <h3>Sídlo</h3>
       <ul>
-        <li>Horní Čermná</li>
-        <li>561 56, Česká republika</li>
-        <li>Zápis: Krajský soud v Hradci Králové</li>
-        <li>Č. j.: 00215716</li>
+        <li>{COMPANY.address}</li>
+        <li>{COMPANY.city}, {COMPANY.country}</li>
+        <li>Zápis: {COMPANY.court}</li>
+        <li>Č. j.: {COMPANY.fileNo}</li>
       </ul>
 
       <h3>Transparentní účet</h3>
       <ul>
-        <li>Moneta Money Bank</li>
-        <li>Účet: 259251079/0600</li>
-        <li>IBAN: CZ68 0600 0000 0002 5925 1079</li>
-        <li>BIC: AGBACZPP</li>
+        <li>{COMPANY.bankName}</li>
+        <li>Účet: {COMPANY.bankAccount}</li>
+        <li>IBAN: {COMPANY.iban}</li>
+        <li>BIC/SWIFT: {COMPANY.swift}</li>
       </ul>
 
       <h2>Kontakt</h2>
       <p>Máte dotaz nebo nápad na spolupráci? Kontaktujte nás přímo emailem.</p>
       <ul>
-        <li>E-mail: <a href="mailto:hello@zionterranova.com">hello@zionterranova.com</a></li>
-        <li>Obchodní/dotazy: <a href="mailto:shop@zionterranova.com">shop@zionterranova.com</a></li>
-        <li>GDPR: <a href="mailto:gdpr@zionterranova.com">gdpr@zionterranova.com</a></li>
+        <li>E-mail: <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></li>
       </ul>
 
       <h2>Naše mise</h2>

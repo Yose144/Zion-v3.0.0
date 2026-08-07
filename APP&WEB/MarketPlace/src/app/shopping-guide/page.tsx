@@ -1,5 +1,6 @@
 import InfoPage from '@/components/info/InfoPage';
 import { tr } from '@/lib/translations';
+import { COMPANY } from '@/lib/invoice';
 
 export const metadata = {
   title: 'Nákupní řád | ZION Market',
@@ -104,7 +105,7 @@ export default function ShoppingGuidePage() {
       <p>Standardní objednávky zpracováváme do 1-2 pracovních dnů. U ručně vyráběných produktů může příprava trvat déle – vždy vás budeme informovat e-mailem.</p>
 
       <h3>Mohu změnit nebo zrušit objednávku?</h3>
-      <p>Ano, pokud ještě nebyla odeslána. Kontaktujte nás co nejdříve na <a href="mailto:hello@zionterranova.com">hello@zionterranova.com</a> s číslem objednávky.</p>
+      <p>Ano, pokud ještě nebyla odeslána. Kontaktujte nás co nejdříve na <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> s číslem objednávky.</p>
 
       <h3>Jak zjistím stav své objednávky?</h3>
       <p>Po odeslání obdržíte e-mail s trackovacím číslem. Zásilku můžete sledovat na webu Zásilkovny nebo přímo v aplikaci.</p>

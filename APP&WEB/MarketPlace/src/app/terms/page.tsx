@@ -1,9 +1,10 @@
 import InfoPage from '@/components/info/InfoPage';
 import { tr } from '@/lib/translations';
+import { COMPANY } from '@/lib/invoice';
 
 export const metadata = {
   title: 'Obchodní podmínky | ZION Market',
-  description: 'Obchodní podmínky ZION Market — OASIS Artifact Marketplace.',
+  description: 'Obchodní podmínky ZION Market.',
 };
 
 export default function TermsPage() {
@@ -18,27 +19,27 @@ export default function TermsPage() {
 
       <h3>1.1 Identifikace prodávajícího</h3>
       <ul>
-        <li>Název: ZION TerraNova®</li>
-        <li>IČ: 09120050</li>
-        <li>DIČ: CZ09120050</li>
-        <li>Sídlo: Horní Čermná, 561 56, Česká republika</li>
-        <li>Zápis: Krajský soud v Hradci Králové</li>
-        <li>Č. j.: 00215716</li>
-        <li>E-mail: <a href="mailto:hello@zionterranova.com">hello@zionterranova.com</a></li>
-        <li>Web: <a href="https://zionterranova.com" target="_blank" rel="noopener noreferrer">https://zionterranova.com</a></li>
+        <li>Název: {COMPANY.name}</li>
+        <li>IČ: {COMPANY.ico}</li>
+        <li>DIČ: {COMPANY.dic}</li>
+        <li>Sídlo: {COMPANY.address}, {COMPANY.city}, {COMPANY.country}</li>
+        <li>Zápis: {COMPANY.court}</li>
+        <li>Č. j.: {COMPANY.fileNo}</li>
+        <li>E-mail: <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></li>
+        <li>Web: <a href={`https://${COMPANY.web}`} target="_blank" rel="noopener noreferrer">https://{COMPANY.web}</a></li>
       </ul>
 
       <h3>1.2 Transparentní účet</h3>
       <ul>
-        <li>Banka: Moneta Money Bank</li>
-        <li>Číslo účtu: 259251079/0600</li>
-        <li>IBAN: CZ68 0600 0000 0002 5925 1079</li>
-        <li>BIC: AGBACZPP</li>
+        <li>Banka: {COMPANY.bankName}</li>
+        <li>Číslo účtu: {COMPANY.bankAccount}</li>
+        <li>IBAN: {COMPANY.iban}</li>
+        <li>BIC/SWIFT: {COMPANY.swift}</li>
       </ul>
 
       <h3>1.3 Definice pojmů</h3>
       <ul>
-        <li><strong>Prodávající</strong> – ZION TerraNova®, provozovatel internetového obchodu zionterranova.com a market.zionterranova.com</li>
+        <li><strong>Prodávající</strong> – {COMPANY.name}, provozovatel internetového obchodu {COMPANY.web} a market.zionterranova.com</li>
         <li><strong>Kupující</strong> – fyzická nebo právnická osoba, která uzavírá kupní smlouvu</li>
         <li><strong>Zboží</strong> – produkty a digitální artefakty nabízené v internetovém obchodě</li>
         <li><strong>Objednávka</strong> – závazný návrh kupujícího na uzavření kupní smlouvy</li>
@@ -172,13 +173,13 @@ export default function TermsPage() {
 
       <h3>8.1 Správce údajů</h3>
       <ul>
-        <li>Správce: ZION TerraNova®</li>
-        <li>IČ: 09120050</li>
-        <li>DIČ: CZ09120050</li>
-        <li>Sídlo: Horní Čermná, 561 56, Česká republika</li>
-        <li>Zápis: Krajský soud v Hradci Králové</li>
-        <li>Č. j.: 00215716</li>
-        <li>E-mail pro GDPR: <a href="mailto:gdpr@zionterranova.com">gdpr@zionterranova.com</a></li>
+        <li>Správce: {COMPANY.name}</li>
+        <li>IČ: {COMPANY.ico}</li>
+        <li>DIČ: {COMPANY.dic}</li>
+        <li>Sídlo: {COMPANY.address}, {COMPANY.city}, {COMPANY.country}</li>
+        <li>Zápis: {COMPANY.court}</li>
+        <li>Č. j.: {COMPANY.fileNo}</li>
+        <li>E-mail pro GDPR: <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></li>
       </ul>
 
       <h3>8.2 Zpracovávané údaje</h3>
@@ -199,7 +200,7 @@ export default function TermsPage() {
       </ul>
 
       <h3>8.4 Práva subjektu údajů</h3>
-      <p>Máte právo na přístup k údajům, jejich opravu, výmaz, omezení zpracování a přenositelnost. Kontaktujte nás na <a href="mailto:hello@zionterranova.com">hello@zionterranova.com</a>.</p>
+      <p>Máte právo na přístup k údajům, jejich opravu, výmaz, omezení zpracování a přenositelnost. Kontaktujte nás na <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>.</p>
 
       <h2>9. Závěrečná ustanovení</h2>
 
