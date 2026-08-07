@@ -4811,9 +4811,9 @@ def build_wallets() -> dict:
     canonical_pool = V31_CANONICAL_POOL_PAYOUT_WALLET
     op_sources = [
         (canonical_pool, "Pool Canonical (Main Payout)", "canonical"),
-        (find_env_value("ZION_MINER_ADDRESS") or latest_recipients.get("miner") or node_addrs.get("miner") or V31_CANONICAL_DEFAULT_MINER_WALLET, "Miner Payout", "node"),
-        (find_env_value("ZION_HUMANITARIAN_WALLET") or latest_recipients.get("humanitarian") or node_addrs.get("humanitarian") or V31_CANONICAL_HUMANITARIAN_WALLET, "Humanitarian Tithe", "node"),
-        (find_env_value("ZION_ISSOBELLA_WALLET") or latest_recipients.get("issobella") or node_addrs.get("issobella") or V31_CANONICAL_ISSOBELLA_WALLET, "Issobella Fund", "node"),
+        (latest_recipients.get("miner") or find_env_value("ZION_MINER_ADDRESS") or node_addrs.get("miner") or V31_CANONICAL_DEFAULT_MINER_WALLET, "Miner Payout", "node"),
+        (latest_recipients.get("humanitarian") or find_env_value("ZION_HUMANITARIAN_WALLET") or node_addrs.get("humanitarian") or V31_CANONICAL_HUMANITARIAN_WALLET, "Humanitarian Tithe", "node"),
+        (latest_recipients.get("issobella") or find_env_value("ZION_ISSOBELLA_WALLET") or node_addrs.get("issobella") or V31_CANONICAL_ISSOBELLA_WALLET, "Issobella Fund", "node"),
         (find_env_value("ZION_POOL_FEE_WALLET") or node_addrs.get("pool_fee") or V31_CANONICAL_POOL_FEE_WALLET, "Pool Fee Recipient", "node"),
         (find_env_value("ZION_POOL_WALLET"), "Pool Operational", "env"),
     ]
