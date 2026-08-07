@@ -4629,6 +4629,9 @@ def parse_premine_from_genesis(rpc_host: str = None, rpc_port: int = None) -> li
         # Fallback to Edge RPC
         genesis = rpc_call(EDGE_HOST, 9445, "getBlockByHeight", {"height": 0}, timeout=2.0)
     if not genesis or not genesis.get("transactions"):
+        # Fallback to public Edge RPC
+        genesis = rpc_call(EDGE_PUBLIC_IP, 8443, "getBlockByHeight", {"height": 0}, timeout=3.0)
+    if not genesis or not genesis.get("transactions"):
         # Final fallback to file if RPC unavailable
         return parse_premine_from_file()
     labels = [
@@ -5232,6 +5235,11 @@ def _rpc_with_fallback(method: str, params: dict, timeout: float = 2.0):
     result = rpc_call(EDGE_HOST, 9445, method, params, timeout=timeout)
     if result and not result.get("_rpc_error"):
         return result, EDGE_HOST, 9445
+
+    # Final fallback: public Edge RPC (nginx TCP stream on 8443 -> V31 node)
+    result = rpc_call(EDGE_PUBLIC_IP, 8443, method, params, timeout=timeout)
+    if result and not result.get("_rpc_error"):
+        return result, EDGE_PUBLIC_IP, 8443
     return None, rpc_host, rpc_port
 
 
