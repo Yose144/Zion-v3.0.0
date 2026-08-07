@@ -1091,8 +1091,8 @@ function setupControls() {
       const visible = debugDrawer.style.display !== 'none';
       debugDrawer.style.display = visible ? 'none' : 'block';
       debugToggle.style.color = visible ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.85)';
-      debugToggle.style.borderColor = visible ? 'rgba(255,255,255,0.1)' : 'rgba(147,51,234,0.5)';
-      debugToggle.style.background = visible ? 'rgba(255,255,255,0.05)' : 'rgba(147,51,234,0.15)';
+      debugToggle.style.borderColor = visible ? 'rgba(255,255,255,0.1)' : 'rgba(228, 30, 43,0.5)';
+      debugToggle.style.background = visible ? 'rgba(255,255,255,0.05)' : 'rgba(228, 30, 43,0.15)';
     });
   }
 }
@@ -2606,7 +2606,7 @@ async function loadWalletsList() {
     const safeDate = escapeHtml(new Date(wallet.createdAt).toLocaleDateString());
     const safeLastUsed = wallet.lastUsed ? escapeHtml(new Date(wallet.lastUsed).toLocaleDateString()) : 'Never';
     return `
-    <div style="padding: 20px; background: rgba(0,0,0,0.5); border: 1px solid rgba(147,51,234,0.2); border-radius: 12px; margin-bottom: 16px;">
+    <div style="padding: 20px; background: rgba(0,0,0,0.5); border: 1px solid rgba(228, 30, 43,0.2); border-radius: 12px; margin-bottom: 16px;">
       <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
         <div>
           <h3 style="color: var(--zion-gold); margin-bottom: 8px; font-size: 18px;">${safeName}</h3>
@@ -2623,7 +2623,7 @@ async function loadWalletsList() {
            <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
            <span>Use for Mining</span>
         </button>
-        <button class="btn" onclick="copyWalletAddress('${safeAddr}')" style="width: auto; padding: 10px 16px; font-size: 13px; background: rgba(147,51,234,0.2); border: 1px solid var(--zion-purple);">
+        <button class="btn" onclick="copyWalletAddress('${safeAddr}')" style="width: auto; padding: 10px 16px; font-size: 13px; background: rgba(228, 30, 43,0.2); border: 1px solid var(--zion-purple);">
            <svg class="icon" aria-hidden="true"><use href="#i-copy"></use></svg>
            <span>Copy Address</span>
         </button>
@@ -4500,9 +4500,9 @@ const DAO_GUARDIANS = [
 ];
 
 const DAO_HUMANITARIAN_CATEGORIES = [
-  { icon: '◆', name: 'Clean Water', allocated: '205,714,286', color: '#06b6d4' },
-  { icon: '◈', name: 'Food Security', allocated: '205,714,286', color: '#ffd700' },
-  { icon: '⌂', name: 'Shelter', allocated: '205,714,286', color: '#9333ea' },
+  { icon: '◆', name: 'Clean Water', allocated: '205,714,286', color: '#078930' },
+  { icon: '◈', name: 'Food Security', allocated: '205,714,286', color: '#fcd116' },
+  { icon: '⌂', name: 'Shelter', allocated: '205,714,286', color: '#e41e2b' },
   { icon: '◎', name: 'Environment', allocated: '205,714,286', color: '#00ff88' },
   { icon: '+',  name: 'Healthcare', allocated: '205,714,286', color: '#f87171' },
   { icon: '≡', name: 'Education', allocated: '205,714,286', color: '#818cf8' },
@@ -5516,8 +5516,8 @@ async function _nodeRefresh() {
         if (s.state === 'IBD') {
           if (syncIcon) syncIcon.textContent = '⬇';
           syncTxt.innerHTML = `Synchronizuji bloky… <b>${s.percent?.toFixed(1) ?? 0}%</b>`;
-          syncBar.style.background = 'rgba(6,182,212,0.07)';
-          syncBar.style.borderColor = 'rgba(6,182,212,0.2)';
+          syncBar.style.background = 'rgba(7, 137, 48,0.07)';
+          syncBar.style.borderColor = 'rgba(7, 137, 48,0.2)';
         } else if (s.state === 'Steady') {
           if (syncIcon) syncIcon.textContent = '✓';
           syncTxt.innerHTML = `Node je plně synchronizován — blok <b>#${s.download_height ?? 0}</b>`;
@@ -5630,13 +5630,13 @@ async function _nodeLoadCheckpoints() {
       const hash = escapeHtml(String(cp.hash || ''));
       const label = cp.label ? escapeHtml(String(cp.label)) : '';
       return `<div style="display:flex;align-items:center;justify-content:space-between;
-                padding:10px 14px;background:rgba(255,215,0,0.03);border-radius:10px;
-                border:1px solid rgba(255,215,0,0.1);margin-bottom:6px">
+                padding:10px 14px;background:rgba(252, 209, 22,0.03);border-radius:10px;
+                border:1px solid rgba(252, 209, 22,0.1);margin-bottom:6px">
         <div>
           <div style="font-size:13px;font-weight:600;color:#fcd34d">Blok #${hStr} ${label ? '<span style="font-weight:400;color:rgba(255,255,255,0.4);font-size:11px;margin-left:6px">' + label + '</span>' : ''}</div>
           <div style="font-family:monospace;font-size:10px;color:rgba(255,255,255,0.3);margin-top:2px;word-break:break-all">${hash}</div>
         </div>
-        <span style="font-size:10px;color:rgba(255,215,0,0.5);text-transform:uppercase;letter-spacing:.08em;flex-shrink:0;margin-left:12px">✓ Checkpoint</span>
+        <span style="font-size:10px;color:rgba(252, 209, 22,0.5);text-transform:uppercase;letter-spacing:.08em;flex-shrink:0;margin-left:12px">✓ Checkpoint</span>
       </div>`;
     }).join('');
   } catch(e) {

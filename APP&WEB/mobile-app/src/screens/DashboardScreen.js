@@ -99,7 +99,7 @@ const DashboardScreen = () => {
             icon="flash"
             label="Hashrate"
             value={minerStats?.hashrate || '0 H/s'}
-            color={colors.primary.cyan}
+            color={colors.primary.green}
           />
           <StatItem
             icon="check-circle"
@@ -111,7 +111,7 @@ const DashboardScreen = () => {
             icon="clock-outline"
             label="Last Share"
             value={minerStats?.lastShare || 'Never'}
-            color={colors.primary.purple}
+            color={colors.primary.red}
           />
           <StatItem
             icon="currency-usd"
@@ -162,13 +162,13 @@ const DashboardScreen = () => {
             icon="speedometer"
             label="Pool Hashrate"
             value={poolStats?.poolHashrate || '0 H/s'}
-            color={colors.primary.cyan}
+            color={colors.primary.green}
           />
           <StatItem
             icon="cube-outline"
             label="Blocks Found"
             value={poolStats?.blocksFound || '0'}
-            color={colors.primary.purple}
+            color={colors.primary.red}
           />
           <StatItem
             icon="chart-line"
@@ -371,18 +371,18 @@ const styles = StyleSheet.create({
   algoBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,215,0,0.08)',
+    backgroundColor: 'rgba(252, 209, 22,0.08)',
     borderRadius: 8,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     marginBottom: spacing.md,
     gap: spacing.sm,
     borderWidth: 1,
-    borderColor: 'rgba(255,215,0,0.25)',
+    borderColor: 'rgba(252, 209, 22,0.25)',
   },
   algoBadgeText: {
     fontSize: 12,
-    color: '#FFD700',
+    color: '#fcd116',
     fontWeight: '600',
     flex: 1,
   },
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
   },
   networkValue: {
     ...typography.body,
-    color: colors.primary.cyan,
+    color: colors.primary.green,
     fontWeight: '600',
   },
   blockItem: {
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(249,217,118,0.1)',
+    backgroundColor: 'rgba(252, 209, 22,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.md,

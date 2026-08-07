@@ -326,7 +326,7 @@ const SendScreen = ({ navigation, route }) => {
               style={styles.scanButton}
               onPress={() => setShowScanner(true)}
             >
-              <Icon name="qrcode-scan" size={24} color={colors.primary.cyan} />
+              <Icon name="qrcode-scan" size={24} color={colors.primary.green} />
             </TouchableOpacity>
           </View>
 
@@ -499,11 +499,11 @@ const styles = StyleSheet.create({
   maxButton: {
     marginLeft: spacing.sm,
     padding: spacing.md,
-    backgroundColor: colors.primary.cyan + '20',
+    backgroundColor: colors.primary.green + '20',
     borderRadius: borderRadius.md,
   },
   maxButtonText: {
-    color: colors.primary.cyan,
+    color: colors.primary.green,
     fontWeight: 'bold',
   },
   feeSelector: {
@@ -521,15 +521,15 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   feeOptionActive: {
-    borderColor: colors.primary.cyan,
-    backgroundColor: colors.primary.cyan + '15',
+    borderColor: colors.primary.green,
+    backgroundColor: colors.primary.green + '15',
   },
   feeOptionText: {
     ...typography.caption,
     color: colors.text.secondary,
   },
   feeOptionTextActive: {
-    color: colors.primary.cyan,
+    color: colors.primary.green,
   },
   feeAmount: {
     ...typography.small,
@@ -611,7 +611,7 @@ const styles = StyleSheet.create({
   },
   confirmTotal: {
     ...typography.body,
-    color: colors.primary.cyan,
+    color: colors.primary.green,
     fontWeight: 'bold',
   },
   burnNotice: {
@@ -672,7 +672,7 @@ const styles = StyleSheet.create({
   },
   resultAddress: {
     ...typography.body,
-    color: colors.primary.cyan,
+    color: colors.primary.green,
     marginBottom: spacing.md,
   },
   txIdLabel: {

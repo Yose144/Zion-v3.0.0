@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
   },
   infoValue: {
     ...typography.body,
-    color: colors.primary.cyan,
+    color: colors.primary.green,
     fontWeight: '600',
     flex: 1,
     textAlign: 'right',

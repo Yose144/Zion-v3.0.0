@@ -1048,8 +1048,8 @@ function setupControls() {
       const visible = debugDrawer.style.display !== 'none';
       debugDrawer.style.display = visible ? 'none' : 'block';
       debugToggle.style.color = visible ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.85)';
-      debugToggle.style.borderColor = visible ? 'rgba(255,255,255,0.1)' : 'rgba(147,51,234,0.5)';
-      debugToggle.style.background = visible ? 'rgba(255,255,255,0.05)' : 'rgba(147,51,234,0.15)';
+      debugToggle.style.borderColor = visible ? 'rgba(255,255,255,0.1)' : 'rgba(228, 30, 43,0.5)';
+      debugToggle.style.background = visible ? 'rgba(255,255,255,0.05)' : 'rgba(228, 30, 43,0.15)';
     });
   }
 }
@@ -2141,8 +2141,8 @@ function renderHrSparkline() {
   ctx.lineTo((_hrSparkHistory.length - 1) * stepX, h);
   ctx.closePath();
   const grad = ctx.createLinearGradient(0, 0, 0, h);
-  grad.addColorStop(0, 'rgba(6,182,212,0.35)');
-  grad.addColorStop(1, 'rgba(6,182,212,0.02)');
+  grad.addColorStop(0, 'rgba(7, 137, 48,0.35)');
+  grad.addColorStop(1, 'rgba(7, 137, 48,0.02)');
   ctx.fillStyle = grad;
   ctx.fill();
   // Line
@@ -2153,7 +2153,7 @@ function renderHrSparkline() {
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   }
-  ctx.strokeStyle = '#06b6d4';
+  ctx.strokeStyle = '#078930';
   ctx.lineWidth = 1.5;
   ctx.stroke();
 }
@@ -2875,7 +2875,7 @@ async function loadWalletsList() {
     const safeDate = escapeHtml(new Date(wallet.createdAt).toLocaleDateString());
     const safeLastUsed = wallet.lastUsed ? escapeHtml(new Date(wallet.lastUsed).toLocaleDateString()) : 'Never';
     return `
-    <div style="padding: 20px; background: rgba(0,0,0,0.5); border: 1px solid rgba(147,51,234,0.2); border-radius: 12px; margin-bottom: 16px;">
+    <div style="padding: 20px; background: rgba(0,0,0,0.5); border: 1px solid rgba(228, 30, 43,0.2); border-radius: 12px; margin-bottom: 16px;">
       <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
         <div>
           <h3 style="color: var(--zion-gold); margin-bottom: 8px; font-size: 18px;">${safeName}</h3>
@@ -2892,7 +2892,7 @@ async function loadWalletsList() {
            <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
            <span>Use for Mining</span>
         </button>
-        <button class="btn" onclick="copyWalletAddress('${safeAddr}')" style="width: auto; padding: 10px 16px; font-size: 13px; background: rgba(147,51,234,0.2); border: 1px solid var(--zion-purple);">
+        <button class="btn" onclick="copyWalletAddress('${safeAddr}')" style="width: auto; padding: 10px 16px; font-size: 13px; background: rgba(228, 30, 43,0.2); border: 1px solid var(--zion-purple);">
            <svg class="icon" aria-hidden="true"><use href="#i-copy"></use></svg>
            <span>Copy Address</span>
         </button>
@@ -5064,9 +5064,9 @@ function initAiView() {
     div.style.maxWidth = '85%';
     div.style.wordBreak = 'break-word';
     if (role === 'user') {
-      div.style.background = 'rgba(147,51,234,0.15)';
+      div.style.background = 'rgba(228, 30, 43,0.15)';
       div.style.marginLeft = 'auto';
-      div.style.border = '1px solid rgba(147,51,234,0.2)';
+      div.style.border = '1px solid rgba(228, 30, 43,0.2)';
     } else {
       div.style.background = 'rgba(255,255,255,0.04)';
       div.style.border = '1px solid rgba(255,255,255,0.08)';
@@ -5228,7 +5228,7 @@ function initNclView() {
           lbEl.innerHTML = entries.slice(0, 10).map((w, i) => `
             <div style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;justify-content:space-between;align-items:center">
               <span style="color:rgba(255,255,255,0.8)">${i + 1}. ${w.wallet || w.worker_id || w.id || 'Worker'}</span>
-              <span style="color:var(--zion-cyan,#06b6d4);font-weight:600">${w.reputation ?? w.score ?? 0} pts</span>
+              <span style="color:var(--zion-cyan,#078930);font-weight:600">${w.reputation ?? w.score ?? 0} pts</span>
             </div>
           `).join('');
         }

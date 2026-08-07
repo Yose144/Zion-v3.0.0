@@ -404,7 +404,7 @@ const MiningScreen = () => {
 
 const StatItem = ({icon, label, value}) => (
   <View style={styles.statItem}>
-    <Icon name={icon} size={24} color={colors.primary.cyan} />
+    <Icon name={icon} size={24} color={colors.primary.green} />
     <Text style={styles.statLabel}>{label}</Text>
     <Text style={styles.statValue}>{value}</Text>
   </View>
@@ -549,18 +549,18 @@ const styles = StyleSheet.create({
   algoBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,215,0,0.08)',
+    backgroundColor: 'rgba(252, 209, 22,0.08)',
     borderRadius: 8,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     marginBottom: spacing.md,
     gap: spacing.sm,
     borderWidth: 1,
-    borderColor: 'rgba(255,215,0,0.25)',
+    borderColor: 'rgba(252, 209, 22,0.25)',
   },
   algoBadgeText: {
     fontSize: 12,
-    color: '#FFD700',
+    color: '#fcd116',
     fontWeight: '600',
   },
   warningCard: {

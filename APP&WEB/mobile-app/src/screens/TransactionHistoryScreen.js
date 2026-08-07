@@ -290,7 +290,7 @@ const TransactionHistoryScreen = ({ navigation }) => {
       {/* Transaction List */}
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary.cyan} />
+          <ActivityIndicator size="large" color={colors.primary.green} />
         </View>
       ) : (
         <FlatList
@@ -302,7 +302,7 @@ const TransactionHistoryScreen = ({ navigation }) => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={colors.primary.cyan}
+              tintColor={colors.primary.green}
             />
           }
           ListEmptyComponent={renderEmpty}
@@ -346,14 +346,14 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
   },
   filterTabActive: {
-    backgroundColor: colors.primary.cyan + '30',
+    backgroundColor: colors.primary.green + '30',
   },
   filterText: {
     ...typography.body,
     color: colors.text.secondary,
   },
   filterTextActive: {
-    color: colors.primary.cyan,
+    color: colors.primary.green,
     fontWeight: 'bold',
   },
   listContent: {
@@ -470,7 +470,7 @@ const styles = StyleSheet.create({
   },
   detailHash: {
     ...typography.small,
-    color: colors.primary.cyan,
+    color: colors.primary.green,
     fontFamily: 'monospace',
   },
   statusBadge: {

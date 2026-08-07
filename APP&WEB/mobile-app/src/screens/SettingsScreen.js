@@ -294,7 +294,7 @@ const SettingsScreen = ({navigation}) => {
 const SettingRow = ({icon, label, value, onToggle}) => (
   <View style={styles.settingRow}>
     <View style={styles.settingLeft}>
-      <Icon name={icon} size={24} color={colors.primary.cyan} />
+      <Icon name={icon} size={24} color={colors.primary.green} />
       <Text style={styles.settingLabel}>{label}</Text>
     </View>
     <Switch
@@ -312,7 +312,7 @@ const SettingItem = ({icon, label, value, onPress, showArrow}) => (
     onPress={onPress}
     disabled={!onPress}>
     <View style={styles.settingLeft}>
-      <Icon name={icon} size={24} color={colors.primary.cyan} />
+      <Icon name={icon} size={24} color={colors.primary.green} />
       <View style={styles.settingTextContainer}>
         <Text style={styles.settingLabel}>{label}</Text>
         {value && <Text style={styles.settingValue}>{value}</Text>}
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 16,
-    backgroundColor: 'rgba(249,217,118,0.1)',
+    backgroundColor: 'rgba(252, 209, 22,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -363,18 +363,18 @@ const styles = StyleSheet.create({
   chv4Badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,215,0,0.08)',
+    backgroundColor: 'rgba(252, 209, 22,0.08)',
     borderRadius: 8,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     marginTop: spacing.md,
     gap: spacing.sm,
     borderWidth: 1,
-    borderColor: 'rgba(255,215,0,0.25)',
+    borderColor: 'rgba(252, 209, 22,0.25)',
   },
   chv4BadgeText: {
     fontSize: 12,
-    color: '#FFD700',
+    color: '#fcd116',
     fontWeight: '600',
     flex: 1,
   },
@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
   },
   networkBadgeText: {
     fontSize: 12,
-    color: colors.primary.cyan,
+    color: colors.primary.green,
     fontWeight: '600',
     flex: 1,
   },
@@ -441,14 +441,14 @@ const styles = StyleSheet.create({
   premiumActiveBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,215,0,0.1)',
+    backgroundColor: 'rgba(252, 209, 22,0.1)',
     borderRadius: 8,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     marginBottom: spacing.md,
     gap: spacing.sm,
     borderWidth: 1,
-    borderColor: 'rgba(255,215,0,0.3)',
+    borderColor: 'rgba(252, 209, 22,0.3)',
   },
   premiumActiveText: {
     fontSize: 14,

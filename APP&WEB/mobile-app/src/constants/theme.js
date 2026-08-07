@@ -1,28 +1,43 @@
 /**
- * ZION TerraNova v3.0.0 — Unified Design System
- * Synchronized with: website-v2.9, desktop-agent
+ * ZION TerraNova v3.2.0 — Unified Rasta Design System
+ * Synchronized with: website-v2.9 (rasta palette), desktop-agent
  *
- * Color tokens match:
- *   - desktop-agent/src/styles/main.css  (CSS vars)
- *   - website-v2.9/src/components/BackgroundOrchestrator (galactic-core)
+ * Rasta colors: Red / Gold / Green / Black
+ *   - web2.9: globals.css --color-zion-gold/purple/cyan/blue
+ *   - desktop-agent: index.html :root --zion-gold/purple/cyan/blue
  *
- * v3.0.0: CHv4 aktivní od genesis (CHV4_NPU_FORK_HEIGHT=0), revenue 89/5/5/1
+ * v3.2.0: One Love — rasta palette synced across all surfaces.
  */
 
 export const colors = {
   primary: {
-    gold: '#FFD700',       // Primary accent — matching desktop/web
-    goldWarm: '#f9d976',   // Warm gold variant
-    cyan: '#06B6D4',       // Tertiary accent
-    cyanBright: '#32e6ff', // Bright cyan variant
-    purple: '#9333EA',     // Secondary accent — matching desktop/web
-    purpleBright: '#9b5cff',
+    gold: '#fcd116',         // Rasta Gold — primary accent
+    goldWarm: '#f9d976',     // Warm gold variant
+    red: '#e41e2b',          // Rasta Red — secondary accent (replaces purple)
+    redBright: '#ff4d5a',    // Bright red variant
+    green: '#078930',        // Rasta Green — tertiary accent (replaces cyan)
+    greenBright: '#34d399',  // Bright green variant
+  },
+  rasta: {
+    red: '#e41e2b',
+    gold: '#fcd116',
+    green: '#078930',
+    dark: '#1a1a1a',
+    black: '#0d0d0d',
+  },
+  supplementary: {
+    quantumBlue: '#00d4ff',  // Tech/data accent
+    matrixGreen: '#00ff41',  // Live pulse, online status
+    amber: '#f59e0b',        // Warning, attention
+    rose: '#f43f5e',         // Terra Nova story
+    teal: '#14b8a6',         // Genesis, docs
+    indigo: '#6366f1',       // Roadmap, API
   },
   background: {
-    dark: '#04020c',       // Galactic-core base (deepest)
-    space: '#0a0118',      // Deep space black-purple
-    card: 'rgba(12, 14, 30, 0.82)', // --card-bg from desktop
-    elevated: 'rgba(0, 0, 0, 0.55)', // --view-shell from desktop
+    dark: '#0d0d0d',         // Rasta black base (deepest)
+    space: '#0a0a0a',        // Deep space black
+    card: 'rgba(13, 13, 13, 0.82)', // --card-bg (rasta black)
+    elevated: 'rgba(0, 0, 0, 0.55)', // --view-shell
   },
   text: {
     primary: 'rgba(255,255,255,0.92)',
@@ -30,7 +45,7 @@ export const colors = {
     muted: 'rgba(255,255,255,0.45)',
   },
   glass: {
-    bg: 'rgba(10, 12, 28, 0.72)',     // --glass-bg
+    bg: 'rgba(13, 13, 13, 0.72)',     // --glass-bg (rasta black)
     border: 'rgba(255,255,255,0.12)',  // --glass-border
     borderLight: 'rgba(255,255,255,0.06)',
   },
@@ -42,10 +57,10 @@ export const colors = {
     onTheStar: '#eab308',
   },
   status: {
-    success: '#10b981',
-    warning: '#f59e0b',
-    error: '#ef4444',
-    info: '#3b82f6',
+    success: '#078930',      // Rasta green
+    warning: '#fcd116',      // Rasta gold
+    error: '#e41e2b',        // Rasta red
+    info: '#00d4ff',         // Quantum blue
   },
   overlay: {
     light: 'rgba(255,255,255,0.08)',
@@ -53,21 +68,25 @@ export const colors = {
     strong: 'rgba(255,255,255,0.25)',
   },
   glow: {
-    gold: 'rgba(255, 215, 0, 0.3)',
-    purple: 'rgba(147, 51, 234, 0.25)',
-    cyan: 'rgba(6, 182, 212, 0.2)',
+    gold: 'rgba(252, 209, 22, 0.3)',
+    red: 'rgba(228, 30, 43, 0.25)',
+    green: 'rgba(7, 137, 48, 0.2)',
   },
 };
 
 export const gradients = {
-  gold: ['#FFD700', '#f9a825'],
-  cyan: ['#32e6ff', '#06B6D4'],
-  purple: ['#9b5cff', '#9333EA'],
-  glow: ['rgba(249,217,118,0.25)', 'rgba(147,51,234,0.15)', 'rgba(6,182,212,0.15)'],
+  // Rasta tri-color: red → gold → green
+  rasta: ['#e41e2b', '#fcd116', '#078930'],
+  gold: ['#fcd116', '#f9a825'],
+  red: ['#ff4d5a', '#e41e2b'],
+  green: ['#34d399', '#078930'],
+  // Background glow — rasta radial
+  glow: ['rgba(252,209,22,0.25)', 'rgba(228,30,43,0.15)', 'rgba(7,137,48,0.15)'],
   consciousness: ['#8b5cf6', '#ec4899', '#f59e0b'],
-  dark: ['#04020c', '#0a0118'],
-  galacticCore: ['rgba(22,8,32,0.9)', 'rgba(4,2,12,0.98)'],
-  logoText: ['#FFD700', '#9333EA', '#06B6D4'],
+  dark: ['#0d0d0d', '#0a0a0a'],
+  galacticCore: ['rgba(13,13,13,0.9)', 'rgba(0,0,0,0.98)'],
+  // Logo text — rasta tri-color
+  logoText: ['#e41e2b', '#fcd116', '#078930'],
 };
 
 export const spacing = {
@@ -156,6 +175,20 @@ export const shadows = {
     shadowOpacity: 0.5,
     shadowRadius: 12,
     elevation: 6,
+  },
+  glowRed: {
+    shadowColor: colors.primary.red,
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  glowGreen: {
+    shadowColor: colors.primary.green,
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 5,
   },
 };
 

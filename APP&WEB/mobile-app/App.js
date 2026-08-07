@@ -34,7 +34,7 @@ const WalletNavigator = () => (
   <WalletStack.Navigator
     screenOptions={{
       headerStyle: {
-        backgroundColor: 'rgba(10, 12, 28, 0.95)',
+        backgroundColor: 'rgba(13, 13, 13, 0.95)',
         elevation: 0,
         shadowOpacity: 0,
         borderBottomWidth: 0,
@@ -67,7 +67,7 @@ const navTheme = {
   colors: {
     primary: colors.primary.gold,
     background: 'transparent',
-    card: 'rgba(12, 14, 30, 0.85)',
+    card: 'rgba(13, 13, 13, 0.85)',
     text: colors.text.primary,
     border: 'rgba(255,255,255,0.08)',
     notification: colors.primary.gold,
@@ -116,7 +116,7 @@ const MainTabs = () => (
       tabBarActiveTintColor: colors.primary.gold,
       tabBarInactiveTintColor: colors.text.muted,
       tabBarStyle: {
-        backgroundColor: 'rgba(12, 14, 30, 0.85)',
+        backgroundColor: 'rgba(13, 13, 13, 0.85)',
         borderTopColor: 'rgba(255,255,255,0.08)',
         borderTopWidth: 1,
         height: 65,
@@ -128,7 +128,7 @@ const MainTabs = () => (
         fontWeight: '600',
       },
       headerStyle: {
-        backgroundColor: 'rgba(10, 12, 28, 0.6)',
+        backgroundColor: 'rgba(13, 13, 13, 0.6)',
         elevation: 0,
         shadowOpacity: 0,
         borderBottomWidth: 0,
@@ -316,7 +316,7 @@ const App = () => {
                   headerShown: true,
                   headerTitle: 'Upgrade',
                   headerStyle: {
-                    backgroundColor: 'rgba(10, 12, 28, 0.95)',
+                    backgroundColor: 'rgba(13, 13, 13, 0.95)',
                     elevation: 0,
                     shadowOpacity: 0,
                     borderBottomWidth: 0,

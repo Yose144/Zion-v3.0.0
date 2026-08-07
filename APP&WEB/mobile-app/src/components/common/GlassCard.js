@@ -4,9 +4,9 @@ import LinearGradient from 'react-native-linear-gradient';
 import {colors, borderRadius, shadows} from '../../constants/theme';
 
 /**
- * Glass Card Component — Unified with desktop-agent & website
+ * Glass Card Component — Unified with desktop-agent & website (rasta palette)
  * Matches:
- *   - desktop: --card-bg rgba(12,14,30,0.82), --glass-border rgba(255,255,255,0.12)
+ *   - desktop: --card-bg rgba(13,13,13,0.82), --glass-border rgba(255,255,255,0.12)
  *   - website: bg-black/50, border-white/10, backdrop-blur-xl
  */
 const GlassCard = ({children, style, onPress, gradient = false, glow = false}) => {
@@ -18,9 +18,9 @@ const GlassCard = ({children, style, onPress, gradient = false, glow = false}) =
   } : {};
 
   const glowStyle = glow ? {
-    borderColor: colors.primary.purple,
+    borderColor: colors.primary.gold,
     ...Platform.select({
-      web: { boxShadow: `0 0 16px ${colors.glow.purple}` },
+      web: { boxShadow: `0 0 16px ${colors.glow.gold}` },
       default: shadows.glow,
     }),
   } : {};
