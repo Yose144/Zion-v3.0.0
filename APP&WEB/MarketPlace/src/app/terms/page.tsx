@@ -12,30 +12,45 @@ export default function TermsPage() {
     <InfoPage
       title={tr('info', 'termsTitle', 'cs')}
       subtitle={tr('info', 'termsSubtitle', 'cs')}
+      icon="📜"
     >
-      <p className="text-sm text-gray-400 mb-6">Poslední aktualizace: 28. července 2026</p>
+      <p className="update-date">Poslední aktualizace: 28. července 2026</p>
 
-      <h2>1. Úvodní ustanovení</h2>
+      <div className="rasta-info-toc">
+        <h3>Obsah</h3>
+        <ol>
+          <li><a href="#section1">Úvodní ustanovení</a></li>
+          <li><a href="#section2">Objednávka a uzavření smlouvy</a></li>
+          <li><a href="#section3">Ceny a platební podmínky</a></li>
+          <li><a href="#section4">Doprava a dodání</a></li>
+          <li><a href="#section5">Odstoupení od smlouvy</a></li>
+          <li><a href="#section6">Reklamace a záruka</a></li>
+          <li><a href="#section7">ZION Token Reward Program</a></li>
+          <li><a href="#section8">Ochrana osobních údajů</a></li>
+          <li><a href="#section9">Závěrečná ustanovení</a></li>
+        </ol>
+      </div>
+
+      <h2 id="section1">1. Úvodní ustanovení</h2>
 
       <h3>1.1 Identifikace prodávajícího</h3>
-      <ul>
-        <li>Název: {COMPANY.name}</li>
-        <li>IČ: {COMPANY.ico}</li>
-        <li>DIČ: {COMPANY.dic}</li>
-        <li>Sídlo: {COMPANY.address}, {COMPANY.city}, {COMPANY.country}</li>
-        <li>Zápis: {COMPANY.court}</li>
-        <li>Č. j.: {COMPANY.fileNo}</li>
-        <li>E-mail: <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></li>
-        <li>Web: <a href={`https://${COMPANY.web}`} target="_blank" rel="noopener noreferrer">https://{COMPANY.web}</a></li>
-      </ul>
+      <div className="seller-info">
+        <p><strong>Název:</strong> {COMPANY.name}</p>
+        <p><strong>IČ:</strong> {COMPANY.ico}</p>
+        <p><strong>DIČ:</strong> {COMPANY.dic}</p>
+        <p><strong>Sídlo:</strong> {COMPANY.address}, {COMPANY.city}, {COMPANY.country}</p>
+        <p><strong>Zapsáno:</strong> {COMPANY.court}, Č. j. {COMPANY.fileNo}</p>
+        <p><strong>E-mail:</strong> <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></p>
+        <p><strong>Web:</strong> <a href={`https://${COMPANY.web}`} target="_blank" rel="noopener noreferrer">https://{COMPANY.web}</a></p>
+      </div>
 
       <h3>1.2 Transparentní účet</h3>
-      <ul>
-        <li>Banka: {COMPANY.bankName}</li>
-        <li>Číslo účtu: {COMPANY.bankAccount}</li>
-        <li>IBAN: {COMPANY.iban}</li>
-        <li>BIC/SWIFT: {COMPANY.swift}</li>
-      </ul>
+      <div className="seller-info">
+        <p><strong>Banka:</strong> {COMPANY.bankName}</p>
+        <p><strong>Číslo účtu:</strong> {COMPANY.bankAccount}</p>
+        <p><strong>IBAN:</strong> {COMPANY.iban}</p>
+        <p><strong>BIC/SWIFT:</strong> {COMPANY.swift}</p>
+      </div>
 
       <h3>1.3 Definice pojmů</h3>
       <ul>
@@ -45,7 +60,7 @@ export default function TermsPage() {
         <li><strong>Objednávka</strong> – závazný návrh kupujícího na uzavření kupní smlouvy</li>
       </ul>
 
-      <h2>2. Objednávka a uzavření smlouvy</h2>
+      <h2 id="section2">2. Objednávka a uzavření smlouvy</h2>
 
       <h3>2.1 Postup objednávky</h3>
       <ol>
@@ -59,7 +74,7 @@ export default function TermsPage() {
       <h3>2.2 Uzavření kupní smlouvy</h3>
       <p>Kupní smlouva je uzavřena okamžikem potvrzení objednávky prodávajícím. Potvrzení je zasláno na e-mailovou adresu kupujícího.</p>
 
-      <h2>3. Ceny a platební podmínky</h2>
+      <h2 id="section3">3. Ceny a platební podmínky</h2>
 
       <h3>3.1 Ceny</h3>
       <p>Všechny ceny jsou uvedeny v českých korunách (CZK) včetně DPH. Cena je platná v okamžiku odeslání objednávky.</p>
@@ -88,7 +103,7 @@ export default function TermsPage() {
         </tbody>
       </table>
 
-      <h2>4. Doprava a dodání</h2>
+      <h2 id="section4">4. Doprava a dodání</h2>
 
       <h3>4.1 Způsoby dopravy</h3>
       <table>
@@ -121,10 +136,10 @@ export default function TermsPage() {
       <h3>4.2 Dodací lhůta</h3>
       <p>Standardní dodací lhůta je 3-7 pracovních dnů od potvrzení objednávky (resp. přijetí platby u platby předem).</p>
 
-      <h2>5. Odstoupení od smlouvy</h2>
+      <h2 id="section5">5. Odstoupení od smlouvy</h2>
 
       <h3>5.1 Právo na odstoupení</h3>
-      <p>Kupující – spotřebitel má právo odstoupit od smlouvy bez udání důvodu do 14 dnů od převzetí zboží.</p>
+      <p>Kupující – spotřebitel má právo odstoupit od smlouvy bez udání důvodu do <strong>14 dnů</strong> od převzetí zboží.</p>
 
       <h3>5.2 Postup odstoupení</h3>
       <ol>
@@ -141,10 +156,10 @@ export default function TermsPage() {
         <li>Hygienické potřeby po porušení obalu</li>
       </ul>
 
-      <h2>6. Reklamace a záruka</h2>
+      <h2 id="section6">6. Reklamace a záruka</h2>
 
       <h3>6.1 Záruční doba</h3>
-      <p>Na zboží poskytujeme záruku 24 měsíců od data převzetí (pro spotřebitele).</p>
+      <p>Na zboží poskytujeme záruku <strong>24 měsíců</strong> od data převzetí (pro spotřebitele).</p>
 
       <h3>6.2 Uplatnění reklamace</h3>
       <ol>
@@ -154,9 +169,9 @@ export default function TermsPage() {
       </ol>
 
       <h3>6.3 Lhůta pro vyřízení</h3>
-      <p>Reklamace bude vyřízena nejpozději do 30 dnů od jejího uplatnění.</p>
+      <p>Reklamace bude vyřízena nejpozději do <strong>30 dnů</strong> od jejího uplatnění.</p>
 
-      <h2>7. ZION Token Reward Program</h2>
+      <h2 id="section7">7. ZION Token Reward Program</h2>
 
       <h3>7.1 Podmínky programu</h3>
       <ul>
@@ -169,18 +184,17 @@ export default function TermsPage() {
       <h3>7.2 Důležité upozornění</h3>
       <p>ZION tokeny jsou bonusem a nemají garantovanou peněžní hodnotu. Jedná se o experimentální projekt.</p>
 
-      <h2>8. Ochrana osobních údajů</h2>
+      <h2 id="section8">8. Ochrana osobních údajů</h2>
 
       <h3>8.1 Správce údajů</h3>
-      <ul>
-        <li>Správce: {COMPANY.name}</li>
-        <li>IČ: {COMPANY.ico}</li>
-        <li>DIČ: {COMPANY.dic}</li>
-        <li>Sídlo: {COMPANY.address}, {COMPANY.city}, {COMPANY.country}</li>
-        <li>Zápis: {COMPANY.court}</li>
-        <li>Č. j.: {COMPANY.fileNo}</li>
-        <li>E-mail pro GDPR: <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></li>
-      </ul>
+      <div className="seller-info">
+        <p><strong>Správce:</strong> {COMPANY.name}</p>
+        <p><strong>IČ:</strong> {COMPANY.ico}</p>
+        <p><strong>DIČ:</strong> {COMPANY.dic}</p>
+        <p><strong>Sídlo:</strong> {COMPANY.address}, {COMPANY.city}, {COMPANY.country}</p>
+        <p><strong>Zapsáno:</strong> {COMPANY.court}, Č. j. {COMPANY.fileNo}</p>
+        <p><strong>E-mail pro GDPR:</strong> <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></p>
+      </div>
 
       <h3>8.2 Zpracovávané údaje</h3>
       <ul>
@@ -202,7 +216,7 @@ export default function TermsPage() {
       <h3>8.4 Práva subjektu údajů</h3>
       <p>Máte právo na přístup k údajům, jejich opravu, výmaz, omezení zpracování a přenositelnost. Kontaktujte nás na <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>.</p>
 
-      <h2>9. Závěrečná ustanovení</h2>
+      <h2 id="section9">9. Závěrečná ustanovení</h2>
 
       <h3>9.1 Platnost</h3>
       <p>Tyto obchodní podmínky jsou platné a účinné od 1. prosince 2025.</p>
@@ -214,7 +228,7 @@ export default function TermsPage() {
       <p>Tyto podmínky se řídí právním řádem České republiky.</p>
 
       <h3>9.4 Řešení sporů</h3>
-      <p>Případné spory lze řešit mimosoudně prostřednictvím České obchodní inspekce nebo platformy ODR.</p>
+      <p>Případné spory lze řešit mimosoudně prostřednictvím <a href="https://www.coi.cz" target="_blank" rel="noopener noreferrer">České obchodní inspekce</a> nebo platformy <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer">ODR</a>.</p>
     </InfoPage>
   );
 }

@@ -1479,3 +1479,306 @@ body.zion-shell {
   background: rgba(255, 255, 255, 0.02);
 }
 
+
+/* ── Rasta info page (legal/FAQ pages) ── */
+.rasta-info-page {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.rasta-info-hero {
+  background: linear-gradient(135deg, rgba(26, 26, 26, 0.85) 0%, rgba(10, 10, 10, 0.9) 100%);
+  border-radius: 1.65rem;
+  min-height: clamp(240px, 40vh, 400px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.rasta-info-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(228, 30, 43, 0.12), transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(252, 209, 22, 0.08), transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(7, 137, 48, 0.06), transparent 50%);
+  pointer-events: none;
+}
+
+.rasta-info-hero-inner {
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  padding: 2rem 1rem;
+}
+
+.rasta-info-hero h1 {
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: clamp(2px, 0.6vw, 6px);
+  background: linear-gradient(90deg, #e41e2b, #fcd116, #078930);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+}
+
+.rasta-info-version-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(90deg, rgba(7, 137, 48, 0.2), rgba(252, 209, 22, 0.15));
+  color: #fcd116;
+  padding: 0.5rem 1.25rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(252, 209, 22, 0.2);
+}
+
+.rasta-info-subtitle {
+  color: #9ca3af;
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  opacity: 0.9;
+}
+
+.rasta-info-section {
+  padding: clamp(1.5rem, 4vw, 3rem) 0;
+}
+
+.rasta-info-content {
+  color: #e5e7eb;
+  line-height: 1.75;
+}
+
+.rasta-info-content h2 {
+  font-size: clamp(1.4rem, 3.5vw, 2rem);
+  color: #fcd116;
+  text-align: center;
+  margin-top: 2.5rem;
+  margin-bottom: 1.25rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 800;
+  font-family: var(--font-display);
+}
+
+.rasta-info-content h3 {
+  font-size: 1.15rem;
+  color: #078930;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+  font-weight: 700;
+}
+
+.rasta-info-content h4 {
+  font-size: 1rem;
+  color: #e5e7eb;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.rasta-info-content p {
+  margin-bottom: 1rem;
+}
+
+.rasta-info-content ul {
+  list-style: disc;
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.rasta-info-content ol {
+  list-style: decimal;
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.rasta-info-content li {
+  margin-bottom: 0.5rem;
+}
+
+.rasta-info-content a {
+  color: #fcd116;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.rasta-info-content a:hover {
+  color: #fff;
+}
+
+.rasta-info-content .seller-info {
+  background: linear-gradient(145deg, rgba(7, 137, 48, 0.08), rgba(252, 209, 22, 0.05));
+  border: 1px solid rgba(7, 137, 48, 0.3);
+  border-radius: 1rem;
+  padding: 1.25rem 1.5rem;
+  margin: 1.25rem 0;
+}
+
+.rasta-info-content .seller-info p {
+  margin: 0.4rem 0;
+}
+
+.rasta-info-content .seller-info strong {
+  color: #fcd116;
+}
+
+.rasta-info-content .highlight-box {
+  background: rgba(7, 137, 48, 0.1);
+  border-left: 4px solid #078930;
+  padding: 1.25rem 1.5rem;
+  border-radius: 0 0.75rem 0.75rem 0;
+  margin: 1.25rem 0;
+}
+
+.rasta-info-content .warning-box {
+  background: rgba(252, 209, 22, 0.08);
+  border-left: 4px solid #fcd116;
+  padding: 1.25rem 1.5rem;
+  border-radius: 0 0.75rem 0.75rem 0;
+  margin: 1.25rem 0;
+}
+
+.rasta-info-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.25rem 0;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  font-size: 0.95rem;
+}
+
+.rasta-info-content th,
+.rasta-info-content td {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.85rem 1rem;
+  text-align: left;
+}
+
+.rasta-info-content th {
+  background: linear-gradient(90deg, #e41e2b, #fcd116, #078930);
+  color: #000;
+  font-weight: 700;
+}
+
+.rasta-info-content tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.rasta-info-cta {
+  text-align: center;
+  margin-top: 3rem;
+  padding-top: 2rem;
+}
+
+.rasta-info-toc {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(252, 209, 22, 0.3);
+  border-radius: 1rem;
+  padding: 1.5rem 2rem;
+  margin: 1.5rem 0 2.5rem;
+  text-align: center;
+}
+
+.rasta-info-toc h3 {
+  color: #fcd116;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.rasta-info-toc ol {
+  margin: 0 auto;
+  padding-left: 0;
+  list-style-position: inside;
+  display: inline-block;
+  text-align: left;
+}
+
+.rasta-info-toc a {
+  color: #078930;
+  text-decoration: none;
+}
+
+.rasta-info-toc a:hover {
+  color: #fcd116;
+  text-decoration: underline;
+}
+
+.update-date {
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ── Pillar cards (about page) ── */
+.pillar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 25px;
+  margin: 40px 0;
+}
+
+.pillar-card {
+  background: linear-gradient(145deg, rgba(252, 209, 22, 0.05) 0%, rgba(7, 137, 48, 0.05) 100%);
+  border: 1px solid rgba(252, 209, 22, 0.2);
+  border-radius: 15px;
+  padding: 30px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.pillar-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #e41e2b, #fcd116, #078930);
+}
+
+.pillar-card:hover {
+  transform: translateY(-8px);
+  border-color: #fcd116;
+  box-shadow: 0 20px 40px rgba(252, 209, 22, 0.12);
+}
+
+.pillar-card .icon {
+  font-size: 2.5rem;
+  margin-bottom: 15px;
+  display: block;
+}
+
+.pillar-card h4 {
+  color: #fcd116;
+  font-size: 1.15rem;
+  margin-bottom: 15px;
+  font-weight: 700;
+}
+
+.pillar-card p {
+  color: #cfcfcf;
+  line-height: 1.6;
+  margin-bottom: 0.4rem;
+}
+
+@media (max-width: 768px) {
+  .pillar-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,39 +1,59 @@
 'use client';
 
 import { type ReactNode } from 'react';
-import { FileText } from 'lucide-react';
+import { FileText, ShoppingBag } from 'lucide-react';
 import { useLangT } from '@/lib/useTranslation';
 import Link from 'next/link';
 
 interface InfoPageProps {
   title: string;
   subtitle?: string;
+  icon?: string;
   children: ReactNode;
+  showToc?: boolean;
 }
 
-export default function InfoPage({ title, subtitle, children }: InfoPageProps) {
+export default function InfoPage({ title, subtitle, icon = '📄', children, showToc = false }: InfoPageProps) {
   const { t } = useLangT();
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <div className="zion-kicker mb-3 inline-flex items-center gap-2">
-            <FileText className="w-4 h-4" /> {t('info.kicker')}
-          </div>
-          <h1 className="text-3xl font-black font-display text-gradient mb-1">{title}</h1>
-          {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
+    <div className="rasta-info-page">
+      {/* Hero */}
+      <section className="rasta-info-hero">
+        <div className="rasta-info-hero-inner">
+          <span className="rasta-info-version-badge">
+            <FileText className="w-4 h-4 inline-block mr-2" /> {t('info.kicker')}
+          </span>
+          <h1>{title}</h1>
+          {subtitle && <p className="rasta-info-subtitle">{subtitle}</p>}
         </div>
-        <Link href="/" className="zion-button-secondary self-start">
-          ← {t('info.backHome')}
-        </Link>
+      </section>
+
+      {/* Divider */}
+      <div className="rasta-divider">
+        <div className="line" />
+        <span className="icon">{icon}</span>
+        <div className="line" />
       </div>
 
-      <div className="zion-section p-6 md:p-10">
-        <div className="info-content max-w-none">
+      {/* Content */}
+      <section className="rasta-info-section">
+        <div className="rasta-info-content">
           {children}
         </div>
-      </div>
+
+        {/* Bottom CTA */}
+        <div className="rasta-info-cta">
+          <div className="rasta-divider">
+            <div className="line" />
+            <span className="icon">🦁</span>
+            <div className="line" />
+          </div>
+          <Link href="/shop" className="zion-button-primary">
+            <ShoppingBag className="w-4 h-4" /> {t('shop.cta') || 'Zpět do obchodu'}
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }

@@ -12,6 +12,7 @@ export default function ShoppingGuidePage() {
     <InfoPage
       title={tr('info', 'guideTitle', 'cs')}
       subtitle={tr('info', 'guideSubtitle', 'cs')}
+      icon="🛍️"
     >
       <h2>Jak nakoupit krok za krokem</h2>
       <ol>
