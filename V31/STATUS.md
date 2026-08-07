@@ -4,7 +4,58 @@
 > **Datum:** 2026-08-07
 > **Stav:** workspace builduje, **2079 testů prochází (0 failures)**, `cargo clippy --workspace` čisté. **Fáze A i Fáze B jsou kompletní** — `EkamDeeksha` v2 běží na všech výškách (kód `ekam_deeksha.rs` nyní obsahuje i v3.2 ASIC-hardening konstanty: 512 KiB scratchpad, 2 passy, 128 random reads, 2 AES rounds), CPU KAT vektory a GPU OpenCL/CUDA/Metal kernely jsou synchronizovány, `zion-miner` mapuje `ekam_deeksha` na kanonické `deeksha_lite`/`deeksha_chv3` GPU backendy. **V31 je nasazen na Edge** (public RPC, pool, multichain, dashboard). **Lokální GPU OpenCL build + benchmark GO na NVIDIA GTX 1070 Ti (~132 kh/s, 2026-08-06); reálný rig E2E stále pending.** Fáze C1-C8 hotová (DAO + CLI + ZionDex + Dashboard wiring). **Pool FULL V3 feature parity dokončena**. **Dashboard UI/UX update do V31 hotov, `/health` OK. V31 banner KPIs + V31 Production panel (metriky, logy, Grafana) + pool metrics port 8080 + Prometheus/Grafana provisioning nasazeny na Edge. V31 cutover proveden: V3 služby zastaveny a maskovány, `zion-v31-node` osamostatněn od V3. **Fáze D E2E: cargo test --workspace pass, V31 miner našel a odevzdal pool share (block height 50+), web `/api/health` `ok` s rpc_node i mining_pool healthy, e2e API scénáře zelené. Git tag `v3.1.0-alpha.2-phase-D`.
 >
+> **TRINITY STREAM 1 (ZION) — BLOCK PRODUCTION GREEN (2026-08-07):** Tři kritické bugy opraveny, ZION chain rostoucí na Edge (height 51+). Viz detaily níže.
+>
 > **PLAN_TO_3.2 audit 2026-08-07:** CLI (`zion`) má 21 subcommandů (včetně `dao`, `atomic-swap`, `warp`, `monitor`, `topology`, `explorer`, `onboard`, `deploy`, `update`, `compose`, `auxpow`), některé jsou stále stub; miner TUI (`ui.rs`, `interactive.rs`, `setup_menu.rs`, `banner.rs`) je zapojená pod `tui` feature a Cargo.toml obsahuje `full`/`native-all`/`gpu-all`/`public_build`; EVM a ZionDex Solidity kontrakty jsou přítomny v `V31/L2/multichain/contracts/`, ale chybí Foundry/Hardhat projektová konfigurace pro `zion deploy`. **Otevřené zůstává:** non-EVM WARP placeholdery (31 TODO markerů v adapterech), OASIS `output: 'export'` blokuje server-side ZIS route, `deploy-edge.sh` neinstaluje `zion-zis` službu (i když `APP&WEB/identity/` existuje), sync `public/` subtree, reálný GPU rig E2E a 30d continuous run.
+
+## Update 2026-08-07 (Trinity session) — Stream 1 ZION block production GREEN, 3 critical bug fixes
+
+Tři kritické bugy blokovaly produkci ZION bloků na Edge. Všechny opraveny, chain roste (height 51+ v ~5 minutách).
+
+### Bug 1: Pool `current_chain_height` četl V3 height místo native height (`c7b9980a5`)
+
+- **Symptom:** Pool odmítal každý mined block jako `stale block height=2 (tip=0), treating as orphan`
+- **Root cause:** `current_chain_height()` v `stratum.rs` volala `getStatus` RPC metodu, která vrací V3 chain height (0 při běhu s `--v3-no-genesis`). Pool ale submituje native L1 bloky.
+- **Fix:** Přepnuto na `getChainInfo` RPC metodu a čten `native_chain_height` (s fallback na `chain_height` pro starší node)
+
+### Bug 2: Pool vardiff env var names neodpovídaly edge-environment.sh (`e6af816dc`)
+
+- **Symptom:** Pool vždy používal default `start_difficulty=1` (trivially easy target), nonce=0 vždy prošel
+- **Root cause:** Kód četl `ZION_VARDIFF_START` ale env file používá `ZION_VARDIFF_START_DIFF`. Tři env var names se neshodovaly: START, MIN, MAX.
+- **Fix:** Kód nyní čte obě varianty s `*_DIFF` prioritou
+
+### Bug 3: `difficulty_to_target` bit shift direction invertovaný (`fbde94996`) — ROOT CAUSE nonce=0
+
+- **Symptom:** I s `ZION_VARDIFF_START_DIFF=100` nonce=0 vždy prošel share target, ale nikdy nesplnil block target → žádné bloky
+- **Root cause:** Big-endian right-shift loop v `vardiff.rs` iteroval z least-significant do most-significant byte (i=31..0), což je ve skutečnosti LEFT shift. Target pro difficulty 100 byl `0xFF...FF03` místo `0x03FF...FF`.
+- **Fix:** Iterace obrácena na i=0..31 (most-significant → least-significant), carry se nyní propaguje správně pro right shift
+- **Testy:** Přidány 2 nové testy (`test_difficulty_to_target_100_has_correct_leading_bits`, `test_difficulty_to_target_10_first_byte`) ověřující správné leading bytes
+
+### Edge deployment výsledky
+
+- **Pool + miner přestavěny** na Edge s nejnovějším kódem (`fbde94996`)
+- **ZION_VARDIFF_START_DIFF=100** nastaveno v `/etc/zion/edge-environment.sh`
+- **Block production GREEN:**
+  - `submitBlock response: {"id":1,"jsonrpc":"2.0","result":{"accepted":true}}`
+  - `notify_block_found miner=zion1j0j5d0c70056u678j7g4p686e7r3w5k0y8vy0m0 height=51 worker=edge-cpu`
+  - `native_chain_height: 51` (z 1 na 51 v ~5 minutách, ~5s/blok)
+  - Nonce nyní non-zero (0x0e, 0xa4, 0x10, 0x0f, ...)
+- **Pool test suite:** 163 tests pass (0 failures)
+- **Commits pushed:** `c7b9980a5`, `e6af816dc`, `fbde94996`
+
+### Trinity Stream status
+
+| Stream | Coin | Pool | Status |
+|--------|------|------|--------|
+| Stream 1 (ZION) | ZION | localhost:8444 | ✅ GREEN — blocks mined + accepted, height 51+ |
+| Stream 2 (GPU AuxPoW) | ZANO | de.zano.herominers.com:1110 | ⚠️ Connected + `eth_submitLogin` authorized, ale revenue_proxy EOF po subscribe |
+| Stream 3 (CPU AuxPoW) | VRSC | eu.luckpool.net:3956 | ⚠️ Connection unstable — poll loop keeps ending, reconnect storm |
+
+### Zbývající úkoly
+
+- **Stream 2 (ZANO):** Debug revenue_proxy EOF po subscribe — pool pravděpodobně očekává jiný protokol handshake
+- **Stream 3 (VRSC):** Debug connection instability — možná zcashstratum subscribe/authorize sekvence issue, nebo pool odpojuje kvůli nevalidnímu worker name
+- **VRSC reconnect storm způsobil fail2ban SSH ban** — reconnect smyčka generuje rychlé TCP connect/disconnect, fail2ban vyhodnotil jako port scan. Nutno přidat Edge IP do ignoreip nebo zpomalit reconnect.
 
 ## Update 2026-08-07 (session) — u128 JSON serde hardening, Edge binary redeploy, block production green
 
