@@ -1175,7 +1175,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "critical", "autoheal": False,
      "health_endpoint": "http://127.0.0.1:9445",
-     "purpose": "V31 Mainnet Alpha (3.1.0-alpha.2) — PROD node. P2P 8335, RPC 9445. Independent of V3. systemd zion-v31-node.service.",
+     "purpose": "V31 Mainnet Alpha 3.1.0-beta (protocol 3.1.0-alpha) — PROD node. P2P 8335, RPC 9445. Independent of V3. systemd zion-v31-node.service.",
      "child_says": "🚀 V31 PROD node — mainnet alpha!",
      "depends_on": []},
     {"id": "v31-pool", "name": "V31 Pool (PROD)", "icon": "🌐", "level": "L1", "kind": "pool",
@@ -3322,13 +3322,13 @@ def _build_status_edge_primary() -> dict:
         "tip_hash": v31_tip_hash,
         "mempool_size": v31_mempool,
         "network": _vr.get("network", "mainnet"),
-        "protocol_version": _vr.get("protocol_version", "zion-v3-node/3.1.0-alpha.2"),
+        "protocol_version": _vr.get("protocol_version", "3.1.0-alpha"),
         "accepted_blocks": _vr.get("accepted_blocks"),
         "node_id": _vr.get("node_id", "zion-edge-v31"),
         "p2p_bind": _vr.get("p2p_bind", "0.0.0.0:8335"),
         "rpc_bind": _vr.get("rpc_bind", "127.0.0.1:9445"),
         "host": "127.0.0.1:9445",
-        "version": "3.1.0-alpha.2",
+        "version": "3.1.0-beta",
         "known_peers": _vr.get("known_peers", 0),
         "sync_lag": 0,
     }
@@ -3377,13 +3377,13 @@ def _build_status_edge_primary() -> dict:
         "tip_hash": v31_n2_tip,
         "mempool_size": v31_n2_mempool,
         "network": _vr2.get("network", "mainnet"),
-        "protocol_version": _vr2.get("protocol_version", "zion-v3-node/3.1.0-alpha.2"),
+        "protocol_version": _vr2.get("protocol_version", "3.1.0-alpha"),
         "accepted_blocks": _vr2.get("accepted_blocks"),
         "node_id": _vr2.get("node_id", "zion-edge-v31-node2"),
         "p2p_bind": _vr2.get("p2p_bind", "0.0.0.0:8336"),
         "rpc_bind": _vr2.get("rpc_bind", "127.0.0.1:9446"),
         "host": "127.0.0.1:9446",
-        "version": "3.1.0-alpha.2",
+        "version": "3.1.0-beta",
         "known_peers": _vr2.get("known_peers", 0),
         "sync_lag": 0,
     }
@@ -3424,13 +3424,13 @@ def _build_status_edge_primary() -> dict:
         "tip_hash": v31_n3_tip,
         "mempool_size": v31_n3_mempool,
         "network": _vr3.get("network", "mainnet"),
-        "protocol_version": _vr3.get("protocol_version", "zion-v3-node/3.1.0-alpha.2"),
+        "protocol_version": _vr3.get("protocol_version", "3.1.0-alpha"),
         "accepted_blocks": _vr3.get("accepted_blocks"),
         "node_id": _vr3.get("node_id", "zion-edge-v31-node3"),
         "p2p_bind": _vr3.get("p2p_bind", "0.0.0.0:8337"),
         "rpc_bind": _vr3.get("rpc_bind", "127.0.0.1:9447"),
         "host": "127.0.0.1:9447",
-        "version": "3.1.0-alpha.2",
+        "version": "3.1.0-beta",
         "known_peers": _vr3.get("known_peers", 0),
         "sync_lag": 0,
     }
@@ -11887,7 +11887,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         # ── Dashboard v2 compatibility endpoints ─────────────────────────────
         elif route == "/health":
             # Simple liveness endpoint for load balancers / uptime probes
-            self._json({"ok": True, "status": "healthy", "version": "3.1.0-alpha.2", "timestamp": int(time.time())})
+            self._json({"ok": True, "status": "healthy", "version": "3.1.0-beta", "timestamp": int(time.time())})
         elif route == "/api/health":
             # v2 client: GET /api/health → returns HealthMap {service: status}
             self._json(_build_health_map())

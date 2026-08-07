@@ -593,7 +593,7 @@ def status():
         "sync_mode": _detect_sync_mode(db_tip["db_height"]),
         "sync_lag": max(0, v3_ref_height - db_tip["db_height"]) if v3_ref_height > 0 else 0,
         "log_dir": str(LOG_DIR),
-        "version": "3.1.0-alpha.2",
+        "version": "3.1.0-beta",
         "service_name": _service_unit("node"),
     }
 

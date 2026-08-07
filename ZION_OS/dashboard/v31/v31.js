@@ -1,4 +1,4 @@
-// V31 Mainnet Alpha dashboard — v3.1.0-alpha.2
+// V31 Mainnet Alpha dashboard — v3.1.0-beta
 // Updated 2026-08-03: systemd + journald based, live sync metrics
 
 async function api(path, opts={}) {
@@ -26,7 +26,7 @@ function setBanner(st) {
   const fmt = (n, d=0) => (n == null || n === '' || n === undefined) ? '—' : Number(n).toLocaleString(undefined, {minimumFractionDigits:d, maximumFractionDigits:d});
   const el = id => document.getElementById(id);
 
-  if (el('banner-version')) el('banner-version').textContent = st.version || '3.1.0-alpha.2';
+  if (el('banner-version')) el('banner-version').textContent = st.version || '3.1.0-beta';
 
   if (el('banner-network')) {
     const ok = st.node_running && st.node_reachable;
