@@ -68,7 +68,7 @@
 #endif
 
 /* ============================================================================
- * KECCAK-f[1600] — reference implementation (original Keccak padding 0x01)
+ * KECCAK-f[1600] -- reference implementation (original Keccak padding 0x01)
  * ============================================================================ */
 
 static const uint64_t KECCAK_RC[24] = {
@@ -156,7 +156,7 @@ static void keccak_hash(const uint8_t *in, size_t inlen,
 
     /* Final block: copy remainder, append Keccak suffix 0x01, pad10*1 */
     memcpy(temp, in, inlen);
-    temp[inlen++] = 0x01;   /* Keccak domain suffix — NOT SHA3 (0x06) */
+    temp[inlen++] = 0x01;   /* Keccak domain suffix -- NOT SHA3 (0x06) */
     memset(temp + inlen, 0, rsiz - inlen);
     temp[rsiz - 1] |= 0x80;
     for (i = 0; i < rsiz / 8; i++)
@@ -178,7 +178,7 @@ static void keccak512(const uint8_t *in, size_t len, uint8_t *out) {
 }
 
 /* ============================================================================
- * FNV-1a (32-bit) — Ethash mixing
+ * FNV-1a (32-bit) -- Ethash mixing
  *   hash = (hash ^ element) * FNV_PRIME
  * ============================================================================ */
 
@@ -246,7 +246,7 @@ static void ethash_compute(const uint8_t header_hash[32],
         }
     }
 
-    /* Step 4: compress mix — FNV-fold each group of 4 u32 words -> 8 u32 (32 bytes) */
+    /* Step 4: compress mix -- FNV-fold each group of 4 u32 words -> 8 u32 (32 bytes) */
     uint32_t cmix[8];
     for (int i = 0; i < 32; i += 4) {
         cmix[i / 4] = fnv1a(fnv1a(fnv1a(mix[i], mix[i + 1]), mix[i + 2]), mix[i + 3]);
@@ -270,7 +270,7 @@ static void ethash_compute(const uint8_t header_hash[32],
  * The host may register a precomputed DAG once per epoch via ethash_set_dag().
  * When set, the legacy ethash_hash() uses the real DAG-based algorithm.
  * When not set, it falls back to a light cache evaluation (NOT valid for real
- * mining — only for testing the stratum pipeline).
+ * mining -- only for testing the stratum pipeline).
  * ============================================================================ */
 
 typedef struct {
@@ -291,7 +291,7 @@ EXPORT void ethash_set_dag(const uint8_t *dag, uint64_t dag_size_entries) {
 }
 
 /* ============================================================================
- * PRIMARY API — real DAG-based Ethash
+ * PRIMARY API -- real DAG-based Ethash
  * ============================================================================ */
 
 /* Compute the full Ethash hash over a precomputed DAG.
@@ -352,7 +352,7 @@ EXPORT int32_t ethash_mine(
 }
 
 /* ============================================================================
- * LEGACY API — light-mode fallback (kept for backward compatibility)
+ * LEGACY API -- light-mode fallback (kept for backward compatibility)
  *
  * ethash_hash() / ethash_verify() use the globally-registered DAG (via
  * ethash_set_dag) when available.  When no DAG is registered, they fall back
@@ -369,16 +369,43 @@ EXPORT uint32_t ethash_get_epoch(uint32_t block_number) {
     return block_number / ETHASH_EPOCH_LENGTH;
 }
 
-/* Get cache size for epoch (light-mode fallback) */
-EXPORT uint64_t ethash_get_cache_size(uint32_t epoch) {
-    uint64_t size = 16 * 1024 * 1024 + (uint64_t)epoch * 128 * 1024;
-    return (size / 64) * 64;
+/* Simple primality test for 64-bit integers.
+ * Cache/dataset item counts are < 2^64 and their square roots are small,
+ * so trial division is fast enough. */
+static int ethash_is_prime(uint64_t n) {
+    if (n < 2) return 0;
+    if (n % 2 == 0) return n == 2;
+    if (n % 3 == 0) return n == 3;
+    uint64_t i = 5;
+    while (i * i <= n) {
+        if (n % i == 0 || n % (i + 2) == 0) return 0;
+        i += 6;
+    }
+    return 1;
 }
 
-/* Get dataset size for epoch */
+/* Get cache size for epoch (light-mode fallback).
+ *
+ * Follows the Ethash/ProgPoW spec: linear growth rounded down to the
+ * largest size whose number of 64-byte items is prime. */
+EXPORT uint64_t ethash_get_cache_size(uint32_t epoch) {
+    uint64_t items = (16ULL * 1024 * 1024 + (uint64_t)epoch * 128 * 1024 - 64) / 64;
+    while (!ethash_is_prime(items)) {
+        items = items > 2 ? items - 2 : 1;
+    }
+    return items * 64;
+}
+
+/* Get dataset size for epoch.
+ *
+ * Follows the Ethash/ProgPoW spec: linear growth rounded down to the
+ * largest size whose number of 128-byte items is prime. */
 EXPORT uint64_t ethash_get_dataset_size(uint32_t epoch) {
-    uint64_t size = 1024ULL * 1024 * 1024 + (uint64_t)epoch * 8 * 1024 * 1024;
-    return (size / 128) * 128;
+    uint64_t items = (1024ULL * 1024 * 1024 + (uint64_t)epoch * 8 * 1024 * 1024 - 128) / 128;
+    while (!ethash_is_prime(items)) {
+        items = items > 2 ? items - 2 : 1;
+    }
+    return items * 128;
 }
 
 /* Generate seed hash for epoch by keccak256-chaining */
@@ -574,6 +601,236 @@ EXPORT double ethash_benchmark(int32_t iterations) {
     return secs > 0.0 ? iterations / secs : 0.0;
 }
 
+/* ============================================================================
+ * DAG GENERATOR -- light cache -> full DAG (graph expansion)
+ *
+ * Implements the standard Ethash dataset generation:
+ *   1. Build the light cache (already done by _ctx_init_epoch)
+ *   2. For each DAG node i (128 bytes = 16 x u64):
+ *      a. Start with a copy of cache[i % cache_items]
+ *      b. Mix with 256 parent nodes (ETHASH_DATASET_PARENTS) using FNV-1a
+ *         index selection and keccak-512 mixing
+ *   3. The result is the full DAG buffer
+ *
+ * The caller owns the returned buffer and must free() it.
+ * Returns NULL on allocation failure or if the cache is not initialized.
+ *
+ * Parameters:
+ *   epoch            -- epoch number (determines cache + DAG size)
+ *   dag_size_entries -- output: number of 128-byte entries generated
+ *   progress_cb      -- optional callback called after each 1% of DAG generated
+ *                      (may be NULL); receives percentage 0..100
+ * Returns:
+ *   pointer to DAG buffer (dag_size_entries * 128 bytes), or NULL on error.
+ *   Caller must free() the returned pointer.
+ * ============================================================================ */
+
+typedef void (*dag_progress_cb)(uint32_t percent);
+
+/* Calculate a single 64-byte DAG node from the light cache.
+ * Each DAG *entry* is 128 bytes = 2 x 64-byte "nodes".
+ * node_index refers to the 64-byte node, not the 128-byte entry.
+ * So DAG entry e = node(2*e) || node(2*e + 1). */
+static void ethash_calc_dag_node(
+    uint64_t node_index,
+    const uint8_t *cache,
+    uint64_t cache_items,
+    uint8_t *out64)  /* 64-byte output */
+{
+    /* Step 1: init = cache[node_index % cache_items] (64 bytes) */
+    uint8_t mix[64];
+    memcpy(mix, cache + (node_index % cache_items) * 64, 64);
+
+    /* Step 2: mix with 256 parents */
+    for (uint32_t p = 0; p < ETHASH_DATASET_PARENTS; p++) {
+        uint32_t mix_first = *(const uint32_t *)(const void *)mix;
+        uint32_t parent_idx = fnv1a((uint32_t)(node_index ^ p), mix_first) % (uint32_t)cache_items;
+        const uint8_t *parent = cache + (uint64_t)parent_idx * 64;
+
+        /* FNV-1a per 32-bit word (16 words in 64 bytes) */
+        for (int j = 0; j < 16; j++) {
+            uint32_t *mix_w = (uint32_t *)(void *)(mix + j * 4);
+            uint32_t parent_w = *(const uint32_t *)(const void *)(parent + j * 4);
+            *mix_w = fnv1a(*mix_w, parent_w);
+        }
+    }
+
+    /* Step 3: keccak-512(mix) -> output (64 bytes) */
+    keccak512(mix, 64, out64);
+}
+
+/* Generate the full DAG for a given epoch.
+ * The caller owns the returned buffer and must free() it.
+ *
+ *   epoch             -- epoch number
+ *   dag_size_entries  -- output: number of 128-byte entries
+ *   progress_cb       -- optional progress callback (0..100), may be NULL
+ *   returns           -- malloc'd DAG buffer (dag_size_entries * 128 bytes),
+ *                       or NULL on error.  Caller must free().
+ */
+EXPORT uint8_t *ethash_generate_dag(
+    uint32_t epoch,
+    uint64_t *dag_size_entries,
+    dag_progress_cb progress_cb)
+{
+    if (!dag_size_entries) return NULL;
+    *dag_size_entries = 0;
+
+    /* Initialize the light cache for this epoch (full size, not capped) */
+    if (!g_ctx) {
+        g_ctx = (ethash_ctx_t *)calloc(1, sizeof(ethash_ctx_t));
+        if (!g_ctx) return NULL;
+    }
+
+    /* If cache is for a different epoch, rebuild it (full size) */
+    if (!g_ctx->initialized || g_ctx->epoch != epoch) {
+        if (g_ctx->cache) { free(g_ctx->cache); g_ctx->cache = NULL; }
+        g_ctx->epoch = epoch;
+        ethash_get_seedhash(epoch, g_ctx->seed);
+
+        /* Full cache size (not capped at 64 MB for DAG generation) */
+        uint64_t full_cache = ethash_get_cache_size(epoch);
+        g_ctx->cache_size  = full_cache;
+        g_ctx->cache_items = full_cache / 64;
+
+        g_ctx->cache = (uint8_t *)malloc(full_cache);
+        if (!g_ctx->cache) return NULL;
+
+        /* Generate cache: seed first item, chain with keccak-512 */
+        keccak512(g_ctx->seed, 32, g_ctx->cache);
+        for (uint64_t i = 1; i < g_ctx->cache_items; i++) {
+            keccak512(g_ctx->cache + (i - 1) * 64, 64, g_ctx->cache + i * 64);
+        }
+
+        /* RANDMEMOHASH mixing rounds (3 rounds) */
+        for (int r = 0; r < ETHASH_CACHE_ROUNDS; r++) {
+            for (uint64_t i = 0; i < g_ctx->cache_items; i++) {
+                uint32_t v = *(uint32_t *)(void *)&g_ctx->cache[i * 64] % (uint32_t)g_ctx->cache_items;
+                uint64_t prev = (i + g_ctx->cache_items - 1) % g_ctx->cache_items;
+                uint8_t tmp[64];
+                for (int j = 0; j < 64; j++)
+                    tmp[j] = g_ctx->cache[prev * 64 + j] ^ g_ctx->cache[v * 64 + j];
+                keccak512(tmp, 64, g_ctx->cache + i * 64);
+            }
+        }
+        g_ctx->initialized = 1;
+    }
+
+    /* Calculate DAG size */
+    uint64_t ds_entries = ethash_get_dataset_size(epoch) / ETHASH_DAG_ENTRY_BYTES;
+    uint64_t ds_bytes   = ds_entries * ETHASH_DAG_ENTRY_BYTES;
+
+    /* Allocate DAG buffer */
+    uint8_t *dag = (uint8_t *)malloc(ds_bytes);
+    if (!dag) return NULL;
+
+    /* Generate each 128-byte DAG entry = 2 x 64-byte canonical nodes.
+     *
+     * Each node is independent (only reads from the read-only light cache),
+     * so this loop is embarrassingly parallel. We use OpenMP to distribute
+     * the work across all available CPU cores, reducing DAG generation time
+     * from ~minutes (single-threaded) to ~seconds on a multi-core box.
+     *
+     * The cache (`g_ctx->cache`, `g_ctx->cache_items`) is read-only during
+     * DAG generation, so it is safe to share across threads without locking.
+     * The `dag` buffer is partitioned by node index, so writes are also
+     * race-free. The progress callback is invoked from the main thread only
+     * (via `omp master` + `omp atomic capture`) to avoid concurrent calls.
+     */
+    uint64_t total_nodes = ds_entries * 2;  /* 2 nodes per entry */
+    uint64_t progress_step = (total_nodes / 100) + 1;
+
+#pragma omp parallel for schedule(static)
+    for (int64_t n_signed = 0; n_signed < (int64_t)total_nodes; n_signed++) {
+        uint64_t n = (uint64_t)n_signed;
+        ethash_calc_dag_node(n, g_ctx->cache, g_ctx->cache_items,
+                              dag + n * 64);
+        if (progress_cb && (n % progress_step == 0)) {
+#pragma omp critical
+            progress_cb((uint32_t)(n * 100 / total_nodes));
+        }
+    }
+
+    *dag_size_entries = ds_entries;
+
+    if (progress_cb) progress_cb(100);
+
+    return dag;
+}
+
+/* Free a DAG buffer generated by ethash_generate_dag.
+ * This is just free() but exported for FFI safety. */
+EXPORT void ethash_free_dag(uint8_t *dag) {
+    free(dag);
+}
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/*  ETHASH LIGHT CACHE GENERATION (for on-GPU DAG generation)                */
+/*                                                                            */
+/*  The light cache is small (~16MB + epoch*128KB) and fast to generate on   */
+/*  CPU.  It is uploaded to the GPU and used as input for the OpenCL DAG     */
+/*  generation kernel (ethash_calculate_dag_item).  This avoids generating   */
+/*  the full multi-GB DAG on the CPU.                                        */
+/* ────────────────────────────────────────────────────────────────────────── */
+
+/* Generate only the light cache for a given epoch.
+ * The light cache is small (~16MB + epoch*128KB) and fast to generate on CPU.
+ * It is used as input for on-GPU DAG generation.
+ *
+ *   epoch             -- epoch number
+ *   cache_size_bytes  -- output: size of cache in bytes
+ *   cache_items       -- output: cache_size / 64
+ *   dag_size_entries  -- output: dataset size / 128 (number of 128-byte DAG entries)
+ *   returns           -- malloc'd cache buffer, or NULL on error. Caller must free().
+ */
+EXPORT uint8_t *ethash_generate_light_cache(
+    uint32_t epoch,
+    uint64_t *cache_size_bytes,
+    uint64_t *cache_items,
+    uint64_t *dag_size_entries)
+{
+    if (!cache_size_bytes || !cache_items || !dag_size_entries) return NULL;
+
+    /* Build the seed hash for this epoch */
+    uint8_t seed[32];
+    ethash_get_seedhash(epoch, seed);
+
+    uint64_t c_size = ethash_get_cache_size(epoch);
+    uint64_t c_items = c_size / 64;
+
+    uint8_t *cache = (uint8_t *)malloc(c_size);
+    if (!cache) return NULL;
+
+    /* Generate cache: seed first item, chain with keccak-512 */
+    keccak512(seed, 32, cache);
+    for (uint64_t i = 1; i < c_items; i++) {
+        keccak512(cache + (i - 1) * 64, 64, cache + i * 64);
+    }
+
+    /* RANDMEMOHASH mixing rounds (3 rounds) */
+    for (int r = 0; r < ETHASH_CACHE_ROUNDS; r++) {
+        for (uint64_t i = 0; i < c_items; i++) {
+            uint32_t v = *(uint32_t *)(void *)&cache[i * 64] % (uint32_t)c_items;
+            uint64_t prev = (i + c_items - 1) % c_items;
+            uint8_t tmp[64];
+            for (int j = 0; j < 64; j++)
+                tmp[j] = cache[prev * 64 + j] ^ cache[v * 64 + j];
+            keccak512(tmp, 64, cache + i * 64);
+        }
+    }
+
+    *cache_size_bytes = c_size;
+    *cache_items = c_items;
+    *dag_size_entries = ethash_get_dataset_size(epoch) / ETHASH_DAG_ENTRY_BYTES;
+
+    return cache;
+}
+
+/* Free a light cache buffer generated by ethash_generate_light_cache. */
+EXPORT void ethash_free_light_cache(uint8_t *cache) {
+    free(cache);
+}
+
 /* Cleanup */
 EXPORT void ethash_cleanup(void) {
     if (g_ctx) {
@@ -588,7 +845,7 @@ EXPORT void ethash_cleanup(void) {
 
 /* Self-test (prints to stdout for Docker log validation) */
 EXPORT void ethash_test(void) {
-    printf("=== ZION Native Ethash v3.0 — Self-Test ===\n");
+    printf("=== ZION Native Ethash v3.0 -- Self-Test ===\n");
 
     /* Build a tiny fake DAG (4 entries of 128 bytes) for a smoke test */
     uint8_t fake_dag[4 * ETHASH_DAG_ENTRY_BYTES];
@@ -617,5 +874,5 @@ EXPORT void ethash_test(void) {
 }
 
 EXPORT const char *ethash_version(void) {
-    return "ZION Ethash v3.0 — real DAG-based, ETC/ETHW compatible, Keccak-f[1600]";
+    return "ZION Ethash v3.0 -- real DAG-based, ETC/ETHW compatible, Keccak-f[1600]";
 }

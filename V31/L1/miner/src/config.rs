@@ -100,7 +100,10 @@ impl MinerConfig {
             stream1_enabled: true,
             stream2_enabled: true,
             stream3_enabled: true,
-            stream2_batch: 100_000,
+            stream2_batch: std::env::var("ZION_STREAM2_BATCH")
+                .ok()
+                .and_then(|v| v.trim().parse().ok())
+                .unwrap_or(1_000_000),
             stream3_batch: 1_000_000,
             stream2_force_coin: std::env::var("ZION_STREAM2_FORCE_COIN")
                 .ok()
