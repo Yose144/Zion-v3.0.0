@@ -277,6 +277,9 @@ log "Installing nginx config..."
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
     cp -f '${REMOTE_ROOT}/V31/deploy/nginx/zion-nginx.conf'  /etc/nginx/sites-available/zion-nginx.conf
     ln -sfn /etc/nginx/sites-available/zion-nginx.conf /etc/nginx/sites-enabled/zion-nginx.conf
+    # Remove legacy site configs that conflict with the new main site
+    rm -f /etc/nginx/sites-enabled/zion.conf
+    rm -f /etc/nginx/sites-enabled/zion-maintenance.conf
     nginx -t 2>&1 && systemctl reload nginx 2>/dev/null || true
 "
 
@@ -334,13 +337,28 @@ else
     warn "zion-web container not detected after deploy"
 fi
 
+# ── Step 9b: Deploy ZION Identity Service (ZIS) ──
+log "Deploying ZION Identity Service (auth.zionterranova.com)..."
+REPO_ROOT_REAL="$(cd "${REPO_ROOT}/.." && pwd)"
+if [[ -f "${REPO_ROOT_REAL}/APP&WEB/identity/deploy/deploy-zis.sh" ]]; then
+    if bash "${REPO_ROOT_REAL}/APP&WEB/identity/deploy/deploy-zis.sh" --build-only; then
+        # deploy-zis.sh --build-only builds locally; run the full deploy separately to
+        # avoid pulling in APP&WEB via the main rsync exclude list.
+        bash "${REPO_ROOT_REAL}/APP&WEB/identity/deploy/deploy-zis.sh" || warn "ZIS deploy step had issues (continuing)"
+    else
+        warn "ZIS build failed; skipping ZIS deploy"
+    fi
+else
+    warn "ZIS deploy script not found at APP&WEB/identity/deploy/deploy-zis.sh"
+fi
+
 # ── Step 10: Wait and verify ──
 log "Waiting for services to come up..."
 sleep 10
 
 echo ""
 echo "=== Deployment Status ==="
-for svc in zion-v31-node zion-v31-pool zion-v31-multichain zion-v31-dao zion-v31-oasis zion-v31-miner zion-edge-backup zion-edge-maintenance; do
+for svc in zion-v31-node zion-v31-pool zion-v31-multichain zion-v31-dao zion-v31-oasis zion-v31-miner zion-edge-backup zion-edge-maintenance zion-zis; do
     STATUS=$(ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl is-active ${svc}" 2>/dev/null || true)
     if [[ "$STATUS" == "active" ]]; then
         echo -e "${GREEN}  ${svc} : ACTIVE${NC}"
