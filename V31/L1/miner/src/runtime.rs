@@ -1045,6 +1045,7 @@ impl MinerRuntime {
                         } => {
                             this.mark_active(StreamId::GpuExternal).await;
                             if let Err(e) = result {
+                                eprintln!("v3_trinity gpu_ext_error: {}", e);
                                 warn!(error = %e, "V3 Trinity: GPU AuxPoW error");
                                 sleep(Duration::from_millis(50)).await;
                             }
@@ -1077,6 +1078,7 @@ impl MinerRuntime {
                         } => {
                             this.mark_active(StreamId::CpuExternal).await;
                             if let Err(e) = result {
+                                eprintln!("v3_trinity cpu_ext_error: {}", e);
                                 warn!(error = %e, "V3 Trinity: CPU AuxPoW error");
                                 sleep(Duration::from_millis(50)).await;
                             }
@@ -1214,9 +1216,12 @@ impl MinerRuntime {
             .ok_or_else(|| MinerError::Consensus(format!("unknown coin: {}", ext.coin)))?;
 
         // Convert ExternalStreamJob → auxpow::Job
-        let header = hex::decode(&ext.header_hex)
+        // Strip 0x prefix if present (EthStratum pools send hex with 0x prefix)
+        let header_hex_stripped = ext.header_hex.strip_prefix("0x").unwrap_or(&ext.header_hex);
+        let target_hex_stripped = ext.target_hex.strip_prefix("0x").unwrap_or(&ext.target_hex);
+        let header = hex::decode(header_hex_stripped)
             .map_err(|e| MinerError::Consensus(format!("ext header decode: {e}")))?;
-        let target_vec = hex::decode(&ext.target_hex)
+        let target_vec = hex::decode(target_hex_stripped)
             .map_err(|e| MinerError::Consensus(format!("ext target decode: {e}")))?;
         let mut target = [0u8; 32];
         let copy_len = target_vec.len().min(32);
@@ -1232,6 +1237,16 @@ impl MinerRuntime {
             ntime: String::new(),
             height: ext.height,
         };
+
+        eprintln!(
+            "v3_trinity ext_mine_start stream={:?} coin={} algo={} header_len={} target_hex={} height={} batch={}",
+            stream, ext.coin, ext.algorithm, header.len(), ext.target_hex, ext.height,
+            match stream {
+                StreamId::GpuExternal => self.config.stream2_batch,
+                StreamId::CpuExternal => self.config.stream3_batch,
+                _ => self.config.auxpow_nonce_batch,
+            }
+        );
 
         // Mine the share using existing GPU/CPU infrastructure
         let batch = match stream {
