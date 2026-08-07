@@ -157,6 +157,12 @@ impl ExternalCoin {
         }
     }
 
+    /// Parse a coin from its ticker string (case-insensitive).
+    pub fn from_ticker(ticker: &str) -> Option<ExternalCoin> {
+        let upper = ticker.trim().to_ascii_uppercase();
+        Self::ALL.iter().copied().find(|c| c.as_str() == upper)
+    }
+
     pub fn algorithm(&self) -> &'static str {
         match self {
             ExternalCoin::Kaspa => "kheavyhash",

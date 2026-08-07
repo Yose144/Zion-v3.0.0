@@ -3,9 +3,12 @@ set -euo pipefail
 
 # ── V31 Trinity Miner Wrapper for SMOS ──────────────────────────────────────
 # Triple-stream: ZION (GPU) + ZANO (GPU AuxPoW) + VRSC (CPU AuxPoW)
-# V31 architecture: direct stratum connections per stream (no pool bridge needed)
-# Date: 2026-08-07
+# V3 Trinity architecture: single V3 protocol connection to ZION pool.
+# Pool embeds external_stream jobs and forwards AuxPoW shares to external pools.
+# All revenue flows through the pool's AuxPoW bridge and revenue system.
+# Date: 2026-08-07 (V3.2 Trinity upgrade)
 
+# Pool wallet — miner uses this for ZION coinbase. Pool handles ZANO/VRSC wallets.
 WALLET_ADDR="zion1s6m204400290l660k622r3r0c6u040g5j6cu2x5"
 WORKER_NAME="vega-smos"
 export ZION_MINER_ID="vega-smos"
@@ -18,6 +21,11 @@ export ZION_INTERACTIVE=0
 export ZION_NO_STICKY=1
 export ZION_METRICS_REPORT_SECS=15
 export ZION_STATS_FILE="/tmp/zion-miner-stats.json"
+
+# ── V3 Trinity mode ────────────────────────────────────────────────────────
+# All 3 streams through a single V3 protocol connection to the pool.
+# The pool distributes ZANO (GPU) and VRSC (CPU) jobs via external_stream fields.
+export ZION_V3_TRINITY=1
 
 # ── GPU / autotune ────────────────────────────────────────────────────────
 export ZION_AUTOTUNE=1
@@ -36,26 +44,14 @@ export ZION_GPU_MAX_BATCH=65536
 export ZION_GPU_EARLY_BREAK=0
 export ZION_GPU_NO_STREAM_BYPRODUCT=1
 
-# ── Triple-stream (ZION GPU + ZANO GPU + VRSC CPU) ───────────────────────────
-# V31 uses direct stratum connections per stream.
-# Stream 1 (ZION): connects to ZION pool via --pool
-# Stream 2 (GPU AuxPoW): connects directly to ZANO pool via --stream2-url
-# Stream 3 (CPU AuxPoW): connects directly to VRSC pool via --stream3-url
+# ── Triple-stream config ──────────────────────────────────────────────────
+# In V3 Trinity mode, the pool decides which coins to send based on its
+# auxpow_runtime configuration (ZANO + VRSC). No direct stream URLs needed.
 export ZION_STREAM1_ENABLED=1
 export ZION_STREAM2_ENABLED=1
 export ZION_STREAM3_ENABLED=1
-export ZION_STREAM2_FORCE_COIN=ZANO
-export ZION_STREAM3_FORCE_COIN=VRSC
-export ZION_STREAM2_URL="de.zano.herominers.com:1110"
-export ZION_STREAM3_URL="eu.luckpool.net:3956"
 
-# ZANO wallet (per-coin wallet for Stream 2)
-export ZION_AUXPOW_WALLET_ZANO="ZxCj5kQhNdW7xtt4hDTotBPGUsWYKRdtdPTFXjzFpPpf6q42rCVXcYnTtHRYGj3pzz2LUqCnvVoRzFn9zfZdCSzC1CkBiHYrg"
-
-# VRSC wallet (per-coin wallet for Stream 3)
-export ZION_AUXPOW_WALLET_VRSC="RLFQYsdd8wGGUgMgk17WrqdGNtkAVSCfDQ"
-
-# GPU AuxPoW tuning (ZANO ProgPoWZ)
+# GPU AuxPoW tuning (ZANO ProgPoWZ — pool sends jobs, miner mines)
 export ZION_STREAM2_BATCH=2097152
 export ZION_EXT_GPU_BATCH_SIZE=2097152
 export ZION_AUXPOW_GPU_WORK_SIZE=1048576
@@ -63,7 +59,7 @@ export ZION_AUXPOW_GPU_GROUP_SIZE=128
 export ZION_AUXPOW_GPU_VRAM_PCT=50
 export ZION_AUXPOW_GPU_BYTES_PER_ITEM=64
 
-# CPU AuxPoW tuning (VRSC VerusHash)
+# CPU AuxPoW tuning (VRSC VerusHash — pool sends jobs, miner mines)
 export ZION_STREAM3_BATCH=2000000
 export ZION_EXT_CPU_NONCE_COUNT=2000000
 export ZION_MINER_THREADS=4
@@ -85,13 +81,12 @@ chmod +x "${LOCAL_MINER}.tmp"
 mv "${LOCAL_MINER}.tmp" "${LOCAL_MINER}"
 echo "[smos-wrapper] V31 miner binary ready ($(stat -c%s "${LOCAL_MINER}") bytes)"
 
-echo "[smos-wrapper] starting TRIPLE STREAM (V31): ZION + ZANO + VRSC"
+echo "[smos-wrapper] starting V3 TRINITY: ZION + ZANO + VRSC (all through pool)"
 exec "${LOCAL_MINER}" \
   --pool "${ZION_POOL_ADDR:-62.171.141.136:8444}" \
   --wallet "${WALLET_ADDR}" \
   --worker "${WORKER_NAME}" \
-  --stream2-url "${ZION_STREAM2_URL}" \
-  --stream3-url "${ZION_STREAM3_URL}" \
   --gpu "${ZION_GPU_BACKEND}" \
   --threads "${ZION_MINER_THREADS}" \
+  --v3-trinity \
   "$@"

@@ -20,7 +20,10 @@ use crate::autonomous::{AutonomousProfitRouter, HardwareProfile};
 #[cfg(feature = "auxpow")]
 use crate::auxpow::{AuxPoWScheduler, Job, Share, ShareResult, StratumClient};
 use crate::config::MinerConfig;
+use crate::pool_message::ExternalStreamJob;
 use crate::stream::{StreamId, StreamStats};
+#[cfg(feature = "auxpow")]
+use crate::v3_pool_client::V3PoolClient;
 
 #[cfg(feature = "auxpow")]
 use crate::gpu::{create_gpu_backend, GpuBackendKind};
@@ -861,6 +864,366 @@ impl MinerRuntime {
         r3??;
         r_profit??;
         Ok(())
+    }
+
+    /// Run Trinity mode: single V3 protocol connection to the pool carries
+    /// all 3 streams (ZION + GPU AuxPoW + CPU AuxPoW). The pool embeds
+    /// `external_stream` and `external_stream_cpu` fields in each Job message,
+    /// and the miner submits shares back via `Submit` (ZION) and
+    /// `ExternalSubmit` (AuxPoW).
+    ///
+    /// This replaces the legacy direct-stratum-connection mode where the
+    /// miner connected separately to external pools. All revenue flows
+    /// through the pool's AuxPoW bridge and revenue system.
+    #[cfg(feature = "auxpow")]
+    pub async fn run_v3_trinity(
+        &self,
+        shutdown: watch::Receiver<bool>,
+    ) -> Result<(), MinerError> {
+        use tokio::sync::broadcast;
+
+        let pool_addr = self
+            .config
+            .pool_url
+            .as_deref()
+            .ok_or_else(|| MinerError::Consensus("V3 trinity requires --pool".into()))?;
+
+        // miner_id = wallet address (pool uses this for payout mapping)
+        let miner_id = self.config.reward_address.as_str().to_string();
+        let worker_name = format!(
+            "{}.{}",
+            self.config.reward_address.as_str(),
+            self.config.worker
+        );
+        let algorithm = "deeksha_lite_v1".to_string();
+        let backend = self.config.gpu_backend.clone();
+
+        // Connect V3PoolClient (shared across all 3 streams via Arc)
+        let client = Arc::new(
+            V3PoolClient::connect(
+                pool_addr,
+                &miner_id,
+                &worker_name,
+                &algorithm,
+                &backend,
+                self.config.reward_address.as_str(),
+            )
+            .await
+            .map_err(|e| MinerError::Consensus(format!("V3 pool connect: {e}")))?,
+        );
+
+        info!(
+            pool = %pool_addr,
+            miner = %miner_id,
+            worker = %worker_name,
+            "V3 Trinity connected — all 3 streams through pool"
+        );
+
+        // Broadcast channel: Stream 1 receives jobs from pool, broadcasts to 2 & 3
+        let (job_tx, _) = broadcast::channel::<crate::v3_pool_client::V3JobBundle>(32);
+
+        // ── Stream 1: ZION mining (GPU deeksha) — also distributes jobs ──
+        let h1 = {
+            let this = self.clone();
+            let client = client.clone();
+            let job_tx = job_tx.clone();
+            let mut shutdown = shutdown.clone();
+            tokio::spawn(async move {
+                loop {
+                    tokio::select! {
+                        _ = shutdown.changed() => break,
+                        result = async {
+                            // Get next job bundle from pool
+                            let bundle = client.next_job(Duration::from_secs(60)).await
+                                .map_err(|e| MinerError::Consensus(format!("V3 job: {e}")))?;
+
+                            // Broadcast to Stream 2/3 workers (ignore lag errors)
+                            if let Some(ref ext) = bundle.gpu_external {
+                                tracing::debug!(coin = %ext.coin, "V3 Trinity: GPU external stream job");
+                            }
+                            if let Some(ref ext) = bundle.cpu_external {
+                                tracing::debug!(coin = %ext.coin, "V3 Trinity: CPU external stream job");
+                            }
+                            let _ = job_tx.send(bundle.clone());
+
+                            // Mine ZION share (Stream 1)
+                            this.mine_v3_zion_share(&client, &bundle.zion).await
+                        } => {
+                            this.mark_active(StreamId::Zion).await;
+                            match result {
+                                Ok(accepted) => {
+                                    if accepted {
+                                        this.record_accepted(StreamId::Zion).await;
+                                    }
+                                }
+                                Err(e) => {
+                                    warn!(error = %e, "V3 Trinity: ZION mining error");
+                                    sleep(Duration::from_millis(100)).await;
+                                }
+                            }
+                        }
+                    }
+                }
+                Ok::<(), MinerError>(())
+            })
+        };
+
+        // ── Stream 2: GPU AuxPoW (ZANO) ──
+        let h2 = {
+            let this = self.clone();
+            let client = client.clone();
+            let mut job_rx = job_tx.subscribe();
+            let mut shutdown = shutdown.clone();
+            tokio::spawn(async move {
+                loop {
+                    tokio::select! {
+                        _ = shutdown.changed() => break,
+                        result = async {
+                            // Receive job bundle from broadcast
+                            let bundle = job_rx.recv().await
+                                .map_err(|e| MinerError::Consensus(format!("V3 broadcast: {e}")))?;
+
+                            // Mine GPU external stream if present
+                            if let Some(ref ext) = bundle.gpu_external {
+                                this.mine_v3_external_share(&client, StreamId::GpuExternal, ext).await
+                            } else {
+                                Ok(false)
+                            }
+                        } => {
+                            this.mark_active(StreamId::GpuExternal).await;
+                            if let Err(e) = result {
+                                warn!(error = %e, "V3 Trinity: GPU AuxPoW error");
+                                sleep(Duration::from_millis(50)).await;
+                            }
+                        }
+                    }
+                }
+                Ok::<(), MinerError>(())
+            })
+        };
+
+        // ── Stream 3: CPU AuxPoW (VRSC) ──
+        let h3 = {
+            let this = self.clone();
+            let client = client.clone();
+            let mut job_rx = job_tx.subscribe();
+            let mut shutdown = shutdown.clone();
+            tokio::spawn(async move {
+                loop {
+                    tokio::select! {
+                        _ = shutdown.changed() => break,
+                        result = async {
+                            let bundle = job_rx.recv().await
+                                .map_err(|e| MinerError::Consensus(format!("V3 broadcast: {e}")))?;
+
+                            if let Some(ref ext) = bundle.cpu_external {
+                                this.mine_v3_external_share(&client, StreamId::CpuExternal, ext).await
+                            } else {
+                                Ok(false)
+                            }
+                        } => {
+                            this.mark_active(StreamId::CpuExternal).await;
+                            if let Err(e) = result {
+                                warn!(error = %e, "V3 Trinity: CPU AuxPoW error");
+                                sleep(Duration::from_millis(50)).await;
+                            }
+                        }
+                    }
+                }
+                Ok::<(), MinerError>(())
+            })
+        };
+
+        let mut shutdown_for_changed = shutdown.clone();
+        let _ = shutdown_for_changed.changed().await;
+        let (r1, r2, r3) = tokio::join!(h1, h2, h3);
+        r1??;
+        r2??;
+        r3??;
+        Ok(())
+    }
+
+    /// Mine a ZION share from a V3 protocol job and submit it to the pool.
+    /// Returns Ok(true) if the share was accepted.
+    #[cfg(feature = "auxpow")]
+    async fn mine_v3_zion_share(
+        &self,
+        client: &V3PoolClient,
+        job: &crate::v3_pool_client::V3ZionJob,
+    ) -> Result<bool, MinerError> {
+        let header = hex::decode(&job.header_hex)
+            .map_err(|e| MinerError::Consensus(format!("V3 header decode: {e}")))?;
+        let target = hex::decode(&job.target_hex)
+            .map_err(|e| MinerError::Consensus(format!("V3 target decode: {e}")))?;
+        let mut target_bytes = [0u8; 32];
+        let copy_len = target.len().min(32);
+        target_bytes[..copy_len].copy_from_slice(&target[..copy_len]);
+
+        let batch_size = self.config.zion_nonce_batch;
+        let t_start = Instant::now();
+
+        // Try GPU first, fall back to CPU
+        let gpu_zion = self.gpu_zion.clone();
+        let header_for_gpu = header.clone();
+        let target_for_gpu = target_bytes;
+        let gpu_result = task::spawn_blocking(move || {
+            let mut gpu_guard = gpu_zion.lock().unwrap();
+            if let Some(ref mut gpu) = gpu_guard.as_mut() {
+                let mut header_bytes = [0u8; 80];
+                let copy_len = header_for_gpu.len().min(80);
+                header_bytes[..copy_len].copy_from_slice(&header_for_gpu[..copy_len]);
+                let mining_header = zion_core::MiningHeader::from_bytes(header_bytes);
+                let target = zion_core::V3DifficultyTarget { bytes: target_for_gpu };
+                match gpu.mine_batch(mining_header, target, 0, batch_size) {
+                    Ok(result) => {
+                        let nonces_tested = result.nonces_tested;
+                        if let Some((found_nonce, found_hash, _mix)) = result.solutions.into_iter().next() {
+                            return Some((found_nonce, found_hash, nonces_tested));
+                        }
+                        return None;
+                    }
+                    Err(e) => {
+                        eprintln!("gpu_zion_batch_failed reason=\"{}\" — falling back to CPU", e);
+                    }
+                }
+            }
+            None
+        })
+        .await
+        .map_err(|e| MinerError::Consensus(format!("gpu task join: {e}")))?;
+
+        let (nonce, hash_bytes, nonces_searched) = if let Some((n, h, tested)) = gpu_result {
+            (n, h, tested)
+        } else {
+            // CPU fallback
+            let threads = self.config.miner_threads.max(1);
+            let header_cpu = header.clone();
+            let target_cpu = target_bytes;
+            let result = task::spawn_blocking(move || {
+                parallel_zion_find_nonce(&header_cpu, &target_cpu, 0, batch_size, threads)
+            })
+            .await
+            .map_err(|e| MinerError::Consensus(format!("cpu join: {e}")))?
+            .ok_or(MinerError::NoAuxPoWSolution)?;
+            let (n, h) = result;
+            (n, h.0, n.saturating_sub(0) + 1)
+        };
+
+        let elapsed = t_start.elapsed().as_secs_f64();
+        self.update_hashrate(StreamId::Zion, nonces_searched, elapsed).await;
+
+        let hash_hex = hex::encode(&hash_bytes);
+        let result = client
+            .submit_zion_share(job.job_id, nonce, &hash_hex, None)
+            .await
+            .map_err(|e| MinerError::Consensus(format!("V3 submit: {e}")))?;
+
+        if result.accepted {
+            info!(
+                job = job.job_id,
+                nonce,
+                height = job.height,
+                "V3 Trinity: ZION share accepted"
+            );
+        } else {
+            warn!(
+                job = job.job_id,
+                nonce,
+                status = %result.status,
+                "V3 Trinity: ZION share rejected"
+            );
+            self.record_rejected(StreamId::Zion).await;
+        }
+
+        Ok(result.accepted)
+    }
+
+    /// Mine an AuxPoW (external) share from a V3 protocol external_stream job
+    /// and submit it to the pool for forwarding to the external pool.
+    #[cfg(feature = "auxpow")]
+    async fn mine_v3_external_share(
+        &self,
+        client: &V3PoolClient,
+        stream: StreamId,
+        ext: &ExternalStreamJob,
+    ) -> Result<bool, MinerError> {
+        use zion_cosmic_harmony::ExternalCoin;
+
+        let coin = ExternalCoin::from_ticker(&ext.coin)
+            .ok_or_else(|| MinerError::Consensus(format!("unknown coin: {}", ext.coin)))?;
+
+        // Convert ExternalStreamJob → auxpow::Job
+        let header = hex::decode(&ext.header_hex)
+            .map_err(|e| MinerError::Consensus(format!("ext header decode: {e}")))?;
+        let target_vec = hex::decode(&ext.target_hex)
+            .map_err(|e| MinerError::Consensus(format!("ext target decode: {e}")))?;
+        let mut target = [0u8; 32];
+        let copy_len = target_vec.len().min(32);
+        target[..copy_len].copy_from_slice(&target_vec[..copy_len]);
+
+        let job = Job {
+            job_id: ext.job_id.clone(),
+            coin,
+            header: header.clone(),
+            target,
+            extranonce: hex::decode(&ext.extranonce1_hex).unwrap_or_default(),
+            extranonce2: String::new(),
+            ntime: String::new(),
+            height: ext.height,
+        };
+
+        // Mine the share using existing GPU/CPU infrastructure
+        let batch = match stream {
+            StreamId::GpuExternal => self.config.stream2_batch,
+            StreamId::CpuExternal => self.config.stream3_batch,
+            _ => self.config.auxpow_nonce_batch,
+        };
+
+        let share = self.mine_auxpow_share_batch(stream, &job, batch).await?;
+
+        // Submit via V3PoolClient → pool forwards to external pool
+        let hash_hex = hex::encode(&share.hash);
+        let mix_hash_hex = share.mix_hash.as_ref().map(|m| hex::encode(m));
+        let result = client
+            .submit_external_share(
+                &ext.coin,
+                &ext.algorithm,
+                &ext.job_id,
+                share.nonce,
+                &hash_hex,
+                mix_hash_hex.as_deref(),
+                &ext.extranonce1_hex,
+            )
+            .await
+            .map_err(|e| MinerError::Consensus(format!("V3 external submit: {e}")))?;
+
+        // Record stats
+        let share_result = if result.accepted {
+            ShareResult::Accepted
+        } else {
+            ShareResult::Rejected(result.status.clone())
+        };
+        self.record_share_result(stream, coin, &share_result).await;
+
+        if result.accepted {
+            info!(
+                stream = ?stream,
+                coin = %coin,
+                nonce = share.nonce,
+                job_id = %ext.job_id,
+                "V3 Trinity: external share accepted"
+            );
+        } else {
+            warn!(
+                stream = ?stream,
+                coin = %coin,
+                nonce = share.nonce,
+                status = %result.status,
+                "V3 Trinity: external share rejected"
+            );
+        }
+
+        Ok(result.accepted)
     }
 
     #[cfg(feature = "auxpow")]

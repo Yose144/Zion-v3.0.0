@@ -93,6 +93,13 @@ struct Args {
     #[arg(long)]
     no_cpu: bool,
 
+    /// Enable V3 Trinity mode: single V3 protocol connection to the pool
+    /// carries all 3 streams (ZION + GPU AuxPoW + CPU AuxPoW). The pool
+    /// embeds external_stream jobs and forwards AuxPoW shares to external
+    /// pools. Also read from `ZION_V3_TRINITY=1`.
+    #[arg(long)]
+    v3_trinity: bool,
+
     /// GPU backend for ZION Stream 1 mining: cuda, opencl, metal, cpu, auto.
     /// Also read from `ZION_GPU_BACKEND`. Default: auto (tries CUDA → OpenCL → CPU).
     #[arg(long)]
@@ -377,7 +384,22 @@ async fn main() -> Result<()> {
         let _ = shutdown_tx.send(true);
     });
 
-    let result = runtime.run(shutdown_rx).await;
+    // V3 Trinity mode: all 3 streams through a single V3 protocol connection.
+    // The pool embeds external_stream jobs and forwards AuxPoW shares.
+    let v3_trinity = args.v3_trinity || env_bool("ZION_V3_TRINITY", false);
+    let result = if v3_trinity {
+        #[cfg(feature = "auxpow")]
+        {
+            info!("V3 Trinity mode enabled — all streams through pool V3 protocol");
+            runtime.run_v3_trinity(shutdown_rx).await
+        }
+        #[cfg(not(feature = "auxpow"))]
+        {
+            anyhow::bail!("V3 Trinity mode requires the 'auxpow' feature");
+        }
+    } else {
+        runtime.run(shutdown_rx).await
+    };
 
     // ── Exit sticky header (leave alternate screen buffer) ──
     #[cfg(feature = "tui")]
