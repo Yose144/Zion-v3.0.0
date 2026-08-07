@@ -1748,19 +1748,27 @@ fn parse_target_hex(target_hex: &str) -> Option<[u8; 32]> {
     Some(out)
 }
 
-/// Query the node RPC for the current chain tip height.
+/// Query the node RPC for the current native chain tip height.
+///
+/// We use `getChainInfo` (not `getStatus`) because `getStatus` returns the V3
+/// chain height which is 0 when running with `--v3-no-genesis`.  The pool
+/// submits native L1 blocks, so we need the native chain height.
 async fn current_chain_height(rpc_addr: SocketAddr) -> Option<u64> {
     let request = json!({
         "jsonrpc": "2.0",
         "id": 1,
-        "method": "getStatus",
+        "method": "getChainInfo",
         "params": [],
     });
     let response = jsonrpc_call(rpc_addr, &request).await.ok()?;
+    // Prefer native_chain_height; fall back to chain_height for older nodes.
     response
         .get("result")
-        .and_then(|r| r.get("chain_height"))
-        .and_then(|v| v.as_u64())
+        .and_then(|r| {
+            r.get("native_chain_height")
+                .and_then(|v| v.as_u64())
+                .or_else(|| r.get("chain_height").and_then(|v| v.as_u64()))
+        })
 }
 
 /// Submit a solved block to the node RPC.
