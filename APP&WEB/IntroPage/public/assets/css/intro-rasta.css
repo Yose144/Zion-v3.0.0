@@ -1,0 +1,214 @@
+/* Rasta Intro overrides — Red / Gold / Green / Black
+   Loaded after main.css and stargate-theme.css to keep Stargate visual
+   but apply the One Love v3.2.0 design system. */
+
+:root {
+  --rasta-red: #e41e2b;
+  --rasta-gold: #fcd116;
+  --rasta-green: #078930;
+  --rasta-black: #0d0d0d;
+  --rasta-dark: #1a1a1a;
+  --zion-radius-sm: 0.85rem;
+  --zion-radius-md: 1.2rem;
+  --zion-radius-lg: 1.65rem;
+}
+
+/* ── Font: Inter + JetBrains Mono from web2.9 layout ───────────────────── */
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+*,
+*:before,
+*:after {
+  font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+}
+
+code,
+pre,
+kbd,
+samp,
+tt,
+var {
+  font-family: var(--font-mono), 'Courier New', monospace;
+}
+
+/* ── Background: rasta radial glows over deep black ──────────────────────── */
+#bg:after {
+  background-image:
+    radial-gradient(circle at 22% -5%, rgba(228, 30, 43, 0.18), transparent 38rem),
+    radial-gradient(circle at 82% 5%, rgba(7, 137, 48, 0.12), transparent 34rem),
+    radial-gradient(circle at 50% 40%, rgba(252, 209, 22, 0.07), transparent 50rem),
+    radial-gradient(ellipse at bottom, #0f0f0f 0%, #000 100%);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+#bg:before {
+  background-image:
+    linear-gradient(to top, rgba(13, 13, 13, 0.25), rgba(13, 13, 13, 0.45)),
+    url('../../images/overlay.png');
+  background-size: auto, 256px 256px;
+  background-position: center, center;
+  background-repeat: no-repeat, repeat;
+}
+
+/* ── Main article: rasta black, rounded corners, glow ────────────────────── */
+html body #main article {
+  background: rgba(13, 13, 13, 0.92);
+  border-radius: var(--zion-radius-lg);
+  border: 1px solid rgba(252, 209, 22, 0.1);
+  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.42), 0 0 42px rgba(252, 209, 22, 0.12);
+  padding-bottom: 6rem;
+}
+
+html body #main article .close:before {
+  border-radius: 100%;
+}
+
+/* ── Buttons and inputs: rounded corners ───────────────────────────────── */
+html body input[type='submit'],
+html body input[type='reset'],
+html body input[type='button'],
+html body button,
+html body .button,
+html body input[type='text'],
+html body input[type='password'],
+html body input[type='email'],
+html body input[type='tel'],
+html body select,
+html body textarea {
+  border-radius: var(--zion-radius-md);
+}
+
+html body input[type='text']:focus,
+html body input[type='password']:focus,
+html body input[type='email']:focus,
+html body input[type='tel']:focus,
+html body select:focus,
+html body textarea:focus {
+  border-color: var(--rasta-gold);
+  box-shadow: 0 0 0 1px rgba(252, 209, 22, 0.5), 0 0 18px rgba(252, 209, 22, 0.15);
+  background: rgba(252, 209, 22, 0.05);
+}
+
+/* ── Bottom tab menu ─────────────────────────────────────────────────────── */
+.bottom-tabs {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem;
+  background: rgba(13, 13, 13, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--zion-radius-lg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45), 0 0 42px rgba(252, 209, 22, 0.15);
+  transition: opacity 0.325s ease-in-out, transform 0.325s ease-in-out;
+}
+
+.bottom-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 1.15rem;
+  border-radius: var(--zion-radius-md);
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  transition: all 0.2s ease-in-out;
+  white-space: nowrap;
+}
+
+.bottom-tab:hover,
+.bottom-tab:focus {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(252, 209, 22, 0.15);
+}
+
+.bottom-tab.active {
+  background: linear-gradient(110deg, var(--rasta-red), var(--rasta-gold) 48%, var(--rasta-green));
+  color: var(--rasta-black);
+  box-shadow: 0 0 18px rgba(252, 209, 22, 0.35);
+  font-weight: 700;
+}
+
+/* Mobile bottom tabs */
+@media screen and (max-width: 736px) {
+  .bottom-tabs {
+    bottom: 0.6rem;
+    padding: 0.35rem;
+    gap: 0.25rem;
+    border-radius: var(--zion-radius-lg);
+  }
+
+  .bottom-tab {
+    padding: 0.55rem 0.85rem;
+    font-size: 0.62rem;
+    letter-spacing: 0.04em;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .bottom-tabs {
+    width: calc(100% - 1.25rem);
+    max-width: 28rem;
+    justify-content: space-around;
+  }
+
+  .bottom-tab {
+    flex: 1 1 0;
+    padding: 0.55rem 0.3rem;
+  }
+}
+
+/* ── Top nav polish: rounded pill buttons ──────────────────────────────── */
+#header nav ul li a {
+  border-radius: var(--zion-radius-sm);
+  transition: all 0.2s ease-in-out;
+}
+
+#header nav ul li a:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--rasta-gold);
+  box-shadow: 0 0 12px rgba(252, 209, 22, 0.15);
+}
+
+/* ── Headings: gold with rasta glow, slightly less spacing ─────────────── */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  letter-spacing: 0.08rem;
+}
+
+h1 {
+  letter-spacing: 0.35rem;
+}
+
+/* ── Article padding to keep content above the bottom tabs ─────────────── */
+html body #main article {
+  padding-bottom: 6rem;
+}
+
+@media screen and (max-width: 736px) {
+  html body #main article {
+    padding-bottom: 5.5rem;
+  }
+}

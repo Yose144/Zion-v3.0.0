@@ -52,6 +52,7 @@ export default function RootLayout({
       <head>
         <link rel="stylesheet" href="/assets/css/main.css" precedence="default" />
         <link rel="stylesheet" href="/stargate/stargate-theme.css" precedence="default" />
+        <link rel="stylesheet" href="/assets/css/intro-rasta.css" precedence="default" />
         <noscript>
           <link rel="stylesheet" href="/assets/css/noscript.css" />
         </noscript>
