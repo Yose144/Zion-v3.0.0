@@ -119,9 +119,9 @@ impl StratumServer {
         let (notify_tx, _notify_rx) = broadcast::channel(256);
 
         let vardiff_config = VarDiffConfig {
-            start_difficulty: env_or("ZION_VARDIFF_START", 1),
-            min_difficulty: env_or("ZION_VARDIFF_MIN", 1),
-            max_difficulty: env_or("ZION_VARDIFF_MAX", 100_000),
+            start_difficulty: env_or("ZION_VARDIFF_START_DIFF", env_or("ZION_VARDIFF_START", 1)),
+            min_difficulty: env_or("ZION_VARDIFF_MIN_DIFF", env_or("ZION_VARDIFF_MIN", 1)),
+            max_difficulty: env_or("ZION_VARDIFF_MAX_DIFF", env_or("ZION_VARDIFF_MAX", 100_000)),
             target_secs: env_or("ZION_VARDIFF_TARGET_SECS", 15),
             retarget_shares: env_or("ZION_VARDIFF_RETARGET_SHARES", 8),
         };
