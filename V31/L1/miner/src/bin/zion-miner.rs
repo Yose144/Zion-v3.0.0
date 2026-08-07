@@ -386,6 +386,10 @@ async fn main() -> Result<()> {
 
     // V3 Trinity mode: all 3 streams through a single V3 protocol connection.
     // The pool embeds external_stream jobs and forwards AuxPoW shares.
+    // Default: ON when auxpow feature is enabled (set ZION_NO_V3_TRINITY=1 to disable).
+    #[cfg(feature = "auxpow")]
+    let v3_trinity = !env_bool("ZION_NO_V3_TRINITY", false);
+    #[cfg(not(feature = "auxpow"))]
     let v3_trinity = args.v3_trinity || env_bool("ZION_V3_TRINITY", false);
     let result = if v3_trinity {
         #[cfg(feature = "auxpow")]
