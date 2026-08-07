@@ -10,6 +10,16 @@ const nextConfig = {
       { protocol: 'https', hostname: 'app.zionterranova.com' },
     ],
   },
+  webpack: (config) => {
+    // Optional/native-only deps used by wallet SDKs; silence build warnings
+    // in the browser bundle without adding unnecessary packages.
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@react-native-async-storage/async-storage': false,
+      'pino-pretty': false,
+    };
+    return config;
+  },
 };
 
 module.exports = nextConfig;

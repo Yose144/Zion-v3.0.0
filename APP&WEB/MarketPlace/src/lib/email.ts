@@ -38,9 +38,23 @@ function emailConfig() {
   };
 }
 
+function isResendFromVerified(from: string): boolean {
+  // Resend's onboarding/test domain only allows sending to a single verified
+  // address and fails for normal recipients. Skip Resend when it is unverified.
+  return !from.toLowerCase().endsWith('@resend.dev');
+}
+
+function defaultFrom(): string {
+  const cfg = emailConfig();
+  const from = cfg.resendApiKey && isResendFromVerified(cfg.resendFrom)
+    ? cfg.resendFrom
+    : cfg.shopEmail;
+  return `${cfg.shopName} <${from}>`;
+}
+
 function isEnabled(): boolean {
   const cfg = emailConfig();
-  if (cfg.resendApiKey) return true;
+  if (cfg.resendApiKey && isResendFromVerified(cfg.resendFrom)) return true;
   // Local Postfix doesn't need auth — just need a sender address
   if (cfg.isLocal) return Boolean(cfg.shopEmail);
   return Boolean(cfg.user && cfg.password);
@@ -91,16 +105,19 @@ async function sendWithResend(options: SendMailOptions): Promise<{ messageId?: s
 
 export async function sendMail(options: SendMailOptions): Promise<{ messageId?: string }> {
   const cfg = emailConfig();
-  if (cfg.resendApiKey) {
+  const useResend = cfg.resendApiKey && isResendFromVerified(options.from);
+
+  if (useResend) {
     try {
       return await sendWithResend(options);
     } catch (error) {
       console.warn('Resend failed, falling back to local SMTP:', error);
     }
   }
+
   const transporter = createTransporter();
   // Fallback to the configured shop email when Resend's default/onboarding from address is used
-  const from = options.from.includes('@resend.dev')
+  const from = options.from.toLowerCase().includes('@resend.dev')
     ? `${cfg.shopName} <${cfg.shopEmail}>`
     : options.from;
   const info = await transporter.sendMail({
@@ -217,7 +234,7 @@ Poznámka: ${order.note || '—'}
 
   try {
     await sendMail({
-      from: `${cfg.shopName} <${cfg.resendApiKey ? cfg.resendFrom : cfg.shopEmail}>`,
+      from: defaultFrom(),
       to: cfg.adminEmail,
       replyTo: order.customerEmail,
       subject,
@@ -257,7 +274,7 @@ export async function sendCustomerOrderConfirmation(
       : undefined;
 
     await sendMail({
-      from: `${cfg.shopName} <${cfg.resendApiKey ? cfg.resendFrom : cfg.shopEmail}>`,
+      from: defaultFrom(),
       to: order.customerEmail,
       replyTo: cfg.shopEmail,
       subject,
@@ -294,7 +311,7 @@ Tým ZION Terra Nova
 
   try {
     await sendMail({
-      from: `${cfg.shopName} <${cfg.resendApiKey ? cfg.resendFrom : cfg.shopEmail}>`,
+      from: defaultFrom(),
       to: order.customerEmail,
       replyTo: cfg.shopEmail,
       subject,
@@ -328,7 +345,7 @@ Tým ZION Terra Nova
   try {
     const pdf = await generateInvoicePdf(invoiceHtml);
     await sendMail({
-      from: `${cfg.shopName} <${cfg.resendApiKey ? cfg.resendFrom : cfg.shopEmail}>`,
+      from: defaultFrom(),
       to: order.customerEmail,
       replyTo: cfg.shopEmail,
       subject,
@@ -396,7 +413,7 @@ Tým ZION Terra Nova
 
   try {
     await sendMail({
-      from: `${cfg.shopName} <${cfg.resendApiKey ? cfg.resendFrom : cfg.shopEmail}>`,
+      from: defaultFrom(),
       to: input.customerEmail,
       replyTo: cfg.shopEmail,
       subject,
@@ -434,7 +451,7 @@ Tým ZION Terra Nova
 
   try {
     await sendMail({
-      from: `${cfg.shopName} <${cfg.resendApiKey ? cfg.resendFrom : cfg.shopEmail}>`,
+      from: defaultFrom(),
       to: order.customerEmail,
       replyTo: cfg.shopEmail,
       subject,
@@ -488,7 +505,7 @@ Tým ZION Terra Nova
 
   try {
     await sendMail({
-      from: `${cfg.shopName} <${cfg.resendApiKey ? cfg.resendFrom : cfg.shopEmail}>`,
+      from: defaultFrom(),
       to: input.customerEmail,
       replyTo: cfg.shopEmail,
       subject,
