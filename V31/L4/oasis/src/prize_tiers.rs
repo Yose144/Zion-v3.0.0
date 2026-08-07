@@ -10,6 +10,7 @@ pub struct PrizeTier {
     pub rank: u32,
     pub title: String,
     pub zion: u64,
+    #[serde(with = "zion_l1_types::u128_str")]
     pub flowers: u128,
     pub percentage: f64,
     pub nft_reward: String,
@@ -22,6 +23,7 @@ pub struct PrizeConfig {
     #[serde(rename = "_comment")]
     pub comment: String,
     pub total_pool_zion: u64,
+    #[serde(with = "zion_l1_types::u128_str")]
     pub total_pool_flowers: u128,
     pub tiers: Vec<PrizeTier>,
     pub dao_approval_required: bool,

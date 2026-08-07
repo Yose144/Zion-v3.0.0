@@ -12,23 +12,7 @@ use crate::storage::{Storage, StorageError};
 use crate::v3_compat::{MiningHeader, V3Block};
 
 /// Serde helper for u128 values that may be represented as strings in JSON.
-mod u128_str {
-    use serde::{Deserialize, Deserializer};
-
-    #[derive(Deserialize)]
-    #[serde(untagged)]
-    enum StringOrNum {
-        Str(String),
-        Num(u64),
-    }
-
-    pub fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<u128, D::Error> {
-        match StringOrNum::deserialize(deserializer)? {
-            StringOrNum::Str(s) => s.parse::<u128>().map_err(serde::de::Error::custom),
-            StringOrNum::Num(n) => Ok(n as u128),
-        }
-    }
-}
+use zion_l1_types::u128_str;
 
 /// UTXO output captured by a checkpoint.
 #[derive(Debug, Clone, Deserialize)]

@@ -237,39 +237,15 @@ pub struct BlockTemplate {
     pub utxo_transaction_count: usize,
     pub total_utxo_fees: u64,
 }
-/// Custom serde for u128: serializes as string, deserializes from string or number.
-/// Required because serde_json does not natively support u128 without `arbitrary_precision`.
-mod serde_u128 {
-    use serde::{self, Deserialize, Deserializer, Serializer};
-    pub fn serialize<S>(value: &u128, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&value.to_string())
-    }
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<u128, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        #[derive(Deserialize)]
-        #[serde(untagged)]
-        enum StringOrNum {
-            Str(String),
-            Num(u64),
-        }
-        match StringOrNum::deserialize(deserializer)? {
-            StringOrNum::Str(s) => s.parse::<u128>().map_err(serde::de::Error::custom),
-            StringOrNum::Num(n) => Ok(n as u128),
-        }
-    }
-}
+/// Re-export the shared `u128` serde helper from `zion_l1_types`.
+use zion_l1_types::u128_str;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Transaction {
     pub tx_id: String,
     pub from: String,
     pub to: String,
-    #[serde(with = "serde_u128")]
+    #[serde(with = "u128_str")]
     pub amount_zion: u128,
     pub fee_zion: u64,
     pub nonce: u64,
