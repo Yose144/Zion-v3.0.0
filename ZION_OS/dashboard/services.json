@@ -13,9 +13,9 @@
       "ZION_NODE_STATE_PATH": "V31/data/zion-node-state.db",
       "ZION_MIGRATION_HEIGHT": "1",
       "ZION_SEED_PEERS": "62.171.141.136:8335",
-      "ZION_MINER_ADDRESS": "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604",
-      "ZION_HUMANITARIAN_WALLET": "zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4",
-      "ZION_ISSOBELLA_WALLET": "zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702"
+      "ZION_MINER_ADDRESS": "zion1074344t7k686j6n8a0l6t0f4c8d828y083xh4m2",
+      "ZION_HUMANITARIAN_WALLET": "zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8",
+      "ZION_ISSOBELLA_WALLET": "zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0"
     }
   },
 
@@ -29,7 +29,7 @@
       "ZION_MINER_THREADS": "2",
       "ZION_WORKER_NAME": "worker1",
       "ZION_MINER_ID": "w11-amd-gpu-miner-01",
-      "ZION_PAYOUT_ADDRESS": "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604",
+      "ZION_PAYOUT_ADDRESS": "zion1074344t7k686j6n8a0l6t0f4c8d828y083xh4m2",
       "ZION_MINER_ALGORITHM": "deeksha_lite_fire",
       "ZION_GPU_BACKEND": "opencl",
       "ZION_NONCE_COUNT_GPU": "262144"
@@ -46,7 +46,7 @@
       "ZION_MINER_THREADS": "4",
       "ZION_WORKER_NAME": "worker1",
       "ZION_MINER_ID": "w11-cpu-miner-01",
-      "ZION_PAYOUT_ADDRESS": "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604",
+      "ZION_PAYOUT_ADDRESS": "zion1074344t7k686j6n8a0l6t0f4c8d828y083xh4m2",
       "ZION_MINER_ALGORITHM": "deeksha_lite_fire",
       "ZION_GPU_BACKEND": "cpu"
     }
@@ -62,7 +62,7 @@
       "ZION_MINER_THREADS": "2",
       "ZION_WORKER_NAME": "worker1",
       "ZION_MINER_ID": "w11-amd-gpu-miner-01",
-      "ZION_PAYOUT_ADDRESS": "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604",
+      "ZION_PAYOUT_ADDRESS": "zion1074344t7k686j6n8a0l6t0f4c8d828y083xh4m2",
       "ZION_MINER_ALGORITHM": "deeksha_lite_fire",
       "ZION_GPU_BACKEND": "opencl",
       "ZION_NONCE_COUNT_GPU": "262144"
@@ -74,11 +74,12 @@
     "log": "pool",
     "service_id": "zion-v31-pool",
     "env": {
-      "ZION_POOL_ADDR": "62.171.141.136:8444",
+      "ZION_POOL_ADDR": "0.0.0.0:8444",
       "ZION_POOL_API_BIND": "0.0.0.0:8080",
-      "ZION_MINER_ADDRESS": "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604",
-      "ZION_HUMANITARIAN_ADDRESS": "zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4",
-      "ZION_ISSOBELLA_ADDRESS": "zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702"
+      "ZION_POOL_MINER_ADDRESS": "zion1d2k5v0p6p2z667l7g522v2z0w0y6e7w742zq8k6",
+      "ZION_HUMANITARIAN_ADDRESS": "zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8",
+      "ZION_ISSOBELLA_ADDRESS": "zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0",
+      "ZION_POOL_FEE_ADDRESS": "zion1l0h428f536s6u3x7h5f0d5c2z644j7t8u8va3x0"
     }
   },
 
