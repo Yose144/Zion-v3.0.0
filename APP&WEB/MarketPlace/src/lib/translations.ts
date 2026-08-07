@@ -280,6 +280,7 @@ const t = {
     title2: { cs: 'Handcrafted Market', en: 'Handcrafted Market' },
     subtitle: { cs: 'WoodArt · Gravírování · Artefakty · Digitální služby', en: 'WoodArt · Engraving · Artifacts · Digital services' },
     completePurchase: { cs: 'Dokončit nákup', en: 'Complete purchase' },
+    cta: { cs: 'Zpět do obchodu', en: 'Back to shop' },
     categoriesTitle: { cs: 'Kategorie', en: 'Categories' },
     all: { cs: 'Vše', en: 'All' },
     sortTitle: { cs: 'Řazení', en: 'Sort' },

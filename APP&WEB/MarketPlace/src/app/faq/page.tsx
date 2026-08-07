@@ -11,6 +11,7 @@ export default function FaqPage() {
     <InfoPage
       title={tr('info', 'faqTitle', 'cs')}
       subtitle={tr('info', 'faqSubtitle', 'cs')}
+      icon="❓"
     >
       <h2>Obecné otázky</h2>
 

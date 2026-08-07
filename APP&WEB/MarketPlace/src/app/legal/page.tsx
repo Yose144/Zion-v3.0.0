@@ -12,12 +12,19 @@ export default function LegalPage() {
     <InfoPage
       title={tr('info', 'legalTitle', 'cs')}
       subtitle={tr('info', 'legalSubtitle', 'cs')}
+      icon="⚖️"
     >
-      <p className="text-sm text-gray-400 mb-6">Poslední aktualizace: Leden 2026</p>
+      <p className="update-date">Poslední aktualizace: Leden 2026</p>
 
       <h2>1. Úvod</h2>
       <p>ZION Terra Nova (dále jen „ZION" nebo „projekt") je experimentální open-source iniciativa, která kombinuje decentralizované technologie s filozofickými a duchovními principy. Projekt slouží jako prostor pro výzkum, tvorbu a sdílení vědomých technologií.</p>
-      <p>Provozovatelem tohoto webu je {COMPANY.name}, IČ {COMPANY.ico}, se sídlem {COMPANY.address}, {COMPANY.city}. Kontakt: <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>.</p>
+
+      <div className="seller-info">
+        <p><strong>Provozovatel webu:</strong> {COMPANY.name}</p>
+        <p><strong>IČ:</strong> {COMPANY.ico}</p>
+        <p><strong>Sídlo:</strong> {COMPANY.address}, {COMPANY.city}, {COMPANY.country}</p>
+        <p><strong>Kontakt:</strong> <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></p>
+      </div>
 
       <div className="highlight-box">
         <p>ZION není klasická kryptoměna ani investiční produkt. Je to technologický experiment zaměřený na podporu vědomého rozvoje jednotlivců i komunit.</p>
@@ -80,7 +87,7 @@ export default function LegalPage() {
       </ul>
 
       <h2>7. Filozofie projektu</h2>
-      <p><em>„Technologie bez lásky je jen strojírenství. Technologie s láskou je magie."</em></p>
+      <p className="text-center italic text-lg my-6">„Technologie bez lásky je jen strojírenství. Technologie s láskou je magie."</p>
       <p>ZION Terra Nova stojí na následujících pilířích:</p>
       <ul>
         <li><strong>Vědomí nad ziskem</strong> – Duchovní a osobní rozvoj je důležitější než finanční metriky</li>

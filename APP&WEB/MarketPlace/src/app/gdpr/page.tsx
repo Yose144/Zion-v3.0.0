@@ -12,25 +12,42 @@ export default function GdprPage() {
     <InfoPage
       title={tr('info', 'gdprTitle', 'cs')}
       subtitle={tr('info', 'gdprSubtitle', 'cs')}
+      icon="🔒"
     >
-      <p className="text-sm text-gray-400 mb-6">Platnost od 1. 1. 2026</p>
+      <p className="update-date">Platnost od 1. 1. 2026</p>
+
+      <div className="rasta-info-toc">
+        <h3>Obsah</h3>
+        <ol>
+          <li><a href="#section1">Správce osobních údajů</a></li>
+          <li><a href="#section2">Jaké osobní údaje zpracováváme</a></li>
+          <li><a href="#section3">Jak dlouho údaje uchováváme</a></li>
+          <li><a href="#section4">Komu předáváme údaje</a></li>
+          <li><a href="#section5">Vaše práva</a></li>
+          <li><a href="#section6">Cookies a sledování</a></li>
+          <li><a href="#section7">Zabezpečení údajů</a></li>
+          <li><a href="#section8">Newsletter</a></li>
+          <li><a href="#section9">Děti</a></li>
+          <li><a href="#section10">Změny tohoto dokumentu</a></li>
+          <li><a href="#section11">Kontakt</a></li>
+        </ol>
+      </div>
+
+      <h2 id="section1">1. Správce osobních údajů</h2>
+      <div className="seller-info">
+        <p><strong>Správce:</strong> {COMPANY.name}</p>
+        <p><strong>IČ:</strong> {COMPANY.ico}</p>
+        <p><strong>DIČ:</strong> {COMPANY.dic}</p>
+        <p><strong>Sídlo:</strong> {COMPANY.address}, {COMPANY.city}, {COMPANY.country}</p>
+        <p><strong>Zapsáno:</strong> {COMPANY.court}, Č. j. {COMPANY.fileNo}</p>
+        <p><strong>E-mail:</strong> <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></p>
+      </div>
 
       <div className="highlight-box">
         <p>Tato informace o zpracování osobních údajů je v souladu s nařízením EU 2016/679 (GDPR). Vaše soukromí je pro nás prioritou.</p>
       </div>
 
-      <h2>1. Správce osobních údajů</h2>
-      <ul>
-        <li>{COMPANY.name} (provozovatel ZION Market)</li>
-        <li>IČ: {COMPANY.ico}</li>
-        <li>DIČ: {COMPANY.dic}</li>
-        <li>Sídlo: {COMPANY.address}, {COMPANY.city}, {COMPANY.country}</li>
-        <li>Zápis: {COMPANY.court}</li>
-        <li>Č. j.: {COMPANY.fileNo}</li>
-        <li>E-mail: <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></li>
-      </ul>
-
-      <h2>2. Jaké osobní údaje zpracováváme</h2>
+      <h2 id="section2">2. Jaké osobní údaje zpracováváme</h2>
 
       <h3>2.1 Při nákupu v e-shopu</h3>
       <table>
@@ -83,7 +100,7 @@ export default function GdprPage() {
         <li>Historie interakcí (otevření emailů, kliky)</li>
       </ul>
 
-      <h2>3. Jak dlouho údaje uchováváme</h2>
+      <h2 id="section3">3. Jak dlouho údaje uchováváme</h2>
       <ul>
         <li>Objednávky – 10 let (daňové účely)</li>
         <li>Fakturační údaje – 10 let (zákon o účetnictví)</li>
@@ -91,7 +108,7 @@ export default function GdprPage() {
         <li>Cookies – max. 24 měsíců</li>
       </ul>
 
-      <h2>4. Komu předáváme údaje</h2>
+      <h2 id="section4">4. Komu předáváme údaje</h2>
 
       <h3>4.1 Zpracovatelé (třetí strany)</h3>
       <ul>
@@ -107,7 +124,7 @@ export default function GdprPage() {
         <p>Transakce tokenů jsou zaznamenány na veřejném blockchainu. Wallet adresy jsou pseudonymní (není možné je jednoduše spojit s osobou), ale jednou zapsané transakce nelze smazat (decentralizovaná povaha blockchainu).</p>
       </div>
 
-      <h2>5. Vaše práva</h2>
+      <h2 id="section5">5. Vaše práva</h2>
 
       <h3>5.1 Máte právo:</h3>
       <ul>
@@ -131,7 +148,7 @@ export default function GdprPage() {
         <li>Web: <a href="https://www.uoou.cz" target="_blank" rel="noopener noreferrer">www.uoou.cz</a></li>
       </ul>
 
-      <h2>6. Cookies a sledování</h2>
+      <h2 id="section6">6. Cookies a sledování</h2>
 
       <h3>6.1 Technické cookies (nezbytné)</h3>
       <p>Umožňují základní funkce webu (košík, přihlášení). Nelze odmítnout.</p>
@@ -145,7 +162,7 @@ export default function GdprPage() {
         <li>Retargeting kampaně</li>
       </ul>
 
-      <h2>7. Zabezpečení údajů</h2>
+      <h2 id="section7">7. Zabezpečení údajů</h2>
       <p>Jak chráníme vaše údaje:</p>
       <ul>
         <li>SSL/TLS šifrování (HTTPS)</li>
@@ -156,7 +173,7 @@ export default function GdprPage() {
         <li>Anonymizace IP adres v Google Analytics</li>
       </ul>
 
-      <h2>8. Newsletter</h2>
+      <h2 id="section8">8. Newsletter</h2>
 
       <h3>8.1 Odběr newsletteru</h3>
       <p>Pokud se přihlásíte k odběru newsletteru, zpracováváme:</p>
@@ -169,13 +186,13 @@ export default function GdprPage() {
       <h3>8.2 Jak se odhlásit</h3>
       <p>V každém emailu je odkaz pro odhlášení (Unsubscribe). Nebo nám napište na <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>.</p>
 
-      <h2>9. Děti</h2>
+      <h2 id="section9">9. Děti</h2>
       <p>Neposkytujeme služby dětem mladším 18 let bez souhlasu zákonného zástupce. Pokud zjistíme, že jsme shromáždili údaje od dítěte bez souhlasu, údaje smažeme.</p>
 
-      <h2>10. Změny tohoto dokumentu</h2>
+      <h2 id="section10">10. Změny tohoto dokumentu</h2>
       <p>Tuto informaci můžeme aktualizovat. Vždy na této stránce najdete nejnovější verzi. Poslední aktualizace: 1. 1. 2026.</p>
 
-      <h2>11. Kontakt</h2>
+      <h2 id="section11">11. Kontakt</h2>
       <p>Máte otázky k GDPR? Kontaktujte nás na <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>.</p>
     </InfoPage>
   );
