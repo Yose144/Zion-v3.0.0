@@ -362,8 +362,16 @@ async fn forward_share_to_upstream(
     req: &ShareForwardRequest,
 ) -> ShareForwardOutcome {
     let _ = coin; // coin is implicit in the client config
+    let header_hash = format!("0x{}", hex::encode(&req.header_bytes));
     match client
-        .submit_share(&req.job_id, req.nonce, "", "00000000")
+        .submit_share(
+            &req.job_id,
+            req.nonce,
+            "",
+            "00000000",
+            req.mix_hash_hex.as_deref(),
+            Some(&header_hash),
+        )
         .await
     {
         Ok(zion_miner::auxpow::client::ShareResult::Accepted) => {

@@ -2,7 +2,7 @@
 
 > **⚠️ This roadmap is historical / V3-centric. The active 3.2 "One Love" / Mainnet Stable execution plan is [`V31/PLAN_TO_3.2.md`](./V31/PLAN_TO_3.2.md). Previous plan: [`PLAN_TO_3.1_RECONCILED.md`](./docs/3.1/PLAN_TO_3.1_RECONCILED.md). Live status is in [`StatusV3.md`](./StatusV3.md). The current development workspace is `V31/`.**
 
-> **Version:** 3.0.7 "Trinity All Green" (archived) / 3.1.0-alpha.2 V31 Mainnet Alpha (LIVE on Edge) / 3.2.0 "One Love" (Mainnet Stable) in progress  
+> **Version:** 3.0.7 "Trinity All Green" (archived) / 3.1.0-beta V31 Mainnet Alpha (LIVE on Edge, protocol 3.1.0-alpha) / 3.2.0 "One Love" (Mainnet Stable) in progress  
 > **Last updated:** 2026-08-07
 > **One source of truth:** [`V31/PLAN_TO_3.2.md`](./V31/PLAN_TO_3.2.md) · Previous: [`PLAN_TO_3.1_RECONCILED.md`](./docs/3.1/PLAN_TO_3.1_RECONCILED.md) · Live status: [`StatusV3.md`](./StatusV3.md) · V31 rules: [`V31/AGENTS.md`](./V31/AGENTS.md)  
 > **Engineering detail:** [`V3/ROADMAP.md`](./archive/V3/ROADMAP.md) (archived)

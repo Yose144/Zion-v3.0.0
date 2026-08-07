@@ -27,7 +27,7 @@ Before starting, verify:
 - [ ] **Local dev PC** is clean (no malware, no screen-sharing, no keyloggers).
 - [ ] **Edge server** (`62.171.141.136`) is reachable via SSH (`ssh zion-new` or `ssh -6 -p 2222 -i ~/.ssh/zion-edge-post-wipe-2026-07-29 root@2a02:c207:2342:5821::1`).
 - [ ] **Backup** of current Edge state taken (`ZION_OS/infra/scripts/backup-edge.sh` on Edge, then `sync-edge-backups.sh` locally). The old chain will be destroyed — this backup is the only record.
-- [ ] **All V31 services** on Edge are running (`systemctl status zion-v31-{node,pool,multichain,dao,oasis}`) so you know the baseline.
+- [ ] **All V31 services** on Edge are running (`systemctl status zion-v31-{node,pool,miner,multichain,dao,oasis} zion-edge-python-dashboard`) so you know the baseline.
 - [ ] **Git working tree** is clean (`git status` — commit or stash any in-progress work).
 - [ ] **Key storage location** ready: `~/Desktop/ZION_KEYS_NEW_GENESIS_<DATE>/` (chmod 700, owner-only).
 - [ ] **Offline backup medium** ready (USB drive / encrypted volume) for key file copies.

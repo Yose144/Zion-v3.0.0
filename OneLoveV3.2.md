@@ -1,7 +1,8 @@
 # ZION 3.2 "One Love" — Mainnet Stable Launch, Marketing & Listing Plan
 
 > **Version:** 3.2.0 "One Love" — Mainnet Stable  
-> **Date:** 2026-08-06  
+> **Current workspace / protocol:** 3.1.0-beta / `zion-v3-node/3.1.0-alpha` (V31 Mainnet Alpha)  
+> **Date:** 2026-08-07  
 > **Status:** canonical root plan for the 3.2.0 public-mainnet-ready push  
 > **One source of truth:** this file  
 > **Technical execution plan:** [`V31/PLAN_TO_3.2.md`](./V31/PLAN_TO_3.2.md)  
@@ -51,14 +52,14 @@ The full engineering plan lives in [`V31/PLAN_TO_3.2.md`](./V31/PLAN_TO_3.2.md).
 
 | Area | Evidence | Status |
 |------|----------|--------|
-| V31 workspace | `cargo test --workspace` 2079 pass, `cargo clippy --workspace` clean | verified 2026-08-06 |
-| V31 node on Edge | `zion-v31-node` P2P 8335, RPC 9445, sync_lag 0 | verified 2026-08-05 |
-| V31 pool on Edge | stratum 8444, HTTP API 8080, shares accepted | verified 2026-08-05 |
-| V31 multichain | `/health` 200, DEX + HTLC endpoints wired | verified 2026-08-06 |
-| V31 DAO | runtime, L1 scanner, HTTP API + metrics | verified 2026-08-05 |
-| V31 dashboard | `/api/services`, `/api/readiness` 100 %, Grafana | verified 2026-08-05 |
-| DEX solver network | `HttpSolverClient` + solver endpoints wired | GO 2026-08-06 |
-| Desktop Agent V31 | `npm test` + `build:linux` pass | GO 2026-08-06 |
+| V31 workspace | `cargo test --workspace` passes (0 failures), `cargo clippy --workspace` clean (pre-existing warnings only) | verified 2026-08-07 |
+| V31 node on Edge | `zion-v31-node` P2P 8335, RPC 9445, height 94+ | verified 2026-08-07 |
+| V31 pool on Edge | stratum 8444, HTTP API 8080, shares accepted, payout confirmation sweep active | verified 2026-08-07 |
+| V31 multichain | `/health` 200, DEX + HTLC endpoints wired | verified 2026-08-07 |
+| V31 DAO | runtime, L1 scanner, HTTP API + metrics on port 8456 | verified 2026-08-07 |
+| V31 dashboard | `zion-edge-python-dashboard` active on 8766, V31 service metrics | verified 2026-08-07 |
+| DEX solver network | `HttpSolverClient` + solver endpoints wired | GO 2026-08-07 |
+| Desktop Agent V31 | `npm test` + `build:linux` pass, Rasta/One Love theme deployed | GO 2026-08-07 |
 
 ### 3.2 What "One Love" must close
 

@@ -761,17 +761,49 @@ html body textarea:focus {
   }
 }
 
-/* ── Footer quick-link icon strip ─────────────────────────────────────────── */
-footer .footer-quick-links {
+/* ── Footer: company logo, icon bar, layer names, copyright ────────────────── */
+footer .footer-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem 1rem 0.75rem;
+  margin-top: 2.5rem;
+  opacity: 1 !important;
+}
+
+footer .footer-logo-link {
+  display: inline-block;
+  text-decoration: none;
+  border-bottom: none;
+}
+
+footer .footer-logo {
+  width: clamp(5.5rem, 18%, 8.5rem);
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  border-radius: var(--zion-radius-md);
+  transition: transform 0.3s ease, filter 0.3s ease;
+  filter: drop-shadow(0 0 10px rgba(252, 209, 22, 0.25));
+}
+
+footer .footer-logo-link:hover .footer-logo {
+  transform: scale(1.08);
+  filter: drop-shadow(0 0 18px rgba(252, 209, 22, 0.45));
+}
+
+/* ── Lite footer: quick-link icon strip ───────────────────────────────────── */
+footer .lite-footer {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.5rem 0 1.25rem;
+  padding: 0.5rem 1rem 1.25rem;
+  margin: 0;
 }
 
-footer .quick-link {
+footer .lite-footer .quick-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -780,7 +812,7 @@ footer .quick-link {
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(252, 209, 22, 0.18);
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(255, 255, 255, 0.9);
   font-size: 1.05rem;
   text-decoration: none;
   transition: transform 0.25s ease, background 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
@@ -788,7 +820,7 @@ footer .quick-link {
   -webkit-backdrop-filter: blur(6px);
 }
 
-footer .quick-link:hover {
+footer .lite-footer .quick-link:hover {
   background: rgba(252, 209, 22, 0.12);
   border-color: rgba(252, 209, 22, 0.65);
   color: #fff;
@@ -798,9 +830,34 @@ footer .quick-link:hover {
     0 0 26px rgba(228, 30, 43, 0.15);
 }
 
-footer .quick-link .icon {
-  display: inline-block;
-  line-height: 1;
+/* ── L1–L6 layer strip ────────────────────────────────────────────────────── */
+footer .footer-layers {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.35rem 0.6rem;
+  padding: 0.25rem 1rem 0.75rem;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+footer .footer-layers .layer-sep {
+  color: rgba(252, 209, 22, 0.5);
+}
+
+/* ── Copyright at the very bottom ─────────────────────────────────────────── */
+footer .footer-copyright {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: center;
+  margin: 0;
+  padding: 0 1rem 2rem;
 }
 
 /* ── Footer / logo chip ──────────────────────────────────────────────────── */

@@ -1,8 +1,8 @@
 # V31 — Mainnet Alpha Workspace
 
-> **Stav 2026-08-07:** `V31` (`3.1.0-alpha.2`) je aktivní **Mainnet Alpha** workspace. `cargo test` prochází pro celý workspace (2079 testů), `cargo clippy --workspace` čisté. **V31 je produkční na Edge** — node, pool, multichain a dashboard běží na `62.171.141.136` s kanonickým `EkamDeeksha` v2 (128 KiB, 1 pass, 32 random reads, 2 AES rounds). V3 služby zastaveny a maskovány.
+> **Stav 2026-08-07:** `V31` (`3.1.0-beta`) je aktivní **Mainnet Alpha** workspace. Workspace protokol je `zion-v3-node/3.1.0-alpha`. `cargo test --workspace` prochází (např. `zion-cosmic-harmony` 337 testů, `zion-core` 302 testů, `zion-miner` 196 testů + ostatní crate), `cargo clippy --workspace` čisté kromě pre-existing warnings. **V31 je produkční na Edge** — node, pool, multichain, DAO, OASIS, dashboard, web a marketplace běží na `62.171.141.136` s kanonickým `EkamDeeksha` v3.2 (512 KiB, 2 passy, 128 random reads, 2 AES rounds). V3 služby zastaveny a maskovány.
 
-Workspace se nachází v `/Users/yeshuae/Projects/2.9.6/V31/`; V3 produkční služby byly zastaveny a maskovány, V3 zůstává jako historická checkpoint reference (`archive/V3/` + `v3_compat`).
+Workspace se nachází v `/home/zionserver/2.9.6-main/V31/`; V3 produkční služby byly zastaveny a maskovány, V3 zůstává jako historická checkpoint reference (`archive/V3/` + `v3_compat`).
 
 ## Filozofie
 
@@ -26,7 +26,7 @@ Workspace se nachází v `/Users/yeshuae/Projects/2.9.6/V31/`; V3 produkční sl
 | `L5/free-world` | `zion-free-world` | Free World vrstva — funkcionální scaffold s unit testy. |
 | `L6/issobella` | `zion-issobella` | Issobella superstruktura — funkcionální scaffold s unit testy. |
 | `sdk` | `zion-sdk` | SDK pro integrace třetích stran a interních nástrojů. |
-| `cli` | `zion-cli` (bin `zion`) | Operátorské CLI — subcommandy `status`, `wallet`, `bridge`, `swap`, `pool`, `miner`, `doctor`, `api`, `node`, `migrate`. |
+| `cli` | `zion-cli` (bin `zion`) | Operátorské CLI — 28 subcommandů: `menu`, `status`, `wallet`, `bridge`, `swap`, `pool`, `miner`, `doctor`, `api`, `node`, `service`, `dao`, `atomic-swap`, `warp`, `monitor`, `topology`, `explorer`, `onboard`, `deploy`, `update`, `compose`, `completions`, `agent`, `hiran`, `issobella`, `free-world`, `ncl`, `auxpow`. |
 
 Binárky z `L1/core` (`zion-node`, `zion-migrate`) a z `cli` (`zion`) jsou generovány ve stejných cestách jako ostatní crate workspace. `zion-core` poskytuje node runtime a SQLite storage; `zion-cli` je jednotný operátorský binární vstup.
 
@@ -74,7 +74,7 @@ Pro plný Mainnet Alpha release použij `cargo build --release` — profil má `
 
 ## Aktuální highlighty
 
-- **Kanonický Ekam Deeksha PoW v2 + stress testy** — `EkamDeeksha` z `zion-cosmic-harmony` je jediný PoW v `zion-core`, `zion-miner` a `zion-pool` (128 KiB scratchpad, 1 pass, 32 random reads, 2 AES rounds); unit testy pokrývají mine/verify a nonce-search sweep 0–5500.
+- **Kanonický Ekam Deeksha PoW v3.2 + stress testy** — `EkamDeeksha` z `zion-cosmic-harmony` je jediný PoW v `zion-core`, `zion-miner` a `zion-pool` (512 KiB scratchpad, 2 passy, 128 random reads, 2 AES rounds); unit testy pokrývají mine/verify a nonce-search sweep 0–5500.
 - **L3–L6 cross-layer smoke** — `V31/smoke` crate prověřuje end-to-end tok: NCL compute job → AI-Native consciousness → Oasis bridge → Oasis player → Free World grant → Issobella proposal.
 - **Triple Stream mining** — kanonický ZION stream + AuxPoW GPU a CPU fallback přes `auxpow` feature.
 - **V3 checkpoint sync** — V3 stav slouží jako checkpoint pro V31, nikoliv jako genesis reset.
@@ -141,5 +141,5 @@ Klíčové provozní body z `V31/AGENTS.md`:
 
 ---
 
-**Verze:** `3.1.0-alpha.2` (2026-08-05)
+**Verze:** `3.1.0-beta` (2026-08-07)
 **Autorita:** Tento `README.md` je kanonický vstupní bod pro V31 Mainnet Alpha workspace.

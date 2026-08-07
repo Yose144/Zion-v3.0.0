@@ -1,7 +1,8 @@
 # ZION V3 — Canonical Status (Mainnet Beta)
 
-> **Datum poslední aktualizace:** 2026-08-06
-> **Update (2026-08-06):** **3.2.0 oficiálně pojmenováno "One Love"** — viz [`V31/PLAN_TO_3.2.md`](./V31/PLAN_TO_3.2.md). Název odkazuje na vizi jednoty a pokračování odkazu Boba Marleyho: spojení technologie, komunity a lidské solidarity. Forward plán na 3.2 Mainnet Stable je nyní kanonický. Dokumentace aktualizována a připravena k push.
+> **Datum poslední aktualizace:** 2026-08-07
+> **Update (2026-08-07):** **V31 3.2.0 "One Love" payout confirmation sweep nasazen a potvrzený.** Pool `/api/v1/payouts` označuje výplaty `confirmed` on-chain (37 confirmed / 13 unconfirmed při height ~87). Edge `zion-v31-node`/`zion-v31-pool`/`zion-v31-miner`/`zion-v31-multichain` jsou active, chain roste (height 94+). `zion-v31-dao`, `zion-v31-oasis`, `zion-edge-python-dashboard`, `zion-website`, `zion-oasis-web` a `zion-marketplace` rovněž active. Legacy V3 `zion-node`/`zion-pool` a `zion-dashboard-web` zůstávají failed (expected po cutoveru / port conflict). `logrotate.service` je failed na systémové úrovni, neblokuje ZION. Workspace verze je `3.1.0-beta`, protokol `zion-v3-node/3.1.0-alpha`. Root dokumentace rekonciliována s kódem a Edge realitou.
+> **Update (2026-08-06):** **3.2.0 oficiálně pojmenováno "One Love"** — viz [`V31/PLAN_TO_3.2.md`](./V31/PLAN_TO_3.2.md). Název odkazuje na vizi jednoty a pokračování odkazu Boba Marleyho: spojení technologie, komunity a lidské solidarity. Forward plán na 3.2 Mainnet Stable je nyní kanonický.
 > **Update (2026-08-06):** WARP non-EVM production hardening: `deploy-edge.sh` nyní builduje `warpd` a automaticky instaluje `/etc/zion/warp.toml` z `V31/L2/multichain/warp.example.toml`, `zion-v31-multichain.service` běží `warpd --config /etc/zion/warp.toml --listen 127.0.0.1:8453 --db /data/zion/warp.db`, nginx proxy `/api/warp/` → `127.0.0.1:8453`. Přidán Prometheus `/metrics` endpoint do `warp/server.rs` (text/plain s `Accept: application/json` fallback). Opraven clippy warning v `swap/dex.rs`. `cargo test -p zion-multichain` a `cargo clippy -p zion-multichain` čisté.
 >
 > **Update (2026-08-06):** ZionDex E2E integrace s `warpd` (Option 1): `warpd` nyní startuje i `MultichainService` a `ApiServer` DEX endpointy (`/v1/swap/quote`, `/v1/swap/intent`, `/v1/swap/intent/:id/bid`, `/v1/swap/intent/:id/settle`, `/v1/swap/intent/:id/execute`) na portu `listen_port + 1` (8454). `MultichainService` rozšířen o podporu EVM chainů (Arbitrum, Optimism, BSC, Polygon, Avalanche, zkSync, Linea) a tolerantně přeskakuje nepodporované adaptéry. nginx získá `/v1/` proxy na `127.0.0.1:8454`. `cargo test -p zion-multichain` a `cargo clippy -p zion-multichain` čisté.
@@ -10,8 +11,8 @@
 > **Update (2026-08-07):** V31 kanonický `EkamDeeksha` v3.2 aktivní na Edge: 512 KiB scratchpad, 2 AES passes, 128 random reads, Keccak256 final hash. CPU `ekam_deeksha.rs` (konstanty `SCRATCHPAD_SIZE=512 KiB`, `PASSES=2`, `RANDOM_READS=128` v `V31/L1/cosmic-harmony/src/algorithm/ekam_deeksha.rs`), OpenCL/CUDA/Metal kernely a `zion-miner` GPU backend mapování synchronizovány. `cargo test -p zion-cosmic-harmony -p zion-core -p zion-pool -p zion-miner` a `cargo clippy --workspace` čisté.
 > **Update (2026-08-05):** **Fáze D E2E COMPLETE.** `cargo test --workspace` 2079 testů pass. V31 miner na Edge našel a odevzdal pool share s `WALLET.worker` autentizací (`zion1g5u0m3j5x5w2t730c8s4h4m5a5v4a7p6p0c07y7.v31-miner`), pool zapsal `share accepted`, block height 50+. Web `/api/health` `ok` po celou dobu, rpc_node i mining_pool healthy. **Playwright UI E2E 3/3 pass** (`app.zionterranova.com/pool/miner/[address]` se správně vykresluje). **30min smoke test PASS** — služby `zion-v31-miner`, `zion-v31-pool`, `zion-v31-node`, `zion-website` zůstaly `active`, `/api/health` zelený. **Edge backup + off-site sync COMPLETE** — denní backup `/opt/zion/backups/daily/zion-edge-20260805_213243.tar.gz` (47M, 117 souborů) a off-site sync do `~/2.9.6-main/backups/edge` (1.2G, integrity OK). **Dashboard `https://dashboard.zionterranova.com` komplexně napojen na V31 služby**: `/api/services`, `/api/health`, `/api/readiness` a `/api/v2/status` nyní správně reflektují `v31-miner` jako `running`, `/api/readiness` vrací **100 %**, checklist 13/17. Opraveny systemd mapy, `EDGE_SERVICE_ORDER`, `get_edge_server_status` a `_build_health_map` pro V31. Git tag `v3.1.0-alpha.2-phase-D`. Při rychlých rebuild/restartech se aktivoval `fail2ban`/`ufw`; aktuální dev IP `109.81.83.81` byla whitelisted a přidána do `V31/AGENTS.md`.
 > **Update (2026-08-06):** V31 DAO governance runtime rozšířen o treasury, humanitarian, db, l1_scanner, metrics, executor, consent, co_admin, cross_layer a prizes. `zion-dao` má nyní 74 testů. `zion-dao` binárka otevírá SQLite DB, načítá návrhy/hlasy do `GovernanceRuntime`, persistuje všechny změny, spouští L1 memo scanner a předává mu hlasy přímo do runtimeu, vystavuje `/metrics`. Dashboard (`ZION_OS/dashboard/v31.py`) nyní zobrazuje i DAO metriky/health/stats a má `dao_api` port v `nodes.json`. **Fáze B hotova z hlediska kódu a testů** — GPU OpenCL/CUDA/Metal kompiluje, `zion-miner` triple-stream běží, profit switching a TUI/metriky zapojeny, `cargo test -p zion-miner` 92 pass. **Go/No-Go testy na reálném GPU/rigu (OpenCL/CUDA/Metal) zůstávají pending.** **Fáze C COMPLETE** — DAO governance runtime, ZionDex C2, HTLC endpoints, live profit oracle, bridge consensus, CLI wallet/tx/lifecycle, dashboard metriky. `zion-multichain` má 574 testů, celý `V31` workspace 2079 testů, `cargo clippy --workspace` čisté. **Dashboard UI/UX update do V31 hotov, nasazen na Edge a `/health` OK. V31 banner KPIs integrovány do full dashboardu. Nový "V31 Production" panel přidává detailní metriky, live log viewer pro V31 služby a vložený Grafana dashboard (`v31-mainnet`) přímo v `/dashboard`. Pool API/metrics port opraven z 8455 na 8080, Prometheus scrape target a Grafana provisioning nasazeny na Edge. **V31 cutover proveden**: V3 služby zastaveny a maskovány, `zion-v31-node` osamostatněn od V3, dashboard registry nastavena V31-first.** V31 GPU backend port — CUDA, OpenCL, Metal a nativní CPU shims nyní kompilují v `V31/L1/miner`. Kompletní report: [`REPORT_2026-08-06.md`](./docs/3.1/REPORT_2026-08-06.md). `cargo clippy --workspace` je čisté a `cargo test -p zion-multichain` prochází. Opraveny cudarc 0.12.1 závislosti, `progpow_codegen` viditelnost, `auxpow` feature gating, `kheavyhash::mine` argument order a macOS `block`/`objc` závislosti. `native-verushash` linkuje `-lomp` (vyžaduje libomp na macOS, na Linuxu bezproblémové). Viz `V31/STATUS.md`.
-> **Verze:** 3.0.7 "Trinity All Green" (V3 archiv) / 3.1.0-alpha.2 (V31 Alpha — LIVE na Edge) / 3.2.0 "One Love" (Mainnet Stable — ve vývoji)
-> **Protokol:** `zion-v3-node/3.0.7` (V3 archiv) / `zion-v3-node/3.1.0-alpha.2` (V31)
+> **Verze:** 3.0.7 "Trinity All Green" (V3 archiv) / 3.1.0-beta (V31 Mainnet Alpha — LIVE na Edge, protokol 3.1.0-alpha) / 3.2.0 "One Love" (Mainnet Stable — ve vývoji)
+> **Protokol:** `zion-v3-node/3.0.7` (V3 archiv) / `zion-v3-node/3.1.0-alpha` (V31)
 > **Genesis hash (V3 compat, production):** `4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71`
 > **Genesis hash (V31 native):** `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`
 > **Status:** Mainnet Beta — oficiální public launch **2026-12-31**
@@ -50,15 +51,17 @@
 
 | Metric | Value |
 |--------|-------|
-| **Height** | fresh chain (2026-08-06 hard genesis reset, 4-node V31 P2P mesh on Edge + local backup) |
-| **Protocol** | `zion-v3-node/3.1.0-alpha.2` (V31) |
+| **Height** | 94+ (2026-08-06 hard genesis reset, V31 P2P mesh on Edge + local backup) |
+| **Native height** | 94+ |
+| **Accepted blocks** | 95+ |
+| **Protocol** | `zion-v3-node/3.1.0-alpha` (V31; workspace version `3.1.0-beta`) |
 | **Genesis (V3 compat)** | `4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71` |
 | **Genesis (V31 native)** | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
 | **Decimals** | 6 (1 ZION = 1,000,000 flowers) |
 | **Total Supply** | 144B ZION (144e15 flowers) |
 | **Circulating** | ~16.78B ZION premine (přesné rozdělení viz `V31/L1/core/src/genesis.rs`) |
 | **Block Reward** | 5400.067 ZION |
-| **Fee Split** | 89% miner / 5% treasury / 5% community / 1% burn |
+| **Fee Split** | 89% miner / 5% humanitarian / 5% issobella (science/space) / 1% burn (pool-fee slot, never minted) |
 | **Difficulty** | LWMA-60 (integer, ±25% clamp, 30–120s solve) |
 | **Consensus Algo** | `ekam_deeksha` (Ekam Deeksha v3.2) pro všechny výšky — 512 KiB scratchpad, 2 AES passes, 128 random reads, Keccak256 final |
 | **Pool Advertised Algo** | `ekam_deeksha` |
@@ -81,25 +84,27 @@
 
 | Service | Port(s) | Bind | Layer | Status |
 |---------|---------|------|-------|--------|
-| zion-edge-node1 | 8333 (P2P), 9443 (RPC), 8445 (WS), 9100 (metrics) | P2P 0.0.0.0, rest 127.0.0.1 | L1 | ✅ active |
-| zion-edge-node2 | 8334 (P2P), 8448 (RPC), 8449 (WS), 9116 (metrics) | P2P 0.0.0.0, rest 127.0.0.1 | L1 | ✅ active (follower) |
-| zion-v31-node | 8335 (P2P), 9445 (RPC) | P2P 0.0.0.0, RPC 127.0.0.1 | L1 (V31 PRODUCTION) | ✅ active (height 11270, sync_lag 0, public RPC 8443 → 9445) |
-| zion-v31-pool | 8444 (Stratum) | 0.0.0.0 | L1 (V31 PRODUCTION) | ✅ active (~1 MH/s, desítky shares/sec) |
-| zion-edge-pool | DISABLED (V3 pool — replaced by zion-v31-pool) | — | L1 | ⛔ disabled (V31 cutover) |
-| zion-edge-bridge | 9101 (metrics) | 127.0.0.1 | L2 | ✅ active |
-| zion-edge-dao | 8450 (API) | 127.0.0.1 | L2 | ✅ active |
-| zion-edge-atomic-swap | 8452 (API) | 0.0.0.0 | L2 | ✅ active |
-| zion-edge-warp | 8453 (WARP API), 8454 (DEX API via `warpd`) | 0.0.0.0 | L3 | ✅ active |
-| zion-edge-dex | 8454 (DEX Router API, nyní součástí `warpd`) | 0.0.0.0 | L3 | ✅ active |
-| zion-edge-oasis | 8094 (API), 9102 (metrics) | 127.0.0.1 | L4 | ✅ active |
-| zion-free-world | — | — | L5 | ⚠️ inactive (disabled) |
-| zion-issobella | — | — | L6 | ⚠️ inactive (disabled) |
-| zion-edge-debug-pool@KAS | 8461 | 0.0.0.0 | L1 (debug) | ✅ active (Trinity 3.0.7 E2E) |
-| zion-rtm-debug-pool | 8460 | 0.0.0.0 | L1 (RTM) | ⚠️ disabled (stopped 2026-07-28) |
-| zion-edge-python-dashboard | 8766 | 127.0.0.1 | — | ✅ active (V31 node card integrated) |
+| zion-v31-node | 8335 (P2P), 9445 (RPC) | P2P 0.0.0.0, RPC 127.0.0.1 | L1 (V31 PRODUCTION) | ✅ active (height 94+, public RPC 8443 → 9445) |
+| zion-v31-pool | 8444 (Stratum), 8080 (HTTP API) | 0.0.0.0 | L1 (V31 PRODUCTION) | ✅ active (shares accepted, payout sweep active) |
+| zion-v31-miner | — | — | L1 (V31 PRODUCTION) | ✅ active (triple-stream) |
+| zion-v31-multichain | 8453 (WARP API), 8454 (DEX API via `warpd`) | 0.0.0.0 | L3 (V31 PRODUCTION) | ✅ active |
+| zion-v31-dao | 8456 (API) | 127.0.0.1 | L2 (V31 PRODUCTION) | ✅ active |
+| zion-v31-oasis | 8094 (API), 9102 (metrics) | 127.0.0.1 | L4 (V31 PRODUCTION) | ✅ active |
+| zion-edge-python-dashboard | 8766 | 0.0.0.0 | — | ✅ active (Python zero-dep dashboard) |
+| zion-website | 3000 | 127.0.0.1 | — | ✅ active (Next.js, app.zionterranova.com) |
+| zion-oasis-web | 3001 | 127.0.0.1 | — | ✅ active (Next.js, oasis.zionterranova.com) |
+| zion-marketplace | 3100 | 127.0.0.1 | — | ✅ active (Next.js, market.zionterranova.com) |
+| fail2ban.service | — | — | — | ✅ active |
 | zion-watchdog.timer | — | — | — | ✅ active (2 min) |
-| zion-web (Docker) | 3000 | 127.0.0.1 | — | ✅ Up (runtime image 2.68 GB; 377 MB = standalone build artifact) |
 | nginx | 80, 443 | 0.0.0.0 | — | ✅ active |
+| zion-agent.service | — | — | — | 🔄 activating (auto-restart) |
+| zion-free-world | — | — | L5 | ⛔ inactive (disabled) |
+| zion-issobella | — | — | L6 | ⛔ inactive (disabled) |
+| zion-node (V3 legacy) | — | — | L1 | ⛔ failed (expected after V31 cutover) |
+| zion-pool (V3 legacy) | — | — | L1 | ⛔ failed (expected after V31 cutover) |
+| zion-dashboard-web (legacy Flask) | — | — | — | ⛔ failed (superseded by zion-edge-python-dashboard) |
+| logrotate.service | — | — | — | ⛔ failed (system-level, does not block ZION) |
+| zion-edge-* (V3/edge legacy) | various | — | — | ⛔ disabled / masked (replaced by zion-v31-*) |
 
 ### Local Backup Node: `zionserver-144` (109.81.27.87)
 

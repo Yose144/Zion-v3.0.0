@@ -317,17 +317,19 @@ impl ShareStore {
         Ok(())
     }
 
-    /// Mark a payout as confirmed, also recording the block hash it was mined in.
+    /// Mark a payout as confirmed, also recording the block hash and height
+    /// it was mined in.
     pub fn confirm_payout_with_block(
         &self,
         tx_id: &str,
         confirmations: u32,
         block_hash: &str,
+        height: u64,
     ) -> Result<()> {
         let conn = self.conn.lock().expect("share store lock poisoned");
         conn.execute(
-            "UPDATE payouts SET confirmations = ?1, confirmed = 1, block_hash = ?2 WHERE tx_id = ?3",
-            params![confirmations as i64, block_hash, tx_id],
+            "UPDATE payouts SET confirmations = ?1, confirmed = 1, block_hash = ?2, height = ?3 WHERE tx_id = ?4",
+            params![confirmations as i64, block_hash, height as i64, tx_id],
         )?;
         Ok(())
     }
@@ -825,6 +827,30 @@ mod tests {
 
         let stats = store.get_miner_stats("m1").unwrap().unwrap();
         assert_eq!(stats.total_paid_flowers, 1_000_000);
+    }
+
+    #[test]
+    fn confirm_payout_with_block_updates_height_and_hash() {
+        let store = ShareStore::open_in_memory().unwrap();
+        let payout = PayoutRecord {
+            miner_id: "m1".to_string(),
+            address: "zion1abc".to_string(),
+            amount_flowers: 1_000_000,
+            tx_id: "tx123".to_string(),
+            height: 100,
+            block_hash: String::new(),
+        };
+        store.record_payout(&payout).unwrap();
+        store
+            .confirm_payout_with_block("tx123", 12, "blockhash456", 150)
+            .unwrap();
+
+        let payouts = store.query_payouts("m1", 10).unwrap();
+        assert_eq!(payouts.len(), 1);
+        assert!(payouts[0].confirmed);
+        assert_eq!(payouts[0].confirmations, 12);
+        assert_eq!(payouts[0].block_hash, "blockhash456");
+        assert_eq!(payouts[0].height, 150);
     }
 
     #[test]

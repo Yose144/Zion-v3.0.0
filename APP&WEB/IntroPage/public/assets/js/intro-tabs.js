@@ -7,7 +7,7 @@
 
   const i18n = {
     cs: {
-      'menu.sections': `Sekce`,
+      'menu.sections': `Menu`,
       'menu.language': `Jazyk`,
       'menu.background': `Pozadí`,
       'menu.intro': `Intro`,
@@ -76,10 +76,25 @@
       'paths.builder.title': `3. Stavitel`,
       'paths.builder.p1': `Tvůj počítač může nést kus mostu. Stáhni <a href="https://app.zionterranova.com/download" target="_blank" rel="noopener">miner</a>, vytvoř peněženku a spusť uzel nebo těžbu — jedna binárka, interaktivní menu, GPU + CPU Boost.`,
       'social.facebook': `Facebook`,
-      'social.instagram': `Instagram`
+      'social.instagram': `Instagram`,
+
+      'nav.market': `Market`,
+      'nav.onboard': `Onboard`,
+      'nav.about': `O nás`,
+      'nav.docs': `Docs`,
+      'nav.mine': `Těžba`,
+
+      'about.title': `O ZIONu`,
+      'about.p1': `ZION TerraNova je veřejný multichain ekosystém s nativním Proof-of-Work. Každý blok dělí odměnu mezi těžaře, humanitární fond, fond budoucnosti a spalování. Bez ICO, bez předprodeje, bez tajných alokací. Kód je otevřený, pravidla transparentní a spuštění sítě probíhá postupně až do 31. prosince 2026.`,
+      'about.p2': `OASIS je první vrstva ekosystému — místo, kde mohou avataři, questy a reálné činy tvořit hodnotu. Pod zahradou běží mainnet 3.2.0 “One Love” s novým blokem každých ~60 sekund.`,
+
+      'mine.title': `Těžba`,
+      'mine.p1': `Staň se stavitelem mostu. Stáhni <a href="https://app.zionterranova.com/download" target="_blank" rel="noopener">miner</a>, vytvoř peněženku a připoj se k poolu. ZION miner podporuje GPU i CPU boost, interaktivní menu a jednu binárku pro Linux, Windows i macOS.`,
+      'mine.p2': `Odměny jsou automaticky rozděleny v každém bloku: 89 % těžaři, 5 % humanitární fond, 5 % fond budoucnosti, 1 % spáleno. Čím víc těžařů, tím silnější a decentralizovanější síť.`,
+      'mine.button': `Stáhnout miner`
     },
     en: {
-      'menu.sections': `Sections`,
+      'menu.sections': `Menu`,
       'menu.language': `Language`,
       'menu.background': `Background`,
       'menu.intro': `Intro`,
@@ -148,7 +163,22 @@
       'paths.builder.title': `3. Builder`,
       'paths.builder.p1': `Your computer can carry a piece of the bridge. Download the <a href="https://app.zionterranova.com/download" target="_blank" rel="noopener">miner</a>, create a wallet and run a node or mining — one binary, interactive menu, GPU + CPU Boost.`,
       'social.facebook': `Facebook`,
-      'social.instagram': `Instagram`
+      'social.instagram': `Instagram`,
+
+      'nav.market': `Market`,
+      'nav.onboard': `Onboard`,
+      'nav.about': `About`,
+      'nav.docs': `Docs`,
+      'nav.mine': `Mine`,
+
+      'about.title': `About ZION`,
+      'about.p1': `ZION TerraNova is a public multichain ecosystem with native Proof-of-Work. Every block splits the reward among miners, a humanitarian fund, a future fund, and burning. No ICO, no presale, no secret allocations. The code is open, the rules are transparent, and the network launch is rolling until 31 December 2026.`,
+      'about.p2': `OASIS is the first layer of the ecosystem — a place where avatars, quests and real-world actions create value. Under the garden, mainnet 3.2.0 “One Love” runs with a new block every ~60 seconds.`,
+
+      'mine.title': `Mine`,
+      'mine.p1': `Become a builder of the bridge. Download the <a href="https://app.zionterranova.com/download" target="_blank" rel="noopener">miner</a>, create a wallet and connect to the pool. ZION miner supports GPU and CPU boost, an interactive menu, and a single binary for Linux, Windows and macOS.`,
+      'mine.p2': `Rewards are automatically split in every block: 89 % to miners, 5 % humanitarian fund, 5 % future fund, 1 % burned. The more miners, the stronger and more decentralized the network.`,
+      'mine.button': `Download miner`
     }
   };
 

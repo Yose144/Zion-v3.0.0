@@ -1,10 +1,10 @@
 # V31 Mainnet Alpha — Status
 
-> **Verze:** 3.1.0-alpha.2 (post-Phase A+B+C+D — E2E mining + web health green) / směřujeme k **3.2.0 "One Love" (Mainnet Stable)**
+> **Verze:** 3.1.0-beta (workspace) / protokol `zion-v3-node/3.1.0-alpha` (post-Phase A+B+C+D — E2E mining + web health green) / směřujeme k **3.2.0 "One Love" (Mainnet Stable)**
 > **Datum:** 2026-08-07
-> **Stav:** workspace builduje, **2079 testů prochází (0 failures)**, `cargo clippy --workspace` čisté. **Fáze A i Fáze B jsou kompletní** — `EkamDeeksha` v2 běží na všech výškách (kód `ekam_deeksha.rs` nyní obsahuje i v3.2 ASIC-hardening konstanty: 512 KiB scratchpad, 2 passy, 128 random reads, 2 AES rounds), CPU KAT vektory a GPU OpenCL/CUDA/Metal kernely jsou synchronizovány, `zion-miner` mapuje `ekam_deeksha` na kanonické `deeksha_lite`/`deeksha_chv3` GPU backendy. **V31 je nasazen na Edge** (public RPC, pool, multichain, dashboard). **Lokální GPU OpenCL build + benchmark GO na NVIDIA GTX 1070 Ti (~132 kh/s, 2026-08-06); reálný rig E2E stále pending.** Fáze C1-C8 hotová (DAO + CLI + ZionDex + Dashboard wiring). **Pool FULL V3 feature parity dokončena**. **Dashboard UI/UX update do V31 hotov, `/health` OK. V31 banner KPIs + V31 Production panel (metriky, logy, Grafana) + pool metrics port 8080 + Prometheus/Grafana provisioning nasazeny na Edge. V31 cutover proveden: V3 služby zastaveny a maskovány, `zion-v31-node` osamostatněn od V3. **Fáze D E2E: cargo test --workspace pass, V31 miner našel a odevzdal pool share (block height 50+), web `/api/health` `ok` s rpc_node i mining_pool healthy, e2e API scénáře zelené. Git tag `v3.1.0-alpha.2-phase-D`.
+> **Stav:** workspace builduje, `cargo test --workspace` prochází (0 failures), `cargo clippy --workspace` čisté (pouze pre-existing warnings). **Fáze A i Fáze B jsou kompletní** — `EkamDeeksha` v3.2 běží na všech výškách (konstanty: 512 KiB scratchpad, 2 passy, 128 random reads, 2 AES rounds), CPU KAT vektory a GPU OpenCL/CUDA/Metal kernely jsou synchronizovány, `zion-miner` mapuje `ekam_deeksha` na kanonické `deeksha_lite`/`deeksha_chv3` GPU backendy. **V31 je nasazen na Edge** (public RPC, pool, multichain, dashboard, DAO, OASIS, web, marketplace). **Lokální GPU OpenCL build + benchmark GO na NVIDIA GTX 1070 Ti (~132 kh/s, 2026-08-06); reálný rig E2E stále pending.** Fáze C1-C8 hotová (DAO + CLI + ZionDex + Dashboard wiring). **Pool FULL V3 feature parity + payout confirmation sweep s UTXO fallback nasazena**. **Dashboard UI/UX update do V31 hotov, `/health` OK. V31 banner KPIs + V31 Production panel (metriky, logy, Grafana) + pool metrics port 8080 + Prometheus/Grafana provisioning nasazeny na Edge. V31 cutover proveden: V3 služby zastaveny a maskovány, `zion-v31-node` osamostatněn od V3. **Fáze D E2E: cargo test --workspace pass, V31 miner našel a odevzdal pool share, web `/api/health` `ok`, e2e API scénáře zelené. Git tag `v3.1.0-alpha.2-phase-D`.
 >
-> **TRINITY STREAM 1 (ZION) — BLOCK PRODUCTION GREEN (2026-08-07):** Tři kritické bugy opraveny, ZION chain rostoucí na Edge (height 51+). Viz detaily níže.
+> **TRINITY STREAM 1 (ZION) — BLOCK PRODUCTION GREEN (2026-08-07):** Tři kritické bugy opraveny, ZION chain rostoucí na Edge (height 94+). Pool payout confirmation sweep potvrzuje výplaty on-chain (37 confirmed / 13 unconfirmed při height ~87). Viz detaily níže.
 >
 > **PLAN_TO_3.2 audit 2026-08-07:** CLI (`zion`) má 21 subcommandů (včetně `dao`, `atomic-swap`, `warp`, `monitor`, `topology`, `explorer`, `onboard`, `deploy`, `update`, `compose`, `auxpow`), některé jsou stále stub; miner TUI (`ui.rs`, `interactive.rs`, `setup_menu.rs`, `banner.rs`) je zapojená pod `tui` feature a Cargo.toml obsahuje `full`/`native-all`/`gpu-all`/`public_build`; EVM a ZionDex Solidity kontrakty jsou přítomny v `V31/L2/multichain/contracts/`, ale chybí Foundry/Hardhat projektová konfigurace pro `zion deploy`. **Otevřené zůstává:** non-EVM WARP placeholdery (31 TODO markerů v adapterech), OASIS `output: 'export'` blokuje server-side ZIS route, `deploy-edge.sh` neinstaluje `zion-zis` službu (i když `APP&WEB/identity/` existuje), sync `public/` subtree, reálný GPU rig E2E a 30d continuous run.
 
@@ -52,14 +52,15 @@ Tři kritické bugy blokovaly produkci ZION bloků na Edge. Všechny opraveny, c
 | Stream | Coin | Pool | Status |
 |--------|------|------|--------|
 | Stream 1 (ZION) | ZION | localhost:8444 | ✅ GREEN — blocks mined + accepted, height 51+ |
-| Stream 2 (GPU AuxPoW) | ZANO | de.zano.herominers.com:1110 | ⚠️ Connected + `eth_submitLogin` authorized, ale revenue_proxy EOF po subscribe |
-| Stream 3 (CPU AuxPoW) | VRSC | eu.luckpool.net:3956 | ⚠️ Connection unstable — poll loop keeps ending, reconnect storm |
+| Stream 2 (GPU AuxPoW) | ZANO | de.zano.herominers.com:1110 | 🔄 Handshake fixed — `eth_submitLogin` now sends `wallet.worker` + `x`; ZANO `eth_getWork` response order handled |
+| Stream 3 (CPU AuxPoW) | VRSC | eu.luckpool.net:3956 | 🔄 Handshake fixed — `mining.authorize` now uses `d=0.01` and sends `mining.extranonce.subscribe` after auth |
 
 ### Zbývající úkoly
 
-- **Stream 2 (ZANO):** Debug revenue_proxy EOF po subscribe — pool pravděpodobně očekává jiný protokol handshake
-- **Stream 3 (VRSC):** Debug connection instability — možná zcashstratum subscribe/authorize sekvence issue, nebo pool odpojuje kvůli nevalidnímu worker name
+- **Stream 2 (ZANO):** `revenue_proxy`/`AuxPowClient` handshake a `eth_getWork` parsing opraveny — potřeba runtime ověření proti HeroMiners
+- **Stream 3 (VRSC):** `AuxPowClient` nyní posílá `d=0.01` a `mining.extranonce.subscribe` — potřeba runtime ověření proti LuckPool
 - **VRSC reconnect storm způsobil fail2ban SSH ban** — reconnect smyčka generuje rychlé TCP connect/disconnect, fail2ban vyhodnotil jako port scan. Nutno přidat Edge IP do ignoreip nebo zpomalit reconnect.
+- **Sdílení práce:** `cargo test --workspace` prochází po opravách.
 
 ## Update 2026-08-07 (session) — u128 JSON serde hardening, Edge binary redeploy, block production green
 

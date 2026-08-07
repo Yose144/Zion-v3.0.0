@@ -616,14 +616,14 @@ pub fn spawn_payout_confirmation_sweep(
                     let confirm = if block_hash.is_empty() {
                         store.confirm_payout(&tx_id, confirmations)
                     } else {
-                        store.confirm_payout_with_block(&tx_id, confirmations, &block_hash)
+                        store.confirm_payout_with_block(&tx_id, confirmations, &block_hash, tx_height)
                     };
                     if let Err(e) = confirm {
                         warn!("payout_confirmation_sweep: confirm_payout failed for {}: {}", tx_id, e);
                     } else {
                         info!(
-                            "payout_confirmed tx_id={} height={} chain_height={} confirmations={}",
-                            tx_id, tx_height, chain_height, confirmations
+                            "payout_confirmed tx_id={} height={} chain_height={} confirmations={} block_hash={}",
+                            tx_id, tx_height, chain_height, confirmations, block_hash
                         );
                     }
                 }

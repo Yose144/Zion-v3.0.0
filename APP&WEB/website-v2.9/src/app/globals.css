@@ -25,9 +25,9 @@
     --zion-radius-xl: 2rem;
     --zion-border-subtle: rgba(255, 255, 255, 0.1);
     --zion-border-strong: rgba(255, 255, 255, 0.18);
-    --zion-surface: rgba(13, 13, 13, 0.68);
-    --zion-surface-soft: rgba(255, 255, 255, 0.045);
-    --zion-surface-hover: rgba(255, 255, 255, 0.075);
+    --zion-surface: rgba(13, 13, 13, 0.28);
+    --zion-surface-soft: rgba(255, 255, 255, 0.025);
+    --zion-surface-hover: rgba(255, 255, 255, 0.045);
     --zion-shadow-panel: 0 24px 90px rgba(0, 0, 0, 0.42);
     --zion-shadow-glow: 0 0 42px rgba(252, 209, 22, 0.28);
   }
@@ -57,10 +57,11 @@
     font-family: var(--font-inter);
     background:
       /* rasta radial glows */
-      radial-gradient(circle at 22% -5%, rgba(228, 30, 43, 0.16), transparent 38rem),
-      radial-gradient(circle at 82% 5%, rgba(7, 137, 48, 0.12), transparent 34rem),
-      radial-gradient(circle at 50% 40%, rgba(252, 209, 22, 0.06), transparent 50rem),
-      radial-gradient(ellipse at bottom, #0f0f0f 0%, #000 100%);
+      radial-gradient(circle at 18% 15%, rgba(228, 30, 43, 0.22), transparent 45rem),
+      radial-gradient(circle at 88% 12%, rgba(7, 137, 48, 0.06), transparent 40rem),
+      radial-gradient(circle at 50% 78%, rgba(252, 209, 22, 0.14), transparent 55rem),
+      radial-gradient(circle at 76% 88%, rgba(228, 30, 43, 0.08), transparent 48rem),
+      linear-gradient(180deg, #0c0c0c 0%, #050505 60%, #000 100%);
     color: rgb(var(--color-fg));
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -75,12 +76,12 @@
     background-image:
       repeating-linear-gradient(
         135deg,
-        rgba(228, 30, 43, 0.025) 0px,
-        rgba(228, 30, 43, 0.025) 3px,
-        rgba(252, 209, 22, 0.020) 3px,
-        rgba(252, 209, 22, 0.020) 6px,
-        rgba(7, 137, 48, 0.025) 6px,
-        rgba(7, 137, 48, 0.025) 9px,
+        rgba(228, 30, 43, 0.012) 0px,
+        rgba(228, 30, 43, 0.012) 3px,
+        rgba(252, 209, 22, 0.010) 3px,
+        rgba(252, 209, 22, 0.010) 6px,
+        rgba(7, 137, 48, 0.012) 6px,
+        rgba(7, 137, 48, 0.012) 9px,
         transparent 9px,
         transparent 160px
       );
@@ -131,10 +132,10 @@
     pointer-events: none;
     z-index: -1;
     background:
-      linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.014) 1px, transparent 1px),
-      radial-gradient(circle at 12% 18%, rgba(228, 30, 43, 0.10), transparent 48%),
-      radial-gradient(circle at 88% 74%, rgba(7, 137, 48, 0.07), transparent 44%);
+      linear-gradient(rgba(255,255,255,0.010) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.007) 1px, transparent 1px),
+      radial-gradient(circle at 12% 18%, rgba(228, 30, 43, 0.05), transparent 48%),
+      radial-gradient(circle at 88% 74%, rgba(7, 137, 48, 0.03), transparent 44%);
     background-size: 96px 96px, 96px 96px, auto, auto;
     mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
   }
@@ -197,9 +198,9 @@
     border-radius: clamp(1rem, 2.5vw, 1.5rem);
     border: 1px solid var(--zion-border-subtle);
     background:
-      linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.028)),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015)),
       var(--zion-surface);
-    backdrop-filter: blur(22px) saturate(140%);
+    backdrop-filter: blur(28px) saturate(140%);
     box-shadow: var(--zion-shadow-panel);
   }
 
@@ -233,8 +234,8 @@
     border-radius: 1.5rem;
     border: 1px solid rgba(var(--rc), 0.22);
     background:
-      linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%),
-      linear-gradient(90deg, rgba(228,30,43,0.06), rgba(252,209,22,0.05), rgba(7,137,48,0.06));
+      linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%),
+      linear-gradient(90deg, rgba(228,30,43,0.02), rgba(252,209,22,0.015), rgba(7,137,48,0.02));
     transition: border-color 250ms ease, box-shadow 250ms ease, transform 250ms ease;
   }
 
@@ -246,7 +247,7 @@
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, rgba(228,30,43,0.85), rgba(252,209,22,0.95), rgba(7,137,48,0.85));
+    background: linear-gradient(90deg, rgba(228,30,43,0.45), rgba(252,209,22,0.55), rgba(7,137,48,0.45));
     pointer-events: none;
     z-index: 1;
   }
@@ -259,7 +260,7 @@
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(90deg, rgba(228,30,43,0.35), rgba(252,209,22,0.45), rgba(7,137,48,0.35));
+    background: linear-gradient(90deg, rgba(228,30,43,0.18), rgba(252,209,22,0.22), rgba(7,137,48,0.18));
     pointer-events: none;
     z-index: 1;
   }
@@ -281,8 +282,8 @@
     border-radius: 1rem;
     border: 1px solid rgba(var(--rc), 0.16);
     background:
-      linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%),
-      linear-gradient(135deg, rgba(228,30,43,0.04), rgba(252,209,22,0.04), rgba(7,137,48,0.04));
+      linear-gradient(135deg, rgba(255,255,255,0.025) 0%, rgba(255,255,255,0.008) 100%),
+      linear-gradient(135deg, rgba(228,30,43,0.015), rgba(252,209,22,0.012), rgba(7,137,48,0.015));
     transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
   }
 
@@ -293,7 +294,7 @@
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, rgba(228,30,43,0.65), rgba(252,209,22,0.75), rgba(7,137,48,0.65));
+    background: linear-gradient(90deg, rgba(228,30,43,0.30), rgba(252,209,22,0.35), rgba(7,137,48,0.30));
     pointer-events: none;
   }
 
@@ -304,7 +305,7 @@
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(90deg, rgba(228,30,43,0.25), rgba(252,209,22,0.35), rgba(7,137,48,0.25));
+    background: linear-gradient(90deg, rgba(228,30,43,0.10), rgba(252,209,22,0.15), rgba(7,137,48,0.10));
     pointer-events: none;
   }
 
@@ -319,9 +320,9 @@
   .zion-glass {
     border: 1px solid var(--zion-border-subtle);
     background:
-      radial-gradient(circle at top left, rgba(var(--color-zion-gold), 0.12), transparent 28rem),
-      linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
-    backdrop-filter: blur(24px) saturate(150%);
+      radial-gradient(circle at top left, rgba(var(--color-zion-gold), 0.05), transparent 28rem),
+      linear-gradient(135deg, rgba(255,255,255,0.035), rgba(255,255,255,0.015));
+    backdrop-filter: blur(28px) saturate(150%);
   }
 
   .zion-kicker {
@@ -368,7 +369,7 @@
     gap: 0.55rem;
     border-radius: var(--zion-radius-md);
     border: 1px solid var(--zion-border-subtle);
-    background: rgba(255, 255, 255, 0.055);
+    background: rgba(255, 255, 255, 0.03);
     padding: 0.9rem 1.35rem;
     font-weight: 650;
     color: white;
@@ -379,7 +380,7 @@
   .zion-button-secondary:hover {
     transform: translateY(-1px);
     border-color: var(--zion-border-strong);
-    background: rgba(255, 255, 255, 0.085);
+    background: rgba(255, 255, 255, 0.05);
   }
 
   .zion-divider {
@@ -425,9 +426,10 @@
     border: 1px solid var(--zion-border-subtle);
     border-top: 2px solid transparent;
     border-image: linear-gradient(90deg, #e41e2b, #fcd116, #078930) 1;
-    background: rgba(0, 0, 0, 0.42);
-    padding: clamp(1.5rem, 4vw, 2rem);
+    background: rgba(0, 0, 0, 0.18);
     backdrop-filter: blur(20px) saturate(135%);
+    -webkit-backdrop-filter: blur(20px) saturate(135%);
+    padding: clamp(1.5rem, 4vw, 2rem);
     box-shadow:
       0 24px 80px rgba(0,0,0,0.32),
       inset 0 1px 0 rgba(255,255,255,0.04);

@@ -527,17 +527,31 @@ impl AuxPowClient {
         Ok(())
     }
 
+    /// Return the stratum password for authorize/eth_submitLogin.
+    /// ZcashStratum (VRSC/LuckPool) uses a starting vardiff of d=0.01 when no
+    /// explicit password is configured. EthStratum and others default to "x".
+    fn authorize_password(&self) -> &str {
+        if !self.config.password.is_empty() {
+            self.config.password.as_str()
+        } else if self.protocol == StratumProtocol::ZcashStratum {
+            "d=0.01"
+        } else {
+            "x"
+        }
+    }
+
     async fn authorize(&self, payout_wallet: &str) -> Result<()> {
-        // EthStratum (e.g. HeroMiners ZANO) uses eth_submitLogin with just
-        // the wallet address — no .worker suffix, no mining.authorize.
+        // EthStratum (e.g. HeroMiners ZANO) uses eth_submitLogin with
+        // wallet.worker and a password ("x").
         if self.protocol == StratumProtocol::EthStratum {
             return self.eth_submit_login(payout_wallet).await;
         }
         let worker = format!("{}.{}", payout_wallet, self.config.worker_name);
+        let password = self.authorize_password();
         let req = json!({
             "id": 2,
             "method": "mining.authorize",
-            "params": [worker, self.config.password]
+            "params": [worker, password]
         });
         let resp = self.send_request(&req).await?;
         if !is_authorize_ok(&resp) {
@@ -545,15 +559,31 @@ impl AuxPowClient {
         }
         *self.authorized.lock().await = true;
         info!("stratum authorized for {}", self.config.coin);
+
+        // ZcashStratum (VRSC/LuckPool): send mining.extranonce.subscribe after
+        // authorize to enable push extranonce updates. Fire-and-forget; the
+        // background poll loop will handle any set_extranonce notification.
+        if self.protocol == StratumProtocol::ZcashStratum {
+            let ex_req = json!({
+                "id": 3,
+                "method": "mining.extranonce.subscribe",
+                "params": []
+            });
+            if let Err(e) = self.send_notification(&ex_req).await {
+                warn!("mining.extranonce.subscribe failed for {}: {}", self.config.coin, e);
+            }
+        }
         Ok(())
     }
 
-    /// EthStratum login: sends `eth_submitLogin` with just the wallet address.
+    /// EthStratum login: sends `eth_submitLogin` with wallet.worker and password.
     async fn eth_submit_login(&self, payout_wallet: &str) -> Result<()> {
+        let worker = format!("{}.{}", payout_wallet, self.config.worker_name);
+        let password = self.authorize_password();
         let req = json!({
             "id": 2,
             "method": "eth_submitLogin",
-            "params": [payout_wallet]
+            "params": [worker, password]
         });
         let resp = self.send_request(&req).await?;
         if !is_authorize_ok(&resp) {
@@ -565,12 +595,14 @@ impl AuxPowClient {
     }
 
     async fn authorize_inline(&self, payout_wallet: &str) -> Result<()> {
-        // EthStratum uses eth_submitLogin with just the wallet address.
+        // EthStratum uses eth_submitLogin with wallet.worker and password.
         if self.protocol == StratumProtocol::EthStratum {
+            let worker = format!("{}.{}", payout_wallet, self.config.worker_name);
+            let password = self.authorize_password();
             let req = json!({
                 "id": 2,
                 "method": "eth_submitLogin",
-                "params": [payout_wallet]
+                "params": [worker, password]
             });
             let resp = self.send_request_inline(&req).await?;
             if !is_authorize_ok(&resp) {
@@ -581,16 +613,30 @@ impl AuxPowClient {
             return Ok(());
         }
         let worker = format!("{}.{}", payout_wallet, self.config.worker_name);
+        let password = self.authorize_password();
         let req = json!({
             "id": 2,
             "method": "mining.authorize",
-            "params": [worker, self.config.password]
+            "params": [worker, password]
         });
         let resp = self.send_request_inline(&req).await?;
         if !is_authorize_ok(&resp) {
             bail!("stratum authorize failed");
         }
         *self.authorized.lock().await = true;
+
+        // ZcashStratum (VRSC/LuckPool): send mining.extranonce.subscribe after
+        // authorize to enable push extranonce updates. Fire-and-forget.
+        if self.protocol == StratumProtocol::ZcashStratum {
+            let ex_req = json!({
+                "id": 3,
+                "method": "mining.extranonce.subscribe",
+                "params": []
+            });
+            if let Err(e) = self.send_notification(&ex_req).await {
+                warn!("mining.extranonce.subscribe (inline) failed for {}: {}", self.config.coin, e);
+            }
+        }
         Ok(())
     }
 
@@ -844,29 +890,56 @@ impl AuxPowClient {
     }
 
     /// Parse an `eth_getWork` JSON-RPC response or notification.
-    /// Response has `result`, open-ethereum-pool notification has `params`.
-    /// Format: `[header_hash, seed_hash, target, block_number]`
+    ///
+    /// Standard EthStratum (ETC/ERG) uses `[seed_hash, header_hash, target, height]`.
+    /// ZANO HeroMiners poll responses swap the first two fields:
+    /// `[header_hash, seed_hash, target, height]`.
+    /// open-ethereum-pool notifications carry the array in `params`; JSON-RPC
+    /// responses carry it in `result`.
     async fn parse_getwork_response(&self, msg: &Value) -> Option<ExternalJob> {
-        let result = msg
+        // Prefer `result` for responses, fall back to `params` for notifications.
+        let is_response = msg.get("result").is_some();
+        let arr = msg
             .get("result")
             .or_else(|| msg.get("params"))
             .and_then(Value::as_array)?;
-        if result.len() < 3 {
+        if arr.len() < 3 {
             return None;
         }
-        let header_hex = result[0].as_str().unwrap_or("");
-        let _seed_hex = result[1].as_str().unwrap_or("");
-        let target_hex = result[2].as_str().unwrap_or("");
-        let block_number = result.get(3).and_then(|v| {
-            v.as_u64().or_else(|| {
-                v.as_str()
-                    .and_then(|s| u64::from_str_radix(s.trim_start_matches("0x"), 16).ok())
-            })
-        });
+
+        // ZANO poll responses have header/seed swapped vs the standard
+        // notification order. Only swap when we are reading a `result` field.
+        let is_zano = self.config.coin == ExternalCoin::Zano;
+        let (seed_idx, header_idx) = if is_response && is_zano {
+            (1, 0)
+        } else {
+            (0, 1)
+        };
+
+        let seed_hex = arr[seed_idx].as_str().unwrap_or("");
+        let header_hex = arr[header_idx].as_str().unwrap_or("");
+        let target_hex = arr[2].as_str().unwrap_or("");
+        let height_hex = arr.get(3).and_then(|v| v.as_str());
+
+        let block_number = height_hex
+            .and_then(|h| u64::from_str_radix(h.trim_start_matches("0x"), 16).ok());
 
         let header = hex::decode(header_hex.trim_start_matches("0x")).unwrap_or_default();
         let target = hasher::parse_target_hex(target_hex).unwrap_or([0xFF; 32]);
-        let job_id = format!("gw_{}", block_number.unwrap_or(0));
+
+        // EthStratum pools provide the share target directly in getWork;
+        // update the client's current target so share difficulty checks
+        // don't default to difficulty=1.0.
+        let difficulty = hasher::target_to_difficulty_with_max(
+            &target,
+            &hasher::algorithm_max_target(&self.config.algorithm),
+        );
+        *self.current_target_bytes.lock().await = Some(target);
+        *self.current_difficulty.lock().await = difficulty;
+
+        // Use the header hash as the job id; it uniquely identifies the
+        // EthStratum job and is needed for eth_submitWork submissions.
+        let job_id = header_hex.to_string();
 
         let job = ExternalJob {
             job_id: job_id.clone(),
@@ -874,6 +947,7 @@ impl AuxPowClient {
             target_hex: target_hex.to_string(),
             header_bytes: header,
             target_bytes: target,
+            seed_hash: Some(seed_hex.to_string()),
             block_number,
             algorithm: self.config.algorithm.clone(),
             external_coin: self.config.coin,
@@ -903,12 +977,19 @@ impl AuxPowClient {
     }
 
     /// Submit a share to the pool.
+    ///
+    /// `mix_hash` and `header_hash` are optional and used by EthStratum /
+    /// ProgPoW-style `eth_submitWork` submissions. If not provided, the
+    /// EthStratum path falls back to the `job_id` (expected to be the header
+    /// hash) and a zero mix hash.
     pub async fn submit_share(
         &self,
         job_id: &str,
         nonce: u64,
         extranonce2: &str,
         ntime: &str,
+        mix_hash: Option<&str>,
+        header_hash: Option<&str>,
     ) -> Result<ShareResult> {
         {
             let mut submitted = self.submitted_nonces.lock().await;
@@ -929,11 +1010,19 @@ impl AuxPowClient {
             format!("{}.{}", wallet, self.config.worker_name)
         };
 
+        let header_hex = header_hash
+            .map(|h| if h.starts_with("0x") { h.to_string() } else { format!("0x{}", h) })
+            .unwrap_or_else(|| if job_id.starts_with("0x") { job_id.to_string() } else { format!("0x{}", job_id) });
+
+        let mix_hex = mix_hash
+            .map(|m| if m.starts_with("0x") { m.to_string() } else { format!("0x{}", m) })
+            .unwrap_or_else(|| format!("0x{}", "0".repeat(64)));
+
         let req = match self.protocol {
             StratumProtocol::EthStratum => json!({
                 "id": self.next_rpc_id(),
                 "method": "eth_submitWork",
-                "params": [nonce_hex(nonce), format!("0x{}", hex::encode([0u8; 32])), format!("0x{}", hex::encode([0u8; 32]))]
+                "params": [nonce_hex(nonce), header_hex, mix_hex]
             }),
             StratumProtocol::CryptonoteStratum => {
                 let session_id = self.cryptonote_session_id.lock().await.clone();
@@ -944,7 +1033,7 @@ impl AuxPowClient {
                         "id": session_id.unwrap_or_default(),
                         "job_id": job_id,
                         "nonce": nonce_hex(nonce),
-                        "result": format!("0x{}", hex::encode([0u8; 32]))
+                        "result": mix_hex
                     }
                 })
             }
