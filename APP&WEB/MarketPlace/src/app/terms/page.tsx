@@ -19,10 +19,11 @@ export default function TermsPage() {
       <h3>1.1 Identifikace prodávajícího</h3>
       <ul>
         <li>Název: ZION TerraNova®</li>
-        <li>IČO: 09120050</li>
+        <li>IČ: 09120050</li>
         <li>DIČ: CZ09120050</li>
-        <li>Sídlo: Horní Čermná, 56156, Česká republika</li>
-        <li>Zapsáno: Krajský soud v Hradci Králové, spis. zn. C 43712</li>
+        <li>Sídlo: Horní Čermná, 561 56, Česká republika</li>
+        <li>Zápis: Krajský soud v Hradci Králové</li>
+        <li>Č. j.: 00215716</li>
         <li>E-mail: <a href="mailto:hello@zionterranova.com">hello@zionterranova.com</a></li>
         <li>Web: <a href="https://zionterranova.com" target="_blank" rel="noopener noreferrer">https://zionterranova.com</a></li>
       </ul>
@@ -172,8 +173,11 @@ export default function TermsPage() {
       <h3>8.1 Správce údajů</h3>
       <ul>
         <li>Správce: ZION TerraNova®</li>
-        <li>IČO: 09120050</li>
-        <li>Sídlo: Horní Čermná, 56156</li>
+        <li>IČ: 09120050</li>
+        <li>DIČ: CZ09120050</li>
+        <li>Sídlo: Horní Čermná, 561 56, Česká republika</li>
+        <li>Zápis: Krajský soud v Hradci Králové</li>
+        <li>Č. j.: 00215716</li>
         <li>E-mail pro GDPR: <a href="mailto:gdpr@zionterranova.com">gdpr@zionterranova.com</a></li>
       </ul>
 

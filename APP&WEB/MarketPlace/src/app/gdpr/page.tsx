@@ -21,9 +21,12 @@ export default function GdprPage() {
       <h2>1. Správce osobních údajů</h2>
       <ul>
         <li>ZION TerraNova® (provozovatel ZION Market)</li>
-        <li>IČO: 09120050</li>
-        <li>Sídlo: Horní Čermná, 56156, Česká republika</li>
-        <li>E-mail: <a href="mailto:shop@zionterranova.com">shop@zionterranova.com</a></li>
+        <li>IČ: 09120050</li>
+        <li>DIČ: CZ09120050</li>
+        <li>Sídlo: Horní Čermná, 561 56, Česká republika</li>
+        <li>Zápis: Krajský soud v Hradci Králové</li>
+        <li>Č. j.: 00215716</li>
+        <li>E-mail: <a href="mailto:hello@zionterranova.com">hello@zionterranova.com</a></li>
         <li>GDPR kontakt: <a href="mailto:gdpr@zionterranova.com">gdpr@zionterranova.com</a></li>
       </ul>
 
