@@ -225,8 +225,21 @@ async fn main() -> anyhow::Result<()> {
     }
 
     // ── Revenue proxy (external pool forwarding) ──────────────────────────
+    // Skip revenue_proxy for coins that already have an auxpow_runtime bridge
+    // — both systems connect to the same upstream pool with the same wallet,
+    // and dual connections cause pools like HeroMiners to close one of them.
+    // The auxpow_runtime bridge already handles both job fetching AND share
+    // forwarding, so revenue_proxy is redundant for those coins.
     let auxpow_cfg_for_proxy = auxpow_runtime::config_from_env();
+    let bridge_coins = auxpow_cfg.enabled_coins.clone();
     for coin in &auxpow_cfg_for_proxy.enabled_coins {
+        if bridge_coins.contains(coin) {
+            info!(
+                "revenue_proxy: skipping {:?} — already handled by auxpow_runtime bridge",
+                coin
+            );
+            continue;
+        }
         if let Some(wallet) = auxpow_cfg_for_proxy.wallet_for_coin(coin) {
             if !wallet.is_empty() {
                 let profile = zion_cosmic_harmony::CoinProfile::for_coin(*coin);
