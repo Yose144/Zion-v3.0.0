@@ -19,10 +19,11 @@
       'menu.en': `EN`,
       'menu.toggle.open': `Otevřít menu`,
       'menu.toggle.close': `Zavřít menu`,
-      'bg.rasta': `Rasta`,
-      'bg.stargate': `Stargate`,
-      'bg.matrix': `Matrix`,
-      'bg.cyber': `Cyber`,
+      'bg.maintenance': `Maintenance Starfield`,
+      'bg.planet-orbit': `Turquoise Core`,
+      'bg.galaxy-core': `Galaxy Core`,
+      'bg.desktop-agent': `Desktop Agent`,
+      'bg.warp-speed': `Warp`,
       'hero.subtitle': `Multichain Dharma Ekosystém`,
       'nav.archive': `Archiv V2`,
       'intro.title': `Intro`,
@@ -90,10 +91,11 @@
       'menu.en': `EN`,
       'menu.toggle.open': `Open menu`,
       'menu.toggle.close': `Close menu`,
-      'bg.rasta': `Rasta`,
-      'bg.stargate': `Stargate`,
-      'bg.matrix': `Matrix`,
-      'bg.cyber': `Cyber`,
+      'bg.maintenance': `Maintenance Starfield`,
+      'bg.planet-orbit': `Turquoise Core`,
+      'bg.galaxy-core': `Galaxy Core`,
+      'bg.desktop-agent': `Desktop Agent`,
+      'bg.warp-speed': `Warp`,
       'hero.subtitle': `Multichain Dharma Ecosystem`,
       'nav.archive': `Archive V2`,
       'intro.title': `Intro`,
@@ -200,17 +202,22 @@
     }
   }
 
-  // --- Background modes ---
-  const bgModes = ['rasta', 'stargate', 'matrix', 'cyber'];
+  // --- Background modes (match website-v2.9 Observatory modes) ---
+  const bgModes = ['maintenance', 'planet-orbit', 'galaxy-core', 'desktop-agent', 'warp-speed'];
   function applyBg(mode) {
-    if (!bgModes.includes(mode)) mode = 'rasta';
-    document.body.classList.remove('bg-rasta', 'bg-stargate', 'bg-matrix', 'bg-cyber');
+    if (!bgModes.includes(mode)) mode = 'maintenance';
+    document.body.classList.remove('bg-maintenance', 'bg-planet-orbit', 'bg-galaxy-core', 'bg-desktop-agent', 'bg-warp-speed');
     document.body.classList.add('bg-' + mode);
     try { localStorage.setItem('zion_bg', mode); } catch (e) {}
 
     $$('.floating-menu-bg').forEach(function (btn) {
-      btn.classList.toggle('active', btn.getAttribute('data-bg') === mode);
+      const isActive = btn.getAttribute('data-bg') === mode;
+      btn.classList.toggle('active', isActive);
     });
+
+    if (typeof window.setStarfieldMode === 'function') {
+      window.setStarfieldMode(mode);
+    }
   }
 
   // --- Floating menu ---
@@ -296,5 +303,5 @@
   const savedBg = (function () { try { return localStorage.getItem('zion_bg'); } catch (e) { return null; } })();
 
   if (savedLang) applyLang(savedLang);
-  if (savedBg) applyBg(savedBg);
+  applyBg(savedBg || 'maintenance');
 })();

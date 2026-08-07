@@ -92,40 +92,30 @@ body::before {
   background-image: none;
 }
 
-/* Background modes (Rasta is default, selected via JS) */
-body.bg-stargate,
-body.bg-matrix,
-body.bg-cyber {
-  background-color: #000;
+/* Background modes (website-v2.9 Observatory modes, selected via JS) */
+body.bg-maintenance,
+body.bg-planet-orbit,
+body.bg-galaxy-core,
+body.bg-desktop-agent,
+body.bg-warp-speed {
+  background: #000;
 }
 
-body.bg-stargate::before,
-body.bg-matrix::before,
-body.bg-cyber::before {
+body.bg-maintenance {
+  background:
+    radial-gradient(circle at 30% 20%, rgba(228, 30, 43, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 70% 80%, rgba(7, 137, 48, 0.06) 0%, transparent 40%),
+    radial-gradient(ellipse at bottom, #0a0a0a 0%, #000 100%);
+}
+
+body.bg-maintenance::before,
+body.bg-planet-orbit::before,
+body.bg-galaxy-core::before,
+body.bg-desktop-agent::before,
+body.bg-warp-speed::before {
   background-image: none;
   mask-image: none;
   -webkit-mask-image: none;
-}
-
-body.bg-stargate {
-  background:
-    #000 url('../../images/nebula.jpg') center center / cover no-repeat fixed;
-}
-
-body.bg-matrix {
-  background:
-    radial-gradient(circle at 22% -5%, rgba(0, 255, 65, 0.18), transparent 38rem),
-    radial-gradient(circle at 82% 5%, rgba(0, 180, 90, 0.12), transparent 34rem),
-    radial-gradient(circle at 50% 40%, rgba(0, 255, 120, 0.07), transparent 50rem),
-    radial-gradient(ellipse at bottom, #001a0a 0%, #000 100%);
-}
-
-body.bg-cyber {
-  background:
-    radial-gradient(circle at 22% -5%, rgba(255, 0, 128, 0.18), transparent 38rem),
-    radial-gradient(circle at 82% 5%, rgba(168, 85, 247, 0.12), transparent 34rem),
-    radial-gradient(circle at 50% 40%, rgba(34, 211, 238, 0.07), transparent 50rem),
-    radial-gradient(ellipse at bottom, #0f0018 0%, #000 100%);
 }
 
 /* ── Headings: web2.9 style, rasta gradient on major headings ────────────── */
@@ -616,7 +606,7 @@ html body textarea:focus {
   padding: 0.6rem 0.5rem;
   border-radius: var(--zion-radius-md);
   color: rgba(255, 255, 255, 0.82);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 650;
   text-decoration: none;
   letter-spacing: 0.01em;
@@ -626,6 +616,10 @@ html body textarea:focus {
   transition: all 0.18s ease;
   cursor: pointer;
   border: none;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .floating-menu-item:hover,
