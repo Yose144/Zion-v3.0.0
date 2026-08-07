@@ -182,6 +182,7 @@ export interface AdminOrdersListResult {
       payment: string;
       trackingNumber: string | null;
       zionTokens: number;
+      customerWalletAddress: string | null;
       items: unknown;
       addressStreet: string | null;
       addressCity: string | null;

@@ -198,13 +198,15 @@ function OrderModal({ order, onClose, onRefresh }: OrderModalProps) {
   };
 
   const handleDistributeTokens = async () => {
-    if (!confirm(`⚠️ POZOR: Distribuovat ${order.zionTokens.toLocaleString('cs-CZ')} ZION tokenů?\n\nTato akce je NEVRATNÁ.`)) return;
-    const txHash = prompt('Zadejte tx hash (nebo nechte prázdné pro "pending"):') || undefined;
+    const walletInfo = order.customerWalletAddress
+      ? `\nCílová peněženka: ${order.customerWalletAddress}`
+      : '\n⚠️ Objednávka nemá zákaznickou peněženku — bude zapsán jako pending.';
+    if (!confirm(`⚠️ POZOR: Distribuovat ${order.zionTokens.toLocaleString('cs-CZ')} ZION tokenů?\n\nTato akce je NEVRATNÁ a pošle tokeny on-chain.${walletInfo}`)) return;
     setBusy('tokens');
-    const res = await distributeTokens(order.id, txHash || undefined);
+    const res = await distributeTokens(order.id);
     setBusy(null);
     if (res?.success) {
-      alert(`Distribuce dokončena! ${res.tokens?.toLocaleString('cs-CZ')} ZION → ${res.status}`);
+      alert(`Distribuce dokončena! ${res.tokens?.toLocaleString('cs-CZ')} ZION → ${res.status}\nTx: ${res.txHash || 'pending'}`);
       loadTokenStatus();
     } else {
       alert('Chyba: ' + (res?.error || 'neznámá'));
@@ -321,6 +323,12 @@ function OrderModal({ order, onClose, onRefresh }: OrderModalProps) {
                 <h3 className="text-emerald-400 font-bold text-sm uppercase tracking-wider">🎁 ZION Token Bonus</h3>
                 <div className="text-2xl font-black text-emerald-400">{order.zionTokens.toLocaleString('cs-CZ')} ZION ⚡</div>
               </div>
+              {order.customerWalletAddress && (
+                <div className="mb-3 text-sm">
+                  <span className="text-gray-400">Cílová peněženka:</span>{' '}
+                  <span className="font-mono text-emerald-300">{order.customerWalletAddress}</span>
+                </div>
+              )}
               <div className="flex items-center gap-4">
                 <div className="flex-1">
                   {tokenStatus.loading ? (

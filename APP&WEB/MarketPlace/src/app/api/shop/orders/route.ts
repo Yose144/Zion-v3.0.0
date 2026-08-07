@@ -3,8 +3,9 @@ import { prisma } from '@/lib/db';
 import { Prisma } from '@prisma/client';
 import QRCode from 'qrcode';
 import type { ShopOrderInput } from '@/types/shop';
-import { sendAdminOrderNotification, sendCustomerOrderConfirmation } from '@/lib/email';
+import { sendAdminOrderNotification, sendCustomerOrderConfirmation, sendCustomerWalletEmail } from '@/lib/email';
 import { createInvoiceForOrder } from '@/lib/invoice';
+import { generateCustomerWallet } from '@/lib/zion-l1';
 
 const BANK_ACCOUNT = 'CZ6320100000002901809148';
 const BANK_BIC = 'FIOBCZPPXXX';
@@ -28,6 +29,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Generate a fresh ZION L1 wallet for the customer so the bonus token
+    // payout has a known on-chain destination. The seed phrase is emailed
+    // to the customer and stored for admin payout use.
+    let customerWallet: ReturnType<typeof generateCustomerWallet> | null = null;
+    if (body.zionTokens > 0) {
+      try {
+        customerWallet = generateCustomerWallet();
+      } catch (walletErr) {
+        console.error('Failed to generate customer ZION wallet:', walletErr);
+      }
+    }
+
     const order = await prisma.shopOrder.create({
       data: {
         orderId: body.orderId,
@@ -46,6 +59,10 @@ export async function POST(req: NextRequest) {
         shippingCzk: body.shipping.price,
         items: body.items as unknown as never,
         zionTokens: body.zionTokens,
+        customerWalletAddress: customerWallet?.address ?? null,
+        customerWalletSeed: customerWallet?.mnemonic ?? null,
+        customerWalletPublicKey: customerWallet?.publicKey ?? null,
+        customerWalletSecretKey: customerWallet?.secretKey ?? null,
         termsAccepted: body.termsAccepted,
         newsletter: body.customer.newsletter ?? false,
       },
@@ -102,6 +119,15 @@ export async function POST(req: NextRequest) {
     // Send notifications in background; don't block the response
     sendAdminOrderNotification(emailData).catch(console.error);
     sendCustomerOrderConfirmation(emailData, invoiceResult?.html ?? null).catch(console.error);
+    if (customerWallet) {
+      sendCustomerWalletEmail({
+        customerName: order.customerName,
+        customerEmail: order.customerEmail,
+        orderId: order.orderId,
+        address: customerWallet.address,
+        seed: customerWallet.mnemonic,
+      }).catch((err) => console.error('Failed to send customer wallet email:', err));
+    }
 
     return NextResponse.json({
       success: true,

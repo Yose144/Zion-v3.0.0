@@ -16,7 +16,10 @@
     "contract:deploy:base": "forge script contracts/scripts/Deploy.s.sol --rpc-url $BASE_RPC_URL --private-key $DEPLOYER_KEY --broadcast"
   },
   "dependencies": {
+    "@noble/curves": "^1.6.0",
+    "@noble/hashes": "^1.5.0",
     "@prisma/client": "^5.18.0",
+    "@scure/bip39": "^1.5.0",
     "@tanstack/react-query": "^5.51.0",
     "@types/nodemailer": "^8.0.1",
     "@x402/core": "^2.20.0",
