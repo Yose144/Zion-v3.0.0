@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-use serde_json::json;
+use serde_json::{json, Value};
 use tracing::{info, warn};
 
 use crate::store::{PayoutRow, ShareStore};
@@ -92,20 +92,33 @@ fn rpc_request(method: &str, params: serde_json::Value) -> serde_json::Value {
     })
 }
 
-/// Check if a transaction is on-chain (returns block height if confirmed).
-pub async fn check_tx_on_chain(rpc_addr: &str, tx_id: &str) -> anyhow::Result<Option<u64>> {
+/// Check if a transaction is on-chain.
+///
+/// Returns the block height and block hash (hex) if the node reports the
+/// transaction in a confirmed block. The response is read from the JSON-RPC
+/// `result` envelope.
+pub async fn check_tx_on_chain(
+    rpc_addr: &str,
+    tx_id: &str,
+) -> anyhow::Result<Option<(u64, String)>> {
     let addr = crate::rpc_client::parse_rpc_addr(rpc_addr)?;
-    let result = crate::rpc_client::jsonrpc_call(
+    let resp = crate::rpc_client::jsonrpc_call(
         addr,
         &rpc_request("getTransaction", json!({ "txid": tx_id })),
     )
     .await?;
 
+    let result = resp.get("result").cloned().unwrap_or(Value::Null);
     if result.is_null() {
         return Ok(None);
     }
     let height = result.get("block_height").and_then(|v| v.as_u64());
-    Ok(height)
+    let block_hash = result
+        .get("block_hash")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    Ok(height.map(|h| (h, block_hash)))
 }
 
 /// Get the current chain height from the node.
@@ -573,28 +586,24 @@ pub fn spawn_payout_confirmation_sweep(
 
             for (tx_id, group) in by_tx {
                 // First try the exact getTransaction RPC.
-                let tx_height = match check_tx_on_chain(&rpc, &tx_id).await {
-                    Ok(Some(h)) => Some(h),
+                let (tx_height, block_hash) = match check_tx_on_chain(&rpc, &tx_id).await {
+                    Ok(Some((h, hash))) => (h, hash),
                     Ok(None) => {
                         // Fallback: look for the tx hash in any recipient UTXO set.
                         let representative = &group[0];
                         match check_tx_on_chain_via_utxos(&rpc, &representative.address, &tx_id).await {
-                            Ok(true) => Some(representative.height),
-                            Ok(false) => None,
+                            Ok(true) => (representative.height, String::new()),
+                            Ok(false) => continue,
                             Err(e) => {
                                 tracing::debug!("payout_confirmation_sweep: getUtxos fallback failed for {}: {e}", representative.address);
-                                None
+                                continue;
                             }
                         }
                     }
                     Err(e) => {
                         tracing::debug!("payout_confirmation_sweep: check_tx_on_chain failed for {}: {e}", tx_id);
-                        None
+                        continue;
                     }
-                };
-
-                let Some(tx_height) = tx_height else {
-                    continue;
                 };
 
                 let confirmations = if chain_height >= tx_height {
@@ -604,7 +613,12 @@ pub fn spawn_payout_confirmation_sweep(
                 };
 
                 if confirmations >= maturity_confirmations {
-                    if let Err(e) = store.confirm_payout(&tx_id, confirmations) {
+                    let confirm = if block_hash.is_empty() {
+                        store.confirm_payout(&tx_id, confirmations)
+                    } else {
+                        store.confirm_payout_with_block(&tx_id, confirmations, &block_hash)
+                    };
+                    if let Err(e) = confirm {
                         warn!("payout_confirmation_sweep: confirm_payout failed for {}: {}", tx_id, e);
                     } else {
                         info!(

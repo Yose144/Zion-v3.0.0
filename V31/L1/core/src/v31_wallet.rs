@@ -164,18 +164,69 @@ pub fn build_batch_payout(
                 let final_total: u64 = adjusted_recipients.iter().map(|r| r.amount).sum();
                 let (sel, tot) = select_utxos(available_utxos, final_total)?;
                 return build_batch_payout_inner(
-                    signing_key, change_address, &adjusted_recipients, 0, &sel, tot,
+                    signing_key, change_address, &adjusted_recipients, 0, &sel, tot, MIN_PAYOUT_AMOUNT,
                 );
             }
             let (sel, tot) = select_utxos(available_utxos, new_target)?;
             return build_batch_payout_inner(
-                signing_key, change_address, &adjusted_recipients, fee, &sel, tot,
+                signing_key, change_address, &adjusted_recipients, fee, &sel, tot, MIN_PAYOUT_AMOUNT,
             );
         }
         Err(e) => return Err(e),
     };
 
-    build_batch_payout_inner(signing_key, change_address, recipients, fee, &selected, total)
+    build_batch_payout_inner(
+        signing_key,
+        change_address,
+        recipients,
+        fee,
+        &selected,
+        total,
+        MIN_PAYOUT_AMOUNT,
+    )
+}
+
+/// Build and sign a single-recipient V31 UTXO transaction.
+///
+/// `amount` and `fee` are in flowers. The change returns to
+/// `change_address` (usually the sender). Dust outputs are allowed,
+/// so this is suitable for small customer bonuses.
+pub fn build_send(
+    signing_key: &SigningKey,
+    change_address: &str,
+    to_address: &str,
+    amount: u64,
+    fee: u64,
+    available_utxos: &[SpendableUtxo],
+) -> Result<BuildResult, WalletError> {
+    if amount == 0 {
+        return Err(WalletError::FeeTooLow {
+            fee: 0,
+            minimum: 1,
+        });
+    }
+
+    let target = amount
+        .checked_add(fee)
+        .ok_or(WalletError::InsufficientFunds {
+            available: 0,
+            needed: u64::MAX,
+        })?;
+
+    let (selected, total) = select_utxos(available_utxos, target)?;
+
+    build_batch_payout_inner(
+        signing_key,
+        change_address,
+        &[BatchRecipient {
+            address: to_address.to_string(),
+            amount,
+        }],
+        fee,
+        &selected,
+        total,
+        1,
+    )
 }
 
 fn total_payout_inner(recipients: &[BatchRecipient], fee: u64) -> u64 {
@@ -190,17 +241,18 @@ fn build_batch_payout_inner(
     fee: u64,
     selected: &[&SpendableUtxo],
     total: u64,
+    min_payout: u64,
 ) -> Result<BuildResult, WalletError> {
     let target = total_payout_inner(recipients, fee);
     let change = total - target;
 
     let mut outputs: Vec<TransactionOutput> = Vec::with_capacity(recipients.len() + 1);
     for r in recipients {
-        if r.amount < MIN_PAYOUT_AMOUNT {
+        if r.amount < min_payout {
             // Skip dust outputs; they would fail validation anyway.
             return Err(WalletError::FeeTooLow {
                 fee: r.amount,
-                minimum: MIN_PAYOUT_AMOUNT,
+                minimum: min_payout,
             });
         }
         outputs.push(TransactionOutput {

@@ -387,15 +387,51 @@ impl Node {
         Ok(self.storage.get_by_hash(hash).await?)
     }
 
+    /// Find a V31 native transaction by its hex id.
+    ///
+    /// Scans the accepted chain from tip to genesis and returns the block
+    /// height, block hash (hex), and the transaction itself if found.
+    pub async fn find_transaction(
+        &self,
+        tx_id: &str,
+    ) -> Result<Option<(u64, String, Transaction)>, NodeError> {
+        let (tip_header, _tip_hash) = self.storage.tip().await?.unwrap_or_else(|| {
+            let genesis = genesis::genesis_block();
+            let hash = genesis.header.header_hash();
+            (genesis.header.clone(), hash)
+        });
+        for height in (0..=tip_header.height).rev() {
+            if let Some(block) = self.storage.get_by_height(height).await? {
+                let block_hash = block.header.header_hash().to_hex();
+                for tx in &block.transactions {
+                    if tx.hash().to_hex() == tx_id {
+                        return Ok(Some((height, block_hash, tx.clone())));
+                    }
+                }
+            }
+        }
+        Ok(None)
+    }
+
     /// Submit a transaction to the mempool.
     pub async fn submit_transaction(&self, tx: Transaction) {
         self.mempool.add(tx).await;
     }
 
     /// Return unspent V31 UTXOs for an address.
+    ///
+    /// Excludes outputs already consumed by a mempool transaction so wallets
+    /// do not build conflicting transactions while a previous spend is pending.
     pub async fn get_utxos_for_address(&self, address: &str) -> Vec<(Hash, u32, u64)> {
         let set = self.utxo_set.lock().await;
-        set.get_utxos_for_address(address)
+        let mut utxos = set.get_utxos_for_address(address);
+        drop(set);
+        let spent = self.mempool.spent_outpoints().await;
+        utxos.retain(|(tx_hash, index, _amount)| {
+            let outpoint = Outpoint::new(*tx_hash, *index);
+            !spent.contains(&outpoint)
+        });
+        utxos
     }
 
     /// Submit a V31 UTXO transaction to the mempool.

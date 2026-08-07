@@ -685,26 +685,16 @@ async fn main() -> anyhow::Result<()> {
                 let total_available: u64 = utxos.iter().map(|u| u.amount).sum();
                 println!("Available: {} flowers ({} UTXOs)", total_available, utxos.len());
 
-                // Build and sign transaction
-                let params = zion_core::v3_wallet::SendParams {
-                    to_address: to.clone(),
-                    amount: amount_flowers,
-                    fee: fee_flowers,
-                    memo: memo.clone(),
-                };
-
-                let chain_tip = get_chain_height(&rpc).await.unwrap_or(0);
-                if chain_tip == 0 {
-                    println!("Warning: could not fetch chain tip height; using 0");
-                }
-
-                let result = zion_core::v3_wallet::build_and_sign(
+                // Build and sign V31-native transaction
+                let result = zion_core::build_send(
                     &signing_key,
                     sender_address,
-                    &params,
+                    &to,
+                    amount_flowers,
+                    fee_flowers,
                     &utxos,
-                    chain_tip,
-                ).map_err(|e| anyhow!("wallet error: {}", e))?;
+                )
+                .map_err(|e| anyhow!("wallet error: {}", e))?;
 
                 println!("Transaction built and signed:");
                 println!("  Change: {} flowers", result.change_amount);
@@ -714,7 +704,7 @@ async fn main() -> anyhow::Result<()> {
                 // Serialize transaction as JSON for RPC submission
                 let tx_json = serde_json::to_value(&result.transaction)
                     .map_err(|e| anyhow!("failed to serialize transaction: {e}"))?;
-                let tx_id = hex::encode(result.transaction.calculate_hash());
+                let tx_id = hex::encode(result.transaction.hash().0);
                 println!("  TX hash: {}", tx_id);
 
                 // Submit to L1 RPC
@@ -1034,23 +1024,6 @@ async fn rpc_call_line(rpc_url: &str, request: &serde_json::Value) -> anyhow::Re
     serde_json::from_str(&line).with_context(|| "failed to parse RPC response")
 }
 
-/// Fetch the current V3 chain height from the L1 RPC.
-async fn get_chain_height(rpc_url: &str) -> anyhow::Result<u64> {
-    let request = serde_json::json!({
-        "jsonrpc": "2.0",
-        "id": 1,
-        "method": "getStatus",
-        "params": null
-    });
-    let response = rpc_call_line(rpc_url, &request).await?;
-    if let Some(err) = response["error"]["message"].as_str() {
-        bail!("getStatus error: {}", err);
-    }
-    response["result"]["chain_height"]
-        .as_u64()
-        .context("missing chain_height in getStatus response")
-}
-
 fn address_bytes(chain_id: &ChainId, encoded: &str) -> anyhow::Result<Vec<u8>> {
     use zion_l1_types::ChainFamily;
     match chain_id.family() {
@@ -1069,7 +1042,7 @@ fn address_bytes(chain_id: &ChainId, encoded: &str) -> anyhow::Result<Vec<u8>> {
 async fn fetch_utxos(
     rpc_url: &str,
     address: &str,
-) -> anyhow::Result<Vec<zion_core::v3_wallet::SpendableUtxo>> {
+) -> anyhow::Result<Vec<zion_core::v31_wallet::SpendableUtxo>> {
     let request = serde_json::json!({
         "jsonrpc": "2.0",
         "method": "getUtxos",
@@ -1086,7 +1059,7 @@ async fn fetch_utxos(
         .as_array()
         .ok_or_else(|| anyhow!("no utxos field in RPC response"))?;
 
-    let result: Vec<zion_core::v3_wallet::SpendableUtxo> = utxos
+    let result: Vec<zion_core::v31_wallet::SpendableUtxo> = utxos
         .iter()
         .filter_map(|u| {
             let tx_hash_hex = u["tx_hash"].as_str()?;
@@ -1098,7 +1071,7 @@ async fn fetch_utxos(
             }
             let mut hash_arr = [0u8; 32];
             hash_arr.copy_from_slice(&tx_hash);
-            Some(zion_core::v3_wallet::SpendableUtxo {
+            Some(zion_core::v31_wallet::SpendableUtxo {
                 tx_hash: hash_arr,
                 output_index,
                 amount,
@@ -1110,18 +1083,18 @@ async fn fetch_utxos(
     Ok(result)
 }
 
-/// Submit a signed UTXO transaction to the L1 RPC.
+/// Submit a signed V31-native UTXO transaction to the L1 RPC.
 async fn submit_tx_json(rpc_url: &str, tx_json: &serde_json::Value) -> anyhow::Result<String> {
     let request = serde_json::json!({
         "jsonrpc": "2.0",
-        "method": "submitUtxoTransaction",
+        "method": "submitTransaction",
         "params": {"transaction": tx_json},
         "id": 1
     });
     let response = rpc_call_line(rpc_url, &request).await?;
 
     if let Some(err) = response["error"]["message"].as_str() {
-        bail!("submitUtxoTransaction error: {}", err);
+        bail!("submitTransaction error: {}", err);
     }
 
     let result = response["result"].to_string();

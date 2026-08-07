@@ -286,13 +286,16 @@ async fn run_bridge_task(
     let client_config = AuxPowClientConfig::new(coin, pool_addr, worker, password);
     let client = AuxPowClient::new(client_config);
 
+    // Keep trying until the initial connect + handshake succeeds.
+    // AuxPowClient spawns its own background poll/reconnect task, so once we
+    // succeed we must NOT call connect() again — doing so would spawn duplicate
+    // reader tasks and create a reconnect storm.
     loop {
-        // Connect to upstream pool
         tracing::info!("auxpow[{}]: connecting to {}", coin_label, pool_addr);
         match client.connect(wallet).await {
             Ok(()) => {
                 tracing::info!("auxpow[{}]: connected", coin_label);
-                reconnect_delay = reconnect_base_secs;
+                break;
             }
             Err(e) => {
                 tracing::warn!(
@@ -303,26 +306,19 @@ async fn run_bridge_task(
                 );
                 tokio::time::sleep(Duration::from_secs(reconnect_delay)).await;
                 reconnect_delay = (reconnect_delay * 2).min(reconnect_max_secs);
-                continue;
             }
         }
+    }
 
-        // Main loop: fetch jobs + forward shares + touch timestamps
-        loop {
-            // Check if still connected
-            if !client.is_connected().await {
-                tracing::warn!("auxpow[{}]: disconnected", coin_label);
-                break;
-            }
-
-            // Fetch new jobs (5s timeout)
-            match tokio::time::timeout(
-                Duration::from_secs(5),
-                client.wait_for_job(Duration::from_secs(5)),
-            )
-            .await
-            {
-                Ok(Ok(job)) => {
+    // Main loop: fetch jobs + forward shares + touch timestamps.
+    // The AuxPowClient background task handles all reconnects, so this loop
+    // just waits for the next job and drains the share/touch channels.
+    loop {
+        if client.is_connected().await {
+            // A short timeout is fine — it lets us forward shares frequently
+            // without forcing a reconnect when no new job arrives.
+            match client.wait_for_job(Duration::from_secs(5)).await {
+                Ok(job) => {
                     let pkg = external_job_to_package(&job, coin);
                     tracing::debug!(
                         "auxpow[{}]: got job id={} height={}",
@@ -333,42 +329,29 @@ async fn run_bridge_task(
                     // Push to bridge queue
                     bridge.push_job_for_coin(&coin, pkg);
                 }
-                Ok(Err(e)) => {
-                    tracing::warn!("auxpow[{}]: wait_for_job error: {}", coin_label, e);
-                    break;
-                }
-                Err(_) => {
-                    // Timeout — no new job, continue
+                Err(e) => {
+                    // No new job within the timeout; not a fatal error.
+                    tracing::debug!("auxpow[{}]: wait_for_job timeout: {}", coin_label, e);
                 }
             }
-
-            // Forward any pending shares (non-blocking drain)
-            while let Ok((req, reply_tx)) = share_rx.try_recv() {
-                let result = forward_share_to_upstream(&client, coin, &req).await;
-                let _ = reply_tx.send(result);
-            }
-
-            // Touch job timestamps (non-blocking drain)
-            while let Ok(job_id) = touch_rx.try_recv() {
-                tracing::trace!(
-                    "auxpow[{}]: touch job_id={}",
-                    coin_label,
-                    job_id
-                );
-            }
-
-            // Small yield to prevent busy-looping
-            tokio::task::yield_now().await;
+        } else {
+            tracing::debug!("auxpow[{}]: waiting for upstream reconnect", coin_label);
+            tokio::time::sleep(Duration::from_secs(1)).await;
         }
 
-        // Reconnect with backoff
-        tracing::warn!(
-            "auxpow[{}]: reconnecting in {}s",
-            coin_label,
-            reconnect_delay
-        );
-        tokio::time::sleep(Duration::from_secs(reconnect_delay)).await;
-        reconnect_delay = (reconnect_delay * 2).min(reconnect_max_secs);
+        // Forward any pending shares (non-blocking drain)
+        while let Ok((req, reply_tx)) = share_rx.try_recv() {
+            let result = forward_share_to_upstream(&client, coin, &req).await;
+            let _ = reply_tx.send(result);
+        }
+
+        // Touch job timestamps (non-blocking drain)
+        while let Ok(job_id) = touch_rx.try_recv() {
+            tracing::trace!("auxpow[{}]: touch job_id={}", coin_label, job_id);
+        }
+
+        // Small yield to prevent busy-looping
+        tokio::task::yield_now().await;
     }
 }
 
