@@ -1,4 +1,4 @@
 fn main() {
-    let vault_addr = zion_core::crypto::bridge_vault_address();
-    println!("New bridge vault address: {}", vault_addr);
+    let vault_addr = zion_core::fee::BRIDGE_VAULT_ADDRESS;
+    println!("Bridge vault address: {}", vault_addr);
 }

@@ -147,14 +147,6 @@ pub fn derive_keyless_address(seed: &str) -> String {
     derive_address(&synthetic_pubkey)
 }
 
-/// The canonical seed string used to derive the ZION bridge vault address.
-pub const BRIDGE_VAULT_SEED: &str = "ZION Bridge Vault V3 Mainnet v2 2026-07-06-HARD-RESET";
-
-/// Derive the canonical bridge vault address.
-pub fn bridge_vault_address() -> String {
-    derive_keyless_address(BRIDGE_VAULT_SEED)
-}
-
 // ── hex helpers ────────────────────────────────────────────────────────
 
 /// Encode bytes as lowercase hex string.
@@ -192,14 +184,6 @@ mod tests {
         let (sk, vk) = generate_keypair();
         let sig = sign(&sk, b"test message");
         assert!(verify(vk.as_bytes(), b"test message", &sig));
-    }
-
-    #[test]
-    fn bridge_vault_address_matches_constant() {
-        assert_eq!(
-            bridge_vault_address(),
-            "zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7"
-        );
     }
 
     #[test]
