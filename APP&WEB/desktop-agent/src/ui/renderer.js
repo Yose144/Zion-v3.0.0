@@ -3498,7 +3498,7 @@ async function refreshNetworkMetrics() {
             <span style="font-size:11px;color:rgba(255,255,255,0.35);font-family:monospace;">${safeHost}</span>
           </div>
           <div style="display:flex;gap:16px;font-size:12px;color:rgba(255,255,255,0.55);">
-            <span>H: <b style="color:#93c5fd;">${n.height ? n.height.toLocaleString() : '—'}</b></span>
+            <span>H: <b style="color:#22c55e;">${n.height ? n.height.toLocaleString() : '—'}</b></span>
             <span>M: <b style="color:#fcd34d;">${n.miners}</b></span>
             <span style="color:#ff6b7a;font-family:monospace;">${hr}</span>
           </div>
@@ -3565,7 +3565,7 @@ async function refreshPeerList() {
         ? '<span style="color:#6ee7b7;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;">● Connected</span>'
         : '<span style="color:#6b7280;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;">○ Known</span>';
       const dirLabel = p.incoming
-        ? '<span style="color:#38bdf8;font-size:10px;">↓ IN</span>'
+        ? '<span style="color:#4ade80;font-size:10px;">↓ IN</span>'
         : '<span style="color:#fbbf24;font-size:10px;">↑ OUT</span>';
       const heightStr = p.height ? p.height.toLocaleString() : '0';
       const idleSecs = p.idle_seconds || 0;
@@ -3586,7 +3586,7 @@ async function refreshPeerList() {
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:14px;font-size:12px;color:rgba(255,255,255,0.55);">
-          <span>H: <b style="color:#93c5fd;">${heightStr}</b></span>
+          <span>H: <b style="color:#22c55e;">${heightStr}</b></span>
           <span style="color:rgba(255,255,255,0.3);">:${safePort}</span>
           <span>idle ${idleStr}</span>
           ${failStr}
@@ -3711,7 +3711,7 @@ function initUpdateUI() {
       licenseBtn.textContent = 'Validating...';
       if (licenseStatus) {
         licenseStatus.textContent = 'Validating license...';
-        licenseStatus.style.color = '#93c5fd';
+        licenseStatus.style.color = '#fcd116';
       }
 
       try {
@@ -3746,7 +3746,7 @@ function initUpdateUI() {
     checkBtn.addEventListener('click', async () => {
       if (_updateState.checking) return;
       _updateState.checking = true;
-      _setUpdateStatus('Checking...', 'Contacting update server...', '#93c5fd');
+      _setUpdateStatus('Checking...', 'Contacting update server...', '#fcd116');
       checkBtn.disabled = true;
       checkBtn.textContent = 'Checking...';
 
@@ -3810,7 +3810,7 @@ function initUpdateUI() {
     window.electronAPI.onUpdateStatus?.((data) => {
       switch (data.status) {
         case 'checking':
-          _setUpdateStatus('Checking...', 'Contacting update server...', '#93c5fd');
+          _setUpdateStatus('Checking...', 'Contacting update server...', '#fcd116');
           break;
         case 'available':
           _updateState.available = true;
@@ -3873,7 +3873,7 @@ function _showDownloadPrompt(result) {
     checkBtn.onclick = async () => {
       checkBtn.disabled = true;
       checkBtn.textContent = 'Downloading...';
-      _setUpdateStatus('Downloading...', 'Download in progress', '#93c5fd');
+      _setUpdateStatus('Downloading...', 'Download in progress', '#fcd116');
       try {
         const dlResult = await window.electronAPI.downloadUpdate();
         if (!dlResult?.success) {
@@ -4020,7 +4020,7 @@ async function loadSecurityStatus() {
         return `<div class="glass-panel" style="padding:12px; background:rgba(248,113,113,.06); border:1px solid rgba(248,113,113,.2);">
           <div style="color:#f87171; font-weight:600; margin-bottom:4px;">⚠️ ${rec.title}</div>
           <div style="color:var(--text-secondary); font-size:13px; white-space:pre-wrap;">${rec.description}</div>
-          ${rec.command ? `<code style="display:block; margin-top:8px; padding:6px 10px; background:rgba(255,255,255,.06); border-radius:6px; font-size:12px; color:#93c5fd; word-break:break-all;">${rec.command}</code>` : ''}
+          ${rec.command ? `<code style="display:block; margin-top:8px; padding:6px 10px; background:rgba(255,255,255,.06); border-radius:6px; font-size:12px; color:#22c55e; word-break:break-all;">${rec.command}</code>` : ''}
         </div>`;
       }).join('');
 
@@ -5357,7 +5357,7 @@ async function refreshDaoTreasury() {
     if (gridEl && d.addresses) {
       gridEl.innerHTML = d.addresses.map((addr, i) => `
         <div class="dao-guardian-card" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;text-align:center">
-          <div style="width:40px;height:40px;border-radius:50%;background:var(--zion-gradient,linear-gradient(135deg,#00d4ff,#7b61ff));margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff">${i + 1}</div>
+          <div style="width:40px;height:40px;border-radius:50%;background:var(--zion-gradient,linear-gradient(135deg,#fcd116,#e41e2b));margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff">${i + 1}</div>
           <div style="font-size:11px;color:rgba(255,255,255,0.5);font-family:monospace;word-break:break-all">${addr.substring(0, 20)}...${addr.substring(addr.length - 6)}</div>
           <div style="margin-top:6px;font-size:11px;color:var(--zion-green)">✓ Active</div>
         </div>`).join('');
