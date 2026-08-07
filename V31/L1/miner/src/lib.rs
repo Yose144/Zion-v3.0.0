@@ -20,6 +20,7 @@ pub mod pool_message;
 pub mod reconnect;
 pub mod runtime;
 pub mod stream;
+pub mod v3_pool_client;
 pub mod stream_profit;
 pub mod thread_affinity;
 
