@@ -7,17 +7,18 @@
 //! external pool, subscribes for jobs, and submits shares produced by ZION
 //! miners that have been routed to the `Revenue` or `Auto` session groups.
 
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use serde_json::json;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, Mutex};
 use tokio::time::{sleep, Duration};
 use tracing::{debug, error, info, warn};
 
-use zion_cosmic_harmony::CoinProfile;
+use zion_cosmic_harmony::{CoinProfile, ExternalCoin};
+use zion_miner::auxpow::client::{coin_protocol, StratumProtocol};
 
 /// Stats for one external pool connection.
 #[derive(Debug, Default)]
@@ -37,6 +38,10 @@ pub struct ShareSubmission {
     pub worker: String,
     /// Result hash (32 bytes hex) — required for CryptoNote/RandomX pools.
     pub result: String,
+    /// PoW header hash (32 bytes hex) — required for EthStratum `eth_submitWork`.
+    pub header_hash: String,
+    /// Mix hash (32 bytes hex) — required for EthStratum / ProgPoW `eth_submitWork`.
+    pub mix_hash: Option<String>,
 }
 
 /// Async Stratum client for a single external coin/pool.
@@ -45,6 +50,7 @@ pub struct ExternalPoolClient {
     pool_addr: String,
     wallet: String,
     worker: String,
+    protocol: StratumProtocol,
     /// Channel for inbound share submissions from ZION miners.
     submit_tx: mpsc::Sender<ShareSubmission>,
     submit_rx: tokio::sync::Mutex<mpsc::Receiver<ShareSubmission>>,
@@ -57,6 +63,7 @@ impl ExternalPoolClient {
         pool_addr: &str,
         wallet: &str,
         worker: &str,
+        coin: ExternalCoin,
         stats: Arc<ExternalPoolStats>,
     ) -> Arc<Self> {
         let (submit_tx, submit_rx) = mpsc::channel(256);
@@ -64,11 +71,13 @@ impl ExternalPoolClient {
         let clean_addr = pool_addr
             .trim_start_matches("stratum+tcp://")
             .trim_start_matches("stratum2+tcp://");
+        let protocol = coin_protocol(coin);
         Arc::new(Self {
             name: name.to_string(),
             pool_addr: clean_addr.to_string(),
             wallet: wallet.to_string(),
             worker: worker.to_string(),
+            protocol,
             submit_tx,
             submit_rx: tokio::sync::Mutex::new(submit_rx),
             stats,
@@ -121,37 +130,73 @@ impl ExternalPoolClient {
             .await
             .with_context(|| format!("failed to connect to {}", self.pool_addr))?;
 
-        let (reader, mut writer) = stream.into_split();
+        let (reader, writer) = stream.into_split();
         let mut lines = BufReader::new(reader).lines();
+        let writer = Arc::new(Mutex::new(writer));
 
         // Mark connected
         self.stats.connected.store(1, Ordering::Relaxed);
 
-        // --- Stratum v1 handshake ---
-        let subscribe_req = json!({
-            "id": 1,
-            "method": "mining.subscribe",
-            "params": [format!("zion_proxy/{}", self.name), null]
-        });
-        Self::send_line(&mut writer, &subscribe_req).await?;
+        match self.protocol {
+            StratumProtocol::EthStratum => {
+                // EthStratum / open-ethereum-pool: no mining.subscribe.
+                let login_req = json!({
+                    "id": 2,
+                    "method": "eth_submitLogin",
+                    "params": [self.wallet]
+                });
+                Self::send_line(&writer, &login_req).await?;
 
-        // Expect subscribe response
-        let _subscribe_resp = Self::recv_line(&mut lines).await?;
-        debug!("[{}] subscribe response received", self.name);
+                let login_resp = Self::recv_line(&mut lines).await?;
+                if !is_authorize_ok(&login_resp) {
+                    bail!("eth_submitLogin failed");
+                }
+                info!("[{}] EthStratum authorized as {}", self.name, self.wallet);
 
-        let auth_req = json!({
-            "id": 2,
-            "method": "mining.authorize",
-            "params": [format!("{}.{}", self.wallet, self.worker)]
-        });
-        Self::send_line(&mut writer, &auth_req).await?;
+                // Some pools push eth_getWork, others require polling. Poll
+                // every few seconds to keep the job feed alive.
+                let writer_clone = Arc::clone(&writer);
+                tokio::spawn(async move {
+                    let mut interval = tokio::time::interval(Duration::from_secs(3));
+                    loop {
+                        interval.tick().await;
+                        let req =
+                            json!({"id": 10, "method": "eth_getWork", "params": []});
+                        if Self::send_line(&writer_clone, &req).await.is_err() {
+                            break;
+                        }
+                    }
+                });
+            }
+            StratumProtocol::Stratum | StratumProtocol::ZcashStratum => {
+                // Standard Stratum v1 handshake.
+                let subscribe_req = json!({
+                    "id": 1,
+                    "method": "mining.subscribe",
+                    "params": [format!("zion_proxy/{}", self.name), null]
+                });
+                Self::send_line(&writer, &subscribe_req).await?;
 
-        // Expect authorize response
-        let _auth_resp = Self::recv_line(&mut lines).await?;
-        info!(
-            "[{}] Authorized as {}.{}",
-            self.name, self.wallet, self.worker
-        );
+                let _subscribe_resp = Self::recv_line(&mut lines).await?;
+                debug!("[{}] subscribe response received", self.name);
+
+                let auth_req = json!({
+                    "id": 2,
+                    "method": "mining.authorize",
+                    "params": [format!("{}.{}", self.wallet, self.worker)]
+                });
+                Self::send_line(&writer, &auth_req).await?;
+
+                let _auth_resp = Self::recv_line(&mut lines).await?;
+                info!(
+                    "[{}] Authorized as {}.{}",
+                    self.name, self.wallet, self.worker
+                );
+            }
+            other => {
+                bail!("revenue_proxy: protocol {:?} not yet supported", other);
+            }
+        }
 
         // --- Main loop: read jobs, forward shares ---
         let mut submit_rx = self.submit_rx.lock().await;
@@ -169,16 +214,34 @@ impl ExternalPoolClient {
                     }
                 }
                 Some(submission) = submit_rx.recv() => {
-                    let submit_req = json!({
-                        "id": 3,
-                        "method": "mining.submit",
-                        "params": [
-                            format!("{}.{}", self.wallet, submission.worker),
-                            submission.job_id,
-                            submission.nonce,
-                        ]
-                    });
-                    Self::send_line(&mut writer, &submit_req).await?;
+                    let submit_req = match self.protocol {
+                        StratumProtocol::EthStratum => {
+                            let nonce = format!("0x{}", submission.nonce.trim_start_matches("0x"));
+                            let header = if submission.header_hash.starts_with("0x") {
+                                submission.header_hash.clone()
+                            } else {
+                                format!("0x{}", submission.header_hash)
+                            };
+                            let mix = submission.mix_hash.as_deref().map(|m| {
+                                if m.starts_with("0x") { m.to_string() } else { format!("0x{}", m) }
+                            }).unwrap_or_else(|| format!("0x{}", "0".repeat(64)));
+                            json!({
+                                "id": 3,
+                                "method": "eth_submitWork",
+                                "params": [nonce, header, mix]
+                            })
+                        }
+                        _ => json!({
+                            "id": 3,
+                            "method": "mining.submit",
+                            "params": [
+                                format!("{}.{}", self.wallet, submission.worker),
+                                submission.job_id,
+                                submission.nonce,
+                            ]
+                        }),
+                    };
+                    Self::send_line(&writer, &submit_req).await?;
                     self.stats.shares_submitted.fetch_add(1, Ordering::Relaxed);
                 }
             }
@@ -194,21 +257,27 @@ impl ExternalPoolClient {
 
         if let Some(method) = msg.get("method").and_then(|m| m.as_str()) {
             match method {
-                "mining.notify" => {
+                "mining.notify" | "eth_getWork" | "job" => {
                     self.stats.jobs_received.fetch_add(1, Ordering::Relaxed);
-                    debug!("[{}] mining.notify received", self.name);
+                    debug!("[{}] {} received", self.name, method);
                 }
-                "mining.set_difficulty" => {
+                "mining.set_difficulty" | "mining.set_target" => {
                     debug!("[{}] difficulty updated", self.name);
                 }
+                "client.reconnect" | "mining.reconnect" => {
+                    warn!("[{}] pool requested reconnect", self.name);
+                    bail!("pool requested reconnect");
+                }
                 _ => {
-                    debug!("[{}]Unhandled method: {}", self.name, method);
+                    debug!("[{}] Unhandled method: {}", self.name, method);
                 }
             }
         }
 
         if let Some(result) = msg.get("result") {
-            if result.get("status").and_then(|s| s.as_str()) == Some("ok") {
+            if result.get("status").and_then(|s| s.as_str()) == Some("ok")
+                || result.as_bool() == Some(true)
+            {
                 self.stats.shares_accepted.fetch_add(1, Ordering::Relaxed);
             }
         }
@@ -223,13 +292,14 @@ impl ExternalPoolClient {
     }
 
     async fn send_line(
-        writer: &mut tokio::net::tcp::OwnedWriteHalf,
+        writer: &Arc<Mutex<tokio::net::tcp::OwnedWriteHalf>>,
         value: &serde_json::Value,
     ) -> Result<()> {
         let mut line = serde_json::to_string(value)?;
         line.push('\n');
-        writer.write_all(line.as_bytes()).await?;
-        writer.flush().await?;
+        let mut w = writer.lock().await;
+        w.write_all(line.as_bytes()).await?;
+        w.flush().await?;
         Ok(())
     }
 
@@ -244,6 +314,20 @@ impl ExternalPoolClient {
             serde_json::from_str(&line).with_context(|| format!("invalid JSON line: {line}"))?;
         Ok(val)
     }
+}
+
+/// Check whether an authorize/login response indicates success.
+/// Pools may return `true`, `null`, or omit `error`.
+fn is_authorize_ok(value: &serde_json::Value) -> bool {
+    if let Some(result) = value.get("result") {
+        if result.is_boolean() {
+            return result.as_bool().unwrap_or(false);
+        }
+        if result.is_null() {
+            return true;
+        }
+    }
+    value.get("error").is_none()
 }
 
 /// Transparent Stratum proxy listener.
@@ -474,6 +558,7 @@ pub fn client_from_profile(
         &profile.pool_address(),
         wallet,
         worker,
+        profile.coin,
         stats,
     )
 }

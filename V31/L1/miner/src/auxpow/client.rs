@@ -16,6 +16,7 @@ use anyhow::{anyhow, bail, Context, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader};
@@ -199,6 +200,8 @@ pub struct AuxPowClient {
     latest_job_id: Arc<Mutex<Option<String>>>,
     cryptonote_session_id: Arc<Mutex<Option<String>>>,
     submitted_nonces: Arc<Mutex<std::collections::VecDeque<(String, u64)>>>,
+    /// Guard to ensure only one background poll/reconnect task is ever spawned.
+    poll_task_running: Arc<AtomicBool>,
 }
 
 impl std::fmt::Debug for AuxPowClient {
@@ -241,16 +244,28 @@ impl AuxPowClient {
             latest_job_id: Arc::new(Mutex::new(None)),
             cryptonote_session_id: Arc::new(Mutex::new(None)),
             submitted_nonces: Arc::new(Mutex::new(std::collections::VecDeque::new())),
+            poll_task_running: Arc::new(AtomicBool::new(false)),
         }
     }
 
     pub async fn connect(&self, payout_wallet: &str) -> Result<()> {
         *self.payout_wallet.lock().await = payout_wallet.to_string();
+
+        // Only one background poll/reconnect task is ever needed. If one is
+        // already running, leave it alone and let it handle reconnection.
+        if self.poll_task_running.load(Ordering::SeqCst) {
+            return Ok(());
+        }
+
         self.connect_tcp().await?;
 
         if self.protocol == StratumProtocol::CryptonoteStratum {
             self.cryptonote_login(payout_wallet).await?;
         }
+
+        // Mark the poll loop as running before spawning so concurrent
+        // connect() calls never create a second reader task.
+        self.poll_task_running.store(true, Ordering::SeqCst);
 
         let client_clone = Arc::new(self.clone());
         let profile_clone = self.config.clone();
@@ -416,7 +431,7 @@ impl AuxPowClient {
                 }
             }
             if let Some(method) = parsed.get("method").and_then(|m| m.as_str()) {
-                self.handle_notification(method, &parsed).await;
+                self.handle_notification(method, &parsed).await?;
             }
         }
     }
@@ -499,6 +514,14 @@ impl AuxPowClient {
                 *self.extranonce1.lock().await = e1;
                 *self.extranonce2_size.lock().await = Some(size);
                 info!(extranonce2_size = size, "stratum subscribed");
+            } else if arr.len() == 2 {
+                // Some pools (e.g. eu.luckpool.net for VRSC) return only
+                // [session_id, extranonce1] with no extranonce2_size. Fall back
+                // to a sensible default of 4 bytes for VerusHash.
+                let e1 = parse_hex_value(&arr[1]).unwrap_or_default();
+                *self.extranonce1.lock().await = e1;
+                *self.extranonce2_size.lock().await = Some(4);
+                info!(extranonce2_size = 4, "stratum subscribed (2-field response)");
             }
         }
         Ok(())
@@ -682,12 +705,12 @@ impl AuxPowClient {
             }
 
             if let Some(method) = parsed.get("method").and_then(|m| m.as_str()) {
-                self.handle_notification(method, &parsed).await;
+                self.handle_notification(method, &parsed).await?;
             }
         }
     }
 
-    async fn handle_notification(&self, method: &str, msg: &Value) {
+    async fn handle_notification(&self, method: &str, msg: &Value) -> Result<()> {
         match method {
             "mining.notify" => {
                 if let Some(job) = self.parse_notify(msg).await {
@@ -716,7 +739,7 @@ impl AuxPowClient {
                     }
                 }
             }
-            "mining.set_extranonce" => {
+            "mining.set_extranonce" | "set_extranonce" => {
                 if let Some(params) = msg.get("params").and_then(Value::as_array) {
                     if params.len() >= 2 {
                         let e1 = parse_hex_value(&params[0]).unwrap_or_default();
@@ -727,15 +750,23 @@ impl AuxPowClient {
                 }
             }
             "eth_getWork" | "job" => {
-                if let Some(job) = self.parse_notify(msg).await {
+                if let Some(job) = self.parse_getwork_response(msg).await {
                     *self.current_job.lock().await = Some(job);
                     self.job_notify.notify_waiters();
                 }
+            }
+            "client.reconnect" | "mining.reconnect" => {
+                // Stratum V1 pool-directed reconnect (used by ZcashStratum/
+                // LuckPool). Bail out of the poll loop so the auto-reconnect
+                // task can start a fresh TCP + subscribe + authorize cycle.
+                warn!(coin = %self.config.coin, "pool requested reconnect");
+                bail!("pool requested reconnect");
             }
             _ => {
                 debug!(method = method, "unhandled stratum notification");
             }
         }
+        Ok(())
     }
 
     async fn parse_notify(&self, msg: &Value) -> Option<ExternalJob> {
@@ -812,10 +843,14 @@ impl AuxPowClient {
         None
     }
 
-    /// Parse an `eth_getWork` JSON-RPC *response* (has `result`, not `params`).
+    /// Parse an `eth_getWork` JSON-RPC response or notification.
+    /// Response has `result`, open-ethereum-pool notification has `params`.
     /// Format: `[header_hash, seed_hash, target, block_number]`
     async fn parse_getwork_response(&self, msg: &Value) -> Option<ExternalJob> {
-        let result = msg.get("result").and_then(Value::as_array)?;
+        let result = msg
+            .get("result")
+            .or_else(|| msg.get("params"))
+            .and_then(Value::as_array)?;
         if result.len() < 3 {
             return None;
         }
@@ -1918,6 +1953,84 @@ mod tests {
         };
         let result = client.submit_share(&share).await.unwrap();
         assert_eq!(result, ShareResult::Accepted);
+        server.abort();
+    }
+
+    #[tokio::test]
+    async fn auxpow_client_honors_client_reconnect_and_is_idempotent() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        use std::sync::Arc;
+        use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+        use tokio::net::TcpListener;
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let request_count = Arc::new(AtomicUsize::new(0));
+        let request_count_clone = Arc::clone(&request_count);
+
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let (reader, mut writer) = socket.split();
+            let mut lines = BufReader::new(reader).lines();
+            while let Ok(Some(line)) = lines.next_line().await {
+                if line.contains("mining.subscribe") {
+                    request_count_clone.fetch_add(1, Ordering::SeqCst);
+                    let resp = r#"{"id":1,"result":["s1","0011"],"error":null}"#;
+                    let _ = writer.write_all(resp.as_bytes()).await;
+                    let _ = writer.write_all(b"\n").await;
+                    let _ = writer.flush().await;
+                } else if line.contains("mining.authorize") {
+                    request_count_clone.fetch_add(1, Ordering::SeqCst);
+                    let resp = r#"{"id":2,"result":true,"error":null}"#;
+                    let _ = writer.write_all(resp.as_bytes()).await;
+                    let _ = writer.write_all(b"\n").await;
+                    let _ = writer.flush().await;
+
+                    // LuckPool-style client.reconnect request.
+                    tokio::time::sleep(Duration::from_millis(50)).await;
+                    let reconnect = r#"{"id":null,"method":"client.reconnect","params":[]}"#;
+                    let _ = writer.write_all(reconnect.as_bytes()).await;
+                    let _ = writer.write_all(b"\n").await;
+                    let _ = writer.flush().await;
+                    break;
+                }
+            }
+        });
+
+        let cfg = AuxPowClientConfig::new(
+            ExternalCoin::Verus,
+            format!("127.0.0.1:{}", port),
+            "worker",
+            "x",
+        );
+        let client = AuxPowClient::new(cfg);
+
+        // Initial connect + handshake.
+        tokio::time::timeout(Duration::from_secs(2), client.connect("RRRR"))
+            .await
+            .unwrap()
+            .unwrap();
+        assert!(client.is_connected().await);
+        assert_eq!(request_count.load(Ordering::SeqCst), 2);
+
+        // A second connect() call must be a no-op now that the poll task is
+        // running — this is what prevents the reconnect storm.
+        tokio::time::timeout(Duration::from_secs(2), client.connect("RRRR"))
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(request_count.load(Ordering::SeqCst), 2);
+
+        // After client.reconnect is processed the client should disconnect and
+        // let its background reconnect task take over.
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while client.is_connected().await {
+                tokio::time::sleep(Duration::from_millis(50)).await;
+            }
+        })
+        .await
+        .unwrap();
+
         server.abort();
     }
 }

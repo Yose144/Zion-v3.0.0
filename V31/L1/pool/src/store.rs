@@ -317,6 +317,21 @@ impl ShareStore {
         Ok(())
     }
 
+    /// Mark a payout as confirmed, also recording the block hash it was mined in.
+    pub fn confirm_payout_with_block(
+        &self,
+        tx_id: &str,
+        confirmations: u32,
+        block_hash: &str,
+    ) -> Result<()> {
+        let conn = self.conn.lock().expect("share store lock poisoned");
+        conn.execute(
+            "UPDATE payouts SET confirmations = ?1, confirmed = 1, block_hash = ?2 WHERE tx_id = ?3",
+            params![confirmations as i64, block_hash, tx_id],
+        )?;
+        Ok(())
+    }
+
     /// Record a block (or update status if already present).
     pub fn record_block(&self, rec: &BlockRecord) -> Result<()> {
         let conn = self.conn.lock().expect("share store lock poisoned");

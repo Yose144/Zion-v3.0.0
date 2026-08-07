@@ -84,7 +84,10 @@ pub use node::{Node, NodeConfig};
 pub use storage::{Storage, StorageError};
 pub use transaction::{Transaction, TransactionInput, TransactionOutput};
 pub use utxo::{Outpoint, UtxoError, UtxoSet};
-pub use v31_wallet::{build_batch_payout, BatchRecipient, BuildResult, SpendableUtxo, WalletError, MAX_BATCH_RECIPIENTS, MIN_PAYOUT_AMOUNT};
+pub use v31_wallet::{
+    build_batch_payout, build_send, BatchRecipient, BuildResult, SpendableUtxo, WalletError,
+    MAX_BATCH_RECIPIENTS, MIN_PAYOUT_AMOUNT,
+};
 
 #[cfg(feature = "v3-binaries")]
 pub use v3_compat::{

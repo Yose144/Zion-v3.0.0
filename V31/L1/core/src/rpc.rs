@@ -222,6 +222,19 @@ async fn dispatch_request(line: &str, node: &Node) -> Value {
         };
     }
 
+    // V31 native transaction lookup. Falls back to the V3 handler when the
+    // transaction is not a V31 native transaction.
+    if method == "getTransaction" {
+        return match get_transaction(node, &params).await {
+            Ok(Some(v)) => success_response(id, v),
+            Ok(None) => {
+                let result = node.v3_rpc.dispatch("getTransaction", params).await;
+                wrap_v3_response(id, result)
+            }
+            Err(e) => error_response(id, -32000, &e.to_string()),
+        };
+    }
+
     // V3 methods are dispatched to the V3 RPC handler.
     let v3_methods = [
         "getStatus",
@@ -232,7 +245,6 @@ async fn dispatch_request(line: &str, node: &Node) -> Value {
         "sendRawTransaction",
         "getBalance",
         "getAccountBalance",
-        "getTransaction",
         "getAccountTransaction",
         "getTransactionHistory",
         "getAddressInfo",
@@ -406,6 +418,27 @@ async fn submit_utxo_tx(node: &Node, params: &Value) -> Result<Value, NodeError>
         "tx_id": tx_hash.to_hex(),
         "model": "v31-native",
     }))
+}
+
+/// Look up a V31 native transaction by id.
+async fn get_transaction(node: &Node, params: &Value) -> Result<Option<Value>, NodeError> {
+    let tx_id = params
+        .get("txid")
+        .or_else(|| params.get(0))
+        .and_then(Value::as_str)
+        .ok_or_else(|| NodeError::Address("txid required".to_string()))?;
+
+    match node.find_transaction(tx_id).await? {
+        Some((height, block_hash, tx)) => Ok(Some(json!({
+            "transaction_model": "v31-native",
+            "transaction": tx,
+            "block_height": height,
+            "block_hash": block_hash,
+            "confirmed": true,
+            "source": "confirmed",
+        }))),
+        None => Ok(None),
+    }
 }
 
 fn success_response(id: Option<Value>, result: Value) -> Value {
