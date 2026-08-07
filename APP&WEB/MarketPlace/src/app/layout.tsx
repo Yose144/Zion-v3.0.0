@@ -12,6 +12,15 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-sans', display: 'swa
 const mono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono', display: 'swap' });
 const display = Space_Grotesk({ subsets: ['latin'], variable: '--font-display', display: 'swap' });
 
+const FOOTER_LINKS = [
+  { href: '/about', labelKey: 'footer.about' },
+  { href: '/terms', labelKey: 'footer.terms' },
+  { href: '/gdpr', labelKey: 'footer.gdpr' },
+  { href: '/legal', labelKey: 'footer.legal' },
+  { href: '/shopping-guide', labelKey: 'footer.guide' },
+  { href: '/faq', labelKey: 'footer.faq' },
+];
+
 export const metadata: Metadata = {
   metadataBase: new URL('https://market.zionterranova.com'),
   title: tr('common', 'metadataTitle', 'cs'),
@@ -66,7 +75,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   decoding="async"
                 />
               </Link>
-              <p className="mt-4 text-xs text-gray-600">
+              <nav className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-gray-500">
+                {FOOTER_LINKS.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="hover:text-rasta-gold transition-colors"
+                  >
+                    {tr('footer', link.labelKey.split('.')[1] as 'about' | 'terms' | 'gdpr' | 'legal' | 'guide' | 'faq', 'cs')}
+                  </Link>
+                ))}
+              </nav>
+              <p className="mt-6 text-xs text-gray-600">
                 © 2026 ZION ® Terra Nova ∞ Oasis
               </p>
             </div>

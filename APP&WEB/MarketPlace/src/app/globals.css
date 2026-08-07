@@ -1393,3 +1393,89 @@ body.zion-shell {
   filter: drop-shadow(0 0 12px rgba(252, 209, 22, 0.55));
 }
 
+/* ── Info / legal page typography ── */
+.info-content {
+  color: #e5e7eb;
+  line-height: 1.75;
+}
+.info-content h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fcd116;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  font-family: var(--font-display);
+}
+.info-content h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #078930;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+.info-content h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e5e7eb;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+.info-content p {
+  margin-bottom: 1rem;
+}
+.info-content ul {
+  list-style: disc;
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+.info-content ol {
+  list-style: decimal;
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+.info-content li {
+  margin-bottom: 0.5rem;
+}
+.info-content a {
+  color: #fcd116;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.info-content a:hover {
+  color: #fff;
+}
+.info-content .highlight-box {
+  background: linear-gradient(135deg, rgba(252, 209, 22, 0.08), rgba(7, 137, 48, 0.08));
+  border-left: 3px solid #fcd116;
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  margin: 1.25rem 0;
+}
+.info-content .warning-box {
+  background: rgba(228, 30, 43, 0.08);
+  border-left: 3px solid #e41e2b;
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  margin: 1.25rem 0;
+}
+.info-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.25rem 0;
+  font-size: 0.9rem;
+}
+.info-content th,
+.info-content td {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+.info-content th {
+  background: rgba(252, 209, 22, 0.08);
+  color: #fcd116;
+  font-weight: 700;
+}
+.info-content tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
