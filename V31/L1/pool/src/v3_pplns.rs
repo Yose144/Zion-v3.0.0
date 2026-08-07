@@ -473,6 +473,19 @@ impl PplnsEngine {
         std::mem::replace(&mut self.dirty, false)
     }
 
+    /// Save engine state only if it has changed since the last save.
+    ///
+    /// Returns `Ok(true)` if a snapshot was written, `Ok(false)` if the state
+    /// was already clean and no write was needed.
+    pub fn save_if_dirty<P: AsRef<Path>>(&mut self, path: P) -> std::io::Result<bool> {
+        if !self.take_dirty() {
+            return Ok(false);
+        }
+        let snap = self.snapshot();
+        Self::write_snapshot_to_path(&snap, path)?;
+        Ok(true)
+    }
+
     /// Write a pre-captured snapshot to a JSON file (atomic + durable write
     /// via temp + fsync + rename).  This is a standalone function so the
     /// persistence thread can snapshot under the lock, then serialize + write
