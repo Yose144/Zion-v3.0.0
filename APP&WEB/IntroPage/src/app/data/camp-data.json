@@ -1,0 +1,91 @@
+{
+  "hero": {
+    "cs": {
+      "badge": "🏕️ EKO FARM PROJEKT",
+      "title": "Base Camp",
+      "subtitle": "Terra Nova ® Portugalsko",
+      "desc": "Udržitelný život | Glamping | Surf škola",
+      "cta": "Prozkoumat camp"
+    },
+    "en": {
+      "badge": "🏕️ ECO FARM PROJECT",
+      "title": "Base Camp",
+      "subtitle": "Terra Nova ® Portugal",
+      "desc": "Sustainable living | Glamping | Surf school",
+      "cta": "Explore the camp"
+    }
+  },
+  "about": {
+    "cs": {
+      "title": "Vítej v Base Campu",
+      "p1": "V našem Base Campu v Portugalsku budujeme eko farmu, která ztělesňuje náš závazek k udržitelnosti, inovacím a komunitnímu životu.",
+      "quote": "One love, one heart. Společně tvoříme budoucnost, kde je člověk a Země opět v harmonii."
+    },
+    "en": {
+      "title": "Welcome to the Base Camp",
+      "p1": "Welcome to our Base Camp in Portugal, where we are building a new eco-farm that embodies our commitment to sustainability, innovation and community living.",
+      "quote": "One love, one heart. Together we grow a future where humans and Earth are in harmony again."
+    }
+  },
+  "featuresTitle": { "cs": "Co v campu najdeš", "en": "What you can experience" },
+  "features": {
+    "cs": [
+      { "icon": "fa-campground", "title": "Glamping ubytování", "desc": "Pohodlné a útulné stany uprostřed přírody. Komfort bez kompromisů, v hlubokém spojení se Zemí.", "status": "Otevřeno" },
+      { "icon": "fa-seedling", "title": "Organické farmaření", "desc": "Pěstujeme organické plodiny, pečujeme o půdu a rozšiřujeme biodiverzitu regionu.", "status": "Rosteme" },
+      { "icon": "fa-tree", "title": "Sázení stromů", "desc": "Aktivně vysazujeme nové stromy a obnovujeme ekosystém. Každý návštěvník může zasadit svůj strom.", "status": "Aktivní" },
+      { "icon": "fa-water", "title": "Surf škola", "desc": "Plánujeme surfovou školu, která propojí lásku k oceánu, pohyb a vědomý životní styl.", "status": "Brzy" },
+      { "icon": "fa-solar-panel", "title": "Off-grid život", "desc": "Solární energie, sběr dešťové vody, kompostování. Učíme se žít v souladu s planetou.", "status": "Eko" },
+      { "icon": "fa-users", "title": "Komunitní setkání", "desc": "Workshopy, retreaty, ceremonie a malé festivaly. Společně tvoříme pole podpory a spolupráce.", "status": "Přidej se" }
+    ],
+    "en": [
+      { "icon": "fa-campground", "title": "Glamping accommodation", "desc": "Comfortable and cozy tents in the heart of nature. Comfort without compromise, deeply connected to the land.", "status": "Open" },
+      { "icon": "fa-seedling", "title": "Organic farming", "desc": "We grow organic crops, care for the soil and expand the biodiversity of the region.", "status": "Growing" },
+      { "icon": "fa-tree", "title": "Tree planting", "desc": "We actively plant new trees and help regenerate the ecosystem. Every visitor can plant their own tree.", "status": "Active" },
+      { "icon": "fa-water", "title": "Surf school", "desc": "Planned surf school connecting love for the ocean, movement and a conscious lifestyle.", "status": "Coming soon" },
+      { "icon": "fa-solar-panel", "title": "Off-grid living", "desc": "Solar power, rainwater collection, composting. Learning to live in balance with the planet.", "status": "Eco" },
+      { "icon": "fa-users", "title": "Community gatherings", "desc": "Workshops, retreats, ceremonies and small festivals. Co-creating a field of support and collaboration.", "status": "Join us" }
+    ]
+  },
+  "gallery": {
+    "cs": { "title": "Galerie z campu" },
+    "en": { "title": "Camp Gallery" },
+    "slides": [
+      { "src": "/legacy/gal/4.jpeg", "caption": { "cs": "Terra Nova eko farma", "en": "Terra Nova eco farm" } },
+      { "src": "/legacy/gal/1.jpeg", "caption": { "cs": "Glamping v přírodě", "en": "Glamping in nature" } },
+      { "src": "/legacy/gal/3.jpeg", "caption": { "cs": "Propojení s přírodou", "en": "Connection with nature" } },
+      { "src": "/legacy/gal/2.jpeg", "caption": { "cs": "Organické zahrady", "en": "Organic gardens" } },
+      { "src": "/legacy/gal/5.jpeg", "caption": { "cs": "Komunitní život", "en": "Community living" } }
+    ]
+  },
+  "vision": {
+    "cs": {
+      "title": "Naše vize",
+      "p1": "Právě teď sázíme nové stromy a rozšiřujeme půdu, abychom vytvořili živou a udržitelnou farmu. Naším cílem je pěstovat pestrou škálu organických plodin a současně podporovat přirozenou biodiverzitu místa.",
+      "p2": "Do budoucna máme v plánu otevřít surf školu, která propojí lásku k přírodě, oceánu a pohybu. Chceme nabídnout prostor, kde lze žít aktivně a zároveň hluboce vnímat planetu, která nás nese.",
+      "quote": "Přidej se k nám v Terra Nova a staň se součástí cesty k udržitelnější a dobrodružnější budoucnosti.",
+      "homeCta": "Zpět na hlavní stránku",
+      "shopCta": "Navštívit obchod"
+    },
+    "en": {
+      "title": "Our Vision",
+      "p1": "Right now we are planting new trees and expanding the land to create a thriving, sustainable farm. Our goal is to grow a diverse range of organic crops while supporting the natural biodiversity of the place.",
+      "p2": "Looking ahead, we plan to open a surf school that connects love for nature, the ocean and movement. We want to offer a space where you can live actively and at the same time deeply feel the planet that carries us.",
+      "quote": "Join us at Terra Nova and become part of the journey towards a more sustainable and adventurous future.",
+      "homeCta": "Back to home",
+      "shopCta": "Visit shop"
+    },
+    "image": "/legacy/img/tibet.jpg",
+    "imageAlt": "Vision"
+  },
+  "footer": {
+    "cs": "Největší sláva nespočívá v tom, že nikdy nepadneme, ale v tom, že pokaždé, když padneme, opět vstaneme.",
+    "en": "The greatest glory in living lies not in never falling, but in rising every time we fall."
+  },
+  "socials": [
+    { "icon": "fa-facebook", "url": "https://www.facebook.com/ZionTerraNova/", "color": "text-[#078930]" },
+    { "icon": "fa-twitter", "url": "https://x.com/ZionTerraNova", "color": "text-[#fcd116]" },
+    { "icon": "fa-instagram", "url": "https://www.instagram.com/terranova_project/", "color": "text-[#e41e2b]" },
+    { "icon": "fa-github", "url": "https://github.com/Zion-TerraNova", "color": "text-white" },
+    { "icon": "fa-discord", "url": "https://discord.gg/eatGYDbd", "color": "text-[#7289da]" }
+  ]
+}
