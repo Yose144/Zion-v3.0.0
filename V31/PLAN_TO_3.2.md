@@ -1,9 +1,10 @@
 # ZION 3.2 "One Love" — Mainnet Stable Canonical Execution Plan
 
 > **Version:** 3.2.0 "One Love" — Mainnet Stable / production ready  
+> **Current workspace / protocol:** 3.1.0-beta / `zion-v3-node/3.1.0-alpha` (V31 Mainnet Alpha)  
 > **Datum:** 2026-08-07  
 > **Status:** canonical plan, supersedes `PLAN_TO_3.1_RECONCILED.md` for forward work  
-> **Update 2026-08-07:** CLI migration, miner TUI, native Cargo features, and V3/V31 Solidity + ZionDex contracts are now present in code. Non-EVM WARP placeholders, OASIS static export, ZIS Edge deploy, public subtree sync, real GPU E2E, and 30d run remain open.  
+> **Update 2026-08-07:** CLI migration, miner TUI, native Cargo features, and V3/V31 Solidity + ZionDex contracts are now present in code. Pool payout confirmation sweep with UTXO fallback is live on Edge (37 confirmed / 13 unconfirmed). Non-EVM WARP placeholders, OASIS static export, ZIS Edge deploy, public subtree sync, real GPU E2E, and 30d run remain open.  
 > **Active workspace:** `V31/`  
 > **Live status:** [`StatusV3.md`](../StatusV3.md) · [`V31/STATUS.md`](./STATUS.md)  
 > **Agent rules:** [`V31/AGENTS.md`](./AGENTS.md) · [`../AGENTS.md`](../AGENTS.md)
@@ -26,16 +27,16 @@ This document is the **single canonical plan** for moving from `3.1.0-alpha.2/be
 
 | Area | Evidence | Status |
 |------|----------|--------|
-| V31 workspace | `cargo test --workspace` 2079 pass, `cargo clippy --workspace` clean | verified 2026-08-06 |
-| V31 node on Edge | `zion-v31-node` P2P 8335, RPC 9445, fresh chain from 2026-08-06 reset | verified 2026-08-07 |
-| V31 pool on Edge | `zion-v31-pool` stratum 8444, HTTP API 8080, shares accepted | verified 2026-08-05 |
-| V31 multichain | `/health` 200, DEX + HTLC endpoints wired | verified 2026-08-06 |
-| V31 DAO | runtime loads/persists proposals, L1 scanner, HTTP API + metrics | verified 2026-08-05 |
-| V31 dashboard | `/api/services`, `/api/readiness`, V31 metrics, Grafana | verified 2026-08-05 |
+| V31 workspace | `cargo test --workspace` passes (0 failures), `cargo clippy --workspace` clean (pre-existing warnings only) | verified 2026-08-07 |
+| V31 node on Edge | `zion-v31-node` P2P 8335, RPC 9445, height 94+ | verified 2026-08-07 |
+| V31 pool on Edge | `zion-v31-pool` stratum 8444, HTTP API 8080, shares accepted, payout confirmation sweep active | verified 2026-08-07 |
+| V31 multichain | `/health` 200, DEX + HTLC endpoints wired | verified 2026-08-07 |
+| V31 DAO | runtime loads/persists proposals, L1 scanner, HTTP API + metrics on port 8456 | verified 2026-08-07 |
+| V31 dashboard | `zion-edge-python-dashboard` active on 8766, V31 service metrics | verified 2026-08-07 |
 | V31 miner binary | builds with OpenCL/CUDA/Metal/native features, triple-stream runtime | code complete |
 | V31 miner GPU OpenCL (local) | `gpu_opencl_detect` test passes on GTX 1070 Ti, ~132 kh/s | GO 2026-08-06 |
 | DEX solver network | `HttpSolverClient` + `/v1/swap/solve` + `/v1/swap/intent/:id/broadcast` wired; integration tests pass | GO 2026-08-06 |
-| Desktop Agent V31 binaries | `prepare-rust-miner.js` copies V31 `zion-miner`, `node`, `zion`; `npm test` + `build:linux` pass | GO 2026-08-06 |
+| Desktop Agent V31 binaries | `prepare-rust-miner.js` copies V31 `zion-miner`, `node`, `zion`; `npm test` + `build:linux` pass, Rasta theme deployed | GO 2026-08-07 |
 | GitHub release | `v3.1.0-beta` published with binaries + SHA256 | done 2026-08-04 |
 
 ### 2.2 What the code-vs-docs audit still shows as incomplete

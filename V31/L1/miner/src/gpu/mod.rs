@@ -8781,10 +8781,148 @@ fn query_metal_details() -> Vec<GpuInfo> {
 
 #[cfg(test)]
 mod tests {
-    #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
     use super::*;
     #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
     use zion_cosmic_harmony::EkamDeeksha;
+
+    /// Mock `GpuMiner` that supports the pipelined `launch_batch`/`collect_batch`
+    /// API without needing real GPU hardware.  Used to exercise `GpuPipelineState`.
+    #[derive(Default)]
+    struct MockPipelinedMiner {
+        pending: Option<(MiningJob, u64)>,
+        next_token: u64,
+    }
+
+    impl GpuMiner for MockPipelinedMiner {
+        fn device_name(&self) -> String {
+            "mock-pipelined".to_string()
+        }
+
+        fn backend_kind(&self) -> GpuBackendKind {
+            GpuBackendKind::Cpu
+        }
+
+        fn algorithm(&self) -> String {
+            "deeksha_lite_v1".to_string()
+        }
+
+        fn mine_batch(
+            &mut self,
+            _header: MiningHeader,
+            _target: DifficultyTarget,
+            _nonce_start: u64,
+            batch_size: u64,
+        ) -> Result<GpuBatchResult> {
+            Ok(GpuBatchResult {
+                solutions: Vec::new(),
+                solution_blob: None,
+                nonces_tested: batch_size,
+                device_name: self.device_name(),
+            })
+        }
+
+        fn benchmark(&mut self, _secs: f64) -> Result<(u64, f64, f64)> {
+            Ok((0, 0.0, 0.0))
+        }
+
+        fn launch_batch(
+            &mut self,
+            header: MiningHeader,
+            target: DifficultyTarget,
+            nonce_start: u64,
+            batch_size: u64,
+        ) -> Result<u64> {
+            let token = self.next_token;
+            self.next_token += 1;
+            self.pending = Some((
+                MiningJob {
+                    job_id: token,
+                    header,
+                    target,
+                    start_nonce: nonce_start,
+                    nonce_count: batch_size,
+                    height: 0,
+                },
+                token,
+            ));
+            Ok(token)
+        }
+
+        fn collect_batch(&mut self, _token: u64) -> Result<GpuBatchResult> {
+            let (job, _) = self
+                .pending
+                .take()
+                .ok_or_else(|| anyhow::anyhow!("no pending mock batch"))?;
+            let hash = [0u8; 32];
+            let solutions = if job.target.allows(&hash) {
+                vec![(job.start_nonce, hash, None)]
+            } else {
+                Vec::new()
+            };
+            Ok(GpuBatchResult {
+                solutions,
+                solution_blob: None,
+                nonces_tested: job.nonce_count,
+                device_name: self.device_name(),
+            })
+        }
+    }
+
+    #[test]
+    fn gpu_pipeline_state_steps_and_collects() {
+        let mut gpu = MockPipelinedMiner::default();
+        let mut pipeline = GpuPipelineState::new();
+
+        let job1 = MiningJob {
+            job_id: 1,
+            header: MiningHeader::from_bytes([0xAA; 80]),
+            target: DifficultyTarget::MAX,
+            start_nonce: 100,
+            nonce_count: 1024,
+            height: 0,
+        };
+        let job2 = MiningJob {
+            job_id: 2,
+            header: MiningHeader::from_bytes([0xBB; 80]),
+            target: DifficultyTarget::MAX,
+            start_nonce: 200,
+            nonce_count: 1024,
+            height: 0,
+        };
+        let job3 = MiningJob {
+            job_id: 3,
+            header: MiningHeader::from_bytes([0xCC; 80]),
+            target: DifficultyTarget::MAX,
+            start_nonce: 300,
+            nonce_count: 1024,
+            height: 0,
+        };
+
+        let result1 = pipeline.step(&mut gpu, job1, "deeksha_lite_v1", &[]);
+        assert!(result1.is_none(), "first step should not return a previous result");
+
+        let result2 = pipeline.step(&mut gpu, job2, "deeksha_lite_v1", &[]);
+        let outcome = result2.expect("second step should return the first job's result");
+        let sol = outcome.solution.expect("first job should have a solution at max target");
+        assert_eq!(sol.job_id, 1);
+        assert_eq!(sol.candidate.nonce, 100);
+
+        let result3 = pipeline.step(&mut gpu, job3, "deeksha_lite_v1", &[]);
+        let sol2 = result3
+            .expect("third step should return the second job's result")
+            .solution
+            .expect("second job should have a solution at max target");
+        assert_eq!(sol2.job_id, 2);
+        assert_eq!(sol2.candidate.nonce, 200);
+
+        let final_result = pipeline.collect(&mut gpu, "deeksha_lite_v1");
+        let sol3 = final_result
+            .expect("final collect should return the last job's result")
+            .solution
+            .expect("last job should have a solution at max target");
+        assert_eq!(sol3.job_id, 3);
+        assert_eq!(sol3.candidate.nonce, 300);
+    }
 
     #[test]
     #[cfg(all(feature = "gpu-metal", target_os = "macos"))]

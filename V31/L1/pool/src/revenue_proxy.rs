@@ -140,10 +140,12 @@ impl ExternalPoolClient {
         match self.protocol {
             StratumProtocol::EthStratum => {
                 // EthStratum / open-ethereum-pool: no mining.subscribe.
+                // Login as wallet.worker with password "x" (HeroMiners / 2miners).
+                let username = format!("{}.{}", self.wallet, self.worker);
                 let login_req = json!({
                     "id": 2,
                     "method": "eth_submitLogin",
-                    "params": [self.wallet]
+                    "params": [username, "x"]
                 });
                 Self::send_line(&writer, &login_req).await?;
 
@@ -151,7 +153,7 @@ impl ExternalPoolClient {
                 if !is_authorize_ok(&login_resp) {
                     bail!("eth_submitLogin failed");
                 }
-                info!("[{}] EthStratum authorized as {}", self.name, self.wallet);
+                info!("[{}] EthStratum authorized as {}", self.name, username);
 
                 // Some pools push eth_getWork, others require polling. Poll
                 // every few seconds to keep the job feed alive.
@@ -180,10 +182,17 @@ impl ExternalPoolClient {
                 let _subscribe_resp = Self::recv_line(&mut lines).await?;
                 debug!("[{}] subscribe response received", self.name);
 
+                // VRSC/LuckPool expects a starting vardiff password; other
+                // pools use the conventional "x".
+                let password = if self.protocol == StratumProtocol::ZcashStratum {
+                    "d=0.01"
+                } else {
+                    "x"
+                };
                 let auth_req = json!({
                     "id": 2,
                     "method": "mining.authorize",
-                    "params": [format!("{}.{}", self.wallet, self.worker)]
+                    "params": [format!("{}.{}", self.wallet, self.worker), password]
                 });
                 Self::send_line(&writer, &auth_req).await?;
 
@@ -192,6 +201,17 @@ impl ExternalPoolClient {
                     "[{}] Authorized as {}.{}",
                     self.name, self.wallet, self.worker
                 );
+
+                // ZcashStratum (VRSC/LuckPool) expects extranonce.subscribe.
+                if self.protocol == StratumProtocol::ZcashStratum {
+                    let ex_req = json!({
+                        "id": 3,
+                        "method": "mining.extranonce.subscribe",
+                        "params": []
+                    });
+                    Self::send_line(&writer, &ex_req).await?;
+                    debug!("[{}] extranonce.subscribe sent", self.name);
+                }
             }
             other => {
                 bail!("revenue_proxy: protocol {:?} not yet supported", other);
