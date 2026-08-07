@@ -42,7 +42,7 @@ impl Transaction {
         }
     }
 
-    /// Deterministic transaction hash used in merkle roots.
+    /// Deterministic transaction hash used in merkle roots and UTXO outpoints.
     pub fn hash(&self) -> Hash {
         let mut bytes = Vec::new();
         bytes.extend_from_slice(&self.version.to_le_bytes());
@@ -50,6 +50,28 @@ impl Transaction {
             bytes.extend_from_slice(&input.previous_output.0);
             bytes.extend_from_slice(&input.index.to_le_bytes());
             bytes.extend_from_slice(&input.script);
+        }
+        for output in &self.outputs {
+            bytes.extend_from_slice(&output.amount.0.to_le_bytes());
+            bytes.extend_from_slice(output.address.encoded.as_bytes());
+        }
+        bytes.extend_from_slice(&self.memo);
+        Hash::new(Keccak256::digest(bytes).into())
+    }
+
+    /// Hash of the transaction with all input scripts cleared.
+    ///
+    /// This is the message that must be signed by each input. Keeping the
+    /// scripts out of the signed hash means the transaction ID (which includes
+    /// the scripts) can vary without invalidating the signatures.
+    pub fn signing_hash(&self) -> Hash {
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&self.version.to_le_bytes());
+        for input in &self.inputs {
+            bytes.extend_from_slice(&input.previous_output.0);
+            bytes.extend_from_slice(&input.index.to_le_bytes());
+            // Exclude scripts from the signing message.
+            bytes.extend_from_slice(&[]);
         }
         for output in &self.outputs {
             bytes.extend_from_slice(&output.amount.0.to_le_bytes());

@@ -18,8 +18,8 @@ ExecStart=/opt/zion/V31/target/release/zion-node \
     --node-id zion-v31-node-3 \
     --peer 127.0.0.1:8335 \
     --v3-no-genesis \
-    --human zion1j0j5d0c70056u678j7g4p686e7r3w5k0y8vy0m0 \
-    --issobella zion1g3g0k2j665r075g5j077z0w3u4g3w0d5837j3f6
+    --human zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8 \
+    --issobella zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0
 Restart=always
 RestartSec=10
 KillMode=process

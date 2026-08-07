@@ -108,6 +108,8 @@ pub struct StratumServer {
     revenue_scheduler: Arc<Mutex<RevenueScheduler>>,
     /// Per-group/source submit tracking + periodic logging.
     routing_stats: Arc<Mutex<RoutingStats>>,
+    /// Optional persistent store for blocks and payouts.
+    share_store: Option<Arc<crate::store::ShareStore>>,
 }
 
 impl StratumServer {
@@ -150,6 +152,7 @@ impl StratumServer {
             notifier: Arc::new(Notifier::new(NotificationsConfig::from_env())),
             revenue_scheduler: Arc::new(Mutex::new(RevenueScheduler::from_env(0.0))),
             routing_stats: Arc::new(Mutex::new(RoutingStats::new(env_or("ZION_POOL_ROUTING_LOG_EVERY", 1000)))),
+            share_store: None,
         }
     }
 
@@ -168,6 +171,12 @@ impl StratumServer {
     /// Set a custom RevenueScheduler (called from main.rs when revenue routing is configured).
     pub fn with_revenue_scheduler(mut self, scheduler: Arc<Mutex<RevenueScheduler>>) -> Self {
         self.revenue_scheduler = scheduler;
+        self
+    }
+
+    /// Attach an optional `ShareStore` to record found blocks.
+    pub fn with_share_store(mut self, store: Option<Arc<crate::store::ShareStore>>) -> Self {
+        self.share_store = store;
         self
     }
 
@@ -546,6 +555,7 @@ impl StratumServer {
                     &worker_name,
                     share_difficulty,
                     network_difficulty,
+                    "",
                 );
             }
         }
@@ -1229,6 +1239,7 @@ impl StratumServer {
                                                     &worker_for_block,
                                                     share_diff,
                                                     network_diff,
+                                                    "",
                                                 );
                                             }
                                         }
@@ -1537,6 +1548,7 @@ impl StratumServer {
         worker_name: &str,
         share_difficulty: u64,
         network_difficulty: u64,
+        block_hash: &str,
     ) {
         self.pool.lock().unwrap().on_block_found(block_height, block_reward);
         self.block_tracker.lock().unwrap().record_block_found(
@@ -1553,6 +1565,21 @@ impl StratumServer {
             .record_block_found(miner_id, worker_name);
         self.template_cache.lock().unwrap().invalidate();
         self.notifier.notify_block_found(miner_id, block_height, worker_name);
+
+        if let Some(ref store) = self.share_store {
+            let rec = crate::store::BlockRecord {
+                height: block_height,
+                hash: block_hash.to_string(),
+                miner_id: miner_id.to_string(),
+                worker_name: worker_name.to_string(),
+                share_difficulty,
+                network_difficulty,
+                status: "confirmed".to_string(),
+            };
+            if let Err(e) = store.record_block(&rec) {
+                tracing::warn!("share_store record_block failed: {}", e);
+            }
+        }
     }
 
     fn record_block_orphaned(
@@ -1562,6 +1589,7 @@ impl StratumServer {
         worker_name: &str,
         share_difficulty: u64,
         network_difficulty: u64,
+        block_hash: &str,
     ) {
         self.block_tracker.lock().unwrap().record_block_found(
             block_height,
@@ -1572,6 +1600,21 @@ impl StratumServer {
             false,
         );
         self.template_cache.lock().unwrap().invalidate();
+
+        if let Some(ref store) = self.share_store {
+            let rec = crate::store::BlockRecord {
+                height: block_height,
+                hash: block_hash.to_string(),
+                miner_id: miner_id.to_string(),
+                worker_name: worker_name.to_string(),
+                share_difficulty,
+                network_difficulty,
+                status: "orphaned".to_string(),
+            };
+            if let Err(e) = store.record_block(&rec) {
+                tracing::warn!("share_store record_block (orphan) failed: {}", e);
+            }
+        }
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -1602,6 +1645,7 @@ impl StratumServer {
                 &worker_name,
                 share_difficulty,
                 network_difficulty,
+                &block.header.header_hash().to_hex(),
             );
             return Ok(());
         }
@@ -1622,6 +1666,7 @@ impl StratumServer {
                     &worker_name,
                     share_difficulty,
                     network_difficulty,
+                    &block.header.header_hash().to_hex(),
                 );
                 self.notifier.notify_orphan(block_height);
                 return Ok(());
@@ -1637,6 +1682,7 @@ impl StratumServer {
                     &worker_name,
                     share_difficulty,
                     network_difficulty,
+                    &block.header.header_hash().to_hex(),
                 );
                 Ok(())
             }
@@ -1648,6 +1694,7 @@ impl StratumServer {
                     &worker_name,
                     share_difficulty,
                     network_difficulty,
+                    &block.header.header_hash().to_hex(),
                 );
                 self.notifier.notify_orphan(block_height);
                 Err(e)
@@ -1950,7 +1997,7 @@ mod tests {
 
     #[test]
     fn parse_real_edge_block_template() {
-        let template_json = r#"{"block_reward":5400067000,"difficulty":10,"header_hex":"874a54ccfa860f9aee5273dfd99cc6f897946e3c4fab40aa7421f2ae4225eda55aa25269fdfcfa052d7cd0aa34b5140b1a78299f2f9572b915a62ba35a9759b902000000000000003230756a00000000","header_json":"{\"previous_hash\":[135,74,84,204,250,134,15,154,238,82,115,223,217,156,198,248,151,148,110,60,79,171,64,170,116,33,242,174,66,37,237,165],\"merkle_root\":[90,162,82,105,253,252,250,5,45,124,208,170,52,181,20,11,26,120,41,159,47,149,114,185,21,166,43,163,90,151,89,185],\"height\":2,\"timestamp\":1786064946,\"nonce\":0,\"difficulty\":10}","height":2,"previous_hash":"874a54ccfa860f9aee5273dfd99cc6f897946e3c4fab40aa7421f2ae4225eda5","target":"1999999999999999999999999999999999999999999999999999999999999999","target_hex":"1999999999999999999999999999999999999999999999999999999999999999","template_id":253,"transactions":[{"inputs":[],"memo":[99,111,105,110,98,97,115,101],"outputs":[{"address":{"bytes":[],"chain":"zion_l1","encoded":"zion177w668f4g5g8s3t844s3f053k8h7r6d540853g6"},"amount":"4806059630"},{"address":{"bytes":[],"chain":"zion_l1","encoded":"zion1j0j5d0c70056u678j7g4p686e7r3w5k0y8vy0m0"},"amount":"270003350"},{"address":{"bytes":[],"chain":"zion_l1","encoded":"zion1g3g0k2j665r075g5j077z0w3u4g3w0d5837j3f6"},"amount":"270003350"}],"version":1}]}"#;
+        let template_json = r#"{"block_reward":5400067000,"difficulty":10,"header_hex":"874a54ccfa860f9aee5273dfd99cc6f897946e3c4fab40aa7421f2ae4225eda55aa25269fdfcfa052d7cd0aa34b5140b1a78299f2f9572b915a62ba35a9759b902000000000000003230756a00000000","header_json":"{\"previous_hash\":[135,74,84,204,250,134,15,154,238,82,115,223,217,156,198,248,151,148,110,60,79,171,64,170,116,33,242,174,66,37,237,165],\"merkle_root\":[90,162,82,105,253,252,250,5,45,124,208,170,52,181,20,11,26,120,41,159,47,149,114,185,21,166,43,163,90,151,89,185],\"height\":2,\"timestamp\":1786064946,\"nonce\":0,\"difficulty\":10}","height":2,"previous_hash":"874a54ccfa860f9aee5273dfd99cc6f897946e3c4fab40aa7421f2ae4225eda5","target":"1999999999999999999999999999999999999999999999999999999999999999","target_hex":"1999999999999999999999999999999999999999999999999999999999999999","template_id":253,"transactions":[{"inputs":[],"memo":[99,111,105,110,98,97,115,101],"outputs":[{"address":{"bytes":[],"chain":"zion_l1","encoded":"zion1d2k5v0p6p2z667l7g522v2z0w0y6e7w742zq8k6"},"amount":"4806059630"},{"address":{"bytes":[],"chain":"zion_l1","encoded":"zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8"},"amount":"270003350"},{"address":{"bytes":[],"chain":"zion_l1","encoded":"zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0"},"amount":"270003350"}],"version":1}]}"#;
         match serde_json::from_str::<zion_core::node::BlockTemplate>(template_json) {
             Ok(t) => {
                 assert_eq!(t.height, 2);

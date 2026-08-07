@@ -37,7 +37,7 @@ Tři kritické bugy blokovaly produkci ZION bloků na Edge. Všechny opraveny, c
 - **ZION_VARDIFF_START_DIFF=100** nastaveno v `/etc/zion/edge-environment.sh`
 - **Block production GREEN:**
   - `submitBlock response: {"id":1,"jsonrpc":"2.0","result":{"accepted":true}}`
-  - `notify_block_found miner=zion1j0j5d0c70056u678j7g4p686e7r3w5k0y8vy0m0 height=51 worker=edge-cpu`
+  - `notify_block_found miner=zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8 height=51 worker=edge-cpu`
   - `native_chain_height: 51` (z 1 na 51 v ~5 minutách, ~5s/blok)
   - Nonce nyní non-zero (0x0e, 0xa4, 0x10, 0x0f, ...)
 - **Pool test suite:** 163 tests pass (0 failures)

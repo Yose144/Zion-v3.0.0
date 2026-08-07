@@ -2,7 +2,7 @@
 
 This file provides operating guidance to Devin, WARP, Copilot, and future automated agents working in this repository.
 
-> **⚠️ V3.2 ONE LOVE GENESIS RESET 2026-08-06 (LATEST):** Kompletní rotace všech klíčů s BIP39 mnemonics — premine (14), canonical wallets (5), admin (3), DAO guardian (7), EVM validator (5) + escrow. Nové genesis hashe: **V3 compat `b0e95b135b736373430a3ff25d773329a3a3bd4b72ee66bb02d5a1583a77ecff`**, **V31 native `065eaf8e85e2808bda876db360c6d4ec1092d6048ab48b30c8a40e468bc10dd6`**. Předchozí genesis hashe (`08a94fb0...` V3 compat, `21e2b274...` V31 native z first reset, `4f75a0df...` z 2026-07-20) jsou **historické**. Všechny adresy aktualizovány v kódu i na Edge serveru (config files + env files + systemd service files). V31 služby active: `zion-v31-node`, `zion-v31-pool`, `zion-v31-miner`, `zion-v31-multichain`. Watchdog fix: height=0 je validní pro fresh chain (nerestartuje node). Miner fix: `--no-gpu --no-cpu` flagy odstraněny. Backup fix: V31 DBs (`/opt/zion/data/v31/`) přidány do `backup-edge.sh`. Klíče uloženy v `~/Desktop/ZION_KEYS_GENESIS_V2_2026-08-06/` (chmod 700, owner-only). **Všech 35 keypairs má BIP39 24-word mnemonics** — klíče generovány přes `gen-all-keys-mnemonic.rs`. L1 wallet CLI používá Ed25519 SK přímo (mnemonic nepotřebuje). Multi-Chain SDK (`WalletClient::from_mnemonic()`) nyní funguje se všemi klíči. Kompletní procedura: [`HARD_RESET_PLAYBOOK.md`](./HARD_RESET_PLAYBOOK.md). Adresní mapping (old → new) viz playbook appendix.
+> **⚠️ V3.2 ONE LOVE GENESIS RESET 2026-08-06 (LATEST):** Kompletní rotace všech klíčů s BIP39 mnemonics — premine (14), canonical wallets (5), admin (3), DAO guardian (7), EVM validator (5) + escrow. Nové genesis hashe: **V3 compat `4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71`**, **V31 native `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`**. Předchozí genesis hashe (`08a94fb0...` V3 compat, `21e2b274...` V31 native z first reset, `4f75a0df...` z 2026-07-20) jsou **historické**. Všechny adresy aktualizovány v kódu i na Edge serveru (config files + env files + systemd service files). V31 služby active: `zion-v31-node`, `zion-v31-pool`, `zion-v31-miner`, `zion-v31-multichain`. Watchdog fix: height=0 je validní pro fresh chain (nerestartuje node). Miner fix: `--no-gpu --no-cpu` flagy odstraněny. Backup fix: V31 DBs (`/opt/zion/data/v31/`) přidány do `backup-edge.sh`. Klíče uloženy v `~/Desktop/ZION_KEYS_GENESIS_V2_2026-08-06/` (chmod 700, owner-only). **Všech 35 keypairs má BIP39 24-word mnemonics** — klíče generovány přes `gen-all-keys-mnemonic.rs`. L1 wallet CLI používá Ed25519 SK přímo (mnemonic nepotřebuje). Multi-Chain SDK (`WalletClient::from_mnemonic()`) nyní funguje se všemi klíči. Kompletní procedura: [`HARD_RESET_PLAYBOOK.md`](./HARD_RESET_PLAYBOOK.md). Adresní mapping (old → new) viz playbook appendix.
 >
 > **⚠️ SERVER MIGRATION 2026-07-07 (HISTORICAL):** The old Edge server (`77.42.71.94`) is **DECOMMISSIONED**. All services have been rebuilt on a new server at **`62.171.141.136`** (Contabo VPS, hostname `vmi3425821.contaboserver.net`, IPv6 `2a02:c207:2342:5821::1`) following the 2026-07-20 hard genesis reset (post block-retention fix; previous chain 0–~10913 lost). Historical genesis hash: `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` (superseded by 2026-08-06 reset above). SSH: `ssh zion-new` (key: `~/.ssh/zion-edge-post-wipe-2026-07-29`, **port 22 (default) + port 2222 (alias), IPv4 + IPv6**). All references to `77.42.71.94` or `100.76.16.108` below are **historical** unless explicitly marked as updated. See [`StatusV3.md`](./StatusV3.md) for current live topology. Web: `https://zionterranova.com` (Next.js Docker, image 377 MB standalone). Dashboard: `https://dashboard.zionterranova.com` (Basic Auth). Pool: `62.171.141.136:8444`. RPC: `rpc.zionterranova.com:8443` (public, nginx TCP stream proxy → `127.0.0.1:9443` node RPC). All L2 services (bridge, dao, warp, swap, dashboard) use `127.0.0.1:9443` internally.
 >
@@ -814,15 +814,15 @@ PowerShell `ConvertTo-Json` emits Czech decimal commas on Czech Windows. Fix: wr
 - Bridge Seed Fund (Slot 12): 0.4B
 - Humanitarian (Slot 13): 1.44B
 
-**Canonical Addresses:**
-- Humanitarian: `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4`
-- ISSOBELLA: `zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702`
-- Pool Fee: `zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342`
-- Default Miner: `zion1w523a76830x2t5m7f3j023w265e8g5c400a4790`
-- Pool Payout: `zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604`
-- Genesis Projects: `zion16542q4l853a2z0u5r5w8y4m8k4558847h503736` (590M ZION, account model)
-- Bridge Vault: `zion106v7v0v0k3d500v0h7l636w0j4f5l4v044mh4a6` (100M ZION)
-- Bridge Seed Fund: `zion13794g7k3m0f84637l2x0t855h3l258k8p3xp5t3` (400M ZION)
+**Canonical Addresses (V2 JSON 2026-08-06):**
+- Humanitarian: `zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8`
+- ISSOBELLA: `zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0`
+- Pool Fee: `zion1l0h428f536s6u3x7h5f0d5c2z644j7t8u8va3x0`
+- Default Miner: `zion1074344t7k686j6n8a0l6t0f4c8d828y083xh4m2`
+- Pool Payout: `zion1d2k5v0p6p2z667l7g522v2z0w0y6e7w742zq8k6`
+- Genesis Projects: `zion122v8f8g55398f4g884k7j482h3z845j6c6ta4f8` (590M ZION, premine slot 11)
+- Bridge Vault: `zion1j3w3h7k8m635h734y786j5804305m822t5uk546` (100M ZION, premine slot 14)
+- Bridge Seed Fund: `zion1t6z3c0f0p3h0v233a3h432k5h764j0r3n5ml756` (400M ZION, premine slot 13)
 
 **Fee Split Configuration:**
 - Miners: 89%
@@ -1165,12 +1165,11 @@ Fixed script: `V3/deploy/new-server/zion-watchdog.sh`. Report: [`POOL_WATCHDOG_F
 
 ### Bridge Vault — Canonical Reference (IMPORTANT)
 
-**Live vault (post hard reset 2026-07-06):** `zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7` (100M ZION genesis premine)
-**Seed:** `"ZION Bridge Vault V3 Mainnet v2 2026-07-06-HARD-RESET"` (in `V3/L1/core/src/crypto.rs:BRIDGE_VAULT_SEED`)
-**DO NOT change this seed** — it is tied to the new genesis vault.
+**Live vault (post V2 reset 2026-08-06):** `zion1j3w3h7k8m635h734y786j5804305m822t5uk546` (100M ZION genesis premine, slot 14)
+**Source:** `V31_PREMINE_V2_KEYS_2026-08-06.json` — mnemonic wallet, not a keyless seed. `V31/L1/core/src/fee.rs::BRIDGE_VAULT_ADDRESS` and `V31/L1/core/src/v3_compat.rs::PREMINE_OUTPUTS[13]`.
 
-**Old vault (pre-hard-reset):** `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0` (seed: `"ZION Bridge Vault V3 Mainnet"`)
-This address is no longer active after the 2026-07-06 hard genesis reset.
+**Old vault (pre-V2 reset):** `zion1j53677g5k83030x3s2z2z644e7h07792q0u02t7` (keyless, seed `"ZION Bridge Vault V3 Mainnet v2 2026-07-06-HARD-RESET"`)
+This address is no longer active after the 2026-08-06 V2 hard genesis reset.
 
 **Bridge validators drop-in (v3.0.4):** Validator keys configured via `ZION_BRIDGE_VALIDATOR_SK_1..5` in `/root/zion/edge-environment.sh` (placeholder `<REPLACE_EVM_VALIDATOR_SK_*>` — air-gapped generation pending).
 - `ZION_BRIDGE_VALIDATOR_PUBKEYS` = 5 compressed secp256k1 pubkeys (comma-separated)

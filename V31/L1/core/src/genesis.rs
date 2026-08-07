@@ -3,9 +3,9 @@
 //! V31 keeps the same launch timestamp and constitutional supply constants as V3.
 //! The merkle hashing and block layout are the V31-canonical model.
 //!
-//! V3 mainnet genesis hash (v3.2 One Love reset 2026-08-06):
-//! `b0e95b135b736373430a3ff25d773329a3a3bd4b72ee66bb02d5a1583a77ecff`.
-//! V31 native genesis hash: `065eaf8e85e2808bda876db360c6d4ec1092d6048ab48b30c8a40e468bc10dd6`.
+//! V3-compatible mainnet genesis hash (v3.2 One Love reset 2026-08-06):
+//! `4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71`.
+//! V31 native genesis hash: `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`.
 //! V31 still uses a different canonical block layout, so the computed
 //! `genesis_hash()` below intentionally differs. See `V31/V3_SYNC_ASSESSMENT.md`.
 

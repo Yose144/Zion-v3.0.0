@@ -15,7 +15,7 @@ use zion_cosmic_harmony_v3::{
     FIRE_FORK_HEIGHT,
 };
 
-/// V31 mainnet genesis hash (v3.2 One Love genesis reset 2026-08-06 with V2 mnemonic premine keys).
+/// V3-compatible mainnet genesis hash (v3.2 One Love genesis reset 2026-08-06 with V2 mnemonic premine keys).
 pub const V3_GENESIS_HASH: &str = "4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71";
 
 /// Re-export the shared `u128` serde helper from `zion_l1_types`.
@@ -544,15 +544,15 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
 
 /// V3 canonical subsidy / operational wallet addresses.
 pub const MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET: &str =
-    "zion1j0j5d0c70056u678j7g4p686e7r3w5k0y8vy0m0";
+    "zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8";
 pub const MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET: &str =
-    "zion1g3g0k2j665r075g5j077z0w3u4g3w0d5837j3f6";
+    "zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0";
 pub const MAINNET_CANONICAL_POOL_FEE_SUBSIDY_WALLET: &str =
-    "zion1y0j6a7h7y7e345u5a2d6d3d667n8d002k4wa374";
+    "zion1l0h428f536s6u3x7h5f0d5c2z644j7t8u8va3x0";
 pub const MAINNET_CANONICAL_DEFAULT_MINER_WALLET: &str =
-    "zion1d6e3a4s6t856z042q2m6h5h2j4k3v7f8f2a94h7";
+    "zion1074344t7k686j6n8a0l6t0f4c8d828y083xh4m2";
 pub const MAINNET_CANONICAL_POOL_PAYOUT_WALLET: &str =
-    "zion177w668f4g5g8s3t844s3f053k8h7r6d540853g6";
+    "zion1d2k5v0p6p2z667l7g522v2z0w0y6e7w742zq8k6";
 
 // ── Admin governance public keys (3-of-3 multisig) ──────────────────────
 //
@@ -562,21 +562,21 @@ pub const MAINNET_CANONICAL_POOL_PAYOUT_WALLET: &str =
 
 /// Rama — Admin-1 (protocol governance, emergency pause).
 pub const ADMIN_RAMA_PUBLIC_KEY_HEX: &str =
-    "f60ca5bbb6a5e71ddd7e4b317afa94654af5aea7b52802e76269b463e6ee57d2";
-pub const ADMIN_RAMA_L1_ADDRESS: &str = "zion1v4v3g8s205f6g682m5w894g2h3n45350s6kl4a6";
-pub const ADMIN_RAMA_EVM_ADDRESS: &str = "0x98cc66915c33dcd771553262abfd5a53ea27e32e";
+    "210f4cca2e84feacd3fb901fd63cc389691afef65acf5f7f232274591113e4c2";
+pub const ADMIN_RAMA_L1_ADDRESS: &str = "zion1s4t4y2s4v0a4l4h28423h266f2y7h406d3s0847";
+pub const ADMIN_RAMA_EVM_ADDRESS: &str = "0x716a1be17bc096565c8269dff539303f3111b105";
 
 /// Sita — Admin-2 (treasury oversight, DAO guardian).
 pub const ADMIN_SITA_PUBLIC_KEY_HEX: &str =
-    "31a8fde77e4ce9219d2c2b34d1eb897e7b860ae838c3e636e66858e973217359";
-pub const ADMIN_SITA_L1_ADDRESS: &str = "zion1t6a3t0d5z5s6u823l2w4x002505738r4968w042";
-pub const ADMIN_SITA_EVM_ADDRESS: &str = "0x3d485d1e7ef904631cd493c2a5cfceb81d39662e";
+    "863b556da0fb398eb38f029bb1046a3496ccc2bdf0de4b8b6c2fd3cd72de4442";
+pub const ADMIN_SITA_L1_ADDRESS: &str = "zion1l6p5g466r047v7x39623n467v545p2m4l8v30v2";
+pub const ADMIN_SITA_EVM_ADDRESS: &str = "0x8cf0ae1a83a94f3b608b5863ff5c4c6c2479ac50";
 
 /// Hanuman — Admin-3 (bridge admin, EVM multisig).
 pub const ADMIN_HANUMAN_PUBLIC_KEY_HEX: &str =
-    "669658a175a8228aac072895607f45548340a7889d1a11ebced040da25ced75b";
-pub const ADMIN_HANUMAN_L1_ADDRESS: &str = "zion1c528m3y7j6z6m728u643c8e0v7z5c02702kd565";
-pub const ADMIN_HANUMAN_EVM_ADDRESS: &str = "0x1e821cb228ba11f7c65f1c6ebea5bfa1a865c17f";
+    "febc4cbf13d37215764127b10d1c724c66bd74bc1b38a4aee6e7b23d3d182ee3";
+pub const ADMIN_HANUMAN_L1_ADDRESS: &str = "zion18693c577h054s7v866e686f8m3z0y8s7s5gl2l7";
+pub const ADMIN_HANUMAN_EVM_ADDRESS: &str = "0xcad8a7fc07a8777aaa7bba5261f409ae40d78141";
 
 /// Check whether a premine output may be spent.
 ///

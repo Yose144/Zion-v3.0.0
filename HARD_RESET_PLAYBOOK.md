@@ -163,18 +163,18 @@ Every address must be updated in the codebase. The following files contain hardc
 
 ### 3.7 Address mapping table (old → new)
 
-Always record the old→new mapping for audit trail. Example from 2026-08-06 reset:
+Always record the old→new mapping for audit trail. Example from 2026-08-06 V2 reset (old 2026-07-06 V3 addresses → `V31_PREMINE_V2_KEYS_2026-08-06.json`):
 
 | Role | Old address | New address |
 |------|------------|-------------|
-| default_miner | `zion1u4a82230m0a267r785m822u5a3g7n753d7eu5n0` | `zion1d6e3a4s6t856z042q2m6h5h2j4k3v7f8f2a94h7` |
-| humanitarian | `zion136m4u7f8s5w3l0e00342s7a4r282275442vm2w3` | `zion1j0j5d0c70056u678j7g4p686e7r3w5k0y8vy0m0` |
-| issobella | `zion173g835z228z6u303z59603y236r5e854l36g604` | `zion1g3g0k2j665r075g5j077z0w3u4g3w0d5837j3f6` |
-| pool_payout | `zion1k4g2d8s3y4m5v238k0l3v6y5n48894n357uv064` | `zion177w668f4g5g8s3t844s3f053k8h7r6d540853g6` |
-| pool_fee | `zion1e6r72872w0y5w6c3h4e6z847g8z4z7l0n4rj607` | `zion1y0j6a7h7y7e345u5a2d6d3d667n8d002k4wa374` |
-| Rama (admin L1) | `zion1u2r4n87572t2f3n8f2j006f2a540y7r8m84p887` | `zion1v4v3g8s205f6g682m5w894g2h3n45350s6kl4a6` |
-| Sita (admin L1) | `zion1r4t6v7a8j6v4u86208d3g8k6t6q4q4g5y0kc3p8` | `zion1t6a3t0d5z5s6u823l2w4x002505738r4968w042` |
-| Hanuman (admin L1) | `zion19086w6d026y8z2f7u7v2x68054g8d4y5n3e70q4` | `zion1c528m3y7j6z6m728u643c8e0v7z5c02702kd565` |
+| default_miner | `zion1u4a82230m0a267r785m822u5a3g7n753d7eu5n0` | `zion1074344t7k686j6n8a0l6t0f4c8d828y083xh4m2` |
+| humanitarian | `zion136m4u7f8s5w3l0e00342s7a4r282275442vm2w3` | `zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8` |
+| issobella | `zion173g835z228z6u303z59603y236r5e854l36g604` | `zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0` |
+| pool_payout | `zion1k4g2d8s3y4m5v238k0l3v6y5n48894n357uv064` | `zion1d2k5v0p6p2z667l7g522v2z0w0y6e7w742zq8k6` |
+| pool_fee | `zion1e6r72872w0y5w6c3h4e6z847g8z4z7l0n4rj607` | `zion1l0h428f536s6u3x7h5f0d5c2z644j7t8u8va3x0` |
+| Rama (admin L1) | `zion1u2r4n87572t2f3n8f2j006f2a540y7r8m84p887` | `zion1s4t4y2s4v0a4l4h28423h266f2y7h406d3s0847` |
+| Sita (admin L1) | `zion1r4t6v7a8j6v4u86208d3g8k6t6q4q4g5y0kc3p8` | `zion1l6p5g466r047v7x39623n467v545p2m4l8v30v2` |
+| Hanuman (admin L1) | `zion19086w6d026y8z2f7u7v2x68054g8d4y5n3e70q4` | `zion18693c577h054s7v866e686f8m3z0y8s7s5gl2l7` |
 
 *(Full 14-premine + 5-canonical + 3-admin + 7-guardian + 5-validator mapping kept in the key directory's `PUBLIC_ADDRESSES.txt`.)*
 
@@ -199,8 +199,8 @@ cargo run --release -p zion-core --bin print-genesis-hash 2>/dev/null || \
 The V31 native genesis hash is `genesis_hash()` in `V31/L1/core/src/genesis.rs` (Keccak256 of the PoW header + nonce). The V3 compat hash is the V3 chain's actual block-0 hash, which must be set in `V3_GENESIS_HASH` after the V3 node recomputes it with the new premine.
 
 **v3.2 One Love genesis hashes (2026-08-06):**
-- V31 native: `065eaf8e85e2808bda876db360c6d4ec1092d6048ab48b30c8a40e468bc10dd6`
-- V3 compat: `b0e95b135b736373430a3ff25d773329a3a3bd4b72ee66bb02d5a1583a77ecff`
+- V31 native: `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`
+- V3 compat: `4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71`
 
 **Record both hashes** — they go into `StatusV3.md`, `AGENTS.md`, `README.md`, and `v3_compat.rs`.
 
@@ -303,7 +303,7 @@ ssh zion-new "echo '{\"jsonrpc\":\"2.0\",\"method\":\"chain_get_block\",\"params
 
 ```bash
 # Query each premine address balance — must match the amounts in genesis.rs
-ssh zion-new "echo '{\"jsonrpc\":\"2.0\",\"method\":\"address_get_balance\",\"params\":[\"zion172h3y7d6m7d7y7d8q2d4x363t0m55227n2rt2v2\"],\"id\":1}' | nc 127.0.0.1 9445"
+ssh zion-new "echo '{\"jsonrpc\":\"2.0\",\"method\":\"address_get_balance\",\"params\":[\"zion1s0t7f8q680t4h6v7g240p4k7g2s0a4z8g3cc5h5\"],\"id\":1}' | nc 127.0.0.1 9445"
 # Expected: 8,250,000,000 ZION (slot 1, OASIS+GoldenEgg)
 ```
 
