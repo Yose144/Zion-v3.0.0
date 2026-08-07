@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Check, ShoppingBag, Mail, HelpCircle, Loader2, XCircle } from 'lucide-react';
 import { getOrderStatus, verifyStripeSession, type OrderStatusResult } from '@/lib/shop-api';
 import { useLangT } from '@/lib/useTranslation';
+import { COMPANY } from '@/lib/invoice';
 
 function LoadingFallback() {
   const { t } = useLangT();
@@ -88,7 +89,7 @@ function OrderSuccessContent() {
 
   const formatPrice = (price: number) => t('common.price', { price, symbol: t('common.kcSymbol') });
 
-  const supportEmail = 'hello@zionterranova.com';
+  const supportEmail = COMPANY.email;
   const footerQuestionText = t('orderSuccess.footerQuestion', { email: '%%EMAIL%%' });
   const [footerBefore, footerAfter] = footerQuestionText.includes('%%EMAIL%%')
     ? footerQuestionText.split('%%EMAIL%%')
@@ -156,7 +157,7 @@ function OrderSuccessContent() {
         <Link href="/shop" className="zion-button-primary">
           <ShoppingBag className="w-4 h-4" /> {t('orderSuccess.continueShopping')}
         </Link>
-        <a href="mailto:hello@zionterranova.com" className="zion-button-secondary">
+        <a href={`mailto:${COMPANY.email}`} className="zion-button-secondary">
           <Mail className="w-4 h-4" /> {t('orderSuccess.contactSupport')}
         </a>
       </div>
