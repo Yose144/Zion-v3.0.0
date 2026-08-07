@@ -150,6 +150,9 @@ pub struct MinerRuntime {
     /// GPU backend for Stream 1 (ZION deeksha). `None` = CPU-only.
     /// Initialized when `config.gpu_backend` is not "cpu".
     gpu_zion: Arc<std::sync::Mutex<Option<Box<dyn GpuMiner>>>>,
+    /// ZION nonce cursor — advances between batches so we don't always
+    /// re-scan from 0. Wrapped in a mutex for safe concurrent access.
+    zion_nonce_cursor: Arc<std::sync::atomic::AtomicU64>,
     #[cfg(feature = "auxpow")]
     scheduler: Arc<Mutex<AuxPoWScheduler>>,
     #[cfg(feature = "auxpow")]
@@ -242,6 +245,7 @@ impl MinerRuntime {
                 consensus,
                 stats,
                 gpu_zion,
+                zion_nonce_cursor: Arc::new(std::sync::atomic::AtomicU64::new(0)),
                 scheduler: Arc::new(Mutex::new(AuxPoWScheduler::new(
                     hashrate_per_unit,
                     stream2_force_coin,
@@ -259,6 +263,7 @@ impl MinerRuntime {
                 consensus,
                 stats,
                 gpu_zion,
+                zion_nonce_cursor: Arc::new(std::sync::atomic::AtomicU64::new(0)),
             }
         }
     }
@@ -514,7 +519,15 @@ impl MinerRuntime {
         job: &Job,
         batch: u64,
     ) -> Result<Share, MinerError> {
-        let try_gpu = stream == StreamId::GpuExternal && self.config.gpu_backend != "cpu";
+        // In V3 Trinity mode (single GPU rig), the GPU is dedicated to ZION
+        // Stream 1. External streams (ZANO/VRSC) use CPU to avoid GPU mutex
+        // contention. Set ZION_TRINITY_EXT_GPU=1 to enable GPU for Stream 2.
+        let ext_gpu_enabled = std::env::var("ZION_TRINITY_EXT_GPU")
+            .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+            .unwrap_or(false);
+        let try_gpu = stream == StreamId::GpuExternal
+            && self.config.gpu_backend != "cpu"
+            && ext_gpu_enabled;
         if try_gpu {
             if let Some(share) = self.try_gpu_auxpow_share(job, batch).await {
                 return Ok(share);
@@ -882,6 +895,37 @@ impl MinerRuntime {
     ) -> Result<(), MinerError> {
         use tokio::sync::broadcast;
 
+        // Outer reconnect loop: if the pool connection drops, reconnect with
+        // exponential backoff. This handles pool restarts and network blips.
+        let mut reconnect_delay_secs: u64 = 3;
+        let max_reconnect_delay_secs: u64 = 60;
+        loop {
+            if *shutdown.borrow() {
+                return Ok(());
+            }
+            match self.run_v3_trinity_session(shutdown.clone()).await {
+                Ok(()) => return Ok(()),
+                Err(e) => {
+                    warn!(error = %e, "V3 Trinity session ended, reconnecting in {}s", reconnect_delay_secs);
+                    eprintln!("v3_trinity reconnect in {}s: {}", reconnect_delay_secs, e);
+                    let mut shutdown_rx = shutdown.clone();
+                    tokio::select! {
+                        _ = tokio::time::sleep(Duration::from_secs(reconnect_delay_secs)) => {}
+                        _ = shutdown_rx.changed() => return Ok(()),
+                    }
+                    reconnect_delay_secs = (reconnect_delay_secs * 2).min(max_reconnect_delay_secs);
+                }
+            }
+        }
+    }
+
+    #[cfg(feature = "auxpow")]
+    async fn run_v3_trinity_session(
+        &self,
+        shutdown: watch::Receiver<bool>,
+    ) -> Result<(), MinerError> {
+        use tokio::sync::broadcast;
+
         let pool_addr = self
             .config
             .pool_url
@@ -937,6 +981,14 @@ impl MinerRuntime {
                             // Get next job bundle from pool
                             let bundle = client.next_job(Duration::from_secs(60)).await
                                 .map_err(|e| MinerError::Consensus(format!("V3 job: {e}")))?;
+
+                            // Reset nonce cursor on each new job (pool rotates
+                            // job_id, so old nonces are stale). The cursor will
+                            // advance as mine_v3_zion_share scans batches.
+                            this.zion_nonce_cursor.store(
+                                bundle.zion.start_nonce,
+                                std::sync::atomic::Ordering::Relaxed,
+                            );
 
                             // Broadcast to Stream 2/3 workers (ignore lag errors)
                             if let Some(ref ext) = bundle.gpu_external {
@@ -1063,6 +1115,14 @@ impl MinerRuntime {
         let batch_size = self.config.zion_nonce_batch;
         let t_start = Instant::now();
 
+        // Advance nonce cursor — don't always scan from 0.
+        // The pool sends start_nonce=0 + nonce_count=0xFFFFFFFF (full range),
+        // so we track our own cursor and advance it by batch_size each iteration.
+        let start_nonce = self.zion_nonce_cursor.fetch_add(
+            batch_size,
+            std::sync::atomic::Ordering::Relaxed,
+        );
+
         // Try GPU first, fall back to CPU
         let gpu_zion = self.gpu_zion.clone();
         let header_for_gpu = header.clone();
@@ -1075,7 +1135,7 @@ impl MinerRuntime {
                 header_bytes[..copy_len].copy_from_slice(&header_for_gpu[..copy_len]);
                 let mining_header = zion_core::MiningHeader::from_bytes(header_bytes);
                 let target = zion_core::V3DifficultyTarget { bytes: target_for_gpu };
-                match gpu.mine_batch(mining_header, target, 0, batch_size) {
+                match gpu.mine_batch(mining_header, target, start_nonce, batch_size) {
                     Ok(result) => {
                         let nonces_tested = result.nonces_tested;
                         if let Some((found_nonce, found_hash, _mix)) = result.solutions.into_iter().next() {
@@ -1101,7 +1161,7 @@ impl MinerRuntime {
             let header_cpu = header.clone();
             let target_cpu = target_bytes;
             let result = task::spawn_blocking(move || {
-                parallel_zion_find_nonce(&header_cpu, &target_cpu, 0, batch_size, threads)
+                parallel_zion_find_nonce(&header_cpu, &target_cpu, start_nonce, batch_size, threads)
             })
             .await
             .map_err(|e| MinerError::Consensus(format!("cpu join: {e}")))?
