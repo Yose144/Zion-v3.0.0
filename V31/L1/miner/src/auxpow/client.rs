@@ -505,6 +505,11 @@ impl AuxPowClient {
     }
 
     async fn authorize(&self, payout_wallet: &str) -> Result<()> {
+        // EthStratum (e.g. HeroMiners ZANO) uses eth_submitLogin with just
+        // the wallet address — no .worker suffix, no mining.authorize.
+        if self.protocol == StratumProtocol::EthStratum {
+            return self.eth_submit_login(payout_wallet).await;
+        }
         let worker = format!("{}.{}", payout_wallet, self.config.worker_name);
         let req = json!({
             "id": 2,
@@ -520,7 +525,38 @@ impl AuxPowClient {
         Ok(())
     }
 
+    /// EthStratum login: sends `eth_submitLogin` with just the wallet address.
+    async fn eth_submit_login(&self, payout_wallet: &str) -> Result<()> {
+        let req = json!({
+            "id": 2,
+            "method": "eth_submitLogin",
+            "params": [payout_wallet]
+        });
+        let resp = self.send_request(&req).await?;
+        if !is_authorize_ok(&resp) {
+            bail!("eth_submitLogin failed");
+        }
+        *self.authorized.lock().await = true;
+        info!("eth_submitLogin authorized for {}", self.config.coin);
+        Ok(())
+    }
+
     async fn authorize_inline(&self, payout_wallet: &str) -> Result<()> {
+        // EthStratum uses eth_submitLogin with just the wallet address.
+        if self.protocol == StratumProtocol::EthStratum {
+            let req = json!({
+                "id": 2,
+                "method": "eth_submitLogin",
+                "params": [payout_wallet]
+            });
+            let resp = self.send_request_inline(&req).await?;
+            if !is_authorize_ok(&resp) {
+                bail!("eth_submitLogin failed");
+            }
+            *self.authorized.lock().await = true;
+            info!("eth_submitLogin authorized for {}", self.config.coin);
+            return Ok(());
+        }
         let worker = format!("{}.{}", payout_wallet, self.config.worker_name);
         let req = json!({
             "id": 2,
