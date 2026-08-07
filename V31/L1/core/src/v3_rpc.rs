@@ -35,6 +35,17 @@ pub enum V3RpcError {
     Validation(String),
 }
 
+/// Extract a transaction payload from RPC params.
+///
+/// Callers may either send the transaction directly in `params` or wrap it
+/// in `{ "transaction": <tx> }` (used by the V31 wallet / pool convention).
+fn extract_transaction(params: &Value) -> Value {
+    params
+        .get("transaction")
+        .cloned()
+        .unwrap_or_else(|| params.clone())
+}
+
 /// V3 RPC handler. Keeps an in-memory mempool until it can be mined.
 pub struct V3RpcHandler {
     storage: Arc<Storage>,
@@ -248,8 +259,8 @@ impl V3RpcHandler {
     }
 
     async fn submit_account_tx(&self, params: &Value) -> Result<Value, V3RpcError> {
-        let tx: AccountTransaction =
-            serde_json::from_value(params.clone()).map_err(|e| V3RpcError::Parse(e.to_string()))?;
+        let tx: AccountTransaction = serde_json::from_value(extract_transaction(params))
+            .map_err(|e| V3RpcError::Parse(e.to_string()))?;
 
         validate_account_tx_for_mempool(&tx)?;
 
@@ -271,8 +282,8 @@ impl V3RpcHandler {
     }
 
     async fn submit_utxo_tx(&self, params: &Value) -> Result<Value, V3RpcError> {
-        let tx: UtxoTransaction =
-            serde_json::from_value(params.clone()).map_err(|e| V3RpcError::Parse(e.to_string()))?;
+        let tx: UtxoTransaction = serde_json::from_value(extract_transaction(params))
+            .map_err(|e| V3RpcError::Parse(e.to_string()))?;
 
         if tx.id != tx.calculate_hash() {
             return Err(V3RpcError::Validation(
@@ -349,7 +360,7 @@ impl V3RpcHandler {
                 })
             })
             .collect();
-        Ok(json!({ "address": address, "utxos": out, "count": out.len() }))
+        Ok(json!({ "address": address, "utxos": out, "count": out.len(), "model": "v3" }))
     }
 
     async fn get_transaction(&self, params: &Value) -> Result<Value, V3RpcError> {
@@ -856,8 +867,8 @@ impl V3RpcHandler {
     }
 
     async fn submit_bridge_unlock(&self, params: &Value) -> Result<Value, V3RpcError> {
-        let tx: UtxoTransaction =
-            serde_json::from_value(params.clone()).map_err(|e| V3RpcError::Parse(e.to_string()))?;
+        let tx: UtxoTransaction = serde_json::from_value(extract_transaction(params))
+            .map_err(|e| V3RpcError::Parse(e.to_string()))?;
 
         if tx.id != tx.calculate_hash() {
             return Err(V3RpcError::Validation(

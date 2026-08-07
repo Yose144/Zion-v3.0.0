@@ -280,7 +280,7 @@ async fn main() -> anyhow::Result<()> {
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(30);
-    spawn_payout_confirmation_sweep(deferred_rpc.clone(), sweep_interval);
+    spawn_payout_confirmation_sweep(deferred_rpc.clone(), sweep_interval, share_store.clone());
 
     // ── NCL Gateway (AI compute revenue stream) ───────────────────────────
     if let Ok(gateway_url) = std::env::var("ZION_NCL_GATEWAY_URL") {

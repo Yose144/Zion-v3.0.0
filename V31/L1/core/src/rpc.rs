@@ -179,18 +179,46 @@ async fn dispatch_request(line: &str, node: &Node) -> Value {
         };
     }
 
-    // V31 native UTXO RPCs.
+    // V31 native UTXO RPCs. When the request does not match the V31 native
+    // model, fall back to the V3 compatibility handler so legacy V3 UTXO
+    // wallets and bridge tools keep working.
     if method == "getUtxos" {
         return match get_utxos(node, &params).await {
-            Ok(v) => success_response(id, v),
+            Ok(v) if v.get("count").and_then(|c| c.as_u64()).unwrap_or(0) > 0 => {
+                success_response(id, v)
+            }
+            Ok(v) => {
+                let v3_result = node.v3_rpc.dispatch("getUtxos", params).await;
+                if let Some(r) = v3_result.get("result") {
+                    if r.get("count").and_then(|c| c.as_u64()).unwrap_or(0) > 0 {
+                        return wrap_v3_response(id, v3_result);
+                    }
+                }
+                success_response(id, v)
+            }
             Err(e) => error_response(id, -32000, &e.to_string()),
         };
     }
 
     if method == "submitUtxoTransaction" || method == "submitTransaction" {
-        return match submit_utxo_tx(node, &params).await {
-            Ok(v) => success_response(id, v),
-            Err(e) => error_response(id, -32000, &e.to_string()),
+        let tx_value = params
+            .get("transaction")
+            .cloned()
+            .unwrap_or_else(|| params.clone());
+        return match serde_json::from_value::<crate::Transaction>(tx_value) {
+            Ok(_) => match submit_utxo_tx(node, &params).await {
+                Ok(v) => success_response(id, v),
+                Err(e) => error_response(id, -32000, &e.to_string()),
+            },
+            Err(_) => {
+                let v3_method = if method == "submitUtxoTransaction" {
+                    "submitUtxoTransaction"
+                } else {
+                    "submitTransaction"
+                };
+                let v3_result = node.v3_rpc.dispatch(v3_method, params).await;
+                wrap_v3_response(id, v3_result)
+            }
         };
     }
 
