@@ -199,6 +199,8 @@ export async function sendZionPayout(
   ];
   if (memo) args.push('--memo', memo);
 
+  console.log(`[zion-l1] Sending ${amountZion} ZION to ${toAddress} via RPC ${rpc}`);
+
   try {
     const { stdout, stderr } = await execFileAsync(cli, args, {
       timeout: 120_000,
@@ -213,6 +215,14 @@ export async function sendZionPayout(
     const inputsMatch = output.match(/Inputs:\s*(\d+)/);
     const outputsMatch = output.match(/Outputs:\s*(\d+)/);
 
+    if (txHash) {
+      console.log(`[zion-l1] Payout broadcast OK. txHash=${txHash}`);
+    } else if (output.toLowerCase().includes('dry-run')) {
+      console.log('[zion-l1] Payout dry-run completed');
+    } else {
+      console.warn('[zion-l1] Payout CLI completed without a tx hash:', output.slice(0, 500));
+    }
+
     return {
       success: true,
       txHash,
@@ -221,10 +231,9 @@ export async function sendZionPayout(
       outputs: outputsMatch ? outputsMatch[1] : undefined,
     };
   } catch (err: any) {
-    return {
-      success: false,
-      error: err?.stderr?.toString() || err?.message || String(err),
-    };
+    const error = err?.stderr?.toString() || err?.message || String(err);
+    console.error(`[zion-l1] Payout failed for ${toAddress}:`, error);
+    return { success: false, error };
   }
 }
 

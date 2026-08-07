@@ -26,7 +26,7 @@ export function rarityColor(rarity: string): string {
     common: 'text-zinc-400 border-zinc-600',
     uncommon: 'text-green-400 border-green-600',
     rare: 'text-blue-400 border-blue-600',
-    epic: 'text-purple-400 border-purple-600',
+    epic: 'text-red-400 border-red-600',
     legendary: 'text-amber-400 border-amber-600',
     mythic: 'text-rose-400 border-rose-600',
     unique: 'text-cyan-400 border-cyan-600',
