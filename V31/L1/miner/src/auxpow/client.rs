@@ -849,7 +849,14 @@ impl AuxPowClient {
                 let reserved = parse_hex_value(&params[4]).unwrap_or_default();
                 let ntime = params[5].as_str().unwrap_or("00000000").to_string();
                 let nbits = params[6].as_str().unwrap_or("");
-                let solution = parse_hex_value(&params[8]).unwrap_or_default();
+                let mut solution = parse_hex_value(&params[8]).unwrap_or_default();
+                // Pad solution to VERUS_SOLUTION_SIZE (1344 bytes) — the pool
+                // may send an empty or partial solution; the miner fills the
+                // nonceSpace during mining, but the header must be full-size.
+                const VERUS_SOLUTION_SIZE: usize = 1344;
+                if solution.len() < VERUS_SOLUTION_SIZE {
+                    solution.resize(VERUS_SOLUTION_SIZE, 0);
+                }
 
                 let target = hasher::parse_target_hex(nbits)
                     .or_else(|| hasher::nbits_to_target(nbits))
