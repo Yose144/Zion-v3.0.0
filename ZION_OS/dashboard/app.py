@@ -4656,7 +4656,6 @@ def parse_premine_from_genesis(rpc_host: str = None, rpc_port: int = None) -> li
         for tx in tx_group:
             if not isinstance(tx, dict):
                 continue
-            amount = 0
             # V31 genesis UTXO: { outputs: [{ amount, address: <string> }] }
             outputs = tx.get("outputs", [])
             if outputs:
@@ -4671,7 +4670,16 @@ def parse_premine_from_genesis(rpc_host: str = None, rpc_port: int = None) -> li
                         amt = amt.get("0", 0)
                     if not addr:
                         continue
-                    amount += int(amt) if amt is not None else 0
+                    amount = int(amt) if amt is not None else 0
+                    wallets.append({
+                        "index": i + 1,
+                        "address": addr,
+                        "label": labels[i] if i < len(labels) else f"Premine Output {i+1}",
+                        "amount_zion": flowers_to_zion(amount),  # flowers -> ZION (auto-detects legacy 1e12)
+                        "source": "genesis",
+                        "category": "premine",
+                    })
+                    i += 1
             else:
                 # V31 account transaction: { to, amount_zion }
                 addr = tx.get("to", "")
@@ -4679,17 +4687,17 @@ def parse_premine_from_genesis(rpc_host: str = None, rpc_port: int = None) -> li
                 if isinstance(raw, dict):
                     raw = raw.get("0", "0")
                 amount = int(raw) if raw is not None else 0
-            if not addr:
-                continue
-            wallets.append({
-                "index": i + 1,
-                "address": addr,
-                "label": labels[i] if i < len(labels) else f"Premine Output {i+1}",
-                "amount_zion": flowers_to_zion(amount),  # flowers -> ZION (auto-detects legacy 1e12)
-                "source": "genesis",
-                "category": "premine",
-            })
-            i += 1
+                if not addr:
+                    continue
+                wallets.append({
+                    "index": i + 1,
+                    "address": addr,
+                    "label": labels[i] if i < len(labels) else f"Premine Output {i+1}",
+                    "amount_zion": flowers_to_zion(amount),  # flowers -> ZION (auto-detects legacy 1e12)
+                    "source": "genesis",
+                    "category": "premine",
+                })
+                i += 1
     return wallets
 
 def parse_premine_from_file() -> list:
@@ -4842,12 +4850,16 @@ def build_wallets() -> dict:
         except Exception:
             pass
 
-    # 4. Try to enrich with live balances — prefer local RPC, fallback to Edge
+    # 4. Try to enrich with live balances — prefer local RPC, fallback to Edge/public
     rpc_host, rpc_port = _get_node_rpc_addr()
-    # Test connectivity; fall back to Edge if local unavailable
     _ping = rpc_call(rpc_host, rpc_port, "getChainInfo", {}, timeout=1.5)
-    if not _ping or _ping.get("_rpc_error"):
-        rpc_host, rpc_port = EDGE_HOST, 9445
+    rpc_reachable = _ping and not _ping.get("_rpc_error")
+    if not rpc_reachable:
+        # Fallback to public Edge RPC (nginx TCP stream on 8443 -> V31 node)
+        _ping = rpc_call(EDGE_PUBLIC_IP, 8443, "getChainInfo", {}, timeout=2.0)
+        if _ping and not _ping.get("_rpc_error"):
+            rpc_host, rpc_port = EDGE_PUBLIC_IP, 8443
+            rpc_reachable = True
 
     for w in wallets:
         addr = w.get("address", "")
@@ -4860,6 +4872,7 @@ def build_wallets() -> dict:
                 w["balance_zion"] = bal.get("balance_zion") if isinstance(bal.get("balance_zion"), (int, float)) else flowers_to_zion(atomic)
                 w["balance_atomic"] = atomic
                 w["rpc_ok"] = True
+                w["balance_source"] = "rpc"
             else:
                 w["balance_zion"] = None
                 w["balance_atomic"] = None
@@ -4869,27 +4882,59 @@ def build_wallets() -> dict:
             w["balance_atomic"] = None
             w["rpc_ok"] = False
 
+    # 5. Fallback for offline / UTXO-unaware balance RPC:
+    #    - Premine wallets: use the genesis output amount (authoritative from block 0).
+    #    - Operational wallets: show 0 when no live data is available.
+    for w in wallets:
+        if w.get("category") == "premine" and w.get("amount_zion"):
+            w["balance_zion"] = float(w["amount_zion"])
+            w["balance_atomic"] = int(w["amount_zion"] * FLOWERS_PER_ZION)
+            w["balance_source"] = "genesis"
+            w["rpc_ok"] = False
+        elif w.get("category") == "operational" and not w.get("rpc_ok"):
+            w["balance_zion"] = 0.0
+            w["balance_atomic"] = 0
+            w["balance_source"] = "estimated"
+
     total_premine = sum(w.get("amount_zion", 0) for w in wallets if w.get("category") == "premine")
     with_balance = [w for w in wallets if w.get("balance_zion") is not None]
+    live_balance_count = len([w for w in wallets if w.get("rpc_ok")])
 
-    # Category breakdown for premine
+    # Category breakdown for premine (canonical V31 ordering from genesis block 0)
     category_summary = {}
     for w in wallets:
         if w.get("category") == "premine":
+            idx = w.get("index")
             label = w.get("label", "")
-            # Group by purpose
-            if "OASIS" in label:
-                group = "oasis"
-            elif "DAO" in label:
-                group = "dao"
-            elif "Core Dev" in label or "Infrastructure" in label or "Creator" in label or "Seed" in label:
-                group = "infrastructure"
-            elif "Humanitarian" in label or "Children" in label:
-                group = "humanitarian"
-            elif "Issobella" in label or "Space" in label:
-                group = "issobella"
+            if isinstance(idx, int) and 1 <= idx <= 14:
+                if 1 <= idx <= 5:
+                    group = "oasis"
+                elif 6 <= idx <= 8:
+                    group = "dao"
+                elif 9 <= idx <= 11:
+                    group = "infrastructure"
+                elif idx == 12:
+                    group = "humanitarian"
+                elif idx == 13:
+                    group = "bridge_seed"
+                elif idx == 14:
+                    group = "bridge_vault_utxo"
+                else:
+                    group = "other"
             else:
-                group = "other"
+                # Group by purpose label as a fallback
+                if "OASIS" in label:
+                    group = "oasis"
+                elif "DAO" in label:
+                    group = "dao"
+                elif "Core Dev" in label or "Infrastructure" in label or "Creator" in label or "Seed" in label:
+                    group = "infrastructure"
+                elif "Humanitarian" in label or "Children" in label:
+                    group = "humanitarian"
+                elif "Issobella" in label or "Space" in label:
+                    group = "issobella"
+                else:
+                    group = "other"
             category_summary.setdefault(group, {"count": 0, "total_zion": 0, "labels": []})
             category_summary[group]["count"] += 1
             amt = w.get("amount_zion", 0)
@@ -4898,7 +4943,7 @@ def build_wallets() -> dict:
             category_summary[group]["labels"].append(label[:40])
 
     # Operational breakdown
-    op_total = sum(w.get("balance_zion", 0) or 0 for w in wallets if w.get("category") == "operational")
+    op_total = sum((w.get("balance_zion") or 0) for w in wallets if w.get("category") == "operational")
 
     return {
         "ok": True,
@@ -4907,12 +4952,13 @@ def build_wallets() -> dict:
             "total_wallets": len(wallets),
             "premine_wallets": len(premine),
             "operational_wallets": len([w for w in wallets if w.get("category") == "operational"]),
-            "with_live_balance": len(with_balance),
+            "with_live_balance": live_balance_count,
+            "with_balance": len(with_balance),
             "total_premine_zion": total_premine,
             "total_operational_zion": round(op_total, 6),
         },
         "category_summary": category_summary,
-        "rpc": {"host": rpc_host, "port": rpc_port, "reachable": len(with_balance) > 0},
+        "rpc": {"host": rpc_host, "port": rpc_port, "reachable": rpc_reachable},
     }
 
 # ── Block detail ────────────────────────────────────────────────────────
@@ -8695,19 +8741,23 @@ def build_payout_status() -> dict:
     recent_payouts.sort(key=lambda x: x["block_height"], reverse=True)
     status["recent_payouts"] = recent_payouts[:20]
 
-    # ── Wallet balances (RPC with Edge→local fallback) ────────────────
-    rpc_host = edge_host if (is_edge and edge_rpc_alive) else "127.0.0.1"
+    # ── Wallet balances (RPC with Edge→public fallback) ────────────────
+    rpc_host, _ = _get_node_rpc_addr()
+    _ping = rpc_call(rpc_host, rpc_port, "getChainInfo", {}, timeout=1.5)
+    if not _ping or _ping.get("_rpc_error"):
+        _ping = rpc_call(EDGE_PUBLIC_IP, 8443, "getChainInfo", {}, timeout=2.0)
+        if _ping and not _ping.get("_rpc_error"):
+            rpc_host = EDGE_PUBLIC_IP
+            rpc_port = 8443
+
     if status["pool_wallet"] and status["pool_wallet"].startswith("zion1"):
         bal = rpc_call(rpc_host, rpc_port, "getBalance", {"address": status["pool_wallet"]}, timeout=2.5)
         if bal and not bal.get("_rpc_error"):
             atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
             status["pool_wallet_balance"] = atomic
-        elif is_edge and local_rpc_alive:
-            # Fallback to local backup node
-            bal = rpc_call("127.0.0.1", rpc_port, "getBalance", {"address": status["pool_wallet"]}, timeout=2)
-            if bal and not bal.get("_rpc_error"):
-                atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
-                status["pool_wallet_balance"] = atomic
+        else:
+            # No live data available: show 0 instead of null so the UI renders a balance.
+            status["pool_wallet_balance"] = 0
 
     balances = {}
     for key, addr in [("miner", status["miner_wallet"]),
@@ -8719,6 +8769,9 @@ def build_payout_status() -> dict:
             if bal and not bal.get("_rpc_error"):
                 atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
                 balances[key] = {"atomic": atomic, "zion": flowers_to_zion(atomic)}
+            else:
+                # No live data: show 0 so the UI does not leave the balance blank.
+                balances[key] = {"atomic": 0, "zion": 0.0}
     status["balances"] = balances
 
     # ── Pool stats / miners from Edge or local ──────────────────────────

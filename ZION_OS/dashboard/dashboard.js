@@ -709,7 +709,7 @@ function updateServiceCards(s){
   const lbp = document.getElementById('val-local-backup-peers');
   if(lbp) lbp.textContent = lbData ? (lbData.known_peers ?? 0) : 0;
   const lbp2p = document.getElementById('val-local-backup-p2p');
-  if(lbp2p) lbp2p.textContent = lbData ? (lbData.p2p_bind ?? '0.0.0.0:8333') : '0.0.0.0:8333';
+  if(lbp2p) lbp2p.textContent = lbData ? (lbData.p2p_bind ?? '0.0.0.0:8335') : '0.0.0.0:8335';
   const lbm = document.getElementById('val-local-backup-mempool');
   if(lbm) lbm.textContent = lbData ? (lbData.mempool_size ?? 0) : 0;
   const lbu = document.getElementById('val-local-backup-uptime');
@@ -1139,10 +1139,10 @@ function _renderEdgeServerCard(d) {
 
   // Services grid
   const SVC_LABELS = {
-    'zion-node':         { icon: '🔷', label: 'Node',   url: 'http://62.171.141.136:8443' },
+    'zion-node':         { icon: '🔷', label: 'Node',   url: 'http://62.171.141.136:9445' },
     'zion-pool':         { icon: '⚡', label: 'Pool',   url: 'http://62.171.141.136:8444' },
-    'zion-dao':          { icon: '🏛️', label: 'DAO',    url: 'http://62.171.141.136:8450' },
-    'zion-warp':         { icon: '🌀', label: 'WARP',   url: 'http://62.171.141.136:9333' },
+    'zion-dao':          { icon: '🏛️', label: 'DAO',    url: 'http://62.171.141.136:8456' },
+    'zion-warp':         { icon: '🌀', label: 'WARP',   url: 'http://62.171.141.136:8453' },
     'zion-bridge':       { icon: '🌉', label: 'Bridge', url: 'http://62.171.141.136:9101' },
     'nginx':             { icon: '🌐', label: 'Nginx',  url: 'https://zionterranova.com' },
     'hiran-inference':   { icon: '🤖', label: 'Hiran',  url: null },
@@ -1192,7 +1192,7 @@ function _renderEdgeServerCard(d) {
   if(okEl){ okEl.textContent = okCount; okEl.className = 'text-xl font-bold ' + (okCount >= 5 ? 'text-emerald-400' : okCount >= 3 ? 'text-amber-400' : 'text-red-400'); }
 
   // Ports
-  const PORT_LABELS = {8333:'P2P1',8334:'P2P2',8443:'RPC1',8444:'Stratum',8450:'DAO',8453:'WARP',3000:'Web',3100:'Grafana',9090:'Prometheus'};
+  const PORT_LABELS = {8335:'P2P1',8336:'P2P2',9445:'RPC1',8444:'Stratum',8456:'DAO',8453:'WARP',3000:'Web',3100:'Grafana',9090:'Prometheus'};
   const ports = d.ports || {};
   const portsRow = document.getElementById('edge-ports-row');
   if(portsRow){
@@ -4296,6 +4296,8 @@ async function loadWallets(){
         infrastructure: { label: '🏗️ Infrastructure', color: 'text-zion-cyan', bg: 'bg-zion-cyan/10' },
         humanitarian: { label: '💝 Humanitarian', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
         issobella: { label: '🚀 Issobella Space', color: 'text-purple-400', bg: 'bg-purple-500/10' },
+        bridge_seed: { label: '🌉 Bridge Seed', color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
+        bridge_vault_utxo: { label: '🔒 Bridge Vault UTXO', color: 'text-red-400', bg: 'bg-red-500/10' },
         other: { label: '📦 Other', color: 'text-amber-400', bg: 'bg-amber-500/10' },
       };
       catDisplay.innerHTML = Object.entries(cats).map(([key, val]) => {
@@ -5999,7 +6001,7 @@ async function renderWizard(){
   const isEdge = st.topology === 'edge-primary';
   const steps = isEdge ? [
     { n: 1, title: 'Prepare environment', desc: 'Generate keys (gen-keys), assemble .env with all wallets and ZION_POOL_PAYOUT_SK_HEX.', done: C('env')?.ok, actions: [{ label: 'View env files', tab: 'env' }] },
-    { n: 2, title: 'Start Local Backup Node', desc: 'Syncs from Edge primary via Tailscale VPN. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).', done: C('node1')?.ok, actions: [{ label: '▶ Start Backup Node', control: 'start-node1' }] },
+    { n: 2, title: 'Start Local Backup Node', desc: 'Syncs from Edge primary via Tailscale VPN. 0.0.0.0:8335 (P2P) / 0.0.0.0:9445 (RPC).', done: C('node1')?.ok, actions: [{ label: '▶ Start Backup Node', control: 'start-node1' }] },
     { n: 3, title: 'Connect to Edge Pool', desc: 'Edge (62.171.141.136) runs the primary pool. Verify VPN connectivity.', done: C('pool-edge')?.ok, actions: [{ label: 'Check Edge Pool', tab: 'overview' }] },
     { n: 4, title: 'Start GPU Miner', desc: 'Connects to Edge pool, performs cosmic_harmony hashing on GPU.', done: C('miner')?.ok, actions: [{ label: '▶ Start Miner', control: 'start-miner' }] },
     { n: 5, title: 'Pool Metrics', desc: 'Built-in Prometheus exposition on port 8080 — no external monitoring needed.', done: C('pool-edge')?.ok, actions: [{ label: 'Open Pool Metrics', href: 'http://62.171.141.136:8080' }] },
@@ -6007,7 +6009,7 @@ async function renderWizard(){
     { n: 7, title: 'Confirm fee split & payouts', desc: 'Validate 89/5/5 burn-model distribution and payout wallet funded.', done: C('fee_split')?.ok && C('payout')?.ok, actions: [{ label: 'View payouts', tab: 'overview' }] },
   ] : [
     { n: 1, title: 'Prepare environment', desc: 'Generate keys (gen-keys), assemble .env with all wallets and ZION_POOL_PAYOUT_SK_HEX.', done: C('env')?.ok, actions: [{ label: 'View env files', tab: 'env' }] },
-    { n: 2, title: 'Start Genesis Node', desc: 'Local genesis node. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).', done: C('node1')?.ok, actions: [{ label: '▶ Start Node', control: 'start-node1' }] },
+    { n: 2, title: 'Start Genesis Node', desc: 'Local genesis node. 0.0.0.0:8335 (P2P) / 0.0.0.0:9445 (RPC).', done: C('node1')?.ok, actions: [{ label: '▶ Start Node', control: 'start-node1' }] },
     { n: 3, title: 'Start Local Pool', desc: 'Accepts miners, validates shares, distributes payouts (89/5/5 burn model).', done: C('pool')?.ok, actions: [{ label: '▶ Start Pool', control: 'start-pool' }] },
     { n: 4, title: 'Start GPU Miner', desc: 'Connects to local pool, performs cosmic_harmony hashing on GPU.', done: C('miner')?.ok, actions: [{ label: '▶ Start Miner', control: 'start-miner' }] },
     { n: 5, title: 'Pool Metrics', desc: 'Built-in Prometheus exposition on port 8080 — no external monitoring needed.', done: C('pool')?.ok, actions: [{ label: 'Open Pool Metrics', href: 'http://62.171.141.136:8080' }] },
