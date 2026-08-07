@@ -809,14 +809,23 @@ pub fn parse_target_hex(hex_str: &str) -> Option<[u8; 32]> {
 }
 
 pub fn nbits_to_target(nbits: &str) -> Option<[u8; 32]> {
-    let bytes = hex::decode(nbits.trim_start_matches("0x")).ok()?;
+    let mut bytes = hex::decode(nbits.trim_start_matches("0x")).ok()?;
     if bytes.len() != 4 {
         return None;
     }
+    // nbits may arrive in big-endian (Zcash/VRSC style: "db3e061b") or
+    // little-endian (Bitcoin style: "1b063edb").  The first byte is the
+    // exponent and must be in 3..=32.  If bytes[0] is out of range, try
+    // reversing the 4 bytes (big-endian → little-endian).
     let exponent = bytes[0] as usize;
     if !(3..=32).contains(&exponent) {
-        return None;
+        bytes.reverse();
+        let exp_swapped = bytes[0] as usize;
+        if !(3..=32).contains(&exp_swapped) {
+            return None;
+        }
     }
+    let exponent = bytes[0] as usize;
     let mut coefficient = [0u8; 3];
     coefficient.copy_from_slice(&bytes[1..4]);
     let mut out = [0u8; 32];

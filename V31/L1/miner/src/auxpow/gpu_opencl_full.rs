@@ -2820,6 +2820,10 @@ typedef unsigned long ulong;
             .ok()
             .and_then(|v| v.trim().parse::<i32>().ok())
             .map(|v| v != 0);
+        // ds_bpermute works on RDNA1+ (wave32). On GCN/Vega (wave64) it causes
+        // kernel hangs with the current progpow_kernel.cl — likely because the
+        // wave_group_base calculation assumes wave32 lane indexing.
+        // Default: enabled on RDNA1+ only, disabled on GCN/Vega and NVIDIA.
         let use_bpermute = use_bpermute_env.unwrap_or((!is_gcn_or_vega) && !is_nvidia);
 
         let is_progpow = algorithm == "progpow"
