@@ -671,6 +671,13 @@ impl AuxPowClient {
             if let Some(id) = parsed.get("id").and_then(|v| v.as_i64()) {
                 if let Some(sender) = self.pending_requests.lock().await.remove(&id) {
                     let _ = sender.send(parsed.clone());
+                } else if id == ETH_GETWORK_ID {
+                    // eth_getWork poll response (sent via send_notification,
+                    // so no pending request entry).  Process it as a job.
+                    if let Some(job) = self.parse_getwork_response(&parsed).await {
+                        *self.current_job.lock().await = Some(job);
+                        self.job_notify.notify_waiters();
+                    }
                 }
             }
 
@@ -803,6 +810,43 @@ impl AuxPowClient {
 
         warn!(len = params.len(), "unsupported mining.notify param count");
         None
+    }
+
+    /// Parse an `eth_getWork` JSON-RPC *response* (has `result`, not `params`).
+    /// Format: `[header_hash, seed_hash, target, block_number]`
+    async fn parse_getwork_response(&self, msg: &Value) -> Option<ExternalJob> {
+        let result = msg.get("result").and_then(Value::as_array)?;
+        if result.len() < 3 {
+            return None;
+        }
+        let header_hex = result[0].as_str().unwrap_or("");
+        let _seed_hex = result[1].as_str().unwrap_or("");
+        let target_hex = result[2].as_str().unwrap_or("");
+        let block_number = result.get(3).and_then(|v| {
+            v.as_u64().or_else(|| {
+                v.as_str()
+                    .and_then(|s| u64::from_str_radix(s.trim_start_matches("0x"), 16).ok())
+            })
+        });
+
+        let header = hex::decode(header_hex.trim_start_matches("0x")).unwrap_or_default();
+        let target = hasher::parse_target_hex(target_hex).unwrap_or([0xFF; 32]);
+        let job_id = format!("gw_{}", block_number.unwrap_or(0));
+
+        let job = ExternalJob {
+            job_id: job_id.clone(),
+            header_hex: header_hex.to_string(),
+            target_hex: target_hex.to_string(),
+            header_bytes: header,
+            target_bytes: target,
+            block_number,
+            algorithm: self.config.algorithm.clone(),
+            external_coin: self.config.coin,
+            extranonce1: self.extranonce1.lock().await.clone(),
+            ..Default::default()
+        };
+        *self.latest_job_id.lock().await = Some(job_id);
+        Some(job)
     }
 
     /// Wait for the next job from the pool.
