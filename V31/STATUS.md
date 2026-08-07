@@ -6,6 +6,32 @@
 >
 > **PLAN_TO_3.2 audit 2026-08-07:** CLI (`zion`) má 21 subcommandů (včetně `dao`, `atomic-swap`, `warp`, `monitor`, `topology`, `explorer`, `onboard`, `deploy`, `update`, `compose`, `auxpow`), některé jsou stále stub; miner TUI (`ui.rs`, `interactive.rs`, `setup_menu.rs`, `banner.rs`) je zapojená pod `tui` feature a Cargo.toml obsahuje `full`/`native-all`/`gpu-all`/`public_build`; EVM a ZionDex Solidity kontrakty jsou přítomny v `V31/L2/multichain/contracts/`, ale chybí Foundry/Hardhat projektová konfigurace pro `zion deploy`. **Otevřené zůstává:** non-EVM WARP placeholdery (31 TODO markerů v adapterech), OASIS `output: 'export'` blokuje server-side ZIS route, `deploy-edge.sh` neinstaluje `zion-zis` službu (i když `APP&WEB/identity/` existuje), sync `public/` subtree, reálný GPU rig E2E a 30d continuous run.
 
+## Update 2026-08-07 (session) — u128 JSON serde hardening, Edge binary redeploy, block production green
+
+- **Root cause `invalid number at line 1 column 1024` fixed:** `serde_json` 1.x without the `arbitrary_precision` feature cannot represent `u128`/`i128` as JSON numbers, which broke P2P block sync and pool block-template parsing (`Amount` is a transparent `u128`; `PplnsSnapshot`, `Transaction` and `MintInstruction` contain `u128` fields). `V31/Cargo.toml` has `serde_json = { version = "1", features = ["arbitrary_precision"] }`.
+- **Shared `u128` serde helper in `zion_l1_types`:** new `V31/L1/types/src/u128_str.rs` with `serialize`/`deserialize` plus `u128_str::map` for `HashMap<String, u128>`. It round-trips `u128` as decimal strings and still accepts legacy `u64` numbers. Covered by unit tests in the same file.
+- **Helper applied to all relevant V31 `u128` fields:**
+  - `zion_pool::v3_pplns::PplnsSnapshot` — `window_total_difficulty`, `paid_per_miner` (map), `total_paid_flowers`.
+  - `zion_core::node_runtime::Transaction::amount_zion`.
+  - `zion_core::v3_compat::V3Transaction::amount_zion`.
+  - `zion_core::v3_checkpoint::{Checkpoint, CheckpointAccount}` balances.
+  - `zion_multichain::warp::protocol::MintInstruction::amount_dest_atomic`.
+  - `zion_oasis::prize_tiers::{PrizeTier, PrizeConfig}` flower amounts (added `zion-l1-types` dep to `zion-oasis`).
+- **Local helpers replaced by shared one:** `v3_compat.rs`, `v3_checkpoint.rs`, `node_runtime.rs` now re-export/use `zion_l1_types::u128_str`, removing duplicated string-or-number logic.
+- **Verification:** `cargo check --workspace`, `cargo clippy -p zion-l1-types -p zion-core -p zion-pool -p zion-multichain -p zion-oasis` and `cargo test --workspace` all pass (workspace tests green). New `zion-l1-types` unit tests for `u128_str` pass.
+- **Edge binary redeploy:** stopped and masked `zion-v31-node`/`zion-v31-pool`/`zion-v31-miner`, copied fresh `zion-node`, `zion-pool`, `zion-miner`, `zion-universal-miner` to `/opt/zion/V31/target/release/`, unmasked and restarted all three services. Running `zion-node` no longer blocks the binary file; new `zion-pool` is `cc69b6cc...`, `zion-node` is `17d2acd4...`.
+- **Edge live results:**
+  - `systemctl is-active zion-v31-node zion-v31-pool zion-v31-miner` → `active active active`.
+  - Node accepted blocks height 2, 3 and 4 (`zion_core::node: accepted block height=...`).
+  - Pool broadcasting `mining.notify job=zion_68` and `share accepted — job=zion_68, worker=..., nonce=...`.
+  - Dashboard `/api/health` returns `{"v31-node":"up","v31-pool":"up","v31-miner":"up",...}`.
+  - No more `invalid number at line 1 column 1024` errors in pool logs.
+- **Unified watchdog verification:** `scripts/watchdog.sh` v31 mode correctly treats `native_chain_height=0` as valid fresh-chain; both `zion-v31-watchdog.timer` and `zion-watchdog.timer` re-enabled; logs show `OK: v31=1 version=3.1.0-alpha`.
+- **Remaining open tasks:**
+  - Verify local backup node P2P sync with Edge (`getPeerInfo` peers, `native_chain_height` match).
+  - Verify PPLNS payouts and configure `pool_wallet_key` / pool fee wallet.
+  - Run longer smoke test to confirm stable block production and share acceptance.
+
 ## Update 2026-08-06 — DEX HTTP solver client, GPU OpenCL build, Desktop Agent V31 binaries
 
 - **DEX solver network — GO**:
