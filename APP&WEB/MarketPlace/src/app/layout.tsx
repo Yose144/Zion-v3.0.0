@@ -66,25 +66,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </main>
             <footer className="rasta-footer mt-16 relative py-10 zion-container">
             <div className="section-line absolute top-0 inset-x-0" />
-            <div className="grid md:grid-cols-2 gap-8 items-start">
-              <div>
-                <Link href="/" className="inline-block opacity-90 hover:opacity-100 transition-opacity duration-300">
-                  <img
-                    src="/images/logo144.png"
-                    alt="ZION Market"
-                    className="w-16 h-auto rasta-footer-logo"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </Link>
-                <p className="mt-4 text-sm text-gray-400 leading-relaxed max-w-sm">
-                  {COMPANY.name}<br />
-                  IČ: {COMPANY.ico} · DIČ: {COMPANY.dic}<br />
-                  {COMPANY.address}, {COMPANY.city}<br />
-                  <a href={`mailto:${COMPANY.email}`} className="text-rasta-gold hover:text-white transition-colors">{COMPANY.email}</a>
-                </p>
-              </div>
-              <nav className="flex flex-wrap md:justify-end gap-x-5 gap-y-2 text-sm text-gray-500">
+            <div className="flex flex-col items-center text-center">
+              <Link href="/" className="opacity-90 hover:opacity-100 transition-opacity duration-300">
+                <img
+                  src="/images/logo144.png"
+                  alt="ZION Market"
+                  className="w-20 h-auto mx-auto rasta-footer-logo"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </Link>
+              <nav className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-gray-500">
                 {FOOTER_LINKS.map((link) => (
                   <Link
                     key={link.href}
@@ -95,10 +87,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   </Link>
                 ))}
               </nav>
+              <p className="mt-6 text-xs text-gray-600">
+                © 2026 {COMPANY.name} · ZION Market
+              </p>
             </div>
-            <p className="mt-8 pt-6 border-t border-white/10 text-center text-xs text-gray-600">
-              © 2026 {COMPANY.name} · ZION Market
-            </p>
           </footer>
           </CartProvider>
         </Providers>
