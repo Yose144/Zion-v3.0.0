@@ -1,8 +1,9 @@
-//! Canonical Ekam Deeksha / DeekshaLite v2 Metal backend.
+//! Ekam Deeksha / DeekshaLite Metal backend.
 //!
-//! Uses `kernels/metal/deeksha_lite.metal` — a 128 KiB, 1-pass, 32-reads,
-//! 2-AES-rounds, Keccak256-final pipeline that is bit-identical to the CPU
-//! `EkamDeeksha` implementation.
+//! Uses `kernels/metal/deeksha_lite.metal` — currently still 128 KiB, 1-pass,
+//! 32-reads, 2-AES-rounds. The CPU `EkamDeeksha` implementation has moved to
+//! v3.2 (512 KiB, 2 passes, 128 reads), so the Metal kernel must be updated
+//! to the same constants and pipeline before it can be used for live mining.
 
 use super::*;
 use metal::{Device, MTLResourceOptions, MTLSize};

@@ -6,7 +6,7 @@
 >
 > **TRINITY STREAM 1 (ZION) — BLOCK PRODUCTION GREEN (2026-08-07):** Tři kritické bugy opraveny, ZION chain rostoucí na Edge (height 94+). Pool payout confirmation sweep potvrzuje výplaty on-chain (37 confirmed / 13 unconfirmed při height ~87). Viz detaily níže.
 >
-> **PLAN_TO_3.2 audit 2026-08-07:** CLI (`zion`) má 21 subcommandů (včetně `dao`, `atomic-swap`, `warp`, `monitor`, `topology`, `explorer`, `onboard`, `deploy`, `update`, `compose`, `auxpow`), některé jsou stále stub; miner TUI (`ui.rs`, `interactive.rs`, `setup_menu.rs`, `banner.rs`) je zapojená pod `tui` feature a Cargo.toml obsahuje `full`/`native-all`/`gpu-all`/`public_build`; EVM a ZionDex Solidity kontrakty jsou přítomny v `V31/L2/multichain/contracts/`, ale chybí Foundry/Hardhat projektová konfigurace pro `zion deploy`. **Otevřené zůstává:** non-EVM WARP placeholdery (31 TODO markerů v adapterech), OASIS `output: 'export'` blokuje server-side ZIS route, `deploy-edge.sh` neinstaluje `zion-zis` službu (i když `APP&WEB/identity/` existuje), sync `public/` subtree, reálný GPU rig E2E a 30d continuous run.
+> **PLAN_TO_3.2 audit 2026-08-07:** CLI (`zion`) má 28 subcommandů (včetně `dao`, `atomic-swap`, `warp`, `monitor`, `topology`, `explorer`, `onboard`, `deploy`, `update`, `compose`, `auxpow`), některé jsou stále stub; miner TUI (`ui.rs`, `interactive.rs`, `setup_menu.rs`, `banner.rs`) je zapojená pod `tui` feature a Cargo.toml obsahuje `full`/`native-all`/`gpu-all`/`public_build`; EVM a ZionDex Solidity kontrakty jsou přítomny v `V31/L2/multichain/contracts/`, ale chybí Foundry/Hardhat projektová konfigurace pro `zion deploy`. **Otevřené zůstává:** non-EVM WARP placeholdery (31 TODO markerů v adapterech), OASIS `output: 'export'` blokuje server-side ZIS route, `deploy-edge.sh` neinstaluje `zion-zis` službu (i když `APP&WEB/identity/` existuje), sync `public/` subtree, reálný GPU rig E2E a 30d continuous run.
 
 > **3.2.0 "One Love" genesis reset (2026-08-06):** Kanonická sada klíčů `V31_PREMINE_V2_KEYS_2026-08-06.json` (38 klíčů: 14 premine, 5 canonical, 3 admin, 7 DAO guardian, 5 EVM validator, 1 escrow). Všechny adresy byly aktualizovány v `zion-core`, `zion-dao`, CLI a deploy konfiguracích. Genesis hashe: V31 native `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`, V3 compat `4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71`.
 >
@@ -52,15 +52,15 @@ Tři kritické bugy blokovaly produkci ZION bloků na Edge. Všechny opraveny, c
 | Stream | Coin | Pool | Status |
 |--------|------|------|--------|
 | Stream 1 (ZION) | ZION | localhost:8444 | ✅ GREEN — blocks mined + accepted, height 51+ |
-| Stream 2 (GPU AuxPoW) | ZANO | de.zano.herominers.com:1110 | 🔄 Handshake fixed — `eth_submitLogin` now sends `wallet.worker` + `x`; ZANO `eth_getWork` response order handled |
-| Stream 3 (CPU AuxPoW) | VRSC | eu.luckpool.net:3956 | 🔄 Handshake fixed — `mining.authorize` now uses `d=0.01` and sends `mining.extranonce.subscribe` after auth |
+| Stream 2 (GPU AuxPoW) | ZANO | de.zano.herominers.com:1110 | ✅ GREEN — `eth_submitLogin` + `eth_getWork` polling ověřené runtime; pool posílá joby (height 3805131+) |
+| Stream 3 (CPU AuxPoW) | VRSC | eu.luckpool.net:3956 | ✅ GREEN — `mining.authorize` s `d=0.01` + `mining.extranonce.subscribe` ověřené runtime; pool posílá joby |
 
 ### Zbývající úkoly
 
-- **Stream 2 (ZANO):** `revenue_proxy`/`AuxPowClient` handshake a `eth_getWork` parsing opraveny — potřeba runtime ověření proti HeroMiners
-- **Stream 3 (VRSC):** `AuxPowClient` nyní posílá `d=0.01` a `mining.extranonce.subscribe` — potřeba runtime ověření proti LuckPool
+- **Stream 2 (ZANO):** ✅ `revenue_proxy`/`AuxPowClient` handshake a `eth_getWork` parsing opraveny a ověřeny proti HeroMiners
+- **Stream 3 (VRSC):** ✅ `AuxPowClient` posílá `d=0.01` a `mining.extranonce.subscribe`; ověřeno proti LuckPool
 - **VRSC reconnect storm způsobil fail2ban SSH ban** — reconnect smyčka generuje rychlé TCP connect/disconnect, fail2ban vyhodnotil jako port scan. Nutno přidat Edge IP do ignoreip nebo zpomalit reconnect.
-- **Sdílení práce:** `cargo test --workspace` prochází po opravách.
+- **Sdílení práce:** `cargo test --workspace` prochází po opravách. Desktop-agent binárky (`zion-miner`, `zion-universal-miner`, `node`, `zion`) aktualizovány na lokálním Ubuntu.
 
 ## Update 2026-08-07 (session) — u128 JSON serde hardening, Edge binary redeploy, block production green
 
@@ -117,9 +117,9 @@ Rekonciliace `V31/PLAN_TO_3.2.md` s aktuálním kódem ukazuje, že řada polož
 
 **Potvrzeno v kódu:**
 
-- **CLI (`V31/cli/src/main.rs`)** — 21 subcommandů: `menu`, `status`, `wallet`, `bridge`, `swap`, `pool`, `miner`, `doctor`, `api`, `node`, `service`, `dao`, `atomic-swap`, `warp`, `monitor`, `topology`, `explorer`, `onboard`, `deploy`, `update`, `compose`, `auxpow`, `completions` a migrační `agent`/`hiran`/`issobella`/`free-world`/`ncl`. Některé subcommandy (např. `deploy`, `topology`, `explorer`, L4/L5/L6 migrační) jsou stále částečně stub nebo vyžadují dořešení.
+- **CLI (`V31/cli/src/main.rs`)** — 28 subcommandů: `menu`, `status`, `wallet`, `bridge`, `swap`, `pool`, `miner`, `doctor`, `api`, `node`, `service`, `dao`, `atomic-swap`, `warp`, `monitor`, `topology`, `explorer`, `onboard`, `deploy`, `update`, `compose`, `auxpow`, `completions` a migrační `agent`/`hiran`/`issobella`/`free-world`/`ncl`. Některé subcommandy (např. `deploy`, `topology`, `explorer`, L4/L5/L6 migrační) jsou stále částečně stub nebo vyžadují dořešení.
 - **Miner TUI** — `V31/L1/miner/src/ui.rs`, `interactive.rs`, `setup_menu.rs`, `banner.rs` zapojeny za `tui` feature. `Cargo.toml` obsahuje featury `full`, `native-all`, `gpu-all`, `public_build`.
-- **Ekam Deeksha v3.2 ASIC-hardening** — `V31/L1/cosmic-harmony/src/algorithm/ekam_deeksha.rs` používá 512 KiB scratchpad, 2 passy, 128 random reads, 2 AES rounds (dokumentační komentář nahoře souboru stále uvádí "v2, 128 KiB" a měl by se aktualizovat).
+- **Ekam Deeksha v3.2 ASIC-hardening** — `V31/L1/cosmic-harmony/src/algorithm/ekam_deeksha.rs` používá 512 KiB scratchpad, 2 passy, 128 random reads, 2 AES rounds. Dokumentační komentáře v kódu byly aktualizovány na v3.2.
 - **EVM + ZionDex kontrakty** — `V31/L2/multichain/contracts/evm/` má 8 Solidity kontraktů (`wZION.sol`, `ZIONBridge.sol`, `ZIONAtomicSwap.sol`, ...), `contracts/dex/` má 7 ZionDex kontraktů (`ZionDexRouter.sol`, `ZionDexPoolManager.sol`, ...).
 - **ZIS (ZION Identity Service)** — `APP&WEB/identity/` Fastify auth server existuje, má vlastní `deploy-zis.sh`, `nginx-zis.conf` a `zion-zis.service`. `APP&WEB/shared/prisma/schema.prisma` obsahuje unified ZIS schema; dashboard používá `zis_auth.py` a webové projekty `zis.ts`.
 
@@ -133,7 +133,7 @@ Rekonciliace `V31/PLAN_TO_3.2.md` s aktuálním kódem ukazuje, že řada polož
 - **Reálný GPU rig E2E** — lokální OpenCL benchmark GO, ale Edge pool s referenčními rigy (≥90 % accept rate) je stále pending.
 - **30d continuous run** — není zahájen.
 
-## Co je hotovo v `v3.1.0-alpha.2` (post-Phase A+B.1)
+## Co je hotovo v `3.1.0-beta` (post-Phase A+B.1, protokol `3.1.0-alpha`)
 
 - L1/L2/L3/L4/L5/L6 crates existují a kompilují jako jeden workspace (18 crateů).
 - **Všechny workspace testy pass: 2079** (bylo 2077 před archive aggregator/executor portem, 2076 před solver broadcast testy, 2075 před cross-chain bridge testem, 2073 před intent persistence, 2072 před HTTP intent testem, 2071 před integračním intent testem, 2069 před C1+C2+C3, 2043 před Full V3 Parity, 1877 před B.1, 1458 před Fází A)
@@ -221,7 +221,7 @@ Rekonciliace `V31/PLAN_TO_3.2.md` s aktuálním kódem ukazuje, že řada polož
 ### Původní alpha.2 features
 
 - **V3 checkpoint sync** — L1 umí načíst V3 stav jako genesis checkpoint.
-- **Kanonický Ekam Deeksha PoW v2** — `zion-core`, `zion-miner` a `zion-pool` používají `EkamDeeksha` z `zion-cosmic-harmony` pro všechny výšky. Parametry: 128 KiB scratchpad, 1 forward pass, 32 random reads, 2 AES rounds (1 full + 1 final). OpenCL/CUDA/Metal kernely synchronizovány na stejné konstanty. Historická V3 validace zůstává v `v3_compat`.
+- **Kanonický Ekam Deeksha PoW v3.2** — `zion-core`, `zion-miner` a `zion-pool` používají `EkamDeeksha` z `zion-cosmic-harmony` pro všechny výšky. Parametry: 512 KiB scratchpad, 2 passy (forward + backward), 128 random reads, 2 AES rounds. OpenCL/CUDA/Metal kernely synchronizovány na stejné konstanty. Historická V3 validace zůstává v `v3_compat`.
 - **P2P hardening** — peer manager, ban score, max peers, discovery, rate limiting, escalating bans.
 - **Triple-stream mining** — ZION + AuxPoW GPU + CPU fallback. GPU runtime backend port dokončen: OpenCL (`gpu-opencl`), CUDA (`gpu-cuda`), Metal (`gpu-metal`) a nativní CPU shims (`native-kheavyhash`, `native-blake3-algo`, `native-verushash`) kompilují pod `zion-miner`; `cargo clippy --workspace` čisté.
 - **Custom AMM** deploy v `zion-multichain` (SQLite persistence, HTTP API).

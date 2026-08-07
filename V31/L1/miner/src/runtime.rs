@@ -35,7 +35,7 @@ use zion_core::v3_compat::{MiningHeader, DifficultyTarget as V3DiffTarget};
 /// Parallel CPU nonce search for ZION (Ekam Deeksha).
 ///
 /// Splits the nonce range across `threads` rayon workers. Each worker
-/// allocates its own 128 KiB scratchpad once and reuses it for all nonces
+/// allocates its own 512 KiB scratchpad once and reuses it for all nonces
 /// in its chunk, eliminating per-nonce allocation.
 ///
 /// Fast path: tries the first 64 nonces sequentially before launching the

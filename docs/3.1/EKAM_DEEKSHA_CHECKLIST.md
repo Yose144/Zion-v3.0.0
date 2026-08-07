@@ -19,9 +19,9 @@
 - [x] A13 — `cargo clippy --workspace` čisté (`-D warnings`, 30.87s, exit 0)
 - [x] A14 — Commit fáze A a push (pushnuto v rámci následného commitu)
 
-## Fáze B — Ekam Deeksha v2 (parametry + kernely)
+## Fáze B — Ekam Deeksha v3.2 (parametry + kernely)
 
-- [x] B1 — Změnit `EkamDeeksha` parametry: scratchpad 128 KiB, 1 pass, 32 random reads, 2 AES rounds
+- [x] B1 — Změnit `EkamDeeksha` parametry: scratchpad 512 KiB, 2 passy, 128 random reads, 2 AES rounds
 - [x] B2 — Upravit `V31/L1/cosmic-harmony/src/algorithm/ekam_deeksha.rs` implementaci
 - [x] B3 — Vygenerovat / aktualizovat KAT vektory a unit testy
 - [x] B4 — Upravit OpenCL kernely `deeksha_lite.cl`, `deeksha_chv3.cl`, `deeksha_lite_fire.cl`, `cosmic_harmony_deeksha.cl` a `opencl_kernel.rs`
@@ -41,5 +41,5 @@
 
 ---
 
-*Poslední aktualizace: 2026-08-06*  
+*Poslední aktualizace: 2026-08-07*  
 *Tento soubor se doplňuje po každé fázi.*

@@ -3,7 +3,7 @@
 > **Vytvořeno:** 2026-08-04  
 > **Autor:** Devin  
 > **Verze:** 1.0  
-> **Status:** kanonický root plán pro dokončení V31 / 3.1.0 Mainnet Alpha  
+> **Status:** historický plán pro dokončení V31 / 3.1.0 Mainnet Alpha (2026-08-04). Aktuální plán na 3.2.0 "One Love" je [`V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md) / [`OneLoveV3.2.md`](../../OneLoveV3.2.md).  
 > **Zdroje:** [`PLAN_TO_3.1.md`](./PLAN_TO_3.1.md), [`V31_V3_FULL_AUDIT.md`](./V31_V3_FULL_AUDIT.md), [`V31/STATUS.md`](../../V31/STATUS.md), [`V31/CUTOVER_PLAN.md`](../../V31/CUTOVER_PLAN.md), [`V31/AGENTS.md`](../../V31/AGENTS.md), [`StatusV3.md`](../../StatusV3.md)
 
 ---

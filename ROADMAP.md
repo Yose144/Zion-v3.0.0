@@ -256,13 +256,13 @@ Final checklist. Full procedure in [`docs/3.0.0/MAINNET_LAUNCH_SEQUENCE.md`](./d
 
 | Metric | Value |
 |--------|-------|
-| V31 workspace tests | 2069+ |
+| V31 workspace tests | `cargo test --workspace` pass (0 failures) |
 | V3 workspace tests (archived) | ~2,066+ |
 | WARP tests | 499 |
-| Edge services | V31 primary node + follower + pool + multichain + DAO + bridge + WARP + web + dashboard |
-| Chain height | 11270+ (2026-08-05) |
-| Protocol | `zion-v3-node/3.1.0-alpha.2` |
-| Circulating supply | ~16.69B ZION |
+| Edge services | V31 primary node + pool + multichain + DAO + OASIS + web + marketplace + dashboard (V3 legacy masked) |
+| Chain height | 94+ (2026-08-07) |
+| Protocol | `zion-v3-node/3.1.0-alpha` |
+| Circulating supply | ~16.78B ZION |
 | Web image size | 377 MB (was 2.57 GB) |
 | Mainnet launch | 31 December 2026 |
 

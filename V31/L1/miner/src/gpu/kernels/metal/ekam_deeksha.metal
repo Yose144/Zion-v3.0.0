@@ -2,7 +2,12 @@
  * ZION Ekam Deeksha — Metal GPU Compute Shader
  * Apple Silicon M1–M5 Native Pipeline
  *
- * Exact match to Rust cosmic_harmony_ekam_deeksha() canonical hash:
+ * WARNING: This file describes the legacy Cosmic Harmony pipeline and uses
+ * 128 KiB / 1 pass / 32 reads constants. It does NOT match the current
+ * `EkamDeeksha` v3.2 CPU implementation (512 KiB, 2 passes, 128 reads).
+ * Update constants and pipeline before enabling for live mining.
+ *
+ * Legacy pipeline described below (cosmic_harmony_ekam_deeksha, v3.0-dev):
  *   Step 1: Keccak-256 (header||nonce → 32 B)
  *   Step 2: SHA3-512 (32 B → 64 B)
  *   Step 3: Golden Matrix (φ^k fixed-point, 64 B → 64 B)

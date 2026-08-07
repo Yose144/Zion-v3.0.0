@@ -1,14 +1,15 @@
 /*
  * DeekshaLite v1 — OpenCL Kernel (GCN/RDNA compatible) OPTIMIZED
  *
- * Pipeline (Ekam Deeksha v2):
+ * Pipeline (Ekam Deeksha v3.2):
  *   1. Keccak256(header[0..80] || nonce_le[0..8])  → s1[32]
  *      OPTIMIZATION: Host precomputes Keccak state after absorbing header.
  *      Each thread only XORs nonce, applies padding, and runs f1600.
- *   2. Memory-hard scratchpad (128 KiB)
- *        Phase A: SHA3-512 chain fill  (BLOCK_COUNT=4096 × 32B)
- *        Phase B: 1 forward sequential XOR pass
- *        Phase C: 32 random reads → acc[32]  (idx derived from 8 bytes)
+ *   2. Memory-hard scratchpad (512 KiB)
+ *        Phase A: SHA3-512 chain fill  (BLOCK_COUNT=16384 × 32B)
+ *        Phase B: forward sequential XOR pass
+ *        Phase C: backward sequential XOR pass (when PASSES >= 2)
+ *        Phase D: 128 random reads → acc[32]  (idx derived from 8 bytes)
  *      OPTIMIZATION: Vectorized 32-byte reads/writes via ulong4 vload4/vstore4.
  *   3. AES-128 CTR mix (key=s2[0..16], counter=nonce||s2[16..24])
  *        → block0 + block1(counter+1), 1 full round + 1 final round
@@ -294,9 +295,9 @@ void aes_final_round(__private uchar s[16], __private const uchar k[16], __local
 /* ========================================================================== */
 /* Step 2A: Fill scratchpad with SHA3-512 chain (INTERLEAVED layout)           */
 /*                                                                             */
-/* Matches CPU ekam_deeksha.rs step2_memory_hard Phase 1 (Ekam v2):           */
+/* Matches CPU ekam_deeksha.rs step2_memory_hard Phase 1 (Ekam v3.2):         */
 /*   state[0..32] = seed, state[32..64] = 0                                   */
-/*   for blk in 0..4096:                                                       */
+/*   for blk in 0..16384:                                                      */
 /*     input[0..64] = state                                                    */
 /*     input[64..68] = blk.to_le_bytes()  (only [64] used — hash 65 bytes)   */
 /*     out = sha3_512(&input[..65])                                            */
@@ -436,7 +437,7 @@ void aes128_mix(
         if (carry == 0) break;
     }
 
-    /* Ekam v2: 1 full AES round + 1 final round (total 2 rounds) */
+    /* Ekam v3.2: 1 full AES round + 1 final round (total 2 rounds) */
     #pragma unroll
     for (int r = 0; r < 1; r++) {
         aes_round(block0, key, sbox);
