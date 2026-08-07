@@ -12,26 +12,34 @@
   <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
   <style>
     :root {
-      --zion-gold: rgb(255, 215, 0);
-      --zion-purple: rgb(147, 51, 234);
-      --zion-cyan: rgb(6, 182, 212);
-      --zion-blue: rgb(30, 58, 138);
-      --bg-dark: rgb(0, 0, 0);
-      --bg-card: rgba(10, 10, 20, 0.8);
-      --border-glow: rgba(147, 51, 234, 0.3);
-      --card-bg: rgba(12, 14, 30, 0.82);
+      /* ═══ RASTA PALETTE — Red / Gold / Green / Black (synced with web2.9) ═══ */
+      --zion-gold: rgb(252, 209, 22);       /* #fcd116 — Rasta Gold */
+      --zion-purple: rgb(228, 30, 43);      /* #e41e2b — Rasta Red (replaces purple) */
+      --zion-cyan: rgb(7, 137, 48);         /* #078930 — Rasta Green (replaces cyan) */
+      --zion-blue: rgb(13, 13, 13);         /* #0d0d0d — Rasta Black (replaces blue) */
+      --rasta-red: #e41e2b;
+      --rasta-gold: #fcd116;
+      --rasta-green: #078930;
+      --rasta-dark: #1a1a1a;
+      --rasta-black: #0d0d0d;
+      --quantum-gold: #fcd116;
+      --matrix-green: #00ff41;
+      --bg-dark: rgb(13, 13, 13);
+      --bg-card: rgba(13, 13, 13, 0.8);
+      --border-glow: rgba(252, 209, 22, 0.3);
+      --card-bg: rgba(13, 13, 13, 0.82);
       --card-border: rgba(255,255,255,0.14);
       --card-shadow: 0 24px 70px rgba(0,0,0,0.45);
-      --card-shadow-hover: 0 28px 90px rgba(0,0,0,0.55), 0 0 40px rgba(147,51,234,0.25);
-      --glass-bg: rgba(10, 12, 28, 0.72);
+      --card-shadow-hover: 0 28px 90px rgba(0,0,0,0.55), 0 0 40px rgba(252,209,22,0.25);
+      --glass-bg: rgba(13, 13, 13, 0.72);
       --glass-border: rgba(255,255,255,0.12);
-      --glow-gradient: linear-gradient(135deg, rgba(249,217,118,0.25), rgba(147,51,234,0.15), rgba(6,182,212,0.15));
+      --glow-gradient: linear-gradient(135deg, rgba(252,209,22,0.25), rgba(228,30,43,0.15), rgba(7,137,48,0.15));
 
-      /* web2.9-style tokens */
-      --color-zion-gold: 255 215 0;
-      --color-zion-purple: 147 51 234;
-      --color-zion-cyan: 6 182 212;
-      --color-zion-blue: 30 58 138;
+      /* web2.9-style tokens (rasta-mapped) */
+      --color-zion-gold: 252 209 22;
+      --color-zion-purple: 228 30 43;
+      --color-zion-cyan: 7 137 48;
+      --color-zion-blue: 13 13 13;
       --color-bg: 0 0 0;
       --color-fg: 255 255 255;
     }
@@ -69,9 +77,9 @@
     }
     input:focus, textarea:focus, select:focus {
       outline: none;
-      border-color: rgba(147, 51, 234, 0.35);
-      box-shadow: 0 0 20px rgba(147, 51, 234, 0.15);
-      background: rgba(10, 10, 20, 0.40);
+      border-color: rgba(252, 209, 22, 0.35);
+      box-shadow: 0 0 20px rgba(252, 209, 22, 0.15);
+      background: rgba(13, 13, 13, 0.40);
     }
     input::placeholder, textarea::placeholder {
       color: rgba(255,255,255,0.30);
@@ -80,10 +88,11 @@
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background:
-        radial-gradient(circle at 50% 20%, rgba(10,12,28,0.45), rgba(0,0,0,0.85)),
-        radial-gradient(ellipse at 20% 30%, rgba(147, 51, 234, 0.12), transparent 50%),
-        radial-gradient(ellipse at 80% 70%, rgba(6, 182, 212, 0.08), transparent 50%),
-        rgb(0, 0, 0);
+        /* rasta radial glows (synced with web2.9) */
+        radial-gradient(circle at 22% -5%, rgba(228, 30, 43, 0.16), transparent 38rem),
+        radial-gradient(circle at 82% 5%, rgba(7, 137, 48, 0.12), transparent 34rem),
+        radial-gradient(circle at 50% 40%, rgba(252, 209, 22, 0.06), transparent 50rem),
+        radial-gradient(ellipse at bottom, #0f0f0f 0%, #000 100%);
       color: #ffffff;
       overflow: hidden;
       position: relative;
@@ -151,11 +160,11 @@
       display: flex;
       align-items: center;
       gap: 16px;
-      background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(123,97,255,0.15));
-      border: 2px solid rgba(0,212,255,0.5);
+      background: linear-gradient(135deg, rgba(252,209,22,0.15), rgba(245,158,11,0.15));
+      border: 2px solid rgba(252,209,22,0.5);
       border-radius: 16px;
       padding: 20px 24px;
-      box-shadow: 0 8px 32px rgba(0,212,255,0.3), 0 0 60px rgba(123,97,255,0.2);
+      box-shadow: 0 8px 32px rgba(252,209,22,0.3), 0 0 60px rgba(245,158,11,0.2);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       min-width: 320px;
@@ -170,10 +179,10 @@
     .block-found-toast-title {
       font-size: 16px;
       font-weight: 800;
-      color: #00d4ff;
+      color: #fcd116;
       text-transform: uppercase;
       letter-spacing: 1px;
-      text-shadow: 0 0 12px rgba(0,212,255,0.5);
+      text-shadow: 0 0 12px rgba(252,209,22,0.5);
     }
     .block-found-toast-subtitle {
       font-size: 13px;
@@ -223,14 +232,14 @@
       to { opacity: 1; }
     }
     .wizard-card {
-      background: rgba(12,14,30,0.65);
-      border: 1px solid rgba(255,215,0,0.15);
+      background: rgba(13,13,13,0.65);
+      border: 1px solid rgba(252, 209, 22,0.15);
       border-radius: 28px;
       padding: 40px 36px;
       max-width: 480px;
       width: 90vw;
       text-align: center;
-      box-shadow: 0 40px 100px rgba(0,0,0,0.50), 0 0 60px rgba(147,51,234,0.10);
+      box-shadow: 0 40px 100px rgba(0,0,0,0.50), 0 0 60px rgba(228, 30, 43,0.10);
       backdrop-filter: blur(40px);
       -webkit-backdrop-filter: blur(40px);
     }
@@ -320,7 +329,7 @@
       padding: 12px;
       background: rgba(80,60,0,0.3);
       border-radius: 8px;
-      border: 1px solid rgba(255,215,0,0.3);
+      border: 1px solid rgba(252, 209, 22,0.3);
       line-height: 1.6;
     }
     .wizard-footnote {
@@ -346,12 +355,12 @@
       font-family: inherit;
     }
     .wizard-btn-primary {
-      background: linear-gradient(135deg, rgb(255,215,0), rgb(147,51,234));
+      background: linear-gradient(135deg, rgb(252, 209, 22), rgb(228, 30, 43));
       color: #000;
     }
     .wizard-btn-primary:hover {
       transform: translateY(-1px);
-      box-shadow: 0 8px 30px rgba(255,215,0,0.3);
+      box-shadow: 0 8px 30px rgba(252, 209, 22,0.3);
     }
     .wizard-btn-primary:disabled {
       opacity: 0.5;
@@ -432,7 +441,7 @@
     }
 
     .neon-border {
-      box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 0 20px rgba(147,51,234,0.25);
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 0 20px rgba(228, 30, 43,0.25);
     }
 
     .nav-item {
@@ -489,15 +498,15 @@
     }
 
     .nav-item:hover {
-      background: rgba(147, 51, 234, 0.08);
-      border-color: rgba(147, 51, 234, 0.15);
+      background: rgba(228, 30, 43, 0.08);
+      border-color: rgba(228, 30, 43, 0.15);
       transform: translateY(-3px) scale(1.08);
       color: rgba(255,255,255,0.9);
     }
 
     .nav-item.active {
-      background: rgba(147, 51, 234, 0.12);
-      border-color: rgba(147, 51, 234, 0.25);
+      background: rgba(228, 30, 43, 0.12);
+      border-color: rgba(228, 30, 43, 0.25);
       color: var(--zion-gold);
       transform: translateY(-2px);
     }
@@ -543,7 +552,7 @@
       border-radius: 3px;
       background: linear-gradient(90deg, var(--zion-purple), var(--zion-cyan));
       transition: width 0.3s ease;
-      box-shadow: 0 0 12px rgba(147,51,234,0.4);
+      box-shadow: 0 0 12px rgba(228, 30, 43,0.4);
     }
     .update-progress-detail {
       font-size: 11px;
@@ -567,17 +576,17 @@
       transition: all 0.2s;
     }
     .update-actions .btn-primary {
-      background: rgba(147,51,234,0.15);
-      color: #c4b5fd;
+      background: rgba(228, 30, 43,0.15);
+      color: #ff6b7a;
     }
     .update-actions .btn-primary:hover {
-      background: rgba(147,51,234,0.25);
-      border-color: rgba(147,51,234,0.4);
-      box-shadow: 0 0 20px rgba(147,51,234,0.2);
+      background: rgba(228, 30, 43,0.25);
+      border-color: rgba(228, 30, 43,0.4);
+      box-shadow: 0 0 20px rgba(228, 30, 43,0.2);
     }
     .update-actions .btn-success {
       background: rgba(16,185,129,0.15);
-      color: #6ee7b7;
+      color: #34d399;
     }
     .update-actions .btn-success:hover {
       background: rgba(16,185,129,0.25);
@@ -622,12 +631,12 @@
       transition: all 0.2s;
     }
     .update-toggle input:checked + .update-toggle-slider {
-      background: rgba(147,51,234,0.4);
+      background: rgba(228, 30, 43,0.4);
     }
     .update-toggle input:checked + .update-toggle-slider::after {
       left: 19px;
-      background: #c4b5fd;
-      box-shadow: 0 0 8px rgba(147,51,234,0.4);
+      background: #ff6b7a;
+      box-shadow: 0 0 8px rgba(228, 30, 43,0.4);
     }
     .update-toggle-label {
       font-size: 12px;
@@ -676,13 +685,13 @@
     }
     .update-badge.new {
       background: rgba(16,185,129,0.15);
-      color: #6ee7b7;
+      color: #34d399;
       border: 1px solid rgba(16,185,129,0.25);
     }
     .update-badge.current {
-      background: rgba(147,51,234,0.15);
-      color: #c4b5fd;
-      border: 1px solid rgba(147,51,234,0.25);
+      background: rgba(228, 30, 43,0.15);
+      color: #ff6b7a;
+      border: 1px solid rgba(228, 30, 43,0.25);
     }
 
     .view-shell {
@@ -771,7 +780,7 @@
     .section-tab.active .tab-dot {
       background: var(--zion-gold);
       opacity: 1;
-      box-shadow: 0 0 8px rgba(255,215,0,0.4);
+      box-shadow: 0 0 8px rgba(252, 209, 22,0.4);
     }
     .section-tab .tab-icon {
       width: 14px;
@@ -840,7 +849,7 @@
       text-transform: uppercase;
       letter-spacing: 0.25em;
       font-weight: 600;
-      box-shadow: 0 0 20px rgba(147,51,234,0.15);
+      box-shadow: 0 0 20px rgba(228, 30, 43,0.15);
     }
 
     .about-grid {
@@ -1058,7 +1067,7 @@
       position: absolute;
       inset: -2px;
       border-radius: 20px;
-      background: radial-gradient(circle at top left, rgba(147, 51, 234, 0.15), transparent 70%);
+      background: radial-gradient(circle at top left, rgba(228, 30, 43, 0.15), transparent 70%);
       filter: blur(15px);
       z-index: -1;
       opacity: 0;
@@ -1067,7 +1076,7 @@
 
     .stat-card:hover {
       border-color: rgba(255,255,255,0.16);
-      box-shadow: 0 8px 32px rgba(147, 51, 234, 0.12);
+      box-shadow: 0 8px 32px rgba(228, 30, 43, 0.12);
       transform: translateY(-1px);
     }
 
@@ -1133,8 +1142,8 @@
     .stat-sub .sub-value.accent-green { color: #22c55e; }
     .stat-sub .sub-value.accent-red { color: #ef4444; }
     .stat-sub .sub-value.accent-gold { color: var(--zion-gold); }
-    .stat-sub .sub-value.accent-cyan { color: #06b6d4; }
-    .stat-sub .sub-value.accent-purple { color: #a855f7; }
+    .stat-sub .sub-value.accent-cyan { color: #078930; }
+    .stat-sub .sub-value.accent-purple { color: #ff4d5a; }
 
     /* Wide stat card spanning full row */
     .stat-card.wide {
@@ -1191,7 +1200,7 @@
       transition: border-color 0.25s ease, background 0.25s ease;
     }
     .stream-card.stream-zion { border-left: 3px solid #10b981; }
-    .stream-card.stream-gpu  { border-left: 3px solid #6366f1; }
+    .stream-card.stream-gpu  { border-left: 3px solid #fcd116; }
     .stream-card.stream-cpu  { border-left: 3px solid #f59e0b; }
     .stream-card.active {
       background: rgba(255,255,255,0.06);
@@ -1219,7 +1228,7 @@
       background: rgba(255,255,255,0.06);
     }
     .stream-zion .stream-coin { color: #10b981; background: rgba(16,185,129,0.12); }
-    .stream-gpu  .stream-coin { color: #818cf8; background: rgba(99,102,241,0.12); }
+    .stream-gpu  .stream-coin { color: #fcd116; background: rgba(252,209,22,0.12); }
     .stream-cpu  .stream-coin { color: #fbbf24; background: rgba(245,158,11,0.12); }
     .stream-card-body {
       display: flex;
@@ -1417,7 +1426,7 @@
     }
 
     .wallet-card.wallet-receive-card {
-      border-color: rgba(147,51,234,0.25);
+      border-color: rgba(228, 30, 43,0.25);
     }
 
     .wallet-kicker {
@@ -1439,7 +1448,7 @@
     .wallet-main-value {
       font-size: 32px;
       font-weight: 800;
-      color: #6ee7b7;
+      color: #34d399;
       font-variant-numeric: tabular-nums;
       letter-spacing: -0.5px;
     }
@@ -1479,7 +1488,7 @@
     }
 
     .wallet-pill-value.pending { color: #fbbf24; }
-    .wallet-pill-value.paid { color: #6ee7b7; }
+    .wallet-pill-value.paid { color: #34d399; }
 
     .wallet-metrics-grid {
       display: grid;
@@ -1655,8 +1664,8 @@
       height: 8px;
       transition: width 0.5s ease;
     }
-    .ms-segment-zion    { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
-    .ms-segment-gpu     { background: linear-gradient(90deg, #0ea5e9, #38bdf8); }
+    .ms-segment-zion    { background: linear-gradient(90deg, #e41e2b, #ff4d5a); }
+    .ms-segment-gpu     { background: linear-gradient(90deg, #f59e0b, #fcd116); }
     .ms-segment-cpu-rev { background: linear-gradient(90deg, #10b981, #34d399); }
     .ms-labels {
       display: flex;
@@ -1674,17 +1683,17 @@
       border-radius: 50%;
       display: inline-block;
     }
-    .ms-dot-zion    { background: #a78bfa; }
-    .ms-dot-gpu     { background: #38bdf8; }
+    .ms-dot-zion    { background: #ff4d5a; }
+    .ms-dot-gpu     { background: #fcd116; }
     .ms-dot-cpu-rev { background: #34d399; }
     .ms-coin-badge {
       margin-left: 4px;
       padding: 1px 5px;
-      background: rgba(14,165,233,0.2);
-      border: 1px solid rgba(14,165,233,0.35);
+      background: rgba(252,209,22,0.2);
+      border: 1px solid rgba(252,209,22,0.35);
       border-radius: 4px;
       font-size: 10px;
-      color: #7dd3fc;
+      color: #fcd116;
       font-weight: 700;
       letter-spacing: 0.5px;
     }
@@ -1692,7 +1701,7 @@
     .algo-display-chip {
       padding: 6px 12px;
       background: rgba(0,0,0,0.35);
-      border: 1px solid rgba(147,51,234,0.2);
+      border: 1px solid rgba(228, 30, 43,0.2);
       border-radius: 8px;
       color: #fff;
       display: flex;
@@ -1738,20 +1747,20 @@
     }
     .input-flex-mono:focus {
       outline: none;
-      border-color: rgba(147, 51, 234, 0.35);
-      box-shadow: 0 0 20px rgba(147, 51, 234, 0.15);
+      border-color: rgba(228, 30, 43, 0.35);
+      box-shadow: 0 0 20px rgba(228, 30, 43, 0.15);
       background: rgba(10, 10, 20, 0.40);
     }
-    .pool-metric-blue { color: #38bdf8; font-weight: 600; }
-    .pool-metric-green { color: #6ee7b7; font-weight: 600; }
-    .pool-metric-purple { color: #c4b5fd; font-weight: 600; }
+    .pool-metric-blue { color: #4ade80; font-weight: 600; }
+    .pool-metric-green { color: #34d399; font-weight: 600; }
+    .pool-metric-purple { color: #ff6b7a; font-weight: 600; }
     .btn-ghost-green {
       border-color: rgba(16,185,129,0.3);
-      color: #6ee7b7;
+      color: #34d399;
     }
     .btn-ghost-purple {
-      border-color: rgba(147,51,234,0.3);
-      color: #c4b5fd;
+      border-color: rgba(228, 30, 43,0.3);
+      color: #ff6b7a;
     }
     .wallet-receive-row {
       display: flex;
@@ -1872,7 +1881,7 @@
       width: 100%;
       padding: 12px;
       background: rgba(0,0,0,0.25);
-      border: 1px solid rgba(147,51,234,0.15);
+      border: 1px solid rgba(228, 30, 43,0.15);
       border-radius: 12px;
       color: #fff;
       font-family: monospace;
@@ -1922,8 +1931,8 @@
     }
     .textarea-no-resize:focus {
       outline: none;
-      border-color: rgba(147, 51, 234, 0.35);
-      box-shadow: 0 0 20px rgba(147, 51, 234, 0.15);
+      border-color: rgba(228, 30, 43, 0.35);
+      box-shadow: 0 0 20px rgba(228, 30, 43, 0.15);
       background: rgba(10, 10, 20, 0.40);
     }
 
@@ -1964,8 +1973,8 @@
 
     .info-card.version { border-color: rgba(212,175,55,0.25); }
     .info-card.algo { border-color: rgba(16,185,129,0.25); }
-    .info-card.network { border-color: rgba(96,165,250,0.25); }
-    .info-card.engine { border-color: rgba(167,139,250,0.25); }
+    .info-card.network { border-color: rgba(34,197,94,0.25); }
+    .info-card.engine { border-color: rgba(228,30,43,0.25); }
 
     .info-card-kicker {
       color: rgba(255,255,255,0.5);
@@ -1986,9 +1995,9 @@
     }
 
     .info-card-value.version { color: #fcd34d; }
-    .info-card-value.algo { color: #6ee7b7; }
-    .info-card-value.network { color: #93c5fd; }
-    .info-card-value.engine { color: #c4b5fd; }
+    .info-card-value.algo { color: #34d399; }
+    .info-card-value.network { color: #22c55e; }
+    .info-card-value.engine { color: #ff6b7a; }
 
     .info-card-sub {
       font-size: 11px;
@@ -2080,10 +2089,10 @@
     }
 
     .metric-card.green { border-color: rgba(16,185,129,0.3); }
-    .metric-card.blue { border-color: rgba(96,165,250,0.3); }
-    .metric-card.purple { border-color: rgba(167,139,250,0.3); }
+    .metric-card.blue { border-color: rgba(34,197,94,0.3); }
+    .metric-card.purple { border-color: rgba(228,30,43,0.3); }
     .metric-card.gold { border-color: rgba(251,191,36,0.3); }
-    .metric-card.soft-purple { border-color: rgba(147,51,234,0.2); }
+    .metric-card.soft-purple { border-color: rgba(228, 30, 43,0.2); }
 
     .metric-kicker {
       color: rgba(255,255,255,0.5);
@@ -2107,9 +2116,9 @@
       letter-spacing: -0.3px;
     }
 
-    .metric-value.green { color: #6ee7b7; }
-    .metric-value.blue { color: #93c5fd; }
-    .metric-value.purple { color: #c4b5fd; }
+    .metric-value.green { color: #34d399; }
+    .metric-value.blue { color: #22c55e; }
+    .metric-value.purple { color: #ff6b7a; }
     .metric-value.gold { color: #fcd34d; }
 
     .sync-bar {
@@ -2205,7 +2214,7 @@
       max-width: 500px;
       margin: 0 auto;
       font-style: italic;
-      background: linear-gradient(135deg, rgba(255,215,0,0.8), rgba(147,51,234,0.8));
+      background: linear-gradient(135deg, rgba(252, 209, 22,0.8), rgba(228, 30, 43,0.8));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -2250,8 +2259,8 @@
     .form-group input:focus,
     .form-group select:focus {
       outline: none;
-      border-color: rgba(147, 51, 234, 0.35);
-      box-shadow: 0 0 20px rgba(147, 51, 234, 0.15);
+      border-color: rgba(228, 30, 43, 0.35);
+      box-shadow: 0 0 20px rgba(228, 30, 43, 0.15);
       background: rgba(10, 10, 20, 0.50);
     }
 
@@ -2283,9 +2292,9 @@
     }
 
     .btn:hover {
-      border-color: rgba(147,51,234,0.35);
+      border-color: rgba(228, 30, 43,0.35);
       background: rgba(255, 255, 255, 0.08);
-      box-shadow: 0 0 20px rgba(147,51,234,0.15);
+      box-shadow: 0 0 20px rgba(228, 30, 43,0.15);
       transform: translateY(-1px);
     }
 
@@ -2294,16 +2303,16 @@
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, rgba(255,215,0,0.12), rgba(147,51,234,0.18));
+      background: linear-gradient(135deg, rgba(252, 209, 22,0.12), rgba(228, 30, 43,0.18));
       color: #fff;
-      border: 1px solid rgba(255,215,0,0.30);
-      box-shadow: 0 0 16px rgba(255,215,0,0.06);
+      border: 1px solid rgba(252, 209, 22,0.30);
+      box-shadow: 0 0 16px rgba(252, 209, 22,0.06);
     }
 
     .btn-primary:hover {
-      background: linear-gradient(135deg, rgba(255,215,0,0.22), rgba(147,51,234,0.28));
-      border-color: rgba(255,215,0,0.50);
-      box-shadow: 0 0 24px rgba(255,215,0,0.15), 0 0 12px rgba(147,51,234,0.12);
+      background: linear-gradient(135deg, rgba(252, 209, 22,0.22), rgba(228, 30, 43,0.28));
+      border-color: rgba(252, 209, 22,0.50);
+      box-shadow: 0 0 24px rgba(252, 209, 22,0.15), 0 0 12px rgba(228, 30, 43,0.12);
       color: #fff;
     }
 
@@ -2429,8 +2438,8 @@
 
     .badge-live {
       color: var(--zion-gold);
-      border-color: rgba(255,215,0,0.35);
-      background: rgba(255,215,0,0.08);
+      border-color: rgba(252, 209, 22,0.35);
+      background: rgba(252, 209, 22,0.08);
     }
 
     .form-grid {
@@ -2539,8 +2548,8 @@
     }
 
     .pool-card input:checked + .pool-card-body {
-      border-color: rgba(255,215,0,0.5);
-      box-shadow: 0 0 25px rgba(255,215,0,0.25);
+      border-color: rgba(252, 209, 22,0.5);
+      box-shadow: 0 0 25px rgba(252, 209, 22,0.25);
     }
 
     .pool-card h4 {
@@ -2571,9 +2580,9 @@
       background: rgba(255,255,255,0.05);
     }
 
-    .pill-gold { border-color: rgba(255,215,0,0.4); color: var(--zion-gold); }
-    .pill-cyan { border-color: rgba(6,182,212,0.4); color: var(--zion-cyan); }
-    .pill-purple { border-color: rgba(147,51,234,0.4); color: var(--zion-purple); }
+    .pill-gold { border-color: rgba(252, 209, 22,0.4); color: var(--zion-gold); }
+    .pill-cyan { border-color: rgba(7, 137, 48,0.4); color: var(--zion-cyan); }
+    .pill-purple { border-color: rgba(228, 30, 43,0.4); color: var(--zion-purple); }
 
     .custom-pool-input {
       margin-top: 10px;
@@ -2688,8 +2697,8 @@
     #wallet-display input:focus,
     #wallet-display textarea:focus {
       outline: none;
-      border-color: rgba(147, 51, 234, 0.35) !important;
-      box-shadow: 0 0 20px rgba(147, 51, 234, 0.15);
+      border-color: rgba(228, 30, 43, 0.35) !important;
+      box-shadow: 0 0 20px rgba(228, 30, 43, 0.15);
       background: rgba(10, 10, 20, 0.40);
     }
 
@@ -2709,7 +2718,7 @@
 
     .progress-container {
       background: rgba(0, 0, 0, 0.30);
-      border: 1px solid rgba(147, 51, 234, 0.20);
+      border: 1px solid rgba(228, 30, 43, 0.20);
       border-radius: 14px;
       padding: 6px;
       box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
@@ -2729,7 +2738,7 @@
       font-weight: 700;
       font-size: 14px;
       letter-spacing: 1px;
-      box-shadow: 0 0 20px rgba(147, 51, 234, 0.5);
+      box-shadow: 0 0 20px rgba(228, 30, 43, 0.5);
       position: relative;
       overflow: hidden;
     }
@@ -2882,7 +2891,7 @@
     }
     .console-metrics-title {
       font-weight: 800;
-      color: #00ffc8;
+      color: #34d399;
       text-shadow: 0 0 10px rgba(0,255,200,0.25);
     }
     .console-metrics-uptime { color: rgba(255,255,255,0.55); }
@@ -2900,7 +2909,7 @@
     .console-metrics-label { color: rgba(255,255,255,0.5); font-size: 10px; }
     .console-metrics-coin { font-weight: 700; color: #fff; }
     .console-metrics-algo { color: rgba(255,255,255,0.55); font-size: 11px; }
-    .console-metrics-hr { color: #00ffc8; font-weight: 800; text-align: right; }
+    .console-metrics-hr { color: #34d399; font-weight: 800; text-align: right; }
     .console-metrics-shares { text-align: right; font-size: 11px; }
     .console-metrics-shares .good { color: #34d399; font-weight: 700; }
     .console-metrics-shares .bad { color: #f87171; font-weight: 700; }
@@ -2937,15 +2946,15 @@
     }
     /* XMRig-style color classes */
     .mc-line .mc-ts { color: #6b7280; }           /* timestamp gray */
-    .mc-line .mc-speed { color: #e879f9; }         /* speed label magenta */
-    .mc-line .mc-hr { color: #22d3ee; font-weight: 700; } /* hashrate cyan bold */
+    .mc-line .mc-speed { color: #fcd116; }         /* speed label gold */
+    .mc-line .mc-hr { color: #4ade80; font-weight: 700; } /* hashrate green bold */
     .mc-line .mc-unit { color: rgba(255,255,255,0.6); }  /* unit dimmed */
     .mc-line .mc-max { color: #22c55e; }           /* max green */
     .mc-line .mc-accepted { color: #22c55e; font-weight: 700; } /* accepted green */
     .mc-line .mc-rejected { color: #ef4444; font-weight: 700; } /* rejected red */
-    .mc-line .mc-job { color: #3b82f6; }           /* new job blue */
+    .mc-line .mc-job { color: #22c55e; }           /* new job green */
     .mc-line .mc-diff { color: #fbbf24; }          /* difficulty gold */
-    .mc-line .mc-algo { color: #22d3ee; }          /* algo cyan */
+    .mc-line .mc-algo { color: #4ade80; }          /* algo green */
     .mc-line .mc-block { color: #fbbf24; font-weight: 700; } /* block gold bold */
     .mc-line .mc-info { color: rgba(255,255,255,0.5); }  /* info dim */
     .mc-line .mc-err { color: #ef4444; }           /* error red */
@@ -2974,12 +2983,12 @@
     }
 
     ::-webkit-scrollbar-thumb {
-      background: linear-gradient(180deg, rgba(255,215,0,0.40), rgba(147,51,234,0.40));
+      background: linear-gradient(180deg, rgba(252, 209, 22,0.40), rgba(228, 30, 43,0.40));
       border-radius: 8px;
     }
 
     ::-webkit-scrollbar-thumb:hover {
-      background: linear-gradient(180deg, rgba(255,215,0,0.60), rgba(147,51,234,0.60));
+      background: linear-gradient(180deg, rgba(252, 209, 22,0.60), rgba(228, 30, 43,0.60));
     }
 
     /* CH3 Stream Indicator */
@@ -2989,7 +2998,7 @@
       gap: 10px;
       padding: 12px 18px;
       background: rgba(0,0,0,0.25);
-      border: 1px solid rgba(147,51,234,0.20);
+      border: 1px solid rgba(228, 30, 43,0.20);
       border-radius: 14px;
       font-size: 13px;
       backdrop-filter: blur(12px);
@@ -3109,7 +3118,7 @@
 
     /* ═══ Web 2.9 unified design tokens ═══ */
     .card-glow {
-      box-shadow: 0 0 30px rgba(147, 51, 234, 0.3);
+      box-shadow: 0 0 30px rgba(228, 30, 43, 0.3);
     }
 
     .hud-grid {
@@ -3124,8 +3133,8 @@
 
     /* Consciousness level progress */
     @keyframes orbPulse {
-      0%, 100% { transform: scale(1); box-shadow: 0 0 30px rgba(255,215,0,0.3), 0 0 60px rgba(147,51,234,0.15); }
-      50% { transform: scale(1.08); box-shadow: 0 0 40px rgba(255,215,0,0.5), 0 0 80px rgba(147,51,234,0.25); }
+      0%, 100% { transform: scale(1); box-shadow: 0 0 30px rgba(252, 209, 22,0.3), 0 0 60px rgba(228, 30, 43,0.15); }
+      50% { transform: scale(1.08); box-shadow: 0 0 40px rgba(252, 209, 22,0.5), 0 0 80px rgba(228, 30, 43,0.25); }
     }
 
     /* Feature unlock timeline */
@@ -3152,7 +3161,7 @@
     .territory-card:hover {
       border-color: rgba(255,255,255,0.20);
       transform: translateY(-3px);
-      box-shadow: 0 16px 50px rgba(0,0,0,0.35), 0 0 30px var(--territory-glow, rgba(147,51,234,0.12));
+      box-shadow: 0 16px 50px rgba(0,0,0,0.35), 0 0 30px var(--territory-glow, rgba(228, 30, 43,0.12));
     }
     .territory-banner {
       height: 80px;
@@ -3220,8 +3229,8 @@
     .guild-card {
       padding: 24px;
       border-radius: 22px;
-      border: 1px solid rgba(147,51,234,0.2);
-      background: linear-gradient(135deg, rgba(147,51,234,0.05), rgba(6,182,212,0.04));
+      border: 1px solid rgba(228, 30, 43,0.2);
+      background: linear-gradient(135deg, rgba(228, 30, 43,0.05), rgba(7, 137, 48,0.04));
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       margin-bottom: 16px;
@@ -3268,15 +3277,15 @@
       transition: all 0.25s ease;
     }
     .quest-item:hover {
-      border-color: rgba(147,51,234,0.25);
-      background: rgba(147,51,234,0.04);
+      border-color: rgba(228, 30, 43,0.25);
+      background: rgba(228, 30, 43,0.04);
     }
     .quest-icon {
       font-size: 20px;
       width: 36px;
       height: 36px;
       border-radius: 10px;
-      background: rgba(147,51,234,0.1);
+      background: rgba(228, 30, 43,0.1);
       display: grid;
       place-items: center;
     }
@@ -3329,9 +3338,9 @@
       cursor: default;
     }
     .challenge-card:hover {
-      border-color: rgba(6,182,212,0.3);
+      border-color: rgba(7, 137, 48,0.3);
       transform: translateY(-2px);
-      box-shadow: 0 12px 40px rgba(0,0,0,0.3), 0 0 20px rgba(6,182,212,0.08);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3), 0 0 20px rgba(7, 137, 48,0.08);
     }
     .challenge-category {
       font-size: 9px;
@@ -3365,8 +3374,8 @@
       letter-spacing: 1px;
     }
     .diff-beginner    { background: rgba(0,255,136,0.1);  color: #00ff88; }
-    .diff-intermediate { background: rgba(6,182,212,0.1);  color: var(--zion-cyan); }
-    .diff-advanced    { background: rgba(255,215,0,0.1);  color: var(--zion-gold); }
+    .diff-intermediate { background: rgba(7, 137, 48,0.1);  color: var(--zion-cyan); }
+    .diff-advanced    { background: rgba(252, 209, 22,0.1);  color: var(--zion-gold); }
     .diff-master      { background: rgba(239,68,68,0.1);  color: #f87171; }
     .challenge-xp {
       font-size: 13px;
@@ -3392,9 +3401,9 @@
       transition: all 0.3s ease;
     }
     .tithe-card:hover {
-      border-color: rgba(255,215,0,0.2);
+      border-color: rgba(252, 209, 22,0.2);
       transform: translateY(-2px);
-      box-shadow: 0 10px 35px rgba(0,0,0,0.25), 0 0 18px rgba(255,215,0,0.06);
+      box-shadow: 0 10px 35px rgba(0,0,0,0.25), 0 0 18px rgba(252, 209, 22,0.06);
     }
     .tithe-emoji {
       font-size: 36px;
@@ -3423,8 +3432,8 @@
       margin-top: 20px;
       padding: 20px 24px;
       border-radius: 18px;
-      border: 1px solid rgba(255,215,0,0.12);
-      background: linear-gradient(135deg, rgba(255,215,0,0.04), rgba(147,51,234,0.03));
+      border: 1px solid rgba(252, 209, 22,0.12);
+      background: linear-gradient(135deg, rgba(252, 209, 22,0.04), rgba(228, 30, 43,0.03));
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -3460,8 +3469,8 @@
       transition: all 0.25s ease;
     }
     .reward-slot:hover {
-      border-color: rgba(255,215,0,0.15);
-      background: rgba(255,215,0,0.03);
+      border-color: rgba(252, 209, 22,0.15);
+      background: rgba(252, 209, 22,0.03);
     }
     .reward-slot-icon {
       font-size: 22px;
@@ -3487,13 +3496,13 @@
 
     /* Gradient sheen for territory banners */
     .bg-mountains   { background: linear-gradient(135deg, #2d3436, #636e72, #b2bec3); --territory-glow: rgba(178,190,195,0.15); }
-    .bg-forest      { background: linear-gradient(135deg, #00b894, #00cec9, #55efc4); --territory-glow: rgba(0,184,148,0.15); }
+    .bg-forest      { background: linear-gradient(135deg, #078930, #4ade80, #22c55e); --territory-glow: rgba(7, 137, 48,0.15); }
     .bg-desert      { background: linear-gradient(135deg, #fdcb6e, #e17055, #d63031); --territory-glow: rgba(253,203,110,0.15); }
-    .bg-ocean       { background: linear-gradient(135deg, #0984e3, #74b9ff, #00cec9); --territory-glow: rgba(9,132,227,0.15); }
+    .bg-ocean       { background: linear-gradient(135deg, #0d0d0d, #078930, #4ade80); --territory-glow: rgba(7, 137, 48,0.15); }
     .bg-volcano     { background: linear-gradient(135deg, #d63031, #e17055, #fdcb6e); --territory-glow: rgba(214,48,49,0.15); }
-    .bg-crystal     { background: linear-gradient(135deg, #a29bfe, #6c5ce7, #fd79a8); --territory-glow: rgba(108,92,231,0.15); }
-    .bg-temple      { background: linear-gradient(135deg, #ffd700, #f0c060, #9b59b6); --territory-glow: rgba(255,215,0,0.15); }
-    .bg-nexus       { background: linear-gradient(135deg, #2d3436, #6c5ce7, #00cec9); --territory-glow: rgba(6,182,212,0.15); }
+    .bg-crystal     { background: linear-gradient(135deg, #fcd116, #fdcb6e, #f0c060); --territory-glow: rgba(252, 209, 22,0.15); }
+    .bg-temple      { background: linear-gradient(135deg, #fcd116, #f0c060, #e41e2b); --territory-glow: rgba(252, 209, 22,0.15); }
+    .bg-nexus       { background: linear-gradient(135deg, #0d0d0d, #e41e2b, #078930); --territory-glow: rgba(7, 137, 48,0.15); }
 
     /* ═══ OASIS Cosmic Mine — Full Space Scene ═══ */
     #oasis-game { padding:0 0 12px; }
@@ -3508,7 +3517,7 @@
     /* ── HUD overlays ── */
 
     /* ── Sun ── */
-    @keyframes csSunPulse { 0%,100%{box-shadow:0 0 28px #ffd700,0 0 60px rgba(255,140,0,.7),0 0 130px rgba(255,80,0,.35)} 50%{box-shadow:0 0 50px #ffd700,0 0 110px rgba(255,140,0,.9),0 0 200px rgba(255,80,0,.5),0 0 320px rgba(255,100,0,.2)} }
+    @keyframes csSunPulse { 0%,100%{box-shadow:0 0 28px #fcd116,0 0 60px rgba(255,140,0,.7),0 0 130px rgba(255,80,0,.35)} 50%{box-shadow:0 0 50px #fcd116,0 0 110px rgba(255,140,0,.9),0 0 200px rgba(255,80,0,.5),0 0 320px rgba(255,100,0,.2)} }
     @keyframes csSunRay { to{transform:rotate(360deg)} }
 
     /* ── Planets ── */
@@ -3606,15 +3615,15 @@
       background:rgba(0,0,0,0.28); border:1px solid rgba(255,255,255,0.07); border-radius:18px;
       padding:18px; cursor:default; transition:all .2s;
     }
-    .dao-proposal:hover { border-color:rgba(147,51,234,0.25); transform:translateY(-1px); box-shadow:0 10px 35px rgba(0,0,0,0.3); }
+    .dao-proposal:hover { border-color:rgba(228, 30, 43,0.25); transform:translateY(-1px); box-shadow:0 10px 35px rgba(0,0,0,0.3); }
     .dao-proposal-header { display:flex; justify-content:space-between; margin-bottom:8px; gap:10px; }
     .dao-proposal-title { font-size:15px; font-weight:600; }
     .dao-status-badge { font-size:10px; padding:4px 10px; border-radius:20px; flex-shrink:0; }
     .dao-status-active   { background:rgba(0,255,136,0.1); color:#00ff88; }
-    .dao-status-passed   { background:rgba(6,182,212,0.1); color:var(--zion-cyan); }
-    .dao-status-executed { background:rgba(255,215,0,0.1); color:var(--zion-gold); }
+    .dao-status-passed   { background:rgba(7, 137, 48,0.1); color:var(--zion-cyan); }
+    .dao-status-executed { background:rgba(252, 209, 22,0.1); color:var(--zion-gold); }
     .dao-status-failed   { background:rgba(239,68,68,0.1); color:#f87171; }
-    .dao-status-timelocked { background:rgba(147,51,234,0.1); color:var(--zion-purple); }
+    .dao-status-timelocked { background:rgba(228, 30, 43,0.1); color:var(--zion-purple); }
     .dao-proposal-desc { font-size:12px; color:rgba(255,255,255,0.4); margin-bottom:12px; }
     .dao-vote-bar { height:6px; border-radius:3px; display:flex; overflow:hidden; }
     .dao-vote-yes   { background:#00ff88; height:100%; }
@@ -3622,17 +3631,17 @@
     .dao-vote-abstain { background:rgba(255,255,255,0.15); height:100%; }
     .dao-vote-labels { display:flex; justify-content:space-between; margin-top:6px; font-size:11px; color:rgba(255,255,255,0.45); }
     .dao-treasury-card {
-      background:linear-gradient(135deg, rgba(0,0,0,0.35), rgba(147,51,234,0.08));
-      border:1px solid rgba(147,51,234,0.18); border-radius:22px; padding:28px; text-align:center;
+      background:linear-gradient(135deg, rgba(0,0,0,0.35), rgba(228, 30, 43,0.08));
+      border:1px solid rgba(228, 30, 43,0.18); border-radius:22px; padding:28px; text-align:center;
     }
-    .dao-treasury-value { font-size:36px; font-weight:800; margin:12px 0 6px; color:#fff; text-shadow:0 0 20px rgba(147,51,234,0.25); }
+    .dao-treasury-value { font-size:36px; font-weight:800; margin:12px 0 6px; color:#fff; text-shadow:0 0 20px rgba(228, 30, 43,0.25); }
     .dao-treasury-label { font-size:11px; color:rgba(255,255,255,0.4); letter-spacing:2px; text-transform:uppercase; }
     .dao-guardian-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:12px; margin-top:14px; }
     .dao-guardian {
       background:rgba(0,0,0,0.22); border:1px solid rgba(255,255,255,0.07); border-radius:14px;
       padding:16px; text-align:center; transition:all .25s;
     }
-    .dao-guardian:hover { border-color:rgba(147,51,234,0.2); }
+    .dao-guardian:hover { border-color:rgba(228, 30, 43,0.2); }
     .dao-guardian-icon { font-size:28px; margin-bottom:8px; }
     .dao-guardian-name { font-size:13px; font-weight:600; margin-bottom:4px; }
     .dao-guardian-status { font-size:10px; color:rgba(255,255,255,0.45); }
@@ -3712,7 +3721,7 @@
       font-size: 13px;
       font-weight: 500;
     }
-    .bridge-readiness-row.status-done .bridge-readiness-label { color: #6ee7b7; }
+    .bridge-readiness-row.status-done .bridge-readiness-label { color: #34d399; }
     .bridge-readiness-row.status-pending .bridge-readiness-label { color: #fcd34d; }
 
     /* ═══ Node View ═══ */
@@ -3743,7 +3752,7 @@
       white-space: nowrap;
       transition: color .3s;
     }
-    .node-status-text.online { color: #6ee7b7; }
+    .node-status-text.online { color: #34d399; }
 
     .node-console {
       margin-top: 14px;
@@ -3782,7 +3791,7 @@
     }
     .ibd-bar-fill {
       height: 100%;
-      background: linear-gradient(90deg, var(--zion-cyan), #a78bfa);
+      background: linear-gradient(90deg, var(--zion-cyan), #ff4d5a);
       width: 0%;
       transition: width .6s ease;
       border-radius: 6px;
@@ -3802,8 +3811,8 @@
       font-size: 13px; color: rgba(255,255,255,0.6);
     }
     .sync-bar.ibd {
-      background: rgba(6,182,212,0.07);
-      border-color: rgba(6,182,212,0.2);
+      background: rgba(7, 137, 48,0.07);
+      border-color: rgba(7, 137, 48,0.2);
     }
     .sync-bar.synced {
       background: rgba(16,185,129,0.06);
@@ -3837,24 +3846,24 @@
     .peer-status {
       font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
     }
-    .peer-row.connected .peer-status { color: #6ee7b7; }
+    .peer-row.connected .peer-status { color: #34d399; }
     .peer-row .peer-status { color: #6b7280; }
     .peer-agent { color: rgba(255,255,255,0.25); font-size: 10px; }
     .peer-meta { display: flex; align-items: center; gap: 14px; font-size: 12px; color: rgba(255,255,255,0.5); }
-    .peer-meta .height { color: #93c5fd; }
+    .peer-meta .height { color: #22c55e; }
     .peer-meta .idle { color: rgba(255,255,255,0.28); }
 
     .checkpoint-row {
       display: flex; align-items: center; justify-content: space-between;
       padding: 10px 14px; border-radius: 10px;
-      border: 1px solid rgba(255,215,0,0.1);
+      border: 1px solid rgba(252, 209, 22,0.1);
       margin-bottom: 6px;
-      background: rgba(255,215,0,0.03);
+      background: rgba(252, 209, 22,0.03);
     }
     .checkpoint-row .height { font-size: 13px; font-weight: 600; color: #fcd34d; }
     .checkpoint-row .label { font-weight: 400; color: rgba(255,255,255,0.4); font-size: 11px; margin-left: 6px; }
     .checkpoint-row .hash { font-family: monospace; font-size: 10px; color: rgba(255,255,255,0.3); margin-top: 2px; word-break: break-all; }
-    .checkpoint-row .badge { font-size: 10px; color: rgba(255,215,0,0.5); text-transform: uppercase; letter-spacing: .08em; flex-shrink: 0; margin-left: 12px; }
+    .checkpoint-row .badge { font-size: 10px; color: rgba(252, 209, 22,0.5); text-transform: uppercase; letter-spacing: .08em; flex-shrink: 0; margin-left: 12px; }
 
     .node-settings-grid {
       display: grid;
@@ -3906,8 +3915,8 @@
       transition: border-color .2s, box-shadow .2s;
     }
     .algo-select:focus {
-      border-color: rgba(255,215,0,0.4);
-      box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
+      border-color: rgba(252, 209, 22,0.4);
+      box-shadow: 0 0 0 3px rgba(252, 209, 22,0.1);
     }
 
     /* ── ZionDex View ──────────────────────────────────────────── */
@@ -3958,7 +3967,7 @@
     }
     .dex-select:focus {
       outline: none;
-      border-color: rgba(255,215,0,0.4);
+      border-color: rgba(252, 209, 22,0.4);
     }
     .dex-token-select {
       flex: 0 0 120px;
@@ -3975,7 +3984,7 @@
     }
     .dex-input:focus {
       outline: none;
-      border-color: rgba(255,215,0,0.4);
+      border-color: rgba(252, 209, 22,0.4);
     }
     .dex-output {
       width: 100%;
@@ -3983,7 +3992,7 @@
       background: rgba(10,10,15,0.4);
       border: 1px solid rgba(255,255,255,0.05);
       border-radius: 12px;
-      color: rgba(255,215,0,0.9);
+      color: rgba(252, 209, 22,0.9);
       font-size: 24px;
       font-weight: 700;
     }
@@ -4002,7 +4011,7 @@
       border-radius: 50%;
       background: rgba(30,30,40,0.8);
       border: 1px solid rgba(255,255,255,0.1);
-      color: rgba(255,215,0,0.9);
+      color: rgba(252, 209, 22,0.9);
       font-size: 18px;
       cursor: pointer;
       transition: transform 0.2s;
@@ -4029,8 +4038,8 @@
       width: 20px;
       height: 20px;
       border-radius: 50%;
-      background: rgba(255,215,0,0.15);
-      color: rgba(255,215,0,0.9);
+      background: rgba(252, 209, 22,0.15);
+      color: rgba(252, 209, 22,0.9);
       text-align: center;
       line-height: 20px;
       font-weight: 700;
@@ -4687,7 +4696,7 @@
               <!-- Info banner -->
               <div class="control-panel panel-tight" style="border-left:3px solid rgba(16,185,129,0.6);margin-bottom:4px">
                 <div class="stack-col" style="gap:4px">
-                  <span style="font-size:12px;font-weight:600;color:#6ee7b7">How it works</span>
+                  <span style="font-size:12px;font-weight:600;color:#34d399">How it works</span>
                   <span style="font-size:12px;color:rgba(255,255,255,0.7)">Send ZION to the Bridge Vault address with a special memo that includes your Base EVM address. Minimum 100 ZION. After 60-block L1 finality (~10 min), the relay mints wZION to your EVM wallet.</span>
                 </div>
               </div>
@@ -4727,7 +4736,7 @@
               <div class="form-group">
                 <label>Transaction Memo <span style="font-size:11px;color:rgba(255,255,255,0.35);font-weight:400">(auto-generated)</span></label>
                 <div class="inline-row">
-                  <input type="text" id="bridge-lock-memo" readonly placeholder="Fill EVM address above..." class="input-flex-mono" style="color:#6ee7b7" />
+                  <input type="text" id="bridge-lock-memo" readonly placeholder="Fill EVM address above..." class="input-flex-mono" style="color:#34d399" />
                   <button class="btn btn-ghost btn-sm" id="bridge-lock-copy-memo">Copy</button>
                 </div>
                 <span class="status-note hidden" id="bridge-lock-memo-copied">Memo copied!</span>
@@ -4737,7 +4746,7 @@
               <div class="form-group">
                 <label>Bridge Vault Address <span style="font-size:11px;color:rgba(255,255,255,0.35);font-weight:400">(send ZION here)</span></label>
                 <div class="inline-row">
-                  <input type="text" value="zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0" readonly class="input-flex-mono" style="color:#6ee7b7;font-size:11px" />
+                  <input type="text" value="zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0" readonly class="input-flex-mono" style="color:#34d399;font-size:11px" />
                   <button class="btn btn-ghost btn-sm" onclick="copyToClipboard('zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0','bridge-vault-addr-copied')">Copy</button>
                 </div>
                 <span class="status-note hidden" id="bridge-vault-addr-copied">Address copied!</span>
@@ -4753,7 +4762,7 @@
               <div id="bridge-lock-status" class="status-note" style="margin-top:8px"></div>
               <div id="bridge-lock-tx-result" class="control-panel panel-tight" style="display:none;border-left:3px solid rgba(16,185,129,0.6);margin-top:8px">
                 <div class="stack-col" style="gap:4px">
-                  <span style="font-size:12px;font-weight:600;color:#6ee7b7">TX Submitted</span>
+                  <span style="font-size:12px;font-weight:600;color:#34d399">TX Submitted</span>
                   <span style="font-size:12px;color:rgba(255,255,255,0.7)">TX Hash: <code id="bridge-lock-txhash" style="font-size:11px"></code></span>
                   <span style="font-size:12px;color:rgba(255,255,255,0.5)">Wait ~10 min for 60-block finality. wZION will appear in your Base wallet.</span>
                 </div>
@@ -4826,7 +4835,7 @@
                 <div class="stack-col" style="gap:6px">
                   <span style="font-size:12px;color:rgba(255,255,255,0.5)">L1 Bridge Vault (keyless)</span>
                   <div class="inline-row" style="gap:8px;align-items:center">
-                    <code style="background:rgba(0,0,0,0.3);padding:4px 8px;border-radius:6px;font-size:11px;color:#6ee7b7">zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0</code>
+                    <code style="background:rgba(0,0,0,0.3);padding:4px 8px;border-radius:6px;font-size:11px;color:#34d399">zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0</code>
                     <button class="btn btn-primary btn-sm" onclick="copyToClipboard('zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0', 'bridge-vault-copied')">Copy</button>
                   </div>
                   <span class="status-note hidden" id="bridge-vault-copied">Copied!</span>
@@ -4836,7 +4845,7 @@
                   </div>
                 </div>
               </div>
-              <div class="control-panel panel-tight" style="border-left:3px solid rgba(99,102,241,0.6);margin-top:8px">
+              <div class="control-panel panel-tight" style="border-left:3px solid rgba(252,209,22,0.6);margin-top:8px">
                 <div class="stack-col" style="gap:6px">
                   <span style="font-size:12px;color:rgba(255,255,255,0.5)">Bridge Validator Multisig</span>
                   <div class="bridge-readiness-row status-done"><span class="bridge-readiness-label">Threshold: 5/5 (fail-closed)</span></div>
@@ -5060,9 +5069,9 @@
               <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg> Swap wZION on Uniswap v3</span>
             </h2>
             <div class="stack-col panel-mt-20">
-              <div class="control-panel panel-tight" style="border-left:3px solid rgba(99,102,241,0.6)">
+              <div class="control-panel panel-tight" style="border-left:3px solid rgba(252,209,22,0.6)">
                 <div class="stack-col" style="gap:4px">
-                  <span style="font-size:12px;font-weight:600;color:#a5b4fc">wZION / USDT Pool (0.3%)</span>
+                  <span style="font-size:12px;font-weight:600;color:#fcd116">wZION / USDT Pool (0.3%)</span>
                   <div class="inline-row" style="gap:12px;flex-wrap:wrap">
                     <span style="font-size:12px;color:rgba(255,255,255,0.7)">Price: <strong id="defi-pool-usdt-price">—</strong> USD</span>
                     <span style="font-size:12px;color:rgba(255,255,255,0.7)">Liquidity: <strong id="defi-pool-usdt-liq">—</strong></span>
@@ -5072,7 +5081,7 @@
               </div>
               <div class="control-panel panel-tight" style="border-left:3px solid rgba(16,185,129,0.6);margin-top:6px">
                 <div class="stack-col" style="gap:4px">
-                  <span style="font-size:12px;font-weight:600;color:#6ee7b7">wZION / WETH Pool (0.3%)</span>
+                  <span style="font-size:12px;font-weight:600;color:#34d399">wZION / WETH Pool (0.3%)</span>
                   <div class="inline-row" style="gap:12px;flex-wrap:wrap">
                     <span style="font-size:12px;color:rgba(255,255,255,0.7)">Price: <strong id="defi-pool-weth-price">—</strong> USD</span>
                     <span style="font-size:12px;color:rgba(255,255,255,0.7)">Liquidity: <strong id="defi-pool-weth-liq">—</strong></span>
@@ -5122,7 +5131,7 @@
               <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg> Stake wZION</span>
             </h2>
             <div class="stack-col panel-mt-20">
-              <div class="control-panel panel-tight" style="border-left:3px solid rgba(99,102,241,0.6)">
+              <div class="control-panel panel-tight" style="border-left:3px solid rgba(252,209,22,0.6)">
                 <div class="stack-col" style="gap:6px">
                   <div class="inline-row" style="gap:20px;flex-wrap:wrap">
                     <span style="font-size:12px;color:rgba(255,255,255,0.5)">Total Staked: <strong id="defi-total-staked">—</strong></span>
@@ -5207,7 +5216,7 @@
                 <div class="control-panel panel-tight" style="border-left:3px solid rgba(16,185,129,0.6)">
                   <div class="stack-col" style="gap:4px">
                     <span style="font-size:12px;color:rgba(255,255,255,0.5)">wZION Balance</span>
-                    <span style="font-size:20px;font-weight:700;color:#6ee7b7" id="defi-portfolio-wzion">—</span>
+                    <span style="font-size:20px;font-weight:700;color:#34d399" id="defi-portfolio-wzion">—</span>
                   </div>
                 </div>
                 <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);gap:8px">
@@ -6796,7 +6805,7 @@
 
               <!-- SmartScreen -->
               <div style="margin-bottom:16px;">
-                <h4 style="margin:0 0 6px 0; color:#93c5fd; font-size:14px;">1. SmartScreen při instalaci</h4>
+                <h4 style="margin:0 0 6px 0; color:#fcd116; font-size:14px;">1. SmartScreen při instalaci</h4>
                 <p style="color:var(--text-secondary); font-size:13px; margin:0 0 6px 0;">
                   Při spuštění instalátoru Windows zobrazí modré okno „SmartScreen ochránil tento počítač":
                 </p>
@@ -6812,7 +6821,7 @@
 
               <!-- Defender -->
               <div style="margin-bottom:16px;">
-                <h4 style="margin:0 0 6px 0; color:#93c5fd; font-size:14px;">2. Windows Defender — smazaná binárka</h4>
+                <h4 style="margin:0 0 6px 0; color:#fcd116; font-size:14px;">2. Windows Defender — smazaná binárka</h4>
                 <p style="color:var(--text-secondary); font-size:13px; margin:0 0 6px 0;">
                   Defender může po instalaci smazat <code style="background:rgba(255,255,255,.08); padding:1px 5px; border-radius:3px;">zion-universal-miner.exe</code> jako „Potentially Unwanted App" (PUA). Obnovení:
                 </p>
@@ -6826,7 +6835,7 @@
 
               <!-- Exclusion -->
               <div style="margin-bottom:16px;">
-                <h4 style="margin:0 0 6px 0; color:#93c5fd; font-size:14px;">3. Přidání výjimky (doporučeno)</h4>
+                <h4 style="margin:0 0 6px 0; color:#fcd116; font-size:14px;">3. Přidání výjimky (doporučeno)</h4>
                 <p style="color:var(--text-secondary); font-size:13px; margin:0 0 6px 0;">
                   Aby Defender neblokoval miner opakovaně:
                 </p>
@@ -6836,13 +6845,13 @@
                   <li>Klikněte <b>+ Přidat vyloučení → Složka</b></li>
                   <li>Vyberte instalační složku ZION Mineru:</li>
                 </ol>
-                <code style="display:block; padding:8px 12px; background:rgba(255,255,255,.06); border-radius:6px; font-size:12px; color:#93c5fd; margin:0 0 4px 0;">C:\Users\VaseJmeno\AppData\Local\Programs\zion-desktop-agent\</code>
-                <code style="display:block; padding:8px 12px; background:rgba(255,255,255,.06); border-radius:6px; font-size:12px; color:#93c5fd;">C:\Program Files\ZION Miner\</code>
+                <code style="display:block; padding:8px 12px; background:rgba(255,255,255,.06); border-radius:6px; font-size:12px; color:#22c55e; margin:0 0 4px 0;">C:\Users\VaseJmeno\AppData\Local\Programs\zion-desktop-agent\</code>
+                <code style="display:block; padding:8px 12px; background:rgba(255,255,255,.06); border-radius:6px; font-size:12px; color:#22c55e;">C:\Program Files\ZION Miner\</code>
               </div>
 
               <!-- PowerShell -->
               <div style="margin-bottom:16px;">
-                <h4 style="margin:0 0 6px 0; color:#93c5fd; font-size:14px;">4. PowerShell příkazy (pro pokročilé)</h4>
+                <h4 style="margin:0 0 6px 0; color:#fcd116; font-size:14px;">4. PowerShell příkazy (pro pokročilé)</h4>
                 <p style="color:var(--text-secondary); font-size:13px; margin:0 0 6px 0;">Spusťte PowerShell jako Administrator:</p>
                 <div style="background:rgba(0,0,0,.3); border-radius:8px; padding:12px 14px; font-family:monospace; font-size:12px; color:#e2e8f0; line-height:1.6; overflow-x:auto;">
                   <span style="color:#6b7280;"># Přidání výjimky na složku</span><br/>
@@ -6857,7 +6866,7 @@
 
               <!-- Quick start -->
               <div>
-                <h4 style="margin:0 0 6px 0; color:#93c5fd; font-size:14px;">5. Quick Start — Windows</h4>
+                <h4 style="margin:0 0 6px 0; color:#fcd116; font-size:14px;">5. Quick Start — Windows</h4>
                 <div style="background:rgba(0,0,0,.3); border-radius:8px; padding:12px 14px; font-family:monospace; font-size:12px; color:#e2e8f0; line-height:1.6; overflow-x:auto;">
                   <span style="color:#6b7280;"># 1. Stáhněte installer z GitHub Releases</span><br/>
                   <span style="color:#6b7280;"># 2. Spusťte .exe → SmartScreen → "Více informací" → "Přesto spustit"</span><br/>
@@ -6884,7 +6893,7 @@
 
               <!-- Gatekeeper -->
               <div style="margin-bottom:16px;">
-                <h4 style="margin:0 0 6px 0; color:#a78bfa; font-size:14px;">1. Gatekeeper — „Aplikace nemůže být otevřena"</h4>
+                <h4 style="margin:0 0 6px 0; color:#ff4d5a; font-size:14px;">1. Gatekeeper — „Aplikace nemůže být otevřena"</h4>
                 <p style="color:var(--text-secondary); font-size:13px; margin:0 0 6px 0;">
                   macOS blokuje stažené neregistrované aplikace. Tři způsoby obejití:
                 </p>
@@ -6897,7 +6906,7 @@
 
               <!-- Quarantine xattr -->
               <div style="margin-bottom:16px;">
-                <h4 style="margin:0 0 6px 0; color:#a78bfa; font-size:14px;">2. Odstranění quarantine příznaku</h4>
+                <h4 style="margin:0 0 6px 0; color:#ff4d5a; font-size:14px;">2. Odstranění quarantine příznaku</h4>
                 <p style="color:var(--text-secondary); font-size:13px; margin:0 0 6px 0;">
                   Stažené soubory dostanou atribut <code style="background:rgba(255,255,255,.08); padding:1px 5px; border-radius:3px;">com.apple.quarantine</code>. Odebrání:
                 </p>
@@ -6913,7 +6922,7 @@
 
               <!-- Permissions -->
               <div style="margin-bottom:16px;">
-                <h4 style="margin:0 0 6px 0; color:#a78bfa; font-size:14px;">3. Oprávnění ke spuštění minerů</h4>
+                <h4 style="margin:0 0 6px 0; color:#ff4d5a; font-size:14px;">3. Oprávnění ke spuštění minerů</h4>
                 <p style="color:var(--text-secondary); font-size:13px; margin:0 0 6px 0;">
                   Pokud miner hlásí „Permission denied":
                 </p>
@@ -6929,7 +6938,7 @@
 
               <!-- Firewall -->
               <div style="margin-bottom:16px;">
-                <h4 style="margin:0 0 6px 0; color:#a78bfa; font-size:14px;">4. Firewall — povolení síťového přístupu</h4>
+                <h4 style="margin:0 0 6px 0; color:#ff4d5a; font-size:14px;">4. Firewall — povolení síťového přístupu</h4>
                 <p style="color:var(--text-secondary); font-size:13px; margin:0 0 6px 0;">
                   macOS firewall se může zeptat na povolení síťového přístupu:
                 </p>
@@ -6941,7 +6950,7 @@
 
               <!-- Quick Start -->
               <div>
-                <h4 style="margin:0 0 6px 0; color:#a78bfa; font-size:14px;">5. Quick Start — macOS</h4>
+                <h4 style="margin:0 0 6px 0; color:#ff4d5a; font-size:14px;">5. Quick Start — macOS</h4>
                 <div style="background:rgba(0,0,0,.3); border-radius:8px; padding:12px 14px; font-family:monospace; font-size:12px; color:#e2e8f0; line-height:1.6; overflow-x:auto;">
                   <span style="color:#6b7280;"># 1. Stáhněte .dmg z GitHub Releases</span><br/>
                   <span style="color:#6b7280;"># 2. Odstraňte quarantine (volitelné — app to dělá automaticky)</span><br/>
@@ -6966,7 +6975,7 @@
               <h3 style="margin:0 0 12px 0; color:var(--accent-3); font-size:16px;">🐧 Linux — Průvodce</h3>
 
               <div style="margin-bottom:16px;">
-                <h4 style="margin:0 0 6px 0; color:#6ee7b7; font-size:14px;">Quick Start — Linux</h4>
+                <h4 style="margin:0 0 6px 0; color:#34d399; font-size:14px;">Quick Start — Linux</h4>
                 <div style="background:rgba(0,0,0,.3); border-radius:8px; padding:12px 14px; font-family:monospace; font-size:12px; color:#e2e8f0; line-height:1.6; overflow-x:auto;">
                   <span style="color:#6b7280;"># AppImage</span><br/>
                   chmod +x zion-desktop-agent-v3.0.6-linux-x64.AppImage<br/>

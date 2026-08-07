@@ -1079,8 +1079,8 @@ function setupControls() {
       const visible = debugDrawer.style.display !== 'none';
       debugDrawer.style.display = visible ? 'none' : 'block';
       debugToggle.style.color = visible ? 'rgba(255,255,255,0.45)' : 'rgba(255,255,255,0.85)';
-      debugToggle.style.borderColor = visible ? 'rgba(255,255,255,0.1)' : 'rgba(147,51,234,0.5)';
-      debugToggle.style.background = visible ? 'rgba(255,255,255,0.05)' : 'rgba(147,51,234,0.15)';
+      debugToggle.style.borderColor = visible ? 'rgba(255,255,255,0.1)' : 'rgba(228, 30, 43,0.5)';
+      debugToggle.style.background = visible ? 'rgba(255,255,255,0.05)' : 'rgba(228, 30, 43,0.15)';
     });
   }
 }
@@ -2256,8 +2256,8 @@ function renderHrSparkline() {
   ctx.lineTo((_hrSparkHistory.length - 1) * stepX, h);
   ctx.closePath();
   const grad = ctx.createLinearGradient(0, 0, 0, h);
-  grad.addColorStop(0, 'rgba(6,182,212,0.35)');
-  grad.addColorStop(1, 'rgba(6,182,212,0.02)');
+  grad.addColorStop(0, 'rgba(7, 137, 48,0.35)');
+  grad.addColorStop(1, 'rgba(7, 137, 48,0.02)');
   ctx.fillStyle = grad;
   ctx.fill();
   // Line
@@ -2268,7 +2268,7 @@ function renderHrSparkline() {
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   }
-  ctx.strokeStyle = '#06b6d4';
+  ctx.strokeStyle = '#078930';
   ctx.lineWidth = 1.5;
   ctx.stroke();
 }
@@ -3024,7 +3024,7 @@ async function loadWalletsList() {
     const safeDate = escapeHtml(new Date(wallet.createdAt).toLocaleDateString());
     const safeLastUsed = wallet.lastUsed ? escapeHtml(new Date(wallet.lastUsed).toLocaleDateString()) : 'Never';
     return `
-    <div style="padding: 20px; background: rgba(0,0,0,0.5); border: 1px solid rgba(147,51,234,0.2); border-radius: 12px; margin-bottom: 16px;">
+    <div style="padding: 20px; background: rgba(0,0,0,0.5); border: 1px solid rgba(228, 30, 43,0.2); border-radius: 12px; margin-bottom: 16px;">
       <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
         <div>
           <h3 style="color: var(--zion-gold); margin-bottom: 8px; font-size: 18px;">${safeName}</h3>
@@ -3041,7 +3041,7 @@ async function loadWalletsList() {
            <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
            <span>Use for Mining</span>
         </button>
-        <button class="btn" onclick="copyWalletAddress('${safeAddr}')" style="width: auto; padding: 10px 16px; font-size: 13px; background: rgba(147,51,234,0.2); border: 1px solid var(--zion-purple);">
+        <button class="btn" onclick="copyWalletAddress('${safeAddr}')" style="width: auto; padding: 10px 16px; font-size: 13px; background: rgba(228, 30, 43,0.2); border: 1px solid var(--zion-purple);">
            <svg class="icon" aria-hidden="true"><use href="#i-copy"></use></svg>
            <span>Copy Address</span>
         </button>
@@ -3591,9 +3591,9 @@ async function refreshNetworkMetrics() {
             <span style="font-size:11px;color:rgba(255,255,255,0.35);font-family:monospace;">${safeHost}</span>
           </div>
           <div style="display:flex;gap:16px;font-size:12px;color:rgba(255,255,255,0.55);">
-            <span>H: <b style="color:#93c5fd;">${n.height ? n.height.toLocaleString() : '—'}</b></span>
+            <span>H: <b style="color:#22c55e;">${n.height ? n.height.toLocaleString() : '—'}</b></span>
             <span>M: <b style="color:#fcd34d;">${n.miners}</b></span>
-            <span style="color:#c4b5fd;font-family:monospace;">${hr}</span>
+            <span style="color:#ff6b7a;font-family:monospace;">${hr}</span>
           </div>
         </div>`;
       }).join('');
@@ -3658,7 +3658,7 @@ async function refreshPeerList() {
         ? '<span style="color:#6ee7b7;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;">● Connected</span>'
         : '<span style="color:#6b7280;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;">○ Known</span>';
       const dirLabel = p.incoming
-        ? '<span style="color:#38bdf8;font-size:10px;">↓ IN</span>'
+        ? '<span style="color:#4ade80;font-size:10px;">↓ IN</span>'
         : '<span style="color:#fbbf24;font-size:10px;">↑ OUT</span>';
       const heightStr = p.height ? p.height.toLocaleString() : '0';
       const idleSecs = p.idle_seconds || 0;
@@ -3679,7 +3679,7 @@ async function refreshPeerList() {
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:14px;font-size:12px;color:rgba(255,255,255,0.55);">
-          <span>H: <b style="color:#93c5fd;">${heightStr}</b></span>
+          <span>H: <b style="color:#22c55e;">${heightStr}</b></span>
           <span style="color:rgba(255,255,255,0.3);">:${safePort}</span>
           <span>idle ${idleStr}</span>
           ${failStr}
@@ -3810,7 +3810,7 @@ function initUpdateUI() {
       licenseBtn.textContent = 'Validating...';
       if (licenseStatus) {
         licenseStatus.textContent = 'Validating license...';
-        licenseStatus.style.color = '#93c5fd';
+        licenseStatus.style.color = '#fcd116';
       }
 
       try {
@@ -3846,7 +3846,7 @@ function initUpdateUI() {
       if (_updateState.checking) return;
       _updateState.checking = true;
       const statusText = PUBLIC_BUILD ? 'Checking GitHub releases...' : 'Contacting update server...';
-      _setUpdateStatus('Checking...', statusText, '#93c5fd');
+      _setUpdateStatus('Checking...', statusText, '#fcd116');
       checkBtn.disabled = true;
       checkBtn.textContent = 'Checking...';
 
@@ -3864,7 +3864,7 @@ function initUpdateUI() {
           _showChangelog(result.releaseNotes, result.latestVersion);
           if (PUBLIC_BUILD) {
             // Public build: auto-download is on, just show "downloading" status
-            _setUpdateStatus('Downloading...', `v${result.latestVersion} downloading in background`, '#93c5fd');
+            _setUpdateStatus('Downloading...', `v${result.latestVersion} downloading in background`, '#fcd116');
           } else {
             _showDownloadPrompt(result);
           }
@@ -3915,7 +3915,7 @@ function initUpdateUI() {
     window.electronAPI.onUpdateStatus?.((data) => {
       switch (data.status) {
         case 'checking':
-          _setUpdateStatus('Checking...', 'Contacting update server...', '#93c5fd');
+          _setUpdateStatus('Checking...', 'Contacting update server...', '#fcd116');
           break;
         case 'available':
           _updateState.available = true;
@@ -3978,7 +3978,7 @@ function _showDownloadPrompt(result) {
     checkBtn.onclick = async () => {
       checkBtn.disabled = true;
       checkBtn.textContent = 'Downloading...';
-      _setUpdateStatus('Downloading...', 'Download in progress', '#93c5fd');
+      _setUpdateStatus('Downloading...', 'Download in progress', '#fcd116');
       try {
         const dlResult = await window.electronAPI.downloadUpdate();
         if (!dlResult?.success) {
@@ -4125,7 +4125,7 @@ async function loadSecurityStatus() {
         return `<div class="glass-panel" style="padding:12px; background:rgba(248,113,113,.06); border:1px solid rgba(248,113,113,.2);">
           <div style="color:#f87171; font-weight:600; margin-bottom:4px;">⚠️ ${rec.title}</div>
           <div style="color:var(--text-secondary); font-size:13px; white-space:pre-wrap;">${rec.description}</div>
-          ${rec.command ? `<code style="display:block; margin-top:8px; padding:6px 10px; background:rgba(255,255,255,.06); border-radius:6px; font-size:12px; color:#93c5fd; word-break:break-all;">${rec.command}</code>` : ''}
+          ${rec.command ? `<code style="display:block; margin-top:8px; padding:6px 10px; background:rgba(255,255,255,.06); border-radius:6px; font-size:12px; color:#22c55e; word-break:break-all;">${rec.command}</code>` : ''}
         </div>`;
       }).join('');
 
@@ -4796,7 +4796,7 @@ function updateDefiPoolsUI(poolData) {
       const priceStr = pool.price?.usd_per_wzion != null ? `$${Number(pool.price.usd_per_wzion).toFixed(4)}` : '—';
       const liqStr = pool.liquidity ?? '—';
       const label = key === 'wzion_usdt' ? 'wZION / USDT (0.3%)' : key === 'wzion_weth' ? 'wZION / WETH (0.3%)' : key;
-      const borderColor = key === 'wzion_usdt' ? 'rgba(99,102,241,0.6)' : 'rgba(16,185,129,0.6)';
+      const borderColor = key === 'wzion_usdt' ? 'rgba(252,209,22,0.6)' : 'rgba(16,185,129,0.6)';
       rows.push(`<div class="control-panel panel-tight" style="border-left:3px solid ${borderColor}">
         <div class="stack-col" style="gap:4px">
           <span style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.85)">${escapeHtml(label)}</span>
@@ -5169,9 +5169,9 @@ function initAiView() {
     div.style.maxWidth = '85%';
     div.style.wordBreak = 'break-word';
     if (role === 'user') {
-      div.style.background = 'rgba(147,51,234,0.15)';
+      div.style.background = 'rgba(228, 30, 43,0.15)';
       div.style.marginLeft = 'auto';
-      div.style.border = '1px solid rgba(147,51,234,0.2)';
+      div.style.border = '1px solid rgba(228, 30, 43,0.2)';
     } else {
       div.style.background = 'rgba(255,255,255,0.04)';
       div.style.border = '1px solid rgba(255,255,255,0.08)';
@@ -5333,7 +5333,7 @@ function initNclView() {
           lbEl.innerHTML = entries.slice(0, 10).map((w, i) => `
             <div style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;justify-content:space-between;align-items:center">
               <span style="color:rgba(255,255,255,0.8)">${i + 1}. ${w.wallet || w.worker_id || w.id || 'Worker'}</span>
-              <span style="color:var(--zion-cyan,#06b6d4);font-weight:600">${w.reputation ?? w.score ?? 0} pts</span>
+              <span style="color:var(--zion-cyan,#078930);font-weight:600">${w.reputation ?? w.score ?? 0} pts</span>
             </div>
           `).join('');
         }
@@ -5462,7 +5462,7 @@ async function refreshDaoTreasury() {
     if (gridEl && d.addresses) {
       gridEl.innerHTML = d.addresses.map((addr, i) => `
         <div class="dao-guardian-card" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;text-align:center">
-          <div style="width:40px;height:40px;border-radius:50%;background:var(--zion-gradient,linear-gradient(135deg,#00d4ff,#7b61ff));margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff">${i + 1}</div>
+          <div style="width:40px;height:40px;border-radius:50%;background:var(--zion-gradient,linear-gradient(135deg,#fcd116,#e41e2b));margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff">${i + 1}</div>
           <div style="font-size:11px;color:rgba(255,255,255,0.5);font-family:monospace;word-break:break-all">${addr.substring(0, 20)}...${addr.substring(addr.length - 6)}</div>
           <div style="margin-top:6px;font-size:11px;color:var(--zion-green)">✓ Active</div>
         </div>`).join('');
