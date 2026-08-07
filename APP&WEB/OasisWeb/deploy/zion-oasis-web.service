@@ -9,7 +9,7 @@ User=zion
 Group=zion
 WorkingDirectory=/opt/zion/oasis-web
 EnvironmentFile=/opt/zion/oasis-web/.env
-Environment="PORT=3001"
+Environment="PORT=3002"
 Environment="HOSTNAME=127.0.0.1"
 ExecStart=/usr/bin/node /opt/zion/oasis-web/server.js
 Restart=on-failure

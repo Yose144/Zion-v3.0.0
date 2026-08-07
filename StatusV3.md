@@ -92,7 +92,7 @@
 | zion-v31-oasis | 8094 (API), 9102 (metrics) | 127.0.0.1 | L4 (V31 PRODUCTION) | ✅ active |
 | zion-edge-python-dashboard | 8766 | 0.0.0.0 | — | ✅ active (Python zero-dep dashboard) |
 | zion-website | 3000 | 127.0.0.1 | — | ✅ active (Next.js, app.zionterranova.com) |
-| zion-oasis-web | 3001 | 127.0.0.1 | — | ✅ active (Next.js, oasis.zionterranova.com) |
+| zion-oasis-web | 3002 | 127.0.0.1 | — | ✅ active (Next.js standalone; public site served from /var/www/oasis static via nginx) |
 | zion-marketplace | 3100 | 127.0.0.1 | — | ✅ active (Next.js, market.zionterranova.com) |
 | fail2ban.service | — | — | — | ✅ active |
 | zion-watchdog.timer | — | — | — | ✅ active (2 min) |
