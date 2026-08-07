@@ -42,31 +42,42 @@ export async function GET(request: NextRequest) {
       prisma.shopOrder.count({ where }),
     ]);
 
-    // Compute stats from ALL orders (not just current page)
-    const allOrders = await prisma.shopOrder.findMany({
-      select: {
-        status: true,
-        paymentStatus: true,
-        totalCzk: true,
-        zionTokens: true,
-        payment: true,
-      },
-    });
+    // Compute stats from ALL orders (not just current page) using DB aggregation
+    const [statusCounts, paymentCounts, totals, pendingPayment, paid] = await Promise.all([
+      prisma.shopOrder.groupBy({
+        by: ['status'],
+        _count: { status: true },
+      }),
+      prisma.shopOrder.groupBy({
+        by: ['payment'],
+        _count: { payment: true },
+      }),
+      prisma.shopOrder.aggregate({
+        _count: { id: true },
+        _sum: { totalCzk: true, zionTokens: true },
+      }),
+      prisma.shopOrder.count({ where: { paymentStatus: 'pending' } }),
+      prisma.shopOrder.count({ where: { paymentStatus: 'paid' } }),
+    ]);
+
+    const byStatus = statusCounts.reduce((acc, s) => {
+      acc[s.status] = s._count.status;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const byPayment = paymentCounts.reduce((acc, p) => {
+      acc[p.payment] = p._count.payment;
+      return acc;
+    }, {} as Record<string, number>);
 
     const stats = {
-      totalOrders: allOrders.length,
-      totalRevenue: allOrders.reduce((sum, o) => sum + o.totalCzk, 0),
-      totalTokens: allOrders.reduce((sum, o) => sum + (o.zionTokens || 0), 0),
-      pendingPayment: allOrders.filter((o) => o.paymentStatus === 'pending').length,
-      paid: allOrders.filter((o) => o.paymentStatus === 'paid').length,
-      byStatus: allOrders.reduce((acc, o) => {
-        acc[o.status] = (acc[o.status] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>),
-      byPayment: allOrders.reduce((acc, o) => {
-        acc[o.payment] = (acc[o.payment] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>),
+      totalOrders: totals._count.id,
+      totalRevenue: totals._sum.totalCzk ?? 0,
+      totalTokens: totals._sum.zionTokens ?? 0,
+      pendingPayment,
+      paid,
+      byStatus,
+      byPayment,
     };
 
     return NextResponse.json({

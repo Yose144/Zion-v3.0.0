@@ -105,7 +105,8 @@ async function sendWithResend(options: SendMailOptions): Promise<{ messageId?: s
 
 export async function sendMail(options: SendMailOptions): Promise<{ messageId?: string }> {
   const cfg = emailConfig();
-  const useResend = cfg.resendApiKey && isResendFromVerified(options.from);
+  // Only use Resend when the configured from address is on a verified (non-test) domain.
+  const useResend = cfg.resendApiKey && isResendFromVerified(cfg.resendFrom);
 
   if (useResend) {
     try {
