@@ -455,3 +455,12 @@ Dokončeny všechny 11 chybějících V3 pool funkcí. Pool je teď **FULL V3 fe
   - Reálný GPU rig E2E (≥90 % accept rate) a 30d continuous run
   - Security audit + chaos testy (3.0.9 / 3.1.0-beta)
   - Publikace GitHub release z draftu
+
+## 2026-08-07 — PPLNS persistence deployed; payout verification blocked by V31 UTXO gap
+
+- `zion-pool` PPLNS state is now persisted every 30s to `--state-path` (`/opt/zion/data/v31/pool-pplns.json`) after redeploy.
+- `cargo test --workspace` and `cargo clippy --workspace` pass; updated binary `zion-pool` is live on Edge.
+- Payout verification is **blocked**: the pool sweeper calls `getUtxos` and `submitUtxoTransaction` on the V3 compatibility RPC, while live V31 mining produces UTXO coinbase outputs on the V31 native chain. The V3 chain remains at height 0, so the pool wallet has no visible UTXOs and payouts cannot execute. Resolving this requires either:
+  1. V31-native UTXO RPC (`getUtxos` / `submitTransaction`) wired to the V31 `Node`/`Storage` layer and a V31 batch-payout builder, or
+  2. Dual-write V31 coinbase UTXOs into the V3 UTXO set so the existing V3 `v3_wallet` payout path can spend them.
+- Next step: choose architecture and implement V31 payout path.
