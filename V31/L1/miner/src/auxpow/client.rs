@@ -832,6 +832,77 @@ impl AuxPowClient {
 
         if params.len() >= 9 {
             let job_id = params[0].as_str().unwrap_or("").to_string();
+
+            // Detect ZcashStratum (VRSC/FLUX/ZEC) format:
+            //   [job_id, version, prevhash, merkle, reserved, ntime, nbits, clean_jobs, solution]
+            // The first field after job_id is version (4 bytes = 8 hex chars).
+            // Standard stratum (BTC/LTC): [job_id, prevhash, coinb1, coinb2, merkle, version, nbits, ntime, clean]
+            // where params[1] is a 64-char hex (32-byte prevhash).
+            let first_hex = params[1].as_str().unwrap_or("");
+            let first_len = first_hex.trim_start_matches("0x").len();
+
+            if first_len == 8 && self.protocol == StratumProtocol::ZcashStratum {
+                // ── ZcashStratum (VRSC) full header construction ──
+                let version = parse_hex_value(&params[1]).unwrap_or_default();
+                let prevhash = parse_hex_value(&params[2]).unwrap_or_default();
+                let merkle = parse_hex_value(&params[3]).unwrap_or_default();
+                let reserved = parse_hex_value(&params[4]).unwrap_or_default();
+                let ntime = params[5].as_str().unwrap_or("00000000").to_string();
+                let nbits = params[6].as_str().unwrap_or("");
+                let solution = parse_hex_value(&params[8]).unwrap_or_default();
+
+                let target = hasher::parse_target_hex(nbits)
+                    .or_else(|| hasher::nbits_to_target(nbits))
+                    .unwrap_or([0xFF; 32]);
+
+                let en1 = self.extranonce1.lock().await.clone();
+                let mut nonce_field = [0u8; 32];
+                let en1_len = en1.len().min(32);
+                nonce_field[..en1_len].copy_from_slice(&en1[..en1_len]);
+
+                let ntime_bytes = parse_hex_value(&params[5]).unwrap_or_else(|| vec![0u8; 4]);
+                let nbits_bytes = parse_hex_value(&params[6]).unwrap_or_else(|| vec![0u8; 4]);
+
+                let varint = hasher::zcash_varint_for_len(solution.len());
+                let mut header = Vec::with_capacity(
+                    version.len() + prevhash.len() + merkle.len() + reserved.len()
+                        + ntime_bytes.len() + nbits_bytes.len() + nonce_field.len()
+                        + varint.len() + solution.len(),
+                );
+                header.extend_from_slice(&version);
+                header.extend_from_slice(&prevhash);
+                header.extend_from_slice(&merkle);
+                header.extend_from_slice(&reserved);
+                header.extend_from_slice(&ntime_bytes);
+                header.extend_from_slice(&nbits_bytes);
+                header.extend_from_slice(&nonce_field);
+                header.extend_from_slice(&varint);
+                header.extend_from_slice(&solution);
+
+                let timestamp = u32::from_str_radix(ntime.trim_start_matches("0x"), 16)
+                    .ok()
+                    .map(|t| t as u64);
+                let block_number = timestamp.unwrap_or(0);
+
+                let job = ExternalJob {
+                    job_id,
+                    header_hex: hex::encode(&header),
+                    target_hex: hex::encode(target),
+                    header_bytes: header,
+                    target_bytes: target,
+                    timestamp,
+                    nbits: Some(nbits.to_string()),
+                    algorithm: self.config.algorithm.clone(),
+                    external_coin: self.config.coin,
+                    extranonce1: en1,
+                    block_number: Some(block_number),
+                    ..Default::default()
+                };
+                *self.latest_job_id.lock().await = Some(job.job_id.clone());
+                return Some(job);
+            }
+
+            // ── Standard stratum (BTC/LTC/VRSC-legacy) ──
             let prevhash = parse_hex_value(&params[1]).unwrap_or_default();
             let _coinb1 = params[2].as_str().unwrap_or("");
             let _coinb2 = params[3].as_str().unwrap_or("");
