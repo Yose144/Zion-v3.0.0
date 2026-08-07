@@ -8,6 +8,10 @@
 >
 > **PLAN_TO_3.2 audit 2026-08-07:** CLI (`zion`) má 21 subcommandů (včetně `dao`, `atomic-swap`, `warp`, `monitor`, `topology`, `explorer`, `onboard`, `deploy`, `update`, `compose`, `auxpow`), některé jsou stále stub; miner TUI (`ui.rs`, `interactive.rs`, `setup_menu.rs`, `banner.rs`) je zapojená pod `tui` feature a Cargo.toml obsahuje `full`/`native-all`/`gpu-all`/`public_build`; EVM a ZionDex Solidity kontrakty jsou přítomny v `V31/L2/multichain/contracts/`, ale chybí Foundry/Hardhat projektová konfigurace pro `zion deploy`. **Otevřené zůstává:** non-EVM WARP placeholdery (31 TODO markerů v adapterech), OASIS `output: 'export'` blokuje server-side ZIS route, `deploy-edge.sh` neinstaluje `zion-zis` službu (i když `APP&WEB/identity/` existuje), sync `public/` subtree, reálný GPU rig E2E a 30d continuous run.
 
+> **3.2.0 "One Love" genesis reset (2026-08-06):** Kanonická sada klíčů `V31_PREMINE_V2_KEYS_2026-08-06.json` (38 klíčů: 14 premine, 5 canonical, 3 admin, 7 DAO guardian, 5 EVM validator, 1 escrow). Všechny adresy byly aktualizovány v `zion-core`, `zion-dao`, CLI a deploy konfiguracích. Genesis hashe: V31 native `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`, V3 compat `4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71`.
+>
+> **Genesis reset postup:** Viz [`HARD_RESET_PLAYBOOK.md`](../HARD_RESET_PLAYBOOK.md). Klíče jsou uloženy v `~/Desktop/ZION_KEYS_GENESIS_V2_2026-08-06/` (chmod 700, owner-only).
+
 ## Update 2026-08-07 (Trinity session) — Stream 1 ZION block production GREEN, 3 critical bug fixes
 
 Tři kritické bugy blokovaly produkci ZION bloků na Edge. Všechny opraveny, chain roste (height 51+ v ~5 minutách).
