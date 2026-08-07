@@ -1,0 +1,160 @@
+{
+  "hero": {
+    "cs": {
+      "badge": "🎨 ®evoluZion v2",
+      "title": "®evoluZion",
+      "subtitle": "Analog · Digital · Dharma Wear",
+      "desc": "WoodWork • Sacred Prints • Game ®evoluZion merch",
+      "shopCta": "Navštiv shop",
+      "woodartCta": "WoodArt galerie"
+    },
+    "en": {
+      "badge": "🎨 FREEDOM ®EVOLUZION v2",
+      "title": "®evoluZion",
+      "subtitle": "Analog · Digital · Dharma Wear",
+      "desc": "WoodWork • Sacred Prints • Game ®evoluZion merch",
+      "shopCta": "Visit shop",
+      "woodartCta": "WoodArt gallery"
+    }
+  },
+  "manifest": {
+    "cs": {
+      "title": "Proč ®evoluZion",
+      "p1": "Projekt se narodil v roce 2008 jako rebelie proti sériové módě. Každý kus nese modlitbu, mantru a stopu ruční práce. EvoluZion v2 navazuje na původní DNA, ale přidává rasta futurismus, digitální identitu a merch pro nové města světla.",
+      "p2": "V každém dropu spojujeme regenerativní materiály, posvátnou geometrii a moderní technologie. Kolekce vznikají slow-fashion tempem.",
+      "quote": "Art je modlitba v pohybu. Dýchej, tvoř, sdílej. — ZION Collective"
+    },
+    "en": {
+      "title": "Why ®evoluZion",
+      "p1": "The project was born in 2008 as a rebellion against mass fashion. Every piece carries a prayer, a mantra, and a trace of handwork. EvoluZion v2 keeps the original DNA yet adds rasta futurism, digital identity, and merch for new light cities.",
+      "p2": "Each drop merges regenerative materials, sacred geometry, and modern technology. Collections are released in a slow-fashion rhythm.",
+      "quote": "Art is a prayer in motion. Breathe, create, share. — ZION Collective"
+    }
+  },
+  "head2008": {
+    "cs": {
+      "title": "Původní hlava 2008",
+      "desc": "Legendární ilustrace od Ericky alias elfí paní všech Keporkaků, která odstartovala celý projekt, bez níž by Zion nikdy nevznikl. Nekonečná vděčnost tobě."
+    },
+    "en": {
+      "title": "Original Head 2008",
+      "desc": "The legendary illustration by Ericka, the elven lady of all Keporkaks, who launched the entire project, without whom Zion would never have been born. Endless gratitude to you."
+    },
+    "image": "/legacy/img/evol.jpeg",
+    "imageAlt": "®evoluZion Original Head 2008"
+  },
+  "stats": {
+    "cs": [
+      { "value": "17+", "label": "Let historie" },
+      { "value": "18", "label": "Ručně tvořených kusů" },
+      { "value": "4", "label": "Hlavní linie" },
+      { "value": "V2", "label": "Nová generace" }
+    ],
+    "en": [
+      { "value": "17+", "label": "Years active" },
+      { "value": "18", "label": "Handmade pieces" },
+      { "value": "4", "label": "Core lines" },
+      { "value": "V2", "label": "New generation" }
+    ]
+  },
+  "pillarsTitle": { "cs": "Pilíře tvorby", "en": "Pillars of creation" },
+  "pillars": {
+    "cs": [
+      { "icon": "fa-tree", "title": "WoodWork", "desc": "Mandaly, reliéfy a oltáře z regenerativního dřeva, leptané ohněm i laserem.", "status": "Origins" },
+      { "icon": "fa-pen-nib", "title": "Sacred Prints", "desc": "Limitované tisky na ruční papír, pigmentované zlatem a propojené s mantrou.", "status": "144 ks" },
+      { "icon": "fa-shirt", "title": "®evoluZion Wear", "desc": "Slow fashion dropy s organickou bavlnou, UV inkousty a galaktickými runami.", "status": "Drop v2" },
+      { "icon": "fa-headphones", "title": "Soundscapes", "desc": "Playlisty, tibetské mantry a modulární syntezátory pro meditaci i tvorbu.", "status": "3 alba" },
+      { "icon": "fa-cubes", "title": "Digital Arts", "desc": "Generativní grafika, NFT série a vizuální identita pro Game ®evoluZion.", "status": "11 kolekcí" },
+      { "icon": "fa-infinity", "title": "Dharma Merch", "desc": "Artefakty, které chrání prostor: korálky, talismany a oltářní sety.", "status": "One Love" }
+    ],
+    "en": [
+      { "icon": "fa-tree", "title": "WoodWork", "desc": "Mandalas, reliefs, and altars carved from regenerative woods, etched by flame and laser.", "status": "Origins" },
+      { "icon": "fa-pen-nib", "title": "Sacred Prints", "desc": "Limited prints on handmade paper, gilded with pigments and paired with mantra.", "status": "144 pcs" },
+      { "icon": "fa-shirt", "title": "®evoluZion Wear", "desc": "Slow-fashion drops using organic cotton, UV inks, and galactic runes.", "status": "Drop v2" },
+      { "icon": "fa-headphones", "title": "Soundscapes", "desc": "Playlists, Tibetan mantras, and modular synth journeys for meditation and creation.", "status": "3 albums" },
+      { "icon": "fa-cubes", "title": "Digital Arts", "desc": "Generative visuals, NFT series, and visual identity for Game ®evoluZion.", "status": "11 collections" },
+      { "icon": "fa-infinity", "title": "Dharma Merch", "desc": "Artifacts that guard your space: beads, talismans, and altar kits.", "status": "One Love" }
+    ]
+  },
+  "timelineTitle": { "cs": "Timeline Journey", "en": "Timeline Journey" },
+  "timeline": {
+    "cs": [
+      { "year": "2008", "title": "Genesis", "text": "Cagay city, Zrod projektu. Hand-drawn trička s motivy jednoty, svobody a duchovní revoluce." },
+      { "year": "2010", "title": "Underground Rise", "text": "Festivaly, graffiti, street kultura a komunitní hub bez masové výroby." },
+      { "year": "2012", "title": "Heart of Amenti", "text": "Motivy od Nathanaela." },
+      { "year": "2015", "title": "Silent Years", "text": "Období klidu a integrace. Projekt hibernuje, ale oheň ostává v komunitě." },
+      { "year": "2025", "title": "evoluZion v2 Rebirth", "text": "Hybridní rasta design, digitální identita a dharma merch pro novou generaci, Eshop, Zion Token predprodej." },
+      { "year": "2027", "title": "Zion - Terra Nova Mainnet Launch", "text": "Spuštění hlavní sítě, Zion Token a Blockchain distribuce. Dao start." },
+      { "year": "2029+", "title": "Zion Oasis", "text": "Spuštění hlavní hry o zlaté vejce Hiranyagharba." }
+    ],
+    "en": [
+      { "year": "2008", "title": "Genesis", "text": "Cagayan de Oro city, Birth of the project. Hand-drawn tees with motifs of unity, freedom, and spiritual revolution." },
+      { "year": "2010", "title": "Underground Rise", "text": "Festivals, graffiti, street culture, and a community hub without mass production." },
+      { "year": "2012", "title": "Heart of Amenti", "text": "Motifs from Nathanael." },
+      { "year": "2015", "title": "Silent Years", "text": "A time of stillness and integration. The project hibernates, but the fire stays alive in the community." },
+      { "year": "2025", "title": "evoluZion v2 Rebirth", "text": "Hybrid rasta design, digital identity, and dharma merch for the new generation, Zion Token and Blockchain." },
+      { "year": "2026", "title": "Zion - Terra Nova Mainnet Launch", "text": "Mainnet launch, Zion Token and Blockchain distribution. Dao start." },
+      { "year": "2028+", "title": "Zion Oasis", "text": "Main game launch for the golden egg Hiranyagarbha." }
+    ]
+  },
+  "gallery": {
+    "cs": { "title": "Galerie dropů" },
+    "en": { "title": "Drop gallery" },
+    "slides": [
+      { "src": "/legacy/img2/matrix.jpg", "alt": "System Error", "caption": "System Error", "width": "w-1/2" },
+      { "src": "/legacy/img2/newGene.jpg", "alt": "New Generation", "caption": "New Generation", "width": "w-3/5" },
+      { "src": "/legacy/img2/nathanael.jpg", "alt": "Heart of Amenti", "caption": "Heart of Amenti", "width": "w-3/5" },
+      { "src": "/legacy/img/lion.jpg", "alt": "Lion Drop", "caption": "Lion Drop", "width": "w-2/5" },
+      { "src": "/legacy/img/onelove.jpg", "alt": "One Love", "caption": "One Love", "width": "w-2/5" }
+    ]
+  },
+  "dropsTitle": { "cs": "Dropy & artefakty", "en": "Drops & artifacts" },
+  "drops": {
+    "cs": [
+      { "title": "Original Head 2008", "desc": "Legendární ilustrace od Ericky alias Keporkak. Znovuzrozené v holografických tiscích a plakátech.", "tag": "Archiv" },
+      { "title": "Sacred Prints", "desc": "Zlaté fólie, kaligrafie a posvátné symboly. Každý tisk je požehnán mantrou a očistěn vonným dýmem.", "tag": "44 ks" },
+      { "title": "®evoluZion Wear", "desc": "Trička, mikiny a headwear s motivy Kailash, HIRANYAGARBHA a Antahkarana 44:44.", "tag": "Drop v2" },
+      { "title": "Talismany & oltáře", "desc": "Křišťálové vložky, korálky, oltářní desky a rituální boxy pro domovy i oázy.", "tag": "One Love" }
+    ],
+    "en": [
+      { "title": "Original Head 2008", "desc": "The legendary illustration by Ericka aka Keporkak. Reborn as holographic prints and posters.", "tag": "Archive" },
+      { "title": "Sacred Prints", "desc": "Gold foils, calligraphy, and sacred symbols. Each print is blessed with mantra and incense smoke.", "tag": "44 pcs" },
+      { "title": "®evoluZion Wear", "desc": "Tees, hoodies, and headwear with Kailash, HIRANYAGARBHA, and Antahkarana 44:44 motifs.", "tag": "Drop v2" },
+      { "title": "Talismany & oltáře", "desc": "Crystal inserts, bead malas, altar boards, and ritual boxes for homes and sanctuaries.", "tag": "One Love" }
+    ]
+  },
+  "music": {
+    "cs": { "title": "Zvuk & rituál", "desc": "Playlist pro meditaci, tvorbu i dlouhou cestu. Roots reggae, ambientní syntezátory a tibetské chorály." },
+    "en": { "title": "Sound & ritual", "desc": "A playlist for meditation, creation, and long rides. Roots reggae, ambient synths, and Tibetan chants." },
+    "spotify": "https://open.spotify.com/embed/playlist/4HvwefPlEhGlLM1LOpKlnV?utm_source=generator&theme=0"
+  },
+  "cta": {
+    "cs": {
+      "title": "Podpoř ®evoluZion",
+      "desc": "Každý nákup financuje nové dílny, komunitní projekty a stipendia pro mladé tvůrce Terra Nova ®.",
+      "shop": "Do shopu",
+      "home": "Zpět na domov",
+      "arts": "Freedom Arts"
+    },
+    "en": {
+      "title": "Support ®evoluZion",
+      "desc": "Every purchase funds new studios, community projects, and scholarships for young Terra Nova ® creators.",
+      "shop": "Enter shop",
+      "home": "Back home",
+      "arts": "Freedom Arts"
+    }
+  },
+  "connect": {
+    "cs": { "title": "Zůstaň ve spojení", "desc": "Sleduj nás na sociálních sítích a buď součástí živého příběhu." },
+    "en": { "title": "Stay connected", "desc": "Follow us on social channels and witness the story unfold in real time." },
+    "links": [
+      { "icon": "fa-facebook", "url": "https://www.facebook.com/ZionTerraNova/" },
+      { "icon": "fa-twitter", "url": "https://x.com/ZionTerraNova" },
+      { "icon": "fa-instagram", "url": "https://www.instagram.com/terranova_project/" }
+    ]
+  },
+  "footer": {
+    "cs": { "quote": "Jedna dobrá věc o hudbě - když tě zasáhne, necítíš bolest. — Bob Marley" },
+    "en": { "quote": "One good thing about music, when it hits you, you feel no pain. — Bob Marley" }
+  }
+}
