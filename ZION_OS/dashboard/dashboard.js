@@ -237,7 +237,7 @@ function switchTab(name){
   if(name === 'orchestrator'){ refreshOrchestrator(); }
   if(name === 'marketplace-orders' || name === 'marketplace-invoices' || name === 'marketplace-shipping' || name === 'marketplace-stripe'){
     const c = document.getElementById('pane-' + name);
-    if(c) c.innerHTML = '<div class="zion-panel p-8 text-center text-gray-400"><div class="text-3xl mb-3">🛒</div><h3 class="text-lg font-bold text-white mb-2">Marketplace</h3><p>Tato sekce bude dostupná po spuštění OASIS Marketplace služby.</p><div class="text-xs text-gray-500 mt-2">Service not yet deployed</div></div>';
+    if(c) c.innerHTML = '<div class="zion-panel p-8 text-center text-gray-400"><div class="text-3xl mb-3"><i class="fas fa-shopping-bag"></i></div><h3 class="text-lg font-bold text-white mb-2">Marketplace</h3><p>This section will be available once the OASIS Marketplace service is deployed.</p><div class="text-xs text-gray-500 mt-2">Service not yet deployed</div></div>';
   }
   if(name === 'ncl-jobs'){ loadNclJobs && loadNclJobs(); }
   if(name === 'poc-lab'){ loadPocLab && loadPocLab(); }
