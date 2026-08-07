@@ -59,9 +59,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <div className="flex flex-col items-center text-center">
               <Link href="https://market.zionterranova.com" className="opacity-90 hover:opacity-100 transition-opacity duration-300">
                 <img
-                  src="/logo/org/zion-wordmark-dark.png"
+                  src="/images/logo144.png"
                   alt="ZION Terra Nova"
-                  className="w-48 h-auto mx-auto rasta-footer-logo"
+                  className="w-20 h-auto mx-auto rasta-footer-logo"
                   loading="lazy"
                   decoding="async"
                 />
