@@ -5,9 +5,9 @@
  * Bit-identical with deeksha_lite_fire.cu but WITHOUT the thermal loop (Step 4).
  * deeksha_lite_v1 and deeksha_chv3 are bit-identical algorithms.
  *
- * Pipeline:
+ * Pipeline (Ekam Deeksha v3.2):
  *   1. Keccak256(header || nonce) → s1[32]
- *   2. Memory-hard scratchpad (128 KiB): fill, 1 pass, 32 random reads (Ekam v2)
+ *   2. Memory-hard scratchpad (512 KiB): fill, 2 passes, 128 random reads
  *   3. AES-128 CTR mix → s3[32]
  *   4. Keccak256(s3) → final hash[32]  (NO thermal loop)
  *
@@ -286,7 +286,7 @@ __device__ __forceinline__ uint64_t* pad_block(
 }
 
 /* ========================================================================== */
-/* Step 2A: fill_scratchpad — 4096 SHA3-512 calls (INTERLEAVED, Ekam v2)       */
+/* Step 2A: fill_scratchpad — 16384 SHA3-512 calls (INTERLEAVED, Ekam v3.2)    */
 /* ========================================================================== */
 
 __device__ __forceinline__ void fill_scratchpad(
@@ -316,7 +316,7 @@ __device__ __forceinline__ void fill_scratchpad(
 }
 
 /* ========================================================================== */
-/* Step 2B: sequential_passes — forward XOR (backward guarded by PASSES, Ekam v2) */
+/* Step 2B: sequential_passes — forward + backward XOR (Ekam v3.2)             */
 /* ========================================================================== */
 
 __device__ __forceinline__ void sequential_passes(
@@ -365,7 +365,7 @@ __device__ __forceinline__ void sequential_passes(
 }
 
 /* ========================================================================== */
-/* Step 2C: random_read_mix — 32 random reads (INTERLEAVED, Ekam v2)           */
+/* Step 2C: random_read_mix — 128 random reads (INTERLEAVED, Ekam v3.2)        */
 /* ========================================================================== */
 
 __device__ __forceinline__ void random_read_mix(

@@ -13,7 +13,7 @@
 
 ## 1. Executive Summary
 
-`3.1.0-alpha.2` is live on Edge. The V31 cut-over is complete and the code compiles, tests pass, and production services are running. **3.2.0 "One Love"** is the next stage: *production exercised*, not just *production started*. It is the track that closes the gap between "code complete" and "mainnet stable".
+`3.1.0-beta` is live on Edge. The V31 cut-over is complete and the code compiles, tests pass, and production services are running. **3.2.0 "One Love"** is the next stage: *production exercised*, not just *production started*. It is the track that closes the gap between "code complete" and "mainnet stable".
 
 This document is the **single canonical root plan** for the 3.2.0 launch. It combines the technical hardening plan, marketing and onboarding narrative, exchange/tracker listing packets, and the Bitcointalk announcement into one public-facing source of truth.
 

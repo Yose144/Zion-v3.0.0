@@ -13,11 +13,11 @@
 
 ## 1. Executive Summary
 
-`3.1.0-alpha.2` is **live on Edge** and has passed the V31 cut-over. Public RPC, pool stratum, multichain, dashboard and miner are running on V31. The code-vs-docs reconciliation work from `3.0.6` through `3.0.9`, the V31 migration, and the Phase A-D cut-over are complete in the sense that **the modules compile, the workspace tests pass, and the production services start**.
+`3.1.0-beta` is **live on Edge** and has passed the V31 cut-over. Public RPC, pool stratum, multichain, DAO, OASIS, web, marketplace, dashboard and miner are running on V31. The code-vs-docs reconciliation work from `3.0.6` through `3.0.9`, the V31 migration, and the Phase A-D cut-over are complete in the sense that **the modules compile, the workspace tests pass, and the production services start**.
 
 **However, "compiles and tests pass" is not "production ready".** `PLAN_TO_3.1_RECONCILED.md` already warned that many items marked "complete" meant *library modules ported*, not *production binaries fully exercised*. `3.2.0 "One Love" / Mainnet Stable` is the track that closes that gap.
 
-This document is the **single canonical plan** for moving from `3.1.0-alpha.2/beta` to `3.2.0 "One Love" (Mainnet Stable)`. It is a code-vs-docs-grounded plan, not a wishlist. Every gate is testable, every phase has an owner, and every "complete" claim must be backed by evidence.
+This document is the **single canonical plan** for moving from `3.1.0-beta` to `3.2.0 "One Love" (Mainnet Stable)`. It is a code-vs-docs-grounded plan, not a wishlist. Every gate is testable, every phase has an owner, and every "complete" claim must be backed by evidence.
 
 ---
 
@@ -238,12 +238,12 @@ Week 10: G2-G7 release and launch readiness
 | L6/issobella | `archive/V3/L6/issobella` (10 files) | `V31/L6/issobella` (10 files, identical) | ✅ MIGRATED |
 | ZionDex | `archive/ZionDex/` (contracts + router + solver + intent + sdk) | `V31/L2/multichain/src/swap/dex/` (aggregator, executor, intent, intent_engine, solver_network) + `V31/L2/multichain/contracts/dex/` (7 .sol) | ✅ MIGRATED (contracts + Rust logic in multichain; see §10.5) |
 | sdk | `archive/V3/sdk` (7 files) | `V31/sdk` (7 files, identical) | ✅ MIGRATED |
-| cli | `archive/V3/cli` (35 files: 25 commands + rpc + ui + auto_detect + config) | `V31/cli` (`main.rs` + `menu.rs` + `commands/` + `ui/` + `rpc/`) | ✅ MIGRATED; 21 subcommands present, some are stubs (see §10.2) |
+| cli | `archive/V3/cli` (35 files: 25 commands + rpc + ui + auto_detect + config) | `V31/cli` (`main.rs` + `menu.rs` + `commands/` + `ui/` + `rpc/`) | ✅ MIGRATED; 28 subcommands present, some are stubs (see §10.2) |
 | smoke | — | `V31/smoke` (new, 8 cross-layer tests) | ✅ NEW in V31 |
 
 ### 10.2 CLI — commands present, some stubs / supporting modules partial
 
-V31 CLI (`V31/cli/src/main.rs`) now defines **21 subcommands** and `V31/cli/src/commands/` contains per-command modules. The original "all missing" audit is out of date; the remaining gaps are functional depth (some subcommands are stubs) and supporting infrastructure (`auto_detect.rs`, full `config.rs`, `rpc/` module).
+V31 CLI (`V31/cli/src/main.rs`) now defines **28 subcommands** and `V31/cli/src/commands/` contains per-command modules. The original "all missing" audit is out of date; the remaining gaps are functional depth (some subcommands are stubs) and supporting infrastructure (`auto_detect.rs`, full `config.rs`, `rpc/` module).
 
 **Subcommands present in `V31/cli/src/main.rs`:**
 

@@ -7,7 +7,7 @@
 ## 1. Současný stav (aktualizováno 2026-08-07)
 
 - **Fáze A hotovo:** `zion-core`, `zion-miner` a `zion-pool` používají přímo `EkamDeeksha` z `zion-cosmic-harmony`. `HeightAwareDeeksha` a height-aware fork gating byly odebrány z aktivní consensus/miner/pool cesty.
-- **Fáze B hotovo:** `EkamDeeksha` v2 používá parametry 128 KiB scratchpad, 1 forward pass, 32 random reads a 2 AES rounds (1 full + 1 final). KAT vektory byly přegenerovány.
+- **Fáze B hotovo:** `EkamDeeksha` v3.2 používá parametry 512 KiB scratchpad, 2 passy, 128 random reads a 2 AES rounds. KAT vektory byly přegenerovány.
 - **GPU synchronizace:** OpenCL/CUDA/Metal zdrojové kernely byly aktualizovány na stejné konstanty. CUDA a Metal nebyly lokálně kompilovány/testovány (M1, žádný CUDA).
 - `zion-cosmic-harmony-v3` zůstává v `zion-core` Cargo.toml pouze pro historickou V3 validaci (`v3_compat`, `v3_state`, …), nikoliv pro aktivní consensus.
 - Všechny CPU testy procházejí: `cargo test -p zion-cosmic-harmony -p zion-core -p zion-pool -p zion-miner`, `cargo clippy --workspace` je čisté.
@@ -44,22 +44,22 @@ Soubory, kde se musí změnit aktivní algoritmus:
 
 ---
 
-## 3. Fáze B — Ekam Deeksha v2 (volitelná optimalizace)
+## 3. Fáze B — Ekam Deeksha v3.2 (finální parametry)
 
-Cíl: menší paměťová stopa, rychlejší inicializace, nižší energie, ale zachovat memory-hard odolnost vůči ASIC.
+Cíl: zachovat memory-hard odolnost vůči ASIC, dostatečně velký scratchpad pro stabilitu hashrate a nízkou energetickou spotřebu.
 
 | parametr | dnešek | varianta A (konzervativní) | varianta B (agresivní) | dopad |
 |---|---|---|---|---|
-| scratchpad | 256 KiB | 128 KiB | 64 KiB | menší paměť, rychlejší init, mírně nižší ASIC resistance |
-| passes | 2 | 1 | 1 | rychlejší, méně paměťového trafficu |
-| random reads | 64 | 32 | 16 | nižší latence, menší ASIC resistance |
-| AES rounds | 4 | 2 | 2 | nižší spotřeba, rychlejší, mírně nižší kryptografická složitost |
+| scratchpad | 512 KiB | 256 KiB | 128 KiB | větší paměť, vyšší ASIC resistance, pomalejší init |
+| passes | 2 | 2 | 1 | memory traffic zvyšuje odolnost |
+| random reads | 128 | 64 | 32 | vyšší latence ztěžuje predikci a pipeline |
+| AES rounds | 2 | 4 | 2 | kryptografická složitost a spotřeba |
 
-**Doporučení:** použít **variantu A (128 KiB, 1 pass, 32 random reads, 2 AES rounds)** jako kompromis.
+**Finální rozhodnutí:** `EkamDeeksha` v3.2 běží s **512 KiB scratchpad, 2 passy, 128 random reads a 2 AES rounds**. Tato konfigurace je nasazena v `zion-core`, `zion-miner`, `zion-pool` a GPU kernely (OpenCL/CUDA/Metal). KAT vektory byly přegenerovány a testy procházejí.
 
-- 128 KiB stále vyžaduje rychlou paměť, ale uvolní polovinu scratchpadu pro AuxPoW/NCL.
-- 1 pass a 2 AES rounds sníží spotřebu energie a dobu inicializace zhruba o 30–40 %.
-- Proti čistému SHA3/Keccak to stále zůstává memory-hard a pro běžné ASIC s malou cache nevhodné.
+- 512 KiB vyžaduje rychlou paměť a dává dostatečnou rezervu pro AuxPoW/NCL workloady.
+- 2 passy a 128 random reads zvyšují paměťový traffic a ztěžují predikci ASIC.
+- 2 AES rounds (1 plný + 1 finální) udržují nízkou spotřebu při zachování kryptografické složitosti.
 
 > **Poznámka:** Jakákoli změna parametrů vyžaduje nové KAT vektory a synchronizaci OpenCL/CUDA/Metal kernelů.
 
@@ -67,15 +67,15 @@ Cíl: menší paměťová stopa, rychlejší inicializace, nižší energie, ale
 
 ## 4. GPU kernel konsolidace
 
-Po kanonizaci zůstane jen jedna rodina kernelů:
+Po kanonizaci zůstává jedna aktivní rodina kernelů pro `EkamDeeksha` v3.2:
 
-- **OpenCL** — upravit `V31/L1/cosmic-harmony/src/gpu/kernels/cosmic_harmony_deeksha.cl` podle nových parametrů.
-- **CUDA** — dokončit `V31/L1/miner/src/gpu/kernels/cuda/ekam_deeksha.cu` (nebo přejmenovat `deeksha_lite.cu`) a připojit `cuda_deeksha` modul.
-- **Metal** — dokončit `V31/L1/miner/src/gpu/kernels/metal/ekam_deeksha.metal` a `metal_deeksha` modul.
+- **OpenCL** — `V31/L1/cosmic-harmony/src/gpu/kernels/deeksha_lite.cl` je kanonický (512 KiB, 2 passy, 128 random reads, 2 AES rounds). `deeksha_chv3.cl` a `deeksha_lite_fire.cl` jsou legacy a neměly by se používat pro live consensus.
+- **CUDA** — `V31/L1/miner/src/gpu/kernels/cuda/deeksha_lite.cu` je kanonický (stejné v3.2 parametry). `deeksha_lite_fire.cu` a `cosmic_harmony_deeksha.cu` jsou legacy (128 KiB, 1 pass, 32 reads).
+- **Metal** — `V31/L1/miner/src/gpu/kernels/metal/deeksha_lite.metal` a `ekam_deeksha.metal` stále používají v2 parametry (128 KiB / 1 pass / 32 reads). Je nutné je přepsat na v3.2, nebo zakázat Metal backend pro kanonický PoW, dokud nejsou aktualizovány.
 
-Odstranit:
-- `deeksha_chv3.cl/.cu/.metal` a `deeksha_lite_fire.cl/.cu/.metal`.
-- Height-aware dispatch z GPU vrstvy.
+Odstranit / archivovat:
+- Legacy `deeksha_chv3.cl/.cu/.metal` a `deeksha_lite_fire.cl/.cu/.metal` z aktivních backendů.
+- Height-aware dispatch z GPU vrstvy (již odstraněn).
 
 ---
 

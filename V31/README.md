@@ -98,7 +98,7 @@ Pro plný Mainnet Alpha release použij `cargo build --release` — profil má `
 
 ## Co ještě běží / E2E
 
-Všechny naplánované E2E položky pro `v3.1.0-alpha.2` jsou hotové. Zbývá ops/externí krok:
+Všechny naplánované E2E položky pro `3.1.0-beta` (protokol `3.1.0-alpha`) jsou hotové. Zbývá ops/externí krok:
 
 - ~~End-to-end smoke test node + pool + miner v jednom lokálním runu.~~ **Hotovo (2026-07-30).**
 - ~~P2P production hardening — peer discovery, ban score a resiliance proti reconnect stormu.~~ **Hotovo (2026-07-30).**

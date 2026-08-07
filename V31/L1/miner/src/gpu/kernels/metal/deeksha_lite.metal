@@ -2,7 +2,10 @@
  * DeekshaLite v2 / Ekam Deeksha — Metal GPU Compute Shader
  * Apple Silicon M1–M5 Native Pipeline
  *
- * Bit-identical to canonical CPU `EkamDeeksha::hash_bytes`:
+ * Based on Ekam Deeksha v2; not bit-identical to the current CPU
+ * `EkamDeeksha::hash_bytes` (v3.2: 512 KiB, 16384 blocks, 2 passes, 128 reads).
+ * This kernel must be updated to v3.2 constants/pipeline before use.
+ * Pipeline:
  *   1. Keccak256(header || nonce)
  *   2. Memory-hard scratchpad (128 KiB, 4096 blocks, 1 pass, 32 reads)
  *   3. AES-128 CTR mix (1 full round + 1 final round)
