@@ -354,7 +354,7 @@ async function refreshAll(){
       if(currentTab === 'wallets') { loadWallets(); loadWalletStatus(); }
       if(currentTab === 'explorer') loadExplorer();
       if(currentTab === 'hiran') loadAiStatus();
-      if(currentTab === 'overview') { loadMempool(); loadMonitoringStatus(); updateChainStats(); updateRecentBlocks(); updateTopWallets(); updateBlockRewardBreakdown(); updateNetworkGrowth(); updateMinerLeaderboard(); updateDifficultyForecast(); }
+      if(currentTab === 'overview') { loadMempool(); loadMonitoringStatus(); updateChainStats(); updateRecentBlocks(); updateTopWallets(); updateBlockRewardBreakdown(); updateNetworkGrowth(); updateMinerLeaderboard(); updateDifficultyForecast(); refreshReadiness(); }
       if(currentTab === 'controls') { loadMinerPerformance(); loadDepGraphControls(); }
       if(currentTab === 'nodes') renderAllNodes();
 
@@ -405,6 +405,12 @@ function _renderCriticalUI(statusData){
   if(netStatus) netStatus.textContent = runningNodes > 0 ? 'Live' : 'Down';
   const netSub = document.getElementById('hero-network-sub');
   if(netSub) netSub.textContent = `${protoVer} · ${runningNodes}/${totalNodes} nodes`;
+  const heroKicker = document.getElementById('hero-status-kicker');
+  if(heroKicker){
+    heroKicker.style.display = '';
+    const h = isEdge ? (statusData.v31_node?.chain_height ?? statusData.node1?.chain_height) : statusData.node1?.chain_height;
+    heroKicker.textContent = h > 0 ? `🟢 Mainnet Live · #${Number(h).toLocaleString()}` : '⏳ Pre-Launch · awaiting blocks';
+  }
   const netExtra = document.getElementById('hero-network-extra');
   if(netExtra){
     const allInSync = statusData.all_in_sync;
@@ -418,6 +424,7 @@ function _renderCriticalUI(statusData){
       `<span class="zhc-mini"><span class="zhc-mini-label">Sync</span><span class="zhc-mini-val">${allInSync ? '✅' : '⚠️'}</span></span>`,
       `<span class="zhc-mini"><span class="zhc-mini-label">Peers</span><span class="zhc-mini-val">${peers}</span></span>`,
       `<span class="zhc-mini"><span class="zhc-mini-label">Mempool</span><span class="zhc-mini-val">${mempool}</span></span>`,
+      `<span class="zhc-mini"><span class="zhc-mini-label">Blockers</span><span class="zhc-mini-val" id="hero-blockers-open">—</span></span>`,
     ].join('');
   }
 
@@ -3512,9 +3519,9 @@ async function loadRevenueTab(){
     const uptime = rev.uptime_secs || auxpow.uptime_secs || 0;
     set('rev-uptime', uptime > 0 ? Math.floor(uptime/3600) + 'h ' + Math.floor((uptime%3600)/60) + 'm' : '—');
 
-    // Split bars (real data from pool API)
+    // Split bars (real data from pool API). The second bar is Issobella Space.
     const minerPct = rev.miner_share_pct != null ? rev.miner_share_pct : 89;
-    const daoPct = rev.dao_share_pct != null ? rev.dao_share_pct : 5;
+    const daoPct = rev.issobella_share_pct != null ? rev.issobella_share_pct : (rev.dao_share_pct != null ? rev.dao_share_pct : 5);
     const humanPct = rev.humanitarian_share_pct != null ? rev.humanitarian_share_pct : 5;
     const poolPct = rev.pool_fee_pct != null ? rev.pool_fee_pct : 1;
     set('rev-split-miner', minerPct + '%');

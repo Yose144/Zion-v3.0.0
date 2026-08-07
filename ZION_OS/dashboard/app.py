@@ -334,6 +334,14 @@ ZION_BLOCK_REWARD = 5400.067           # BASE_REWARD = 5_400_067_000 flowers
 TARGET_BLOCK_TIME_SECS = 60            # BLOCK_TIME_SECONDS = 60s → 1440 blocks/day max
 MAX_BLOCKS_PER_DAY = 86400 // TARGET_BLOCK_TIME_SECS  # 1440
 
+# V31 Mainnet (2026-08-06 genesis reset) canonical public addresses.
+# Source: V31/L1/core/src/v3_compat.rs, V31/deploy/config/edge-environment.sh
+V31_CANONICAL_POOL_PAYOUT_WALLET = "zion1d2k5v0p6p2z667l7g522v2z0w0y6e7w742zq8k6"
+V31_CANONICAL_DEFAULT_MINER_WALLET = "zion1074344t7k686j6n8a0l6t0f4c8d828y083xh4m2"
+V31_CANONICAL_HUMANITARIAN_WALLET  = "zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8"
+V31_CANONICAL_ISSOBELLA_WALLET     = "zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0"
+V31_CANONICAL_POOL_FEE_WALLET      = "zion1l0h428f536s6u3x7h5f0d5c2z644j7t8u8va3x0"
+
 def flowers_to_zion(flowers):
     """Convert flowers (integer) to ZION (float), auto-detecting legacy scale.
     If the value exceeds total supply in post-3.0.3 scale, it must be legacy
@@ -3741,7 +3749,7 @@ def _build_status_edge_primary() -> dict:
             pool_edge_health = {"alive": False}
 
 
-    edge_pool_wallet = os.environ.get("ZION_POOL_WALLET", "") or "zion177w668f4g5g8s3t844s3f053k8h7r6d540853g6"
+    edge_pool_wallet = os.environ.get("ZION_POOL_WALLET", "") or V31_CANONICAL_POOL_PAYOUT_WALLET
     edge_fee_split = "89/5/5/1"
     local_pool = parse_pool_log()
     pool_status = {
@@ -4580,11 +4588,12 @@ def rpc_call(host: str, port: int, method: str, params: dict, timeout: float = 2
     """JSON-RPC call to ZION node.
 
     V31 nodes (port 9445) use raw TCP JSON-RPC, so we route those directly.
-    If the caller still targets the legacy port 9443 but ZION_NODE_RPC_ADDR
-    points to a different (V31) port, we honour the configured node address.
+    If the caller still targets the legacy port 9443 on localhost but
+    ZION_NODE_RPC_ADDR points to a different (V31) port, honour the configured
+    node address.  We do not overwrite an explicit remote host.
     """
-    # Honour active node RPC config when legacy port 9443 is requested
-    if port == 9443:
+    # Honour active node RPC config when legacy localhost port 9443 is requested
+    if port == 9443 and host in ("127.0.0.1", "localhost", "0.0.0.0"):
         cfg_host, cfg_port = _get_node_rpc_addr()
         if cfg_port != 9443:
             host, port = cfg_host, cfg_port
@@ -4605,15 +4614,20 @@ def rpc_call(host: str, port: int, method: str, params: dict, timeout: float = 2
     except Exception as e:
         return {"_rpc_error": str(e)[:120]}
 
-def parse_premine_from_genesis(rpc_host: str = "127.0.0.1", rpc_port: int = 9443) -> list:
+def parse_premine_from_genesis(rpc_host: str = None, rpc_port: int = None) -> list:
     """Extract premine addresses and amounts from the actual genesis block via RPC.
     This reflects the true on-chain state, which may differ from PREMINE_ADDRESSES_PUBLIC.txt
     after wallet rotation."""
     wallets = []
-    genesis = rpc_call(rpc_host, rpc_port, "getBlockByHeight", {"height": 0})
+    cfg_host, cfg_port = _get_node_rpc_addr()
+    if rpc_host is None:
+        rpc_host = cfg_host
+    if rpc_port is None:
+        rpc_port = cfg_port
+    genesis = rpc_call(rpc_host, rpc_port, "getBlockByHeight", {"height": 0}, timeout=2.0)
     if not genesis or not genesis.get("transactions"):
         # Fallback to Edge RPC
-        genesis = rpc_call(EDGE_HOST, 9443, "getBlockByHeight", {"height": 0})
+        genesis = rpc_call(EDGE_HOST, 9445, "getBlockByHeight", {"height": 0}, timeout=2.0)
     if not genesis or not genesis.get("transactions"):
         # Final fallback to file if RPC unavailable
         return parse_premine_from_file()
@@ -4630,35 +4644,52 @@ def parse_premine_from_genesis(rpc_host: str = "127.0.0.1", rpc_port: int = 9443
         "Network Infrastructure — P2P Seed Nodes",
         "Genesis Projects — Dharma Temple, Piko de Ora + DAO",
         "Children Future Fund — Humanitarian DAO",
+        "Bridge Seed Fund — EVM Bridge Liquidity",
+        "Bridge Vault UTXO — EVM Bridge Unlock Liquidity",
     ]
-    for i, tx in enumerate(genesis.get("transactions", [])):
-        # V31 genesis: Transaction { outputs: [{ amount, address: { encoded } }] }
-        # V3 genesis: { to, amount_zion }
-        outputs = tx.get("outputs", []) if isinstance(tx, dict) else []
-        if outputs:
-            for out in outputs:
-                if not isinstance(out, dict):
-                    continue
-                addr = out.get("address", {}).get("encoded", "") if isinstance(out.get("address"), dict) else out.get("address", "")
-                amt = out.get("amount", 0)
-                if isinstance(amt, dict):
-                    amt = amt.get("0", 0)  # Amount is a u128 tuple struct serialized as {"0": value}
-                if not addr:
-                    continue
-                amount = int(amt) if amt is not None else 0
-        else:
-            addr = tx.get("to", "")
-            amount = int(tx.get("amount_zion", 0))
-        if not addr:
-            continue
-        wallets.append({
-            "index": i + 1,
-            "address": addr,
-            "label": labels[i] if i < len(labels) else f"Premine Output {i+1}",
-            "amount_zion": flowers_to_zion(amount),  # flowers -> ZION (auto-detects legacy 1e12)
-            "source": "genesis",
-            "category": "premine",
-        })
+    tx_lists = [
+        genesis.get("transactions", []),
+        genesis.get("utxo_transactions", []),
+    ]
+    i = 0
+    for tx_group in tx_lists:
+        for tx in tx_group:
+            if not isinstance(tx, dict):
+                continue
+            amount = 0
+            # V31 genesis UTXO: { outputs: [{ amount, address: <string> }] }
+            outputs = tx.get("outputs", [])
+            if outputs:
+                for out in outputs:
+                    if not isinstance(out, dict):
+                        continue
+                    addr = out.get("address", "") or ""
+                    if isinstance(addr, dict):
+                        addr = addr.get("encoded", "")
+                    amt = out.get("amount", 0)
+                    if isinstance(amt, dict):
+                        amt = amt.get("0", 0)
+                    if not addr:
+                        continue
+                    amount += int(amt) if amt is not None else 0
+            else:
+                # V31 account transaction: { to, amount_zion }
+                addr = tx.get("to", "")
+                raw = tx.get("amount_zion", "0")
+                if isinstance(raw, dict):
+                    raw = raw.get("0", "0")
+                amount = int(raw) if raw is not None else 0
+            if not addr:
+                continue
+            wallets.append({
+                "index": i + 1,
+                "address": addr,
+                "label": labels[i] if i < len(labels) else f"Premine Output {i+1}",
+                "amount_zion": flowers_to_zion(amount),  # flowers -> ZION (auto-detects legacy 1e12)
+                "source": "genesis",
+                "category": "premine",
+            })
+            i += 1
     return wallets
 
 def parse_premine_from_file() -> list:
@@ -4755,17 +4786,23 @@ def build_wallets() -> dict:
     for w in premine:
         wallets.append(w)
 
-    # 2. Operational wallets — prefer node startup log (actual running addresses),
-    #    fallback to .env files
+    # 2. Operational wallets — prefer env / canonical V31 addresses.
+    # Only trust node startup log when a V31 node RPC is actually reachable,
+    # otherwise stale local logs can inject pre-reset addresses.
     node_addrs = parse_node_startup_addresses()
+    rpc_host, rpc_port = _get_node_rpc_addr()
+    _ping = rpc_call(rpc_host, rpc_port, "getChainInfo", {}, timeout=1.5)
+    rpc_reachable = _ping and not _ping.get("_rpc_error")
+    if not rpc_reachable:
+        node_addrs = {}
     # Canonical Edge pool wallet (AGENTS.md) — always include
-    canonical_pool = "zion177w668f4g5g8s3t844s3f053k8h7r6d540853g6"
+    canonical_pool = V31_CANONICAL_POOL_PAYOUT_WALLET
     op_sources = [
         (canonical_pool, "Pool Canonical (Main Payout)", "canonical"),
-        (node_addrs.get("miner") or find_env_value("ZION_MINER_ADDRESS"), "Miner Payout", "node"),
-        (node_addrs.get("humanitarian") or find_env_value("ZION_HUMANITARIAN_WALLET"), "Humanitarian Tithe", "node"),
-        (node_addrs.get("issobella") or find_env_value("ZION_ISSOBELLA_WALLET"), "Issobella Fund", "node"),
-        (node_addrs.get("pool_fee") or find_env_value("ZION_POOL_FEE_WALLET"), "Pool Fee Recipient", "node"),
+        (find_env_value("ZION_MINER_ADDRESS") or node_addrs.get("miner") or V31_CANONICAL_DEFAULT_MINER_WALLET, "Miner Payout", "node"),
+        (find_env_value("ZION_HUMANITARIAN_WALLET") or node_addrs.get("humanitarian") or V31_CANONICAL_HUMANITARIAN_WALLET, "Humanitarian Tithe", "node"),
+        (find_env_value("ZION_ISSOBELLA_WALLET") or node_addrs.get("issobella") or V31_CANONICAL_ISSOBELLA_WALLET, "Issobella Fund", "node"),
+        (find_env_value("ZION_POOL_FEE_WALLET") or node_addrs.get("pool_fee") or V31_CANONICAL_POOL_FEE_WALLET, "Pool Fee Recipient", "node"),
         (find_env_value("ZION_POOL_WALLET"), "Pool Operational", "env"),
     ]
     for val, label, src in op_sources:
@@ -4793,7 +4830,7 @@ def build_wallets() -> dict:
                         continue
                     if m := re.search(r'wallet\s*=\s*["\']?([^"\'\s#]+)', line):
                         addr = m.group(1).strip()
-                        active_miner = node_addrs.get("miner") or find_env_value("ZION_MINER_ADDRESS")
+                        active_miner = node_addrs.get("miner") or find_env_value("ZION_MINER_ADDRESS") or V31_CANONICAL_DEFAULT_MINER_WALLET
                         if addr and addr != active_miner and not any(w["address"] == addr for w in wallets):
                             wallets.append({
                                 "address": addr,
@@ -4806,21 +4843,11 @@ def build_wallets() -> dict:
             pass
 
     # 4. Try to enrich with live balances — prefer local RPC, fallback to Edge
-    rpc_host = "127.0.0.1"
-    rpc_port = 9443
-    rpc_addr = os.environ.get("ZION_NODE_RPC_ADDR", "")
-    if rpc_addr and ":" in rpc_addr:
-        try:
-            rpc_host, rpc_port_str = rpc_addr.rsplit(":", 1)
-            rpc_port = int(rpc_port_str)
-        except Exception:
-            pass
-    elif rpc_addr:
-        rpc_host = rpc_addr
+    rpc_host, rpc_port = _get_node_rpc_addr()
     # Test connectivity; fall back to Edge if local unavailable
     _ping = rpc_call(rpc_host, rpc_port, "getChainInfo", {}, timeout=1.5)
     if not _ping or _ping.get("_rpc_error"):
-        rpc_host, rpc_port = EDGE_HOST, 9443
+        rpc_host, rpc_port = EDGE_HOST, 9445
 
     for w in wallets:
         addr = w.get("address", "")
@@ -5146,25 +5173,16 @@ def _estimate_circulating_supply_at_height(height: int) -> float:
 def _rpc_with_fallback(method: str, params: dict, timeout: float = 2.0):
     """Call RPC on the configured local endpoint, falling back to Edge.
     Returns (result, effective_host, effective_port)."""
-    rpc_host, rpc_port = "127.0.0.1", 9443
-    rpc_addr = os.environ.get("ZION_NODE_RPC_ADDR", "")
-    if rpc_addr and ":" in rpc_addr:
-        try:
-            rpc_host, rpc_port_str = rpc_addr.rsplit(":", 1)
-            rpc_port = int(rpc_port_str)
-        except Exception:
-            pass
-    elif rpc_addr:
-        rpc_host = rpc_addr
+    rpc_host, rpc_port = _get_node_rpc_addr()
 
     result = rpc_call(rpc_host, rpc_port, method, params, timeout=timeout)
     if result and not result.get("_rpc_error"):
         return result, rpc_host, rpc_port
 
     # Fallback to Edge RPC
-    result = rpc_call(EDGE_HOST, 9443, method, params, timeout=timeout)
+    result = rpc_call(EDGE_HOST, 9445, method, params, timeout=timeout)
     if result and not result.get("_rpc_error"):
-        return result, EDGE_HOST, 9443
+        return result, EDGE_HOST, 9445
     return None, rpc_host, rpc_port
 
 
@@ -6235,7 +6253,7 @@ def get_pool_registered_miners() -> dict:
     balance_map = {}
     for addr in unique_addrs:
         try:
-            bal = rpc_call(EDGE_RPC_HOST, 9443, "getBalance", {"address": addr}, timeout=2.0)
+            bal = rpc_call(EDGE_RPC_HOST, 9445, "getBalance", {"address": addr}, timeout=2.0)
             if bal and not bal.get("_rpc_error"):
                 atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
                 balance_map[addr] = flowers_to_zion(atomic)
@@ -6336,7 +6354,7 @@ def enrich_miner_balances(miners: list) -> list:
         addr = m.get("payout_address") or m.get("address") or ""
         if addr and isinstance(addr, str) and addr.startswith("zion1"):
             try:
-                bal = rpc_call(EDGE_RPC_HOST, 9443, "getBalance", {"address": addr}, timeout=2.0)
+                bal = rpc_call(EDGE_RPC_HOST, 9445, "getBalance", {"address": addr}, timeout=2.0)
                 if bal and not bal.get("_rpc_error"):
                     atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
                     m["on_chain_balance_zion"] = flowers_to_zion(atomic)
@@ -6797,10 +6815,10 @@ def get_revenue_dashboard() -> dict:
     issobella_accum = float(fee_split.get("issobella_accumulated_flowers", 0)) / FLOWERS_PER_ZION
     pool_fee_accum = float(fee_split.get("pool_fee_accumulated_flowers", 0)) / FLOWERS_PER_ZION
 
-    # ── Fee wallet addresses (from pool config) ───────────────────────
-    humanitarian_wallet = fee_split.get("humanitarian_wallet", "")
-    issobella_wallet = fee_split.get("issobella_wallet", "")
-    pool_fee_wallet = fee_split.get("pool_fee_wallet", "")
+    # ── Fee wallet addresses (from pool config / env / canonical fallback) ──
+    humanitarian_wallet = fee_split.get("humanitarian_wallet") or find_env_value("ZION_HUMANITARIAN_WALLET") or V31_CANONICAL_HUMANITARIAN_WALLET
+    issobella_wallet = fee_split.get("issobella_wallet") or find_env_value("ZION_ISSOBELLA_WALLET") or V31_CANONICAL_ISSOBELLA_WALLET
+    pool_fee_wallet = fee_split.get("pool_fee_wallet") or find_env_value("ZION_POOL_FEE_WALLET") or V31_CANONICAL_POOL_FEE_WALLET
 
     # ── Service-based strategy detection (real status, not string parsing) ──
     # Check which L2/L3 services are actually running
@@ -6841,9 +6859,11 @@ def get_revenue_dashboard() -> dict:
         "last_switch_ts": auxpow.get("last_switch_ts"),
         "consecutive_failures": int(auxpow.get("consecutive_failures", 0)),
         "circuit_open": bool(auxpow.get("circuit_open", False)),
-        # Fee split (real data from pool API; chain defaults: 89/5/5/1 from emission.rs)
+        # Fee split (real data from pool API; chain defaults: 89/5/5/1 from emission.rs).
+        # dao_share_pct is preserved for backward UI compatibility and maps to Issobella Space.
         "miner_share_pct": int(fee_split.get("miner_pct", 89)),
         "dao_share_pct": int(fee_split.get("issobella_pct", 5)),
+        "issobella_share_pct": int(fee_split.get("issobella_pct", 5)),
         "humanitarian_share_pct": int(fee_split.get("humanitarian_pct", 5)),
         "pool_fee_pct": int(fee_split.get("pool_fee_pct", 1)),
         "humanitarian_accumulated_zion": round(humanitarian_accum, 4),
@@ -7970,7 +7990,7 @@ def get_pool_miner_detail(address: str) -> dict:
 
     # On-chain balance
     try:
-        bal = rpc_call(EDGE_RPC_HOST, 9443, "getBalance", {"address": address}, timeout=2.0)
+        bal = rpc_call(EDGE_RPC_HOST, 9445, "getBalance", {"address": address}, timeout=2.0)
         if bal and not bal.get("_rpc_error"):
             atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
             result["on_chain_balance_zion"] = flowers_to_zion(atomic)
@@ -8213,7 +8233,7 @@ def get_pool_wallet_status() -> dict:
 
     # ── Canonical pool wallet (from env or hardcoded 3.0.4) ─────────────
     if not status["pool_wallet"]:
-        status["pool_wallet"] = os.environ.get("ZION_POOL_WALLET") or "zion177w668f4g5g8s3t844s3f053k8h7r6d540853g6"
+        status["pool_wallet"] = os.environ.get("ZION_POOL_WALLET") or V31_CANONICAL_POOL_PAYOUT_WALLET
     if not status["payout_enabled"]:
         status["payout_enabled"] = True
     if not status["fee_split"]:
@@ -8243,7 +8263,7 @@ def get_pool_wallet_status() -> dict:
     # ── Tertiary: RPC for pool wallet balance ────────────────────────────
     wallet = status["pool_wallet"]
     if wallet and wallet.startswith("zion1"):
-        bal = rpc_call("127.0.0.1", 9443, "getBalance", {"address": wallet})
+        bal = rpc_call("127.0.0.1", 9445, "getBalance", {"address": wallet}, timeout=2.0)
         if bal and not bal.get("_rpc_error"):
             atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
             status["balance_zion"] = bal.get("balance_zion") if isinstance(bal.get("balance_zion"), (int, float)) else flowers_to_zion(atomic)
@@ -8456,7 +8476,7 @@ def build_payout_status() -> dict:
 
     if is_edge:
         # Canonical Edge pool wallets (from edge-environment.sh, 3.0.4 hard reset)
-        status["pool_wallet"] = os.environ.get("ZION_POOL_WALLET") or "zion177w668f4g5g8s3t844s3f053k8h7r6d540853g6"
+        status["pool_wallet"] = os.environ.get("ZION_POOL_WALLET") or V31_CANONICAL_POOL_PAYOUT_WALLET
         status["payout_enabled"] = True
         status["fee_split"] = "89/5/5/1"
         # Try env var first, then edge-environment.sh, then hardcoded canonical
@@ -8476,10 +8496,10 @@ def build_payout_status() -> dict:
                         break
                 except Exception:
                     pass
-        status["humanitarian_wallet"] = _hum or "zion1j0j5d0c70056u678j7g4p686e7r3w5k0y8vy0m0"
-        status["issobella_wallet"] = _iss or "zion1g3g0k2j665r075g5j077z0w3u4g3w0d5837j3f6"
+        status["humanitarian_wallet"] = _hum or V31_CANONICAL_HUMANITARIAN_WALLET
+        status["issobella_wallet"] = _iss or V31_CANONICAL_ISSOBELLA_WALLET
         status["pool_fee_wallet"] = ""
-        status["miner_wallet"] = os.environ.get("ZION_MINER_ADDRESS") or "zion1d6e3a4s6t856z042q2m6h5h2j4k3v7f8f2a94h7"
+        status["miner_wallet"] = os.environ.get("ZION_MINER_ADDRESS") or V31_CANONICAL_DEFAULT_MINER_WALLET
     else:
         startup = head_log("pool.log", 50)
         for line in startup:
@@ -8523,9 +8543,9 @@ def build_payout_status() -> dict:
                     pass
         # Final canonical fallback (V2 mnemonic addresses, 2026-08-06 genesis reset)
         if not status["humanitarian_wallet"]:
-            status["humanitarian_wallet"] = "zion1j0j5d0c70056u678j7g4p686e7r3w5k0y8vy0m0"
+            status["humanitarian_wallet"] = V31_CANONICAL_HUMANITARIAN_WALLET
         if not status["issobella_wallet"]:
-            status["issobella_wallet"] = "zion1g3g0k2j665r075g5j077z0w3u4g3w0d5837j3f6"
+            status["issobella_wallet"] = V31_CANONICAL_ISSOBELLA_WALLET
         if not status["pool_fee_wallet"]:
             status["pool_fee_wallet"] = os.environ.get("ZION_POOL_FEE_WALLET")
 
@@ -8730,21 +8750,21 @@ def build_payout_status() -> dict:
     for m in miners:
         addr = m.get("payout_address")
         if addr and addr.startswith("zion1"):
-            bal = rpc_call(rpc_host, 9443, "getBalance", {"address": addr}, timeout=2.0)
+            bal = rpc_call(rpc_host, rpc_port, "getBalance", {"address": addr}, timeout=2.0)
             if bal and not bal.get("_rpc_error"):
                 atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
                 m["on_chain_balance_zion"] = flowers_to_zion(atomic)
             elif is_edge and local_rpc_alive:
-                bal = rpc_call("127.0.0.1", 9443, "getBalance", {"address": addr}, timeout=2.0)
+                bal = rpc_call("127.0.0.1", 9445, "getBalance", {"address": addr}, timeout=2.0)
                 if bal and not bal.get("_rpc_error"):
                     atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or bal.get("balance") or 0)
                     m["on_chain_balance_zion"] = flowers_to_zion(atomic)
 
     # ── Network-wide emission totals from block 0 (consensus schedule) ──
     try:
-        chain_info = rpc_call(rpc_host, 9443, "getChainInfo", {}, timeout=2.0)
+        chain_info = rpc_call(rpc_host, rpc_port, "getChainInfo", {}, timeout=2.0)
         if not chain_info or chain_info.get("_rpc_error"):
-            chain_info = rpc_call("127.0.0.1", 9443, "getChainInfo", {}, timeout=2.0) if (is_edge and local_rpc_alive) else None
+            chain_info = rpc_call("127.0.0.1", 9445, "getChainInfo", {}, timeout=2.0) if (is_edge and local_rpc_alive) else None
         if chain_info and not chain_info.get("_rpc_error"):
             status["network_emission"] = calculate_emission_totals(chain_info.get("chain_height", 0))
         else:
@@ -8930,7 +8950,7 @@ def get_network_topology() -> dict:
     edge_rpc_alive = False
     edge_height = None
     try:
-        info = rpc_call(EDGE_RPC_HOST, 9443, "getChainInfo", {}, timeout=2)
+        info = rpc_call(EDGE_RPC_HOST, 9445, "getChainInfo", {}, timeout=2)
         if info and not info.get("_rpc_error"):
             edge_rpc_alive = True
             edge_height = info.get("chain_height")
@@ -9921,7 +9941,7 @@ PREMINE_GUARD = [
     {"address": "zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4", "label": "DAO Treasury", "min_balance_zion": 2_400_000_000},
     {"address": "zion1d3p5x622m327r060w5z0q5r203v837m6l8pa8x5", "label": "Core Dev Fund", "min_balance_zion": 990_000_000},
     {"address": "zion1z7g4u3s2w3c5z5u4a60864m2y7q8e5j304g46r7", "label": "Children Future Fund", "min_balance_zion": 1_430_000_000},
-    {"address": "zion177w668f4g5g8s3t844s3f053k8h7r6d540853g6", "label": "Pool Wallet", "min_balance_zion": 0},
+    {"address": V31_CANONICAL_POOL_PAYOUT_WALLET, "label": "Pool Wallet", "min_balance_zion": 0},
 ]
 
 ALERT_LOG_FILES = {
@@ -9933,22 +9953,10 @@ ALERT_LOG_FILES = {
 
 def _rpc_get_balance(address: str) -> dict | None:
     """Query node RPC for balance. Returns None on error."""
-    try:
-        import urllib.request
-        payload = json.dumps({
-            "id": 1, "jsonrpc": "2.0",
-            "method": "getBalance", "params": {"address": address}
-        }).encode("utf-8")
-        req = urllib.request.Request(
-            "http://127.0.0.1:9443",
-            data=payload,
-            headers={"Content-Type": "application/json"},
-        )
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            return data.get("result")
-    except Exception:
-        return None
+    result = rpc_call("127.0.0.1", 9445, "getBalance", {"address": address}, timeout=2.0)
+    if result and not result.get("_rpc_error"):
+        return result
+    return None
 
 
 def _read_alert_log(path: str, max_lines: int = 20) -> list[str]:
@@ -11467,7 +11475,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             # Get current genesis hash from node
             genesis_hash = None
             try:
-                genesis = rpc_call("127.0.0.1", 9443, "getBlockByHeight", {"height": 0})
+                genesis = rpc_call("127.0.0.1", 9445, "getBlockByHeight", {"height": 0})
                 if genesis:
                     genesis_hash = genesis.get("hash_hex") or genesis.get("hash")
             except Exception:
@@ -11477,9 +11485,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
             # instead of hardcoded values that may be stale after wallet rotation.
             tip_block = None
             try:
-                chain_info = rpc_call("127.0.0.1", 9443, "getChainInfo", {})
+                chain_info = rpc_call("127.0.0.1", 9445, "getChainInfo", {})
                 if chain_info and chain_info.get("chain_height") is not None:
-                    tip_block = rpc_call("127.0.0.1", 9443, "getBlockByHeight",
+                    tip_block = rpc_call("127.0.0.1", 9445, "getBlockByHeight",
                                          {"height": chain_info["chain_height"]})
             except Exception:
                 pass
@@ -11584,7 +11592,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 # Check current genesis
                 current_genesis_hash = None
                 try:
-                    genesis = rpc_call("127.0.0.1", 9443, "getBlockByHeight", {"height": 0})
+                    genesis = rpc_call("127.0.0.1", 9445, "getBlockByHeight", {"height": 0})
                     if genesis and genesis.get("hash"):
                         current_genesis_hash = genesis["hash"]
                 except Exception:
@@ -11609,7 +11617,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 # Fetch current genesis hash for the manifest
                 current_genesis_hash = None
                 try:
-                    genesis = rpc_call("127.0.0.1", 9443, "getBlockByHeight", {"height": 0}, timeout=3)
+                    genesis = rpc_call("127.0.0.1", 9445, "getBlockByHeight", {"height": 0}, timeout=3)
                     if genesis and genesis.get("hash"):
                         current_genesis_hash = genesis["hash"]
                 except Exception:
@@ -11723,7 +11731,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     status = build_status()
                     state_snapshot["current_height"] = status["node1"]["chain_height"]
                     
-                    genesis = rpc_call("127.0.0.1", 9443, "getBlockByHeight", {"height": 0})
+                    genesis = rpc_call("127.0.0.1", 9445, "getBlockByHeight", {"height": 0})
                     if genesis and genesis.get("hash"):
                         state_snapshot["current_genesis"] = genesis["hash"]
                 except Exception as e:
