@@ -378,6 +378,17 @@ impl AuxPowClient {
             }
         }
         info!("AuxPow: reconnected for {}", self.config.coin);
+
+        // For EthStratum, ensure getWork polling is active after reconnect.
+        // The polling task should survive across reconnects (it doesn't break
+        // on error), but this is a safety net in case it was stopped.
+        if self.protocol == StratumProtocol::EthStratum {
+            let already_polling = *self.eth_getwork_polling.lock().await;
+            if !already_polling {
+                self.start_eth_getwork_polling().await;
+            }
+        }
+
         Ok(())
     }
 
@@ -704,8 +715,9 @@ impl AuxPowClient {
                 }
                 let req = json!({"id": 10, "method": "eth_getWork", "params": []});
                 if let Err(e) = self_clone.send_notification(&req).await {
-                    warn!("eth_getWork poll failed: {}", e);
-                    break;
+                    // Don't break — the connection might be reconnecting.
+                    // Just log and continue; the next tick will retry.
+                    debug!("eth_getWork poll skipped (reconnecting?): {}", e);
                 }
             }
         });
