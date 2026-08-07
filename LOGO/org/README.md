@@ -1,6 +1,11 @@
 # ZION Brand Package — `LOGO/org/`
 
-Canonical deliverables based on `LOGO/symbol.png` for listings, websites, apps and socials.
+Canonical deliverables based on `LOGO/ZionLogo.png` for listings, websites, apps and socials.
+
+The previous `LOGO/symbol.png` package is still buildable with:
+```bash
+python3 LOGO/org/build_org_logos.py --source LOGO/symbol.png --legacy-symbol
+```
 
 ## Quick pick
 
@@ -13,6 +18,8 @@ Canonical deliverables based on `LOGO/symbol.png` for listings, websites, apps a
 | **Header wordmark dark** | `zion-wordmark-dark.png` |
 | **Header wordmark light** | `zion-wordmark-light.png` |
 | **High-res master** | `symbol-1024x1024.png` |
+| **Desktop .ico** | `zion-desktop.ico` |
+| **Desktop .icns** | `zion-desktop.icns` |
 
 ## Generated assets
 
@@ -23,8 +30,8 @@ Canonical deliverables based on `LOGO/symbol.png` for listings, websites, apps a
 | `symbol-256x256.png` | 256×256 | Wallet / app icon |
 | `symbol-200x200.png` | 200×200 | **CoinMarketCap / CoinGecko / exchange listing** |
 | `favicon.png` | 512×512 | Default web favicon PNG |
-| `favicon.ico` | multi-res | ICO with 16, 32, 48, 64, 128, 256, 512 layers |
-| `favicon-16/32/48/64/128/256/512.png` | various | Individual favicon sizes |
+| `favicon.ico` | multi-res | ICO with 16, 32, 48, 64, 128, 256 layers |
+| `favicon-16/32/48/64/128/144/180/192/256/512.png` | various | Individual favicon sizes |
 | `favicon.svg` | 256×256 | SVG wrapper with embedded PNG (for modern browsers) |
 | `symbol.svg` | 512×512 | SVG wrapper with embedded PNG |
 | `zion-wordmark-dark.png` | 1200×600 | Light text on dark background |
@@ -34,6 +41,10 @@ Canonical deliverables based on `LOGO/symbol.png` for listings, websites, apps a
 | `zion-gold-emerald.png` | 1024×1024 | App icon, gold-to-emerald gradient background |
 | `zion-light-background.png` | 1024×1024 | App icon, light/white background |
 | `zion-exchange-mark-200/256/512.png` | 200/256/512 | Exchange / CMC-style square mark |
+| `zion-desktop.ico` | multi-res | Windows desktop agent icon |
+| `zion-desktop.icns` | multi-res | macOS desktop agent icon set |
+| `zion-mobile-adaptive-icon.png` | 1024×1024 | Transparent adaptive / app icon for mobile |
+| `zion-mobile-splash.png` | 1242×2208 | Expo splash screen with dark background |
 
 ## Rebuild
 
@@ -44,8 +55,9 @@ python3 LOGO/org/build_org_logos.py
 Requirements:
 - `python3`
 - `Pillow` (`pip install Pillow` if missing)
+- `iconutil` (macOS only, required for `.icns`)
 
-The script reads `LOGO/symbol.png`, removes the white background and any stray top-left artifacts, then generates the whole package in `LOGO/org/`.
+The script reads `LOGO/ZionLogo.png`, removes the stray top-left watermark and makes the background transparent, then generates the whole package in `LOGO/org/`.
 
 ## Notes
 
