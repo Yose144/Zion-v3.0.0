@@ -231,7 +231,7 @@ fn main() {
     // -----------------------------------------------------------------------
     if feat("native-etchash") {
         let mut b = cc::Build::new();
-        b.file("csrc/etchash/etchash_native.c")
+        b.file("csrc/etchash/etchash_native.c") // Includes DAG generation (ethash_generate_dag, etc.)
             .opt_level(3)
             .warnings(false)
             .cargo_warnings(false);
@@ -239,9 +239,14 @@ fn main() {
             b.flag_if_supported("-fPIC");
             if target_os == "linux" {
                 b.define("_POSIX_C_SOURCE", "200112L");
+                // Enable OpenMP for parallel DAG generation
+                if std::env::var("ZION_DISABLE_OPENMP").as_deref() != Ok("1") {
+                    b.flag_if_supported("-fopenmp");
+                }
             }
         } else {
             b.flag_if_supported("/std:c11");
+            b.flag_if_supported("/openmp");
             add_msvc_includes(&mut b);
         }
         b.compile("etchash_zion");
