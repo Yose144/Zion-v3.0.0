@@ -136,7 +136,62 @@ pub fn build_batch_payout(
             needed: u64::MAX,
         })?;
 
-    let (selected, total) = select_utxos(available_utxos, target)?;
+    // If we don't have enough UTXOs to cover payouts + fee, but we DO have
+    // enough to cover just the payouts, reduce the last recipient's amount
+    // by the fee shortfall. This avoids "insufficient funds" when the pool
+    // has exactly the right amount for payouts but no reserve for the fee.
+    let (selected, total) = match select_utxos(available_utxos, target) {
+        Ok(result) => result,
+        Err(WalletError::InsufficientFunds { available, .. }) if available >= total_payout => {
+            // Recompute with fee absorbed into payouts
+            let shortfall = target.saturating_sub(available);
+            let mut adjusted_recipients: Vec<BatchRecipient> = recipients.to_vec();
+            if !adjusted_recipients.is_empty() {
+                let last = adjusted_recipients.len() - 1;
+                adjusted_recipients[last].amount =
+                    adjusted_recipients[last].amount.saturating_sub(shortfall);
+            }
+            let new_total_payout: u64 = adjusted_recipients.iter().map(|r| r.amount).sum();
+            let new_target = new_total_payout.checked_add(fee).unwrap_or(u64::MAX);
+            // If still not enough, try with zero fee (dust tx)
+            if new_target > available {
+                // Last resort: absorb fee entirely into last recipient
+                if !adjusted_recipients.is_empty() {
+                    let last = adjusted_recipients.len() - 1;
+                    adjusted_recipients[last].amount =
+                        adjusted_recipients[last].amount.saturating_sub(fee);
+                }
+                let final_total: u64 = adjusted_recipients.iter().map(|r| r.amount).sum();
+                let (sel, tot) = select_utxos(available_utxos, final_total)?;
+                return build_batch_payout_inner(
+                    signing_key, change_address, &adjusted_recipients, 0, &sel, tot,
+                );
+            }
+            let (sel, tot) = select_utxos(available_utxos, new_target)?;
+            return build_batch_payout_inner(
+                signing_key, change_address, &adjusted_recipients, fee, &sel, tot,
+            );
+        }
+        Err(e) => return Err(e),
+    };
+
+    build_batch_payout_inner(signing_key, change_address, recipients, fee, &selected, total)
+}
+
+fn total_payout_inner(recipients: &[BatchRecipient], fee: u64) -> u64 {
+    let total_payout: u64 = recipients.iter().map(|r| r.amount).sum();
+    total_payout.saturating_add(fee)
+}
+
+fn build_batch_payout_inner(
+    signing_key: &SigningKey,
+    change_address: &str,
+    recipients: &[BatchRecipient],
+    fee: u64,
+    selected: &[&SpendableUtxo],
+    total: u64,
+) -> Result<BuildResult, WalletError> {
+    let target = total_payout_inner(recipients, fee);
     let change = total - target;
 
     let mut outputs: Vec<TransactionOutput> = Vec::with_capacity(recipients.len() + 1);
@@ -161,7 +216,7 @@ pub fn build_batch_payout(
     }
 
     let mut inputs: Vec<TransactionInput> = Vec::with_capacity(selected.len());
-    for utxo in &selected {
+    for utxo in selected {
         inputs.push(TransactionInput {
             previous_output: Hash::new(utxo.tx_hash),
             index: utxo.output_index,
