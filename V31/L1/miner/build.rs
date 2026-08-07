@@ -6,7 +6,88 @@
 //!
 //! Also handles GPU backend linking (OpenCL, Metal) when those features are enabled.
 
+/// On Windows MSVC, cc-rs may not find the Windows SDK / VC include paths when
+/// invoked from a plain terminal (not a VS Developer Command Prompt).
+/// Detect and add them explicitly so C standard headers are resolved.
+/// Also adds the POSIX compat shim (clock_gettime etc.) for Windows.
+fn add_msvc_includes(b: &mut cc::Build) {
+    // 0. Define NOMINMAX globally — windows.h defines min/max macros that
+    //    break std::numeric_limits<T>::max() in C++ code.
+    b.define("NOMINMAX", None);
+
+    // 1. VCToolsInstallDir env var (set by vcvarsall.bat / developer prompt)
+    if let Ok(v) = std::env::var("VCToolsInstallDir") {
+        let inc = std::path::PathBuf::from(&v).join("include");
+        if inc.exists() {
+            b.include(&inc);
+        }
+    }
+
+    // 2. Walk known VS installation roots (VS 2022 + VS 2026 + VS 18)
+    let roots: &[&str] = &[
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC",
+        "C:\\Program Files\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC",
+        "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC",
+        "C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\VC\\Tools\\MSVC",
+        "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\VC\\Tools\\MSVC",
+        "D:\\VS2026\\VC\\Tools\\MSVC",
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC",
+    ];
+    for root in roots {
+        if let Ok(entries) = std::fs::read_dir(root) {
+            if let Some(latest) = entries
+                .filter_map(|e| e.ok())
+                .filter(|e| e.file_type().map(|t| t.is_dir()).unwrap_or(false))
+                .max_by_key(|e| e.file_name())
+            {
+                let inc = latest.path().join("include");
+                if inc.exists() {
+                    b.include(&inc);
+                    break;
+                }
+            }
+        }
+    }
+
+    // 3. Windows SDK ucrt/um/shared headers
+    let sdk_roots: &[&str] = &[
+        "C:\\Program Files (x86)\\Windows Kits\\10\\Include",
+        "C:\\Program Files\\Windows Kits\\10\\Include",
+    ];
+    for sdk_root in sdk_roots {
+        if let Ok(entries) = std::fs::read_dir(sdk_root) {
+            if let Some(latest) = entries
+                .filter_map(|e| e.ok())
+                .filter(|e| e.file_type().map(|t| t.is_dir()).unwrap_or(false))
+                .max_by_key(|e| e.file_name())
+            {
+                for sub in &["ucrt", "um", "shared"] {
+                    let p = latest.path().join(sub);
+                    if p.exists() {
+                        b.include(&p);
+                    }
+                }
+                break;
+            }
+        }
+    }
+
+    // 4. Force-include the POSIX compat shim (provides clock_gettime etc.)
+    //    The compat header lives in native-ffi/csrc/compat — use relative path
+    //    from the miner crate root.
+    let compat_dir = std::path::PathBuf::from("../native-ffi/csrc/compat");
+    if compat_dir.exists() {
+        b.include(&compat_dir);
+        // Use flag() not flag_if_supported() — cc-rs's flag_if_supported
+        // tests the flag with a dummy compilation that may not include the
+        // compat dir, causing /FI to fail the support check.
+        b.flag("/FIzion_time_compat.h");
+    }
+}
+
 fn main() {
+    let is_msvc = std::env::var("CARGO_CFG_TARGET_ENV").unwrap_or_default() == "msvc";
+
     // ── Native C hashers (from AuXpow) ──
     if std::env::var("CARGO_FEATURE_NATIVE_HASHERS").is_ok() {
         let mut build = cc::Build::new();
@@ -40,14 +121,22 @@ fn main() {
             build.flag("-fopenmp");
         }
 
+        // Windows MSVC: add include paths + POSIX compat shim
+        if is_msvc {
+            add_msvc_includes(&mut build);
+            build.flag_if_supported("/utf-8");
+        }
+
         // CPU baseline (XMRig-style): respect ZION_CPU_TARGET env var.
         {
             let cpu_target =
                 std::env::var("ZION_CPU_TARGET").unwrap_or_else(|_| "x86-64".to_string());
-            if cpu_target == "native" {
-                build.flag_if_supported("-march=native");
-            } else if !cpu_target.is_empty() {
-                build.flag_if_supported(format!("-march={}", cpu_target));
+            if !is_msvc {
+                if cpu_target == "native" {
+                    build.flag_if_supported("-march=native");
+                } else if !cpu_target.is_empty() {
+                    build.flag_if_supported(format!("-march={}", cpu_target));
+                }
             }
             println!("cargo:warning=ZION miner build: cpu_target={}", cpu_target);
         }
