@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --rasta-red: #e41e2b;
+  --rasta-gold: #fcd116;
+  --rasta-green: #078930;
+  --rasta-dark: #1a1a1a;
+  --rasta-black: #0d0d0d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--rasta-black);
+  color: #fff;
+  font-family: 'Inter', system-ui, sans-serif;
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Original Stargate CSS from public/stargate/stargate.css is loaded by the component */
