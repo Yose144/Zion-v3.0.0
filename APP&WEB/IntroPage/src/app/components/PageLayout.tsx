@@ -23,6 +23,7 @@ export default function PageLayout({
     { href: "/camp", label: { cs: "Camp", en: "Camp" } },
     { href: "/blog", label: { cs: "Blog", en: "Blog" } },
     { href: "/portfolio/", label: { cs: "Portfolio", en: "Portfolio" } },
+    { href: "/seeds/", label: { cs: "Seeds", en: "Seeds" } },
   ];
 
   return (
