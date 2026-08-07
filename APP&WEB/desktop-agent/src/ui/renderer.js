@@ -3500,7 +3500,7 @@ async function refreshNetworkMetrics() {
           <div style="display:flex;gap:16px;font-size:12px;color:rgba(255,255,255,0.55);">
             <span>H: <b style="color:#93c5fd;">${n.height ? n.height.toLocaleString() : '—'}</b></span>
             <span>M: <b style="color:#fcd34d;">${n.miners}</b></span>
-            <span style="color:#c4b5fd;font-family:monospace;">${hr}</span>
+            <span style="color:#ff6b7a;font-family:monospace;">${hr}</span>
           </div>
         </div>`;
       }).join('');
