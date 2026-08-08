@@ -97,9 +97,15 @@ impl MinerConfig {
             hashrate_per_unit: 1000.0,
             zion_nonce_batch: 10_000,
             auxpow_nonce_batch: 1_000_000,
-            stream1_enabled: true,
-            stream2_enabled: true,
-            stream3_enabled: true,
+            stream1_enabled: std::env::var("ZION_STREAM1_ENABLED")
+                .map(|v| v != "0" && !v.eq_ignore_ascii_case("false"))
+                .unwrap_or(true),
+            stream2_enabled: std::env::var("ZION_STREAM2_ENABLED")
+                .map(|v| v != "0" && !v.eq_ignore_ascii_case("false"))
+                .unwrap_or(true),
+            stream3_enabled: std::env::var("ZION_STREAM3_ENABLED")
+                .map(|v| v != "0" && !v.eq_ignore_ascii_case("false"))
+                .unwrap_or(true),
             stream2_batch: 1_048_576, // 1M nonces per batch for ProgPoW GPU mining
             stream3_batch: 1_000_000,
             stream2_force_coin: std::env::var("ZION_STREAM2_FORCE_COIN")

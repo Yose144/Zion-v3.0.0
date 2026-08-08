@@ -1127,7 +1127,11 @@ impl MinerRuntime {
             let client = client.clone();
             let mut job_rx = job_tx.subscribe();
             let mut shutdown = shutdown.clone();
+            let stream2_enabled = self.config.stream2_enabled;
             tokio::spawn(async move {
+                if !stream2_enabled {
+                    return Ok::<(), MinerError>(());
+                }
                 loop {
                     tokio::select! {
                         _ = shutdown.changed() => break,
@@ -1162,7 +1166,11 @@ impl MinerRuntime {
             let client = client.clone();
             let mut job_rx = job_tx.subscribe();
             let mut shutdown = shutdown.clone();
+            let stream3_enabled = self.config.stream3_enabled;
             tokio::spawn(async move {
+                if !stream3_enabled {
+                    return Ok::<(), MinerError>(());
+                }
                 loop {
                     tokio::select! {
                         _ = shutdown.changed() => break,
