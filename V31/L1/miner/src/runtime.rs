@@ -1024,33 +1024,43 @@ impl MinerRuntime {
             let job_tx = job_tx.clone();
             let mut shutdown = shutdown.clone();
             tokio::spawn(async move {
+                // Get the initial job, then continuously mine shares with it
+                // until a new job arrives. This ensures we search many nonces
+                // per job instead of just one share per job.
+                let mut current_bundle: Option<crate::v3_pool_client::V3JobBundle> = None;
+
                 loop {
                     tokio::select! {
                         _ = shutdown.changed() => break,
                         result = async {
-                            // Get next job bundle from pool
-                            let bundle = client.next_job(Duration::from_secs(60)).await
-                                .map_err(|e| MinerError::Consensus(format!("V3 job: {e}")))?;
-
-                            // Reset nonce cursor on each new job (pool rotates
-                            // job_id, so old nonces are stale). The cursor will
-                            // advance as mine_v3_zion_share scans batches.
-                            this.zion_nonce_cursor.store(
-                                bundle.zion.start_nonce,
-                                std::sync::atomic::Ordering::Relaxed,
-                            );
-
-                            // Broadcast to Stream 2/3 workers (ignore lag errors)
-                            if let Some(ref ext) = bundle.gpu_external {
-                                eprintln!("v3_trinity gpu_external coin={} job_id={} height={}", ext.coin, ext.job_id, ext.height);
+                            // If we have a current job, mine a share with it.
+                            // Otherwise, wait for the first job.
+                            if let Some(bundle) = &current_bundle {
+                                // Mine ZION share with the current job
+                                this.mine_v3_zion_share(&client, &bundle.zion).await
+                            } else {
+                                // Wait for first job
+                                let bundle = client.next_job(Duration::from_secs(60)).await
+                                    .map_err(|e| MinerError::Consensus(format!("V3 job: {e}")))?;
+                                this.zion_nonce_cursor.store(
+                                    bundle.zion.start_nonce,
+                                    std::sync::atomic::Ordering::Relaxed,
+                                );
+                                if let Some(ref ext) = bundle.gpu_external {
+                                    eprintln!("v3_trinity gpu_external coin={} job_id={} height={}", ext.coin, ext.job_id, ext.height);
+                                }
+                                if let Some(ref ext) = bundle.cpu_external {
+                                    eprintln!("v3_trinity cpu_external coin={} job_id={} height={}", ext.coin, ext.job_id, ext.height);
+                                }
+                                let _ = job_tx.send(bundle.clone());
+                                current_bundle = Some(bundle);
+                                // Mine first share with the new job
+                                if let Some(bundle) = &current_bundle {
+                                    this.mine_v3_zion_share(&client, &bundle.zion).await
+                                } else {
+                                    return Ok(false);
+                                }
                             }
-                            if let Some(ref ext) = bundle.cpu_external {
-                                eprintln!("v3_trinity cpu_external coin={} job_id={} height={}", ext.coin, ext.job_id, ext.height);
-                            }
-                            let _ = job_tx.send(bundle.clone());
-
-                            // Mine ZION share (Stream 1)
-                            this.mine_v3_zion_share(&client, &bundle.zion).await
                         } => {
                             this.mark_active(StreamId::Zion).await;
                             match result {
@@ -1062,6 +1072,46 @@ impl MinerRuntime {
                                 Err(e) => {
                                     warn!(error = %e, "V3 Trinity: ZION mining error");
                                     sleep(Duration::from_millis(100)).await;
+                                }
+                            }
+
+                            // Check if a new job has arrived (non-blocking)
+                            if let Some(new_bundle) = client.try_next_job().await {
+                                this.zion_nonce_cursor.store(
+                                    new_bundle.zion.start_nonce,
+                                    std::sync::atomic::Ordering::Relaxed,
+                                );
+                                if let Some(ref ext) = new_bundle.gpu_external {
+                                    eprintln!("v3_trinity gpu_external coin={} job_id={} height={}", ext.coin, ext.job_id, ext.height);
+                                }
+                                if let Some(ref ext) = new_bundle.cpu_external {
+                                    eprintln!("v3_trinity cpu_external coin={} job_id={} height={}", ext.coin, ext.job_id, ext.height);
+                                }
+                                let _ = job_tx.send(new_bundle.clone());
+                                current_bundle = Some(new_bundle);
+                            }
+
+                            // If no current job, wait for one
+                            if current_bundle.is_none() {
+                                match client.next_job(Duration::from_secs(60)).await {
+                                    Ok(bundle) => {
+                                        this.zion_nonce_cursor.store(
+                                            bundle.zion.start_nonce,
+                                            std::sync::atomic::Ordering::Relaxed,
+                                        );
+                                        if let Some(ref ext) = bundle.gpu_external {
+                                            eprintln!("v3_trinity gpu_external coin={} job_id={} height={}", ext.coin, ext.job_id, ext.height);
+                                        }
+                                        if let Some(ref ext) = bundle.cpu_external {
+                                            eprintln!("v3_trinity cpu_external coin={} job_id={} height={}", ext.coin, ext.job_id, ext.height);
+                                        }
+                                        let _ = job_tx.send(bundle.clone());
+                                        current_bundle = Some(bundle);
+                                    }
+                                    Err(e) => {
+                                        warn!(error = %e, "V3 Trinity: ZION job wait error");
+                                        sleep(Duration::from_secs(5)).await;
+                                    }
                                 }
                             }
                         }

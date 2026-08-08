@@ -275,6 +275,13 @@ impl V3PoolClient {
         }
     }
 
+    /// Non-blocking check for a new job. Returns `Some(bundle)` if a new job
+    /// is available, `None` if no new job has arrived since the last call.
+    pub async fn try_next_job(&self) -> Option<V3JobBundle> {
+        let mut rx = self.job_rx.lock().await;
+        rx.try_recv().ok()
+    }
+
     /// Submit a ZION share to the pool.
     pub async fn submit_zion_share(
         &self,
