@@ -1505,6 +1505,11 @@ impl StratumServer {
 
                                 let bridge_result = self.multi_bridge.forward_by_ticker(&coin, req);
 
+                                tracing::info!(
+                                    "v3_external_forward miner={} coin={} job={} nonce={} result={:?}",
+                                    sub_miner_id, coin, external_job_id, nonce, bridge_result.as_ref().map(|_| "result")
+                                );
+
                                 let (accepted, status) = match bridge_result {
                                     Some(crate::auxpow_bridge::ShareForwardOutcome::Result(
                                         crate::share_forwarder::ShareForwardResult::Accepted,
