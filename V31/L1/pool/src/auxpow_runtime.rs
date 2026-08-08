@@ -342,6 +342,10 @@ async fn run_bridge_task(
         // Forward any pending shares (non-blocking drain)
         while let Ok((req, reply_tx)) = share_rx.try_recv() {
             let result = forward_share_to_upstream(&client, coin, &req).await;
+            tracing::info!(
+                "auxpow[{}]: share forwarded job={} nonce={} result={:?}",
+                coin_label, req.job_id, req.nonce, result
+            );
             let _ = reply_tx.send(result);
         }
 
@@ -362,7 +366,13 @@ async fn forward_share_to_upstream(
     req: &ShareForwardRequest,
 ) -> ShareForwardOutcome {
     let _ = coin; // coin is implicit in the client config
-    let header_hash = format!("0x{}", hex::encode(&req.header_bytes));
+    // If header_bytes is empty, pass None so submit_share falls back to job_id
+    // (which is the block header hash for EthStratum pools like HeroMiners).
+    let header_hash_opt = if req.header_bytes.is_empty() {
+        None
+    } else {
+        Some(format!("0x{}", hex::encode(&req.header_bytes)))
+    };
     match client
         .submit_share(
             &req.job_id,
@@ -370,7 +380,7 @@ async fn forward_share_to_upstream(
             "",
             "00000000",
             req.mix_hash_hex.as_deref(),
-            Some(&header_hash),
+            header_hash_opt.as_deref(),
         )
         .await
     {
