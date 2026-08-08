@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import PageLayout from "../../components/PageLayout";
 import HeroImage from "../../components/HeroImage";
+import LucideIcon from "../../components/LucideIcon";
 import data from "../../data/seeds-data.json";
 
 export default function SeedsDetailClient({ slug }: { slug: string }) {
@@ -14,7 +15,7 @@ export default function SeedsDetailClient({ slug }: { slug: string }) {
   const colors: Record<string, string> = {
     thc: "bg-[#e41e2b]",
     cbd: "bg-[#078930]",
-    indica: "bg-[#6549d5]",
+    indica: "bg-[#e41e2b]",
     sativa: "bg-[#fcd116]",
   };
 
@@ -54,7 +55,7 @@ export default function SeedsDetailClient({ slug }: { slug: string }) {
             className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-center backdrop-blur-sm"
           >
             <div className="mb-2 text-2xl text-[#078930]">
-              <i className={`fa-solid ${stat.icon}`}></i>
+              <LucideIcon name={stat.icon} size={24} />
             </div>
             <div className="text-lg font-bold text-white">{stat.value}</div>
             <div className="text-xs text-white/60">{stat.label}</div>
@@ -82,10 +83,11 @@ export default function SeedsDetailClient({ slug }: { slug: string }) {
               }}
             >
               <p className="!m-0 text-[#fcd116]">
-                <i
-                  className={`fa-solid ${strain.description.note.icon}`}
-                  style={{ marginRight: 8 }}
-                ></i>
+                <LucideIcon
+                  name={strain.description.note.icon}
+                  size={18}
+                  className="mr-2 inline"
+                />
                 <strong>{strain.description.note.title}</strong>{" "}
                 {strain.description.note.text}
               </p>
@@ -125,7 +127,7 @@ export default function SeedsDetailClient({ slug }: { slug: string }) {
                 key={i}
                 className="flex items-center gap-2 rounded-full border border-[#078930]/30 bg-[#078930]/10 px-3 py-1 text-sm text-[#078930]"
               >
-                <i className={`fa-solid ${e.icon}`}></i>
+                <LucideIcon name={e.icon} size={16} />
                 <span>{e.label}</span>
               </div>
             ))}
@@ -139,7 +141,7 @@ export default function SeedsDetailClient({ slug }: { slug: string }) {
                 key={i}
                 className="flex items-center gap-2 rounded-full border border-[#e41e2b]/30 bg-[#e41e2b]/10 px-3 py-1 text-sm text-[#e41e2b]"
               >
-                <i className={`fa-solid ${e.icon}`}></i>
+                <LucideIcon name={e.icon} size={16} />
                 <span>{e.label}</span>
               </div>
             ))}
@@ -182,7 +184,7 @@ export default function SeedsDetailClient({ slug }: { slug: string }) {
                 className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-center"
               >
                 <div className="mb-2 text-2xl text-[#fcd116]">
-                  <i className={`fa-solid ${g.icon}`}></i>
+                  <LucideIcon name={g.icon} size={24} />
                 </div>
                 <div className="text-xs text-white/60">{g.title}</div>
                 <div className="text-lg font-semibold text-white">{g.value}</div>
@@ -235,7 +237,7 @@ export default function SeedsDetailClient({ slug }: { slug: string }) {
               {strain.cta.price}
             </div>
             <a href="/legacy/shop.html" className="button primary small rasta-green">
-              <i className="fa-solid fa-cart-plus"></i> {strain.cta.buy}
+              <LucideIcon name="fa-cart-plus" size={16} className="mr-2" /> {strain.cta.buy}
             </a>
           </div>
         </section>
@@ -258,7 +260,7 @@ export default function SeedsDetailClient({ slug }: { slug: string }) {
                 rel="noopener"
                 className={`${s.color} transition hover:text-white`}
               >
-                <i className={`fa-brands ${s.icon}`}></i>
+                <LucideIcon name={s.icon} size={28} />
               </a>
             ))}
           </div>
@@ -269,19 +271,19 @@ export default function SeedsDetailClient({ slug }: { slug: string }) {
             href={`/seeds/${strain.nav.prev.slug}/`}
             className="button primary small rasta-gold"
           >
-            <i className="fa-solid fa-arrow-left"></i> {strain.nav.prev.label}
+            <LucideIcon name="fa-arrow-left" size={16} className="mr-2" /> {strain.nav.prev.label}
           </Link>
           <Link
             href={`/seeds/${strain.nav.next.slug}/`}
             className="button primary small rasta-gold"
           >
-            {strain.nav.next.label} <i className="fa-solid fa-arrow-right"></i>
+            {strain.nav.next.label} <LucideIcon name="fa-arrow-right" size={16} className="ml-2" />
           </Link>
         </div>
 
         <div className="mt-6 text-center">
           <Link href="/seeds/" className="button primary small rasta-green">
-            <i className="fa-solid fa-arrow-left"></i> Zpět na seeds
+            <LucideIcon name="fa-arrow-left" size={16} className="mr-2" /> Zpět na seeds
           </Link>
         </div>
       </article>
