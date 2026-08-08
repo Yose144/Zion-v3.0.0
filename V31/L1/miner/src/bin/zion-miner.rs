@@ -220,9 +220,10 @@ async fn main() -> Result<()> {
     config.stream3_url = args.stream3_url.or(config.stream3_url);
     config.worker = args.worker.clone();
     config.miner_threads = args.threads;
-    config.stream1_enabled = !args.no_zion;
-    config.stream2_enabled = !args.no_gpu;
-    config.stream3_enabled = !args.no_cpu;
+    // CLI --no-* flags override env vars; if flag is absent, keep env var value
+    if args.no_zion { config.stream1_enabled = false; }
+    if args.no_gpu { config.stream2_enabled = false; }
+    if args.no_cpu { config.stream3_enabled = false; }
     // GPU backend for Stream 1 (ZION deeksha) — CLI overrides env
     if let Some(ref gpu) = args.gpu {
         config.gpu_backend = gpu.clone();
@@ -266,6 +267,7 @@ async fn main() -> Result<()> {
         }
     }
 
+    let (s1, s2, s3) = (config.stream1_enabled, config.stream2_enabled, config.stream3_enabled);
     let runtime = MinerRuntime::new(config);
     let pool_addr = runtime
         .config()
@@ -368,9 +370,9 @@ async fn main() -> Result<()> {
     });
 
     info!(
-        stream1 = %(!args.no_zion),
-        stream2 = %(!args.no_gpu),
-        stream3 = %(!args.no_cpu),
+        stream1 = %s1,
+        stream2 = %s2,
+        stream3 = %s3,
         threads = args.threads,
         tui = %tui_enabled,
         "zion-miner (triple stream) starting"
