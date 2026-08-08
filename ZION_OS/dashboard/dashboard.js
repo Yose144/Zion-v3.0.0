@@ -103,13 +103,32 @@ function copyToClipboard(text){
 }
 
 // Safe fetch wrapper: checks .ok, throws on HTTP error, parses JSON, with timeout
+// Short-lived in-memory cache for GET requests to dedupe concurrent calls and
+// avoid redundant server work during heavy refresh cycles.
+const _API_CACHE = new Map();
+const _API_CACHE_TTL_MS = 1500;
+
 async function apiFetch(url, opts={}, timeoutMs=8000){
+  const method = (opts.method || 'GET').toUpperCase();
+  const key = method + ' ' + url;
+  const now = Date.now();
+  const useCache = method === 'GET' && opts.cache !== false;
+  if(useCache){
+    const cached = _API_CACHE.get(key);
+    if(cached && now - cached.ts < _API_CACHE_TTL_MS){
+      return cached.data;
+    }
+  }
   const ctrl = new AbortController();
   const tid = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const res = await fetch(url, { ...opts, signal: ctrl.signal, credentials: 'same-origin' });
     if(!res.ok) throw new Error('HTTP ' + res.status + ' on ' + url);
-    return await res.json();
+    const data = await res.json();
+    if(useCache){
+      _API_CACHE.set(key, { data, ts: now });
+    }
+    return data;
   } finally {
     clearTimeout(tid);
   }
@@ -292,7 +311,10 @@ function setCardLive(id, ok){
   c.classList.toggle('svc-live', ok);
 }
 
+let _refreshInProgress = false;
 async function refreshAll(){
+  if(_refreshInProgress) { console.log('[REFRESH] skipped (already running)'); return; }
+  _refreshInProgress = true;
   console.log('[REFRESH] Starting refreshAll...');
   try {
     // ── Phase 1: Fetch /api/status FIRST (critical path) ──
@@ -380,6 +402,8 @@ async function refreshAll(){
   } catch(e){
     console.error('[REFRESH] refreshAll error:', e);
     updateConnectionStatus(false);
+  } finally {
+    _refreshInProgress = false;
   }
 }
 
@@ -8740,6 +8764,17 @@ setTimeout(() => { loadNclOverview(); loadHiranOverview(); }, 1500);
 setTimeout(() => { refreshEdgeServerCard(); updateEdgeHealth(); }, 3000); // initial edge server load
 if(_overviewWidgetTimer) clearInterval(_overviewWidgetTimer);
 _overviewWidgetTimer = setInterval(() => { loadNclOverview(); loadHiranOverview(); }, 15000);
+
+// ── Pause background refresh when tab is hidden to save CPU/network ───
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden){
+    if(refreshTimer){ clearInterval(refreshTimer); refreshTimer = null; }
+  } else {
+    refreshAll();
+    if(autoRefresh && !refreshTimer) refreshTimer = setInterval(refreshAll, REFRESH_INTERVAL_OK);
+  }
+});
+
 // ─────────────────────────────────────────────────────────────────────
 // L2 Layer Functions
 // ─────────────────────────────────────────────────────────────────────
