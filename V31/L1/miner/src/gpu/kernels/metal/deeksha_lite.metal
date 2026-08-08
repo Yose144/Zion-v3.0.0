@@ -1,13 +1,11 @@
 /*
- * DeekshaLite v2 / Ekam Deeksha — Metal GPU Compute Shader
+ * Ekam Deeksha v3.2 — Metal GPU Compute Shader
  * Apple Silicon M1–M5 Native Pipeline
  *
- * Based on Ekam Deeksha v2; not bit-identical to the current CPU
- * `EkamDeeksha::hash_bytes` (v3.2: 512 KiB, 16384 blocks, 2 passes, 128 reads).
- * This kernel must be updated to v3.2 constants/pipeline before use.
+ * Bit-identical to CPU `EkamDeeksha::hash_bytes` (v3.2).
  * Pipeline:
  *   1. Keccak256(header || nonce)
- *   2. Memory-hard scratchpad (128 KiB, 4096 blocks, 1 pass, 32 reads)
+ *   2. Memory-hard scratchpad (512 KiB, 16384 blocks, 2 passes, 128 reads)
  *   3. AES-128 CTR mix (1 full round + 1 final round)
  *   4. Keccak256(s3) -> final hash
  *
@@ -18,11 +16,11 @@
 #include <metal_atomic>
 using namespace metal;
 
-#define SCRATCHPAD_SIZE  131072   /* 128 KiB = 4096 * 32 */
+#define SCRATCHPAD_SIZE  524288   /* 512 KiB = 16384 * 32 */
 #define BLOCK_SIZE       32
-#define BLOCK_COUNT      4096
-#define PASSES           1
-#define RANDOM_READS     32
+#define BLOCK_COUNT      16384
+#define PASSES           2
+#define RANDOM_READS     128
 
 #define ROL64(x, n) (((x) << (n)) | ((x) >> (64 - (n))))
 
@@ -351,9 +349,10 @@ kernel void deeksha_lite_mine(
     thread uchar *hash = (thread uchar *)hash_u;
     for (int i = 0; i < 32; i++) hash[i] = sb[i];
 
-    /* Compare first 4 bytes vs target */
-    uint state0 = hash_u[0];
-    if (state0 <= target_u32) {
+    /* Compare first 4 bytes vs target (big-endian, matching CPU lexicographic) */
+    uint state0_be = ((uint)hash[0] << 24) | ((uint)hash[1] << 16) |
+                     ((uint)hash[2] <<  8) |  (uint)hash[3];
+    if (state0_be <= target_u32) {
         uint old = atomic_exchange_explicit(&result_flag[0], 0u, memory_order_relaxed);
         if (old == 0xFFFFFFFFu) {
             atomic_store_explicit(&result_flag[1], (uint)(nonce & 0xFFFFFFFFu), memory_order_relaxed);
