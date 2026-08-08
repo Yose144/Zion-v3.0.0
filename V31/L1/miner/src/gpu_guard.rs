@@ -281,8 +281,8 @@ impl GpuTuning {
     pub fn auto_tune(algo: GpuAlgorithm, family: GpuDeviceFamily, vram_bytes: usize) -> Self {
         let scratchpad_bytes = match algo {
             GpuAlgorithm::CosmicHarmony => 256 * 1024, // 256 KiB per thread
-            GpuAlgorithm::DeekshaLiteV1 => 256 * 1024, // 256 KiB per thread
-            GpuAlgorithm::DeekshaLiteFire => 256 * 1024, // 256 KiB per thread (same as v1 + thermal loop)
+            GpuAlgorithm::DeekshaLiteV1 => 512 * 1024, // 512 KiB per thread (v3.2 ASIC-hardened)
+            GpuAlgorithm::DeekshaLiteFire => 512 * 1024, // 512 KiB per thread (v3.2 + thermal loop)
         };
 
         let reserve = 512 * 1024 * 1024; // 512 MiB for driver + desktop
@@ -293,12 +293,14 @@ impl GpuTuning {
         let (work_size, local_ws, build_opts, vram_pct, gcn_s4_mode) = match (algo, family) {
             // ── DeekshaLite v1 ──────────────────────────────────────────
             (GpuAlgorithm::DeekshaLiteV1, GpuDeviceFamily::AmdGcn) => {
-                // GCN Vega 64: 8GB HBM2 → 16384, local_ws=64 (wave64 optimal)
+                // GCN Vega 64: 8GB HBM2, 512 KiB/thread (v3.2)
+                // 8192 threads × 512 KiB = 4 GiB scratchpad (fits comfortably)
+                // local_ws=64 (wave64 optimal for gfx900)
                 // NOTE: local_ws=256 causes kernel compilation/execution hangs on
                 // SMOS OpenCL compiler for gfx900 (see VEGA_GPU_MINING_DEBUG_REPORT_2026-04-09.md)
-                let ws = (max_by_vram.min(16384).max(256)).next_power_of_two();
-                let opts = "-cl-std=CL1.2".to_string();
-                (ws, 64, opts, 85, false)
+                let ws = (max_by_vram.min(8192).max(256)).next_power_of_two();
+                let opts = "-cl-std=CL1.2 -cl-mad-enable".to_string();
+                (ws, 64, opts, 60, false)
             }
             (GpuAlgorithm::DeekshaLiteV1, GpuDeviceFamily::AmdRdna) => {
                 // RDNA: fast ulong-width path, LWS=256 benchmarks better than 128

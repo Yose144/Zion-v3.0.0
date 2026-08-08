@@ -334,6 +334,98 @@ ZION_BLOCK_REWARD = 5400.067           # BASE_REWARD = 5_400_067_000 flowers
 TARGET_BLOCK_TIME_SECS = 60            # BLOCK_TIME_SECONDS = 60s → 1440 blocks/day max
 MAX_BLOCKS_PER_DAY = 86400 // TARGET_BLOCK_TIME_SECS  # 1440
 
+# ── Hashrate fallback helpers ─────────────────────────────────────────────
+# The V31 pool does not receive attempted_hashes/elapsed_ms from V3 Trinity
+# miners, so its built-in hashrate telemetry stays at 0.  We estimate hashrate
+# from the number of full blocks found by the pool and the current network
+# difficulty: hashes = blocks * difficulty, rate = hashes / pool_uptime.
+
+@_ttl_cache_fn(15.0)
+def _v31_chain_info() -> dict:
+    """Fetch live V31 chain info from the local node (cached 15 s)."""
+    try:
+        req = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "getChainInfo", "params": []}) + "\n"
+        with socket.create_connection((EDGE_RPC_HOST, 9445), timeout=2.0) as s:
+            s.sendall(req.encode())
+            resp = b""
+            while True:
+                chunk = s.recv(8192)
+                if not chunk:
+                    break
+                resp += chunk
+                if b"\n" in chunk:
+                    break
+        r = json.loads(resp.decode("utf-8", errors="replace").strip())
+        if "error" in r and r["error"]:
+            return {}
+        res = r.get("result") or {}
+        return {
+            "chain_height": res.get("native_chain_height") or res.get("chain_height"),
+            "difficulty": res.get("difficulty"),
+            "accepted_blocks": res.get("accepted_blocks"),
+            "tip_hash": res.get("tip_hash"),
+        }
+    except Exception:
+        return {}
+
+
+def _estimate_hashrate_from_pool_metrics(metrics_body: str, network_difficulty: float = None) -> dict:
+    """Estimate pool and per-worker hashrate from pool Prometheus metrics.
+
+    Returns a dict with:
+      - "pool_hps": aggregate pool hashrate in hashes/second
+      - "workers_hps": { worker_label: hps }
+      - "avg_share_diff": inferred average share difficulty
+      - "pool_khs": aggregate pool hashrate in kH/s
+    """
+    result = {"pool_hps": 0.0, "workers_hps": {}, "avg_share_diff": 0.0, "pool_khs": 0.0}
+    if network_difficulty is None:
+        cinfo = _v31_chain_info()
+        network_difficulty = cinfo.get("difficulty")
+    if not network_difficulty:
+        return result
+
+    uptime_s = 0.0
+    blocks_found = 0
+    shares_accepted = 0
+    workers: dict = {}
+    for line in metrics_body.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if line.startswith("zion_pool_uptime_s "):
+            uptime_s = float(line.split()[-1])
+        elif line.startswith("zion_pool_blocks_found_total "):
+            blocks_found = int(float(line.split()[-1]))
+        elif line.startswith("zion_pool_shares_accepted "):
+            shares_accepted = int(float(line.split()[-1]))
+        elif line.startswith("zion_pool_worker_valid_shares{worker="):
+            m = re.search(r'worker="([^"]+)"\}\s+([\d.]+)', line)
+            if m:
+                workers[m.group(1)] = int(float(m.group(2)))
+
+    if not (uptime_s > 0 and blocks_found > 0 and network_difficulty > 0):
+        return result
+
+    # Pool hashrate = (blocks_found * network_difficulty) / uptime
+    # Each full block represents ~network_difficulty hashes on average.
+    pool_hps = (blocks_found * float(network_difficulty)) / uptime_s
+    result["pool_hps"] = pool_hps
+    result["pool_khs"] = pool_hps / 1000.0
+
+    # Infer average share difficulty from pool hashrate and accepted shares.
+    avg_share_diff = 0.0
+    if shares_accepted > 0:
+        avg_share_diff = (pool_hps * uptime_s) / shares_accepted
+    result["avg_share_diff"] = avg_share_diff
+
+    if avg_share_diff > 0:
+        for worker, valid in workers.items():
+            result["workers_hps"][worker] = (valid * avg_share_diff) / uptime_s
+
+    return result
+
+
 # V31 Mainnet (2026-08-06 genesis reset) canonical public addresses.
 # Source: V31/L1/core/src/v3_compat.rs, V31/deploy/config/edge-environment.sh
 V31_CANONICAL_POOL_PAYOUT_WALLET = "zion1d2k5v0p6p2z667l7g522v2z0w0y6e7w742zq8k6"
@@ -886,6 +978,9 @@ def get_monitoring_status() -> dict:
                 hashrate_hps = float(line.split()[-1])
             elif line.startswith("zion_pool_hashrate_khs "):
                 hashrate_hps = float(line.split()[-1]) * 1000.0
+            elif line.startswith("zion_pool_hashrate_1h_hps "):
+                # ignore; we use live
+                pass
             elif line.startswith("zion_pool_blocks_found ") or line.startswith("zion_pool_blocks_found_total "):
                 blocks_found = int(float(line.split()[-1]))
             elif line.startswith("zion_pool_submits_total "):
@@ -896,6 +991,13 @@ def get_monitoring_status() -> dict:
             result["prometheus"]["targets_up"] = active_sessions
         if submits == 0 and (accepted or rejected):
             submits = accepted + rejected
+        # Fallback hashrate estimate for V3 Trinity miners that don't report work samples.
+        if hashrate_hps <= 0 and body:
+            try:
+                hr_est = _estimate_hashrate_from_pool_metrics(body)
+                hashrate_hps = hr_est.get("pool_hps", 0.0)
+            except Exception:
+                pass
         hr_str = f"{hashrate_hps/1000:.1f} KH/s" if hashrate_hps >= 1000 else f"{hashrate_hps:.1f} H/s"
         result["prometheus"]["version"] = hr_str
         result["prometheus"]["shares"] = shares
@@ -2735,7 +2837,7 @@ def get_miner_live_stats() -> dict:
             import urllib.request as _ur
             with _ur.urlopen(f"http://{EDGE_RPC_HOST}:{V31_POOL_API_PORT}/metrics", timeout=2.0) as _r:
                 _txt = _r.read().decode("utf-8", errors="ignore")
-            _active = _tracked = _hashrate = _accepted = _rejected = 0
+            _active = _tracked = _accepted = _rejected = 0
             for _ln in _txt.splitlines():
                 _ln = _ln.strip()
                 if _ln.startswith("zion_pool_active_sessions "):
@@ -2745,10 +2847,6 @@ def get_miner_live_stats() -> dict:
                 elif _ln.startswith("zion_pool_pplns_registered_miners "):
                     if _tracked == 0:
                         _tracked = int(float(_ln.split()[-1]))
-                elif _ln.startswith("zion_pool_hashrate_hps "):
-                    _hashrate = float(_ln.split()[-1]) / 1000.0
-                elif _ln.startswith("zion_pool_hashrate_khs "):
-                    _hashrate = float(_ln.split()[-1])
                 elif _ln.startswith("zion_pool_shares_accepted "):
                     _accepted = int(float(_ln.split()[-1]))
                 elif _ln.startswith("zion_pool_accepted_total "):
@@ -2761,11 +2859,22 @@ def get_miner_live_stats() -> dict:
                         _rejected = int(float(_ln.split()[-1]))
             if _active > 0 or _tracked > 0:
                 stats["running"] = True
-                stats["hashrate"] = _hashrate if _hashrate > 0 else stats.get("hashrate")
                 stats["shares_accepted"] = _accepted
                 stats["shares_rejected"] = _rejected
                 stats["pool_addr"] = f"{EDGE_PUBLIC_IP}:8444"
                 stats["gpu_backend"] = "pool"
+                # The pool's built-in hashrate metric is 0 for V3 Trinity miners
+                # because they don't submit attempted_hashes/elapsed_ms. Estimate
+                # from blocks found and network difficulty; prefer the Edge worker
+                # if we can identify it.
+                hr_est = _estimate_hashrate_from_pool_metrics(_txt)
+                _hashrate = hr_est["pool_khs"]
+                for worker, hps in hr_est["workers_hps"].items():
+                    if "v31-edge-lite" in worker:
+                        _hashrate = hps / 1000.0
+                        stats["worker_name"] = worker.split(".")[-1]
+                        break
+                stats["hashrate"] = _hashrate if _hashrate > 0 else stats.get("hashrate")
         except Exception:
             pass
 
@@ -3200,6 +3309,10 @@ def _build_status_edge_primary() -> dict:
                 combined["chain_height"] = chaininfo["native_chain_height"]
             if chaininfo.get("tip_hash"):
                 combined["tip_hash"] = chaininfo["tip_hash"]
+            if chaininfo.get("difficulty") is not None:
+                combined["difficulty"] = chaininfo["difficulty"]
+            if chaininfo.get("accepted_blocks") is not None:
+                combined["accepted_blocks"] = chaininfo["accepted_blocks"]
         return ("v31", combined)
 
     def _v31_systemd_call():
@@ -3663,6 +3776,7 @@ def _build_status_edge_primary() -> dict:
     edge_payout = {"pplns_rounds": 0, "pplns_total_paid": 0, "pplns_window_size": 0, "pplns_window_used": 0, "pplns_registered_miners": 0,
                    "fee_humanitarian": 0, "fee_issobella": 0, "fee_pool": 0, "fee_miner_pct": 89,
                    "miner_balances": []}
+    body = ""
     try:
         # Direct Edge pool metrics probe (port V31_POOL_API_PORT)
         url = f"http://{EDGE_RPC_HOST}:{V31_POOL_API_PORT}/metrics"
@@ -3744,6 +3858,31 @@ def _build_status_edge_primary() -> dict:
         _tracked = edge_metrics.get("miners_tracked") or edge_payout.get("pplns_registered_miners") or 0
         if _tracked > 0:
             edge_metrics["active_miners"] = _tracked
+    # Hashrate fallback: V31 Trinity miners don't submit attempted_hashes/elapsed_ms,
+    # so the pool's built-in hashrate metric stays 0. Estimate from full blocks found,
+    # current network difficulty, and pool uptime.
+    if body and (edge_metrics.get("hashrate") is None or edge_metrics["hashrate"] <= 0):
+        network_difficulty = None
+        if v31_rpc_info and isinstance(v31_rpc_info, dict):
+            network_difficulty = v31_rpc_info.get("difficulty")
+        if network_difficulty:
+            try:
+                hr_est = _estimate_hashrate_from_pool_metrics(body, network_difficulty)
+                with open("/tmp/hr_debug.log", "a") as _df:
+                    _df.write(f"[HASHRATE_DEBUG] nd={network_difficulty} hr={hr_est}\n")
+                if hr_est.get("pool_khs", 0) > 0:
+                    edge_metrics["hashrate"] = round(hr_est["pool_khs"], 6)
+                    if edge_metrics.get("hashrate_1h") is None:
+                        edge_metrics["hashrate_1h"] = round(hr_est["pool_khs"], 6)
+                    # Remember per-worker estimates so the Edge miner panel can show
+                    # its own hashrate rather than the whole pool's.
+                    for worker, hps in hr_est.get("workers_hps", {}).items():
+                        if "v31-edge-lite" in worker:
+                            edge_metrics["edge_worker_khs"] = round(hps / 1000.0, 6)
+                            break
+            except Exception:
+                pass
+
     # Mark pool as alive if we successfully fetched metrics
     if edge_metrics.get("active_miners") is not None:
         pool_edge_health = {"alive": True}
@@ -3803,10 +3942,11 @@ def _build_status_edge_primary() -> dict:
     # Edge-primary: no local miner process; reflect active pool miners instead
     active_miners = (edge_metrics.get("active_miners") or 0) if edge_metrics else 0
     tracked_miners = (edge_metrics.get("miners_tracked") or 0) if edge_metrics else 0
-    if not miner_status.get("running") and (active_miners > 0 or tracked_miners > 0):
+    if ((not miner_status.get("running")) or (miner_status.get("hashrate") is None)) and (active_miners > 0 or tracked_miners > 0):
         miner_status["running"] = True
         miner_status["pool_addr"] = f"{EDGE_PUBLIC_IP}:8444"
-        miner_status["hashrate"] = edge_metrics.get("hashrate") if edge_metrics else None
+        # Prefer the Edge worker's estimated hashrate; fall back to the pool aggregate.
+        miner_status["hashrate"] = edge_metrics.get("edge_worker_khs") or edge_metrics.get("hashrate") if edge_metrics else None
         miner_status["shares_accepted"] = edge_metrics.get("shares_accepted") or 0
         miner_status["shares_rejected"] = edge_metrics.get("shares_rejected") or 0
 

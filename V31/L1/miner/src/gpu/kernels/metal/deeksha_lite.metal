@@ -144,9 +144,34 @@ inline void keccak256(thread const uchar *in, int inlen, thread uchar *out)
 }
 
 /* ========================================================================== */
-/* SHA3-512                                                                   */
+/* SHA3-512 — u64-optimized for 65-byte input (scratchpad fill)               */
+/* Input always fits in one keccak block (rate=72 > 65).                       */
 /* ========================================================================== */
 
+inline void sha3_512_65_u64(
+    thread const ulong *state_in,
+    uchar blk_byte,
+    thread ulong *out_u64)
+{
+    thread ulong st[25];
+    st[0]=state_in[0]; st[1]=state_in[1]; st[2]=state_in[2]; st[3]=state_in[3];
+    st[4]=state_in[4]; st[5]=state_in[5]; st[6]=state_in[6]; st[7]=state_in[7];
+    st[8]=0; st[9]=0; st[10]=0; st[11]=0; st[12]=0; st[13]=0; st[14]=0; st[15]=0;
+    st[16]=0; st[17]=0; st[18]=0; st[19]=0; st[20]=0; st[21]=0; st[22]=0; st[23]=0;
+    st[24]=0;
+
+    /* XOR byte 64 into low byte of st[8] */
+    st[8] ^= (ulong)blk_byte;
+    /* Pad: 0x06 at byte 65 (st[8] byte 1), 0x80 at byte 71 (st[8] byte 7) */
+    st[8] ^= (0x06UL << 8) | (0x80UL << 56);
+
+    keccak_f1600(st);
+
+    out_u64[0]=st[0]; out_u64[1]=st[1]; out_u64[2]=st[2]; out_u64[3]=st[3];
+    out_u64[4]=st[4]; out_u64[5]=st[5]; out_u64[6]=st[6]; out_u64[7]=st[7];
+}
+
+/* Generic SHA3-512 (for non-scratchpad use) */
 inline void sha3_512(thread const uchar *in, uint inlen, thread uchar *out)
 {
     thread ulong st[25];
@@ -207,23 +232,25 @@ inline void aes_final_round(thread uchar s[16], thread const uchar k[16])
 /* Steps 2A/2B/2C: scratchpad                                                 */
 /* ========================================================================== */
 
-inline void fill_scratchpad(thread const uchar seed[32], device uchar *pad)
+inline void fill_scratchpad(thread const ulong seed_u64[4], device uchar *pad)
 {
-    thread ulong state_u[8];
-    thread uchar *state = (thread uchar *)state_u;
-    for (int i = 0; i < 32; i++) state[i] = seed[i];
-    for (int i = 32; i < 64; i++) state[i] = 0;
+    thread ulong state[8];
+    state[0] = seed_u64[0]; state[1] = seed_u64[1];
+    state[2] = seed_u64[2]; state[3] = seed_u64[3];
+    state[4] = 0; state[5] = 0; state[6] = 0; state[7] = 0;
+
     for (uint blk = 0; blk < BLOCK_COUNT; blk++) {
-        uchar inp[65];
-        for (int i = 0; i < 64; i++) inp[i] = state[i];
-        inp[64] = (uchar)(blk & 0xFF);
-        thread ulong out64_u[8];
-        thread uchar *out64 = (thread uchar *)out64_u;
-        sha3_512(inp, 65, out64);
+        thread ulong out[8];
+        sha3_512_65_u64(state, (uchar)(blk & 0xFF), out);
+
         uint off = blk * BLOCK_SIZE;
         device ulong *dst = (device ulong *)(pad + off);
-        for (int i = 0; i < 4; i++) dst[i] = out64_u[i];
-        for (int i = 0; i < 4; i++) state_u[i] = out64_u[i];
+        dst[0] = out[0]; dst[1] = out[1]; dst[2] = out[2]; dst[3] = out[3];
+
+        /* Chain state: first 4 u64s from output, rest zero */
+        state[0] = out[0]; state[1] = out[1];
+        state[2] = out[2]; state[3] = out[3];
+        state[4] = 0; state[5] = 0; state[6] = 0; state[7] = 0;
     }
 }
 
@@ -246,21 +273,20 @@ inline void sequential_passes(device uchar *pad)
 #endif
 }
 
-inline void random_read_mix(thread const uchar seed[32], device const uchar *pad, thread uchar *out)
+inline void random_read_mix(thread const ulong seed_u64[4], device const uchar *pad, thread ulong out_u64[4])
 {
-    thread ulong acc_u[4];
-    thread uchar *acc = (thread uchar *)acc_u;
-    for (int i = 0; i < 32; i++) acc[i] = seed[i];
+    thread ulong acc[4];
+    acc[0] = seed_u64[0]; acc[1] = seed_u64[1];
+    acc[2] = seed_u64[2]; acc[3] = seed_u64[3];
     ulong pos = 0;
     for (ulong r = 0; r < RANDOM_READS; r++) {
         uint off = (uint)(pos * BLOCK_SIZE);
         device const ulong *pv = (device const ulong *)(pad + off);
-        for (int j = 0; j < 4; j++) acc_u[j] ^= pv[j];
-        ulong idx_val = 0;
-        for (int i = 0; i < 8; i++) idx_val |= ((ulong)acc[i]) << (i * 8);
-        pos = (idx_val ^ pos ^ r) % BLOCK_COUNT;
+        acc[0] ^= pv[0]; acc[1] ^= pv[1]; acc[2] ^= pv[2]; acc[3] ^= pv[3];
+        pos = (acc[0] ^ pos ^ r) % BLOCK_COUNT;
     }
-    for (int i = 0; i < 32; i++) out[i] = acc[i];
+    out_u64[0] = acc[0]; out_u64[1] = acc[1];
+    out_u64[2] = acc[2]; out_u64[3] = acc[3];
 }
 
 /* ========================================================================== */
@@ -312,7 +338,7 @@ kernel void deeksha_lite_mine(
     ulong nonce = nonce_base_buf[0] + (ulong)gid;
     device uchar *pad = scratchpad_pool + (ulong)gid * SCRATCHPAD_SIZE;
 
-    /* Step 1: Keccak256(header || nonce) */
+    /* Step 1: Keccak256(header || nonce) — u64 throughout */
     thread ulong input_u[11];
     for (int i = 0; i < 11; i++) input_u[i] = 0;
     thread uchar *input = (thread uchar *)input_u;
@@ -324,41 +350,57 @@ kernel void deeksha_lite_mine(
     for (uint i = (hwords << 2); i < hlen; i++) input[i] = header[i];
     input_u[10] = nonce;
 
-    uchar s1[32];
-    keccak256(input, 88, s1);
+    /* Keccak256 with padding 0x01 at byte 88, 0x80 at byte 135 */
+    {
+        thread ulong st[25];
+        for (int i = 0; i < 11; i++) st[i] = input_u[i];
+        for (int i = 11; i < 25; i++) st[i] = 0;
+        st[11] ^= 0x01UL;
+        st[16] ^= (0x80UL << 56);
+        keccak_f1600(st);
+        ulong s1_u64[4];
+        s1_u64[0] = st[0]; s1_u64[1] = st[1]; s1_u64[2] = st[2]; s1_u64[3] = st[3];
 
-    /* Step 2: Memory-hard scratchpad */
-    fill_scratchpad(s1, pad);
-    sequential_passes(pad);
-    uchar s2[32];
-    random_read_mix(s1, pad, s2);
+        /* Step 2: Memory-hard scratchpad — u64 API */
+        fill_scratchpad(s1_u64, pad);
+        sequential_passes(pad);
+        ulong s2_u64[4];
+        random_read_mix(s1_u64, pad, s2_u64);
 
-    /* Step 3: AES-128 CTR mix */
-    uchar s3[32];
-    aes128_mix(s2, nonce, s3);
+        /* Step 3: AES-128 CTR mix */
+        thread uchar s2_bytes[32];
+        thread uchar *s2p = (thread uchar *)s2_u64;
+        for (int i = 0; i < 32; i++) s2_bytes[i] = s2p[i];
+        uchar s3[32];
+        aes128_mix(s2_bytes, nonce, s3);
 
-    /* Step 4: Keccak256 final */
-    thread ulong st[25];
-    for (int i = 0; i < 25; i++) st[i] = 0;
-    thread uchar *sb = (thread uchar *)st;
-    for (int i = 0; i < 32; i++) sb[i] ^= s3[i];
-    sb[32] ^= 0x01;
-    sb[135] ^= 0x80;
-    keccak_f1600(st);
-    thread uint hash_u[8];
-    thread uchar *hash = (thread uchar *)hash_u;
-    for (int i = 0; i < 32; i++) hash[i] = sb[i];
+        /* Step 4: Keccak256 final — u64 direct */
+        thread ulong fst[25];
+        for (int i = 0; i < 25; i++) fst[i] = 0;
+        thread ulong *s3_u64 = (thread ulong *)s3;
+        fst[0] = s3_u64[0]; fst[1] = s3_u64[1]; fst[2] = s3_u64[2]; fst[3] = s3_u64[3];
+        fst[4] ^= 0x01UL;
+        fst[16] ^= (0x80UL << 56);
+        keccak_f1600(fst);
 
-    /* Compare first 4 bytes vs target (big-endian, matching CPU lexicographic) */
-    uint state0_be = ((uint)hash[0] << 24) | ((uint)hash[1] << 16) |
-                     ((uint)hash[2] <<  8) |  (uint)hash[3];
-    if (state0_be <= target_u32) {
-        uint old = atomic_exchange_explicit(&result_flag[0], 0u, memory_order_relaxed);
-        if (old == 0xFFFFFFFFu) {
-            atomic_store_explicit(&result_flag[1], (uint)(nonce & 0xFFFFFFFFu), memory_order_relaxed);
-            atomic_store_explicit(&result_flag[2], (uint)(nonce >> 32), memory_order_relaxed);
-            device uint *rh32 = (device uint *)result_hash;
-            for (int i = 0; i < 8; i++) rh32[i] = hash_u[i];
+        ulong hash_u64[4];
+        hash_u64[0] = fst[0]; hash_u64[1] = fst[1]; hash_u64[2] = fst[2]; hash_u64[3] = fst[3];
+
+        /* Compare first 4 bytes vs target (big-endian, matching CPU lexicographic) */
+        uint hash_low = (uint)(hash_u64[0] & 0xFFFFFFFFUL);
+        uint state0_be = ((hash_low & 0xFFu) << 24) |
+                         ((hash_low & 0xFF00u) << 8) |
+                         ((hash_low >> 8) & 0xFF00u) |
+                         ((hash_low >> 24) & 0xFFu);
+        if (state0_be <= target_u32) {
+            uint old = atomic_exchange_explicit(&result_flag[0], 0u, memory_order_relaxed);
+            if (old == 0xFFFFFFFFu) {
+                atomic_store_explicit(&result_flag[1], (uint)(nonce & 0xFFFFFFFFu), memory_order_relaxed);
+                atomic_store_explicit(&result_flag[2], (uint)(nonce >> 32), memory_order_relaxed);
+                device ulong *rh = (device ulong *)result_hash;
+                rh[0] = hash_u64[0]; rh[1] = hash_u64[1];
+                rh[2] = hash_u64[2]; rh[3] = hash_u64[3];
+            }
         }
     }
 }
