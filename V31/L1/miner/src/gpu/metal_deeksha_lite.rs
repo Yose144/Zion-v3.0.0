@@ -244,6 +244,7 @@ impl GpuMiner for MetalDeekshaLiteMiner {
             solutions: all_solutions,
             nonces_tested: total_tested,
             device_name: self.device_name_cached.clone(),
+            solution_blob: None,
         })
     }
 

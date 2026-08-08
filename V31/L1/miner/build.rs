@@ -113,12 +113,13 @@ fn main() {
             build.file(src);
         }
 
-        // OpenMP for parallel DAG generation (see AuXpow build.rs for details).
-        let openmp_disabled = std::env::var("ZION_DISABLE_OPENMP").as_deref() == Ok("1");
-        let target_os_for_omp = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
-        if target_os_for_omp == "macos" && !openmp_disabled {
-            build.flag("-Xpreprocessor");
-            build.flag("-fopenmp");
+        // OpenMP for parallel DAG generation — disabled entirely.
+        // DAG is generated on GPU; libomp is not always available
+        // (macOS, minimal Docker containers). Can be re-enabled with
+        // ZION_ENABLE_OPENMP=1 if needed for CPU-only DAG generation.
+        let openmp_enabled = std::env::var("ZION_ENABLE_OPENMP").as_deref() == Ok("1");
+        if openmp_enabled {
+            build.flag_if_supported("-fopenmp");
         }
 
         // Windows MSVC: add include paths + POSIX compat shim
@@ -144,7 +145,7 @@ fn main() {
         build.warnings(false).opt_level(3).compile("auxpow_native");
 
         let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
-        if target_os == "macos" && !openmp_disabled {
+        if target_os == "linux" && openmp_enabled {
             println!("cargo:rustc-link-lib=omp");
         }
 

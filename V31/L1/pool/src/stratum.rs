@@ -944,23 +944,88 @@ impl StratumServer {
                     match line {
                         Ok(Some(line)) => {
                             match decode_message(&line) {
-                                Ok(PoolMessage::Submit { job_id, miner_id: _, worker_name, nonce, .. }) => {
+                                Ok(PoolMessage::Submit { job_id, miner_id: submit_miner, worker_name: submit_worker, nonce, .. }) => {
                                     let job_key = format!("zion_{}", job_id);
                                     let job_data = self.jobs.lock().unwrap().get(&job_key).cloned();
-                                    if let Some((header, share_target, _block_target, _reward, template)) = job_data {
+                                    if let Some((header, share_target, block_target, reward, template)) = job_data {
                                         let (height, difficulty) = template.as_ref().map(|t| (t.height, t.difficulty)).unwrap_or((0, 1));
                                         let submission = ShareSubmission {
-                                            worker: worker_name.clone(),
+                                            worker: submit_worker.clone(),
                                             job_id: job_key.clone(),
                                             nonce_hex: format!("{:016x}", nonce),
                                         };
                                         let result = self.pool.lock().unwrap().submit_zion_with_target(submission, &header, height, difficulty, &share_target);
                                         let accepted = matches!(result, Ok(true));
+
+                                        // Check if share meets the network block target
+                                        let block_found = accepted && {
+                                            let pool = self.pool.lock().unwrap();
+                                            let hash = pool.validator.zion_hash(&header, nonce);
+                                            hash.as_bytes() <= &block_target
+                                        };
+
+                                        if accepted {
+                                            self.block_tracker.lock().unwrap().record_share();
+                                        }
+
+                                        // If block found, submit to node
+                                        if block_found {
+                                            let has_rpc = self.pool.lock().unwrap().config.l1_rpc_url.as_deref().is_some_and(|s| !s.is_empty());
+                                            match (has_rpc, template) {
+                                                (true, Some(tpl)) => {
+                                                    let block = match build_solved_block(tpl, nonce) {
+                                                        Ok(b) => b,
+                                                        Err(e) => {
+                                                            tracing::warn!("v3_tls_block_build_failed: {}", e);
+                                                            let result_msg = PoolMessage::Result {
+                                                                accepted,
+                                                                status: "accepted".into(),
+                                                                block_found: false,
+                                                                block_height: Some(height),
+                                                            };
+                                                            let _ = write_v3_message(writer, &result_msg).await;
+                                                            continue;
+                                                        }
+                                                    };
+                                                    let job_id_log = job_key.clone();
+                                                    let server = self.clone();
+                                                    let miner_for_block = submit_miner.clone();
+                                                    let worker_for_block = submit_worker.clone();
+                                                    let share_diff = difficulty;
+                                                    let network_diff = difficulty;
+                                                    tokio::spawn(async move {
+                                                        if let Err(e) = server.submit_found_block(
+                                                            job_id_log, miner_for_block, worker_for_block,
+                                                            block, height, reward, share_diff, network_diff,
+                                                        ).await {
+                                                            tracing::warn!("v3_tls block submission failed: {}", e);
+                                                        }
+                                                    });
+                                                    tracing::info!(
+                                                        "v3_share job={} miner={} nonce={} accepted=true block_found=true height={}",
+                                                        job_id, submit_miner, nonce, height
+                                                    );
+                                                }
+                                                _ => {
+                                                    self.record_block_accepted(height, reward, &submit_miner, &submit_worker, difficulty, difficulty, "");
+                                                    tracing::info!(
+                                                        "v3_share job={} miner={} nonce={} accepted=true block_found=true (no RPC) height={}",
+                                                        job_id, submit_miner, nonce, height
+                                                    );
+                                                }
+                                            }
+                                        } else if accepted {
+                                            tracing::info!(
+                                                "v3_share job={} miner={} nonce={} accepted={}",
+                                                job_id, submit_miner, nonce, accepted
+                                            );
+                                        }
+
                                         let result_msg = PoolMessage::Result {
                                             accepted,
                                             status: if accepted { "accepted".into() } else { "rejected".into() },
-                                            block_found: false,
-                                            block_height: None,
+                                            block_found,
+                                            block_height: if block_found { Some(height) } else { None },
                                         };
                                         let _ = write_v3_message(writer, &result_msg).await;
                                     } else {
@@ -1787,11 +1852,17 @@ fn parse_target_hex(target_hex: &str) -> Option<[u8; 32]> {
         .trim()
         .trim_start_matches("0x")
         .trim_start_matches("0X");
-    if hex.len() != 64 {
-        return None;
-    }
+    // Pad short hex to 64 chars (32 bytes) with leading zeros.
+    // The node may return a truncated target (e.g. 40 chars = 20 bytes).
+    let padded = if hex.len() < 64 {
+        format!("{:0>64}", hex)
+    } else if hex.len() > 64 {
+        hex[..64].to_string()
+    } else {
+        hex.to_string()
+    };
     let mut out = [0u8; 32];
-    hex::decode_to_slice(hex, &mut out).ok()?;
+    hex::decode_to_slice(&padded, &mut out).ok()?;
     Some(out)
 }
 
