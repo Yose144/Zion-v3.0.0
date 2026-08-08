@@ -10,6 +10,8 @@ Group=zion
 WorkingDirectory=/opt/zion
 EnvironmentFile=/etc/zion/edge-environment.sh
 Environment="RUST_LOG=info,zion_dao=debug"
+Environment=DAO_API_PORT=8456
+Environment=DAO_L1_RPC=127.0.0.1:9445
 ExecStart=/opt/zion/V31/target/release/zion-dao
 Restart=always
 RestartSec=10

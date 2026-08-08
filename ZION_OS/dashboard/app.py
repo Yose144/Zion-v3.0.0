@@ -991,11 +991,14 @@ def get_monitoring_status() -> dict:
             result["prometheus"]["targets_up"] = active_sessions
         if submits == 0 and (accepted or rejected):
             submits = accepted + rejected
-        # Fallback hashrate estimate for V3 Trinity miners that don't report work samples.
-        if hashrate_hps <= 0 and body:
+        # Authoritative hashrate estimate: blocks found * network difficulty / uptime.
+        # The pool's live telemetry only counts workers that report work samples, so
+        # we always prefer the block-based estimate here.
+        if body:
             try:
                 hr_est = _estimate_hashrate_from_pool_metrics(body)
-                hashrate_hps = hr_est.get("pool_hps", 0.0)
+                if hr_est.get("pool_hps", 0.0) > 0:
+                    hashrate_hps = hr_est["pool_hps"]
             except Exception:
                 pass
         hr_str = f"{hashrate_hps/1000:.1f} KH/s" if hashrate_hps >= 1000 else f"{hashrate_hps:.1f} H/s"
@@ -2870,7 +2873,7 @@ def get_miner_live_stats() -> dict:
                 hr_est = _estimate_hashrate_from_pool_metrics(_txt)
                 _hashrate = hr_est["pool_khs"]
                 for worker, hps in hr_est["workers_hps"].items():
-                    if "v31-edge-lite" in worker:
+                    if worker.endswith(".v31-edge-lite"):
                         _hashrate = hps / 1000.0
                         stats["worker_name"] = worker.split(".")[-1]
                         break
@@ -3858,26 +3861,27 @@ def _build_status_edge_primary() -> dict:
         _tracked = edge_metrics.get("miners_tracked") or edge_payout.get("pplns_registered_miners") or 0
         if _tracked > 0:
             edge_metrics["active_miners"] = _tracked
-    # Hashrate fallback: V31 Trinity miners don't submit attempted_hashes/elapsed_ms,
-    # so the pool's built-in hashrate metric stays 0. Estimate from full blocks found,
-    # current network difficulty, and pool uptime.
-    if body and (edge_metrics.get("hashrate") is None or edge_metrics["hashrate"] <= 0):
+    # Hashrate estimate: V31 Trinity miners don't always submit
+    # attempted_hashes/elapsed_ms, so the pool's built-in hashrate metric can be
+    # 0 or only reflect a subset of workers.  Estimate from full blocks found,
+    # current network difficulty, and pool uptime — this is the authoritative
+    # aggregate hashrate for the pool.
+    if body and (edge_metrics.get("blocks_found") or 0) > 0:
         network_difficulty = None
         if v31_rpc_info and isinstance(v31_rpc_info, dict):
             network_difficulty = v31_rpc_info.get("difficulty")
         if network_difficulty:
             try:
                 hr_est = _estimate_hashrate_from_pool_metrics(body, network_difficulty)
-                with open("/tmp/hr_debug.log", "a") as _df:
-                    _df.write(f"[HASHRATE_DEBUG] nd={network_difficulty} hr={hr_est}\n")
                 if hr_est.get("pool_khs", 0) > 0:
+                    # Always prefer the block-based estimate over the pool's live
+                    # telemetry, which only counts workers that report work samples.
                     edge_metrics["hashrate"] = round(hr_est["pool_khs"], 6)
-                    if edge_metrics.get("hashrate_1h") is None:
-                        edge_metrics["hashrate_1h"] = round(hr_est["pool_khs"], 6)
+                    edge_metrics["hashrate_1h"] = round(hr_est["pool_khs"], 6)
                     # Remember per-worker estimates so the Edge miner panel can show
                     # its own hashrate rather than the whole pool's.
                     for worker, hps in hr_est.get("workers_hps", {}).items():
-                        if "v31-edge-lite" in worker:
+                        if worker.endswith(".v31-edge-lite"):
                             edge_metrics["edge_worker_khs"] = round(hps / 1000.0, 6)
                             break
             except Exception:
@@ -3942,13 +3946,25 @@ def _build_status_edge_primary() -> dict:
     # Edge-primary: no local miner process; reflect active pool miners instead
     active_miners = (edge_metrics.get("active_miners") or 0) if edge_metrics else 0
     tracked_miners = (edge_metrics.get("miners_tracked") or 0) if edge_metrics else 0
-    if ((not miner_status.get("running")) or (miner_status.get("hashrate") is None)) and (active_miners > 0 or tracked_miners > 0):
-        miner_status["running"] = True
-        miner_status["pool_addr"] = f"{EDGE_PUBLIC_IP}:8444"
-        # Prefer the Edge worker's estimated hashrate; fall back to the pool aggregate.
-        miner_status["hashrate"] = edge_metrics.get("edge_worker_khs") or edge_metrics.get("hashrate") if edge_metrics else None
+    if active_miners > 0 or tracked_miners > 0:
+        # Edge-primary: the "miner" card reflects the pool's activity.  Prefer
+        # the Edge worker's estimated hashrate, then the pool aggregate, and
+        # overwrite any stale local-log value.
+        if not miner_status.get("running"):
+            miner_status["running"] = True
+            miner_status["pool_addr"] = f"{EDGE_PUBLIC_IP}:8444"
+        _mh = edge_metrics.get("edge_worker_khs") or edge_metrics.get("hashrate") if edge_metrics else None
+        if _mh is not None:
+            miner_status["hashrate"] = _mh
         miner_status["shares_accepted"] = edge_metrics.get("shares_accepted") or 0
         miner_status["shares_rejected"] = edge_metrics.get("shares_rejected") or 0
+
+    # Backfill the V31 miner card with the Edge worker's estimated hashrate
+    # (the systemd journal does not expose hashrate for Trinity miners).
+    if v31_miner_status.get("hashrate") is None:
+        _ew = edge_metrics.get("edge_worker_khs") if edge_metrics else None
+        if _ew:
+            v31_miner_status["hashrate"] = round(_ew * 1000.0, 1)
 
     # ── L2/L3 Edge services health — TCP port check on Edge (fast, 0.5s) ────
     _edge = "127.0.0.1"

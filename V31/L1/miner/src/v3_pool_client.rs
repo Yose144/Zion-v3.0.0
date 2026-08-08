@@ -289,6 +289,8 @@ impl V3PoolClient {
         nonce: u64,
         hash_hex: &str,
         mix_hash_hex: Option<&str>,
+        attempted_hashes: u64,
+        elapsed_ms: u64,
     ) -> Result<V3ShareResult> {
         let msg = PoolMessage::Submit {
             job_id,
@@ -296,8 +298,8 @@ impl V3PoolClient {
             worker_name: self.worker_name.clone(),
             nonce,
             hash_hex: hash_hex.to_string(),
-            attempted_hashes: None,
-            elapsed_ms: None,
+            attempted_hashes: Some(attempted_hashes),
+            elapsed_ms: Some(elapsed_ms),
             mix_hash_hex: mix_hash_hex.map(|s| s.to_string()),
         };
         let line = encode_message(&msg)?;
