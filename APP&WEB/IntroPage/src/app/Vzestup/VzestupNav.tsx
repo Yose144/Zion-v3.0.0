@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import "./rasta-nav.css";
 
 const navItems = [
   { id: "hero", label: "Úvod" },
@@ -16,74 +16,126 @@ const navItems = [
 
 export default function VzestupNav() {
   const [open, setOpen] = useState(false);
+  const [activeHash, setActiveHash] = useState("");
+
+  useEffect(() => {
+    document.body.classList.toggle("rasta-menu-open", open);
+    return () => document.body.classList.remove("rasta-menu-open");
+  }, [open]);
+
+  useEffect(() => {
+    setActiveHash(window.location.hash.replace("#", ""));
+    const onHash = () => setActiveHash(window.location.hash.replace("#", ""));
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-50 border-b border-[rgba(155,89,182,0.25)] bg-[rgba(10,10,20,0.85)] backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
+    <nav className="rasta-nav">
+      <div className="rasta-nav-pill">
         <Link
           href="/"
-          className="flex items-center gap-2 text-lg font-bold tracking-wide text-[#d2b4de]"
+          className="rasta-nav-logo-link"
           onClick={() => setOpen(false)}
         >
-          <span className="text-[#f1c40f]">ZION</span>
-          <span className="text-white/80">Vzestup</span>
+          <img
+            src="/symbol-200x200.png"
+            alt="ZION"
+            width={38}
+            height={38}
+            className="rasta-nav-logo-img"
+          />
+          <div className="rasta-nav-logo-text">
+            <span className="rasta-nav-brand">ZION</span>
+            <span className="rasta-nav-kicker">Vzestup</span>
+          </div>
         </Link>
 
-        {/* Desktop nav */}
-        <nav className="hidden items-center gap-1 text-sm font-medium md:flex">
+        <div className="rasta-nav-menu rasta-desktop-menu">
           {navItems.map((n) => (
             <a
               key={n.id}
               href={`#${n.id}`}
-              className="rounded-lg px-3 py-2 text-[#d2b4de] transition hover:bg-white/5 hover:text-[#f1c40f]"
               onClick={() => setOpen(false)}
+              className={`rasta-nav-link ${
+                activeHash === n.id ? "active" : ""
+              }`}
             >
               {n.label}
             </a>
           ))}
+        </div>
+
+        <div className="rasta-nav-right rasta-nav-actions">
           <a
             href="/amenti/"
-            className="ml-2 rounded-lg border border-[#f1c40f]/30 px-3 py-1.5 text-xs font-semibold text-[#f1c40f] transition hover:bg-[#f1c40f]/10"
+            className="rasta-nav-link"
+            onClick={() => setOpen(false)}
           >
             Amenti
           </a>
-        </nav>
+          <button
+            onClick={() => setOpen((s) => !s)}
+            className={`rasta-hamburger ${open ? "active" : ""}`}
+            aria-label={open ? "Zavřít menu" : "Otevřít menu"}
+            aria-expanded={open}
+          >
+            <span className="bar" />
+            <span className="bar" />
+            <span className="bar" />
+          </button>
+        </div>
 
-        {/* Mobile hamburger */}
+        {/* Mobile hamburger is visible only on small screens */}
         <button
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#9b59b6]/40 bg-[#9b59b6]/10 text-[#d2b4de] transition hover:bg-[#9b59b6]/20 md:hidden"
           onClick={() => setOpen((s) => !s)}
+          className={`rasta-hamburger ${open ? "active" : ""}`}
           aria-label={open ? "Zavřít menu" : "Otevřít menu"}
           aria-expanded={open}
+          style={{ marginLeft: "auto" }}
         >
-          {open ? <X size={22} /> : <Menu size={22} />}
+          <span className="bar" />
+          <span className="bar" />
+          <span className="bar" />
         </button>
       </div>
 
-      {/* Mobile menu */}
-      {open && (
-        <div className="absolute left-0 right-0 top-full border-b border-[#9b59b6]/25 bg-[rgba(10,10,20,0.97)] px-4 pb-5 pt-4 shadow-2xl backdrop-blur-md md:hidden">
-          <nav className="flex flex-col gap-2">
-            {navItems.map((n) => (
-              <a
-                key={n.id}
-                href={`#${n.id}`}
-                className="rounded-lg px-4 py-2 text-base text-[#d2b4de] transition hover:bg-white/5 hover:text-[#f1c40f]"
-                onClick={() => setOpen(false)}
-              >
-                {n.label}
-              </a>
-            ))}
-            <a
-              href="/amenti/"
-              className="mt-2 rounded-lg border border-[#f1c40f]/30 px-4 py-2 text-center text-sm font-semibold text-[#f1c40f] transition hover:bg-[#f1c40f]/10"
-              onClick={() => setOpen(false)}
-            >
-              Amenti
-            </a>
-          </nav>
+      <div className={`rasta-mobile-menu ${open ? "open" : ""}`}>
+        <div className="rasta-mobile-brand">
+          <img
+            src="/symbol-200x200.png"
+            alt="ZION"
+            width={34}
+            height={34}
+            className="rasta-nav-logo-img"
+          />
+          <div className="rasta-nav-logo-text">
+            <span className="rasta-nav-brand">ZION</span>
+            <span className="rasta-nav-kicker">Vzestup</span>
+          </div>
         </div>
-      )}
-    </header>
+
+        {navItems.map((n) => (
+          <a
+            key={n.id}
+            href={`#${n.id}`}
+            onClick={() => setOpen(false)}
+            className={`rasta-nav-link ${
+              activeHash === n.id ? "active" : ""
+            }`}
+          >
+            {n.label}
+          </a>
+        ))}
+
+        <a
+          href="/amenti/"
+          onClick={() => setOpen(false)}
+          className="rasta-nav-link"
+        >
+          Amenti
+        </a>
+      </div>
+    </nav>
   );
 }
