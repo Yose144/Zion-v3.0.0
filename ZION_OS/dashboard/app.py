@@ -1543,6 +1543,12 @@ def get_service(sid: str) -> dict:
 # ── Health checks ───────────────────────────────────────────────────────
 
 import urllib.request as _urlreq
+
+# Install a global opener so urllib does not rebuild one per urlopen call
+# (rebuilding creates HTTPSHandler/SSLContext repeatedly, which adds ~40ms).
+_URLLIB_OPENER = _urlreq.build_opener()
+_urlreq.install_opener(_URLLIB_OPENER)
+
 HEALTH_CACHE = {}  # id -> {"alive": bool, "ts": int, "details": str}
 HEALTH_TTL = 10  # seconds
 
@@ -3117,7 +3123,8 @@ def _compute_v31_banner_metrics(pool_status: dict, v31_multichain_status: dict, 
     if v31_dao_status:
         dao_total = v31_dao_status.get("proposals_total", 0)
         dao_active = v31_dao_status.get("proposals_active", 0)
-    if not dao_total and not dao_active:
+    # Only fall back to a live DAO call if we have no status dict at all.
+    if v31_dao_status is None:
         try:
             with urllib.request.urlopen("http://127.0.0.1:8456/api/dao/proposals", timeout=1.5) as r:
                 dao_st = json.loads(r.read().decode("utf-8", errors="ignore"))
@@ -5240,83 +5247,116 @@ def _rpc_with_fallback(method: str, params: dict, timeout: float = 2.0):
 
 # ── On-chain UTXO balance scanner ──────────────────────────────────────
 
-_UTXO_BALANCE_CACHE: dict[str, tuple[float, dict]] = {}
-_UTXO_BALANCE_CACHE_LOCK = threading.Lock()
+# Persistent incremental UTXO scanner state.
+_UTXO_SCAN: dict = {
+    "lock": threading.Lock(),
+    "last_height": -1,
+    "last_tip_hash": None,
+    "utxo": {},  # (txid, vout) -> (address, amount_flowers)
+}
+
+
+def _apply_block_to_utxo(utxo: dict, blk: dict) -> None:
+    """Apply a single block's transactions to the UTXO set in-place."""
+    tx_lists = [blk.get("transactions", []), blk.get("utxo_transactions", [])]
+    for tx_group in tx_lists:
+        if not isinstance(tx_group, list):
+            continue
+        for tx in tx_group:
+            if not isinstance(tx, dict):
+                continue
+            tx_id = tx.get("tx_id") or tx.get("transaction_id")
+            if not tx_id:
+                continue
+            # Mark inputs as spent
+            for inp in tx.get("inputs", []):
+                if not isinstance(inp, dict):
+                    continue
+                po = inp.get("previous_output")
+                if po is None:
+                    continue
+                if isinstance(po, dict):
+                    prev_tx = po.get("tx_id") or po.get("transaction_id")
+                    vout = po.get("index", po.get("vout", 0))
+                elif isinstance(po, str):
+                    prev_tx = po
+                    vout = 0
+                else:
+                    continue
+                if prev_tx:
+                    utxo.pop((prev_tx, vout), None)
+            # Record outputs
+            for idx, out in enumerate(tx.get("outputs", [])):
+                if not isinstance(out, dict):
+                    continue
+                addr = out.get("address") or out.get("to")
+                if not addr:
+                    continue
+                try:
+                    amount = int(out.get("amount", 0))
+                except (ValueError, TypeError):
+                    amount = 0
+                if amount < 0:
+                    amount = 0
+                utxo[(tx_id, idx)] = (addr, amount)
+
 
 @_ttl_cache_fn(15.0)
 def _scan_all_utxo_balances(timeout_per_block: float = 3.0, max_total_time: float = 60.0) -> dict:
-    """Scan the whole chain for unspent UTXO outputs and return address -> flowers.
+    """Return address -> flowers for all unspent UTXOs.
 
-    V31 nodes may not expose arbitrary address balance lookups (getBalance /
-    getAddressInfo only return wallet-local balances). This function walks the
-    chain itself: genesis -> tip, collects all outputs, marks inputs as spent,
-    and returns the sum of unspent outputs per address.
+    Uses an in-memory incremental cache: on the first call it walks the whole
+    chain, on subsequent calls it only fetches newly added blocks. If the tip
+    hash changed without the height growing, the cache is reset to handle
+    re-orgs.
     """
     start = time.monotonic()
     chain_info, _, _ = _rpc_with_fallback("getChainInfo", {}, timeout=5.0)
-    height = (chain_info or {}).get("chain_height", 0) if isinstance(chain_info, dict) else 0
-    if height <= 0:
+    if not chain_info or chain_info.get("_rpc_error"):
         return {}
+    height = int(chain_info.get("chain_height", 0) or 0)
+    tip_hash = chain_info.get("tip_hash") or chain_info.get("native_tip_hash")
 
-    utxo: dict[tuple[str, int], tuple[str, int]] = {}  # (txid, idx) -> (address, amount_flowers)
-    spent: set[tuple[str, int]] = set()
+    state = _UTXO_SCAN
+    with state["lock"]:
+        # Detect re-org or first run
+        if height <= 0:
+            state["last_height"] = -1
+            state["last_tip_hash"] = None
+            state["utxo"].clear()
+            return {}
 
-    for h in range(0, height + 1):
-        if time.monotonic() - start > max_total_time:
-            break
-        blk, _, _ = _rpc_with_fallback("getBlockByHeight", {"height": h}, timeout=timeout_per_block)
-        if not blk or (isinstance(blk, dict) and blk.get("_rpc_error")):
-            continue
-        if not isinstance(blk, dict):
-            continue
-        tx_lists = [blk.get("transactions", []), blk.get("utxo_transactions", [])]
-        for tx_group in tx_lists:
-            if not isinstance(tx_group, list):
+        reset = (
+            state["last_height"] < 0
+            or height < state["last_height"]
+            or (height == state["last_height"] and tip_hash and tip_hash != state["last_tip_hash"])
+        )
+        if reset:
+            state["last_height"] = -1
+            state["last_tip_hash"] = None
+            state["utxo"].clear()
+
+        start_height = state["last_height"] + 1
+        # Scan new blocks only
+        for h in range(start_height, height + 1):
+            if time.monotonic() - start > max_total_time:
+                break
+            blk, _, _ = _rpc_with_fallback("getBlockByHeight", {"height": h}, timeout=timeout_per_block)
+            if not blk or (isinstance(blk, dict) and blk.get("_rpc_error")):
                 continue
-            for tx in tx_group:
-                if not isinstance(tx, dict):
-                    continue
-                tx_id = tx.get("tx_id") or tx.get("transaction_id")
-                if not tx_id:
-                    continue
-                # Mark inputs as spent
-                for inp in tx.get("inputs", []):
-                    if not isinstance(inp, dict):
-                        continue
-                    po = inp.get("previous_output")
-                    if po is None:
-                        continue
-                    if isinstance(po, dict):
-                        prev_tx = po.get("tx_id") or po.get("transaction_id")
-                        vout = po.get("index", po.get("vout", 0))
-                    elif isinstance(po, str):
-                        prev_tx = po
-                        vout = 0
-                    else:
-                        continue
-                    if prev_tx:
-                        spent.add((prev_tx, vout))
-                # Record outputs
-                for idx, out in enumerate(tx.get("outputs", [])):
-                    if not isinstance(out, dict):
-                        continue
-                    addr = out.get("address") or out.get("to")
-                    if not addr:
-                        continue
-                    try:
-                        amount = int(out.get("amount", 0))
-                    except (ValueError, TypeError):
-                        amount = 0
-                    if amount < 0:
-                        amount = 0
-                    utxo[(tx_id, idx)] = (addr, amount)
+            if not isinstance(blk, dict):
+                continue
+            _apply_block_to_utxo(state["utxo"], blk)
 
-    balances: dict[str, int] = {}
-    for (tx_id, idx), (addr, amount) in utxo.items():
-        if (tx_id, idx) in spent:
-            continue
-        balances[addr] = balances.get(addr, 0) + amount
-    return balances
+        state["last_height"] = height
+        if tip_hash:
+            state["last_tip_hash"] = tip_hash
+
+        # Build balances from current UTXO set
+        balances: dict[str, int] = {}
+        for (tx_id, vout), (addr, amount) in state["utxo"].items():
+            balances[addr] = balances.get(addr, 0) + amount
+        return balances
 
 
 def _get_on_chain_balance(address: str, scan: dict = None) -> tuple[int, bool]:
