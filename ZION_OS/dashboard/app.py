@@ -991,10 +991,8 @@ def get_monitoring_status() -> dict:
             result["prometheus"]["targets_up"] = active_sessions
         if submits == 0 and (accepted or rejected):
             submits = accepted + rejected
-        # Authoritative hashrate estimate: blocks found * network difficulty / uptime.
-        # The pool's live telemetry only counts workers that report work samples, so
-        # we always prefer the block-based estimate here.
-        if body:
+        # Fallback hashrate estimate for miners that don't report work samples.
+        if hashrate_hps <= 0 and body:
             try:
                 hr_est = _estimate_hashrate_from_pool_metrics(body)
                 if hr_est.get("pool_hps", 0.0) > 0:
@@ -2860,23 +2858,39 @@ def get_miner_live_stats() -> dict:
                 elif _ln.startswith("zion_pool_rejected_total "):
                     if _rejected == 0:
                         _rejected = int(float(_ln.split()[-1]))
+            _hashrate = 0.0
+            for _ln in _txt.splitlines():
+                if _ln.startswith("zion_pool_hashrate_khs "):
+                    _hashrate = float(_ln.split()[-1])
+                elif _ln.startswith("zion_pool_hashrate_hps "):
+                    _hashrate = float(_ln.split()[-1]) / 1000.0
+                elif _ln.startswith("zion_pool_worker_hashrate_hps{worker="):
+                    m = re.search(r'worker="([^"]+)"\}\s+([\d.]+)', _ln)
+                    if m and (m.group(1).endswith(".v31-miner") or m.group(1).endswith(".v31-edge-lite")):
+                        _hashrate = float(m.group(2)) / 1000.0
+                        stats["worker_name"] = m.group(1).split(".")[-1]
+                        break
+                elif _ln.startswith("zion_pool_worker_hashrate_khs{worker="):
+                    m = re.search(r'worker="([^"]+)"\}\s+([\d.]+)', _ln)
+                    if m and (m.group(1).endswith(".v31-miner") or m.group(1).endswith(".v31-edge-lite")):
+                        _hashrate = float(m.group(2))
+                        stats["worker_name"] = m.group(1).split(".")[-1]
+                        break
             if _active > 0 or _tracked > 0:
                 stats["running"] = True
                 stats["shares_accepted"] = _accepted
                 stats["shares_rejected"] = _rejected
                 stats["pool_addr"] = f"{EDGE_PUBLIC_IP}:8444"
                 stats["gpu_backend"] = "pool"
-                # The pool's built-in hashrate metric is 0 for V3 Trinity miners
-                # because they don't submit attempted_hashes/elapsed_ms. Estimate
-                # from blocks found and network difficulty; prefer the Edge worker
-                # if we can identify it.
-                hr_est = _estimate_hashrate_from_pool_metrics(_txt)
-                _hashrate = hr_est["pool_khs"]
-                for worker, hps in hr_est["workers_hps"].items():
-                    if worker.endswith(".v31-edge-lite"):
-                        _hashrate = hps / 1000.0
-                        stats["worker_name"] = worker.split(".")[-1]
-                        break
+                # Fallback estimate only if the live metrics don't report hashrate.
+                if _hashrate <= 0:
+                    hr_est = _estimate_hashrate_from_pool_metrics(_txt)
+                    _hashrate = hr_est["pool_khs"]
+                    for worker, hps in hr_est["workers_hps"].items():
+                        if worker.endswith(".v31-miner") or worker.endswith(".v31-edge-lite"):
+                            _hashrate = hps / 1000.0
+                            stats["worker_name"] = worker.split(".")[-1]
+                            break
                 stats["hashrate"] = _hashrate if _hashrate > 0 else stats.get("hashrate")
         except Exception:
             pass
@@ -3817,6 +3831,14 @@ def _build_status_edge_primary() -> dict:
                     edge_metrics["hashrate"] = float(line.split()[-1]) / 1000.0
                 elif line.startswith("zion_pool_hashrate_1h_hps "):
                     edge_metrics["hashrate_1h"] = float(line.split()[-1]) / 1000.0
+                elif line.startswith("zion_pool_worker_hashrate_hps{worker="):
+                    m = re.search(r'worker="([^"]+)"\}\s+([\d.]+)', line)
+                    if m and m.group(1).endswith(".v31-miner"):
+                        edge_metrics["edge_worker_khs"] = float(m.group(2)) / 1000.0
+                elif line.startswith("zion_pool_worker_hashrate_khs{worker="):
+                    m = re.search(r'worker="([^"]+)"\}\s+([\d.]+)', line)
+                    if m and m.group(1).endswith(".v31-miner"):
+                        edge_metrics["edge_worker_khs"] = float(m.group(2))
                 elif line.startswith("zion_pool_accept_rate_pct "):
                     edge_metrics["accept_rate_pct"] = float(line.split()[-1])
                 elif line.startswith("zion_pool_miners_tracked "):
@@ -3861,12 +3883,12 @@ def _build_status_edge_primary() -> dict:
         _tracked = edge_metrics.get("miners_tracked") or edge_payout.get("pplns_registered_miners") or 0
         if _tracked > 0:
             edge_metrics["active_miners"] = _tracked
-    # Hashrate estimate: V31 Trinity miners don't always submit
+    # Hashrate fallback: V31 Trinity miners don't always submit
     # attempted_hashes/elapsed_ms, so the pool's built-in hashrate metric can be
     # 0 or only reflect a subset of workers.  Estimate from full blocks found,
-    # current network difficulty, and pool uptime — this is the authoritative
-    # aggregate hashrate for the pool.
-    if body and (edge_metrics.get("blocks_found") or 0) > 0:
+    # current network difficulty, and pool uptime.  Only used when the live
+    # metric is unavailable (0/None).
+    if body and (edge_metrics.get("hashrate") is None or edge_metrics["hashrate"] <= 0) and (edge_metrics.get("blocks_found") or 0) > 0:
         network_difficulty = None
         if v31_rpc_info and isinstance(v31_rpc_info, dict):
             network_difficulty = v31_rpc_info.get("difficulty")
@@ -3874,14 +3896,12 @@ def _build_status_edge_primary() -> dict:
             try:
                 hr_est = _estimate_hashrate_from_pool_metrics(body, network_difficulty)
                 if hr_est.get("pool_khs", 0) > 0:
-                    # Always prefer the block-based estimate over the pool's live
-                    # telemetry, which only counts workers that report work samples.
                     edge_metrics["hashrate"] = round(hr_est["pool_khs"], 6)
                     edge_metrics["hashrate_1h"] = round(hr_est["pool_khs"], 6)
                     # Remember per-worker estimates so the Edge miner panel can show
                     # its own hashrate rather than the whole pool's.
                     for worker, hps in hr_est.get("workers_hps", {}).items():
-                        if worker.endswith(".v31-edge-lite"):
+                        if worker.endswith(".v31-miner") or worker.endswith(".v31-edge-lite"):
                             edge_metrics["edge_worker_khs"] = round(hps / 1000.0, 6)
                             break
             except Exception:

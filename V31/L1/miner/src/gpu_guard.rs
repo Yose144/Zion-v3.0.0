@@ -294,13 +294,13 @@ impl GpuTuning {
             // ── DeekshaLite v1 ──────────────────────────────────────────
             (GpuAlgorithm::DeekshaLiteV1, GpuDeviceFamily::AmdGcn) => {
                 // GCN Vega 64: 8GB HBM2, 512 KiB/thread (v3.2)
-                // 8192 threads × 512 KiB = 4 GiB scratchpad (fits comfortably)
+                // 4096 threads × 512 KiB = 2 GiB scratchpad (safe for 8GB HBM2)
                 // local_ws=64 (wave64 optimal for gfx900)
                 // NOTE: local_ws=256 causes kernel compilation/execution hangs on
                 // SMOS OpenCL compiler for gfx900 (see VEGA_GPU_MINING_DEBUG_REPORT_2026-04-09.md)
-                let ws = (max_by_vram.min(8192).max(256)).next_power_of_two();
+                let ws = (max_by_vram.min(4096).max(256)).next_power_of_two();
                 let opts = "-cl-std=CL1.2 -cl-mad-enable".to_string();
-                (ws, 64, opts, 60, false)
+                (ws, 64, opts, 50, false)
             }
             (GpuAlgorithm::DeekshaLiteV1, GpuDeviceFamily::AmdRdna) => {
                 // RDNA: fast ulong-width path, LWS=256 benchmarks better than 128
