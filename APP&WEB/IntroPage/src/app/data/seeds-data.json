@@ -161,7 +161,7 @@
       },
       "nav": {
         "prev": { "slug": "emc2", "label": "E = MC²" },
-        "next": { "slug": "hemp", "label": "Hemp" }
+        "next": { "slug": "jaganath", "label": "Jaganath Krishna" }
       }
     },
     {
@@ -302,7 +302,7 @@
         "buy": "Koupit v eShopu"
       },
       "nav": {
-        "prev": { "slug": "hemp", "label": "Hemp" },
+        "prev": { "slug": "genesis", "label": "Genesis (Father Strain)" },
         "next": { "slug": "jaganath", "label": "Jaganath Krishna" }
       }
     },

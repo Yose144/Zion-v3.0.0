@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import PageLayout from "../../components/PageLayout";
 import HeroImage from "../../components/HeroImage";
+import LucideIcon from "../../components/LucideIcon";
 import blogData from "../../data/blog-posts.json";
 
 const { posts, categories } = blogData;
@@ -61,7 +62,7 @@ export default function BlogPostClient({ slug }: { slug: string }) {
           {title}
         </h1>
         <p className="text-white/70">
-          <i className="fa-regular fa-calendar"></i> {formatDate(post.date, lang)}
+          <LucideIcon name="fa-calendar" size={16} className="mr-1" /> {formatDate(post.date, lang)}
         </p>
       </HeroImage>
 
@@ -100,7 +101,7 @@ export default function BlogPostClient({ slug }: { slug: string }) {
             />
           ) : post.file ? (
             <div className="my-10 rounded-xl border border-[#fcd116]/20 bg-white/[0.03] p-8 text-center">
-              <i className="fa-regular fa-file-lines mb-3 text-3xl text-[#fcd116]"></i>
+              <LucideIcon name="fa-file-lines" size={48} className="mb-3 text-[#fcd116]" />
               <p className="mb-4">
                 {lang === "cs"
                   ? "Tento příspěvek je dostupný v plné HTML verzi v archivu."
@@ -110,7 +111,7 @@ export default function BlogPostClient({ slug }: { slug: string }) {
                 href={`/legacy/${post.file}`}
                 className="button primary small rasta-gold"
               >
-                <i className="fa-solid fa-arrow-up-right-from-square"></i>
+                <LucideIcon name="fa-arrow-up-right-from-square" size={16} className="mr-2" />
                 {lang === "cs" ? "Zobrazit plnou verzi" : "View full version"}
               </a>
             </div>
@@ -128,7 +129,7 @@ export default function BlogPostClient({ slug }: { slug: string }) {
                 href={handleHref(prev)}
                 className="button primary small rasta-green"
               >
-                <i className="fa-solid fa-arrow-left"></i>
+                <LucideIcon name="fa-arrow-left" size={16} />
                 <span className="ml-2 line-clamp-1 max-w-[180px] text-left">
                   {postTitle(prev)}
                 </span>
@@ -138,10 +139,9 @@ export default function BlogPostClient({ slug }: { slug: string }) {
             )}
             <Link
               href="/blog"
-              className="button small"
-              style={{ background: "rgba(255,255,255,0.08)", textDecoration: "none", border: "none" }}
+              className="button primary small rasta-green"
             >
-              <i className="fa-solid fa-list"></i> {lang === "cs" ? "Zpět do archivu" : "Back to archive"}
+              <LucideIcon name="fa-list" size={16} className="mr-2" /> {lang === "cs" ? "Zpět do archivu" : "Back to archive"}
             </Link>
             {next ? (
               <Link
@@ -151,7 +151,7 @@ export default function BlogPostClient({ slug }: { slug: string }) {
                 <span className="mr-2 line-clamp-1 max-w-[180px] text-right">
                   {postTitle(next)}
                 </span>
-                <i className="fa-solid fa-arrow-right"></i>
+                <LucideIcon name="fa-arrow-right" size={16} />
               </Link>
             ) : (
               <span></span>

@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import PageLayout from "../components/PageLayout";
 import HeroImage from "../components/HeroImage";
+import LucideIcon from "../components/LucideIcon";
 import blogData from "../data/blog-posts.json";
 
 const { posts, categories } = blogData;
@@ -71,7 +72,7 @@ export default function BlogPage() {
         className="py-20 md:py-24"
       >
         <span className="rounded-full border border-[#fcd116]/30 bg-black/40 px-4 py-1 text-sm font-semibold text-[#fcd116]">
-          📝 ®Genesis Blog
+          <LucideIcon name="fa-file-lines" size={14} className="mr-1" /> ®Genesis Blog
         </span>
         <h1 className="text-5xl font-extrabold text-white md:text-6xl">
           {lang === "cs" ? "Kronika" : "Chronicle"}
@@ -133,7 +134,7 @@ export default function BlogPage() {
 
           {sortedYears.length === 0 && (
             <div className="py-12 text-center text-white/40">
-              <i className="fa-solid fa-search mb-2 text-2xl opacity-30"></i>
+              <LucideIcon name="fa-search" size={32} className="mb-2 opacity-30" />
               <p>{lang === "cs" ? "Žádné příspěvky v této kategorii." : "No posts in this category."}</p>
             </div>
           )}
@@ -193,11 +194,11 @@ export default function BlogPage() {
                             </span>
                           </div>
                           <h3 className="!my-1 flex items-center gap-2 text-lg font-bold text-white group-hover:text-[#fcd116]">
-                            <i className={post.icon}></i> {title}
+                            <LucideIcon name={post.icon} size={18} /> {title}
                           </h3>
                           <p className="!my-0 !text-sm !text-white/50 line-clamp-2">{excerpt}</p>
                         </div>
-                        <i className="fa-solid fa-chevron-right self-center text-white/20 group-hover:text-[#fcd116]"></i>
+                        <LucideIcon name="fa-chevron-right" size={18} className="self-center text-white/20 group-hover:text-[#fcd116]" />
                       </Link>
                     );
                   })}
@@ -207,7 +208,7 @@ export default function BlogPage() {
           </div>
 
           <div className="mt-10 rounded-xl border border-[#fcd116]/10 bg-[rgba(252,209,22,0.03)] p-6 text-center text-[#fcd116]">
-            <i className="fa-solid fa-om mb-2 text-2xl"></i>
+            <LucideIcon name="fa-om" size={32} className="mb-2" />
             <p>
               {lang === "cs"
                 ? "V jednotě je síla. Ve vědomí je pravda. V lásce je vše."

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import PageLayout from "../components/PageLayout";
 import HeroImage from "../components/HeroImage";
+import LucideIcon from "../components/LucideIcon";
 import data from "../data/evoluzion-data.json";
 
 export default function EvoluzionPage() {
@@ -50,10 +51,10 @@ export default function EvoluzionPage() {
         <p className="max-w-xl text-white/70">{t.hero.desc}</p>
         <div className="mt-4 flex flex-wrap items-center justify-center gap-4">
           <a href="/legacy/shop.html" className="button primary small rasta-gold">
-            <i className="fa-solid fa-cart-shopping"></i> {t.hero.shopCta}
+            <LucideIcon name="fa-cart-shopping" size={16} className="mr-2" /> {t.hero.shopCta}
           </a>
           <a href="/legacy/woodart.html" className="button primary small rasta-green">
-            <i className="fa-solid fa-tree"></i> {t.hero.woodartCta}
+            <LucideIcon name="fa-tree" size={16} className="mr-2" /> {t.hero.woodartCta}
           </a>
         </div>
       </HeroImage>
@@ -78,7 +79,7 @@ export default function EvoluzionPage() {
           <div className="text-center">
             <h2 className="major">{t.head.title}</h2>
           </div>
-          <p className="rasta-text">༺꧁🤍꧂༻</p>
+          <p className="rasta-text flex items-center justify-center gap-2"><LucideIcon name="fa-heart" size={20} /> <LucideIcon name="fa-heart" size={20} /> <LucideIcon name="fa-heart" size={20} /></p>
           <p className="rasta-text">{t.head.desc}</p>
           <div className="my-8 text-center">
             <Image
@@ -124,7 +125,7 @@ export default function EvoluzionPage() {
                 className="rounded-xl border border-white/10 bg-white/[0.03] p-5 text-center backdrop-blur-sm transition hover:border-[#fcd116]/40"
               >
                 <div className="mb-3 text-2xl text-[#fcd116]">
-                  <i className={`fa-solid ${p.icon}`}></i>
+                  <LucideIcon name={p.icon} size={24} />
                 </div>
                 <h4 className="mb-2 text-[#fcd116]">{p.title}</h4>
                 <p className="!text-sm !text-white/70">{p.desc}</p>
@@ -187,14 +188,14 @@ export default function EvoluzionPage() {
               className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-[#fcd116] hover:bg-black/80"
               aria-label="Previous"
             >
-              <i className="fa-solid fa-chevron-left"></i>
+              <LucideIcon name="fa-chevron-left" size={20} />
             </button>
             <button
               onClick={next}
               className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-[#fcd116] hover:bg-black/80"
               aria-label="Next"
             >
-              <i className="fa-solid fa-chevron-right"></i>
+              <LucideIcon name="fa-chevron-right" size={20} />
             </button>
           </div>
           <div className="mt-4 flex justify-center gap-2">
@@ -259,13 +260,13 @@ export default function EvoluzionPage() {
           <p className="rasta-text">{t.cta.desc}</p>
           <div className="mt-4 flex flex-wrap justify-center gap-4">
             <a href="/legacy/shop.html" className="button primary small rasta-gold">
-              <i className="fa-solid fa-cart-shopping"></i> {t.cta.shop}
+              <LucideIcon name="fa-cart-shopping" size={16} className="mr-2" /> {t.cta.shop}
             </a>
             <a href="/" className="button primary small rasta-green">
-              <i className="fa-solid fa-arrow-left"></i> {t.cta.home}
+              <LucideIcon name="fa-arrow-left" size={16} className="mr-2" /> {t.cta.home}
             </a>
-            <a href="/legacy/arts.html" className="button primary small">
-              <i className="fa-solid fa-palette"></i> {t.cta.arts}
+            <a href="/legacy/arts.html" className="button primary small rasta-red">
+              <LucideIcon name="fa-palette" size={16} className="mr-2" /> {t.cta.arts}
             </a>
           </div>
         </section>
@@ -285,7 +286,7 @@ export default function EvoluzionPage() {
                 rel="noopener"
                 className="text-[#fcd116] transition hover:text-white"
               >
-                <i className={`fa-brands ${link.icon}`}></i>
+                <LucideIcon name={link.icon} size={32} />
               </a>
             ))}
           </div>
@@ -295,7 +296,7 @@ export default function EvoluzionPage() {
         <section className="mt-12 text-center">
           <div className="rasta-divider my-6 flex items-center gap-4 text-[#fcd116]">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[#fcd116]"></div>
-            <span className="text-2xl">🦁</span>
+            <LucideIcon name="fa-sparkles" size={24} />
             <div className="h-px flex-1 bg-gradient-to-l from-transparent to-[#fcd116]"></div>
           </div>
           <div className="mb-6 text-center">
@@ -311,13 +312,13 @@ export default function EvoluzionPage() {
           <p className="italic text-[#fcd116]">{t.footer.quote}</p>
           <div className="mt-6 flex justify-center gap-6 text-2xl">
             <a href="https://www.facebook.com/ZionTerraNova/" className="text-[#078930]">
-              <i className="fa-brands fa-facebook"></i>
+              <LucideIcon name="fa-facebook" size={28} />
             </a>
             <a href="https://x.com/ZionTerraNova" className="text-[#fcd116]">
-              <i className="fa-brands fa-twitter"></i>
+              <LucideIcon name="fa-twitter" size={28} />
             </a>
             <a href="https://www.instagram.com/terranova_project/" className="text-[#e41e2b]">
-              <i className="fa-brands fa-instagram"></i>
+              <LucideIcon name="fa-instagram" size={28} />
             </a>
           </div>
         </section>

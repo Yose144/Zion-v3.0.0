@@ -68,15 +68,16 @@ export default async function VzestupPage() {
       />
       <Script id="vzestup-toggle" strategy="afterInteractive">
         {`
+          const chevron = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24" style="vertical-align:middle;margin-right:6px"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
           function toggleExpand(id, btn) {
             const el = document.getElementById(id);
             if (!el || !btn) return;
             el.classList.toggle('open');
             btn.classList.toggle('active');
             if (el.classList.contains('open')) {
-              btn.innerHTML = '<i class="fa-solid fa-chevron-down"></i> Skrýt články';
+              btn.innerHTML = chevron + 'Skrýt články';
             } else {
-              btn.innerHTML = '<i class="fa-solid fa-chevron-down"></i> Zobrazit všechny články';
+              btn.innerHTML = chevron + 'Zobrazit všechny články';
             }
           }
         `}

@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import PageLayout from "../components/PageLayout";
 import HeroImage from "../components/HeroImage";
+import LucideIcon from "../components/LucideIcon";
 import data from "../data/amenti-data.json";
 
 export default function AmentiPage() {
@@ -32,10 +33,10 @@ export default function AmentiPage() {
         <p className="max-w-xl text-white/70">{t.tagline}</p>
         <div className="mt-4 flex flex-wrap items-center justify-center gap-4">
           <a href="#library" className="button primary small rasta-gold">
-            <i className="fa-solid fa-book"></i> {t.libraryCta}
+            <LucideIcon name="fa-book" size={16} className="mr-2" /> {t.libraryCta}
           </a>
           <Link href="/" className="button primary small rasta-green">
-            <i className="fa-solid fa-arrow-left"></i> {t.backCta}
+            <LucideIcon name="fa-arrow-left" size={16} className="mr-2" /> {t.backCta}
           </Link>
         </div>
       </HeroImage>
@@ -140,15 +141,15 @@ export default function AmentiPage() {
                 key={chip}
                 className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-[#fcd116]"
               >
-                <i className="fa-solid fa-feather mr-1"></i> {chip}
+                <LucideIcon name="fa-feather" size={14} className="mr-1" /> {chip}
               </span>
             ))}
           </div>
 
           {/* Vzestup banner */}
           <a
-            href="/legacy/Vzestup/index.html"
-            className="my-6 flex items-center gap-4 rounded-xl border border-[#9333ea]/30 bg-gradient-to-r from-[#4c1d95]/40 to-[#7c3aed]/20 p-4 no-underline transition hover:border-[#a855f7]"
+            href="/Vzestup/"
+            className="my-6 flex items-center gap-4 rounded-xl border border-[#078930]/30 bg-gradient-to-r from-[#e41e2b]/30 via-[#fcd116]/20 to-[#078930]/20 p-4 no-underline transition hover:border-[#fcd116]"
           >
             <Image
               src="/legacy/Vzestup/vzestup.webpark.cz/portal.jpg"
@@ -160,7 +161,7 @@ export default function AmentiPage() {
               className="rounded-full"
             />
             <div className="text-left">
-              <span className="text-xs font-bold text-[#c084fc]">🔮 DUCHOVNÍ PORTÁL</span>
+              <span className="text-xs font-bold text-[#078930]">DUHOVÝ PORTÁL</span>
               <h3 className="!my-0 !text-lg text-white">Vzestup & Duchovní růst</h3>
               <p className="!my-0 !text-sm !text-white/60">
                 Fialový plamen · Duchovní škola vzestupu · WingMakers · 100+ článků
@@ -187,7 +188,7 @@ export default function AmentiPage() {
                 href="/legacy/books/QuantumRevolution.zip"
                 className="button primary small rasta-gold mt-4 inline-flex"
               >
-                <i className="fa-solid fa-file-zipper"></i> {t.featuredBookCta}
+                <LucideIcon name="fa-file-zipper" size={16} className="mr-2" /> {t.featuredBookCta}
               </a>
               <p className="!mt-3 !text-xs !text-white/50">CZ · EN · ES · FR · PT · DE · JP · HI · LA · SANS · HAW</p>
             </div>
@@ -223,7 +224,7 @@ export default function AmentiPage() {
                               target="_blank"
                               rel="noopener"
                             >
-                              <i className="fa-solid fa-download"></i> PDF
+                              <LucideIcon name="fa-download" size={14} className="mr-1" /> PDF
                             </a>
                           ) : (
                             <span className="text-white/30">N/A</span>
@@ -251,7 +252,7 @@ export default function AmentiPage() {
             rel="noopener"
             className="button primary small rasta-green"
           >
-            <i className="fa-solid fa-link"></i> {t.golokaCta}
+            <LucideIcon name="fa-link" size={16} className="mr-2" /> {t.golokaCta}
           </a>
 
           <div className="relative mx-auto mt-8 max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-black/40">
@@ -276,14 +277,14 @@ export default function AmentiPage() {
               className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-[#fcd116] hover:bg-black/80"
               aria-label="Previous"
             >
-              <i className="fa-solid fa-chevron-left"></i>
+              <LucideIcon name="fa-chevron-left" size={20} />
             </button>
             <button
               onClick={() => setSlide((s) => (s === data.golokaImages.length - 1 ? 0 : s + 1))}
               className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-[#fcd116] hover:bg-black/80"
               aria-label="Next"
             >
-              <i className="fa-solid fa-chevron-right"></i>
+              <LucideIcon name="fa-chevron-right" size={20} />
             </button>
             <div className="mb-4 flex justify-center gap-2">
               {data.golokaImages.map((_, i) => (
@@ -343,10 +344,10 @@ export default function AmentiPage() {
           <p>{t.ctaP1}</p>
           <div className="flex flex-wrap justify-center gap-4">
             <a href="/legacy/shop.html" className="button primary small rasta-gold">
-              <i className="fa-solid fa-cart-shopping"></i> {t.shopCta}
+              <LucideIcon name="fa-cart-shopping" size={16} className="mr-2" /> {t.shopCta}
             </a>
             <a href="/legacy/donate.html" className="button primary small rasta-green">
-              <i className="fa-solid fa-hand-holding-heart"></i> {t.donateCta}
+              <LucideIcon name="fa-hand-holding-heart" size={16} className="mr-2" /> {t.donateCta}
             </a>
           </div>
         </section>

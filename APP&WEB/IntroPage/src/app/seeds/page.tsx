@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import PageLayout from "../components/PageLayout";
 import HeroImage from "../components/HeroImage";
+import LucideIcon from "../components/LucideIcon";
 import data from "../data/seeds-data.json";
 
 export default function SeedsIndexPage() {
@@ -26,7 +27,7 @@ export default function SeedsIndexPage() {
         </h1>
         <p className="max-w-xl text-white/70">{t.heroSubtitle}</p>
         <a href="#strains" className="button primary small rasta-green">
-          <i className="fa-solid fa-seedling"></i> {t.cta}
+          <LucideIcon name="fa-seedling" size={16} className="mr-2" /> {t.cta}
         </a>
       </HeroImage>
 
@@ -78,7 +79,7 @@ export default function SeedsIndexPage() {
         <section className="text-center">
           <div className="rasta-divider my-6 flex items-center gap-4 text-[#fcd116]">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[#fcd116]"></div>
-            <span className="text-2xl">🌿</span>
+            <LucideIcon name="fa-leaf" size={24} />
             <div className="h-px flex-1 bg-gradient-to-l from-transparent to-[#fcd116]"></div>
           </div>
           <p className="italic text-[#078930]">{data.footer[lang]}</p>
@@ -91,7 +92,7 @@ export default function SeedsIndexPage() {
                 rel="noopener"
                 className={`${s.color} transition hover:text-white`}
               >
-                <i className={`fa-brands ${s.icon}`}></i>
+                <LucideIcon name={s.icon} size={28} />
               </a>
             ))}
           </div>

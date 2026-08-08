@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import PageLayout from "../components/PageLayout";
 import HeroImage from "../components/HeroImage";
+import LucideIcon from "../components/LucideIcon";
 import data from "../data/camp-data.json";
 
 export default function CampPage() {
@@ -44,7 +45,7 @@ export default function CampPage() {
         </h2>
         <p className="max-w-xl text-white/70">{t.hero.desc}</p>
         <a href="#camps-info" className="button primary small rasta-green">
-          <i className="fa-solid fa-tent"></i> {t.hero.cta}
+          <LucideIcon name="fa-tent" size={16} className="mr-2" /> {t.hero.cta}
         </a>
       </HeroImage>
 
@@ -72,7 +73,7 @@ export default function CampPage() {
                 className="rounded-xl border border-white/10 bg-white/[0.03] p-5 text-center backdrop-blur-sm transition hover:border-[#078930]/40"
               >
                 <div className="mb-3 text-2xl text-[#078930]">
-                  <i className={`fa-solid ${f.icon}`}></i>
+                  <LucideIcon name={f.icon} size={24} />
                 </div>
                 <h4 className="mb-2 text-[#fcd116]">{f.title}</h4>
                 <p className="!text-sm !text-white/70">{f.desc}</p>
@@ -115,14 +116,14 @@ export default function CampPage() {
               className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-[#fcd116] hover:bg-black/80"
               aria-label="Previous"
             >
-              <i className="fa-solid fa-chevron-left"></i>
+              <LucideIcon name="fa-chevron-left" size={20} />
             </button>
             <button
               onClick={next}
               className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-[#fcd116] hover:bg-black/80"
               aria-label="Next"
             >
-              <i className="fa-solid fa-chevron-right"></i>
+              <LucideIcon name="fa-chevron-right" size={20} />
             </button>
           </div>
           <div className="mt-4 flex justify-center gap-2">
@@ -162,10 +163,10 @@ export default function CampPage() {
           </blockquote>
           <div className="flex flex-wrap justify-center gap-4">
             <a href="/" className="button primary small rasta-green">
-              <i className="fa-solid fa-arrow-left"></i> {t.vision.homeCta}
+              <LucideIcon name="fa-arrow-left" size={16} className="mr-2" /> {t.vision.homeCta}
             </a>
             <a href="/legacy/shop.html" className="button primary small rasta-gold">
-              <i className="fa-solid fa-cart-shopping"></i> {t.vision.shopCta}
+              <LucideIcon name="fa-cart-shopping" size={16} className="mr-2" /> {t.vision.shopCta}
             </a>
           </div>
         </section>
@@ -175,7 +176,7 @@ export default function CampPage() {
         <section className="text-center">
           <div className="rasta-divider my-6 flex items-center gap-4 text-[#fcd116]">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[#fcd116]"></div>
-            <span className="text-2xl">🦁</span>
+            <LucideIcon name="fa-sparkles" size={24} />
             <div className="h-px flex-1 bg-gradient-to-l from-transparent to-[#fcd116]"></div>
           </div>
           <div className="mb-6 text-center">
@@ -198,7 +199,7 @@ export default function CampPage() {
                 rel="noopener"
                 className={`${s.color} transition hover:text-white`}
               >
-                <i className={`fa-brands ${s.icon}`}></i>
+                <LucideIcon name={s.icon} size={28} />
               </a>
             ))}
           </div>
