@@ -321,3 +321,34 @@ body.rasta-menu-open {
     height: 38px;
   }
 }
+
+/* Language switcher */
+.rasta-lang-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(4, 6, 16, 0.65);
+  color: #f7f7f7;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: all 0.25s ease;
+  cursor: pointer;
+}
+
+.rasta-lang-switch:hover,
+.rasta-lang-switch:focus-visible {
+  background: rgba(252, 209, 22, 0.15);
+  border-color: var(--rasta-gold);
+  color: #fff;
+}
+
+.rasta-lang-switch.active {
+  color: #0d0d0d;
+  background: linear-gradient(120deg, var(--rasta-red), var(--rasta-gold), var(--rasta-green));
+  border-color: transparent;
+}

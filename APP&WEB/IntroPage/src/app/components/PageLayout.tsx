@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Script from "next/script";
 import { usePathname } from "next/navigation";
 import { ReactNode } from "react";
-import { Menu, X } from "lucide-react";
+import "./rasta-nav.css";
+
+function normalize(p: string) {
+  return p.replace(/\/$/, "") || "/";
+}
 
 export default function PageLayout({
   children,
@@ -16,7 +20,7 @@ export default function PageLayout({
   lang: "cs" | "en";
   setLang: (lang: "cs" | "en") => void;
 }) {
-  const path = usePathname();
+  const path = normalize(usePathname());
   const [open, setOpen] = useState(false);
 
   const nav = [
@@ -25,119 +29,138 @@ export default function PageLayout({
     { href: "/evoluzion", label: { cs: "EvoluZion", en: "EvoluZion" } },
     { href: "/camp", label: { cs: "Camp", en: "Camp" } },
     { href: "/blog", label: { cs: "Blog", en: "Blog" } },
-    { href: "/portfolio/", label: { cs: "Portfolio", en: "Portfolio" } },
-    { href: "/seeds/", label: { cs: "Seeds", en: "Seeds" } },
-    { href: "/Vzestup/", label: { cs: "Vzestup", en: "Ascension" } },
+    { href: "/portfolio", label: { cs: "Portfolio", en: "Portfolio" } },
+    { href: "/seeds", label: { cs: "Seeds", en: "Seeds" } },
+    { href: "/Vzestup", label: { cs: "Vzestup", en: "Ascension" } },
   ];
 
   const close = () => setOpen(false);
 
+  useEffect(() => {
+    document.body.classList.toggle("rasta-menu-open", open);
+    return () => document.body.classList.remove("rasta-menu-open");
+  }, [open]);
+
   return (
     <div className="relative z-10 flex min-h-screen w-full flex-col">
-      <header className="fixed left-0 right-0 top-0 z-50 border-b border-[rgba(252,209,22,0.16)] bg-[rgba(13,13,13,0.68)] backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+      <nav className="rasta-nav">
+        <div className="rasta-nav-pill">
           <Link
             href="/"
-            className="text-lg font-bold tracking-wide text-[#fcd116]"
+            className="rasta-nav-logo-link"
             onClick={close}
           >
-            ZION TerraNova<span className="text-white">®</span>
+            <img
+              src="/symbol-200x200.png"
+              alt="ZION"
+              width={38}
+              height={38}
+              className="rasta-nav-logo-img"
+            />
+            <div className="rasta-nav-logo-text">
+              <span className="rasta-nav-brand">ZION</span>
+              <span className="rasta-nav-kicker">TerraNova</span>
+            </div>
           </Link>
 
-          {/* Desktop nav */}
-          <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
+          <div className="rasta-nav-menu rasta-desktop-menu">
             {nav.map((n) => (
               <Link
                 key={n.href}
-                href={n.href}
-                className={`transition hover:text-[#fcd116] ${
-                  path === n.href ? "text-[#fcd116]" : "text-gray-300"
+                href={n.href === "/" ? "/" : n.href + "/"}
+                onClick={close}
+                className={`rasta-nav-link ${
+                  path === n.href ? "active" : ""
                 }`}
               >
                 {n.label[lang]}
               </Link>
             ))}
-            <div className="ml-2 flex rounded-lg border border-white/20 bg-white/5 text-xs">
+          </div>
+
+          <div className="rasta-nav-right">
+            <div className="rasta-nav-actions">
               <button
                 onClick={() => setLang("cs")}
-                className={`rounded-l-lg px-2 py-1 ${
-                  lang === "cs"
-                    ? "bg-gradient-to-r from-[#078930] to-[#fcd116] font-semibold text-black"
-                    : ""
+                className={`rasta-lang-switch ${
+                  lang === "cs" ? "active" : ""
                 }`}
               >
                 CZ
               </button>
               <button
                 onClick={() => setLang("en")}
-                className={`rounded-r-lg px-2 py-1 ${
-                  lang === "en"
-                    ? "bg-gradient-to-r from-[#078930] to-[#fcd116] font-semibold text-black"
-                    : ""
+                className={`rasta-lang-switch ${
+                  lang === "en" ? "active" : ""
                 }`}
               >
                 EN
               </button>
             </div>
-          </nav>
 
-          {/* Mobile hamburger */}
-          <button
-            className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#fcd116]/30 bg-[#fcd116]/10 text-[#fcd116] transition hover:bg-[#fcd116]/20 md:hidden"
-            onClick={() => setOpen((s) => !s)}
-            aria-label={open ? "Zavřít menu" : "Otevřít menu"}
-            aria-expanded={open}
-          >
-            {open ? <X size={22} /> : <Menu size={22} />}
-          </button>
+            <button
+              onClick={() => setOpen((s) => !s)}
+              className={`rasta-hamburger ${open ? "active" : ""}`}
+              aria-label={open ? "Zavřít menu" : "Otevřít menu"}
+              aria-expanded={open}
+            >
+              <span className="bar" />
+              <span className="bar" />
+              <span className="bar" />
+            </button>
+          </div>
         </div>
 
-        {/* Mobile menu */}
-        {open && (
-          <div className="absolute left-0 right-0 top-full border-b border-[#fcd116]/20 bg-[rgba(13,13,13,0.95)] px-4 pb-6 pt-4 shadow-2xl backdrop-blur-md md:hidden">
-            <nav className="flex flex-col gap-3">
-              {nav.map((n) => (
-                <Link
-                  key={n.href}
-                  href={n.href}
-                  onClick={close}
-                  className={`rounded-lg px-4 py-2 text-base font-medium transition hover:bg-white/5 hover:text-[#fcd116] ${
-                    path === n.href
-                      ? "text-[#fcd116]"
-                      : "text-gray-300"
-                  }`}
-                >
-                  {n.label[lang]}
-                </Link>
-              ))}
-            </nav>
-            <div className="mt-4 flex justify-center gap-2 rounded-lg border border-white/20 bg-white/5 p-1 text-xs">
-              <button
-                onClick={() => setLang("cs")}
-                className={`flex-1 rounded-md px-3 py-1.5 ${
-                  lang === "cs"
-                    ? "bg-gradient-to-r from-[#078930] to-[#fcd116] font-semibold text-black"
-                    : "text-white/70"
-                }`}
-              >
-                CZ
-              </button>
-              <button
-                onClick={() => setLang("en")}
-                className={`flex-1 rounded-md px-3 py-1.5 ${
-                  lang === "en"
-                    ? "bg-gradient-to-r from-[#078930] to-[#fcd116] font-semibold text-black"
-                    : "text-white/70"
-                }`}
-              >
-                EN
-              </button>
+        <div className={`rasta-mobile-menu ${open ? "open" : ""}`}>
+          <div className="rasta-mobile-brand">
+            <img
+              src="/symbol-200x200.png"
+              alt="ZION"
+              width={34}
+              height={34}
+              className="rasta-nav-logo-img"
+            />
+            <div className="rasta-nav-logo-text">
+              <span className="rasta-nav-brand">ZION</span>
+              <span className="rasta-nav-kicker">TerraNova</span>
             </div>
           </div>
-        )}
-      </header>
 
-      <main id="main" className="flex-grow pt-16">
+          {nav.map((n) => (
+            <Link
+              key={n.href}
+              href={n.href === "/" ? "/" : n.href + "/"}
+              onClick={close}
+              className={`rasta-nav-link ${
+                path === n.href ? "active" : ""
+              }`}
+            >
+              {n.label[lang]}
+            </Link>
+          ))}
+
+          <div className="rasta-mobile-actions">
+            <button
+              onClick={() => setLang("cs")}
+              className={`rasta-lang-switch ${
+                lang === "cs" ? "active" : ""
+              }`}
+            >
+              CZ
+            </button>
+            <button
+              onClick={() => setLang("en")}
+              className={`rasta-lang-switch ${
+                lang === "en" ? "active" : ""
+              }`}
+            >
+              EN
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <main id="main" className="flex-grow">
         {children}
       </main>
 
