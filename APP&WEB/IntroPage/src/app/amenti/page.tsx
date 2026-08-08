@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import PageLayout from "../components/PageLayout";
+import HeroImage from "../components/HeroImage";
 import data from "../data/amenti-data.json";
 
 export default function AmentiPage() {
@@ -14,13 +15,10 @@ export default function AmentiPage() {
   return (
     <PageLayout lang={lang} setLang={setLang}>
       {/* Hero */}
-      <section
-        className="relative flex w-full flex-col items-center justify-center gap-6 px-4 py-28 text-center"
-        style={{
-          backgroundImage: `linear-gradient(120deg, rgba(0,0,0,0.85), rgba(6,20,12,0.8)), url('/legacy/img/144Halls.jpg')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
+      <HeroImage
+        src="/legacy/img/144Halls.jpg"
+        alt="Halls of Amenti"
+        className="py-20 md:py-28"
       >
         <span className="rounded-full border border-[#fcd116]/30 bg-black/40 px-4 py-1 text-sm font-semibold text-[#fcd116] backdrop-blur-sm">
           {t.badge}
@@ -40,7 +38,7 @@ export default function AmentiPage() {
             <i className="fa-solid fa-arrow-left"></i> {t.backCta}
           </Link>
         </div>
-      </section>
+      </HeroImage>
 
       <article className="active">
         {/* Amenti image */}
@@ -50,7 +48,9 @@ export default function AmentiPage() {
             alt="Halls of Amenti"
             width={800}
             height={400}
-            className="mx-auto rounded-lg opacity-90"
+            sizes="(max-width: 768px) 100vw, 800px"
+            decoding="async"
+            className="mx-auto h-auto w-full max-w-3xl rounded-lg opacity-90"
             priority
           />
         </section>
@@ -98,7 +98,9 @@ export default function AmentiPage() {
               alt="Logos of Amenti"
               width={400}
               height={120}
-              className="mx-auto"
+              sizes="(max-width: 768px) 100vw, 400px"
+              decoding="async"
+              className="mx-auto h-auto w-full max-w-[400px]"
             />
           </div>
         </section>
@@ -119,7 +121,9 @@ export default function AmentiPage() {
               alt="Heart of Amenti"
               width={720}
               height={400}
-              className="mx-auto rounded-2xl"
+              sizes="(max-width: 768px) 100vw, 720px"
+              decoding="async"
+              className="mx-auto h-auto w-full max-w-3xl rounded-2xl"
             />
           </div>
         </section>
@@ -151,6 +155,8 @@ export default function AmentiPage() {
               alt="Vzestup"
               width={80}
               height={80}
+              sizes="80px"
+              decoding="async"
               className="rounded-full"
             />
             <div className="text-left">
@@ -169,6 +175,8 @@ export default function AmentiPage() {
               alt={t.featuredBookTitle}
               width={160}
               height={220}
+              sizes="160px"
+              decoding="async"
               className="rounded-lg"
             />
             <div>
@@ -255,7 +263,9 @@ export default function AmentiPage() {
                     alt={img.alt}
                     width={500}
                     height={300}
-                    className="mx-auto rounded-xl"
+                    sizes="(max-width: 768px) 100vw, 500px"
+                    decoding="async"
+                    className="mx-auto h-auto w-full max-w-xl rounded-xl"
                   />
                   <p className="!mt-3 !text-white/80">{img.alt}</p>
                 </div>
@@ -311,6 +321,8 @@ export default function AmentiPage() {
               alt="Tibet guardians"
               width={200}
               height={200}
+              sizes="200px"
+              decoding="async"
               className="rounded-xl"
             />
             <Image
@@ -318,6 +330,8 @@ export default function AmentiPage() {
               alt="Varja symbol"
               width={200}
               height={200}
+              sizes="200px"
+              decoding="async"
               className="rounded-xl"
             />
           </div>

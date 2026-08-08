@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import PageLayout from "../components/PageLayout";
+import HeroImage from "../components/HeroImage";
 import blogData from "../data/blog-posts.json";
 
 const { posts, categories } = blogData;
@@ -64,13 +65,10 @@ export default function BlogPage() {
 
   return (
     <PageLayout lang={lang} setLang={setLang}>
-      <section
-        className="relative flex w-full flex-col items-center justify-center gap-4 px-4 py-24 text-center"
-        style={{
-          backgroundImage: `linear-gradient(120deg, rgba(0,0,0,0.85), rgba(6,20,12,0.8)), url('/legacy/img/org1.jpg')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
+      <HeroImage
+        src="/legacy/img/org1.jpg"
+        alt="Blog"
+        className="py-20 md:py-24"
       >
         <span className="rounded-full border border-[#fcd116]/30 bg-black/40 px-4 py-1 text-sm font-semibold text-[#fcd116]">
           📝 ®Genesis Blog
@@ -86,7 +84,7 @@ export default function BlogPage() {
             ? "Od prvního dne cesty — po probuzení ZION sítě"
             : "From the first day of the journey — to the awakening of the ZION network"}
         </p>
-      </section>
+      </HeroImage>
 
       <article className="active">
         <section className="text-center">
@@ -180,6 +178,7 @@ export default function BlogPage() {
                             alt={title}
                             width={115}
                             height={78}
+                            decoding="async"
                             className="hidden h-20 w-28 rounded-lg object-cover opacity-80 group-hover:opacity-100 sm:block"
                           />
                         ) : null}

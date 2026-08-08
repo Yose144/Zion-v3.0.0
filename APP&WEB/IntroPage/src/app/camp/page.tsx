@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import PageLayout from "../components/PageLayout";
+import HeroImage from "../components/HeroImage";
 import data from "../data/camp-data.json";
 
 export default function CampPage() {
@@ -27,13 +28,10 @@ export default function CampPage() {
 
   return (
     <PageLayout lang={lang} setLang={setLang}>
-      <section
-        className="relative flex w-full flex-col items-center justify-center gap-6 px-4 py-28 text-center"
-        style={{
-          backgroundImage: `linear-gradient(120deg, rgba(0,0,0,0.85), rgba(6,20,12,0.8)), url('/legacy/img/org1.jpg')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
+      <HeroImage
+        src="/legacy/img/org1.jpg"
+        alt="Camp"
+        className="py-20 md:py-28"
       >
         <span className="rounded-full border border-[#078930]/30 bg-black/40 px-4 py-1 text-sm font-semibold text-[#078930] backdrop-blur-sm">
           {t.hero.badge}
@@ -48,7 +46,7 @@ export default function CampPage() {
         <a href="#camps-info" className="button primary small rasta-green">
           <i className="fa-solid fa-tent"></i> {t.hero.cta}
         </a>
-      </section>
+      </HeroImage>
 
       <article className="active">
         <section id="camps-info">
@@ -104,7 +102,9 @@ export default function CampPage() {
                     alt={s.caption[lang]}
                     width={900}
                     height={600}
-                    className="mx-auto w-full rounded-xl object-cover"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    decoding="async"
+                    className="mx-auto h-auto w-full max-w-3xl rounded-xl object-cover"
                   />
                   <div className="mt-3 text-[#fcd116]">{s.caption[lang]}</div>
                 </div>
@@ -152,6 +152,7 @@ export default function CampPage() {
               alt={t.visionImageAlt}
               width={250}
               height={250}
+              decoding="async"
               className="mx-auto rounded-xl opacity-90"
             />
           </div>
@@ -183,6 +184,7 @@ export default function CampPage() {
               alt="ZION Logo"
               width={120}
               height={120}
+              decoding="async"
               className="mx-auto rounded-full opacity-85"
             />
           </div>
