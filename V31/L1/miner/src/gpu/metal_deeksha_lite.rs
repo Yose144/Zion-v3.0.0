@@ -1,9 +1,7 @@
-//! Ekam Deeksha / DeekshaLite Metal backend.
+//! Ekam Deeksha v3.2 Metal backend.
 //!
-//! Uses `kernels/metal/deeksha_lite.metal` — currently still 128 KiB, 1-pass,
-//! 32-reads, 2-AES-rounds. The CPU `EkamDeeksha` implementation has moved to
-//! v3.2 (512 KiB, 2 passes, 128 reads), so the Metal kernel must be updated
-//! to the same constants and pipeline before it can be used for live mining.
+//! Uses `kernels/metal/deeksha_lite.metal` — bit-identical to CPU
+//! `EkamDeeksha::hash_bytes` (v3.2: 512 KiB, 16384 blocks, 2 passes, 128 reads).
 
 use super::*;
 use metal::{Device, MTLResourceOptions, MTLSize};
@@ -61,7 +59,7 @@ impl MetalDeekshaLiteMiner {
 
         let device_recommended = device.recommended_max_working_set_size();
         let budget_bytes = claim_gpu_memory_budget(device_recommended);
-        let max_threads_by_mem = (budget_bytes / 131_072) as usize;
+        let max_threads_by_mem = (budget_bytes / 524_288) as usize;
         let batch_size = work_size
             .max(threads_per_tg)
             .min(max_threads_by_mem.max(threads_per_tg));
@@ -77,7 +75,7 @@ impl MetalDeekshaLiteMiner {
         let mut scratchpad_buf;
         let mut scratch_bytes;
         loop {
-            scratch_bytes = (batch_size as u64) * 131_072u64;
+            scratch_bytes = (batch_size as u64) * 524_288u64;
             scratchpad_buf = device.new_buffer(scratch_bytes, opts);
             if scratchpad_buf.length() >= scratch_bytes {
                 break;

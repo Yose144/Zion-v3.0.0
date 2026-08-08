@@ -10721,12 +10721,15 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route in ("/dashboard.js", "/dashboard.min.js"):
             # Serve the exact file requested — /dashboard.js → dashboard.js,
             # /dashboard.min.js → dashboard.min.js (with .gz when accepted).
-            if route == "/dashboard.min.js":
+            is_min = route == "/dashboard.min.js"
+            if is_min:
                 js_path = SCRIPT_DIR / "dashboard.min.js"
                 gz_path = SCRIPT_DIR / "dashboard.min.js.gz"
+                cc = "public, max-age=31536000, immutable"
             else:
                 js_path = SCRIPT_DIR / "dashboard.js"
                 gz_path = SCRIPT_DIR / "dashboard.js.gz"
+                cc = "no-cache, no-store, must-revalidate"
             if js_path.exists():
                 _ensure_gz_uptodate(js_path, gz_path)
                 accepts_gzip = "gzip" in (self.headers.get("Accept-Encoding", "").lower())
@@ -10736,7 +10739,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     self.send_header("Content-Type", "application/javascript; charset=utf-8")
                     self.send_header("Content-Encoding", "gzip")
                     self.send_header("Vary", "Accept-Encoding")
-                    self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+                    self.send_header("Cache-Control", cc)
                     self.send_header("Content-Length", str(len(body)))
                     self.end_headers()
                     self.wfile.write(body)
@@ -10744,7 +10747,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     body = js_path.read_bytes()
                     self.send_response(200)
                     self.send_header("Content-Type", "application/javascript; charset=utf-8")
-                    self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+                    self.send_header("Cache-Control", cc)
                     self.send_header("Content-Length", str(len(body)))
                     self.end_headers()
                     self.wfile.write(body)
