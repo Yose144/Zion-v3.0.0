@@ -24,6 +24,7 @@ npx serve dist -l 3001
 - `/blog/` — Blog archive
 - `/blog/<slug>/` — Blog detail
 - `/legacy/` — Migrated V2 static files (HTML, CSS, JS, images, PDFs)
+- `/Vzestup/` — Vzestup portal (legacy V2 content rendered in Next.js with Folio/Marketplace-style nav)
 
 ## Important files
 
@@ -34,6 +35,7 @@ npx serve dist -l 3001
 - `src/app/data/amenti-data.json` — Amenti copy
 - `src/app/data/blog-posts.json` — Blog archive data (converted from `public_html/V2/blog-posts.js`)
 - `public/legacy/` — full V2 static archive
+- `src/app/Vzestup/page.tsx` + `VzestupNav.tsx` — Vzestup portal page and navigation
 
 ## Styling
 
