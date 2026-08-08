@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import PageLayout from "../components/PageLayout";
+import HeroImage from "../components/HeroImage";
 import data from "../data/evoluzion-data.json";
 
 export default function EvoluzionPage() {
@@ -32,13 +33,10 @@ export default function EvoluzionPage() {
 
   return (
     <PageLayout lang={lang} setLang={setLang}>
-      <section
-        className="relative flex w-full flex-col items-center justify-center gap-6 px-4 py-28 text-center"
-        style={{
-          backgroundImage: `linear-gradient(120deg, rgba(0,0,0,0.85), rgba(6,20,12,0.8)), url('/legacy/img/org1.jpg')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
+      <HeroImage
+        src="/legacy/img/org1.jpg"
+        alt="EvoluZion"
+        className="py-20 md:py-28"
       >
         <span className="rounded-full border border-[#fcd116]/30 bg-black/40 px-4 py-1 text-sm font-semibold text-[#fcd116] backdrop-blur-sm">
           {t.hero.badge}
@@ -58,7 +56,7 @@ export default function EvoluzionPage() {
             <i className="fa-solid fa-tree"></i> {t.hero.woodartCta}
           </a>
         </div>
-      </section>
+      </HeroImage>
 
       <article className="active">
         {/* Manifest */}
@@ -88,7 +86,9 @@ export default function EvoluzionPage() {
               alt={data.head2008.imageAlt}
               width={600}
               height={600}
-              className="mx-auto rounded-xl border-[3px] border-[#fcd116] opacity-95"
+              sizes="(max-width: 768px) 100vw, 50vw"
+              decoding="async"
+              className="mx-auto rounded-xl border-[3px] border-[#fcd116] opacity-95 !w-full h-auto"
             />
           </div>
         </section>
@@ -174,7 +174,9 @@ export default function EvoluzionPage() {
                     alt={s.alt}
                     width={600}
                     height={600}
-                    className={`mx-auto rounded-xl ${s.width} object-cover`}
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    decoding="async"
+                    className={`mx-auto h-auto w-full max-w-xl rounded-xl object-cover`}
                   />
                   <div className="mt-3 text-[#fcd116]">{s.caption}</div>
                 </div>
@@ -302,6 +304,7 @@ export default function EvoluzionPage() {
               alt="ZION Logo"
               width={120}
               height={120}
+              decoding="async"
               className="mx-auto rounded-full opacity-85"
             />
           </div>

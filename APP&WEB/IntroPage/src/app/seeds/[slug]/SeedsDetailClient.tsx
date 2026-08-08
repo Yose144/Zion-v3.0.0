@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import PageLayout from "../../components/PageLayout";
+import HeroImage from "../../components/HeroImage";
 import data from "../../data/seeds-data.json";
 
 export default function SeedsDetailClient({ slug }: { slug: string }) {
@@ -19,13 +20,10 @@ export default function SeedsDetailClient({ slug }: { slug: string }) {
 
   return (
     <PageLayout lang={lang} setLang={setLang}>
-      <section
-        className="relative flex w-full flex-col items-center justify-center gap-5 px-4 pb-12 pt-32 text-center"
-        style={{
-          backgroundImage: `linear-gradient(120deg, rgba(0,0,0,0.88), rgba(6,20,12,0.82)), url('${strain.heroBg}')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
+      <HeroImage
+        src={strain.heroBg}
+        alt={strain.name}
+        className="pb-16 pt-36 md:pb-20 md:pt-44"
       >
         <span
           className="rounded-full border border-white/10 bg-black/40 px-4 py-1 text-sm font-semibold text-[#fcd116] backdrop-blur-sm"
@@ -42,9 +40,12 @@ export default function SeedsDetailClient({ slug }: { slug: string }) {
           alt={strain.name}
           width={180}
           height={180}
+          priority
+          sizes="180px"
+          decoding="async"
           className="rounded-full border-4 border-white/10 object-cover shadow-2xl"
         />
-      </section>
+      </HeroImage>
 
       <div className="mx-auto grid w-full max-w-4xl grid-cols-2 gap-3 px-4 py-6 md:grid-cols-4">
         {strain.stats.map((stat: any, i: number) => (

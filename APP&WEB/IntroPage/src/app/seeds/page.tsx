@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import PageLayout from "../components/PageLayout";
+import HeroImage from "../components/HeroImage";
 import data from "../data/seeds-data.json";
 
 export default function SeedsIndexPage() {
@@ -12,13 +13,10 @@ export default function SeedsIndexPage() {
 
   return (
     <PageLayout lang={lang} setLang={setLang}>
-      <section
-        className="relative flex w-full flex-col items-center justify-center gap-5 px-4 py-28 text-center"
-        style={{
-          backgroundImage: `linear-gradient(120deg, rgba(0,0,0,0.9), rgba(6,20,12,0.85)), url('/legacy/img/seeds/emc2.jpg')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
+      <HeroImage
+        src="/legacy/img/seeds/emc2.jpg"
+        alt="Seeds"
+        className="py-20 md:py-28"
       >
         <span className="rounded-full border border-[#078930]/30 bg-black/40 px-4 py-1 text-sm font-semibold text-[#078930] backdrop-blur-sm">
           {t.heroBadge}
@@ -30,7 +28,7 @@ export default function SeedsIndexPage() {
         <a href="#strains" className="button primary small rasta-green">
           <i className="fa-solid fa-seedling"></i> {t.cta}
         </a>
-      </section>
+      </HeroImage>
 
       <article className="active" id="strains">
         <section>

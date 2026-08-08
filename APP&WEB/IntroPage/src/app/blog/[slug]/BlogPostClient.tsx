@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import PageLayout from "../../components/PageLayout";
+import HeroImage from "../../components/HeroImage";
 import blogData from "../../data/blog-posts.json";
 
 const { posts, categories } = blogData;
@@ -45,13 +46,10 @@ export default function BlogPostClient({ slug }: { slug: string }) {
 
   return (
     <PageLayout lang={lang} setLang={setLang}>
-      <section
-        className="relative flex w-full flex-col items-center justify-center gap-4 px-4 py-24 text-center"
-        style={{
-          backgroundImage: `linear-gradient(120deg, rgba(0,0,0,0.85), rgba(6,20,12,0.8)), url('${post.image ? fixImage(post.image) : "/legacy/img/org1.jpg"}')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
+      <HeroImage
+        src={post.image ? fixImage(post.image) : "/legacy/img/org1.jpg"}
+        alt={title}
+        className="py-20 md:py-24"
       >
         <span
           className="rounded-full border px-4 py-1 text-sm font-semibold text-black"
@@ -65,7 +63,7 @@ export default function BlogPostClient({ slug }: { slug: string }) {
         <p className="text-white/70">
           <i className="fa-regular fa-calendar"></i> {formatDate(post.date, lang)}
         </p>
-      </section>
+      </HeroImage>
 
       <article className="active">
         <section>
@@ -76,7 +74,9 @@ export default function BlogPostClient({ slug }: { slug: string }) {
                 alt={title}
                 width={1200}
                 height={540}
-                className="w-full object-cover"
+                sizes="(max-width: 768px) 100vw, 46rem"
+                decoding="async"
+                className="h-auto w-full object-cover"
               />
             </div>
           )}
