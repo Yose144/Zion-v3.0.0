@@ -83,6 +83,7 @@
       'nav.about': `O nás`,
       'nav.docs': `Docs`,
       'nav.mine': `Těžba`,
+      'nav.vzestup': `Vzestup`,
 
       'about.title': `O ZIONu`,
       'about.p1': `ZION TerraNova je veřejný multichain ekosystém s nativním Proof-of-Work. Každý blok dělí odměnu mezi těžaře, humanitární fond, fond budoucnosti a spalování. Bez ICO, bez předprodeje, bez tajných alokací. Kód je otevřený, pravidla transparentní a spuštění sítě probíhá postupně až do 31. prosince 2026.`,
@@ -170,6 +171,7 @@
       'nav.about': `About`,
       'nav.docs': `Docs`,
       'nav.mine': `Mine`,
+      'nav.vzestup': `Ascension`,
 
       'about.title': `About ZION`,
       'about.p1': `ZION TerraNova is a public multichain ecosystem with native Proof-of-Work. Every block splits the reward among miners, a humanitarian fund, a future fund, and burning. No ICO, no presale, no secret allocations. The code is open, the rules are transparent, and the network launch is rolling until 31 December 2026.`,

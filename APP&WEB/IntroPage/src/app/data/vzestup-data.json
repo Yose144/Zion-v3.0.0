@@ -1,0 +1,369 @@
+{
+  "hero": {
+    "badge": "🔮 Vzestup Portál",
+    "title": "Vzestup & Duchovní růst",
+    "subtitle": "Materiály věnované vzestupu, duchovnímu růstua pomoci Zemi a lidem na vzestupu",
+    "heroSubtitle": "Archív překladů, channelingů, meditací, iniciací a moudrosti · Původně vzestup.webpark.cz",
+    "namaste": "🙏 Namaste — Bůh Já JSEM mé duše stále zdraví Boha Já JSEM ve tvé bytosti"
+  },
+  "nav": [
+    {
+      "id": "portals",
+      "label": "✦ Brány Portálu ✦"
+    },
+    {
+      "id": "lyara",
+      "label": "🌟 Poselství Lyary"
+    },
+    {
+      "id": "sheldan",
+      "label": "💫 Poselství Sheldana Nidla"
+    },
+    {
+      "id": "vule-bozi",
+      "label": "📜 Vůle Boží"
+    },
+    {
+      "id": "extra",
+      "label": "🕊️ Metatron & Karen — Další poselství"
+    },
+    {
+      "id": "asea-lol",
+      "label": ""
+    }
+  ],
+  "sections": [
+    {
+      "id": "portals",
+      "title": "✦ Brány Portálu ✦",
+      "subtitle": "Šest hlavních sekcí duchovního vzestupu",
+      "type": "cards",
+      "cards": [
+        {
+          "icon": "🔥",
+          "iconImage": "/legacy/Vzestup/vzestup.webpark.cz/violetfire.jpg",
+          "title": "Očistný Fialový plamen",
+          "href": "/legacy/Vzestup/vzestup.webpark.cz/f_plamen/index_fp.html",
+          "desc": "Fialový plamen léčící tělo, mysl i duši. Dekrety, meditace a cvičení se Saint Germainem.",
+          "links": [
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/f_plamen/index_fp.html",
+              "text": "Hlavní stránka"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/f_plamen/violetflame.html",
+              "text": "O Fialovém plameni"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/f_plamen/decrees.html",
+              "text": "Dekrety"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/f_plamen/nine_steps.html",
+              "text": "Devět kroků"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/f_plamen/presence.html",
+              "text": "Přítomnost"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/f_plamen/chart.html",
+              "text": "Harmonický diagram"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/ca_ucel.html",
+              "text": "O Duchovní škole vzestupu"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/ca_what.html",
+              "text": "Co je to vzestup?"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/wishints.html",
+              "text": "Rady na cestu vzestupu"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/wishints2.html",
+              "text": "Další rady na cestu vzestupu"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/wisoverview.html",
+              "text": "Shrnutí procesu vzestupu"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/ca_krist.html",
+              "text": "Dosažení stavu Krista"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/ca_egypt.html",
+              "text": "Nová zasvěcení ze starého Egypta"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/ca_hier.html",
+              "text": "Nový rok vítá novou hierarchii"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/ca_5da.html",
+              "text": "Dosažení vědomí 5. dimenze"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/ca_ggu.html",
+              "text": "Návrat Boha a Bohyně sjednocených"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/a1liber.html",
+              "text": "Dosažení osvobození"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/ca_cryst.html",
+              "text": "Krystalická forma"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/ca_rize.html",
+              "text": "Představení Lorda a Lady Rize"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/ca_beyl.html",
+              "text": "Dál za osvobozením"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/ca_25da.html",
+              "text": "Dosažení vědomí 25. dimenze"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/a1bodhi.html",
+              "text": "Dosažení stavu Bódhisatvy"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/a17harm.html",
+              "text": "Sedm zákonů neubližování"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/a1crechart.html",
+              "text": "Kreační diagram"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/ca_char1.html",
+              "text": "Energetický diagram"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/ca_dol1.html",
+              "text": "Delfíní a velrybí pohyb"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/ca_globu.html",
+              "text": "Globální vzestup"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/ca_hints.html",
+              "text": "Tipy pro vzestup"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/ascend.html",
+              "text": "Vzestup"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/nature1.html",
+              "text": "Příroda a vzestup"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/muscle.html",
+              "text": "Svalové testování"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/lgsupport.html",
+              "text": "Podpora světelného jazyka"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/easter.html",
+              "text": "Velikonoční poselství"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/moudra/dalajlama.html",
+              "text": "Poselství Dalajlámy k miléniu"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/moudra/umeni_med.html",
+              "text": "Umění meditace (Ed. Tomáš)"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/moudra/otcenas.html",
+              "text": "Otče Náš (Míla Tomášová)"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/moudra/venus.html",
+              "text": "Přechod Venuše — brána Zlatého věku"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/moudra/sprehledem.html",
+              "text": "Praktické rady pro život s přehledem"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/moudra/poselstvi_jez.html",
+              "text": "Poselství od Ježíše"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/moudra/silaviry_jez.html",
+              "text": "Síla tvé víry od Ježíše"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/moudra/planeta_lasky.html",
+              "text": "Učiňme Zemi planetou Lásky"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/moudra/volanizeme.html",
+              "text": "Volání Matky Země"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/moudra/svjan.html",
+              "text": "Poselství ze sv. Jána"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/moudra/slunzasv.html",
+              "text": "Sluneční zasvěcení"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/moudra/jaknaodpusteni.html",
+              "text": "Jak na odpuštění"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/moudra/childrenmeditation.html",
+              "text": "Meditace pro děti"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/moudra/kvet_med.html",
+              "text": "Květinová meditace"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/moudra/firegrid.html",
+              "text": "Ohnivá mříž"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/moudra/harmonicgrid.html",
+              "text": "Harmonická mříž"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/moudra/wesak.html",
+              "text": "Wesak"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/moudra/wesaklegenda.html",
+              "text": "Legenda o Wesaku"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/moudra/altamajor.html",
+              "text": "Alta Major"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/moudra/ruiz_plamen.html",
+              "text": "Plamen (Ruiz)"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/moudra/shapiro.html",
+              "text": "Shapiro"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/moudra/megrepraha.html",
+              "text": "Megre — Praha"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/katka/kkniha.html",
+              "text": "Katrin — Návraty"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/katka/horskystit.pdf",
+              "text": "Vanessa — Horský štít (PDF)"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/moudra/Neos.html",
+              "text": "A. Grane: Klíč k pochopení vnitřního života (1927)"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/moudra/Verunka.html",
+              "text": "Manfred Kyber: Verunčina tři světla"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/rc/index_rc.html",
+              "text": "Úvod do Reconnection"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/rc/history.html",
+              "text": "Historie"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/wm/index_wm.html",
+              "text": "Hlavní stránka"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/wm/wmsetup.html",
+              "text": "Nastavení WM"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/wm/WingMakers-InetTisk.html",
+              "text": "WingMakers pro tisk"
+            }
+          ]
+        }
+      ],
+      "articles": []
+    },
+    {
+      "id": "lyara",
+      "title": "🌟 Poselství Lyary",
+      "subtitle": "Chronologická sbírka channelingů a článků od Lyary (1999–2009)",
+      "type": "articles",
+      "cards": [],
+      "articles": []
+    },
+    {
+      "id": "sheldan",
+      "title": "💫 Poselství Sheldana Nidla",
+      "subtitle": "Aktualizace od Galaktické federace světla",
+      "type": "articles",
+      "cards": [],
+      "articles": []
+    },
+    {
+      "id": "vule-bozi",
+      "title": "📜 Vůle Boží",
+      "subtitle": "Kompletní série textů o Vůli Boží (11 dílů)",
+      "type": "articles",
+      "cards": [],
+      "articles": []
+    },
+    {
+      "id": "extra",
+      "title": "🕊️ Metatron & Karen — Další poselství",
+      "subtitle": "Poselství od Lorda Metatrona a Mistra světla a míru",
+      "type": "articles",
+      "cards": [],
+      "articles": []
+    },
+    {
+      "id": "asea-lol",
+      "title": "",
+      "subtitle": "",
+      "type": "cards",
+      "cards": [
+        {
+          "icon": "⚗️",
+          "iconImage": "",
+          "title": "ASEA — Tělo i duch",
+          "href": "/legacy/Vzestup/vzestup.webpark.cz/asea/index_asea.html",
+          "desc": "Tělo i duch musí být v rovnováze. Materiály o celostním zdraví a regeneraci.",
+          "links": [
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/LOL/lolsymboly.html",
+              "text": "Symboly LOL"
+            },
+            {
+              "href": "/legacy/Vzestup/vzestup.webpark.cz/karen/LOL/lolutil.html",
+              "text": "Nástroje LOL"
+            }
+          ]
+        }
+      ],
+      "articles": []
+    }
+  ]
+}
