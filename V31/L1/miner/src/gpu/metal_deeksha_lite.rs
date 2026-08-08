@@ -59,10 +59,14 @@ impl MetalDeekshaLiteMiner {
 
         let device_recommended = device.recommended_max_working_set_size();
         let budget_bytes = claim_gpu_memory_budget(device_recommended);
+        // 512 KiB scratchpad per thread (v3.2)
+        // M1: 8GB unified memory → budget ~4GB → 8192 threads
+        // Cap at 8192 to keep batch latency reasonable
         let max_threads_by_mem = (budget_bytes / 524_288) as usize;
         let batch_size = work_size
             .max(threads_per_tg)
-            .min(max_threads_by_mem.max(threads_per_tg));
+            .min(max_threads_by_mem.max(threads_per_tg))
+            .min(8192);
         let opts = MTLResourceOptions::StorageModeShared;
 
         let header_buf = device.new_buffer(80, opts);

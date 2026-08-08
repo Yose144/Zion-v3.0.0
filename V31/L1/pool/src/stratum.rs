@@ -185,6 +185,41 @@ impl StratumServer {
         &self.notifier
     }
 
+    /// Fallback hashrate sample estimate for miners that do not report
+    /// `attempted_hashes` / `elapsed_ms` (e.g. older V3 Trinity clients).
+    /// Uses the current share difficulty as the expected work and the time
+    /// since the worker's previous accepted share as the elapsed time.
+    fn fallback_work_sample(
+        &self,
+        miner_id: &str,
+        worker_name: &str,
+        share_difficulty: u64,
+        attempted: Option<u64>,
+        elapsed: Option<u64>,
+    ) -> (u64, u64) {
+        let now_s = crate::telemetry::now_unix_seconds();
+        let attempted_h = attempted.unwrap_or(0);
+        let elapsed_ms = elapsed.unwrap_or(0);
+        if attempted_h > 0 && elapsed_ms > 0 {
+            return (attempted_h, elapsed_ms);
+        }
+        let mut out_attempted = attempted_h;
+        let mut out_elapsed = elapsed_ms;
+        if out_attempted == 0 {
+            out_attempted = share_difficulty.max(1);
+        }
+        if out_elapsed == 0 {
+            let key = format!("{miner_id}/{worker_name}");
+            let reg = self.telemetry.lock().unwrap();
+            if let Some(miner) = reg.get_miner(&key) {
+                if miner.last_share_time_s > 0 && now_s > miner.last_share_time_s {
+                    out_elapsed = (now_s - miner.last_share_time_s).saturating_mul(1000);
+                }
+            }
+        }
+        (out_attempted, out_elapsed)
+    }
+
     /// Handle a Stratum v1 JSON-RPC request line (stateless convenience wrapper).
     pub fn handle_request(&self, line: &str) -> String {
         let mut ctx = StratumV1Ctx::new(0, &self.vardiff_config);
@@ -944,7 +979,7 @@ impl StratumServer {
                     match line {
                         Ok(Some(line)) => {
                             match decode_message(&line) {
-                                Ok(PoolMessage::Submit { job_id, miner_id: submit_miner, worker_name: submit_worker, nonce, .. }) => {
+                                Ok(PoolMessage::Submit { job_id, miner_id: submit_miner, worker_name: submit_worker, nonce, attempted_hashes, elapsed_ms, .. }) => {
                                     let job_key = format!("zion_{}", job_id);
                                     let job_data = self.jobs.lock().unwrap().get(&job_key).cloned();
                                     if let Some((header, share_target, block_target, reward, template)) = job_data {
@@ -957,6 +992,15 @@ impl StratumServer {
                                         let result = self.pool.lock().unwrap().submit_zion_with_target(submission, &header, height, difficulty, &share_target);
                                         let accepted = matches!(result, Ok(true));
 
+                                        // Estimate hashes/elapsed for TLS clients (no per-session vardiff here).
+                                        let (attempted_h, elapsed_ms) = self.fallback_work_sample(
+                                            &submit_miner,
+                                            &submit_worker,
+                                            self.vardiff_config.start_difficulty.max(1),
+                                            attempted_hashes,
+                                            elapsed_ms,
+                                        );
+
                                         // Check if share meets the network block target
                                         let block_found = accepted && {
                                             let pool = self.pool.lock().unwrap();
@@ -965,6 +1009,13 @@ impl StratumServer {
                                         };
 
                                         if accepted {
+                                            self.telemetry.lock().unwrap().record_job_result(
+                                                &submit_miner,
+                                                &submit_worker,
+                                                true,
+                                                attempted_h,
+                                                elapsed_ms,
+                                            );
                                             self.block_tracker.lock().unwrap().record_share();
                                         }
 
@@ -1217,6 +1268,15 @@ impl StratumServer {
                                     hash.as_bytes() <= &block_target
                                 };
 
+                                // Estimate hashes/elapsed for clients that don't report them.
+                                let (attempted_h, elapsed_ms) = self.fallback_work_sample(
+                                    &submit_miner,
+                                    &submit_worker,
+                                    vardiff.current(),
+                                    attempted_hashes,
+                                    elapsed_ms,
+                                );
+
                                 // Record routing stats
                                 use zion_cosmic_harmony::revenue::RevenueSource;
                                 let should_log = self.routing_stats.lock().unwrap().record(
@@ -1235,8 +1295,8 @@ impl StratumServer {
                                         &submit_miner,
                                         &submit_worker,
                                         true,
-                                        attempted_hashes.unwrap_or(0),
-                                        elapsed_ms.unwrap_or(0),
+                                        attempted_h,
+                                        elapsed_ms,
                                     );
                                     // Record share for block tracker
                                     self.block_tracker.lock().unwrap().record_share();
@@ -1314,8 +1374,8 @@ impl StratumServer {
                                         &submit_miner,
                                         &submit_worker,
                                         false,
-                                        attempted_hashes.unwrap_or(0),
-                                        elapsed_ms.unwrap_or(0),
+                                        attempted_h,
+                                        elapsed_ms,
                                     );
                                 }
 
@@ -1367,11 +1427,19 @@ impl StratumServer {
                                     job_id, ns_miner, consecutive_no_solution
                                 );
 
+                                let (attempted_h, elapsed_ms) = self.fallback_work_sample(
+                                    &ns_miner,
+                                    &ns_worker,
+                                    vardiff.current(),
+                                    attempted_hashes,
+                                    elapsed_ms,
+                                );
+
                                 self.telemetry.lock().unwrap().record_no_solution(
                                     &ns_miner,
                                     &ns_worker,
-                                    attempted_hashes.unwrap_or(0),
-                                    elapsed_ms.unwrap_or(0),
+                                    attempted_h,
+                                    elapsed_ms,
                                 );
 
                                 if consecutive_no_solution >= self.max_consecutive_no_solution {
