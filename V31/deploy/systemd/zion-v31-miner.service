@@ -12,10 +12,9 @@ EnvironmentFile=/etc/zion/edge-environment.sh
 Environment=ZION_POOL_ADDR=127.0.0.1:8444
 Environment=ZION_WORKER_NAME=v31-miner
 Environment=ZION_MINER_ID=v31-miner-1
-Environment=ZION_LOOP_COUNT=1000000
 Environment=ZION_THREADS=2
 Environment=ZION_GPU_BACKEND=auto
-ExecStart=/opt/zion/V31/target/release/zion-miner --pool 127.0.0.1:8444 --worker v31-miner --threads 2 --loops 1000000
+ExecStart=/opt/zion/V31/target/release/zion-miner --pool 127.0.0.1:8444 --worker v31-miner --threads 2
 Restart=always
 RestartSec=30
 

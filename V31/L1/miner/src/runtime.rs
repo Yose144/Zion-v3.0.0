@@ -1276,8 +1276,9 @@ impl MinerRuntime {
         self.update_hashrate(StreamId::Zion, nonces_searched, elapsed).await;
 
         let hash_hex = hex::encode(&hash_bytes);
+        let elapsed_ms = (elapsed * 1000.0) as u64;
         let result = client
-            .submit_zion_share(job.job_id, nonce, &hash_hex, None)
+            .submit_zion_share(job.job_id, nonce, &hash_hex, None, nonces_searched, elapsed_ms)
             .await
             .map_err(|e| MinerError::Consensus(format!("V3 submit: {e}")))?;
 
