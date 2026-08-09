@@ -1504,17 +1504,40 @@ impl StratumServer {
                                 );
 
                                 // Forward to AuxPoW bridge
-                                // Get ntime from the submit message (from miner) or
-                                // fall back to the bridge job_queue for this coin
-                                let ntime_hex = if !submit_ntime_hex.is_empty() {
-                                    submit_ntime_hex
-                                } else {
+                                // Get ntime + solution from the submit message (from miner) or
+                                // fall back to the bridge job_queue for this coin.
+                                // Old miners (barker rig, etc.) don't send solution_hex/ntime_hex,
+                                // so we extract them from the job_queue header_hex.
+                                let (ntime_hex, solution_hex_final) = {
                                     let coin_enum = zion_cosmic_harmony::profit::ExternalCoin::from_ticker(&coin);
-                                    if let Some(c) = coin_enum {
-                                        if let Some(job_pkg) = self.multi_bridge.latest_job_for_coin(&c) {
-                                            job_pkg.ntime
+                                    let job_pkg = coin_enum
+                                        .as_ref()
+                                        .and_then(|c| self.multi_bridge.latest_job_for_coin(c));
+
+                                    let ntime = if !submit_ntime_hex.is_empty() {
+                                        submit_ntime_hex
+                                    } else if let Some(ref pkg) = job_pkg {
+                                        pkg.ntime.clone()
+                                    } else { String::new() };
+
+                                    let sol = if !solution_hex.is_empty() {
+                                        solution_hex
+                                    } else if let Some(ref pkg) = job_pkg {
+                                        // Extract solution (WITH varint prefix) from header_hex
+                                        // for ZcashStratum (VRSC).
+                                        // Header: version(4)+prevhash(32)+merkle(32)+reserved(32)+
+                                        //         ntime(4)+nbits(4)+nonce(32)+varint+solution
+                                        // Varint starts at offset 140. LuckPool expects the
+                                        // full solution including the CompactSize varint prefix.
+                                        let header_hex_stripped = pkg.header_hex.strip_prefix("0x").unwrap_or(&pkg.header_hex);
+                                        if let Ok(header) = hex::decode(header_hex_stripped) {
+                                            if header.len() > 141 && submit_algorithm.contains("verushash") {
+                                                // Include varint prefix in the solution
+                                                hex::encode(&header[140..])
+                                            } else { String::new() }
                                         } else { String::new() }
-                                    } else { String::new() }
+                                    } else { String::new() };
+                                    (ntime, sol)
                                 };
                                 let req = ShareForwardRequest {
                                     job_id: external_job_id.clone(),
@@ -1524,7 +1547,7 @@ impl StratumServer {
                                     algorithm: submit_algorithm.clone(),
                                     header_bytes: Vec::new(),
                                     ntime: ntime_hex,
-                                    solution_hex: solution_hex.clone(),
+                                    solution_hex: solution_hex_final,
                                     extranonce1_hex: extranonce1_hex.clone(),
                                 };
 
