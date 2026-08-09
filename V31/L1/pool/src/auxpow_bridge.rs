@@ -78,7 +78,9 @@ impl AuxPowBridge {
             return None;
         }
         let q = self.job_queue.lock().expect("auxpow job queue lock poisoned");
-        q.front().cloned()
+        // Return the LATEST job (back of queue), not the oldest.
+        // Jobs are push_back'd, so back() is the most recent.
+        q.back().cloned()
     }
 
     pub fn get_job_by_id(&self, job_id: &str) -> Option<JobPackage> {
@@ -329,6 +331,33 @@ mod tests {
         let q = bridge.job_queue.lock().unwrap();
         assert_eq!(q.len(), 5);
         assert_eq!(q.front().unwrap().external_job_id, "job2");
+    }
+
+    #[test]
+    fn pop_job_returns_latest() {
+        let (bridge, _rx, _touch) = AuxPowBridge::new(true);
+        bridge.push_job(JobPackage {
+            external_job_id: "old".into(),
+            coin: ExternalCoin::Decred,
+            header_hex: String::new(),
+            target_hex: String::new(),
+            height: 0,
+            algorithm: "blake3".into(),
+            extranonce1_hex: String::new(),
+            ntime: String::new(),
+        });
+        bridge.push_job(JobPackage {
+            external_job_id: "new".into(),
+            coin: ExternalCoin::Decred,
+            header_hex: String::new(),
+            target_hex: String::new(),
+            height: 0,
+            algorithm: "blake3".into(),
+            extranonce1_hex: String::new(),
+            ntime: String::new(),
+        });
+        let popped = bridge.pop_job().unwrap();
+        assert_eq!(popped.external_job_id, "new", "pop_job should return latest job (back of queue)");
     }
 
     #[test]
