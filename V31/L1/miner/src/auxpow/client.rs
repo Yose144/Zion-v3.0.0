@@ -203,6 +203,9 @@ pub struct AuxPowClient {
     job_header_prefix: Arc<Mutex<HashMap<String, String>>>,
     job_extranonce1: Arc<Mutex<HashMap<String, Vec<u8>>>>,
     latest_job_id: Arc<Mutex<Option<String>>>,
+    /// Timestamp when the latest job was received — used for time-based
+    /// staleness detection on fast-block coins (VRSC ~60s, ZANO ~30s).
+    latest_job_time: Arc<Mutex<Option<Instant>>>,
     cryptonote_session_id: Arc<Mutex<Option<String>>>,
     submitted_nonces: Arc<Mutex<std::collections::VecDeque<(String, u64)>>>,
     /// Guard to ensure only one background poll/reconnect task is ever spawned.
@@ -247,6 +250,7 @@ impl AuxPowClient {
             job_header_prefix: Arc::new(Mutex::new(HashMap::new())),
             job_extranonce1: Arc::new(Mutex::new(HashMap::new())),
             latest_job_id: Arc::new(Mutex::new(None)),
+            latest_job_time: Arc::new(Mutex::new(None)),
             cryptonote_session_id: Arc::new(Mutex::new(None)),
             submitted_nonces: Arc::new(Mutex::new(std::collections::VecDeque::new())),
             poll_task_running: Arc::new(AtomicBool::new(false)),
@@ -374,6 +378,7 @@ impl AuxPowClient {
             self.job_header_prefix.lock().await.clear();
             self.job_extranonce1.lock().await.clear();
             *self.latest_job_id.lock().await = None;
+            *self.latest_job_time.lock().await = None;
             let cancelled = self.pending_requests.lock().await.drain().count();
             if cancelled > 0 {
                 warn!(
@@ -527,18 +532,49 @@ impl AuxPowClient {
             if arr.len() >= 3 {
                 let e1 = parse_hex_value(&arr[1]).unwrap_or_default();
                 let size = arr[2].as_u64().unwrap_or(0) as u32;
+                let en1_hex = hex::encode(&e1);
+                let en1_len = e1.len();
                 *self.extranonce1.lock().await = e1;
                 *self.extranonce2_size.lock().await = Some(size);
                 info!(extranonce2_size = size, "stratum subscribed");
+                tracing::debug!(
+                    target: "en1_trace",
+                    en1_hex = %en1_hex,
+                    en1_len = en1_len,
+                    coin = %self.config.coin,
+                    "en1_trace subscribe_response set extranonce1 (3-field)"
+                );
             } else if arr.len() == 2 {
                 // Some pools (e.g. eu.luckpool.net for VRSC) return only
                 // [session_id, extranonce1] with no extranonce2_size. Fall back
                 // to a sensible default of 4 bytes for VerusHash.
                 let e1 = parse_hex_value(&arr[1]).unwrap_or_default();
+                let en1_hex = hex::encode(&e1);
+                let en1_len = e1.len();
                 *self.extranonce1.lock().await = e1;
                 *self.extranonce2_size.lock().await = Some(4);
                 info!(extranonce2_size = 4, "stratum subscribed (2-field response)");
+                tracing::debug!(
+                    target: "en1_trace",
+                    en1_hex = %en1_hex,
+                    en1_len = en1_len,
+                    coin = %self.config.coin,
+                    "en1_trace subscribe_response set extranonce1 (2-field)"
+                );
+            } else {
+                tracing::warn!(
+                    target: "en1_trace",
+                    arr_len = arr.len(),
+                    coin = %self.config.coin,
+                    "en1_trace subscribe_response UNEXPECTED array length — extranonce1 NOT set"
+                );
             }
+        } else {
+            tracing::warn!(
+                target: "en1_trace",
+                coin = %self.config.coin,
+                "en1_trace subscribe_response no result array — extranonce1 NOT set"
+            );
         }
         Ok(())
     }
@@ -912,6 +948,22 @@ impl AuxPowClient {
                 };
 
                 let en1 = self.extranonce1.lock().await.clone();
+                tracing::debug!(
+                    target: "en1_trace",
+                    en1_hex = %hex::encode(&en1),
+                    en1_len = en1.len(),
+                    job_id = %job_id,
+                    coin = %self.config.coin,
+                    "en1_trace parse_notify read extranonce1 for job"
+                );
+                if en1.is_empty() {
+                    tracing::warn!(
+                        target: "en1_trace",
+                        job_id = %job_id,
+                        coin = %self.config.coin,
+                        "en1_trace parse_notify EMPTY extranonce1 — race condition? subscribe response may not have been processed yet"
+                    );
+                }
                 let mut nonce_field = [0u8; 32];
                 let en1_len = en1.len().min(32);
                 nonce_field[..en1_len].copy_from_slice(&en1[..en1_len]);
@@ -956,6 +1008,7 @@ impl AuxPowClient {
                     ..Default::default()
                 };
                 *self.latest_job_id.lock().await = Some(job.job_id.clone());
+                *self.latest_job_time.lock().await = Some(Instant::now());
                 return Some(job);
             }
 
@@ -1095,6 +1148,7 @@ impl AuxPowClient {
             ..Default::default()
         };
         *self.latest_job_id.lock().await = Some(job_id);
+        *self.latest_job_time.lock().await = Some(Instant::now());
         Some(job)
     }
 
@@ -1241,6 +1295,16 @@ impl AuxPowClient {
     /// Used by the runtime to detect stale shares before forwarding.
     pub async fn latest_job_id(&self) -> Option<String> {
         self.latest_job_id.lock().await.clone()
+    }
+
+    /// Return the elapsed time since the latest job was received.
+    /// Returns `None` if no job has been received yet.
+    /// Used for time-based staleness detection on fast-block coins.
+    pub async fn latest_job_age(&self) -> Option<Duration> {
+        self.latest_job_time
+            .lock()
+            .await
+            .map(|t| t.elapsed())
     }
 
     pub fn config(&self) -> &AuxPowClientConfig {

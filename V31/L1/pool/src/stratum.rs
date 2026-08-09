@@ -1504,13 +1504,34 @@ impl StratumServer {
                                     "v3_external_submit miner={} coin={} job={} nonce={}",
                                     sub_miner_id, coin, external_job_id, nonce
                                 );
+                                tracing::debug!(
+                                    target: "en1_trace",
+                                    miner_en1 = %extranonce1_hex,
+                                    miner_sol_hex_len = solution_hex.len(),
+                                    coin = %coin,
+                                    "en1_trace external_submit received from miner"
+                                );
 
                                 // Forward to AuxPoW bridge
                                 // Get ntime + solution from the submit message (from miner) or
                                 // fall back to the bridge job_queue for this coin.
                                 // Old miners (barker rig, etc.) don't send solution_hex/ntime_hex,
                                 // so we extract them from the job_queue header_hex.
-                                let (ntime_hex, solution_hex_final, effective_job_id) = {
+                                //
+                                // VRSC CRITICAL FIX: For VerusHash (VRSC/LuckPool), the solution's
+                                // nonceSpace (last 15 bytes of the 1344-byte solution) MUST contain
+                                // the extranonce1 (pool nonce) at the beginning, otherwise LuckPool
+                                // rejects with "invalid solution, pool nonce missing".
+                                //
+                                // The miner may receive an empty extranonce1 due to a race
+                                // condition between the poll task (processing mining.notify) and
+                                // the subscribe() call (setting self.extranonce1). To fix this,
+                                // we ALWAYS rebuild the solution nonceSpace at the pool side using
+                                // the extranonce1 from the JobPackage (which comes directly from
+                                // LuckPool's subscribe response), not from the miner's submit.
+                                // This matches the V3 reference implementation which builds the
+                                // solution at submit time, not at mining time.
+                                let (ntime_hex, solution_hex_final, en1_hex_final) = {
                                     let coin_enum = zion_cosmic_harmony::profit::ExternalCoin::from_ticker(&coin);
                                     let job_pkg = coin_enum
                                         .as_ref()
@@ -1522,7 +1543,90 @@ impl StratumServer {
                                         pkg.ntime.clone()
                                     } else { String::new() };
 
-                                    let sol = if !solution_hex.is_empty() {
+                                    // Use the extranonce1 from the JobPackage (authoritative,
+                                    // from LuckPool subscribe) if available. Fall back to the
+                                    // miner's extranonce1_hex only if the job_pkg is unavailable.
+                                    let en1_hex = if let Some(ref pkg) = job_pkg {
+                                        if !pkg.extranonce1_hex.is_empty() {
+                                            pkg.extranonce1_hex.clone()
+                                        } else {
+                                            extranonce1_hex.clone()
+                                        }
+                                    } else {
+                                        extranonce1_hex.clone()
+                                    };
+
+                                    let is_verushash = submit_algorithm.contains("verushash")
+                                        || coin.to_ascii_uppercase() == "VRSC";
+
+                                    let sol = if is_verushash {
+                                        // Rebuild the solution at the pool side for VRSC.
+                                        // 1. Get the original solution (with MMR roots) from the
+                                        //    job_pkg header_hex, or from the miner's solution_hex.
+                                        // 2. Overwrite the nonceSpace (solution bytes 1329-1343)
+                                        //    with [en1][miner_nonce(4B LE)][padding].
+                                        // 3. Prepend the varint prefix (fd4005 for 1344 bytes).
+                                        const VERUS_SOLUTION_SIZE: usize = 1344;
+                                        const VERUS_NONCE_SPACE_SIZE: usize = 15;
+                                        const VERUS_NONCE_SPACE_OFFSET: usize = 1329; // within solution
+                                        const VERUS_SOLUTION_OFFSET_IN_HEADER: usize = 143;
+
+                                        let en1_bytes = hex::decode(&en1_hex).unwrap_or_default();
+
+                                        // Get the original 1344-byte solution (without varint)
+                                        let mut sol_1344: Vec<u8> = if !solution_hex.is_empty() {
+                                            // Miner sent a solution with varint prefix (1347 bytes = 2694 hex)
+                                            let sol_bytes = hex::decode(&solution_hex).unwrap_or_default();
+                                            if sol_bytes.len() == 3 + VERUS_SOLUTION_SIZE {
+                                                sol_bytes[3..].to_vec()
+                                            } else if sol_bytes.len() == VERUS_SOLUTION_SIZE {
+                                                sol_bytes
+                                            } else {
+                                                // Fallback: extract from job_pkg header
+                                                if let Some(ref pkg) = job_pkg {
+                                                    let header_hex_stripped = pkg.header_hex.strip_prefix("0x").unwrap_or(&pkg.header_hex);
+                                                    if let Ok(header) = hex::decode(header_hex_stripped) {
+                                                        if header.len() >= VERUS_SOLUTION_OFFSET_IN_HEADER + VERUS_SOLUTION_SIZE {
+                                                            header[VERUS_SOLUTION_OFFSET_IN_HEADER..VERUS_SOLUTION_OFFSET_IN_HEADER + VERUS_SOLUTION_SIZE].to_vec()
+                                                        } else { vec![0u8; VERUS_SOLUTION_SIZE] }
+                                                    } else { vec![0u8; VERUS_SOLUTION_SIZE] }
+                                                } else { vec![0u8; VERUS_SOLUTION_SIZE] }
+                                            }
+                                        } else if let Some(ref pkg) = job_pkg {
+                                            // Extract solution from header_hex
+                                            let header_hex_stripped = pkg.header_hex.strip_prefix("0x").unwrap_or(&pkg.header_hex);
+                                            if let Ok(header) = hex::decode(header_hex_stripped) {
+                                                if header.len() >= VERUS_SOLUTION_OFFSET_IN_HEADER + VERUS_SOLUTION_SIZE {
+                                                    header[VERUS_SOLUTION_OFFSET_IN_HEADER..VERUS_SOLUTION_OFFSET_IN_HEADER + VERUS_SOLUTION_SIZE].to_vec()
+                                                } else { vec![0u8; VERUS_SOLUTION_SIZE] }
+                                            } else { vec![0u8; VERUS_SOLUTION_SIZE] }
+                                        } else {
+                                            vec![0u8; VERUS_SOLUTION_SIZE]
+                                        };
+
+                                        // Ensure solution is exactly 1344 bytes
+                                        if sol_1344.len() < VERUS_SOLUTION_SIZE {
+                                            sol_1344.resize(VERUS_SOLUTION_SIZE, 0);
+                                        } else if sol_1344.len() > VERUS_SOLUTION_SIZE {
+                                            sol_1344.truncate(VERUS_SOLUTION_SIZE);
+                                        }
+
+                                        // Overwrite nonceSpace: [en1][miner_nonce(4B LE)][padding]
+                                        let en1_len = en1_bytes.len().min(VERUS_NONCE_SPACE_SIZE - 4);
+                                        let nonce_le = (nonce as u32).to_le_bytes();
+                                        let mut nonce_space = [0u8; VERUS_NONCE_SPACE_SIZE];
+                                        if en1_len > 0 {
+                                            nonce_space[..en1_len].copy_from_slice(&en1_bytes[..en1_len]);
+                                        }
+                                        nonce_space[en1_len..en1_len + 4].copy_from_slice(&nonce_le);
+                                        sol_1344[VERUS_NONCE_SPACE_OFFSET..VERUS_NONCE_SPACE_OFFSET + VERUS_NONCE_SPACE_SIZE]
+                                            .copy_from_slice(&nonce_space);
+
+                                        // Prepend varint: fd4005 = 1344 in Zcash compact varint
+                                        let mut solution_with_varint = vec![0xfd, 0x40, 0x05];
+                                        solution_with_varint.extend_from_slice(&sol_1344);
+                                        hex::encode(&solution_with_varint)
+                                    } else if !solution_hex.is_empty() {
                                         solution_hex
                                     } else if let Some(ref pkg) = job_pkg {
                                         // Extract solution (WITH varint prefix) from header_hex
@@ -1542,32 +1646,68 @@ impl StratumServer {
                                             } else { String::new() }
                                         } else { String::new() }
                                     } else { String::new() };
-
-                                    // If the miner's job_id doesn't match the latest upstream
-                                    // job_id, override it to the latest. This fixes stale shares
-                                    // from rigs running older binaries that don't track job
-                                    // rotations fast enough.
-                                    let effective_jid = if let Some(ref pkg) = job_pkg {
-                                        if pkg.external_job_id != external_job_id {
-                                            tracing::info!(
-                                                "v3_external_job_override miner={} coin={} old_job={} new_job={}",
-                                                sub_miner_id, coin, external_job_id, pkg.external_job_id
-                                            );
-                                            pkg.external_job_id.clone()
-                                        } else {
-                                            external_job_id.clone()
-                                        }
-                                    } else {
-                                        tracing::warn!(
-                                            "v3_external_no_job_pkg miner={} coin={} submit_job={}",
-                                            sub_miner_id, coin, external_job_id
-                                        );
-                                        external_job_id.clone()
-                                    };
-                                    (ntime, sol, effective_jid)
+                                    (ntime, sol, en1_hex)
                                 };
+
+                                tracing::debug!(
+                                    target: "en1_trace",
+                                    final_en1 = %en1_hex_final,
+                                    miner_en1 = %extranonce1_hex,
+                                    sol_hex_len = solution_hex_final.len(),
+                                    coin = %coin,
+                                    "en1_trace pool-side final extranonce1 for forwarding"
+                                );
+
+                                // ── VRSC latest-job-only check ─────────────────────
+                                // LuckPool expires VRSC jobs IMMEDIATELY when a new
+                                // VerusCoin block is found (clean=true).  The multi-hop
+                                // delay (LuckPool→Edge→miner→Edge→LuckPool, 1-2s) means
+                                // the miner sometimes finds shares for a job that has
+                                // already been superseded.  Forwarding these to LuckPool
+                                // always results in "job not found" rejects.
+                                //
+                                // Fix: for VRSC only, only forward shares for the
+                                // LATEST job_id (front of the queue).  Shares for older
+                                // job_ids are silently skipped — they would be rejected
+                                // by LuckPool anyway.
+                                //
+                                // Env: ZION_VRSC_LATEST_ONLY=0 to disable (default: 1).
+                                if coin.to_ascii_uppercase() == "VRSC" {
+                                    let vrsc_latest_only = std::env::var("ZION_VRSC_LATEST_ONLY")
+                                        .ok()
+                                        .and_then(|v| v.parse::<u32>().ok())
+                                        .unwrap_or(1);
+                                    if vrsc_latest_only > 0 {
+                                        let coin_enum = zion_cosmic_harmony::profit::ExternalCoin::from_ticker(&coin);
+                                        if let Some(ref c) = coin_enum {
+                                            let job_ids = self.multi_bridge.job_ids_for_coin(c);
+                                            if !job_ids.is_empty() {
+                                                if let Some(latest_id) = job_ids.first() {
+                                                    if latest_id != &external_job_id {
+                                                        tracing::info!(
+                                                            "external_share_vrsc_skip miner={} coin=VRSC share_job_id={} latest_job_id={} — skipping (not latest, LuckPool will reject)",
+                                                            sub_miner_id, external_job_id, latest_id
+                                                        );
+                                                        let ext_result = PoolMessage::ExternalResult {
+                                                            accepted: false,
+                                                            status: "stale_skip".to_string(),
+                                                            coin: coin.clone(),
+                                                        };
+                                                        let _ = write_v3_message(writer, &ext_result).await;
+                                                        // Record reject in routing stats
+                                                        let ext_source = zion_cosmic_harmony::revenue::RevenueSource::VerusHashExternal;
+                                                        let group = crate::routing::resolve_session_group(&sub_miner_id, &sub_worker_name);
+                                                        self.routing_stats.lock().unwrap().record(group, ext_source, false);
+                                                        continue;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
                                 let req = ShareForwardRequest {
-                                    job_id: effective_job_id,
+                                    job_id: external_job_id.clone(),
                                     nonce,
                                     hash_hex: hash_hex.clone(),
                                     mix_hash_hex: mix_hash_hex.clone(),
@@ -1575,7 +1715,7 @@ impl StratumServer {
                                     header_bytes: Vec::new(),
                                     ntime: ntime_hex,
                                     solution_hex: solution_hex_final,
-                                    extranonce1_hex: extranonce1_hex.clone(),
+                                    extranonce1_hex: en1_hex_final,
                                 };
 
                                 let bridge = self.multi_bridge.clone();
