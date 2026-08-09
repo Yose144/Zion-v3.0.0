@@ -291,6 +291,16 @@ pub fn find_auxpow_share(
     threads: usize,
     nonce_count: u64,
 ) -> Option<crate::auxpow::Share> {
+    find_auxpow_share_from(job, threads, nonce_count, 0)
+}
+
+/// Like `find_auxpow_share` but starts scanning from `start_nonce` instead of 0.
+pub fn find_auxpow_share_from(
+    job: &crate::auxpow::Job,
+    threads: usize,
+    nonce_count: u64,
+    start_nonce: u64,
+) -> Option<crate::auxpow::Share> {
     if nonce_count == 0 {
         return None;
     }
@@ -359,7 +369,7 @@ pub fn find_auxpow_share(
     // VerusHash v2.2 uses a full 1487-byte block header with a 15-byte
     // nonceSpace; the generic nonce-per-hash path cannot produce valid shares.
     if algorithm.contains("verushash") {
-        return find_verushash_share(job, threads, nonce_count);
+        return find_verushash_share(job, threads, nonce_count, start_nonce);
     }
 
     if threads == 1 || nonce_count < threads as u64 {
@@ -435,6 +445,7 @@ fn find_verushash_share(
     job: &crate::auxpow::Job,
     threads: usize,
     nonce_count: u64,
+    start_nonce: u64,
 ) -> Option<crate::auxpow::Share> {
     let threads = threads.max(1);
     let chunk_size = nonce_count / threads as u64;
@@ -452,9 +463,9 @@ fn find_verushash_share(
     header_hash[..copy_len].copy_from_slice(&header[..copy_len]);
 
     (0..threads).into_par_iter().find_map_any(|thread_idx| {
-        let start = thread_idx as u64 * chunk_size;
+        let start = start_nonce + thread_idx as u64 * chunk_size;
         let count = if thread_idx == threads - 1 {
-            nonce_count - start
+            nonce_count - thread_idx as u64 * chunk_size
         } else {
             chunk_size
         };
