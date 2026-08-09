@@ -1,5 +1,5 @@
 # TRINITY ENGINE PARALLEL MINING REPORT
-**Date:** 2026-08-08 22:10 CET (updated)
+**Date:** 2026-08-09 03:50 CET (updated)
 **Engine:** V3 Trinity (ZION + ZANO + VRSC)
 
 ---
@@ -180,16 +180,21 @@ ZION_POOL_AUXPOW_CPU_REGION=eu
 |------|--------|--------|
 | `V31/L1/pool/src/stratum.rs` | Add `v3_external_forward` log after bridge forward | `4b37b4c11` |
 | `V31/L1/pool/src/auxpow_runtime.rs` | Add `share forwarded` log + fix empty header_bytes → None | `4b37b4c11` |
+| `V31/L1/miner/src/config.rs` | Read `ZION_STREAM{1,2,3}_ENABLED` env vars | `abff6874b` |
+| `V31/L1/miner/src/bin/zion-miner.rs` | `--no-*` flags augment env vars instead of overriding | `abff6874b` |
+| `V31/L1/miner/src/runtime.rs` | V3 trinity checks `stream{2,3}_enabled` before spawning | `abff6874b` |
 | `V31/L1/miner/src/gpu_guard.rs` | scratchpad 256→512 KiB, Vega work_size 4096 | earlier |
 | `V31/L1/miner/src/gpu/kernels/metal/deeksha_lite.metal` | u64 SHA3-512 optimization (+45%) | earlier |
 
 ## Next Steps
 
-1. **Restart zionserver-gpu** — restore primary block finder, resume chain growth
+1. **Restore remote GPU miner** — zionserver-gpu needs its remote GPU back for block finding
 2. **Physical restart Vega rig** — restore OpenCL GPU + VRSC CPU streams
-3. **Verify ZANO forwarding** — with fix applied, confirm HeroMiners accepts shares
-4. **Verify VRSC forwarding** — confirm LuckPool accepts shares from pool
+3. **Verify ZANO forwarding** — with fix applied, confirm HeroMiners accepts shares (needs GPU miner)
+4. **Verify VRSC forwarding** — confirm LuckPool accepts shares from pool (needs Vega rig)
 5. **Port Metal ProgPoWZ** — enable ZANO on Mac M1 (future work)
+
+See [SHARE_VERIFY_TRINITY_2026-08-09.md](./SHARE_VERIFY_TRINITY_2026-08-09.md) for full share verification report.
 
 ---
 
