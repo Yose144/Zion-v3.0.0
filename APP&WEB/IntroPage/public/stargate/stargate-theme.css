@@ -738,6 +738,13 @@ a {
   }
 }
 
+/* Reduce stargate ring count on small screens to save GPU/CPU */
+@media (max-width: 480px) {
+  .container > img[class*="rotate"]:nth-of-type(n+11) {
+    display: none;
+  }
+}
+
 /* === GLOBAL RESPONSIVE FIXES === */
 img, video, canvas, iframe {
   max-width: 100%;
