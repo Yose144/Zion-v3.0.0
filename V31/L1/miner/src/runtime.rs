@@ -27,7 +27,7 @@ use crate::stream::{StreamId, StreamStats};
 use crate::v3_pool_client::V3PoolClient;
 
 #[cfg(feature = "auxpow")]
-use crate::gpu::{create_gpu_backend, GpuBackendKind};
+use crate::gpu::{create_gpu_backend, create_gpu_backend_with_cuda_device, GpuBackendKind};
 #[cfg(feature = "auxpow")]
 use zion_core::V3DifficultyTarget as DifficultyTarget;
 
@@ -667,6 +667,18 @@ impl MinerRuntime {
         let gpu_ext_nonce_cursor = self.gpu_ext_nonce_cursor.clone();
         let kind = parse_gpu_backend(&self.config.gpu_backend);
 
+        // Extract shared CUDA device from the ZION (Stream 1) GPU backend.
+        // This is CRITICAL: without sharing the same CudaDevice, both backends
+        // create separate CUDA contexts on the same GPU. On consumer GPUs
+        // (GTX 1070 Ti, etc.) without MPS, two concurrent CUDA contexts cause
+        // memory corruption and false-positive results in the deeksha kernel.
+        // V3 reference passes shared_cuda_dev to create_gpu_backend_with_cuda_device
+        // (archive/V3/L1/miner/src/main.rs line 5141).
+        let shared_cuda_dev = {
+            let gpu_guard = self.gpu_zion.lock().unwrap();
+            gpu_guard.as_ref().and_then(|g| g.shared_cuda_device())
+        };
+
         let start = Instant::now();
         let gpu_result = task::spawn_blocking(move || {
             // Check if we need to (re)create the GPU backend for this algorithm
@@ -676,10 +688,12 @@ impl MinerRuntime {
             };
             if need_recreate {
                 eprintln!(
-                    "gpu_ext_init algo={} coin={} work_size={} — creating persistent backend",
-                    algorithm, coin_ticker, work_size
+                    "gpu_ext_init algo={} coin={} work_size={} — creating persistent backend (shared_cuda={})",
+                    algorithm, coin_ticker, work_size, shared_cuda_dev.is_some()
                 );
-                let miner = create_gpu_backend(kind, work_size, algorithm, coin_ticker)
+                let miner = create_gpu_backend_with_cuda_device(
+                    kind, work_size, algorithm, coin_ticker, shared_cuda_dev.clone(),
+                )
                     .map_err(|e| anyhow::anyhow!("{e}"))?;
                 *gpu_ext.lock().unwrap() = Some(miner);
                 *gpu_ext_algo.lock().unwrap() = Some(algorithm.to_string());

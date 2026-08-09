@@ -995,7 +995,7 @@ extern "C" __global__ void deeksha_mine(
     uint32_t                     header_len,      /* actual header length       */
     uint64_t                     nonce_base,      /* starting nonce             */
     uint8_t        *__restrict__ scratchpad_pool, /* N × 262144 bytes           */
-    uint32_t                     target_u32,      /* LE u32 target              */
+    uint32_t                     target_u32,      /* BE u32 target              */
     uint64_t       *__restrict__ result_nonce,    /* output: winning nonce      */
     uint8_t        *__restrict__ result_hash,     /* output: 32-byte hash       */
     const int8_t   *__restrict__ npu_weights,     /* packed MLP weights         */
@@ -1041,11 +1041,11 @@ extern "C" __global__ void deeksha_mine(
     uint8_t hash[32];
     cosmic_fusion(s5, hash);
 
-    /* Target check: LE u32 from first 4 bytes ≤ target */
-    uint32_t state0 = (uint32_t)hash[0]
-                    | ((uint32_t)hash[1] <<  8)
-                    | ((uint32_t)hash[2] << 16)
-                    | ((uint32_t)hash[3] << 24);
+    /* Target check: BE u32 from first 4 bytes ≤ target (big-endian/lexicographic) */
+    uint32_t state0 = ((uint32_t)hash[0] << 24)
+                    | ((uint32_t)hash[1] << 16)
+                    | ((uint32_t)hash[2] <<  8)
+                    | ((uint32_t)hash[3]);
 
     if (state0 <= target_u32) {
         unsigned long long int old = atomicCAS(
@@ -1113,8 +1113,11 @@ extern "C" __global__ void ekam_deeksha_mine(
     uint8_t hash[32];
     cosmic_fusion_ekam(s5, hash);
 
-    /* Target check */
-    uint32_t state0 = *(uint32_t *)hash;
+    /* Target check: BE u32 from first 4 bytes ≤ target (big-endian/lexicographic) */
+    uint32_t state0 = ((uint32_t)hash[0] << 24)
+                    | ((uint32_t)hash[1] << 16)
+                    | ((uint32_t)hash[2] <<  8)
+                    | ((uint32_t)hash[3]);
 
     if (state0 <= target_u32) {
         unsigned long long int old = atomicCAS(

@@ -487,10 +487,11 @@ extern "C" __global__ void deeksha_lite_fire_mine(
     /* Shared memory: AES S-box (256 bytes) */
     __shared__ uint8_t sbox[256];
     {
-        /* Cooperative load of S-box into shared memory */
-        uint32_t tid_local = threadIdx.x;
-        if (tid_local < 256) {
-            sbox[tid_local] = AES_SBOX_DATA[tid_local];
+        /* Cooperative load of S-box into shared memory.
+         * Use strided loop to ensure all 256 entries are loaded
+         * even when blockDim.x < 256 (e.g. 128 threads). */
+        for (uint32_t i = threadIdx.x; i < 256; i += blockDim.x) {
+            sbox[i] = AES_SBOX_DATA[i];
         }
         __syncthreads();
     }
@@ -540,11 +541,16 @@ extern "C" __global__ void deeksha_lite_fire_mine(
     uint64_t *slot = (uint64_t*)(output_hashes + (uint64_t)tid * 32);
     slot[0] = hash[0]; slot[1] = hash[1]; slot[2] = hash[2]; slot[3] = hash[3];
 
-    /* Target check */
+    /* Target check — big-endian u32 of first 4 hash bytes (lexicographic).
+     * Matches OpenCL kernel: byte-swap lower 32 bits of hash[0] to get BE u32. */
     if (target_u32 != 0) {
-        uint32_t hash_le = (uint32_t)(hash[0] & 0xFFFFFFFFULL);
-        if (hash_le <= target_u32) {
-            uint64_t old = atomicExch(result_nonce, nonce);
+        uint32_t hash_low = (uint32_t)(hash[0] & 0xFFFFFFFFULL);
+        uint32_t hash_be = ((hash_low & 0xFFu) << 24) |
+                           ((hash_low & 0xFF00u) << 8) |
+                           ((hash_low >> 8) & 0xFF00u) |
+                           ((hash_low >> 24) & 0xFFu);
+        if (hash_be <= target_u32) {
+            uint64_t old = atomicCAS(result_nonce, 0xFFFFFFFFFFFFFFFFULL, nonce);
             if (old == 0xFFFFFFFFFFFFFFFFULL) {
                 uint8_t *rh = result_hash;
                 uint8_t *hb = (uint8_t*)hash;
