@@ -7,6 +7,11 @@
 **Licence: MIT pro core a pool · Tento text je manifest, kronika a průvodce**
 **Kanonický zdroj: 2026-08-09**
 
+> **KANONICKÝ WHITEPAPER (zkanonizováno 2026-08-09):** Tento dokument je hlavní veřejný whitepaper ZION.
+> Nahrazuje [`ZION_MASTER_WHITEPAPER_3.1_CZ.md`](./ZION_MASTER_WHITEPAPER_3.1_CZ.md) a všechny starší master whitepapery.
+> Technický doplněk: [`ZION_Technical_Whitepaper_v3.1_CZ.md`](./ZION_Technical_Whitepaper_v3.1_CZ.md).
+> Veřejný vstupní bod: [`ZION_ONBOARDING_PUBLIC_CZ.md`](./ZION_ONBOARDING_PUBLIC_CZ.md).
+
 ---
 
 > *„Jedna dobrá věc na hudbě — když tě zasáhne, necítíš bolest.*

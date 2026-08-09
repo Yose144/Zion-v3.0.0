@@ -7,6 +7,11 @@
 **License: MIT for core and pool · This text is manifesto, chronicle, and guide**
 **Canonical source date: 2026-08-09**
 
+> **CANONICAL WHITEPAPER (canonized 2026-08-09):** This document is the main public whitepaper of ZION.
+> It supersedes [`ZION_MASTER_WHITEPAPER_3.1_EN.md`](./ZION_MASTER_WHITEPAPER_3.1_EN.md) and all earlier master whitepapers.
+> Technical companion: [`ZION_Technical_Whitepaper_v3.1_EN.md`](./ZION_Technical_Whitepaper_v3.1_EN.md).
+> Public entry point: [`ZION_ONBOARDING_PUBLIC_EN.md`](./ZION_ONBOARDING_PUBLIC_EN.md).
+
 ---
 
 > *"One good thing about music — when it hits you, you feel no pain.*
