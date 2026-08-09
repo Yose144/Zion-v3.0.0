@@ -43,7 +43,7 @@ export default function PageLayout({
     <div className="relative z-10 flex min-h-screen w-full flex-col">
       <nav className="rasta-nav">
         <div className="rasta-nav-pill">
-          <Link
+          <a
             href="/"
             className="rasta-nav-logo-link"
             onClick={close}
@@ -59,21 +59,34 @@ export default function PageLayout({
               <span className="rasta-nav-brand">ZION</span>
               <span className="rasta-nav-kicker">TerraNova</span>
             </div>
-          </Link>
+          </a>
 
           <div className="rasta-nav-menu rasta-desktop-menu">
-            {nav.map((n) => (
-              <Link
-                key={n.href}
-                href={n.href === "/" ? "/" : n.href + "/"}
-                onClick={close}
-                className={`rasta-nav-link ${
-                  path === n.href ? "active" : ""
-                }`}
-              >
-                {n.label[lang]}
-              </Link>
-            ))}
+            {nav.map((n) =>
+              n.href === "/" ? (
+                <a
+                  key={n.href}
+                  href="/"
+                  onClick={close}
+                  className={`rasta-nav-link ${
+                    path === n.href ? "active" : ""
+                  }`}
+                >
+                  {n.label[lang]}
+                </a>
+              ) : (
+                <Link
+                  key={n.href}
+                  href={n.href + "/"}
+                  onClick={close}
+                  className={`rasta-nav-link ${
+                    path === n.href ? "active" : ""
+                  }`}
+                >
+                  {n.label[lang]}
+                </Link>
+              )
+            )}
           </div>
 
           <div className="rasta-nav-right">
@@ -124,18 +137,31 @@ export default function PageLayout({
             </div>
           </div>
 
-          {nav.map((n) => (
-            <Link
-              key={n.href}
-              href={n.href === "/" ? "/" : n.href + "/"}
-              onClick={close}
-              className={`rasta-nav-link ${
-                path === n.href ? "active" : ""
-              }`}
-            >
-              {n.label[lang]}
-            </Link>
-          ))}
+          {nav.map((n) =>
+            n.href === "/" ? (
+              <a
+                key={n.href}
+                href="/"
+                onClick={close}
+                className={`rasta-nav-link ${
+                  path === n.href ? "active" : ""
+                }`}
+              >
+                {n.label[lang]}
+              </a>
+            ) : (
+              <Link
+                key={n.href}
+                href={n.href + "/"}
+                onClick={close}
+                className={`rasta-nav-link ${
+                  path === n.href ? "active" : ""
+                }`}
+              >
+                {n.label[lang]}
+              </Link>
+            )
+          )}
 
           <div className="rasta-mobile-actions">
             <button
