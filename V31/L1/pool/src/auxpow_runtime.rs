@@ -368,6 +368,24 @@ async fn forward_share_to_upstream(
     req: &ShareForwardRequest,
 ) -> ShareForwardOutcome {
     let _ = coin; // coin is implicit in the client config
+
+    // Stale job check: for fast-block coins (VRSC ~60s, ZANO ~30s), the
+    // upstream pool may have already rotated to a new job by the time a
+    // miner submits a share.  If our client's latest_job_id differs from
+    // the share's job_id, skip forwarding to avoid "job not found"
+    // rejections and wasted network round-trips.
+    if let Some(latest_jid) = client.latest_job_id().await {
+        if latest_jid != req.job_id {
+            tracing::info!(
+                "auxpow[{:?}]: stale share skipped job={} latest={} nonce={}",
+                coin, req.job_id, latest_jid, req.nonce
+            );
+            return ShareForwardOutcome::Result(ShareForwardResult::Rejected(
+                "stale job".to_string(),
+            ));
+        }
+    }
+
     // If header_bytes is empty, pass None so submit_share falls back to job_id
     // (which is the block header hash for EthStratum pools like HeroMiners).
     let header_hash_opt = if req.header_bytes.is_empty() {

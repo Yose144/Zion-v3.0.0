@@ -284,6 +284,9 @@ mod tests {
                 mix_hash_hex: None,
                 algorithm: "blake3".into(),
                 header_bytes: vec![],
+                extranonce1_hex: String::new(),
+                ntime: String::new(),
+                solution_hex: String::new(),
             }),
             Some(ShareForwardOutcome::NotEnabled)
         );
