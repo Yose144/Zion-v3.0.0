@@ -852,8 +852,10 @@ impl StratumServer {
                             },
                             msg = notify_rx.recv() => match msg {
                                 Ok(msg) => {
+                                    // encode_message already appends '\n' — trim and add one
+                                    let line = msg.trim_end();
                                     let mut w = writer.lock().await;
-                                    if w.write_all(msg.as_bytes()).await.is_err() { break; }
+                                    if w.write_all(line.as_bytes()).await.is_err() { break; }
                                     if w.write_all(b"\n").await.is_err() { break; }
                                 }
                                 Err(_) => break,
