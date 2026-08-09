@@ -401,11 +401,11 @@ async fn forward_share_to_upstream(
         }
 
         // Time-based staleness: VRSC blocks are ~60s, ZANO ~30s.
-        // Use 45s for VRSC (VerusHash) and 25s for ZANO (ProgPoW).
+        // Use 50s for VRSC (VerusHash) and 28s for ZANO (ProgPoW).
         // For other coins, use a generous 120s default.
         let max_age_secs: u64 = match coin {
-            ExternalCoin::Verus => 45,
-            ExternalCoin::Zano => 25,
+            ExternalCoin::Verus => 50,
+            ExternalCoin::Zano => 28,
             _ => 120,
         };
         if let Some(age) = client.latest_job_age().await {
