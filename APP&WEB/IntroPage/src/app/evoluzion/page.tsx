@@ -5,11 +5,11 @@ import Image from "next/image";
 import PageLayout from "../components/PageLayout";
 import HeroImage from "../components/HeroImage";
 import LucideIcon from "../components/LucideIcon";
+import ImageSlider from "../components/ImageSlider";
 import data from "../data/evoluzion-data.json";
 
 export default function EvoluzionPage() {
   const [lang, setLang] = useState<"cs" | "en">("cs");
-  const [slide, setSlide] = useState(0);
 
   const t = {
     hero: data.hero[lang],
@@ -28,9 +28,6 @@ export default function EvoluzionPage() {
     connect: { ...data.connect, ...data.connect[lang], links: data.connect.links },
     footer: data.footer[lang],
   };
-
-  const next = () => setSlide((s) => (s === data.gallery.slides.length - 1 ? 0 : s + 1));
-  const prev = () => setSlide((s) => (s === 0 ? data.gallery.slides.length - 1 : s - 1));
 
   return (
     <PageLayout lang={lang} setLang={setLang}>
@@ -163,53 +160,15 @@ export default function EvoluzionPage() {
           <div className="text-center">
             <h2 className="major">{t.gallery.title}</h2>
           </div>
-          <div className="relative mx-auto max-w-3xl overflow-hidden rounded-2xl border border-white/10 bg-black/40 p-4">
-            <div
-              className="flex transition-transform duration-500"
-              style={{ transform: `translateX(-${slide * 100}%)` }}
-            >
-              {data.gallery.slides.map((s: any, i: number) => (
-                <div key={i} className="w-full flex-shrink-0 p-2 text-center">
-                  <Image
-                    src={s.src}
-                    alt={s.alt}
-                    width={600}
-                    height={600}
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    decoding="async"
-                    className={`mx-auto h-auto w-full max-w-xl rounded-xl object-cover`}
-                  />
-                  <div className="mt-3 text-[#fcd116]">{s.caption}</div>
-                </div>
-              ))}
-            </div>
-            <button
-              onClick={prev}
-              className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-[#fcd116] hover:bg-black/80"
-              aria-label="Previous"
-            >
-              <LucideIcon name="fa-chevron-left" size={20} />
-            </button>
-            <button
-              onClick={next}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-[#fcd116] hover:bg-black/80"
-              aria-label="Next"
-            >
-              <LucideIcon name="fa-chevron-right" size={20} />
-            </button>
-          </div>
-          <div className="mt-4 flex justify-center gap-2">
-            {data.gallery.slides.map((_: any, i: number) => (
-              <button
-                key={i}
-                onClick={() => setSlide(i)}
-                className={`h-2 w-2 rounded-full transition ${
-                  i === slide ? "bg-[#fcd116]" : "bg-white/30"
-                }`}
-                aria-label={`Go to slide ${i + 1}`}
-              />
-            ))}
-          </div>
+          <ImageSlider
+            slides={data.gallery.slides.map((s: any) => ({
+              src: s.src,
+              alt: s.alt,
+              caption: s.caption,
+            }))}
+            aspect="aspect-square"
+            objectFit="cover"
+          />
         </section>
 
         <hr className="my-8 border-white/10" />

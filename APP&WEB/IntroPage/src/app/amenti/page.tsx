@@ -6,11 +6,11 @@ import Link from "next/link";
 import PageLayout from "../components/PageLayout";
 import HeroImage from "../components/HeroImage";
 import LucideIcon from "../components/LucideIcon";
+import ImageSlider from "../components/ImageSlider";
 import data from "../data/amenti-data.json";
 
 export default function AmentiPage() {
   const [lang, setLang] = useState<"cs" | "en">("cs");
-  const [slide, setSlide] = useState(0);
   const t = data[lang];
 
   return (
@@ -255,48 +255,12 @@ export default function AmentiPage() {
             <LucideIcon name="fa-link" size={16} className="mr-2" /> {t.golokaCta}
           </a>
 
-          <div className="relative mx-auto mt-8 max-w-2xl overflow-hidden rounded-2xl border border-white/10 bg-black/40">
-            <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${slide * 100}%)` }}>
-              {data.golokaImages.map((img) => (
-                <div key={img.alt} className="w-full flex-shrink-0 p-6 text-center">
-                  <Image
-                    src={img.src}
-                    alt={img.alt}
-                    width={500}
-                    height={300}
-                    sizes="(max-width: 768px) 100vw, 500px"
-                    decoding="async"
-                    className="mx-auto h-auto w-full max-w-xl rounded-xl"
-                  />
-                  <p className="!mt-3 !text-white/80">{img.alt}</p>
-                </div>
-              ))}
-            </div>
-            <button
-              onClick={() => setSlide((s) => (s === 0 ? data.golokaImages.length - 1 : s - 1))}
-              className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-[#fcd116] hover:bg-black/80"
-              aria-label="Previous"
-            >
-              <LucideIcon name="fa-chevron-left" size={20} />
-            </button>
-            <button
-              onClick={() => setSlide((s) => (s === data.golokaImages.length - 1 ? 0 : s + 1))}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-[#fcd116] hover:bg-black/80"
-              aria-label="Next"
-            >
-              <LucideIcon name="fa-chevron-right" size={20} />
-            </button>
-            <div className="mb-4 flex justify-center gap-2">
-              {data.golokaImages.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setSlide(i)}
-                  className={`h-2 w-2 rounded-full transition ${i === slide ? "bg-[#fcd116]" : "bg-white/30"}`}
-                  aria-label={`Go to slide ${i + 1}`}
-                />
-              ))}
-            </div>
-          </div>
+          <ImageSlider
+            slides={data.golokaImages.map((img) => ({ ...img, caption: img.alt }))}
+            aspect="aspect-[4/3]"
+            objectFit="contain"
+            className="mt-8"
+          />
         </section>
 
         {/* Protectors */}
