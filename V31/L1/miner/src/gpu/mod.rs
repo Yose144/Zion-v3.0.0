@@ -6558,8 +6558,8 @@ pub mod cuda_deeksha {
                 .htod_sync_copy_into(&header_bytes[..], &mut self.header_buf)
                 .map_err(|e| anyhow::anyhow!("header upload: {e}"))?;
 
-            // Target: LE u32 from first 4 bytes of target
-            let target_u32 = u32::from_le_bytes([
+            // Target: BE u32 from first 4 bytes of target (big-endian/lexicographic)
+            let target_u32 = u32::from_be_bytes([
                 target.bytes[0],
                 target.bytes[1],
                 target.bytes[2],
@@ -6855,8 +6855,8 @@ pub mod cuda_deeksha_lite_fire {
                 .htod_copy_into(keccak_state.to_vec(), &mut self.header_state_buf)
                 .map_err(|e| anyhow::anyhow!("header_state upload: {e}"))?;
 
-            // Target: LE u32 from first 4 bytes of target
-            let target_u32 = u32::from_le_bytes([
+            // Target: BE u32 from first 4 bytes of target (big-endian/lexicographic)
+            let target_u32 = u32::from_be_bytes([
                 target.bytes[0],
                 target.bytes[1],
                 target.bytes[2],
@@ -6987,7 +6987,7 @@ pub mod cuda_deeksha_lite_fire {
                 .htod_copy_into(keccak_state.to_vec(), &mut self.header_state_buf)
                 .map_err(|e| anyhow::anyhow!("header_state upload: {e}"))?;
 
-            let target_u32 = u32::from_le_bytes([
+            let target_u32 = u32::from_be_bytes([
                 target.bytes[0],
                 target.bytes[1],
                 target.bytes[2],
@@ -7280,7 +7280,7 @@ pub mod cuda_deeksha_lite {
                 .htod_copy_into(keccak_state.to_vec(), &mut self.header_state_buf)
                 .map_err(|e| anyhow::anyhow!("header_state upload: {e}"))?;
 
-            let target_u32 = u32::from_le_bytes([
+            let target_u32 = u32::from_be_bytes([
                 target.bytes[0],
                 target.bytes[1],
                 target.bytes[2],
@@ -7400,7 +7400,7 @@ pub mod cuda_deeksha_lite {
                 .htod_copy_into(keccak_state.to_vec(), &mut self.header_state_buf)
                 .map_err(|e| anyhow::anyhow!("header_state upload: {e}"))?;
 
-            let target_u32 = u32::from_le_bytes([
+            let target_u32 = u32::from_be_bytes([
                 target.bytes[0],
                 target.bytes[1],
                 target.bytes[2],
@@ -7525,10 +7525,13 @@ pub mod cuda_deeksha_lite {
             };
             Ok((total, elapsed, khps))
         }
+
+        #[cfg(feature = "gpu-cuda")]
+        fn shared_cuda_device(&self) -> Option<std::sync::Arc<cudarc::driver::CudaDevice>> {
+            Some(std::sync::Arc::clone(&self.dev))
+        }
     }
 }
-
-// ─── Metal Backend (Apple Silicon) ───────────────────────────────────────────
 
 #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
 pub mod metal_deeksha {
