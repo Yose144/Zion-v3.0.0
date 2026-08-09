@@ -147,6 +147,13 @@ pub enum PoolMessage {
         mix_hash_hex: Option<String>,
         #[serde(default)]
         extranonce1_hex: String,
+        /// Equihash solution hex (for ZcashStratum/VRSC submit).
+        /// Extracted from the job notify solution field.
+        #[serde(default)]
+        solution_hex: String,
+        /// ntime hex from the upstream pool job notify.
+        #[serde(default)]
+        ntime_hex: String,
     },
     PearlSubmit {
         miner_id: String,

@@ -129,6 +129,10 @@ pub struct ExternalJob {
     pub external_coin: ExternalCoin,
     #[serde(skip)]
     pub from_group: u32,
+    /// ntime hex string from upstream pool notify (e.g. "62d12345").
+    /// Used for ZcashStratum (VRSC) submit format.
+    #[serde(skip)]
+    pub ntime: String,
     #[serde(skip)]
     pub to_group: u32,
     #[serde(skip)]
@@ -154,6 +158,7 @@ impl Default for ExternalJob {
             nbits: None,
             external_coin: ExternalCoin::Bitcoin,
             from_group: 0,
+            ntime: String::new(),
             to_group: 0,
             extranonce1: Vec::new(),
             extranonce2: String::new(),
@@ -935,6 +940,7 @@ impl AuxPowClient {
                     external_coin: self.config.coin,
                     extranonce1: en1,
                     block_number: Some(block_number),
+                    ntime: ntime.clone(),
                     ..Default::default()
                 };
                 *self.latest_job_id.lock().await = Some(job.job_id.clone());
@@ -1112,6 +1118,7 @@ impl AuxPowClient {
         ntime: &str,
         mix_hash: Option<&str>,
         header_hash: Option<&str>,
+        solution_hex: &str,
     ) -> Result<ShareResult> {
         {
             let mut submitted = self.submitted_nonces.lock().await;
@@ -1157,6 +1164,21 @@ impl AuxPowClient {
                         "nonce": nonce_hex(nonce),
                         "result": mix_hex
                     }
+                })
+            }
+            StratumProtocol::ZcashStratum => {
+                // ZcashStratum (VRSC): [worker, job_id, extranonce2, ntime, solution]
+                // solution is the equihash solution hex from the job notify.
+                // If solution_hex is provided, use it; otherwise fall back to nonce.
+                let sol = if !solution_hex.is_empty() {
+                    solution_hex.to_string()
+                } else {
+                    format!("{:08x}", (nonce & 0xFFFFFFFF) as u32)
+                };
+                json!({
+                    "id": self.next_rpc_id(),
+                    "method": "mining.submit",
+                    "params": [worker, job_id, extranonce2, ntime, sol]
                 })
             }
             _ => json!({

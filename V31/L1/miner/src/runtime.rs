@@ -1156,8 +1156,12 @@ impl MinerRuntime {
                         bundle = job_rx.recv() => {
                             if let Ok(bundle) = bundle {
                                 if let Some(ext) = bundle.gpu_external {
+                                    // Only reset cursor if the job_id actually changed
+                                    let old_id = current_ext.as_ref().map(|e| e.job_id.clone()).unwrap_or_default();
+                                    if ext.job_id != old_id {
+                                        nonce_cursor = 0;
+                                    }
                                     current_ext = Some(ext);
-                                    nonce_cursor = 0; // reset cursor on new job
                                 }
                             }
                         }
@@ -1212,8 +1216,12 @@ impl MinerRuntime {
                         bundle = job_rx.recv() => {
                             if let Ok(bundle) = bundle {
                                 if let Some(ext) = bundle.cpu_external {
+                                    // Only reset cursor if the job_id actually changed
+                                    let old_id = current_ext.as_ref().map(|e| e.job_id.clone()).unwrap_or_default();
+                                    if ext.job_id != old_id {
+                                        nonce_cursor = 0;
+                                    }
                                     current_ext = Some(ext);
-                                    nonce_cursor = 0; // reset cursor on new job
                                 }
                             }
                         }
@@ -1387,6 +1395,40 @@ impl MinerRuntime {
         let copy_len = target_vec.len().min(32);
         target[..copy_len].copy_from_slice(&target_vec[..copy_len]);
 
+        // Extract solution and ntime from the header for ZcashStratum (VRSC) submit.
+        // Header layout: version(4) + prevhash(32) + merkle(32) + reserved(32) +
+        //                ntime(4) + nbits(4) + nonce(32) + varint + solution
+        // ntime is at offset 100, 4 bytes.
+        // Solution starts after nonce_field (offset 140) + varint.
+        let (solution_hex, ntime_hex) = if ext.algorithm.contains("verushash") || ext.protocol == "zcashstratum" {
+            let ntime_hex = if header.len() >= 104 {
+                hex::encode(&header[100..104])
+            } else { String::new() };
+            // Parse varint at offset 140 to find solution start
+            let sol_hex = if header.len() > 141 {
+                let varint_start = 140;
+                let first_byte = header[varint_start];
+                let (sol_offset, _sol_len) = if first_byte < 0xfd {
+                    (varint_start + 1, first_byte as usize)
+                } else if first_byte == 0xfd {
+                    (varint_start + 3, u16::from_le_bytes([header[varint_start+1], header[varint_start+2]]) as usize)
+                } else if first_byte == 0xfe {
+                    (varint_start + 5, u32::from_le_bytes([header[varint_start+1], header[varint_start+2], header[varint_start+3], header[varint_start+4]]) as usize)
+                } else {
+                    (varint_start + 9, u64::from_le_bytes([
+                        header[varint_start+1], header[varint_start+2], header[varint_start+3], header[varint_start+4],
+                        header[varint_start+5], header[varint_start+6], header[varint_start+7], header[varint_start+8],
+                    ]) as usize)
+                };
+                if sol_offset < header.len() {
+                    hex::encode(&header[sol_offset..])
+                } else { String::new() }
+            } else { String::new() };
+            (sol_hex, ntime_hex)
+        } else {
+            (String::new(), String::new())
+        };
+
         let job = Job {
             job_id: ext.job_id.clone(),
             coin,
@@ -1394,7 +1436,7 @@ impl MinerRuntime {
             target,
             extranonce: hex::decode(&ext.extranonce1_hex).unwrap_or_default(),
             extranonce2: String::new(),
-            ntime: String::new(),
+            ntime: ntime_hex.clone(),
             height: ext.height,
         };
 
@@ -1439,6 +1481,8 @@ impl MinerRuntime {
                 &hash_hex,
                 mix_hash_hex.as_deref(),
                 &ext.extranonce1_hex,
+                &solution_hex,
+                &ntime_hex,
             )
             .await
             .map_err(|e| MinerError::Consensus(format!("V3 external submit: {e}")))?;
