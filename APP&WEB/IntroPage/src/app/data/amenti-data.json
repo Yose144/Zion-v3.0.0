@@ -159,41 +159,85 @@
     {
       "title": "⚛️ Quantová Revoluce",
       "titleEn": "⚛️ Quantum Revolution",
-      "links": {}
+      "links": {
+        "CZ": "/legacy/books/QuantumRevolutionCZ.pdf",
+        "EN": "/legacy/books/QuantumRevolution_EN.pdf",
+        "ES": "/legacy/books/QuantumRevolution_ES.pdf",
+        "FR": "/legacy/books/QuantumRevolution_FR.pdf",
+        "PT": "/legacy/books/QuantumRevolution_PT.pdf"
+      }
     },
     {
       "title": "🤖 Quantová Revoluce — Claude",
       "titleEn": "🤖 Quantum Revolution — Claude",
-      "links": {}
+      "links": {
+        "CZ": "/legacy/books/Bonus/Quantova%20Revoluce%20Claude.pdf",
+        "EN": "/legacy/books/Bonus/Quantova%20Revoluce%20Claude_EN.pdf",
+        "ES": "/legacy/books/Bonus/Quantova%20Revoluce%20Claude_ES.pdf",
+        "FR": "/legacy/books/Bonus/Quantova%20Revoluce%20Claude_FR.pdf",
+        "PT": "/legacy/books/Bonus/Quantova%20Revoluce%20Claude_PT.pdf"
+      }
     },
     {
       "title": "The Secret of Amenti",
-      "links": {}
+      "links": {
+        "CZ": "/legacy/src/cz/Tajemstv%C3%AD%20amenti.PDF",
+        "EN": "/legacy/src/en/AmentiEN.PDF",
+        "ES": "/legacy/src/sp/AmentiSpain.PDF",
+        "FR": "/legacy/src/fr/AmentiFR.PDF",
+        "PT": "/legacy/src/pt/Tajemstv%C3%AD%20amenti%20pt.PDF"
+      }
     },
     {
       "title": "Emerald Plates Thot",
       "titleEn": "Emerald Plates Thot",
-      "links": {}
+      "links": {
+        "CZ": "/legacy/src/cz/SmaragdoveDesky.pdf",
+        "EN": "/legacy/src/en/SmaragdoveDesky%20en.pdf",
+        "ES": "/legacy/src/sp/SmaragdoveDesky%20es.pdf",
+        "FR": "/legacy/src/fr/SmaragdoveDesky%20fr.pdf",
+        "PT": "/legacy/src/pt/SmaragdoveDesky%20pt.pdf"
+      }
     },
     {
       "title": "Book of Amenti 2012",
       "titleEn": "Book of Amenti 2012",
-      "links": {}
+      "links": {
+        "CZ": "/legacy/src/cz/ZIONOneLove%20CZ.pdf",
+        "EN": "/legacy/src/en/ZIONOneLoveEN.pdf",
+        "ES": "/legacy/src/sp/ZIONOneLoveSP.pdf",
+        "FR": "/legacy/src/fr/ZIONOneLoveFR.pdf"
+      }
     },
     {
       "title": "Cosmic Egg",
       "titleEn": "Cosmic Egg",
-      "links": {}
+      "links": {
+        "CZ": "/legacy/src/cz/CosmicEgg.pdf",
+        "EN": "/legacy/src/en/CosmicEgg-EN.pdf",
+        "ES": "/legacy/src/sp/CosmicEgg-SP.pdf",
+        "FR": "/legacy/src/fr/CosmicEgg-FR.pdf"
+      }
     },
     {
       "title": "Dohrman Prophecy",
       "titleEn": "Dohrman Prophecy",
-      "links": {}
+      "links": {
+        "CZ": "/legacy/src/cz/Dohrmanovo-proroctvi.pdf",
+        "EN": "/legacy/src/en/DP-EN.pdf",
+        "ES": "/legacy/src/sp/DP-SP.pdf",
+        "FR": "/legacy/src/fr/DP-FR.pdf"
+      }
     },
     {
       "title": "Ancient Arrow",
       "titleEn": "Ancient Arrow",
-      "links": {}
+      "links": {
+        "CZ": "/legacy/src/cz/Starobyly_sip.pdf",
+        "EN": "/legacy/src/en/AA-EN.pdf",
+        "ES": "/legacy/src/sp/AA-SP.pdf",
+        "FR": "/legacy/src/fr/AA-FR.pdf"
+      }
     }
   ]
 }
