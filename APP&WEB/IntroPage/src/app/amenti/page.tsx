@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import PageLayout from "../components/PageLayout";
 import HeroImage from "../components/HeroImage";
 import LucideIcon from "../components/LucideIcon";
@@ -35,9 +34,9 @@ export default function AmentiPage() {
           <a href="#library" className="button primary small rasta-gold">
             <LucideIcon name="fa-book" size={16} className="mr-2" /> {t.libraryCta}
           </a>
-          <Link href="/" className="button primary small rasta-green">
+          <a href="/" className="button primary small rasta-green">
             <LucideIcon name="fa-arrow-left" size={16} className="mr-2" /> {t.backCta}
-          </Link>
+          </a>
         </div>
       </HeroImage>
 
