@@ -1,10 +1,10 @@
 # V31 Mainnet Alpha — Status
 
 > **Verze:** 3.1.0-beta (workspace) / protokol `zion-v3-node/3.1.0-alpha` (post-Phase A+B+C+D — E2E mining + web health green) / směřujeme k **3.2.0 "One Love" (Mainnet Stable)**
-> **Datum:** 2026-08-07
+> **Datum:** 2026-08-09
 > **Stav:** workspace builduje, `cargo test --workspace` prochází (0 failures), `cargo clippy --workspace` čisté (pouze pre-existing warnings). **Fáze A i Fáze B jsou kompletní** — `EkamDeeksha` v3.2 běží na všech výškách (konstanty: 512 KiB scratchpad, 2 passy, 128 random reads, 2 AES rounds), CPU KAT vektory a GPU OpenCL/CUDA/Metal kernely jsou synchronizovány, `zion-miner` mapuje `ekam_deeksha` na kanonické `deeksha_lite`/`deeksha_chv3` GPU backendy. **V31 je nasazen na Edge** (public RPC, pool, multichain, dashboard, DAO, OASIS, web, marketplace). **Lokální GPU OpenCL build + benchmark GO na NVIDIA GTX 1070 Ti (~132 kh/s, 2026-08-06); reálný rig E2E stále pending.** Fáze C1-C8 hotová (DAO + CLI + ZionDex + Dashboard wiring). **Pool FULL V3 feature parity + payout confirmation sweep s UTXO fallback nasazena**. **Dashboard UI/UX update do V31 hotov, `/health` OK. V31 banner KPIs + V31 Production panel (metriky, logy, Grafana) + pool metrics port 8080 + Prometheus/Grafana provisioning nasazeny na Edge. V31 cutover proveden: V3 služby zastaveny a maskovány, `zion-v31-node` osamostatněn od V3. **Fáze D E2E: cargo test --workspace pass, V31 miner našel a odevzdal pool share, web `/api/health` `ok`, e2e API scénáře zelené. Git tag `v3.1.0-alpha.2-phase-D`.
 >
-> **TRINITY STREAM 1 (ZION) — BLOCK PRODUCTION GREEN (2026-08-07):** Tři kritické bugy opraveny, ZION chain rostoucí na Edge (height 94+). Pool payout confirmation sweep potvrzuje výplaty on-chain (37 confirmed / 13 unconfirmed při height ~87). Viz detaily níže.
+> **TRINITY STREAM 1 (ZION) — BLOCK PRODUCTION GREEN (2026-08-09):** Tři kritické bugy opraveny, ZION chain rostoucí na Edge (height 1000+). Pool payout confirmation sweep potvrzuje výplaty on-chain (37+ confirmed on-chain). Viz detaily níže.
 >
 > **PLAN_TO_3.2 audit 2026-08-07:** CLI (`zion`) má 28 subcommandů (včetně `dao`, `atomic-swap`, `warp`, `monitor`, `topology`, `explorer`, `onboard`, `deploy`, `update`, `compose`, `auxpow`), některé jsou stále stub; miner TUI (`ui.rs`, `interactive.rs`, `setup_menu.rs`, `banner.rs`) je zapojená pod `tui` feature a Cargo.toml obsahuje `full`/`native-all`/`gpu-all`/`public_build`; EVM a ZionDex Solidity kontrakty jsou přítomny v `V31/L2/multichain/contracts/`, ale chybí Foundry/Hardhat projektová konfigurace pro `zion deploy`. **Otevřené zůstává:** non-EVM WARP placeholdery (31 TODO markerů v adapterech), OASIS `output: 'export'` blokuje server-side ZIS route, `deploy-edge.sh` neinstaluje `zion-zis` službu (i když `APP&WEB/identity/` existuje), sync `public/` subtree, reálný GPU rig E2E a 30d continuous run.
 
@@ -44,7 +44,7 @@ Tři kritické bugy blokovaly produkci ZION bloků na Edge. Všechny opraveny, c
   - `notify_block_found miner=zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8 height=51 worker=edge-cpu`
   - `native_chain_height: 51` (z 1 na 51 v ~5 minutách, ~5s/blok)
   - Nonce nyní non-zero (0x0e, 0xa4, 0x10, 0x0f, ...)
-- **Pool test suite:** 163 tests pass (0 failures)
+- **Pool test suite:** 165 tests pass (0 failures)
 - **Commits pushed:** `c7b9980a5`, `e6af816dc`, `fbde94996`
 
 ### Trinity Stream status
@@ -64,7 +64,7 @@ Tři kritické bugy blokovaly produkci ZION bloků na Edge. Všechny opraveny, c
 
 ## Update 2026-08-07 (session) — u128 JSON serde hardening, Edge binary redeploy, block production green
 
-- **Root cause `invalid number at line 1 column 1024` fixed:** `serde_json` 1.x without the `arbitrary_precision` feature cannot represent `u128`/`i128` as JSON numbers, which broke P2P block sync and pool block-template parsing (`Amount` is a transparent `u128`; `PplnsSnapshot`, `Transaction` and `MintInstruction` contain `u128` fields). `V31/Cargo.toml` has `serde_json = { version = "1", features = ["arbitrary_precision"] }`.
+- **Root cause `invalid number at line 1 column 1024` fixed:** `serde_json` 1.x cannot represent `u128`/`i128` as JSON numbers, which broke P2P block sync and pool block-template parsing (`Amount` is a transparent `u128`; `PplnsSnapshot`, `Transaction` and `MintInstruction` contain `u128` fields). `V31/Cargo.toml` keeps `serde_json = "1"` without the `arbitrary_precision` feature; the canonical fix is the shared `zion_l1_types::u128_str` string serde helper, which serializes `u128`/`Amount` as decimal strings and deserializes from strings or `u64` numbers.
 - **Shared `u128` serde helper in `zion_l1_types`:** new `V31/L1/types/src/u128_str.rs` with `serialize`/`deserialize` plus `u128_str::map` for `HashMap<String, u128>`. It round-trips `u128` as decimal strings and still accepts legacy `u64` numbers. Covered by unit tests in the same file.
 - **Helper applied to all relevant V31 `u128` fields:**
   - `zion_pool::v3_pplns::PplnsSnapshot` — `window_total_difficulty`, `paid_per_miner` (map), `total_paid_flowers`.
@@ -136,22 +136,23 @@ Rekonciliace `V31/PLAN_TO_3.2.md` s aktuálním kódem ukazuje, že řada polož
 ## Co je hotovo v `3.1.0-beta` (post-Phase A+B.1, protokol `3.1.0-alpha`)
 
 - L1/L2/L3/L4/L5/L6 crates existují a kompilují jako jeden workspace (18 crateů).
-- **Všechny workspace testy pass: 2079** (bylo 2077 před archive aggregator/executor portem, 2076 před solver broadcast testy, 2075 před cross-chain bridge testem, 2073 před intent persistence, 2072 před HTTP intent testem, 2071 před integračním intent testem, 2069 před C1+C2+C3, 2043 před Full V3 Parity, 1877 před B.1, 1458 před Fází A)
-  - `zion-core` 302 testů (bylo 89 — +213 z P2P infra + V3 core + websocket)
-  - `zion-native-ffi` 66 testů (NOVÝ crate)
-  - `zion-cosmic-harmony` 193 testů (bylo 28 — +165 z V3 modules)
+- **Všechny workspace testy pass: 2178** (včetně doc-testů; bez doc-testů 2165). Hlavní příspěvky: `zion-ai-native` 337, `zion-multichain` 579, `zion-core` 303, `zion-cosmic-harmony-v3` 205, `zion-cosmic-harmony` 195, `zion-pool` 165, `zion-oasis` 125, `zion-miner` 101, `zion-dao` 76, `zion-ncl` 42, `zion-native-ffi` 13, `zion-l1-types` 11, `zion-smoke` 3, `zion-free-world` 3, `zion-issobella` 3, `zion-sdk` 4.
+  - `zion-core` 303 testů
+  - `zion-native-ffi` 13 testů
+  - `zion-cosmic-harmony` 195 testů
   - `zion-cosmic-harmony-v3` 205 testů
   - `zion-ai-native` 337 testů
-  - `zion-multichain` 562 testů
+  - `zion-multichain` 579 testů (včetně integračních testů)
   - `zion-ncl` 42 testů
   - `zion-oasis` 125 testů
-  - `zion-pool` 160 testů (bylo 68 — +92 z TLS, share relay, profit switcher, auxpow runtime, expanded API, routing, deferred payout, NCL gateway)
-  - `zion-miner` 92 testů
-  - `zion-dao` 74 testů
+  - `zion-pool` 165 testů
+  - `zion-miner` 101 testů
+  - `zion-dao` 76 testů (lib + integrační smoke)
   - `zion-free-world` 3 testy
   - `zion-issobella` 3 testy
-  - `zion-smoke` 8 cross-layer testů
+  - `zion-smoke` 3 cross-layer testy
   - `zion-sdk` 4 testy
+  - `zion-l1-types` 11 testů
 
 ### Fáze A — Critical Gap Closure (PLAN_TO_3.1.md) ✅
 

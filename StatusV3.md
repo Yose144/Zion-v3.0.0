@@ -52,9 +52,9 @@
 
 | Metric | Value |
 |--------|-------|
-| **Height** | 94+ (2026-08-06 hard genesis reset, V31 P2P mesh on Edge + local backup) |
-| **Native height** | 94+ |
-| **Accepted blocks** | 95+ |
+| **Height** | 1000+ (2026-08-09, V31 P2P mesh on Edge + local backup) |
+| **Native height** | 1000+ |
+| **Accepted blocks** | 1000+ |
 | **Protocol** | `zion-v3-node/3.1.0-alpha` (V31; workspace version `3.1.0-beta`) |
 | **Genesis (V3 compat)** | `4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71` |
 | **Genesis (V31 native)** | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
@@ -85,7 +85,7 @@
 
 | Service | Port(s) | Bind | Layer | Status |
 |---------|---------|------|-------|--------|
-| zion-v31-node | 8335 (P2P), 9445 (RPC) | P2P 0.0.0.0, RPC 127.0.0.1 | L1 (V31 PRODUCTION) | ✅ active (height 94+, public RPC 8443 → 9445) |
+| zion-v31-node | 8335 (P2P), 9445 (RPC) | P2P 0.0.0.0, RPC 127.0.0.1 | L1 (V31 PRODUCTION) | ✅ active (height 1000+, public RPC 8443 → 9445) |
 | zion-v31-pool | 8444 (Stratum), 8080 (HTTP API) | 0.0.0.0 | L1 (V31 PRODUCTION) | ✅ active (shares accepted, payout sweep active) |
 | zion-v31-miner | — | — | L1 (V31 PRODUCTION) | ✅ active (triple-stream) |
 | zion-v31-multichain | 8453 (WARP API), 8454 (DEX API via `warpd`) | 0.0.0.0 | L3 (V31 PRODUCTION) | ✅ active |
@@ -137,7 +137,7 @@
 | Resource | Used | Total | % |
 |----------|------|-------|---|
 | RAM | ~3.5 GB | 7.8 GB | 45% |
-| Disk | 80 GB | 145 GB | 56% |
+| Disk | 43 GB | 145 GB | 30% |
 | Node1 RSS | ~142 MB | — | stable (post memory-leak fix) |
 | Node2 RSS | ~3.5 MB | — | stable |
 
