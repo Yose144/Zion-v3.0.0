@@ -1849,10 +1849,11 @@ async fn write_v3_message<W>(
 where
     W: tokio::io::AsyncWrite + Unpin + Send,
 {
+    // encode_message already appends '\n', so we must NOT add another one
+    // (double newline causes empty-line decode errors on the miner side)
     let line = encode_message(msg).map_err(std::io::Error::other)?;
     let mut w = writer.lock().await;
     w.write_all(line.as_bytes()).await?;
-    w.write_all(b"\n").await?;
     w.flush().await?;
     Ok(())
 }
