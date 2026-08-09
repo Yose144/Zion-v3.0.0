@@ -25,10 +25,9 @@
       "On-chain transparentnost",
       "DAO governance 24/7"
     ],
-    "featuredBookTag": "⚛️ ZDARMA KE STAŽENÍ",
+    "featuredBookTag": "⚛️ AMENTI KNIHOVNA",
     "featuredBookTitle": "Quantum Revolution & One Love v3.2",
     "featuredBookDesc": "180+ stran o filozofii ZION, Consciousness Mining, multichain mostech, DAO governance a duchovní evoluci. PDF ve 11 jazycích + bonus materiály. Nyní aktualizováno pro v3.2.0 One Love.",
-    "featuredBookCta": "Stáhnout vše (ZIP)",
     "langsLabel": "Jazyky",
     "missingLang": "Pokud některý jazyk chybí, kontaktuj nás – rádi doplníme překlad.",
     "golokaTitle": "Goloka Vrindávan",
@@ -37,9 +36,7 @@
     "protectorsTitle": "Protektori Světla",
     "protectorsP1": "Všichni bódhisattvové jsou přítomni a chrání novou linii mistrů Averil/Jedi. Vědomí Amenti prošlo 12letým cyklem (2012–2024) a 144k dětí Nové Země nyní působí na planetě Shan jako uzelová síť, těžaři a DAO strážci.",
     "ctaTitle": "Podpoř strážce Amenti",
-    "ctaP1": "Nákupem v ZION shopu, účastí v OASIS nebo provozem uzlu financuješ nové edice knih, restaurování chrámů a stipendia pro mladé kronikáře.",
-    "shopCta": "Do obchodu",
-    "donateCta": "Dar pro knihovnu"
+    "ctaP1": "Účastí v OASIS nebo provozem uzlu financuješ nové edice knih, restaurování chrámů a stipendia pro mladé kronikáře."
   },
   "en": {
     "badge": "🌀 AMENTI",
@@ -67,10 +64,9 @@
       "On-chain transparency",
       "DAO governance 24/7"
     ],
-    "featuredBookTag": "⚛️ FREE DOWNLOAD",
+    "featuredBookTag": "⚛️ AMENTI LIBRARY",
     "featuredBookTitle": "Quantum Revolution & One Love v3.2",
     "featuredBookDesc": "180+ pages on ZION philosophy, Consciousness Mining, multichain bridges, DAO governance, and spiritual evolution. PDF in 11 languages + bonus materials. Now updated for v3.2.0 One Love.",
-    "featuredBookCta": "Download all (ZIP)",
     "langsLabel": "Languages",
     "missingLang": "If a language is missing, contact us — we will be happy to add a translation.",
     "golokaTitle": "Goloka Vrindavan",
@@ -79,9 +75,7 @@
     "protectorsTitle": "Protectors of Light",
     "protectorsP1": "All bodhisattvas are present and protect the new lineage of Averil/Jedi masters. Amenti consciousness has passed through a 12-year cycle (2012–2024) and the 144k children of New Earth are now active on planet Shan as a node network, miners, and DAO guardians.",
     "ctaTitle": "Support the guardians of Amenti",
-    "ctaP1": "By shopping in the ZION shop, participating in OASIS, or running a node, you fund new editions of books, restoration of temples, and scholarships for young chroniclers.",
-    "shopCta": "Go to shop",
-    "donateCta": "Gift for the library"
+    "ctaP1": "By participating in OASIS or running a node, you fund new editions of books, restoration of temples, and scholarships for young chroniclers."
   },
   "guardians": [
     {
@@ -165,88 +159,41 @@
     {
       "title": "⚛️ Quantová Revoluce",
       "titleEn": "⚛️ Quantum Revolution",
-      "featured": true,
-      "zip": "/legacy/books/QuantumRevolution.zip",
-      "links": {
-        "CZ": "/legacy/books/QuantumRevolutionCZ.pdf",
-        "EN": "/legacy/books/QuantumRevolution_EN.pdf",
-        "ES": "/legacy/books/QuantumRevolution_ES.pdf",
-        "FR": "/legacy/books/QuantumRevolution_FR.pdf",
-        "PT": "/legacy/books/QuantumRevolution_PT.pdf"
-      }
+      "links": {}
     },
     {
       "title": "🤖 Quantová Revoluce — Claude",
       "titleEn": "🤖 Quantum Revolution — Claude",
-      "featured": false,
-      "links": {
-        "CZ": "/legacy/books/Bonus/Quantova%20Revoluce%20Claude.pdf",
-        "EN": "/legacy/books/Bonus/Quantova%20Revoluce%20Claude_EN.pdf",
-        "ES": "/legacy/books/Bonus/Quantova%20Revoluce%20Claude_ES.pdf",
-        "FR": "/legacy/books/Bonus/Quantova%20Revoluce%20Claude_FR.pdf",
-        "PT": "/legacy/books/Bonus/Quantova%20Revoluce%20Claude_PT.pdf"
-      }
+      "links": {}
     },
     {
       "title": "The Secret of Amenti",
-      "links": {
-        "CZ": "/legacy/src/cz/Tajemstv%C3%AD%20amenti.PDF",
-        "EN": "/legacy/src/en/AmentiEN.PDF",
-        "ES": "/legacy/src/sp/AmentiSpain.PDF",
-        "FR": "/legacy/src/fr/AmentiFR.PDF",
-        "PT": "/legacy/src/pt/Tajemstv%C3%AD%20amenti%20pt.PDF"
-      }
+      "links": {}
     },
     {
       "title": "Emerald Plates Thot",
       "titleEn": "Emerald Plates Thot",
-      "links": {
-        "CZ": "/legacy/src/cz/SmaragdoveDesky.pdf",
-        "EN": "/legacy/src/en/SmaragdoveDesky%20en.pdf",
-        "ES": "/legacy/src/sp/SmaragdoveDesky%20es.pdf",
-        "FR": "/legacy/src/fr/SmaragdoveDesky%20fr.pdf",
-        "PT": "/legacy/src/pt/SmaragdoveDesky%20pt.pdf"
-      }
+      "links": {}
     },
     {
       "title": "Book of Amenti 2012",
       "titleEn": "Book of Amenti 2012",
-      "links": {
-        "CZ": "/legacy/src/cz/ZIONOneLove%20CZ.pdf",
-        "EN": "/legacy/src/en/ZIONOneLoveEN.pdf",
-        "ES": "/legacy/src/sp/ZIONOneLoveSP.pdf",
-        "FR": "/legacy/src/fr/ZIONOneLoveFR.pdf"
-      }
+      "links": {}
     },
     {
       "title": "Cosmic Egg",
       "titleEn": "Cosmic Egg",
-      "links": {
-        "CZ": "/legacy/src/cz/CosmicEgg.pdf",
-        "EN": "/legacy/src/en/CosmicEgg-EN.pdf",
-        "ES": "/legacy/src/sp/CosmicEgg-SP.pdf",
-        "FR": "/legacy/src/fr/CosmicEgg-FR.pdf"
-      }
+      "links": {}
     },
     {
       "title": "Dohrman Prophecy",
       "titleEn": "Dohrman Prophecy",
-      "links": {
-        "CZ": "/legacy/src/cz/Dohrmanovo-proroctvi.pdf",
-        "EN": "/legacy/src/en/DP-EN.pdf",
-        "ES": "/legacy/src/sp/DP-SP.pdf",
-        "FR": "/legacy/src/fr/DP-FR.pdf"
-      }
+      "links": {}
     },
     {
       "title": "Ancient Arrow",
       "titleEn": "Ancient Arrow",
-      "links": {
-        "CZ": "/legacy/src/cz/Starobyly_sip.pdf",
-        "EN": "/legacy/src/en/AA-EN.pdf",
-        "ES": "/legacy/src/sp/AA-SP.pdf",
-        "FR": "/legacy/src/fr/AA-FR.pdf"
-      }
+      "links": {}
     }
   ]
 }

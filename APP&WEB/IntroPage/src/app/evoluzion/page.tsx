@@ -46,14 +46,6 @@ export default function EvoluzionPage() {
           {t.hero.subtitle}
         </h2>
         <p className="max-w-xl text-white/70">{t.hero.desc}</p>
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-4">
-          <a href="/legacy/shop.html" className="button primary small rasta-gold">
-            <LucideIcon name="fa-cart-shopping" size={16} className="mr-2" /> {t.hero.shopCta}
-          </a>
-          <a href="/legacy/woodart.html" className="button primary small rasta-green">
-            <LucideIcon name="fa-tree" size={16} className="mr-2" /> {t.hero.woodartCta}
-          </a>
-        </div>
       </HeroImage>
 
       <article className="active">
@@ -216,14 +208,8 @@ export default function EvoluzionPage() {
           <h2 className="major">{t.cta.title}</h2>
           <p className="rasta-text">{t.cta.desc}</p>
           <div className="mt-4 flex flex-wrap justify-center gap-4">
-            <a href="/legacy/shop.html" className="button primary small rasta-gold">
-              <LucideIcon name="fa-cart-shopping" size={16} className="mr-2" /> {t.cta.shop}
-            </a>
             <a href="/" className="button primary small rasta-green">
               <LucideIcon name="fa-arrow-left" size={16} className="mr-2" /> {t.cta.home}
-            </a>
-            <a href="/legacy/arts.html" className="button primary small rasta-red">
-              <LucideIcon name="fa-palette" size={16} className="mr-2" /> {t.cta.arts}
             </a>
           </div>
         </section>
