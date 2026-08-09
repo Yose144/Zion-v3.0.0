@@ -1237,6 +1237,12 @@ impl AuxPowClient {
         *self.extranonce2_size.lock().await
     }
 
+    /// Return the latest job_id received from the upstream pool.
+    /// Used by the runtime to detect stale shares before forwarding.
+    pub async fn latest_job_id(&self) -> Option<String> {
+        self.latest_job_id.lock().await.clone()
+    }
+
     pub fn config(&self) -> &AuxPowClientConfig {
         &self.config
     }
