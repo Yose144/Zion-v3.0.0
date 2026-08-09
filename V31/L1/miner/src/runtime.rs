@@ -595,7 +595,13 @@ impl MinerRuntime {
         }
 
         let job = job.clone();
-        let threads = self.config.miner_threads;
+        // Use dedicated CPU thread count for Stream 3 (VerusHash) so it can
+        // use all logical cores even when ZION Stream 1 uses fewer threads.
+        let threads = if stream == StreamId::CpuExternal {
+            self.config.ext_cpu_threads
+        } else {
+            self.config.miner_threads
+        };
         let start = Instant::now();
         // Advance the CPU external nonce cursor so successive batches scan
         // different nonces instead of re-hashing the same range (which would

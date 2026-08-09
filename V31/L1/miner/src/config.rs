@@ -36,6 +36,11 @@ pub struct MinerConfig {
     /// Number of CPU mining threads. Read from `ZION_MINER_THREADS`,
     /// defaults to the number of logical CPUs.
     pub miner_threads: usize,
+    /// Number of CPU threads for Stream 3 (CPU external / VerusHash).
+    /// Read from `ZION_EXT_CPU_THREADS`, defaults to all logical CPUs.
+    /// Separate from `miner_threads` so ZION Stream 1 can use fewer threads
+    /// while VRSC Stream 3 uses all available cores.
+    pub ext_cpu_threads: usize,
     /// Worker name used on AuxPoW pools.
     pub worker: String,
     /// Password used on AuxPoW pools.
@@ -91,12 +96,22 @@ impl MinerConfig {
                 .ok()
                 .and_then(|v| v.parse().ok())
                 .unwrap_or_else(|| num_cpus::get().max(1)),
+            ext_cpu_threads: std::env::var("ZION_EXT_CPU_THREADS")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or_else(|| num_cpus::get().max(1)),
             worker: std::env::var("ZION_WORKER").unwrap_or_else(|_| "zion_worker".to_string()),
             password: std::env::var("ZION_PASSWORD").unwrap_or_else(|_| "x".to_string()),
             auxpow_enabled: true,
             hashrate_per_unit: 1000.0,
             zion_nonce_batch: 10_000,
-            auxpow_nonce_batch: 1_000_000,
+            // Auto-tuned VerusHash batch size based on CPU core count.
+            // V3 used 5M for 8+ threads, 2M for 4-7, 1M for <4.
+            // Override with ZION_EXT_CPU_NONCE_COUNT env var.
+            auxpow_nonce_batch: std::env::var("ZION_EXT_CPU_NONCE_COUNT")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or_else(|| auto_tune_verushash_batch(num_cpus::get())),
             stream1_enabled: std::env::var("ZION_STREAM1_ENABLED")
                 .map(|v| v != "0" && !v.eq_ignore_ascii_case("false"))
                 .unwrap_or(true),
@@ -107,7 +122,10 @@ impl MinerConfig {
                 .map(|v| v != "0" && !v.eq_ignore_ascii_case("false"))
                 .unwrap_or(true),
             stream2_batch: 1_048_576, // 1M nonces per batch for ProgPoW GPU mining
-            stream3_batch: 1_000_000,
+            stream3_batch: std::env::var("ZION_EXT_CPU_NONCE_COUNT")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or_else(|| auto_tune_verushash_batch(num_cpus::get())),
             stream2_force_coin: std::env::var("ZION_STREAM2_FORCE_COIN")
                 .ok()
                 .and_then(|s| s.trim().to_uppercase().parse().ok()),
@@ -132,5 +150,26 @@ impl MinerConfig {
     /// Return true if any AuxPoW stream is enabled.
     pub fn any_auxpow_enabled(&self) -> bool {
         self.auxpow_enabled && (self.stream2_enabled || self.stream3_enabled)
+    }
+}
+
+/// Auto-tune VerusHash nonce batch size based on logical CPU core count.
+///
+/// Ported from V3 `auto_tune_verushash()` — larger batches amortize the
+/// per-batch `hash_half()` + `prepare_key()` setup cost over more nonces,
+/// significantly improving throughput on multi-core CPUs.
+///
+/// | Logical cores | Batch size  |
+/// |---------------|-------------|
+/// | 8+            | 5,000,000   |
+/// | 4-7           | 2,000,000   |
+/// | <4            | 1,000,000   |
+fn auto_tune_verushash_batch(logical_cores: usize) -> u64 {
+    if logical_cores >= 8 {
+        5_000_000
+    } else if logical_cores >= 4 {
+        2_000_000
+    } else {
+        1_000_000
     }
 }
