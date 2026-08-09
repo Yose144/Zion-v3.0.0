@@ -869,15 +869,30 @@ impl AuxPowClient {
                     solution.resize(VERUS_SOLUTION_SIZE, 0);
                 }
 
-                let target = hasher::parse_target_hex(&nbits)
-                    .or_else(|| hasher::nbits_to_target(&nbits))
-                    .unwrap_or_else(|| {
-                        eprintln!(
-                            "vrsc_target_parse_fail nbits=\"{}\" params6={:?} — using 0xFF fallback",
-                            nbits, params[6]
-                        );
-                        [0xFF; 32]
-                    });
+                let target = {
+                    // Use the share difficulty (set by mining.set_difficulty) to
+                    // compute the share target. The block target from nbits is
+                    // far too hard for miners — we need the easier share target.
+                    // If the pool hasn't sent set_difficulty, use a minimum of
+                    // 10000 to avoid flooding the pool with diff=1 shares.
+                    let diff = self.current_difficulty.lock().await.clone();
+                    let effective_diff = if diff > 1.0 && diff.is_finite() {
+                        diff
+                    } else {
+                        // LuckPool doesn't send mining.set_difficulty for
+                        // ZcashStratum — use a reasonable minimum.
+                        let min_diff = 10000.0f64;
+                        if diff != min_diff {
+                            eprintln!(
+                                "vrsc_min_difficulty_applied diff={} min={} — pool did not set difficulty",
+                                diff, min_diff
+                            );
+                        }
+                        min_diff
+                    };
+                    let max_target = hasher::algorithm_max_target(&self.config.algorithm);
+                    hasher::difficulty_to_target_with_max(effective_diff, &max_target)
+                };
 
                 let en1 = self.extranonce1.lock().await.clone();
                 let mut nonce_field = [0u8; 32];

@@ -533,6 +533,17 @@ impl MinerRuntime {
         job: &Job,
         batch: u64,
     ) -> Result<Share, MinerError> {
+        self.mine_auxpow_share_batch_from(stream, job, batch, 0).await
+    }
+
+    /// Like `mine_auxpow_share_batch` but starts scanning from `start_nonce`.
+    pub async fn mine_auxpow_share_batch_from(
+        &self,
+        stream: StreamId,
+        job: &Job,
+        batch: u64,
+        start_nonce: u64,
+    ) -> Result<Share, MinerError> {
         // Stream 2: GPU with duty-cycle time-slicing (like V3 reference)
         if stream == StreamId::GpuExternal && self.config.gpu_backend != "cpu" {
             if let Some(share) = self.try_gpu_ext_share(job, batch).await {
@@ -561,7 +572,7 @@ impl MinerRuntime {
         let job = job.clone();
         let threads = self.config.miner_threads;
         let share =
-            task::spawn_blocking(move || crate::parallel::find_auxpow_share(&job, threads, batch))
+            task::spawn_blocking(move || crate::parallel::find_auxpow_share_from(&job, threads, batch, start_nonce))
                 .await
                 .map_err(|e| MinerError::Consensus(format!("cpu scanner join: {e}")))?
                 .ok_or(MinerError::NoAuxPoWSolution)?;
@@ -1132,26 +1143,43 @@ impl MinerRuntime {
                 if !stream2_enabled {
                     return Ok::<(), MinerError>(());
                 }
+                // Cache the current GPU external job so we keep mining it
+                // across multiple batches instead of waiting for a new job
+                // broadcast after each batch.
+                let mut current_ext: Option<crate::pool_message::ExternalStreamJob> = None;
+                let mut nonce_cursor: u64 = 0;
+                let batch_size = this.config.stream2_batch;
                 loop {
                     tokio::select! {
                         _ = shutdown.changed() => break,
+                        // Update cached job when a new broadcast arrives
+                        bundle = job_rx.recv() => {
+                            if let Ok(bundle) = bundle {
+                                if let Some(ext) = bundle.gpu_external {
+                                    current_ext = Some(ext);
+                                    nonce_cursor = 0; // reset cursor on new job
+                                }
+                            }
+                        }
+                        // Mine the current job — loops rapidly through batches
                         result = async {
-                            // Receive job bundle from broadcast
-                            let bundle = job_rx.recv().await
-                                .map_err(|e| MinerError::Consensus(format!("V3 broadcast: {e}")))?;
-
-                            // Mine GPU external stream if present
-                            if let Some(ref ext) = bundle.gpu_external {
-                                this.mine_v3_external_share(&client, StreamId::GpuExternal, ext).await
-                            } else {
-                                Ok(false)
+                            match &current_ext {
+                                Some(ext) => this.mine_v3_external_share(&client, StreamId::GpuExternal, ext, nonce_cursor).await,
+                                None => {
+                                    sleep(Duration::from_millis(500)).await;
+                                    Ok(false)
+                                }
                             }
                         } => {
                             this.mark_active(StreamId::GpuExternal).await;
-                            if let Err(e) = result {
-                                eprintln!("v3_trinity gpu_ext_error: {}", e);
-                                warn!(error = %e, "V3 Trinity: GPU AuxPoW error");
-                                sleep(Duration::from_millis(50)).await;
+                            match result {
+                                Ok(_) => { nonce_cursor = nonce_cursor.wrapping_add(batch_size); }
+                                Err(MinerError::NoAuxPoWSolution) => { nonce_cursor = nonce_cursor.wrapping_add(batch_size); }
+                                Err(e) => {
+                                    eprintln!("v3_trinity gpu_ext_error: {}", e);
+                                    warn!(error = %e, "V3 Trinity: GPU AuxPoW error");
+                                    sleep(Duration::from_millis(50)).await;
+                                }
                             }
                         }
                     }
@@ -1171,24 +1199,46 @@ impl MinerRuntime {
                 if !stream3_enabled {
                     return Ok::<(), MinerError>(());
                 }
+                // Cache the current CPU external job so we keep mining it
+                // across multiple batches instead of waiting for a new job
+                // broadcast after each batch.
+                let mut current_ext: Option<crate::pool_message::ExternalStreamJob> = None;
+                let mut nonce_cursor: u64 = 0;
+                let batch_size = this.config.stream3_batch;
                 loop {
                     tokio::select! {
                         _ = shutdown.changed() => break,
+                        // Update cached job when a new broadcast arrives
+                        bundle = job_rx.recv() => {
+                            if let Ok(bundle) = bundle {
+                                if let Some(ext) = bundle.cpu_external {
+                                    current_ext = Some(ext);
+                                    nonce_cursor = 0; // reset cursor on new job
+                                }
+                            }
+                        }
+                        // Mine the current job — loops rapidly through batches
                         result = async {
-                            let bundle = job_rx.recv().await
-                                .map_err(|e| MinerError::Consensus(format!("V3 broadcast: {e}")))?;
-
-                            if let Some(ref ext) = bundle.cpu_external {
-                                this.mine_v3_external_share(&client, StreamId::CpuExternal, ext).await
-                            } else {
-                                Ok(false)
+                            match &current_ext {
+                                Some(ext) => this.mine_v3_external_share(&client, StreamId::CpuExternal, ext, nonce_cursor).await,
+                                None => {
+                                    sleep(Duration::from_millis(500)).await;
+                                    Ok(false)
+                                }
                             }
                         } => {
                             this.mark_active(StreamId::CpuExternal).await;
-                            if let Err(e) = result {
-                                eprintln!("v3_trinity cpu_ext_error: {}", e);
-                                warn!(error = %e, "V3 Trinity: CPU AuxPoW error");
-                                sleep(Duration::from_millis(50)).await;
+                            match result {
+                                Ok(_) => { nonce_cursor = nonce_cursor.wrapping_add(batch_size); }
+                                Err(MinerError::NoAuxPoWSolution) => { nonce_cursor = nonce_cursor.wrapping_add(batch_size); }
+                                Err(e) => {
+                                    // NoAuxPoWSolution is expected — don't log, try next batch immediately
+                                    if !matches!(e, MinerError::NoAuxPoWSolution) {
+                                        eprintln!("v3_trinity cpu_ext_error: {}", e);
+                                        warn!(error = %e, "V3 Trinity: CPU AuxPoW error");
+                                        sleep(Duration::from_millis(50)).await;
+                                    }
+                                }
                             }
                         }
                     }
@@ -1318,6 +1368,7 @@ impl MinerRuntime {
         client: &V3PoolClient,
         stream: StreamId,
         ext: &ExternalStreamJob,
+        start_nonce: u64,
     ) -> Result<bool, MinerError> {
         use zion_cosmic_harmony::ExternalCoin;
 
@@ -1347,15 +1398,24 @@ impl MinerRuntime {
             height: ext.height,
         };
 
-        eprintln!(
-            "v3_trinity ext_mine_start stream={:?} coin={} algo={} header_len={} target_hex={} height={} batch={}",
-            stream, ext.coin, ext.algorithm, header.len(), ext.target_hex, ext.height,
-            match stream {
-                StreamId::GpuExternal => self.config.stream2_batch,
-                StreamId::CpuExternal => self.config.stream3_batch,
-                _ => self.config.auxpow_nonce_batch,
-            }
-        );
+        // Only log ext_mine_start on first batch (nonce_cursor == 0) to avoid spam.
+        // Log every 100 batches to track progress.
+        let ext_batch = match stream {
+            StreamId::GpuExternal => self.config.stream2_batch,
+            StreamId::CpuExternal => self.config.stream3_batch,
+            _ => self.config.auxpow_nonce_batch,
+        };
+        if start_nonce == 0 {
+            eprintln!(
+                "v3_trinity ext_mine_start stream={:?} coin={} algo={} header_len={} target_hex={} height={} batch={}",
+                stream, ext.coin, ext.algorithm, header.len(), ext.target_hex, ext.height, ext_batch
+            );
+        } else if ext_batch > 0 && start_nonce % (ext_batch * 100) == 0 {
+            eprintln!(
+                "v3_trinity ext_mine_progress stream={:?} coin={} nonce_cursor={} batch={}",
+                stream, ext.coin, start_nonce, ext_batch
+            );
+        }
 
         // Mine the share using existing GPU/CPU infrastructure
         let batch = match stream {
@@ -1364,7 +1424,7 @@ impl MinerRuntime {
             _ => self.config.auxpow_nonce_batch,
         };
 
-        let share = self.mine_auxpow_share_batch(stream, &job, batch).await?;
+        let share = self.mine_auxpow_share_batch_from(stream, &job, batch, start_nonce).await?;
         eprintln!("v3_trinity mined_ext_share stream={:?} coin={} nonce={}", stream, coin, share.nonce);
 
         // Submit via V3PoolClient → pool forwards to external pool

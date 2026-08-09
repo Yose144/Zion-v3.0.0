@@ -1505,7 +1505,11 @@ impl StratumServer {
                                     header_bytes: Vec::new(),
                                 };
 
-                                let bridge_result = self.multi_bridge.forward_by_ticker(&coin, req);
+                                let bridge = self.multi_bridge.clone();
+                                let coin_clone = coin.clone();
+                                let bridge_result = tokio::task::spawn_blocking(move || {
+                                    bridge.forward_by_ticker(&coin_clone, req)
+                                }).await.unwrap_or(None);
 
                                 tracing::info!(
                                     "v3_external_forward miner={} coin={} job={} nonce={} result={:?}",

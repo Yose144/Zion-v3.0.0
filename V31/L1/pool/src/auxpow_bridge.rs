@@ -101,7 +101,10 @@ impl AuxPowBridge {
         if self.share_tx.send((req, tx)).is_err() {
             return Some(ShareForwardOutcome::ChannelClosed);
         }
-        rx.recv().ok()
+        // Use a 5-second timeout to avoid blocking the pool's V3 handler
+        // indefinitely when the upstream pool is slow to respond.
+        rx.recv_timeout(std::time::Duration::from_secs(5))
+            .ok()
     }
 }
 
