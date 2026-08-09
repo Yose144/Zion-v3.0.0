@@ -100,34 +100,37 @@ tick. Po reconnectu se polling restartuje jako safety net.
 
 ## Deployment
 
-### Build (lokálně + Docker na Edge)
+### Build (lokálně + Docker)
 
 ```bash
-# Lokální build (macOS)
-cd V31 && cargo build --release -p zion-miner --features auxpow,gpu-opencl
+# Docker build (Debian bullseye + GLIBC 2.31 pro SMOS)
+# Vytvoří target-bullseye v Docker volume a zkopíruje výsledek do V31/
+cd V31 && docker run --rm \
+  -v "$(pwd):/workspace" \
+  -v zion-v31-miner-target:/workspace/target-bullseye \
+  -v zion-v31-cargo-cache:/usr/local/cargo/registry \
+  -e CARGO_TARGET_DIR=/workspace/target-bullseye \
+  -w /workspace \
+  rust:1.97-bullseye \
+  bash -c '
+    set -e
+    apt-get update -qq
+    apt-get install -y -qq ocl-icd-opencl-dev libssl-dev pkg-config
+    cargo build --release -p zion-miner --features '"'"'auxpow,gpu-opencl,native-hashers,native-verushash'"'"'
+    cp target-bullseye/release/zion-miner /workspace/zion-miner-v31-bullseye
+  '
 
-# Edge Docker build (Ubuntu 18.04 + OpenCL)
-rsync -avz --exclude='target' --exclude='.git' \
-  -e "ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 -p 2222" \
-  V31/L1/miner/src/ root@62.171.141.136:/opt/zion/V31-build/L1/miner/src/
+# Verifikace GLIBC
+objdump -T zion-miner-v31-bullseye | grep -oE 'GLIBC_[0-9.]+' | sort -V | tail -1
+# očekáváme GLIBC_2.30 nebo nižší
 
-ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 -p 2222 root@62.171.141.136 \
-  'docker run --rm -v /opt/zion/V31-build:/workspace \
-   -v /opt/zion/cargo-cache:/root/.cargo/registry \
-   -w /workspace ubuntu:18.04 bash -c "
-     apt-get update -qq && apt-get install -y -qq curl build-essential \
-     pkg-config libssl-dev ocl-icd-opencl-dev
-     curl --proto =https --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-     source /root/.cargo/env
-     cargo build --release -p zion-miner --features auxpow,gpu-opencl
-     cp target/release/zion-miner /workspace/zion-miner-v31
-   "'
-
-# Upload binary + reload SMOS
+# Upload na Edge (přes IPv6 fallback, pokud IPv4 fail2ban zabanuje)
 scp -i ~/.ssh/zion-edge-post-wipe-2026-07-29 -P 2222 \
-  V31-build/zion-miner-v31 root@62.171.141.136:/var/www/zion-miner/
+  zion-miner-v31-bullseye root@62.171.141.136:/var/www/zion-miner/zion-miner-v31
 
-curl -X PATCH -H "X-AUTH-TOKEN: <token>" \
+# Reload SMOS (provedený token se občas mění, viz AGENTS.md)
+API_TOKEN="<token>"
+curl -s -X PATCH -H "X-AUTH-TOKEN: $API_TOKEN" \
   -H "Content-Type: application/merge-patch+json" \
   "https://api.simplemining.net/rigs/execute-reload" -d '{"rigIds":[518837]}'
 ```
@@ -137,7 +140,7 @@ curl -X PATCH -H "X-AUTH-TOKEN: <token>" \
 Pool logy:
 ```bash
 ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 -p 2222 root@62.171.141.136 \
-  'journalctl -u zion-v31-pool --since "5 min ago" | grep -E "v3_hello|v3_share|external_submit"'
+  'journalctl -u zion-v31-pool --since "5 min ago" | grep -E "v3_hello|v3_share|v3_external_submit|v3_external_forward"'
 ```
 
 Miner konzole (SMOS API):
