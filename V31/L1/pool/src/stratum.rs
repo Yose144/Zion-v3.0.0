@@ -1682,7 +1682,7 @@ impl StratumServer {
                                         if let Some(ref c) = coin_enum {
                                             let job_ids = self.multi_bridge.job_ids_for_coin(c);
                                             if !job_ids.is_empty() {
-                                                if let Some(latest_id) = job_ids.first() {
+                                                if let Some(latest_id) = job_ids.last() {
                                                     if latest_id != &external_job_id {
                                                         tracing::info!(
                                                             "external_share_vrsc_skip miner={} coin=VRSC share_job_id={} latest_job_id={} — skipping (not latest, LuckPool will reject)",
