@@ -332,6 +332,8 @@ impl V3PoolClient {
         hash_hex: &str,
         mix_hash_hex: Option<&str>,
         extranonce1_hex: &str,
+        solution_hex: &str,
+        ntime_hex: &str,
     ) -> Result<V3ExternalResult> {
         let msg = PoolMessage::ExternalSubmit {
             miner_id: self.miner_id.clone(),
@@ -343,6 +345,8 @@ impl V3PoolClient {
             hash_hex: hash_hex.to_string(),
             mix_hash_hex: mix_hash_hex.map(|s| s.to_string()),
             extranonce1_hex: extranonce1_hex.to_string(),
+            solution_hex: solution_hex.to_string(),
+            ntime_hex: ntime_hex.to_string(),
         };
         let line = encode_message(&msg)?;
         {

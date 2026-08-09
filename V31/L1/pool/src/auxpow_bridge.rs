@@ -25,6 +25,13 @@ pub struct ShareForwardRequest {
     pub mix_hash_hex: Option<String>,
     pub algorithm: String,
     pub header_bytes: Vec<u8>,
+    /// ntime hex string (e.g. "62d12345") from the upstream pool job notify.
+    /// Used for ZcashStratum (VRSC) submit format.
+    pub ntime: String,
+    /// Equihash solution hex (for ZcashStratum/VRSC submit).
+    pub solution_hex: String,
+    /// Extranonce1 hex (for ZcashStratum submit — extranonce2 derivation).
+    pub extranonce1_hex: String,
 }
 
 #[derive(Clone, Debug, PartialEq)]

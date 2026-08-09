@@ -1493,6 +1493,9 @@ impl StratumServer {
                                 nonce,
                                 hash_hex,
                                 mix_hash_hex,
+                                extranonce1_hex,
+                                solution_hex,
+                                ntime_hex: submit_ntime_hex,
                                 ..
                             }) => {
                                 tracing::info!(
@@ -1501,6 +1504,18 @@ impl StratumServer {
                                 );
 
                                 // Forward to AuxPoW bridge
+                                // Get ntime from the submit message (from miner) or
+                                // fall back to the bridge job_queue for this coin
+                                let ntime_hex = if !submit_ntime_hex.is_empty() {
+                                    submit_ntime_hex
+                                } else {
+                                    let coin_enum = zion_cosmic_harmony::profit::ExternalCoin::from_ticker(&coin);
+                                    if let Some(c) = coin_enum {
+                                        if let Some(job_pkg) = self.multi_bridge.latest_job_for_coin(&c) {
+                                            job_pkg.ntime
+                                        } else { String::new() }
+                                    } else { String::new() }
+                                };
                                 let req = ShareForwardRequest {
                                     job_id: external_job_id.clone(),
                                     nonce,
@@ -1508,6 +1523,9 @@ impl StratumServer {
                                     mix_hash_hex: mix_hash_hex.clone(),
                                     algorithm: submit_algorithm.clone(),
                                     header_bytes: Vec::new(),
+                                    ntime: ntime_hex,
+                                    solution_hex: solution_hex.clone(),
+                                    extranonce1_hex: extranonce1_hex.clone(),
                                 };
 
                                 let bridge = self.multi_bridge.clone();

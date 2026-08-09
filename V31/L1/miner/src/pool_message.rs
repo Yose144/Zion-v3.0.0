@@ -185,6 +185,12 @@ pub enum PoolMessage {
         mix_hash_hex: Option<String>,
         #[serde(default)]
         extranonce1_hex: String,
+        /// Equihash solution hex (for ZcashStratum/VRSC submit).
+        #[serde(default)]
+        solution_hex: String,
+        /// ntime hex from the upstream pool job notify.
+        #[serde(default)]
+        ntime_hex: String,
     },
     PearlSubmit {
         miner_id: String,
@@ -297,6 +303,8 @@ mod tests {
             hash_hex: "abcd".into(),
             mix_hash_hex: Some("eff0".into()),
             extranonce1_hex: "".into(),
+            solution_hex: "".into(),
+            ntime_hex: "".into(),
         };
         let encoded = encode_message(&msg).unwrap();
         let decoded = decode_message(&encoded).unwrap();

@@ -141,7 +141,7 @@ fn external_job_to_package(job: &ExternalJob, coin: ExternalCoin) -> JobPackage 
         height: job.block_number.unwrap_or(0),
         algorithm: job.algorithm.clone(),
         extranonce1_hex: hex::encode(&job.extranonce1),
-        ntime: "00000000".to_string(),
+        ntime: if job.ntime.is_empty() { "00000000".to_string() } else { job.ntime.clone() },
     }
 }
 
@@ -373,14 +373,20 @@ async fn forward_share_to_upstream(
     } else {
         Some(format!("0x{}", hex::encode(&req.header_bytes)))
     };
+    let ntime_val = if req.ntime.is_empty() { "00000000" } else { &req.ntime };
+    tracing::debug!(
+        "auxpow forward_share job={} nonce={} ntime={} ntime_len={}",
+        req.job_id, req.nonce, ntime_val, ntime_val.len()
+    );
     match client
         .submit_share(
             &req.job_id,
             req.nonce,
-            "",
-            "00000000",
+            "00",
+            if req.ntime.is_empty() { "00000000" } else { &req.ntime },
             req.mix_hash_hex.as_deref(),
             header_hash_opt.as_deref(),
+            &req.solution_hex,
         )
         .await
     {
