@@ -126,16 +126,40 @@
     }
   ],
   "protectors": [
-    { "title": "Varja Sattva", "subtitle": "Dorje Sempa" },
-    { "title": "Avalókitéšvara", "subtitle": "Čänräzig" },
-    { "title": "Vajra Dhara", "subtitle": "Dorje Chang" }
+    {
+      "title": "Varja Sattva",
+      "subtitle": "Dorje Sempa"
+    },
+    {
+      "title": "Avalókitéšvara",
+      "subtitle": "Čänräzig"
+    },
+    {
+      "title": "Vajra Dhara",
+      "subtitle": "Dorje Chang"
+    }
   ],
   "golokaImages": [
-    { "src": "/legacy/img/radhakrishna.jpg", "alt": "Sri Sri Radha Govinda / Goloka" },
-    { "src": "/legacy/img/ramasita.jpg", "alt": "Sri Sri Rama Sita" },
-    { "src": "/legacy/img/gouranga.jpg", "alt": "Sri Caitanja Mahaprabhu / Panca Tattva" },
-    { "src": "/legacy/img/pra-1.png", "alt": "Srila Prabhupada" },
-    { "src": "/legacy/img/Hirarchy.jpg", "alt": "Vedanta Universe" }
+    {
+      "src": "/legacy/img/radhakrishna.jpg",
+      "alt": "Sri Sri Radha Govinda / Goloka"
+    },
+    {
+      "src": "/legacy/img/ramasita.jpg",
+      "alt": "Sri Sri Rama Sita"
+    },
+    {
+      "src": "/legacy/img/gouranga.jpg",
+      "alt": "Sri Caitanja Mahaprabhu / Panca Tattva"
+    },
+    {
+      "src": "/legacy/img/pra-1.png",
+      "alt": "Srila Prabhupada"
+    },
+    {
+      "src": "/legacy/img/Hirarchy.jpg",
+      "alt": "Vedanta Universe"
+    }
   ],
   "books": [
     {
@@ -156,21 +180,21 @@
       "titleEn": "🤖 Quantum Revolution — Claude",
       "featured": false,
       "links": {
-        "CZ": "/legacy/books/Bonus/Quantova Revoluce Claude.pdf",
-        "EN": "/legacy/books/Bonus/Quantova Revoluce Claude_EN.pdf",
-        "ES": "/legacy/books/Bonus/Quantova Revoluce Claude_ES.pdf",
-        "FR": "/legacy/books/Bonus/Quantova Revoluce Claude_FR.pdf",
-        "PT": "/legacy/books/Bonus/Quantova Revoluce Claude_PT.pdf"
+        "CZ": "/legacy/books/Bonus/Quantova%20Revoluce%20Claude.pdf",
+        "EN": "/legacy/books/Bonus/Quantova%20Revoluce%20Claude_EN.pdf",
+        "ES": "/legacy/books/Bonus/Quantova%20Revoluce%20Claude_ES.pdf",
+        "FR": "/legacy/books/Bonus/Quantova%20Revoluce%20Claude_FR.pdf",
+        "PT": "/legacy/books/Bonus/Quantova%20Revoluce%20Claude_PT.pdf"
       }
     },
     {
       "title": "The Secret of Amenti",
       "links": {
-        "CZ": "/legacy/src/cz/Tajemství amenti.PDF",
+        "CZ": "/legacy/src/cz/Tajemstv%C3%AD%20amenti.PDF",
         "EN": "/legacy/src/en/AmentiEN.PDF",
         "ES": "/legacy/src/sp/AmentiSpain.PDF",
         "FR": "/legacy/src/fr/AmentiFR.PDF",
-        "PT": "/legacy/src/pt/Tajemství amenti pt.PDF"
+        "PT": "/legacy/src/pt/Tajemstv%C3%AD%20amenti%20pt.PDF"
       }
     },
     {
@@ -178,17 +202,17 @@
       "titleEn": "Emerald Plates Thot",
       "links": {
         "CZ": "/legacy/src/cz/SmaragdoveDesky.pdf",
-        "EN": "/legacy/src/en/SmaragdoveDesky en.pdf",
-        "ES": "/legacy/src/sp/SmaragdoveDesky es.pdf",
-        "FR": "/legacy/src/fr/SmaragdoveDesky fr.pdf",
-        "PT": "/legacy/src/pt/SmaragdoveDesky pt.pdf"
+        "EN": "/legacy/src/en/SmaragdoveDesky%20en.pdf",
+        "ES": "/legacy/src/sp/SmaragdoveDesky%20es.pdf",
+        "FR": "/legacy/src/fr/SmaragdoveDesky%20fr.pdf",
+        "PT": "/legacy/src/pt/SmaragdoveDesky%20pt.pdf"
       }
     },
     {
       "title": "Book of Amenti 2012",
       "titleEn": "Book of Amenti 2012",
       "links": {
-        "CZ": "/legacy/src/cz/ZIONOneLove CZ.pdf",
+        "CZ": "/legacy/src/cz/ZIONOneLove%20CZ.pdf",
         "EN": "/legacy/src/en/ZIONOneLoveEN.pdf",
         "ES": "/legacy/src/sp/ZIONOneLoveSP.pdf",
         "FR": "/legacy/src/fr/ZIONOneLoveFR.pdf"
