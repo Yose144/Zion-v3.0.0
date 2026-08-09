@@ -1399,30 +1399,15 @@ impl MinerRuntime {
         // Header layout: version(4) + prevhash(32) + merkle(32) + reserved(32) +
         //                ntime(4) + nbits(4) + nonce(32) + varint + solution
         // ntime is at offset 100, 4 bytes.
-        // Solution starts after nonce_field (offset 140) + varint.
+        // Solution (WITH varint prefix) starts at offset 140.
+        // LuckPool expects the full solution including the CompactSize varint prefix.
         let (solution_hex, ntime_hex) = if ext.algorithm.contains("verushash") || ext.protocol == "zcashstratum" {
             let ntime_hex = if header.len() >= 104 {
                 hex::encode(&header[100..104])
             } else { String::new() };
-            // Parse varint at offset 140 to find solution start
-            let sol_hex = if header.len() > 141 {
-                let varint_start = 140;
-                let first_byte = header[varint_start];
-                let (sol_offset, _sol_len) = if first_byte < 0xfd {
-                    (varint_start + 1, first_byte as usize)
-                } else if first_byte == 0xfd {
-                    (varint_start + 3, u16::from_le_bytes([header[varint_start+1], header[varint_start+2]]) as usize)
-                } else if first_byte == 0xfe {
-                    (varint_start + 5, u32::from_le_bytes([header[varint_start+1], header[varint_start+2], header[varint_start+3], header[varint_start+4]]) as usize)
-                } else {
-                    (varint_start + 9, u64::from_le_bytes([
-                        header[varint_start+1], header[varint_start+2], header[varint_start+3], header[varint_start+4],
-                        header[varint_start+5], header[varint_start+6], header[varint_start+7], header[varint_start+8],
-                    ]) as usize)
-                };
-                if sol_offset < header.len() {
-                    hex::encode(&header[sol_offset..])
-                } else { String::new() }
+            // Include varint prefix in solution (starts at offset 140)
+            let sol_hex = if header.len() > 140 {
+                hex::encode(&header[140..])
             } else { String::new() };
             (sol_hex, ntime_hex)
         } else {

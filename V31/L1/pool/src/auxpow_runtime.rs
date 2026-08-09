@@ -375,8 +375,9 @@ async fn forward_share_to_upstream(
     };
     let ntime_val = if req.ntime.is_empty() { "00000000" } else { &req.ntime };
     tracing::debug!(
-        "auxpow forward_share job={} nonce={} ntime={} ntime_len={}",
-        req.job_id, req.nonce, ntime_val, ntime_val.len()
+        "auxpow forward_share job={} nonce={} ntime={} ntime_len={} sol_hex_len={} sol_bytes={}",
+        req.job_id, req.nonce, ntime_val, ntime_val.len(),
+        req.solution_hex.len(), req.solution_hex.len() / 2
     );
     match client
         .submit_share(

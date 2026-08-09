@@ -1167,9 +1167,9 @@ impl AuxPowClient {
                 })
             }
             StratumProtocol::ZcashStratum => {
-                // ZcashStratum (VRSC): [worker, job_id, extranonce2, ntime, solution]
-                // solution is the equihash solution hex from the job notify.
-                // If solution_hex is provided, use it; otherwise fall back to nonce.
+                // ZcashStratum (VRSC/LuckPool): [worker, job_id, ntime, extranonce2, solution]
+                // ntime is 4-byte hex (8 chars), extranonce2 is the 28-byte suffix
+                // after extranonce1, solution is the equihash solution hex.
                 let sol = if !solution_hex.is_empty() {
                     solution_hex.to_string()
                 } else {
@@ -1178,7 +1178,7 @@ impl AuxPowClient {
                 json!({
                     "id": self.next_rpc_id(),
                     "method": "mining.submit",
-                    "params": [worker, job_id, extranonce2, ntime, sol]
+                    "params": [worker, job_id, ntime, extranonce2, sol]
                 })
             }
             _ => json!({
