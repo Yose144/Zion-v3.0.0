@@ -1551,10 +1551,26 @@ impl MinerRuntime {
         let share = self.mine_auxpow_share_batch(stream, &job, batch).await?;
         eprintln!("v3_trinity mined_ext_share stream={:?} coin={} nonce={}", stream, coin, share.nonce);
 
-        // V3 philosophy: submit ALL shares immediately, no stale check.
-        // The upstream pool (LuckPool/HeroMiners) will decide if the share
-        // is stale. Pre-rejecting here only reduces accept rate.
-        let _ = job_rx; // suppress unused warning
+        // V3 philosophy: forward ALL shares to the upstream pool.
+        // However, for VRSC (fast-block CPU coin), check if a newer job has
+        // arrived BEFORE submitting. If the pool already sent a newer job,
+        // the current job is likely expired on LuckPool ("job not found").
+        // This only skips when a NEWER job is already available — it does
+        // NOT check job_id mismatch or age, so it won't pre-reject valid
+        // shares for jobs that are still current upstream.
+        // ZANO (GPU, ~30s blocks) doesn't need this — 100% accept rate.
+        let skip_stale = if matches!(stream, StreamId::CpuExternal) {
+            job_rx.has_changed().unwrap_or(false)
+        } else {
+            false
+        };
+        if skip_stale {
+            eprintln!(
+                "v3_trinity stale_ext_share stream={:?} coin={} nonce={} — newer job arrived, skipping submit",
+                stream, coin, share.nonce
+            );
+            return Ok(false);
+        }
 
         // Submit via V3PoolClient → pool forwards to external pool
         let hash_hex = hex::encode(&share.hash);
