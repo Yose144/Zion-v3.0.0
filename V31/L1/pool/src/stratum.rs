@@ -1510,7 +1510,7 @@ impl StratumServer {
                                 // fall back to the bridge job_queue for this coin.
                                 // Old miners (barker rig, etc.) don't send solution_hex/ntime_hex,
                                 // so we extract them from the job_queue header_hex.
-                                let (ntime_hex, solution_hex_final) = {
+                                let (ntime_hex, solution_hex_final, effective_job_id) = {
                                     let coin_enum = zion_cosmic_harmony::profit::ExternalCoin::from_ticker(&coin);
                                     let job_pkg = coin_enum
                                         .as_ref()
@@ -1531,18 +1531,43 @@ impl StratumServer {
                                         //         ntime(4)+nbits(4)+nonce(32)+varint+solution
                                         // Varint starts at offset 140. LuckPool expects the
                                         // full solution including the CompactSize varint prefix.
+                                        // Check coin == VRSC (not algorithm — rigs may report
+                                        // deeksha_lite_v1 as their algo but still mine VRSC).
+                                        let is_vrsc = coin == "VRSC";
                                         let header_hex_stripped = pkg.header_hex.strip_prefix("0x").unwrap_or(&pkg.header_hex);
                                         if let Ok(header) = hex::decode(header_hex_stripped) {
-                                            if header.len() > 141 && submit_algorithm.contains("verushash") {
+                                            if header.len() > 141 && is_vrsc {
                                                 // Include varint prefix in the solution
                                                 hex::encode(&header[140..])
                                             } else { String::new() }
                                         } else { String::new() }
                                     } else { String::new() };
-                                    (ntime, sol)
+
+                                    // If the miner's job_id doesn't match the latest upstream
+                                    // job_id, override it to the latest. This fixes stale shares
+                                    // from rigs running older binaries that don't track job
+                                    // rotations fast enough.
+                                    let effective_jid = if let Some(ref pkg) = job_pkg {
+                                        if pkg.external_job_id != external_job_id {
+                                            tracing::info!(
+                                                "v3_external_job_override miner={} coin={} old_job={} new_job={}",
+                                                sub_miner_id, coin, external_job_id, pkg.external_job_id
+                                            );
+                                            pkg.external_job_id.clone()
+                                        } else {
+                                            external_job_id.clone()
+                                        }
+                                    } else {
+                                        tracing::warn!(
+                                            "v3_external_no_job_pkg miner={} coin={} submit_job={}",
+                                            sub_miner_id, coin, external_job_id
+                                        );
+                                        external_job_id.clone()
+                                    };
+                                    (ntime, sol, effective_jid)
                                 };
                                 let req = ShareForwardRequest {
-                                    job_id: external_job_id.clone(),
+                                    job_id: effective_job_id,
                                     nonce,
                                     hash_hex: hash_hex.clone(),
                                     mix_hash_hex: mix_hash_hex.clone(),
