@@ -1,9 +1,9 @@
 # ZION — Sůl této země
 ## Dvanáct zastavení na cestě k Oasis — a jedna otázka pro stavitele na konci
 
-**Status: koncept / narativní řada — k diskuzi před publikací.**
-**Jazyk:** čeština (první průchod; anglická verze až po schválení tónu).
-**Vztahuje se k:** čtyřem knihám ZIONu (Genesis · Kvantová revoluce · Ekam Deeksha · Terra Nova), k technickému whitepaperu 3.1 a k L4 Oasis (Consciousness Levels, Golden Egg, avataři).
+**Status: KANONICKÁ narativní řada — zkanonizováno 2026-08-09 v rámci 3.2 „One Love".**
+**Jazyk:** čeština — anglický kanonický index: [`00-README_EN.md`](./00-README_EN.md).
+**Vztahuje se k:** čtyřem knihám ZIONu (Genesis · Kvantová revoluce · Ekam Deeksha · Terra Nova), ke kanonickému whitepaperu [`3.2 „One Love"`](../ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_CZ.md), k technickému whitepaperu 3.1 a k L4 Oasis (Consciousness Levels, Golden Egg, avataři — dnes veřejný preview ve výstavbě).
 
 Prvních jedenáct zastavení tě provede solí, rozpuštěním, chutí vody, cestou bez mapy, archou a branou do Oasis. Dvanácté zastavení je jiné: nevypráví další podobenství, ale ptá se, co uděláš teď, dokud je síť ještě malá a dveře archy ještě otevřené.
 
@@ -41,9 +41,13 @@ Tohle rozdělení není formalita. Je to **jádro upřímnosti** téhle řady: p
 
 Epizody na sebe volně navazují (společný rámec: večer u ohně, který se postupně stává stavbou lodi), ale každá jde číst i samostatně. Epizoda 10 popisuje První svět Oasis a jeho teritoria. Epizoda 11 navazuje prvním vstupem hráče a poctivě odděluje implementovaný backend, archivní herní návrh a budoucí klientské rozhraní. Epizoda 12 knihu uzavírá a míří konkrétně na stavitele a těžaře: proč je poctivě ověřitelnou výhodou vstoupit do mladé sítě dřív, než se zaplní — bez jediného příslibu ceny.
 
-**Zkrácená marketingová verze pro širokou veřejnost:** [`Onboarding.md`](./Onboarding.md) — jeden dokument, který celou řadu shrnuje do jednoduché pozvánky s prvními kroky.
+**Kanonický onboarding pro širokou veřejnost (CZ i EN):** [`../ZION_ONBOARDING_PUBLIC_CZ.md`](../ZION_ONBOARDING_PUBLIC_CZ.md) — [`English version`](../ZION_ONBOARDING_PUBLIC_EN.md).
 
-**Kanonický onboarding (úplný, technický + narativní, CZ i EN):** [`ZION_ONBOARDING.md`](./ZION_ONBOARDING.md) — [`English version`](./ZION_ONBOARDING_EN.md).
+**Hloubkový onboarding 3.2 „One Love" (technický + narativní, CZ i EN):** [`../ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md`](../ZION_ONBOARDING_3.2_ONE_LOVE_CZ.md) — [`English version`](../ZION_ONBOARDING_3.2_ONE_LOVE_EN.md).
+
+**Zkrácená marketingová verze:** [`Onboarding.md`](./Onboarding.md). **Rasta příběh u ohně:** [`../marketing/RASTA_ONBOARD_3.2_ONE_LOVE_CZ.md`](../marketing/RASTA_ONBOARD_3.2_ONE_LOVE_CZ.md).
+
+**Historické verze onboardingu (2026-08-03, superseded):** [`ZION_ONBOARDING.md`](./ZION_ONBOARDING.md) — [`English version`](./ZION_ONBOARDING_EN.md).
 
 ---
 
@@ -51,7 +55,7 @@ Epizody na sebe volně navazují (společný rámec: večer u ohně, který se p
 
 - **Není náboženským tvrzením.** Nikdo netvrdí, že ZION je posvátný text nebo že staví na skutečné teologii. Postavy jsou vypůjčené jako **archetypy důvěry**, které lidstvo napříč kulturami už zná — ne jako nárok na jejich autoritu.
 - **Není finančním slibem.** Žádná epizoda neříká „investuj a zbohatneš". Kompas ukazuje směr, ne výnos.
-- **Není náhradou technického whitepaperu.** Kde příběh mluví o algoritmu, odměně nebo hard capu, čísla odpovídají [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md) a běžící síti — ne naopak.
+- **Není náhradou whitepaperu.** Kde příběh mluví o algoritmu, odměně nebo hard capu, čísla odpovídají kanonickému whitepaperu [`ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_CZ.md`](../ZION_MASTER_WHITEPAPER_3.2_ONE_LOVE_CZ.md), technické referenci [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md) a běžící síti — ne naopak.
 
 ---
 
