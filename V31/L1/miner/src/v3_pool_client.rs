@@ -140,6 +140,10 @@ impl V3PoolClient {
             loop {
                 match lines.next_line().await {
                     Ok(Some(line)) => {
+                        // Skip empty lines (pool may send blank lines between messages)
+                        if line.trim().is_empty() {
+                            continue;
+                        }
                         match decode_message(&line) {
                             Ok(PoolMessage::Job {
                                 job_id,
