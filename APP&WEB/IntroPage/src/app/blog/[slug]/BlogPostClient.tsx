@@ -20,7 +20,17 @@ function formatDate(dateStr: string, lang: "cs" | "en") {
   return `${d.getDate()}. ${monthNames[lang][d.getMonth()]} ${d.getFullYear()}`;
 }
 
-export default function BlogPostClient({ slug }: { slug: string }) {
+type BlogPostClientProps = {
+  slug: string;
+  fullContent?: string;
+  fullPage?: boolean;
+};
+
+export default function BlogPostClient({
+  slug,
+  fullContent,
+  fullPage = false,
+}: BlogPostClientProps) {
   const [lang, setLang] = useState<"cs" | "en">("cs");
 
   const index = posts.findIndex((p) => p.slug === slug);
@@ -31,7 +41,10 @@ export default function BlogPostClient({ slug }: { slug: string }) {
   const category = categories[post.category as keyof typeof categories] as any;
   const title = lang === "en" ? post.titleEn || post.title : post.title;
   const excerpt = lang === "en" ? post.excerptEn || post.excerpt : post.excerpt;
-  const content = lang === "en" ? post.contentEn || post.content : post.content;
+  const content =
+    lang === "en"
+      ? post.contentEn || fullContent || post.content
+      : fullContent || post.content;
 
   const fixImage = (src?: string) => {
     if (!src) return "";
@@ -86,11 +99,22 @@ export default function BlogPostClient({ slug }: { slug: string }) {
             {excerpt}
           </p>
 
-          {content ? (
+          {fullPage && post.file ? (
+            <div className="my-6 w-full overflow-hidden rounded-xl border border-white/10 bg-[#010208]">
+              <iframe
+                src={`/legacy/${post.file}`}
+                className="h-[800px] w-full"
+                title={title}
+                loading="lazy"
+              />
+            </div>
+          ) : content ? (
             <div
-              className="prose prose-invert mx-auto mt-6 max-w-none"
+              className="article mx-auto mt-6 max-w-none"
               dangerouslySetInnerHTML={{
                 __html: content
+                  .replace(/src="\.\.\/\.\.\/img\//g, 'src="/legacy/img/')
+                  .replace(/src='\.\.\/\.\.\/img\//g, "src='/legacy/img/")
                   .replace(/src="\.\/img\//g, 'src="/legacy/img/')
                   .replace(/src='\.\/img\//g, "src='/legacy/img/")
                   .replace(/href="\.\.\/\.\.\/\.\.\//g, 'href="/legacy/')

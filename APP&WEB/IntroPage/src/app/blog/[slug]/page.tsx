@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import BlogPostClient from "./BlogPostClient";
 import blogData from "../../data/blog-posts.json";
+import { extractFullPostContent } from "./fullContent";
 
 const { posts } = blogData;
 
@@ -10,7 +11,7 @@ export function generateStaticParams() {
 
 export const dynamicParams = false;
 
-export default function BlogPostPage({
+export default async function BlogPostPage({
   params,
 }: {
   params: { slug: string };
@@ -18,5 +19,22 @@ export default function BlogPostPage({
   const post = posts.find((p) => p.slug === params.slug);
   if (!post) return notFound();
 
-  return <BlogPostClient slug={params.slug} />;
+  let fullContent: string | undefined;
+  let fullPage = false;
+
+  if (post.file) {
+    const extracted = extractFullPostContent(post.file);
+    if (extracted) {
+      fullContent = extracted.html;
+      fullPage = extracted.fullPage;
+    }
+  }
+
+  return (
+    <BlogPostClient
+      slug={params.slug}
+      fullContent={fullContent}
+      fullPage={fullPage}
+    />
+  );
 }
