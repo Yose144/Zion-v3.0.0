@@ -1050,6 +1050,7 @@ impl AuxPowClient {
                 ..Default::default()
             };
             *self.latest_job_id.lock().await = Some(job.job_id.clone());
+            *self.latest_job_time.lock().await = Some(Instant::now());
             return Some(job);
         }
 
@@ -1075,6 +1076,7 @@ impl AuxPowClient {
                 ..Default::default()
             };
             *self.latest_job_id.lock().await = Some(job.job_id.clone());
+            *self.latest_job_time.lock().await = Some(Instant::now());
             return Some(job);
         }
 

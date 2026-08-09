@@ -35,6 +35,146 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::Instant;
 
+// ---------------------------------------------------------------------------
+// Ethash / ProgPoW light cache (pure-Rust, shared with the OpenCL DAG path)
+// ---------------------------------------------------------------------------
+
+const DAG_CACHE_ROUNDS: usize = 3;
+const CACHE_BYTES_INIT: u64 = 1 << 24;     // 16 MB
+const CACHE_BYTES_GROWTH: u64 = 1 << 17;   // 128 KB
+const HASH_BYTES: u64 = 64;
+const DATASET_BYTES_INIT: u64 = 1 << 30;   // 1 GB
+const DATASET_BYTES_GROWTH: u64 = 1 << 23; // 8 MB
+const MIX_BYTES: u64 = 128;
+
+fn is_prime_u64(n: u64) -> bool {
+    if n < 2 {
+        return false;
+    }
+    if n.is_multiple_of(2) {
+        return n == 2;
+    }
+    if n.is_multiple_of(3) {
+        return n == 3;
+    }
+    let mut i = 5u64;
+    while i * i <= n {
+        if n.is_multiple_of(i) || n.is_multiple_of(i + 2) {
+            return false;
+        }
+        i += 6;
+    }
+    true
+}
+
+fn cache_size_for_epoch(epoch: u32) -> u64 {
+    let mut items =
+        (CACHE_BYTES_INIT + (epoch as u64) * CACHE_BYTES_GROWTH - HASH_BYTES) / HASH_BYTES;
+    while !is_prime_u64(items) {
+        items = items.saturating_sub(2).max(1);
+    }
+    items * HASH_BYTES
+}
+
+fn dataset_size_for_epoch(epoch: u32) -> u64 {
+    let mut items =
+        (DATASET_BYTES_INIT + (epoch as u64) * DATASET_BYTES_GROWTH - MIX_BYTES) / MIX_BYTES;
+    while !is_prime_u64(items) {
+        items = items.saturating_sub(2).max(1);
+    }
+    items * MIX_BYTES
+}
+
+fn seed_hash_for_epoch(epoch: u32) -> [u8; 32] {
+    use sha3::{Digest, Keccak256};
+    let mut seed = [0u8; 32];
+    for _ in 0..epoch {
+        let mut hasher = Keccak256::new();
+        hasher.update(seed);
+        seed = hasher.finalize().into();
+    }
+    seed
+}
+
+fn generate_light_cache(epoch: u32) -> Vec<u8> {
+    use sha3::{Digest, Keccak512};
+
+    let cache_size = cache_size_for_epoch(epoch) as usize;
+    let cache_items = cache_size / 64;
+    let seed = seed_hash_for_epoch(epoch);
+
+    let mut cache = vec![0u8; cache_size];
+
+    {
+        let mut hasher = Keccak512::new();
+        hasher.update(seed);
+        let hash = hasher.finalize();
+        cache[..64].copy_from_slice(&hash);
+    }
+
+    for i in 1..cache_items {
+        let mut hasher = Keccak512::new();
+        hasher.update(&cache[(i - 1) * 64..i * 64]);
+        let hash = hasher.finalize();
+        cache[i * 64..(i + 1) * 64].copy_from_slice(&hash);
+    }
+
+    for _r in 0..DAG_CACHE_ROUNDS {
+        for i in 0..cache_items {
+            let v = u32::from_le_bytes([
+                cache[i * 64],
+                cache[i * 64 + 1],
+                cache[i * 64 + 2],
+                cache[i * 64 + 3],
+            ]) % cache_items as u32;
+            let prev = (i + cache_items - 1) % cache_items;
+
+            let mut tmp = [0u8; 64];
+            for j in 0..64 {
+                tmp[j] = cache[prev * 64 + j] ^ cache[v as usize * 64 + j];
+            }
+
+            let mut hasher = Keccak512::new();
+            hasher.update(tmp);
+            let hash = hasher.finalize();
+            cache[i * 64..(i + 1) * 64].copy_from_slice(&hash);
+        }
+    }
+
+    cache
+}
+
+/// Light cache used for on-GPU Ethash / ProgPoW DAG generation.
+struct LightCache {
+    cache: Vec<u8>,
+    cache_size: u64,
+    cache_items: u64,
+    dag_size_entries: u64,
+}
+
+impl LightCache {
+    fn as_slice(&self) -> &[u8] {
+        &self.cache
+    }
+}
+
+fn generate_ethash_light_cache_rust(epoch: u32) -> Option<LightCache> {
+    let cache = generate_light_cache(epoch);
+    if cache.is_empty() {
+        return None;
+    }
+    let cache_size = cache_size_for_epoch(epoch);
+    let cache_items = cache_size / 64;
+    let dag_size = dataset_size_for_epoch(epoch);
+    let dag_size_entries = dag_size / 128;
+    Some(LightCache {
+        cache,
+        cache_size,
+        cache_items,
+        dag_size_entries,
+    })
+}
+
 /// A found share from GPU mining.
 #[derive(Debug, Clone)]
 pub struct GpuFoundShare {
@@ -2273,8 +2413,6 @@ typedef unsigned long ulong;
                 return Ok(());
             }
         }
-        use zion_native_ffi::etchash::generate_light_cache as generate_ethash_light_cache_rust;
-
         eprintln!(
             "dag_manager: generating Ethash light cache epoch={} on CPU (pure-Rust)...",
             epoch
@@ -2327,8 +2465,6 @@ typedef unsigned long ulong;
                 return Ok(());
             }
         }
-        use zion_native_ffi::etchash::generate_light_cache as generate_ethash_light_cache_rust;
-
         eprintln!(
             "dag_manager: generating ProgPow light cache epoch={} on CPU (pure-Rust)...",
             epoch

@@ -1524,7 +1524,7 @@ fn is_prime_u64(n: u64) -> bool {
 ///
 /// Follows the Ethash/ProgPoW spec: linear growth rounded down to the largest
 /// size whose number of 64-byte items is prime.
-fn cache_size_for_epoch(epoch: u32) -> u64 {
+pub(crate) fn cache_size_for_epoch(epoch: u32) -> u64 {
     let mut items =
         (CACHE_BYTES_INIT + (epoch as u64) * CACHE_BYTES_GROWTH - HASH_BYTES) / HASH_BYTES;
     while !is_prime_u64(items) {
@@ -1537,7 +1537,7 @@ fn cache_size_for_epoch(epoch: u32) -> u64 {
 ///
 /// Follows the Ethash/ProgPoW spec: linear growth rounded down to the largest
 /// size whose number of 128-byte items is prime.
-fn dataset_size_for_epoch(epoch: u32) -> u64 {
+pub(crate) fn dataset_size_for_epoch(epoch: u32) -> u64 {
     let mut items =
         (DATASET_BYTES_INIT + (epoch as u64) * DATASET_BYTES_GROWTH - MIX_BYTES) / MIX_BYTES;
     while !is_prime_u64(items) {
@@ -1560,7 +1560,7 @@ fn seed_hash_for_epoch(epoch: u32) -> [u8; 32] {
 
 /// Generate the Ethash/Kawpow light cache for a given epoch.
 /// Returns a Vec<u8> of size cache_size_for_epoch(epoch).
-fn generate_light_cache(epoch: u32) -> Vec<u8> {
+pub(crate) fn generate_light_cache(epoch: u32) -> Vec<u8> {
     use sha3::{Digest, Keccak512};
 
     let cache_size = cache_size_for_epoch(epoch) as usize;

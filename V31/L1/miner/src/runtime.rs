@@ -130,6 +130,8 @@ pub enum MinerError {
     #[cfg(feature = "auxpow")]
     #[error("no AuxPoW solution")]
     NoAuxPoWSolution,
+    #[error("connection error: {0}")]
+    Connection(String),
     #[error("shutdown requested")]
     Shutdown,
     #[error("task join error: {0}")]
@@ -1137,7 +1139,7 @@ impl MinerRuntime {
                             } else {
                                 // Wait for first job
                                 let bundle = client.next_job(Duration::from_secs(60)).await
-                                    .map_err(|e| MinerError::Consensus(format!("V3 job: {e}")))?;
+                                    .map_err(|e| MinerError::Connection(format!("V3 job: {e}")))?;
                                 this.zion_nonce_cursor.store(
                                     bundle.zion.start_nonce,
                                     std::sync::atomic::Ordering::Relaxed,
@@ -1171,6 +1173,10 @@ impl MinerRuntime {
                                 }
                                 Err(e) => {
                                     warn!(error = %e, "V3 Trinity: ZION mining error");
+                                    if matches!(e, MinerError::Connection(_)) {
+                                        eprintln!("v3_trinity zion_ext_error: {}, reconnecting", e);
+                                        return Err(e);
+                                    }
                                     sleep(Duration::from_millis(100)).await;
                                 }
                             }
@@ -1210,7 +1216,7 @@ impl MinerRuntime {
                                     }
                                     Err(e) => {
                                         warn!(error = %e, "V3 Trinity: ZION job wait error");
-                                        sleep(Duration::from_secs(5)).await;
+                                        return Err(MinerError::Connection(format!("V3 job wait: {e}")));
                                     }
                                 }
                             }
@@ -1239,7 +1245,13 @@ impl MinerRuntime {
                 while bundle.is_none() {
                     tokio::select! {
                         _ = shutdown.changed() => return Ok(()),
-                        _ = job_rx.changed() => {
+                        result = job_rx.changed() => {
+                            if result.is_err() {
+                                warn!("V3 Trinity: external job channel closed");
+                                return Err(MinerError::Connection(
+                                    "external job watch channel closed".into(),
+                                ));
+                            }
                             bundle = (*job_rx.borrow_and_update()).clone();
                         }
                     }
@@ -1264,14 +1276,26 @@ impl MinerRuntime {
                             Err(e) => {
                                 eprintln!("v3_trinity gpu_ext_error: {}", e);
                                 warn!(error = %e, "V3 Trinity: GPU AuxPoW error");
+                                if matches!(e, MinerError::Connection(_)) {
+                                    return Err(e);
+                                }
                             }
                         }
                     }
-                    if let Ok(true) = job_rx.has_changed() {
-                        bundle = match (*job_rx.borrow_and_update()).clone() {
-                            Some(b) => b,
-                            None => break,
-                        };
+                    match job_rx.has_changed() {
+                        Ok(true) => {
+                            bundle = match (*job_rx.borrow_and_update()).clone() {
+                                Some(b) => b,
+                                None => break,
+                            };
+                        }
+                        Ok(false) => {}
+                        Err(_) => {
+                            warn!("V3 Trinity: external job watch channel closed, exiting");
+                            return Err(MinerError::Connection(
+                                "external job watch channel closed".into(),
+                            ));
+                        }
                     }
                 }
                 Ok::<(), MinerError>(())
@@ -1297,7 +1321,13 @@ impl MinerRuntime {
                 while bundle.is_none() {
                     tokio::select! {
                         _ = shutdown.changed() => return Ok(()),
-                        _ = job_rx.changed() => {
+                        result = job_rx.changed() => {
+                            if result.is_err() {
+                                warn!("V3 Trinity: external job channel closed");
+                                return Err(MinerError::Connection(
+                                    "external job watch channel closed".into(),
+                                ));
+                            }
                             bundle = (*job_rx.borrow_and_update()).clone();
                         }
                     }
@@ -1320,14 +1350,26 @@ impl MinerRuntime {
                             Err(e) => {
                                 eprintln!("v3_trinity cpu_ext_error: {}", e);
                                 warn!(error = %e, "V3 Trinity: CPU AuxPoW error");
+                                if matches!(e, MinerError::Connection(_)) {
+                                    return Err(e);
+                                }
                             }
                         }
                     }
-                    if let Ok(true) = job_rx.has_changed() {
-                        bundle = match (*job_rx.borrow_and_update()).clone() {
-                            Some(b) => b,
-                            None => break,
-                        };
+                    match job_rx.has_changed() {
+                        Ok(true) => {
+                            bundle = match (*job_rx.borrow_and_update()).clone() {
+                                Some(b) => b,
+                                None => break,
+                            };
+                        }
+                        Ok(false) => {}
+                        Err(_) => {
+                            warn!("V3 Trinity: external job watch channel closed, exiting");
+                            return Err(MinerError::Connection(
+                                "external job watch channel closed".into(),
+                            ));
+                        }
                     }
                 }
                 Ok::<(), MinerError>(())
@@ -1435,7 +1477,7 @@ impl MinerRuntime {
         let result = client
             .submit_zion_share(job.job_id, nonce, &hash_hex, None, nonces_searched, elapsed_ms)
             .await
-            .map_err(|e| MinerError::Consensus(format!("V3 submit: {e}")))?;
+            .map_err(|e| MinerError::Connection(format!("V3 submit: {e}")))?;
 
         if result.accepted {
             info!(
@@ -1488,25 +1530,6 @@ impl MinerRuntime {
         let copy_len = target_vec.len().min(32);
         target[..copy_len].copy_from_slice(&target_vec[..copy_len]);
 
-        // Extract solution and ntime from the header for ZcashStratum (VRSC) submit.
-        // Header layout: version(4) + prevhash(32) + merkle(32) + reserved(32) +
-        //                ntime(4) + nbits(4) + nonce(32) + varint + solution
-        // ntime is at offset 100, 4 bytes.
-        // Solution (WITH varint prefix) starts at offset 140.
-        // LuckPool expects the full solution including the CompactSize varint prefix.
-        let (solution_hex, ntime_hex) = if ext.algorithm.contains("verushash") || ext.protocol == "zcashstratum" {
-            let ntime_hex = if header.len() >= 104 {
-                hex::encode(&header[100..104])
-            } else { String::new() };
-            // Include varint prefix in solution (starts at offset 140)
-            let sol_hex = if header.len() > 140 {
-                hex::encode(&header[140..])
-            } else { String::new() };
-            (sol_hex, ntime_hex)
-        } else {
-            (String::new(), String::new())
-        };
-
         let job = Job {
             job_id: ext.job_id.clone(),
             coin,
@@ -1528,17 +1551,10 @@ impl MinerRuntime {
         let share = self.mine_auxpow_share_batch(stream, &job, batch).await?;
         eprintln!("v3_trinity mined_ext_share stream={:?} coin={} nonce={}", stream, coin, share.nonce);
 
-        // Stale job check: if the V3 pool has pushed a new job bundle since we
-        // started mining, the external job_id may be expired on the upstream
-        // pool (e.g. VRSC rotates job_ids every ~30s). Skip submission to
-        // avoid "job not found" rejections.
-        if job_rx.has_changed().unwrap_or(false) {
-            eprintln!(
-                "v3_trinity stale_ext_share stream={:?} coin={} nonce={} — job changed, skipping submit",
-                stream, coin, share.nonce
-            );
-            return Ok(false);
-        }
+        // V3 philosophy: submit ALL shares immediately, no stale check.
+        // The upstream pool (LuckPool/HeroMiners) will decide if the share
+        // is stale. Pre-rejecting here only reduces accept rate.
+        let _ = job_rx; // suppress unused warning
 
         // Submit via V3PoolClient → pool forwards to external pool
         let hash_hex = hex::encode(&share.hash);
@@ -1558,7 +1574,7 @@ impl MinerRuntime {
                 &ntime_hex,
             )
             .await
-            .map_err(|e| MinerError::Consensus(format!("V3 external submit: {e}")))?;
+            .map_err(|e| MinerError::Connection(format!("V3 external submit: {e}")))?;
 
         // Record stats
         let share_result = if result.accepted {
@@ -1648,7 +1664,7 @@ impl MinerRuntime {
             .ok_or_else(|| MinerError::Consensus("stratum client missing".to_string()))?;
 
         let next_timeout = Duration::from_secs(60);
-        let mut stratum_job = client
+        let stratum_job = client
             .next_job(coin, next_timeout)
             .await
             .map_err(|e| MinerError::Consensus(format!("stratum job error: {e}")))?;

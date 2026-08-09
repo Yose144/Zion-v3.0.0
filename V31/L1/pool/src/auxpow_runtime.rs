@@ -377,49 +377,20 @@ async fn forward_share_to_upstream(
 ) -> ShareForwardOutcome {
     let _ = coin; // coin is implicit in the client config
 
-    // Stale job check: for fast-block coins (VRSC ~60s, ZANO ~30s), the
-    // upstream pool may have already rotated to a new job by the time a
-    // miner submits a share.  We use two checks:
+    // V3 philosophy: forward ALL shares to the upstream pool and let the
+    // upstream pool decide.  No pre-rejection, no per-job duplicate prevention,
+    // no job_id mismatch check, no age-based stale check.
     //
-    // 1. job_id mismatch: if our client's latest_job_id differs from the
-    //    share's job_id, the job is definitely stale (we already received
-    //    a newer notify).
+    // The V3 reference implementation (archive/AuXpow/src/share_forwarder.rs)
+    // explicitly does NOT check latest_job_id mismatch because:
+    //   "If we rejected shares whenever job_id != latest_job_id, we would
+    //    pre-reject valid shares that LuckPool would have accepted — the
+    //    miner is legitimately still working on the previous job which is
+    //    still valid upstream."
     //
-    // 2. job age: even if the job_id matches, the upstream pool may have
-    //    rotated to a new block but we haven't received the new notify yet.
-    //    If the job is older than a coin-specific threshold, skip the
-    //    submission to avoid "job not found" rejections.
-    if let Some(latest_jid) = client.latest_job_id().await {
-        if latest_jid != req.job_id {
-            tracing::info!(
-                "auxpow[{:?}]: stale share skipped (job_id mismatch) job={} latest={} nonce={}",
-                coin, req.job_id, latest_jid, req.nonce
-            );
-            return ShareForwardOutcome::Result(ShareForwardResult::Rejected(
-                "stale job".to_string(),
-            ));
-        }
-
-        // Time-based staleness: VRSC blocks are ~60s, ZANO ~30s.
-        // Use 50s for VRSC (VerusHash) and 28s for ZANO (ProgPoW).
-        // For other coins, use a generous 120s default.
-        let max_age_secs: u64 = match coin {
-            ExternalCoin::Verus => 50,
-            ExternalCoin::Zano => 28,
-            _ => 120,
-        };
-        if let Some(age) = client.latest_job_age().await {
-            if age.as_secs() >= max_age_secs {
-                tracing::info!(
-                    "auxpow[{:?}]: stale share skipped (age {}s >= {}s) job={} nonce={}",
-                    coin, age.as_secs(), max_age_secs, req.job_id, req.nonce
-                );
-                return ShareForwardOutcome::Result(ShareForwardResult::Rejected(
-                    "stale job".to_string(),
-                ));
-            }
-        }
-    }
+    // VRSC stale threshold defaults to 0 (disabled) in V3.
+    // ZANO (GPU coin) has no stale check at all in V3 (only CPU coins checked).
+    // No per-job dup prevention in V3 — every share is forwarded.
 
     // If header_bytes is empty, pass None so submit_share falls back to job_id
     // (which is the block header hash for EthStratum pools like HeroMiners).
@@ -444,6 +415,19 @@ async fn forward_share_to_upstream(
         req.job_id, req.nonce, ntime_val, ntime_val.len(), extranonce2.len(),
         req.solution_hex.len(), req.solution_hex.len() / 2
     );
+    // Detailed logging for ProgPoW/EthStratum coins (ZANO) to diagnose
+    // "Duplicate share" rejects.  Log mix_hash and header_hash so we can
+    // verify the share data is correct.
+    if matches!(coin, ExternalCoin::Zano) {
+        tracing::info!(
+            "auxpow[ZANO] submit_detail job={} nonce={} mix_hash={} header_hash={} hash_hex={}",
+            req.job_id,
+            req.nonce,
+            req.mix_hash_hex.as_deref().unwrap_or("(none)"),
+            header_hash_opt.as_deref().unwrap_or("(none)"),
+            if req.hash_hex.is_empty() { "(empty)" } else { &req.hash_hex[..req.hash_hex.len().min(16)] }
+        );
+    }
     match client
         .submit_share(
             &req.job_id,
