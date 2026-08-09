@@ -184,12 +184,6 @@ export default function AmentiPage() {
               <span className="text-xs font-bold text-[#078930]">{t.featuredBookTag}</span>
               <h3 className="!my-2 text-[#fcd116]">{t.featuredBookTitle}</h3>
               <p className="!text-white/70">{t.featuredBookDesc}</p>
-              <a
-                href="/legacy/books/QuantumRevolution.zip"
-                className="button primary small rasta-gold mt-4 inline-flex"
-              >
-                <LucideIcon name="fa-file-zipper" size={16} className="mr-2" /> {t.featuredBookCta}
-              </a>
               <p className="!mt-3 !text-xs !text-white/50">CZ · EN · ES · FR · PT · DE · JP · HI · LA · SANS · HAW</p>
             </div>
           </div>
@@ -306,14 +300,6 @@ export default function AmentiPage() {
         <section id="cta" className="text-center">
           <h2 className="major">{t.ctaTitle}</h2>
           <p>{t.ctaP1}</p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <a href="/legacy/shop.html" className="button primary small rasta-gold">
-              <LucideIcon name="fa-cart-shopping" size={16} className="mr-2" /> {t.shopCta}
-            </a>
-            <a href="/legacy/donate.html" className="button primary small rasta-green">
-              <LucideIcon name="fa-hand-holding-heart" size={16} className="mr-2" /> {t.donateCta}
-            </a>
-          </div>
         </section>
       </article>
     </PageLayout>

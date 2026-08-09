@@ -122,9 +122,6 @@ export default function CampPage() {
             <a href="/" className="button primary small rasta-green">
               <LucideIcon name="fa-arrow-left" size={16} className="mr-2" /> {t.vision.homeCta}
             </a>
-            <a href="/legacy/shop.html" className="button primary small rasta-gold">
-              <LucideIcon name="fa-cart-shopping" size={16} className="mr-2" /> {t.vision.shopCta}
-            </a>
           </div>
         </section>
 

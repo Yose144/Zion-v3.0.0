@@ -236,9 +236,6 @@ export default function SeedsDetailClient({ slug }: { slug: string }) {
             <div className="mb-4 text-3xl font-bold text-[#fcd116]">
               {strain.cta.price}
             </div>
-            <a href="/legacy/shop.html" className="button primary small rasta-green">
-              <LucideIcon name="fa-cart-plus" size={16} className="mr-2" /> {strain.cta.buy}
-            </a>
           </div>
         </section>
 
