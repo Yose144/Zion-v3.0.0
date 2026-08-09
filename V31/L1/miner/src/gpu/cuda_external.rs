@@ -254,6 +254,10 @@ pub struct CudaExternalMiner {
     progpow_dag_elements: u64,
     // ProgPoW: g_output buffer for the kernel's compatibility output slots.
     progpow_g_output: Option<CudaSlice<u32>>,
+    // KawPow: job_blob (10 u32), results (16 u32), stop (2 u32)
+    kawpow_job_blob: Option<CudaSlice<u32>>,
+    kawpow_results: Option<CudaSlice<u32>>,
+    kawpow_stop: Option<CudaSlice<u32>>,
 }
 
 impl CudaExternalMiner {
@@ -351,6 +355,26 @@ impl CudaExternalMiner {
             None
         };
 
+        // KawPow: allocate job_blob (10 u32), results (16 u32), stop (2 u32)
+        let (kawpow_job_blob, kawpow_results, kawpow_stop) = if algo == CudaExtAlgo::Kawpow {
+            (
+                Some(
+                    dev.htod_copy(vec![0u32; 10])
+                        .map_err(|e| anyhow::anyhow!("kawpow_job_blob alloc: {e}"))?,
+                ),
+                Some(
+                    dev.htod_copy(vec![0u32; 16])
+                        .map_err(|e| anyhow::anyhow!("kawpow_results alloc: {e}"))?,
+                ),
+                Some(
+                    dev.htod_copy(vec![0u32; 2])
+                        .map_err(|e| anyhow::anyhow!("kawpow_stop alloc: {e}"))?,
+                ),
+            )
+        } else {
+            (None, None, None)
+        };
+
         // Allow larger work sizes for ProgPoW to reduce kernel launch
         // overhead and improve occupancy on Pascal+.  The previous 1M cap
         // was conservative; 4M gives the GPU bigger batches to chew on
@@ -396,6 +420,9 @@ impl CudaExternalMiner {
             progpow_period: 0xFFFFFFFF,
             progpow_dag_elements: 0,
             progpow_g_output,
+            kawpow_job_blob,
+            kawpow_results,
+            kawpow_stop,
         })
     }
 
@@ -903,20 +930,64 @@ impl CudaExternalMiner {
                             .dag_buf
                             .as_ref()
                             .ok_or_else(|| anyhow::anyhow!("kawpow DAG not loaded"))?;
-                        let dag_entries = self.dag_size_entries;
+                        let job_blob = self
+                            .kawpow_job_blob
+                            .as_mut()
+                            .ok_or_else(|| anyhow::anyhow!("kawpow job_blob not allocated"))?;
+                        let results = self
+                            .kawpow_results
+                            .as_mut()
+                            .ok_or_else(|| anyhow::anyhow!("kawpow results not allocated"))?;
+                        let stop = self
+                            .kawpow_stop
+                            .as_mut()
+                            .ok_or_else(|| anyhow::anyhow!("kawpow stop not allocated"))?;
+
+                        // Build job_blob: header[32] + nonce[8] = 40 bytes = 10 uint32
+                        // The kernel adds gid to job_blob[8], so we put base_nonce there.
+                        let mut blob = [0u32; 10];
+                        for i in 0..8 {
+                            blob[i] = u32::from_le_bytes([
+                                header[i * 4],
+                                header[i * 4 + 1],
+                                header[i * 4 + 2],
+                                header[i * 4 + 3],
+                            ]);
+                        }
+                        blob[8] = (current_nonce & 0xFFFFFFFF) as u32;
+                        blob[9] = (current_nonce >> 32) as u32;
+                        self.dev
+                            .htod_copy_into(blob.to_vec(), job_blob)
+                            .map_err(|e| anyhow::anyhow!("kawpow job_blob upload: {e}"))?;
+
+                        // Reset results and stop buffers
+                        self.dev
+                            .htod_copy_into(vec![0u32; 16], results)
+                            .map_err(|e| anyhow::anyhow!("kawpow results reset: {e}"))?;
+                        self.dev
+                            .htod_copy_into(vec![0u32; 2], stop)
+                            .map_err(|e| anyhow::anyhow!("kawpow stop reset: {e}"))?;
+
+                        // Convert 32-byte big-endian target to u64
+                        let target_u64 = u64::from_be_bytes([
+                            target[0], target[1], target[2], target[3], target[4], target[5],
+                            target[6], target[7],
+                        ]);
+                        let hack_false: u32 = 0;
                         func.clone()
                             .launch(
                                 cfg,
                                 (
-                                    &self.header_buf,
-                                    &self.target_buf,
-                                    current_nonce,
                                     dag,
-                                    dag_entries,
+                                    job_blob,
+                                    target_u64,
+                                    hack_false,
+                                    results,
+                                    stop,
                                     &mut self.output_nonce,
-                                    &mut self.output_hash,
                                     &mut self.output_mix,
                                     &mut self.found_flag,
+                                    &mut self.output_hash,
                                 ),
                             )
                             .map_err(|e| anyhow::anyhow!("kawpow launch: {e}"))?;
@@ -953,6 +1024,7 @@ impl CudaExternalMiner {
                                     &mut self.output_nonce,
                                     &mut self.output_mix,
                                     &mut self.found_flag,
+                                    &mut self.output_hash,
                                 ),
                             )
                             .map_err(|e| anyhow::anyhow!("progpow launch: {e}"))?;

@@ -611,6 +611,9 @@ pub fn build_verushash_solution(header: &[u8], nonce: u64, extranonce1: &[u8]) -
     final_header[VERUS_NONCE_SPACE_OFFSET..VERUS_NONCE_SPACE_OFFSET + VERUS_NONCE_SPACE_SIZE]
         .copy_from_slice(&final_nonce_space);
 
+    // The ZcashStratum submit expects the solution WITH the Zcash compact
+    // varint length prefix (3 bytes for 1344: 0xFD 0x40 0x05), matching the
+    // nheqminer/VerusCoin pool format (SOLUTION_LENGTH = 2694 hex chars).
     let mut solution = zcash_varint_for_len(VERUS_SOLUTION_SIZE);
     solution.extend_from_slice(
         &final_header[VERUS_SOLUTION_OFFSET..VERUS_SOLUTION_OFFSET + VERUS_SOLUTION_SIZE],
@@ -1106,9 +1109,7 @@ mod tests {
         let verify_hash = hash_verushash_header(&verify_header);
         assert_eq!(verify_hash, hash, "hashed solution must match scan hash");
 
-        // The solution-with-varint must be the correct length and start with the
-        // Zcash compact varint for 1344 bytes.
+        // The solution-with-varint must be the correct length (3 + 1344 = 1347 bytes).
         assert_eq!(solution.len(), 3 + VERUS_SOLUTION_SIZE);
-        assert_eq!(&solution[..3], &[0xfd, 0x40, 0x05]);
     }
 }

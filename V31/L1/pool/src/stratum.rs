@@ -737,6 +737,7 @@ impl StratumServer {
                         protocol: "stratum".to_string(),
                         seed_hash_hex: String::new(),
                         timestamp: 0,
+                        ntime_hex: job.ntime.clone(),
                     });
                 }
             }
@@ -765,6 +766,7 @@ impl StratumServer {
                         protocol: "stratum".to_string(),
                         seed_hash_hex: String::new(),
                         timestamp: 0,
+                        ntime_hex: job.ntime.clone(),
                     });
                 }
             }

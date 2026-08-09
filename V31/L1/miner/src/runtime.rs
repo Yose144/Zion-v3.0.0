@@ -13,6 +13,7 @@ use zion_core::{
     Block, BlockHeader, ConsensusEngine, EkamDeeksha, Transaction, TransactionInput,
     TransactionOutput,
 };
+use zion_cosmic_harmony::PowAlgorithm;
 use zion_l1_types::{Amount, Hash};
 
 #[cfg(feature = "auxpow")]
@@ -164,6 +165,12 @@ pub struct MinerRuntime {
     /// re-scan from 0. Wrapped in a mutex for safe concurrent access.
     zion_nonce_cursor: Arc<std::sync::atomic::AtomicU64>,
     #[cfg(feature = "auxpow")]
+    /// Stream 2 (GPU external AuxPoW) nonce cursor.
+    gpu_ext_nonce_cursor: Arc<std::sync::atomic::AtomicU64>,
+    #[cfg(feature = "auxpow")]
+    /// Stream 3 (CPU external AuxPoW) nonce cursor.
+    cpu_ext_nonce_cursor: Arc<std::sync::atomic::AtomicU64>,
+    #[cfg(feature = "auxpow")]
     scheduler: Arc<Mutex<AuxPoWScheduler>>,
     #[cfg(feature = "auxpow")]
     gpu_client: Arc<Mutex<Option<StratumClient>>>,
@@ -206,10 +213,22 @@ impl MinerRuntime {
         // ── Initialize GPU backend for Stream 1 (ZION deeksha) ──
         // When gpu_backend is not "cpu", create a GPU miner (CUDA/OpenCL/Metal)
         // for the canonical deeksha_lite_v1 algorithm. Falls back to CPU if init fails.
+        // If Stream 2 (GPU AuxPoW) is also enabled, avoid creating a second GPU context
+        // on the same device — DAG-based external algorithms (ProgPoW/Ethash/KawPow)
+        // need large contiguous VRAM and concurrent ZION + external contexts cause
+        // CL_MEM_OBJECT_ALLOCATION_FAILURE on consumer cards.  Users can force ZION
+        // GPU with `ZION_ZION_GPU=1` if they have enough VRAM.
         let gpu_backend_str = config.gpu_backend.clone();
         let gpu_zion: Arc<std::sync::Mutex<Option<Box<dyn GpuMiner>>>> =
             Arc::new(std::sync::Mutex::new(None));
-        if gpu_backend_str != "cpu" && !gpu_backend_str.is_empty() {
+        let force_zion_gpu = std::env::var("ZION_ZION_GPU")
+            .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+            .unwrap_or(false);
+        let skip_zion_gpu = config.stream2_enabled
+            && gpu_backend_str != "cpu"
+            && !gpu_backend_str.is_empty()
+            && !force_zion_gpu;
+        if !skip_zion_gpu && gpu_backend_str != "cpu" && !gpu_backend_str.is_empty() {
             let kind = parse_gpu_backend(&gpu_backend_str);
             let work_size = std::env::var("ZION_GPU_WORK_SIZE")
                 .ok()
@@ -258,6 +277,8 @@ impl MinerRuntime {
                 gpu_ext: Arc::new(std::sync::Mutex::new(None)),
                 gpu_ext_algo: Arc::new(std::sync::Mutex::new(None)),
                 zion_nonce_cursor: Arc::new(std::sync::atomic::AtomicU64::new(0)),
+                gpu_ext_nonce_cursor: Arc::new(std::sync::atomic::AtomicU64::new(0)),
+                cpu_ext_nonce_cursor: Arc::new(std::sync::atomic::AtomicU64::new(0)),
                 scheduler: Arc::new(Mutex::new(AuxPoWScheduler::new(
                     hashrate_per_unit,
                     stream2_force_coin,
@@ -533,17 +554,6 @@ impl MinerRuntime {
         job: &Job,
         batch: u64,
     ) -> Result<Share, MinerError> {
-        self.mine_auxpow_share_batch_from(stream, job, batch, 0).await
-    }
-
-    /// Like `mine_auxpow_share_batch` but starts scanning from `start_nonce`.
-    pub async fn mine_auxpow_share_batch_from(
-        &self,
-        stream: StreamId,
-        job: &Job,
-        batch: u64,
-        start_nonce: u64,
-    ) -> Result<Share, MinerError> {
         // Stream 2: GPU with duty-cycle time-slicing (like V3 reference)
         if stream == StreamId::GpuExternal && self.config.gpu_backend != "cpu" {
             if let Some(share) = self.try_gpu_ext_share(job, batch).await {
@@ -569,14 +579,52 @@ impl MinerRuntime {
             // GPU failed — fall through to CPU
         }
 
+        let algorithm = job.coin.algorithm().to_string();
+        let is_dag_placeholder = algorithm.contains("ethash")
+            || algorithm.contains("etchash")
+            || algorithm.contains("kawpow")
+            || algorithm.contains("progpow")
+            || algorithm.contains("meowpow")
+            || algorithm == "evrprogpow";
+
+        // DAG-based algorithms (Ethash, KawPow, ProgPoW, etc.) require a real
+        // DAG on the GPU. The CPU fallback uses a placeholder hasher that cannot
+        // produce valid shares, so skip it entirely to avoid wasting time.
+        if is_dag_placeholder {
+            return Err(MinerError::NoAuxPoWSolution);
+        }
+
         let job = job.clone();
         let threads = self.config.miner_threads;
-        let share =
-            task::spawn_blocking(move || crate::parallel::find_auxpow_share_from(&job, threads, batch, start_nonce))
-                .await
-                .map_err(|e| MinerError::Consensus(format!("cpu scanner join: {e}")))?
-                .ok_or(MinerError::NoAuxPoWSolution)?;
-        Ok(share)
+        let start = Instant::now();
+        // Advance the CPU external nonce cursor so successive batches scan
+        // different nonces instead of re-hashing the same range (which would
+        // produce duplicate shares).
+        let nonce_start = if stream == StreamId::CpuExternal {
+            self.cpu_ext_nonce_cursor
+                .fetch_add(batch, std::sync::atomic::Ordering::Relaxed)
+        } else {
+            0
+        };
+        let share = task::spawn_blocking(move || {
+            crate::parallel::find_auxpow_share_from(&job, threads, batch, nonce_start)
+        })
+            .await
+            .map_err(|e| MinerError::Consensus(format!("cpu scanner join: {e}")))?;
+        let elapsed = start.elapsed().as_secs_f64();
+
+        if let Some(share) = share {
+            let nonces_tested = share.nonce.saturating_add(1).min(batch);
+            self.update_hashrate(stream, nonces_tested, elapsed).await;
+            Ok(share)
+        } else {
+            // DAG CPU fallback is a placeholder (hash_kawpow) and would distort
+            // the hashrate display; skip hashrate for these misses.
+            if !is_dag_placeholder {
+                self.update_hashrate(stream, batch, elapsed).await;
+            }
+            Err(MinerError::NoAuxPoWSolution)
+        }
     }
 
     /// Try GPU mining for Stream 2 (external GPU coin) using a persistent
@@ -608,8 +656,10 @@ impl MinerRuntime {
 
         let gpu_ext = self.gpu_ext.clone();
         let gpu_ext_algo = self.gpu_ext_algo.clone();
+        let gpu_ext_nonce_cursor = self.gpu_ext_nonce_cursor.clone();
         let kind = parse_gpu_backend(&self.config.gpu_backend);
 
+        let start = Instant::now();
         let gpu_result = task::spawn_blocking(move || {
             // Check if we need to (re)create the GPU backend for this algorithm
             let need_recreate = {
@@ -638,15 +688,35 @@ impl MinerRuntime {
             gpu.update_epoch(height)
                 .map_err(|e| anyhow::anyhow!("epoch update: {e}"))?;
 
+            // Advance the external GPU nonce cursor so successive batches scan
+            // different nonces instead of re-hashing the same first batch.
+            // We fetch inside the worker so we can correct the cursor if the
+            // GPU actually tests fewer nonces than requested (e.g. ProgPoW
+            // caps global work size for TTD avoidance).
+            let nonce_start = gpu_ext_nonce_cursor
+                .fetch_add(batch, std::sync::atomic::Ordering::Relaxed);
+
             let result = gpu
-                .mine_batch_raw(&header, target, 0, batch)
+                .mine_batch_raw(&header, target, nonce_start, batch)
                 .map_err(|e| anyhow::anyhow!("mine_batch_raw: {e}"))?;
+
+            let tested = result.nonces_tested.min(batch);
+            if tested < batch {
+                gpu_ext_nonce_cursor.fetch_sub(
+                    batch - tested,
+                    std::sync::atomic::Ordering::Relaxed,
+                );
+            }
+
             Ok(Some(result))
         })
         .await;
+        let elapsed = start.elapsed().as_secs_f64();
 
         match gpu_result {
             Ok(Ok(Some(gpu_result))) => {
+                let nonces_tested = gpu_result.nonces_tested.min(batch);
+                self.update_hashrate(StreamId::GpuExternal, nonces_tested, elapsed).await;
                 if let Some((nonce, hash, mix)) = gpu_result.solutions.into_iter().next() {
                     let solution =
                         if algorithm == "verushash" || algorithm.starts_with("verushash_") {
@@ -954,8 +1024,6 @@ impl MinerRuntime {
         &self,
         shutdown: watch::Receiver<bool>,
     ) -> Result<(), MinerError> {
-        use tokio::sync::broadcast;
-
         // Outer reconnect loop: if the pool connection drops, reconnect with
         // exponential backoff. This handles pool restarts and network blips.
         let mut reconnect_delay_secs: u64 = 3;
@@ -985,8 +1053,6 @@ impl MinerRuntime {
         &self,
         shutdown: watch::Receiver<bool>,
     ) -> Result<(), MinerError> {
-        use tokio::sync::broadcast;
-
         let pool_addr = self
             .config
             .pool_url
@@ -1025,8 +1091,11 @@ impl MinerRuntime {
         );
         eprintln!("v3_trinity connected pool={} miner={}", pool_addr, miner_id);
 
-        // Broadcast channel: Stream 1 receives jobs from pool, broadcasts to 2 & 3
-        let (job_tx, _) = broadcast::channel::<crate::v3_pool_client::V3JobBundle>(32);
+        // Watch channel: Stream 1 receives jobs from pool, shares the latest
+        // bundle with Stream 2 & 3. Watch always keeps the newest job, so
+        // slow streams never get lagged or stale.
+        let (job_tx, _): (watch::Sender<Option<crate::v3_pool_client::V3JobBundle>>, _) =
+            watch::channel(None);
 
         // ── Stream 1: ZION mining (GPU deeksha) — also distributes jobs ──
         let h1 = {
@@ -1063,7 +1132,7 @@ impl MinerRuntime {
                                 if let Some(ref ext) = bundle.cpu_external {
                                     eprintln!("v3_trinity cpu_external coin={} job_id={} height={}", ext.coin, ext.job_id, ext.height);
                                 }
-                                let _ = job_tx.send(bundle.clone());
+                                let _ = job_tx.send_replace(Some(bundle.clone()));
                                 current_bundle = Some(bundle);
                                 // Mine first share with the new job
                                 if let Some(bundle) = &current_bundle {
@@ -1098,7 +1167,7 @@ impl MinerRuntime {
                                 if let Some(ref ext) = new_bundle.cpu_external {
                                     eprintln!("v3_trinity cpu_external coin={} job_id={} height={}", ext.coin, ext.job_id, ext.height);
                                 }
-                                let _ = job_tx.send(new_bundle.clone());
+                                let _ = job_tx.send_replace(Some(new_bundle.clone()));
                                 current_bundle = Some(new_bundle);
                             }
 
@@ -1116,7 +1185,7 @@ impl MinerRuntime {
                                         if let Some(ref ext) = bundle.cpu_external {
                                             eprintln!("v3_trinity cpu_external coin={} job_id={} height={}", ext.coin, ext.job_id, ext.height);
                                         }
-                                        let _ = job_tx.send(bundle.clone());
+                                        let _ = job_tx.send_replace(Some(bundle.clone()));
                                         current_bundle = Some(bundle);
                                     }
                                     Err(e) => {
@@ -1133,7 +1202,7 @@ impl MinerRuntime {
         };
 
         // ── Stream 2: GPU AuxPoW (ZANO) ──
-        let h2 = {
+        let h2 = if self.config.stream2_enabled {
             let this = self.clone();
             let client = client.clone();
             let mut job_rx = job_tx.subscribe();
@@ -1143,57 +1212,56 @@ impl MinerRuntime {
                 if !stream2_enabled {
                     return Ok::<(), MinerError>(());
                 }
-                // Cache the current GPU external job so we keep mining it
-                // across multiple batches instead of waiting for a new job
-                // broadcast after each batch.
-                let mut current_ext: Option<crate::pool_message::ExternalStreamJob> = None;
-                let mut nonce_cursor: u64 = 0;
-                let batch_size = this.config.stream2_batch;
-                loop {
+
+                // Wait for the first job bundle.
+                let mut bundle: Option<crate::v3_pool_client::V3JobBundle> =
+                    (*job_rx.borrow_and_update()).clone();
+                while bundle.is_none() {
                     tokio::select! {
-                        _ = shutdown.changed() => break,
-                        // Update cached job when a new broadcast arrives
-                        bundle = job_rx.recv() => {
-                            if let Ok(bundle) = bundle {
-                                if let Some(ext) = bundle.gpu_external {
-                                    // Only reset cursor if the job_id actually changed
-                                    let old_id = current_ext.as_ref().map(|e| e.job_id.clone()).unwrap_or_default();
-                                    if ext.job_id != old_id {
-                                        nonce_cursor = 0;
-                                    }
-                                    current_ext = Some(ext);
-                                }
+                        _ = shutdown.changed() => return Ok(()),
+                        _ = job_rx.changed() => {
+                            bundle = (*job_rx.borrow_and_update()).clone();
+                        }
+                    }
+                }
+                let mut bundle = bundle.unwrap();
+
+                // Continuously mine the current GPU external job, checking the
+                // watch channel for a newer bundle after each batch.
+                loop {
+                    if *shutdown.borrow() {
+                        break;
+                    }
+                    this.mark_active(StreamId::GpuExternal).await;
+                    if let Some(ref ext) = bundle.gpu_external {
+                        match this
+                            .mine_v3_external_share(&client, StreamId::GpuExternal, ext, &job_rx)
+                            .await
+                        {
+                            Ok(true) => {}
+                            Ok(false) => {}
+                            Err(MinerError::NoAuxPoWSolution) => {}
+                            Err(e) => {
+                                eprintln!("v3_trinity gpu_ext_error: {}", e);
+                                warn!(error = %e, "V3 Trinity: GPU AuxPoW error");
                             }
                         }
-                        // Mine the current job — loops rapidly through batches
-                        result = async {
-                            match &current_ext {
-                                Some(ext) => this.mine_v3_external_share(&client, StreamId::GpuExternal, ext, nonce_cursor).await,
-                                None => {
-                                    sleep(Duration::from_millis(500)).await;
-                                    Ok(false)
-                                }
-                            }
-                        } => {
-                            this.mark_active(StreamId::GpuExternal).await;
-                            match result {
-                                Ok(_) => { nonce_cursor = nonce_cursor.wrapping_add(batch_size); }
-                                Err(MinerError::NoAuxPoWSolution) => { nonce_cursor = nonce_cursor.wrapping_add(batch_size); }
-                                Err(e) => {
-                                    eprintln!("v3_trinity gpu_ext_error: {}", e);
-                                    warn!(error = %e, "V3 Trinity: GPU AuxPoW error");
-                                    sleep(Duration::from_millis(50)).await;
-                                }
-                            }
-                        }
+                    }
+                    if let Ok(true) = job_rx.has_changed() {
+                        bundle = match (*job_rx.borrow_and_update()).clone() {
+                            Some(b) => b,
+                            None => break,
+                        };
                     }
                 }
                 Ok::<(), MinerError>(())
             })
+        } else {
+            tokio::spawn(async move { Ok::<(), MinerError>(()) })
         };
 
         // ── Stream 3: CPU AuxPoW (VRSC) ──
-        let h3 = {
+        let h3 = if self.config.stream3_enabled {
             let this = self.clone();
             let client = client.clone();
             let mut job_rx = job_tx.subscribe();
@@ -1203,56 +1271,49 @@ impl MinerRuntime {
                 if !stream3_enabled {
                     return Ok::<(), MinerError>(());
                 }
-                // Cache the current CPU external job so we keep mining it
-                // across multiple batches instead of waiting for a new job
-                // broadcast after each batch.
-                let mut current_ext: Option<crate::pool_message::ExternalStreamJob> = None;
-                let mut nonce_cursor: u64 = 0;
-                let batch_size = this.config.stream3_batch;
-                loop {
+
+                let mut bundle: Option<crate::v3_pool_client::V3JobBundle> =
+                    (*job_rx.borrow_and_update()).clone();
+                while bundle.is_none() {
                     tokio::select! {
-                        _ = shutdown.changed() => break,
-                        // Update cached job when a new broadcast arrives
-                        bundle = job_rx.recv() => {
-                            if let Ok(bundle) = bundle {
-                                if let Some(ext) = bundle.cpu_external {
-                                    // Only reset cursor if the job_id actually changed
-                                    let old_id = current_ext.as_ref().map(|e| e.job_id.clone()).unwrap_or_default();
-                                    if ext.job_id != old_id {
-                                        nonce_cursor = 0;
-                                    }
-                                    current_ext = Some(ext);
-                                }
+                        _ = shutdown.changed() => return Ok(()),
+                        _ = job_rx.changed() => {
+                            bundle = (*job_rx.borrow_and_update()).clone();
+                        }
+                    }
+                }
+                let mut bundle = bundle.unwrap();
+
+                loop {
+                    if *shutdown.borrow() {
+                        break;
+                    }
+                    this.mark_active(StreamId::CpuExternal).await;
+                    if let Some(ref ext) = bundle.cpu_external {
+                        match this
+                            .mine_v3_external_share(&client, StreamId::CpuExternal, ext, &job_rx)
+                            .await
+                        {
+                            Ok(true) => {}
+                            Ok(false) => {}
+                            Err(MinerError::NoAuxPoWSolution) => {}
+                            Err(e) => {
+                                eprintln!("v3_trinity cpu_ext_error: {}", e);
+                                warn!(error = %e, "V3 Trinity: CPU AuxPoW error");
                             }
                         }
-                        // Mine the current job — loops rapidly through batches
-                        result = async {
-                            match &current_ext {
-                                Some(ext) => this.mine_v3_external_share(&client, StreamId::CpuExternal, ext, nonce_cursor).await,
-                                None => {
-                                    sleep(Duration::from_millis(500)).await;
-                                    Ok(false)
-                                }
-                            }
-                        } => {
-                            this.mark_active(StreamId::CpuExternal).await;
-                            match result {
-                                Ok(_) => { nonce_cursor = nonce_cursor.wrapping_add(batch_size); }
-                                Err(MinerError::NoAuxPoWSolution) => { nonce_cursor = nonce_cursor.wrapping_add(batch_size); }
-                                Err(e) => {
-                                    // NoAuxPoWSolution is expected — don't log, try next batch immediately
-                                    if !matches!(e, MinerError::NoAuxPoWSolution) {
-                                        eprintln!("v3_trinity cpu_ext_error: {}", e);
-                                        warn!(error = %e, "V3 Trinity: CPU AuxPoW error");
-                                        sleep(Duration::from_millis(50)).await;
-                                    }
-                                }
-                            }
-                        }
+                    }
+                    if let Ok(true) = job_rx.has_changed() {
+                        bundle = match (*job_rx.borrow_and_update()).clone() {
+                            Some(b) => b,
+                            None => break,
+                        };
                     }
                 }
                 Ok::<(), MinerError>(())
             })
+        } else {
+            tokio::spawn(async move { Ok::<(), MinerError>(()) })
         };
 
         let mut shutdown_for_changed = shutdown.clone();
@@ -1343,6 +1404,14 @@ impl MinerRuntime {
 
         let hash_hex = hex::encode(&hash_bytes);
         let elapsed_ms = (elapsed * 1000.0) as u64;
+
+        // Diagnostic: verify locally with the same EkamDeeksha reference the pool uses
+        let local_ok = zion_cosmic_harmony::EkamDeeksha::new().verify(&header, nonce, &target_bytes);
+        eprintln!(
+            "SHARE candidate job_id={} height={} nonce={} local_verify={} hash_hex={} target_hex={} header_hex={}",
+            job.job_id, job.height, nonce, local_ok, hash_hex, job.target_hex, job.header_hex
+        );
+
         let result = client
             .submit_zion_share(job.job_id, nonce, &hash_hex, None, nonces_searched, elapsed_ms)
             .await
@@ -1362,6 +1431,10 @@ impl MinerRuntime {
                 status = %result.status,
                 "V3 Trinity: ZION share rejected"
             );
+            eprintln!(
+                "SHARE rejected job_id={} height={} nonce={} status={} hash_hex={} target_hex={} header_hex={}",
+                job.job_id, job.height, nonce, result.status, hash_hex, job.target_hex, job.header_hex
+            );
             self.record_rejected(StreamId::Zion).await;
         }
 
@@ -1376,7 +1449,7 @@ impl MinerRuntime {
         client: &V3PoolClient,
         stream: StreamId,
         ext: &ExternalStreamJob,
-        start_nonce: u64,
+        job_rx: &tokio::sync::watch::Receiver<Option<crate::v3_pool_client::V3JobBundle>>,
     ) -> Result<bool, MinerError> {
         use zion_cosmic_harmony::ExternalCoin;
 
@@ -1421,28 +1494,9 @@ impl MinerRuntime {
             target,
             extranonce: hex::decode(&ext.extranonce1_hex).unwrap_or_default(),
             extranonce2: String::new(),
-            ntime: ntime_hex.clone(),
+            ntime: ext.ntime_hex.clone(),
             height: ext.height,
         };
-
-        // Only log ext_mine_start on first batch (nonce_cursor == 0) to avoid spam.
-        // Log every 100 batches to track progress.
-        let ext_batch = match stream {
-            StreamId::GpuExternal => self.config.stream2_batch,
-            StreamId::CpuExternal => self.config.stream3_batch,
-            _ => self.config.auxpow_nonce_batch,
-        };
-        if start_nonce == 0 {
-            eprintln!(
-                "v3_trinity ext_mine_start stream={:?} coin={} algo={} header_len={} target_hex={} height={} batch={}",
-                stream, ext.coin, ext.algorithm, header.len(), ext.target_hex, ext.height, ext_batch
-            );
-        } else if ext_batch > 0 && start_nonce % (ext_batch * 100) == 0 {
-            eprintln!(
-                "v3_trinity ext_mine_progress stream={:?} coin={} nonce_cursor={} batch={}",
-                stream, ext.coin, start_nonce, ext_batch
-            );
-        }
 
         // Mine the share using existing GPU/CPU infrastructure
         let batch = match stream {
@@ -1451,12 +1505,26 @@ impl MinerRuntime {
             _ => self.config.auxpow_nonce_batch,
         };
 
-        let share = self.mine_auxpow_share_batch_from(stream, &job, batch, start_nonce).await?;
+        let share = self.mine_auxpow_share_batch(stream, &job, batch).await?;
         eprintln!("v3_trinity mined_ext_share stream={:?} coin={} nonce={}", stream, coin, share.nonce);
+
+        // Stale job check: if the V3 pool has pushed a new job bundle since we
+        // started mining, the external job_id may be expired on the upstream
+        // pool (e.g. VRSC rotates job_ids every ~30s). Skip submission to
+        // avoid "job not found" rejections.
+        if job_rx.has_changed().unwrap_or(false) {
+            eprintln!(
+                "v3_trinity stale_ext_share stream={:?} coin={} nonce={} — job changed, skipping submit",
+                stream, coin, share.nonce
+            );
+            return Ok(false);
+        }
 
         // Submit via V3PoolClient → pool forwards to external pool
         let hash_hex = hex::encode(&share.hash);
         let mix_hash_hex = share.mix_hash.as_ref().map(|m| hex::encode(m));
+        let solution_hex = share.solution.as_ref().map(hex::encode).unwrap_or_default();
+        let ntime_hex = share.ntime.clone();
         let result = client
             .submit_external_share(
                 &ext.coin,
@@ -1559,14 +1627,11 @@ impl MinerRuntime {
             .as_mut()
             .ok_or_else(|| MinerError::Consensus("stratum client missing".to_string()))?;
 
-        let next_timeout = Duration::from_secs(10);
-        let stratum_job = client
+        let next_timeout = Duration::from_secs(60);
+        let mut stratum_job = client
             .next_job(coin, next_timeout)
             .await
             .map_err(|e| MinerError::Consensus(format!("stratum job error: {e}")))?;
-        let job: Job = stratum_job.into();
-
-        drop(guard);
 
         let batch = match stream {
             StreamId::GpuExternal => self.config.stream2_batch,
@@ -1574,35 +1639,62 @@ impl MinerRuntime {
             _ => self.config.auxpow_nonce_batch,
         };
 
-        let share = self.mine_auxpow_share_batch(stream, &job, batch).await?;
+        drop(guard);
 
-        let result = {
-            let guard = client_cell.lock().await;
-            if let Some(client) = guard.as_ref() {
-                match client.submit_share(&share).await {
-                    Ok(r) => r,
-                    Err(e) => {
-                        warn!(error = %e, "submit share failed");
-                        ShareResult::Rejected(e.to_string())
+        let mut job: Job = stratum_job.into();
+        // Mine up to this many batches on the current job before returning to
+        // the outer select loop. This keeps the GPU busy while still giving the
+        // runtime periodic chances to react to shutdown/job changes.
+        let max_batches = 100usize;
+
+        for _ in 0..max_batches {
+            match self.mine_auxpow_share_batch(stream, &job, batch).await {
+                Ok(share) => {
+                    let result = {
+                        let guard = client_cell.lock().await;
+                        if let Some(client) = guard.as_ref() {
+                            match client.submit_share(&share).await {
+                                Ok(r) => r,
+                                Err(e) => {
+                                    warn!(error = %e, "submit share failed");
+                                    ShareResult::Rejected(e.to_string())
+                                }
+                            }
+                        } else {
+                            ShareResult::Rejected("stratum client missing".to_string())
+                        }
+                    };
+
+                    self.record_share_result(stream, coin, &result).await;
+                    match result {
+                        ShareResult::Accepted => {
+                            info!(stream = ?stream, coin = %coin, nonce = share.nonce, "mined auxpow share accepted");
+                        }
+                        ShareResult::Rejected(reason) => {
+                            warn!(stream = ?stream, coin = %coin, nonce = share.nonce, reason = %reason, "auxpow share rejected");
+                        }
+                        _ => {
+                            info!(stream = ?stream, coin = %coin, nonce = share.nonce, "mined auxpow share");
+                        }
                     }
                 }
-            } else {
-                ShareResult::Rejected("stratum client missing".to_string())
+                Err(MinerError::NoAuxPoWSolution) => {}
+                Err(e) => return Err(e),
             }
-        };
 
-        self.record_share_result(stream, coin, &result).await;
-        match result {
-            ShareResult::Accepted => {
-                info!(stream = ?stream, coin = %coin, nonce = share.nonce, "mined auxpow share accepted");
+            // Check for a newer stratum job without blocking. Pools push
+            // updated jobs via eth_getWork / mining.notify while we mine.
+            let mut guard = client_cell.lock().await;
+            if let Some(client) = guard.as_mut() {
+                if let Some(new_job) = client.next_job(coin, Duration::from_millis(1)).await.ok() {
+                    if new_job.job_id != job.job_id {
+                        job = new_job.into();
+                    }
+                }
             }
-            ShareResult::Rejected(reason) => {
-                warn!(stream = ?stream, coin = %coin, nonce = share.nonce, reason = %reason, "auxpow share rejected");
-            }
-            _ => {
-                info!(stream = ?stream, coin = %coin, nonce = share.nonce, "mined auxpow share");
-            }
+            drop(guard);
         }
+
         Ok(())
     }
 

@@ -42,6 +42,10 @@ pub struct ExternalStreamJob {
     /// Timestamp from upstream pool notify (KAS kheavyhash).
     #[serde(default)]
     pub timestamp: u64,
+    /// ntime hex string from upstream pool notify (e.g. "62d12345").
+    /// Used for ZcashStratum (VRSC) submit format.
+    #[serde(default)]
+    pub ntime_hex: String,
 }
 
 /// Miner → pool: coin preference for autonomous profit routing.
@@ -272,6 +276,7 @@ mod tests {
                 protocol: "ethstratum".into(),
                 seed_hash_hex: "".into(),
                 timestamp: 0,
+                ntime_hex: "".into(),
             }),
             external_stream_cpu: Some(ExternalStreamJob {
                 coin: "VRSC".into(),
@@ -284,6 +289,7 @@ mod tests {
                 protocol: "zcashstratum".into(),
                 seed_hash_hex: "".into(),
                 timestamp: 0,
+                ntime_hex: "".into(),
             }),
         };
         let encoded = encode_message(&msg).unwrap();

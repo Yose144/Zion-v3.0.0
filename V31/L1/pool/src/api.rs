@@ -306,6 +306,16 @@ impl PoolApi {
             json!({"enabled":false})
         };
 
+        // Routing stats (sources + groups) for dashboard Trinity Mining panel
+        let routing_json = if let Some(ref rs) = self.routing_stats {
+            match rs.try_lock() {
+                Ok(guard) => guard.snapshot_json(),
+                Err(_) => serde_json::json!({}),
+            }
+        } else {
+            serde_json::json!({})
+        };
+
         json!({
             "ok": true,
             "uptime_s": uptime_s,
@@ -334,6 +344,7 @@ impl PoolApi {
                 "port": pool.config.port
             },
             "auxpow": auxpow_json,
+            "routing": routing_json,
             "api": {
                 "stats": "/stats",
                 "miners": "/miners?limit=200",

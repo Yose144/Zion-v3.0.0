@@ -315,9 +315,11 @@ async fn run_bridge_task(
     // just waits for the next job and drains the share/touch channels.
     loop {
         if client.is_connected().await {
-            // A short timeout is fine — it lets us forward shares frequently
-            // without forcing a reconnect when no new job arrives.
-            match client.wait_for_job(Duration::from_secs(5)).await {
+            // Short 1-second timeout so shares in the channel are forwarded
+            // promptly. The previous 5s timeout could delay share forwarding
+            // by up to 5s, causing "Job expired" rejections on fast-block
+            // chains like ZANO (~30s blocks).
+            match client.wait_for_job(Duration::from_secs(1)).await {
                 Ok(job) => {
                     let pkg = external_job_to_package(&job, coin);
                     tracing::debug!(
@@ -374,16 +376,26 @@ async fn forward_share_to_upstream(
         Some(format!("0x{}", hex::encode(&req.header_bytes)))
     };
     let ntime_val = if req.ntime.is_empty() { "00000000" } else { &req.ntime };
+    // For VRSC (ZcashStratum PBaaS v7+), the extranonce2 must match the
+    // extranonce2_size from the upstream pool's subscription response.
+    // LuckPool typically sets extranonce2_size=4, so extranonce2 = "00000000".
+    // The nonce lives in the solution nonceSpace, so extranonce2 is all zeros.
+    let extranonce2 = if req.algorithm.contains("verushash") {
+        let en2_size = client.extranonce2_size().await.unwrap_or(4) as usize;
+        "0".repeat(en2_size * 2)
+    } else {
+        "00".to_string()
+    };
     tracing::debug!(
-        "auxpow forward_share job={} nonce={} ntime={} ntime_len={} sol_hex_len={} sol_bytes={}",
-        req.job_id, req.nonce, ntime_val, ntime_val.len(),
+        "auxpow forward_share job={} nonce={} ntime={} ntime_len={} en2_len={} sol_hex_len={} sol_bytes={}",
+        req.job_id, req.nonce, ntime_val, ntime_val.len(), extranonce2.len(),
         req.solution_hex.len(), req.solution_hex.len() / 2
     );
     match client
         .submit_share(
             &req.job_id,
             req.nonce,
-            "00",
+            &extranonce2,
             if req.ntime.is_empty() { "00000000" } else { &req.ntime },
             req.mix_hash_hex.as_deref(),
             header_hash_opt.as_deref(),
