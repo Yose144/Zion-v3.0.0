@@ -1104,11 +1104,14 @@ impl MinerRuntime {
             watch::channel(None);
 
         // ── Stream 1: ZION mining (GPU deeksha) — also distributes jobs ──
+        // When stream1_enabled=false, this task only fetches and distributes
+        // jobs to Stream 2/3 without mining ZION shares.
         let h1 = {
             let this = self.clone();
             let client = client.clone();
             let job_tx = job_tx.clone();
             let mut shutdown = shutdown.clone();
+            let zion_enabled = self.config.stream1_enabled;
             tokio::spawn(async move {
                 // Get the initial job, then continuously mine shares with it
                 // until a new job arrives. This ensures we search many nonces
@@ -1122,8 +1125,15 @@ impl MinerRuntime {
                             // If we have a current job, mine a share with it.
                             // Otherwise, wait for the first job.
                             if let Some(bundle) = &current_bundle {
-                                // Mine ZION share with the current job
-                                this.mine_v3_zion_share(&client, &bundle.zion).await
+                                if zion_enabled {
+                                    // Mine ZION share with the current job
+                                    this.mine_v3_zion_share(&client, &bundle.zion).await
+                                } else {
+                                    // ZION disabled — just sleep briefly and let
+                                    // the job-check logic below handle job rotation
+                                    sleep(Duration::from_millis(500)).await;
+                                    Ok(false)
+                                }
                             } else {
                                 // Wait for first job
                                 let bundle = client.next_job(Duration::from_secs(60)).await
@@ -1140,11 +1150,15 @@ impl MinerRuntime {
                                 }
                                 let _ = job_tx.send_replace(Some(bundle.clone()));
                                 current_bundle = Some(bundle);
-                                // Mine first share with the new job
-                                if let Some(bundle) = &current_bundle {
-                                    this.mine_v3_zion_share(&client, &bundle.zion).await
+                                // Mine first share with the new job (or skip if ZION disabled)
+                                if zion_enabled {
+                                    if let Some(bundle) = &current_bundle {
+                                        this.mine_v3_zion_share(&client, &bundle.zion).await
+                                    } else {
+                                        return Ok(false);
+                                    }
                                 } else {
-                                    return Ok(false);
+                                    Ok(false)
                                 }
                             }
                         } => {
