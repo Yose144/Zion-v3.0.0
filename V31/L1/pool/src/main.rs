@@ -327,6 +327,9 @@ async fn main() -> anyhow::Result<()> {
 
     let (_shutdown_tx, shutdown_rx) = watch::channel(false);
 
+    // Extract routing_stats handle before server is moved into run_handle
+    let api_routing_stats = server.routing_stats_handle();
+
     let feed_server = server.clone();
     let feed_l1_rpc_url = l1_rpc_url.clone();
     let feed_handle = tokio::spawn(async move {
@@ -416,7 +419,8 @@ async fn main() -> anyhow::Result<()> {
     let api_bridge = multi_bridge.clone();
     let api_share_store = share_store.clone();
     let api_handle = tokio::task::spawn_blocking(move || {
-        let api = PoolApi::new(api_pool, api_share_store, Some(api_bridge));
+        let api = PoolApi::new(api_pool, api_share_store, Some(api_bridge))
+            .with_routing_stats(api_routing_stats);
         if let Err(e) = api.serve(&api_bind) {
             tracing::error!("pool API server error: {}", e);
         }

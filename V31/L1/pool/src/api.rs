@@ -17,6 +17,7 @@ pub struct PoolApi {
     pool: Arc<Mutex<Pool>>,
     share_store: Option<Arc<ShareStore>>,
     auxpow_bridge: Option<MultiAuxPowBridge>,
+    routing_stats: Option<Arc<std::sync::Mutex<crate::routing::RoutingStats>>>,
     started_at: Instant,
     active_sessions: Arc<AtomicU64>,
     total_connections: Arc<AtomicU64>,
@@ -32,10 +33,16 @@ impl PoolApi {
             pool,
             share_store,
             auxpow_bridge,
+            routing_stats: None,
             started_at: Instant::now(),
             active_sessions: Arc::new(AtomicU64::new(0)),
             total_connections: Arc::new(AtomicU64::new(0)),
         }
+    }
+
+    pub fn with_routing_stats(mut self, stats: Arc<std::sync::Mutex<crate::routing::RoutingStats>>) -> Self {
+        self.routing_stats = Some(stats);
+        self
     }
 
     pub fn active_sessions(&self) -> &Arc<AtomicU64> {
@@ -758,9 +765,25 @@ impl PoolApi {
 
     /// `/api/v1/routing-metrics` — routing stats snapshot.
     fn build_routing_metrics_payload(&self) -> String {
-        let pool = self.pool.lock().expect("pool lock poisoned");
-        let (accepted, rejected) = pool.stats();
+        // Use try_lock to avoid blocking the API thread
+        let (accepted, rejected) = match self.pool.try_lock() {
+            Ok(pool) => pool.stats(),
+            Err(_) => (0, 0),
+        };
         let uptime_s = self.started_at.elapsed().as_secs();
+
+        // Get detailed routing stats from the stratum server's routing_stats
+        let sources = if let Some(ref rs) = self.routing_stats {
+            match rs.try_lock() {
+                Ok(guard) => {
+                    let routing = guard.snapshot_json();
+                    routing.get("sources").cloned().unwrap_or(json!([]))
+                }
+                Err(_) => json!([]),
+            }
+        } else {
+            json!([])
+        };
 
         let json = json!({
             "ok": true,
@@ -772,6 +795,7 @@ impl PoolApi {
             "groups": [
                 {"group": "zion", "submits": accepted + rejected, "accepted": accepted, "pct": 100.0},
             ],
+            "sources": sources,
         });
         json.to_string()
     }

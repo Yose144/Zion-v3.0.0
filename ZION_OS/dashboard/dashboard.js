@@ -2867,29 +2867,37 @@ function updateTripleStream(data){
     if(summary) summary.textContent='No routing data';
     return;
   }
-  const src=data.routing.sources||{};
+  // Pool API returns sources as an array of {source, submits, accepted, accept_rate_pct}
+  // Convert to a map for easy lookup by source name.
+  const srcArr=data.routing.sources||[];
+  const src={};
+  if(Array.isArray(srcArr)){
+    for(const s of srcArr){if(s&&s.source)src[s.source]={submits:s.submits||0,accepted:s.accepted||0};}
+  } else {
+    Object.assign(src,srcArr);
+  }
   const get=(k)=>src[k]||{submits:0,accepted:0};
   // Stream 1: ZION + internal bonus sources
-  const zionKeys=['zion','keccak','sha3','profit','ncl','deeksha_lite','thermal_bonus'];
+  const zionKeys=['zion','keccak','keccak_bonus','sha3','sha3_bonus','profit','profit_switch','ncl','ncl_ai','deeksha_lite','thermal_bonus'];
   let zionAcc=0,zionSub=0;
   for(const k of zionKeys){const v=get(k);zionAcc+=v.accepted||0;zionSub+=v.submits||0;}
   // Stream 2: GPU-capable external AuxPoW sources
-  const gpuKeys=['blake3','kheavyhash','ethash','kawpow','autolykos','zelhash','progpow','beamhash'];
+  const gpuKeys=['blake3','blake3_external','kheavyhash','kheavyhash_external','ethash','ethash_external','etchash','etchash_external','kawpow','kawpow_external','autolykos','autolykos_external','zelhash','zelhash_external','progpow','progpow_external','beamhash','beamhash_external','meowpow'];
   let gpuAcc=0,gpuSub=0,gpuCoin='—';
   for(const k of gpuKeys){
     const v=get(k);
     gpuAcc+=v.accepted||0;
     gpuSub+=v.submits||0;
-    if((v.submits||0)>0&&gpuCoin==='—'){gpuCoin=k.toUpperCase();}
+    if((v.submits||0)>0&&gpuCoin==='—'){gpuCoin=k.replace('_external','').toUpperCase();}
   }
   // Stream 3: CPU-only external sources (VerusHash, RandomX)
-  const cpuKeys=['verushash','randomx'];
+  const cpuKeys=['verushash','verushash_external','randomx','randomx_external'];
   let cpuAcc=0,cpuSub=0,cpuCoin='—';
   for(const k of cpuKeys){
     const v=get(k);
     cpuAcc+=v.accepted||0;
     cpuSub+=v.submits||0;
-    if((v.submits||0)>0&&cpuCoin==='—'){cpuCoin=k.toUpperCase();}
+    if((v.submits||0)>0&&cpuCoin==='—'){cpuCoin=k.replace('_external','').toUpperCase();}
   }
   const setText=(id,txt)=>{const el=document.getElementById(id);if(el)el.textContent=txt;};
   // Stream 1: ZION
