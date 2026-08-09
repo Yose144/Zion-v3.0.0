@@ -799,6 +799,12 @@ impl AuxPowClient {
                 {
                     if let Some(target) = hasher::parse_target_hex(target_hex) {
                         *self.current_target_bytes.lock().await = Some(target);
+                        // Also update current_difficulty so other code paths
+                        // (stats, vardiff) see a consistent value.
+                        let max_target = hasher::algorithm_max_target(&self.config.algorithm);
+                        let diff = hasher::target_to_difficulty_with_max(&target, &max_target);
+                        *self.current_difficulty.lock().await = diff;
+                        debug!(difficulty = diff, target = %target_hex, "stratum set_target");
                     }
                 }
             }
@@ -875,28 +881,34 @@ impl AuxPowClient {
                 }
 
                 let target = {
-                    // Use the share difficulty (set by mining.set_difficulty) to
-                    // compute the share target. The block target from nbits is
-                    // far too hard for miners — we need the easier share target.
-                    // If the pool hasn't sent set_difficulty, use a minimum of
-                    // 10000 to avoid flooding the pool with diff=1 shares.
-                    let diff = self.current_difficulty.lock().await.clone();
-                    let effective_diff = if diff > 1.0 && diff.is_finite() {
-                        diff
+                    // LuckPool (VRSC) sends mining.set_target with the share
+                    // target directly.  If we received it, use it as-is — this
+                    // is the authoritative share target the pool will check
+                    // against.  Falling back to difficulty_to_target would
+                    // produce a different (easier) target and shares would be
+                    // rejected as "low difficulty share".
+                    let set_target = self.current_target_bytes.lock().await.clone();
+                    if let Some(t) = set_target {
+                        t
                     } else {
-                        // LuckPool doesn't send mining.set_difficulty for
-                        // ZcashStratum — use a reasonable minimum.
-                        let min_diff = 10000.0f64;
-                        if diff != min_diff {
-                            eprintln!(
-                                "vrsc_min_difficulty_applied diff={} min={} — pool did not set difficulty",
-                                diff, min_diff
-                            );
-                        }
-                        min_diff
-                    };
-                    let max_target = hasher::algorithm_max_target(&self.config.algorithm);
-                    hasher::difficulty_to_target_with_max(effective_diff, &max_target)
+                        // Fallback: compute from mining.set_difficulty, or use
+                        // a reasonable minimum if the pool hasn't set either.
+                        let diff = self.current_difficulty.lock().await.clone();
+                        let effective_diff = if diff > 1.0 && diff.is_finite() {
+                            diff
+                        } else {
+                            let min_diff = 10000.0f64;
+                            if diff != min_diff {
+                                warn!(
+                                    "vrsc_min_difficulty_applied diff={} min={} — pool did not set difficulty or target",
+                                    diff, min_diff
+                                );
+                            }
+                            min_diff
+                        };
+                        let max_target = hasher::algorithm_max_target(&self.config.algorithm);
+                        hasher::difficulty_to_target_with_max(effective_diff, &max_target)
+                    }
                 };
 
                 let en1 = self.extranonce1.lock().await.clone();
@@ -1170,6 +1182,7 @@ impl AuxPowClient {
                 // ZcashStratum (VRSC/LuckPool): [worker, job_id, ntime, extranonce2, solution]
                 // ntime is 4-byte hex (8 chars), extranonce2 is the 28-byte suffix
                 // after extranonce1, solution is the equihash solution hex.
+                // If solution_hex is provided, use it; otherwise fall back to nonce.
                 let sol = if !solution_hex.is_empty() {
                     solution_hex.to_string()
                 } else {
@@ -1702,7 +1715,11 @@ async fn handle_line(
                 if let Some(target_hex) = params.first().and_then(Value::as_str) {
                     if let Some(target) = hasher::parse_target_hex(target_hex) {
                         *state.target_bytes.lock().await = Some(target);
-                        info!(target = %hex::encode(target), "stratum set target");
+                        // Also update difficulty for consistency.
+                        let max_target = [0xFFu8; 32];
+                        let diff = hasher::target_to_difficulty_with_max(&target, &max_target);
+                        *state.difficulty.lock().await = diff;
+                        info!(target = %hex::encode(target), difficulty = diff, "stratum set target");
                     }
                 }
             }

@@ -108,9 +108,12 @@ impl AuxPowBridge {
         if self.share_tx.send((req, tx)).is_err() {
             return Some(ShareForwardOutcome::ChannelClosed);
         }
-        // Use a 5-second timeout to avoid blocking the pool's V3 handler
-        // indefinitely when the upstream pool is slow to respond.
-        rx.recv_timeout(std::time::Duration::from_secs(5))
+        // Use a 15-second timeout to allow enough time for the bridge task
+        // to drain the share and forward to the upstream pool. The bridge task
+        // polls shares every 1 second (wait_for_job timeout), so shares are
+        // picked up quickly. 15s gives upstream pools with slow RTT (e.g.
+        // HeroMiners EU from our Edge) enough time to respond.
+        rx.recv_timeout(std::time::Duration::from_secs(15))
             .ok()
     }
 }
