@@ -1467,12 +1467,22 @@ impl MinerRuntime {
         let hash_hex = hex::encode(&hash_bytes);
         let elapsed_ms = (elapsed * 1000.0) as u64;
 
-        // Diagnostic: verify locally with the same EkamDeeksha reference the pool uses
+        // Verify locally with the same EkamDeeksha reference the pool uses.
+        // GPU kernels can produce false positives under VRAM pressure or
+        // concurrent execution; skip submission if local verification fails.
         let local_ok = zion_cosmic_harmony::EkamDeeksha::new().verify(&header, nonce, &target_bytes);
         eprintln!(
             "SHARE candidate job_id={} height={} nonce={} local_verify={} hash_hex={} target_hex={} header_hex={}",
             job.job_id, job.height, nonce, local_ok, hash_hex, job.target_hex, job.header_hex
         );
+        if !local_ok {
+            warn!(
+                job = job.job_id,
+                nonce,
+                "V3 Trinity: ZION share failed local verification — skipping submit (GPU false positive)"
+            );
+            return Ok(false);
+        }
 
         let result = client
             .submit_zion_share(job.job_id, nonce, &hash_hex, None, nonces_searched, elapsed_ms)

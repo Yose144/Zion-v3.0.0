@@ -377,20 +377,32 @@ async fn forward_share_to_upstream(
 ) -> ShareForwardOutcome {
     let _ = coin; // coin is implicit in the client config
 
-    // V3 philosophy: forward ALL shares to the upstream pool and let the
-    // upstream pool decide.  No pre-rejection, no per-job duplicate prevention,
-    // no job_id mismatch check, no age-based stale check.
+    // V3 philosophy: forward ALL shares to the upstream pool.
+    // No job_id mismatch check, no age-based stale check.
     //
-    // The V3 reference implementation (archive/AuXpow/src/share_forwarder.rs)
-    // explicitly does NOT check latest_job_id mismatch because:
-    //   "If we rejected shares whenever job_id != latest_job_id, we would
-    //    pre-reject valid shares that LuckPool would have accepted — the
-    //    miner is legitimately still working on the previous job which is
-    //    still valid upstream."
-    //
-    // VRSC stale threshold defaults to 0 (disabled) in V3.
-    // ZANO (GPU coin) has no stale check at all in V3 (only CPU coins checked).
-    // No per-job dup prevention in V3 — every share is forwarded.
+    // Per-job duplicate prevention: ONLY for ZANO (HeroMiners).
+    // HeroMiners only accepts ONE share per job_id — subsequent shares for the
+    // same job (even with different nonces) are rejected as "Duplicate share".
+    // VRSC (LuckPool) DOES accept multiple shares per job (different nonces),
+    // so dup prevention must NOT be applied to VRSC.
+    // Cleanup after 60s (jobs are expired by then anyway).
+    static SUBMITTED_JOBS: std::sync::OnceLock<std::sync::Mutex<std::collections::HashMap<String, std::time::Instant>>> = std::sync::OnceLock::new();
+    let tracker = SUBMITTED_JOBS.get_or_init(|| std::sync::Mutex::new(std::collections::HashMap::new()));
+    if matches!(coin, ExternalCoin::Zano) {
+        let mut guard = tracker.lock().unwrap();
+        let now = std::time::Instant::now();
+        guard.retain(|_, ts| now.duration_since(*ts).as_secs() < 60);
+        if let Some(ts) = guard.get(&req.job_id) {
+            tracing::debug!(
+                "auxpow[ZANO]: skipping duplicate share for job={} (first submitted {:.1}s ago)",
+                req.job_id, now.duration_since(*ts).as_secs_f64()
+            );
+            return ShareForwardOutcome::Result(ShareForwardResult::Rejected(
+                "duplicate job (already submitted)".to_string(),
+            ));
+        }
+        guard.insert(req.job_id.clone(), now);
+    }
 
     // If header_bytes is empty, pass None so submit_share falls back to job_id
     // (which is the block header hash for EthStratum pools like HeroMiners).
