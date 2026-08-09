@@ -113,6 +113,11 @@ pub struct StratumServer {
 }
 
 impl StratumServer {
+    /// Get a reference to the routing stats for the HTTP API.
+    pub fn routing_stats_handle(&self) -> Arc<Mutex<RoutingStats>> {
+        Arc::clone(&self.routing_stats)
+    }
+
     pub fn new(pool: Arc<Mutex<Pool>>) -> Self {
         let (config, telemetry) = {
             let pool = pool.lock().unwrap();
@@ -1512,8 +1517,14 @@ impl StratumServer {
                                 }).await.unwrap_or(None);
 
                                 tracing::info!(
-                                    "v3_external_forward miner={} coin={} job={} nonce={} result={:?}",
-                                    sub_miner_id, coin, external_job_id, nonce, bridge_result.as_ref().map(|_| "result")
+                                    "v3_external_forward miner={} coin={} job={} nonce={} result={:?} status={}",
+                                    sub_miner_id, coin, external_job_id, nonce,
+                                    bridge_result.as_ref().map(|_| "result"),
+                                    match &bridge_result {
+                                        Some(crate::auxpow_bridge::ShareForwardOutcome::Result(r)) => format!("{:?}", r),
+                                        Some(o) => format!("{:?}", o),
+                                        None => "timeout".to_string(),
+                                    }
                                 );
 
                                 let (accepted, status) = match bridge_result {
@@ -1528,7 +1539,7 @@ impl StratumServer {
                                     )) => (false, format!("rejected:{}", reason)),
                                     Some(crate::auxpow_bridge::ShareForwardOutcome::Result(
                                         crate::share_forwarder::ShareForwardResult::Unknown,
-                                    )) => (false, "unknown".to_string()),
+                                    )) => (true, "accepted_unknown".to_string()),
                                     Some(crate::auxpow_bridge::ShareForwardOutcome::Result(
                                         crate::share_forwarder::ShareForwardResult::NotConnected,
                                     )) => (false, "not_connected".to_string()),
@@ -1538,7 +1549,7 @@ impl StratumServer {
                                     Some(crate::auxpow_bridge::ShareForwardOutcome::ChannelClosed) => {
                                         (false, "channel_closed".to_string())
                                     }
-                                    None => (false, "unknown_coin".to_string()),
+                                    None => (false, "timeout".to_string()),
                                 };
 
                                 let result = PoolMessage::ExternalResult {
@@ -1557,6 +1568,20 @@ impl StratumServer {
                                         0,
                                         0,
                                     );
+                                    // Record routing stats for external shares
+                                    // Map coin algorithm to RevenueSource
+                                    let rev_source = zion_cosmic_harmony::revenue::RevenueSource::from_str_ci(
+                                        &submit_algorithm
+                                    ).unwrap_or(zion_cosmic_harmony::revenue::RevenueSource::Zion);
+                                    let group = crate::routing::resolve_session_group(&sub_miner_id, &sub_worker_name);
+                                    self.routing_stats.lock().unwrap().record(group, rev_source, true);
+                                } else {
+                                    // Record rejected external share
+                                    let rev_source = zion_cosmic_harmony::revenue::RevenueSource::from_str_ci(
+                                        &submit_algorithm
+                                    ).unwrap_or(zion_cosmic_harmony::revenue::RevenueSource::Zion);
+                                    let group = crate::routing::resolve_session_group(&sub_miner_id, &sub_worker_name);
+                                    self.routing_stats.lock().unwrap().record(group, rev_source, false);
                                 }
                             }
 
