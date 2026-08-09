@@ -271,7 +271,7 @@ if _legacy_user and _legacy_pass:
     DASHBOARD_USERS[_legacy_user] = _sha256(_legacy_pass)
 
 # Endpoints that skip auth (health checks, static assets)
-AUTH_EXEMPT_ROUTES = {"/api/health", "/health", "/favicon.ico", "/v31/favicon.ico", "/v31/symbol-200x200.png", "/api/poc/html", "/api/poc/status"}
+AUTH_EXEMPT_ROUTES = {"/api/health", "/health", "/favicon.ico", "/v31/favicon.ico", "/v31/symbol-200x200.png", "/api/poc/html", "/api/poc/status", "/api/pool/miners-dashboard", "/stats"}
 
 # Edge server addresses (Hetzner VPS — always-on)
 EDGE_HOST = "127.0.0.1"   # Dashboard runs on same server (v3.0.4)

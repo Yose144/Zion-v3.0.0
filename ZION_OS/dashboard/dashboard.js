@@ -882,7 +882,7 @@ function updateServiceCards(s){
   const mhr = v31m.hashrate ?? (mMain.hashrate ? mMain.hashrate * 1000 : null);
   setBadge('badge-v31-miner', v31m.running); setCardLive('v31-miner', v31m.running);
   const v31mh = document.getElementById('val-v31-miner-hashrate');
-  if(v31mh) v31mh.textContent = mhr != null ? (mhr >= 1000 ? (mhr/1000).toFixed(2) + ' kH/s' : Math.round(mhr).toLocaleString() + ' H/s') : '—';
+  if(v31mh) v31mh.textContent = _formatHashrate(mhr);
   const v31ms = document.getElementById('val-v31-miner-shares');
   if(v31ms) v31ms.textContent = v31m.shares_submitted ?? '—';
   const v31ma = document.getElementById('val-v31-miner-accepted');
