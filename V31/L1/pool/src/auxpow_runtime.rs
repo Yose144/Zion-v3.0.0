@@ -328,6 +328,14 @@ async fn run_bridge_task(
                         pkg.external_job_id,
                         pkg.height
                     );
+                    tracing::debug!(
+                        target: "en1_trace",
+                        coin = %coin_label,
+                        job_id = %pkg.external_job_id,
+                        en1_hex = %pkg.extranonce1_hex,
+                        en1_len = pkg.extranonce1_hex.len() / 2,
+                        "en1_trace job_package created with extranonce1"
+                    );
                     // Push to bridge queue
                     bridge.push_job_for_coin(&coin, pkg);
                 }
@@ -371,18 +379,45 @@ async fn forward_share_to_upstream(
 
     // Stale job check: for fast-block coins (VRSC ~60s, ZANO ~30s), the
     // upstream pool may have already rotated to a new job by the time a
-    // miner submits a share.  If our client's latest_job_id differs from
-    // the share's job_id, skip forwarding to avoid "job not found"
-    // rejections and wasted network round-trips.
+    // miner submits a share.  We use two checks:
+    //
+    // 1. job_id mismatch: if our client's latest_job_id differs from the
+    //    share's job_id, the job is definitely stale (we already received
+    //    a newer notify).
+    //
+    // 2. job age: even if the job_id matches, the upstream pool may have
+    //    rotated to a new block but we haven't received the new notify yet.
+    //    If the job is older than a coin-specific threshold, skip the
+    //    submission to avoid "job not found" rejections.
     if let Some(latest_jid) = client.latest_job_id().await {
         if latest_jid != req.job_id {
             tracing::info!(
-                "auxpow[{:?}]: stale share skipped job={} latest={} nonce={}",
+                "auxpow[{:?}]: stale share skipped (job_id mismatch) job={} latest={} nonce={}",
                 coin, req.job_id, latest_jid, req.nonce
             );
             return ShareForwardOutcome::Result(ShareForwardResult::Rejected(
                 "stale job".to_string(),
             ));
+        }
+
+        // Time-based staleness: VRSC blocks are ~60s, ZANO ~30s.
+        // Use 45s for VRSC (VerusHash) and 25s for ZANO (ProgPoW).
+        // For other coins, use a generous 120s default.
+        let max_age_secs: u64 = match coin {
+            ExternalCoin::Verus => 45,
+            ExternalCoin::Zano => 25,
+            _ => 120,
+        };
+        if let Some(age) = client.latest_job_age().await {
+            if age.as_secs() >= max_age_secs {
+                tracing::info!(
+                    "auxpow[{:?}]: stale share skipped (age {}s >= {}s) job={} nonce={}",
+                    coin, age.as_secs(), max_age_secs, req.job_id, req.nonce
+                );
+                return ShareForwardOutcome::Result(ShareForwardResult::Rejected(
+                    "stale job".to_string(),
+                ));
+            }
         }
     }
 
