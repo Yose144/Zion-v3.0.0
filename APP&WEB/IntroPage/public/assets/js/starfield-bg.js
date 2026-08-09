@@ -129,7 +129,11 @@
     };
     var hw = canvas.width / 2;
     var hh = canvas.height / 2;
-    for (var i = 0; i < state.config.density; i++) {
+    var area = canvas.width * canvas.height;
+    var refArea = 1920 * 1080;
+    var density = Math.max(80, Math.round(state.config.density * Math.min(1.25, area / refArea)));
+    if (canvas.width < 768) density = Math.round(density * 0.55);
+    for (var i = 0; i < density; i++) {
       state.stars.push({
         x: Math.random() * canvas.width - hw,
         y: Math.random() * canvas.height - hh,
