@@ -748,12 +748,8 @@ impl StratumServer {
     /// Build the CPU external stream job from the AuxPoW bridge.
     /// Selects the first available CPU coin job (XMR, VRSC, RTM).
     ///
-    /// For VRSC (VerusHash), we override the share target to a fixed
-    /// difficulty of 180M (180 million) so the miner finds ~1 share per
-    /// 30s at 6 MH/s — matching the VRSC block time for optimal accept
-    /// rate.  LuckPool's default vardiff can be too high for a single
-    /// CPU stream, causing very few shares and high stale rate.
-    /// Env: ZION_VRSC_MIN_DIFF=180000000 (default 180M)
+    /// V3 philosophy: use the upstream pool's target as-is (no override).
+    /// V3 didn't override VRSC difficulty and achieved 95% accept rate.
     fn build_external_stream_cpu(&self) -> Option<ExternalStreamJob> {
         let coins = self.multi_bridge.enabled_coins();
         if coins.is_empty() {
@@ -762,35 +758,12 @@ impl StratumServer {
         for coin in &coins {
             if self.multi_bridge.is_cpu_coin(coin) {
                 if let Some(job) = self.multi_bridge.latest_job_for_coin(coin) {
-                    // VRSC min difficulty override: compute a relaxed share
-                    // target so the miner finds shares at ~10T difficulty.
-                    // target = 2^256 / difficulty  (big-endian 32 bytes)
-                    let target_hex = if coin.as_str().eq_ignore_ascii_case("VRSC") {
-                        let min_diff: u128 = std::env::var("ZION_VRSC_MIN_DIFF")
-                            .ok()
-                            .and_then(|v| v.parse::<u128>().ok())
-                            .unwrap_or(180_000_000); // 180M default
-                        // target = 2^256 / diff ≈ (2^128 / diff) << 128
-                        // For diff >= 2^128 this would be zero, but 10T << 2^128.
-                        // Compute: target_hi = 2^128 / diff (floor), target_lo = 0
-                        let target_hi = if min_diff > 0 {
-                            (u128::MAX / min_diff).max(1) // 2^128-1 / diff ≈ 2^128/diff
-                        } else {
-                            u128::MAX
-                        };
-                        // Pack as 32-byte big-endian: [target_hi(16 bytes)][0(16 bytes)]
-                        let mut target_bytes = [0u8; 32];
-                        target_bytes[0..16].copy_from_slice(&target_hi.to_be_bytes());
-                        hex::encode(&target_bytes)
-                    } else {
-                        job.target_hex.clone()
-                    };
                     return Some(ExternalStreamJob {
                         coin: coin.as_str().to_string(),
                         algorithm: job.algorithm.clone(),
                         job_id: job.external_job_id.clone(),
                         header_hex: job.header_hex.clone(),
-                        target_hex,
+                        target_hex: job.target_hex.clone(),
                         height: job.height,
                         extranonce1_hex: job.extranonce1_hex.clone(),
                         protocol: "stratum".to_string(),
@@ -1587,7 +1560,7 @@ impl StratumServer {
                                     };
 
                                     let is_verushash = submit_algorithm.contains("verushash")
-                                        || coin.to_ascii_uppercase() == "VRSC";
+                                        || coin.eq_ignore_ascii_case("VRSC");
 
                                     let sol = if is_verushash {
                                         // Rebuild the solution at the pool side for VRSC.
@@ -1688,53 +1661,9 @@ impl StratumServer {
                                     "en1_trace pool-side final extranonce1 for forwarding"
                                 );
 
-                                // ── VRSC latest-job-only check ─────────────────────
-                                // LuckPool expires VRSC jobs IMMEDIATELY when a new
-                                // VerusCoin block is found (clean=true).  The multi-hop
-                                // delay (LuckPool→Edge→miner→Edge→LuckPool, 1-2s) means
-                                // the miner sometimes finds shares for a job that has
-                                // already been superseded.  Forwarding these to LuckPool
-                                // always results in "job not found" rejects.
-                                //
-                                // Fix: for VRSC only, only forward shares for the
-                                // LATEST job_id (front of the queue).  Shares for older
-                                // job_ids are silently skipped — they would be rejected
-                                // by LuckPool anyway.
-                                //
-                                // Env: ZION_VRSC_LATEST_ONLY=0 to disable (default: 1).
-                                if coin.to_ascii_uppercase() == "VRSC" {
-                                    let vrsc_latest_only = std::env::var("ZION_VRSC_LATEST_ONLY")
-                                        .ok()
-                                        .and_then(|v| v.parse::<u32>().ok())
-                                        .unwrap_or(1);
-                                    if vrsc_latest_only > 0 {
-                                        let coin_enum = zion_cosmic_harmony::profit::ExternalCoin::from_ticker(&coin);
-                                        if let Some(ref c) = coin_enum {
-                                            let job_ids = self.multi_bridge.job_ids_for_coin(c);
-                                            if !job_ids.is_empty() {
-                                                if let Some(latest_id) = job_ids.last() {
-                                                    if latest_id != &external_job_id {
-                                                        tracing::info!(
-                                                            "external_share_vrsc_skip miner={} coin=VRSC share_job_id={} latest_job_id={} — skipping (not latest, LuckPool will reject)",
-                                                            sub_miner_id, external_job_id, latest_id
-                                                        );
-                                                        let ext_result = PoolMessage::ExternalResult {
-                                                            accepted: false,
-                                                            status: "stale_skip".to_string(),
-                                                            coin: coin.clone(),
-                                                        };
-                                                        let _ = write_v3_message(writer, &ext_result).await;
-                                                        // Record reject in routing stats
-                                                        let ext_source = zion_cosmic_harmony::revenue::RevenueSource::VerusHashExternal;
-                                                        let group = crate::routing::resolve_session_group(&sub_miner_id, &sub_worker_name);
-                                                        self.routing_stats.lock().unwrap().record(group, ext_source, false);
-                                                        continue;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
+                                // V3 philosophy: forward ALL VRSC shares to LuckPool.
+                                // No recent-jobs-only check — V3 didn't have this and
+                                // achieved 95% accept rate by forwarding everything.
 
                                 let req = ShareForwardRequest {
                                     job_id: external_job_id.clone(),

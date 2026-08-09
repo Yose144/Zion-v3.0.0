@@ -10,7 +10,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
-use tokio::sync::{mpsc, Mutex, oneshot};
+use tokio::sync::{mpsc, watch, Mutex};
 use tracing::{debug, info, warn};
 
 use crate::pool_message::{decode_message, encode_message, ExternalStreamJob, PoolMessage};
@@ -71,9 +71,18 @@ pub struct V3PoolClient {
     // to dedicated channels.
     zion_result_rx: Mutex<mpsc::Receiver<V3ShareResult>>,
     ext_result_rx: Mutex<mpsc::Receiver<V3ExternalResult>>,
+    // Becomes true when the read loop detects the pool has closed the
+    // connection.  Used to fail fast on subsequent submits.
+    conn_closed: watch::Receiver<bool>,
 }
 
 impl V3PoolClient {
+    fn ensure_connected(&self) -> Result<()> {
+        if *self.conn_closed.borrow() {
+            anyhow::bail!("V3 pool: connection closed");
+        }
+        Ok(())
+    }
     /// Connect to the pool and perform the V3 handshake (Hello → Welcome).
     pub async fn connect(
         pool_addr: &str,
@@ -134,8 +143,10 @@ impl V3PoolClient {
         let (zion_result_tx, zion_result_rx) = mpsc::channel::<V3ShareResult>(16);
         let (ext_result_tx, ext_result_rx) = mpsc::channel::<V3ExternalResult>(16);
 
+        // Watch channel to signal when the pool closes the connection.
+        let (conn_closed_tx, conn_closed_rx) = watch::channel(false);
+
         // Spawn the read loop
-        let writer_clone = writer.clone();
         tokio::spawn(async move {
             loop {
                 match lines.next_line().await {
@@ -180,6 +191,7 @@ impl V3PoolClient {
                                 };
                                 if job_tx.send(bundle).await.is_err() {
                                     warn!("V3 read loop: job channel closed, exiting");
+                                    let _ = conn_closed_tx.send(true);
                                     break;
                                 }
                             }
@@ -233,6 +245,7 @@ impl V3PoolClient {
                                     "V3 bye: accepted={} rejected={} revenue={}",
                                     accepted_shares, rejected_shares, revenue_total_usd
                                 );
+                                let _ = conn_closed_tx.send(true);
                                 break;
                             }
                             Ok(other) => {
@@ -245,10 +258,12 @@ impl V3PoolClient {
                     }
                     Ok(None) => {
                         warn!("V3 pool: connection closed");
+                        let _ = conn_closed_tx.send(true);
                         break;
                     }
                     Err(e) => {
                         warn!("V3 pool: read error: {}", e);
+                        let _ = conn_closed_tx.send(true);
                         break;
                     }
                 }
@@ -266,11 +281,13 @@ impl V3PoolClient {
             job_rx: Mutex::new(job_rx),
             zion_result_rx: Mutex::new(zion_result_rx),
             ext_result_rx: Mutex::new(ext_result_rx),
+            conn_closed: conn_closed_rx,
         })
     }
 
     /// Wait for the next job bundle from the pool (ZION + AuxPoW streams).
     pub async fn next_job(&self, timeout: Duration) -> Result<V3JobBundle> {
+        self.ensure_connected()?;
         let mut rx = self.job_rx.lock().await;
         match tokio::time::timeout(timeout, rx.recv()).await {
             Ok(Some(bundle)) => Ok(bundle),
@@ -296,6 +313,7 @@ impl V3PoolClient {
         attempted_hashes: u64,
         elapsed_ms: u64,
     ) -> Result<V3ShareResult> {
+        self.ensure_connected()?;
         let msg = PoolMessage::Submit {
             job_id,
             miner_id: self.miner_id.clone(),
@@ -335,6 +353,7 @@ impl V3PoolClient {
         solution_hex: &str,
         ntime_hex: &str,
     ) -> Result<V3ExternalResult> {
+        self.ensure_connected()?;
         let msg = PoolMessage::ExternalSubmit {
             miner_id: self.miner_id.clone(),
             worker_name: self.worker_name.clone(),
@@ -371,6 +390,7 @@ impl V3PoolClient {
         gpu_profit_usd_day: f64,
         cpu_profit_usd_day: f64,
     ) -> Result<()> {
+        self.ensure_connected()?;
         let msg = PoolMessage::CoinPreference {
             miner_id: self.miner_id.clone(),
             gpu_coin: gpu_coin.to_string(),
@@ -387,6 +407,7 @@ impl V3PoolClient {
 
     /// Send a NoSolution message (job expired without finding a share).
     pub async fn send_no_solution(&self, job_id: u64) -> Result<()> {
+        self.ensure_connected()?;
         let msg = PoolMessage::NoSolution {
             job_id,
             miner_id: self.miner_id.clone(),

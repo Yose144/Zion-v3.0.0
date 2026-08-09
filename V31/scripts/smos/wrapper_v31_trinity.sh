@@ -31,6 +31,7 @@ export ZION_V3_TRINITY=1
 export ZION_AUTOTUNE=1
 export ZION_AUTOTUNE_SECS=3
 export ZION_IGNORE_GPU_SELF_TEST_FAIL=1
+export ZION_NO_GCN_S4_MODE=1
 export ZION_OCL_BUILD_OPTS="${ZION_OCL_BUILD_OPTS:--cl-std=CL1.2 -cl-mad-enable}"
 
 # Deeksha (ZION) GPU stream
