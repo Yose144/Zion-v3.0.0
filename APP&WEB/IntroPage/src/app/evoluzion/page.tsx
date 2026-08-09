@@ -166,8 +166,6 @@ export default function EvoluzionPage() {
               alt: s.alt,
               caption: s.caption,
             }))}
-            aspect="aspect-square"
-            objectFit="cover"
           />
         </section>
 

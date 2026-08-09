@@ -83,7 +83,7 @@ export default function ImageSlider({
 
   return (
     <div
-      className={`relative mx-auto w-full max-w-3xl overflow-hidden rounded-2xl border border-white/10 bg-black/40 p-2 ${className}`}
+      className={`relative mx-auto w-full max-w-xl overflow-hidden rounded-2xl border border-white/10 bg-black/40 p-2 ${className}`}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       role="region"
@@ -101,13 +101,13 @@ export default function ImageSlider({
             aria-roledescription="slide"
             aria-label={`${i + 1} of ${total}`}
           >
-            <div className={`relative mx-auto w-full max-w-2xl overflow-hidden rounded-xl ${aspect}`}>
+            <div className={`relative mx-auto w-full overflow-hidden rounded-xl ${aspect}`}>
               <Image
                 src={s.src}
                 alt={s.alt}
                 fill
-                sizes="(max-width: 768px) 100vw, 800px"
-                loading={i === 0 ? "eager" : "lazy"}
+                sizes="(max-width: 768px) 100vw, 576px"
+                loading="eager"
                 decoding="async"
                 className={`rounded-xl ${objectFit === "cover" ? "object-cover" : "object-contain"}`}
                 draggable={false}
