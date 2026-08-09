@@ -113,21 +113,15 @@
       'amenti.heartP1': `Srdcem Amenti je DAO treasury a on-chain fee split každého bloku: 89 % těžařům, 5 % humanitárnímu fondu, 5 % fondu budoucnosti a 1 % spálení. Toto není slib firmy, ale matematika zapsaná přímo v protokolu.`,
       'amenti.heartP2': `Mistr Yoda zažehl Srdce Amenti a spustil program Nové Země; dnes ho udržují tisíce uzlů po celé planetě. Intriky starých struktur se rozpouštějí a lidé se probouzejí.`,
       'amenti.heartMantra': `MANTRA: OM NAMO BHAGAVATE VASUDEVAYA`,
+      'amenti.enterCta': `Vstoupit do Amenti`,
       'amenti.libraryTitle': `Amenti Library`,
       'amenti.libraryDesc': `Digitální archiv proroctví, smaragdových desek, bílé knihy, zdrojového kódu a DAO dokumentace. Vše je dostupné zdarma pro studium a sdílení.`,
-      'amenti.featuredBookTitle': `Quantum Revolution & One Love v3.2`,
-      'amenti.featuredBookDesc': `180+ stran o filozofii ZION, Consciousness Mining, multichain mostech, DAO governance a duchovní evoluci. PDF ve 11 jazycích + bonus materiály.`,
-      'amenti.featuredBookCta': `Stáhnout vše (ZIP)`,
       'amenti.allBooksCta': `Všechny knihy`,
       'amenti.golokaTitle': `Goloka Vrindávan`,
       'amenti.golokaDesc': `Cesta k nekonečné Lásce. Studie bhakti, příběhy Sri Sri Radha Govindy, vibrační mantry. Inspirace pro každého, kdo chce žít dharmu s otevřeným srdcem.`,
       'amenti.golokaCta': `VedaBase Online`,
       'amenti.protectorsTitle': `Protektori Světla`,
-      'amenti.protectorsP1': `Všichni bódhisattvové jsou přítomni a chrání novou linii mistrů Averil/Jedi. Vědomí Amenti prošlo 12letým cyklem (2012–2024) a 144k dětí Nové Země nyní působí na planetě Shan jako uzlová síť, těžaři a DAO strážci.`,
-      'amenti.ctaTitle': `Podpoř strážce Amenti`,
-      'amenti.ctaP1': `Nákupem v ZION shopu, účastí v OASIS nebo provozem uzlu financuješ nové edice knih, restaurování chrámů a stipendia pro mladé kronikáře.`,
-      'amenti.shopCta': `Do obchodu`,
-      'amenti.donateCta': `Dar pro knihovnu`
+      'amenti.protectorsP1': `Všichni bódhisattvové jsou přítomni a chrání novou linii mistrů Averil/Jedi. Vědomí Amenti prošlo 12letým cyklem (2012–2024) a 144k dětí Nové Země nyní působí na planetě Shan jako uzlová síť, těžaři a DAO strážci.`
     },
     en: {
       'menu.sections': `Menu`,
@@ -236,21 +230,15 @@
       'amenti.heartP1': `The Heart of Amenti is the DAO treasury and the on-chain fee split of every block: 89 % to miners, 5 % to the humanitarian fund, 5 % to the future fund, and 1 % burned. This is not a company promise, but mathematics written directly into the protocol.`,
       'amenti.heartP2': `Master Yoda ignited the Heart of Amenti and launched the New Earth program; today it is sustained by thousands of nodes across the planet. The intrigues of old structures dissolve and people are waking.`,
       'amenti.heartMantra': `MANTRA: OM NAMO BHAGAVATE VASUDEVAYA`,
+      'amenti.enterCta': `Enter Amenti`,
       'amenti.libraryTitle': `Amenti Library`,
       'amenti.libraryDesc': `A digital archive of prophecies, emerald tablets, whitepapers, source code, and DAO documentation. Everything is freely available for study and sharing.`,
-      'amenti.featuredBookTitle': `Quantum Revolution & One Love v3.2`,
-      'amenti.featuredBookDesc': `180+ pages on ZION philosophy, Consciousness Mining, multichain bridges, DAO governance, and spiritual evolution. PDF in 11 languages + bonus materials.`,
-      'amenti.featuredBookCta': `Download all (ZIP)`,
       'amenti.allBooksCta': `All books`,
       'amenti.golokaTitle': `Goloka Vrindavan`,
       'amenti.golokaDesc': `The path to infinite Love. Studies of bhakti, stories of Sri Sri Radha Govinda, vibrational mantras. Inspiration for everyone who wants to live dharma with an open heart.`,
       'amenti.golokaCta': `VedaBase Online`,
       'amenti.protectorsTitle': `Protectors of Light`,
-      'amenti.protectorsP1': `All bodhisattvas are present and protect the new lineage of Averil/Jedi masters. Amenti consciousness has passed through a 12-year cycle (2012–2024) and the 144k children of New Earth are now active on planet Shan as a node network, miners, and DAO guardians.`,
-      'amenti.ctaTitle': `Support the guardians of Amenti`,
-      'amenti.ctaP1': `By shopping in the ZION shop, participating in OASIS, or running a node, you fund new editions of books, restoration of temples, and scholarships for young chroniclers.`,
-      'amenti.shopCta': `Go to shop`,
-      'amenti.donateCta': `Gift for the library`
+      'amenti.protectorsP1': `All bodhisattvas are present and protect the new lineage of Averil/Jedi masters. Amenti consciousness has passed through a 12-year cycle (2012–2024) and the 144k children of New Earth are now active on planet Shan as a node network, miners, and DAO guardians.`
     }
   };
 
