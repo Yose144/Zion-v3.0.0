@@ -260,7 +260,7 @@ Final checklist. Full procedure in [`docs/3.0.0/MAINNET_LAUNCH_SEQUENCE.md`](./d
 | V3 workspace tests (archived) | ~2,066+ |
 | WARP tests | 499 |
 | Edge services | V31 primary node + pool + multichain + DAO + OASIS + web + marketplace + dashboard (V3 legacy masked) |
-| Chain height | 94+ (2026-08-07) |
+| Chain height | 1000+ (2026-08-09) |
 | Protocol | `zion-v3-node/3.1.0-alpha` |
 | Circulating supply | ~16.78B ZION |
 | Web image size | 377 MB (was 2.57 GB) |

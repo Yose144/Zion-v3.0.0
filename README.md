@@ -7,7 +7,7 @@
 
 ## Status
 
-> **Last updated: 2026-08-07**
+> **Last updated: 2026-08-09**
 
 - **Active mainnet track:** `V31/` workspace — version `3.1.0-beta` (V31 Mainnet Alpha), protocol string `zion-v3-node/3.1.0-alpha`, clean `cargo test --workspace`.
 - **V3 production line has been archived** to `archive/V3/` after the 2026-08-04 V31 cutover.
@@ -16,7 +16,7 @@
   - Public RPC: `rpc.zionterranova.com:8443` (nginx TCP proxy → `127.0.0.1:9445`)
   - Public pool stratum: `62.171.141.136:8444`
   - Pool HTTP API: `62.171.141.136:8080`
-  - Chain height: ~94 (fresh chain from 2026-08-06 genesis)
+  - Chain height: 1000+ (2026-08-09)
   - Protocol: `zion-v3-node/3.1.0-alpha` (workspace version `3.1.0-beta`)
   - Genesis hash (V3 compat): `4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71`
   - Genesis hash (V31 native): `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`

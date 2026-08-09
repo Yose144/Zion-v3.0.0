@@ -28,7 +28,7 @@ This document is the **single canonical plan** for moving from `3.1.0-beta` to `
 | Area | Evidence | Status |
 |------|----------|--------|
 | V31 workspace | `cargo test --workspace` passes (0 failures), `cargo clippy --workspace` clean (pre-existing warnings only) | verified 2026-08-07 |
-| V31 node on Edge | `zion-v31-node` P2P 8335, RPC 9445, height 94+ | verified 2026-08-07 |
+| V31 node on Edge | `zion-v31-node` P2P 8335, RPC 9445, height 1000+ | verified 2026-08-09 |
 | V31 pool on Edge | `zion-v31-pool` stratum 8444, HTTP API 8080, shares accepted, payout confirmation sweep active | verified 2026-08-07 |
 | V31 multichain | `/health` 200, DEX + HTLC endpoints wired | verified 2026-08-07 |
 | V31 DAO | runtime loads/persists proposals, L1 scanner, HTTP API + metrics on port 8456 | verified 2026-08-07 |

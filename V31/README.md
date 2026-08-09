@@ -1,6 +1,6 @@
 # V31 — Mainnet Alpha Workspace
 
-> **Stav 2026-08-07:** `V31` (`3.1.0-beta`) je aktivní **Mainnet Alpha** workspace. Workspace protokol je `zion-v3-node/3.1.0-alpha`. `cargo test --workspace` prochází (např. `zion-cosmic-harmony` 337 testů, `zion-core` 302 testů, `zion-miner` 196 testů + ostatní crate), `cargo clippy --workspace` čisté kromě pre-existing warnings. **V31 je produkční na Edge** — node, pool, multichain, DAO, OASIS, dashboard, web a marketplace běží na `62.171.141.136` s kanonickým `EkamDeeksha` v3.2 (512 KiB, 2 passy, 128 random reads, 2 AES rounds). V3 služby zastaveny a maskovány.
+> **Stav 2026-08-09:** `V31` (`3.1.0-beta`) je aktivní **Mainnet Alpha** workspace. Workspace protokol je `zion-v3-node/3.1.0-alpha`. `cargo test --workspace` prochází (aktuálně 2178 testů, např. `zion-multichain` 579, `zion-ai-native` 337, `zion-core` 303, `zion-pool` 165, `zion-miner` 101 + další crate), `cargo clippy --workspace` čisté kromě pre-existing warnings. **V31 je produkční na Edge** — node, pool, multichain, DAO, OASIS, dashboard, web a marketplace běží na `62.171.141.136` s kanonickým `EkamDeeksha` v3.2 (512 KiB, 2 passy, 128 random reads, 2 AES rounds). V3 služby zastaveny a maskovány.
 
 Workspace se nachází v `/home/zionserver/2.9.6-main/V31/`; V3 produkční služby byly zastaveny a maskovány, V3 zůstává jako historická checkpoint reference (`archive/V3/` + `v3_compat`).
 
