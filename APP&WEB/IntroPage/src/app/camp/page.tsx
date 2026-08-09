@@ -94,8 +94,6 @@ export default function CampPage() {
               alt: s.caption[lang],
               caption: s.caption[lang],
             }))}
-            aspect="aspect-[3/2]"
-            objectFit="cover"
           />
         </section>
 
