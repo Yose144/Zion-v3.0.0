@@ -1189,8 +1189,16 @@ pub fn print_trinity_stats_sticky(
 
     // ── First-time initialization ──
     if !STICKY_ACTIVE.load(Ordering::SeqCst) {
-        // Open /dev/tty for direct UI output (bypasses redirected stdout)
+        // Open /dev/tty for direct UI output (bypasses redirected stdout).
+        // If /dev/tty is not available (no controlling terminal), we cannot
+        // render the sticky header — fall back to normal stdout logging.
         open_tty();
+        let tty_fd = TTY_FD.load(Ordering::SeqCst);
+        if tty_fd < 0 {
+            // No TTY: leave stdout alone and do not enter sticky mode.
+            return;
+        }
+
         // Redirect stdout to /dev/null — ALL println! from any thread
         // will now go to /dev/null and cannot corrupt the display.
         // UI output goes to /dev/tty via tty_write().
