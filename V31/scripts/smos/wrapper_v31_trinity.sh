@@ -46,17 +46,17 @@ export ZION_OCL_BUILD_OPTS="${ZION_OCL_BUILD_OPTS:--cl-std=CL1.2 -cl-mad-enable}
 
 # Deeksha (ZION) GPU stream — work_size=8192 (RDNA1 cap, GCN auto-caps to 4096).
 # Auto-tune per-device: Vega 64 (GCN) → 4096, RX 5600 XT (RDNA1) → 8192.
-# LOCAL_SIZE: GCN needs 64 (wave64), RDNA1 uses 256 (wave32). Auto-tune handles
-# this per-device, but ZION_OCL_LOCAL_SIZE override can break GCN if set wrong.
+# LOCAL_SIZE=128 for RDNA1 (optimal for 512KB scratchpad, 2 WGs per CU).
+# GCN needs 64 (wave64). Auto-tune handles this per-device.
 # See docs/3.0.1Genesis/VEGA64_S4_MEMHARD_DEBUG_GUIDE.md (work size table)
 # See docs/3.0.6/VEGA_SMOS_DUAL_GPU_REPORT.md (v90 config)
 export ZION_MINER_ALGORITHM=deeksha_lite_v1
 export ZION_GPU_WORK_SIZE=8192
 export ZION_NONCE_AUTOTUNE=1
-export ZION_NONCE_COUNT=65536
-export ZION_NONCE_COUNT_MIN=32768
-export ZION_NONCE_COUNT_MAX=262144
-export ZION_GPU_MAX_BATCH=65536
+export ZION_NONCE_COUNT=262144
+export ZION_NONCE_COUNT_MIN=65536
+export ZION_NONCE_COUNT_MAX=524288
+export ZION_GPU_MAX_BATCH=262144
 export ZION_GPU_EARLY_BREAK=0
 export ZION_GPU_NO_STREAM_BYPRODUCT=1
 
@@ -68,20 +68,18 @@ export ZION_STREAM2_ENABLED=1
 export ZION_STREAM3_ENABLED=1
 
 # GPU AuxPoW tuning (ZANO ProgPoWZ)
-# PARALLEL mode: BOTH GPUs mine BOTH ZION and ZANO via time-slicing.
-# GAP_MS=0 → tokio::yield_now() (no sleep, just cooperative scheduling).
-# GPU driver serializes ZION and ZANO kernels on each GPU.
+# DEDICATED mode: Vega 64 exclusively mines ZANO ProgPoWZ.
+# GWS cap: 524288 (512K) — Vega 64 has 64 CUs, 524288/128 = 4096 WGs,
+# 4096/64 = 64 WGs per CU. Safe from amdgpu TTD (timeout detection) since
+# dedicated GPU has no ZION contention. Was 262144 (conservative for parallel).
 # Vega 64 (GCN): GROUP_SIZE=128, bpermute auto-disabled (GCN-safe)
-# RX 5600 XT (RDNA1): GROUP_SIZE=256, bpermute auto-enabled (wave32)
-# See docs/3.0.6/parallelgpu.md (RDNA1 bpermute optimization)
-# See docs/3.0.6/VEGA64_ZANO_TUNING_REPORT.md (Vega 64 ZANO tuning)
-# See docs/3.0.6/VEGA_SMOS_DUAL_GPU_REPORT.md (v90 stable config)
-export ZION_STREAM2_BATCH=2097152
+export ZION_STREAM2_BATCH=4194304
 export ZION_STREAM2_FORCE_COIN=ZANO
 export ZION_AUXPOW_GPU_WORK_SIZE=1048576
 export ZION_AUXPOW_GPU_GROUP_SIZE=128
 export ZION_AUXPOW_GPU_VRAM_PCT=50
 export ZION_AUXPOW_GPU_BYTES_PER_ITEM=64
+export ZION_AUXPOW_PROGPOW_MAX_GWS=524288
 export ZION_ZANO_STALE_SECS=30
 
 # Multi-GPU DEDICATED mode: Vega 64 reserved for ZANO ProgPoWZ,
@@ -95,9 +93,11 @@ export ZION_EXT_GPU_GAP_MS=0
 export ZION_EXT_GPU_MAX_GAP_MS=0
 
 # CPU AuxPoW tuning (VRSC VerusHash — pool sends jobs, miner mines)
+# Pentium G4560: 2C/4T @ 3.5GHz. 4 threads = max (hyperthreading).
+# Larger batch = less host overhead, CPU can pre-compute more nonces.
 export ZION_MINER_CPU_COIN=VRSC
-export ZION_STREAM3_BATCH=2000000
-export ZION_EXT_CPU_NONCE_COUNT=2000000
+export ZION_STREAM3_BATCH=4000000
+export ZION_EXT_CPU_NONCE_COUNT=4000000
 export ZION_MINER_THREADS=4
 
 # ── Download V31 miner binary ─────────────────────────────────────────────

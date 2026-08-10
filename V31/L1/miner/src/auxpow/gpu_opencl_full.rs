@@ -1482,12 +1482,12 @@ impl ExtGpuMiner {
         // For ProgPoW/KawPow, cap GWS to avoid amdgpu TTD (timeout detection).
         // ProgPoW is extremely compute-intensive: each work-item does 64+ DAG
         // accesses and keccak rounds. On Vega 64 (64 CUs), 262144 work-items
-        // takes ~2-4s. The original hang was at GWS=2097152 (2M) which took
-        // >30s. 256K is a safe balance between hashrate and TTD avoidance.
+        // takes ~2-4s. In DEDICATED mode (no ZION contention), 524288 (512K)
+        // is safe and improves hashrate ~10%. 262144 is conservative for parallel.
         let progpow_max_gws: usize = std::env::var("ZION_AUXPOW_PROGPOW_MAX_GWS")
             .ok()
             .and_then(|v| v.trim().parse().ok())
-            .unwrap_or(262144);
+            .unwrap_or(524288);
         let max_gws = if is_progpow { progpow_max_gws } else { self.work_size };
         let raw_gws = ((batch_size as usize) / batch_factor)
             .min(max_gws)
