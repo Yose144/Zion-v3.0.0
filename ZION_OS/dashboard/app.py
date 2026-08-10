@@ -5462,10 +5462,10 @@ def _apply_block_to_utxo(utxo: dict, blk: dict) -> None:
                     continue
                 if isinstance(po, dict):
                     prev_tx = po.get("tx_id") or po.get("transaction_id")
-                    vout = po.get("index", po.get("vout", 0))
+                    vout = int(po.get("index", po.get("vout", 0)) or 0)
                 elif isinstance(po, str):
                     prev_tx = po
-                    vout = 0
+                    vout = int(inp.get("index", 0) or 0)
                 else:
                     continue
                 if prev_tx:
