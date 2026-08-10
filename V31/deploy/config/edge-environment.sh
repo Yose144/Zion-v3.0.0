@@ -74,7 +74,10 @@ ZION_POOL_AUXPOW_SPLIT_EXTERNAL=1
 # pools). If you mine a coin that pays out in that coin (e.g. ZANO → ZANO
 # address), set ZION_POOL_AUXPOW_WALLET_ZANO securely on the server, NOT here.
 ZION_POOL_AUXPOW_WALLET=bc1q9c06f4wpf638xp2280j07qgdrpz0sdms7peqkh
-ZION_POOL_AUXPOW_WORKER_NAME=zion-pool
+# Base worker name used for all AuxPoW upstream connections.
+# The pool appends .<coin> to this (e.g. zion-pool.vrsc, zion-pool.zano).
+# auxpow_runtime.rs reads ZION_POOL_AUXPOW_WORKER (not _WORKER_NAME).
+ZION_POOL_AUXPOW_WORKER="zion-pool"
 ZION_POOL_AUXPOW_POOL_PREFERENCE=default
 ZION_POOL_AUXPOW_REGION=eu
 ZION_POOL_AUXPOW_PROFIT_CHECK_INTERVAL=60
