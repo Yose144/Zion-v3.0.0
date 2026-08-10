@@ -726,6 +726,10 @@ impl StratumServer {
         for coin in &coins {
             if !self.multi_bridge.is_cpu_coin(coin) {
                 if let Some(job) = self.multi_bridge.latest_job_for_coin(coin) {
+                    if !Self::job_is_fresh(&job) {
+                        tracing::debug!("build_external_stream_gpu: dropping stale {} job {}", coin.as_str(), job.external_job_id);
+                        continue;
+                    }
                     return Some(ExternalStreamJob {
                         coin: coin.as_str().to_string(),
                         algorithm: job.algorithm.clone(),
@@ -758,6 +762,10 @@ impl StratumServer {
         for coin in &coins {
             if self.multi_bridge.is_cpu_coin(coin) {
                 if let Some(job) = self.multi_bridge.latest_job_for_coin(coin) {
+                    if !Self::job_is_fresh(&job) {
+                        tracing::debug!("build_external_stream_cpu: dropping stale {} job {}", coin.as_str(), job.external_job_id);
+                        continue;
+                    }
                     return Some(ExternalStreamJob {
                         coin: coin.as_str().to_string(),
                         algorithm: job.algorithm.clone(),
@@ -775,6 +783,18 @@ impl StratumServer {
             }
         }
         None
+    }
+
+    /// Return true if an external job is fresh enough to send to a miner.
+    /// Thresholds match the previous V3 stale-share tunings.
+    fn job_is_fresh(job: &crate::auxpow_bridge::JobPackage) -> bool {
+        let max_age_secs: u64 = match job.coin {
+            ExternalCoin::Zano => 28,
+            ExternalCoin::Verus => 50,
+            _ => 120,
+        };
+        job.received_at
+            .map_or(true, |t| t.elapsed().as_secs() <= max_age_secs)
     }
 
     pub async fn run(&self, listener: TcpListener) -> std::io::Result<()> {

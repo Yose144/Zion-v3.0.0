@@ -5,7 +5,7 @@
 //! V31 uses `AuxPowClient` directly instead of V3's `JobMultiplexer`.
 
 use std::collections::HashSet;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use zion_cosmic_harmony::{CoinProfile, ExternalCoin};
 use zion_miner::auxpow::client::{AuxPowClient, AuxPowClientConfig, ExternalJob};
@@ -142,6 +142,7 @@ fn external_job_to_package(job: &ExternalJob, coin: ExternalCoin) -> JobPackage 
         algorithm: job.algorithm.clone(),
         extranonce1_hex: hex::encode(&job.extranonce1),
         ntime: if job.ntime.is_empty() { "00000000".to_string() } else { job.ntime.clone() },
+        received_at: Some(Instant::now()),
     }
 }
 
