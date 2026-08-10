@@ -16,7 +16,7 @@ export ZION_MINER_ID="vega-smos"
 # ── Core miner config ─────────────────────────────────────────────────────
 export ZION_GPU_BACKEND="${ZION_GPU_BACKEND:-opencl}"
 export ZION_PROFILE="${ZION_PROFILE:-pool}"
-export ZION_VERBOSE=0
+export ZION_VERBOSE=1
 export ZION_INTERACTIVE=1
 export ZION_NO_STICKY=1
 export ZION_METRICS_REPORT_SECS=15
@@ -63,10 +63,10 @@ export ZION_AUXPOW_GPU_GROUP_SIZE=128
 export ZION_AUXPOW_GPU_VRAM_PCT=50
 export ZION_AUXPOW_GPU_BYTES_PER_ITEM=64
 
-# Duty-cycle: 50% GPU time for Stream 2, 50% for Stream 1
-# gap_ms = sleep after each Stream 2 batch (300ms default)
-export ZION_EXT_GPU_TIME_DUTY_PCT=50
-export ZION_EXT_GPU_GAP_MS=300
+# Duty-cycle: dedicated Vega for ZANO ProgPoW, RX 5600 for ZION Deeksha.
+# gap_ms = 0 because each coin has its own GPU; no time-slicing needed.
+export ZION_EXT_GPU_TIME_DUTY_PCT=100
+export ZION_EXT_GPU_GAP_MS=0
 export ZION_EXT_GPU_MAX_GAP_MS=5000
 
 # CPU AuxPoW tuning (VRSC VerusHash — pool sends jobs, miner mines)

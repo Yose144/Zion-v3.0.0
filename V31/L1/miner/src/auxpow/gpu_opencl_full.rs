@@ -291,6 +291,10 @@ pub struct ExtGpuMiner {
     /// Kept in sync with the kernel's GROUP_SIZE build define so the
     /// enqueue local_work_size matches and avoids out-of-bounds local mem.
     progpow_group_size: usize,
+    /// Number of nonces actually tested in the last `mine()` call.
+    /// This can differ from the requested `batch_size` when the kernel caps
+    /// or rounds the global work size (e.g. ProgPoW GWS limit).
+    last_batch_tested: u64,
 }
 
 /// Cached OpenCL buffers for the BeamHash III multi-round solver.
@@ -636,6 +640,7 @@ impl ExtGpuMiner {
             beamhash_buffers: None,
             block_height: 0,
             progpow_group_size: 256,
+            last_batch_tested: 0,
         })
     }
 
@@ -649,6 +654,12 @@ impl ExtGpuMiner {
     /// Returns the OpenCL device name (e.g. "gfx900:xnack- (Vega 64, 64 CUs, 8GB)").
     pub fn device_name(&self) -> &str {
         &self.device_name
+    }
+
+    /// Returns the number of nonces actually tested by the last `mine()` call.
+    /// This is the authoritative value for the caller's nonce cursor.
+    pub fn last_batch_tested(&self) -> u64 {
+        self.last_batch_tested
     }
 
     /// Compute GhostRider hash for a single nonce using the benchmark kernel.
@@ -1482,6 +1493,11 @@ impl ExtGpuMiner {
             .min(max_gws)
             .max(1);
         let global_work_size = ((raw_gws + wg_size - 1) / wg_size) * wg_size;
+        self.last_batch_tested = if is_progpow {
+            global_work_size as u64
+        } else {
+            (global_work_size as u64) * (batch_factor as u64)
+        };
         let start = Instant::now();
         // Only log kernel enqueue occasionally to avoid log spam (was 5859
         // lines in a single session). Log first 3 batches and then every 500.

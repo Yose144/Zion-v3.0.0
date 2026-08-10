@@ -2256,19 +2256,36 @@ pub fn create_gpu_backend(
                 }
             };
 
-            let zion_indices: Vec<usize> =
-                (0..gpu_count).filter(|i| Some(*i) != zano_idx).collect();
+            // Decide which devices should run the requested algorithm.
+            // Stream 1 (ZION Deeksha) uses the non-reserved devices.
+            // Stream 2 (ZANO ProgPoW / external AuxPoW) uses the reserved ProgPoW GPU.
+            // If ZION_ZANO_RESERVE=0, the external stream picks the best ProgPoW device.
+            let target_indices: Vec<usize> = if is_external_algorithm(algorithm) {
+                if let Some(idx) = zano_idx {
+                    vec![idx]
+                } else {
+                    // No reservation: external stream should still use the best
+                    // ProgPoW-capable device, not all devices mixed with ZION.
+                    gpu_devices
+                        .iter()
+                        .max_by_key(|d| d.classification.progpow_priority())
+                        .map(|d| vec![d.global_idx])
+                        .unwrap_or_default()
+                }
+            } else {
+                (0..gpu_count).filter(|i| Some(*i) != zano_idx).collect()
+            };
 
             tlog!(
-                "multi_gpu_init devices={} algorithm={} zano_device_idx={:?} zion_devices={:?}",
+                "multi_gpu_init devices={} algorithm={} zano_device_idx={:?} target_devices={:?}",
                 gpu_count,
                 algorithm,
                 zano_idx,
-                zion_indices
+                target_indices
             );
 
             let mut sub_miners: Vec<Box<dyn GpuMiner>> = Vec::new();
-            for i in &zion_indices {
+            for i in &target_indices {
                 let dev = &gpu_devices[*i];
                 // Use the exact device name for deterministic assignment; names are stable.
                 std::env::remove_var("ZION_OCL_DEVICE_IDX");
@@ -2295,25 +2312,23 @@ pub fn create_gpu_backend(
             }
 
             if sub_miners.is_empty() {
-                // No ZION GPUs left (e.g. single GPU and it matches ZANO filter).
+                // No target GPUs left (e.g. single GPU and it matches ZANO filter).
                 // Fall through to single-GPU mode on the ZANO device.
-                tlog!("multi_gpu: no ZION devices left after ZANO reservation, falling back to single-GPU");
+                tlog!("multi_gpu: no target devices left after ZANO reservation, falling back to single-GPU");
             } else {
                 if sub_miners.len() == 1 {
-                    println!("multi_gpu: 1 ZION sub-miner — using single-GPU for ZION");
+                    println!("multi_gpu: 1 sub-miner — using single-GPU for {algorithm}");
                 }
 
-                // Point the external AuxPoW (ZANO ProgPoW) miner at the reserved
-                // ProgPoW GPU by device name (NOT index — names are stable across reboots).
+                // Point any later OpenCL picker at the reserved ZANO device so
+                // streams that don't go through this multi-GPU branch still land
+                // on the correct GPU. Names are stable across reboots.
                 if let Some(idx) = zano_idx {
                     let zano_dev = &gpu_devices[idx];
-                    // Remove index override to force name-based selection in AuXpow.
-                    // This is critical: enumeration order can shift between reboots,
-                    // but device names are stable.
                     std::env::remove_var("ZION_OCL_DEVICE_IDX");
                     std::env::set_var("ZION_OCL_DEVICE_NAME", &zano_dev.name);
                     tlog!(
-                        "multi_gpu_ready zion_active_devices={} zion_names=\"{}\" zano_device_idx={} zano_device_name=\"{}\" zano_class={}",
+                        "multi_gpu_ready active_devices={} active_names=\"{}\" zano_device_idx={} zano_device_name=\"{}\" zano_class={}",
                         sub_miners.len(),
                         sub_miners.iter().map(|m| m.device_name()).collect::<Vec<_>>().join(" + "),
                         idx,
@@ -2321,12 +2336,7 @@ pub fn create_gpu_backend(
                         zano_dev.classification.as_str(),
                     );
                 } else {
-                    // No ZANO reservation — all GPUs mine ZION in parallel.
-                    // The ZANO AuxPoW stream will auto-select the best ProgPoW GPU
-                    // (typically Vega 64) and share it with ZION via time-slicing
-                    // controlled by ZION_EXT_GPU_TIME_DUTY_PCT.
-                    // Set ZION_OCL_DEVICE_NAME to the best ProgPoW device so AuxPoW
-                    // picks the right one (not just the first device).
+                    // No ZANO reservation — all GPUs run the same algorithm in parallel.
                     std::env::remove_var("ZION_OCL_DEVICE_IDX");
                     let best_progpow = gpu_devices
                         .iter()
@@ -2337,7 +2347,7 @@ pub fn create_gpu_backend(
                         std::env::set_var("ZION_OCL_DEVICE_NAME", &best_progpow);
                     }
                     tlog!(
-                        "multi_gpu_ready zion_active_devices={} zion_names=\"{}\" zano_device_idx=none (time-shared on \"{}\")",
+                        "multi_gpu_ready active_devices={} active_names=\"{}\" zano_device_idx=none (best=\"{}\")",
                         sub_miners.len(),
                         sub_miners.iter().map(|m| m.device_name()).collect::<Vec<_>>().join(" + "),
                         best_progpow,
@@ -8491,7 +8501,7 @@ pub mod opencl_external {
 
     impl GpuMiner for OpenClExternalMiner {
         fn device_name(&self) -> String {
-            format!("opencl_auxpow_{}", self.algorithm)
+            self.device_name_cached.clone()
         }
         fn backend_kind(&self) -> GpuBackendKind {
             GpuBackendKind::OpenCL
@@ -8556,18 +8566,20 @@ pub mod opencl_external {
                 batch_size,
             )?;
 
+            let nonces_tested = self.miner.last_batch_tested();
+            let nonces_tested = if nonces_tested == 0 { batch_size } else { nonces_tested };
             if let Some(fs) = found {
                 Ok(GpuBatchResult {
                     solutions: vec![(fs.nonce, fs.hash, fs.mix_hash)],
                     solution_blob: fs.solution,
-                    nonces_tested: batch_size,
+                    nonces_tested,
                     device_name: self.device_name_cached.clone(),
                 })
             } else {
                 Ok(GpuBatchResult {
                     solutions: Vec::new(),
                     solution_blob: None,
-                    nonces_tested: batch_size,
+                    nonces_tested,
                     device_name: self.device_name_cached.clone(),
                 })
             }
@@ -8589,18 +8601,20 @@ pub mod opencl_external {
                 batch_size,
             )?;
 
+            let nonces_tested = self.miner.last_batch_tested();
+            let nonces_tested = if nonces_tested == 0 { batch_size } else { nonces_tested };
             if let Some(fs) = found {
                 Ok(GpuBatchResult {
                     solutions: vec![(fs.nonce, fs.hash, fs.mix_hash)],
                     solution_blob: fs.solution,
-                    nonces_tested: batch_size,
+                    nonces_tested,
                     device_name: self.device_name_cached.clone(),
                 })
             } else {
                 Ok(GpuBatchResult {
                     solutions: Vec::new(),
                     solution_blob: None,
-                    nonces_tested: batch_size,
+                    nonces_tested,
                     device_name: self.device_name_cached.clone(),
                 })
             }
