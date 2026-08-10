@@ -674,10 +674,14 @@ impl MinerRuntime {
         // memory corruption and false-positive results in the deeksha kernel.
         // V3 reference passes shared_cuda_dev to create_gpu_backend_with_cuda_device
         // (archive/V3/L1/miner/src/main.rs line 5141).
+        // Only relevant when the miner is compiled with the `gpu-cuda` feature.
+        #[cfg(feature = "gpu-cuda")]
         let shared_cuda_dev = {
             let gpu_guard = self.gpu_zion.lock().unwrap();
             gpu_guard.as_ref().and_then(|g| g.shared_cuda_device())
         };
+        #[cfg(not(feature = "gpu-cuda"))]
+        let shared_cuda_dev: Option<()> = None;
 
         let start = Instant::now();
         let gpu_result = task::spawn_blocking(move || {
