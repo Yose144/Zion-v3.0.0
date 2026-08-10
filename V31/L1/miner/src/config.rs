@@ -140,7 +140,10 @@ impl MinerConfig {
             stream3_enabled: std::env::var("ZION_STREAM3_ENABLED")
                 .map(|v| v != "0" && !v.eq_ignore_ascii_case("false"))
                 .unwrap_or(true),
-            stream2_batch: 1_048_576, // 1M nonces per batch for ProgPoW GPU mining
+            stream2_batch: std::env::var("ZION_STREAM2_BATCH")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(262_144), // cap to progpow_max_gws per sub-miner to avoid skipped ranges
             stream3_batch: verushash_nonce_count,
             stream2_force_coin: std::env::var("ZION_STREAM2_FORCE_COIN")
                 .ok()
