@@ -593,7 +593,13 @@ impl CudaExternalMiner {
             .ok_or_else(|| anyhow::anyhow!("dag_gen kernel not found"))?;
 
         let threads_per_block: u32 = 256;
-        let batch_nodes: u32 = 8192; // nodes per kernel launch
+        // Default to 64K nodes per launch (8x the previous 8,192). A larger
+        // batch keeps the GPU better occupied and can be tuned via env.
+        let batch_nodes: u32 = std::env::var("ZION_AUXPOW_GPU_DAG_BATCH")
+            .ok()
+            .and_then(|v| v.trim().parse::<u32>().ok())
+            .unwrap_or(65_536)
+            .max(1_024);
         let light_cache_ref = self.light_cache_buf.as_ref().unwrap();
 
         eprintln!(
