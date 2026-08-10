@@ -254,11 +254,14 @@ enum WalletCommand {
         #[arg(short, long)]
         path: Option<PathBuf>,
     },
-    /// Send ZION from a wallet file to an address.
+    /// Send ZION from a wallet file or raw secret key to an address.
     Send {
         /// Wallet file path (default: ~/.zion/wallet.json).
         #[arg(short, long)]
         wallet: Option<PathBuf>,
+        /// Sender secret key as hex (64 characters). Derives sender address.
+        #[arg(long)]
+        secret_key_hex: Option<String>,
         /// Recipient address (zion1...).
         #[arg(short, long)]
         to: String,
@@ -630,34 +633,48 @@ async fn main() -> anyhow::Result<()> {
                 println!("Address:     {}", address);
                 println!("Public key:  {}", public_key);
             }
-            WalletCommand::Send { wallet, to, amount, fee, memo, rpc, dry_run } => {
-                let wallet_path = wallet.unwrap_or_else(|| {
-                    dirs::home_dir()
-                        .unwrap_or_else(|| PathBuf::from("."))
-                        .join(".zion")
-                        .join("wallet.json")
-                });
-                if !wallet_path.exists() {
-                    bail!("wallet file not found: {}", wallet_path.display());
-                }
-                let raw = std::fs::read_to_string(&wallet_path)?;
-                let wallet_data: serde_json::Value = serde_json::from_str(&raw)?;
-                let sk_hex = wallet_data["secret_key"]
-                    .as_str()
-                    .ok_or_else(|| anyhow!("wallet file missing 'secret_key' field"))?;
-                let sender_address = wallet_data["address"]
-                    .as_str()
-                    .ok_or_else(|| anyhow!("wallet file missing 'address' field"))?;
-
-                // Reconstruct signing key
-                let sk_bytes = zion_core::crypto::from_hex(sk_hex)
-                    .ok_or_else(|| anyhow!("invalid secret key hex"))?;
-                if sk_bytes.len() != 32 {
-                    bail!("secret key must be 32 bytes, got {}", sk_bytes.len());
-                }
-                let mut sk_arr = [0u8; 32];
-                sk_arr.copy_from_slice(&sk_bytes);
-                let signing_key = ed25519_dalek::SigningKey::from_bytes(&sk_arr);
+            WalletCommand::Send { wallet, secret_key_hex, to, amount, fee, memo, rpc, dry_run } => {
+                // Reconstruct signing key and determine sender address
+                let (signing_key, sender_address) = if let Some(sk_hex) = secret_key_hex {
+                    let sk_bytes = zion_core::crypto::from_hex(&sk_hex)
+                        .ok_or_else(|| anyhow!("invalid secret key hex"))?;
+                    if sk_bytes.len() != 32 {
+                        bail!("secret key must be 32 bytes, got {}", sk_bytes.len());
+                    }
+                    let mut sk_arr = [0u8; 32];
+                    sk_arr.copy_from_slice(&sk_bytes);
+                    let signing_key = ed25519_dalek::SigningKey::from_bytes(&sk_arr);
+                    let sender_address =
+                        zion_core::crypto::derive_address(&signing_key.verifying_key().to_bytes());
+                    (signing_key, sender_address)
+                } else {
+                    let wallet_path = wallet.unwrap_or_else(|| {
+                        dirs::home_dir()
+                            .unwrap_or_else(|| PathBuf::from("."))
+                            .join(".zion")
+                            .join("wallet.json")
+                    });
+                    if !wallet_path.exists() {
+                        bail!("wallet file not found: {}", wallet_path.display());
+                    }
+                    let raw = std::fs::read_to_string(&wallet_path)?;
+                    let wallet_data: serde_json::Value = serde_json::from_str(&raw)?;
+                    let sk_hex = wallet_data["secret_key"]
+                        .as_str()
+                        .ok_or_else(|| anyhow!("wallet file missing 'secret_key' field"))?;
+                    let sender_address = wallet_data["address"]
+                        .as_str()
+                        .ok_or_else(|| anyhow!("wallet file missing 'address' field"))?;
+                    let sk_bytes = zion_core::crypto::from_hex(sk_hex)
+                        .ok_or_else(|| anyhow!("invalid secret key hex"))?;
+                    if sk_bytes.len() != 32 {
+                        bail!("secret key must be 32 bytes, got {}", sk_bytes.len());
+                    }
+                    let mut sk_arr = [0u8; 32];
+                    sk_arr.copy_from_slice(&sk_bytes);
+                    let signing_key = ed25519_dalek::SigningKey::from_bytes(&sk_arr);
+                    (signing_key, sender_address.to_string())
+                };
 
                 // Convert ZION to flowers (6 decimals)
                 let amount_flowers = (amount * 1_000_000.0) as u64;
@@ -677,7 +694,7 @@ async fn main() -> anyhow::Result<()> {
                 }
 
                 // Fetch UTXOs from L1 RPC
-                let utxos = fetch_utxos(&rpc, sender_address).await?;
+                let utxos = fetch_utxos(&rpc, &sender_address).await?;
                 if utxos.is_empty() {
                     bail!("no spendable UTXOs found for address {}", sender_address);
                 }
@@ -688,7 +705,7 @@ async fn main() -> anyhow::Result<()> {
                 // Build and sign V31-native transaction
                 let result = zion_core::build_send(
                     &signing_key,
-                    sender_address,
+                    &sender_address,
                     &to,
                     amount_flowers,
                     fee_flowers,

@@ -329,12 +329,6 @@ impl StratumServer {
             Err(msg) => return error_response(Some(id), -32602, msg),
         };
 
-        let submission = ShareSubmission {
-            worker,
-            job_id: job_id.clone(),
-            nonce_hex: nonce_hex.clone(),
-        };
-
         let (header, _share_target, block_target, reward, template) = {
             let jobs = self.jobs.lock().unwrap();
             match jobs.get(&job_id) {
@@ -353,6 +347,13 @@ impl StratumServer {
         // per-session vardiff retarget is queued via mining.set_difficulty.)
         let share_target = ctx.vardiff.share_target();
         let share_difficulty = ctx.vardiff.current();
+
+        let submission = ShareSubmission {
+            worker,
+            job_id: job_id.clone(),
+            nonce_hex: nonce_hex.clone(),
+            difficulty: share_difficulty,
+        };
 
         let worker_name = submission.worker.clone();
         let (miner_id, worker_short) = split_worker(&worker_name);
@@ -374,22 +375,19 @@ impl StratumServer {
             }
         };
 
-        let (height, difficulty) = template
-            .as_ref()
-            .map(|t| (t.height, t.difficulty))
-            .unwrap_or((0, 1));
+        let height = template.as_ref().map(|t| t.height).unwrap_or(0);
 
         let result = if job_id.starts_with("zion_") || job_id.starts_with("j") {
             self.pool
                 .lock()
                 .unwrap()
-                .submit_zion_with_target(submission, &header, height, difficulty, &share_target)
+                .submit_zion_with_target(submission, &header, height, &share_target)
         } else if job_id.starts_with("aux_") {
             let coin = parse_aux_coin(&job_id);
             self.pool
                 .lock()
                 .unwrap()
-                .submit_auxpow_with_target(coin, submission, &header, height, difficulty, &share_target)
+                .submit_auxpow_with_target(coin, submission, &header, height, &share_target)
         } else {
             Err(PoolError::UnknownJob)
         };
@@ -1016,12 +1014,14 @@ impl StratumServer {
                                     let job_data = self.jobs.lock().unwrap().get(&job_key).cloned();
                                     if let Some((header, share_target, block_target, reward, template)) = job_data {
                                         let (height, difficulty) = template.as_ref().map(|t| (t.height, t.difficulty)).unwrap_or((0, 1));
+                                        let share_diff = self.vardiff_config.start_difficulty.max(1);
                                         let submission = ShareSubmission {
                                             worker: submit_worker.clone(),
                                             job_id: job_key.clone(),
                                             nonce_hex: format!("{:016x}", nonce),
+                                            difficulty: share_diff,
                                         };
-                                        let result = self.pool.lock().unwrap().submit_zion_with_target(submission, &header, height, difficulty, &share_target);
+                                        let result = self.pool.lock().unwrap().submit_zion_with_target(submission, &header, height, &share_target);
                                         let accepted = matches!(result, Ok(true));
 
                                         // Estimate hashes/elapsed for TLS clients (no per-session vardiff here).
@@ -1279,17 +1279,18 @@ impl StratumServer {
                                     .map(|t| (t.height, t.difficulty))
                                     .unwrap_or((0, 1));
 
+                                let share_difficulty = vardiff.current().max(1);
                                 let submission = ShareSubmission {
                                     worker: submit_worker.clone(),
                                     job_id: job_key.clone(),
                                     nonce_hex: format!("{:016x}", nonce),
+                                    difficulty: share_difficulty,
                                 };
 
                                 let result = self.pool.lock().unwrap().submit_zion_with_target(
                                     submission,
                                     &header,
                                     height,
-                                    difficulty,
                                     &share_target,
                                 );
 

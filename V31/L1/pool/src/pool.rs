@@ -95,11 +95,13 @@ impl Pool {
         u64::from_str_radix(s, 16).map_err(|_| PoolError::Parse)
     }
 
-    fn record_share(&mut self, worker: &str, height: u64, difficulty: u64) {
+    fn record_share(&mut self, submission: &ShareSubmission, height: u64) {
+        let worker = &submission.worker;
         let address = self.worker_address(worker);
         self.pplns.register_address(worker, &address.encoded);
+        let share_difficulty = submission.difficulty.max(1);
         self.pplns
-            .record_share_with_diff(worker, worker, height, difficulty);
+            .record_share_with_diff(worker, worker, height, share_difficulty);
     }
 
     fn worker_address(&self, worker: &str) -> Address {
@@ -124,10 +126,9 @@ impl Pool {
         submission: ShareSubmission,
         header: &[u8],
         height: u64,
-        difficulty: u64,
     ) -> Result<bool, PoolError> {
         let target = self.config.zion_target;
-        self.submit_zion_with_target(submission, header, height, difficulty, &target)
+        self.submit_zion_with_target(submission, header, height, &target)
     }
 
     pub fn submit_zion_with_target(
@@ -135,12 +136,11 @@ impl Pool {
         submission: ShareSubmission,
         header: &[u8],
         height: u64,
-        difficulty: u64,
         target: &[u8; 32],
     ) -> Result<bool, PoolError> {
         let nonce = Self::parse_nonce(&submission.nonce_hex)?;
         if self.validator.validate_zion(header, nonce, target) {
-            self.record_share(&submission.worker, height, difficulty);
+            self.record_share(&submission, height);
             self.accepted.fetch_add(1, Ordering::Relaxed);
             Ok(true)
         } else {
@@ -155,10 +155,9 @@ impl Pool {
         submission: ShareSubmission,
         header: &[u8],
         height: u64,
-        difficulty: u64,
     ) -> Result<bool, PoolError> {
         let target = self.config.auxpow_target;
-        self.submit_auxpow_with_target(coin, submission, header, height, difficulty, &target)
+        self.submit_auxpow_with_target(coin, submission, header, height, &target)
     }
 
     pub fn submit_auxpow_with_target(
@@ -167,12 +166,11 @@ impl Pool {
         submission: ShareSubmission,
         header: &[u8],
         height: u64,
-        difficulty: u64,
         target: &[u8; 32],
     ) -> Result<bool, PoolError> {
         let nonce = Self::parse_nonce(&submission.nonce_hex)?;
         if self.validator.validate_auxpow(coin, header, nonce, target) {
-            self.record_share(&submission.worker, height, difficulty);
+            self.record_share(&submission, height);
             self.accepted.fetch_add(1, Ordering::Relaxed);
             Ok(true)
         } else {
@@ -280,8 +278,9 @@ mod tests {
             worker: "worker1".into(),
             job_id: "zion_1".into(),
             nonce_hex: format!("{:016x}", nonce),
+            difficulty: 1,
         };
-        assert!(pool.submit_zion(submission, header, 0, 1).unwrap());
+        assert!(pool.submit_zion(submission, header, 0).unwrap());
         assert_eq!(pool.stats(), (1, 0));
     }
 
@@ -292,8 +291,9 @@ mod tests {
             worker: "worker1".into(),
             job_id: "zion_1".into(),
             nonce_hex: "not_a_nonce".into(),
+            difficulty: 1,
         };
-        assert!(pool.submit_zion(submission, b"header", 0, 1).is_err());
+        assert!(pool.submit_zion(submission, b"header", 0).is_err());
     }
 
     #[test]
@@ -303,9 +303,10 @@ mod tests {
             worker: "worker1".into(),
             job_id: "aux_1".into(),
             nonce_hex: "0000000000000000".into(),
+            difficulty: 1,
         };
         assert!(pool
-            .submit_auxpow(ExternalCoin::Bitcoin, submission, b"aux_header", 0, 1)
+            .submit_auxpow(ExternalCoin::Bitcoin, submission, b"aux_header", 0)
             .unwrap());
         assert_eq!(pool.stats(), (1, 0));
     }
@@ -320,9 +321,10 @@ mod tests {
             worker: "worker1".into(),
             job_id: "aux_1".into(),
             nonce_hex: "0000000000000000".into(),
+            difficulty: 1,
         };
         assert!(pool
-            .submit_auxpow(ExternalCoin::Bitcoin, submission, b"aux_header", 0, 1)
+            .submit_auxpow(ExternalCoin::Bitcoin, submission, b"aux_header", 0)
             .is_err());
     }
 
@@ -338,8 +340,9 @@ mod tests {
                 worker: "worker1".into(),
                 job_id: format!("zion_{i}"),
                 nonce_hex: format!("{:016x}", i),
+                difficulty: 1,
             };
-            pool.submit_zion(submission, header, 1, 1).unwrap();
+            pool.submit_zion(submission, header, 1).unwrap();
         }
         let reward = 1_000_000;
         let payouts = pool.payouts(reward);

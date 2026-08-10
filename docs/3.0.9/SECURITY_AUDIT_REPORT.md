@@ -70,7 +70,7 @@
 ### Action Required
 
 **ANKR API key rotation (A1.5-URGENT):**
-- Key `d036dcf6e89c08c7a36d0b2d723d2d8ac27090965fa5925f60cab30b9c02f152` is compromised
+- Key `<SCRUBBED_ANKR_API_KEY>` is compromised
 - Appears in git history across 15+ commits (cannot be removed without force-push rewrite)
 - **Must be rotated at Ankr dashboard** and new key stored in 1Password
 - Update `V3/docker/.env` on Edge server with new key after rotation

@@ -12,4 +12,8 @@ pub struct ShareSubmission {
     pub worker: String,
     pub job_id: String,
     pub nonce_hex: String,
+    /// Per-share difficulty (work weight) used for PPLNS accounting.
+    /// Defaults to 1 for tests; callers should set this to the session's
+    /// vardiff value or the network difficulty for non-vardiff protocols.
+    pub difficulty: u64,
 }
