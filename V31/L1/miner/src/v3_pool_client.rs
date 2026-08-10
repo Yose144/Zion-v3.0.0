@@ -70,7 +70,10 @@ pub struct V3PoolClient {
     // We use a simpler approach: the read loop dispatches Result/ExternalResult
     // to dedicated channels.
     zion_result_rx: Mutex<mpsc::Receiver<V3ShareResult>>,
-    ext_result_rx: Mutex<mpsc::Receiver<V3ExternalResult>>,
+    // Per-coin external result channels to prevent cross-coin result mismatch.
+    // VRSC (CpuExternal) and ZANO (GpuExternal) each get their own channel.
+    vrsc_result_rx: Mutex<mpsc::Receiver<V3ExternalResult>>,
+    zano_result_rx: Mutex<mpsc::Receiver<V3ExternalResult>>,
     // Becomes true when the read loop detects the pool has closed the
     // connection.  Used to fail fast on subsequent submits.
     conn_closed: watch::Receiver<bool>,
@@ -141,7 +144,11 @@ impl V3PoolClient {
         // Channels for dispatching messages from the read loop
         let (job_tx, job_rx) = mpsc::channel::<V3JobBundle>(64);
         let (zion_result_tx, zion_result_rx) = mpsc::channel::<V3ShareResult>(16);
-        let (ext_result_tx, ext_result_rx) = mpsc::channel::<V3ExternalResult>(16);
+        // Per-coin channels: VRSC results and ZANO results are dispatched
+        // separately to prevent result mismatch when shares are submitted
+        // concurrently.
+        let (vrsc_result_tx, vrsc_result_rx) = mpsc::channel::<V3ExternalResult>(16);
+        let (zano_result_tx, zano_result_rx) = mpsc::channel::<V3ExternalResult>(16);
 
         // Watch channel to signal when the pool closes the connection.
         let (conn_closed_tx, conn_closed_rx) = watch::channel(false);
@@ -222,13 +229,21 @@ impl V3PoolClient {
                                 status,
                                 coin,
                             }) => {
-                                let _ = ext_result_tx
-                                    .send(V3ExternalResult {
-                                        accepted,
-                                        status,
-                                        coin,
-                                    })
-                                    .await;
+                                let result = V3ExternalResult {
+                                    accepted,
+                                    status,
+                                    coin: coin.clone(),
+                                };
+                                // Dispatch to per-coin channel.  Coin names
+                                // from the pool are uppercase tickers
+                                // ("VRSC", "ZANO").  Match case-insensitively.
+                                let coin_upper = coin.to_uppercase();
+                                if coin_upper == "VRSC" {
+                                    let _ = vrsc_result_tx.send(result).await;
+                                } else {
+                                    // ZANO and any other GPU-external coin
+                                    let _ = zano_result_tx.send(result).await;
+                                }
                             }
                             Ok(PoolMessage::Cancel { job_id, reason }) => {
                                 debug!("V3 cancel: job={} reason={}", job_id, reason);
@@ -280,7 +295,8 @@ impl V3PoolClient {
             writer,
             job_rx: Mutex::new(job_rx),
             zion_result_rx: Mutex::new(zion_result_rx),
-            ext_result_rx: Mutex::new(ext_result_rx),
+            vrsc_result_rx: Mutex::new(vrsc_result_rx),
+            zano_result_rx: Mutex::new(zano_result_rx),
             conn_closed: conn_closed_rx,
         })
     }
@@ -340,7 +356,8 @@ impl V3PoolClient {
     }
 
     /// Submit an AuxPoW (external) share to the pool for forwarding to the
-    /// external pool (ZANO, VRSC, etc.).
+    /// external pool (ZANO, VRSC, etc.).  The `is_vrsc` parameter selects
+    /// the correct per-coin result channel.
     pub async fn submit_external_share(
         &self,
         coin: &str,
@@ -352,6 +369,7 @@ impl V3PoolClient {
         extranonce1_hex: &str,
         solution_hex: &str,
         ntime_hex: &str,
+        is_vrsc: bool,
     ) -> Result<V3ExternalResult> {
         self.ensure_connected()?;
         let msg = PoolMessage::ExternalSubmit {
@@ -373,8 +391,25 @@ impl V3PoolClient {
             w.write_all(line.as_bytes()).await?;
             w.flush().await?;
         }
-        // Wait for ExternalResult
-        let mut rx = self.ext_result_rx.lock().await;
+        // Wait for ExternalResult on the per-coin channel.
+        // First drain any stale results left over from previous timed-out
+        // submissions — without this, a late-arriving result from a previous
+        // share would be picked up as the result for THIS share, causing
+        // false rejections ("result shifting").
+        let rx_lock = if is_vrsc {
+            self.vrsc_result_rx.lock().await
+        } else {
+            self.zano_result_rx.lock().await
+        };
+        let mut rx = rx_lock;
+        while let Ok(stale) = rx.try_recv() {
+            tracing::warn!(
+                coin = %stale.coin,
+                accepted = stale.accepted,
+                status = %stale.status,
+                "drained stale external result (leftover from timed-out submission)"
+            );
+        }
         match tokio::time::timeout(Duration::from_secs(30), rx.recv()).await {
             Ok(Some(result)) => Ok(result),
             Ok(None) => anyhow::bail!("V3 pool: external result channel closed"),

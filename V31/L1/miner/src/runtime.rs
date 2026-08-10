@@ -1773,20 +1773,29 @@ impl MinerRuntime {
         tracing::debug!(stream = ?stream, coin = %coin, nonce = share.nonce, "mined ext share");
 
         // V3 philosophy: forward ALL shares to the upstream pool.
-        // However, for VRSC (fast-block CPU coin), check if a newer job has
-        // arrived BEFORE submitting. If the pool already sent a newer job,
-        // the current job is likely expired on LuckPool ("job not found").
-        // This only skips when a NEWER job is already available — it does
-        // NOT check job_id mismatch or age, so it won't pre-reject valid
-        // shares for jobs that are still current upstream.
+        // For VRSC (fast-block CPU coin), check if a newer V3 job bundle has
+        // arrived AND the new bundle's cpu_external job_id differs from the
+        // current one.  Only then is the VRSC job truly stale.  Previously
+        // this checked has_changed() unconditionally, which fired on ZION-only
+        // job updates and skipped valid VRSC shares.
         // ZANO (GPU, ~30s blocks) doesn't need this — 100% accept rate.
         let skip_stale = if matches!(stream, StreamId::CpuExternal) {
-            job_rx.has_changed().unwrap_or(false)
+            if job_rx.has_changed().unwrap_or(false) {
+                // A new bundle arrived — check if the VRSC job actually changed
+                let new_vrsc_id = job_rx
+                    .borrow()
+                    .as_ref()
+                    .and_then(|b| b.cpu_external.as_ref())
+                    .map(|e| e.job_id.clone());
+                new_vrsc_id.is_some() && new_vrsc_id.as_deref() != Some(&ext.job_id)
+            } else {
+                false
+            }
         } else {
             false
         };
         if skip_stale {
-            tracing::debug!(stream = ?stream, coin = %coin, nonce = share.nonce, "stale ext share — newer job arrived, skipping submit");
+            tracing::debug!(stream = ?stream, coin = %coin, nonce = share.nonce, "stale ext share — VRSC job_id changed, skipping submit");
             return Ok(false);
         }
 
@@ -1819,6 +1828,7 @@ impl MinerRuntime {
                         &en1,
                         &solution_hex,
                         &ntime_hex,
+                        true, // is_vrsc
                     )
                     .await;
                 match result {
@@ -1879,6 +1889,7 @@ impl MinerRuntime {
                 &ext.extranonce1_hex,
                 &solution_hex,
                 &ntime_hex,
+                false, // is_vrsc = false (ZANO)
             )
             .await
             .map_err(|e| MinerError::Connection(format!("V3 external submit: {e}")))?;
