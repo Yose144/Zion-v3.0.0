@@ -399,3 +399,16 @@ ZionDex/contracts/broadcast/
 
 V31_PREMINE_V2_KEYS_2026-08-06.json
 V31/data/
+
+# V31 custom cargo target dirs (cross-compile / feature test builds)
+V31/target-bullseye/
+V31/target-bullseye-noBMI2/
+V31/target-bullseye-nobmi/
+V31/target-bullseye-nobmi2/
+V31/target-cflags-test/
+V31/target-pool-bullseye/
+V31/target-test2/
+V31/target-test3/
+V31/target_feature/
+
+V31/target_feature
