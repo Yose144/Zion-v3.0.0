@@ -239,8 +239,6 @@ Je technická páteř tohoto whitepaperu.
 
 ## 2. Edge produkční stav
 
-Produkční Edge server je `62.171.141.136` (Contabo VPS,
-`vmi3425821.contaboserver.net`, IPv6 `2a02:c207:2342:5821::1`).
 
 Živá kontrola 2026-08-09 přes `https://dashboard.zionterranova.com/api/health`:
 
