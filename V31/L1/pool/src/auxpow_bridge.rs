@@ -49,7 +49,6 @@ pub struct AuxPowBridge {
     pub enabled: bool,
     pub job_queue: Arc<Mutex<VecDeque<JobPackage>>>,
     share_tx: mpsc::Sender<(ShareForwardRequest, mpsc::Sender<ShareForwardOutcome>)>,
-    touch_tx: mpsc::Sender<String>,
 }
 
 impl AuxPowBridge {
@@ -57,24 +56,24 @@ impl AuxPowBridge {
     pub fn new(enabled: bool) -> (
         Self,
         mpsc::Receiver<(ShareForwardRequest, mpsc::Sender<ShareForwardOutcome>)>,
-        mpsc::Receiver<String>,
     ) {
         let (share_tx, share_rx) = mpsc::channel();
-        let (touch_tx, touch_rx) = mpsc::channel();
         let bridge = Self {
             enabled,
             job_queue: Arc::new(Mutex::new(VecDeque::new())),
             share_tx,
-            touch_tx,
         };
-        (bridge, share_rx, touch_rx)
+        (bridge, share_rx)
     }
 
     pub fn touch_job_timestamp(&self, job_id: &str) {
         if !self.enabled {
             return;
         }
-        let _ = self.touch_tx.send(job_id.to_string());
+        let mut q = self.job_queue.lock().expect("auxpow job queue lock poisoned");
+        if let Some(job) = q.iter_mut().find(|j| j.external_job_id == job_id) {
+            job.received_at = Some(Instant::now());
+        }
     }
 
     pub fn pop_job(&self) -> Option<JobPackage> {
@@ -280,7 +279,7 @@ mod tests {
 
     #[test]
     fn bridge_disabled_returns_none() {
-        let (bridge, _rx, _touch) = AuxPowBridge::new(false);
+        let (bridge, _rx) = AuxPowBridge::new(false);
         assert!(bridge.pop_job().is_none());
         assert_eq!(
             bridge.forward(ShareForwardRequest {
@@ -300,7 +299,7 @@ mod tests {
 
     #[test]
     fn bridge_enabled_push_pop() {
-        let (bridge, _rx, _touch) = AuxPowBridge::new(true);
+        let (bridge, _rx) = AuxPowBridge::new(true);
         let job = JobPackage {
             external_job_id: "job1".into(),
             coin: ExternalCoin::Decred,
@@ -320,7 +319,7 @@ mod tests {
 
     #[test]
     fn bridge_queue_caps_at_five() {
-        let (bridge, _rx, _touch) = AuxPowBridge::new(true);
+        let (bridge, _rx) = AuxPowBridge::new(true);
         for i in 0..7 {
             bridge.push_job(JobPackage {
                 external_job_id: format!("job{i}"),
@@ -331,6 +330,7 @@ mod tests {
                 algorithm: "blake3".into(),
                 extranonce1_hex: String::new(),
                 ntime: String::new(),
+                received_at: None,
             });
         }
         let q = bridge.job_queue.lock().unwrap();
@@ -340,7 +340,7 @@ mod tests {
 
     #[test]
     fn pop_job_returns_latest() {
-        let (bridge, _rx, _touch) = AuxPowBridge::new(true);
+        let (bridge, _rx) = AuxPowBridge::new(true);
         bridge.push_job(JobPackage {
             external_job_id: "old".into(),
             coin: ExternalCoin::Decred,
@@ -379,7 +379,7 @@ mod tests {
     #[test]
     fn multi_bridge_insert_and_pop() {
         let multi = MultiAuxPowBridge::new();
-        let (bridge, _rx, _touch) = AuxPowBridge::new(true);
+        let (bridge, _rx) = AuxPowBridge::new(true);
         bridge.push_job(JobPackage {
             external_job_id: "ext1".into(),
             coin: ExternalCoin::Kaspa,
@@ -400,7 +400,7 @@ mod tests {
 
     #[test]
     fn multi_bridge_get_job_by_id() {
-        let (bridge, _rx, _touch) = AuxPowBridge::new(true);
+        let (bridge, _rx) = AuxPowBridge::new(true);
         bridge.push_job(JobPackage {
             external_job_id: "findme".into(),
             coin: ExternalCoin::Ravencoin,

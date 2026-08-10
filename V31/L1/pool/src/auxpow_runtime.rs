@@ -218,8 +218,7 @@ pub fn spawn_auxpow_runtime(
         let reconnect_max = cfg.reconnect_max_delay_secs;
 
         // Insert bridge for this coin
-        let (aux_bridge, share_rx, touch_rx) =
-            crate::auxpow_bridge::AuxPowBridge::new(true);
+        let (aux_bridge, share_rx) = crate::auxpow_bridge::AuxPowBridge::new(true);
         bridge.insert(coin, aux_bridge);
 
         tracing::info!(
@@ -257,7 +256,6 @@ pub fn spawn_auxpow_runtime(
                 coin,
                 bridge,
                 share_rx,
-                touch_rx,
                 reconnect_base,
                 reconnect_max,
             ));
@@ -279,7 +277,6 @@ async fn run_bridge_task(
         ShareForwardRequest,
         std::sync::mpsc::Sender<ShareForwardOutcome>,
     )>,
-    touch_rx: std::sync::mpsc::Receiver<String>,
     reconnect_base_secs: u64,
     reconnect_max_secs: u64,
 ) {
@@ -360,9 +357,15 @@ async fn run_bridge_task(
             let _ = reply_tx.send(result);
         }
 
-        // Touch job timestamps (non-blocking drain)
-        while let Ok(job_id) = touch_rx.try_recv() {
-            tracing::trace!("auxpow[{}]: touch job_id={}", coin_label, job_id);
+        // Refresh the bridge's timestamp for the current upstream job.
+        // This keeps the job marked as fresh while the client keeps
+        // receiving the same work (e.g. ZANO eth_getWork responses
+        // every 3s with the same block), so build_external_stream_*
+        // only drops it when the upstream client is actually silent.
+        if client.is_connected().await {
+            if let Some(job) = client.current_job().await {
+                bridge.touch_job_timestamp(&coin, &job.job_id);
+            }
         }
 
         // Small yield to prevent busy-looping

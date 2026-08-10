@@ -794,7 +794,7 @@ impl StratumServer {
             _ => 120,
         };
         job.received_at
-            .map_or(true, |t| t.elapsed().as_secs() <= max_age_secs)
+            .is_none_or(|t| t.elapsed().as_secs() <= max_age_secs)
     }
 
     pub async fn run(&self, listener: TcpListener) -> std::io::Result<()> {
