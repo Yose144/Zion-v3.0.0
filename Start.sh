@@ -1,14 +1,34 @@
 #!/usr/bin/env bash
 # ============================================================================
 #  ZION V31 Mainnet Alpha — Miner Launcher with Built-in Pro TUI Dashboard
-#  Updated: 2026-08-06 — Claymore-style sticky header + ZION banner + algorithm
+#  Updated: 2026-08-10 — ZION GPU enabled + auto-detect + structured logging
 #
-#  The miner binary now has a built-in professional TUI (just like V3):
+#  Trinity hashrate: 21.5 MH/s total (ZION 2.46 + ZANO 8.37 + VRSC 10.39)
+#  Accept rates: ZION 100%, ZANO 100%, VRSC ~97%, Overall ~98%
+#
+#  Build: ZION_CPU_TARGET=native cargo build --release -p zion-miner \
+#         --features gpu-cuda,native-all,tui (REQUIRED)
+#
+#  V31 Trinity: single V3 protocol connection to the pool carries all 3 streams:
+#    Stream 1: ZION (GPU CUDA deeksha_lite_v1 — work_size=4096, 2GB scratchpad)
+#    Stream 2: ZANO (GPU CUDA ProgPoW — AuxPoW via pool → HeroMiners)
+#    Stream 3: VRSC (CPU VerusHash v2.2 — AuxPoW via pool → LuckPool)
+#
+#  GPU sharing: ZION + ZANO share the same GPU (CUDA driver time-slices).
+#    GTX 1070 Ti (8GB): ZION scratchpad 2GB + ZANO DAG 2GB = 4GB used.
+#    Duty-cycle gap: 50ms when ZION has GPU, 300ms when ZION is CPU-only.
+#
+#  Auto-detect: miner auto-detects CPU/GPU/RAM and derives optimal config.
+#    GPU detected → Triple Parallel (3 streams), CPU-only → Dual Stream (2).
+#    All values overridable with env vars (see auto_detect.rs).
+#
+#  Structured logging: tracing::info/warn/debug + periodic 30s metrics summary
+#    (per-stream hashrate, shares, accept rate) — works in both TUI and --bg.
+#
+#  The miner binary has a built-in professional TUI:
 #    - ZION ASCII art banner with version, backend, threads, "Ekam Deeksha"
 #    - Hardware detection table (CPU cores, SIMD, GPU CUs/VRAM/clock)
-#    - Algorithm display (deeksha_lite_v1 / cosmic_harmony_ekam_deeksha_v2)
-#    - Claymore-style sticky header with trinity stats box:
-#      per-stream hashrate, shares, bar chart, pool info, GPU details
+#    - Claymore-style sticky header with trinity stats box
 #    - Scrolling log lines below the fixed header
 #    - Alternate screen buffer (like Claymore/GMiner)
 #
@@ -19,22 +39,21 @@
 #    ./Start.sh --stop       — Stop running miner
 #    ./Start.sh --status     — Show one-shot status snapshot from metrics
 #    ./Start.sh --log        — Tail miner log (Ctrl+C to exit)
-#    ./Start.sh --autonomous — Enable autonomous profit switching (Stream 2/3)
 # ============================================================================
 
 set -euo pipefail
 
 # ── Configuration ───────────────────────────────────────────────────────────
 REPO_ROOT="/home/zionserver/2.9.6-main"
-MINER_BIN="${REPO_ROOT}/V31/target/release/zion-miner"
+MINER_BIN="${HOME}/Desktop/zion-miner"
 SCREEN_NAME="zion-miner"
 LOG_FILE="/tmp/zion-miner.log"
 CRASH_LOG="/tmp/zion-miner-crash.log"
 
 # Pool (Edge primary — V31 mainnet)
 ZION_POOL_ADDR="${ZION_POOL_ADDR:-62.171.141.136:8444}"
-ZION_MINER_WORKER="${ZION_MINER_WORKER:-zionserver-gpu}"
-ZION_MINER_THREADS="${ZION_MINER_THREADS:-2}"
+ZION_MINER_WORKER="${ZION_MINER_WORKER:-1070ti}"
+ZION_MINER_THREADS="${ZION_MINER_THREADS:-10}"
 ZION_LOG_INTERVAL="${ZION_LOG_INTERVAL:-5}"
 ZION_METRICS_BIND="${ZION_METRICS_BIND:-127.0.0.1:9101}"
 
@@ -54,38 +73,64 @@ if [[ -z "$WALLET_ADDRESS" ]]; then
 fi
 
 if [[ -z "$WALLET_ADDRESS" ]]; then
-    WALLET_ADDRESS="zion1u4a82230m0a267r785m822u5a3g7n753d7eu5n0"
-    echo "[WARN] No wallet backup found — using Edge default miner address"
+    WALLET_ADDRESS="zion1n4k4n5e4p0z3g7z2e0z0j7c8w7y0v5m8c6hf8c2"
+    echo "[WARN] No wallet backup found — using V3.2 genesis pool wallet"
     echo "       $WALLET_ADDRESS"
 fi
 
 # ── Stream configuration ────────────────────────────────────────────────────
-# GPU backend for Stream 1 (ZION deeksha) — CUDA for NVIDIA GPUs
-# Override with: ZION_GPU_BACKEND=opencl|cuda|cpu|auto
+# V31 Trinity mode: all 3 streams through a single V3 protocol connection.
+#   Stream 1: ZION (GPU CUDA deeksha_lite_v1 — 2.46 MH/s on 1070 Ti)
+#   Stream 2: ZANO (GPU CUDA ProgPoW — 8.37 MH/s, AuxPoW via pool → HeroMiners)
+#   Stream 3: VRSC (CPU VerusHash v2.2 — 10.39 MH/s, AuxPoW via pool → LuckPool)
+#
+# Auto-detect: miner detects CPU/GPU and auto-configures streams.
+#   GPU present → all 3 streams enabled (Triple Parallel).
+#   CPU-only → Stream 2 disabled, Stream 1+3 enabled (Dual Stream).
+# Override: ZION_STREAM1_ENABLED, ZION_STREAM2_ENABLED, ZION_STREAM3_ENABLED
 GPU_BACKEND="${ZION_GPU_BACKEND:-cuda}"
 GPU_FLAG="--gpu ${GPU_BACKEND}"
 
-# CUDA work size — number of GPU threads per kernel launch.
-# Each thread uses 512 KiB scratchpad (v3.2 ASIC-hardened), so:
-#   work_size=4096 → 2 GB VRAM (leaves 6 GB for Stream 2 AuxPoW)
-#   work_size=8192 → 4 GB VRAM (OOM on 8GB 1070 Ti with OS display)
-# GTX 1070 Ti (8GB, 19 SMs): 4096 optimal (32 blocks of 128 = 1.68 blocks/SM).
-# Smaller GPUs (4GB): use 2048. Larger GPUs (16GB+): can try 8192+.
-# Benchmark: 4096 → 24-26 KH/s raw (v3.2), 2048 → 22 KH/s, 6144 → 24 KH/s.
+# CUDA work size — number of GPU threads per kernel launch chunk.
+# Each thread uses 512 KiB scratchpad (v3.2 ASIC-hardened deeksha_lite).
+# work_size=4096 → 2 GB VRAM for ZION scratchpad.
+# GTX 1070 Ti (8GB): ZION 2GB + ZANO DAG 2GB = 4GB, fits comfortably.
+# When sharing GPU with ZANO (Stream 2), miner auto-selects 4096.
+# Without ZANO: miner auto-selects 8192 (4GB scratchpad, more throughput).
 export ZION_CUDA_WORK_CAP="${ZION_CUDA_WORK_CAP:-4096}"
 export ZION_GPU_WORK_SIZE="${ZION_GPU_WORK_SIZE:-4096}"
 
-# Stream 2/3 (AuxPoW external coins) — disabled by default, enable with --autonomous
+# ZION GPU is now AUTO-ENABLED even when ZANO (Stream 2) is active.
+# The miner shares the GPU between ZION and ZANO via CUDA driver time-slicing.
+# To force ZION CPU-only (old behavior): export ZION_ZION_GPU=0
+# To force ZION GPU with larger work_size: export ZION_GPU_WORK_SIZE=8192
+
+# ProgPoW max GWS — limits GPU work size for ProgPoW (ZANO).
+# GTX 1070 Ti (8GB): 262144 is safe. Lower if DAG generation OOMs.
+export ZION_AUXPOW_PROGPOW_MAX_GWS="${ZION_AUXPOW_PROGPOW_MAX_GWS:-262144}"
+
+# Duty-cycle gap for GPU sharing (Stream 2 ZANO yields to Stream 1 ZION).
+# When ZION has GPU: 50ms (short — CUDA driver handles scheduling).
+# When ZION is CPU-only: 300ms (longer — gives CPU mining a chance).
+# Override: export ZION_EXT_GPU_GAP_MS=0 (disable gap entirely)
+export ZION_EXT_GPU_GAP_MS="${ZION_EXT_GPU_GAP_MS:-50}"
+
+# VRSC (VerusHash) CPU tuning — Stream 3 uses arch-aware autotune by default.
+# AMD Ryzen 5 3600: 12 threads, 5M nonce batch → ~10.4 MH/s.
+# Override with ZION_EXT_CPU_THREADS to limit VRSC thread count.
+# Override with ZION_EXT_CPU_NONCE_COUNT for batch size.
+if [[ -n "${ZION_EXT_CPU_THREADS:-}" ]]; then
+    export ZION_EXT_CPU_THREADS
+fi
+
+# Trinity mode flag — all 3 streams enabled
+TRINITY_FLAG="--v3-trinity"
+export ZION_V3_TRINITY=1
+export ZION_AUXPOW_ENABLED=1
+# ZION GPU enabled — shares GPU with ZANO via CUDA driver time-slicing
+export ZION_ZION_GPU=1
 STREAM2_FLAG=""
 STREAM3_FLAG=""
-
-if [[ "${1:-}" == "--autonomous" || "${ZION_AUTONOMOUS:-0}" == "1" ]]; then
-    export ZION_AUTONOMOUS=1
-    echo "[AUTONOMOUS] Profit switching enabled for Stream 2/3"
-else
-    STREAM2_FLAG="--no-gpu"
-    STREAM3_FLAG="--no-cpu"
-fi
 
 # ── Actions ──────────────────────────────────────────────────────────────────
 ACTION="${1:-start}"
@@ -138,17 +183,27 @@ case "$ACTION" in
 
     start|--start)
         ;;
-
-    --autonomous)
-        ;;
 esac
 
 # ── Binary check ─────────────────────────────────────────────────────────────
+# The miner binary MUST be built with --features gpu-cuda,native-all,tui.
+#   gpu-cuda    — ZION + ZANO GPU kernels (CUDA)
+#   native-all  — VerusHash v2.2 native CPU (REQUIRED for VRSC)
+#   tui         — built-in Claymore-style dashboard
+# Always use the freshly built target/release binary to avoid stale copies.
+MINER_BIN="${REPO_ROOT}/V31/target/release/zion-miner"
 if [[ ! -x "$MINER_BIN" ]]; then
     echo "[BUILD] V31 miner binary not found at $MINER_BIN"
-    echo "        Building with GPU + TUI..."
+    echo "        Building with CUDA + native-verushash + TUI + native CPU target..."
     cd "$REPO_ROOT/V31"
-    cargo build --release -p zion-miner --features gpu-cuda,gpu-opencl,tui,native-hashers,native-verushash,native-randomx
+    ZION_CPU_TARGET=native cargo build --release -p zion-miner --bin zion-miner \
+        --features gpu-cuda,native-all,tui
+fi
+
+# Keep the Desktop copy in sync (for manual ./zion-miner runs)
+if [[ -x "$MINER_BIN" ]]; then
+    cp -f -v "$MINER_BIN" "${HOME}/Desktop/zion-miner" 2>/dev/null || true
+    chmod +x "${HOME}/Desktop/zion-miner" 2>/dev/null || true
 fi
 
 # ── Kill existing miner ─────────────────────────────────────────────────────
@@ -199,6 +254,7 @@ while true; do
         --worker '${ZION_MINER_WORKER}' \\
         --threads '${ZION_MINER_THREADS}' \\
         --gpu '${GPU_BACKEND}' \\
+        --v3-trinity \\
         --no-tui \\
         ${STREAM2_FLAG} ${STREAM3_FLAG} \\
         --metrics '${ZION_METRICS_BIND}' \\
@@ -252,6 +308,7 @@ while true; do
         --worker "$ZION_MINER_WORKER" \
         --threads "$ZION_MINER_THREADS" \
         --gpu "$GPU_BACKEND" \
+        --v3-trinity \
         --interactive \
         ${STREAM2_FLAG} ${STREAM3_FLAG} \
         --metrics "$ZION_METRICS_BIND" \
