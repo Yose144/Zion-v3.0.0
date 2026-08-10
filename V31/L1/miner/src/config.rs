@@ -84,30 +84,70 @@ pub struct MinerConfig {
 
 impl MinerConfig {
     pub fn new(reward_address: Address) -> Self {
-        let gpu_backend =
-            std::env::var("ZION_GPU_BACKEND").unwrap_or_else(|_| "cpu".to_string());
-        let has_gpu = gpu_backend != "cpu" && !gpu_backend.is_empty();
+        // ── Hardware auto-detection ──
+        // Detect CPU, GPU, RAM and derive optimal stream configuration.
+        // All values can be overridden with env vars.
+        let hw = crate::auto_detect::detect_hardware();
+        let tune = crate::gpu::auto_tune_work_sizes();
+        let auto = crate::auto_detect::derive_auto_config(&hw, &tune);
 
-        // V3 archive: arch-aware VerusHash autotuning uses physical/logical core
-        // layout and CPU vendor/model to pick the optimal VRSC thread count and
-        // nonce batch. Override with ZION_EXT_CPU_THREADS / ZION_EXT_CPU_NONCE_COUNT.
-        let (default_verushash_threads, default_verushash_nonce_count) =
-            crate::gpu::verushash_cpu_tuning(has_gpu);
+        // Print clean startup summary (only once)
+        crate::auto_detect::print_hardware_summary(&hw);
+        crate::auto_detect::print_mine_plan(&auto);
 
+        // ── Resolve GPU backend ──
+        // Env override takes priority, then auto-detect
+        let gpu_backend = std::env::var("ZION_GPU_BACKEND").unwrap_or_else(|_| {
+            match auto.gpu_backend {
+                crate::gpu::GpuBackendKind::Cuda => "cuda".to_string(),
+                crate::gpu::GpuBackendKind::OpenCL => "opencl".to_string(),
+                crate::gpu::GpuBackendKind::Metal => "metal".to_string(),
+                _ => "cpu".to_string(),
+            }
+        });
+
+        // ── CPU threads ──
+        let miner_threads = std::env::var("ZION_MINER_THREADS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(auto.miner_threads);
+
+        // ── VRSC (Stream 3) autotune ──
         let ext_cpu_threads = std::env::var("ZION_EXT_CPU_THREADS")
             .ok()
             .and_then(|v| v.parse().ok())
-            .unwrap_or(default_verushash_threads);
+            .unwrap_or(auto.ext_cpu_threads);
         let verushash_nonce_count = std::env::var("ZION_EXT_CPU_NONCE_COUNT")
             .ok()
             .and_then(|v| v.parse().ok())
-            .unwrap_or(default_verushash_nonce_count);
+            .unwrap_or(auto.verushash_nonce_count);
 
-        #[cfg(not(feature = "public_build"))]
-        eprintln!(
-            "[verus-tune] VRSC threads={} nonce_count={} (override: ZION_EXT_CPU_THREADS / ZION_EXT_CPU_NONCE_COUNT)",
-            ext_cpu_threads, verushash_nonce_count
-        );
+        // ── ZION nonce batch ──
+        let zion_nonce_batch = std::env::var("ZION_NONCE_COUNT")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(auto.zion_nonce_batch);
+
+        // ── Stream enable/disable (auto: GPU → 3 streams, CPU-only → 2 streams) ──
+        let stream1_enabled = std::env::var("ZION_STREAM1_ENABLED")
+            .map(|v| v != "0" && !v.eq_ignore_ascii_case("false"))
+            .unwrap_or(auto.stream1_enabled);
+        let stream2_enabled = std::env::var("ZION_STREAM2_ENABLED")
+            .map(|v| v != "0" && !v.eq_ignore_ascii_case("false"))
+            .unwrap_or(auto.stream2_enabled);
+        let stream3_enabled = std::env::var("ZION_STREAM3_ENABLED")
+            .map(|v| v != "0" && !v.eq_ignore_ascii_case("false"))
+            .unwrap_or(auto.stream3_enabled);
+
+        // ── Stream 2 batch ──
+        let stream2_batch = std::env::var("ZION_STREAM2_BATCH")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(if auto.stream2_batch > 0 {
+                auto.stream2_batch
+            } else {
+                262_144
+            });
 
         Self {
             reward_address,
@@ -117,33 +157,18 @@ impl MinerConfig {
             stream2_url: std::env::var("ZION_STREAM2_URL").ok(),
             stream3_url: std::env::var("ZION_STREAM3_URL").ok(),
             gpu_backend,
-            miner_threads: std::env::var("ZION_MINER_THREADS")
-                .ok()
-                .and_then(|v| v.parse().ok())
-                .unwrap_or_else(|| num_cpus::get().max(1)),
+            miner_threads,
             ext_cpu_threads,
             worker: std::env::var("ZION_WORKER").unwrap_or_else(|_| "zion_worker".to_string()),
             password: std::env::var("ZION_PASSWORD").unwrap_or_else(|_| "x".to_string()),
             auxpow_enabled: true,
             hashrate_per_unit: 1000.0,
-            zion_nonce_batch: std::env::var("ZION_NONCE_COUNT")
-                .ok()
-                .and_then(|v| v.parse().ok())
-                .unwrap_or(10_000),
+            zion_nonce_batch,
             auxpow_nonce_batch: verushash_nonce_count,
-            stream1_enabled: std::env::var("ZION_STREAM1_ENABLED")
-                .map(|v| v != "0" && !v.eq_ignore_ascii_case("false"))
-                .unwrap_or(true),
-            stream2_enabled: std::env::var("ZION_STREAM2_ENABLED")
-                .map(|v| v != "0" && !v.eq_ignore_ascii_case("false"))
-                .unwrap_or(true),
-            stream3_enabled: std::env::var("ZION_STREAM3_ENABLED")
-                .map(|v| v != "0" && !v.eq_ignore_ascii_case("false"))
-                .unwrap_or(true),
-            stream2_batch: std::env::var("ZION_STREAM2_BATCH")
-                .ok()
-                .and_then(|v| v.parse().ok())
-                .unwrap_or(262_144), // cap to progpow_max_gws per sub-miner to avoid skipped ranges
+            stream1_enabled,
+            stream2_enabled,
+            stream3_enabled,
+            stream2_batch,
             stream3_batch: verushash_nonce_count,
             stream2_force_coin: std::env::var("ZION_STREAM2_FORCE_COIN")
                 .ok()

@@ -3,12 +3,12 @@ set -euo pipefail
 
 # ── V31 Trinity Miner Wrapper for SMOS ──────────────────────────────────────
 # Triple-stream: ZION (GPU) + ZANO (GPU AuxPoW) + VRSC (CPU AuxPoW)
-# Multi-GPU parallel: BOTH GPUs mine BOTH ZION Deeksha and ZANO ProgPoW.
-# VRSC stays CPU-only (Stream 3).
+# Multi-GPU DEDICATED: Vega 64 → ZANO ProgPoWZ, RX 5600 XT → ZION Deeksha.
+# Both GPUs at 100% load, no time-slicing. VRSC on CPU (Stream 3).
 # V3 Trinity architecture: single V3 protocol connection to ZION pool.
 # Pool embeds external_stream jobs and forwards AuxPoW shares to external pools.
 # All revenue flows through the pool's AuxPoW bridge and revenue system.
-# Date: 2026-08-10 (V3.2 Trinity multi-GPU parallel)
+# Date: 2026-08-10 (V3.2 Trinity multi-GPU dedicated, max performance)
 
 # Pool wallet — miner uses this for ZION coinbase. Pool handles ZANO/VRSC wallets.
 WALLET_ADDR="zion1s6m204400290l660k622r3r0c6u040g5j6cu2x5"
@@ -61,34 +61,36 @@ export ZION_STREAM1_ENABLED=1
 export ZION_STREAM2_ENABLED=1
 export ZION_STREAM3_ENABLED=1
 
-# GPU AuxPoW tuning (ZANO ProgPoWZ — GPU time-slicing with Stream 1)
-# Stream 2 uses GPU with burst/gap duty-cycle: runs batch, then sleeps
-# gap_ms to yield GPU to Stream 1 (ZION deeksha). This mirrors the V3
-# reference external_gpu_thread architecture.
+# GPU AuxPoW tuning (ZANO ProgPoWZ)
+# DEDICATED GPU mode: Vega 64 → ZANO, RX 5600 XT → ZION.
+# Both GPUs run at 100% with NO time-slicing / NO gap sleep.
+# This eliminates the 50% load issue caused by GAP_MS time-slicing.
 # Vega 64 (GCN): GROUP_SIZE=128, bpermute auto-disabled (GCN-safe)
 # RX 5600 XT (RDNA1): GROUP_SIZE=256, bpermute auto-enabled (wave32)
 # See docs/3.0.6/parallelgpu.md (RDNA1 bpermute optimization)
 # See docs/3.0.6/VEGA64_ZANO_TUNING_REPORT.md (Vega 64 ZANO tuning)
-export ZION_STREAM2_BATCH=262144
+# See docs/3.0.6/VEGA_SMOS_DUAL_GPU_REPORT.md (v90 stable config)
+export ZION_STREAM2_BATCH=2097152
+export ZION_STREAM2_FORCE_COIN=ZANO
 export ZION_AUXPOW_GPU_WORK_SIZE=1048576
 export ZION_AUXPOW_GPU_GROUP_SIZE=128
 export ZION_AUXPOW_GPU_VRAM_PCT=50
 export ZION_AUXPOW_GPU_BYTES_PER_ITEM=64
 export ZION_ZANO_STALE_SECS=30
 
-# Multi-GPU parallel mode: both GPUs mine ZION and ZANO, VRSC is CPU only.
-# ZION_ZANO_RESERVE=0 disables device reservation so MultiGpuMiner uses all
-# OpenCL GPUs for both the ZION Deeksha and ZANO ProgPoW streams.
-# DUTY_PCT=100: external ProgPoW gets full GPU time during its burst
-# (ZION Deeksha runs on the other GPU during the gap).
-# See docs/3.0.6/VEGA_SMOS_DUAL_GPU_REPORT.md (v90 stable config)
-export ZION_ZANO_RESERVE=0
+# Multi-GPU DEDICATED mode: Vega 64 reserved for ZANO ProgPoWZ,
+# RX 5600 XT dedicated to ZION Deeksha. Both at 100%, no time-slicing.
+# ZION_ZANO_RESERVE=1 (default): reserve one GPU for ZANO via name match.
+# ZION_ZANO_DEVICE_NAME=vega: Vega 64 selected for ZANO (best ProgPoW priority).
+# GAP_MS=0: no sleep needed — GPUs are dedicated, not shared.
+export ZION_ZANO_RESERVE=1
 export ZION_ZANO_DEVICE_NAME=vega
 export ZION_EXT_GPU_TIME_DUTY_PCT=100
-export ZION_EXT_GPU_GAP_MS=1000
-export ZION_EXT_GPU_MAX_GAP_MS=5000
+export ZION_EXT_GPU_GAP_MS=0
+export ZION_EXT_GPU_MAX_GAP_MS=0
 
 # CPU AuxPoW tuning (VRSC VerusHash — pool sends jobs, miner mines)
+export ZION_MINER_CPU_COIN=VRSC
 export ZION_STREAM3_BATCH=2000000
 export ZION_EXT_CPU_NONCE_COUNT=2000000
 export ZION_MINER_THREADS=4
@@ -110,7 +112,7 @@ chmod +x "${LOCAL_MINER}.tmp"
 mv "${LOCAL_MINER}.tmp" "${LOCAL_MINER}"
 echo "[smos-wrapper] V31 miner binary ready ($(stat -c%s "${LOCAL_MINER}") bytes)"
 
-echo "[smos-wrapper] starting V3 TRINITY multi-GPU parallel: 2x ZION + 2x ZANO + VRSC CPU"
+echo "[smos-wrapper] starting V3 TRINITY multi-GPU DEDICATED: RX5600→ZION + Vega→ZANO + VRSC CPU"
 exec "${LOCAL_MINER}" \
   --pool "${ZION_POOL_ADDR:-62.171.141.136:8444}" \
   --wallet "${WALLET_ADDR}" \

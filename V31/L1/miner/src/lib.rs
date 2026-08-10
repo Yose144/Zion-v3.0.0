@@ -8,6 +8,7 @@
 #![allow(dead_code, unexpected_cfgs)] // V3 ported modules — used when fully integrated
 
 pub mod autonomous;
+pub mod auto_detect;
 #[cfg(feature = "auxpow")]
 pub mod auxpow;
 pub mod b3_verify;
