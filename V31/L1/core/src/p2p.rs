@@ -15,7 +15,7 @@ use tracing::{info, warn};
 
 use crate::block::Block;
 use crate::node::Node;
-use crate::peer_manager::{PeerManager, PeerSource};
+use crate::peer_manager::{PeerGuard, PeerManager, PeerSource};
 
 /// Wire message types exchanged between Alpha nodes.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -59,17 +59,12 @@ impl P2P {
                     let peers = Arc::clone(&self.peers);
                     let node = Arc::clone(&self.node);
                     tokio::spawn(async move {
-                        let _guard = match peers.acquire(peer).await {
-                            Some(g) => g,
-                            None => {
-                                warn!("P2P peer {} rejected", peer);
-                                return;
-                            }
-                        };
+                        if !peers.can_accept(peer).await {
+                            warn!("P2P peer {} rejected", peer);
+                            return;
+                        }
                         if let Err(e) = handle_peer(socket, &peers, node).await {
                             warn!("P2P peer {} disconnected: {}", peer, e);
-                        } else {
-                            peers.record_good(peer).await;
                         }
                     });
                 }
@@ -87,6 +82,7 @@ async fn handle_peer(
     let peer_addr = socket.peer_addr()?;
     let (reader, mut writer) = socket.split();
     let mut lines = BufReader::new(reader).lines();
+    let mut guard: Option<PeerGuard> = None;
 
     while let Some(line) = lines.next_line().await? {
         let msg: Message = match serde_json::from_str(&line) {
@@ -97,6 +93,15 @@ async fn handle_peer(
                 continue;
             }
         };
+
+        if guard.is_none() {
+            guard = peers.acquire(peer_addr).await;
+            if guard.is_none() {
+                warn!("P2P peer {} rejected after first message", peer_addr);
+                return Ok(());
+            }
+            peers.add_known(peer_addr, PeerSource::Inbound).await;
+        }
 
         match msg {
             Message::Block { block } => {
@@ -130,6 +135,9 @@ async fn handle_peer(
             }
             Message::Status { .. } | Message::Blocks { .. } | Message::Peers { .. } => {}
         }
+    }
+    if guard.is_some() {
+        peers.record_good(peer_addr).await;
     }
     Ok(())
 }
