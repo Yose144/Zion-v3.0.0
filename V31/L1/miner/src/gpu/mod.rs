@@ -215,6 +215,11 @@ pub trait GpuMiner: Send {
     /// Algorithm this backend mines (e.g. "deeksha_lite_v1", "cosmic_harmony_ekam_deeksha_v2").
     fn algorithm(&self) -> String;
 
+    /// Work size (number of nonces per kernel launch chunk).
+    fn work_size(&self) -> usize {
+        8192
+    }
+
     /// Update NPU weights for the given block height's epoch.
     /// No-op if the epoch hasn't changed since the last call.
     fn update_epoch(&mut self, _height: u64) -> Result<()> {
@@ -7287,6 +7292,10 @@ pub mod cuda_deeksha_lite {
 
         fn algorithm(&self) -> String {
             "deeksha_lite_v1".to_string()
+        }
+
+        fn work_size(&self) -> usize {
+            self.work_size
         }
 
         fn update_epoch(&mut self, _height: u64) -> Result<()> {
