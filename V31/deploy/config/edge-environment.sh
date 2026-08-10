@@ -141,6 +141,9 @@ ZION_BLOCK_RETENTION=0
 # and embeds jobs as `external_stream_cpu` in Job messages.
 # Miner runs ZION (GPU) + EPIC/ZANO (GPU) + VRSC (CPU) simultaneously.
 ZION_POOL_AUXPOW_CPU_COIN="VRSC"
+# Per-coin wallet override used by auxpow_runtime.rs (format: ZION_POOL_AUXPOW_WALLET_<COIN>)
+ZION_POOL_AUXPOW_WALLET_VRSC="RLFQYsdd8wGGUgMgk17WrqdGNtkAVSCfDQ"
+# Backward-compatible alias for scripts that still reference CPU_WALLET
 ZION_POOL_AUXPOW_CPU_WALLET="RLFQYsdd8wGGUgMgk17WrqdGNtkAVSCfDQ"
 ZION_POOL_AUXPOW_CPU_WORKER_NAME="zion_triple"
 ZION_POOL_AUXPOW_CPU_REGION="eu"
