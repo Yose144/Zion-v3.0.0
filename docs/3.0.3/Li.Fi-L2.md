@@ -129,7 +129,7 @@ Integrovat **univerzální cross-chain swap + bridge** do Zion web app pomocí L
 ```bash
 cd V3/docker
 cp .env.example .env
-# Edit .env: ANKR_API_KEY=d036dcf6...
+# Edit .env: ANKR_API_KEY=<your_ankr_key>
 docker compose -f docker-compose.v3-l2.yml up -d zion-bridge
 # Verify: docker logs zion-bridge | grep -i ankr
 ```
