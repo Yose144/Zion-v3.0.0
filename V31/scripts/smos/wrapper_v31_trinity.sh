@@ -33,18 +33,23 @@ export ZION_V3_TRINITY=1
 export ZION_AUTOTUNE=1
 export ZION_AUTOTUNE_SECS=3
 export ZION_IGNORE_GPU_SELF_TEST_FAIL=1
-export ZION_NO_GCN_S4_MODE=1
+# NOTE: Do NOT set ZION_NO_GCN_S4_MODE — s4_mode is the default and REQUIRED
+# for Vega 64 (GCN/gfx900).  Forcing full GPU pipeline on GCN produces 0%
+# accepted shares due to compiler bugs in NPU/fusion stages (stages 5-6).
+# See docs/3.0.1Genesis/VEGA64_S4_MEMHARD_DEBUG_GUIDE.md
+# RX 5600 XT (RDNA1/gfx1010) uses full GPU pipeline by default (not GCN).
 export ZION_OCL_BUILD_OPTS="${ZION_OCL_BUILD_OPTS:--cl-std=CL1.2 -cl-mad-enable}"
 
-# Deeksha (ZION) GPU stream — reduced work_size so both GPUs can host ZION
-# AND the ZANO ProgPoW DAG (~2 GB at current epoch) in their VRAM.
-# Vega 8 GB → OK, RX 5600 6 GB → tight, needs 2 GB ZION scratchpad + 2 GB DAG.
+# Deeksha (ZION) GPU stream — work_size=16384 is the Vega 64 optimal (GCN cap).
+# Auto-tune per-device will cap the RX 5600 XT (RDNA1, 6 GB) to ~6128.
+# See docs/3.0.1Genesis/VEGA64_S4_MEMHARD_DEBUG_GUIDE.md (work size table)
+# See docs/3.0.6/VEGA_SMOS_DUAL_GPU_REPORT.md (v90 config)
 export ZION_MINER_ALGORITHM=deeksha_lite_v1
-export ZION_GPU_WORK_SIZE=4096
+export ZION_GPU_WORK_SIZE=16384
 export ZION_NONCE_AUTOTUNE=1
-export ZION_NONCE_COUNT=8192
-export ZION_NONCE_COUNT_MIN=8192
-export ZION_NONCE_COUNT_MAX=8192
+export ZION_NONCE_COUNT=65536
+export ZION_NONCE_COUNT_MIN=32768
+export ZION_NONCE_COUNT_MAX=262144
 export ZION_GPU_MAX_BATCH=65536
 export ZION_GPU_EARLY_BREAK=0
 export ZION_GPU_NO_STREAM_BYPRODUCT=1
@@ -60,18 +65,26 @@ export ZION_STREAM3_ENABLED=1
 # Stream 2 uses GPU with burst/gap duty-cycle: runs batch, then sleeps
 # gap_ms to yield GPU to Stream 1 (ZION deeksha). This mirrors the V3
 # reference external_gpu_thread architecture.
+# Vega 64 (GCN): GROUP_SIZE=128, bpermute auto-disabled (GCN-safe)
+# RX 5600 XT (RDNA1): GROUP_SIZE=256, bpermute auto-enabled (wave32)
+# See docs/3.0.6/parallelgpu.md (RDNA1 bpermute optimization)
+# See docs/3.0.6/VEGA64_ZANO_TUNING_REPORT.md (Vega 64 ZANO tuning)
 export ZION_STREAM2_BATCH=262144
 export ZION_AUXPOW_GPU_WORK_SIZE=1048576
 export ZION_AUXPOW_GPU_GROUP_SIZE=128
 export ZION_AUXPOW_GPU_VRAM_PCT=50
 export ZION_AUXPOW_GPU_BYTES_PER_ITEM=64
+export ZION_ZANO_STALE_SECS=30
 
 # Multi-GPU parallel mode: both GPUs mine ZION and ZANO, VRSC is CPU only.
 # ZION_ZANO_RESERVE=0 disables device reservation so MultiGpuMiner uses all
 # OpenCL GPUs for both the ZION Deeksha and ZANO ProgPoW streams.
-# gap_ms > 0 is required: external ProgPoW must yield the GPU to ZION Deeksha.
+# DUTY_PCT=100: external ProgPoW gets full GPU time during its burst
+# (ZION Deeksha runs on the other GPU during the gap).
+# See docs/3.0.6/VEGA_SMOS_DUAL_GPU_REPORT.md (v90 stable config)
 export ZION_ZANO_RESERVE=0
-export ZION_EXT_GPU_TIME_DUTY_PCT=50
+export ZION_ZANO_DEVICE_NAME=vega
+export ZION_EXT_GPU_TIME_DUTY_PCT=100
 export ZION_EXT_GPU_GAP_MS=1000
 export ZION_EXT_GPU_MAX_GAP_MS=5000
 
