@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{mpsc, Arc, Mutex};
+use std::time::Instant;
 
 use zion_cosmic_harmony::ExternalCoin;
 
@@ -15,6 +16,9 @@ pub struct JobPackage {
     pub algorithm: String,
     pub extranonce1_hex: String,
     pub ntime: String,
+    /// Wall-clock time when the job was received from the upstream pool.
+    /// Used to drop stale jobs before they are sent to miners.
+    pub received_at: Option<Instant>,
 }
 
 #[derive(Clone, Debug)]
@@ -306,6 +310,7 @@ mod tests {
             algorithm: "blake3".into(),
             extranonce1_hex: "00".into(),
             ntime: "00000000".into(),
+            received_at: None,
         };
         bridge.push_job(job.clone());
         let popped = bridge.pop_job().unwrap();
@@ -345,6 +350,7 @@ mod tests {
             algorithm: "blake3".into(),
             extranonce1_hex: String::new(),
             ntime: String::new(),
+            received_at: None,
         });
         bridge.push_job(JobPackage {
             external_job_id: "new".into(),
@@ -355,6 +361,7 @@ mod tests {
             algorithm: "blake3".into(),
             extranonce1_hex: String::new(),
             ntime: String::new(),
+            received_at: None,
         });
         let popped = bridge.pop_job().unwrap();
         assert_eq!(popped.external_job_id, "new", "pop_job should return latest job (back of queue)");
@@ -382,6 +389,7 @@ mod tests {
             algorithm: "kheavyhash".into(),
             extranonce1_hex: String::new(),
             ntime: String::new(),
+            received_at: None,
         });
         multi.insert(ExternalCoin::Kaspa, bridge);
         assert!(multi.contains(&ExternalCoin::Kaspa));
@@ -402,6 +410,7 @@ mod tests {
             algorithm: "kawpow".into(),
             extranonce1_hex: String::new(),
             ntime: String::new(),
+            received_at: None,
         });
         let job = bridge.get_job_by_id("findme").unwrap();
         assert_eq!(job.coin, ExternalCoin::Ravencoin);
