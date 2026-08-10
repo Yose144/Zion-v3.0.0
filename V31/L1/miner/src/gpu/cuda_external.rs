@@ -17,6 +17,8 @@ use anyhow::Result;
 use cudarc::driver::sys::CUdevice_attribute;
 use cudarc::driver::{CudaDevice, CudaSlice, LaunchAsync, LaunchConfig};
 use cudarc::nvrtc::{compile_ptx_with_opts, CompileOptions};
+use std::io::{BufReader, BufWriter, Read, Write};
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -511,12 +513,62 @@ impl CudaExternalMiner {
     /// Generates the light cache on CPU (~16-100MB, fast), uploads it,
     /// then computes the full DAG (1-6GB) IN PARALLEL ON THE GPU using
     /// the ethash_calculate_dag kernel. No multi-GB CPU→GPU transfer.
+    ///
+    /// Generated DAGs are persisted to disk so that the next miner startup can
+    /// load the DAG from cache instead of regenerating it.  This saves the
+    /// ~10 second ProgPoW DAG generation on each restart.  Cache files are
+    /// named `$ZION_DAG_CACHE_DIR/{algo}_epoch{epoch}.bin` (default
+    /// `~/.zion/dag-cache/`).  Set `ZION_DAG_CACHE_DISABLE=1` to skip cache I/O.
     fn ensure_dag(&mut self, epoch: u32) -> Result<()> {
         if self.dag_epoch == epoch && self.dag_buf.is_some() {
             return Ok(());
         }
 
         let algo_name = self.algo.module_name();
+        let cache_path = Self::dag_cache_path(algo_name, epoch);
+
+        // Try loading a previously generated DAG from disk cache first.
+        if Self::dag_cache_enabled() && cache_path.exists() {
+            eprintln!(
+                "dag_manager: loading {} DAG epoch={} from disk cache ({})...",
+                algo_name,
+                epoch,
+                cache_path.display()
+            );
+            match Self::load_dag_from_disk(&cache_path) {
+                Ok((dag_u64, dag_size_entries)) => {
+                    let dag_bytes = dag_u64.len() * 8;
+                    eprintln!(
+                        "dag_manager: uploading {} cached DAG to GPU ({} entries = {:.1} MB)",
+                        algo_name,
+                        dag_size_entries,
+                        dag_bytes as f64 / (1024.0 * 1024.0)
+                    );
+                    let dag_buf = self
+                        .dev
+                        .htod_copy(dag_u64)
+                        .map_err(|e| anyhow::anyhow!("DAG upload from cache: {e}"))?;
+                    self.dag_buf = Some(dag_buf);
+                    self.dag_size_entries = dag_size_entries;
+                    self.dag_epoch = epoch;
+                    self.light_cache_buf = None;
+                    self.light_cache_items = 0;
+                    eprintln!(
+                        "dag_manager: {} DAG epoch={} ready from disk cache",
+                        algo_name, epoch
+                    );
+                    return Ok(());
+                }
+                Err(e) => {
+                    eprintln!(
+                        "dag_manager: corrupt/mismatched {} DAG cache, deleting and regenerating on GPU: {}",
+                        algo_name, e
+                    );
+                    let _ = std::fs::remove_file(&cache_path);
+                }
+            }
+        }
+
         eprintln!(
             "dag_manager: generating {} DAG epoch={} on GPU...",
             algo_name, epoch,
@@ -661,6 +713,16 @@ impl CudaExternalMiner {
             epoch,
             start.elapsed().as_secs_f64(),
         );
+
+        // Persist to disk cache so the next miner start can load the DAG
+        // instead of regenerating it.
+        if Self::dag_cache_enabled() {
+            if let Some(dag_buf) = self.dag_buf.as_ref() {
+                if let Err(e) = Self::save_dag_to_disk(&self.dev, &cache_path, dag_buf, self.dag_size_entries) {
+                    eprintln!("dag_manager: failed to save {} DAG disk cache: {}", algo_name, e);
+                }
+            }
+        }
 
         Ok(())
     }
@@ -1160,6 +1222,176 @@ impl CudaExternalMiner {
                 device_name: self.device_name_cached.clone(),
             })
         }
+    }
+}
+
+impl CudaExternalMiner {
+    /// Return the configured DAG disk cache directory.
+    /// `$ZION_DAG_CACHE_DIR` or `~/.zion/dag-cache` by default.
+    fn dag_cache_dir() -> PathBuf {
+        std::env::var("ZION_DAG_CACHE_DIR")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| {
+                let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+                PathBuf::from(home).join(".zion").join("dag-cache")
+            })
+    }
+
+    /// Return whether DAG disk caching is enabled.
+    /// Set `ZION_DAG_CACHE_DISABLE=1` to opt out.
+    fn dag_cache_enabled() -> bool {
+        std::env::var("ZION_DAG_CACHE_DISABLE")
+            .ok()
+            .map(|v| v.trim() != "1" && v.trim().to_lowercase() != "true")
+            .unwrap_or(true)
+    }
+
+    /// Cache file path for a given algorithm and epoch.
+    fn dag_cache_path(algo: &str, epoch: u32) -> PathBuf {
+        Self::dag_cache_dir().join(format!("{}_epoch{}.bin", algo, epoch))
+    }
+
+    /// Load a DAG from a disk cache file.
+    /// File layout: 8 bytes little-endian `dag_size_entries`, then the DAG data
+    /// as little-endian u64 words (128 bytes = 16 u64 per entry).
+    fn load_dag_from_disk(path: &Path) -> Result<(Vec<u64>, u64)> {
+        let metadata = std::fs::metadata(path)
+            .map_err(|e| anyhow::anyhow!("failed to stat DAG cache {}: {e}", path.display()))?;
+        let total_bytes = metadata.len() as usize;
+        if total_bytes < 8 {
+            return Err(anyhow::anyhow!(
+                "DAG cache file too small: {} bytes",
+                total_bytes
+            ));
+        }
+        let data_bytes = total_bytes - 8;
+        if data_bytes % 8 != 0 {
+            return Err(anyhow::anyhow!(
+                "DAG cache data size is not a multiple of 8: {}",
+                data_bytes
+            ));
+        }
+
+        let file = std::fs::File::open(path)
+            .map_err(|e| anyhow::anyhow!("failed to open DAG cache {}: {e}", path.display()))?;
+        let mut reader = BufReader::with_capacity(8 * 1024 * 1024, file);
+
+        let mut header = [0u8; 8];
+        reader
+            .read_exact(&mut header)
+            .map_err(|e| anyhow::anyhow!("failed to read DAG cache header: {e}"))?;
+        let dag_size_entries = u64::from_le_bytes(header);
+
+        let expected_data_bytes = (dag_size_entries as u128)
+            .checked_mul(128)
+            .ok_or_else(|| anyhow::anyhow!("DAG entries count overflow: {}", dag_size_entries))?;
+        if expected_data_bytes as usize != data_bytes {
+            return Err(anyhow::anyhow!(
+                "DAG cache size mismatch: header says {} entries ({} bytes), file has {} bytes",
+                dag_size_entries,
+                expected_data_bytes,
+                data_bytes
+            ));
+        }
+
+        let u64_count = data_bytes / 8;
+        let chunk_u64s = 1024 * 1024; // 1M u64s = 8 MB
+        let mut chunk_bytes = vec![0u8; chunk_u64s * 8];
+        let mut dag_u64 = Vec::with_capacity(u64_count);
+
+        let start = Instant::now();
+        let mut remaining = u64_count;
+        while remaining > 0 {
+            let n = remaining.min(chunk_u64s);
+            reader
+                .read_exact(&mut chunk_bytes[..n * 8])
+                .map_err(|e| anyhow::anyhow!("failed to read DAG cache data: {e}"))?;
+            for i in 0..n {
+                dag_u64.push(u64::from_le_bytes(
+                    chunk_bytes[i * 8..i * 8 + 8].try_into().unwrap(),
+                ));
+            }
+            remaining -= n;
+        }
+
+        eprintln!(
+            "dag_manager: loaded DAG from {} ({:.1}s)",
+            path.display(),
+            start.elapsed().as_secs_f64()
+        );
+        Ok((dag_u64, dag_size_entries))
+    }
+
+    /// Save a GPU-resident DAG to disk cache.
+    /// Downloads the DAG to host memory, then writes it using a buffered
+    /// little-endian u64 layout.  Set `ZION_DAG_CACHE_DISABLE=1` to skip.
+    fn save_dag_to_disk(
+        dev: &Arc<CudaDevice>,
+        path: &Path,
+        dag_buf: &CudaSlice<u64>,
+        dag_size_entries: u64,
+    ) -> Result<()> {
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)
+                .map_err(|e| anyhow::anyhow!("failed to create DAG cache dir: {e}"))?;
+        }
+
+        let start = Instant::now();
+        eprintln!(
+            "dag_manager: downloading {} DAG from GPU for disk cache ({} entries)...",
+            path.display(),
+            dag_size_entries
+        );
+        let dag_u64 = dev
+            .dtoh_sync_copy(dag_buf)
+            .map_err(|e| anyhow::anyhow!("DAG download for disk cache: {e}"))?;
+
+        let expected_u64s = (dag_size_entries as u128)
+            .checked_mul(16)
+            .ok_or_else(|| anyhow::anyhow!("DAG entries count overflow: {}", dag_size_entries))?;
+        if dag_u64.len() as u128 != expected_u64s {
+            return Err(anyhow::anyhow!(
+                "DAG buffer size mismatch: expected {} u64s, got {}",
+                expected_u64s,
+                dag_u64.len()
+            ));
+        }
+
+        let file = std::fs::File::create(path)
+            .map_err(|e| anyhow::anyhow!("failed to create DAG cache {}: {e}", path.display()))?;
+        let mut writer = BufWriter::with_capacity(8 * 1024 * 1024, file);
+
+        // Header: dag_size_entries (u64 LE)
+        writer
+            .write_all(&dag_size_entries.to_le_bytes())
+            .map_err(|e| anyhow::anyhow!("failed to write DAG cache header: {e}"))?;
+
+        // Data: u64 words in little-endian, written in 8 MB chunks.
+        let chunk_u64s = 1024 * 1024; // 1M u64s = 8 MB
+        let mut chunk_bytes = vec![0u8; chunk_u64s * 8];
+        let mut written = 0usize;
+        while written < dag_u64.len() {
+            let n = (dag_u64.len() - written).min(chunk_u64s);
+            for i in 0..n {
+                chunk_bytes[i * 8..i * 8 + 8]
+                    .copy_from_slice(&dag_u64[written + i].to_le_bytes());
+            }
+            writer
+                .write_all(&chunk_bytes[..n * 8])
+                .map_err(|e| anyhow::anyhow!("failed to write DAG cache data: {e}"))?;
+            written += n;
+        }
+
+        writer
+            .flush()
+            .map_err(|e| anyhow::anyhow!("failed to flush DAG cache: {e}"))?;
+
+        eprintln!(
+            "dag_manager: saved DAG cache to {} ({:.1}s)",
+            path.display(),
+            start.elapsed().as_secs_f64()
+        );
+        Ok(())
     }
 }
 
