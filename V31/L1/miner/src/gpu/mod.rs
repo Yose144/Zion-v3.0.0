@@ -4957,19 +4957,119 @@ pub mod opencl_deeksha_lite {
                 }
             }
 
+            // ── On-device target check path (CUDA-style) ──────────────────
+            // The kernel supports on-device target checking via target_u32.
+            // When target_u32 != 0, the kernel checks each hash on-device and
+            // only writes the winning nonce + hash (40 bytes total) via atomic.
+            // This eliminates the 256KB+ DMA readback + CPU iteration per chunk
+            // that the benchmark-mode (target_u32=0) path requires.
+            // This matches the CUDA mine_batch architecture exactly.
+            let target_u32 = u32::from_be_bytes([
+                target.bytes[0],
+                target.bytes[1],
+                target.bytes[2],
+                target.bytes[3],
+            ]);
+
+            if target_u32 != 0 {
+                // Reset result buffers for this batch
+                {
+                    let guard = GpuGuard::new();
+                    let flag_zero: [u32; 1] = [0u32];
+                    let sentinel_slice: [u64; 1] = [SENTINEL];
+                    self.result_flag_buf.write(&flag_zero[..]).enq()?;
+                    self.result_nonce_buf.write(&sentinel_slice[..]).enq()?;
+                    if guard.was_caught() {
+                        self.recovery_attempts += 1;
+                        anyhow::bail!(
+                            "GPU access violation during result buffer reset (attempt {}/{}).",
+                            self.recovery_attempts,
+                            self.max_recovery_attempts
+                        );
+                    }
+                }
+
+                let mut total_tested = 0u64;
+                let mut current_nonce = nonce_start;
+                let mut left = batch_size;
+
+                // Launch all chunks back-to-back (no inter-chunk sync).
+                // The kernel's atomic early-exit (atomic_add(result_flag, 0) != 0)
+                // handles early termination for subsequent chunks automatically.
+                while left > 0 {
+                    let chunk = (left as usize).min(self.work_size);
+                    let local_size = self.local_work_size.min(chunk);
+                    let global_size = chunk.div_ceil(local_size) * local_size;
+
+                    self.kernel.set_arg(1, current_nonce)?;
+                    self.kernel.set_arg(2, chunk as u32)?;
+                    self.kernel.set_arg(6, target_u32)?; // on-device target check
+
+                    {
+                        let guard = GpuGuard::new();
+                        unsafe {
+                            self.kernel
+                                .cmd()
+                                .global_work_size(global_size)
+                                .local_work_size(local_size)
+                                .enq()?;
+                        }
+                        if guard.was_caught() {
+                            self.recovery_attempts += 1;
+                            anyhow::bail!(
+                                "GPU access violation during kernel enqueue (attempt {}/{}). AMD driver crash detected.",
+                                self.recovery_attempts,
+                                self.max_recovery_attempts
+                            );
+                        }
+                    }
+
+                    total_tested += chunk as u64;
+                    current_nonce = current_nonce.wrapping_add(chunk as u64);
+                    left = left.saturating_sub(chunk as u64);
+                }
+
+                // Single sync — wait for all chunks to complete
+                {
+                    let guard = GpuGuard::new();
+                    self.pro_que.queue().finish()?;
+                    if guard.was_caught() {
+                        self.recovery_attempts += 1;
+                        anyhow::bail!(
+                            "GPU access violation during queue finish (attempt {}/{}).",
+                            self.recovery_attempts,
+                            self.max_recovery_attempts
+                        );
+                    }
+                }
+
+                // Read only the result nonce + hash (40 bytes, not 256KB+)
+                let mut all_solutions = Vec::new();
+                let mut nonce_out = [SENTINEL; 1];
+                self.result_nonce_buf.read(&mut nonce_out[..]).enq()?;
+                if nonce_out[0] != SENTINEL {
+                    let mut hash_out = [0u8; 32];
+                    self.result_hash_buf.read(&mut hash_out[..]).enq()?;
+                    all_solutions.push((nonce_out[0], hash_out, None));
+                }
+
+                return Ok(GpuBatchResult {
+                    nonces_tested: total_tested,
+                    solutions: all_solutions,
+                    solution_blob: None,
+                    device_name: self.device_name_cached.clone(),
+                });
+            }
+
+            // ── Benchmark mode (target_u32 == 0): readback all hashes ──────
+            // Used by benchmark() function — no target, output all hashes.
+
             // Check if double-buffering is disabled (env override for debugging)
             let double_buffer_disabled = std::env::var("ZION_GPU_NO_DOUBLE_BUFFER")
                 .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
                 .unwrap_or(false);
 
             // Early-break: return after the first chunk that finds a solution.
-            // On GCN/Vega, each kernel launch has ~200ms driver overhead. With
-            // low pool difficulty, every chunk finds a solution, so processing
-            // the full batch wastes 7×200ms=1.4s of overhead. Early-break
-            // launches only 1 kernel (8192 nonces in ~400ms = 20 KH/s) instead
-            // of 8 kernels (65536 nonces in ~4900ms = 13 KH/s).
-            // Default: false (multi-chunk batches + double-buffering enabled).
-            // Set ZION_GPU_EARLY_BREAK=1 to force single-chunk (safe path).
             let early_break = std::env::var("ZION_GPU_EARLY_BREAK")
                 .map(|v| !(v == "0" || v.eq_ignore_ascii_case("false")))
                 .unwrap_or(false);
@@ -4977,11 +5077,6 @@ pub mod opencl_deeksha_lite {
             let mut all_solutions = Vec::new();
             let mut total_tested = 0u64;
             let mut current_nonce = nonce_start;
-            // Cap batch to single chunk when early_break is enabled.
-            // This forces the single-buffer path, which is safe (no
-            // pending DMA events to drop). The double-buffered path
-            // with early_break causes heap corruption (use-after-free
-            // when pending read events/buffers are dropped on return).
             let mut left = if early_break {
                 batch_size.min(self.work_size as u64)
             } else {
@@ -4989,10 +5084,6 @@ pub mod opencl_deeksha_lite {
             };
 
             // ── Double-buffered async readback path ──────────────────────
-            // Uses two output buffers (A/B) and a dedicated read queue.
-            // While the GPU computes chunk N+1 on the compute queue, the CPU
-            // processes chunk N's results from the read queue. This hides the
-            // DMA readback latency behind GPU compute time.
             if !double_buffer_disabled && left > self.work_size as u64 {
                 let out_bufs = [&self.output_hashes_buf, &self.output_hashes_buf_b];
                 let mut host_a = vec![0u8; self.work_size * 32];
