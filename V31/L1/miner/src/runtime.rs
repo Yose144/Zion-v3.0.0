@@ -170,6 +170,17 @@ pub struct MinerRuntime {
     /// Stream 2 (GPU external AuxPoW) nonce cursor.
     gpu_ext_nonce_cursor: Arc<std::sync::atomic::AtomicU64>,
     #[cfg(feature = "auxpow")]
+    /// Last external job ID seen by Stream 2 — used to detect job changes
+    /// and reset the nonce base to a unique per-miner value.
+    gpu_ext_last_job_id: Arc<Mutex<String>>,
+    #[cfg(feature = "auxpow")]
+    /// Per-job nonce base for Stream 2 (randomized to avoid duplicate shares
+    /// when multiple miners share the same upstream job).
+    gpu_ext_job_base: Arc<std::sync::atomic::AtomicU64>,
+    #[cfg(feature = "auxpow")]
+    /// Per-job counter used to make the Stream 2 nonce base unique.
+    gpu_ext_job_counter: Arc<std::sync::atomic::AtomicU64>,
+    #[cfg(feature = "auxpow")]
     /// Stream 3 (CPU external AuxPoW) nonce cursor.
     cpu_ext_nonce_cursor: Arc<std::sync::atomic::AtomicU64>,
     #[cfg(feature = "auxpow")]
@@ -280,6 +291,9 @@ impl MinerRuntime {
                 gpu_ext_algo: Arc::new(std::sync::Mutex::new(None)),
                 zion_nonce_cursor: Arc::new(std::sync::atomic::AtomicU64::new(0)),
                 gpu_ext_nonce_cursor: Arc::new(std::sync::atomic::AtomicU64::new(0)),
+                gpu_ext_last_job_id: Arc::new(Mutex::new(String::new())),
+                gpu_ext_job_base: Arc::new(std::sync::atomic::AtomicU64::new(0)),
+                gpu_ext_job_counter: Arc::new(std::sync::atomic::AtomicU64::new(0)),
                 cpu_ext_nonce_cursor: Arc::new(std::sync::atomic::AtomicU64::new(0)),
                 scheduler: Arc::new(Mutex::new(AuxPoWScheduler::new(
                     hashrate_per_unit,
@@ -1531,6 +1545,49 @@ impl MinerRuntime {
         Ok(result.accepted)
     }
 
+    #[cfg(feature = "auxpow")]
+    /// Parse a hex string (with or without 0x) into a u64.
+    /// Only the first 8 bytes are used; shorter values are left-padded with
+    /// zeroes. Returns None for empty/invalid input.
+    fn parse_hex_u64(hex: &str) -> Option<u64> {
+        let s = hex.strip_prefix("0x").unwrap_or(hex);
+        let bytes = hex::decode(s).ok()?;
+        if bytes.is_empty() {
+            return None;
+        }
+        let mut arr = [0u8; 8];
+        let n = bytes.len().min(8);
+        arr[..n].copy_from_slice(&bytes[..n]);
+        Some(u64::from_be_bytes(arr))
+    }
+
+    #[cfg(feature = "auxpow")]
+    /// Compute a unique 64-bit nonce base for Stream 2 GPU external jobs.
+    /// The base is derived from the reward address, worker name, job ID,
+    /// process ID and a per-job counter, so different rigs and even different
+    /// jobs on the same rig start scanning from different nonce ranges.
+    fn compute_gpu_ext_nonce_base(&self, ext: &ExternalStreamJob) -> u64 {
+        let counter = self
+            .gpu_ext_job_counter
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let mut seed = format!(
+            "{}:{}:{}:{}:{}",
+            self.config.reward_address.encoded,
+            self.config.worker,
+            ext.job_id,
+            std::process::id(),
+            counter,
+        );
+        if let Ok(host) = std::env::var("HOSTNAME") {
+            seed.push(':');
+            seed.push_str(&host);
+        }
+        let h = blake3::hash(seed.as_bytes());
+        let mut arr = [0u8; 8];
+        arr.copy_from_slice(&h.as_bytes()[..8]);
+        u64::from_le_bytes(arr)
+    }
+
     /// Mine an AuxPoW (external) share from a V3 protocol external_stream job
     /// and submit it to the pool for forwarding to the external pool.
     #[cfg(feature = "auxpow")]
@@ -1545,6 +1602,28 @@ impl MinerRuntime {
 
         let coin = ExternalCoin::from_ticker(&ext.coin)
             .ok_or_else(|| MinerError::Consensus(format!("unknown coin: {}", ext.coin)))?;
+
+        // On a new GPU external job, reset the nonce cursor to a unique base.
+        // Without this, multiple miners on the same upstream EthStratum/ProgPoW
+        // job all scan from nonce 0, find the same first solution, and one of
+        // them gets an upstream "duplicate share" reject.
+        if stream == StreamId::GpuExternal {
+            let mut last_job = self.gpu_ext_last_job_id.lock().await;
+            if *last_job != ext.job_id {
+                *last_job = ext.job_id.clone();
+                let base = Self::parse_hex_u64(&ext.extranonce1_hex)
+                    .filter(|&v| v != 0)
+                    .unwrap_or_else(|| self.compute_gpu_ext_nonce_base(ext));
+                self.gpu_ext_nonce_cursor
+                    .store(base, std::sync::atomic::Ordering::Relaxed);
+                self.gpu_ext_job_base
+                    .store(base, std::sync::atomic::Ordering::Relaxed);
+                eprintln!(
+                    "v3_trinity gpu_ext_nonce_base coin={} job_id={} base={}",
+                    ext.coin, ext.job_id, base
+                );
+            }
+        }
 
         // Convert ExternalStreamJob → auxpow::Job
         // Strip 0x prefix if present (EthStratum pools send hex with 0x prefix)
