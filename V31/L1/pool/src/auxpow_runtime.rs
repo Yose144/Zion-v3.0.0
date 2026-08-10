@@ -212,7 +212,7 @@ pub fn spawn_auxpow_runtime(
         }
 
         let coin_label = coin.as_str().to_string();
-        let worker = format!("{}.{}", cfg.worker_name, coin_label.to_lowercase());
+        let worker = cfg.worker_name.clone();
         let bridge = multi_bridge.clone();
         let reconnect_base = cfg.reconnect_base_delay_secs;
         let reconnect_max = cfg.reconnect_max_delay_secs;
