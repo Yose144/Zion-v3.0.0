@@ -1524,6 +1524,18 @@ fn classify_cpu(vendor: &str, model: &str) -> CpuArch {
     CpuArch::Other
 }
 
+/// Public config-friendly wrapper around the V3 arch-aware VerusHash autotuner.
+///
+/// Detects the CPU, classifies it into a performance profile (AMD Zen / Intel /
+/// Apple / Other), and returns the optimal (threads, nonce_count) for VRSC
+/// Stream 3. `has_gpu` is used for Apple Silicon to leave one core free when
+/// the GPU shares unified memory.
+pub(crate) fn verushash_cpu_tuning(has_gpu: bool) -> (usize, u64) {
+    let (vendor, model, physical, logical) = detect_cpu_info();
+    let arch = classify_cpu(&vendor, &model);
+    auto_tune_verushash(physical, logical, arch, has_gpu)
+}
+
 /// Auto-detect hardware and compute optimal mining parameters.
 ///
 /// This is the main entry point for hardware-based autotuning.
@@ -2258,19 +2270,23 @@ pub fn create_gpu_backend(
 
             // Decide which devices should run the requested algorithm.
             // Stream 1 (ZION Deeksha) uses the non-reserved devices.
-            // Stream 2 (ZANO ProgPoW / external AuxPoW) uses the reserved ProgPoW GPU.
-            // If ZION_ZANO_RESERVE=0, the external stream picks the best ProgPoW device.
+            // Stream 2 (ZANO ProgPoW / external AuxPoW) uses the reserved ProgPoW GPU
+            // by default. If ZION_ZANO_RESERVE=0 (or a single ZANO device is not
+            // explicitly requested), the external stream runs on ALL GPUs in
+            // parallel via MultiGpuMiner, sharing the GPU with ZION through the
+            // runtime's duty-cycle time-slicing (ZION_EXT_GPU_TIME_DUTY_PCT/GAP_MS).
             let target_indices: Vec<usize> = if is_external_algorithm(algorithm) {
                 if let Some(idx) = zano_idx {
                     vec![idx]
                 } else {
-                    // No reservation: external stream should still use the best
-                    // ProgPoW-capable device, not all devices mixed with ZION.
+                    // No reservation: external ProgPoW uses all GPUs for parallel
+                    // multi-GPU mining. Filter to devices that have any ProgPoW
+                    // priority (excludes Intel/Other if they were enumerated).
                     gpu_devices
                         .iter()
-                        .max_by_key(|d| d.classification.progpow_priority())
-                        .map(|d| vec![d.global_idx])
-                        .unwrap_or_default()
+                        .filter(|d| d.classification.progpow_priority() > 0)
+                        .map(|d| d.global_idx)
+                        .collect()
                 }
             } else {
                 (0..gpu_count).filter(|i| Some(*i) != zano_idx).collect()
