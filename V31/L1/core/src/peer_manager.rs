@@ -192,6 +192,8 @@ impl PeerManager {
 
     /// Return up to `n` known peers, excluding our own address and banned ones.
     pub async fn random_peers(&self, n: usize) -> Vec<SocketAddr> {
+        // Prune stale known peers so we do not advertise dead endpoints.
+        self.prune_stale_peers(Duration::from_secs(300)).await;
         let local = *self.local_addr.lock().unwrap_or_else(|e| e.into_inner());
         let banned = self.banned.lock().unwrap_or_else(|e| e.into_inner()).clone();
         let peers = self.peers.lock().unwrap_or_else(|e| e.into_inner());
@@ -221,6 +223,75 @@ impl PeerManager {
     /// Number of known peers.
     pub async fn known_count(&self) -> usize {
         self.peers.lock().unwrap_or_else(|e| e.into_inner()).len()
+    }
+
+    /// Remove known peers whose last_seen is older than `max_age`, unless they
+    /// are currently active inbound peers.  Keeps the known set from growing
+    /// forever with ephemeral health-check connections.
+    pub async fn prune_stale_peers(&self, max_age: Duration) {
+        let now = Instant::now();
+        let active = self.active.lock().unwrap_or_else(|e| e.into_inner()).clone();
+        let mut peers = self.peers.lock().unwrap_or_else(|e| e.into_inner());
+        peers.retain(|addr, info| {
+            active.contains(addr) || now.duration_since(info.last_seen) <= max_age
+        });
+    }
+
+    /// Return all currently active peer addresses.
+    pub async fn active_peers(&self) -> Vec<SocketAddr> {
+        self.active
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .iter()
+            .cloned()
+            .collect()
+    }
+
+    /// Return all known peer addresses, excluding our own and banned ones.
+    pub async fn known_peers_list(&self) -> Vec<SocketAddr> {
+        let local = *self.local_addr.lock().unwrap_or_else(|e| e.into_inner());
+        let banned = self.banned.lock().unwrap_or_else(|e| e.into_inner()).clone();
+        self.peers
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .iter()
+            .filter(|(addr, _)| Some(**addr) != local)
+            .filter(|(addr, _)| !banned.contains_key(&addr.ip()))
+            .map(|(addr, _)| *addr)
+            .collect()
+    }
+
+    /// Return known peers seen within `window`, excluding our own and banned ones.
+    pub async fn recent_peers(&self, window: Duration) -> Vec<SocketAddr> {
+        let now = Instant::now();
+        let local = *self.local_addr.lock().unwrap_or_else(|e| e.into_inner());
+        let banned = self.banned.lock().unwrap_or_else(|e| e.into_inner()).clone();
+        self.peers
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .iter()
+            .filter(|(_, info)| now.duration_since(info.last_seen) <= window)
+            .filter(|(addr, _)| Some(**addr) != local)
+            .filter(|(addr, _)| !banned.contains_key(&addr.ip()))
+            .map(|(addr, _)| *addr)
+            .collect()
+    }
+
+    /// Return known peers that have had a successful interaction (good > 0) and
+    /// were seen within `window`.  This excludes seeds that only ever failed.
+    pub async fn recent_good_peers(&self, window: Duration) -> Vec<SocketAddr> {
+        let now = Instant::now();
+        let local = *self.local_addr.lock().unwrap_or_else(|e| e.into_inner());
+        let banned = self.banned.lock().unwrap_or_else(|e| e.into_inner()).clone();
+        self.peers
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .iter()
+            .filter(|(_, info)| info.good > 0 && now.duration_since(info.last_seen) <= window)
+            .filter(|(addr, _)| Some(**addr) != local)
+            .filter(|(addr, _)| !banned.contains_key(&addr.ip()))
+            .map(|(addr, _)| *addr)
+            .collect()
     }
 }
 

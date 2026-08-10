@@ -3,9 +3,10 @@
 //! The Alpha RPC speaks line-delimited JSON over plain TCP. This avoids a heavy
 //! HTTP stack while covering the essential node operations.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -394,13 +395,34 @@ async fn get_node_info(node: &Node) -> Result<Value, NodeError> {
 }
 
 async fn get_peer_info(node: &Node) -> Result<Value, NodeError> {
-    let peers: Vec<Value> = node
+    // Prune ephemeral known peers older than 5 minutes before reporting.
+    node.peer_manager
+        .prune_stale_peers(Duration::from_secs(300))
+        .await;
+    let seeds: Vec<Value> = node
         .config
         .seed_peers
         .iter()
         .map(|p| json!({ "address": p.to_string() }))
         .collect();
-    Ok(json!({ "peers": peers, "count": peers.len() }))
+    let active = node.peer_manager.active_peers().await;
+    let recent = node.peer_manager.recent_good_peers(Duration::from_secs(60)).await;
+    let known = node.peer_manager.known_peers_list().await;
+    let connected: HashSet<SocketAddr> = active
+        .iter()
+        .chain(recent.iter())
+        .cloned()
+        .collect();
+    let connected: Vec<_> = connected.into_iter().collect();
+    Ok(json!({
+        "seeds": seeds,
+        "seed_count": seeds.len(),
+        "peers": known.iter().map(|p| json!({ "address": p.to_string() })).collect::<Vec<_>>(),
+        "count": known.len(),
+        "known_count": known.len(),
+        "active": connected.iter().map(|p| json!({ "address": p.to_string() })).collect::<Vec<_>>(),
+        "active_count": connected.len(),
+    }))
 }
 
 async fn get_utxos(node: &Node, params: &Value) -> Result<Value, NodeError> {

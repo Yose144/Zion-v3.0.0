@@ -118,6 +118,8 @@ pub struct Node {
     /// V3 P2P sync client.
     pub v3_sync: crate::v3_p2p::V3Sync,
     pub config: NodeConfig,
+    /// Shared P2P peer manager (active + known peers).
+    pub peer_manager: Arc<crate::peer_manager::PeerManager>,
     next_template_id: AtomicU64,
 }
 
@@ -225,6 +227,7 @@ impl Node {
             v3_rpc,
             v3_sync,
             config,
+            peer_manager: Arc::new(crate::peer_manager::PeerManager::default_manager()),
             next_template_id: AtomicU64::new(1),
         })
     }
@@ -249,7 +252,7 @@ impl Node {
         let v3_no_genesis = self.config.v3_no_genesis;
         let v3_sync = self.v3_sync.clone();
         let v3_p2p_addr = self.config.v3_p2p_addr;
-        let peers = Arc::new(crate::peer_manager::PeerManager::default_manager());
+        let peers = Arc::clone(&self.peer_manager);
 
         // Clone self so both the native sync handle and the V3 branch can use it.
         let node = Arc::clone(&self);

@@ -3318,6 +3318,7 @@ def _build_status_edge_primary() -> dict:
             combined.update(nodeinfo)
         if isinstance(peers, dict):
             combined["known_peers"] = peers.get("count", 0)
+            combined["active_peers"] = peers.get("active_count", 0)
             combined["peers"] = peers.get("peers", [])
         if isinstance(chaininfo, dict):
             # getChainInfo returns native_chain_height (real height) vs chain_height (V3=0)
@@ -3376,10 +3377,15 @@ def _build_status_edge_primary() -> dict:
         if status is None:
             return (key, None)
         nodeinfo = _call("getNodeInfo")
+        peers = _call("getPeerInfo")
         chaininfo = _call("getChainInfo")
         combined = dict(status) if isinstance(status, dict) else {}
         if isinstance(nodeinfo, dict):
             combined.update(nodeinfo)
+        if isinstance(peers, dict):
+            combined["known_peers"] = peers.get("count", 0)
+            combined["active_peers"] = peers.get("active_count", 0)
+            combined["peers"] = peers.get("peers", [])
         if isinstance(chaininfo, dict):
             if chaininfo.get("native_chain_height") is not None:
                 combined["native_chain_height"] = chaininfo["native_chain_height"]
@@ -3490,6 +3496,7 @@ def _build_status_edge_primary() -> dict:
         "host": "127.0.0.1:9445",
         "version": "3.1.0-beta",
         "known_peers": _vr.get("known_peers", 0),
+        "active_peers": _vr.get("active_peers", 0),
         "sync_lag": 0,
     }
 
@@ -3545,6 +3552,7 @@ def _build_status_edge_primary() -> dict:
         "host": "127.0.0.1:9446",
         "version": "3.1.0-beta",
         "known_peers": _vr2.get("known_peers", 0),
+        "active_peers": _vr2.get("active_peers", 0),
         "sync_lag": 0,
     }
 
@@ -3592,6 +3600,7 @@ def _build_status_edge_primary() -> dict:
         "host": "127.0.0.1:9447",
         "version": "3.1.0-beta",
         "known_peers": _vr3.get("known_peers", 0),
+        "active_peers": _vr3.get("active_peers", 0),
         "sync_lag": 0,
     }
 
