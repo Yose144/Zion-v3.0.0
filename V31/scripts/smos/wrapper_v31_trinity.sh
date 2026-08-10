@@ -69,9 +69,9 @@ export ZION_STREAM3_ENABLED=1
 
 # GPU AuxPoW tuning (ZANO ProgPoWZ)
 # DEDICATED mode: Vega 64 exclusively mines ZANO ProgPoWZ.
-# GWS cap: 524288 (512K) — Vega 64 has 64 CUs, 524288/128 = 4096 WGs,
-# 4096/64 = 64 WGs per CU. Safe from amdgpu TTD (timeout detection) since
-# dedicated GPU has no ZION contention. Was 262144 (conservative for parallel).
+# GWS cap: 1048576 (1M) — Vega 64 has 64 CUs, 1M/128 = 8192 WGs,
+# 8192/64 = 128 WGs per CU. Safe from amdgpu TTD in dedicated mode.
+# Tested: 262K → 12.82 MH/s, 524K → 16.54 MH/s (+29%), 1M → target ~18+ MH/s.
 # Vega 64 (GCN): GROUP_SIZE=128, bpermute auto-disabled (GCN-safe)
 export ZION_STREAM2_BATCH=4194304
 export ZION_STREAM2_FORCE_COIN=ZANO
@@ -79,7 +79,7 @@ export ZION_AUXPOW_GPU_WORK_SIZE=1048576
 export ZION_AUXPOW_GPU_GROUP_SIZE=128
 export ZION_AUXPOW_GPU_VRAM_PCT=50
 export ZION_AUXPOW_GPU_BYTES_PER_ITEM=64
-export ZION_AUXPOW_PROGPOW_MAX_GWS=524288
+export ZION_AUXPOW_PROGPOW_MAX_GWS=1048576
 export ZION_ZANO_STALE_SECS=30
 
 # Multi-GPU DEDICATED mode: Vega 64 reserved for ZANO ProgPoWZ,
@@ -94,10 +94,10 @@ export ZION_EXT_GPU_MAX_GAP_MS=0
 
 # CPU AuxPoW tuning (VRSC VerusHash — pool sends jobs, miner mines)
 # Pentium G4560: 2C/4T @ 3.5GHz. 4 threads = max (hyperthreading).
-# Larger batch = less host overhead, CPU can pre-compute more nonces.
+# 2M batch is optimal — 4M caused stale share rejects (VRSC block time ~60s).
 export ZION_MINER_CPU_COIN=VRSC
-export ZION_STREAM3_BATCH=4000000
-export ZION_EXT_CPU_NONCE_COUNT=4000000
+export ZION_STREAM3_BATCH=2000000
+export ZION_EXT_CPU_NONCE_COUNT=2000000
 export ZION_MINER_THREADS=4
 
 # ── Download V31 miner binary ─────────────────────────────────────────────
