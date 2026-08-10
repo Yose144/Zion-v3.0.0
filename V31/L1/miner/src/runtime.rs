@@ -619,12 +619,12 @@ impl MinerRuntime {
             self.config.miner_threads
         };
         let start = Instant::now();
-        // Advance the CPU external nonce cursor so successive batches scan
-        // different nonces instead of re-hashing the same range (which would
-        // produce duplicate shares).
+        // Read the CPU external nonce cursor WITHOUT advancing yet.
+        // We'll advance by the actual nonces scanned after the scan completes,
+        // so we don't waste nonce space when shares are found early.
         let nonce_start = if stream == StreamId::CpuExternal {
             self.cpu_ext_nonce_cursor
-                .fetch_add(batch, std::sync::atomic::Ordering::Relaxed)
+                .load(std::sync::atomic::Ordering::Relaxed)
         } else {
             0
         };
@@ -636,10 +636,32 @@ impl MinerRuntime {
         let elapsed = start.elapsed().as_secs_f64();
 
         if let Some(share) = share {
-            let nonces_tested = share.nonce.saturating_add(1).min(batch);
-            self.update_hashrate(stream, nonces_tested, elapsed).await;
+            // Compute actual nonces scanned. find_verushash_share divides
+            // `batch` into `threads` chunks and uses find_map_any, which
+            // returns as soon as any thread finds a share. All threads run
+            // in parallel, so each scanned approximately the same number of
+            // nonces before one found a share.
+            let chunk_size = (batch / threads as u64).max(1);
+            let offset_in_chunk = share
+                .nonce
+                .saturating_sub(nonce_start)
+                .min(chunk_size);
+            let nonces_per_thread = offset_in_chunk + 1;
+            let total_nonces = nonces_per_thread * threads as u64;
+
+            // Advance cursor by actual nonces scanned (not full batch)
+            if stream == StreamId::CpuExternal {
+                self.cpu_ext_nonce_cursor
+                    .fetch_add(total_nonces, std::sync::atomic::Ordering::Relaxed);
+            }
+            self.update_hashrate(stream, total_nonces, elapsed).await;
             Ok(share)
         } else {
+            // No share found — full batch was scanned
+            if stream == StreamId::CpuExternal {
+                self.cpu_ext_nonce_cursor
+                    .fetch_add(batch, std::sync::atomic::Ordering::Relaxed);
+            }
             // DAG CPU fallback is a placeholder (hash_kawpow) and would distort
             // the hashrate display; skip hashrate for these misses.
             if !is_dag_placeholder {
@@ -1299,7 +1321,7 @@ impl MinerRuntime {
                     this.mark_active(StreamId::GpuExternal).await;
                     if let Some(ref ext) = bundle.gpu_external {
                         match this
-                            .mine_v3_external_share(&client, StreamId::GpuExternal, ext, &job_rx)
+                            .mine_v3_external_share(client.clone(), StreamId::GpuExternal, ext.clone(), &job_rx)
                             .await
                         {
                             Ok(true) => {}
@@ -1373,7 +1395,7 @@ impl MinerRuntime {
                     this.mark_active(StreamId::CpuExternal).await;
                     if let Some(ref ext) = bundle.cpu_external {
                         match this
-                            .mine_v3_external_share(&client, StreamId::CpuExternal, ext, &job_rx)
+                            .mine_v3_external_share(client.clone(), StreamId::CpuExternal, ext.clone(), &job_rx)
                             .await
                         {
                             Ok(true) => {}
@@ -1593,9 +1615,9 @@ impl MinerRuntime {
     #[cfg(feature = "auxpow")]
     async fn mine_v3_external_share(
         &self,
-        client: &V3PoolClient,
+        client: Arc<V3PoolClient>,
         stream: StreamId,
-        ext: &ExternalStreamJob,
+        ext: ExternalStreamJob,
         job_rx: &tokio::sync::watch::Receiver<Option<crate::v3_pool_client::V3JobBundle>>,
     ) -> Result<bool, MinerError> {
         use zion_cosmic_harmony::ExternalCoin;
@@ -1613,7 +1635,7 @@ impl MinerRuntime {
                 *last_job = ext.job_id.clone();
                 let base = Self::parse_hex_u64(&ext.extranonce1_hex)
                     .filter(|&v| v != 0)
-                    .unwrap_or_else(|| self.compute_gpu_ext_nonce_base(ext));
+                    .unwrap_or_else(|| self.compute_gpu_ext_nonce_base(&ext));
                 self.gpu_ext_nonce_cursor
                     .store(base, std::sync::atomic::Ordering::Relaxed);
                 self.gpu_ext_job_base
@@ -1679,7 +1701,80 @@ impl MinerRuntime {
             return Ok(false);
         }
 
-        // Submit via V3PoolClient → pool forwards to external pool
+        // For VRSC (CpuExternal): spawn share submission as a background task
+        // so the mining loop can immediately resume scanning. VRSC blocks are
+        // fast (~60s) and the target is easy, so shares are found frequently.
+        // Blocking the scan loop on network round-trips wastes CPU cycles.
+        if matches!(stream, StreamId::CpuExternal) {
+            let hash_hex = hex::encode(&share.hash);
+            let mix_hash_hex = share.mix_hash.as_ref().map(|m| hex::encode(m));
+            let solution_hex = share.solution.as_ref().map(hex::encode).unwrap_or_default();
+            let ntime_hex = share.ntime.clone();
+            let coin_name = ext.coin.clone();
+            let algo = ext.algorithm.clone();
+            let job_id = ext.job_id.clone();
+            let en1 = ext.extranonce1_hex.clone();
+            let nonce = share.nonce;
+            let self_clone = self.clone();
+            let client_clone = client.clone();
+
+            tokio::spawn(async move {
+                let result = client_clone
+                    .submit_external_share(
+                        &coin_name,
+                        &algo,
+                        &job_id,
+                        nonce,
+                        &hash_hex,
+                        mix_hash_hex.as_deref(),
+                        &en1,
+                        &solution_hex,
+                        &ntime_hex,
+                    )
+                    .await;
+                match result {
+                    Ok(r) => {
+                        let share_result = if r.accepted {
+                            ShareResult::Accepted
+                        } else {
+                            ShareResult::Rejected(r.status.clone())
+                        };
+                        self_clone
+                            .record_share_result(StreamId::CpuExternal, coin, &share_result)
+                            .await;
+                        if r.accepted {
+                            info!(
+                                stream = ?StreamId::CpuExternal,
+                                coin = %coin,
+                                nonce = nonce,
+                                job_id = %job_id,
+                                "V3 Trinity: external share accepted"
+                            );
+                        } else {
+                            warn!(
+                                stream = ?StreamId::CpuExternal,
+                                coin = %coin,
+                                nonce = nonce,
+                                status = %r.status,
+                                "V3 Trinity: external share rejected"
+                            );
+                        }
+                    }
+                    Err(e) => {
+                        warn!(
+                            stream = ?StreamId::CpuExternal,
+                            coin = %coin,
+                            nonce = nonce,
+                            error = %e,
+                            "V3 Trinity: external share submit error"
+                        );
+                    }
+                }
+            });
+            return Ok(true);
+        }
+
+        // For ZANO (GpuExternal): submit synchronously (30s blocks, low share rate)
         let hash_hex = hex::encode(&share.hash);
         let mix_hash_hex = share.mix_hash.as_ref().map(|m| hex::encode(m));
         let solution_hex = share.solution.as_ref().map(hex::encode).unwrap_or_default();
@@ -1880,7 +1975,10 @@ impl MinerRuntime {
 
     /// Update hashrate for a stream based on nonces searched and elapsed time.
     async fn update_hashrate(&self, stream: StreamId, nonces_searched: u64, elapsed_secs: f64) {
-        if elapsed_secs < 0.001 {
+        // Don't skip very fast scans — VRSC shares can be found in <1ms with
+        // easy targets, and skipping the update leaves hashrate at 0.
+        // Guard against divide-by-zero only.
+        if elapsed_secs < 1e-9 {
             return;
         }
         let hr = nonces_searched as f64 / elapsed_secs;
