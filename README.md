@@ -7,22 +7,23 @@
 
 ## Status
 
-> **Last updated: 2026-08-09**
+> **Last updated: 2026-08-10**
 
 - **Active mainnet track:** `V31/` workspace — version `3.1.0-beta` (V31 Mainnet Alpha), protocol string `zion-v3-node/3.1.0-alpha`, clean `cargo test --workspace`.
 - **V3 production line has been archived** to `archive/V3/` after the 2026-08-04 V31 cutover.
 - **Hard genesis reset (2026-08-06):** Complete key rotation — new premine, canonical, admin, DAO guardian, and EVM validator keys. All addresses updated across codebase + Edge server. See [`HARD_RESET_PLAYBOOK.md`](HARD_RESET_PLAYBOOK.md) for the full procedure.
-- **Edge production is V31 (2026-08-07):**
+- **Edge production is V31 (2026-08-10):**
   - Public RPC: `rpc.zionterranova.com:8443` (nginx TCP proxy → `127.0.0.1:9445`)
   - Public pool stratum: `62.171.141.136:8444`
   - Pool HTTP API: `62.171.141.136:8080`
-  - Chain height: 1000+ (2026-08-09)
+  - Chain height: 1000+ (2026-08-10)
   - Protocol: `zion-v3-node/3.1.0-alpha` (workspace version `3.1.0-beta`)
+  - 2026-08-10: Stale Edge `zion-pool` binary rebuilt/redeployed with latest `pop_job()`/`touch_job_timestamp` fixes; VRSC/ZANO shares now accepted upstream. AuxPoW worker simplified to `zion-pool` (commit `a5b3aa2c6`).
   - Genesis hash (V3 compat): `4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71`
   - Genesis hash (V31 native): `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`
   - Active V31 services: `zion-v31-node`, `zion-v31-pool`, `zion-v31-miner`, `zion-v31-multichain`, `zion-v31-dao`, `zion-v31-oasis`, `zion-edge-python-dashboard`, `zion-website`, `zion-oasis-web`, `zion-marketplace`
   - Legacy/expected failed: `zion-node` (V3), `zion-pool` (V3), `zion-dashboard-web` (superseded), `logrotate.service`
-- **Latest wins:** V31 pool reaches full V3 parity with payout confirmation sweep + UTXO fallback, DAO governance runtime with treasury/humanitarian/L1 scanner, GPU backend port (CUDA/OpenCL/Metal/native) with Ekam Deeksha v3.2 (512 KiB scratchpad, 128 random reads, 2 AES passes), cross-chain DEX multi-path routing + HTTP solver network, CLI with 21 subcommands (DAO/WARP/HTLC/monitor/topology/explorer/onboard), Rasta/One Love desktop and web UI theme, OASIS RPC fixed (raw TCP JSON-RPC).
+- **Latest wins:** 2026-08-10 stale Edge `zion-pool` binary rebuild/redeploy with `pop_job()` + `touch_job_timestamp` fixes and AuxPoW worker-name simplification (commit `a5b3aa2c6`) — VRSC/ZANO shares now accepted upstream. V31 pool reaches full V3 parity with payout confirmation sweep + UTXO fallback, DAO governance runtime with treasury/humanitarian/L1 scanner, GPU backend port (CUDA/OpenCL/Metal/native) with Ekam Deeksha v3.2 (512 KiB scratchpad, 128 random reads, 2 AES passes), cross-chain DEX multi-path routing + HTTP solver network, CLI with 21 subcommands (DAO/WARP/HTLC/monitor/topology/explorer/onboard), Rasta/One Love desktop and web UI theme, OASIS RPC fixed (raw TCP JSON-RPC).
 - **Test gate:** `cargo test --workspace` passes, `cargo clippy --workspace` is clean (pre-existing warnings only).
 - **Public launch target:** 31 December 2026.
 
