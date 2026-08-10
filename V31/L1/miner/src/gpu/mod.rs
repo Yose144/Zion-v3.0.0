@@ -4998,7 +4998,11 @@ pub mod opencl_deeksha_lite {
                 // handles early termination for subsequent chunks automatically.
                 while left > 0 {
                     let chunk = (left as usize).min(self.work_size);
-                    let local_size = self.local_work_size.min(chunk);
+                    // local_size must be exactly self.local_work_size to satisfy
+                    // reqd_work_group_size(LOCAL_SIZE, 1, 1). global_size is
+                    // rounded up to a multiple of local_size; extra threads
+                    // exit early via `if (tid >= nonce_count) return;`.
+                    let local_size = self.local_work_size;
                     let global_size = chunk.div_ceil(local_size) * local_size;
 
                     self.kernel.set_arg(1, current_nonce)?;
