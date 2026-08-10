@@ -58,7 +58,11 @@ async fn handle_socket(socket: TcpStream, node: Arc<Node>) -> Result<(), NodeErr
     // Peek at the first bytes to detect HTTP vs raw TCP JSON-RPC.
     // HTTP requests start with "POST ", "GET ", etc. If detected, handle as HTTP.
     let mut peek_buf = [0u8; 5];
-    let n = socket.peek(&mut peek_buf).await?;
+    let n = match socket.peek(&mut peek_buf).await {
+        Ok(n) => n,
+        Err(e) if is_benign_rpc_disconnect(&e) => return Ok(()),
+        Err(e) => return Err(e.into()),
+    };
     if n >= 4 && (&peek_buf[..4] == b"POST" || &peek_buf[..4] == b"GET " || &peek_buf[..4] == b"HEAD" || &peek_buf[..4] == b"OPTI") {
         handle_http(socket, node).await
     } else {
@@ -66,17 +70,52 @@ async fn handle_socket(socket: TcpStream, node: Arc<Node>) -> Result<(), NodeErr
     }
 }
 
+/// Treat common client-side disconnects (and binary/TLS probes) as normal.
+fn is_benign_rpc_disconnect(e: &std::io::Error) -> bool {
+    matches!(
+        e.kind(),
+        std::io::ErrorKind::ConnectionReset
+            | std::io::ErrorKind::ConnectionAborted
+            | std::io::ErrorKind::BrokenPipe
+            | std::io::ErrorKind::UnexpectedEof
+            | std::io::ErrorKind::NotConnected
+            | std::io::ErrorKind::InvalidData
+    )
+}
+
 /// Handle raw TCP line-delimited JSON-RPC (original protocol).
 async fn handle_raw_tcp(socket: TcpStream, node: Arc<Node>) -> Result<(), NodeError> {
     let (reader, mut writer) = socket.into_split();
     let mut lines = BufReader::new(reader).lines();
 
-    while let Some(line) = lines.next_line().await? {
-        let response = dispatch_request(&line, &node).await;
-        let body = serde_json::to_string(&response)?;
-        writer.write_all(body.as_bytes()).await?;
-        writer.write_all(b"\n").await?;
-        writer.flush().await?;
+    loop {
+        match lines.next_line().await {
+            Ok(Some(line)) => {
+                let response = dispatch_request(&line, &node).await;
+                let body = serde_json::to_string(&response)?;
+                if let Err(e) = writer.write_all(body.as_bytes()).await {
+                    if is_benign_rpc_disconnect(&e) {
+                        break;
+                    }
+                    return Err(e.into());
+                }
+                if let Err(e) = writer.write_all(b"\n").await {
+                    if is_benign_rpc_disconnect(&e) {
+                        break;
+                    }
+                    return Err(e.into());
+                }
+                if let Err(e) = writer.flush().await {
+                    if is_benign_rpc_disconnect(&e) {
+                        break;
+                    }
+                    return Err(e.into());
+                }
+            }
+            Ok(None) => break,
+            Err(e) if is_benign_rpc_disconnect(&e) => break,
+            Err(e) => return Err(e.into()),
+        }
     }
     Ok(())
 }
@@ -90,7 +129,12 @@ async fn handle_http(socket: TcpStream, node: Arc<Node>) -> Result<(), NodeError
 
     // Read request line: "POST /jsonrpc HTTP/1.1"
     let mut request_line = String::new();
-    buf_reader.read_line(&mut request_line).await?;
+    if let Err(e) = buf_reader.read_line(&mut request_line).await {
+        if is_benign_rpc_disconnect(&e) {
+            return Ok(());
+        }
+        return Err(e.into());
+    }
     let method = request_line.split_whitespace().next().unwrap_or("").to_string();
 
     // Read headers until empty line
@@ -98,7 +142,11 @@ async fn handle_http(socket: TcpStream, node: Arc<Node>) -> Result<(), NodeError
     let mut header_line = String::new();
     loop {
         header_line.clear();
-        let n = buf_reader.read_line(&mut header_line).await?;
+        let n = match buf_reader.read_line(&mut header_line).await {
+            Ok(n) => n,
+            Err(e) if is_benign_rpc_disconnect(&e) => return Ok(()),
+            Err(e) => return Err(e.into()),
+        };
         if n == 0 {
             break;
         }
@@ -115,8 +163,12 @@ async fn handle_http(socket: TcpStream, node: Arc<Node>) -> Result<(), NodeError
     // Handle CORS preflight (OPTIONS) — return 204 with CORS headers
     if method == "OPTIONS" {
         let cors_response = "HTTP/1.1 204 No Content\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: POST, GET, OPTIONS\r\nAccess-Control-Allow-Headers: Content-Type\r\nAccess-Control-Max-Age: 86400\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
-        writer.write_all(cors_response.as_bytes()).await?;
-        writer.flush().await?;
+        if let Err(e) = writer.write_all(cors_response.as_bytes()).await {
+            return if is_benign_rpc_disconnect(&e) { Ok(()) } else { Err(e.into()) };
+        }
+        if let Err(e) = writer.flush().await {
+            return if is_benign_rpc_disconnect(&e) { Ok(()) } else { Err(e.into()) };
+        }
         return Ok(());
     }
 
@@ -129,15 +181,21 @@ async fn handle_http(socket: TcpStream, node: Arc<Node>) -> Result<(), NodeError
             health_str.len(),
             health_str
         );
-        writer.write_all(http_response.as_bytes()).await?;
-        writer.flush().await?;
+        if let Err(e) = writer.write_all(http_response.as_bytes()).await {
+            return if is_benign_rpc_disconnect(&e) { Ok(()) } else { Err(e.into()) };
+        }
+        if let Err(e) = writer.flush().await {
+            return if is_benign_rpc_disconnect(&e) { Ok(()) } else { Err(e.into()) };
+        }
         return Ok(());
     }
 
     // Read body for POST
     let mut body = vec![0u8; content_length];
     if content_length > 0 {
-        buf_reader.read_exact(&mut body).await?;
+        if let Err(e) = buf_reader.read_exact(&mut body).await {
+            return if is_benign_rpc_disconnect(&e) { Ok(()) } else { Err(e.into()) };
+        }
     }
 
     let body_str = String::from_utf8_lossy(&body);
@@ -151,8 +209,12 @@ async fn handle_http(socket: TcpStream, node: Arc<Node>) -> Result<(), NodeError
         response_body
     );
 
-    writer.write_all(http_response.as_bytes()).await?;
-    writer.flush().await?;
+    if let Err(e) = writer.write_all(http_response.as_bytes()).await {
+        return if is_benign_rpc_disconnect(&e) { Ok(()) } else { Err(e.into()) };
+    }
+    if let Err(e) = writer.flush().await {
+        return if is_benign_rpc_disconnect(&e) { Ok(()) } else { Err(e.into()) };
+    }
 
     Ok(())
 }
