@@ -10,7 +10,7 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::{TcpListener, TcpStream};
-use tokio::time::sleep;
+use tokio::time::{sleep, timeout};
 use tracing::{info, warn};
 
 use crate::block::Block;
@@ -83,12 +83,24 @@ async fn handle_peer(
     let (reader, mut writer) = socket.split();
     let mut lines = BufReader::new(reader).lines();
     let mut guard: Option<PeerGuard> = None;
+    let read_timeout = Duration::from_secs(60);
+    let write_timeout = Duration::from_secs(30);
 
-    while let Some(line) = lines.next_line().await? {
+    loop {
+        let line = match timeout(read_timeout, lines.next_line()).await {
+            Ok(Ok(Some(line))) => line,
+            Ok(Ok(None)) => break,
+            Ok(Err(e)) => return Err(e.into()),
+            Err(_) => {
+                warn!("P2P peer {} read timeout, closing", peer_addr);
+                break;
+            }
+        };
+
         let msg: Message = match serde_json::from_str(&line) {
             Ok(m) => m,
             Err(e) => {
-                warn!("invalid P2P message: {}", e);
+                warn!("invalid P2P message from {}: {}", peer_addr, e);
                 peers.record_bad(peer_addr, 1).await;
                 continue;
             }
@@ -115,7 +127,10 @@ async fn handle_peer(
                     height: status.height,
                     tip_hash: status.tip_hash.to_hex(),
                 };
-                write_message(&mut writer, &reply).await?;
+                if let Err(_) = timeout(write_timeout, write_message(&mut writer, &reply)).await {
+                    warn!("P2P peer {} write timeout on Status", peer_addr);
+                    break;
+                }
             }
             Message::GetBlocks {
                 start_height,
@@ -126,12 +141,18 @@ async fn handle_peer(
                     .get_blocks_range(start_height, end_height)
                     .await?;
                 let reply = Message::Blocks { blocks };
-                write_message(&mut writer, &reply).await?;
+                if let Err(_) = timeout(write_timeout, write_message(&mut writer, &reply)).await {
+                    warn!("P2P peer {} write timeout on Blocks", peer_addr);
+                    break;
+                }
             }
             Message::GetPeers => {
                 let peers = peers.random_peers(8).await;
                 let reply = Message::Peers { peers };
-                write_message(&mut writer, &reply).await?;
+                if let Err(_) = timeout(write_timeout, write_message(&mut writer, &reply)).await {
+                    warn!("P2P peer {} write timeout on Peers", peer_addr);
+                    break;
+                }
             }
             Message::Status { .. } | Message::Blocks { .. } | Message::Peers { .. } => {}
         }
@@ -161,6 +182,7 @@ pub async fn gossip(addr: SocketAddr, block: &Block) -> Result<(), crate::node::
         block: block.clone(),
     };
     write_message(&mut writer, &msg).await?;
+    let _ = writer.shutdown().await;
     Ok(())
 }
 
@@ -173,6 +195,8 @@ pub async fn get_status(addr: SocketAddr) -> Result<(u64, String), crate::node::
     let mut lines = BufReader::new(reader).lines();
     if let Some(line) = lines.next_line().await? {
         if let Message::Status { height, tip_hash } = serde_json::from_str::<Message>(&line)? {
+            // Graceful half-close so the peer's read loop ends immediately.
+            let _ = writer.shutdown().await;
             return Ok((height, tip_hash));
         }
     }
@@ -199,6 +223,7 @@ pub async fn get_blocks(
     let mut lines = BufReader::new(reader).lines();
     if let Some(line) = lines.next_line().await? {
         if let Message::Blocks { blocks } = serde_json::from_str::<Message>(&line)? {
+            let _ = writer.shutdown().await;
             return Ok(blocks);
         }
     }
