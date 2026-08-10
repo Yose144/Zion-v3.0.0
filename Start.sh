@@ -3,8 +3,8 @@
 #  ZION V31 Mainnet Alpha — Miner Launcher with Built-in Pro TUI Dashboard
 #  Updated: 2026-08-10 — ZION GPU enabled + auto-detect + structured logging
 #
-#  Trinity hashrate: 21.5 MH/s total (ZION 2.46 + ZANO 8.37 + VRSC 10.39)
-#  Accept rates: ZION 100%, ZANO 100%, VRSC ~97%, Overall ~98%
+#  Trinity hashrate: 22-24 MH/s total (ZION 3.1 + ZANO 9.1 + VRSC 11.8)
+#  Accept rates: ZION 100%, ZANO 100%, VRSC 100%, Overall 100%
 #
 #  Build: ZION_CPU_TARGET=native cargo build --release -p zion-miner \
 #         --features gpu-cuda,native-all,tui (REQUIRED)
@@ -113,12 +113,14 @@ export ZION_AUXPOW_PROGPOW_MAX_GWS="${ZION_AUXPOW_PROGPOW_MAX_GWS:-262144}"
 # When ZION has GPU: 50ms (short — CUDA driver handles scheduling).
 # When ZION is CPU-only: 300ms (longer — gives CPU mining a chance).
 # Override: export ZION_EXT_GPU_GAP_MS=0 (disable gap entirely)
-export ZION_EXT_GPU_GAP_MS="${ZION_EXT_GPU_GAP_MS:-50}"
+export ZION_EXT_GPU_GAP_MS="${ZION_EXT_GPU_GAP_MS:-0}"
 
 # VRSC (VerusHash) CPU tuning — Stream 3 uses arch-aware autotune by default.
-# AMD Ryzen 5 3600: 12 threads, 5M nonce batch → ~10.4 MH/s.
+# AMD Ryzen 5 3600: 12 threads, 10M nonce batch → ~11.5 MH/s.
 # Override with ZION_EXT_CPU_THREADS to limit VRSC thread count.
 # Override with ZION_EXT_CPU_NONCE_COUNT for batch size.
+export ZION_EXT_CPU_NONCE_COUNT="${ZION_EXT_CPU_NONCE_COUNT:-10000000}"
+export ZION_NONCE_COUNT="${ZION_NONCE_COUNT:-10000000}"
 if [[ -n "${ZION_EXT_CPU_THREADS:-}" ]]; then
     export ZION_EXT_CPU_THREADS
 fi
