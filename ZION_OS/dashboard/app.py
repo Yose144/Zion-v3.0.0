@@ -6,6 +6,7 @@ and parses local log files via a JSON API.
 """
 
 import base64
+import contextlib
 import gzip
 import hashlib
 import json
@@ -30,9 +31,9 @@ import marketplace
 
 # ── TTL cache helper for expensive RPC/log scrapers ─────────────────────
 
-def _ttl_cache_fn(ttl_seconds: float):
+def _ttl_cache_fn(ttl_seconds: float, max_size: int = 256):
     def decorator(fn):
-        _cache = {}
+        _cache: dict = {}
         _lock = threading.Lock()
         def wrapper(*args, **kwargs):
             key = (fn.__name__, args, tuple(sorted(kwargs.items())))
@@ -42,8 +43,20 @@ def _ttl_cache_fn(ttl_seconds: float):
                     value, expires = _cache[key]
                     if now < expires:
                         return value
+                    del _cache[key]
+                # Evict expired entries
+                expired = [k for k, (_, exp) in _cache.items() if exp <= now]
+                for k in expired:
+                    del _cache[k]
             result = fn(*args, **kwargs)
             with _lock:
+                if len(_cache) >= max_size:
+                    # Evict oldest (arbitrary) key
+                    try:
+                        oldest = next(iter(_cache))
+                        del _cache[oldest]
+                    except StopIteration:
+                        pass
                 _cache[key] = (result, now + ttl_seconds)
             return result
         return wrapper
@@ -200,6 +213,13 @@ def load_config() -> dict:
                 defaults.update(loaded)
     except Exception:
         pass
+    # Allow environment overrides for host/port so systemd can bind the
+    # dashboard to localhost while keeping config.json under version control.
+    if "DASHBOARD_HOST" in os.environ:
+        defaults["host"] = os.environ["DASHBOARD_HOST"]
+    if "DASHBOARD_PORT" in os.environ:
+        with contextlib.suppress(ValueError):
+            defaults["port"] = int(os.environ["DASHBOARD_PORT"])
     return defaults
 
 CONFIG = load_config()
@@ -5309,18 +5329,26 @@ def get_mempool_detail() -> dict:
         tx_ids = template.get("transaction_ids", [])
         tx_count = info.get("size", 0) or len(tx_ids)
         transactions = []
-        for txid in tx_ids[:50]:
+
+        def _fetch_tx(txid: str):
             tx, _, _ = _rpc_with_fallback("getTransaction", {"txid": txid}, timeout=0.8)
             if tx and not tx.get("_rpc_error") and (tx.get("tx_id") or tx.get("txid")):
-                transactions.append(_parse_mempool_tx(tx))
-            else:
-                transactions.append({
-                    "tx_id": txid,
-                    "from": "—",
-                    "to": "—",
-                    "amount_zion": 0,
-                    "fee_zion": 0,
-                })
+                return _parse_mempool_tx(tx)
+            return {
+                "tx_id": txid,
+                "from": "—",
+                "to": "—",
+                "amount_zion": 0,
+                "fee_zion": 0,
+            }
+
+        with ThreadPoolExecutor(max_workers=8, thread_name_prefix="mempool_tx") as ex:
+            futures = [ex.submit(_fetch_tx, txid) for txid in tx_ids[:50]]
+            for f in futures:
+                try:
+                    transactions.append(f.result(timeout=2))
+                except Exception:
+                    pass
         return {
             "rpc_reachable": True,
             "tx_count": tx_count,
@@ -9968,6 +9996,10 @@ def save_settings(settings: dict) -> dict:
 
 def kill_process(pid: int) -> dict:
     """Kill a process by PID (cross-platform)."""
+    if not isinstance(pid, int) or pid <= 0:
+        return {"ok": False, "error": "valid positive pid required"}
+    if pid == os.getpid():
+        return {"ok": False, "error": "refusing to kill dashboard process"}
     try:
         if sys.platform == "win32":
             import ctypes
@@ -12814,8 +12846,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
             max_r = int(params.get("max", ["50"])[0])
             self._json({"query": q, "results": search_logs(q, max_r)})
         elif route == "/api/processes/kill":
-            pid = int(params.get("pid", ["0"])[0])
-            self._json(kill_process(pid))
+            try:
+                pid = int(params.get("pid", ["0"])[0])
+            except Exception:
+                pid = 0
+            if pid <= 0:
+                self._json({"ok": False, "error": "valid pid required"})
+            else:
+                self._json(kill_process(pid))
         elif route == "/api/export/blocks":
             # Export recent blocks as CSV
             expl = build_explorer()

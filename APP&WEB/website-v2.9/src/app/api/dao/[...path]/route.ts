@@ -22,12 +22,12 @@ async function proxyDao(request: Request, path: string[]) {
   const accept = request.headers.get('accept');
   const contentType = request.headers.get('content-type');
   const method = request.method.toUpperCase();
-  const apiKey = request.headers.get('x-dao-key') ?? process.env.ZION_DAO_API_KEY;
+  const apiKey = request.headers.get('x-dao-key');
 
   // GET requests are public (read-only: proposals, treasury, guardians)
   // POST/PUT/DELETE require API key (mutations: vote, create proposal, etc.)
   if (method !== 'GET' && !apiKey) {
-    return NextResponse.json({ success: false, error: 'DAO API key required for mutations' }, { status: 403 });
+    return NextResponse.json({ success: false, error: 'DAO API key required for mutations' }, { status: 401 });
   }
 
   if (accept) headers.set('accept', accept);

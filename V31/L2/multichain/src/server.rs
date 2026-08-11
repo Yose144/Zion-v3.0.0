@@ -5,7 +5,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use axum::{
     extract::{Path, State},
-    http::StatusCode,
+    http::{HeaderValue, Method, StatusCode, header::HeaderName},
     response::Json,
     routing::{get, post},
     Router,
@@ -27,6 +27,41 @@ use crate::swap::dex::solver_network::HttpSolverClient;
 use crate::swap::Pool;
 use crate::types::{Transfer, TransferDirection, TransferEndpoint};
 use zion_pool::StratumServer;
+
+/// Build the CORS allow-origin list for the multichain HTTP gateway.
+/// Defaults to the canonical ZION public domains; override with the
+/// comma-separated `ZION_MULTICHAIN_CORS_ORIGINS` environment variable.
+fn cors_allowed_origins() -> AllowOrigin {
+    let origins: Vec<String> = std::env::var("ZION_MULTICHAIN_CORS_ORIGINS")
+        .ok()
+        .map(|s| {
+            s.split(',')
+                .map(|o| o.trim().to_string())
+                .filter(|o| !o.is_empty())
+                .collect()
+        })
+        .unwrap_or_else(|| {
+            vec![
+                "https://zionterranova.com".to_string(),
+                "https://app.zionterranova.com".to_string(),
+                "https://oasis.zionterranova.com".to_string(),
+                "https://market.zionterranova.com".to_string(),
+                "https://dashboard.zionterranova.com".to_string(),
+                "https://www.newearth.cz".to_string(),
+            ]
+        });
+
+    let header_values: Vec<HeaderValue> = origins
+        .into_iter()
+        .filter_map(|o| HeaderValue::from_str(&o).ok())
+        .collect();
+
+    if header_values.is_empty() {
+        tracing::warn!("ZION_MULTICHAIN_CORS_ORIGINS empty, CORS disabled");
+    }
+
+    AllowOrigin::list(header_values)
+}
 
 /// Axum state shared by all handlers.
 #[derive(Clone)]
@@ -118,9 +153,14 @@ impl ApiServer {
 
     /// Build the Axum router for testing and serving.
     pub fn router(&self) -> Router {
+        let mut config = self.config.clone();
+        if config.auth.api_key.is_none() {
+            config.auth.api_key = std::env::var("ZION_MULTICHAIN_API_KEY").ok();
+        }
+
         let state = AppState {
             service: Arc::clone(&self.service),
-            limiter: RateLimiter::new(&self.config),
+            limiter: RateLimiter::new(&config),
             solver_name: std::env::var("ZION_DEX_SOLVER_NAME")
                 .unwrap_or_else(|_| "zion-solver".to_string()),
             solver_fee_bps: std::env::var("ZION_DEX_SOLVER_FEE_BPS")
@@ -165,9 +205,19 @@ impl ApiServer {
             ))
             .layer(
                 CorsLayer::new()
-                    .allow_origin(AllowOrigin::any())
-                    .allow_methods(AllowMethods::any())
-                    .allow_headers(AllowHeaders::any()),
+                    .allow_origin(cors_allowed_origins())
+                    .allow_methods(AllowMethods::list([
+                        Method::GET,
+                        Method::POST,
+                        Method::OPTIONS,
+                    ]))
+                    .allow_headers(AllowHeaders::list([
+                        HeaderName::from_static("authorization"),
+                        HeaderName::from_static("content-type"),
+                        HeaderName::from_static("x-dao-key"),
+                        HeaderName::from_static("x-warp-key"),
+                        HeaderName::from_static("accept"),
+                    ])),
             )
             .with_state(state)
     }

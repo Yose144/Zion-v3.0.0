@@ -13,7 +13,7 @@ use std::time::Instant;
 
 use axum::body::Body;
 use axum::extract::{ConnectInfo, State};
-use axum::http::{Request, StatusCode};
+use axum::http::{Method, Request, StatusCode};
 use axum::middleware::Next;
 use axum::response::Response;
 use tokio::sync::Mutex;
@@ -103,20 +103,26 @@ pub async fn auth_rate_limit(
         return Ok(next.run(req).await);
     }
 
-    // Optional API key auth.
-    if let Some(expected) = limiter.api_key() {
-        let header = req
-            .headers()
-            .get("authorization")
-            .and_then(|h| h.to_str().ok())
-            .unwrap_or("");
-        let provided = header
-            .strip_prefix("Bearer ")
-            .or_else(|| header.strip_prefix("bearer "))
-            .unwrap_or(header)
-            .trim();
-        if provided != expected {
-            return Err(StatusCode::UNAUTHORIZED);
+    // Optional API key auth only for mutating requests.
+    let is_read = matches!(
+        req.method(),
+        &Method::GET | &Method::HEAD | &Method::OPTIONS
+    );
+    if !is_read {
+        if let Some(expected) = limiter.api_key() {
+            let header = req
+                .headers()
+                .get("authorization")
+                .and_then(|h| h.to_str().ok())
+                .unwrap_or("");
+            let provided = header
+                .strip_prefix("Bearer ")
+                .or_else(|| header.strip_prefix("bearer "))
+                .unwrap_or(header)
+                .trim();
+            if provided != expected {
+                return Err(StatusCode::UNAUTHORIZED);
+            }
         }
     }
 

@@ -16,6 +16,7 @@ StandardError=journal
 
 # Environment: DASHBOARD_USERS must be set in /etc/zion/edge-environment.sh
 EnvironmentFile=/etc/zion/edge-environment.sh
+Environment="DASHBOARD_HOST=127.0.0.1"
 
 # Security hardening (unprivileged zion user)
 NoNewPrivileges=true
