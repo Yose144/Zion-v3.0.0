@@ -36,6 +36,7 @@ This file provides operating guidance to Devin, WARP, Copilot, and future automa
 - If deployment behavior changes, update every source of operational truth together: compose files, Docker docs, runbooks, scripts, and status docs.
 - If docs disagree, use this order of truth: `StatusV3.md` → `ROADMAP.md` / `V3/README.md` / `V3/ROADMAP.md` → `V3/docs/**` → older `STATUS.md`, root README, and archived docs.
 - Root README / older plans may still mention historical multi-server topology. Verify live topology against `StatusV3.md` before making operational claims.
+- **Edge IPv6 + fail2ban lockout (2026-08-11):** Edge IPv6 `2a02:c207:2342:5821::1` je funkční fallback; při rychlých SSH auditech může `fail2ban` `sshd` jail zabanovat operátorskou IPv4/IPv6, pokud není v `ignoreip`. Aktuální operátorská IP `46.135.81.225` a IPv6 `2a00:11b1:10e2:af49:b90b:20ed:4eee:b48b` byly přidány do `V31/AGENTS.md` `OPERATOR_IPS`. `zion-v31-multichain` je aktuálně `inactive (dead)`, `zion-v31-miner` padá na `ocl::Platform::list` na CPU-only serveru — viz aktuální `StatusV3.md` a [`REPORT_2026-08-10_EDGE_V31_AUDIT.md`](./REPORT_2026-08-10_EDGE_V31_AUDIT.md).
 - **Watchdog scripts:** the canonical unified script is [`scripts/watchdog.sh`](./scripts/watchdog.sh) with modes `edge` (default), `backup`, and `new-server`. `edge-deploy/watchdog.sh` and `V3/deploy/new-server/zion-watchdog.sh` are thin wrappers that dispatch to it.
 
 ## public/ — Open-source public repository (git subtree)
