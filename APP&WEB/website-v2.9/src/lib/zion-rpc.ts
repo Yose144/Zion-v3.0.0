@@ -409,21 +409,44 @@ class ZionRpcClient {
     throw new Error(`All RPC nodes failed: ${errors.join(' | ')}`);
   }
 
-  private async poolHttpGet<T = any>(path: string): Promise<T | null> {
+  private async poolHttpGet<T = any>(path: string, timeoutMs = 8000): Promise<T | null> {
     try {
       const response = await fetch(`${SITE_PRIMARY_POOL_API_URL}${path}`, {
         cache: 'no-store',
-        signal: AbortSignal.timeout(4000),
+        signal: AbortSignal.timeout(timeoutMs),
       });
 
       if (!response.ok) {
         return null;
       }
 
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('text/plain') || path === '/metrics') {
+        const text = await response.text();
+        return text as unknown as T;
+      }
+
       return await response.json() as T;
     } catch {
       return null;
     }
+  }
+
+  private parsePrometheusMetrics(text: string): Record<string, number> {
+    const metrics: Record<string, number> = {};
+    if (!text) return metrics;
+    for (const line of text.split('\n')) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const parts = trimmed.split(/\s+/);
+      if (parts.length < 2) continue;
+      const name = parts[0];
+      const value = Number.parseFloat(parts[parts.length - 1]);
+      if (!Number.isNaN(value)) {
+        metrics[name] = value;
+      }
+    }
+    return metrics;
   }
 
   private normalizePoolStats(payload: any): any | null {
@@ -899,16 +922,81 @@ class ZionRpcClient {
 
   /** Get pool routing statistics via TCP from the pool metrics port */
   async getPoolStats(): Promise<any> {
-    const httpStats = this.normalizePoolStats(await this.poolHttpGet('/stats'));
-    if (httpStats) {
-      return httpStats;
+    // Try HTTP pool API first (V31 pool exposes /stats, /metrics, /miners)
+    const [statsPayload, metricsText, minersPayload] = await Promise.all([
+      this.poolHttpGet<any>('/stats', 10000),
+      this.poolHttpGet<string>('/metrics', 10000),
+      this.poolHttpGet<any>('/miners?limit=200', 10000),
+    ]);
+
+    const metrics = this.parsePrometheusMetrics(metricsText || '');
+
+    // If we got any of the HTTP endpoints, build a normalized stats object.
+    if (statsPayload || metricsText || minersPayload) {
+      const stats = statsPayload || {};
+      const shares = stats.shares || {};
+      const pplns = stats.pplns || {};
+      const routing = stats.routing || {};
+      const poolInfo = stats.pool || {};
+
+      const accepted = shares.accepted ?? metrics['zion_pool_shares_accepted'] ?? routing.accepted ?? 0;
+      const rejected = shares.rejected ?? metrics['zion_pool_shares_rejected'] ?? routing.rejected ?? 0;
+      const totalShares = accepted + rejected;
+
+      const miners = Array.isArray(minersPayload?.miners) ? minersPayload.miners : [];
+      const activeSessions = stats.sessions ?? metrics['zion_pool_active_sessions'] ?? miners.length ?? 0;
+      const registeredMiners = pplns.registered_miners ?? metrics['zion_pool_pplns_registered_miners'] ?? miners.length ?? 0;
+      const blocksFound = metrics['zion_pool_blocks_found_total'] ?? 0;
+      const hashratePool = metrics['zion_pool_hashrate_hps'] ?? 0;
+      const hashrate1h = metrics['zion_pool_hashrate_1h_hps'] ?? 0;
+      const uptimeSeconds = stats.uptime_s ?? metrics['zion_pool_uptime_s'] ?? 0;
+
+      return {
+        ok: true,
+        hashrate: {
+          pool: hashratePool,
+          pool_1h: hashrate1h,
+          pool_24h: 0,
+        },
+        miners: {
+          active: activeSessions,
+          total: registeredMiners,
+        },
+        shares: {
+          valid: accepted,
+          invalid: rejected,
+        },
+        blocks: {
+          found: blocksFound,
+          pending: 0,
+        },
+        pool: {
+          fee: (poolInfo.fee_bps ?? 100) / 100,
+          humanitarian_tithe: poolInfo.humanitarian_pct ?? 5,
+          issobella_fund: poolInfo.issobella_pct ?? 5,
+          miner_share: poolInfo.miner_pct ?? 89,
+          version: '3.1.0',
+          uptime_secs: uptimeSeconds,
+        },
+        uptime_s: uptimeSeconds,
+        routing: {
+          submits: totalShares,
+          accepted: accepted,
+          rejected: rejected,
+          accept_rate_pct: totalShares > 0 ? (accepted / totalShares) * 100 : 0,
+          groups: routing.groups ?? {},
+          sources: routing.sources ?? {},
+        },
+        pplns_window_size: pplns.window_size ?? metrics['zion_pool_pplns_window_size'] ?? 0,
+        payouts: {
+          pending_total_atomic: pplns.total_unpaid_flowers ?? 0,
+          pending_miners: 0,
+        },
+        miners_list: miners,
+      };
     }
 
-    const httpPool = this.normalizePoolStats(await this.poolHttpGet('/pool'));
-    if (httpPool) {
-      return httpPool;
-    }
-
+    // Fallback to raw TCP pool metrics (legacy)
     const errors: string[] = [];
     for (const node of this.nodes) {
       if (!node.ports.pool_api || node.ports.pool_api === 0) continue;
@@ -917,14 +1005,11 @@ class ZionRpcClient {
         const metrics = await tcpPoolMetrics(host, port);
         return {
           ok: true,
-          hashrate: { pool: 0, pool_24h: 0 },
+          hashrate: { pool: 0, pool_1h: 0, pool_24h: 0 },
           miners: { active: metrics.active_sessions ?? 0, total: metrics.active_sessions ?? 0 },
-          shares: {
-            valid: metrics.accepted ?? 0,
-            invalid: metrics.rejected ?? 0,
-          },
+          shares: { valid: metrics.accepted ?? 0, invalid: metrics.rejected ?? 0 },
           blocks: { found: 0, pending: 0 },
-          pool: { fee: 5, version: '3.0.6' },
+          pool: { fee: 1, humanitarian_tithe: 5, issobella_fund: 5, miner_share: 89, version: '3.0.6' },
           uptime_s: metrics.uptime_s ?? 0,
           routing: {
             submits: metrics.submits ?? 0,
@@ -934,6 +1019,9 @@ class ZionRpcClient {
             groups: metrics.groups ?? {},
             sources: metrics.sources ?? {},
           },
+          pplns_window_size: 0,
+          payouts: { pending_total_atomic: 0, pending_miners: 0 },
+          miners_list: [],
         };
       } catch (err: any) {
         errors.push(`${node.name}: ${err.message}`);
@@ -996,25 +1084,25 @@ class ZionRpcClient {
   /** Get miner info by address — try V3 getBalance */
   async getMinerInfo(address: string): Promise<any> {
     const [statsPayload, payoutsPayload, chainPayouts] = await Promise.all([
-      this.poolHttpGet<any>(`/api/v1/miner/${address}/stats`),
-      this.poolHttpGet<any>(`/api/v1/miner/${address}/payouts`),
+      this.poolHttpGet<any>(`/api/v1/miners/${encodeURIComponent(address)}`),
+      this.poolHttpGet<any>(`/api/v1/payouts?miner=${encodeURIComponent(address)}&limit=50`),
       this.getChainPayoutsForAddress(address).catch(() => ({ totalPaidAtomic: 0, payouts: [] })),
     ]);
 
-    if (statsPayload?.ok && statsPayload?.stats) {
-      const minerStats = statsPayload.stats;
-      const pendingPayouts = Array.isArray(payoutsPayload?.pending_payouts)
-        ? payoutsPayload.pending_payouts
+    const minerData = statsPayload?.miner || statsPayload?.stats;
+    if (statsPayload?.ok && minerData) {
+      const pendingPayouts = Array.isArray(payoutsPayload?.payouts)
+        ? payoutsPayload.payouts
         : [];
 
-      const poolTotalPaidAtomic = minerStats.total_paid ?? 0;
+      const poolTotalPaidAtomic = Number(minerData.paid_total_atomic ?? minerData.total_paid ?? 0);
       const totalPaidAtomic = chainPayouts.totalPaidAtomic || poolTotalPaidAtomic;
 
       const pending = pendingPayouts.map((payout: any) => ({
-        amount: (payout.amount_zion ?? (payout.amount ?? payout.amount_atomic ?? 0) / 1e6),
+        amount: (payout.amount_zion ?? (payout.amount_flowers ?? payout.amount ?? 0) / 1_000_000),
         tx_id: payout.tx_id,
-        timestamp: payout.created_ts ?? payout.updated_ts ?? 0,
-        status: payout.status ?? 'pending',
+        timestamp: payout.ts ?? payout.created_ts ?? payout.updated_ts ?? 0,
+        status: payout.confirmed ? 'confirmed' : (payout.status ?? 'pending'),
       }));
 
       const confirmed = chainPayouts.payouts.map((payout) => ({
@@ -1030,19 +1118,21 @@ class ZionRpcClient {
 
       return {
         address,
+        worker: statsPayload.worker || minerData.worker || address,
         balance: {
-          pending: (minerStats.pending_balance ?? 0) / 1e6,
+          pending: (Number(minerData.pending_balance ?? 0)) / 1_000_000,
           locked: 0,
-          paid: totalPaidAtomic / 1e6,
+          paid: totalPaidAtomic / 1_000_000,
         },
         recent_payouts: recentPayouts,
-        blocks_found: minerStats.blocks_found ?? 0,
-        accepted_shares: minerStats.valid_shares ?? 0,
-        rejected_shares: minerStats.invalid_shares ?? 0,
-        hashrate_1h: minerStats.hashrate_1h ?? 0,
-        hashrate_24h: minerStats.hashrate_24h ?? 0,
-        first_seen: 0,
-        last_seen: minerStats.last_share_time ?? 0,
+        blocks_found: minerData.blocks_found ?? 0,
+        accepted_shares: minerData.valid_shares ?? 0,
+        rejected_shares: minerData.invalid_shares ?? 0,
+        hashrate: minerData.hashrate_hps ?? 0,
+        hashrate_1h: minerData.hashrate_1h_hps ?? 0,
+        hashrate_24h: minerData.hashrate_24h_hps ?? 0,
+        first_seen: minerData.first_seen_s ?? 0,
+        last_seen: minerData.last_seen_s ?? minerData.last_share_time ?? 0,
       };
     }
 
@@ -1075,18 +1165,26 @@ class ZionRpcClient {
   /** Get address balance from V3 */
   async getAddressBalance(address: string): Promise<{ balance_atomic: number; balance_zion: number; utxo_count: number }> {
     try {
-      const res = await this.rpcCall<any>('getBalance', { address });
-      const balanceAtomic = Number(res?.balance_flowers ?? res?.balance_atomic ?? 0);
-      const balanceZion = typeof res?.balance_zion === 'number'
-        ? res.balance_zion
+      const [balance, utxos] = await Promise.all([
+        this.rpcCall<any>('getBalance', { address }),
+        address.startsWith('zion1')
+          ? this.rpcCall<any>('getUtxos', { address }).catch(() => null)
+          : Promise.resolve(null),
+      ]);
+
+      const rawUtxos = Array.isArray(utxos?.utxos) ? utxos.utxos : [];
+      const utxoTotal = utxos?.total_amount ?? rawUtxos.reduce((sum: number, item: any) => sum + Number(item?.amount ?? 0), 0);
+      const balanceAtomic = utxoTotal > 0
+        ? utxoTotal
+        : Number(balance?.balance_flowers ?? balance?.balance_atomic ?? balance?.balance ?? 0);
+      const balanceZion = typeof balance?.balance_zion === 'number' && balance.balance_zion > 0
+        ? balance.balance_zion
         : balanceAtomic / ATOMIC_PER_ZION;
-      const utxos = address.startsWith('zion1')
-        ? await this.rpcCall<any>('getUtxos', { address }).catch(() => null)
-        : null;
+
       return {
         balance_atomic: balanceAtomic,
         balance_zion: balanceZion,
-        utxo_count: utxos?.count ?? utxos?.utxos?.length ?? 0,
+        utxo_count: utxos?.count ?? rawUtxos.length,
       };
     } catch {
       return { balance_atomic: 0, balance_zion: 0, utxo_count: 0 };
@@ -1101,11 +1199,14 @@ class ZionRpcClient {
         : Promise.resolve(null),
     ]);
 
-    const balanceAtomic = Number(balance?.balance_flowers ?? balance?.balance_atomic ?? 0);
-    const balanceZion = typeof balance?.balance_zion === 'number'
+    const rawUtxos = Array.isArray(utxos?.utxos) ? utxos.utxos : [];
+    const utxoTotal = utxos?.total_amount ?? rawUtxos.reduce((sum: number, item: any) => sum + Number(item?.amount ?? 0), 0);
+    const balanceAtomic = utxoTotal > 0
+      ? utxoTotal
+      : Number(balance?.balance_flowers ?? balance?.balance_atomic ?? balance?.balance ?? 0);
+    const balanceZion = typeof balance?.balance_zion === 'number' && balance.balance_zion > 0
       ? balance.balance_zion
       : balanceAtomic / ATOMIC_PER_ZION;
-    const rawUtxos = Array.isArray(utxos?.utxos) ? utxos.utxos : [];
 
     return {
       address,
@@ -1114,7 +1215,7 @@ class ZionRpcClient {
       chain_height: balance?.chain_height ?? utxos?.chain_height ?? 0,
       transaction_model: balance?.transaction_model ?? (address.startsWith('zion1') ? 'utxo' : 'account'),
       utxo_count: utxos?.count ?? rawUtxos.length,
-      total_utxo_amount: utxos?.total_amount ?? rawUtxos.reduce((sum: number, item: any) => sum + Number(item?.amount ?? 0), 0),
+      total_utxo_amount: utxoTotal,
       utxos: rawUtxos.map((item: any) => ({
         tx_hash: item.tx_hash ?? '',
         output_index: item.output_index ?? 0,

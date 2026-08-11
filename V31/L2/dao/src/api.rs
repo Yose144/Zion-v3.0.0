@@ -536,7 +536,7 @@ pub async fn serve(
         .route("/metrics", get(prometheus))
         .with_state(state);
 
-    let addr = format!("0.0.0.0:{port}");
+    let addr = format!("127.0.0.1:{port}");
     info!("DAO API listening on {addr}");
     let listener = tokio::net::TcpListener::bind(&addr).await?;
     axum::serve(listener, app).await?;

@@ -313,8 +313,9 @@ async fn dispatch_request(line: &str, node: &Node) -> Value {
     }
 
     // V3 methods are dispatched to the V3 RPC handler.
+    // `getStatus` is intentionally served by the native V31 handler so public
+    // RPC clients see the live V31 chain height and protocol version.
     let v3_methods = [
-        "getStatus",
         "submitAccountTransaction",
         "sendRawTransaction",
         "getBalance",
@@ -341,6 +342,7 @@ async fn dispatch_request(line: &str, node: &Node) -> Value {
     // Node-level methods that need the V31 Node (not V3RpcHandler).
     let result = match method {
         "getChainInfo" => get_chain_info(node).await,
+        "getStatus" => get_chain_info(node).await,
         "getNodeInfo" => get_node_info(node).await,
         "getPeerInfo" => get_peer_info(node).await,
         _ => Ok(error_response(

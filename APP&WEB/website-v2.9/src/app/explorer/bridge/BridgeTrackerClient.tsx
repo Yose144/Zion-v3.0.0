@@ -256,7 +256,7 @@ export default function BridgeTrackerClient() {
 
   const fetchStatus = useCallback(async () => {
     try {
-      const res = await apiClient<BridgeMetrics>("/bridge/status");
+      const res = await apiClient<BridgeMetrics>("/blockchain/bridge/status");
       setData(res);
     } catch {
       /* silent */
@@ -268,7 +268,7 @@ export default function BridgeTrackerClient() {
   const fetchTxs = useCallback(async () => {
     try {
       setTxsError(null);
-      const res = await fetch('/api/bridge/transactions?limit=50&scan_depth=1000');
+      const res = await fetch('/api/blockchain/bridge/transactions?limit=50&scan_depth=1000');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json: BridgeTxsResponse = await res.json();
       setTxs(json.transactions ?? []);

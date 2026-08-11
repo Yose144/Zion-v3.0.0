@@ -80,7 +80,7 @@ struct Args {
     admin_key: Option<String>,
 
     /// Pool HTTP API bind address.
-    #[arg(long, env = "ZION_POOL_API_BIND", default_value = "0.0.0.0:8080")]
+    #[arg(long, env = "ZION_POOL_API_BIND", default_value = "127.0.0.1:8080")]
     api_bind: String,
 
     /// Hex-encoded 32-byte Ed25519 signing key for the pool payout wallet.

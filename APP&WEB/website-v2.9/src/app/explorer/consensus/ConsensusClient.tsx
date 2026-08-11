@@ -19,6 +19,9 @@ import { useLang } from "@/contexts/LanguageContext";
 import { usePolling } from "@/hooks/usePolling";
 import { apiClient } from "@/lib/api";
 
+import type { ExplorerConsensus } from "@/lib/explorer/types";
+import { formatNumber } from "@/lib/explorer/format";
+
 const ExplorerConsensusConsensusClientCopy = {
   noDataAvailable: { cs: `Data nejsou dostupná`, en: `No data available` },
   enUs: { cs: `cs-CZ`, en: `en-US` },
@@ -48,33 +51,19 @@ const ExplorerConsensusConsensusClientCopy = {
 };
 
 /* ─── Difficulty Adjustment SVG chart ────────────────────────── */
-function DifficultyChart({ cs }: { cs: boolean }) {
-  const [values, setValues] = useState<number[]>([]);
-  const [labels, setLabels] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+function DifficultyChart({
+  chart,
+  cs,
+  loading,
+}: {
+  chart: { labels: string[]; values: number[] } | null;
+  cs: boolean;
+  loading: boolean;
+}) {
   const [hovered, setHovered] = useState<number | null>(null);
 
-  const fetchDifficulty = useCallback(async () => {
-    try {
-      const result = await apiClient<{
-        data: { labels: string[]; values: number[] };
-      }>("/blockchain/charts?type=difficulty&range=7d");
-      const validIdx = result.data.values
-        .map((v, i) => (v > 0 ? i : -1))
-        .filter((i) => i >= 0);
-      setValues(validIdx.map((i) => result.data.values[i]));
-      setLabels(validIdx.map((i) => result.data.labels[i]));
-    } catch {
-      /* silent */
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchDifficulty();
-  }, [fetchDifficulty]);
-  usePolling(fetchDifficulty, 30_000);
+  const values = chart?.values ?? [];
+  const labels = chart?.labels ?? [];
 
   if (loading) {
     return (
@@ -214,50 +203,59 @@ export default function ConsensusClient() {
   const { lang } = useLang();
   const cs = lang === "cs";
 
+  const [consensus, setConsensus] = useState<ExplorerConsensus | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchConsensus = useCallback(async () => {
+    try {
+      const result = await apiClient<ExplorerConsensus>("/blockchain/consensus?range=7d");
+      setConsensus(result);
+    } catch {
+      /* silent */
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchConsensus();
+  }, [fetchConsensus]);
+  usePolling(fetchConsensus, 30_000);
+
   const sections = [
     {
       icon: Clock,
       title: ExplorerConsensusConsensusClientCopy.lwmaDaa[cs ? 'cs' : 'en'],
       color: "text-zion-cyan",
-      border: "border-zion-cyan/20",
-      bg: "bg-zion-cyan/5",
       content: ExplorerConsensusConsensusClientCopy.zionUsesTheLinearlyWeightedMov[cs ? 'cs' : 'en'],
     },
     {
       icon: TrendingDown,
       title: ExplorerConsensusConsensusClientCopy.decadeDecay[cs ? 'cs' : 'en'],
       color: "text-zion-gold",
-      border: "border-zion-gold/20",
-      bg: "bg-zion-gold/5",
       content: ExplorerConsensusConsensusClientCopy.zionEmissionIsNotAHalvingItSDe[cs ? 'cs' : 'en'],
     },
     {
       icon: Pickaxe,
       title: ExplorerConsensusConsensusClientCopy.powAlgorithms[cs ? 'cs' : 'en'],
       color: "text-zion-cyan",
-      border: "border-zion-cyan/20",
-      bg: "bg-zion-cyan/5",
       content: ExplorerConsensusConsensusClientCopy.zionSupportsThreeAlgorithmsDee[cs ? 'cs' : 'en'],
     },
     {
       icon: Heart,
       title: ExplorerConsensusConsensusClientCopy.k89551RewardSplit[cs ? 'cs' : 'en'],
       color: "text-zion-purple",
-      border: "border-zion-purple/20",
-      bg: "bg-zion-purple/5",
       content: ExplorerConsensusConsensusClientCopy.everyCoinbaseBlockSplitsTheRew[cs ? 'cs' : 'en'],
     },
     {
       icon: Shield,
       title: ExplorerConsensusConsensusClientCopy.securityValidation[cs ? 'cs' : 'en'],
       color: "text-zion-purple",
-      border: "border-zion-purple/20",
-      bg: "bg-zion-purple/5",
       content: ExplorerConsensusConsensusClientCopy.utxoModelWithRingSignaturesEve[cs ? 'cs' : 'en'],
     },
   ];
 
-  const decades = [
+  const decades = consensus?.consensus?.decades ?? [
     { index: 0, reward: 5400.067, blocks: 525_600, pct: "20%" },
     { index: 1, reward: 4320.054, blocks: 525_600, pct: "16%" },
     { index: 2, reward: 3456.043, blocks: 525_600, pct: "12.8%" },
@@ -296,7 +294,41 @@ export default function ConsensusClient() {
             <p className="text-lg text-gray-300 max-w-2xl">
               {ExplorerConsensusConsensusClientCopy.overviewOfAlgorithmsEmissionAn[cs ? 'cs' : 'en']}
             </p>
+
+            {consensus?.network && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+                <div className="rounded-xl border border-white/5 bg-black/20 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500">{cs ? 'Výška' : 'Height'}</p>
+                  <p className="text-lg font-semibold text-white tabular-nums">{formatNumber(consensus.network.chain_height)}</p>
+                </div>
+                <div className="rounded-xl border border-white/5 bg-black/20 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500">{cs ? 'Obtížnost' : 'Difficulty'}</p>
+                  <p className="text-lg font-semibold text-zion-gold tabular-nums">{formatNumber(consensus.network.current_difficulty)}</p>
+                </div>
+                <div className="rounded-xl border border-white/5 bg-black/20 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500">{cs ? 'Cíl bloku' : 'Target block'}</p>
+                  <p className="text-lg font-semibold text-zion-cyan tabular-nums">{consensus.consensus?.target_block_time ?? 60}s</p>
+                </div>
+                <div className="rounded-xl border border-white/5 bg-black/20 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500">{cs ? 'Max supply' : 'Max supply'}</p>
+                  <p className="text-lg font-semibold text-white tabular-nums">{formatNumber(consensus.consensus?.max_supply ?? 144_000_000_000)}</p>
+                </div>
+              </div>
+            )}
           </div>
+        </motion.section>
+
+        {/* DIFFICULTY CHART */}
+        <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
+          className="zion-section p-6 md:p-10">
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Graf' : 'Chart'}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Gauge className="h-7 w-7 text-zion-purple" />
+              {cs ? 'Obtížnost (7 dní)' : 'Difficulty (7 days)'}
+            </h2>
+          </div>
+          <DifficultyChart chart={consensus?.difficulty_chart ?? null} cs={cs} loading={loading} />
         </motion.section>
 
         {/* INFO CARDS */}

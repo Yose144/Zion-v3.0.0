@@ -159,7 +159,37 @@ const getEndpointGroups = (cs: boolean) => [
         path: '/api/blockchain/transactions?limit=50',
         description: ApiReferenceCopy.recentTransactionsForExplorers[cs ? 'cs' : 'en'],
         latency: '70 ms avg'
-      }
+      },
+      {
+        method: 'GET',
+        path: '/api/blockchain/consensus',
+        description: cs ? 'Parametry konsensu, decade decay a difficulty graf.' : 'Consensus parameters, decade decay schedule and difficulty chart.',
+        latency: '120 ms avg'
+      },
+      {
+        method: 'GET',
+        path: '/api/blockchain/miners',
+        description: cs ? 'Live těžební leaderboard z poolu.' : 'Live mining leaderboard from the pool.',
+        latency: '80 ms avg'
+      },
+      {
+        method: 'GET',
+        path: '/api/blockchain/richlist',
+        description: cs ? 'Top držitelé ZION včetně premine a pool adres.' : 'Top ZION holders including premine and pool addresses.',
+        latency: '90 ms avg'
+      },
+      {
+        method: 'GET',
+        path: '/api/blockchain/bridge/status',
+        description: cs ? 'Stav L1↔Base bridge a relay metriky.' : 'L1↔Base bridge status and relay metrics.',
+        latency: '60 ms avg'
+      },
+      {
+        method: 'GET',
+        path: '/api/blockchain/sse',
+        description: cs ? 'Server-Sent Events stream nových bloků a mempoolu.' : 'Server-Sent Events stream for new blocks and mempool.',
+        latency: 'live'
+      },
     ]
   },
   {

@@ -26,7 +26,7 @@ interface SearchResult {
 
 export async function GET(request: NextRequest) {
   const rpc = getZionRpc();
-  const q = (request.nextUrl.searchParams.get('q') || '').trim();
+  const q = (request.nextUrl.searchParams.get('q') || request.nextUrl.searchParams.get('query') || '').trim();
 
   if (!q) {
     return NextResponse.json({ query: '', results: [] });
@@ -87,17 +87,15 @@ export async function GET(request: NextRequest) {
   // 4) Address (zion1... or Z... prefix)
   if (/^(zion|ZION|Z)[a-zA-Z0-9]{40,}$/i.test(q)) {
     try {
-      const info = await rpc.rpcCall<any>('getAddressInfo', { address: q });
+      const info = await rpc.getWalletSnapshot(q);
       if (info) {
-        const balanceZion = info.balance != null
-          ? (typeof info.balance === 'number' ? info.balance : Number(info.balance))
-          : 0;
+        const balanceZion = info.balance_zion ?? 0;
         results.push({
           type: 'address',
           href: `/explorer/address?addr=${encodeURIComponent(q)}`,
           title: `Address ${q.slice(0, 12)}…${q.slice(-8)}`,
           meta: `Balance: ${balanceZion.toLocaleString(undefined, { maximumFractionDigits: 6 })} ZION`,
-          data: { address: q, balance: balanceZion, tx_count: info.tx_count ?? 0 },
+          data: { address: q, balance: balanceZion, tx_count: info.utxo_count },
         });
       }
     } catch { /* not found */ }
