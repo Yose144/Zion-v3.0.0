@@ -1091,19 +1091,40 @@ class ZionRpcClient {
 
   /** Get miner info by address — try V3 getBalance */
   async getMinerInfo(address: string): Promise<any> {
-    const [statsPayload, payoutsPayload, chainPayouts] = await Promise.all([
+    const lowerAddress = address.toLowerCase();
+
+    // First try direct pool API by worker name/address.
+    const [statsPayload, payoutsPayload, minersList, chainPayouts] = await Promise.all([
       this.poolHttpGet<any>(`/api/v1/miners/${encodeURIComponent(address)}`),
       this.poolHttpGet<any>(`/api/v1/payouts?miner=${encodeURIComponent(address)}&limit=50`),
+      this.poolHttpGet<any>('/miners?limit=500'),
       this.getChainPayoutsForAddress(address).catch(() => ({ totalPaidAtomic: 0, payouts: [] })),
     ]);
 
-    const minerData = statsPayload?.miner || statsPayload?.stats;
-    if (statsPayload?.ok && minerData) {
+    // Try to find the miner either from direct stats, telemetry list, or share store.
+    let matched: any = null;
+    if (statsPayload?.ok) {
+      matched = statsPayload.miner || statsPayload.stats;
+    }
+
+    if (!matched && minersList?.ok && Array.isArray(minersList.miners)) {
+      matched = minersList.miners.find((m: any) =>
+        (m.address || m.payout_address || m.miner_id || '').toLowerCase() === lowerAddress,
+      );
+      if (!matched) {
+        // Partial match against worker field.
+        matched = minersList.miners.find((m: any) =>
+          (m.worker || m.worker_name || '').toLowerCase().includes(lowerAddress),
+        );
+      }
+    }
+
+    if (matched) {
       const pendingPayouts = Array.isArray(payoutsPayload?.payouts)
         ? payoutsPayload.payouts
         : [];
 
-      const poolTotalPaidAtomic = Number(minerData.paid_total_atomic ?? minerData.total_paid ?? 0);
+      const poolTotalPaidAtomic = Number(matched.paid_total_atomic ?? matched.total_paid ?? 0);
       const totalPaidAtomic = chainPayouts.totalPaidAtomic || poolTotalPaidAtomic;
 
       const pending = pendingPayouts.map((payout: any) => ({
@@ -1126,21 +1147,21 @@ class ZionRpcClient {
 
       return {
         address,
-        worker: statsPayload.worker || minerData.worker || address,
+        worker: matched.worker || statsPayload?.worker || matched.worker_name || address,
         balance: {
-          pending: (Number(minerData.pending_balance ?? 0)) / 1_000_000,
+          pending: (Number(matched.pending_balance ?? 0)) / 1_000_000,
           locked: 0,
           paid: totalPaidAtomic / 1_000_000,
         },
         recent_payouts: recentPayouts,
-        blocks_found: minerData.blocks_found ?? 0,
-        accepted_shares: minerData.valid_shares ?? 0,
-        rejected_shares: minerData.invalid_shares ?? 0,
-        hashrate: minerData.hashrate_hps ?? 0,
-        hashrate_1h: minerData.hashrate_1h_hps ?? 0,
-        hashrate_24h: minerData.hashrate_24h_hps ?? 0,
-        first_seen: minerData.first_seen_s ?? 0,
-        last_seen: minerData.last_seen_s ?? minerData.last_share_time ?? 0,
+        blocks_found: matched.blocks_found ?? 0,
+        accepted_shares: matched.valid_shares ?? 0,
+        rejected_shares: matched.invalid_shares ?? 0,
+        hashrate: matched.hashrate_hps ?? 0,
+        hashrate_1h: matched.hashrate_1h_hps ?? 0,
+        hashrate_24h: matched.hashrate_24h_hps ?? 0,
+        first_seen: matched.first_seen_s ?? 0,
+        last_seen: matched.last_seen_s ?? matched.last_share_time ?? 0,
       };
     }
 
