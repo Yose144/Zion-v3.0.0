@@ -7,9 +7,10 @@
 
 ## Status
 
-> **Last updated: 2026-08-10 (ZANO duplicate-share fix + CUDA DAG disk cache)**
+> **Last updated: 2026-08-11 (ZANO duplicate-share fix + CUDA DAG disk cache + 3.2 "One Love" canonical docs)**
 
 - **Active mainnet track:** `V31/` workspace — version `3.1.0-beta` (V31 Mainnet Alpha), protocol string `zion-v3-node/3.1.0-alpha`, clean `cargo test --workspace`.
+- **3.2 "One Love" canonical docs:** Public whitepapers and onboarding (CZ/EN) are now canonized in [`docs/WP-Mainet/`](docs/WP-Mainet/README.md); see the launch plan [`OneLoveV3.2.md`](OneLoveV3.2.md) and technical execution plan [`V31/PLAN_TO_3.2.md`](V31/PLAN_TO_3.2.md).
 - **V3 production line has been archived** to `archive/V3/` after the 2026-08-04 V31 cutover.
 - **Hard genesis reset (2026-08-06):** Complete key rotation — new premine, canonical, admin, DAO guardian, and EVM validator keys. All addresses updated across codebase + Edge server. See [`HARD_RESET_PLAYBOOK.md`](HARD_RESET_PLAYBOOK.md) for the full procedure.
 - **Edge production is V31 (2026-08-10):**
@@ -38,6 +39,9 @@
 | **V31 workspace entry** | [`V31/README.md`](V31/README.md) |
 | **V31 build / cutover plan** | [`V31/ALPHA_BUILD_PLAN.md`](V31/ALPHA_BUILD_PLAN.md) |
 | **V31 operational rules** | [`V31/AGENTS.md`](V31/AGENTS.md) |
+| **3.2 "One Love" launch & marketing plan** | [`OneLoveV3.2.md`](OneLoveV3.2.md) |
+| **3.2 technical execution plan** | [`V31/PLAN_TO_3.2.md`](V31/PLAN_TO_3.2.md) |
+| **Canonical public docs / whitepapers** | [`docs/WP-Mainet/README.md`](docs/WP-Mainet/README.md) |
 | **Live status + topology** | [`StatusV3.md`](StatusV3.md) |
 | **Post-cutover execution plan** | [`PLAN_TO_3.1_RECONCILED.md`](./docs/3.1/PLAN_TO_3.1_RECONCILED.md) |
 | **V31 detailed status** | [`V31/STATUS.md`](V31/STATUS.md) |
@@ -134,6 +138,9 @@ This repository has one source of truth per topic:
 | **Live operational status** | [`StatusV3.md`](StatusV3.md) |
 | **V31 workspace + build notes** | [`V31/README.md`](V31/README.md) |
 | **V31 security / ops rules** | [`V31/AGENTS.md`](V31/AGENTS.md) |
+| **3.2 "One Love" launch plan** | [`OneLoveV3.2.md`](OneLoveV3.2.md) |
+| **3.2 technical execution plan** | [`V31/PLAN_TO_3.2.md`](V31/PLAN_TO_3.2.md) |
+| **Canonical public docs / whitepapers** | [`docs/WP-Mainet/README.md`](docs/WP-Mainet/README.md) |
 | **Post-cutover execution plan** | [`PLAN_TO_3.1_RECONCILED.md`](./docs/3.1/PLAN_TO_3.1_RECONCILED.md) |
 | **V3 archive** | [`archive/V3/README.md`](archive/V3/README.md) |
 | **MarketPlace ZION L1 bonus payout** | [`APP&WEB/MarketPlace/PAYOUT.md`](APP&WEB/MarketPlace/PAYOUT.md) |
@@ -147,4 +154,4 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-*Last updated: 2026-08-10 · Version: 3.1.0-beta (V31 Mainnet Alpha, protocol 3.1.0-alpha) · Live status: [`StatusV3.md`](StatusV3.md) · [`V31/STATUS.md`](V31/STATUS.md)*
+*Last updated: 2026-08-11 · Version: 3.1.0-beta (V31 Mainnet Alpha, protocol 3.1.0-alpha) · 3.2 "One Love" docs: [`docs/WP-Mainet/README.md`](docs/WP-Mainet/README.md) · Live status: [`StatusV3.md`](StatusV3.md) · [`V31/STATUS.md`](V31/STATUS.md)*
