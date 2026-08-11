@@ -28,12 +28,12 @@ async function proxyWarp(request: Request, path: string[]) {
   const headers = new Headers();
   const accept = request.headers.get('accept');
   const contentType = request.headers.get('content-type');
-  const apiKey = request.headers.get('x-warp-key') ?? process.env.ZION_WARP_API_KEY;
+  const apiKey = request.headers.get('x-warp-key');
   const isPublicPath = PUBLIC_PATHS.has(path[0]);
 
   // Allow read-only health/status without API key; require key for everything else
   if (!apiKey && !isPublicPath) {
-    return NextResponse.json({ success: false, error: 'WARP API key not configured' }, { status: 503 });
+    return NextResponse.json({ success: false, error: 'WARP API key required' }, { status: 401 });
   }
 
   if (accept) headers.set('accept', accept);

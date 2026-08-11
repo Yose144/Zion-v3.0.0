@@ -211,3 +211,12 @@ WARP_NEAR_ACCOUNT=<SET_VIA_DEPLOYMENT>
 
 # Multi-node WARP validator set (comma-separated 64-char hex private keys)
 WARP_VALIDATOR_KEYS=<SET_VIA_SECURE_ENVIRONMENT_DO_NOT_COMMIT>
+
+# Multi-Chain / WARP / DEX HTTP API key (optional but recommended)
+# If set, mutating endpoints require `Authorization: Bearer <ZION_MULTICHAIN_API_KEY>`.
+# Public read-only endpoints (quote, chains, health) remain unauthenticated.
+ZION_MULTICHAIN_API_KEY=<SET_VIA_SECURE_ENVIRONMENT_DO_NOT_COMMIT>
+
+# Comma-separated list of allowed CORS origins for the multichain HTTP API.
+# Defaults to canonical ZION public domains if unset.
+ZION_MULTICHAIN_CORS_ORIGINS=https://zionterranova.com,https://app.zionterranova.com,https://oasis.zionterranova.com,https://market.zionterranova.com,https://dashboard.zionterranova.com

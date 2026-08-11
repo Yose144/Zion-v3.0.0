@@ -1,0 +1,35 @@
+[Unit]
+Description=ZION MarketPlace (Next.js — OASIS Artifact Marketplace)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=zion
+Group=zion
+WorkingDirectory=/opt/zion/APP&WEB/MarketPlace
+Environment=NODE_ENV=production
+Environment=PORT=3100
+Environment=HOSTNAME=127.0.0.1
+Environment=OASIS_API_URL=http://127.0.0.1:8094
+Environment=NEXT_PUBLIC_BASE_RPC_URL=https://mainnet.base.org
+Environment=NEXT_PUBLIC_WZION_ADDRESS=0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6
+Environment=NEXT_PUBLIC_WC_PROJECT_ID=zion-marketplace
+# Per-service secrets MUST be in a separate 600-perm file, not in this unit.
+EnvironmentFile=/opt/zion/APP&WEB/MarketPlace/.env
+ExecStart=/usr/bin/node .next/standalone/server.js
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening (unprivileged zion user)
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=yes
+ReadWritePaths=/opt/zion/APP&WEB/MarketPlace
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target

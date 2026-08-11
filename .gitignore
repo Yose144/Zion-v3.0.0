@@ -253,6 +253,7 @@ patch_validation_v2.py
 
 # Rust
 Cargo.lock
+!V31/Cargo.lock
 **/*.rs.bk
 
 # Python extras
@@ -269,6 +270,7 @@ APP&WEB/public_html/V2/books/Old/
 # Misc
 *.tmp
 *.temp
+*.bak
 .cache/
 ai.key
 git.key
@@ -394,10 +396,9 @@ ZionDex/contracts/out/
 ZionDex/contracts/cache/
 ZionDex/contracts/broadcast/
 *.db
-2 m i n e r s / x m r i g - 6 . 2 6 . 0 /  
+2 m i n e r s / x m r i g - 6 . 2 6 . 0 / 
+ 
  V31_PREMINE_V2_KEYS_2026-08-06.json
-
-V31_PREMINE_V2_KEYS_2026-08-06.json
 V31/data/
 
 # V31 custom cargo target dirs (cross-compile / feature test builds)
