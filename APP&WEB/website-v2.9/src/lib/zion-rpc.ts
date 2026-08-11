@@ -1093,21 +1093,19 @@ class ZionRpcClient {
   async getMinerInfo(address: string): Promise<any> {
     const lowerAddress = address.toLowerCase();
 
-    // First try direct pool API by worker name/address.
-    const [statsPayload, payoutsPayload, minersList, chainPayouts] = await Promise.all([
-      this.poolHttpGet<any>(`/api/v1/miners/${encodeURIComponent(address)}`),
-      this.poolHttpGet<any>(`/api/v1/payouts?miner=${encodeURIComponent(address)}&limit=50`),
-      this.poolHttpGet<any>('/miners?limit=500'),
-      this.getChainPayoutsForAddress(address).catch(() => ({ totalPaidAtomic: 0, payouts: [] })),
+    // First try direct pool API by worker name/address and telemetry list.
+    // Each call is wrapped so one slow/failing endpoint doesn't abort the others.
+    const [statsPayload, payoutsPayload, minersList] = await Promise.all([
+      this.poolHttpGet<any>(`/api/v1/miners/${encodeURIComponent(address)}`, 15000).catch(() => null),
+      this.poolHttpGet<any>(`/api/v1/payouts?miner=${encodeURIComponent(address)}&limit=50`, 15000).catch(() => null),
+      this.poolHttpGet<any>('/miners?limit=50', 15000).catch(() => null),
     ]);
 
     // Try to find the miner either from direct stats, telemetry list, or share store.
+    // Prefer telemetry list because /api/v1/miners/{address} treats the address as a
+    // worker name and returns empty data when the real worker name is address.something.
     let matched: any = null;
-    if (statsPayload?.ok) {
-      matched = statsPayload.miner || statsPayload.stats;
-    }
-
-    if (!matched && minersList?.ok && Array.isArray(minersList.miners)) {
+    if (minersList?.ok && Array.isArray(minersList.miners)) {
       matched = minersList.miners.find((m: any) =>
         (m.address || m.payout_address || m.miner_id || '').toLowerCase() === lowerAddress,
       );
@@ -1118,6 +1116,12 @@ class ZionRpcClient {
         );
       }
     }
+
+    if (!matched && statsPayload?.ok) {
+      matched = statsPayload.miner || statsPayload.stats;
+    }
+
+    const chainPayouts = await this.getChainPayoutsForAddress(address, 200).catch(() => ({ totalPaidAtomic: 0, payouts: [] }));
 
     if (matched) {
       const pendingPayouts = Array.isArray(payoutsPayload?.payouts)

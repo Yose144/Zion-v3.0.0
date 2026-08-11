@@ -4,7 +4,7 @@
  */
 
 export interface HtlcRecord {
-  hash_hex: String;
+  hash_hex: string;
   amount_flowers: number;
   timeout_mins: number;
   target_chain: string;

@@ -3,7 +3,6 @@ import { getZionRpc } from '@/lib/zion-rpc';
 import {
   ATOMIC_UNITS_PER_ZION,
   BLOCK_REWARD_ZION,
-  FLOWERS_PER_ZION,
   HUMANITARIAN_TITHE_PCT,
   HUMANITARIAN_WALLET,
   ISSOBELLA_FUND_PCT,
@@ -12,11 +11,8 @@ import {
   POOL_FEE_PCT,
   POOL_FEE_WALLET,
   POOL_WALLET,
-  TOTAL_SUPPLY_ZION,
 } from '@/lib/constants';
-import { SITE_PRIMARY_HOST, SITE_PRIMARY_POOL_API_URL } from '@/lib/site';
-
-const PROMETHEUS_URL = process.env.PROMETHEUS_URL || 'http://127.0.0.1:9090';
+import { SITE_PRIMARY_HOST } from '@/lib/site';
 
 // ── In-memory cache for fee wallet balances (30s TTL) ───────────────────────
 // Avoids 3+ RPC calls on every /api/pool/stats request.
@@ -27,78 +23,7 @@ interface FeeBalanceCache {
 let feeBalanceCache: FeeBalanceCache | null = null;
 const FEE_BALANCE_CACHE_TTL_MS = 30_000;
 
-interface PromResult {
-  metric: Record<string, string>;
-  value: [number, string];
-}
-
-async function promQuery(query: string): Promise<PromResult[]> {
-  const response = await fetch(
-    `${PROMETHEUS_URL}/api/v1/query?query=${encodeURIComponent(query)}`,
-    {
-      cache: 'no-store',
-      signal: AbortSignal.timeout(8000),
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error(`Prometheus query failed: ${query}`);
-  }
-
-  const payload = await response.json();
-  return payload?.data?.result ?? [];
-}
-
-async function fetchPoolApiJson<T = any>(path: string): Promise<T | null> {
-  try {
-    const response = await fetch(`${SITE_PRIMARY_POOL_API_URL}${path}`, {
-      cache: 'no-store',
-      signal: AbortSignal.timeout(5000),
-    });
-
-    if (!response.ok) {
-      return null;
-    }
-
-    return await response.json() as T;
-  } catch {
-    return null;
-  }
-}
-
-function firstMetricValue(results: PromiseSettledResult<PromResult[]>[], index: number): number | null {
-  const result = results[index];
-  if (result?.status !== 'fulfilled') {
-    return null;
-  }
-
-  const first = result.value[0];
-  if (!first) {
-    return null;
-  }
-
-  return Number.parseFloat(first.value[1] ?? '');
-}
-
-function labeledMetricValue(
-  results: PromiseSettledResult<PromResult[]>[],
-  index: number,
-  label: string,
-  value: string,
-): number | null {
-  const result = results[index];
-  if (result?.status !== 'fulfilled') {
-    return null;
-  }
-
-  for (const metric of result.value) {
-    if (metric.metric[label] === value) {
-      return Number.parseFloat(metric.value[1] ?? '');
-    }
-  }
-
-  return null;
-}
+export const maxDuration = 30;
 
 export async function GET() {
   const rpc = getZionRpc();

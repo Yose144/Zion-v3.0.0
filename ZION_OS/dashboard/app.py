@@ -72,6 +72,7 @@ EXE_SUFFIX = ".exe" if os.name == "nt" else ""
 
 # Cache for deriving V31 banner shares/sec from the Edge pool total-shares counter
 _V31_BANNER_POOL_TOTALS = {"ts": 0.0, "shares": 0.0}
+_V31_BANNER_POOL_TOTALS_LOCK = threading.Lock()
 
 def _v31_pool_api_port() -> int:
     """Return the V31 pool HTTP API/metrics port.
@@ -3239,15 +3240,16 @@ def _compute_v31_banner_metrics(pool_status: dict, v31_multichain_status: dict, 
     if total_shares is not None:
         global _V31_BANNER_POOL_TOTALS
         now = time.time()
-        prev = _V31_BANNER_POOL_TOTALS
         try:
             total = float(total_shares)
-            if prev["ts"] > 0 and total >= prev["shares"]:
-                dt = now - prev["ts"]
-                if dt > 0:
-                    shares_per_sec = round((total - prev["shares"]) / dt, 2)
-            prev["ts"] = now
-            prev["shares"] = total
+            with _V31_BANNER_POOL_TOTALS_LOCK:
+                prev = _V31_BANNER_POOL_TOTALS
+                if prev["ts"] > 0 and total >= prev["shares"]:
+                    dt = now - prev["ts"]
+                    if dt > 0:
+                        shares_per_sec = round((total - prev["shares"]) / dt, 2)
+                prev["ts"] = now
+                prev["shares"] = total
         except Exception:
             pass
 
@@ -4271,6 +4273,8 @@ def _build_status_local_dev() -> dict:
     except Exception:
         pass
 
+    _total_shares = (local_pool.get("shares_accepted", 0) or 0) + (local_pool.get("shares_rejected", 0) or 0)
+    _hashrate_khs = pool_metrics.get("hashrate_hps", 0) / 1000.0 if pool_metrics.get("hashrate_hps") else None
     pool_status = {
         "running": pool_health["alive"],
         "bind_addr": "127.0.0.1:8444",
@@ -4278,10 +4282,12 @@ def _build_status_local_dev() -> dict:
         "nonce_count": 4096,
         "pool_wallet": os.environ.get("ZION_POOL_WALLET", ""),
         "payout_enabled": pool_health["alive"] and local_pool.get("fee_split") == "89/5/5/1",
-        "blocks_found": pool_metrics["blocks_found"] or local_pool["blocks_found"],
-        "shares_accepted": local_pool["shares_accepted"],
-        "shares_rejected": local_pool["shares_rejected"],
-        "active_sessions": pool_metrics["active_miners"] or local_pool["active_sessions"],
+        "blocks_found": pool_metrics.get("blocks_found", 0) or local_pool.get("blocks_found", 0),
+        "shares_accepted": local_pool.get("shares_accepted", 0),
+        "shares_rejected": local_pool.get("shares_rejected", 0),
+        "total_shares": _total_shares,
+        "hashrate_khs": _hashrate_khs,
+        "active_sessions": pool_metrics.get("active_miners") or local_pool.get("active_sessions", 0),
         "fee_split": local_pool.get("fee_split", "89/5/5/1"),
         "recent_payouts": local_pool["recent_payouts"],
         "recent_lines": local_pool["recent_lines"],
@@ -4392,27 +4398,31 @@ def build_checklist(status: dict) -> dict:
             {"id": "v31-pool",   "label": "V31 Pool running & accepting miners",       "ok": v31_pool.get("running", False)},
             {"id": "v31-miner",  "label": "V31 Miner running",                         "ok": v31_miner.get("running", False)},
             {"id": "local-backup", "label": "Local Backup Node running & synced",      "ok": status.get("local_backup", {}).get("running", False) and status.get("local_backup", {}).get("known_peers", 0) > 0},
-            {"id": "pool",       "label": "Edge Pool running & accepting miners",     "ok": status["pool"]["running"] and status["pool"]["active_sessions"] is not None},
+            {"id": "pool",       "label": "Edge Pool running & accepting miners",     "ok": status.get("pool", {}).get("running", False) and status.get("pool", {}).get("active_sessions") is not None},
             {"id": "pool-edge",  "label": "Edge Pool TCP reachable",                  "ok": status.get("pool_edge", {}).get("running", False)},
             {"id": "chain",      "label": "Chain height advancing",                   "ok": chain_height is not None and chain_height > 0},
-            {"id": "payout",     "label": "Payout mechanism ready (fee split active)", "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/1"},
-            {"id": "fee_split",  "label": "Fee split 89/5/5/1 (burn model) active",    "ok": status["pool"]["fee_split"] == "89/5/5/1"},
+            {"id": "payout",     "label": "Payout mechanism ready (fee split active)", "ok": status.get("pool", {}).get("running", False) and status.get("pool", {}).get("fee_split") == "89/5/5/1"},
+            {"id": "fee_split",  "label": "Fee split 89/5/5/1 (burn model) active",    "ok": status.get("pool", {}).get("fee_split") == "89/5/5/1"},
             {"id": "logs",       "label": "Log directory writable",                   "ok": LOG_DIR.exists()},
             {"id": "node1",      "label": "Local Backup Node P2P synced",             "ok": status.get("local_backup", {}).get("running", False) and status.get("local_backup", {}).get("known_peers", 0) > 0},
             {"id": "miner",      "label": "Local GPU miner (optional)",               "ok": True},
             {"id": "edge-backup","label": "Edge database auto-backup (optional)",     "ok": edge_backup_ok},
         ]
     else:  # local-dev
+        n1 = status.get("node1", {})
+        n2 = status.get("node2", {})
+        pool = status.get("pool", {})
+        miner = status.get("miner", {})
         checks = [
             {"id": "keys",      "label": "Offline key generation complete",         "ok": True},
             {"id": "env",       "label": "Env file assembled (.env.mainnet)",       "ok": True},
-            {"id": "node1",     "label": "Node 1 (Genesis) running",               "ok": status["node1"]["running"] and status["node1"]["p2p_bind"] is not None},
-            {"id": "node2",     "label": "Node 2 (Follower) synced if running",    "ok": not status["node2"]["running"] or status["node2"]["known_peers"] > 0},
-            {"id": "pool",      "label": "Local Pool running & accepting miners",  "ok": status["pool"]["running"] and status["pool"]["active_sessions"] is not None},
-            {"id": "miner",     "label": "GPU miner connected & hashing",         "ok": status["miner"]["running"] and status["miner"]["hashrate"] is not None},
-            {"id": "chain",     "label": "Chain height advancing",                 "ok": status["node1"]["chain_height"] is not None and status["node1"]["chain_height"] > 0},
-            {"id": "payout",    "label": "Payout mechanism ready (fee split active)",  "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/1"},
-            {"id": "fee_split", "label": "Fee split 89/5/5/1 (burn model) active",     "ok": status["pool"]["fee_split"] == "89/5/5/1"},
+            {"id": "node1",     "label": "Node 1 (Genesis) running",               "ok": n1.get("running", False) and n1.get("p2p_bind") is not None},
+            {"id": "node2",     "label": "Node 2 (Follower) synced if running",    "ok": not n2.get("running", False) or n2.get("known_peers", 0) > 0},
+            {"id": "pool",      "label": "Local Pool running & accepting miners",  "ok": pool.get("running", False) and pool.get("active_sessions") is not None},
+            {"id": "miner",     "label": "GPU miner connected & hashing",         "ok": miner.get("running", False) and miner.get("hashrate") is not None},
+            {"id": "chain",     "label": "Chain height advancing",                 "ok": n1.get("chain_height") is not None and n1.get("chain_height", 0) > 0},
+            {"id": "payout",    "label": "Payout mechanism ready (fee split active)",  "ok": pool.get("running", False) and pool.get("fee_split") == "89/5/5/1"},
+            {"id": "fee_split", "label": "Fee split 89/5/5/1 (burn model) active",     "ok": pool.get("fee_split") == "89/5/5/1"},
             {"id": "logs",      "label": "Log directory writable",                  "ok": LOG_DIR.exists()},
         ]
     
@@ -4497,7 +4507,7 @@ def build_alerts(status: dict) -> list:
     Severity is now derived from SERVICE_REGISTRY. Topology-aware."""
     alerts = []
     topology = status.get("topology", TOPOLOGY)
-    n1, n2, pool, miner = status["node1"], status["node2"], status["pool"], status["miner"]
+    n1, n2, pool, miner = status.get("node1", {}), status.get("node2", {}), status.get("pool", {}), status.get("miner", {})
     v31_node = status.get("v31_node", {})
     v31_node2 = status.get("v31_node2", {})
     v31_node3 = status.get("v31_node3", {})
@@ -5360,10 +5370,10 @@ def get_miner_shares_history(limit: int = 50) -> dict:
             })
         # If we still have no history, return the current live pool sample
         if not history:
-            ps = get_pool_status() or {}
+            ps = get_monitoring_status().get("pool_metrics", {})
             history = [{
-                "accepted": ps.get("shares_accepted", 0),
-                "rejected": ps.get("shares_rejected", 0),
+                "accepted": ps.get("accepted", 0),
+                "rejected": ps.get("rejected", 0),
                 "hashrate": ps.get("hashrate", 0),
             }]
 
@@ -5594,23 +5604,20 @@ def _scan_all_utxo_balances(timeout_per_block: float = 3.0, max_total_time: floa
 
 
 @_ttl_cache_fn(15.0)
-def _get_utxo_balance(address: str) -> int:
-    """Return the confirmed UTXO balance (in flowers) for a single address.
+def _get_utxo_balance(address: str) -> tuple[int, bool]:
+    """Return (confirmed UTXO balance in flowers, ok) for a single address.
 
     Uses the node's `getUtxos` RPC, which is authoritative and O(1) per
     address instead of scanning the whole chain block-by-block. Cached for
     15 s so multiple dashboard panels can reuse the same lookup cheaply.
     """
     if not address or not isinstance(address, str) or not address.startswith("zion1"):
-        return 0
-    try:
-        result, _, _ = _rpc_with_fallback("getUtxos", [address], timeout=5.0)
-        if not result or not isinstance(result, dict) or result.get("_rpc_error"):
-            return 0
-        utxos = result.get("utxos") or []
-        return sum(int(u.get("amount", 0)) for u in utxos)
-    except Exception:
-        return 0
+        return 0, False
+    result, _, _ = _rpc_with_fallback("getUtxos", [address], timeout=5.0)
+    if not result or not isinstance(result, dict) or result.get("_rpc_error"):
+        return 0, False
+    utxos = result.get("utxos") or []
+    return sum(int(u.get("amount", 0)) for u in utxos), True
 
 
 def _get_on_chain_balance(address: str, scan: dict = None) -> tuple[int, bool]:
@@ -5621,11 +5628,9 @@ def _get_on_chain_balance(address: str, scan: dict = None) -> tuple[int, bool]:
     """
     if not address or not isinstance(address, str) or not address.startswith("zion1"):
         return 0, False
-    try:
-        bal = _get_utxo_balance(address)
+    bal, ok = _get_utxo_balance(address)
+    if ok:
         return bal, True
-    except Exception:
-        pass
     if scan:
         return int(scan.get(address, 0)), bool(scan)
     return 0, False
@@ -6238,22 +6243,86 @@ def get_pool_miners() -> dict:
     pplns_unpaid = pplns_state.get("unpaid", {}) or {}
     pplns_addresses = pplns_state.get("addresses", {}) or {}
 
+    # Reverse lookup for bare worker names (e.g. "rig1") when the active
+    # telemetry omits the wallet part of the PPLNS key.
+    worker_to_payout = {}
+    if pplns_addresses:
+        for key, val in pplns_addresses.items():
+            if not isinstance(key, str) or not isinstance(val, str) or not val.startswith("zion1"):
+                continue
+            suffix = key
+            if "." in suffix:
+                suffix = suffix.rsplit(".", 1)[-1]
+            elif "/" in suffix:
+                suffix = suffix.rsplit("/", 1)[-1]
+            if suffix and suffix not in worker_to_payout:
+                worker_to_payout[suffix] = val
+
     # Normalize raw /miners fields used by the dashboard
     normalized = []
     for m in miner_list:
-        worker = m.get("worker") or m.get("worker_name") or ""
-        address = m.get("address") or m.get("miner_id") or ""
-        if not address and worker:
-            address, _ = _split_worker_username(worker)
-        if not worker:
-            worker = m.get("miner_id") or ""
-        miner_id, worker_name = _split_worker_username(worker) if worker else (address, "default")
+        raw_worker = m.get("worker") or m.get("worker_name") or ""
+        full_worker = raw_worker
+        # worker_name may be the bare rig name, or worker may be "wallet.worker".
+        if "." in raw_worker:
+            miner_id, worker_name = raw_worker.split(".", 1)
+            worker = raw_worker
+        elif "/" in raw_worker:
+            miner_id, worker_name = raw_worker.split("/", 1)
+            worker = raw_worker
+        elif raw_worker.startswith("zion1"):
+            # Wallet-only identifier; default worker name.
+            miner_id, worker_name = raw_worker, "default"
+            worker = raw_worker
+        elif raw_worker:
+            # Bare worker name; we will resolve the wallet below.
+            worker_name = raw_worker
+            miner_id = ""
+            worker = raw_worker
+        else:
+            worker_name = "default"
+            miner_id = ""
+            worker = ""
+
+        address = m.get("payout_address") or m.get("address") or m.get("miner_id") or ""
+        if not address and raw_worker:
+            address, _ = _split_worker_username(raw_worker)
         if not miner_id:
             miner_id = address
+        if not worker:
+            worker = miner_id
+
+        # Resolve authoritative payout address from PPLNS state when the raw
+        # telemetry only gives us a worker name or an ambiguous id.
+        payout_address = address or ""
+        if not payout_address or not payout_address.startswith("zion1"):
+            # First try to derive a wallet from the raw worker string itself
+            if raw_worker and not payout_address:
+                payout_address, _ = _split_worker_username(raw_worker)
+            # Try exact PPLNS worker keys, then a bare worker-name fallback.
+            if pplns_addresses:
+                for key in _pplns_worker_keys(miner_id, worker_name, full_worker):
+                    val = pplns_addresses.get(key)
+                    if isinstance(val, str) and val.startswith("zion1"):
+                        payout_address = val
+                        break
+            if (not payout_address or not payout_address.startswith("zion1")) and worker_to_payout:
+                bare_worker = worker_name if worker_name and worker_name != "default" else full_worker
+                if bare_worker:
+                    fallback = worker_to_payout.get(bare_worker) or worker_to_payout.get(full_worker)
+                    if isinstance(fallback, str) and fallback.startswith("zion1"):
+                        payout_address = fallback
+                        # The bare string was the actual worker name.
+                        if worker_name == "default" and full_worker:
+                            worker_name = full_worker
+        if not payout_address:
+            payout_address = address or miner_id
+        if payout_address and payout_address.startswith("zion1"):
+            miner_id = payout_address
+            address = payout_address
 
         # PPLNS state is keyed by "wallet.worker" (dot) or "wallet/worker" (slash)
         # or just "wallet" for the default worker. Try all variants for robustness.
-        full_worker = m.get("worker") or worker or ""
         stats = _pplns_dict_lookup(pplns_shares, miner_id, worker_name, full_worker, default={})
         if not isinstance(stats, dict):
             stats = {}
@@ -6302,6 +6371,7 @@ def get_pool_miners() -> dict:
         enriched = {
             "miner_id": miner_id,
             "address": address or miner_id,
+            "payout_address": payout_address,
             "worker_name": worker_name,
             "worker": worker,
             "valid_shares": valid_shares,
@@ -9346,12 +9416,82 @@ def build_payout_status() -> dict:
     try:
         pplns_state = _fetch_pplns_state() or {}
         pplns_unpaid = pplns_state.get("unpaid") or {}
+        pplns_addresses = pplns_state.get("addresses") or {}
     except Exception:
         pplns_unpaid = {}
+        pplns_addresses = {}
+
+    # Reverse lookup for bare worker names when telemetry omits the wallet.
+    worker_to_payout = {}
+    if pplns_addresses:
+        for key, val in pplns_addresses.items():
+            if not isinstance(key, str) or not isinstance(val, str) or not val.startswith("zion1"):
+                continue
+            suffix = key
+            if "." in suffix:
+                suffix = suffix.rsplit(".", 1)[-1]
+            elif "/" in suffix:
+                suffix = suffix.rsplit("/", 1)[-1]
+            if suffix and suffix not in worker_to_payout:
+                worker_to_payout[suffix] = val
+
     for m in miners:
+        raw_worker = m.get("worker") or m.get("worker_name") or ""
+        full_worker = raw_worker
+
+        # worker_name may be the bare rig name, or worker may be "wallet.worker".
+        if "." in raw_worker:
+            mid, wn = raw_worker.split(".", 1)
+            worker = raw_worker
+        elif "/" in raw_worker:
+            mid, wn = raw_worker.split("/", 1)
+            worker = raw_worker
+        elif raw_worker.startswith("zion1"):
+            mid, wn = raw_worker, "default"
+            worker = raw_worker
+        elif raw_worker:
+            wn = raw_worker
+            mid = ""
+            worker = raw_worker
+        else:
+            wn = "default"
+            mid = ""
+            worker = ""
+
         addr = m.get("payout_address") or m.get("address") or m.get("miner_id") or ""
-        worker = m.get("worker") or ""
-        mid, wn = _split_worker_username(worker) if worker else (addr, "default")
+        if not addr and raw_worker:
+            addr, _ = _split_worker_username(raw_worker)
+        if not mid:
+            mid = addr
+        if not worker:
+            worker = mid
+
+        # Resolve PPLNS payout address when telemetry is incomplete.
+        if (not addr or not addr.startswith("zion1")) and pplns_addresses:
+            for key in _pplns_worker_keys(mid, wn, full_worker):
+                val = pplns_addresses.get(key)
+                if isinstance(val, str) and val.startswith("zion1"):
+                    addr = val
+                    break
+            if (not addr or not addr.startswith("zion1")) and worker_to_payout:
+                bare_worker = wn if wn and wn != "default" else full_worker
+                if bare_worker:
+                    fallback = worker_to_payout.get(bare_worker) or worker_to_payout.get(full_worker)
+                    if isinstance(fallback, str) and fallback.startswith("zion1"):
+                        addr = fallback
+                        if wn == "default" and full_worker:
+                            wn = full_worker
+        if not addr:
+            addr = m.get("payout_address") or m.get("address") or m.get("miner_id") or ""
+
+        m["payout_address"] = addr
+        m["address"] = m.get("address") or addr
+        m["miner_id"] = m.get("miner_id") or addr
+        if worker:
+            m["worker"] = worker
+        if wn:
+            m["worker_name"] = wn
+
         if addr and addr.startswith("zion1"):
             try:
                 atomic, ok = _get_on_chain_balance(addr)
@@ -9370,9 +9510,6 @@ def build_payout_status() -> dict:
             m["pending_balance_zion"] = flowers_to_zion(int(m.get("pending_balance") or 0))
         if m.get("unpaid_total") is not None and m.get("pending_balance_zion") is None:
             m["pending_balance_zion"] = m["unpaid_total"]
-        # Ensure worker_name exists
-        if not m.get("worker_name"):
-            m["worker_name"] = wn
 
     # ── Network-wide emission totals from block 0 (consensus schedule) ──
     try:

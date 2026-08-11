@@ -202,6 +202,10 @@ function clearTabTimers(except){
   if(except !== 'revenue'){ clearInterval(_revenueTimer); _revenueTimer = null; }
   if(except !== 'cex'){ clearInterval(_cexTimer); _cexTimer = null; }
   if(except !== 'pool-debug'){ clearInterval(_poolDebugTimer); _poolDebugTimer = null; }
+  if(except !== 'launch-day'){ clearInterval(_countdownTimer); _countdownTimer = null; }
+  if(except !== 'overview'){ clearInterval(_overviewWidgetTimer); _overviewWidgetTimer = null; }
+  clearInterval(_nclAutoTimer); _nclAutoTimer = null;
+  clearInterval(_v31LogTimer); _v31LogTimer = null;
 }
 
 function switchTab(name){
@@ -214,6 +218,18 @@ function switchTab(name){
     }
     if(btn) btn.classList.toggle('tab-active', t === name);
   });
+
+  // Extra aliases for duplicate nav entries (e.g. Wallets in Pool dropdown).
+  const extraBtns = {
+    'wallets': ['tab-pool-wallets'],
+    'marketplace-orders': ['tab-marketplace-orders-quick'],
+  };
+  for(const [tab, ids] of Object.entries(extraBtns)){
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.classList.toggle('tab-active', tab === name);
+    });
+  }
 
   // ── Auto-refresh timers ─────────────────────────────────────────────
   if(name === 'overview'){ loadMempool(); loadMonitoringStatus(); updateChainStats(); updateRecentBlocks(); updateTopWallets(); updateBlockRewardBreakdown(); updateNetworkGrowth(); updateMinerLeaderboard(); updatePoolConnectionHistory(); updateDifficultyForecast(); loadMaintStatus(); }
@@ -258,10 +274,10 @@ function switchTab(name){
     const c = document.getElementById('pane-' + name);
     if(c) c.innerHTML = '<div class="zion-panel p-8 text-center text-gray-400"><div class="text-3xl mb-3"><i class="fas fa-shopping-bag"></i></div><h3 class="text-lg font-bold text-white mb-2">Marketplace</h3><p>This section will be available once the OASIS Marketplace service is deployed.</p><div class="text-xs text-gray-500 mt-2">Service not yet deployed</div></div>';
   }
-  if(name === 'ncl-jobs'){ loadNclJobs && loadNclJobs(); }
-  if(name === 'poc-lab'){ loadPocLab && loadPocLab(); }
-  if(name === 'agent'){ loadAgent && loadAgent(); }
-  if(name === 'ai-agents'){ loadAiAgents && loadAiAgents(); }
+  if(name === 'ncl-jobs'){ if(typeof loadNclJobsPanel === 'function') loadNclJobsPanel(); }
+  if(name === 'poc-lab'){ if(typeof pocCheckStatus === 'function') pocCheckStatus(); }
+  if(name === 'agent'){ if(typeof refreshAgentPanel === 'function') refreshAgentPanel(); }
+  if(name === 'ai-agents'){ if(typeof loadAiAgentsPanel === 'function') loadAiAgentsPanel(); }
 
   // ── NCL / Hiran auto-refresh ────────────────────────────────────────
   if(name === 'hiran'){
@@ -2805,11 +2821,13 @@ async function updateConnectedMiners(){
 
     const payoutByKey = new Map();
     payoutMiners.forEach(m => {
-      const addr = m.address || m.miner_id || '';
-      const worker = m.worker_name || '';
-      const composite = worker ? `${addr}/${worker}` : addr;
+      const raw = m.worker || m.worker_name || '';
+      const wn = m.worker_name || (raw.includes('.') ? raw.split('.')[1] : (raw.includes('/') ? raw.split('/')[1] : raw));
+      const addr = m.payout_address || m.address || m.miner_id || '';
+      const composite = wn ? `${addr}/${wn}` : addr;
       if(composite) payoutByKey.set(composite, m);
-      if(worker) payoutByKey.set(worker, m); // fallback by worker_name (unique per worker)
+      if(wn) payoutByKey.set(wn, m);
+      if(addr) payoutByKey.set(addr, m);
     });
 
     // Mark top `active` rows as active; if no active sessions but shares are flowing,
@@ -7190,10 +7208,13 @@ async function loadGenesis(){
 async function loadBlockers(){
   const res = await fetch('/api/blockers').then(r => r.json()).catch(()=>({blockers:[],open:0,done:0,ready_for_launch:false}));
   const summary = document.getElementById('blockers-summary');
+  const openCrit = res.open_critical ?? 0;
+  const open = res.open ?? 0;
+  const done = res.done ?? 0;
   summary.innerHTML = `
-    <span class="zion-kicker" style="background:rgba(228,30,43,0.15);color:#e41e2b;border-color:rgba(228,30,43,0.3);">${res.open_critical} critical</span>
-    <span class="zion-kicker" style="background:rgba(252,209,22,0.15);color:#fcd116;border-color:rgba(252,209,22,0.3);margin-left:8px;">${res.open} open</span>
-    <span class="zion-kicker" style="background:rgba(7,137,48,0.15);color:#078930;border-color:rgba(7,137,48,0.3);margin-left:8px;">${res.done} done</span>
+    <span class="zion-kicker" style="background:rgba(228,30,43,0.15);color:#e41e2b;border-color:rgba(228,30,43,0.3);">${openCrit} critical</span>
+    <span class="zion-kicker" style="background:rgba(252,209,22,0.15);color:#fcd116;border-color:rgba(252,209,22,0.3);margin-left:8px;">${open} open</span>
+    <span class="zion-kicker" style="background:rgba(7,137,48,0.15);color:#078930;border-color:rgba(7,137,48,0.3);margin-left:8px;">${done} done</span>
   `;
 
   const list = document.getElementById('blockers-list');
@@ -7637,10 +7658,7 @@ function applySettings(s){
 }
 
 function openSettingsModal(){
-  const m = document.getElementById('settings-modal');
-  if(m) m.classList.remove('hidden');
-  loadSettings();
-  loadTopologyConfig();
+  switchTab('settings');
 }
 
 async function loadTopologyConfig(){

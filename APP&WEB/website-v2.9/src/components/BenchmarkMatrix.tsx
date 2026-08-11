@@ -94,7 +94,7 @@ const TUNING_DEFAULTS = [
   { cls: '6 GB (2060, 1660)', tpb: '48', wc: '16384',  note: { cs: 'Dobrý kompromis', en: 'Good balance' } },
   { cls: '8 GB (1080, 3060 Ti)', tpb: '48', wc: '16384', note: { cs: '1080: TPB=256 taky OK', en: '1080: TPB=256 also works' } },
   { cls: '12 GB (3060)',      tpb: '24', wc: '4096',   note: { cs: '¾ warpu, Ampere optimální', en: '¾ warp, Ampere optimal' } },
-  { cls: '16 GB (5070 Ti…)',  tpb: '48', wc: '49152',  note: { cs: '', en: '' } },
+  { cls: '16 GB (5070 Ti…)',  tpb: '48', wc: '49152',  note: { cs: 'High-end GPU', en: 'High-end GPU' } },
   { cls: '24+ GB (A100, H100)', tpb: '24', wc: '262144', note: { cs: 'H100 škáluje s wc; A100 flat', en: 'H100 scales with wc; A100 flat' } },
 ];
 

@@ -12,7 +12,10 @@ import {
   Check,
   Crown,
   Download,
+  Droplets,
   Gem,
+  Heart,
+  Link as LinkIcon,
   Loader2,
   Pickaxe,
   RefreshCw,
@@ -37,7 +40,7 @@ const ExplorerRichlistRichListClientCopy = {
   miningRewards: { cs: `Těžební odměny`, en: `Mining rewards` },
   show: { cs: `Zobrazit:`, en: `Show:` },
   exportCsv: { cs: `Export CSV`, en: `Export CSV` },
-  rank: { cs: `Poradi`, en: `Rank` },
+  rank: { cs: `Pořadí`, en: `Rank` },
   address: { cs: `Adresa`, en: `Address` },
   balanceZion: { cs: `Zůstatek (ZION)`, en: `Balance (ZION)` },
   type: { cs: `Typ`, en: `Type` },
@@ -48,6 +51,8 @@ const ExplorerRichlistRichListClientCopy = {
   addresses: { cs: `adres`, en: `addresses` },
   premineAllocationAsDefinedIn: { cs: `Premine alokace podle`, en: `Premine allocation as defined in` },
   minerBalancesFromPoolRewardHis: { cs: `. Zůstatky minerů vycházejí z historie odměn poolu.`, en: `. Miner balances from pool reward history.` },
+  percentSupply: { cs: `% zásoby`, en: `% Supply` },
+  genesisBlock: { cs: `Genesis blok`, en: `Genesis Block` },
 };
 
 /* ── types ───────────────────────────────────────────────────── */
@@ -126,6 +131,34 @@ const getTypeConfig = (cs: boolean) => ({
     text: "text-zion-cyan",
     label: "Miner",
     icon: Pickaxe,
+  },
+  dao: {
+    bg: "bg-zion-gold/10",
+    border: "border-zion-gold/20",
+    text: "text-zion-gold",
+    label: "DAO",
+    icon: Crown,
+  },
+  humanitarian: {
+    bg: "bg-emerald-500/10",
+    border: "border-emerald-500/20",
+    text: "text-emerald-400",
+    label: "Humanitarian",
+    icon: Heart,
+  },
+  bridge: {
+    bg: "bg-blue-500/10",
+    border: "border-blue-500/20",
+    text: "text-blue-400",
+    label: "Bridge",
+    icon: LinkIcon,
+  },
+  pool: {
+    bg: "bg-zion-cyan/10",
+    border: "border-zion-cyan/20",
+    text: "text-zion-cyan",
+    label: "Pool",
+    icon: Droplets,
   },
   unknown: {
     bg: "bg-white/5",
@@ -346,7 +379,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
               {ExplorerRichlistRichListClientCopy.balanceZion[cs ? 'cs' : 'en']}
             </span>
             <span className="text-[11px] text-white/30 uppercase tracking-wider text-right hidden md:block">
-              % Supply
+              {ExplorerRichlistRichListClientCopy.percentSupply[cs ? 'cs' : 'en']}
             </span>
             <span className="text-[11px] text-white/30 uppercase tracking-wider text-right">
               {ExplorerRichlistRichListClientCopy.type[cs ? 'cs' : 'en']}
@@ -378,7 +411,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
           {!loading &&
             !error &&
             data?.rich_list.map((entry, i) => {
-              const tc = typeConfig[entry.type];
+              const tc = typeConfig[entry.type as keyof typeof typeConfig] ?? typeConfig.unknown;
               const RankIcon = entry.rank <= 3 ? rankIcons[entry.rank - 1] : null;
               return (
                 <motion.div
@@ -467,7 +500,7 @@ export default function RichListClient({ embedded = false }: RichListClientProps
                 href="/genesis"
                 className="text-zion-gold/60 hover:text-zion-gold transition-colors underline"
               >
-                Genesis Block
+                {ExplorerRichlistRichListClientCopy.genesisBlock[cs ? 'cs' : 'en']}
               </Link>
               {ExplorerRichlistRichListClientCopy.minerBalancesFromPoolRewardHis[cs ? 'cs' : 'en']}
             </p>

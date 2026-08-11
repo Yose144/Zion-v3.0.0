@@ -256,17 +256,17 @@ export default function ConsensusClient() {
   ];
 
   const decades = consensus?.consensus?.decades ?? [
-    { index: 0, reward: 5400.067, blocks: 525_600, pct: "20%" },
-    { index: 1, reward: 4320.054, blocks: 525_600, pct: "16%" },
-    { index: 2, reward: 3456.043, blocks: 525_600, pct: "12.8%" },
-    { index: 3, reward: 2764.834, blocks: 525_600, pct: "10.24%" },
-    { index: 4, reward: 2211.867, blocks: 525_600, pct: "8.19%" },
-    { index: 5, reward: 1769.494, blocks: 525_600, pct: "6.55%" },
-    { index: 6, reward: 1415.595, blocks: 525_600, pct: "5.24%" },
-    { index: 7, reward: 1132.476, blocks: 525_600, pct: "4.19%" },
-    { index: 8, reward: 905.981, blocks: 525_600, pct: "3.36%" },
-    { index: 9, reward: 724.785, blocks: 525_600, pct: "2.68%" },
-    { index: 10, reward: 724.785, blocks: 0, pct: "Tail ∞" },
+    { index: 0, reward: 5400.067, blocks: 525_600, share: "20%" },
+    { index: 1, reward: 4320.054, blocks: 525_600, share: "16%" },
+    { index: 2, reward: 3456.043, blocks: 525_600, share: "12.8%" },
+    { index: 3, reward: 2764.834, blocks: 525_600, share: "10.24%" },
+    { index: 4, reward: 2211.867, blocks: 525_600, share: "8.19%" },
+    { index: 5, reward: 1769.494, blocks: 525_600, share: "6.55%" },
+    { index: 6, reward: 1415.595, blocks: 525_600, share: "5.24%" },
+    { index: 7, reward: 1132.476, blocks: 525_600, share: "4.19%" },
+    { index: 8, reward: 905.981, blocks: 525_600, share: "3.36%" },
+    { index: 9, reward: 724.785, blocks: 525_600, share: "2.68%" },
+    { index: 10, reward: 724.785, blocks: 0, share: "Tail ∞" },
   ];
 
   return (
@@ -379,7 +379,7 @@ export default function ConsensusClient() {
                     <td className="px-6 py-3 text-white font-semibold">{d.index === 10 ? "Tail ∞" : `Decade ${d.index}`}</td>
                     <td className="px-3 py-3 text-zion-gold font-mono">{d.reward.toFixed(3)} ZION</td>
                     <td className="px-3 py-3 text-gray-400 font-mono">{d.blocks > 0 ? d.blocks.toLocaleString() : "∞"}</td>
-                    <td className="px-6 py-3 text-right text-gray-400">{d.pct}</td>
+                    <td className="px-6 py-3 text-right text-gray-400">{d.share}</td>
                   </tr>
                 ))}
               </tbody>
