@@ -3823,7 +3823,8 @@ def _build_status_edge_primary() -> dict:
     edge_metrics = {"active_miners": None, "hashrate": 0.0, "hashrate_1h": None, "accept_rate_pct": None,
                     "shares_accepted": None, "shares_rejected": None, "miners_tracked": None,
                     "blocks_found": 0, "total_hashes": None, "total_shares": None}
-    edge_payout = {"pplns_rounds": 0, "pplns_total_paid": 0, "pplns_window_size": 0, "pplns_window_used": 0, "pplns_registered_miners": 0,
+    edge_payout = {"pplns_rounds": 0, "pplns_total_paid": 0, "pplns_total_unpaid": 0,
+                   "pplns_window_size": 0, "pplns_window_used": 0, "pplns_registered_miners": 0,
                    "fee_humanitarian": 0, "fee_issobella": 0, "fee_pool": 0, "fee_miner_pct": 89,
                    "miner_balances": []}
     body = ""
@@ -3880,6 +3881,8 @@ def _build_status_edge_primary() -> dict:
                     edge_payout["pplns_rounds"] = int(line.split()[-1])
                 elif line.startswith("zion_pool_pplns_total_paid_flowers ") or line.startswith("zion_pplns_total_paid_flowers "):
                     edge_payout["pplns_total_paid"] = int(line.split()[-1])
+                elif line.startswith("zion_pool_pplns_total_unpaid_flowers ") or line.startswith("zion_pplns_total_unpaid_flowers "):
+                    edge_payout["pplns_total_unpaid"] = int(line.split()[-1])
                 elif line.startswith("zion_pool_pplns_window_size ") or line.startswith("zion_pplns_window_size "):
                     edge_payout["pplns_window_size"] = int(line.split()[-1])
                 elif line.startswith("zion_pool_pplns_window_used ") or line.startswith("zion_pplns_window_used "):
@@ -3976,6 +3979,8 @@ def _build_status_edge_primary() -> dict:
         "pplns_rounds": edge_payout["pplns_rounds"],
         "pplns_total_paid": edge_payout["pplns_total_paid"],
         "pplns_total_paid_zion": flowers_to_zion(edge_payout["pplns_total_paid"]),
+        "pplns_total_unpaid": edge_payout["pplns_total_unpaid"],
+        "pplns_total_unpaid_zion": flowers_to_zion(edge_payout["pplns_total_unpaid"]),
         "pplns_window_size": edge_payout["pplns_window_size"],
         "pplns_window_used": edge_payout["pplns_window_used"],
         "pplns_registered_miners": edge_payout["pplns_registered_miners"],
@@ -4235,7 +4240,9 @@ def _build_status_local_dev() -> dict:
     local_pool = parse_pool_log()
 
     # Try to scrape local pool metrics
-    pool_metrics = {"active_miners": None, "hashrate": None, "blocks_found": None}
+    pool_metrics = {"active_miners": None, "hashrate": None, "blocks_found": None,
+                    "pplns_window_size": 0, "pplns_window_used": 0, "pplns_rounds": 0,
+                    "pplns_total_paid": 0, "pplns_total_unpaid": 0, "pplns_registered": 0}
     try:
         metrics_port = pool_svc.get("ports", {}).get("metrics") if pool_svc else None
         if metrics_port and pool_health.get("alive"):
@@ -4249,6 +4256,18 @@ def _build_status_local_dev() -> dict:
                         pass
                     elif line.startswith("zion_pool_blocks_found ") or line.startswith("zion_pool_blocks_found_total "):
                         pool_metrics["blocks_found"] = int(float(line.split()[-1]))
+                    elif line.startswith("zion_pool_pplns_window_size ") or line.startswith("zion_pplns_window_size "):
+                        pool_metrics["pplns_window_size"] = int(line.split()[-1])
+                    elif line.startswith("zion_pool_pplns_window_used ") or line.startswith("zion_pplns_window_used "):
+                        pool_metrics["pplns_window_used"] = int(line.split()[-1])
+                    elif line.startswith("zion_pool_pplns_payout_rounds ") or line.startswith("zion_pplns_payout_rounds "):
+                        pool_metrics["pplns_rounds"] = int(line.split()[-1])
+                    elif line.startswith("zion_pool_pplns_total_paid_flowers ") or line.startswith("zion_pplns_total_paid_flowers "):
+                        pool_metrics["pplns_total_paid"] = int(line.split()[-1])
+                    elif line.startswith("zion_pool_pplns_total_unpaid_flowers ") or line.startswith("zion_pplns_total_unpaid_flowers "):
+                        pool_metrics["pplns_total_unpaid"] = int(line.split()[-1])
+                    elif line.startswith("zion_pool_pplns_registered_miners ") or line.startswith("zion_pplns_registered_miners "):
+                        pool_metrics["pplns_registered"] = int(line.split()[-1])
     except Exception:
         pass
 
@@ -4266,6 +4285,12 @@ def _build_status_local_dev() -> dict:
         "fee_split": local_pool.get("fee_split", "89/5/5/1"),
         "recent_payouts": local_pool["recent_payouts"],
         "recent_lines": local_pool["recent_lines"],
+        "pplns_window_size": pool_metrics["pplns_window_size"],
+        "pplns_window_used": pool_metrics["pplns_window_used"],
+        "pplns_rounds": pool_metrics["pplns_rounds"],
+        "pplns_total_paid_zion": flowers_to_zion(pool_metrics["pplns_total_paid"]),
+        "pplns_total_unpaid_zion": flowers_to_zion(pool_metrics["pplns_total_unpaid"]),
+        "pplns_registered_miners": pool_metrics["pplns_registered"],
     }
 
     # Compute sync gap between node1 and node2
@@ -6123,6 +6148,40 @@ def _split_worker_username(username: str) -> tuple:
         return (wallet, worker)
     return (username, "default")
 
+
+def _pplns_worker_keys(miner_id: str, worker_name: str = "", full_worker: str = "") -> list:
+    """Return candidate PPLNS keys for looking up a worker in PPLNS state maps.
+
+    V31 pool historically persisted keys both as 'wallet.worker' (dot) and
+    'wallet/worker' (slash) depending on the pool binary version, and may use
+    just 'wallet' for the default worker.  We try all common variants so the
+    dashboard matches telemetry, PPLNS state and Prometheus labels reliably.
+    """
+    keys = []
+    if full_worker:
+        keys.append(full_worker)
+    if miner_id:
+        if worker_name and worker_name != "default":
+            keys.append(f"{miner_id}.{worker_name}")
+            keys.append(f"{miner_id}/{worker_name}")
+            # Some PPLNS snapshots store only the wallet as the key even with workers
+            keys.append(miner_id)
+        else:
+            keys.append(miner_id)
+            keys.append(f"{miner_id}/default")
+    return keys
+
+
+def _pplns_dict_lookup(pplns_dict: dict, miner_id: str, worker_name: str = "", full_worker: str = "", default=None):
+    """Look up a PPLNS value by trying dot, slash and wallet-only key variants."""
+    if not pplns_dict or not isinstance(pplns_dict, dict):
+        return default
+    for key in _pplns_worker_keys(miner_id, worker_name, full_worker):
+        if key in pplns_dict:
+            val = pplns_dict[key]
+            return default if val is None else val
+    return default
+
 def get_pool_miners() -> dict:
     """Fetch active miners from Edge pool /miners endpoint.
 
@@ -6192,14 +6251,15 @@ def get_pool_miners() -> dict:
         if not miner_id:
             miner_id = address
 
-        # PPLNS state is keyed by either "address/worker_name" or just "address" (legacy)
-        composite = f"{miner_id}/{worker_name}"
-        stats = pplns_shares.get(composite) or pplns_shares.get(miner_id) or {}
+        # PPLNS state is keyed by "wallet.worker" (dot) or "wallet/worker" (slash)
+        # or just "wallet" for the default worker. Try all variants for robustness.
+        full_worker = m.get("worker") or worker or ""
+        stats = _pplns_dict_lookup(pplns_shares, miner_id, worker_name, full_worker, default={})
         if not isinstance(stats, dict):
             stats = {}
-        last_share = pplns_last_share.get(composite, pplns_last_share.get(miner_id, 0))
-        paid_flowers = pplns_paid.get(composite, pplns_paid.get(miner_id, 0))
-        unpaid_flowers = pplns_unpaid.get(composite, pplns_unpaid.get(miner_id, 0))
+        last_share = _pplns_dict_lookup(pplns_last_share, miner_id, worker_name, full_worker, default=0)
+        paid_flowers = _pplns_dict_lookup(pplns_paid, miner_id, worker_name, full_worker, default=0)
+        unpaid_flowers = _pplns_dict_lookup(pplns_unpaid, miner_id, worker_name, full_worker, default=0)
         if isinstance(paid_flowers, (int, float, str)):
             try:
                 paid_flowers = int(paid_flowers)
@@ -6253,6 +6313,8 @@ def get_pool_miners() -> dict:
             "total_paid_flowers": paid_total,
             "paid_total": flowers_to_zion(paid_total),
             "paid_total_atomic": paid_total,
+            "pending_balance": unpaid_flowers,
+            "pending_balance_zion": flowers_to_zion(unpaid_flowers),
             "unpaid_total": flowers_to_zion(unpaid_flowers),
             "hashrate_hps": hashrate_hps,
             "hashrate_1h_hps": hashrate_1h_hps,
@@ -6264,23 +6326,28 @@ def get_pool_miners() -> dict:
         }
         normalized.append(enriched)
 
-    # V31 pool may report 0 active TCP sessions for miners that submit via block-submit
-    # or that connect briefly; use the registered worker count as a sensible active proxy
-    # when shares are being accepted.
-    if not miners_tracked and normalized:
-        miners_tracked = len(normalized)
-    if active_sessions == 0 and (shares_accepted or total_shares) and miners_tracked > 0:
-        active_sessions = miners_tracked
-
     total_hashrate_khs = sum(m.get("hashrate_hps", 0.0) or 0.0 for m in normalized) / 1000.0
     total_valid = sum(m.get("valid_shares", 0) or 0 for m in normalized)
     total_invalid = sum(m.get("invalid_shares", 0) or 0 for m in normalized)
 
+    # V31 pool may report 0 active TCP sessions for miners that submit via block-submit
+    # or that connect briefly; use the registered worker count as a sensible active proxy.
+    if not miners_tracked and normalized:
+        miners_tracked = len(normalized)
+    if active_sessions == 0 and (shares_accepted or total_valid or total_invalid) and miners_tracked > 0:
+        active_sessions = miners_tracked
+
+    # Enrich with real on-chain balances so /api/pool/miners is self-contained.
+    enrich_miner_balances(normalized)
+
+    active_count = sum(1 for m in normalized if m.get("active"))
     return {
         "ok": True,
         "miners": normalized,
         "active_sessions": active_sessions,
+        "active_count": active_count,
         "miners_tracked": miners_tracked,
+        "registered_count": miners_tracked,
         "shares_accepted": shares_accepted if shares_accepted else total_valid,
         "shares_rejected": shares_rejected if shares_rejected else total_invalid,
         "total_shares": total_valid + total_invalid,
@@ -6773,50 +6840,83 @@ def get_pool_registered_miners() -> dict:
             pass
 
     # 3. Build per-miner records, preserving individual miner IDs even if they share an address.
-    # PPLNS state keys are composite "miner_id/worker_name"; split for display.
+    # PPLNS state keys may be "wallet.worker" (dot) or "wallet/worker" (slash).
     miners = []
     pplns_stats = (stats.get("pplns") or {}) if isinstance(stats, dict) else {}
     total_paid_flowers = pplns_stats.get("total_paid_flowers", 0)
+    pplns_shares = pplns_state.get("shares_per_miner") or {}
+    pplns_paid = pplns_state.get("paid_per_miner") or {}
+    pplns_last_share = pplns_state.get("last_share_time_per_miner") or {}
     for pplns_key, payout_address in addresses.items():
-        active = active_map.get(pplns_key)
         on_chain = balance_map.get(payout_address, 0.0)
-        pending_atomic = int(unpaid.get(pplns_key, 0)) if isinstance(unpaid, dict) else 0
-        # Split composite key for display
-        if "/" in pplns_key:
+        pending_atomic = int(_pplns_dict_lookup(unpaid, pplns_key, full_worker=pplns_key, default=0)) or 0
+        # Split PPLNS key for display (dot or slash)
+        if "." in pplns_key:
+            display_miner_id, display_worker = pplns_key.split(".", 1)
+        elif "/" in pplns_key:
             display_miner_id, display_worker = pplns_key.split("/", 1)
         else:
-            display_miner_id, display_worker = pplns_key, ""
-        # If active, use live telemetry; otherwise zero hashrate/shares
-        hashrate = active.get("hashrate") or active.get("hashrate_hps") or 0.0 if active else 0.0
-        hashrate_1h = active.get("hashrate_1h") or 0.0 if active else 0.0
-        hashrate_24h = active.get("hashrate_24h") or 0.0 if active else 0.0
-        valid_shares = active.get("valid_shares", 0) if active else 0
-        invalid_shares = active.get("invalid_shares", 0) if active else 0
-        blocks_found = active.get("blocks_found", 0) if active else 0
-        last_seen = active.get("last_seen", 0) if active else 0
-        last_share = active.get("last_share", 0) if active else 0
-        worker_name = display_worker or (active.get("worker_name", "") if active else "")
-        streams = active.get("streams", {}) if active else {}
+            display_miner_id, display_worker = pplns_key, "default"
+
+        # Look up active telemetry using dot/slash/wallet key variants
+        active = _pplns_dict_lookup(active_map, display_miner_id, display_worker, full_worker=pplns_key)
+
+        # Per-miner PPLNS stats (shares, paid, last share time)
+        pplns_share_stats = _pplns_dict_lookup(pplns_shares, display_miner_id, display_worker, full_worker=pplns_key, default={})
+        if not isinstance(pplns_share_stats, dict):
+            pplns_share_stats = {}
+        pplns_paid_flowers = int(_pplns_dict_lookup(pplns_paid, display_miner_id, display_worker, full_worker=pplns_key, default=0)) or 0
+        pplns_last_share_time = int(_pplns_dict_lookup(pplns_last_share, display_miner_id, display_worker, full_worker=pplns_key, default=0)) or 0
+
+        # Prefer active telemetry, fall back to PPLNS state for inactive/registered miners
+        if active:
+            hashrate = active.get("hashrate") or active.get("hashrate_hps") or 0.0
+            hashrate_1h = active.get("hashrate_1h") or active.get("hashrate_1h_hps", 0) or 0.0
+            hashrate_24h = active.get("hashrate_24h") or active.get("hashrate_24h_hps", 0) or 0.0
+            valid_shares = active.get("valid_shares", 0)
+            invalid_shares = active.get("invalid_shares", 0)
+            blocks_found = active.get("blocks_found", 0)
+            last_seen = active.get("last_seen", 0) or active.get("last_seen_s", 0)
+            last_share = active.get("last_share", 0) or active.get("last_share_time", 0) or active.get("last_share_time_s", 0)
+            worker_name = display_worker or active.get("worker_name", "") or "default"
+            streams = active.get("streams", {})
+            paid_total_atomic = int(active.get("paid_total_atomic", 0) or 0)
+            # /miners returns paid_total_atomic; older code used paid_total (zion)
+            paid_total_zion = float(active.get("paid_total", 0.0) or 0.0) if active.get("paid_total") else flowers_to_zion(paid_total_atomic)
+        else:
+            hashrate = 0.0
+            hashrate_1h = 0.0
+            hashrate_24h = 0.0
+            valid_shares = pplns_share_stats.get("valid", 0)
+            invalid_shares = pplns_share_stats.get("invalid", 0)
+            blocks_found = pplns_share_stats.get("blocks", 0)
+            last_seen = 0
+            last_share = pplns_last_share_time
+            worker_name = display_worker or "default"
+            streams = {}
+            paid_total_atomic = pplns_paid_flowers
+            paid_total_zion = flowers_to_zion(pplns_paid_flowers)
+
         m = {
             "miner_id": display_miner_id,
             "worker_name": worker_name,
             "pplns_key": pplns_key,
             "payout_address": payout_address,
-            "hashrate_hps": hashrate,
-            "hashrate_1h": hashrate_1h,
-            "hashrate_24h": hashrate_24h,
-            "valid_shares": valid_shares,
-            "invalid_shares": invalid_shares,
+            "hashrate_hps": float(hashrate or 0),
+            "hashrate_1h": float(hashrate_1h or 0),
+            "hashrate_24h": float(hashrate_24h or 0),
+            "valid_shares": int(valid_shares or 0),
+            "invalid_shares": int(invalid_shares or 0),
             "pending_balance": pending_atomic,
             "pending_balance_zion": flowers_to_zion(pending_atomic),
-            "paid_total": float(active.get("paid_total", 0.0) or 0.0) if active else 0.0,
-            "paid_total_atomic": int(active.get("paid_total_atomic", 0) or 0) if active else 0,
-            "blocks_found": blocks_found,
-            "last_seen": last_seen,
-            "last_share": last_share,
+            "paid_total": paid_total_zion,
+            "paid_total_atomic": paid_total_atomic,
+            "blocks_found": int(blocks_found or 0),
+            "last_seen": int(last_seen or 0),
+            "last_share": int(last_share or 0),
             "on_chain_balance_zion": on_chain,
             "active": bool(active),
-            "streams": streams,
+            "streams": streams or {},
         }
         miners.append(m)
 
@@ -6913,11 +7013,14 @@ def get_pool_leaderboard(limit: int = 50) -> dict:
         total_pending += float(m.get("pending_balance_zion") or 0)
         total_paid += float(m.get("paid_total") or 0)
         total_on_chain += float(m.get("on_chain_balance_zion") or 0)
+    active_count = sum(1 for m in sorted_miners if m.get("active"))
     return {
         "ok": True,
         "miners": sorted_miners,
         "active_sessions": data.get("active_sessions", 0),
+        "active_count": active_count,
         "miners_tracked": data.get("miners_tracked", len(sorted_miners)),
+        "registered_count": data.get("miners_tracked", len(sorted_miners)),
         "total_hashrate_khs": data.get("total_hashrate_khs", 0),
         "totals": {
             "pending_zion": total_pending,
@@ -7118,9 +7221,15 @@ def get_pool_miners_dashboard() -> dict:
             "paid_zion": pplns_paid_zion,
             "on_chain_zion": total_on_chain,
         }
+        # registered_miners: prefer the larger of live PPLNS count, tracked count,
+        # or the actual number of miners returned, so the KPI never undersells the table.
+        _pplns_registered = int(result.get("pplns", {}).get("registered_miners", 0) or 0)
+        _tracked = int(result.get("miners_tracked", 0) or 0)
+        _displayed = len(miners)
+        _registered_miners = max(_pplns_registered, _tracked, _displayed)
         result["summary"] = {
             "active_miners": result.get("active_sessions", 0),
-            "registered_miners": result.get("pplns", {}).get("registered_miners", 0),
+            "registered_miners": _registered_miners,
             "tracked_miners": result.get("miners_tracked", 0),
             "displayed_miners": len(miners),
             "total_hashrate_khs": total_hash / 1000.0,
@@ -7130,6 +7239,7 @@ def get_pool_miners_dashboard() -> dict:
             "total_shares": total_shares,
             "accept_rate_pct": round(accept_rate, 2),
             "blocks_found": blocks_total,
+            "payout_rounds": result.get("pplns", {}).get("payout_rounds", 0),
             "total_paid_zion": pplns_paid_zion,
             "total_pending_zion": pplns_unpaid_zion if pplns_unpaid_zion > total_pending else total_pending,
             "total_on_chain_zion": total_on_chain,
@@ -7188,9 +7298,10 @@ def get_revenue_dashboard() -> dict:
         pass
     try:
         payouts = stats.get("payouts", {}) if isinstance(stats.get("payouts"), dict) else {}
-        total_paid_atomic = int(payouts.get("total_paid_atomic", 0))
-        payout_rounds = int(payouts.get("payout_rounds", 0))
-        pending_atomic = int(payouts.get("pending_total_atomic", 0))
+        pplns = stats.get("pplns", {}) if isinstance(stats.get("pplns"), dict) else {}
+        total_paid_atomic = int(payouts.get("total_paid_atomic") or pplns.get("total_paid_flowers") or 0)
+        payout_rounds = int(payouts.get("payout_rounds") or pplns.get("payout_rounds") or 0)
+        pending_atomic = int(payouts.get("pending_total_atomic") or pplns.get("total_unpaid_flowers") or 0)
     except Exception:
         pass
     try:
@@ -9256,9 +9367,17 @@ def build_payout_status() -> dict:
     else:
         status["burned_total"] = 0.0
 
-    # ── On-chain UTXO balances for each miner payout address ───────────────
+    # ── On-chain UTXO balances + paid/pending normalization for each miner ─────────
+    # Load PPLNS state once to backfill pending balances when telemetry is missing.
+    try:
+        pplns_state = _fetch_pplns_state() or {}
+        pplns_unpaid = pplns_state.get("unpaid") or {}
+    except Exception:
+        pplns_unpaid = {}
     for m in miners:
-        addr = m.get("payout_address")
+        addr = m.get("payout_address") or m.get("address") or m.get("miner_id") or ""
+        worker = m.get("worker") or ""
+        mid, wn = _split_worker_username(worker) if worker else (addr, "default")
         if addr and addr.startswith("zion1"):
             try:
                 atomic, ok = _get_on_chain_balance(addr)
@@ -9266,6 +9385,20 @@ def build_payout_status() -> dict:
                     m["on_chain_balance_zion"] = flowers_to_zion(atomic)
             except Exception:
                 pass
+        # Normalize paid_total and pending for the payout tab miner table
+        if m.get("paid_total_atomic") is not None:
+            m["paid_total"] = flowers_to_zion(int(m.get("paid_total_atomic") or 0))
+        if m.get("pending_balance") is None:
+            unpaid_flowers = _pplns_dict_lookup(pplns_unpaid, mid, wn, full_worker=worker, default=0)
+            m["pending_balance"] = int(unpaid_flowers or 0)
+            m["pending_balance_zion"] = flowers_to_zion(m["pending_balance"])
+        elif m.get("pending_balance_zion") is None:
+            m["pending_balance_zion"] = flowers_to_zion(int(m.get("pending_balance") or 0))
+        if m.get("unpaid_total") is not None and m.get("pending_balance_zion") is None:
+            m["pending_balance_zion"] = m["unpaid_total"]
+        # Ensure worker_name exists
+        if not m.get("worker_name"):
+            m["worker_name"] = wn
 
     # ── Network-wide emission totals from block 0 (consensus schedule) ──
     try:
@@ -9284,6 +9417,13 @@ def build_payout_status() -> dict:
     _metrics_accept = None
     _metrics_hashrate = None
     _metrics_blocks = 0
+    # PPLNS metrics from Prometheus (used as fallback if pool /stats pplns object is missing)
+    _metrics_pplns_window_size = 0
+    _metrics_pplns_window_used = 0
+    _metrics_pplns_rounds = 0
+    _metrics_pplns_total_paid = 0
+    _metrics_pplns_total_unpaid = 0
+    _metrics_pplns_registered = 0
     try:
         import urllib.request as _ur2
         _mhost = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
@@ -9295,6 +9435,19 @@ def build_payout_status() -> dict:
                     _metrics_hashrate = float(_ln.split()[-1])
                 elif _ln.startswith("zion_pool_blocks_found_total "):
                     _metrics_blocks = int(float(_ln.split()[-1]))
+                # PPLNS Prometheus metrics (V31 pool exports these)
+                elif _ln.startswith("zion_pool_pplns_window_size ") or _ln.startswith("zion_pplns_window_size "):
+                    _metrics_pplns_window_size = int(_ln.split()[-1])
+                elif _ln.startswith("zion_pool_pplns_window_used ") or _ln.startswith("zion_pplns_window_used "):
+                    _metrics_pplns_window_used = int(_ln.split()[-1])
+                elif _ln.startswith("zion_pool_pplns_payout_rounds ") or _ln.startswith("zion_pplns_payout_rounds "):
+                    _metrics_pplns_rounds = int(_ln.split()[-1])
+                elif _ln.startswith("zion_pool_pplns_total_paid_flowers ") or _ln.startswith("zion_pplns_total_paid_flowers "):
+                    _metrics_pplns_total_paid = int(_ln.split()[-1])
+                elif _ln.startswith("zion_pool_pplns_total_unpaid_flowers ") or _ln.startswith("zion_pplns_total_unpaid_flowers "):
+                    _metrics_pplns_total_unpaid = int(_ln.split()[-1])
+                elif _ln.startswith("zion_pool_pplns_registered_miners ") or _ln.startswith("zion_pplns_registered_miners "):
+                    _metrics_pplns_registered = int(_ln.split()[-1])
     except Exception:
         pass
     if _metrics_blocks > 0 and status["blocks_found"] == 0:
@@ -9316,9 +9469,42 @@ def build_payout_status() -> dict:
             pool_stats = {}
         pool_stats.setdefault("hashrate", {})["pool"] = _metrics_hashrate
 
+    # Expose top-level PPLNS fields used by the overview Pool Command Center
+    try:
+        _pplns = (pool_stats.get("pplns") or {}) if isinstance(pool_stats, dict) else {}
+        _pplns_window_size = int(_pplns.get("window_size") or _metrics_pplns_window_size or 0) or 0
+        _pplns_window_used = int(_pplns.get("window_used") or _metrics_pplns_window_used or 0) or 0
+        _pplns_rounds = int(_pplns.get("payout_rounds") or _metrics_pplns_rounds or 0) or 0
+        _pplns_registered = int(_pplns.get("registered_miners") or _metrics_pplns_registered or 0) or 0
+        _pplns_total_paid = _pplns.get("total_paid_flowers") or _metrics_pplns_total_paid or 0
+        _pplns_total_unpaid = _pplns.get("total_unpaid_flowers") or _metrics_pplns_total_unpaid or 0
+        if _pplns_total_paid:
+            _pplns_total_paid = int(_pplns_total_paid)
+        if _pplns_total_unpaid:
+            _pplns_total_unpaid = int(_pplns_total_unpaid)
+        status["pplns_window_size"] = _pplns_window_size
+        status["pplns_window_used"] = _pplns_window_used
+        status["pplns_rounds"] = _pplns_rounds
+        status["pplns_registered_miners"] = _pplns_registered
+        status["pplns_total_paid_flowers"] = _pplns_total_paid
+        status["pplns_total_unpaid_flowers"] = _pplns_total_unpaid
+        status["pplns_total_paid_zion"] = flowers_to_zion(_pplns_total_paid)
+        status["pplns_total_unpaid_zion"] = flowers_to_zion(_pplns_total_unpaid)
+    except Exception:
+        status["pplns_window_size"] = _metrics_pplns_window_size
+        status["pplns_window_used"] = _metrics_pplns_window_used
+        status["pplns_rounds"] = _metrics_pplns_rounds
+        status["pplns_registered_miners"] = _metrics_pplns_registered
+        status["pplns_total_paid_flowers"] = _metrics_pplns_total_paid
+        status["pplns_total_unpaid_flowers"] = _metrics_pplns_total_unpaid
+        status["pplns_total_paid_zion"] = flowers_to_zion(_metrics_pplns_total_paid)
+        status["pplns_total_unpaid_zion"] = flowers_to_zion(_metrics_pplns_total_unpaid)
+
     # JS miner_stats compatibility
     miner_stats = []
     for m in miners:
+        first_seen = m.get("connected_since") or m.get("first_seen_s") or m.get("first_seen")
+        last_share = m.get("last_share") or m.get("last_share_time") or m.get("last_share_time_s")
         miner_stats.append({
             "address": m.get("payout_address") or m.get("address") or "—",
             "worker_name": m.get("worker_name") or m.get("id") or "—",
@@ -9331,8 +9517,8 @@ def build_payout_status() -> dict:
             "on_chain_balance_zion": m.get("on_chain_balance_zion"),
             "pending_balance": m.get("pending_balance", 0),
             "blocks_found": m.get("blocks_found", 0),
-            "connected_since": m.get("connected_since"),
-            "last_share": m.get("last_share"),
+            "connected_since": first_seen,
+            "last_share": last_share,
         })
     status["miner_stats"] = miner_stats
     status["miner_payouts_detail"] = status["miner_payouts"]
