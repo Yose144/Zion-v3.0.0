@@ -1687,19 +1687,21 @@ function updatePayouts(p, topology){
       if(balEl && pay.pool_wallet_balance != null){
         balEl.textContent = formatFlowers(pay.pool_wallet_balance);
       }
-      // PPLNS stats
+      // PPLNS stats — prefer pool_stats.pplns, fall back to top-level /api/payout PPLNS
       const ps = pay.pool_stats || {};
       const pplns = ps.pplns || {};
       const roundsEl = document.getElementById('payout-pplns-rounds');
-      if(roundsEl) roundsEl.textContent = pplns.payout_rounds ?? '—';
+      if(roundsEl) roundsEl.textContent = (pplns.payout_rounds ?? pay.pplns_rounds) ?? '—';
       const paidEl = document.getElementById('payout-pplns-paid');
-      if(paidEl && pplns.total_paid_flowers != null){
-        const zion = pplns.total_paid_flowers / 1_000_000;
+      const totalPaidFlowers = pplns.total_paid_flowers ?? pay.pplns_total_paid_flowers;
+      if(paidEl && totalPaidFlowers != null){
+        const zion = Number(totalPaidFlowers) / 1_000_000;
         paidEl.textContent = _zionFmt(zion) + ' ZION';
       }
       const unpaidEl = document.getElementById('payout-pplns-unpaid');
-      if(unpaidEl && pplns.total_unpaid_flowers != null){
-        const zion = pplns.total_unpaid_flowers / 1_000_000;
+      const totalUnpaidFlowers = pplns.total_unpaid_flowers ?? pay.pplns_total_unpaid_flowers;
+      if(unpaidEl && totalUnpaidFlowers != null){
+        const zion = Number(totalUnpaidFlowers) / 1_000_000;
         unpaidEl.textContent = _zionFmt(zion) + ' ZION';
       }
     })
@@ -2464,8 +2466,10 @@ async function refreshPayout(){
     } else {
       set('pool-stat-accept-rate', '—');
     }
-    if (ps.pplns) {
-      set('pool-stat-pplns', ps.pplns.window_used + '/' + ps.pplns.window_size);
+    if (ps.pplns || data.pplns_window_size) {
+      const used = ps.pplns?.window_used ?? data.pplns_window_used ?? 0;
+      const size = ps.pplns?.window_size ?? data.pplns_window_size ?? 0;
+      set('pool-stat-pplns', used + '/' + size);
     } else {
       set('pool-stat-pplns', '—');
     }
@@ -3150,15 +3154,15 @@ async function loadPoolMinersTab(){
     set('pm-pplns-state', pplnsState.loaded ? '✅ Loaded' : '⚠️ In-memory');
     set('pm-pplns-window-entries', pplnsState.window_entries != null ? pplnsState.window_entries.toLocaleString() : '—');
 
-    // PPLNS panel
+    // PPLNS panel — fall back to summary counts when pool /stats pplns is empty
     set('pm-pplns-size', pplns.window_size?.toLocaleString() || '—');
     set('pm-pplns-used', pplns.window_used?.toLocaleString() || '—');
     const utilPct = pplns.window_utilization_pct || 0;
     set('pm-pplns-util', utilPct.toFixed(2) + '%');
     const pplnsBar = document.getElementById('pm-pplns-bar');
     if(pplnsBar) pplnsBar.style.width = Math.min(utilPct, 100) + '%';
-    set('pm-pplns-rounds', pplns.payout_rounds?.toLocaleString() || '—');
-    set('pm-pplns-registered', pplns.registered_miners?.toLocaleString() || '—');
+    set('pm-pplns-rounds', (pplns.payout_rounds ?? summary.payout_rounds)?.toLocaleString() || '—');
+    set('pm-pplns-registered', (pplns.registered_miners ?? summary.registered_miners)?.toLocaleString() || '—');
     set('pm-pplns-paid', pplns.total_paid_zion > 0 ? _zionFmt(pplns.total_paid_zion) + ' ZION' : '—');
     set('pm-pplns-unpaid', pplns.total_unpaid_zion > 0 ? _zionFmt(pplns.total_unpaid_zion) + ' ZION' : '—');
 
@@ -4595,11 +4599,14 @@ async function loadPayoutTab(){
     set('payout-kpi-miners', activeCount);
 
     // Total paid: use pplns.total_paid_flowers from pool /stats (sanitized by backend).
-    // This is the authoritative lifetime total. Fallback to miner paid_total sum.
+    // This is the authoritative lifetime total. Fallback to top-level d.pplns_total_paid_zion
+    // (exposed by build_payout_status when pool /stats is unavailable), then miner paid_total sum.
     let totalPaidZion = 0;
     const pplnsPaidFlowers = ps.pplns?.total_paid_flowers;
     if(pplnsPaidFlowers && pplnsPaidFlowers > 0){
       totalPaidZion = pplnsPaidFlowers / 1_000_000;
+    } else if(d.pplns_total_paid_zion && d.pplns_total_paid_zion > 0){
+      totalPaidZion = d.pplns_total_paid_zion;
     } else {
       miners.forEach(m => { totalPaidZion += (m.paid_total ?? 0); });
     }
@@ -4626,12 +4633,15 @@ async function loadPayoutTab(){
     set('payout-fee-pool-bal', d.burned_total != null ? _zionFmt(d.burned_total) + ' ZION' : '—');
 
     // ── PPLNS Status ─────────────────────────────────────────────────
+    // Prefer pool_stats.pplns; fall back to top-level PPLNS fields exposed by /api/payout.
     const pplns = ps.pplns || {};
-    set('payout-pplns-window', pplns.window_size ?? '—');
-    set('payout-pplns-used', pplns.window_used ?? '—');
-    set('payout-pplns-registered', pplns.registered_miners ?? pplns.miners_registered ?? miners.length ?? 0);
-    set('payout-pplns-rounds', pplns.payout_rounds ?? pplns.rounds_completed ?? '—');
-    // Total paid: use the same totalPaidZion computed above (from sanitized pplns.total_paid_flowers)
+    const pplnsWinSize = (pplns.window_size ?? d.pplns_window_size) || '—';
+    const pplnsWinUsed = (pplns.window_used ?? d.pplns_window_used) || '—';
+    set('payout-pplns-window', pplnsWinSize);
+    set('payout-pplns-used', pplnsWinUsed);
+    set('payout-pplns-registered', (pplns.registered_miners ?? d.pplns_registered_miners ?? pplns.miners_registered) || miners.length || 0);
+    set('payout-pplns-rounds', (pplns.payout_rounds ?? d.pplns_rounds ?? pplns.rounds_completed) || '—');
+    // Total paid: use the same totalPaidZion computed above (from sanitized pplns.total_paid_flowers or top-level fallback)
     set('payout-pplns-total', totalPaidZion > 0 ? _zionFmt(totalPaidZion) + ' ZION' : (d.burned_total != null ? _zionFmt(d.burned_total) + ' ZION' : '—'));
 
     const lastTime = d.last_payout_time;
@@ -5025,10 +5035,14 @@ function updatePayoutSnapshot(d){
   const miners = d.miners || d.miner_stats || [];
   set('payout-kpi-miners', ss.active_sessions ?? miners.length ?? 0);
 
+  // Prefer pool_stats.pplns total (sanitized backend). Fall back to top-level PPLNS
+  // fields exposed by build_payout_status, then to sum of miner paid_total.
   let totalPaid = 0;
   const snapPplns = (d.pool_stats || {}).pplns || {};
   if(snapPplns.total_paid_flowers && snapPplns.total_paid_flowers > 0){
     totalPaid = snapPplns.total_paid_flowers / 1_000_000;
+  } else if(d.pplns_total_paid_zion && d.pplns_total_paid_zion > 0){
+    totalPaid = d.pplns_total_paid_zion;
   } else {
     miners.forEach(m => { totalPaid += (m.total_paid || m.paid_total || 0); });
   }
@@ -5054,11 +5068,14 @@ function updatePayoutSnapshot(d){
 
   const ps = d.pool_stats || {};
   const pplns = ps.pplns || {};
-  set('payout-pplns-window', pplns.window_size ?? '—');
-  set('payout-pplns-used', pplns.window_used ?? '—');
-  set('payout-pplns-registered', pplns.miners_registered ?? miners.length ?? 0);
-  set('payout-pplns-rounds', pplns.rounds_completed ?? '—');
-  // Use sum of miner paid_total instead of buggy pplns.total_paid_flowers
+  // Prefer pool_stats.pplns; fall back to top-level PPLNS fields from build_payout_status.
+  const pplnsWinSize = (pplns.window_size ?? d.pplns_window_size) || '—';
+  const pplnsWinUsed = (pplns.window_used ?? d.pplns_window_used) || '—';
+  set('payout-pplns-window', pplnsWinSize);
+  set('payout-pplns-used', pplnsWinUsed);
+  set('payout-pplns-registered', (pplns.registered_miners ?? d.pplns_registered_miners ?? pplns.miners_registered) || miners.length || 0);
+  set('payout-pplns-rounds', (pplns.payout_rounds ?? d.pplns_rounds ?? pplns.rounds_completed) || '—');
+  // totalPaid is already the sanitized lifetime total (pool_stats → top-level PPLNS → miner sum)
   set('payout-pplns-total', totalPaid > 0 ? _zionFmt(totalPaid) + ' ZION' : (d.burned_total != null ? _zionFmt(d.burned_total) + ' ZION' : '—'));
 
   set('payout-last-time', d.last_payout_time || '—');
