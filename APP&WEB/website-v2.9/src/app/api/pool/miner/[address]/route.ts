@@ -2,6 +2,8 @@ import { NextResponse, NextRequest } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
 import { ATOMIC_UNITS_PER_ZION } from '@/lib/constants';
 
+export const maxDuration = 30;
+
 const ACTIVE_THRESHOLD_SECONDS = 600;
 
 export async function GET(
@@ -23,8 +25,25 @@ export async function GET(
     rpc.getInfo().catch(() => null),
   ]);
 
-  // Prefer direct miner stats from pool API; fall back to cross-referenced miner from /miners list
-  let minerStats = minerInfo;
+  // Normalize minerInfo from getMinerInfo into the shape the rest of the route expects.
+  let minerStats: any = null;
+  if (minerInfo) {
+    minerStats = {
+      hashrate: minerInfo.hashrate ?? 0,
+      hashrate_1h: minerInfo.hashrate_1h ?? 0,
+      hashrate_24h: minerInfo.hashrate_24h ?? 0,
+      valid_shares: minerInfo.accepted_shares ?? 0,
+      invalid_shares: minerInfo.rejected_shares ?? 0,
+      blocks_found: minerInfo.blocks_found ?? 0,
+      pending_balance: minerInfo.balance?.pending ? Math.round(minerInfo.balance.pending * ATOMIC_UNITS_PER_ZION) : 0,
+      last_share_time: minerInfo.last_seen ?? 0,
+      worker_name: minerInfo.worker ?? address,
+      algorithm: minerInfo.algorithm ?? '',
+      backend: minerInfo.backend ?? '',
+    };
+  }
+
+  // Fall back to cross-referenced miner from /miners list
   if (!minerStats && poolStats?.miners_list) {
     const lower = address.toLowerCase();
     const matched = poolStats.miners_list.find((m: any) =>

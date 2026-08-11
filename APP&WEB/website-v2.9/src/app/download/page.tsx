@@ -307,7 +307,7 @@ export default function DownloadPage() {
         <section className="space-y-6">
           <div className="flex flex-col gap-2">
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DownloadCopy.publicMainnetRelease[cs ? 'cs' : 'en']}</p>
-            <h2 className="text-3xl font-semibold text-white">ZION v3.2.0 "One Love" · Terminal Miner</h2>
+            <h2 className="text-3xl font-semibold text-white">ZION v3.2.0 &quot;One Love&quot; · Terminal Miner</h2>
             <p className="text-gray-400 max-w-3xl">
               {DownloadCopy.theLatestReleaseBringsTheTripl[cs ? 'cs' : 'en']}
             </p>

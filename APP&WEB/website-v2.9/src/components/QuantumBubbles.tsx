@@ -16,6 +16,10 @@ type Bubble = {
 };
 
 const BUBBLE_PRESETS: Record<ObservatoryMode, Bubble[]> = {
+  maintenance: [
+    { id: "m-1", size: 260, x: 25, y: 35, color: "rgba(252, 209, 22, 0.16)", blur: 80 },
+    { id: "m-2", size: 220, x: 70, y: 60, color: "rgba(252, 209, 22, 0.12)", blur: 70, opacity: 0.45 },
+  ],
   "planet-orbit": [
     { id: "po-1", size: 280, x: 20, y: 30, color: "rgba(249,217,118,0.18)", blur: 70 },
     { id: "po-2", size: 200, x: 70, y: 40, color: "rgba(50,230,255,0.16)", blur: 60 },

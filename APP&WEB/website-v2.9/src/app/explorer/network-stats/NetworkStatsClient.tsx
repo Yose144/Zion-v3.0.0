@@ -59,6 +59,7 @@ const ExplorerNetworkStatsNetworkStatsClientCopy = {
   max: { cs: `Max`, en: `Max` },
   nativeRustP2pNetworkWithLwmaDa: { cs: `Nativní Rust P2P síť s LWMA DAA. Hashrate a obtížnost se přizpůsobují v reálném čase pro stabilní 60s blok.`, en: `Native Rust P2P network with LWMA DAA. Hashrate and difficulty adjust in real time for a stable 60s block.` },
   networkStatus: { cs: `Stav sítě`, en: `Network Status` },
+  supply: { cs: `Zásoba`, en: `Supply` },
 };
 
 interface ChainStats {
@@ -377,7 +378,7 @@ export default function NetworkStatsClient() {
               <Globe className="h-4 w-4" /> {ExplorerNetworkStatsNetworkStatsClientCopy.networkStatus[cs ? 'cs' : 'en']}
             </Link>
             <Link href="/explorer/supply" className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-6 py-3 text-sm font-semibold text-white border border-white/10">
-              <BarChart3 className="h-4 w-4" /> Supply
+              <BarChart3 className="h-4 w-4" /> {ExplorerNetworkStatsNetworkStatsClientCopy.supply[cs ? 'cs' : 'en']}
             </Link>
           </div>
         </motion.section>

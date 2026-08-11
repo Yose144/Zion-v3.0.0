@@ -435,6 +435,8 @@ export interface ExplorerMiner {
   worker_name?: string;
   label?: string | null;
   efficiency_pct: number;
+  type: 'pool' | 'solo';
+  balance: number;
 }
 
 export interface ExplorerMiners {
@@ -443,5 +445,6 @@ export interface ExplorerMiners {
   total_hashrate_formatted: string;
   active_miners: number;
   blocks_found: number;
+  total_shares: number;
   fetched_at: number;
 }

@@ -61,7 +61,7 @@ interface RichListEntry {
   balance: number;
   balance_display: string;
   type: 'premine' | 'miner' | 'unknown' | 'dao' | 'humanitarian' | 'bridge' | 'pool';
-  label?: string;
+  label: string | undefined;
   percentage: number;
 }
 

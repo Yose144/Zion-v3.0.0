@@ -166,7 +166,7 @@ export default function MultichainPage() {
   }, []);
   usePolling(fetchDao, 30000);
 
-  const relayOnline = bridgeStatus?.relay_online ?? false;
+  const relayOnline = bridgeStatus?.online ?? false;
 
   return (
     <div className="zion-page">
@@ -251,8 +251,8 @@ export default function MultichainPage() {
           {bridgeStatus && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { label: cs ? 'Locks' : 'Locks', value: bridgeStatus.total_locks ?? '—' },
-                { label: cs ? 'Unlocks' : 'Unlocks', value: bridgeStatus.total_unlocks ?? '—' },
+                { label: cs ? 'Locks' : 'Locks', value: bridgeStatus.l1_locks_detected ?? '—' },
+                { label: cs ? 'Unlocks' : 'Unlocks', value: bridgeStatus.l1_unlocks_submitted ?? '—' },
                 { label: 'Uptime', value: formatUptime(bridgeStatus.uptime_seconds) },
                 { label: cs ? 'Efficiency' : 'Efficiency', value: `${bridgeEfficiency(bridgeStatus)}%` },
               ].map((s) => (

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -114,7 +114,7 @@ const PoolDashboardCopy = {
   poolRuntimeOverview: { cs: `Přehled runtime poolu`, en: `Pool Runtime Overview` },
   submissionFlowPplnsEngineFillA: { cs: `Tok submitů, naplnění PPLNS enginu a payout throughput čerpané z živé telemetrie poolu v3.0.6.`, en: `Submission flow, PPLNS engine fill, and payout throughput sourced from live v3.0.6 pool telemetry.` },
   acceptedShares: { cs: `přijaté shares`, en: `accepted shares` },
-  submits: { cs: `Submity`, en: `Submits` },
+  submits: { cs: `Odeslání`, en: `Submits` },
   acceptRate_2: { cs: `Míra přijetí`, en: `Accept rate` },
   windowUtilization: { cs: `Využití okna`, en: `Window utilization` },
   registeredMiners: { cs: `Registrovaní mineři`, en: `Registered miners` },
@@ -525,6 +525,7 @@ export default function PoolDashboard() {
   const cs = lang === 'cs';
   const [data, setData] = useState<PoolData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
   const [minerSearch, setMinerSearch] = useState("");
@@ -563,9 +564,13 @@ export default function PoolDashboard() {
   const fetchData = useCallback(async () => {
     try {
       const res = await fetch("/api/pool/stats", { cache: "no-store" });
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
       const json = await res.json();
       if (json.ok) {
         setData(json);
+        setError(null);
         setLastUpdate(new Date());
         const hr = json.aggregate?.hashrate ?? 0;
         const ar = json.aggregate?.accept_rate_pct ?? 0;
@@ -586,18 +591,25 @@ export default function PoolDashboard() {
         if (json.runtime?.chain_height) {
           setBlockHeight((prev: number) => Math.max(prev, json.runtime.chain_height));
         }
+      } else {
+        setError(json.error || 'Pool stats unavailable');
       }
-    } catch {
-      /* silent */
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load pool stats');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  usePolling(fetchData, 15_000);
+  usePolling(fetchData, 15_000, { runWhenHidden: true });
   usePolling(() => {
     setNow(Math.floor(Date.now() / 1000));
   }, 30_000, { immediate: false });
+
+  // Immediate initial fetch so the page loads even in headless / background tabs.
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
 
   return (
     <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden">
@@ -824,6 +836,7 @@ export default function PoolDashboard() {
             <div className="zion-rainbow-sub p-6 text-center" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
               <XCircle className="h-8 w-8 text-zion-purple mx-auto mb-3" />
               <p className="text-gray-400">{PoolDashboardCopy.poolDataUnavailableServersMayB[cs ? 'cs' : 'en']}</p>
+              {error && <p className="text-xs text-zion-purple mt-2 font-mono">{error}</p>}
             </div>
           )}
         </motion.section>

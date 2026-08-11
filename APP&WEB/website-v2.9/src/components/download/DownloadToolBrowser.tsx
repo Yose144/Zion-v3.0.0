@@ -250,7 +250,7 @@ function ReleaseCard({
           <Link
             href={release.htmlUrl}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="zion-button-secondary text-sm"
           >
             <ExternalLink className="h-4 w-4" />
@@ -341,7 +341,7 @@ function ReleaseCard({
                   <Link
                     href={asset.downloadUrl}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="zion-button-secondary text-sm"
                   >
                     <ArrowDownToLine className="h-4 w-4" />
@@ -378,7 +378,7 @@ function ReleaseCard({
             <Link
               href={checksum.downloadUrl}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="zion-button-secondary text-sm"
             >
               <ShieldCheck className="h-4 w-4" />
@@ -536,7 +536,7 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
           <Link
             href={GITHUB_REPO_URL}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-xs font-semibold text-zion-cyan hover:underline"
           >
             <ExternalLink className="h-3 w-3" />
