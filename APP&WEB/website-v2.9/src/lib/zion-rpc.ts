@@ -944,8 +944,16 @@ class ZionRpcClient {
       const totalShares = accepted + rejected;
 
       const miners = Array.isArray(minersPayload?.miners) ? minersPayload.miners : [];
-      const activeSessions = stats.sessions ?? metrics['zion_pool_active_sessions'] ?? miners.length ?? 0;
-      const registeredMiners = pplns.registered_miners ?? metrics['zion_pool_pplns_registered_miners'] ?? miners.length ?? 0;
+      const metricActiveSessions = metrics['zion_pool_active_sessions'] ?? 0;
+      const activeSessions = Math.max(
+        metricActiveSessions,
+        stats.sessions ?? 0,
+        miners.length,
+      );
+      const registeredMiners = Math.max(
+        pplns.registered_miners ?? metrics['zion_pool_pplns_registered_miners'] ?? 0,
+        miners.length,
+      );
       const blocksFound = metrics['zion_pool_blocks_found_total'] ?? 0;
       const hashratePool = metrics['zion_pool_hashrate_hps'] ?? 0;
       const hashrate1h = metrics['zion_pool_hashrate_1h_hps'] ?? 0;
