@@ -1397,6 +1397,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
         <div class="text-xs text-gray-400 mb-1 relative z-10">→ Pool: <span class="font-mono text-white">127.0.0.1:8444</span></div>
         <div class="text-xs text-gray-400 mb-1 relative z-10">Shares: <span id="val-v31-miner-shares" class="text-white">—</span> | Accepted: <span id="val-v31-miner-accepted" class="text-emerald-400">—</span></div>
         <div class="text-xs text-gray-400 mb-1 relative z-10">Worker: <span id="val-v31-miner-worker" class="text-white text-[10px]">—</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">On-Chain: <span id="val-v31-miner-onchain" class="text-emerald-400 font-mono text-[10px]">—</span></div>
         <div class="text-xs text-gray-400 mb-3 relative z-10">systemd: <span id="val-v31-miner-systemd" class="font-mono text-emerald-400">—</span></div>
         <div class="flex gap-1.5 relative z-10">
           <button onclick="edgeAction('restart-v31-miner')" class="text-[10px] px-2.5 py-1 bg-amber-700/50 hover:bg-amber-600 rounded-md font-semibold transition">⟳ Restart</button>
@@ -8232,7 +8233,7 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
   </div>
 </div>
 
-<script src="/dashboard.min.js?v=129" defer></script>
+<script src="/dashboard.js?v=130" defer></script>
 <script>
 // ═══ Supported AuxPoW coin tickers (keep in sync with app.py AUXPOW_SUPPORTED_COINS) ═══
 const STREAM_COIN_TICKERS = [
