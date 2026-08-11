@@ -360,7 +360,7 @@ async function refreshAll(){
       if(pt) pt.textContent = checklistData.passed + '/' + checklistData.total;
       if(pb) pb.style.width = checklistData.pct + '%';
       const heroBlk = document.getElementById('hero-blockers-open');
-      if(heroBlk) heroBlk.textContent = blockersData.open;
+      if(heroBlk) heroBlk.textContent = blockersData.open ?? 0;
 
       // Update hero kicker with blocker info
       const isEdge = statusData.topology === 'edge-primary';
@@ -368,7 +368,7 @@ async function refreshAll(){
       const heroKicker = document.getElementById('hero-status-kicker');
       if(heroKicker) heroKicker.textContent = blockersData.ready_for_launch
         ? '✅ Ready · All P0 Blockers Resolved'
-        : (heroHeight > 0 ? '🟢 Mainnet Live · ' + heroHeight + ' blocks' : '⏳ Pre-Launch · ' + blockersData.open_critical + ' critical blockers');
+        : (heroHeight > 0 ? '🟢 Mainnet Live · ' + heroHeight + ' blocks' : '⏳ Pre-Launch · ' + (blockersData.open_critical ?? 0) + ' critical blockers');
 
       updateAlerts(alertsData.alerts);
       updateChecklist(checklistData.checks);
@@ -404,6 +404,24 @@ async function refreshAll(){
       if(currentTab === 'overview') { loadMempool(); loadMonitoringStatus(); updateChainStats(); updateRecentBlocks(); updateTopWallets(); updateBlockRewardBreakdown(); updateNetworkGrowth(); updateMinerLeaderboard(); updateDifficultyForecast(); refreshReadiness(); }
       if(currentTab === 'controls') { loadMinerPerformance(); loadDepGraphControls(); }
       if(currentTab === 'nodes') renderAllNodes();
+
+      // Refresh tabs that do not have their own interval timer
+      if(currentTab === 'env') loadEnvFiles();
+      if(currentTab === 'database') loadDatabases();
+      if(currentTab === 'metrics') renderMetricsButtons();
+      if(currentTab === 'pool-setup') loadPoolSetupTab();
+      if(currentTab === 'servers-setup') loadServersSetup();
+      if(currentTab === 'multichain') loadMultichainPanel();
+      if(currentTab === 'warp-swap') loadWarpSwapPanel();
+      if(currentTab === 'warp') loadWarpPanel();
+      if(currentTab === 'bridge') loadBridgeStats();
+      if(currentTab === 'bridge-validators') loadBridgeValidators();
+      if(currentTab === 'ncl-jobs'){ if(typeof loadNclJobsPanel==='function') loadNclJobsPanel(); }
+      if(currentTab === 'poc-lab'){ if(typeof pocCheckStatus==='function') pocCheckStatus(); }
+      if(currentTab === 'agent'){ if(typeof refreshAgentPanel==='function') refreshAgentPanel(); if(typeof refreshAgentRewards==='function') refreshAgentRewards(); if(typeof refreshAgentNodes==='function') refreshAgentNodes(); }
+      if(currentTab === 'ai-agents'){ if(typeof loadAiAgentsPanel==='function') loadAiAgentsPanel(); }
+      if(currentTab === 'fleet'){ if(typeof refreshFleet==='function') refreshFleet(); }
+      if(currentTab === 'cex') loadCexPanel();
 
       // Fire-and-forget: telemetry details (makes its own API call, 5s timeout)
       updateServiceTelemetryDetails(statusData).catch(() => {});
