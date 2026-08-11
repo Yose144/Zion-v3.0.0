@@ -5,6 +5,8 @@
 Tento soubor je provozní a bezpečnostní pravidla pro pracovní prostor `V31` — čistý Mainnet Alpha track v `/Users/yeshuae/Projects/2.9.6/V31/`. V31 cutover je dokončen a produkční Edge běží na V31; historická V3 data zůstávají v `archive/V3/` a `v3_compat` pro checkpoint sync. Veškerá nová mainnet-track vývojárna patří do `V31/`. Historická topologie a incidenty jsou v kořenovém `/Users/yeshuae/Projects/2.9.6/AGENTS.md`.
 
 Aktuální stav V31 (2026-08-07): workspace verze `3.1.0-beta`, protokol `zion-v3-node/3.1.0-alpha`. `cargo clippy --workspace` je čisté (pouze pre-existing warnings) a `cargo test --workspace` prochází (0 failures). `zion-core` používá kanonický `EkamDeeksha` PoW (v3.2: 512 KiB scratchpad, 2 passy, 128 random reads, 2 AES rounds), `zion-miner` ho mapuje na kanonické `deeksha_lite`/`deeksha_chv3` OpenCL/CUDA backendy. V31 je nasazen na Edge (public RPC, pool, multichain, DAO, OASIS, dashboard, web, marketplace). Historická V3 validace zůstává v `v3_compat`. `zion-pool` má rate limiting reconnect stormu a payout confirmation sweep s UTXO fallback. `zion-miner` nyní běží ve triple-stream režimu (ZION + GPU/CPU AuxPoW), má `ZION_STREAM3_FORCE_COIN`, profit switching s 15% hysteresí a TUI/metriky. `zion-dao` runtime načítá/persistuje návrhy a hlasy, spouští L1 scanner a vystavuje HTTP API/metriky. Fáze B i C jsou kompletní z hlediska kódu a testů; Go/No-Go na reálném GPU/rigu zůstává pending. Dashboard UI/UX je V31-first a je nasazen na Edge (`zion-edge-python-dashboard` active on 0.0.0.0:8766, `/health` OK). V31 banner KPIs a V31 Production panel (metriky, live logy, embedovaný Grafana `v31-mainnet`) jsou integrovány do full dashboardu. Pool API/metrics port je 8080, Prometheus scrape a Grafana provisioning nasazeny. **V31 cutover proveden**: V3 služby (`zion-edge-node1/2`, `zion-edge-pool`, bridge, DAO, atomic-swap, DEX, WARP, OASIS, starý dashboard) zastaveny a maskovány; `zion-v31-node` osamostatněn od V3 a běží nezávisle na portu 9445. Edge registry v dashboardu nastavena V31-first, přidány `zion-v31-miner`, `zion-v31-dao`, `zion-v31-oasis`, Prometheus/Grafana/website/marketplace. Opraveny systemd unit mapy (z `zion-edge-miner.service` na `zion-v31-miner.service`), `_build_health_map`, `build_checklist`, `build_readiness_score` a `build_alerts` pro V31. V31 pool, multichain, DAO, OASIS, web, marketplace a dashboard běží, `/api/services` i `/api/readiness` vrací V31 služby jako `primary` (readiness 100 %).
+>
+> **Edge V31 (2026-08-11):** `zion-v31-node` (height 1617+, `getStatus` V31), `zion-v31-pool` (HTTP API `127.0.0.1:8080`), `zion-v31-dao` (`127.0.0.1:8456`), `zion-v31-multichain` (WARP `127.0.0.1:8453`), `zion-v31-oasis` jsou active. `zion-v31-miner` je na Edge zastaven (CPU-only server). Edge secrets zabezpečeny (`chmod 600`, API klíče přesunuty do env), operátorské IP whitelisted v `ufw`/`fail2ban`. ANKR klíč stále čeká na ruční rotaci. Nginx `/api/dao` proxy opraven na `127.0.0.1:8456`; public RPC vrací V31 data.
 
 ---
 
@@ -81,8 +83,9 @@ OPERATOR_IPS=(
 | RPC přes nginx | `rpc.zionterranova.com:8443` → `127.0.0.1:9445` | `nginx` (TCP stream) | **operator-only** | TCP proxy; zakončení na V31 node RPC `9445` (ne historickém `9443`). |
 | RPC alternativa | `127.0.0.1:9445` | `zion-node` | **localhost-only** | Výhradně lokální; veřejně přístupný jen přes nginx `8443`. |
 | Pool stratum | `62.171.141.136:8444` | `zion-pool` | **public** | Hlavní veřejná služba pro minery. |
-| Pool HTTP API / Prometheus | `0.0.0.0:8080` | `zion-pool` | **localhost-only** | `/stats`, `/metrics`, `/miners`; neexponuj bez allowlistu. |
-| WARP API + DEX API | `0.0.0.0:8453` (WARP), `0.0.0.0:8454` (DEX `/v1/*`) | `zion-multichain` (`warpd`) | **local** | Výchozí `localhost-only`; public jen s allowlistem/nginx. DEX port = WARP port + 1. |
+| Pool HTTP API / Prometheus | `127.0.0.1:8080` | `zion-pool` | **localhost-only** | `/stats`, `/metrics`, `/miners`; veřejně pouze přes nginx/IP allowlist. |
+| WARP API + DEX API | `127.0.0.1:8453` (WARP), `127.0.0.1:8454` (DEX `/v1/*`) | `zion-multichain` (`warpd`) | **local** | Bind z `--listen 127.0.0.1:8453` + config; DEX běží na portu WARP+1. Public jen přes nginx. |
+| DAO API | `127.0.0.1:8456` | `zion-dao` | **local** | `/api/dao/*` nginx proxy sem; nikdy veřejně bez allowlistu. |
 | Dashboard | `443` → `127.0.0.1:8766` | `nginx` → dashboard | **operator-only** | Basic Auth nebo IP allowlist. |
 | Web | `443` | `nginx` | **public** / **maintenance** | Případně maintenance mód, pokud je web vypnutý. |
 
@@ -302,7 +305,7 @@ V31 je aktivní mainnet-track workspace. Tato pravidla zajišťují, že zůstan
 - [ ] Aktuální `OPERATOR_IPS` jsou v `ignoreip` a firewall allowlistu.
 - [ ] `sshd` naslouchá na `0.0.0.0:22`, `0.0.0.0:2222`, `[::]:22`, `[::]:2222`.
 - [ ] Root login zakázán / klíčový; root heslo uloženo v 1Password (pokud existuje).
-- [ ] Node RPC `127.0.0.1:9443` není veřejně dosažitelný; nginx `8443` má IP allowlist.
+- [ ] Node RPC `127.0.0.1:9445` není veřejně dosažitelný; nginx `8443` má IP allowlist.
 - [ ] P2P porty `8333/8334` mají whitelisted peery a `fail2ban` `zion-p2p` jail.
 - [ ] Pool stratum `8444` veřejný a funkční.
 - [ ] `cargo test` prošlo v `/Users/yeshuae/Projects/2.9.6/V31/`.
@@ -336,7 +339,7 @@ V31 je aktivní mainnet-track workspace. Tato pravidla zajišťují, že zůstan
   1. `rsync` local `V31/` to `/opt/zion` on the Edge.
   2. On Edge: `. /root/.cargo/env && cd /opt/zion/V31 && sed -i '/"cli",/d;/"smoke",/d' Cargo.toml` (these members are not needed on Edge).
   3. Build with `nohup cargo build -p zion-core -p zion-pool -p zion-miner -p zion-dao -p zion-multichain --release >/tmp/v31-build.log 2>&1 </dev/null &`.
-  4. `chown -R zion:zion /opt/zion/V31/target/release` and `systemctl restart zion-v31-node zion-v31-multichain zion-v31-pool zion-v31-dao zion-v31-miner`.
+  4. `chown -R zion:zion /opt/zion/V31/target/release` and `systemctl restart zion-v31-node zion-v31-multichain zion-v31-pool zion-v31-dao zion-v31-oasis`.
 - For SSH to Edge, prefer IPv6 with `ControlMaster` + `ControlPersist` and `ServerAliveInterval` to avoid `Connection refused` from `fail2ban`/rate-limiting during rapid deploy commands:
   ```
   Host zion-v6

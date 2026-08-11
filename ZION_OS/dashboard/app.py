@@ -5128,8 +5128,8 @@ def build_wallets() -> dict:
             w["balance_source"] = "genesis"
             w["rpc_ok"] = False
         elif w.get("category") == "operational":
-            w["balance_zion"] = 0.0
-            w["balance_atomic"] = 0
+            w["balance_zion"] = None
+            w["balance_atomic"] = None
             w["balance_source"] = "estimated"
 
     total_premine = sum(w.get("amount_zion", 0) for w in wallets if w.get("category") == "premine")
@@ -9336,6 +9336,9 @@ def build_payout_status() -> dict:
             atomic, ok = _get_on_chain_balance(addr)
             if ok:
                 balances[key] = {"atomic": atomic, "zion": flowers_to_zion(atomic)}
+        elif key == "pool_fee" and status.get("burned_total"):
+            # Pool fee is burned (no recipient wallet) — show accumulated burn
+            balances[key] = {"zion": status["burned_total"], "source": "burned"}
     status["balances"] = balances
 
     # ── Pool stats / miners from Edge or local ──────────────────────────
