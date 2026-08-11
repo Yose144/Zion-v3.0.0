@@ -9321,26 +9321,6 @@ def build_payout_status() -> dict:
     recent_payouts.sort(key=lambda x: x["block_height"], reverse=True)
     status["recent_payouts"] = recent_payouts[:20]
 
-    # ── Wallet balances (on-chain UTXO via getUtxos RPC) ───────────────
-    if status["pool_wallet"] and status["pool_wallet"].startswith("zion1"):
-        atomic, ok = _get_on_chain_balance(status["pool_wallet"])
-        if ok:
-            status["pool_wallet_balance"] = atomic
-
-    balances = {}
-    for key, addr in [("miner", status["miner_wallet"]),
-                      ("humanitarian", status["humanitarian_wallet"]),
-                      ("issobella", status["issobella_wallet"]),
-                      ("pool_fee", status.get("pool_fee_wallet"))]:
-        if addr and addr.startswith("zion1"):
-            atomic, ok = _get_on_chain_balance(addr)
-            if ok:
-                balances[key] = {"atomic": atomic, "zion": flowers_to_zion(atomic)}
-        elif key == "pool_fee" and status.get("burned_total"):
-            # Pool fee is burned (no recipient wallet) — show accumulated burn
-            balances[key] = {"zion": status["burned_total"], "source": "burned"}
-    status["balances"] = balances
-
     # ── Pool stats / miners from Edge or local ──────────────────────────
     pool_stats = fetch_pool_stats()
     miners = fetch_pool_miners()
@@ -9360,15 +9340,6 @@ def build_payout_status() -> dict:
                 status["last_block_height"] = int(recent_blocks[0].get("height", 0))
             except Exception:
                 pass
-
-    # ── Burned total (after edge block fallback so total_blocks is accurate) ─
-    total_blocks = status["blocks_found"]
-    last_height = status["last_block_height"] or 1
-    if total_blocks > 0:
-        per_block_burned_zion = block_subsidy(last_height) / 100 / 1_000_000
-        status["burned_total"] = total_blocks * per_block_burned_zion
-    else:
-        status["burned_total"] = 0.0
 
     # ── On-chain UTXO balances + paid/pending normalization for each miner ─────────
     # Load PPLNS state once to backfill pending balances when telemetry is missing.
@@ -9453,6 +9424,7 @@ def build_payout_status() -> dict:
                     _metrics_pplns_registered = int(_ln.split()[-1])
     except Exception:
         pass
+    total_blocks = status["blocks_found"]
     if _metrics_blocks > 0 and status["blocks_found"] == 0:
         status["blocks_found"] = _metrics_blocks
         total_blocks = _metrics_blocks
@@ -9460,6 +9432,27 @@ def build_payout_status() -> dict:
     if total_blocks > 0:
         per_block_burned_zion = block_subsidy(status["last_block_height"] or 1) / 100 / 1_000_000
         status["burned_total"] = total_blocks * per_block_burned_zion
+
+    # ── Wallet balances (on-chain UTXO via getUtxos RPC) ───────────────
+    if status["pool_wallet"] and status["pool_wallet"].startswith("zion1"):
+        atomic, ok = _get_on_chain_balance(status["pool_wallet"])
+        if ok:
+            status["pool_wallet_balance"] = atomic
+
+    balances = {}
+    for key, addr in [("miner", status["miner_wallet"]),
+                      ("humanitarian", status["humanitarian_wallet"]),
+                      ("issobella", status["issobella_wallet"]),
+                      ("pool_fee", status.get("pool_fee_wallet"))]:
+        if addr and addr.startswith("zion1"):
+            atomic, ok = _get_on_chain_balance(addr)
+            if ok:
+                balances[key] = {"atomic": atomic, "zion": flowers_to_zion(atomic)}
+        elif key == "pool_fee" and status.get("burned_total"):
+            # Pool fee is burned (no recipient wallet) — show accumulated burn
+            balances[key] = {"zion": status["burned_total"], "source": "burned"}
+    status["balances"] = balances
+
     status["session_stats"] = {
         "active_sessions": active_sessions,
         "total_shares_1h": sum(m.get("valid_shares", 0) for m in miners),
@@ -9537,6 +9530,73 @@ def build_payout_status() -> dict:
 
     status["ok"] = True
     return status
+
+
+def build_payout_sse_stats() -> dict:
+    """Lightweight stats payload for the payout SSE stream.
+
+    Avoids the heavy build_payout_status() work; only pulls pool /stats and
+    /miners for live KPIs.  Used for `stats` events between full snapshots.
+    """
+    pool_stats = fetch_pool_stats()
+    miners = fetch_pool_miners()
+    routing = pool_stats.get("routing") or {}
+    accepted = int(routing.get("accepted") or 0)
+    rejected = int(routing.get("rejected") or 0)
+    stale = int(routing.get("stale") or 0)
+    total = accepted + rejected + stale
+    accept_rate = (accepted / total * 100.0) if total > 0 else None
+    blocks = pool_stats.get("blocks") or {}
+    blocks_found = int(blocks.get("found") or blocks.get("total_found") or 0)
+    active_miners = int((pool_stats.get("miners") or {}).get("active") or len(miners) or 0)
+    hashrate = float((pool_stats.get("hashrate") or {}).get("pool") or 0)
+    if not hashrate and miners:
+        hashrate = sum(float(m.get("hashrate_hps") or m.get("hashrate") or 0) for m in miners)
+    return {
+        "pool_hashrate_hps": hashrate,
+        "blocks_found": blocks_found,
+        "active_miners": active_miners,
+        "accept_rate_pct": round(accept_rate, 2) if accept_rate is not None else None,
+    }
+
+
+def payout_sse_stream(handler):
+    """SSE endpoint for the Payout tab: one full snapshot then lightweight stats."""
+    import time as _time
+    handler.send_response(200)
+    handler.send_header("Content-Type", "text/event-stream; charset=utf-8")
+    handler.send_header("Cache-Control", "no-cache")
+    handler.send_header("X-Accel-Buffering", "no")
+    handler.end_headers()
+
+    def _sse(event: str, data: str):
+        payload = f"event: {event}\n"
+        for ln in data.splitlines() or [data]:
+            payload += f"data: {ln}\n"
+        payload += "\n"
+        handler.wfile.write(payload.encode("utf-8"))
+        handler.wfile.flush()
+
+    try:
+        # Send one full snapshot immediately so the UI has complete data
+        snap = build_payout_status()
+        _sse("snapshot", json.dumps(snap, default=str))
+
+        # Stream lightweight stats every 10 s for up to 10 minutes
+        deadline = _time.time() + 600
+        while _time.time() < deadline:
+            _time.sleep(10)
+            stats = build_payout_sse_stats()
+            _sse("stats", json.dumps(stats, default=str))
+    except (BrokenPipeError, ConnectionResetError, OSError):
+        # Client disconnected
+        pass
+    except Exception as e:
+        try:
+            _sse("error", json.dumps({"error": str(e)}))
+        except Exception:
+            pass
+
 
 def trigger_payout() -> dict:
     """Manual payout trigger endpoint.
@@ -12556,6 +12616,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(build_wallets())
         elif route == "/api/explorer":
             self._json(build_explorer())
+        elif route == "/api/payout/stream":
+            payout_sse_stream(self)
         elif route == "/api/payout":
             self._json(build_payout_status())
         elif route == "/api/block":
