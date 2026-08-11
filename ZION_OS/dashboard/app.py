@@ -2914,6 +2914,16 @@ def get_miner_live_stats() -> dict:
     if not raw_pool_addr or pool_host in _DECOMMISSIONED_POOL_IPS:
         raw_pool_addr = "62.171.141.136:8444"
 
+    # Real on-chain balance for the active miner payout address
+    miner_wallet = _get_active_miner_wallet()
+    on_chain_zion = None
+    try:
+        atomic, ok = _get_on_chain_balance(miner_wallet)
+        if ok:
+            on_chain_zion = flowers_to_zion(atomic)
+    except Exception:
+        pass
+
     return {
         "hashrate": stats.get("hashrate"),
         "shares_accepted": stats.get("shares_accepted", 0),
@@ -2926,6 +2936,8 @@ def get_miner_live_stats() -> dict:
         "pool_addr": raw_pool_addr,
         "running": stats.get("running", False),
         "gpus": agent_gpu.get("gpus", []) if not agent_gpu.get("_error") else [],
+        "payout_address": miner_wallet,
+        "on_chain_balance_zion": on_chain_zion,
         "timestamp": datetime.now().isoformat(),
     }
 
@@ -3669,6 +3681,16 @@ def _build_status_edge_primary() -> dict:
                 v31_miner_accepted = int(m_acc.group(1))
     except Exception:
         pass
+    # Real on-chain balance for the active miner payout address
+    v31_miner_wallet = _get_active_miner_wallet()
+    v31_miner_on_chain = None
+    try:
+        atomic, ok = _get_on_chain_balance(v31_miner_wallet)
+        if ok:
+            v31_miner_on_chain = flowers_to_zion(atomic)
+    except Exception:
+        pass
+
     v31_miner_status = {
         "running": v31_miner_active == "active",
         "systemd_active": v31_miner_active,
@@ -3676,6 +3698,8 @@ def _build_status_edge_primary() -> dict:
         "shares_submitted": v31_miner_shares,
         "shares_accepted": v31_miner_accepted,
         "worker": "v31-miner",
+        "payout_address": v31_miner_wallet,
+        "on_chain_balance_zion": v31_miner_on_chain,
     }
     # ── V31 Multichain (PROD) — systemd + /health ──────────────────────────
     v31_mc_sys = _systemctl_show("zion-v31-multichain.service")
@@ -5046,18 +5070,12 @@ def build_wallets() -> dict:
         except Exception:
             pass
 
-    # 4. On-chain UTXO balance scan (replaces getBalance, which only returns
-    #    wallet-local data on V31). Scan the whole chain once, look up all
-    #    wallet addresses, then fall back to genesis estimates when the scan
-    #    cannot be completed.
-    scan = _scan_all_utxo_balances()
-    scan_ok = bool(scan)
-
+    # 4. On-chain UTXO balance via fast getUtxos RPC (replaces block-by-block scan).
     for w in wallets:
         addr = w.get("address", "")
         if addr and addr.startswith("zion1"):
-            atomic, _ = _get_on_chain_balance(addr, scan=scan)
-            if scan_ok:
+            atomic, ok = _get_on_chain_balance(addr)
+            if ok:
                 w["balance_zion"] = flowers_to_zion(atomic)
                 w["balance_atomic"] = atomic
                 w["balance_source"] = "utxo"
@@ -5065,26 +5083,29 @@ def build_wallets() -> dict:
             else:
                 w["balance_zion"] = None
                 w["balance_atomic"] = None
+                w["balance_source"] = "rpc_unavailable"
                 w["rpc_ok"] = False
         else:
             w["balance_zion"] = None
             w["balance_atomic"] = None
+            w["balance_source"] = "no_address"
             w["rpc_ok"] = False
 
-    # 5. Fallback if UTXO scan failed:
+    # 5. Fallback if getUtxos RPC failed:
     #    - Premine wallets: use the genesis output amount (authoritative from block 0).
     #    - Operational wallets: show 0 when no live data is available.
-    if not scan_ok:
-        for w in wallets:
-            if w.get("category") == "premine" and w.get("amount_zion"):
-                w["balance_zion"] = float(w["amount_zion"])
-                w["balance_atomic"] = int(w["amount_zion"] * FLOWERS_PER_ZION)
-                w["balance_source"] = "genesis"
-                w["rpc_ok"] = False
-            elif w.get("category") == "operational" and not w.get("rpc_ok"):
-                w["balance_zion"] = 0.0
-                w["balance_atomic"] = 0
-                w["balance_source"] = "estimated"
+    for w in wallets:
+        if w.get("rpc_ok"):
+            continue
+        if w.get("category") == "premine" and w.get("amount_zion"):
+            w["balance_zion"] = float(w["amount_zion"])
+            w["balance_atomic"] = int(w["amount_zion"] * FLOWERS_PER_ZION)
+            w["balance_source"] = "genesis"
+            w["rpc_ok"] = False
+        elif w.get("category") == "operational":
+            w["balance_zion"] = 0.0
+            w["balance_atomic"] = 0
+            w["balance_source"] = "estimated"
 
     total_premine = sum(w.get("amount_zion", 0) for w in wallets if w.get("category") == "premine")
     with_balance = [w for w in wallets if w.get("balance_zion") is not None]
@@ -5134,6 +5155,9 @@ def build_wallets() -> dict:
 
     # Operational breakdown
     op_total = sum((w.get("balance_zion") or 0) for w in wallets if w.get("category") == "operational")
+
+    # scan_ok now reflects whether getUtxos RPC lookups succeeded for at least one wallet
+    scan_ok = live_balance_count > 0
 
     return {
         "ok": True,
@@ -5544,15 +5568,42 @@ def _scan_all_utxo_balances(timeout_per_block: float = 3.0, max_total_time: floa
         return balances
 
 
-def _get_on_chain_balance(address: str, scan: dict = None) -> tuple[int, bool]:
-    """Return (balance_flowers, ok) for a single address using the UTXO scan.
-    If scan is not provided, it will be computed on demand.
+@_ttl_cache_fn(15.0)
+def _get_utxo_balance(address: str) -> int:
+    """Return the confirmed UTXO balance (in flowers) for a single address.
+
+    Uses the node's `getUtxos` RPC, which is authoritative and O(1) per
+    address instead of scanning the whole chain block-by-block. Cached for
+    15 s so multiple dashboard panels can reuse the same lookup cheaply.
     """
-    if not address or not address.startswith("zion1"):
+    if not address or not isinstance(address, str) or not address.startswith("zion1"):
+        return 0
+    try:
+        result, _, _ = _rpc_with_fallback("getUtxos", [address], timeout=5.0)
+        if not result or not isinstance(result, dict) or result.get("_rpc_error"):
+            return 0
+        utxos = result.get("utxos") or []
+        return sum(int(u.get("amount", 0)) for u in utxos)
+    except Exception:
+        return 0
+
+
+def _get_on_chain_balance(address: str, scan: dict = None) -> tuple[int, bool]:
+    """Return (balance_flowers, ok) for a single address.
+
+    Prefers the fast `getUtxos` RPC. The legacy `scan` dict is accepted but
+    no longer required; it is only used as a fallback if the RPC fails.
+    """
+    if not address or not isinstance(address, str) or not address.startswith("zion1"):
         return 0, False
-    if scan is None:
-        scan = _scan_all_utxo_balances()
-    return int(scan.get(address, 0)), bool(scan)
+    try:
+        bal = _get_utxo_balance(address)
+        return bal, True
+    except Exception:
+        pass
+    if scan:
+        return int(scan.get(address, 0)), bool(scan)
+    return 0, False
 
 
 def _get_latest_block_recipients(timeout: float = 5.0) -> dict:
@@ -5597,6 +5648,53 @@ def _get_latest_block_recipients(timeout: float = 5.0) -> dict:
         return recipients
     except Exception:
         return {}
+
+
+@_ttl_cache_fn(60.0)
+def _get_active_miner_wallet() -> str:
+    """Return the best available active miner payout address.
+
+    Priority:
+      1. miner address from the latest block (authoritative for current chain tip)
+      2. ZION_MINER_ADDRESS env / .env files
+      3. wallet from zion.toml [miner] section
+      4. canonical V31 default miner wallet
+    """
+    # 1. live tip block
+    try:
+        latest = _get_latest_block_recipients(timeout=3.0)
+        addr = latest.get("miner", "")
+        if addr and addr.startswith("zion1"):
+            return addr
+    except Exception:
+        pass
+
+    # 2. env / .env files
+    env_addr = find_env_value("ZION_MINER_ADDRESS")
+    if env_addr and env_addr.startswith("zion1"):
+        return env_addr
+
+    # 3. zion.toml [miner] wallet
+    toml_path = REPO_ROOT / "zion.toml"
+    if toml_path.exists():
+        try:
+            with open(toml_path, "r", encoding="utf-8", errors="ignore") as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith("#"):
+                        continue
+                    if m := re.search(r'wallet\s*=\s*["\']?([^"\'\s#]+)', line):
+                        addr = m.group(1).strip()
+                        if addr and addr.startswith("zion1"):
+                            return addr
+                    if line.startswith("[") and "]" in line and not line.startswith("[miner"):
+                        # Reached next section without finding wallet
+                        break
+        except Exception:
+            pass
+
+    # 4. canonical fallback
+    return V31_CANONICAL_DEFAULT_MINER_WALLET
 
 
 # ── Explorer data builder ──────────────────────────────────────────────
@@ -6664,15 +6762,13 @@ def get_pool_registered_miners() -> dict:
         if addr and isinstance(addr, str) and addr.startswith("zion1"):
             unique_addrs.add(addr)
 
+    # Per-address on-chain balance via fast getUtxos RPC.
     balance_map = {}
-    try:
-        scan = _scan_all_utxo_balances()
-    except Exception:
-        scan = {}
     for addr in unique_addrs:
         try:
-            atomic, _ = _get_on_chain_balance(addr, scan=scan)
-            balance_map[addr] = flowers_to_zion(atomic)
+            atomic, ok = _get_on_chain_balance(addr)
+            if ok:
+                balance_map[addr] = flowers_to_zion(atomic)
         except Exception:
             pass
 
@@ -6768,16 +6864,13 @@ def enrich_miner_balances(miners: list) -> list:
     """
     if not miners:
         return miners
-    try:
-        scan = _scan_all_utxo_balances()
-    except Exception:
-        scan = {}
     for m in miners:
         addr = m.get("payout_address") or m.get("address") or ""
         if addr and isinstance(addr, str) and addr.startswith("zion1"):
             try:
-                atomic, _ = _get_on_chain_balance(addr, scan=scan)
-                m["on_chain_balance_zion"] = flowers_to_zion(atomic)
+                atomic, ok = _get_on_chain_balance(addr)
+                if ok:
+                    m["on_chain_balance_zion"] = flowers_to_zion(atomic)
             except Exception:
                 pass
         # Normalize pending_balance to ZION
@@ -9117,11 +9210,11 @@ def build_payout_status() -> dict:
     recent_payouts.sort(key=lambda x: x["block_height"], reverse=True)
     status["recent_payouts"] = recent_payouts[:20]
 
-    # ── Wallet balances (on-chain UTXO scan) ───────────────────────────
-    scan = _scan_all_utxo_balances()
+    # ── Wallet balances (on-chain UTXO via getUtxos RPC) ───────────────
     if status["pool_wallet"] and status["pool_wallet"].startswith("zion1"):
-        atomic, _ = _get_on_chain_balance(status["pool_wallet"], scan=scan)
-        status["pool_wallet_balance"] = atomic
+        atomic, ok = _get_on_chain_balance(status["pool_wallet"])
+        if ok:
+            status["pool_wallet_balance"] = atomic
 
     balances = {}
     for key, addr in [("miner", status["miner_wallet"]),
@@ -9129,8 +9222,9 @@ def build_payout_status() -> dict:
                       ("issobella", status["issobella_wallet"]),
                       ("pool_fee", status.get("pool_fee_wallet"))]:
         if addr and addr.startswith("zion1"):
-            atomic, _ = _get_on_chain_balance(addr, scan=scan)
-            balances[key] = {"atomic": atomic, "zion": flowers_to_zion(atomic)}
+            atomic, ok = _get_on_chain_balance(addr)
+            if ok:
+                balances[key] = {"atomic": atomic, "zion": flowers_to_zion(atomic)}
     status["balances"] = balances
 
     # ── Pool stats / miners from Edge or local ──────────────────────────
@@ -9163,16 +9257,13 @@ def build_payout_status() -> dict:
         status["burned_total"] = 0.0
 
     # ── On-chain UTXO balances for each miner payout address ───────────────
-    try:
-        scan = _scan_all_utxo_balances()
-    except Exception:
-        scan = {}
     for m in miners:
         addr = m.get("payout_address")
         if addr and addr.startswith("zion1"):
             try:
-                atomic, _ = _get_on_chain_balance(addr, scan=scan)
-                m["on_chain_balance_zion"] = flowers_to_zion(atomic)
+                atomic, ok = _get_on_chain_balance(addr)
+                if ok:
+                    m["on_chain_balance_zion"] = flowers_to_zion(atomic)
             except Exception:
                 pass
 

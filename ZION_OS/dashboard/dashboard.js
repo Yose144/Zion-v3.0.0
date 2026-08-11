@@ -889,6 +889,8 @@ function updateServiceCards(s){
   if(v31ma) v31ma.textContent = v31m.shares_accepted ?? '—';
   const v31mw = document.getElementById('val-v31-miner-worker');
   if(v31mw) v31mw.textContent = v31m.worker ?? '—';
+  const v31mon = document.getElementById('val-v31-miner-onchain');
+  if(v31mon) v31mon.textContent = v31m.on_chain_balance_zion != null ? _zionFmt(v31m.on_chain_balance_zion) + ' ZION' : '—';
   const v31msys = document.getElementById('val-v31-miner-systemd');
   if(v31msys) v31msys.textContent = v31m.systemd_active || '—';
 
