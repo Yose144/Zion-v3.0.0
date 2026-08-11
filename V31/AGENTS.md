@@ -36,6 +36,7 @@ Vše ostatní je uzavřené za firewallem, proxované přes nginx s IP allowlist
 - P2P porty `8333`/`8334` jsou otevřené jen pro známé peery / bootstrap seznam. Pokud možno filtruj podle whitelisted peer IPs a používej `fail2ban` jail `zion-p2p` pro detekci port scanu / reconnect stormu.
 - SSH autentizace výhradně přes klíč. Žádné root heslo. SSH běží na portech `22` a `2222`, IPv4 i IPv6. Port `22` a `2222` musí mít `AddressFamily any` a správné `ListenStream` v `systemd` drop-ins (`/etc/systemd/system/ssh.socket.d/`), aby nedošlo k IPv6-only situaci.
 - `fail2ban` musí být aktivní se jménem `zion-p2p` (maxretry=50/10min, bantime=24h dle provozní zkušenosti) a s aktuálními `ignoreip`.
+- `fail2ban` `sshd` jail (maxretry=3/10min, bantime=24h) musí mít v `ignoreip` všechny `OPERATOR_IPS` včetně IPv6 — jinak rychlé SSH připojení z Mac/auditu vyvolá 24h lockout.
 - nginx TCP stream pro RPC (`rpc.zionterranova.com:8443` → `127.0.0.1:9443`) musí mít allowlist nad rámec reverse proxy.
 - Dashboard (`dashboard.zionterranova.com`) a web (`zionterranova.com`) jsou za nginx; používejte Basic Auth nebo IP allowlist dle služby.
 
@@ -53,6 +54,8 @@ OPERATOR_IPS=(
   109.81.83.205
   109.81.81.86
   109.81.83.81     # added 2026-08-05 during Phase D E2E / Playwright work
+  46.135.81.225     # Devin session 2026-08-11
+  2a00:11b1:10e2:af49:b90b:20ed:4eee:b48b/128  # Devin session IPv6 2026-08-11
   2a02:c207:2342:5821::1/64
 )
 ```
@@ -60,6 +63,7 @@ OPERATOR_IPS=(
 **Pravidla:**
 
 - [ ] `ignoreip` v `/etc/fail2ban/jail.d/zion-p2p.conf` obsahuje všechny `OPERATOR_IPS`.
+- [ ] `ignoreip` v `/etc/fail2ban/jail.d/zion-sshd.conf` obsahuje všechny `OPERATOR_IPS` (IPv4 i IPv6); jinak rychlé SSH audity spustí 24h ban.
 - [ ] `ufw` / `nftables` `allow` pravidla obsahují všechny `OPERATOR_IPS` pro SSH, RPC/dash a další operátorské služby.
 - [ ] IPv6 `2a02:c207:2342:5821::1/64` pokrývá lokální síť / loopbackové rozhraní serveru a IPv6 fallback.
 - [ ] Pokud se Mac IP změní, upravte `ignoreip` dříve, než spustíte lokální backup node nebo pool test.
