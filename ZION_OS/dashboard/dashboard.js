@@ -382,7 +382,7 @@ async function refreshAll(){
       if(currentTab === 'ops') loadOps();
       if(currentTab === 'topology') loadTopology();
       if(currentTab === 'payout') loadPayoutTab();
-      if(currentTab === 'wallets') { loadWallets(); loadWalletStatus(); }
+      if(currentTab === 'wallets') { loadWallets(); }
       if(currentTab === 'explorer') loadExplorer();
       if(currentTab === 'hiran') loadAiStatus();
       if(currentTab === 'overview') { loadMempool(); loadMonitoringStatus(); updateChainStats(); updateRecentBlocks(); updateTopWallets(); updateBlockRewardBreakdown(); updateNetworkGrowth(); updateMinerLeaderboard(); updateDifficultyForecast(); refreshReadiness(); }
@@ -4594,8 +4594,8 @@ async function loadPayoutTab(){
     set('payout-kpi-hashrate', hrKhs);
 
     const ss = d.session_stats || {};
-    // API: session_stats.active_sessions; fallback pool_stats.miners.active; fallback miners array
-    const activeCount = ss.active_sessions ?? ps.miners?.active ?? miners.length ?? 0;
+    // API: session_stats.active_sessions; fallback pool_stats.miners.active; fallback active registered miners
+    const activeCount = ss.active_sessions ?? ps.miners?.active ?? miners.filter(m => m.active).length ?? 0;
     set('payout-kpi-miners', activeCount);
 
     // Total paid: use pplns.total_paid_flowers from pool /stats (sanitized by backend).
@@ -4642,7 +4642,7 @@ async function loadPayoutTab(){
     set('payout-pplns-registered', (pplns.registered_miners ?? d.pplns_registered_miners ?? pplns.miners_registered) || miners.length || 0);
     set('payout-pplns-rounds', (pplns.payout_rounds ?? d.pplns_rounds ?? pplns.rounds_completed) || '—');
     // Total paid: use the same totalPaidZion computed above (from sanitized pplns.total_paid_flowers or top-level fallback)
-    set('payout-pplns-total', totalPaidZion > 0 ? _zionFmt(totalPaidZion) + ' ZION' : (d.burned_total != null ? _zionFmt(d.burned_total) + ' ZION' : '—'));
+    set('payout-pplns-total', totalPaidZion > 0 ? _zionFmt(totalPaidZion) + ' ZION' : '—');
 
     const lastTime = d.last_payout_time;
     const lastTx = d.last_payout_tx;
@@ -4668,8 +4668,9 @@ async function loadPayoutTab(){
         const key = m.worker_name || m.worker || m.miner_id || m.address || '';
         if(key) poolMetrics.set(key, m);
       });
-      // Use payout miners (richer: on_chain_balance, payout_address)
-      const payoutMiners = (d.miners && d.miners.length > 0) ? d.miners : miners;
+      // Use registered miners (enriched with on-chain/pending balances); fall back
+      // to active-only payout miners if no registered list is available.
+      const payoutMiners = (miners && miners.length > 0) ? miners : (d.miners || []);
       if(payoutMiners.length === 0){
         balTbody.innerHTML = '<tr><td colspan="8" class="text-gray-500 text-center py-4">No miners connected</td></tr>';
       } else {
@@ -5469,44 +5470,6 @@ async function measureServiceLatency(){
       if(label) label.textContent = 'ERR';
     }
   }
-}
-
-// ── Wallet extended status (pool wallet / UTXO / payouts) ───────────────
-
-async function loadWalletStatus(){
-  try {
-    // Edge-primary: prefer /api/payout (live Edge pool data) over /api/wallet/status (local pool.log)
-    const isEdge = window.currentStatus?.topology === 'edge-primary';
-    const w = isEdge
-      ? await fetch('/api/payout').then(r => r.json()).catch(() => null)
-      : await fetch('/api/wallet/status').then(r => r.json());
-    if(!w) return;
-    const container = document.getElementById('wallet-pool-status');
-    if(!container) return;
-
-    const poolWallet = w.pool_wallet || '—';
-    const bal = w.pool_wallet_balance != null ? formatFlowers(w.pool_wallet_balance) : (w.balance_zion != null ? w.balance_zion.toFixed(4) + ' ZION' : '—');
-    const blocks = w.blocks_found ?? '—';
-    const enabled = w.payout_enabled === true ? 'Yes' : (w.payout_enabled === false ? 'No' : '—');
-    const enabledClass = w.payout_enabled === true ? 'text-emerald-400' : (w.payout_enabled === false ? 'text-red-400' : 'text-gray-400');
-    const split = w.fee_split ?? '—';
-    const sharesA = w.shares_accepted ?? 0;
-    const sharesR = w.shares_rejected ?? 0;
-    const lastErr = w.last_payout_error || (w.errors && w.errors[0]) || '';
-
-    container.innerHTML = `
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Pool Wallet</div><div class="text-sm font-bold text-white truncate" title="${escapeHtml(poolWallet)}">${escapeHtml(poolWallet.length > 14 ? poolWallet.slice(0,14)+'…' : poolWallet)}</div></div>
-        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Balance</div><div class="text-sm font-bold text-emerald-400">${bal}</div></div>
-        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Blocks Found</div><div class="text-sm font-bold text-amber-400">${blocks}</div></div>
-        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Payouts Enabled</div><div class="text-sm font-bold ${enabledClass}">${enabled}</div></div>
-        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Fee Split</div><div class="text-sm font-bold text-white">${split}</div></div>
-        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Shares A/R</div><div class="text-sm font-bold text-white">${sharesA}/${sharesR}</div></div>
-        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Miners</div><div class="text-sm font-bold text-white">${(w.miners && w.miners.length) || (w.pool_stats && w.pool_stats.miners && w.pool_stats.miners.active) || '—'}</div></div>
-        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Last Error</div><div class="text-sm font-bold text-red-400 truncate" title="${escapeHtml(lastErr)}">${lastErr ? 'Error' : 'None'}</div></div>
-      </div>
-    `;
-  } catch(e) { console.error('loadWalletStatus error:', e); }
 }
 
 // ── AI services status ────────────────────────────────────────────────
