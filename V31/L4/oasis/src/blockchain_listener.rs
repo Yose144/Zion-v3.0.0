@@ -101,9 +101,9 @@ pub struct BlockInfo {
     pub height: u64,
     #[serde(default)]
     pub miner_address: String,
-    /// L1 RPC field name is `subsidy_zion` but, per the 3.0.3 decimal fork,
-    /// the value is in flowers. We keep the wire name for compatibility.
-    #[serde(default, alias = "subsidy_zion", alias = "subsidy_flowers")]
+    /// L1 RPC field names: `reward` is the miner reward in flowers;
+    /// `subsidy_zion` is the total subsidy in ZION (f64) and is ignored.
+    #[serde(default, alias = "reward", alias = "subsidy_flowers")]
     pub subsidy_flowers: u64,
     #[serde(default)]
     pub timestamp: u64,
@@ -367,14 +367,15 @@ mod tests {
 
     #[test]
     fn test_parse_block_response() {
-        // Sample getBlockByHeight response. Note the wire field name
-        // `subsidy_zion` which we alias to `subsidy_flowers`.
+        // Sample getBlockByHeight response. `subsidy_zion` is a float ZION
+        // value and is intentionally ignored; the miner reward is `reward`.
         let sample = json!({
             "jsonrpc": "2.0",
             "result": {
                 "height": 1001,
                 "miner_address": "zion1qxyz...",
-                "subsidy_zion": 500_000_000,
+                "subsidy_zion": 5400.067,
+                "reward": 500_000_000,
                 "timestamp": 1_700_000_123,
                 "extra_field": "ignored"
             },

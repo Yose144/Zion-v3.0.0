@@ -44,19 +44,25 @@ export interface ExplorerStats {
   pool_pplns_window: number;
   pool_pending_payouts_atomic: number;
   pool_pending_miners: number;
+  block_size_limit: number;
+  block_size_median: number;
+  database_size: number;
+  alt_blocks_count: number;
   connected: boolean;
-  last_block?: {
+  last_block: {
     height: number;
     hash: string;
     timestamp: number;
+    difficulty: number;
     reward: number;
     num_txes: number;
-  };
-  latest_block?: {
+    block_size: number;
+  } | null;
+  latest_block: {
     height: number;
     hash: string;
     timestamp: number;
-  };
+  } | null;
   mempool_size: number;
   total_blocks: number;
   total_transactions: number;
@@ -367,4 +373,75 @@ export interface VerifyMessageResult {
   message: string;
   algorithm: string;
   error?: string;
+}
+
+// ── Consensus ───────────────────────────────────────────────────────────────
+
+export interface ConsensusNetworkInfo {
+  mainnet: boolean;
+  testnet: boolean;
+  chain_height: number;
+  current_difficulty: number;
+  top_block_hash: string;
+}
+
+export interface ConsensusRewardSplit {
+  miner: number;
+  humanitarian: number;
+  issobella: number;
+  pool_fee: number;
+}
+
+export interface ConsensusDecade {
+  index: number;
+  reward: number;
+  blocks: number;
+  share: string;
+}
+
+export interface ConsensusParameters {
+  daa: string;
+  target_block_time: number;
+  pow_algorithms: string[];
+  reward_split: ConsensusRewardSplit;
+  fee_burn: boolean;
+  max_supply: number;
+  tail_emission: number;
+  decades: ConsensusDecade[];
+}
+
+export interface ExplorerConsensus {
+  protocol: string;
+  version: string;
+  network: ConsensusNetworkInfo;
+  consensus: ConsensusParameters;
+  difficulty_chart: { labels: string[]; values: number[] } | null;
+  fetched_at: number;
+}
+
+// ── Miners ───────────────────────────────────────────────────────────────────
+
+export interface ExplorerMiner {
+  rank: number;
+  address: string;
+  hashrate: number;
+  hashrate_formatted: string;
+  shares_accepted: number;
+  shares_rejected: number;
+  blocks_found: number;
+  paid: number;
+  pending: number;
+  last_seen: number;
+  worker_name?: string;
+  label?: string | null;
+  efficiency_pct: number;
+}
+
+export interface ExplorerMiners {
+  miners: ExplorerMiner[];
+  total_hashrate: number;
+  total_hashrate_formatted: string;
+  active_miners: number;
+  blocks_found: number;
+  fetched_at: number;
 }

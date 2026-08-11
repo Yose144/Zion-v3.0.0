@@ -108,7 +108,7 @@ function fmtSI(v: number): string {
 
 /* ─── Mini Sparkline ────────────────────────────────────────── */
 function Sparkline({ data, color, height = 48 }: { data: number[]; color: string; height?: number }) {
-  if (!data.length) return <div style={{ height }} className="flex items-center justify-center"><span className="text-[10px] text-gray-600">…</span></div>;
+  if (!data.length) return <div style={{ height }} className="flex items-center justify-center"><span className="text-[10px] text-gray-600">No data</span></div>;
   const w = 200;
   const min = Math.min(...data);
   const max = Math.max(...data);

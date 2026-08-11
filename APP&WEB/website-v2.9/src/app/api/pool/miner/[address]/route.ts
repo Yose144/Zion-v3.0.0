@@ -1,41 +1,8 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
 import { ATOMIC_UNITS_PER_ZION } from '@/lib/constants';
-import { SITE_PRIMARY_POOL_API_URL } from '@/lib/site';
 
 const ACTIVE_THRESHOLD_SECONDS = 600;
-
-async function fetchPoolApiJson<T = any>(path: string): Promise<T | null> {
-  try {
-    const response = await fetch(`${SITE_PRIMARY_POOL_API_URL}${path}`, {
-      cache: 'no-store',
-      signal: AbortSignal.timeout(5000),
-    });
-
-    if (!response.ok) {
-      return null;
-    }
-
-    return await response.json() as T;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * The pool server tracks miners by worker name (e.g. "local-miner"), not by
- * payout address. When a miner is looked up by their ZION payout address, the
- * direct `/api/v1/miner/:address/stats` call will fail. We therefore also fetch
- * the full `/miners` list and cross-reference by `payout_address`.
- */
-async function findMinerByPayoutAddress(address: string): Promise<any | null> {
-  const list = await fetchPoolApiJson<any>('/miners?limit=500');
-  if (!list?.ok || !Array.isArray(list?.miners)) return null;
-  const lower = address.toLowerCase();
-  return list.miners.find((m: any) =>
-    typeof m.payout_address === 'string' && m.payout_address.toLowerCase() === lower,
-  ) ?? null;
-}
 
 export async function GET(
   _request: NextRequest,
@@ -50,23 +17,38 @@ export async function GET(
   const rpc = getZionRpc();
 
   // Fetch pool stats, direct miner stats, miner list (for payout_address cross-ref), and chain info in parallel
-  const [balance, poolStats, minerStatsPayload, payoutsPayload, info, minersListMiner] = await Promise.all([
-    rpc.getAddressBalance(address).catch(() => null),
+  const [poolStats, minerInfo, info] = await Promise.all([
     rpc.getPoolStats().catch(() => null),
-    fetchPoolApiJson<any>(`/api/v1/miner/${address}/stats`),
-    fetchPoolApiJson<any>(`/api/v1/miner/${address}/payouts`),
+    rpc.getMinerInfo(address).catch(() => null),
     rpc.getInfo().catch(() => null),
-    findMinerByPayoutAddress(address),
   ]);
 
-  // Prefer direct miner stats; fall back to cross-referenced miner from /miners list
-  let minerStats = minerStatsPayload?.ok && minerStatsPayload?.stats ? minerStatsPayload.stats : null;
-  if (!minerStats && minersListMiner) {
-    minerStats = minersListMiner;
+  // Prefer direct miner stats from pool API; fall back to cross-referenced miner from /miners list
+  let minerStats = minerInfo;
+  if (!minerStats && poolStats?.miners_list) {
+    const lower = address.toLowerCase();
+    const matched = poolStats.miners_list.find((m: any) =>
+      (m.address || m.miner_id || '').toLowerCase() === lower,
+    );
+    if (matched) {
+      minerStats = {
+        hashrate: matched.hashrate_hps ?? 0,
+        hashrate_1h: matched.hashrate_1h_hps ?? 0,
+        hashrate_24h: matched.hashrate_24h_hps ?? 0,
+        valid_shares: matched.valid_shares ?? 0,
+        invalid_shares: matched.invalid_shares ?? 0,
+        blocks_found: matched.blocks_found ?? 0,
+        pending_balance: 0,
+        last_share_time: matched.last_share_time ?? 0,
+        worker_name: matched.worker || matched.worker_name || address,
+        algorithm: matched.algorithm || '',
+        backend: matched.backend || '',
+      };
+    }
   }
 
-  const pendingPayouts = payoutsPayload?.ok && Array.isArray(payoutsPayload?.pending_payouts)
-    ? payoutsPayload.pending_payouts
+  const pendingPayouts = Array.isArray(minerInfo?.recent_payouts)
+    ? minerInfo.recent_payouts.filter((p: any) => p.status === 'pending')
     : [];
 
   const validShares = minerStats?.valid_shares ?? 0;
@@ -105,17 +87,21 @@ export async function GET(
   // so miner stats survive pool restarts / lost telemetry.
   const chainPayouts = await rpc.getChainPayoutsForAddress(address).catch(() => ({ totalPaidAtomic: 0, payouts: [] }));
 
-  const poolTotalPaidAtomic = minerStats?.total_paid ?? 0;
+  const poolTotalPaidAtomic = minerInfo?.balance?.paid
+    ? Math.round(minerInfo.balance.paid * ATOMIC_UNITS_PER_ZION)
+    : (minerStats?.paid_total_atomic ?? 0);
+
   const totalPaidAtomic = chainPayouts.totalPaidAtomic || poolTotalPaidAtomic;
 
   const pendingPayoutRows = pendingPayouts.map((payout: any) => ({
-    amount: payout.amount_atomic ?? Math.round((payout.amount ?? 0) * ATOMIC_UNITS_PER_ZION),
+    amount: Math.round((payout.amount ?? 0) * ATOMIC_UNITS_PER_ZION),
     tx_id: payout.tx_id,
-    timestamp: payout.created_ts ?? payout.updated_ts ?? 0,
+    timestamp: payout.timestamp ?? 0,
     status: payout.status ?? 'pending',
   }));
 
-  const payouts = [...pendingPayoutRows, ...chainPayouts.payouts]
+  const payouts = [...pendingPayoutRows, ...(minerInfo?.recent_payouts || [])]
+    .filter((p) => p.status !== 'pending')
     .sort((a, b) => b.timestamp - a.timestamp)
     .slice(0, 50);
 
@@ -130,9 +116,9 @@ export async function GET(
     active,
     recently_active: recentlyActive,
     ever_active: everActive,
-    worker_name: minersListMiner?.worker_name ?? minerStats?.worker_name ?? null,
-    algorithm: minersListMiner?.algorithm ?? minerStats?.algorithm ?? '',
-    backend: minersListMiner?.backend ?? minerStats?.backend ?? '',
+    worker_name: minerStats?.worker_name ?? null,
+    algorithm: minerStats?.algorithm ?? '',
+    backend: minerStats?.backend ?? '',
     stats: {
       hashrate_1h: minerStats?.hashrate_1h ?? minerStats?.hashrate ?? 0,
       hashrate_24h: minerStats?.hashrate_24h ?? 0,
