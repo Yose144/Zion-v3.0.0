@@ -526,11 +526,13 @@ async fn get_utxos(node: &Node, params: &Value) -> Result<Value, NodeError> {
     let utxos = node.get_utxos_for_address(address).await;
     let out: Vec<Value> = utxos
         .into_iter()
-        .map(|(hash, idx, amount)| {
+        .map(|(hash, idx, amount, height, timestamp)| {
             json!({
                 "tx_hash": hash.to_hex(),
                 "output_index": idx,
                 "amount": amount,
+                "block_height": height,
+                "timestamp": timestamp,
             })
         })
         .collect();

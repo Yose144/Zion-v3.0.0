@@ -320,7 +320,7 @@ mod tests {
         };
 
         let mut utxo_set = UtxoSet::new();
-        utxo_set.apply_transaction(&coinbase).unwrap();
+        utxo_set.apply_transaction(&coinbase, 1, 0).unwrap();
 
         let tx_hash = coinbase.hash().0;
         let utxos = vec![SpendableUtxo {

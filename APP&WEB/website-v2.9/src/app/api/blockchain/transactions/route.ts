@@ -33,6 +33,18 @@ export async function GET(request: NextRequest) {
         const txs = await rpc.getTransactions([txHash]);
         if (txs.length > 0) {
           const tx = txs[0];
+
+          // Build a human-readable from/to summary from UTXO inputs/outputs
+          const fromAddrs = (tx.inputs || [])
+            .map((i) => i.address)
+            .filter((a): a is string => typeof a === 'string' && a.startsWith('zion1'));
+          tx.from = fromAddrs.length ? Array.from(new Set(fromAddrs)).join(', ') : tx.from;
+
+          const toAddrs = (tx.outputs || [])
+            .map((o) => o.address || o.key)
+            .filter((a): a is string => typeof a === 'string' && a.startsWith('zion1'));
+          tx.to = toAddrs.length ? Array.from(new Set(toAddrs)).join(', ') : tx.to;
+
           const amountZion = tx.amount_zion ? Number(tx.amount_zion) / ATOMIC_UNITS_PER_ZION : 0;
           const feeZion = (tx.fee_zion ?? tx.fee ?? 0) / ATOMIC_UNITS_PER_ZION;
 
@@ -89,35 +101,66 @@ export async function GET(request: NextRequest) {
     // ── Address-specific transactions (from on-chain RPC) ──
     if (address) {
       try {
-        const history = await rpc.getTransactionHistory(address, limit, offset);
-        const transactions = history.transactions.map((tx) => {
-          const isCoinbase = tx.from === 'coinbase';
-          const amountZion = Number(tx.amount_zion) / ATOMIC_UNITS_PER_ZION;
-          const feeZion = Number(tx.fee_zion) / ATOMIC_UNITS_PER_ZION;
-          return {
-            tx_hash: tx.tx_id,
-            type: isCoinbase ? 'coinbase' : 'transfer',
-            from: tx.from,
-            to: tx.to,
-            amount: amountZion,
-            amount_zion: tx.amount_zion,
-            fee: feeZion,
-            fee_zion: tx.fee_zion,
-            nonce: tx.nonce,
-            block_height: tx.block_height,
-            timestamp: tx.timestamp,
-            status: tx.confirmed ? 'confirmed' : 'pending',
-            confirmations: tx.block_height > 0 ? 1 : 0, // approx; chain height not fetched here
-            transaction_model: tx.tx_model,
-          };
-        });
+        const [history, walletSnapshot] = await Promise.all([
+          rpc.getTransactionHistory(address, limit, offset),
+          rpc.getWalletSnapshot(address).catch(() => null),
+        ]);
+
+        let transactions: any[];
+        if (history.transactions.length > 0) {
+          transactions = history.transactions.map((tx) => {
+            const isCoinbase = tx.from === 'coinbase';
+            const amountZion = Number(tx.amount_zion) / ATOMIC_UNITS_PER_ZION;
+            const feeZion = Number(tx.fee_zion) / ATOMIC_UNITS_PER_ZION;
+            return {
+              tx_hash: tx.tx_id,
+              type: isCoinbase ? 'coinbase' : 'transfer',
+              from: tx.from,
+              to: tx.to,
+              amount: amountZion,
+              amount_zion: tx.amount_zion,
+              fee: feeZion,
+              fee_zion: tx.fee_zion,
+              nonce: tx.nonce,
+              block_height: tx.block_height,
+              timestamp: tx.timestamp,
+              status: tx.confirmed ? 'confirmed' : 'pending',
+              confirmations: tx.block_height > 0 ? 1 : 0,
+              transaction_model: tx.tx_model,
+            };
+          });
+        } else if (walletSnapshot?.utxos?.length) {
+          // V31-native UTXO: each UTXO is a received output for this address
+          const utxoTxs = walletSnapshot.utxos.map((u: any) => {
+            const isCoinbase = u.output_index === 0;
+            return {
+              tx_hash: u.tx_hash,
+              type: isCoinbase ? 'coinbase' : 'transfer',
+              from: isCoinbase ? 'coinbase' : '',
+              to: u.address || address,
+              amount: Number(u.amount) / ATOMIC_UNITS_PER_ZION,
+              amount_zion: String(u.amount),
+              fee: 0,
+              fee_zion: 0,
+              nonce: 0,
+              block_height: u.height ?? 0,
+              timestamp: u.timestamp ?? 0,
+              status: 'confirmed',
+              confirmations: u.height > 0 ? 1 : 0,
+              transaction_model: 'v31-native',
+            };
+          });
+          transactions = utxoTxs.sort((a, b) => (b.timestamp || b.block_height) - (a.timestamp || a.block_height));
+        } else {
+          transactions = [];
+        }
 
         return NextResponse.json({
           transactions,
           items: transactions,
           count: transactions.length,
-          total: history.total,
-          has_more: history.has_more,
+          total: history.total || walletSnapshot?.utxos?.length || 0,
+          has_more: history.has_more || false,
         });
       } catch {
         return NextResponse.json({ transactions: [], items: [], count: 0 });

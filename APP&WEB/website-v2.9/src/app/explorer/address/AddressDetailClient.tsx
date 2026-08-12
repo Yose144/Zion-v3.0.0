@@ -202,6 +202,7 @@ interface AddressData {
     amount: number;
     address: string;
     height: number;
+    timestamp?: number;
   }>;
   transaction_model: string;
 }
@@ -632,11 +633,12 @@ export default function AddressDetailClient() {
             </div>
 
             {/* table header */}
-            <div className="grid grid-cols-[60px_1fr_80px_100px_100px] min-w-[340px] gap-3 px-5 py-2.5 border-b border-white/[0.04]">
+            <div className="grid grid-cols-[60px_1fr_80px_100px_100px_100px] min-w-[420px] gap-3 px-5 py-2.5 border-b border-white/[0.04]">
               <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">#</span>
               <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">TX Hash</span>
               <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerAddressAddressDetailClientCopy.index[cs ? 'cs' : 'en']}</span>
               <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerAddressAddressDetailClientCopy.height[cs ? 'cs' : 'en']}</span>
+              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerAddressAddressDetailClientCopy.age[cs ? 'cs' : 'en']}</span>
               <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{ExplorerAddressAddressDetailClientCopy.amount[cs ? 'cs' : 'en']}</span>
             </div>
 
@@ -649,7 +651,7 @@ export default function AddressDetailClient() {
                 <Link
                   key={`${u.tx_hash}_${u.output_index}`}
                   href={`/explorer/tx?hash=${encodeURIComponent(u.tx_hash)}`}
-                  className="grid grid-cols-[60px_1fr_80px_100px_100px] min-w-[340px] gap-3 px-5 py-3 border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors group"
+                  className="grid grid-cols-[60px_1fr_80px_100px_100px_100px] min-w-[420px] gap-3 px-5 py-3 border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors group"
                 >
                   <div className="flex items-center text-[12px] text-white/40 tabular-nums">{idx + 1}</div>
                   <div className="flex items-center gap-2 min-w-0">
@@ -660,6 +662,7 @@ export default function AddressDetailClient() {
                   </div>
                   <div className="flex items-center justify-end text-[12px] text-white/40 tabular-nums font-mono">{u.output_index}</div>
                   <div className="flex items-center justify-end text-[12px] text-white/40 tabular-nums font-mono">{u.height > 0 ? u.height.toLocaleString(locale) : '—'}</div>
+                  <div className="flex items-center justify-end text-[12px] text-white/40 tabular-nums">{u.timestamp ? timeAgo(u.timestamp, cs) : '—'}</div>
                   <div className="flex items-center justify-end text-[13px] font-semibold tabular-nums text-zion-cyan">
                     {(u.amount / FLOWERS_PER_ZION).toFixed(4)} ₿Z
                   </div>

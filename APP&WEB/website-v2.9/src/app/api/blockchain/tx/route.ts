@@ -43,6 +43,17 @@ export async function GET(request: NextRequest) {
 
     const tx = txs[0];
 
+    // Build a human-readable from/to summary from UTXO inputs/outputs
+    const fromAddrs = (tx.inputs || [])
+      .map((i) => i.address)
+      .filter((a): a is string => typeof a === 'string' && a.startsWith('zion1'));
+    tx.from = fromAddrs.length ? Array.from(new Set(fromAddrs)).join(', ') : tx.from;
+
+    const toAddrs = (tx.outputs || [])
+      .map((o) => o.address || o.key)
+      .filter((a): a is string => typeof a === 'string' && a.startsWith('zion1'));
+    tx.to = toAddrs.length ? Array.from(new Set(toAddrs)).join(', ') : tx.to;
+
     // Fetch block timestamp if not present
     let blockTimestamp = tx.block_timestamp ?? 0;
     let blockHash = '';

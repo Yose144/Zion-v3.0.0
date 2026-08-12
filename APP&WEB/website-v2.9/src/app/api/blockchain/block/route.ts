@@ -55,20 +55,32 @@ export async function GET(request: NextRequest) {
         const isCoinbase = tx.from === 'coinbase';
         const amountAtomic = Number(tx.amount_zion ?? 0);
         const feeAtomic = Number(tx.fee_zion ?? 0);
+
+        // Build a human-readable from/to summary from UTXO inputs/outputs
+        const fromAddrs = (tx.inputs || [])
+          .map((i: any) => i.address)
+          .filter((a: any) => typeof a === 'string' && a.startsWith('zion1'));
+        const uniqueFrom = Array.from(new Set(fromAddrs)).join(', ') || (isCoinbase ? 'coinbase' : '');
+
+        const toAddrs = (tx.outputs || [])
+          .map((o: any) => o.address || o.key)
+          .filter((a: any) => typeof a === 'string' && a.startsWith('zion1'));
+        const uniqueTo = Array.from(new Set(toAddrs)).join(', ') || tx.to || '';
+
         txs.push({
           tx_hash: tx.tx_id,
           type: isCoinbase ? 'coinbase' : 'transfer',
           fee: feeAtomic / ATOMIC_UNITS_PER_ZION,
           amount: amountAtomic / ATOMIC_UNITS_PER_ZION,
           timestamp: block.timestamp,
-          from: tx.from,
-          to: tx.to,
+          from: uniqueFrom,
+          to: uniqueTo,
           amount_zion: tx.amount_zion,
           fee_zion: feeAtomic,
           nonce: tx.nonce,
           signature: tx.signature,
           public_key: tx.public_key,
-          transaction_model: 'account',
+          transaction_model: 'v31-native',
           inputs: isCoinbase
             ? [{ type: 'coinbase', height: block.height }]
             : (tx.inputs || []).map((i: any) => ({
@@ -86,8 +98,8 @@ export async function GET(request: NextRequest) {
               }))
             : [{
                 amount: amountAtomic / ATOMIC_UNITS_PER_ZION,
-                key: tx.to,
-                address: tx.to,
+                key: uniqueTo,
+                address: uniqueTo,
               }],
         });
       }

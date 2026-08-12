@@ -425,12 +425,12 @@ impl Node {
     ///
     /// Excludes outputs already consumed by a mempool transaction so wallets
     /// do not build conflicting transactions while a previous spend is pending.
-    pub async fn get_utxos_for_address(&self, address: &str) -> Vec<(Hash, u32, u64)> {
+    pub async fn get_utxos_for_address(&self, address: &str) -> Vec<(Hash, u32, u64, u64, u64)> {
         let set = self.utxo_set.lock().await;
         let mut utxos = set.get_utxos_for_address(address);
         drop(set);
         let spent = self.mempool.spent_outpoints().await;
-        utxos.retain(|(tx_hash, index, _amount)| {
+        utxos.retain(|(tx_hash, index, _amount, _height, _timestamp)| {
             let outpoint = Outpoint::new(*tx_hash, *index);
             !spent.contains(&outpoint)
         });
@@ -515,7 +515,7 @@ impl Node {
             let set = self.utxo_set.lock().await;
             let mut view = set.clone();
             for tx in mempool_txs {
-                match view.apply_transaction(&tx) {
+                match view.apply_transaction(&tx, 0, 0) {
                     Ok(_) => selected.push(tx),
                     Err(e) => {
                         warn!(%e, tx_hash = %tx.hash().to_hex(), "mempool tx invalid for template");
@@ -617,7 +617,7 @@ impl Node {
             let mut view = set.clone();
             let mut invalid = Vec::new();
             for tx in remaining {
-                if view.apply_transaction(&tx).is_err() {
+                if view.apply_transaction(&tx, 0, 0).is_err() {
                     invalid.push(tx.hash());
                 }
             }
