@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
-import { ATOMIC_UNITS_PER_ZION, BLOCK_REWARD_ZION } from '@/lib/constants';
+import { ATOMIC_UNITS_PER_ZION } from '@/lib/constants';
 
 function normalizeTxHash(rawHash: string): string {
   const trimmed = rawHash.trim();
@@ -33,7 +33,6 @@ export async function GET(request: NextRequest) {
         const txs = await rpc.getTransactions([txHash]);
         if (txs.length > 0) {
           const tx = txs[0];
-          // V3 account-model: amount_zion is string (flowers), fee_zion is number (flowers)
           const amountZion = tx.amount_zion ? Number(tx.amount_zion) / ATOMIC_UNITS_PER_ZION : 0;
           const feeZion = (tx.fee_zion ?? tx.fee ?? 0) / ATOMIC_UNITS_PER_ZION;
 
@@ -53,9 +52,8 @@ export async function GET(request: NextRequest) {
             block_height: tx.block_height,
             block_timestamp: blockTimestamp,
             in_pool: tx.in_pool,
-            // V3 account-model fields
             from: tx.from ?? '',
-            to: tx.to ?? '',
+            to: tx.to ?? tx.outputs?.map((o) => o.address).filter(Boolean).join(', ') ?? '',
             amount: amountZion,
             amount_zion: tx.amount_zion ?? '',
             fee: feeZion,
@@ -63,14 +61,22 @@ export async function GET(request: NextRequest) {
             nonce: tx.nonce ?? 0,
             signature: tx.signature ?? '',
             public_key: tx.public_key ?? '',
-            transaction_model: tx.transaction_model ?? 'hybrid',
-            // Legacy fields for backward compat
+            transaction_model: tx.transaction_model ?? 'v31-native',
             version: tx.version,
             unlock_time: tx.unlock_time,
-            inputs: [],
-            outputs: [],
+            inputs: tx.inputs?.map((i) => ({
+              type: i.type,
+              amount: i.amount / ATOMIC_UNITS_PER_ZION,
+              key_image: i.key_image,
+              previous_output: i.previous_output,
+            })) ?? [],
+            outputs: tx.outputs?.map((o) => ({
+              address: o.address,
+              amount: o.amount / ATOMIC_UNITS_PER_ZION,
+              key: o.key,
+            })) ?? [],
             extra: tx.extra,
-            confirmations: tx.block_height > 0 ? chainInfo.height - tx.block_height : 0,
+            confirmations: tx.block_height > 0 ? Math.max(0, chainInfo.height - tx.block_height) : 0,
             status: tx.in_pool ? 'pending' : 'confirmed',
           });
         }
@@ -122,50 +128,27 @@ export async function GET(request: NextRequest) {
     const info = await rpc.getInfo();
     const chainHeight = info.height;
 
-    // Get V3 account-model transactions (non-coinbase) from recent blocks
-    const v3Txs = await rpc.getRecentV3Transactions(limit).catch(() => []);
+    const recentTxs = await rpc.getRecentV3Transactions(limit).catch(() => []);
 
-    const allTxs: any[] = [];
-
-    // Add V3 account-model transactions first (most interesting to users)
-    for (const tx of v3Txs) {
-      allTxs.push({
-        tx_hash: tx.tx_id,
-        type: 'transfer',
-        from: tx.from,
-        to: tx.to,
-        amount: Number(tx.amount_zion) / ATOMIC_UNITS_PER_ZION,
-        amount_zion: tx.amount_zion,
-        fee: tx.fee_zion / ATOMIC_UNITS_PER_ZION,
-        fee_zion: tx.fee_zion,
-        nonce: tx.nonce,
-        block_height: tx.block_height,
-        timestamp: tx.timestamp,
-        status: 'confirmed',
-        confirmations: chainHeight - tx.block_height,
-        transaction_model: 'account',
-      });
-      if (allTxs.length >= limit) break;
-    }
-
-    // Add coinbase transactions from recent blocks
-    const endHeight = Math.max(0, chainHeight);
-    const startHeight = Math.max(0, endHeight - 9); // Scan last 10 blocks for coinbase
-    const headers = await rpc.getBlockHeaders(startHeight, endHeight);
-
-    for (const header of headers.reverse()) {
-      allTxs.push({
-        tx_hash: `coinbase_${header.height}`,
-        type: 'coinbase',
-        amount: header.reward ? header.reward / ATOMIC_UNITS_PER_ZION : BLOCK_REWARD_ZION,
-        fee: 0,
-        block_height: header.height,
-        timestamp: header.timestamp,
-        status: 'confirmed',
-        confirmations: chainHeight - header.height,
-      });
-      if (allTxs.length >= limit) break;
-    }
+    const allTxs = recentTxs.map((tx) => ({
+      tx_hash: tx.tx_hash,
+      tx_id: tx.tx_hash,
+      type: tx.from === 'coinbase' ? 'coinbase' : 'transfer',
+      from: tx.from,
+      to: tx.to,
+      amount: Number(tx.amount_zion) / ATOMIC_UNITS_PER_ZION,
+      amount_zion: tx.amount_zion,
+      fee: (tx.fee_zion ?? 0) / ATOMIC_UNITS_PER_ZION,
+      fee_zion: tx.fee_zion ?? 0,
+      nonce: tx.nonce ?? 0,
+      block_height: tx.block_height,
+      timestamp: tx.timestamp,
+      status: 'confirmed',
+      confirmations: Math.max(0, chainHeight - tx.block_height),
+      transaction_model: tx.transaction_model ?? 'v31-native',
+      inputs: tx.inputs,
+      outputs: tx.outputs,
+    }));
 
     return NextResponse.json({
       count: allTxs.length,
