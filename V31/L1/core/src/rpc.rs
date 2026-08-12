@@ -6,7 +6,9 @@
 use std::collections::{HashMap, HashSet};
 use std::net::SocketAddr;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
+
+use crate::peer_manager::{PeerInfo, PeerSource};
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -470,20 +472,46 @@ async fn get_peer_info(node: &Node) -> Result<Value, NodeError> {
         .map(|p| json!({ "address": p.to_string() }))
         .collect();
     let active = node.peer_manager.active_peers().await;
+    let active_set: HashSet<SocketAddr> = active.iter().cloned().collect();
     let recent = node.peer_manager.recent_good_peers(Duration::from_secs(60)).await;
-    let known = node.peer_manager.known_peers_list().await;
+    let known_addrs = node.peer_manager.known_peers_list().await;
+    let known_with_metadata = node.peer_manager.known_peers_with_metadata().await;
     let connected: HashSet<SocketAddr> = active
         .iter()
         .chain(recent.iter())
         .cloned()
         .collect();
     let connected: Vec<_> = connected.into_iter().collect();
+
+    let peer_objects: Vec<Value> = known_addrs
+        .iter()
+        .map(|addr| {
+            let meta = known_with_metadata.get(addr).cloned().unwrap_or(PeerInfo {
+                source: PeerSource::PeerExchange,
+                last_seen: Instant::now(),
+                good: 0,
+                bad: 0,
+            });
+            json!({
+                "address": addr.to_string(),
+                "host": addr.ip().to_string(),
+                "port": addr.port(),
+                "connected": active_set.contains(addr),
+                "state": if active_set.contains(addr) { "connected" } else { "known" },
+                "source": format!("{:?}", meta.source).to_lowercase(),
+                "good": meta.good,
+                "bad": meta.bad,
+                "idle_seconds": meta.last_seen.elapsed().as_secs(),
+            })
+        })
+        .collect();
+
     Ok(json!({
         "seeds": seeds,
         "seed_count": seeds.len(),
-        "peers": known.iter().map(|p| json!({ "address": p.to_string() })).collect::<Vec<_>>(),
-        "count": known.len(),
-        "known_count": known.len(),
+        "peers": peer_objects,
+        "count": peer_objects.len(),
+        "known_count": peer_objects.len(),
         "active": connected.iter().map(|p| json!({ "address": p.to_string() })).collect::<Vec<_>>(),
         "active_count": connected.len(),
     }))
