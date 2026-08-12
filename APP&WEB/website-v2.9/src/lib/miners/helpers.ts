@@ -12,7 +12,11 @@ export interface PoolMinerRaw {
   address?: string;
   worker_name?: string;
   hashrate?: number;
+  hashrate_hps?: number;
   hashrate_1h?: number;
+  hashrate_1h_hps?: number;
+  hashrate_24h?: number;
+  hashrate_24h_hps?: number;
   valid_shares?: number;
   invalid_shares?: number;
   blocks_found?: number;
@@ -28,6 +32,10 @@ export interface MinerEntry {
   worker_name?: string;
   hashrate: number;
   hashrate_formatted: string;
+  hashrate_1h?: number;
+  hashrate_1h_formatted?: string;
+  hashrate_24h?: number;
+  hashrate_24h_formatted?: string;
   shares_accepted: number;
   shares_rejected: number;
   blocks_found: number;
@@ -88,7 +96,12 @@ export async function buildMinersLeaderboard(): Promise<MinersLeaderboard> {
     if (!addr || !addr.startsWith('zion1')) continue;
 
     const existing = byAddress.get(addr);
-    const hashrate = Math.max(existing?.hashrate || 0, Number(m.hashrate || m.hashrate_1h || 0));
+    const currentHps = Number(m.hashrate_hps ?? m.hashrate ?? 0);
+    const h1Hps = Number(m.hashrate_1h_hps ?? m.hashrate_1h ?? 0);
+    const h24Hps = Number(m.hashrate_24h_hps ?? m.hashrate_24h ?? 0);
+    const hashrate = Math.max(existing?.hashrate || 0, currentHps || h1Hps || h24Hps);
+    const hashrate1h = Math.max(existing?.hashrate_1h || 0, h1Hps);
+    const hashrate24h = Math.max(existing?.hashrate_24h || 0, h24Hps);
     const accepted = (existing?.shares_accepted || 0) + Number(m.valid_shares || 0);
     const rejected = (existing?.shares_rejected || 0) + Number(m.invalid_shares || 0);
     const blocks = (existing?.blocks_found || 0) + Number(m.blocks_found || 0);
@@ -102,6 +115,10 @@ export async function buildMinersLeaderboard(): Promise<MinersLeaderboard> {
       worker_name: m.worker_name || existing?.worker_name,
       hashrate,
       hashrate_formatted: formatHashrate(hashrate),
+      hashrate_1h: hashrate1h,
+      hashrate_1h_formatted: formatHashrate(hashrate1h),
+      hashrate_24h: hashrate24h,
+      hashrate_24h_formatted: formatHashrate(hashrate24h),
       shares_accepted: accepted,
       shares_rejected: rejected,
       blocks_found: blocks,

@@ -16,6 +16,7 @@ import {
   Cpu,
   Box,
   Code,
+  Wallet,
 } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
@@ -51,10 +52,15 @@ const ExplorerBlockBlockDetailClientCopy = {
   transactions: { cs: `Transakce`, en: `Transactions` },
   user: { cs: `uživatel`, en: `user` },
   coinbaseRecipient: { cs: `Coinbase příjemce`, en: `Coinbase Recipient` },
-  totalOutput: { cs: `Celkový výstup`, en: `Total Output` },
+  totalOutput: { cs: `Emise bloku`, en: `Block Emission` },
   feesCollected: { cs: `Vybrané fee`, en: `Fees Collected` },
   blockReward_2: { cs: `Odměna bloku`, en: `Block Reward` },
   txCount: { cs: `Počet tx`, en: `Tx Count` },
+  rewardDistribution: { cs: `Rozdělení odměny`, en: `Reward Distribution` },
+  miner: { cs: `Miner`, en: `Miner` },
+  humanitarian: { cs: `Humanitární`, en: `Humanitarian` },
+  issobella: { cs: `Issobella`, en: `Issobella` },
+  poolFee: { cs: `Pool fee (spáleno)`, en: `Pool Fee (burned)` },
   type: { cs: `Typ`, en: `Type` },
   amount: { cs: `Částka`, en: `Amount` },
   coinbase: { cs: `Coinbase`, en: `Coinbase` },
@@ -99,6 +105,7 @@ interface BlockDetail {
   tx_hashes: string[];
   total_fees: number;
   total_output: number;
+  reward_breakdown?: Record<string, { address: string; amount: number; pct: number }>;
   merkle_root?: string;
   tx_hash_list_merkle_root?: string;
   [key: string]: any;
@@ -412,6 +419,37 @@ export default function BlockDetailClient() {
             </div>
           ))}
         </div>
+
+        {/* Reward distribution */}
+        {block.reward_breakdown && Object.keys(block.reward_breakdown).length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
+            className="zion-rainbow-sub rounded-[28px] bg-black/60 p-6 mb-6" style={{ '--rc': '228, 30, 43' } as React.CSSProperties}>
+            <h2 className="text-sm font-semibold text-white/70 mb-4 flex items-center gap-2">
+              <Wallet className="w-4 h-4 text-zion-gold" />
+              {ExplorerBlockBlockDetailClientCopy.rewardDistribution[cs ? 'cs' : 'en']}
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {(['miner', 'humanitarian', 'issobella', 'pool_fee'] as const).map((key) => {
+                const item = block.reward_breakdown![key];
+                if (!item) return null;
+                const labelMap = {
+                  miner: ExplorerBlockBlockDetailClientCopy.miner,
+                  humanitarian: ExplorerBlockBlockDetailClientCopy.humanitarian,
+                  issobella: ExplorerBlockBlockDetailClientCopy.issobella,
+                  pool_fee: ExplorerBlockBlockDetailClientCopy.poolFee,
+                };
+                return (
+                  <div key={key} className="zion-tile p-4">
+                    <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-1">{labelMap[key][cs ? 'cs' : 'en']}</p>
+                    <p className="text-lg font-bold tabular-nums text-white">{item.amount.toFixed(4)} ZION</p>
+                    <p className="text-[11px] text-white/40 tabular-nums">{item.pct.toFixed(2)}%</p>
+                    <p className="text-[10px] text-white/25 font-mono truncate mt-1">{truncHash(item.address, 10)}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
 
         {/* Transactions */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}

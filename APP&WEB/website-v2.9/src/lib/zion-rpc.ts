@@ -39,6 +39,9 @@ export interface ZionBlockHeader {
   major_version: number;
   minor_version: number;
   miner_address?: string;
+  // V31 full reward split
+  subsidy_zion?: number;
+  miner_reward_zion?: number;
 }
 
 export interface ZionV3Transaction {
@@ -74,6 +77,7 @@ export interface ZionTransactionInput {
   key_image?: string;
   previous_output?: string;
   address?: string;
+  output_index?: number;
 }
 
 export interface ZionTransactionOutput {
@@ -208,6 +212,7 @@ export interface ZionWalletSnapshot {
     amount: number;
     address: string;
     height: number;
+    timestamp?: number;
   }>;
 }
 
@@ -346,7 +351,8 @@ function normalizeRewardZion(rawReward: unknown): number {
 }
 
 function mapV3BlockToHeader(block: any): ZionBlockHeader {
-  const rewardZion = normalizeRewardZion(block.miner_reward_zion ?? block.subsidy_zion ?? block.reward);
+  const minerRewardZion = normalizeRewardZion(block.miner_reward_zion ?? block.reward);
+  const subsidyZion = normalizeRewardZion(block.subsidy_zion ?? block.miner_reward_zion ?? block.reward);
   const txCount = block.transaction_ids?.length ?? block.transactions?.length ?? 0;
   return {
     height: block.height ?? 0,
@@ -355,7 +361,7 @@ function mapV3BlockToHeader(block: any): ZionBlockHeader {
     timestamp: block.timestamp ?? 0,
     difficulty: block.difficulty ?? 0,
     nonce: block.nonce ?? 0,
-    reward: Math.round(rewardZion * ATOMIC_PER_ZION),
+    reward: Math.round(minerRewardZion * ATOMIC_PER_ZION),
     miner_tx_hash: '',
     num_txes: Math.max(0, txCount),
     block_size: block.block_size ?? block.size ?? 0,
@@ -364,6 +370,8 @@ function mapV3BlockToHeader(block: any): ZionBlockHeader {
     major_version: 1,
     minor_version: 0,
     miner_address: block.miner_address ?? '',
+    subsidy_zion: subsidyZion,
+    miner_reward_zion: minerRewardZion,
   };
 }
 
@@ -415,13 +423,14 @@ function parseV31Output(out: any): { address: string; amount: number; key: strin
   return { address, amount, key: address };
 }
 
-function parseV31Input(inp: any): { type: string; amount: number; key_image: string | undefined; previous_output: string | undefined } {
+function parseV31Input(inp: any): { type: string; amount: number; key_image: string | undefined; previous_output: string | undefined; output_index: number } {
   const previousOutput = bytesToHex(inp?.previous_output);
   return {
     type: previousOutput ? 'standard' : 'coinbase',
     amount: 0,
     key_image: previousOutput ? previousOutput : undefined,
     previous_output: previousOutput || undefined,
+    output_index: typeof inp?.index === 'number' ? inp.index : 0,
   };
 }
 
@@ -474,12 +483,13 @@ function parseV31NativeTransaction(
     output_indices: [],
     version: tx.version ?? 1,
     unlock_time: 0,
-    inputs: inputs.map((i: { type: string; amount: number; key_image: string | undefined; previous_output: string | undefined }) => ({
+    inputs: inputs.map((i: { type: string; amount: number; key_image: string | undefined; previous_output: string | undefined; address?: string; output_index: number }) => ({
       type: i.type,
       amount: i.amount,
       key_image: i.key_image,
       previous_output: i.previous_output,
-      address: i.previous_output,
+      address: i.address ?? i.previous_output,
+      output_index: i.output_index,
     })),
     outputs: outputs.map((o: { address: string; amount: number; key: string }) => ({
       amount: o.amount,
@@ -491,8 +501,12 @@ function parseV31NativeTransaction(
     extra: memo,
     fee: feeAtomic,
     // V3 account-model compatibility fields derived from UTXO data
-    from: isCoinbase ? 'coinbase' : (inputs.length > 0 ? '' : 'coinbase'),
-    to: outputs[0]?.address ?? '',
+    from: isCoinbase
+      ? 'coinbase'
+      : inputs.length > 0
+        ? inputs.map((i: any) => i.address).filter(Boolean).join(', ')
+        : '',
+    to: outputs.map((o: { address: string }) => o.address).filter(Boolean).join(', '),
     amount_zion: String(totalOutputAtomic),
     fee_zion: 0,
     nonce: 0,
@@ -942,7 +956,7 @@ class ZionRpcClient {
       : (chainInfo.chain_height ?? 0);
   }
 
-  /** Get transactions by hash via V3 getTransaction */
+  /** Get transactions by hash via V3 getTransaction, with input address enrichment */
   async getTransactions(txHashes: string[]): Promise<ZionTransaction[]> {
     if (txHashes.length === 0) return [];
     const results: ZionTransaction[] = [];
@@ -950,10 +964,57 @@ class ZionRpcClient {
       try {
         const res = await this.rpcCall<any>('getTransaction', { txid });
         if (!res || !res.transaction) continue;
-        results.push(parseV31NativeTransaction(res, res.block_height ?? 0, 0, res.confirmed ?? false, txid));
+        const tx = parseV31NativeTransaction(res, res.block_height ?? 0, 0, res.confirmed ?? false, txid);
+
+        // Enrich input addresses from previous transaction outputs
+        if (tx.inputs?.length && !tx.inputs.some((i) => i.address && i.address.startsWith('zion1'))) {
+          await this.enrichInputAddresses(tx);
+        }
+
+        results.push(tx);
       } catch { /* skip unavailable tx */ }
     }
     return results;
+  }
+
+  private async enrichInputAddresses(tx: ZionTransaction): Promise<void> {
+    const standardInputs = (tx.inputs || []).filter((i) => i.previous_output && i.type !== 'coinbase');
+    if (!standardInputs.length) return;
+
+    const CONCURRENCY = 10;
+    for (let i = 0; i < standardInputs.length; i += CONCURRENCY) {
+      const batch = standardInputs.slice(i, i + CONCURRENCY);
+      const enriched = await Promise.all(
+        batch.map(async (input) => {
+          try {
+            const prev = await this.rpcCall<any>('getTransaction', { txid: input.previous_output });
+            const prevTx = prev?.transaction;
+            if (!prevTx) return input;
+            const outIndex = typeof (input as any).output_index === 'number' ? (input as any).output_index : 0;
+            const outs = Array.isArray(prevTx.outputs) ? prevTx.outputs : [];
+            const out = outs[outIndex] ?? outs[0];
+            if (out) {
+              input.address = parseV31Address(out?.address);
+            }
+            return input;
+          } catch {
+            return input;
+          }
+        })
+      );
+      for (const input of enriched) {
+        const idx = tx.inputs?.findIndex((i) => i.previous_output === input.previous_output);
+        if (idx != null && idx >= 0 && tx.inputs) tx.inputs[idx] = input;
+      }
+    }
+
+    // Rebuild the account-model `from` field from enriched input addresses
+    if (tx.inputs?.length) {
+      const fromAddrs = tx.inputs
+        .map((i) => i.address)
+        .filter((addr): addr is string => typeof addr === 'string' && addr.startsWith('zion1'));
+      tx.from = fromAddrs.length ? Array.from(new Set(fromAddrs)).join(', ') : tx.from;
+    }
   }
 
   /** Get transaction history for an address via V3 getTransactionHistory RPC.
@@ -991,15 +1052,24 @@ class ZionRpcClient {
     };
   }
 
-  /** Get mempool info — V3 only returns count, not individual txs */
-  async getTransactionPool(): Promise<ZionMempoolTx[]> {
+  /** Get mempool info — V31 returns count only, no individual tx list */
+  async getTransactionPool(): Promise<{ count: number; size: number; total_fees: number; transactions: ZionMempoolTx[] }> {
     try {
-      const info = await this.rpcCall<any>('getMempoolInfo');
-      // V3 getMempoolInfo returns { size, template_transactions, template_total_fees_zion }
-      // No individual tx details available — return empty for now
-      return [];
+      const [mempoolInfo, chainInfo] = await Promise.all([
+        this.rpcCall<any>('getMempoolInfo').catch(() => null),
+        this.rpcCall<any>('getChainInfo').catch(() => null),
+      ]);
+      const count = chainInfo?.mempool_transactions ?? mempoolInfo?.size ?? 0;
+      const templateCount = mempoolInfo?.template_transactions ?? 0;
+      const totalFeesZion = mempoolInfo?.template_total_fees_zion ?? 0;
+      return {
+        count,
+        size: count + templateCount,
+        total_fees: totalFeesZion,
+        transactions: [],
+      };
     } catch {
-      return [];
+      return { count: 0, size: 0, total_fees: 0, transactions: [] };
     }
   }
 
@@ -1390,8 +1460,50 @@ class ZionRpcClient {
         amount: Number(item.amount ?? 0),
         address: item.address ?? address,
         height: item.height ?? 0,
+        timestamp: 0,
       })),
     };
+  }
+
+  /** Enrich UTXO metadata (height/timestamp) for a small list of tx hashes.
+   *  Used by the explorer address page to show recent transaction details. */
+  async enrichUtxoMetadata(txHashes: string[]): Promise<Map<string, { height: number; timestamp: number; inputs: any[]; outputs: any[] }>> {
+    const map = new Map<string, { height: number; timestamp: number; inputs: any[]; outputs: any[] }>();
+    const uniqueHashes = Array.from(new Set<string>(txHashes));
+    const CONCURRENCY = 20;
+    for (let i = 0; i < uniqueHashes.length; i += CONCURRENCY) {
+      const batch = uniqueHashes.slice(i, i + CONCURRENCY);
+      const results = await Promise.all(
+        batch.map(async (txHash: string) => {
+          try {
+            const txs = await this.getTransactions([txHash]);
+            const tx = txs[0];
+            if (!tx) return null;
+            let ts = tx.block_timestamp ?? 0;
+            const bh = tx.block_height ?? 0;
+            if (!ts && bh > 0) {
+              try {
+                const block = await this.getBlock(bh);
+                ts = block?.timestamp ?? 0;
+              } catch { /* ignore */ }
+            }
+            return {
+              tx_hash: txHash,
+              height: bh,
+              timestamp: ts,
+              inputs: tx.inputs ?? [],
+              outputs: tx.outputs ?? [],
+            };
+          } catch {
+            return null;
+          }
+        })
+      );
+      for (const r of results) {
+        if (r) map.set(r.tx_hash, { height: r.height, timestamp: r.timestamp, inputs: r.inputs, outputs: r.outputs });
+      }
+    }
+    return map;
   }
 
   async submitSignedTransaction(transaction: unknown, method: 'submitTransaction' | 'submitAccountTransaction' | 'sendRawTransaction' = 'submitTransaction'): Promise<{ accepted: boolean; tx_id?: string }> {

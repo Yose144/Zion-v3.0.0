@@ -68,7 +68,7 @@ export async function GET() {
         payout_address: m.address || m.miner_id || '',
         last_share: m.last_share_time ?? 0,
         last_seen: m.last_seen_s ?? m.last_share_time ?? 0,
-        hashrate: m.hashrate_hps ?? 0,
+        hashrate: m.hashrate_hps ?? m.hashrate_1h_hps ?? m.hashrate_24h_hps ?? 0,
         hashrate_1h: m.hashrate_1h_hps ?? 0,
         hashrate_24h: m.hashrate_24h_hps ?? 0,
         blocks_found: m.blocks_found ?? 0,

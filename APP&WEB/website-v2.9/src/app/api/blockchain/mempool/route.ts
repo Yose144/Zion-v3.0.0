@@ -15,11 +15,11 @@ export async function GET() {
 
   try {
     const [pool, info] = await Promise.all([
-      rpc.getTransactionPool().catch(() => []),
+      rpc.getTransactionPool().catch(() => ({ count: 0, size: 0, total_fees: 0, transactions: [] })),
       rpc.getInfo().catch(() => null),
     ]);
 
-    const transactions = pool.map((tx) => ({
+    const transactions = pool.transactions.map((tx) => ({
       tx_hash: tx.id_hash,
       size: tx.blob_size || 0,
       fee: tx.fee / ATOMIC_UNITS_PER_ZION,
@@ -42,7 +42,7 @@ export async function GET() {
     const avgFee = fees.length ? totalFees / fees.length : 0;
 
     return NextResponse.json({
-      count: transactions.length,
+      count: pool.count,
       pool_size_bytes: totalSize,
       total_fees: totalFees,
       fee_stats: {

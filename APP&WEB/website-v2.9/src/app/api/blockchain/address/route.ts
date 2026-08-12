@@ -74,23 +74,31 @@ export async function GET(request: NextRequest) {
         .reduce((sum, tx) => sum + tx.amount, 0);
     } else if (utxoList.length > 0 && address.startsWith('zion1')) {
       // V31-native UTXO: each UTXO corresponds to a received output.
-      const utxoTxs = utxoList
-        .slice()
-        .sort((a: any, b: any) => (b.height ?? 0) - (a.height ?? 0))
-        .slice(0, 50)
-        .map((u: any) => ({
+      // UTXOs from getUtxos are sorted by tx_hash, not height; to get the most recent
+      // we enrich a small slice. Since getTransaction scans the chain for each hash,
+      // keep this small to avoid slow page loads.
+      const pageUtxos = utxoList.slice(0, 20);
+      const txHashes = pageUtxos.map((u: any) => u.tx_hash).filter(Boolean) as string[];
+      const meta = txHashes.length > 0 ? await rpc.enrichUtxoMetadata(txHashes) : new Map();
+
+      const utxoTxs = pageUtxos.map((u: any) => {
+        const m = meta.get(u.tx_hash);
+        const isCoinbase = u.output_index === 0 && (m?.inputs?.length === 0 || u.amount > 1_000_000_000);
+        return {
           tx_hash: u.tx_hash,
-          type: 'coinbase',
-          from: 'coinbase',
+          type: isCoinbase ? 'coinbase' : 'transfer',
+          from: isCoinbase ? 'coinbase' : '',
           to: u.address || address,
           amount: Number(u.amount) / 1_000_000,
           fee: 0,
-          timestamp: 0,
-          block_height: u.height ?? 0,
+          timestamp: m?.timestamp ?? 0,
+          block_height: m?.height ?? 0,
           status: 'confirmed',
           output_index: u.output_index ?? 0,
-        }));
-      transactions = utxoTxs;
+        };
+      });
+      // Sort newest first by timestamp/height.
+      transactions = utxoTxs.sort((a: any, b: any) => (b.timestamp || b.block_height) - (a.timestamp || a.block_height));
       totalReceived = utxoList.reduce((sum: number, u: any) => sum + Number(u.amount ?? 0), 0) / 1_000_000;
     } else {
       const payouts = minerData?.recent_payouts || [];
