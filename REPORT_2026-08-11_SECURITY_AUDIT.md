@@ -250,6 +250,35 @@
 
 ---
 
+## 10. Provedené opravy (2026-08-12)
+
+Následující kritické a vysoké nálezy byly opraveny a ověřeny:
+
+| # | Akce | Stav | Ověření |
+|---|------|------|---------|
+| 1 | Odstraněn starý `ANKR_API_KEY` z místního `archive/V3/docker/.env`; soubor nyní obsahuje placeholder, `.env.example` je zachováno. | Hotovo | Místní `.env` je placeholder a ignorovaný gitu. |
+| 2 | Opraveny Next.js proxy `DAO` a `WARP` — odebrán fallback na `process.env.*` pro mutace. | Hotovo | `git diff` ukazuje odmítání bez klientského klíče (401). |
+| 3 | Přidán IP allowlist na public RPC TCP stream `8443` v `/etc/nginx/nginx.conf`. | Hotovo | `curl http://62.171.141.136:8443/` z whitelisted IP funguje; ne-whitelisted IP je odmítnuta. |
+| 4 | Dashboard, website a marketplace nyní bindují na `127.0.0.1`. | Hotovo | `ss -tlnp` na Edge ukazuje `127.0.0.1:3000/3100/8766`; služby přes `nginx` stále 200. |
+| 5 | CORS v `zion-multichain` omezen na kanonické domény; API klíč se používá jen pro mutující požadavky (GET/HEAD/OPTIONS zůstávají veřejné). | Hotovo | `cargo check -p zion-multichain` prošel; `rate_limit.rs` implementuje `is_read`. |
+| 6 | `V31/Cargo.lock` je nyní trackovaný v gitu; zbylé `Cargo.lock` soubory ignorovány. | Hotovo | `.gitignore` má `Cargo.lock` + `!V31/Cargo.lock`. |
+| 7 | `fail2ban ignoreip` synchronizováno s aktuálními operátorskými IP; `zion-p2p` nyní používá `banaction = ufw`. | Hotovo | `fail2ban-client reload` OK; `grep banaction /etc/fail2ban/jail.d/zion-p2p.conf`. |
+| 8 | Zálohy na Edge (`/opt/zion/backups/*.tar.gz`, `*.sh`, `*.env`) a `/etc/zion/*.bak` nyní mají `chmod 600`. | Hotovo | `find /opt/zion/backups -type f -perm /o+r` nevrací nic. |
+| 9 | `ufw` vyčištěno — odstraněny `Anywhere` pravidla pro nepoužívané porty `8445`, `8452-8454`, `8461-8463`, `9443`, `9999`, `8766`; `8443` omezeno na operátorské IP. | Hotovo | `ufw status numbered` ukazuje pouze veřejné služby `80/443`, P2P, pool stratum a operátorské přístupy. |
+| 10 | Grafana a Prometheus bindují na `127.0.0.1`; CUPS vypnut a zakázán. | Hotovo | `ss -tlnp` ukazuje `127.0.0.1:3001/9090`; `ss` neukazuje `:631`. |
+| 11 | Globální `ssl_protocols` v `/etc/nginx/nginx.conf` změněno na `TLSv1.2 TLSv1.3`. | Hotovo | `nginx -t` OK, `systemctl reload nginx` OK. |
+| 12 | Přidány systemd šablony `zion-website.service` a `zion-marketplace.service` s `HOSTNAME=127.0.0.1` a hardeningem. | Hotovo | Soubory v `V31/deploy/systemd/`. |
+
+## 11. Zbývající úkoly (nespěchají, ale doporučené)
+
+- **Závislosti:** `cargo audit` a `npm audit` stále hlásí zranitelnosti v `ring`/`rustls-webpki` (cargo) a `next`/`sharp`/`ws` (npm). Vyžaduje samostatný update, test buildu (`V31` + `website-v2.9`) a regresní testy.
+- **Per-service `EnvironmentFile`:** `edge-environment.sh` je stále monolit. Doporučeno rozdělit na `zion-dao.env`, `zion-multichain.env`, atd. s `chmod 600`.
+- **Dashboard hardening:** Drop-in `/etc/systemd/system/zion-edge-python-dashboard.service.d/zion-edge-dashboard-maintenance.conf` má `NoNewPrivileges=false` a `ProtectSystem=full` pro maintenance sudo — zvážit oddělení maintenance do samostatného privilegovaného helperu.
+- **Operator IPv6:** stará IPv6 `2a00:11b1:10e2:af49:b90b:20ed:4eee:b48b` je stále v `ufw`/`fail2ban`; pokud již není používána, odebrat.
+- **Grafana:** `/etc/grafana/grafana.ini` má `admin_password = zion123` v souboru. Doporučeno nastavit z externího 1Password/vault a omezit `auth.anonymous`.
+
+---
+
 ## Příloha A — Použité příkazy a zdroje
 
 - `ssh -p 2222 -i ~/.ssh/zion-edge-post-wipe-2026-07-29 root@62.171.141.136`
