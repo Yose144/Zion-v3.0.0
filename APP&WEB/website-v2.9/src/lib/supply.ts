@@ -117,9 +117,9 @@ export function estimateRemainingMiningYears(chainHeight: number, minedSupply: n
 }
 
 export async function resolveSupplySnapshot(rpc: RpcSupplyClient, chainHeight: number): Promise<SupplySnapshot> {
-  const estimatedMinedSupply = Math.max(0, chainHeight * BLOCK_REWARD_ZION);
+  // Decade Decay estimate is more accurate than linear height * reward.
   let premineSupply = GENESIS_PREMINE_ZION;
-  let minedSupply = estimatedMinedSupply;
+  let minedSupply = estimateMinedSupplyAtHeight(chainHeight);
 
   try {
     const supplyInfo = await rpc.rpcCall<Record<string, unknown>>('getSupplyInfo');
@@ -129,7 +129,7 @@ export async function resolveSupplySnapshot(rpc: RpcSupplyClient, chainHeight: n
     const reportedPremine =
       asFiniteNumber(supplyInfo?.premine_zion) ??
       asFiniteNumber(supplyInfo?.premine);
-    if (reportedPremine != null && reportedPremine >= 0) {
+    if (reportedPremine != null && reportedPremine > 0) {
       premineSupply = reportedPremine;
     }
 
@@ -148,23 +148,13 @@ export async function resolveSupplySnapshot(rpc: RpcSupplyClient, chainHeight: n
         : reportedCirculating;
 
     const minedCandidate = reportedMined ?? minedFromCirculating;
-    if (minedCandidate != null && minedCandidate >= 0) {
+    // Some V31 nodes report mined_so_far_zion=0 even with non-zero height.
+    // Only trust a positive, plausible value; otherwise keep the estimate.
+    if (minedCandidate != null && minedCandidate > 0) {
       minedSupply = minedCandidate;
     }
   } catch {
-    // Fall through to emission or height-based estimate.
-  }
-
-  if (minedSupply === estimatedMinedSupply && chainHeight > 0) {
-    try {
-      const emission = await rpc.getCoinbaseTxSum(0, chainHeight);
-      const candidate = emission.emission_amount / ATOMIC_UNITS_PER_ZION;
-      if (Number.isFinite(candidate) && candidate > 0) {
-        minedSupply = candidate;
-      }
-    } catch {
-      // Keep estimated mined supply.
-    }
+    // Fall through to decade-decay estimate.
   }
 
   const maxMineableSupply = Math.max(0, TOTAL_SUPPLY_ZION - premineSupply);
