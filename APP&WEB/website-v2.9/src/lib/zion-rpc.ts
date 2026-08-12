@@ -68,6 +68,20 @@ export interface ZionBlock extends ZionBlockHeader {
   v3_transactions?: ZionV3Transaction[];
 }
 
+export interface ZionTransactionInput {
+  type?: string;
+  amount: number;
+  key_image?: string;
+  previous_output?: string;
+  address?: string;
+}
+
+export interface ZionTransactionOutput {
+  amount: number;
+  address: string;
+  key?: string;
+}
+
 export interface ZionTransaction {
   tx_hash: string;
   block_height: number;
@@ -91,6 +105,9 @@ export interface ZionTransaction {
     amount: number;
     target: { key: string };
   }>;
+  // Normalized inputs/outputs for UI/explorer rendering
+  inputs?: ZionTransactionInput[];
+  outputs?: ZionTransactionOutput[];
   extra: number[];
   fee: number;
   humanitarian_tithe?: number;
@@ -367,6 +384,131 @@ function mapV3BlockToFull(block: any): ZionBlock {
     tx_hashes: (block.transaction_ids ?? []).slice(1),
     v3_transactions: v3Txs,
   };
+}
+
+// ─── V31 Native (UTXO) Transaction Helpers ───────────────────────────────────
+
+function bytesToHex(bytes: number[] | string | undefined): string {
+  if (!bytes) return '';
+  if (typeof bytes === 'string') return bytes.replace(/^0x/i, '').toLowerCase();
+  return Array.from(bytes, (b) => (b & 0xff).toString(16).padStart(2, '0')).join('');
+}
+
+function amountToAtomic(raw: string | number | undefined): number {
+  if (raw === undefined || raw === null) return 0;
+  const n = typeof raw === 'string' ? Number(raw) : raw;
+  return Number.isFinite(n) ? n : 0;
+}
+
+function parseV31Address(addr: any): string {
+  if (typeof addr === 'string') return addr;
+  if (!addr || typeof addr !== 'object') return '';
+  if (typeof addr.encoded === 'string') return addr.encoded;
+  return '';
+}
+
+function parseV31Output(out: any): { address: string; amount: number; key: string } {
+  const amount = amountToAtomic(out?.amount);
+  const address = parseV31Address(out?.address);
+  return { address, amount, key: address };
+}
+
+function parseV31Input(inp: any): { type: string; amount: number; key_image: string | undefined; previous_output: string | undefined } {
+  const previousOutput = bytesToHex(inp?.previous_output);
+  return {
+    type: previousOutput ? 'standard' : 'coinbase',
+    amount: 0,
+    key_image: previousOutput ? previousOutput : undefined,
+    previous_output: previousOutput || undefined,
+  };
+}
+
+function isCoinbaseFromInputs(inputs: any[]): boolean {
+  if (!Array.isArray(inputs) || inputs.length === 0) return true;
+  return !inputs.some((inp) => bytesToHex(inp?.previous_output));
+}
+
+function decodeMemo(bytes: number[] | undefined): string {
+  if (!Array.isArray(bytes)) return '';
+  try {
+    return String.fromCharCode(...bytes.filter((b) => b >= 32 && b < 127));
+  } catch {
+    return '';
+  }
+}
+
+function parseV31NativeTransaction(
+  raw: any,
+  blockHeight = 0,
+  blockTimestamp = 0,
+  confirmed = true,
+  txHashOverride?: string,
+): ZionTransaction {
+  const res = raw ?? {};
+  const tx = res.transaction ?? raw ?? {};
+  const inputsRaw = Array.isArray(tx.inputs) ? tx.inputs : [];
+  const outputsRaw = Array.isArray(tx.outputs) ? tx.outputs : [];
+
+  const outputs = outputsRaw.map(parseV31Output);
+  const inputs = inputsRaw.map(parseV31Input);
+  const isCoinbase = isCoinbaseFromInputs(inputsRaw);
+
+  const totalOutputAtomic = outputs.reduce((s: number, o: { amount: number }) => s + o.amount, 0);
+  // V31-native transactions do not expose input amounts in the RPC, so fee cannot
+  // be calculated without looking up previous outputs. We report 0 fee for now.
+  const feeAtomic = 0;
+
+  const txHash = txHashOverride || tx.tx_id || res.tx_id || '';
+  const memo = Array.isArray(tx.memo) ? tx.memo : [];
+  const memoText = decodeMemo(memo);
+
+  return {
+    tx_hash: txHash,
+    tx_id: txHash,
+    block_height: res.block_height ?? blockHeight,
+    block_timestamp: res.block_timestamp ?? blockTimestamp,
+    in_pool: !confirmed,
+    double_spend_seen: false,
+    output_indices: [],
+    version: tx.version ?? 1,
+    unlock_time: 0,
+    inputs: inputs.map((i: { type: string; amount: number; key_image: string | undefined; previous_output: string | undefined }) => ({
+      type: i.type,
+      amount: i.amount,
+      key_image: i.key_image,
+      previous_output: i.previous_output,
+      address: i.previous_output,
+    })),
+    outputs: outputs.map((o: { address: string; amount: number; key: string }) => ({
+      amount: o.amount,
+      address: o.address,
+      key: o.key,
+    })),
+    vin: inputs.map((i: { type: string; amount: number; key_image: string | undefined; previous_output: string | undefined }) => ({ key: { amount: i.amount, key_offsets: [], k_image: i.key_image || '' } })),
+    vout: outputs.map((o: { address: string; amount: number; key: string }) => ({ amount: o.amount, target: { key: o.key } })),
+    extra: memo,
+    fee: feeAtomic,
+    // V3 account-model compatibility fields derived from UTXO data
+    from: isCoinbase ? 'coinbase' : (inputs.length > 0 ? '' : 'coinbase'),
+    to: outputs[0]?.address ?? '',
+    amount_zion: String(totalOutputAtomic),
+    fee_zion: 0,
+    nonce: 0,
+    signature: '',
+    public_key: '',
+    transaction_model: res.transaction_model ?? 'v31-native',
+  };
+}
+
+function parseV31TransactionsFromBlock(block: any): ZionTransaction[] {
+  if (!block || !Array.isArray(block.transactions)) return [];
+  const txIds = Array.isArray(block.transaction_ids) ? block.transaction_ids : [];
+  const blockHeight = block.height ?? 0;
+  const blockTimestamp = block.timestamp ?? 0;
+  return block.transactions.map((tx: any, idx: number) => {
+    const wrapped = { transaction: tx, block_height: blockHeight, block_timestamp: blockTimestamp, confirmed: true, transaction_model: 'v31-native' };
+    return parseV31NativeTransaction(wrapped, blockHeight, blockTimestamp, true, txIds[idx] ?? tx.tx_id ?? '');
+  });
 }
 
 // ─── RPC Client ──────────────────────────────────────────────────────────────
@@ -728,43 +870,61 @@ class ZionRpcClient {
     const block = typeof heightOrHash === 'number'
       ? await this.rpcCall<any>('getBlockByHeight', { height: heightOrHash })
       : await this.rpcCall<any>('getBlock', { hash: heightOrHash });
-    return mapV3BlockToFull(block);
+    const header = mapV3BlockToHeader(block);
+    const v31Txs = parseV31TransactionsFromBlock(block);
+    return {
+      ...header,
+      miner_tx: {
+        version: 1,
+        unlock_time: 0,
+        vin: v31Txs[0]?.inputs?.length ? [] : [{ gen: { height: block.height ?? 0 } }],
+        vout: v31Txs[0]?.outputs?.map((o) => ({ amount: Math.round(o.amount), target: { key: o.address ?? '' } })) ?? [{
+          amount: Math.round(normalizeRewardZion(block.miner_reward_zion ?? block.subsidy_zion ?? block.reward) * ATOMIC_PER_ZION),
+          target: { key: block.miner_address ?? '' },
+        }],
+        extra: v31Txs[0]?.extra ?? [],
+      },
+      tx_hashes: (block.transaction_ids ?? []).slice(1),
+      v3_transactions: v31Txs as any,
+    };
   }
 
-  /** Get recent V3 account-model transactions from latest blocks.
-   *  Scans blocks and returns non-coinbase transactions with from/to/amount fields. */
+  /** Get recent V31-native transactions from latest blocks.
+   *  Scans blocks and returns both coinbase and transfer transactions with UTXO details. */
   async getRecentV3Transactions(limit: number = 20): Promise<Array<{
-    tx_id: string; from: string; to: string; amount_zion: string;
+    tx_id: string; tx_hash: string; from: string; to: string; amount_zion: string;
     fee_zion: number; nonce: number; block_height: number; timestamp: number;
-    public_key: string; signature: string;
+    public_key: string; signature: string; transaction_model: string;
+    inputs: { address?: string; amount: number; key?: string; previous_output?: string }[];
+    outputs: { address: string; amount: number; key?: string }[];
   }>> {
     const info = await this.getInfo();
     const chainHeight = info.height;
     const txs: any[] = [];
-    // Scan last 200 blocks for non-coinbase transactions.
-    // Transfer TXs (pool payouts, user transfers) can be sparse — sometimes
-    // dozens of blocks apart — so a 20-block window misses them entirely.
     const startHeight = Math.max(0, chainHeight - 199);
     for (let h = chainHeight; h >= startHeight && txs.length < limit; h--) {
       try {
         const block = await this.rpcCall<any>('getBlockByHeight', { height: h });
-        const blockTxs = block?.transactions ?? [];
-        for (const tx of blockTxs) {
-          if (tx.from && tx.from !== 'coinbase') {
-            txs.push({
-              tx_id: tx.tx_id,
-              from: tx.from,
-              to: tx.to,
-              amount_zion: tx.amount_zion,
-              fee_zion: tx.fee_zion ?? 0,
-              nonce: tx.nonce ?? 0,
-              block_height: h,
-              timestamp: block?.timestamp ?? 0,
-              public_key: tx.public_key ?? '',
-              signature: tx.signature ?? '',
-            });
-            if (txs.length >= limit) break;
-          }
+        const parsed = parseV31TransactionsFromBlock(block);
+        for (const tx of parsed) {
+          if (txs.length >= limit) break;
+          const isCoinbase = tx.from === 'coinbase';
+          txs.push({
+            tx_id: tx.tx_hash,
+            tx_hash: tx.tx_hash,
+            from: isCoinbase ? 'coinbase' : (tx.inputs?.map((i) => i.previous_output).filter(Boolean).join(', ') ?? ''),
+            to: tx.to ?? tx.outputs?.map((o) => o.address).filter(Boolean).join(', ') ?? '',
+            amount_zion: tx.amount_zion ?? '0',
+            fee_zion: tx.fee_zion ?? 0,
+            nonce: 0,
+            block_height: tx.block_height,
+            timestamp: tx.block_timestamp,
+            public_key: '',
+            signature: '',
+            transaction_model: tx.transaction_model ?? 'v31-native',
+            inputs: tx.inputs,
+            outputs: tx.outputs,
+          });
         }
       } catch { /* skip unavailable block */ }
     }
@@ -786,36 +946,9 @@ class ZionRpcClient {
     const results: ZionTransaction[] = [];
     for (const txid of txHashes) {
       try {
-        // V3 RPC expects { txid: ... } not { hash: ... }
         const res = await this.rpcCall<any>('getTransaction', { txid });
-        const tx = res?.transaction ?? res ?? {};
-        // V3 account-model response: { from, to, amount_zion, fee_zion, nonce, signature, public_key, tx_id }
-        const amountAtomic = Number(tx.amount_zion ?? 0);
-        const feeAtomic = Number(tx.fee_zion ?? 0);
-        results.push({
-          tx_hash: tx.tx_id ?? txid,
-          block_height: res?.block_height ?? tx.block_height ?? 0,
-          block_timestamp: tx.timestamp ?? 0,
-          in_pool: !(res?.confirmed ?? true),
-          double_spend_seen: false,
-          output_indices: [],
-          version: tx.version ?? 1,
-          unlock_time: 0,
-          vin: [],
-          vout: [],
-          extra: [],
-          fee: feeAtomic,
-          // V3 account-model fields
-          from: tx.from,
-          to: tx.to,
-          amount_zion: tx.amount_zion,
-          fee_zion: feeAtomic,
-          nonce: tx.nonce,
-          signature: tx.signature,
-          public_key: tx.public_key,
-          tx_id: tx.tx_id,
-          transaction_model: res?.transaction_model ?? 'hybrid',
-        });
+        if (!res || !res.transaction) continue;
+        results.push(parseV31NativeTransaction(res, res.block_height ?? 0, 0, res.confirmed ?? false, txid));
       } catch { /* skip unavailable tx */ }
     }
     return results;

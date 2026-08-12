@@ -56,14 +56,13 @@ const ExplorerTxTxDetailClientCopy = {
   viewBlock: { cs: `Zobrazit blok`, en: `View Block` },
 };
 
-interface TxInput { type: string; amount: number; key_image?: string; key_offsets?: number[]; }
-interface TxOutput { amount: number; key: string; index?: number; }
+interface TxInput { type: string; amount: number; key_image?: string; previous_output?: string; key_offsets?: number[]; }
+interface TxOutput { amount: number; key: string; address?: string; index?: number; }
 interface Transaction {
   tx_hash: string; block_height: number; block_timestamp: number; in_pool: boolean;
   fee: number; amount: number; version: number; unlock_time: number;
   inputs: TxInput[]; outputs: TxOutput[]; extra: number[];
   confirmations: number; status: string;
-  // V3 account-model fields
   from?: string; to?: string; amount_zion?: string; fee_zion?: number;
   nonce?: number; signature?: string; public_key?: string; tx_id?: string;
   transaction_model?: string;
@@ -281,16 +280,21 @@ export default function TxDetailClient() {
           <InfoRow label={ExplorerTxTxDetailClientCopy.timestamp[cs ? 'cs' : 'en']} value={`${fmtDate(tx.block_timestamp, locale)} (${fmtAge(tx.block_timestamp, cs)})`} />
           <InfoRow label={ExplorerTxTxDetailClientCopy.amount[cs ? 'cs' : 'en']} value={`${tx.amount.toFixed(6)} ZION`} color="text-zion-gold" />
           <InfoRow label="Fee" value={`${tx.fee.toFixed(6)} ZION`} color="text-zion-gold" />
-          {isV3Account ? (
+          {isCoinbase ? (
+            <InfoRow label="From" value="⛏ Coinbase" />
+          ) : (
+            <InfoRow label="From" value={tx.from ?? '—'} mono copyable link={tx.from?.startsWith('zion1') ? `/explorer/address?id=${tx.from}` : undefined} />
+          )}
+          <InfoRow label="To" value={tx.to ?? tx.outputs?.[0]?.address ?? '—'} mono copyable link={(tx.to ?? tx.outputs?.[0]?.address)?.startsWith('zion1') ? `/explorer/address?id=${tx.to ?? tx.outputs?.[0]?.address}` : undefined} />
+          <InfoRow label={ExplorerTxTxDetailClientCopy.model[cs ? 'cs' : 'en']} value={(tx.transaction_model ?? 'v31-native').toUpperCase()} color="text-zion-cyan" />
+          {isV3Account && (
             <>
-              <InfoRow label="From" value={tx.from ?? '—'} mono copyable link={`/explorer/address?id=${tx.from}`} />
-              <InfoRow label="To" value={tx.to ?? '—'} mono copyable link={`/explorer/address?id=${tx.to}`} />
               <InfoRow label="Nonce" value={`${tx.nonce ?? 0}`} />
-              <InfoRow label={ExplorerTxTxDetailClientCopy.model[cs ? 'cs' : 'en']} value={(tx.transaction_model ?? 'hybrid').toUpperCase()} color="text-zion-cyan" />
               {tx.public_key && <InfoRow label={ExplorerTxTxDetailClientCopy.publicKey[cs ? 'cs' : 'en']} value={tx.public_key} mono copyable />}
               {tx.signature && <InfoRow label={ExplorerTxTxDetailClientCopy.signature[cs ? 'cs' : 'en']} value={truncHash(tx.signature, 16)} mono copyable />}
             </>
-          ) : (
+          )}
+          {!isV3Account && (
             <>
               <InfoRow label={ExplorerTxTxDetailClientCopy.version[cs ? 'cs' : 'en']} value={tx.version.toString()} />
               {tx.unlock_time > 0 && <InfoRow label={ExplorerTxTxDetailClientCopy.unlockTime[cs ? 'cs' : 'en']} value={tx.unlock_time.toString()} />}
@@ -360,10 +364,21 @@ export default function TxDetailClient() {
                     <span className="text-zion-cyan text-[10px] font-mono uppercase tracking-wider">{ExplorerTxTxDetailClientCopy.output[cs ? 'cs' : 'en']} #{i}</span>
                     <span className="text-zion-gold text-sm font-semibold tabular-nums">{out.amount.toFixed(4)} ZION</span>
                   </div>
-                  {out.key && (
+                  {(out.address || out.key) && (
                     <div className="flex items-center text-gray-600 font-mono text-[11px] truncate">
-                      {ExplorerTxTxDetailClientCopy.key[cs ? 'cs' : 'en']}: {truncHash(out.key, 10)}
-                      <CopyBtn text={out.key} />
+                      {out.address ? (
+                        <>
+                          <Link href={`/explorer/address?id=${out.address}`} className="hover:text-zion-cyan transition">
+                            {truncHash(out.address, 14)}
+                          </Link>
+                          <CopyBtn text={out.address} />
+                        </>
+                      ) : (
+                        <>
+                          {ExplorerTxTxDetailClientCopy.key[cs ? 'cs' : 'en']}: {truncHash(out.key, 10)}
+                          <CopyBtn text={out.key} />
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
