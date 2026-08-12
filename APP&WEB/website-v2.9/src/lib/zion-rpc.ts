@@ -180,7 +180,11 @@ export interface ZionPeer {
   recv_count: number;
   send_count: number;
   state: string;
+  source?: string;
   live_time: number;
+  idle_seconds?: number;
+  good?: number;
+  bad?: number;
   avg_download: number;
   current_download: number;
   avg_upload: number;
@@ -188,6 +192,7 @@ export interface ZionPeer {
   connection_id: string;
   height: number;
   incoming: boolean;
+  connected?: boolean;
   address: string;
 }
 
@@ -768,16 +773,23 @@ class ZionRpcClient {
     // Get tip block for difficulty and real TX count
     let difficulty = chainInfo.difficulty ?? 0;
     let txCount = 0;
-    if (effectiveHeight > 0 && difficulty === 0) {
-      try {
-        const tip = await this.rpcCall<any>('getBlockByHeight', { height: effectiveHeight });
-        difficulty = tip?.difficulty ?? 0;
-        txCount = Array.isArray(tip?.transaction_ids)
-          ? tip.transaction_ids.length
-          : Array.isArray(tip?.transactions)
-            ? tip.transactions.length
-            : 0;
-      } catch { /* use 0 */ }
+    if (effectiveHeight > 0) {
+      if (difficulty === 0) {
+        try {
+          const tip = await this.rpcCall<any>('getBlockByHeight', { height: effectiveHeight });
+          difficulty = tip?.difficulty ?? 0;
+          txCount = Array.isArray(tip?.transaction_ids)
+            ? tip.transaction_ids.length
+            : Array.isArray(tip?.transactions)
+              ? tip.transactions.length
+              : 0;
+        } catch { /* use 0 */ }
+      }
+      // V31 getChainInfo exposes accepted_blocks; use it as a live TX-count proxy
+      // (each accepted block contains at least the miner/coinbase tx).
+      if (txCount === 0 && (chainInfo.accepted_blocks ?? 0) > 0) {
+        txCount = Math.max(0, (chainInfo.accepted_blocks as number) - 1) * 2;
+      }
     }
 
     const peerCount = peerInfo?.count ?? nodeInfo?.known_peers ?? 0;
@@ -1079,8 +1091,9 @@ class ZionRpcClient {
       const res = await this.rpcCall<any>('getPeerInfo');
       const peers = res?.peers ?? [];
       return peers.map((p: any) => {
-        const incoming = p.inbound === true || p.is_inbound === true || p.direction === 'inbound';
-        const state = p.state ?? 'connected';
+        const incoming = p.inbound === true || p.is_inbound === true || p.direction === 'inbound' || p.source === 'inbound';
+        const source = p.source ?? (incoming ? 'inbound' : 'outbound');
+        const state = p.connected === true ? 'connected' : (p.state ?? 'known');
         return {
           host: p.host ?? '',
           port: p.port ?? 0,
@@ -1088,7 +1101,11 @@ class ZionRpcClient {
           recv_count: p.bytes_received ?? 0,
           send_count: p.bytes_sent ?? 0,
           state,
-          live_time: p.connection_time ?? 0,
+          source,
+          live_time: p.connection_time ?? p.idle_seconds ?? 0,
+          idle_seconds: p.idle_seconds ?? 0,
+          good: p.good ?? 0,
+          bad: p.bad ?? 0,
           avg_download: p.avg_download ?? 0,
           current_download: p.current_download ?? 0,
           avg_upload: p.avg_upload ?? 0,
@@ -1096,7 +1113,7 @@ class ZionRpcClient {
           connection_id: p.address ?? '',
           height: p.height ?? p.chain_height ?? 0,
           incoming,
-          connected: p.connected ?? state === 'connected',
+          connected: p.connected === true,
           address: p.address ?? `${p.host}:${p.port}`,
         };
       });

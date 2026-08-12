@@ -21,11 +21,14 @@ export async function GET() {
       port: peer.port,
       height: peer.height || 0,
       incoming: peer.incoming || false,
-      connected: peer.connected || false,
-      state: peer.state || 'known',
+      connected: peer.connected === true,
+      state: peer.connected === true ? 'connected' : (peer.state || 'known'),
+      source: peer.source || 'unknown',
       sub_version: peer.sub_version || '',
       last_seen: peer.last_seen || 0,
-      idle_seconds: peer.idle_seconds || 0,
+      idle_seconds: peer.idle_seconds ?? 0,
+      good: peer.good ?? 0,
+      bad: peer.bad ?? 0,
       failed_attempts: peer.failed_attempts || 0,
     }));
 

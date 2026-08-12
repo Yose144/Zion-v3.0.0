@@ -42,7 +42,9 @@ const tests = [
       console.log(`OK ${t.path}`);
       passed++;
     } else {
-      console.log(`FAIL ${t.path} status=${res.status} error=${res.error || 'check failed'} body=${JSON.stringify(res.json || res.body).slice(0, 120)}`);
+      const payload = res.json !== undefined ? res.json : res.body;
+      const bodyPreview = payload !== undefined ? JSON.stringify(payload).slice(0, 120) : '(no body)';
+      console.log(`FAIL ${t.path} status=${res.status} error=${res.error || 'check failed'} body=${bodyPreview}`);
     }
   }
   console.log(`\n${passed}/${tests.length} API checks passed`);

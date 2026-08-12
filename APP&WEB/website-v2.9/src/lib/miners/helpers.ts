@@ -11,6 +11,8 @@ export interface PoolMinerRaw {
   payout_address?: string;
   address?: string;
   worker_name?: string;
+  worker?: string;
+  miner_id?: string;
   hashrate?: number;
   hashrate_hps?: number;
   hashrate_1h?: number;
@@ -18,12 +20,17 @@ export interface PoolMinerRaw {
   hashrate_24h?: number;
   hashrate_24h_hps?: number;
   valid_shares?: number;
+  accepted_shares?: number;
   invalid_shares?: number;
+  rejected_shares?: number;
   blocks_found?: number;
   paid_total_atomic?: number;
+  total_paid_flowers?: number;
   paid_total?: number;
   pending_balance?: number;
   last_seen?: number;
+  last_seen_s?: number;
+  first_seen_s?: number;
 }
 
 export interface MinerEntry {
@@ -59,18 +66,43 @@ export interface MinersLeaderboard {
 }
 
 export async function fetchMinersFromPool(): Promise<PoolMinerRaw[]> {
-  try {
-    const res = await fetch(`${SITE_PRIMARY_POOL_API_URL}/miners?limit=500`, {
-      cache: 'no-store',
-      signal: AbortSignal.timeout(8000),
-    });
-    if (!res.ok) return [];
-    const data = await res.json() as any;
-    if (!data.ok || !Array.isArray(data.miners)) return [];
-    return data.miners as PoolMinerRaw[];
-  } catch {
-    return [];
+  // Try live telemetry first; fall back to persistent share-store history.
+  const endpoints = [`${SITE_PRIMARY_POOL_API_URL}/miners?limit=500`, `${SITE_PRIMARY_POOL_API_URL}/api/v1/miners?limit=500`];
+  const results: PoolMinerRaw[] = [];
+  const seen = new Set<string>();
+
+  for (const url of endpoints) {
+    try {
+      const res = await fetch(url, {
+        cache: 'no-store',
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) continue;
+      const data = await res.json() as any;
+      if (!data.ok || !Array.isArray(data.miners)) continue;
+
+      for (const m of data.miners as PoolMinerRaw[]) {
+        const id = m.miner_id || `${m.address || m.payout_address || 'unknown'}.${m.worker_name || 'default'}`;
+        if (seen.has(id)) continue;
+        seen.add(id);
+        // Normalize persistent-miner shape to telemetry shape.
+        if (!m.payout_address && !m.address && m.miner_id) {
+          const [addr, worker] = m.miner_id.split('.');
+          m.address = addr;
+          m.worker_name = worker || 'default';
+          m.paid_total_atomic = m.total_paid_flowers;
+          m.valid_shares = m.accepted_shares;
+          m.invalid_shares = m.rejected_shares;
+          m.last_seen = m.last_seen_s;
+        }
+        results.push(m);
+      }
+    } catch {
+      /* try next endpoint */
+    }
   }
+
+  return results;
 }
 
 export async function buildMinersLeaderboard(): Promise<MinersLeaderboard> {

@@ -249,6 +249,11 @@ impl PeerManager {
 
     /// Return all known peer addresses, excluding our own and banned ones.
     pub async fn known_peers_list(&self) -> Vec<SocketAddr> {
+        self.known_peers_with_metadata().await.into_keys().collect()
+    }
+
+    /// Return all known peer addresses with their metadata.
+    pub async fn known_peers_with_metadata(&self) -> HashMap<SocketAddr, PeerInfo> {
         let local = *self.local_addr.lock().unwrap_or_else(|e| e.into_inner());
         let banned = self.banned.lock().unwrap_or_else(|e| e.into_inner()).clone();
         self.peers
@@ -257,7 +262,7 @@ impl PeerManager {
             .iter()
             .filter(|(addr, _)| Some(**addr) != local)
             .filter(|(addr, _)| !banned.contains_key(&addr.ip()))
-            .map(|(addr, _)| *addr)
+            .map(|(addr, info)| (*addr, info.clone()))
             .collect()
     }
 
