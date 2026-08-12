@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
-import { ATOMIC_UNITS_PER_ZION, BLOCK_REWARD_ZION, KNOWN_ADDRESS_LABELS, POOL_WALLET } from '@/lib/constants';
+import { ATOMIC_UNITS_PER_ZION, BLOCK_REWARD_ZION, KNOWN_ADDRESS_LABELS, POOL_WALLET, POOL_FEE_PCT } from '@/lib/constants';
 
 export async function GET(request: NextRequest) {
   const rpc = getZionRpc();
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
 
     if (v3Txs.length > 0) {
       // Use the transactions array directly from the V3 RPC response
-      for (const tx of v3Txs) {
+      for (const tx of v3Txs as any[]) {
         const isCoinbase = tx.from === 'coinbase';
         const amountAtomic = Number(tx.amount_zion ?? 0);
         const feeAtomic = Number(tx.fee_zion ?? 0);
@@ -71,11 +71,24 @@ export async function GET(request: NextRequest) {
           transaction_model: 'account',
           inputs: isCoinbase
             ? [{ type: 'coinbase', height: block.height }]
-            : [],
-          outputs: [{
-            amount: amountAtomic / ATOMIC_UNITS_PER_ZION,
-            key: tx.to,
-          }],
+            : (tx.inputs || []).map((i: any) => ({
+                type: i.type,
+                amount: i.amount || 0,
+                key_image: i.key_image || i.previous_output || '',
+                previous_output: i.previous_output || '',
+                address: i.address || '',
+              })),
+          outputs: Array.isArray(tx.outputs) && tx.outputs.length > 0
+            ? tx.outputs.map((o: any) => ({
+                amount: (o.amount || 0) / ATOMIC_UNITS_PER_ZION,
+                key: o.address || o.key || '',
+                address: o.address || o.key || '',
+              }))
+            : [{
+                amount: amountAtomic / ATOMIC_UNITS_PER_ZION,
+                key: tx.to,
+                address: tx.to,
+              }],
         });
       }
     } else {
@@ -134,7 +147,7 @@ export async function GET(request: NextRequest) {
       timestamp: block.timestamp,
       difficulty: block.difficulty,
       nonce: block.nonce || 0,
-      reward: block.reward ? block.reward / ATOMIC_UNITS_PER_ZION : BLOCK_REWARD_ZION,
+      reward: block.subsidy_zion ?? (block.reward ? block.reward / ATOMIC_UNITS_PER_ZION : BLOCK_REWARD_ZION),
       block_size: block.block_size || 0,
       num_txes: block.num_txes || 0,
       orphan_status: block.orphan_status || false,
@@ -158,7 +171,38 @@ export async function GET(request: NextRequest) {
 
       // Computed fields
       total_fees: txs.reduce((sum, tx) => sum + (tx.fee || 0), 0),
-      total_output: txs.reduce((sum, tx) => sum + (tx.amount || 0), 0),
+      // total_output = sum of coinbase outputs only (real new supply emitted in this block)
+      total_output: txs
+        .filter((tx) => tx.type === 'coinbase')
+        .reduce((sum, tx) => sum + (tx.amount || 0), 0),
+
+      // Coinbase reward breakdown from outputs
+      reward_breakdown: (() => {
+        const coinbase = txs.find((tx) => tx.type === 'coinbase');
+        const outs = coinbase?.outputs || [];
+        const breakdown: Record<string, { address: string; amount: number; pct: number }> = {};
+        for (const out of outs) {
+          const addr = out.key || out.address || '';
+          const known = KNOWN_ADDRESS_LABELS[addr];
+          const label = known?.type === 'humanitarian' ? 'humanitarian'
+            : known?.type === 'issobella' ? 'issobella'
+            : known?.type === 'pool_fee' ? 'pool_fee'
+            : 'miner';
+          breakdown[label] = { address: addr, amount: out.amount || 0, pct: 0 };
+        }
+        const emitted = Object.values(breakdown).reduce((s, v) => s + v.amount, 0);
+        // Pool fee is burned: the difference between full subsidy and emitted coinbase outputs
+        const subsidy = (block as any).subsidy_zion ?? (emitted / (1 - POOL_FEE_PCT / 100));
+        const poolFee = Math.max(0, subsidy - emitted);
+        if (poolFee > 0) {
+          breakdown.pool_fee = { address: '', amount: poolFee, pct: 0 };
+        }
+        const total = Object.values(breakdown).reduce((s, v) => s + v.amount, 0);
+        if (total > 0) {
+          for (const v of Object.values(breakdown)) v.pct = (v.amount / total) * 100;
+        }
+        return breakdown;
+      })(),
     };
 
     return NextResponse.json(blockInfo, {

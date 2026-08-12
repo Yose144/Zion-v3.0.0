@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
-import { ATOMIC_UNITS_PER_ZION } from '@/lib/constants';
+import { ATOMIC_UNITS_PER_ZION, BLOCK_REWARD_ZION } from '@/lib/constants';
 import { resolveSupplySnapshot } from '@/lib/supply';
 import { promises as fs } from 'fs';
 import { join } from 'path';
@@ -96,7 +96,7 @@ async function computeStats(): Promise<{ json: any; ts: number }> {
       hash: lastBlock.hash,
       timestamp: lastBlock.timestamp,
       difficulty: lastBlock.difficulty,
-      reward: lastBlock.reward / ATOMIC_UNITS_PER_ZION,
+      reward: lastBlock.subsidy_zion ?? (lastBlock.reward ? lastBlock.reward / ATOMIC_UNITS_PER_ZION : BLOCK_REWARD_ZION),
       num_txes: lastBlock.num_txes || 0,
       block_size: lastBlock.block_size || 0,
     } : null,

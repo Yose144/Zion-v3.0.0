@@ -221,7 +221,7 @@ export default function AddressDetailClient() {
   const locale = ExplorerAddressAddressDetailClientCopy.enUs[cs ? 'cs' : 'en'];
   const router = useRouter();
   const searchParams = useSearchParams();
-  const addr = useMemo(() => String(searchParams.get("addr") || "").trim(), [searchParams]);
+  const addr = useMemo(() => String(searchParams.get("addr") || searchParams.get("address") || "").trim(), [searchParams]);
 
   const [data, setData] = useState<AddressData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -411,8 +411,8 @@ export default function AddressDetailClient() {
         {/* ── transaction summary (received / sent / fees) ──── */}
         {(() => {
           const txs = data.transactions.filter((t) => t.tx_hash);
-          const received = txs.filter((t) => (t.to || '') === addr).reduce((s, t) => s + t.amount, 0);
-          const sent = txs.filter((t) => (t.from || '') === addr).reduce((s, t) => s + t.amount, 0);
+          const received = data.total_received || txs.filter((t) => (t.to || '') === addr).reduce((s, t) => s + t.amount, 0);
+          const sent = data.total_sent || txs.filter((t) => (t.from || '') === addr).reduce((s, t) => s + t.amount, 0);
           const fees = txs.reduce((s, t) => s + (t.fee || 0), 0);
           const total = received + sent;
           return (

@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
         transactions: (header.num_txes || 0) + 1,
         num_txes: header.num_txes || 0,
         miner: header.miner_address || '',
-        reward: header.reward ? header.reward / ATOMIC_UNITS_PER_ZION : BLOCK_REWARD_ZION,
+        reward: header.subsidy_zion ?? (header.reward ? header.reward / ATOMIC_UNITS_PER_ZION : BLOCK_REWARD_ZION),
         difficulty: header.difficulty,
         block_size: header.block_size || 0,
         nonce: header.nonce || 0,
