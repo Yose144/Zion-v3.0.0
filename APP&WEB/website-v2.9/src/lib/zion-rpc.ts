@@ -271,19 +271,21 @@ async function tcpJsonRpc(host: string, port: number, method: string, params: an
 
     socket.on('data', (chunk) => {
       data += chunk.toString();
-      // V3 and V31 nodes reply with a single JSON line terminated by a newline.
-      const lines = data.split('\n');
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (trimmed) {
-          finish(trimmed);
+      // V3 and V31 nodes reply with one or more JSON lines terminated by newlines.
+      // Buffer until we have at least one complete line before parsing.
+      let newlineIdx;
+      while ((newlineIdx = data.indexOf('\n')) >= 0) {
+        const line = data.slice(0, newlineIdx).trim();
+        data = data.slice(newlineIdx + 1);
+        if (line) {
+          finish(line);
           return;
         }
       }
     });
 
-    socket.on('end', () => finish(data.trim()));
-    socket.on('close', () => finish(data.trim()));
+    socket.on('end', () => { if (data.trim()) finish(data.trim()); });
+    socket.on('close', () => { if (data.trim()) finish(data.trim()); });
     socket.on('error', (err) => { if (!settled) { settled = true; clearTimeout(timer); socket.destroy(); reject(err); } });
   });
 }
@@ -912,7 +914,7 @@ class ZionRpcClient {
           txs.push({
             tx_id: tx.tx_hash,
             tx_hash: tx.tx_hash,
-            from: isCoinbase ? 'coinbase' : (tx.inputs?.map((i) => i.previous_output).filter(Boolean).join(', ') ?? ''),
+            from: isCoinbase ? 'coinbase' : '',
             to: tx.to ?? tx.outputs?.map((o) => o.address).filter(Boolean).join(', ') ?? '',
             amount_zion: tx.amount_zion ?? '0',
             fee_zion: tx.fee_zion ?? 0,
