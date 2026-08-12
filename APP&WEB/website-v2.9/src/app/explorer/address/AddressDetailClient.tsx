@@ -193,6 +193,7 @@ interface AddressData {
     amount: number;
     fee: number;
     timestamp: number;
+    block_height: number;
     status: string;
   }>;
   utxos: Array<{
@@ -577,7 +578,9 @@ export default function AddressDetailClient() {
                       </div>
 
                       {/* age */}
-                      <div className="flex items-center text-[12px] text-white/40 tabular-nums">{timeAgo(t.timestamp, cs)}</div>
+                      <div className="flex items-center text-[12px] text-white/40 tabular-nums">
+                        {t.timestamp ? timeAgo(t.timestamp, cs) : (t.block_height ? `#${t.block_height.toLocaleString(locale)}` : "—")}
+                      </div>
 
                       {/* fee */}
                       <div className="flex items-center justify-end text-[12px] text-white/30 tabular-nums font-mono">

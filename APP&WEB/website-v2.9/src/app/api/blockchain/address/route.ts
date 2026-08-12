@@ -46,10 +46,13 @@ export async function GET(request: NextRequest) {
     // UTXO list (for zion1 addresses)
     const utxoList = walletSnapshot?.utxos ?? [];
 
-    // Use on-chain transaction history (authoritative) when available;
-    // fall back to pool payouts for legacy compatibility.
+    // Build address transaction history.
+    // Priority 1: on-chain transaction history (account-model).
+    // Priority 2: UTXO-derived received transactions (v31-native UTXO).
+    // Priority 3: pool payouts as legacy fallback.
     let transactions: any[];
     let totalReceived: number;
+
     if (txHistory && txHistory.transactions.length > 0) {
       transactions = txHistory.transactions.map((tx) => {
         const isCoinbase = tx.from === 'coinbase';
@@ -69,6 +72,26 @@ export async function GET(request: NextRequest) {
       totalReceived = transactions
         .filter((tx) => tx.to === address)
         .reduce((sum, tx) => sum + tx.amount, 0);
+    } else if (utxoList.length > 0 && address.startsWith('zion1')) {
+      // V31-native UTXO: each UTXO corresponds to a received output.
+      const utxoTxs = utxoList
+        .slice()
+        .sort((a: any, b: any) => (b.height ?? 0) - (a.height ?? 0))
+        .slice(0, 50)
+        .map((u: any) => ({
+          tx_hash: u.tx_hash,
+          type: 'coinbase',
+          from: 'coinbase',
+          to: u.address || address,
+          amount: Number(u.amount) / 1_000_000,
+          fee: 0,
+          timestamp: 0,
+          block_height: u.height ?? 0,
+          status: 'confirmed',
+          output_index: u.output_index ?? 0,
+        }));
+      transactions = utxoTxs;
+      totalReceived = utxoList.reduce((sum: number, u: any) => sum + Number(u.amount ?? 0), 0) / 1_000_000;
     } else {
       const payouts = minerData?.recent_payouts || [];
       transactions = payouts.map((p: any, idx: number) => ({
@@ -89,12 +112,12 @@ export async function GET(request: NextRequest) {
       known_label: KNOWN_ADDRESS_LABELS[address]?.label || null,
       known_type: KNOWN_ADDRESS_LABELS[address]?.type || null,
       balance,
-      total_received: minerData?.balance?.paid || totalReceived,
+      total_received: totalReceived || minerData?.balance?.paid || 0,
       total_sent: 0,
       net_balance: balanceZion,
-      transaction_count: txHistory?.total ?? transactions.length,
-      first_seen: minerData?.first_seen || 0,
-      last_seen: minerData?.last_seen || 0,
+      transaction_count: (txHistory && txHistory.total > 0) ? txHistory.total : (utxoList.length > 0 ? utxoList.length : transactions.length),
+      first_seen: minerData?.first_seen || (utxoList.length ? Math.min(...utxoList.map((u: any) => u.height ?? 0).filter((h: number) => h > 0)) : 0),
+      last_seen: minerData?.last_seen || (utxoList.length ? Math.max(...utxoList.map((u: any) => u.height ?? 0)) : 0),
 
       // Mining stats (ZION-specific)
       is_miner: !!minerData,
