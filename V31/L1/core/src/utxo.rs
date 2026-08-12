@@ -38,6 +38,8 @@ impl From<&TransactionInput> for Outpoint {
 pub struct UtxoOutput {
     pub amount: Amount,
     pub address: Address,
+    pub block_height: u64,
+    pub block_timestamp: u64,
 }
 
 /// UTXO validation / application error.
@@ -77,13 +79,19 @@ impl UtxoSet {
     }
 
     /// Return unspent outputs for the given encoded address.
-    pub fn get_utxos_for_address(&self, address: &str) -> Vec<(Hash, u32, u64)> {
+    pub fn get_utxos_for_address(&self, address: &str) -> Vec<(Hash, u32, u64, u64, u64)> {
         let mut out = Vec::new();
         for (outpoint, output) in &self.outputs {
             if output.address.encoded == address {
                 let amount = output.amount.0;
                 if amount <= u64::MAX as u128 {
-                    out.push((outpoint.tx_hash, outpoint.index, amount as u64));
+                    out.push((
+                        outpoint.tx_hash,
+                        outpoint.index,
+                        amount as u64,
+                        output.block_height,
+                        output.block_timestamp,
+                    ));
                 }
             }
         }
@@ -105,16 +113,21 @@ impl UtxoSet {
     /// Validate a transaction against this UTXO set and return the fee.
     pub fn validate_transaction(&self, tx: &Transaction) -> Result<u128, UtxoError> {
         // Validate against a disposable clone so the real set is untouched.
-        self.clone().apply_transaction(tx)
+        self.clone().apply_transaction(tx, 0, 0)
     }
 
     /// Apply a transaction to the set, validating it first.
     ///
     /// Returns the fee (input sum - output sum) for non-coinbase transactions
     /// and 0 for coinbase transactions.
-    pub fn apply_transaction(&mut self, tx: &Transaction) -> Result<u128, UtxoError> {
+    pub fn apply_transaction(
+        &mut self,
+        tx: &Transaction,
+        block_height: u64,
+        block_timestamp: u64,
+    ) -> Result<u128, UtxoError> {
         if tx.is_coinbase() {
-            return self.apply_coinbase(tx);
+            return self.apply_coinbase(tx, block_height, block_timestamp);
         }
 
         // Collect the outputs being spent before we remove them, and verify
@@ -191,6 +204,8 @@ impl UtxoSet {
                 UtxoOutput {
                     amount: output.amount,
                     address: output.address.clone(),
+                    block_height,
+                    block_timestamp,
                 },
             );
         }
@@ -198,7 +213,12 @@ impl UtxoSet {
         Ok(fee)
     }
 
-    fn apply_coinbase(&mut self, tx: &Transaction) -> Result<u128, UtxoError> {
+    fn apply_coinbase(
+        &mut self,
+        tx: &Transaction,
+        block_height: u64,
+        block_timestamp: u64,
+    ) -> Result<u128, UtxoError> {
         for (i, output) in tx.outputs.iter().enumerate() {
             if output.amount.0 == 0 {
                 return Err(UtxoError::ZeroOutput(i));
@@ -209,6 +229,8 @@ impl UtxoSet {
                 UtxoOutput {
                     amount: output.amount,
                     address: output.address.clone(),
+                    block_height,
+                    block_timestamp,
                 },
             );
         }
@@ -218,8 +240,10 @@ impl UtxoSet {
     /// Apply an entire block to the set, atomically.
     pub fn apply_block(&mut self, block: &Block) -> Result<(), UtxoError> {
         let mut next = self.clone();
+        let block_height = block.header.height;
+        let block_timestamp = block.header.timestamp;
         for tx in &block.transactions {
-            next.apply_transaction(tx)?;
+            next.apply_transaction(tx, block_height, block_timestamp)?;
         }
         *self = next;
         Ok(())

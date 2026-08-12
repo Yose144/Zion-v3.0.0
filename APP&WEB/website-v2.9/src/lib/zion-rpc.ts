@@ -900,6 +900,11 @@ class ZionRpcClient {
       : await this.rpcCall<any>('getBlock', { hash: heightOrHash });
     const header = mapV3BlockToHeader(block);
     const v31Txs = parseV31TransactionsFromBlock(block);
+
+    // Enrich input addresses for non-coinbase transactions in the block.
+    // This is safe because block details are fetched one at a time.
+    await Promise.all(v31Txs.map((tx) => this.enrichInputAddresses(tx)));
+
     return {
       ...header,
       miner_tx: {
@@ -937,11 +942,20 @@ class ZionRpcClient {
         for (const tx of parsed) {
           if (txs.length >= limit) break;
           const isCoinbase = tx.from === 'coinbase';
+
+          // Build a human-readable from/to summary from UTXO inputs/outputs
+          const fromAddrs = (tx.inputs || [])
+            .map((i) => i.address)
+            .filter((a): a is string => typeof a === 'string' && a.startsWith('zion1'));
+          const toAddrs = (tx.outputs || [])
+            .map((o) => o.address || o.key)
+            .filter((a): a is string => typeof a === 'string' && a.startsWith('zion1'));
+
           txs.push({
             tx_id: tx.tx_hash,
             tx_hash: tx.tx_hash,
-            from: isCoinbase ? 'coinbase' : '',
-            to: tx.to ?? tx.outputs?.map((o) => o.address).filter(Boolean).join(', ') ?? '',
+            from: isCoinbase ? 'coinbase' : (fromAddrs.length ? Array.from(new Set(fromAddrs)).join(', ') : ''),
+            to: toAddrs.length ? Array.from(new Set(toAddrs)).join(', ') : (tx.to ?? ''),
             amount_zion: tx.amount_zion ?? '0',
             fee_zion: tx.fee_zion ?? 0,
             nonce: 0,
@@ -989,10 +1003,13 @@ class ZionRpcClient {
     return results;
   }
 
-  private async enrichInputAddresses(tx: ZionTransaction): Promise<void> {
+  /** Enrich input addresses for a single transaction by looking up previous outputs.
+   *  Returns true if at least one input address was resolved. */
+  async enrichInputAddresses(tx: ZionTransaction): Promise<boolean> {
     const standardInputs = (tx.inputs || []).filter((i) => i.previous_output && i.type !== 'coinbase');
-    if (!standardInputs.length) return;
+    if (!standardInputs.length) return false;
 
+    let resolved = false;
     const CONCURRENCY = 10;
     for (let i = 0; i < standardInputs.length; i += CONCURRENCY) {
       const batch = standardInputs.slice(i, i + CONCURRENCY);
@@ -1007,6 +1024,7 @@ class ZionRpcClient {
             const out = outs[outIndex] ?? outs[0];
             if (out) {
               input.address = parseV31Address(out?.address);
+              resolved = true;
             }
             return input;
           } catch {
@@ -1027,6 +1045,7 @@ class ZionRpcClient {
         .filter((addr): addr is string => typeof addr === 'string' && addr.startsWith('zion1'));
       tx.from = fromAddrs.length ? Array.from(new Set(fromAddrs)).join(', ') : tx.from;
     }
+    return resolved;
   }
 
   /** Get transaction history for an address via V3 getTransactionHistory RPC.
@@ -1476,8 +1495,8 @@ class ZionRpcClient {
         output_index: item.output_index ?? 0,
         amount: Number(item.amount ?? 0),
         address: item.address ?? address,
-        height: item.height ?? 0,
-        timestamp: 0,
+        height: item.block_height ?? item.height ?? 0,
+        timestamp: item.timestamp ?? 0,
       })),
     };
   }

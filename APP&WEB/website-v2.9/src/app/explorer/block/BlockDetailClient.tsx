@@ -21,6 +21,7 @@ import {
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
 import { useLang } from '@/contexts/LanguageContext';
+import { KNOWN_ADDRESS_LABELS } from '@/lib/constants';
 
 const ExplorerBlockBlockDetailClientCopy = {
   enUs: { cs: `cs-CZ`, en: `en-US` },
@@ -443,7 +444,13 @@ export default function BlockDetailClient() {
                     <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-1">{labelMap[key][cs ? 'cs' : 'en']}</p>
                     <p className="text-lg font-bold tabular-nums text-white">{item.amount.toFixed(4)} ZION</p>
                     <p className="text-[11px] text-white/40 tabular-nums">{item.pct.toFixed(2)}%</p>
-                    <p className="text-[10px] text-white/25 font-mono truncate mt-1">{truncHash(item.address, 10)}</p>
+                    {item.address ? (
+                      <Link href={`/explorer/address?addr=${item.address}`} className="text-[10px] font-mono truncate mt-1 block text-zion-cyan hover:text-white transition" title={item.address}>
+                        {KNOWN_ADDRESS_LABELS[item.address]?.label || truncHash(item.address, 10)}
+                      </Link>
+                    ) : (
+                      <p className="text-[10px] text-white/25 font-mono truncate mt-1">{cs ? 'spáleno' : 'burned'}</p>
+                    )}
                   </div>
                 );
               })}
@@ -495,18 +502,35 @@ export default function BlockDetailClient() {
                       </div>
                     </td>
                     <td className="px-3 py-3 hidden lg:table-cell">
-                      {tx.from && tx.to ? (
-                        <div className="flex items-center gap-1 text-xs font-mono">
-                          <Link href={`/explorer/address?addr=${tx.from}`} className="text-gray-500 hover:text-white transition truncate max-w-[140px]">
-                            {truncHash(tx.from, 8)}
+                      {tx.type === 'coinbase' ? (
+                        <div className="flex flex-wrap gap-1 text-xs font-mono">
+                          <span className="text-zion-gold">⛏ coinbase</span>
+                          <ArrowRight className="h-3 w-3 text-gray-600 flex-shrink-0" />
+                          {(tx.outputs || []).slice(0, 4).map((out: any, idx: number) => (
+                            <Link
+                              key={idx}
+                              href={`/explorer/address?addr=${out.address || out.key}`}
+                              className={`truncate max-w-[120px] ${KNOWN_ADDRESS_LABELS[out.address || out.key]?.type ? 'text-zion-gold' : 'text-zion-cyan hover:text-white'} transition`}
+                              title={out.address || out.key}>
+                              {KNOWN_ADDRESS_LABELS[out.address || out.key]?.label || truncHash(out.address || out.key, 7)}
+                            </Link>
+                          ))}
+                          {(tx.outputs || []).length > 4 && (
+                            <span className="text-gray-500">+{(tx.outputs || []).length - 4}</span>
+                          )}
+                        </div>
+                      ) : tx.from && tx.to ? (
+                        <div className="flex items-center gap-1 text-xs font-mono flex-wrap">
+                          <Link href={`/explorer/address?addr=${tx.from}`} className="text-gray-500 hover:text-white transition truncate max-w-[120px]" title={tx.from}>
+                            {truncHash(tx.from, 7)}
                           </Link>
                           <ArrowRight className="h-3 w-3 text-gray-600 flex-shrink-0" />
-                          <Link href={`/explorer/address?addr=${tx.to}`} className="text-zion-cyan hover:text-white transition truncate max-w-[140px]">
+                          <Link href={`/explorer/address?addr=${tx.to}`} className="text-zion-cyan hover:text-white transition truncate max-w-[140px]" title={tx.to}>
                             {truncHash(tx.to, 8)}
                           </Link>
                         </div>
                       ) : tx.to ? (
-                        <Link href={`/explorer/address?addr=${tx.to}`} className="text-zion-cyan hover:text-white transition font-mono text-xs truncate max-w-[200px]">
+                        <Link href={`/explorer/address?addr=${tx.to}`} className="text-zion-cyan hover:text-white transition font-mono text-xs truncate max-w-[200px]" title={tx.to}>
                           {truncHash(tx.to, 10)}
                         </Link>
                       ) : (

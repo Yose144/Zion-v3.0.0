@@ -74,16 +74,8 @@ export async function GET(request: NextRequest) {
         .reduce((sum, tx) => sum + tx.amount, 0);
     } else if (utxoList.length > 0 && address.startsWith('zion1')) {
       // V31-native UTXO: each UTXO corresponds to a received output.
-      // UTXOs from getUtxos are sorted by tx_hash, not height; to get the most recent
-      // we enrich a small slice. Since getTransaction scans the chain for each hash,
-      // keep this small to avoid slow page loads.
-      const pageUtxos = utxoList.slice(0, 20);
-      const txHashes = pageUtxos.map((u: any) => u.tx_hash).filter(Boolean) as string[];
-      const meta = txHashes.length > 0 ? await rpc.enrichUtxoMetadata(txHashes) : new Map();
-
-      const utxoTxs = pageUtxos.map((u: any) => {
-        const m = meta.get(u.tx_hash);
-        const isCoinbase = u.output_index === 0 && (m?.inputs?.length === 0 || u.amount > 1_000_000_000);
+      const utxoTxs = utxoList.map((u: any) => {
+        const isCoinbase = u.output_index === 0;
         return {
           tx_hash: u.tx_hash,
           type: isCoinbase ? 'coinbase' : 'transfer',
@@ -91,8 +83,8 @@ export async function GET(request: NextRequest) {
           to: u.address || address,
           amount: Number(u.amount) / 1_000_000,
           fee: 0,
-          timestamp: m?.timestamp ?? 0,
-          block_height: m?.height ?? 0,
+          timestamp: u.timestamp ?? 0,
+          block_height: u.height ?? 0,
           status: 'confirmed',
           output_index: u.output_index ?? 0,
         };
@@ -124,8 +116,8 @@ export async function GET(request: NextRequest) {
       total_sent: 0,
       net_balance: balanceZion,
       transaction_count: (txHistory && txHistory.total > 0) ? txHistory.total : (utxoList.length > 0 ? utxoList.length : transactions.length),
-      first_seen: minerData?.first_seen || (utxoList.length ? Math.min(...utxoList.map((u: any) => u.height ?? 0).filter((h: number) => h > 0)) : 0),
-      last_seen: minerData?.last_seen || (utxoList.length ? Math.max(...utxoList.map((u: any) => u.height ?? 0)) : 0),
+      first_seen: minerData?.first_seen || (utxoList.length ? Math.min(...utxoList.map((u: any) => u.timestamp ?? 0).filter((t: number) => t > 0)) : 0),
+      last_seen: minerData?.last_seen || (utxoList.length ? Math.max(...utxoList.map((u: any) => u.timestamp ?? 0)) : 0),
 
       // Mining stats (ZION-specific)
       is_miner: !!minerData,

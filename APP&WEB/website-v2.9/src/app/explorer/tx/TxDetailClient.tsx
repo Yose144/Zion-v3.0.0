@@ -18,6 +18,7 @@ import {
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
 import { useLang } from '@/contexts/LanguageContext';
+import { KNOWN_ADDRESS_LABELS } from '@/lib/constants';
 
 const ExplorerTxTxDetailClientCopy = {
   enUs: { cs: `cs-CZ`, en: `en-US` },
@@ -283,9 +284,9 @@ export default function TxDetailClient() {
           {isCoinbase ? (
             <InfoRow label="From" value="⛏ Coinbase" />
           ) : (
-            <InfoRow label="From" value={tx.from ?? '—'} mono copyable link={tx.from?.startsWith('zion1') ? `/explorer/address?id=${tx.from}` : undefined} />
+            <InfoRow label="From" value={tx.from && tx.from.startsWith('zion1') ? tx.from : '—'} mono copyable link={tx.from?.startsWith('zion1') ? `/explorer/address?addr=${tx.from}` : undefined} />
           )}
-          <InfoRow label="To" value={tx.to ?? tx.outputs?.[0]?.address ?? '—'} mono copyable link={(tx.to ?? tx.outputs?.[0]?.address)?.startsWith('zion1') ? `/explorer/address?id=${tx.to ?? tx.outputs?.[0]?.address}` : undefined} />
+          <InfoRow label="To" value={tx.to ?? tx.outputs?.map((o) => o.address || o.key).filter(Boolean).join(', ') ?? '—'} mono copyable link={tx.to?.startsWith('zion1') ? `/explorer/address?addr=${tx.to}` : undefined} />
           <InfoRow label={ExplorerTxTxDetailClientCopy.model[cs ? 'cs' : 'en']} value={(tx.transaction_model ?? 'v31-native').toUpperCase()} color="text-zion-cyan" />
           {isV3Account && (
             <>
@@ -330,12 +331,19 @@ export default function TxDetailClient() {
                         <span className="text-zion-purple text-[10px] font-mono uppercase tracking-wider">{ExplorerTxTxDetailClientCopy.input[cs ? 'cs' : 'en']} #{i}</span>
                         <span className="text-white text-sm font-semibold tabular-nums">{inp.amount.toFixed(4)} ZION</span>
                       </div>
-                      {inp.key_image && (
+                      {inp.address ? (
+                        <div className="flex items-center text-gray-600 font-mono text-[11px] truncate">
+                          <Link href={`/explorer/address?addr=${inp.address}`} className="hover:text-zion-cyan transition" title={inp.address}>
+                            {KNOWN_ADDRESS_LABELS[inp.address]?.label || truncHash(inp.address, 14)}
+                          </Link>
+                          <CopyBtn text={inp.address} />
+                        </div>
+                      ) : inp.key_image ? (
                         <div className="flex items-center text-gray-600 font-mono text-[11px] truncate">
                           {ExplorerTxTxDetailClientCopy.keyImage[cs ? 'cs' : 'en']}: {truncHash(inp.key_image, 10)}
                           <CopyBtn text={inp.key_image} />
                         </div>
-                      )}
+                      ) : null}
                     </>
                   )}
                 </div>
@@ -366,12 +374,12 @@ export default function TxDetailClient() {
                   </div>
                   {(out.address || out.key) && (
                     <div className="flex items-center text-gray-600 font-mono text-[11px] truncate">
-                      {out.address ? (
+                      {out.address || out.key ? (
                         <>
-                          <Link href={`/explorer/address?id=${out.address}`} className="hover:text-zion-cyan transition">
-                            {truncHash(out.address, 14)}
+                          <Link href={`/explorer/address?addr=${out.address || out.key}`} className="hover:text-zion-cyan transition" title={out.address || out.key}>
+                            {KNOWN_ADDRESS_LABELS[out.address || out.key]?.label || truncHash(out.address || out.key, 14)}
                           </Link>
-                          <CopyBtn text={out.address} />
+                          <CopyBtn text={out.address || out.key} />
                         </>
                       ) : (
                         <>
