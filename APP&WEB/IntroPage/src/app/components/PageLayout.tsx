@@ -28,7 +28,6 @@ export default function PageLayout({
     { href: "/amenti", label: { cs: "Amenti", en: "Amenti" } },
     { href: "/evoluzion", label: { cs: "EvoluZion", en: "EvoluZion" } },
     { href: "/camp", label: { cs: "Camp", en: "Camp" } },
-    { href: "/blog", label: { cs: "Blog", en: "Blog" } },
     { href: "/Vzestup", label: { cs: "Vzestup", en: "Ascension" } },
   ];
 
