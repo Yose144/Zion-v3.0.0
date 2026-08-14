@@ -1237,6 +1237,16 @@ class ZionRpcClient {
           sources: routing.sources ?? {},
         },
         pplns_window_size: pplns.window_size ?? metrics['zion_pool_pplns_window_size'] ?? 0,
+        pplns: {
+          registered_miners: pplns.registered_miners ?? metrics['zion_pool_pplns_registered_miners'] ?? 0,
+          window_size: pplns.window_size ?? metrics['zion_pool_pplns_window_size'] ?? 0,
+          window_used: pplns.window_used ?? metrics['zion_pool_pplns_window_used'] ?? 0,
+          window_total_difficulty: pplns.window_total_difficulty ?? 0,
+          total_paid_flowers: pplns.total_paid_flowers ?? metrics['zion_pool_pplns_total_paid_flowers'] ?? 0,
+          total_unpaid_flowers: pplns.total_unpaid_flowers ?? 0,
+          payout_rounds: pplns.payout_rounds ?? metrics['zion_pool_pplns_payout_rounds'] ?? 0,
+          miners_with_unpaid: pplns.miners_with_unpaid ?? 0,
+        },
         payouts: {
           pending_total_atomic: pplns.total_unpaid_flowers ?? 0,
           pending_miners: 0,
@@ -1269,6 +1279,16 @@ class ZionRpcClient {
             sources: metrics.sources ?? {},
           },
           pplns_window_size: 0,
+          pplns: {
+            registered_miners: 0,
+            window_size: 0,
+            window_used: 0,
+            window_total_difficulty: 0,
+            total_paid_flowers: 0,
+            total_unpaid_flowers: 0,
+            payout_rounds: 0,
+            miners_with_unpaid: 0,
+          },
           payouts: { pending_total_atomic: 0, pending_miners: 0 },
           miners_list: [],
         };

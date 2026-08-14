@@ -217,6 +217,8 @@ wallet_keys/
 **/private_keys/
 PREMINE_WALLETS_BACKUP.json
 **/PREMINE_WALLETS_BACKUP*
+**/*PREMINE*KEYS*.json
+**/*PREMINE_V2_KEYS*
 MYSTERIUM_KEYS_BACKUP.json
 scripts/_decrypt_myst.py
 # Plaintext credentials folders / files (see SECURITY_NOTICE_2026-04-28.md)
@@ -396,9 +398,9 @@ ZionDex/contracts/out/
 ZionDex/contracts/cache/
 ZionDex/contracts/broadcast/
 *.db
-2 m i n e r s / x m r i g - 6 . 2 6 . 0 / 
- 
- V31_PREMINE_V2_KEYS_2026-08-06.json
+2miners/xmrig-6.26.0/
+
+V31_PREMINE_V2_KEYS_2026-08-06.json
 V31/data/
 
 # V31 custom cargo target dirs (cross-compile / feature test builds)
