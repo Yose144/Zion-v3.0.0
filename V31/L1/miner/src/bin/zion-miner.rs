@@ -121,6 +121,13 @@ struct Args {
     /// Disable the TUI dashboard even if `ZION_INTERACTIVE=1`.
     #[arg(long)]
     no_tui: bool,
+
+    /// Watchdog timeout: if the miner reports hashrate but no share is
+    /// accepted or rejected for this many seconds, the process exits so an
+    /// external supervisor (systemd / SMOS) can restart it.  Disabled when 0.
+    /// Also read from `ZION_WATCHDOG_TIMEOUT_SEC`.
+    #[arg(long, default_value = "300")]
+    watchdog_timeout: u64,
 }
 
 /// Parse a bool env var (1/true/yes → true).
@@ -207,6 +214,13 @@ async fn main() -> Result<()> {
     #[cfg(not(feature = "tui"))]
     let tui_enabled = false;
 
+    // ── Watchdog timeout ──
+    // CLI --watchdog-timeout overrides ZION_WATCHDOG_TIMEOUT_SEC; 0 disables.
+    let watchdog_timeout = std::env::var("ZION_WATCHDOG_TIMEOUT_SEC")
+        .ok()
+        .and_then(|v| v.parse::<u64>().ok())
+        .unwrap_or(args.watchdog_timeout);
+
     let reward_address = Address::new(ChainId::ZionL1, vec![], &args.wallet)
         .with_context(|| format!("invalid reward address: {}", args.wallet))?;
 
@@ -288,8 +302,11 @@ async fn main() -> Result<()> {
     let stats_threads = args.threads;
     let stats_log_interval = args.log_interval.max(5);
     tokio::spawn(async move {
+        const WATCHDOG_GRACE_SEC: u64 = 120;
         let mut last_stats: std::collections::HashMap<StreamId, StreamStats> = Default::default();
         let start = Instant::now();
+        let mut last_share_total = 0u64;
+        let mut last_share_time = Instant::now();
         loop {
             sleep(Duration::from_secs(stats_log_interval)).await;
             let stats = stats_rt.stats().await;
@@ -338,6 +355,32 @@ async fn main() -> Result<()> {
             if total_hr > 0.0 {
                 let hashes_this_interval = (total_hr * stats_log_interval as f64) as u64;
                 stats_metrics.record_hashes(hashes_this_interval);
+            }
+
+            // ── Watchdog: if hashes are being produced but no share is
+            // accepted/rejected for too long, the GPU/CPU batch is hung.
+            // Exit with non-zero so the supervisor (systemd/SMOS) restarts us.
+            if watchdog_timeout > 0
+                && start.elapsed().as_secs() >= WATCHDOG_GRACE_SEC
+                && total_hr > 0.0
+            {
+                let total_shares = stats_metrics.shares_accepted() + stats_metrics.shares_rejected();
+                if total_shares > last_share_total {
+                    last_share_total = total_shares;
+                    last_share_time = Instant::now();
+                } else if last_share_time.elapsed().as_secs() >= watchdog_timeout {
+                    warn!(
+                        "WATCHDOG: no share accepted/rejected for {}s while hashrate is {:.1} H/s. Exiting to force restart.",
+                        watchdog_timeout, total_hr
+                    );
+                    #[cfg(feature = "tui")]
+                    {
+                        if tui_enabled {
+                            zion_miner::ui::exit_sticky_header();
+                        }
+                    }
+                    std::process::exit(1);
+                }
             }
 
             // ── Claymore-style sticky header TUI ──
