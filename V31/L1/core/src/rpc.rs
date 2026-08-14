@@ -1188,3 +1188,123 @@ impl Default for RpcRouter {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use serde_json::json;
+
+    use zion_l1_types::{Address, ChainId};
+
+    use crate::block::Block;
+    use crate::crypto::{derive_address, generate_keypair};
+    use crate::node::{Node, NodeConfig};
+    use crate::v31_wallet::{build_send, SpendableUtxo};
+
+    use super::dispatch_request;
+
+    /// Mine a block, submit a spend transaction, and verify that
+    /// `getMempoolTransactions` returns the pending transaction with fee,
+    /// size, from/to and receive-time metadata.
+    #[tokio::test]
+    async fn get_mempool_transactions_e2e() {
+        let config = NodeConfig {
+            db_path: ":memory:".into(),
+            ..Default::default()
+        };
+        let node = Arc::new(Node::new(config).await.unwrap());
+
+        let (miner_sk, miner_vk) = generate_keypair();
+        let miner_addr = derive_address(miner_vk.as_bytes());
+        let miner = Address::new(ChainId::ZionL1, vec![], &miner_addr).unwrap();
+
+        let template = node.block_template(miner).await.unwrap();
+        let mut header: crate::block::BlockHeader =
+            serde_json::from_str(&template.header_json).unwrap();
+        header.difficulty = 1;
+        let target = [0xff; 32];
+        node.consensus
+            .mine(&mut header, &target, 0, 1_000)
+            .expect("block should be mineable in test");
+
+        let coinbase = template.transactions[0].clone();
+        let block = Block::new(header, template.transactions);
+        node.submit_block(block).await.unwrap();
+
+        let utxo = SpendableUtxo {
+            tx_hash: coinbase.hash().0,
+            output_index: 0,
+            amount: coinbase.outputs[0].amount.0 as u64,
+            address: miner_addr.clone(),
+        };
+
+        let (_recipient_sk, recipient_vk) = generate_keypair();
+        let recipient_addr = derive_address(recipient_vk.as_bytes());
+
+        let build = build_send(
+            &miner_sk,
+            &miner_addr,
+            &recipient_addr,
+            1_000_000,
+            10_000,
+            &[utxo],
+        )
+        .expect("valid spend");
+
+        // Submit the transaction through the JSON-RPC dispatcher.
+        let submit = json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "submitUtxoTransaction",
+            "params": { "transaction": build.transaction },
+        });
+        let submit_line = serde_json::to_string(&submit).unwrap();
+        let submit_response = dispatch_request(&submit_line, &node).await;
+        assert!(
+            submit_response
+                .get("result")
+                .and_then(|r| r.get("accepted"))
+                .and_then(|a| a.as_bool())
+                .unwrap_or(false),
+            "transaction should be accepted: {:?}",
+            submit_response
+        );
+
+        // Query the mempool transaction list.
+        let get = json!({
+            "jsonrpc": "2.0",
+            "id": 2,
+            "method": "getMempoolTransactions",
+            "params": {},
+        });
+        let get_line = serde_json::to_string(&get).unwrap();
+        let response = dispatch_request(&get_line, &node).await;
+        let result = response
+            .get("result")
+            .expect("result missing")
+            .as_array()
+            .expect("result should be an array");
+
+        assert_eq!(result.len(), 1, "mempool should contain one pending tx");
+
+        let tx = &result[0];
+        assert_eq!(
+            tx["id_hash"].as_str().unwrap(),
+            build.transaction.hash().to_hex()
+        );
+        assert!(
+            tx["fee"].as_u64().unwrap() >= 10_000,
+            "fee should be at least the provided fee"
+        );
+        assert!(tx["blob_size"].as_u64().unwrap() > 0);
+        assert!(tx["receive_time"].as_u64().unwrap() > 0);
+        assert!(!tx["double_spend_seen"].as_bool().unwrap());
+
+        let from = tx["from"].as_str().unwrap();
+        assert!(from.contains(&miner_addr), "from should contain sender");
+
+        let to = tx["to"].as_str().unwrap();
+        assert!(to.contains(&recipient_addr), "to should contain recipient");
+    }
+}
