@@ -5,6 +5,7 @@
 //! node stack is wired together.
 
 use std::collections::HashSet;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use tokio::sync::Mutex;
 use zion_l1_types::Hash;
@@ -12,13 +13,28 @@ use zion_l1_types::Hash;
 use crate::transaction::Transaction;
 use crate::utxo::Outpoint;
 
+/// Metadata stored for each pending transaction.
+#[derive(Clone, Debug)]
+pub struct MempoolEntry {
+    pub tx: Transaction,
+    /// Unix timestamp (seconds) when the transaction entered the mempool.
+    pub received_at: u64,
+}
+
 /// Pending transaction pool.
 #[derive(Default)]
 pub struct Mempool {
-    txs: Mutex<Vec<Transaction>>,
+    txs: Mutex<Vec<MempoolEntry>>,
     /// Outpoints already consumed by a mempool transaction. This prevents
     /// accepting two transactions that spend the same confirmed output.
     spent: Mutex<HashSet<Outpoint>>,
+}
+
+fn now_seconds() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
 }
 
 impl Mempool {
@@ -34,7 +50,7 @@ impl Mempool {
     pub async fn add(&self, tx: Transaction) {
         let hash = tx.hash();
         let mut txs = self.txs.lock().await;
-        if txs.iter().any(|t| t.hash() == hash) {
+        if txs.iter().any(|e| e.tx.hash() == hash) {
             return;
         }
         {
@@ -43,11 +59,20 @@ impl Mempool {
                 spent.insert(Outpoint::new(input.previous_output, input.index));
             }
         }
-        txs.push(tx);
+        txs.push(MempoolEntry {
+            tx,
+            received_at: now_seconds(),
+        });
     }
 
     /// Return a copy of the pending transactions for block template building.
     pub async fn pending(&self) -> Vec<Transaction> {
+        self.txs.lock().await.iter().map(|e| e.tx.clone()).collect()
+    }
+
+    /// Return a copy of the pending transaction entries, including metadata
+    /// such as the receive timestamp.
+    pub async fn pending_entries(&self) -> Vec<MempoolEntry> {
         self.txs.lock().await.clone()
     }
 
@@ -59,15 +84,15 @@ impl Mempool {
     /// Remove transactions included in a block.
     pub async fn remove(&self, hashes: &[Hash]) {
         let mut txs = self.txs.lock().await;
-        let removed: Vec<Transaction> = txs
+        let removed: Vec<MempoolEntry> = txs
             .drain(..)
-            .filter(|t| !hashes.contains(&t.hash()))
+            .filter(|e| !hashes.contains(&e.tx.hash()))
             .collect();
         // Recompute the spent set from the remaining transactions.
         let mut spent = self.spent.lock().await;
         spent.clear();
-        for tx in &removed {
-            for input in &tx.inputs {
+        for e in &removed {
+            for input in &e.tx.inputs {
                 spent.insert(Outpoint::new(input.previous_output, input.index));
             }
         }

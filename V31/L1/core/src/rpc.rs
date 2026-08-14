@@ -328,6 +328,14 @@ async fn dispatch_request(line: &str, node: &Node) -> Value {
         };
     }
 
+    // Native V31 mempool transaction list with fee/size/from/to enrichment.
+    if method == "getMempoolTransactions" {
+        return match get_mempool_transactions(node, &params).await {
+            Ok(v) => success_response(id, v),
+            Err(e) => error_response(id, -32000, &e.to_string()),
+        };
+    }
+
     // V3 methods are dispatched to the V3 RPC handler.
     // `getStatus` is intentionally served by the native V31 handler so public
     // RPC clients see the live V31 chain height and protocol version.
@@ -783,6 +791,117 @@ async fn get_transaction_history_native(
         "has_more": offset + rows.len() < total,
         "transactions": transactions,
     })))
+}
+
+/// Return the V31 native mempool as a list of enriched pending transactions.
+///
+/// Each entry includes the transaction hash, fee, estimated size, from/to
+/// addresses, receive timestamp, and V3-compatible mempool flags so the
+/// existing explorer `MempoolResponse` shape works without changes.
+async fn get_mempool_transactions(node: &Node, _params: &Value) -> Result<Value, NodeError> {
+    let entries = node.mempool.pending_entries().await;
+    let mut out = Vec::with_capacity(entries.len());
+
+    for entry in entries {
+        let tx = &entry.tx;
+        let size = crate::fee::estimate_tx_size(tx.inputs.len(), tx.outputs.len());
+
+        // Compute fee, `from` addresses, and detect double-spends against the
+        // current confirmed UTXO set. The set guard is dropped before any
+        // follow-up storage lookups.
+        let (fee, mut from_addrs, missing_outpoints) = {
+            let set = node.utxo_set.lock().await;
+            let mut input_sum: u128 = 0;
+            let mut from_addrs = Vec::with_capacity(tx.inputs.len());
+            let mut missing_outpoints = Vec::new();
+
+            for input in &tx.inputs {
+                let outpoint = crate::utxo::Outpoint::new(input.previous_output, input.index);
+                if let Some(utxo) = set.get(&outpoint) {
+                    input_sum += utxo.amount.0;
+                    let addr = utxo.address.encoded.clone();
+                    if !from_addrs.contains(&addr) {
+                        from_addrs.push(addr);
+                    }
+                } else {
+                    missing_outpoints.push(outpoint);
+                }
+            }
+
+            let output_sum: u128 = tx.outputs.iter().map(|o| o.amount.0).sum();
+            let fee = if !missing_outpoints.is_empty() {
+                0u128
+            } else {
+                input_sum.saturating_sub(output_sum)
+            };
+
+            (fee, from_addrs, missing_outpoints)
+        };
+
+        // Resolve `from` for inputs not found in the current UTXO set. These
+        // transactions are either double-spends or are temporarily invalid
+        // against a block that just arrived.
+        for outpoint in &missing_outpoints {
+            if let Some((addr, _)) = node
+                .get_output_owner(&outpoint.tx_hash, outpoint.index)
+                .await?
+            {
+                if !from_addrs.contains(&addr) {
+                    from_addrs.push(addr);
+                }
+            }
+        }
+
+        let double_spend_seen = !missing_outpoints.is_empty() && !tx.inputs.is_empty();
+
+        let mut to_addrs = Vec::with_capacity(tx.outputs.len());
+        for output in &tx.outputs {
+            if !to_addrs.contains(&output.address.encoded) {
+                to_addrs.push(output.address.encoded.clone());
+            }
+        }
+
+        let output_sum: u128 = tx.outputs.iter().map(|o| o.amount.0).sum();
+        let amount_u64 = if output_sum <= u64::MAX as u128 {
+            output_sum as u64
+        } else {
+            u64::MAX
+        };
+        let fee_u64 = if fee <= u64::MAX as u128 {
+            fee as u64
+        } else {
+            u64::MAX
+        };
+
+        let tx_json = serde_json::to_string(&tx).unwrap_or_default();
+        let tx_blob = serde_json::to_vec(&tx).map(hex::encode).unwrap_or_default();
+
+        out.push(json!({
+            "id_hash": tx.hash().to_hex(),
+            "tx_hash": tx.hash().to_hex(),
+            "tx_blob": tx_blob,
+            "tx_json": tx_json,
+            "blob_size": size,
+            "size": size,
+            "fee": fee_u64,
+            "amount": amount_u64,
+            "inputs": tx.inputs.len(),
+            "outputs": tx.outputs.len(),
+            "from": from_addrs.join(", "),
+            "to": to_addrs.join(", "),
+            "max_used_block_height": 0,
+            "max_used_block_id_hash": "",
+            "kept_by_block": false,
+            "last_failed_height": 0,
+            "last_failed_id_hash": "",
+            "receive_time": entry.received_at,
+            "relayed": true,
+            "do_not_relay": false,
+            "double_spend_seen": double_spend_seen,
+        }));
+    }
+
+    Ok(json!(out))
 }
 
 fn success_response(id: Option<Value>, result: Value) -> Value {

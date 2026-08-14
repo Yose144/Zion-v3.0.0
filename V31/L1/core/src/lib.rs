@@ -85,8 +85,8 @@ pub use storage::{Storage, StorageError};
 pub use transaction::{Transaction, TransactionInput, TransactionOutput};
 pub use utxo::{Outpoint, UtxoError, UtxoSet};
 pub use v31_wallet::{
-    build_batch_payout, build_send, BatchRecipient, BuildResult, SpendableUtxo, WalletError,
-    MAX_BATCH_RECIPIENTS, MIN_PAYOUT_AMOUNT,
+    build_batch_payout, build_send, build_send_with_memo, BatchRecipient, BuildResult,
+    SpendableUtxo, WalletError, MAX_BATCH_RECIPIENTS, MIN_PAYOUT_AMOUNT,
 };
 
 #[cfg(feature = "v3-binaries")]
