@@ -23,13 +23,11 @@ function formatDate(dateStr: string, lang: "cs" | "en") {
 type BlogPostClientProps = {
   slug: string;
   fullContent?: string;
-  fullPage?: boolean;
 };
 
 export default function BlogPostClient({
   slug,
   fullContent,
-  fullPage = false,
 }: BlogPostClientProps) {
   const [lang, setLang] = useState<"cs" | "en">("cs");
 
@@ -99,16 +97,7 @@ export default function BlogPostClient({
             {excerpt}
           </p>
 
-          {fullPage && post.file ? (
-            <div className="my-6 w-full overflow-hidden rounded-xl border border-white/10 bg-[#010208]">
-              <iframe
-                src={`/legacy/${post.file}`}
-                className="h-[800px] w-full"
-                title={title}
-                loading="lazy"
-              />
-            </div>
-          ) : content ? (
+          {content ? (
             <div
               className="article mx-auto mt-6 max-w-none"
               dangerouslySetInnerHTML={{

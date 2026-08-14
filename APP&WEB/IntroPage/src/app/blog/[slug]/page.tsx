@@ -19,22 +19,8 @@ export default async function BlogPostPage({
   const post = posts.find((p) => p.slug === params.slug);
   if (!post) return notFound();
 
-  let fullContent: string | undefined;
-  let fullPage = false;
+  const extracted = post.file ? extractFullPostContent(post.file) : null;
+  const fullContent = extracted ?? undefined;
 
-  if (post.file) {
-    const extracted = extractFullPostContent(post.file);
-    if (extracted) {
-      fullContent = extracted.html;
-      fullPage = extracted.fullPage;
-    }
-  }
-
-  return (
-    <BlogPostClient
-      slug={params.slug}
-      fullContent={fullContent}
-      fullPage={fullPage}
-    />
-  );
+  return <BlogPostClient slug={params.slug} fullContent={fullContent} />;
 }

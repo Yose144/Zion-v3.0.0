@@ -56,9 +56,7 @@ function trimTrivial(html: string): string {
   return html.replace(new RegExp("^" + trivial.source, "i"), "").replace(new RegExp(trivial.source + "$", "i"), "").trim();
 }
 
-export function extractFullPostContent(
-  file: string
-): { html: string; fullPage: boolean } | null {
+export function extractFullPostContent(file: string): string | null {
   if (!file.startsWith("blog/full/")) return null;
 
   const filePath = path.join(LEGACY_ROOT, file);
@@ -70,14 +68,8 @@ export function extractFullPostContent(
   if (!article) return null;
 
   // Some legacy full-HTML posts contain a nested full HTML document (e.g. a banner).
-  // Those are best rendered in an iframe so they keep their own styles.
-  const nestedHtml = article.querySelector("html");
-  if (nestedHtml) {
-    const body = nestedHtml.querySelector("body");
-    if (body && body.innerHTML.trim().length > 200) {
-      return { html: "", fullPage: true };
-    }
-  }
+  // Those are not regular article content, so fall back to the JSON content.
+  if (article.querySelector("html")) return null;
 
   let content = article.innerHTML;
   content = trimTrivial(content);
@@ -86,5 +78,5 @@ export function extractFullPostContent(
   const fileDir = path.dirname(file);
   content = rewriteLegacyUrls(content, fileDir);
 
-  return { html: content, fullPage: false };
+  return content;
 }

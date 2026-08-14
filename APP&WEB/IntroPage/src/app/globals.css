@@ -85,6 +85,38 @@
   color: rgba(255, 255, 255, 0.95);
 }
 
+.article table,
+.article .blog-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 0.95rem;
+}
+
+.article .blog-table td,
+.article .blog-table th,
+.article table td,
+.article table th {
+  padding: 10px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
+}
+
+.article .blog-table td:first-child,
+.article table td:first-child,
+.article .blog-table th:first-child,
+.article table th:first-child {
+  color: var(--rasta-gold);
+  font-weight: 600;
+  white-space: nowrap;
+  width: 120px;
+}
+
+.article .blog-table a,
+.article table a {
+  color: var(--rasta-green);
+}
+
 .article * {
   max-width: 100%;
 }
