@@ -164,12 +164,12 @@ pub fn build_batch_payout(
                 let final_total: u64 = adjusted_recipients.iter().map(|r| r.amount).sum();
                 let (sel, tot) = select_utxos(available_utxos, final_total)?;
                 return build_batch_payout_inner(
-                    signing_key, change_address, &adjusted_recipients, 0, &sel, tot, MIN_PAYOUT_AMOUNT,
+                    signing_key, change_address, &adjusted_recipients, 0, &sel, tot, MIN_PAYOUT_AMOUNT, &[],
                 );
             }
             let (sel, tot) = select_utxos(available_utxos, new_target)?;
             return build_batch_payout_inner(
-                signing_key, change_address, &adjusted_recipients, fee, &sel, tot, MIN_PAYOUT_AMOUNT,
+                signing_key, change_address, &adjusted_recipients, fee, &sel, tot, MIN_PAYOUT_AMOUNT, &[],
             );
         }
         Err(e) => return Err(e),
@@ -183,6 +183,7 @@ pub fn build_batch_payout(
         &selected,
         total,
         MIN_PAYOUT_AMOUNT,
+        &[],
     )
 }
 
@@ -198,6 +199,22 @@ pub fn build_send(
     amount: u64,
     fee: u64,
     available_utxos: &[SpendableUtxo],
+) -> Result<BuildResult, WalletError> {
+    build_send_with_memo(signing_key, change_address, to_address, amount, fee, available_utxos, &[])
+}
+
+/// Same as [`build_send`], but attaches an arbitrary memo (e.g. a note or
+/// reference id) to the transaction. Memo bytes are stored as-is in
+/// `Transaction::memo` and are not validated against any charset/length
+/// beyond what the network's max transaction size otherwise permits.
+pub fn build_send_with_memo(
+    signing_key: &SigningKey,
+    change_address: &str,
+    to_address: &str,
+    amount: u64,
+    fee: u64,
+    available_utxos: &[SpendableUtxo],
+    memo: &[u8],
 ) -> Result<BuildResult, WalletError> {
     if amount == 0 {
         return Err(WalletError::FeeTooLow {
@@ -226,6 +243,7 @@ pub fn build_send(
         &selected,
         total,
         1,
+        memo,
     )
 }
 
@@ -242,6 +260,7 @@ fn build_batch_payout_inner(
     selected: &[&SpendableUtxo],
     total: u64,
     min_payout: u64,
+    memo: &[u8],
 ) -> Result<BuildResult, WalletError> {
     let target = total_payout_inner(recipients, fee);
     let change = total - target;
@@ -280,7 +299,7 @@ fn build_batch_payout_inner(
         version: 1,
         inputs,
         outputs,
-        memo: Vec::new(),
+        memo: memo.to_vec(),
     };
 
     let signing_hash = tx.signing_hash();
@@ -343,5 +362,57 @@ mod tests {
 
         // The transaction must pass the node's UTXO validation.
         utxo_set.validate_transaction(&tx).unwrap();
+    }
+
+    #[test]
+    fn build_send_with_memo_attaches_and_signs_memo() {
+        let (sk, vk) = generate_keypair();
+        let sender_addr = derive_address(vk.as_bytes());
+
+        let coinbase = Transaction {
+            version: 1,
+            inputs: vec![],
+            outputs: vec![TransactionOutput {
+                amount: Amount::new(10_000_000_000),
+                address: Address::new(ChainId::ZionL1, vec![], &sender_addr).unwrap(),
+            }],
+            memo: vec![],
+        };
+
+        let mut utxo_set = UtxoSet::new();
+        utxo_set.apply_transaction(&coinbase, 1, 0).unwrap();
+
+        let utxos = vec![SpendableUtxo {
+            tx_hash: coinbase.hash().0,
+            output_index: 0,
+            amount: 10_000_000_000,
+            address: sender_addr.clone(),
+        }];
+
+        let (_recipient_vk, recipient_pk) = generate_keypair();
+        let recipient_addr = derive_address(recipient_pk.as_bytes());
+
+        let memo = b"e2e-test-devin";
+        let build = build_send_with_memo(
+            &sk,
+            &sender_addr,
+            &recipient_addr,
+            1_000_000,
+            10_000,
+            &utxos,
+            memo,
+        )
+        .unwrap();
+        let tx = build.transaction;
+
+        // Memo must be stored verbatim and included in the signed payload.
+        assert_eq!(tx.memo, memo);
+        utxo_set.validate_transaction(&tx).unwrap();
+
+        // build_send() (no memo) must still produce an empty memo — this is
+        // the pre-existing behavior callers without a memo rely on.
+        let build_no_memo =
+            build_send(&sk, &sender_addr, &recipient_addr, 1_000_000, 10_000, &utxos).unwrap();
+        assert!(build_no_memo.transaction.memo.is_empty());
     }
 }

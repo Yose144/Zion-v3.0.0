@@ -20,6 +20,7 @@
 import { getSeedNodesConfig, type SeedNodeConfig } from './network-config';
 import { SITE_PRIMARY_POOL_API_URL } from './site';
 import { estimateMinedSupplyAtHeight } from './supply';
+import { flowersToZion } from './constants';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -158,10 +159,17 @@ export interface ZionNetworkInfo {
 
 export interface ZionMempoolTx {
   id_hash: string;
+  tx_hash?: string;
   tx_blob: string;
   tx_json: string;
   blob_size: number;
+  size?: number;
   fee: number;
+  amount?: number;
+  inputs?: number;
+  outputs?: number;
+  from?: string;
+  to?: string;
   max_used_block_height: number;
   max_used_block_id_hash: string;
   kept_by_block: boolean;
@@ -1128,21 +1136,46 @@ class ZionRpcClient {
     };
   }
 
-  /** Get mempool info — V31 returns count only, no individual tx list */
+  /** Get mempool info — V31 native getMempoolTransactions returns the full list. */
   async getTransactionPool(): Promise<{ count: number; size: number; total_fees: number; transactions: ZionMempoolTx[] }> {
     try {
-      const [mempoolInfo, chainInfo] = await Promise.all([
-        this.rpcCall<any>('getMempoolInfo').catch(() => null),
+      const [mempoolTxs, chainInfo, mempoolInfo] = await Promise.all([
+        this.rpcCall<any>('getMempoolTransactions').catch(() => null),
         this.rpcCall<any>('getChainInfo').catch(() => null),
+        this.rpcCall<any>('getMempoolInfo').catch(() => null),
       ]);
-      const count = chainInfo?.mempool_transactions ?? mempoolInfo?.size ?? 0;
-      const templateCount = mempoolInfo?.template_transactions ?? 0;
-      const totalFeesZion = mempoolInfo?.template_total_fees_zion ?? 0;
+      const rawTxs = Array.isArray(mempoolTxs) ? (mempoolTxs as any[]) : [];
+      const transactions: ZionMempoolTx[] = rawTxs.map((tx: any) => ({
+        id_hash: tx.id_hash ?? tx.tx_hash ?? '',
+        tx_hash: tx.tx_hash ?? tx.id_hash ?? '',
+        tx_blob: tx.tx_blob ?? '',
+        tx_json: tx.tx_json ?? '',
+        blob_size: tx.blob_size ?? tx.size ?? 0,
+        size: tx.size ?? tx.blob_size ?? 0,
+        fee: tx.fee ?? 0,
+        amount: tx.amount ?? 0,
+        inputs: tx.inputs ?? 0,
+        outputs: tx.outputs ?? 0,
+        from: tx.from ?? '',
+        to: tx.to ?? '',
+        max_used_block_height: tx.max_used_block_height ?? 0,
+        max_used_block_id_hash: tx.max_used_block_id_hash ?? '',
+        kept_by_block: tx.kept_by_block ?? false,
+        last_failed_height: tx.last_failed_height ?? 0,
+        last_failed_id_hash: tx.last_failed_id_hash ?? '',
+        receive_time: tx.receive_time ?? 0,
+        relayed: tx.relayed ?? true,
+        do_not_relay: tx.do_not_relay ?? false,
+        double_spend_seen: tx.double_spend_seen ?? false,
+      }));
+      const count = chainInfo?.mempool_transactions ?? mempoolInfo?.size ?? transactions.length;
+      const size = transactions.reduce((s, t) => s + (t.blob_size || 0), 0);
+      const totalFeesFlowers = transactions.reduce((s, t) => s + (t.fee || 0), 0);
       return {
         count,
-        size: count + templateCount,
-        total_fees: totalFeesZion,
-        transactions: [],
+        size,
+        total_fees: flowersToZion(totalFeesFlowers),
+        transactions,
       };
     } catch {
       return { count: 0, size: 0, total_fees: 0, transactions: [] };

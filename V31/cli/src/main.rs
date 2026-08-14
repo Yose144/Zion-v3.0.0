@@ -702,14 +702,18 @@ async fn main() -> anyhow::Result<()> {
                 let total_available: u64 = utxos.iter().map(|u| u.amount).sum();
                 println!("Available: {} flowers ({} UTXOs)", total_available, utxos.len());
 
-                // Build and sign V31-native transaction
-                let result = zion_core::build_send(
+                // Build and sign V31-native transaction. `--memo` is stored
+                // as raw UTF-8 bytes in the transaction and is part of the
+                // signed payload (Transaction::signing_hash includes memo).
+                let memo_bytes = memo.as_deref().unwrap_or("").as_bytes();
+                let result = zion_core::build_send_with_memo(
                     &signing_key,
                     &sender_address,
                     &to,
                     amount_flowers,
                     fee_flowers,
                     &utxos,
+                    memo_bytes,
                 )
                 .map_err(|e| anyhow!("wallet error: {}", e))?;
 
