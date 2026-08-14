@@ -79,6 +79,7 @@ export async function GET(request: NextRequest) {
             inputs: tx.inputs?.map((i) => ({
               type: i.type,
               amount: i.amount / ATOMIC_UNITS_PER_ZION,
+              address: i.address,
               key_image: i.key_image,
               previous_output: i.previous_output,
             })) ?? [],

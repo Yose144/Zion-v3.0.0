@@ -939,6 +939,13 @@ class ZionRpcClient {
       try {
         const block = await this.rpcCall<any>('getBlockByHeight', { height: h });
         const parsed = parseV31TransactionsFromBlock(block);
+
+        // Enrich input addresses (UTXO previous_output -> actual sender address)
+        // for non-coinbase transactions before building the from/to summary.
+        // Without this, tx.inputs[].address falls back to the previous_output
+        // tx hash placeholder, and `from` incorrectly renders empty.
+        await Promise.all(parsed.map((tx) => this.enrichInputAddresses(tx)));
+
         for (const tx of parsed) {
           if (txs.length >= limit) break;
           const isCoinbase = tx.from === 'coinbase';
