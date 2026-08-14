@@ -219,6 +219,15 @@ impl Node {
         }
         let utxo_set = Arc::new(tokio::sync::Mutex::new(utxo_set));
 
+        // One-time backfill of the tx/address indexes for databases that
+        // predate this feature. `put()` keeps the index warm going forward;
+        // this only runs the (potentially slow) full scan when the index is
+        // empty, so it is a no-op on every subsequent restart.
+        if storage.tx_index_is_empty().await? {
+            let indexed = storage.backfill_tx_index().await?;
+            info!(blocks = indexed, "backfilled native tx/address index");
+        }
+
         Ok(Self {
             storage,
             mempool: Mempool::new(),
@@ -392,12 +401,29 @@ impl Node {
 
     /// Find a V31 native transaction by its hex id.
     ///
-    /// Scans the accepted chain from tip to genesis and returns the block
-    /// height, block hash (hex), and the transaction itself if found.
+    /// Resolves the containing block height in O(1) via the persistent
+    /// `tx_index` (see `Storage::find_tx_height`), falling back to a full
+    /// chain scan only if the index has no entry (e.g. mid-backfill on an
+    /// old database). Returns the block height, block hash (hex), and the
+    /// transaction itself if found.
     pub async fn find_transaction(
         &self,
         tx_id: &str,
     ) -> Result<Option<(u64, String, Transaction)>, NodeError> {
+        if let Some(hash) = Hash::from_hex(tx_id) {
+            if let Some(height) = self.storage.find_tx_height(&hash).await? {
+                if let Some(block) = self.storage.get_by_height(height).await? {
+                    let block_hash = block.header.header_hash().to_hex();
+                    for tx in &block.transactions {
+                        if tx.hash() == hash {
+                            return Ok(Some((height, block_hash, tx.clone())));
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fallback: full scan (only reachable for un-indexed legacy data).
         let (tip_header, _tip_hash) = self.storage.tip().await?.unwrap_or_else(|| {
             let genesis = genesis::genesis_block();
             let hash = genesis.header.header_hash();
@@ -414,6 +440,39 @@ impl Node {
             }
         }
         Ok(None)
+    }
+
+    /// Resolve the owning address and amount of a specific transaction
+    /// output via the persistent `output_index`. Used to enrich transaction
+    /// inputs (which only carry `previous_output` + `index`) with the actual
+    /// spender address server-side, instead of requiring RPC clients to
+    /// perform a separate lookup per input.
+    pub async fn get_output_owner(
+        &self,
+        tx_hash: &Hash,
+        output_index: u32,
+    ) -> Result<Option<(String, u128)>, NodeError> {
+        Ok(self.storage.get_output_owner(tx_hash, output_index).await?)
+    }
+
+    /// Paginated native V31 UTXO address transaction history, newest first.
+    /// Returns `(tx_hash_hex, height, direction)` plus the total row count.
+    pub async fn get_address_tx_history(
+        &self,
+        address: &str,
+        limit: usize,
+        offset: usize,
+    ) -> Result<(Vec<(String, u64, String)>, usize), NodeError> {
+        let (rows, total) = self
+            .storage
+            .get_address_tx_history(address, limit, offset)
+            .await?;
+        Ok((
+            rows.into_iter()
+                .map(|(hash, height, dir)| (hash.to_hex(), height, dir))
+                .collect(),
+            total,
+        ))
     }
 
     /// Submit a transaction to the mempool.
