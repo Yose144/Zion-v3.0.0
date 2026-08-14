@@ -57,7 +57,7 @@ const ExplorerTxTxDetailClientCopy = {
   viewBlock: { cs: `Zobrazit blok`, en: `View Block` },
 };
 
-interface TxInput { type: string; amount: number; key_image?: string; previous_output?: string; key_offsets?: number[]; }
+interface TxInput { type: string; amount: number; address?: string; key_image?: string; previous_output?: string; key_offsets?: number[]; }
 interface TxOutput { amount: number; key: string; address?: string; index?: number; }
 interface Transaction {
   tx_hash: string; block_height: number; block_timestamp: number; in_pool: boolean;
