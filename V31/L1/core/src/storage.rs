@@ -141,7 +141,236 @@ impl Storage {
             )",
             [],
         )?;
+
+        // ── Native V31 transaction / address indexes ──────────────────────
+        // `tx_index` gives O(1) height lookups for a given tx hash, instead
+        // of the previous full-chain linear scan in `Node::find_transaction`.
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS tx_index (
+                tx_hash BLOB PRIMARY KEY,
+                height INTEGER NOT NULL
+            )",
+            [],
+        )?;
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_tx_index_height ON tx_index(height)",
+            [],
+        )?;
+        // `output_index` permanently records the owning address of every
+        // output ever created (unlike the in-memory `UtxoSet`, which removes
+        // an entry the moment it is spent). This lets us resolve a
+        // transaction input's spender address in O(1) without needing to
+        // fetch and deserialize the entire ancestor block.
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS output_index (
+                tx_hash BLOB NOT NULL,
+                output_index INTEGER NOT NULL,
+                address TEXT NOT NULL,
+                amount TEXT NOT NULL,
+                PRIMARY KEY (tx_hash, output_index)
+            )",
+            [],
+        )?;
+        // `address_tx_index` is the address -> transaction history index used
+        // by `getTransactionHistory` for native V31 UTXO addresses. A single
+        // transaction can involve the same address twice (once as sender,
+        // once as receiver, e.g. change outputs); `direction` records which
+        // side was seen first, but is intentionally *not* part of the primary
+        // key so each (address, tx) pair appears at most once in history
+        // results (self-transfers are recorded once, not duplicated).
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS address_tx_index (
+                address TEXT NOT NULL,
+                tx_hash BLOB NOT NULL,
+                height INTEGER NOT NULL,
+                direction TEXT NOT NULL,
+                PRIMARY KEY (address, tx_hash)
+            )",
+            [],
+        )?;
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_address_tx_index_lookup
+             ON address_tx_index(address, height DESC)",
+            [],
+        )?;
         Ok(())
+    }
+
+    /// Index a block's transactions into `tx_index`, `output_index`, and
+    /// `address_tx_index`. Must be called with the same connection used to
+    /// persist the block (see `put`), after the block row has been written,
+    /// and only once per block height (ancestor blocks must already be
+    /// indexed so that input addresses can be resolved via `output_index`).
+    fn index_block_transactions(
+        &self,
+        conn: &Connection,
+        block: &Block,
+    ) -> Result<(), StorageError> {
+        let height = block.header.height as i64;
+        for tx in &block.transactions {
+            let tx_hash = tx.hash();
+            let tx_hash_bytes = tx_hash.0.as_slice();
+
+            conn.execute(
+                "INSERT OR REPLACE INTO tx_index (tx_hash, height) VALUES (?1, ?2)",
+                params![tx_hash_bytes, height],
+            )?;
+
+            // Resolve the spender address for each input via output_index.
+            // Coinbase transactions have no inputs to resolve.
+            if !tx.is_coinbase() {
+                for input in &tx.inputs {
+                    let prev_bytes = input.previous_output.0.as_slice();
+                    let owner: Option<String> = conn
+                        .query_row(
+                            "SELECT address FROM output_index
+                             WHERE tx_hash = ?1 AND output_index = ?2",
+                            params![prev_bytes, input.index as i64],
+                            |row| row.get(0),
+                        )
+                        .optional()?;
+                    if let Some(address) = owner {
+                        conn.execute(
+                            "INSERT OR IGNORE INTO address_tx_index
+                             (address, tx_hash, height, direction)
+                             VALUES (?1, ?2, ?3, 'out')",
+                            params![address, tx_hash_bytes, height],
+                        )?;
+                    }
+                }
+            }
+
+            // Record each output's owning address (both for future input
+            // resolution and for the receiver-side address history).
+            for (idx, output) in tx.outputs.iter().enumerate() {
+                let address = &output.address.encoded;
+                conn.execute(
+                    "INSERT OR REPLACE INTO output_index
+                     (tx_hash, output_index, address, amount)
+                     VALUES (?1, ?2, ?3, ?4)",
+                    params![tx_hash_bytes, idx as i64, address, output.amount.0.to_string()],
+                )?;
+                conn.execute(
+                    "INSERT OR IGNORE INTO address_tx_index
+                     (address, tx_hash, height, direction)
+                     VALUES (?1, ?2, ?3, 'in')",
+                    params![address, tx_hash_bytes, height],
+                )?;
+            }
+        }
+        Ok(())
+    }
+
+    /// Height of a native V31 transaction, resolved in O(1) via `tx_index`.
+    pub async fn find_tx_height(&self, tx_hash: &Hash) -> Result<Option<u64>, StorageError> {
+        let conn = self.conn.lock().await;
+        let height: Option<i64> = conn
+            .query_row(
+                "SELECT height FROM tx_index WHERE tx_hash = ?1",
+                [tx_hash.0.as_slice()],
+                |row| row.get(0),
+            )
+            .optional()?;
+        Ok(height.map(|h| h as u64))
+    }
+
+    /// Owning address and amount of a specific output, resolved in O(1) via
+    /// `output_index`. Returns `None` if the output was never indexed
+    /// (e.g. belongs to a block stored before the index existed — see
+    /// `backfill_tx_index`).
+    pub async fn get_output_owner(
+        &self,
+        tx_hash: &Hash,
+        output_index: u32,
+    ) -> Result<Option<(String, u128)>, StorageError> {
+        let conn = self.conn.lock().await;
+        let row: Option<(String, String)> = conn
+            .query_row(
+                "SELECT address, amount FROM output_index
+                 WHERE tx_hash = ?1 AND output_index = ?2",
+                params![tx_hash.0.as_slice(), output_index as i64],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .optional()?;
+        Ok(row.and_then(|(addr, amt)| amt.parse::<u128>().ok().map(|a| (addr, a))))
+    }
+
+    /// Paginated transaction history for a native V31 UTXO address, newest
+    /// first. Returns `(tx_hash, height, direction)` tuples plus the total
+    /// number of matching rows (for pagination).
+    pub async fn get_address_tx_history(
+        &self,
+        address: &str,
+        limit: usize,
+        offset: usize,
+    ) -> Result<(Vec<(Hash, u64, String)>, usize), StorageError> {
+        let conn = self.conn.lock().await;
+        let total: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM address_tx_index WHERE address = ?1",
+            [address],
+            |row| row.get(0),
+        )?;
+
+        let mut stmt = conn.prepare(
+            "SELECT tx_hash, height, direction FROM address_tx_index
+             WHERE address = ?1
+             ORDER BY height DESC
+             LIMIT ?2 OFFSET ?3",
+        )?;
+        let rows = stmt.query_map(params![address, limit as i64, offset as i64], |row| {
+            let hash_bytes: Vec<u8> = row.get(0)?;
+            let height: i64 = row.get(1)?;
+            let direction: String = row.get(2)?;
+            Ok((hash_bytes, height as u64, direction))
+        })?;
+
+        let mut out = Vec::new();
+        for row in rows {
+            let (hash_bytes, height, direction) = row?;
+            out.push((bytes_to_hash(&hash_bytes)?, height, direction));
+        }
+        Ok((out, total.max(0) as usize))
+    }
+
+    /// True if the tx/address indexes have never been populated (e.g. a
+    /// pre-existing database predating this feature). Used to decide whether
+    /// a one-time backfill is needed at startup.
+    pub async fn tx_index_is_empty(&self) -> Result<bool, StorageError> {
+        let conn = self.conn.lock().await;
+        let count: i64 = conn.query_row("SELECT COUNT(*) FROM tx_index", [], |row| row.get(0))?;
+        Ok(count == 0)
+    }
+
+    /// Rebuild `tx_index`, `output_index`, and `address_tx_index` from the
+    /// full stored block range. Safe to call on every startup: all inserts
+    /// are idempotent (`INSERT OR REPLACE` / `INSERT OR IGNORE`), and callers
+    /// should gate the (potentially expensive) full scan on
+    /// `tx_index_is_empty()` to avoid redoing it once the index is warm.
+    pub async fn backfill_tx_index(&self) -> Result<u64, StorageError> {
+        let tip_height = self.height().await?;
+        let mut indexed = 0u64;
+        for h in 0..=tip_height {
+            let block = {
+                let conn = self.conn.lock().await;
+                let hash: Option<Vec<u8>> = conn
+                    .query_row(
+                        "SELECT hash FROM blocks WHERE height = ?1",
+                        [h as i64],
+                        |row| row.get(0),
+                    )
+                    .optional()?;
+                match hash {
+                    Some(hb) => self.get_by_hash_internal(&bytes_to_hash(&hb)?, &conn)?,
+                    None => None,
+                }
+            };
+            if let Some(block) = block {
+                let conn = self.conn.lock().await;
+                self.index_block_transactions(&conn, &block)?;
+                indexed += 1;
+            }
+        }
+        Ok(indexed)
     }
 
     /// Store a block and update the chain tip.
@@ -186,6 +415,7 @@ impl Storage {
                 header.timestamp as i64,
             ],
         )?;
+        self.index_block_transactions(&conn, block)?;
         Ok(())
     }
 
@@ -720,6 +950,176 @@ mod tests {
 
         let by_height = storage.get_by_height(0).await.unwrap().unwrap();
         assert_eq!(by_height.header.merkle_root, block.header.merkle_root);
+    }
+
+    /// Build a simple block spending `genesis`'s first output to two new
+    /// addresses, for exercising the tx/address index.
+    fn build_spend_block(genesis: &Block) -> (Block, Hash) {
+        use crate::transaction::{Transaction, TransactionInput, TransactionOutput};
+        use zion_l1_types::{Address, Amount, ChainId};
+
+        let genesis_tx = &genesis.transactions[0];
+        let genesis_tx_hash = genesis_tx.hash();
+
+        let addr = |s: &str| Address::new(ChainId::ZionL1, vec![], s).unwrap();
+        let spend_tx = Transaction::new(
+            1,
+            vec![TransactionInput {
+                previous_output: genesis_tx_hash,
+                index: 0,
+                script: vec![0u8; 96],
+            }],
+            vec![
+                TransactionOutput {
+                    amount: Amount::new(1_000_000_000_000),
+                    address: addr("zion1recipientaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+                },
+                TransactionOutput {
+                    amount: Amount::new(500_000_000_000),
+                    address: addr("zion1changeaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+                },
+            ],
+            vec![],
+        );
+        let spend_tx_hash = spend_tx.hash();
+
+        let header = BlockHeader {
+            previous_hash: genesis.header.header_hash(),
+            merkle_root: Hash::default(),
+            height: 1,
+            timestamp: genesis.header.timestamp + 60,
+            nonce: 0,
+            difficulty: genesis.header.difficulty,
+        };
+        (Block::new(header, vec![spend_tx]), spend_tx_hash)
+    }
+
+    #[tokio::test]
+    async fn put_indexes_tx_and_address_history() {
+        let storage = Storage::open_in_memory().await.unwrap();
+        let genesis = genesis::genesis_block();
+        let genesis_tx_hash = genesis.transactions[0].hash();
+        storage.put(&genesis).await.unwrap();
+
+        let (block1, spend_tx_hash) = build_spend_block(&genesis);
+        storage.put(&block1).await.unwrap();
+
+        // O(1) tx height lookup.
+        assert_eq!(storage.find_tx_height(&spend_tx_hash).await.unwrap(), Some(1));
+        assert_eq!(storage.find_tx_height(&genesis_tx_hash).await.unwrap(), Some(0));
+
+        // Output ownership resolution (used to enrich tx inputs server-side).
+        let (owner, amount) = storage
+            .get_output_owner(&genesis_tx_hash, 0)
+            .await
+            .unwrap()
+            .expect("genesis output 0 must be indexed");
+        assert_eq!(owner, "zion1s0t7f8q680t4h6v7g240p4k7g2s0a4z8g3cc5h5");
+        assert_eq!(amount, 1650000000_u128 * 1_000_000);
+
+        // Sender-side history: the spent genesis address should show an 'out'
+        // entry for the spend transaction alongside its original 'in' entry.
+        let (rows, total) = storage
+            .get_address_tx_history("zion1s0t7f8q680t4h6v7g240p4k7g2s0a4z8g3cc5h5", 10, 0)
+            .await
+            .unwrap();
+        assert_eq!(total, 2);
+        assert!(rows.iter().any(|(h, height, dir)| *h == genesis_tx_hash && *height == 0 && dir == "in"));
+        assert!(rows.iter().any(|(h, height, dir)| *h == spend_tx_hash && *height == 1 && dir == "out"));
+
+        // Receiver-side history: the new recipient address should show an
+        // 'in' entry at height 1.
+        let (rows, total) = storage
+            .get_address_tx_history("zion1recipientaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 10, 0)
+            .await
+            .unwrap();
+        assert_eq!(total, 1);
+        assert_eq!(rows[0], (spend_tx_hash, 1, "in".to_string()));
+    }
+
+    #[tokio::test]
+    async fn address_tx_history_dedupes_self_transfers() {
+        use crate::transaction::{Transaction, TransactionInput, TransactionOutput};
+        use zion_l1_types::{Address, Amount, ChainId};
+
+        let storage = Storage::open_in_memory().await.unwrap();
+        let genesis = genesis::genesis_block();
+        let genesis_tx_hash = genesis.transactions[0].hash();
+        storage.put(&genesis).await.unwrap();
+
+        // A "self-transfer" transaction: the same address both spends an
+        // input (sender) and receives a change output (receiver). Before
+        // the fix, this produced two rows (one 'in', one 'out') for the same
+        // (address, tx_hash) pair, double-counting the tx in history totals.
+        let sender = "zion1s0t7f8q680t4h6v7g240p4k7g2s0a4z8g3cc5h5";
+        let addr = |s: &str| Address::new(ChainId::ZionL1, vec![], s).unwrap();
+        let self_tx = Transaction::new(
+            1,
+            vec![TransactionInput {
+                previous_output: genesis_tx_hash,
+                index: 0,
+                script: vec![0u8; 96],
+            }],
+            vec![
+                TransactionOutput {
+                    amount: Amount::new(1_000_000_000_000),
+                    address: addr("zion1otherrecipientbbbbbbbbbbbbbbbbbbbbbbbbb"),
+                },
+                TransactionOutput {
+                    amount: Amount::new(649_000_000_000_000),
+                    address: addr(sender), // change back to the sender
+                },
+            ],
+            vec![],
+        );
+        let self_tx_hash = self_tx.hash();
+        let header = BlockHeader {
+            previous_hash: genesis.header.header_hash(),
+            merkle_root: Hash::default(),
+            height: 1,
+            timestamp: genesis.header.timestamp + 60,
+            nonce: 0,
+            difficulty: genesis.header.difficulty,
+        };
+        storage.put(&Block::new(header, vec![self_tx])).await.unwrap();
+
+        let (rows, total) = storage.get_address_tx_history(sender, 10, 0).await.unwrap();
+        // Exactly 2 distinct transactions touch `sender`: the genesis receipt
+        // and the self-transfer — NOT 3 (which would happen if the
+        // self-transfer's 'in' and 'out' legs were counted separately).
+        assert_eq!(total, 2, "self-transfer must not be double-counted");
+        assert_eq!(rows.iter().filter(|(h, ..)| *h == self_tx_hash).count(), 1);
+    }
+
+    #[tokio::test]
+    async fn backfill_tx_index_rebuilds_from_scratch() {
+        let storage = Storage::open_in_memory().await.unwrap();
+        let genesis = genesis::genesis_block();
+        storage.put(&genesis).await.unwrap();
+        let (block1, spend_tx_hash) = build_spend_block(&genesis);
+        storage.put(&block1).await.unwrap();
+
+        // Simulate a pre-existing database that predates the index feature.
+        {
+            let conn = storage.conn.lock().await;
+            conn.execute("DELETE FROM tx_index", []).unwrap();
+            conn.execute("DELETE FROM output_index", []).unwrap();
+            conn.execute("DELETE FROM address_tx_index", []).unwrap();
+        }
+        assert!(storage.tx_index_is_empty().await.unwrap());
+        assert!(storage.find_tx_height(&spend_tx_hash).await.unwrap().is_none());
+
+        let indexed = storage.backfill_tx_index().await.unwrap();
+        assert_eq!(indexed, 2);
+        assert!(!storage.tx_index_is_empty().await.unwrap());
+        assert_eq!(storage.find_tx_height(&spend_tx_hash).await.unwrap(), Some(1));
+
+        let (rows, total) = storage
+            .get_address_tx_history("zion1recipientaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 10, 0)
+            .await
+            .unwrap();
+        assert_eq!(total, 1);
+        assert_eq!(rows[0], (spend_tx_hash, 1, "in".to_string()));
     }
 
     #[tokio::test]

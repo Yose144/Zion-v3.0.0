@@ -428,14 +428,25 @@ function parseV31Output(out: any): { address: string; amount: number; key: strin
   return { address, amount, key: address };
 }
 
-function parseV31Input(inp: any): { type: string; amount: number; key_image: string | undefined; previous_output: string | undefined; output_index: number } {
+function parseV31Input(inp: any): { type: string; amount: number; key_image: string | undefined; previous_output: string | undefined; output_index: number; address?: string; server_resolved?: boolean } {
+  // `bytesToHex` already accepts either a raw byte array (from the plain
+  // serde `Transaction` struct, e.g. via `getTransaction`) or an already-hex
+  // string (from `get_native_block`'s manually built JSON).
   const previousOutput = bytesToHex(inp?.previous_output);
+  // Server-side address resolution (see V31 `output_index` / `get_output_owner`
+  // in rpc.rs). When present, this avoids the client needing a follow-up
+  // getTransaction call per input — see `enrichInputAddresses`.
+  const resolvedAddress = typeof inp?.address === 'string' && inp.address.startsWith('zion1')
+    ? inp.address
+    : undefined;
   return {
     type: previousOutput ? 'standard' : 'coinbase',
-    amount: 0,
+    amount: typeof inp?.amount === 'string' ? Number(inp.amount) || 0 : 0,
     key_image: previousOutput ? previousOutput : undefined,
     previous_output: previousOutput || undefined,
     output_index: typeof inp?.index === 'number' ? inp.index : 0,
+    address: resolvedAddress,
+    server_resolved: resolvedAddress !== undefined,
   };
 }
 
@@ -465,14 +476,35 @@ function parseV31NativeTransaction(
   const inputsRaw = Array.isArray(tx.inputs) ? tx.inputs : [];
   const outputsRaw = Array.isArray(tx.outputs) ? tx.outputs : [];
 
+  // `getTransaction` (single-tx lookup) returns server-resolved addresses
+  // and amounts as separate index-aligned arrays rather than embedding them
+  // directly on each input object (unlike `get_native_block`'s inputs, which
+  // already carry `address`/`amount`). Merge them in here so `parseV31Input`
+  // sees a uniform shape either way.
+  if (Array.isArray(res.input_addresses)) {
+    inputsRaw.forEach((inp: any, idx: number) => {
+      if (inp && typeof inp === 'object') {
+        if (res.input_addresses[idx]) inp.address = res.input_addresses[idx];
+        if (Array.isArray(res.input_amounts) && res.input_amounts[idx]) {
+          inp.amount = res.input_amounts[idx];
+        }
+      }
+    });
+  }
+
   const outputs = outputsRaw.map(parseV31Output);
   const inputs = inputsRaw.map(parseV31Input);
   const isCoinbase = isCoinbaseFromInputs(inputsRaw);
 
   const totalOutputAtomic = outputs.reduce((s: number, o: { amount: number }) => s + o.amount, 0);
-  // V31-native transactions do not expose input amounts in the RPC, so fee cannot
-  // be calculated without looking up previous outputs. We report 0 fee for now.
-  const feeAtomic = 0;
+  // Fee = input sum - output sum, when every input's amount was resolved
+  // (server-side via `output_index`, or by `enrichInputAddresses` as a
+  // fallback). Falls back to 0 if any input amount is still unknown.
+  const allInputsResolved = inputs.length > 0 && inputs.every((i: { amount: number }) => i.amount > 0);
+  const totalInputAtomic = inputs.reduce((s: number, i: { amount: number }) => s + i.amount, 0);
+  const feeAtomic = !isCoinbase && allInputsResolved
+    ? Math.max(0, totalInputAtomic - totalOutputAtomic)
+    : 0;
 
   const txHash = txHashOverride || tx.tx_id || res.tx_id || '';
   const memo = Array.isArray(tx.memo) ? tx.memo : [];
@@ -513,7 +545,7 @@ function parseV31NativeTransaction(
         : '',
     to: outputs.map((o: { address: string }) => o.address).filter(Boolean).join(', '),
     amount_zion: String(totalOutputAtomic),
-    fee_zion: 0,
+    fee_zion: feeAtomic,
     nonce: 0,
     signature: '',
     public_key: '',
@@ -999,10 +1031,10 @@ class ZionRpcClient {
         if (!res || !res.transaction) continue;
         const tx = parseV31NativeTransaction(res, res.block_height ?? 0, 0, res.confirmed ?? false, txid);
 
-        // Enrich input addresses from previous transaction outputs
-        if (tx.inputs?.length && !tx.inputs.some((i) => i.address && i.address.startsWith('zion1'))) {
-          await this.enrichInputAddresses(tx);
-        }
+        // Fallback enrichment for any input the node didn't already resolve
+        // server-side (see `input_addresses` in rpc.rs::get_transaction).
+        // No-op (no RPC calls) once every input already carries an address.
+        await this.enrichInputAddresses(tx);
 
         results.push(tx);
       } catch { /* skip unavailable tx */ }
@@ -1011,9 +1043,15 @@ class ZionRpcClient {
   }
 
   /** Enrich input addresses for a single transaction by looking up previous outputs.
-   *  Returns true if at least one input address was resolved. */
+   *  Skips inputs that already carry a resolved `zion1...` address (the node
+   *  resolves these server-side as of the `output_index` addition — see
+   *  rpc.rs::get_transaction / get_native_block), so this is a no-op RPC-wise
+   *  once the chain's tx/address index is warm. Returns true if at least one
+   *  input address was resolved. */
   async enrichInputAddresses(tx: ZionTransaction): Promise<boolean> {
-    const standardInputs = (tx.inputs || []).filter((i) => i.previous_output && i.type !== 'coinbase');
+    const standardInputs = (tx.inputs || []).filter(
+      (i) => i.previous_output && i.type !== 'coinbase' && !(i.address && i.address.startsWith('zion1')),
+    );
     if (!standardInputs.length) return false;
 
     let resolved = false;

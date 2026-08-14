@@ -52,6 +52,15 @@ export async function GET(request: NextRequest) {
     // Priority 3: pool payouts as legacy fallback.
     let transactions: any[];
     let totalReceived: number;
+    let totalSent = 0;
+
+    // `to`/`from` are comma-joined lists of every distinct output/input
+    // address on a UTXO transaction (e.g. "zion1abc..., zion1def..."), not a
+    // single address — an exact `===` match against `address` therefore
+    // almost never matches multi-output transfers. Use `includes()` against
+    // the individual comma-separated entries instead.
+    const involvesAddress = (field: string | undefined) =>
+      !!field && field.split(',').map((a) => a.trim()).includes(address);
 
     if (txHistory && txHistory.transactions.length > 0) {
       transactions = txHistory.transactions.map((tx) => {
@@ -70,7 +79,10 @@ export async function GET(request: NextRequest) {
         };
       });
       totalReceived = transactions
-        .filter((tx) => tx.to === address)
+        .filter((tx) => involvesAddress(tx.to))
+        .reduce((sum, tx) => sum + tx.amount, 0);
+      totalSent = transactions
+        .filter((tx) => tx.type !== 'coinbase' && involvesAddress(tx.from))
         .reduce((sum, tx) => sum + tx.amount, 0);
     } else if (utxoList.length > 0 && address.startsWith('zion1')) {
       // V31-native UTXO: each UTXO corresponds to a received output.
@@ -113,7 +125,7 @@ export async function GET(request: NextRequest) {
       known_type: KNOWN_ADDRESS_LABELS[address]?.type || null,
       balance,
       total_received: totalReceived || minerData?.balance?.paid || 0,
-      total_sent: 0,
+      total_sent: totalSent,
       net_balance: balanceZion,
       transaction_count: (txHistory && txHistory.total > 0) ? txHistory.total : (utxoList.length > 0 ? utxoList.length : transactions.length),
       first_seen: minerData?.first_seen || (utxoList.length ? Math.min(...utxoList.map((u: any) => u.timestamp ?? 0).filter((t: number) => t > 0)) : 0),

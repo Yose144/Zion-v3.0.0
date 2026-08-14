@@ -314,6 +314,20 @@ async fn dispatch_request(line: &str, node: &Node) -> Value {
         };
     }
 
+    // Native V31 UTXO address transaction history, backed by the persistent
+    // address_tx_index. Falls back to the V3/account-model handler when the
+    // address has no native activity (e.g. it's a legacy V3-only address).
+    if method == "getTransactionHistory" {
+        return match get_transaction_history_native(node, &params).await {
+            Ok(Some(v)) => success_response(id, v),
+            Ok(None) => {
+                let result = node.v3_rpc.dispatch("getTransactionHistory", params).await;
+                wrap_v3_response(id, result)
+            }
+            Err(e) => error_response(id, -32000, &e.to_string()),
+        };
+    }
+
     // V3 methods are dispatched to the V3 RPC handler.
     // `getStatus` is intentionally served by the native V31 handler so public
     // RPC clients see the live V31 chain height and protocol version.
@@ -323,7 +337,6 @@ async fn dispatch_request(line: &str, node: &Node) -> Value {
         "getBalance",
         "getAccountBalance",
         "getAccountTransaction",
-        "getTransactionHistory",
         "getAddressInfo",
         "getBalanceAtHeight",
         "getMempoolInfo",
@@ -593,28 +606,32 @@ async fn get_native_block(node: &Node, params: &Value) -> Result<Option<Value>, 
         .unwrap_or_default();
 
     let transaction_ids: Vec<String> = block.transactions.iter().map(|tx| tx.hash().to_hex()).collect();
-    let transactions: Vec<Value> = block
-        .transactions
-        .iter()
-        .map(|tx| {
-            json!({
-                "tx_id": tx.hash().to_hex(),
-                "version": tx.version,
-                "inputs": tx.inputs.iter().map(|i| {
-                    json!({
-                        "previous_output": i.previous_output.to_hex(),
-                        "index": i.index,
-                    })
-                }).collect::<Vec<_>>(),
-                "outputs": tx.outputs.iter().map(|o| {
-                    json!({
-                        "amount": o.amount.0,
-                        "address": o.address.encoded,
-                    })
-                }).collect::<Vec<_>>(),
-            })
-        })
-        .collect();
+    let mut transactions: Vec<Value> = Vec::with_capacity(block.transactions.len());
+    for tx in &block.transactions {
+        // Resolve each input's spender address server-side via `output_index`
+        // so RPC clients (explorer) don't need a follow-up lookup per input.
+        let mut inputs = Vec::with_capacity(tx.inputs.len());
+        for i in &tx.inputs {
+            let owner = node.get_output_owner(&i.previous_output, i.index).await?;
+            inputs.push(json!({
+                "previous_output": i.previous_output.to_hex(),
+                "index": i.index,
+                "address": owner.as_ref().map(|(a, _)| a.clone()),
+                "amount": owner.as_ref().map(|(_, amt)| amt.to_string()),
+            }));
+        }
+        transactions.push(json!({
+            "tx_id": tx.hash().to_hex(),
+            "version": tx.version,
+            "inputs": inputs,
+            "outputs": tx.outputs.iter().map(|o| {
+                json!({
+                    "amount": o.amount.0,
+                    "address": o.address.encoded,
+                })
+            }).collect::<Vec<_>>(),
+        }));
+    }
 
     Ok(Some(json!({
         "height": header.height,
@@ -664,16 +681,108 @@ async fn get_transaction(node: &Node, params: &Value) -> Result<Option<Value>, N
         .ok_or_else(|| NodeError::Address("txid required".to_string()))?;
 
     match node.find_transaction(tx_id).await? {
-        Some((height, block_hash, tx)) => Ok(Some(json!({
-            "transaction_model": "v31-native",
-            "transaction": tx,
-            "block_height": height,
-            "block_hash": block_hash,
-            "confirmed": true,
-            "source": "confirmed",
-        }))),
+        Some((height, block_hash, tx)) => {
+            // Resolve each input's spender address + amount server-side via
+            // `output_index` (index-aligned with `transaction.inputs`) so
+            // RPC clients don't need a follow-up lookup per input, and can
+            // compute the transaction fee (input sum - output sum).
+            let mut input_addresses: Vec<Option<String>> = Vec::with_capacity(tx.inputs.len());
+            let mut input_amounts: Vec<Option<String>> = Vec::with_capacity(tx.inputs.len());
+            for i in &tx.inputs {
+                let owner = node.get_output_owner(&i.previous_output, i.index).await?;
+                input_addresses.push(owner.as_ref().map(|(addr, _)| addr.clone()));
+                input_amounts.push(owner.as_ref().map(|(_, amt)| amt.to_string()));
+            }
+            Ok(Some(json!({
+                "transaction_model": "v31-native",
+                "transaction": tx,
+                "input_addresses": input_addresses,
+                "input_amounts": input_amounts,
+                "block_height": height,
+                "block_hash": block_hash,
+                "confirmed": true,
+                "source": "confirmed",
+            })))
+        }
         None => Ok(None),
     }
+}
+
+/// Native V31 UTXO address transaction history, backed by the persistent
+/// `address_tx_index`. Falls back to `None` (letting the caller dispatch to
+/// the V3/account-model handler) when the address has no indexed activity.
+async fn get_transaction_history_native(
+    node: &Node,
+    params: &Value,
+) -> Result<Option<Value>, NodeError> {
+    let address = params
+        .get("address")
+        .or_else(|| params.get(0))
+        .and_then(Value::as_str)
+        .ok_or_else(|| NodeError::Address("address required".to_string()))?;
+    let limit = params
+        .get("limit")
+        .and_then(Value::as_u64)
+        .unwrap_or(50)
+        .clamp(1, 500) as usize;
+    let offset = params.get("offset").and_then(Value::as_u64).unwrap_or(0) as usize;
+
+    let (rows, total) = node.get_address_tx_history(address, limit, offset).await?;
+    if rows.is_empty() {
+        return Ok(None);
+    }
+
+    let mut transactions = Vec::with_capacity(rows.len());
+    for (tx_hash_hex, height, _direction) in &rows {
+        let Some(block) = node.block_by_height(*height).await? else { continue };
+        let Some(tx_hash) = decode_hash_32(tx_hash_hex).ok() else { continue };
+        let Some(tx) = block.transactions.iter().find(|t| t.hash() == tx_hash) else { continue };
+
+        let is_coinbase = tx.is_coinbase();
+        let mut from_addrs: Vec<String> = Vec::new();
+        if !is_coinbase {
+            for input in &tx.inputs {
+                if let Some((addr, _amt)) = node
+                    .get_output_owner(&input.previous_output, input.index)
+                    .await?
+                {
+                    if !from_addrs.contains(&addr) {
+                        from_addrs.push(addr);
+                    }
+                }
+            }
+        }
+        let mut to_addrs: Vec<String> = tx.outputs.iter().map(|o| o.address.encoded.clone()).collect();
+        to_addrs.dedup();
+        let total_out: u128 = tx.outputs.iter().map(|o| o.amount.0).sum();
+
+        // Shape matches the V3/account-model handler's response
+        // (`entry.transaction.*` for tx fields, `entry.*` for chain
+        // metadata) so the explorer's existing client parser works
+        // unchanged for both native and legacy addresses.
+        transactions.push(json!({
+            "transaction": {
+                "tx_id": tx_hash_hex,
+                "from": if is_coinbase { "coinbase".to_string() } else { from_addrs.join(", ") },
+                "to": to_addrs.join(", "),
+                "amount_zion": total_out.to_string(),
+                "fee_zion": 0,
+                "nonce": 0,
+                "signature": "",
+                "public_key": "",
+            },
+            "block_height": height,
+            "timestamp": block.header.timestamp,
+            "confirmed": true,
+            "tx_model": "v31-native",
+        }));
+    }
+
+    Ok(Some(json!({
+        "total": total,
+        "has_more": offset + rows.len() < total,
+        "transactions": transactions,
+    })))
 }
 
 fn success_response(id: Option<Value>, result: Value) -> Value {
