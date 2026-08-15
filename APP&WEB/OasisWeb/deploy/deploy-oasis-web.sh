@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-# ZION OASIS Web deploy — Next.js standalone to oasis.zionterranova.com
+# ZION OASIS Web deploy — Next.js static export to oasis.zionterranova.com
 #
-# Builds APP&WEB/OasisWeb as a standalone Next.js app, rsyncs
-# dist/standalone/ to /opt/zion/oasis-web on the Edge server,
-# installs/updates the zion-oasis-web systemd service and nginx site,
-# then starts the service.
+# Builds APP&WEB/OasisWeb as a static export, rsyncs dist/ to /var/www/oasis
+# on the Edge server, installs/updates the nginx site, reloads nginx and
+# runs a health check.
 #
 # Usage:
 #   bash APP&WEB/OasisWeb/deploy/deploy-oasis-web.sh
@@ -14,43 +13,33 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 EDGE_HOST="${ZION_EDGE_HOST:-62.171.141.136}"
 EDGE_PORT="${ZION_EDGE_PORT:-2222}"
+EDGE_USE_IPV6="${ZION_EDGE_USE_IPV6:-0}"
 SSH_KEY="${ZION_EDGE_SSH_KEY:-$HOME/.ssh/zion-edge-post-wipe-2026-07-29}"
 REMOTE="root@${EDGE_HOST}"
-REMOTE_DIR="/opt/zion/oasis-web"
+REMOTE_DIR="/var/www/oasis"
 NGINX_CONF="/etc/nginx/sites-enabled/oasis.zionterranova.com.conf"
-SERVICE="zion-oasis-web"
 
 SSH_OPTS="-i ${SSH_KEY} -p ${EDGE_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+[[ "$EDGE_USE_IPV6" == "1" ]] && SSH_OPTS="${SSH_OPTS} -6"
 
-echo "[deploy-oasis-web] Building Next.js standalone..."
+echo "[deploy-oasis-web] Building Next.js static export..."
 cd "$ROOT_DIR"
 NEXT_PUBLIC_OASIS_API_URL= npm run build
 
-if [[ ! -d "${ROOT_DIR}/dist/standalone" ]]; then
-  echo "[deploy-oasis-web] ERROR: dist/standalone/ not found. Did 'npm run build' succeed with output: 'standalone'?" >&2
+if [[ ! -f "${ROOT_DIR}/dist/index.html" ]]; then
+  echo "[deploy-oasis-web] ERROR: dist/index.html not found. Did 'npm run build' succeed with output: 'export'?" >&2
   exit 1
 fi
 
-echo "[deploy-oasis-web] Syncing ${ROOT_DIR}/dist/standalone/ to ${REMOTE}:${REMOTE_DIR}"
-ssh ${SSH_OPTS} "${REMOTE}" "mkdir -p ${REMOTE_DIR} && chown -R zion:zion ${REMOTE_DIR} 2>/dev/null || true"
-rsync -avz --delete -e "ssh ${SSH_OPTS}" "${ROOT_DIR}/dist/standalone/" "${REMOTE}:${REMOTE_DIR}/"
-
-echo "[deploy-oasis-web] Installing systemd service..."
-rsync -avz -e "ssh ${SSH_OPTS}" "${ROOT_DIR}/deploy/zion-oasis-web.service" "${REMOTE}:/etc/systemd/system/${SERVICE}.service"
-
-# Ensure service user exists and has correct perms
-ssh ${SSH_OPTS} "${REMOTE}" "id -u zion >/dev/null 2>&1 || useradd -r -s /bin/false zion; chown -R zion:zion ${REMOTE_DIR}"
-
-# (Optional) env file template
-echo "[deploy-oasis-web] Ensuring .env file exists..."
-ssh ${SSH_OPTS} "${REMOTE}" "test -f ${REMOTE_DIR}/.env || echo '# NODE_ENV=production\n# NEXT_PUBLIC_OASIS_API_URL=' > ${REMOTE_DIR}/.env"
+echo "[deploy-oasis-web] Syncing ${ROOT_DIR}/dist/ to ${REMOTE}:${REMOTE_DIR}"
+ssh ${SSH_OPTS} "${REMOTE}" "mkdir -p ${REMOTE_DIR}"
+rsync -avz --delete -e "ssh ${SSH_OPTS}" "${ROOT_DIR}/dist/" "${REMOTE}:${REMOTE_DIR}/"
 
 echo "[deploy-oasis-web] Updating nginx config..."
 rsync -avz -e "ssh ${SSH_OPTS}" "${ROOT_DIR}/deploy/nginx-oasis.conf" "${REMOTE}:${NGINX_CONF}"
 
-echo "[deploy-oasis-web] Reloading systemd and nginx..."
-ssh ${SSH_OPTS} "${REMOTE}" "systemctl daemon-reload && systemctl enable ${SERVICE}.service && systemctl restart ${SERVICE}.service"
-ssh ${SSH_OPTS} "${REMOTE}" "nginx -t && nginx -s reload"
+echo "[deploy-oasis-web] Disabling stale zion-oasis-web service and reloading nginx..."
+ssh ${SSH_OPTS} "${REMOTE}" "systemctl disable zion-oasis-web.service 2>/dev/null || true; systemctl stop zion-oasis-web.service 2>/dev/null || true; nginx -t && nginx -s reload"
 
 # Optional: mirror public desktop miner artifacts to /var/www/downloads so the
 # OASIS /downloads mirror links work. This step is skipped if the artifacts do
@@ -74,14 +63,18 @@ shopt -s nullglob
 for deb in "${DESKTOP_DIST}"/*.deb; do
   if [[ -f "${deb}" ]]; then
     echo "[deploy-oasis-web] Syncing ${deb} to ${DOWNLOADS_DIR}"
-    rsync -avz -e "ssh ${SSH_OPTS}" "${deb}" "${REMOTE}:${DOWNLOADS_DIR}/"
+    rsync -avz -e "ssh ${SSH_OPTS}" "${deb}" "${REMOTE}:${DOWNLOADS_DIR}/" || {
+      echo "[deploy-oasis-web] Skipping ${deb} (optional artifact)";
+    }
   fi
 done
 shopt -u nullglob
 
 if [[ -f "${SHA256SUMS}" ]]; then
   echo "[deploy-oasis-web] Syncing SHA256SUMS.txt to ${DOWNLOADS_DIR}"
-  rsync -avz -e "ssh ${SSH_OPTS}" "${SHA256SUMS}" "${REMOTE}:${DOWNLOADS_DIR}/"
+  rsync -avz -e "ssh ${SSH_OPTS}" "${SHA256SUMS}" "${REMOTE}:${DOWNLOADS_DIR}/" || {
+    echo "[deploy-oasis-web] Skipping SHA256SUMS.txt (optional artifact)";
+  }
 fi
 
 echo "[deploy-oasis-web] Done — https://oasis.zionterranova.com"

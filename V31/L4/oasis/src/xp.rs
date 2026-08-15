@@ -26,6 +26,10 @@ pub enum XpSource {
     AvatarQuest { quest_id: String, avatar_id: u16 },
     /// Referral bonus
     Referral { referred_address: String },
+    /// Scanning a world in the OASIS galaxy
+    WorldScan { world_id: String, xp: u64 },
+    /// Approaching a world in the OASIS galaxy
+    WorldApproach { world_id: String, xp: u64 },
 }
 
 impl XpSource {
@@ -46,9 +50,14 @@ impl XpSource {
             XpSource::GuildQuest { .. } => 200,
             XpSource::AvatarQuest { .. } => 500,
             XpSource::Referral { .. } => 50,
+            XpSource::WorldScan { xp, .. } => *xp,
+            XpSource::WorldApproach { xp, .. } => *xp,
         }
     }
 }
+
+/// Clamp world action XP to a sane preview-game range.
+pub const MAX_WORLD_XP: u64 = 250;
 
 /// XP System — manages player XP
 pub struct XpSystem {
@@ -162,5 +171,23 @@ mod tests {
 
         // Would be 1000 but capped at 10000 - 9900 = 100
         assert_eq!(award.actual_amount, 100);
+    }
+
+    #[test]
+    fn test_world_scan_xp_uses_provided_amount() {
+        let source = XpSource::WorldScan {
+            world_id: "NOVA_ZEME".to_string(),
+            xp: 150,
+        };
+        assert_eq!(source.xp_amount(), 150);
+    }
+
+    #[test]
+    fn test_world_approach_xp_uses_provided_amount() {
+        let source = XpSource::WorldApproach {
+            world_id: "ALPHA_CENTAURI".to_string(),
+            xp: 25,
+        };
+        assert_eq!(source.xp_amount(), 25);
     }
 }
