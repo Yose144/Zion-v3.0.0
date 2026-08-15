@@ -2,7 +2,6 @@
 
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import { WORLDS } from '../domain/config/worlds';
 import type { World, WorldCategory, WorldLayer } from '../domain/types/world';
 import WorldNode from './World';
 import Hyperlanes from './Hyperlanes';
@@ -26,6 +25,7 @@ const CATEGORY_SIZES: Record<string, number> = {
 const CORE = new THREE.Vector3(0, 0.4, 0);
 
 interface GalaxyMapProps {
+  worlds: World[];
   activeCategories: WorldCategory[];
   activeLayers?: WorldLayer[];
   selectedWorldId?: string | null;
@@ -33,17 +33,17 @@ interface GalaxyMapProps {
   isMobile?: boolean;
 }
 
-export default function GalaxyMap({ activeCategories, activeLayers, selectedWorldId, onWorldSelect, isMobile = false }: GalaxyMapProps) {
+export default function GalaxyMap({ worlds, activeCategories, activeLayers, selectedWorldId, onWorldSelect, isMobile = false }: GalaxyMapProps) {
   const groupRef = useRef<THREE.Group>(null);
   const linesRef = useRef<THREE.LineSegments>(null);
 
   const visibleWorlds = useMemo(
-    () => WORLDS.filter((w) => {
+    () => worlds.filter((w) => {
       const catOk = activeCategories.includes(w.category as WorldCategory);
       const layerOk = !activeLayers || activeLayers.length === 0 || activeLayers.includes(w.layer);
       return catOk && layerOk && w.galaxyPosition;
     }),
-    [activeCategories, activeLayers]
+    [worlds, activeCategories, activeLayers]
   );
 
   const { lineGeometry, lineMaterial } = useMemo(() => {
@@ -81,7 +81,7 @@ export default function GalaxyMap({ activeCategories, activeLayers, selectedWorl
       <lineSegments ref={linesRef} geometry={lineGeometry} material={lineMaterial} />
 
       {/* Inter-world hyperlane / warp-gate network */}
-      <Hyperlanes isMobile={isMobile} />
+      <Hyperlanes worlds={worlds} isMobile={isMobile} />
 
       {visibleWorlds.map((w) => {
         const color = CATEGORY_COLORS[w.category] || '#ffffff';

@@ -4,7 +4,6 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { PointerLockControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { WORLDS } from '../domain/config/worlds';
 import type { World } from '../domain/types/world';
 import type { MobileInput } from './MobileControls';
 import { useGameStore } from '../store/gameStore';
@@ -56,6 +55,7 @@ const FlightControls = forwardRef<FlightControlsHandle, FlightControlsProps>(
     const keys = useRef({ ...keysInitial });
     const speedRef = useRef(0);
     const canLandWorld = useRef<World | null>(null);
+    const worlds = useGameStore((s) => s.worlds);
 
     useImperativeHandle(ref, () => ({
       lock: () => controlsRef.current?.lock(),
@@ -116,7 +116,7 @@ const FlightControls = forwardRef<FlightControlsHandle, FlightControlsProps>(
       // Landing detection
       let best: World | null = null;
       let bestScore = 0;
-      for (const w of WORLDS) {
+      for (const w of worlds) {
         if (!w.galaxyPosition) continue;
         const size = w.category === 'star-system' ? 0.28 : w.category === 'planet' ? 0.22 : w.category === 'world' ? 0.24 : 0.2;
         const pos = new THREE.Vector3(w.galaxyPosition.x, w.galaxyPosition.y, w.galaxyPosition.z);

@@ -77,6 +77,20 @@ pub enum WsEvent {
         clue_id: u32,
         category: String,
     },
+    WorldScan {
+        address: String,
+        world_id: String,
+        world_name: String,
+        first: bool,
+        xp_awarded: u64,
+    },
+    WorldApproach {
+        address: String,
+        world_id: String,
+        world_name: String,
+        first: bool,
+        xp_awarded: u64,
+    },
     Tithe {
         address: String,
         amount_flowers: u64,

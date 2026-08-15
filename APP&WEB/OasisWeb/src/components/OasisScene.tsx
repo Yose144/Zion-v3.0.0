@@ -23,7 +23,6 @@ import CameraCompassTracker from './CameraCompassTracker';
 import R3FErrorBoundary from './R3FErrorBoundary';
 import MobileTouchControls from './MobileTouchControls';
 import Planet, { NovaZeme } from './Planet';
-import { getWorldById } from '@/domain/config/worlds';
 import type { CompassData } from './Compass';
 
 interface CameraRigProps {
@@ -176,6 +175,7 @@ interface OasisSceneProps {
   activeCategories: WorldCategory[];
   activeLayers?: WorldLayer[];
   selectedWorld: World | null;
+  worlds: World[];
   onWorldSelect: (world: World) => void;
   view: 'galaxy' | 'world';
   flightMode: boolean;
@@ -198,6 +198,7 @@ export default function OasisScene({
   activeCategories,
   activeLayers,
   selectedWorld,
+  worlds,
   onWorldSelect,
   view,
   flightMode,
@@ -214,6 +215,7 @@ export default function OasisScene({
   compassRef,
 }: OasisSceneProps) {
   const universeRef = useRef<THREE.Group>(null);
+  const getWorldById = (id: string) => worlds.find((w) => w.id === id);
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
@@ -310,6 +312,7 @@ export default function OasisScene({
 
             <R3FErrorBoundary label="GalaxyMap">
               <GalaxyMap
+                worlds={worlds}
                 activeCategories={activeCategories}
                 activeLayers={activeLayers}
                 selectedWorldId={selectedWorld?.id}

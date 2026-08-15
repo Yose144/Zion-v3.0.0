@@ -12,7 +12,6 @@ import MiniMap from './MiniMap';
 import type { World, WorldCategory, WorldLayer } from '../domain/types/world';
 import type { MusicPlayerState } from './AudioEngine';
 import { useGameStore, getLevel, getLevelProgress } from '../store/gameStore';
-import { WORLDS } from '../domain/config/worlds';
 import { CATEGORY_COLORS, CATEGORY_LABELS } from './WorldPanel';
 
 const WORLD_CATEGORIES: WorldCategory[] = ['star-system', 'planet', 'sector', 'world', 'dimension'];
@@ -54,7 +53,7 @@ function MainMenu({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab | 'worlds'>('worlds');
-  const { xp, credits, discoveredWorlds, scannedWorlds, collectedEggs, completedQuests, address, shipLoadout } = useGameStore();
+  const { xp, credits, discoveredWorlds, scannedWorlds, collectedEggs, completedQuests, address, shipLoadout, worlds } = useGameStore();
   const level = getLevel(xp);
   const progress = getLevelProgress(xp);
 
@@ -156,6 +155,7 @@ function MainMenu({
                     onToggleCategory={toggleCategory}
                     activeLayers={activeLayers}
                     onToggleLayer={toggleLayer}
+                    worlds={worlds}
                     selectedWorld={selectedWorld}
                     onWorldSelect={(w) => { onWorldSelect(w); onClose(); }}
                     onCloseWorld={onCloseWorld}
@@ -244,6 +244,7 @@ function WorldsTab({
   onWorldSelect,
   onCloseWorld,
   isMobile,
+  worlds,
 }: {
   activeCategories: WorldCategory[];
   onToggleCategory: (cat: WorldCategory) => void;
@@ -253,6 +254,7 @@ function WorldsTab({
   onWorldSelect: (world: World) => void;
   onCloseWorld: () => void;
   isMobile: boolean;
+  worlds: World[];
 }) {
   return (
     <div className="space-y-4">
@@ -262,6 +264,7 @@ function WorldsTab({
           <Compass className="h-3 w-3" /> Galaxy Map
         </p>
         <MiniMap
+          worlds={worlds}
           activeCategories={activeCategories}
           selectedWorldId={selectedWorld?.id}
           onWorldSelect={onWorldSelect}
@@ -333,8 +336,8 @@ function WorldsTab({
 }
 
 function DiscoveryStats() {
-  const { discoveredWorlds, scannedWorlds, collectedEggs, completedQuests } = useGameStore();
-  const total = WORLDS.length;
+  const { discoveredWorlds, scannedWorlds, collectedEggs, completedQuests, worlds } = useGameStore();
+  const total = worlds.length;
   return (
     <div className="zion-hud-panel !relative p-3">
       <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-white/70">Discovery</p>

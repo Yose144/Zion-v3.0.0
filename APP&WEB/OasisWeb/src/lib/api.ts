@@ -1,3 +1,5 @@
+import type { World } from '../domain/types/world';
+
 const API = process.env.NEXT_PUBLIC_OASIS_API_URL ?? 'http://127.0.0.1:8094';
 
 export interface ApiResponse<T> {
@@ -101,6 +103,14 @@ export interface WorldActionResponse {
   total_xp: number;
   level: string;
   leveled_up: boolean;
+}
+
+export interface WorldClueResponse {
+  address: string;
+  world_id: string;
+  clue_id: number;
+  new: boolean;
+  total_clues: number;
 }
 
 export interface LeaderboardEntry {
@@ -240,6 +250,14 @@ export const approachWorld = (address: string, worldId: string, xp: number) =>
     `/api/v1/oasis/player/${encodeURIComponent(address)}/worlds/${encodeURIComponent(worldId)}/approach`,
     { xp },
   );
+
+export const discoverWorldClue = (address: string, worldId: string) =>
+  postJson<WorldClueResponse>(
+    `/api/v1/oasis/player/${encodeURIComponent(address)}/worlds/${encodeURIComponent(worldId)}/clue`,
+    {},
+  );
+
+export const getWorlds = () => fetchJson<World[]>('/api/v1/oasis/worlds');
 
 export const completePlayerQuest = (address: string, questId: string) =>
   postJson<QuestProgress>(

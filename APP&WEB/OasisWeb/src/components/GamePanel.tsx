@@ -11,7 +11,6 @@ import {
 import { useGameStore, getLevel, getLevelProgress, type ShipLoadout, SHIP_MODELS, type ShipModelId } from '../store/gameStore';
 import { useToastStore } from '../store/toastStore';
 import { getAddressType, isValidZionAddress, generateZionWallet, deriveWalletFromMnemonic, validatePilgrimOrZionAddress } from '../lib/zionWallet';
-import { WORLDS } from '../domain/config/worlds';
 import { getHealth, getLeaderboard, getPlayer, getAvatars, type Player, type LeaderboardEntry } from '../lib/api';
 import type { World, WorldCategory } from '../domain/types/world';
 import type { MusicPlayerState } from './AudioEngine';
@@ -655,7 +654,7 @@ export default function GamePanel({
   onEnterFlight,
   isMobile = false,
 }: GamePanelProps) {
-  const { xp, credits, completedQuests, discoveredWorlds, scannedWorlds, collectedEggs, address, shipLoadout } = useGameStore();
+  const { xp, credits, completedQuests, discoveredWorlds, scannedWorlds, collectedEggs, address, shipLoadout, worlds } = useGameStore();
   const [expanded, setExpanded] = useState(false);
   const [tab, setTab] = useState<Tab>('ship');
   const [showSocial, setShowSocial] = useState(false);
@@ -665,7 +664,7 @@ export default function GamePanel({
   const level = getLevel(xp);
   const progress = getLevelProgress(xp);
   const consciousness = CONSCIOUSNESS_NAMES[(level - 1) % CONSCIOUSNESS_NAMES.length] ?? 'Physical';
-  const totalWorlds = WORLDS.length;
+  const totalWorlds = worlds.length;
   const discoveryPct = Math.round((discoveredWorlds.length / totalWorlds) * 100);
 
   const tabs: { id: Tab; icon: React.ComponentType<{ className?: string }>; label: string; color: string }[] = [
@@ -710,6 +709,7 @@ export default function GamePanel({
         <div className="zion-hud-panel !relative w-[13rem] p-2.5 sm:w-72 sm:p-3.5">
           {/* MiniMap */}
           <MiniMap
+            worlds={worlds}
             activeCategories={activeCategories}
             selectedWorldId={selectedWorldId}
             onWorldSelect={onWorldSelect}

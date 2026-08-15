@@ -6,7 +6,7 @@ import { X, Globe, Layers, MapPin, Sparkles, Eye, Egg, Tag, Swords, Compass, Pic
 import type { World } from '../domain/types/world';
 import { generateQuests, type Quest } from '../domain/quests';
 import { useGameStore, getLevel, getLevelProgress } from '../store/gameStore';
-import { awardPlayerXp, completePlayerQuest } from '../lib/api';
+import { discoverWorldClue, scanWorld as apiScanWorld, approachWorld as apiApproachWorld, awardPlayerXp, completePlayerQuest } from '../lib/api';
 import { useAudio } from './AudioEngine';
 import { useToastStore } from '../store/toastStore';
 
@@ -483,8 +483,20 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
                 if (ok) {
                   addToast(`Golden Egg found on ${world.name}: +500 XP`, 'success', 4000);
                   if (address) {
-                    await awardPlayerXp(address, 50, 'golden_egg', { world: world.name });
-                    await syncPlayer();
+                    try {
+                      const clue = await discoverWorldClue(address, world.id);
+                      if (clue) {
+                        addXp(50);
+                        addToast(
+                          `Clue ${clue.clue_id} recorded — ${clue.total_clues} total`,
+                          'success',
+                          2500,
+                        );
+                        await syncPlayer();
+                      }
+                    } catch (e) {
+                      console.warn('[WorldPanel] clue discovery failed:', e);
+                    }
                   }
                 } else if (credits < 100) addToast('Not enough credits (100 Z needed)', 'warning', 3000);
               }}
@@ -525,7 +537,7 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
               addXp(xpGain);
               addToast(`Deep scan: +${xpGain} XP`, 'success', 2500);
               if (address) {
-                await awardPlayerXp(address, Math.min(50, Math.round(xpGain / 10)), 'scan', { world: world.name });
+                await apiScanWorld(address, world.id, xpGain);
                 await syncPlayer();
               }
             }}
@@ -544,7 +556,7 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
               addCredits(creditGain);
               addToast(`Exploration: +${xpGain} XP, +${creditGain} Z`, 'success', 3000);
               if (address) {
-                await awardPlayerXp(address, Math.min(80, Math.round(xpGain / 10)), 'explore', { world: world.name });
+                await apiApproachWorld(address, world.id, xpGain);
                 await syncPlayer();
               }
             }}

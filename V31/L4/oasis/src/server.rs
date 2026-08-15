@@ -9,6 +9,9 @@
 //! | POST   | /api/v1/oasis/player/:address/xp | Award XP to player |
 //! | POST   | /api/v1/oasis/player/:address/worlds/:id/scan | Scan a world |
 //! | POST   | /api/v1/oasis/player/:address/worlds/:id/approach | Approach a world |
+//! | POST   | /api/v1/oasis/player/:address/worlds/:id/clue | Discover a world's Golden Egg clue |
+//! | GET    | /api/v1/oasis/worlds | List all OASIS worlds |
+//! | GET    | /api/v1/oasis/worlds/:id | Get a single world |
 //! | GET    | /api/v1/oasis/leaderboard | Top players by XP |
 //! | POST   | /api/v1/oasis/guild | Create a guild |
 //! | GET    | /api/v1/oasis/guild/:id | Get guild info |
@@ -29,6 +32,7 @@ use crate::rate_limit::{rate_limit_middleware, RateLimiter};
 use crate::rewards::{RewardPool, RewardSlot};
 use crate::territory::TerritoryMap;
 use crate::websocket::{ws_events_handler, ws_leaderboard_handler, WsHub};
+use crate::worlds::WorldRegistry;
 use crate::xp::{XpSource, XpSystem, MAX_WORLD_XP};
 use axum::{
     extract::{Path, State},
@@ -54,6 +58,7 @@ pub struct OasisState {
     pub metrics: Arc<OasisMetrics>,
     pub ws_hub: Option<Arc<WsHub>>,
     pub hiran: Arc<OasisHiranBridge>,
+    pub worlds: Arc<WorldRegistry>,
 }
 
 impl OasisState {
@@ -66,6 +71,7 @@ impl OasisState {
     ) -> Self {
         let daily_cap = config.daily_xp_cap;
         let hiran = Arc::new(OasisHiranBridge::new(&config));
+        let worlds = Arc::new(WorldRegistry::load_default());
         Self {
             db,
             config,
@@ -74,6 +80,7 @@ impl OasisState {
             metrics,
             ws_hub,
             hiran,
+            worlds,
         }
     }
 }
@@ -87,6 +94,7 @@ pub fn build_router(state: OasisState) -> Router {
         .route("/api/v1/oasis/player/:address/xp", post(award_xp))
         .route("/api/v1/oasis/player/:address/worlds/:id/scan", post(scan_world))
         .route("/api/v1/oasis/player/:address/worlds/:id/approach", post(approach_world))
+        .route("/api/v1/oasis/player/:address/worlds/:id/clue", post(discover_world_clue))
         .route("/api/v1/oasis/guild", post(create_guild))
         .route("/api/v1/oasis/guild/:id/join", post(join_guild))
         .route("/api/v1/oasis/raid-team", post(create_raid_team))
@@ -103,6 +111,8 @@ pub fn build_router(state: OasisState) -> Router {
         .merge(sensitive)
         .route("/health", get(health))
         .route("/api/v1/oasis/player/:address", get(get_player))
+        .route("/api/v1/oasis/worlds", get(list_worlds))
+        .route("/api/v1/oasis/worlds/:id", get(get_world))
         .route("/api/v1/oasis/leaderboard", get(leaderboard))
         .route("/api/v1/oasis/leaderboard/top100", get(top_100_leaderboard))
         .route("/api/v1/oasis/guild/:id", get(get_guild))
@@ -457,6 +467,15 @@ async fn scan_world(
             amount: xp_awarded,
             total_xp: player.total_xp,
         });
+        if let Some(world) = state.worlds.get(&world_id) {
+            hub.broadcast(crate::websocket::WsEvent::WorldScan {
+                address: address.clone(),
+                world_id: world_id.clone(),
+                world_name: world.name.clone(),
+                first,
+                xp_awarded,
+            });
+        }
     }
 
     (StatusCode::OK, Json(ApiResponse::ok(resp))).into_response()
@@ -513,9 +532,111 @@ async fn approach_world(
             amount: xp_awarded,
             total_xp: player.total_xp,
         });
+        if let Some(world) = state.worlds.get(&world_id) {
+            hub.broadcast(crate::websocket::WsEvent::WorldApproach {
+                address: address.clone(),
+                world_id: world_id.clone(),
+                world_name: world.name.clone(),
+                first,
+                xp_awarded,
+            });
+        }
     }
 
     (StatusCode::OK, Json(ApiResponse::ok(resp))).into_response()
+}
+
+/// Response for a Golden Egg clue discovered on a world.
+#[derive(Debug, Serialize)]
+pub struct WorldClueResponse {
+    pub address: String,
+    pub world_id: String,
+    pub clue_id: u32,
+    pub new: bool,
+    pub total_clues: u32,
+}
+
+/// POST /api/v1/oasis/player/:address/worlds/:id/clue
+async fn discover_world_clue(
+    State(state): State<OasisState>,
+    Path((address, world_id)): Path<(String, String)>,
+) -> impl IntoResponse {
+    state
+        .metrics
+        .requests_total
+        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+
+    let world = match state.worlds.get(&world_id) {
+        Some(w) => w,
+        None => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(ApiResponse::<()>::error("world not found")),
+            )
+                .into_response();
+        }
+    };
+
+    let clue_id = match world.golden_egg_clue {
+        Some(id) => id,
+        None => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(ApiResponse::<()>::error("world has no golden egg clue")),
+            )
+                .into_response();
+        }
+    };
+
+    let category = world.category.clone();
+
+    // Record clue discovery idempotently by comparing counts before/after.
+    let before = state.db.get_clue_count(&address).unwrap_or(0);
+    if let Err(e) = state.db.save_clue_discovery(&address, clue_id, &category) {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<()>::error(&e.to_string())),
+        )
+            .into_response();
+    }
+    let after = state.db.get_clue_count(&address).unwrap_or(0);
+    let new = after > before;
+    let total_clues = after;
+
+    if let Some(ref hub) = state.ws_hub {
+        hub.broadcast(crate::websocket::WsEvent::ClueDiscovered {
+            address: address.clone(),
+            clue_id,
+            category: category.clone(),
+        });
+    }
+
+    let resp = WorldClueResponse {
+        address: address.clone(),
+        world_id: world_id.clone(),
+        clue_id,
+        new,
+        total_clues,
+    };
+
+    (StatusCode::OK, Json(ApiResponse::ok(resp))).into_response()
+}
+
+/// GET /api/v1/oasis/worlds
+async fn list_worlds(State(state): State<OasisState>) -> impl IntoResponse {
+    (StatusCode::OK, Json(ApiResponse::ok(state.worlds.all()))).into_response()
+}
+
+/// GET /api/v1/oasis/worlds/:id
+async fn get_world(State(state): State<OasisState>, Path(id): Path<String>) -> impl IntoResponse {
+    match state.worlds.get(&id) {
+        Some(world) => (StatusCode::OK, Json(ApiResponse::ok(world))).into_response(),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(ApiResponse::<()>::error("world not found")),
+        )
+            .into_response(),
+    }
 }
 
 /// GET /api/v1/oasis/leaderboard
@@ -1484,6 +1605,75 @@ mod tests {
                     .uri("/api/v1/oasis/player/zion1pilgrim/worlds/NOVA_ZEME/approach")
                     .header("content-type", "application/json")
                     .body(Body::from("{}"))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_list_worlds_endpoint() {
+        let state = test_state();
+        let app = build_router(state);
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/oasis/worlds")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_get_world_endpoint() {
+        let state = test_state();
+        let app = build_router(state);
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/oasis/worlds/NOVA_ZEME")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_get_world_not_found() {
+        let state = test_state();
+        let app = build_router(state);
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/oasis/worlds/NONEXISTENT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_discover_world_clue_endpoint() {
+        let state = test_state();
+        state
+            .db
+            .save_player(&Player::new("zion1pilgrim".to_string()))
+            .unwrap();
+        let app = build_router(state);
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/v1/oasis/player/zion1pilgrim/worlds/ALPHA_CENTAURI/clue")
+                    .body(Body::empty())
                     .unwrap(),
             )
             .await
