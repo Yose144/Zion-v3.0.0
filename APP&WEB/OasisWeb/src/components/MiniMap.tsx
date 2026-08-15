@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useCallback, memo } from 'react';
-import { WORLDS } from '../domain/config/worlds';
 import type { World, WorldCategory } from '../domain/types/world';
 
 const CATEGORY_COLORS: Record<WorldCategory, string> = {
@@ -15,19 +14,20 @@ const CATEGORY_COLORS: Record<WorldCategory, string> = {
 const PADDING = 18;
 
 interface MiniMapProps {
+  worlds: World[];
   activeCategories: WorldCategory[];
   selectedWorldId?: string | null;
   onWorldSelect?: (world: World) => void;
   cameraPosition?: { x: number; y: number; z: number };
 }
 
-function MiniMap({ activeCategories, selectedWorldId, onWorldSelect, cameraPosition }: MiniMapProps) {
+function MiniMap({ worlds: allWorlds, activeCategories, selectedWorldId, onWorldSelect, cameraPosition }: MiniMapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const worlds = useMemo(
-    () => WORLDS.filter((w) => w.galaxyPosition && activeCategories.includes(w.category as WorldCategory)),
-    [activeCategories]
+    () => allWorlds.filter((w) => w.galaxyPosition && activeCategories.includes(w.category as WorldCategory)),
+    [allWorlds, activeCategories]
   );
 
   const bounds = useMemo(() => {

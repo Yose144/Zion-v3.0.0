@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Coins, Star, MapPin, Rocket, Egg, User, Wallet, ScanLine, Zap, Package, Globe } from 'lucide-react';
 import { useGameStore, getLevel, getLevelProgress } from '../store/gameStore';
 import { getAddressType } from '../lib/zionWallet';
-import { WORLDS } from '../domain/config/worlds';
 import ShipLoadout from './ShipLoadout';
 import PlayerSettings from './PlayerSettings';
 import SocialPanel from './SocialPanel';
@@ -56,7 +55,7 @@ function StatTile({ icon: Icon, value, label, color }: StatTileProps) {
 }
 
 export default function PlayerHud() {
-  const { xp, credits, completedQuests, discoveredWorlds, scannedWorlds, collectedEggs, address, shipLoadout } = useGameStore();
+  const { xp, credits, completedQuests, discoveredWorlds, scannedWorlds, collectedEggs, address, shipLoadout, worlds } = useGameStore();
   const [showShip, setShowShip] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showSocial, setShowSocial] = useState(false);
@@ -64,7 +63,7 @@ export default function PlayerHud() {
   const progress = getLevelProgress(xp);
   const consciousness = CONSCIOUSNESS_NAMES[(level - 1) % CONSCIOUSNESS_NAMES.length] ?? 'Physical';
 
-  const totalWorlds = WORLDS.length;
+  const totalWorlds = worlds.length;
   const discoveryPct = Math.round((discoveredWorlds.length / totalWorlds) * 100);
 
   return (

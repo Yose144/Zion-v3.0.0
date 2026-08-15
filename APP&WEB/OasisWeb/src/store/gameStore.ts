@@ -3,6 +3,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { getPlayer } from '../lib/api';
+import { WORLDS } from '../domain/config/worlds';
+import type { World } from '../domain/types/world';
 
 export interface ShipLoadout {
   boost: number;
@@ -106,6 +108,8 @@ interface GameState {
   avatarConfig: AvatarConfig;
   shipLoadout: ShipLoadout;
   unlockedShips: ShipModelId[];
+  worlds: World[];
+  setWorlds: (worlds: World[]) => void;
   setAddress: (address: string | null) => void;
   setAvatars: (avatars: any[]) => void;
   setTerritories: (territories: any[]) => void;
@@ -155,6 +159,9 @@ export const useGameStore = create<GameState>()(
       avatarConfig: { callsign: '', bodyType: 'standard', neonColor: '#078930', augmentation: 'neural' },
       shipLoadout: { boost: 1, cargo: 1, scanner: 1, color: '#078930', model: 'pilgrim' },
       unlockedShips: ['pilgrim'],
+      worlds: WORLDS,
+
+      setWorlds: (worlds) => set({ worlds }),
 
       setAddress: (address) => set({ address }),
 

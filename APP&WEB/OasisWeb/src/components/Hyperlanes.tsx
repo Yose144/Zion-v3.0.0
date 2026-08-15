@@ -2,9 +2,10 @@
 
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import { WORLDS } from '../domain/config/worlds';
+import type { World } from '../domain/types/world';
 
 interface HyperlanesProps {
+  worlds: World[];
   isMobile?: boolean;
 }
 
@@ -18,7 +19,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   'dimension': '#e41e2b',
 };
 
-export default function Hyperlanes({ isMobile = false }: HyperlanesProps) {
+export default function Hyperlanes({ worlds, isMobile = false }: HyperlanesProps) {
   const linesRef = useRef<THREE.LineSegments>(null);
 
   const { lineGeometry, lineMaterial } = useMemo(() => {
@@ -26,7 +27,7 @@ export default function Hyperlanes({ isMobile = false }: HyperlanesProps) {
     const positions: number[] = [];
     const colors: number[] = [];
 
-    const worldsWithPos = WORLDS.filter((w) => w.galaxyPosition);
+    const worldsWithPos = worlds.filter((w) => w.galaxyPosition);
 
     for (const w of worldsWithPos) {
       const others = worldsWithPos
@@ -68,7 +69,7 @@ export default function Hyperlanes({ isMobile = false }: HyperlanesProps) {
     });
 
     return { lineGeometry, lineMaterial };
-  }, []);
+  }, [worlds]);
 
   return <lineSegments ref={linesRef} geometry={lineGeometry} material={lineMaterial} />;
 }

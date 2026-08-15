@@ -17,7 +17,7 @@ import ControlHud from './ControlHud';
 import type { CompassData } from './Compass';
 import { useGameStore } from '../store/gameStore';
 import { useToastStore } from '../store/toastStore';
-import { getQuests, getAvatars, getTerritories, scanWorld as apiScanWorld, approachWorld as apiApproachWorld } from '../lib/api';
+import { getQuests, getAvatars, getTerritories, getWorlds, scanWorld as apiScanWorld, approachWorld as apiApproachWorld } from '../lib/api';
 import type { World, WorldCategory, WorldLayer } from '../domain/types/world';
 
 const BabylonIntro = dynamic(() => import('./BabylonIntro'), { ssr: false });
@@ -71,6 +71,8 @@ export default function OasisClient() {
   const setAvatars = useGameStore(s => s.setAvatars);
   const setTerritories = useGameStore(s => s.setTerritories);
   const setAddress = useGameStore(s => s.setAddress);
+  const setWorlds = useGameStore(s => s.setWorlds);
+  const worlds = useGameStore(s => s.worlds);
   const address = useGameStore(s => s.address);
   const shipLoadout = useGameStore(s => s.shipLoadout);
   const syncPlayer = useGameStore(s => s.syncPlayer);
@@ -85,6 +87,24 @@ export default function OasisClient() {
   useEffect(() => {
     if (!address) setAddress('pilgrim-0001');
   }, [address, setAddress]);
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadWorlds() {
+      try {
+        const apiWorlds = await getWorlds();
+        if (mounted && apiWorlds && apiWorlds.length > 0) {
+          setWorlds(apiWorlds);
+        }
+      } catch (e) {
+        console.warn('[OasisClient] failed to load worlds from API:', e);
+      }
+    }
+    loadWorlds();
+    return () => {
+      mounted = false;
+    };
+  }, [setWorlds]);
 
   useEffect(() => {
     if (!address) return;
@@ -308,6 +328,7 @@ export default function OasisClient() {
           activeCategories={activeCategories}
           activeLayers={activeLayers}
           selectedWorld={selectedWorld}
+          worlds={worlds}
           onWorldSelect={handleWorldSelect}
           view={view}
           flightMode={flightMode}

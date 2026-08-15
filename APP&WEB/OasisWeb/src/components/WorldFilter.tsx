@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Filter, ChevronDown, ChevronUp, Layers, Globe2, Pickaxe, Activity, Download } from 'lucide-react';
 import Link from 'next/link';
-import { WORLDS } from '../domain/config/worlds';
 import type { WorldCategory, WorldLayer } from '../domain/types/world';
 import { getHealth, getPlayer } from '../lib/api';
 import { useGameStore } from '../store/gameStore';
@@ -150,9 +149,10 @@ interface WorldFilterProps {
 export default function WorldFilter({ active, onChange, activeLayers, onLayersChange }: WorldFilterProps) {
   const [minimized, setMinimized] = useState(false);
   const hasLayers = !!activeLayers && !!onLayersChange;
+  const worlds = useGameStore((s) => s.worlds);
 
-  const counts = CATEGORIES.map((cat) => WORLDS.filter((w) => w.category === cat.id).length);
-  const layerCounts = LAYERS.map((l) => WORLDS.filter((w) => w.layer === l.id).length);
+  const counts = CATEGORIES.map((cat) => worlds.filter((w) => w.category === cat.id).length);
+  const layerCounts = LAYERS.map((l) => worlds.filter((w) => w.layer === l.id).length);
 
   useEffect(() => {
     const saved = typeof window !== 'undefined' ? localStorage.getItem(MINIMIZED_KEY) : null;
@@ -191,7 +191,7 @@ export default function WorldFilter({ active, onChange, activeLayers, onLayersCh
     onLayersChange!(allLayersActive ? [] : LAYERS.map((l) => l.id));
   };
 
-  const visibleCount = WORLDS.filter((w) => {
+  const visibleCount = worlds.filter((w) => {
     const catOk = active.includes(w.category as WorldCategory);
     const layerOk = !hasLayers || activeLayers!.includes(w.layer);
     return catOk && layerOk;
@@ -212,7 +212,7 @@ export default function WorldFilter({ active, onChange, activeLayers, onLayersCh
           title="Show world filters"
         >
           <Filter className="h-3.5 w-3.5 text-oasis-cyan" />
-          <span className="font-mono">{visibleCount}/{WORLDS.length}</span>
+          <span className="font-mono">{visibleCount}/{worlds.length}</span>
           <ChevronUp className="h-3 w-3" />
         </button>
       </motion.div>
@@ -355,7 +355,7 @@ export default function WorldFilter({ active, onChange, activeLayers, onLayersCh
       <div className="zion-hud-panel flex shrink-0 items-center justify-between px-3 py-2">
         <span className="text-[9px] font-bold uppercase tracking-wider text-white/70">Visible</span>
         <span className="font-mono text-[11px] font-bold text-oasis-cyan">
-          {visibleCount} / {WORLDS.length}
+          {visibleCount} / {worlds.length}
         </span>
       </div>
 

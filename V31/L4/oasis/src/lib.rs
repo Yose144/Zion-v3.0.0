@@ -74,6 +74,7 @@ pub mod server;
 pub mod territory;
 pub mod tithe;
 pub mod websocket;
+pub mod worlds;
 pub mod xp;
 
 // Re-exports
