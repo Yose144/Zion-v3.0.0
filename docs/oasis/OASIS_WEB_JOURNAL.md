@@ -3,7 +3,7 @@
 > Location: `APP&WEB/OasisWeb/`  
 > Live URL: https://oasis.zionterranova.com  
 > Edge server: `62.171.141.136` / `oasis.zionterranova.com` → `/var/www/oasis`  
-> Last update: 2026-08-01 12:05 CEST  
+> Last update: 2026-08-15 16:00 CEST  
 > Branch: `main` on `origin` (private repo: `Yose144/Zion-v3.0.0`)
 
 ---
@@ -342,5 +342,36 @@ The script will:
 - AudioContext requires a user gesture; the WarpIntro "Enter the OASIS" button provides this.
 
 ---
+
+## 10. 2026-08-15 — Static Export, Deploy & World Action API
+
+### Deploy fix
+- Switched `APP&WEB/OasisWeb/next.config.ts` from `output: 'standalone'` to `output: 'export'`.
+- Updated `deploy/nginx-oasis.conf` to serve static files from `/var/www/oasis` instead of proxying a Node server.
+- Removed obsolete `deploy/zion-oasis-web.service`; `zion-oasis-web` is now disabled on Edge.
+- `deploy/deploy-oasis-web.sh` now uses static export, supports `ZION_EDGE_USE_IPV6=1`, and treats optional desktop artifacts as non-fatal.
+
+### Backend + UI hand-in-hand
+- Added `XpSource::WorldScan` and `XpSource::WorldApproach` to `V31/L4/oasis/src/xp.rs`.
+- Added `Player::record_world_scan` / `record_world_approach` with unique-world tracking in `V31/L4/oasis/src/player.rs`.
+- Added new REST endpoints:
+  - `POST /api/v1/oasis/player/:address/worlds/:id/scan`
+  - `POST /api/v1/oasis/player/:address/worlds/:id/approach`
+- Updated `OasisClient.tsx` to call the new `scanWorld` / `approachWorld` API instead of the generic `awardPlayerXp` path.
+- Added tests for world scan/approach XP and player stats.
+
+### Live state
+- Edge OASIS static web deployed and healthy at `https://oasis.zionterranova.com/`.
+- `zion-v31-oasis` built on Edge and restarted; `/health` returns V31 `3.1.0-beta`.
+- Public scan/approach endpoints verified end-to-end:
+  ```
+  curl -X POST -H 'content-type: application/json' -d '{"xp":125}' \
+    https://oasis.zionterranova.com/api/v1/oasis/player/pilgrim-0001/worlds/NOVA_ZEME/scan
+  ```
+
+### Next-step candidates
+- Add `GET /api/v1/oasis/worlds` endpoint and load world metadata from the backend (removes the need to ship `worlds.ts` in the frontend build).
+- Add a per-world `golden_egg` clue completion endpoint so the web can report clue discovery to the backend.
+- Consider a lightweight `WorldScan` WebSocket event to push live scan notifications to the leaderboard page.
 
 *Generated with [Devin](https://devin.ai) — this journal should be updated as the roadmap progresses.*
