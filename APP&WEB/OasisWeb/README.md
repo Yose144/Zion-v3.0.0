@@ -72,9 +72,9 @@ bash deploy/deploy-oasis-web.sh
 ```
 
 Skript:
-1. Sestaví aplikaci s relativními API cestami.
+1. Sestaví aplikaci jako Next.js static export s relativními API cestami.
 2. Synchronizuje `dist/` na `root@62.171.141.136:/var/www/oasis` přes SSH port `2222`.
-3. Aktualizuje nginx konfiguraci a reloadne nginx.
+3. Aktualizuje nginx konfiguraci, zastaví zastaralou `zion-oasis-web` službu a reloadne nginx.
 4. Provádí health check `https://oasis.zionterranova.com`.
 
 ## Stack

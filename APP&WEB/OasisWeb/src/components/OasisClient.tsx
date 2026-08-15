@@ -17,7 +17,7 @@ import ControlHud from './ControlHud';
 import type { CompassData } from './Compass';
 import { useGameStore } from '../store/gameStore';
 import { useToastStore } from '../store/toastStore';
-import { getQuests, getAvatars, getTerritories, awardPlayerXp } from '../lib/api';
+import { getQuests, getAvatars, getTerritories, scanWorld as apiScanWorld, approachWorld as apiApproachWorld } from '../lib/api';
 import type { World, WorldCategory, WorldLayer } from '../domain/types/world';
 
 const BabylonIntro = dynamic(() => import('./BabylonIntro'), { ssr: false });
@@ -259,9 +259,8 @@ export default function OasisClient() {
       scanWorld(selectedWorld.id);
       addXp(xp);
       addToast(`Entering ${selectedWorld.name}: +${xp} XP`, 'info', 3000);
-      if (address && firstScan) {
-        const shares = Math.min(100, Math.max(1, Math.round(xp / 10)));
-        await awardPlayerXp(address, shares, 'scan', { world: selectedWorld.name });
+      if (address) {
+        await apiScanWorld(address, selectedWorld.id, xp);
         await syncPlayer();
       }
       setTimeout(() => setWarping(false), 1500);
@@ -292,9 +291,10 @@ export default function OasisClient() {
     const firstDiscovery = !discoveredWorlds.includes(world.id);
     discoverWorld(world.id);
     addToast(`Approaching ${world.name}`, 'info', 3000);
-    addXp(25);
-    if (address && firstDiscovery) {
-      await awardPlayerXp(address, 3, 'exploration', { world: world.name });
+    const xp = 25;
+    addXp(xp);
+    if (address) {
+      await apiApproachWorld(address, world.id, xp);
       await syncPlayer();
     }
   };

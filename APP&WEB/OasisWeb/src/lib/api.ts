@@ -92,6 +92,17 @@ export interface XpAwardResponse {
   leveled_up: boolean;
 }
 
+export interface WorldActionResponse {
+  address: string;
+  world_id: string;
+  action: 'scan' | 'approach';
+  first: boolean;
+  xp_awarded: number;
+  total_xp: number;
+  level: string;
+  leveled_up: boolean;
+}
+
 export interface LeaderboardEntry {
   rank: number;
   address: string;
@@ -216,6 +227,18 @@ export const awardPlayerXp = (
   postJson<XpAwardResponse>(
     `/api/v1/oasis/player/${encodeURIComponent(address)}/xp`,
     { source, amount, details },
+  );
+
+export const scanWorld = (address: string, worldId: string, xp: number) =>
+  postJson<WorldActionResponse>(
+    `/api/v1/oasis/player/${encodeURIComponent(address)}/worlds/${encodeURIComponent(worldId)}/scan`,
+    { xp },
+  );
+
+export const approachWorld = (address: string, worldId: string, xp: number) =>
+  postJson<WorldActionResponse>(
+    `/api/v1/oasis/player/${encodeURIComponent(address)}/worlds/${encodeURIComponent(worldId)}/approach`,
+    { xp },
   );
 
 export const completePlayerQuest = (address: string, questId: string) =>

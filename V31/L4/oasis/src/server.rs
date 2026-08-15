@@ -7,6 +7,8 @@
 //! | GET    | /health | Health check |
 //! | GET    | /api/v1/oasis/player/:address | Get player profile |
 //! | POST   | /api/v1/oasis/player/:address/xp | Award XP to player |
+//! | POST   | /api/v1/oasis/player/:address/worlds/:id/scan | Scan a world |
+//! | POST   | /api/v1/oasis/player/:address/worlds/:id/approach | Approach a world |
 //! | GET    | /api/v1/oasis/leaderboard | Top players by XP |
 //! | POST   | /api/v1/oasis/guild | Create a guild |
 //! | GET    | /api/v1/oasis/guild/:id | Get guild info |
@@ -19,6 +21,7 @@ use crate::combat::{ActionType, CombatAction, CombatEngine, Combatant};
 use crate::config::OasisConfig;
 use crate::db::OasisDb;
 use crate::guild::Guild;
+use crate::player::Player;
 use crate::hiran_bridge::OasisHiranBridge;
 use crate::metrics::{serve_metrics, OasisMetrics};
 use crate::quests::QuestManager;
@@ -26,7 +29,7 @@ use crate::rate_limit::{rate_limit_middleware, RateLimiter};
 use crate::rewards::{RewardPool, RewardSlot};
 use crate::territory::TerritoryMap;
 use crate::websocket::{ws_events_handler, ws_leaderboard_handler, WsHub};
-use crate::xp::{XpSource, XpSystem};
+use crate::xp::{XpSource, XpSystem, MAX_WORLD_XP};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -82,6 +85,8 @@ pub fn build_router(state: OasisState) -> Router {
     // Sensitive POST endpoints under rate limit
     let sensitive = Router::new()
         .route("/api/v1/oasis/player/:address/xp", post(award_xp))
+        .route("/api/v1/oasis/player/:address/worlds/:id/scan", post(scan_world))
+        .route("/api/v1/oasis/player/:address/worlds/:id/approach", post(approach_world))
         .route("/api/v1/oasis/guild", post(create_guild))
         .route("/api/v1/oasis/guild/:id/join", post(join_guild))
         .route("/api/v1/oasis/raid-team", post(create_raid_team))
@@ -244,6 +249,27 @@ pub struct AwardXpResponse {
     pub leveled_up: bool,
 }
 
+/// Request body for scanning or approaching a world.
+#[derive(Debug, Deserialize)]
+pub struct WorldActionRequest {
+    /// Optional explicit XP amount. If omitted, defaults to a sensible
+    /// preview value (100 for scan, 25 for approach).
+    pub xp: Option<u64>,
+}
+
+/// Response for a world scan or approach.
+#[derive(Debug, Serialize)]
+pub struct WorldActionResponse {
+    pub address: String,
+    pub world_id: String,
+    pub action: String,
+    pub first: bool,
+    pub xp_awarded: u64,
+    pub total_xp: u64,
+    pub level: String,
+    pub leveled_up: bool,
+}
+
 /// POST /api/v1/oasis/player/:address/xp
 async fn award_xp(
     State(state): State<OasisState>,
@@ -340,6 +366,153 @@ async fn award_xp(
                 level_name: resp.level.clone(),
             });
         }
+    }
+
+    (StatusCode::OK, Json(ApiResponse::ok(resp))).into_response()
+}
+
+/// Helper to apply a world scan or approach and persist the player.
+fn apply_world_action(
+    player: &mut Player,
+    world_id: &str,
+    requested_xp: u64,
+    action: &str,
+    xp_sys: &XpSystem,
+) -> (u64, bool, bool) {
+    let xp = requested_xp.min(MAX_WORLD_XP);
+    let first = match action {
+        "scan" => player.record_world_scan(world_id),
+        "approach" => player.record_world_approach(world_id),
+        _ => false,
+    };
+
+    let source = if action == "scan" {
+        XpSource::WorldScan {
+            world_id: world_id.to_string(),
+            xp,
+        }
+    } else {
+        XpSource::WorldApproach {
+            world_id: world_id.to_string(),
+            xp,
+        }
+    };
+
+    let award = xp_sys.award(player.total_xp, player.level, &source, player.daily_xp);
+    player.total_xp = award.new_total_xp;
+    player.daily_xp += award.actual_amount;
+    player.level = award.new_level;
+    player.touch();
+    (award.actual_amount, first, award.leveled_up)
+}
+
+/// POST /api/v1/oasis/player/:address/worlds/:id/scan
+async fn scan_world(
+    State(state): State<OasisState>,
+    Path((address, world_id)): Path<(String, String)>,
+    Json(req): Json<WorldActionRequest>,
+) -> impl IntoResponse {
+    state
+        .metrics
+        .requests_total
+        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+
+    let mut player = match state.db.get_or_create_player(&address) {
+        Ok(p) => p,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiResponse::<()>::error(&e.to_string())),
+            )
+                .into_response();
+        }
+    };
+
+    let xp = req.xp.unwrap_or(100);
+    let (xp_awarded, first, leveled_up) =
+        apply_world_action(&mut player, &world_id, xp, "scan", &state.xp_sys);
+
+    if let Err(e) = state.db.save_player(&player) {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<()>::error(&e.to_string())),
+        )
+            .into_response();
+    }
+
+    let resp = WorldActionResponse {
+        address: address.clone(),
+        world_id: world_id.clone(),
+        action: "scan".to_string(),
+        first,
+        xp_awarded,
+        total_xp: player.total_xp,
+        level: player.level.name().to_string(),
+        leveled_up,
+    };
+
+    if let Some(ref hub) = state.ws_hub {
+        hub.broadcast(crate::websocket::WsEvent::XpAward {
+            address: address.clone(),
+            amount: xp_awarded,
+            total_xp: player.total_xp,
+        });
+    }
+
+    (StatusCode::OK, Json(ApiResponse::ok(resp))).into_response()
+}
+
+/// POST /api/v1/oasis/player/:address/worlds/:id/approach
+async fn approach_world(
+    State(state): State<OasisState>,
+    Path((address, world_id)): Path<(String, String)>,
+    Json(req): Json<WorldActionRequest>,
+) -> impl IntoResponse {
+    state
+        .metrics
+        .requests_total
+        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+
+    let mut player = match state.db.get_or_create_player(&address) {
+        Ok(p) => p,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiResponse::<()>::error(&e.to_string())),
+            )
+                .into_response();
+        }
+    };
+
+    let xp = req.xp.unwrap_or(25);
+    let (xp_awarded, first, leveled_up) =
+        apply_world_action(&mut player, &world_id, xp, "approach", &state.xp_sys);
+
+    if let Err(e) = state.db.save_player(&player) {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<()>::error(&e.to_string())),
+        )
+            .into_response();
+    }
+
+    let resp = WorldActionResponse {
+        address: address.clone(),
+        world_id: world_id.clone(),
+        action: "approach".to_string(),
+        first,
+        xp_awarded,
+        total_xp: player.total_xp,
+        level: player.level.name().to_string(),
+        leveled_up,
+    };
+
+    if let Some(ref hub) = state.ws_hub {
+        hub.broadcast(crate::websocket::WsEvent::XpAward {
+            address: address.clone(),
+            amount: xp_awarded,
+            total_xp: player.total_xp,
+        });
     }
 
     (StatusCode::OK, Json(ApiResponse::ok(resp))).into_response()
@@ -1266,6 +1439,51 @@ mod tests {
                 Request::builder()
                     .uri("/api/v1/oasis/prize-tiers")
                     .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_scan_world_endpoint() {
+        let state = test_state();
+        state
+            .db
+            .save_player(&Player::new("zion1pilgrim".to_string()))
+            .unwrap();
+        let app = build_router(state);
+        let body = serde_json::json!({ "xp": 150 });
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/v1/oasis/player/zion1pilgrim/worlds/NOVA_ZEME/scan")
+                    .header("content-type", "application/json")
+                    .body(Body::from(body.to_string()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_approach_world_endpoint() {
+        let state = test_state();
+        state
+            .db
+            .save_player(&Player::new("zion1pilgrim".to_string()))
+            .unwrap();
+        let app = build_router(state);
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/v1/oasis/player/zion1pilgrim/worlds/NOVA_ZEME/approach")
+                    .header("content-type", "application/json")
+                    .body(Body::from("{}"))
                     .unwrap(),
             )
             .await

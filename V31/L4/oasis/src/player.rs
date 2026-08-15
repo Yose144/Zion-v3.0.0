@@ -161,6 +161,38 @@ impl Player {
         self.daily_xp = 0;
     }
 
+    /// Check whether a world has already been scanned by this player.
+    pub fn has_scanned_world(&self, world_id: &str) -> bool {
+        self.stats.contains_key(&format!("scanned:{}", world_id))
+    }
+
+    /// Check whether a world has already been approached by this player.
+    pub fn has_approached_world(&self, world_id: &str) -> bool {
+        self.stats.contains_key(&format!("approached:{}", world_id))
+    }
+
+    /// Record a world scan in player stats and return true if it was the first one.
+    pub fn record_world_scan(&mut self, world_id: &str) -> bool {
+        let first = !self.has_scanned_world(world_id);
+        *self.stats.entry("world_scans".to_string()).or_insert(0) += 1;
+        if first {
+            *self.stats.entry("unique_worlds_scanned".to_string()).or_insert(0) += 1;
+            self.stats.insert(format!("scanned:{}", world_id), 1);
+        }
+        first
+    }
+
+    /// Record a world approach in player stats and return true if it was the first one.
+    pub fn record_world_approach(&mut self, world_id: &str) -> bool {
+        let first = !self.has_approached_world(world_id);
+        *self.stats.entry("world_approaches".to_string()).or_insert(0) += 1;
+        if first {
+            *self.stats.entry("unique_worlds_approached".to_string()).or_insert(0) += 1;
+            self.stats.insert(format!("approached:{}", world_id), 1);
+        }
+        first
+    }
+
     /// Update streak
     pub fn update_streak(&mut self, is_consecutive: bool) {
         if is_consecutive {
@@ -271,6 +303,25 @@ mod tests {
         store.get_or_create("addr1");
         store.get_or_create("addr2");
         assert_eq!(store.total_players(), 2);
+    }
+
+    #[test]
+    fn test_record_world_scan_tracks_unique_worlds() {
+        let mut player = Player::new("zion1".to_string());
+        assert!(player.record_world_scan("ALPHA_CENTAURI"));
+        assert!(player.has_scanned_world("ALPHA_CENTAURI"));
+        assert!(!player.record_world_scan("ALPHA_CENTAURI"));
+        assert_eq!(player.stats.get("world_scans").copied().unwrap_or(0), 2);
+        assert_eq!(player.stats.get("unique_worlds_scanned").copied().unwrap_or(0), 1);
+    }
+
+    #[test]
+    fn test_record_world_approach_tracks_unique_worlds() {
+        let mut player = Player::new("zion1".to_string());
+        assert!(player.record_world_approach("NOVA_ZEME"));
+        assert!(!player.record_world_approach("NOVA_ZEME"));
+        assert_eq!(player.stats.get("world_approaches").copied().unwrap_or(0), 2);
+        assert_eq!(player.stats.get("unique_worlds_approached").copied().unwrap_or(0), 1);
     }
 
     #[test]
