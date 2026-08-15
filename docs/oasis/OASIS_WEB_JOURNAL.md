@@ -374,4 +374,34 @@ The script will:
 - Add a per-world `golden_egg` clue completion endpoint so the web can report clue discovery to the backend.
 - Consider a lightweight `WorldScan` WebSocket event to push live scan notifications to the leaderboard page.
 
+---
+
+## 11. 2026-08-15 (continued) — Backend World Registry, Clue API & Frontend Sync
+
+### New backend capabilities
+- Canonical world registry loaded from embedded `V31/L4/oasis/data/worlds.json` (73 worlds).
+  - `GET /api/v1/oasis/worlds` — full list.
+  - `GET /api/v1/oasis/worlds/:id` — single world.
+- Per-world Golden Egg clue discovery:
+  - `POST /api/v1/oasis/player/:address/worlds/:id/clue` — idempotent, returns `{clue_id, new, total_clues}`.
+- WebSocket events for live feed:
+  - `WorldScan`, `WorldApproach` with `world_id`, `world_name`, `first`, `xp_awarded`.
+  - Existing `ClueDiscovered` now also broadcast from the clue endpoint.
+
+### Frontend integration
+- `gameStore` now owns `worlds` (defaults to local `WORLDS`, refreshed from API).
+- `OasisClient` fetches `/api/v1/oasis/worlds` on mount and calls `setWorlds`.
+- All 3D and HUD components now read the live world list:
+  - `OasisScene`, `GalaxyMap`, `Hyperlanes`, `MiniMap`, `FlightControls`
+  - `MainMenu`, `WorldFilter`, `GamePanel`, `PlayerHud`
+- `WorldPanel` quick actions use `scanWorld` / `approachWorld` endpoints.
+- Golden Egg claim in `WorldPanel` records the clue via `discoverWorldClue` and toasts the running total.
+
+### Verification on Edge
+- `curl https://oasis.zionterranova.com/api/v1/oasis/worlds` → 73 worlds.
+- `curl https://oasis.zionterranova.com/api/v1/oasis/worlds/NOVA_ZEME` → 200.
+- `POST .../ALPHA_CENTAURI/clue` → `clue_id: 1, new: true, total_clues: 1`; second call → `new: false`.
+- `POST .../NOVA_ZEME/scan` → XP awarded, `total_xp` updated.
+- Web and API paths all return 200.
+
 *Generated with [Devin](https://devin.ai) — this journal should be updated as the roadmap progresses.*
