@@ -194,7 +194,7 @@ ZION ships **two kinds** of pre-built miner binaries:
 | Type | What it is | Release |
 |:------|:-----------|:--------|
 | **Desktop GUI Miner** (Boost Streams) | Electron + TUI app with full dashboard, hashrate graphs, Boost Stream cards, auto-updater. Recommended for most users. | [`v3.1.0-desktop`](https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.1.0-desktop) |
-| **CLI Miner** (headless) | Single `zion-miner` binary for servers, SMOS/HiveOS rigs, and scripting. | [`v3.0.6-beta`](https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.0.6-beta) |
+| **CLI Miner** (headless) | Single `zion-miner` binary for servers, SMOS/HiveOS rigs, and scripting. | [`v3.1.0-boost`](https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.1.0-boost) |
 
 ---
 
@@ -245,7 +245,7 @@ Then it launches with Boost Streams enabled — ZION core + Boost Stream 1 (GPU)
 
 ---
 
-### Option B — CLI Miner (v3.0.6-beta, headless)
+### Option B — CLI Miner (v3.1.0-boost, headless)
 
 #### 1. Download for your system
 
@@ -257,7 +257,7 @@ Then it launches with Boost Streams enabled — ZION core + Boost Stream 1 (GPU)
 | **macOS Intel** (pre-2020 Macs) | `zion-miner-macos-x86_64.tar.gz` |
 | **Windows x86_64** (10/11) | `zion-miner-windows-x86_64.zip` |
 
-Latest CLI release: **[v3.0.6-beta](https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.0.6-beta)**
+Latest CLI release: **[v3.1.0-boost](https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.1.0-boost)**
 
 #### 2. Extract
 
