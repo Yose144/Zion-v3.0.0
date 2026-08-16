@@ -2062,7 +2062,7 @@ pub(crate) fn draw_dashboard_redesign(
     let mut frame = DashboardFrame::new(&mut out, width);
     frame.top()?;
     #[cfg(feature = "public_build")]
-    let header_label = "ZION MINER";
+    let header_label = "ZION MINER  |  BOOST";
     #[cfg(not(feature = "public_build"))]
     let header_label = "ZION MINER  |  TRINITY";
     frame.title(&format!(
@@ -2155,43 +2155,58 @@ pub(crate) fn draw_dashboard_redesign(
         rates.zion_rejected,
         Color::White,
     )?;
-    // In public_build, hide Stream 2 (GPU/ZANO) and Stream 3 (CPU/VRSC).
-    // Trinity still runs internally — only the display is suppressed.
+    // In public_build, mask Stream 2/3 as BOOST 1/2 to hide external coin names.
+    // Trinity still runs internally — only the display is masked.
+    #[cfg(feature = "public_build")]
+    let (gpu_label, gpu_desc) = (
+        "BOOST 1",
+        if gpu_active { "Boost / Boost".to_string() } else { "idle".to_string() },
+    );
     #[cfg(not(feature = "public_build"))]
-    {
-        let gpu_desc = if gpu_active {
+    let (gpu_label, gpu_desc) = (
+        "GPU",
+        if gpu_active {
             format!("{} / {}", gpu_coin, dashboard_short_algo(&gpu_algo))
         } else {
             "idle".to_string()
-        };
-        dashboard_stream_row(
-            &mut frame,
-            2,
-            "GPU",
-            &gpu_desc,
-            rates.gpu_ext_10s_hps,
-            gpu_active,
-            rates.gpu_ext_accepted,
-            rates.gpu_ext_rejected,
-            Color::Magenta,
-        )?;
-        let cpu_desc = if cpu_active {
+        },
+    );
+    dashboard_stream_row(
+        &mut frame,
+        2,
+        gpu_label,
+        &gpu_desc,
+        rates.gpu_ext_10s_hps,
+        gpu_active,
+        rates.gpu_ext_accepted,
+        rates.gpu_ext_rejected,
+        Color::Magenta,
+    )?;
+    #[cfg(feature = "public_build")]
+    let (cpu_label, cpu_desc) = (
+        "BOOST 2",
+        if cpu_active { "Boost / Boost".to_string() } else { "idle".to_string() },
+    );
+    #[cfg(not(feature = "public_build"))]
+    let (cpu_label, cpu_desc) = (
+        "CPU",
+        if cpu_active {
             format!("{} / {}", cpu_coin, dashboard_short_algo(&cpu_algo))
         } else {
             "idle".to_string()
-        };
-        dashboard_stream_row(
-            &mut frame,
-            3,
-            "CPU",
-            &cpu_desc,
-            rates.cpu_ext_10s_hps,
-            cpu_active,
-            rates.cpu_ext_accepted,
-            rates.cpu_ext_rejected,
-            Color::Yellow,
-        )?;
-    } // end not(public_build)
+        },
+    );
+    dashboard_stream_row(
+        &mut frame,
+        3,
+        cpu_label,
+        &cpu_desc,
+        rates.cpu_ext_10s_hps,
+        cpu_active,
+        rates.cpu_ext_accepted,
+        rates.cpu_ext_rejected,
+        Color::Yellow,
+    )?;
 
     frame.rule("SHARES", Color::Yellow)?;
     let share_total = rates.accepted.saturating_add(rates.rejected);

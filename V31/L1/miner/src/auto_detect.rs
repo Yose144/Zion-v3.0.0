@@ -3,8 +3,8 @@
 //! Detects CPU architecture, GPU devices (CUDA/OpenCL/Metal), system memory,
 //! and derives the optimal Trinity mining configuration:
 //!
-//! - **GPU detected** → Triple Parallel: Stream 1 (ZION GPU) + Stream 2 (ZANO GPU) + Stream 3 (VRSC CPU)
-//! - **CPU-only** → Dual Stream: Stream 1 (ZION CPU) + Stream 3 (VRSC CPU)
+//! - **GPU detected** → Triple Parallel: Stream 1 (ZION GPU) + Stream 2 (BOOST 1) + Stream 3 (BOOST 2)
+//! - **CPU-only** → Dual Stream: Stream 1 (ZION CPU) + Stream 3 (BOOST 2)
 //!
 //! All decisions can be overridden with env vars:
 //! - `ZION_GPU_BACKEND` — force backend (cuda/opencl/metal/cpu)
@@ -351,15 +351,25 @@ pub fn print_mine_plan(cfg: &AutoMineConfig) {
         "  ║  Stream 1 (ZION):     {:<34} ║",
         stream_status(cfg.stream1_enabled, &format!("threads={}", cfg.miner_threads))
     );
+    #[cfg(feature = "public_build")]
+    let stream2_label = "Stream 2 (BOOST 1)";
+    #[cfg(not(feature = "public_build"))]
+    let stream2_label = "Stream 2 (ZANO GPU)";
     eprintln!(
-        "  ║  Stream 2 (ZANO GPU): {:<34} ║",
+        "  ║  {}: {:<34} ║",
+        stream2_label,
         stream_status(
             cfg.stream2_enabled,
             &format!("batch={}", format_batch(cfg.stream2_batch))
         )
     );
+    #[cfg(feature = "public_build")]
+    let stream3_label = "Stream 3 (BOOST 2)";
+    #[cfg(not(feature = "public_build"))]
+    let stream3_label = "Stream 3 (VRSC CPU)";
     eprintln!(
-        "  ║  Stream 3 (VRSC CPU): {:<34} ║",
+        "  ║  {}: {:<34} ║",
+        stream3_label,
         stream_status(
             cfg.stream3_enabled,
             &format!(

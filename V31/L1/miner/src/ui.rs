@@ -864,9 +864,9 @@ fn build_trinity_box(
     s.push_str(BOLD);
     s.push_str(WHITE);
     #[cfg(feature = "public_build")]
-    let title_str = "  ZION v3.0.7 Miner";
+    let title_str = "  ZION v3.1.0 Boost";
     #[cfg(not(feature = "public_build"))]
-    let title_str = "  ZION v3.0.7 Trinity";
+    let title_str = "  ZION v3.1.0 Trinity";
     s.push_str(title_str);
     s.push_str(RESET);
     let title_len = title_str.chars().count();
@@ -880,32 +880,44 @@ fn build_trinity_box(
     s.push_str(&format!("├{}┤\n", "─".repeat(w)));
 
     // ── Per-stream lines ──
-    // In public_build, filter out non-ZION streams (hide Trinity).
-    #[cfg(feature = "public_build")]
-    let visible_streams: Vec<&StreamStats> = streams.iter().filter(|s| s.label == "ZION").collect();
-    #[cfg(not(feature = "public_build"))]
+    // In public_build, show all streams but mask coin/algo as Boost.
     let visible_streams: Vec<&StreamStats> = streams.iter().collect();
     for stream in visible_streams {
+        // Mask labels and coin/algo in public_build
+        #[cfg(feature = "public_build")]
+        let (display_label, display_coin, display_algo) = match stream.label {
+            "ZION" => (stream.label.to_string(), stream.coin.clone(), stream.algorithm.clone()),
+            "GPU PROFIT" => ("BOOST 1".to_string(), "Boost".to_string(), "Boost".to_string()),
+            "CPU PROFIT" => ("BOOST 2".to_string(), "Boost".to_string(), "Boost".to_string()),
+            _ => ("BOOST".to_string(), "Boost".to_string(), "Boost".to_string()),
+        };
+        #[cfg(not(feature = "public_build"))]
+        let (display_label, display_coin, display_algo) = (
+            stream.label.to_string(),
+            stream.coin.clone(),
+            stream.algorithm.clone(),
+        );
+
         s.push_str("│");
         if !stream.active {
             // Inactive stream
             s.push_str(BRIGHT_BLACK);
-            s.push_str(&format!("  {:<10}", stream.label));
+            s.push_str(&format!("  {:<10}", display_label));
             s.push_str(RESET);
             s.push_str(DIM);
-            let detail = format!("{} / {}", stream.coin, stream.algorithm);
+            let detail = format!("{} / {}", display_coin, display_algo);
             s.push_str(&format!(" {:<22}", detail));
             s.push_str(RESET);
             s.push_str(BRIGHT_BLACK);
             // Reason for inactive
-            let reason = if stream.coin.is_empty() {
+            let reason = if display_coin.is_empty() {
                 "IDLE (no job from pool)"
-            } else if stream.algorithm.contains("progpow")
-                || stream.algorithm.contains("ethash")
-                || stream.algorithm.contains("kawpow")
+            } else if display_algo.contains("progpow")
+                || display_algo.contains("ethash")
+                || display_algo.contains("kawpow")
             {
                 "SKIPPED (DAG-based on Metal)"
-            } else if stream.algorithm.contains("zelhash") || stream.algorithm.contains("beamhash")
+            } else if display_algo.contains("zelhash") || display_algo.contains("beamhash")
             {
                 "SKIPPED (memory-hard on Metal)"
             } else {
@@ -920,9 +932,9 @@ fn build_trinity_box(
 
         // Active stream
         let (hv, hu) = fmt_hashrate(stream.hashrate_10s);
-        let (h60v, h60u) = fmt_hashrate(stream.hashrate_60s);
+        let (_h60v, _h60u) = fmt_hashrate(stream.hashrate_60s);
         let stream_total = stream.accepted + stream.rejected;
-        let stream_pct = if stream_total > 0 {
+        let _stream_pct = if stream_total > 0 {
             stream.accepted as f64 * 100.0 / stream_total as f64
         } else {
             100.0
@@ -937,11 +949,11 @@ fn build_trinity_box(
         };
         s.push_str(label_color);
         s.push_str(BOLD);
-        s.push_str(&format!("  {:<10}", stream.label));
+        s.push_str(&format!("  {:<10}", display_label));
         s.push_str(RESET);
 
         // Coin / algorithm
-        let detail = format!("{} / {}", stream.coin, stream.algorithm);
+        let detail = format!("{} / {}", display_coin, display_algo);
         s.push_str(DIM);
         s.push_str(&format!(" {:<22}", &detail[..detail.len().min(22)]));
         s.push_str(RESET);
@@ -1301,7 +1313,7 @@ pub fn print_fancy_banner(threads: usize, version: &str, backend: &str) {
     #[cfg(not(feature = "public_build"))]
     s.push_str("Trinity");
     #[cfg(feature = "public_build")]
-    s.push_str("Desktop");
+    s.push_str("Boost");
     s.push_str(RESET);
     s.push_str("         ║\n");
     s.push_str("║  ");
