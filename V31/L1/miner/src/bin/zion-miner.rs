@@ -357,21 +357,27 @@ async fn main() -> Result<()> {
                 stats_metrics.record_hashes(hashes_this_interval);
             }
 
-            // ── Watchdog: if hashes are being produced but no share is
-            // accepted/rejected for too long, the GPU/CPU batch is hung.
+            // ── Watchdog: if no share is accepted/rejected for too long,
+            // the miner is stuck (GPU hang, pool idle, no jobs).
             // Exit with non-zero so the supervisor (systemd/SMOS) restarts us.
-            if watchdog_timeout > 0
-                && start.elapsed().as_secs() >= WATCHDOG_GRACE_SEC
-                && total_hr > 0.0
-            {
+            // When hashrate is still positive, use the configured timeout.
+            // When hashrate has dropped to 0, allow a longer timeout (3x)
+            // to avoid false restarts during slow network or very easy
+            // target changes, but still force recovery if no work is done.
+            if watchdog_timeout > 0 && start.elapsed().as_secs() >= WATCHDOG_GRACE_SEC {
                 let total_shares = stats_metrics.shares_accepted() + stats_metrics.shares_rejected();
+                let effective_timeout = if total_hr > 0.0 {
+                    watchdog_timeout
+                } else {
+                    watchdog_timeout * 3
+                };
                 if total_shares > last_share_total {
                     last_share_total = total_shares;
                     last_share_time = Instant::now();
-                } else if last_share_time.elapsed().as_secs() >= watchdog_timeout {
+                } else if last_share_time.elapsed().as_secs() >= effective_timeout {
                     warn!(
-                        "WATCHDOG: no share accepted/rejected for {}s while hashrate is {:.1} H/s. Exiting to force restart.",
-                        watchdog_timeout, total_hr
+                        "WATCHDOG: no share accepted/rejected for {}s (hashrate={:.1} H/s, watchdog={}s). Exiting to force restart.",
+                        effective_timeout, total_hr, watchdog_timeout
                     );
                     #[cfg(feature = "tui")]
                     {
