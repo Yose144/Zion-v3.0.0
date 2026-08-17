@@ -8825,6 +8825,15 @@ pub fn detect_gpus() -> Vec<String> {
     #[allow(unused_mut)]
     let mut devices = Vec::new();
 
+    // Respect explicit CPU-only backend: skip any GPU enumeration that may
+    // panic or hang on headless / OpenCL-less machines (e.g. Edge server).
+    if std::env::var("ZION_GPU_BACKEND")
+        .map(|v| v.eq_ignore_ascii_case("cpu"))
+        .unwrap_or(false)
+    {
+        return devices;
+    }
+
     #[cfg(feature = "gpu-opencl")]
     {
         let platforms = ocl::Platform::list();
@@ -8911,6 +8920,16 @@ fn query_cuda_details() -> Vec<GpuInfo> {
 #[cfg(feature = "gpu-opencl")]
 pub fn query_gpu_details() -> Vec<GpuInfo> {
     let mut out = Vec::new();
+
+    // Respect explicit CPU-only backend: skip OpenCL enumeration that may
+    // panic or hang on headless servers with no OpenCL platform installed.
+    if std::env::var("ZION_GPU_BACKEND")
+        .map(|v| v.eq_ignore_ascii_case("cpu"))
+        .unwrap_or(false)
+    {
+        return out;
+    }
+
     let platforms = ocl::Platform::list();
     for platform in platforms {
         let platform_name = platform.name().unwrap_or_else(|_| "unknown".to_string());
