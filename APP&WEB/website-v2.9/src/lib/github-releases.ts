@@ -32,59 +32,69 @@ const DL_BASE_310_CLI = `https://github.com/${GITHUB_REPO}/releases/download/v3.
 const DL_BASE_306 = `https://github.com/${GITHUB_REPO}/releases/download/v3.0.6-beta`;
 const DL_BASE_305 = `https://github.com/${GITHUB_REPO}/releases/download/v3.0.5-beta`;
 
+const DL_BASE_310_MINER = `https://github.com/${GITHUB_REPO}/releases/download/v3.1.0-miner`;
+
 /**
- * v3.1.0-cli — Terminal Miner (2026-08-03)
+ * v3.1.0-miner — Public Boost Miner (2026-08-17)
  * One-click GPU auto-detect: CUDA → OpenCL → Metal → CPU.
- * Public Boost branding — internal Trinity/AuxPoW streams hidden.
- * All builds include native-all + native-hashers: VerusHash, RandomX,
- * GhostRider, Etchash, KawPow, Autolykos, kHeavyHash, BLAKE3, Cosmic Harmony.
- * 4 platforms: Linux x86_64, macOS Apple Silicon, macOS Intel, Windows x86_64.
+ * TUI dashboard, public Boost branding, and all native algorithms:
+ * VerusHash, RandomX, GhostRider, Etchash, KawPow, Autolykos,
+ * kHeavyHash, BLAKE3, Cosmic Harmony.
+ * 5 platforms: Linux x86_64, Linux ARM64, macOS Apple Silicon, macOS Intel, Windows x86_64.
  */
 export const LATEST_RELEASE: Release = {
-  tag: 'v3.1.0-cli',
-  name: 'ZION v3.1.0 — Terminal Miner',
-  publishedAt: '2026-08-03',
+  tag: 'v3.1.0-miner',
+  name: 'ZION v3.1.0 — Public Boost Miner',
+  publishedAt: '2026-08-17',
   prerelease: false,
-  htmlUrl: `https://github.com/${GITHUB_REPO}/releases/tag/v3.1.0-cli`,
+  htmlUrl: `https://github.com/${GITHUB_REPO}/releases/tag/v3.1.0-miner`,
   assets: [
     {
-      name: 'zion-miner-linux-x86_64.tar.gz',
+      name: 'zion-miner-v3.1.0-linux-x86_64.tar.gz',
       label: 'Linux x86_64',
-      description: 'Terminal Miner — auto GPU (CUDA + OpenCL) + all native algorithms',
-      sizeMB: 3.7,
-      downloadUrl: `${DL_BASE_310_CLI}/zion-miner-linux-x86_64.tar.gz`,
+      description: 'Public Boost Miner — CUDA + OpenCL + all native algorithms + TUI',
+      sizeMB: 4.2,
+      downloadUrl: `${DL_BASE_310_MINER}/zion-miner-v3.1.0-linux-x86_64.tar.gz`,
       platform: 'linux-x86_64',
     },
     {
-      name: 'zion-miner-macos-aarch64.tar.gz',
+      name: 'zion-miner-v3.1.0-linux-arm64.tar.gz',
+      label: 'Linux ARM64',
+      description: 'Public Boost Miner — OpenCL + all native algorithms + TUI',
+      sizeMB: 3.4,
+      downloadUrl: `${DL_BASE_310_MINER}/zion-miner-v3.1.0-linux-arm64.tar.gz`,
+      platform: 'linux-aarch64',
+    },
+    {
+      name: 'zion-miner-v3.1.0-macos-arm64.tar.gz',
       label: 'macOS Apple Silicon (M1–M4)',
-      description: 'Terminal Miner — Metal + OpenCL (legacy) + all native algorithms',
-      sizeMB: 3.2,
-      downloadUrl: `${DL_BASE_310_CLI}/zion-miner-macos-aarch64.tar.gz`,
+      description: 'Public Boost Miner — Metal + OpenCL + all native algorithms + TUI',
+      sizeMB: 3.6,
+      downloadUrl: `${DL_BASE_310_MINER}/zion-miner-v3.1.0-macos-arm64.tar.gz`,
       platform: 'macos-arm64',
     },
     {
-      name: 'zion-miner-macos-x86_64.tar.gz',
+      name: 'zion-miner-v3.1.0-macos-x86_64.tar.gz',
       label: 'macOS Intel x86_64',
-      description: 'Terminal Miner — Metal + OpenCL (legacy) + all native algorithms',
-      sizeMB: 3.3,
-      downloadUrl: `${DL_BASE_310_CLI}/zion-miner-macos-x86_64.tar.gz`,
+      description: 'Public Boost Miner — Metal + OpenCL + all native algorithms + TUI',
+      sizeMB: 3.7,
+      downloadUrl: `${DL_BASE_310_MINER}/zion-miner-v3.1.0-macos-x86_64.tar.gz`,
       platform: 'macos-x86_64',
     },
     {
-      name: 'zion-miner-windows-x86_64.zip',
+      name: 'zion-miner-v3.1.0-windows-x86_64.zip',
       label: 'Windows x86_64',
-      description: 'Terminal Miner — CUDA + OpenCL + all native algorithms',
-      sizeMB: 22.3,
-      downloadUrl: `${DL_BASE_310_CLI}/zion-miner-windows-x86_64.zip`,
+      description: 'Public Boost Miner — CUDA + OpenCL + all native algorithms + TUI',
+      sizeMB: 23.0,
+      downloadUrl: `${DL_BASE_310_MINER}/zion-miner-v3.1.0-windows-x86_64.zip`,
       platform: 'windows-x86_64',
     },
     {
       name: 'SHA256SUMS.txt',
       label: 'SHA256 Checksums',
-      description: 'Verification checksums for v3.1.0-cli downloads',
+      description: 'Verification checksums for v3.1.0-miner downloads',
       sizeMB: 0.0,
-      downloadUrl: `${DL_BASE_310_CLI}/SHA256SUMS.txt`,
+      downloadUrl: `${DL_BASE_310_MINER}/SHA256SUMS.txt`,
       platform: 'checksum',
     },
   ],
