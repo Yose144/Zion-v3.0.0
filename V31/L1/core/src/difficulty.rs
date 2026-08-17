@@ -3,9 +3,9 @@
 //! Constitutional constants:
 //!   - Target block time: 60 seconds
 //!   - LWMA window: 60 blocks
-//!   - Per-block clamp: ±25 %
-//!   - Solve-time clamp: 30–120 s per interval
-//!   - Minimum difficulty: 1_000
+//!   - Per-block clamp: ±50 %
+//!   - Solve-time clamp: 6–360 s per interval
+//!   - Minimum difficulty: 10
 //!   - Maximum difficulty: u64::MAX / 1_000
 //!
 //! Reference: Zawy's LWMA (used by Monero, Grin, LOKI, etc.).
@@ -16,11 +16,18 @@ pub const TARGET_BLOCK_TIME: u64 = 60;
 /// Number of previous blocks considered by the LWMA window.
 pub const LWMA_WINDOW: usize = 60;
 
-/// Minimum per-interval solve time (clamped), `TARGET / 2`.
-pub const MIN_SOLVE_TIME: u64 = 30;
+/// Minimum per-interval solve time (clamped), `TARGET / 10`.
+///
+/// Matches Zawy's LWMA reference: small solve times are not rounded up very
+/// much, so the algorithm can quickly react to a sudden hashrate increase.
+pub const MIN_SOLVE_TIME: u64 = 6;
 
-/// Maximum per-interval solve time (clamped), `TARGET * 2`.
-pub const MAX_SOLVE_TIME: u64 = 120;
+/// Maximum per-interval solve time (clamped), `TARGET * 6`.
+///
+/// Matches Zawy's LWMA reference (`std::min(6*T, ...)`). A wider ceiling lets
+/// the algorithm drop difficulty faster when hashrate suddenly falls, reducing
+/// the risk of long block stalls like the one seen around height 6944.
+pub const MAX_SOLVE_TIME: u64 = 360;
 
 /// Absolute difficulty floor.
 pub const MIN_DIFFICULTY: u64 = 10;
@@ -31,11 +38,15 @@ pub const MAX_DIFFICULTY: u64 = u64::MAX / 1_000;
 /// Difficulty used for the genesis block and early chain bootstrap.
 pub const GENESIS_DIFFICULTY: u64 = MIN_DIFFICULTY;
 
-/// ±25 % as exact integer fractions — avoids f64 non-determinism.
-const CLAMP_UP_NUM: u128 = 5;
-const CLAMP_UP_DEN: u128 = 4; // 5/4 = 1.25
-const CLAMP_DN_NUM: u128 = 3;
-const CLAMP_DN_DEN: u128 = 4; // 3/4 = 0.75
+/// ±50 % as exact integer fractions — avoids f64 non-determinism.
+///
+/// The wider band matches Zawy's recommendation to not over-limit the LWMA
+/// rise/fall rate, while still capping the per-block difficulty swing to
+/// prevent extreme jumps from timestamp manipulation or measurement noise.
+const CLAMP_UP_NUM: u128 = 3;
+const CLAMP_UP_DEN: u128 = 2; // 3/2 = 1.5
+const CLAMP_DN_NUM: u128 = 1;
+const CLAMP_DN_DEN: u128 = 2; // 1/2 = 0.5
 
 /// Timestamp (seconds) + difficulty pair consumed by the LWMA algorithm.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -176,13 +187,14 @@ mod tests {
 
     #[test]
     fn clamp_limits_per_block_change() {
-        let mut window = make_window(TARGET_BLOCK_TIME, 10_000, LWMA_WINDOW + 1);
-        // Last block is super fast, would otherwise more than double difficulty.
-        let last = window.len() - 1;
-        window[last].timestamp = window[last - 1].timestamp + 1;
+        // Every block is 1/10 of target (6 s). The raw LWMA would push
+        // difficulty to ~100_000, so the per-block clamp must cap it.
+        let window = make_window(TARGET_BLOCK_TIME / 10, 10_000, LWMA_WINDOW + 1);
         let next = lwma_next_difficulty(&window);
-        let max_allowed = 10_000 * 5 / 4;
-        assert!(next <= max_allowed, "per-block clamp violated: {next}");
+        let max_allowed = 10_000 * 3 / 2;
+        let min_allowed = 10_000 / 2;
+        assert!(next <= max_allowed, "per-block upward clamp violated: {next}");
+        assert!(next >= min_allowed, "per-block downward clamp violated: {next}");
     }
 
     #[test]
