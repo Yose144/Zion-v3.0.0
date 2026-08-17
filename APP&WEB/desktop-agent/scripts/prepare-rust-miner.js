@@ -127,15 +127,15 @@ function detectPlatformFeatures() {
 
   // V31 zion-miner default already enables auxpow. GPU and native algorithm
   // features must be enabled explicitly.
-  const nativeFeatures = 'native-hashers,native-kheavyhash,native-blake3-algo,native-verushash';
+  const nativeFeatures = 'native-all';
 
   if (platform === 'darwin') {
     if (arch === 'arm64') {
-      console.log('[prepare-v31] Apple Silicon detected -> enabling Metal + native hashers');
-      return `auxpow,gpu-metal,${nativeFeatures}`;
+      console.log('[prepare-v31] Apple Silicon detected -> enabling Metal + OpenCL + all native hashers');
+      return `auxpow,gpu-opencl,gpu-metal,${nativeFeatures}`;
     }
-    console.log('[prepare-v31] Intel Mac detected -> enabling OpenCL + native hashers');
-    return `auxpow,gpu-opencl,${nativeFeatures}`;
+    console.log('[prepare-v31] Intel Mac detected -> enabling OpenCL + Metal + all native hashers');
+    return `auxpow,gpu-opencl,gpu-metal,${nativeFeatures}`;
   }
 
   if (platform === 'win32') {
