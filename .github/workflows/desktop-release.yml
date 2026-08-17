@@ -80,7 +80,7 @@ jobs:
 
       - name: Build Linux packages
         run: |
-          node scripts/prepare-rust-miner.js --features "auxpow,gpu-opencl,gpu-cuda,native-all"
+          node scripts/prepare-rust-miner.js --features "public_build,auxpow,gpu-opencl,gpu-cuda,native-all"
           npx electron-builder --linux --x64 --publish never
 
       - name: Upload Linux artifacts
@@ -134,7 +134,7 @@ jobs:
           LIB: ${{ env.LIB }}
           INCLUDE: ${{ env.INCLUDE }}
         run: |
-          node scripts/prepare-rust-miner.js --features "auxpow,gpu-opencl,gpu-cuda,native-all"
+          node scripts/prepare-rust-miner.js --features "public_build,auxpow,gpu-opencl,gpu-cuda,native-all"
           npx electron-builder --win --x64 --publish never
 
       - name: Upload Windows artifacts
@@ -168,7 +168,7 @@ jobs:
 
       - name: Build macOS package
         run: |
-          node scripts/prepare-rust-miner.js --features "auxpow,gpu-opencl,gpu-metal,native-all"
+          node scripts/prepare-rust-miner.js --features "public_build,auxpow,gpu-opencl,gpu-metal,native-all"
           npx electron-builder --mac --publish never
 
       - name: Upload macOS artifacts
