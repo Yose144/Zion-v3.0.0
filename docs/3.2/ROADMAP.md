@@ -1,0 +1,180 @@
+# ZION 3.2 "One Love" — Mainnet Stable Roadmap
+
+> **Version target:** 3.2.0 "One Love" (Mainnet Stable)  
+> **Current version:** 3.1.0-beta (V31 Mainnet Alpha), protocol `zion-v3-node/3.1.0-alpha`  
+> **Last updated:** 2026-08-17  
+> **Public launch target:** 31 December 2026  
+>
+> **Canonical plans:**
+> - Launch & marketing plan: [`OneLoveV3.2.md`](../../OneLoveV3.2.md)
+> - Technical execution plan: [`V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md)
+> - Live status: [`StatusV3.md`](../../StatusV3.md) · [`V31/STATUS.md`](../../V31/STATUS.md)
+
+---
+
+## 1. Executive summary
+
+V31 Mainnet Alpha is **live and producing blocks on Edge**. The workspace compiles, `cargo test --workspace` passes with 0 failures, and the production stack (`zion-node`, `zion-pool`, `zion-miner`, `zion-multichain`, `zion-dao`, `zion-oasis`, web, marketplace, dashboard) is active.
+
+3.2.0 "One Love" is the track from *production started* to *production exercised and stable*. It is gated by real-world E2E, a 30-day continuous run, security audit, public-subtree sync, and release readiness.
+
+---
+
+## 2. What is already resolved in 3.1.0-beta
+
+| Area | Status | Evidence |
+|------|--------|----------|
+| V31 workspace build & tests | ✅ Complete | `cargo test --workspace` passes, `cargo clippy --workspace` clean |
+| V31 node on Edge | ✅ Active | height 7000+, protocol 3.1.0-alpha |
+| V31 pool on Edge | ✅ Active | stratum 8444, shares accepted, PPLNS payout confirmation sweep active |
+| V31 multichain | ✅ Active | `/health` 200, DEX + HTLC endpoints wired |
+| V31 DAO | ✅ Active | runtime, L1 scanner, HTTP API + metrics |
+| V31 OASIS | ✅ Active | raw TCP RPC, blockchain listener fixed |
+| V31 dashboard | ✅ Active | V31 service metrics, Grafana, `/health` |
+| Trinity mining (ZION + ZANO + VRSC) | ✅ Production | 22–24 MH/s total, 100% accept rate on Edge pool |
+| CUDA DAG disk cache | ✅ Live | `~/.zion/dag-cache/{algo}_epoch{N}.bin` |
+| ZANO duplicate-share fix | ✅ Deployed | unique 64-bit nonce base per external job |
+| LWMA difficulty clamp | ✅ Deployed | `MIN_SOLVE_TIME=6`, `MAX_SOLVE_TIME=360`, ±50% per-block clamp |
+| CPU-only miner enumeration | ✅ Fixed | `ZION_GPU_BACKEND=cpu` short-circuits OpenCL/CUDA/Metal |
+| Native TX/address index | ✅ Active | `tx_index`, `output_index`, `address_tx_index` in SQLite |
+| Genesis key rotation (2026-08-06) | ✅ Complete | 38 BIP39 keypairs, new genesis hashes |
+
+---
+
+## 3. What must still close for 3.2.0 "One Love"
+
+These are the hard gates. Each must be backed by evidence before 3.2.0 can be called Mainnet Stable.
+
+| ID | Gate | Why it blocks 3.2 | Current status |
+|----|------|-------------------|----------------|
+| **G1** | Real GPU / rig E2E (≥90% accept rate for 1h on ≥2 reference rigs) | Local OpenCL GO is not production E2E | ❌ Not started |
+| **G2** | Non-EVM WARP contracts (deploy or `disabled_reason`) | Cannot claim 12-chain support with placeholders | ❌ Not started |
+| **G3** | Solver network real E2E (independent solver over internet) | Wired locally only | ❌ Not started |
+| **G4** | Public subtree diff = 0 | Public MIT repo out of sync | ❌ Not started |
+| **G5** | XMR / RandomX path (reach pool or `disabled_reason`) | No reachable pure-RandomX pool from Edge datacenter | ⚠️ Decision pending |
+| **G6** | PRL (Pearl PoUW) deferred and excluded | Must remain documented and excluded from profit switching | ✅ Documented |
+| **G7** | Chaos / load tests executed | 1000+ miner sim, 24h fuzzing, bridge stress | ❌ Not started |
+| **G8** | 30-day continuous run completed | Cannot call "Stable" without uptime evidence | ❌ Not started |
+| **G9** | External / internal security audit | Internal tests pass; no formal review on record | ❌ Not started |
+| **G10** | L5 Free World / L6 Issobella decision | Must have defined run mode or explicit post-3.2 deferral | ⚠️ Decision pending |
+| **G11** | V3→V31 migration tooling complete | Foundry config, CLI stubs, public subtree, ZIS, OASIS server | ⚠️ Partial |
+
+---
+
+## 4. Phases
+
+### Phase E — Real-World Verification & Hardening (weeks 1–4)
+
+| # | Task | Owner | Acceptance |
+|---|------|-------|------------|
+| E1 | GPU Go/No-Go on reference rigs | core/miner | ≥90% accept rate on ZION Deeksha for 1h on ≥2 rigs |
+| E2 | AuxPoW real-pool E2E | core/miner | ≥2 GPU + ≥2 CPU coins accepted upstream on Edge pool |
+| E3 | Profit switching live test | core/miner | switches within 15% hysteresis, PRL never selected |
+| E4 | Bridge Base mainnet round-trip | multichain | 100K wZION lock → mint → burn → release |
+| E5 | Non-EVM WARP hardening | multichain | each chain deployed or `disabled_reason` + UI hidden |
+| E6 | Solver network real E2E | multichain | independent solver over internet |
+| E7 | Public subtree sync | release/docs | `git subtree push --prefix=public public main` clean, `git secrets --scan` clean |
+| E8 | XMR / RandomX path | core/pool | reachable pool E2E or `disabled_reason` |
+| E9 | L5/L6 activation decision | product/ops | decision record |
+
+### Phase F — Stability, Security & 30-Day Run (weeks 5–9)
+
+| # | Task | Owner | Acceptance |
+|---|------|-------|------------|
+| F1 | Security audit | security | L1, bridge contracts, multichain reviewed; findings mitigated or accepted |
+| F2 | 24h transaction fuzzing | QA | no crashes, final state checksum consistent |
+| F3 | Chaos tests | QA/ops | `V31/CHAOS_TEST_PLAN.md` rounds 1–5 executed |
+| F4 | 1000+ miner simulation | pool/QA | memory flat, CPU <80%, no panics |
+| F5 | Backup / DR drill | ops | restore from off-site backup, sync to tip |
+| F6 | 30-day continuous run | ops | uptime ≥99.9%, no critical incidents |
+
+### Phase G — Release & Launch Readiness (weeks 9–10)
+
+| # | Task | Owner | Acceptance |
+|---|------|-------|------------|
+| G1 | Feature freeze | product | `DEFERRED_3.2.md` frozen |
+| G2 | GitHub `v3.2.0` release | release | Linux/Windows/macOS binaries, SHA256SUMS, signed tag |
+| G3 | SMOS package | release | tested on reference rig |
+| G4 | Desktop app bundle | APP&WEB | builds and passes tests on all platforms |
+| G5 | Public docs update | docs | `public/README.md` and translations reflect 3.2.0 |
+| G6 | Community + bug bounty | community | channels and process published |
+| G7 | Monitoring & alerting | ops | alerts tested, runbooks updated |
+
+### Phase H — V3→V31 Migration Completion (parallel with E–F)
+
+| # | Task | Status |
+|---|------|--------|
+| H1 | Foundry / Hardhat project config for `zion deploy` | ❌ Missing |
+| H2 | Miner TUI smoke test | ⚠️ Present, needs test |
+| H3 | Miner Cargo feature verification on all platforms | ⚠️ Present, needs test |
+| H4 | Complete CLI subcommands (some are stubs) | ⚠️ Partial |
+| H5 | AuXpow E2E test script | ❌ Missing |
+| H6 | Stratum v2 pool support | ❌ Missing |
+| H7 | PPS + SOLO pool modes | ❌ Missing |
+| H8 | Pool downstream / proxy mode | ❌ Missing |
+
+### Phase I — ZION Identity Service (ZIS) (parallel with E–F)
+
+| # | Task | Status |
+|---|------|--------|
+| I1 | ZIS OpenAPI design | ❌ Not started |
+| I2 | ZIS server implementation (`APP&WEB/identity/`) | ❌ Not started |
+| I3 | Unified Prisma schema | ❌ Not started |
+| I4 | Deploy ZIS on Edge | ❌ Not started |
+| I5 | Cross-domain cookie SSO | ❌ Not started |
+| I6 | EVM wallet auth (SIWE) | ❌ Not started |
+| I7 | Link EVM + ZION addresses | ❌ Not started |
+| I8 | API keys for programmatic access | ❌ Not started |
+
+### Phase J — Cross-App Integration (parallel with E–F)
+
+| # | Task | Status |
+|---|------|--------|
+| J1 | Web 2.9 → ZIS | ❌ Not started |
+| J2 | Marketplace → ZIS | ❌ Not started |
+| J3 | OASIS → server + ZIS | ❌ Not started |
+| J4 | Dashboard → ZIS | ❌ Not started |
+| J5 | OASIS ↔ Marketplace artifact sync | ❌ Not started |
+| J6 | Dashboard "My Ecosystem" view | ❌ Not started |
+| J7 | Mining / DAO → shared DB | ❌ Not started |
+
+---
+
+## 5. What is deliberately not a 3.2 blocker
+
+| Item | Rationale |
+|------|-----------|
+| CHv4.2 Merkabah Dual-Spin | Fork height is `u64::MAX`; requires governance vote |
+| Full 12-chain non-EVM WARP | Mainnet-stable scope is EVM + Bitcoin + one non-EVM pilot |
+| Mobile app store submission | Can ship in 3.2.x |
+| Pearl PoUW | Officially deferred; must stay `disabled_reason` |
+
+---
+
+## 6. Definition of Done for 3.2.0
+
+1. 30-day continuous run on Edge completed, uptime ≥99.9%, no critical incidents.
+2. Real GPU mining passes on at least two reference rigs with ≥90% accept rate.
+3. Bridge wZION round-trip verified on Base mainnet.
+4. No undeclared placeholder addresses or mock clients in hot paths.
+5. Public `github.com/Zion-TerraNova/v3-Mainnet` subtree in sync and clean.
+6. Security audit and chaos/load tests complete with mitigations.
+7. `v3.2.0` GitHub release with multi-platform binaries and SHA256SUMS.
+8. Monitoring, alerting, backup/DR, and runbooks tested and current.
+9. Public docs and community channels ready for public mainnet.
+
+---
+
+## 7. Risks
+
+| Risk | Mitigation |
+|------|-----------|
+| GPU Go/No-Go fails on specific vendor | document hardware matrix; disable with `disabled_reason` |
+| Bridge mainnet round-trip loses funds | test small amount first; 5/7 multisig; pause on any `BurnRelease` failure |
+| 30d run interrupted by non-critical bug | only critical incidents (consensus, payout, bridge safety) reset clock |
+| Public subtree push reveals secret | always `--dry-run` first; `git secrets --scan` |
+| External audit finds critical issue | keep 4-week buffer before 31.12.2026 launch |
+
+---
+
+*Generated from [`V31/PLAN_TO_3.2.md`](../../V31/PLAN_TO_3.2.md), [`OneLoveV3.2.md`](../../OneLoveV3.2.md) and live status in [`StatusV3.md`](../../StatusV3.md).*
