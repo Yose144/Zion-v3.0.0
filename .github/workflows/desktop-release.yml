@@ -111,9 +111,15 @@ jobs:
       - name: Install OpenCL via vcpkg
         shell: pwsh
         run: |
+          $vcpkgRoot = if ($env:VCPKG_ROOT) { $env:VCPKG_ROOT } elseif ($env:VCPKG_INSTALLATION_ROOT) { $env:VCPKG_INSTALLATION_ROOT } else { (vcpkg root) }
+          if (-not $vcpkgRoot) { throw "Could not determine vcpkg root" }
           vcpkg install opencl:x64-windows
-          $openclLib = "${env:VCPKG_ROOT}\installed\x64-windows\lib"
-          $openclInc = "${env:VCPKG_ROOT}\installed\x64-windows\include"
+          $openclLib = Join-Path $vcpkgRoot "installed\x64-windows\lib"
+          $openclInc = Join-Path $vcpkgRoot "installed\x64-windows\include"
+          if (-not (Test-Path (Join-Path $openclLib "OpenCL.lib"))) {
+            throw "OpenCL.lib not found in $openclLib"
+          }
+          echo "VCPKG_ROOT=$vcpkgRoot" >> ${env:GITHUB_ENV}
           echo "LIB=$openclLib;${env:LIB}" >> ${env:GITHUB_ENV}
           echo "INCLUDE=$openclInc;${env:INCLUDE}" >> ${env:GITHUB_ENV}
 

@@ -97,34 +97,29 @@ jobs:
   build-linux-arm64:
     name: Build Linux ARM64
     if: github.event_name == 'push' || inputs.build_linux_arm64 == true
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     env:
       ZION_CPU_TARGET: armv8-a
     steps:
       - uses: actions/checkout@v4
 
       - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-unknown-linux-gnu
 
-      - name: Install cross-toolchain
+      - name: Install system dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq gcc-aarch64-linux-gnu g++-aarch64-linux-gnu build-essential cmake libssl-dev pkg-config
+          sudo apt-get install -y -qq build-essential cmake ocl-icd-opencl-dev libssl-dev pkg-config
 
       - name: Build miner
         working-directory: V31
-        env:
-          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
-          CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
-          CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
         run: |
-          cargo build --release -p zion-miner --target aarch64-unknown-linux-gnu --features "public_build,auxpow,gpu-opencl,native-all,tui"
+          cargo build --release -p zion-miner \
+            --features "public_build,auxpow,gpu-opencl,native-all,tui"
 
       - name: Package
         run: |
           mkdir -p V31/dist
-          cp V31/target/aarch64-unknown-linux-gnu/release/zion-miner V31/dist/
+          cp V31/target/release/zion-miner V31/dist/
           cd V31/dist
           tar czf zion-miner-v${{ env.VERSION }}-linux-arm64.tar.gz zion-miner
           sha256sum zion-miner-v${{ env.VERSION }}-linux-arm64.tar.gz
@@ -150,9 +145,15 @@ jobs:
       - name: Install OpenCL via vcpkg
         shell: pwsh
         run: |
+          $vcpkgRoot = if ($env:VCPKG_ROOT) { $env:VCPKG_ROOT } elseif ($env:VCPKG_INSTALLATION_ROOT) { $env:VCPKG_INSTALLATION_ROOT } else { (vcpkg root) }
+          if (-not $vcpkgRoot) { throw "Could not determine vcpkg root" }
           vcpkg install opencl:x64-windows
-          $openclLib = "${env:VCPKG_ROOT}\installed\x64-windows\lib"
-          $openclInc = "${env:VCPKG_ROOT}\installed\x64-windows\include"
+          $openclLib = Join-Path $vcpkgRoot "installed\x64-windows\lib"
+          $openclInc = Join-Path $vcpkgRoot "installed\x64-windows\include"
+          if (-not (Test-Path (Join-Path $openclLib "OpenCL.lib"))) {
+            throw "OpenCL.lib not found in $openclLib"
+          }
+          echo "VCPKG_ROOT=$vcpkgRoot" >> ${env:GITHUB_ENV}
           echo "LIB=$openclLib;${env:LIB}" >> ${env:GITHUB_ENV}
           echo "INCLUDE=$openclInc;${env:INCLUDE}" >> ${env:GITHUB_ENV}
 
