@@ -32,6 +32,22 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'v3.1.0-miner-public-boost-released',
+    date: '2026-08-17',
+    tag: { cs: 'Release', en: 'Release' },
+    tagColor: 'text-zion-gold',
+    title: {
+      cs: 'ZION v3.1.0 — Public Boost Miner je venku',
+      en: 'ZION v3.1.0 — Public Boost Miner is out',
+    },
+    summary: {
+      cs: 'Nový veřejný miner v3.1.0-miner je dostupný pro Linux x86_64/ARM64, macOS Apple Silicon/Intel a Windows x86_64. Přináší interaktivní TUI, všechny nativní algoritmy a automatickou detekci GPU backendu (CUDA, OpenCL, Metal). Stáhni z GitHub Releases a začni těžit na oficiální pool.',
+      en: 'The new public miner v3.1.0-miner is available for Linux x86_64/ARM64, macOS Apple Silicon/Intel, and Windows x86_64. It brings an interactive TUI, all native algorithms, and automatic GPU backend detection (CUDA, OpenCL, Metal). Download from GitHub Releases and start mining to the official pool.',
+    },
+    href: 'https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.1.0-miner',
+    external: true,
+  },
+  {
     slug: 'zion-v320-one-love-mainnet-stable',
     date: '2026-08-06',
     tag: { cs: 'Release', en: 'Release' },

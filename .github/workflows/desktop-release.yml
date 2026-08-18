@@ -80,7 +80,7 @@ jobs:
 
       - name: Build Linux packages
         run: |
-          node scripts/prepare-rust-miner.js --features "auxpow,gpu-opencl,gpu-cuda,native-hashers,native-kheavyhash,native-blake3-algo,native-verushash"
+          node scripts/prepare-rust-miner.js --features "public_build,auxpow,gpu-opencl,gpu-cuda,native-all"
           npx electron-builder --linux --x64 --publish never
 
       - name: Upload Linux artifacts
@@ -111,9 +111,15 @@ jobs:
       - name: Install OpenCL via vcpkg
         shell: pwsh
         run: |
+          $vcpkgRoot = if ($env:VCPKG_ROOT) { $env:VCPKG_ROOT } elseif ($env:VCPKG_INSTALLATION_ROOT) { $env:VCPKG_INSTALLATION_ROOT } else { (vcpkg root) }
+          if (-not $vcpkgRoot) { throw "Could not determine vcpkg root" }
           vcpkg install opencl:x64-windows
-          $openclLib = "${env:VCPKG_ROOT}\installed\x64-windows\lib"
-          $openclInc = "${env:VCPKG_ROOT}\installed\x64-windows\include"
+          $openclLib = Join-Path $vcpkgRoot "installed\x64-windows\lib"
+          $openclInc = Join-Path $vcpkgRoot "installed\x64-windows\include"
+          if (-not (Test-Path (Join-Path $openclLib "OpenCL.lib"))) {
+            throw "OpenCL.lib not found in $openclLib"
+          }
+          echo "VCPKG_ROOT=$vcpkgRoot" >> ${env:GITHUB_ENV}
           echo "LIB=$openclLib;${env:LIB}" >> ${env:GITHUB_ENV}
           echo "INCLUDE=$openclInc;${env:INCLUDE}" >> ${env:GITHUB_ENV}
 
@@ -134,7 +140,7 @@ jobs:
           LIB: ${{ env.LIB }}
           INCLUDE: ${{ env.INCLUDE }}
         run: |
-          node scripts/prepare-rust-miner.js --features "auxpow,gpu-opencl,native-hashers,native-kheavyhash,native-blake3-algo,native-verushash"
+          node scripts/prepare-rust-miner.js --features "public_build,auxpow,gpu-opencl,gpu-cuda,native-all"
           npx electron-builder --win --x64 --publish never
 
       - name: Upload Windows artifacts
@@ -168,7 +174,7 @@ jobs:
 
       - name: Build macOS package
         run: |
-          node scripts/prepare-rust-miner.js --features "auxpow,gpu-metal,native-hashers,native-kheavyhash,native-blake3-algo,native-verushash"
+          node scripts/prepare-rust-miner.js --features "public_build,auxpow,gpu-opencl,gpu-metal,native-all"
           npx electron-builder --mac --publish never
 
       - name: Upload macOS artifacts
