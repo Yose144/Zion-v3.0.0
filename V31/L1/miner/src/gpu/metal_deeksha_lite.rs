@@ -47,15 +47,9 @@ impl MetalDeekshaLiteMiner {
             .map_err(|e| anyhow::anyhow!("Metal Lite pipeline creation failed: {:?}", e))?;
 
         let max_tpg = pipeline.max_total_threads_per_threadgroup() as usize;
-        let threads_per_tg = if device_name.contains("Pro")
-            || device_name.contains("Max")
-            || device_name.contains("Ultra")
-        {
-            256
-        } else {
-            128
-        }
-        .min(max_tpg);
+        // Use the pipeline's maximum threads per threadgroup for best occupancy
+        // on all Apple Silicon GPUs.
+        let threads_per_tg = max_tpg;
 
         let device_recommended = device.recommended_max_working_set_size();
         let budget_bytes = claim_gpu_memory_budget(device_recommended);
@@ -94,6 +88,10 @@ impl MetalDeekshaLiteMiner {
             }
             batch_size = (batch_size * 9 / 10).max(threads_per_tg);
         }
+
+        // Round the batch down to a multiple of threads_per_tg so the Metal
+        // dispatch grid has no idle tail threads.
+        batch_size = (batch_size / threads_per_tg) * threads_per_tg;
 
         println!(
             "gpu_metal_lite_init device=\"{}\" batch_size={} threads_per_tg={} scratchpad_mib={}",

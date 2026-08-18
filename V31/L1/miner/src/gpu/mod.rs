@@ -5578,8 +5578,9 @@ mod tests {
         // Maximum target so the first nonce (nonce_start) is a solution.
         let target = DifficultyTarget { bytes: [0xff; 32] };
         let nonce_start = 0x123456789ABCDEF0u64;
+        // Test a single nonce so the result is deterministic (gid 0).
         let result = miner
-            .mine_batch(header, target, nonce_start, 1024)
+            .mine_batch(header, target, nonce_start, 1)
             .expect("Metal mine_batch should run");
 
         assert!(
