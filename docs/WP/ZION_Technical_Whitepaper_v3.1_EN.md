@@ -1,7 +1,7 @@
 # ZION v3 — Canonical Technical Whitepaper
 
 > **Version 3.1** · Mainnet Beta v3.0.6 → Mainnet Alpha 3.1 · July 2026 · MIT License
-> Genesis hash: `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122`
+> Genesis hash: `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`
 > Network status: **Mainnet Beta v3.0.6 → Mainnet Alpha 3.1** (public launch target: 31 Dec 2026)
 
 ---
@@ -70,7 +70,7 @@ ZION is built on three principles:
 | Component | Technology |
 |-----------|-----------|
 | Language | Rust (stable) |
-| Consensus | Ekam Deeksha v2 (multi-phase PoW) |
+| Consensus | Ekam Deeksha v3.2 (multi-phase PoW) |
 | Signatures | Ed25519 |
 | Hashing | BLAKE3 (tx IDs, Merkle roots, body roots) |
 | Difficulty | LWMA (60-block window, ±25% clamp) |
@@ -229,7 +229,7 @@ The genesis block (height 0) contains **14 premine outputs** totaling
 16,780,000,000 ZION. There is no mining subsidy at height 0 — the premine
 is the sole coinbase.
 
-- **Genesis hash**: `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122`
+- **Genesis hash**: `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`
 - **Timestamp**: `1767225600` (2026-01-01 00:00:00 UTC)
 - **Previous hash**: `0000...0000` (all zeros)
 - **Algorithm**: `deeksha_lite_v1`
@@ -379,7 +379,7 @@ constitutional stones:
 - Total supply (144B ZION)
 - Genesis allocation (16.78B ZION)
 - Block time (60 seconds)
-- Mining algorithm (Ekam Deeksha v2)
+- Mining algorithm (Ekam Deeksha v3.2)
 - Consensus type (Proof-of-Work)
 - Block reward split (89/5/5/1 %)
 
@@ -486,8 +486,8 @@ work in progress, not finished.
 
 | What to verify | Where |
 |----------------|-------|
-| Protocol | `zion-v3-node/3.0.6` |
-| Genesis hash | `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122` |
+| Protocol | `zion-v3-node/3.1.0-alpha` |
+| Genesis hash | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
 | Total supply | 144,000,000,000 ZION (`emission.rs`) |
 | Premine | 16,780,000,000 ZION, transparent outputs in block 0 |
 | 89/5/5/1 split | Four-output coinbase, consensus-enforced |
