@@ -70,9 +70,10 @@ constant uchar AES_SBOX[256] = {
   st[(b)+3]  = _d ^ ((~_e) & _a); \
   st[(b)+4]  = _e ^ ((~_a) & _b); }
 
-inline void keccak_f1600(thread ulong *st)
+inline void __attribute__((always_inline)) keccak_f1600(thread ulong *st)
 {
     ulong bc0, bc1, bc2, bc3, bc4, t;
+    #pragma unroll 1
     for (int rnd = 0; rnd < 24; rnd++) {
         bc0 = st[0]^st[5]^st[10]^st[15]^st[20];
         bc1 = st[1]^st[6]^st[11]^st[16]^st[21];
@@ -148,10 +149,10 @@ inline void keccak256(thread const uchar *in, int inlen, thread uchar *out)
 /* Input always fits in one keccak block (rate=72 > 65).                       */
 /* ========================================================================== */
 
-inline void sha3_512_65_u64(
+inline void __attribute__((always_inline)) sha3_512_65_u64(
     thread const ulong *state_in,
     uchar blk_byte,
-    thread ulong *out_u64)
+    thread ulong out_u64[4])
 {
     thread ulong st[25];
     st[0]=state_in[0]; st[1]=state_in[1]; st[2]=state_in[2]; st[3]=state_in[3];
@@ -168,7 +169,6 @@ inline void sha3_512_65_u64(
     keccak_f1600(st);
 
     out_u64[0]=st[0]; out_u64[1]=st[1]; out_u64[2]=st[2]; out_u64[3]=st[3];
-    out_u64[4]=st[4]; out_u64[5]=st[5]; out_u64[6]=st[6]; out_u64[7]=st[7];
 }
 
 /* Generic SHA3-512 (for non-scratchpad use) */
@@ -193,8 +193,8 @@ inline void sha3_512(thread const uchar *in, uint inlen, thread uchar *out)
 /* AES-128 helpers                                                            */
 /* ========================================================================== */
 
-inline void aes_sub_bytes(thread uchar s[16])
-{ for (int i = 0; i < 16; i++) s[i] = AES_SBOX[s[i]]; }
+inline void __attribute__((always_inline)) aes_sub_bytes(thread uchar s[16], threadgroup const uchar *sbox)
+{ for (int i = 0; i < 16; i++) s[i] = sbox[s[i]]; }
 
 inline void aes_shift_rows(thread uchar s[16])
 {
@@ -222,17 +222,25 @@ inline void aes_mix_columns(thread uchar s[16])
 inline void aes_add_round_key(thread uchar s[16], thread const uchar k[16])
 { for (int i = 0; i < 16; i++) s[i] ^= k[i]; }
 
-inline void aes_round(thread uchar s[16], thread const uchar k[16])
-{ aes_sub_bytes(s); aes_shift_rows(s); aes_mix_columns(s); aes_add_round_key(s, k); }
+inline void __attribute__((always_inline)) aes_round(thread uchar s[16], thread const uchar k[16], threadgroup const uchar *sbox)
+{ aes_sub_bytes(s, sbox); aes_shift_rows(s); aes_mix_columns(s); aes_add_round_key(s, k); }
 
-inline void aes_final_round(thread uchar s[16], thread const uchar k[16])
-{ aes_sub_bytes(s); aes_shift_rows(s); aes_add_round_key(s, k); }
+inline void __attribute__((always_inline)) aes_final_round(thread uchar s[16], thread const uchar k[16], threadgroup const uchar *sbox)
+{ aes_sub_bytes(s, sbox); aes_shift_rows(s); aes_add_round_key(s, k); }
 
 /* ========================================================================== */
-/* Steps 2A/2B/2C: scratchpad                                                 */
+/* Steps 2A/2B/2C: scratchpad (per-thread contiguous layout)                  */
+/*                                                                             */
+/* On Apple Silicon (TBDR + unified memory), per-thread contiguous layout     */
+/* is faster than interleaved because the sequential phases (fill + 2 passes) */
+/* have 49152 iterations with stride=32B (cache-friendly), while the random   */
+/* read phase has only 128 iterations. Interleaved layout makes the sequential */
+/* phases strided (total_threads*32B apart), which thrashes the cache on M1.  */
 /* ========================================================================== */
 
-inline void fill_scratchpad(thread const ulong seed_u64[4], device uchar *pad)
+inline void __attribute__((always_inline)) fill_scratchpad(
+    thread const ulong seed_u64[4],
+    device uchar *pad)
 {
     thread ulong state[8];
     state[0] = seed_u64[0]; state[1] = seed_u64[1];
@@ -240,7 +248,7 @@ inline void fill_scratchpad(thread const ulong seed_u64[4], device uchar *pad)
     state[4] = 0; state[5] = 0; state[6] = 0; state[7] = 0;
 
     for (uint blk = 0; blk < BLOCK_COUNT; blk++) {
-        thread ulong out[8];
+        thread ulong out[4];
         sha3_512_65_u64(state, (uchar)(blk & 0xFF), out);
 
         uint off = blk * BLOCK_SIZE;
@@ -254,7 +262,7 @@ inline void fill_scratchpad(thread const ulong seed_u64[4], device uchar *pad)
     }
 }
 
-inline void sequential_passes(device uchar *pad)
+inline void __attribute__((always_inline)) sequential_passes(device uchar *pad)
 {
     for (uint i = 0; i < BLOCK_COUNT; i++) {
         uint prev = (i == 0) ? (BLOCK_COUNT - 1) : (i - 1);
@@ -273,7 +281,10 @@ inline void sequential_passes(device uchar *pad)
 #endif
 }
 
-inline void random_read_mix(thread const ulong seed_u64[4], device const uchar *pad, thread ulong out_u64[4])
+inline void __attribute__((always_inline)) random_read_mix(
+    thread const ulong seed_u64[4],
+    device const uchar *pad,
+    thread ulong out_u64[4])
 {
     thread ulong acc[4];
     acc[0] = seed_u64[0]; acc[1] = seed_u64[1];
@@ -293,7 +304,7 @@ inline void random_read_mix(thread const ulong seed_u64[4], device const uchar *
 /* Step 3: AES-128 CTR mix                                                    */
 /* ========================================================================== */
 
-inline void aes128_mix(thread const uchar seed[32], ulong nonce, thread uchar *out)
+inline void __attribute__((always_inline)) aes128_mix(thread const uchar seed[32], ulong nonce, thread uchar *out, threadgroup const uchar *sbox)
 {
     uchar key[16];
     for (int i = 0; i < 16; i++) key[i] = seed[i];
@@ -310,83 +321,91 @@ inline void aes128_mix(thread const uchar seed[32], ulong nonce, thread uchar *o
         if (carry == 0) break;
     }
     /* Ekam v2: 1 full AES round + 1 final round (total 2 rounds) */
-    for (int r = 0; r < 1; r++) { aes_round(block0, key); aes_round(block1, key); }
-    aes_final_round(block0, key);
-    aes_final_round(block1, key);
+    for (int r = 0; r < 1; r++) { aes_round(block0, key, sbox); aes_round(block1, key, sbox); }
+    aes_final_round(block0, key, sbox);
+    aes_final_round(block1, key, sbox);
     for (int i = 0; i < 16; i++) { out[i] = block0[i] ^ seed[i]; out[16 + i] = block1[i] ^ seed[16 + i]; }
 }
 
 /* ========================================================================== */
 /* Ekam Deeksha v3.2 — main mining kernel                                     */
+/*                                                                             */
+/* Optimizations ported from CUDA/OpenCL:                                     */
+/*   - Precomputed Keccak state from host (eliminates header absorption)      */
+/*   - AES S-box in threadgroup (shared) memory                               */
+/*   - Early-exit when solution already found                                 */
+/*   - fast_math enabled at compile time                                      */
 /* ========================================================================== */
 
 kernel void ekam_deeksha_mine(
-    device const uchar *header              [[ buffer(0) ]],
-    device const uint  *params              [[ buffer(1) ]],  // [header_len, nonce_count, target_u32]
+    device const ulong *header_keccak_state [[ buffer(0) ]],  // 25 u64s, precomputed
+    device const uint  *params              [[ buffer(1) ]],  // [nonce_count, target_u32]
     device const ulong *nonce_base_buf      [[ buffer(2) ]],
     device       uchar *scratchpad_pool     [[ buffer(3) ]],
     device atomic_uint *result_flag         [[ buffer(4) ]],  // [0]=flag, [1]=nonce_lo, [2]=nonce_hi
     device       uchar *result_hash         [[ buffer(5) ]],
-    uint gid                                 [[ thread_position_in_grid ]]
+    uint gid                                 [[ thread_position_in_grid ]],
+    uint lid                                 [[ thread_position_in_threadgroup ]],
+    uint lsize                               [[ threads_per_threadgroup ]]
 )
 {
-    uint header_len  = params[0];
-    uint nonce_count = params[1];
-    uint target_u32  = params[2];
+    uint nonce_count = params[0];
+    uint target_u32  = params[1];
     if (gid >= nonce_count) return;
+
+    /* Cooperative load of AES S-box into threadgroup memory */
+    threadgroup uchar sbox[256];
+    for (uint i = lid; i < 256; i += lsize) {
+        sbox[i] = AES_SBOX[i];
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+
+    /* Early exit if solution already found by another threadgroup */
+    if (target_u32 != 0) {
+        uint flag = atomic_load_explicit(&result_flag[0], memory_order_relaxed);
+        if (flag != 0xFFFFFFFFu) return;
+    }
 
     ulong nonce = nonce_base_buf[0] + (ulong)gid;
     device uchar *pad = scratchpad_pool + (ulong)gid * SCRATCHPAD_SIZE;
 
-    /* Step 1: Keccak256(header || nonce) — u64 throughout */
-    thread ulong input_u[11];
-    for (int i = 0; i < 11; i++) input_u[i] = 0;
-    thread uchar *input = (thread uchar *)input_u;
-    uint hlen = min(header_len, (uint)80);
-    device const uint *hdr32 = (device const uint *)header;
-    thread uint *inp32 = (thread uint *)input;
-    uint hwords = hlen >> 2;
-    for (uint i = 0; i < hwords; i++) inp32[i] = hdr32[i];
-    for (uint i = (hwords << 2); i < hlen; i++) input[i] = header[i];
-    input_u[10] = nonce;
+    /* Step 1: Keccak256(header || nonce) — from precomputed state */
+    thread ulong st[25];
+    for (int i = 0; i < 25; i++) st[i] = header_keccak_state[i];
+    st[10] ^= nonce;
+    st[11] ^= 0x01UL;
+    st[16] ^= (0x80UL << 56);
+    keccak_f1600(st);
+    ulong s1_u64[4];
+    s1_u64[0] = st[0]; s1_u64[1] = st[1]; s1_u64[2] = st[2]; s1_u64[3] = st[3];
 
-    /* Keccak256 with padding 0x01 at byte 88, 0x80 at byte 135 */
-    {
-        thread ulong st[25];
-        for (int i = 0; i < 11; i++) st[i] = input_u[i];
-        for (int i = 11; i < 25; i++) st[i] = 0;
-        st[11] ^= 0x01UL;
-        st[16] ^= (0x80UL << 56);
-        keccak_f1600(st);
-        ulong s1_u64[4];
-        s1_u64[0] = st[0]; s1_u64[1] = st[1]; s1_u64[2] = st[2]; s1_u64[3] = st[3];
+    /* Step 2: Memory-hard scratchpad — per-thread contiguous */
+    fill_scratchpad(s1_u64, pad);
+    sequential_passes(pad);
+    ulong s2_u64[4];
+    random_read_mix(s1_u64, pad, s2_u64);
 
-        /* Step 2: Memory-hard scratchpad — u64 API */
-        fill_scratchpad(s1_u64, pad);
-        sequential_passes(pad);
-        ulong s2_u64[4];
-        random_read_mix(s1_u64, pad, s2_u64);
+    /* Step 3: AES-128 CTR mix (S-box from threadgroup memory) */
+    thread uchar s2_bytes[32];
+    thread uchar *s2p = (thread uchar *)s2_u64;
+    for (int i = 0; i < 32; i++) s2_bytes[i] = s2p[i];
+    uchar s3[32];
+    aes128_mix(s2_bytes, nonce, s3, sbox);
 
-        /* Step 3: AES-128 CTR mix */
-        thread uchar s2_bytes[32];
-        thread uchar *s2p = (thread uchar *)s2_u64;
-        for (int i = 0; i < 32; i++) s2_bytes[i] = s2p[i];
-        uchar s3[32];
-        aes128_mix(s2_bytes, nonce, s3);
+    /* Step 4: Keccak256 final — u64 direct */
+    thread ulong fst[25];
+    for (int i = 0; i < 25; i++) fst[i] = 0;
+    thread ulong *s3_u64 = (thread ulong *)s3;
+    fst[0] = s3_u64[0]; fst[1] = s3_u64[1]; fst[2] = s3_u64[2]; fst[3] = s3_u64[3];
+    fst[4] ^= 0x01UL;
+    fst[16] ^= (0x80UL << 56);
+    keccak_f1600(fst);
 
-        /* Step 4: Keccak256 final — u64 direct */
-        thread ulong fst[25];
-        for (int i = 0; i < 25; i++) fst[i] = 0;
-        thread ulong *s3_u64 = (thread ulong *)s3;
-        fst[0] = s3_u64[0]; fst[1] = s3_u64[1]; fst[2] = s3_u64[2]; fst[3] = s3_u64[3];
-        fst[4] ^= 0x01UL;
-        fst[16] ^= (0x80UL << 56);
-        keccak_f1600(fst);
+    ulong hash_u64[4];
+    hash_u64[0] = fst[0]; hash_u64[1] = fst[1]; hash_u64[2] = fst[2]; hash_u64[3] = fst[3];
 
-        ulong hash_u64[4];
-        hash_u64[0] = fst[0]; hash_u64[1] = fst[1]; hash_u64[2] = fst[2]; hash_u64[3] = fst[3];
-
-        /* Compare first 4 bytes vs target (big-endian, matching CPU lexicographic) */
+    /* On-device target check (matches CUDA/OpenCL) */
+    if (target_u32 != 0) {
         uint hash_low = (uint)(hash_u64[0] & 0xFFFFFFFFUL);
         uint state0_be = ((hash_low & 0xFFu) << 24) |
                          ((hash_low & 0xFF00u) << 8) |
