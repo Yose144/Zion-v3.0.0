@@ -2103,7 +2103,13 @@ pub fn backend_supports_algorithm(backend: GpuBackendKind, algorithm: &str) -> b
             // coin (KAS/ALPH/DCR) or CPU fallback instead.
             // Metal on Apple Silicon: skip DAG-based AND memory-hard algorithms
             // to prevent system freezes from unified memory OOM.
-            if is_dag_based_algorithm(algorithm) || is_memory_hard_algorithm(algorithm) {
+            // Ekam Deeksha v3.2 is also disabled: the M1-M5 GPU is 8-10x
+            // slower than the CPU for this memory-hard PoW (512 KiB scratchpad
+            // + 16384 Keccak permutations per nonce).
+            if is_dag_based_algorithm(algorithm)
+                || is_memory_hard_algorithm(algorithm)
+                || algorithm == "ekam_deeksha"
+            {
                 return false;
             }
             // Non-DAG algorithms are safe on Metal
@@ -2771,6 +2777,21 @@ fn create_gpu_backend_inner(
         GpuBackendKind::Metal => {
             #[cfg(all(feature = "gpu-metal", target_os = "macos"))]
             {
+                // Ekam Deeksha v3.2 is memory-hard (512 KiB scratchpad, 16384
+                // Keccak permutations) and the M1-M5 integrated GPU is 8-10x
+                // slower than the CPU at this algorithm. Disable it on Apple
+                // Silicon by default so the GPU can be used for other streams
+                // (e.g. Stream 2 / ProgPoW). Tests can force it with
+                // ZION_METAL_FORCE_EKAM_DEEKSHA=1.
+                if algorithm == "ekam_deeksha"
+                    && std::env::var("ZION_METAL_FORCE_EKAM_DEEKSHA").is_err()
+                {
+                    anyhow::bail!(
+                        "Ekam Deeksha v3.2 is CPU-faster on Apple Silicon; \
+                         set ZION_METAL_FORCE_EKAM_DEEKSHA=1 to force Metal"
+                    );
+                }
+
                 // ProgPoWZ now has a native Metal kernel with per-period source
                 // generation. Route it to the dedicated Metal external miner.
                 if algorithm == "progpow_zano" {
