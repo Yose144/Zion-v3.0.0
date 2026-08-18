@@ -1,4 +1,4 @@
-// ZION V3 Mainnet Ready v3.1.0 - Public Desktop Miner
+// ZION V3 Mainnet Ready v3.2.0 - Public Desktop Miner
 // Electron main process with system tray, auto-start, GPU mining, IPC
 
 // Public build: Boost streams run in the background; UI shows Boost branding.
@@ -1942,7 +1942,7 @@ function createWindow() {
     height: 800,
     minWidth: 800,
     minHeight: 600,
-    title: PUBLIC_BUILD ? 'ZION Public Miner v3.1.0' : 'ZION Native Awakening v3.1.0',
+    title: PUBLIC_BUILD ? 'ZION Public Miner v3.2.0' : 'ZION Native Awakening v3.2.0',
     backgroundColor: '#000000',
     ...(windowIcon ? { icon: windowIcon } : {}),
     show: true, // Always show window on manual start; startMinimized only applies to auto-start
@@ -2138,7 +2138,7 @@ function createTray() {
   
   trayMenu = Menu.buildFromTemplate([
     {
-      label: 'ZION Public Miner v3.1.0',
+      label: 'ZION Public Miner v3.2.0',
       enabled: false
     },
     { type: 'separator' },
@@ -2192,7 +2192,7 @@ function createTray() {
   ]);
 
   tray.setContextMenu(trayMenu);
-  tray.setToolTip('ZION Public Miner v3.1.0');
+  tray.setToolTip('ZION Public Miner v3.2.0');
   
   tray.on('click', () => {
     showWindow();
@@ -2326,7 +2326,7 @@ function startMiningV3(config, v3Path) {
     : explicitGpuBackend || 'auto';
 
   // ── 6. Build CLI args ──────────────────────────────────────────────────────
-  // V31 (3.1.0-beta) miner uses a different CLI surface than V3 3.0.7:
+  // V31 (3.2.0-beta) miner uses a different CLI surface than V3 3.0.7:
   //   - No --stats-file, --algorithm, --cpu-coin, --gpu-coin flags
   //   - Uses --v3-trinity for unified 3-stream mode
   //   - Stats file is set via ZION_STATS_FILE env var
@@ -3848,7 +3848,7 @@ function parseMinerOutput(output) {
     minerStats.last_job_height = v3MiningMatch[2];
   }
 
-  // ─── V3 version banner: "version=3.1.0-dev" ───
+  // ─── V3 version banner: "version=3.2.0-dev" ───
   const v3VersionMatch = output.match(/^version=([\d.]+(?:-\w+)?)/m);
   if (v3VersionMatch) {
     minerStats.miner_version = v3VersionMatch[1];
@@ -3882,7 +3882,7 @@ function parseMinerOutput(output) {
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // V31 MINER OUTPUT PARSERS (zion-miner v3.1.0-beta Trinity mode)
+  // V31 MINER OUTPUT PARSERS (zion-miner v3.2.0-beta Trinity mode)
   // V31 uses a completely different output format than V3 3.0.7:
   //   - "stream stats stream=zion coin=zion accepted=N rejected=N hashrate=X status=active"
   //   - "hashrate=X H/s submitted=N accepted=N rejected=N jobs=N reconnects=N coin=zion pool=..."
@@ -3994,7 +3994,7 @@ function parseMinerOutput(output) {
     minerStats.stream_algorithm = v31GpuZionMatch[4];
   }
 
-  // ─── V31 version: "zion-miner 3.1.0-beta" ───
+  // ─── V31 version: "zion-miner 3.2.0-beta" ───
   const v31VersionMatch = output.match(/zion-miner\s+([\d.]+(?:-\w+)?)/);
   if (v31VersionMatch) {
     minerStats.miner_version = v31VersionMatch[1];
@@ -6390,7 +6390,7 @@ function _isNewerVersion(latest, current) {
 
 // App lifecycle
 app.whenReady().then(async () => {
-  console.log(PUBLIC_BUILD ? 'ZION Public Miner v3.1.0 started' : 'ZION Native Awakening v3.1.0 started');
+  console.log(PUBLIC_BUILD ? 'ZION Public Miner v3.2.0 started' : 'ZION Native Awakening v3.2.0 started');
 
   // Initialize auto-tuner
 
