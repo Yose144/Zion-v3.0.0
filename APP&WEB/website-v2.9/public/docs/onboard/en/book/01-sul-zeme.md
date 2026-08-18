@@ -55,7 +55,7 @@ Jesus did not tell his disciples "you are the gold of the earth" or "you are the
 
 | Claim from the story | What is verifiable on the network |
 |---|---|
-| "Salt is small, but essential." | The ZION genesis block was mined on **December 4, 2025**. No `mint()` for the founder — every coin is born from work. |
+| "Salt is small, but essential." | The ZION genesis block was mined on **January 1, 2026**. No `mint()` for the founder — every coin is born from work. |
 | "The rules hold without words." | Hard cap **144,000,000,000 ZION**, written into consensus, not into a statement. |
 | "Salt is distributed, not hoarded." | Every block: **89% to miners, 5% to the humanitarian fund, 5% to the Issobella fund, 1% burned** — enforced by consensus, not by promise. |
 | "Whoever wants salt must reach for it." | **Fair launch** — no ICO, no presale, no VIP allocation. |

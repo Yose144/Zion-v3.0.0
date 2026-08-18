@@ -34,7 +34,7 @@ Tahle věta je oheň. Je to Genesis. Je to jiskra, ze které vyrostlo všechno o
 
 A jako každé semeno, i tohle potřebovalo půdu. Ne metaforickou. Skutečnou: řádky kódu, testy, které musí prochcnout, blok, který musí být ověřen, ne jen slíben.
 
-4. prosince 2025 byl vytěžen první blok ZION. Od té chvíle nese síť tuto větu v sobě — v každém dalším bloku, který na ni navazuje. Nejde vymazat. Nejde přepsat. Genesis blok je jako první slovo básně, které určuje rým všech dalších.
+1. ledna 2026 byl vytěžen první blok ZION. Od té chvíle nese síť tuto větu v sobě — v každém dalším bloku, který na ni navazuje. Nejde vymazat. Nejde přepsat. Genesis blok je jako první slovo básně, které určuje rým všech dalších.
 
 ---
 

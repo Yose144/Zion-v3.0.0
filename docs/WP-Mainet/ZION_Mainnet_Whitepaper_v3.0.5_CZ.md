@@ -4,7 +4,7 @@
 **Datum:** Červenec 2026  
 **Autoři:** ZION Open-Source Contributors  
 **Licence kódu:** MIT  
-**Stav:** Mainnet Beta — 11/11 služeb aktivních, protocol `zion-v3-node/3.0.5`, veřejný launch 31. prosince 2026  
+**Stav:** Mainnet Beta — 11/11 služeb aktivních, protocol `zion-v3-node/3.1.0-alpha`, veřejný launch 31. prosince 2026  
 **Jazyk:** Čeština
 
 > **Kanonický zdroj pravdy:** Tento dokument nahrazuje všechny předchozí drafty whitepaperů, včetně `docs/WP-Mainet/ZION_Mainnet_Whitepaper_v3.0_CZ.md`, `docs/WP3.0/WHITEPAPER_v3.0.md` a legacy verzí 2.9.x. Pro aktuální technickou pravdu ověřujte `StatusV3.md`, `V3/ROADMAP.md`, `3.0.5.md` a kód v `V3/`.
@@ -22,7 +22,7 @@
 3. [Od 2.9 k 3.0.5 — stručná historie](#3-od-29-k-305--stručná-historie)
 4. [Živý stav sítě](#4-živý-stav-sítě)
 5. [Architektura L1](#5-architektura-l1)
-6. [Konsensus — Ekam Deeksha v2](#6-konsensus--ekam-deeksha-v2)
+6. [Konsensus — Ekam Deeksha v3.2](#6-konsensus--ekam-deeksha-v2)
 7. [Ekonomický model](#7-ekonomický-model)
 8. [L2 — wZION bridge a DeFi](#8-l2--wzion-bridge-a-defi)
 9. [L3 — NCL, WARP a AI-Native](#9-l3--ncl-warp-a-ai-native)
@@ -55,7 +55,7 @@ Klíčové parametry na první pohled:
 | **Odměna za blok (1. dekáda)** | 5 400,067 ZION |
 | **Emisní model** | Decade Decay (−20 % každých 10 let) |
 | **Trvalá odměna od ~2126** | 724,784723787776 ZION/blok — navěky |
-| **Těžební algoritmus** | Ekam Deeksha v2 (CPU/GPU, odolný vůči ASIC) |
+| **Těžební algoritmus** | Ekam Deeksha v3.2 (CPU/GPU, odolný vůči ASIC) |
 | **Podpisová křivka** | Ed25519 |
 | **Hashování** | BLAKE3 |
 | **Formát adresy** | Bech32 (`zion1…`) |
@@ -64,8 +64,8 @@ Klíčové parametry na první pohled:
 | **Atomická jednotka** | 1 flower; **1 ZION = 1 000 000 flowers** (6 desetinných míst) |
 | **L2 wrapped token** | wZION (ERC-20 na Base, Arbitrum, BSC, Polygon, Optimism, Avalanche) |
 | **Programovací jazyk** | Rust (Tokio async runtime) |
-| **Verze protokolu** | `zion-v3-node/3.0.5` |
-| **Genesis hash** | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
+| **Verze protokolu** | `zion-v3-node/3.1.0-alpha` |
+| **Genesis hash** | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
 | **Živá výška** | 827+ a roste |
 | **Produkční server** | `62.171.141.136` |
 | **Cíl veřejného launchi** | 31. prosince 2026 |
@@ -91,7 +91,7 @@ Většina kryptoměnových projektů trpí stejnými systémovými neduhy jako t
 | Neduh | ZION řešení |
 |-------|-------------|
 | Insider tokeny | Fair Launch — žádný předprodej, žádné ICO |
-| ASIC centralizace | Ekam Deeksha v2 — paměťově náročný, optimalizovaný pro CPU/GPU |
+| ASIC centralizace | Ekam Deeksha v3.2 — paměťově náročný, optimalizovaný pro CPU/GPU |
 | Technologie bez smyslu | 10 % z každé odměny vynuceno kódem |
 | Nabídkové šoky | Decade Decay — postupné −20 % za dekádu + věčný tail |
 | Neprůhledné bridge | 5/5 validator quorum, on-chain důkazy, timelocky, daily limit |
@@ -116,7 +116,7 @@ ZION začal jako Rust rewrite vícevrstvé blockchainové vize. Testnetová lini
 
 ### 3.2 v3.0.0–v3.0.2 — cesta k mainnet genesis
 
-V3 mainnet linie přinesla čistou implementaci v Rustu, Ed25519 podpisy, BLAKE3 hashování, UTXO model s account-model rozšířeními a algoritmus Ekam Deeksha v2. První mainnet genesis blok obsahoval 14 ústavních premine výstupů.
+V3 mainnet linie přinesla čistou implementaci v Rustu, Ed25519 podpisy, BLAKE3 hashování, UTXO model s account-model rozšířeními a algoritmus Ekam Deeksha v3.2. První mainnet genesis blok obsahoval 14 ústavních premine výstupů.
 
 ### 3.3 v3.0.3 — Decimal Fork (27. 6. 2026)
 
@@ -142,7 +142,7 @@ Bezpečnostní incident s kompromitovaným Edge serverem a uniklými EVM/týmov�
   - **F1 (ZION-2026-001):** Chybějící ověření podpisu u P2P account transakcí
   - **F5 (ZION-2026-002):** Chybějící validace zůstatku odesílatele umožňující neomezenou inflaci
 
-Nový genesis hash je `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`.
+Nový genesis hash je `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`.
 
 ### 3.5 v3.0.5 — „All Green" Operationalizace (9. 7. 2026)
 
@@ -194,9 +194,9 @@ Core/Local (109.81.87.10) — backup node + AI služby
 
 | Metrika | Hodnota |
 |---------|---------|
-| Protokol | `zion-v3-node/3.0.5` |
+| Protokol | `zion-v3-node/3.1.0-alpha` |
 | Výška chainu | 827+ |
-| Genesis hash | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
+| Genesis hash | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
 | Aktivní služby | 11/11 |
 | P2P peerů | 1 (3-node mesh) |
 | Pool minerů | 11+ |
@@ -227,7 +227,7 @@ Core/Local (109.81.87.10) — backup node + AI služby
 │  JSON-RPC 2.0 (TCP)           konfigurovatelné  │
 │  Pool Stratum Session Wire    konfigurovatelné  │
 ├─────────────────────────────────────────────────┤
-│  Konsenzusní engine (Ekam Deeksha v2)           │
+│  Konsenzusní engine (Ekam Deeksha v3.2)           │
 │  Mempool  ·  Block Builder  ·  DAA (LWMA)         │
 ├─────────────────────────────────────────────────┤
 │  UTXO Set  ·  Merkle Tree  ·  Fee Calculator    │
@@ -290,7 +290,7 @@ Konstanty (`V3/L1/core/src/fee.rs`):
 
 ---
 
-## 6. Konsensus — Ekam Deeksha v2
+## 6. Konsensus — Ekam Deeksha v3.2
 
 ### 6.1 Jméno algoritmu
 
@@ -333,7 +333,7 @@ ZION používá **LWMA (Linearly Weighted Moving Average)** s 60-block oknem:
 
 ### 6.5 Fork hooks
 
-`CHV_EKAM_V2_FORK_HEIGHT` je připraven pro koordinované budoucí PoW upgrady. V default production buildu je Ekam Deeksha v2 aktivní od genesis (výška 0).
+`CHV_EKAM_V2_FORK_HEIGHT` je připraven pro koordinované budoucí PoW upgrady. V default production buildu je Ekam Deeksha v3.2 aktivní od genesis (výška 0).
 
 ---
 
@@ -673,7 +673,7 @@ Současná implementace je **pool-side proxy** (Fáze 1). Budoucí hard fork př
 |------------|---------|
 | **BLAKE3** | Hashování transakcí, Merkle utility, core hashing |
 | **Ed25519** | Podpis transakcí a bloků |
-| **Keccak-256 + SHA3-512** | Fáze Ekam Deeksha v2 pipeline |
+| **Keccak-256 + SHA3-512** | Fáze Ekam Deeksha v3.2 pipeline |
 | **RIPEMD-160** | Mezikrok v derivaci adresy |
 | **secp256k1 (k256)** | EVM bridge validator podpisy |
 
@@ -746,7 +746,7 @@ DAO **nemůže** změnit:
 - Celkovou nabídku (144 mld. ZION)
 - Genesis alokaci (16,78 mld. ZION)
 - Čas bloku (60 sekund)
-- Těžební algoritmus (Ekam Deeksha v2)
+- Těžební algoritmus (Ekam Deeksha v3.2)
 - Typ konsensu (Proof-of-Work)
 - Poměry rozdělení block reward (89/5/5/1 %)
 
@@ -909,7 +909,7 @@ Viz také:
 | `V3/L1/core/src/emission.rs` | Ústavní emisní konstanty |
 | `V3/L1/core/src/genesis.rs` | Validace genesis a reserve integrity |
 | `V3/L1/core/src/difficulty.rs` | LWMA difficulty algoritmus |
-| `V3/L1/cosmic-harmony/src/deeksha.rs` | Ekam Deeksha v2 kanonický PoW |
+| `V3/L1/cosmic-harmony/src/deeksha.rs` | Ekam Deeksha v3.2 kanonický PoW |
 | `V3/L2/dao/src/proposal.rs` | DAO typy návrhů, quorum, hlasovací okna |
 | `StatusV3.md` | Aktuální provozní stav a blockery |
 | `3.0.5.md` | Kanonické shrnutí 3.0.5 „All Green" |

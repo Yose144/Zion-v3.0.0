@@ -1609,7 +1609,7 @@ Je to jen dobře navržená klec.
 
 | Tvrzení | Ověřitelný zdroj v repozitáři |
 |---|---|
-| Genesis hash ZIONu | `V31/L1/core/src/v3_compat.rs` uvádí zmrazený V3 hash; `V3/L1/core/src/bin/get-genesis-hash.rs` jej umí reprodukovat — `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
+| Genesis hash ZIONu | `V31/L1/core/src/v3_compat.rs` uvádí zmrazený V3 hash; `V3/L1/core/src/bin/get-genesis-hash.rs` jej umí reprodukovat — `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
 | Cílový block time 60 sekund | `V3/L1/core/src/emission.rs` |
 | Celková konstanta nabídky 144 mld ZION | `V3/L1/core/src/emission.rs` |
 | 89/5/5/1 s 1 % spálením | `V3/L1/core/src/emission.rs` a coinbase logika v `V3/L1/core/src/lib.rs` |

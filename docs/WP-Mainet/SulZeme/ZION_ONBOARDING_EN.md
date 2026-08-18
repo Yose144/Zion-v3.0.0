@@ -83,7 +83,7 @@ This document is one entry point. The detailed truth lives in these sources:
 |---|---|---|
 | ZION is a public blockchain | Source code under MIT: `https://github.com/Zion-TerraNova/v3-Mainnet` | [`AGENTS.md`](../../../AGENTS.md), `public/` section |
 | New block every 60 s | Block time 60 s, DAA LWMA 60 blocks, target interval 30–120 s, ±25 % clamp | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5 |
-| Genesis block 4 Dec 2025 | Genesis hash `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`; after a block-retention bug fix a hard genesis reset happened on 2026-07-20; blocks 0–~10913 of the old chain are lost, from the fix onward all blocks are retained | [`StatusV3.md`](../../../StatusV3.md), lines 6–9; [`AGENTS.md`](../../../AGENTS.md), BLOCK RETENTION FIX |
+| Genesis block 1 Jan 2026 | Genesis hash `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`; after a block-retention bug fix a hard genesis reset happened on 2026-07-20; blocks 0–~10913 of the old chain are lost, from the fix onward all blocks are retained | [`StatusV3.md`](../../../StatusV3.md), lines 6–9; [`AGENTS.md`](../../../AGENTS.md), BLOCK RETENTION FIX |
 | Reward 5,400.067 ZION/block | Decade 1 (2026–2036): 5,400.067 ZION/block; never higher; Decade Decay −20 % per decade; tail 724.784723 ZION/block from ~2126 | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5.2 |
 | 89/5/5/1 % split | `MINER_SHARE_PERCENT = 0.89`; humanitarian 5 %; Issobella 5 %; pool fee / burn 1 %; nodes reject blocks with a different ratio | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5.3; [`V3/README.md`](../../../V3/README.md) |
 | Hard cap 144 billion ZION | `max_supply = 144_000_000_000`; premine 16.78 B (11.65 %), rest by mining | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5 |
@@ -101,7 +101,7 @@ The invitation to ZION often asks: what is *really* finished, what is being buil
 This can be checked today on the running network, in blocks, or in the repository:
 
 - **L1 Proof-of-Work blockchain** in Rust; target block time 60 s, consensus Ekam Deeksha / CosmicHarmony.
-- **Public genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`.
+- **Public genesis hash:** `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`.
 - **Emission with a 144 billion ZION hard cap**, the 89/5/5/1 % split is in the consensus code.
 - **Open source MIT code** at `https://github.com/Zion-TerraNova/v3-Mainnet`.
 - **L2 on Base / EVM:** wZION, bridge, governance, treasury, staking, farm and atomic swap — addresses verifiable on Basescan.
@@ -591,7 +591,7 @@ rpcCall('getChainInfo').then(console.log);
 | Claim | Reality in code / network | Source |
 |---|---|---|
 | **Network status** | Mainnet Beta; official public launch 2026-12-31 | [`StatusV3.md`](../../../StatusV3.md), lines 7–8 |
-| **Genesis hash** | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` | [`StatusV3.md`](../../../StatusV3.md), line 6; [`AGENTS.md`](../../../AGENTS.md) |
+| **Genesis hash** | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` | [`StatusV3.md`](../../../StatusV3.md), line 6; [`AGENTS.md`](../../../AGENTS.md) |
 | **Genesis story / code reality** | 4 December 2025 (story) / hard genesis reset 2026-07-20 (after block retention fix) | [`StatusV3.md`](../../../StatusV3.md), line 9; [`AGENTS.md`](../../../AGENTS.md), BLOCK RETENTION FIX |
 | **Block time** | 60 s; DAA LWMA 60 blocks; ±25 % clamp; solve time 30–120 s | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5 |
 | **First-decade reward** | 5,400.067 ZION/block (2026–2036) | [`ZION_Technical_Whitepaper_v3.1_EN.md`](../ZION_Technical_Whitepaper_v3.1_EN.md), chapter 5.2 |

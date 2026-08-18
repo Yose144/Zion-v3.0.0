@@ -62,7 +62,7 @@ Lidi se smějou. Babylon se směje vždycky, když někdo staví něco, co ješt
 
 Archa nezachraňuje ty, kdo si ji zaslouží. Zachraňuje ty, kdo vejdou dřív, než začne pršet. Staví se předem — ne až začne pršet. Pár od každýho druhu. Ne jen silní. Ne jen bohatí. Pár od každýho druhu.
 
-V ZIONu: fair launch od genesis bloku 4. prosince 2025. Síť běží nepřetržitě. L1 mining, L2 DeFi/DAO/bridge, humanitární fond. Žádný VIP. Žádný presale. Žádný token pro insider. Jedny dveře. Genesis reset 2026-07-20 — bloky 0–10913 ztraceny kvůli bug v block retention. Síť pokračuje. Pravda nahlas, i když bolí.
+V ZIONu: fair launch od genesis bloku 1. ledna 2026. Síť běží nepřetržitě. L1 mining, L2 DeFi/DAO/bridge, humanitární fond. Žádný VIP. Žádný presale. Žádný token pro insider. Jedny dveře. Genesis reset 2026-08-06 — bloky 0–10913 ztraceny kvůli bug v block retention. Síť pokračuje. Pravda nahlas, i když bolí.
 
 # ZASTAVENÍ ŠESTÉ — KOMPAS A POZVÁNKA DO OASIS
 
@@ -176,7 +176,7 @@ ZION není cíl. Je to sůl. Je to loď. Je to cesta. Můžeš být pozorovatel,
 | Emisní křivka | Decade Decay —20 % každých 10 let |
 | Nejvyšší odměna | 5 400 067 ZION/blok (dekáda 1) |
 | Difficulty | LWMA, ±25 % clamp |
-| Genesis blok | 4. prosince 2025 |
+| Genesis blok | 1. ledna 2026 |
 | Genesis reset | 2026-07-20 (bloky 0–10913 ztraceny, bug v block retention) |
 | Licence | MIT — kód patří všem |
 | L1 | TerraNova blockchain, Proof-of-Work, živé |

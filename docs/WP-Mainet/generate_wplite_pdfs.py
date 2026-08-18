@@ -71,7 +71,7 @@ def build_pdf(lang):
             "Semeno se jmenuje ZION TerraNova. Je to nativní Layer-1 blockchain napsaný od nuly v jazyce Rust.",
             "Fair launch: žádné ICO, žádný předprodej, žádné tokeny pro zakladatele. První vodu nedostal nikdo — každý ZION musí být vytěžen prací nebo získán od někoho, kdo ho vytěžil.",
             "Hard cap: 144 000 000 000 ZION. Ne jeden navíc. Zapsáno v emission.rs jako konstanta, ne jako slib.",
-            "Stav dnes: Mainnet Beta, protokol zion-v3-node/3.0.5, veřejný launch cíl 31. 12. 2026.",
+            "Stav dnes: Mainnet Beta, protokol zion-v3-node/3.1.0-alpha, veřejný launch cíl 31. 12. 2026.",
             "Licence: MIT. Kdokoli smí semeno prozkoumat, zasadit vlastní, nebo dokázat, že je shnilé.",
         ])
         pdf.section_break()
@@ -161,8 +161,8 @@ def build_pdf(lang):
         ])
         pdf.chronicle("Zápis v kronice — Had a nový kořen", [
             "V roce 2026 byly nalezeny a zveřejněny kritické zranitelnosti (mj. chybějící ověření podpisů u P2P account transakcí a chybějící validace zůstatku odesílatele umožňující inflaci) plus kompromitace serveru a klíčů.",
-            "Reakce: veřejná security disclosure ve formátu Ethereum Foundation (ZION-2026-001 … 005), oprava konsensu, kompletní rotace klíčů a hard genesis reset (2026-07-06).",
-            "Nový kanonický kořen: 4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e",
+            "Reakce: veřejná security disclosure ve formátu Ethereum Foundation (ZION-2026-001 … 005), oprava konsensu, kompletní rotace klíčů a hard genesis reset (2026-08-06).",
+            "Nový kanonický kořen: 96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb",
             "Od resetu: služby aktivní, E2E testy potvrzeny na živé síti, externí audit plánován.",
             "Poučení zapsané do kultury projektu: důvěra se nebuduje tvrzením, že chyba je nemožná — buduje se veřejnou opravou.",
         ])
@@ -240,8 +240,8 @@ def build_pdf(lang):
             "Nevěř bajce. Ověř kroniku. A když kronika obstojí — pak si tu bajku vyprávěj dál, protože příběhy, které obstály před kalkulačkou, jsou to nejcennější, co civilizace má.",
         ], table_rows=[
             ["Co si ověřit", "Kde"],
-            ["Protokol", "zion-v3-node/3.0.5"],
-            ["Genesis hash", "4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e"],
+            ["Protokol", "zion-v3-node/3.1.0-alpha"],
+            ["Genesis hash", "96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb"],
             ["Celková nabídka", "144 000 000 000 ZION (emission.rs)"],
             ["Premine", "16 780 000 000 ZION, transparentní výstupy v bloku 0"],
             ["Split 89/5/5/1", "čtyřvýstupová coinbase, vynuceno konsensem"],
@@ -295,7 +295,7 @@ def build_pdf(lang):
             "The seed is called ZION TerraNova. It is a native Layer-1 blockchain written from scratch in Rust.",
             "Fair launch: no ICO, no pre-sale, no founder tokens. No one got the first water — every ZION must be mined by work or received from someone who mined it.",
             "Hard cap: 144,000,000,000 ZION. Not one more. Written in emission.rs as a constant, not as a promise.",
-            "Status today: Mainnet Beta, protocol zion-v3-node/3.0.5, public launch target 31 Dec 2026.",
+            "Status today: Mainnet Beta, protocol zion-v3-node/3.1.0-alpha, public launch target 31 Dec 2026.",
             "License: MIT. Anyone may examine the seed, plant their own, or prove it is rotten.",
         ])
         pdf.section_break()
@@ -385,8 +385,8 @@ def build_pdf(lang):
         ])
         pdf.chronicle("Chronicle entry — The Snake and the New Root", [
             "In 2026 critical vulnerabilities were found and disclosed (including missing signature verification on P2P account transactions and missing sender-balance validation allowing inflation) plus server and key compromise.",
-            "Response: public security disclosure in Ethereum Foundation format (ZION-2026-001 … 005), consensus fix, complete key rotation, and a hard genesis reset (2026-07-06).",
-            "New canonical root: 4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e",
+            "Response: public security disclosure in Ethereum Foundation format (ZION-2026-001 … 005), consensus fix, complete key rotation, and a hard genesis reset (2026-08-06).",
+            "New canonical root: 96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb",
             "Since the reset: services active, E2E tests confirmed on the live network, external audit scheduled.",
             "The lesson written into the project's culture: trust is not built by claiming error is impossible — it is built by public repair.",
         ])
@@ -464,8 +464,8 @@ def build_pdf(lang):
             "Do not trust the fable. Verify the chronicle. And when the chronicle holds — then keep telling the fable, because stories that survived the calculator are the most precious thing civilization has.",
         ], table_rows=[
             ["What to verify", "Where"],
-            ["Protocol", "zion-v3-node/3.0.5"],
-            ["Genesis hash", "4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e"],
+            ["Protocol", "zion-v3-node/3.1.0-alpha"],
+            ["Genesis hash", "96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb"],
             ["Total supply", "144,000,000,000 ZION (emission.rs)"],
             ["Premine", "16,780,000,000 ZION, transparent outputs in block 0"],
             ["89/5/5/1 split", "four-output coinbase, consensus-enforced"],

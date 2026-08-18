@@ -161,7 +161,7 @@ V mapě Stromu života představuje Keter zdroj a neměnnou vůli. V technickém
 Patří sem hard cap, pravidla odměny, výchozí bezpečnostní parametry a genesis hash současného řetězce:
 
 ```text
-4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e
+96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb
 ```
 
 Genesis hash není magický symbol. Je to konkrétní kryptografická kotva. Umožňuje každému novému uzlu poznat, na jakém řetězci stojí.
@@ -377,9 +377,9 @@ Jako strom, který se umí vracet k péči.
 
 | Parametr | Stav |
 |---|---|
-| Konsensus | Proof-of-Work (Nakamoto), Ekam Deeksha v2 / Deeksha Lite V1 |
-| Protokol | `zion-v3-node/3.0.5` |
-| Genesis hash | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
+| Konsensus | Proof-of-Work (Nakamoto), Ekam Deeksha v3.2 / Deeksha Lite V1 |
+| Protokol | `zion-v3-node/3.1.0-alpha` |
+| Genesis hash | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
 | Total supply | 144,000,000,000 ZION |
 | Genesis premine | 16,780,000,000 ZION |
 | Jednotka | 1 ZION = 1,000,000 flowers |

@@ -14,7 +14,7 @@
 > *Bob Marley as the narrative voice — a tribute, not an official endorsement.*
 
 > *"The Golden Age does not begin with a date. It begins with a decision."*
-> — ZION Genesis block, 4 Dec 2025
+> — ZION Genesis block, 1 Jan 2026
 
 ---
 
@@ -504,7 +504,7 @@ It is **living infrastructure + a compass**.
 | Protocol | `zion-v3-node/3.1.0-alpha` → 3.2.0 "One Love" |
 | Genesis hash (V3 compat) | `4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71` |
 | Genesis hash (V31 native) | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
-| First block | 4 Dec 2025 |
+| First block | 1 Jan 2026 |
 | Total supply | 144,000,000,000 ZION |
 | Premine | 16,780,000,000 ZION (transparent on-chain outputs) |
 | Base reward | 5,400.067 ZION / block · 60 s |

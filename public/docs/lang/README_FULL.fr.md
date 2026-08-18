@@ -58,7 +58,7 @@ Une blockchain avec consensus proof-of-work, algorithme dual, pont cross-chain, 
 
 > **⚠️ MAINNET BETA — Minage à vos risques et périls**
 
-ZION v3.0.6 est **en ligne et opérationnel** en tant que Mainnet Beta. Le réseau est opérationnel, les blocs sont produits et la chaîne de genèse est établie.
+ZION v3.2.0 One Love est **en ligne et opérationnel** en tant que Mainnet Stable. Le réseau est opérationnel, les blocs sont produits et la chaîne de genèse est établie.
 
 **Ce que cela signifie :**
 - ✅ Le réseau est en ligne et produit des blocs
@@ -78,9 +78,9 @@ La période Mainnet Beta dure jusqu'au lancement public officiel du **31.12.2026
 
 | Paramètre | Valeur |
 |-----------|--------|
-| Statut | **Mainnet Beta** |
-| Protocole | 3.0.6 |
-| Hash de genèse | `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122` |
+| Statut | **Mainnet Stable** |
+| Protocole | 3.1.0-alpha |
+| Hash de genèse | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
 | Lancement officiel | 2026-12-31 |
 | Minage | Actif (à vos risques et périls) |
 
@@ -405,7 +405,7 @@ cargo run --release -p zion-core --bin zion-node
 
 | Constante | Valeur |
 |-----------|--------|
-| Hash de genèse | `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122` |
+| Hash de genèse | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
 | `FLOWERS_PER_ZION` | 1 000 000 (6 décimales) |
 | `BASE_REWARD` | 5 400 067 000 flowers (5 400,067 ZION) |
 | `TAIL_REWARD` | 724 784 723 flowers (~724,785 ZION) |
@@ -452,7 +452,7 @@ cargo run --release -p zion-core --bin zion-node
 
 | | |
 |---|---|
-| **Protocole** | 3.0.6 |
+| **Protocole** | 3.1.0-alpha |
 | **Release** | v3.0.6-beta (Mainnet Beta) |
 | **Statut** | En direct — minage actif (à vos risques et périls) |
 | **Lancement officiel** | 2026-12-31 |
