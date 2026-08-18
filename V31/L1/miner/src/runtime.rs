@@ -432,11 +432,21 @@ impl MinerRuntime {
         // GPU mine_batch is synchronous CUDA/OpenCL and blocks for ~0.5-2s per batch.
         // We run it on a blocking thread so it doesn't stall the tokio runtime
         // (which would prevent the stratum client from reading pool messages).
+        //
+        // GPU closure returns:
+        //   Some(Some((nonce, hash)))  — GPU ran and found a solution
+        //   Some(None)                 — GPU ran, tested full batch, no solution
+        //   None                       — no GPU or GPU error
+        // This distinction is critical for accurate hashrate: when GPU ran but
+        // found nothing, it still tested batch_size nonces. CPU then re-tests
+        // the same range as fallback — total unique nonces = batch_size, NOT
+        // batch_size + cpu_searched (which would double-count and inflate
+        // hashrate by ~2×).
         let gpu_zion = self.gpu_zion.clone();
         let header_for_gpu = job.header.clone();
         let target_for_gpu = job.target;
         let batch_for_gpu = batch_size;
-        let gpu_result = task::spawn_blocking(move || {
+        let gpu_result: Option<Option<(u64, [u8; 32])>> = task::spawn_blocking(move || {
             let mut gpu_guard = gpu_zion.lock().unwrap();
             if let Some(ref mut gpu) = gpu_guard.as_mut() {
                 let mut header_bytes = [0u8; 80];
@@ -446,13 +456,11 @@ impl MinerRuntime {
                 let target = V3DiffTarget { bytes: target_for_gpu };
                 match gpu.mine_batch(mining_header, target, 0, batch_for_gpu) {
                     Ok(result) => {
-                        let nonces_tested = result.nonces_tested;
                         if let Some((found_nonce, found_hash, _mix)) = result.solutions.into_iter().next() {
-                            return Some((found_nonce, found_hash, nonces_tested));
+                            return Some(Some((found_nonce, found_hash)));
                         }
-                        // GPU found no solution — return how many nonces were tested
-                        // so the hashrate is still accurate for the CPU fallback.
-                        return None;
+                        // GPU ran, tested full batch, no solution found.
+                        return Some(None);
                     }
                     Err(e) => {
                         warn!(error = %e, "GPU ZION batch failed — falling back to CPU");
@@ -464,15 +472,15 @@ impl MinerRuntime {
         .await
         .map_err(|e| MinerError::Consensus(format!("gpu task join: {e}")))?;
 
-        let (nonce, _hash, nonces_searched) = if let Some((found_nonce, found_hash, _gpu_tested)) = gpu_result {
+        let (nonce, _hash, nonces_searched) = if let Some(Some((found_nonce, found_hash))) = gpu_result {
             // GPU found a solution — report batch_size for stable hashrate.
-            // GPU processes nonces in parallel; using only gpu_tested (chunk
-            // where solution was found) causes wild hashrate fluctuations.
+            // GPU processes nonces in parallel; using only the chunk where
+            // the solution was found causes wild hashrate fluctuations.
             (found_nonce, Hash::new(found_hash), batch_size)
-        } else {
-            // No GPU or GPU found no solution — CPU mining
-            // Use parallel search across all CPU threads via spawn_blocking
-            // (prevents blocking the tokio runtime while rayon workers mine).
+        } else if gpu_result == Some(None) {
+            // GPU ran and tested the full batch_size but found no solution.
+            // CPU re-tests the same [0, batch_size) range as fallback.
+            // Total unique nonces = batch_size (NOT batch_size + cpu_searched).
             let header = job.header.clone();
             let target = job.target;
             let threads = self.config.miner_threads.max(1);
@@ -483,9 +491,25 @@ impl MinerRuntime {
             .map_err(|e| MinerError::Consensus(format!("cpu parallel join: {e}")))?
             .ok_or(MinerError::NoAuxPoWSolution)?;
             let (found_nonce, found_hash) = result;
-            // GPU scanned batch_size + CPU found at found_nonce
+            // GPU already tested batch_size nonces; CPU found within that range.
+            // Do NOT add cpu_searched — that would double-count the same nonces.
+            (found_nonce, found_hash, batch_size)
+        } else {
+            // No GPU available — CPU is the only miner.
+            // CPU searches [0, batch_size) and finds at found_nonce.
+            // Total nonces = found_nonce + 1 (linear search stops at solution).
+            let header = job.header.clone();
+            let target = job.target;
+            let threads = self.config.miner_threads.max(1);
+            let result = task::spawn_blocking(move || {
+                parallel_zion_find_nonce(&header, &target, 0, batch_size, threads)
+            })
+            .await
+            .map_err(|e| MinerError::Consensus(format!("cpu parallel join: {e}")))?
+            .ok_or(MinerError::NoAuxPoWSolution)?;
+            let (found_nonce, found_hash) = result;
             let cpu_searched = found_nonce.saturating_sub(0) + 1;
-            (found_nonce, found_hash, batch_size + cpu_searched)
+            (found_nonce, found_hash, cpu_searched)
         };
 
         let elapsed = t_start.elapsed().as_secs_f64();
@@ -1547,11 +1571,19 @@ impl MinerRuntime {
             std::sync::atomic::Ordering::Relaxed,
         );
 
-        // Try GPU first, fall back to CPU
+        // Try GPU first, fall back to CPU.
+        //
+        // GPU closure returns:
+        //   Some(Some((nonce, hash, tested)))  — GPU ran and found a solution
+        //   Some(None)                         — GPU ran, tested full batch, no solution
+        //   None                               — no GPU or GPU error
+        // This prevents double-counting: when GPU ran but found nothing, it
+        // already tested batch_size nonces. CPU re-tests the same range, so
+        // total unique = batch_size, NOT batch_size + cpu_nonces.
         let gpu_zion = self.gpu_zion.clone();
         let header_for_gpu = header.clone();
         let target_for_gpu = target_bytes;
-        let gpu_result = task::spawn_blocking(move || {
+        let gpu_result: Option<Option<(u64, [u8; 32], u64)>> = task::spawn_blocking(move || {
             let mut gpu_guard = gpu_zion.lock().unwrap();
             if let Some(ref mut gpu) = gpu_guard.as_mut() {
                 let mut header_bytes = [0u8; 80];
@@ -1563,9 +1595,10 @@ impl MinerRuntime {
                     Ok(result) => {
                         let nonces_tested = result.nonces_tested;
                         if let Some((found_nonce, found_hash, _mix)) = result.solutions.into_iter().next() {
-                            return Some((found_nonce, found_hash, nonces_tested));
+                            return Some(Some((found_nonce, found_hash, nonces_tested)));
                         }
-                        return None;
+                        // GPU ran, tested full batch, no solution found.
+                        return Some(None);
                     }
                     Err(e) => {
                         warn!(error = %e, "GPU ZION batch failed — falling back to CPU");
@@ -1577,7 +1610,7 @@ impl MinerRuntime {
         .await
         .map_err(|e| MinerError::Consensus(format!("gpu task join: {e}")))?;
 
-        let (nonce, hash_bytes, nonces_searched) = if let Some((n, h, tested)) = gpu_result {
+        let (nonce, hash_bytes, nonces_searched) = if let Some(Some((n, h, tested))) = gpu_result {
             // GPU found a solution. The kernel uses an in-kernel sentinel for
             // early-exit: once a solution is found, remaining chunks exit
             // immediately. So the actual nonces processed is less than
@@ -1591,9 +1624,10 @@ impl MinerRuntime {
             let chunks_processed = (offset / gpu_work_size as u64) + 1;
             let estimated_nonces = (chunks_processed * gpu_work_size as u64).min(batch_size);
             (n, h, estimated_nonces.max(tested.min(batch_size)))
-        } else {
-            // No GPU or GPU found no solution — full batch was processed.
-            // Try CPU fallback for the same batch.
+        } else if gpu_result == Some(None) {
+            // GPU ran and tested the full batch_size but found no solution.
+            // CPU re-tests the same [start_nonce, start_nonce + batch_size) range.
+            // Total unique nonces = batch_size (NOT batch_size + cpu_nonces).
             let threads = self.config.miner_threads.max(1);
             let header_cpu = header.clone();
             let target_cpu = target_bytes;
@@ -1604,9 +1638,25 @@ impl MinerRuntime {
             .map_err(|e| MinerError::Consensus(format!("cpu join: {e}")))?
             .ok_or(MinerError::NoAuxPoWSolution)?;
             let (n, h) = result;
-            // GPU scanned batch_size nonces + CPU found at nonce n
+            // GPU already tested batch_size nonces; CPU found within that range.
+            // Do NOT add cpu_nonces — that would double-count the same nonces.
+            (n, h.0, batch_size)
+        } else {
+            // No GPU available — CPU is the only miner.
+            // CPU searches [start_nonce, start_nonce + batch_size) and finds at n.
+            // Total nonces = (n - start_nonce) + 1 (linear search stops at solution).
+            let threads = self.config.miner_threads.max(1);
+            let header_cpu = header.clone();
+            let target_cpu = target_bytes;
+            let result = task::spawn_blocking(move || {
+                parallel_zion_find_nonce(&header_cpu, &target_cpu, start_nonce, batch_size, threads)
+            })
+            .await
+            .map_err(|e| MinerError::Consensus(format!("cpu join: {e}")))?
+            .ok_or(MinerError::NoAuxPoWSolution)?;
+            let (n, h) = result;
             let cpu_nonces = n.saturating_sub(start_nonce) + 1;
-            (n, h.0, batch_size + cpu_nonces)
+            (n, h.0, cpu_nonces)
         };
 
         let elapsed = t_start.elapsed().as_secs_f64();
