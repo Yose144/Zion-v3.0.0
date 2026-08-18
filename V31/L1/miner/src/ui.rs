@@ -790,7 +790,7 @@ pub struct StreamStats {
 /// Example output:
 /// ```
 /// ┌─────────────────────────────────────────────────────────────────────────┐
-/// │  ZION v3.0.7 Trinity                              uptime 01:23:45 │
+/// │  ZION v3.1.0 Trinity                              uptime 01:23:45 │
 /// ├─────────────────────────────────────────────────────────────────────────┤
 /// │  STREAM 1  ZION       deeksha_lite_v1     12.34 MH/s  ████░░░  45/0  ✓  │
 /// │  STREAM 2  GPU PROFIT EPIC / progpow      SKIPPED (DAG-based on Metal)   │

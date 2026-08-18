@@ -275,7 +275,7 @@ async fn health() -> Json<serde_json::Value> {
     ok(serde_json::json!({
         "status": "ok",
         "service": "zion-dao",
-        "version": "3.1.0-alpha.2"
+        "version": "3.1.0-alpha"
     }))
 }
 

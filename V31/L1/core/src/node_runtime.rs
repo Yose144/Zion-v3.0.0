@@ -49,7 +49,7 @@ pub use zion_cosmic_harmony_v3::NclStats as NclSnapshot;
 pub use zion_cosmic_harmony_v3::RevenueSource;
 
 pub const HEADER_SIZE: usize = MiningHeader::HEADER_SIZE;
-pub const NODE_PROTOCOL_VERSION: &str = "zion-v3-node/3.0.7";
+pub const NODE_PROTOCOL_VERSION: &str = "zion-v3-node/3.1.0-alpha";
 pub const PROTOCOL_VERSION: u32 = 2;
 pub const LEGACY_PROTOCOL_VERSION: u32 = 1;
 pub const MAX_TEMPLATE_TRANSACTIONS: usize = 16;

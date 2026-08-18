@@ -49,8 +49,8 @@ ZION TerraNova v3 — Mainnet Stable 3.2 "One Love."
 
 All essential facts are public and verifiable:
 
-- **Genesis hash (V3 compat)**: `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122`
-- **Genesis hash (V31 native)**: `21e2b2742ec774a37ea1df4a643b954110dd3f803fa48675416b81d6c5baba60`
+- **Genesis hash (V3 compat)**: `4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71`
+- **Genesis hash (V31 native)**: `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`
 - **Total supply**: 144,000,000,000 ZION
 - **Premine**: 16,780,000,000 ZION (transparent outputs in block 0)
 - **Block reward split**: 89/5/5/1 (consensus-enforced)
