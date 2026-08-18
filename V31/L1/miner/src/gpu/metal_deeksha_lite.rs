@@ -1,6 +1,6 @@
 //! Ekam Deeksha v3.2 Metal backend.
 //!
-//! Uses `kernels/metal/deeksha_lite.metal` — bit-identical to CPU
+//! Uses `kernels/metal/ekam_deeksha.metal` — bit-identical to CPU
 //! `EkamDeeksha::hash_bytes` (v3.2: 512 KiB, 16384 blocks, 2 passes, 128 reads).
 
 use super::*;
@@ -32,15 +32,15 @@ impl MetalDeekshaLiteMiner {
         let device_name = device.name().to_string();
         let queue = device.new_command_queue();
 
-        let shader_src = include_str!("kernels/metal/deeksha_lite.metal");
+        let shader_src = include_str!("kernels/metal/ekam_deeksha.metal");
         let options = metal::CompileOptions::new();
         let library = device
             .new_library_with_source(shader_src, &options)
             .map_err(|e| anyhow::anyhow!("Metal Lite shader compilation failed: {:?}", e))?;
 
         let func = library
-            .get_function("deeksha_lite_mine", None)
-            .map_err(|e| anyhow::anyhow!("Lite kernel function not found: {:?}", e))?;
+            .get_function("ekam_deeksha_mine", None)
+            .map_err(|e| anyhow::anyhow!("Ekam Deeksha kernel function not found: {:?}", e))?;
 
         let pipeline = device
             .new_compute_pipeline_state_with_function(&func)

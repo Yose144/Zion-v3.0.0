@@ -40,8 +40,8 @@ ZION_NODE_RPC_ADDR=127.0.0.1:9445
 ZION_L1_RPC_URL=http://127.0.0.1:9445
 ZION_POOL_LOOP_COUNT=1000000
 ZION_MAX_SESSIONS_PER_IP=10
-# GPU optimization: nonce_count tuned for RX 5700 XT @ ~19.25 KH/s (deeksha_lite_v1).
-# Benchmark 2026-06-07: deeksha_lite_v1=19.25 KH/s, cosmic_harmony=3.29 KH/s, fire=10.15 KH/s.
+# GPU optimization: nonce_count tuned for RX 5700 XT @ ~19.25 KH/s (ekam_deeksha).
+# Benchmark 2026-06-07: ekam_deeksha=19.25 KH/s.
 # 524288 nonces = ~27s work @ 19.25 KH/s = 45% GPU util with 60s TTL.
 # 1048576 nonces = ~54s work @ 19.25 KH/s = 91% GPU util with 60s TTL.
 ZION_NONCE_COUNT=1048576

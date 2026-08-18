@@ -27,7 +27,7 @@ use std::time::Instant;
 /// NVRTC requires virtual arch (compute_XX) — the generated PTX is JIT-compiled
 /// to SASS by the driver.  Falls back to the ZION_CUDA_ARCH env var, then to
 /// "compute_86" if detection fails.
-fn detect_cuda_arch(dev: &CudaDevice) -> String {
+pub(crate) fn detect_cuda_arch(dev: &CudaDevice) -> String {
     if let Ok(arch) = std::env::var("ZION_CUDA_ARCH") {
         return arch;
     }

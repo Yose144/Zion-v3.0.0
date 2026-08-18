@@ -1,10 +1,9 @@
-//! GPU miner harness for OpenCL-accelerated ZION Deeksha mining.
+//! GPU miner harness for OpenCL-accelerated ZION Ekam Deeksha mining.
 //!
 //! When the `gpu-opencl` feature is enabled, this module builds the canonical
-//! `deeksha_lite.cl`, `deeksha_chv3.cl` and `cosmic_harmony_deeksha.cl` kernels
-//! from `zion-cosmic-harmony` and dispatches them on the first available
-//! OpenCL GPU device. Without `gpu-opencl`, the backend is a stub that reports
-//! GPU mining as unavailable.
+//! `ekam_deeksha.cl` kernel from `zion-cosmic-harmony` and dispatches it on the
+//! first available OpenCL GPU device. Without `gpu-opencl`, the backend is a
+//! stub that reports GPU mining as unavailable.
 
 use anyhow::Result;
 
@@ -51,7 +50,7 @@ mod opencl_impl {
     use zion_cosmic_harmony::algorithms_npu::{chv4_npu_weights_packed, epoch_from_height};
     use zion_cosmic_harmony::gpu::opencl_kernel;
 
-    const SCRATCHPAD_BYTES: usize = 256 * 1024; // 256 KiB per thread (all deeksha variants)
+    const SCRATCHPAD_BYTES: usize = 512 * 1024; // 512 KiB per thread (Ekam Deeksha v3.2)
     const SENTINEL: u64 = 0xFFFF_FFFF_FFFF_FFFF;
 
     /// Precompute Keccak-256 state after absorbing the 80-byte header.
@@ -71,7 +70,12 @@ mod opencl_impl {
     fn is_deeksha_algorithm(algorithm: &str) -> bool {
         matches!(
             algorithm,
-            "deeksha_lite_v1" | "deeksha_chv3" | "cosmic_harmony_ekam_deeksha_v2"
+            "ekam_deeksha"
+                | "deeksha_lite_v1"
+                | "deeksha_lite"
+                | "deeksha_chv3"
+                | "deeksha_lite_fire"
+                | "cosmic_harmony_ekam_deeksha_v2"
         )
     }
 
@@ -99,9 +103,9 @@ mod opencl_impl {
             kernel_src: &str,
             kernel_name: &str,
         ) -> Result<Self> {
-            // Tuning is identical for deeksha_lite and deeksha_chv3 (both are
-            // the 256 KiB scratchpad, SHA3-512 + AES pipeline).
-            let tuning = GpuTuning::auto_tune(GpuAlgorithm::DeekshaLiteV1, family, vram);
+            // Tuning for canonical Ekam Deeksha v3.2 (512 KiB scratchpad,
+            // SHA3-512 + AES pipeline).
+            let tuning = GpuTuning::auto_tune(GpuAlgorithm::EkamDeeksha, family, vram);
 
             // Allow the operator to override the local work size.
             let local_ws = std::env::var("ZION_OCL_LOCAL_SIZE")
@@ -359,7 +363,7 @@ mod opencl_impl {
             family: GpuDeviceFamily,
             vram: usize,
         ) -> Result<Self> {
-            let tuning = GpuTuning::auto_tune(GpuAlgorithm::CosmicHarmony, family, vram);
+            let tuning = GpuTuning::auto_tune(GpuAlgorithm::EkamDeeksha, family, vram);
             let local_ws = std::env::var("ZION_OCL_LOCAL_SIZE")
                 .ok()
                 .and_then(|v| v.trim().parse::<usize>().ok())
@@ -376,7 +380,7 @@ mod opencl_impl {
             build_opts.push_str(&format!(" -DWGS={} -DNPU_MAX_DIM=256", local_ws));
 
             let mut prog = ProgramBuilder::new();
-            prog.src(opencl_kernel::get_deeksha_kernel_source());
+            prog.src(opencl_kernel::get_ekam_deeksha_kernel_source());
             if !build_opts.is_empty() {
                 prog.cmplr_opt(&build_opts);
             }
@@ -677,7 +681,7 @@ mod opencl_impl {
                 })
                 .unwrap_or(2_000_000_000);
 
-            let tuning = GpuTuning::auto_tune(GpuAlgorithm::DeekshaLiteV1, family, vram);
+            let tuning = GpuTuning::auto_tune(GpuAlgorithm::EkamDeeksha, family, vram);
             let actual_work_size = tuning.work_size.max(64).next_power_of_two();
             let local_ws = std::env::var("ZION_OCL_LOCAL_SIZE")
                 .ok()
@@ -695,8 +699,8 @@ mod opencl_impl {
                 platform,
                 family,
                 vram,
-                opencl_kernel::get_deeksha_lite_kernel_source(),
-                opencl_kernel::DEEKSHA_LITE_KERNEL_NAME,
+                opencl_kernel::get_ekam_deeksha_kernel_source(),
+                opencl_kernel::EKAM_DEEKSHA_KERNEL_NAME,
             )
             .with_context(|| "deeksha_lite OpenCL state setup failed")?;
 
@@ -719,8 +723,8 @@ mod opencl_impl {
                     self.platform,
                     self.family,
                     self.vram,
-                    opencl_kernel::get_deeksha_lite_kernel_source(),
-                    opencl_kernel::DEEKSHA_LITE_KERNEL_NAME,
+                    opencl_kernel::get_ekam_deeksha_kernel_source(),
+                    opencl_kernel::EKAM_DEEKSHA_KERNEL_NAME,
                 )?);
             }
             Ok(self.lite.as_mut().expect("lite state just created"))
@@ -733,8 +737,8 @@ mod opencl_impl {
                     self.platform,
                     self.family,
                     self.vram,
-                    opencl_kernel::get_deeksha_chv3_kernel_source(),
-                    opencl_kernel::DEEKSHA_CHV3_KERNEL_NAME,
+                    opencl_kernel::get_ekam_deeksha_kernel_source(),
+                    opencl_kernel::EKAM_DEEKSHA_KERNEL_NAME,
                 )?);
             }
             Ok(self.chv3.as_mut().expect("chv3 state just created"))
@@ -759,24 +763,13 @@ mod opencl_impl {
             target: &[u8; 32],
             start_nonce: u64,
             nonce_count: u64,
-            block_height: u64,
+            _block_height: u64,
         ) -> Result<Option<GpuFoundShare>> {
             if !is_deeksha_algorithm(algorithm) {
                 return Ok(None);
             }
-            match algorithm {
-                "deeksha_lite_v1" => {
-                    self.lite_state()?
-                        .mine(header, target, start_nonce, nonce_count)
-                }
-                "cosmic_harmony_ekam_deeksha_v2" => {
-                    self.ekam_state()?
-                        .mine(header, target, start_nonce, nonce_count, block_height)
-                }
-                _ => self
-                    .chv3_state()?
-                    .mine(header, target, start_nonce, nonce_count),
-            }
+            self.lite_state()?
+                .mine(header, target, start_nonce, nonce_count)
         }
 
         pub fn device_name(&self) -> &str {
@@ -845,43 +838,16 @@ mod tests {
         target.fill(0xFF); // maximally easy target: every hash meets it
 
         let result = miner
-            .mine_simple("deeksha_lite_v1", header, &target, 0, 1, 0)
+            .mine_simple("ekam_deeksha", header, &target, 0, 1, 0)
             .expect("mine_simple should not error");
 
         let share = result.expect("GPU should find a share with an all-0xFF target");
         assert_eq!(share.nonce, 0, "first nonce tested should be 0");
 
-        let cpu_hash = zion_cosmic_harmony::deeksha_lite(header, 0);
+        let cpu_hash = zion_cosmic_harmony::algorithm::ekam_deeksha::EkamDeeksha::hash_bytes(header, 0);
         assert_eq!(
             share.hash, cpu_hash,
-            "GPU hash for nonce 0 must match CPU deeksha_lite"
-        );
-    }
-
-    #[cfg(feature = "gpu-opencl")]
-    #[test]
-    #[ignore = "requires OpenCL GPU"]
-    fn opencl_ekam_v2_nonce_zero_matches_cpu() {
-        let mut miner = match GpuMiner::new() {
-            Ok(m) => m,
-            Err(_) => return,
-        };
-
-        let header = b"ZION_OPENCL_EKAM_V2_TEST";
-        let mut target = [0u8; 32];
-        target.fill(0xFF);
-
-        let result = miner
-            .mine_simple("cosmic_harmony_ekam_deeksha_v2", header, &target, 0, 1, 0)
-            .expect("mine_simple should not error");
-
-        let share = result.expect("GPU should find an ekam v2 share with all-0xFF target");
-        assert_eq!(share.nonce, 0);
-
-        let cpu_hash = zion_cosmic_harmony::deeksha::cosmic_harmony_ekam_deeksha_v2(header, 0, 0);
-        assert_eq!(
-            share.hash, cpu_hash.data,
-            "GPU hash for ekam v2 nonce 0 must match CPU"
+            "GPU hash for nonce 0 must match CPU EkamDeeksha"
         );
     }
 }

@@ -776,7 +776,7 @@ pub fn print_speed_table(
 pub struct StreamStats {
     pub label: &'static str, // "ZION", "GPU PROFIT", "CPU PROFIT"
     pub coin: String,        // "ZION", "EPIC", "VRSC", etc.
-    pub algorithm: String,   // "deeksha_lite_v1", "progpow", "verushash"
+    pub algorithm: String,   // "ekam_deeksha", "progpow", "verushash"
     pub hashrate_10s: f64,
     pub hashrate_60s: f64,
     pub hashrate_15m: f64,
@@ -792,7 +792,7 @@ pub struct StreamStats {
 /// ┌─────────────────────────────────────────────────────────────────────────┐
 /// │  ZION v3.1.0 Trinity                              uptime 01:23:45 │
 /// ├─────────────────────────────────────────────────────────────────────────┤
-/// │  STREAM 1  ZION       deeksha_lite_v1     12.34 MH/s  ████░░░  45/0  ✓  │
+/// │  STREAM 1  ZION       ekam_deeksha      12.34 MH/s  ████░░░  45/0  ✓  │
 /// │  STREAM 2  GPU PROFIT EPIC / progpow      SKIPPED (DAG-based on Metal)   │
 /// │  STREAM 3  CPU PROFIT VRSC / verushash    234.5 H/s  ██░░░░░  12/0  ✓  │
 /// ├─────────────────────────────────────────────────────────────────────────┤

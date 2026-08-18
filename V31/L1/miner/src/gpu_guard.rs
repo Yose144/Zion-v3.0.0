@@ -8,7 +8,7 @@
 //!
 //! Also provides:
 //! - `GpuDeviceFamily`  (GCN vs RDNA vs Unknown) auto-detection
-//! - `GpuAlgorithm`     (CosmicHarmony vs DeekshaLiteV1) selector
+//! - `GpuAlgorithm`     (EkamDeeksha) selector
 //! - `GpuTuning`        per-family optimal work_size / local_ws / build flags
 
 // This module is only fully exercised under the GPU feature builds; without a
@@ -223,34 +223,32 @@ impl GpuDeviceFamily {
     }
 }
 
-/// Canonical mining algorithms on GPU.
-/// Three algorithms only: Deeksha (full Ekam), Lite v1, Fire.
-/// Experimental variants live in DeekshaDebug/ sandbox.
+/// Canonical mining algorithm on GPU.
+/// V31 mainnet uses only Ekam Deeksha v3.2.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GpuAlgorithm {
-    /// Original cosmic_harmony Deeksha (full pipeline with NPU, Blake3, etc.)
-    CosmicHarmony,
-    /// Canonical deeksha_lite_v1 — 256 KiB scratchpad, SHA3-512, 64 reads, 4 AES rounds
-    DeekshaLiteV1,
-    /// Canonical deeksha_lite_fire — 256 KiB scratchpad + 65536-iter thermal loop
-    DeekshaLiteFire,
+    /// Ekam Deeksha v3.2 — 512 KiB scratchpad, SHA3-512, 2 passes, 128 reads
+    EkamDeeksha,
 }
 
 impl GpuAlgorithm {
     #[allow(clippy::should_implement_trait)]
     pub fn from_str(s: &str) -> Self {
         match s.trim().to_ascii_lowercase().as_str() {
-            "deeksha_lite_v1" | "deeksha_lite" | "lite" | "dl" | "dlv1" => Self::DeekshaLiteV1,
-            "deeksha_lite_fire" | "fire" | "dlfire" => Self::DeekshaLiteFire,
-            _ => Self::CosmicHarmony,
+            "ekam_deeksha"
+            | "deeksha_lite_v1"
+            | "deeksha_lite"
+            | "deeksha_chv3"
+            | "lite"
+            | "dl"
+            | "dlv1" => Self::EkamDeeksha,
+            _ => Self::EkamDeeksha,
         }
     }
 
     pub fn as_str(self) -> &'static str {
         match self {
-            Self::CosmicHarmony => "cosmic_harmony",
-            Self::DeekshaLiteV1 => "deeksha_lite_v1",
-            Self::DeekshaLiteFire => "deeksha_lite_fire",
+            Self::EkamDeeksha => "ekam_deeksha",
         }
     }
 }
@@ -280,9 +278,7 @@ impl GpuTuning {
     /// Compute optimal tuning for a given algorithm + device family + VRAM.
     pub fn auto_tune(algo: GpuAlgorithm, family: GpuDeviceFamily, vram_bytes: usize) -> Self {
         let scratchpad_bytes = match algo {
-            GpuAlgorithm::CosmicHarmony => 256 * 1024, // 256 KiB per thread
-            GpuAlgorithm::DeekshaLiteV1 => 512 * 1024, // 512 KiB per thread (v3.2 ASIC-hardened)
-            GpuAlgorithm::DeekshaLiteFire => 512 * 1024, // 512 KiB per thread (v3.2 + thermal loop)
+            GpuAlgorithm::EkamDeeksha => 512 * 1024, // 512 KiB per thread (v3.2 ASIC-hardened)
         };
 
         let reserve = 512 * 1024 * 1024; // 512 MiB for driver + desktop
@@ -290,9 +286,9 @@ impl GpuTuning {
         let per_thread = scratchpad_bytes + 128; // scratchpad + output + margin
         let max_by_vram = available / per_thread;
 
-        let (work_size, local_ws, build_opts, vram_pct, gcn_s4_mode) = match (algo, family) {
-            // ── DeekshaLite v1 ──────────────────────────────────────────
-            (GpuAlgorithm::DeekshaLiteV1, GpuDeviceFamily::AmdGcn) => {
+        let (work_size, local_ws, build_opts, vram_pct, gcn_s4_mode) = match family {
+            // ── Ekam Deeksha v3.2 ───────────────────────────────────────
+            GpuDeviceFamily::AmdGcn => {
                 // GCN Vega 64: 8GB HBM2, 512 KiB/thread (v3.2)
                 // 4096 threads × 512 KiB = 2 GiB scratchpad (safe for 8GB HBM2)
                 // local_ws=64 (wave64 optimal for gfx900)
@@ -302,7 +298,7 @@ impl GpuTuning {
                 let opts = "-cl-std=CL1.2 -cl-mad-enable".to_string();
                 (ws, 64, opts, 50, false)
             }
-            (GpuAlgorithm::DeekshaLiteV1, GpuDeviceFamily::AmdRdna) => {
+            GpuDeviceFamily::AmdRdna => {
                 // RDNA: LWS=256 benchmarks best for 512KB scratchpad kernel.
                 // Tested 128 (800 KH/s) vs 256 (805 KH/s) on RX 5600 XT — 256 wins.
                 // More threads per WG = better coalesced memory access for INTERLEAVED
@@ -313,59 +309,12 @@ impl GpuTuning {
                 let opts = "-cl-std=CL1.2 -cl-mad-enable".to_string();
                 (ws, 256, opts, 85, false)
             }
-            (GpuAlgorithm::DeekshaLiteV1, GpuDeviceFamily::Nvidia) => {
+            GpuDeviceFamily::Nvidia => {
                 let ws = (max_by_vram.min(8192).max(512)).next_power_of_two();
                 let opts = "-cl-std=CL1.2 -cl-mad-enable -cl-fast-relaxed-math".to_string();
                 (ws, 128, opts, 80, false)
             }
-            (GpuAlgorithm::DeekshaLiteV1, GpuDeviceFamily::Other) => {
-                let ws = (max_by_vram.min(4096).max(256)).next_power_of_two();
-                let opts = "-cl-std=CL1.2 -cl-mad-enable".to_string();
-                (ws, 128, opts, 70, false)
-            }
-
-            // ── DeekshaLite Fire (thermal-intensive) ────────────────────
-            // 256 KiB scratchpad (same as v1) + 65536-iter integer thermal loop.
-            (GpuAlgorithm::DeekshaLiteFire, GpuDeviceFamily::AmdGcn) => {
-                // GCN Vega 64: local_ws=64 (wave64), 256 causes hangs on SMOS gfx900
-                let ws = (max_by_vram.min(16384).max(128)).next_power_of_two();
-                let opts = "-cl-std=CL1.2".to_string();
-                (ws, 64, opts, 85, false)
-            }
-            (GpuAlgorithm::DeekshaLiteFire, GpuDeviceFamily::AmdRdna) => {
-                // RDNA1: LWS=256 benchmarks slightly better than 128 (12.5s vs 14s)
-                let ws = (max_by_vram.min(8192).max(512)).next_power_of_two();
-                let opts = "-cl-std=CL1.2 -cl-mad-enable".to_string();
-                (ws, 256, opts, 85, false)
-            }
-            (GpuAlgorithm::DeekshaLiteFire, GpuDeviceFamily::Nvidia) => {
-                let ws = (max_by_vram.min(4096).max(256)).next_power_of_two();
-                let opts = "-cl-std=CL1.2 -cl-mad-enable".to_string();
-                (ws, 128, opts, 75, false)
-            }
-            (GpuAlgorithm::DeekshaLiteFire, GpuDeviceFamily::Other) => {
-                let ws = (max_by_vram.min(2048).max(128)).next_power_of_two();
-                let opts = "-cl-std=CL1.2 -cl-mad-enable".to_string();
-                (ws, 128, opts, 65, false)
-            }
-
-            // ── Cosmic Harmony ──────────────────────────────────────────
-            (GpuAlgorithm::CosmicHarmony, GpuDeviceFamily::AmdGcn) => {
-                let ws = (max_by_vram.min(16384).max(128)).next_power_of_two();
-                let opts = "-cl-std=CL1.2".to_string();
-                (ws, 256, opts, 85, false)
-            }
-            (GpuAlgorithm::CosmicHarmony, GpuDeviceFamily::AmdRdna) => {
-                let ws = (max_by_vram.min(8192).max(512)).next_power_of_two();
-                let opts = "-cl-std=CL1.2 -cl-mad-enable -cl-fast-relaxed-math".to_string();
-                (ws, 128, opts, 85, false)
-            }
-            (GpuAlgorithm::CosmicHarmony, GpuDeviceFamily::Nvidia) => {
-                let ws = (max_by_vram.min(8192).max(512)).next_power_of_two();
-                let opts = "-cl-std=CL1.2 -cl-mad-enable -cl-fast-relaxed-math".to_string();
-                (ws, 128, opts, 80, false)
-            }
-            (GpuAlgorithm::CosmicHarmony, GpuDeviceFamily::Other) => {
+            GpuDeviceFamily::Other => {
                 let ws = (max_by_vram.min(4096).max(256)).next_power_of_two();
                 let opts = "-cl-std=CL1.2 -cl-mad-enable".to_string();
                 (ws, 128, opts, 70, false)
