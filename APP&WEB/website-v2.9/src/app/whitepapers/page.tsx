@@ -164,7 +164,7 @@ const categories: Category[] = [
 ];
 
 const quickFacts = [
-  { label: { cs: 'Genesishash', en: 'Genesis hash' }, value: '4f75a0df…79bd6e', full: '08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122' },
+  { label: { cs: 'Genesishash', en: 'Genesis hash' }, value: '96109423…fe35bdb', full: '96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb' },
   { label: { cs: 'Total supply', en: 'Total supply' }, value: '144B ZION' },
   { label: { cs: 'Premine', en: 'Premine' }, value: '16.78B ZION' },
   { label: { cs: 'Block split', en: 'Block split' }, value: '89/5/5/1' },

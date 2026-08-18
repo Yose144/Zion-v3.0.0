@@ -345,7 +345,7 @@ Udělal tři věci, v tomto pořadí:
 Kanonický kořen sítě po hard resetu 6. srpna 2026:
 
 ```text
-08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122
+96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb
 ```
 
 Důvěra se nestaví tvrzením, že chyba je nemožná. Staví se veřejnou
@@ -477,10 +477,10 @@ Je to **živá infrastruktura + kompas**.
 |---|---|
 | Jméno | ZION TerraNova |
 | Typ | nativní L1 mince (Proof-of-Work) |
-| Konsenzus | Ekam Deeksha v2 / CosmicHarmony (memory-hard PoW, 256 KiB scratchpad) |
-| Protokol | `zion-v3-node/3.1.0-alpha.2` → 3.2.0 "One Love" |
-| Genesis hash (V3 compat) | `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122` |
-| Genesis hash (V31 native) | `21e2b2742ec774a37ea1df4a643b954110dd3f803fa48675416b81d6c5baba60` |
+| Konsenzus | Ekam Deeksha v3.2 — 512 KiB scratchpad, 2 AES passy, 128 náhodných čtení, Keccak-256 final |
+| Protokol | `zion-v3-node/3.1.0-alpha` → 3.2.0 "One Love" |
+| Genesis hash (V3 compat) | `4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71` |
+| Genesis hash (V31 native) | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
 | První blok | 4. prosince 2025 |
 | Celková zásoba | 144 000 000 000 ZION |
 | Premine | 16 780 000 000 ZION (transparentní on-chain výstupy) |

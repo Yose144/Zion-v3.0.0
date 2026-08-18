@@ -55,7 +55,7 @@ fn prompt_choice(default: &str, text: &str, choices: &[&str]) -> String {
 fn run_menu() {
     println!();
     println!("============================================================");
-    println!("  ZION Miner v3.0.7 — Interactive Setup");
+    println!("  ZION Miner v3.1.0 — Interactive Setup");
     println!("============================================================");
     println!();
     println!("Leave a field empty to accept the [default].");

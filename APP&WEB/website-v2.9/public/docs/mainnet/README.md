@@ -6,7 +6,7 @@
 > **Status:** Mainnet Beta — live, pool active, mining operational
 > **Official public launch:** 31 December 2026
 > **Network:** `zion-mainnet-1`
-> **Genesis hash:** `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122`
+> **Genesis hash:** `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`
 
 ---
 
@@ -158,7 +158,7 @@ After the reset, `zion-node` was OOM-killed twice because `accepted_blocks` and 
 | Mining horizon | 100+ years + tail ∞ |
 | DAA | LWMA (60 blocks, ±25%) |
 | Fees | Split 89/5/5/1 |
-| Genesis hash | `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122` |
+| Genesis hash | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
 
 ---
 

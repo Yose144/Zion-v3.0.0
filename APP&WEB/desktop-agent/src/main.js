@@ -1,4 +1,4 @@
-// ZION V31 Mainnet Alpha v3.1.0 "Triple Stream" - Main Process
+// ZION V31 Mainnet Alpha v3.2.0 "Triple Stream" - Main Process
 // Electron main process with system tray, auto-start, GPU mining, IPC
 
 // Work around NVIDIA/Wayland GPU sandbox segfaults by forcing the X11 Ozone
@@ -1945,7 +1945,7 @@ function createWindow() {
     height: 800,
     minWidth: 800,
     minHeight: 600,
-    title: 'ZION Native Awakening v3.1.0',
+    title: 'ZION Native Awakening v3.2.0',
     backgroundColor: '#000000',
     ...(windowIcon ? { icon: windowIcon } : {}),
     show: true, // Always show window on manual start; startMinimized only applies to auto-start
@@ -2141,7 +2141,7 @@ function createTray() {
   
   trayMenu = Menu.buildFromTemplate([
     {
-      label: 'ZION Miner v3.1.0 Ekam Deeksha',
+      label: 'ZION Miner v3.2.0 Ekam Deeksha',
       enabled: false
     },
     { type: 'separator' },
@@ -2195,7 +2195,7 @@ function createTray() {
   ]);
 
   tray.setContextMenu(trayMenu);
-  tray.setToolTip('ZION Miner v3.1.0 Ekam Deeksha');
+  tray.setToolTip('ZION Miner v3.2.0 Ekam Deeksha');
   
   tray.on('click', () => {
     showWindow();
@@ -3722,7 +3722,7 @@ function parseMinerOutput(output) {
     minerStats.last_job_height = v3MiningMatch[2];
   }
 
-  // ─── V31 version banner: "version=3.1.0-dev" ───
+  // ─── V31 version banner: "version=3.2.0-dev" ───
   const v3VersionMatch = output.match(/^version=([\d.]+(?:-\w+)?)/m);
   if (v3VersionMatch) {
     minerStats.miner_version = v3VersionMatch[1];
@@ -4416,7 +4416,7 @@ ipcMain.handle('get-gpu-info', () => {
   }
 });
 
-// ── Ekam Deeksha v3.1.0 — GPU device enumeration ──
+// ── Ekam Deeksha v3.2.0 — GPU device enumeration ──
 ipcMain.handle('get-gpu-devices', () => {
   try {
     const info = detectGPU();
@@ -4426,7 +4426,7 @@ ipcMain.handle('get-gpu-devices', () => {
   }
 });
 
-// ── Ekam Deeksha v3.1.0 — GPU benchmark (runs miner in benchmark mode) ──
+// ── Ekam Deeksha v3.2.0 — GPU benchmark (runs miner in benchmark mode) ──
 ipcMain.handle('run-gpu-benchmark', async (_event, options = {}) => {
   try {
     const gpuInfo = detectGPU();
@@ -6085,7 +6085,7 @@ function _isNewerVersion(latest, current) {
 
 // App lifecycle
 app.whenReady().then(async () => {
-  console.log('ZION Native Awakening v3.1.0 started');
+  console.log('ZION Native Awakening v3.2.0 started');
 
   // Initialize auto-tuner
 
