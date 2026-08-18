@@ -2,8 +2,8 @@
 ## Kanonický story-whitepaper systému TerraNova
 
 **Verze 4.0 (Model-Native / Gemini Edition) · v3.0.5 Mainnet Beta**  
-**Kořenová pravda:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`  
-**Dnešní stav:** Proof-of-Work (Ekam Deeksha v2) · **Horizont:** Proof-of-Care (Protokol Péče)  
+**Kořenová pravda:** `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`  
+**Dnešní stav:** Proof-of-Work (Ekam Deeksha v3.2) · **Horizont:** Proof-of-Care (Protokol Péče)  
 **Licence:** MIT (Otevřený kód, otevřené vědomí)
 
 ---
@@ -43,7 +43,7 @@ Tento dokument je **čtvrtou verzí whitepaperu**. Je psán stylem, který spoju
 Každý svět začíná bodem singularity. Bodem, kde se nekonečný potenciál stlačí do jediného, nevratného rozhodnutí. V blockchainu se tento bod jmenuje **Genesis blok**.
 
 Dne 6. července 2026 byl po hlubokém bezpečnostním resetu vytěžen blok #0 s hash-podpisem:
-`4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
+`96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`
 
 Tento hash není náhodné číslo. Je to konstituční DNA sítě. Je v něm zapsána věta, kterou tvůrce vložil do prvních bajtů: *ZION je semeno, ne zbraň.* Od tohoto okamžiku je každá transakce, každý další blok a každý vytěžený flower jen rozvinutím tohoto prvního slova.
 
@@ -212,8 +212,8 @@ ZION nepotřebuje slepou víru. Zde jsou data, která si můžeš sám vytáhnou
 
 | Vlastnost | Hodnota v kódu / na řetězci | Ověřitelný zdroj |
 |---|---|---|
-| **Verze protokolu** | `zion-v3-node/3.0.5` | `V3/L1/core/src/lib.rs` |
-| **Genesis Hash** | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` | `getBlockByHeight(0)` |
+| **Verze protokolu** | `zion-v3-node/3.1.0-alpha` | `V3/L1/core/src/lib.rs` |
+| **Genesis Hash** | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` | `getBlockByHeight(0)` |
 | **Max Supply** | `144_000_000_000` ZION | `V3/L1/core/src/emission.rs` |
 | **Genesis Premine** | `16_780_000_000` ZION | `V3/L1/core/src/emission.rs` |
 | **Základní odměna** | `5_400.067` ZION | `BASE_REWARD` v `emission.rs` |

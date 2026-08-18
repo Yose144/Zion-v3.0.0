@@ -184,7 +184,7 @@ Kluk se podíval na obrazovku. „Takže čekat?"
 > |---|---|---|
 > | Status | Mainnet Alpha 3.1 (V31 3.1.0-alpha.2) | `StatusV3.md` |
 > | Výška chainu | ~11 270 bloků (2026-08-04) | `StatusV3.md` |
-> | Genesis hash | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` | `StatusV3.md`, `emission.rs` |
+> | Genesis hash | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` | `StatusV3.md`, `emission.rs` |
 > | Pool hashrate | ~1 MH/s, desítky shares/sec | `StatusV3.md` |
 > | Algoritmus (height-aware) | `deeksha_lite_fire` (h ≥ 5000, 65 536 thermal iterací) | `cosmic-harmony-v3/src/lib.rs` |
 > | DAA | LWMA, okno 60 bloků, ±25 % clamp | technický whitepaper 3.1, kap. 4.4 |
@@ -278,7 +278,7 @@ Kluk se chystal odejít. Kovář ho zadržel.
 > # https://oasis.zionterranova.com
 > ```
 >
-> > **Genesis hash:** `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
+> > **Genesis hash:** `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`
 > > **wZION na Base:** `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` (verifikováno na Basescan)
 > > **GitHub:** `https://github.com/Zion-TerraNova/v3-Mainnet` (MIT)
 

@@ -7,7 +7,7 @@
 **Souvisí s:** čtyřmi knihami ZIONu, whitepaperem 3.1, V31 Mainnet Alpha, Dharma Credits a L4 OASIS  
 
 > *„Zlatý věk nezačíná datem. Začíná rozhodnutím — a rozhodnutí začíná ve dveřích, které si člověk otevře sám."*
-> — Genesis blok ZIONu, 4. 12. 2025
+> — Genesis blok ZIONu, 1. 1. 2026
 
 ---
 
@@ -242,7 +242,7 @@ Je to **aricha** — loď, která nese všechny vrstvy.
 
 Představ si ZION jako loď s šesti palubami:
 
-- **L1 — trup lodi:** Terra Nova blockchain v Rustu, Ekam Deeksha PoW, 144 miliard ZION, genesis blok z 4. 12. 2025. To je tělo lodi. Bez něj by se vše ostatní potopilo.
+- **L1 — trup lodi:** Terra Nova blockchain v Rustu, Ekam Deeksha PoW, 144 miliard ZION, genesis blok z 1. 1. 2026. To je tělo lodi. Bez něj by se vše ostatní potopilo.
 - **L2 — plachty a lanoví:** Bridge, DeFi, DAO, wZION na Base, atomic swap, DEX. To je oběh hodnoty. Bez placheb by loď nejela.
 - **L3 — hvězdná navigace:** AI Native, WARP, Hiranyagarbha jako znalostní nervový systém. To je mozek a kompas. Bez něj by loď plula naslepo.
 - **L4 — zahrada na palubě:** OASIS. Hra, avataři, questy, Golden Egg, Consciousness Levels. To je místo, kde rostou lidé. Bez něj by loď byla jen stroj.

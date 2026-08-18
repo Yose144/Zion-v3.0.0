@@ -55,7 +55,7 @@ Ježíš neřekl svým učedníkům „vy jste zlato země" ani „vy jste meč 
 
 | Tvrzení z příběhu | Co je na síti ověřitelné |
 |---|---|
-| „Sůl je malá, ale nutná." | Genesis blok ZION byl vytěžen **4. prosince 2025**. Žádný `mint()` pro zakladatele — každá mince vzniká z práce. |
+| „Sůl je malá, ale nutná." | Genesis blok ZION byl vytěžen **1. ledna 2026**. Žádný `mint()` pro zakladatele — každá mince vzniká z práce. |
 | „Pravidla platí beze slov." | Hard cap **144 000 000 000 ZION**, zapsaný v konsensu, ne v prohlášení. |
 | „Sůl se rozděluje, nehromadí." | Každý blok: **89 % těžaři, 5 % humanitárnímu fondu, 5 % fondu Issobella, 1 % spáleno** — vynuceno konsensem, ne slibem. |
 | „Kdo chce sůl, musí si pro ni sáhnout." | **Fair launch** — žádné ICO, žádný předprodej, žádná VIP alokace. |

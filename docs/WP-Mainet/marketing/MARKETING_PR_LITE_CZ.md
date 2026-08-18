@@ -20,7 +20,7 @@ ZION je vlastní Layer 1 blockchain v Rustu: Proof-of-Work, fair launch, žádn�
 - **Hard cap:** 144 miliard ZION
 - **Block time:** cca 60 sekund
 - **Fee split:** 89 % těžař / 5 % humanitární / 5 % budoucnost / 1 % burn
-- **Launch:** testnet od 4. 12. 2025, Mainnet Beta žije, public launch 31. 12. 2026
+- **Launch:** testnet od 1. 1. 2026, Mainnet Stable žije, public launch 31. 12. 2026
 - **Licence:** MIT
 - **Public pool:** 62.171.141.136:8444
 - **Weby:** https://zionterranova.com, https://app.zionterranova.com, https://oasis.zionterranova.com, https://market.zionterranova.com

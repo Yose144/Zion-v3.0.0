@@ -21,7 +21,7 @@
 2. [Úvod: Proč ZION existuje](#úvod-proč-zion-existuje)
 3. [Čtyři strukturální nedostatky](#čtyři-strukturální-nedostatky)
 4. [Odpověď ZION: Šestivrstvá architektura](#odpověď-zion-šestivrstvá-architektura)
-5. [Konsensus: Ekam Deeksha v2](#konsensus-ekam-deeksha-v2)
+5. [Konsensus: Ekam Deeksha v3.2](#konsensus-ekam-deeksha-v2)
 6. [Ekonomický model: Decade Decay](#ekonomický-model-decade-decay)
 7. [Tokenomika a Genesis](#tokenomika-a-genesis)
 8. [L2 — wZION Bridge a DeFi](#l2--wzion-bridge-a-defi)
@@ -41,7 +41,7 @@
 
 ZION TerraNova je Layer 1 blockchain s důkazem práce (Proof-of-Work), navržený k řešení čtyř strukturálních problémů, které trápí kryptoměny od jejich vzniku: centralizace těžby do rukou ASIC operátorů, přednostní alokace tokenů insiderům, nulový protokolární sociální dopad a volatilita způsobená náhlými změnami emise.
 
-ZION je napsán od základů v jazyce **Rust** s **Tokio** async runtime. Představuje paměťově náročný PoW algoritmus **Ekam Deeksha v2**, který efektivně běží na běžných CPU a GPU a zároveň odolává ASIC specializaci. Jeho ekonomický model **Decade Decay** nahrazuje brutální čtyřletá půlení (halving) plynulým snížením o 20 % každých deset let, zakončeným věčnou tail emission, která garantuje motivaci těžařů na staletí.
+ZION je napsán od základů v jazyce **Rust** s **Tokio** async runtime. Představuje paměťově náročný PoW algoritmus **Ekam Deeksha v3.2**, který efektivně běží na běžných CPU a GPU a zároveň odolává ASIC specializaci. Jeho ekonomický model **Decade Decay** nahrazuje brutální čtyřletá půlení (halving) plynulým snížením o 20 % každých deset let, zakončeným věčnou tail emission, která garantuje motivaci těžařů na staletí.
 
 Klíčové je, že **10 % z každé odměny za blok je automaticky a nezměnitelně alokováno na humanitární a vědecké účely** — 5 % do globálního Humanitárního fondu a 5 % do L5/L6 Issobella fondu pro dlouhodobý vědecký výzkum. Toto není marketingový slib; je to vynuceno přímo v konsensuálním kódu.
 
@@ -52,7 +52,7 @@ Klíčové je, že **10 % z každé odměny za blok je automaticky a nezměnitel
 | Počáteční odměna za blok | 5 400,067 ZION |
 | Emisní model | Decade Decay (−20 % / 10 let) + tail emission od ~2126 |
 | Tail emission | 724,784723787776 ZION / blok (navěky) |
-| Těžební algoritmus | Ekam Deeksha v2 (256 KiB scratchpad, 6-fázový pipeline) |
+| Těžební algoritmus | Ekam Deeksha v3.2 (256 KiB scratchpad, 6-fázový pipeline) |
 | Konsensus | Proof-of-Work (Nakamoto) |
 | Podpis | Ed25519 |
 | Hashování | BLAKE3 |
@@ -84,7 +84,7 @@ Projekt čerpá z dlouhé tradice open-source infrastruktury sloužící veřejn
 
 Bitcoinův SHA-256 i Ethash byly původně těženy CPU a později GPU. V obou případech příchod ASIC (Application-Specific Integrated Circuits) rychle koncentroval hashrate do rukou několika průmyslových operátorů. Dnes čtyři těžební pooly ovládají většinu bitcoinového hashrate. "Decentralizace" slibovaná Satoshim se v praxi stala průmyslovou konsolidací.
 
-**Odpověď ZION:** Ekam Deeksha v2 je záměrně paměťově náročný. Jeho 256 KiB scratchpad vyžaduje pseudonáhodné závislé čtení, které nelze efektivně pipeliningovat fixed-function hardwarem. ASIC navržený pro Ekam Deeksha by vypadal tak podobně jako běžný CPU s velkou cache, že by ztratil svou cenovou výhodu. Algoritmus dosahuje skóre 90/100 na nezávislých benchmarkách odolnosti vůči ASIC.
+**Odpověď ZION:** Ekam Deeksha v3.2 je záměrně paměťově náročný. Jeho 256 KiB scratchpad vyžaduje pseudonáhodné závislé čtení, které nelze efektivně pipeliningovat fixed-function hardwarem. ASIC navržený pro Ekam Deeksha by vypadal tak podobně jako běžný CPU s velkou cache, že by ztratil svou cenovou výhodu. Algoritmus dosahuje skóre 90/100 na nezávislých benchmarkách odolnosti vůči ASIC.
 
 ### 2. Přednostní alokace insiderům
 
@@ -126,7 +126,7 @@ ZION je organizován jako zásobník šesti vrstev, každá nezávisle funkční
 │  L2 — DeFi Bridge       wZION ERC-20 + Base/Arbitrum/BSC   │
 │                         + DAO + atomické swapy              │
 ├─────────────────────────────────────────────────────────────┤
-│  L1 — Core Chain        Ekam Deeksha v2 + UTXO + P2P       │
+│  L1 — Core Chain        Ekam Deeksha v3.2 + UTXO + P2P       │
 │                         + Stratum pool + LMDB               │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -166,13 +166,13 @@ ZION je organizován jako zásobník šesti vrstev, každá nezávisle funkční
 
 ---
 
-## Konsensus: Ekam Deeksha v2
+## Konsensus: Ekam Deeksha v3.2
 
 Důkaz práce algoritmus se jmenuje **Ekam Deeksha** (sanskrt: "jedna iniciace"). Verze 2 je mainnet-track algoritmus aktivní od genesis bloku 0.
 
 ### Filozofie návrhu
 
-Většina PoW algoritmů selhává v odolnosti vůči ASIC, protože spoléhá na jeden výpočetní primitiv. Pokud lze tento primitiv implementovat v silikonu, algoritmus padne. Ekam Deeksha v2 používá **šestifázový sekvenční pipeline**, který kombinuje více primitiv s paměťově náročnou fází uprostřed. ASIC by musel být efektivní v Keccak-256, SHA3-512, maticové multiplikaci, pseudonáhodném paměťovém přístupu, neurálních vektorových operacích a BLAKE3 — v podstatě obecný počítač, což poráží účel specializace.
+Většina PoW algoritmů selhává v odolnosti vůči ASIC, protože spoléhá na jeden výpočetní primitiv. Pokud lze tento primitiv implementovat v silikonu, algoritmus padne. Ekam Deeksha v3.2 používá **šestifázový sekvenční pipeline**, který kombinuje více primitiv s paměťově náročnou fází uprostřed. ASIC by musel být efektivní v Keccak-256, SHA3-512, maticové multiplikaci, pseudonáhodném paměťovém přístupu, neurálních vektorových operacích a BLAKE3 — v podstatě obecný počítač, což poráží účel specializace.
 
 ### Šest fází
 
@@ -206,7 +206,7 @@ LWMA reaguje plynule na změny hashrate detekované před pouhými sekundami, č
 
 ### Fork háky
 
-Kód obsahuje konstanty pro hard-fork výšky pro budoucí upgrady konsensu. V aktuálním produkčním buildu je Ekam Deeksha v2 aktivní od výšky 0. Koordinovaný testnet rehearsal lze povolit přes cargo feature `testnet_fork_rehearsal` bez modifikace výchozí binárky.
+Kód obsahuje konstanty pro hard-fork výšky pro budoucí upgrady konsensu. V aktuálním produkčním buildu je Ekam Deeksha v3.2 aktivní od výšky 0. Koordinovaný testnet rehearsal lze povolit přes cargo feature `testnet_fork_rehearsal` bez modifikace výchozí binárky.
 
 ---
 
@@ -486,7 +486,7 @@ DAO **nemůže** změnit následující bez community-wide hard forku:
 - Celková nabídka (144 miliard ZION)
 - Genesis alokace (16,28 miliardy ZION)
 - Block time (60 sekund)
-- Těžební algoritmus (Ekam Deeksha v2)
+- Těžební algoritmus (Ekam Deeksha v3.2)
 - Typ konsensu (Proof-of-Work)
 - Rozdělení odměn (89/5/5/1 %)
 
@@ -594,7 +594,7 @@ Od května 2026 je následující infrastruktura provozuschopná:
 |-------|-------|-------|
 | Emisní konstanty | `V3/L1/core/src/emission.rs` | Decade Decay, fee split, tail reward |
 | Genesis blok | `V3/L1/core/src/genesis.rs` | 12 premine výstupů, DAO lock, genesis message |
-| PoW algoritmus | `V3/L1/cosmic-harmony/src/deeksha.rs` | Ekam Deeksha v2 kanonický pipeline |
+| PoW algoritmus | `V3/L1/cosmic-harmony/src/deeksha.rs` | Ekam Deeksha v3.2 kanonický pipeline |
 | Obtížnost | `V3/L1/core/src/difficulty.rs` | LWMA DAA |
 | Validace | `V3/L1/core/src/validation.rs` | 11-kroková validace bloků |
 | Wallet | `V3/L1/core/src/wallet.rs` | UTXO coin selection, batch payouts |

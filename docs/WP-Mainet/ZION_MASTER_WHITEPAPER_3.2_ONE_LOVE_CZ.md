@@ -20,7 +20,7 @@
 > *Bob Marley jako narativní hlas — hold, nikoliv oficiální schválení.*
 >
 > *„Zlatý věk nezačíná datem. Začíná rozhodnutím."*
-> — Záměr ZION genesis, 4. 12. 2025
+> — Záměr ZION genesis, 1. 1. 2026
 
 ---
 

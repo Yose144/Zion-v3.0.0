@@ -2,7 +2,7 @@
 ### Příběh, který si můžeš ověřit. Síť, na kterou můžeš vstoupit dnes.
 
 > *„Zlatý věk nezačíná datem. Začíná rozhodnutím."*
-> — ZION Genesis blok, 4. 12. 2025
+> — ZION Genesis blok, 1. 1. 2026
 
 ---
 
@@ -20,7 +20,7 @@ Ta loď se jmenuje **ZION**. A tohle je tvoje pozvánka na palubu.
 
 ## Co je ZION — ve třech větách
 
-**ZION je blockchain, který se dá ověřit, ne jen slíbit.** Běží od 4. prosince 2025, nový blok každých 60 sekund, otevřený kód, který si může přečíst kdokoliv.
+**ZION je blockchain, který se dá ověřit, ne jen slíbit.** Běží od 1. ledna 2026, nový blok každých 60 sekund, otevřený kód, který si může přečíst kdokoliv.
 
 **Každý blok automaticky dělí odměnu: 89 % těžaři, 5 % humanitárnímu fondu, 5 % fondu budoucnosti, 1 % se spálí.** Není to slib firmy — je to matematika zapsaná v pravidlech sítě, kterou nikdo nemůže potichu změnit.
 

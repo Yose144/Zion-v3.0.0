@@ -78,7 +78,7 @@ Napadlo ho **semeno**.
 >
 > - **Fair launch:** žádné ICO, žádný předprodej, žádné tokeny pro zakladatele schované v kódu. První vodu nedostal nikdo — každý ZION musí být vytěžen prací nebo získán od někoho, kdo ho vytěžil.
 > - **Hard cap:** 144 000 000 000 ZION. Ne jeden navíc. Zapsáno v `emission.rs` jako konstanta, ne jako slib.
-> - **Stav dnes:** Mainnet Beta, protokol `zion-v3-node/3.0.5`, veřejný launch cíl 31. 12. 2026.
+> - **Stav dnes:** Mainnet Beta, protokol `zion-v3-node/3.1.0-alpha`, veřejný launch cíl 31. 12. 2026.
 > - **Licence:** MIT. Kdokoli smí semeno prozkoumat, zasadit vlastní, nebo dokázat, že je shnilé. Zatím to nikdo nedokázal — a přesně proto je otevřenost silnější než reklama.
 
 
@@ -226,7 +226,7 @@ Nový strom roste dodnes. A jizva po požáru není ostuda — je to letokruh, k
 > - V roce 2026 byly nalezeny a zveřejněny kritické zranitelnosti (mj. chybějící ověření podpisů u P2P account transakcí a chybějící validace zůstatku odesílatele umožňující inflaci) plus kompromitace serveru a klíčů.
 > - Reakce: **veřejná security disclosure** ve formátu Ethereum Foundation (ZION-2026-001 … 005), oprava konsensu, kompletní rotace klíčů a **hard genesis reset** (2026-07-06).
 > - Nový kanonický kořen:
->   `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
+>   `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`
 > - Od resetu: 11/11 služeb aktivních, E2E testy potvrzeny na živé síti, externí audit plánován.
 > - Poučení zapsané do kultury projektu: *důvěra se nebuduje tvrzením, že chyba je nemožná — buduje se veřejnou opravou.*
 # Kapitola šestá — Šest větví a hvězda
@@ -391,8 +391,8 @@ Tahle bajka by nestála za papír, kdyby se nedala vyvrátit. Dá se. Všechno p
 
 | Co si ověřit | Kde |
 |---|---|
-| Protokol | `zion-v3-node/3.0.5` |
-| Genesis hash | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
+| Protokol | `zion-v3-node/3.1.0-alpha` |
+| Genesis hash | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
 | Celková nabídka | 144 000 000 000 ZION (`emission.rs`) |
 | Premine | 16 780 000 000 ZION, transparentní výstupy v bloku 0 |
 | Split 89/5/5/1 | čtyřvýstupová coinbase, vynuceno konsensem |

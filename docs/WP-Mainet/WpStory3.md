@@ -39,7 +39,7 @@ U ZIONu se to jádro jmenuje Genesis. Ne jako mýtická ozdoba, ale jako konstit
 Současný kanonický začátek mainnetové linie je zapsán v genesis hashi:
 
 ```text
-4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e
+96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb
 ```
 
 To není magie. Je to matematická kotva. Umožňuje každému ověřit, na jaké větvi stromu stojí. Umožňuje každý další blok číst jako potvrzení první věty.
@@ -59,7 +59,7 @@ Je to síť, která:
 - produkuje bloky s cílem **60 sekund**;
 - snižuje odměnu **hladce po desetiletích** (Decade Decay), ne gilotínou;
 - automaticky posílá **10 % každé blokové odměny** k humanitárnímu a dlouhodobému fondu;
-- běží dnes jako **Mainnet Beta** s protokolem `zion-v3-node/3.0.5`.
+- běží dnes jako **Mainnet Beta** s protokolem `zion-v3-node/3.1.0-alpha`.
 
 To jsou fakta. Všechno ostatní v tomto whitepaperu se o ně opírá.
 
@@ -363,9 +363,9 @@ Tím, že nenecháš ráj být jen vzpomínkou.
 
 | Parametr | Hodnota |
 |---|---|
-| Protokol | `zion-v3-node/3.0.5` |
+| Protokol | `zion-v3-node/3.1.0-alpha` |
 | Konsensus | PoW · Ekam Deeksha / CosmicHarmony |
-| Genesis hash | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
+| Genesis hash | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
 | Total supply | 144 000 000 000 ZION |
 | Premine | 16 780 000 000 ZION |
 | Base reward | 5 400,067 ZION |

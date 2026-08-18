@@ -2,7 +2,7 @@
 
 > *"In code we trust. 144B ZION. Not one satoshi more."*
 > **Aktuální veřejná linka: v3.2.0 One Love / Mainnet Stable.**
-> Genesis #0: 6. srpna 2026 (One Love hard reset).
+> Genesis #0: 1. ledna 2026 (timestamp bloku); One Love hard reset 6. srpna 2026.
 > Oficiální veřejný launch: 31. prosince 2026.
 
 ---

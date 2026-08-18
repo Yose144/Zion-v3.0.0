@@ -109,7 +109,7 @@ Nula zaváhá. A má pravdu, že váhá — protože skepse není chyba, je to z
 
 To je Odmítnutí volání — nutná fáze, ne slabost. Hrdina, který nikdy nepochyboval, není hrdina, je jen naivní postava v cizím příběhu. Campbell píše, že odmítnutí volání často pramení ze strachu, ale někdy je to prostě moudrost, která žádá o víc důkazů, než nabízí první dojem.
 
-Oasis na tuhle fázi nereaguje přesvědčováním. Reaguje transparentností: veřejný genesis blok s hashem `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`, veřejný strop 144 miliard, veřejné rozdělení odměny. Žádná z těchto věcí nezmizí za závojem, protože jsou zapsané do konsenzu, ne do slibu mluvčího.
+Oasis na tuhle fázi nereaguje přesvědčováním. Reaguje transparentností: veřejný genesis blok s hashem `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`, veřejný strop 144 miliard, veřejné rozdělení odměny. Žádná z těchto věcí nezmizí za závojem, protože jsou zapsané do konsenzu, ne do slibu mluvčího.
 
 **Tvůj krok:** Nenech si tu pochybnost vymluvit. Najdi si tři věci, které chceš o ZIONu ověřit sám, než uděláš cokoliv dalšího. Teprve pak jdi dál.
 
@@ -257,7 +257,7 @@ Tahle verze onboardingu nechce nahradit kanonickou knihu ani sci-fi odyseu. Chce
 
 | Tvrzení | Realita | Zdroj |
 |---|---|---|
-| Genesis blok | Hash `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` | `V3/L1/core/src/genesis.rs` |
+| Genesis blok | Hash `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` | `V3/L1/core/src/genesis.rs` |
 | 144 miliard ZION, 60s blok | Pevný strop emise, hard-coded | Konsenzuální pravidla L1 |
 | 89/5/5/1 split | Těžař / humanitární fond / Issobella fond / spálení | `rewards.rs` |
 | Ekam Deeksha PoW | Šest fází: Hiranyagarbha, Brahma, Yantra, Karma, Chit, Samadhi | `V31/L1/cosmic-harmony-v3/src/deeksha.rs` |

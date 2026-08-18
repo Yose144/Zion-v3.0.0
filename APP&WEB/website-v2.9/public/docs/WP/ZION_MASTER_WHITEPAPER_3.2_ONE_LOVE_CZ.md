@@ -14,7 +14,7 @@
 > *Bob Marley jako vypravěčský hlas — pocta, ne oficiální schválení.*
 
 > *"Zlatý věk nezačíná datem. Začíná rozhodnutím."*
-> — ZION genesis blok, 4. prosince 2025
+> — ZION genesis blok, 1. 1. 2026
 
 ---
 
@@ -481,7 +481,7 @@ Je to **živá infrastruktura + kompas**.
 | Protokol | `zion-v3-node/3.1.0-alpha` → 3.2.0 "One Love" |
 | Genesis hash (V3 compat) | `4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71` |
 | Genesis hash (V31 native) | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
-| První blok | 4. prosince 2025 |
+| První blok | 1. 1. 2026 |
 | Celková zásoba | 144 000 000 000 ZION |
 | Premine | 16 780 000 000 ZION (transparentní on-chain výstupy) |
 | Základní odměna | 5 400,067 ZION / blok · 60 s |

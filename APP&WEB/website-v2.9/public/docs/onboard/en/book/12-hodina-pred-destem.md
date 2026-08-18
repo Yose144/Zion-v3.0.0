@@ -58,7 +58,7 @@ Three things are written into ZION's code in a way that holds regardless of who 
 
 **Network difficulty is governed by how many people are mining right now, not by how many will be mining a year from now.** Difficulty is recalculated by the LWMA algorithm over the last 60 blocks (with a ±25 % clamp) — it responds to current network hashrate, not to the future. The fewer machines searching for a block today, the larger the share of found blocks goes to each individual machine that joins now. When the network fills with more miners (and that is the goal — a network no one mines is not secure), difficulty will rise with them, and the same hashrate will yield a smaller share.
 
-**Entry is the same for everyone who comes — but not equally easy at every moment.** Fair launch means no one got VIP access at the start. It does not mean the start lasts forever. The genesis block fell on December 4, 2025; every day that passes is a day more of history, a day more of miners, and a day closer to the moment when "starting from zero" will no longer be possible — because zero was long ago.
+**Entry is the same for everyone who comes — but not equally easy at every moment.** Fair launch means no one got VIP access at the start. It does not mean the start lasts forever. The genesis block fell on January 1, 2026; every day that passes is a day more of history, a day more of miners, and a day closer to the moment when "starting from zero" will no longer be possible — because zero was long ago.
 
 This is exactly what the blacksmith from the story did: he did not forge hinges because someone guaranteed him a reward. He forged them because he understood the mechanics of rain — that water does not wait for everyone to decide to believe.
 

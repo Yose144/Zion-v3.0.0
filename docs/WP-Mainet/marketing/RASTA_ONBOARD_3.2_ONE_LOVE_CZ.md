@@ -10,7 +10,7 @@
 
 ## I. Oheň, který nezhasl
 
-Selám, brácho. Sestro, pojď blíž, ať tě vidím ve světle. Oheň hoří už od 4. prosince 2025 a od tý doby ho nikdo nezhasl — ani déšť, ani posměch, ani ticho těch, co nevěřili, že vydrží do rána.
+Selám, brácho. Sestro, pojď blíž, ať tě vidím ve světle. Oheň hoří už od 1. ledna 2026 a od tý doby ho nikdo nezhasl — ani déšť, ani posměch, ani ticho těch, co nevěřili, že vydrží do rána.
 
 Neseď z povzdálí. Pojď si sednout do kruhu. Tady se nikomu neklaní, tady se nikomu neplatí vstupné. Tady se jenom přikládá dřevo a poslouchá riddim, co jde z hloubi země nahoru, jako by ho bubnoval sám kořen stromu.
 
