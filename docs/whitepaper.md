@@ -1,7 +1,7 @@
 # ZION v3 — Technical Whitepaper
 
 > **Version 3.0.4** · July 2026 · MIT License
-> Genesis hash: `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122`
+> Genesis hash: `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`
 
 ---
 
@@ -192,7 +192,7 @@ The genesis block (height 0) contains **14 premine outputs** totaling
 16,780,000,000 ZION. There is no mining subsidy at height 0 — the premine
 is the sole coinbase.
 
-- **Genesis hash**: `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122`
+- **Genesis hash**: `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`
 - **Timestamp**: `1767225600` (2026-01-01 00:00:00 UTC)
 - **Previous hash**: `0000...0000` (all zeros)
 - **Algorithm**: `deeksha_lite_v1`

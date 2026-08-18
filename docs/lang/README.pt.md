@@ -91,9 +91,9 @@
 
 | Parâmetro | Valor |
 |:----------|:------|
-| **Estado** | Mainnet Beta |
-| **Protocolo** | 3.0.6 |
-| **Genesis hash** | `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122` |
+| **Estado** | Mainnet Stable |
+| **Protocolo** | 3.1.0-alpha |
+| **Genesis hash** | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
 | **Lançamento oficial** | 2026-12-31 |
 | **Tempo de bloco** | ~60 segundos |
 | **Algoritmo de mineração** | `deeksha_lite_v1` (CPU + GPU) |

@@ -1,6 +1,6 @@
 # ZION v3 — Genesis Blok
 
-> **Genesis hash**: `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122`
+> **Genesis hash**: `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`
 > **Timestamp**: `1767225600` (2026-01-01 00:00:00 UTC)
 > **Zdroj**: [`V3/L1/core/src/genesis.rs`](../V3/L1/core/src/genesis.rs)
 
@@ -35,7 +35,7 @@ Genesis blok obsahuje:
 ### Hash
 
 ```
-08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122
+96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb
 ```
 
 Tento hash je **deterministický** — je vypočítán z konstrukce genesis bloku
