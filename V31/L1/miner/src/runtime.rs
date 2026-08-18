@@ -223,9 +223,9 @@ impl MinerRuntime {
         let stats = Arc::new(Mutex::new(map));
         let config = Arc::new(config);
 
-        // ── Initialize GPU backend for Stream 1 (ZION deeksha) ──
+        // ── Initialize GPU backend for Stream 1 (ZION ekam_deeksha) ──
         // When gpu_backend is not "cpu", create a GPU miner (CUDA/OpenCL/Metal)
-        // for the canonical deeksha_lite_v1 algorithm. Falls back to CPU if init fails.
+        // for the canonical ekam_deeksha algorithm. Falls back to CPU if init fails.
         // If Stream 2 (GPU AuxPoW) is also enabled, avoid creating a second GPU context
         // on the same device — DAG-based external algorithms (ProgPoW/Ethash/KawPow)
         // need large contiguous VRAM and concurrent ZION + external contexts cause
@@ -234,9 +234,6 @@ impl MinerRuntime {
         let gpu_backend_str = config.gpu_backend.clone();
         let gpu_zion: Arc<std::sync::Mutex<Option<Box<dyn GpuMiner>>>> =
             Arc::new(std::sync::Mutex::new(None));
-        let force_zion_gpu = std::env::var("ZION_ZION_GPU")
-            .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
-            .unwrap_or(false);
         // When Stream 2 (ZANO GPU) is enabled, we still enable ZION GPU but
         // with a smaller work_size to coexist on the same GPU. The 1070 Ti
         // has 8GB VRAM: ZANO DAG ~2GB + ZION scratchpad at 4096*512KB=2GB = 4GB.
@@ -254,7 +251,7 @@ impl MinerRuntime {
                 .and_then(|v| v.trim().parse::<usize>().ok())
                 .unwrap_or(default_work_size);
             let algorithm = std::env::var("ZION_MINER_ALGORITHM")
-                .unwrap_or_else(|_| "deeksha_lite_v1".to_string());
+                .unwrap_or_else(|_| "ekam_deeksha".to_string());
             match create_gpu_backend(kind, work_size, &algorithm, "") {
                 Ok(miner) => {
                     let name = miner.device_name();
@@ -762,7 +759,7 @@ impl MinerRuntime {
                     "GPU ext: creating persistent backend"
                 );
                 let miner = create_gpu_backend_with_cuda_device(
-                    kind, work_size, algorithm, coin_ticker, shared_cuda_dev.clone(),
+                    kind, work_size, algorithm, coin_ticker, shared_cuda_dev,
                 )
                     .map_err(|e| anyhow::anyhow!("{e}"))?;
                 *gpu_ext.lock().unwrap() = Some(miner);
@@ -1235,7 +1232,7 @@ impl MinerRuntime {
             self.config.reward_address.as_str(),
             self.config.worker
         );
-        let algorithm = "deeksha_lite_v1".to_string();
+        let algorithm = "ekam_deeksha".to_string();
         let backend = self.config.gpu_backend.clone();
 
         // Connect V3PoolClient (shared across all 3 streams via Arc)
@@ -1317,7 +1314,7 @@ impl MinerRuntime {
                                     if let Some(bundle) = &current_bundle {
                                         this.mine_v3_zion_share(&client, &bundle.zion).await
                                     } else {
-                                        return Ok(false);
+                                        Ok(false)
                                     }
                                 } else {
                                     Ok(false)
@@ -1662,7 +1659,7 @@ impl MinerRuntime {
         let elapsed = t_start.elapsed().as_secs_f64();
         self.update_hashrate(StreamId::Zion, nonces_searched, elapsed).await;
 
-        let hash_hex = hex::encode(&hash_bytes);
+        let hash_hex = hex::encode(hash_bytes);
         let elapsed_ms = (elapsed * 1000.0) as u64;
 
         // Verify locally with the same EkamDeeksha reference the pool uses.
@@ -1854,8 +1851,8 @@ impl MinerRuntime {
         // fast (~60s) and the target is easy, so shares are found frequently.
         // Blocking the scan loop on network round-trips wastes CPU cycles.
         if matches!(stream, StreamId::CpuExternal) {
-            let hash_hex = hex::encode(&share.hash);
-            let mix_hash_hex = share.mix_hash.as_ref().map(|m| hex::encode(m));
+            let hash_hex = hex::encode(share.hash);
+            let mix_hash_hex = share.mix_hash.as_ref().map(hex::encode);
             let solution_hex = share.solution.as_ref().map(hex::encode).unwrap_or_default();
             let ntime_hex = share.ntime.clone();
             let coin_name = ext.coin.clone();
@@ -1924,8 +1921,8 @@ impl MinerRuntime {
         }
 
         // For ZANO (GpuExternal): submit synchronously (30s blocks, low share rate)
-        let hash_hex = hex::encode(&share.hash);
-        let mix_hash_hex = share.mix_hash.as_ref().map(|m| hex::encode(m));
+        let hash_hex = hex::encode(share.hash);
+        let mix_hash_hex = share.mix_hash.as_ref().map(hex::encode);
         let solution_hex = share.solution.as_ref().map(hex::encode).unwrap_or_default();
         let ntime_hex = share.ntime.clone();
         let result = client
@@ -2090,7 +2087,7 @@ impl MinerRuntime {
             // updated jobs via eth_getWork / mining.notify while we mine.
             let mut guard = client_cell.lock().await;
             if let Some(client) = guard.as_mut() {
-                if let Some(new_job) = client.next_job(coin, Duration::from_millis(1)).await.ok() {
+                if let Ok(new_job) = client.next_job(coin, Duration::from_millis(1)).await {
                     if new_job.job_id != job.job_id {
                         job = new_job.into();
                     }

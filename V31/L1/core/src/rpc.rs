@@ -442,7 +442,7 @@ async fn get_chain_info(node: &Node) -> Result<Value, NodeError> {
     };
     Ok(json!({
         "network": "mainnet",
-        "consensus_profile": "cosmic_harmony_v3",
+        "consensus_profile": "ekam_deeksha",
         "chain_height": effective_height,
         "native_chain_height": native_status.height,
         "v3_chain_height": v3_height,

@@ -1,18 +1,19 @@
 /*
- * DeekshaLite Fire — Native CUDA GPU Mining Kernel (OPTIMIZED v3)
+ * Ekam Deeksha v3.2 — Native CUDA GPU Mining Kernel
  *
- * Ported from the canonical OpenCL kernel (deeksha_lite_fire.cl).
- * Every operation is bit-exact with Rust reference and OpenCL production kernel.
+ * Canonical ZION PoW (512 KiB scratchpad, 2 AES passes, 128 random reads,
+ * Keccak-256 final). Bit-identical to the CPU `EkamDeeksha::hash_bytes`.
+ *
+ * Pipeline (Ekam Deeksha v3.2):
+ *   1. Keccak256(header || nonce) → s1[32]
+ *   2. Memory-hard scratchpad (512 KiB): fill, 2 passes, 128 random reads
+ *   3. AES-128 CTR mix → s3[32]
+ *   4. Keccak256(s3) → final hash[32]  (NO thermal loop)
  *
  * v3 optimizations:
- *   - INTERLEAVED scratchpad layout: block N of all threads is contiguous
- *     in memory → perfect memory coalescing for fill_scratchpad and
- *     sequential_passes (16K+ coalesced reads vs 16K strided reads)
- *   - __launch_bounds__(128, 2): 256 registers/thread, eliminates keccak
- *     state register spilling to local memory
- *   - AES S-box in __shared__ memory (256 bytes, 1-cycle access vs ~20 for const)
- *   - __ldg() for read-only header_keccak_state (texture cache)
- *   - Simple keccak loop (no unrolling) for smaller instruction footprint
+ *   - INTERLEAVED scratchpad layout for memory coalescing
+ *   - AES S-box in __shared__ memory
+ *   - __ldg() for read-only header_keccak_state
  *   - All scratchpad I/O via u64 coalesced 128-byte transactions
  */
 
@@ -26,12 +27,11 @@ typedef long long          int64_t;
 /* Constants                                                                   */
 /* ========================================================================== */
 
-#define SCRATCHPAD_SIZE  131072   /* 128 KiB = 4096 * 32 */
+#define SCRATCHPAD_SIZE  524288   /* 512 KiB = 16384 * 32 (v3.2 ASIC-hardened) */
 #define BLOCK_SIZE       32       /* bytes per block */
-#define BLOCK_COUNT      4096
-#define RANDOM_READS     32
-#define PASSES           1
-#define THERMAL_ITERS    16384
+#define BLOCK_COUNT      16384    /* 512 KiB / 32B = 16384 blocks */
+#define RANDOM_READS     128      /* 4× more serial bottleneck (was 32) */
+#define PASSES           2        /* forward + backward (was 1) */
 #define TPB              128      /* threads per block (must match launch config) */
 
 #define ROL64(x, n) (((x) << (n)) | ((x) >> (64 - (n))))
@@ -285,7 +285,7 @@ __device__ __forceinline__ uint64_t* pad_block(
 }
 
 /* ========================================================================== */
-/* Step 2A: fill_scratchpad — 4096 SHA3-512 calls (INTERLEAVED, Ekam v2)       */
+/* Step 2A: fill_scratchpad — 16384 SHA3-512 calls (INTERLEAVED, Ekam v3.2)    */
 /* ========================================================================== */
 
 __device__ __forceinline__ void fill_scratchpad(
@@ -315,7 +315,7 @@ __device__ __forceinline__ void fill_scratchpad(
 }
 
 /* ========================================================================== */
-/* Step 2B: sequential_passes — forward XOR (backward guarded by PASSES, Ekam v2) */
+/* Step 2B: sequential_passes — forward + backward XOR (Ekam v3.2)             */
 /* ========================================================================== */
 
 __device__ __forceinline__ void sequential_passes(
@@ -364,7 +364,7 @@ __device__ __forceinline__ void sequential_passes(
 }
 
 /* ========================================================================== */
-/* Step 2C: random_read_mix — 32 random reads (INTERLEAVED, Ekam v2)           */
+/* Step 2C: random_read_mix — 128 random reads (INTERLEAVED, Ekam v3.2)        */
 /* ========================================================================== */
 
 __device__ __forceinline__ void random_read_mix(
@@ -393,61 +393,6 @@ __device__ __forceinline__ void random_read_mix(
 }
 
 /* ========================================================================== */
-/* Step 4: Thermal loop — 16384 iterations of 8 ulong chains                   */
-/* ========================================================================== */
-
-__device__ __forceinline__ void thermal_loop(uint64_t data_u64[4], uint64_t nonce)
-{
-    uint64_t a = nonce ^ 0x9E3779B97F4A7C15ULL;
-    uint64_t b = nonce ^ 0xBF58476D1CE4E5B9ULL;
-    uint64_t c = nonce ^ 0x94D049BB133111EBULL;
-    uint64_t d = nonce ^ 0x5851F42D4C957F2DULL;
-    uint64_t e = nonce ^ 0xC0FFEE123456789AULL;
-    uint64_t f = nonce ^ 0xDEADBEEFCAFEBABEULL;
-    uint64_t g = nonce ^ 0xBADC0FFEE0DDF00DULL;
-    uint64_t h = nonce ^ 0xFEEDFACECAFEBEEFULL;
-
-    uint8_t *data = (uint8_t*)data_u64;
-
-    #pragma unroll 4
-    for (int i = 0; i < THERMAL_ITERS; i++) {
-        a = ROL64(a,17) + b;  b = ROL64(b,31) ^ a;
-        c = ROL64(c,13) + d;  d = ROL64(d,47) ^ c;
-        e = ROL64(e,23) + f;  f = ROL64(f,41) ^ e;
-        g = ROL64(g,11) + h;  h = ROL64(h,53) ^ g;
-        a = a * 0xFF51AFD7ED558CCDULL;  b = b + 0xFF51AFD7ED558CCDULL;
-        c = c * 0x94D049BB133111EBULL;  d = d + 0x5851F42D4C957F2DULL;
-        e = e * 0xC0FFEE123456789AULL;  f = f + 0xDEADBEEFCAFEBABEULL;
-        g = g * 0xBADC0FFEE0DDF00DULL;  h = h + 0xFEEDFACECAFEBEEFULL;
-        a ^= (uint64_t)data[(i    ) & 0x1F];
-        b ^= (uint64_t)data[(i + 8) & 0x1F];
-        c ^= (uint64_t)data[(i +16) & 0x1F];
-        d ^= (uint64_t)data[(i +24) & 0x1F];
-        e ^= (uint64_t)data[(i + 4) & 0x1F];
-        f ^= (uint64_t)data[(i +12) & 0x1F];
-        g ^= (uint64_t)data[(i + 2) & 0x1F];
-        h ^= (uint64_t)data[(i + 6) & 0x1F];
-    }
-    /* Fold back */
-    data[ 0] ^= (uint8_t)(a);       data[ 1] ^= (uint8_t)(a>>8);
-    data[ 2] ^= (uint8_t)(b);       data[ 3] ^= (uint8_t)(b>>8);
-    data[ 4] ^= (uint8_t)(c);       data[ 5] ^= (uint8_t)(c>>8);
-    data[ 6] ^= (uint8_t)(d);       data[ 7] ^= (uint8_t)(d>>8);
-    data[ 8] ^= (uint8_t)(e);       data[ 9] ^= (uint8_t)(e>>8);
-    data[10] ^= (uint8_t)(f);       data[11] ^= (uint8_t)(f>>8);
-    data[12] ^= (uint8_t)(g);       data[13] ^= (uint8_t)(g>>8);
-    data[14] ^= (uint8_t)(h);       data[15] ^= (uint8_t)(h>>8);
-    data[16] ^= (uint8_t)(a>>16);   data[17] ^= (uint8_t)(b>>16);
-    data[18] ^= (uint8_t)(c>>16);   data[19] ^= (uint8_t)(d>>16);
-    data[20] ^= (uint8_t)(e>>16);   data[21] ^= (uint8_t)(f>>16);
-    data[22] ^= (uint8_t)(g>>16);   data[23] ^= (uint8_t)(h>>16);
-    data[24] ^= (uint8_t)(a>>24);   data[25] ^= (uint8_t)(b>>24);
-    data[26] ^= (uint8_t)(c>>24);   data[27] ^= (uint8_t)(d>>24);
-    data[28] ^= (uint8_t)(e>>24);   data[29] ^= (uint8_t)(f>>24);
-    data[30] ^= (uint8_t)(g>>24);   data[31] ^= (uint8_t)(h>>24);
-}
-
-/* ========================================================================== */
 /* AES S-box data (loaded into shared memory at kernel start)                  */
 /* ========================================================================== */
 
@@ -471,10 +416,11 @@ __constant__ uint8_t AES_SBOX_DATA[256] = {
 };
 
 /* ========================================================================== */
-/* Main kernel — INTERLEAVED + shared memory S-box + high register budget      */
+/* Ekam Deeksha v3.2 — main mining kernel (NO thermal loop)                    */
+/* INTERLEAVED + shared memory S-box + high register budget                    */
 /* ========================================================================== */
 
-extern "C" __global__ void deeksha_lite_fire_mine(
+extern "C" __launch_bounds__(128, 4) __global__ void ekam_deeksha_mine(
     const uint64_t *header_keccak_state,
     uint64_t nonce_base,
     uint32_t nonce_count,
@@ -520,10 +466,7 @@ extern "C" __global__ void deeksha_lite_fire_mine(
     uint64_t s3[4];
     aes128_mix(s2, nonce, s3, sbox);
 
-    /* Step 4: Thermal loop */
-    thermal_loop(s3, nonce);
-
-    /* Step 5: Keccak256 final */
+    /* Step 4: Keccak256 final (NO thermal loop — Ekam Deeksha v3.2) */
     uint64_t st[25];
     st[0]=s3[0]; st[1]=s3[1]; st[2]=s3[2]; st[3]=s3[3];
     st[4]=0; st[5]=0; st[6]=0; st[7]=0; st[8]=0; st[9]=0;
@@ -537,9 +480,10 @@ extern "C" __global__ void deeksha_lite_fire_mine(
     uint64_t hash[4];
     hash[0] = st[0]; hash[1] = st[1]; hash[2] = st[2]; hash[3] = st[3];
 
-    /* Write output hash */
-    uint64_t *slot = (uint64_t*)(output_hashes + (uint64_t)tid * 32);
-    slot[0] = hash[0]; slot[1] = hash[1]; slot[2] = hash[2]; slot[3] = hash[3];
+    /* Skip writing to output_hashes — the host only reads result_nonce/result_hash.
+     * Writing 32 bytes per thread to global memory was pure overhead (4096×32 = 128KB
+     * of useless global writes per batch). The output_hashes buffer is kept in the
+     * kernel signature for ABI compatibility but is never written to. */
 
     /* Target check — big-endian u32 of first 4 hash bytes (lexicographic).
      * Matches OpenCL kernel: byte-swap lower 32 bits of hash[0] to get BE u32. */
@@ -562,7 +506,7 @@ extern "C" __global__ void deeksha_lite_fire_mine(
 }
 
 /* Debug kernel: returns hash for a single nonce (for KAT validation) */
-extern "C" __global__ void deeksha_lite_fire_debug(
+extern "C" __global__ void ekam_deeksha_debug(
     const uint64_t *header_keccak_state,
     uint64_t nonce,
     uint8_t *output_hash,
@@ -626,13 +570,14 @@ extern "C" __global__ void deeksha_lite_fire_debug(
 
     /* AES mix (load S-box to shared first) */
     __shared__ uint8_t sbox[256];
-    if (threadIdx.x < 256) sbox[threadIdx.x] = AES_SBOX_DATA[threadIdx.x];
+    /* Debug kernel runs with 1 thread — load S-box in a loop, not per-thread */
+    for (int i = 0; i < 256; i++) sbox[i] = AES_SBOX_DATA[i];
     __syncthreads();
 
     uint64_t s3[4];
     aes128_mix(acc, nonce, s3, sbox);
 
-    thermal_loop(s3, nonce);
+    /* NO thermal loop — Ekam Deeksha v3.2 */
 
     uint64_t st[25];
     st[0]=s3[0]; st[1]=s3[1]; st[2]=s3[2]; st[3]=s3[3];
@@ -644,8 +589,22 @@ extern "C" __global__ void deeksha_lite_fire_debug(
     st[16] ^= (0x80ULL << 56);
     keccak_f1600(st);
 
+    /* Write debug output: s1, final hash, s2 (acc), s3 — for KAT verification */
     uint8_t *out = output_hash;
+    /* s1 at offset 0 */
+    uint8_t *s1b = (uint8_t*)s1;
+    #pragma unroll
+    for (int i = 0; i < 32; i++) out[i] = s1b[i];
+    /* final hash at offset 32 */
     uint8_t *hb = (uint8_t*)st;
     #pragma unroll
-    for (int i = 0; i < 32; i++) out[i] = hb[i];
+    for (int i = 0; i < 32; i++) out[32+i] = hb[i];
+    /* s2 (acc after random reads) at offset 64 */
+    uint8_t *accb = (uint8_t*)acc;
+    #pragma unroll
+    for (int i = 0; i < 32; i++) out[64+i] = accb[i];
+    /* s3 (after AES mix) at offset 96 */
+    uint8_t *s3b = (uint8_t*)s3;
+    #pragma unroll
+    for (int i = 0; i < 32; i++) out[96+i] = s3b[i];
 }

@@ -1660,7 +1660,7 @@ impl StratumServer {
                                         // Varint starts at offset 140. LuckPool expects the
                                         // full solution including the CompactSize varint prefix.
                                         // Check coin == VRSC (not algorithm — rigs may report
-                                        // deeksha_lite_v1 as their algo but still mine VRSC).
+                                        // ekam_deeksha as their algo but still mine VRSC).
                                         let is_vrsc = coin == "VRSC";
                                         let header_hex_stripped = pkg.header_hex.strip_prefix("0x").unwrap_or(&pkg.header_hex);
                                         if let Ok(header) = hex::decode(header_hex_stripped) {

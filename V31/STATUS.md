@@ -2,7 +2,7 @@
 
 > **Verze:** 3.1.0-beta (workspace) / protokol `zion-v3-node/3.1.0-alpha` (post-Phase A+B+C+D — E2E mining + web health green) / směřujeme k **3.2.0 "One Love" (Mainnet Stable)**
 > **Datum:** 2026-08-11
-> **Stav:** workspace builduje, `cargo test --workspace` prochází (0 failures), `cargo clippy --workspace` čisté (pouze pre-existing warnings). **Fáze A i Fáze B jsou kompletní** — `EkamDeeksha` v3.2 běží na všech výškách (konstanty: 512 KiB scratchpad, 2 passy, 128 random reads, 2 AES rounds), CPU KAT vektory a GPU OpenCL/CUDA/Metal kernely jsou synchronizovány, `zion-miner` mapuje `ekam_deeksha` na kanonické `deeksha_lite`/`deeksha_chv3` GPU backendy. **V31 je nasazen na Edge** (public RPC, pool, DAO, OASIS, web, marketplace; multichain je momentálně `inactive (dead)`). **Lokální GPU OpenCL build + benchmark GO na NVIDIA GTX 1070 Ti (~132 kh/s, 2026-08-06); reálný rig E2E stále pending.** Fáze C1-C8 hotová (DAO + CLI + ZionDex + Dashboard wiring). **Pool FULL V3 feature parity + payout confirmation sweep s UTXO fallback nasazena**. **Dashboard UI/UX update do V31 hotov, `/health` OK. V31 banner KPIs + V31 Production panel (metriky, logy, Grafana) + pool metrics port 8080 + Prometheus/Grafana provisioning nasazeny na Edge. V31 cutover proveden: V3 služby zastaveny a maskovány, `zion-v31-node` osamostatněn od V3. **Fáze D E2E: cargo test --workspace pass, V31 miner našel a odevzdal pool share, web `/api/health` `ok`, e2e API scénáře zelené. Git tag `v3.1.0-alpha.2-phase-D`.
+> **Stav:** workspace builduje, `cargo test --workspace` prochází (0 failures), `cargo clippy --workspace` čisté (pouze pre-existing warnings). **Fáze A i Fáze B jsou kompletní** — `EkamDeeksha` v3.2 běží na všech výškách (konstanty: 512 KiB scratchpad, 2 passy, 128 random reads, 2 AES rounds), CPU KAT vektory a GPU OpenCL/CUDA/Metal kernely jsou synchronizovány, `zion-miner` mapuje `ekam_deeksha` na kanonické OpenCL/CUDA/Metal GPU backendy. **V31 je nasazen na Edge** (public RPC, pool, DAO, OASIS, web, marketplace; multichain je momentálně `inactive (dead)`). **Lokální GPU OpenCL build + benchmark GO na NVIDIA GTX 1070 Ti (~132 kh/s, 2026-08-06); reálný rig E2E stále pending.** Fáze C1-C8 hotová (DAO + CLI + ZionDex + Dashboard wiring). **Pool FULL V3 feature parity + payout confirmation sweep s UTXO fallback nasazena**. **Dashboard UI/UX update do V31 hotov, `/health` OK. V31 banner KPIs + V31 Production panel (metriky, logy, Grafana) + pool metrics port 8080 + Prometheus/Grafana provisioning nasazeny na Edge. V31 cutover proveden: V3 služby zastaveny a maskovány, `zion-v31-node` osamostatněn od V3. **Fáze D E2E: cargo test --workspace pass, V31 miner našel a odevzdal pool share, web `/api/health` `ok`, e2e API scénáře zelené. Git tag `v3.1.0-alpha.2-phase-D`.
 >
 > **Update 2026-08-11 (Edge audit přes IPv6):** Edge IPv6 fallback `2a02:c207:2342:5821::1` funkční. Chain height 1595. `zion-v31-node`, `zion-v31-pool`, `zion-v31-dao`, `zion-v31-oasis`, web, marketplace a dashboard běží. `zion-v31-multichain` je `inactive (dead)` od 10. 8. 10:19 CEST. `zion-v31-miner` je v restart smyčce — `zion-miner` s `gpu-opencl` padá na `ocl::Platform::list` na CPU-only serveru; `zion-universal-miner` CPU-only test OK. Aktuální operátorská IP byla přidána do `V31/AGENTS.md`. Podrobný audit: [`REPORT_2026-08-10_EDGE_V31_AUDIT.md`](../REPORT_2026-08-10_EDGE_V31_AUDIT.md).
 >
@@ -199,7 +199,7 @@ Rekonciliace `V31/PLAN_TO_3.2.md` s aktuálním kódem ukazuje, že řada polož
     ncl_integration, revenue, revenue_journal, sha3_fast, stream_layers, stream_profit
   - ✅ 6 miner modules enabled: b3_verify, reconnect, cpu_features, thread_affinity,
     gpu_guard, autonomous
-  - ✅ cosmic-harmony re-exports: cosmic_harmony_with_height, deeksha_lite, deeksha_lite_fire
+  - ✅ cosmic-harmony re-exports: EkamDeeksha (canonical), CANONICAL_ALGORITHM
   - ✅ ExternalCoin methods: ticker(), is_gpu(), is_cpu(), estimated_*_power_watts()
   - ✅ ProfitRouter::default_estimates() (V3 fetch_live_profit_estimates compat)
   - ✅ pool_message.rs (65 lines) — local PoolMessage to avoid cyclic dep
@@ -236,7 +236,7 @@ Rekonciliace `V31/PLAN_TO_3.2.md` s aktuálním kódem ukazuje, že řada polož
 
 ### Nově připojené v této iteraci
 
-- **B2 full Ekam v2 GPU** — `zion-miner/src/auxpow/gpu_miner.rs` nově používá kanonické OpenCL jádro `ekam_deeksha_mine` pro `cosmic_harmony_ekam_deeksha_v2` (dříve fallback na `deeksha_chv3`). Včetně NPU buffer uploadu podle epochy a CPU↔GPU parity testu.
+- **B2 full Ekam Deeksha v3.2 GPU** — `zion-miner/src/auxpow/gpu_miner.rs` nově používá kanonické OpenCL jádro `ekam_deeksha_mine` pro `ekam_deeksha`. CPU↔GPU parity test synchronizován s `EkamDeeksha::hash_bytes`.
 - **C3 HTLC HTTP endpoints** — `zion-multichain` má `/v1/multichain/swaps/htlc/lock`, `/claim`, `/refund` a `/:hash` query; handlers volají `HtlcSwap` v `MultichainService`.
 - **C4 Live profit oracle** — `stream_profit.rs` má NiceHash `simplemultialgo/info` provider, `ProfitOracle` s cache a token-bucket rate limitem (max 10 req/60 s), fallback na statické odhady.
 - **C5 Bridge validator consensus** — `multichain/src/bridge/consensus.rs` s `BridgeConsensus` (5/7 quorum), lokální threshold signing, integrace do `Bridge::submit`; `WarpValidatorSet` teď `Debug + Clone`.

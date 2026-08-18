@@ -255,13 +255,7 @@ impl MinerControl {
     }
 
     pub fn cycle_algorithm(&mut self) {
-        const ALGOS: &[&str] = &[
-            "deeksha_lite_v1",
-            "deeksha_lite_fire",
-            "cosmic_harmony_ekam_deeksha_v2",
-        ];
-        let idx = ALGOS.iter().position(|&a| a == self.algorithm).unwrap_or(0);
-        self.algorithm = ALGOS[(idx + 1) % ALGOS.len()].to_string();
+        self.algorithm = "ekam_deeksha".to_string();
     }
 
     pub fn toggle_cpu(&mut self) {
@@ -1074,9 +1068,12 @@ pub fn fetch_online_snapshot(pool_addr: &str) -> Option<OnlineMinerSnapshot> {
 /// Short display names for algorithms
 fn algo_display(algo: &str) -> &str {
     match algo {
-        "deeksha_lite_v1" => "Deeksha Lite v1",
-        "deeksha_lite_fire" => "Deeksha Lite Fire",
-        "cosmic_harmony_ekam_deeksha_v2" => "Ekam Deeksha v2",
+        "ekam_deeksha" => "Ekam Deeksha v3.2",
+        "deeksha_lite_v1" => "Ekam Deeksha v3.2",
+        "deeksha_lite" => "Ekam Deeksha v3.2",
+        "deeksha_chv3" => "Ekam Deeksha v3.2",
+        "deeksha_lite_fire" => "Ekam Deeksha v3.2",
+        "cosmic_harmony_ekam_deeksha_v2" => "Ekam Deeksha v3.2",
         other => other,
     }
 }

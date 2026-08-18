@@ -3,7 +3,7 @@
 //! Mines a single batch on Metal GPU with an easy target, then compares
 //! the GPU hash against the CPU reference for the same nonce.
 
-use zion_miner::gpu::{create_gpu_backend, GpuBackendKind, GpuMiner};
+use zion_miner::gpu::{create_gpu_backend, GpuBackendKind};
 use zion_core::{MiningHeader, V3DifficultyTarget};
 use zion_cosmic_harmony::algorithm::ekam_deeksha::EkamDeeksha;
 
@@ -20,11 +20,11 @@ fn main() {
     // Easy target: first 4 bytes = 0xFFFFFFFF (every nonce passes)
     let target = V3DifficultyTarget { bytes: [0xFF; 32] };
 
-    let mut miner = create_gpu_backend(GpuBackendKind::Metal, 256, "deeksha_lite_v1", "")
+    let mut miner = create_gpu_backend(GpuBackendKind::Metal, 256, "ekam_deeksha", "")
         .expect("Metal init failed");
 
     println!("Device: {}", miner.device_name());
-    println!("Header: {}", hex::encode(&header_bytes));
+    println!("Header: {}", hex::encode(header_bytes));
     println!();
 
     // Mine a small batch — every nonce should pass with 0xFF target

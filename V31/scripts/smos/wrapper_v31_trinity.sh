@@ -50,7 +50,7 @@ export ZION_OCL_BUILD_OPTS="${ZION_OCL_BUILD_OPTS:--cl-std=CL1.2 -cl-mad-enable}
 # GCN needs 64 (wave64). Auto-tune handles this per-device.
 # See docs/3.0.1Genesis/VEGA64_S4_MEMHARD_DEBUG_GUIDE.md (work size table)
 # See docs/3.0.6/VEGA_SMOS_DUAL_GPU_REPORT.md (v90 config)
-export ZION_MINER_ALGORITHM=deeksha_lite_v1
+export ZION_MINER_ALGORITHM=ekam_deeksha
 export ZION_GPU_WORK_SIZE=8192
 export ZION_NONCE_AUTOTUNE=1
 export ZION_NONCE_COUNT=262144
