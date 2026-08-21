@@ -1,8 +1,8 @@
 # ZION 3.2 "One Love" — Mainnet Stable Roadmap
 
 > **Version target:** 3.2.0 "One Love" (Mainnet Stable)  
-> **Current version:** 3.1.0-beta (V31 Mainnet Alpha), protocol `zion-v3-node/3.1.0-alpha`  
-> **Last updated:** 2026-08-17  
+> **Current version:** 3.2.0-beta (V31 Mainnet Alpha pre-release), protocol `zion-v3-node/3.1.0-alpha`  
+> **Last updated:** 2026-08-21  
 > **Public launch target:** 31 December 2026  
 >
 > **Canonical plans:**
@@ -93,10 +93,10 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 | # | Task | Owner | Acceptance |
 |---|------|-------|------------|
 | G1 | Feature freeze | product | `DEFERRED_3.2.md` frozen |
-| G2 | GitHub `v3.2.0` release | release | Linux/Windows/macOS binaries, SHA256SUMS, signed tag |
+| G2 | GitHub `v3.2.0` release | release | Linux/Windows/macOS binaries, SHA256SUMS, signed tag — 🔄 in progress (workflows + scripts ready, tags pending) |
 | G3 | SMOS package | release | tested on reference rig |
-| G4 | Desktop app bundle | APP&WEB | builds and passes tests on all platforms |
-| G5 | Public docs update | docs | `public/README.md` and translations reflect 3.2.0 |
+| G4 | Desktop app bundle | APP&WEB | builds and passes tests on all platforms — 🔄 in progress (v3.2.0 desktop workflow + release notes ready) |
+| G5 | Public docs update | docs | `public/README.md` and translations reflect 3.2.0 — 🔄 in progress (download page metadata and release notes updated) |
 | G6 | Community + bug bounty | community | channels and process published |
 | G7 | Monitoring & alerting | ops | alerts tested, runbooks updated |
 

@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag, e.g. v3.1.0-cli'
+        description: 'Release tag, e.g. v3.2.0-miner'
         required: true
         type: string
       draft:
@@ -47,13 +47,15 @@ on:
         type: boolean
   push:
     tags:
+      - 'v3.2.0'
+      - 'v3.2.0-*'
       - 'v3.1.0'
       - 'v3.1.0-*'
       - 'miner-v*'
 
 env:
   PUBLIC_REPO: Zion-TerraNova/v3-Mainnet
-  VERSION: "3.1.0"
+  VERSION: "3.2.0"
   ZION_DISABLE_OPENMP: "1"
 
 jobs:
@@ -299,25 +301,25 @@ jobs:
             echo "Creating new release ${RELEASE_TAG}."
             gh release create "${RELEASE_TAG}" \
               --repo "${PUBLIC_REPO}" \
-              --title "ZION v3.1.0 — Public Boost Miner" \
-              --notes "## ZION v3.1.0 — Public Boost Miner
+              --title "ZION v3.2.0 — Public Boost Miner" \
+              --notes "## ZION v3.2.0 — Public Boost Miner
 
-          One-click public miner with TUI, all native algorithms (RandomX, GhostRider, VerusHash, Etchash, KawPow, Autolykos, kHeavyHash, BLAKE3, Cosmic Harmony) and the best GPU backend per platform:
+          One-click public miner with TUI, the canonical Ekam Deeksha v3.2 PoW (512 KiB, 2 passes, 128 random reads, Keccak-256) and all native algorithms (RandomX, GhostRider, VerusHash, Etchash, KawPow, Autolykos, kHeavyHash, BLAKE3). Best GPU backend per platform:
           - Linux x86_64: CUDA + OpenCL
           - Windows x86_64: CUDA + OpenCL
           - macOS arm64 / x86_64: Metal + OpenCL
           - Linux ARM64: OpenCL
 
-          The `public_build` feature hides internal AuxPoW/Trinity streams from the TUI — the miner runs ZION + revenue-optimized merged mining in the background and displays the ZION / Boost stream.
+          The public build shows only **ZION** plus **BOOST 1** / **BOOST 2** streams in the TUI, banner and logs — the miner still runs merged mining in the background to optimize total returns.
 
           ### Downloads
           | File | Platform |
           |------|----------|
-          | zion-miner-v3.1.0-linux-x86_64.tar.gz | Linux x86_64 |
-          | zion-miner-v3.1.0-linux-arm64.tar.gz | Linux ARM64 |
-          | zion-miner-v3.1.0-windows-x86_64.zip | Windows x86_64 |
-          | zion-miner-v3.1.0-macos-arm64.tar.gz | macOS Apple Silicon |
-          | zion-miner-v3.1.0-macos-x86_64.tar.gz | macOS Intel |
+          | zion-miner-v3.2.0-linux-x86_64.tar.gz | Linux x86_64 |
+          | zion-miner-v3.2.0-linux-arm64.tar.gz | Linux ARM64 |
+          | zion-miner-v3.2.0-windows-x86_64.zip | Windows x86_64 |
+          | zion-miner-v3.2.0-macos-arm64.tar.gz | macOS Apple Silicon |
+          | zion-miner-v3.2.0-macos-x86_64.tar.gz | macOS Intel |
 
           See SHA256SUMS.txt for checksums." \
               ${DRAFT_FLAG} \

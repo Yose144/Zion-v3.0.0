@@ -20,7 +20,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 V31_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 DIST_DIR="${SCRIPT_DIR}/dist"
 VERSION="v3.2.0"
-FEATURES="public_build,full,tui"
+FEATURES="public_build,auxpow,gpu-opencl,gpu-metal,native-all,tui"
 
 echo "=== ZION V31 Miner — macOS Public Boost Build ==="
 echo "Version:  ${VERSION}"
