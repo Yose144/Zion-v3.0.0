@@ -11,8 +11,8 @@ pub mod algorithm;
 pub mod algorithms_npu;
 pub mod algorithms_opt;
 pub mod deeksha;
-pub mod deeksha_lite;
-pub mod deeksha_lite_fire;
+pub mod deeksha_lite;   // legacy, kept for tests
+pub mod deeksha_lite_fire; // legacy, kept for tests
 pub mod gpu;
 pub mod hic;
 pub mod hugepages;
@@ -29,9 +29,12 @@ pub use algorithm::{DynPowAlgorithm, EkamDeeksha, PocAlgorithm, PowAlgorithm};
 pub use profit::{CoinProfile, Device, ExternalCoin, PoolPreference, ProfitEntry, ProfitRouter};
 pub use revenue::{NclStats, RevenueCollector, RevenueSource};
 
-// Re-export key functions for miner compatibility.
+// Re-export legacy functions for V3 compatibility tests.
+#[allow(deprecated)]
 pub use algorithms_opt::cosmic_harmony_with_height;
+#[allow(deprecated)]
 pub use deeksha_lite::deeksha_lite;
+#[allow(deprecated)]
 pub use deeksha_lite_fire::deeksha_lite_fire;
 
 /// Static canonical algorithm name used by pool, miner and status banners.

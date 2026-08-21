@@ -334,7 +334,7 @@ mod tests {
     #[test]
     fn decode_job_from_pool() {
         // Simulate a Job message that the pool would send
-        let line = r#"{"type":"job","job_id":100,"algorithm":"deeksha_lite_v1","start_nonce":0,"nonce_count":1000000,"target_hex":"0000ffff","header_hex":"aabb","height":116,"stream_weights":"","external_stream":{"coin":"ZANO","algorithm":"progpow_zano","job_id":"ext1","header_hex":"ccdd","target_hex":"00ff","height":3805439,"extranonce1_hex":"","protocol":"ethstratum","seed_hash_hex":"","timestamp":0},"external_stream_cpu":{"coin":"VRSC","algorithm":"verushash","job_id":"ext2","header_hex":"eeff","target_hex":"00ff","height":1000,"extranonce1_hex":"","protocol":"zcashstratum","seed_hash_hex":"","timestamp":0}}"#;
+        let line = r#"{"type":"job","job_id":100,"algorithm":"ekam_deeksha","start_nonce":0,"nonce_count":1000000,"target_hex":"0000ffff","header_hex":"aabb","height":116,"stream_weights":"","external_stream":{"coin":"ZANO","algorithm":"progpow_zano","job_id":"ext1","header_hex":"ccdd","target_hex":"00ff","height":3805439,"extranonce1_hex":"","protocol":"ethstratum","seed_hash_hex":"","timestamp":0},"external_stream_cpu":{"coin":"VRSC","algorithm":"verushash","job_id":"ext2","header_hex":"eeff","target_hex":"00ff","height":1000,"extranonce1_hex":"","protocol":"zcashstratum","seed_hash_hex":"","timestamp":0}}"#;
         let msg = decode_message(line).unwrap();
         match msg {
             PoolMessage::Job {

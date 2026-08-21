@@ -1,7 +1,7 @@
 {
   "name": "zion-desktop-agent",
-  "version": "3.1.0",
-  "description": "ZION V31 Mainnet Alpha v3.1.0 Desktop Agent — unified mining, Multichain, MarketPlace and OASIS client with bridge, swap, DeFi, DAO and node management.",
+  "version": "3.2.0",
+  "description": "ZION V31 Mainnet Alpha v3.2.0 Desktop Agent — unified mining, Multichain, MarketPlace and OASIS client with bridge, swap, DeFi, DAO and node management.",
   "homepage": "https://zionterranova.com",
   "main": "src/main.js",
   "scripts": {

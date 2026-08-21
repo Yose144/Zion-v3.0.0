@@ -20,7 +20,7 @@
 > *Bob Marley as the narrative voice — a tribute, not an official endorsement.*
 >
 > *"The Golden Age does not begin with a date. It begins with a decision."*
-> — ZION genesis intent, 4 Dec 2025
+> — ZION genesis intent, 1 Jan 2026
 
 ---
 

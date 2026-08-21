@@ -51,7 +51,7 @@ Dnešní svět má svou vlastní potopu — ne vody, ale důvěry: inflace, kter
 |---|---|
 | „Jedny dveře, ne dvoje." | Fair launch: žádný pár „zvířat" (investorů, zakladatelů, VIP) nevstoupil do sítě dřív za jiných podmínek než ostatní. |
 | „Loď nese různé druhy." | Síť dnes zahrnuje L1 mining, L2 DeFi/DAO/bridge, humanitární fond a fond Issobella — víc forem účasti než jen „koupit a čekat". |
-| „Staví se předem, ne až začne pršet." | Blok je vytěžen každých 60 sekund, nepřetržitě, bez ohledu na to, kdo se právě dívá — síť běží od genesis bloku 4. 12. 2025. |
+| „Staví se předem, ne až začne pršet." | Blok je vytěžen každých 60 sekund, nepřetržitě, bez ohledu na to, kdo se právě dívá — síť běží od genesis bloku 1. 1. 2026. |
 | „Nikdo nenutí nastoupit." | Účast v síti je čistě dobrovolná — žádné KYC vynucené protokolem, žádná podmínka členství mimo běh softwaru. |
 
 ---

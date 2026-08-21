@@ -58,7 +58,7 @@ Blockchain s proof-of-work konsenzem, dual-algoritmem, cross-chain bridge, DeFi 
 
 > **⚠️ MAINNET BETA — Těžba na vlastní nebezpečí**
 
-ZION v3.0.6 je **živý a běží** jako Mainnet Beta. Síť je operační, bloky jsou produkovány a genesis řetězec je ustaven.
+ZION v3.2.0 One Love je **živý a běží** jako Mainnet Stable. Síť je operační, bloky jsou produkovány a genesis řetězec je ustaven.
 
 **Co to znamená:**
 - ✅ Síť je živá a produkuje bloky
@@ -78,9 +78,9 @@ Období Mainnet Beta trvá do oficiálního veřejného spuštění **31.12.2026
 
 | Parametr | Hodnota |
 |-----------|---------|
-| Status | **Mainnet Beta** |
-| Protokol | 3.0.6 |
-| Genesis hash | `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122` |
+| Status | **Mainnet Stable** |
+| Protokol | 3.1.0-alpha |
+| Genesis hash | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
 | Oficiální launch | 2026-12-31 |
 | Těžba | Aktivní (na vlastní nebezpečí) |
 
@@ -405,7 +405,7 @@ cargo run --release -p zion-core --bin zion-node
 
 | Konstanta | Hodnota |
 |-----------|---------|
-| Genesis hash | `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122` |
+| Genesis hash | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
 | `FLOWERS_PER_ZION` | 1 000 000 (6 desetinných míst) |
 | `BASE_REWARD` | 5 400 067 000 flowers (5 400,067 ZION) |
 | `TAIL_REWARD` | 724 784 723 flowers (~724,785 ZION) |
@@ -452,7 +452,7 @@ cargo run --release -p zion-core --bin zion-node
 
 | | |
 |---|---|
-| **Protokol** | 3.0.6 |
+| **Protokol** | 3.1.0-alpha |
 | **Release** | v3.0.6-beta (Mainnet Beta) |
 | **Status** | Live — těžba aktivní (na vlastní nebezpečí) |
 | **Oficiální launch** | 2026-12-31 |

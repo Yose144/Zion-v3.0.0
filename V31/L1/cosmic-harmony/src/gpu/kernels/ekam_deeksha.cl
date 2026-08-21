@@ -1,18 +1,15 @@
 /*
- * DeekshaChv3 — Unified Canonical OpenCL Kernel (Phase C) OPTIMIZED
+ * Ekam Deeksha v3.2 — OpenCL Kernel (GCN/RDNA compatible) OPTIMIZED
  *
- * This kernel is a bit-identical alias of deeksha_lite.cl.
- * Phase A established deeksha_chv3 as the canonical name for deeksha_lite_v1.
- * Phase C provides a dedicated GPU kernel with the canonical name.
- *
- * Pipeline (Ekam Deeksha v2):
+ * Pipeline (Ekam Deeksha v3.2):
  *   1. Keccak256(header[0..80] || nonce_le[0..8])  → s1[32]
  *      OPTIMIZATION: Host precomputes Keccak state after absorbing header.
  *      Each thread only XORs nonce, applies padding, and runs f1600.
- *   2. Memory-hard scratchpad (128 KiB)
- *        Phase A: SHA3-512 chain fill  (BLOCK_COUNT=4096 × 32B)
- *        Phase B: 1 forward sequential XOR pass
- *        Phase C: 32 random reads → acc[32]  (idx derived from 8 bytes)
+ *   2. Memory-hard scratchpad (512 KiB)
+ *        Phase A: SHA3-512 chain fill  (BLOCK_COUNT=16384 × 32B)
+ *        Phase B: forward sequential XOR pass
+ *        Phase C: backward sequential XOR pass (when PASSES >= 2)
+ *        Phase D: 128 random reads → acc[32]  (idx derived from 8 bytes)
  *      OPTIMIZATION: Vectorized 32-byte reads/writes via ulong4 vload4/vstore4.
  *   3. AES-128 CTR mix (key=s2[0..16], counter=nonce||s2[16..24])
  *        → block0 + block1(counter+1), 1 full round + 1 final round
@@ -21,9 +18,6 @@
  *
  * GCN-safe: union instead of pointer casts for keccak state.
  * No Blake3 — SHA3-512 is used for scratchpad fill (GPU-friendly).
- *
- * KAT (Known Answer Test): CPU↔GPU parity verified via
- * deeksha_chv3::tests::chv3_kat_known_vector.
  */
 
 /* 32-bit atomics for on-device target check + early exit (matches CUDA).
@@ -36,11 +30,11 @@
 /* Constants                                                                   */
 /* ========================================================================== */
 
-#define SCRATCHPAD_SIZE  131072   /* 128 KiB = 4096 * 32 */
+#define SCRATCHPAD_SIZE  524288   /* 512 KiB = 16384 * 32 (v3.2 ASIC-hardened) */
 #define BLOCK_SIZE       32
-#define BLOCK_COUNT      4096
-#define PASSES           1
-#define RANDOM_READS     32
+#define BLOCK_COUNT      16384    /* 512 KiB / 32B = 16384 blocks */
+#define PASSES           2        /* forward + backward (was 1) */
+#define RANDOM_READS     128      /* 4× more serial bottleneck (was 32) */
 
 /* Local work group size — overridden via build options for the real miner. */
 #ifndef LOCAL_SIZE
@@ -301,9 +295,9 @@ void aes_final_round(__private uchar s[16], __private const uchar k[16], __local
 /* ========================================================================== */
 /* Step 2A: Fill scratchpad with SHA3-512 chain (INTERLEAVED layout)           */
 /*                                                                             */
-/* Matches CPU ekam_deeksha.rs step2_memory_hard Phase 1 (Ekam v2):           */
+/* Matches CPU ekam_deeksha.rs step2_memory_hard Phase 1 (Ekam v3.2):         */
 /*   state[0..32] = seed, state[32..64] = 0                                   */
-/*   for blk in 0..4096:                                                       */
+/*   for blk in 0..16384:                                                      */
 /*     input[0..64] = state                                                    */
 /*     input[64..68] = blk.to_le_bytes()  (only [64] used — hash 65 bytes)   */
 /*     out = sha3_512(&input[..65])                                            */
@@ -443,7 +437,7 @@ void aes128_mix(
         if (carry == 0) break;
     }
 
-    /* Ekam v2: 1 full AES round + 1 final round (total 2 rounds) */
+    /* Ekam v3.2: 1 full AES round + 1 final round (total 2 rounds) */
     #pragma unroll
     for (int r = 0; r < 1; r++) {
         aes_round(block0, key, sbox);
@@ -534,7 +528,7 @@ void stream_byproduct_aes(__private const uchar in[32], ulong nonce, int iters,
 /* ========================================================================== */
 
 __kernel __attribute__((reqd_work_group_size(LOCAL_SIZE, 1, 1)))
-void deeksha_chv3_mine(
+void ekam_deeksha_mine(
     __constant const ulong * restrict header_keccak_state,
     ulong  nonce_base,
     uint   nonce_count,

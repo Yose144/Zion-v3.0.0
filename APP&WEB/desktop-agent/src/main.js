@@ -1,4 +1,4 @@
-// ZION V31 Mainnet Alpha v3.1.0 "Triple Stream" - Main Process
+// ZION V31 Mainnet Alpha v3.2.0 "Triple Stream" - Main Process
 // Electron main process with system tray, auto-start, GPU mining, IPC
 
 // Work around NVIDIA/Wayland GPU sandbox segfaults by forcing the X11 Ozone
@@ -40,7 +40,7 @@ const QRCode = require('qrcode');
 const crypto = require('crypto');
 
 // ── Network Constants ───────────────────────────────────────────────────────
-// Mainnet Edge relay (Hetzner VPS, Prague) — public-facing pool + node
+// Mainnet Edge relay (Contabo VPS, Prague) — public-facing pool + node
 const PRIMARY_MAINNET_HOST = '62.171.141.136';
 const PRIMARY_POOL_PORT = 8444;
 const PRIMARY_RPC_PORT = 8443;
@@ -51,6 +51,15 @@ const PRIMARY_TESTNET_HOST = PRIMARY_MAINNET_HOST;
 // Default to public Edge read-only RPC for public miners.
 // Users with local Core node can override via Settings → RPC URL.
 const DEFAULT_RPC_URL = 'http://62.171.141.136:8443/jsonrpc';
+
+// ── Public HTTPS API (app.zionterranova.com) ────────────────────────────────
+// The TCP RPC port 8443 is behind an nginx IP allowlist (operator-only).
+// Public desktop agents must use the HTTPS API exposed by the Next.js website
+// to fetch wallet balances, UTXOs, mining stats, and broadcast transactions.
+const PUBLIC_API_BASE = 'https://app.zionterranova.com';
+const PUBLIC_API_ADDRESS = `${PUBLIC_API_BASE}/api/blockchain/address`;
+const PUBLIC_API_BROADCAST = `${PUBLIC_API_BASE}/api/blockchain/broadcast`;
+const PUBLIC_API_POOL_STATS = `${PUBLIC_API_BASE}/api/pool/stats`;
 
 // ── Logging: only miner metrics + errors go to console.log.
 // Everything else uses dbg() which outputs console.debug only when ZION_DEBUG=1.
@@ -1945,7 +1954,7 @@ function createWindow() {
     height: 800,
     minWidth: 800,
     minHeight: 600,
-    title: 'ZION Native Awakening v3.1.0',
+    title: 'ZION Native Awakening v3.2.0',
     backgroundColor: '#000000',
     ...(windowIcon ? { icon: windowIcon } : {}),
     show: true, // Always show window on manual start; startMinimized only applies to auto-start
@@ -2141,7 +2150,7 @@ function createTray() {
   
   trayMenu = Menu.buildFromTemplate([
     {
-      label: 'ZION Miner v3.1.0 Ekam Deeksha',
+      label: 'ZION Miner v3.2.0 Ekam Deeksha',
       enabled: false
     },
     { type: 'separator' },
@@ -2195,7 +2204,7 @@ function createTray() {
   ]);
 
   tray.setContextMenu(trayMenu);
-  tray.setToolTip('ZION Miner v3.1.0 Ekam Deeksha');
+  tray.setToolTip('ZION Miner v3.2.0 Ekam Deeksha');
   
   tray.on('click', () => {
     showWindow();
@@ -3722,7 +3731,7 @@ function parseMinerOutput(output) {
     minerStats.last_job_height = v3MiningMatch[2];
   }
 
-  // ─── V31 version banner: "version=3.1.0-dev" ───
+  // ─── V31 version banner: "version=3.2.0-dev" ───
   const v3VersionMatch = output.match(/^version=([\d.]+(?:-\w+)?)/m);
   if (v3VersionMatch) {
     minerStats.miner_version = v3VersionMatch[1];
@@ -4416,7 +4425,7 @@ ipcMain.handle('get-gpu-info', () => {
   }
 });
 
-// ── Ekam Deeksha v3.1.0 — GPU device enumeration ──
+// ── Ekam Deeksha v3.2.0 — GPU device enumeration ──
 ipcMain.handle('get-gpu-devices', () => {
   try {
     const info = detectGPU();
@@ -4426,7 +4435,7 @@ ipcMain.handle('get-gpu-devices', () => {
   }
 });
 
-// ── Ekam Deeksha v3.1.0 — GPU benchmark (runs miner in benchmark mode) ──
+// ── Ekam Deeksha v3.2.0 — GPU benchmark (runs miner in benchmark mode) ──
 ipcMain.handle('run-gpu-benchmark', async (_event, options = {}) => {
   try {
     const gpuInfo = detectGPU();
@@ -4766,6 +4775,60 @@ ipcMain.handle('validate-address', (event, address) => {
   };
 });
 
+/**
+ * Fetch wallet snapshot (balance, UTXOs, mining stats, transactions) via the
+ * public HTTPS API on app.zionterranova.com. This is the primary path for
+ * desktop agents — the raw TCP RPC on port 8443 is operator-only (nginx IP
+ * allowlist) and unreachable from public networks.
+ *
+ * Returns a normalized object matching the old RPC-based shape so the
+ * renderer code doesn't need to change.
+ */
+async function fetchWalletSnapshotPublic(address) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 10000);
+  try {
+    const res = await fetch(`${PUBLIC_API_ADDRESS}?address=${encodeURIComponent(address)}`, {
+      signal: ctrl.signal,
+      headers: { 'Accept': 'application/json' },
+    });
+    if (!res.ok) {
+      throw new Error(`Public API HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    if (data.error) {
+      throw new Error(data.error);
+    }
+    return data;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Broadcast a signed transaction via the public HTTPS API.
+ * POST /api/blockchain/broadcast with { transaction, model }
+ */
+async function broadcastTransactionPublic(transaction, model) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 15000);
+  try {
+    const res = await fetch(PUBLIC_API_BROADCAST, {
+      method: 'POST',
+      signal: ctrl.signal,
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ transaction, model }),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) {
+      throw new Error(data.error || `Broadcast HTTP ${res.status}`);
+    }
+    return data;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function zionRpcCall(rpcUrl, method, params) {
   const net = require('net');
   const url = (rpcUrl || '').toString().trim();
@@ -4861,176 +4924,167 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
       return { success: false, error: 'Address must be a zion1... address' };
     }
 
-    const baseRpcUrl = normalizeRpcUrl(rpcUrl);
-    const parsedBase = (() => {
-      try {
-        return new URL(baseRpcUrl);
-      } catch {
-        return null;
-      }
-    })();
-    const baseHost = parsedBase?.hostname || '';
-    const baseProtocol = parsedBase?.protocol || 'http:';
-    const basePort = parsedBase?.port || '8443';
-
-    const canonicalRpcCandidates = MAINNET_SERVERS.map((s) => `http://${s.host}:${PRIMARY_RPC_PORT}/jsonrpc`);
-
-    const rpcCandidates = [
-      baseRpcUrl,
-      baseHost ? `${baseProtocol}//${baseHost}:${PRIMARY_RPC_PORT}/jsonrpc` : '',
-      ...MAINNET_SERVERS.map(s => `http://${s.host}:${basePort}/jsonrpc`),
-      ...canonicalRpcCandidates
-    ].filter(Boolean);
-
-    const seenRpc = new Set();
-    const uniqueRpcCandidates = rpcCandidates.filter((url) => {
-      if (!url || seenRpc.has(url)) return false;
-      seenRpc.add(url);
-      return true;
-    });
-
-    let result = null;
+    // ── Primary path: public HTTPS API (app.zionterranova.com) ──────────
+    // The TCP RPC on port 8443 is behind an nginx IP allowlist and unreachable
+    // from public networks. The Next.js website exposes a public REST API that
+    // proxies to the local node RPC and returns balance + UTXOs + mining stats
+    // + transaction history in a single call.
+    let snap = null;
     let rpcSource = '';
-    let lastRpcError = '';
+    let rpcError = '';
     const rpcTried = [];
 
-    for (const candidateUrl of uniqueRpcCandidates) {
-      try {
-        rpcTried.push(candidateUrl);
-        const rpcRes = await zionRpcCall(candidateUrl, 'getBalance', { address: addr });
-        result = rpcRes;
-        rpcSource = candidateUrl;
-        break;
-      } catch (err) {
-        lastRpcError = err?.message || String(err);
-      }
-    }
-
-    // Even if RPC fails, we continue to fetch pool balance below.
-    let rpcOk = !!result && !result?.error;
-    let rpcError = '';
-    if (!result) {
-      rpcError = lastRpcError || 'no reachable endpoint';
-    } else if (result?.error) {
-      rpcError = result.error?.message || JSON.stringify(result.error);
-      rpcOk = false;
-    }
-
-    // V31 returns: balance_flowers (string, u128 in flowers), chain_height, transaction_model
-    // 1 ZION = 1_000_000 flowers (1e6) — 3.0.3 decimal fork
-    // Use BigInt for precision with large u128 values, then convert to Number for display
-    const balanceFlowersStr = rpcOk ? (result?.balance_flowers ?? '0') : '0';
-    const utxoBalanceFlowersStr = rpcOk ? (result?.utxo_balance_flowers ?? '0') : '0';
-    const accountBalanceFlowersStr = rpcOk ? (result?.account_balance_flowers ?? '0') : '0';
-    let balanceZion = 0;
     try {
-      balanceZion = Number(BigInt(balanceFlowersStr)) / 1_000_000;
-    } catch {
-      balanceZion = Number(balanceFlowersStr) / 1_000_000;
+      rpcTried.push(PUBLIC_API_ADDRESS);
+      snap = await fetchWalletSnapshotPublic(addr);
+      rpcSource = PUBLIC_API_ADDRESS;
+    } catch (pubErr) {
+      rpcError = pubErr?.message || String(pubErr);
+      dbg(`[wallet-get-balance] Public API failed: ${rpcError}`);
     }
-    const balanceAtomic = balanceFlowersStr;
-    const utxoCount = rpcOk ? (result?.utxo_count ?? 0) : 0;
-    const chainHeight = rpcOk ? (result?.chain_height ?? 0) : 0;
 
-    // Fetch pool mined balance — try Edge pool API if available.
-    // V31 pool API runs on the Edge node (port 8080) for miner stats.
-    const POOL_API_SERVERS = [
-      { id: 'zion-edge', host: PRIMARY_MAINNET_HOST },
-      { id: 'zion-edge-vpn', host: EDGE_VPN_HOST },
-    ];
+    // ── Fallback: direct TCP RPC (operator-only, localhost or allowed IP) ──
+    if (!snap && rpcUrl) {
+      const baseRpcUrl = normalizeRpcUrl(rpcUrl);
+      const parsedBase = (() => {
+        try { return new URL(baseRpcUrl); } catch { return null; }
+      })();
+      const baseHost = parsedBase?.hostname || '';
+      const baseProtocol = parsedBase?.protocol || 'http:';
+      const basePort = parsedBase?.port || '8443';
 
-    const fetchPoolJson = async (url, timeoutMs = 3000) => {
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-      try {
-        const res = await fetch(url, { signal: ctrl.signal });
-        if (!res.ok) return null;
-        return await res.json();
-      } catch {
-        return null;
-      } finally {
-        clearTimeout(timer);
-      }
-    };
+      const rpcCandidates = [
+        baseRpcUrl,
+        baseHost ? `${baseProtocol}//${baseHost}:${PRIMARY_RPC_PORT}/jsonrpc` : '',
+        ...MAINNET_SERVERS.map(s => `http://${s.host}:${basePort}/jsonrpc`),
+        ...MAINNET_SERVERS.map(s => `http://${s.host}:${PRIMARY_RPC_PORT}/jsonrpc`)
+      ].filter(Boolean);
 
-    let poolPending = 0;
-    let poolPendingFromStats = 0;
-    let poolPendingFromPayouts = 0;
-    let poolPaid = 0;
-    let poolShares = 0;
-    let poolBlocks = 0;
-    let poolHashrate1h = 0;
-    let poolHashrate24h = 0;
-    let poolLastShare = 0;
-    let poolPendingTxCount = 0;
-    let poolPendingSource = 'stats';
-    let poolSource = '';
-    let poolSourceHost = '';
-    try {
-      for (const srv of POOL_API_SERVERS) {
-        const statsResp = await fetchPoolJson(`http://${srv.host}:8080/api/v1/miner/${addr}/stats`);
-        const stats = statsResp?.stats || statsResp;
-        if (!stats) continue;
+      const seenRpc = new Set();
+      const uniqueRpcCandidates = rpcCandidates.filter((url) => {
+        if (!url || seenRpc.has(url)) return false;
+        seenRpc.add(url);
+        return true;
+      });
 
-        const payoutsResp = await fetchPoolJson(`http://${srv.host}:8080/api/v1/miner/${addr}/payouts`);
-
-        poolSource = srv.id || '';
-        poolSourceHost = srv.host || '';
-
-        poolPendingFromStats = Number(stats.pending_balance) || 0;
-        poolPending = poolPendingFromStats;
-        poolPaid     = Number(stats.total_paid) || 0;
-        poolShares   = Number(stats.valid_shares) || 0;
-        poolBlocks   = Number(stats.blocks_found) || 0;
-        poolHashrate1h  = Number(stats.hashrate_1h) || 0;
-        poolHashrate24h = Number(stats.hashrate_24h) || 0;
-        poolLastShare   = Number(stats.last_share_time) || 0;
-
-        if (payoutsResp && typeof payoutsResp.pending_balance !== 'undefined') {
-          poolPendingFromPayouts = Number(payoutsResp.pending_balance) || 0;
-          poolPending = poolPendingFromPayouts;
-          poolPendingSource = 'payouts';
-          const pendingPayouts = Array.isArray(payoutsResp.pending_payouts) ? payoutsResp.pending_payouts : [];
-          poolPendingTxCount = pendingPayouts.length;
+      let rpcResult = null;
+      for (const candidateUrl of uniqueRpcCandidates) {
+        try {
+          rpcTried.push(candidateUrl);
+          const rpcRes = await zionRpcCall(candidateUrl, 'getBalance', { address: addr });
+          if (rpcRes && !rpcRes.error) {
+            rpcResult = rpcRes;
+            rpcSource = candidateUrl;
+            break;
+          }
+        } catch (err) {
+          rpcError = err?.message || String(err);
         }
-
-        // First successful server in priority order is authoritative.
-        break;
       }
-    } catch (poolErr) {
-      console.warn(`[wallet-get-balance] Pool stats unavailable: ${poolErr?.message || poolErr}`);
+
+      if (rpcResult) {
+        // Normalize RPC result to the public API shape
+        const balanceFlowersStr = rpcResult.balance_flowers ?? '0';
+        let balanceZion = 0;
+        try { balanceZion = Number(BigInt(balanceFlowersStr)) / 1_000_000; }
+        catch { balanceZion = Number(balanceFlowersStr) / 1_000_000; }
+
+        snap = {
+          address: addr,
+          balance: {
+            total: balanceZion,
+            total_atomic: Number(balanceFlowersStr) || 0,
+            utxo_count: rpcResult.utxo_count ?? 0,
+            pool_pending: 0,
+            pool_paid: 0,
+          },
+          mining_stats: null,
+          transactions: [],
+          utxos: [],
+          transaction_model: rpcResult.transaction_model ?? 'utxo',
+        };
+      }
     }
+
+    if (!snap) {
+      // Both public API and RPC failed — return offline status
+      return {
+        success: true,
+        balance: 0,
+        balance_atomic: '0',
+        utxo_balance_flowers: '0',
+        account_balance_flowers: '0',
+        utxo_count: 0,
+        chain_height: 0,
+        transaction_model: 'unknown',
+        rpc_ok: false,
+        rpc_error: rpcError || 'no reachable endpoint',
+        pool_pending: 0,
+        pool_pending_atomic: 0,
+        pool_pending_stats_atomic: 0,
+        pool_pending_payouts_atomic: 0,
+        pool_paid: 0,
+        pool_paid_atomic: 0,
+        pool_shares: 0,
+        pool_blocks: 0,
+        pool_hashrate_1h: 0,
+        pool_hashrate_24h: 0,
+        pool_last_share: 0,
+        pool_pending_txs: 0,
+        pool_pending_source: 'stats',
+        pool_source: '',
+        pool_source_host: '',
+        rpc_source: '',
+        rpc_tried: rpcTried,
+        address: addr,
+      };
+    }
+
+    // ── Extract data from snapshot (public API or RPC-normalized) ──────
+    const balanceZion = Number(snap.balance?.total ?? 0);
+    const balanceAtomic = String(snap.balance?.total_atomic ?? '0');
+    const utxoCount = Number(snap.balance?.utxo_count ?? 0);
+    const transactionModel = snap.transaction_model ?? (addr.startsWith('zion1') ? 'utxo' : 'account');
+
+    // Mining stats from public API (already merged from pool)
+    const ms = snap.mining_stats;
+    const poolPending = Number(snap.balance?.pool_pending ?? 0);
+    const poolPaid = Number(snap.balance?.pool_paid ?? 0);
+    const poolShares = ms?.accepted_shares ?? 0;
+    const poolBlocks = ms?.blocks_found ?? 0;
+    const poolHashrate1h = ms?.hashrate_1h ?? 0;
 
     return {
       success: true,
       balance: balanceZion,
       balance_atomic: balanceAtomic,
-      utxo_balance_flowers: utxoBalanceFlowersStr,
-      account_balance_flowers: accountBalanceFlowersStr,
+      utxo_balance_flowers: balanceAtomic,
+      account_balance_flowers: '0',
       utxo_count: utxoCount,
-      chain_height: chainHeight,
-      transaction_model: rpcOk ? (result?.transaction_model ?? 'account') : 'unknown',
-      rpc_ok: rpcOk,
-      rpc_error: rpcError || '',
-      // Pool mining balance (V31 pool stores flowers: 1 ZION = 1_000_000 flowers — 3.0.3 decimal fork)
-      pool_pending:        poolPending  / 1_000_000,
-      pool_pending_atomic: poolPending,
-      pool_pending_stats_atomic: poolPendingFromStats,
-      pool_pending_payouts_atomic: poolPendingFromPayouts,
-      pool_paid:           poolPaid     / 1_000_000,
-      pool_paid_atomic:    poolPaid,
+      chain_height: 0,
+      transaction_model: transactionModel,
+      rpc_ok: true,
+      rpc_error: '',
+      pool_pending:        poolPending,
+      pool_pending_atomic: Math.round(poolPending * 1_000_000),
+      pool_pending_stats_atomic: Math.round(poolPending * 1_000_000),
+      pool_pending_payouts_atomic: Math.round(poolPending * 1_000_000),
+      pool_paid:           poolPaid,
+      pool_paid_atomic:    Math.round(poolPaid * 1_000_000),
       pool_shares:         poolShares,
       pool_blocks:         poolBlocks,
       pool_hashrate_1h:    poolHashrate1h,
-      pool_hashrate_24h:   poolHashrate24h,
-      pool_last_share:     poolLastShare,   // unix timestamp (seconds)
-      pool_pending_txs:    poolPendingTxCount,
-      pool_pending_source: poolPendingSource,
-      pool_source:         poolSource,
-      pool_source_host:    poolSourceHost,
+      pool_hashrate_24h:   0,
+      pool_last_share:     0,
+      pool_pending_txs:    0,
+      pool_pending_source: 'stats',
+      pool_source:         snap.is_miner ? 'public-api' : '',
+      pool_source_host:    'app.zionterranova.com',
       rpc_source:          rpcSource,
       rpc_tried:           rpcTried,
-      address: rpcOk ? (result?.address ?? addr) : addr
+      address:             snap.address ?? addr,
+      transactions:        snap.transactions ?? [],
+      utxos:               snap.utxos ?? [],
     };
   } catch (error) {
     return { success: false, error: error?.message || String(error) };
@@ -5109,48 +5163,66 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
     }
 
     // ── Step 2: Get UTXOs for the sender address ─────────────────────
+    // Primary: public HTTPS API (app.zionterranova.com)
+    // Fallback: direct TCP RPC (operator-only)
     console.log('[MAIN wallet-send-transaction] Fetching UTXOs...');
-    const baseRpcUrl = normalizeRpcUrl(rpcUrl);
-    const parsedBase = (() => {
-      try { return new URL(baseRpcUrl); } catch { return null; }
-    })();
-    const baseHost = parsedBase?.hostname || '';
-    const baseProtocol = parsedBase?.protocol || 'http:';
-    const basePort = parsedBase?.port || '8443';
-
-    const rpcCandidates = [
-      baseRpcUrl,
-      baseHost ? `${baseProtocol}//${baseHost}:${PRIMARY_RPC_PORT}/jsonrpc` : '',
-      ...MAINNET_SERVERS.map(s => `http://${s.host}:${basePort}/jsonrpc`),
-      ...MAINNET_SERVERS.map(s => `http://${s.host}:${PRIMARY_RPC_PORT}/jsonrpc`)
-    ].filter(Boolean);
-
-    const seenRpc = new Set();
-    const uniqueRpcCandidates = rpcCandidates.filter((url) => {
-      if (!url || seenRpc.has(url)) return false;
-      seenRpc.add(url);
-      return true;
-    });
-    console.log('[MAIN wallet-send-transaction] RPC candidates:', uniqueRpcCandidates.length);
-
     let utxos = null;
-    let utxoRpcUrl = '';
     let lastRpcError = '';
 
-    for (const candidateUrl of uniqueRpcCandidates) {
-      try {
-        const utxoRes = await zionRpcCall(candidateUrl, 'getUtxos', { address: fromAddr });
-        if (utxoRes && !utxoRes.error && Array.isArray(utxoRes.utxos)) {
-          utxos = utxoRes.utxos;
-          utxoRpcUrl = candidateUrl;
-          console.log('[MAIN wallet-send-transaction] UTXOs fetched from', candidateUrl, '- count:', utxos.length);
-          break;
+    // Try public API first — returns UTXOs in the snapshot
+    try {
+      const snap = await fetchWalletSnapshotPublic(fromAddr);
+      if (Array.isArray(snap.utxos) && snap.utxos.length > 0) {
+        utxos = snap.utxos;
+        console.log('[MAIN wallet-send-transaction] UTXOs fetched from public API - count:', utxos.length);
+      } else if (Array.isArray(snap.utxos)) {
+        // Public API returned empty UTXO list — use it (account model)
+        utxos = snap.utxos;
+        console.log('[MAIN wallet-send-transaction] Public API returned 0 UTXOs (account model)');
+      }
+    } catch (pubErr) {
+      lastRpcError = pubErr?.message || String(pubErr);
+      console.warn('[MAIN wallet-send-transaction] Public API UTXO fetch failed:', lastRpcError);
+    }
+
+    // Fallback: direct TCP RPC
+    if (!utxos && rpcUrl) {
+      const baseRpcUrl = normalizeRpcUrl(rpcUrl);
+      const parsedBase = (() => {
+        try { return new URL(baseRpcUrl); } catch { return null; }
+      })();
+      const baseHost = parsedBase?.hostname || '';
+      const baseProtocol = parsedBase?.protocol || 'http:';
+      const basePort = parsedBase?.port || '8443';
+
+      const rpcCandidates = [
+        baseRpcUrl,
+        baseHost ? `${baseProtocol}//${baseHost}:${PRIMARY_RPC_PORT}/jsonrpc` : '',
+        ...MAINNET_SERVERS.map(s => `http://${s.host}:${basePort}/jsonrpc`),
+        ...MAINNET_SERVERS.map(s => `http://${s.host}:${PRIMARY_RPC_PORT}/jsonrpc`)
+      ].filter(Boolean);
+
+      const seenRpc = new Set();
+      const uniqueRpcCandidates = rpcCandidates.filter((url) => {
+        if (!url || seenRpc.has(url)) return false;
+        seenRpc.add(url);
+        return true;
+      });
+
+      for (const candidateUrl of uniqueRpcCandidates) {
+        try {
+          const utxoRes = await zionRpcCall(candidateUrl, 'getUtxos', { address: fromAddr });
+          if (utxoRes && !utxoRes.error && Array.isArray(utxoRes.utxos)) {
+            utxos = utxoRes.utxos;
+            console.log('[MAIN wallet-send-transaction] UTXOs fetched from', candidateUrl, '- count:', utxos.length);
+            break;
+          }
+          if (utxoRes?.error) {
+            lastRpcError = typeof utxoRes.error === 'string' ? utxoRes.error : JSON.stringify(utxoRes.error);
+          }
+        } catch (err) {
+          lastRpcError = err?.message || String(err);
         }
-        if (utxoRes?.error) {
-          lastRpcError = typeof utxoRes.error === 'string' ? utxoRes.error : JSON.stringify(utxoRes.error);
-        }
-      } catch (err) {
-        lastRpcError = err?.message || String(err);
       }
     }
 
@@ -5188,18 +5260,15 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
     } else {
       // ── Account model fallback ──────────────────────────────────────
       console.log('[MAIN wallet-send-transaction] No UTXOs, checking account balance...');
-      let balanceRes = null;
-      for (const candidateUrl of uniqueRpcCandidates) {
-        try {
-          const balRes = await zionRpcCall(candidateUrl, 'getBalance', { address: fromAddr });
-          if (balRes && !balRes.error) {
-            balanceRes = balRes;
-            break;
-          }
-        } catch { /* try next */ }
+      // Use public API to get balance
+      let accountBalanceFlowers = BigInt(0);
+      try {
+        const snap = await fetchWalletSnapshotPublic(fromAddr);
+        accountBalanceFlowers = BigInt(Math.round(Number(snap.balance?.total ?? 0) * 1_000_000));
+      } catch (pubErr) {
+        console.warn('[MAIN wallet-send-transaction] Public API balance check failed:', pubErr?.message);
       }
 
-      const accountBalanceFlowers = BigInt(balanceRes?.account_balance_flowers || '0');
       const amountFlowers = BigInt(Math.floor(amt * 1e6));
       const feeFlowers = AccountBuilder.DEFAULT_FEE_FLOWERS;
       const totalNeeded = amountFlowers + feeFlowers;
@@ -5232,40 +5301,80 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
     }
 
     // ── Step 4: Submit transaction ──────────────────────────────────
+    // Primary: public HTTPS broadcast API
+    // Fallback: direct TCP RPC (operator-only)
     console.log('[MAIN wallet-send-transaction] Submitting', txModel, 'transaction...');
     let result = null;
-    const submitMethod = txModel === 'account' ? 'submitAccountTransaction' : 'submitTransaction';
-    for (const candidateUrl of uniqueRpcCandidates) {
-      try {
-        const rpcRes = await zionRpcCall(candidateUrl, submitMethod, txPayload);
-        if (rpcRes && !rpcRes.error) {
-          result = rpcRes;
-          console.log('[MAIN wallet-send-transaction] Transaction submitted to', candidateUrl, 'via', submitMethod);
-          break;
-        }
-        if (rpcRes?.error) {
-          console.warn('[MAIN wallet-send-transaction] RPC error:', rpcRes.error);
-          // If it fails with one method, try the generic one as last resort
-          if (txModel === 'account') {
-            const fallbackRes = await zionRpcCall(candidateUrl, 'submitTransaction', txPayload);
-            if (fallbackRes && !fallbackRes.error) {
-              result = fallbackRes;
-              console.log('[MAIN wallet-send-transaction] Account tx submitted via generic submitTransaction');
-              break;
-            }
+
+    try {
+      const broadcastRes = await broadcastTransactionPublic(txPayload, txModel);
+      if (broadcastRes.accepted || broadcastRes.tx_id) {
+        result = { tx_id: broadcastRes.tx_id, status: 'submitted' };
+        console.log('[MAIN wallet-send-transaction] Transaction submitted via public API, txId:', broadcastRes.tx_id);
+      } else if (broadcastRes.error) {
+        lastRpcError = broadcastRes.error;
+      }
+    } catch (pubErr) {
+      lastRpcError = pubErr?.message || String(pubErr);
+      console.warn('[MAIN wallet-send-transaction] Public broadcast failed:', lastRpcError);
+    }
+
+    // Fallback: direct TCP RPC
+    if (!result && rpcUrl) {
+      const baseRpcUrl = normalizeRpcUrl(rpcUrl);
+      const parsedBase = (() => {
+        try { return new URL(baseRpcUrl); } catch { return null; }
+      })();
+      const baseHost = parsedBase?.hostname || '';
+      const baseProtocol = parsedBase?.protocol || 'http:';
+      const basePort = parsedBase?.port || '8443';
+
+      const rpcCandidates = [
+        baseRpcUrl,
+        baseHost ? `${baseProtocol}//${baseHost}:${PRIMARY_RPC_PORT}/jsonrpc` : '',
+        ...MAINNET_SERVERS.map(s => `http://${s.host}:${basePort}/jsonrpc`),
+        ...MAINNET_SERVERS.map(s => `http://${s.host}:${PRIMARY_RPC_PORT}/jsonrpc`)
+      ].filter(Boolean);
+
+      const seenRpc = new Set();
+      const uniqueRpcCandidates = rpcCandidates.filter((url) => {
+        if (!url || seenRpc.has(url)) return false;
+        seenRpc.add(url);
+        return true;
+      });
+
+      const submitMethod = txModel === 'account' ? 'submitAccountTransaction' : 'submitTransaction';
+      for (const candidateUrl of uniqueRpcCandidates) {
+        try {
+          const rpcRes = await zionRpcCall(candidateUrl, submitMethod, txPayload);
+          if (rpcRes && !rpcRes.error) {
+            result = rpcRes;
+            console.log('[MAIN wallet-send-transaction] Transaction submitted to', candidateUrl, 'via', submitMethod);
+            break;
           }
-          return { success: false, error: typeof rpcRes.error === 'string' ? rpcRes.error : JSON.stringify(rpcRes.error) };
+          if (rpcRes?.error) {
+            console.warn('[MAIN wallet-send-transaction] RPC error:', rpcRes.error);
+            if (txModel === 'account') {
+              const fallbackRes = await zionRpcCall(candidateUrl, 'submitTransaction', txPayload);
+              if (fallbackRes && !fallbackRes.error) {
+                result = fallbackRes;
+                console.log('[MAIN wallet-send-transaction] Account tx submitted via generic submitTransaction');
+                break;
+              }
+            }
+            return { success: false, error: typeof rpcRes.error === 'string' ? rpcRes.error : JSON.stringify(rpcRes.error) };
+          }
+        } catch (err) {
+          lastRpcError = err?.message || String(err);
         }
-      } catch (err) {
-        lastRpcError = err?.message || String(err);
       }
     }
 
     if (!result) {
-      console.warn('[MAIN wallet-send-transaction] All RPCs failed');
+      console.warn('[MAIN wallet-send-transaction] All broadcast paths failed');
       return {
         success: false,
-        error: `RPC unavailable — node unreachable on all servers. Last error: ${lastRpcError || 'no reachable endpoint'}`
+        error: `Broadcast unavailable — public API and RPC both failed. Last error: ${lastRpcError || 'no reachable endpoint'}`
       };
     }
 
@@ -6085,7 +6194,7 @@ function _isNewerVersion(latest, current) {
 
 // App lifecycle
 app.whenReady().then(async () => {
-  console.log('ZION Native Awakening v3.1.0 started');
+  console.log('ZION Native Awakening v3.2.0 started');
 
   // Initialize auto-tuner
 

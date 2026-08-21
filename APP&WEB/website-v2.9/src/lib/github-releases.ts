@@ -221,8 +221,8 @@ export const COMMUNITY_CLI_RELEASE: Release = {
 };
 
 export const NETWORK_PARAMS = [
-  { label: 'Genesis hash', value: '08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122', mono: true },
-  { label: 'Consensus', value: 'PoW (Ekam Deeksha dual-algo: BLAKE3 + RandomNPU)' },
+  { label: 'Genesis hash', value: '96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb', mono: true },
+  { label: 'Consensus', value: 'PoW (Ekam Deeksha v3.2 — 512 KiB, 2 passes, 128 reads, Keccak-256)' },
   { label: 'Block target', value: '60 seconds' },
   { label: 'Supply', value: '144 billion ZION (144,000,000,000)' },
   { label: 'Decimals', value: '6 (1 ZION = 1,000,000 flowers)' },

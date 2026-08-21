@@ -85,7 +85,7 @@ The compass is not a guide for reaching a goal without thinking. It is a protect
 ## LIVE: the root
 
 - **L1 Proof-of-Work blockchain** in Rust; block target is 60 seconds and consensus uses the memory-intensive Ekam Deeksha / CosmicHarmony family.
-- **Public genesis hash:** `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122`.
+- **Public genesis hash:** `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`.
 - **Emission with a hard cap of 144 billion ZION.** Consensus defines the reward split: 89% to miners, 5% to the humanitarian fund, 5% to the Issobella fund, and 1% burn/pool fee depending on deployment configuration.
 - **Open-source MIT code** in the repository `Zion-TerraNova/v3-Mainnet`.
 - **L2 on Base and other EVM networks:** wZION, bridge, governance, treasury, staking, farm, and atomic swap are documented in the canonical technical whitepaper, including contract addresses and verification information on Basescan.

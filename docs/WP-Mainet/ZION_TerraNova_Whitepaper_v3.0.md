@@ -21,7 +21,7 @@
 2. [Introduction: Why ZION Exists](#introduction-why-zion-exists)
 3. [The Four Structural Flaws](#the-four-structural-flaws)
 4. [ZION's Answer: A Six-Layer Architecture](#zions-answer-a-six-layer-architecture)
-5. [Consensus: Ekam Deeksha v2](#consensus-ekam-deeksha-v2)
+5. [Consensus: Ekam Deeksha v3.2](#consensus-ekam-deeksha-v2)
 6. [Economic Model: Decade Decay](#economic-model-decade-decay)
 7. [Tokenomics & Genesis](#tokenomics--genesis)
 8. [L2 — wZION Bridge & DeFi](#l2--wzion-bridge--defi)
@@ -41,7 +41,7 @@
 
 ZION TerraNova is a Layer 1 proof-of-work blockchain designed to solve four structural problems that have plagued cryptocurrency since its inception: ASIC-driven centralization, insider pre-allocation, zero protocol-level social impact, and supply-shock volatility.
 
-Built from the ground up in **Rust** with a **Tokio** async runtime, ZION introduces a memory-hard PoW algorithm called **Ekam Deeksha v2** that runs efficiently on consumer CPUs and GPUs while resisting ASIC specialization. Its economic model, **Decade Decay**, replaces abrupt four-year halvings with a smooth 20 % reduction every ten years, capped by a perpetual tail emission that guarantees miner incentives for centuries.
+Built from the ground up in **Rust** with a **Tokio** async runtime, ZION introduces a memory-hard PoW algorithm called **Ekam Deeksha v3.2** that runs efficiently on consumer CPUs and GPUs while resisting ASIC specialization. Its economic model, **Decade Decay**, replaces abrupt four-year halvings with a smooth 20 % reduction every ten years, capped by a perpetual tail emission that guarantees miner incentives for centuries.
 
 Critically, **10 % of every block reward is automatically and immutably allocated to humanitarian and scientific purposes** — 5 % to a global Humanitarian Fund and 5 % to the L5/L6 Issobella Fund for long-term scientific research. This is not a promise in a marketing deck; it is enforced in the consensus code itself.
 
@@ -52,7 +52,7 @@ Critically, **10 % of every block reward is automatically and immutably allocate
 | Initial block reward | 5,400.067 ZION |
 | Emission | Decade Decay (−20 % / 10 years) + tail emission from ~2126 |
 | Tail emission | 724.784723787776 ZION / block (forever) |
-| Mining algorithm | Ekam Deeksha v2 (256 KiB scratchpad, 6-stage pipeline) |
+| Mining algorithm | Ekam Deeksha v3.2 (256 KiB scratchpad, 6-stage pipeline) |
 | Consensus | Proof-of-Work (Nakamoto) |
 | Signing | Ed25519 |
 | General hashing | BLAKE3 |
@@ -84,7 +84,7 @@ The project draws on a long tradition of open-source infrastructure serving the 
 
 Bitcoin's SHA-256 and Ethereum's Ethash were both initially mined by CPUs and then GPUs. In both cases, the emergence of application-specific integrated circuits (ASICs) rapidly concentrated hashrate into a handful of industrial operators. Today, four mining pools control the majority of Bitcoin's hashrate. The "decentralization" promised by Satoshi has become, in practice, industrial consolidation.
 
-**ZION's response:** Ekam Deeksha v2 is deliberately memory-hard. Its 256 KiB scratchpad requires pseudo-random dependent reads that cannot be efficiently pipelined by fixed-function hardware. An ASIC designed for Ekam Deeksha would look so much like a general-purpose CPU with large cache that it would lose its cost advantage. The algorithm scores 90/100 on independent ASIC-resistance benchmarks.
+**ZION's response:** Ekam Deeksha v3.2 is deliberately memory-hard. Its 256 KiB scratchpad requires pseudo-random dependent reads that cannot be efficiently pipelined by fixed-function hardware. An ASIC designed for Ekam Deeksha would look so much like a general-purpose CPU with large cache that it would lose its cost advantage. The algorithm scores 90/100 on independent ASIC-resistance benchmarks.
 
 ### 2. Insider Pre-Allocation
 
@@ -126,7 +126,7 @@ ZION is organized as a stack of six layers, each independently functional and ea
 │  L2 — DeFi Bridge       wZION ERC-20 + Base/Arbitrum/BSC     │
 │                         + DAO + atomic swaps                  │
 ├─────────────────────────────────────────────────────────────┤
-│  L1 — Core Chain        Ekam Deeksha v2 + UTXO + P2P        │
+│  L1 — Core Chain        Ekam Deeksha v3.2 + UTXO + P2P        │
 │                         + Stratum pool + LMDB                │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -166,13 +166,13 @@ ZION is organized as a stack of six layers, each independently functional and ea
 
 ---
 
-## Consensus: Ekam Deeksha v2
+## Consensus: Ekam Deeksha v3.2
 
 The proof-of-work algorithm is called **Ekam Deeksha** (Sanskrit: "one initiation"). Version 2 is the mainnet-track algorithm, active from genesis block 0.
 
 ### Design Philosophy
 
-Most PoW algorithms fail at ASIC resistance because they rely on a single computational primitive. If that primitive can be implemented in silicon, the algorithm falls. Ekam Deeksha v2 uses a **six-stage sequential pipeline** that combines multiple primitives with a memory-hard stage in the middle. An ASIC would need to be efficient at Keccak-256, SHA3-512, matrix multiplication, pseudo-random memory access, neural vector operations, and BLAKE3 — essentially a general-purpose computer, defeating the purpose of specialization.
+Most PoW algorithms fail at ASIC resistance because they rely on a single computational primitive. If that primitive can be implemented in silicon, the algorithm falls. Ekam Deeksha v3.2 uses a **six-stage sequential pipeline** that combines multiple primitives with a memory-hard stage in the middle. An ASIC would need to be efficient at Keccak-256, SHA3-512, matrix multiplication, pseudo-random memory access, neural vector operations, and BLAKE3 — essentially a general-purpose computer, defeating the purpose of specialization.
 
 ### The Six Stages
 
@@ -206,7 +206,7 @@ LWMA reacts smoothly to hashrate changes detected only seconds ago, preventing t
 
 ### Fork Hooks
 
-The code contains hard-fork height constants for future consensus upgrades. In the current production build, Ekam Deeksha v2 is active from height 0. A coordinated testnet rehearsal can be enabled via the `testnet_fork_rehearsal` Cargo feature without modifying the default binary.
+The code contains hard-fork height constants for future consensus upgrades. In the current production build, Ekam Deeksha v3.2 is active from height 0. A coordinated testnet rehearsal can be enabled via the `testnet_fork_rehearsal` Cargo feature without modifying the default binary.
 
 ---
 
@@ -486,7 +486,7 @@ The DAO **cannot** change the following without a community-wide hard fork:
 - Total supply (144 billion ZION)
 - Genesis allocation (16.28 billion ZION)
 - Block time (60 seconds)
-- Mining algorithm (Ekam Deeksha v2)
+- Mining algorithm (Ekam Deeksha v3.2)
 - Consensus type (Proof-of-Work)
 - Block reward split (89/5/5/1 %)
 
@@ -594,7 +594,7 @@ As of May 2026, the following infrastructure is operational:
 |----------|------|-------------|
 | Emission constants | `V3/L1/core/src/emission.rs` | Decade Decay, fee split, tail reward |
 | Genesis block | `V3/L1/core/src/genesis.rs` | 12 premine outputs, DAO lock, genesis message |
-| PoW algorithm | `V3/L1/cosmic-harmony/src/deeksha.rs` | Ekam Deeksha v2 canonical pipeline |
+| PoW algorithm | `V3/L1/cosmic-harmony/src/deeksha.rs` | Ekam Deeksha v3.2 canonical pipeline |
 | Difficulty | `V3/L1/core/src/difficulty.rs` | LWMA DAA |
 | Validation | `V3/L1/core/src/validation.rs` | 11-step block validation |
 | Wallet | `V3/L1/core/src/wallet.rs` | UTXO coin selection, batch payouts |

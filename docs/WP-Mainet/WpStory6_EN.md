@@ -133,8 +133,8 @@ this acceleration.
 
 | Property | Value |
 |---|---|
-| Protocol | `zion-v3-node/3.0.6` |
-| Genesis hash | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
+| Protocol | `zion-v3-node/3.1.0-alpha` |
+| Genesis hash | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
 | Total supply | 144,000,000,000 ZION |
 | Reward split | 89% miner / 5% humanitarian fund / 5% Issobella fund / 1% burned |
 | Block time | ~60 seconds |

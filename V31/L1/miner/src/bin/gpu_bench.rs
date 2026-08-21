@@ -1,4 +1,4 @@
-use zion_miner::gpu::{create_gpu_backend, GpuBackendKind, GpuMiner};
+use zion_miner::gpu::{create_gpu_backend, GpuBackendKind};
 
 fn main() {
     let work_size = std::env::var("ZION_GPU_WORK_SIZE")
@@ -15,7 +15,7 @@ fn main() {
             { GpuBackendKind::Cuda }
         }
     };
-    let mut miner = create_gpu_backend(kind, work_size, "deeksha_lite_v1", "")
+    let mut miner = create_gpu_backend(kind, work_size, "ekam_deeksha", "")
         .expect("GPU init failed");
     println!("Device: {}", miner.device_name());
     println!("Running 10-second benchmark with work_size={}...", work_size);

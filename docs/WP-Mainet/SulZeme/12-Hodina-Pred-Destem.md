@@ -58,7 +58,7 @@ Tři věci jsou v kódu ZIONu napsané tak, že platí bez ohledu na to, kdo je 
 
 **Náročnost sítě se řídí tím, kolik lidí těží právě teď, ne tím, kolik jich bude těžit za rok.** Obtížnost se přepočítává algoritmem LWMA za posledních 60 bloků (s omezením ±25 %) — reaguje na aktuální výkon sítě, ne na budoucí. Čím méně strojů dnes hledá blok, tím větší podíl z nalezených bloků připadá na každý jednotlivý stroj, který se připojí teď. Až se síť zaplní dalšími těžaři (a to je cílem — síť, kterou nikdo netěží, není bezpečná), obtížnost s nimi poroste a stejný výkon bude stačit na menší podíl.
 
-**Vstup je stejný pro každého, kdo přijde — ale ne stejně snadný v každý okamžik.** Fair launch znamená, že nikdo nedostal VIP přístup na začátku. Neznamená to, že začátek trvá věčně. Genesis blok padl 4. prosince 2025; každý den, který uplyne, je o den víc historie, o den víc těžařů a o den blíž k okamžiku, kdy „začít od nuly" už nebude možné — protože nula už dávno byla.
+**Vstup je stejný pro každého, kdo přijde — ale ne stejně snadný v každý okamžik.** Fair launch znamená, že nikdo nedostal VIP přístup na začátku. Neznamená to, že začátek trvá věčně. Genesis blok padl 1. ledna 2026; každý den, který uplyne, je o den víc historie, o den víc těžařů a o den blíž k okamžiku, kdy „začít od nuly" už nebude možné — protože nula už dávno byla.
 
 Tohle je přesně to, co dělal kovář z příběhu: nekul panty proto, že mu někdo zaručil odměnu. Kul je proto, že rozuměl mechanice deště — že voda nečeká na to, až se všichni rozhodnou věřit.
 

@@ -127,8 +127,8 @@ zrychlení.
 
 | Vlastnost | Hodnota |
 |---|---|
-| Protokol | `zion-v3-node/3.0.6` |
-| Genesis hash | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
+| Protokol | `zion-v3-node/3.1.0-alpha` |
+| Genesis hash | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
 | Celková nabídka | 144 000 000 000 ZION |
 | Rozdělení odměny | 89 % miner / 5 % humanitární fond / 5 % fond Issobella / 1 % spáleno |
 | Blok | ~60 sekund |

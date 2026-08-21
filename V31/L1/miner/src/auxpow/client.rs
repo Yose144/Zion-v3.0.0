@@ -23,8 +23,8 @@ use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader
 use tokio::net::TcpStream;
 use tokio::sync::{oneshot, Mutex, Notify};
 use tokio::time::timeout;
-use tracing::{debug, info, warn};
 
+use crate::{ext_debug, ext_info, ext_warn};
 use super::hasher;
 use zion_cosmic_harmony::{CoinProfile, ExternalCoin};
 
@@ -285,7 +285,7 @@ impl AuxPowClient {
                 match client_clone.poll_messages().await {
                     Ok(()) => {}
                     Err(e) => {
-                        warn!(
+                        ext_warn!(
                             "auxpow_client: poll loop ended for {}: {} — reconnecting in {}s",
                             profile_clone.coin, e, backoff_secs
                         );
@@ -293,12 +293,12 @@ impl AuxPowClient {
                         tokio::time::sleep(Duration::from_secs(backoff_secs)).await;
                         match client_clone.reconnect(&payout_wallet_clone).await {
                             Ok(()) => {
-                                info!("auxpow_client: reconnected to {}", profile_clone.coin);
+                                ext_info!("auxpow_client: reconnected to {}", profile_clone.coin);
                                 backoff_secs = 5;
                             }
                             Err(re_err) => {
                                 backoff_secs = (backoff_secs * 2).min(600);
-                                warn!(
+                                ext_warn!(
                                     "auxpow_client: reconnect failed: {} — retry in {}s",
                                     re_err, backoff_secs
                                 );
@@ -329,7 +329,7 @@ impl AuxPowClient {
             self.start_eth_getwork_polling().await;
         }
 
-        info!("AuxPow: connected and authorized for {}", self.config.coin);
+        ext_info!("AuxPow: connected and authorized for {}", self.config.coin);
         Ok(())
     }
 
@@ -339,7 +339,7 @@ impl AuxPowClient {
         let addr = raw
             .trim_start_matches("stratum+tcp://")
             .trim_start_matches("stratum2+tcp://");
-        info!(
+        ext_info!(
             "AuxPow: connecting to {} ({}) for {}",
             addr,
             self.protocol.as_str(),
@@ -381,13 +381,13 @@ impl AuxPowClient {
             *self.latest_job_time.lock().await = None;
             let cancelled = self.pending_requests.lock().await.drain().count();
             if cancelled > 0 {
-                warn!(
+                ext_warn!(
                     "AuxPow: cancelled {} pending request(s) after reconnect",
                     cancelled
                 );
             }
         }
-        info!("AuxPow: reconnected for {}", self.config.coin);
+        ext_info!("AuxPow: reconnected for {}", self.config.coin);
 
         // For EthStratum, ensure getWork polling is active after reconnect.
         // The polling task should survive across reconnects (it doesn't break
@@ -536,8 +536,8 @@ impl AuxPowClient {
                 let en1_len = e1.len();
                 *self.extranonce1.lock().await = e1;
                 *self.extranonce2_size.lock().await = Some(size);
-                info!(extranonce2_size = size, "stratum subscribed");
-                tracing::debug!(
+                ext_info!(extranonce2_size = size, "stratum subscribed");
+                crate::ext_debug!(
                     target: "en1_trace",
                     en1_hex = %en1_hex,
                     en1_len = en1_len,
@@ -553,8 +553,8 @@ impl AuxPowClient {
                 let en1_len = e1.len();
                 *self.extranonce1.lock().await = e1;
                 *self.extranonce2_size.lock().await = Some(4);
-                info!(extranonce2_size = 4, "stratum subscribed (2-field response)");
-                tracing::debug!(
+                ext_info!(extranonce2_size = 4, "stratum subscribed (2-field response)");
+                crate::ext_debug!(
                     target: "en1_trace",
                     en1_hex = %en1_hex,
                     en1_len = en1_len,
@@ -562,7 +562,7 @@ impl AuxPowClient {
                     "en1_trace subscribe_response set extranonce1 (2-field)"
                 );
             } else {
-                tracing::warn!(
+                crate::ext_warn!(
                     target: "en1_trace",
                     arr_len = arr.len(),
                     coin = %self.config.coin,
@@ -570,7 +570,7 @@ impl AuxPowClient {
                 );
             }
         } else {
-            tracing::warn!(
+            crate::ext_warn!(
                 target: "en1_trace",
                 coin = %self.config.coin,
                 "en1_trace subscribe_response no result array — extranonce1 NOT set"
@@ -610,7 +610,7 @@ impl AuxPowClient {
             bail!("stratum authorize failed");
         }
         *self.authorized.lock().await = true;
-        info!("stratum authorized for {}", self.config.coin);
+        ext_info!("stratum authorized for {}", self.config.coin);
 
         // ZcashStratum (VRSC/LuckPool): send mining.extranonce.subscribe after
         // authorize to enable push extranonce updates. Fire-and-forget; the
@@ -622,7 +622,7 @@ impl AuxPowClient {
                 "params": []
             });
             if let Err(e) = self.send_notification(&ex_req).await {
-                warn!("mining.extranonce.subscribe failed for {}: {}", self.config.coin, e);
+                ext_warn!("mining.extranonce.subscribe failed for {}: {}", self.config.coin, e);
             }
         }
         Ok(())
@@ -642,7 +642,7 @@ impl AuxPowClient {
             bail!("eth_submitLogin failed");
         }
         *self.authorized.lock().await = true;
-        info!("eth_submitLogin authorized for {}", self.config.coin);
+        ext_info!("eth_submitLogin authorized for {}", self.config.coin);
         Ok(())
     }
 
@@ -661,7 +661,7 @@ impl AuxPowClient {
                 bail!("eth_submitLogin failed");
             }
             *self.authorized.lock().await = true;
-            info!("eth_submitLogin authorized for {}", self.config.coin);
+            ext_info!("eth_submitLogin authorized for {}", self.config.coin);
             return Ok(());
         }
         let worker = format!("{}.{}", payout_wallet, self.config.worker_name);
@@ -686,7 +686,7 @@ impl AuxPowClient {
                 "params": []
             });
             if let Err(e) = self.send_notification(&ex_req).await {
-                warn!("mining.extranonce.subscribe (inline) failed for {}: {}", self.config.coin, e);
+                ext_warn!("mining.extranonce.subscribe (inline) failed for {}: {}", self.config.coin, e);
             }
         }
         Ok(())
@@ -712,7 +712,7 @@ impl AuxPowClient {
             }
         }
         *self.authorized.lock().await = true;
-        info!("cryptonote login for {}", self.config.coin);
+        ext_info!("cryptonote login for {}", self.config.coin);
         Ok(())
     }
 
@@ -758,7 +758,7 @@ impl AuxPowClient {
                 if let Err(e) = self_clone.send_notification(&req).await {
                     // Don't break — the connection might be reconnecting.
                     // Just log and continue; the next tick will retry.
-                    debug!("eth_getWork poll skipped (reconnecting?): {}", e);
+                    ext_debug!("eth_getWork poll skipped (reconnecting?): {}", e);
                 }
             }
         });
@@ -785,7 +785,7 @@ impl AuxPowClient {
             let parsed: Value = match serde_json::from_str(&line_str) {
                 Ok(v) => v,
                 Err(e) => {
-                    warn!("invalid JSON from pool: {} — {}", e, line_str);
+                    ext_warn!("invalid JSON from pool: {} — {}", e, line_str);
                     continue;
                 }
             };
@@ -824,7 +824,7 @@ impl AuxPowClient {
                     .and_then(Value::as_f64)
                 {
                     *self.current_difficulty.lock().await = d;
-                    debug!(difficulty = d, "stratum set difficulty");
+                    ext_debug!(difficulty = d, "stratum set difficulty");
                 }
             }
             "mining.set_target" => {
@@ -840,7 +840,7 @@ impl AuxPowClient {
                         let max_target = hasher::algorithm_max_target(&self.config.algorithm);
                         let diff = hasher::target_to_difficulty_with_max(&target, &max_target);
                         *self.current_difficulty.lock().await = diff;
-                        debug!(difficulty = diff, target = %target_hex, "stratum set_target");
+                        ext_debug!(difficulty = diff, target = %target_hex, "stratum set_target");
                     }
                 }
             }
@@ -864,11 +864,11 @@ impl AuxPowClient {
                 // Stratum V1 pool-directed reconnect (used by ZcashStratum/
                 // LuckPool). Bail out of the poll loop so the auto-reconnect
                 // task can start a fresh TCP + subscribe + authorize cycle.
-                warn!(coin = %self.config.coin, "pool requested reconnect");
+                ext_warn!(coin = %self.config.coin, "pool requested reconnect");
                 bail!("pool requested reconnect");
             }
             _ => {
-                debug!(method = method, "unhandled stratum notification");
+                ext_debug!(method = method, "unhandled stratum notification");
             }
         }
         Ok(())
@@ -935,7 +935,7 @@ impl AuxPowClient {
                         } else {
                             let min_diff = 10000.0f64;
                             if diff != min_diff {
-                                warn!(
+                                ext_warn!(
                                     "vrsc_min_difficulty_applied diff={} min={} — pool did not set difficulty or target",
                                     diff, min_diff
                                 );
@@ -948,7 +948,7 @@ impl AuxPowClient {
                 };
 
                 let en1 = self.extranonce1.lock().await.clone();
-                tracing::debug!(
+                crate::ext_debug!(
                     target: "en1_trace",
                     en1_hex = %hex::encode(&en1),
                     en1_len = en1.len(),
@@ -957,7 +957,7 @@ impl AuxPowClient {
                     "en1_trace parse_notify read extranonce1 for job"
                 );
                 if en1.is_empty() {
-                    tracing::warn!(
+                    crate::ext_warn!(
                         target: "en1_trace",
                         job_id = %job_id,
                         coin = %self.config.coin,
@@ -1080,7 +1080,7 @@ impl AuxPowClient {
             return Some(job);
         }
 
-        warn!(len = params.len(), "unsupported mining.notify param count");
+        ext_warn!(len = params.len(), "unsupported mining.notify param count");
         None
     }
 
@@ -1617,9 +1617,9 @@ async fn run_stratum_loop(
     loop {
         if let Err(e) = stratum_session(&url, &worker, &password, coin, &job_tx, &mut submit_rx, &state, &pending).await
         {
-            warn!(url = %url, error = %e, "stratum session failed, reconnecting in 5s");
+            ext_warn!(url = %url, error = %e, "stratum session failed, reconnecting in 5s");
         } else {
-            warn!(url = %url, "stratum session ended, reconnecting in 5s");
+            ext_warn!(url = %url, "stratum session ended, reconnecting in 5s");
         }
 
         // Reject any outstanding submissions before reconnecting.
@@ -1644,7 +1644,7 @@ async fn stratum_session(
     pending: &Mutex<HashMap<i64, tokio::sync::oneshot::Sender<ShareResult>>>,
 ) -> Result<()> {
     let (host, port) = parse_url(url)?;
-    info!(host = %host, port = port, "connecting to stratum pool");
+    ext_info!(host = %host, port = port, "connecting to stratum pool");
     let mut stream = TcpStream::connect((host, port)).await?;
     let (reader, mut writer) = stream.split();
     let mut lines = BufReader::new(reader).lines();
@@ -1672,7 +1672,7 @@ async fn stratum_session(
             _tick = eth_getwork_interval.tick(), if is_ethstratum => {
                 let req = json!({"id": ETH_GETWORK_ID, "method": "eth_getWork", "params": []});
                 if let Err(e) = send_line(&mut writer, &req).await {
-                    warn!(error = %e, "failed to send eth_getWork poll");
+                    ext_warn!(error = %e, "failed to send eth_getWork poll");
                 }
             }
             line = lines.next_line() => match line {
@@ -1681,11 +1681,11 @@ async fn stratum_session(
                         continue;
                     }
                     if let Err(e) = handle_line(&line, job_tx, state, pending).await {
-                        warn!(line = %line, error = %e, "stratum line parse failed");
+                        ext_warn!(line = %line, error = %e, "stratum line parse failed");
                     }
                 }
                 Ok(None) => {
-                    warn!("stratum server closed connection");
+                    ext_warn!("stratum server closed connection");
                     return Ok(());
                 }
                 Err(e) => return Err(e.into()),
@@ -1699,7 +1699,7 @@ async fn stratum_session(
                                 pending.lock().await.insert(req.id, req.response);
                             }
                             Err(e) => {
-                                warn!(error = %e, "failed to send share");
+                                ext_warn!(error = %e, "failed to send share");
                                 let _ = req.response.send(ShareResult::Rejected("failed to send share".to_string()));
                             }
                         }
@@ -1736,7 +1736,7 @@ async fn handle_line(
                 if !is_authorize_ok(&value) {
                     bail!("stratum authorize failed");
                 }
-                info!("stratum authorized");
+                ext_info!("stratum authorized");
                 return Ok(());
             }
             ETH_GETWORK_ID => {
@@ -1770,7 +1770,7 @@ async fn handle_line(
             if let Some(d) = params_difficulty(&value) {
                 let mut diff = state.difficulty.lock().await;
                 *diff = d;
-                info!(difficulty = d, "stratum set difficulty");
+                ext_info!(difficulty = d, "stratum set difficulty");
             }
         }
         "mining.set_extranonce" | "set_extranonce" => {
@@ -1779,7 +1779,7 @@ async fn handle_line(
                 *e1 = en1;
                 let mut e2 = state.extranonce2_size.lock().await;
                 *e2 = en2_size;
-                info!(extranonce1 = %hex::encode(&*e1), extranonce2_size = en2_size, "stratum set extranonce");
+                ext_info!(extranonce1 = %hex::encode(&*e1), extranonce2_size = en2_size, "stratum set extranonce");
             }
         }
         "mining.set_target" | "set_target" => {
@@ -1791,7 +1791,7 @@ async fn handle_line(
                         let max_target = [0xFFu8; 32];
                         let diff = hasher::target_to_difficulty_with_max(&target, &max_target);
                         *state.difficulty.lock().await = diff;
-                        info!(target = %hex::encode(target), difficulty = diff, "stratum set target");
+                        ext_info!(target = %hex::encode(target), difficulty = diff, "stratum set target");
                     }
                 }
             }
@@ -1816,14 +1816,14 @@ async fn parse_subscribe_response(value: &Value, state: &StratumState) -> Result
             *e1_lock = e1;
             let mut size_lock = state.extranonce2_size.lock().await;
             *size_lock = size;
-            info!(extranonce2_size = size, "stratum subscribed");
+            ext_info!(extranonce2_size = size, "stratum subscribed");
         } else if arr.len() >= 2 && arr[0].as_bool() == Some(true) && arr[1].is_string() {
             // EthereumStratum/1.0.0 subscribe: [true, "EthereumStratum/1.0.0"]
             // The pool sends the real extranonce1 via a later set_extranonce
             // notification (e.g. 2miners KAS/ALPH).
-            info!(result = %arr[1], "stratum subscribed (EthereumStratum/1.0.0)");
+            ext_info!(result = %arr[1], "stratum subscribed (EthereumStratum/1.0.0)");
         } else if !arr.is_empty() && arr[0].as_bool() == Some(true) {
-            info!("stratum subscribed");
+            ext_info!("stratum subscribed");
         }
     }
     Ok(())
@@ -2072,7 +2072,7 @@ async fn parse_notify(params: &[Value], state: &StratumState) -> Option<StratumJ
         });
     }
 
-    warn!(len = params.len(), "unsupported mining.notify param count");
+    ext_warn!(len = params.len(), "unsupported mining.notify param count");
     None
 }
 

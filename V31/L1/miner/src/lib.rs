@@ -14,6 +14,7 @@ pub mod auxpow;
 pub mod b3_verify;
 pub mod config;
 pub mod cpu_features;
+pub mod ext_log;
 pub mod gpu;
 pub mod gpu_guard;
 pub mod metrics;

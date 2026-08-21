@@ -255,13 +255,7 @@ impl MinerControl {
     }
 
     pub fn cycle_algorithm(&mut self) {
-        const ALGOS: &[&str] = &[
-            "deeksha_lite_v1",
-            "deeksha_lite_fire",
-            "cosmic_harmony_ekam_deeksha_v2",
-        ];
-        let idx = ALGOS.iter().position(|&a| a == self.algorithm).unwrap_or(0);
-        self.algorithm = ALGOS[(idx + 1) % ALGOS.len()].to_string();
+        self.algorithm = "ekam_deeksha".to_string();
     }
 
     pub fn toggle_cpu(&mut self) {
@@ -1074,9 +1068,12 @@ pub fn fetch_online_snapshot(pool_addr: &str) -> Option<OnlineMinerSnapshot> {
 /// Short display names for algorithms
 fn algo_display(algo: &str) -> &str {
     match algo {
-        "deeksha_lite_v1" => "Deeksha Lite v1",
-        "deeksha_lite_fire" => "Deeksha Lite Fire",
-        "cosmic_harmony_ekam_deeksha_v2" => "Ekam Deeksha v2",
+        "ekam_deeksha" => "Ekam Deeksha v3.2",
+        "deeksha_lite_v1" => "Ekam Deeksha v3.2",
+        "deeksha_lite" => "Ekam Deeksha v3.2",
+        "deeksha_chv3" => "Ekam Deeksha v3.2",
+        "deeksha_lite_fire" => "Ekam Deeksha v3.2",
+        "cosmic_harmony_ekam_deeksha_v2" => "Ekam Deeksha v3.2",
         other => other,
     }
 }
@@ -1215,7 +1212,7 @@ pub(crate) fn draw_dashboard(
 
     // ── Title bar ──
     let algo_short = algo_display(&control.algorithm);
-    let title_text = format!("ZION MINER v3.0.7 - Triple Parallel - {}", algo_short);
+    let title_text = format!("ZION MINER v3.2.0 - Triple Parallel - {}", algo_short);
     let title = center_text(&title_text, iw);
     queue!(
         out,
@@ -2062,7 +2059,7 @@ pub(crate) fn draw_dashboard_redesign(
     let mut frame = DashboardFrame::new(&mut out, width);
     frame.top()?;
     #[cfg(feature = "public_build")]
-    let header_label = "ZION MINER";
+    let header_label = "ZION MINER  |  BOOST";
     #[cfg(not(feature = "public_build"))]
     let header_label = "ZION MINER  |  TRINITY";
     frame.title(&format!(
@@ -2155,43 +2152,58 @@ pub(crate) fn draw_dashboard_redesign(
         rates.zion_rejected,
         Color::White,
     )?;
-    // In public_build, hide Stream 2 (GPU/ZANO) and Stream 3 (CPU/VRSC).
-    // Trinity still runs internally — only the display is suppressed.
+    // In public_build, mask Stream 2/3 as BOOST 1/2 to hide external coin names.
+    // Trinity still runs internally — only the display is masked.
+    #[cfg(feature = "public_build")]
+    let (gpu_label, gpu_desc) = (
+        "BOOST 1",
+        if gpu_active { "Boost / Boost".to_string() } else { "idle".to_string() },
+    );
     #[cfg(not(feature = "public_build"))]
-    {
-        let gpu_desc = if gpu_active {
+    let (gpu_label, gpu_desc) = (
+        "GPU",
+        if gpu_active {
             format!("{} / {}", gpu_coin, dashboard_short_algo(&gpu_algo))
         } else {
             "idle".to_string()
-        };
-        dashboard_stream_row(
-            &mut frame,
-            2,
-            "GPU",
-            &gpu_desc,
-            rates.gpu_ext_10s_hps,
-            gpu_active,
-            rates.gpu_ext_accepted,
-            rates.gpu_ext_rejected,
-            Color::Magenta,
-        )?;
-        let cpu_desc = if cpu_active {
+        },
+    );
+    dashboard_stream_row(
+        &mut frame,
+        2,
+        gpu_label,
+        &gpu_desc,
+        rates.gpu_ext_10s_hps,
+        gpu_active,
+        rates.gpu_ext_accepted,
+        rates.gpu_ext_rejected,
+        Color::Magenta,
+    )?;
+    #[cfg(feature = "public_build")]
+    let (cpu_label, cpu_desc) = (
+        "BOOST 2",
+        if cpu_active { "Boost / Boost".to_string() } else { "idle".to_string() },
+    );
+    #[cfg(not(feature = "public_build"))]
+    let (cpu_label, cpu_desc) = (
+        "CPU",
+        if cpu_active {
             format!("{} / {}", cpu_coin, dashboard_short_algo(&cpu_algo))
         } else {
             "idle".to_string()
-        };
-        dashboard_stream_row(
-            &mut frame,
-            3,
-            "CPU",
-            &cpu_desc,
-            rates.cpu_ext_10s_hps,
-            cpu_active,
-            rates.cpu_ext_accepted,
-            rates.cpu_ext_rejected,
-            Color::Yellow,
-        )?;
-    } // end not(public_build)
+        },
+    );
+    dashboard_stream_row(
+        &mut frame,
+        3,
+        cpu_label,
+        &cpu_desc,
+        rates.cpu_ext_10s_hps,
+        cpu_active,
+        rates.cpu_ext_accepted,
+        rates.cpu_ext_rejected,
+        Color::Yellow,
+    )?;
 
     frame.rule("SHARES", Color::Yellow)?;
     let share_total = rates.accepted.saturating_add(rates.rejected);

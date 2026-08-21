@@ -1,7 +1,7 @@
 # ZION v3 — Kanonický technický whitepaper
 
 > **Verze 3.1** · Mainnet Beta v3.0.6 → Mainnet Alpha 3.1 · červenec 2026 · Licence MIT
-> Genesis hash: `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
+> Genesis hash: `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`
 > Stav sítě: **Mainnet Beta v3.0.6 → Mainnet Alpha 3.1** (veřejný launch cíl: 31. 12. 2026)
 
 ---
@@ -70,7 +70,7 @@ ZION je postaven na třech principech:
 | Komponenta | Technologie |
 |------------|-------------|
 | Jazyk | Rust (stable) |
-| Konsensus | Ekam Deeksha v2 (vícefázový PoW) |
+| Konsensus | Ekam Deeksha v3.2 (vícefázový PoW) |
 | Podpisy | Ed25519 |
 | Hashování | BLAKE3 (TX ID, Merkle kořeny, body roots) |
 | Obtížnost | LWMA (okno 60 bloků, ±25 % clamping) |
@@ -230,7 +230,7 @@ Genesis blok (výška 0) obsahuje **14 premine výstupů** v celkové hodnotě
 16 780 000 000 ZION. Ve výšce 0 není žádná těžební dotace — premine je
 jediný coinbase.
 
-- **Genesis hash**: `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`
+- **Genesis hash**: `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`
 - **Timestamp**: `1767225600` (2026-01-01 00:00:00 UTC)
 - **Previous hash**: `0000...0000` (samé nuly)
 - **Algoritmus**: `deeksha_lite_v1`
@@ -380,7 +380,7 @@ DAO **nemůže** změnit následující parametry — jsou to konstituční kame
 - Celkovou nabídku (144B ZION)
 - Genesis alokaci (16,78B ZION)
 - Čas bloku (60 sekund)
-- Těžební algoritmus (Ekam Deeksha v2)
+- Těžební algoritmus (Ekam Deeksha v3.2)
 - Typ konsensu (Proof-of-Work)
 - Rozdělení odměny za blok (89/5/5/1 %)
 
@@ -487,8 +487,8 @@ rozestavěné, ne hotové.
 
 | Co si ověřit | Kde |
 |---------------|-----|
-| Protokol | `zion-v3-node/3.0.6` |
-| Genesis hash | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
+| Protokol | `zion-v3-node/3.1.0-alpha` |
+| Genesis hash | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
 | Celková nabídka | 144 000 000 000 ZION (`emission.rs`) |
 | Premine | 16 780 000 000 ZION, transparentní výstupy v bloku 0 |
 | Split 89/5/5/1 | Čtyřvýstupová coinbase, vynuceno konsensem |

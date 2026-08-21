@@ -10,7 +10,7 @@
 
 ## I. The Fire That Never Went Out
 
-Selah, bredda. Sista, come closer, let me see you in the light. The fire has been burning since December 4, 2025, and nobody put it out since — not the rain, not the laughter of them who never believed it would last till morning.
+Selah, bredda. Sista, come closer, let me see you in the light. The fire has been burning since January 1, 2026, and nobody put it out since — not the rain, not the laughter of them who never believed it would last till morning.
 
 Don't sit far off. Come sit in the circle. Nobody bow down here, nobody pay to enter. Here you only feed the wood and listen to the riddim that rise up from deep in the earth, like the root of the tree itself keeping the beat.
 

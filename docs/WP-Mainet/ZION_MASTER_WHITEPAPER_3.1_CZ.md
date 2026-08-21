@@ -13,7 +13,7 @@
 > — Rigvéda X.121.1
 
 > *„Zlatý věk nezačíná datem. Začíná rozhodnutím."*
-> — ZION Genesis blok, 4. 12. 2025
+> — ZION Genesis blok, 1. 1. 2026
 
 ---
 
@@ -83,7 +83,7 @@ TERRA NOVA (země)       — jak se vize stane světem
 Každý svět začíná bodem, kde se nekonečný potenciál stlačí do jediného
 nevratného rozhodnutí. V blockchainu se ten bod jmenuje Genesis blok.
 
-První blok ZIONu byl vytěžen **4. prosince 2025**. Nese v sobě věnování,
+První blok ZIONu byl vytěžen **1. ledna 2026**. Nese v sobě věnování,
 které není adresováno investorům, ale dětem tohoto světa: *ZION je váš.
 Stavte lepší svět, kde dosáhnete ke hvězdám. Zlatý věk začíná.*
 
@@ -247,7 +247,7 @@ Udělal tři věci, v tomto pořadí:
 Nový kanonický kořen sítě:
 
 ```text
-4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e
+96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb
 ```
 
 Důvěra se nebuduje tvrzením, že chyba je nemožná. Buduje se veřejnou
@@ -428,9 +428,9 @@ Je to **žijící infrastruktura + kompas**.
 | Jméno | ZION TerraNova |
 | Typ | nativní L1 coin (Proof-of-Work) |
 | Konsensus | Ekam Deeksha / CosmicHarmony (paměťově náročný PoW) |
-| Protokol | `zion-v3-node/3.0.6` → 3.1 |
-| Genesis hash | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
-| První blok | 4. 12. 2025 |
+| Protokol | `zion-v3-node/3.1.0-alpha` → 3.1 |
+| Genesis hash | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
+| První blok | 1. 1. 2026 |
 | Celková nabídka | 144 000 000 000 ZION |
 | Premine | 16 780 000 000 ZION (transparentní on-chain výstupy) |
 | Základní odměna | 5 400,067 ZION / blok · 60 s |

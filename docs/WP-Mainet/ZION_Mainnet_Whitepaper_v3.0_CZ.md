@@ -55,7 +55,7 @@ Všechna pravidla jsou zapsána přímo v kódu. Nelze je obejít. Nelze je změ
 | **Odměna za blok (1. dekáda)** | 5 400,067 ZION |
 | **Emisní model** | Decade Decay (−20 % každých 10 let) |
 | **Trvalá odměna od ~2126** | 724,784723787776 ZION/blok — navěky |
-| **Těžební algoritmus** | Ekam Deeksha v2 (CPU/GPU, odolný vůči ASIC) |
+| **Těžební algoritmus** | Ekam Deeksha v3.2 (CPU/GPU, odolný vůči ASIC) |
 | **Podpisová křivka** | Ed25519 |
 | **Hashování** | BLAKE3 |
 | **Formát adresy** | Bech32 (`zion1…`) |
@@ -84,7 +84,7 @@ Většina kryptoměnových projektů trpí stejnými neduhy jako tradiční fina
 | Neduh | ZION řešení |
 |-------|-------------|
 | Insider tokeny | Fair Launch — žádný předprodej, žádné ICO, žádné privátní kola |
-| ASIC centralizace | Ekam Deeksha v2 — paměťově náročný, optimalizovaný pro CPU/GPU |
+| ASIC centralizace | Ekam Deeksha v3.2 — paměťově náročný, optimalizovaný pro CPU/GPU |
 | Technologie bez smyslu | 10 % z každé odměny za blok vynuceno kódem |
 | Nabídkové šoky | Decade Decay — postupné −20 % za dekádu + věčný tail |
 
@@ -252,7 +252,7 @@ Po roce 2035 je bonusový fond vyčerpán; těžba pokračuje základní odměno
 
 ## 5. Jak těžíte vy, ne jen korporace
 
-### Algoritmus Ekam Deeksha v2
+### Algoritmus Ekam Deeksha v3.2
 
 Název pochází ze sanskrtu: „Jedna iniciace". Je to proof-of-work algoritmus navržený tak, aby zůstal doménou běžných počítačů — ne průmyslových monster.
 
@@ -455,7 +455,7 @@ DAO **nemůže** změnit:
 - Celkovou nabídku (144B ZION)
 - Genesis alokaci (16,28B ZION)
 - Čas bloku (60 sekund)
-- Těžební algoritmus (Ekam Deeksha v2)
+- Těžební algoritmus (Ekam Deeksha v3.2)
 - Typ konsensu (Proof-of-Work)
 - Rozdělení odměny za blok (89/5/5/1 %)
 
@@ -515,7 +515,7 @@ Při selhání jsou poplatky obnoveny přes `restore_fees()` a pokus je zopakov�
 |------------|---------|
 | **BLAKE3** | Hashování transakcí, Merkle utility, core hashing |
 | **Ed25519** | Podpis transakcí a bloků |
-| **Keccak-256 + SHA3-512** | Fáze pipeline konsensu Ekam Deeksha v2 |
+| **Keccak-256 + SHA3-512** | Fáze pipeline konsensu Ekam Deeksha v3.2 |
 | **RIPEMD-160** | Mezikrok při odvozování adresy |
 
 ### Bezpečnostní vlastnosti
@@ -629,7 +629,7 @@ Viz také:
 | `V3/L1/core/src/emission.rs` | Konstituční emisní konstanty (flowers, decay, tail, fee split) |
 | `V3/L1/core/src/genesis.rs` | Genesis validace a integrita rezerv |
 | `V3/L1/core/src/difficulty.rs` | LWMA algoritmus obtížnosti |
-| `V3/L1/cosmic-harmony/src/deeksha.rs` | Ekam Deeksha v2 kanonický PoW |
+| `V3/L1/cosmic-harmony/src/deeksha.rs` | Ekam Deeksha v3.2 kanonický PoW |
 | `V3/L2/dao/src/proposal.rs` | DAO typy návrhů, kvórum, hlasovací okna |
 | `docs/mainnet/MAINNET_CONSTITUTION.md` | Mainnet Constitution (zmrazený SHA-256) |
 | `StatusV3.md` | Aktuální operační status a launch blockery |

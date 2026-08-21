@@ -13,7 +13,7 @@
 > — Rigveda X.121.1
 
 > *"The Golden Age does not begin with a date. It begins with a decision."*
-> — ZION Genesis block, 4 Dec 2025
+> — ZION Genesis block, 1 Jan 2026
 
 ---
 
@@ -264,7 +264,7 @@ It did three things, in this order:
 The network's new canonical root:
 
 ```text
-4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e
+96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb
 ```
 
 Trust is not built by claiming a mistake is impossible. It is built by
@@ -449,9 +449,9 @@ It is **living infrastructure + a compass**.
 | Name | ZION TerraNova |
 | Type | native L1 coin (Proof-of-Work) |
 | Consensus | Ekam Deeksha / CosmicHarmony (memory-hard PoW) |
-| Protocol | `zion-v3-node/3.0.6` → 3.1 |
-| Genesis hash | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
-| First block | 4 Dec 2025 |
+| Protocol | `zion-v3-node/3.1.0-alpha` → 3.1 |
+| Genesis hash | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
+| First block | 1 Jan 2026 |
 | Total supply | 144,000,000,000 ZION |
 | Premine | 16,780,000,000 ZION (transparent on-chain outputs) |
 | Base reward | 5,400.067 ZION / block · 60 s |

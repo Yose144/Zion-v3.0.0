@@ -1,9 +1,11 @@
-//! CPU↔GPU bit-identical verification for Deeksha v3.2 (512 KiB scratchpad).
+//! CPU↔GPU bit-identical verification for Ekam Deeksha v3.2 (512 KiB scratchpad).
 //!
-//! Runs the CUDA `deeksha_lite_debug` kernel for known nonces and compares
+//! Runs the CUDA `ekam_deeksha_debug` kernel for known nonces and compares
 //! the output hash against the CPU KAT vectors from `ekam_deeksha.rs`.
 
+#[cfg(feature = "gpu-cuda")]
 use zion_cosmic_harmony::algorithm::ekam_deeksha::{EkamDeeksha, LITE_KAT, LITE_KAT_HEADER};
+#[cfg(feature = "gpu-cuda")]
 use sha3::{Digest, Keccak256, Sha3_512};
 
 #[cfg(feature = "gpu-cuda")]
@@ -12,7 +14,7 @@ fn main() {
     use cudarc::nvrtc::{compile_ptx_with_opts, CompileOptions};
 
     // ── Compile the CUDA kernel ──
-    let kernel_src = include_str!("../gpu/kernels/cuda/deeksha_lite.cu");
+    let kernel_src = include_str!("../gpu/kernels/cuda/ekam_deeksha.cu");
     let dev = CudaDevice::new(0).expect("CUDA device init failed");
     let arch = "compute_61".to_string();
     let opts = vec![
@@ -30,7 +32,7 @@ fn main() {
         },
     )
     .expect("NVRTC compile failed");
-    dev.load_ptx(ptx, "deeksha_lite", &["deeksha_lite_debug"])
+    dev.load_ptx(ptx, "ekam_deeksha", &["ekam_deeksha_debug"])
         .expect("PTX load failed");
 
     // ── Precompute Keccak state from KAT header ──
@@ -55,8 +57,8 @@ fn main() {
     let output_buf = dev.alloc_zeros::<u8>(128).expect("output alloc");
 
     let func = dev
-        .get_func("deeksha_lite", "deeksha_lite_debug")
-        .expect("deeksha_lite_debug not found");
+        .get_func("ekam_deeksha", "ekam_deeksha_debug")
+        .expect("ekam_deeksha_debug not found");
 
     let mut all_ok = true;
     for (expected_hex, nonce) in LITE_KAT.iter() {

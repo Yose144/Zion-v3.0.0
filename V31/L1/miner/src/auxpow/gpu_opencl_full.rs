@@ -616,7 +616,7 @@ impl ExtGpuMiner {
             .build()
             .map_err(|e| anyhow!("failed to create OpenCL context: {e}"))?;
 
-        println!(
+        crate::ext_info!(
             "auxpow_gpu_opencl platform=\"{}\" device=\"{}\" work_size={}",
             platform_name, device_name, work_size
         );
@@ -1510,7 +1510,7 @@ impl ExtGpuMiner {
             .map(|v| v != "1" && v != "true")
             .unwrap_or(true);
         if is_progpow && no_sticky && (batch_count_local < 3 || batch_count_local % 500 == 0) {
-            eprintln!(
+            crate::ext_warn!(
                 "auxpow_gpu_kernel_enqueue algo={} gws={} lws={} batch_factor={} dag_elements={}",
                 algorithm,
                 global_work_size,
@@ -1552,7 +1552,7 @@ impl ExtGpuMiner {
                 Ok(EventInfoResult::CommandExecutionStatus(_)) => {
                     // Queued / Submitted / Running — keep polling
                     if Instant::now() > deadline {
-                        eprintln!(
+                        crate::ext_warn!(
                             "auxpow_gpu_kernel_hang algo={} elapsed_ms={} gws={} timeout={}s — aborting batch",
                             algorithm, start.elapsed().as_millis(), global_work_size, kernel_timeout_secs
                         );
@@ -1574,14 +1574,14 @@ impl ExtGpuMiner {
                 }
                 Ok(other) => {
                     // Unexpected info result — fall back to q.finish()
-                    eprintln!("auxpow_gpu_kernel_event_unexpected_status algo={} result={:?} — falling back to q.finish()", algorithm, other);
+                    crate::ext_warn!("auxpow_gpu_kernel_event_unexpected_status algo={} result={:?} — falling back to q.finish()", algorithm, other);
                     q.finish()
                         .map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
                     break;
                 }
                 Err(e) => {
                     // Event status query failed — fall back to q.finish()
-                    eprintln!("auxpow_gpu_kernel_event_query_failed algo={} err={e} — falling back to q.finish()", algorithm);
+                    crate::ext_warn!("auxpow_gpu_kernel_event_query_failed algo={} err={e} — falling back to q.finish()", algorithm);
                     q.finish()
                         .map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
                     break;
@@ -1590,7 +1590,7 @@ impl ExtGpuMiner {
         }
         let elapsed_ms = start.elapsed().as_millis();
         if elapsed_ms > 5000 {
-            eprintln!(
+            crate::ext_warn!(
                 "auxpow_gpu_kernel_slow algo={} elapsed_ms={} gws={} — kernel took unusually long",
                 algorithm, elapsed_ms, global_work_size
             );
@@ -1667,7 +1667,7 @@ impl ExtGpuMiner {
             None
         };
 
-        println!(
+        crate::ext_info!(
             "auxpow_gpu_share_found algorithm={} nonce={} hash_first8={:016x} has_mix={} elapsed_ms={}",
             algorithm,
             nonce[0],
@@ -1820,13 +1820,13 @@ impl ExtGpuMiner {
                             std::thread::sleep(std::time::Duration::from_millis(10));
                         }
                         Ok(other) => {
-                            eprintln!("auxpow_gpu_kernel_event_unexpected_status algo=beamhash kernel={name} result={:?} — falling back to q.finish()", other);
+                            crate::ext_warn!("auxpow_gpu_kernel_event_unexpected_status algo=beamhash kernel={name} result={:?} — falling back to q.finish()", other);
                             q.finish()
                                 .map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
                             break;
                         }
                         Err(e) => {
-                            eprintln!("auxpow_gpu_kernel_event_query_failed algo=beamhash kernel={name} err={e} — falling back to q.finish()");
+                            crate::ext_warn!("auxpow_gpu_kernel_event_query_failed algo=beamhash kernel={name} err={e} — falling back to q.finish()");
                             q.finish()
                                 .map_err(|e| anyhow!("OpenCL finish failed: {e}"))?;
                             break;
@@ -1883,7 +1883,7 @@ impl ExtGpuMiner {
                     let mut solution = indices_100.clone();
                     solution.extend_from_slice(&extra_nonce);
 
-                    println!(
+                    crate::ext_info!(
                     "auxpow_gpu_share_found algorithm=beamhash nonce={} hash_first8={:016x} elapsed_ms={}",
                     u64::from_le_bytes(full_nonce),
                     u64::from_le_bytes(hash[0..8].try_into().unwrap()),
@@ -2149,7 +2149,7 @@ impl ExtGpuMiner {
             0xd7, 0x21, 0xaa, 0x48,
         ];
         if hash.as_slice() != expected {
-            eprintln!(
+            crate::ext_warn!(
                 "auxpow_gpu_verthash WARNING: data file SHA256 mismatch — \
                  got {:x?}, expected {:x?}. Mining may produce invalid shares.",
                 hash.as_slice(),
@@ -2181,7 +2181,7 @@ impl ExtGpuMiner {
             data_size,
         });
 
-        println!(
+        crate::ext_info!(
             "auxpow_gpu_verthash data loaded: {} bytes ({:.2} GB), MDIV={}",
             data_size,
             data_size as f64 / 1e9,
@@ -2248,7 +2248,7 @@ impl ExtGpuMiner {
         let dag_nodes = dag_size_entries * 2; // each 128-byte entry = 2 nodes
         let dag_ulongs = dag_nodes * 8; // each 64-byte node = 8 ulongs
 
-        eprintln!(
+        crate::ext_warn!(
             "dag_manager: {} DAG will be {} nodes = {:.2} GB",
             algorithm_label,
             dag_nodes,
@@ -2314,7 +2314,7 @@ typedef unsigned long ulong;
             .map(|i| u64::from_le_bytes(cache_bytes[i * 8..i * 8 + 8].try_into().unwrap()))
             .collect();
 
-        eprintln!(
+        crate::ext_warn!(
             "dag_manager: uploading light cache to GPU ({} ulongs = {:.1} MB)...",
             cache_u64.len(),
             (cache_u64.len() * 8) as f64 / (1024.0 * 1024.0)
@@ -2328,7 +2328,7 @@ typedef unsigned long ulong;
             .map_err(|e| anyhow!("failed to allocate light cache buffer: {e}"))?;
 
         // Allocate the DAG buffer on the GPU (no host data — will be filled by kernel).
-        eprintln!(
+        crate::ext_warn!(
             "dag_manager: allocating DAG buffer on GPU ({} ulongs = {:.2} GB)...",
             dag_ulongs,
             (dag_ulongs * 8) as f64 / (1024.0 * 1024.0 * 1024.0)
@@ -2345,7 +2345,7 @@ typedef unsigned long ulong;
         let num_batches = (total_nodes + batch_size - 1) / batch_size;
         let light_items = cache_items;
 
-        eprintln!(
+        crate::ext_warn!(
             "dag_manager: generating {} DAG on GPU ({} batches of {} nodes, light_items={})...",
             algorithm_label, num_batches, batch_size, light_items
         );
@@ -2393,7 +2393,7 @@ typedef unsigned long ulong;
                 } else {
                     0.0
                 };
-                eprintln!(
+                crate::ext_warn!(
                     "dag_manager: {} DAG generation {}% (batch {}/{}, {:.1}s elapsed, ~{:.0}s ETA)",
                     algorithm_label,
                     pct,
@@ -2405,7 +2405,7 @@ typedef unsigned long ulong;
             }
         }
 
-        eprintln!(
+        crate::ext_warn!(
             "dag_manager: {} DAG ready on GPU ({:.1}s total)",
             algorithm_label,
             start_time.elapsed().as_secs_f64()
@@ -2430,7 +2430,7 @@ typedef unsigned long ulong;
                 return Ok(());
             }
         }
-        eprintln!(
+        crate::ext_warn!(
             "dag_manager: generating Ethash light cache epoch={} on CPU (pure-Rust)...",
             epoch
         );
@@ -2441,7 +2441,7 @@ typedef unsigned long ulong;
             )
         })?;
 
-        eprintln!(
+        crate::ext_warn!(
             "dag_manager: light cache ready ({} items = {:.1} MB)",
             light_cache.cache_items,
             light_cache.cache_size as f64 / (1024.0 * 1024.0)
@@ -2463,7 +2463,7 @@ typedef unsigned long ulong;
             epoch,
         });
 
-        eprintln!("dag_manager: Ethash DAG epoch={} ready on GPU", epoch);
+        crate::ext_warn!("dag_manager: Ethash DAG epoch={} ready on GPU", epoch);
         Ok(())
     }
 
@@ -2482,7 +2482,7 @@ typedef unsigned long ulong;
                 return Ok(());
             }
         }
-        eprintln!(
+        crate::ext_warn!(
             "dag_manager: generating ProgPow light cache epoch={} on CPU (pure-Rust)...",
             epoch
         );
@@ -2493,7 +2493,7 @@ typedef unsigned long ulong;
             )
         })?;
 
-        eprintln!(
+        crate::ext_warn!(
             "dag_manager: light cache ready ({} items = {:.1} MB)",
             light_cache.cache_items,
             light_cache.cache_size as f64 / (1024.0 * 1024.0)
@@ -2515,7 +2515,7 @@ typedef unsigned long ulong;
             epoch,
         });
 
-        eprintln!("dag_manager: ProgPow DAG epoch={} ready on GPU", epoch);
+        crate::ext_warn!("dag_manager: ProgPow DAG epoch={} ready on GPU", epoch);
         Ok(())
     }
 
@@ -2643,7 +2643,7 @@ typedef unsigned long ulong;
                 .iter()
                 .find(|(_, _, _, _, _, name)| name.to_ascii_lowercase().contains(&filter_l))
             {
-                println!(
+                crate::ext_info!(
                     "auxpow_opencl_pick mode=name filter=\"{}\" platform_idx={} device_idx={} platform=\"{}\" device=\"{}\"",
                     filter, pidx, didx, platform_name, device_name
                 );
@@ -2660,7 +2660,7 @@ typedef unsigned long ulong;
                     Self::auxpow_device_name_matches_filter(name, &filter_l)
                 })
             {
-                println!(
+                crate::ext_info!(
                     "auxpow_opencl_pick mode=name_classified filter=\"{}\" platform_idx={} device_idx={} platform=\"{}\" device=\"{}\"",
                     filter, pidx, didx, platform_name, device_name
                 );
@@ -2671,7 +2671,7 @@ typedef unsigned long ulong;
                     device_name.clone(),
                 ));
             }
-            eprintln!(
+            crate::ext_warn!(
                 "auxpow_opencl_pick name filter=\"{}\" matched no device, falling back to index",
                 filter
             );
@@ -2682,7 +2682,7 @@ typedef unsigned long ulong;
             let idx = global_idx.min(candidates.len().saturating_sub(1));
             let (pidx, didx, platform, device, platform_name, device_name) =
                 candidates.swap_remove(idx);
-            println!(
+            crate::ext_info!(
                 "auxpow_opencl_pick mode=override index={} platform_idx={} device_idx={} platform=\"{}\" device=\"{}\"",
                 idx, pidx, didx, platform_name, device_name
             );
@@ -2691,7 +2691,7 @@ typedef unsigned long ulong;
 
         // Default: first available device.
         let (pidx, didx, platform, device, platform_name, device_name) = candidates.swap_remove(0);
-        println!(
+        crate::ext_info!(
             "auxpow_opencl_pick mode=auto platform_idx={} device_idx={} platform=\"{}\" device=\"{}\"",
             pidx, didx, platform_name, device_name
         );
@@ -2758,7 +2758,7 @@ typedef unsigned long ulong;
                         std::fs::read_to_string(&dir.join(kernel_file)).with_context(|| {
                             format!("reading OpenCL kernel {:?}", dir.join(kernel_file))
                         })?;
-                    println!("auxpow_gpu_opencl ghostrider concatenated: sph={}B cn={}B main={}B total={}B",
+                    crate::ext_info!("auxpow_gpu_opencl ghostrider concatenated: sph={}B cn={}B main={}B total={}B",
                         sph.len(), cn.len(), main.len(), sph.len() + cn.len() + main.len());
                     format!("{sph}\n{cn}\n{main}")
                 } else {
@@ -2843,7 +2843,7 @@ typedef unsigned long ulong;
                         let sph = include_str!("../../csrc/opencl/ghostrider_sph.cl");
                         let cn = include_str!("../../csrc/opencl/ghostrider_cn.cl");
                         let main = include_str!("../../csrc/opencl/ghostrider_kernel.cl");
-                        println!(
+                        crate::ext_info!(
                             "auxpow_gpu_opencl using embedded ghostrider: sph={}B cn={}B main={}B",
                             sph.len(),
                             cn.len(),
@@ -2858,7 +2858,7 @@ typedef unsigned long ulong;
                     }
                 };
                 if !is_ghostrider {
-                    println!("auxpow_gpu_opencl using embedded kernel={kernel_file}");
+                    crate::ext_info!("auxpow_gpu_opencl using embedded kernel={kernel_file}");
                 }
                 embedded
             }
@@ -3131,7 +3131,7 @@ typedef unsigned long ulong;
             .build()
             .map_err(|e| anyhow!("OpenCL compile failed for {kernel_file} period={period}: {e}"))?;
 
-        println!(
+        crate::ext_info!(
             "auxpow_gpu_opencl compiled {kernel_file} for period={period} (block_height={block_height})"
         );
 
@@ -3880,7 +3880,7 @@ typedef unsigned long ulong;
         const SOLS_BUF_SIZE: usize = 8192;
 
         let vram_needed = 2 * HT_SIZE + ROW_COUNTERS_SIZE * 2 * 4 + SOLS_BUF_SIZE + 1024;
-        println!(
+        crate::ext_info!(
             "auxpow_gpu_zelhash_prod ht_size={:.1} GB per table, total VRAM needed={:.1} GB",
             HT_SIZE as f64 / 1e9,
             vram_needed as f64 / 1e9
@@ -3903,7 +3903,7 @@ typedef unsigned long ulong;
         let blake_state = Self::zelhash_blake2b_state(&header_buf);
 
         // Allocate GPU buffers
-        println!("auxpow_gpu_zelhash_prod allocating hash tables...");
+        crate::ext_info!("auxpow_gpu_zelhash_prod allocating hash tables...");
         let ht0: Buffer<u8> = Buffer::builder()
             .queue(q.clone())
             .len(HT_SIZE)
@@ -4040,7 +4040,7 @@ typedef unsigned long ulong;
                 .enq()?;
         }
         q.finish()?;
-        println!(
+        crate::ext_info!(
             "auxpow_gpu_zelhash_prod round0 done in {}ms",
             start.elapsed().as_millis()
         );
@@ -4066,7 +4066,7 @@ typedef unsigned long ulong;
                     .enq()?;
             }
             q.finish()?;
-            println!(
+            crate::ext_info!(
                 "auxpow_gpu_zelhash_prod round{} done in {}ms",
                 round_num,
                 start.elapsed().as_millis()
@@ -4092,7 +4092,7 @@ typedef unsigned long ulong;
                 .enq()?;
         }
         q.finish()?;
-        println!(
+        crate::ext_info!(
             "auxpow_gpu_zelhash_prod round3 (final) done in {}ms",
             start.elapsed().as_millis()
         );
@@ -4111,7 +4111,7 @@ typedef unsigned long ulong;
                 .enq()?;
         }
         q.finish()?;
-        println!(
+        crate::ext_info!(
             "auxpow_gpu_zelhash_prod sols extraction done in {}ms",
             start.elapsed().as_millis()
         );
@@ -4124,7 +4124,7 @@ typedef unsigned long ulong;
         let nr_sols =
             u32::from_le_bytes([sols_data[0], sols_data[1], sols_data[2], sols_data[3]]) as usize;
 
-        println!(
+        crate::ext_info!(
             "auxpow_gpu_zelhash_prod found {} potential solutions",
             nr_sols
         );
@@ -4159,7 +4159,7 @@ typedef unsigned long ulong;
             // Encode solution
             let encoded_sol = Self::encode_equihash_solution(&indices, PREFIX, PARAM_K);
             if encoded_sol.len() != zcash_sol_len {
-                eprintln!(
+                crate::ext_warn!(
                     "auxpow_gpu_zelhash_prod sol{}: wrong size {} != {}",
                     sol_i,
                     encoded_sol.len(),
@@ -4194,7 +4194,7 @@ typedef unsigned long ulong;
             if meets_target {
                 let mut hash_arr = [0u8; 32];
                 hash_arr.copy_from_slice(&hash2);
-                println!(
+                crate::ext_info!(
                     "auxpow_gpu_zelhash_prod SHARE FOUND sol_{sol_i} nonce={base_nonce} hash_first8={:016x}",
                     u64::from_le_bytes(hash_arr[0..8].try_into().unwrap())
                 );
@@ -4205,11 +4205,11 @@ typedef unsigned long ulong;
                     solution: Some(encoded_sol),
                 }));
             } else {
-                println!("auxpow_gpu_zelhash_prod sol{}: doesn't meet target", sol_i);
+                crate::ext_info!("auxpow_gpu_zelhash_prod sol{}: doesn't meet target", sol_i);
             }
         }
 
-        println!("auxpow_gpu_zelhash_prod: no solution met target");
+        crate::ext_info!("auxpow_gpu_zelhash_prod: no solution met target");
         Ok(None)
     }
 
@@ -4247,7 +4247,7 @@ typedef unsigned long ulong;
 
         // Check VRAM — need at least 2 * ht_size + overhead
         let vram_needed = 2 * ht_size + ROW_COUNTERS_SIZE * 2 * 4 + SOLS_BUF_SIZE + 1024;
-        println!(
+        crate::ext_info!(
             "auxpow_gpu_equihash ht_size={:.1} GB per table, total VRAM needed={:.1} GB",
             ht_size as f64 / 1e9,
             vram_needed as f64 / 1e9
@@ -4273,7 +4273,7 @@ typedef unsigned long ulong;
         let blake_state = Self::zcash_blake2b_state(&header_buf);
 
         // Allocate GPU buffers
-        println!("auxpow_gpu_equihash allocating hash tables...");
+        crate::ext_info!("auxpow_gpu_equihash allocating hash tables...");
         let ht0: Buffer<u8> = Buffer::builder()
             .queue(q.clone())
             .len(ht_size)
@@ -4507,7 +4507,7 @@ typedef unsigned long ulong;
         q.finish()?;
 
         let elapsed_ms = start.elapsed().as_millis();
-        println!("auxpow_gpu_equihash kernels completed in {elapsed_ms} ms");
+        crate::ext_info!("auxpow_gpu_equihash kernels completed in {elapsed_ms} ms");
 
         // 5. Read back solutions
         let mut sols_data = vec![0u8; SOLS_BUF_SIZE];
@@ -4520,11 +4520,11 @@ typedef unsigned long ulong;
             u32::from_le_bytes([sols_data[4], sols_data[5], sols_data[6], sols_data[7]]);
 
         if nr_sols == 0 {
-            println!("auxpow_gpu_equihash no solutions found for nonce={base_nonce}");
+            crate::ext_info!("auxpow_gpu_equihash no solutions found for nonce={base_nonce}");
             return Ok(None);
         }
 
-        println!("auxpow_gpu_equihash {nr_sols} potential solutions found");
+        crate::ext_info!("auxpow_gpu_equihash {nr_sols} potential solutions found");
 
         // valid[] array starts at offset 8, MAX_SOLS=10 bytes
         // values[] array starts at offset 12 (after padding), each solution is 128 u32s = 512 bytes
@@ -4555,7 +4555,7 @@ typedef unsigned long ulong;
             // Encode solution
             let encoded_sol = Self::encode_equihash_solution(&inputs, prefix, param_k);
             if encoded_sol.len() != zcash_sol_len {
-                println!(
+                crate::ext_info!(
                     "auxpow_gpu_equihash sol_{sol_i} encoded size {} != expected {zcash_sol_len}, skipping",
                     encoded_sol.len()
                 );
@@ -4589,7 +4589,7 @@ typedef unsigned long ulong;
             if meets_target {
                 let mut hash_arr = [0u8; 32];
                 hash_arr.copy_from_slice(&hash2);
-                println!(
+                crate::ext_info!(
                     "auxpow_gpu_equihash SHARE FOUND sol_{sol_i} nonce={base_nonce} hash_first8={:016x}",
                     u64::from_le_bytes(hash_arr[0..8].try_into().unwrap())
                 );
@@ -4600,11 +4600,11 @@ typedef unsigned long ulong;
                     solution: Some(encoded_sol),
                 }));
             } else {
-                println!("auxpow_gpu_equihash sol_{sol_i} above target, skipping");
+                crate::ext_info!("auxpow_gpu_equihash sol_{sol_i} above target, skipping");
             }
         }
 
-        println!("auxpow_gpu_equihash {nr_sols_capped} solutions checked, none under target");
+        crate::ext_info!("auxpow_gpu_equihash {nr_sols_capped} solutions checked, none under target");
         Ok(None)
     }
 
@@ -4712,7 +4712,7 @@ typedef unsigned long ulong;
         let batch_u32 = batch_size as u32;
         let verthash_gws = batch_size * 4; // 4-way kernel
 
-        println!(
+        crate::ext_info!(
             "auxpow_gpu_verthash batch={} verthash_gws={} mdiv={} in18=0x{:08x} target_hi=0x{:08x}",
             batch_size, verthash_gws, mdiv, in18, target_u32
         );
@@ -4816,7 +4816,7 @@ typedef unsigned long ulong;
         q.finish()?;
 
         let elapsed_ms = start.elapsed().as_millis();
-        println!("auxpow_gpu_verthash kernels completed in {elapsed_ms} ms (batch={batch_size})");
+        crate::ext_info!("auxpow_gpu_verthash kernels completed in {elapsed_ms} ms (batch={batch_size})");
 
         // --- Read target results ---
         // targetResults[0] = count of found nonces
@@ -4832,7 +4832,7 @@ typedef unsigned long ulong;
         let potential_gr4id = test_result[1];
         let found_nonce = base_nonce + potential_gr4id as u64;
 
-        println!(
+        crate::ext_info!(
             "auxpow_gpu_verthash SHARE FOUND gr4id={} nonce={} count={}",
             potential_gr4id, found_nonce, result_count
         );
@@ -4865,7 +4865,7 @@ typedef unsigned long ulong;
         };
 
         if meets_target {
-            println!(
+            crate::ext_info!(
                 "auxpow_gpu_verthash SHARE CONFIRMED nonce={} hash_first8={:016x}",
                 found_nonce,
                 u64::from_le_bytes(hash_bytes[0..8].try_into().unwrap())
@@ -4878,7 +4878,7 @@ typedef unsigned long ulong;
             }));
         }
 
-        println!(
+        crate::ext_info!(
             "auxpow_gpu_verthash potential nonce {} above target, skipping",
             found_nonce
         );
@@ -5418,7 +5418,7 @@ impl DagManager {
             return Ok(()); // already loaded
         }
 
-        eprintln!(
+        crate::ext_warn!(
             "dag_manager: loading Ethash DAG epoch={} (cache_dir={})",
             epoch,
             self.cache_dir.display()
@@ -5427,13 +5427,13 @@ impl DagManager {
         // Try disk cache first (from a previous GPU-generated DAG that was saved)
         let cache_path = self.cache_dir.join(format!("ethash_epoch{}.bin", epoch));
         if cache_path.exists() {
-            eprintln!(
+            crate::ext_warn!(
                 "dag_manager: loading Ethash DAG from disk cache: {}",
                 cache_path.display()
             );
             match Self::load_dag_from_disk(&cache_path) {
                 Ok((dag_u64, dag_entries)) => {
-                    eprintln!(
+                    crate::ext_warn!(
                         "dag_manager: uploading Ethash DAG to GPU ({} entries = {:.1} MB)",
                         dag_entries,
                         dag_entries as f64 * 128.0 / (1024.0 * 1024.0)
@@ -5441,7 +5441,7 @@ impl DagManager {
                     miner.set_ethash_dag(&dag_u64, dag_entries, epoch)?;
                 }
                 Err(e) => {
-                    eprintln!("dag_manager: corrupt Ethash DAG cache, regenerating on GPU: {e}");
+                    crate::ext_warn!("dag_manager: corrupt Ethash DAG cache, regenerating on GPU: {e}");
                     let _ = std::fs::remove_file(&cache_path);
                     // Generate DAG on GPU (NEVER on CPU)
                     miner.generate_ethash_dag_on_gpu(epoch)?;
@@ -5452,7 +5452,7 @@ impl DagManager {
             // The light cache (~16-100 MB) is generated on CPU and uploaded,
             // then the full DAG is computed in parallel on the GPU.
             // This is the standard approach used by ethminer/kawpowminer.
-            eprintln!(
+            crate::ext_warn!(
                 "dag_manager: generating Ethash DAG epoch={} on GPU...",
                 epoch
             );
@@ -5460,7 +5460,7 @@ impl DagManager {
         }
 
         self.ethash_epoch = Some(epoch);
-        eprintln!("dag_manager: Ethash DAG epoch={} ready", epoch);
+        crate::ext_warn!("dag_manager: Ethash DAG epoch={} ready", epoch);
         Ok(())
     }
 
@@ -5477,7 +5477,7 @@ impl DagManager {
             return Ok(()); // already loaded
         }
 
-        eprintln!(
+        crate::ext_warn!(
             "dag_manager: loading KawPow DAG epoch={} (cache_dir={})",
             epoch,
             self.cache_dir.display()
@@ -5486,13 +5486,13 @@ impl DagManager {
         // Try disk cache first (for subsequent startups).
         let cache_path = self.cache_dir.join(format!("kawpow_epoch{}.bin", epoch));
         if cache_path.exists() {
-            eprintln!(
+            crate::ext_warn!(
                 "dag_manager: loading KawPow DAG from disk cache: {}",
                 cache_path.display()
             );
             match Self::load_dag_from_disk(&cache_path) {
                 Ok((dag_u64, dag_entries)) => {
-                    eprintln!(
+                    crate::ext_warn!(
                         "dag_manager: uploading KawPow DAG to GPU ({} entries = {:.1} MB)",
                         dag_entries,
                         dag_entries as f64 * 128.0 / (1024.0 * 1024.0)
@@ -5500,7 +5500,7 @@ impl DagManager {
                     miner.set_kawpow_dag(&dag_u64, dag_entries, epoch)?;
                 }
                 Err(e) => {
-                    eprintln!("dag_manager: corrupt KawPow DAG cache, regenerating on GPU: {e}");
+                    crate::ext_warn!("dag_manager: corrupt KawPow DAG cache, regenerating on GPU: {e}");
                     let _ = std::fs::remove_file(&cache_path);
                     // Generate DAG on GPU (NEVER on CPU)
                     miner.generate_kawpow_dag_on_gpu(epoch)?;
@@ -5510,7 +5510,7 @@ impl DagManager {
             // Generate the DAG directly on the GPU.
             // The light cache (~16-64 MB) is generated on CPU and uploaded,
             // then the GPU kernel fills the full DAG buffer in-place.
-            eprintln!(
+            crate::ext_warn!(
                 "dag_manager: generating KawPow DAG epoch={} on GPU...",
                 epoch
             );
@@ -5518,7 +5518,7 @@ impl DagManager {
         }
 
         self.kawpow_epoch = Some(epoch);
-        eprintln!("dag_manager: KawPow DAG epoch={} ready", epoch);
+        crate::ext_warn!("dag_manager: KawPow DAG epoch={} ready", epoch);
         Ok(())
     }
 
@@ -5535,7 +5535,7 @@ impl DagManager {
             return Ok(()); // already loaded
         }
 
-        eprintln!(
+        crate::ext_warn!(
             "dag_manager: loading ProgPow DAG epoch={} (cache_dir={})",
             epoch,
             self.cache_dir.display()
@@ -5544,13 +5544,13 @@ impl DagManager {
         // Try disk cache first (separate file from Ethash)
         let cache_path = self.cache_dir.join(format!("progpow_epoch{}.bin", epoch));
         if cache_path.exists() {
-            eprintln!(
+            crate::ext_warn!(
                 "dag_manager: loading ProgPow DAG from disk cache: {}",
                 cache_path.display()
             );
             match Self::load_dag_from_disk(&cache_path) {
                 Ok((dag_u64, dag_entries)) => {
-                    eprintln!(
+                    crate::ext_warn!(
                         "dag_manager: uploading ProgPow DAG to GPU ({} entries = {:.1} MB)",
                         dag_entries,
                         dag_entries as f64 * 128.0 / (1024.0 * 1024.0)
@@ -5558,7 +5558,7 @@ impl DagManager {
                     miner.set_progpow_dag(&dag_u64, dag_entries, epoch)?;
                 }
                 Err(e) => {
-                    eprintln!("dag_manager: corrupt ProgPow DAG cache, regenerating on GPU: {e}");
+                    crate::ext_warn!("dag_manager: corrupt ProgPow DAG cache, regenerating on GPU: {e}");
                     let _ = std::fs::remove_file(&cache_path);
                     // Generate DAG on GPU (NEVER on CPU) — keep it on GPU, do NOT
                     // read back to host memory to avoid CPU RAM pressure and stalls.
@@ -5570,7 +5570,7 @@ impl DagManager {
             // We intentionally do NOT persist it to disk: reading 2+ GB back to
             // host RAM violates the "DAG stays on GPU" rule and can stall the
             // miner long enough for the pool to close the connection.
-            eprintln!(
+            crate::ext_warn!(
                 "dag_manager: generating ProgPow DAG epoch={} on GPU...",
                 epoch
             );
@@ -5578,7 +5578,7 @@ impl DagManager {
         }
 
         self.progpow_epoch = Some(epoch);
-        eprintln!("dag_manager: ProgPow DAG epoch={} ready", epoch);
+        crate::ext_warn!("dag_manager: ProgPow DAG epoch={} ready", epoch);
         Ok(())
     }
 
@@ -5662,7 +5662,7 @@ impl DagManager {
         }
         file.flush()
             .map_err(|e| anyhow!("failed to flush DAG cache file: {e}"))?;
-        eprintln!(
+        crate::ext_warn!(
             "dag_manager: saved DAG to disk cache ({} entries, {:.1} MB)",
             dag_entries,
             dag_u64.len() as f64 * 8.0 / (1024.0 * 1024.0)
@@ -6421,7 +6421,7 @@ impl ExtGpuMiner {
                 for (name, ms) in &prof_timings {
                     eprint!(" {}={:.2}ms", name, ms);
                 }
-                eprintln!(" | TOTAL={:.2}ms", total);
+                crate::ext_warn!(" | TOTAL={:.2}ms", total);
             }
             self.pearl_buffers = Some(cache);
             return Ok(None);
@@ -7018,7 +7018,7 @@ impl ExtGpuMiner {
 
         if profile {
             q.finish()?;
-            eprintln!(
+            crate::ext_warn!(
                 "PEARL_BATCH steps1-6 for {} nonces: {:.2}ms",
                 bs,
                 prof_steps_start.elapsed().as_secs_f64() * 1000.0
@@ -7073,13 +7073,13 @@ impl ExtGpuMiner {
 
         if profile {
             q.finish()?;
-            eprintln!(
+            crate::ext_warn!(
                 "PEARL_BATCH step7_mine+readback for {} nonces: {:.2}ms ({:.2}ms/nonce)",
                 bs,
                 prof_mine_start.elapsed().as_secs_f64() * 1000.0,
                 prof_mine_start.elapsed().as_secs_f64() * 1000.0 / bs as f64
             );
-            eprintln!(
+            crate::ext_warn!(
                 "PEARL_BATCH total for {} nonces: {:.2}ms ({:.2}ms/nonce)",
                 bs,
                 prof_t0.elapsed().as_secs_f64() * 1000.0,
