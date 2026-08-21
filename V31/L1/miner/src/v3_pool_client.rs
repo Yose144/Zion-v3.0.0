@@ -13,6 +13,7 @@ use tokio::net::TcpStream;
 use tokio::sync::{mpsc, watch, Mutex};
 use tracing::{debug, info, warn};
 
+use crate::ext_warn;
 use crate::pool_message::{decode_message, encode_message, ExternalStreamJob, PoolMessage};
 
 /// A ZION job received from the pool (Stream 1).
@@ -403,7 +404,7 @@ impl V3PoolClient {
         };
         let mut rx = rx_lock;
         while let Ok(stale) = rx.try_recv() {
-            tracing::warn!(
+            ext_warn!(
                 coin = %stale.coin,
                 accepted = stale.accepted,
                 status = %stale.status,

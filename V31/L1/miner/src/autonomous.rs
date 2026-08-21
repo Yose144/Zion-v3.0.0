@@ -434,11 +434,18 @@ impl AutonomousProfitRouter {
     }
 
     /// Print the decision log.
+    ///
+    /// In `public_build`, this is a no-op: the decision log records which
+    /// external coins Stream 2/3 (Boost) selected and switched between,
+    /// which must never reach stdout/logs in the public release.
+    #[cfg(not(feature = "public_build"))]
     pub fn print_log(&self) {
         for entry in &self.log {
             println!("[autonomous] {}", entry);
         }
     }
+    #[cfg(feature = "public_build")]
+    pub fn print_log(&self) {}
 
     /// Get a summary string for display.
     pub fn summary(&self) -> String {

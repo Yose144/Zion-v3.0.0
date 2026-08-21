@@ -36,14 +36,14 @@ pub(crate) fn detect_cuda_arch(dev: &CudaDevice) -> String {
     match (major, minor) {
         (Ok(maj), Ok(min)) => {
             let arch = format!("compute_{}{}", maj, min);
-            eprintln!(
+            crate::ext_warn!(
                 "cuda_arch_detect: compute_capability={}.{} => arch={}",
                 maj, min, arch
             );
             arch
         }
         _ => {
-            eprintln!(
+            crate::ext_warn!(
                 "cuda_arch_detect: failed to query compute capability, falling back to compute_86"
             );
             "compute_86".to_string()
@@ -387,7 +387,7 @@ impl CudaExternalMiner {
             .unwrap_or(1 << 22); // 4M default
         let actual_work_size = work_size.max(256).min(max_work_size);
 
-        println!(
+        crate::ext_info!(
             "gpu_cuda_ext_init device=\"{}\" algorithm={} work_size={}",
             device_name, algorithm, actual_work_size,
         );
@@ -529,7 +529,7 @@ impl CudaExternalMiner {
 
         // Try loading a previously generated DAG from disk cache first.
         if Self::dag_cache_enabled() && cache_path.exists() {
-            eprintln!(
+            crate::ext_warn!(
                 "dag_manager: loading {} DAG epoch={} from disk cache ({})...",
                 algo_name,
                 epoch,
@@ -538,7 +538,7 @@ impl CudaExternalMiner {
             match Self::load_dag_from_disk(&cache_path) {
                 Ok((dag_u64, dag_size_entries)) => {
                     let dag_bytes = dag_u64.len() * 8;
-                    eprintln!(
+                    crate::ext_warn!(
                         "dag_manager: uploading {} cached DAG to GPU ({} entries = {:.1} MB)",
                         algo_name,
                         dag_size_entries,
@@ -553,14 +553,14 @@ impl CudaExternalMiner {
                     self.dag_epoch = epoch;
                     self.light_cache_buf = None;
                     self.light_cache_items = 0;
-                    eprintln!(
+                    crate::ext_warn!(
                         "dag_manager: {} DAG epoch={} ready from disk cache",
                         algo_name, epoch
                     );
                     return Ok(());
                 }
                 Err(e) => {
-                    eprintln!(
+                    crate::ext_warn!(
                         "dag_manager: corrupt/mismatched {} DAG cache, deleting and regenerating on GPU: {}",
                         algo_name, e
                     );
@@ -569,7 +569,7 @@ impl CudaExternalMiner {
             }
         }
 
-        eprintln!(
+        crate::ext_warn!(
             "dag_manager: generating {} DAG epoch={} on GPU...",
             algo_name, epoch,
         );
@@ -582,7 +582,7 @@ impl CudaExternalMiner {
         let dag_nodes = dag_size_entries * 2; // each 128-byte entry = 2 nodes
         let dag_u64s = dag_nodes * 8; // each 64-byte node = 8 u64
 
-        eprintln!(
+        crate::ext_warn!(
             "dag_manager: light cache ready ({} items = {:.1} MB), DAG will be {} nodes = {:.2} GB",
             cache_items,
             cache_bytes.len() as f64 / (1024.0 * 1024.0),
@@ -607,7 +607,7 @@ impl CudaExternalMiner {
         self.light_cache_items = cache_items as u64;
 
         // Step 3: Allocate DAG buffer on GPU (zero-initialized)
-        eprintln!(
+        crate::ext_warn!(
             "dag_manager: allocating DAG buffer on GPU ({:.2} GB)...",
             (dag_u64s as f64 * 8.0) / (1024.0 * 1024.0 * 1024.0),
         );
@@ -654,7 +654,7 @@ impl CudaExternalMiner {
             .max(1_024);
         let light_cache_ref = self.light_cache_buf.as_ref().unwrap();
 
-        eprintln!(
+        crate::ext_warn!(
             "dag_manager: computing DAG on GPU ({} nodes in batches of {})...",
             dag_nodes, batch_nodes,
         );
@@ -693,7 +693,7 @@ impl CudaExternalMiner {
 
             let pct = (node_start * 100 / dag_nodes).min(100);
             if pct.is_multiple_of(10) || node_start == dag_nodes {
-                eprintln!(
+                crate::ext_warn!(
                     "dag_manager: DAG generation {}% ({}/{}, {:.1}s)",
                     pct,
                     node_start,
@@ -707,7 +707,7 @@ impl CudaExternalMiner {
         self.dag_size_entries = dag_size_entries;
         self.dag_epoch = epoch;
 
-        eprintln!(
+        crate::ext_warn!(
             "dag_manager: {} DAG epoch={} ready on GPU ({:.1}s total)",
             algo_name,
             epoch,
@@ -719,7 +719,7 @@ impl CudaExternalMiner {
         if Self::dag_cache_enabled() {
             if let Some(dag_buf) = self.dag_buf.as_ref() {
                 if let Err(e) = Self::save_dag_to_disk(&self.dev, &cache_path, dag_buf, self.dag_size_entries) {
-                    eprintln!("dag_manager: failed to save {} DAG disk cache: {}", algo_name, e);
+                    crate::ext_warn!("dag_manager: failed to save {} DAG disk cache: {}", algo_name, e);
                 }
             }
         }
@@ -1314,7 +1314,7 @@ impl CudaExternalMiner {
             remaining -= n;
         }
 
-        eprintln!(
+        crate::ext_warn!(
             "dag_manager: loaded DAG from {} ({:.1}s)",
             path.display(),
             start.elapsed().as_secs_f64()
@@ -1337,7 +1337,7 @@ impl CudaExternalMiner {
         }
 
         let start = Instant::now();
-        eprintln!(
+        crate::ext_warn!(
             "dag_manager: downloading {} DAG from GPU for disk cache ({} entries)...",
             path.display(),
             dag_size_entries
@@ -1386,7 +1386,7 @@ impl CudaExternalMiner {
             .flush()
             .map_err(|e| anyhow::anyhow!("failed to flush DAG cache: {e}"))?;
 
-        eprintln!(
+        crate::ext_warn!(
             "dag_manager: saved DAG cache to {} ({:.1}s)",
             path.display(),
             start.elapsed().as_secs_f64()

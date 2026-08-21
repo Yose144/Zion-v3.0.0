@@ -1212,7 +1212,7 @@ pub(crate) fn draw_dashboard(
 
     // ── Title bar ──
     let algo_short = algo_display(&control.algorithm);
-    let title_text = format!("ZION MINER v3.1.0 - Triple Parallel - {}", algo_short);
+    let title_text = format!("ZION MINER v3.2.0 - Triple Parallel - {}", algo_short);
     let title = center_text(&title_text, iw);
     queue!(
         out,
