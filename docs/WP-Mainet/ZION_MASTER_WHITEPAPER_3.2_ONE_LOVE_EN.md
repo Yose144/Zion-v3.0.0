@@ -485,8 +485,8 @@ One planet. One people. One love.
 - Launch and marketing plan: [`OneLoveV3.2.md`](../../OneLoveV3.2.md)
 - Agent rules: [`AGENTS.md`](../../AGENTS.md) · [`V31/AGENTS.md`](../../V31/AGENTS.md)
 - Hard reset playbook: [`HARD_RESET_PLAYBOOK.md`](../../HARD_RESET_PLAYBOOK.md)
-- Session report: [`V31_3.2.0_SESSION_REPORT.md`](../../V31_3.2.0_SESSION_REPORT.md)
-- Trinity tuning: [`REPORT_2026-08-09_TRINITY_TUNING_FINAL.md`](../../REPORT_2026-08-09_TRINITY_TUNING_FINAL.md)
+- Session report: [`V31_3.2.0_SESSION_REPORT.md`](../../docs/3.1/REPORTS/V31_3.2.0_SESSION_REPORT.md)
+- Trinity tuning: [`REPORT_2026-08-09_TRINITY_TUNING_FINAL.md`](../../docs/3.1/REPORTS/REPORT_2026-08-09_TRINITY_TUNING_FINAL.md)
 
 ---
 
