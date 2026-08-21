@@ -371,7 +371,7 @@ mod opencl_impl {
                 .unwrap_or(tuning.local_ws);
             let actual_work_size = tuning.work_size.max(64).next_power_of_two();
 
-            eprintln!(
+            crate::ext_warn!(
                 "gpu_opencl_ekam_init family={family:?} vram={}MiB work_size={actual_work_size} local_ws={local_ws}",
                 vram / (1024 * 1024)
             );
@@ -662,7 +662,7 @@ mod opencl_impl {
             let (pidx, didx, platform, device, platform_name, device_name) =
                 candidates.swap_remove(idx);
 
-            eprintln!(
+            crate::ext_warn!(
                 "gpu_opencl_pick platform_idx={pidx} device_idx={didx} \"{platform_name}\" \"{device_name}\""
             );
 
@@ -689,7 +689,7 @@ mod opencl_impl {
                 .map(|v| v.clamp(32, 512))
                 .unwrap_or(tuning.local_ws);
 
-            eprintln!(
+            crate::ext_warn!(
                 "gpu_opencl_init family={family:?} device=\"{device_name}\" vram={}MiB work_size={actual_work_size} local_ws={local_ws}",
                 vram / (1024 * 1024)
             );

@@ -13,6 +13,11 @@ use zion_core::{
     Block, BlockHeader, ConsensusEngine, EkamDeeksha, Transaction, TransactionInput,
     TransactionOutput,
 };
+
+// In `public_build`, these compile to no-ops so that Stream 2/3 AuxPoW
+// activity (external coin names, job ids, stratum URLs) never reaches
+// logs. See `crate::ext_log` for details.
+use crate::{ext_debug, ext_info, ext_warn};
 use zion_cosmic_harmony::PowAlgorithm;
 use zion_l1_types::{Amount, Hash};
 
@@ -753,7 +758,7 @@ impl MinerRuntime {
                 algo_guard.as_deref() != Some(algorithm)
             };
             if need_recreate {
-                info!(
+                ext_info!(
                     algorithm, coin = coin_ticker, work_size,
                     shared_cuda = shared_cuda_dev.is_some(),
                     "GPU ext: creating persistent backend"
@@ -764,7 +769,7 @@ impl MinerRuntime {
                     .map_err(|e| anyhow::anyhow!("{e}"))?;
                 *gpu_ext.lock().unwrap() = Some(miner);
                 *gpu_ext_algo.lock().unwrap() = Some(algorithm.to_string());
-                info!(algorithm, "GPU ext: backend ready");
+                ext_info!(algorithm, "GPU ext: backend ready");
             }
 
             let mut gpu_guard = gpu_ext.lock().unwrap();
@@ -897,7 +902,7 @@ impl MinerRuntime {
             if let Some(coin) = cpu {
                 scheduler.set_cpu(coin, profiles);
             }
-            info!(
+            ext_info!(
                 gpu = ?gpu,
                 cpu = ?cpu,
                 "autonomous profit re-evaluation complete"
@@ -947,17 +952,30 @@ impl MinerRuntime {
                         } else {
                             0.0
                         };
-                        let coin_str = s.coin.map(|c| c.as_str()).unwrap_or("—");
                         let hashrate_str = format_hashrate(s.hashrate);
-                        info!(
-                            stream = stream.as_str(),
-                            coin = coin_str,
-                            hashrate = %hashrate_str,
-                            accepted = s.accepted,
-                            rejected = s.rejected,
-                            accept_rate = format!("{:.1}%", accept_rate),
-                            "stream metrics"
-                        );
+                        if stream == StreamId::Zion {
+                            info!(
+                                stream = stream.as_str(),
+                                hashrate = %hashrate_str,
+                                accepted = s.accepted,
+                                rejected = s.rejected,
+                                accept_rate = format!("{:.1}%", accept_rate),
+                                "stream metrics"
+                            );
+                        } else {
+                            // Stream 2/3 (AuxPoW boost): coin ticker is never
+                            // logged in public_build.
+                            let coin_str = s.coin.map(|c| c.as_str()).unwrap_or("—");
+                            ext_info!(
+                                stream = stream.as_str(),
+                                coin = coin_str,
+                                hashrate = %hashrate_str,
+                                accepted = s.accepted,
+                                rejected = s.rejected,
+                                accept_rate = format!("{:.1}%", accept_rate),
+                                "stream metrics"
+                            );
+                        }
                     }
                 }
 
@@ -1138,7 +1156,7 @@ impl MinerRuntime {
                         _ = interval.tick() => {
                             let profiles = zion_cosmic_harmony::CoinProfile::defaults();
                             let (gpu, cpu) = this.refresh_auxpow(&profiles).await;
-                            info!(
+                            ext_info!(
                                 gpu = ?gpu,
                                 cpu = ?cpu,
                                 interval_sec = this.config.profit_interval_sec,
@@ -1302,10 +1320,10 @@ impl MinerRuntime {
                                     std::sync::atomic::Ordering::Relaxed,
                                 );
                                 if let Some(ref ext) = bundle.gpu_external {
-                                    tracing::debug!(coin = %ext.coin, job_id = %ext.job_id, height = ext.height, "GPU ext job arrived");
+                                    ext_debug!(coin = %ext.coin, job_id = %ext.job_id, height = ext.height, "GPU ext job arrived");
                                 }
                                 if let Some(ref ext) = bundle.cpu_external {
-                                    tracing::debug!(coin = %ext.coin, job_id = %ext.job_id, height = ext.height, "CPU ext job arrived");
+                                    ext_debug!(coin = %ext.coin, job_id = %ext.job_id, height = ext.height, "CPU ext job arrived");
                                 }
                                 let _ = job_tx.send_replace(Some(bundle.clone()));
                                 current_bundle = Some(bundle);
@@ -1344,10 +1362,10 @@ impl MinerRuntime {
                                     std::sync::atomic::Ordering::Relaxed,
                                 );
                                 if let Some(ref ext) = new_bundle.gpu_external {
-                                    tracing::debug!(coin = %ext.coin, job_id = %ext.job_id, height = ext.height, "GPU ext job arrived");
+                                    ext_debug!(coin = %ext.coin, job_id = %ext.job_id, height = ext.height, "GPU ext job arrived");
                                 }
                                 if let Some(ref ext) = new_bundle.cpu_external {
-                                    tracing::debug!(coin = %ext.coin, job_id = %ext.job_id, height = ext.height, "CPU ext job arrived");
+                                    ext_debug!(coin = %ext.coin, job_id = %ext.job_id, height = ext.height, "CPU ext job arrived");
                                 }
                                 let _ = job_tx.send_replace(Some(new_bundle.clone()));
                                 current_bundle = Some(new_bundle);
@@ -1362,10 +1380,10 @@ impl MinerRuntime {
                                             std::sync::atomic::Ordering::Relaxed,
                                         );
                                         if let Some(ref ext) = bundle.gpu_external {
-                                            tracing::debug!(coin = %ext.coin, job_id = %ext.job_id, height = ext.height, "GPU ext job arrived");
+                                            ext_debug!(coin = %ext.coin, job_id = %ext.job_id, height = ext.height, "GPU ext job arrived");
                                         }
                                         if let Some(ref ext) = bundle.cpu_external {
-                                            tracing::debug!(coin = %ext.coin, job_id = %ext.job_id, height = ext.height, "CPU ext job arrived");
+                                            ext_debug!(coin = %ext.coin, job_id = %ext.job_id, height = ext.height, "CPU ext job arrived");
                                         }
                                         let _ = job_tx.send_replace(Some(bundle.clone()));
                                         current_bundle = Some(bundle);
@@ -1779,7 +1797,7 @@ impl MinerRuntime {
                     .store(base, std::sync::atomic::Ordering::Relaxed);
                 self.gpu_ext_job_base
                     .store(base, std::sync::atomic::Ordering::Relaxed);
-                tracing::debug!(
+                ext_debug!(
                     coin = %ext.coin, job_id = %ext.job_id, base,
                     "GPU ext nonce base set"
                 );
@@ -1817,7 +1835,7 @@ impl MinerRuntime {
         };
 
         let share = self.mine_auxpow_share_batch(stream, &job, batch).await?;
-        tracing::debug!(stream = ?stream, coin = %coin, nonce = share.nonce, "mined ext share");
+        ext_debug!(stream = ?stream, coin = %coin, nonce = share.nonce, "mined ext share");
 
         // V3 philosophy: forward ALL shares to the upstream pool.
         // For VRSC (fast-block CPU coin), check if a newer V3 job bundle has
@@ -1842,7 +1860,7 @@ impl MinerRuntime {
             false
         };
         if skip_stale {
-            tracing::debug!(stream = ?stream, coin = %coin, nonce = share.nonce, "stale ext share — VRSC job_id changed, skipping submit");
+            ext_debug!(stream = ?stream, coin = %coin, nonce = share.nonce, "stale ext share — job_id changed, skipping submit");
             return Ok(false);
         }
 
@@ -1889,7 +1907,7 @@ impl MinerRuntime {
                             .record_share_result(StreamId::CpuExternal, coin, &share_result)
                             .await;
                         if r.accepted {
-                            info!(
+                            ext_info!(
                                 stream = ?StreamId::CpuExternal,
                                 coin = %coin,
                                 nonce = nonce,
@@ -1897,7 +1915,7 @@ impl MinerRuntime {
                                 "V3 Trinity: external share accepted"
                             );
                         } else {
-                            warn!(
+                            ext_warn!(
                                 stream = ?StreamId::CpuExternal,
                                 coin = %coin,
                                 nonce = nonce,
@@ -1907,7 +1925,7 @@ impl MinerRuntime {
                         }
                     }
                     Err(e) => {
-                        warn!(
+                        ext_warn!(
                             stream = ?StreamId::CpuExternal,
                             coin = %coin,
                             nonce = nonce,
@@ -1950,7 +1968,7 @@ impl MinerRuntime {
         self.record_share_result(stream, coin, &share_result).await;
 
         if result.accepted {
-            info!(
+            ext_info!(
                 stream = ?stream,
                 coin = %coin,
                 nonce = share.nonce,
@@ -1958,7 +1976,7 @@ impl MinerRuntime {
                 "V3 Trinity: external share accepted"
             );
         } else {
-            warn!(
+            ext_warn!(
                 stream = ?stream,
                 coin = %coin,
                 nonce = share.nonce,
@@ -2000,7 +2018,7 @@ impl MinerRuntime {
             .unwrap_or_default();
 
         if url.is_empty() {
-            warn!(stream = ?stream, coin = %coin, "no stratum url for auxpow coin");
+            ext_warn!(stream = ?stream, coin = %coin, "no stratum url for auxpow coin");
             sleep(Duration::from_millis(self.config.auxpow_retry_ms)).await;
             return Ok(());
         }
@@ -2069,13 +2087,13 @@ impl MinerRuntime {
                     self.record_share_result(stream, coin, &result).await;
                     match result {
                         ShareResult::Accepted => {
-                            info!(stream = ?stream, coin = %coin, nonce = share.nonce, "mined auxpow share accepted");
+                            ext_info!(stream = ?stream, coin = %coin, nonce = share.nonce, "mined auxpow share accepted");
                         }
                         ShareResult::Rejected(reason) => {
-                            warn!(stream = ?stream, coin = %coin, nonce = share.nonce, reason = %reason, "auxpow share rejected");
+                            ext_warn!(stream = ?stream, coin = %coin, nonce = share.nonce, reason = %reason, "auxpow share rejected");
                         }
                         _ => {
-                            info!(stream = ?stream, coin = %coin, nonce = share.nonce, "mined auxpow share");
+                            ext_info!(stream = ?stream, coin = %coin, nonce = share.nonce, "mined auxpow share");
                         }
                     }
                 }

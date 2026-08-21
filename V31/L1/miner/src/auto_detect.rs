@@ -226,8 +226,12 @@ pub fn derive_auto_config(hw: &HardwareProfile, tune: &AutoTuneResult) -> AutoMi
         // Stream 1: ZION Deeksha (CPU)
         // Stream 2: Disabled (no GPU)
         // Stream 3: VRSC (CPU VerusHash)
+        #[cfg(feature = "public_build")]
+        let mode_name = "CPU Dual Stream (ZION + BOOST)".to_string();
+        #[cfg(not(feature = "public_build"))]
+        let mode_name = "CPU Dual Stream (ZION + VRSC)".to_string();
         AutoMineConfig {
-            mode_name: "CPU Dual Stream (ZION + VRSC)".to_string(),
+            mode_name,
             gpu_backend: GpuBackendKind::Cpu,
             gpu_work_size: 1 << 18, // 256K
             secondary_gpu_work_size: 0,

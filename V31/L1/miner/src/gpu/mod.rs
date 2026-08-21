@@ -2189,9 +2189,9 @@ pub fn create_gpu_backend(
         let gpu_count = gpu_devices.len();
         if gpu_count > 1 {
             // Log all enumerated devices for diagnostics
-            println!("multi_gpu_enumeration devices={}", gpu_count);
+            crate::ext_info!("multi_gpu_enumeration devices={}", gpu_count);
             for d in &gpu_devices {
-                println!(
+                crate::ext_info!(
                     "  [{}] name=\"{}\" class={} cu={} vram={}MB pci_bus={:?}",
                     d.global_idx,
                     d.name,
@@ -2223,13 +2223,13 @@ pub fn create_gpu_backend(
                 .and_then(|v| v.trim().parse::<usize>().ok());
 
             let zano_idx: Option<usize> = if !zano_reserve {
-                tlog!("multi_gpu: ZION_ZANO_RESERVE=0 — all GPUs go to ZION, ZANO will share via time-slicing");
+                crate::ext_info!("multi_gpu: ZION_ZANO_RESERVE=0 — all GPUs go to ZION, ZANO will share via time-slicing");
                 None
             } else if let Some(idx) = zano_idx_explicit {
                 if idx < gpu_count {
                     Some(idx)
                 } else {
-                    tlog!(
+                    crate::ext_info!(
                         "multi_gpu: ZION_ZANO_DEVICE_IDX={} out of range ({} devices)",
                         idx,
                         gpu_count
@@ -2251,7 +2251,7 @@ pub fn create_gpu_backend(
                         .max_by_key(|d| d.classification.progpow_priority())
                         .map(|d| d.global_idx);
                     if let Some(idx) = best {
-                        tlog!(
+                        crate::ext_info!(
                             "multi_gpu_auto_zano no name match for \"{}\", auto-selected device[{}] class={} (priority={})",
                             zano_filter,
                             idx,
@@ -2287,7 +2287,7 @@ pub fn create_gpu_backend(
                 (0..gpu_count).filter(|i| Some(*i) != zano_idx).collect()
             };
 
-            tlog!(
+            crate::ext_info!(
                 "multi_gpu_init devices={} algorithm={} zano_device_idx={:?} target_devices={:?}",
                 gpu_count,
                 algorithm,
@@ -2303,7 +2303,7 @@ pub fn create_gpu_backend(
                 std::env::set_var("ZION_OCL_DEVICE_NAME", &dev.name);
                 match create_gpu_backend_inner(kind, work_size, algorithm, coin, None) {
                     Ok(m) => {
-                        println!(
+                        crate::ext_info!(
                             "multi_gpu_sub_init device_idx={} device=\"{}\" class={} ok",
                             i,
                             m.device_name(),
@@ -2312,7 +2312,7 @@ pub fn create_gpu_backend(
                         sub_miners.push(m);
                     }
                     Err(e) => {
-                        eprintln!(
+                        crate::ext_warn!(
                             "multi_gpu_sub_init device_idx={} device=\"{}\" class={} failed: {e}",
                             i,
                             dev.name,
@@ -2325,10 +2325,10 @@ pub fn create_gpu_backend(
             if sub_miners.is_empty() {
                 // No target GPUs left (e.g. single GPU and it matches ZANO filter).
                 // Fall through to single-GPU mode on the ZANO device.
-                tlog!("multi_gpu: no target devices left after ZANO reservation, falling back to single-GPU");
+                crate::ext_info!("multi_gpu: no target devices left after ZANO reservation, falling back to single-GPU");
             } else {
                 if sub_miners.len() == 1 {
-                    println!("multi_gpu: 1 sub-miner — using single-GPU for {algorithm}");
+                    crate::ext_info!("multi_gpu: 1 sub-miner — using single-GPU for {algorithm}");
                 }
 
                 // Point any later OpenCL picker at the reserved ZANO device so
@@ -2338,7 +2338,7 @@ pub fn create_gpu_backend(
                     let zano_dev = &gpu_devices[idx];
                     std::env::remove_var("ZION_OCL_DEVICE_IDX");
                     std::env::set_var("ZION_OCL_DEVICE_NAME", &zano_dev.name);
-                    tlog!(
+                    crate::ext_info!(
                         "multi_gpu_ready active_devices={} active_names=\"{}\" zano_device_idx={} zano_device_name=\"{}\" zano_class={}",
                         sub_miners.len(),
                         sub_miners.iter().map(|m| m.device_name()).collect::<Vec<_>>().join(" + "),
@@ -2357,7 +2357,7 @@ pub fn create_gpu_backend(
                     if !best_progpow.is_empty() {
                         std::env::set_var("ZION_OCL_DEVICE_NAME", &best_progpow);
                     }
-                    tlog!(
+                    crate::ext_info!(
                         "multi_gpu_ready active_devices={} active_names=\"{}\" zano_device_idx=none (best=\"{}\")",
                         sub_miners.len(),
                         sub_miners.iter().map(|m| m.device_name()).collect::<Vec<_>>().join(" + "),
@@ -2919,7 +2919,7 @@ pub fn gpu_scan_job(
         // algos; the DAG is managed via update_epoch_from_job() which is
         // called from a separate path.
         // For now, we log the epoch for diagnostics.
-        tlog!(
+        crate::ext_info!(
             "auxpow_dag_epoch_hint algorithm={} height={} epoch={}",
             algorithm,
             job.height,
@@ -2993,7 +2993,7 @@ pub fn gpu_scan_job(
                         let fmthex = |b: &[u8]| -> String {
                             b.iter().map(|x| format!("{:02x}", x)).collect()
                         };
-                        tlog!(
+                        crate::ext_warn!(
                             "GPU_CPU_MISMATCH #{} nonce={} h={} algo={} \
                              gpu_hash={} cpu_hash={} \
                              gpu_meets_target={} cpu_meets_target={}",
@@ -3015,7 +3015,7 @@ pub fn gpu_scan_job(
                     static FALSE_POS: AtomicU64 = AtomicU64::new(0);
                     let count = FALSE_POS.fetch_add(1, Ordering::Relaxed) + 1;
                     if count <= 5 || count.is_multiple_of(50) {
-                        tlog!(
+                        crate::ext_warn!(
                             "gpu_false_positive #{} nonce={} h={} algo={} gpu_above_target=true",
                             count,
                             nonce,
