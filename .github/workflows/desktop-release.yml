@@ -18,7 +18,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag, e.g. v3.1.0-desktop'
+        description: 'Release tag, e.g. v3.2.0-desktop'
         required: true
         type: string
       draft:
@@ -43,6 +43,7 @@ on:
         type: boolean
   push:
     tags:
+      - 'v3.2.0-desktop*'
       - 'v3.1.0-desktop*'
       - 'desktop-v*'
 
@@ -60,7 +61,7 @@ jobs:
     if: github.event_name == 'push' || inputs.build_linux == true
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
@@ -98,7 +99,7 @@ jobs:
     if: github.event_name == 'push' || inputs.build_windows == true
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
@@ -159,7 +160,7 @@ jobs:
     if: github.event_name == 'push' || inputs.build_macos == true
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
@@ -193,7 +194,7 @@ jobs:
     if: always() && !cancelled() && (needs.build-linux.result == 'success' || needs.build-windows.result == 'success' || needs.build-macos.result == 'success')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - name: Download all build artifacts
         uses: actions/download-artifact@v4
@@ -244,7 +245,7 @@ jobs:
             echo "Creating new release ${RELEASE_TAG}."
             gh release create "${RELEASE_TAG}" \
               --repo "${PUBLIC_REPO}" \
-              --title "ZION Public Desktop Miner v3.1.0" \
+              --title "ZION Public Desktop Miner v3.2.0" \
               --notes-file "${NOTES_FILE}" \
               ${DRAFT_FLAG} \
               "${assets[@]}"

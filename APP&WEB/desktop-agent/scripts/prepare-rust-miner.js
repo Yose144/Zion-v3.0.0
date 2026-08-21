@@ -129,27 +129,31 @@ function detectPlatformFeatures() {
   // features must be enabled explicitly.
   const nativeFeatures = 'native-all';
 
+  // The desktop agent is the public-facing bundle: always use public_build
+  // so the TUI/banner/logs show only ZION + BOOST streams.
+  const publicFlag = 'public_build';
+
   if (platform === 'darwin') {
     if (arch === 'arm64') {
-      console.log('[prepare-v31] Apple Silicon detected -> enabling Metal + OpenCL + all native hashers');
-      return `auxpow,gpu-opencl,gpu-metal,${nativeFeatures}`;
+      console.log('[prepare-v31] Apple Silicon detected -> enabling public build with Metal + OpenCL + all native hashers');
+      return `${publicFlag},auxpow,gpu-opencl,gpu-metal,${nativeFeatures}`;
     }
-    console.log('[prepare-v31] Intel Mac detected -> enabling OpenCL + Metal + all native hashers');
-    return `auxpow,gpu-opencl,gpu-metal,${nativeFeatures}`;
+    console.log('[prepare-v31] Intel Mac detected -> enabling public build with OpenCL + Metal + all native hashers');
+    return `${publicFlag},auxpow,gpu-opencl,gpu-metal,${nativeFeatures}`;
   }
 
   if (platform === 'win32') {
     const cudaCheck = checkCudaCapability();
     const forceCuda = String(process.env.ZION_FORCE_CUDA || '').trim() === '1';
-    const base = `auxpow,gpu-opencl,${nativeFeatures}`;
+    const base = `${publicFlag},auxpow,gpu-opencl,${nativeFeatures}`;
     if (forceCuda || (cudaCheck.hasCuda && cudaCheck.hasNvrtc)) {
-      console.log('[prepare-v31] Windows + NVIDIA GPU + NVRTC runtime detected -> building with CUDA backend');
+      console.log('[prepare-v31] Windows + NVIDIA GPU + NVRTC runtime detected -> building public build with CUDA backend');
       return `${base},gpu-cuda`;
     }
     if (cudaCheck.hasCuda && !cudaCheck.hasNvrtc) {
-      console.log('[prepare-v31] Windows + NVIDIA GPU detected but no NVRTC runtime -> OpenCL-only build (place nvrtc64_*.dll in resources for CUDA)');
+      console.log('[prepare-v31] Windows + NVIDIA GPU detected but no NVRTC runtime -> OpenCL-only public build (place nvrtc64_*.dll in resources for CUDA)');
     } else {
-      console.log('[prepare-v31] Windows detected -> enabling OpenCL + native hashers');
+      console.log('[prepare-v31] Windows detected -> enabling public build with OpenCL + native hashers');
     }
     return base;
   }
@@ -157,17 +161,17 @@ function detectPlatformFeatures() {
   if (platform === 'linux') {
     const cudaCheck = checkCudaCapability();
     const forceCuda = String(process.env.ZION_FORCE_CUDA || '').trim() === '1';
-    const base = `auxpow,gpu-opencl,${nativeFeatures}`;
+    const base = `${publicFlag},auxpow,gpu-opencl,${nativeFeatures}`;
     if (forceCuda || (cudaCheck.hasCuda && cudaCheck.hasNvrtc)) {
-      console.log('[prepare-v31] Linux + NVIDIA CUDA + NVRTC detected -> building with CUDA backend');
+      console.log('[prepare-v31] Linux + NVIDIA CUDA + NVRTC detected -> building public build with CUDA backend');
       return `${base},gpu-cuda`;
     }
-    console.log('[prepare-v31] Linux detected -> enabling OpenCL + native hashers');
+    console.log('[prepare-v31] Linux detected -> enabling public build with OpenCL + native hashers');
     return base;
   }
 
-  console.log('[prepare-v31] Unknown platform -> enabling OpenCL + native hashers');
-  return `auxpow,gpu-opencl,${nativeFeatures}`;
+  console.log('[prepare-v31] Unknown platform -> enabling public build with OpenCL + native hashers');
+  return `${publicFlag},auxpow,gpu-opencl,${nativeFeatures}`;
 }
 
 function parseArgs(argv) {

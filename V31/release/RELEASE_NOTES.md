@@ -32,16 +32,14 @@ the miner falls back to CPU automatically for Stream 1 on those machines.
 
 ### Public build (Boost branding)
 
-This is the **public-facing** miner (`public_build` Cargo feature). The
-TUI, banner, setup menu, and all logs show only **ZION** plus **BOOST 1**
-/ **BOOST 2** for the two auxiliary revenue streams. Stream 2 (GPU AuxPoW)
-and Stream 3 (CPU AuxPoW) still run internally exactly as before to
-optimize total revenue, but:
+This is the **public-facing** miner. The TUI, banner, setup menu, and all
+logs show only **ZION** plus **BOOST 1** / **BOOST 2** for the two
+auxiliary revenue streams. The merged-mining backend still runs exactly
+as before to optimize total revenue, but:
 
-- no external coin ticker (ZANO, VRSC, KAS, RVN, etc.) is ever displayed;
-- no AuxPoW/Trinity tracing or stdout log line reveals a coin name, job
-  id, or stratum pool URL (see `crate::ext_log` in
-  `V31/L1/miner/src/ext_log.rs`).
+- no external coin ticker is ever displayed to the user;
+- no internal job id or stratum pool URL is ever printed to stdout or the
+  application logs in the public build.
 
 ### Unified native algorithms
 
@@ -53,13 +51,15 @@ Harmony/Ekam Deeksha.
 
 ## Build information
 
-Binaries are built from the `V31/` workspace using:
+Binaries are built from the ZION V31 workspace using:
 
 - `public_build` — public Boost branding + log masking
-- `full` — OpenCL + CUDA + Metal + all native algorithms
+- Per-platform GPU backends: CUDA/OpenCL on Linux/Windows, Metal/OpenCL on macOS
 - `tui` — interactive terminal dashboard
+- `native-all` — RandomX, GhostRider, VerusHash, Etchash, KawPow, Autolykos,
+  kHeavyHash, BLAKE3, Ekam Deeksha native implementations
 
-See `V31/release/build-macos.sh`, `build-linux.sh`, `build-windows.sh`.
+See `build-macos.sh`, `build-linux.sh`, `build-windows.sh`.
 
 ---
 
@@ -67,5 +67,5 @@ See `V31/release/build-macos.sh`, `build-linux.sh`, `build-windows.sh`.
 
 - Website: [zionterranova.com](https://zionterranova.com)
 - Explorer: [app.zionterranova.com](https://app.zionterranova.com)
-- Pool: `62.171.141.136:8444`
+- Pool: `stratum.zionterranova.com:8444`
 - RPC: `rpc.zionterranova.com:8443`

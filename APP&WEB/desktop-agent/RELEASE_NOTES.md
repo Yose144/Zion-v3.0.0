@@ -1,38 +1,45 @@
-# ZION Desktop Agent v3.1.0
+# ZION Desktop Miner v3.2.0
 
-**Release:** `v3.1.0`  
-**Date:** 2026-08-06  
+**Release:** `v3.2.0`  
+**Date:** 2026-08-21  
 **Status:** Mainnet Alpha
 
 ## Overview
 
-The v3.1.0 desktop agent bundles the public ZION V31 mining client (`zion-miner`), the L1 full node (`node`) and the unified CLI (`zion`) in a single Electron app. This is the first release built from the unified `V31/` workspace and the `APP&WEB/desktop-agent/` source tree.
+The ZION Desktop Miner bundles the public ZION mining client, the L1 full node and the unified `zion` CLI into a single Electron app. This release is built from the canonical ZION V31 workspace.
 
-## What is new in v3.1.0
+## What's new in v3.2.0
 
-### V31 workspace
+### Ekam Deeksha v3.2
 
-All binaries are built from the canonical `V31/` workspace (`V31/Cargo.toml`). The legacy `DesktopAgentP3.0.6/` and `MinerP3.0.6/` V3 source trees have been archived.
+The embedded miner uses the canonical **Ekam Deeksha v3.2** PoW: 512 KiB scratchpad, 2 passes, 128 random reads per pass, Keccak-256 final hash. This replaces the earlier 128 KiB Deeksha Lite algorithm used in v3.0.x / v3.1.x public builds.
 
 ### One-click GPU auto-detect
 
-The embedded miner binary automatically picks the best available GPU backend:
+The app picks the best available GPU backend automatically per platform:
 
 | Platform | NVIDIA | AMD / Intel | Apple Silicon |
 |----------|--------|-------------|---------------|
-| Linux x86_64 | OpenCL / CUDA (when built with `gpu-cuda`) | OpenCL | — |
-| Windows x86_64 | OpenCL | OpenCL | — |
+| Linux x86_64 | OpenCL / CUDA | OpenCL | — |
+| Windows x86_64 | OpenCL / CUDA | OpenCL | — |
 | macOS arm64 | — | OpenCL (legacy) | Metal |
+| macOS x86_64 | — | OpenCL (legacy) | Metal |
 
-No flags are required for basic operation — the app falls back through CUDA → OpenCL → Metal → CPU as available.
+On Apple Silicon M1–M5 the Ekam Deeksha workload is routed to CPU by default, because the integrated GPU is slower for this memory-hard algorithm.
 
-### Pure ZION / no external pools
+### Public Boost branding
 
-The default mining mode in the desktop app connects directly to the ZION Mainnet pool and mines the ZION stream only. External Trinity/AuxPoW coin support is still available in the standalone terminal miner.
+The embedded miner is built in **public** mode. The TUI, banner, setup menu and logs show only:
+
+- **ZION** — the main ZION stream
+- **BOOST 1** — GPU auxiliary revenue stream
+- **BOOST 2** — CPU auxiliary revenue stream
+
+No external coin tickers, job ids or stratum pool URLs are printed to the UI or logs. The auxiliary revenue streams still run in the background exactly as before.
 
 ### Included binaries
 
-- `zion-miner` — V31 mining client
+- `zion-miner` — mining client (CPU/GPU backends, ZION + Boost streams)
 - `node` — ZION L1 full node (P2P + RPC)
 - `zion` — unified CLI (wallet, send, balance, status, etc.)
 
@@ -40,11 +47,11 @@ The default mining mode in the desktop app connects directly to the ZION Mainnet
 
 | File | Platform | Format |
 |------|----------|--------|
-| `zion-desktop-agent-v3.1.0-mac-arm64.dmg` | macOS Apple Silicon | DMG |
-| `zion-desktop-agent-v3.1.0-linux-x86_64.AppImage` | Linux x86_64 | AppImage |
-| `zion-desktop-agent-v3.1.0-linux-amd64.deb` | Linux x86_64 | DEB |
-| `zion-desktop-agent-v3.1.0-windows-x64.exe` | Windows x64 | NSIS installer |
-| `zion-desktop-agent-v3.1.0-windows-x64.zip` | Windows x64 | Portable ZIP |
+| `zion-desktop-agent-v3.2.0-mac-arm64.dmg` | macOS Apple Silicon | DMG |
+| `zion-desktop-agent-v3.2.0-linux-x86_64.AppImage` | Linux x86_64 | AppImage |
+| `zion-desktop-agent-v3.2.0-linux-amd64.deb` | Linux x86_64 | DEB |
+| `zion-desktop-agent-v3.2.0-windows-x64.exe` | Windows x64 | NSIS installer |
+| `zion-desktop-agent-v3.2.0-windows-x64.zip` | Windows x64 | Portable ZIP |
 
 > Verify SHA-256 checksums with `SHA256SUMS.txt` included in this release.
 
@@ -57,8 +64,8 @@ Open the `.dmg` and drag **ZION Miner** into **Applications**. On Apple Silicon 
 ### Linux AppImage
 
 ```bash
-chmod +x zion-desktop-agent-v3.1.0-linux-x86_64.AppImage
-./zion-desktop-agent-v3.1.0-linux-x86_64.AppImage
+chmod +x zion-desktop-agent-v3.2.0-linux-x86_64.AppImage
+./zion-desktop-agent-v3.2.0-linux-x86_64.AppImage
 ```
 
 > If the window does not appear on Wayland/NVIDIA, run with `--no-sandbox --ozone-platform=x11 --disable-gpu-sandbox`.
@@ -66,3 +73,10 @@ chmod +x zion-desktop-agent-v3.1.0-linux-x86_64.AppImage
 ### Windows
 
 Run the installer and follow the prompts, or extract the portable ZIP and run `ZION Miner.exe`.
+
+## Support
+
+- Website: [zionterranova.com](https://zionterranova.com)
+- Explorer: [app.zionterranova.com](https://app.zionterranova.com)
+- Pool: `stratum.zionterranova.com:8444`
+- RPC: `rpc.zionterranova.com:8443`
