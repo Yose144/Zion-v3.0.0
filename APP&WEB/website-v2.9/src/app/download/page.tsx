@@ -29,15 +29,15 @@ const DownloadCopy = {
   windowsDoubleClickZionMinerExe: { cs: `Na Windows dvakrát klikni na zion-miner.exe`, en: `On Windows double-click zion-miner.exe` },
   k3CheckBalance: { cs: `3. Zkontroluj zůstatek`, en: `3. Check Balance` },
   orVisitTheExplorerAtZionterran: { cs: `Nebo navštiv Explorer na zionterranova.com/explorer`, en: `Or visit the Explorer at zionterranova.com/explorer` },
-  needAWalletUseV305CliBelow: { cs: `Potřebuješ peněženku? Použij v3.0.5-beta Community CLI níže`, en: `Need a wallet? Use the v3.0.5-beta Community CLI below` },
+  needAWalletUseV305CliBelow: { cs: `Potřebuješ peněženku? Použij v3.2.0 Community CLI níže`, en: `Need a wallet? Use the v3.2.0 Community CLI below` },
   tripleStreamMinerGpuCpuZionLiq: { cs: `Terminal Miner · GPU + CPU · Zion Liquidity`, en: `Terminal Miner · GPU + CPU · Zion Liquidity` },
   downloadMineEarn: { cs: `Stáhni. Těž. Vydělávej.`, en: `Download. Mine. Earn.` },
-  zionV310BoostMinerThreeStream: { cs: `ZION v3.2.0 "One Love" — Terminal Miner. One-click GPU auto-detect na 4 platformách. `, en: `ZION v3.2.0 "One Love" — Terminal Miner. One-click GPU auto-detect on 4 platforms. ` },
-  invertsTraditionalMiningMineHo: { cs: `Auto GPU backend (CUDA + OpenCL + Metal) a nativní algoritmy (VerusHash, RandomX, BLAKE3, GhostRider, Etchash, KawPow, Autolykos, kHeavyHash, Cosmic Harmony). Linux x86_64, macOS Apple Silicon/Intel, Windows x86_64.`, en: `Auto GPU backend (CUDA + OpenCL + Metal) and native algorithms (VerusHash, RandomX, BLAKE3, GhostRider, Etchash, KawPow, Autolykos, kHeavyHash, Cosmic Harmony). Linux x86_64, macOS Apple Silicon/Intel, Windows x86_64.` },
+  zionV310BoostMinerThreeStream: { cs: `ZION v3.2.0 "One Love" — Terminal Miner. One-click GPU auto-detect na 5 platformách. `, en: `ZION v3.2.0 "One Love" — Terminal Miner. One-click GPU auto-detect on 5 platforms. ` },
+  invertsTraditionalMiningMineHo: { cs: `Auto GPU backend (CUDA + OpenCL + Metal) a nativní algoritmy (VerusHash, RandomX, BLAKE3, GhostRider, Etchash, KawPow, Autolykos, kHeavyHash, Cosmic Harmony). Linux x86_64/ARM64, macOS Apple Silicon/Intel, Windows x86_64.`, en: `Auto GPU backend (CUDA + OpenCL + Metal) and native algorithms (VerusHash, RandomX, BLAKE3, GhostRider, Etchash, KawPow, Autolykos, kHeavyHash, Cosmic Harmony). Linux x86_64/ARM64, macOS Apple Silicon/Intel, Windows x86_64.` },
   downloadBinaries: { cs: `Stáhnout binárky`, en: `Download binaries` },
   githubReleases: { cs: `GitHub Releases`, en: `GitHub Releases` },
   publicMainnetRelease: { cs: `Veřejný mainnet release`, en: `Public mainnet release` },
-  theLatestReleaseBringsTheTripl: { cs: `Nejnovější release v3.2.0 "One Love" přináší Terminal Miner — one-click GPU auto-detect (CUDA → OpenCL → Metal → CPU). Nativní algoritmy: VerusHash, RandomX, BLAKE3, GhostRider, Etchash, KawPow, Autolykos, kHeavyHash, Cosmic Harmony. 4 platformy: Linux x86_64, macOS Apple Silicon/Intel, Windows x86_64. SHA256 verifikace.`, en: `The latest v3.2.0 "One Love" release brings Terminal Miner — one-click GPU auto-detect (CUDA → OpenCL → Metal → CPU). Native algorithms: VerusHash, RandomX, BLAKE3, GhostRider, Etchash, KawPow, Autolykos, kHeavyHash, Cosmic Harmony. 4 platforms: Linux x86_64, macOS Apple Silicon/Intel, Windows x86_64. SHA256 verification.` },
+  theLatestReleaseBringsTheTripl: { cs: `Nejnovější release v3.2.0 "One Love" přináší Terminal Miner — one-click GPU auto-detect (CUDA → OpenCL → Metal → CPU). Nativní algoritmy: VerusHash, RandomX, BLAKE3, GhostRider, Etchash, KawPow, Autolykos, kHeavyHash, Cosmic Harmony. 5 platforem: Linux x86_64, Linux ARM64, macOS Apple Silicon/Intel, Windows x86_64. SHA256 verifikace.`, en: `The latest v3.2.0 "One Love" release brings Terminal Miner — one-click GPU auto-detect (CUDA → OpenCL → Metal → CPU). Native algorithms: VerusHash, RandomX, BLAKE3, GhostRider, Etchash, KawPow, Autolykos, kHeavyHash, Cosmic Harmony. 5 platforms: Linux x86_64, Linux ARM64, macOS Apple Silicon/Intel, Windows x86_64. SHA256 verification.` },
   sourceOfTruth: { cs: `Zdroj pravdy:`, en: `Source of truth:` },
   operatorCommandsGuideFaqRefere: { cs: `operátorské příkazy, guide, FAQ, reference a troubleshooting jsou v sekci `, en: `operator commands, guide, FAQ, reference, and troubleshooting live in the ` },
   sectionOfTheDocsSourceCodeIsOp: { cs: ` v dokumentaci. Zdrojový kód je open-source na `, en: ` section of the docs. Source code is open-source on ` },
@@ -214,7 +214,7 @@ export default function DownloadPage() {
 
             <div className="flex flex-wrap gap-3">
               <Link
-                href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.1.0-desktop/zion-public-miner-v3.1.0-linux-x86_64.AppImage"
+                href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.2.0-desktop/zion-desktop-agent-v3.2.0-linux-x86_64.AppImage"
                 target="_blank"
                 rel="noreferrer"
                 className="zion-button-primary text-sm"
@@ -223,7 +223,7 @@ export default function DownloadPage() {
                 {DownloadCopy.desktopLinuxAppImage[cs ? 'cs' : 'en']}
               </Link>
               <Link
-                href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.1.0-desktop/zion-public-miner-v3.1.0-linux-amd64.deb"
+                href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.2.0-desktop/zion-desktop-agent-v3.2.0-linux-amd64.deb"
                 target="_blank"
                 rel="noreferrer"
                 className="zion-button-primary text-sm"
@@ -232,7 +232,7 @@ export default function DownloadPage() {
                 {DownloadCopy.desktopLinuxDeb[cs ? 'cs' : 'en']}
               </Link>
               <Link
-                href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.1.0-desktop/zion-public-miner-v3.1.0-windows-x64.exe"
+                href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.2.0-desktop/zion-desktop-agent-v3.2.0-windows-x64.exe"
                 target="_blank"
                 rel="noreferrer"
                 className="zion-button-primary text-sm"
@@ -241,7 +241,7 @@ export default function DownloadPage() {
                 {DownloadCopy.desktopWindowsExe[cs ? 'cs' : 'en']}
               </Link>
               <Link
-                href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.1.0-desktop/zion-public-miner-v3.1.0-windows-x64.zip"
+                href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.2.0-desktop/zion-desktop-agent-v3.2.0-windows-x64.zip"
                 target="_blank"
                 rel="noreferrer"
                 className="zion-button-primary text-sm"
@@ -250,7 +250,7 @@ export default function DownloadPage() {
                 {DownloadCopy.desktopWindowsZip[cs ? 'cs' : 'en']}
               </Link>
               <Link
-                href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.1.0-desktop/zion-public-miner-v3.1.0-mac-arm64.dmg"
+                href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.2.0-desktop/zion-desktop-agent-v3.2.0-mac-arm64.dmg"
                 target="_blank"
                 rel="noreferrer"
                 className="zion-button-primary text-sm"
@@ -282,7 +282,7 @@ export default function DownloadPage() {
                 {DownloadCopy.desktopMacDmgDesc[cs ? 'cs' : 'en']}
               </span>
               <Link
-                href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.1.0-desktop"
+                href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.2.0-desktop"
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1.5 text-zion-cyan hover:underline"
