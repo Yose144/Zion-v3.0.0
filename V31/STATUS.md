@@ -201,7 +201,7 @@ Rekonciliace `V31/PLAN_TO_3.2.md` s aktuálním kódem ukazuje, že řada polož
     ncl_integration, revenue, revenue_journal, sha3_fast, stream_layers, stream_profit
   - ✅ 6 miner modules enabled: b3_verify, reconnect, cpu_features, thread_affinity,
     gpu_guard, autonomous
-  - ✅ cosmic-harmony re-exports: cosmic_harmony_with_height, deeksha_lite, deeksha_lite_fire
+  - ✅ cosmic-harmony re-exports: EkamDeeksha (canonical), CANONICAL_ALGORITHM
   - ✅ ExternalCoin methods: ticker(), is_gpu(), is_cpu(), estimated_*_power_watts()
   - ✅ ProfitRouter::default_estimates() (V3 fetch_live_profit_estimates compat)
   - ✅ pool_message.rs (65 lines) — local PoolMessage to avoid cyclic dep
@@ -238,7 +238,7 @@ Rekonciliace `V31/PLAN_TO_3.2.md` s aktuálním kódem ukazuje, že řada polož
 
 ### Nově připojené v této iteraci
 
-- **B2 full Ekam v2 GPU** — `zion-miner/src/auxpow/gpu_miner.rs` nově používá kanonické OpenCL jádro `ekam_deeksha_mine` pro `cosmic_harmony_ekam_deeksha_v2` (dříve fallback na `deeksha_chv3`). Včetně NPU buffer uploadu podle epochy a CPU↔GPU parity testu.
+- **B2 full Ekam Deeksha v3.2 GPU** — `zion-miner/src/auxpow/gpu_miner.rs` nově používá kanonické OpenCL jádro `ekam_deeksha_mine` pro `ekam_deeksha`. CPU↔GPU parity test synchronizován s `EkamDeeksha::hash_bytes`.
 - **C3 HTLC HTTP endpoints** — `zion-multichain` má `/v1/multichain/swaps/htlc/lock`, `/claim`, `/refund` a `/:hash` query; handlers volají `HtlcSwap` v `MultichainService`.
 - **C4 Live profit oracle** — `stream_profit.rs` má NiceHash `simplemultialgo/info` provider, `ProfitOracle` s cache a token-bucket rate limitem (max 10 req/60 s), fallback na statické odhady.
 - **C5 Bridge validator consensus** — `multichain/src/bridge/consensus.rs` s `BridgeConsensus` (5/7 quorum), lokální threshold signing, integrace do `Bridge::submit`; `WarpValidatorSet` teď `Debug + Clone`.

@@ -20,7 +20,7 @@
 | `DECAY_DENOMINATOR` | `5` | Decay factor denominator |
 | `MAX_DECAY_DECADES` | `10` | Decades before tail emission |
 | `BASE_REWARD` | `5_400_067_000` flowers | Initial block reward (5,400.067 ZION) — 6-decimal scale (3.0.3 fork) |
-| `GENESIS_HASH` | `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122` | Current canonical genesis (3.0.4 hard reset, 2026-07-06) |
+| `GENESIS_HASH` | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` | Current canonical genesis (3.0.4 hard reset, 2026-07-06) |
 | `TAIL_REWARD` | `724_784_723` flowers | Perpetual tail emission (~724.7847 ZION) — 6-decimal scale (3.0.3 fork) |
 | `COINBASE_MATURITY` | `100` | Blocks before coinbase spendable |
 | `MINER_PCT` | `89` | Miner share of block reward (%) |

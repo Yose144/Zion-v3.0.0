@@ -164,7 +164,7 @@ Na ně se můžeš kdykoliv otočit a znovu se zorientovat.
 
 | Hvězda | Co ukazuje | Jak si ji ověříš |
 |---|---|---|
-| **Genesis** | Odkud se plulo — první bod každé cesty | Hash `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`; zmrazen v `V31/L1/core/src/v3_compat.rs`, reprodukovatelný přes `V3/L1/core/src/bin/get-genesis-hash.rs` |
+| **Genesis** | Odkud se plulo — první bod každé cesty | Hash `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`; zmrazen v `V31/L1/core/src/v3_compat.rs`, reprodukovatelný přes `V3/L1/core/src/bin/get-genesis-hash.rs` |
 | **Rytmus** | Tep světa — jeden blok za minutu | `BLOCK_TIME_SECONDS = 60` v `V3/L1/core/src/emission.rs` |
 | **Strop** | Hranice moře — vody je přesně tolik, kolik je napsáno | `TOTAL_SUPPLY = 144_000_000_000` ZION v `V3/L1/core/src/emission.rs` |
 | **Dělení úlovku** | Komu patří každý blok — a co se spálí | 89 % těžaři, 5 % humanitární tithe, 5 % Issobella fond, 1 % spálený slot; `V3/L1/core/src/emission.rs` a coinbase logika v `lib.rs` |
@@ -737,7 +737,7 @@ Tak zní přísaha navigátora Oasis:
 
 | Tvrzení v průvodci | Stav | Ověřitelný zdroj |
 |---|---|---|
-| Genesis hash ZIONu | Skutečný, zmrazený | `V31/L1/core/src/v3_compat.rs` (`V3_GENESIS_HASH`); reprodukce `V3/L1/core/src/bin/get-genesis-hash.rs` — `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` |
+| Genesis hash ZIONu | Skutečný, zmrazený | `V31/L1/core/src/v3_compat.rs` (`V3_GENESIS_HASH`); reprodukce `V3/L1/core/src/bin/get-genesis-hash.rs` — `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
 | 60sekundový blok | Kód | `V3/L1/core/src/emission.rs` (`BLOCK_TIME_SECONDS = 60`) |
 | Strop 144 miliard ZION | Kód | `V3/L1/core/src/emission.rs` (`TOTAL_SUPPLY`) |
 | 89/5/5/1, přičemž 1 % se spaluje | Kód | `V3/L1/core/src/emission.rs` (`MINER_PCT/HUMANITARIAN_PCT/ISSOBELLA_PCT/POOL_FEE_PCT`) a coinbase v `V3/L1/core/src/lib.rs` |

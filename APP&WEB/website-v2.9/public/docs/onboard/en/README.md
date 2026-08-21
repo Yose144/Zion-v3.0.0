@@ -2,7 +2,7 @@
 ### A story you can verify. A network you can join today.
 
 > *"The golden age does not begin with a date. It begins with a decision."*
-> — ZION Genesis block, December 4, 2025
+> — ZION Genesis block, January 1, 2026
 
 ---
 
@@ -20,7 +20,7 @@ That ship is called **ZION**. And this is your invitation aboard.
 
 ## What ZION is — in three sentences
 
-**ZION is a blockchain you can verify, not just trust.** It has been running since December 4, 2025, a new block every 60 seconds, with open-source code that anyone can read.
+**ZION is a blockchain you can verify, not just trust.** It has been running since January 1, 2026, a new block every 60 seconds, with open-source code that anyone can read.
 
 **Every block automatically splits the reward: 89% to miners, 5% to a humanitarian fund, 5% to a future fund, 1% is burned.** This is not a company's promise — it is mathematics written into the rules of the network, which no one can silently change.
 

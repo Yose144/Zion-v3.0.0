@@ -2,7 +2,7 @@ use rayon::prelude::*;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use zion_core::{BlockCandidate, MiningJob, MiningSolution};
-use zion_cosmic_harmony::{cosmic_harmony_with_height, deeksha_lite, deeksha_lite_fire};
+use zion_cosmic_harmony::algorithm::ekam_deeksha::EkamDeeksha;
 
 /// Dispatch a single hash for the given algorithm.
 ///
@@ -26,12 +26,14 @@ pub fn dispatch_algorithm(
     algorithm: &str,
 ) -> [u8; 32] {
     match algorithm {
-        // ── ZION PoW algorithms ──────────────────────────────────
-        "deeksha_chv3" | "deeksha_lite_v1" => deeksha_lite::deeksha_lite(header, nonce),
-        "deeksha_lite_fire" => deeksha_lite_fire::deeksha_lite_fire(header, nonce),
-        "cosmic_harmony_v3" | "cosmic_harmony_ekam_deeksha_v2" | "ekam_deeksha" => {
-            cosmic_harmony_with_height(header, nonce, height).data
-        }
+        // ── ZION PoW: Ekam Deeksha v3.2 ──────────────────────────
+        "ekam_deeksha"
+        | "deeksha_lite_v1"
+        | "deeksha_lite"
+        | "deeksha_chv3"
+        | "deeksha_lite_fire"
+        | "cosmic_harmony_v3"
+        | "cosmic_harmony_ekam_deeksha_v2" => EkamDeeksha::hash_bytes(header, nonce),
 
         // ── External algorithms: Blake3 (DCR, ALPH) ──────────────
         "blake3" | "blake3_dcr" => crate::auxpow::hash_blake3(header, 0, nonce),
@@ -513,7 +515,7 @@ pub fn detect_threads() -> usize {
 mod tests {
     use super::*;
     use zion_core::{MiningHeader, V3DifficultyTarget as DifficultyTarget};
-    use zion_cosmic_harmony::deeksha::cosmic_harmony_ekam_deeksha_v3;
+    use zion_cosmic_harmony::algorithm::ekam_deeksha::EkamDeeksha;
 
     fn test_header() -> MiningHeader {
         MiningHeader {
@@ -539,9 +541,9 @@ mod tests {
         let seq = sequential_scan(
             job,
             &AtomicBool::new(false),
-            "cosmic_harmony_ekam_deeksha_v2",
+            "ekam_deeksha",
         );
-        let par = parallel_scan_nonce_range(job, 4, "cosmic_harmony_ekam_deeksha_v2");
+        let par = parallel_scan_nonce_range(job, 4, "ekam_deeksha");
 
         assert!(seq.is_some());
         assert!(par.is_some());
@@ -564,9 +566,9 @@ mod tests {
         let seq = sequential_scan(
             job,
             &AtomicBool::new(false),
-            "cosmic_harmony_ekam_deeksha_v2",
+            "ekam_deeksha",
         );
-        let par = parallel_scan_nonce_range(job, 1, "cosmic_harmony_ekam_deeksha_v2");
+        let par = parallel_scan_nonce_range(job, 1, "ekam_deeksha");
 
         assert_eq!(seq.unwrap().candidate.nonce, par.unwrap().candidate.nonce,);
     }
@@ -584,22 +586,19 @@ mod tests {
         };
 
         // With cancelled=true up front, should return None quickly
-        let result = sequential_scan(job, &cancelled, "cosmic_harmony_ekam_deeksha_v2");
+        let result = sequential_scan(job, &cancelled, "ekam_deeksha");
         assert!(result.is_none());
     }
 
     #[test]
-    fn deeksha_lite_produces_different_hashes() {
+    fn ekam_deeksha_is_deterministic() {
         let header = test_header();
         let nonce = 42u64;
 
-        let hash_ekam = cosmic_harmony_ekam_deeksha_v3(&header.to_bytes(), nonce, 0).data;
-        let hash_lite = deeksha_lite::deeksha_lite(&header.to_bytes(), nonce);
+        let h1 = EkamDeeksha::hash_bytes(&header.to_bytes(), nonce);
+        let h2 = EkamDeeksha::hash_bytes(&header.to_bytes(), nonce);
 
-        assert_ne!(
-            hash_ekam, hash_lite,
-            "DeekshaLite must produce different hashes than ekam_v3"
-        );
+        assert_eq!(h1, h2, "Ekam Deeksha must be deterministic");
     }
 
     #[test]

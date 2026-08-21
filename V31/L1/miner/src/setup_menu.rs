@@ -55,7 +55,7 @@ fn prompt_choice(default: &str, text: &str, choices: &[&str]) -> String {
 fn run_menu() {
     println!();
     println!("============================================================");
-    println!("  ZION Miner v3.0.7 — Interactive Setup");
+    println!("  ZION Miner v3.1.0 — Interactive Setup");
     println!("============================================================");
     println!();
     println!("Leave a field empty to accept the [default].");
@@ -92,7 +92,7 @@ fn run_menu() {
     let worker = prompt(default_worker, "Worker name");
     let gpu = prompt_choice("auto", &format!("GPU backend ({gpu_hint})"), &gpu_choices);
     let threads = prompt("auto", "CPU threads (auto or number)");
-    let algorithm = prompt("deeksha_lite_v1", "Algorithm");
+    let algorithm = prompt("ekam_deeksha", "Algorithm");
     let profile = prompt_choice("pool", "Profile", &profile_choices);
 
     // Set env vars for the normal config parser

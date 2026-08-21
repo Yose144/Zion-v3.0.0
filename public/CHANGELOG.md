@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Pool CLI earnings** — switched from non-existent JSON-RPC to pool HTTP API
-- **Protocol version** — synced live node, code, and docs to `zion-v3-node/3.0.6`
+- **Protocol version** — synced live node, code, and docs to `zion-v3-node/3.1.0-alpha`
 - **Backup node documentation** — noted offline status and seed peers
 
 ---

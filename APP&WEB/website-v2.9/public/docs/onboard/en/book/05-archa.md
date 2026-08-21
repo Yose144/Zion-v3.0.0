@@ -51,7 +51,7 @@ Today's world has its own flood — not of water, but of trust: inflation that d
 |---|---|
 | "One doorway, not two." | Fair launch: no pair of "animals" (investors, founders, VIPs) entered the network earlier or under different conditions than the rest. |
 | "The ship carries many kinds." | The network today encompasses L1 mining, L2 DeFi/DAO/bridge, a humanitarian fund, and the Issobella fund — more forms of participation than simply "buy and wait." |
-| "It is built in advance, not once the rain begins." | A block is mined every 60 seconds, continuously, regardless of who is watching — the network has been running since the genesis block on December 4, 2025. |
+| "It is built in advance, not once the rain begins." | A block is mined every 60 seconds, continuously, regardless of who is watching — the network has been running since the genesis block on January 1, 2026. |
 | "No one is forced to board." | Participation in the network is purely voluntary — no protocol-enforced KYC, no membership requirement beyond running the software. |
 
 ---

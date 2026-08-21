@@ -70,7 +70,7 @@ Tento dokument je jedním vstupním bodem. Detailní pravdu najdeš v těchto zd
 
 > **Příběh**
 >
-> **ZION je blockchain, který se dá ověřit, ne jen slíbit.** Běží od 4. prosince 2025 - Testnetu, nový blok každých 60 sekund, otevřený kód, který si může přečíst kdokoliv.
+> **ZION je blockchain, který se dá ověřit, ne jen slíbit.** Běží od 1. ledna 2026 - Testnetu, nový blok každých 60 sekund, otevřený kód, který si může přečíst kdokoliv.
 >
 > **Každý blok automaticky dělí odměnu: 89 % těžaři, 5 % humanitárnímu fondu, 5 % fondu budoucnosti, 1 % se spálí.** Není to slib firmy — je to matematika zapsaná v pravidlech sítě, kterou nikdo nemůže potichu změnit.
 >
@@ -82,7 +82,7 @@ Tento dokument je jedním vstupním bodem. Detailní pravdu najdeš v těchto zd
 |---|---|---|
 | ZION je veřejný blockchain | Zdrojový kód pod MIT: `https://github.com/Zion-TerraNova/v3-Mainnet` | [`AGENTS.md`](../../../AGENTS.md), sekce `public/` |
 | Nový blok každých 60 s | Block time 60 s, DAA LWMA 60 bloků, cílový interval 30–120 s, ±25 % clamp | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5 |
-| Genesis blok 4. 12. 2025 | Genesis hash `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e`; po fixu retence bloků proběhl hard genesis reset 2026-07-20; bloky 0–~10913 starého řetězce jsou ztraceny, od fixu se uchovávají všechny | [`StatusV3.md`](../../../StatusV3.md), řádky 6–9; [`AGENTS.md`](../../../AGENTS.md), sekce BLOCK RETENTION FIX |
+| Genesis blok 1. 1. 2026 | Genesis hash `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb`; po fixu retence bloků proběhl hard genesis reset 2026-07-20; bloky 0–~10913 starého řetězce jsou ztraceny, od fixu se uchovávají všechny | [`StatusV3.md`](../../../StatusV3.md), řádky 6–9; [`AGENTS.md`](../../../AGENTS.md), sekce BLOCK RETENTION FIX |
 | Odměna 5 400,067 ZION/blok | Dekáda 1 (2026–2036): 5 400,067 ZION/blok; nikdy vyšší; Decade Decay −20 % každou dekádu; tail 724,784723 ZION/blok od ~2126 | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5.2 |
 | Rozdělení 89/5/5/1 % | `MINER_SHARE_PERCENT = 0,89`; humanitární 5 %; Issobella 5 %; pool fee / burn 1 %; uzly odmítnou blok s jiným poměrem | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5.3; [`V3/README.md`](../../../V3/README.md) |
 | Hard cap 144 miliard ZION | `max_supply = 144_000_000_000`; premine 16,78 mld. (11,65 %), zbytek těžbou | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5 |
@@ -554,8 +554,8 @@ rpcCall('getChainInfo').then(console.log);
 | Tvrzení | Realita v kódu / síti | Zdroj |
 |---|---|---|
 | **Status sítě** | Mainnet Beta; oficiální public launch 2026-12-31 | [`StatusV3.md`](../../../StatusV3.md), řádky 7–8 |
-| **Genesis hash** | `4f75a0dfe6dde3b167287d445aa1ade56577b0e9166c641ed288b4c20a79bd6e` | [`StatusV3.md`](../../../StatusV3.md), řádek 6; [`AGENTS.md`](../../../AGENTS.md) |
-| **Genesis příběh / kódová realita** | 4. prosince 2025 (příběh) / hard genesis reset 2026-07-20 (po fixu retence bloků) | [`StatusV3.md`](../../../StatusV3.md), řádky 9; [`AGENTS.md`](../../../AGENTS.md), BLOCK RETENTION FIX |
+| **Genesis hash** | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` | [`StatusV3.md`](../../../StatusV3.md), řádek 6; [`AGENTS.md`](../../../AGENTS.md) |
+| **Genesis příběh / kódová realita** | 1. ledna 2026 (příběh) / hard genesis reset 2026-08-06 (po fixu retence bloků) | [`StatusV3.md`](../../../StatusV3.md), řádky 9; [`AGENTS.md`](../../../AGENTS.md), BLOCK RETENTION FIX |
 | **Block time** | 60 s; DAA LWMA 60 bloků; ±25 % clamp; solve time 30–120 s | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5 |
 | **Odměna v 1. dekádě** | 5 400,067 ZION/blok (2026–2036) | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5.2 |
 | **Decade Decay** | Faktor 0,8 (−20 %) každých ~10 let (5 256 000 bloků) | [`ZION_Technical_Whitepaper_v3.1_CZ.md`](../ZION_Technical_Whitepaper_v3.1_CZ.md), kapitola 5.2 |

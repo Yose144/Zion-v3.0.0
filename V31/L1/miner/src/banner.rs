@@ -5,14 +5,14 @@ use crate::ui;
 /// Print the startup banner with version, consensus, and hardware info.
 pub fn print_banner(threads: usize) {
     let backend = crate::gpu::GpuBackendKind::from_env();
-    ui::print_fancy_banner(threads, "3.1.0", backend.as_str());
+    ui::print_fancy_banner(threads, "3.2.0", backend.as_str());
 
     // ── System info table ──
     let mut rows: Vec<(String, String)> = Vec::new();
     #[cfg(not(feature = "public_build"))]
-    rows.push(("version".to_string(), "3.1.0 V31 Mainnet Alpha".to_string()));
+    rows.push(("version".to_string(), "3.2.0 V31 Mainnet Alpha".to_string()));
     #[cfg(feature = "public_build")]
-    rows.push(("version".to_string(), "3.1.0".to_string()));
+    rows.push(("version".to_string(), "3.2.0 Boost".to_string()));
     rows.push((
         "consensus".to_string(),
         zion_core::node_runtime::consensus_profile().to_string(),

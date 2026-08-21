@@ -305,7 +305,7 @@ pdf.golden_box("Co DAO nemůže změnit (neměnné parametry)", [
     "Celkovou nabídku (144B ZION)",
     "Genesis alokaci (16,28B ZION)",
     "Čas bloku (60 sekund)",
-    "Těžební algoritmus (Ekam Deeksha v2)",
+    "Těžební algoritmus (Ekam Deeksha v3.2)",
     "Typ konsensu (Proof-of-Work)",
     "Rozdělení odměny za blok (89/5/5/1 %)"
 ])

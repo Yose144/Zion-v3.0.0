@@ -1,15 +1,15 @@
 # ZION TerraNova — Veřejná dokumentace
 
 > *"In code we trust. 144B ZION. Not one satoshi more."*
-> **Aktuální veřejná linka: v3.0.6 Trinity / Mainnet Beta.**
-> Genesis #0: 11. června 2026. Hard reset / nový genesis hash: 6.–7. července 2026.
+> **Aktuální veřejná linka: v3.2.0 One Love / Mainnet Stable.**
+> Genesis #0: 1. ledna 2026 (timestamp bloku); One Love hard reset 6. srpna 2026.
 > Oficiální veřejný launch: 31. prosince 2026.
 
 ---
 
-## Živý stav — v3.0.6 Trinity
+## Živý stav — v3.2.0 One Love
 
-ZION Mainnet běží jako **Mainnet Beta**. Aktuální runtime je **v3.0.6 Ekam Deeksha** s přesností na 6 desetinných míst a novým genesis hashem po hard resetu v červenci 2026.
+ZION Mainnet běží jako **Mainnet Stable**. Aktuální runtime je **v3.2.0 Ekam Deeksha v3.2** s přesností na 6 desetinných míst a novým genesis hashem po hard resetu v srpnu 2026.
 
 - ✅ Mainnet Core nód — 3-node P2P mesh (Edge 1 + Edge 2 + Local Backup)
 - ✅ Pool server aktivní — `stratum+tcp://pool.zionterranova.com:8444`
@@ -30,9 +30,9 @@ ZION Mainnet běží jako **Mainnet Beta**. Aktuální runtime je **v3.0.6 Ekam 
 | Parametr | Mainnet |
 |----------|---------|
 | **Chain ID** | `zion-mainnet-1` |
-| **Genesis hash** | `08a94fb04ad084724af33b62c81b84a3472c32d89bbeccd0a8751fd893bfa122` |
-| **Verze protokolu** | `zion-v3-node/3.0.6` |
-| **Algoritmus** | Ekam Deeksha v2 (multi-algo PoW) |
+| **Genesis hash** | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |
+| **Verze protokolu** | `zion-v3-node/3.1.0-alpha` |
+| **Algoritmus** | Ekam Deeksha v3.2 (512 KiB, 2 passy, 128 čtení, Keccak-256) |
 | **Block time** | 60 s |
 | **Block reward** | 5 400,067 ZION → Decade Decay (-20 %/10 let) |
 | **Tail emission** | 724,784723787776 ZION/block (od ~2126) |
@@ -72,6 +72,8 @@ ZION Mainnet běží jako **Mainnet Beta**. Aktuální runtime je **v3.0.6 Ekam 
 
 | Verze | Role | Co přinesla |
 |-------|------|-------------|
+| **v3.2.0** | **One Love / Mainnet Stable** | Hard reset v srpnu 2026 — kompletní rotace klíčů, kanonický Ekam Deeksha v3.2, V31 native genesis, 5/5 core služeb aktivních |
+| **v3.1.0** | Mainnet Alpha | V31 cut-over, veřejný RPC/pool/DAO/OASIS/web/marketplace live |
 | **v3.0.5** | **All Green / Mainnet Beta** | Nový genesis hash po hard resetu, 3-node mesh, 11/11 služeb aktivních, E2E memo testy, opravy zabezpečení F1/F5/F4.7 nasazeny |
 | **v3.0.4** | Hard Genesis Reset | Nový server zprovozněn, regenerace klíčů, full stack rebuild |
 | **v3.0.3** | Decimal Fork | `1e12` → `1e6` flower scale |
@@ -98,4 +100,4 @@ ZION Mainnet běží jako **Mainnet Beta**. Aktuální runtime je **v3.0.6 Ekam 
 
 ---
 
-*ZION TerraNova veřejná dokumentace • v3.0.6 Trinity / Mainnet Beta • aktualizováno 22. 7. 2026*
+*ZION TerraNova veřejná dokumentace • v3.2.0 One Love / Mainnet Stable • aktualizováno 11. 8. 2026*

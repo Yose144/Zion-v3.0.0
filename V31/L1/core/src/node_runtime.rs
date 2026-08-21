@@ -37,9 +37,10 @@ use crate::v3_bridge as bridge;
 use crate::v3_validation as validation;
 use crate::v3_bridge::{BridgeUnlockRequest, BridgeValidatorProof};
 
+use zion_cosmic_harmony::{EkamDeeksha, CANONICAL_ALGORITHM as EKAM_DEEKSHA_ALGORITHM};
 use zion_cosmic_harmony_v3::{
-    account_tx_memo_v1_active, body_root_v2_active, cosmic_harmony_ekam_deeksha,
-    cosmic_harmony_with_height, profile_name, profile_name_for_height, tx_hash_v2_active,
+    account_tx_memo_v1_active, body_root_v2_active,
+    cosmic_harmony_with_height, profile_name_for_height, tx_hash_v2_active,
     NclStats, RevenueCollector, RevenueEvent, RevenueStats,
     CHV3_FORK_HEIGHT, CHV_EKAM_FORK_HEIGHT, EKAM_FUSION_ROUNDS, FIRE_FORK_HEIGHT,
 };
@@ -49,7 +50,7 @@ pub use zion_cosmic_harmony_v3::NclStats as NclSnapshot;
 pub use zion_cosmic_harmony_v3::RevenueSource;
 
 pub const HEADER_SIZE: usize = MiningHeader::HEADER_SIZE;
-pub const NODE_PROTOCOL_VERSION: &str = "zion-v3-node/3.0.7";
+pub const NODE_PROTOCOL_VERSION: &str = "zion-v3-node/3.1.0-alpha";
 pub const PROTOCOL_VERSION: u32 = 2;
 pub const LEGACY_PROTOCOL_VERSION: u32 = 1;
 pub const MAX_TEMPLATE_TRANSACTIONS: usize = 16;
@@ -72,28 +73,24 @@ fn difficulty_target_from_hex(raw: &str) -> Result<DifficultyTarget, String> {
     })
 }
 
-/// Hash a block candidate with a specific algorithm (V31's v3_compat doesn't have this).
+/// Hash a block candidate with the canonical Ekam Deeksha v3.2 algorithm.
+///
+/// Legacy names (`deeksha_lite_v1`, `deeksha_chv3`, `deeksha_lite_fire`,
+/// `cosmic_harmony_v3`, `cosmic_harmony_ekam_deeksha_v2`) are accepted as
+/// aliases for the canonical algorithm; they all resolve to the same v3.2 hash.
 fn hash_candidate_with_algorithm(candidate: BlockCandidate, algorithm: &str) -> [u8; 32] {
     let header_bytes = candidate.header.to_bytes();
     match algorithm {
-        "deeksha_chv3" | "deeksha_lite_v1" => {
-            zion_cosmic_harmony_v3::deeksha_lite::deeksha_lite_with_height(
-                &header_bytes,
-                candidate.nonce,
-                candidate.height,
-            )
-            .data
+        "ekam_deeksha"
+        | "deeksha_lite_v1"
+        | "deeksha_lite"
+        | "deeksha_chv3"
+        | "deeksha_lite_fire"
+        | "cosmic_harmony_v3"
+        | "cosmic_harmony_ekam_deeksha_v2" => {
+            EkamDeeksha::hash_bytes(&header_bytes, candidate.nonce)
         }
-        "deeksha_lite_fire" => {
-            zion_cosmic_harmony_v3::deeksha_lite_fire::deeksha_lite_fire(
-                &header_bytes,
-                candidate.nonce,
-            )
-        }
-        "cosmic_harmony_v3" | "cosmic_harmony_ekam_deeksha_v2" => {
-            cosmic_harmony_with_height(&header_bytes, candidate.nonce, candidate.height).data
-        }
-        _ => cosmic_harmony_with_height(&header_bytes, candidate.nonce, candidate.height).data,
+        _ => EkamDeeksha::hash_bytes(&header_bytes, candidate.nonce),
     }
 }
 
@@ -149,7 +146,7 @@ pub struct ConsensusConfig {
 impl Default for ConsensusConfig {
     fn default() -> Self {
         Self {
-            profile: profile_name(),
+            profile: EKAM_DEEKSHA_ALGORITHM,
             ekam_fork_height: CHV_EKAM_FORK_HEIGHT,
             chv3_fork_height: CHV3_FORK_HEIGHT,
             fire_fork_height: FIRE_FORK_HEIGHT,
@@ -360,8 +357,8 @@ impl From<tx::Transaction> for RuntimeTransaction {
         Self::Utxo(value)
     }
 }
-fn default_deeksha_lite_v1() -> String {
-    "deeksha_lite_v1".to_string()
+fn default_ekam_deeksha() -> String {
+    EKAM_DEEKSHA_ALGORITHM.to_string()
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -380,8 +377,8 @@ pub struct AcceptedBlock {
     /// Empty for legacy persisted blocks (pre-Phase 13). All-zeros hex for genesis.
     #[serde(default)]
     pub previous_hash_hex: String,
-    /// Mining algorithm used for this block (e.g. "deeksha_lite_v1", "deeksha_lite_fire").
-    #[serde(default = "default_deeksha_lite_v1")]
+    /// Mining algorithm used for this block (e.g. "ekam_deeksha").
+    #[serde(default = "default_ekam_deeksha")]
     pub algorithm: String,
     pub transaction_ids: Vec<String>,
     pub transactions: Vec<Transaction>,
@@ -725,16 +722,14 @@ impl CoreRuntime {
 }
 
 pub fn consensus_profile() -> &'static str {
-    profile_name()
+    EKAM_DEEKSHA_ALGORITHM
 }
 
 /// Height-aware canonical profile name.
 ///
-/// - height < 4500  → `deeksha_lite_v1`
-/// - 4500 ≤ h < 5000 → `deeksha_chv3` (unified canonical, Phase D)
-/// - height ≥ 5000  → `deeksha_lite_fire`
-pub fn consensus_profile_for_height(height: u64) -> &'static str {
-    profile_name_for_height(height)
+/// V31 uses `ekam_deeksha` for all heights.
+pub fn consensus_profile_for_height(_height: u64) -> &'static str {
+    EKAM_DEEKSHA_ALGORITHM
 }
 
 pub fn node_protocol_version() -> &'static str {

@@ -201,7 +201,7 @@ def build_pdf(lang):
             "Celkovou nabídku (144B ZION)",
             "Genesis alokaci (16,28B ZION)",
             "Čas bloku (60 sekund)",
-            "Těžební algoritmus (Ekam Deeksha v2)",
+            "Těžební algoritmus (Ekam Deeksha v3.2)",
             "Typ konsensu (Proof-of-Work)",
             "Rozdělení odměny za blok (89/5/5/1 %)"
         ])
@@ -417,7 +417,7 @@ def build_pdf(lang):
             "Total supply (144B ZION)",
             "Genesis allocation (16.28B ZION)",
             "Block time (60 seconds)",
-            "Mining algorithm (Ekam Deeksha v2)",
+            "Mining algorithm (Ekam Deeksha v3.2)",
             "Consensus type (Proof-of-Work)",
             "Block reward split (89/5/5/1 %)"
         ])

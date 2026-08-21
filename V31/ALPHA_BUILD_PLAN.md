@@ -13,7 +13,7 @@ Tento dokument je **jediný kanonický plán** pro stavbu `V31/`. Všechny rozho
 
 ### 1.1 Triple Stream jako primární mining model
 
-- **Stream 1** — ZION canonical (`EkamDeeksha`/`deeksha_lite_v1` kompatibilní). Hlavní příjem v ZION.
+- **Stream 1** — ZION canonical (`EkamDeeksha`). Hlavní příjem v ZION.
 - **Stream 2** — externí GPU coin (KAS/ALPH/RVN/EPIC/ZANO/…). Přes AuxPoW stratum.
 - **Stream 3** — externí CPU coin (VRSC/XMR/RTM/…). Přes AuxPoW stratum.
 

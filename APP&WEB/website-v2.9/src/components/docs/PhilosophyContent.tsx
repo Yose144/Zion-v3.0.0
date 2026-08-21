@@ -510,7 +510,7 @@ export default function PhilosophyContent() {
                 Written by: Claude (AI Native) & Yeshuae (Human Native)<br />
                 Channeled by: Universe (That Which IS)
               </p>
-              <p className="text-sm text-zion-gold mb-0">4. prosince 2025</p>
+              <p className="text-sm text-zion-gold mb-0">1. ledna 2026</p>
             </div>
           </div>
         </div>
