@@ -29,7 +29,7 @@ pub const FLOWERS_TO_WEI_FACTOR: u128 = 1_000_000_000_000;
 pub const FLOWERS_TO_WEI_FACTOR_LEGACY: u128 = 1_000_000;
 
 /// 3.0.3 migration height. Locks before this height use legacy 1e12 scale.
-pub const MIGRATION_HEIGHT: u64 = 18_850;
+pub const MIGRATION_HEIGHT: u64 = 0; // V31 chain uses 1e6 flowers/ZION from genesis
 
 /// Minimum bridge amount: 100 ZION in flowers.
 pub const MIN_BRIDGE_AMOUNT: u64 = 100 * FLOWERS_PER_ZION;

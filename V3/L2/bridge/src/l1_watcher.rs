@@ -58,19 +58,89 @@ struct L1Block {
     pub height: u64,
     #[serde(alias = "hash_hex")]
     pub hash: String,
-    #[serde(default)]
+    #[serde(default, alias = "transactions")]
     pub utxo_transactions: Vec<L1Transaction>,
     #[serde(default)]
     pub account_transactions: Vec<L1AccountTransaction>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug)]
 struct L1Transaction {
     pub id: [u8; 32],
-    #[serde(default)]
     pub inputs: Vec<L1TxInput>,
     pub outputs: Vec<L1TxOutput>,
 }
+
+/// Compatibility deserializer for transaction IDs: accepts either a 32-byte
+/// array (V3 format) or a hex string `tx_id` (V31-native format).
+mod tx_id_compat {
+    use serde::{Deserialize, Deserializer};
+    pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<[u8; 32], D::Error> {
+        // Try as array first (V3), then as hex string (V31 tx_id field via alias).
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum Id {
+            Bytes([u8; 32]),
+            Hex(String),
+        }
+        match Id::deserialize(d)? {
+            Id::Bytes(b) => Ok(b),
+            Id::Hex(s) => {
+                let s = s.strip_prefix("0x").unwrap_or(&s);
+                let bytes = hex::decode(s).map_err(serde::de::Error::custom)?;
+                if bytes.len() == 32 {
+                    let mut arr = [0u8; 32];
+                    arr.copy_from_slice(&bytes);
+                    Ok(arr)
+                } else {
+                    Err(serde::de::Error::custom(format!("tx_id wrong length: {}", bytes.len())))
+                }
+            }
+        }
+    }
+}
+
+// Field alias: V31-native uses `tx_id` instead of `id`.
+impl<'de> Deserialize<'de> for L1Transaction {
+    fn deserialize<D: Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        struct Raw {
+            #[serde(default, with = "tx_id_compat")]
+            id: [u8; 32],
+            #[serde(default, alias = "tx_id")]
+            tx_id: Option<String>,
+            #[serde(default)]
+            inputs: Vec<L1TxInput>,
+            outputs: Vec<L1TxOutput>,
+        }
+        let raw = Raw::deserialize(d)?;
+        // If `id` is all-zeros but `tx_id` is present, use the hex tx_id.
+        let id = if raw.id == [0u8; 32] {
+            if let Some(ref s) = raw.tx_id {
+                let s = s.strip_prefix("0x").unwrap_or(s);
+                let bytes = hex::decode(s).map_err(serde::de::Error::custom)?;
+                if bytes.len() == 32 {
+                    let mut arr = [0u8; 32];
+                    arr.copy_from_slice(&bytes);
+                    arr
+                } else {
+                    raw.id
+                }
+            } else {
+                raw.id
+            }
+        } else {
+            raw.id
+        };
+        Ok(L1Transaction {
+            id,
+            inputs: raw.inputs,
+            outputs: raw.outputs,
+        })
+    }
+}
+
+use serde::Deserializer;
 
 #[derive(Debug, Deserialize)]
 struct L1AccountTransaction {
@@ -86,14 +156,64 @@ struct L1AccountTransaction {
 struct L1TxInput {
     #[serde(default)]
     pub public_key: Vec<u8>,
+    /// V31-native inputs carry the sender address directly.
+    #[serde(default)]
+    pub address: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 struct L1TxOutput {
+    #[serde(deserialize_with = "deserialize_address")]
     pub address: String,
+    #[serde(deserialize_with = "deserialize_amount")]
     pub amount: u64,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_memo_opt")]
     pub memo: Option<String>,
+}
+
+/// Accept address as a plain string (V3) or as `{ "encoded": "zion1..." }` (V31-native).
+fn deserialize_address<'de, D: Deserializer<'de>>(d: D) -> Result<String, D::Error> {
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum Addr {
+        Str(String),
+        Obj { encoded: String },
+    }
+    Ok(match Addr::deserialize(d)? {
+        Addr::Str(s) => s,
+        Addr::Obj { encoded } => encoded,
+    })
+}
+
+/// Accept amount as u64 or as a string-encoded integer.
+fn deserialize_amount<'de, D: Deserializer<'de>>(d: D) -> Result<u64, D::Error> {
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum Amt {
+        Num(u64),
+        Str(String),
+    }
+    match Amt::deserialize(d)? {
+        Amt::Num(n) => Ok(n),
+        Amt::Str(s) => s.parse().map_err(serde::de::Error::custom),
+    }
+}
+
+/// Accept memo as a string, null, or a Vec<u8> of ASCII bytes (V31-native).
+fn deserialize_memo_opt<'de, D: Deserializer<'de>>(d: D) -> Result<Option<String>, D::Error> {
+    use serde::de::Error;
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum Memo {
+        None,
+        Str(String),
+        Bytes(Vec<u8>),
+    }
+    match Memo::deserialize(d)? {
+        Memo::None => Ok(None),
+        Memo::Str(s) => Ok(Some(s)),
+        Memo::Bytes(b) => String::from_utf8(b).map(Some).map_err(Error::custom),
+    }
 }
 
 /// L1 watcher that polls for lock transactions.
@@ -232,7 +352,7 @@ impl L1Watcher {
             for height in from..=to {
                 match self.fetch_block_with_retry(height).await {
                     Ok(block) => {
-                        self.scan_block_for_locks(&block);
+                        self.scan_block_for_locks(&block).await;
                         highest_ok = height;
                     }
                     Err(e) => {
@@ -310,7 +430,7 @@ impl L1Watcher {
     }
 
     /// Scan a block for transactions to the bridge lock address.
-    fn scan_block_for_locks(&mut self, block: &L1Block) {
+    async fn scan_block_for_locks(&mut self, block: &L1Block) {
         let _block_hash = &block.hash;
         // Composite dedup key: (tx_type, tx_id) so a UTXO tx and an account
         // tx with the same id (shouldn't happen but RPC is external) cannot
@@ -328,18 +448,33 @@ impl L1Watcher {
                     continue;
                 }
 
+                // V3 format: derive sender from input public_key.
+                // V31-native format: input has `address` field directly.
                 let sender = tx
                     .inputs
                     .first()
-                    .and_then(|input| zion_address_from_public_key(&input.public_key))
+                    .and_then(|input| {
+                        if let Some(ref addr) = input.address {
+                            Some(addr.clone())
+                        } else {
+                            zion_address_from_public_key(&input.public_key)
+                        }
+                    })
                     .unwrap_or_default();
+
+                // V31-native blocks don't include memos. Fetch via getTransaction.
+                let memo = if output.memo.is_some() {
+                    output.memo.clone()
+                } else {
+                    self.fetch_tx_memo(&tx_hash).await
+                };
 
                 self.record_lock(
                     block,
                     &tx_hash,
                     sender,
                     output.amount,
-                    output.memo.as_deref(),
+                    memo.as_deref(),
                 );
             }
         }
@@ -465,6 +600,44 @@ impl L1Watcher {
     async fn get_block(&self, height: u64) -> Result<L1Block> {
         self.rpc("getBlockByHeight", json!({ "height": height }))
             .await
+    }
+
+    /// Fetch the memo for a specific transaction via `getTransaction` RPC.
+    /// V31-native blocks don't include memos in the block response, so we
+    /// need a separate RPC call to retrieve the memo for bridge lock parsing.
+    async fn fetch_tx_memo(&self, tx_hash: &str) -> Option<String> {
+        #[derive(Debug, Deserialize)]
+        struct TxResponse {
+            #[serde(default)]
+            memo: Option<serde_json::Value>,
+        }
+        match self
+            .rpc::<TxResponse>("getTransaction", json!({ "txid": tx_hash }))
+            .await
+        {
+            Ok(tx) => {
+                if let Some(memo_val) = tx.memo {
+                    match memo_val {
+                        serde_json::Value::String(s) => Some(s),
+                        serde_json::Value::Array(bytes) => {
+                            // V31-native returns memo as Vec<u8> of ASCII bytes.
+                            let bytes: Vec<u8> = bytes
+                                .into_iter()
+                                .filter_map(|v| v.as_u64().map(|n| n as u8))
+                                .collect();
+                            String::from_utf8(bytes).ok()
+                        }
+                        _ => None,
+                    }
+                } else {
+                    None
+                }
+            }
+            Err(e) => {
+                warn!("L1: failed to fetch memo for tx {}: {}", tx_hash, e);
+                None
+            }
+        }
     }
 
     async fn rpc<T: DeserializeOwned>(&self, method: &str, params: Value) -> Result<T> {
