@@ -52,9 +52,9 @@ export async function POST(request: NextRequest) {
 
     // Determine submission method based on model
     // - submitAccountTransaction: for account-model TXs (from/to/amount/nonce/signature)
-    // - submitTransaction: for UTXO-model TXs (vin/vout)
+    // - submitUtxoTransaction: for UTXO-model TXs (vin/vout)
     // - sendRawTransaction: for raw hex
-    let method: 'submitTransaction' | 'submitAccountTransaction' | 'sendRawTransaction';
+    let method: 'submitAccountTransaction' | 'submitUtxoTransaction' | 'sendRawTransaction';
     let payload: unknown;
 
     if (body.raw) {
@@ -63,16 +63,15 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Raw transaction must be valid hex string' }, { status: 400 });
       }
       method = 'sendRawTransaction';
-      payload = { transaction: body.raw };
+      payload = body.raw;
     } else if (body.model === 'account') {
       method = 'submitAccountTransaction';
-      payload = { transaction: body.transaction };
+      payload = body.transaction;
     } else if (body.model === 'utxo') {
-      method = 'submitTransaction';
-      payload = { transaction: body.transaction };
+      method = 'submitUtxoTransaction';
+      payload = body.transaction;
     } else {
-      // Auto-detect: try account first (V3 mainnet is account-model),
-      // fall back to UTXO if the node rejects it
+      // Auto-detect: try account first, fall back to UTXO if the node rejects it
       try {
         const result = await rpc.submitSignedTransaction(body.transaction, 'submitAccountTransaction');
         return NextResponse.json({
@@ -83,11 +82,11 @@ export async function POST(request: NextRequest) {
       } catch (accountErr) {
         // Fall back to UTXO submission
         try {
-          const result = await rpc.submitSignedTransaction(body.transaction, 'submitTransaction');
+          const result = await rpc.submitSignedTransaction(body.transaction, 'submitUtxoTransaction');
           return NextResponse.json({
             accepted: result.accepted,
             tx_id: result.tx_id ?? '',
-            method: 'submitTransaction',
+            method: 'submitUtxoTransaction',
           });
         } catch (utxoErr) {
           const msg = utxoErr instanceof Error ? utxoErr.message : 'Unknown error';

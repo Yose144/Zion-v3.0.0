@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
 
 const HEADERS = { 'Cache-Control': 'no-store, max-age=0' };
-const ALLOWED_METHODS = new Set(['submitTransaction', 'submitAccountTransaction', 'sendRawTransaction']);
+const ALLOWED_METHODS = new Set(['submitTransaction', 'submitAccountTransaction', 'submitUtxoTransaction', 'sendRawTransaction']);
 const FLOWERS_PER_ZION = 1_000_000;
 
 function asNumber(value: unknown, fallback = 0): number {
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
 
     const result = await rpc.submitSignedTransaction(
       transaction,
-      method as 'submitTransaction' | 'submitAccountTransaction' | 'sendRawTransaction',
+      method as 'submitTransaction' | 'submitAccountTransaction' | 'submitUtxoTransaction' | 'sendRawTransaction',
     );
 
     return NextResponse.json(

@@ -5343,7 +5343,7 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
         return true;
       });
 
-      const submitMethod = txModel === 'account' ? 'submitAccountTransaction' : 'submitTransaction';
+      const submitMethod = txModel === 'account' ? 'submitAccountTransaction' : 'submitUtxoTransaction';
       for (const candidateUrl of uniqueRpcCandidates) {
         try {
           const rpcRes = await zionRpcCall(candidateUrl, submitMethod, txPayload);

@@ -1640,7 +1640,7 @@ class ZionRpcClient {
     return map;
   }
 
-  async submitSignedTransaction(transaction: unknown, method: 'submitTransaction' | 'submitAccountTransaction' | 'sendRawTransaction' = 'submitTransaction'): Promise<{ accepted: boolean; tx_id?: string }> {
+  async submitSignedTransaction(transaction: unknown, method: 'submitTransaction' | 'submitAccountTransaction' | 'submitUtxoTransaction' | 'sendRawTransaction' = 'submitTransaction'): Promise<{ accepted: boolean; tx_id?: string }> {
     return this.rpcCall(method, { transaction });
   }
 
