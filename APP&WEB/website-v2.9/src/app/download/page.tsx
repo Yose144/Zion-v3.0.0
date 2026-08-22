@@ -223,7 +223,7 @@ export default function DownloadPage() {
                 {DownloadCopy.desktopLinuxAppImage[cs ? 'cs' : 'en']}
               </Link>
               <Link
-                href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.2.0-desktop/zion-desktop-agent-v3.2.0-linux-amd64.deb"
+                href="https://github.com/Zion-TerraNova/v3-Mainnet/releases/download/v3.2.0-desktop/zion-desktop-agent-v3.2.0-linux-x86_64.deb"
                 target="_blank"
                 rel="noreferrer"
                 className="zion-button-primary text-sm"

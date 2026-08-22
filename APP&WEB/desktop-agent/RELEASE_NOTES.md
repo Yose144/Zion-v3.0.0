@@ -49,7 +49,7 @@ No external coin tickers, job ids or stratum pool URLs are printed to the UI or 
 |------|----------|--------|
 | `zion-desktop-agent-v3.2.0-mac-arm64.dmg` | macOS Apple Silicon | DMG |
 | `zion-desktop-agent-v3.2.0-linux-x86_64.AppImage` | Linux x86_64 | AppImage |
-| `zion-desktop-agent-v3.2.0-linux-amd64.deb` | Linux x86_64 | DEB |
+| `zion-desktop-agent-v3.2.0-linux-x86_64.deb` | Linux x86_64 | DEB |
 | `zion-desktop-agent-v3.2.0-windows-x64.exe` | Windows x64 | NSIS installer |
 | `zion-desktop-agent-v3.2.0-windows-x64.zip` | Windows x64 | Portable ZIP |
 
