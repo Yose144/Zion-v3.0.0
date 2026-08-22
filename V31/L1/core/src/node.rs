@@ -15,8 +15,9 @@ use crate::block::{Block, BlockHeader};
 use crate::consensus::{ConsensusEngine, ConsensusError};
 use zion_cosmic_harmony::EkamDeeksha;
 use crate::difficulty::{self, difficulty_to_target, lwma_next_difficulty};
-use crate::emission::{block_subsidy, fee_split};
+use crate::emission::{self, block_subsidy, fee_split};
 use crate::genesis;
+use crate::v3_compat::is_premine_transfer_allowed_no_admin;
 use crate::mempool::Mempool;
 use crate::rpc::RpcServer;
 use crate::storage::{Storage, StorageError};
@@ -50,6 +51,11 @@ pub struct NodeConfig {
     pub v3_no_genesis: bool,
     /// Optional path to a V3 checkpoint snapshot JSON for import at startup.
     pub v3_checkpoint_path: Option<std::path::PathBuf>,
+    /// Block height at which V31 premine locks and coinbase maturity rules
+    /// activate. Before this height the legacy (permissive) behaviour is used.
+    /// Defaults to `u64::MAX` (disabled) so a new binary does not hard-fork an
+    /// existing chain unless the operator explicitly sets an activation height.
+    pub soft_fork_activation_height: u64,
 }
 
 impl Default for NodeConfig {
@@ -81,6 +87,7 @@ impl Default for NodeConfig {
                 .to_string(),
             v3_no_genesis: false,
             v3_checkpoint_path: None,
+            soft_fork_activation_height: u64::MAX,
         }
     }
 }
@@ -389,6 +396,82 @@ impl Node {
         })
     }
 
+    /// Validate premine locks and coinbase maturity for a single transaction
+    /// against the supplied UTXO view.
+    ///
+    /// The view must represent the UTXO set as it exists immediately before
+    /// `tx` is applied. This is called during block validation so that
+    /// sequential transactions within the same block can spend outputs created
+    /// by earlier transactions in that block (which are added to the view as
+    /// the loop progresses).
+    fn validate_premine_and_maturity_for_tx(
+        view: &UtxoSet,
+        tx: &Transaction,
+        block_height: u64,
+    ) -> Result<(), UtxoError> {
+        if tx.is_coinbase() {
+            return Ok(());
+        }
+        for input in &tx.inputs {
+            let outpoint = Outpoint::from(input);
+            let Some(output) = view.get(&outpoint) else {
+                continue;
+            };
+
+            if output.is_coinbase {
+                let age = block_height.saturating_sub(output.block_height);
+                if age < emission::COINBASE_MATURITY {
+                    return Err(UtxoError::ImmatureCoinbase {
+                        outpoint,
+                        age,
+                        required: emission::COINBASE_MATURITY,
+                    });
+                }
+            }
+
+            if let Err(reason) =
+                is_premine_transfer_allowed_no_admin(&output.address.encoded, block_height)
+            {
+                return Err(UtxoError::PremineLocked {
+                    address: output.address.encoded.clone(),
+                    reason,
+                });
+            }
+        }
+        Ok(())
+    }
+
+    /// Validate only premine locks for a transaction entering the mempool.
+    ///
+    /// Coinbase maturity is intentionally not enforced here: a transaction that
+    /// spends an immature coinbase may become valid after enough confirmations,
+    /// so it is allowed to wait in the mempool. `block_template` and
+    /// `submit_block` enforce the maturity rule when the transaction is mined.
+    fn validate_premine_for_mempool(
+        view: &UtxoSet,
+        tx: &Transaction,
+        current_height: u64,
+    ) -> Result<(), UtxoError> {
+        if tx.is_coinbase() {
+            return Ok(());
+        }
+        for input in &tx.inputs {
+            let outpoint = Outpoint::from(input);
+            let Some(output) = view.get(&outpoint) else {
+                continue;
+            };
+            if let Err(reason) =
+                is_premine_transfer_allowed_no_admin(&output.address.encoded, current_height)
+            {
+                return Err(UtxoError::PremineLocked {
+                    address: output.address.encoded.clone(),
+                    reason,
+                });
+            }
+        }
+        Ok(())
+    }
+
     /// Block by height.
     pub async fn block_by_height(&self, height: u64) -> Result<Option<Block>, NodeError> {
         Ok(self.storage.get_by_height(height).await?)
@@ -516,7 +599,11 @@ impl Node {
 
         // Validate against the current confirmed UTXO set.
         {
+            let current_height = self.storage.height().await?;
             let set = self.utxo_set.lock().await;
+            if current_height >= self.config.soft_fork_activation_height {
+                Self::validate_premine_for_mempool(&set, &tx, current_height)?;
+            }
             set.validate_transaction(&tx)?;
         }
 
@@ -570,11 +657,21 @@ impl Node {
         let mempool_txs = self.mempool.pending().await;
         let mut selected = Vec::with_capacity(mempool_txs.len());
         let mut invalid = Vec::with_capacity(mempool_txs.len());
+        let block_timestamp = chrono::Utc::now().timestamp() as u64;
         {
             let set = self.utxo_set.lock().await;
             let mut view = set.clone();
             for tx in mempool_txs {
-                match view.apply_transaction(&tx, 0, 0) {
+                if next_height >= self.config.soft_fork_activation_height {
+                    if let Err(e) =
+                        Self::validate_premine_and_maturity_for_tx(&view, &tx, next_height)
+                    {
+                        warn!(%e, tx_hash = %tx.hash().to_hex(), "mempool tx invalid for template");
+                        invalid.push(tx.hash());
+                        continue;
+                    }
+                }
+                match view.apply_transaction(&tx, next_height, block_timestamp) {
                     Ok(_) => selected.push(tx),
                     Err(e) => {
                         warn!(%e, tx_hash = %tx.hash().to_hex(), "mempool tx invalid for template");
@@ -595,7 +692,7 @@ impl Node {
             previous_hash: tip_header.header_hash(),
             merkle_root,
             height: next_height,
-            timestamp: chrono::Utc::now().timestamp() as u64,
+            timestamp: block_timestamp,
             nonce: 0,
             difficulty: next_difficulty,
         };
@@ -658,7 +755,24 @@ impl Node {
         // Validate and apply the block's transactions to the V31 UTXO set.
         {
             let mut set = self.utxo_set.lock().await;
-            set.apply_block(&block)?;
+            if block.header.height >= self.config.soft_fork_activation_height {
+                let mut view = set.clone();
+                for tx in &block.transactions {
+                    Self::validate_premine_and_maturity_for_tx(
+                        &view,
+                        tx,
+                        block.header.height,
+                    )?;
+                    view.apply_transaction(
+                        tx,
+                        block.header.height,
+                        block.header.timestamp,
+                    )?;
+                }
+                *set = view;
+            } else {
+                set.apply_block(&block)?;
+            }
         }
 
         self.storage.put(&block).await?;
@@ -731,6 +845,8 @@ pub struct BlockTemplate {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::crypto::{derive_address, generate_keypair};
+    use crate::v31_wallet::{build_send, SpendableUtxo};
 
     #[tokio::test]
     async fn node_seeds_genesis() {
@@ -767,5 +883,181 @@ mod tests {
         node.submit_block(block).await.unwrap();
 
         assert_eq!(node.status().await.unwrap().height, 1);
+    }
+
+    #[tokio::test]
+    async fn submit_block_rejects_immature_coinbase() {
+        let config = NodeConfig {
+            db_path: ":memory:".into(),
+            soft_fork_activation_height: 0,
+            ..Default::default()
+        };
+        let node = Arc::new(Node::new(config).await.unwrap());
+
+        let (miner_sk, miner_vk) = generate_keypair();
+        let miner_addr = derive_address(miner_vk.as_bytes());
+        let miner = Address::new(zion_l1_types::ChainId::ZionL1, vec![], &miner_addr).unwrap();
+
+        // Mine and submit block 1, coinbase goes to our miner key.
+        let template1 = node.block_template(miner.clone()).await.unwrap();
+        let mut header1: BlockHeader = serde_json::from_str(&template1.header_json).unwrap();
+        header1.difficulty = 1;
+        let target = [0xff; 32];
+        node.consensus
+            .mine(&mut header1, &target, 0, 1_000)
+            .expect("mine block 1");
+        let block1 = Block::new(header1, template1.transactions);
+        node.submit_block(block1.clone()).await.unwrap();
+
+        // Build a spend of the block 1 coinbase output (index 0).
+        let coinbase = &block1.transactions[0];
+        let spend_utxo = SpendableUtxo {
+            tx_hash: coinbase.hash().0,
+            output_index: 0,
+            amount: coinbase.outputs[0].amount.0 as u64,
+            address: miner_addr.clone(),
+        };
+        let (_recipient_sk, recipient_vk) = generate_keypair();
+        let recipient_addr = derive_address(recipient_vk.as_bytes());
+        let build = build_send(
+            &miner_sk,
+            &miner_addr,
+            &recipient_addr,
+            1_000_000,
+            10_000,
+            &[spend_utxo],
+        )
+        .expect("valid spend");
+
+        // Build block 2 with a fresh coinbase and the immature spend.
+        let template2 = node.block_template(miner.clone()).await.unwrap();
+        let mut header2: BlockHeader = serde_json::from_str(&template2.header_json).unwrap();
+        header2.difficulty = 1;
+        let mut txs = template2.transactions;
+        txs.push(build.transaction);
+        header2.merkle_root = merkle_root(&txs);
+        node.consensus
+            .mine(&mut header2, &target, 0, 1_000)
+            .expect("mine block 2");
+        let block2 = Block::new(header2, txs);
+
+        let err = node.submit_block(block2).await.unwrap_err();
+        assert!(
+            matches!(err, NodeError::Utxo(UtxoError::ImmatureCoinbase { .. })),
+            "expected immature coinbase error, got {:?}",
+            err
+        );
+    }
+
+    #[tokio::test]
+    async fn submit_block_accepts_mature_coinbase() {
+        let config = NodeConfig {
+            db_path: ":memory:".into(),
+            soft_fork_activation_height: 0,
+            ..Default::default()
+        };
+        let node = Arc::new(Node::new(config).await.unwrap());
+
+        let (miner_sk, miner_vk) = generate_keypair();
+        let miner_addr = derive_address(miner_vk.as_bytes());
+        let miner = Address::new(zion_l1_types::ChainId::ZionL1, vec![], &miner_addr).unwrap();
+
+        // Mine 100 blocks so the block 1 coinbase is exactly mature.
+        for _ in 0..100 {
+            let template = node.block_template(miner.clone()).await.unwrap();
+            let mut header: BlockHeader = serde_json::from_str(&template.header_json).unwrap();
+            header.difficulty = 1;
+            let target = [0xff; 32];
+            node.consensus
+                .mine(&mut header, &target, 0, 1_000)
+                .expect("mine block");
+            let block = Block::new(header, template.transactions);
+            node.submit_block(block).await.unwrap();
+        }
+
+        // Build a spend of the block 1 coinbase output (index 0).
+        let block1 = node.block_by_height(1).await.unwrap().unwrap();
+        let coinbase = &block1.transactions[0];
+        let spend_utxo = SpendableUtxo {
+            tx_hash: coinbase.hash().0,
+            output_index: 0,
+            amount: coinbase.outputs[0].amount.0 as u64,
+            address: miner_addr.clone(),
+        };
+        let (_recipient_sk, recipient_vk) = generate_keypair();
+        let recipient_addr = derive_address(recipient_vk.as_bytes());
+        let build = build_send(
+            &miner_sk,
+            &miner_addr,
+            &recipient_addr,
+            1_000_000,
+            10_000,
+            &[spend_utxo],
+        )
+        .expect("valid spend");
+
+        // Build block 101 with a fresh coinbase and the now-mature spend.
+        let template = node.block_template(miner.clone()).await.unwrap();
+        let mut header: BlockHeader = serde_json::from_str(&template.header_json).unwrap();
+        header.difficulty = 1;
+        let mut txs = template.transactions;
+        txs.push(build.transaction);
+        header.merkle_root = merkle_root(&txs);
+        let target = [0xff; 32];
+        node.consensus
+            .mine(&mut header, &target, 0, 1_000)
+            .expect("mine block 101");
+        let block = Block::new(header, txs);
+
+        node.submit_block(block).await.unwrap();
+        assert_eq!(node.status().await.unwrap().height, 101);
+    }
+
+    #[test]
+    fn validate_premine_lock_rejects_spend() {
+        let premine_addr = Address::new(
+            zion_l1_types::ChainId::ZionL1,
+            vec![],
+            "zion1s0t7f8q680t4h6v7g240p4k7g2s0a4z8g3cc5h5",
+        )
+        .unwrap();
+
+        let coinbase = Transaction {
+            version: 1,
+            inputs: vec![],
+            outputs: vec![TransactionOutput {
+                amount: Amount::new(1_000_000),
+                address: premine_addr,
+            }],
+            memo: vec![],
+        };
+
+        let mut utxo_set = UtxoSet::new();
+        // Apply coinbase at height 1000 so it is mature by height 1100.
+        utxo_set.apply_transaction(&coinbase, 1000, 0).unwrap();
+
+        let outpoint = Outpoint::new(coinbase.hash(), 0);
+        let spend = Transaction {
+            version: 1,
+            inputs: vec![crate::transaction::TransactionInput {
+                previous_output: outpoint.tx_hash,
+                index: outpoint.index,
+                script: vec![],
+            }],
+            outputs: vec![TransactionOutput {
+                amount: Amount::new(1),
+                address: Address::new(zion_l1_types::ChainId::ZionL1, vec![], "zion1test")
+                    .unwrap(),
+            }],
+            memo: vec![],
+        };
+
+        let err =
+            Node::validate_premine_and_maturity_for_tx(&utxo_set, &spend, 1100).unwrap_err();
+        assert!(
+            matches!(err, UtxoError::PremineLocked { .. }),
+            "expected premine lock error, got {:?}",
+            err
+        );
     }
 }

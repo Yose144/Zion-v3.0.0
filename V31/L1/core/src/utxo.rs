@@ -40,6 +40,8 @@ pub struct UtxoOutput {
     pub address: Address,
     pub block_height: u64,
     pub block_timestamp: u64,
+    /// Whether this output was created by a coinbase transaction.
+    pub is_coinbase: bool,
 }
 
 /// UTXO validation / application error.
@@ -63,6 +65,10 @@ pub enum UtxoError {
     InvalidAddress(String),
     #[error("transaction is already in the UTXO set")]
     DuplicateTransaction,
+    #[error("coinbase output {outpoint:?} is immature: age {age} < {required}")]
+    ImmatureCoinbase { outpoint: Outpoint, age: u64, required: u64 },
+    #[error("premine output is locked: {address} ({reason})")]
+    PremineLocked { address: String, reason: String },
 }
 
 /// In-memory UTXO set.
@@ -206,6 +212,7 @@ impl UtxoSet {
                     address: output.address.clone(),
                     block_height,
                     block_timestamp,
+                    is_coinbase: false,
                 },
             );
         }
@@ -231,6 +238,7 @@ impl UtxoSet {
                     address: output.address.clone(),
                     block_height,
                     block_timestamp,
+                    is_coinbase: true,
                 },
             );
         }

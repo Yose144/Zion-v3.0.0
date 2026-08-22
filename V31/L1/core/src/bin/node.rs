@@ -77,6 +77,12 @@ struct Args {
     /// Block retention (0 = unlimited).
     #[arg(long, env = "ZION_BLOCK_RETENTION", default_value_t = 0)]
     block_retention: usize,
+
+    /// Block height at which V31 premine locks and coinbase maturity rules
+    /// activate. Defaults to disabled (`u64::MAX`) so the binary does not
+    /// hard-fork an existing chain until the operator explicitly enables it.
+    #[arg(long, env = "ZION_SOFT_FORK_ACTIVATION", default_value_t = u64::MAX)]
+    soft_fork_activation_height: u64,
 }
 
 #[tokio::main]
@@ -134,6 +140,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         v3_issobella_address: v3_issobella.clone(),
         v3_no_genesis: args.v3_no_genesis,
         v3_checkpoint_path: args.v3_checkpoint,
+        soft_fork_activation_height: args.soft_fork_activation_height,
     };
 
     info!("ZION v3.1 node");
@@ -155,6 +162,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             args.block_retention.to_string()
         }
     );
+    if args.soft_fork_activation_height != u64::MAX {
+        info!("soft_fork_activation_height={}", args.soft_fork_activation_height);
+    } else {
+        info!("soft_fork_activation=disabled");
+    }
     info!("db_path={}", args.db_path);
     if !config.seed_peers.is_empty() {
         info!(
