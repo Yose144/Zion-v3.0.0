@@ -32,6 +32,21 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'zion-v320-public-release-miner-cli-desktop',
+    date: '2026-08-22',
+    tag: { cs: 'Release', en: 'Release' },
+    tagColor: 'text-zion-gold',
+    title: {
+      cs: 'ZION v3.2.0 — Terminal Miner, Community CLI a Desktop App jsou venku',
+      en: 'ZION v3.2.0 — Terminal Miner, Community CLI and Desktop App are out',
+    },
+    summary: {
+      cs: 'Tři nové veřejné v3.2.0 release: Terminal Miner (5 platforem — Linux x86_64/ARM64, macOS Apple Silicon/Intel, Windows) s one-click GPU auto-detect a TUI dashboardem; Community CLI (5 platforem) — jeden `zion` binary pro peněženku, node, pool a mining; a Desktop App (Linux AppImage/DEB, macOS DMG, Windows installer/ZIP) s vestavěným minerem, peněženkou a dashboardem v reálném čase. Vše se SHA256 checksums na GitHub Releases.',
+      en: 'Three new public v3.2.0 releases: Terminal Miner (5 platforms — Linux x86_64/ARM64, macOS Apple Silicon/Intel, Windows) with one-click GPU auto-detect and a TUI dashboard; Community CLI (5 platforms) — a single `zion` binary for wallet, node, pool, and mining; and the Desktop App (Linux AppImage/DEB, macOS DMG, Windows installer/ZIP) with a built-in miner, wallet, and real-time dashboard. All with SHA256 checksums on GitHub Releases.',
+    },
+    href: '/download',
+  },
+  {
     slug: 'v3.1.0-miner-public-boost-released',
     date: '2026-08-17',
     tag: { cs: 'Release', en: 'Release' },
@@ -46,6 +61,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     },
     href: 'https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.1.0-miner',
     external: true,
+    homepage: false,
   },
   {
     slug: 'zion-v320-one-love-mainnet-stable',

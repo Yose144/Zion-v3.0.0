@@ -15,18 +15,18 @@ const ReleaseHighlightBannerCopy = {
   allPlatformsAvailable: { cs: `Linux + macOS + Windows`, en: `Linux + macOS + Windows` },
   boostStreams: { cs: `Boost Streams: GPU + CPU`, en: `Boost Streams: GPU + CPU` },
   autoGpuBackend: { cs: `Auto GPU backend`, en: `Auto GPU backend` },
-  fourPlatforms: { cs: `4 platformy (Linux, macOS ARM/Intel, Windows)`, en: `4 platforms (Linux, macOS ARM/Intel, Windows)` },
+  fourPlatforms: { cs: `5 platforem (Linux x86_64/ARM64, macOS ARM/Intel, Windows)`, en: `5 platforms (Linux x86_64/ARM64, macOS ARM/Intel, Windows)` },
   downloadDesktopApp: { cs: `Stáhnout Desktop App`, en: `Download Desktop App` },
   githubDesktopApp: { cs: `GitHub — Desktop App`, en: `GitHub — Desktop App` },
   githubTerminalMiner: { cs: `GitHub — Terminal Miner`, en: `GitHub — Terminal Miner` },
   allNews: { cs: `Všechny novinky`, en: `All news` },
 };
 
-const DISMISS_KEY = 'zion-release-310-hub-dismissed';
-const RELEASE_TAG = 'v3.1.0-cli';
-const RELEASE_DATE = '2026-08-03';
-const GITHUB_DESKTOP_URL = 'https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.1.0-desktop';
-const GITHUB_BOOST_URL = 'https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.1.0-cli';
+const DISMISS_KEY = 'zion-release-320-hub-dismissed';
+const RELEASE_TAG = 'v3.2.0-miner';
+const RELEASE_DATE = '2026-08-22';
+const GITHUB_DESKTOP_URL = 'https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.2.0-desktop';
+const GITHUB_BOOST_URL = 'https://github.com/Zion-TerraNova/v3-Mainnet/releases/tag/v3.2.0-miner';
 
 export default function ReleaseHighlightBanner() {
   const { lang } = useLang();
@@ -96,11 +96,11 @@ export default function ReleaseHighlightBanner() {
           <p className="text-base text-zion-gold/80 leading-relaxed mb-5 max-w-3xl">
             {cs ? (
               <>
-                ZION v3.2.0 &quot;One Love&quot; přináší Mainnet Stable: <strong className="text-zion-cyan font-semibold">Terminal Miner</strong> — one-click GPU auto-detect (CUDA → OpenCL → Metal → CPU) na <strong className="text-zion-cyan font-semibold">4 platformách</strong> (Linux, macOS Apple Silicon/Intel, Windows) — a <strong className="text-zion-cyan font-semibold">Desktop App</strong> — GUI aplikaci s vestavěným minerem, peněženkou a dashboardem v reálném čase. Desktop App dostupná pro <strong className="text-zion-cyan font-semibold">Linux, macOS a Windows</strong>.
+                ZION v3.2.0 &quot;One Love&quot; přináší Mainnet Stable: <strong className="text-zion-cyan font-semibold">Terminal Miner</strong> — one-click GPU auto-detect (CUDA → OpenCL → Metal → CPU) na <strong className="text-zion-cyan font-semibold">5 platformách</strong> (Linux x86_64/ARM64, macOS Apple Silicon/Intel, Windows) — a <strong className="text-zion-cyan font-semibold">Desktop App</strong> — GUI aplikaci s vestavěným minerem, peněženkou a dashboardem v reálném čase. Desktop App dostupná pro <strong className="text-zion-cyan font-semibold">Linux, macOS a Windows</strong>.
               </>
             ) : (
               <>
-                ZION v3.2.0 &quot;One Love&quot; brings Mainnet Stable: <strong className="text-zion-cyan font-semibold">Terminal Miner</strong> — one-click GPU auto-detect (CUDA → OpenCL → Metal → CPU) on <strong className="text-zion-cyan font-semibold">4 platforms</strong> (Linux, macOS Apple Silicon/Intel, Windows) — and <strong className="text-zion-cyan font-semibold">Desktop App</strong> — a GUI app with built-in miner, wallet, and real-time dashboard. Desktop App available for <strong className="text-zion-cyan font-semibold">Linux, macOS and Windows</strong>.
+                ZION v3.2.0 &quot;One Love&quot; brings Mainnet Stable: <strong className="text-zion-cyan font-semibold">Terminal Miner</strong> — one-click GPU auto-detect (CUDA → OpenCL → Metal → CPU) on <strong className="text-zion-cyan font-semibold">5 platforms</strong> (Linux x86_64/ARM64, macOS Apple Silicon/Intel, Windows) — and <strong className="text-zion-cyan font-semibold">Desktop App</strong> — a GUI app with built-in miner, wallet, and real-time dashboard. Desktop App available for <strong className="text-zion-cyan font-semibold">Linux, macOS and Windows</strong>.
               </>
             )}
           </p>
