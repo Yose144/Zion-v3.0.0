@@ -57,7 +57,7 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 | **G8** | 30-day continuous run completed | Cannot call "Stable" without uptime evidence | ❌ Not started |
 | **G9** | External / internal security audit | Internal tests pass; no formal review on record | ❌ Not started |
 | **G10** | L5 Free World / L6 Issobella decision | Must have defined run mode or explicit post-3.2 deferral | ⚠️ Decision pending |
-| **G11** | V3→V31 migration tooling complete | Foundry config, CLI stubs, public subtree, ZIS, OASIS server | ⚠️ Partial |
+| **G11** | V3→V31 migration tooling complete | Foundry config, CLI stubs, public subtree, ZIS, OASIS server | ⚠️ Partial — `public/` subtree in sync (G4 ✅); ZIS deployed on Edge and healthy; UTXO v2 hash and `submitUtxoTransaction` wired through wallet SDK, CLI and pool; Foundry config and CLI `deploy` still stub |
 
 ---
 
