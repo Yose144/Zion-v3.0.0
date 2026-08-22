@@ -8,6 +8,7 @@ import {
   BarChart3,
   Blocks,
   Clock,
+  Coins,
   Download,
   Layers,
   TrendingUp,
@@ -18,6 +19,7 @@ import { usePolling } from "@/hooks/usePolling";
 import { apiClient } from "@/lib/api";
 import { exportToCsv } from "@/lib/csv-export";
 import { SITE_RELEASE_LABEL } from "@/lib/site";
+import type { DexPairDetail, DexMarketData } from "@/lib/market";
 import LiveBadge from "@/components/explorer/v4/shared/LiveBadge";
 
 const ExplorerChartsChartsPageClientCopy = {
@@ -40,6 +42,14 @@ const ExplorerChartsChartsPageClientCopy = {
   exportCsv: { cs: `Export CSV`, en: `Export CSV` },
   aboutTheCharts: { cs: `O grafech`, en: `About the charts` },
   dataComesFromTheLiveZionNodeRp: { cs: `Data pocházejí z živého ZION node RPC. Hashrate a obtížnost používají LWMA DAA (Difficulty Adjustment Algorithm). Čas bloku je klouzavý průměr. Auto-refresh 30 sekund.`, en: `Data comes from the live ZION node RPC. Hashrate and difficulty use LWMA DAA (Difficulty Adjustment Algorithm). Block time is a rolling average. Auto-refresh every 30 seconds.` },
+  market: { cs: `DEX trh`, en: `DEX Market` },
+  liveDexData: { cs: `Živá data z kanonických wZION poolů na Base.`, en: `Live data from canonical wZION pools on Base.` },
+  price: { cs: `Cena`, en: `Price` },
+  volume24h: { cs: `Objem 24h`, en: `Volume 24h` },
+  liquidity: { cs: `Likvidita`, en: `Liquidity` },
+  pairs: { cs: `Páry`, en: `Pairs` },
+  change24h: { cs: `Změna 24h`, en: `Change 24h` },
+  volumeByPair: { cs: `Objem podle páru`, en: `Volume by Pair` },
 };
 
 /* ── helpers ─────────────────────────────────────────────────── */
@@ -170,6 +180,80 @@ function AreaChart({
   );
 }
 
+/* ── DEX Volume Bar Chart ────────────────────────────────────── */
+
+function fmtUsd(n: number, dec = 2): string {
+  if (n >= 1e9) return `$${(n / 1e9).toFixed(dec)}B`;
+  if (n >= 1e6) return `$${(n / 1e6).toFixed(dec)}M`;
+  if (n >= 1e3) return `$${(n / 1e3).toFixed(dec)}K`;
+  if (n > 0) return `$${n.toFixed(dec)}`;
+  return "$0";
+}
+
+function VolumeBarChart({ pairs, height = 160 }: { pairs: DexPairDetail[]; height?: number }) {
+  const data = pairs.filter((p) => p.volume_24h > 0).sort((a, b) => b.volume_24h - a.volume_24h);
+  if (!data.length) {
+    return (
+      <div style={{ height }} className="flex items-center justify-center">
+        <span className="text-xs text-gray-600">No DEX volume data</span>
+      </div>
+    );
+  }
+
+  const W = 800;
+  const H = height;
+  const PAD = { top: 16, right: 16, bottom: 48, left: 16 };
+  const cw = W - PAD.left - PAD.right;
+  const ch = H - PAD.top - PAD.bottom;
+  const max = Math.max(...data.map((p) => p.volume_24h));
+  const barWidth = Math.min(cw / data.length - 12, 120);
+  const offsetX = (cw - data.length * (barWidth + 12)) / 2;
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full" preserveAspectRatio="none">
+      {data.map((p, i) => {
+        const h = max > 0 ? (p.volume_24h / max) * ch : 0;
+        const x = PAD.left + offsetX + i * (barWidth + 12);
+        const y = PAD.top + ch - h;
+        return (
+          <g key={p.address}>
+            <rect
+              x={x}
+              y={y}
+              width={barWidth}
+              height={h}
+              rx={6}
+              fill="rgba(34, 211, 238, 0.35)"
+              stroke="rgba(34, 211, 238, 0.5)"
+              strokeWidth={1}
+            />
+            <text
+              x={x + barWidth / 2}
+              y={H - 28}
+              textAnchor="middle"
+              fill="rgba(255,255,255,0.5)"
+              fontSize="9"
+              fontFamily="monospace"
+            >
+              {p.pair}
+            </text>
+            <text
+              x={x + barWidth / 2}
+              y={H - 12}
+              textAnchor="middle"
+              fill="rgba(255,255,255,0.35)"
+              fontSize="8"
+              fontFamily="monospace"
+            >
+              {fmtUsd(p.volume_24h)}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 /* ── types ───────────────────────────────────────────────────── */
 
 interface ChartData {
@@ -197,6 +281,12 @@ interface StatsData {
 type ChartType = "hashrate" | "difficulty" | "blocktime" | "txcount";
 type RangeType = "24h" | "7d" | "30d";
 
+interface MarketResponse {
+  ok: boolean;
+  dex: DexMarketData | { source: 'unavailable'; pairs: number; total_volume_24h: number; total_liquidity_usd: number };
+  fetchedAt: number;
+}
+
 /* ── component ───────────────────────────────────────────────── */
 
 export default function ChartsPageClient() {
@@ -205,6 +295,8 @@ export default function ChartsPageClient() {
 
   const [stats, setStats] = useState<StatsData | null>(null);
   const [charts, setCharts] = useState<Record<string, ChartData>>({});
+  const [market, setMarket] = useState<DexMarketData | null>(null);
+  const [marketLoading, setMarketLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState<RangeType>("24h");
 
@@ -223,13 +315,19 @@ export default function ChartsPageClient() {
 
   const fetchAll = useCallback(async () => {
     try {
-      const [s, ...chartResults] = await Promise.all([
+      const [s, m, ...chartResults] = await Promise.all([
         apiClient<StatsData>("/blockchain/stats"),
+        apiClient<MarketResponse>("/cex/listings").catch(() => null),
         ...chartTypes.map((ct) =>
           apiClient<ChartData>(`/blockchain/charts?type=${ct.key}&range=${range}`).catch(() => null),
         ),
       ]);
       setStats(s);
+      if (m?.ok && m.dex && 'source' in m.dex) {
+        setMarket(m.dex.source === 'dexscreener' ? (m.dex as DexMarketData) : null);
+      } else {
+        setMarket(null);
+      }
       const next: Record<string, ChartData> = {};
       chartTypes.forEach((ct, i) => {
         const result = chartResults[i];
@@ -240,6 +338,7 @@ export default function ChartsPageClient() {
       /* silent */
     } finally {
       setLoading(false);
+      setMarketLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range]);
@@ -497,6 +596,93 @@ export default function ChartsPageClient() {
                 </motion.div>
               );
             })}
+          </div>
+        </motion.section>
+
+        {/* ═══════ DEX MARKET ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12 }}
+        >
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
+              {ExplorerChartsChartsPageClientCopy.market[cs ? 'cs' : 'en']}
+            </p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Coins className="h-7 w-7 text-zion-gold" />
+              {ExplorerChartsChartsPageClientCopy.market[cs ? 'cs' : 'en']}
+            </h2>
+            <p className="text-sm text-gray-400">
+              {ExplorerChartsChartsPageClientCopy.liveDexData[cs ? 'cs' : 'en']}
+            </p>
+          </div>
+
+          <div className="zion-rainbow-card rounded-3xl bg-black/60 p-6">
+            {marketLoading || !market ? (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="zion-rainbow-sub p-4 animate-pulse" style={{ "--rc": "252, 209, 22" } as React.CSSProperties}>
+                      <div className="h-3 w-16 bg-white/10 rounded mb-3" />
+                      <div className="h-6 w-20 bg-white/10 rounded" />
+                    </div>
+                  ))}
+                </div>
+                <div className="h-[160px] w-full bg-white/5 rounded-xl animate-pulse" />
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="zion-rainbow-sub p-4" style={{ "--rc": "252, 209, 22" } as React.CSSProperties}>
+                    <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
+                      {ExplorerChartsChartsPageClientCopy.price[cs ? 'cs' : 'en']}
+                    </div>
+                    <div className="text-lg font-bold text-zion-gold tabular-nums">
+                      {market.best_price_usd.toFixed(6)} USD
+                    </div>
+                  </div>
+                  <div className="zion-rainbow-sub p-4" style={{ "--rc": "252, 209, 22" } as React.CSSProperties}>
+                    <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
+                      {ExplorerChartsChartsPageClientCopy.change24h[cs ? 'cs' : 'en']}
+                    </div>
+                    <div className={`text-lg font-bold tabular-nums ${market.price_change_24h >= 0 ? 'text-zion-cyan' : 'text-zion-purple'}`}>
+                      {market.price_change_24h >= 0 ? '▲' : '▼'} {Math.abs(market.price_change_24h).toFixed(2)}%
+                    </div>
+                  </div>
+                  <div className="zion-rainbow-sub p-4" style={{ "--rc": "252, 209, 22" } as React.CSSProperties}>
+                    <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
+                      {ExplorerChartsChartsPageClientCopy.volume24h[cs ? 'cs' : 'en']}
+                    </div>
+                    <div className="text-lg font-bold text-white tabular-nums">
+                      {fmtUsd(market.total_volume_24h)}
+                    </div>
+                  </div>
+                  <div className="zion-rainbow-sub p-4" style={{ "--rc": "252, 209, 22" } as React.CSSProperties}>
+                    <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-1">
+                      {ExplorerChartsChartsPageClientCopy.liquidity[cs ? 'cs' : 'en']}
+                    </div>
+                    <div className="text-lg font-bold text-white tabular-nums">
+                      {fmtUsd(market.total_liquidity_usd)}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-base font-semibold text-white">
+                      {ExplorerChartsChartsPageClientCopy.volumeByPair[cs ? 'cs' : 'en']}
+                    </h3>
+                    <span className="text-[11px] text-gray-500">
+                      {market.pairs} {ExplorerChartsChartsPageClientCopy.pairs[cs ? 'cs' : 'en']}
+                    </span>
+                  </div>
+                  <div className="h-[160px]">
+                    <VolumeBarChart pairs={market.pairs_detail} />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </motion.section>
 

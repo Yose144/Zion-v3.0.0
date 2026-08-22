@@ -14,6 +14,9 @@ pub struct Transfer {
     pub hashlock: Option<Hash>,
     pub timelock: Option<u64>,
     pub preimage: Option<Hash>,
+    /// For HTLC claim/refund: the on-chain lock transaction id that created
+    /// the UTXO this transfer must spend (Zion L1 UTXO adapter).
+    pub lock_tx_id: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -71,6 +74,7 @@ impl Transfer {
             hashlock: None,
             timelock: None,
             preimage: None,
+            lock_tx_id: None,
             created_at: now,
             updated_at: now,
         }

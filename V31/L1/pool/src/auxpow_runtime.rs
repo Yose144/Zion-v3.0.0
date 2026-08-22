@@ -201,6 +201,19 @@ pub fn spawn_auxpow_runtime(
             continue;
         }
 
+        // Optional per-coin upstream pool override (e.g. for testing or failover).
+        let per_coin_pool = std::env::var(format!(
+            "ZION_POOL_AUXPOW_POOL_{}",
+            coin.as_str().to_uppercase()
+        ))
+        .ok()
+        .filter(|s| !s.is_empty());
+        let profile = if let Some(override_addr) = per_coin_pool {
+            profile.with_pool_address(override_addr)
+        } else {
+            profile
+        };
+
         let pool_addr = profile.pool_address();
         if pool_addr.is_empty() || pool_addr.contains("example") {
             tracing::warn!(
