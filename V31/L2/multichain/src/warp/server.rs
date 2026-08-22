@@ -54,7 +54,10 @@ pub struct WarpState {
 impl WarpState {
     /// Create state with in-memory router and NO persistence.
     pub fn new(config: WarpConfig) -> Self {
-        let registry = ChainRegistry::with_defaults();
+        let registry = ChainRegistry::from_config(&config.chains).unwrap_or_else(|e| {
+            tracing::warn!("[warpd] Failed to load registry from config, using defaults: {e}");
+            ChainRegistry::with_defaults()
+        });
         let fee_engine = FeeEngine::with_defaults();
         let validator_set = Arc::new(Mutex::new(WarpValidatorSet::new(config.quorum)));
         let router = WarpRouter::new(registry, fee_engine, validator_set);
@@ -232,13 +235,7 @@ async fn metrics(State(s): State<WarpState>, headers: HeaderMap) -> impl IntoRes
 
 async fn chains(State(s): State<WarpState>) -> impl IntoResponse {
     let r = s.router.lock().await;
-    Json(ApiOk::new(
-        r.registry
-            .list_enabled()
-            .into_iter()
-            .cloned()
-            .collect::<Vec<_>>(),
-    ))
+    Json(ApiOk::new(r.registry.list_chain_status()))
 }
 
 async fn list_transfers(State(s): State<WarpState>) -> impl IntoResponse {

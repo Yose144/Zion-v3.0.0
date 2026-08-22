@@ -54,6 +54,7 @@ pub fn create_adapter(chain_name: &str) -> Option<Box<dyn ChainAdapter>> {
         rpc_url: String::new(),
         contract_address: None,
         finality_blocks: 12,
+        disabled_reason: None,
     };
     create_adapter_from_config(&cfg, &WarpConfig::default())
 }

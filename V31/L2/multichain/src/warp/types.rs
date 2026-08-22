@@ -51,6 +51,92 @@ pub struct ChainId {
 }
 
 impl ChainId {
+    /// Build a `ChainId` from WARP configuration fields.
+    pub fn from_config(name: &str, family: &str, finality_blocks: u64) -> Option<Self> {
+        Some(match family.to_lowercase().as_str() {
+            "evm" => Self::evm(name, 0, finality_blocks),
+            "solana" => Self {
+                family: ChainFamily::Solana,
+                name: name.to_string(),
+                chain_id_numeric: None,
+                decimals: 9,
+                finality_blocks,
+            },
+            "tron" => Self {
+                family: ChainFamily::Tron,
+                name: name.to_string(),
+                chain_id_numeric: None,
+                decimals: 18,
+                finality_blocks,
+            },
+            "stellar" => Self {
+                family: ChainFamily::Stellar,
+                name: name.to_string(),
+                chain_id_numeric: None,
+                decimals: 7,
+                finality_blocks,
+            },
+            "cardano" => Self {
+                family: ChainFamily::Cardano,
+                name: name.to_string(),
+                chain_id_numeric: None,
+                decimals: 6,
+                finality_blocks,
+            },
+            "cosmos" => Self {
+                family: ChainFamily::Cosmos,
+                name: name.to_string(),
+                chain_id_numeric: None,
+                decimals: 6,
+                finality_blocks,
+            },
+            "bitcoin" => Self {
+                family: ChainFamily::Bitcoin,
+                name: name.to_string(),
+                chain_id_numeric: None,
+                decimals: 8,
+                finality_blocks,
+            },
+            "sui" => Self {
+                family: ChainFamily::Sui,
+                name: name.to_string(),
+                chain_id_numeric: None,
+                decimals: 9,
+                finality_blocks,
+            },
+            "aptos" => Self {
+                family: ChainFamily::Aptos,
+                name: name.to_string(),
+                chain_id_numeric: None,
+                decimals: 8,
+                finality_blocks,
+            },
+            "near" => Self {
+                family: ChainFamily::Near,
+                name: name.to_string(),
+                chain_id_numeric: None,
+                decimals: 24,
+                finality_blocks,
+            },
+            "ton" => Self {
+                family: ChainFamily::Ton,
+                name: name.to_string(),
+                chain_id_numeric: None,
+                decimals: 9,
+                finality_blocks,
+            },
+            "lightning" => Self {
+                family: ChainFamily::Lightning,
+                name: name.to_string(),
+                chain_id_numeric: None,
+                decimals: 8,
+                finality_blocks,
+            },
+            "zion-l1" | "zion_l1" => Self::zion_l1(),
+            _ => return None,
+        })
+    }
+
     pub fn evm(name: &str, chain_id: u64, finality: u64) -> Self {
         Self {
             family: ChainFamily::Evm,
@@ -180,6 +266,16 @@ impl ChainId {
             finality_blocks: 1,
         }
     }
+}
+
+/// Public status of a chain in the WARP registry.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChainStatus {
+    pub name: String,
+    pub family: String,
+    pub enabled: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub disabled_reason: Option<String>,
 }
 
 /// Represents an asset on a specific chain.
