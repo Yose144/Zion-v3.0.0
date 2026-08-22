@@ -4,6 +4,7 @@
 > **Current version:** 3.2.0-beta (V31 Mainnet Alpha pre-release), protocol `zion-v3-node/3.1.0-alpha`  
 > **Last updated:** 2026-08-22  
 > **Public launch target:** 31 December 2026  
+> **Daily summary:** [`REPORTS/REPORT_2026-08-22_DAILY_SUMMARY.md`](./REPORTS/REPORT_2026-08-22_DAILY_SUMMARY.md)
 >
 > **Canonical plans:**
 > - Launch & marketing plan: [`OneLoveV3.2.md`](../../OneLoveV3.2.md)
@@ -82,7 +83,7 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 | # | Task | Owner | Acceptance |
 |---|------|-------|------------|
 | F1 | Security audit | security | L1, bridge contracts, multichain reviewed; findings mitigated or accepted |
-| F2 | 24h transaction fuzzing | QA | 10-minute deterministic preview passed (2 280 requests, 0 health fails); full 24h run pending |
+| F2 | 24h transaction fuzzing | QA | 🔄 10-min preview passed (2 280 req, 0 health fails); full 24h run started 2026-08-22 22:34 CET (PID 1235651, `scripts/ops/tx_fuzz.py`, target `127.0.0.1:8446`, concurrency 10); report will be at `docs/3.2/REPORTS/fuzz_logs/` |
 | F3 | Chaos tests | QA/ops | ✅ Rounds 1–5 preview executed (network, process, data, resource, L2 bridge); no crashes | Report: [`docs/3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md`](../3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md) |
 | F4 | 1000+ miner simulation | pool/QA | ✅ 10 000-miner local pool handshake 100 % pass, 10 000-miner Edge connect storm survived; no panics | Report: [`docs/3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md`](../3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md) |
 | F5 | Backup / DR drill | ops | restore from off-site backup, sync to tip |
