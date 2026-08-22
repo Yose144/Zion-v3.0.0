@@ -108,7 +108,7 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 | H2 | Miner TUI smoke test | ⚠️ Present, needs test |
 | H3 | Miner Cargo feature verification on all platforms | ⚠️ Present, needs test |
 | H4 | Complete CLI subcommands (some are stubs) | ⚠️ Partial |
-| H5 | AuXpow E2E test script | ❌ Missing |
+| H5 | AuXpow E2E test script | ✅ Complete — `scripts/ops/auxpow_e2e_test.py` validates miner → pool → mock CryptonoteStratum upstream share flow for XMR/RandomX; logs preserved under `/tmp/auxpow_e2e_<id>/`; report: [`docs/3.2/REPORTS/REPORT_2026-08-22_H5_AUXPOW_E2E_TEST.md`](./REPORTS/REPORT_2026-08-22_H5_AUXPOW_E2E_TEST.md) |
 | H6 | Stratum v2 pool support | ❌ Missing |
 | H7 | PPS + SOLO pool modes | ❌ Missing |
 | H8 | Pool downstream / proxy mode | ❌ Missing |

@@ -2,7 +2,7 @@
 """
 H5 — AuxPoW E2E smoke test.
 
-Starts a local mock upstream stratum server (Decred/Blake3, standard stratum),
+Starts a local mock upstream CryptonoteStratum server (Monero/RandomX),
 a local zion-pool bridge, and a CPU-only zion-miner. The goal is to observe at
 least one AuxPoW share forwarded from the miner → local pool → mock upstream
 within a short timeout.
@@ -10,9 +10,11 @@ within a short timeout.
 Requires:
   - V31 zion-node running on 127.0.0.1:8446 (or override with --l1-rpc).
   - V31 zion-pool and zion-miner release binaries in V31/target/release.
+    The miner binary must be built with the `native-randomx` feature so it
+    can hash RandomX shares.
 
 Usage:
-  python3 scripts/ops/auxpow_e2e_test.py --timeout 120
+  python3 scripts/ops/auxpow_e2e_test.py --timeout 180
 """
 
 import argparse
@@ -39,11 +41,8 @@ def send_line(sock: socket.socket, obj: dict) -> None:
     sock.sendall(line.encode())
 
 
-class MockUpstreamStratum(threading.Thread):
-    """Minimal standard-stratum server for Decred (Blake3).
-
-    Sends an easy job after subscribe+authorize and accepts any share.
-    """
+class MockUpstreamCryptonote(threading.Thread):
+    """Minimal Monero/CryptonoteStratum server for RandomX (Stream 3 CPU)."""
 
     def __init__(self, port: int):
         super().__init__(daemon=True)
@@ -55,13 +54,30 @@ class MockUpstreamStratum(threading.Thread):
         self.server.bind(("127.0.0.1", port))
         self.server.listen(1)
 
+    def _job(self, job_id: str) -> dict:
+        # Monero mining blob is 76 bytes (152 hex chars); all-zero is fine for E2E.
+        blob = "0" * 152
+        # Max 32-bit target => every RandomX hash is a valid share locally.
+        target = "ffffffff"
+        return {
+            "id": None,
+            "method": "job",
+            "params": {
+                "blob": blob,
+                "job_id": job_id,
+                "target": target,
+                "height": 1234567,
+                "algo": "rx/0",
+            },
+        }
+
     def run(self) -> None:
         self.server.settimeout(1.0)
         try:
             while not self._stop.is_set():
                 try:
                     conn, _ = self.server.accept()
-                except socket.timeout:
+                except (socket.timeout, OSError):
                     continue
                 conn.settimeout(0.5)
                 handler = threading.Thread(
@@ -69,12 +85,15 @@ class MockUpstreamStratum(threading.Thread):
                 )
                 handler.start()
         finally:
-            self.server.close()
+            try:
+                self.server.close()
+            except Exception:
+                pass
 
     def _handle_client(self, conn: socket.socket) -> None:
         try:
             buf = b""
-            subscribed = False
+            logged_in = False
             while not self._stop.is_set():
                 try:
                     data = conn.recv(4096)
@@ -90,35 +109,9 @@ class MockUpstreamStratum(threading.Thread):
                     except json.JSONDecodeError:
                         continue
                     self._handle_message(conn, msg)
-                    if not subscribed and msg.get("method") == "mining.subscribe":
-                        subscribed = True
-                        # Easy target: 0x1d00ffff scaled to share target ~ max.
-                        send_line(
-                            conn,
-                            {
-                                "id": None,
-                                "method": "mining.set_difficulty",
-                                "params": [1.0],
-                            },
-                        )
-                        send_line(
-                            conn,
-                            {
-                                "id": None,
-                                "method": "mining.notify",
-                                "params": [
-                                    "job1",
-                                    "0000000000000000000000000000000000000000000000000000000000000000",
-                                    "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff200208620101",
-                                    "01000000000000000000000000000000000000000000000000000000000000000000000000",
-                                    [],
-                                    "01000000",
-                                    "1d00ffff",
-                                    "686f6e67",
-                                    True,
-                                ],
-                            },
-                        )
+                    if not logged_in and msg.get("method") == "login":
+                        logged_in = True
+                        send_line(conn, self._job("job1"))
         except Exception as e:
             print(f"[mock] client handler error: {e}", file=sys.stderr)
         finally:
@@ -130,20 +123,28 @@ class MockUpstreamStratum(threading.Thread):
     def _handle_message(self, conn: socket.socket, msg: dict) -> None:
         method = msg.get("method")
         msg_id = msg.get("id")
-        if method == "mining.subscribe":
+        if method == "login":
             send_line(
                 conn,
                 {
                     "id": msg_id,
-                    "result": ["s1", "00000000000000000000000000000000", 4],
+                    "result": {
+                        "id": "session1",
+                        "job": {
+                            "blob": "0" * 152,
+                            "job_id": "job1",
+                            "target": "ffffffff",
+                            "height": 1234567,
+                            "algo": "rx/0",
+                        },
+                        "status": "OK",
+                    },
                     "error": None,
                 },
             )
-        elif method == "mining.authorize":
-            send_line(conn, {"id": msg_id, "result": True, "error": None})
-        elif method == "mining.submit":
+        elif method == "submit":
             self.shares.append(msg)
-            send_line(conn, {"id": msg_id, "result": True, "error": None})
+            send_line(conn, {"id": msg_id, "result": {"status": "OK"}, "error": None})
         else:
             send_line(conn, {"id": msg_id, "result": True, "error": None})
 
@@ -168,13 +169,12 @@ def wait_for_log(path: Path, pattern: str, timeout: float) -> bool:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--timeout", type=int, default=120)
+    parser.add_argument("--timeout", type=int, default=180)
     parser.add_argument("--l1-rpc", default="http://127.0.0.1:8446")
     parser.add_argument("--pool-bin", default=str(Path(__file__).parents[2] / "V31" / "target" / "release" / "zion-pool"))
     parser.add_argument("--miner-bin", default=str(Path(__file__).parents[2] / "V31" / "target" / "release" / "zion-miner"))
     args = parser.parse_args()
 
-    repo_root = Path(__file__).parents[2]
     tmpdir = Path(tempfile.mkdtemp(prefix="auxpow_e2e_"))
     upstream_port = get_free_port()
     pool_port = get_free_port()
@@ -185,14 +185,14 @@ def main() -> int:
     print(f"[e2e] pool=127.0.0.1:{pool_port}")
     print(f"[e2e] l1_rpc={args.l1_rpc}")
 
-    upstream = MockUpstreamStratum(upstream_port)
+    upstream = MockUpstreamCryptonote(upstream_port)
     upstream.start()
 
     env = os.environ.copy()
     env["RUST_LOG"] = "info"
-    env["ZION_POOL_AUXPOW_COINS"] = "DCR"
-    env["ZION_POOL_AUXPOW_WALLET_DCR"] = "DsUbTWsZKHjbZhZTPLR9HkwxQ2fbZJuoDd"
-    env["ZION_POOL_AUXPOW_POOL_DCR"] = f"127.0.0.1:{upstream_port}"
+    env["ZION_POOL_AUXPOW_COINS"] = "XMR"
+    env["ZION_POOL_AUXPOW_WALLET_XMR"] = "44AFFq5kSiGBoZ4NMDk5ZV6Xz21K8W5wS8oV5mY5Xy8g9V9J1wS7oJ1wS7oJ1wS7oJ1wS7oJ1wS7oJ1wS7oJ1wS7oJ1wS7"
+    env["ZION_POOL_AUXPOW_POOL_XMR"] = f"127.0.0.1:{upstream_port}"
     env["ZION_POOL_AUXPOW_WORKER"] = "auxpow-e2e"
     env["ZION_POOL_AUXPOW_PASSWORD"] = "x"
 
@@ -221,12 +221,12 @@ def main() -> int:
         miner_env = os.environ.copy()
         miner_env["RUST_LOG"] = "info"
         miner_env["ZION_GPU_BACKEND"] = "cpu"
-        miner_env["ZION_STREAM1_ENABLED"] = "1"
+        miner_env["ZION_STREAM1_ENABLED"] = "0"  # Mine only AuxPoW to reduce CPU noise.
         miner_env["ZION_STREAM2_ENABLED"] = "0"
         miner_env["ZION_STREAM3_ENABLED"] = "1"
-        miner_env["ZION_MINER_CPU_COIN"] = "DCR"
+        miner_env["ZION_MINER_CPU_COIN"] = "XMR"
         miner_env["ZION_INTERACTIVE"] = "0"
-        miner_env["ZION_MINER_THREADS"] = "2"
+        miner_env["ZION_MINER_THREADS"] = "1"
 
         miner_log = tmpdir / "miner.log"
         miner_proc = subprocess.Popen(
@@ -237,8 +237,10 @@ def main() -> int:
                 "--worker", "auxpow-e2e",
                 "--gpu", "cpu",
                 "--v3-trinity",
+                "--no-zion",
                 "--no-gpu",
                 "--no-tui",
+                "--threads", "1",
                 "--log-interval", "5",
                 "--watchdog-timeout", "0",
             ],
@@ -272,13 +274,13 @@ def main() -> int:
             return 1
     finally:
         print("[e2e] cleaning up...")
-        for p in (pool_proc,):
-            if p.poll() is None:
-                p.terminate()
+        for proc in (pool_proc,):
+            if proc.poll() is None:
+                proc.terminate()
                 try:
-                    p.wait(timeout=5)
+                    proc.wait(timeout=5)
                 except subprocess.TimeoutExpired:
-                    p.kill()
+                    proc.kill()
         if 'miner_proc' in dir():
             if miner_proc.poll() is None:
                 miner_proc.terminate()
