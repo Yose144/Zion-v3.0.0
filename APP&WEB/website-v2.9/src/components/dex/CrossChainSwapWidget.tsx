@@ -12,7 +12,7 @@ import TokenSelector from './TokenSelector';
 import SwapPathVisual from './SwapPathVisual';
 import { useWallet } from '@/contexts/WalletContext';
 
-const ROUTER_URL = process.env.NEXT_PUBLIC_ZIONDEX_ROUTER_URL || 'https://zionterranova.com/dex-api';
+const ROUTER_URL = process.env.NEXT_PUBLIC_ZIONDEX_ROUTER_URL || 'https://dex.zionterranova.com';
 
 type SwapPhase = 'idle' | 'quoting' | 'quoted' | 'executing' | 'success' | 'error';
 

@@ -26,8 +26,8 @@ export default function NetworkOperatorToolkit({ primaryPool }: { primaryPool: s
   const cs = lang === 'cs';
   const [copied, setCopied] = useState<string | null>(null);
   const xmrigConnect = `./xmrig -o stratum+tcp://${primaryPool} -u YOUR_ZION_ADDRESS -p x`;
-  const healthCurl = 'curl -s https://www.zionterranova.com/api/health';
-  const networkCurl = 'curl -s https://www.zionterranova.com/api/network';
+  const healthCurl = 'curl -s https://app.zionterranova.com/api/health';
+  const networkCurl = 'curl -s https://app.zionterranova.com/api/network';
 
   const copyText = async (id: string, value: string) => {
     await navigator.clipboard.writeText(value);

@@ -376,12 +376,12 @@ export default function MiningUnifiedClient() {
       items: cs
         ? [
             'Spustte: zion wallet balance --address YOUR_ADDRESS',
-            'Otevrete Explorer na zionterranova.com/explorer',
+            'Otevrete Explorer na app.zionterranova.com/explorer',
             'Odeslani: zion wallet send --to RECIPIENT --amount 100',
           ]
         : [
             'Run: zion wallet balance --address YOUR_ADDRESS',
-            'Visit Explorer at zionterranova.com/explorer',
+            'Visit Explorer at app.zionterranova.com/explorer',
             'Send: zion wallet send --to RECIPIENT --amount 100',
           ],
     },

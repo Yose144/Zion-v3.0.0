@@ -9,6 +9,8 @@ import {
   POOL_FEE_PCT,
 } from '@/lib/constants';
 import { resolveSupplySnapshot } from '@/lib/supply';
+import { SITE_APP_URL, SITE_INTRO_URL } from '@/lib/site';
+import { GITHUB_REPO_URL } from '@/lib/github-releases';
 
 export async function GET() {
   const rpc = getZionRpc();
@@ -37,17 +39,17 @@ export async function GET() {
         asset_platform_id: null,
         contract_address: null,
         links: {
-          homepage: ['https://www.zionterranova.com'],
-          blockchain_site: ['https://www.zionterranova.com/explorer'],
-          official_forum_url: ['https://www.zionterranova.com/docs'],
+          homepage: [SITE_INTRO_URL],
+          blockchain_site: [`${SITE_APP_URL}/explorer`],
+          official_forum_url: [`${SITE_APP_URL}/docs`],
           chat_url: [],
-          announcement_url: ['https://www.zionterranova.com/roadmap'],
+          announcement_url: [`${SITE_APP_URL}/roadmap`],
           twitter_screen_name: '',
           facebook_username: '',
           telegram_channel_identifier: '',
           subreddit_url: '',
           repos_url: {
-            github: ['https://github.com/Zion-TerraNova'],
+            github: [GITHUB_REPO_URL],
             bitbucket: [],
           },
         },

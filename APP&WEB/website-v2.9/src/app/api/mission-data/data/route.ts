@@ -364,7 +364,7 @@ export async function GET() {
   return NextResponse.json(data, {
     headers: {
       'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'Access-Control-Allow-Origin': process.env.CORS_ORIGIN || 'https://zionterranova.com',
+      'Access-Control-Allow-Origin': process.env.CORS_ORIGIN || 'https://app.zionterranova.com',
     },
   });
 }

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL } from '@/lib/site';
 import { Activity, ExternalLink } from "lucide-react";
 
-const GRAFANA_BASE_URL = (process.env.NEXT_PUBLIC_GRAFANA_BASE_URL || "https://zionterranova.com/grafana").replace(/\/$/, "");
+const GRAFANA_BASE_URL = (process.env.NEXT_PUBLIC_GRAFANA_BASE_URL || "https://app.zionterranova.com/grafana").replace(/\/$/, "");
 const IFRAME_SRC = `${GRAFANA_BASE_URL}/d/system-metrics/full-system-dashboard?orgId=1&theme=dark&kiosk=tv`;
 const DASHBOARD_URL = `${GRAFANA_BASE_URL}/d/system-metrics/full-system-dashboard`;
 

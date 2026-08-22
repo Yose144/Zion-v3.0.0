@@ -27,8 +27,8 @@ export const SITE_PRIMARY_RPC_URL = `${SITE_PRIMARY_HOST}:${SITE_PRIMARY_RPC_POR
 export const SITE_PRIMARY_POOL_API_URL = process.env.ZION_POOL_API_URL || `http://127.0.0.1:8080`;
 export const SITE_PRIMARY_DAO_API_URL = process.env.ZION_DAO_API_URL || `http://127.0.0.1:8456`;
 
-// Edge pool stratum port is 8444 (ShareRelay architecture)
-export const SITE_POOL_PRIMARY = `${SITE_PRIMARY_HOST}:8444`;
+// Edge pool stratum (ShareRelay architecture)
+export const SITE_POOL_PRIMARY = `${process.env.NEXT_PUBLIC_ZION_POOL_HOST || 'stratum.zionterranova.com'}:8444`;
 
 // Network topology descriptor (operational details are injected via environment variables only)
 export const SITE_NETWORK_TOPOLOGY = 'single-node Mainnet Stable';

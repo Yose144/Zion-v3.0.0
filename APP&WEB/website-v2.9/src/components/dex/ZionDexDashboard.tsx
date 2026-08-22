@@ -24,7 +24,7 @@ const CrossChainSwapWidget = dynamic(() => import('./CrossChainSwapWidget'), {
   loading: () => <div className="h-96 animate-pulse rounded-2xl bg-white/5" />,
 });
 
-const ROUTER_URL = process.env.NEXT_PUBLIC_ZIONDEX_ROUTER_URL || 'https://zionterranova.com/dex-api';
+const ROUTER_URL = process.env.NEXT_PUBLIC_ZIONDEX_ROUTER_URL || 'https://dex.zionterranova.com';
 
 type DexTab = 'swap' | 'liquidity' | 'portfolio' | 'bridge' | 'atomic';
 

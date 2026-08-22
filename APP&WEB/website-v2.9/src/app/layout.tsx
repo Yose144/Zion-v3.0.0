@@ -14,7 +14,7 @@ import HeroSection from "@/components/HeroSection";
 import BackgroundToggle from "@/components/BackgroundToggle";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import PerformanceShell from "@/components/PerformanceShell";
-import { SITE_NETWORK_TOPOLOGY, SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_VERSION } from '@/lib/site';
+import { SITE_APP_URL, SITE_NETWORK_TOPOLOGY, SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_VERSION } from '@/lib/site';
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -37,7 +37,7 @@ export const viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://zionterranova.com'),
+  metadataBase: new URL(SITE_APP_URL),
   title: {
     default: `ZION Blockchain ${SITE_RELEASE_LABEL}`,
     template: '%s | ZION TerraNova',
