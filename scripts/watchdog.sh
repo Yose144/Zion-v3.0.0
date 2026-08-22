@@ -171,6 +171,22 @@ check_services() {
 }
 
 check_health() {
+  # Startup grace: do not restart a recently started node while it is still
+  # performing first-start backfills (tx_index, UTXO migrations).
+  local active_ts start_epoch now_epoch age
+  active_ts=$(_systemctl show --property=ActiveEnterTimestamp --value "$NODE_SERVICE" 2>/dev/null | tr -d '\n')
+  if [[ -n "$active_ts" && "$active_ts" != "n/a" ]]; then
+    start_epoch=$(date -d "$active_ts" +%s 2>/dev/null || echo 0)
+    now_epoch=$(date +%s)
+    if [[ "$start_epoch" -gt 0 && "$now_epoch" -ge "$start_epoch" ]]; then
+      age=$(( now_epoch - start_epoch ))
+      if [[ "$age" -lt 300 ]]; then
+        log "INFO: ${NODE_SERVICE} started ${age}s ago, within 300s startup grace; skipping health checks"
+        return
+      fi
+    fi
+  fi
+
   if ! check_node_http; then
     restart_service "$NODE_SERVICE" "V31 RPC on ${NODE_RPC} not reachable"
     return
@@ -216,6 +232,23 @@ check_v31() {
   if [[ "$status" != "active" ]]; then
     restart_service "$NODE_SERVICE" "service not active (was: $status)"
     return
+  fi
+
+  # Startup grace: the node may spend >60s on first-start backfills (tx_index,
+  # UTXO migrations) before the RPC port is bound. Do not restart while it is
+  # still within the grace window.
+  local active_ts start_epoch now_epoch age
+  active_ts=$(_systemctl show --property=ActiveEnterTimestamp --value "$NODE_SERVICE" 2>/dev/null | tr -d '\n')
+  if [[ -n "$active_ts" && "$active_ts" != "n/a" ]]; then
+    start_epoch=$(date -d "$active_ts" +%s 2>/dev/null || echo 0)
+    now_epoch=$(date +%s)
+    if [[ "$start_epoch" -gt 0 && "$now_epoch" -ge "$start_epoch" ]]; then
+      age=$(( now_epoch - start_epoch ))
+      if [[ "$age" -lt 300 ]]; then
+        log "INFO: ${NODE_SERVICE} started ${age}s ago, within 300s startup grace; skipping RPC checks"
+        return
+      fi
+    fi
   fi
 
   # Use getNodeInfo to confirm the TCP RPC is alive; protocol_version is a string.
