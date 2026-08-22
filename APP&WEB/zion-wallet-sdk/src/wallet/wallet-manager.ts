@@ -395,7 +395,7 @@ export class WalletManager {
     const utxos = await this.rpc.getUtxos(wallet.address);
     if (utxos.length > 0) {
       try {
-        const tx = await buildUtxoTransaction({
+        const result = await buildUtxoTransaction({
           fromAddress: wallet.address,
           toAddress: options.toAddress,
           amountZion: options.amountZion,
@@ -403,12 +403,12 @@ export class WalletManager {
             tx_hash: String(u.tx_hash ?? u.txid ?? ''),
             output_index: Number(u.output_index ?? u.vout ?? 0),
             amount: String(u.amount ?? 0),
-            address: String(u.address ?? ''),
+            address: String(u.address ?? wallet.address),
           })),
           privateKey,
           memo: options.memo,
         });
-        const payload = transactionToRpcPayload(tx);
+        const payload = transactionToRpcPayload(result.transaction);
         return this.rpc.broadcastTransaction(payload);
       } catch (err) {
         // UTXO build failed (e.g. insufficient UTXO balance) — fall through to account model

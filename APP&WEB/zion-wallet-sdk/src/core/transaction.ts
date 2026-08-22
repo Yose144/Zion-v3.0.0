@@ -1,15 +1,22 @@
 /**
- * ZION V3 UTXO + Account Transaction Builder
- * Matches V3/L1/core/src/tx.rs Transaction::calculate_hash()
- * Matches V3/L1/core/src/wallet.rs build_and_sign_account
+ * ZION V31-native UTXO + Account Transaction Builder
+ *
+ * V31-native UTXO transaction matches V31/L1/core/src/transaction.rs:
+ *   version: u32
+ *   inputs:  [{ previous_output: [u8;32], index: u32, script: Vec<u8> }]
+ *   outputs: [{ amount: u128 (string), address: { chain, bytes, encoded } }]
+ *   memo:    Vec<u8>
+ *
+ * Transaction ID and signing message use Keccak-256 over the same binary
+ * preimage.  The signing hash leaves every input `script` empty so the
+ * signatures do not affect the tx ID (SegWit-style).
  */
 
-import { blake3 } from '@noble/hashes/blake3.js';
-import { signMessage } from './keypair.js';
+import { keccak_256 } from '@noble/hashes/sha3.js';
 import * as ed from '@noble/ed25519';
 import { sha512 } from '@noble/hashes/sha2.js';
 
-// Enable sync sha512 for @noble/ed25519
+// Enable sync sha512 for @noble/ed25519 in environments without WebCrypto
 ed.etc.sha512Sync = (...m: Uint8Array[]) => sha512(ed.etc.concatBytes(...m));
 
 export const FLOWERS_PER_ZION = 1_000_000n;
@@ -20,31 +27,36 @@ export interface UTXO {
   tx_hash: string;
   output_index: number;
   amount: string | number | bigint;
-  address: string;
+  address?: string;
   height?: number;
   coinbase?: boolean;
 }
 
 export interface TxInput {
-  prev_tx_hash: number[]; // 32 bytes
-  output_index: number;
-  signature: number[]; // 64 bytes
-  public_key: number[]; // 32 bytes
+  previous_output: number[]; // 32 bytes
+  index: number;
+  script: number[]; // 64-byte signature + 32-byte public key
 }
 
 export interface TxOutput {
-  amount: number;
-  address: string;
-  memo?: string;
+  amount: string; // u128 as decimal string
+  address: {
+    chain: string;
+    bytes: number[];
+    encoded: string;
+  };
 }
 
 export interface Transaction {
-  id: number[]; // 32 bytes
   version: number;
   inputs: TxInput[];
   outputs: TxOutput[];
-  fee: number;
-  timestamp: number;
+  memo: number[];
+}
+
+export interface BuildUtxoResult {
+  transaction: Transaction;
+  tx_id: string;
 }
 
 function hexToBytes(hex: string): number[] {
@@ -56,95 +68,123 @@ function hexToBytes(hex: string): number[] {
   return bytes;
 }
 
+function bytesToHex(bytes: Uint8Array | Buffer | number[]): string {
+  return Array.from(bytes).map((b) => (b & 0xff).toString(16).padStart(2, '0')).join('');
+}
+
 function uint32LE(value: number): number[] {
   const buf = Buffer.allocUnsafe(4);
   buf.writeUInt32LE(value >>> 0, 0);
   return Array.from(buf);
 }
 
-function uint64LE(value: bigint): number[] {
-  const buf = Buffer.allocUnsafe(8);
-  buf.writeBigUInt64LE(value, 0);
+function uint128LE(value: bigint): number[] {
+  const v = BigInt(value);
+  const buf = Buffer.allocUnsafe(16);
+  const mask = 0xFFFFFFFFFFFFFFFFn;
+  buf.writeBigUInt64LE(v & mask, 0);
+  buf.writeBigUInt64LE((v >> 64n) & mask, 8);
   return Array.from(buf);
 }
 
-function concatBytes(arrays: (number[] | Uint8Array | Buffer)[]): Uint8Array {
+function concatBuffers(arrays: (Buffer | Uint8Array | number[])[]): Buffer {
   let total = 0;
   for (const arr of arrays) total += arr.length;
-  const result = new Uint8Array(total);
+  const out = Buffer.allocUnsafe(total);
   let offset = 0;
   for (const arr of arrays) {
-    result.set(arr instanceof Uint8Array ? arr : new Uint8Array(arr), offset);
+    out.set(arr instanceof Uint8Array ? arr : Buffer.from(arr), offset);
     offset += arr.length;
   }
-  return result;
+  return out;
+}
+
+function keccak256Hash(data: Buffer | Uint8Array | number[]): Buffer {
+  return Buffer.from(keccak_256(Buffer.from(data)));
 }
 
 /**
- * Compute the canonical SegWit-style BLAKE3 transaction hash (v2).
- * Matches V31/L1/core/src/v3_tx.rs Transaction::calculate_hash_v2().
- * Excludes signatures.
+ * Estimate serialized transaction size in bytes.
+ * Mirrors V31/L1/core/src/fee.rs estimate_tx_size().
  */
-export function calculateTxHash(tx: Transaction): Uint8Array {
-  const parts: (number[] | Uint8Array | Buffer)[] = [];
+export function estimateTxSize(numInputs: number, numOutputs: number): number {
+  return 52 + numInputs * 132 + numOutputs * 60;
+}
 
-  // Domain-separation tag
-  parts.push(Buffer.from('ZION_TX_V2\x00', 'binary'));
+/**
+ * Minimum required fee for a transaction of the given size.
+ * Mirrors V31/L1/core/src/fee.rs minimum_fee_for_size().
+ */
+export function minimumFeeForSize(txSize: number): bigint {
+  const rateBased = BigInt(txSize);
+  return rateBased > MIN_FEE_FLOWERS ? rateBased : MIN_FEE_FLOWERS;
+}
+
+function makeAddressObject(encoded: string): TxOutput['address'] {
+  return {
+    chain: 'zion_l1',
+    bytes: [],
+    encoded,
+  };
+}
+
+/**
+ * Build the binary Keccak-256 preimage for a native V31 transaction.
+ * @param tx - native V31 transaction
+ * @param scripts - one per input; use empty Buffer for signing hash
+ */
+function buildPreimage(tx: Transaction, scripts: Buffer[]): Buffer {
+  const parts: (Buffer | number[])[] = [];
 
   // version: u32 LE
-  parts.push(uint32LE(tx.version));
+  parts.push(Buffer.from(uint32LE(tx.version)));
 
-  // fee: u64 LE
-  parts.push(uint64LE(BigInt(tx.fee)));
-
-  // timestamp: u64 LE
-  parts.push(uint64LE(BigInt(tx.timestamp)));
-
-  // inputs count: u32 LE
-  parts.push(uint32LE(tx.inputs.length));
-
-  // inputs (exclude signature — SegWit-style)
-  for (const input of tx.inputs) {
-    parts.push(Buffer.from(input.prev_tx_hash));
-    parts.push(uint32LE(input.output_index));
-    const pubKey = Buffer.from(input.public_key);
-    parts.push(uint32LE(pubKey.length));
-    parts.push(pubKey);
+  // inputs
+  for (let i = 0; i < tx.inputs.length; i++) {
+    const input = tx.inputs[i];
+    parts.push(Buffer.from(input.previous_output));
+    parts.push(Buffer.from(uint32LE(input.index)));
+    parts.push(scripts[i] || Buffer.alloc(0));
   }
-
-  // outputs count: u32 LE
-  parts.push(uint32LE(tx.outputs.length));
 
   // outputs
   for (const output of tx.outputs) {
-    parts.push(uint64LE(BigInt(output.amount)));
-    const addrBytes = Buffer.from(output.address, 'utf8');
-    parts.push(uint32LE(addrBytes.length));
-    parts.push(addrBytes);
-    if (output.memo) {
-      const memoBytes = Buffer.from(output.memo, 'utf8');
-      parts.push([1]);
-      parts.push(uint32LE(memoBytes.length));
-      parts.push(memoBytes);
-    } else {
-      parts.push([0]);
-    }
+    parts.push(Buffer.from(uint128LE(BigInt(output.amount))));
+    parts.push(Buffer.from(output.address.encoded, 'utf8'));
   }
 
-  return blake3(concatBytes(parts));
+  // memo
+  parts.push(Buffer.from(tx.memo));
+
+  return concatBuffers(parts);
 }
 
 /**
- * Extract raw 32-byte Ed25519 public key from DER PKCS8 private key.
+ * Compute the native V31 transaction hash (txid) — scripts included.
  */
-export function extractPublicKeyFromPrivateKey(_privateKeyDer: Uint8Array): Uint8Array {
-  // For raw 32-byte Ed25519 private keys, the public key is derived via getPublicKey
-  // This function assumes the caller provides the raw private key seed
-  throw new Error('Use deriveKeypairFromPrivateKey from keypair.ts to get publicKey');
+export function calculateTxHash(tx: Transaction): Buffer {
+  const scripts = tx.inputs.map((input) => Buffer.from(input.script));
+  return keccak256Hash(buildPreimage(tx, scripts));
 }
 
 /**
- * Build a signed UTXO transaction for V3.
+ * Compute the native V31 signing hash — input scripts are empty.
+ */
+export function calculateSigningHash(tx: Transaction): Buffer {
+  const scripts = tx.inputs.map(() => Buffer.alloc(0));
+  return keccak256Hash(buildPreimage(tx, scripts));
+}
+
+/**
+ * Build a signed V31-native UTXO transaction.
+ *
+ * @param fromAddress - Sender zion1 address
+ * @param toAddress - Recipient zion1 address
+ * @param amountZion - Amount in ZION (float)
+ * @param utxos - Spendable UTXOs from getUtxos RPC
+ * @param privateKey - Raw 32-byte Ed25519 private key seed
+ * @param memo - Optional UTF-8 memo
+ * @returns {{transaction: Transaction, tx_id: string}} V31-native payload + hex txid
  */
 export async function buildUtxoTransaction({
   fromAddress,
@@ -160,117 +200,130 @@ export async function buildUtxoTransaction({
   utxos: UTXO[];
   privateKey: Uint8Array;
   memo?: string;
-}): Promise<Transaction> {
-  const amountFlowers = BigInt(Math.round(amountZion * 1e6));
-  const feeFlowers = MIN_FEE_FLOWERS;
-  const totalNeeded = amountFlowers + feeFlowers;
+}): Promise<BuildUtxoResult> {
+  if (!fromAddress || !toAddress) throw new Error('fromAddress and toAddress are required');
+  if (amountZion <= 0) throw new Error('Amount must be positive');
+  if (!Array.isArray(utxos) || utxos.length === 0) throw new Error('No UTXOs provided');
 
-  // Sort UTXOs by amount descending for efficient selection
+  const amountFlowers = BigInt(Math.floor(amountZion * 1e6));
+  const publicKey = await ed.getPublicKey(privateKey);
+
+  // Sort UTXOs by amount descending for efficient selection.  The RPC already
+  // returns UTXOs for `fromAddress`, so the address filter is best-effort.
   const sortedUtxos = [...utxos]
-    .filter((u) => u.address === fromAddress && BigInt(u.amount) > 0n)
+    .filter((u) => {
+      const addr = u.address;
+      return !addr || addr === fromAddress;
+    })
     .sort((a, b) => Number(BigInt(b.amount) - BigInt(a.amount)));
 
-  // Simple greedy UTXO selection
+  if (sortedUtxos.length === 0) {
+    throw new Error('No spendable UTXOs for the sender address');
+  }
+
+  // Greedy selection with dynamic fee based on selected input/output count.
   const selected: UTXO[] = [];
   let inputSum = 0n;
+  let feeFlowers = 0n;
+  let changeFlowers = 0n;
+  let numOutputs = 2; // assume change output initially
+
   for (const utxo of sortedUtxos) {
     selected.push(utxo);
     inputSum += BigInt(utxo.amount);
-    if (inputSum >= totalNeeded) break;
+
+    feeFlowers = minimumFeeForSize(estimateTxSize(selected.length, numOutputs));
+    changeFlowers = inputSum - amountFlowers - feeFlowers;
+
+    if (inputSum >= amountFlowers + feeFlowers) {
+      break;
+    }
   }
 
-  if (inputSum < totalNeeded) {
+  if (inputSum < amountFlowers + feeFlowers) {
     const balanceZion = Number(inputSum) / 1e6;
     throw new Error(
       `Insufficient balance: need ${amountZion} + fee ZION, have ${balanceZion.toFixed(6)} ZION spendable`
     );
   }
 
-  const change = inputSum - totalNeeded;
-
-  // Derive public key from private key
-  const { publicKey } = await import('./keypair').then((m) => m.deriveKeypairFromPrivateKey(Buffer.from(privateKey).toString('hex')));
-
   // Build outputs
   const outputs: TxOutput[] = [
     {
-      amount: Number(amountFlowers),
-      address: toAddress,
-      ...(memo ? { memo } : {}),
+      amount: amountFlowers.toString(),
+      address: makeAddressObject(toAddress),
     },
   ];
 
-  // Change output (back to sender)
-  if (change > 0n) {
+  if (changeFlowers > 0n) {
     outputs.push({
-      amount: Number(change),
-      address: fromAddress,
+      amount: changeFlowers.toString(),
+      address: makeAddressObject(fromAddress),
     });
+  } else {
+    // No change output — fee is whatever remains (still >= min for 1 output)
+    feeFlowers = inputSum - amountFlowers;
   }
 
-  // Build inputs (signatures empty initially — filled after hash computation)
+  // Build inputs (scripts empty initially — filled after signing hash)
   const inputs: TxInput[] = selected.map((utxo) => ({
-    prev_tx_hash: hexToBytes(utxo.tx_hash),
-    output_index: utxo.output_index,
-    signature: new Array(64).fill(0),
-    public_key: Array.from(publicKey),
+    previous_output: hexToBytes(utxo.tx_hash),
+    index: utxo.output_index,
+    script: [],
   }));
 
-  // Build transaction structure (v2 required from genesis for TX_HASH_V2)
+  // Native V31 transaction structure
+  const memoBytes = memo ? Array.from(Buffer.from(memo, 'utf8')) : [];
   const tx: Transaction = {
-    id: new Array(32).fill(0),
-    version: 2,
+    version: 1,
     inputs,
     outputs,
-    fee: Number(feeFlowers),
-    timestamp: Math.floor(Date.now() / 1000),
+    memo: memoBytes,
   };
 
-  // Compute BLAKE3 hash (SegWit-style, excludes signatures)
-  const txHash = calculateTxHash(tx);
-  tx.id = Array.from(txHash);
+  // Compute signing hash (scripts excluded), sign it, then fill scripts
+  const signingHash = calculateSigningHash(tx);
+  const signature = await ed.sign(signingHash, privateKey);
+  const script = Array.from(Buffer.concat([signature, publicKey]));
 
-  // Sign each input with the transaction hash
   for (const input of tx.inputs) {
-    const sig = await signMessage(txHash, privateKey);
-    input.signature = Array.from(sig);
+    input.script = script;
   }
 
-  return tx;
+  // Compute transaction hash (txid) with scripts included
+  const txHash = calculateTxHash(tx);
+
+  return {
+    tx_id: bytesToHex(txHash),
+    transaction: tx,
+  };
 }
 
 /**
- * Convert a transaction to the JSON-RPC payload format.
- * UtxoTransaction expects byte arrays, not hex strings.
+ * Convert a V31-native transaction to the JSON-RPC payload format.
+ * submitUtxoTransaction expects the native V31 Transaction shape.
  */
 export function transactionToRpcPayload(tx: Transaction): Record<string, unknown> {
   return {
-    id: tx.id,
     version: tx.version,
     inputs: tx.inputs.map((input) => ({
-      prev_tx_hash: input.prev_tx_hash,
-      output_index: input.output_index,
-      signature: input.signature,
-      public_key: input.public_key,
+      previous_output: input.previous_output,
+      index: input.index,
+      script: input.script,
     })),
     outputs: tx.outputs,
-    fee: tx.fee,
-    timestamp: tx.timestamp,
+    memo: tx.memo,
   };
 }
 
 // ─── Account-Model Transaction Builder ───────────────────────────────
-// Matches V3/L1/core/src/wallet.rs build_and_sign_account + lib.rs Transaction struct
+// Matches V31/L1/core/src/v3_wallet.rs build_and_sign_account
 // Used for premine wallets (Humanitarian, ISSOBELLA, DAO treasury, Genesis Creator)
 // that have balance in the account ledger (not UTXO).
 
-function bytesToHex(bytes: Uint8Array | Buffer | number[]): string {
-  return Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
-}
-
 /**
  * Generate a deterministic tx_id for an account transaction.
- * Matches V3/L1/core/src/wallet.rs generate_account_tx_id.
+ * Matches V31/L1/core/src/v3_wallet.rs generate_account_tx_id.
  *
  * Layout:
  *   bytes[0..16]  = timestamp nanos (two u64 LE: low + high)
@@ -372,7 +425,7 @@ export async function buildAccountTransaction({
     if (memoBytes.length > 256) {
       throw new Error('memo exceeds 256 bytes');
     }
-    if (!/^[ -]*$/.test(memo)) {
+    if (!/^[-]*$/.test(memo)) {
       throw new Error('memo must be ASCII');
     }
   }
