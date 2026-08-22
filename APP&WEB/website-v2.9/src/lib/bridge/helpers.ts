@@ -4,6 +4,7 @@
 
 import { coreUrl } from '@/lib/core-endpoints';
 import { getZionRpc } from '@/lib/zion-rpc';
+import { BRIDGE_VALIDATORS } from '@/lib/defi-contracts';
 import { NextResponse } from 'next/server';
 
 // ── Bridge status helpers ────────────────────────────────────────────────────
@@ -42,9 +43,11 @@ const canonicalBridgeState = {
   bridge_e2e_confirmed: true,
   bridge_e2e_burn_tx: '0x70ad4d93ee3922210ae2783fed5af1c34bfe6080fb01089b18572e0ceaa8a719',
   bridge_e2e_unlock_block: 20919,
-  validator_threshold: '5/5',
-  chains_active: 4,
-  chains: ['Base', 'Arbitrum', 'Optimism', 'Avalanche'],
+  validator_threshold: `${BRIDGE_VALIDATORS.length}/${BRIDGE_VALIDATORS.length}`,
+  validator_count: BRIDGE_VALIDATORS.length,
+  validators: BRIDGE_VALIDATORS,
+  chains_active: 1,
+  chains: ['Base'],
   wzion_address: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
   bridge_contract: '0x72c8f0Dc60E27aB7A83fe3B416fab4F0600a6467',
 };
@@ -74,6 +77,8 @@ export async function getBridgeStatusResponse() {
           l1_unlocks_submitted: parsePrometheus(text, 'zion_bridge_l1_unlocks_submitted_total'),
           l1_unlocks_confirmed: parsePrometheus(text, 'zion_bridge_l1_unlocks_confirmed_total'),
           errors_total: parsePrometheus(text, 'zion_bridge_errors_total'),
+          validator_threshold: `${canonicalBridgeState.validator_count}/${canonicalBridgeState.validator_count}`,
+          validators: canonicalBridgeState.validators,
           relay_metrics_online: true,
           fetched_at: Date.now(),
         },

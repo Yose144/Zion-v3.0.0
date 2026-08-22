@@ -32,6 +32,7 @@ import {
 } from '@/lib/bridge-api';
 import { useLang } from '@/contexts/LanguageContext';
 import { usePolling } from '@/hooks/usePolling';
+import BridgeValidators from '@/components/BridgeValidators';
 
 const BridgeCopy = {
   howLongDoesItTake: { cs: `Jak dlouho to trvá?`, en: `How long does it take?` },
@@ -465,8 +466,10 @@ export default function BridgePage() {
                 bgClass="bg-zion-purple/10"
                 rc="228, 30, 43"
                 label={BridgeCopy.validators[cs ? 'cs' : 'en']}
-                value="5/5"
-                sub={BridgeCopy.guardianRelay[cs ? 'cs' : 'en']}
+                value={status?.validator_threshold ?? '—'}
+                sub={status?.validator_count
+                  ? `${status.validator_count} ${BridgeCopy.guardianRelay[cs ? 'cs' : 'en']}`
+                  : BridgeCopy.guardianRelay[cs ? 'cs' : 'en']}
                 tip={BridgeCopy.guardianValidators55Quorum[cs ? 'cs' : 'en']}
               />
               <StatCard
@@ -487,6 +490,17 @@ export default function BridgePage() {
                 value={`${status ? bridgeEfficiency(status) : 0}%`}
                 sub={BridgeCopy.finalizedDetected[cs ? 'cs' : 'en']}
                 tip={BridgeCopy.ratioOfFinalizedLocksToDetecte[cs ? 'cs' : 'en']}
+              />
+            </div>
+          )}
+
+          {status?.validators && status.validators.length > 0 && (
+            <div className="mt-6">
+              <BridgeValidators
+                validators={status.validators}
+                threshold={status.validator_threshold}
+                count={status.validator_count}
+                cs={cs}
               />
             </div>
           )}

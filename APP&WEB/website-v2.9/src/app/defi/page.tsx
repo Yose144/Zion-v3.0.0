@@ -43,6 +43,7 @@ const DefiBalances    = dynamic(() => import('@/components/DefiBalances'), { ssr
 const StakingPanel    = dynamic(() => import('@/components/StakingPanel'), { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-2xl bg-white/5" /> });
 const FarmingPanel    = dynamic(() => import('@/components/FarmingPanel'), { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-2xl bg-white/5" /> });
 const GovernancePanel = dynamic(() => import('@/components/GovernancePanel'), { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-2xl bg-white/5" /> });
+const BridgeValidators = dynamic(() => import('@/components/BridgeValidators'), { ssr: false, loading: () => <div className="h-40 animate-pulse rounded-2xl bg-white/5" /> });
 
 import { CONTRACTS, SEED_PRICE_USD, CCA_AUCTION_PARAMS, PANCAKE_V3 } from '@/lib/defi-contracts';
 import { useNetworkStatus } from '@/hooks/useWebSocketSubscription';
@@ -315,6 +316,51 @@ const SECTIONS: { key: SectionTab; labelCs: string; labelEn: string; icon: typeo
   { key: 'auction', labelCs: 'Aukce', labelEn: 'Auction', icon: Gavel },
 ];
 
+// ─── Reusable Bridge explainer card (removes duplicate JSX) ───────────────────
+
+function BridgeHowItWorks({ cs, showLinks = false }: { cs: boolean; showLinks?: boolean }) {
+  return (
+    <div className="zion-rainbow-card p-6 space-y-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+      <div className="flex items-center gap-2 mb-2">
+        <Flame className="h-5 w-5 text-zion-gold" />
+        <h3 className="font-semibold text-white text-sm">
+          {DefiCopy.howBridgeWorks[cs ? 'cs' : 'en']}
+        </h3>
+      </div>
+      <div className="space-y-3 text-xs text-gray-300 leading-relaxed">
+        <div className="flex gap-3">
+          <span className="shrink-0 rounded-lg bg-zion-cyan/10 border border-zion-cyan/20 px-2 py-1 text-zion-cyan font-mono text-[10px]">L1→L2</span>
+          <p>{DefiCopy.lockZionOnL1RelayMintsWzionOnB[cs ? 'cs' : 'en']}</p>
+        </div>
+        <div className="flex gap-3">
+          <span className="shrink-0 rounded-lg bg-zion-gold/10 border border-zion-gold/20 px-2 py-1 text-zion-gold font-mono text-[10px]">L2→L1</span>
+          <p>{DefiCopy.burnWzionOnBaseRelayUnlocksZio[cs ? 'cs' : 'en']}</p>
+        </div>
+      </div>
+      {showLinks && (
+        <div className="pt-2 flex flex-wrap gap-2">
+          <a
+            href={`https://basescan.org/address/${CONTRACTS.ZIONBridge}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="zion-button-secondary !px-3 !py-1.5 !text-[10px] !rounded-lg !text-gray-400 hover:!text-white"
+          >
+            Bridge Contract <ExternalLink className="h-2.5 w-2.5" />
+          </a>
+          <a
+            href={`https://basescan.org/token/${CONTRACTS.wZION}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="zion-button-secondary !px-3 !py-1.5 !text-[10px] !rounded-lg !text-gray-400 hover:!text-white"
+          >
+            wZION Token <ExternalLink className="h-2.5 w-2.5" />
+          </a>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function DefiPage() {
@@ -338,6 +384,9 @@ export default function DefiPage() {
     l1_unlocks_confirmed: number;
     last_l1_height: number;
     errors_total: number;
+    validator_count?: number;
+    validator_threshold?: string;
+    validators?: string[];
   } | null>(null);
   interface PoolEntry {
     pair: string;
@@ -856,7 +905,7 @@ export default function DefiPage() {
 
                 label={DefiCopy.bridge[cs ? 'cs' : 'en']}
                 value={bridgeStatus?.online ? (DefiCopy.online[cs ? 'cs' : 'en']) : (DefiCopy.offline[cs ? 'cs' : 'en'])}
-                sub={DefiCopy.k55Validators[cs ? 'cs' : 'en']}
+                sub={bridgeStatus?.validator_threshold ?? DefiCopy.k55Validators[cs ? 'cs' : 'en']}
                 loading={!dataLoaded}
               />
               <StatCard
@@ -865,8 +914,10 @@ export default function DefiPage() {
                 bgClass="bg-zion-purple/10"
 
                 label={DefiCopy.validators[cs ? 'cs' : 'en']}
-                value="5/5"
-                sub={DefiCopy.guardianRelay[cs ? 'cs' : 'en']}
+                value={bridgeStatus?.validator_threshold ?? '—'}
+                sub={bridgeStatus?.validator_count
+                  ? `${bridgeStatus.validator_count} ${DefiCopy.guardianRelay[cs ? 'cs' : 'en']}`
+                  : DefiCopy.guardianRelay[cs ? 'cs' : 'en']}
                 loading={!dataLoaded}
               />
               <StatCard
@@ -1303,7 +1354,7 @@ export default function DefiPage() {
                 </div>
                 <div>
                   <h3 className="text-base font-semibold text-white">{DefiCopy.wzionBridge[cs ? 'cs' : 'en']}</h3>
-                  <p className="text-[11px] text-gray-500">{DefiCopy.l1Base55Validators[cs ? 'cs' : 'en']}</p>
+                  <p className="text-[11px] text-gray-500">{bridgeStatus?.validator_threshold ?? DefiCopy.l1Base55Validators[cs ? 'cs' : 'en']}</p>
                 </div>
               </div>
               <p className="text-sm text-gray-300 leading-relaxed mb-3">{DefiCopy.lockZionOnL1AndReceiveWzionOnB[cs ? 'cs' : 'en']}</p>
@@ -1313,45 +1364,7 @@ export default function DefiPage() {
               </div>
             </Link>
 
-            <div
-              className="zion-rainbow-card p-6"
-              style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
-            >
-              <div className="flex items-center gap-2 mb-4">
-                <Flame className="h-5 w-5 text-zion-gold" />
-                <h3 className="font-semibold text-white text-sm">
-                  {DefiCopy.howBridgeWorks[cs ? 'cs' : 'en']}
-                </h3>
-              </div>
-              <div className="space-y-3 text-xs text-gray-300 leading-relaxed">
-                <div className="flex gap-3">
-                  <span className="shrink-0 rounded-lg bg-zion-cyan/10 border border-zion-cyan/20 px-2 py-1 text-zion-cyan font-mono text-[10px]">L1→L2</span>
-                  <p>{DefiCopy.lockZionOnL1RelayMintsWzionOnB[cs ? 'cs' : 'en']}</p>
-                </div>
-                <div className="flex gap-3">
-                  <span className="shrink-0 rounded-lg bg-zion-gold/10 border border-zion-gold/20 px-2 py-1 text-zion-gold font-mono text-[10px]">L2→L1</span>
-                  <p>{DefiCopy.burnWzionOnBaseRelayUnlocksZio[cs ? 'cs' : 'en']}</p>
-                </div>
-              </div>
-              <div className="pt-4 flex flex-wrap gap-2">
-                <a
-                  href={`https://basescan.org/address/${CONTRACTS.ZIONBridge}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="zion-button-secondary !px-3 !py-1.5 !text-[10px] !rounded-lg !text-gray-400 hover:!text-white"
-                >
-                  Bridge Contract <ExternalLink className="h-2.5 w-2.5" />
-                </a>
-                <a
-                  href={`https://basescan.org/token/${CONTRACTS.wZION}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="zion-button-secondary !px-3 !py-1.5 !text-[10px] !rounded-lg !text-gray-400 hover:!text-white"
-                >
-                  wZION Token <ExternalLink className="h-2.5 w-2.5" />
-                </a>
-              </div>
-            </div>
+            <BridgeHowItWorks cs={cs} showLinks />
           </div>
         </motion.div>
       </section>
@@ -1420,6 +1433,18 @@ export default function DefiPage() {
                 <p className="text-[10px] text-gray-500">{DefiCopy.lastScan[cs ? 'cs' : 'en']}</p>
               </div>
             </div>
+
+            {bridgeStatus?.validators && bridgeStatus.validators.length > 0 && (
+              <div className="mt-4">
+                <BridgeValidators
+                  validators={bridgeStatus.validators}
+                  threshold={bridgeStatus.validator_threshold}
+                  count={bridgeStatus.validator_count}
+                  cs={cs}
+                />
+              </div>
+            )}
+
             <div className="mt-4 flex flex-wrap items-center gap-3 text-[10px] text-gray-500">
               <span className="inline-flex items-center gap-1">
                 <Link2 className="h-3 w-3" />
@@ -1440,42 +1465,7 @@ export default function DefiPage() {
           {/* Burn widget + How it works */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <BridgeBurnWidget />
-            <div className="zion-rainbow-card p-6 space-y-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-              <div className="flex items-center gap-2 mb-2">
-                <Flame className="h-5 w-5 text-zion-gold" />
-                <h3 className="font-semibold text-white text-sm">
-                  {DefiCopy.howBridgeWorks[cs ? 'cs' : 'en']}
-                </h3>
-              </div>
-              <div className="space-y-3 text-xs text-gray-300 leading-relaxed">
-                <div className="flex gap-3">
-                  <span className="shrink-0 rounded-lg bg-zion-cyan/10 border border-zion-cyan/20 px-2 py-1 text-zion-cyan font-mono text-[10px]">L1→L2</span>
-                  <p>{DefiCopy.lockZionOnL1RelayMintsWzionOnB[cs ? 'cs' : 'en']}</p>
-                </div>
-                <div className="flex gap-3">
-                  <span className="shrink-0 rounded-lg bg-zion-gold/10 border border-zion-gold/20 px-2 py-1 text-zion-gold font-mono text-[10px]">L2→L1</span>
-                  <p>{DefiCopy.burnWzionOnBaseRelayUnlocksZio[cs ? 'cs' : 'en']}</p>
-                </div>
-              </div>
-              <div className="pt-2 flex flex-wrap gap-2">
-                <a
-                  href={`https://basescan.org/address/${CONTRACTS.ZIONBridge}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="zion-button-secondary !px-3 !py-1.5 !text-[10px] !rounded-lg !text-gray-400 hover:!text-white"
-                >
-                  Bridge Contract <ExternalLink className="h-2.5 w-2.5" />
-                </a>
-                <a
-                  href={`https://basescan.org/token/${CONTRACTS.wZION}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="zion-button-secondary !px-3 !py-1.5 !text-[10px] !rounded-lg !text-gray-400 hover:!text-white"
-                >
-                  wZION Token <ExternalLink className="h-2.5 w-2.5" />
-                </a>
-              </div>
-            </div>
+            <BridgeHowItWorks cs={cs} showLinks />
           </div>
         </motion.div>
       </section>
