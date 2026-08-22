@@ -88,6 +88,8 @@ function CopyBtn({ text }: { text: string }) {
     <button
       onClick={() => { navigator.clipboard.writeText(text); setOk(true); setTimeout(() => setOk(false), 1500); }}
       className="text-white/20 hover:text-white/60 transition-colors"
+      aria-label={ok ? 'Copied' : 'Copy'}
+      title={ok ? 'Copied' : 'Copy'}
     >
       {ok ? <Check className="w-3.5 h-3.5 text-zion-cyan" /> : <Copy className="w-3.5 h-3.5" />}
     </button>
@@ -347,6 +349,11 @@ export default function AddressDetailClient() {
               {data.known_label && (
                 <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider border ${
                   data.known_type === 'pool' ? 'bg-zion-cyan/10 text-zion-cyan border-zion-cyan/20' :
+                  data.known_type === 'dao' ? 'bg-zion-purple/10 text-zion-purple border-zion-purple/20' :
+                  data.known_type === 'premine' ? 'bg-zion-gold/10 text-zion-gold border-zion-gold/20' :
+                  data.known_type === 'humanitarian' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                  data.known_type === 'bridge' ? 'bg-zion-cyan/10 text-zion-cyan border-zion-cyan/20' :
+                  data.known_type === 'miner' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
                   data.known_type === 'fund' ? 'bg-zion-purple/10 text-zion-purple border-zion-purple/20' :
                   data.known_type === 'fee' ? 'bg-zion-gold/10 text-zion-gold border-zion-gold/20' :
                   'bg-gray-500/10 text-gray-400 border-gray-500/20'

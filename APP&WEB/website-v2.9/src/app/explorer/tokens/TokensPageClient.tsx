@@ -149,6 +149,7 @@ function CopyBtn({ text, label }: { text: string; label: string }) {
         setTimeout(() => setOk(false), 1500);
       }}
       title={label}
+      aria-label={ok ? 'Copied' : label}
       className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10 transition-colors"
     >
       {ok ? (

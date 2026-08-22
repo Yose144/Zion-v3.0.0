@@ -18,7 +18,7 @@ import {
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
 import { useLang } from '@/contexts/LanguageContext';
-import { KNOWN_ADDRESS_LABELS } from '@/lib/constants';
+import { KNOWN_ADDRESS_MAP } from '@/lib/explorer/known-addresses';
 
 const ExplorerTxTxDetailClientCopy = {
   enUs: { cs: `cs-CZ`, en: `en-US` },
@@ -98,7 +98,9 @@ function CopyBtn({ text }: { text: string }) {
   const [ok, setOk] = useState(false);
   return (
     <button onClick={() => { navigator.clipboard.writeText(text); setOk(true); setTimeout(() => setOk(false), 1500); }}
-      className="text-gray-600 hover:text-white transition ml-2 flex-shrink-0">
+      className="text-gray-600 hover:text-white transition ml-2 flex-shrink-0"
+      aria-label={ok ? 'Copied' : 'Copy'}
+      title={ok ? 'Copied' : 'Copy'}>
       {ok ? <Check className="h-3.5 w-3.5 text-zion-cyan" /> : <Copy className="h-3.5 w-3.5" />}
     </button>
   );
@@ -130,7 +132,7 @@ function AddressList({ addrs, max = 3 }: { addrs: string; max?: number }) {
   return (
     <div className="flex flex-col items-end gap-1.5">
       {visible.map((a, i) => {
-        const label = KNOWN_ADDRESS_LABELS[a]?.label;
+        const label = KNOWN_ADDRESS_MAP.get(a)?.label;
         const isAddr = a.startsWith('zion1');
         return (
           <div key={i} className="flex items-center gap-2 min-w-0">

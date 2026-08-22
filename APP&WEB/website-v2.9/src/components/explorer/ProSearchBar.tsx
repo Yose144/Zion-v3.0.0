@@ -20,6 +20,7 @@ const ProSearchBarCopy = {
   search: { cs: `Hledat`, en: `Search` },
   trySearchingAsBlockTx: { cs: `Zkusit hledat jako blok nebo tx`, en: `Try searching as block/tx` },
   searchByBlockHeightTxHashOrAdd: { cs: `Hledat podle výšky bloku, hashe tx nebo adresy…`, en: `Search by block height, tx hash, or address…` },
+  clear: { cs: `Vymazat`, en: `Clear` },
   enter: { cs: `Enter ↵`, en: `Enter ↵` },
   txHash: { cs: `tx:<hash>`, en: `tx:<hash>` },
   addrAddress: { cs: `addr:<adresa>`, en: `addr:<address>` },
@@ -267,6 +268,7 @@ export default function ProSearchBar() {
           onFocus={() => setFocused(true)}
           onKeyDown={handleKeyDown}
           placeholder={ProSearchBarCopy.searchByBlockHeightTxHashOrAdd[cs ? 'cs' : 'en']}
+          aria-label={ProSearchBarCopy.searchByBlockHeightTxHashOrAdd[cs ? 'cs' : 'en']}
           className="w-full bg-transparent px-3 py-3.5 text-sm text-white placeholder:text-gray-500 
             focus:outline-none font-mono"
           autoComplete="off"
@@ -280,6 +282,7 @@ export default function ProSearchBar() {
               inputRef.current?.focus();
             }}
             className="pr-3 text-gray-500 hover:text-white transition"
+            aria-label={ProSearchBarCopy.clear[cs ? 'cs' : 'en']}
           >
             <X className="h-4 w-4" />
           </button>

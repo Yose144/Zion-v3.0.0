@@ -64,7 +64,9 @@ function CopyBtn({ text }: { text: string }) {
   const [ok, setOk] = useState(false);
   return (
     <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigator.clipboard.writeText(text); setOk(true); setTimeout(() => setOk(false), 1500); }}
-      className="text-gray-600 hover:text-white transition ml-1.5 shrink-0">
+      className="text-gray-600 hover:text-white transition ml-1.5 shrink-0"
+      aria-label={ok ? 'Copied' : 'Copy'}
+      title={ok ? 'Copied' : 'Copy'}>
       {ok ? <Check className="h-3 w-3 text-zion-cyan" /> : <Copy className="h-3 w-3" />}
     </button>
   );
