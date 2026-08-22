@@ -178,9 +178,8 @@ impl ChainAdapter for ZionL1Adapter {
         let evm_tx_hash = &transfer.id;
         let recipient = transfer.target.address.encoded.clone();
 
-        let wallet = self
-            .keyring
-            .evm_wallet(0, 0)
+        let wallet = crate::wallet::evm_relay_wallet()
+            .or_else(|_| self.keyring.evm_wallet(0, 0))
             .map_err(|e| MultichainError::Internal(format!("derive evm wallet: {e}")))?;
 
         let message = format!(

@@ -12,6 +12,7 @@ use anyhow::{anyhow, bail, Context, Result};
 use serde_json::json;
 use tokio::time::interval;
 use tracing::{info, warn};
+use zion_core::emission::COINBASE_MATURITY;
 use zion_core::transaction::Transaction;
 use zion_core::v31_wallet::{build_batch_payout, BatchRecipient, SpendableUtxo};
 
@@ -98,6 +99,7 @@ impl PayoutSweeper {
         }
 
         let rpc_addr = parse_rpc_addr(&rpc_url)?;
+        let current_height = crate::deferred_payout::get_chain_height(&rpc_url).await.unwrap_or(0);
 
         // Self-sends do not require a transaction.
         payouts.retain(|(_, p)| p.address != pool_address.encoded);
@@ -106,7 +108,7 @@ impl PayoutSweeper {
         }
 
         let pool_encoded = pool_address.encoded;
-        let utxos = fetch_utxos(rpc_addr, &pool_encoded).await?;
+        let utxos = fetch_utxos(rpc_addr, &pool_encoded, current_height).await?;
         if utxos.is_empty() {
             warn!(
                 "payout sweep skipped: no UTXOs available for pool wallet {}",
@@ -134,12 +136,24 @@ impl PayoutSweeper {
             })
             .collect();
 
-        // Use a fee that covers the serialized transaction size.
+        // Use a fee that covers the serialized transaction size, capped at a
+        // fraction of the total payout to avoid operator misconfiguration or a
+        // compromised fee oracle draining the pool wallet.
+        const MAX_FEE_PERCENT: f64 = 0.10;
+        let total_payout: u64 = recipients.iter().map(|r| r.amount).sum();
+        let max_fee = (total_payout as f64 * MAX_FEE_PERCENT) as u64;
         let fee = zion_core::fee::minimum_fee_for_size(zion_core::fee::estimate_tx_size(
             utxos.len(),
             recipients.len() + 1,
         ))
-        .max(fee_flowers);
+        .max(fee_flowers)
+        .min(max_fee);
+
+        if fee == 0 {
+            warn!("payout sweep skipped: fee is zero");
+            self.requeue(payouts);
+            return Ok(());
+        }
 
         let build_result = build_batch_payout(
             &signing_key,
@@ -170,8 +184,10 @@ impl PayoutSweeper {
             .unwrap_or("")
             .to_string();
 
-        if tx_id.is_empty() {
-            warn!("payout submit response missing tx_id");
+        if !Self::is_valid_tx_id(&tx_id) {
+            warn!("payout submit response has invalid tx_id: {}", tx_id);
+            self.requeue(payouts);
+            return Err(anyhow!("invalid tx_id in submit response: {}", tx_id));
         }
 
         let block_height = payouts.first().map(|(h, _)| *h).unwrap_or(0);
@@ -221,7 +237,11 @@ impl PayoutSweeper {
         Ok(())
     }
 
-    fn requeue(&self, payouts: Vec<(u64, PayoutEntry)>) {
+    fn is_valid_tx_id(tx_id: &str) -> bool {
+        tx_id.len() == 64 && tx_id.chars().all(|c| c.is_ascii_hexdigit())
+    }
+
+fn requeue(&self, payouts: Vec<(u64, PayoutEntry)>) {
         if payouts.is_empty() {
             return;
         }
@@ -232,7 +252,14 @@ impl PayoutSweeper {
 }
 
 /// Fetch UTXOs owned by the pool wallet from the L1 node RPC.
-async fn fetch_utxos(rpc_addr: SocketAddr, address: &str) -> Result<Vec<SpendableUtxo>> {
+///
+/// Only includes outputs that are mature: coinbase outputs require
+/// `COINBASE_MATURITY` confirmations.
+async fn fetch_utxos(
+    rpc_addr: SocketAddr,
+    address: &str,
+    current_height: u64,
+) -> Result<Vec<SpendableUtxo>> {
     let payload = json!({
         "jsonrpc": "2.0",
         "id": 1,
@@ -272,6 +299,21 @@ async fn fetch_utxos(rpc_addr: SocketAddr, address: &str) -> Result<Vec<Spendabl
                 .get("amount")
                 .and_then(|v| v.as_u64())
                 .unwrap_or_default();
+            let block_height = utxo
+                .get("block_height")
+                .and_then(|v| v.as_u64())
+                .unwrap_or_default();
+            let is_coinbase = utxo
+                .get("is_coinbase")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
+
+            // Skip immature coinbase outputs so the pool never builds an
+            // invalid payout transaction.
+            if is_coinbase && current_height.saturating_sub(block_height) < COINBASE_MATURITY {
+                skipped += 1;
+                continue;
+            }
 
             let tx_hash = match hex::decode(tx_hash_hex)
                 .ok()
@@ -289,6 +331,8 @@ async fn fetch_utxos(rpc_addr: SocketAddr, address: &str) -> Result<Vec<Spendabl
                 output_index,
                 amount,
                 address: address.to_string(),
+                block_height,
+                is_coinbase,
             });
         }
     }

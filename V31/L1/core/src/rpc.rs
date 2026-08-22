@@ -547,13 +547,14 @@ async fn get_utxos(node: &Node, params: &Value) -> Result<Value, NodeError> {
     let utxos = node.get_utxos_for_address(address).await;
     let out: Vec<Value> = utxos
         .into_iter()
-        .map(|(hash, idx, amount, height, timestamp)| {
+        .map(|(hash, idx, amount, height, timestamp, is_coinbase)| {
             json!({
                 "tx_hash": hash.to_hex(),
                 "output_index": idx,
                 "amount": amount,
                 "block_height": height,
                 "timestamp": timestamp,
+                "is_coinbase": is_coinbase,
             })
         })
         .collect();
@@ -1237,6 +1238,8 @@ mod tests {
             output_index: 0,
             amount: coinbase.outputs[0].amount.0 as u64,
             address: miner_addr.clone(),
+            block_height: 1,
+            is_coinbase: true,
         };
 
         let (_recipient_sk, recipient_vk) = generate_keypair();

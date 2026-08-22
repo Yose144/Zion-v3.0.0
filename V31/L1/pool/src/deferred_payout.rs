@@ -310,6 +310,8 @@ async fn fetch_pool_utxos(rpc_addr: &str, address: &str) -> anyhow::Result<Vec<z
                         output_index: u.get("output_index")?.as_u64()? as u32,
                         amount: u.get("amount")?.as_u64()?,
                         address: address.to_string(),
+                        block_height: u.get("block_height")?.as_u64().unwrap_or(0),
+                        is_coinbase: u.get("is_coinbase")?.as_bool().unwrap_or(false),
                     })
                 })
                 .collect::<Vec<_>>()

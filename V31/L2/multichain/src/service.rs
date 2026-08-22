@@ -10,6 +10,7 @@ use zion_pool::telemetry::MinerTelemetryRegistry;
 use zion_pool::Pool as MiningPool;
 
 use crate::bridge::Bridge;
+use crate::bridge::consensus::BridgeConsensus;
 use crate::chain::adapters::{BitcoinAdapter, EvmAdapter, ZionL1Adapter};
 use crate::chain::{BlockTemplate, ChainAdapter, ChainAdapterRegistry};
 use crate::config::{AdapterConfig, MultichainConfig};
@@ -107,7 +108,10 @@ impl MultichainService {
         adapters: Arc<ChainAdapterRegistry>,
         keyring: Keyring,
     ) -> Self {
-        let bridge = Bridge::new(Arc::clone(&adapters));
+        let bridge = match load_bridge_consensus() {
+            Some(consensus) => Bridge::with_consensus(Arc::clone(&adapters), consensus),
+            None => Bridge::new(Arc::clone(&adapters)),
+        };
         let htlc = HtlcSwap::with_db(Arc::clone(&adapters), Arc::clone(&db));
         let pool = config.pool.as_ref().and_then(|p| {
             if p.enabled {
@@ -655,6 +659,24 @@ impl MultichainService {
     }
 }
 
+fn load_bridge_consensus() -> Option<BridgeConsensus> {
+    let mut consensus = BridgeConsensus::new();
+    match consensus.validator_set_mut().load_from_env() {
+        Ok(count) if count >= consensus.validator_set().quorum => Some(consensus),
+        Ok(count) => {
+            tracing::warn!(
+                "WARP_VALIDATOR_KEYS loaded {count} keys, but quorum is {}; bridge will run without consensus",
+                consensus.validator_set().quorum
+            );
+            None
+        }
+        Err(e) => {
+            tracing::warn!("WARP_VALIDATOR_KEYS not loaded: {}; bridge will run without consensus", e);
+            None
+        }
+    }
+}
+
 fn evm_chain_id(name: &str) -> Option<ChainId> {
     match name.to_lowercase().as_str() {
         "ethereum" | "eth" => Some(ChainId::Ethereum),
@@ -689,7 +711,9 @@ fn build_adapter(
         }
         _ => {
             if let Some(chain_id) = evm_chain_id(&name_lower) {
-                let wallet = keyring.evm_wallet(0, 0).ok();
+                let wallet = crate::wallet::evm_relay_wallet()
+                    .or_else(|_| keyring.evm_wallet(0, 0))
+                    .ok();
                 let contracts = ZionContracts::for_chain(&cfg.chain)
                     .unwrap_or_else(ZionContracts::non_base);
                 Ok(Box::new(EvmAdapter::new(

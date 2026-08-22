@@ -466,6 +466,7 @@ impl HtlcSwap {
 
         // 6. Release funds on target chain via adapter.
         let preimage_hex = hex::encode(secret);
+        transfer.preimage = Some(hash_sha256(secret));
         let target_chain = transfer.target.address.chain;
         let release_tx = if let Some(adapter) = self.adapters.get(target_chain) {
             adapter.execute_outbound(transfer).await?

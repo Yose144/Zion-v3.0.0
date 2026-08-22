@@ -18,6 +18,18 @@ pub const MIN_FEE_RATE: u64 = 1;
 /// Maximum transaction size: 100 KB.
 pub const MAX_TX_SIZE: usize = 100_000;
 
+/// Maximum number of inputs in a single transaction.
+pub const MAX_TX_INPUTS: usize = 1_000;
+
+/// Maximum number of outputs in a single transaction.
+pub const MAX_TX_OUTPUTS: usize = 1_000;
+
+/// Maximum input script length in bytes.
+pub const MAX_TX_SCRIPT_BYTES: usize = 512;
+
+/// Maximum transaction memo length in bytes.
+pub const MAX_TX_MEMO_BYTES: usize = 10_000;
+
 /// Maximum single output amount: total supply in flowers.
 pub const MAX_OUTPUT_AMOUNT: u64 = u64::MAX;
 
