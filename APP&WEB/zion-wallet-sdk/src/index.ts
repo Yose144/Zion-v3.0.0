@@ -37,6 +37,7 @@ export {
   buildAccountTransaction,
   generateAccountTxId,
   calculateTxHash,
+  calculateSigningHash,
   transactionToRpcPayload,
   FLOWERS_PER_ZION,
   MIN_FEE_FLOWERS,
@@ -48,6 +49,7 @@ export type {
   TxInput,
   TxOutput,
   Transaction,
+  BuildUtxoResult,
   AccountTransaction,
 } from './core/transaction.js';
 

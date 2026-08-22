@@ -25,10 +25,10 @@ describe('TransactionBuilder', () => {
 
   describe('selectUTXOs', () => {
     it('selects sufficient UTXOs for amount + fee', () => {
-      const target = zionToAtomic(600);
+      const target = zionToAtomic(1200);
       const fee = zionToAtomic(0.001);
       const { selected, totalIn, change } = selectUTXOs(sampleUtxos, target, fee);
-      expect(selected.length).toBe(2); // 1000 + 500 covers 600
+      expect(selected.length).toBe(2); // 1000 + 500 covers 1200
       expect(totalIn).toBeGreaterThanOrEqual(target + fee);
       expect(change).toBe(totalIn - target - fee);
     });
@@ -99,8 +99,9 @@ describe('TransactionBuilder', () => {
       const dummyPrivateKey = Buffer.alloc(32, 0x42);
       const signedTx = await signTransaction(tx, dummyPrivateKey);
 
-      expect(signedTx.inputs[0].signature).toBeTruthy();
-      expect(signedTx.inputs[0].public_key).toBeTruthy();
+      expect(signedTx.inputs[0].script).toBeTruthy();
+      expect(signedTx.inputs[0].script.length).toBe(96); // 64-byte sig + 32-byte pubkey
+      expect(signedTx.tx_id).toHaveLength(64);
 
       const valid = await verifyTransaction(signedTx);
       expect(valid).toBe(true);
@@ -118,7 +119,7 @@ describe('TransactionBuilder', () => {
       const signedTx = await signTransaction(tx, dummyPrivateKey);
 
       // Tamper an output amount
-      signedTx.outputs[0].amount += 1;
+      signedTx.outputs[0].amount = (BigInt(signedTx.outputs[0].amount) + 1n).toString();
       const valid = await verifyTransaction(signedTx);
       expect(valid).toBe(false);
     });
