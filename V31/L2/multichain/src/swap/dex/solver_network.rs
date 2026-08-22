@@ -10,6 +10,9 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
+/// API keys indexed by solver name for outbound bid requests.
+pub type SolverApiKeys = HashMap<String, String>;
+
 use async_trait::async_trait;
 use tokio::task::JoinSet;
 
@@ -33,6 +36,11 @@ pub trait SolverClient: Send + Sync {
 pub struct HttpSolverClient {
     client: reqwest::Client,
     timeout: Duration,
+    /// Default API key sent on every bid request (legacy single-solver mode).
+    api_key: Option<String>,
+    /// Per-solver API keys, keyed by solver name. Takes precedence over
+    /// `api_key` when a match exists.
+    solver_api_keys: SolverApiKeys,
 }
 
 impl Default for HttpSolverClient {
@@ -50,7 +58,21 @@ impl HttpSolverClient {
         Self {
             client: reqwest::Client::new(),
             timeout,
+            api_key: None,
+            solver_api_keys: SolverApiKeys::new(),
         }
+    }
+
+    /// Set a default API key sent as `X-Solver-Key` on every bid request.
+    pub fn with_api_key(mut self, key: impl Into<String>) -> Self {
+        self.api_key = Some(key.into());
+        self
+    }
+
+    /// Set per-solver API keys. Each key is sent only to the matching solver.
+    pub fn with_solver_api_keys(mut self, keys: SolverApiKeys) -> Self {
+        self.solver_api_keys = keys;
+        self
     }
 }
 
@@ -74,19 +96,20 @@ impl SolverClient for HttpSolverClient {
             intent.id
         );
 
-        let res = self
-            .client
-            .post(&url)
-            .timeout(self.timeout)
-            .json(intent)
-            .send()
-            .await
-            .map_err(|e| {
-                MultichainError::Internal(format!(
-                    "solver {} HTTP request failed: {}",
-                    solver.name, e
-                ))
-            })?;
+        let key = self
+            .solver_api_keys
+            .get(&solver.name)
+            .or(self.api_key.as_ref());
+        let mut req = self.client.post(&url).timeout(self.timeout).json(intent);
+        if let Some(key) = key {
+            req = req.header("X-Solver-Key", key);
+        }
+        let res = req.send().await.map_err(|e| {
+            MultichainError::Internal(format!(
+                "solver {} HTTP request failed: {}",
+                solver.name, e
+            ))
+        })?;
 
         if res.status() == reqwest::StatusCode::NO_CONTENT {
             tracing::debug!("solver {} declined intent {}", solver.name, intent.id);

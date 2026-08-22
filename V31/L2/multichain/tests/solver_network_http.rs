@@ -16,6 +16,7 @@ use zion_multichain::chain::adapter::ChainAdapterRegistry;
 use zion_multichain::config::{MultichainConfig, ServerConfig};
 use zion_multichain::server::ApiServer;
 use zion_multichain::service::MultichainService;
+use zion_multichain::swap::dex::intent::{SolverBid, SwapIntent};
 
 fn build_service() -> Arc<MultichainService> {
     let mut config = MultichainConfig::default();
@@ -194,4 +195,119 @@ async fn http_solver_client_bids_and_buyer_executes() {
     let executed = zion_l1_types::Amount::new(out);
     assert!(executed >= Amount::new(900_000));
     assert_eq!(intent.status, zion_multichain::swap::dex::intent::IntentStatus::Executed);
+}
+
+fn build_service_with_solver(config: zion_multichain::config::SolverConfig) -> Arc<MultichainService> {
+    let mut mc_config = zion_multichain::config::MultichainConfig::default();
+    mc_config.l1_rpc_url = String::new();
+    mc_config.database.path = ":memory:".to_string();
+    mc_config.solver = config;
+    Arc::new(
+        MultichainService::new_with_adapters(mc_config, ChainAdapterRegistry::new())
+            .expect("in-memory service builds"),
+    )
+}
+
+#[tokio::test]
+async fn solver_solve_endpoint_requires_api_key() {
+    let solver_config = zion_multichain::config::SolverConfig {
+        enabled: true,
+        name: "auth-solver".to_string(),
+        fee_bps: 10,
+        api_key: Some("solver-secret".to_string()),
+        advertised_url: None,
+    };
+    let solver_service = build_service_with_solver(solver_config);
+    let solver_server = ApiServer::new(ServerConfig::default(), Arc::clone(&solver_service));
+    let solver_app = solver_server.router();
+
+    let zion = Asset::native(ChainId::ZionL1, "ZION", 6, "ZION");
+    let usdc = Asset::native(ChainId::ZionL1, "USDC", 6, "USD Coin");
+
+    let pool_body = serde_json::json!({
+        "id": 1,
+        "asset_a": zion,
+        "asset_b": usdc,
+        "reserve_a": 100000000000_u64,
+        "reserve_b": 1000000000000_u64,
+        "fee_bps": 30,
+    });
+    let response = solver_app
+        .clone()
+        .oneshot(build_request("POST", "/v1/swap/pool/deploy", pool_body.to_string()))
+        .await
+        .expect("request ok");
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let intent = serde_json::json!({
+        "user": "zion1user",
+        "from_chain": "zion",
+        "from_ticker": "ZION",
+        "from_contract": null,
+        "to_chain": "zion",
+        "to_ticker": "USDC",
+        "to_contract": null,
+        "amount_in": 1_000_000_u64,
+        "min_amount_out": 900_000_u64,
+        "deadline": u64::MAX,
+        "nonce": 42,
+    });
+    let response = solver_app
+        .clone()
+        .oneshot(build_request("POST", "/v1/swap/intent", intent.to_string()))
+        .await
+        .expect("request ok");
+    assert_eq!(response.status(), StatusCode::OK);
+    let json = read_json(response).await;
+    let intent_id = json["intent_id"].as_str().unwrap().to_string();
+
+    let get_intent = || async {
+        let response = solver_app
+            .clone()
+            .oneshot(build_request(
+                "GET",
+                &format!("/v1/swap/intent/{}?auth=bypass", intent_id),
+                "".to_string(),
+            ))
+            .await
+            .expect("request ok");
+        assert_eq!(response.status(), StatusCode::OK);
+        read_json(response).await
+    };
+
+    let json = get_intent().await;
+    let intent: SwapIntent = serde_json::from_value(json["intent"].clone()).unwrap();
+
+    // Missing key -> 401.
+    let response = solver_app
+        .clone()
+        .oneshot(build_request("POST", "/v1/swap/solve", serde_json::to_string(&intent).unwrap()))
+        .await
+        .expect("request ok");
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+
+    // Wrong key -> 401.
+    let mut req = build_request(
+        "POST",
+        "/v1/swap/solve",
+        serde_json::to_string(&intent).unwrap(),
+    );
+    req.headers_mut()
+        .insert("X-Solver-Key", "wrong-key".parse().unwrap());
+    let response = solver_app.clone().oneshot(req).await.expect("request ok");
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+
+    // Correct key -> 200 and a bid.
+    let mut req = build_request(
+        "POST",
+        "/v1/swap/solve",
+        serde_json::to_string(&intent).unwrap(),
+    );
+    req.headers_mut()
+        .insert("X-Solver-Key", "solver-secret".parse().unwrap());
+    let response = solver_app.clone().oneshot(req).await.expect("request ok");
+    assert_eq!(response.status(), StatusCode::OK);
+    let bid: SolverBid =
+        serde_json::from_slice(&axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap()).unwrap();
+    assert_eq!(bid.intent_id.to_string(), intent_id);
 }

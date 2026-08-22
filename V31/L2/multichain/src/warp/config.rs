@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::config::{SolverConfig, SolverEntry};
+
 /// WARP configuration loaded from TOML.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WarpConfig {
@@ -21,6 +23,14 @@ pub struct WarpConfig {
 
     #[serde(default)]
     pub chains: Vec<ChainConfig>,
+
+    /// Local solver node configuration.
+    #[serde(default)]
+    pub solver: SolverConfig,
+
+    /// Pre-configured off-chain solvers the buyer node can broadcast intents to.
+    #[serde(default)]
+    pub solvers: Vec<SolverEntry>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -65,6 +75,8 @@ impl Default for WarpConfig {
             l1_vault_address: "zion1warp_vault_address".into(),
             chains: vec![],
             poll_interval_secs: None,
+            solver: SolverConfig::default(),
+            solvers: Vec::new(),
         }
     }
 }

@@ -45,6 +45,10 @@ pub struct MultichainService {
 }
 
 impl MultichainService {
+    pub fn config(&self) -> &MultichainConfig {
+        &self.config
+    }
+
     pub fn new(config: MultichainConfig) -> MultichainResult<Self> {
         let db = Arc::new(Mutex::new(Db::open(&config.database.path)?));
         let keyring = Keyring::generate()?;
@@ -115,6 +119,14 @@ impl MultichainService {
                 None
             }
         });
+        let mut intent_engine = IntentEngine::new();
+        for entry in &config.solvers {
+            intent_engine.registry_mut().register_with_info(
+                &entry.name,
+                Some(entry.url.clone()),
+                entry.reputation,
+            );
+        }
         Self {
             config,
             db,
@@ -124,7 +136,7 @@ impl MultichainService {
             keyring,
             credits: CreditsLedger::new(),
             dex: RwLock::new(DexRouter::new()),
-            intent_engine: RwLock::new(IntentEngine::new()),
+            intent_engine: RwLock::new(intent_engine),
             pool,
             processed_payouts: Arc::new(StdMutex::new(HashSet::new())),
         }

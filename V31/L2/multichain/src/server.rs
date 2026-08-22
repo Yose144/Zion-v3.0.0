@@ -70,6 +70,7 @@ pub struct AppState {
     limiter: RateLimiter,
     solver_name: String,
     solver_fee_bps: u16,
+    solver_api_key: Option<String>,
 }
 
 /// HTTP API gateway for `zion-multichain`.
@@ -158,15 +159,17 @@ impl ApiServer {
             config.auth.api_key = std::env::var("ZION_MULTICHAIN_API_KEY").ok();
         }
 
+        let solver_cfg = self.service.config().solver.clone();
         let state = AppState {
             service: Arc::clone(&self.service),
             limiter: RateLimiter::new(&config),
-            solver_name: std::env::var("ZION_DEX_SOLVER_NAME")
-                .unwrap_or_else(|_| "zion-solver".to_string()),
-            solver_fee_bps: std::env::var("ZION_DEX_SOLVER_FEE_BPS")
-                .ok()
-                .and_then(|s| s.parse().ok())
-                .unwrap_or(0),
+            solver_name: if solver_cfg.name.is_empty() {
+                "zion-solver".to_string()
+            } else {
+                solver_cfg.name
+            },
+            solver_fee_bps: solver_cfg.fee_bps,
+            solver_api_key: solver_cfg.api_key,
         };
 
         Router::new()
@@ -851,8 +854,19 @@ async fn register_solver(
 
 async fn solve_intent(
     State(state): State<AppState>,
+    headers: axum::http::HeaderMap,
     Json(intent): Json<SwapIntent>,
 ) -> Result<Json<SolverBid>, StatusCode> {
+    if let Some(expected) = &state.solver_api_key {
+        let provided = headers
+            .get("X-Solver-Key")
+            .and_then(|v| v.to_str().ok());
+        if provided != Some(expected) {
+            tracing::warn!("solver API key mismatch from {:?}", headers.get("x-forwarded-for"));
+            return Err(StatusCode::UNAUTHORIZED);
+        }
+    }
+
     if intent.status != crate::swap::dex::intent::IntentStatus::Pending {
         return Err(StatusCode::BAD_REQUEST);
     }
@@ -911,7 +925,13 @@ async fn broadcast_intent(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let client = Arc::new(HttpSolverClient::new());
+    let mut keys = crate::swap::dex::solver_network::SolverApiKeys::new();
+    for entry in &state.service.config().solvers {
+        if let Some(key) = &entry.api_key {
+            keys.insert(entry.name.clone(), key.clone());
+        }
+    }
+    let client = Arc::new(HttpSolverClient::new().with_solver_api_keys(keys));
     match state.service.broadcast_intent::<HttpSolverClient>(id, client).await {
         Ok(results) => {
             let out: Vec<serde_json::Value> = results

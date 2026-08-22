@@ -131,7 +131,31 @@ disabled_reason = "Bitcoin HTLC address not configured; deploy HTLC contract and
 rpc_url = "https://mempool.space/api"
 # HTLC / watch address for inbound proofs.
 contract_address = "bc1qplaceholderhtlcaddress"
-finality_blocks = 3
+finality_blocks = 0
+
+# ── Solver network (optional) ───────────────────────────────────────────────
+# Configure this warpd instance as an off-chain intent solver, and/or list
+# trusted independent solvers that the local buyer node can broadcast intents to.
+
+[solver]
+enabled = false
+name = "zion-solver"
+fee_bps = 10
+# api_key = "set-a-strong-shared-secret-here"   # protects /v1/swap/solve
+# advertised_url = "https://solver.example.com" # public URL other buyers can use
+
+# Pre-configured independent solvers known to this buyer node.
+# The buyer will broadcast open intents to each entry concurrently.
+# [[solvers]]
+# name = "independent-solver-1"
+# url = "https://solver1.example.com"
+# reputation = 100
+# api_key = "shared-secret-with-solver1"
+#
+# [[solvers]]
+# name = "independent-solver-2"
+# url = "https://solver2.example.com"
+# reputation = 80
 
 [[chains]]
 name = "cosmos"
