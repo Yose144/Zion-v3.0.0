@@ -44,6 +44,15 @@ pub const TAIL_REWARD: u64 = 724_784_723;
 /// Coinbase maturity: outputs unspendable for this many blocks.
 pub const COINBASE_MATURITY: u64 = 100;
 
+/// Maximum future block timestamp drift (2 hours).
+pub const MAX_FUTURE_BLOCK_OFFSET: u64 = 2 * 60 * 60;
+
+/// Maximum total transactions in a block (including coinbase).
+pub const MAX_BLOCK_TRANSACTIONS: usize = 1_000;
+
+/// Maximum serialized block size in bytes.
+pub const MAX_BLOCK_SIZE_BYTES: usize = 1_000_000;
+
 /// Miner share: 89% of block subsidy.
 pub const MINER_PCT: u64 = 89;
 

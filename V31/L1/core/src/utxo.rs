@@ -85,7 +85,10 @@ impl UtxoSet {
     }
 
     /// Return unspent outputs for the given encoded address.
-    pub fn get_utxos_for_address(&self, address: &str) -> Vec<(Hash, u32, u64, u64, u64)> {
+    ///
+    /// Tuple: `(tx_hash, output_index, amount, block_height, block_timestamp,
+    /// is_coinbase)`.
+    pub fn get_utxos_for_address(&self, address: &str) -> Vec<(Hash, u32, u64, u64, u64, bool)> {
         let mut out = Vec::new();
         for (outpoint, output) in &self.outputs {
             if output.address.encoded == address {
@@ -97,6 +100,7 @@ impl UtxoSet {
                         amount as u64,
                         output.block_height,
                         output.block_timestamp,
+                        output.is_coinbase,
                     ));
                 }
             }

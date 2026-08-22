@@ -34,6 +34,18 @@ impl std::fmt::Debug for Keyring {
     }
 }
 
+/// Load the canonical EVM relay/validator wallet from `WARP_EVM_RELAY_KEY`.
+/// The key is a 32-byte secp256k1 private key in hex (with or without 0x).
+pub fn evm_relay_wallet() -> MultichainResult<ethers::signers::LocalWallet> {
+    let raw = std::env::var("WARP_EVM_RELAY_KEY")
+        .map_err(|_| MultichainError::Config("WARP_EVM_RELAY_KEY not set".to_string()))?;
+    let hex = raw.trim_start_matches("0x").trim();
+    let bytes = hex::decode(hex)
+        .map_err(|e| MultichainError::Config(format!("invalid WARP_EVM_RELAY_KEY hex: {e}")))?;
+    LocalWallet::from_bytes(&bytes)
+        .map_err(|e| MultichainError::Config(format!("invalid EVM relay key: {e}")))
+}
+
 impl Keyring {
     /// Generate a random 24-word English mnemonic.
     pub fn generate() -> MultichainResult<Self> {

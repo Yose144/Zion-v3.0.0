@@ -336,6 +336,8 @@ fn fetch_v31_utxos(address: &str) -> Vec<zion_core::v31_wallet::SpendableUtxo> {
             output_index: u["output_index"].as_u64().unwrap_or(0) as u32,
             amount: u["amount"].as_u64().unwrap_or(0),
             address: address.to_string(),
+            block_height: u["block_height"].as_u64().unwrap_or(0),
+            is_coinbase: u["is_coinbase"].as_bool().unwrap_or(false),
         })
         .collect()
 }

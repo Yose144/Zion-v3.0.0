@@ -13,6 +13,7 @@ pub struct Transfer {
     pub status: TransferStatus,
     pub hashlock: Option<Hash>,
     pub timelock: Option<u64>,
+    pub preimage: Option<Hash>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -69,6 +70,7 @@ impl Transfer {
             status: TransferStatus::Pending,
             hashlock: None,
             timelock: None,
+            preimage: None,
             created_at: now,
             updated_at: now,
         }

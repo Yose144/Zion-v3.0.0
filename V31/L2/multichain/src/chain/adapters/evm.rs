@@ -30,6 +30,9 @@ const CONFIRM_BURN_RELEASE_SIG: &str = "confirmBurnRelease(bytes32,address,uint2
 const HAS_ROLE_SIG: &str = "hasRole(bytes32,address)";
 const ERC20_BALANCE_OF_SIG: &str = "balanceOf(address)";
 const ERC20_TRANSFER_SIG: &str = "transfer(address,uint256)";
+const HTLC_LOCK_SIG: &str = "lock(bytes32,bytes32,uint256,address,uint256,address,string,string)";
+const HTLC_CLAIM_SIG: &str = "claim(bytes32,bytes32)";
+const HTLC_REFUND_SIG: &str = "refund(bytes32)";
 
 /// EVM adapter configured for a specific RPC, optional signer and contracts.
 pub struct EvmAdapter {
@@ -78,6 +81,10 @@ impl EvmAdapter {
 
     fn bridge_address(&self) -> Option<EthAddress> {
         self.contracts.as_ref()?.bridge.parse().ok()
+    }
+
+    fn atomic_swap_address(&self) -> Option<EthAddress> {
+        self.contracts.as_ref()?.atomic_swap.parse().ok()
     }
 
     fn topic0(signature: &str) -> H256 {
@@ -282,6 +289,127 @@ impl EvmAdapter {
         self.send_transaction(bridge, data, U256::zero()).await
     }
 
+    fn parse_htlc_hash(transfer: &Transfer) -> MultichainResult<H256> {
+        let id = transfer.id.as_str();
+        let hash_hex = id
+            .rsplit_once('-')
+            .map(|(_, h)| h)
+            .filter(|h| h.len() == 64)
+            .ok_or_else(|| MultichainError::Validation(format!("invalid HTLC transfer id: {id}")))?;
+        let bytes = hex::decode(hash_hex)
+            .map_err(|_| MultichainError::Validation(format!("invalid HTLC hash hex: {hash_hex}")))?;
+        if bytes.len() != 32 {
+            return Err(MultichainError::Validation("HTLC hash must be 32 bytes".to_string()));
+        }
+        Ok(H256::from_slice(&bytes))
+    }
+
+    fn htlc_token_address(&self, asset: &crate::types::TransferEndpoint) -> MultichainResult<EthAddress> {
+        match asset.asset.id.ticker.as_str() {
+            "ETH" => Ok(EthAddress::zero()),
+            "wZION" => self
+                .wzion_address()
+                .ok_or_else(|| MultichainError::Config("wZION contract not configured".to_string())),
+            _ => Err(MultichainError::Unsupported(format!(
+                "HTLC token {} not supported",
+                asset.asset.id.ticker
+            ))),
+        }
+    }
+
+    fn scale_to_18_decimals(amount: u128, from_decimals: u8) -> u128 {
+        if from_decimals >= 18 {
+            amount
+        } else {
+            amount.saturating_mul(10u128.pow(u32::from(18 - from_decimals)))
+        }
+    }
+
+    async fn htlc_lock(
+        &self,
+        transfer: &Transfer,
+        swap: EthAddress,
+    ) -> MultichainResult<Hash> {
+        let id = Self::parse_htlc_hash(transfer)?;
+        let hashlock = transfer
+            .hashlock
+            .ok_or_else(|| MultichainError::Validation("HTLC lock missing hashlock".to_string()))?;
+        let timelock = transfer
+            .timelock
+            .ok_or_else(|| MultichainError::Validation("HTLC lock missing timelock".to_string()))?;
+
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        if timelock <= now {
+            return Err(MultichainError::Validation(format!(
+                "HTLC timelock must be in the future (now={now}, timelock={timelock})"
+            )));
+        }
+        let duration = timelock - now;
+
+        let token = self.htlc_token_address(&transfer.source)?;
+        let amount = U256::from(Self::scale_to_18_decimals(
+            transfer.source.amount.0,
+            transfer.source.asset.decimals,
+        ));
+        let recipient = self.to_eth_address(&transfer.target.address)?;
+
+        let counterparty_chain = transfer.source.address.chain.as_str().to_string();
+        let counterparty_addr = transfer.source.address.encoded.clone();
+
+        let mut data = Self::function_selector(HTLC_LOCK_SIG).to_vec();
+        let args = encode(&[
+            Token::FixedBytes(id.as_bytes().to_vec()),
+            Token::FixedBytes(hashlock.0.to_vec()),
+            Token::Uint(U256::from(duration)),
+            Token::Address(token),
+            Token::Uint(amount),
+            Token::Address(recipient),
+            Token::String(counterparty_chain),
+            Token::String(counterparty_addr),
+        ]);
+        data.extend_from_slice(&args);
+
+        let value = if token == EthAddress::zero() { amount } else { U256::zero() };
+        self.send_transaction(swap, data, value).await
+    }
+
+    async fn htlc_claim(
+        &self,
+        transfer: &Transfer,
+        swap: EthAddress,
+    ) -> MultichainResult<Hash> {
+        let id = Self::parse_htlc_hash(transfer)?;
+        let preimage = transfer
+            .preimage
+            .ok_or_else(|| MultichainError::Validation("HTLC claim missing preimage".to_string()))?;
+
+        let mut data = Self::function_selector(HTLC_CLAIM_SIG).to_vec();
+        let args = encode(&[
+            Token::FixedBytes(id.as_bytes().to_vec()),
+            Token::FixedBytes(preimage.0.to_vec()),
+        ]);
+        data.extend_from_slice(&args);
+
+        self.send_transaction(swap, data, U256::zero()).await
+    }
+
+    async fn htlc_refund(
+        &self,
+        transfer: &Transfer,
+        swap: EthAddress,
+    ) -> MultichainResult<Hash> {
+        let id = Self::parse_htlc_hash(transfer)?;
+
+        let mut data = Self::function_selector(HTLC_REFUND_SIG).to_vec();
+        let args = encode(&[Token::FixedBytes(id.as_bytes().to_vec())]);
+        data.extend_from_slice(&args);
+
+        self.send_transaction(swap, data, U256::zero()).await
+    }
+
     fn parse_tx_hash(id: &str) -> H256 {
         match hex::decode(id) {
             Ok(v) if v.len() == 32 => H256::from_slice(&v),
@@ -399,6 +527,23 @@ impl ChainAdapter for EvmAdapter {
         match transfer.direction {
             TransferDirection::LockMint => self.submit_lock_proof(transfer, bridge).await,
             TransferDirection::BurnRelease => self.confirm_burn_release(transfer, bridge).await,
+            TransferDirection::Htlc => {
+                let swap = self
+                    .atomic_swap_address()
+                    .ok_or_else(|| MultichainError::Config("atomic swap contract not configured".to_string()))?;
+                if transfer.id.starts_with("htlc-lock-") {
+                    self.htlc_lock(transfer, swap).await
+                } else if transfer.id.starts_with("htlc-claim-") {
+                    self.htlc_claim(transfer, swap).await
+                } else if transfer.id.starts_with("htlc-refund-") {
+                    self.htlc_refund(transfer, swap).await
+                } else {
+                    Err(MultichainError::Validation(format!(
+                        "unknown HTLC transfer id prefix: {}",
+                        transfer.id
+                    )))
+                }
+            }
             _ => Err(MultichainError::Unsupported(format!(
                 "EVM adapter cannot handle transfer direction {:?}",
                 transfer.direction

@@ -23,6 +23,10 @@ pub struct SpendableUtxo {
     pub output_index: u32,
     pub amount: u64,
     pub address: String,
+    /// Height of the block that created this output.
+    pub block_height: u64,
+    /// True if the output was created by a coinbase transaction.
+    pub is_coinbase: bool,
 }
 
 /// Recipient for a batch payout.
@@ -347,6 +351,8 @@ mod tests {
             output_index: 0,
             amount: 10_000_000_000,
             address: pool_addr.clone(),
+            block_height: 1,
+            is_coinbase: true,
         }];
 
         let (_miner_vk, miner_pk) = generate_keypair();
@@ -387,6 +393,8 @@ mod tests {
             output_index: 0,
             amount: 10_000_000_000,
             address: sender_addr.clone(),
+            block_height: 1,
+            is_coinbase: true,
         }];
 
         let (_recipient_vk, recipient_pk) = generate_keypair();

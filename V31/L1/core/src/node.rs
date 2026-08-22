@@ -16,6 +16,7 @@ use crate::consensus::{ConsensusEngine, ConsensusError};
 use zion_cosmic_harmony::EkamDeeksha;
 use crate::difficulty::{self, difficulty_to_target, lwma_next_difficulty};
 use crate::emission::{self, block_subsidy, fee_split};
+use crate::fee;
 use crate::genesis;
 use crate::v3_compat::is_premine_transfer_allowed_no_admin;
 use crate::mempool::Mempool;
@@ -111,6 +112,22 @@ pub enum NodeError {
     V3P2P(#[from] crate::v3_p2p::V3P2PError),
     #[error("UTXO error: {0}")]
     Utxo(#[from] UtxoError),
+    #[error("coinbase structure error at height {height}: {reason}")]
+    CoinbaseStructure { height: u64, reason: String },
+    #[error("block timestamp drift: {block_timestamp} > {network_time} + {max_offset}")]
+    TimestampDrift {
+        block_timestamp: u64,
+        network_time: u64,
+        max_offset: u64,
+    },
+    #[error("block too large: size {size} exceeds max {max}")]
+    OversizedBlock { size: usize, max: usize },
+    #[error("transaction too large: size {size} exceeds max {max}")]
+    OversizedTransaction { size: usize, max: usize },
+    #[error("transaction count {count} exceeds max {max}")]
+    TooManyTransactions { count: usize, max: usize },
+    #[error("transaction has too many inputs, outputs, or memo bytes")]
+    TxStructure(String),
 }
 
 /// Chain node.
@@ -472,6 +489,162 @@ impl Node {
         Ok(())
     }
 
+    /// Validate that a transaction's serialized size and structural limits are
+    /// within consensus bounds. Returns the serialized size in bytes on success.
+    fn validate_tx_size(tx: &Transaction) -> Result<usize, NodeError> {
+        if tx.inputs.len() > fee::MAX_TX_INPUTS {
+            return Err(NodeError::TxStructure(format!(
+                "too many inputs: {} > {}",
+                tx.inputs.len(),
+                fee::MAX_TX_INPUTS
+            )));
+        }
+        if tx.outputs.len() > fee::MAX_TX_OUTPUTS {
+            return Err(NodeError::TxStructure(format!(
+                "too many outputs: {} > {}",
+                tx.outputs.len(),
+                fee::MAX_TX_OUTPUTS
+            )));
+        }
+        if tx.memo.len() > fee::MAX_TX_MEMO_BYTES {
+            return Err(NodeError::TxStructure(format!(
+                "memo too long: {} > {}",
+                tx.memo.len(),
+                fee::MAX_TX_MEMO_BYTES
+            )));
+        }
+        for (i, input) in tx.inputs.iter().enumerate() {
+            if input.script.len() > fee::MAX_TX_SCRIPT_BYTES {
+                return Err(NodeError::TxStructure(format!(
+                    "input {i} script too long: {} > {}",
+                    input.script.len(),
+                    fee::MAX_TX_SCRIPT_BYTES
+                )));
+            }
+        }
+
+        // Serialized JSON is the authoritative wire-size bound used for fee
+        // market and block-size calculations.
+        let size = serde_json::to_vec(tx).map_err(NodeError::Serialization)?.len();
+        if size > fee::MAX_TX_SIZE {
+            return Err(NodeError::OversizedTransaction {
+                size,
+                max: fee::MAX_TX_SIZE,
+            });
+        }
+        Ok(size)
+    }
+
+    /// Validate that a block's timestamp is not too far in the future.
+    fn validate_block_timestamp(&self, block: &Block) -> Result<(), NodeError> {
+        if block.header.height < self.config.soft_fork_activation_height {
+            return Ok(());
+        }
+        let network_time = chrono::Utc::now().timestamp() as u64;
+        let max_time = network_time.saturating_add(emission::MAX_FUTURE_BLOCK_OFFSET);
+        if block.header.timestamp > max_time {
+            return Err(NodeError::TimestampDrift {
+                block_timestamp: block.header.timestamp,
+                network_time,
+                max_offset: emission::MAX_FUTURE_BLOCK_OFFSET,
+            });
+        }
+        Ok(())
+    }
+
+    /// Validate that the block's coinbase exactly matches the expected subsidy
+    /// split and canonical recipient addresses.
+    fn validate_coinbase(&self, block: &Block) -> Result<(), NodeError> {
+        if block.header.height == 0 {
+            return Ok(());
+        }
+
+        let Some(coinbase) = block.transactions.first() else {
+            return Err(NodeError::CoinbaseStructure {
+                height: block.header.height,
+                reason: "block has no coinbase transaction".to_string(),
+            });
+        };
+
+        if !coinbase.is_coinbase() {
+            return Err(NodeError::CoinbaseStructure {
+                height: block.header.height,
+                reason: "first transaction is not a coinbase".to_string(),
+            });
+        }
+
+        let expected_subsidy = emission::block_subsidy(block.header.height);
+        let (miner_amt, human_amt, issobella_amt, _) = emission::fee_split(expected_subsidy);
+
+        if block.header.height < self.config.soft_fork_activation_height {
+            // Pre-activation: only the total minted subsidy is enforced.
+            let actual: u64 = coinbase.outputs.iter().map(|o| o.amount.0 as u64).sum();
+            let expected = miner_amt + human_amt + issobella_amt;
+            if actual != expected {
+                return Err(NodeError::CoinbaseStructure {
+                    height: block.header.height,
+                    reason: format!(
+                        "coinbase subsidy mismatch: expected {expected}, got {actual}"
+                    ),
+                });
+            }
+            return Ok(());
+        }
+
+        // Post-activation: enforce exact output count, amounts and addresses.
+        if coinbase.outputs.len() != 3 {
+            return Err(NodeError::CoinbaseStructure {
+                height: block.header.height,
+                reason: format!(
+                    "coinbase must have exactly 3 outputs, got {}",
+                    coinbase.outputs.len()
+                ),
+            });
+        }
+
+        if coinbase.outputs[0].amount.0 != miner_amt as u128 {
+            return Err(NodeError::CoinbaseStructure {
+                height: block.header.height,
+                reason: format!(
+                    "miner output amount {} does not match expected {}",
+                    coinbase.outputs[0].amount.0, miner_amt
+                ),
+            });
+        }
+
+        if coinbase.outputs[1].amount.0 != human_amt as u128
+            || coinbase.outputs[1].address != self.config.human_address
+        {
+            return Err(NodeError::CoinbaseStructure {
+                height: block.header.height,
+                reason: format!(
+                    "humanitarian output must be {} at {}, got {} at {}",
+                    human_amt,
+                    self.config.human_address.encoded,
+                    coinbase.outputs[1].amount.0,
+                    coinbase.outputs[1].address.encoded
+                ),
+            });
+        }
+
+        if coinbase.outputs[2].amount.0 != issobella_amt as u128
+            || coinbase.outputs[2].address != self.config.issobella_address
+        {
+            return Err(NodeError::CoinbaseStructure {
+                height: block.header.height,
+                reason: format!(
+                    "issobella output must be {} at {}, got {} at {}",
+                    issobella_amt,
+                    self.config.issobella_address.encoded,
+                    coinbase.outputs[2].amount.0,
+                    coinbase.outputs[2].address.encoded
+                ),
+            });
+        }
+
+        Ok(())
+    }
+
     /// Block by height.
     pub async fn block_by_height(&self, height: u64) -> Result<Option<Block>, NodeError> {
         Ok(self.storage.get_by_height(height).await?)
@@ -567,12 +740,12 @@ impl Node {
     ///
     /// Excludes outputs already consumed by a mempool transaction so wallets
     /// do not build conflicting transactions while a previous spend is pending.
-    pub async fn get_utxos_for_address(&self, address: &str) -> Vec<(Hash, u32, u64, u64, u64)> {
+    pub async fn get_utxos_for_address(&self, address: &str) -> Vec<(Hash, u32, u64, u64, u64, bool)> {
         let set = self.utxo_set.lock().await;
         let mut utxos = set.get_utxos_for_address(address);
         drop(set);
         let spent = self.mempool.spent_outpoints().await;
-        utxos.retain(|(tx_hash, index, _amount, _height, _timestamp)| {
+        utxos.retain(|(tx_hash, index, _amount, _height, _timestamp, _is_coinbase)| {
             let outpoint = Outpoint::new(*tx_hash, *index);
             !spent.contains(&outpoint)
         });
@@ -581,6 +754,9 @@ impl Node {
 
     /// Submit a V31 UTXO transaction to the mempool.
     pub async fn submit_utxo_transaction(&self, tx: Transaction) -> Result<Hash, NodeError> {
+        // Enforce structural and serialized size limits.
+        Self::validate_tx_size(&tx)?;
+
         // Reject coinbase transactions submitted as user transactions.
         if tx.is_coinbase() {
             return Err(NodeError::Utxo(UtxoError::InputNotFound(Outpoint::new(
@@ -650,18 +826,40 @@ impl Node {
             ],
             memo: format!("coinbase:height={}", next_height).into_bytes(),
         };
+        let coinbase_size = Self::validate_tx_size(&coinbase)?;
 
         // Filter mempool: drop transactions that are no longer valid against the
         // current UTXO set or that conflict with earlier transactions in the
-        // same template.
+        // same template. Respect block count and size caps.
+        let max_user_txs = emission::MAX_BLOCK_TRANSACTIONS.saturating_sub(1);
+        let max_user_bytes = emission::MAX_BLOCK_SIZE_BYTES.saturating_sub(coinbase_size);
+
         let mempool_txs = self.mempool.pending().await;
-        let mut selected = Vec::with_capacity(mempool_txs.len());
+        let mut selected = Vec::with_capacity(mempool_txs.len().min(max_user_txs));
         let mut invalid = Vec::with_capacity(mempool_txs.len());
+        let mut selected_bytes = 0usize;
         let block_timestamp = chrono::Utc::now().timestamp() as u64;
         {
             let set = self.utxo_set.lock().await;
             let mut view = set.clone();
             for tx in mempool_txs {
+                if selected.len() >= max_user_txs {
+                    break;
+                }
+                let tx_size = match Self::validate_tx_size(&tx) {
+                    Ok(s) => s,
+                    Err(e) => {
+                        warn!(%e, tx_hash = %tx.hash().to_hex(), "mempool tx oversized for template");
+                        invalid.push(tx.hash());
+                        continue;
+                    }
+                };
+                if selected_bytes
+                    .checked_add(tx_size)
+                    .is_none_or(|s| s > max_user_bytes)
+                {
+                    break;
+                }
                 if next_height >= self.config.soft_fork_activation_height {
                     if let Err(e) =
                         Self::validate_premine_and_maturity_for_tx(&view, &tx, next_height)
@@ -672,7 +870,10 @@ impl Node {
                     }
                 }
                 match view.apply_transaction(&tx, next_height, block_timestamp) {
-                    Ok(_) => selected.push(tx),
+                    Ok(_) => {
+                        selected_bytes += tx_size;
+                        selected.push(tx);
+                    }
                     Err(e) => {
                         warn!(%e, tx_hash = %tx.hash().to_hex(), "mempool tx invalid for template");
                         invalid.push(tx.hash());
@@ -726,6 +927,8 @@ impl Node {
             .verify_header(&block.header, &tip_header, &target)
             .map_err(NodeError::Consensus)?;
 
+        self.validate_block_timestamp(&block)?;
+
         // Verify merkle root.
         let expected_merkle = merkle_root(&block.transactions);
         if expected_merkle != block.header.merkle_root {
@@ -737,20 +940,31 @@ impl Node {
             return Err(NodeError::Consensus(ConsensusError::PreviousHashMismatch));
         }
 
-        // Verify coinbase structure for non-genesis blocks.
-        if block.header.height > 0 {
-            let Some(coinbase) = block.transactions.first() else {
-                return Err(NodeError::Consensus(ConsensusError::TargetNotMet));
-            };
-            let expected_subsidy = block_subsidy(block.header.height);
-            let actual_subsidy: u64 = coinbase.outputs.iter().map(|o| o.amount.0 as u64).sum();
-            let (miner, human, issobella, _burn) = fee_split(expected_subsidy);
-            let expected = miner + human + issobella;
-            if actual_subsidy != expected {
-                warn!(expected, actual_subsidy, "coinbase subsidy mismatch");
-                return Err(NodeError::Consensus(ConsensusError::TargetNotMet));
+        // Enforce transaction count and block size limits.
+        if block.transactions.len() > emission::MAX_BLOCK_TRANSACTIONS {
+            return Err(NodeError::TooManyTransactions {
+                count: block.transactions.len(),
+                max: emission::MAX_BLOCK_TRANSACTIONS,
+            });
+        }
+        let mut block_size = 0usize;
+        for tx in &block.transactions {
+            block_size = block_size
+                .checked_add(Self::validate_tx_size(tx)?)
+                .ok_or_else(|| NodeError::OversizedBlock {
+                    size: usize::MAX,
+                    max: emission::MAX_BLOCK_SIZE_BYTES,
+                })?;
+            if block_size > emission::MAX_BLOCK_SIZE_BYTES {
+                return Err(NodeError::OversizedBlock {
+                    size: block_size,
+                    max: emission::MAX_BLOCK_SIZE_BYTES,
+                });
             }
         }
+
+        // Verify coinbase structure for non-genesis blocks.
+        self.validate_coinbase(&block)?;
 
         // Validate and apply the block's transactions to the V31 UTXO set.
         {
@@ -916,6 +1130,8 @@ mod tests {
             output_index: 0,
             amount: coinbase.outputs[0].amount.0 as u64,
             address: miner_addr.clone(),
+            block_height: 1,
+            is_coinbase: true,
         };
         let (_recipient_sk, recipient_vk) = generate_keypair();
         let recipient_addr = derive_address(recipient_vk.as_bytes());
@@ -983,6 +1199,8 @@ mod tests {
             output_index: 0,
             amount: coinbase.outputs[0].amount.0 as u64,
             address: miner_addr.clone(),
+            block_height: 1,
+            is_coinbase: true,
         };
         let (_recipient_sk, recipient_vk) = generate_keypair();
         let recipient_addr = derive_address(recipient_vk.as_bytes());
