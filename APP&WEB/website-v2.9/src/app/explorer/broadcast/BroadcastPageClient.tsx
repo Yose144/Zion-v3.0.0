@@ -25,7 +25,7 @@ const ExplorerBroadcastBroadcastPageClientCopy = {
   broadcast: { cs: `Broadcast`, en: `Broadcast` },
   submit: { cs: `Odeslat`, en: `Submit` },
   broadcastTransaction: { cs: `Broadcast transakce`, en: `Broadcast Transaction` },
-  submitASignedTransactionToTheZ: { cs: `Odešlete podepsanou transakci do ZION sítě. Podporuje account-model JSON i raw hex formát.`, en: `Submit a signed transaction to the ZION network. Supports account-model JSON and raw hex format.` },
+  submitASignedTransactionToTheZ: { cs: `Odešlete podepsanou transakci do ZION sítě. Podporuje V31 native UTXO JSON, account-model JSON i raw hex formát.`, en: `Submit a signed transaction to the ZION network. Supports V31 native UTXO JSON, account-model JSON, and raw hex format.` },
   transactionsMustBeSignedBefore: { cs: `Transakce musí být podepsána před odesláním. Tento nástroj nepodepisuje — pouze odesílá již podepsaná data do sítě.`, en: `Transactions must be signed before broadcasting. This tool does not sign — it only submits already-signed data to the network.` },
   format: { cs: `Formát:`, en: `Format:` },
   model: { cs: `Model:`, en: `Model:` },
@@ -40,8 +40,8 @@ const ExplorerBroadcastBroadcastPageClientCopy = {
   error: { cs: `Chyba`, en: `Error` },
   howToBroadcast: { cs: `Jak broadcastovat`, en: `How to broadcast` },
   accountModelSignTheTransaction: { cs: `Account-model: podepište transakci pomocí wallet SDK, vložte JSON s from/to/amount/fee/nonce/public_key/signature.`, en: `Account-model: sign the transaction using the wallet SDK, paste JSON with from/to/amount/fee/nonce/public_key/signature.` },
-  utxoModelUseTheSubmittransacti: { cs: `UTXO model: použijte submitTransaction RPC formát s inputs/outputs.`, en: `UTXO model: use the submitTransaction RPC format with inputs/outputs.` },
-  rawHexForPreSignedBinaryTransa: { cs: `Raw hex: pro pre-signed binární transakce v hex formátu.`, en: `Raw hex: for pre-signed binary transactions in hex format.` },
+  utxoModelUseTheSubmittransacti: { cs: `V31 native UTXO: vložte JSON s version, inputs (previous_output jako 32 bajtů, index, script), outputs (amount jako desetinný řetězec, address {chain, bytes, encoded}) a memo.`, en: `V31 native UTXO: paste JSON with version, inputs (previous_output as 32 bytes, index, script), outputs (amount as decimal string, address {chain, bytes, encoded}), and memo.` },
+  rawHexForPreSignedBinaryTransa: { cs: `Raw hex: vložte pre-signed binární transakci v hex formátu (0x prefix bude odstraněn).`, en: `Raw hex: paste a pre-signed binary transaction in hex format (0x prefix is allowed).` },
   afterSuccessfulBroadcastYouRec: { cs: `Po úspěšném broadcastu dostanete tx_id pro sledování v průzkumníku.`, en: `After successful broadcast you receive a tx_id to track in the explorer.` },
 };
 
@@ -55,7 +55,7 @@ export default function BroadcastPageClient() {
   const cs = lang === "cs";
 
   const [mode, setMode] = useState<InputMode>("json");
-  const [txModel, setTxModel] = useState<TxModel>("account");
+  const [txModel, setTxModel] = useState<TxModel>("utxo");
   const [payload, setPayload] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BroadcastResult | null>(null);
@@ -98,26 +98,56 @@ export default function BroadcastPageClient() {
     }
   };
 
-  const examples: Record<InputMode, string> = {
-    json: JSON.stringify(
+  const accountExample = {
+    tx_id: "0000000000000000000000000000000000000000000000000000000000000000",
+    from: "zion1example0000000000000000000000000000",
+    to: "zion1recipient000000000000000000000000000",
+    amount_zion: "100000000",
+    fee_zion: 1000,
+    nonce: 1,
+    public_key: "32_byte_ed25519_public_key_hex",
+    signature: "64_byte_ed25519_signature_hex",
+    memo: "",
+  };
+
+  const utxoExample = {
+    version: 1,
+    inputs: [
       {
-        from: "zion1example0000000000000000000000000000",
-        to: "zion1recipient000000000000000000000000000",
-        amount: 100,
-        fee: 0.001,
-        nonce: 1,
-        public_key: "ed25519_public_key_hex",
-        signature: "ed25519_signature_hex",
-        memo: "",
+        previous_output: Array.from({ length: 32 }, (_, i) => i),
+        index: 0,
+        script: Array.from({ length: 96 }, (_, i) => i % 256),
       },
-      null,
-      2,
-    ),
-    hex: "0x...raw_transaction_hex...",
+    ],
+    outputs: [
+      {
+        amount: "100000",
+        address: {
+          chain: "zion_l1",
+          bytes: [],
+          encoded: "zion1recipient000000000000000000000000000",
+        },
+      },
+      {
+        amount: "50000",
+        address: {
+          chain: "zion_l1",
+          bytes: [],
+          encoded: "zion1change000000000000000000000000000000",
+        },
+      },
+    ],
+    memo: [],
+  };
+
+  const getExample = (): string => {
+    if (mode === "hex") return "020000...";
+    if (txModel === "utxo") return JSON.stringify(utxoExample, null, 2);
+    return JSON.stringify(accountExample, null, 2);
   };
 
   const loadExample = () => {
-    setPayload(examples[mode]);
+    setPayload(getExample());
   };
 
   /* ── render ──────────────────────────────────────────────── */
@@ -246,9 +276,11 @@ export default function BroadcastPageClient() {
                 value={payload}
                 onChange={(e) => setPayload(e.target.value)}
                 placeholder={
-                  mode === "json"
-                    ? '{\n  "from": "zion1...",\n  "to": "zion1...",\n  "amount": 100,\n  ...\n}'
-                    : "0x...raw_transaction_hex..."
+                  mode === "hex"
+                    ? "020000..."
+                    : txModel === "utxo"
+                      ? '{\n  "version": 1,\n  "inputs": [\n    {\n      "previous_output": [32 bytes],\n      "index": 0,\n      "script": [96 bytes: 64 sig + 32 pubkey]\n    }\n  ],\n  "outputs": [\n    {\n      "amount": "100000",\n      "address": {\n        "chain": "zion_l1",\n        "bytes": [],\n        "encoded": "zion1..."\n      }\n    }\n  ],\n  "memo": []\n}'
+                      : '{\n  "from": "zion1...",\n  "to": "zion1...",\n  "amount": 100,\n  ...\n}'
                 }
                 rows={12}
                 className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm font-mono text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-zion-cyan/40 focus:ring-1 focus:ring-zion-cyan/20 transition resize-y"
@@ -316,8 +348,11 @@ export default function BroadcastPageClient() {
                       : ExplorerBroadcastBroadcastPageClientCopy.transactionRejected[cs ? 'cs' : 'en']}
                   </h2>
                   <p className="text-sm text-gray-400">
-                    {result.method && (
-                      <span className="font-mono text-white/50">via {result.method}</span>
+                    {(result.method || result.model) && (
+                      <span className="font-mono text-white/50">
+                        via {result.method ?? "broadcast"}
+                        {result.model ? ` (${result.model})` : ""}
+                      </span>
                     )}
                   </p>
                 </div>

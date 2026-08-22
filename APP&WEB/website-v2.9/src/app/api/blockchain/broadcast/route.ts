@@ -2,21 +2,44 @@
  * ZION Explorer — Broadcast Transaction API (V4)
  *
  * Submits a signed transaction to the ZION daemon via RPC.
- * Supports both account-model and UTXO-model transactions.
+ * Supports V31 native UTXO JSON, legacy account-model JSON, and raw hex.
  *
  * POST body (JSON):
  *   {
  *     "transaction": { ... },          // signed transaction object
- *     "model": "account" | "utxo"      // optional, defaults to auto-detect
+ *     "model": "account" | "utxo"      // optional; auto-detected from shape
+ *   }
+ *
+ * V31 native UTXO transaction format:
+ *   {
+ *     "version": 1,
+ *     "inputs": [
+ *       {
+ *         "previous_output": [0,1,...],   // 32 bytes of the funding tx hash
+ *         "index": 0,
+ *         "script": [...]                 // 64-byte signature + 32-byte public key
+ *       }
+ *     ],
+ *     "outputs": [
+ *       {
+ *         "amount": "100000",             // u128 as decimal string (flowers)
+ *         "address": {
+ *           "chain": "zion_l1",
+ *           "bytes": [],
+ *           "encoded": "zion1..."
+ *         }
+ *       }
+ *     ],
+ *     "memo": []
  *   }
  *
  * Or raw hex:
  *   {
- *     "raw": "020000...",               // raw transaction hex
+ *     "raw": "020000..."                // raw transaction hex (0x prefix is stripped)
  *   }
  *
  * Response:
- *   { accepted: boolean, tx_id: string }
+ *   { accepted: boolean, tx_id: string, method: string, model?: string }
  *   or { error: string }
  */
 
@@ -29,6 +52,51 @@ interface BroadcastBody {
   transaction?: unknown;
   raw?: string;
   model?: 'account' | 'utxo';
+}
+
+type BroadcastMethod = 'submitAccountTransaction' | 'submitUtxoTransaction' | 'sendRawTransaction';
+
+interface RpcResult {
+  accepted: boolean;
+  tx_id?: string;
+  model?: string;
+}
+
+function strip0x(hex: string): string {
+  return hex.replace(/^0x/i, '');
+}
+
+function isHex(s: string): boolean {
+  return /^[0-9a-fA-F]+$/.test(s);
+}
+
+function detectModel(tx: unknown): 'account' | 'utxo' {
+  if (typeof tx === 'object' && tx !== null) {
+    const obj = tx as Record<string, unknown>;
+    if (
+      typeof obj.version === 'number' &&
+      Array.isArray(obj.inputs) &&
+      Array.isArray(obj.outputs)
+    ) {
+      return 'utxo';
+    }
+    if (
+      typeof obj.from === 'string' &&
+      typeof obj.to === 'string' &&
+      (typeof obj.signature === 'string' || typeof obj.public_key === 'string')
+    ) {
+      return 'account';
+    }
+  }
+  // V31-first: default to UTXO when the shape is ambiguous.
+  return 'utxo';
+}
+
+function resultModel(method: BroadcastMethod, rpcModel?: string): string {
+  if (rpcModel) return rpcModel;
+  if (method === 'submitUtxoTransaction') return 'v31-native';
+  if (method === 'submitAccountTransaction') return 'account';
+  return 'raw';
 }
 
 export async function POST(request: NextRequest) {
@@ -48,20 +116,19 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Determine submission method based on model
-  // - submitAccountTransaction: for account-model TXs (from/to/amount/nonce/signature)
-  // - submitUtxoTransaction: for UTXO-model TXs (vin/vout)
-  // - sendRawTransaction: for raw hex
-  let method: 'submitAccountTransaction' | 'submitUtxoTransaction' | 'sendRawTransaction';
+  let method: BroadcastMethod;
   let payload: unknown;
 
   if (body.raw) {
-    // Raw hex submission
-    if (!/^[0-9a-fA-F]+$/.test(body.raw)) {
-      return NextResponse.json({ error: 'Raw transaction must be valid hex string' }, { status: 400 });
+    const hex = strip0x(body.raw);
+    if (!isHex(hex)) {
+      return NextResponse.json(
+        { error: 'Raw transaction must be a valid hex string (0x prefix is allowed but will be stripped)' },
+        { status: 400 }
+      );
     }
     method = 'sendRawTransaction';
-    payload = body.raw;
+    payload = hex;
   } else if (body.model === 'account') {
     method = 'submitAccountTransaction';
     payload = body.transaction;
@@ -69,44 +136,24 @@ export async function POST(request: NextRequest) {
     method = 'submitUtxoTransaction';
     payload = body.transaction;
   } else {
-    // Auto-detect: try account first, fall back to UTXO if the node rejects it
-    try {
-      const result = await rpc.submitSignedTransaction(body.transaction, 'submitAccountTransaction');
-      return NextResponse.json({
-        accepted: result.accepted,
-        tx_id: result.tx_id ?? '',
-        method: 'submitAccountTransaction',
-      });
-    } catch (accountErr) {
-      // Fall back to UTXO submission
-      try {
-        const result = await rpc.submitSignedTransaction(body.transaction, 'submitUtxoTransaction');
-        return NextResponse.json({
-          accepted: result.accepted,
-          tx_id: result.tx_id ?? '',
-          method: 'submitUtxoTransaction',
-        });
-      } catch (utxoErr) {
-        const msg = utxoErr instanceof Error ? utxoErr.message : 'Unknown error';
-        return NextResponse.json(
-          { error: `Transaction rejected by both account and UTXO submission: ${msg}` },
-          { status: 400 }
-        );
-      }
-    }
+    // Auto-detect: V31 native UTXO uses { version, inputs, outputs, memo }.
+    method = detectModel(body.transaction) === 'account'
+      ? 'submitAccountTransaction'
+      : 'submitUtxoTransaction';
+    payload = body.transaction;
   }
 
-  // Direct submission for explicit model / raw
   try {
-    const result = await rpc.submitSignedTransaction(payload, method);
+    const result = (await rpc.submitSignedTransaction(payload, method)) as RpcResult;
     return NextResponse.json({
       accepted: result.accepted,
       tx_id: result.tx_id ?? '',
       method,
+      model: resultModel(method, result.model),
     });
   } catch (submitErr) {
     const msg = submitErr instanceof Error ? submitErr.message : 'Unknown error';
-    // Node rejection (validation/parse) → 400; transport failure (timeout/conn) → 503
+    // Node rejection (validation/parse) -> 400; transport failure (timeout/conn) -> 503
     const isClientError = !/timeout|ECONNREFUSED|ECONNRESET|connect|network/i.test(msg);
     return NextResponse.json(
       { error: msg },

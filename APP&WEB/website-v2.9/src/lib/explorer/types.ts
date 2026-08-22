@@ -359,6 +359,7 @@ export interface BroadcastResult {
   accepted: boolean;
   tx_id: string;
   method?: string;
+  model?: string;
   error?: string;
 }
 
