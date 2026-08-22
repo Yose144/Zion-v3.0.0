@@ -384,7 +384,7 @@ impl MinerRuntime {
             .as_ref()
             .ok_or_else(|| MinerError::Consensus("no node_rpc_url configured".to_string()))?;
 
-        let template = fetch_block_template(rpc_url).await?;
+        let template = fetch_block_template(rpc_url, self.config.reward_address.as_str()).await?;
         let mut header: BlockHeader = serde_json::from_str(&template.header_json)
             .map_err(|e| MinerError::Consensus(format!("template parse: {e}")))?;
 
@@ -2238,7 +2238,7 @@ struct NodeTemplate {
 }
 
 /// Call `getBlockTemplate` on the node and parse the response.
-async fn fetch_block_template(rpc_url: &str) -> Result<NodeTemplate, MinerError> {
+async fn fetch_block_template(rpc_url: &str, reward_address: &str) -> Result<NodeTemplate, MinerError> {
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(15))
         .build()
@@ -2248,7 +2248,7 @@ async fn fetch_block_template(rpc_url: &str) -> Result<NodeTemplate, MinerError>
         "jsonrpc": "2.0",
         "id": 1,
         "method": "getBlockTemplate",
-        "params": { "miner": "zion1miner" }
+        "params": { "miner": reward_address }
     });
 
     let resp: Value = client
