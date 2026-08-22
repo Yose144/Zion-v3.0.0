@@ -30,13 +30,43 @@ function tcpRpcCall(method, params) {
     const payload = JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }) + '\n';
     const sock = new net.Socket();
     let resp = '';
+    let settled = false;
+
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      sock.destroy();
+      const trimmed = resp.trim();
+      if (!trimmed) {
+        resolve({ error: 'Empty RPC response' });
+        return;
+      }
+      try {
+        const lines = trimmed.split('\n');
+        for (const line of lines) {
+          const json = JSON.parse(line);
+          if (json.id === 1 || json.id === 'zion-desktop-agent') {
+            if (json.error) { resolve({ error: json.error.message || JSON.stringify(json.error) }); return; }
+            resolve(json);
+            return;
+          }
+        }
+        resolve(lines[0] ? JSON.parse(lines[0]) : { raw: trimmed });
+      } catch {
+        resolve({ raw: trimmed });
+      }
+    };
+
     sock.connect(RPC_PORT, RPC_HOST, () => sock.write(payload));
     sock.on('data', (c) => (resp += c.toString()));
-    sock.on('end', () => {
-      try { resolve(JSON.parse(resp)); } catch { resolve({ raw: resp }); }
+    sock.on('end', finish);
+    sock.on('close', finish);
+    sock.on('error', (err) => {
+      if (!settled) { settled = true; sock.destroy(); reject(err); }
     });
-    sock.on('error', reject);
-    setTimeout(() => sock.destroy(), 8000);
+    setTimeout(() => {
+      if (!settled) finish();
+    }, 5000);
   });
 }
 
@@ -89,15 +119,15 @@ async function main() {
     console.log('  RPC unreachable or error');
   }
 
-  // 6. Build signed UTXO transaction
-  console.log('\n[6/9] Building signed UTXO transaction (v2 hash)...');
+  // 6. Build signed V31 native UTXO transaction
+  console.log('\n[6/9] Building signed V31 native UTXO transaction...');
   const fakeUtxo = {
     tx_hash: 'aabbccdd11223344556677889900aabbccdd11223344556677889900aabbccdd',
     output_index: 0,
     amount: 20000000000,
     address: wallet.address
   };
-  const utxoTx = UtxoBuilder.buildUtxoTransaction({
+  const utxoResult = UtxoBuilder.buildUtxoTransaction({
     fromAddress: wallet.address,
     toAddress: wallet.address,
     amountZion: 0.001,
@@ -105,19 +135,24 @@ async function main() {
     privateKeyDer: Buffer.from(wallet.privateKey, 'hex'),
     memo: 'e2e test'
   });
-  console.log('  tx.version:', utxoTx.version, '(expected: 2)');
-  console.log('  tx.id:', UtxoBuilder.bytesToHex(utxoTx.id));
+  const utxoTx = utxoResult.transaction;
+  console.log('  tx.version:', utxoTx.version, '(expected: 1)');
+  console.log('  tx_id:', utxoResult.tx_id);
   console.log('  inputs:', utxoTx.inputs.length, 'outputs:', utxoTx.outputs.length);
 
-  // 7. Verify UTXO tx signature
-  console.log('\n[7/9] Verifying UTXO Ed25519 signature...');
+  // 7. Verify V31 native UTXO tx signature
+  console.log('\n[7/9] Verifying V31 native UTXO Ed25519 signature...');
   const ed = require('@noble/ed25519');
   const { sha512 } = require('@noble/hashes/sha512');
-  ed.hashes.sha512 = sha512;
+  ed.etc.sha512Sync = (...m) => sha512(ed.etc.concatBytes(...m));
+  const script = Buffer.from(utxoTx.inputs[0].script);
+  const signature = script.slice(0, script.length - 32);
+  const publicKey = script.slice(script.length - 32);
+  const signingHash = UtxoBuilder.calculateSigningHash(utxoTx);
   const valid = ed.verify(
-    new Uint8Array(utxoTx.inputs[0].signature),
-    new Uint8Array(utxoTx.id),
-    new Uint8Array(utxoTx.inputs[0].public_key)
+    new Uint8Array(signature),
+    new Uint8Array(signingHash),
+    new Uint8Array(publicKey)
   );
   if (!valid) throw new Error('UTXO signature verification failed');
   console.log('  signature valid: OK');

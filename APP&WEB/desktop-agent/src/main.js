@@ -5252,9 +5252,9 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
           privateKeyDer,
           memo: memo || undefined
         });
-        txPayload = signedTx;
-        txIdStr = UtxoBuilder.bytesToHex(signedTx.id);
-        console.log('[MAIN wallet-send-transaction] UTXO tx built, txId:', txIdStr);
+        txPayload = signedTx.transaction;
+        txIdStr = signedTx.tx_id;
+        console.log('[MAIN wallet-send-transaction] V31 native UTXO tx built, txId:', txIdStr);
       } catch (buildErr) {
         console.error('[MAIN wallet-send-transaction] Build failed:', buildErr);
         return { success: false, error: buildErr.message };
