@@ -142,7 +142,11 @@ jobs:
           INCLUDE: ${{ env.INCLUDE }}
         run: |
           node scripts/prepare-rust-miner.js --features "public_build,auxpow,gpu-opencl,gpu-cuda,native-all"
-          npx electron-builder --win --x64 --publish never
+          # NOTE: `npx electron-builder` breaks on Windows runners because the checkout
+          # path contains "APP&WEB" — npx shells out via cmd.exe and the unquoted "&"
+          # splits the command. Invoke the local module entry point via node directly
+          # to bypass npx's shell-based bin resolution.
+          node .\node_modules\electron-builder\cli.js --win --x64 --publish never
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
