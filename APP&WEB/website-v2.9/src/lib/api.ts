@@ -143,12 +143,24 @@ export async function apiClient<T = any>(
 
       if (!response.ok) {
         const isRetryable = response.status >= 500 || response.status === 408 || response.status === 429;
+        let bodyError: string | undefined;
+        try {
+          const body = (await response.json()) as { error?: string } | undefined;
+          if (body && typeof body === 'object' && typeof body.error === 'string') {
+            bodyError = body.error;
+          }
+        } catch {
+          // ignore parse errors; use status text fallback below
+        }
+        const errorMessage = bodyError
+          ? `API error: ${response.status}: ${bodyError}`
+          : `API error: ${response.status} ${response.statusText}`;
         if (isRetryable && attempt < maxRetries) {
-          lastError = new Error(`API error: ${response.status} ${response.statusText}`);
+          lastError = new Error(errorMessage);
           await delay(baseDelay * Math.pow(2, attempt));
           continue;
         }
-        throw new Error(`API error: ${response.status} ${response.statusText}`);
+        throw new Error(errorMessage);
       }
 
       return await response.json();
