@@ -693,11 +693,12 @@ impl AuxPowClient {
     }
 
     async fn cryptonote_login(&self, payout_wallet: &str) -> Result<()> {
+        let login = format!("{}.{}", payout_wallet, self.config.worker_name);
         let req = json!({
             "id": 1,
             "method": "login",
             "params": {
-                "login": payout_wallet,
+                "login": login,
                 "pass": self.config.password,
                 "agent": "zion-miner/3.1.0"
             }
@@ -727,10 +728,17 @@ impl AuxPowClient {
         let height = job.get("height").and_then(Value::as_u64);
 
         let header_bytes = hex::decode(blob_hex).unwrap_or_default();
-        let target_bytes = hasher::parse_target_hex(target_hex).unwrap_or([0xFF; 32]);
+        let target_bytes = hasher::parse_cryptonote_target(target_hex)
+            .or_else(|| hasher::parse_target_hex(target_hex))
+            .unwrap_or([0xFF; 32]);
+
+        let max_target = hasher::algorithm_max_target(&self.config.algorithm);
+        let difficulty = hasher::target_to_difficulty_with_max(&target_bytes, &max_target);
+        *self.current_difficulty.lock().await = difficulty;
+        *self.current_target_bytes.lock().await = Some(target_bytes);
 
         let ext_job = ExternalJob {
-            job_id,
+            job_id: job_id.clone(),
             header_hex: blob_hex.to_string(),
             target_hex: target_hex.to_string(),
             header_bytes,
@@ -741,6 +749,8 @@ impl AuxPowClient {
             ..Default::default()
         };
         *self.current_job.lock().await = Some(ext_job);
+        *self.latest_job_id.lock().await = Some(job_id);
+        *self.latest_job_time.lock().await = Some(Instant::now());
         self.job_notify.notify_waiters();
     }
 
@@ -855,7 +865,11 @@ impl AuxPowClient {
                 }
             }
             "eth_getWork" | "job" => {
-                if let Some(job) = self.parse_getwork_response(msg).await {
+                if self.protocol == StratumProtocol::CryptonoteStratum {
+                    if let Some(params) = msg.get("params").filter(|v| v.is_object()) {
+                        self.parse_cryptonote_job(params).await;
+                    }
+                } else if let Some(job) = self.parse_getwork_response(msg).await {
                     *self.current_job.lock().await = Some(job);
                     self.job_notify.notify_waiters();
                 }
@@ -1229,8 +1243,8 @@ impl AuxPowClient {
                     "params": {
                         "id": session_id.unwrap_or_default(),
                         "job_id": job_id,
-                        "nonce": nonce_hex(nonce),
-                        "result": mix_hex
+                        "nonce": cryptonote_nonce_hex(nonce),
+                        "result": cryptonote_result_hex(&mix_hex)
                     }
                 })
             }
@@ -1324,6 +1338,19 @@ impl AuxPowClient {
 
 fn nonce_hex(nonce: u64) -> String {
     format!("0x{:016x}", nonce)
+}
+
+/// CryptonoteStratum (XMR) 32-bit nonce as an 8-char lowercase hex string.
+fn cryptonote_nonce_hex(nonce: u64) -> String {
+    format!("{:08x}", (nonce & 0xFFFFFFFF) as u32)
+}
+
+/// CryptonoteStratum (XMR) PoW result: 64-char lowercase hex string, no 0x prefix.
+fn cryptonote_result_hex(hex: &str) -> String {
+    hex.trim()
+        .trim_start_matches("0x")
+        .trim_start_matches("0X")
+        .to_lowercase()
 }
 
 fn is_authorize_ok(value: &Value) -> bool {
@@ -2354,5 +2381,22 @@ mod tests {
         .unwrap();
 
         server.abort();
+    }
+
+    #[test]
+    fn cryptonote_nonce_and_result_format() {
+        assert_eq!(cryptonote_nonce_hex(0x1234abcd), "1234abcd");
+        assert_eq!(cryptonote_nonce_hex(0x1), "00000001");
+        // Nonce is masked to 32 bits.
+        assert_eq!(cryptonote_nonce_hex(0x1_1234abcd), "1234abcd");
+
+        assert_eq!(
+            cryptonote_result_hex("0xABCD1234"),
+            "abcd1234"
+        );
+        assert_eq!(
+            cryptonote_result_hex("  0xABCD1234  "),
+            "abcd1234"
+        );
     }
 }
