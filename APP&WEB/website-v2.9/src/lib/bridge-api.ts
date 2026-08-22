@@ -22,6 +22,12 @@ export interface BridgeStatus {
   bridge_e2e_burn_tx?: string;
   bridge_e2e_unlock_block?: number;
   validator_threshold?: string;
+  validator_count?: number;
+  validators?: string[];
+  chains_active?: number;
+  chains?: string[];
+  wzion_address?: string;
+  bridge_contract?: string;
   fetched_at: number;
 }
 

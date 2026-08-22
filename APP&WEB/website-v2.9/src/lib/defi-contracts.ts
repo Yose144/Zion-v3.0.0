@@ -132,6 +132,15 @@ export const GOVERNANCE_DEPLOYED = (CONTRACTS.ZIONGovernance as string) !== '0x0
 export const DEPLOYER = '0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186';
 export const VALIDATOR2 = '0x8cc6F931edDAf5F14D0071727Ed1640752B5c787';
 
+/** Base Mainnet ZIONBridge guardian validators (5/5 multisig) */
+export const BRIDGE_VALIDATORS = [
+  '0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186',
+  '0x24d986841E56e5571489B25951eE8C1Ae761FA82',
+  '0x665c55eDCF25c2c5A1dfF1B20eE950cBDC58d3d0',
+  '0x8E644b3E9FaBf52eE321DC5B3D5AA06d6e3E66C6',
+  '0x7e0D2eD71d78B9CFB5034A83333e82e304bc4CB2',
+] as const;
+
 // ─── Seed price constants ($0.0002 / ZION) ───────────────────────────────────
 //
 // These are used as fallback values while the Uni V3 pool has no liquidity yet,

@@ -195,6 +195,7 @@ def main():
     parser.add_argument("--batch-delay", type=float, default=1.0, help="Delay between batches (seconds)")
     parser.add_argument("--hold-time", type=float, default=10.0, help="How long to hold connections (seconds)")
     parser.add_argument("--shares", type=int, default=0, help="Number of fake shares to submit (total)")
+    parser.add_argument("--algo", default="ekam_deeksha", help="Mining algorithm to report in hello (default: ekam_deeksha)")
     parser.add_argument("--metrics-host", default="62.171.141.136", help="Prometheus metrics host")
     parser.add_argument("--metrics-port", type=int, default=8455, help="Prometheus metrics port")
     parser.add_argument("--output", default=None, help="Output report file (default: stdout)")
@@ -238,7 +239,7 @@ def main():
 
         for j in range(batch_start, batch_end):
             miner_id = f"stress-miner-{j:05d}"
-            t = threading.Thread(target=simulate_miner, args=(args.host, args.port, miner_id), daemon=True)
+            t = threading.Thread(target=simulate_miner, args=(args.host, args.port, miner_id, args.algo), daemon=True)
             threads.append(t)
 
         for t in threads:
