@@ -60,6 +60,7 @@ OPERATOR_IPS=(
   109.81.83.205
   109.81.81.86
   109.81.83.81     # added 2026-08-05 during Phase D E2E / Playwright work
+  109.81.24.189    # Devin session 2026-08-22 (dashboard/nginx incident)
   46.135.81.225     # Devin session 2026-08-11
   2a00:11b1:10e2:af49:b90b:20ed:4eee:b48b/128  # Devin session IPv6 2026-08-11
   2a02:c207:2342:5821::1/64
