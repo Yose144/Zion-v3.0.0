@@ -18,8 +18,13 @@ const Features = dynamicImport(() => import('@/components/Features'));
 const RoadmapPulse = dynamicImport(() => import('@/components/RoadmapPulse'));
 const DocsRail = dynamicImport(() => import('@/components/DocsRail'));
 
-// Force dynamic rendering so deploy changes appear immediately
-export const dynamic = 'force-dynamic';
+// ISR: regenerate at most once every 60s. All visible content is either
+// static (hero/news copy) or fetched client-side by 'use client' components
+// (LiveDashboard, WebTerminal, etc.), so the server-rendered shell doesn't
+// need to be re-rendered on every request. Deploys restart the whole
+// zion-website process, which clears this cache anyway, so changes still
+// show up immediately after a deploy.
+export const revalidate = 60;
 
 export default function Home() {
   return (

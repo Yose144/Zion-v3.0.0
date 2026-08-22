@@ -30,8 +30,13 @@ export const CORE = {
   /** Dashboard Python Flask — runs locally on Edge (port 8766) */
   dashboard: `http://127.0.0.1:8766`,
 
-  /** ZION Node RPC (raw TCP JSON-RPC) — runs locally on Edge */
-  nodeRpc: `127.0.0.1:8443`,
+  /**
+   * ZION Node RPC (raw TCP JSON-RPC) — node itself only listens on
+   * 127.0.0.1:9445; port 8443 is the public nginx TCP stream proxy in
+   * front of it. Prefer connecting directly to 9445 for local/server-side
+   * calls running on Edge to skip the extra proxy hop.
+   */
+  nodeRpc: `127.0.0.1:9445`,
 
   /** Pool stratum — runs locally on Edge */
   poolStratum: `127.0.0.1:8444`,

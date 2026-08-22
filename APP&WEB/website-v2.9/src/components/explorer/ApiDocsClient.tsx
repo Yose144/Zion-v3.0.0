@@ -25,7 +25,7 @@ const ApiDocsCopy = {
   copy: { cs: `Kopirovat`, en: `Copy` },
   rateLimiting: { cs: `Rate Limiting:`, en: `Rate Limiting:` },
   noRateLimitFairUse: { cs: `Zadny rate limit (fair use)`, en: `No rate limit (fair use)` },
-  zionTerranovaV306ApiDocumentat: { cs: `ZION TerraNova v3.0.6 · API dokumentace · Vsechny endpointy vraci JSON`, en: `ZION TerraNova v3.0.6 · API Documentation · All endpoints return JSON` },
+  zionTerranovaV306ApiDocumentat: { cs: `ZION TerraNova v3.2.0 · API dokumentace · Vsechny endpointy vraci JSON`, en: `ZION TerraNova v3.2.0 · API Documentation · All endpoints return JSON` },
 };
 
 /* ── types ───────────────────────────────────────────────────── */
@@ -512,7 +512,7 @@ export default function ApiDocsClient() {
               <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">{ApiDocsCopy.zionBlockchainApi[cs ? 'cs' : 'en']}</h1>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-zion-purple/15 text-zion-purple border border-zion-purple/30">
-                  v3.0.6
+                  v3.2.0
                 </span>
               </div>
               <p className="text-sm text-white/40 mt-1">{ApiDocsCopy.jsonEndpointsForIntegrationAnd[cs ? 'cs' : 'en']}</p>
