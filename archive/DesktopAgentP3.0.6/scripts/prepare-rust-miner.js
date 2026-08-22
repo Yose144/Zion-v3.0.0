@@ -17,9 +17,8 @@
     - zion                               (unified CLI — wallet, send, balance, etc.)
 
   Platform-aware GPU features:
-    macOS (arm64)  -> --features gpu-metal (via `full` alias)
-    macOS (x86_64) -> --features gpu-opencl (via `full` alias)
-    Linux/Windows  -> --features gpu-opencl,gpu-cuda (via `full` alias)
+    macOS (arm64/x86_64) -> --features gpu-opencl,gpu-metal,native-all
+    Linux/Windows        -> --features gpu-opencl,(gpu-cuda when NVIDIA/NVRTC),native-all
 
   Usage:
     node scripts/prepare-rust-miner.js [--no-build] [--features <f>] [--require]
@@ -72,28 +71,21 @@ function copyIfExists(src, dst) {
   return true;
 }
 
-function windowsMinerFeatures() {
-  // Full native stack for Windows — all algorithms including RandomX (XMR)
-  // and GhostRider (RTM).  The previous command-line length limit issue was
-  // resolved by using the `full` feature alias which Cargo expands server-side.
-  return 'full';
-}
-
 function detectPlatformFeatures() {
   const platform = process.platform;
   const arch = os.arch();
 
-  // V31 `full` feature = gpu-opencl + gpu-cuda + gpu-metal + native-all.
-  // This produces a single unified miner binary that can mine any coin by
-  // just changing --pool / --wallet / --gpu parameters.
-  //
+  // Native algorithm acceleration is always included for public bundles so a
+  // single binary can switch coins by changing --pool / --wallet / --algorithm.
+  const nativeFeatures = 'native-all';
+
   // IMPORTANT: gpu-cuda pulls in cudarc which tries to dlopen libcuda at
   // startup. On macOS there is no CUDA driver, so including gpu-cuda causes
-  // an immediate panic. Therefore on macOS we use gpu-opencl + gpu-metal
-  // + native-all (no gpu-cuda). On Linux/Windows we use the full alias
-  // (gpu-cuda compiles but is a no-op without NVIDIA hardware at runtime).
+  // an immediate panic. The gpu-metal crate is Apple-only, so including it on
+  // Linux/Windows causes a build failure. We therefore build per-platform
+  // feature sets instead of using the convenience `full` alias.
   if (platform === 'darwin') {
-    const macFeatures = 'gpu-opencl,gpu-metal,native-all';
+    const macFeatures = `gpu-opencl,gpu-metal,${nativeFeatures}`;
     if (arch === 'arm64') {
       console.log('[prepare-v31] Apple Silicon detected -> Metal + OpenCL + all native (no CUDA — not available on macOS)');
     } else {
@@ -102,17 +94,18 @@ function detectPlatformFeatures() {
     return macFeatures;
   }
 
-  const base = 'full';
-
   if (platform === 'win32') {
     const cudaCheck = checkCudaCapability();
     const forceCuda = String(process.env.ZION_FORCE_CUDA || '').trim() === '1';
+    const base = `gpu-opencl,${nativeFeatures}`;
     if (forceCuda || (cudaCheck.hasCuda && cudaCheck.hasNvrtc)) {
-      console.log('[prepare-v31] Windows + NVIDIA GPU + NVRTC runtime detected -> full build with CUDA backend');
-    } else if (cudaCheck.hasCuda && !cudaCheck.hasNvrtc) {
-      console.log('[prepare-v31] Windows + NVIDIA GPU detected but no NVRTC runtime -> full build (CUDA inactive without nvrtc64_*.dll)');
+      console.log('[prepare-v31] Windows + NVIDIA GPU + NVRTC runtime detected -> public build with CUDA backend');
+      return `${base},gpu-cuda`;
+    }
+    if (cudaCheck.hasCuda && !cudaCheck.hasNvrtc) {
+      console.log('[prepare-v31] Windows + NVIDIA GPU but no NVRTC runtime -> OpenCL-only public build (place nvrtc64_*.dll for CUDA)');
     } else {
-      console.log('[prepare-v31] Windows detected -> full build (OpenCL active, CUDA compiled but inactive)');
+      console.log('[prepare-v31] Windows detected -> OpenCL + all native hashers');
     }
     return base;
   }
@@ -120,16 +113,21 @@ function detectPlatformFeatures() {
   if (platform === 'linux') {
     const cudaCheck = checkCudaCapability();
     const forceCuda = String(process.env.ZION_FORCE_CUDA || '').trim() === '1';
+    const base = `gpu-opencl,${nativeFeatures}`;
     if (forceCuda || (cudaCheck.hasCuda && cudaCheck.hasNvrtc)) {
-      console.log('[prepare-v31] Linux + NVIDIA CUDA + NVRTC detected -> full build with CUDA backend');
+      console.log('[prepare-v31] Linux + NVIDIA CUDA + NVRTC detected -> public build with CUDA backend');
+      return `${base},gpu-cuda`;
+    }
+    if (cudaCheck.hasCuda && !cudaCheck.hasNvrtc) {
+      console.log('[prepare-v31] Linux + NVIDIA GPU but no NVRTC runtime -> OpenCL-only public build (add libnvrtc.so for CUDA runtime)');
     } else {
-      console.log('[prepare-v31] Linux detected -> full build (OpenCL active, CUDA compiled but inactive)');
+      console.log('[prepare-v31] Linux detected -> OpenCL + all native hashers');
     }
     return base;
   }
 
-  console.log('[prepare-v31] Unknown platform -> full build');
-  return base;
+  console.log('[prepare-v31] Unknown platform -> OpenCL + all native hashers');
+  return `gpu-opencl,${nativeFeatures}`;
 }
 
 function findNvrtcRuntime() {
