@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
-import { ATOMIC_UNITS_PER_ZION, BLOCK_REWARD_ZION } from '@/lib/constants';
+import { ATOMIC_UNITS_PER_ZION, BLOCK_REWARD_ZION, GENESIS_PREMINE_ZION, TOTAL_SUPPLY_ZION } from '@/lib/constants';
 import { resolveSupplySnapshot } from '@/lib/supply';
 import { promises as fs } from 'fs';
 import { join } from 'path';
@@ -206,9 +206,9 @@ export async function GET() {
 
     return NextResponse.json(
       {
-        block_height: 0, difficulty: 0, premine_supply: 16_280_000_000, mined_supply: 0,
-        circulating_supply: 0, total_supply: 144_000_000_000, max_supply: 144_000_000_000,
-        remaining_supply: 144_000_000_000,
+        block_height: 0, difficulty: 0, premine_supply: GENESIS_PREMINE_ZION, mined_supply: 0,
+        circulating_supply: 0, total_supply: TOTAL_SUPPLY_ZION, max_supply: TOTAL_SUPPLY_ZION,
+        remaining_supply: TOTAL_SUPPLY_ZION,
         network_hashrate: 0, network_hashrate_formatted: 'Offline', tx_count: 0, tx_pool_size: 0,
         total_connections: 0, connected: false, status: 'offline',
         error: 'Failed to connect to ZION daemon',

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
 import { SITE_PRIMARY_POOL_API_URL } from '@/lib/site';
 import { KNOWN_ADDRESS_MAP } from '@/lib/explorer/known-addresses';
+import { GENESIS_PREMINE_ZION } from '@/lib/constants';
 
 async function rpc(method: string, params: Record<string, any> = {}) {
   try {
@@ -72,7 +73,7 @@ export async function GET(request: Request) {
   try {
     const poolMiners = await fetchPoolMiners();
     const supplyInfo = await rpc('getSupplyInfo');
-    const totalCirculating = supplyInfo?.circulating_supply || 16_280_000_000;
+    const totalCirculating = supplyInfo?.circulating_supply || GENESIS_PREMINE_ZION;
 
     let richList: RichListEntry[] = [];
 

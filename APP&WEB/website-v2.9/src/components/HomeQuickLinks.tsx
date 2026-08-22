@@ -32,6 +32,8 @@ const HomeQuickLinksCopy = {
   lessNoiseClearerDirectionNetwo: { cs: `Méně šumu, jasné směry: síť, těžba, dokumentace, plán a příběh Terra Nova.`, en: `Less noise, clearer direction: network, mining, documentation, roadmap, and the Terra Nova story.` },
   arcade: { cs: `ARKÁDA`, en: `ARCADE` },
   whenDogecoinWas000025GamesShow: { cs: `Když Dogecoin stál $0.0002 — 5 her, showdown, stargate`, en: `When Dogecoin was $0.0002 — 5 games, showdown, stargate` },
+  multichain: { cs: `Multichain`, en: `Multichain` },
+  bridgeWarpSwap: { cs: `Bridge, WARP, swap`, en: `Bridge, WARP, swap` },
 };
 
 export default function HomeQuickLinks() {
@@ -69,8 +71,8 @@ export default function HomeQuickLinks() {
     },
     {
       href: '/multichain',
-      label: 'Multichain',
-      desc: cs ? 'Bridge, WARP, swap' : 'Bridge, WARP, swap',
+      label: HomeQuickLinksCopy.multichain[cs ? 'cs' : 'en'],
+      desc: HomeQuickLinksCopy.bridgeWarpSwap[cs ? 'cs' : 'en'],
       icon: Globe,
       rc: '252, 209, 22', // rasta gold
     },
