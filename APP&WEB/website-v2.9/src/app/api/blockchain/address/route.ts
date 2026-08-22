@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
-import { KNOWN_ADDRESS_LABELS } from '@/lib/constants';
+import { KNOWN_ADDRESS_MAP } from '@/lib/explorer/known-addresses';
 
 export async function GET(request: NextRequest) {
   const rpc = getZionRpc();
@@ -119,10 +119,19 @@ export async function GET(request: NextRequest) {
       totalReceived = transactions.reduce((sum: number, tx: any) => sum + tx.amount, 0);
     }
 
+    const knownAddress = KNOWN_ADDRESS_MAP.get(address);
+    const isMiner = !!minerData && (
+      (minerData.hashrate_1h ?? 0) > 0 ||
+      (minerData.accepted_shares ?? 0) > 0 ||
+      (minerData.blocks_found ?? 0) > 0 ||
+      (minerData.first_seen ?? 0) > 0 ||
+      (minerData.worker_name && minerData.worker_name !== 'default')
+    );
+
     const addressInfo = {
       address,
-      known_label: KNOWN_ADDRESS_LABELS[address]?.label || null,
-      known_type: KNOWN_ADDRESS_LABELS[address]?.type || null,
+      known_label: knownAddress?.label || null,
+      known_type: knownAddress?.type || null,
       balance,
       total_received: totalReceived || minerData?.balance?.paid || 0,
       total_sent: totalSent,
@@ -132,8 +141,8 @@ export async function GET(request: NextRequest) {
       last_seen: minerData?.last_seen || (utxoList.length ? Math.max(...utxoList.map((u: any) => u.timestamp ?? 0)) : 0),
 
       // Mining stats (ZION-specific)
-      is_miner: !!minerData,
-      mining_stats: minerData ? {
+      is_miner: isMiner,
+      mining_stats: isMiner && minerData ? {
         blocks_found: minerData.blocks_found || 0,
         accepted_shares: minerData.accepted_shares || 0,
         rejected_shares: minerData.rejected_shares || 0,

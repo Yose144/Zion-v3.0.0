@@ -16,7 +16,8 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
-import { ATOMIC_UNITS_PER_ZION, KNOWN_ADDRESS_LABELS } from '@/lib/constants';
+import { ATOMIC_UNITS_PER_ZION } from '@/lib/constants';
+import { KNOWN_ADDRESS_MAP } from '@/lib/explorer/known-addresses';
 
 function normalizeTxHash(raw: string): string {
   const trimmed = raw.trim();
@@ -97,9 +98,21 @@ export async function GET(request: NextRequest) {
         index: idx,
       })) ?? [];
 
-    // Known address labels
-    const fromLabel = tx.from ? KNOWN_ADDRESS_LABELS[tx.from]?.label ?? null : null;
-    const toLabel = tx.to ? KNOWN_ADDRESS_LABELS[tx.to]?.label ?? null : null;
+    // Known address labels (first known address in comma-joined list)
+    const firstKnown = (field?: string) => {
+      if (!field) return null;
+      for (const a of field.split(',').map((s) => s.trim()).filter(Boolean)) {
+        const known = KNOWN_ADDRESS_MAP.get(a);
+        if (known) return known;
+      }
+      return null;
+    };
+    const fromKnown = firstKnown(tx.from);
+    const toKnown = firstKnown(tx.to);
+    const fromLabel = fromKnown?.label ?? null;
+    const toLabel = toKnown?.label ?? null;
+    const fromType = fromKnown?.type ?? null;
+    const toType = toKnown?.type ?? null;
 
     const result = {
       hash: tx.tx_hash ?? tx.tx_id ?? txHash,
@@ -126,6 +139,8 @@ export async function GET(request: NextRequest) {
       type,
       from_label: fromLabel,
       to_label: toLabel,
+      from_type: fromType,
+      to_type: toType,
       inputs,
       outputs,
       version: tx.version ?? 1,

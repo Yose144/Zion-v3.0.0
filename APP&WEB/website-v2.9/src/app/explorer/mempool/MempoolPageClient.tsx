@@ -110,6 +110,8 @@ function CopyBtn({ text }: { text: string }) {
         setTimeout(() => setOk(false), 1500);
       }}
       className="text-white/20 hover:text-white/60 transition-colors"
+      aria-label={ok ? 'Copied' : 'Copy'}
+      title={ok ? 'Copied' : 'Copy'}
     >
       {ok ? <Check className="w-3.5 h-3.5 text-zion-cyan" /> : <Copy className="w-3.5 h-3.5" />}
     </button>

@@ -9,7 +9,8 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
-import { ATOMIC_UNITS_PER_ZION, BLOCK_REWARD_ZION, KNOWN_ADDRESS_LABELS, POOL_WALLET, POOL_FEE_PCT } from '@/lib/constants';
+import { ATOMIC_UNITS_PER_ZION, BLOCK_REWARD_ZION, POOL_FEE_PCT } from '@/lib/constants';
+import { KNOWN_ADDRESS_MAP } from '@/lib/explorer/known-addresses';
 
 export async function GET(request: NextRequest) {
   const rpc = getZionRpc();
@@ -173,8 +174,8 @@ export async function GET(request: NextRequest) {
       // Miner info
       miner: minerAddress,
       miner_address: minerAddress,
-      miner_label: KNOWN_ADDRESS_LABELS[minerAddress]?.label || null,
-      is_pool_block: minerAddress === POOL_WALLET,
+      miner_label: KNOWN_ADDRESS_MAP.get(minerAddress)?.label || null,
+      is_pool_block: KNOWN_ADDRESS_MAP.get(minerAddress)?.type === 'pool',
 
       // Transactions
       tx_count: txs.length,
@@ -195,11 +196,15 @@ export async function GET(request: NextRequest) {
         const breakdown: Record<string, { address: string; amount: number; pct: number }> = {};
         for (const out of outs) {
           const addr = out.key || out.address || '';
-          const known = KNOWN_ADDRESS_LABELS[addr];
-          const label = known?.type === 'humanitarian' ? 'humanitarian'
-            : known?.type === 'issobella' ? 'issobella'
-            : known?.type === 'pool_fee' ? 'pool_fee'
-            : 'miner';
+          const known = KNOWN_ADDRESS_MAP.get(addr);
+          let label = 'miner';
+          if (known?.type === 'humanitarian') {
+            label = 'humanitarian';
+          } else if (known?.type === 'pool' || known?.label?.toLowerCase().includes('pool fee')) {
+            label = 'pool_fee';
+          } else if (known?.label?.toLowerCase().includes('issobella') || known?.category?.toLowerCase().includes('issobella')) {
+            label = 'issobella';
+          }
           breakdown[label] = { address: addr, amount: out.amount || 0, pct: 0 };
         }
         const emitted = Object.values(breakdown).reduce((s, v) => s + v.amount, 0);

@@ -21,7 +21,7 @@ import {
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
 import { useLang } from '@/contexts/LanguageContext';
-import { KNOWN_ADDRESS_LABELS } from '@/lib/constants';
+import { KNOWN_ADDRESS_MAP } from '@/lib/explorer/known-addresses';
 
 const ExplorerBlockBlockDetailClientCopy = {
   enUs: { cs: `cs-CZ`, en: `en-US` },
@@ -135,6 +135,7 @@ function CopyBtn({ text, label }: { text: string; label?: string }) {
     <button
       onClick={() => { navigator.clipboard.writeText(text); setOk(true); setTimeout(() => setOk(false), 1500); }}
       className="text-gray-600 hover:text-white transition ml-2 flex-shrink-0" title={`Copy ${label || ""}`}
+      aria-label={ok ? 'Copied' : `Copy ${label || 'value'}`}
     >
       {ok ? <Check className="h-3.5 w-3.5 text-zion-cyan" /> : <Copy className="h-3.5 w-3.5" />}
     </button>
@@ -446,7 +447,7 @@ export default function BlockDetailClient() {
                     <p className="text-[11px] text-white/40 tabular-nums">{item.pct.toFixed(2)}%</p>
                     {item.address ? (
                       <Link href={`/explorer/address?addr=${item.address}`} className="text-[10px] font-mono truncate mt-1 block text-zion-cyan hover:text-white transition" title={item.address}>
-                        {KNOWN_ADDRESS_LABELS[item.address]?.label || truncHash(item.address, 10)}
+                        {KNOWN_ADDRESS_MAP.get(item.address)?.label || truncHash(item.address, 10)}
                       </Link>
                     ) : (
                       <p className="text-[10px] text-white/25 font-mono truncate mt-1">{cs ? 'spáleno' : 'burned'}</p>
@@ -510,9 +511,9 @@ export default function BlockDetailClient() {
                             <Link
                               key={idx}
                               href={`/explorer/address?addr=${out.address || out.key}`}
-                              className={`truncate max-w-[120px] ${KNOWN_ADDRESS_LABELS[out.address || out.key]?.type ? 'text-zion-gold' : 'text-zion-cyan hover:text-white'} transition`}
+                              className={`truncate max-w-[120px] ${KNOWN_ADDRESS_MAP.get(out.address || out.key)?.type ? 'text-zion-gold' : 'text-zion-cyan hover:text-white'} transition`}
                               title={out.address || out.key}>
-                              {KNOWN_ADDRESS_LABELS[out.address || out.key]?.label || truncHash(out.address || out.key, 7)}
+                              {KNOWN_ADDRESS_MAP.get(out.address || out.key)?.label || truncHash(out.address || out.key, 7)}
                             </Link>
                           ))}
                           {(tx.outputs || []).length > 4 && (
