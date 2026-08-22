@@ -4995,7 +4995,11 @@ async function broadcastTransactionPublic(transaction, model) {
       body: JSON.stringify({ transaction, model }),
     });
     const data = await res.json();
-    if (!res.ok || data.error) throw new Error(data.error || `Broadcast HTTP ${res.status}`);
+    if (!res.ok || data.error) {
+      const err = new Error(data.error || `Broadcast HTTP ${res.status}`);
+      err.status = res.status;
+      throw err;
+    }
     return data;
   } finally {
     clearTimeout(timer);
@@ -5485,6 +5489,10 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
     } catch (pubErr) {
       lastRpcError = pubErr?.message || String(pubErr);
       console.warn('[MAIN wallet-send-transaction] Public broadcast failed:', lastRpcError);
+      // Validation errors (4xx) from the public API are not recoverable by fallback RPC
+      if (pubErr?.status >= 400 && pubErr?.status < 500) {
+        return { success: false, error: lastRpcError };
+      }
     }
 
     // Fallback: direct TCP RPC
@@ -5511,7 +5519,7 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
         return true;
       });
 
-      const submitMethod = txModel === 'account' ? 'submitAccountTransaction' : 'submitTransaction';
+      const submitMethod = txModel === 'account' ? 'submitAccountTransaction' : 'submitUtxoTransaction';
       for (const candidateUrl of uniqueRpcCandidates) {
         try {
           const rpcRes = await zionRpcCall(candidateUrl, submitMethod, txPayload);
