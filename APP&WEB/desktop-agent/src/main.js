@@ -4821,7 +4821,9 @@ async function broadcastTransactionPublic(transaction, model) {
     });
     const data = await res.json();
     if (!res.ok || data.error) {
-      throw new Error(data.error || `Broadcast HTTP ${res.status}`);
+      const err = new Error(data.error || `Broadcast HTTP ${res.status}`);
+      err.status = res.status;
+      throw err;
     }
     return data;
   } finally {
@@ -5317,9 +5319,13 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
     } catch (pubErr) {
       lastRpcError = pubErr?.message || String(pubErr);
       console.warn('[MAIN wallet-send-transaction] Public broadcast failed:', lastRpcError);
+      // Validation errors (4xx) from the public API are not recoverable by fallback RPC
+      if (pubErr?.status >= 400 && pubErr?.status < 500) {
+        return { success: false, error: lastRpcError };
+      }
     }
 
-    // Fallback: direct TCP RPC
+    // Fallback: direct TCP RPC (operator/local nodes only)
     if (!result && rpcUrl) {
       const baseRpcUrl = normalizeRpcUrl(rpcUrl);
       const parsedBase = (() => {
