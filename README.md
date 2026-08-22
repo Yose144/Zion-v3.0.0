@@ -7,7 +7,7 @@
 
 ## Status
 
-> **Last updated: 2026-08-17 (LWMA difficulty clamp fix + CPU-only `zion-miner` enumeration fix + V31 services all active, chain height 7000+)**
+> **Last updated: 2026-08-22 (V31 soft-fork premine/coinbase maturity, wallet-sdk + mobile-app UTXO native format, website swap proxy, CLI `--soft-fork-activation-height`; 311 core tests pass, website build OK)**
 
 - **Active mainnet track:** `V31/` workspace — version `3.1.0-beta` (V31 Mainnet Alpha), protocol string `zion-v3-node/3.1.0-alpha`, clean `cargo test --workspace`.
 - **3.2 "One Love" canonical docs:** Public whitepapers and onboarding (CZ/EN) are now canonized in [`docs/WP-Mainet/`](docs/WP-Mainet/README.md); see the launch plan [`OneLoveV3.2.md`](OneLoveV3.2.md) and technical execution plan [`V31/PLAN_TO_3.2.md`](V31/PLAN_TO_3.2.md).
