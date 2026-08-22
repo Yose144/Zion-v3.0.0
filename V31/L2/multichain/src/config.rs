@@ -16,6 +16,10 @@ pub struct MultichainConfig {
     pub pool: Option<PoolConfigFile>,
     #[serde(default)]
     pub warp: Option<crate::warp::config::WarpConfig>,
+    #[serde(default)]
+    pub solver: SolverConfig,
+    #[serde(default)]
+    pub solvers: Vec<SolverEntry>,
 }
 
 impl Default for MultichainConfig {
@@ -27,6 +31,8 @@ impl Default for MultichainConfig {
             adapters: Vec::new(),
             pool: None,
             warp: None,
+            solver: SolverConfig::default(),
+            solvers: Vec::new(),
         }
     }
 }
@@ -62,6 +68,50 @@ impl Default for RateLimitConfig {
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct AuthConfig {
+    pub api_key: Option<String>,
+}
+
+/// Local solver node configuration.
+///
+/// When `enabled` is true, this warpd instance will advertise itself as a
+/// solver and authenticate inbound `/v1/swap/solve` requests with `api_key`.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SolverConfig {
+    pub enabled: bool,
+    #[serde(default = "default_solver_name")]
+    pub name: String,
+    #[serde(default)]
+    pub fee_bps: u16,
+    #[serde(default)]
+    pub api_key: Option<String>,
+    #[serde(default)]
+    pub advertised_url: Option<String>,
+}
+
+impl Default for SolverConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            name: default_solver_name(),
+            fee_bps: 0,
+            api_key: None,
+            advertised_url: None,
+        }
+    }
+}
+
+fn default_solver_name() -> String {
+    "zion-solver".to_string()
+}
+
+/// Pre-configured off-chain solver known to the buyer node.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SolverEntry {
+    pub name: String,
+    pub url: String,
+    #[serde(default)]
+    pub reputation: u64,
+    #[serde(default)]
     pub api_key: Option<String>,
 }
 

@@ -95,6 +95,8 @@ fn build_multichain_config(warp: &WarpConfig) -> MultichainConfig {
             .collect(),
         pool: None,
         warp: None,
+        solver: warp.solver.clone(),
+        solvers: warp.solvers.clone(),
     }
 }
 
