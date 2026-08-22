@@ -37,10 +37,14 @@ As a result, any party with the premine private keys can spend them on the live 
    - Keep premine keys offline and restrict access.
    - Consider rotating funds that must remain locked into new, non-premine multisig addresses as soon as a safe governance path exists.
 
-2. **Consensus fix (soft-fork)**
-   - Wire `validate_premine_locks` into `Node::submit_block` and `Node::submit_utxo_transaction`.
-   - Guard the new rule behind an activation height (e.g. a future mainnet height or a `--premine-lock-activation` CLI flag) to avoid splitting the chain on the already-accepted block 12837.
-   - Update all Edge/mainnet nodes and miners to the patched binary before the activation height.
+2. **Consensus fix (soft-fork)** — IMPLEMENTED
+   - `V31/L1/core/src/node.rs` now runs a `validate_premine_and_maturity_for_tx` step for every transaction in `Node::submit_block`, every mempool tx entering `Node::submit_utxo_transaction` (premine lock only), and every candidate in `Node::block_template`.
+   - It checks:
+     - `COINBASE_MATURITY = 100`: a coinbase UTXO can only be spent once the block height is at least `created_height + 100`.
+     - `PREMINE_OUTPUTS` locks: any input spending from a premine/DAO Treasury address must pass `v3_compat::is_premine_transfer_allowed` (currently requires admin unlock — no admin unlocks are configured, so all admin-locked premine is rejected until governance unlocks it).
+   - `UtxoOutput` now tracks `is_coinbase` so the maturity rule is enforced across the in-memory UTXO set.
+   - The new rules are gated by `NodeConfig::soft_fork_activation_height` (CLI `--soft-fork-activation-height`, env `ZION_SOFT_FORK_ACTIVATION`). The default is `u64::MAX` (disabled) so an unconfigured binary does not hard-fork the existing chain. To deploy on mainnet, set an activation height well above the current tip and restart all nodes/miners before that height.
+   - New unit tests pass: `submit_block_rejects_immature_coinbase`, `submit_block_accepts_mature_coinbase`, `validate_premine_lock_rejects_spend`.
 
 3. **Governance/DAO integration**
    - Populate `ValidationContext::admin_unlocked_addresses` from executed admin/DAO proposals so that legitimate premine unlocks can still occur after the fix.
@@ -70,16 +74,15 @@ Comparing the full 11-step `v3_validation::validate_block` pipeline with what `N
 | 5 | Merkle root | Yes | `merkle_root` computed and compared to header |
 | 6 | Transaction signatures | Yes | `UtxoSet::apply_transaction` -> `verify_input` |
 | 7 | No double-spend | Yes | `UtxoSet` applies transactions sequentially and removes spent outputs |
-| 8 | Coinbase maturity (`COINBASE_MATURITY = 100`) | **No** | `UtxoSet` never checks `created_height` of the spent output |
+| 8 | Coinbase maturity (`COINBASE_MATURITY = 100`) | **Yes after `soft_fork_activation_height`** | `Node::validate_premine_and_maturity_for_tx` checks `block_height - created_height >= 100` for coinbase UTXOs |
 | 9 | Fees (≥ `MIN_TX_FEE` and ≥ size-based minimum) | Yes | `UtxoSet::apply_transaction` compares fee to `minimum_fee_for_size` |
 | 10 | Coinbase subsidy (≤ block reward, split to canonical addresses) | Partially | `Node::submit_block` checks coinbase output sum, but not that outputs are the canonical miner/human/issobella addresses |
-| 11 | Premine / DAO treasury locks | **No** | `validate_premine_locks` not called |
+| 11 | Premine / DAO treasury locks | **Yes after `soft_fork_activation_height`** | `Node::validate_premine_and_maturity_for_tx` calls `v3_compat::is_premine_transfer_allowed_no_admin` on every input's source address |
 
 Additional observations:
 
 - `v3_validation` is written for V3 `Transaction` (`v3_tx::Transaction`), which has `id`, `fee`, and `timestamp` fields, and a different input/output model. It cannot be reused directly for V31 native `Transaction` (`transaction::Transaction`) without a refactor or a V31-specific validation module.
-- `UtxoSet` tracks `block_height` and `block_timestamp` for each UTXO, but not `is_coinbase`. Coinbase-maturity and other output-origin checks can be added by extending `UtxoOutput`.
-- The missing rules (structure, timestamp drift, coinbase maturity, premine locks) can all be added to `Node::submit_block` as pre-`apply_block` checks and/or pushed down into `UtxoSet::apply_transaction`. Because the chain already contains block 12837, any new consensus rule must be gated by an activation height or a configuration flag to avoid an immediate hard fork.
+- `UtxoSet` now tracks `block_height`, `block_timestamp` and `is_coinbase` for each UTXO. The premine/coinbase-maturity checks are implemented in `Node::validate_premine_and_maturity_for_tx` and gated by `NodeConfig::soft_fork_activation_height` so the existing chain (including block 12837) is not invalidated. Block structure and timestamp drift remain unenforced in the V31 native path.
 
 ## References
 

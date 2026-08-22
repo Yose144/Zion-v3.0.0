@@ -41,8 +41,8 @@ export const CORE = {
   /** Pool stratum — runs locally on Edge */
   poolStratum: `127.0.0.1:8444`,
 
-  /** Atomic Swap API — runs locally on Edge (port 8452) */
-  atomicSwap: `http://127.0.0.1:8452`,
+  /** ZionDex / atomic swap API — unified V31 multichain DEX (port 8454) */
+  atomicSwap: `http://127.0.0.1:8454`,
 
   /** WARP daemon — runs locally on Edge (port 8453) */
   warp: `http://127.0.0.1:8453`,
