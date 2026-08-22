@@ -1,5 +1,7 @@
 # V31 Mainnet Alpha — Status
 
+> **Update 2026-08-22 (ZIS deployment + UTXO v2 wallet/CLI fixes + WARP test stability):** `zion-zis.service` je `active` na Edge; `/health` vrací OK na `https://auth.zionterranova.com` po opravě `@fastify/rate-limit` (`^9.1.0` pro Fastify 4) a systemd `ExecStart` cesty. Wallet SDK (`APP&WEB/zion-wallet-sdk`) nyní počítá v2 UTXO hash odpovídající `V31/L1/core/src/v3_tx.rs` a odesílá transakce přes `submitUtxoTransaction`. CLI `wallet send` používá `zion_core::v3_wallet::build_and_sign` s aktuálním chain tip height. NEAR env-var testy v `V31/L2/multichain/src/warp/adapter/near.rs` jsou serializovány mutexem, `cargo test -p zion-multichain` prochází 573 testy (1 ignored) bez flaky selhání.
+>
 > **Update 2026-08-22 (WARP G2 — non-EVM `disabled_reason` + config-driven registry):** Implementována podpora `disabled_reason` ve WARP: `ChainConfig`/`ChainRegistry`/`WarpError` nyní nesou důvod vypnutí; `WarpRuntime` a `/chains` API staví registry z `warp.toml` místo hardcoded `with_defaults()`. `/chains` vrací `name`, `family`, `enabled` a `disabled_reason`. `warp.example.toml` aktualizován: pro 3.2.0 jsou aktivní pouze `base` (EVM pilot) a `zion-l1`; všechny nedeployované non-EVM chainy (aptos, sui, cardano, cosmos, near, lightning) mají `enabled = false` s explicitním `disabled_reason`. Gate **G2** v [`docs/3.2/ROADMAP.md`](../docs/3.2/ROADMAP.md) označen jako ✅ Complete. Testy `cargo test -p zion-multichain` (574 testů) a `cargo clippy -p zion-multichain` prošly bez nových warningů.
 >
 > **Update 2026-08-22 (public subtree G4 closed):** `public/` subtree je plně synchronizovaný s `github.com/Zion-TerraNova/v3-Mainnet:main`. `git subtree split --prefix=public` vrací `fbc5e02f2`, identický s `public/main`; `git push public public-split:main --dry-run` hlásí "Everything up-to-date". Gate **G4** v [`docs/3.2/ROADMAP.md`](../docs/3.2/ROADMAP.md) označen jako ✅ Complete.
@@ -472,11 +474,9 @@ Dokončeny všechny 11 chybějících V3 pool funkcí. Pool je teď **FULL V3 fe
   - Security audit + chaos testy (3.0.9 / 3.1.0-beta)
   - Publikace GitHub release z draftu
 
-## 2026-08-07 — PPLNS persistence deployed; payout verification blocked by V31 UTXO gap
+## 2026-08-07 (HISTORICAL) — PPLNS persistence deployed; payout verification blocked by V31 UTXO gap
 
 - `zion-pool` PPLNS state is now persisted every 30s to `--state-path` (`/opt/zion/data/v31/pool-pplns.json`) after redeploy.
 - `cargo test --workspace` and `cargo clippy --workspace` pass; updated binary `zion-pool` is live on Edge.
-- Payout verification is **blocked**: the pool sweeper calls `getUtxos` and `submitUtxoTransaction` on the V3 compatibility RPC, while live V31 mining produces UTXO coinbase outputs on the V31 native chain. The V3 chain remains at height 0, so the pool wallet has no visible UTXOs and payouts cannot execute. Resolving this requires either:
-  1. V31-native UTXO RPC (`getUtxos` / `submitTransaction`) wired to the V31 `Node`/`Storage` layer and a V31 batch-payout builder, or
-  2. Dual-write V31 coinbase UTXOs into the V3 UTXO set so the existing V3 `v3_wallet` payout path can spend them.
-- Next step: choose architecture and implement V31 payout path.
+- **Resolved 2026-08-10+**: V31-native payout path is implemented and active. `PayoutSweeper` in `V31/L1/pool/src/payout.rs` uses `zion_core::v31_wallet::build_batch_payout` and calls `getUtxos` / `submitUtxoTransaction` on the V31 node RPC. `deferred_payout.rs` was also ported to `v31_wallet` so fee/deferred payouts no longer fall back to V3. Live Edge blocks (e.g. height 12831+) show `transfer` payout transactions from the pool wallet to miner addresses.
+- Original blocker (kept for reference): the pool sweeper previously called `getUtxos` and `submitUtxoTransaction` on the V3 compatibility RPC while live V31 mining produced UTXO coinbase outputs on the V31 native chain. The V3 chain remained at height 0, so the pool wallet had no visible UTXOs.
