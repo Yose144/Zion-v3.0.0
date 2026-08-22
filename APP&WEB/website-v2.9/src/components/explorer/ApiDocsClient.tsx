@@ -24,7 +24,7 @@ const ApiDocsCopy = {
   baseUrl: { cs: `Base URL`, en: `Base URL` },
   copy: { cs: `Kopirovat`, en: `Copy` },
   rateLimiting: { cs: `Rate Limiting:`, en: `Rate Limiting:` },
-  noRateLimitFairUse: { cs: `Zadny rate limit (fair use)`, en: `No rate limit (fair use)` },
+  rateLimitValue: { cs: `120 pozadavku na IP za 60s sliding window. Prekroceni vraci 429 s Retry-After.`, en: `120 requests per IP per 60s sliding window. 429 with Retry-After when exceeded.` },
   zionTerranovaV306ApiDocumentat: { cs: `ZION TerraNova v3.2.0 · API dokumentace · Vsechny endpointy vraci JSON`, en: `ZION TerraNova v3.2.0 · API Documentation · All endpoints return JSON` },
 };
 
@@ -343,9 +343,87 @@ const ENDPOINTS: Endpoint[] = [
   "mining_pool": { "healthy": true }
 }`,
   },
+
+  /* ── Listing ── */
+  {
+    category: "Listing",
+    method: "GET",
+    path: "/api/listing/coingecko",
+    title: "CoinGecko Listing Feed",
+    description: "CoinGecko-ready project metadata, live DEX price, market cap, volume, supply, and on-chain telemetry.",
+    params: [],
+    exampleResponse: `{
+  "id": "zion-terranova",
+  "symbol": "zion",
+  "name": "ZION TerraNova",
+  "market_data": {
+    "current_price": { "usd": 0.0002 },
+    "market_cap": { "usd": 3256.78 },
+    "fully_diluted_valuation": { "usd": 28800000 },
+    "total_volume": { "usd": 1250.5 },
+    "price_change_24h": 0,
+    "price_change_percentage_24h": 0,
+    "circulating_supply": 16280000,
+    "total_supply": 144000000000,
+    "max_supply": 144000000000
+  },
+  "listing_ready": true,
+  "price_source": "dexscreener"
+}`,
+  },
+  {
+    category: "Listing",
+    method: "GET",
+    path: "/api/listing/coinmarketcap",
+    title: "CoinMarketCap Listing Feed",
+    description: "CoinMarketCap-style payload with live USD quote, volume, market cap, supply, and on-chain snapshot.",
+    params: [],
+    exampleResponse: `{
+  "data": {
+    "name": "ZION TerraNova",
+    "symbol": "ZION",
+    "circulating_supply": 16280000,
+    "total_supply": 144000000000,
+    "max_supply": 144000000000,
+    "quote": {
+      "USD": {
+        "price": 0.0002,
+        "volume_24h": 1250.5,
+        "percent_change_24h": 0,
+        "market_cap": 3256.78,
+        "fully_diluted_market_cap": 28800000
+      }
+    },
+    "price_source": "dexscreener"
+  }
+}`,
+  },
+  {
+    category: "Listing",
+    method: "GET",
+    path: "/api/cex/listings",
+    title: "CEX / DEX Listings",
+    description: "Planned and live CEX listings with a live DEX market snapshot from canonical wZION Uniswap V3 pools on Base.",
+    params: [],
+    exampleResponse: `{
+  "ok": true,
+  "cex": {
+    "listings": [...],
+    "summary": { "total_exchanges": 6, "listed": 0, "planned": 6, "total_pairs": 12 }
+  },
+  "dex": {
+    "source": "dexscreener",
+    "pairs": 3,
+    "best_price_usd": 0.0002,
+    "total_volume_24h": 1250.5,
+    "total_liquidity_usd": 8000.25,
+    "pairs_detail": [...]
+  }
+}`,
+  },
 ];
 
-const CATEGORIES = ["Blockchain", "Pool", "DeFi", "Bridge", "Network", "System"];
+const CATEGORIES = ["Blockchain", "Pool", "DeFi", "Bridge", "Network", "System", "Listing"];
 
 /* ── helpers ─────────────────────────────────────────────────── */
 
@@ -531,7 +609,7 @@ export default function ApiDocsClient() {
             <span className="w-2 h-2 rounded-full bg-zion-cyan animate-pulse flex-shrink-0" />
             <p className="text-[13px] text-zion-cyan/90">
               <span className="font-semibold">{ApiDocsCopy.rateLimiting[cs ? 'cs' : 'en']}</span>{" "}
-              {ApiDocsCopy.noRateLimitFairUse[cs ? 'cs' : 'en']}
+              {ApiDocsCopy.rateLimitValue[cs ? 'cs' : 'en']}
             </p>
           </div>
         </div>

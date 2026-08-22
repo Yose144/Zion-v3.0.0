@@ -6,6 +6,7 @@ import {
   TOTAL_SUPPLY_ZION,
 } from '@/lib/constants';
 import { resolveSupplySnapshot } from '@/lib/supply';
+import { fetchDexMarketData } from '@/lib/market';
 import { SITE_APP_URL, SITE_INTRO_URL } from '@/lib/site';
 import { GITHUB_REPO_URL } from '@/lib/github-releases';
 
@@ -30,8 +31,17 @@ export async function GET() {
       );
     }
 
-    const supply = await resolveSupplySnapshot(rpc, info.height);
+    const [supply, market] = await Promise.all([
+      resolveSupplySnapshot(rpc, info.height),
+      fetchDexMarketData(),
+    ]);
     const circulating = supply.circulatingSupply;
+
+    const price = market.best_price_usd || 0.0002;
+    const marketCap = price * circulating;
+    const fdv = price * TOTAL_SUPPLY_ZION;
+    const volume24h = market.total_volume_24h;
+    const priceChangePct = market.price_change_24h || 0;
 
     const updatedAt = new Date().toISOString();
 
@@ -75,7 +85,7 @@ export async function GET() {
           is_hidden: 0,
           date_launched: null,
           self_reported_circulating_supply: circulating,
-          self_reported_market_cap: null,
+          self_reported_market_cap: marketCap,
           infinite_supply: false,
           max_supply: TOTAL_SUPPLY_ZION,
           total_supply: TOTAL_SUPPLY_ZION,
@@ -83,16 +93,16 @@ export async function GET() {
           last_updated: updatedAt,
           quote: {
             USD: {
-              price: null,
-              volume_24h: null,
+              price,
+              volume_24h: volume24h,
               volume_change_24h: null,
-              percent_change_1h: null,
-              percent_change_24h: null,
+              percent_change_1h: market.price_change_1h || null,
+              percent_change_24h: priceChangePct,
               percent_change_7d: null,
               percent_change_30d: null,
-              market_cap: null,
+              market_cap: marketCap,
               market_cap_dominance: null,
-              fully_diluted_market_cap: null,
+              fully_diluted_market_cap: fdv,
               last_updated: updatedAt,
             },
           },
@@ -107,6 +117,7 @@ export async function GET() {
               (info.incoming_connections_count || 0) +
               (info.outgoing_connections_count || 0),
           },
+          price_source: market.source,
         },
       },
       {
