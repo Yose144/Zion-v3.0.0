@@ -13,7 +13,8 @@ This report documents:
 1. Connectivity test results against MoneroOcean.
 2. Rust fixes in `zion-miner` for CryptonoteStratum parsing and share formatting.
 3. How to enable XMR as a CPU external coin on the Edge pool and on a local miner.
-4. Known caveats and follow-up items.
+4. The H5 AuxPoW E2E test script that closes the local protocol loop.
+5. Known caveats and follow-up items.
 
 ## 1. Connectivity verification
 
@@ -92,7 +93,18 @@ export ZION_POOL_ADDR=62.171.141.136:8444
 
 The miner build in `start-local-miner.sh` already includes `native-randomx`, so RandomX hashing is available when the feature is enabled.
 
-## 4. Caveats
+## 4. H5 — Local AuxPoW E2E harness
+
+A dedicated E2E script, [`scripts/ops/auxpow_e2e_test.py`](../../scripts/ops/auxpow_e2e_test.py), closes the loop locally:
+
+- It starts a mock CryptonoteStratum upstream on a free port.
+- It launches `zion-pool` with `ZION_POOL_AUXPOW_POOL_XMR` pointing at the mock upstream (using the new `CoinProfile::with_pool_address` helper).
+- It launches a CPU-only `zion-miner` with `ZION_MINER_CPU_COIN=XMR` and only Stream 3 enabled.
+- It verifies that at least one share is forwarded **miner → pool → mock upstream**.
+
+The first successful run recorded a `submit` message with `{'id': 'session1', 'job_id': 'job1', 'nonce': '...', 'result': '...'}`. Full details are in [`REPORT_2026-08-22_H5_AUXPOW_E2E_TEST.md`](./REPORT_2026-08-22_H5_AUXPOW_E2E_TEST.md).
+
+## 5. Caveats
 
 - **Plain TCP only**: the current `zion-miner` AuxPoW client strips `stratum+tcp://` prefixes but has no TLS implementation. MoneroOcean's SSL ports did not work from this host, so the path relies on `10001` TCP. This is acceptable for the current release but should be revisited if MoneroOcean ever disables plain TCP.
 - **No real hash-rate share submitted yet**: connectivity, job parsing, and share formatting were validated with unit tests and a protocol probe. A live CPU-only RandomX share submission against MoneroOcean still needs to be observed in production or a CPU-only staging rig before declaring full production confidence.
