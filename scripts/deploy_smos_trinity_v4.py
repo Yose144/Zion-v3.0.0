@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Deploy the Trinity V4 SMOS package and reload rig 518837.
+"""Deploy the Trinity v3.2.0 SMOS package and reload rig 518837.
 
 Updates SMOS group 1773590 customMiner to:
-    https://zionterranova.com/zion-miner/zion-trinity-smos-v4.zip
+    https://zionterranova.com/zion-miner/zion-trinity-smos-v3.2.0.zip
 The miner wrapper inside the zip downloads the current V31 OpenCL binary
 from http://62.171.141.136/zion-miner/zion-miner-v31.
 
@@ -21,7 +21,7 @@ import urllib.request
 API = "https://api.simplemining.net"
 RIG = 518837
 GROUP = 1773590
-MINER_URL = "https://zionterranova.com/zion-miner/zion-trinity-smos-v4.zip"
+MINER_URL = "https://zionterranova.com/zion-miner/zion-trinity-smos-v3.2.0.zip"
 
 
 def token():
