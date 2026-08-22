@@ -409,8 +409,8 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       en: 'wZION DEX is live on Base Mainnet — swap, bridge & portfolio',
     },
     summary: {
-      cs: 'Počáteční Uniswap V3 pool wZION/WETH nasazen na Base Mainnet. WETH pozice později spálena — nyní aktivní pouze wZION/USDT 0.3% pool. Na zionterranova.com/defi funguje swap, bridge a portfolio dashboard s live cenami z on-chain poolu.',
-      en: 'Initial Uniswap V3 wZION/WETH pool deployed on Base Mainnet. WETH position later burned — now only wZION/USDT 0.3% pool is active. zionterranova.com/defi features swap, bridge, and a portfolio dashboard with live on-chain pool prices.',
+      cs: 'Počáteční Uniswap V3 pool wZION/WETH nasazen na Base Mainnet. WETH pozice později spálena — nyní aktivní pouze wZION/USDT 0.3% pool. Na app.zionterranova.com/defi funguje swap, bridge a portfolio dashboard s live cenami z on-chain poolu.',
+      en: 'Initial Uniswap V3 wZION/WETH pool deployed on Base Mainnet. WETH position later burned — now only wZION/USDT 0.3% pool is active. app.zionterranova.com/defi features swap, bridge, and a portfolio dashboard with live on-chain pool prices.',
     },
     href: '/defi',
   },

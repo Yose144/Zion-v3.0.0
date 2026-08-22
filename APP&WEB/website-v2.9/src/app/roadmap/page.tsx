@@ -396,7 +396,7 @@ export default function RoadmapPage() {
       items: [
         'wZION ERC-20 deployed on Base Mainnet ✅',
         'Uniswap V3 pool wZION/WETH live ✅',
-        'DeFi UI on zionterranova.com/defi ✅',
+        'DeFi UI on app.zionterranova.com/defi ✅',
         cs ? 'Prohloubit likviditu + price discovery' : 'Deepen liquidity + price discovery',
         'CoinGecko / DexScreener listing',
       ],

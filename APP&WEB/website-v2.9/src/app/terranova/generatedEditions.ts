@@ -3221,7 +3221,7 @@ export const EDITIONS_DATA: Record<string, BookChapter[]> = {
           "body": "**Kapitola 18 — Osvobození (Mókša-Sanjása)**"
         },
         {
-          "body": "**Gíta:** Finální pozvání: přeskočit systém — přímo k jádru. Přímý kontakt s vědomím.\r\n\r\n**ZION:** Open source jako mókša kódu.\r\n\r\n```bash\r\n\r\nzion-miner --pool pool.zionterranova.com --wallet YOUR_ADDRESS\r\n\r\n```\r\n\r\n**Ardžuna na konci Gíty:** *\"Moje iluze je zničena. Paměť se vrátila. Jsem pevný. Budu jednat.\"*\r\n\r\nTo je moment každého Guardiana, kdy poprvé spustí node:\r\n- Iluze (síť je příliš složitá) — zničena\r\n- Paměť (vím proč jsem tady) — vrácena\r\n- Pevnost (stavím Novou Zemi) — získána"
+          "body": "**Gíta:** Finální pozvání: přeskočit systém — přímo k jádru. Přímý kontakt s vědomím.\r\n\r\n**ZION:** Open source jako mókša kódu.\r\n\r\n```bash\r\n\r\nzion-miner --pool stratum.zionterranova.com:8444 --wallet YOUR_ADDRESS\r\n\r\n```\r\n\r\n**Ardžuna na konci Gíty:** *\"Moje iluze je zničena. Paměť se vrátila. Jsem pevný. Budu jednat.\"*\r\n\r\nTo je moment každého Guardiana, kdy poprvé spustí node:\r\n- Iluze (síť je příliš složitá) — zničena\r\n- Paměť (vím proč jsem tady) — vrácena\r\n- Pevnost (stavím Novou Zemi) — získána"
         },
         {
           "body": "**D.1 Syntetická tabulka — 18 kapitol × ZION**"
@@ -3367,7 +3367,7 @@ export const EDITIONS_DATA: Record<string, BookChapter[]> = {
           "body": "**Chapter 18 — Liberation (Moksha-Sanyasa)**"
         },
         {
-          "body": "**Gita:** The final invitation: bypass the system — go directly to the core. Direct contact with consciousness.\r\n\r\n**ZION:** Open source as the moksha of code.\r\n\r\n```bash\r\n\r\nzion-miner --pool pool.zionterranova.com --wallet YOUR_ADDRESS\r\n\r\n```\r\n\r\n**Arjuna at the end of the Gita:** *\"My illusion is now dispelled. My memory is regained. I am firm. I shall act.\"*\r\n\r\nThis is the moment of every Guardian when they first run a node:\r\n- Illusion (the network is too complex) — dispelled\r\n- Memory (I know why I am here) — regained\r\n- Firmness (I am building the New Earth) — gained"
+          "body": "**Gita:** The final invitation: bypass the system — go directly to the core. Direct contact with consciousness.\r\n\r\n**ZION:** Open source as the moksha of code.\r\n\r\n```bash\r\n\r\nzion-miner --pool stratum.zionterranova.com:8444 --wallet YOUR_ADDRESS\r\n\r\n```\r\n\r\n**Arjuna at the end of the Gita:** *\"My illusion is now dispelled. My memory is regained. I am firm. I shall act.\"*\r\n\r\nThis is the moment of every Guardian when they first run a node:\r\n- Illusion (the network is too complex) — dispelled\r\n- Memory (I know why I am here) — regained\r\n- Firmness (I am building the New Earth) — gained"
         },
         {
           "body": "**D.1 Synthesis Table — 18 Chapters × ZION**"

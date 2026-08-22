@@ -2,7 +2,7 @@ import React from "react";
 import type { Metadata } from "next";
 import { Activity, ExternalLink } from "lucide-react";
 
-const PROM_BASE_URL = (process.env.NEXT_PUBLIC_PROMETHEUS_BASE_URL || "https://zionterranova.com/prometheus").replace(/\/$/, "");
+const PROM_BASE_URL = (process.env.NEXT_PUBLIC_PROMETHEUS_BASE_URL || "https://app.zionterranova.com/prometheus").replace(/\/$/, "");
 const IFRAME_SRC = `${PROM_BASE_URL}/graph?g0.expr=&g0.range_input=1h&g0.stacked=0&g0.tab=0`;
 
 export const metadata: Metadata = {

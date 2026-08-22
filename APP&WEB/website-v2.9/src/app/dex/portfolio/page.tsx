@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 import { Wallet, TrendingUp, Droplets, Activity, Loader2, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 
-const ROUTER_URL = process.env.NEXT_PUBLIC_ZIONDEX_ROUTER_URL || 'https://zionterranova.com/dex-api';
+const ROUTER_URL = process.env.NEXT_PUBLIC_ZIONDEX_ROUTER_URL || 'https://dex.zionterranova.com';
 
 interface SwapRecord {
   id: string;

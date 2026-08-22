@@ -12,7 +12,7 @@ import ChainSelector from '@/components/dex/ChainSelector';
 import TokenSelector from '@/components/dex/TokenSelector';
 import Link from 'next/link';
 
-const ROUTER_URL = process.env.NEXT_PUBLIC_ZIONDEX_ROUTER_URL || 'https://zionterranova.com/dex-api';
+const ROUTER_URL = process.env.NEXT_PUBLIC_ZIONDEX_ROUTER_URL || 'https://dex.zionterranova.com';
 
 interface Pool {
   chain: string;

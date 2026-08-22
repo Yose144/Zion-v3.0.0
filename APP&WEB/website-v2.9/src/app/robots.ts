@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { SITE_APP_URL } from '@/lib/site';
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -9,6 +10,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/admin/', '/api/', '/health'],
       },
     ],
-    sitemap: 'https://zionterranova.com/sitemap.xml',
+    sitemap: `${SITE_APP_URL}/sitemap.xml`,
   };
 }

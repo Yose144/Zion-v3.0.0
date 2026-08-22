@@ -417,7 +417,7 @@ export default function NCLDashboard() {
             <pre style={rc('purple')} className="zion-rainbow-sub p-4 text-sm overflow-x-auto">
               <code className="text-zion-cyan">
 {`./zion_miner \
-  --pool ${process.env.NEXT_PUBLIC_ZION_POOL_HOST || 'pool.zionterranova.com'}:8444 \
+  --pool ${process.env.NEXT_PUBLIC_ZION_POOL_HOST || 'stratum.zionterranova.com'}:8444 \
   --wallet ZION_YOUR_ADDRESS \
   --ncl-enabled \
   --ncl-allocation 30`}

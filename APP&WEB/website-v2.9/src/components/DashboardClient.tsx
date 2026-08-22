@@ -139,8 +139,8 @@ const getRoadmapSlices = (cs: boolean) => [
   }
 ];
 
-const GRAFANA_BASE_URL = (process.env.NEXT_PUBLIC_GRAFANA_BASE_URL || 'https://zionterranova.com/grafana').replace(/\/$/, '');
-const PROMETHEUS_BASE_URL = (process.env.NEXT_PUBLIC_PROMETHEUS_BASE_URL || 'https://zionterranova.com/prometheus').replace(/\/$/, '');
+const GRAFANA_BASE_URL = (process.env.NEXT_PUBLIC_GRAFANA_BASE_URL || 'https://app.zionterranova.com/grafana').replace(/\/$/, '');
+const PROMETHEUS_BASE_URL = (process.env.NEXT_PUBLIC_PROMETHEUS_BASE_URL || 'https://app.zionterranova.com/prometheus').replace(/\/$/, '');
 
 const getGrafanaDashboards = (cs: boolean) => [
   {

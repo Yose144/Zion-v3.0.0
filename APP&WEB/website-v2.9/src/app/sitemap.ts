@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
+import { SITE_APP_URL } from '@/lib/site';
 
-const BASE = 'https://zionterranova.com';
+const BASE = SITE_APP_URL;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();

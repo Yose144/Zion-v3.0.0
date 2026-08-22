@@ -5,7 +5,7 @@ import { ChevronDown } from 'lucide-react';
 
 const DownloadFaqCopy = {
   doINeedANodeToMine: { cs: `Potřebuji pro těžbu Node?`, en: `Do I need a Node to mine?` },
-  noConnectToThePublicPoolZionte: { cs: `Ne. Připojte se k veřejnému poolu (zionterranova.com/pool). Pool řeší komunikaci s blockchainem. Node potřebujete jen pokud chcete sami ověřovat transakce nebo provozovat vlastní pool.`, en: `No. Connect to the public pool (zionterranova.com/pool). The pool handles blockchain communication. A node is only needed if you want to verify transactions yourself or run your own pool.` },
+  noConnectToThePublicPoolZionte: { cs: `Ne. Připojte se k veřejnému poolu (app.zionterranova.com/pool). Pool řeší komunikaci s blockchainem. Node potřebujete jen pokud chcete sami ověřovat transakce nebo provozovat vlastní pool.`, en: `No. Connect to the public pool (app.zionterranova.com/pool). The pool handles blockchain communication. A node is only needed if you want to verify transactions yourself or run your own pool.` },
   howDoICreateAWallet: { cs: `Jak vytvořím peněženku?`, en: `How do I create a wallet?` },
   downloadZionCliAndRunZionWalle: { cs: `Stáhněte ZION CLI (v3.0.5-beta Community CLI níže) a spusťte: zion wallet new --mnemonic --out my-wallet.json --print. Zapište si 24 slov na papír — to je vaše záloha. Nikdy je nesdílejte online.`, en: `Download ZION CLI (v3.0.5-beta Community CLI below) and run: zion wallet new --mnemonic --out my-wallet.json --print. Write down the 24 words on paper — they are your backup. Never share them online.` },
   howDoIStartMining: { cs: `Jak spustím těžbu?`, en: `How do I start mining?` },

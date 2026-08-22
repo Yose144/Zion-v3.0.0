@@ -28,7 +28,7 @@ const DownloadCopy = {
   runZionMinerNoArgsForMenu: { cs: `Spusť ./zion-miner bez argumentů a projdi interaktivním menu`, en: `Run ./zion-miner with no arguments and walk through the interactive menu` },
   windowsDoubleClickZionMinerExe: { cs: `Na Windows dvakrát klikni na zion-miner.exe`, en: `On Windows double-click zion-miner.exe` },
   k3CheckBalance: { cs: `3. Zkontroluj zůstatek`, en: `3. Check Balance` },
-  orVisitTheExplorerAtZionterran: { cs: `Nebo navštiv Explorer na zionterranova.com/explorer`, en: `Or visit the Explorer at zionterranova.com/explorer` },
+  orVisitTheExplorerAtZionterran: { cs: `Nebo navštiv Explorer na app.zionterranova.com/explorer`, en: `Or visit the Explorer at app.zionterranova.com/explorer` },
   needAWalletUseV305CliBelow: { cs: `Potřebuješ peněženku? Použij v3.2.0 Community CLI níže`, en: `Need a wallet? Use the v3.2.0 Community CLI below` },
   tripleStreamMinerGpuCpuZionLiq: { cs: `Terminal Miner · GPU + CPU · Zion Liquidity`, en: `Terminal Miner · GPU + CPU · Zion Liquidity` },
   downloadMineEarn: { cs: `Stáhni. Těž. Vydělávej.`, en: `Download. Mine. Earn.` },

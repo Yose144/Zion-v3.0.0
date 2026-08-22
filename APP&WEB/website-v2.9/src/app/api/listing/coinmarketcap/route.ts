@@ -6,6 +6,8 @@ import {
   TOTAL_SUPPLY_ZION,
 } from '@/lib/constants';
 import { resolveSupplySnapshot } from '@/lib/supply';
+import { SITE_APP_URL, SITE_INTRO_URL } from '@/lib/site';
+import { GITHUB_REPO_URL } from '@/lib/github-releases';
 
 export async function GET() {
   const rpc = getZionRpc();
@@ -57,12 +59,12 @@ export async function GET() {
           tag_names: ['Layer 1', 'Proof of Work', 'UTXO'],
           tag_groups: ['CATEGORY'],
           urls: {
-            website: ['https://www.zionterranova.com'],
-            technical_doc: ['https://www.zionterranova.com/docs'],
-            explorer: ['https://www.zionterranova.com/explorer'],
-            source_code: ['https://github.com/Zion-TerraNova'],
-            message_board: ['https://www.zionterranova.com/roadmap'],
-            announcement: ['https://www.zionterranova.com/roadmap'],
+            website: [SITE_INTRO_URL],
+            technical_doc: [`${SITE_APP_URL}/docs`],
+            explorer: [`${SITE_APP_URL}/explorer`],
+            source_code: [GITHUB_REPO_URL],
+            message_board: [`${SITE_APP_URL}/roadmap`],
+            announcement: [`${SITE_APP_URL}/roadmap`],
             chat: [],
             twitter: [],
             reddit: [],

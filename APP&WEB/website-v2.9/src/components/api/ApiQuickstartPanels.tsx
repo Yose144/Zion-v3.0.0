@@ -34,13 +34,13 @@ function getCodeSamples(cs: boolean): CodeSample[] {
       id: 'curl',
       label: ApiQuickstartPanelsCopy.curlQuickPing[cs ? 'cs' : 'en'],
       snippet: `curl -X GET \\
-  https://zionterranova.com/api/blockchain/stats \\
+  https://app.zionterranova.com/api/blockchain/stats \\
   -H 'Accept: application/json'`,
     },
     {
       id: 'ts',
       label: 'TypeScript fetch',
-      snippet: `const res = await fetch('https://zionterranova.com/api/blockchain/stats', {
+      snippet: `const res = await fetch('https://app.zionterranova.com/api/blockchain/stats', {
   headers: {
     'Accept': 'application/json',
   },
