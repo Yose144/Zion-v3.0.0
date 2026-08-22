@@ -50,7 +50,7 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 | **G1** | Real GPU / rig E2E (≥90% accept rate for 1h on ≥2 reference rigs) | Local OpenCL GO is not production E2E | ❌ Not started |
 | **G2** | Non-EVM WARP contracts (deploy or `disabled_reason`) | Cannot claim 12-chain support with placeholders | ❌ Not started |
 | **G3** | Solver network real E2E (independent solver over internet) | Wired locally only | ❌ Not started |
-| **G4** | Public subtree diff = 0 | Public MIT repo out of sync | ❌ Not started |
+| **G4** | Public subtree diff = 0 | Public MIT repo out of sync | ✅ Complete (`git push public public-split:main --dry-run` = "Everything up-to-date" at `fbc5e02f2`) |
 | **G5** | XMR / RandomX path (reach pool or `disabled_reason`) | No reachable pure-RandomX pool from Edge datacenter | ⚠️ Decision pending |
 | **G6** | PRL (Pearl PoUW) deferred and excluded | Must remain documented and excluded from profit switching | ✅ Documented |
 | **G7** | Chaos / load tests executed | 1000+ miner sim, 24h fuzzing, bridge stress | ❌ Not started |
@@ -73,7 +73,7 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 | E4 | Bridge Base mainnet round-trip | multichain | 100K wZION lock → mint → burn → release |
 | E5 | Non-EVM WARP hardening | multichain | each chain deployed or `disabled_reason` + UI hidden |
 | E6 | Solver network real E2E | multichain | independent solver over internet |
-| E7 | Public subtree sync | release/docs | `git subtree push --prefix=public public main` clean, `git secrets --scan` clean |
+| E7 | Public subtree sync | release/docs | `git subtree push --prefix=public public main` clean, `git secrets --scan` clean | ✅ Complete — `public-split` identical to `public/main` at `fbc5e02f2`; `git push --dry-run` reports "Everything up-to-date" (2026-08-22) |
 | E8 | XMR / RandomX path | core/pool | reachable pool E2E or `disabled_reason` |
 | E9 | L5/L6 activation decision | product/ops | decision record |
 
