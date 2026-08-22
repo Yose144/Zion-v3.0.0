@@ -21,6 +21,7 @@ import {
 import { apiClient } from "@/lib/api";
 import { useLang } from '@/contexts/LanguageContext';
 import { FLOWERS_PER_ZION } from '@/lib/constants';
+import QRCode from "@/components/explorer/QRCode";
 
 const ExplorerAddressAddressDetailClientCopy = {
   enUs: { cs: `cs-CZ`, en: `en-US` },
@@ -65,6 +66,9 @@ const ExplorerAddressAddressDetailClientCopy = {
   amount: { cs: `Částka`, en: `Amount` },
   noTransactionsFound: { cs: `Nenalezeny žádné transakce`, en: `No transactions found` },
   payout: { cs: `výplata`, en: `payout` },
+  in: { cs: `IN`, en: `IN` },
+  out: { cs: `OUT`, en: `OUT` },
+  self: { cs: `SELF`, en: `SELF` },
   loadMore: { cs: `Načíst další`, en: `Load More` },
   utxoList: { cs: `UTXO seznam`, en: `UTXO List` },
   index: { cs: `Index`, en: `Index` },
@@ -331,7 +335,7 @@ export default function AddressDetailClient() {
           <div className="w-10 h-10 rounded-xl bg-zion-purple/10 border border-zion-purple/20 flex items-center justify-center flex-shrink-0 mt-0.5">
             <Wallet className="w-5 h-5 text-zion-purple" />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-bold text-white tracking-tight">{ExplorerAddressAddressDetailClientCopy.address[cs ? 'cs' : 'en']}</h1>
               {isWatched && (
@@ -391,6 +395,9 @@ export default function AddressDetailClient() {
                 </button>
               </div>
             )}
+          </div>
+          <div className="hidden sm:block flex-shrink-0">
+            <QRCode value={addr} size={112} />
           </div>
         </div>
 
@@ -556,7 +563,23 @@ export default function AddressDetailClient() {
             return (
               <>
                 {visibleTxs.map((t) => {
-                  const incoming = (t.to || '') === addr;
+                  const outgoing = t.from && t.from !== 'coinbase' && t.from.includes(addr);
+                  const incoming = t.to && t.to.includes(addr);
+                  const isSelf = outgoing && incoming;
+                  const typeLabel = t.type === 'payout'
+                    ? (ExplorerAddressAddressDetailClientCopy.payout[cs ? 'cs' : 'en'])
+                    : isSelf
+                      ? (ExplorerAddressAddressDetailClientCopy.self[cs ? 'cs' : 'en'])
+                      : outgoing
+                        ? (ExplorerAddressAddressDetailClientCopy.out[cs ? 'cs' : 'en'])
+                        : incoming
+                          ? (ExplorerAddressAddressDetailClientCopy.in[cs ? 'cs' : 'en'])
+                          : (cs ? 'převod' : 'transfer');
+                  const typeClass = isSelf
+                    ? 'bg-zion-gold/15 text-zion-gold'
+                    : outgoing
+                      ? 'bg-zion-purple/15 text-zion-purple'
+                      : 'bg-zion-cyan/15 text-zion-cyan';
                   return (
                     <Link
                       key={t.tx_hash}
@@ -565,9 +588,7 @@ export default function AddressDetailClient() {
                     >
                       {/* type */}
                       <div className="flex items-center">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
-                          t.type === "payout" ? "bg-zion-cyan/15 text-zion-cyan" : "bg-zion-purple/15 text-zion-purple"
-                        }`}>{t.type === 'payout' ? (ExplorerAddressAddressDetailClientCopy.payout[cs ? 'cs' : 'en']) : (cs ? 'převod' : t.type)}</span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${typeClass}`}>{typeLabel}</span>
                       </div>
 
                       {/* hash */}
@@ -589,8 +610,8 @@ export default function AddressDetailClient() {
                       </div>
 
                       {/* amount */}
-                      <div className={`flex items-center justify-end text-[13px] font-semibold tabular-nums ${incoming ? "text-zion-cyan" : "text-zion-purple"}`}>
-                        {incoming ? "+" : "-"}{t.amount.toFixed(4)} ₿Z
+                      <div className={`flex items-center justify-end text-[13px] font-semibold tabular-nums ${isSelf ? "text-white" : incoming ? "text-zion-cyan" : "text-zion-purple"}`}>
+                        {isSelf ? "±" : incoming ? "+" : "-"}{t.amount.toFixed(4)} ZION
                       </div>
                     </Link>
                   );

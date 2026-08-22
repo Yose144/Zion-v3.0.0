@@ -79,6 +79,7 @@ export interface ZionTransactionInput {
   previous_output?: string;
   address?: string;
   output_index?: number;
+  script?: string;
 }
 
 export interface ZionTransactionOutput {
@@ -436,7 +437,7 @@ function parseV31Output(out: any): { address: string; amount: number; key: strin
   return { address, amount, key: address };
 }
 
-function parseV31Input(inp: any): { type: string; amount: number; key_image: string | undefined; previous_output: string | undefined; output_index: number; address?: string; server_resolved?: boolean } {
+function parseV31Input(inp: any): { type: string; amount: number; key_image: string | undefined; previous_output: string | undefined; output_index: number; address?: string; server_resolved?: boolean; script?: string } {
   // `bytesToHex` already accepts either a raw byte array (from the plain
   // serde `Transaction` struct, e.g. via `getTransaction`) or an already-hex
   // string (from `get_native_block`'s manually built JSON).
@@ -455,6 +456,7 @@ function parseV31Input(inp: any): { type: string; amount: number; key_image: str
     output_index: typeof inp?.index === 'number' ? inp.index : 0,
     address: resolvedAddress,
     server_resolved: resolvedAddress !== undefined,
+    script: bytesToHex(inp?.script) || undefined,
   };
 }
 
@@ -528,13 +530,14 @@ function parseV31NativeTransaction(
     output_indices: [],
     version: tx.version ?? 1,
     unlock_time: 0,
-    inputs: inputs.map((i: { type: string; amount: number; key_image: string | undefined; previous_output: string | undefined; address?: string; output_index: number }) => ({
+    inputs: inputs.map((i: { type: string; amount: number; key_image: string | undefined; previous_output: string | undefined; address?: string; output_index: number; script?: string }) => ({
       type: i.type,
       amount: i.amount,
       key_image: i.key_image,
       previous_output: i.previous_output,
       address: i.address ?? i.previous_output,
       output_index: i.output_index,
+      script: i.script,
     })),
     outputs: outputs.map((o: { address: string; amount: number; key: string }) => ({
       amount: o.amount,

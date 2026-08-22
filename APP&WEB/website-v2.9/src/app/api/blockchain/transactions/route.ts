@@ -82,11 +82,14 @@ export async function GET(request: NextRequest) {
               address: i.address,
               key_image: i.key_image,
               previous_output: i.previous_output,
+              output_index: i.output_index,
+              script: i.script,
             })) ?? [],
-            outputs: tx.outputs?.map((o) => ({
+            outputs: tx.outputs?.map((o, idx) => ({
               address: o.address,
               amount: o.amount / ATOMIC_UNITS_PER_ZION,
               key: o.key,
+              index: idx,
             })) ?? [],
             extra: tx.extra,
             confirmations: tx.block_height > 0 ? Math.max(0, chainInfo.height - tx.block_height) : 0,

@@ -6,7 +6,7 @@ import { Suspense } from "react";
 import { motion } from "framer-motion";
 import ProSearchBar from "@/components/explorer/ProSearchBar";
 import { useLang } from '@/contexts/LanguageContext';
-import { SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL } from '@/lib/site';
+
 import {
   Activity,
   ArrowLeftRight,
@@ -27,70 +27,71 @@ import {
 } from "lucide-react";
 
 const ExplorerCopy = {
-  blockArchive: { cs: `Archiv bloku`, en: `Block Archive` },
+  blockArchive: { cs: `Bloky`, en: `Blocks` },
   completeLedgerOfAllValidatedBl: { cs: `Kompletní ledger všech validovaných bloků`, en: `Complete ledger of all validated blocks` },
-  transactionFeed: { cs: `Tok transakcí`, en: `Transaction Feed` },
-  realTimeFlowOfFundsAndFees: { cs: `Tok fondů a fee v reálném čase`, en: `Real-time flow of funds and fees` },
+  transactionFeed: { cs: `Transakce`, en: `Transactions` },
+  realTimeFlowOfFundsAndFees: { cs: `Transakce a fee v reálném čase`, en: `Real-time transactions and fees` },
   mempool: { cs: `Mempool`, en: `Mempool` },
-  pendingTransactionsFeeHistogra: { cs: `Čekající transakce, fee histogram, double-spend`, en: `Pending transactions, fee histogram, double-spend` },
+  pendingTransactionsFeeHistogra: { cs: `Čekající transakce a fee histogram`, en: `Pending transactions and fee histogram` },
   bridgeTracker: { cs: `Bridge Tracker`, en: `Bridge Tracker` },
-  liveL1BaseBridgeStatusLockMint: { cs: `Live stav L1↔Base mostu, lock/mint/burn/unlock`, en: `Live L1↔Base bridge status, lock/mint/burn/unlock` },
-  networkPeers: { cs: `Síťoví peeri`, en: `Network Peers` },
-  globalNodeConnectivityMap: { cs: `Globální mapa konektivity nodů`, en: `Global node connectivity map` },
-  supplyDashboard: { cs: `Supply Dashboard`, en: `Supply Dashboard` },
-  circulatingMinedPremineDecadeD: { cs: `Circulating, vytěženo, premine, Decade Decay`, en: `Circulating, mined, premine, Decade Decay` },
-  chartsAnalytics: { cs: `Grafy a analytika`, en: `Charts & Analytics` },
-  historicalDifficultyHashrateEm: { cs: `Historická obtížnost, hashrate a emise`, en: `Historical difficulty, hashrate & emission` },
-  networkStats: { cs: `Network Stats`, en: `Network Stats` },
-  hashrateDifficultyBlockTimeTxT: { cs: `Hashrate, obtížnost, čas bloku, TX trendy`, en: `Hashrate, difficulty, block time, TX trends` },
+  liveL1BaseBridgeStatusLockMint: { cs: `Stav cross-chain bridge`, en: `Cross-chain bridge status` },
+  networkPeers: { cs: `Síťové peery`, en: `Network Peers` },
+  globalNodeConnectivityMap: { cs: `Globální mapa konektivity uzlů`, en: `Global node connectivity map` },
+  supplyDashboard: { cs: `Supply`, en: `Supply` },
+  circulatingMinedPremineDecadeD: { cs: `Cirkulující, vytěžené a celkové zásoby`, en: `Circulating, mined and total supply` },
+  chartsAnalytics: { cs: `Grafy`, en: `Charts` },
+  historicalDifficultyHashrateEm: { cs: `Historická obtížnost, hashrate a emise`, en: `Historical difficulty, hashrate and emission` },
+  networkStats: { cs: `Statistiky sítě`, en: `Network Stats` },
+  hashrateDifficultyBlockTimeTxT: { cs: `Hashrate, obtížnost, čas bloku a TX trendy`, en: `Hashrate, difficulty, block time and TX trends` },
   search: { cs: `Hledat`, en: `Search` },
-  unifiedSearchForBlocksTransact: { cs: `Jednotne hledani bloku, tx a adres`, en: `Unified search for blocks, transactions and addresses` },
-  explorerApi: { cs: `API explorera`, en: `Explorer API` },
-  directJsonEndpointsForIntegrat: { cs: `Priame JSON endpointy pro integraci a monitoring`, en: `Direct JSON endpoints for integration and monitoring` },
-  explorerPro: { cs: `Průzkumník Pro`, en: `Explorer Pro` },
-  realTime: { cs: `Živé`, en: `Real-Time` },
-  blockchainExplorer: { cs: `Průzkumník blockchainu`, en: `Blockchain Explorer` },
+  unifiedSearchForBlocksTransact: { cs: `Hledání bloků, transakcí a adres`, en: `Search blocks, transactions and addresses` },
+  explorerApi: { cs: `API`, en: `API` },
+  directJsonEndpointsForIntegrat: { cs: `JSON endpointy pro integraci a monitoring`, en: `JSON endpoints for integration and monitoring` },
+  explorerPro: { cs: `Explorer`, en: `Explorer` },
+  realTime: { cs: `Reálný čas`, en: `Real-Time` },
+  blockchainExplorer: { cs: `Blockchain Explorer`, en: `Blockchain Explorer` },
   liveMainnetData: { cs: `Živá mainnet data`, en: `Live Mainnet Data` },
   autoRefresh15s: { cs: `Auto-refresh 15 s`, en: `Auto-Refresh 15s` },
-  k2NodeMesh: { cs: `2-uzlový mesh`, en: `2-node mesh` },
-  trinity1111Services: { cs: `Trinity · 11/11 služeb`, en: `Trinity · 11/11 services` },
+  k2NodeMesh: { cs: `Síť uzlů`, en: `Node Mesh` },
+  trinity1111Services: { cs: `Plně funkční`, en: `Fully Operational` },
   apiDocs: { cs: `API dokumentace`, en: `API Docs` },
   telemetry: { cs: `Telemetrie`, en: `Telemetry` },
   networkStatistics: { cs: `Síťové statistiky`, en: `Network Statistics` },
-  realTimeMetricsFromTheZionBloc: { cs: `Metriky v reálném čase z blockchain daemonu ZION.`, en: `Real-time metrics from the ZION blockchain daemon.` },
+  realTimeMetricsFromTheZionBloc: { cs: `Metriky v reálném čase z blockchainu ZION.`, en: `Real-time metrics from the ZION blockchain.` },
   ledger: { cs: `Ledger`, en: `Ledger` },
   blocksTransactions: { cs: `Bloky a transakce`, en: `Blocks & Transactions` },
-  latestConfirmedBlocksAndTransa: { cs: `Nejnovější potvrzené bloky a tok transakcí ze chainu ZION.`, en: `Latest confirmed blocks and transaction feed from the ZION chain.` },
+  latestConfirmedBlocksAndTransa: { cs: `Nejnovější potvrzené bloky a transakce ze sítě ZION.`, en: `Latest confirmed blocks and transactions from the ZION network.` },
   quickNavigation: { cs: `Rychlá navigace`, en: `Quick Navigation` },
   jumpToSection: { cs: `Skok do sekce`, en: `Jump to section` },
-  v32Ledger: { cs: `Ledger v3.2.0`, en: `v3.2.0 Ledger` },
-  newFeaturesAndSecurityPatchesV: { cs: `Nové vlastnosti a bezpečnostní patche ověřené end-to-end na živém mainnetu.`, en: `New features and security patches verified end-to-end on the live mainnet.` },
-  accountModelMemo: { cs: `Account-model memo`, en: `Account-model memo` },
-  txMemoFieldForBridgeDaoAndSwap: { cs: `TX pole memo pro BRIDGE, DAO a SWAP — E2E potvrzeno v bloku 752.`, en: `TX memo field for BRIDGE, DAO, and SWAP — E2E confirmed in block 752.` },
-  f47F5Patches: { cs: `F4.7 + F5 patche`, en: `F4.7 + F5 patches` },
-  maxTxAmountCapAndSenderBalance: { cs: `Max-tx-amount cap a sender balance check aktivní od genesis.`, en: `Max-tx-amount cap and sender balance check active from genesis.` },
-  k2NodeRpcMesh: { cs: `2-uzlový RPC mesh`, en: `2-node RPC mesh` },
-  rpcAutoFailoverAcrossEdge18443: { cs: `RPC auto-failover přes Edge 1 (8443) a Edge 2 (8448). Local Backup je offline.`, en: `RPC auto-failover across Edge 1 (8443) and Edge 2 (8448). Local Backup is offline.` },
-  memoryLeakFix: { cs: `Memory leak fix`, en: `Memory leak fix` },
-  poolNodeMemoryLeaksFixedWatchd: { cs: `Pool + node memory leak opraveny, watchdog hlídá zdraví.`, en: `Pool + node memory leaks fixed, watchdog monitors health.` },
+  v32Ledger: { cs: `Funkce sítě`, en: `Network Features` },
+  newFeaturesAndSecurityPatchesV: { cs: `Přehled klíčových vlastností a zabezpečení sítě.`, en: `Overview of key network features and security.` },
+  accountModelMemo: { cs: `Memo pole`, en: `Memo Field` },
+  txMemoFieldForBridgeDaoAndSwap: { cs: `Každá transakce může nést volitelný veřejný memo text.`, en: `Every transaction can carry an optional public memo text.` },
+  f47F5Patches: { cs: `Ověření transakcí`, en: `Transaction Validation` },
+  maxTxAmountCapAndSenderBalance: { cs: `Maximální částka a kontrola zůstatku odesílatele.`, en: `Maximum amount cap and sender balance verification.` },
+  k2NodeRpcMesh: { cs: `Decentralizovaná síť`, en: `Decentralized Network` },
+  rpcAutoFailoverAcrossEdge18443: { cs: `Distribuovaná RPC infrastruktura pro vysokou dostupnost.`, en: `Distributed RPC infrastructure for high availability.` },
+  memoryLeakFix: { cs: `Stabilní infrastruktura`, en: `Stable Infrastructure` },
+  poolNodeMemoryLeaksFixedWatchd: { cs: `Node a pool běží s watchdogem a kontinuálním health-checkem.`, en: `Node and pool run with watchdog and continuous health checks.` },
   analytics: { cs: `Analytika`, en: `Analytics` },
   networkCharts: { cs: `Síťové grafy`, en: `Network Charts` },
-  historicalDifficultyHashrateEm_2: { cs: `Historické trendy obtížnosti, hashrate, emise a velikosti bloku.`, en: `Historical difficulty, hashrate, emission, and block size trends.` },
+  historicalDifficultyHashrateEm_2: { cs: `Historické trendy obtížnosti, hashrate, emise a velikosti bloku.`, en: `Historical difficulty, hashrate, emission and block size trends.` },
   supply: { cs: `Zasoba`, en: `Supply` },
   emissionMonitor: { cs: `Monitoring emise`, en: `Emission Monitor` },
-  trackMiningProgressDecadeDecay: { cs: `Sledujte postup těžby – Decade Decay: 5,400 -> 724 ZION/blok, 100+ let + tail ∞.`, en: `Track mining progress - Decade Decay: 5,400 -> 724 ZION/block, 100+ years + tail ∞.` },
+  trackMiningProgressDecadeDecay: { cs: `Sledujte postup těžby a emisi podle Decade Decay modelu.`, en: `Track mining progress and emission under the Decade Decay model.` },
   p2pNetwork: { cs: `P2P síť`, en: `P2P Network` },
-  connectivityOfThe2NodeP2pMeshE: { cs: `Konektivita 2-uzlového P2P meshe — Edge 1 a Edge 2 v reálném čase. Local Backup Node je offline.`, en: `Connectivity of the 2-node P2P mesh — Edge 1 and Edge 2 in real time. Local Backup Node is offline.` },
+  connectivityOfThe2NodeP2pMeshE: { cs: `Globální P2P konektivita sítě ZION v reálném čase.`, en: `Global ZION P2P network connectivity in real time.` },
   realTime_2: { cs: `Real-time`, en: `Real-time` },
   liveBlockFeed: { cs: `Živý feed bloků`, en: `Live Block Feed` },
-  newBlocksDeliveredViaServerSen: { cs: `Nové bloky doručené přes Server-Sent Events — okamžitě po potvrzení.`, en: `New blocks delivered via Server-Sent Events — instantly upon confirmation.` },
+  newBlocksDeliveredViaServerSen: { cs: `Nové bloky doručeny okamžitě po potvrzení.`, en: `New blocks delivered instantly upon confirmation.` },
   distribution: { cs: `Distribuce`, en: `Distribution` },
   richList: { cs: `Rich list`, en: `Rich List` },
-  topZionHoldersByBalancePremine: { cs: `Top držitelé ZION podle zůstatku – premine alokace, těžební odměny a ekonomika sítě.`, en: `Top ZION holders by balance - premine allocations, mining rewards, and network economics.` },
-  realTimeBlockchainDataFromNati: { cs: `Blockchain data v reálném čase z nativních Rust nodů. Každý blok, transakce a adresa – plně transparentní, plně otevřené.`, en: `Real-time blockchain data from native Rust nodes. Every block, transaction, and address - fully transparent, fully open.` },
-  decadeDecayEmission5400724Zion: { cs: `Decade Decay emise: 5,400 → 724 ZION/block · 100+ let + tail ∞ · Veškeré fee spáleno · 89/5/5/1 distribuce · Memo E2E potvrzeno v bloku 752 · Public launch 31.12.2026`, en: `Decade Decay emission: 5,400 → 724 ZION/block · 100+ years + tail ∞ · All fees burned · 89/5/5/1 distribution · Memo E2E confirmed in block 752 · Public launch 31.12.2026` },
+  topZionHoldersByBalancePremine: { cs: `Top držitelé ZION podle zůstatku.`, en: `Top ZION holders by balance.` },
+  realTimeBlockchainDataFromNati: { cs: `Blockchain data v reálném čase z uzlů ZION. Každý blok, transakce a adresa – plně transparentní, plně otevřené.`, en: `Real-time blockchain data from ZION nodes. Every block, transaction, and address — fully transparent, fully open.` },
+  decadeDecayEmission5400724Zion: { cs: `Decade Decay emise: 5,400 → 724 ZION/block · 100+ let + tail ∞ · Veškeré fee spáleno · 89/5/5/1 distribuce.`, en: `Decade Decay emission: 5,400 → 724 ZION/block · 100+ years + tail ∞ · All fees burned · 89/5/5/1 distribution.` },
   networkStatus: { cs: `Stav sítě`, en: `Network Status` },
   roadmap: { cs: `Roadmapa`, en: `Roadmap` },
+  networkFeatures: { cs: `Síť`, en: `Network` },
 };
 
 const ExplorerDashboard = dynamic(() => import("@/components/explorer/ExplorerDashboard"), { ssr: false });
@@ -208,7 +209,7 @@ export default function ExplorerPage() {
             <div className="space-y-5">
               <div className="zion-badge text-zion-cyan border-zion-cyan/40 bg-zion-cyan/10">
                 <SearchCode className="h-4 w-4" />
-                {SITE_RELEASE_LABEL} · {ExplorerCopy.explorerPro[cs ? 'cs' : 'en']}
+                ZION Mainnet · {ExplorerCopy.explorerPro[cs ? 'cs' : 'en']}
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{ExplorerCopy.realTime[cs ? 'cs' : 'en']}</p>
@@ -218,8 +219,8 @@ export default function ExplorerPage() {
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
                 {cs
-                  ? `Prozkoumejte bloky, transakce a adresy na živém mainnetu ZION TerraNova ${SITE_RELEASE_LABEL}. Kanonický runtime běží na ${SITE_RUNTIME_LABEL} — 2-uzlový P2P mesh (Edge 1 + Edge 2), account-model transakce s memo polem, E2E testy potvrzené v bloku 752.`
-                  : `Search blocks, transactions, and addresses on the live ZION TerraNova ${SITE_RELEASE_LABEL} mainnet. Canonical runtime runs on ${SITE_RUNTIME_LABEL} — 2-node P2P mesh (Edge 1 + Edge 2), account-model transactions with memo field, E2E tests confirmed in block 752.`}
+                  ? `Prozkoumejte bloky, transakce a adresy na živém ZION mainnetu. Transparentní, rychlý a otevřený blockchain explorer s aktuálními daty sítě.`
+                  : `Explore blocks, transactions and addresses on the live ZION mainnet. A transparent, fast and open blockchain explorer with live network data.`}
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="zion-badge zion-badge-gold">
@@ -346,14 +347,14 @@ export default function ExplorerPage() {
           </div>
         </motion.section>
 
-        {/* ═══════ v3.2.0 E2E LEDGER FEATURES ═══════ */}
+        {/* ═══════ NETWORK FEATURES ═══════ */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.12 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">v3.2.0 E2E</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{ExplorerCopy.networkFeatures[cs ? 'cs' : 'en']}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Sparkles className="h-7 w-7 text-zion-gold" />
               {ExplorerCopy.v32Ledger[cs ? 'cs' : 'en']}
@@ -527,8 +528,8 @@ export default function ExplorerPage() {
 
         <p className="text-center text-xs text-gray-600">
           {cs
-            ? `ZION TerraNova ${SITE_RELEASE_LABEL} - Blockchain Explorer Pro · Živá data z 2-uzlového Rust runtime · v3.2.0 E2E Trinity`
-            : `ZION TerraNova ${SITE_RELEASE_LABEL} - Blockchain Explorer Pro · Live data from 2-node Rust runtime · v3.2.0 E2E Trinity`}
+            ? `ZION TerraNova - Blockchain Explorer · Živá data ze sítě`
+            : `ZION TerraNova - Blockchain Explorer · Live network data`}
         </p>
       </div>
     </div>

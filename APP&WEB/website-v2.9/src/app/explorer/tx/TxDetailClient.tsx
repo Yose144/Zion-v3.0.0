@@ -33,6 +33,10 @@ const ExplorerTxTxDetailClientCopy = {
   rawJson: { cs: `Raw JSON`, en: `Raw JSON` },
   amount: { cs: `Částka`, en: `Amount` },
   model: { cs: `Model`, en: `Model` },
+  previousOutput: { cs: `Předchozí výstup`, en: `Previous Output` },
+  outputIndex: { cs: `Index výstupu`, en: `Output Index` },
+  script: { cs: `Script`, en: `Script` },
+  memo: { cs: `Memo`, en: `Memo` },
   inputs: { cs: `Vstupy`, en: `Inputs` },
   outputs: { cs: `Vystupy`, en: `Outputs` },
   transactionDetails: { cs: `Detaily transakce`, en: `Transaction Details` },
@@ -57,7 +61,7 @@ const ExplorerTxTxDetailClientCopy = {
   viewBlock: { cs: `Zobrazit blok`, en: `View Block` },
 };
 
-interface TxInput { type: string; amount: number; address?: string; key_image?: string; previous_output?: string; key_offsets?: number[]; }
+interface TxInput { type: string; amount: number; address?: string; key_image?: string; previous_output?: string; output_index?: number; script?: string; key_offsets?: number[]; }
 interface TxOutput { amount: number; key: string; address?: string; index?: number; }
 interface Transaction {
   tx_hash: string; block_height: number; block_timestamp: number; in_pool: boolean;
@@ -80,6 +84,15 @@ const fmtAge = (ts: number, cs: boolean) => {
   return cs ? `před ${Math.floor(s / 86400)} d` : `${Math.floor(s / 86400)}d ago`;
 };
 const truncHash = (h: string, n = 12) => h && h.length > n * 2 ? `${h.slice(0, n)}…${h.slice(-n)}` : h || "—";
+const bytesToHex = (bytes: number[]) =>
+  bytes.map((b) => b.toString(16).padStart(2, "0")).join("");
+const decodeMemo = (bytes: number[]) => {
+  if (!bytes?.length) return { text: "", hex: "", isText: false };
+  const printable = bytes.filter((b) => b >= 32 && b < 127);
+  const text = String.fromCharCode(...printable);
+  const hex = bytesToHex(bytes);
+  return { text, hex, isText: text.length > 0 && text.length === printable.length };
+};
 
 function CopyBtn({ text }: { text: string }) {
   const [ok, setOk] = useState(false);
@@ -102,6 +115,60 @@ function InfoRow({ label, value, copyable, mono, color, link }: {
           <Link href={link} className={`${mono ? "font-mono" : ""} ${color || "text-zion-cyan"} text-sm hover:text-white transition break-all truncate`}>{value}</Link>
         ) : (
           <span className={`${mono ? "font-mono" : ""} ${color || "text-white"} text-sm break-all`}>{value}</span>
+        )}
+        {copyable && <CopyBtn text={value} />}
+      </div>
+    </div>
+  );
+}
+
+function AddressList({ addrs, max = 3 }: { addrs: string; max?: number }) {
+  const list = addrs.split(',').map((s) => s.trim()).filter(Boolean);
+  if (!list.length) return <span className="text-gray-600">—</span>;
+  const visible = list.slice(0, max);
+  const hidden = list.length - max;
+  return (
+    <div className="flex flex-col items-end gap-1.5">
+      {visible.map((a, i) => {
+        const label = KNOWN_ADDRESS_LABELS[a]?.label;
+        const isAddr = a.startsWith('zion1');
+        return (
+          <div key={i} className="flex items-center gap-2 min-w-0">
+            {label && <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/60 border border-white/10">{label}</span>}
+            {isAddr ? (
+              <Link href={`/explorer/address?addr=${a}`} className="text-sm font-mono text-zion-cyan hover:text-white transition break-all truncate" title={a}>
+                {truncHash(a, 18)}
+              </Link>
+            ) : (
+              <span className="text-sm font-mono text-white break-all truncate" title={a}>{a}</span>
+            )}
+            <CopyBtn text={a} />
+          </div>
+        );
+      })}
+      {hidden > 0 && <span className="text-xs text-gray-500">+{hidden}</span>}
+    </div>
+  );
+}
+
+function AddressRow({ label, addrs }: { label: string; addrs: string }) {
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-start justify-between py-3 border-b border-white/[0.04] last:border-0 gap-2">
+      <span className="text-[12px] uppercase tracking-[0.1em] text-gray-500 font-medium flex-shrink-0 pt-1">{label}</span>
+      <AddressList addrs={addrs} />
+    </div>
+  );
+}
+
+function MiniInfo({ label, value, copyable, mono, link, color }: { label: string; value: string; copyable?: boolean; mono?: boolean; link?: string; color?: string }) {
+  return (
+    <div className="flex items-start justify-between gap-3 py-1.5 border-b border-white/[0.04] last:border-0">
+      <span className="text-[10px] uppercase tracking-wider text-white/40 pt-1">{label}</span>
+      <div className="flex items-center gap-2 min-w-0 justify-end">
+        {link ? (
+          <Link href={link} className={`text-[11px] ${mono ? "font-mono" : ""} ${color || "text-zion-cyan"} hover:text-white transition break-all truncate`} title={value}>{truncHash(value, 18)}</Link>
+        ) : (
+          <span className={`text-[11px] ${mono ? "font-mono" : ""} ${color || "text-white"} break-all truncate`} title={value}>{value}</span>
         )}
         {copyable && <CopyBtn text={value} />}
       </div>
@@ -284,9 +351,9 @@ export default function TxDetailClient() {
           {isCoinbase ? (
             <InfoRow label="From" value="⛏ Coinbase" />
           ) : (
-            <InfoRow label="From" value={tx.from && tx.from.startsWith('zion1') ? tx.from : '—'} mono copyable link={tx.from?.startsWith('zion1') ? `/explorer/address?addr=${tx.from}` : undefined} />
+            <AddressRow label="From" addrs={tx.from || tx.inputs.map((i) => i.address).filter(Boolean).join(', ')} />
           )}
-          <InfoRow label="To" value={tx.to ?? tx.outputs?.map((o) => o.address || o.key).filter(Boolean).join(', ') ?? '—'} mono copyable link={tx.to?.startsWith('zion1') ? `/explorer/address?addr=${tx.to}` : undefined} />
+          <AddressRow label="To" addrs={tx.to || tx.outputs.map((o) => o.address || o.key).filter(Boolean).join(', ')} />
           <InfoRow label={ExplorerTxTxDetailClientCopy.model[cs ? 'cs' : 'en']} value={(tx.transaction_model ?? 'v31-native').toUpperCase()} color="text-zion-cyan" />
           {isV3Account && (
             <>
@@ -300,6 +367,19 @@ export default function TxDetailClient() {
               <InfoRow label={ExplorerTxTxDetailClientCopy.version[cs ? 'cs' : 'en']} value={tx.version.toString()} />
               {tx.unlock_time > 0 && <InfoRow label={ExplorerTxTxDetailClientCopy.unlockTime[cs ? 'cs' : 'en']} value={tx.unlock_time.toString()} />}
             </>
+          )}
+          {tx.extra && tx.extra.length > 0 && (
+            (() => {
+              const memo = decodeMemo(tx.extra);
+              return (
+                <InfoRow
+                  label={ExplorerTxTxDetailClientCopy.memo[cs ? 'cs' : 'en']}
+                  value={memo.isText ? memo.text : `${memo.hex.slice(0, 64)}${memo.hex.length > 64 ? '…' : ''}`}
+                  mono={!memo.isText}
+                  copyable
+                />
+              );
+            })()
           )}
         </motion.div>
 
@@ -327,23 +407,45 @@ export default function TxDetailClient() {
                     </div>
                   ) : (
                     <>
-                      <div className="flex justify-between items-center mb-1">
+                      <div className="flex justify-between items-center mb-2">
                         <span className="text-zion-purple text-[10px] font-mono uppercase tracking-wider">{ExplorerTxTxDetailClientCopy.input[cs ? 'cs' : 'en']} #{i}</span>
                         <span className="text-white text-sm font-semibold tabular-nums">{inp.amount.toFixed(4)} ZION</span>
                       </div>
-                      {inp.address ? (
-                        <div className="flex items-center text-gray-600 font-mono text-[11px] truncate">
-                          <Link href={`/explorer/address?addr=${inp.address}`} className="hover:text-zion-cyan transition" title={inp.address}>
-                            {KNOWN_ADDRESS_LABELS[inp.address]?.label || truncHash(inp.address, 14)}
-                          </Link>
-                          <CopyBtn text={inp.address} />
-                        </div>
-                      ) : inp.key_image ? (
-                        <div className="flex items-center text-gray-600 font-mono text-[11px] truncate">
-                          {ExplorerTxTxDetailClientCopy.keyImage[cs ? 'cs' : 'en']}: {truncHash(inp.key_image, 10)}
-                          <CopyBtn text={inp.key_image} />
-                        </div>
-                      ) : null}
+                      <div className="space-y-0.5">
+                        {inp.previous_output && (
+                          <MiniInfo
+                            label={ExplorerTxTxDetailClientCopy.previousOutput[cs ? 'cs' : 'en']}
+                            value={inp.previous_output}
+                            copyable
+                            mono
+                            link={`/explorer/tx?hash=${inp.previous_output}`}
+                          />
+                        )}
+                        {typeof inp.output_index === 'number' && (
+                          <MiniInfo
+                            label={ExplorerTxTxDetailClientCopy.outputIndex[cs ? 'cs' : 'en']}
+                            value={String(inp.output_index)}
+                            mono
+                          />
+                        )}
+                        {inp.script && (
+                          <MiniInfo
+                            label={ExplorerTxTxDetailClientCopy.script[cs ? 'cs' : 'en']}
+                            value={inp.script}
+                            copyable
+                            mono
+                          />
+                        )}
+                        {inp.address?.startsWith('zion1') ? (
+                          <MiniInfo
+                            label="Address"
+                            value={inp.address}
+                            copyable
+                            mono
+                            link={`/explorer/address?addr=${inp.address}`}
+                          />
+                        ) : null}
+                      </div>
                     </>
                   )}
                 </div>
@@ -368,27 +470,24 @@ export default function TxDetailClient() {
             <div className="space-y-2">
               {tx.outputs.map((out, i) => (
                 <div key={i} className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3">
-                  <div className="flex justify-between items-center mb-1">
+                  <div className="flex justify-between items-center mb-2">
                     <span className="text-zion-cyan text-[10px] font-mono uppercase tracking-wider">{ExplorerTxTxDetailClientCopy.output[cs ? 'cs' : 'en']} #{i}</span>
                     <span className="text-zion-gold text-sm font-semibold tabular-nums">{out.amount.toFixed(4)} ZION</span>
                   </div>
-                  {(out.address || out.key) && (
-                    <div className="flex items-center text-gray-600 font-mono text-[11px] truncate">
-                      {out.address || out.key ? (
-                        <>
-                          <Link href={`/explorer/address?addr=${out.address || out.key}`} className="hover:text-zion-cyan transition" title={out.address || out.key}>
-                            {KNOWN_ADDRESS_LABELS[out.address || out.key]?.label || truncHash(out.address || out.key, 14)}
-                          </Link>
-                          <CopyBtn text={out.address || out.key} />
-                        </>
-                      ) : (
-                        <>
-                          {ExplorerTxTxDetailClientCopy.key[cs ? 'cs' : 'en']}: {truncHash(out.key, 10)}
-                          <CopyBtn text={out.key} />
-                        </>
-                      )}
-                    </div>
-                  )}
+                  <div className="space-y-0.5">
+                    {typeof out.index === 'number' && (
+                      <MiniInfo label="Index" value={String(out.index)} mono />
+                    )}
+                    {(out.address || out.key) && (
+                      <MiniInfo
+                        label="Address"
+                        value={out.address || out.key}
+                        copyable
+                        mono
+                        link={(out.address || out.key).startsWith('zion1') ? `/explorer/address?addr=${out.address || out.key}` : undefined}
+                      />
+                    )}
+                  </div>
                 </div>
               ))}
               {tx.outputs.length > 0 && (
@@ -401,20 +500,31 @@ export default function TxDetailClient() {
         </div>
         )}
 
-        {/* TX Extra */}
+        {/* Memo / TX Extra */}
         {tx.extra && tx.extra.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-            className="zion-rainbow-sub p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-8 w-8 rounded-xl bg-gray-500/10 flex items-center justify-center">
-                <Hash className="h-4 w-4 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-white">TX Extra ({tx.extra.length} {ExplorerTxTxDetailClientCopy.bytes[cs ? 'cs' : 'en']})</h3>
-            </div>
-            <div className="bg-black/40 rounded-xl p-4 font-mono text-[11px] text-gray-500 break-all overflow-x-auto max-h-24 leading-relaxed">
-              {tx.extra.map((b) => b.toString(16).padStart(2, "0")).join(" ")}
-            </div>
-          </motion.div>
+          (() => {
+            const memo = decodeMemo(tx.extra);
+            return (
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                className="zion-rainbow-sub p-6" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="h-8 w-8 rounded-xl bg-gray-500/10 flex items-center justify-center">
+                    <Hash className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white">{ExplorerTxTxDetailClientCopy.memo[cs ? 'cs' : 'en']} ({tx.extra.length} {ExplorerTxTxDetailClientCopy.bytes[cs ? 'cs' : 'en']})</h3>
+                </div>
+                {memo.isText ? (
+                  <div className="bg-black/40 rounded-xl p-4 text-sm text-white break-all overflow-x-auto max-h-40 leading-relaxed">
+                    {memo.text}
+                  </div>
+                ) : (
+                  <div className="bg-black/40 rounded-xl p-4 font-mono text-[11px] text-gray-500 break-all overflow-x-auto max-h-40 leading-relaxed">
+                    {memo.hex.match(/.{1,64}/g)?.join(' ')}
+                  </div>
+                )}
+              </motion.div>
+            );
+          })()
         )}
 
         {/* Navigate to block */}

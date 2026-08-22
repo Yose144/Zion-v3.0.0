@@ -77,21 +77,24 @@ export async function GET(request: NextRequest) {
     const feeZion = (tx.fee_zion ?? tx.fee ?? 0) / ATOMIC_UNITS_PER_ZION;
 
     // Build inputs/outputs for V31-native UTXO transactions
-    const inputs: Array<{ address?: string; amount: number; type: string; key_image?: string; previous_output?: string }> =
+    const inputs: Array<{ address?: string; amount: number; type: string; key_image?: string; previous_output?: string; output_index?: number; script?: string }> =
       tx.inputs?.map((i) => ({
         address: i.address,
         amount: i.amount / ATOMIC_UNITS_PER_ZION,
         type: i.type ?? (i.previous_output ? 'standard' : 'coinbase'),
         key_image: i.key_image,
         previous_output: i.previous_output,
+        output_index: i.output_index,
+        script: i.script,
       })) ?? [];
 
-    const outputs: Array<{ address: string; amount: number; type: string; key?: string }> =
-      tx.outputs?.map((o) => ({
+    const outputs: Array<{ address: string; amount: number; type: string; key?: string; index?: number }> =
+      tx.outputs?.map((o, idx) => ({
         address: o.address,
         amount: o.amount / ATOMIC_UNITS_PER_ZION,
         type: 'standard',
         key: o.key,
+        index: idx,
       })) ?? [];
 
     // Known address labels
