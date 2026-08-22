@@ -528,6 +528,10 @@ impl ChainAdapter for NearAdapter {
 mod tests {
     use super::*;
     use crate::warp::protocol::MintInstruction;
+    use std::sync::Mutex;
+
+    // Tests touching process env vars must run serially to avoid races.
+    static NEAR_ENV_LOCK: Mutex<()> = Mutex::new(());
 
     // ── Metadata ─────────────────────────────────────────────────────────────
 
@@ -546,6 +550,7 @@ mod tests {
 
     #[test]
     fn test_from_env_uses_default_rpc() {
+        let _lock = NEAR_ENV_LOCK.lock().unwrap();
         std::env::remove_var("WARP_NEAR_RPC");
         let a = NearAdapter::from_env();
         assert_eq!(a.rpc_url, "https://rpc.mainnet.near.org");
@@ -553,6 +558,7 @@ mod tests {
 
     #[test]
     fn test_from_env_respects_override() {
+        let _lock = NEAR_ENV_LOCK.lock().unwrap();
         std::env::set_var("WARP_NEAR_RPC", "https://rpc.testnet.near.org");
         let a = NearAdapter::from_env();
         assert_eq!(a.rpc_url, "https://rpc.testnet.near.org");
@@ -582,6 +588,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_execute_mint_no_key_is_err() {
+        let _lock = NEAR_ENV_LOCK.lock().unwrap();
         std::env::remove_var("WARP_NEAR_RELAY_KEY");
         std::env::remove_var("WARP_NEAR_ACCOUNT");
         let a = NearAdapter::with_rpc("http://127.0.0.1:1");
