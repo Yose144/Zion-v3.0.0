@@ -43,7 +43,9 @@ import {
   SITE_ENVIRONMENT_LABEL,
   SITE_PRIMARY_HOST,
   SITE_POOL_PRIMARY,
+  SITE_APP_URL,
 } from '@/lib/site';
+import { GITHUB_REPO_URL } from '@/lib/github-releases';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -375,7 +377,7 @@ async function handleStatus(): Promise<CliResponse> {
 
   // Website
   lines.push('', '── Website ──');
-  lines.push(`  ✓ Online — https://zionterranova.com`);
+  lines.push(`  ✓ Online — ${SITE_APP_URL}`);
   lines.push(`    Version: ${SITE_VERSION}`);
 
   lines.push('');
@@ -1142,16 +1144,16 @@ function formatDocs(): string {
     'ZION Documentation',
     '═══════════════════════════════════════════════════════════',
     '',
-    '  Whitepaper:        https://zionterranova.com/whitepaper',
-    '  Docs (main):       https://zionterranova.com/docs',
-    '  Mining guide:      https://zionterranova.com/mining',
-    '  Explorer:          https://zionterranova.com/explorer',
-    '  Pool:              https://zionterranova.com/pool',
-    '  DeFi:              https://zionterranova.com/defi',
-    '  CEX:               https://zionterranova.com/cex',
-    '  DAO:               https://zionterranova.com/dao',
-    '  Bridge:            https://zionterranova.com/bridge',
-    '  Downloads:         https://zionterranova.com/downloads',
+    `  Whitepapers:       ${SITE_APP_URL}/whitepapers`,
+    `  Docs (main):       ${SITE_APP_URL}/docs`,
+    `  Mining guide:      ${SITE_APP_URL}/mining`,
+    `  Explorer:          ${SITE_APP_URL}/explorer`,
+    `  Pool:              ${SITE_APP_URL}/pool`,
+    `  DeFi:              ${SITE_APP_URL}/defi`,
+    `  CEX:               ${SITE_APP_URL}/cex`,
+    `  DAO:               ${SITE_APP_URL}/dao`,
+    `  Bridge:            ${SITE_APP_URL}/bridge`,
+    `  Downloads:         ${SITE_APP_URL}/download`,
     '',
     'Type "links" for a quick reference of all useful URLs.',
   ].join('\n');
@@ -1162,16 +1164,16 @@ function formatLinks(): string {
     'Useful Links',
     '═══════════════════════════════════════════════════════════',
     '',
-    '  Website:           https://zionterranova.com',
-    '  Explorer:          https://zionterranova.com/explorer',
-    '  Pool:              https://zionterranova.com/pool',
-    '  DeFi:              https://zionterranova.com/defi',
-    '  CEX:               https://zionterranova.com/cex',
-    '  DAO:               https://zionterranova.com/dao',
-    '  Bridge:            https://zionterranova.com/bridge',
-    '  Downloads:         https://zionterranova.com/downloads',
-    '  GitHub:            https://github.com/zionterranova',
-    '  Whitepaper:        https://zionterranova.com/whitepaper',
+    `  Website:           ${SITE_APP_URL}`,
+    `  Explorer:          ${SITE_APP_URL}/explorer`,
+    `  Pool:              ${SITE_APP_URL}/pool`,
+    `  DeFi:              ${SITE_APP_URL}/defi`,
+    `  CEX:               ${SITE_APP_URL}/cex`,
+    `  DAO:               ${SITE_APP_URL}/dao`,
+    `  Bridge:            ${SITE_APP_URL}/bridge`,
+    `  Downloads:         ${SITE_APP_URL}/download`,
+    `  GitHub:            ${GITHUB_REPO_URL}`,
+    `  Whitepapers:       ${SITE_APP_URL}/whitepapers`,
     '  Pool stratum:      ' + SITE_POOL_PRIMARY,
     '  Node RPC:          ' + SITE_PRIMARY_HOST + ':8443',
     '',
@@ -1721,7 +1723,7 @@ function formatMineStart(): string {
     'ZION Mining — Quick Start Guide',
     '═══════════════════════════════════════════════════════════',
     '',
-    '1. Download the ZION miner from https://zionterranova.com/downloads',
+    `1. Download the ZION miner from ${SITE_APP_URL}/download`,
     '   (or build from source: cargo build --release -p zion-miner)',
     '',
     '2. Choose a mining algorithm:',

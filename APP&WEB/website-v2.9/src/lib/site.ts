@@ -11,6 +11,13 @@ export const SITE_LAUNCH_DATE = '2026-12-31T00:00:00Z';
 export const SITE_LAUNCH_DATE_DISPLAY = '31 December 2026 (New Year\'s Eve)';
 export const SITE_NETWORK_LABEL = `${SITE_ENVIRONMENT_LABEL} · ${SITE_RELEASE_LABEL}`;
 
+// app.zionterranova.com is the actual Next.js web app (explorer, pool, defi,
+// downloads, docs, etc). zionterranova.com is a separate static intro/hub
+// page that only serves its own index.html for every path — it does NOT
+// proxy to this app, so links must point at the app subdomain.
+export const SITE_APP_URL = 'https://app.zionterranova.com';
+export const SITE_INTRO_URL = 'https://zionterranova.com';
+
 // ── Infrastructure (One Love Mainnet Stable, 2026-08-06) ───────────────────
 // Edge server — cloud VPS, public-facing node + pool stratum
 export const SITE_PRIMARY_HOST = process.env.NEXT_PUBLIC_ZION_RPC_HOST || 'rpc.zionterranova.com';
