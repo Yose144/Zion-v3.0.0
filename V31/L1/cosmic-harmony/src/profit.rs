@@ -600,6 +600,19 @@ impl CoinProfile {
         self
     }
 
+    /// Override the default stratum pool URL for this coin. Useful for
+    /// testing, failover, or region-specific endpoints.
+    pub fn with_pool_address(mut self, url: impl Into<String>) -> Self {
+        let url = url.into();
+        let url = if url.starts_with("stratum+") || url.starts_with("stratum://") {
+            url
+        } else {
+            format!("stratum+tcp://{}", url)
+        };
+        self.stratum_urls = vec![url];
+        self
+    }
+
     /// Placeholder defaults for Mainnet Alpha. These are not live quotes.
     pub fn defaults() -> Vec<Self> {
         vec![

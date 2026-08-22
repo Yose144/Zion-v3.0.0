@@ -142,7 +142,7 @@ impl Keyring {
         hash[..32].try_into().expect("keccak256 output is 32 bytes")
     }
 
-    fn zion_signing_key(&self, account: u32, index: u32) -> MultichainResult<EdSigningKey> {
+    pub fn zion_signing_key(&self, account: u32, index: u32) -> MultichainResult<EdSigningKey> {
         let seed = self.zion_seed(account, index);
         Ok(EdSigningKey::from_bytes(&seed))
     }

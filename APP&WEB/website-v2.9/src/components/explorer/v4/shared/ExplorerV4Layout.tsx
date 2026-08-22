@@ -10,7 +10,9 @@ import {
   BarChart3,
   Boxes,
   Code,
+  Coins,
   Compass,
+  FileCode,
   Globe,
   Layers,
   Radio,
@@ -45,6 +47,7 @@ const navItems: NavItem[] = [
   { href: "/explorer/richlist", labelCs: "Rich List", labelEn: "Rich List", icon: TrendingUp, group: "data" },
   { href: "/explorer/supply", labelCs: "Emise", labelEn: "Supply", icon: BarChart3, group: "data" },
   { href: "/explorer/charts", labelCs: "Grafy", labelEn: "Charts", icon: BarChart3, group: "data" },
+  { href: "/explorer/tokens", labelCs: "Tokeny", labelEn: "Tokens", icon: Coins, group: "data" },
   { href: "/explorer/status", labelCs: "Status", labelEn: "Status", icon: Signal, group: "data" },
   { href: "/explorer/network-stats", labelCs: "Síť", labelEn: "Network", icon: Globe, group: "data" },
   { href: "/explorer/bridge", labelCs: "Most", labelEn: "Bridge", icon: ArrowLeftRight, group: "data" },
@@ -53,6 +56,7 @@ const navItems: NavItem[] = [
   { href: "/explorer/search", labelCs: "Hledat", labelEn: "Search", icon: Search, group: "tools" },
   { href: "/explorer/broadcast", labelCs: "Broadcast", labelEn: "Broadcast", icon: Radio, group: "tools" },
   { href: "/explorer/verify-message", labelCs: "Verify", labelEn: "Verify", icon: ShieldCheck, group: "tools" },
+  { href: "/explorer/contracts", labelCs: "Kontrakty", labelEn: "Contracts", icon: FileCode, group: "tools" },
   { href: "/explorer/api-docs", labelCs: "API", labelEn: "API Docs", icon: Code, group: "tools" },
 ];
 

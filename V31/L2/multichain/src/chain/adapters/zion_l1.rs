@@ -6,10 +6,12 @@
 //! - submit `submitBridgeUnlock` with an EVM validator proof from the keyring.
 
 use async_trait::async_trait;
+use ed25519_dalek::SigningKey;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sha2::{Digest, Sha256};
 
+use zion_core::v31_wallet::{build_send_with_memo, SpendableUtxo};
 use zion_l1_types::{Address, Amount, ChainFamily, ChainId, Hash};
 
 use crate::chain::adapter::{BlockTemplate, ChainAdapter, DepositEvent};
@@ -104,66 +106,202 @@ impl ZionL1Adapter {
             _ => "unknown",
         }
     }
-}
 
-#[async_trait]
-impl ChainAdapter for ZionL1Adapter {
-    fn name(&self) -> &str {
-        "zion-l1"
+    fn adapter_address(&self) -> MultichainResult<Address> {
+        self.keyring.address(ChainId::ZionL1, 0, 0)
     }
 
-    fn family(&self) -> ChainFamily {
-        ChainFamily::Zion
-    }
+    async fn get_spendable_utxos(&self, address: &str) -> MultichainResult<Vec<SpendableUtxo>> {
+        let resp: serde_json::Value = self.call("getUtxos", json!({"address": address})).await?;
+        let utxos = resp
+            .get("utxos")
+            .and_then(|v| v.as_array())
+            .ok_or_else(|| MultichainError::Internal("zion getUtxos missing utxos array".to_string()))?;
 
-    async fn health_check(&self) -> MultichainResult<bool> {
-        match self.current_height().await {
-            Ok(_) => Ok(true),
-            Err(_) => Ok(false),
-        }
-    }
+        let mut out = Vec::with_capacity(utxos.len());
+        for u in utxos {
+            let tx_hash_hex = u
+                .get("tx_hash")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| MultichainError::Internal("utxo missing tx_hash".to_string()))?;
+            let tx_hash = hex::decode(tx_hash_hex)
+                .map_err(|e| MultichainError::Internal(format!("invalid utxo tx_hash hex: {e}")))?
+                .try_into()
+                .map_err(|_| MultichainError::Internal("utxo tx_hash must be 32 bytes".to_string()))?;
 
-    async fn watch_events(&self) -> MultichainResult<Vec<DepositEvent>> {
-        let tip = self.current_height().await?;
-        let from = tip.saturating_sub(100);
+            let output_index = u
+                .get("output_index")
+                .and_then(|v| v.as_u64())
+                .ok_or_else(|| MultichainError::Internal("utxo missing output_index".to_string()))? as u32;
 
-        let resp: BridgeLocksResponse = self
-            .call(
-                "getBridgeLocks",
-                json!({"from_height": from, "to_height": tip}),
-            )
-            .await?;
+            let amount = u
+                .get("amount")
+                .and_then(|v| v.as_u64())
+                .ok_or_else(|| MultichainError::Internal("utxo missing amount".to_string()))?;
 
-        let mut events = Vec::new();
-        for lock in resp.locks {
-            let tx_hash = Hash::from_hex(&lock.txid).unwrap_or_default();
-            let recipient = Address::new(
-                ChainId::ZionL1,
-                lock.sender.as_bytes().to_vec(),
-                lock.sender,
-            )?;
-            let confirmations = tip.saturating_sub(lock.block_height) + 1;
-            events.push(DepositEvent {
-                chain: ChainId::ZionL1,
+            let block_height = u.get("block_height").and_then(|v| v.as_u64()).unwrap_or(0);
+            let is_coinbase = u.get("is_coinbase").and_then(|v| v.as_bool()).unwrap_or(false);
+
+            out.push(SpendableUtxo {
                 tx_hash,
-                recipient,
-                amount: Amount::new(lock.amount_flowers as u128),
-                memo: Some(lock.memo),
-                confirmations,
+                output_index,
+                amount,
+                address: address.to_string(),
+                block_height,
+                is_coinbase,
             });
         }
-
-        Ok(events)
+        Ok(out)
     }
 
-    async fn execute_outbound(&self, transfer: &Transfer) -> MultichainResult<Hash> {
-        if transfer.direction != TransferDirection::BurnRelease {
-            return Err(MultichainError::Unsupported(format!(
-                "zion-l1 execute_outbound only supports BurnRelease, got {:?}",
-                transfer.direction
+    async fn submit_utxo_transaction(
+        &self,
+        tx: zion_core::Transaction,
+    ) -> MultichainResult<Hash> {
+        let tx_json = serde_json::to_value(&tx)
+            .map_err(|e| MultichainError::Internal(format!("serialize utxo tx: {e}")))?;
+        let resp: serde_json::Value = self
+            .call("submitUtxoTransaction", json!({"transaction": tx_json}))
+            .await?;
+
+        let accepted = resp.get("accepted").and_then(|v| v.as_bool()).unwrap_or(false);
+        if !accepted {
+            let reason = resp
+                .get("reason")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown");
+            return Err(MultichainError::Internal(format!(
+                "submitUtxoTransaction rejected: {reason}"
             )));
         }
 
+        let tx_id = resp
+            .get("tx_id")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| MultichainError::Internal("submitUtxoTransaction missing tx_id".to_string()))?;
+        Hash::from_hex(tx_id)
+            .ok_or_else(|| MultichainError::Internal("invalid tx_id hex from submitUtxoTransaction".to_string()))
+    }
+
+    fn zion_signing_key(&self) -> MultichainResult<SigningKey> {
+        self.keyring.zion_signing_key(0, 0)
+    }
+
+    async fn build_and_send_utxo(
+        &self,
+        to: &str,
+        amount: u64,
+        fee: u64,
+        memo: &[u8],
+        lock_tx_id: Option<&str>,
+    ) -> MultichainResult<Hash> {
+        let from = self.adapter_address()?.encoded;
+        let mut utxos = self.get_spendable_utxos(&from).await?;
+        if utxos.is_empty() {
+            return Err(MultichainError::Internal("no spendable UTXOs for zion-l1 adapter".to_string()));
+        }
+
+        // For HTLC claim/refund, spend the exact UTXO created by the lock tx.
+        if let Some(lock_id) = lock_tx_id {
+            let bytes = hex::decode(lock_id)
+                .map_err(|e| MultichainError::Validation(format!("invalid lock_tx_id hex: {e}")))?;
+            let lock_hash: [u8; 32] = bytes
+                .try_into()
+                .map_err(|_| MultichainError::Validation("lock_tx_id must be 32 bytes".to_string()))?;
+            utxos.retain(|u| u.tx_hash == lock_hash);
+            if utxos.is_empty() {
+                return Err(MultichainError::Validation(format!(
+                    "no UTXO found for lock tx {lock_id}"
+                )));
+            }
+        }
+
+        let signing_key = self.zion_signing_key()?;
+        let build = build_send_with_memo(
+            &signing_key,
+            &from,
+            to,
+            amount,
+            fee,
+            &utxos,
+            memo,
+        )
+        .map_err(|e| MultichainError::Internal(format!("build zion utxo tx: {e}")))?;
+
+        self.submit_utxo_transaction(build.transaction).await
+    }
+
+    fn parse_htlc_hash(transfer: &Transfer) -> MultichainResult<Hash> {
+        let id = transfer.id.as_str();
+        let hash_hex = id
+            .rsplit_once('-')
+            .map(|(_, h)| h)
+            .filter(|h| h.len() == 64)
+            .ok_or_else(|| MultichainError::Validation(format!("invalid HTLC transfer id: {id}")))?;
+        Hash::from_hex(hash_hex)
+            .ok_or_else(|| MultichainError::Validation(format!("invalid HTLC hash hex: {hash_hex}")))
+    }
+
+    fn htlc_memo(&self, transfer: &Transfer, action: &str) -> MultichainResult<String> {
+        let hash_hex = Self::parse_htlc_hash(transfer)?.to_hex();
+        match action {
+            "lock" => {
+                let timelock = transfer.timelock.ok_or_else(|| {
+                    MultichainError::Validation("HTLC lock missing timelock".to_string())
+                })?;
+                let timeout_minutes = (timelock - std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_secs())
+                    .div_ceil(60)
+                    .max(30);
+                let counterparty_chain = transfer.target.address.chain.as_str();
+                let counterparty_addr = transfer.target.address.encoded.clone();
+                let claimant = transfer.source.address.encoded.clone();
+                Ok(format!(
+                    "SWAP:LOCK:{hash_hex}:{timeout_minutes}:{counterparty_chain}:{counterparty_addr}:{claimant}"
+                ))
+            }
+            "claim" => {
+                let preimage = transfer.preimage.ok_or_else(|| {
+                    MultichainError::Validation("HTLC claim missing preimage".to_string())
+                })?;
+                Ok(format!("SWAP:CLAIM:{hash_hex}:{}", preimage.to_hex()))
+            }
+            "refund" => Ok(format!("SWAP:REFUND:{hash_hex}")),
+            _ => Err(MultichainError::Validation(format!("unknown HTLC action: {action}"))),
+        }
+    }
+
+    async fn htlc_lock(&self, transfer: &Transfer) -> MultichainResult<Hash> {
+        let to = self.adapter_address()?.encoded;
+        let memo = self.htlc_memo(transfer, "lock")?;
+        let amount = transfer.source.amount.0 as u64;
+        const FEE_ZION: u64 = 1_000_000; // 1 ZION in flowers
+        self.build_and_send_utxo(&to, amount, FEE_ZION, memo.as_bytes(), None).await
+    }
+
+    async fn htlc_claim(&self, transfer: &Transfer) -> MultichainResult<Hash> {
+        let to = transfer.target.address.encoded.clone();
+        self.validate_address(&transfer.target.address)?;
+        let memo = self.htlc_memo(transfer, "claim")?;
+        let amount = transfer.target.amount.0 as u64;
+        const FEE_ZION: u64 = 1_000_000;
+        let lock_id = transfer.lock_tx_id.as_deref();
+        self.build_and_send_utxo(&to, amount, FEE_ZION, memo.as_bytes(), lock_id).await
+    }
+
+    async fn htlc_refund(&self, transfer: &Transfer) -> MultichainResult<Hash> {
+        let to = transfer.source.address.encoded.clone();
+        self.validate_address(&transfer.source.address)?;
+        let memo = self.htlc_memo(transfer, "refund")?;
+        let amount = transfer.source.amount.0 as u64;
+        const FEE_ZION: u64 = 1_000_000;
+        let lock_id = transfer.lock_tx_id.as_deref();
+        self.build_and_send_utxo(&to, amount, FEE_ZION, memo.as_bytes(), lock_id).await
+    }
+
+    async fn execute_burn_release(&self, transfer: &Transfer) -> MultichainResult<Hash> {
         let source_chain = Self::chain_name(transfer.source.address.chain);
         if source_chain == "unknown" {
             return Err(MultichainError::Validation(format!(
@@ -224,6 +362,81 @@ impl ChainAdapter for ZionL1Adapter {
         Hash::from_hex(tx_id).ok_or_else(|| {
             MultichainError::Internal("invalid tx_id hex from submitBridgeUnlock".to_string())
         })
+    }
+}
+
+#[async_trait]
+impl ChainAdapter for ZionL1Adapter {
+    fn name(&self) -> &str {
+        "zion-l1"
+    }
+
+    fn family(&self) -> ChainFamily {
+        ChainFamily::Zion
+    }
+
+    async fn health_check(&self) -> MultichainResult<bool> {
+        match self.current_height().await {
+            Ok(_) => Ok(true),
+            Err(_) => Ok(false),
+        }
+    }
+
+    async fn watch_events(&self) -> MultichainResult<Vec<DepositEvent>> {
+        let tip = self.current_height().await?;
+        let from = tip.saturating_sub(100);
+
+        let resp: BridgeLocksResponse = self
+            .call(
+                "getBridgeLocks",
+                json!({"from_height": from, "to_height": tip}),
+            )
+            .await?;
+
+        let mut events = Vec::new();
+        for lock in resp.locks {
+            let tx_hash = Hash::from_hex(&lock.txid).unwrap_or_default();
+            let recipient = Address::new(
+                ChainId::ZionL1,
+                lock.sender.as_bytes().to_vec(),
+                lock.sender,
+            )?;
+            let confirmations = tip.saturating_sub(lock.block_height) + 1;
+            events.push(DepositEvent {
+                chain: ChainId::ZionL1,
+                tx_hash,
+                recipient,
+                amount: Amount::new(lock.amount_flowers as u128),
+                memo: Some(lock.memo),
+                confirmations,
+            });
+        }
+
+        Ok(events)
+    }
+
+    async fn execute_outbound(&self, transfer: &Transfer) -> MultichainResult<Hash> {
+        match transfer.direction {
+            TransferDirection::BurnRelease => self.execute_burn_release(transfer).await,
+            TransferDirection::Htlc => {
+                if transfer.id.starts_with("htlc-lock-") {
+                    self.htlc_lock(transfer).await
+                } else if transfer.id.starts_with("htlc-claim-") {
+                    self.htlc_claim(transfer).await
+                } else if transfer.id.starts_with("htlc-refund-") {
+                    self.htlc_refund(transfer).await
+                } else {
+                    Err(MultichainError::Validation(format!(
+                        "unknown HTLC transfer id prefix: {}",
+                        transfer.id
+                    )))
+                }
+            }
+            _ => Err(MultichainError::Unsupported(format!(
+                "zion-l1 execute_outbound only supports BurnRelease and Htlc, got {:?}",
+                transfer.direction
+            ))),
+        }
     }
 
     async fn current_height(&self) -> MultichainResult<u64> {

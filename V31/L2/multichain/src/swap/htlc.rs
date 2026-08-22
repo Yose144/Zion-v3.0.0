@@ -381,6 +381,8 @@ impl HtlcSwap {
             Hash::new(Sha256::digest(format!("lock:{hash_hex}").as_bytes()).into())
         };
 
+        transfer.lock_tx_id = Some(lock_tx.to_hex());
+
         let record = HtlcRecord {
             hash_hex: hash_hex.clone(),
             locker_address: transfer.source.address.to_string(),
@@ -467,6 +469,7 @@ impl HtlcSwap {
         // 6. Release funds on target chain via adapter.
         let preimage_hex = hex::encode(secret);
         transfer.preimage = Some(hash_sha256(secret));
+        transfer.lock_tx_id = Some(record.lock_tx_id.clone());
         let target_chain = transfer.target.address.chain;
         let release_tx = if let Some(adapter) = self.adapters.get(target_chain) {
             adapter.execute_outbound(transfer).await?
@@ -530,6 +533,7 @@ impl HtlcSwap {
         }
 
         // Refund to locker on source chain.
+        transfer.lock_tx_id = Some(record.lock_tx_id.clone());
         let source_chain = transfer.source.address.chain;
         let release_tx = if let Some(adapter) = self.adapters.get(source_chain) {
             adapter.execute_outbound(transfer).await?
