@@ -8,7 +8,7 @@ use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use serde_json::json;
 use tokio::time::interval;
 use tracing::{info, warn};
@@ -77,6 +77,10 @@ impl PayoutSweeper {
             )
         };
 
+        if !payouts.is_empty() {
+            info!("payout_sweep_started pending={}", payouts.len());
+        }
+
         if payouts.is_empty() {
             return Ok(());
         }
@@ -115,6 +119,10 @@ impl PayoutSweeper {
         // Respect the batch recipient cap imposed by the wallet.
         if payouts.len() > zion_core::v31_wallet::MAX_BATCH_RECIPIENTS {
             let overflow = payouts.split_off(zion_core::v31_wallet::MAX_BATCH_RECIPIENTS);
+            warn!(
+                "payout batch cap exceeded, requeuing {} overflow payouts",
+                overflow.len()
+            );
             self.requeue(overflow);
         }
 
@@ -143,6 +151,17 @@ impl PayoutSweeper {
         .map_err(|e| anyhow!("failed to build batch payout: {}", e))?;
 
         let tx = build_result.transaction;
+        let change = build_result.change_amount;
+        info!(
+            "payout_broadcast pool={} recipients={} inputs={} outputs={} fee={} change={}",
+            pool_encoded,
+            payouts.len(),
+            tx.inputs.len(),
+            tx.outputs.len(),
+            fee,
+            change
+        );
+
         let response = submit_utxo_transaction(rpc_addr, &tx).await?;
 
         let tx_id = response
@@ -150,6 +169,10 @@ impl PayoutSweeper {
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string();
+
+        if tx_id.is_empty() {
+            warn!("payout submit response missing tx_id");
+        }
 
         let block_height = payouts.first().map(|(h, _)| *h).unwrap_or(0);
 
@@ -184,10 +207,14 @@ impl PayoutSweeper {
         }
 
         info!(
-            "payout_submitted tx_id={} recipients={} fee={} pool={}",
+            "payout_submitted height={} tx_id={} recipients={} inputs={} outputs={} fee={} change={} pool={}",
+            block_height,
             tx_id,
             payouts.len(),
+            tx.inputs.len(),
+            tx.outputs.len(),
             fee,
+            change,
             pool_encoded
         );
 
@@ -198,6 +225,7 @@ impl PayoutSweeper {
         if payouts.is_empty() {
             return;
         }
+        info!("payout_requeue count={}", payouts.len());
         let mut pool = self.pool.lock().expect("pool lock poisoned");
         pool.requeue_payouts(payouts);
     }
@@ -213,7 +241,22 @@ async fn fetch_utxos(rpc_addr: SocketAddr, address: &str) -> Result<Vec<Spendabl
     });
     let resp = jsonrpc_call(rpc_addr, &payload).await?;
 
+    if let Some(error) = resp.get("error").filter(|v| !v.is_null()) {
+        let msg = error
+            .get("message")
+            .and_then(|m| m.as_str())
+            .unwrap_or("unknown");
+        bail!("getUtxos error: {}", msg);
+    }
+
     let mut out = Vec::new();
+    let mut skipped = 0u64;
+    let count = resp
+        .get("result")
+        .and_then(|r| r.get("count"))
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0);
+
     if let Some(utxos) = resp.get("result").and_then(|r| r.get("utxos")).and_then(|v| v.as_array())
     {
         for utxo in utxos {
@@ -230,10 +273,16 @@ async fn fetch_utxos(rpc_addr: SocketAddr, address: &str) -> Result<Vec<Spendabl
                 .and_then(|v| v.as_u64())
                 .unwrap_or_default();
 
-            let tx_hash = hex::decode(tx_hash_hex)
+            let tx_hash = match hex::decode(tx_hash_hex)
                 .ok()
                 .and_then(|v| <[u8; 32]>::try_from(v).ok())
-                .context("invalid UTXO tx_hash")?;
+            {
+                Some(h) => h,
+                None => {
+                    skipped += 1;
+                    continue;
+                }
+            };
 
             out.push(SpendableUtxo {
                 tx_hash,
@@ -243,6 +292,16 @@ async fn fetch_utxos(rpc_addr: SocketAddr, address: &str) -> Result<Vec<Spendabl
             });
         }
     }
+
+    let total: u64 = out.iter().map(|u| u.amount).sum();
+    info!(
+        "payout_utxos_fetched address={} count={}/{} available={} skipped={}",
+        address,
+        out.len(),
+        count,
+        total,
+        skipped
+    );
 
     Ok(out)
 }

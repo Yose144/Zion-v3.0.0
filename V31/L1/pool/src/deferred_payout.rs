@@ -235,7 +235,7 @@ pub async fn execute_fee_payout(
     }
 
     // Build batch recipients
-    use zion_core::v3_wallet::{build_batch_payout, BatchRecipient};
+    use zion_core::v31_wallet::{build_batch_payout, BatchRecipient};
     let batch: Vec<BatchRecipient> = recipients
         .iter()
         .map(|r| BatchRecipient {
@@ -244,14 +244,12 @@ pub async fn execute_fee_payout(
         })
         .collect();
 
-    let chain_height = get_chain_height(rpc_addr).await.unwrap_or(0);
     let result = build_batch_payout(
         &signing_key,
         pool_wallet,
         &batch,
         zion_core::fee::MIN_TX_FEE,
         &utxos,
-        chain_height,
     )
     .map_err(|e| anyhow::anyhow!("failed to build fee payout tx: {e}"))?;
 
@@ -266,9 +264,10 @@ pub async fn execute_fee_payout(
     .await?;
 
     let tx_id = resp
-        .get("tx_id")
+        .get("result")
+        .and_then(|r| r.get("tx_id"))
         .and_then(|v| v.as_str())
-        .or_else(|| resp.as_str())
+        .or_else(|| resp.get("result").and_then(|r| r.as_str()))
         .unwrap_or("unknown")
         .to_string();
 
@@ -283,15 +282,16 @@ pub async fn execute_fee_payout(
 }
 
 /// Fetch spendable UTXOs for a pool wallet address from the node.
-async fn fetch_pool_utxos(rpc_addr: &str, address: &str) -> anyhow::Result<Vec<zion_core::v3_wallet::SpendableUtxo>> {
-    use zion_core::v3_wallet::SpendableUtxo;
+async fn fetch_pool_utxos(rpc_addr: &str, address: &str) -> anyhow::Result<Vec<zion_core::v31_wallet::SpendableUtxo>> {
+    use zion_core::v31_wallet::SpendableUtxo;
     let addr = crate::rpc_client::parse_rpc_addr(rpc_addr)?;
-    let result = crate::rpc_client::jsonrpc_call(
+    let resp = crate::rpc_client::jsonrpc_call(
         addr,
         &rpc_request("getUtxos", json!({ "address": address })),
     )
     .await?;
 
+    let result = resp.get("result").cloned().unwrap_or(Value::Null);
     let utxos = result
         .get("utxos")
         .and_then(|v| v.as_array())
@@ -380,7 +380,7 @@ pub fn spawn_deferred_payout_processor(
             };
 
             // Attempt to re-execute the payout
-            use zion_core::v3_wallet::{build_batch_payout, BatchRecipient};
+            use zion_core::v31_wallet::{build_batch_payout, BatchRecipient};
             let batch: Vec<BatchRecipient> = payouts
                 .iter()
                 .map(|p| BatchRecipient {
@@ -402,14 +402,12 @@ pub fn spawn_deferred_payout_processor(
                         key_bytes.as_slice().try_into().unwrap(),
                     );
 
-                    let chain_height = get_chain_height(&rpc).await.unwrap_or(0);
                     match build_batch_payout(
                         &signing_key,
                         &wallet,
                         &batch,
                         zion_core::fee::MIN_TX_FEE,
                         &utxos,
-                        chain_height,
                     ) {
                         Ok(result) => {
                             let tx_json = match serde_json::to_value(&result.transaction) {
