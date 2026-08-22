@@ -269,36 +269,40 @@ jobs:
           GH_TOKEN: ${{ secrets.PUBLIC_RELEASE_TOKEN }}
           RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
           DRAFT_FLAG: ${{ inputs.draft == true && '--draft' || '' }}
+          RELEASE_NOTES: |
+            ## ZION v3.2.0 — Public CLI
+
+            The unified ZION command-line interface for the V31 Mainnet Alpha network. Use it to create and manage wallets, check balances, send transactions, query node/pool status and bootstrap a local node.
+
+            ### Highlights
+            - Wallet uses the public HTTPS API by default (falling back to TCP RPC where needed)
+            - Single portable `zion` binary — no GPU dependencies
+            - Built from the canonical V31 workspace
+
+            ### Downloads
+            | File | Platform |
+            |------|----------|
+            | zion-cli-v3.2.0-linux-x86_64.tar.gz | Linux x86_64 |
+            | zion-cli-v3.2.0-linux-arm64.tar.gz | Linux ARM64 |
+            | zion-cli-v3.2.0-windows-x86_64.zip | Windows x86_64 |
+            | zion-cli-v3.2.0-macos-arm64.tar.gz | macOS Apple Silicon |
+            | zion-cli-v3.2.0-macos-x86_64.tar.gz | macOS Intel |
+
+            See SHA256SUMS.txt for checksums.
         run: |
           set -e
+          echo "${RELEASE_NOTES}" > /tmp/cli-release-notes.md
           mapfile -t assets < <(find . -maxdepth 1 -type f -printf '%P\n' | sort)
           if gh release view "${RELEASE_TAG}" --repo "${PUBLIC_REPO}" >/dev/null 2>&1; then
-            echo "Release ${RELEASE_TAG} exists. Uploading with --clobber."
+            echo "Release ${RELEASE_TAG} exists. Uploading with --clobber and syncing title/notes."
             gh release upload --repo "${PUBLIC_REPO}" "${RELEASE_TAG}" "${assets[@]}" --clobber
+            gh release edit --repo "${PUBLIC_REPO}" "${RELEASE_TAG}" --title "ZION v3.2.0 — Public CLI" --notes-file /tmp/cli-release-notes.md
           else
             echo "Creating new release ${RELEASE_TAG}."
             gh release create "${RELEASE_TAG}" \
               --repo "${PUBLIC_REPO}" \
               --title "ZION v3.2.0 — Public CLI" \
-              --notes "## ZION v3.2.0 — Public CLI
-
-          The unified ZION command-line interface for the V31 Mainnet Alpha network. Use it to create and manage wallets, check balances, send transactions, query node/pool status and bootstrap a local node.
-
-          ### Highlights
-          - Wallet uses the public HTTPS API by default (falling back to TCP RPC where needed)
-          - Single portable `zion` binary — no GPU dependencies
-          - Built from the canonical V31 workspace
-
-          ### Downloads
-          | File | Platform |
-          |------|----------|
-          | zion-cli-v3.2.0-linux-x86_64.tar.gz | Linux x86_64 |
-          | zion-cli-v3.2.0-linux-arm64.tar.gz | Linux ARM64 |
-          | zion-cli-v3.2.0-windows-x86_64.zip | Windows x86_64 |
-          | zion-cli-v3.2.0-macos-arm64.tar.gz | macOS Apple Silicon |
-          | zion-cli-v3.2.0-macos-x86_64.tar.gz | macOS Intel |
-
-          See SHA256SUMS.txt for checksums." \
+              --notes-file /tmp/cli-release-notes.md \
               ${DRAFT_FLAG} \
               "${assets[@]}"
           fi
