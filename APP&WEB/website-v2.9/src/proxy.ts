@@ -100,37 +100,41 @@ export async function proxy(request: NextRequest) {
   }
 
   // ── /admin protection (Basic Auth) ───────────────────────────────
-  const adminPassword = process.env.ADMIN_PASSWORD;
-  const adminUser = process.env.ADMIN_USER || 'admin';
+  if (pathname.startsWith('/admin')) {
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    const adminUser = process.env.ADMIN_USER || 'admin';
 
-  if (!adminPassword) {
-    console.warn('[SECURITY] ADMIN_PASSWORD not set — /admin access DENIED');
-    return new Response('Admin panel disabled: ADMIN_PASSWORD not configured', {
-      status: 403,
-      headers: { 'Cache-Control': 'no-store' },
-    });
-  }
+    if (!adminPassword) {
+      console.warn('[SECURITY] ADMIN_PASSWORD not set — /admin access DENIED');
+      return new Response('Admin panel disabled: ADMIN_PASSWORD not configured', {
+        status: 403,
+        headers: { 'Cache-Control': 'no-store' },
+      });
+    }
 
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Basic ')) {
-    return unauthorizedResponse();
-  }
-
-  try {
-    const base64Credentials = authHeader.slice('Basic '.length);
-    const decoded = atob(base64Credentials);
-    const separatorIndex = decoded.indexOf(':');
-    const username = separatorIndex >= 0 ? decoded.slice(0, separatorIndex) : '';
-    const password = separatorIndex >= 0 ? decoded.slice(separatorIndex + 1) : '';
-
-    if (username !== adminUser || password !== adminPassword) {
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Basic ')) {
       return unauthorizedResponse();
     }
 
-    return NextResponse.next();
-  } catch {
-    return unauthorizedResponse();
+    try {
+      const base64Credentials = authHeader.slice('Basic '.length);
+      const decoded = atob(base64Credentials);
+      const separatorIndex = decoded.indexOf(':');
+      const username = separatorIndex >= 0 ? decoded.slice(0, separatorIndex) : '';
+      const password = separatorIndex >= 0 ? decoded.slice(separatorIndex + 1) : '';
+
+      if (username !== adminUser || password !== adminPassword) {
+        return unauthorizedResponse();
+      }
+
+      return NextResponse.next();
+    } catch {
+      return unauthorizedResponse();
+    }
   }
+
+  return NextResponse.next();
 }
 
 export const config = {

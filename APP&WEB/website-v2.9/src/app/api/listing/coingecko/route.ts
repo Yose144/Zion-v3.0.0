@@ -9,6 +9,7 @@ import {
   POOL_FEE_PCT,
 } from '@/lib/constants';
 import { resolveSupplySnapshot } from '@/lib/supply';
+import { fetchDexMarketData } from '@/lib/market';
 import { SITE_APP_URL, SITE_INTRO_URL } from '@/lib/site';
 import { GITHUB_REPO_URL } from '@/lib/github-releases';
 
@@ -25,8 +26,18 @@ export async function GET() {
       return NextResponse.json({ error: 'Cannot reach ZION daemon' }, { status: 503 });
     }
 
-    const supply = await resolveSupplySnapshot(rpc, info.height);
+    const [supply, market] = await Promise.all([
+      resolveSupplySnapshot(rpc, info.height),
+      fetchDexMarketData(),
+    ]);
     const circulating = supply.circulatingSupply;
+
+    const price = market.best_price_usd || 0.0002;
+    const marketCap = price * circulating;
+    const fdv = price * TOTAL_SUPPLY_ZION;
+    const volume24h = market.total_volume_24h;
+    const priceChangePct = market.price_change_24h || 0;
+    const priceChangeAbs = price * (priceChangePct / 100);
 
     const updatedAt = new Date().toISOString();
 
@@ -67,10 +78,12 @@ export async function GET() {
         liquidity_score: null,
         public_interest_score: null,
         market_data: {
-          current_price: { usd: null },
-          market_cap: { usd: null },
-          fully_diluted_valuation: { usd: null },
-          total_volume: { usd: null },
+          current_price: { usd: price },
+          market_cap: { usd: marketCap },
+          fully_diluted_valuation: { usd: fdv },
+          total_volume: { usd: volume24h },
+          price_change_24h: priceChangeAbs,
+          price_change_percentage_24h: priceChangePct,
           circulating_supply: circulating,
           total_supply: TOTAL_SUPPLY_ZION,
           max_supply: TOTAL_SUPPLY_ZION,
@@ -119,6 +132,7 @@ export async function GET() {
           },
         },
         listing_ready: true,
+        price_source: market.source,
         updated_at: updatedAt,
       },
       {

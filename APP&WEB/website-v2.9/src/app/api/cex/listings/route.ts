@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 300; // cache 5 min
 
 import { NextResponse } from 'next/server';
+import { fetchDexMarketData, type DexMarketData } from '@/lib/market';
 
 const HEADERS = { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' };
 
@@ -98,111 +99,24 @@ const CEX_LISTINGS: CexListing[] = [
   },
 ];
 
-// ─── DexScreener Integration ─────────────────────────────────────────────────
-// Fetches real trading data from DexScreener API for the wZION/WETH pool.
+// ─── DEX market data
+// Shared DEX logic lives in src/lib/market.ts (DexScreener canonical wZION pools).
 
-const DEXSCREENER_API = 'https://api.dexscreener.com/latest/dex/tokens';
-const WZION_TOKEN = '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6';
-
-// Canonical Uniswap V3 pools on Base — only these are official.
-// All other wZION pools (wrong fee tiers, inverted price, dust) are filtered out.
-const CANONICAL_POOLS = new Set([
-  '0x186b46c2f04153999d44d25179cd623fd62bfda2', // wZION/USDT 0.3%  (primary)
-  '0x18c0daef295e63f1bfbc7c39e71d0fabf4600699', // wZION/WETH 1.0%  (secondary)
-  '0xf38c56bbbbbc6d9fa11e7de84bf7bb70e1e8d2b3', // wZION/SOL  0.01% (tertiary)
-]);
-
-interface DexPair {
-  pairAddress: string;
-  dexId: string;
-  baseToken: { address: string; symbol: string; name: string };
-  quoteToken: { address: string; symbol: string; name: string };
-  priceUsd?: string;
-  priceNative?: string;
-  liquidity?: { usd?: number; base?: number; quote?: number };
-  volume?: { h24?: number; h6?: number; h1?: number; m15?: number };
-  priceChange?: { h24?: number; h6?: number; h1?: number; m15?: number };
-  txns?: { h24?: { buys?: number; sells?: number } };
-  pairCreatedAt?: number;
-  fdv?: number;
-  marketCap?: number;
-}
-
-async function fetchDexData(): Promise<DexPair[]> {
-  try {
-    const res = await fetch(`${DEXSCREENER_API}/${WZION_TOKEN}`, {
-      signal: AbortSignal.timeout(8000),
-      headers: { Accept: 'application/json' },
-      cache: 'no-store',
-    });
-    if (!res.ok) return [];
-    const json = await res.json();
-    return json?.pairs ?? [];
-  } catch {
-    return [];
+function buildDexResponse(market: DexMarketData) {
+  if (market.source === 'dexscreener') {
+    return { ...market };
   }
+  return {
+    source: 'unavailable',
+    pairs: 0,
+    total_volume_24h: 0,
+    total_liquidity_usd: 0,
+  };
 }
 
 export async function GET() {
   try {
-    const dexPairs = await fetchDexData();
-
-    // Filter to canonical Base chain pairs only — exclude rogue/dust pools
-    const basePairs = dexPairs.filter(p =>
-      p.dexId === 'uniswap' &&
-      p.baseToken?.address?.toLowerCase() === WZION_TOKEN.toLowerCase() &&
-      CANONICAL_POOLS.has(p.pairAddress?.toLowerCase() ?? '')
-    );
-
-    // Aggregate DEX stats
-    const dexStats = basePairs.length > 0
-      ? {
-          pairs: basePairs.length,
-          total_volume_24h: basePairs.reduce((acc, p) => acc + (p.volume?.h24 ?? 0), 0),
-          total_liquidity_usd: basePairs.reduce((acc, p) => acc + (p.liquidity?.usd ?? 0), 0),
-          total_txns_24h: basePairs.reduce((acc, p) => {
-            const buys = p.txns?.h24?.buys ?? 0;
-            const sells = p.txns?.h24?.sells ?? 0;
-            return acc + buys + sells;
-          }, 0),
-          total_buys_24h: basePairs.reduce((acc, p) => acc + (p.txns?.h24?.buys ?? 0), 0),
-          total_sells_24h: basePairs.reduce((acc, p) => acc + (p.txns?.h24?.sells ?? 0), 0),
-          // Best price: prefer WETH pair (most liquid), fallback to USDT, then SOL
-          best_price_usd: (() => {
-            const order = [
-              '0x18c0daef295e63f1bfbc7c39e71d0fabf4600699', // WETH
-              '0x186b46c2f04153999d44d25179cd623fd62bfda2', // USDT
-              '0xf38c56bbbbbc6d9fa11e7de84bf7bb70e1e8d2b3', // SOL
-            ];
-            for (const addr of order) {
-              const p = basePairs.find(x => x.pairAddress?.toLowerCase() === addr);
-              const price = parseFloat(p?.priceUsd ?? '0');
-              if (price > 0) return price;
-            }
-            return 0;
-          })(),
-          pairs_detail: basePairs.map(p => ({
-            address: p.pairAddress,
-            dex: p.dexId,
-            pair: `${p.baseToken.symbol}/${p.quoteToken.symbol}`,
-            price_usd: parseFloat(p.priceUsd ?? '0'),
-            price_native: p.priceNative ?? '0',
-            liquidity_usd: p.liquidity?.usd ?? 0,
-            volume_24h: p.volume?.h24 ?? 0,
-            volume_6h: p.volume?.h6 ?? 0,
-            volume_1h: p.volume?.h1 ?? 0,
-            price_change_24h: p.priceChange?.h24 ?? 0,
-            price_change_1h: p.priceChange?.h1 ?? 0,
-            txns_24h: {
-              buys: p.txns?.h24?.buys ?? 0,
-              sells: p.txns?.h24?.sells ?? 0,
-            },
-            fdv: p.fdv ?? 0,
-            market_cap: p.marketCap ?? 0,
-            created_at: p.pairCreatedAt ?? 0,
-          })),
-        }
-      : null;
+    const market = await fetchDexMarketData();
 
     // CEX summary
     const listedCount = CEX_LISTINGS.filter(e => e.status === 'listed').length;
@@ -222,17 +136,7 @@ export async function GET() {
           total_pairs: totalPairs,
         },
       },
-      dex: dexStats
-        ? {
-            source: 'dexscreener',
-            ...dexStats,
-          }
-        : {
-            source: 'unavailable',
-            pairs: 0,
-            total_volume_24h: 0,
-            total_liquidity_usd: 0,
-          },
+      dex: buildDexResponse(market),
       fetchedAt: Date.now(),
     }, { headers: HEADERS });
   } catch (error) {
