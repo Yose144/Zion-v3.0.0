@@ -175,7 +175,7 @@ export class ZionRPC {
   // ─── Transaction Operations ───────────────────────────────────────────
 
   async broadcastTransaction(txPayload: Record<string, unknown>): Promise<string> {
-    const result = await this.call<Record<string, unknown>>('submitTransaction', { transaction: txPayload });
+    const result = await this.call<Record<string, unknown>>('submitUtxoTransaction', { transaction: txPayload });
 
     if (!result?.accepted && !result?.tx_id) {
       throw new Error((result?.error as string) || 'Failed to broadcast transaction');

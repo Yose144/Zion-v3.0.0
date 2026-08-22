@@ -81,36 +81,55 @@ function concatBytes(arrays: (number[] | Uint8Array | Buffer)[]): Uint8Array {
 }
 
 /**
- * Compute the canonical SegWit-style BLAKE3 transaction hash.
+ * Compute the canonical SegWit-style BLAKE3 transaction hash (v2).
+ * Matches V31/L1/core/src/v3_tx.rs Transaction::calculate_hash_v2().
  * Excludes signatures.
  */
 export function calculateTxHash(tx: Transaction): Uint8Array {
   const parts: (number[] | Uint8Array | Buffer)[] = [];
 
+  // Domain-separation tag
+  parts.push(Buffer.from('ZION_TX_V2\x00', 'binary'));
+
   // version: u32 LE
   parts.push(uint32LE(tx.version));
-
-  // inputs (exclude signature — SegWit-style)
-  for (const input of tx.inputs) {
-    parts.push(input.prev_tx_hash);
-    parts.push(uint32LE(input.output_index));
-    parts.push(input.public_key);
-  }
-
-  // outputs
-  for (const output of tx.outputs) {
-    parts.push(uint64LE(BigInt(output.amount)));
-    parts.push(Buffer.from(output.address, 'utf8'));
-    if (output.memo) {
-      parts.push(Buffer.from(output.memo, 'utf8'));
-    }
-  }
 
   // fee: u64 LE
   parts.push(uint64LE(BigInt(tx.fee)));
 
   // timestamp: u64 LE
   parts.push(uint64LE(BigInt(tx.timestamp)));
+
+  // inputs count: u32 LE
+  parts.push(uint32LE(tx.inputs.length));
+
+  // inputs (exclude signature — SegWit-style)
+  for (const input of tx.inputs) {
+    parts.push(Buffer.from(input.prev_tx_hash));
+    parts.push(uint32LE(input.output_index));
+    const pubKey = Buffer.from(input.public_key);
+    parts.push(uint32LE(pubKey.length));
+    parts.push(pubKey);
+  }
+
+  // outputs count: u32 LE
+  parts.push(uint32LE(tx.outputs.length));
+
+  // outputs
+  for (const output of tx.outputs) {
+    parts.push(uint64LE(BigInt(output.amount)));
+    const addrBytes = Buffer.from(output.address, 'utf8');
+    parts.push(uint32LE(addrBytes.length));
+    parts.push(addrBytes);
+    if (output.memo) {
+      const memoBytes = Buffer.from(output.memo, 'utf8');
+      parts.push([1]);
+      parts.push(uint32LE(memoBytes.length));
+      parts.push(memoBytes);
+    } else {
+      parts.push([0]);
+    }
+  }
 
   return blake3(concatBytes(parts));
 }
@@ -197,10 +216,10 @@ export async function buildUtxoTransaction({
     public_key: Array.from(publicKey),
   }));
 
-  // Build transaction structure
+  // Build transaction structure (v2 required from genesis for TX_HASH_V2)
   const tx: Transaction = {
     id: new Array(32).fill(0),
-    version: 1,
+    version: 2,
     inputs,
     outputs,
     fee: Number(feeFlowers),
@@ -222,16 +241,17 @@ export async function buildUtxoTransaction({
 
 /**
  * Convert a transaction to the JSON-RPC payload format.
+ * UtxoTransaction expects byte arrays, not hex strings.
  */
 export function transactionToRpcPayload(tx: Transaction): Record<string, unknown> {
   return {
-    id: tx.id.map((b) => b.toString(16).padStart(2, '0')).join(''),
+    id: tx.id,
     version: tx.version,
     inputs: tx.inputs.map((input) => ({
-      prev_tx_hash: input.prev_tx_hash.map((b) => b.toString(16).padStart(2, '0')).join(''),
+      prev_tx_hash: input.prev_tx_hash,
       output_index: input.output_index,
-      signature: input.signature.map((b) => b.toString(16).padStart(2, '0')).join(''),
-      public_key: input.public_key.map((b) => b.toString(16).padStart(2, '0')).join(''),
+      signature: input.signature,
+      public_key: input.public_key,
     })),
     outputs: tx.outputs,
     fee: tx.fee,
