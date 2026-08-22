@@ -358,6 +358,15 @@ async fn dispatch_request(line: &str, node: &Node) -> Value {
         "submitBridgeUnlock",
     ];
     if v3_methods.contains(&method) {
+        // Bridge unlock: sync V31 native bridge vault UTXOs to the v3_utxos
+        // table before dispatching, so the V3 RPC handler can see them.
+        // The V31 native chain holds the actual bridge vault UTXOs (created
+        // by lock transactions), but the V3 compat bridge unlock code reads
+        // from the v3_utxos SQLite table.  This one-time sync per request
+        // bridges the two UTXO tracking systems.
+        if method == "submitBridgeUnlock" {
+            sync_bridge_vault_utxos(node).await;
+        }
         let result = node.v3_rpc.dispatch(method, params).await;
         return wrap_v3_response(id, result);
     }
@@ -398,6 +407,31 @@ fn wrap_v3_response(id: Option<Value>, result: Value) -> Value {
     }
 }
 
+/// Sync V31 native bridge vault UTXOs into the `v3_utxos` SQLite table.
+///
+/// The V31 native chain holds the actual bridge vault UTXOs (created by lock
+/// transactions mined in V31 native blocks).  The V3 compat bridge unlock
+/// code (`v3_rpc.rs`) reads from the `v3_utxos` SQLite table, which is only
+/// populated by V3 compat block acceptance — not V31 native blocks.  This
+/// function bridges the gap by fetching the current bridge vault UTXOs from
+/// the V31 native in-memory `UtxoSet` and upserting them into `v3_utxos`.
+async fn sync_bridge_vault_utxos(node: &Node) {
+    let bridge_vault = crate::fee::BRIDGE_VAULT_ADDRESS;
+    let utxos = node.get_utxos_for_address(bridge_vault).await;
+    if utxos.is_empty() {
+        return;
+    }
+    let entries: Vec<([u8; 32], u32, u64, String)> = utxos
+        .into_iter()
+        .map(|(hash, idx, amount, _height, _ts, _coinbase, _script)| {
+            (hash.0, idx, amount, bridge_vault.to_string())
+        })
+        .collect();
+    if let Err(e) = node.storage.put_v3_utxos(&entries).await {
+        warn!("sync_bridge_vault_utxos: failed to sync {} UTXOs: {}", entries.len(), e);
+    }
+}
+
 async fn block_template(node: &Node, params: &Value) -> Result<Value, NodeError> {
     let miner = params
         .get("miner_address")
@@ -414,6 +448,13 @@ async fn submit_block_rpc(node: &Node, params: &Value) -> Result<Value, NodeErro
     // Try the new-chain Block first.
     if let Ok(block) = serde_json::from_value::<crate::Block>(params.clone()) {
         node.submit_block(block).await?;
+        // Flush V3 compat UTXO mempool: apply any pending V3 compat UTXO
+        // transactions (e.g. bridge unlock) to the v3_utxos state so they
+        // are reflected on-chain when a V31 native block is accepted.
+        let flushed = node.v3_rpc.flush_utxo_mempool().await;
+        if flushed > 0 {
+            info!("flushed {} V3 compat UTXO mempool tx(s) after native block", flushed);
+        }
         return Ok(json!({"accepted": true}));
     }
     // Fall back to V3 handlers.
@@ -547,7 +588,7 @@ async fn get_utxos(node: &Node, params: &Value) -> Result<Value, NodeError> {
     let utxos = node.get_utxos_for_address(address).await;
     let out: Vec<Value> = utxos
         .into_iter()
-        .map(|(hash, idx, amount, height, timestamp, is_coinbase)| {
+        .map(|(hash, idx, amount, height, timestamp, is_coinbase, script)| {
             json!({
                 "tx_hash": hash.to_hex(),
                 "output_index": idx,
@@ -555,6 +596,8 @@ async fn get_utxos(node: &Node, params: &Value) -> Result<Value, NodeError> {
                 "block_height": height,
                 "timestamp": timestamp,
                 "is_coinbase": is_coinbase,
+                "script_hex": hex::encode(&script),
+                "memo_hex": hex::encode(&script),
             })
         })
         .collect();
@@ -1238,6 +1281,7 @@ mod tests {
             output_index: 0,
             amount: coinbase.outputs[0].amount.0 as u64,
             address: miner_addr.clone(),
+            script: coinbase.outputs[0].script.clone(),
             block_height: 1,
             is_coinbase: true,
         };
