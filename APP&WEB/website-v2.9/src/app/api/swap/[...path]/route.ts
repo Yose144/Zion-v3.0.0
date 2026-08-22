@@ -13,11 +13,11 @@ const ROOT_PATHS = new Set(['health', 'status']);
 function buildUpstreamUrl(request: Request, path: string[]) {
   const incoming = new URL(request.url);
   const suffix = path.map((segment) => encodeURIComponent(segment)).join('/');
-  // Swap server exposes /health directly; HTLC lookups under /swap/{hash}
+  // Unified multichain DEX exposes /health directly; swap endpoints under /v1/swap/{...}
   if (ROOT_PATHS.has(suffix)) {
     return `${SWAP_UPSTREAM_BASE.replace(/\/$/, '')}/${suffix}${incoming.search}`;
   }
-  return `${SWAP_UPSTREAM_BASE.replace(/\/$/, '')}/swap/${suffix}${incoming.search}`;
+  return `${SWAP_UPSTREAM_BASE.replace(/\/$/, '')}/v1/swap/${suffix}${incoming.search}`;
 }
 
 async function proxySwap(request: Request, path: string[]) {
