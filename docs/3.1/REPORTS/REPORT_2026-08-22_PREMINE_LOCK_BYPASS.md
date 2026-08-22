@@ -57,9 +57,36 @@ As a result, any party with the premine private keys can spend them on the live 
 - `V31/STATUS.md` — payout status update
 - This report
 
+## V31 validation gap analysis
+
+Comparing the full 11-step `v3_validation::validate_block` pipeline with what `Node::submit_block` + `UtxoSet::apply_block` actually enforce for V31 native blocks:
+
+| Step | `v3_validation` rule | V31 currently enforced | Where / notes |
+|------|----------------------|------------------------|---------------|
+| 1 | Block structure (non-empty, ≤ `MAX_BLOCK_SIZE`) | **No** | `validate_structure` not called |
+| 2 | PoW / difficulty | Yes | `ConsensusEngine::verify_header` + difficulty target |
+| 3 | Difficulty (LWMA) | Yes | `difficulty_to_target` from `lwma_next_difficulty` |
+| 4 | Timestamp drift (± `MAX_TIMESTAMP_DRIFT` from median-time-past) | **No** | `verify_header` only checks `timestamp >= previous.timestamp` |
+| 5 | Merkle root | Yes | `merkle_root` computed and compared to header |
+| 6 | Transaction signatures | Yes | `UtxoSet::apply_transaction` -> `verify_input` |
+| 7 | No double-spend | Yes | `UtxoSet` applies transactions sequentially and removes spent outputs |
+| 8 | Coinbase maturity (`COINBASE_MATURITY = 100`) | **No** | `UtxoSet` never checks `created_height` of the spent output |
+| 9 | Fees (≥ `MIN_TX_FEE` and ≥ size-based minimum) | Yes | `UtxoSet::apply_transaction` compares fee to `minimum_fee_for_size` |
+| 10 | Coinbase subsidy (≤ block reward, split to canonical addresses) | Partially | `Node::submit_block` checks coinbase output sum, but not that outputs are the canonical miner/human/issobella addresses |
+| 11 | Premine / DAO treasury locks | **No** | `validate_premine_locks` not called |
+
+Additional observations:
+
+- `v3_validation` is written for V3 `Transaction` (`v3_tx::Transaction`), which has `id`, `fee`, and `timestamp` fields, and a different input/output model. It cannot be reused directly for V31 native `Transaction` (`transaction::Transaction`) without a refactor or a V31-specific validation module.
+- `UtxoSet` tracks `block_height` and `block_timestamp` for each UTXO, but not `is_coinbase`. Coinbase-maturity and other output-origin checks can be added by extending `UtxoOutput`.
+- The missing rules (structure, timestamp drift, coinbase maturity, premine locks) can all be added to `Node::submit_block` as pre-`apply_block` checks and/or pushed down into `UtxoSet::apply_transaction`. Because the chain already contains block 12837, any new consensus rule must be gated by an activation height or a configuration flag to avoid an immediate hard fork.
+
 ## References
 
 - `V31/L1/core/src/v3_compat.rs` — `PREMINE_OUTPUTS` definitions
 - `V31/L1/core/src/v3_validation.rs` — existing but unused `validate_premine_locks`
 - `V31/L1/core/src/node.rs` — `submit_block`, `submit_utxo_transaction`
 - `V31/L1/core/src/utxo.rs` — `UtxoSet::apply_block`
+- `V31/L1/core/src/consensus.rs` — `ConsensusEngine::verify_header`
+- `V31/L1/core/src/fee.rs` — fee rules and `minimum_fee_for_size`
+- `V31/L1/core/src/emission.rs` — `COINBASE_MATURITY`
