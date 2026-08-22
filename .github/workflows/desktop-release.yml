@@ -240,7 +240,7 @@ jobs:
           if gh release view "${RELEASE_TAG}" --repo "${PUBLIC_REPO}" >/dev/null 2>&1; then
             echo "Release ${RELEASE_TAG} already exists. Uploading assets with --clobber."
             gh release upload --repo "${PUBLIC_REPO}" "${RELEASE_TAG}" "${assets[@]}" --clobber
-            gh release edit --repo "${PUBLIC_REPO}" "${RELEASE_TAG}" --notes-file "${NOTES_FILE}"
+            gh release edit --repo "${PUBLIC_REPO}" "${RELEASE_TAG}" --title "ZION Public Desktop Miner v3.2.0" --notes-file "${NOTES_FILE}"
           else
             echo "Creating new release ${RELEASE_TAG}."
             gh release create "${RELEASE_TAG}" \
