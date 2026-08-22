@@ -433,6 +433,11 @@ struct NodeStartArgs {
     /// Seed peer(s) for P2P block sync. Repeat for multiple peers.
     #[arg(long, short = 'P')]
     peer: Vec<SocketAddr>,
+    /// Block height at which V31 premine locks and coinbase maturity rules
+    /// activate. Defaults to u64::MAX (disabled) so a new binary does not
+    /// hard-fork an existing chain unless explicitly set.
+    #[arg(long, default_value_t = u64::MAX)]
+    soft_fork_activation_height: u64,
 }
 
 #[derive(Parser)]
@@ -908,6 +913,7 @@ async fn main() -> anyhow::Result<()> {
                     v3_issobella_address: String::new(),
                     v3_no_genesis: false,
                     v3_checkpoint_path: None,
+                    soft_fork_activation_height: args.soft_fork_activation_height,
                 };
 
                 println!(
