@@ -77,6 +77,35 @@ impl V3RpcHandler {
         *self.issobella_address.lock().await = issobella;
     }
 
+    /// Flush the V3 compat UTXO mempool by applying state changes directly
+    /// to the `v3_utxos` SQLite table.
+    ///
+    /// This is called after a V31 native block is accepted, so that V3 compat
+    /// mempool transactions (e.g. bridge unlock) have their UTXO state changes
+    /// persisted even though they are not included in V31 native blocks.
+    /// Returns the number of transactions flushed.
+    pub async fn flush_utxo_mempool(&self) -> usize {
+        let mut mempool = self.mempool_utxo.lock().await;
+        if mempool.is_empty() {
+            return 0;
+        }
+        let txs = std::mem::take(&mut *mempool);
+        let count = txs.len();
+        for tx in &txs {
+            // Mark inputs as spent.
+            for input in &tx.inputs {
+                let _ = self.storage.spend_v3_utxo(&input.prev_tx_hash, input.output_index).await;
+            }
+            // Create new outputs.
+            for (idx, output) in tx.outputs.iter().enumerate() {
+                let _ = self.storage
+                    .create_v3_utxo(&tx.id, idx as u32, output.amount, &output.address)
+                    .await;
+            }
+        }
+        count
+    }
+
     /// Dispatch a JSON-RPC method and return a JSON value suitable for the
     /// `result` field (errors are encoded as `{ "error": ... }`).
     pub async fn dispatch(&self, method: &str, params: Value) -> Value {
@@ -867,6 +896,13 @@ impl V3RpcHandler {
     }
 
     async fn submit_bridge_unlock(&self, params: &Value) -> Result<Value, V3RpcError> {
+        // V3 bridge relay format: params contain "recipient", "amount_flowers",
+        // "burn_id", "evm_chain", "evm_tx_hash", "validator_proofs".
+        // Build the transaction internally from these parameters.
+        if params.get("recipient").is_some() && params.get("amount_flowers").is_some() {
+            return self.submit_bridge_unlock_relay_format(params).await;
+        }
+
         let tx: UtxoTransaction = serde_json::from_value(extract_transaction(params))
             .map_err(|e| V3RpcError::Parse(e.to_string()))?;
 
@@ -949,6 +985,248 @@ impl V3RpcHandler {
                 "bridge unlock validation failed: {msg}"
             ))),
         }
+    }
+
+    /// Handle the V3 bridge relay format for `submitBridgeUnlock`.
+    ///
+    /// The relay sends `{"recipient", "amount_flowers", "burn_id",
+    /// "evm_chain", "evm_tx_hash", "validator_proofs"}` instead of a
+    /// pre-built transaction.  We build the UTXO transaction internally
+    /// using bridge vault UTXOs, embed the proofs in the memo, and submit
+    /// it to the mempool.
+    async fn submit_bridge_unlock_relay_format(&self, params: &Value) -> Result<Value, V3RpcError> {
+        use crate::v3_bridge::{
+            bridge_operation_message, bridge_unlock_memo_with_proofs,
+            bridge_unlock_replay_key, load_bridge_validator_pubkey_allowlist,
+            required_bridge_validator_threshold, verify_bridge_proofs,
+            BridgeValidatorProof,
+        };
+        use crate::v3_tx::{self, Transaction as V3Tx, TxInput, TxOutput};
+        use crate::fee;
+
+        // Parse request fields
+        let recipient = params
+            .get("recipient")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| V3RpcError::Parse("missing 'recipient' field".to_string()))?;
+        let amount_flowers = params
+            .get("amount_flowers")
+            .and_then(|v| v.as_u64())
+            .ok_or_else(|| V3RpcError::Parse("missing or invalid 'amount_flowers' field".to_string()))?;
+        let burn_id = params
+            .get("burn_id")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| V3RpcError::Parse("missing 'burn_id' field".to_string()))?;
+        let evm_chain = params
+            .get("evm_chain")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| V3RpcError::Parse("missing 'evm_chain' field".to_string()))?;
+        let evm_tx_hash = params
+            .get("evm_tx_hash")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| V3RpcError::Parse("missing 'evm_tx_hash' field".to_string()))?;
+
+        // Parse validator proofs.  The V3 bridge relay sends each proof as:
+        //   { "validator_id", "validator_public_key", "signature", ... }
+        // We map these to `BridgeValidatorProof::new(validator_id, pubkey_hex, signature_hex)`.
+        let proofs_raw = params
+            .get("validator_proofs")
+            .and_then(|v| v.as_array())
+            .ok_or_else(|| V3RpcError::Parse("missing 'validator_proofs' field".to_string()))?;
+
+        let mut proofs = Vec::new();
+        for (i, p) in proofs_raw.iter().enumerate() {
+            let validator_id = p
+                .get("validator_id")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| V3RpcError::Parse(format!("proof {i}: missing 'validator_id'")))?;
+            let pubkey = p
+                .get("validator_public_key")
+                .or_else(|| p.get("pubkey"))
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| V3RpcError::Parse(format!("proof {i}: missing 'validator_public_key'")))?;
+            let signature = p
+                .get("signature")
+                .and_then(|v| v.as_str())
+                .ok_or_else(|| V3RpcError::Parse(format!("proof {i}: missing 'signature'")))?;
+            proofs.push(BridgeValidatorProof::new(validator_id, pubkey, signature).map_err(|e| {
+                V3RpcError::Parse(format!("proof {i}: {e}"))
+            })?);
+        }
+
+        // Verify proofs against the canonical operation message
+        let operation_message = bridge_operation_message(
+            recipient,
+            amount_flowers,
+            evm_chain,
+            burn_id,
+            evm_tx_hash,
+        );
+        let allowed_pubkeys = load_bridge_validator_pubkey_allowlist();
+        let threshold = required_bridge_validator_threshold();
+        verify_bridge_proofs(&proofs, &operation_message, &allowed_pubkeys, threshold)
+            .map_err(|e| V3RpcError::Validation(format!("bridge proof verification failed: {e}")))?;
+
+        // Replay protection is enforced at block acceptance time via the
+        // memo-embedded replay key (ChainState::bridge_unlock_replay_keys).
+        let _replay_key = bridge_unlock_replay_key(evm_chain, burn_id, evm_tx_hash);
+
+        // Query bridge vault UTXOs
+        let block_height = self.storage.v3_height().await?;
+        let utxo_rows = self
+            .storage
+            .v3_utxos_by_address(fee::BRIDGE_VAULT_ADDRESS)
+            .await?;
+
+        // Build spendable UTXOs
+        let mut spendable: Vec<crate::v3_chain::SpendableUtxo> = utxo_rows
+            .into_iter()
+            .map(|(hash, idx, amount)| crate::v3_chain::SpendableUtxo {
+                tx_hash: hex(&hash),
+                output_index: idx,
+                amount,
+                address: fee::BRIDGE_VAULT_ADDRESS.to_string(),
+                height: block_height,
+            })
+            .collect();
+        spendable.sort_by(|a, b| {
+            a.height
+                .cmp(&b.height)
+                .then(a.tx_hash.cmp(&b.tx_hash))
+                .then(a.output_index.cmp(&b.output_index))
+        });
+
+        // Select UTXOs to cover amount + fee
+        let pending_height = block_height.saturating_add(1);
+        let scale_fix_active =
+            crate::v3_bridge::bridge_unlock_scale_fix_active(pending_height);
+
+        let mut selected = Vec::new();
+        let mut total_input = 0u64;
+        let mut required_fee = fee::minimum_fee_for_size(fee::estimate_tx_size(1, 2));
+        for utxo in &spendable {
+            let scaled_amount = if scale_fix_active {
+                crate::v3_bridge::bridge_vault_utxo_scaled_amount(utxo.amount, utxo.height)
+            } else {
+                utxo.amount
+            };
+            total_input = total_input
+                .checked_add(scaled_amount)
+                .ok_or_else(|| V3RpcError::Validation("input sum overflow".to_string()))?;
+            selected.push(utxo.clone());
+            required_fee = fee::minimum_fee_for_size(fee::estimate_tx_size(selected.len(), 2));
+            let required_total = amount_flowers
+                .checked_add(required_fee)
+                .ok_or_else(|| V3RpcError::Validation("amount + fee overflow".to_string()))?;
+            if total_input >= required_total {
+                break;
+            }
+        }
+
+        let required_total = amount_flowers
+            .checked_add(required_fee)
+            .ok_or_else(|| V3RpcError::Validation("amount + fee overflow".to_string()))?;
+        if total_input < required_total {
+            return Err(V3RpcError::Validation(format!(
+                "bridge vault balance {} insufficient for unlock amount {} plus fee {}",
+                total_input, amount_flowers, required_fee,
+            )));
+        }
+
+        // Build outputs
+        let mut outputs = vec![TxOutput {
+            amount: amount_flowers,
+            address: recipient.to_string(),
+            memo: Some(bridge_unlock_memo_with_proofs(
+                evm_chain,
+                burn_id,
+                evm_tx_hash,
+                &proofs,
+            )),
+        }];
+
+        let change = total_input - required_total;
+        if change > 0 {
+            outputs.push(TxOutput {
+                amount: change,
+                address: fee::BRIDGE_VAULT_ADDRESS.to_string(),
+                memo: None,
+            });
+        }
+
+        // Determine tx version
+        let bridge_utxo_ver = if zion_cosmic_harmony_v3::tx_hash_v2_active(pending_height) {
+            v3_tx::TX_HASH_V2_VERSION
+        } else {
+            1u32
+        };
+
+        // Build transaction
+        let mut transaction = V3Tx {
+            id: [0u8; 32],
+            version: bridge_utxo_ver,
+            inputs: selected
+                .into_iter()
+                .map(|utxo| TxInput {
+                    prev_tx_hash: crate::chain_state::parse_fixed_hex::<32>(&utxo.tx_hash, "bridge vault utxo hash")
+                        .unwrap_or([0u8; 32]),
+                    output_index: utxo.output_index,
+                    signature: Vec::new(),
+                    public_key: Vec::new(),
+                })
+                .collect(),
+            outputs,
+            fee: required_fee,
+            timestamp: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_secs())
+                .unwrap_or(0),
+        };
+        transaction.finalize_id();
+
+        let tx_id = hex(&transaction.id);
+
+        // Convert to UtxoTransaction for mempool
+        let utxo_tx = UtxoTransaction {
+            id: transaction.id,
+            version: transaction.version,
+            inputs: transaction
+                .inputs
+                .iter()
+                .map(|i| crate::v3_compat::TxInput {
+                    prev_tx_hash: i.prev_tx_hash,
+                    output_index: i.output_index,
+                    signature: i.signature.clone(),
+                    public_key: i.public_key.clone(),
+                })
+                .collect(),
+            outputs: transaction
+                .outputs
+                .iter()
+                .map(|o| crate::v3_compat::TxOutput {
+                    amount: o.amount,
+                    address: o.address.clone(),
+                    memo: o.memo.clone(),
+                })
+                .collect(),
+            fee: transaction.fee,
+            timestamp: transaction.timestamp,
+        };
+
+        // Check mempool for duplicates
+        let mut mempool = self.mempool_utxo.lock().await;
+        if mempool.iter().any(|t| t.id == utxo_tx.id) {
+            return Err(V3RpcError::Validation(
+                "transaction already in mempool".to_string(),
+            ));
+        }
+        mempool.push(utxo_tx);
+
+        Ok(json!({
+            "accepted": true,
+            "tx_id": tx_id,
+            "tx_hash": tx_id,
+        }))
     }
 }
 
