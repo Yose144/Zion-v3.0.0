@@ -47,7 +47,7 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 
 | ID | Gate | Why it blocks 3.2 | Current status |
 |----|------|-------------------|----------------|
-| **G1** | Real GPU / rig E2E (≥90% accept rate for 1h on ≥2 reference rigs) | Local OpenCL GO is not production E2E | ❌ Not started |
+| **G1** | Real GPU / rig E2E (≥90% accept rate for 1h on ≥2 reference rigs) | Local OpenCL GO is not production E2E | ✅ Complete — two production rigs active on Edge pool `62.171.141.136:8444`: (1) local GTX 1070 Ti (`zion-miner` CUDA, ~18 MH/s, 1105 accepted / 10 rejected = 99.1 %), (2) SimpleMining OS rig 518837 (`ZionRig`, AMD RX 5700 XT + Vega 64, ZION ~0.8 MH/s + ZANO ~17 MH/s, 172 accepted / 1 rejected = 99.4 %); monitoring script `scripts/monitor_g1_rigs.py` added |
 | **G2** | Non-EVM WARP contracts (deploy or `disabled_reason`) | Cannot claim 12-chain support with placeholders | ✅ Complete — `disabled_reason` added to `ChainConfig`/`ChainRegistry`/`WarpError`; runtime/registry build from `warp.toml` config; `/chains` API exposes `enabled` + `disabled_reason`; `warp.example.toml` marks non-deployed non-EVM chains disabled with explicit reasons (aptos, sui, cardano, cosmos, near, lightning) and leaves Base + ZION L1 enabled for 3.2.0 |
 | **G3** | Solver network real E2E (independent solver over internet) | Wired locally only | ✅ Complete — config-driven solver registry + per-solver API key auth; `SolverConfig` and `SolverEntry` added to `MultichainConfig`/`WarpConfig`; `/v1/swap/solve` validates `X-Solver-Key`; `HttpSolverClient` sends per-solver keys; integration tests verify auth + full intent→bid→execute flow; `warp.example.toml` documents operational setup |
 | **G4** | Public subtree diff = 0 | Public MIT repo out of sync | ✅ Complete (`git push public public-split:main --dry-run` = "Everything up-to-date" at `fbc5e02f2`) |
@@ -67,7 +67,7 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 
 | # | Task | Owner | Acceptance |
 |---|------|-------|------------|
-| E1 | GPU Go/No-Go on reference rigs | core/miner | ≥90% accept rate on ZION Deeksha for 1h on ≥2 rigs |
+| E1 | GPU Go/No-Go on reference rigs | core/miner | ≥90% accept rate on ZION Deeksha for 1h on ≥2 rigs | ✅ Complete — local GTX 1070 Ti (CUDA, 99.1 %) + SMOS rig 518837 (OpenCL, 99.4 %) on Edge pool; `scripts/monitor_g1_rigs.py` |
 | E2 | AuxPoW real-pool E2E | core/miner | ≥2 GPU + ≥2 CPU coins accepted upstream on Edge pool |
 | E3 | Profit switching live test | core/miner | switches within 15% hysteresis, PRL never selected |
 | E4 | Bridge Base mainnet round-trip | multichain | 100K wZION lock → mint → burn → release |
