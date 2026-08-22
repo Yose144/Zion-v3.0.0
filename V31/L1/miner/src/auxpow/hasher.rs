@@ -811,6 +811,28 @@ pub fn parse_target_hex(hex_str: &str) -> Option<[u8; 32]> {
     Some(out)
 }
 
+/// Parse a CryptonoteStratum 32-bit compact target (8 hex chars, little-endian)
+/// into a 32-byte big-endian target. MoneroOcean/XMR sends the target as a
+/// 4-byte little-endian value; the effective 256-bit target is that value
+/// shifted to the most-significant 32 bits.
+pub fn parse_cryptonote_target(hex_str: &str) -> Option<[u8; 32]> {
+    let hex = hex_str
+        .trim()
+        .trim_start_matches("0x")
+        .trim_start_matches("0X");
+    if hex.len() == 64 {
+        return parse_target_hex(hex_str);
+    }
+    if hex.len() != 8 {
+        return None;
+    }
+    let bytes = hex::decode(hex).ok()?;
+    let val = u32::from_le_bytes(bytes.try_into().ok()?);
+    let mut out = [0u8; 32];
+    out[0..4].copy_from_slice(&val.to_be_bytes());
+    Some(out)
+}
+
 pub fn nbits_to_target(nbits: &str) -> Option<[u8; 32]> {
     let mut bytes = hex::decode(nbits.trim_start_matches("0x")).ok()?;
     if bytes.len() != 4 {
@@ -1035,6 +1057,21 @@ mod tests {
     #[test]
     fn parse_target_hex_short() {
         assert_eq!(parse_target_hex("00"), None);
+    }
+
+    #[test]
+    fn parse_cryptonote_target_ok() {
+        // MoneroOcean compact target: little-endian 0x00011171 -> big-endian bytes.
+        let t = parse_cryptonote_target("71110100").unwrap();
+        assert_eq!(&t[0..4], &[0x00, 0x01, 0x11, 0x71]);
+        assert!(t[4..].iter().all(|&b| b == 0));
+
+        // 64-char full target passes through parse_target_hex.
+        let full = "f".repeat(64);
+        assert_eq!(parse_cryptonote_target(&full), Some([0xff; 32]));
+
+        // Invalid lengths fall back to None.
+        assert!(parse_cryptonote_target("dead").is_none());
     }
 
     #[test]

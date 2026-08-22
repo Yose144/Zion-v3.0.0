@@ -2,7 +2,7 @@
 
 > **Version target:** 3.2.0 "One Love" (Mainnet Stable)  
 > **Current version:** 3.2.0-beta (V31 Mainnet Alpha pre-release), protocol `zion-v3-node/3.1.0-alpha`  
-> **Last updated:** 2026-08-21  
+> **Last updated:** 2026-08-22  
 > **Public launch target:** 31 December 2026  
 >
 > **Canonical plans:**
@@ -51,7 +51,7 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 | **G2** | Non-EVM WARP contracts (deploy or `disabled_reason`) | Cannot claim 12-chain support with placeholders | ✅ Complete — `disabled_reason` added to `ChainConfig`/`ChainRegistry`/`WarpError`; runtime/registry build from `warp.toml` config; `/chains` API exposes `enabled` + `disabled_reason`; `warp.example.toml` marks non-deployed non-EVM chains disabled with explicit reasons (aptos, sui, cardano, cosmos, near, lightning) and leaves Base + ZION L1 enabled for 3.2.0 |
 | **G3** | Solver network real E2E (independent solver over internet) | Wired locally only | ✅ Complete — config-driven solver registry + per-solver API key auth; `SolverConfig` and `SolverEntry` added to `MultichainConfig`/`WarpConfig`; `/v1/swap/solve` validates `X-Solver-Key`; `HttpSolverClient` sends per-solver keys; integration tests verify auth + full intent→bid→execute flow; `warp.example.toml` documents operational setup |
 | **G4** | Public subtree diff = 0 | Public MIT repo out of sync | ✅ Complete (`git push public public-split:main --dry-run` = "Everything up-to-date" at `fbc5e02f2`) |
-| **G5** | XMR / RandomX path (reach pool or `disabled_reason`) | No reachable pure-RandomX pool from Edge datacenter | ⚠️ Decision pending |
+| **G5** | XMR / RandomX path (reach pool or `disabled_reason`) | No reachable pure-RandomX pool from Edge datacenter | ✅ Complete — MoneroOcean `gulf.moneroocean.stream:10001` reachable over plain TCP; CryptonoteStratum handshake returns `rx/0` jobs; `zion-miner` CryptonoteStratum job parsing, compact target parsing, worker login, and share formatting fixed; `cargo test -p zion-miner --lib` 103 pass | Report: [`docs/3.2/REPORTS/REPORT_2026-08-22_G5_E8_XMR_RANDOMX_MONEROOCEAN.md`](./REPORTS/REPORT_2026-08-22_G5_E8_XMR_RANDOMX_MONEROOCEAN.md) |
 | **G6** | PRL (Pearl PoUW) deferred and excluded | Must remain documented and excluded from profit switching | ✅ Documented |
 | **G7** | Chaos / load tests executed | 1000+ miner sim, 24h fuzzing, bridge stress | ✅ Complete — 10 000-miner local pool handshake 100 % pass, 10 000-miner Edge connect storm survived with real rigs unaffected, DEX quote overload 1 972 req/s 100 % 200, bridge submit overload 1 793 req/s no crash, P2P reconnect storm OK; 10-minute transaction fuzz preview passed (2 280 requests, 0 health fails); full 24h fuzzing pending per F2 | Report: [`docs/3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md`](../3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md) |
 | **G8** | 30-day continuous run completed | Cannot call "Stable" without uptime evidence | ❌ Not started |
@@ -74,7 +74,7 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 | E5 | Non-EVM WARP hardening | multichain | each chain deployed or `disabled_reason` + UI hidden | ✅ Complete — `ChainConfig.disabled_reason` wired through registry, runtime, `/chains` API and example config; disabled chains hidden from router/watcher |
 | E6 | Solver network real E2E | multichain | independent solver over internet | ✅ Complete — config-driven registry + per-solver API keys; integration tests pass; operational procedure in `warp.example.toml` |
 | E7 | Public subtree sync | release/docs | `git subtree push --prefix=public public main` clean, `git secrets --scan` clean | ✅ Complete — `public-split` identical to `public/main` at `fbc5e02f2`; `git push --dry-run` reports "Everything up-to-date" (2026-08-22) |
-| E8 | XMR / RandomX path | core/pool | reachable pool E2E or `disabled_reason` |
+| E8 | XMR / RandomX path | core/pool | reachable pool E2E or `disabled_reason` | ✅ Complete — MoneroOcean reachable; CryptonoteStratum fixes merged; unit tests pass | Report: [`docs/3.2/REPORTS/REPORT_2026-08-22_G5_E8_XMR_RANDOMX_MONEROOCEAN.md`](./REPORTS/REPORT_2026-08-22_G5_E8_XMR_RANDOMX_MONEROOCEAN.md) |
 | E9 | L5/L6 activation decision | product/ops | decision record |
 
 ### Phase F — Stability, Security & 30-Day Run (weeks 5–9)
