@@ -7,8 +7,8 @@ pub enum WarpError {
     #[error("Unsupported chain: {0}")]
     UnsupportedChain(String),
 
-    #[error("Chain {chain} is currently disabled")]
-    ChainDisabled { chain: String },
+    #[error("Chain {chain} is currently disabled: {reason}")]
+    ChainDisabled { chain: String, reason: String },
 
     #[error("Chain adapter error ({chain}): {reason}")]
     AdapterError { chain: String, reason: String },

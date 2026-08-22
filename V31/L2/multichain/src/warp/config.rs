@@ -31,6 +31,10 @@ pub struct ChainConfig {
     pub rpc_url: String,
     pub contract_address: Option<String>,
     pub finality_blocks: u64,
+    /// If `enabled` is false, this explains why (e.g. "contract not deployed").
+    /// Used by the `/chains` API and operator tooling.
+    #[serde(default)]
+    pub disabled_reason: Option<String>,
 }
 
 impl Default for ChainConfig {
@@ -42,6 +46,7 @@ impl Default for ChainConfig {
             rpc_url: String::new(),
             contract_address: None,
             finality_blocks: 12,
+            disabled_reason: None,
         }
     }
 }
@@ -154,5 +159,35 @@ mod tests {
         assert_eq!(config.chains.len(), 2);
         assert_eq!(config.chains[0].name, "base");
         assert_eq!(config.chains[1].name, "solana");
+    }
+
+    #[test]
+    fn test_chain_disabled_reason_in_toml() {
+        let toml_str = r#"
+            node_id = "n1"
+            listen_addr = "0.0.0.0"
+            listen_port = 9333
+            database_path = "warp.db"
+            quorum = 3
+            daily_limit_zion = 10000000
+            timelock_threshold_zion = 1000000
+            l1_rpc_url = "http://localhost:8443"
+            l1_vault_address = "zion1vault"
+
+            [[chains]]
+            name = "aptos"
+            family = "aptos"
+            enabled = false
+            disabled_reason = "BCS not implemented"
+            rpc_url = "https://fullnode.mainnet.aptoslabs.com"
+            finality_blocks = 3
+        "#;
+        let config = WarpConfig::load_from_str(toml_str).unwrap();
+        assert_eq!(config.chains.len(), 1);
+        assert_eq!(config.chains[0].enabled, false);
+        assert_eq!(
+            config.chains[0].disabled_reason,
+            Some("BCS not implemented".to_string())
+        );
     }
 }

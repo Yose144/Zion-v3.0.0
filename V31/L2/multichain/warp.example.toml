@@ -29,6 +29,7 @@ l1_vault_address = "zion1warp_vault_address"
 
 poll_interval_secs = 15
 
+# ENABLED for 3.2.0 Mainnet Stable (Base EVM pilot + ZION L1 source)
 [[chains]]
 name = "base"
 family = "evm"
@@ -38,9 +39,19 @@ contract_address = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
 finality_blocks = 12
 
 [[chains]]
+name = "zion-l1"
+family = "zion-l1"
+enabled = true
+rpc_url = "http://127.0.0.1:9445"
+contract_address = "zion1warp_vault_address"
+finality_blocks = 60
+
+# DISABLED EVM chains — deploy wZION/bridge contract and set `enabled = true` to activate
+[[chains]]
 name = "arbitrum"
 family = "evm"
 enabled = false
+disabled_reason = "wZION/Bridge contract not deployed on Arbitrum; set contract_address after deployment"
 rpc_url = "https://arb1.arbitrum.io/rpc"
 contract_address = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
 finality_blocks = 20
@@ -49,6 +60,7 @@ finality_blocks = 20
 name = "optimism"
 family = "evm"
 enabled = false
+disabled_reason = "wZION/Bridge contract not deployed on Optimism; set contract_address after deployment"
 rpc_url = "https://mainnet.optimism.io"
 contract_address = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
 finality_blocks = 20
@@ -57,6 +69,7 @@ finality_blocks = 20
 name = "bsc"
 family = "evm"
 enabled = false
+disabled_reason = "wZION/Bridge contract not deployed on BSC; set contract_address after deployment"
 rpc_url = "https://bsc-dataseed.binance.org"
 contract_address = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
 finality_blocks = 15
@@ -65,6 +78,7 @@ finality_blocks = 15
 name = "polygon"
 family = "evm"
 enabled = false
+disabled_reason = "wZION/Bridge contract not deployed on Polygon; set contract_address after deployment"
 rpc_url = "https://polygon-rpc.com"
 contract_address = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
 finality_blocks = 128
@@ -73,14 +87,17 @@ finality_blocks = 128
 name = "avalanche"
 family = "evm"
 enabled = false
+disabled_reason = "wZION/Bridge contract not deployed on Avalanche; set contract_address after deployment"
 rpc_url = "https://api.avax.network/ext/bc/C/rpc"
 contract_address = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
 finality_blocks = 20
 
+# DISABLED non-EVM chains — deploy contracts / infrastructure and remove `disabled_reason` to activate
 [[chains]]
 name = "solana"
 family = "solana"
 enabled = false
+disabled_reason = "Solana SPL mint configuration pending operator validation; set WARP_SOLANA_RELAY_KEY and verify mint HgfQZpH2JAqPdR3PcP4dEE8WRhznXh1QhJBiiwcHfT8H before enabling"
 rpc_url = "https://api.mainnet-beta.solana.com"
 # ZION SPL token mint address; override with real deployed mint.
 contract_address = "HgfQZpH2JAqPdR3PcP4dEE8WRhznXh1QhJBiiwcHfT8H"
@@ -90,6 +107,7 @@ finality_blocks = 31
 name = "cardano"
 family = "cardano"
 enabled = false
+disabled_reason = "Cardano Plutus minting policy not deployed; deploy contract from V31/L2/multichain/contracts/non-evm/cardano/ and set WARP_CARDANO_ZION_ASSET"
 rpc_url = "https://cardano-mainnet.blockfrost.io/api/v0"
 # policy_id (28 bytes) + asset_name "ZION" (4 bytes = 5a494f4e)
 contract_address = "5a71011c726573745a494f4e"
@@ -99,6 +117,7 @@ finality_blocks = 20
 name = "stellar"
 family = "stellar"
 enabled = false
+disabled_reason = "Stellar Soroban distribution not fully configured; set WARP_STELLAR_DISTRIBUTION and configure 5/7 WARP validator multi-sig signers before enabling"
 rpc_url = "https://horizon.stellar.org"
 # ZION asset issuer public key.
 contract_address = "GDDXUOJ7ERSHHDMUKS6PBIDSXV2PB5J7GOFOKMHW6BRVAS46CFSPAYJT"
@@ -108,6 +127,7 @@ finality_blocks = 3
 name = "bitcoin"
 family = "bitcoin"
 enabled = false
+disabled_reason = "Bitcoin HTLC address not configured; deploy HTLC contract and set WARP_BITCOIN_HTLC_ADDRESS or chain.contract_address"
 rpc_url = "https://mempool.space/api"
 # HTLC / watch address for inbound proofs.
 contract_address = "bc1qplaceholderhtlcaddress"
@@ -117,6 +137,7 @@ finality_blocks = 3
 name = "cosmos"
 family = "cosmos"
 enabled = false
+disabled_reason = "Cosmos CW20 contract not deployed; deploy zion_cw20.rs to cosmoshub-4 and set WARP_COSMOS_CONTRACT"
 rpc_url = "https://api.cosmos.network"
 contract_address = "cosmos1placeholder"
 finality_blocks = 3
@@ -125,6 +146,7 @@ finality_blocks = 3
 name = "tron"
 family = "tron"
 enabled = false
+disabled_reason = "Tron TRC-20 contract not deployed; deploy ZionToken.sol and set WARP_TRON_CONTRACT"
 rpc_url = "https://api.trongrid.io"
 # TRC-20 ZION contract / jetton master.
 contract_address = "TPlaceholderTronContract"
@@ -134,6 +156,7 @@ finality_blocks = 20
 name = "sui"
 family = "sui"
 enabled = false
+disabled_reason = "Sui BCS TransactionData encoding not implemented; Move bridge package not deployed; requires sui-sdk integration"
 rpc_url = "https://fullnode.mainnet.sui.io:443"
 # Sui package object ID that emits BridgeBurn/BridgeMint events.
 contract_address = "0x2"
@@ -143,6 +166,7 @@ finality_blocks = 3
 name = "aptos"
 family = "aptos"
 enabled = false
+disabled_reason = "Aptos BCS transaction encoding not implemented; Move bridge module not deployed; requires aptos-sdk integration"
 rpc_url = "https://fullnode.mainnet.aptoslabs.com"
 # Bridge account / module publisher.
 contract_address = "0x0000000000000000000000000000000000000000000000000000000000000001"
@@ -152,6 +176,7 @@ finality_blocks = 3
 name = "near"
 family = "near"
 enabled = false
+disabled_reason = "NEAR NEP-141 contract not deployed; deploy zion_token.rs and set WARP_NEAR_BRIDGE_CONTRACT"
 rpc_url = "https://rpc.mainnet.near.org"
 contract_address = "warp.near"
 finality_blocks = 3
@@ -160,6 +185,7 @@ finality_blocks = 3
 name = "ton"
 family = "ton"
 enabled = false
+disabled_reason = "TON jetton bridge account not configured; set WARP_TON_BRIDGE_ACCOUNT and WARP_TON_RELAY_KEY"
 rpc_url = "https://toncenter.com/api/v2/jsonRPC"
 # TON jetton master address (EQ... / UQ...).
 contract_address = "EQPlaceholderTonJettonMaster"
@@ -169,6 +195,7 @@ finality_blocks = 3
 name = "lightning"
 family = "lightning"
 enabled = false
+disabled_reason = "Lightning Network requires LND node setup; start Docker stack via docker-compose -f V31/L2/multichain/docker/lightning/docker-compose.yml and set WARP_LN_NODE_URL + WARP_LN_MACAROON"
 # LND REST base URL, e.g. "https://localhost:8080".
 rpc_url = "https://localhost:8080"
 # Hex-encoded LND invoice macaroon. In production prefer WARP_LN_MACAROON env var

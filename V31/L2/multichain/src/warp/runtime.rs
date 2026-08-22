@@ -55,7 +55,7 @@ impl WarpRuntime {
         );
         let validators = Arc::new(Mutex::new(validator_set));
 
-        let registry = crate::warp::ChainRegistry::with_defaults();
+        let registry = build_registry_from_config(&config)?;
         let fee_engine = crate::warp::FeeEngine::with_defaults();
         let db = transfer_db.clone().ok_or_else(|| {
             crate::warp::error::WarpError::Internal("WARP database not available".to_string())
@@ -131,4 +131,8 @@ impl WarpRuntime {
 
         Ok(())
     }
+}
+
+fn build_registry_from_config(config: &crate::warp::config::WarpConfig) -> WarpResult<crate::warp::ChainRegistry> {
+    crate::warp::ChainRegistry::from_config(&config.chains)
 }

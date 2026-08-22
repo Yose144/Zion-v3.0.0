@@ -449,7 +449,7 @@ mod tests {
     #[test]
     fn test_disabled_chain_rejected() {
         let mut router = test_router();
-        router.registry.disable("tron").unwrap();
+        router.registry.disable("tron", None).unwrap();
         let proof = test_deposit(100_000, "WARP:1:tron:TAddr");
         assert!(router.initiate_outbound(proof).is_err());
     }

@@ -1,6 +1,8 @@
 use crate::warp::error::{WarpError, WarpResult};
-use crate::warp::types::ChainId;
+use crate::warp::types::{ChainId, ChainStatus};
 use std::collections::HashMap;
+
+use crate::warp::config::ChainConfig;
 
 /// Registry of supported chains. Manages enabling/disabling chains.
 pub struct ChainRegistry {
@@ -10,6 +12,8 @@ pub struct ChainRegistry {
 struct ChainEntry {
     chain_id: ChainId,
     enabled: bool,
+    /// Human-readable reason if the chain is disabled (e.g. contract not deployed).
+    disabled_reason: Option<String>,
 }
 
 impl ChainRegistry {
@@ -49,12 +53,45 @@ impl ChainRegistry {
         reg
     }
 
+    /// Build a registry from the WARP `chains` config. Empty config falls back
+    /// to `with_defaults()` for backward compatibility.
+    pub fn from_config(chains: &[ChainConfig]) -> WarpResult<Self> {
+        if chains.is_empty() {
+            return Ok(Self::with_defaults());
+        }
+
+        let mut reg = Self::new();
+        for chain in chains {
+            let chain_id = ChainId::from_config(&chain.name, &chain.family, chain.finality_blocks)
+                .ok_or_else(|| WarpError::Config(format!(
+                    "unsupported chain family '{}' for chain '{}' in WARP config",
+                    chain.family, chain.name
+                )))?;
+            reg.register_with_reason(
+                chain_id,
+                chain.enabled,
+                if chain.enabled { None } else { chain.disabled_reason.clone() },
+            );
+        }
+        Ok(reg)
+    }
+
     pub fn register(&mut self, chain: ChainId) {
+        self.register_with_reason(chain, true, None);
+    }
+
+    pub fn register_with_reason(
+        &mut self,
+        chain: ChainId,
+        enabled: bool,
+        disabled_reason: Option<String>,
+    ) {
         self.chains.insert(
             chain.name.clone(),
             ChainEntry {
                 chain_id: chain,
-                enabled: true,
+                enabled,
+                disabled_reason,
             },
         );
     }
@@ -65,19 +102,27 @@ impl ChainRegistry {
             .get(name)
             .ok_or_else(|| WarpError::UnsupportedChain(name.to_string()))?;
         if !entry.enabled {
+            let reason = entry
+                .disabled_reason
+                .clone()
+                .unwrap_or_else(|| "disabled by operator".to_string());
             return Err(WarpError::ChainDisabled {
                 chain: name.to_string(),
+                reason,
             });
         }
         Ok(&entry.chain_id)
     }
 
-    pub fn disable(&mut self, name: &str) -> WarpResult<()> {
+    pub fn disable(&mut self, name: &str, reason: Option<String>) -> WarpResult<()> {
         let entry = self
             .chains
             .get_mut(name)
             .ok_or_else(|| WarpError::UnsupportedChain(name.to_string()))?;
         entry.enabled = false;
+        if let Some(r) = reason {
+            entry.disabled_reason = Some(r);
+        }
         Ok(())
     }
 
@@ -87,6 +132,7 @@ impl ChainRegistry {
             .get_mut(name)
             .ok_or_else(|| WarpError::UnsupportedChain(name.to_string()))?;
         entry.enabled = true;
+        entry.disabled_reason = None;
         Ok(())
     }
 
@@ -106,6 +152,18 @@ impl ChainRegistry {
         self.chains
             .iter()
             .map(|(name, entry)| (name, entry.enabled))
+            .collect()
+    }
+
+    pub fn list_chain_status(&self) -> Vec<ChainStatus> {
+        self.chains
+            .values()
+            .map(|entry| ChainStatus {
+                name: entry.chain_id.name.clone(),
+                family: entry.chain_id.family.to_string(),
+                enabled: entry.enabled,
+                disabled_reason: entry.disabled_reason.clone(),
+            })
             .collect()
     }
 
@@ -170,7 +228,7 @@ mod tests {
     fn test_registry_disable_enable() {
         let mut reg = ChainRegistry::with_defaults();
         assert!(reg.is_enabled("bitcoin"));
-        reg.disable("bitcoin").unwrap();
+        reg.disable("bitcoin", Some("test disable".into())).unwrap();
         assert!(!reg.is_enabled("bitcoin"));
         assert!(reg.get("bitcoin").is_err()); // disabled
         reg.enable("bitcoin").unwrap();
@@ -181,7 +239,7 @@ mod tests {
     fn test_registry_list_enabled() {
         let mut reg = ChainRegistry::with_defaults();
         let initial = reg.enabled_count();
-        reg.disable("tron").unwrap();
+        reg.disable("tron", None).unwrap();
         assert_eq!(reg.enabled_count(), initial - 1);
     }
 
@@ -197,7 +255,7 @@ mod tests {
     #[test]
     fn test_registry_disable_unknown() {
         let mut reg = ChainRegistry::with_defaults();
-        assert!(reg.disable("nonexistent").is_err());
+        assert!(reg.disable("nonexistent", None).is_err());
     }
 
     #[test]
@@ -206,5 +264,39 @@ mod tests {
         let all = reg.list_all();
         assert_eq!(all.len(), 21);
         assert!(all.iter().all(|(_, enabled)| *enabled));
+    }
+
+    #[test]
+    fn test_registry_from_config() {
+        use crate::warp::config::ChainConfig;
+
+        let chains = vec![
+            ChainConfig {
+                name: "base".into(),
+                family: "evm".into(),
+                enabled: true,
+                rpc_url: "".into(),
+                contract_address: None,
+                finality_blocks: 12,
+                disabled_reason: None,
+            },
+            ChainConfig {
+                name: "aptos".into(),
+                family: "aptos".into(),
+                enabled: false,
+                rpc_url: "".into(),
+                contract_address: None,
+                finality_blocks: 3,
+                disabled_reason: Some("BCS not implemented".into()),
+            },
+        ];
+        let reg = ChainRegistry::from_config(&chains).unwrap();
+        assert!(reg.is_enabled("base"));
+        assert!(!reg.is_enabled("aptos"));
+        assert!(reg.get("aptos").is_err());
+        let status = reg.list_chain_status();
+        let aptos = status.iter().find(|s| s.name == "aptos").unwrap();
+        assert!(!aptos.enabled);
+        assert_eq!(aptos.disabled_reason.as_deref(), Some("BCS not implemented"));
     }
 }
