@@ -1,6 +1,8 @@
 # ZION V3 — Canonical Status (Mainnet Beta)
 
-> **Datum poslední aktualizace:** 2026-08-21
+> **Datum poslední aktualizace:** 2026-08-22
+>
+> **Update (2026-08-22):** **Gate G4 — public subtree sync — CLOSED.** `public/` subtree je plně synchronizovaný s `github.com/Zion-TerraNova/v3-Mainnet:main` (`git subtree split --prefix=public` vrací `fbc5e02f2`, identický s `public/main`; `git push public public-split:main --dry-run` hlásí "Everything up-to-date"). Viz kanonická 3.2 roadmap [`docs/3.2/ROADMAP.md`](./docs/3.2/ROADMAP.md).
 >
 > **Update (2026-08-21):** **Příprava veřejných v3.2.0 release buildů — Terminal Miner + CLI + Desktop.** Opraveny build skripty (`V31/release/build-*.sh`) na per-platform feature matrix (bez `gpu-metal` na Linuxu/Windowsu, bez `gpu-cuda` na macOS). Desktop agent `prepare-rust-miner.js` nyní defaultně používá `public_build`, aby veřejná TUI/banner/logy ukazovaly pouze ZION + BOOST 1 + BOOST 2. CI workflow `miner-release.yml` a nový `cli-release.yml` aktualizovány na `v3.2.0` tagy, názvy a assety. Desktop release notes aktualizovány na v3.2.0. Veřejná download metadata v `APP&WEB/website-v2.9/src/lib/github-releases.ts` přepnuta na `v3.2.0-miner` a `v3.2.0-cli`. `docs/3.2/ROADMAP.md` aktualizováno: Phase G release readiness in progress. Čeká se na push tagů a spuštění CI buildů.
 >
