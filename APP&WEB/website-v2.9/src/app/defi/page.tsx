@@ -368,6 +368,28 @@ export default function DefiPage() {
   const cs = lang === 'cs';
   const { connected, account, isBaseMainnet, connect, switchToBase } = useWallet();
   const [activeTab, setActiveTab] = useState<SectionTab>('overview');
+
+  // ── Sync active tab with URL hash (nav children / direct links) ───────────────
+  useEffect(() => {
+    const applyHash = () => {
+      const raw = window.location.hash.replace('#', '');
+      const key = (raw === 'warp' ? 'bridge' : raw) as SectionTab;
+      if (SECTIONS.some((s) => s.key === key)) {
+        setActiveTab(key);
+      }
+    };
+    applyHash();
+    window.addEventListener('hashchange', applyHash);
+    return () => window.removeEventListener('hashchange', applyHash);
+  }, []);
+
+  useEffect(() => {
+    const target = activeTab === 'overview' ? '' : `#${activeTab}`;
+    if (typeof window !== 'undefined' && window.location.hash !== target) {
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${target}`);
+    }
+  }, [activeTab]);
+
   const [wZIONSupply, setWZIONSupply] = useState<string | null>(null);
   const [wZIONPrice, setWZIONPrice] = useState<{ wzion_per_weth: number; usd_per_wzion: number } | null>(null);
   const [dataLoaded, setDataLoaded] = useState(false);

@@ -61,10 +61,6 @@ function unauthorizedResponse(): Response {
 const PROTECTED_PATHS = [
   '/account',
   '/dashboard/private',
-  '/dex',
-  '/swap',
-  '/ziondex',
-  '/bridge',
 ];
 
 function isProtected(pathname: string): boolean {
@@ -179,9 +175,5 @@ export const config = {
     '/api/:path*',
     '/account/:path*',
     '/dashboard/private/:path*',
-    '/dex/:path*',
-    '/swap/:path*',
-    '/ziondex/:path*',
-    '/bridge/:path*',
   ],
 };

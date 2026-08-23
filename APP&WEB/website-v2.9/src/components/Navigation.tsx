@@ -53,7 +53,14 @@ export default function Navigation() {
       title: tr('nav', 'defi_group', lang),
       color: '252, 209, 22',
       items: [
-        { href: '/multichain', label: tr('nav', 'multichain', lang) },
+        { href: '/defi', label: tr('nav', 'defi', lang), children: [
+          { href: '/defi#swap', label: tr('nav', 'swap', lang) },
+          { href: '/defi#bridge', label: tr('nav', 'bridge', lang) },
+          { href: '/defi#pools', label: tr('nav', 'dex', lang) },
+          { href: '/defi#earn', label: tr('nav', 'earn', lang) },
+          { href: '/defi#governance', label: tr('nav', 'dao', lang) },
+          { href: '/defi#auction', label: tr('nav', 'auction', lang) },
+        ] },
         { href: '/cex', label: tr('nav', 'cex', lang) },
         { href: '/wallet', label: tr('nav', 'wallet', lang) },
       ],

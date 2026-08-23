@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
 export default function FarmingPage() {
-  redirect('/multichain');
+  redirect('/defi');
 }
