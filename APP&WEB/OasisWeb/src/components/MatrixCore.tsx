@@ -53,7 +53,7 @@ export default function MatrixCore() {
 
   // Orbiting data nodes — small particles circling the core
   const { dataGeometry, dataMaterial, dataOrbits } = useMemo(() => {
-    const count = 200;
+    const count = 120;
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
     const orbits: { radius: number; speed: number; phase: number; yOffset: number; tilt: number }[] = [];

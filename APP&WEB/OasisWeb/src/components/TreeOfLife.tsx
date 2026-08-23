@@ -166,7 +166,7 @@ interface SporeFieldProps {
   rng: ReturnType<typeof createRandom>;
 }
 
-function SporeField({ count = 700, rng }: SporeFieldProps) {
+function SporeField({ count = 350, rng }: SporeFieldProps) {
   const pointsRef = useRef<THREE.Points>(null);
 
   const { geometry, material, speeds, phases } = useMemo(() => {
@@ -174,11 +174,11 @@ function SporeField({ count = 700, rng }: SporeFieldProps) {
     const colors = new Float32Array(count * 3);
     const palette = [
       new THREE.Color('#078930'),
-      new THREE.Color('#e41e2b'),
       new THREE.Color('#fcd116'),
-      new THREE.Color('#078930'),
       new THREE.Color('#e41e2b'),
       new THREE.Color('#078930'),
+      new THREE.Color('#fcd116'),
+      new THREE.Color('#e41e2b'),
     ];
     const speeds: number[] = [];
     const phases: number[] = [];
@@ -299,8 +299,8 @@ interface LeafCanopyProps {
   rng: ReturnType<typeof createRandom>;
 }
 
-// Mostly green, like a real canopy — with only a rare warm accent leaf.
-const LEAF_GREENS = ['#078930', '#078930', '#078930', '#078930', '#078930', '#078930'];
+// Rasta canopy: green, gold, red with occasional black/earth base.
+const LEAF_PALETTE = ['#078930', '#fcd116', '#e41e2b', '#078930', '#fcd116', '#1a1a1a'];
 
 function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
@@ -320,8 +320,8 @@ function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
   );
 
   const leaves = useMemo(() => {
-    const palette = LEAF_GREENS.map((c) => new THREE.Color(c));
-    const accent = new THREE.Color('#fcd116');
+    const palette = LEAF_PALETTE.map((c) => new THREE.Color(c));
+    const accent = new THREE.Color('#e41e2b');
     const result: {
       pos: THREE.Vector3;
       rot: THREE.Euler;
@@ -347,7 +347,7 @@ function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
           scale: 0.55 + rng.next() * 0.6,
           phase: rng.next() * Math.PI * 2,
           speed: 0.5 + rng.next() * 0.6,
-          color: rng.next() < 0.06 ? accent : palette[rng.int(0, palette.length)],
+          color: palette[rng.int(0, palette.length)],
         });
       }
     }
@@ -391,7 +391,7 @@ function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
 }
 
 /* ── Contact-style light fountain: vertical streaks spiraling upward ── */
-function LightFountain({ rng, count = 1200 }: { rng: ReturnType<typeof createRandom>; count?: number }) {
+function LightFountain({ rng, count = 700 }: { rng: ReturnType<typeof createRandom>; count?: number }) {
   const pointsRef = useRef<THREE.Points>(null);
 
   const { geometry, material, speeds, angles, radii, phases } = useMemo(() => {
@@ -405,9 +405,9 @@ function LightFountain({ rng, count = 1200 }: { rng: ReturnType<typeof createRan
     const palette = [
       new THREE.Color('#078930'),
       new THREE.Color('#e41e2b'),
-      new THREE.Color('#078930'),
       new THREE.Color('#fcd116'),
-      new THREE.Color('#ffffff'),
+      new THREE.Color('#078930'),
+      new THREE.Color('#1a1a1a'),
     ];
 
     for (let i = 0; i < count; i++) {
@@ -482,12 +482,12 @@ function LightFountain({ rng, count = 1200 }: { rng: ReturnType<typeof createRan
 function EnergyRings() {
   const groupRef = useRef<THREE.Group>(null);
   const rings = useMemo(() => {
-    return Array.from({ length: 12 }).map((_, i) => ({
-      radius: 0.8 + i * 0.35,
-      tube: 0.015 + (i < 6 ? 0.01 : 0),
-      color: i % 3 === 0 ? '#078930' : i % 3 === 1 ? '#e41e2b' : '#078930',
+    return Array.from({ length: 10 }).map((_, i) => ({
+      radius: 0.8 + i * 0.42,
+      tube: 0.015 + (i < 5 ? 0.01 : 0),
+      color: i % 3 === 0 ? '#078930' : i % 3 === 1 ? '#fcd116' : '#e41e2b',
       speed: (0.08 + i * 0.02) * (i % 2 === 0 ? 1 : -1),
-      yOffset: -3 + i * 0.7,
+      yOffset: -3 + i * 0.8,
       phase: i * 0.5,
     }));
   }, []);
@@ -505,11 +505,11 @@ function EnergyRings() {
     <group ref={groupRef}>
       {rings.map((ring, i) => (
         <mesh key={i} position={[0, ring.yOffset, 0]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[ring.radius, ring.tube, 16, 80]} />
+          <torusGeometry args={[ring.radius, ring.tube, 12, 48]} />
           <meshBasicMaterial
             color={ring.color}
             transparent
-            opacity={0.3 - i * 0.015}
+            opacity={0.28 - i * 0.02}
             blending={THREE.AdditiveBlending}
             depthWrite={false}
             toneMapped={false}
@@ -529,7 +529,7 @@ function EnergyBeams({ rng }: { rng: ReturnType<typeof createRandom> }) {
       const radius = 0.6 + rng.next() * 1.2;
       return {
         position: [Math.cos(angle) * radius, 0, Math.sin(angle) * radius] as [number, number, number],
-        color: ['#078930', '#e41e2b', '#078930', '#fcd116'][i % 4],
+        color: ['#078930', '#fcd116', '#e41e2b', '#078930'][i % 4],
         speed: 0.3 + rng.next() * 0.4,
         phase: rng.next() * Math.PI * 2,
         height: 4 + rng.next() * 2,
@@ -540,8 +540,8 @@ function EnergyBeams({ rng }: { rng: ReturnType<typeof createRandom> }) {
 
   const glowTexture = useMemo(() => createGlowTexture(
     'rgba(252, 209, 22, 0.9)',
-    'rgba(228, 30, 43, 0.3)',
-    'rgba(7, 137, 48, 0.05)'
+    'rgba(228, 30, 43, 0.4)',
+    'rgba(7, 137, 48, 0.08)'
   ), []);
 
   useFrame((state) => {
@@ -658,11 +658,11 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
 
     const fruitPalette = [
       '#078930',
+      '#fcd116',
+      '#e41e2b',
       '#078930',
       '#fcd116',
       '#e41e2b',
-      '#e41e2b',
-      '#fcd116',
     ];
 
     const fruitData = fruits.map((pos, i) => {
@@ -674,8 +674,8 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
 
     const glowTexture = createGlowTexture(
       'rgba(252, 209, 22, 0.95)',
-      'rgba(228, 30, 43, 0.45)',
-      'rgba(7, 137, 48, 0.1)'
+      'rgba(228, 30, 43, 0.55)',
+      'rgba(7, 137, 48, 0.15)'
     );
 
     return { branches, branchGeometry, rootsGeometry, fruitData, glowTexture, leafAnchors };
@@ -720,13 +720,13 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
   const branchMaterial = useMemo(
     () =>
       new THREE.MeshPhysicalMaterial({
-        color: 0x241238,
-        emissive: 0x8b3ff0,
-        emissiveIntensity: 0.6,
-        roughness: 0.3,
-        metalness: 0.7,
-        clearcoat: 0.5,
-        clearcoatRoughness: 0.25,
+        color: 0x1a0f0a,
+        emissive: 0x078930,
+        emissiveIntensity: 0.45,
+        roughness: 0.5,
+        metalness: 0.3,
+        clearcoat: 0.4,
+        clearcoatRoughness: 0.35,
         toneMapped: false,
       }),
     []
@@ -735,12 +735,12 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
   const rootMaterial = useMemo(
     () =>
       new THREE.MeshPhysicalMaterial({
-        color: 0x2d1a42,
-        emissive: 0x5b21b6,
-        emissiveIntensity: 0.3,
-        roughness: 0.6,
-        metalness: 0.4,
-        clearcoat: 0.3,
+        color: 0x140c08,
+        emissive: 0x5c3a12,
+        emissiveIntensity: 0.25,
+        roughness: 0.7,
+        metalness: 0.2,
+        clearcoat: 0.2,
         toneMapped: false,
       }),
     []
@@ -855,15 +855,15 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
       {/* Tree heart — layered luminous core (Contact-style bright center) */}
       <mesh ref={heartRef} position={[0, 0.45, 0]}>
         <sphereGeometry args={[0.55, 64, 64]} />
-        <meshBasicMaterial color="#fcd116" transparent opacity={0.15} blending={THREE.AdditiveBlending} depthWrite={false} />
+        <meshBasicMaterial color="#e41e2b" transparent opacity={0.15} blending={THREE.AdditiveBlending} depthWrite={false} />
       </mesh>
       <mesh position={[0, 0.45, 0]}>
         <sphereGeometry args={[0.32, 64, 64]} />
-        <meshBasicMaterial color="#fcd116" transparent opacity={0.25} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+        <meshBasicMaterial color="#fcd116" transparent opacity={0.28} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
       </mesh>
       <mesh position={[0, 0.45, 0]}>
         <sphereGeometry args={[0.18, 64, 64]} />
-        <meshBasicMaterial color="#ffffff" transparent opacity={0.6} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+        <meshBasicMaterial color="#078930" transparent opacity={0.5} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
       </mesh>
       <mesh position={[0, 0.45, 0]}>
         <sphereGeometry args={[0.08, 32, 32]} />
@@ -887,7 +887,7 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
       </sprite>
 
       {/* Contact-style light fountain — spiraling vertical streaks */}
-      <LightFountain rng={rng} count={isMobile ? 300 : 500} />
+      <LightFountain rng={rng} count={isMobile ? 250 : 400} />
 
       {/* Pulsing energy rings around the tree */}
       <EnergyRings />
@@ -899,8 +899,8 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
       <pointLight position={[0, 0.45, 0]} intensity={2.5} distance={12} decay={1.5} color="#fcd116" />
       <pointLight position={[0, 2, 0]} intensity={1.2} distance={10} decay={1.5} color="#e41e2b" />
 
-      <SporeField count={isMobile ? 200 : 400} rng={rng} />
-      <LeafCanopy anchors={leafAnchors} leavesPerAnchor={isMobile ? 1 : 2} rng={rng} />
+      <SporeField count={isMobile ? 150 : 250} rng={rng} />
+      <LeafCanopy anchors={leafAnchors} leavesPerAnchor={isMobile ? 1 : 1} rng={rng} />
     </group>
   );
 }

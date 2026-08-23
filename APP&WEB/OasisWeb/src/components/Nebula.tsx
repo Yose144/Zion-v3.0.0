@@ -4,7 +4,7 @@ import { useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 
-function createNebulaTexture(color1: string, color2: string, size = 1024): THREE.Texture {
+function createNebulaTexture(color1: string, color2: string, size = 512): THREE.Texture {
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
@@ -67,7 +67,7 @@ interface NebulaCloudProps {
 function NebulaCloud({ color1, color2, position, scale, speed, textureSize = 1024 }: NebulaCloudProps & { textureSize?: number }) {
   const spriteRef = useRef<THREE.Sprite>(null);
   const { camera } = useThree();
-  const texture = useMemo(() => createNebulaTexture(color1, color2, textureSize), [color1, color2, textureSize]);
+  const texture = useMemo(() => createNebulaTexture(color1, color2, Math.min(textureSize, 512)), [color1, color2, textureSize]);
   const drift = useMemo(() => ({ phase: Math.random() * Math.PI * 2, amp: 0.6 + Math.random() * 0.8 }), []);
 
   useFrame((state) => {
@@ -121,7 +121,7 @@ export default function Nebula({ isMobile = false }: { isMobile?: boolean }) {
   return (
     <group>
       {visibleClouds.map((cloud, i) => (
-        <NebulaCloud key={i} {...cloud} textureSize={isMobile ? 512 : 1024} />
+        <NebulaCloud key={i} {...cloud} textureSize={isMobile ? 256 : 512} />
       ))}
     </group>
   );

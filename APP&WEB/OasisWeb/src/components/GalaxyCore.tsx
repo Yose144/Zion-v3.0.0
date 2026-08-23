@@ -85,7 +85,7 @@ export default function GalaxyCore() {
   // Tunnel streak geometry — motion is now entirely GPU-driven (see
   // StreakMaterial above), so this only builds static base attributes once.
   const streaksGeometry = useMemo(() => {
-    const count = 1000;
+    const count = 600;
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
     const speeds = new Float32Array(count);
@@ -129,9 +129,9 @@ export default function GalaxyCore() {
   }, [rng]);
 
   const rings = useMemo(() => {
-    return Array.from({ length: 10 }).map((_, i) => {
-      const radius = 0.7 + i * 0.5;
-      const tube = 0.02 + i * 0.003;
+    return Array.from({ length: 8 }).map((_, i) => {
+      const radius = 0.7 + i * 0.55;
+      const tube = 0.02 + i * 0.004;
       const color = i % 3 === 0 ? '#078930' : i % 3 === 1 ? '#fcd116' : '#e41e2b';
       return { radius, tube, color, speed: (0.05 + i * 0.012) * (i % 2 === 0 ? 1 : -1) };
     });
@@ -208,7 +208,7 @@ export default function GalaxyCore() {
       <group ref={ringsRef} rotation={[Math.PI / 2, 0, 0]}>
         {rings.map((ring, i) => (
           <mesh key={i} rotation={[Math.PI / 2, 0, i * 0.4]}>
-            <torusGeometry args={[ring.radius, ring.tube, 16, 48]} />
+            <torusGeometry args={[ring.radius, ring.tube, 12, 40]} />
             <meshBasicMaterial
               color={ring.color}
               transparent

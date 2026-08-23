@@ -221,7 +221,7 @@ export default function OasisScene({
     <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
       <Canvas
         camera={{ position: isMobile ? [0, 4, 22] : [0, 3.5, 34], fov: isMobile ? 60 : 55 }}
-        dpr={[1, isMobile ? 1 : 1.25]}
+        dpr={[1, isMobile ? 1 : 1.15]}
         style={{ width: '100%', height: '100%', display: 'block', position: 'absolute', inset: 0 }}
         gl={{
           antialias: false,
@@ -441,10 +441,10 @@ export default function OasisScene({
 
         {!isMobile && (
           <EffectComposer multisampling={2}>
-            <Bloom intensity={0.68} luminanceThreshold={0.34} luminanceSmoothing={0.6} mipmapBlur radius={0.6} />
-            <HueSaturation saturation={0.16} />
-            <BrightnessContrast brightness={-0.03} contrast={0.08} />
-            <Vignette eskil={false} offset={0.18} darkness={0.7} />
+            <Bloom intensity={0.58} luminanceThreshold={0.4} luminanceSmoothing={0.55} mipmapBlur radius={0.45} />
+            <HueSaturation saturation={0.14} />
+            <BrightnessContrast brightness={-0.02} contrast={0.08} />
+            <Vignette eskil={false} offset={0.2} darkness={0.75} />
           </EffectComposer>
         )}
 
