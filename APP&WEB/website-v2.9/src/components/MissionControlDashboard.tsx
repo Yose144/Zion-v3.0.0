@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Activity, AlertTriangle, ArrowLeftRight, BarChart3, Brain, CheckCircle2,
@@ -2024,15 +2024,15 @@ export default function MissionControlDashboard() {
       containers_healthy: primaryNode.containers_healthy ?? fallbackContainers.containers_healthy,
     };
   })();
-  const opsAlertsRaw: Array<OpsAlert | null> = [
+  const opsAlertsRaw = useMemo<Array<OpsAlert | null>>(() => [
     servicesDown > 0 ? { id: 'targets-down', message: `${servicesDown} target${servicesDown > 1 ? 's' : ''} down`, severity: 'critical', href: '/monitoring' } : null,
     stackSummary?.prometheusReloadOk === 0 ? { id: 'prometheus-reload', message: 'Telemetry reload failed', severity: 'critical', href: '/grafana/' } : null,
     stackSummary?.prometheusQueueLength != null && stackSummary.prometheusQueueLength > 0 ? { id: 'alert-queue', message: `Alert queue ${fmt(stackSummary.prometheusQueueLength)}`, severity: stackSummary.prometheusQueueLength > 10 ? 'critical' : 'warn', href: '/grafana/' } : null,
     stackSummary?.redisUp === 0 ? { id: 'redis-unhealthy', message: 'Redis telemetry path unhealthy', severity: 'warn', href: '/monitoring' } : null,
     servicesNa > 0 ? { id: 'na-services', message: `${servicesNa} service${servicesNa > 1 ? 's' : ''} without a telemetry pull`, severity: 'info', href: '/monitoring' } : null,
-  ];
-  const opsAlerts = opsAlertsRaw.filter((value): value is OpsAlert => value !== null);
-  const effectiveReadinessMap = readinessMap ?? getFallbackReadinessMap(cs);
+  ], [servicesDown, servicesNa, stackSummary]);
+  const opsAlerts = useMemo(() => opsAlertsRaw.filter((value): value is OpsAlert => value !== null), [opsAlertsRaw]);
+  const effectiveReadinessMap = useMemo(() => readinessMap ?? getFallbackReadinessMap(cs), [readinessMap, cs]);
   const readinessPanels = [
     {
       key: 'done',
