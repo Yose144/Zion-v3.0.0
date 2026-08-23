@@ -4124,6 +4124,60 @@
       font-weight: 500;
     }
 
+    .code-preview {
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      color: rgba(255,255,255,0.75);
+      white-space: pre-wrap;
+      max-height: 220px;
+      overflow: auto;
+    }
+
+    .zis-api-key-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 180px;
+      overflow: auto;
+    }
+    .zis-api-key-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+    .zis-api-key-item span {
+      word-break: break-all;
+      color: rgba(255,255,255,0.85);
+    }
+    .zis-api-key-item small {
+      color: rgba(255,255,255,0.55);
+      flex-shrink: 0;
+    }
+    .zis-revoke {
+      background: rgba(228,30,43,0.15);
+      color: #ff6b7a;
+      border: 1px solid rgba(228,30,43,0.35);
+      border-radius: 8px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .zis-revoke:hover {
+      background: rgba(228,30,43,0.25);
+    }
+
   </style>
 </head>
 <body>
@@ -4258,6 +4312,22 @@
 
     <symbol id="i-link" viewBox="0 0 24 24">
       <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.73 1.73M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.73-1.72" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+
+    <symbol id="i-shield" viewBox="0 0 24 24">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <symbol id="i-login" viewBox="0 0 24 24">
+      <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M10 17l5-5-5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M15 12H3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+
+    <symbol id="i-user" viewBox="0 0 24 24">
+      <circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     </symbol>
   </svg>
 
@@ -5900,6 +5970,86 @@
                 <div>
                   <p>Auto-start mining on launch</p>
                   <small>Mining will resume with the last known profile</small>
+                </div>
+              </div>
+            </section>
+
+            <!-- ZIS Login / Session -->
+            <section class="settings-card span-2" id="zis-card">
+              <div class="card-heading">
+                <div class="card-icon gradient-cyan">
+                  <svg class="icon" aria-hidden="true"><use href="#i-shield"></use></svg>
+                </div>
+                <div>
+                  <p class="card-kicker">Authentication</p>
+                  <h3>ZION Identity Service</h3>
+                </div>
+                <span class="badge badge-neutral" id="zis-status">Not signed in</span>
+              </div>
+
+              <div class="form-grid two-col" id="zis-logged-out">
+                <div class="form-group span-2">
+                  <label>ZION BIP39 Mnemonic</label>
+                  <textarea id="zis-mnemonic-input" rows="2" placeholder="abandon ability able about..." class="textarea-no-resize"></textarea>
+                </div>
+                <div class="form-group span-2">
+                  <label>Or Ed25519 Private Key (64/128 hex)</label>
+                  <input type="password" id="zis-private-key-input" placeholder="0x..." />
+                </div>
+                <div class="button-group button-group-mt-14">
+                  <button class="btn btn-primary" id="zis-login-mnemonic-btn">
+                    <svg class="icon" aria-hidden="true"><use href="#i-login"></use></svg>
+                    <span>Sign in with Mnemonic</span>
+                  </button>
+                  <button class="btn btn-primary" id="zis-login-key-btn">
+                    <svg class="icon" aria-hidden="true"><use href="#i-key"></use></svg>
+                    <span>Sign in with Key</span>
+                  </button>
+                  <button class="btn btn-secondary" id="zis-login-siwe-btn">
+                    <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
+                    <span>Sign in with EVM (SIWE)</span>
+                  </button>
+                </div>
+                <small class="muted-note span-2" style="margin-top:6px; display:block;">
+                  Mnemonic sign-in derives an Ed25519 key. EVM sign-in requires the EVM private key.
+                </small>
+              </div>
+
+              <div class="form-grid two-col" id="zis-logged-in" style="display:none;">
+                <div class="form-group span-2">
+                  <label>Session</label>
+                  <pre id="zis-session-output" class="code-preview">Not loaded</pre>
+                </div>
+                <div class="button-group button-group-mt-14">
+                  <button class="btn btn-primary" id="zis-refresh-session-btn">
+                    <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
+                    <span>Refresh Session</span>
+                  </button>
+                  <button class="btn btn-secondary" id="zis-me-btn">
+                    <svg class="icon" aria-hidden="true"><use href="#i-user"></use></svg>
+                    <span>Profile</span>
+                  </button>
+                  <button class="btn btn-danger" id="zis-logout-btn">
+                    <svg class="icon" aria-hidden="true"><use href="#i-x"></use></svg>
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+
+                <div class="form-group span-2" style="margin-top:18px;">
+                  <label>API Keys</label>
+                  <div id="zis-api-keys-list" class="zis-api-key-list"></div>
+                </div>
+                <div class="form-two-col">
+                  <div class="form-group form-group-no-margin">
+                    <input type="text" id="zis-api-key-label" placeholder="New key label" />
+                  </div>
+                  <div class="button-group form-group-no-margin">
+                    <button class="btn btn-primary" id="zis-create-key-btn">Create API Key</button>
+                    <button class="btn btn-secondary" id="zis-set-api-key-btn">Set Stored Key</button>
+                  </div>
+                </div>
+                <div class="form-group span-2" style="margin-top:8px;">
+                  <input type="text" id="zis-manual-api-key" placeholder="Paste an API key to use for public multichain calls..." />
                 </div>
               </div>
             </section>

@@ -41,6 +41,7 @@ const UtxoBuilder = require('./utxo-builder');
 const AccountBuilder = require('./account-builder');
 const QRCode = require('qrcode');
 const crypto = require('crypto');
+const zisClient = require('./zis-client');
 
 // ── Network Constants ───────────────────────────────────────────────────────
 // Mainnet Edge relay (Contabo VPS, Prague) — public-facing pool + node
@@ -637,8 +638,10 @@ app.on('second-instance', () => {
 
 const USER_DATA_PATH = app.getPath('userData');
 const CACHE_PATH = path.join(USER_DATA_PATH, 'cache');
+const ZIS_STORAGE_PATH = path.join(USER_DATA_PATH, 'zis');
 
 app.setPath('cache', CACHE_PATH);
+zisClient.setStorageDir(ZIS_STORAGE_PATH);
 app.commandLine.appendSwitch('disable-gpu-shader-disk-cache');
 app.commandLine.appendSwitch('disk-cache-dir', CACHE_PATH);
 app.commandLine.appendSwitch('disable-http-cache');
@@ -6431,13 +6434,31 @@ ipcMain.handle('cli-bridge-lock', async (_event, { from, to, amount, sourceAddre
   const args = ['bridge', 'lock', '--from', from, '--to', to, '--amount', String(amount)];
   if (sourceAddress) args.push('--source-address', sourceAddress);
   if (targetAddress) args.push('--target-address', targetAddress);
-  return runZionCli(args);
+  const local = runZionCli(args);
+  if (local.success) return local;
+  if (!zisClient.isLoggedIn()) return { ...local, error: `${local.error}\nBridge lock needs a local multichain service or ZIS login.` };
+  try {
+    const remote = await zisClient.bridgeSubmit({ direction: 'lock', from, to, amount, sourceAddress, targetAddress });
+    if (remote.ok) return { success: true, output: JSON.stringify(remote.json, null, 2), source: 'https+zis' };
+    return { success: false, error: `Public bridge API: HTTP ${remote.status} ${remote.text}` };
+  } catch (err) {
+    return { success: false, error: `Public bridge API error: ${err.message}` };
+  }
 });
 ipcMain.handle('cli-bridge-burn', async (_event, { from, to, amount, sourceAddress, targetAddress }) => {
   const args = ['bridge', 'burn', '--from', from, '--to', to, '--amount', String(amount)];
   if (sourceAddress) args.push('--source-address', sourceAddress);
   if (targetAddress) args.push('--target-address', targetAddress);
-  return runZionCli(args);
+  const local = runZionCli(args);
+  if (local.success) return local;
+  if (!zisClient.isLoggedIn()) return { ...local, error: `${local.error}\nBridge burn needs a local multichain service or ZIS login.` };
+  try {
+    const remote = await zisClient.bridgeSubmit({ direction: 'burn', from, to, amount, sourceAddress, targetAddress });
+    if (remote.ok) return { success: true, output: JSON.stringify(remote.json, null, 2), source: 'https+zis' };
+    return { success: false, error: `Public bridge API: HTTP ${remote.status} ${remote.text}` };
+  } catch (err) {
+    return { success: false, error: `Public bridge API error: ${err.message}` };
+  }
 });
 
 // ── DAO CLI ────────────────────────────────────────────────────────
@@ -6605,42 +6626,225 @@ ipcMain.handle('cli-warp-estimate', async (_event, { from, to, amount }) => {
 ipcMain.handle('cli-swap-quote', async (_event, { from, to, amount, decimals }) => {
   const args = ['swap', 'quote', '--from', from, '--to', to, '--amount', String(amount)];
   if (decimals) args.push('--decimals', String(decimals));
-  return runZionCli(args);
+  const local = runZionCli(args);
+  if (local.success) return local;
+  if (!zisClient.isLoggedIn()) return { ...local, error: `${local.error}\nSwap quote needs a local multichain service or ZIS login.` };
+  try {
+    const remote = await zisClient.swapQuote({ from, to, amount, decimals });
+    if (remote.ok) return { success: true, output: JSON.stringify(remote.json, null, 2), source: 'https+zis' };
+    return { success: false, error: `Public swap API: HTTP ${remote.status} ${remote.text}` };
+  } catch (err) {
+    return { success: false, error: `Public swap API error: ${err.message}` };
+  }
 });
 ipcMain.handle('cli-swap-execute', async (_event, { from, to, amount, decimals }) => {
   const args = ['swap', 'execute', '--from', from, '--to', to, '--amount', String(amount)];
   if (decimals) args.push('--decimals', String(decimals));
-  return runZionCli(args);
+  const local = runZionCli(args);
+  if (local.success) return local;
+  if (!zisClient.isLoggedIn()) return { ...local, error: `${local.error}\nSwap execute needs a local multichain service or ZIS login.` };
+  try {
+    const remote = await zisClient.swapExecute({ from, to, amount, decimals });
+    if (remote.ok) return { success: true, output: JSON.stringify(remote.json, null, 2), source: 'https+zis' };
+    return { success: false, error: `Public swap API: HTTP ${remote.status} ${remote.text}` };
+  } catch (err) {
+    return { success: false, error: `Public swap API error: ${err.message}` };
+  }
 });
 
 // ── Atomic Swap CLI (HTLC) ─────────────────────────────────────────
 ipcMain.handle('cli-atomic-swap-status', async () => {
-  return runZionCli(['atomic-swap', 'status']);
+  const local = runZionCli(['atomic-swap', 'status']);
+  if (local.success) return local;
+  if (!zisClient.isLoggedIn()) return { ...local, error: `${local.error}\nHTLC status needs a local multichain service or ZIS login.` };
+  try {
+    const remote = await zisClient.htlcPending();
+    if (remote.ok) return { success: true, output: JSON.stringify(remote.json, null, 2), source: 'https+zis' };
+    return { success: false, error: `Public HTLC API: HTTP ${remote.status} ${remote.text}` };
+  } catch (err) {
+    return { success: false, error: `Public HTLC API error: ${err.message}` };
+  }
 });
 ipcMain.handle('cli-atomic-swap-escrow', async () => {
-  return runZionCli(['atomic-swap', 'escrow']);
+  const local = runZionCli(['atomic-swap', 'escrow']);
+  if (local.success) return local;
+  if (!zisClient.isLoggedIn()) return { ...local, error: `${local.error}\nHTLC escrow needs a local multichain service or ZIS login.` };
+  try {
+    const remote = await zisClient.htlcEscrow();
+    if (remote.ok) return { success: true, output: JSON.stringify(remote.json, null, 2), source: 'https+zis' };
+    return { success: false, error: `Public HTLC API: HTTP ${remote.status} ${remote.text}` };
+  } catch (err) {
+    return { success: false, error: `Public HTLC API error: ${err.message}` };
+  }
 });
 ipcMain.handle('cli-atomic-swap-get', async (_event, { hash }) => {
-  return runZionCli(['atomic-swap', 'get', hash]);
+  const local = runZionCli(['atomic-swap', 'get', hash]);
+  if (local.success) return local;
+  if (!zisClient.isLoggedIn()) return { ...local, error: `${local.error}\nHTLC get needs a local multichain service or ZIS login.` };
+  try {
+    const remote = await zisClient.htlcGet(hash);
+    if (remote.ok) return { success: true, output: JSON.stringify(remote.json, null, 2), source: 'https+zis' };
+    return { success: false, error: `Public HTLC API: HTTP ${remote.status} ${remote.text}` };
+  } catch (err) {
+    return { success: false, error: `Public HTLC API error: ${err.message}` };
+  }
 });
 ipcMain.handle('cli-atomic-swap-create', async (_event, { amount, chain, recipient, preimage, timeout }) => {
   const args = ['atomic-swap', 'create', String(amount), chain, recipient];
   if (preimage) args.push('--preimage', preimage);
   if (timeout) args.push('--timeout', String(timeout));
-  return runZionCli(args);
+  const local = runZionCli(args);
+  if (local.success) return local;
+  if (!zisClient.isLoggedIn()) return { ...local, error: `${local.error}\nHTLC create needs a local multichain service or ZIS login.` };
+  try {
+    const hashHex = preimage
+      ? crypto.createHash('sha256').update(Buffer.from(preimage, 'utf8')).digest('hex')
+      : undefined;
+    const sourceAddress = zisClient.getSession().user?.primaryAddress;
+    const remote = await zisClient.htlcLock({
+      from: 'zion-l1',
+      to: chain,
+      amount,
+      hashHex,
+      timelock: timeout,
+      sourceAddress,
+      targetAddress: recipient,
+    });
+    if (remote.ok) return { success: true, output: JSON.stringify(remote.json, null, 2), source: 'https+zis' };
+    return { success: false, error: `Public HTLC API: HTTP ${remote.status} ${remote.text}` };
+  } catch (err) {
+    return { success: false, error: `Public HTLC API error: ${err.message}` };
+  }
 });
 ipcMain.handle('cli-atomic-swap-pending', async () => {
-  return runZionCli(['atomic-swap', 'pending']);
+  const local = runZionCli(['atomic-swap', 'pending']);
+  if (local.success) return local;
+  if (!zisClient.isLoggedIn()) return { ...local, error: `${local.error}\nHTLC pending needs a local multichain service or ZIS login.` };
+  try {
+    const remote = await zisClient.htlcPending();
+    if (remote.ok) return { success: true, output: JSON.stringify(remote.json, null, 2), source: 'https+zis' };
+    return { success: false, error: `Public HTLC API: HTTP ${remote.status} ${remote.text}` };
+  } catch (err) {
+    return { success: false, error: `Public HTLC API error: ${err.message}` };
+  }
 });
 ipcMain.handle('cli-atomic-swap-claim', async (_event, { hash, preimage, recipient, token }) => {
   const args = ['atomic-swap', 'claim', hash, preimage, recipient];
   if (token) args.push('--token', token);
-  return runZionCli(args);
+  const local = runZionCli(args);
+  if (local.success) return local;
+  if (!zisClient.isLoggedIn()) return { ...local, error: `${local.error}\nHTLC claim needs a local multichain service or ZIS login.` };
+  try {
+    const remote = await zisClient.htlcClaim({ hash, preimage, recipient, token });
+    if (remote.ok) return { success: true, output: JSON.stringify(remote.json, null, 2), source: 'https+zis' };
+    return { success: false, error: `Public HTLC API: HTTP ${remote.status} ${remote.text}` };
+  } catch (err) {
+    return { success: false, error: `Public HTLC API error: ${err.message}` };
+  }
 });
 ipcMain.handle('cli-atomic-swap-refund', async (_event, { hash, token }) => {
   const args = ['atomic-swap', 'refund', hash];
   if (token) args.push('--token', token);
-  return runZionCli(args);
+  const local = runZionCli(args);
+  if (local.success) return local;
+  if (!zisClient.isLoggedIn()) return { ...local, error: `${local.error}\nHTLC refund needs a local multichain service or ZIS login.` };
+  try {
+    const remote = await zisClient.htlcRefund({ hash, token });
+    if (remote.ok) return { success: true, output: JSON.stringify(remote.json, null, 2), source: 'https+zis' };
+    return { success: false, error: `Public HTLC API: HTTP ${remote.status} ${remote.text}` };
+  } catch (err) {
+    return { success: false, error: `Public HTLC API error: ${err.message}` };
+  }
+});
+
+// ZIS — ZION Identity Service (auth + authenticated multichain public API)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+ipcMain.handle('zis-get-session', async () => ({
+  success: true,
+  session: zisClient.getSession(),
+  loggedIn: zisClient.isLoggedIn(),
+}));
+
+ipcMain.handle('zis-login-mnemonic', async (_event, { mnemonic }) => {
+  try {
+    const session = await zisClient.loginWithMnemonic(mnemonic.trim());
+    return { success: true, session };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('zis-login-private-key', async (_event, { privateKey }) => {
+  try {
+    const session = await zisClient.loginWithPrivateKey(privateKey.trim());
+    return { success: true, session };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('zis-login-siwe', async (_event, { privateKey }) => {
+  try {
+    const session = await zisClient.loginWithSiwe(privateKey.trim());
+    return { success: true, session };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('zis-logout', async () => {
+  try {
+    await zisClient.logout();
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('zis-me', async () => {
+  try {
+    const user = await zisClient.me();
+    return { success: true, user };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('zis-list-keys', async () => {
+  try {
+    const data = await zisClient.listApiKeys();
+    return { success: true, data };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('zis-create-key', async (_event, { label }) => {
+  try {
+    const data = await zisClient.createApiKey(label);
+    return { success: true, data };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('zis-revoke-key', async (_event, { id }) => {
+  try {
+    const data = await zisClient.revokeApiKey(id);
+    return { success: true, data };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('zis-set-api-key', async (_event, { key }) => {
+  try {
+    const session = await zisClient.setApiKey(key);
+    return { success: true, session };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
 });
 
 function _isNewerVersion(latest, current) {

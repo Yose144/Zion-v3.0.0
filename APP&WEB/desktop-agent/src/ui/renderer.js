@@ -376,6 +376,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupThreadsControl();
     setupNavigation();
     setupControls();
+    setupZisControls();
     setupWalletControls();
 
     dbg('AI/chat removed for mainnet');
@@ -1620,6 +1621,191 @@ function updateConsoleDot(isRunning) {
   if (status) {
     status.textContent = isRunning ? 'mining' : 'idle';
   }
+}
+
+// ZIS (ZION Identity Service) UI wiring
+function setupZisControls() {
+  const statusEl = document.getElementById('zis-status');
+  const loggedOutEl = document.getElementById('zis-logged-out');
+  const loggedInEl = document.getElementById('zis-logged-in');
+  const sessionOutput = document.getElementById('zis-session-output');
+  const mnemonicInput = document.getElementById('zis-mnemonic-input');
+  const privateKeyInput = document.getElementById('zis-private-key-input');
+  const keyListEl = document.getElementById('zis-api-keys-list');
+  const apiKeyLabelInput = document.getElementById('zis-api-key-label');
+  const manualApiKeyInput = document.getElementById('zis-manual-api-key');
+
+  const setBusy = (el, busy) => {
+    if (!el) return;
+    el.disabled = busy;
+    el.dataset.wasText = busy ? (el.dataset.wasText || el.innerText) : undefined;
+    if (busy) el.innerHTML = `<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:6px;"></span>Loading…`;
+    else if (el.dataset.wasText) el.innerHTML = el.dataset.wasText;
+  };
+
+  const safeJson = (obj) => {
+    try { return JSON.stringify(obj, null, 2); } catch { return String(obj); }
+  };
+
+  const updateStatus = (session = null, loggedIn = false) => {
+    if (!statusEl || !loggedOutEl || !loggedInEl || !sessionOutput) return;
+    if (loggedIn && session?.token) {
+      statusEl.textContent = 'Signed in' + (session.user?.primaryAddress ? `: ${session.user.primaryAddress}` : '');
+      statusEl.className = 'badge badge-live';
+      loggedOutEl.style.display = 'none';
+      loggedInEl.style.display = 'grid';
+      sessionOutput.textContent = safeJson(session);
+    } else {
+      statusEl.textContent = 'Not signed in';
+      statusEl.className = 'badge badge-neutral';
+      loggedOutEl.style.display = 'grid';
+      loggedInEl.style.display = 'none';
+      sessionOutput.textContent = 'Not loaded';
+    }
+  };
+
+  const refreshSession = async () => {
+    try {
+      const { session, loggedIn } = await window.electronAPI.zisGetSession();
+      updateStatus(session, loggedIn);
+      if (loggedIn) await refreshApiKeys();
+    } catch (err) {
+      console.error('[ZIS] refresh session failed:', err);
+      updateStatus(null, false);
+    }
+  };
+
+  const refreshApiKeys = async () => {
+    if (!keyListEl) return;
+    keyListEl.innerHTML = '<div class="zis-api-key-item"><span>Loading…</span></div>';
+    try {
+      const res = await window.electronAPI.zisListKeys();
+      if (!res.success) {
+        keyListEl.innerHTML = `<div class="zis-api-key-item"><span>${res.error || 'Could not load keys'}</span></div>`;
+        return;
+      }
+      const keys = res.data?.keys || res.data || [];
+      if (!Array.isArray(keys) || keys.length === 0) {
+        keyListEl.innerHTML = '<div class="zis-api-key-item" style="opacity:0.6;"><span>No API keys</span></div>';
+        return;
+      }
+      keyListEl.innerHTML = '';
+      for (const key of keys) {
+        const id = key.id ?? key._id ?? key.keyId;
+        const row = document.createElement('div');
+        row.className = 'zis-api-key-item';
+        row.innerHTML = `<span title="${key.label || ''}">${(key.label || 'Unlabeled')} — ${(key.mask || key.key?.slice(-12) || '***')}</span><small>${new Date(key.createdAt || Date.now()).toLocaleString()}</small>`;
+        if (id) {
+          const revoke = document.createElement('button');
+          revoke.className = 'zis-revoke';
+          revoke.textContent = 'Revoke';
+          revoke.addEventListener('click', async () => {
+            revoke.disabled = true;
+            try {
+              const out = await window.electronAPI.zisRevokeKey({ id });
+              if (out.success) await refreshApiKeys();
+              else alert(out.error || 'Revoke failed');
+            } catch (e) { alert(e?.message || 'Revoke failed'); }
+            finally { revoke.disabled = false; }
+          });
+          row.appendChild(revoke);
+        }
+        keyListEl.appendChild(row);
+      }
+    } catch (err) {
+      keyListEl.innerHTML = `<div class="zis-api-key-item"><span>${err?.message || 'Could not load keys'}</span></div>`;
+    }
+  };
+
+  document.getElementById('zis-login-mnemonic-btn')?.addEventListener('click', async () => {
+    const mnemonic = mnemonicInput?.value?.trim();
+    if (!mnemonic) return alert('Enter a BIP39 mnemonic.');
+    const btn = document.getElementById('zis-login-mnemonic-btn');
+    setBusy(btn, true);
+    try {
+      const res = await window.electronAPI.zisLoginMnemonic({ mnemonic });
+      if (res.success) { mnemonicInput.value = ''; await refreshSession(); }
+      else alert(res.error || 'Mnemonic sign-in failed');
+    } catch (e) { alert(e?.message || 'Mnemonic sign-in failed'); }
+    finally { setBusy(btn, false); }
+  });
+
+  document.getElementById('zis-login-key-btn')?.addEventListener('click', async () => {
+    const key = privateKeyInput?.value?.trim();
+    if (!key) return alert('Enter an Ed25519 private key.');
+    const btn = document.getElementById('zis-login-key-btn');
+    setBusy(btn, true);
+    try {
+      const res = await window.electronAPI.zisLoginPrivateKey({ privateKey: key });
+      if (res.success) { privateKeyInput.value = ''; await refreshSession(); }
+      else alert(res.error || 'Private key sign-in failed');
+    } catch (e) { alert(e?.message || 'Private key sign-in failed'); }
+    finally { setBusy(btn, false); }
+  });
+
+  document.getElementById('zis-login-siwe-btn')?.addEventListener('click', async () => {
+    const key = privateKeyInput?.value?.trim();
+    if (!key) return alert('Enter an EVM private key for SIWE sign-in.');
+    const btn = document.getElementById('zis-login-siwe-btn');
+    setBusy(btn, true);
+    try {
+      const res = await window.electronAPI.zisLoginSiwe({ privateKey: key });
+      if (res.success) { privateKeyInput.value = ''; await refreshSession(); }
+      else alert(res.error || 'SIWE sign-in failed');
+    } catch (e) { alert(e?.message || 'SIWE sign-in failed'); }
+    finally { setBusy(btn, false); }
+  });
+
+  document.getElementById('zis-logout-btn')?.addEventListener('click', async () => {
+    try {
+      await window.electronAPI.zisLogout();
+      await refreshSession();
+    } catch (e) { alert(e?.message || 'Logout failed'); }
+  });
+
+  document.getElementById('zis-refresh-session-btn')?.addEventListener('click', refreshSession);
+
+  document.getElementById('zis-me-btn')?.addEventListener('click', async () => {
+    try {
+      const res = await window.electronAPI.zisMe();
+      if (res.success) sessionOutput.textContent = safeJson(res.user);
+      else sessionOutput.textContent = res.error || 'Profile fetch failed';
+    } catch (e) { sessionOutput.textContent = e?.message || 'Profile fetch failed'; }
+  });
+
+  document.getElementById('zis-create-key-btn')?.addEventListener('click', async () => {
+    const label = apiKeyLabelInput?.value?.trim() || 'Desktop Agent';
+    const btn = document.getElementById('zis-create-key-btn');
+    setBusy(btn, true);
+    try {
+      const res = await window.electronAPI.zisCreateKey({ label });
+      if (res.success) {
+        alert('API key created. It has been stored as the active public-API key.');
+        apiKeyLabelInput.value = '';
+        await refreshApiKeys();
+        await refreshSession();
+      } else {
+        alert(res.error || 'Could not create API key');
+      }
+    } catch (e) { alert(e?.message || 'Could not create API key'); }
+    finally { setBusy(btn, false); }
+  });
+
+  document.getElementById('zis-set-api-key-btn')?.addEventListener('click', async () => {
+    const key = manualApiKeyInput?.value?.trim();
+    if (!key) return alert('Paste an API key first.');
+    try {
+      const res = await window.electronAPI.zisSetApiKey({ key });
+      if (res.success) { manualApiKeyInput.value = ''; alert('API key set.'); await refreshSession(); }
+      else alert(res.error || 'Could not set API key');
+    } catch (e) { alert(e?.message || 'Could not set API key'); }
+  });
+
+  // Initial state
+  void refreshSession();
+
+  // Re-check when Identity tab becomes active
+  document.querySelector('.section-tab[data-section="settings-identity"]')?.addEventListener('click', refreshSession);
 }
 
 // Event listeners
