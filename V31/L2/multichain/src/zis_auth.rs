@@ -18,6 +18,9 @@ use axum::middleware::Next;
 use axum::response::Response;
 use serde::{Deserialize, Serialize};
 use tracing;
+use zion_l1_types::{Address, ChainFamily, ChainId};
+
+use crate::error::MultichainResult;
 
 /// A linked wallet address stored in ZIS.
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -74,6 +77,71 @@ impl ZisUser {
                 && chain_id.map_or(true, |c| a.chain_id.as_deref() == Some(c))
         })
     }
+
+    /// Return the linked address that best matches a canonical [`ChainId`].
+    pub fn linked_address_for_chain(&self, chain: ChainId) -> Option<&ZisLinkedAddress> {
+        let (chain_type, chain_id) = zis_chain_type(chain);
+        self.linked_addresses.iter().find(|a| {
+            a.chain_type.eq_ignore_ascii_case(&chain_type)
+                && (a.chain_id.is_none() || a.chain_id.as_deref() == chain_id.as_deref())
+        })
+    }
+}
+
+/// Map a canonical [`ChainId`] to the `chainType` / `chainId` values used by ZIS.
+pub fn zis_chain_type(chain: ChainId) -> (String, Option<String>) {
+    let chain_type = match chain.family() {
+        ChainFamily::Zion => "zion-l1".to_string(),
+        ChainFamily::Evm => "evm".to_string(),
+        ChainFamily::Utxo => "bitcoin".to_string(),
+        ChainFamily::Solana => "solana".to_string(),
+        ChainFamily::Cosmos => "cosmos".to_string(),
+        ChainFamily::Move => chain.as_str().to_string(),
+        ChainFamily::Near => "near".to_string(),
+        ChainFamily::Ton => "ton".to_string(),
+        ChainFamily::Tron => "tron".to_string(),
+        ChainFamily::Stellar => "stellar".to_string(),
+        ChainFamily::Cardano => "cardano".to_string(),
+        ChainFamily::Lightning => "lightning".to_string(),
+    };
+    let chain_id = if chain_type == "evm" {
+        Some(chain.as_str().to_string())
+    } else {
+        None
+    };
+    (chain_type, chain_id)
+}
+
+/// Build a chain-agnostic [`Address`] from a ZIS linked address string.
+///
+/// Decodes fixed-length families (EVM, Solana, Near) into raw bytes.
+/// Variable-length / string-encoded families keep empty bytes, matching the
+/// convention used elsewhere in the workspace.
+pub fn address_from_linked(chain: ChainId, linked: &ZisLinkedAddress) -> MultichainResult<Address> {
+    let encoded = linked.address.trim().to_string();
+    let bytes = match chain.family() {
+        ChainFamily::Evm => {
+            let s = encoded.trim_start_matches("0x").trim_start_matches("0X").to_lowercase();
+            if s.len() != 40 {
+                return Err(crate::error::MultichainError::Validation(format!(
+                    "invalid EVM linked address length: {}",
+                    encoded
+                )));
+            }
+            hex::decode(&s).map_err(|_| crate::error::MultichainError::Validation(format!(
+                "invalid EVM linked address hex: {}",
+                encoded
+            )))?
+        }
+        ChainFamily::Solana | ChainFamily::Near => {
+            bs58::decode(&encoded).into_vec().map_err(|_| crate::error::MultichainError::Validation(format!(
+                "invalid base58 linked address: {}",
+                encoded
+            )))?
+        }
+        _ => Vec::new(),
+    };
+    Address::new(chain, bytes, encoded).map_err(|e| e.into())
 }
 
 /// Lightweight client that calls the ZION Identity Service.
