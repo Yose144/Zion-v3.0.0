@@ -140,7 +140,14 @@ impl UtxoSet {
     /// Validate a transaction against this UTXO set and return the fee.
     pub fn validate_transaction(&self, tx: &Transaction) -> Result<u128, UtxoError> {
         // Validate against a disposable clone so the real set is untouched.
-        self.clone().apply_transaction(tx, 0, 0)
+        // Use the current wall-clock time as the block timestamp so HTLC
+        // refund transactions can pass mempool validation after their
+        // timelock expires.
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+        self.clone().apply_transaction(tx, 0, now)
     }
 
     /// Apply a transaction to the set, validating it first.

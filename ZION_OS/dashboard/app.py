@@ -23,7 +23,7 @@ import urllib.parse
 import urllib.request
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import v31
@@ -292,7 +292,7 @@ if _legacy_user and _legacy_pass:
     DASHBOARD_USERS[_legacy_user] = _sha256(_legacy_pass)
 
 # Endpoints that skip auth (health checks, static assets)
-AUTH_EXEMPT_ROUTES = {"/api/health", "/health", "/favicon.ico", "/v31/favicon.ico", "/v31/symbol-200x200.png", "/api/poc/html", "/api/poc/status", "/api/pool/miners-dashboard", "/stats"}
+AUTH_EXEMPT_ROUTES = {"/api/health", "/health", "/favicon.ico", "/v31/favicon.ico", "/v31/symbol-200x200.png", "/api/poc/html", "/api/poc/status", "/api/pool/miners-dashboard", "/stats", "/g8", "/api/g8"}
 
 # Edge server addresses (Hetzner VPS — always-on)
 EDGE_HOST = "127.0.0.1"   # Dashboard runs on same server (v3.0.4)
@@ -3238,6 +3238,73 @@ def build_status() -> dict:
     with _STATUS_CACHE_LOCK:
         _STATUS_CACHE = result
         _STATUS_CACHE_TIME = now
+    return result
+
+def get_g8_status() -> dict:
+    """Read or initialise the 30-day continuous run (G8) state.
+
+    State lives in /opt/zion/data/g8_run.json (Edge) or DATA_DIR fallback.
+    """
+    candidates = [
+        Path("/opt/zion/data/g8_run.json"),
+        Path("/var/lib/zion/g8_run.json"),
+        DATA_DIR / "g8_run.json",
+    ]
+    g8_file = None
+    for p in candidates:
+        try:
+            if p.parent.exists():
+                g8_file = p
+                break
+        except Exception:
+            continue
+    if g8_file is None:
+        g8_file = candidates[0]
+
+    result = {
+        "started": None,
+        "target_end": None,
+        "status": "not_started",
+        "elapsed_seconds": 0,
+        "remaining_seconds": 0,
+        "progress_percent": 0.0,
+        "uptime_percent": None,
+        "services": [],
+        "_state_file": str(g8_file),
+    }
+
+    try:
+        if g8_file.exists():
+            with open(g8_file, "r", encoding="utf-8") as f:
+                state = json.load(f)
+            result.update(state)
+    except Exception as e:
+        result["_error"] = f"Failed to read G8 state: {e}"
+
+    if result.get("started"):
+        try:
+            started = datetime.fromisoformat(result["started"])
+            target_end = datetime.fromisoformat(result.get("target_end")) if result.get("target_end") else started + timedelta(days=30)
+            # Normalise to UTC for elapsed/progress math to avoid naive vs aware comparisons
+            now = datetime.now(timezone.utc)
+            started_utc = started.astimezone(timezone.utc)
+            target_utc = target_end.astimezone(timezone.utc)
+            elapsed = (now - started_utc).total_seconds()
+            total = (target_utc - started_utc).total_seconds()
+            result["elapsed_seconds"] = max(0, int(elapsed))
+            result["remaining_seconds"] = max(0, int(total - elapsed))
+            result["progress_percent"] = round(min(100.0, max(0.0, (elapsed / total) * 100.0)) if total > 0 else 0.0, 6)
+            result["target_end"] = target_end.isoformat()
+            result["status"] = "running" if now < target_utc else "completed"
+        except Exception as e:
+            result["_error"] = f"G8 time parse error: {e}"
+
+    # Include current service health snapshot
+    try:
+        result["services"] = all_services_health()
+    except Exception:
+        pass
+
     return result
 
 def _compute_v31_banner_metrics(pool_status: dict, v31_multichain_status: dict, v31_node_status: dict = None, v31_dao_status: dict = None, v31_oasis_status: dict = None) -> dict:
@@ -11323,7 +11390,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self.send_error(400, "WebSocket upgrade required")
             return
 
-        # ── SPA static files (dashboard v2 dist/) ───────────────────────
+        # ── G8 30-day continuous run status page ─────────────────────────────
+        elif route == "/g8" or route == "/g8.html" or route == "/g8/index.html":
+            self._serve_html_file(SCRIPT_DIR / "g8.html", "g8.html not found")
+            return
         dist_dir = SCRIPT_DIR / "v2" / "dist"
         if dist_dir.exists():
             # Serve static assets
@@ -11507,6 +11577,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             })
         elif route == "/api/status":
             self._json(build_status())
+        elif route == "/api/g8":
+            self._json(get_g8_status())
         elif route == "/api/nodes":
             self._json(detect_nodes())
         elif route == "/api/agent/nodes":
@@ -14016,6 +14088,53 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "events":    list(BLOCK_EVENTS)[-10:][::-1] if BLOCK_EVENTS else [],
                 "checklist": build_checklist(st),
             })
+        elif route == "/api/g8/start":
+            # Start or restart the 30-day continuous run (G8) clock.
+            try:
+                start = payload.get("started") or datetime.now().isoformat()
+                started_dt = datetime.fromisoformat(start)
+                target = payload.get("target_end") or (started_dt + timedelta(days=30)).isoformat()
+                state = {
+                    "started": started_dt.isoformat(),
+                    "target_end": target,
+                    "status": "running",
+                    "uptime_percent": None,
+                    "critical_incidents": [],
+                    "started_by": self.headers.get("Remote-User", "dashboard"),
+                }
+                candidates = [
+                    Path("/opt/zion/data/g8_run.json"),
+                    Path("/var/lib/zion/g8_run.json"),
+                    DATA_DIR / "g8_run.json",
+                ]
+                g8_file = None
+                for p in candidates:
+                    try:
+                        p.parent.mkdir(parents=True, exist_ok=True)
+                        g8_file = p
+                        break
+                    except Exception:
+                        continue
+                if g8_file is None:
+                    g8_file = candidates[0]
+                with open(g8_file, "w", encoding="utf-8") as f:
+                    json.dump(state, f, indent=2)
+                self._json({"ok": True, "g8": get_g8_status()})
+            except Exception as e:
+                self._json({"ok": False, "error": f"Failed to start G8: {e}"})
+        elif route == "/api/g8/stop":
+            try:
+                st = get_g8_status()
+                if not st.get("started"):
+                    self._json({"ok": False, "error": "G8 has not started"})
+                    return
+                g8_file = Path(st.get("_state_file", "/opt/zion/data/g8_run.json"))
+                state = {"started": st["started"], "target_end": st.get("target_end"), "status": "stopped", "stopped_at": datetime.now().isoformat()}
+                with open(g8_file, "w", encoding="utf-8") as f:
+                    json.dump(state, f, indent=2)
+                self._json({"ok": True, "g8": get_g8_status()})
+            except Exception as e:
+                self._json({"ok": False, "error": f"Failed to stop G8: {e}"})
         elif marketplace.handle_post(self, route, payload):
             return
         elif v31.handle_post(self, route, payload):

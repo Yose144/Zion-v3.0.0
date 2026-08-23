@@ -1460,7 +1460,7 @@ function hasNvrtcRuntime() {
   const dirs = [];
   try {
     dirs.push(IS_PACKAGED ? process.resourcesPath : path.join(APP_ROOT, 'resources'));
-    dirs.push(path.join(APP_ROOT, '..', '..', 'V3', 'target', 'release'));
+    dirs.push(path.join(APP_ROOT, '..', '..', 'V31', 'target', 'release'));
   } catch { /* ignore */ }
   for (const envVar of ['CUDA_PATH', 'CUDA_HOME']) {
     const base = process.env[envVar];
@@ -4375,20 +4375,23 @@ ipcMain.handle('open-external', async (_event, url) => {
 // TREE NODE IPC HANDLERS — Start/stop/monitor a local ZION L1 core node
 // ============================================================================
 
-const NODE_RPC_URL = 'http://127.0.0.1:8545';
+const NODE_RPC_URL = '127.0.0.1:9445';
 let nodeProcess = null;
 
 /** Resolve path to the compiled zion-core binary */
 function findCoreBinary() {
   const isWin = process.platform === 'win32';
-  const bin   = isWin ? 'node.exe' : 'node';
+  // V31 binaries are named zion-node; legacy V3 used 'node'. Look for both.
   const candidates = [
-    path.join(APP_ROOT, 'resources', bin),
-    path.join(process.resourcesPath, bin),
-    path.join(APP_ROOT, '..', '..', 'V3', 'target', 'release', bin),
-    path.join(APP_ROOT, '..', '..', 'target', 'release', bin),
-    path.join(APP_ROOT, '..', '..', 'L1', 'core', 'target', 'release', bin),
-    path.join(APP_ROOT, '..', 'target', 'release', bin),
+    path.join(APP_ROOT, 'resources', isWin ? 'zion-node.exe' : 'zion-node'),
+    path.join(APP_ROOT, 'resources', isWin ? 'node.exe' : 'node'),
+    path.join(process.resourcesPath, isWin ? 'zion-node.exe' : 'zion-node'),
+    path.join(process.resourcesPath, isWin ? 'node.exe' : 'node'),
+    path.join(APP_ROOT, '..', '..', 'V31', 'target', 'release', isWin ? 'zion-node.exe' : 'zion-node'),
+    path.join(APP_ROOT, '..', '..', 'V31', 'target', 'release', isWin ? 'node.exe' : 'node'),
+    path.join(APP_ROOT, '..', '..', 'target', 'release', isWin ? 'zion-node.exe' : 'zion-node'),
+    path.join(APP_ROOT, '..', '..', 'L1', 'core', 'target', 'release', isWin ? 'zion-node.exe' : 'zion-node'),
+    path.join(APP_ROOT, '..', 'target', 'release', isWin ? 'zion-node.exe' : 'zion-node'),
   ];
   for (const p2 of candidates) {
     if (fs.existsSync(p2)) return p2;
@@ -4403,7 +4406,7 @@ function findZionCli() {
   const candidates = [
     path.join(APP_ROOT, 'resources', bin),
     path.join(process.resourcesPath, bin),
-    path.join(APP_ROOT, '..', '..', 'V3', 'target', 'release', bin),
+    path.join(APP_ROOT, '..', '..', 'V31', 'target', 'release', bin),
     path.join(APP_ROOT, '..', '..', 'target', 'release', bin),
     path.join(APP_ROOT, '..', 'target', 'release', bin),
   ];
@@ -4438,15 +4441,9 @@ function runZionCli(args) {
 
 /** Call the local node JSON-RPC and return the result object */
 async function nodeRpc(method, params = {}) {
-  const res = await fetch(NODE_RPC_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
-    signal: AbortSignal.timeout(4000),
-  });
-  const json = await res.json();
-  if (json.error) throw new Error(json.error);
-  return json.result;
+  // ZION L1 node uses raw TCP JSON-RPC (not HTTP). Use zionRpcCall which
+  // handles the TCP socket protocol. NODE_RPC_URL is host:port format.
+  return zionRpcCall(NODE_RPC_URL, method, params);
 }
 
 ipcMain.handle('node-get-status', async () => {
@@ -6317,48 +6314,48 @@ ipcMain.handle('open-defender-settings', async () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 ipcMain.handle('cli-get-version', async () => {
-  return runZionCli(['version']);
+  return runZionCli(['--version']);
 });
 
 ipcMain.handle('cli-wallet-list', async () => {
-  return runZionCli(['wallet', 'address']);
+  return runZionCli(['wallet', 'address', '--chain', 'zion-l1']);
 });
 
 ipcMain.handle('cli-wallet-new', async (_event, { name, outPath }) => {
-  const args = ['wallet', 'new'];
+  const args = ['wallet', 'create'];
   if (outPath) { args.push('-o', outPath); }
-  if (name) { args.push('--set-default'); }
+  if (name) { args.push('--force'); }
   return runZionCli(args);
 });
 
-ipcMain.handle('cli-wallet-balance', async (_event, { address }) => {
-  const args = ['wallet', 'balance'];
-  if (address) { args.push('--address', address); }
+ipcMain.handle('cli-wallet-balance', async (_event, { address, chain }) => {
+  const args = ['wallet', 'balance', '--address', address || ''];
+  args.push('--chain', chain || 'zion-l1');
   return runZionCli(args);
 });
 
 ipcMain.handle('cli-wallet-send', async (_event, { wallet, to, amount, memo }) => {
-  const args = ['wallet', 'send', '-w', wallet, '--to', to, '--amount', amount];
+  const args = ['wallet', 'send', '--to', to, '--amount', String(amount)];
+  if (wallet) { args.push('-w', wallet); }
   if (memo) { args.push('--memo', memo); }
   return runZionCli(args);
 });
 
 ipcMain.handle('cli-mine-start', async (_event, { pool, worker, wallet, threads, gpuBackend }) => {
-  const args = ['mine', 'start', '--profile', 'pool'];
-  if (pool) { args.push('--pool', pool); }
-  if (wallet) { args.push('--wallet', wallet); }
-  if (threads) { args.push('--threads', String(threads)); }
-  if (gpuBackend) { args.push('--backend', gpuBackend); }
-  if (worker) { process.env.ZION_WORKER_NAME = ensureZionGroupHint(worker); }
+  const args = ['miner', 'start'];
+  if (pool) { args.push('--pool-url', pool); }
+  if (wallet) { args.push('--reward-address', wallet); }
+  if (worker) { args.push('--worker', ensureZionGroupHint(worker)); }
+  if (gpuBackend === 'cpu') { args.push('--no-gpu'); }
   return runZionCli(args);
 });
 
 ipcMain.handle('cli-mine-stop', async () => {
-  return runZionCli(['mine', 'stop']);
+  return runZionCli(['miner', 'stop']);
 });
 
 ipcMain.handle('cli-mine-status', async () => {
-  return runZionCli(['mine', 'status']);
+  return runZionCli(['miner', 'status']);
 });
 
 ipcMain.handle('cli-node-start', async (_event, { nodeId, p2pPort, rpcPort, seedPeers }) => {
@@ -6374,8 +6371,10 @@ ipcMain.handle('cli-node-stop', async () => {
   return runZionCli(['node', 'stop']);
 });
 
+// ── Config / Doctor (CLI has no 'config' subcommand; use 'doctor' for diagnostics) ──
 ipcMain.handle('cli-config-get', async (_event, { key }) => {
-  const result = runZionCli(['config', 'show']);
+  // Run doctor which verifies configuration and adapter connectivity
+  const result = runZionCli(['doctor']);
   if (!result.success || !key) return result;
   const needle = key.toLowerCase();
   const lines = result.output.split('\n').filter((l) =>
@@ -6386,23 +6385,38 @@ ipcMain.handle('cli-config-get', async (_event, { key }) => {
 });
 
 ipcMain.handle('cli-config-set', async (_event, { key, value }) => {
-  return runZionCli(['config', 'set', key, value]);
+  // CLI does not support inline config set — instruct user to edit the TOML
+  return { success: false, error: `Config set is not supported via CLI. Edit the multichain TOML config file to change '${key}'.` };
 });
 
-// ── Bridge CLI ─────────────────────────────────────────────────────
+// ── Bridge CLI (lock / burn) ───────────────────────────────────────
 ipcMain.handle('cli-bridge-status', async () => {
-  return runZionCli(['bridge', 'status']);
+  // CLI bridge has no status subcommand — use topology chains instead
+  return runZionCli(['topology', 'chains']);
 });
 ipcMain.handle('cli-bridge-pending', async () => {
-  return runZionCli(['bridge', 'pending']);
+  // Bridge has no pending subcommand — use warp pending
+  return runZionCli(['warp', 'pending']);
 });
 ipcMain.handle('cli-bridge-history', async (_event, { n }) => {
-  const args = ['bridge', 'history'];
-  if (n) args.push(String(n));
-  return runZionCli(args);
+  // Bridge has no history subcommand — use explorer blocks
+  return runZionCli(['explorer', 'blocks']);
 });
 ipcMain.handle('cli-bridge-chains', async () => {
-  return runZionCli(['bridge', 'chains']);
+  // Bridge has no chains subcommand — use topology chains
+  return runZionCli(['topology', 'chains']);
+});
+ipcMain.handle('cli-bridge-lock', async (_event, { from, to, amount, sourceAddress, targetAddress }) => {
+  const args = ['bridge', 'lock', '--from', from, '--to', to, '--amount', String(amount)];
+  if (sourceAddress) args.push('--source-address', sourceAddress);
+  if (targetAddress) args.push('--target-address', targetAddress);
+  return runZionCli(args);
+});
+ipcMain.handle('cli-bridge-burn', async (_event, { from, to, amount, sourceAddress, targetAddress }) => {
+  const args = ['bridge', 'burn', '--from', from, '--to', to, '--amount', String(amount)];
+  if (sourceAddress) args.push('--source-address', sourceAddress);
+  if (targetAddress) args.push('--target-address', targetAddress);
+  return runZionCli(args);
 });
 
 // ── DAO CLI ────────────────────────────────────────────────────────
@@ -6447,24 +6461,19 @@ ipcMain.handle('dao-get-treasury', async () => {
 // ── Pool CLI ───────────────────────────────────────────────────────
 ipcMain.handle('cli-pool-stats', async (_event, { target }) => {
   const args = ['pool', 'stats'];
-  if (target) args.push(target);
   return runZionCli(args);
 });
 ipcMain.handle('cli-pool-miners', async (_event, { target }) => {
-  const args = ['pool', 'miners'];
-  if (target) args.push(target);
-  return runZionCli(args);
+  // Pool CLI has no miners subcommand — use shares (same data)
+  return runZionCli(['pool', 'shares']);
 });
 ipcMain.handle('cli-pool-config', async (_event, { target }) => {
-  const args = ['pool', 'config'];
-  if (target) args.push(target);
-  return runZionCli(args);
+  // Pool CLI has no config subcommand — use stats (includes config)
+  return runZionCli(['pool', 'stats']);
 });
 ipcMain.handle('cli-pool-earnings', async (_event, { address, target }) => {
-  const args = ['pool', 'earnings'];
-  if (address) args.push('--address', address);
-  if (target) args.push(target);
-  return runZionCli(args);
+  // Pool CLI has no earnings subcommand — use payouts
+  return runZionCli(['pool', 'payouts']);
 });
 
 // ── Warp CLI ───────────────────────────────────────────────────────
@@ -6472,13 +6481,69 @@ ipcMain.handle('cli-warp-status', async () => {
   return runZionCli(['warp', 'status']);
 });
 ipcMain.handle('cli-warp-chains', async () => {
-  return runZionCli(['warp', 'chains']);
+  // Warp CLI uses 'routes' not 'chains'
+  return runZionCli(['warp', 'routes']);
 });
 ipcMain.handle('cli-warp-pending', async () => {
   return runZionCli(['warp', 'pending']);
 });
 ipcMain.handle('cli-warp-stats', async () => {
-  return runZionCli(['warp', 'stats']);
+  // Warp CLI has no stats subcommand — use status + routes
+  const [status, routes] = await Promise.all([
+    runZionCli(['warp', 'status']),
+    runZionCli(['warp', 'routes']),
+  ]);
+  return {
+    success: status.success || routes.success,
+    output: (status.output || '') + '\n' + (routes.output || ''),
+    error: status.error && routes.error ? status.error : undefined,
+  };
+});
+ipcMain.handle('cli-warp-estimate', async (_event, { from, to, amount }) => {
+  const args = ['warp', 'estimate', '--from', from, '--to', to, '--amount', String(amount)];
+  return runZionCli(args);
+});
+
+// ── Swap CLI (DEX) ─────────────────────────────────────────────────
+ipcMain.handle('cli-swap-quote', async (_event, { from, to, amount, decimals }) => {
+  const args = ['swap', 'quote', '--from', from, '--to', to, '--amount', String(amount)];
+  if (decimals) args.push('--decimals', String(decimals));
+  return runZionCli(args);
+});
+ipcMain.handle('cli-swap-execute', async (_event, { from, to, amount, decimals }) => {
+  const args = ['swap', 'execute', '--from', from, '--to', to, '--amount', String(amount)];
+  if (decimals) args.push('--decimals', String(decimals));
+  return runZionCli(args);
+});
+
+// ── Atomic Swap CLI (HTLC) ─────────────────────────────────────────
+ipcMain.handle('cli-atomic-swap-status', async () => {
+  return runZionCli(['atomic-swap', 'status']);
+});
+ipcMain.handle('cli-atomic-swap-escrow', async () => {
+  return runZionCli(['atomic-swap', 'escrow']);
+});
+ipcMain.handle('cli-atomic-swap-get', async (_event, { hash }) => {
+  return runZionCli(['atomic-swap', 'get', hash]);
+});
+ipcMain.handle('cli-atomic-swap-create', async (_event, { amount, chain, recipient, preimage, timeout }) => {
+  const args = ['atomic-swap', 'create', String(amount), chain, recipient];
+  if (preimage) args.push('--preimage', preimage);
+  if (timeout) args.push('--timeout', String(timeout));
+  return runZionCli(args);
+});
+ipcMain.handle('cli-atomic-swap-pending', async () => {
+  return runZionCli(['atomic-swap', 'pending']);
+});
+ipcMain.handle('cli-atomic-swap-claim', async (_event, { hash, preimage, recipient, token }) => {
+  const args = ['atomic-swap', 'claim', hash, preimage, recipient];
+  if (token) args.push('--token', token);
+  return runZionCli(args);
+});
+ipcMain.handle('cli-atomic-swap-refund', async (_event, { hash, token }) => {
+  const args = ['atomic-swap', 'refund', hash];
+  if (token) args.push('--token', token);
+  return runZionCli(args);
 });
 
 function _isNewerVersion(latest, current) {
