@@ -48,12 +48,12 @@ on:
       - 'desktop-v*'
 
 env:
-  DESKTOP_DIR: 'APP&WEB/desktop-agent'
+  DESKTOP_DIR: 'archive/DesktopAgentP3.0.6'
   PUBLIC_REPO: Zion-TerraNova/v3-Mainnet
 
 defaults:
   run:
-    working-directory: APP&WEB/desktop-agent
+    working-directory: archive/DesktopAgentP3.0.6
 
 jobs:
   build-linux:
@@ -67,7 +67,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: APP&WEB/desktop-agent/package-lock.json
+          cache-dependency-path: archive/DesktopAgentP3.0.6/package-lock.json
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -81,7 +81,7 @@ jobs:
 
       - name: Build Linux packages
         run: |
-          node scripts/prepare-rust-miner.js --features "public_build,auxpow,gpu-opencl,gpu-cuda,native-all"
+          node scripts/prepare-rust-miner.js --features "public_build,auxpow,gpu-opencl,gpu-cuda,native-all,tui"
           npx electron-builder --linux --x64 --publish never
 
       - name: Upload Linux artifacts
@@ -89,9 +89,9 @@ jobs:
         with:
           name: desktop-linux
           path: |
-            APP&WEB/desktop-agent/dist/*.AppImage
-            APP&WEB/desktop-agent/dist/*.deb
-            APP&WEB/desktop-agent/dist/latest-linux.yml
+            archive/DesktopAgentP3.0.6/dist/*.AppImage
+            archive/DesktopAgentP3.0.6/dist/*.deb
+            archive/DesktopAgentP3.0.6/dist/latest-linux.yml
           if-no-files-found: error
 
   build-windows:
@@ -105,7 +105,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: APP&WEB/desktop-agent/package-lock.json
+          cache-dependency-path: archive/DesktopAgentP3.0.6/package-lock.json
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -141,11 +141,9 @@ jobs:
           LIB: ${{ env.LIB }}
           INCLUDE: ${{ env.INCLUDE }}
         run: |
-          node scripts/prepare-rust-miner.js --features "public_build,auxpow,gpu-opencl,gpu-cuda,native-all"
-          # NOTE: `npx electron-builder` breaks on Windows runners because the checkout
-          # path contains "APP&WEB" — npx shells out via cmd.exe and the unquoted "&"
-          # splits the command. Invoke the local module entry point via node directly
-          # to bypass npx's shell-based bin resolution.
+          node scripts/prepare-rust-miner.js --features "public_build,auxpow,gpu-opencl,gpu-cuda,native-all,tui"
+          # Invoke the local module entry point via node directly to bypass
+          # npx's shell-based bin resolution (more reliable on Windows runners).
           node .\node_modules\electron-builder\cli.js --win --x64 --publish never
 
       - name: Upload Windows artifacts
@@ -153,10 +151,10 @@ jobs:
         with:
           name: desktop-windows
           path: |
-            APP&WEB/desktop-agent/dist/*.exe
-            APP&WEB/desktop-agent/dist/*.zip
-            APP&WEB/desktop-agent/dist/*.exe.blockmap
-            APP&WEB/desktop-agent/dist/latest.yml
+            archive/DesktopAgentP3.0.6/dist/*.exe
+            archive/DesktopAgentP3.0.6/dist/*.zip
+            archive/DesktopAgentP3.0.6/dist/*.exe.blockmap
+            archive/DesktopAgentP3.0.6/dist/latest.yml
           if-no-files-found: error
 
   build-macos:
@@ -170,7 +168,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: APP&WEB/desktop-agent/package-lock.json
+          cache-dependency-path: archive/DesktopAgentP3.0.6/package-lock.json
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -179,7 +177,7 @@ jobs:
 
       - name: Build macOS package
         run: |
-          node scripts/prepare-rust-miner.js --features "public_build,auxpow,gpu-opencl,gpu-metal,native-all"
+          node scripts/prepare-rust-miner.js --features "public_build,auxpow,gpu-opencl,gpu-metal,native-all,tui"
           npx electron-builder --mac --publish never
 
       - name: Upload macOS artifacts
@@ -187,9 +185,9 @@ jobs:
         with:
           name: desktop-macos
           path: |
-            APP&WEB/desktop-agent/dist/*.dmg
-            APP&WEB/desktop-agent/dist/*.dmg.blockmap
-            APP&WEB/desktop-agent/dist/latest-mac.yml
+            archive/DesktopAgentP3.0.6/dist/*.dmg
+            archive/DesktopAgentP3.0.6/dist/*.dmg.blockmap
+            archive/DesktopAgentP3.0.6/dist/latest-mac.yml
           if-no-files-found: error
 
   release:
@@ -237,7 +235,7 @@ jobs:
           GH_TOKEN: ${{ secrets.PUBLIC_RELEASE_TOKEN }}
           RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
           DRAFT_FLAG: ${{ inputs.draft == true && '--draft' || '' }}
-          NOTES_FILE: ${{ github.workspace }}/APP&WEB/desktop-agent/RELEASE_NOTES.md
+          NOTES_FILE: ${{ github.workspace }}/archive/DesktopAgentP3.0.6/RELEASE_NOTES.md
         run: |
           set -e
           mapfile -t assets < <(find . -maxdepth 1 -type f -printf '%P\n' | sort)
