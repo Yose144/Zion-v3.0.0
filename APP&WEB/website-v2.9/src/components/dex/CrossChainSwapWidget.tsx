@@ -222,7 +222,6 @@ export default function CrossChainSwapWidget() {
   const fetchQuote = useCallback(async () => {
     const amt = parseFloat(amount);
     if (!amt || amt <= 0 || !srcToken || !destToken) {
-      setQuote(null);
       setRoute(null);
       setPhase('idle');
       return;

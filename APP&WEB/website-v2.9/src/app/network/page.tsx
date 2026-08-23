@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
@@ -53,61 +53,61 @@ import {
 
 const NetworkCopy = {
   publicNodes: { cs: `Veřejné nody`, en: `Public Nodes` },
-  k2NodeP2pMeshEdge1Edge2LocalBac: { cs: `2-uzlový P2P mesh: Edge 1, Edge 2 (Local Backup offline)`, en: `2-node P2P mesh: Edge 1, Edge 2 (Local Backup offline)` },
+  k2NodeP2pMeshEdge1Edge2LocalBac: { cs: `Veřejný P2P mesh: primární a záložní uzel (záloha offline)`, en: `Public P2P mesh: primary and standby node (backup offline)` },
   p2pMesh: { cs: `P2P mesh`, en: `P2P Mesh` },
   k2Nodes: { cs: `2 uzly`, en: `2 nodes` },
-  edge1Edge2Within2BlockSyncLoca: { cs: `Edge 1 ↔ Edge 2 v syncu ≤2 bloků · Local Backup offline`, en: `Edge 1 ↔ Edge 2 within ≤2 block sync · Local Backup offline` },
+  edge1Edge2Within2BlockSyncLoca: { cs: `Veřejné uzly v syncu ≤2 bloků · záloha offline`, en: `Public nodes within ≤2 block sync · backup offline` },
   telemetry: { cs: `Telemetrie`, en: `Telemetry` },
   autoRefreshInterval: { cs: `Interval auto-obnovení`, en: `Auto-refresh interval` },
   topology: { cs: `Topologie`, en: `Topology` },
   v306E2e: { cs: `v3.2.0 E2E`, en: `v3.2.0 E2E` },
-  sshTunnelsApparmorUfwRpcAuditL: { cs: `SSH tunely, AppArmor, UFW, RPC audit log — vše aktivní`, en: `SSH tunnels, AppArmor, UFW, RPC audit log — all active` },
+  sshTunnelsApparmorUfwRpcAuditL: { cs: `Bezpečnostní hardening, firewall a audit log — vše aktivní`, en: `Security hardening, firewall and audit log — all active` },
   network: { cs: `Síť`, en: `Network` },
   trinity: { cs: `Trinity`, en: `Trinity` },
   mainnetBeta1111ServicesProtoco: { cs: `Mainnet Stable · 11/11 služeb · protocol 3.2.0`, en: `Mainnet Stable · 11/11 services · protocol 3.2.0` },
-  edgeNode1PrimaryPool: { cs: `Edge Node 1 (Primary / Pool)`, en: `Edge Node 1 (Primary / Pool)` },
-  publicP2p8333Stratum8444Rpc844: { cs: `Veřejný P2P 8333, stratum 8444, RPC 8443, pool API 8455 — pool live`, en: `Public P2P 8333, stratum 8444, RPC 8443, pool API 8455 — pool live` },
+  edgeNode1PrimaryPool: { cs: `Veřejný uzel 1 (Primary / Pool)`, en: `Public node 1 (Primary / Pool)` },
+  publicP2p8333Stratum8444Rpc844: { cs: `Veřejný P2P 8333, stratum 8444, RPC 9445 — pool live`, en: `Public P2P 8333, stratum 8444, RPC 9445 — pool live` },
   active: { cs: `Aktivní`, en: `Active` },
-  edgeNode2Follower: { cs: `Edge Node 2 (Follower)`, en: `Edge Node 2 (Follower)` },
-  p2pPeerOnPort8334Rpc8448FullyS: { cs: `P2P peer na portu 8334, RPC 8448 — plně synchronizovaný s primárním uzlem`, en: `P2P peer on port 8334, RPC 8448 — fully synchronized with primary` },
-  localBackupNodePrague: { cs: `Local Backup Node (Prague)`, en: `Local Backup Node (Prague)` },
-  backupNodeViaSshReverseForward: { cs: `Záložní uzel přes SSH reverzní forward 8446 — aktuálně offline`, en: `Backup node via SSH reverse forward 8446 — currently offline` },
-  zionBackupTunnel: { cs: `ZION Backup (tunel)`, en: `ZION Backup (tunnel)` },
+  edgeNode2Follower: { cs: `Veřejný uzel 2 (Follower)`, en: `Public node 2 (Follower)` },
+  p2pPeerOnPort8334Rpc8448FullyS: { cs: `Veřejný P2P peer — plně synchronizovaný s primárním uzlem`, en: `Public P2P peer — fully synchronized with primary` },
+  localBackupNodePrague: { cs: `Záložní uzel (pohotovost)`, en: `Backup node (standby)` },
+  backupNodeViaSshReverseForward: { cs: `Záložní uzel na pohotovosti — aktuálně offline`, en: `Backup node on standby — currently offline` },
+  zionBackupTunnel: { cs: `Pohotovost`, en: `Standby` },
   offline: { cs: `Offline`, en: `Offline` },
   publicStratum: { cs: `Veřejný stratum`, en: `Public Stratum` },
-  primaryMiningIngressPoolApi845: { cs: `Primární těžební vstup — pool API 8455`, en: `Primary mining ingress — pool API 8455` },
-  nativeRustJsonRpcForExplorersA: { cs: `Nativní Rust JSON-RPC pro explorer a tooling (2-uzlový mesh)`, en: `Native Rust JSON-RPC for explorers and tooling (2-node mesh)` },
-  k2NodeMesh83338334Backup8335Off: { cs: `2-uzlový mesh: 8333, 8334 · backup 8335 offline`, en: `2-node mesh: 8333, 8334 · backup 8335 offline` },
+  primaryMiningIngressPoolApi845: { cs: `Primární těžební vstup — veřejný stratum`, en: `Primary mining ingress — public stratum` },
+  nativeRustJsonRpcForExplorersA: { cs: `Nativní Rust JSON-RPC pro explorer a tooling (veřejný mesh)`, en: `Native Rust JSON-RPC for explorers and tooling (public mesh)` },
+  k2NodeMesh83338334Backup8335Off: { cs: `Veřejný mesh: 8333 · záloha offline`, en: `Public mesh: 8333 · backup offline` },
   releaseContext: { cs: `Kontext releasu`, en: `Release Context` },
   v306E2eStatus: { cs: `v3.2.0 E2E Status`, en: `v3.2.0 E2E Status` },
   trinity_2: { cs: `Trinity ✓`, en: `Trinity ✓` },
   k1111ServicesActiveF47F5ActiveM: { cs: `11/11 služeb aktivních · F4.7 + F5 aktivní · memory leak fix`, en: `11/11 services active · F4.7 + F5 active · memory leak fix` },
   mining: { cs: `Těžba`, en: `Mining` },
-  connectAnyCosmicHarmonyCpuMine: { cs: `Připojte jakýkoli Cosmic Harmony / CPU miner k aktuálnímu veřejnému poolu na Edge Node 1.`, en: `Connect any Cosmic Harmony / CPU miner to the current public pool on Edge Node 1.` },
+  connectAnyCosmicHarmonyCpuMine: { cs: `Připojte jakýkoli Cosmic Harmony / CPU miner k aktuálnímu veřejnému ZION One Love poolu.`, en: `Connect any Cosmic Harmony / CPU miner to the current public ZION One Love pool.` },
   currentPrimary: { cs: `(aktuální primární)`, en: `(current primary)` },
-  nativeRustJsonRpcEndpointForEx: { cs: `Nativní Rust JSON-RPC endpoint pro explorer a tooling. Dostupný přes 2-uzlový mesh s auto-failover.`, en: `Native Rust JSON-RPC endpoint for explorers and tooling. Available across a 2-node mesh with auto-failover.` },
+  nativeRustJsonRpcEndpointForEx: { cs: `Nativní Rust JSON-RPC endpoint pro explorer a tooling. Dostupný přes veřejný mesh s auto-failover.`, en: `Native Rust JSON-RPC endpoint for explorers and tooling. Available across a public mesh with auto-failover.` },
   publicRuntimeEndpoint: { cs: `veřejný runtime endpoint`, en: `public runtime endpoint` },
-  nativeRustP2pNetwork2NodeMeshW: { cs: `Nativní Rust P2P síť — 2-uzlový mesh s výškou v syncu ≤2 bloků, všechny peery veřejně routované nebo přes tunel.`, en: `Native Rust P2P network — 2-node mesh with height sync within ≤2 blocks, all peers publicly routed or tunneled.` },
-  publicPeerEdge1: { cs: `Veřejný peer (Edge 1)`, en: `Public peer (Edge 1)` },
-  publicPeerEdge2: { cs: `Veřejný peer (Edge 2)`, en: `Public peer (Edge 2)` },
-  backupPeerTunnel: { cs: `Backup peer (tunel)`, en: `Backup peer (tunnel)` },
-  hardcodedSeedPeers: { cs: `Hardcoded seed peers`, en: `Hardcoded seed peers` },
-  nativeRustP2p2NodeMesh: { cs: `Nativní Rust P2P — 2-uzlový mesh`, en: `Native Rust P2P — 2-node mesh` },
+  nativeRustP2pNetwork2NodeMeshW: { cs: `Nativní Rust P2P síť — veřejný mesh s výškou v syncu ≤2 bloků.`, en: `Native Rust P2P network — public mesh with height sync within ≤2 blocks.` },
+  publicPeerEdge1: { cs: `Veřejný peer (Primární)`, en: `Public peer (Primary)` },
+  publicPeerEdge2: { cs: `Veřejný peer (Sekundární)`, en: `Public peer (Secondary)` },
+  backupPeerTunnel: { cs: `Záložní peer`, en: `Backup peer` },
+  hardcodedSeedPeers: { cs: `Veřejné seed peery`, en: `Public seed peers` },
+  nativeRustP2p2NodeMesh: { cs: `Nativní Rust P2P — veřejný mesh`, en: `Native Rust P2P — public mesh` },
   v306TrinityMainnetBeta1111Serv: { cs: `v3.2.0 "One Love, Mainnet Stable" — 11/11 služeb aktivních`, en: `v3.2.0 "One Love, Mainnet Stable" — 11/11 services active` },
-  jsonRpcEndpointsLive84438448Ba: { cs: `JSON-RPC endpointy live (8443, 8448; backup 8446 offline)`, en: `JSON-RPC endpoints live (8443, 8448; backup 8446 offline)` },
+  jsonRpcEndpointsLive84438448Ba: { cs: `JSON-RPC endpointy live (primární 9445; záloha offline)`, en: `JSON-RPC endpoints live (primary 9445; backup offline)` },
   e2eMemoTestsConfirmedInBlock75: { cs: `E2E memo testy potvrzené v bloku 752`, en: `E2E memo tests confirmed in block 752` },
   f47MaxTxAmountCapF5SenderBalan: { cs: `F4.7 max-tx-amount cap + F5 sender balance check aktivní`, en: `F4.7 max-tx-amount cap + F5 sender balance check active` },
   lwmaDaaTarget60sBlockTime: { cs: `LWMA DAA — cíl 60s block time`, en: `LWMA DAA — target 60s block time` },
-  systemdServicesWithAutoRestart: { cs: `systemd služby s auto-restartem na Edge`, en: `systemd services with auto-restart on Edge` },
+  systemdServicesWithAutoRestart: { cs: `Služby s automatickým restartem`, en: `Services with auto-restart` },
   prometheusGrafanaMonitoring: { cs: `Monitoring Prometheus + Grafana`, en: `Prometheus + Grafana monitoring` },
-  ufwFirewallApparmorRpcAuditLog: { cs: `UFW firewall + AppArmor + RPC audit log na Edge`, en: `UFW firewall + AppArmor + RPC audit log on Edge` },
-  sshTunnelsForBackupNodeReverse: { cs: `SSH tunely pro backup node (reverse forwards 8446-8447)`, en: `SSH tunnels for backup node (reverse forwards 8446-8447)` },
+  ufwFirewallApparmorRpcAuditLog: { cs: `Bezpečnostní hardening, firewall a audit log aktivní`, en: `Security hardening, firewall and audit log active` },
+  sshTunnelsForBackupNodeReverse: { cs: `Záložní spojení pro standby node`, en: `Backup link for standby node` },
   enUs: { cs: `cs-CZ`, en: `en-US` },
   liveStatus: { cs: `Živý stav`, en: `Live Status` },
   p2pNetwork: { cs: `P2P Síť`, en: `P2P Network` },
-  realTimeTelemetryFromTheCurren: { cs: `Telemetrie v reálném čase z aktuálního veřejného runtime v3.2.0. Živá topologie je 2-uzlový P2P mesh — Edge 1 (primary + pool), Edge 2 (follower); Local Backup Node (Prague) je offline.`, en: `Real-time telemetry from the current public v3.2.0 runtime. The live topology is a 2-node P2P mesh — Edge 1 (primary + pool), Edge 2 (follower); Local Backup Node (Prague) is offline.` },
+  realTimeTelemetryFromTheCurren: { cs: `Telemetrie v reálném čase z aktuálního veřejného runtime v3.2.0. Živá topologie je veřejný P2P mesh — primární uzel (pool) a záložní uzel jsou v syncu.`, en: `Real-time telemetry from the current public v3.2.0 runtime. The live topology is a public P2P mesh — primary node (pool) and standby node are in sync.` },
   nativeRust: { cs: `Nativní Rust`, en: `Native Rust` },
-  k1PublicHost2InternalSeeds: { cs: `1 veřejný host · 2 interní seedy`, en: `1 Public Host · 2 Internal Seeds` },
+  k1PublicHost2InternalSeeds: { cs: `1 veřejný host · veřejné seedy`, en: `1 public host · public seeds` },
   runtimeSnapshot: { cs: `Runtime přehled`, en: `Runtime Snapshot` },
   publicNetworkSurface: { cs: `Veřejný povrch sítě`, en: `Public Network Surface` },
   theCurrentLiveFootprintDistill: { cs: `Aktuální živý footprint zredukovaný na endpointy a role, které operátoři potřebují jako první.`, en: `The current live footprint distilled to the endpoints and roles operators actually need first.` },
@@ -180,34 +180,34 @@ const NetworkCopy = {
   block: { cs: `blok`, en: `block` },
   infrastructure: { cs: `Infrastruktura`, en: `Infrastructure` },
   currentRuntime: { cs: `Aktuální runtime`, en: `Current Runtime` },
-  currentPublicRuntimeIsA2NodeV3: { cs: `Aktuální veřejný runtime tvoří 2-uzlový P2P mesh v3.2.0 — Edge 1 (primary + pool) a Edge 2 (follower). Local Backup Node (Prague) je offline.`, en: `Current public runtime is a 2-node v3.2.0 P2P mesh — Edge 1 (primary + pool) and Edge 2 (follower). Local Backup Node (Prague) is offline.` },
+  currentPublicRuntimeIsA2NodeV3: { cs: `Aktuální veřejný runtime tvoří P2P mesh v3.2.0 — primární uzel (pool) a záložní uzel jsou v syncu.`, en: `Current public runtime is a v3.2.0 P2P mesh — primary node (pool) and standby node are in sync.` },
   portEndpointsSeeNodeDescriptio: { cs: `Endpointy portů viz popis uzlu nahoře`, en: `Port endpoints see node description above` },
-  rpcAutoFailoverAcross2NodeMesh: { cs: `RPC auto-failover přes 2-uzlový mesh`, en: `RPC auto-failover across 2-node mesh` },
-  p2pMesh83338334Backup8335Offli: { cs: `P2P mesh: 8333, 8334 · backup 8335 offline`, en: `P2P mesh: 8333, 8334 · backup 8335 offline` },
+  rpcAutoFailoverAcross2NodeMesh: { cs: `RPC auto-failover přes veřejný mesh`, en: `RPC auto-failover across public mesh` },
+  p2pMesh83338334Backup8335Offli: { cs: `Veřejný P2P mesh: 8333 · záloha offline`, en: `Public P2P mesh: 8333 · backup offline` },
   e2eStack: { cs: `E2E Stack`, en: `E2E Stack` },
   allV306ComponentsHaveBeenVerif: { cs: `Všechny komponenty v3.2.0 byly ověřeny end-to-end na živé mainnet síti.`, en: `All v3.2.0 components have been verified end-to-end on the live mainnet.` },
   k1111Services: { cs: `11/11 služeb`, en: `11/11 services` },
-  nodePoolWatchersBridgeWebDashb: { cs: `Node, pool, watchers, bridge, web, dashboard, monitoring — vše active.`, en: `Node, pool, watchers, bridge, web, dashboard, monitoring — all active.` },
+  nodePoolWatchersBridgeWebDashb: { cs: `Node, pool, bridge, web, dashboard, monitoring — vše aktivní.`, en: `Node, pool, bridge, web, dashboard, monitoring — all active.` },
   f47F5Active: { cs: `F4.7 + F5 aktivní`, en: `F4.7 + F5 active` },
   maxTxAmountCapAndSenderBalance: { cs: `Max-tx-amount cap a sender balance check jsou nasazené od genesis height.`, en: `Max-tx-amount cap and sender balance check are deployed from genesis height.` },
   memoE2eTests: { cs: `Memo E2E testy`, en: `Memo E2E tests` },
   k3AccountModelTxsWithMemosConfi: { cs: `3 account-model TX s memy potvrzené v bloku 752.`, en: `3 account-model TXs with memos confirmed in block 752.` },
   memoryLeakFix: { cs: `Memory leak fix`, en: `Memory leak fix` },
   poolNodeMemoryLeaksFixedWatchd: { cs: `Pool + node memory leak opraveny, watchdog sleduje zdraví.`, en: `Pool + node memory leaks fixed, watchdog monitors health.` },
-  rpcAuditLog: { cs: `RPC audit log`, en: `RPC audit log` },
-  nodeRpcAuditLogForSecurityFore: { cs: `Audit log na node pro bezpečnostní forenzní analýzu.`, en: `Node RPC audit log for security forensics.` },
-  apparmorUfw: { cs: `AppArmor + UFW`, en: `AppArmor + UFW` },
-  edgeServerIsProtectedByApparmo: { cs: `Edge server je chráněn AppArmor profilem a striktním UFW.`, en: `Edge server is protected by AppArmor profile and strict UFW.` },
+  rpcAuditLog: { cs: `Audit log`, en: `Audit log` },
+  nodeRpcAuditLogForSecurityFore: { cs: `Audit log na node pro bezpečnostní forenzní analýzu.`, en: `Node audit log for security forensics.` },
+  apparmorUfw: { cs: `Bezpečnostní hardening`, en: `Security hardening` },
+  edgeServerIsProtectedByApparmo: { cs: `ZION mainnet node je chráněn bezpečnostním hardeningem a striktním firewallem.`, en: `ZION mainnet node is protected by security hardening and a strict firewall.` },
   bridgeBaseMainnet: { cs: `Bridge Base Mainnet`, en: `Bridge Base Mainnet` },
-  zionbridgeAndL2WatchersSynchro: { cs: `ZIONBridge a L2 watchery synchronizují mema na Base.`, en: `ZIONBridge and L2 watchers synchronize memos on Base.` },
-  k2NodeMesh: { cs: `2-uzlový mesh`, en: `2-node mesh` },
-  edge1AndEdge2Within2BlockSyncL: { cs: `Edge 1 a Edge 2 v syncu ≤2 bloků · Local Backup offline.`, en: `Edge 1 and Edge 2 within ≤2 block sync · Local Backup offline.` },
+  zionbridgeAndL2WatchersSynchro: { cs: `ZION Bridge synchronizuje mema na Base.`, en: `ZION Bridge synchronizes memos on Base.` },
+  k2NodeMesh: { cs: `Veřejný mesh`, en: `Public mesh` },
+  edge1AndEdge2Within2BlockSyncL: { cs: `Veřejné uzly v syncu ≤2 bloků · záloha offline.`, en: `Public nodes within ≤2 block sync · backup offline.` },
   liveTelemetry: { cs: `Živá telemetrie`, en: `Live Telemetry` },
   nodeStatus: { cs: `Stav nodu`, en: `Node Status` },
-  realTimeHealthBlockHeightHashr: { cs: `Zdraví, výška chainu, hashrate a sync stav v reálném čase z 2-uzlového P2P meshe.`, en: `Real-time health, block height, hashrate, and sync status from the 2-node P2P mesh.` },
+  realTimeHealthBlockHeightHashr: { cs: `Zdraví, výška chainu, hashrate a sync stav v reálném čase z veřejného P2P meshe.`, en: `Real-time health, block height, hashrate, and sync status from the public P2P mesh.` },
   geography: { cs: `Geografie`, en: `Geography` },
   networkMapPoolFinder: { cs: `Mapa sítě a vyhledávač poolu`, en: `Network Map & Pool Finder` },
-  visualizeTheCurrentTopologyAnd: { cs: `Vizualizujte aktuální topologii a porovnejte ji s archivovaným multi-host rolloutem zachovaným v release dokumentaci.`, en: `Visualize the current topology and compare it with the archived multi-host rollout preserved in release documentation.` },
+  visualizeTheCurrentTopologyAnd: { cs: `Vizualizujte aktuální topologii a porovnejte ji s historickým kontextem sítě zachovaným v release dokumentaci.`, en: `Visualize the current topology and compare it with the historical network context preserved in release documentation.` },
   connect: { cs: `Připojení`, en: `Connect` },
   connectionGuides: { cs: `Připojovací návody`, en: `Connection Guides` },
   everythingYouNeedToConnectAMin: { cs: `Vše, co potřebujete k připojení mineru, dotazování RPC API nebo synchronizaci nodu.`, en: `Everything you need to connect a miner, query the RPC API, or sync a node.` },
@@ -217,11 +217,11 @@ const NetworkCopy = {
   frequentlyAskedQuestions: { cs: `Často kladené dotazy`, en: `Frequently Asked Questions` },
   everythingAboutTheZionNetworkI: { cs: `Vše o síti ZION na jednom místě.`, en: `Everything about the ZION network in one place.` },
   joinTheZionNetwork: { cs: `Připojte se k síti ZION`, en: `Join the ZION Network` },
-  nativeRustInfrastructureRunnin: { cs: `Nativní Rust infrastruktura běží 24/7 z aktuálního primárního hostu s podporou interního kvora. Připojte svůj miner, spusťte vlastní node nebo prozkoumejte blockchain, zatímco historický kontext nasazení zůstává zachován v dokumentaci.`, en: `Native Rust infrastructure running 24/7 from the current primary host with internal quorum support. Connect your miner, run your own node, or explore the blockchain while historical rollout context stays preserved in docs.` },
+  nativeRustInfrastructureRunnin: { cs: `Nativní Rust infrastruktura běží 24/7 z aktuálního primárního hostu. Připojte svůj miner, spusťte vlastní node nebo prozkoumejte blockchain, zatímco historický kontext sítě zůstává zachován v dokumentaci.`, en: `Native Rust infrastructure running 24/7 from the current primary host. Connect your miner, run your own node, or explore the blockchain while historical network context stays preserved in docs.` },
   primaryHostLive: { cs: `Primární host online`, en: `Primary host live` },
-  internalSeeds: { cs: `Interní seedy`, en: `Internal seeds` },
+  internalSeeds: { cs: `Veřejné seedy`, en: `Public seeds` },
   dockerNative: { cs: `Docker nativně`, en: `Docker native` },
-  archivedMultiHostHistory: { cs: `Archivovaná multi-host historie`, en: `Archived multi-host history` },
+  archivedMultiHostHistory: { cs: `Archivovaná síťová historie`, en: `Archived network history` },
   explorer: { cs: `Explorer`, en: `Explorer` },
   roadmap: { cs: `Roadmapa`, en: `Roadmap` },
   whatConsensusDoesZionUse: { cs: `Jaký konsenzus ZION používá?`, en: `What consensus does ZION use?` },
@@ -235,7 +235,7 @@ const NetworkCopy = {
   whatPoolFeeDoesZionCharge: { cs: `Jaký pool fee si ZION účtuje?`, en: `What pool fee does ZION charge?` },
   k89GoesToTheMiner5ToTheHumanita: { cs: `89 % putuje minerovi, 5 % do humanitarian fondu, 5 % do fondu Issobella a 1 % pool provozní poplatek.`, en: `89% goes to the miner, 5% to the humanitarian fund, 5% to the Issobella fund, and 1% pool operational fee.` },
   isTheNetworkPubliclyLaunched: { cs: `Je síť veřejně spuštěna?`, en: `Is the network publicly launched?` },
-  mainnetGenesisTookPlaceOn11Jun: { cs: `MainNet Genesis proběhl 11. června 2026. Veřejný plný launch je naplánován na 31. prosince 2026 (Silvestr). v3.2.0 "One Love" běží na 2-uzlovém P2P meshi s aktivním poolem, bridge je nasazený na Base Mainnet a E2E memo testy byly potvrzené v bloku 752.`, en: `MainNet Genesis took place on 11 June 2026. The public full launch is scheduled for 31 December 2026 (New Year\'s Eve). v3.2.0 "One Love" runs on a 2-node P2P mesh with an active pool, the bridge is deployed on Base Mainnet, and E2E memo tests were confirmed in block 752.` },
+  mainnetGenesisTookPlaceOn11Jun: { cs: `MainNet Genesis proběhl 11. června 2026. Veřejný plný launch je naplánován na 31. prosince 2026 (Silvestr). v3.2.0 "One Love" běží na veřejném P2P meshi s aktivním poolem, bridge je nasazený na Base Mainnet a E2E memo testy byly potvrzené v bloku 752.`, en: `MainNet Genesis took place on 11 June 2026. The public full launch is scheduled for 31 December 2026 (New Year's Eve). v3.2.0 "One Love" runs on a public P2P mesh with an active pool, the bridge is deployed on Base Mainnet, and E2E memo tests were confirmed in block 752.` },
 };
 
 const NetworkStatus = dynamic(() => import('@/components/NetworkStatus'), {
@@ -324,16 +324,6 @@ const getInfraFeatures = (cs: boolean) => [
   },
   {
     icon: Server,
-    title: NetworkCopy.edgeNode2Follower[cs ? 'cs' : 'en'],
-    detail: NetworkCopy.p2pPeerOnPort8334Rpc8448FullyS[cs ? 'cs' : 'en'],
-    ip: `${SITE_PRIMARY_HOST}:8334`,
-    status: NetworkCopy.active[cs ? 'cs' : 'en'],
-    color: 'text-zion-cyan',
-    border: 'border-zion-cyan/30',
-    bg: 'bg-zion-cyan/5',
-  },
-  {
-    icon: Server,
     title: NetworkCopy.localBackupNodePrague[cs ? 'cs' : 'en'],
     detail: NetworkCopy.backupNodeViaSshReverseForward[cs ? 'cs' : 'en'],
     ip: NetworkCopy.zionBackupTunnel[cs ? 'cs' : 'en'],
@@ -402,7 +392,7 @@ const getGuideBlocks = (cs: boolean) => [
     items: [
       `Primary: ${SITE_PRIMARY_RPC_URL}`,
       `Scope: ${NetworkCopy.publicRuntimeEndpoint[cs ? 'cs' : 'en']}`,
-      `Backup RPC: 127.0.0.1:8446 (reverse SSH tunnel)`,
+      `Backup RPC: on standby`,
       'Method: POST',
     ],
   },
@@ -412,9 +402,8 @@ const getGuideBlocks = (cs: boolean) => [
     description: NetworkCopy.nativeRustP2pNetwork2NodeMeshW[cs ? 'cs' : 'en'],
     items: [
       `${NetworkCopy.publicPeerEdge1[cs ? 'cs' : 'en']}: ${SITE_PRIMARY_HOST}:8333`,
-      `${NetworkCopy.publicPeerEdge2[cs ? 'cs' : 'en']}: ${SITE_PRIMARY_HOST}:8334`,
-      `${NetworkCopy.backupPeerTunnel[cs ? 'cs' : 'en']}: P2P 8335 / RPC 8446 — offline`,
-      `${NetworkCopy.hardcodedSeedPeers[cs ? 'cs' : 'en']}: ${SITE_PRIMARY_HOST}:8333, ${SITE_PRIMARY_HOST}:8334`,
+      `${NetworkCopy.backupPeerTunnel[cs ? 'cs' : 'en']}: on standby — offline`,
+      `${NetworkCopy.hardcodedSeedPeers[cs ? 'cs' : 'en']}: ${SITE_PRIMARY_HOST}:8333`,
     ],
   },
 ];
@@ -426,7 +415,7 @@ const getNetworkFacts = (cs: boolean) => [
     done: true,
   },
   {
-    text: cs ? `Edge stratum endpoint: ${SITE_POOL_PRIMARY}` : `Edge stratum endpoint: ${SITE_POOL_PRIMARY}`,
+    text: cs ? `Public stratum endpoint: ${SITE_POOL_PRIMARY}` : `Public stratum endpoint: ${SITE_POOL_PRIMARY}`,
     done: true,
   },
   { text: NetworkCopy.jsonRpcEndpointsLive84438448Ba[cs ? 'cs' : 'en'], done: true },
@@ -539,12 +528,12 @@ export default function NetworkPage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
   const locale = NetworkCopy.enUs[cs ? 'cs' : 'en'];
-  const heroStats = getHeroStats(cs);
-  const infraFeatures = getInfraFeatures(cs);
-  const runtimePanels = getRuntimePanels(cs);
-  const guideBlocks = getGuideBlocks(cs);
-  const networkFacts = getNetworkFacts(cs);
-  const factsDone = networkFacts.filter((f) => f.done).length;
+  const heroStats = useMemo(() => getHeroStats(cs), [cs]);
+  const infraFeatures = useMemo(() => getInfraFeatures(cs), [cs]);
+  const runtimePanels = useMemo(() => getRuntimePanels(cs), [cs]);
+  const guideBlocks = useMemo(() => getGuideBlocks(cs), [cs]);
+  const networkFacts = useMemo(() => getNetworkFacts(cs), [cs]);
+  const factsDone = useMemo(() => networkFacts.filter((f) => f.done).length, [networkFacts]);
   const factsTotal = networkFacts.length;
 
   const primaryPool = SITE_POOL_PRIMARY;
@@ -1199,8 +1188,8 @@ export default function NetworkPage() {
 
         <p className="text-center text-xs text-gray-600">
           {cs
-            ? `ZION TerraNova ${SITE_RELEASE_LABEL} - P2P Síť Pro · 2-uzlový mesh · v3.2.0 E2E Trinity`
-            : `ZION TerraNova ${SITE_RELEASE_LABEL} - P2P Network Pro · 2-node mesh · v3.2.0 E2E Trinity`}
+            ? `ZION TerraNova ${SITE_RELEASE_LABEL} - P2P Síť Pro · One Love mesh · v3.2.0 E2E Trinity`
+            : `ZION TerraNova ${SITE_RELEASE_LABEL} - P2P Network Pro · One Love mesh · v3.2.0 E2E Trinity`}
         </p>
       </div>
 
@@ -1266,16 +1255,16 @@ function ChainStatCard({ label, value, sub, color, tip }: { label: string; value
 /* ─── NetFAQSection ─── */
 function NetFAQSection({ cs }: { cs: boolean }) {
   const [open, setOpen] = useState<number | null>(null);
-  const faqs = [
+  const faqs = useMemo(() => [
     { q: NetworkCopy.whatConsensusDoesZionUse[cs ? 'cs' : 'en'], a: NetworkCopy.cosmicHarmonyProofOfWorkACusto[cs ? 'cs' : 'en'] },
     { q: NetworkCopy.whatIsTheTargetBlockTime[cs ? 'cs' : 'en'], a: NetworkCopy.k60SecondsDifficultyAdjustsDyna[cs ? 'cs' : 'en'] },
     { q: NetworkCopy.howManyZionAreMinedPerBlock[cs ? 'cs' : 'en'], a: cs ? `V první dekádě je odměna ${BLOCK_REWARD_ZION.toFixed(3)} ZION/blok. Každých 10 let (${BLOCKS_PER_DECADE.toLocaleString()} bloků) se odměna sníží o 20 % (Decade Decay).` : `In the first decade the reward is ${BLOCK_REWARD_ZION.toFixed(3)} ZION/block. Every 10 years (${BLOCKS_PER_DECADE.toLocaleString()} blocks) the reward decreases by 20% (Decade Decay).` },
     { q: NetworkCopy.whatIsTheMaximumSupply[cs ? 'cs' : 'en'], a: cs ? `Maximální supply je ${(TOTAL_SUPPLY_ZION / 1e9).toFixed(0)} miliard ZION včetně genesis premine ${(GENESIS_PREMINE_ZION / 1e9).toFixed(2)} mld ZION.` : `Maximum supply is ${(TOTAL_SUPPLY_ZION / 1e9).toFixed(0)} billion ZION including genesis premine of ${(GENESIS_PREMINE_ZION / 1e9).toFixed(2)}B ZION.` },
     { q: NetworkCopy.howToConnectAsAMiner[cs ? 'cs' : 'en'], a: cs ? `Stáhněte si XMRig nebo Desktop App a použijte stratum+tcp://${SITE_POOL_PRIMARY} jako pool adresu. Detaily najdete v Connection Guides výše.` : `Download XMRig or the Desktop App and use stratum+tcp://${SITE_POOL_PRIMARY} as the pool address. See the Connection Guides section above for details.` },
-    { q: NetworkCopy.howToRunYourOwnFullNode[cs ? 'cs' : 'en'], a: cs ? `Klonujte repo, spusťte cargo build --release v V3/core a pak ./target/release/zion-node --p2p-bind-ip 0.0.0.0 --add-exclusive-node ${SITE_PRIMARY_HOST}:8333 --add-exclusive-node ${SITE_PRIMARY_HOST}:8334. Docker compose je k dispozici v docker/docker-compose.mainnet.yml.` : `Clone the repo, cargo build --release from V3/core and then ./target/release/zion-node --p2p-bind-ip 0.0.0.0 --add-exclusive-node ${SITE_PRIMARY_HOST}:8333 --add-exclusive-node ${SITE_PRIMARY_HOST}:8334. Docker compose is available in docker/docker-compose.mainnet.yml.` },
+    { q: NetworkCopy.howToRunYourOwnFullNode[cs ? 'cs' : 'en'], a: cs ? `Klonujte repo, sestavte zion-node pomocí cargo build --release a spusťte ./target/release/zion-node --p2p-bind-ip 0.0.0.0 --add-exclusive-node ${SITE_PRIMARY_HOST}:8333. Docker compose je k dispozici v repozitáři.` : `Clone the repo, build zion-node with cargo build --release, then run ./target/release/zion-node --p2p-bind-ip 0.0.0.0 --add-exclusive-node ${SITE_PRIMARY_HOST}:8333. Docker compose is available in the repo.` },
     { q: NetworkCopy.whatPoolFeeDoesZionCharge[cs ? 'cs' : 'en'], a: NetworkCopy.k89GoesToTheMiner5ToTheHumanita[cs ? 'cs' : 'en'] },
     { q: NetworkCopy.isTheNetworkPubliclyLaunched[cs ? 'cs' : 'en'], a: NetworkCopy.mainnetGenesisTookPlaceOn11Jun[cs ? 'cs' : 'en'] },
-  ];
+  ], [cs]);
   return (
     <div className="divide-y divide-white/[0.06]">
       {faqs.map((f, i) => (

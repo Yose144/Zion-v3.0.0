@@ -75,7 +75,7 @@ async function getNodeStatus(node: SeedNodeConfig): Promise<NodeStatus> {
     status.rpcLatencyMs = Date.now() - rpcStart;
     status.height = info.height ?? 0;
     status.peers = (info.outgoing_connections_count ?? 0) + (info.incoming_connections_count ?? 0);
-    if (node.region === 'PRIMARY' || node.id === 'edge-vps') {
+    if (node.poolApiUrl || node.region === 'PRIMARY') {
       status.hashrate = info.difficulty ? info.difficulty / (info.target || 60) : 0;
     }
     status.online = info.status === 'OK';
@@ -84,7 +84,7 @@ async function getNodeStatus(node: SeedNodeConfig): Promise<NodeStatus> {
   }
 
   // V3 pool metrics via TCP — only primary runs the pool
-  if (node.id === 'edge-vps') {
+  if (node.poolApiUrl) {
     try {
       const rpc = getZionRpc();
       const poolStart = Date.now();
@@ -101,6 +101,11 @@ async function getNodeStatus(node: SeedNodeConfig): Promise<NodeStatus> {
       // Pool might not be running, that's ok
     }
   }
+
+  // Sanitize public-facing identifiers regardless of env overrides.
+  status.id = 'zion-primary';
+  status.name = 'ZION One Love Node';
+  status.region = 'PRIMARY';
 
   return status;
 }

@@ -5,7 +5,7 @@ import { getMiningPoolsConfig } from '@/lib/network-config';
  * Best Pool API
  * 
  * Returns the best mining pool based on user's geographic location.
- * Defaults to the current public Zion2 host and supports env overrides.
+ * Defaults to the current public ZION host and supports env overrides.
  */
 
 const POOLS = getMiningPoolsConfig();
@@ -33,6 +33,9 @@ export async function GET(request: NextRequest) {
     // No location provided, return configured pools with the primary pool first.
     const allPools = POOLS.map(p => ({
       ...p,
+      id: 'zion-pool',
+      name: 'ZION One Love Pool',
+      region: 'PUBLIC',
       stratumUrl: `stratum+tcp://${p.host}:${p.port}`,
     }));
     const defaultRecommended = allPools[0];
@@ -46,6 +49,9 @@ export async function GET(request: NextRequest) {
   // Calculate distances and sort
   const poolsWithDistance = POOLS.map(pool => ({
     ...pool,
+    id: 'zion-pool',
+    name: 'ZION One Love Pool',
+    region: 'PUBLIC',
     distance: haversineDistance(lat, lon, pool.lat, pool.lon),
     stratumUrl: `stratum+tcp://${pool.host}:${pool.port}`,
   })).sort((a, b) => a.distance - b.distance);
