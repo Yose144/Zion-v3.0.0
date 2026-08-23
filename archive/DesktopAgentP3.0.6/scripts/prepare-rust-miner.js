@@ -51,14 +51,6 @@ const BINS = [
 
 const V31_WORKSPACE_MANIFEST = 'V31/Cargo.toml';
 
-const KNOWN_BINARIES = [
-  'zion-miner',
-  'zion-universal-miner',
-  'zion-node',
-  'node',
-  'zion',
-];
-
 // ── Helpers ────────────────────────────────────────────────────────
 
 function exists(filePath) {
@@ -263,7 +255,7 @@ function buildV31Workspace(workspaceRoot, features) {
       const fallbackFeatures = PUBLIC_BUILD ? 'public_build,native-all' : 'native-all';
       console.warn(`[prepare-v31] Build with [${features}] failed, retrying with [${fallbackFeatures}]...`);
       const fallbackArgs = [...cargoArgs, '-p', 'zion-miner', '--bin', 'zion-miner', '--bin', 'zion-universal-miner', '--features', fallbackFeatures];
-      const fallbackRes = spawnSync('cargo', fallbackArgs, { cwd: workspaceRoot, stdio: 'inherit', env: process.env });
+      const fallbackRes = spawnSync('cargo', fallbackArgs, { cwd: workspaceRoot, stdio: 'inherit', env: buildEnv });
       if (fallbackRes.error) throw fallbackRes.error;
       if (fallbackRes.status !== 0) throw new Error(`cargo build for zion-miner failed (exit ${fallbackRes.status})`);
     } else {
@@ -377,31 +369,41 @@ function warnIfCudaRuntimeMissing(dllNames) {
 // ── Main ───────────────────────────────────────────────────────────
 
 function cleanResources(resourcesDir) {
-  // Remove stale cross-platform binaries from a previous build to prevent
-  // contamination (e.g. Windows .exe ending up in a Linux DEB).
-  // Non-Windows builds drop Windows .exe files; Windows builds drop stale
-  // Linux/Mac binaries that lack the .exe extension.
+  // Remove stale cross-platform binaries AND old same-platform known binaries
+  // from a previous build so we never package the wrong platform's binaries
+  // (e.g. Windows .exe inside a Linux DEB) or bundle stale old versions.
   if (!exists(resourcesDir)) return;
+
   const isWindows = process.platform === 'win32';
+  const ext = isWindows ? '.exe' : '';
+  // Derive the set of binaries (and aliases) that this script places in resources/
+  const knownBins = [...new Set(BINS.flatMap((s) => [s.bin, ...s.aliases]))];
+  const knownWithExt = new Set(knownBins.map((b) => b + ext));
+  const knownNoExt = new Set(knownBins); // stale Linux/mac binaries on Windows
+
   for (const f of fs.readdirSync(resourcesDir)) {
     const fullPath = path.join(resourcesDir, f);
     try {
       const stat = fs.statSync(fullPath);
       if (!stat.isFile()) continue;
 
-      if (isWindows) {
-        // On Windows, real binaries have .exe. Non-.exe files with the names of
-        // shipped binaries are stale Linux/Mac artifacts.
-        if (!f.endsWith('.exe') && KNOWN_BINARIES.includes(f)) {
-          console.log(`[prepare-v31] Removing stale non-Windows binary: ${f}`);
-          fs.unlinkSync(fullPath);
-        }
-      } else {
-        // On Linux/Mac, .exe files are stale Windows artifacts.
-        if (f.endsWith('.exe')) {
-          console.log(`[prepare-v31] Removing stale Windows binary: ${f}`);
-          fs.unlinkSync(fullPath);
-        }
+      let remove = false;
+      let reason = '';
+
+      if (!isWindows && f.toLowerCase().endsWith('.exe')) {
+        remove = true;
+        reason = 'stale cross-platform .exe';
+      } else if (knownWithExt.has(f)) {
+        remove = true;
+        reason = 'stale known binary';
+      } else if (isWindows && knownNoExt.has(f)) {
+        remove = true;
+        reason = 'stale non-Windows binary';
+      }
+
+      if (remove) {
+        console.log(`[prepare-v31] Removing ${reason}: ${f}`);
+        fs.unlinkSync(fullPath);
       }
     } catch { /* ignore */ }
   }

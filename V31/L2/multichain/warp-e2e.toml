@@ -1,0 +1,23 @@
+node_id = "warp-e2e-1"
+listen_addr = "127.0.0.1"
+listen_port = 9335
+database_path = "/tmp/warp-e2e.db"
+
+quorum = 1
+daily_limit_zion = 10000000
+timelock_threshold_zion = 1000000
+
+l1_rpc_url = "http://127.0.0.1:9555"
+l1_vault_address = "zion138c2r0q790d622s3l2j480x77850x0v6l4m7348"
+
+mnemonic = "bullet tribe say emotion fix sorry measure canal silent hole photo angry"
+
+poll_interval_secs = 5
+
+[[chains]]
+name = "zion"
+family = "zion-l1"
+enabled = true
+rpc_url = "http://127.0.0.1:9555"
+contract_address = "zion138c2r0q790d622s3l2j480x77850x0v6l4m7348"
+finality_blocks = 0
