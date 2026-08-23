@@ -1,23 +1,37 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { jwtVerify } from 'jose';
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 120;
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
-setInterval(() => {
-  const now = Date.now();
+function getZisUrl(): string {
+  return (
+    process.env.ZIS_URL ||
+    process.env.NEXT_PUBLIC_ZIS_URL ||
+    'https://auth.zionterranova.com'
+  ).replace(/\/+$/, '');
+}
+
+function getSessionCookie(request: NextRequest): string | undefined {
+  return request.cookies.get('zion_session')?.value;
+}
+
+function pruneRateLimitMap(now: number): void {
   for (const [key, value] of rateLimitMap) {
     if (now > value.resetAt) rateLimitMap.delete(key);
   }
-}, 300_000);
+}
 
 function isRateLimited(ip: string): { limited: boolean; remaining: number } {
   const now = Date.now();
   const entry = rateLimitMap.get(ip);
 
   if (!entry || now > entry.resetAt) {
+    if (entry) rateLimitMap.delete(ip);
+    if (rateLimitMap.size > 1000 && Math.random() < 0.01) {
+      pruneRateLimitMap(now);
+    }
     rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
     return { limited: false, remaining: RATE_LIMIT_MAX_REQUESTS - 1 };
   }
@@ -25,6 +39,10 @@ function isRateLimited(ip: string): { limited: boolean; remaining: number } {
   entry.count++;
   if (entry.count > RATE_LIMIT_MAX_REQUESTS) {
     return { limited: true, remaining: 0 };
+  }
+
+  if (rateLimitMap.size > 1000 && Math.random() < 0.01) {
+    pruneRateLimitMap(now);
   }
 
   return { limited: false, remaining: RATE_LIMIT_MAX_REQUESTS - entry.count };
@@ -38,15 +56,6 @@ function unauthorizedResponse(): Response {
       'Cache-Control': 'no-store',
     },
   });
-}
-
-/** Get JWT secret for session verification */
-function getJwtSecret(): Uint8Array {
-  const secret = process.env.ZION_JWT_SECRET;
-  if (!secret) {
-    throw new Error('[FATAL] ZION_JWT_SECRET is required. Set it in .env.production or .env.local');
-  }
-  return new TextEncoder().encode(secret);
 }
 
 const PROTECTED_PATHS = [
@@ -65,36 +74,46 @@ function isProtected(pathname: string): boolean {
 }
 
 async function requireAuthRedirect(request: NextRequest, pathname: string) {
-  const token = request.cookies.get('zion_session')?.value;
+  const token = getSessionCookie(request);
   if (!token) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
   }
+
   try {
-    const secret = getJwtSecret();
-    await jwtVerify(token, secret);
+    const res = await fetch(`${getZisUrl()}/api/auth/me`, {
+      headers: {
+        Accept: 'application/json',
+        Cookie: `zion_session=${token}`,
+      },
+    });
+    if (!res.ok) {
+      throw new Error(`ZIS session invalid: ${res.status}`);
+    }
   } catch {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
   }
+
   return NextResponse.next();
 }
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // ── Protected pages (ZION Wallet / ZIS auth) ─────────────────────
+  // ── Protected pages (ZIS auth) ──────────────────────────────────
   if (isProtected(pathname)) {
     return requireAuthRedirect(request, pathname);
   }
 
-  // ── API rate limiting ────────────────────────────────────────────
+  // ── API rate limiting ───────────────────────────────────────────
   if (pathname.startsWith('/api/')) {
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-      || request.headers.get('x-real-ip')
-      || 'unknown';
+    const ip =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
     const { limited, remaining } = isRateLimited(ip);
 
     if (limited) {
@@ -108,7 +127,7 @@ export async function proxy(request: NextRequest) {
             'X-RateLimit-Limit': String(RATE_LIMIT_MAX_REQUESTS),
             'X-RateLimit-Remaining': '0',
           },
-        }
+        },
       );
     }
 
@@ -118,7 +137,7 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  // ── /admin protection (Basic Auth) ───────────────────────────────
+  // ── /admin protection (Basic Auth) ────────────────────────────────
   if (pathname.startsWith('/admin')) {
     const adminPassword = process.env.ADMIN_PASSWORD;
     const adminUser = process.env.ADMIN_USER || 'admin';
