@@ -37,36 +37,29 @@ A simple stop/start cleared the transient state and the service began responding
 
 ---
 
-## 3. G8 Public Status UI
+## 3. G8 Public Status UI + Dashboard Integration
 
-### 3.1 Dashboard changes
+### 3.1 Dashboard integration (web2.9 Mission Control)
 
-Modified `ZION_OS/dashboard/app.py`:
+The G8 widget was integrated into the main web dashboard (`src/components/DashboardMain.tsx`):
 
-- Added `get_g8_status()` to read `/opt/zion/data/g8_run.json`, compute elapsed/remaining/progress, and attach live service health.
-- Added public routes `/g8` and `/api/g8`.
-- Added POST endpoints `/api/g8/start` and `/api/g8/stop` (auth-protected) for operator control.
-- Added `/g8` and `/api/g8` to `AUTH_EXEMPT_ROUTES` so the status page is public.
+- New `G8Run` interface and `G8RunCard` component.
+- `DashboardMain` fetches `/api/g8` every 30 s via `usePolling`.
+- `MissionControlLite` now renders `G8RunCard` below the 4 core metrics.
+- Displays start/end, elapsed, remaining, status badge, and a cyan→purple progress bar.
 
-New file `ZION_OS/dashboard/g8.html`:
+Built locally with `npm run build` and deployed to Edge (`rsync .next` + restart `zion-website`).
 
-- Self-contained dark-themed status page.
-- Shows start time, target end, elapsed, remaining, progress bar.
-- Fetches live service health and V31 node snapshot every 30 s.
+### 3.2 Python ops dashboard
 
-### 3.2 nginx changes on Edge
+A G8 panel was added to `ZION_OS/dashboard/dashboard.html` directly after the **Mainnet Readiness** card. It auto-refreshes every 30 s from `/api/g8`.
 
-Added to `/etc/nginx/sites-enabled/zion-edge-download.conf` (server `app.zionterranova.com`):
+### 3.3 nginx
 
-```nginx
-location = /api/g8 { proxy_pass http://127.0.0.1:8766/api/g8; ... }
-location /g8       { proxy_pass http://127.0.0.1:8766/g8;       ... }
-location /dashboard { return 301 /g8; }
-```
+- `/g8` and `/api/g8` remain proxied to the Python dashboard for the public fallback page.
+- `/dashboard` redirect to `/g8` was **reverted** so `app.zionterranova.com/dashboard` serves the Next.js Mission Control again.
 
-`nginx -t` passed; `nginx -s reload` applied.
-
-### 3.3 State file
+### 3.4 State file
 
 `/opt/zion/data/g8_run.json` (Edge):
 
@@ -87,9 +80,10 @@ location /dashboard { return 301 /g8; }
 
 | URL | Expected | Result |
 |-----|----------|--------|
-| `https://app.zionterranova.com/dashboard` | 301 → `/g8` | ✅ 301 |
-| `https://app.zionterranova.com/g8` | 200 HTML | ✅ 200 |
+| `https://app.zionterranova.com/dashboard` | 200 (Next.js Mission Control with G8 widget) | ✅ 200 |
+| `https://app.zionterranova.com/g8` | 200 HTML (public fallback) | ✅ 200 |
 | `https://app.zionterranova.com/api/g8` | 200 JSON | ✅ 200 |
+| `https://dashboard.zionterranova.com` (`/dashboard`) | 200 (Python ops dashboard with G8 panel) | ✅ 200 |
 | `http://127.0.0.1:8766/g8` (dashboard) | 200 HTML | ✅ 200 |
 | `http://127.0.0.1:8766/api/g8` (dashboard) | 200 JSON | ✅ 200 |
 
