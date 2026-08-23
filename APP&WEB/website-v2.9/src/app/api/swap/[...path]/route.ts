@@ -17,6 +17,10 @@ function buildUpstreamUrl(request: Request, path: string[]) {
   if (ROOT_PATHS.has(suffix)) {
     return `${SWAP_UPSTREAM_BASE.replace(/\/$/, '')}/${suffix}${incoming.search}`;
   }
+  // Native multichain HTLC endpoints live under /v1/multichain/swaps/htlc/{...}
+  if (suffix.startsWith('htlc/')) {
+    return `${SWAP_UPSTREAM_BASE.replace(/\/$/, '')}/v1/multichain/swaps/${suffix}${incoming.search}`;
+  }
   return `${SWAP_UPSTREAM_BASE.replace(/\/$/, '')}/v1/swap/${suffix}${incoming.search}`;
 }
 
