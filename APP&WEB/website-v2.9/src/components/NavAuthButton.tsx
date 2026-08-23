@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { LogIn, LogOut, LayoutDashboard, User, ChevronDown, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import LoginModal from './LoginModal';
@@ -15,6 +15,7 @@ export default function NavAuthButton() {
   const [showLogin, setShowLogin] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
 
   if (loading) {
     return (
@@ -38,7 +39,7 @@ export default function NavAuthButton() {
         >
           <LogIn className="w-4 h-4" />
         </button>
-        <LoginModal open={showLogin} onClose={() => setShowLogin(false)} />
+        <LoginModal open={showLogin} onClose={() => setShowLogin(false)} redirectTo={pathname} />
       </>
     );
   }
