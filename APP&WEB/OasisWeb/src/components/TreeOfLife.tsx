@@ -86,8 +86,8 @@ function generateBranches(
   branches: Branch[],
   rng: ReturnType<typeof createRandom>
 ): void {
-  const BASE_WIDTH = 3.4;
-  const DECAY = 0.35;
+  const BASE_WIDTH = 2.4;
+  const DECAY = 0.4;
   const MIN_WIDTH = 0.18;
 
   const width = Math.max(MIN_WIDTH, BASE_WIDTH - depth * DECAY);
@@ -252,42 +252,6 @@ function SporeField({ count = 350, rng }: SporeFieldProps) {
   return <points ref={pointsRef} geometry={geometry} material={material} />;
 }
 
-/** Flat, stylized "vector art" triangular leaf silhouette (thin and light)
- *  instead of a soft glow dot — gives the canopy a clean, illustrated look
- *  rather than a particle-cloud aesthetic. */
-function createLeafTexture(): THREE.Texture {
-  const size = 128;
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext('2d')!;
-  const cx = size / 2;
-
-  ctx.beginPath();
-  ctx.moveTo(cx, 4);
-  ctx.lineTo(size - 10, size - 8);
-  ctx.lineTo(10, size - 8);
-  ctx.closePath();
-
-  const grad = ctx.createLinearGradient(0, 0, 0, size);
-  grad.addColorStop(0, 'rgba(255,255,255,1)');
-  grad.addColorStop(1, 'rgba(255,255,255,0.6)');
-  ctx.fillStyle = grad;
-  ctx.fill();
-
-  // Center vein
-  ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(cx, 8);
-  ctx.lineTo(cx, size - 10);
-  ctx.stroke();
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.needsUpdate = true;
-  return texture;
-}
-
 interface LeafAnchor {
   end: THREE.Vector3;
   dir: THREE.Vector3;
@@ -304,30 +268,38 @@ const LEAF_PALETTE = ['#078930', '#fcd116', '#e41e2b', '#078930', '#fcd116', '#1
 
 function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
-  const leafTexture = useMemo(() => createLeafTexture(), []);
-  const geometry = useMemo(() => new THREE.PlaneGeometry(0.55, 0.72), []);
+  // Robust 4D vector leaves: cone geometry oriented along the branch direction,
+  // with the 4th component (w) driving individual wobble amplitude.
+  const geometry = useMemo(
+    () => new THREE.ConeGeometry(0.15, 0.85, 4),
+    []
+  );
   const material = useMemo(
     () =>
-      new THREE.MeshBasicMaterial({
-        map: leafTexture,
+      new THREE.MeshPhysicalMaterial({
+        vertexColors: true,
         transparent: true,
-        opacity: 0.95,
-        alphaTest: 0.3,
-        side: THREE.DoubleSide,
+        opacity: 0.96,
+        roughness: 0.35,
+        metalness: 0.1,
+        clearcoat: 0.35,
+        clearcoatRoughness: 0.25,
+        emissive: new THREE.Color(0x000000),
         toneMapped: false,
       }),
-    [leafTexture]
+    []
   );
 
   const leaves = useMemo(() => {
     const palette = LEAF_PALETTE.map((c) => new THREE.Color(c));
-    const accent = new THREE.Color('#e41e2b');
+    const up = new THREE.Vector3(0, 1, 0);
     const result: {
       pos: THREE.Vector3;
-      rot: THREE.Euler;
+      quat: THREE.Quaternion;
       scale: number;
       phase: number;
       speed: number;
+      w: number;
       color: THREE.Color;
     }[] = [];
 
@@ -341,12 +313,26 @@ function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
         const jitter = new THREE.Vector3((rng.next() - 0.5) * spread, (rng.next() - 0.5) * spread * 0.6, (rng.next() - 0.5) * spread);
         const pos = anchor.end.clone().addScaledVector(anchor.dir, along).add(jitter);
 
+        // 4D vector orientation: the leaf cone points along the branch dir.
+        // The 4th component (w) is used as a per-leaf wobble amplitude.
+        const dir = anchor.dir.clone().normalize();
+        const quat = new THREE.Quaternion().setFromUnitVectors(up, dir);
+        const spreadQuat = new THREE.Quaternion().setFromEuler(
+          new THREE.Euler(
+            (rng.next() - 0.5) * 0.6,
+            (rng.next() - 0.5) * 0.6,
+            rng.next() * Math.PI
+          )
+        );
+        quat.multiply(spreadQuat);
+
         result.push({
           pos,
-          rot: new THREE.Euler(rng.next() * Math.PI, rng.next() * Math.PI, rng.next() * Math.PI),
-          scale: 0.55 + rng.next() * 0.6,
+          quat,
+          scale: 0.75 + rng.next() * 0.85,
           phase: rng.next() * Math.PI * 2,
-          speed: 0.5 + rng.next() * 0.6,
+          speed: 0.4 + rng.next() * 0.5,
+          w: 0.6 + rng.next() * 0.8,
           color: palette[rng.int(0, palette.length)],
         });
       }
@@ -361,7 +347,7 @@ function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
     const dummy = new THREE.Object3D();
     leaves.forEach((leaf, i) => {
       dummy.position.copy(leaf.pos);
-      dummy.rotation.copy(leaf.rot);
+      dummy.quaternion.copy(leaf.quat);
       dummy.scale.setScalar(leaf.scale);
       dummy.updateMatrix();
       meshRef.current!.setMatrixAt(i, dummy.matrix);
@@ -375,10 +361,12 @@ function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
     if (!meshRef.current) return;
     const dummy = new THREE.Object3D();
     const t = state.clock.elapsedTime;
+    const axis = new THREE.Vector3(0, 1, 0);
     leaves.forEach((leaf, i) => {
-      const sway = Math.sin(t * leaf.speed + leaf.phase) * 0.18;
+      const sway = Math.sin(t * leaf.speed + leaf.phase) * 0.12 * leaf.w;
       dummy.position.copy(leaf.pos);
-      dummy.rotation.set(leaf.rot.x + sway, leaf.rot.y + t * 0.05, leaf.rot.z + sway * 0.5);
+      dummy.quaternion.copy(leaf.quat);
+      dummy.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(axis, sway));
       dummy.scale.setScalar(leaf.scale);
       dummy.updateMatrix();
       meshRef.current!.setMatrixAt(i, dummy.matrix);
@@ -720,13 +708,13 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
   const branchMaterial = useMemo(
     () =>
       new THREE.MeshPhysicalMaterial({
-        color: 0x1a0f0a,
-        emissive: 0x078930,
-        emissiveIntensity: 0.65,
-        roughness: 0.5,
-        metalness: 0.3,
-        clearcoat: 0.4,
-        clearcoatRoughness: 0.35,
+        color: 0x6b4c2a,
+        emissive: 0x3d2410,
+        emissiveIntensity: 0.2,
+        roughness: 0.6,
+        metalness: 0.15,
+        clearcoat: 0.25,
+        clearcoatRoughness: 0.45,
         toneMapped: false,
       }),
     []
@@ -735,12 +723,12 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
   const rootMaterial = useMemo(
     () =>
       new THREE.MeshPhysicalMaterial({
-        color: 0x140c08,
-        emissive: 0x5c3a12,
-        emissiveIntensity: 0.4,
-        roughness: 0.7,
-        metalness: 0.2,
-        clearcoat: 0.2,
+        color: 0x3d2410,
+        emissive: 0x1a0f0a,
+        emissiveIntensity: 0.25,
+        roughness: 0.75,
+        metalness: 0.15,
+        clearcoat: 0.15,
         toneMapped: false,
       }),
     []
