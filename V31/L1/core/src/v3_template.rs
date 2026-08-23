@@ -31,6 +31,8 @@ pub struct V3TemplateBuilder {
     miner_address: String,
     humanitarian_address: String,
     issobella_address: String,
+    node_reward_address: String,
+    node_reward_activation_height: u64,
     mempool_account: Vec<AccountTransaction>,
     mempool_utxo: Vec<UtxoTransaction>,
 }
@@ -42,6 +44,8 @@ impl V3TemplateBuilder {
             miner_address: String::new(),
             humanitarian_address: String::new(),
             issobella_address: String::new(),
+            node_reward_address: String::new(),
+            node_reward_activation_height: u64::MAX,
             mempool_account: Vec::new(),
             mempool_utxo: Vec::new(),
         }
@@ -57,7 +61,7 @@ impl V3TemplateBuilder {
     }
 
     /// Set fee-split destination addresses. When both are non-empty, the
-    /// coinbase is split 89/5/5 (1% pool fee is burned).
+    /// coinbase is split 89/5/5 (1% node reward slot is burned by default).
     pub fn set_fee_addresses(
         &mut self,
         humanitarian: String,
@@ -77,6 +81,22 @@ impl V3TemplateBuilder {
         }
         self.humanitarian_address = humanitarian;
         self.issobella_address = issobella;
+        Ok(())
+    }
+
+    /// Set the node reward pool address and activation height. When the address
+    /// is non-empty and `next_height >= activation_height`, the 1% slot is
+    /// minted to this address instead of being burned.
+    pub fn set_node_reward_address(
+        &mut self,
+        address: String,
+        activation_height: u64,
+    ) -> Result<(), V3TemplateError> {
+        if !address.is_empty() && !is_valid_address(&address) && !is_valid_account_id(&address) {
+            return Err(V3TemplateError::InvalidAddress(address));
+        }
+        self.node_reward_address = address;
+        self.node_reward_activation_height = activation_height;
         Ok(())
     }
 
@@ -112,7 +132,7 @@ impl V3TemplateBuilder {
                 !self.humanitarian_address.is_empty() && !self.issobella_address.is_empty();
 
             if has_split {
-                let (miner_amt, human_amt, issobella_amt, _) = fee_split(subsidy);
+                let (miner_amt, human_amt, issobella_amt, node_reward_amt) = fee_split(subsidy);
                 // V3 insert order: issobella, humanitarian, miner (then reverse in block?)
                 // The resulting `transactions` vector is 0=miner, 1=humanitarian, 2=issobella
                 // because we push in reverse after building.
@@ -133,6 +153,20 @@ impl V3TemplateBuilder {
                 transactions.push(miner_tx);
                 transactions.push(human_tx);
                 transactions.push(issobella_tx);
+
+                // Node reward: mint the 1% slot to the node reward pool address
+                // once the activation height is reached.
+                let node_reward_active = next_height >= self.node_reward_activation_height
+                    && !self.node_reward_address.is_empty();
+                if node_reward_active {
+                    let node_reward_tx = mk_coinbase(
+                        "coinbase_node_reward",
+                        next_height,
+                        &self.node_reward_address,
+                        node_reward_amt,
+                    );
+                    transactions.push(node_reward_tx);
+                }
             } else {
                 let tx = mk_coinbase("coinbase", next_height, &self.miner_address, subsidy);
                 transactions.push(tx);

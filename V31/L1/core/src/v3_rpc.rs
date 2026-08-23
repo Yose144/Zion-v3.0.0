@@ -54,7 +54,9 @@ pub struct V3RpcHandler {
     miner_address: Mutex<String>,
     humanitarian_address: Mutex<String>,
     issobella_address: Mutex<String>,
-    state: V3State,
+    node_reward_address: Mutex<String>,
+    node_reward_activation_height: Mutex<u64>,
+    state: Mutex<V3State>,
 }
 
 impl V3RpcHandler {
@@ -66,7 +68,9 @@ impl V3RpcHandler {
             miner_address: Mutex::new(String::new()),
             humanitarian_address: Mutex::new(String::new()),
             issobella_address: Mutex::new(String::new()),
-            state: V3State::new(storage),
+            node_reward_address: Mutex::new(String::new()),
+            node_reward_activation_height: Mutex::new(u64::MAX),
+            state: Mutex::new(V3State::new(storage)),
         }
     }
 
@@ -75,6 +79,16 @@ impl V3RpcHandler {
         *self.miner_address.lock().await = miner;
         *self.humanitarian_address.lock().await = humanitarian;
         *self.issobella_address.lock().await = issobella;
+    }
+
+    /// Set the node reward pool address and activation height.
+    pub async fn set_node_reward(&self, address: String, activation_height: u64) {
+        *self.node_reward_address.lock().await = address.clone();
+        *self.node_reward_activation_height.lock().await = activation_height;
+        self.state
+            .lock()
+            .await
+            .set_node_reward(address, activation_height);
     }
 
     /// Flush the V3 compat UTXO mempool by applying state changes directly
@@ -205,6 +219,10 @@ impl V3RpcHandler {
             builder.set_fee_addresses(human, issobella)?;
         }
 
+        let node_reward = self.node_reward_address.lock().await.clone();
+        let node_reward_activation = *self.node_reward_activation_height.lock().await;
+        builder.set_node_reward_address(node_reward, node_reward_activation)?;
+
         // Optional overrides from the RPC call.
         if let Some(m) = params.get("miner_address").and_then(Value::as_str) {
             builder.set_miner_address(m.to_string())?;
@@ -260,6 +278,8 @@ impl V3RpcHandler {
         .map_err(|e| V3RpcError::Validation(e.to_string()))?;
 
         self.state
+            .lock()
+            .await
             .apply_block(&block)
             .await
             .map_err(|e| V3RpcError::Validation(e.to_string()))?;

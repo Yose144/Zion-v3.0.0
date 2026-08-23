@@ -2,6 +2,58 @@ use serde::{Deserialize, Serialize};
 
 use zion_l1_types::Address;
 
+/// Node reward service configuration.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct NodeRewardsConfig {
+    /// Address that accumulates the 1% node reward pool. Defaults to the
+    /// canonical mainnet node reward wallet.
+    #[serde(default = "default_node_reward_address")]
+    pub reward_address: String,
+    /// Block height at which the L1 coinbase starts minting the 1% slot.
+    #[serde(default = "default_u64_max")]
+    pub activation_height: u64,
+    /// Epoch length in blocks. Payouts are computed and submitted each epoch.
+    #[serde(default = "default_node_reward_epoch_blocks")]
+    pub epoch_blocks: u64,
+    /// Minimum blocks a node must be registered before it is eligible for
+    /// payouts in the current epoch.
+    #[serde(default = "default_node_reward_min_blocks")]
+    pub min_blocks_registered: u64,
+    /// Optional BIP39 mnemonic for the node reward pool signer. If not set,
+    /// the service will use the `ZION_NODE_REWARD_MNEMONIC` env variable.
+    #[serde(default)]
+    pub signer_mnemonic: Option<String>,
+}
+
+impl Default for NodeRewardsConfig {
+    fn default() -> Self {
+        Self {
+            reward_address: default_node_reward_address(),
+            activation_height: u64::MAX,
+            epoch_blocks: default_node_reward_epoch_blocks(),
+            min_blocks_registered: default_node_reward_min_blocks(),
+            signer_mnemonic: None,
+        }
+    }
+}
+
+fn default_node_reward_address() -> String {
+    zion_core::v3_compat::MAINNET_CANONICAL_NODE_REWARD_WALLET.to_string()
+}
+
+fn default_u64_max() -> u64 {
+    u64::MAX
+}
+
+fn default_node_reward_epoch_blocks() -> u64 {
+    10_080 // ~1 week at 60s block time
+}
+
+fn default_node_reward_min_blocks() -> u64 {
+    1_440 // ~1 day
+}
+
+
 /// Top-level configuration for `zion-multichain`.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MultichainConfig {
@@ -22,6 +74,8 @@ pub struct MultichainConfig {
     pub solver: SolverConfig,
     #[serde(default)]
     pub solvers: Vec<SolverEntry>,
+    #[serde(default)]
+    pub node_rewards: NodeRewardsConfig,
 }
 
 impl Default for MultichainConfig {
@@ -36,6 +90,7 @@ impl Default for MultichainConfig {
             warp: None,
             solver: SolverConfig::default(),
             solvers: Vec::new(),
+            node_rewards: NodeRewardsConfig::default(),
         }
     }
 }

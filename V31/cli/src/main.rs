@@ -14,6 +14,7 @@ mod rpc;
 mod ui;
 
 use zion_core::node::{Node, NodeConfig};
+use crate::commands::node_rewards::{HeartbeatArgs, RegisterArgs};
 use zion_miner::config::MinerConfig;
 use zion_miner::runtime::MinerRuntime;
 use zion_multichain::config::MultichainConfig;
@@ -408,6 +409,10 @@ enum NodeCommand {
     Status,
     /// Restart the ZION L1 node via systemctl.
     Restart,
+    /// Register this full node for node rewards.
+    Register(RegisterArgs),
+    /// Send a signed node reward heartbeat.
+    Heartbeat(HeartbeatArgs),
 }
 
 #[derive(Parser)]
@@ -438,6 +443,13 @@ struct NodeStartArgs {
     /// hard-fork an existing chain unless explicitly set.
     #[arg(long, default_value_t = u64::MAX)]
     soft_fork_activation_height: u64,
+    /// Node reward pool address. The 1% block subsidy slot is minted here once
+    /// `--node-reward-activation-height` is reached.
+    #[arg(long, default_value = zion_core::v3_compat::MAINNET_CANONICAL_NODE_REWARD_WALLET)]
+    node_reward_address: String,
+    /// Block height at which the 1% node reward pool is minted instead of burned.
+    #[arg(long, default_value_t = u64::MAX)]
+    node_reward_activation_height: u64,
 }
 
 #[derive(Parser)]
@@ -898,6 +910,8 @@ async fn main() -> anyhow::Result<()> {
                     .map_err(|e| anyhow!("invalid human address: {e}"))?;
                 let issobella = Address::new(ChainId::ZionL1, vec![], &args.issobella)
                     .map_err(|e| anyhow!("invalid issobella address: {e}"))?;
+                let node_reward = Address::new(ChainId::ZionL1, vec![], &args.node_reward_address)
+                    .map_err(|e| anyhow!("invalid node reward address: {e}"))?;
 
                 let node_config = NodeConfig {
                     db_path: args.db_path,
@@ -914,6 +928,8 @@ async fn main() -> anyhow::Result<()> {
                     v3_no_genesis: false,
                     v3_checkpoint_path: None,
                     soft_fork_activation_height: args.soft_fork_activation_height,
+                    node_reward_address: node_reward,
+                    node_reward_activation_height: args.node_reward_activation_height,
                 };
 
                 println!(
@@ -933,6 +949,8 @@ async fn main() -> anyhow::Result<()> {
             NodeCommand::Stop => systemctl_all("stop", "node")?,
             NodeCommand::Status => service_status("node")?,
             NodeCommand::Restart => systemctl_all("restart", "node")?,
+            NodeCommand::Register(args) => commands::node_rewards::run_register(args).await?,
+            NodeCommand::Heartbeat(args) => commands::node_rewards::run_heartbeat(args).await?,
         },
         Command::Service(svc) => handle_service_command(svc)?,
         Command::Dao(args) => commands::dao::run(args.command, "http://127.0.0.1:8092").await?,

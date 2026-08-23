@@ -13,11 +13,12 @@ use crate::bridge::Bridge;
 use crate::bridge::consensus::BridgeConsensus;
 use crate::chain::adapters::{BitcoinAdapter, EvmAdapter, ZionL1Adapter};
 use crate::chain::{BlockTemplate, ChainAdapter, ChainAdapterRegistry};
-use crate::config::{AdapterConfig, MultichainConfig};
+use crate::config::{AdapterConfig, MultichainConfig, NodeRewardsConfig};
 use crate::contracts::ZionContracts;
 use crate::credits::CreditsLedger;
 use crate::db::Db;
 use crate::error::{MultichainError, MultichainResult};
+use crate::node_rewards::NodeRewards;
 use crate::swap::dex::{DexRouter, Pool, Quote};
 use crate::swap::dex::executor::Executor;
 use crate::swap::dex::intent::{IntentStatus, SolverBid, SwapIntent};
@@ -43,6 +44,7 @@ pub struct MultichainService {
     intent_engine: RwLock<IntentEngine>,
     pool: Option<Arc<StdMutex<MiningPool>>>,
     processed_payouts: Arc<StdMutex<HashSet<(u64, String)>>>,
+    node_rewards: Arc<Mutex<NodeRewards>>,
 }
 
 fn load_keyring(config: &MultichainConfig) -> MultichainResult<Keyring> {
@@ -60,6 +62,10 @@ fn load_keyring(config: &MultichainConfig) -> MultichainResult<Keyring> {
 impl MultichainService {
     pub fn config(&self) -> &MultichainConfig {
         &self.config
+    }
+
+    pub fn node_rewards(&self) -> Arc<Mutex<NodeRewards>> {
+        Arc::clone(&self.node_rewards)
     }
 
     pub fn new(config: MultichainConfig) -> MultichainResult<Self> {
@@ -143,6 +149,21 @@ impl MultichainService {
                 entry.reputation,
             );
         }
+        let node_rewards = NodeRewards::new(
+            Arc::clone(&db),
+            config.node_rewards.clone(),
+            config.l1_rpc_url.clone(),
+        )
+        .unwrap_or_else(|e| {
+            tracing::warn!("failed to initialize node rewards: {e}");
+            NodeRewards::new(
+                Arc::clone(&db),
+                NodeRewardsConfig::default(),
+                config.l1_rpc_url.clone(),
+            )
+            .expect("default node rewards config must initialize")
+        });
+
         Self {
             config,
             db,
@@ -155,6 +176,7 @@ impl MultichainService {
             intent_engine: RwLock::new(intent_engine),
             pool,
             processed_payouts: Arc::new(StdMutex::new(HashSet::new())),
+            node_rewards: Arc::new(Mutex::new(node_rewards)),
         }
     }
 

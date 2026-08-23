@@ -62,28 +62,39 @@ pub const HUMANITARIAN_PCT: u64 = 5;
 /// Issobella fund: 5% of block subsidy.
 pub const ISSOBELLA_PCT: u64 = 5;
 
-/// Pool fee / burn: 1% of block subsidy. Never minted.
+/// Pool fee / burn: 1% of block subsidy. Before the node-reward soft fork this
+/// 1% is burned (never minted). After activation it is minted to the canonical
+/// node reward pool address and later distributed to full user nodes.
 pub const POOL_FEE_PCT: u64 = 1;
 
+/// Alias for the 1% slot that becomes the node reward portion.
+pub const NODE_REWARD_PCT: u64 = POOL_FEE_PCT;
+
 /// Compute the fee split for a given block subsidy.
-/// Returns `(miner, humanitarian, issobella, pool_fee)` in flowers.
+/// Returns `(miner, humanitarian, issobella, node_reward)` in flowers.
 ///
-/// `pool_fee` is the burned amount. The miner portion absorbs rounding dust so
-/// the four parts always sum to `subsidy`.
+/// `node_reward` is the 1% slot. It is burned pre-activation (so it is not
+/// minted) and paid to the node reward pool address post-activation. The miner
+/// portion absorbs rounding dust so the four parts always sum to `subsidy`.
 pub fn fee_split(subsidy: u64) -> (u64, u64, u64, u64) {
     let humanitarian = subsidy * HUMANITARIAN_PCT / 100;
     let issobella = subsidy * ISSOBELLA_PCT / 100;
-    let pool_fee = subsidy * POOL_FEE_PCT / 100;
-    let miner = subsidy - humanitarian - issobella - pool_fee;
-    (miner, humanitarian, issobella, pool_fee)
+    let node_reward = subsidy * NODE_REWARD_PCT / 100;
+    let miner = subsidy - humanitarian - issobella - node_reward;
+    (miner, humanitarian, issobella, node_reward)
 }
 
-/// Amount burned per block: the 1% pool-fee slot that is never minted.
+/// Amount burned per block: the 1% slot that is not minted before the node
+/// reward activation. After activation this 1% is minted to the node reward
+/// pool, so the effective burn becomes 0 for blocks at or above the activation
+/// height.
 pub fn burned_subsidy(subsidy: u64) -> u64 {
     fee_split(subsidy).3
 }
 
-/// Total newly-minted coinbase amount per block (99% of subsidy).
+/// Total newly-minted coinbase amount per block before node reward activation
+/// (99% of subsidy). Post-activation the full 100% is minted; callers that need
+/// the per-activation total should use the components from [`fee_split`].
 pub fn minted_subsidy(subsidy: u64) -> u64 {
     subsidy - burned_subsidy(subsidy)
 }
@@ -167,11 +178,11 @@ mod tests {
 
     #[test]
     fn fee_split_sums_to_subsidy() {
-        let (miner, humanitarian, issobella, pool_fee) = fee_split(BASE_REWARD);
-        assert_eq!(miner + humanitarian + issobella + pool_fee, BASE_REWARD);
+        let (miner, humanitarian, issobella, node_reward) = fee_split(BASE_REWARD);
+        assert_eq!(miner + humanitarian + issobella + node_reward, BASE_REWARD);
         assert!(humanitarian > 0);
         assert!(issobella > 0);
-        assert!(pool_fee > 0);
+        assert!(node_reward > 0);
     }
 
     #[test]

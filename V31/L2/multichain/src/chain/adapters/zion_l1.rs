@@ -107,11 +107,11 @@ impl ZionL1Adapter {
         }
     }
 
-    fn adapter_address(&self) -> MultichainResult<Address> {
+    pub(crate) fn adapter_address(&self) -> MultichainResult<Address> {
         self.keyring.address(ChainId::ZionL1, 0, 0)
     }
 
-    async fn get_spendable_utxos(&self, address: &str) -> MultichainResult<Vec<SpendableUtxo>> {
+    pub(crate) async fn get_spendable_utxos(&self, address: &str) -> MultichainResult<Vec<SpendableUtxo>> {
         let resp: serde_json::Value = self.call("getUtxos", json!({"address": address})).await?;
         let utxos = resp
             .get("utxos")
@@ -156,7 +156,7 @@ impl ZionL1Adapter {
         Ok(out)
     }
 
-    async fn submit_utxo_transaction(
+    pub(crate) async fn submit_utxo_transaction(
         &self,
         tx: zion_core::Transaction,
     ) -> MultichainResult<Hash> {
@@ -185,7 +185,7 @@ impl ZionL1Adapter {
             .ok_or_else(|| MultichainError::Internal("invalid tx_id hex from submitUtxoTransaction".to_string()))
     }
 
-    fn zion_signing_key(&self) -> MultichainResult<SigningKey> {
+    pub(crate) fn zion_signing_key(&self) -> MultichainResult<SigningKey> {
         self.keyring.zion_signing_key(0, 0)
     }
 

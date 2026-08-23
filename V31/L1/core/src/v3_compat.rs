@@ -549,6 +549,9 @@ pub const MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET: &str =
     "zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0";
 pub const MAINNET_CANONICAL_POOL_FEE_SUBSIDY_WALLET: &str =
     "zion1l0h428f536s6u3x7h5f0d5c2z644j7t8u8va3x0";
+/// The 1% block subsidy slot is minted to this canonical address after the
+/// node-reward soft fork and later distributed to full user nodes.
+pub const MAINNET_CANONICAL_NODE_REWARD_WALLET: &str = MAINNET_CANONICAL_POOL_FEE_SUBSIDY_WALLET;
 pub const MAINNET_CANONICAL_DEFAULT_MINER_WALLET: &str =
     "zion1074344t7k686j6n8a0l6t0f4c8d828y083xh4m2";
 pub const MAINNET_CANONICAL_POOL_PAYOUT_WALLET: &str =
