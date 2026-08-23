@@ -1,14 +1,15 @@
 import React from "react";
 import type { Metadata } from "next";
 import { Pickaxe, ExternalLink } from "lucide-react";
+import { SITE_RELEASE_LABEL } from "@/lib/site";
 
 const GRAFANA_BASE_URL = (process.env.NEXT_PUBLIC_GRAFANA_BASE_URL || "https://app.zionterranova.com/grafana").replace(/\/$/, "");
 const IFRAME_SRC = `${GRAFANA_BASE_URL}/d/pool-metrics/pool-metrics-dashboard?orgId=1&theme=dark&kiosk=tv`;
 const DASHBOARD_URL = `${GRAFANA_BASE_URL}/d/pool-metrics/pool-metrics-dashboard`;
 
 export const metadata: Metadata = {
-  title: "Pool Metrics Dashboard · ZION v2.9",
-  description: "Live mining pool metrics: hashrate, workers, shares, and block discovery for ZION v2.9.",
+  title: `Pool Metrics Dashboard · ZION ${SITE_RELEASE_LABEL}`,
+  description: `Live mining pool metrics: hashrate, workers, shares, and block discovery for ZION ${SITE_RELEASE_LABEL}.`,
 };
 
 export default function PoolMetricsPage() {
