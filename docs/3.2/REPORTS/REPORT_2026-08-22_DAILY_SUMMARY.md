@@ -2,12 +2,32 @@
 
 > **Session:** V31 3.2.0 Mainnet Stable roadmap — pokračování
 > **Datum:** 2026-08-22
-> **Commits dnes:** 48 (od 00:00)
-> **Status:** G5/E8 ✅, H5 ✅, F2 🔄 (běží 24h fuzz), G7/F3/F4 ✅, G1/E1 ✅, G2/E5 ✅, G3/E6 ✅, G4/E7 ✅
+> **Commits dnes:** 49 (od 00:00)
+> **Status:** E4 ✅, G5/E8 ✅, H5 ✅, F2 🔄 (běží 24h fuzz), G7/F3/F4 ✅, G1/E1 ✅, G2/E5 ✅, G3/E6 ✅, G4/E7 ✅
 
 ---
 
 ## 1. Co se dnes dokončilo
+
+### 1.0 E4 — Bridge Base mainnet round-trip ✅
+
+Kompletní bridge round-trip test úspěšně dokončen: **Lock → Mint → Burn → Unlock**.
+
+- **Lock:** 100 ZION uzamčeno z pool wallet → bridge vault na L1 (TX `b7f227a6...` @ block 13184)
+- **Mint:** 100 wZION mintováno validator-1 na Base mainnet (přes `submitLockProof()` ×4 validátorů)
+- **Burn:** 100 wZION spáleno přes EIP-2612 permit + transferFrom + bridgeBurn (TX `0xa5148c44...`, burn_id `0xebfce5b8...`, burner: validator-2)
+- **Unlock:** 100 ZION uvolněno zpět pool wallet na L1 (TX `9f3e654e...` @ block 13217), potvrzeno v `v3_utxos` tabulce (100,000,000 flowers, unspent)
+
+**Opravené problémy:**
+1. V31 RPC relay format handler — `v3_rpc.rs` nyní přijímá V3 relay JSON formát pro `submitBridgeUnlock`
+2. Bridge vault UTXO sync — `rpc.rs` kopíruje V31 native UTXO do `v3_utxos` tabulky před zpracováním unlocku
+3. V3 compat mempool flush — po každém native block se V3 compat mempool transakce aplikují na `v3_utxos` tabulku
+4. Standalone `zion-bridge-unlock` binary — podepíše operation message pomocí `k256` (stejná knihovna jako V31 node) a odešle `submitBridgeUnlock` přímo, bypassing relay `is_burn_released` check (potřebné když EVM contract už hlásí `released=true` ale L1 unlock nebyl nikdy minován)
+5. `quick_mine` binary — standalone CPU miner pro testovací block production
+6. Systemd env vars drop-in pro bridge validator pubkeys/threshold
+
+**Report:** [`REPORT_2026-08-22_E4_BRIDGE_ROUND_TRIP.md`](./REPORT_2026-08-22_E4_BRIDGE_ROUND_TRIP.md)
+**Commit:** `c886046f1`
 
 ### 1.1 G5 / E8 — XMR / RandomX path via MoneroOcean ✅
 
@@ -78,6 +98,11 @@
 
 | Soubor | Změna |
 |--------|-------|
+| `V31/L1/core/src/v3_rpc.rs` | E4: relay format `submitBridgeUnlock` handler + `flush_utxo_mempool` |
+| `V31/L1/core/src/rpc.rs` | E4: `sync_bridge_vault_utxos` + mempool flush po native block |
+| `V31/L1/core/src/bin/bridge-unlock.rs` | E4: nový standalone bridge unlock submitter binary |
+| `V31/L1/core/src/bin/quick_mine.rs` | E4: nový standalone CPU miner pro testování |
+| `V31/L1/core/Cargo.toml` | E4: přidán `zion-bridge-unlock` binary |
 | `V31/L1/miner/src/auxpow/client.rs` | CryptonoteStratum login/job/submit fixes |
 | `V31/L1/miner/src/auxpow/hasher.rs` | `parse_cryptonote_target()` + unit test |
 | `V31/L1/cosmic-harmony/src/profit.rs` | `CoinProfile::with_pool_address()` helper |
@@ -123,6 +148,7 @@
 
 | Hash | Zpráva |
 |------|--------|
+| `c886046f1` | feat(bridge): E4 Base mainnet round-trip complete — lock→mint→burn→unlock |
 | `52e9539af` | feat(ops): add F2 transaction fuzzing harness to scripts/ops/ |
 | `4d310d121` | feat(ops): H5 AuxPoW E2E test script for XMR/RandomX CryptonoteStratum |
 | `6bb9af71f` | WIP: latest V31, pool, multichain, and APP&WEB explorer changes |
