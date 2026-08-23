@@ -691,7 +691,7 @@ let minerStats = {
   // Populated from V31 miner `stream stats` log lines. Each entry:
   //   {index, label, coin, algorithm, hashrate_10s, hashrate_60s,
   //    hashrate_15m, accepted, rejected, active}
-  // streams: [] — Stream 1 (ZION), Stream 2 (GPU external), Stream 3 (CPU external)
+  // streams: [] — Stream 1 (ZION), Stream 2 (ZANO GPU), Stream 3 (VRSC CPU)
   streams: [],
 };
 
@@ -3192,6 +3192,36 @@ function maybeEmitShareEvent(output) {
       });
     } catch {}
   }
+
+  // ── V3 Trinity share events (per-stream real-time) ──
+  // "V3 Trinity: ZION share accepted job=4737 nonce=2201928 height=14185"
+  // "V3 Trinity: ZANO share accepted job=... nonce=... height=..."
+  // "V3 Trinity: VRSC share accepted job=... nonce=... height=..."
+  const trinityAccM = clean.match(/V3\s+Trinity:\s+(\S+)\s+share\s+accepted\s+job=(\d+)\s+nonce=(\d+)\s+height=(\d+)/i);
+  if (trinityAccM) {
+    const coin = trinityAccM[1].toUpperCase();
+    const streamIdx = coin === 'ZION' ? 1 : coin === 'ZANO' ? 2 : coin === 'VRSC' ? 3 : 1;
+    try {
+      sendToRenderer('share-event', {
+        stream: streamIdx, coin, accepted: true,
+        job: parseInt(trinityAccM[2], 10), height: parseInt(trinityAccM[4], 10),
+        nonce: parseInt(trinityAccM[3], 10), ts: Date.now(),
+      });
+    } catch {}
+  }
+  const trinityRejM = clean.match(/V3\s+Trinity:\s+(\S+)\s+share\s+rejected\s+job=(\d+)\s+nonce=(\d+)\s+height=(\d+)(?:\s+reason="([^"]+)")?/i);
+  if (trinityRejM) {
+    const coin = trinityRejM[1].toUpperCase();
+    const streamIdx = coin === 'ZION' ? 1 : coin === 'ZANO' ? 2 : coin === 'VRSC' ? 3 : 1;
+    try {
+      sendToRenderer('share-event', {
+        stream: streamIdx, coin, accepted: false,
+        job: parseInt(trinityRejM[2], 10), height: parseInt(trinityRejM[4], 10),
+        nonce: parseInt(trinityRejM[3], 10), reason: trinityRejM[5] || 'rejected',
+        ts: Date.now(),
+      });
+    } catch {}
+  }
 }
 
 function parseMinerOutput(output) {
@@ -3889,21 +3919,29 @@ function parseMinerOutput(output) {
 
   // ─── V31 per-stream telemetry ───
   // INFO zion_miner: stream stats stream=zion coin=zion accepted=1 rejected=0 hashrate=0 status=active
-  const streamIndex = { zion: 0, 'gpu-external': 1, 'cpu-external': 2 };
-  const streamLabels = { zion: 'ZION', 'gpu-external': 'GPU AuxPoW', 'cpu-external': 'CPU AuxPoW' };
+  // Three streams: zion (Stream 1), gpu-external (Stream 2 = ZANO), cpu-external (Stream 3 = VRSC)
+  const streamIndex = { zion: 1, 'gpu-external': 2, 'cpu-external': 3 };
+  const streamLabels = { zion: 'ZION', 'gpu-external': 'ZANO', 'cpu-external': 'VRSC' };
+  const streamAlgos = { zion: 'ekam_deeksha', 'gpu-external': 'progpow', 'cpu-external': 'verushash' };
+  const streamDefaultCoins = { zion: 'ZION', 'gpu-external': 'ZANO', 'cpu-external': 'VRSC' };
   if (!Array.isArray(minerStats.streams)) minerStats.streams = [];
   for (const m of output.matchAll(/(?:^|\n)[^\n]*?stream\s+stats[^\n]*stream\s*=\s*"?([^"\s,]+)"?\s+coin\s*=\s*"?([^"\s,]+)"?\s+accepted\s*=\s*(\d+)\s+rejected\s*=\s*(\d+)\s+hashrate\s*=\s*([^\s,]+)\s+status\s*=\s*"?([^"\s,]+)"?/gi)) {
     const streamId = String(m[1] || '').toLowerCase();
-    const idx = streamIndex[streamId] ?? 0;
+    const idx = streamIndex[streamId] ?? 1;
     const hr = parseFloat(m[5]);
     const active = String(m[6] || '').toLowerCase() === 'active';
     const accepted = parseInt(m[3], 10) || 0;
     const rejected = parseInt(m[4], 10) || 0;
+    // Coin from miner; fallback to default if miner reports generic stream id
+    let coin = String(m[2] || '');
+    if (coin === streamId || coin === 'gpu-external' || coin === 'cpu-external') {
+      coin = streamDefaultCoins[streamId] || coin;
+    }
     minerStats.streams[idx] = {
       index: idx,
       label: streamLabels[streamId] || streamId,
-      coin: String(m[2] || ''),
-      algorithm: (minerStats.streams[idx] && minerStats.streams[idx].algorithm) || '',
+      coin: coin,
+      algorithm: streamAlgos[streamId] || (minerStats.streams[idx] && minerStats.streams[idx].algorithm) || '',
       hashrate_10s: Number.isFinite(hr) ? hr : 0,
       hashrate_60s: Number.isFinite(hr) ? hr : 0,
       hashrate_15m: Number.isFinite(hr) ? hr : 0,
@@ -3911,56 +3949,72 @@ function parseMinerOutput(output) {
       rejected,
       active
     };
-    if (streamId === 'zion') {
-      // Update top-level stats from the most reliable per-stream source.
-      // The aggregate tui_log may lag by one interval in the V31 miner.
-      if (Number.isFinite(hr) && hr > 0) {
-        minerStats.hashrate = hr;
-        if (!Number.isFinite(Number(minerStats.hashrate_10s)) || minerStats.hashrate_10s <= 0) minerStats.hashrate_10s = hr;
-        if (!Number.isFinite(Number(minerStats.hashrate_60s)) || minerStats.hashrate_60s <= 0) minerStats.hashrate_60s = hr;
-        if (!Number.isFinite(Number(minerStats.hashrate_15m)) || minerStats.hashrate_15m <= 0) minerStats.hashrate_15m = hr;
-      }
-      if (accepted >= 0) minerStats.accepted = accepted;
-      if (rejected >= 0) minerStats.rejected = rejected;
-      minerStats.shares = (Number(minerStats.accepted) || 0) + (Number(minerStats.rejected) || 0);
-    }
+    // Do NOT set top-level accepted/rejected here — the top-level shares
+    // should be the TOTAL across all 3 streams, set by the periodic metrics
+    // summary parser below.
   }
 
-  // ─── V31 TUI log (aggregate counters) ───
+  // ─── V31 TUI log (aggregate hashrate only) ───
   // hashrate=1234 H/s submitted=0 accepted=0 rejected=0 jobs=0 reconnects=0 coin=zion pool=...
+  // NOTE: The TUI log's accepted/rejected are per-coin (whichever stream
+  // reported last), NOT the total across all streams. We only use this line
+  // for hashrate and pool/coin metadata. Total shares come from the periodic
+  // metrics summary parser below.
   const v31TuiMatch = output.match(/hashrate\s*=\s*([\d.]+)\s*H\/s\s+submitted\s*=\s*(\d+)\s+accepted\s*=\s*(\d+)\s+rejected\s*=\s*(\d+)\s+jobs\s*=\s*(\d+)\s+reconnects\s*=\s*(\d+)\s+coin\s*=\s*([^\s,]+)\s+pool\s*=\s*([^\s,]+)/i);
   if (v31TuiMatch) {
     const hr = parseFloat(v31TuiMatch[1]);
     if (Number.isFinite(hr) && hr > 0) {
       minerStats.hashrate = hr;
-      if (!Number.isFinite(Number(minerStats.hashrate_10s)) || minerStats.hashrate_10s <= 0) minerStats.hashrate_10s = hr;
-      if (!Number.isFinite(Number(minerStats.hashrate_60s)) || minerStats.hashrate_60s <= 0) minerStats.hashrate_60s = hr;
-      if (!Number.isFinite(Number(minerStats.hashrate_15m)) || minerStats.hashrate_15m <= 0) minerStats.hashrate_15m = hr;
+      minerStats.hashrate_10s = hr;
+      minerStats.hashrate_60s = hr;
+      minerStats.hashrate_15m = hr;
+      if (!Number.isFinite(Number(minerStats.hashrate_max)) || hr > Number(minerStats.hashrate_max)) {
+        minerStats.hashrate_max = hr;
+      }
     }
     minerStats.submitted = parseInt(v31TuiMatch[2], 10) || 0;
-    minerStats.accepted = parseInt(v31TuiMatch[3], 10) || 0;
-    minerStats.rejected = parseInt(v31TuiMatch[4], 10) || 0;
-    minerStats.shares = (Number.isFinite(minerStats.accepted) ? minerStats.accepted : 0) + (Number.isFinite(minerStats.rejected) ? minerStats.rejected : 0);
     minerStats.jobs_received = parseInt(v31TuiMatch[5], 10) || 0;
     minerStats.reconnect_count = parseInt(v31TuiMatch[6], 10) || 0;
     minerStats.coin = v31TuiMatch[7];
     minerStats.pool = v31TuiMatch[8];
   }
 
-  // ─── V31 summary line ───
+  // ─── V31 periodic metrics summary: TOTAL hashrate + TOTAL shares ───
+  // ═══ periodic metrics summary ═══ active_streams=3 total_hashrate=19.68 MH/s total_accepted=1337 total_rejected=6
+  const v31MetricsSummaryMatch = output.match(/periodic\s+metrics\s+summary.*?active_streams\s*=\s*(\d+).*?total_hashrate\s*=\s*([\d.]+)\s*([kKmMgGtT]?H\/s).*?total_accepted\s*=\s*(\d+).*?total_rejected\s*=\s*(\d+)/i);
+  if (v31MetricsSummaryMatch) {
+    const unit = String(v31MetricsSummaryMatch[3] || 'H/s').toLowerCase();
+    const mult = unit.startsWith('th') ? 1e12 : unit.startsWith('gh') ? 1e9 : unit.startsWith('mh') ? 1e6 : unit.startsWith('kh') ? 1e3 : 1;
+    const totalHr = parseFloat(v31MetricsSummaryMatch[2]) * mult;
+    if (Number.isFinite(totalHr) && totalHr > 0) {
+      minerStats.hashrate = totalHr;
+      minerStats.hashrate_10s = totalHr;
+      minerStats.hashrate_60s = totalHr;
+      minerStats.hashrate_15m = totalHr;
+      if (!Number.isFinite(Number(minerStats.hashrate_max)) || totalHr > Number(minerStats.hashrate_max)) {
+        minerStats.hashrate_max = totalHr;
+      }
+    }
+    // Total shares across ALL 3 streams (ZION + ZANO + VRSC)
+    const totalAccepted = parseInt(v31MetricsSummaryMatch[4], 10) || 0;
+    const totalRejected = parseInt(v31MetricsSummaryMatch[5], 10) || 0;
+    minerStats.accepted = totalAccepted;
+    minerStats.rejected = totalRejected;
+    minerStats.shares = totalAccepted + totalRejected;
+  }
+
+  // ─── V31 summary line (fallback hashrate only) ───
   // pool=62.171.141.136:8444 coin=zion hashrate=1234 H/s accepted=0 rejected=0
+  // Only used when neither TUI log nor periodic metrics summary matched.
   const v31SummaryMatch = output.match(/pool\s*=\s*([^\s,]+)\s+coin\s*=\s*([^\s,]+)\s+hashrate\s*=\s*([\d.]+)\s*H\/s\s+accepted\s*=\s*(\d+)\s+rejected\s*=\s*(\d+)/i);
-  if (v31SummaryMatch && !v31TuiMatch) {
+  if (v31SummaryMatch && !v31TuiMatch && !v31MetricsSummaryMatch) {
     const hr = parseFloat(v31SummaryMatch[3]);
     if (Number.isFinite(hr) && hr > 0) {
       minerStats.hashrate = hr;
-      if (!Number.isFinite(Number(minerStats.hashrate_10s)) || minerStats.hashrate_10s <= 0) minerStats.hashrate_10s = hr;
-      if (!Number.isFinite(Number(minerStats.hashrate_60s)) || minerStats.hashrate_60s <= 0) minerStats.hashrate_60s = hr;
-      if (!Number.isFinite(Number(minerStats.hashrate_15m)) || minerStats.hashrate_15m <= 0) minerStats.hashrate_15m = hr;
+      minerStats.hashrate_10s = hr;
+      minerStats.hashrate_60s = hr;
+      minerStats.hashrate_15m = hr;
     }
-    minerStats.accepted = parseInt(v31SummaryMatch[4], 10) || 0;
-    minerStats.rejected = parseInt(v31SummaryMatch[5], 10) || 0;
-    minerStats.shares = (Number.isFinite(minerStats.accepted) ? minerStats.accepted : 0) + (Number.isFinite(minerStats.rejected) ? minerStats.rejected : 0);
     minerStats.pool = v31SummaryMatch[1];
     minerStats.coin = v31SummaryMatch[2];
   }
