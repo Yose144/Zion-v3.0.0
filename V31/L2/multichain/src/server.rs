@@ -22,7 +22,7 @@ use crate::contracts::ZionContracts;
 use crate::error::{MultichainError, MultichainResult};
 use crate::rate_limit::{auth_rate_limit, RateLimiter};
 use crate::service::MultichainService;
-use crate::zis_auth::{resolve_zis_auth, ZisClient, ZisUser};
+use crate::zis_auth::{address_from_linked, resolve_zis_auth, ZisClient, ZisUser};
 use crate::swap::dex::intent::{PathHop, SolverBid, SwapIntent};
 use crate::swap::dex::solver_network::HttpSolverClient;
 use crate::swap::Pool;
@@ -372,16 +372,23 @@ async fn wallet_address(
     user: Option<Extension<ZisUser>>,
     Json(req): Json<WalletAddressRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
+    let user = resolve_auth_user(state.zis_client.enabled, user)?;
     let chain = chain_name_to_id(&req.chain).map_err(|_| StatusCode::BAD_REQUEST)?;
-    match state.service.wallet_address(chain, req.account, req.index) {
-        Ok(addr) => Ok(Json(serde_json::json!({
-            "chain": req.chain,
-            "address": addr.encoded,
-            "bytes": hex::encode(&addr.bytes),
-        }))),
-        Err(_) => Err(StatusCode::BAD_REQUEST),
-    }
+
+    let addr = match user.as_ref().and_then(|u| u.linked_address_for_chain(chain)) {
+        Some(linked) => address_from_linked(chain, linked)
+            .map_err(|_| StatusCode::BAD_REQUEST)?,
+        None => state
+            .service
+            .wallet_address(chain, req.account, req.index)
+            .map_err(|_| StatusCode::BAD_REQUEST)?,
+    };
+
+    Ok(Json(serde_json::json!({
+        "chain": req.chain,
+        "address": addr.encoded,
+        "bytes": hex::encode(&addr.bytes),
+    })))
 }
 
 #[derive(Deserialize)]
