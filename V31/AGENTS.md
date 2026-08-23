@@ -91,6 +91,8 @@ OPERATOR_IPS=(
 | Pool HTTP API / Prometheus | `127.0.0.1:8080` | `zion-pool` | **localhost-only** | `/stats`, `/metrics`, `/miners`; veřejně pouze přes nginx/IP allowlist. |
 | WARP API + DEX API | `127.0.0.1:8453` (WARP), `127.0.0.1:8454` (DEX `/v1/*`) | `zion-multichain` (`warpd`) | **local** | Bind z `--listen 127.0.0.1:8453` + config; DEX běží na portu WARP+1. Public jen přes nginx. |
 | DAO API | `127.0.0.1:8456` | `zion-dao` | **local** | `/api/dao/*` nginx proxy sem; nikdy veřejně bez allowlistu. |
+| Free World (L5) | `127.0.0.1:8095` | `zion-free-world` | **operator-only** | Scans coinbase for humanitarian output. systemd `zion-v31-free-world.service`. |
+| Issobella (L6) | `127.0.0.1:8096` | `zion-issobella` | **operator-only** | Scans coinbase for Issobella output. systemd `zion-v31-issobella.service`. |
 | Dashboard | `443` → `127.0.0.1:8766` | `nginx` → dashboard | **operator-only** | Basic Auth nebo IP allowlist. |
 | Web | `443` | `nginx` | **public** / **maintenance** | Případně maintenance mód, pokud je web vypnutý. |
 
