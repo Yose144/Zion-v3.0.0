@@ -465,13 +465,6 @@ export default function Navigation() {
                     {tr('nav', 'dashboard', lang)}
                   </Link>
                   <Link
-                    href="/dashboard/mission-control"
-                    onClick={() => setIsOpen(false)}
-                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 inline-flex items-center justify-center min-h-[44px] active:bg-white/10 text-center"
-                  >
-                    Mission Control
-                  </Link>
-                  <Link
                     href="/dashboard/guardian"
                     onClick={() => setIsOpen(false)}
                     className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 inline-flex items-center justify-center min-h-[44px] active:bg-white/10 text-center"
