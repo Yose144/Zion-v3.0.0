@@ -146,11 +146,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   cliConfigGet: (data) => ipcRenderer.invoke('cli-config-get', data),
   cliConfigSet: (data) => ipcRenderer.invoke('cli-config-set', data),
 
-  // ── Bridge CLI ───────────────────────────────────────────────────
+  // ── Bridge CLI (lock / burn) ───────────────────────────────────────
   cliBridgeStatus: () => ipcRenderer.invoke('cli-bridge-status'),
   cliBridgePending: () => ipcRenderer.invoke('cli-bridge-pending'),
   cliBridgeHistory: (data) => ipcRenderer.invoke('cli-bridge-history', data),
   cliBridgeChains: () => ipcRenderer.invoke('cli-bridge-chains'),
+  cliBridgeLock: (data) => ipcRenderer.invoke('cli-bridge-lock', data),
+  cliBridgeBurn: (data) => ipcRenderer.invoke('cli-bridge-burn', data),
 
   // ── DAO CLI ────────────────────────────────────────────────────────
   cliDaoStatus: () => ipcRenderer.invoke('cli-dao-status'),
@@ -171,6 +173,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
   cliWarpChains: () => ipcRenderer.invoke('cli-warp-chains'),
   cliWarpPending: () => ipcRenderer.invoke('cli-warp-pending'),
   cliWarpStats: () => ipcRenderer.invoke('cli-warp-stats'),
+  cliWarpEstimate: (data) => ipcRenderer.invoke('cli-warp-estimate', data),
+
+  // ── Swap CLI (DEX) ─────────────────────────────────────────────────
+  cliSwapQuote: (data) => ipcRenderer.invoke('cli-swap-quote', data),
+  cliSwapExecute: (data) => ipcRenderer.invoke('cli-swap-execute', data),
+
+  // ── Atomic Swap CLI (HTLC) ─────────────────────────────────────────
+  cliAtomicSwapStatus: () => ipcRenderer.invoke('cli-atomic-swap-status'),
+  cliAtomicSwapEscrow: () => ipcRenderer.invoke('cli-atomic-swap-escrow'),
+  cliAtomicSwapGet: (data) => ipcRenderer.invoke('cli-atomic-swap-get', data),
+  cliAtomicSwapCreate: (data) => ipcRenderer.invoke('cli-atomic-swap-create', data),
+  cliAtomicSwapPending: () => ipcRenderer.invoke('cli-atomic-swap-pending'),
+  cliAtomicSwapClaim: (data) => ipcRenderer.invoke('cli-atomic-swap-claim', data),
+  cliAtomicSwapRefund: (data) => ipcRenderer.invoke('cli-atomic-swap-refund', data),
 
   // Open URL in system browser
   openExternal: (url) => ipcRenderer.invoke('open-external', url),

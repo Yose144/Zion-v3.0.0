@@ -5411,11 +5411,11 @@ function initCliView() {
   document.getElementById('cli-btn-wallet-list')?.addEventListener('click', () => runCli('cliWalletList', 'wallet address'));
   document.getElementById('cli-btn-wallet-balance')?.addEventListener('click', async () => {
     const address = prompt('Enter ZION address (or leave empty for config wallet):');
-    await runCli('cliWalletBalance', 'wallet balance', { address: address || undefined });
+    await runCli('cliWalletBalance', 'wallet balance', { address: address || undefined, chain: 'zion-l1' });
   });
   document.getElementById('cli-btn-config-get')?.addEventListener('click', async () => {
     const key = prompt('Enter config key (or leave empty for all):');
-    await runCli('cliConfigGet', 'config show', { key: key || undefined });
+    await runCli('cliConfigGet', 'doctor', { key: key || undefined });
   });
   document.getElementById('cli-btn-clear')?.addEventListener('click', clearConsole);
 

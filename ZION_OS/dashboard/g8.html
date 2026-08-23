@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ZION 3.2 — 30-Day Continuous Run (G8)</title>
+<style>
+  :root{ --bg:#0b0c15; --panel:#141624; --text:#e7e9ef; --muted:#8b92a8; --green:#22c55e; --red:#ef4444; --amber:#f59e0b; --cyan:#06b6d4; --purple:#a855f7; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); line-height:1.5; }
+  .wrap{ max-width:920px; margin:0 auto; padding:24px; }
+  header{ display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:24px; }
+  h1{ margin:0; font-size:1.6rem; font-weight:700; }
+  .badge{ font-size:.75rem; padding:4px 10px; border-radius:999px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; background:var(--panel); border:1px solid rgba(255,255,255,.08); }
+  .badge.running{ color:var(--green); border-color:var(--green); }
+  .badge.stopped{ color:var(--red); border-color:var(--red); }
+  .badge.pending{ color:var(--amber); border-color:var(--amber); }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; margin-bottom:24px; }
+  .card{ background:var(--panel); border:1px solid rgba(255,255,255,.06); border-radius:16px; padding:20px; }
+  .card h3{ margin:0 0 8px; font-size:.8rem; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
+  .card .value{ font-size:1.6rem; font-weight:700; font-family:'JetBrains Mono',ui-monospace,monospace; }
+  .card .sub{ font-size:.8rem; color:var(--muted); margin-top:4px; }
+  .bar-wrap{ height:22px; background:rgba(255,255,255,.08); border-radius:999px; overflow:hidden; margin:16px 0 8px; }
+  .bar-fill{ height:100%; border-radius:999px; background:linear-gradient(90deg,var(--green),var(--cyan)); width:0%; transition:width 1s ease; }
+  .uptime-text{ font-size:.9rem; color:var(--muted); }
+  table{ width:100%; border-collapse:collapse; font-size:.9rem; }
+  th,td{ text-align:left; padding:10px 8px; border-bottom:1px solid rgba(255,255,255,.06); }
+  th{ color:var(--muted); font-weight:600; }
+  tr.ok td:first-child{ color:var(--green); }
+  tr.degraded td:first-child{ color:var(--amber); }
+  tr.down td:first-child{ color:var(--red); }
+  .footer{ margin-top:32px; padding-top:16px; border-top:1px solid rgba(255,255,255,.08); color:var(--muted); font-size:.8rem; }
+  a{ color:var(--cyan); text-decoration:none; }
+  a:hover{ text-decoration:underline; }
+  .note{ background:rgba(245,158,11,.08); border:1px solid rgba(245,158,11,.2); border-radius:12px; padding:14px 16px; color:#fbbf24; font-size:.9rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>ZION 3.2 — 30-Day Continuous Run</h1>
+    <span id="g8-status" class="badge pending">Loading…</span>
+  </header>
+
+  <div id="not-started" class="note" style="display:none;">
+    G8 has not started yet. Use the dashboard or <code>/api/g8</code> endpoint to start the run.
+  </div>
+
+  <section id="run-info" style="display:none;">
+    <div class="grid">
+      <div class="card">
+        <h3>Started</h3>
+        <div id="start-time" class="value">—</div>
+        <div class="sub" id="start-iso">—</div>
+      </div>
+      <div class="card">
+        <h3>Target End</h3>
+        <div id="end-time" class="value">—</div>
+        <div class="sub" id="end-iso">—</div>
+      </div>
+      <div class="card">
+        <h3>Elapsed</h3>
+        <div id="elapsed" class="value">—</div>
+        <div class="sub">days / hours / minutes</div>
+      </div>
+      <div class="card">
+        <h3>Uptime Requirement</h3>
+        <div class="value">99.9%</div>
+        <div class="sub">no critical incidents</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <h3>Continuous Run Progress</h3>
+      <div class="bar-wrap"><div id="progress-bar" class="bar-fill"></div></div>
+      <div id="progress-text" class="uptime-text">—</div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <h3>Current Service Health</h3>
+      <table>
+        <thead><tr><th>Status</th><th>Service</th><th>Health</th><th>Last check</th></tr></thead>
+        <tbody id="services-body"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>Latest V31 Node</h3>
+      <div class="grid" style="margin:0;" id="node-grid"></div>
+    </div>
+  </section>
+
+  <div class="footer">
+    Gate <strong>G8</strong> — 30-day continuous run for ZION 3.2 "One Love" Mainnet Stable. <a href="https://dashboard.zionterranova.com">Full dashboard</a> · <a href="/api/g8">JSON API</a>
+  </div>
+</div>
+
+<script>
+const fmtDuration = (ms) => {
+  const s = Math.floor(ms / 1000);
+  const d = Math.floor(s / 86400); const h = Math.floor((s % 86400) / 3600); const m = Math.floor((s % 3600) / 60);
+  return `${d}d ${h}h ${m}m`;
+};
+
+const render = async () => {
+  try {
+    const [g8, status, readiness] = await Promise.all([
+      fetch('/api/g8').then(r => r.json()).catch(() => ({})),
+      fetch('/api/status').then(r => r.json()).catch(() => ({}))
+    ]);
+
+    const statusEl = document.getElementById('g8-status');
+
+    if (!g8.started) {
+      statusEl.textContent = 'Not started';
+      statusEl.className = 'badge pending';
+      document.getElementById('not-started').style.display = 'block';
+      document.getElementById('run-info').style.display = 'none';
+      return;
+    }
+
+    const start = new Date(g8.started);
+    const end = new Date(g8.target_end);
+    const now = new Date();
+    const totalMs = end - start;
+    const elapsedMs = now - start;
+    const progress = Math.max(0, Math.min(100, (elapsedMs / totalMs) * 100));
+
+    document.getElementById('start-time').textContent = start.toLocaleString();
+    document.getElementById('start-iso').textContent = g8.started;
+    document.getElementById('end-time').textContent = end.toLocaleString();
+    document.getElementById('end-iso').textContent = g8.target_end;
+    document.getElementById('elapsed').textContent = fmtDuration(elapsedMs);
+    document.getElementById('progress-bar').style.width = `${progress}%`;
+    document.getElementById('progress-text').textContent = `${progress.toFixed(4)}% of 30 days • ${fmtDuration(totalMs - elapsedMs)} remaining`;
+
+    statusEl.textContent = g8.status;
+    statusEl.className = `badge ${g8.status === 'running' ? 'running' : 'stopped'}`;
+    document.getElementById('not-started').style.display = 'none';
+    document.getElementById('run-info').style.display = 'block';
+
+    // Service health summary
+    const services = g8.services || status.services || [];
+    const tbody = document.getElementById('services-body');
+    tbody.innerHTML = '';
+    for (const s of services.slice(0, 20)) {
+      const cls = s.healthy ? 'ok' : (s.status === 'degraded' ? 'degraded' : 'down');
+      const tr = document.createElement('tr'); tr.className = cls;
+      tr.innerHTML = `<td>${s.healthy ? '✅' : '❌'}</td><td>${s.name}</td><td>${s.status}</td><td>${s.last_check ? new Date(s.last_check).toLocaleString() : '—'}</td>`;
+      tbody.appendChild(tr);
+    }
+
+    // V31 node snapshot
+    const v31 = status.v31_node || status.edge_node || {};
+    const ng = document.getElementById('node-grid');
+    ng.innerHTML = `
+      <div class="card" style="border:none;padding:0;background:transparent;"><h3>Height</h3><div class="value">${v31.chain_height ?? '—'}</div></div>
+      <div class="card" style="border:none;padding:0;background:transparent;"><h3>Version</h3><div class="value">${v31.version ?? '—'}</div></div>
+      <div class="card" style="border:none;padding:0;background:transparent;"><h3>Block Time</h3><div class="value">${v31.block_time_s ? v31.block_time_s + 's' : '—'}</div></div>
+      <div class="card" style="border:none;padding:0;background:transparent;"><h3>Peers</h3><div class="value">${v31.peer_count ?? '—'}</div></div>
+    `;
+  } catch (e) {
+    console.error('G8 render error', e);
+  }
+};
+
+render();
+setInterval(render, 30000);
+</script>
+</body>
+</html>
