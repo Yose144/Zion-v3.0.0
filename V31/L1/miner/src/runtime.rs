@@ -1711,6 +1711,19 @@ impl MinerRuntime {
                 height = job.height,
                 "V3 Trinity: ZION share accepted"
             );
+            // Pool signals block_found when the submitted share also solved
+            // the current ZION block. Emit a parseable log line for the
+            // desktop-agent to detect and show the celebration toast.
+            if result.block_found {
+                let bh = result.block_height.unwrap_or(job.height);
+                info!(
+                    coin = "ZION",
+                    height = bh,
+                    nonce,
+                    "V3 Trinity: ZION block found height={}",
+                    bh
+                );
+            }
         } else {
             warn!(
                 job = job.job_id,

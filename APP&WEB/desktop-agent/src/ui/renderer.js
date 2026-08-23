@@ -1957,11 +1957,12 @@ function setupEventListeners() {
 
   window.electronAPI.onBlockFound((data) => {
     const height = data?.height;
+    const coin = data?.coin || 'ZION';
     const msg = height != null
-      ? `GRATULUJI! Našel jsi blok #${height}!`
-      : 'GRATULUJI! Našel jsi blok!';
+      ? `GRATULUJI! ${coin} blok #${height} nalezen!`
+      : `GRATULUJI! ${coin} blok nalezen!`;
     addLogEntry(msg, 'success');
-    showBlockFoundToast(height);
+    showBlockFoundToast(height, coin);
   });
 
   // ── Share event log (per-share accept/reject with timestamps) ──
@@ -2494,14 +2495,15 @@ function addLogEntry(message, type = 'info') {
 
 // ── Block Found Toast — celebratory notification ──
 let _blockFoundToastTimer = null;
-function showBlockFoundToast(height) {
+function showBlockFoundToast(height, coin) {
   const toast = document.getElementById('block-found-toast');
   if (!toast) return;
   const subtitle = document.getElementById('block-found-toast-subtitle');
   if (subtitle) {
+    const coinStr = coin ? `${coin} — ` : '';
     subtitle.textContent = height != null
-      ? `Block #${height.toLocaleString()}`
-      : 'Block found!';
+      ? `${coinStr}Block #${height.toLocaleString()}`
+      : `${coinStr}Block found!`;
   }
   toast.classList.remove('view-hidden', 'fading');
   // Auto-hide after 15 seconds
@@ -2519,11 +2521,19 @@ function hideBlockFoundToast() {
   }, 400);
 }
 
-// Close button handler
+// Close button handler + test button
 document.addEventListener('DOMContentLoaded', () => {
   const closeBtn = document.getElementById('block-found-toast-close');
   if (closeBtn) {
     closeBtn.addEventListener('click', hideBlockFoundToast);
+  }
+  // Test: trigger fake block found to verify toast + counter work
+  const testBtn = document.getElementById('test-block-found-btn');
+  if (testBtn) {
+    testBtn.addEventListener('click', async () => {
+      const r = await window.electronAPI.testBlockFound({});
+      dbg('[TEST] block-found triggered:', r);
+    });
   }
 });
 
