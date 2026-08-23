@@ -45,7 +45,6 @@ const copy = {
     verified: 'Verified',
     activeSessions: 'Active sessions',
     noActiveSessions: 'No active sessions.',
-    current: 'Current',
     userAgent: 'User agent',
     ip: 'IP',
     expires: 'Expires',
@@ -74,7 +73,6 @@ const copy = {
     verified: 'Ověřeno',
     activeSessions: 'Aktivní relace',
     noActiveSessions: 'Žádné aktivní relace.',
-    current: 'Aktuální',
     userAgent: 'User agent',
     ip: 'IP',
     expires: 'Vyprší',
@@ -284,9 +282,6 @@ export default function SecurityPanel() {
                 <div className="space-y-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm text-white">{s.userAgent || 'Unknown'}</p>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-zion-cyan/20 text-zion-cyan border border-zion-cyan/30">
-                      {t.current}
-                    </span>
                   </div>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
                     <span className="flex items-center gap-1">
