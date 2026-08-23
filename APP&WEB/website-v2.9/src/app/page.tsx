@@ -11,12 +11,12 @@ import ReleaseHighlightBanner from '@/components/ReleaseHighlightBanner';
 const WebTerminal = dynamicImport(() => import('@/components/WebTerminal'), {
   loading: () => null,
 });
-const NewsFeed = dynamicImport(() => import('@/components/NewsFeed'));
-const LiveDashboard = dynamicImport(() => import('@/components/LiveDashboard'));
-const GoldenEggHaraniagharba = dynamicImport(() => import('@/components/GoldenEggHaraniagharba'));
-const Features = dynamicImport(() => import('@/components/Features'));
-const RoadmapPulse = dynamicImport(() => import('@/components/RoadmapPulse'));
-const DocsRail = dynamicImport(() => import('@/components/DocsRail'));
+const NewsFeed = dynamicImport(() => import('@/components/NewsFeed'), { ssr: true });
+const LiveDashboard = dynamicImport(() => import('@/components/LiveDashboard'), { ssr: true });
+const GoldenEggHaraniagharba = dynamicImport(() => import('@/components/GoldenEggHaraniagharba'), { ssr: true });
+const Features = dynamicImport(() => import('@/components/Features'), { ssr: true });
+const RoadmapPulse = dynamicImport(() => import('@/components/RoadmapPulse'), { ssr: true });
+const DocsRail = dynamicImport(() => import('@/components/DocsRail'), { ssr: true });
 
 // ISR: regenerate at most once every 60s. All visible content is either
 // static (hero/news copy) or fetched client-side by 'use client' components

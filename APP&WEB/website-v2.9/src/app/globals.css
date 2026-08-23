@@ -56,46 +56,19 @@
   body {
     font-family: var(--font-inter);
     background:
-      /* rasta radial glows — green forward */
-      radial-gradient(circle at 15% 18%, rgba(6, 105, 40, 0.28), transparent 42rem),
-      radial-gradient(circle at 85% 12%, rgba(6, 105, 40, 0.24), transparent 40rem),
-      radial-gradient(circle at 45% 55%, rgba(6, 105, 40, 0.14), transparent 52rem),
-      radial-gradient(circle at 18% 15%, rgba(228, 30, 43, 0.18), transparent 45rem),
-      radial-gradient(circle at 50% 78%, rgba(252, 209, 22, 0.12), transparent 55rem),
-      radial-gradient(circle at 76% 88%, rgba(228, 30, 43, 0.08), transparent 48rem),
+      /* rasta glows — reduced for paint performance */
+      radial-gradient(circle at 20% 15%, rgba(6, 105, 40, 0.22), transparent 42rem),
+      radial-gradient(circle at 80% 80%, rgba(228, 30, 43, 0.12), transparent 48rem),
       linear-gradient(180deg, #0c0c0c 0%, #050505 60%, #000 100%);
     color: rgb(var(--color-fg));
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-  }
-
-  /* Subtle diagonal rasta stripes */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      repeating-linear-gradient(
-        135deg,
-        rgba(228, 30, 43, 0.012) 0px,
-        rgba(228, 30, 43, 0.012) 3px,
-        rgba(252, 209, 22, 0.010) 3px,
-        rgba(252, 209, 22, 0.010) 6px,
-        rgba(6, 105, 40, 0.045) 6px,
-        rgba(6, 105, 40, 0.045) 9px,
-        transparent 9px,
-        transparent 160px
-      );
-    background-size: 160px 160px;
-    pointer-events: none;
-    z-index: 0;
-    mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
   }
 
   a,
   button {
     -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
   :focus-visible {
@@ -686,6 +659,7 @@ body.menu-open {
   overflow: hidden;
   position: fixed;
   inset: 0;
+  overscroll-behavior: none;
 }
 
 /* ═══ Mobile menu slide-in animation ═══ */
@@ -1124,4 +1098,34 @@ button[class*="min-h-"] {
 .zion-panel {
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+/* Responsive long-hash / address wrapping */
+.hash-wrap,
+.zion-hash,
+code.address,
+pre.wrap {
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+/* Skip rendering off-screen content for faster initial paint */
+.zion-page > section,
+.zion-page > div > section,
+main > section,
+main > div > section {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 500px;
+}
+
+/* Respect user motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

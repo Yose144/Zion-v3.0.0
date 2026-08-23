@@ -2,7 +2,7 @@
 
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import * as THREE from 'three';
 import clsx from 'clsx';
@@ -68,7 +68,7 @@ function EarthGlobe() {
 
   useEffect(() => {
     const loader = new THREE.TextureLoader();
-    loader.load('/textures/earth-blue-marble.jpg', (color) => {
+    loader.load('/textures/earth-blue-marble.webp', (color) => {
       color.colorSpace = THREE.SRGBColorSpace;
       loader.load('/textures/earth-topology.png', (bump) => {
         loader.load('/textures/earth-dark.jpg', (night) => {
@@ -788,7 +788,7 @@ export type HolographicEarthProps = {
   className?: string;
 };
 
-export default function HolographicEarth({ className }: HolographicEarthProps) {
+function HolographicEarth({ className }: HolographicEarthProps) {
   const [webglOk, setWebglOk] = useState(false);
 
   useEffect(() => {
@@ -843,3 +843,5 @@ export default function HolographicEarth({ className }: HolographicEarthProps) {
     </div>
   );
 }
+
+export default memo(HolographicEarth);
