@@ -2,7 +2,7 @@
 
 > **Version target:** 3.2.0 "One Love" (Mainnet Stable)  
 > **Current version:** 3.2.0-beta (V31 Mainnet Alpha pre-release), protocol `zion-v3-node/3.1.0-alpha`  
-> **Last updated:** 2026-08-22  
+> **Last updated:** 2026-08-23  
 > **Public launch target:** 31 December 2026  
 > **Daily summary:** [`REPORTS/REPORT_2026-08-22_DAILY_SUMMARY.md`](./REPORTS/REPORT_2026-08-22_DAILY_SUMMARY.md)
 >
@@ -56,8 +56,8 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 | **G6** | PRL (Pearl PoUW) deferred and excluded | Must remain documented and excluded from profit switching | ✅ Documented |
 | **G7** | Chaos / load tests executed | 1000+ miner sim, 24h fuzzing, bridge stress | ✅ Complete — 10 000-miner local pool handshake 100 % pass, 10 000-miner Edge connect storm survived with real rigs unaffected, DEX quote overload 1 972 req/s 100 % 200, bridge submit overload 1 793 req/s no crash, P2P reconnect storm OK; 10-minute transaction fuzz preview passed (2 280 requests, 0 health fails); full 24h fuzzing pending per F2 | Report: [`docs/3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md`](../3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md) |
 | **G8** | 30-day continuous run completed | Cannot call "Stable" without uptime evidence | 🔄 In progress — started 2026-08-23 07:00 CET; target end 2026-09-22 07:00 CET; public status UI at `https://app.zionterranova.com/g8`; monitoring tracked via dashboard `/api/g8` |
-| **G9** | External / internal security audit | Internal tests pass; no formal review on record | ❌ Not started |
-| **G10** | L5 Free World / L6 Issobella decision | Must have defined run mode or explicit post-3.2 deferral | ⚠️ Decision pending |
+| **G9** | External security audit (L1/L2) — planned before launch | Internal tests pass; no formal review on record | ❌ Not started — external review scheduled before public launch |
+| **G10** | L5/L6 decision — treasury, humanitarian fund, Issobella governance | Must have defined run mode or explicit post-3.2 deferral | ⚠️ Decision pending — need run mode or post-3.2 deferral with treasury/humanitarian/Issobella governance |
 | **G11** | V3→V31 migration tooling complete | Foundry config, CLI stubs, public subtree, ZIS, OASIS server | ✅ Complete — `public/` subtree in sync (G4 ✅); ZIS deployed on Edge and healthy; UTXO v2 hash and `submitUtxoTransaction` wired through wallet SDK, CLI and pool; Foundry test suite (43 tests pass) for wZION/ZIONBridge/ZDXToken; CLI `deploy` wraps `forge create/script/test/verify`; CLI `update now` downloads from GitHub releases API; miner TUI + Cargo features verified on Linux; H6/H7/H8 documented as post-3.2 | Report: [`docs/3.2/REPORTS/REPORT_2026-08-22_G11_V3_V31_MIGRATION.md`](./REPORTS/REPORT_2026-08-22_G11_V3_V31_MIGRATION.md) |
 
 ---
@@ -83,7 +83,7 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 | # | Task | Owner | Acceptance |
 |---|------|-------|------------|
 | F1 | Security audit | security | L1, bridge contracts, multichain reviewed; findings mitigated or accepted |
-| F2 | 24h transaction fuzzing | QA | 🔄 10-min preview passed (2 280 req, 0 health fails); full 24h run started 2026-08-22 22:34 CET (PID 1235651, `scripts/ops/tx_fuzz.py`, target `127.0.0.1:8446`, concurrency 10); report will be at `docs/3.2/REPORTS/fuzz_logs/` |
+| F2 | Complete 24h transaction fuzz evidence | QA | 🔄 10-min preview passed (2 280 req, 0 health fails); full 24h run started 2026-08-22 22:34 CET but is not currently active and `docs/3.2/REPORTS/fuzz_logs/tx_fuzz_24h_stdout.log` is empty; evidence must be completed/restarted before gate close |
 | F3 | Chaos tests | QA/ops | ✅ Rounds 1–5 preview executed (network, process, data, resource, L2 bridge); no crashes | Report: [`docs/3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md`](../3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md) |
 | F4 | 1000+ miner simulation | pool/QA | ✅ 10 000-miner local pool handshake 100 % pass, 10 000-miner Edge connect storm survived; no panics | Report: [`docs/3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md`](../3.1/REPORTS/REPORT_2026-08-22_G7_CHAOS_LOAD_TESTS.md) |
 | F5 | Backup / DR drill | ops | restore from off-site backup, sync to tip |
@@ -114,18 +114,18 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 | H7 | PPS + SOLO pool modes | 📋 Post-3.2 — not a 3.2 blocker; PPLNS is production |
 | H8 | Pool downstream / proxy mode | 📋 Post-3.2 — not a 3.2 blocker; scaling enhancement |
 
-### Phase I — ZION Identity Service (ZIS) (parallel with E–F)
+### Phase I — ZION Identity Service (ZIS) — final public auth flows (parallel with E–F)
 
 | # | Task | Status |
 |---|------|--------|
-| I1 | ZIS OpenAPI design | ❌ Not started |
-| I2 | ZIS server implementation (`APP&WEB/identity/`) | ❌ Not started |
-| I3 | Unified Prisma schema | ❌ Not started |
-| I4 | Deploy ZIS on Edge | ❌ Not started |
-| I5 | Cross-domain cookie SSO | ❌ Not started |
-| I6 | EVM wallet auth (SIWE) | ❌ Not started |
-| I7 | Link EVM + ZION addresses | ❌ Not started |
-| I8 | API keys for programmatic access | ❌ Not started |
+| I1 | ZIS OpenAPI design | 🔄 In progress — Fastify routes (`/api/auth`, `/api/session`, `/api/keys`, `/health`, `/.well-known`) implemented; formal OpenAPI spec still to be committed |
+| I2 | ZIS server implementation (`APP&WEB/identity/`) | ✅ Complete — Fastify 4 server with Ed25519 + SIWE verify, sessions, API keys, rate limiting deployed on Edge |
+| I3 | Unified Prisma schema | ✅ Complete — `APP&WEB/shared/prisma/schema.prisma` covers User, LinkedAddress, Session, ApiKey, OASIS, Marketplace, DAO, Mining, Bridge, DEX, Notifications |
+| I4 | Deploy ZIS on Edge | ✅ Complete — `zion-zis.service` active, `https://auth.zionterranova.com/health` 200 |
+| I5 | Cross-domain cookie SSO | ✅ Complete — `zion_session` cookie on `.zionterranova.com`, httpOnly, secure, signed, 7-day expiry |
+| I6 | EVM wallet auth (SIWE) | ✅ Complete — `POST /api/auth/verify/siwe` verifies EIP-4361 messages with `siwe` library |
+| I7 | Link EVM + ZION addresses | ✅ Complete — `POST /api/auth/link` binds additional addresses to a user after signed challenge |
+| I8 | API keys for programmatic access | 🔄 In progress — `APP&WEB/identity/src/routes/apikey.ts` implemented; final public CLI/script flows need evidence |
 
 ### Phase J — Cross-App Integration (parallel with E–F)
 
