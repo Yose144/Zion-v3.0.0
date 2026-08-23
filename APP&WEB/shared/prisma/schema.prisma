@@ -14,6 +14,11 @@
 
 generator client {
   provider = "prisma-client-js"
+  // Output the generated client into the ZIS package. The shared schema is
+  // consumed primarily by APP&WEB/identity; apps with other package roots
+  // should generate from their own schema or override this value.
+  // Path is relative to this schema file (APP&WEB/shared/prisma/schema.prisma).
+  output   = "../../identity/node_modules/.prisma/client"
 }
 
 datasource db {

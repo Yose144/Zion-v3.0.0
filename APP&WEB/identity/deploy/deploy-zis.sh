@@ -35,9 +35,20 @@ rsync -avz --delete \
     "$REPO_ROOT/APP&WEB/identity/.env.example" \
     "zion-new:$ZIS_DIR/"
 
+# 2a. Sync the shared schema to the server-wide shared location.
+$SSH_CMD "mkdir -p /opt/zion/shared/prisma"
+rsync -avz --delete -e "ssh" \
+    "$REPO_ROOT/APP&WEB/shared/prisma/schema.prisma" \
+    "zion-new:/opt/zion/shared/prisma/"
+
 # 3. Install production deps on server
 echo "[3/5] Installing production dependencies..."
 $SSH_CMD "cd $ZIS_DIR && npm install --production"
+
+# 3a. Generate the Prisma client into the ZIS package.
+#     The shared schema output is configured to write to ../identity/node_modules.
+echo "[3a/5] Generating Prisma client..."
+$SSH_CMD "cd $ZIS_DIR && npx prisma generate --schema /opt/zion/shared/prisma/schema.prisma"
 
 # 4. Setup systemd service
 echo "[4/5] Installing systemd service..."
