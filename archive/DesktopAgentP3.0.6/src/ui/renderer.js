@@ -21,6 +21,20 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
+// ── SVG icon helpers for XSS-safe status messages ──
+// Sets an element's innerHTML to an SVG icon + escaped text (XSS-safe).
+const _SVG_ICONS = {
+  warn:   '<svg class="icon icon-inline" aria-hidden="true" style="vertical-align:-2px;color:#fcd34d;"><use href="#i-alert-triangle"></use></svg>',
+  error:  '<svg class="icon icon-inline" aria-hidden="true" style="vertical-align:-2px;color:#f87171;"><use href="#i-x-circle"></use></svg>',
+  ok:     '<svg class="icon icon-inline" aria-hidden="true" style="vertical-align:-2px;color:#6ee7b7;"><use href="#i-check-circle"></use></svg>',
+  info:   '<svg class="icon icon-inline" aria-hidden="true" style="vertical-align:-2px;color:#06b6d4;"><use href="#i-bulb"></use></svg>',
+};
+function setStatusIcon(el, type, text) {
+  if (!el) return;
+  const icon = _SVG_ICONS[type] || '';
+  el.innerHTML = icon + ' ' + escapeHtml(text);
+}
+
 // ── Sandbox-safe prompt replacement (Electron does not support window.prompt()) ──
 function showPrompt(title, defaultValue = '') {
   return new Promise((resolve) => {
@@ -2244,7 +2258,15 @@ function updateStats(stats) {
   setText('conn-count', stats.connection_count || '1');
 
   // ═══ Difficulty ═══
-  setText('difficulty-value', fmtDiff(stats.difficulty));
+  // V31 Trinity miner doesn't emit pool difficulty directly.
+  // Show accept rate from periodic metrics summary if available, else difficulty.
+  if (stats.overall_accept_rate) {
+    setText('difficulty-value', stats.overall_accept_rate);
+    setText('difficulty-label', 'Accept Rate');
+  } else {
+    setText('difficulty-value', fmtDiff(stats.difficulty));
+    setText('difficulty-label', 'Pool Difficulty');
+  }
   setText('pool-height', stats.last_job_height || '—');
   setText('active-algo', stats.stream_algorithm || stats.algorithm || '—');
 
@@ -2356,6 +2378,7 @@ function buildStatsSignature(stats) {
     stats.blocks_found,
     stats.pool_latency_ms,
     stats.stream_algorithm,
+    stats.overall_accept_rate,
     streamsSig,
   ].join('|');
 }
@@ -2503,7 +2526,7 @@ function renderShareLog() {
     const s = _shareLogBuffer[i];
     const time = new Date(s.ts || Date.now()).toLocaleTimeString();
     const ok = s.accepted;
-    const icon = ok ? '✓' : '✗';
+    const icon = ok ? '<svg class="icon icon-12" aria-hidden="true"><use href="#i-check-circle"></use></svg>' : '<svg class="icon icon-12" aria-hidden="true"><use href="#i-x-circle"></use></svg>';
     const cls = ok ? 'share-acc' : 'share-rej';
     const rawCoin = (s.coin || '—').toString();
     const isZion = rawCoin === 'ZION' || rawCoin.startsWith('ZION');
@@ -3121,7 +3144,7 @@ function setupWalletControls() {
       // Validate from
       if (!from || !from.startsWith('zion1')) {
         console.warn('[WALLET-SEND] Validation failed: no active wallet');
-        if (sendStatusEl) sendStatusEl.textContent = '⚠ No active wallet. Go to Overview tab → set your wallet address.';
+        if (sendStatusEl) setStatusIcon(sendStatusEl, 'warn', 'No active wallet. Go to Overview tab → set your wallet address.');
         if (sendNoWalletWarn) sendNoWalletWarn.style.display = 'block';
         return;
       }
@@ -3129,7 +3152,7 @@ function setupWalletControls() {
       // Validate to
       if (!to || !to.startsWith('zion1')) {
         console.warn('[WALLET-SEND] Validation failed: invalid recipient');
-        if (sendStatusEl) sendStatusEl.textContent = '⚠ Recipient address must be a valid zion1... address.';
+        if (sendStatusEl) setStatusIcon(sendStatusEl, 'warn', 'Recipient address must be a valid zion1... address.');
         return;
       }
 
@@ -3137,25 +3160,25 @@ function setupWalletControls() {
       const parsedAmount = parseFloat(amountRaw.replace(',', '.'));
       if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
         console.warn('[WALLET-SEND] Validation failed: invalid amount');
-        if (sendStatusEl) sendStatusEl.textContent = '⚠ Enter a valid amount greater than 0.';
+        if (sendStatusEl) setStatusIcon(sendStatusEl, 'warn', 'Enter a valid amount greater than 0.');
         return;
       }
 
       if (from === to) {
         console.warn('[WALLET-SEND] Validation failed: same address');
-        if (sendStatusEl) sendStatusEl.textContent = '⚠ Cannot send to yourself.';
+        if (sendStatusEl) setStatusIcon(sendStatusEl, 'warn', 'Cannot send to yourself.');
         return;
       }
 
       // Require password for UTXO signing
       if (!password) {
         console.warn('[WALLET-SEND] Validation failed: no password');
-        if (sendStatusEl) sendStatusEl.textContent = '⚠ Wallet password is required to sign the transaction.';
+        if (sendStatusEl) setStatusIcon(sendStatusEl, 'warn', 'Wallet password is required to sign the transaction.');
         return;
       }
 
       console.log('[WALLET-SEND] All validations passed, calling walletSendTransaction...');
-      if (sendStatusEl) sendStatusEl.textContent = '⏳ Sending…';
+      if (sendStatusEl) sendStatusEl.textContent = 'Sending…';
 
       const result = await window.electronAPI.walletSendTransaction({
         rpcUrl: getRpcUrl(),
@@ -3172,12 +3195,12 @@ function setupWalletControls() {
         const err = result?.error || 'send failed';
         console.error('[WALLET-SEND] Failed:', err);
         const hint = err.includes('Insufficient') ? ' (check your balance)' : err.includes('RPC') ? ' (node unreachable — try again)' : '';
-        if (sendStatusEl) sendStatusEl.textContent = `❌ ${err}${hint}`;
+        if (sendStatusEl) setStatusIcon(sendStatusEl, 'error', `${err}${hint}`);
         return;
       }
 
       console.log('[WALLET-SEND] Success! model:', result.model, 'txId=', result.txId);
-      if (sendStatusEl) sendStatusEl.textContent = `✅ Sent! ${result.model ? `[${result.model.toUpperCase()}]` : ''} Status: ${result.status || 'submitted'} · TX: ${result.txId || 'n/a'}`;
+      if (sendStatusEl) setStatusIcon(sendStatusEl, 'ok', `Sent! ${result.model ? `[${result.model.toUpperCase()}]` : ''} Status: ${result.status || 'submitted'} · TX: ${result.txId || 'n/a'}`);
       if (sendToEl) sendToEl.value = '';
       if (sendAmountEl) sendAmountEl.value = '';
       if (sendPurposeEl) sendPurposeEl.value = '';
@@ -3187,7 +3210,7 @@ function setupWalletControls() {
       setTimeout(refreshSendFrom, 1500);
     } catch (err) {
       console.error('[WALLET-SEND] Unexpected error:', err);
-      if (sendStatusEl) sendStatusEl.textContent = `❌ Unexpected error: ${err?.message || String(err)}`;
+      if (sendStatusEl) setStatusIcon(sendStatusEl, 'error', `Unexpected error: ${err?.message || String(err)}`);
     }
   });
 
@@ -3622,7 +3645,7 @@ function updateTripleStreamPanel(stats) {
   // Render each stream card (1-indexed: stream-1, stream-2, stream-3).
   // Prefer the explicit `index` field; fall back to array order if missing.
   for (let i = 1; i <= 3; i++) {
-    const stream = streams.find(s => Number(s.index) === i) || streams[i - 1];
+    const stream = streams.find(s => s && Number(s.index) === i) || streams[i - 1];
     const card = document.getElementById(`stream-card-${i}`);
     if (!card) continue;
 
@@ -3773,17 +3796,17 @@ async function refreshNetworkMetrics() {
     const syncBar  = el('net-sync-bar');
     if (syncBar) {
       if (s.online === 0) {
-        syncIcon.textContent = '✗';
+        syncIcon.innerHTML = '<svg class="icon icon-inline" aria-hidden="true"><use href="#i-x-circle"></use></svg>';
         syncText.textContent = 'All nodes offline';
         syncText.style.color = '#f87171';
         syncBar.style.borderColor = 'rgba(248,113,113,0.3)';
       } else if (s.inSync) {
-        syncIcon.textContent = '✓';
+        syncIcon.innerHTML = '<svg class="icon icon-inline" aria-hidden="true"><use href="#i-check-circle"></use></svg>';
         syncText.textContent = `Network Synchronized — ${s.online}/${s.total} nodes in consensus`;
         syncText.style.color = '#6ee7b7';
         syncBar.style.borderColor = 'rgba(16,185,129,0.3)';
       } else {
-        syncIcon.textContent = '!';
+        syncIcon.innerHTML = '<svg class="icon icon-inline" aria-hidden="true"><use href="#i-alert-triangle"></use></svg>';
         syncText.textContent = `Synchronizing... (${s.online}/${s.total} online)`;
         syncText.style.color = '#fbbf24';
         syncBar.style.borderColor = 'rgba(251,191,36,0.3)';
@@ -3875,12 +3898,12 @@ async function refreshPeerList() {
         ? '<span style="color:#6ee7b7;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;">● Connected</span>'
         : '<span style="color:#6b7280;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;">○ Known</span>';
       const dirLabel = p.incoming
-        ? '<span style="color:#4ade80;font-size:10px;">↓ IN</span>'
-        : '<span style="color:#fbbf24;font-size:10px;">↑ OUT</span>';
+        ? '<span style="color:#4ade80;font-size:10px;"><svg class="icon icon-10" aria-hidden="true" style="vertical-align:-1px;"><use href="#i-arrow-down"></use></svg> IN</span>'
+        : '<span style="color:#fbbf24;font-size:10px;"><svg class="icon icon-10" aria-hidden="true" style="vertical-align:-1px;"><use href="#i-arrow-up"></use></svg> OUT</span>';
       const heightStr = p.height ? p.height.toLocaleString() : '0';
       const idleSecs = p.idle_seconds || 0;
       const idleStr = idleSecs < 60 ? `${idleSecs}s` : idleSecs < 3600 ? `${Math.floor(idleSecs/60)}m` : `${Math.floor(idleSecs/3600)}h`;
-      const failStr = p.failed_attempts > 0 ? `<span style="color:#f87171;font-size:10px;margin-left:6px;">⚠ ${Number(p.failed_attempts)} fails</span>` : '';
+      const failStr = p.failed_attempts > 0 ? `<span style="color:#f87171;font-size:10px;margin-left:6px;"><svg class="icon icon-10" aria-hidden="true" style="vertical-align:-1px;"><use href="#i-alert-triangle"></use></svg> ${Number(p.failed_attempts)} fails</span>` : '';
       const safeHost = escapeHtml(String(p.host || p.address || ''));
       const safeSource = p.source_node ? `<span style="color:rgba(255,255,255,0.25);font-size:10px;">via ${escapeHtml(String(p.source_node))}</span>` : '';
       const safePort = escapeHtml(String(p.port || '8334'));
@@ -4303,25 +4326,25 @@ async function loadSecurityStatus() {
     // Render binaries status
     if (listEl && status?.binaries) {
       listEl.innerHTML = Object.entries(status.binaries).map(([name, info]) => {
-        let statusIcon = '✅';
+        let statusIcon = '<svg class="icon icon-16" aria-hidden="true"><use href="#i-check-circle"></use></svg>';
         let statusText = 'OK';
         let statusColor = '#6ee7b7';
         if (!info.exists) {
-          statusIcon = '❌';
+          statusIcon = '<svg class="icon icon-16" aria-hidden="true"><use href="#i-x-circle"></use></svg>';
           statusText = 'Chybí (smazáno antivirem?)';
           statusColor = '#f87171';
         } else if (info.quarantined) {
-          statusIcon = '⚠️';
+          statusIcon = '<svg class="icon icon-16" aria-hidden="true"><use href="#i-alert-triangle"></use></svg>';
           statusText = 'Quarantine (Gatekeeper)';
           statusColor = '#fcd34d';
         } else if (!info.executable) {
-          statusIcon = '⚠️';
+          statusIcon = '<svg class="icon icon-16" aria-hidden="true"><use href="#i-alert-triangle"></use></svg>';
           statusText = 'Bez exec permissions';
           statusColor = '#fcd34d';
         }
         return `<div class="resource-item">
           <div class="resource-item-left">
-            <span class="emoji-16">${statusIcon}</span>
+            ${statusIcon}
             <span class="resource-item-label">${name}</span>
           </div>
           <span class="resource-item-value" style="color:${statusColor}">${statusText}</span>
@@ -4335,12 +4358,16 @@ async function loadSecurityStatus() {
       recsEl.innerHTML = status.recommendations.map(rec => {
         if (rec.type === 'ok') {
           return `<div class="glass-panel" style="padding:12px; background:rgba(110,231,183,.08); border:1px solid rgba(110,231,183,.2);">
-            <span style="color:#6ee7b7; font-weight:600;">✅ ${rec.title}</span>
+            <svg class="icon icon-inline" aria-hidden="true" style="vertical-align:-2px; color:#6ee7b7;"><use href="#i-check-circle"></use></svg>
+            <span style="color:#6ee7b7; font-weight:600;">${rec.title}</span>
             <span style="color:var(--text-secondary); margin-left:8px;">${rec.description}</span>
           </div>`;
         }
         return `<div class="glass-panel" style="padding:12px; background:rgba(248,113,113,.06); border:1px solid rgba(248,113,113,.2);">
-          <div style="color:#f87171; font-weight:600; margin-bottom:4px;">⚠️ ${rec.title}</div>
+          <div style="color:#f87171; font-weight:600; margin-bottom:4px;">
+            <svg class="icon icon-inline" aria-hidden="true" style="vertical-align:-2px;"><use href="#i-alert-triangle"></use></svg>
+            ${rec.title}
+          </div>
           <div style="color:var(--text-secondary); font-size:13px; white-space:pre-wrap;">${rec.description}</div>
           ${rec.command ? `<code style="display:block; margin-top:8px; padding:6px 10px; background:rgba(255,255,255,.06); border-radius:6px; font-size:12px; color:#22c55e; word-break:break-all;">${rec.command}</code>` : ''}
         </div>`;
@@ -4431,7 +4458,7 @@ function initBridgeView() {
     if (countEl) countEl.textContent = `${doneCount}/${items.length}`;
     grid.innerHTML = items.map(item => {
       const cls = item.done ? 'status-done' : 'status-pending';
-      const icon = item.done ? '✓' : '◐';
+      const icon = item.done ? '<svg class="icon icon-12" aria-hidden="true"><use href="#i-check-circle"></use></svg>' : '<svg class="icon icon-12" aria-hidden="true"><use href="#i-arrow-up"></use></svg>';
       return `<div class="bridge-readiness-row ${cls}">
         <span class="bridge-readiness-icon">${icon}</span>
         <span class="bridge-readiness-label">${escapeHtml(item.label)}</span>
@@ -4492,10 +4519,10 @@ function initBridgeView() {
           if (fromInput) fromInput.value = addr;
           rebuildMemo();
         } else {
-          if (statusEl) statusEl.textContent = '⚠ No active wallet set. Go to Wallet tab → set your wallet address.';
+          if (statusEl) setStatusIcon(statusEl, 'warn', 'No active wallet set. Go to Wallet tab → set your wallet address.');
         }
       } catch {
-        if (statusEl) statusEl.textContent = '⚠ Could not read config';
+        if (statusEl) setStatusIcon(statusEl, 'warn', 'Could not read config');
       }
     });
   }
@@ -4510,28 +4537,28 @@ function initBridgeView() {
       const memo  = memoInput?.value ?? '';
 
       if (!/^0x[0-9a-fA-F]{40}$/.test(evm)) {
-        if (statusEl) statusEl.textContent = '⚠ Invalid EVM address (must be 0x + 40 hex chars)';
+        if (statusEl) setStatusIcon(statusEl, 'warn', 'Invalid EVM address (must be 0x + 40 hex chars)');
         return;
       }
       if (amt < 100) {
-        if (statusEl) statusEl.textContent = '⚠ Minimum 100 ZION';
+        if (statusEl) setStatusIcon(statusEl, 'warn', 'Minimum 100 ZION');
         return;
       }
       if (!from || !from.startsWith('zion1')) {
-        if (statusEl) statusEl.textContent = '⚠ Set your ZION L1 wallet address (click "Use active wallet")';
+        if (statusEl) setStatusIcon(statusEl, 'warn', 'Set your ZION L1 wallet address (click "Use active wallet")');
         return;
       }
       if (!pwd) {
-        if (statusEl) statusEl.textContent = '⚠ Wallet password is required to sign the transaction';
+        if (statusEl) setStatusIcon(statusEl, 'warn', 'Wallet password is required to sign the transaction');
         return;
       }
       if (!memo.startsWith('BRIDGE:base:')) {
-        if (statusEl) statusEl.textContent = '⚠ Memo not generated — enter EVM address first';
+        if (statusEl) setStatusIcon(statusEl, 'warn', 'Memo not generated — enter EVM address first');
         return;
       }
 
       sendBtn.disabled = true;
-      if (statusEl) statusEl.textContent = '⏳ Sending lock transaction...';
+      if (statusEl) statusEl.textContent = 'Sending lock transaction...';
 
       try {
         // Reuse wallet-send IPC with memo field (bridge lock TX)
@@ -4549,11 +4576,11 @@ function initBridgeView() {
           if (resultEl) resultEl.style.display = 'block';
           if (txHashEl) txHashEl.textContent = result.txId ?? result.tx_id ?? 'submitted';
         } else {
-          if (statusEl) statusEl.textContent = `❌ ${result?.error ?? 'Transaction failed'}`;
+          if (statusEl) setStatusIcon(statusEl, 'error', `${result?.error ?? 'Transaction failed'}`);
           sendBtn.disabled = false;
         }
       } catch (e) {
-        if (statusEl) statusEl.textContent = `❌ ${e.message ?? 'Unknown error'}`;
+        if (statusEl) setStatusIcon(statusEl, 'error', `${e.message ?? 'Unknown error'}`);
         sendBtn.disabled = false;
       }
     });
@@ -4724,7 +4751,7 @@ async function _nodeRefresh() {
       const syncEl   = document.getElementById('node-stat-sync');
       const bpsEl    = document.getElementById('node-stat-bps');
       if (heightEl) heightEl.textContent = _nodeFmt(s.current_height || s.download_height);
-      if (syncEl)   syncEl.textContent   = isRemote ? '✓ Remote' : (s.syncing ? `${s.percent?.toFixed(1) ?? 0}%` : (s.state === 'Steady' ? '✓ Synced' : '—'));
+      if (syncEl)   syncEl.innerHTML   = isRemote ? '<svg class="icon icon-10" aria-hidden="true" style="vertical-align:-1px;color:#6ee7b7;"><use href="#i-check-circle"></use></svg> Remote' : (s.syncing ? `${s.percent?.toFixed(1) ?? 0}%` : (s.state === 'Steady' ? '<svg class="icon icon-10" aria-hidden="true" style="vertical-align:-1px;color:#6ee7b7;"><use href="#i-check-circle"></use></svg> Synced' : '—'));
       if (bpsEl)    bpsEl.textContent    = s.blocks_per_sec > 0 ? `${s.blocks_per_sec.toFixed(0)}` : '—';
 
       // Peer counts (overview + peers tab)
@@ -4750,20 +4777,21 @@ async function _nodeRefresh() {
       const syncTxt  = document.getElementById('node-sync-text');
       if (syncBar && syncTxt) {
         syncBar.classList.remove('ibd', 'synced');
+        const svgIcon = (id) => `<svg class="icon icon-inline" aria-hidden="true"><use href="#${id}"></use></svg>`;
         if (isRemote) {
-          if (syncIcon) syncIcon.textContent = '🌐';
+          if (syncIcon) syncIcon.innerHTML = svgIcon('i-link');
           syncTxt.innerHTML = `Připojeno k <b>Edge node</b> (${r.remoteHost || '62.171.141.136'}) — blok <b>#${s.current_height ?? 0}</b>`;
           syncBar.classList.add('synced');
         } else if (s.state === 'IBD') {
-          if (syncIcon) syncIcon.textContent = '⬇';
+          if (syncIcon) syncIcon.innerHTML = svgIcon('i-arrow-down');
           syncTxt.innerHTML = `Synchronizuji bloky… <b>${s.percent?.toFixed(1) ?? 0}%</b>`;
           syncBar.classList.add('ibd');
         } else if (s.state === 'Steady') {
-          if (syncIcon) syncIcon.textContent = '✓';
+          if (syncIcon) syncIcon.innerHTML = svgIcon('i-check');
           syncTxt.innerHTML = `Node je plně synchronizován — blok <b>#${s.current_height ?? s.download_height ?? 0}</b>`;
           syncBar.classList.add('synced');
         } else {
-          if (syncIcon) syncIcon.textContent = '⚡';
+          if (syncIcon) syncIcon.innerHTML = svgIcon('i-zap');
           syncTxt.innerHTML = `Stav: <b>${s.state ?? '?'}</b>`;
         }
       }
@@ -4825,7 +4853,7 @@ async function _nodeRefresh() {
         const syncIcon = document.getElementById('node-sync-icon');
         const syncBar = document.getElementById('node-sync-bar');
         if (syncTxt)  syncTxt.innerHTML = 'Node není spuštěn — klikni na <b>Spustit Node</b> nebo se připoj k <b>Edge node</b>';
-        if (syncIcon) syncIcon.textContent = '⚡';
+        if (syncIcon) syncIcon.innerHTML = '<svg class="icon icon-inline" aria-hidden="true"><use href="#i-zap"></use></svg>';
         if (syncBar)  syncBar.classList.remove('ibd', 'synced');
       }
     }
@@ -5282,7 +5310,7 @@ function initDefiView() {
     stakeBtn.addEventListener('click', () => {
       const amt = document.getElementById('defi-stake-amount')?.value;
       if (!amt || Number(amt) <= 0) {
-        if (stakeStatus) stakeStatus.textContent = '⚠ Enter a valid amount';
+        if (stakeStatus) setStatusIcon(stakeStatus, 'warn', 'Enter a valid amount');
         return;
       }
       window.electronAPI?.openExternal?.('https://zionterranova.com/defi/staking');
@@ -5325,7 +5353,7 @@ function initDefiView() {
     portfolioBtn.addEventListener('click', async () => {
       const evm = portfolioInput?.value?.trim() ?? '';
       if (!/^0x[0-9a-fA-F]{40}$/.test(evm)) {
-        if (portfolioStatus) portfolioStatus.textContent = '⚠ Enter a valid 0x EVM address';
+        if (portfolioStatus) setStatusIcon(portfolioStatus, 'warn', 'Enter a valid 0x EVM address');
         return;
       }
       if (portfolioStatus) portfolioStatus.textContent = 'Looking up balances...';
@@ -5683,7 +5711,7 @@ async function refreshDaoTreasury() {
         <div class="dao-guardian-card" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;text-align:center">
           <div style="width:40px;height:40px;border-radius:50%;background:var(--zion-gradient,linear-gradient(135deg,#fcd116,#e41e2b));margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff">${i + 1}</div>
           <div style="font-size:11px;color:rgba(255,255,255,0.5);font-family:monospace;word-break:break-all">${addr.substring(0, 20)}...${addr.substring(addr.length - 6)}</div>
-          <div style="margin-top:6px;font-size:11px;color:var(--zion-green)">✓ Active</div>
+          <div style="margin-top:6px;font-size:11px;color:var(--zion-green)"><svg class="icon icon-10" aria-hidden="true" style="vertical-align:-1px;"><use href="#i-check-circle"></use></svg> Active</div>
         </div>`).join('');
     }
   } catch (e) {

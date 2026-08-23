@@ -662,6 +662,11 @@ let appHeartbeatLastLogMs = 0;
 let minerRateSamples = [];
 let minerShareLastSample = { t: 0, accepted: 0, rejected: 0 };
 let minerShareDeltaSamples = [];
+// Track last seen accepted/rejected counts per stream for synthetic share events.
+// ZANO and VRSC don't emit "V3 Trinity: {COIN} share accepted" lines — their
+// shares are only visible as incrementing counts in periodic "stream stats" lines.
+// We detect the increment and emit a synthetic share-event to the renderer.
+let _streamShareCounts = { 1: { accepted: -1, rejected: -1 }, 2: { accepted: -1, rejected: -1 }, 3: { accepted: -1, rejected: -1 } };
 let minerStats = {
   hashrate: 0,
   shares: 0,
@@ -733,6 +738,7 @@ function resetMinerTelemetryForNewSpawn() {
   delete minerStats.miner_version;
   // Reset Boost per-stream telemetry on new spawn
   minerStats.streams = [];
+  _streamShareCounts = { 1: { accepted: -1, rejected: -1 }, 2: { accepted: -1, rejected: -1 }, 3: { accepted: -1, rejected: -1 } };
   Object.assign(minerStats, {
     hashrate: 0,
     shares: 0,
@@ -3263,10 +3269,18 @@ function stopMining() {
 
 function maybeEmitBlockFound(output) {
   const clean = output.replace(/\x1B\[[0-9;]*[A-Za-z]/g, '').replace(/\x1B\[\?[0-9;]*[A-Za-z]/g, '');
+  // Standard V31 format: "[BLOCK FOUND] height=1523"
   const m = clean.match(/\[?BLOCK FOUND\]?.*height[=:]\s*(\d+)/i) || clean.match(/block found.*height[=:]\s*(\d+)/i);
   if (m) {
     try {
       sendToRenderer('block-found', { height: parseInt(m[1], 10) });
+    } catch {}
+  }
+  // V3 Trinity format: "V3 Trinity: ZION block found height=1523"
+  const trinityM = clean.match(/V3\s+Trinity:\s+(\S+)\s+block\s+found\s+height[=:]\s*(\d+)/i);
+  if (trinityM) {
+    try {
+      sendToRenderer('block-found', { height: parseInt(trinityM[2], 10), coin: trinityM[1].toUpperCase() });
     } catch {}
   }
 }
@@ -3314,6 +3328,38 @@ function maybeEmitShareEvent(output) {
       sendToRenderer('share-event', {
         stream: extRejM[1] === 'VRSC' ? 3 : 2, coin: extRejM[1],
         accepted: false, status: extRejM[2], ts: Date.now(),
+      });
+    } catch {}
+  }
+
+  // ── V3 Trinity share events (per-stream real-time) ──
+  // "V3 Trinity: ZION share accepted job=4737 nonce=2201928 height=14185"
+  // "V3 Trinity: ZANO share accepted job=... nonce=... height=..."
+  // "V3 Trinity: VRSC share accepted job=... nonce=... height=..."
+  const trinityAccM = clean.match(/V3\s+Trinity:\s+(\S+)\s+share\s+accepted\s+job=(\d+)\s+nonce=(\d+)\s+height=(\d+)/i);
+  if (trinityAccM) {
+    const coin = trinityAccM[1].toUpperCase();
+    const streamIdx = coin === 'ZION' ? 1 : coin === 'ZANO' ? 2 : coin === 'VRSC' ? 3 : 1;
+    const algo = coin === 'ZION' ? 'ekam_deeksha' : coin === 'ZANO' ? 'progpow' : coin === 'VRSC' ? 'verushash' : '';
+    try {
+      sendToRenderer('share-event', {
+        stream: streamIdx, coin, accepted: true, algorithm: algo,
+        job: parseInt(trinityAccM[2], 10), height: parseInt(trinityAccM[4], 10),
+        nonce: parseInt(trinityAccM[3], 10), ts: Date.now(),
+      });
+    } catch {}
+  }
+  const trinityRejM = clean.match(/V3\s+Trinity:\s+(\S+)\s+share\s+rejected\s+job=(\d+)\s+nonce=(\d+)\s+height=(\d+)(?:\s+reason="([^"]+)")?/i);
+  if (trinityRejM) {
+    const coin = trinityRejM[1].toUpperCase();
+    const streamIdx = coin === 'ZION' ? 1 : coin === 'ZANO' ? 2 : coin === 'VRSC' ? 3 : 1;
+    const algo = coin === 'ZION' ? 'ekam_deeksha' : coin === 'ZANO' ? 'progpow' : coin === 'VRSC' ? 'verushash' : '';
+    try {
+      sendToRenderer('share-event', {
+        stream: streamIdx, coin, accepted: false, algorithm: algo,
+        job: parseInt(trinityRejM[2], 10), height: parseInt(trinityRejM[4], 10),
+        nonce: parseInt(trinityRejM[3], 10), reason: trinityRejM[5] || 'rejected',
+        ts: Date.now(),
       });
     } catch {}
   }
@@ -3904,52 +3950,95 @@ function parseMinerOutput(output) {
   // ═══════════════════════════════════════════════════════════════
 
   // ─── V31 stream stats: per-stream hashrate + accepted/rejected ───
-  const v31StreamMatch = output.match(/stream stats\s+stream=(\S+)\s+coin=(\S+)\s+accepted=(\d+)\s+rejected=(\d+)\s+hashrate=([\d.]+)\s+status=(\S+)/);
-  if (v31StreamMatch) {
-    const stream = v31StreamMatch[1];
-    const accepted = parseInt(v31StreamMatch[3]);
-    const rejected = parseInt(v31StreamMatch[4]);
-    const hashrate = parseFloat(v31StreamMatch[5]);
-    const status = v31StreamMatch[6];
+  // Three streams: zion (Stream 1), gpu-external (Stream 2 = ZANO), cpu-external (Stream 3 = VRSC)
+  const streamIndex = { zion: 1, 'gpu-external': 2, 'cpu-external': 3 };
+  const streamLabels = { zion: 'ZION', 'gpu-external': 'ZANO', 'cpu-external': 'VRSC' };
+  const streamAlgos = { zion: 'ekam_deeksha', 'gpu-external': 'progpow', 'cpu-external': 'verushash' };
+  const streamDefaultCoins = { zion: 'ZION', 'gpu-external': 'ZANO', 'cpu-external': 'VRSC' };
+  if (!Array.isArray(minerStats.streams)) minerStats.streams = [];
+  // Use a temp object keyed by 1-based index to avoid sparse array issues.
+  // Direct array assignment (streams[1]=...) + filter() compaction causes
+  // re-indexing that corrupts the mapping on subsequent calls.
+  const _newStreams = {};
+  for (const m of output.matchAll(/(?:^|\n)[^\n]*?stream\s+stats[^\n]*stream\s*=\s*"?([^"\s,]+)"?\s+coin\s*=\s*"?([^"\s,]+)"?\s+accepted\s*=\s*(\d+)\s+rejected\s*=\s*(\d+)\s+hashrate\s*=\s*([^\s,]+)\s+status\s*=\s*"?([^"\s,]+)"?/gi)) {
+    const streamId = String(m[1] || '').toLowerCase();
+    const idx = streamIndex[streamId] ?? 1;
+    const hr = parseFloat(m[5]);
+    const active = String(m[6] || '').toLowerCase() === 'active';
+    const accepted = parseInt(m[3], 10) || 0;
+    const rejected = parseInt(m[4], 10) || 0;
+    // Coin from miner; fallback to default if miner reports generic stream id
+    let coin = String(m[2] || '');
+    if (coin === streamId || coin === 'gpu-external' || coin === 'cpu-external') {
+      coin = streamDefaultCoins[streamId] || coin;
+    }
+    _newStreams[idx] = {
+      index: idx,
+      label: streamLabels[streamId] || streamId,
+      coin: coin,
+      algorithm: streamAlgos[streamId] || '',
+      hashrate_10s: Number.isFinite(hr) ? hr : 0,
+      hashrate_60s: Number.isFinite(hr) ? hr : 0,
+      hashrate_15m: Number.isFinite(hr) ? hr : 0,
+      accepted,
+      rejected,
+      active
+    };
 
-    if (stream === 'zion') {
-      minerStats.accepted = accepted;
-      minerStats.rejected = rejected;
-      minerStats.shares = accepted + rejected;
-      minerStats.hashrate = hashrate;
-      minerStats.hashrate_10s = hashrate;
-      minerStats.hashrate_60s = hashrate;
-      minerStats.hashrate_15m = hashrate;
-      if (!Number.isFinite(Number(minerStats.hashrate_max)) || hashrate > Number(minerStats.hashrate_max)) {
-        minerStats.hashrate_max = hashrate;
+    // Detect share count increments for ZANO (stream 2) and VRSC (stream 3).
+    // These streams don't emit "V3 Trinity: {COIN} share accepted" lines,
+    // so we synthesize share events from the periodic stream stats counters.
+    // Stream 1 (ZION) has real-time share events, so we skip it here to avoid
+    // duplicate entries in the share log.
+    if (idx >= 2) {
+      const prev = _streamShareCounts[idx];
+      if (prev && prev.accepted >= 0) {
+        const accDelta = accepted - prev.accepted;
+        const rejDelta = rejected - prev.rejected;
+        if (accDelta > 0) {
+          try {
+            sendToRenderer('share-event', {
+              stream: idx, coin, accepted: true,
+              status: 'accepted', algorithm: streamAlgos[streamId] || '', ts: Date.now(),
+            });
+          } catch {}
+        }
+        if (rejDelta > 0) {
+          try {
+            sendToRenderer('share-event', {
+              stream: idx, coin, accepted: false,
+              status: 'rejected', reason: 'rejected', algorithm: streamAlgos[streamId] || '', ts: Date.now(),
+            });
+          } catch {}
+        }
       }
-      minerStats.accept_rate = (accepted + rejected) > 0
-        ? (accepted / (accepted + rejected)) * 100 : 100;
+      _streamShareCounts[idx] = { accepted, rejected };
     }
-    // Track GPU/CPU external streams for Boost UI
-    if (stream === 'gpu-external') {
-      minerStats.gpu_accepted = accepted;
-      minerStats.gpu_rejected = rejected;
-      minerStats.gpu_hashrate = hashrate;
-    }
-    if (stream === 'cpu-external') {
-      minerStats.cpu_accepted = accepted;
-      minerStats.cpu_rejected = rejected;
-      minerStats.cpu_hashrate = hashrate;
-    }
+
+    // Do NOT set top-level accepted/rejected here — the top-level shares
+    // should be the TOTAL across all 3 streams, set by the periodic metrics
+    // summary parser below.
   }
 
-  // ─── V31 overall hashrate line: "hashrate=X H/s submitted=N accepted=N rejected=N ..." ───
-  const v31OverallMatch = output.match(/hashrate=([\d.]+)\s+H\/s\s+submitted=(\d+)\s+accepted=(\d+)\s+rejected=(\d+)\s+jobs=(\d+)\s+reconnects=(\d+)\s+coin=(\S+)\s+pool=(\S+)/);
-  if (v31OverallMatch) {
-    const hr = parseFloat(v31OverallMatch[1]);
-    const accepted = parseInt(v31OverallMatch[3]);
-    const rejected = parseInt(v31OverallMatch[4]);
-    // V31 overall line is the authoritative source for total stats
-    minerStats.accepted = accepted;
-    minerStats.rejected = rejected;
-    minerStats.shares = accepted + rejected;
-    if (hr > 0) {
+  // Build a dense array from the temp object, sorted by stream index.
+  // This replaces the old sparse-array + filter() approach which caused
+  // duplicate ZION entries (filter re-indexed the array, so the next
+  // streams[1]=... overwrote ZANO instead of updating ZION).
+  const _sortedIdxs = Object.keys(_newStreams).map(Number).sort((a, b) => a - b);
+  if (_sortedIdxs.length > 0) {
+    minerStats.streams = _sortedIdxs.map(i => _newStreams[i]);
+  }
+
+  // ─── V31 TUI log (aggregate hashrate only) ───
+  // hashrate=1234 H/s submitted=0 accepted=0 rejected=0 jobs=0 reconnects=0 coin=zion pool=...
+  // NOTE: The TUI log's accepted/rejected are per-coin (whichever stream
+  // reported last), NOT the total across all streams. We only use this line
+  // for hashrate and pool/coin metadata. Total shares come from the periodic
+  // metrics summary parser below.
+  const v31TuiMatch = output.match(/hashrate\s*=\s*([\d.]+)\s*H\/s\s+submitted\s*=\s*(\d+)\s+accepted\s*=\s*(\d+)\s+rejected\s*=\s*(\d+)\s+jobs\s*=\s*(\d+)\s+reconnects\s*=\s*(\d+)\s+coin\s*=\s*([^\s,]+)\s+pool\s*=\s*([^\s,]+)/i);
+  if (v31TuiMatch) {
+    const hr = parseFloat(v31TuiMatch[1]);
+    if (Number.isFinite(hr) && hr > 0) {
       minerStats.hashrate = hr;
       minerStats.hashrate_10s = hr;
       minerStats.hashrate_60s = hr;
@@ -3958,8 +4047,55 @@ function parseMinerOutput(output) {
         minerStats.hashrate_max = hr;
       }
     }
-    minerStats.accept_rate = (accepted + rejected) > 0
-      ? (accepted / (accepted + rejected)) * 100 : 100;
+    minerStats.submitted = parseInt(v31TuiMatch[2], 10) || 0;
+    minerStats.jobs_received = parseInt(v31TuiMatch[5], 10) || 0;
+    minerStats.reconnect_count = parseInt(v31TuiMatch[6], 10) || 0;
+    minerStats.coin = v31TuiMatch[7];
+    minerStats.pool = v31TuiMatch[8];
+  }
+
+  // ─── V31 periodic metrics summary: TOTAL hashrate + TOTAL shares ───
+  // ═══ periodic metrics summary ═══ active_streams=3 total_hashrate=19.68 MH/s total_accepted=1337 total_rejected=6 overall_accept_rate="100.0%"
+  const v31MetricsSummaryMatch = output.match(/periodic\s+metrics\s+summary.*?active_streams\s*=\s*(\d+).*?total_hashrate\s*=\s*([\d.]+)\s*([kKmMgGtT]?H\/s).*?total_accepted\s*=\s*(\d+).*?total_rejected\s*=\s*(\d+)(?:.*?overall_accept_rate\s*=\s*"([^"]+)")?/i);
+  if (v31MetricsSummaryMatch) {
+    const unit = String(v31MetricsSummaryMatch[3] || 'H/s').toLowerCase();
+    const mult = unit.startsWith('th') ? 1e12 : unit.startsWith('gh') ? 1e9 : unit.startsWith('mh') ? 1e6 : unit.startsWith('kh') ? 1e3 : 1;
+    const totalHr = parseFloat(v31MetricsSummaryMatch[2]) * mult;
+    if (Number.isFinite(totalHr) && totalHr > 0) {
+      minerStats.hashrate = totalHr;
+      minerStats.hashrate_10s = totalHr;
+      minerStats.hashrate_60s = totalHr;
+      minerStats.hashrate_15m = totalHr;
+      if (!Number.isFinite(Number(minerStats.hashrate_max)) || totalHr > Number(minerStats.hashrate_max)) {
+        minerStats.hashrate_max = totalHr;
+      }
+    }
+    // Total shares across ALL 3 streams (ZION + ZANO + VRSC)
+    const totalAccepted = parseInt(v31MetricsSummaryMatch[4], 10) || 0;
+    const totalRejected = parseInt(v31MetricsSummaryMatch[5], 10) || 0;
+    minerStats.accepted = totalAccepted;
+    minerStats.rejected = totalRejected;
+    minerStats.shares = totalAccepted + totalRejected;
+    // Accept rate for difficulty card display
+    if (v31MetricsSummaryMatch[6]) {
+      minerStats.overall_accept_rate = v31MetricsSummaryMatch[6];
+    }
+  }
+
+  // ─── V31 summary line (fallback hashrate only) ───
+  // pool=62.171.141.136:8444 coin=zion hashrate=1234 H/s accepted=0 rejected=0
+  // Only used when neither TUI log nor periodic metrics summary matched.
+  const v31SummaryMatch = output.match(/pool\s*=\s*([^\s,]+)\s+coin\s*=\s*([^\s,]+)\s+hashrate\s*=\s*([\d.]+)\s*H\/s\s+accepted\s*=\s*(\d+)\s+rejected\s*=\s*(\d+)/i);
+  if (v31SummaryMatch && !v31TuiMatch && !v31MetricsSummaryMatch) {
+    const hr = parseFloat(v31SummaryMatch[3]);
+    if (Number.isFinite(hr) && hr > 0) {
+      minerStats.hashrate = hr;
+      minerStats.hashrate_10s = hr;
+      minerStats.hashrate_60s = hr;
+      minerStats.hashrate_15m = hr;
+    }
+    minerStats.pool = v31SummaryMatch[1];
+    minerStats.coin = v31SummaryMatch[2];
   }
 
   // ─── V31 ZION share accepted/rejected: "V3 Trinity: ZION share accepted job=N nonce=N height=N" ───
@@ -3981,8 +4117,8 @@ function parseMinerOutput(output) {
     minerStats.last_share_time = Date.now();
   }
 
-  // ─── V31 GPU init: "gpu_cuda_lite_init device=\"...\" work_size=N scratchpad_mb=N" ───
-  const v31GpuInitMatch = output.match(/gpu_cuda_lite_init\s+device="([^"]+)"\s+work_size=(\d+)\s+scratchpad_mb=(\d+)/);
+  // ─── V31 GPU init: "gpu_cuda_lite_init device=\"...\" work_size=N scratchpad_mb=N tpb=N" ───
+  const v31GpuInitMatch = output.match(/gpu_cuda_lite_init\s+device="([^"]+)"\s+work_size=(\d+)\s+scratchpad_mb=(\d+)(?:\s+tpb=(\d+))?/);
   if (v31GpuInitMatch) {
     minerStats.gpu_backend = 'cuda';
     minerStats.runtime_backend = 'cuda';
@@ -3990,8 +4126,36 @@ function parseMinerOutput(output) {
     minerStats.gpu_type = 'cuda';
     minerStats.cpu_only_mode = false;
     minerStats.gpu_device = v31GpuInitMatch[1];
+    minerStats.gpu_name = v31GpuInitMatch[1];
+    minerStats.gpu_info = `cuda: ${v31GpuInitMatch[1]} (ws=${v31GpuInitMatch[2]}, scratchpad=${v31GpuInitMatch[3]}MiB)`;
     minerStats.gpu_work_size = parseInt(v31GpuInitMatch[2]);
     minerStats.gpu_vram_mib = parseInt(v31GpuInitMatch[3]);
+  }
+
+  // ─── V31 auto-tune CPU: "[auto-tune] CPU: AuthenticAMD "AMD Ryzen 5 3600 6-Core Processor" | physical=6 logical=12 arch=AmdZen | threads=12 nonce_count=5000000" ───
+  const v3AutoTuneMatch = output.match(/\[auto-tune\]\s+CPU:\s+\S+\s+"([^"]+)"\s+\|\s+physical=(\d+)\s+logical=(\d+)\s+arch=(\S+)\s+\|\s+threads=(\d+)/);
+  if (v3AutoTuneMatch) {
+    minerStats.cpu_name = v3AutoTuneMatch[1];
+    minerStats.cpu_cores = parseInt(v3AutoTuneMatch[2], 10);
+    minerStats.cpu_logical = parseInt(v3AutoTuneMatch[3], 10);
+    minerStats.cpu_threads = parseInt(v3AutoTuneMatch[5], 10);
+    minerStats.threads = v3AutoTuneMatch[5];
+  }
+
+  // ─── V31 Trinity stream enablement: "Stream 1 (ZION): ENABLED (threads=6)" ───
+  const v3StreamEnableMatch = output.match(/Stream\s+1\s+\(ZION\):\s+ENABLED\s+\(threads=(\d+)\)/);
+  if (v3StreamEnableMatch) {
+    if (!minerStats.cpu_threads) {
+      minerStats.cpu_threads = parseInt(v3StreamEnableMatch[1], 10);
+      minerStats.threads = v3StreamEnableMatch[1];
+    }
+  }
+
+  // ─── V31 block height from ZANO/VRSC progpow recompilation ───
+  // "progpow_cuda: recompiling kernel period=N dag_elements=N block_height=3828953"
+  const v3BlockHeightMatch = output.match(/block_height=(\d+)/);
+  if (v3BlockHeightMatch) {
+    minerStats.last_job_height = parseInt(v3BlockHeightMatch[1], 10);
   }
 
   // ─── V31 GPU ZION init: "gpu_zion_init backend=cuda device=\"...\" work_size=N algorithm=..." ───
@@ -4359,6 +4523,17 @@ ipcMain.handle('stop-mining', async () => {
 
 ipcMain.handle('get-stats', () => {
   return composeStatsPayload();
+});
+
+ipcMain.handle('test-block-found', (_event, { height, coin } = {}) => {
+  const h = height || Math.floor(Math.random() * 100000) + 14000;
+  const c = coin || 'ZION';
+  try {
+    sendToRenderer('block-found', { height: h, coin: c });
+  } catch {}
+  minerStats.blocks_found = (minerStats.blocks_found || 0) + 1;
+  minerStats.last_block_height = h;
+  return { success: true, height: h, coin: c };
 });
 
 ipcMain.handle('open-logs', () => {
