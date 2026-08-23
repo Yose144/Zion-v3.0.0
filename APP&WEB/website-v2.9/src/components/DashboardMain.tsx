@@ -24,6 +24,16 @@ interface V3Metrics {
   source?: 'live' | 'fallback';
 }
 
+interface G8Run {
+  started?: string;
+  target_end?: string;
+  status?: 'not_started' | 'running' | 'completed' | 'stopped';
+  elapsed_seconds?: number;
+  remaining_seconds?: number;
+  progress_percent?: number;
+  uptime_percent?: number | null;
+}
+
 interface TreasuryItem { label: string; address: string; share: string; role: string; }
 interface DaoProposal { id: string; title: string; status: 'active' | 'passed' | 'failed' | 'pending'; yes_votes: number; no_votes: number; deadline: string; }
 
@@ -228,7 +238,84 @@ function WalletGate({ onEnter }: { onEnter: () => void }) {
   );
 }
 
-function MissionControlLite({ metrics }: { metrics: V3Metrics | null }) {
+function G8RunCard({ g8 }: { g8: G8Run | null }) {
+  if (!g8?.started) {
+    return (
+      <Card className="relative overflow-hidden col-span-2 sm:col-span-4">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-9 h-9 rounded-xl bg-zion-cyan/15 flex items-center justify-center">
+            <Activity size={18} className="text-zion-cyan" />
+          </div>
+          <h3 className="text-sm font-semibold text-white">30-Day Continuous Run</h3>
+        </div>
+        <p className="text-xs text-gray-400">G8 has not started.</p>
+      </Card>
+    );
+  }
+
+  const pct = g8.progress_percent ?? 0;
+  const elapsed = g8.elapsed_seconds ?? 0;
+  const remaining = g8.remaining_seconds ?? 0;
+
+  function fmtG8Duration(s: number) {
+    const d = Math.floor(s / 86400);
+    const h = Math.floor((s % 86400) / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    return `${d}d ${h}h ${m}m`;
+  }
+
+  const statusColor = g8.status === 'running' ? '#22C55E' : g8.status === 'completed' ? '#3B82F6' : '#F59E0B';
+
+  return (
+    <Card className="relative overflow-hidden col-span-2 sm:col-span-4">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-zion-cyan/15 flex items-center justify-center">
+            <Activity size={18} className="text-zion-cyan" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-white">30-Day Continuous Run</h3>
+            <p className="text-[10px] text-gray-400">G8 · uptime target ≥99.9%</p>
+          </div>
+        </div>
+        <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ background: statusColor + '20', color: statusColor, border: '1px solid ' + statusColor + '40' }}>
+          {g8.status}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <div>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider">Started</p>
+          <p className="text-xs font-mono text-white">{new Date(g8.started).toLocaleString()}</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider">End</p>
+          <p className="text-xs font-mono text-white">{new Date(g8.target_end!).toLocaleString()}</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider">Elapsed</p>
+          <p className="text-xs font-mono text-zion-cyan">{fmtG8Duration(elapsed)}</p>
+        </div>
+        <div>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider">Remaining</p>
+          <p className="text-xs font-mono text-zion-cyan">{fmtG8Duration(remaining)}</p>
+        </div>
+      </div>
+
+      <div>
+        <div className="flex justify-between text-[10px] text-gray-400 mb-1">
+          <span>Progress</span>
+          <span className="font-mono text-white">{pct.toFixed(4)}%</span>
+        </div>
+        <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+          <div className="h-full rounded-full transition-all duration-700" style={{ width: Math.min(100, pct) + '%', background: 'linear-gradient(90deg,#22d3ee,#a855f7)' }} />
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function MissionControlLite({ metrics, g8 }: { metrics: V3Metrics | null; g8: G8Run | null }) {
   return (
     <Card className="relative overflow-hidden">
       <div className="absolute top-0 right-0 w-32 h-32 bg-zion-gold/5 rounded-full blur-3xl pointer-events-none" />
@@ -238,12 +325,13 @@ function MissionControlLite({ metrics }: { metrics: V3Metrics | null }) {
         </div>
         <h3 className="text-sm font-semibold text-white">Mission Control</h3>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         <MiniStat label="Block Height" value={metrics?.chain?.height?.toLocaleString() ?? '—'} icon={Server} color="#fcd116" />
         <MiniStat label="Difficulty"   value={metrics?.chain?.difficulty ? metrics.chain.difficulty.toLocaleString() : '—'} icon={Database} color="#F59E0B" />
         <MiniStat label="Pool HR"      value={fmtHashrate(metrics?.pool?.hashrate_hps)} icon={Pickaxe} color="#22C55E" />
         <MiniStat label="Blocks Found" value={metrics?.pool?.blocks_found?.toLocaleString() ?? '—'} icon={CheckCircle2} color="#10B981" />
       </div>
+      <G8RunCard g8={g8} />
     </Card>
   );
 }
@@ -758,6 +846,7 @@ export default function DashboardMain() {
   const { activeWallet, disconnect } = useZionWallet();
   const [activeTab, setActiveTab] = useState<'monitoring' | 'wallet' | 'treasury' | 'dao'>('wallet');
   const [metrics, setMetrics] = useState<V3Metrics | null>(null);
+  const [g8, setG8] = useState<G8Run | null>(null);
   const [metricsSource, setMetricsSource] = useState<'live' | 'fallback' | null>(null);
   const [authenticated, setAuthenticated] = useState(false);
 
@@ -771,7 +860,17 @@ export default function DashboardMain() {
     } catch { /* ignore */ }
   }, []);
 
+  const fetchG8 = useCallback(async () => {
+    try {
+      const r = await fetch('/api/g8', { signal: AbortSignal.timeout(5000) });
+      if (!r.ok) return;
+      const d = await r.json();
+      setG8(d);
+    } catch { /* ignore */ }
+  }, []);
+
   usePolling(fetchMetrics, 30);
+  usePolling(fetchG8, 30);
 
   useEffect(() => {
     if (activeWallet) { setAuthenticated(true); fetchMetrics(); }
@@ -827,7 +926,7 @@ export default function DashboardMain() {
         </div>
 
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-6">
-          <MissionControlLite metrics={metrics} />
+          <MissionControlLite metrics={metrics} g8={g8} />
         </motion.div>
 
         <div className="flex gap-1 mt-8 overflow-x-auto pb-1">
