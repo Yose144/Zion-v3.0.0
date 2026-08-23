@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // Stats
   getStats: () => ipcRenderer.invoke('get-stats'),
+  testBlockFound: (data) => ipcRenderer.invoke('test-block-found', data),
   
   // Logs
   openLogs: () => ipcRenderer.invoke('open-logs'),

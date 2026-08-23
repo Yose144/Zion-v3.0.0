@@ -4345,6 +4345,19 @@ ipcMain.handle('get-stats', () => {
   return composeStatsPayload();
 });
 
+// Test: trigger a fake block-found event to verify the toast/UI works.
+ipcMain.handle('test-block-found', (_event, { height, coin } = {}) => {
+  const h = height || Math.floor(Math.random() * 100000) + 14000;
+  const c = coin || 'ZION';
+  try {
+    sendToRenderer('block-found', { height: h, coin: c });
+  } catch {}
+  // Also update blocks_found counter
+  minerStats.blocks_found = (minerStats.blocks_found || 0) + 1;
+  minerStats.last_block_height = h;
+  return { success: true, height: h, coin: c };
+});
+
 ipcMain.handle('open-logs', () => {
   const { shell } = require('electron');
   shell.openPath(LOG_PATH);
