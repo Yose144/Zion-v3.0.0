@@ -4198,6 +4198,8 @@ ipcMain.handle('open-external', async (_event, url) => {
 
 const NODE_RPC_URL = '127.0.0.1:9445';
 let nodeProcess = null;
+let nodeRewardTimer = null;
+let nodeRewardRegistered = false;
 
 /** Resolve path to the compiled zion-core binary */
 function findCoreBinary() {
@@ -4262,6 +4264,89 @@ async function nodeRpc(method, params = {}) {
   // ZION L1 node uses raw TCP JSON-RPC (not HTTP). Use zionRpcCall which
   // handles the TCP socket protocol. NODE_RPC_URL is host:port format.
   return zionRpcCall(NODE_RPC_URL, method, params);
+}
+
+/** Try local node, then remote Edge, to get current height for heartbeats. */
+async function getNodeRewardHeight() {
+  try {
+    const info = await nodeRpc('getChainInfo');
+    return info?.chain_height ?? 0;
+  } catch (e) {
+    try {
+      const info = await zionRpcCall(`${PRIMARY_MAINNET_HOST}:${PRIMARY_RPC_PORT}`, 'getChainInfo', {});
+      return info?.chain_height ?? 0;
+    } catch (e2) {
+      return 0;
+    }
+  }
+}
+
+/** Try local node for peer count, fall back to zero. */
+async function getNodeRewardPeerCount() {
+  try {
+    const info = await nodeRpc('getPeerInfo');
+    return info?.active_count ?? info?.active?.length ?? 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+/** Register the local node once and start sending heartbeats to the multichain. */
+function startNodeRewardHeartbeat(p2pPort) {
+  if (nodeRewardTimer) clearInterval(nodeRewardTimer);
+  nodeRewardTimer = setInterval(async () => {
+    if (!nodeProcess || nodeProcess.killed) {
+      clearInterval(nodeRewardTimer);
+      nodeRewardTimer = null;
+      nodeRewardRegistered = false;
+      return;
+    }
+    if (!zisClient.isLoggedIn()) return;
+    try {
+      if (!nodeRewardRegistered) {
+        const reg = await zisClient.registerNode({
+          bind_host: '127.0.0.1',
+          bind_port: p2pPort ?? 0,
+        });
+        nodeRewardRegistered = reg.ok;
+        sendToRenderer('node-output', {
+          stream: 'stdout',
+          text: reg.ok ? '[NODE-REWARDS] Node registered\n' : `[NODE-REWARDS] Register failed: ${reg.json?.error || reg.text}\n`,
+        });
+      }
+      if (nodeRewardRegistered) {
+        const [height, peer_count] = await Promise.all([
+          getNodeRewardHeight(),
+          getNodeRewardPeerCount(),
+        ]);
+        const hb = await zisClient.nodeHeartbeat({
+          height,
+          peer_count,
+          bandwidth: 0,
+          latency_ms: 0,
+        });
+        if (!hb.ok) {
+          sendToRenderer('node-output', {
+            stream: 'stderr',
+            text: `[NODE-REWARDS] Heartbeat failed: ${hb.json?.error || hb.text}\n`,
+          });
+        }
+      }
+    } catch (err) {
+      sendToRenderer('node-output', {
+        stream: 'stderr',
+        text: `[NODE-REWARDS] ${err.message}\n`,
+      });
+    }
+  }, 60000);
+}
+
+function stopNodeRewardHeartbeat() {
+  if (nodeRewardTimer) {
+    clearInterval(nodeRewardTimer);
+    nodeRewardTimer = null;
+  }
+  nodeRewardRegistered = false;
 }
 
 ipcMain.handle('node-get-status', async () => {
@@ -4385,8 +4470,13 @@ ipcMain.handle('node-start', async (event, options = {}) => {
     });
     nodeProcess.on('exit', (code) => {
       sendToRenderer('node-stopped', { code });
+      stopNodeRewardHeartbeat();
       nodeProcess = null;
     });
+
+    // Start node reward registration/heartbeat when logged in.
+    nodeRewardRegistered = false;
+    startNodeRewardHeartbeat(p2pPort);
 
     return { success: true, pid: nodeProcess.pid, binPath, dataDir, p2pPort, rpcPort, network };
   } catch (e) {
@@ -4399,6 +4489,7 @@ ipcMain.handle('node-stop', async () => {
     return { success: false, error: 'Node is not running' };
   }
   try {
+    stopNodeRewardHeartbeat();
     nodeProcess.kill('SIGTERM');
     await new Promise(resolve => setTimeout(resolve, 1000));
     if (!nodeProcess.killed) nodeProcess.kill('SIGKILL');
@@ -4417,6 +4508,33 @@ ipcMain.handle('node-get-checkpoints', async () => {
       { height: 0, label: 'genesis', hash: '0000000000000000000000000000000000000000000000000000000000000000' },
     ],
   };
+});
+
+ipcMain.handle('node-rewards-register', async (_event, opts = {}) => {
+  try {
+    const result = await zisClient.registerNode(opts);
+    return { success: result.ok, status: result.status, ...result.json };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('node-rewards-heartbeat', async (_event, opts) => {
+  try {
+    const result = await zisClient.nodeHeartbeat(opts);
+    return { success: result.ok, status: result.status, ...result.json };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('node-rewards-payouts', async () => {
+  try {
+    const result = await zisClient.nodeRewardPayouts();
+    return { success: result.ok, status: result.status, payouts: result.json };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
 });
 
 ipcMain.handle('get-gpu-info', () => {
@@ -6707,6 +6825,7 @@ app.on('before-quit', () => {
   flushMinerOutputToRenderer();
   flushBufferedFileAppendsSync();
   stopMining();
+  stopNodeRewardHeartbeat();
   // Stop local node if running
   if (nodeProcess && !nodeProcess.killed) { try { nodeProcess.kill('SIGTERM'); } catch {} }
 });

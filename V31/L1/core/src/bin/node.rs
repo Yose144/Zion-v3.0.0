@@ -12,6 +12,7 @@ use tracing::info;
 use zion_core::node::{Node, NodeConfig};
 use zion_core::v3_compat::{
     MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET, MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET,
+    MAINNET_CANONICAL_NODE_REWARD_WALLET,
 };
 use zion_l1_types::{Address, ChainId};
 
@@ -83,6 +84,18 @@ struct Args {
     /// hard-fork an existing chain until the operator explicitly enables it.
     #[arg(long, env = "ZION_SOFT_FORK_ACTIVATION", default_value_t = u64::MAX)]
     soft_fork_activation_height: u64,
+
+    /// Node reward pool address. The 1% block subsidy slot is minted here once
+    /// `--node-reward-activation-height` is reached. Defaults to the canonical
+    /// node reward wallet (the same as the legacy pool-fee wallet).
+    #[arg(long, env = "ZION_NODE_REWARD_ADDRESS", default_value = MAINNET_CANONICAL_NODE_REWARD_WALLET)]
+    node_reward_address: String,
+
+    /// Block height at which the 1% node reward pool is minted instead of burned.
+    /// Defaults to `u64::MAX` (disabled) so the binary does not hard-fork until
+    /// the operator explicitly enables the soft fork.
+    #[arg(long, env = "ZION_NODE_REWARD_ACTIVATION", default_value_t = u64::MAX)]
+    node_reward_activation_height: u64,
 }
 
 #[tokio::main]
@@ -103,6 +116,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map_err(|e| format!("invalid human address: {e}"))?;
     let issobella = Address::new(ChainId::ZionL1, vec![], &args.issobella)
         .map_err(|e| format!("invalid issobella address: {e}"))?;
+    let node_reward = Address::new(ChainId::ZionL1, vec![], &args.node_reward_address)
+        .map_err(|e| format!("invalid node reward address: {e}"))?;
 
     // Build seed peers: CLI --peer args + ZION_SEED_PEERS env.
     let mut seed_peers = args.peer.clone();
@@ -141,6 +156,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         v3_no_genesis: args.v3_no_genesis,
         v3_checkpoint_path: args.v3_checkpoint,
         soft_fork_activation_height: args.soft_fork_activation_height,
+        node_reward_address: node_reward,
+        node_reward_activation_height: args.node_reward_activation_height,
     };
 
     info!("ZION v3.1 node");
@@ -166,6 +183,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         info!("soft_fork_activation_height={}", args.soft_fork_activation_height);
     } else {
         info!("soft_fork_activation=disabled");
+    }
+    if args.node_reward_activation_height != u64::MAX {
+        info!("node_reward_address={}", args.node_reward_address);
+        info!("node_reward_activation_height={}", args.node_reward_activation_height);
+    } else {
+        info!("node_reward=disabled");
     }
     info!("db_path={}", args.db_path);
     if !config.seed_peers.is_empty() {

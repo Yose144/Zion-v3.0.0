@@ -108,6 +108,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   nodeStart: (options) => ipcRenderer.invoke('node-start', options),
   nodeStop: () => ipcRenderer.invoke('node-stop'),
   nodeGetCheckpoints: () => ipcRenderer.invoke('node-get-checkpoints'),
+  nodeRewardsRegister: (opts) => ipcRenderer.invoke('node-rewards-register', opts),
+  nodeRewardsHeartbeat: (opts) => ipcRenderer.invoke('node-rewards-heartbeat', opts),
+  nodeRewardsPayouts: () => ipcRenderer.invoke('node-rewards-payouts'),
   onNodeOutput: (callback) => ipcRenderer.on('node-output', (event, data) => callback(data)),
   onNodeStopped: (callback) => ipcRenderer.on('node-stopped', (event, data) => callback(data)),
 

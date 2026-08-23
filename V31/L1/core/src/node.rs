@@ -57,6 +57,13 @@ pub struct NodeConfig {
     /// Defaults to `u64::MAX` (disabled) so a new binary does not hard-fork an
     /// existing chain unless the operator explicitly sets an activation height.
     pub soft_fork_activation_height: u64,
+    /// Address that receives the 1% node reward pool portion of the coinbase.
+    /// Defaults to the canonical node reward wallet. Empty = no node reward output.
+    pub node_reward_address: Address,
+    /// Block height at which the 1% node reward pool is minted to
+    /// `node_reward_address` instead of being burned. Defaults to `u64::MAX`
+    /// (disabled) so a new binary does not hard-fork until explicitly enabled.
+    pub node_reward_activation_height: u64,
 }
 
 impl Default for NodeConfig {
@@ -89,6 +96,13 @@ impl Default for NodeConfig {
             v3_no_genesis: false,
             v3_checkpoint_path: None,
             soft_fork_activation_height: u64::MAX,
+            node_reward_address: Address::new(
+                zion_l1_types::ChainId::ZionL1,
+                vec![],
+                crate::v3_compat::MAINNET_CANONICAL_NODE_REWARD_WALLET,
+            )
+            .expect("node reward address"),
+            node_reward_activation_height: u64::MAX,
         }
     }
 }
@@ -220,6 +234,12 @@ impl Node {
                 config.v3_miner_address.clone(),
                 config.v3_humanitarian_address.clone(),
                 config.v3_issobella_address.clone(),
+            )
+            .await;
+        v3_rpc
+            .set_node_reward(
+                config.node_reward_address.encoded.clone(),
+                config.node_reward_activation_height,
             )
             .await;
 
@@ -574,10 +594,21 @@ impl Node {
         }
 
         let expected_subsidy = emission::block_subsidy(block.header.height);
-        let (miner_amt, human_amt, issobella_amt, _) = emission::fee_split(expected_subsidy);
+        let (miner_amt, human_amt, issobella_amt, node_reward_amt) =
+            emission::fee_split(expected_subsidy);
 
-        if block.header.height < self.config.soft_fork_activation_height {
-            // Pre-activation: only the total minted subsidy is enforced.
+        let soft_fork_active = block.header.height >= self.config.soft_fork_activation_height;
+        let node_reward_active = block.header.height >= self.config.node_reward_activation_height;
+        let expected_outputs = if soft_fork_active {
+            if node_reward_active {
+                4
+            } else {
+                3
+            }
+        } else {
+            // Pre-soft-fork: any output count is allowed as long as the total
+            // minted subsidy matches the expected pre-node-reward amount. The
+            // canonical recipient address checks were added later.
             let actual: u64 = coinbase.outputs.iter().map(|o| o.amount.0 as u64).sum();
             let expected = miner_amt + human_amt + issobella_amt;
             if actual != expected {
@@ -589,14 +620,14 @@ impl Node {
                 });
             }
             return Ok(());
-        }
+        };
 
         // Post-activation: enforce exact output count, amounts and addresses.
-        if coinbase.outputs.len() != 3 {
+        if coinbase.outputs.len() != expected_outputs {
             return Err(NodeError::CoinbaseStructure {
                 height: block.header.height,
                 reason: format!(
-                    "coinbase must have exactly 3 outputs, got {}",
+                    "coinbase must have exactly {expected_outputs} outputs, got {}",
                     coinbase.outputs.len()
                 ),
             });
@@ -640,6 +671,23 @@ impl Node {
                     coinbase.outputs[2].address.encoded
                 ),
             });
+        }
+
+        if node_reward_active {
+            if coinbase.outputs[3].amount.0 != node_reward_amt as u128
+                || coinbase.outputs[3].address != self.config.node_reward_address
+            {
+                return Err(NodeError::CoinbaseStructure {
+                    height: block.header.height,
+                    reason: format!(
+                        "node reward output must be {} at {}, got {} at {}",
+                        node_reward_amt,
+                        self.config.node_reward_address.encoded,
+                        coinbase.outputs[3].amount.0,
+                        coinbase.outputs[3].address.encoded
+                    ),
+                });
+            }
         }
 
         Ok(())
@@ -804,29 +852,42 @@ impl Node {
         let next_difficulty = lwma_next_difficulty(&window);
         let target = difficulty_to_target(next_difficulty);
 
-        // Coinbase transaction pays miner + humanitarian + issobella; pool fee is burned.
+        // Coinbase transaction pays miner + humanitarian + issobella. The 1%
+        // node reward slot is minted to the node reward pool address once the
+        // activation height is reached; before that it is burned.
         let subsidy = block_subsidy(next_height);
-        let (miner_amount, human_amount, issobella_amount, _burn) = fee_split(subsidy);
+        let (miner_amount, human_amount, issobella_amount, node_reward_amount) = fee_split(subsidy);
+        let node_reward_active = next_height >= self.config.node_reward_activation_height;
+
+        let mut outputs = vec![
+            TransactionOutput {
+                amount: Amount::new(miner_amount as u128),
+                address: miner,
+                ..Default::default()
+            },
+            TransactionOutput {
+                amount: Amount::new(human_amount as u128),
+                address: self.config.human_address.clone(),
+                ..Default::default()
+            },
+            TransactionOutput {
+                amount: Amount::new(issobella_amount as u128),
+                address: self.config.issobella_address.clone(),
+                ..Default::default()
+            },
+        ];
+        if node_reward_active {
+            outputs.push(TransactionOutput {
+                amount: Amount::new(node_reward_amount as u128),
+                address: self.config.node_reward_address.clone(),
+                ..Default::default()
+            });
+        }
+
         let coinbase = Transaction {
             version: 1,
             inputs: vec![],
-            outputs: vec![
-                TransactionOutput {
-                    amount: Amount::new(miner_amount as u128),
-                    address: miner,
-                    ..Default::default()
-                },
-                TransactionOutput {
-                    amount: Amount::new(human_amount as u128),
-                    address: self.config.human_address.clone(),
-                    ..Default::default()
-                },
-                TransactionOutput {
-                    amount: Amount::new(issobella_amount as u128),
-                    address: self.config.issobella_address.clone(),
-                    ..Default::default()
-                },
-            ],
+            outputs,
             memo: format!("coinbase:height={}", next_height).into_bytes(),
         };
         let coinbase_size = Self::validate_tx_size(&coinbase)?;

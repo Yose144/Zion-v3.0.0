@@ -12,6 +12,16 @@ pub struct Db {
 }
 
 impl Db {
+    pub(crate) fn conn(&self) -> &Connection {
+        &self.conn
+    }
+
+    pub(crate) fn conn_mut(&mut self) -> &mut Connection {
+        &mut self.conn
+    }
+}
+
+impl Db {
     /// Open or create the SQLite database at `path`.
     pub fn open(path: impl AsRef<std::path::Path>) -> MultichainResult<Self> {
         let conn = Connection::open(path)?;
@@ -95,6 +105,51 @@ impl Db {
             CREATE TABLE IF NOT EXISTS solvers (
                 solver TEXT PRIMARY KEY,
                 created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS node_reward_nodes (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                reward_address TEXT NOT NULL,
+                bind_host TEXT,
+                bind_port INTEGER,
+                created_at TEXT NOT NULL,
+                last_heartbeat_at TEXT,
+                epoch_score INTEGER NOT NULL DEFAULT 0,
+                active INTEGER NOT NULL DEFAULT 1
+            );
+            CREATE INDEX IF NOT EXISTS idx_node_reward_user ON node_reward_nodes(user_id);
+
+            CREATE TABLE IF NOT EXISTS node_reward_heartbeats (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                node_id TEXT NOT NULL,
+                height INTEGER NOT NULL,
+                peer_count INTEGER,
+                bandwidth INTEGER,
+                latency_ms INTEGER,
+                observed_at TEXT NOT NULL,
+                signature TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_node_reward_heartbeats_node ON node_reward_heartbeats(node_id);
+
+            CREATE TABLE IF NOT EXISTS node_reward_payouts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                epoch_start INTEGER NOT NULL,
+                epoch_end INTEGER NOT NULL,
+                total_reward INTEGER NOT NULL,
+                tx_id TEXT,
+                status TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                completed_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS node_reward_payout_recipients (
+                payout_id INTEGER NOT NULL,
+                node_id TEXT NOT NULL,
+                reward_address TEXT NOT NULL,
+                score INTEGER NOT NULL,
+                amount INTEGER NOT NULL,
+                PRIMARY KEY (payout_id, node_id)
             );
             "#,
         )?;

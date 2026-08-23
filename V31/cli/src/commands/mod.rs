@@ -11,6 +11,7 @@ pub mod hiran;
 pub mod issobella;
 pub mod monitor;
 pub mod ncl;
+pub mod node_rewards;
 pub mod onboard;
 pub mod topology;
 pub mod update;

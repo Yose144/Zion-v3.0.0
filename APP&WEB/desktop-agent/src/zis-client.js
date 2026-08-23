@@ -125,6 +125,44 @@ async function publicApi(method, apiPath, body, extraHeaders = {}) {
   return { status: resp.status, ok: resp.ok, text, json };
 }
 
+// ── Node reward key persistence ───────────────────────────────────────────
+
+function nodeKeyFile() {
+  if (!_storageDir) throw new Error('ZIS storage directory not set');
+  return path.join(_storageDir, 'node-reward-key.json');
+}
+
+function saveNodeKey(key) {
+  ensureDir(_storageDir);
+  const data = {
+    seed: Buffer.from(key.seed).toString('hex'),
+    publicKey: Buffer.from(key.publicKey).toString('hex'),
+    address: key.address,
+  };
+  fs.writeFileSync(nodeKeyFile(), JSON.stringify(data, null, 2), { mode: 0o600 });
+}
+
+function loadNodeKey() {
+  const f = nodeKeyFile();
+  if (fs.existsSync(f)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(f, 'utf8'));
+      const seed = Buffer.from(data.seed, 'hex');
+      const publicKey = Buffer.from(data.publicKey, 'hex');
+      return { seed, publicKey, address: data.address };
+    } catch (e) {
+      console.error('[ZIS] failed to load node reward key:', e.message);
+    }
+  }
+  const seed = crypto.randomBytes(32);
+  const publicKeyRaw = ed25519.getPublicKey(seed);
+  const publicKey = Buffer.from(publicKeyRaw);
+  const address = zionAddressFromPublicKey(publicKey);
+  const key = { seed, publicKey, address };
+  saveNodeKey(key);
+  return key;
+}
+
 async function ed25519KeypairFromSeed(seed) {
   const seedBytes = new Uint8Array(seed);
   if (seedBytes.length !== 32) throw new Error('Ed25519 seed must be 32 bytes');
@@ -343,6 +381,62 @@ class ZisClient {
 
   async htlcGet(hash) {
     return publicApi('GET', `/api/swap/htlc/${encodeURIComponent(hash)}`);
+  }
+
+  // ── Node reward registration and heartbeat ────────────────────────────────
+
+  async registerNode({ bind_host, bind_port, reward_address } = {}) {
+    if (!this.isLoggedIn()) throw new Error('ZIS login required to register a node');
+    const session = this.getSession();
+    const user = session.user;
+    if (!user?.id) throw new Error('No ZIS user id in session');
+
+    const key = loadNodeKey();
+    const node_id = key.publicKey.toString('hex');
+    const addr = reward_address || key.address;
+    const host = bind_host ?? '';
+    const port = bind_port ?? 0;
+    const payload = `${node_id}:${addr}:${user.id}:${host}:${port}`;
+    const sig = Buffer.from(
+      await ed25519.sign(new TextEncoder().encode(payload), key.seed)
+    ).toString('hex');
+
+    return publicApi('POST', '/v1/nodes/register', {
+      node_id,
+      user_id: user.id,
+      reward_address: addr,
+      bind_host: host,
+      bind_port: port,
+      signature: sig,
+    });
+  }
+
+  async nodeHeartbeat({ height, peer_count, bandwidth, latency_ms }) {
+    const key = loadNodeKey();
+    const node_id = key.publicKey.toString('hex');
+    const observed_at = Date.now();
+    const payload = `${node_id}:${height}:${peer_count}:${bandwidth}:${latency_ms}:${observed_at}`;
+    const sig = Buffer.from(
+      await ed25519.sign(new TextEncoder().encode(payload), key.seed)
+    ).toString('hex');
+
+    return publicApi('POST', '/v1/nodes/heartbeat', {
+      node_id,
+      height,
+      peer_count,
+      bandwidth,
+      latency_ms,
+      observed_at,
+      signature: sig,
+    });
+  }
+
+  async nodeRewardPayouts() {
+    return publicApi('GET', '/v1/nodes/payouts');
+  }
+
+  async activeNodes() {
+    return publicApi('GET', '/v1/nodes');
   }
 }
 

@@ -30,6 +30,8 @@ pub struct V3State {
     storage: Arc<Storage>,
     balance_check_height: u64,
     max_tx_amount_height: u64,
+    node_reward_address: String,
+    node_reward_activation_height: u64,
 }
 
 impl V3State {
@@ -38,6 +40,8 @@ impl V3State {
             storage,
             balance_check_height: u64::MAX,
             max_tx_amount_height: u64::MAX,
+            node_reward_address: String::new(),
+            node_reward_activation_height: u64::MAX,
         }
     }
 
@@ -49,6 +53,14 @@ impl V3State {
     /// Height at which the F4.7 max-tx-amount cap becomes active.
     pub fn set_max_tx_amount_height(&mut self, height: u64) {
         self.max_tx_amount_height = height;
+    }
+
+    /// Set the canonical node reward pool address and activation height.
+    /// When the address is non-empty and the block height is at or above the
+    /// activation height, the 1% node reward slot must be minted to this address.
+    pub fn set_node_reward(&mut self, address: String, activation_height: u64) {
+        self.node_reward_address = address;
+        self.node_reward_activation_height = activation_height;
     }
 
     /// Validate and apply a V3 block to the current state.
@@ -192,9 +204,13 @@ impl V3State {
         }
 
         let subsidy = block_subsidy(block.height);
+        let node_reward_active = block.height >= self.node_reward_activation_height
+            && !self.node_reward_address.is_empty();
+
         let expected_total = match coinbase_count {
             1 => subsidy as u128,
             3 => minted_subsidy(subsidy) as u128,
+            4 if node_reward_active => subsidy as u128,
             _ => {
                 return Err(V3StateError::Coinbase(format!(
                     "unsupported coinbase count {}",
@@ -212,15 +228,20 @@ impl V3State {
 
         // Validate each coinbase tx_id is deterministic and amount matches.
         for (index, tx) in block.transactions.iter().take(coinbase_count).enumerate() {
-            let label = match coinbase_count {
-                1 => format!("coinbase:{}:{}", block.height, tx.to),
-                3 if index == 0 => format!("coinbase:{}:{}", block.height, tx.to),
-                3 if index == 1 => format!("coinbase_humanitarian:{}:{}", block.height, tx.to),
-                3 if index == 2 => format!("coinbase_issobella:{}:{}", block.height, tx.to),
+            let label = match (coinbase_count, index) {
+                (1, 0) => format!("coinbase:{}:{}", block.height, tx.to),
+                (3, 0) | (4, 0) => format!("coinbase:{}:{}", block.height, tx.to),
+                (3, 1) | (4, 1) => {
+                    format!("coinbase_humanitarian:{}:{}", block.height, tx.to)
+                }
+                (3, 2) | (4, 2) => {
+                    format!("coinbase_issobella:{}:{}", block.height, tx.to)
+                }
+                (4, 3) => format!("coinbase_node_reward:{}:{}", block.height, tx.to),
                 _ => {
                     return Err(V3StateError::Coinbase(format!(
-                        "unsupported coinbase count {}",
-                        coinbase_count
+                        "unsupported coinbase count {} or index {}",
+                        coinbase_count, index
                     )));
                 }
             };
@@ -234,16 +255,23 @@ impl V3State {
                 )));
             }
 
-            let expected_amount = match coinbase_count {
-                1 => subsidy as u128,
-                3 => {
-                    let (miner, human, issobella, _) = emission::fee_split(subsidy);
-                    match index {
-                        0 => miner as u128,
-                        1 => human as u128,
-                        2 => issobella as u128,
-                        _ => unreachable!(),
-                    }
+            let expected_amount = match (coinbase_count, index) {
+                (1, 0) => subsidy as u128,
+                (3, 0) | (4, 0) => {
+                    let (miner, _, _, _) = emission::fee_split(subsidy);
+                    miner as u128
+                }
+                (3, 1) | (4, 1) => {
+                    let (_, human, _, _) = emission::fee_split(subsidy);
+                    human as u128
+                }
+                (3, 2) | (4, 2) => {
+                    let (_, _, issobella, _) = emission::fee_split(subsidy);
+                    issobella as u128
+                }
+                (4, 3) => {
+                    let (_, _, _, node_reward) = emission::fee_split(subsidy);
+                    node_reward as u128
                 }
                 _ => unreachable!(),
             };
@@ -251,6 +279,13 @@ impl V3State {
                 return Err(V3StateError::Coinbase(format!(
                     "coinbase amount mismatch at index {}: expected {}, got {}",
                     index, expected_amount, tx.amount_zion
+                )));
+            }
+
+            if coinbase_count == 4 && index == 3 && tx.to != self.node_reward_address {
+                return Err(V3StateError::Coinbase(format!(
+                    "node reward output must pay {} at height {}, got {}",
+                    self.node_reward_address, block.height, tx.to
                 )));
             }
         }
