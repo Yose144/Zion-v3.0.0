@@ -124,14 +124,18 @@ const nextConfig: NextConfig = {
       { source: '/explorer/tx/:hash', destination: '/explorer/tx?hash=:hash', permanent: true },
       { source: '/explorer/address/:addr', destination: '/explorer/address?addr=:addr', permanent: true },
       { source: '/explorer/block/:id', destination: '/explorer/block?id=:id', permanent: true },
-      // Multichain unification — old pages redirect to /multichain#section
-      { source: '/bridge', destination: '/multichain#bridge', permanent: true },
-      { source: '/warp', destination: '/multichain#warp', permanent: true },
-      { source: '/swap', destination: '/multichain#swap', permanent: true },
-      { source: '/dex', destination: '/multichain#dex', permanent: true },
-      { source: '/ziondex', destination: '/multichain#dex', permanent: true },
-      // The legacy /defi hub is now the canonical Multichain Hub
-      { source: '/defi/:path*', destination: '/multichain', permanent: true },
+      // Multichain unification — old pages redirect to /defi#section
+      { source: '/bridge', destination: '/defi#bridge', permanent: true },
+      { source: '/warp', destination: '/defi#bridge', permanent: true },
+      { source: '/swap', destination: '/defi#swap', permanent: true },
+      { source: '/dex', destination: '/defi#pools', permanent: true },
+      { source: '/ziondex', destination: '/defi#pools', permanent: true },
+      { source: '/dao', destination: '/defi#governance', permanent: true },
+      // The marketing /multichain page now redirects to the canonical /defi Multichain Hub
+      { source: '/multichain', destination: '/defi', permanent: true },
+      { source: '/multichain/:path*', destination: '/defi', permanent: true },
+      // Legacy /defi sub-pages are now tabs in the unified hub
+      { source: '/defi/:path+', destination: '/defi', permanent: true },
     ];
   },
   // P1-33: Security headers — CSP, X-Frame-Options, HSTS, etc.
