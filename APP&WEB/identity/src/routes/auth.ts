@@ -1,4 +1,4 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 
@@ -20,6 +20,13 @@ const VerifySiweSchema = z.object({
   address: z.string(), // 0x...
   message: z.string(), // raw SIWE message
   signature: z.string(), // 0x-prefixed hex
+});
+
+const UpdateProfileSchema = z.object({
+  displayName: z.string().min(1).max(64).optional(),
+  email: z.string().email().max(255).optional().nullable(),
+  avatar: z.string().url().max(512).optional().nullable(),
+  bio: z.string().max(512).optional().nullable(),
 });
 
 export async function authRoutes(app: FastifyInstance): Promise<void> {
@@ -51,7 +58,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(401).send({ error: 'AUTH_FAILED', message: 'Invalid signature' });
     }
 
-    return issueSession(app, reply, address, 'zion-l1');
+    return issueSession(app, req, reply, address, 'zion-l1');
   });
 
   // ── POST /verify/siwe ───────────────────────────────────────────
@@ -75,7 +82,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       return reply.code(401).send({ error: 'AUTH_FAILED', message: 'SIWE verification failed' });
     }
 
-    return issueSession(app, reply, address, 'evm');
+    return issueSession(app, req, reply, address, 'evm');
   });
 
   // ── GET /me ─────────────────────────────────────────────────────
@@ -86,6 +93,28 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       include: { linkedAddresses: true, oasisPlayer: true },
     });
     if (!user) return { error: 'NOT_FOUND' };
+    return user;
+  });
+
+  // ── PATCH /me ───────────────────────────────────────────────────
+  app.patch('/me', { preHandler: [requireAuth] }, async (req, reply) => {
+    const parsed = UpdateProfileSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'BAD_REQUEST', details: parsed.error.issues });
+    }
+    const payload = req.user as { sub: string };
+    const data = parsed.data;
+    const update: Record<string, unknown> = {};
+    if ('displayName' in data) update.displayName = data.displayName;
+    if ('email' in data) update.email = data.email;
+    if ('avatar' in data) update.avatar = data.avatar;
+    if ('bio' in data) update.bio = data.bio;
+
+    const user = await app.prisma.user.update({
+      where: { id: payload.sub },
+      data: update,
+      include: { linkedAddresses: true, oasisPlayer: true },
+    });
     return user;
   });
 
@@ -103,6 +132,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
 async function issueSession(
   app: FastifyInstance,
+  req: FastifyRequest,
   reply: import('fastify').FastifyReply,
   address: string,
   chainType: string,
@@ -124,8 +154,10 @@ async function issueSession(
   // Create session
   const jti = randomUUID();
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const userAgent = (req.headers['user-agent'] as string | undefined) ?? '';
+  const ipAddress = req.ip ?? '';
   await app.prisma.session.create({
-    data: { userId: user.id, jwtJti: jti, expiresAt },
+    data: { userId: user.id, jwtJti: jti, expiresAt, userAgent, ipAddress },
   });
 
   const token = app.jwt.sign({ sub: user.id, addr: address, jti });

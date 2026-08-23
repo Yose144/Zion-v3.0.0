@@ -1,18 +1,31 @@
 'use client';
 
 /**
- * AuthContext — manages user authentication state.
+ * AuthContext — ZIS-backed authentication for Web 2.9.
  *
- * Uses Zion Wallet for sign-in (Ed25519 signature challenge).
- * Session is stored in an httpOnly cookie (JWT).
+ * Uses Zion Wallet for sign-in (Ed25519 signature over ZIS challenge).
+ * Session is stored in an httpOnly SSO cookie (zion_session) issued by ZIS
+ * and scoped to .zionterranova.com.
  */
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import {
+  getChallenge,
+  verifyEd25519 as zisVerifyEd25519,
+  getCurrentUser,
+  logout as zisLogout,
+  updateProfile as zisUpdateProfile,
+  type ZisUser,
+} from '@/lib/zis';
 
 export interface AuthUser {
   id?: string;
   address: string;
   displayName: string | null;
+  email?: string | null;
+  avatar?: string | null;
+  bio?: string | null;
+  role?: string;
   createdAt?: number;
   lastLogin?: number;
   loginCount?: number;
@@ -44,19 +57,30 @@ const defaultState: AuthState = {
 
 const AuthContext = createContext<AuthState>(defaultState);
 
+function zisToAuthUser(zisUser: ZisUser | null): AuthUser | null {
+  if (!zisUser) return null;
+  return {
+    id: zisUser.id,
+    address: zisUser.primaryAddress,
+    displayName: zisUser.displayName ?? null,
+    email: zisUser.email ?? null,
+    avatar: zisUser.avatar ?? null,
+    bio: zisUser.bio ?? null,
+    role: zisUser.role,
+    createdAt: zisUser.createdAt ? new Date(zisUser.createdAt).getTime() : undefined,
+    lastLogin: zisUser.lastLogin ? new Date(zisUser.lastLogin).getTime() : undefined,
+    loginCount: zisUser.loginCount,
+  };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   const checkSession = useCallback(async () => {
     try {
-      const res = await fetch('/api/auth/session', { cache: 'no-store' });
-      const data = await res.json();
-      if (data.authenticated && data.user) {
-        setUser(data.user);
-      } else {
-        setUser(null);
-      }
+      const zisUser = await getCurrentUser();
+      setUser(zisToAuthUser(zisUser));
     } catch {
       setUser(null);
     } finally {
@@ -70,12 +94,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginWithWallet = useCallback(async (
     address: string,
-    password: string,
+    _password: string,
     exportPrivateKey: (id: string, pw: string) => Promise<string>,
     walletId: string,
   ) => {
     // 1. Get private key (decrypts with password)
-    const privateKeyHex = await exportPrivateKey(walletId, password);
+    const privateKeyHex = await exportPrivateKey(walletId, _password);
     const privateKeyBytes = new Uint8Array(
       privateKeyHex.match(/.{2}/g)!.map((b: string) => parseInt(b, 16)),
     );
@@ -87,50 +111,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .map((b) => b.toString(16).padStart(2, '0'))
       .join('');
 
-    // 3. Get nonce from server
-    const nonceRes = await fetch(`/api/auth/nonce?address=${address}`);
-    if (!nonceRes.ok) throw new Error('Failed to get nonce');
-    const { nonce } = await nonceRes.json();
+    // 3. Request ZIS challenge
+    const { challenge } = await getChallenge(address, 'zion-l1');
 
-    // 4. Sign the nonce
-    const nonceBytes = new Uint8Array(
-      nonce.match(/.{2}/g)!.map((b: string) => parseInt(b, 16)),
-    );
-    const signatureBytes = await ed.sign(nonceBytes, privateKeyBytes);
+    // 4. Sign the challenge bytes (UTF-8)
+    const challengeBytes = new TextEncoder().encode(challenge);
+    const signatureBytes = await ed.sign(challengeBytes, privateKeyBytes);
     const signatureHex = Array.from(signatureBytes)
       .map((b) => b.toString(16).padStart(2, '0'))
       .join('');
 
-    // 5. Submit to server
-    const authRes = await fetch('/api/auth/wallet', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ address, publicKey: publicKeyHex, signature: signatureHex, nonce }),
-    });
+    // 5. Submit to ZIS through local proxy — the proxy passes the SSO cookie.
+    await zisVerifyEd25519(address, publicKeyHex, signatureHex);
 
-    if (!authRes.ok) {
-      const err = await authRes.json();
-      throw new Error(err.error || 'Authentication failed');
-    }
-
-    const data = await authRes.json();
-    setUser(data.user);
+    // 6. Fetch full user record from ZIS using the freshly set cookie.
+    const fullUser = await getCurrentUser();
+    setUser(zisToAuthUser(fullUser));
   }, []);
 
   const logout = useCallback(async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    await zisLogout();
     setUser(null);
   }, []);
 
   const updateProfile = useCallback(async (displayName: string) => {
-    const res = await fetch('/api/auth/profile', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ displayName }),
-    });
-    if (!res.ok) throw new Error('Failed to update profile');
-    const data = await res.json();
-    if (data.user) setUser(data.user);
+    const updated = await zisUpdateProfile({ displayName });
+    setUser(zisToAuthUser(updated));
   }, []);
 
   return (
