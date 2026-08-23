@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useState, Suspense } from 'react';
+import { useRef, useEffect, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Stars, Environment } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette, HueSaturation, BrightnessContrast } from '@react-three/postprocessing';
@@ -27,9 +27,10 @@ import Planet, { NovaZeme } from './Planet';
 import type { CompassData } from './Compass';
 
 // Live all-sky camera from the GTC (Gran Telescopio CANARIAS) on La Palma.
-// Image is updated in place by the observatory; we append a cache-busting
-// timestamp so the browser reloads the latest frame periodically.
-const SKY_CAM_URL = 'https://atmosportal.gtc.iac.es/img/lastskycam.jpg';
+// The observatory updates this file in place. We use the smaller current-image
+// variant (640×480) for better performance and only mutate the DOM style in a
+// requestAnimationFrame-friendly way to avoid React re-renders every refresh.
+const SKY_CAM_URL = 'https://atmosportal.gtc.iac.es/img/AllSkyCurrentImage.JPG';
 
 interface CameraRigProps {
   started: boolean;
@@ -213,27 +214,41 @@ export default function OasisScene({
   compassRef,
 }: OasisSceneProps) {
   const universeRef = useRef<THREE.Group>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const skyCamTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const getWorldById = (id: string) => worlds.find((w) => w.id === id);
 
-  // Live-sky refresh: start at 0 (no cache bust) and bump every minute on the client.
-  const [skyCamTs, setSkyCamTs] = useState(0);
+  // Refresh the live sky camera in the DOM directly instead of React state,
+  // so the whole <Canvas> tree is not re-rendered every time the image updates.
   useEffect(() => {
-    setSkyCamTs(Date.now());
-    const interval = setInterval(() => setSkyCamTs(Date.now()), 60000);
-    return () => clearInterval(interval);
-  }, []);
+    if (isMobile || !containerRef.current) return;
 
-  const skyCamBackground = `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url('${SKY_CAM_URL}?t=${skyCamTs}')`;
+    const updateSky = () => {
+      const ts = Date.now();
+      if (containerRef.current) {
+        containerRef.current.style.backgroundImage = `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url('${SKY_CAM_URL}?t=${ts}')`;
+      }
+    };
+
+    updateSky();
+    skyCamTimerRef.current = setInterval(updateSky, 60000);
+    return () => {
+      if (skyCamTimerRef.current) clearInterval(skyCamTimerRef.current);
+    };
+  }, [isMobile]);
 
   return (
     <div
+      ref={containerRef}
       style={{
         width: '100%',
         height: '100%',
         position: 'absolute',
         inset: 0,
         backgroundColor: '#05060a',
-        backgroundImage: skyCamBackground,
+        backgroundImage: isMobile
+          ? undefined
+          : `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url('${SKY_CAM_URL}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
