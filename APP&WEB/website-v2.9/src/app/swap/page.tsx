@@ -31,9 +31,11 @@ import {
   getHtlcStatus,
   getPendingHtlcs,
   submitClaim,
+  submitLock,
   submitRefund,
   type HtlcRecord,
 } from '@/lib/swap-api';
+import { generateZionKeypair, deriveZionAddress } from '@/lib/swap-helpers';
 
 const SwapCopy = {
   whatIsAnHtlcSwap: { cs: `Co je HTLC swap?`, en: `What is an HTLC swap?` },
@@ -102,6 +104,16 @@ const SwapCopy = {
   manageHtlcLock: { cs: `Spravovat HTLC zámek`, en: `Manage HTLC Lock` },
   claimSwapRevealPreimageOrReque: { cs: `Uplatnit swap (Claim) nebo refundovat`, en: `Claim swap (reveal preimage) or request refund` },
   recipientL1Address: { cs: `Příjemce (L1 adresa)`, en: `Recipient (L1 address)` },
+  sourceL1Address: { cs: `Source ZION L1 adresa`, en: `Source ZION L1 address` },
+  targetL1Address: { cs: `Cílová ZION L1 adresa`, en: `Target ZION L1 address` },
+  sourcePubkeyHex: { cs: `Source pubkey (hex)`, en: `Source pubkey (hex)` },
+  targetPubkeyHex: { cs: `Cílový pubkey (hex)`, en: `Target pubkey (hex)` },
+  lockSwap: { cs: `Odeslat Lock`, en: `Submit Lock` },
+  lockSuccess: { cs: `Lock úspěšně odeslán!`, en: `Lock submitted successfully` },
+  generateSourceKeys: { cs: `Generovat source klíče`, en: `Generate source keys` },
+  generateTargetKeys: { cs: `Generovat target klíče`, en: `Generate target keys` },
+  nativeL1Htlc: { cs: `Nativní L1 HTLC`, en: `Native L1 HTLC` },
+  useGeneratedZionKeypairFor: { cs: `Pro nativní ZION L1 HTLC vygeneruj obě strany klíčů.`, en: `For a native ZION L1 HTLC, generate keypairs for both sides.` },
   bearerTokenOptional: { cs: `Bearer Token (Volitelný)`, en: `Bearer Token (Optional)` },
   claimSwap: { cs: `Uplatnit (Claim)`, en: `Claim Swap` },
   refund: { cs: `Refund`, en: `Refund` },
@@ -213,12 +225,20 @@ export default function SwapPage() {
 
   // Forms state
   const [initAmt, setInitAmt] = useState('1000');
-  const [initChain, setInitChain] = useState('base');
+  const [initChain, setInitChain] = useState('zion');
   const [initRecipient, setInitRecipient] = useState('');
   const [initTimeout, setInitTimeout] = useState('120');
   const [initPreimage, setInitPreimage] = useState('');
   const [generatedPreimage, setGeneratedPreimage] = useState<string | null>(null);
   const [generatedHash, setGeneratedHash] = useState<string | null>(null);
+
+  // Native L1 HTLC key state
+  const [initSourceAddress, setInitSourceAddress] = useState('');
+  const [initSourcePubkey, setInitSourcePubkey] = useState('');
+  const [initTargetAddress, setInitTargetAddress] = useState('');
+  const [initTargetPubkey, setInitTargetPubkey] = useState('');
+  const [initLockLoading, setInitLockLoading] = useState(false);
+  const [initLockMessage, setInitLockMessage] = useState<{ text: string; success: boolean } | null>(null);
 
   // Claim/Refund form state
   const [actionHash, setActionHash] = useState('');
@@ -284,6 +304,60 @@ export default function SwapPage() {
       const hash = hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
       setGeneratedHash(hash);
     });
+  };
+
+  // Generate source (refund) keypair for native L1 HTLC
+  const handleGenerateSourceKeypair = async () => {
+    const kp = await generateZionKeypair();
+    setInitSourcePubkey(kp.publicKeyHex);
+    setInitSourceAddress(kp.address);
+  };
+
+  // Generate target (claimant) keypair for native L1 HTLC
+  const handleGenerateTargetKeypair = async () => {
+    const kp = await generateZionKeypair();
+    setInitTargetPubkey(kp.publicKeyHex);
+    setInitTargetAddress(kp.address);
+    setInitRecipient(kp.address);
+  };
+
+  // Native L1 HTLC lock submit handler
+  const handleLock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!generatedHash || !initSourcePubkey || !initTargetPubkey || !initAmt || !initTimeout) {
+      setInitLockMessage({ text: SwapCopy.pleaseFillInAllFields[cs ? 'cs' : 'en'], success: false });
+      return;
+    }
+    try {
+      setInitLockLoading(true);
+      setInitLockMessage(null);
+      const res = await submitLock({
+        from: 'zion',
+        to: initChain,
+        amount: Number(initAmt),
+        hashHex: generatedHash,
+        timelock: Number(initTimeout),
+        sourceAddress: initSourceAddress || undefined,
+        targetAddress: initTargetAddress || initRecipient || undefined,
+        sourcePubkeyHex: initSourcePubkey,
+        targetPubkeyHex: initTargetPubkey,
+      });
+      if (res.success) {
+        setInitLockMessage({
+          text: cs
+            ? `${SwapCopy.lockSuccess.cs} Transfer ID: ${res.transfer_id || res.status}`
+            : `${SwapCopy.lockSuccess.en} Transfer ID: ${res.transfer_id || res.status}`,
+          success: true,
+        });
+        void loadInitialData();
+      } else {
+        setInitLockMessage({ text: res.message, success: false });
+      }
+    } catch (err: any) {
+      setInitLockMessage({ text: err.message || 'Error', success: false });
+    } finally {
+      setInitLockLoading(false);
+    }
   };
 
   // Claim swap handler
@@ -687,9 +761,15 @@ export default function SwapPage() {
                       </label>
                       <select
                         value={initChain}
-                        onChange={e => setInitChain(e.target.value)}
+                        onChange={e => {
+                          setInitChain(e.target.value);
+                          setInitTargetAddress('');
+                          setInitTargetPubkey('');
+                          setInitRecipient('');
+                        }}
                         className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-zion-gold focus:outline-none"
                       >
+                        <option value="zion">ZION L1</option>
                         <option value="base">Base</option>
                         <option value="ethereum">Ethereum</option>
                         <option value="bsc">BSC</option>
@@ -712,14 +792,17 @@ export default function SwapPage() {
 
                   <div>
                     <label className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">
-                      {SwapCopy.targetRecipientAddressEvm[cs ? 'cs' : 'en']}
+                      {initChain === 'zion'
+                        ? SwapCopy.targetL1Address[cs ? 'cs' : 'en']
+                        : SwapCopy.targetRecipientAddressEvm[cs ? 'cs' : 'en']}
                     </label>
                     <input
                       type="text"
                       value={initRecipient}
                       onChange={e => setInitRecipient(e.target.value)}
                       className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 font-mono text-white focus:border-zion-gold focus:outline-none"
-                      placeholder="0xYourEvmAddress"
+                      placeholder={initChain === 'zion' ? 'zion1…' : '0xYourEvmAddress'}
+                      disabled={initChain === 'zion' && Boolean(initTargetAddress)}
                     />
                   </div>
                 </div>
@@ -766,8 +849,93 @@ export default function SwapPage() {
                     )}
                   </div>
 
-                  {/* Memo Builder */}
-                  {generatedHash && initRecipient && (
+                  {/* Native L1 HTLC Key Generator */}
+                  <form onSubmit={handleLock} className="zion-rainbow-sub p-4 space-y-3" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-gray-300">
+                        {SwapCopy.nativeL1Htlc[cs ? 'cs' : 'en']}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-gray-400">
+                      {SwapCopy.useGeneratedZionKeypairFor[cs ? 'cs' : 'en']}
+                    </p>
+
+                    <div className="space-y-2 text-xs font-mono">
+                      <div className="zion-rainbow-sub p-2 relative" style={{ '--rc': '228, 30, 43' } as CSSProperties}>
+                        <div className="text-[9px] text-gray-500 uppercase flex items-center justify-between">
+                          <span>{SwapCopy.sourcePubkeyHex[cs ? 'cs' : 'en']}</span>
+                          <button
+                            type="button"
+                            onClick={handleGenerateSourceKeypair}
+                            className="zion-button-primary text-[10px] py-1 px-2"
+                          >
+                            {SwapCopy.generateSourceKeys[cs ? 'cs' : 'en']}
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          value={initSourcePubkey}
+                          onChange={e => {
+                            setInitSourcePubkey(e.target.value);
+                            try {
+                              setInitSourceAddress(deriveZionAddress(e.target.value));
+                            } catch { /* invalid */ }
+                          }}
+                          className="w-full mt-1 rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-white focus:border-zion-gold focus:outline-none"
+                          placeholder="64-char Ed25519 pubkey hex"
+                        />
+                        {initSourceAddress && (
+                          <div className="text-[9px] text-gray-500 mt-1">{initSourceAddress}</div>
+                        )}
+                      </div>
+
+                      <div className="zion-rainbow-sub p-2 relative" style={{ '--rc': '228, 30, 43' } as CSSProperties}>
+                        <div className="text-[9px] text-gray-500 uppercase flex items-center justify-between">
+                          <span>{SwapCopy.targetPubkeyHex[cs ? 'cs' : 'en']}</span>
+                          <button
+                            type="button"
+                            onClick={handleGenerateTargetKeypair}
+                            className="zion-button-primary text-[10px] py-1 px-2"
+                          >
+                            {SwapCopy.generateTargetKeys[cs ? 'cs' : 'en']}
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          value={initTargetPubkey}
+                          onChange={e => {
+                            setInitTargetPubkey(e.target.value);
+                            try {
+                              const addr = deriveZionAddress(e.target.value);
+                              setInitTargetAddress(addr);
+                              setInitRecipient(addr);
+                            } catch { /* invalid */ }
+                          }}
+                          className="w-full mt-1 rounded-lg border border-white/10 bg-black/30 px-2 py-1.5 text-white focus:border-zion-gold focus:outline-none"
+                          placeholder="64-char Ed25519 pubkey hex"
+                        />
+                        {initTargetAddress && (
+                          <div className="text-[9px] text-gray-500 mt-1">{initTargetAddress}</div>
+                        )}
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={initLockLoading}
+                      className="zion-button-primary w-full text-sm py-2.5"
+                    >
+                      {initLockLoading ? (SwapCopy.loading[cs ? 'cs' : 'en']) : (SwapCopy.lockSwap[cs ? 'cs' : 'en'])}
+                    </button>
+                    {initLockMessage && (
+                      <p className={`text-[11px] ${initLockMessage.success ? 'text-zion-cyan' : 'text-red-400'}`}>
+                        {initLockMessage.text}
+                      </p>
+                    )}
+                  </form>
+
+                  {/* Memo Builder (legacy EVM flow) */}
+                  {initChain !== 'zion' && generatedHash && initRecipient && (
                     <div className="zion-rainbow-sub p-4 space-y-2 text-xs" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
                       <div className="flex items-center gap-1.5 text-zion-cyan font-semibold mb-1">
                         <Info className="h-4 w-4" />

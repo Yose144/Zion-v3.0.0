@@ -62,9 +62,8 @@ function copyIfExists(src, dst) {
   return true;
 }
 
-function findNvrtcRuntime() {
-  const resourcesDir = path.resolve(__dirname, '..', 'resources');
-  const targetDir = path.resolve(__dirname, '..', '..', '..', 'V31', 'target', 'release');
+function findNvrtcRuntime(resourcesDir, workspaceRoot) {
+  const targetDir = path.join(workspaceRoot, 'V31', 'target', 'release');
   const isWindows = process.platform === 'win32';
   const searchPaths = isWindows
     ? [resourcesDir, targetDir]
@@ -89,7 +88,7 @@ function findNvrtcRuntime() {
   return null;
 }
 
-function checkCudaCapability() {
+function checkCudaCapability(workspaceRoot, resourcesDir) {
   const result = { hasCuda: false, gpuCount: 0, driverVersion: 'unknown', hasNvrtc: false };
   try {
     const nvSmi = spawnSync('nvidia-smi', ['--query-gpu=count', '--format=csv,noheader,nounits'], { stdio: 'pipe' });
@@ -102,7 +101,7 @@ function checkCudaCapability() {
         if (driverCheck.status === 0) {
           result.driverVersion = driverCheck.stdout.toString().trim().split('\n')[0];
         }
-        const nvrtcPath = findNvrtcRuntime();
+        const nvrtcPath = findNvrtcRuntime(resourcesDir, workspaceRoot);
         if (nvrtcPath) {
           result.hasNvrtc = true;
           console.log(`[prepare-v31] NVRTC runtime found: ${nvrtcPath}`);
@@ -121,7 +120,7 @@ function checkCudaCapability() {
   return result;
 }
 
-function detectPlatformFeatures() {
+function detectPlatformFeatures(workspaceRoot, resourcesDir) {
   const platform = process.platform;
   const arch = os.arch();
 
@@ -143,7 +142,7 @@ function detectPlatformFeatures() {
   }
 
   if (platform === 'win32') {
-    const cudaCheck = checkCudaCapability();
+    const cudaCheck = checkCudaCapability(workspaceRoot, resourcesDir);
     const forceCuda = String(process.env.ZION_FORCE_CUDA || '').trim() === '1';
     const base = `${publicFlag},auxpow,gpu-opencl,${nativeFeatures}`;
     if (forceCuda || (cudaCheck.hasCuda && cudaCheck.hasNvrtc)) {
@@ -159,7 +158,7 @@ function detectPlatformFeatures() {
   }
 
   if (platform === 'linux') {
-    const cudaCheck = checkCudaCapability();
+    const cudaCheck = checkCudaCapability(workspaceRoot, resourcesDir);
     const forceCuda = String(process.env.ZION_FORCE_CUDA || '').trim() === '1';
     const base = `${publicFlag},auxpow,gpu-opencl,${nativeFeatures}`;
     if (forceCuda || (cudaCheck.hasCuda && cudaCheck.hasNvrtc)) {
@@ -182,9 +181,6 @@ function parseArgs(argv) {
     else if (a === '--require' || a === '--require-rust') out.requireBinary = true;
     else if (a === '--auto') out.autoDetect = true;
     else if (a === '--features') { out.features = String(argv[i + 1] || '').trim(); i++; }
-  }
-  if (!out.features || out.autoDetect) {
-    out.features = detectPlatformFeatures();
   }
   return out;
 }
@@ -215,9 +211,10 @@ function buildV31Workspace(workspaceRoot, features) {
       );
     }
     if (features && features !== 'default') {
-      console.warn(`[prepare-v31] Build with [${features}] failed, retrying with [auxpow,native-hashers]...`);
-      const fallbackArgs = [...cargoArgs, '-p', 'zion-miner', '--features', 'auxpow,native-hashers'];
-      const fallbackRes = spawnSync('cargo', fallbackArgs, { cwd: workspaceRoot, stdio: 'inherit', env: process.env });
+      const fallbackFeatures = 'public_build,native-all';
+      console.warn(`[prepare-v31] Build with [${features}] failed, retrying with [${fallbackFeatures}]...`);
+      const fallbackArgs = [...cargoArgs, '-p', 'zion-miner', '--bin', 'zion-miner', '--bin', 'zion-universal-miner', '--features', fallbackFeatures];
+      const fallbackRes = spawnSync('cargo', fallbackArgs, { cwd: workspaceRoot, stdio: 'inherit', env: buildEnv });
       if (fallbackRes.error) throw fallbackRes.error;
       if (fallbackRes.status !== 0) throw new Error(`cargo build for zion-miner failed (exit ${fallbackRes.status})`);
     } else {
@@ -282,6 +279,24 @@ function copyBinaries(workspaceRoot, resourcesDir) {
 
   warnIfCudaRuntimeMissing(dllNames);
 
+  // On Windows MSVC builds, bundle system DLLs that the miner needs at load
+  // time but that may not be present on a clean user machine:
+  //   - OpenCL.dll       — ICD loader required by the OpenCL backend
+  //   - VCRUNTIME140.dll — MSVC C runtime (usually present but bundle to be safe)
+  //   - VCRUNTIME140_1.dll
+  if (process.platform === 'win32') {
+    const systemDlls = ['OpenCL.dll', 'VCRUNTIME140.dll', 'VCRUNTIME140_1.dll'];
+    const sysDir = 'C:\\Windows\\System32';
+    for (const dll of systemDlls) {
+      const src = path.join(sysDir, dll);
+      const dst = path.join(resourcesDir, dll);
+      if (exists(src) && !exists(dst)) {
+        console.log(`[prepare-v31] Copying system DLL ${dll}`);
+        copyIfExists(src, dst);
+      }
+    }
+  }
+
   return copied;
 }
 
@@ -306,6 +321,46 @@ function warnIfCudaRuntimeMissing(dllNames) {
   );
 }
 
+function cleanResources(resourcesDir) {
+  // Remove stale cross-platform binaries from a previous build so we do not
+  // package the wrong platform's binaries (e.g. Windows .exe inside a Linux DEB).
+  if (!exists(resourcesDir)) return;
+
+  const isWindows = process.platform === 'win32';
+  const ext = isWindows ? '.exe' : '';
+  // Derive the set of binaries (and aliases) that this script places in resources/
+  const knownBins = [...new Set(BINS.flatMap((s) => [s.bin, ...s.aliases]))];
+  const knownWithExt = new Set(knownBins.map((b) => b + ext));
+  const knownNoExt = new Set(knownBins); // stale Linux/mac binaries on Windows
+
+  for (const f of fs.readdirSync(resourcesDir)) {
+    const fullPath = path.join(resourcesDir, f);
+    try {
+      const stat = fs.statSync(fullPath);
+      if (!stat.isFile()) continue;
+
+      let remove = false;
+      let reason = '';
+
+      if (!isWindows && f.toLowerCase().endsWith('.exe')) {
+        remove = true;
+        reason = 'stale cross-platform .exe';
+      } else if (knownWithExt.has(f)) {
+        remove = true;
+        reason = 'stale known binary';
+      } else if (isWindows && knownNoExt.has(f)) {
+        remove = true;
+        reason = 'stale non-Windows binary';
+      }
+
+      if (remove) {
+        console.log(`[prepare-v31] Removing ${reason}: ${f}`);
+        fs.unlinkSync(fullPath);
+      }
+    } catch { /* ignore */ }
+  }
+}
+
 // ── Main ───────────────────────────────────────────────────────────
 
 function main() {
@@ -313,11 +368,17 @@ function main() {
   const desktopAgentRoot = path.resolve(__dirname, '..');
   const workspaceRoot = path.resolve(desktopAgentRoot, '..', '..');
   const resourcesDir = path.join(desktopAgentRoot, 'resources');
+
+  // Clean stale cross-platform binaries BEFORE building or copying
+  console.log('[prepare-v31] Cleaning resources/ of stale cross-platform binaries...');
+  cleanResources(resourcesDir);
   ensureDir(resourcesDir);
+
+  const features = args.features || detectPlatformFeatures(workspaceRoot, resourcesDir);
 
   if (!args.noBuild) {
     console.log('[prepare-v31] Building V31 workspace binaries...');
-    buildV31Workspace(workspaceRoot, args.features);
+    buildV31Workspace(workspaceRoot, features);
   } else {
     console.log('[prepare-v31] --no-build set; skipping cargo build');
   }

@@ -12,6 +12,8 @@ pub struct MultichainConfig {
     #[serde(default = "default_l1_rpc_url")]
     pub l1_rpc_url: String,
     #[serde(default)]
+    pub mnemonic: Option<String>,
+    #[serde(default)]
     pub adapters: Vec<AdapterConfig>,
     pub pool: Option<PoolConfigFile>,
     #[serde(default)]
@@ -28,6 +30,7 @@ impl Default for MultichainConfig {
             server: ServerConfig::default(),
             database: DatabaseConfig::default(),
             l1_rpc_url: default_l1_rpc_url(),
+            mnemonic: None,
             adapters: Vec::new(),
             pool: None,
             warp: None,

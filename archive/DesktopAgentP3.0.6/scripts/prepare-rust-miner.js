@@ -17,8 +17,8 @@
     - zion                               (unified CLI — wallet, send, balance, etc.)
 
   Platform-aware GPU features:
-    macOS (arm64/x86_64) -> --features gpu-opencl,gpu-metal,native-all
-    Linux/Windows        -> --features gpu-opencl,(gpu-cuda when NVIDIA/NVRTC),native-all
+    macOS (arm64/x86_64) -> public_build,gpu-opencl,gpu-metal,native-all
+    Linux/Windows        -> public_build,gpu-opencl,(+gpu-cuda when NVIDIA/NVRTC),native-all
 
   Usage:
     node scripts/prepare-rust-miner.js [--no-build] [--features <f>] [--require]
@@ -51,6 +51,14 @@ const BINS = [
 
 const V31_WORKSPACE_MANIFEST = 'V31/Cargo.toml';
 
+const KNOWN_BINARIES = [
+  'zion-miner',
+  'zion-universal-miner',
+  'zion-node',
+  'node',
+  'zion',
+];
+
 // ── Helpers ────────────────────────────────────────────────────────
 
 function exists(filePath) {
@@ -71,71 +79,12 @@ function copyIfExists(src, dst) {
   return true;
 }
 
-function detectPlatformFeatures() {
-  const platform = process.platform;
-  const arch = os.arch();
-
-  // Native algorithm acceleration is always included for public bundles so a
-  // single binary can switch coins by changing --pool / --wallet / --algorithm.
-  const nativeFeatures = 'native-all';
-
-  // IMPORTANT: gpu-cuda pulls in cudarc which tries to dlopen libcuda at
-  // startup. On macOS there is no CUDA driver, so including gpu-cuda causes
-  // an immediate panic. The gpu-metal crate is Apple-only, so including it on
-  // Linux/Windows causes a build failure. We therefore build per-platform
-  // feature sets instead of using the convenience `full` alias.
-  if (platform === 'darwin') {
-    const macFeatures = `gpu-opencl,gpu-metal,${nativeFeatures}`;
-    if (arch === 'arm64') {
-      console.log('[prepare-v31] Apple Silicon detected -> Metal + OpenCL + all native (no CUDA — not available on macOS)');
-    } else {
-      console.log('[prepare-v31] Intel Mac detected -> Metal + OpenCL + all native (no CUDA — not available on macOS)');
-    }
-    return macFeatures;
-  }
-
-  if (platform === 'win32') {
-    const cudaCheck = checkCudaCapability();
-    const forceCuda = String(process.env.ZION_FORCE_CUDA || '').trim() === '1';
-    const base = `gpu-opencl,${nativeFeatures}`;
-    if (forceCuda || (cudaCheck.hasCuda && cudaCheck.hasNvrtc)) {
-      console.log('[prepare-v31] Windows + NVIDIA GPU + NVRTC runtime detected -> public build with CUDA backend');
-      return `${base},gpu-cuda`;
-    }
-    if (cudaCheck.hasCuda && !cudaCheck.hasNvrtc) {
-      console.log('[prepare-v31] Windows + NVIDIA GPU but no NVRTC runtime -> OpenCL-only public build (place nvrtc64_*.dll for CUDA)');
-    } else {
-      console.log('[prepare-v31] Windows detected -> OpenCL + all native hashers');
-    }
-    return base;
-  }
-
-  if (platform === 'linux') {
-    const cudaCheck = checkCudaCapability();
-    const forceCuda = String(process.env.ZION_FORCE_CUDA || '').trim() === '1';
-    const base = `gpu-opencl,${nativeFeatures}`;
-    if (forceCuda || (cudaCheck.hasCuda && cudaCheck.hasNvrtc)) {
-      console.log('[prepare-v31] Linux + NVIDIA CUDA + NVRTC detected -> public build with CUDA backend');
-      return `${base},gpu-cuda`;
-    }
-    if (cudaCheck.hasCuda && !cudaCheck.hasNvrtc) {
-      console.log('[prepare-v31] Linux + NVIDIA GPU but no NVRTC runtime -> OpenCL-only public build (add libnvrtc.so for CUDA runtime)');
-    } else {
-      console.log('[prepare-v31] Linux detected -> OpenCL + all native hashers');
-    }
-    return base;
-  }
-
-  console.log('[prepare-v31] Unknown platform -> OpenCL + all native hashers');
-  return `gpu-opencl,${nativeFeatures}`;
-}
-
-function findNvrtcRuntime() {
+function findNvrtcRuntime(workspaceRoot) {
   // The CUDA backend needs NVRTC at runtime (not the full CUDA Toolkit).
   // Look for the redistributable DLLs / shared libraries that ship with the miner
-  // or may already be present in the target/release directory.
+  // or may already be present in the V31 target/release directory.
   const resourcesDir = path.resolve(__dirname, '..', 'resources');
-  const targetDir = path.resolve(__dirname, '..', '..', 'V31', 'target', 'release');
+  const targetDir = path.join(workspaceRoot, 'V31', 'target', 'release');
   const isWindows = process.platform === 'win32';
   const searchPaths = isWindows
     ? [resourcesDir, targetDir]
@@ -160,7 +109,7 @@ function findNvrtcRuntime() {
   return null;
 }
 
-function checkCudaCapability() {
+function checkCudaCapability(workspaceRoot) {
   const result = { hasCuda: false, gpuCount: 0, driverVersion: 'unknown', hasNvrtc: false };
   try {
     const nvSmi = spawnSync('nvidia-smi', ['--query-gpu=count', '--format=csv,noheader,nounits'], { stdio: 'pipe' });
@@ -176,7 +125,7 @@ function checkCudaCapability() {
         // NVRTC (runtime JIT compiler) is what the miner actually uses. It is
         // bundled as the standalone ~40 MB cuda_nvrtc redistributable, no full
         // 3 GB CUDA Toolkit required. Prefer a local copy over nvcc.
-        const nvrtcPath = findNvrtcRuntime();
+        const nvrtcPath = findNvrtcRuntime(workspaceRoot);
         if (nvrtcPath) {
           result.hasNvrtc = true;
           console.log(`[prepare-v31] NVRTC runtime found: ${nvrtcPath}`);
@@ -195,6 +144,65 @@ function checkCudaCapability() {
   return result;
 }
 
+function detectPlatformFeatures(workspaceRoot) {
+  const platform = process.platform;
+  const arch = os.arch();
+
+  // Native algorithm acceleration is always included for public bundles so a
+  // single binary can switch coins by changing --pool / --wallet / --algorithm.
+  const nativeFeatures = 'native-all';
+
+  // IMPORTANT: gpu-cuda pulls in cudarc which tries to dlopen libcuda at
+  // startup. On macOS there is no CUDA driver, so including gpu-cuda causes
+  // an immediate panic. The gpu-metal crate is Apple-only, so including it on
+  // Linux/Windows causes a build failure. We therefore build per-platform
+  // feature sets instead of using the convenience `full` alias.
+  if (platform === 'darwin') {
+    const macFeatures = `gpu-opencl,gpu-metal,${nativeFeatures}`;
+    if (arch === 'arm64') {
+      console.log('[prepare-v31] Apple Silicon detected -> Metal + OpenCL + all native (no CUDA — not available on macOS)');
+    } else {
+      console.log('[prepare-v31] Intel Mac detected -> Metal + OpenCL + all native (no CUDA — not available on macOS)');
+    }
+    return macFeatures;
+  }
+
+  if (platform === 'win32') {
+    const cudaCheck = checkCudaCapability(workspaceRoot);
+    const forceCuda = String(process.env.ZION_FORCE_CUDA || '').trim() === '1';
+    const base = `gpu-opencl,${nativeFeatures}`;
+    if (forceCuda || (cudaCheck.hasCuda && cudaCheck.hasNvrtc)) {
+      console.log('[prepare-v31] Windows + NVIDIA GPU + NVRTC runtime detected -> public build with CUDA backend');
+      return `${base},gpu-cuda`;
+    }
+    if (cudaCheck.hasCuda && !cudaCheck.hasNvrtc) {
+      console.log('[prepare-v31] Windows + NVIDIA GPU but no NVRTC runtime -> OpenCL-only public build (place nvrtc64_*.dll for CUDA)');
+    } else {
+      console.log('[prepare-v31] Windows detected -> OpenCL + all native hashers');
+    }
+    return base;
+  }
+
+  if (platform === 'linux') {
+    const cudaCheck = checkCudaCapability(workspaceRoot);
+    const forceCuda = String(process.env.ZION_FORCE_CUDA || '').trim() === '1';
+    const base = `gpu-opencl,${nativeFeatures}`;
+    if (forceCuda || (cudaCheck.hasCuda && cudaCheck.hasNvrtc)) {
+      console.log('[prepare-v31] Linux + NVIDIA CUDA + NVRTC detected -> public build with CUDA backend');
+      return `${base},gpu-cuda`;
+    }
+    if (cudaCheck.hasCuda && !cudaCheck.hasNvrtc) {
+      console.log('[prepare-v31] Linux + NVIDIA GPU but no NVRTC runtime -> OpenCL-only public build (add libnvrtc.so for CUDA runtime)');
+    } else {
+      console.log('[prepare-v31] Linux detected -> OpenCL + all native hashers');
+    }
+    return base;
+  }
+
+  console.log('[prepare-v31] Unknown platform -> OpenCL + all native hashers');
+  return `gpu-opencl,${nativeFeatures}`;
+}
+
 function parseArgs(argv) {
   const out = { noBuild: false, requireBinary: false, features: null, autoDetect: false };
   for (let i = 2; i < argv.length; i++) {
@@ -203,9 +211,6 @@ function parseArgs(argv) {
     else if (a === '--require' || a === '--require-rust') out.requireBinary = true;
     else if (a === '--auto') out.autoDetect = true;
     else if (a === '--features') { out.features = String(argv[i + 1] || '').trim(); i++; }
-  }
-  if (!out.features || out.autoDetect) {
-    out.features = detectPlatformFeatures();
   }
   return out;
 }
@@ -301,7 +306,7 @@ function copyBinaries(workspaceRoot, resourcesDir) {
     copyIfExists(src, mainDst);
     copied++;
 
-    // Aliases (e.g. zion-universal-miner for backward compat)
+    // Aliases (e.g. zion-universal-miner for backward compat, node alias for zion-node)
     for (const alias of spec.aliases) {
       const aliasDst = path.join(resourcesDir, alias + ext);
       console.log(`[prepare-v31] Copying alias ${alias}${ext}`);
@@ -372,26 +377,31 @@ function warnIfCudaRuntimeMissing(dllNames) {
 // ── Main ───────────────────────────────────────────────────────────
 
 function cleanResources(resourcesDir) {
-  // Remove any stale binaries from a previous platform build to prevent
-  // cross-platform contamination (e.g. Windows .exe ending up in a Linux DEB).
+  // Remove stale cross-platform binaries from a previous build to prevent
+  // contamination (e.g. Windows .exe ending up in a Linux DEB).
+  // Non-Windows builds drop Windows .exe files; Windows builds drop stale
+  // Linux/Mac binaries that lack the .exe extension.
   if (!exists(resourcesDir)) return;
-  const ext = process.platform === 'win32' ? '.exe' : '';
-  const staleExts = process.platform === 'win32' ? [''] : ['.exe'];
+  const isWindows = process.platform === 'win32';
   for (const f of fs.readdirSync(resourcesDir)) {
     const fullPath = path.join(resourcesDir, f);
     try {
       const stat = fs.statSync(fullPath);
       if (!stat.isFile()) continue;
-      // Remove files with wrong extension (e.g. .exe on Linux/Mac)
-      if (staleExts.some(e => f.endsWith(e))) {
-        console.log(`[prepare-v31] Removing stale cross-platform binary: ${f}`);
-        fs.unlinkSync(fullPath);
-        continue;
-      }
-      // Remove known binaries (with correct extension) so we don't bundle old versions
-      const knownBins = ['zion-miner', 'zion-universal-miner', 'node', 'zion'];
-      if (knownBins.some(b => f === b + ext)) {
-        fs.unlinkSync(fullPath);
+
+      if (isWindows) {
+        // On Windows, real binaries have .exe. Non-.exe files with the names of
+        // shipped binaries are stale Linux/Mac artifacts.
+        if (!f.endsWith('.exe') && KNOWN_BINARIES.includes(f)) {
+          console.log(`[prepare-v31] Removing stale non-Windows binary: ${f}`);
+          fs.unlinkSync(fullPath);
+        }
+      } else {
+        // On Linux/Mac, .exe files are stale Windows artifacts.
+        if (f.endsWith('.exe')) {
+          console.log(`[prepare-v31] Removing stale Windows binary: ${f}`);
+          fs.unlinkSync(fullPath);
+        }
       }
     } catch { /* ignore */ }
   }
@@ -403,6 +413,10 @@ function main() {
   // archive/DesktopAgentP3.0.6 -> archive -> project root (where V31/ lives)
   const workspaceRoot = path.resolve(desktopAgentRoot, '..', '..');
   const resourcesDir = path.join(desktopAgentRoot, 'resources');
+
+  if (!args.features || args.autoDetect) {
+    args.features = detectPlatformFeatures(workspaceRoot);
+  }
 
   // Clean stale cross-platform binaries BEFORE building/copying
   console.log('[prepare-v31] Cleaning resources/ of stale cross-platform binaries...');

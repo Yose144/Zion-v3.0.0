@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Build ZION Public Miner desktop packages locally on an Apple Silicon Mac
-# for all three target platforms (macOS, Linux x86_64, Windows x86_64).
+# Build ZION Public Miner desktop packages locally for all three target
+# platforms (macOS, Linux x86_64, Windows x86_64).
+#
+# This script is designed to run on an Apple Silicon Mac or a Linux build host
+# with cross-compilation tooling installed.
 #
 # Usage:
 #   scripts/build-release-local.sh --mac
 #   scripts/build-release-local.sh --linux
 #   scripts/build-release-local.sh --win
+#   scripts/build-release-local.sh --win-native
 #   scripts/build-release-local.sh --all
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -77,31 +81,89 @@ function clean_resources() {
 }
 
 # ---------------------------------------------------------------------------
-# macOS (native, Apple Silicon)
+# Detect whether the build host has an NVIDIA GPU + NVRTC runtime.
+# This is used to decide whether to add the gpu-cuda feature.
+# Use ZION_FORCE_CUDA=1 to override and always include gpu-cuda.
+# ---------------------------------------------------------------------------
+function detect_cuda_runtime() {
+  if [[ "${ZION_FORCE_CUDA:-}" == "1" ]]; then
+    echo "[build-release-local] ZION_FORCE_CUDA=1 -> forcing gpu-cuda"
+    return 0
+  fi
+
+  if ! command -v nvidia-smi >/dev/null 2>&1; then
+    return 1
+  fi
+
+  local gpu_count
+  gpu_count=$(nvidia-smi --query-gpu=count --format=csv,noheader,nounits 2>/dev/null | head -n 1 | tr -d '[:space:]')
+  if [[ -z "$gpu_count" ]] || [[ "$gpu_count" -eq 0 ]]; then
+    return 1
+  fi
+
+  # NVRTC (runtime JIT compiler) is required by the gpu-cuda feature.
+  # It may already be in the V31 target dir, in the CUDA toolkit, or in
+  # DesktopAgentP3.0.6/native-libs/ for Windows.
+  local search_dirs=(
+    "$REPO_ROOT/V31/target/release"
+    "$REPO_ROOT/V31/target/x86_64-unknown-linux-gnu/release"
+    "$REPO_ROOT/V31/target/x86_64-pc-windows-msvc/release"
+    "$REPO_ROOT/V31/target/x86_64-pc-windows-gnu/release"
+    "/usr/lib/x86_64-linux-gnu"
+    "/usr/local/cuda/lib64"
+    "/usr/lib"
+    "/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.0/bin"
+    "/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.4/bin"
+    "/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6/bin"
+    "$DESKTOP_DIR/native-libs"
+  )
+
+  for dir in "${search_dirs[@]}"; do
+    if [[ -d "$dir" ]]; then
+      for f in "$dir"/libnvrtc.so* "$dir"/libnvrtc-builtins.so* "$dir"/nvrtc64_*.dll "$dir"/nvrtc-builtins*.dll; do
+        if [[ -f "$f" ]]; then
+          echo "[build-release-local] NVIDIA GPU with NVRTC found: $(basename "$f") in $dir"
+          return 0
+        fi
+      done
+    fi
+  done
+
+  return 1
+}
+
+# ---------------------------------------------------------------------------
+# macOS (native, Apple Silicon / Intel)
 # ---------------------------------------------------------------------------
 function build_mac() {
   echo "[build-release-local] Building macOS binaries..."
   clean_resources
 
+  local features="public_build,gpu-opencl,gpu-metal,native-all"
+
   local cargo_args=(
     cargo build --release
-    --manifest-path "$REPO_ROOT/V3/Cargo.toml"
+    --manifest-path "$REPO_ROOT/V31/Cargo.toml"
   )
 
-  # zion-miner with Metal + full native stack
-  "${cargo_args[@]}" -p zion-miner --features public_build,full,gpu-metal
+  # zion-miner + zion-universal-miner with Metal + OpenCL + all native hashers
+  "${cargo_args[@]}" -p zion-miner \
+    --bin zion-miner --bin zion-universal-miner \
+    --features "$features"
 
   # node (zion-core binary)
-  "${cargo_args[@]}" -p zion-core --bin node
+  "${cargo_args[@]}" -p zion-core --bin zion-node
 
   # zion CLI
   "${cargo_args[@]}" -p zion-cli
 
   # Copy
-  cp "$REPO_ROOT/V3/target/release/zion-miner" "$RESOURCES_DIR/"
-  cp "$REPO_ROOT/V3/target/release/zion" "$RESOURCES_DIR/"
-  cp "$REPO_ROOT/V3/target/release/node" "$RESOURCES_DIR/"
-  cp "$REPO_ROOT/V3/target/release/zion-miner" "$RESOURCES_DIR/zion-universal-miner"
+  local target_dir="$REPO_ROOT/V31/target/release"
+  cp "$target_dir/zion-miner" "$RESOURCES_DIR/"
+  cp "$target_dir/zion-miner" "$RESOURCES_DIR/zion-universal-miner"
+  cp "$target_dir/zion" "$RESOURCES_DIR/"
+  cp "$target_dir/zion-node" "$RESOURCES_DIR/"
+  cp "$target_dir/zion-node" "$RESOURCES_DIR/node"
 
   echo "[build-release-local] Building macOS DMG..."
   cd "$DESKTOP_DIR"
@@ -109,43 +171,64 @@ function build_mac() {
 }
 
 # ---------------------------------------------------------------------------
-# Linux x86_64 (cross-compile via cargo-zigbuild, glibc, OpenCL + CUDA)
+# Linux x86_64 (cross-compile via cargo-zigbuild, glibc, OpenCL + optional CUDA)
 # ---------------------------------------------------------------------------
 function build_linux() {
   echo "[build-release-local] Building Linux x86_64 binaries..."
   clean_resources
 
   local target=x86_64-unknown-linux-gnu
-  local features=public_build,full,gpu-cuda
+  local features="public_build,gpu-opencl,native-all"
+  detect_cuda_runtime && features="$features,gpu-cuda"
 
-  # Ensure the link-time OpenCL loader is the real x86_64 .so, not the old stub.
-  # The .incompatible file is the real loader; the target machine uses its own ocl-icd at runtime.
-  local opencl_dir="$REPO_ROOT/V3/L1/native-libs"
-  [[ -f "$opencl_dir/libOpenCL.so.incompatible" ]] && cp "$opencl_dir/libOpenCL.so.incompatible" "$opencl_dir/libOpenCL.so"
+  # Find the x86_64 system OpenCL loader for link time.  The resulting
+  # binary dynamically loads the target machine's libOpenCL.so.1 at runtime,
+  # so we do NOT bundle the loader with the package.
+  local opencl_lib_dir=""
+  for d in /usr/lib/x86_64-linux-gnu /usr/lib64 /lib/x86_64-linux-gnu /usr/lib; do
+    if [[ -f "$d/libOpenCL.so" ]]; then
+      opencl_lib_dir="$d"
+      break
+    fi
+  done
+
+  if [[ -z "$opencl_lib_dir" ]]; then
+    echo "[build-release-local] WARNING: no x86_64 libOpenCL.so found; Linux OpenCL build may fail." >&2
+    echo "  install: sudo apt install ocl-icd-opencl-dev" >&2
+  else
+    echo "[build-release-local] Using OpenCL loader from $opencl_lib_dir"
+  fi
 
   export AR_x86_64_unknown_linux_gnu="$LLVM_AR"
-  export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-L $opencl_dir -Clink-arg=-Wl,--allow-shlib-undefined"
+  if [[ -n "$opencl_lib_dir" ]]; then
+    export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-L $opencl_lib_dir -Clink-arg=-Wl,--allow-shlib-undefined"
+  else
+    export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-Clink-arg=-Wl,--allow-shlib-undefined"
+  fi
 
   cargo zigbuild --release \
-    --manifest-path "$REPO_ROOT/V3/Cargo.toml" \
+    --manifest-path "$REPO_ROOT/V31/Cargo.toml" \
     --target "$target" \
-    -p zion-miner --features "$features"
+    -p zion-miner \
+    --bin zion-miner --bin zion-universal-miner \
+    --features "$features"
 
   cargo zigbuild --release \
-    --manifest-path "$REPO_ROOT/V3/Cargo.toml" \
+    --manifest-path "$REPO_ROOT/V31/Cargo.toml" \
     --target "$target" \
-    -p zion-core --bin node
+    -p zion-core --bin zion-node
 
   cargo zigbuild --release \
-    --manifest-path "$REPO_ROOT/V3/Cargo.toml" \
+    --manifest-path "$REPO_ROOT/V31/Cargo.toml" \
     --target "$target" \
     -p zion-cli
 
-  local target_dir="$REPO_ROOT/V3/target/$target/release"
+  local target_dir="$REPO_ROOT/V31/target/$target/release"
   cp "$target_dir/zion-miner" "$RESOURCES_DIR/"
-  cp "$target_dir/zion" "$RESOURCES_DIR/"
-  cp "$target_dir/node" "$RESOURCES_DIR/"
   cp "$target_dir/zion-miner" "$RESOURCES_DIR/zion-universal-miner"
+  cp "$target_dir/zion" "$RESOURCES_DIR/"
+  cp "$target_dir/zion-node" "$RESOURCES_DIR/"
+  cp "$target_dir/zion-node" "$RESOURCES_DIR/node"
 
   echo "[build-release-local] Building Linux AppImage..."
   cd "$DESKTOP_DIR"
@@ -161,7 +244,9 @@ function build_win() {
   clean_resources
 
   local target=x86_64-pc-windows-gnu
-  local features=public_build,full,gpu-cuda
+  local features="public_build,gpu-opencl,native-all"
+  detect_cuda_runtime && features="$features,gpu-cuda"
+
   export AR_x86_64_pc_windows_gnu="$LLVM_AR"
   export CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER="$MINGW_CC"
   # Statically link MinGW runtime so the binary doesn't depend on
@@ -169,29 +254,32 @@ function build_win() {
   export CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUSTFLAGS="-C link-arg=-static -C link-arg=-static-libgcc -C link-arg=-static-libstdc++"
 
   cargo build --release \
-    --manifest-path "$REPO_ROOT/V3/Cargo.toml" \
+    --manifest-path "$REPO_ROOT/V31/Cargo.toml" \
     --target "$target" \
-    -p zion-miner --features "$features"
+    -p zion-miner \
+    --bin zion-miner --bin zion-universal-miner \
+    --features "$features"
 
   cargo build --release \
-    --manifest-path "$REPO_ROOT/V3/Cargo.toml" \
+    --manifest-path "$REPO_ROOT/V31/Cargo.toml" \
     --target "$target" \
-    -p zion-core --bin node
+    -p zion-core --bin zion-node
 
   cargo build --release \
-    --manifest-path "$REPO_ROOT/V3/Cargo.toml" \
+    --manifest-path "$REPO_ROOT/V31/Cargo.toml" \
     --target "$target" \
     -p zion-cli
 
-  local target_dir="$REPO_ROOT/V3/target/$target/release"
+  local target_dir="$REPO_ROOT/V31/target/$target/release"
   cp "$target_dir/zion-miner.exe" "$RESOURCES_DIR/"
-  cp "$target_dir/zion.exe" "$RESOURCES_DIR/"
-  cp "$target_dir/node.exe" "$RESOURCES_DIR/"
   cp "$target_dir/zion-miner.exe" "$RESOURCES_DIR/zion-universal-miner.exe"
+  cp "$target_dir/zion.exe" "$RESOURCES_DIR/"
+  cp "$target_dir/zion-node.exe" "$RESOURCES_DIR/"
+  cp "$target_dir/zion-node.exe" "$RESOURCES_DIR/node.exe"
 
   # Bundle runtime DLLs that the MinGW cross-compile needs at runtime.
   # NVRTC (CUDA JIT compiler) is required by the gpu-cuda feature.
-  # OpenCL.dll is the ICD loader required by the `full` feature.
+  # OpenCL.dll is the ICD loader required by gpu-opencl.
   bundle_windows_dlls "$RESOURCES_DIR"
 
   echo "[build-release-local] Building Windows NSIS + ZIP..."
@@ -213,28 +301,33 @@ function build_win_native() {
   echo "[build-release-local] Building Windows x86_64 binaries (native MSVC)..."
   clean_resources
 
-  local features=public_build,full,gpu-cuda
+  local features="public_build,gpu-opencl,native-all"
+  detect_cuda_runtime && features="$features,gpu-cuda"
+
   # MSVC build — no cross-compile target needed, uses default host (x86_64-pc-windows-msvc)
   # ZION_DISABLE_OPENMP=1 avoids dependency on libomp (not available on clean user machines)
   export ZION_DISABLE_OPENMP=1
 
   cargo build --release \
-    --manifest-path "$REPO_ROOT/V3/Cargo.toml" \
-    -p zion-miner --features "$features"
+    --manifest-path "$REPO_ROOT/V31/Cargo.toml" \
+    -p zion-miner \
+    --bin zion-miner --bin zion-universal-miner \
+    --features "$features"
 
   cargo build --release \
-    --manifest-path "$REPO_ROOT/V3/Cargo.toml" \
-    -p zion-core --bin node
+    --manifest-path "$REPO_ROOT/V31/Cargo.toml" \
+    -p zion-core --bin zion-node
 
   cargo build --release \
-    --manifest-path "$REPO_ROOT/V3/Cargo.toml" \
+    --manifest-path "$REPO_ROOT/V31/Cargo.toml" \
     -p zion-cli
 
-  local target_dir="$REPO_ROOT/V3/target/release"
+  local target_dir="$REPO_ROOT/V31/target/release"
   cp "$target_dir/zion-miner.exe" "$RESOURCES_DIR/"
-  cp "$target_dir/zion.exe" "$RESOURCES_DIR/"
-  cp "$target_dir/node.exe" "$RESOURCES_DIR/"
   cp "$target_dir/zion-miner.exe" "$RESOURCES_DIR/zion-universal-miner.exe"
+  cp "$target_dir/zion.exe" "$RESOURCES_DIR/"
+  cp "$target_dir/zion-node.exe" "$RESOURCES_DIR/"
+  cp "$target_dir/zion-node.exe" "$RESOURCES_DIR/node.exe"
 
   # Bundle runtime DLLs: VCRUNTIME140, OpenCL, NVRTC
   bundle_windows_dlls "$RESOURCES_DIR"
@@ -262,7 +355,7 @@ function bundle_windows_dlls() {
   local res_dir="$1"
   echo "[build-release-local] Bundling Windows runtime DLLs..."
 
-  # OpenCL.dll — ICD loader required by the `full` feature at load time.
+  # OpenCL.dll — ICD loader required by gpu-opencl at load time.
   # The ICD loader is a thin shim that dispatches to the GPU vendor's
   # driver at runtime; bundling it avoids "OpenCL.dll not found" on
   # machines without an SDK installed.
@@ -278,12 +371,14 @@ function bundle_windows_dlls() {
   # standalone redistributable (~50 MB).
   #
   # Search order:
-  #   1. V3/target/release/ (if CUDA toolkit is installed, cargo links them)
-  #   2. CUDA Toolkit install dirs
-  #   3. DesktopAgentP3.0.6/native-libs/ (pre-bundled copies)
+  #   1. V31/target/release/ (if CUDA toolkit is installed, cargo may have linked/copied them)
+  #   2. V31/target/<target-triple>/release/
+  #   3. CUDA Toolkit install dirs
+  #   4. DesktopAgentP3.0.6/native-libs/ (pre-bundled copies)
   local nvrtc_search_dirs=(
-    "$REPO_ROOT/V3/target/release"
-    "$REPO_ROOT/V3/target/x86_64-pc-windows-msvc/release"
+    "$REPO_ROOT/V31/target/release"
+    "$REPO_ROOT/V31/target/x86_64-pc-windows-msvc/release"
+    "$REPO_ROOT/V31/target/x86_64-pc-windows-gnu/release"
     "/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.0/bin"
     "/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.4/bin"
     "/c/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6/bin"

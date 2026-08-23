@@ -83,6 +83,7 @@ fn build_multichain_config(warp: &WarpConfig) -> MultichainConfig {
             path: multichain_db_path(&warp.database_path),
         },
         l1_rpc_url: warp.l1_rpc_url.clone(),
+        mnemonic: warp.mnemonic.clone(),
         adapters: warp
             .chains
             .iter()

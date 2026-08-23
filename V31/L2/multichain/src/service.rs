@@ -45,6 +45,18 @@ pub struct MultichainService {
     processed_payouts: Arc<StdMutex<HashSet<(u64, String)>>>,
 }
 
+fn load_keyring(config: &MultichainConfig) -> MultichainResult<Keyring> {
+    if let Some(mnemonic) = config.mnemonic.as_deref() {
+        return Keyring::from_mnemonic(mnemonic);
+    }
+    if let Ok(mnemonic) = std::env::var("WARP_MNEMONIC") {
+        if !mnemonic.is_empty() {
+            return Keyring::from_mnemonic(&mnemonic);
+        }
+    }
+    Keyring::generate()
+}
+
 impl MultichainService {
     pub fn config(&self) -> &MultichainConfig {
         &self.config
@@ -52,7 +64,7 @@ impl MultichainService {
 
     pub fn new(config: MultichainConfig) -> MultichainResult<Self> {
         let db = Arc::new(Mutex::new(Db::open(&config.database.path)?));
-        let keyring = Keyring::generate()?;
+        let keyring = load_keyring(&config)?;
         let mut adapters = ChainAdapterRegistry::new();
 
         for cfg in &config.adapters {
@@ -98,7 +110,7 @@ impl MultichainService {
         adapters: ChainAdapterRegistry,
     ) -> MultichainResult<Self> {
         let db = Arc::new(Mutex::new(Db::open(&config.database.path)?));
-        let keyring = Keyring::generate()?;
+        let keyring = load_keyring(&config)?;
         Ok(Self::from_parts(config, db, Arc::new(adapters), keyring))
     }
 

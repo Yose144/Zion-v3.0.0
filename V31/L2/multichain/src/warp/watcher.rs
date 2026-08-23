@@ -273,6 +273,7 @@ mod tests {
             timelock_threshold_zion: 1_000_000,
             l1_rpc_url: "http://localhost:8444".into(),
             l1_vault_address: "zion1test".into(),
+            mnemonic: None,
             solver: Default::default(),
             solvers: vec![],
         }
