@@ -268,29 +268,6 @@ const LEAF_PALETTE = ['#078930', '#fcd116', '#e41e2b', '#078930', '#fcd116', '#1
 
 function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
-  // Robust 4D vector leaves: cone geometry oriented along the branch direction,
-  // with the 4th component (w) driving individual wobble amplitude.
-  // Reuse transient math objects to avoid per-frame allocations.
-  const matrixRef = useRef(new THREE.Matrix4());
-  const quatRef = useRef(new THREE.Quaternion());
-  const swayQuatRef = useRef(new THREE.Quaternion());
-  const axisRef = useRef(new THREE.Vector3(0, 1, 0));
-  const scaleRef = useRef(new THREE.Vector3());
-  const geometry = useMemo(
-    () => new THREE.ConeGeometry(0.15, 0.85, 4, 1, true),
-    []
-  );
-  const material = useMemo(
-    () =>
-      new THREE.MeshBasicMaterial({
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.96,
-        side: THREE.DoubleSide,
-        toneMapped: false,
-      }),
-    []
-  );
 
   const leaves = useMemo(() => {
     const palette = LEAF_PALETTE.map((c) => new THREE.Color(c));
@@ -307,16 +284,11 @@ function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
 
     for (const anchor of anchors) {
       for (let i = 0; i < leavesPerAnchor; i++) {
-        // Spread leaves out past the twig tip, following its outward
-        // direction, so the canopy reads as reaching further out and up
-        // rather than clustering tight around the branch.
         const spread = 0.18 + rng.next() * 0.4;
         const along = 0.05 + rng.next() * 0.32;
         const jitter = new THREE.Vector3((rng.next() - 0.5) * spread, (rng.next() - 0.5) * spread * 0.6, (rng.next() - 0.5) * spread);
         const pos = anchor.end.clone().addScaledVector(anchor.dir, along).add(jitter);
 
-        // 4D vector orientation: the leaf cone points along the branch dir.
-        // The 4th component (w) is used as a per-leaf wobble amplitude.
         const dir = anchor.dir.clone().normalize();
         const quat = new THREE.Quaternion().setFromUnitVectors(up, dir);
         const spreadQuat = new THREE.Quaternion().setFromEuler(
@@ -331,7 +303,7 @@ function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
         result.push({
           pos,
           quat,
-          scale: 0.75 + rng.next() * 0.85,
+          scale: 0.85 + rng.next() * 0.95,
           phase: rng.next() * Math.PI * 2,
           speed: 0.4 + rng.next() * 0.5,
           w: 0.6 + rng.next() * 0.8,
@@ -344,42 +316,99 @@ function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
 
   const count = leaves.length;
 
+  const geometry = useMemo(() => {
+    const geo = new THREE.ConeGeometry(0.15, 0.85, 4, 1, true);
+    if (count === 0) return geo;
+
+    const phaseArr = new Float32Array(count);
+    const speedArr = new Float32Array(count);
+    const wArr = new Float32Array(count);
+    const colorArr = new Float32Array(count * 3);
+
+    for (let i = 0; i < count; i++) {
+      const leaf = leaves[i];
+      phaseArr[i] = leaf.phase;
+      speedArr[i] = leaf.speed;
+      wArr[i] = leaf.w;
+      colorArr[i * 3] = leaf.color.r;
+      colorArr[i * 3 + 1] = leaf.color.g;
+      colorArr[i * 3 + 2] = leaf.color.b;
+    }
+
+    geo.setAttribute('aPhase', new THREE.InstancedBufferAttribute(phaseArr, 1));
+    geo.setAttribute('aSpeed', new THREE.InstancedBufferAttribute(speedArr, 1));
+    geo.setAttribute('aW', new THREE.InstancedBufferAttribute(wArr, 1));
+    geo.setAttribute('aColor', new THREE.InstancedBufferAttribute(colorArr, 3));
+
+    return geo;
+  }, [leaves, count]);
+
+  const material = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        uniforms: {
+          uTime: { value: 0 },
+        },
+        vertexShader: `
+          attribute float aPhase;
+          attribute float aSpeed;
+          attribute float aW;
+          attribute vec3 aColor;
+
+          uniform float uTime;
+          varying vec3 vColor;
+
+          void main() {
+            vColor = aColor;
+
+            float sway = sin(uTime * aSpeed + aPhase) * 0.12 * aW;
+            float c = cos(sway);
+            float s = sin(sway);
+
+            // Sway around local X so the cone visibly tilts.
+            vec3 pos = position;
+            float y = pos.y * c - pos.z * s;
+            float z = pos.y * s + pos.z * c;
+            pos.y = y;
+            pos.z = z;
+
+            vec4 worldPosition = instanceMatrix * vec4(pos, 1.0);
+            gl_Position = projectionMatrix * modelViewMatrix * worldPosition;
+          }
+        `,
+        fragmentShader: `
+          varying vec3 vColor;
+
+          void main() {
+            gl_FragColor = vec4(vColor, 0.96);
+          }
+        `,
+        transparent: true,
+        side: THREE.DoubleSide,
+        toneMapped: false,
+      }),
+    []
+  );
+
   useEffect(() => {
-    if (!meshRef.current) return;
-    const matrix = matrixRef.current;
-    const scale = scaleRef.current;
+    if (!meshRef.current || count === 0) return;
+    const matrix = new THREE.Matrix4();
+    const scale = new THREE.Vector3();
     leaves.forEach((leaf, i) => {
       scale.setScalar(leaf.scale);
       matrix.compose(leaf.pos, leaf.quat, scale);
       meshRef.current!.setMatrixAt(i, matrix);
-      meshRef.current!.setColorAt(i, leaf.color);
     });
     meshRef.current.instanceMatrix.needsUpdate = true;
-    if (meshRef.current.instanceColor) meshRef.current.instanceColor.needsUpdate = true;
-  }, [leaves]);
+    meshRef.current.frustumCulled = false;
+  }, [leaves, count]);
 
   useFrame((state) => {
-    if (!meshRef.current) return;
-    const matrix = matrixRef.current;
-    const quat = quatRef.current;
-    const swayQuat = swayQuatRef.current;
-    const axis = axisRef.current;
-    const scale = scaleRef.current;
-    const t = state.clock.elapsedTime;
-    leaves.forEach((leaf, i) => {
-      const sway = Math.sin(t * leaf.speed + leaf.phase) * 0.12 * leaf.w;
-      swayQuat.setFromAxisAngle(axis, sway);
-      quat.copy(leaf.quat);
-      quat.multiply(swayQuat);
-      scale.setScalar(leaf.scale);
-      matrix.compose(leaf.pos, quat, scale);
-      meshRef.current!.setMatrixAt(i, matrix);
-    });
-    meshRef.current.instanceMatrix.needsUpdate = true;
+    material.uniforms.uTime.value = state.clock.elapsedTime;
   });
 
   if (count === 0) return null;
-  return <instancedMesh ref={meshRef} args={[geometry, material, count]} />;
+  return <instancedMesh ref={meshRef} args={[geometry, material, count]} frustumCulled={false} />;
 }
 
 /* ── Contact-style light fountain: vertical streaks spiraling upward ── */
