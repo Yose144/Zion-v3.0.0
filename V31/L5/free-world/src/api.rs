@@ -1,6 +1,7 @@
 //! REST API handlers for zion-free-world.
 
-use crate::dao_client::{DaoClient, DaoClientConfig, DaoProposalRequest};
+use crate::config::FreeWorldConfig;
+use crate::dao_client::{DaoClient, DaoClientConfig, GrantProposalInput};
 use crate::db::{FreeWorldDb, GrantRecord, ProjectRecord};
 use crate::hiran_bridge::FreeWorldHiranBridge;
 use crate::metrics::serve_metrics_text;
@@ -22,6 +23,7 @@ pub struct AppState {
     pub api_key: String,
     pub metrics: Arc<FreeWorldMetrics>,
     pub hiran: Arc<FreeWorldHiranBridge>,
+    pub config: FreeWorldConfig,
 }
 
 /// Generic API response wrapper using serde_json::Value for data.
@@ -180,13 +182,13 @@ async fn submit_grant_to_dao(
     };
     match grant {
         Some(grant) => {
-            let client = DaoClient::new(DaoClientConfig::default());
-            let req = DaoProposalRequest {
+            let client = DaoClient::new(DaoClientConfig::from(&state.config));
+            let req = GrantProposalInput {
                 title: format!("Grant: {}", grant.title),
                 description: grant.description.clone().unwrap_or_default(),
+                category: grant.category.clone(),
                 amount_zion: grant.amount_zion,
                 recipient_address: grant.applicant_address.clone().unwrap_or_default(),
-                proposal_type: "treasury".to_string(),
             };
             match client.submit_grant_proposal(&req).await {
                 Ok(resp) => (StatusCode::OK, Json(ApiResponse::ok(resp))),

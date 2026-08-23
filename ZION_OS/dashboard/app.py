@@ -164,6 +164,8 @@ V31_JOURNAL_MAP = {
     "multichain":    "zion-v31-multichain.service",
     "dao-daemon":    "zion-v31-dao.service",
     "oasis":         "zion-v31-oasis.service",
+    "v31-free-world": "zion-v31-free-world.service",
+    "v31-issobella":  "zion-v31-issobella.service",
     "dashboard":     "zion-edge-python-dashboard.service",
     "marketplace":   "zion-marketplace.service",
     "website":       "zion-website.service",
@@ -233,6 +235,7 @@ PAYOUT_HIGHWATER_FILE = DATA_DIR / "dashboard-payout-highwater.json"
 EDGE_SERVICE_ORDER = [
     "zion-v31-node", "zion-v31-pool", "zion-v31-miner", "zion-v31-multichain",
     "zion-v31-watchdog", "zion-v31-dao", "zion-v31-oasis",
+    "zion-v31-free-world", "zion-v31-issobella",
     "zion-edge-python-dashboard",
     "prometheus", "grafana-server",
     "zion-website", "zion-marketplace",
@@ -912,9 +915,10 @@ def get_edge_server_health() -> dict:
         }
 
         # Services
-        svc_names = ["zion-v31-node", "zion-v31-pool", "zion-v31-miner",
-                     "zion-v31-multichain", "zion-v31-watchdog", "zion-v31-dao",
-                     "zion-v31-oasis", "zion-edge-python-dashboard",
+        svc_names = ["zion-v31-node", "zion-v31-node2", "zion-v31-node3", "zion-v31-pool", "zion-v31-miner",
+                     "zion-v31-multichain", "zion-v31-dao", "zion-v31-oasis",
+                     "zion-v31-free-world", "zion-v31-issobella",
+                     "zion-v31-watchdog", "zion-edge-python-dashboard",
                      "zion-website", "zion-marketplace", "nginx"]
         svc_states = parts.get("SVCS", "").split(",")
         for i, name in enumerate(svc_names):
@@ -1354,6 +1358,24 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "V31 OASIS L4 game API — avatars, quests, guilds, territories. Port 8094. systemd zion-v31-oasis.service.",
      "child_says": "🪷 V31 OASIS — the avatar consciousness game!",
      "depends_on": ["v31-node"]},
+    {"id": "v31-free-world", "name": "V31 Free World (PROD)", "icon": "🕊️", "level": "L5", "kind": "humanitarian",
+     "ports": {"api": 8095},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "http", "severity": "info", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:8095/health",
+     "purpose": "V31 Free World L5 humanitarian fund tracker. Scans coinbase for zion1y3w...hv8c8 and submits grant proposals to DAO. systemd zion-v31-free-world.service.",
+     "child_says": "🕊️ V31 Free World — humanitarian fund tracker!",
+     "depends_on": ["v31-node", "v31-dao"]},
+    {"id": "v31-issobella", "name": "V31 Issobella (PROD)", "icon": "🚀", "level": "L6", "kind": "space",
+     "ports": {"api": 8096},
+     "host": "127.0.0.1",
+     "log": None, "start": None, "stop": None,
+     "health_method": "http", "severity": "info", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:8096/health",
+     "purpose": "V31 Issobella L6 space fund tracker. Scans coinbase for zion1z4s...l0f0 and submits mission proposals to DAO. systemd zion-v31-issobella.service.",
+     "child_says": "🚀 V31 Issobella — space fund tracker!",
+     "depends_on": ["v31-node", "v31-dao"]},
     {"id": "pool-edge", "name": "V3 Pool (DISABLED)", "icon": "⛔", "level": "L1", "kind": "pool",
      "ports": {"stratum": 8444},
      "host": "127.0.0.1",
@@ -1638,7 +1660,7 @@ SERVICE_REGISTRY_LOCAL_DEV = [
 SERVICE_REGISTRY = SERVICE_REGISTRY_EDGE_PRIMARY if TOPOLOGY == "edge-primary" else SERVICE_REGISTRY_LOCAL_DEV
 
 # ── V31 primary / V3 archived markers ───────────────────────────────────
-PRIMARY_SERVICES = {"v31-node", "v31-pool", "v31-miner", "v31-multichain", "v31-dao", "v31-oasis"}
+PRIMARY_SERVICES = {"v31-node", "v31-pool", "v31-miner", "v31-multichain", "v31-dao", "v31-oasis", "v31-free-world", "v31-issobella"}
 ARCHIVED_SERVICES = {
     "edge-node1", "edge-node2", "pool-edge", "miner",
     "bridge", "dao", "atomic-swap", "dex", "warp",
@@ -3307,7 +3329,7 @@ def get_g8_status() -> dict:
 
     return result
 
-def _compute_v31_banner_metrics(pool_status: dict, v31_multichain_status: dict, v31_node_status: dict = None, v31_dao_status: dict = None, v31_oasis_status: dict = None) -> dict:
+def _compute_v31_banner_metrics(pool_status: dict, v31_multichain_status: dict, v31_node_status: dict = None, v31_dao_status: dict = None, v31_oasis_status: dict = None, v31_free_world_status: dict = None, v31_issobella_status: dict = None) -> dict:
     """Compute the V31 Mainnet Alpha banner KPIs for the full dashboard.
 
     Uses data already collected in _build_status_edge_primary plus a quick DAO
@@ -3375,6 +3397,10 @@ def _compute_v31_banner_metrics(pool_status: dict, v31_multichain_status: dict, 
         "multichain_transfers_pending": multichain_transfers_pending,
         "dao_proposals_total": int(dao_total) if dao_total is not None else 0,
         "dao_proposals_active": int(dao_active) if dao_active is not None else 0,
+        "free_world_running": (v31_free_world_status or {}).get("running", False),
+        "free_world_balance_zion": (v31_free_world_status or {}).get("balance_zion", 0),
+        "issobella_running": (v31_issobella_status or {}).get("running", False),
+        "issobella_balance_zion": (v31_issobella_status or {}).get("balance_zion", 0),
     }
 
 
@@ -3847,6 +3873,50 @@ def _build_status_edge_primary() -> dict:
         "systemd_active": v31_oasis_active,
         "ok": v31_oasis_health.get("success", False) or v31_oasis_health.get("ok", False),
     }
+    # ── V31 Free World (PROD) — systemd + /health ───────────────────────────
+    v31_free_world_sys = _systemctl_show("zion-v31-free-world.service")
+    v31_free_world_active = v31_free_world_sys.get("ActiveState", "unknown")
+    v31_free_world_health = {}
+    v31_free_world_balance_zion = 0
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8095/health", timeout=2) as resp:
+            v31_free_world_health = json.loads(resp.read().decode())
+        with urllib.request.urlopen("http://127.0.0.1:8095/api/v1/fund/balance", timeout=2) as resp:
+            _fw_body = resp.read().decode()
+            _fw_data = json.loads(_fw_body)
+            if _fw_data.get("success") and _fw_data.get("data"):
+                _fw_bal = _fw_data["data"]
+                v31_free_world_balance_zion = (_fw_bal.get("total_accumulated", 0) or 0) / 1_000_000
+    except Exception:
+        pass
+    v31_free_world_status = {
+        "running": v31_free_world_active == "active",
+        "systemd_active": v31_free_world_active,
+        "ok": v31_free_world_health.get("success", False) or v31_free_world_health.get("ok", False),
+        "balance_zion": v31_free_world_balance_zion,
+    }
+    # ── V31 Issobella (PROD) — systemd + /health ────────────────────────────
+    v31_issobella_sys = _systemctl_show("zion-v31-issobella.service")
+    v31_issobella_active = v31_issobella_sys.get("ActiveState", "unknown")
+    v31_issobella_health = {}
+    v31_issobella_balance_zion = 0
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8096/health", timeout=2) as resp:
+            v31_issobella_health = json.loads(resp.read().decode())
+        with urllib.request.urlopen("http://127.0.0.1:8096/api/v1/fund/balance", timeout=2) as resp:
+            _iss_body = resp.read().decode()
+            _iss_data = json.loads(_iss_body)
+            if _iss_data.get("success") and _iss_data.get("data"):
+                _iss_bal = _iss_data["data"]
+                v31_issobella_balance_zion = (_iss_bal.get("total_accumulated", 0) or 0) / 1_000_000
+    except Exception:
+        pass
+    v31_issobella_status = {
+        "running": v31_issobella_active == "active",
+        "systemd_active": v31_issobella_active,
+        "ok": v31_issobella_health.get("success", False) or v31_issobella_health.get("ok", False),
+        "balance_zion": v31_issobella_balance_zion,
+    }
     # ── Local Backup Node — from beacon cache ───────────────────────────────
     # The operator's local machine pushes status via /api/backup-beacon every
     # 15s. If the beacon is fresh (< 90s), we show the node as online.
@@ -4204,7 +4274,7 @@ def _build_status_edge_primary() -> dict:
     max_height = max(running_heights) if running_heights else 0
     all_in_sync = len(running_heights) >= 2 and all(h == running_heights[0] for h in running_heights)
 
-    v31_banner = _compute_v31_banner_metrics(pool_status, v31_multichain_status, v31_node_status, v31_dao_status, v31_oasis_status)
+    v31_banner = _compute_v31_banner_metrics(pool_status, v31_multichain_status, v31_node_status, v31_dao_status, v31_oasis_status, v31_free_world_status, v31_issobella_status)
 
     elapsed = time.time() - t0
     return {
@@ -4221,6 +4291,8 @@ def _build_status_edge_primary() -> dict:
         "v31_multichain": v31_multichain_status,
         "v31_dao": v31_dao_status,
         "v31_oasis": v31_oasis_status,
+        "v31_free_world": v31_free_world_status,
+        "v31_issobella": v31_issobella_status,
         "local_backup": local_backup_status,
         "all_nodes": all_nodes,
         "p2p_peers": p2p_peer_list,
@@ -5936,7 +6008,7 @@ def get_edge_server_status() -> dict:
 
     try:
         # Single command: combine all metrics to avoid multiple calls
-        combined_cmd = "cat /proc/loadavg && free -m && df -h / | tail -1 && echo '===TOP===' && ps -eo rss,comm --sort=-rss | head -6 | tail -5 && echo '===SVC===' && systemctl is-active zion-v31-node zion-v31-pool zion-v31-miner zion-v31-multichain zion-v31-watchdog.timer zion-v31-dao zion-v31-oasis zion-edge-python-dashboard zion-website zion-marketplace nginx 2>/dev/null"
+        combined_cmd = "cat /proc/loadavg && free -m && df -h / | tail -1 && echo '===TOP===' && ps -eo rss,comm --sort=-rss | head -6 | tail -5 && echo '===SVC===' && systemctl is-active zion-v31-node zion-v31-pool zion-v31-miner zion-v31-multichain zion-v31-watchdog.timer zion-v31-dao zion-v31-oasis zion-v31-free-world zion-v31-issobella zion-edge-python-dashboard zion-website zion-marketplace nginx 2>/dev/null"
         result = _run_edge_cmd(combined_cmd, timeout=8)
         if result.returncode != 0:
             return {"ok": False, "error": result.stderr.strip() or "Edge command failed"}
@@ -5992,8 +6064,8 @@ def get_edge_server_status() -> dict:
         # Service status
         services = []
         svc_names = ["v31-node", "v31-pool", "v31-miner", "v31-multichain",
-                     "v31-watchdog", "v31-dao", "v31-oasis", "dashboard",
-                     "website", "marketplace", "nginx"]
+                     "v31-watchdog", "v31-dao", "v31-oasis", "v31-free-world", "v31-issobella",
+                     "dashboard", "website", "marketplace", "nginx"]
         states = svc_part.splitlines() if svc_part else []
         for i, name in enumerate(svc_names):
             if i < len(states):
@@ -6099,6 +6171,12 @@ def run_edge_action(action: str) -> dict:
         "restart-v31-multichain": "sudo systemctl restart zion-v31-multichain.service",
         "stop-v31-multichain":    "sudo systemctl stop zion-v31-multichain.service",
         "start-v31-multichain":   "sudo systemctl start zion-v31-multichain.service",
+        "restart-v31-free-world": "sudo systemctl restart zion-v31-free-world.service",
+        "stop-v31-free-world":    "sudo systemctl stop zion-v31-free-world.service",
+        "start-v31-free-world":   "sudo systemctl start zion-v31-free-world.service",
+        "restart-v31-issobella":  "sudo systemctl restart zion-v31-issobella.service",
+        "stop-v31-issobella":     "sudo systemctl stop zion-v31-issobella.service",
+        "start-v31-issobella":    "sudo systemctl start zion-v31-issobella.service",
         "restart-pool":           "sudo systemctl restart zion-pool",
         "restart-dao":            "sudo systemctl restart zion-dao",
         "restart-warp":           "sudo systemctl restart zion-warp",
@@ -6109,7 +6187,7 @@ def run_edge_action(action: str) -> dict:
         "restart-website":        "sudo systemctl restart zion-website 2>&1",
         "clean-docker":           "docker builder prune -af 2>&1; docker image prune -af 2>&1; docker container prune -f 2>&1",
         "security-audit":         "echo 'Security audit placeholder — run manually'",
-        "full-health":            "sudo systemctl is-active zion-v31-node zion-v31-pool zion-v31-miner zion-v31-multichain zion-v31-watchdog.timer zion-v31-dao zion-v31-oasis zion-website zion-marketplace nginx 2>&1",
+        "full-health":            "sudo systemctl is-active zion-v31-node zion-v31-pool zion-v31-miner zion-v31-multichain zion-v31-watchdog.timer zion-v31-dao zion-v31-oasis zion-v31-free-world zion-v31-issobella zion-website zion-marketplace nginx 2>&1",
         "memory-limit":           "echo 'Memory limits configured in systemd unit files'",
         # ── Edge maintenance (scripts/edge-maintenance.sh) ───────────────
         # Safe: never touches critical services (node/pool/bridge/dao/warp).
@@ -13276,6 +13354,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "multichain": "zion-v31-multichain",
                 "dao": "zion-v31-dao",
                 "oasis": "zion-v31-oasis",
+                "free-world": "zion-v31-free-world",
+                "issobella": "zion-v31-issobella",
             }
             unit = v31_unit_map.get(svc)
             if not unit:

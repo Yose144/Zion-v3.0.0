@@ -32,7 +32,8 @@ impl IssobellaDb {
                 started_at TEXT,
                 completed_at TEXT,
                 orbit_altitude_km REAL,
-                satellite_count INTEGER DEFAULT 0
+                satellite_count INTEGER DEFAULT 0,
+                funding_address TEXT
             );
 
             CREATE TABLE IF NOT EXISTS observations (
@@ -76,18 +77,19 @@ impl IssobellaDb {
 
     pub fn insert_mission(&self, m: &MissionRecord) -> IssobellaResult<()> {
         self.conn.execute(
-            "INSERT INTO missions (id, name, description, mission_type, budget_zion, status, target_launch_date, started_at, orbit_altitude_km, satellite_count)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+            "INSERT INTO missions (id, name, description, mission_type, budget_zion, status, target_launch_date, started_at, orbit_altitude_km, satellite_count, funding_address)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
             (&m.id, &m.name, &m.description, &m.mission_type, &m.budget_zion, &m.status,
-             &m.target_launch_date, &m.started_at.map(|t| t.to_rfc3339()), &m.orbit_altitude_km, &m.satellite_count),
+             &m.target_launch_date, &m.started_at.map(|t| t.to_rfc3339()), &m.orbit_altitude_km, &m.satellite_count,
+             &m.funding_address),
         )?;
         Ok(())
     }
 
     pub fn list_missions(&self, status: Option<&str>) -> IssobellaResult<Vec<MissionRecord>> {
         let sql = match status {
-            Some(_s) => "SELECT id, name, description, mission_type, budget_zion, spent_zion, status, target_launch_date, started_at, completed_at, orbit_altitude_km, satellite_count FROM missions WHERE status = ?1 ORDER BY started_at DESC",
-            None => "SELECT id, name, description, mission_type, budget_zion, spent_zion, status, target_launch_date, started_at, completed_at, orbit_altitude_km, satellite_count FROM missions ORDER BY started_at DESC",
+            Some(_s) => "SELECT id, name, description, mission_type, budget_zion, spent_zion, status, target_launch_date, started_at, completed_at, orbit_altitude_km, satellite_count, funding_address FROM missions WHERE status = ?1 ORDER BY started_at DESC",
+            None => "SELECT id, name, description, mission_type, budget_zion, spent_zion, status, target_launch_date, started_at, completed_at, orbit_altitude_km, satellite_count, funding_address FROM missions ORDER BY started_at DESC",
         };
         let mut stmt = self.conn.prepare(sql)?;
         let rows = match status {
@@ -182,6 +184,7 @@ fn row_to_mission(row: &rusqlite::Row) -> Result<MissionRecord, rusqlite::Error>
             .map(|dt| dt.with_timezone(&Utc)),
         orbit_altitude_km: row.get(10)?,
         satellite_count: row.get(11)?,
+        funding_address: row.get(12)?,
     })
 }
 
@@ -219,6 +222,7 @@ pub struct MissionRecord {
     pub completed_at: Option<DateTime<Utc>>,
     pub orbit_altitude_km: Option<f64>,
     pub satellite_count: i64,
+    pub funding_address: Option<String>,
 }
 
 impl MissionRecord {
@@ -236,6 +240,7 @@ impl MissionRecord {
             completed_at: None,
             orbit_altitude_km: None,
             satellite_count: 0,
+            funding_address: None,
         }
     }
 }

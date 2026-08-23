@@ -7,7 +7,8 @@
 //! # Override via env vars
 //! ISSOBELLA_PORT=8096 \
 //! ISSOBELLA_DB=./issobella.db \
-//! ISSOBELLA_L1_RPC=http://localhost:8443/jsonrpc \
+//! ISSOBELLA_L1_RPC=http://127.0.0.1:9445/jsonrpc \
+//! ISSOBELLA_FUND_ADDRESS=zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0 \
 //! cargo run --bin zion-issobella
 //! ```
 
@@ -58,9 +59,11 @@ async fn main() {
     };
     let db = Arc::new(Mutex::new(iss_db));
 
-    let _iss_config = Arc::new(cfg.clone());
     let metrics = Arc::new(IssobellaMetrics::new());
-    info!("📊 Prometheus metrics: http://0.0.0.0:{}/metrics", cfg.port);
+    info!(
+        "📊 Prometheus metrics: http://{}:{}/metrics",
+        cfg.bind, cfg.port
+    );
 
     let hiran = Arc::new(IssobellaHiranBridge::new(&cfg));
     if cfg.hiran_enabled {
@@ -84,6 +87,7 @@ async fn main() {
         api_key: cfg.api_key.clone(),
         metrics: Arc::clone(&metrics),
         hiran,
+        config: cfg.clone(),
     };
 
     let app = issobella_router(state)

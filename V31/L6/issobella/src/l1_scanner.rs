@@ -24,9 +24,9 @@ pub struct ScannerConfig {
 impl Default for ScannerConfig {
     fn default() -> Self {
         Self {
-            rpc_url: "127.0.0.1:9443".to_string(),
+            rpc_url: "127.0.0.1:9445".to_string(),
             poll_interval: Duration::from_secs(30),
-            fund_address: "zion1issobella000000000000000000000000".to_string(),
+            fund_address: "zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0".to_string(),
             finality_blocks: 6,
         }
     }
@@ -94,8 +94,12 @@ impl L1Scanner {
                 }
             };
 
-            if let Some(coinbase) = block.utxo_transactions.first() {
-                for output in &coinbase.outputs {
+            // The coinbase is the first transaction and contains the miner,
+            // humanitarian, Issobella, and (post-activation) node-reward outputs.
+            // We scan all transactions and all outputs to avoid depending on the
+            // exact position of the coinbase or the response field name.
+            for tx in &block.transactions {
+                for output in &tx.outputs {
                     if output.address == self.config.fund_address {
                         let db = self.db.lock().unwrap();
                         let mut balance = db.get_fund_balance()?;
@@ -203,8 +207,11 @@ fn normalize_rpc_addr(raw: &str) -> String {
 
 #[derive(Debug, Deserialize)]
 struct BlockInfo {
-    #[serde(default)]
-    utxo_transactions: Vec<UtxoTransaction>,
+    /// V31 native blocks return the coinbase (and all other transactions)
+    /// under `transactions`. Keep `utxo_transactions` as a fallback for
+    /// legacy/V3-compat responses.
+    #[serde(default, alias = "utxo_transactions")]
+    transactions: Vec<UtxoTransaction>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -217,4 +224,50 @@ struct UtxoTransaction {
 struct TxOutput {
     address: String,
     amount: u64,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_v31_native_block_transactions() {
+        let raw = r#"{
+            "height": 1234,
+            "transactions": [
+                {
+                    "tx_id": "abc",
+                    "inputs": [],
+                    "outputs": [
+                        { "amount": 480506000, "address": "zion1miner" },
+                        { "amount": 27000350, "address": "zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8" },
+                        { "amount": 27000350, "address": "zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0" }
+                    ]
+                }
+            ]
+        }"#;
+        let block: BlockInfo = serde_json::from_str(raw).unwrap();
+        assert_eq!(block.transactions.len(), 1);
+        assert_eq!(block.transactions[0].outputs.len(), 3);
+    }
+
+    #[test]
+    fn parse_legacy_utxo_transactions() {
+        let raw = r#"{
+            "height": 1234,
+            "utxo_transactions": [
+                { "outputs": [{ "amount": 1000, "address": "zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0" }] }
+            ]
+        }"#;
+        let block: BlockInfo = serde_json::from_str(raw).unwrap();
+        assert_eq!(block.transactions.len(), 1);
+        assert_eq!(block.transactions[0].outputs[0].amount, 1000);
+    }
+
+    #[test]
+    fn normalize_rpc_addr_strips_http_and_path() {
+        assert_eq!(normalize_rpc_addr("http://127.0.0.1:9445/jsonrpc"), "127.0.0.1:9445");
+        assert_eq!(normalize_rpc_addr("https://rpc.example.com:8443"), "rpc.example.com:8443");
+        assert_eq!(normalize_rpc_addr("tcp://127.0.0.1:9445"), "127.0.0.1:9445");
+    }
 }

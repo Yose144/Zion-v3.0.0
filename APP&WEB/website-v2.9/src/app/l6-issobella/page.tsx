@@ -49,7 +49,7 @@ const L6IssobellaCopy = {
   network: { cs: `Síť`, en: `Network` },
 };
 
-const ISSOBELLA_WALLET = 'zion173g835z228z6u303z59603y236r5e854l36g604';
+const ISSOBELLA_WALLET = 'zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0';
 
 const getMissions = (cs: boolean) => [
   {
