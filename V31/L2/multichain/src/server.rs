@@ -75,6 +75,19 @@ pub struct AppState {
     zis_client: ZisClient,
 }
 
+/// Resolve the optional `ZisUser` extension. Returns `401` when ZIS auth is
+/// enabled and no user was resolved.
+fn resolve_auth_user(
+    enabled: bool,
+    user: Option<Extension<ZisUser>>,
+) -> Result<Option<ZisUser>, StatusCode> {
+    if enabled && user.is_none() {
+        Err(StatusCode::UNAUTHORIZED)
+    } else {
+        Ok(user.map(|u| u.0))
+    }
+}
+
 /// HTTP API gateway for `zion-multichain`.
 pub struct ApiServer {
     config: ServerConfig,
@@ -356,8 +369,10 @@ struct WalletAddressRequest {
 
 async fn wallet_address(
     State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
     Json(req): Json<WalletAddressRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
+    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
     let chain = chain_name_to_id(&req.chain).map_err(|_| StatusCode::BAD_REQUEST)?;
     match state.service.wallet_address(chain, req.account, req.index) {
         Ok(addr) => Ok(Json(serde_json::json!({
@@ -381,8 +396,10 @@ struct WalletSignRequest {
 
 async fn wallet_sign(
     State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
     Json(req): Json<WalletSignRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
+    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
     let chain = chain_name_to_id(&req.chain).map_err(|_| StatusCode::BAD_REQUEST)?;
     match state
         .service
@@ -478,10 +495,7 @@ async fn swap_execute(
     user: Option<Extension<ZisUser>>,
     Json(req): Json<SwapRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    if state.zis_client.enabled && user.is_none() {
-        return Err(StatusCode::UNAUTHORIZED);
-    }
-    let _user = user.as_ref().map(|u| &u.0);
+    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
     match state
         .service
         .dex_swap(&req.from, &req.to, Amount::new(req.amount))
@@ -499,8 +513,10 @@ async fn swap_execute(
 
 async fn deploy_pool(
     State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
     Json(pool): Json<Pool>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
+    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
     match state.service.deploy_pool(pool).await {
         Ok(()) => Ok(Json(serde_json::json!({"ok": true}))),
         Err(e) => Ok(Json(serde_json::json!({
@@ -529,8 +545,10 @@ struct BridgeRequest {
 
 async fn bridge_submit(
     State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
     Json(req): Json<BridgeRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
+    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
     let direction = match req.direction.to_lowercase().as_str() {
         "lock" | "lockmint" | "lock_mint" => TransferDirection::LockMint,
         "burn" | "burnrelease" | "burn_release" => TransferDirection::BurnRelease,
@@ -647,8 +665,10 @@ fn decode_pubkey_hex(hex: &Option<String>) -> Result<Option<[u8; 32]>, (StatusCo
 
 async fn htlc_lock(
     State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
     Json(req): Json<HtlcLockRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let _user = resolve_auth_user(state.zis_client.enabled, user).map_err(|s| (s, Json(serde_json::json!({"message": "unauthorized"}))))?;
     let from_id = chain_name_to_id(&req.from).map_err(|e| bad_request(&e.to_string()))?;
     let to_id = chain_name_to_id(&req.to).map_err(|e| bad_request(&e.to_string()))?;
     let hashlock = Hash::from_hex(&req.hash_hex)
@@ -698,8 +718,10 @@ struct HtlcClaimRequest {
 
 async fn htlc_claim(
     State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
     Json(req): Json<HtlcClaimRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let _user = resolve_auth_user(state.zis_client.enabled, user).map_err(|s| (s, Json(serde_json::json!({"message": "unauthorized"}))))?;
     let to_id = chain_name_to_id(&req.to).map_err(|e| bad_request(&e.to_string()))?;
     let hashlock = Hash::from_hex(&req.hash_hex)
         .ok_or_else(|| bad_request("invalid hash_hex"))?;
@@ -754,8 +776,10 @@ struct HtlcRefundRequest {
 
 async fn htlc_refund(
     State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
     Json(req): Json<HtlcRefundRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let _user = resolve_auth_user(state.zis_client.enabled, user).map_err(|s| (s, Json(serde_json::json!({"message": "unauthorized"}))))?;
     let from_id = chain_name_to_id(&req.from).map_err(|e| bad_request(&e.to_string()))?;
     let hashlock = Hash::from_hex(&req.hash_hex)
         .ok_or_else(|| bad_request("invalid hash_hex"))?;
@@ -823,8 +847,10 @@ fn make_asset_id(chain: &str, ticker: &str, contract: Option<String>) -> Multich
 
 async fn create_intent(
     State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
     Json(req): Json<CreateIntentRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
+    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
     let from_asset = make_asset_id(&req.from_chain, &req.from_ticker, req.from_contract)
         .map_err(|_| StatusCode::BAD_REQUEST)?;
     let to_asset = make_asset_id(&req.to_chain, &req.to_ticker, req.to_contract)
@@ -867,8 +893,10 @@ struct BidRequest {
 
 async fn submit_bid(
     State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
     Json(req): Json<BidRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
+    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
     let bid = SolverBid::new(
         req.intent_id,
         req.solver,
@@ -885,8 +913,10 @@ async fn submit_bid(
 
 async fn settle_intent(
     State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
+    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
     match state.service.settle_intent(id).await {
         Ok(Some(bid)) => Ok(Json(serde_json::json!({ "winning_bid": bid }))),
         Ok(None) => Ok(Json(serde_json::json!({ "winning_bid": null }))),
@@ -896,8 +926,10 @@ async fn settle_intent(
 
 async fn execute_intent(
     State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
+    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
     match state.service.execute_intent(id).await {
         Ok(Some(out)) => Ok(Json(serde_json::json!({ "executed": true, "out": out.0.to_string() }))),
         Ok(None) => Ok(Json(serde_json::json!({ "executed": false, "out": null }))),
@@ -915,8 +947,10 @@ struct RegisterSolverRequest {
 
 async fn register_solver(
     State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
     Json(req): Json<RegisterSolverRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
+    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
     match state
         .service
         .register_solver(req.solver, req.url, req.reputation)
@@ -929,9 +963,11 @@ async fn register_solver(
 
 async fn solve_intent(
     State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
     headers: axum::http::HeaderMap,
     Json(intent): Json<SwapIntent>,
 ) -> Result<Json<SolverBid>, StatusCode> {
+    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
     if let Some(expected) = &state.solver_api_key {
         let provided = headers
             .get("X-Solver-Key")
@@ -998,8 +1034,10 @@ async fn solve_intent(
 
 async fn broadcast_intent(
     State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
+    let _user = resolve_auth_user(state.zis_client.enabled, user)?;
     let mut keys = crate::swap::dex::solver_network::SolverApiKeys::new();
     for entry in &state.service.config().solvers {
         if let Some(key) = &entry.api_key {
