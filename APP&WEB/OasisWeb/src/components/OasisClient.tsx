@@ -19,6 +19,7 @@ import { useGameStore } from '../store/gameStore';
 import { useToastStore } from '../store/toastStore';
 import { getQuests, getAvatars, getTerritories, getWorlds, scanWorld as apiScanWorld, approachWorld as apiApproachWorld } from '../lib/api';
 import type { World, WorldCategory, WorldLayer } from '../domain/types/world';
+import { useAuth } from '../contexts/AuthContext';
 
 const BabylonIntro = dynamic(() => import('./BabylonIntro'), { ssr: false });
 const WarpIntro = dynamic(() => import('./WarpIntro'), { ssr: false });
@@ -79,14 +80,18 @@ export default function OasisClient() {
   const scannedWorlds = useGameStore(s => s.scannedWorlds);
   const discoveredWorlds = useGameStore(s => s.discoveredWorlds);
   const addToast = useToastStore((s) => s.add);
+  const { user, authenticated } = useAuth();
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    if (!address) setAddress('pilgrim-0001');
-  }, [address, setAddress]);
+    if (!address) {
+      // Prefer the authenticated ZION address, fall back to a generic pilgrim.
+      setAddress(authenticated && user?.address ? user.address : 'pilgrim-0001');
+    }
+  }, [address, setAddress, authenticated, user]);
 
   useEffect(() => {
     let mounted = true;
