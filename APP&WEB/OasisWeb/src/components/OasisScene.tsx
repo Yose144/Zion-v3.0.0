@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, Suspense } from 'react';
+import { useRef, useEffect, useState, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Stars, Environment } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette, HueSaturation, BrightnessContrast } from '@react-three/postprocessing';
@@ -25,6 +25,11 @@ import R3FErrorBoundary from './R3FErrorBoundary';
 import MobileTouchControls from './MobileTouchControls';
 import Planet, { NovaZeme } from './Planet';
 import type { CompassData } from './Compass';
+
+// Live all-sky camera from the GTC (Gran Telescopio CANARIAS) on La Palma.
+// Image is updated in place by the observatory; we append a cache-busting
+// timestamp so the browser reloads the latest frame periodically.
+const SKY_CAM_URL = 'https://atmosportal.gtc.iac.es/img/lastskycam.jpg';
 
 interface CameraRigProps {
   started: boolean;
@@ -210,13 +215,36 @@ export default function OasisScene({
   const universeRef = useRef<THREE.Group>(null);
   const getWorldById = (id: string) => worlds.find((w) => w.id === id);
 
+  // Live-sky refresh: start at 0 (no cache bust) and bump every minute on the client.
+  const [skyCamTs, setSkyCamTs] = useState(0);
+  useEffect(() => {
+    setSkyCamTs(Date.now());
+    const interval = setInterval(() => setSkyCamTs(Date.now()), 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const skyCamBackground = `linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url('${SKY_CAM_URL}?t=${skyCamTs}')`;
+
   return (
-    <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
+    <div
+      style={{
+        width: '100%',
+        height: '100%',
+        position: 'absolute',
+        inset: 0,
+        backgroundColor: '#05060a',
+        backgroundImage: skyCamBackground,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
       <Canvas
         camera={{ position: isMobile ? [0, 4, 22] : [0, 3.5, 34], fov: isMobile ? 60 : 55 }}
         dpr={[1, isMobile ? 1 : 1]}
         style={{ width: '100%', height: '100%', display: 'block', position: 'absolute', inset: 0 }}
         gl={{
+          alpha: true,
           antialias: false,
           powerPreference: 'high-performance',
           toneMapping: THREE.ACESFilmicToneMapping,
@@ -224,13 +252,14 @@ export default function OasisScene({
           failIfMajorPerformanceCaveat: false,
         }}
         onCreated={({ gl, camera }) => {
-          gl.setClearColor(isMobile ? '#05060a' : '#05060a');
+          // Transparent clear so the live sky camera image shows behind the 3D scene.
+          gl.setClearColor(new THREE.Color('#05060a'), 0);
           if (isMobile) {
             camera.lookAt(0, 0.5, 0);
           }
         }}
       >
-        <color attach="background" args={[isMobile ? '#05060a' : '#05060a']} />
+        {/* No solid scene background — the live observatory sky is the backdrop. */}
         {!isMobile && <fog attach="fog" args={['#05060a', 80, 200]} />}
 
         {/* Lighting — cool white key, cyan fill, violet rim */}
