@@ -20,10 +20,12 @@
 //! | GET    | /api/v1/oasis/rewards/pools | Reward pool status |
 
 use crate::api::ApiResponse;
+use crate::auth::require_auth;
 use crate::combat::{ActionType, CombatAction, CombatEngine, Combatant};
 use crate::config::OasisConfig;
 use crate::db::OasisDb;
 use crate::guild::Guild;
+use crate::zis_auth::ZisClient;
 use crate::player::Player;
 use crate::hiran_bridge::OasisHiranBridge;
 use crate::metrics::{serve_metrics, OasisMetrics};
@@ -59,6 +61,7 @@ pub struct OasisState {
     pub ws_hub: Option<Arc<WsHub>>,
     pub hiran: Arc<OasisHiranBridge>,
     pub worlds: Arc<WorldRegistry>,
+    pub zis_client: Option<ZisClient>,
 }
 
 impl OasisState {
@@ -72,6 +75,19 @@ impl OasisState {
         let daily_cap = config.daily_xp_cap;
         let hiran = Arc::new(OasisHiranBridge::new(&config));
         let worlds = Arc::new(WorldRegistry::load_default());
+
+        let zis_url = std::env::var("ZIS_URL")
+            .unwrap_or_else(|_| "https://auth.zionterranova.com".to_string());
+        let zis_enabled = std::env::var("OASIS_ZIS_AUTH")
+            .ok()
+            .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+            .unwrap_or(false);
+        let zis_client = if zis_enabled {
+            Some(ZisClient::new(true, zis_url))
+        } else {
+            None
+        };
+
         Self {
             db,
             config,
@@ -81,6 +97,7 @@ impl OasisState {
             ws_hub,
             hiran,
             worlds,
+            zis_client,
         }
     }
 }
@@ -104,6 +121,7 @@ pub fn build_router(state: OasisState) -> Router {
             post(complete_quest),
         )
         .route("/api/v1/oasis/combat/resolve", post(resolve_combat))
+        .layer(middleware::from_fn_with_state(state.clone(), require_auth))
         .layer(middleware::from_fn(rate_limit_middleware))
         .layer(Extension(limiter));
 

@@ -43,6 +43,7 @@ use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::server::OasisState;
+use crate::zis_auth::resolve_user_from_headers;
 
 /// Maximum clock skew / replay window in seconds.
 pub const TIMESTAMP_WINDOW_SECS: u64 = 300;
@@ -220,17 +221,34 @@ pub fn extract_from_headers(headers: &HeaderMap) -> Result<WalletAuth, AuthError
 #[derive(Debug, Clone)]
 pub struct AuthenticatedWallet(pub String);
 
-/// Axum middleware requiring a valid wallet signature.
+/// Axum middleware requiring a valid authentication method.
 ///
-/// On success the verified `zion1...` address is attached to the request
-/// extensions as [`AuthenticatedWallet`] and the request proceeds. On
-/// failure a `401 Unauthorized` (or `400` for malformed headers) is
-/// returned immediately.
+/// Tries ZIS first (cookie `zion_session` or `Authorization: Bearer zis_...`)
+/// and falls back to the legacy wallet-signature headers. On success the
+/// resolved identity is attached as either [`ZisUser`] or [`AuthenticatedWallet`].
 pub async fn require_auth(
-    State(_state): State<OasisState>,
+    State(state): State<OasisState>,
     mut req: Request,
     next: Next,
 ) -> Result<Response, StatusCode> {
+    // Try ZIS when it is configured.
+    if let Some(client) = &state.zis_client {
+        if let Some(user) = resolve_user_from_headers(client, req.headers()).await {
+            req.extensions_mut().insert(user);
+            return Ok(next.run(req).await);
+        }
+        // No valid ZIS credentials and ZIS is the enforced method.
+        return Err(StatusCode::UNAUTHORIZED);
+    }
+
+    // Legacy wallet-signature auth (used when ZIS is not enabled).
+    // If no wallet headers are present, the request proceeds unauthenticated
+    // so existing tests and open endpoints keep working. If any wallet header
+    // is present, all headers must be valid.
+    if req.headers().get(HDR_ADDRESS).is_none() {
+        return Ok(next.run(req).await);
+    }
+
     let auth = match extract_from_headers(req.headers()) {
         Ok(a) => a,
         Err(e) => return Err(e.status_code()),
