@@ -56,7 +56,7 @@ const versionText: Record<string, { tag?: LocalizedText; description?: Localized
   },
   'v3.1.0': {
     tag: { cs: 'PŘEDCHOZÍ', en: 'PREVIOUS' },
-    description: { cs: 'Mainnet Alpha — první V31 produkční cutover, Terminal Miner release, OASIS preview', en: 'Mainnet Alpha — first production cutover, Terminal Miner release, OASIS preview' },
+    description: { cs: 'Mainnet Alpha — první produkční cutover, Terminal Miner release, OASIS preview', en: 'Mainnet Alpha — first production cutover, Terminal Miner release, OASIS preview' },
   },
   'v3.0.6': {
     tag: { cs: 'PŘEDCHOZÍ', en: 'PREVIOUS' },

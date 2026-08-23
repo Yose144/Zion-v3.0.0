@@ -7,7 +7,7 @@ const PROM_BASE_URL = (process.env.NEXT_PUBLIC_PROMETHEUS_BASE_URL || "https://a
 const IFRAME_SRC = `${PROM_BASE_URL}/graph?g0.expr=&g0.range_input=1h&g0.stacked=0&g0.tab=0`;
 
 export const metadata: Metadata = {
-  title: `Advanced Pool Dashboard (Prometheus) · ZION ${SITE_RELEASE_LABEL}`,
+  title: `Advanced Pool Dashboard (Telemetry) · ZION ${SITE_RELEASE_LABEL}`,
   description: `PromQL explorer for advanced pool metrics and ad-hoc queries on ZION ${SITE_RELEASE_LABEL}.`,
 };
 
@@ -39,7 +39,7 @@ export default function AdvancedPoolPage() {
 
         <div className="mt-4 flex items-center gap-3 text-sm text-zion-cyan">
           <a href={`${PROM_BASE_URL}/graph`} target="_blank" rel="noreferrer" className="hover:underline inline-flex items-center gap-1">
-            <ExternalLink className="h-3 w-3" /> Open in Prometheus
+            <ExternalLink className="h-3 w-3" /> Open in Telemetry
           </a>
         </div>
       </div>

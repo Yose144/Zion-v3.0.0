@@ -253,7 +253,7 @@ const ENDPOINTS: Endpoint[] = [
     method: "GET",
     path: "/api/pool/stats",
     title: "Pool Statistics",
-    description: "Mining pool statistics: hashrate, active sessions, PPLNS round info, and Prometheus-derived metrics.",
+    description: "Mining pool statistics: hashrate, active sessions, PPLNS round info, and Telemetry-derived metrics.",
     params: [],
     exampleResponse: `{
   "pool_hashrate": 1250.5,
@@ -302,7 +302,7 @@ const ENDPOINTS: Endpoint[] = [
     method: "GET",
     path: "/api/bridge/status",
     title: "Bridge Status",
-    description: "L1↔Base bridge relay status parsed from Prometheus metrics. Lock/mint/burn/unlock counters and validator health.",
+    description: "L1↔Base bridge relay status parsed from Telemetry metrics. Lock/mint/burn/unlock counters and validator health.",
     params: [],
     exampleResponse: `{
   "online": true,

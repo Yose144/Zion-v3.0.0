@@ -40,10 +40,10 @@ export default function PoolMetricsPage() {
 
         <div className="mt-4 flex items-center gap-3 text-sm text-zion-cyan">
           <a href={DASHBOARD_URL} target="_blank" rel="noreferrer" className="hover:underline inline-flex items-center gap-1">
-            <ExternalLink className="h-3 w-3" /> Open in Grafana
+            <ExternalLink className="h-3 w-3" /> Open in Metrics
           </a>
           <span className="text-gray-600">/</span>
-          <a href={`${GRAFANA_BASE_URL}/`} target="_blank" rel="noreferrer" className="hover:underline text-gray-300">Grafana Home</a>
+          <a href={`${GRAFANA_BASE_URL}/`} target="_blank" rel="noreferrer" className="hover:underline text-gray-300">Metrics Home</a>
         </div>
       </div>
     </div>
