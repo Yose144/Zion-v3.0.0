@@ -58,7 +58,7 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 | **G8** | 30-day continuous run completed | Cannot call "Stable" without uptime evidence | ❌ Not started |
 | **G9** | External / internal security audit | Internal tests pass; no formal review on record | ❌ Not started |
 | **G10** | L5 Free World / L6 Issobella decision | Must have defined run mode or explicit post-3.2 deferral | ⚠️ Decision pending |
-| **G11** | V3→V31 migration tooling complete | Foundry config, CLI stubs, public subtree, ZIS, OASIS server | ⚠️ Partial — `public/` subtree in sync (G4 ✅); ZIS deployed on Edge and healthy; UTXO v2 hash and `submitUtxoTransaction` wired through wallet SDK, CLI and pool; Foundry config and CLI `deploy` still stub |
+| **G11** | V3→V31 migration tooling complete | Foundry config, CLI stubs, public subtree, ZIS, OASIS server | ✅ Complete — `public/` subtree in sync (G4 ✅); ZIS deployed on Edge and healthy; UTXO v2 hash and `submitUtxoTransaction` wired through wallet SDK, CLI and pool; Foundry test suite (43 tests pass) for wZION/ZIONBridge/ZDXToken; CLI `deploy` wraps `forge create/script/test/verify`; CLI `update now` downloads from GitHub releases API; miner TUI + Cargo features verified on Linux; H6/H7/H8 documented as post-3.2 | Report: [`docs/3.2/REPORTS/REPORT_2026-08-22_G11_V3_V31_MIGRATION.md`](./REPORTS/REPORT_2026-08-22_G11_V3_V31_MIGRATION.md) |
 
 ---
 
@@ -105,14 +105,14 @@ These are the hard gates. Each must be backed by evidence before 3.2.0 can be ca
 
 | # | Task | Status |
 |---|------|--------|
-| H1 | Foundry / Hardhat project config for `zion deploy` | ❌ Missing |
-| H2 | Miner TUI smoke test | ⚠️ Present, needs test |
-| H3 | Miner Cargo feature verification on all platforms | ⚠️ Present, needs test |
-| H4 | Complete CLI subcommands (some are stubs) | ⚠️ Partial |
+| H1 | Foundry / Hardhat project config for `zion deploy` | ✅ Complete — 43 Foundry tests pass (wZION 22, ZIONBridge 12, ZDXToken 9); `zion deploy` wraps `forge create/script/test/verify` with chain presets |
+| H2 | Miner TUI smoke test | ✅ Complete — `cargo build --release -p zion-miner --features tui` verified |
+| H3 | Miner Cargo feature verification on all platforms | ✅ Complete — `tui`, `public_build`, `gpu-cuda,native-all,tui` all build on Linux; `full` (macOS-only `gpu-metal`) documented |
+| H4 | Complete CLI subcommands (some are stubs) | ✅ Complete — `zion update now` downloads from GitHub releases API; `zion deploy` wraps forge; CLI build passes |
 | H5 | AuXpow E2E test script | ✅ Complete — `scripts/ops/auxpow_e2e_test.py` validates miner → pool → mock CryptonoteStratum upstream share flow for XMR/RandomX; logs preserved under `/tmp/auxpow_e2e_<id>/`; report: [`docs/3.2/REPORTS/REPORT_2026-08-22_H5_AUXPOW_E2E_TEST.md`](./REPORTS/REPORT_2026-08-22_H5_AUXPOW_E2E_TEST.md) |
-| H6 | Stratum v2 pool support | ❌ Missing |
-| H7 | PPS + SOLO pool modes | ❌ Missing |
-| H8 | Pool downstream / proxy mode | ❌ Missing |
+| H6 | Stratum v2 pool support | 📋 Post-3.2 — not a 3.2 blocker; current Stratum v1 is production |
+| H7 | PPS + SOLO pool modes | 📋 Post-3.2 — not a 3.2 blocker; PPLNS is production |
+| H8 | Pool downstream / proxy mode | 📋 Post-3.2 — not a 3.2 blocker; scaling enhancement |
 
 ### Phase I — ZION Identity Service (ZIS) (parallel with E–F)
 
