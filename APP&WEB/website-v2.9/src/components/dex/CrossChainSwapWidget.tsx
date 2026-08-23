@@ -18,7 +18,6 @@ import { ArrowDownUp, Loader2, Zap, AlertCircle, CheckCircle2, Settings } from '
 import ChainSelector from './ChainSelector';
 import TokenSelector, { TOKENS_BY_CHAIN } from './TokenSelector';
 import SwapPathVisual from './SwapPathVisual';
-import { useWallet } from '@/contexts/WalletContext';
 import { useAuth } from '@/contexts/AuthContext';
 import LoginModal from '@/components/LoginModal';
 import { CONTRACTS } from '@/lib/defi-contracts';
@@ -77,6 +76,8 @@ const TOKEN_CONTRACTS: Record<string, Record<string, string | null>> = {
   near: { ZION: null, USDC: null, NEAR: null },
   ton: { ZION: null, USDT: null, TON: null },
   zion: { ZION: null },
+  bitcoin: { BTC: null },
+  lightning: { BTC: null },
 };
 
 // Map UI chain ids to the canonical ChainId enum strings used by the Rust API.
@@ -97,6 +98,8 @@ const CHAIN_API_NAMES: Record<string, string> = {
   sui: 'sui',
   near: 'near',
   ton: 'ton',
+  bitcoin: 'bitcoin',
+  lightning: 'lightning',
 };
 
 const API_TO_UI_CHAIN: Record<string, string> = Object.fromEntries(
@@ -150,10 +153,18 @@ function buildAsset(chain: string, symbol: string): Asset {
 }
 
 function toAtomicAmount(amount: string, decimals: number): string {
+  // Validate as a positive number first
   const value = parseFloat(amount);
   if (Number.isNaN(value) || value <= 0) return '0';
-  const scaled = Math.round(value * 10 ** decimals);
-  return scaled.toString();
+
+  // Use string math to avoid floating point precision loss for u128 values.
+  const [intPart = '0', fracPart = ''] = amount.split('.');
+  const cleanInt = intPart.replace(/^0+/, '') || '0';
+  const cleanFrac = (fracPart || '').replace(/0+$/, '').slice(0, decimals);
+  const paddedFrac = cleanFrac.padEnd(decimals, '0');
+
+  if (cleanInt === '0' && !cleanFrac) return '0';
+  return (cleanInt + paddedFrac).replace(/^0+/, '') || '0';
 }
 
 /**
@@ -166,9 +177,8 @@ function buildSwapBody(
   to: object,
   amount: string,
   extra?: object,
-  fromAddress?: string | null,
 ): string {
-  const base = { from, to, ...(fromAddress ? { from_address: fromAddress } : {}), ...extra };
+  const base = { from, to, ...extra };
   const jsonStr = JSON.stringify(base);
   // Insert "amount":<raw-number> before the closing brace
   return jsonStr.replace(/}$/, `,"amount":${amount}}`);
@@ -216,7 +226,6 @@ function linkedAddressForChain(
 
 export default function CrossChainSwapWidget() {
   const pathname = usePathname();
-  const { connected, connect } = useWallet();
   const { authenticated, user } = useAuth();
   const [srcChain, setSrcChain] = useState('base');
   const [destChain, setDestChain] = useState('base');
@@ -234,13 +243,17 @@ export default function CrossChainSwapWidget() {
   const [recipient, setRecipient] = useState('');
   const [fromAddress, setFromAddress] = useState<string | undefined>(undefined);
 
-  // Reset token when chain changes
+  // Keep a sensible token when chain changes (preserve if it exists, otherwise first token)
   useEffect(() => {
-    setSrcToken('');
+    const tokens = TOKENS_BY_CHAIN[srcChain] || [];
+    const match = tokens.find((t) => t.symbol === srcToken);
+    setSrcToken(match ? match.symbol : (tokens[0]?.symbol ?? ''));
   }, [srcChain]);
 
   useEffect(() => {
-    setDestToken('');
+    const tokens = TOKENS_BY_CHAIN[destChain] || [];
+    const match = tokens.find((t) => t.symbol === destToken);
+    setDestToken(match ? match.symbol : (tokens[0]?.symbol ?? ''));
   }, [destChain]);
 
   // Pre-fill the source address from the authenticated user's linked addresses.
@@ -265,7 +278,7 @@ export default function CrossChainSwapWidget() {
     setError(null);
 
     try {
-      const body = buildSwapBody(fromAsset, toAsset, amountAtomic, { n: 3, max_hops: 3 }, fromAddress);
+      const body = buildSwapBody(fromAsset, toAsset, amountAtomic, { n: 3, max_hops: 3 });
 
       const resp = await fetch(`${API_BASE}/quote/multi`, {
         method: 'POST',
@@ -287,7 +300,7 @@ export default function CrossChainSwapWidget() {
       setPhase('error');
       setRoute(null);
     }
-  }, [srcToken, destToken, amount, fromAsset, toAsset, amountAtomic, fromAddress]);
+  }, [srcToken, destToken, amount, fromAsset, toAsset, amountAtomic]);
 
   // Debounced quote fetch
   useEffect(() => {
@@ -308,7 +321,7 @@ export default function CrossChainSwapWidget() {
     setError(null);
 
     try {
-      const body = buildSwapBody(fromAsset, toAsset, amountAtomic, undefined, fromAddress);
+      const body = buildSwapBody(fromAsset, toAsset, amountAtomic);
 
       const resp = await fetch(`${API_BASE}/execute`, {
         method: 'POST',
@@ -329,7 +342,7 @@ export default function CrossChainSwapWidget() {
       setError(e.message || 'Swap execution failed');
       setPhase('error');
     }
-  }, [route, srcToken, destToken, fromAsset, toAsset, amountAtomic, authenticated, fromAddress]);
+  }, [route, srcToken, destToken, fromAsset, toAsset, amountAtomic, authenticated]);
 
   // Swap chains (reverse direction)
   const swapChains = () => {
@@ -343,8 +356,8 @@ export default function CrossChainSwapWidget() {
     ? (BigInt(route.expected_out) * BigInt(10000 - slippageBps) / BigInt(10000)).toString()
     : '0';
 
-  const displayOut = route ? (Number(route.expected_out) / 10 ** toAsset.decimals).toFixed(6) : '0.0';
-  const displayMin = route ? (Number(minOutput) / 10 ** toAsset.decimals).toFixed(6) : '0.0';
+  const displayOut = route ? (Number(route.expected_out) / 10 ** toAsset.decimals).toFixed(6) : '-';
+  const displayMin = route ? (Number(minOutput) / 10 ** toAsset.decimals).toFixed(6) : '-';
 
   return (
     <div className="w-full max-w-lg mx-auto">
@@ -455,7 +468,9 @@ export default function CrossChainSwapWidget() {
               <div className="text-xs text-zinc-500 mt-1">
                 {phase === 'quoting' && 'Fetching best price...'}
                 {phase === 'quoted' && `Min: ${displayMin}`}
-                {phase === 'idle' && 'Enter amount to get quote'}
+                {phase === 'idle' && (amount && Number(amount) > 0 ? 'No route found' : 'Enter amount to get quote')}
+                {phase === 'error' && 'Quote failed'}
+                {phase === 'success' && 'Swap ready — quote available'}
               </div>
             </div>
           </div>
@@ -504,20 +519,20 @@ export default function CrossChainSwapWidget() {
 
         {/* Execute button */}
         <button
-          onClick={connected ? executeSwap : connect}
-          disabled={(!connected && !route) || phase === 'quoting' || phase === 'executing'}
+          onClick={authenticated ? executeSwap : () => setShowLogin(true)}
+          disabled={phase === 'quoting' || phase === 'executing' || (authenticated && !route)}
           className="zion-button-primary w-full mt-4"
           style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
         >
           {phase === 'quoting' && <Loader2 className="w-4 h-4 animate-spin" />}
           {phase === 'executing' && <Loader2 className="w-4 h-4 animate-spin" />}
-          {!connected && 'Connect Wallet to Swap'}
+          {!authenticated && 'Connect to Swap'}
           {phase === 'quoting' && 'Getting quote...'}
           {phase === 'executing' && 'Executing swap...'}
-          {connected && phase === 'quoted' && 'Swap'}
-          {connected && phase === 'idle' && 'Enter amount'}
-          {connected && phase === 'success' && 'Swap Again'}
-          {connected && phase === 'error' && 'Retry'}
+          {authenticated && phase === 'quoted' && 'Swap'}
+          {authenticated && phase === 'idle' && 'Enter amount'}
+          {authenticated && phase === 'success' && 'Swap Again'}
+          {authenticated && phase === 'error' && 'Retry'}
         </button>
 
         {/* Footer */}

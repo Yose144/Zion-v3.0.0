@@ -70,7 +70,7 @@ export default function HomeQuickLinks() {
       rc: '228, 30, 43', // rasta red
     },
     {
-      href: '/defi',
+      href: '/multichain',
       label: HomeQuickLinksCopy.multichain[cs ? 'cs' : 'en'],
       desc: HomeQuickLinksCopy.bridgeWarpSwap[cs ? 'cs' : 'en'],
       icon: Globe,

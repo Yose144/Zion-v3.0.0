@@ -37,15 +37,10 @@ export default function PriceChart({ token, vsToken = 'USDT', height = 200 }: Pr
           const data = await resp.json();
           if (data.prices && Array.isArray(data.prices)) {
             setPrices(data.prices);
-          } else {
-            // Generate placeholder data if API not available
-            setPrices(generatePlaceholderData(timeframe));
           }
-        } else {
-          setPrices(generatePlaceholderData(timeframe));
         }
       } catch {
-        setPrices(generatePlaceholderData(timeframe));
+        // No price history available — leave empty instead of placeholder data
       } finally {
         setLoading(false);
       }
@@ -102,6 +97,8 @@ export default function PriceChart({ token, vsToken = 'USDT', height = 200 }: Pr
           </h3>
           {loading ? (
             <span className="text-xs text-zinc-500">Loading...</span>
+          ) : prices.length === 0 ? (
+            <span className="text-xs text-zinc-500">No data</span>
           ) : (
             <div className="flex items-center gap-1.5">
               <span className="text-sm font-bold text-white">${currentPrice.toFixed(4)}</span>
@@ -132,6 +129,12 @@ export default function PriceChart({ token, vsToken = 'USDT', height = 200 }: Pr
       </div>
 
       {/* Chart */}
+      {prices.length === 0 ? (
+        <div className="w-full flex items-center justify-center text-zinc-600 text-sm" style={{ height: `${chartHeight}px` }}>
+          No price history
+        </div>
+      ) : (
+      <>
       <svg
         viewBox={`0 0 ${width} ${chartHeight}`}
         className="w-full"
@@ -213,19 +216,10 @@ export default function PriceChart({ token, vsToken = 'USDT', height = 200 }: Pr
           </span>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }
 
-/// Generate placeholder price data for when Router API is not available
-function generatePlaceholderData(timeframe: string): PricePoint[] {
-  const now = Date.now();
-  const points = 50;
-  const interval = timeframe === '1h' ? 60000 : timeframe === '24h' ? 600000 : 86400000;
-  const basePrice = 0.85; // ZION price placeholder
 
-  return Array.from({ length: points }, (_, i) => ({
-    timestamp: now - (points - i) * interval / points,
-    price: basePrice + Math.sin(i / 5) * 0.05 + (Math.random() - 0.5) * 0.02,
-  }));
-}

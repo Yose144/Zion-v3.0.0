@@ -44,6 +44,9 @@ const StakingPanel    = dynamic(() => import('@/components/StakingPanel'), { ssr
 const FarmingPanel    = dynamic(() => import('@/components/FarmingPanel'), { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-2xl bg-white/5" /> });
 const GovernancePanel = dynamic(() => import('@/components/GovernancePanel'), { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-2xl bg-white/5" /> });
 const BridgeValidators = dynamic(() => import('@/components/BridgeValidators'), { ssr: false, loading: () => <div className="h-40 animate-pulse rounded-2xl bg-white/5" /> });
+const CrossChainSwapWidget = dynamic(() => import('@/components/dex/CrossChainSwapWidget'), { ssr: false, loading: () => <div className="h-96 animate-pulse rounded-2xl bg-white/5" /> });
+const DexPriceChart   = dynamic(() => import('@/components/dex/PriceChart'), { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-2xl bg-white/5" /> });
+const DexPoolList     = dynamic(() => import('@/components/dex/DexPoolList'), { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-2xl bg-white/5" /> });
 
 import { CONTRACTS, SEED_PRICE_USD, CCA_AUCTION_PARAMS, PANCAKE_V3 } from '@/lib/defi-contracts';
 import { useNetworkStatus } from '@/hooks/useWebSocketSubscription';
@@ -304,7 +307,7 @@ function StatCard({
 
 // ─── Multichain Sections (same pattern as /pool) ──────────────────────────────────
 
-type SectionTab = 'overview' | 'swap' | 'earn' | 'bridge' | 'governance' | 'pools' | 'auction';
+type SectionTab = 'overview' | 'swap' | 'earn' | 'bridge' | 'governance' | 'dex' | 'auction';
 
 const SECTIONS: { key: SectionTab; labelCs: string; labelEn: string; icon: typeof Activity }[] = [
   { key: 'overview', labelCs: 'Přehled', labelEn: 'Overview', icon: Activity },
@@ -312,7 +315,7 @@ const SECTIONS: { key: SectionTab; labelCs: string; labelEn: string; icon: typeo
   { key: 'earn', labelCs: 'Výnosy', labelEn: 'Earn', icon: TrendingUp },
   { key: 'bridge', labelCs: 'Bridge', labelEn: 'Bridge', icon: ArrowLeftRight },
   { key: 'governance', labelCs: 'Governance', labelEn: 'Governance', icon: Scale },
-  { key: 'pools', labelCs: 'Pooly', labelEn: 'Pools', icon: Droplets },
+  { key: 'dex', labelCs: 'DEX', labelEn: 'DEX', icon: Droplets },
   { key: 'auction', labelCs: 'Aukce', labelEn: 'Auction', icon: Gavel },
 ];
 
@@ -669,7 +672,7 @@ export default function DefiPage() {
                 </span>
               </div>
               <div className="flex flex-wrap gap-3 pt-2">
-                <Link href="/dex" className="zion-button-primary text-sm">
+                <Link href="/multichain#dex" className="zion-button-primary text-sm">
                   <Zap className="h-4 w-4" />
                   {DefiCopy.ziondexSwap[cs ? 'cs' : 'en']}
                   <ArrowRight className="h-3 w-3" />
@@ -1366,7 +1369,7 @@ export default function DefiPage() {
 
           <div className="grid gap-5 md:grid-cols-2">
             <Link
-              href="/bridge"
+              href="/multichain#bridge"
               className="zion-rainbow-card p-6 transition-transform duration-200 hover:scale-[1.01] block"
               style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
             >
@@ -1525,9 +1528,9 @@ export default function DefiPage() {
       </>
       )}
 
-      {activeTab === 'pools' && (
+      {activeTab === 'dex' && (
       <>
-        {/* ═══════ DEX POOLS ═══════ */}
+        {/* ═══════ ZIONDEX ═══════ */}
         <section className="zion-container relative z-10 mb-10">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -1537,228 +1540,28 @@ export default function DefiPage() {
             <div className="flex flex-col gap-2 mb-6">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DefiCopy.liquidity[cs ? 'cs' : 'en']}</p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-                <Droplets className="h-7 w-7 text-zion-cyan" />
-                {DefiCopy.dexPools_2[cs ? 'cs' : 'en']}
+                <Zap className="h-7 w-7 text-zion-gold" />
+                ZionDex
               </h2>
-              <p className="text-sm text-gray-400">{DefiCopy.wzionUsdtOnUniswapV3AndPancake[cs ? 'cs' : 'en']}</p>
-            </div>
-          </motion.div>
-        </section>
-
-        {/* ── PancakeSwap V3 ── */}
-        <section className="zion-container relative z-10 mb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.04 }}
-            className="zion-rainbow-card p-6"
-            style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-              <div className="flex items-center gap-3">
-                <ChefHat className="h-6 w-6 text-zion-gold" />
-                <div>
-                  <h2 className="text-lg font-bold text-white">
-                    PancakeSwap V3
-                  </h2>
-                  <p className="text-[10px] text-gray-500">
-                    {DefiCopy.k2ndLargestDexOnBase115mDailyVo[cs ? 'cs' : 'en']}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-semibold bg-zion-cyan/10 text-zion-cyan border border-zion-cyan/20">
-                  <span className="h-1.5 w-1.5 rounded-full bg-zion-cyan animate-pulse" />
-                  {DefiCopy.live_2[cs ? 'cs' : 'en']}
-                </span>
-                <a
-                  href={PANCAKE_V3.swapUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="zion-button-primary !px-4 !py-2 !text-xs"
-                >
-                  {DefiCopy.swapOnPancakeswap[cs ? 'cs' : 'en']}
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </div>
-            </div>
-
-            {/* Info grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-              <div className="zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{DefiCopy.poolAddress[cs ? 'cs' : 'en']}</p>
-                <p className="text-sm font-semibold text-white font-mono">0x46cc...6f47</p>
-                <p className="text-[10px] text-gray-500">wZION/USDT · 0.25% fee · NFT #2054747</p>
-              </div>
-              <div className="zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{DefiCopy.price[cs ? 'cs' : 'en']}</p>
-                <p className="text-sm font-semibold text-white font-mono">$0.0002</p>
-                <p className="text-[10px] text-gray-500">{DefiCopy.seedPrice[cs ? 'cs' : 'en']}</p>
-              </div>
-              <div className="zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-                <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">{DefiCopy.feeTiers[cs ? 'cs' : 'en']}</p>
-                <p className="text-sm font-semibold text-white">0.01% · 0.05% · 0.25% · 1%</p>
-                <p className="text-[10px] text-gray-500">{DefiCopy.multiTier[cs ? 'cs' : 'en']}</p>
-              </div>
-            </div>
-
-            {/* Links */}
-            <div className="flex flex-wrap gap-2">
-              <a
-                href={PANCAKE_V3.swapUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="zion-button-secondary !px-3 !py-1.5 !text-[10px] !rounded-lg !text-gray-400 hover:!text-white"
-              >
-                {DefiCopy.swapWzion[cs ? 'cs' : 'en']} <ExternalLink className="h-2.5 w-2.5" />
-              </a>
-              <a
-                href={PANCAKE_V3.addLiquidityUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="zion-button-secondary !px-3 !py-1.5 !text-[10px] !rounded-lg !text-gray-400 hover:!text-white"
-              >
-                {DefiCopy.addLiquidity[cs ? 'cs' : 'en']} <ExternalLink className="h-2.5 w-2.5" />
-              </a>
-              <a
-                href={`https://basescan.org/address/${CONTRACTS.PancakeV3PoolUSDT}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="zion-button-secondary !px-3 !py-1.5 !text-[10px] !rounded-lg !text-gray-400 hover:!text-white"
-              >
-                {DefiCopy.poolOnBasescan[cs ? 'cs' : 'en']} <ExternalLink className="h-2.5 w-2.5" />
-              </a>
-              <a
-                href={`https://basescan.org/address/${PANCAKE_V3.factory}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="zion-button-secondary !px-3 !py-1.5 !text-[10px] !rounded-lg !text-gray-400 hover:!text-white"
-              >
-                {DefiCopy.factoryContract[cs ? 'cs' : 'en']} <ExternalLink className="h-2.5 w-2.5" />
-              </a>
-            </div>
-
-            {/* Status note */}
-            <div className="mt-4 flex items-start gap-3 zion-rainbow-sub p-3" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
-              <AlertTriangle className="h-4 w-4 text-zion-gold shrink-0 mt-0.5" />
-              <p className="text-[10px] text-gray-400 leading-relaxed">
-                {DefiCopy.pancakeswapV3PoolWasCreatedAnd[cs ? 'cs' : 'en']}
+              <p className="text-sm text-gray-400">
+                {cs
+                  ? 'Cross-chain DEX napájený L3 WARP bridge. Swapuj mezi 13+ chainy bez syntetických wrap tokenů.'
+                  : 'Cross-chain DEX powered by the L3 WARP bridge. Swap across 13+ chains with no synthetic wrapped tokens.'}
               </p>
             </div>
           </motion.div>
         </section>
 
-        {/* ── Active Pools Detail ── */}
         <section className="zion-container relative z-10 mb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.06 }}
-          >
-            <div className="flex flex-col gap-2 mb-4">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{DefiCopy.uniswapV3[cs ? 'cs' : 'en']}</p>
-              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                <Droplets className="h-5 w-5 text-zion-cyan" />
-                {DefiCopy.uniswapV3Pools[cs ? 'cs' : 'en']}
-              </h2>
+          <div className="grid lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <CrossChainSwapWidget />
+              <DexPriceChart token="wZION" vsToken="USDT" />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* wZION/USDT — active V3 pool */}
-              <div
-                className="zion-rainbow-card p-4"
-                style={{ '--rc': '228, 30, 43' } as React.CSSProperties}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-white">{poolStats?.pools?.wzion_usdt?.pair ?? 'wZION/USDT'}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-zion-purple/20 text-zion-purple border border-zion-purple/30">
-                      {DefiCopy.primary[cs ? 'cs' : 'en']}
-                    </span>
-                    <span className="text-[10px] text-gray-400">{poolStats?.pools?.wzion_usdt?.feeLabel ?? '0.3%'}</span>
-                  </div>
-                </div>
-                <div className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">{DefiCopy.price[cs ? 'cs' : 'en']}:</span>
-                    <span className="font-mono text-white">${(poolStats?.pools?.wzion_usdt?.price_usd ?? 0).toFixed(6)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">{DefiCopy.liquidity[cs ? 'cs' : 'en']}:</span>
-                    <span className="font-mono text-white">
-                      {(Number(poolStats?.pools?.wzion_usdt?.balances?.wzion ?? 0)) > 0
-                        ? `${(Number(poolStats!.pools.wzion_usdt.balances.wzion)).toLocaleString(undefined, { maximumFractionDigits: 0 })} wZION`
-                        : '—'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">USDT:</span>
-                    <span className="font-mono text-white">
-                      {(Number(poolStats?.pools?.wzion_usdt?.balances?.usdt ?? 0)) > 0
-                        ? (Number(poolStats!.pools.wzion_usdt.balances.usdt)).toLocaleString(undefined, { maximumFractionDigits: 2 })
-                        : '—'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">TVL:</span>
-                    <span className="font-mono text-white">${(poolStats?.pools?.wzion_usdt?.tvl_usd ?? 0).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Tick:</span>
-                    <span className="font-mono text-white">{poolStats?.pools?.wzion_usdt?.tick ?? '—'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">{DefiCopy.status[cs ? 'cs' : 'en']}:</span>
-                    <span className={poolStats?.pools?.wzion_usdt?.active ? 'text-zion-cyan' : 'text-zion-gold'}>
-                      {poolStats?.pools?.wzion_usdt?.active ? (DefiCopy.active[cs ? 'cs' : 'en']) : (DefiCopy.inactive[cs ? 'cs' : 'en'])}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* ETH/wZION — initialized, no liquidity */}
-              <div
-                className="zion-rainbow-card p-4 opacity-70"
-                style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-white">{poolStats?.pools?.wzion_weth?.pair ?? 'ETH/wZION'}</span>
-                  <span className="text-[10px] text-gray-400">{poolStats?.pools?.wzion_weth?.feeLabel ?? '1.0%'}</span>
-                </div>
-                <div className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">{DefiCopy.liquidity[cs ? 'cs' : 'en']}:</span>
-                    <span className="font-mono text-gray-500">0</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">{DefiCopy.status[cs ? 'cs' : 'en']}:</span>
-                    <span className="text-zion-gold/70">{DefiCopy.initializedNoLiquidity[cs ? 'cs' : 'en']}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* wZION/SOL — initialized, no liquidity */}
-              <div
-                className="zion-rainbow-card p-4 opacity-70"
-                style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-white">{poolStats?.pools?.wzion_sol?.pair ?? 'wZION/SOL'}</span>
-                  <span className="text-[10px] text-gray-400">{poolStats?.pools?.wzion_sol?.feeLabel ?? '0.01%'}</span>
-                </div>
-                <div className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">{DefiCopy.liquidity[cs ? 'cs' : 'en']}:</span>
-                    <span className="font-mono text-gray-500">0</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">{DefiCopy.status[cs ? 'cs' : 'en']}:</span>
-                    <span className="text-zion-gold/70">{DefiCopy.initializedNoLiquidity[cs ? 'cs' : 'en']}</span>
-                  </div>
-                </div>
-              </div>
+            <div className="space-y-6">
+              <DexPoolList />
             </div>
-          </motion.div>
+          </div>
         </section>
       </>
       )}

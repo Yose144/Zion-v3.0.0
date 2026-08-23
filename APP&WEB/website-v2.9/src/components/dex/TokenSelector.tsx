@@ -93,6 +93,12 @@ const TOKENS_BY_CHAIN: Record<string, TokenOption[]> = {
     { symbol: 'USDT', name: 'Tether USD (TON)', decimals: 6 },
     { symbol: 'TON', name: 'Toncoin', decimals: 9, isNative: true },
   ],
+  bitcoin: [
+    { symbol: 'BTC', name: 'Bitcoin', decimals: 8, isNative: true },
+  ],
+  lightning: [
+    { symbol: 'BTC', name: 'Bitcoin (Lightning)', decimals: 8, isNative: true },
+  ],
 };
 
 interface Props {

@@ -189,7 +189,7 @@ export default function ZionDexDashboard() {
             <ArrowLeftRight className="w-12 h-12 text-zinc-500 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-white">WARP Bridge</h2>
             <p className="text-zinc-400 mt-2 max-w-md mx-auto">
-              Native L1 ↔ Base bridge with no synthetic wrapped tokens. 5/5 validator quorum.
+              Native L1 ↔ Base bridge with no synthetic wrapped tokens.
             </p>
             <Link
               href="/bridge"
