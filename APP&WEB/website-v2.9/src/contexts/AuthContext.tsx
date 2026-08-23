@@ -16,6 +16,7 @@ import {
   logout as zisLogout,
   updateProfile as zisUpdateProfile,
   type ZisUser,
+  type ZisLinkedAddress,
 } from '@/lib/zis';
 
 export interface AuthUser {
@@ -29,6 +30,7 @@ export interface AuthUser {
   createdAt?: number;
   lastLogin?: number;
   loginCount?: number;
+  linkedAddresses?: ZisLinkedAddress[];
 }
 
 interface AuthState {
@@ -70,6 +72,7 @@ function zisToAuthUser(zisUser: ZisUser | null): AuthUser | null {
     createdAt: zisUser.createdAt ? new Date(zisUser.createdAt).getTime() : undefined,
     lastLogin: zisUser.lastLogin ? new Date(zisUser.lastLogin).getTime() : undefined,
     loginCount: zisUser.loginCount,
+    linkedAddresses: zisUser.linkedAddresses,
   };
 }
 
