@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import ToastContainer from '@/components/Toast';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -39,8 +40,10 @@ export default function RootLayout({
   return (
     <html lang="cs" className="dark">
       <body className="antialiased text-white">
-        {children}
-        <ToastContainer />
+        <AuthProvider>
+          {children}
+          <ToastContainer />
+        </AuthProvider>
       </body>
     </html>
   );

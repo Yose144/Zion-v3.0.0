@@ -1,4 +1,4 @@
-import { getPublicKey, etc } from '@noble/ed25519';
+import { getPublicKey, sign as edSign, etc } from '@noble/ed25519';
 import { sha256 } from '@noble/hashes/sha2';
 import { ripemd160 } from '@noble/hashes/legacy';
 import { sha512 } from '@noble/hashes/sha512';
@@ -14,6 +14,14 @@ function toHex(bytes: Uint8Array): string {
   return Array.from(bytes)
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
+}
+
+function fromHex(hex: string): Uint8Array {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+  }
+  return bytes;
 }
 
 export interface ZionWallet {
@@ -95,4 +103,14 @@ export function deriveWalletFromMnemonic(mnemonic: string): ZionWallet {
 export function validatePilgrimOrZionAddress(address: string): boolean {
   const type = getAddressType(address);
   return type === 'zion1' || type === 'pilgrim' || type === 'legacy';
+}
+
+/**
+ * Sign a UTF-8 message with the given Ed25519 private-key seed.
+ * Returns the 64-byte signature as lowercase hex.
+ */
+export function signMessage(privateKeySeed: string | Uint8Array, message: string): string {
+  const seedBytes = typeof privateKeySeed === 'string' ? fromHex(privateKeySeed) : privateKeySeed;
+  const signature = edSign(new TextEncoder().encode(message), seedBytes);
+  return toHex(signature);
 }

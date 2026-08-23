@@ -16,6 +16,7 @@ import type { World, WorldCategory } from '../domain/types/world';
 import type { MusicPlayerState } from './AudioEngine';
 import MiniMap from './MiniMap';
 import SocialPanel from './SocialPanel';
+import { useAuth } from '../contexts/AuthContext';
 
 const XP_PER_LEVEL = 1000;
 
@@ -254,11 +255,12 @@ export function ShipTab() {
 export function IdentityTab() {
   const { address, setAddress, reset, syncPlayer, avatarConfig, archetype } = useGameStore();
   const addToast = useToastStore((s) => s.add);
+  const { user, authenticated, loading: authLoading, loginWithMnemonic, logout: authLogout } = useAuth();
   const [input, setInput] = useState(address ?? '');
   const [showSeed, setShowSeed] = useState(false);
   const [mnemonic, setMnemonic] = useState('');
   const [generated, setGenerated] = useState<{ address: string; mnemonic: string } | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   const handleSave = () => {
     const trimmed = input.trim();
@@ -271,29 +273,42 @@ export function IdentityTab() {
     syncPlayer();
   };
 
-  const handleImport = () => {
+  const handleImport = async () => {
     try {
       const wallet = deriveWalletFromMnemonic(mnemonic.trim());
+      await loginWithMnemonic(wallet.mnemonic);
       setAddress(wallet.address);
-      addToast(`Wallet imported: ${wallet.address.slice(0, 12)}...`, 'success', 2500);
+      addToast(`Wallet connected: ${wallet.address.slice(0, 12)}...`, 'success', 2500);
       setMnemonic('');
       syncPlayer();
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Invalid mnemonic', 'error', 3000);
+      addToast(err instanceof Error ? err.message : 'Invalid mnemonic or ZIS error', 'error', 3000);
     }
   };
 
-  const handleGenerate = () => {
-    setLoading(true);
+  const handleGenerate = async () => {
+    setGenerating(true);
     try {
       const wallet = generateZionWallet();
       setGenerated({ address: wallet.address, mnemonic: wallet.mnemonic });
+      await loginWithMnemonic(wallet.mnemonic);
       setAddress(wallet.address);
+      addToast(`New wallet connected: ${wallet.address.slice(0, 12)}...`, 'success', 2500);
       syncPlayer();
-    } catch {
-      addToast('Wallet generation failed', 'error', 3000);
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Wallet generation or ZIS error', 'error', 3000);
     } finally {
-      setLoading(false);
+      setGenerating(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await authLogout();
+      setAddress(null);
+      addToast('Logged out', 'info', 2500);
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Logout failed', 'error', 2500);
     }
   };
 
@@ -311,6 +326,49 @@ export function IdentityTab() {
 
   return (
     <div className="space-y-2.5">
+      <div className="zion-rainbow-sub p-2.5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
+        <div className="flex items-center gap-2">
+          <div className="rounded-lg bg-oasis-cyan/10 p-1 text-oasis-cyan">
+            <Wallet className="h-3.5 w-3.5" />
+          </div>
+          <p className="text-xs font-semibold text-white">ZIS Identity</p>
+          <span
+            className={`ml-auto h-2 w-2 rounded-full ${
+              authenticated ? 'bg-oasis-cyan' : 'bg-white/30'
+            }`}
+            style={{ boxShadow: authenticated ? '0 0 8px #06b6d4' : 'none' }}
+          />
+        </div>
+        {authenticated ? (
+          <div className="mt-2 space-y-1.5">
+            <div className="flex items-center justify-between text-[10px]">
+              <span className="text-white/70">Connected</span>
+              <span className="font-mono text-oasis-cyan">{(user?.address ?? address ?? '').slice(0, 18)}…</span>
+            </div>
+            {user?.displayName && (
+              <div className="flex items-center justify-between text-[10px]">
+                <span className="text-white/70">Display name</span>
+                <span className="font-semibold text-white">{user.displayName}</span>
+              </div>
+            )}
+            <button
+              onClick={handleLogout}
+              disabled={authLoading}
+              className="zion-button-ghost w-full border-rasta-red/30 bg-rasta-red/10 text-[10px] text-rasta-red hover:bg-rasta-red/20 disabled:opacity-40"
+            >
+              Log Out
+            </button>
+          </div>
+        ) : (
+          <div className="mt-2 space-y-1.5">
+            <p className="text-[9px] leading-relaxed text-white/60">
+              Log in with a ZION wallet to sync your pilgrim across devices.
+            </p>
+            <p className="text-[9px] text-white/40">Use an existing mnemonic or generate a new one below.</p>
+          </div>
+        )}
+      </div>
+
       <div>
         <p className="mb-1 text-[10px] text-white/70">Pilgrim ID or ZION address</p>
         <input
@@ -379,9 +437,10 @@ export function IdentityTab() {
         </div>
         <button
           onClick={handleImport}
-          className="zion-button-ghost mt-1.5 w-full border-oasis-gold/30 bg-oasis-gold/10 text-[10px] text-oasis-gold hover:bg-oasis-gold/20"
+          disabled={!mnemonic || authLoading || generating}
+          className="zion-button-ghost mt-1.5 w-full border-oasis-gold/30 bg-oasis-gold/10 text-[10px] text-oasis-gold hover:bg-oasis-gold/20 disabled:opacity-40"
         >
-          Import Mnemonic
+          {authLoading ? 'Connecting…' : 'Connect with ZIS'}
         </button>
       </div>
 
@@ -407,11 +466,11 @@ export function IdentityTab() {
         ) : (
           <button
             onClick={handleGenerate}
-            disabled={loading}
+            disabled={generating || authLoading}
             className="zion-button-primary w-full text-[10px] disabled:opacity-40"
           >
             <Sparkles className="h-3 w-3" />
-            {loading ? 'Generating...' : 'Generate Wallet'}
+            {generating || authLoading ? 'Connecting…' : 'Generate & Connect'}
           </button>
         )}
       </div>
