@@ -37,11 +37,11 @@ export default function MatrixCore() {
     []
   );
 
-  // Wireframe edges — gold glow
+  // Wireframe edges — cyan glow
   const wireMaterial = useMemo(
     () =>
       new THREE.LineBasicMaterial({
-        color: '#fcd116',
+        color: '#06b6d4',
         transparent: true,
         opacity: 0.7,
         blending: THREE.AdditiveBlending,
@@ -53,14 +53,14 @@ export default function MatrixCore() {
 
   // Orbiting data nodes — small particles circling the core
   const { dataGeometry, dataMaterial, dataOrbits } = useMemo(() => {
-    const count = 120;
+    const count = 80;
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
     const orbits: { radius: number; speed: number; phase: number; yOffset: number; tilt: number }[] = [];
 
-    const goldColor = new THREE.Color('#fcd116');
-    const cyanColor = new THREE.Color('#078930');
-    const purpleColor = new THREE.Color('#e41e2b');
+    const cyanColor = new THREE.Color('#06b6d4');
+    const blueColor = new THREE.Color('#3b82f6');
+    const purpleColor = new THREE.Color('#8b5cf6');
     const temp = new THREE.Color();
 
     for (let i = 0; i < count; i++) {
@@ -78,8 +78,8 @@ export default function MatrixCore() {
       positions[i3 + 2] = Math.sin(phase) * radius;
 
       const mix = rng.next();
-      if (mix < 0.4) temp.copy(goldColor);
-      else if (mix < 0.7) temp.copy(cyanColor);
+      if (mix < 0.4) temp.copy(cyanColor);
+      else if (mix < 0.7) temp.copy(blueColor);
       else temp.copy(purpleColor);
 
       colors[i3] = temp.r;
@@ -122,13 +122,15 @@ export default function MatrixCore() {
   }, [rng]);
 
   // Vertical light pillars — 6 beams radiating from the core
+  const pillarPalette = ['#06b6d4', '#3b82f6', '#8b5cf6', '#ffffff'];
+
   const pillars = useMemo(() => {
     return Array.from({ length: 6 }).map((_, i) => {
       const angle = (i / 6) * Math.PI * 2;
       const radius = 1.8;
       return {
         position: [Math.cos(angle) * radius, 0, Math.sin(angle) * radius] as [number, number, number],
-        color: i % 3 === 0 ? '#fcd116' : i % 3 === 1 ? '#078930' : '#e41e2b',
+        color: pillarPalette[i % pillarPalette.length],
         height: 4 + rng.next() * 2,
       };
     });
@@ -206,8 +208,8 @@ export default function MatrixCore() {
       ))}
 
       {/* Central point light */}
-      <pointLight ref={lightRef} color="#fcd116" intensity={3} distance={25} decay={1.2} position={[0, 0, 0]} />
-      <pointLight color="#078930" intensity={1.5} distance={15} decay={1.5} position={[0, 0, 0]} />
+      <pointLight ref={lightRef} color="#06b6d4" intensity={3} distance={25} decay={1.2} position={[0, 0, 0]} />
+      <pointLight color="#3b82f6" intensity={1.5} distance={15} decay={1.5} position={[0, 0, 0]} />
     </group>
   );
 }

@@ -3,16 +3,9 @@
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import type { World, WorldCategory, WorldLayer } from '../domain/types/world';
+import { CATEGORY_COLORS } from '../lib/categoryColors';
 import WorldNode from './World';
 import Hyperlanes from './Hyperlanes';
-
-const CATEGORY_COLORS: Record<string, string> = {
-  'star-system': '#fcd116',
-  'planet': '#078930',
-  'sector': '#e41e2b',
-  'world': '#078930',
-  'dimension': '#e41e2b',
-};
 
 const CATEGORY_SIZES: Record<string, number> = {
   'star-system': 0.34,

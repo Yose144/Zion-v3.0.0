@@ -7,21 +7,22 @@ import Link from 'next/link';
 import type { WorldCategory, WorldLayer } from '../domain/types/world';
 import { getHealth, getPlayer } from '../lib/api';
 import { useGameStore } from '../store/gameStore';
+import { CATEGORY_COLORS, CATEGORY_RGB, LAYER_COLORS } from '../lib/categoryColors';
 
 const CATEGORIES: { id: WorldCategory; label: string; color: string; rgb: string; icon: string }[] = [
-  { id: 'star-system', label: 'Stars', color: '#fcd116', rgb: '252, 209, 22', icon: '★' },
-  { id: 'planet', label: 'Planets', color: '#078930', rgb: '7, 137, 48', icon: '●' },
-  { id: 'sector', label: 'Sectors', color: '#e41e2b', rgb: '228, 30, 43', icon: '◆' },
-  { id: 'world', label: 'Worlds', color: '#078930', rgb: '7, 137, 48', icon: '◈' },
-  { id: 'dimension', label: 'Dimensions', color: '#e41e2b', rgb: '236, 72, 153', icon: '◊' },
+  { id: 'star-system', label: 'Stars', color: CATEGORY_COLORS['star-system'], rgb: CATEGORY_RGB['star-system'], icon: '★' },
+  { id: 'planet', label: 'Planets', color: CATEGORY_COLORS.planet, rgb: CATEGORY_RGB.planet, icon: '●' },
+  { id: 'sector', label: 'Sectors', color: CATEGORY_COLORS.sector, rgb: CATEGORY_RGB.sector, icon: '◆' },
+  { id: 'world', label: 'Worlds', color: CATEGORY_COLORS.world, rgb: CATEGORY_RGB.world, icon: '◈' },
+  { id: 'dimension', label: 'Dimensions', color: CATEGORY_COLORS.dimension, rgb: CATEGORY_RGB.dimension, icon: '◊' },
 ];
 
 const LAYERS: { id: WorldLayer; label: string; color: string; rgb: string; desc: string }[] = [
-  { id: 1, label: 'Layer 1', color: '#fcd116', rgb: '252, 209, 22', desc: 'Core Galaxy' },
-  { id: 2, label: 'Layer 2', color: '#078930', rgb: '7, 137, 48', desc: 'Inner Rim' },
-  { id: 3, label: 'Layer 3', color: '#e41e2b', rgb: '228, 30, 43', desc: 'Temporal' },
-  { id: 4, label: 'Layer 4', color: '#e41e2b', rgb: '236, 72, 153', desc: 'Mythic' },
-  { id: 5, label: 'Layer 5', color: '#078930', rgb: '7, 137, 48', desc: 'Creative' },
+  { id: 1, label: 'Layer 1', color: LAYER_COLORS[1].color, rgb: LAYER_COLORS[1].rgb, desc: 'Core Galaxy' },
+  { id: 2, label: 'Layer 2', color: LAYER_COLORS[2].color, rgb: LAYER_COLORS[2].rgb, desc: 'Inner Rim' },
+  { id: 3, label: 'Layer 3', color: LAYER_COLORS[3].color, rgb: LAYER_COLORS[3].rgb, desc: 'Temporal' },
+  { id: 4, label: 'Layer 4', color: LAYER_COLORS[4].color, rgb: LAYER_COLORS[4].rgb, desc: 'Mythic' },
+  { id: 5, label: 'Layer 5', color: LAYER_COLORS[5].color, rgb: LAYER_COLORS[5].rgb, desc: 'Creative' },
 ];
 
 const MINIMIZED_KEY = 'oasis-filter-minimized';
@@ -85,7 +86,7 @@ function MinerLite() {
             className={`h-1.5 w-1.5 rounded-full ${
               poolOnline ? 'bg-rasta-green' : poolOnline === false ? 'bg-rasta-red' : 'bg-white/50'
             }`}
-            style={{ boxShadow: poolOnline ? '0 0 6px #078930' : 'none' }}
+            style={{ boxShadow: poolOnline ? '0 0 6px #22c55e' : 'none' }}
           />
           {poolOnline ? 'ONLINE' : poolOnline === false ? 'OFFLINE' : '...'}
         </span>

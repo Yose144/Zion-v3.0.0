@@ -59,9 +59,9 @@ function createLensTexture(): THREE.Texture {
 
   const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
   g.addColorStop(0, 'rgba(255, 255, 255, 1)');
-  g.addColorStop(0.15, 'rgba(252, 209, 22, 0.85)');
-  g.addColorStop(0.35, 'rgba(7, 137, 48, 0.35)');
-  g.addColorStop(0.7, 'rgba(7, 137, 48, 0.08)');
+  g.addColorStop(0.15, 'rgba(6, 182, 212, 0.85)');
+  g.addColorStop(0.35, 'rgba(59, 130, 246, 0.35)');
+  g.addColorStop(0.7, 'rgba(15, 23, 42, 0.08)');
   g.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
   ctx.fillStyle = g;
@@ -85,15 +85,15 @@ export default function GalaxyCore() {
   // Tunnel streak geometry — motion is now entirely GPU-driven (see
   // StreakMaterial above), so this only builds static base attributes once.
   const streaksGeometry = useMemo(() => {
-    const count = 600;
+    const count = 400;
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
     const speeds = new Float32Array(count);
     const offsets = new Float32Array(count);
 
-    const coreColor = new THREE.Color('#078930');
-    const edgeColor = new THREE.Color('#0d0d0d');
-    const goldColor = new THREE.Color('#fcd116');
+    const coreColor = new THREE.Color('#06b6d4');
+    const edgeColor = new THREE.Color('#0f172a');
+    const blueColor = new THREE.Color('#60a5fa');
     const temp = new THREE.Color();
 
     for (let i = 0; i < count; i++) {
@@ -107,10 +107,10 @@ export default function GalaxyCore() {
       positions[i3 + 2] = forward;
 
       const mix = rng.next();
-      if (mix < 0.3) {
-        temp.copy(goldColor).lerp(coreColor, mix * 3);
+      if (mix < 0.35) {
+        temp.copy(blueColor).lerp(coreColor, mix * 2.85);
       } else {
-        temp.copy(coreColor).lerp(edgeColor, (mix - 0.3) / 0.7);
+        temp.copy(coreColor).lerp(edgeColor, (mix - 0.35) / 0.65);
       }
       colors[i3] = temp.r;
       colors[i3 + 1] = temp.g;
@@ -128,11 +128,13 @@ export default function GalaxyCore() {
     return geometry;
   }, [rng]);
 
+  const ringPalette = ['#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899'];
+
   const rings = useMemo(() => {
     return Array.from({ length: 8 }).map((_, i) => {
       const radius = 0.7 + i * 0.55;
       const tube = 0.02 + i * 0.004;
-      const color = i % 3 === 0 ? '#078930' : i % 3 === 1 ? '#fcd116' : '#e41e2b';
+      const color = ringPalette[i % ringPalette.length];
       return { radius, tube, color, speed: (0.05 + i * 0.012) * (i % 2 === 0 ? 1 : -1) };
     });
   }, []);
@@ -165,11 +167,11 @@ export default function GalaxyCore() {
         <meshBasicMaterial color="#ffffff" transparent opacity={1} toneMapped={false} />
       </mesh>
 
-      {/* Warm gold inner corona */}
+      {/* Cyan inner corona */}
       <mesh>
         <sphereGeometry args={[0.72, 32, 32]} />
         <meshBasicMaterial
-          color="#fcd116"
+          color="#06b6d4"
           transparent
           opacity={0.3}
           blending={THREE.AdditiveBlending}
@@ -178,11 +180,11 @@ export default function GalaxyCore() {
         />
       </mesh>
 
-      {/* Cyan-blue corona */}
+      {/* Blue mid corona */}
       <mesh>
         <sphereGeometry args={[1.1, 24, 24]} />
         <meshBasicMaterial
-          color="#078930"
+          color="#3b82f6"
           transparent
           opacity={0.2}
           blending={THREE.AdditiveBlending}
@@ -191,11 +193,11 @@ export default function GalaxyCore() {
         />
       </mesh>
 
-      {/* Deep blue outer glow */}
+      {/* Deep violet outer glow */}
       <mesh>
         <sphereGeometry args={[2.2, 16, 16]} />
         <meshBasicMaterial
-          color="#0d0d0d"
+          color="#020617"
           transparent
           opacity={0.08}
           blending={THREE.AdditiveBlending}
@@ -240,19 +242,19 @@ export default function GalaxyCore() {
         <spriteMaterial map={lensTexture} transparent opacity={0.55} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
       </sprite>
 
-      {/* Secondary warm lens flare */}
+      {/* Secondary cyan lens flare */}
       <sprite position={[0, 0, 0]} scale={[5, 5, 1]}>
-        <spriteMaterial map={lensTexture} transparent opacity={0.35} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} color="#fcd116" />
+        <spriteMaterial map={lensTexture} transparent opacity={0.35} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} color="#06b6d4" />
       </sprite>
 
-      {/* Tertiary purple flare */}
+      {/* Tertiary violet flare */}
       <sprite position={[0, 0, 0]} scale={[3, 3, 1]}>
-        <spriteMaterial map={lensTexture} transparent opacity={0.25} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} color="#e41e2b" />
+        <spriteMaterial map={lensTexture} transparent opacity={0.25} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} color="#8b5cf6" />
       </sprite>
 
-      <pointLight ref={lightRef} color="#078930" intensity={4.5} distance={50} decay={1.0} position={[0, 0, 0]} />
-      <pointLight color="#fcd116" intensity={1.8} distance={30} decay={1.2} position={[0, 0.4, 0]} />
-      <pointLight color="#e41e2b" intensity={1.0} distance={20} decay={1.5} position={[0, 0, 0]} />
+      <pointLight ref={lightRef} color="#06b6d4" intensity={4.5} distance={50} decay={1.0} position={[0, 0, 0]} />
+      <pointLight color="#3b82f6" intensity={1.8} distance={30} decay={1.2} position={[0, 0.4, 0]} />
+      <pointLight color="#8b5cf6" intensity={1.0} distance={20} decay={1.5} position={[0, 0, 0]} />
     </group>
   );
 }

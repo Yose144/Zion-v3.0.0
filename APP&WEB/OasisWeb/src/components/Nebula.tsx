@@ -105,18 +105,17 @@ export default function Nebula({ isMobile = false }: { isMobile?: boolean }) {
   const clouds: NebulaCloudProps[] = [
     { color1: 'rgba(100, 40, 140, 0.65)', color2: 'rgba(30, 10, 50, 0.2)', position: [-22, 5, -28], scale: 34, speed: 0.4 },
     { color1: 'rgba(40, 100, 150, 0.55)', color2: 'rgba(10, 25, 50, 0.18)', position: [26, -4, -22], scale: 28, speed: -0.3 },
-    { color1: 'rgba(140, 80, 30, 0.45)', color2: 'rgba(50, 25, 8, 0.15)', position: [-12, -10, 20], scale: 30, speed: 0.2 },
+    { color1: 'rgba(220, 120, 60, 0.45)', color2: 'rgba(60, 30, 10, 0.15)', position: [-12, -10, 20], scale: 30, speed: 0.2 },
     { color1: 'rgba(70, 50, 120, 0.5)', color2: 'rgba(20, 12, 40, 0.15)', position: [18, 9, 18], scale: 26, speed: -0.25 },
     { color1: 'rgba(30, 80, 110, 0.45)', color2: 'rgba(8, 20, 40, 0.12)', position: [0, 14, -32], scale: 38, speed: 0.15 },
     { color1: 'rgba(120, 60, 100, 0.4)', color2: 'rgba(30, 15, 35, 0.1)', position: [-28, -2, 12], scale: 24, speed: -0.18 },
     { color1: 'rgba(80, 30, 90, 0.5)', color2: 'rgba(20, 8, 35, 0.15)', position: [30, 3, -8], scale: 22, speed: 0.22 },
-    { color1: 'rgba(180, 100, 50, 0.35)', color2: 'rgba(60, 30, 10, 0.12)', position: [-35, 8, -15], scale: 28, speed: 0.12 },
-    { color1: 'rgba(50, 120, 80, 0.3)', color2: 'rgba(15, 40, 25, 0.1)', position: [35, -8, 25], scale: 26, speed: -0.14 },
+    { color1: 'rgba(50, 150, 180, 0.45)', color2: 'rgba(10, 40, 50, 0.15)', position: [-35, 8, -15], scale: 28, speed: 0.12 },
+    { color1: 'rgba(150, 80, 170, 0.4)', color2: 'rgba(40, 15, 50, 0.12)', position: [35, -8, 25], scale: 26, speed: -0.14 },
     { color1: 'rgba(100, 60, 160, 0.4)', color2: 'rgba(25, 15, 50, 0.12)', position: [0, -15, 30], scale: 32, speed: 0.1 },
-    { color1: 'rgba(200, 120, 60, 0.3)', color2: 'rgba(70, 35, 12, 0.1)', position: [-18, 12, -5], scale: 20, speed: -0.2 },
   ];
 
-  const visibleClouds = isMobile ? clouds.slice(0, 6) : clouds;
+  const visibleClouds = isMobile ? clouds.slice(0, 5) : clouds;
 
   return (
     <group>

@@ -26,18 +26,18 @@ const CONSCIOUSNESS_NAMES = [
 ];
 
 const CATEGORY_PALETTE: Record<string, string> = {
-  gold: '252, 209, 22',
-  cyan: '7, 137, 48',
-  purple: '228, 30, 43',
-  emerald: '7, 137, 48',
+  gold: '245, 158, 11',
+  cyan: '6, 182, 212',
+  purple: '139, 92, 246',
+  emerald: '16, 185, 129',
 };
 
 const SHIP_PRESETS: { name: string; hex: string }[] = [
-  { name: 'Zion Cyan', hex: '#078930' },
-  { name: 'Zion Gold', hex: '#fcd116' },
-  { name: 'Zion Purple', hex: '#e41e2b' },
-  { name: 'Zion Emerald', hex: '#078930' },
-  { name: 'Zion Rose', hex: '#e41e2b' },
+  { name: 'Cyan Nebula', hex: '#06b6d4' },
+  { name: 'Solar Amber', hex: '#f59e0b' },
+  { name: 'Violet Void', hex: '#8b5cf6' },
+  { name: 'Emerald Orbit', hex: '#10b981' },
+  { name: 'Rose Relay', hex: '#f43f5e' },
   { name: 'White', hex: '#d4d4d4' },
 ];
 
@@ -78,7 +78,7 @@ function StatTile({ icon: Icon, value, label, color }: StatTileProps) {
 }
 
 function StatusDot({ status }: { status: 'loading' | 'ok' | 'error' }) {
-  const color = status === 'ok' ? '#078930' : status === 'error' ? '#e41e2b' : '#fcd116';
+  const color = status === 'ok' ? '#22c55e' : status === 'error' ? '#ef4444' : '#f59e0b';
   return <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color, boxShadow: `0 0 8px ${color}` }} />;
 }
 
@@ -96,7 +96,7 @@ export function ShipTab() {
       </div>
 
       {/* Ship Model Selector */}
-      <div className="zion-rainbow-sub p-2.5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+      <div className="zion-rainbow-sub p-2.5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
         <div className="flex items-center gap-2">
           <div className="rounded-lg bg-oasis-cyan/10 p-1 text-oasis-cyan">
             <Plane className="h-3.5 w-3.5" />
@@ -181,7 +181,7 @@ export function ShipTab() {
           const Icon = SHIP_ICONS[key];
 
           return (
-            <div key={key} className="zion-rainbow-sub p-2.5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+            <div key={key} className="zion-rainbow-sub p-2.5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="rounded-lg bg-oasis-cyan/10 p-1 text-oasis-cyan">
@@ -215,13 +215,13 @@ export function ShipTab() {
                 </div>
               </div>
               <div className="zion-progress mt-1.5">
-                <div style={{ width: `${(level / 5) * 100}%`, backgroundColor: '#078930' }} />
+                <div style={{ width: `${(level / 5) * 100}%`, backgroundColor: '#06b6d4' }} />
               </div>
             </div>
           );
         })}
 
-      <div className="zion-rainbow-sub p-2.5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+      <div className="zion-rainbow-sub p-2.5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
         <div className="flex items-center gap-2">
           <div className="rounded-lg bg-oasis-cyan/10 p-1 text-oasis-cyan">
             <Palette className="h-3.5 w-3.5" />
@@ -389,7 +389,7 @@ export function IdentityTab() {
       {/* Avatar Configuration */}
       <div className="zion-rainbow-sub p-2.5" style={{ '--rc': '217, 70, 239' } as React.CSSProperties}>
         <div className="flex items-center gap-2">
-          <div className="rounded-lg bg-[#e41e2b]/10 p-1 text-[#e41e2b]">
+          <div className="rounded-lg bg-[#ef4444]/10 p-1 text-[#ef4444]">
             <User className="h-3.5 w-3.5" />
           </div>
           <p className="text-xs font-semibold text-white">Avatar</p>
@@ -444,7 +444,7 @@ export function IdentityTab() {
         </button>
       </div>
 
-      <div className="zion-rainbow-sub p-2.5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+      <div className="zion-rainbow-sub p-2.5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
         <p className="mb-1.5 text-[10px] text-white/70">Generate new ZION wallet:</p>
         {generated ? (
           <div className="space-y-1.5">
@@ -513,7 +513,7 @@ export function AudioTab({ music, muted, onToggleMute }: {
         </button>
       </div>
 
-      <div className="zion-rainbow-sub p-2.5" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+      <div className="zion-rainbow-sub p-2.5" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
         <div className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-oasis-cyan">
           <ListMusic className="h-3 w-3" />
           OASIS Radio
@@ -614,7 +614,7 @@ export function OasisTab({ onEnterFlight }: { onEnterFlight?: () => void }) {
 
       {player && (
         <div className="grid grid-cols-2 gap-2">
-          <div className="zion-rainbow-sub p-2" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+          <div className="zion-rainbow-sub p-2" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
             <p className="text-[9px] text-white/70">Pilgrim</p>
             <p className="truncate text-xs font-semibold text-white">
               {player.display_name || player.address.slice(0, 8)}
@@ -662,7 +662,7 @@ export function OasisTab({ onEnterFlight }: { onEnterFlight?: () => void }) {
       )}
 
       {leaders.length > 0 && (
-        <div className="zion-rainbow-sub p-2" style={{ '--rc': '7, 137, 48' } as React.CSSProperties}>
+        <div className="zion-rainbow-sub p-2" style={{ '--rc': '6, 182, 212' } as React.CSSProperties}>
           <div className="mb-1.5 flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-oasis-cyan">
             <Trophy className="h-3 w-3" />
             Top Pilgrims
