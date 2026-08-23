@@ -675,6 +675,7 @@ let minerStats = {
   last_job_diff: '',
   last_pool_diff: '',
   last_job_id: '',
+  overall_accept_rate: '',
   // CH3 Stream / Revenue fields
   gpu_detected: false,
   gpu_type: 'none',
@@ -3138,10 +3139,18 @@ function stopMining() {
 
 function maybeEmitBlockFound(output) {
   const clean = output.replace(/\x1B\[[0-9;]*[A-Za-z]/g, '').replace(/\x1B\[\?[0-9;]*[A-Za-z]/g, '');
+  // Standard V31 format: "[BLOCK FOUND] height=1523"
   const m = clean.match(/\[?BLOCK FOUND\]?.*height[=:]\s*(\d+)/i) || clean.match(/block found.*height[=:]\s*(\d+)/i);
   if (m) {
     try {
       sendToRenderer('block-found', { height: parseInt(m[1], 10) });
+    } catch {}
+  }
+  // V3 Trinity format: "V3 Trinity: ZION block found height=1523"
+  const trinityM = clean.match(/V3\s+Trinity:\s+(\S+)\s+block\s+found\s+height[=:]\s*(\d+)/i);
+  if (trinityM) {
+    try {
+      sendToRenderer('block-found', { height: parseInt(trinityM[2], 10), coin: trinityM[1].toUpperCase() });
     } catch {}
   }
 }
@@ -3411,6 +3420,14 @@ function parseMinerOutput(output) {
       minerStats.blocks_found = (minerStats.blocks_found || 0) + 1;
       // maybeEmitBlockFound already sent the event, but ensure stats are updated
     }
+  }
+
+  // ─── V3 Trinity block found: "V3 Trinity: ZION block found height=1523" ───
+  const trinityBlockMatch = output.match(/V3\s+Trinity:\s+(\S+)\s+block\s+found\s+height[=:]\s*(\d+)/i);
+  if (trinityBlockMatch) {
+    const height = parseInt(trinityBlockMatch[2]);
+    minerStats.last_block_height = height;
+    minerStats.blocks_found = (minerStats.blocks_found || 0) + 1;
   }
 
   // ─── Full status panel fields ───
@@ -3842,6 +3859,44 @@ function parseMinerOutput(output) {
     minerStats.runtime_backend = 'opencl';
   }
 
+  // ─── V31 CUDA lite init: "gpu_cuda_lite_init device="NVIDIA GeForce GTX 1070 Ti" work_size=4096 scratchpad_mb=2048 tpb=128" ───
+  const v3CudaLiteMatch = output.match(/gpu_cuda_lite_init\s+device="([^"]+)"\s+work_size=(\d+)\s+scratchpad_mb=(\d+)\s+tpb=(\d+)/);
+  if (v3CudaLiteMatch) {
+    minerStats.gpu_detected = true;
+    minerStats.gpu_type = 'cuda';
+    minerStats.gpu_name = v3CudaLiteMatch[1];
+    minerStats.gpu_info = `cuda: ${v3CudaLiteMatch[1]} (ws=${v3CudaLiteMatch[2]}, scratchpad=${v3CudaLiteMatch[3]}MiB)`;
+    minerStats.cpu_only_mode = false;
+    minerStats.runtime_backend = 'cuda';
+  }
+
+  // ─── V31 auto-tune CPU: "[auto-tune] CPU: AuthenticAMD "AMD Ryzen 5 3600 6-Core Processor" | physical=6 logical=12 arch=AmdZen | threads=12 nonce_count=5000000" ───
+  const v3AutoTuneMatch = output.match(/\[auto-tune\]\s+CPU:\s+\S+\s+"([^"]+)"\s+\|\s+physical=(\d+)\s+logical=(\d+)\s+arch=(\S+)\s+\|\s+threads=(\d+)/);
+  if (v3AutoTuneMatch) {
+    minerStats.cpu_name = v3AutoTuneMatch[1];
+    minerStats.cpu_cores = parseInt(v3AutoTuneMatch[2], 10);
+    minerStats.cpu_logical = parseInt(v3AutoTuneMatch[3], 10);
+    minerStats.cpu_threads = parseInt(v3AutoTuneMatch[5], 10);
+    minerStats.threads = v3AutoTuneMatch[5];
+  }
+
+  // ─── V31 Trinity stream enablement: "Stream 1 (ZION): ENABLED (threads=6)" ───
+  const v3StreamEnableMatch = output.match(/Stream\s+1\s+\(ZION\):\s+ENABLED\s+\(threads=(\d+)\)/);
+  if (v3StreamEnableMatch) {
+    // ZION stream threads = GPU + CPU combined for primary chain
+    if (!minerStats.cpu_threads) {
+      minerStats.cpu_threads = parseInt(v3StreamEnableMatch[1], 10);
+      minerStats.threads = v3StreamEnableMatch[1];
+    }
+  }
+
+  // ─── V31 block height from ZANO/VRSC progpow recompilation ───
+  // "progpow_cuda: recompiling kernel period=N dag_elements=N block_height=3828953"
+  const v3BlockHeightMatch = output.match(/block_height=(\d+)/);
+  if (v3BlockHeightMatch) {
+    minerStats.last_job_height = parseInt(v3BlockHeightMatch[1], 10);
+  }
+
   // ─── V31 GPU fallback: "gpu_init_fallback reason=\"...\" using=cpu" ───
   if (/gpu_init_fallback/.test(output)) {
     minerStats.runtime_backend = 'cpu';
@@ -3954,6 +4009,13 @@ function parseMinerOutput(output) {
     // summary parser below.
   }
 
+  // Compact sparse array to dense — 1-indexed assignment leaves index 0 as a hole.
+  // After IPC JSON serialization, holes become null, causing renderer's
+  // streams.find(s => Number(s.index) === i) to crash on null.index.
+  if (Array.isArray(minerStats.streams)) {
+    minerStats.streams = minerStats.streams.filter(s => s);
+  }
+
   // ─── V31 TUI log (aggregate hashrate only) ───
   // hashrate=1234 H/s submitted=0 accepted=0 rejected=0 jobs=0 reconnects=0 coin=zion pool=...
   // NOTE: The TUI log's accepted/rejected are per-coin (whichever stream
@@ -3980,8 +4042,8 @@ function parseMinerOutput(output) {
   }
 
   // ─── V31 periodic metrics summary: TOTAL hashrate + TOTAL shares ───
-  // ═══ periodic metrics summary ═══ active_streams=3 total_hashrate=19.68 MH/s total_accepted=1337 total_rejected=6
-  const v31MetricsSummaryMatch = output.match(/periodic\s+metrics\s+summary.*?active_streams\s*=\s*(\d+).*?total_hashrate\s*=\s*([\d.]+)\s*([kKmMgGtT]?H\/s).*?total_accepted\s*=\s*(\d+).*?total_rejected\s*=\s*(\d+)/i);
+  // ═══ periodic metrics summary ═══ active_streams=3 total_hashrate=19.68 MH/s total_accepted=1337 total_rejected=6 overall_accept_rate="100.0%"
+  const v31MetricsSummaryMatch = output.match(/periodic\s+metrics\s+summary.*?active_streams\s*=\s*(\d+).*?total_hashrate\s*=\s*([\d.]+)\s*([kKmMgGtT]?H\/s).*?total_accepted\s*=\s*(\d+).*?total_rejected\s*=\s*(\d+)(?:.*?overall_accept_rate\s*=\s*"([^"]+)")?/i);
   if (v31MetricsSummaryMatch) {
     const unit = String(v31MetricsSummaryMatch[3] || 'H/s').toLowerCase();
     const mult = unit.startsWith('th') ? 1e12 : unit.startsWith('gh') ? 1e9 : unit.startsWith('mh') ? 1e6 : unit.startsWith('kh') ? 1e3 : 1;
@@ -4001,6 +4063,10 @@ function parseMinerOutput(output) {
     minerStats.accepted = totalAccepted;
     minerStats.rejected = totalRejected;
     minerStats.shares = totalAccepted + totalRejected;
+    // Accept rate for difficulty card display
+    if (v31MetricsSummaryMatch[6]) {
+      minerStats.overall_accept_rate = v31MetricsSummaryMatch[6];
+    }
   }
 
   // ─── V31 summary line (fallback hashrate only) ───
