@@ -405,6 +405,7 @@ function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
 
   useFrame((state) => {
     material.uniforms.uTime.value = state.clock.elapsedTime;
+    material.uniformsNeedUpdate = true;
   });
 
   if (count === 0) return null;
