@@ -12,6 +12,7 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 import {
   getChallenge,
   verifyEd25519 as zisVerifyEd25519,
+  verifySiwe as zisVerifySiwe,
   getCurrentUser,
   logout as zisLogout,
   updateProfile as zisUpdateProfile,
@@ -41,6 +42,8 @@ interface AuthState {
   checkSession: () => Promise<void>;
   /** Login with Zion Wallet signature */
   loginWithWallet: (address: string, password: string, exportPrivateKey: (id: string, pw: string) => Promise<string>, walletId: string) => Promise<void>;
+  /** Login with Ethereum (MetaMask / EIP-191 SIWE) */
+  loginWithSiwe: () => Promise<void>;
   /** Logout */
   logout: () => Promise<void>;
   /** Update display name */
@@ -53,6 +56,7 @@ const defaultState: AuthState = {
   authenticated: false,
   checkSession: async () => {},
   loginWithWallet: async () => {},
+  loginWithSiwe: async () => {},
   logout: async () => {},
   updateProfile: async () => {},
 };
@@ -132,6 +136,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(zisToAuthUser(fullUser));
   }, []);
 
+  const loginWithSiwe = useCallback(async () => {
+    const ethereum = (typeof window !== 'undefined' ? (window as any).ethereum : undefined);
+    if (!ethereum) {
+      throw new Error('MetaMask not detected');
+    }
+
+    // Request account access.
+    const accounts: string[] = await ethereum.request({ method: 'eth_requestAccounts' });
+    const address = accounts[0];
+    if (!address) throw new Error('No EVM account selected');
+
+    // 1. Get ZIS challenge for the EVM address.
+    const { challenge } = await getChallenge(address, 'evm');
+    const nonceMatch = challenge.match(/nonce: ([^\n]+)/i);
+    const nonce = nonceMatch?.[1];
+    if (!nonce) throw new Error('No nonce in challenge');
+
+    // 2. Build a SIWE message (EIP-4361).
+    const issuedAt = new Date().toISOString();
+    const expirationTime = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+    const host = window.location.host;
+    const origin = window.location.origin;
+    const message = [
+      `${host} wants you to sign in with your Ethereum account:`,
+      address,
+      '',
+      'Sign in to ZION.',
+      '',
+      `URI: ${origin}/login`,
+      'Version: 1',
+      'Chain ID: 1',
+      `Nonce: ${nonce}`,
+      `Issued At: ${issuedAt}`,
+      `Expiration Time: ${expirationTime}`,
+    ].join('\n');
+
+    // 3. Sign with MetaMask via EIP-191 personal_sign.
+    const signature: string = await ethereum.request({
+      method: 'personal_sign',
+      params: [message, address],
+    });
+    if (!signature) throw new Error('Signature rejected');
+
+    // 4. Submit to ZIS through the local proxy.
+    await zisVerifySiwe(address, message, signature);
+
+    // 5. Fetch full user record.
+    const fullUser = await getCurrentUser();
+    setUser(zisToAuthUser(fullUser));
+  }, []);
+
   const logout = useCallback(async () => {
     await zisLogout();
     setUser(null);
@@ -150,6 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         authenticated: !!user,
         checkSession,
         loginWithWallet,
+        loginWithSiwe,
         logout,
         updateProfile,
       }}

@@ -24,7 +24,7 @@ interface LoginModalProps {
 }
 
 export default function LoginModal({ open, onClose, redirectTo }: LoginModalProps) {
-  const { loginWithWallet } = useAuth();
+  const { loginWithWallet, loginWithSiwe } = useAuth();
   const zionWallet = useZionWallet();
 
   const [password, setPassword] = useState('');
@@ -33,10 +33,29 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
   const [selectedWalletId, setSelectedWalletId] = useState<string | null>(null);
   const [showWalletList, setShowWalletList] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [hasMetaMask, setHasMetaMask] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    setHasMetaMask(typeof window !== 'undefined' && !!(window as any).ethereum);
   }, []);
+
+  const handleSiwe = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await loginWithSiwe();
+      setPassword('');
+      onClose();
+      if (redirectTo) {
+        window.location.href = redirectTo;
+      }
+    } catch (err: any) {
+      setError(err.message || 'MetaMask login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const activeWallet = zionWallet.wallets.find((w) => w.id === selectedWalletId) || zionWallet.activeWallet;
 
@@ -99,7 +118,7 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
                   <Wallet className="h-5 w-5 text-zion-cyan" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-white">Sign in with ZION Wallet</h2>
+                  <h2 className="text-lg font-bold text-white">Sign in to ZION</h2>
                   <p className="text-xs text-zion-gold/70">Prove ownership to access dashboard</p>
                 </div>
               </div>
@@ -110,6 +129,37 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
 
             {/* Body */}
             <div className="px-6 py-5">
+              {/* MetaMask / EVM sign-in */}
+              <div className="mb-5">
+                <button
+                  type="button"
+                  onClick={handleSiwe}
+                  disabled={loading || !hasMetaMask}
+                  className="zion-button-secondary w-full text-sm disabled:opacity-50"
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Wallet className="h-4 w-4" />
+                  )}
+                  {loading ? 'Signing...' : 'Sign in with MetaMask'}
+                </button>
+                {!hasMetaMask && (
+                  <p className="text-[10px] text-zion-gold/55 text-center mt-2">
+                    MetaMask not detected. Install it or use a ZION wallet below.
+                  </p>
+                )}
+              </div>
+
+              <div className="relative mb-5">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/10" />
+                </div>
+                <div className="relative flex justify-center text-[10px] uppercase tracking-wider text-zion-gold/55">
+                  <span className="bg-black px-2">or</span>
+                </div>
+              </div>
+
               {/* No wallet */}
               {zionWallet.initialized && zionWallet.wallets.length === 0 && (
                 <div className="text-center py-8">
@@ -251,7 +301,7 @@ export default function LoginModal({ open, onClose, redirectTo }: LoginModalProp
             {/* Footer */}
             <div className="border-t border-white/5 px-6 py-3 bg-black/30">
               <p className="text-[10px] text-zion-gold/55 text-center">
-                Secured by Ed25519 signature · No private keys leave your browser
+                Secured by Ed25519 or EIP-191 signature · No private keys leave your browser
               </p>
             </div>
           </motion.div>

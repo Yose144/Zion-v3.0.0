@@ -49,26 +49,36 @@ function getJwtSecret(): Uint8Array {
   return new TextEncoder().encode(secret);
 }
 
+const PROTECTED_PATHS = ['/account', '/dashboard/private'];
+
+function isProtected(pathname: string): boolean {
+  return PROTECTED_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
+async function requireAuthRedirect(request: NextRequest, pathname: string) {
+  const token = request.cookies.get('zion_session')?.value;
+  if (!token) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('redirect', pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+  try {
+    const secret = getJwtSecret();
+    await jwtVerify(token, secret);
+  } catch {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('redirect', pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+  return NextResponse.next();
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // ── /account protection (Zion Wallet auth) ───────────────────────
-  if (pathname.startsWith('/account')) {
-    const token = request.cookies.get('zion_session')?.value;
-    if (!token) {
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('redirect', pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-    try {
-      const secret = getJwtSecret();
-      await jwtVerify(token, secret);
-    } catch {
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('redirect', pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-    return NextResponse.next();
+  // ── Protected pages (ZION Wallet / ZIS auth) ─────────────────────
+  if (isProtected(pathname)) {
+    return requireAuthRedirect(request, pathname);
   }
 
   // ── API rate limiting ────────────────────────────────────────────
@@ -138,5 +148,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/:path*', '/account/:path*'],
+  matcher: ['/admin/:path*', '/api/:path*', '/account/:path*', '/dashboard/private/:path*'],
 };
