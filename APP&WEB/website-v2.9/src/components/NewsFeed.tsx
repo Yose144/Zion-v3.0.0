@@ -183,10 +183,10 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       en: 'ZION Multichain ecosystem LIVE — 2 DEX, 6 chains, CCA auction, bridge',
     },
     summary: {
-      cs: 'wZION je dostupný na 2 DEX platformách (Uniswap V4 + PancakeSwap V3), na 6 EVM chainech (Base, BSC, Polygon, Arbitrum, Optimism, Avalanche), s aktivní Uniswap CCA aukcí (66.47M wZION za USDC) a obousměrným bridge (lock ZION na L1 → mint wZION, burn → unlock). LiFi agregátor přidává 30+ DEX a 20+ bridge protokolů. Live cenový graf, swap widget a portfolio dashboard na /defi.',
-      en: 'wZION is available on 2 DEX platforms (Uniswap V4 + PancakeSwap V3), on 6 EVM chains (Base, BSC, Polygon, Arbitrum, Optimism, Avalanche), with an active Uniswap CCA auction (66.47M wZION for USDC) and bidirectional bridge (lock ZION on L1 → mint wZION, burn → unlock). LiFi aggregator adds 30+ DEX and 20+ bridge protocols. Live price chart, swap widget, and portfolio dashboard on /defi.',
+      cs: 'wZION je dostupný na 2 DEX platformách (Uniswap V4 + PancakeSwap V3), na 6 EVM chainech (Base, BSC, Polygon, Arbitrum, Optimism, Avalanche), s aktivní Uniswap CCA aukcí (66.47M wZION za USDC) a obousměrným bridge (lock ZION na L1 → mint wZION, burn → unlock). LiFi agregátor přidává 30+ DEX a 20+ bridge protokolů. Live cenový graf, swap widget a portfolio dashboard na /multichain.',
+      en: 'wZION is available on 2 DEX platforms (Uniswap V4 + PancakeSwap V3), on 6 EVM chains (Base, BSC, Polygon, Arbitrum, Optimism, Avalanche), with an active Uniswap CCA auction (66.47M wZION for USDC) and bidirectional bridge (lock ZION on L1 → mint wZION, burn → unlock). LiFi aggregator adds 30+ DEX and 20+ bridge protocols. Live price chart, swap widget, and portfolio dashboard on /multichain.',
     },
-    href: '/defi',
+    href: '/multichain',
   },
   {
     slug: 'warp-13-chain-families',
@@ -231,7 +231,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       cs: 'V prosinci 2013 stál jeden Dogecoin $0.0002. Nikdo nevěděl, že v květnu 2021 — po 7.5 letech — dosáhne ATH $0.73, tedy 3650× skok, který zapsal memecoin do historie. Dnes ZION nastavuje seed cenu na stejných $0.0002/ZION. Ne proto, že bychom chtěli zopakovat Doge. Ale proto, že každá legenda začíná stejně — s malým číslem a velkým příběhem. 144B zásoba, 5/5 validátorů, AI vrstva, Strom života. FDV ~$28.8M. ZION není memecoin. Je to vzpomínka na budoucnost.',
       en: 'In December 2013, one Dogecoin cost $0.0002. Nobody knew that in May 2021 — after 7.5 years — it would reach its ATH of $0.73, a 3650× jump that wrote memecoins into history. Today ZION sets its seed price at the same $0.0002/ZION. Not because we want to repeat Doge. But because every legend starts the same way — with a small number and a big story. 144B supply, 5/5 validators, AI layer, Tree of Life. FDV ~$28.8M. ZION is not a memecoin. It is a memory of the future.',
     },
-    href: '/defi',
+    href: '/multichain',
     banner: 'doge-vs-zion',
   },
   {
@@ -409,10 +409,10 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       en: 'wZION DEX is live on Base Mainnet — swap, bridge & portfolio',
     },
     summary: {
-      cs: 'Počáteční Uniswap V3 pool wZION/WETH nasazen na Base Mainnet. WETH pozice později spálena — nyní aktivní pouze wZION/USDT 0.3% pool. Na app.zionterranova.com/defi funguje swap, bridge a portfolio dashboard s live cenami z on-chain poolu.',
-      en: 'Initial Uniswap V3 wZION/WETH pool deployed on Base Mainnet. WETH position later burned — now only wZION/USDT 0.3% pool is active. app.zionterranova.com/defi features swap, bridge, and a portfolio dashboard with live on-chain pool prices.',
+      cs: 'Počáteční Uniswap V3 pool wZION/WETH nasazen na Base Mainnet. WETH pozice později spálena — nyní aktivní pouze wZION/USDT 0.3% pool. Na app.zionterranova.com/multichain funguje swap, bridge a portfolio dashboard s live cenami z on-chain poolu.',
+      en: 'Initial Uniswap V3 wZION/WETH pool deployed on Base Mainnet. WETH position later burned — now only wZION/USDT 0.3% pool is active. app.zionterranova.com/multichain features swap, bridge, and a portfolio dashboard with live on-chain pool prices.',
     },
-    href: '/defi',
+    href: '/multichain',
   },
   {
     slug: 'ekam-deeksha-featured-cz-en-rollout',
@@ -442,7 +442,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       cs: 'wZION ERC-20, ZIONBridge a počáteční Uniswap V3 pool (wZION/WETH 0.3%) nasazeny na Base. WETH pozice později spálena — nyní aktivní wZION/USDT 0.3% pool. Relay propojuje ZION L1 s Base. Bridge umožňuje lock/mint a burn/unlock.',
       en: 'wZION ERC-20, ZIONBridge, and initial Uniswap V3 pool (wZION/WETH 0.3%) deployed on Base. WETH position later burned — now wZION/USDT 0.3% pool is active. Relay connects ZION L1 with Base. Bridge enables lock/mint and burn/unlock.',
     },
-    href: '/defi',
+    href: '/multichain',
   },
   {
     slug: 'coingecko-listing',

@@ -53,8 +53,7 @@ export default function Navigation() {
       title: tr('nav', 'defi_group', lang),
       color: '252, 209, 22',
       items: [
-        { href: '/multichain', label: 'Multichain' },
-        { href: '/defi', label: tr('nav', 'defi', lang) },
+        { href: '/multichain', label: tr('nav', 'multichain', lang) },
         { href: '/cex', label: tr('nav', 'cex', lang) },
         { href: '/wallet', label: tr('nav', 'wallet', lang) },
       ],

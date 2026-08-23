@@ -65,8 +65,6 @@ const PROTECTED_PATHS = [
   '/swap',
   '/ziondex',
   '/bridge',
-  '/multichain',
-  '/defi',
 ];
 
 function isProtected(pathname: string): boolean {
@@ -185,7 +183,5 @@ export const config = {
     '/swap/:path*',
     '/ziondex/:path*',
     '/bridge/:path*',
-    '/multichain/:path*',
-    '/defi/:path*',
   ],
 };

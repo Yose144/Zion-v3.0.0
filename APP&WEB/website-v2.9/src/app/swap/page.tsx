@@ -1287,7 +1287,7 @@ export default function SwapPage() {
             <a href="/bridge" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '228, 30, 43' } as CSSProperties}>
               <ArrowLeftRight className="h-4 w-4 text-zion-cyan" /> {SwapCopy.bridge[cs ? 'cs' : 'en']}
             </a>
-            <a href="/defi" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
+            <a href="/multichain" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
               <TrendingUp className="h-4 w-4 text-zion-cyan" /> {SwapCopy.defiHub[cs ? 'cs' : 'en']}
             </a>
             <a href="/docs" className="zion-rainbow-sub inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
