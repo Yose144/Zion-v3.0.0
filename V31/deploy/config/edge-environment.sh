@@ -1,8 +1,8 @@
 # ZION Edge Server — Common Environment
-# Updated: 2026-07-15 - 3.0.6 "Triple Parallel" — 3-stream parallel mining
-#                        RPC addr corrected: direct node RPC is 127.0.0.1:9443
-#                        AuxPow enabled for 3-stream parallel mining
-#                        EPIC wallet added for ProgPow support
+# Updated: 2026-08-23 - V31 L5/L6 fund trackers
+#                        Direct node RPC is 127.0.0.1:9445 (V31 native)
+#                        DAO API is 127.0.0.1:8456
+#                        Added Free World / Issobella tracker env vars
 # Updated: 2026-07-08 - Post 3.0.4 Hard Genesis Reset (new server 62.171.141.136)
 #                        Updated all addresses to hard-reset canonical addresses
 #                        Fixed env var name: ZION_POOL_SK → ZION_POOL_PAYOUT_SK_HEX
@@ -220,3 +220,26 @@ ZION_MULTICHAIN_API_KEY=<SET_VIA_SECURE_ENVIRONMENT_DO_NOT_COMMIT>
 # Comma-separated list of allowed CORS origins for the multichain HTTP API.
 # Defaults to canonical ZION public domains if unset.
 ZION_MULTICHAIN_CORS_ORIGINS=https://zionterranova.com,https://app.zionterranova.com,https://oasis.zionterranova.com,https://market.zionterranova.com,https://dashboard.zionterranova.com
+
+# ── V31 L5/L6 fund trackers ───────────────────────────────────────────────
+# Free World (humanitarian) and Issobella (space) passive fund trackers.
+# They scan the V31 coinbase for the canonical fund addresses and may submit
+# grant/mission proposals to the V31 DAO.
+FREE_WORLD_BIND=127.0.0.1
+FREE_WORLD_PORT=8095
+FREE_WORLD_DB=/data/zion/free_world.db
+FREE_WORLD_L1_RPC=http://127.0.0.1:9445/jsonrpc
+FREE_WORLD_HUMANITARIAN_ADDRESS=zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8
+
+ISSOBELLA_BIND=127.0.0.1
+ISSOBELLA_PORT=8096
+ISSOBELLA_DB=/data/zion/issobella.db
+ISSOBELLA_L1_RPC=http://127.0.0.1:9445/jsonrpc
+ISSOBELLA_FUND_ADDRESS=zion1z4s3a54266f2x7j4x7c27297k49752t7k52l0f0
+
+# DAO proposal submission (used by L5/L6; optional on passive-only deployments)
+ZION_DAO_API_ADDR=http://127.0.0.1:8456
+ZION_DAO_API_KEY=<SET_VIA_SECURE_ENVIRONMENT_DO_NOT_COMMIT>
+ZION_DAO_PROPOSER=<SET_VIA_SECURE_ENVIRONMENT_DO_NOT_COMMIT>
+ZION_DAO_PROPOSER_BALANCE=0
+ZION_DAO_SNAPSHOT_BLOCK=0

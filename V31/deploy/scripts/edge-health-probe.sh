@@ -22,7 +22,7 @@ fi
 ZIONMINER=$(du -sm /var/log/zion-edge-miner.log /var/log/zion-miner.log 2>/dev/null | cut -f1 | sort -n | tail -1)
 TIMER_ACTIVE=$(systemctl is-active edge-log-cleanup.timer 2>/dev/null)
 TIMER_TRIGGER=$(systemctl show edge-log-cleanup.timer -p LastTriggerUSec --value 2>/dev/null)
-SVCS=$(systemctl is-active zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-bridge zion-edge-dao zion-edge-warp zion-edge-miner zion-edge-watchdog zion-edge-backup zion-edge-maintenance 2>/dev/null | paste -sd ',')
+SVCS=$(systemctl is-active zion-v31-node zion-v31-node2 zion-v31-node3 zion-v31-pool zion-v31-miner zion-v31-multichain zion-v31-dao zion-v31-oasis zion-v31-free-world zion-v31-issobella zion-v31-watchdog zion-edge-python-dashboard zion-website zion-marketplace nginx 2>/dev/null | paste -sd ',')
 DOCKER=$(docker ps --format '{{.Names}}::{{.Status}}' 2>/dev/null | paste -sd '|')
 
 echo "DISK=$DISK MEM=$MEM LOAD=$LOAD CORES=$CORES UPTIME=$UPTIME SYSLOG=$SYSLOG JOURNAL=$JOURNAL ZIONMINER=$ZIONMINER TIMER_ACTIVE=$TIMER_ACTIVE TIMER_TRIGGER=$TIMER_TRIGGER SVCS=$SVCS DOCKER=$DOCKER"

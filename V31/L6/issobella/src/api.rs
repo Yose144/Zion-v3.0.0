@@ -1,6 +1,7 @@
 //! REST API handlers for zion-issobella.
 
-use crate::dao_client::{DaoClient, DaoClientConfig, DaoProposalRequest};
+use crate::config::IssobellaConfig;
+use crate::dao_client::{DaoClient, DaoClientConfig, MissionProposalInput};
 use crate::db::{IssobellaDb, MissionRecord, ResearchProposal};
 use crate::hiran_bridge::IssobellaHiranBridge;
 use crate::metrics::serve_metrics_text;
@@ -22,6 +23,7 @@ pub struct AppState {
     pub api_key: String,
     pub metrics: Arc<IssobellaMetrics>,
     pub hiran: Arc<IssobellaHiranBridge>,
+    pub config: IssobellaConfig,
 }
 
 /// Generic API response wrapper using serde_json::Value for data.
@@ -110,6 +112,7 @@ pub struct CreateMissionRequest {
     pub description: Option<String>,
     pub orbit_altitude_km: Option<f64>,
     pub target_launch_date: Option<String>,
+    pub funding_address: Option<String>,
 }
 
 async fn create_mission(
@@ -120,6 +123,7 @@ async fn create_mission(
     mission.description = req.description;
     mission.orbit_altitude_km = req.orbit_altitude_km;
     mission.target_launch_date = req.target_launch_date;
+    mission.funding_address = req.funding_address;
 
     let db = state.db.lock().unwrap();
     match db.insert_mission(&mission) {
@@ -179,13 +183,24 @@ async fn submit_mission_to_dao(
     };
     match mission {
         Some(mission) => {
-            let client = DaoClient::new(DaoClientConfig::default());
-            let req = DaoProposalRequest {
+            let funding_address = match &mission.funding_address {
+                Some(addr) if !addr.is_empty() => addr.clone(),
+                _ => {
+                    return (
+                        StatusCode::BAD_REQUEST,
+                        Json(ApiResponse::err(
+                            "Mission has no funding_address; set it before submitting to DAO",
+                        )),
+                    )
+                }
+            };
+            let client = DaoClient::new(DaoClientConfig::from(&state.config));
+            let req = MissionProposalInput {
                 title: format!("Mission: {}", mission.name),
                 description: mission.description.clone().unwrap_or_default(),
+                mission_type: mission.mission_type.clone(),
                 amount_zion: mission.budget_zion,
-                recipient_address: String::new(),
-                proposal_type: "treasury".to_string(),
+                recipient_address: funding_address,
             };
             match client.submit_mission_proposal(&req).await {
                 Ok(resp) => (StatusCode::OK, Json(ApiResponse::ok(resp))),

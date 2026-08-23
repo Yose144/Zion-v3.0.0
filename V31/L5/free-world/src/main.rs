@@ -7,7 +7,8 @@
 //! # Override via env vars
 //! FREE_WORLD_PORT=8095 \
 //! FREE_WORLD_DB=./free_world.db \
-//! FREE_WORLD_L1_RPC=http://localhost:8443/jsonrpc \
+//! FREE_WORLD_L1_RPC=http://127.0.0.1:9445/jsonrpc \
+//! FREE_WORLD_HUMANITARIAN_ADDRESS=zion1y3w4z0c755v4y7t3f0k6s54390x0h3k3y5hv8c8 \
 //! cargo run --bin zion-free-world
 //! ```
 
@@ -58,9 +59,11 @@ async fn main() {
     };
     let db = Arc::new(Mutex::new(fw_db));
 
-    let _fw_config = Arc::new(cfg.clone());
     let metrics = Arc::new(FreeWorldMetrics::new());
-    info!("📊 Prometheus metrics: http://0.0.0.0:{}/metrics", cfg.port);
+    info!(
+        "📊 Prometheus metrics: http://{}:{}/metrics",
+        cfg.bind, cfg.port
+    );
 
     let hiran = Arc::new(FreeWorldHiranBridge::new(&cfg));
     if cfg.hiran_enabled {
@@ -84,6 +87,7 @@ async fn main() {
         api_key: cfg.api_key.clone(),
         metrics: Arc::clone(&metrics),
         hiran,
+        config: cfg.clone(),
     };
 
     let app = free_world_router(state)
