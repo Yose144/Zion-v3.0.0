@@ -18,16 +18,15 @@ export const SITE_NETWORK_LABEL = `${SITE_ENVIRONMENT_LABEL} · ${SITE_RELEASE_L
 export const SITE_APP_URL = 'https://app.zionterranova.com';
 export const SITE_INTRO_URL = 'https://zionterranova.com';
 
-// ── Infrastructure (One Love Mainnet Stable, 2026-08-06) ───────────────────
-// Edge server — cloud VPS, public-facing node + pool stratum
+// ── Public endpoints (One Love Mainnet Stable, 2026-08-06) ─────────────────
 export const SITE_PRIMARY_HOST = process.env.NEXT_PUBLIC_ZION_RPC_HOST || 'rpc.zionterranova.com';
 export const SITE_PRIMARY_RPC_PORT = 9445;
 export const SITE_PRIMARY_RPC_URL = `${SITE_PRIMARY_HOST}:${SITE_PRIMARY_RPC_PORT}`;
-// Pool metrics API — runs locally on Edge (port 8080).
+// Pool metrics API — localhost-only, not exposed publicly.
 export const SITE_PRIMARY_POOL_API_URL = process.env.ZION_POOL_API_URL || `http://127.0.0.1:8080`;
 export const SITE_PRIMARY_DAO_API_URL = process.env.ZION_DAO_API_URL || `http://127.0.0.1:8456`;
 
-// Edge pool stratum (ShareRelay architecture)
+// Public pool stratum
 export const SITE_POOL_PRIMARY = `${process.env.NEXT_PUBLIC_ZION_POOL_HOST || 'stratum.zionterranova.com'}:8444`;
 
 // Network topology descriptor (operational details are injected via environment variables only)
