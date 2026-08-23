@@ -9,18 +9,21 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Wallet, Shield, Lock, ArrowRight, Sparkles } from 'lucide-react';
+import { Wallet, Shield, Lock, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useZionWallet } from '@/contexts/ZionWalletContext';
 import LoginModal from '@/components/LoginModal';
 
 export default function LoginPage() {
-  const { authenticated, loading } = useAuth();
+  const { authenticated, loading, loginWithSiwe } = useAuth();
   const zionWallet = useZionWallet();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/account';
   const [showModal, setShowModal] = useState(false);
+  const [siweLoading, setSiweLoading] = useState(false);
+  const [siweError, setSiweError] = useState<string | null>(null);
+  const [hasMetaMask, setHasMetaMask] = useState(false);
 
   // Already authenticated — redirect
   useEffect(() => {
@@ -35,6 +38,23 @@ export default function LoginPage() {
       setShowModal(true);
     }
   }, [zionWallet.initialized, zionWallet.wallets.length, showModal, authenticated]);
+
+  useEffect(() => {
+    setHasMetaMask(typeof window !== 'undefined' && !!(window as any).ethereum);
+  }, []);
+
+  const handleSiwe = async () => {
+    setSiweLoading(true);
+    setSiweError(null);
+    try {
+      await loginWithSiwe();
+      router.push(redirect);
+    } catch (err: any) {
+      setSiweError(err.message || 'MetaMask login failed');
+    } finally {
+      setSiweLoading(false);
+    }
+  };
 
   return (
     <div className="relative min-h-screen flex items-center justify-center px-4 pt-32 pb-20">
@@ -75,7 +95,24 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Login button */}
+        {/* Login buttons */}
+        <button
+          onClick={handleSiwe}
+          disabled={siweLoading || !hasMetaMask}
+          className="zion-button-secondary w-full flex items-center justify-center gap-2 py-3.5 mb-3 disabled:opacity-50"
+        >
+          {siweLoading ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <Wallet className="h-5 w-5" />
+          )}
+          {siweLoading ? 'Signing...' : 'Sign in with MetaMask'}
+          <ArrowRight className="h-4 w-4" />
+        </button>
+        {siweError && (
+          <p className="text-xs text-red-400 text-center mb-3">{siweError}</p>
+        )}
+
         <button
           onClick={() => setShowModal(true)}
           disabled={loading}
