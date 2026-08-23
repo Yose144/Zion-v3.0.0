@@ -105,6 +105,7 @@ fn output(encoded: &str, zion: u64) -> TransactionOutput {
     TransactionOutput {
         amount: Amount::new(zion as u128 * 1_000_000),
         address,
+        script: vec![],
     }
 }
 

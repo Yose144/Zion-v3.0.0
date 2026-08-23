@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use sha3::{Digest, Keccak256};
 
-use zion_l1_types::{Address, Amount, Hash};
+use zion_l1_types::{Address, Amount, ChainId, Hash};
 
 /// Reference to a previous unspent output.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -11,11 +11,27 @@ pub struct TransactionInput {
     pub script: Vec<u8>,
 }
 
-/// Output that assigns an amount to an address.
+/// Output that assigns an amount to an address or a script.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct TransactionOutput {
     pub amount: Amount,
     pub address: Address,
+    /// Output script. Empty means a plain pay-to-public-key-hash output
+    /// (the address owns the funds). Non-empty scripts are interpreted by
+    /// the UTXO validation engine (e.g. HTLC contracts).
+    #[serde(default, with = "serde_bytes")]
+    pub script: Vec<u8>,
+}
+
+impl Default for TransactionOutput {
+    fn default() -> Self {
+        Self {
+            amount: Amount::new(0),
+            address: Address::new(ChainId::ZionL1, vec![], "zion1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+                .expect("default dummy address is valid"),
+            script: vec![],
+        }
+    }
 }
 
 /// L1 account/UTXO transaction.
@@ -54,6 +70,7 @@ impl Transaction {
         for output in &self.outputs {
             bytes.extend_from_slice(&output.amount.0.to_le_bytes());
             bytes.extend_from_slice(output.address.encoded.as_bytes());
+            bytes.extend_from_slice(&output.script);
         }
         bytes.extend_from_slice(&self.memo);
         Hash::new(Keccak256::digest(bytes).into())
@@ -76,6 +93,7 @@ impl Transaction {
         for output in &self.outputs {
             bytes.extend_from_slice(&output.amount.0.to_le_bytes());
             bytes.extend_from_slice(output.address.encoded.as_bytes());
+            bytes.extend_from_slice(&output.script);
         }
         bytes.extend_from_slice(&self.memo);
         Hash::new(Keccak256::digest(bytes).into())

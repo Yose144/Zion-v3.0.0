@@ -23,6 +23,8 @@ pub struct SpendableUtxo {
     pub output_index: u32,
     pub amount: u64,
     pub address: String,
+    /// Output script. Empty = P2PKH; non-empty = contract (e.g. HTLC).
+    pub script: Vec<u8>,
     /// Height of the block that created this output.
     pub block_height: u64,
     /// True if the output was created by a coinbase transaction.
@@ -156,7 +158,7 @@ pub fn build_batch_payout(
                     adjusted_recipients[last].amount.saturating_sub(shortfall);
             }
             let new_total_payout: u64 = adjusted_recipients.iter().map(|r| r.amount).sum();
-            let new_target = new_total_payout.checked_add(fee).unwrap_or(u64::MAX);
+            let new_target = new_total_payout.saturating_add(fee);
             // If still not enough, try with zero fee (dust tx)
             if new_target > available {
                 // Last resort: absorb fee entirely into last recipient
@@ -168,12 +170,12 @@ pub fn build_batch_payout(
                 let final_total: u64 = adjusted_recipients.iter().map(|r| r.amount).sum();
                 let (sel, tot) = select_utxos(available_utxos, final_total)?;
                 return build_batch_payout_inner(
-                    signing_key, change_address, &adjusted_recipients, 0, &sel, tot, MIN_PAYOUT_AMOUNT, &[],
+                    signing_key, change_address, &adjusted_recipients, 0, &sel, tot, MIN_PAYOUT_AMOUNT, &[], None,
                 );
             }
             let (sel, tot) = select_utxos(available_utxos, new_target)?;
             return build_batch_payout_inner(
-                signing_key, change_address, &adjusted_recipients, fee, &sel, tot, MIN_PAYOUT_AMOUNT, &[],
+                signing_key, change_address, &adjusted_recipients, fee, &sel, tot, MIN_PAYOUT_AMOUNT, &[], None,
             );
         }
         Err(e) => return Err(e),
@@ -188,6 +190,7 @@ pub fn build_batch_payout(
         total,
         MIN_PAYOUT_AMOUNT,
         &[],
+        None,
     )
 }
 
@@ -211,6 +214,9 @@ pub fn build_send(
 /// reference id) to the transaction. Memo bytes are stored as-is in
 /// `Transaction::memo` and are not validated against any charset/length
 /// beyond what the network's max transaction size otherwise permits.
+///
+/// If `script` is non-empty it is attached to the single recipient output,
+/// producing an HTLC or other contract output.
 pub fn build_send_with_memo(
     signing_key: &SigningKey,
     change_address: &str,
@@ -248,6 +254,7 @@ pub fn build_send_with_memo(
         total,
         1,
         memo,
+        None,
     )
 }
 
@@ -256,6 +263,7 @@ fn total_payout_inner(recipients: &[BatchRecipient], fee: u64) -> u64 {
     total_payout.saturating_add(fee)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn build_batch_payout_inner(
     signing_key: &SigningKey,
     change_address: &str,
@@ -265,12 +273,13 @@ fn build_batch_payout_inner(
     total: u64,
     min_payout: u64,
     memo: &[u8],
+    output_script: Option<Vec<u8>>,
 ) -> Result<BuildResult, WalletError> {
     let target = total_payout_inner(recipients, fee);
     let change = total - target;
 
     let mut outputs: Vec<TransactionOutput> = Vec::with_capacity(recipients.len() + 1);
-    for r in recipients {
+    for (i, r) in recipients.iter().enumerate() {
         if r.amount < min_payout {
             // Skip dust outputs; they would fail validation anyway.
             return Err(WalletError::FeeTooLow {
@@ -278,15 +287,18 @@ fn build_batch_payout_inner(
                 minimum: min_payout,
             });
         }
+        let script = if i == 0 { output_script.clone().unwrap_or_default() } else { vec![] };
         outputs.push(TransactionOutput {
             amount: Amount::new(r.amount as u128),
             address: parse_address(&r.address)?,
+            script,
         });
     }
     if change > 0 {
         outputs.push(TransactionOutput {
             amount: Amount::new(change as u128),
             address: parse_address(change_address)?,
+            script: vec![],
         });
     }
 
@@ -320,6 +332,193 @@ fn build_batch_payout_inner(
     })
 }
 
+/// Build a native V31 HTLC lock output script.
+///
+/// Script layout:
+/// `[0x01] [32B hashlock] [8B timeout] [32B claimant pubkey] [32B refund pubkey]`
+pub fn htlc_output_script(
+    hashlock: &[u8; 32],
+    timeout: u64,
+    claimant_pk: &[u8; 32],
+    refund_pk: &[u8; 32],
+) -> Vec<u8> {
+    let mut script = Vec::with_capacity(1 + 32 + 8 + 32 + 32);
+    script.push(0x01);
+    script.extend_from_slice(hashlock);
+    script.extend_from_slice(&timeout.to_le_bytes());
+    script.extend_from_slice(claimant_pk);
+    script.extend_from_slice(refund_pk);
+    script
+}
+
+/// Build and sign an HTLC lock transaction.
+///
+/// `signing_key` must be the locker/refund key. `change_address` receives any
+/// change. The locked output is sent to the refund address (so the UTXO is
+/// discoverable by the locker) and carries the HTLC script.
+#[allow(clippy::too_many_arguments)]
+pub fn build_htlc_lock(
+    signing_key: &SigningKey,
+    change_address: &str,
+    lock_amount: u64,
+    fee: u64,
+    available_utxos: &[SpendableUtxo],
+    hashlock: &[u8; 32],
+    timeout: u64,
+    claimant_pk: &[u8; 32],
+    refund_pk: &[u8; 32],
+) -> Result<BuildResult, WalletError> {
+    let target = lock_amount
+        .checked_add(fee)
+        .ok_or(WalletError::InsufficientFunds {
+            available: 0,
+            needed: u64::MAX,
+        })?;
+
+    let (selected, total) = select_utxos(available_utxos, target)?;
+
+    let refund_address = crypto::derive_address(refund_pk);
+    let script = htlc_output_script(hashlock, timeout, claimant_pk, refund_pk);
+
+    build_batch_payout_inner(
+        signing_key,
+        change_address,
+        &[BatchRecipient {
+            address: refund_address,
+            amount: lock_amount,
+        }],
+        fee,
+        &selected,
+        total,
+        1,
+        &[],
+        Some(script),
+    )
+}
+
+/// Build and sign an HTLC claim transaction spending a single HTLC UTXO.
+#[allow(clippy::too_many_arguments)]
+pub fn build_htlc_claim(
+    claimant_signing_key: &SigningKey,
+    fee: u64,
+    lock_utxo: &SpendableUtxo,
+    hashlock: &[u8; 32],
+    timeout: u64,
+    claimant_pk: &[u8; 32],
+    refund_pk: &[u8; 32],
+    preimage: &[u8; 32],
+) -> Result<Transaction, WalletError> {
+    if lock_utxo.amount <= fee {
+        return Err(WalletError::FeeTooLow {
+            fee,
+            minimum: lock_utxo.amount,
+        });
+    }
+    let amount = lock_utxo.amount - fee;
+    let to = crypto::derive_address(claimant_pk);
+    build_htlc_spend(
+        claimant_signing_key,
+        fee,
+        lock_utxo,
+        hashlock,
+        timeout,
+        claimant_pk,
+        refund_pk,
+        Some(preimage),
+        &to,
+        amount,
+    )
+}
+
+/// Build and sign an HTLC refund transaction spending a single HTLC UTXO.
+pub fn build_htlc_refund(
+    refund_signing_key: &SigningKey,
+    fee: u64,
+    lock_utxo: &SpendableUtxo,
+    hashlock: &[u8; 32],
+    timeout: u64,
+    claimant_pk: &[u8; 32],
+    refund_pk: &[u8; 32],
+) -> Result<Transaction, WalletError> {
+    if lock_utxo.amount <= fee {
+        return Err(WalletError::FeeTooLow {
+            fee,
+            minimum: lock_utxo.amount,
+        });
+    }
+    let amount = lock_utxo.amount - fee;
+    let to = crypto::derive_address(refund_pk);
+    build_htlc_spend(
+        refund_signing_key,
+        fee,
+        lock_utxo,
+        hashlock,
+        timeout,
+        claimant_pk,
+        refund_pk,
+        None,
+        &to,
+        amount,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn build_htlc_spend(
+    signing_key: &SigningKey,
+    _fee: u64,
+    lock_utxo: &SpendableUtxo,
+    hashlock: &[u8; 32],
+    timeout: u64,
+    claimant_pk: &[u8; 32],
+    refund_pk: &[u8; 32],
+    preimage: Option<&[u8; 32]>,
+    to: &str,
+    amount: u64,
+) -> Result<Transaction, WalletError> {
+    // Reconstruct the expected HTLC script and verify it matches the UTXO.
+    let expected_script = htlc_output_script(hashlock, timeout, claimant_pk, refund_pk);
+    if lock_utxo.script != expected_script {
+        return Err(WalletError::SigningFailed);
+    }
+
+    let output = TransactionOutput {
+        amount: Amount::new(amount as u128),
+        address: parse_address(to)?,
+        script: vec![],
+    };
+
+    let mut tx = Transaction {
+        version: 1,
+        inputs: vec![TransactionInput {
+            previous_output: Hash::new(lock_utxo.tx_hash),
+            index: lock_utxo.output_index,
+            script: Vec::new(),
+        }],
+        outputs: vec![output],
+        memo: vec![],
+    };
+
+    let signing_hash = tx.signing_hash();
+    let signature = crypto::sign(signing_key, &signing_hash.0);
+    let public_key = signing_key.verifying_key().as_bytes().to_vec();
+
+    tx.inputs[0].script = match preimage {
+        Some(p) => {
+            let mut script = p.to_vec();
+            script.extend_from_slice(&signature);
+            script.extend_from_slice(&public_key);
+            script
+        }
+        None => {
+            let mut script = signature.to_vec();
+            script.extend_from_slice(&public_key);
+            script
+        }
+    };
+
+    Ok(tx)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -338,6 +537,7 @@ mod tests {
             outputs: vec![TransactionOutput {
                 amount: Amount::new(10_000_000_000),
                 address: Address::new(ChainId::ZionL1, vec![], &pool_addr).unwrap(),
+                ..Default::default()
             }],
             memo: vec![],
         };
@@ -351,6 +551,7 @@ mod tests {
             output_index: 0,
             amount: 10_000_000_000,
             address: pool_addr.clone(),
+            script: vec![],
             block_height: 1,
             is_coinbase: true,
         }];
@@ -381,6 +582,7 @@ mod tests {
             outputs: vec![TransactionOutput {
                 amount: Amount::new(10_000_000_000),
                 address: Address::new(ChainId::ZionL1, vec![], &sender_addr).unwrap(),
+                ..Default::default()
             }],
             memo: vec![],
         };
@@ -393,6 +595,7 @@ mod tests {
             output_index: 0,
             amount: 10_000_000_000,
             address: sender_addr.clone(),
+            script: vec![],
             block_height: 1,
             is_coinbase: true,
         }];

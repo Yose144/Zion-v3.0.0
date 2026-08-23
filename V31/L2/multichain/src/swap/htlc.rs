@@ -22,7 +22,7 @@ use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use zion_l1_types::Hash;
+use zion_l1_types::{ChainId, Hash};
 
 // ---------------------------------------------------------------------------
 // Hash / Preimage newtypes
@@ -147,12 +147,12 @@ pub struct HtlcRecord {
     pub counterparty_chain: String,
     /// Counterparty address.
     pub counterparty_addr: String,
-    /// Optional pre-committed claimant address. When set at LOCK time, only
-    /// this address may receive the released funds on CLAIM — prevents
-    /// front-running by observers who steal the preimage from the
-    /// counterparty chain.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub claimant_address: Option<String>,
+    /// Optional 32-byte Ed25519 public key for the locker (refund path).
+    #[serde(default, with = "serde_bytes", skip_serializing_if = "Option::is_none")]
+    pub refund_pubkey: Option<[u8; 32]>,
+    /// Optional 32-byte Ed25519 public key for the claimant (claim path).
+    #[serde(default, with = "serde_bytes", skip_serializing_if = "Option::is_none")]
+    pub claimant_pubkey: Option<[u8; 32]>,
     /// Current lifecycle state.
     pub state: SwapState,
     /// TX hash of the CLAIM or REFUND release transaction.
@@ -374,6 +374,18 @@ impl HtlcSwap {
 
         // Execute the lock on the source chain via adapter.
         let source_chain = transfer.source.address.chain;
+        if source_chain == ChainId::ZionL1 {
+            if transfer.source_pubkey.is_none() {
+                return Err(MultichainError::Validation(
+                    "ZION L1 HTLC lock requires source_pubkey".to_string(),
+                ));
+            }
+            if transfer.target_pubkey.is_none() {
+                return Err(MultichainError::Validation(
+                    "ZION L1 HTLC lock requires target_pubkey".to_string(),
+                ));
+            }
+        }
         let lock_tx = if let Some(adapter) = self.adapters.get(source_chain) {
             adapter.execute_outbound(transfer).await?
         } else {
@@ -392,7 +404,8 @@ impl HtlcSwap {
             expires_at: timelock as i64,
             counterparty_chain: format!("{:?}", transfer.target.address.chain),
             counterparty_addr: transfer.target.address.to_string(),
-            claimant_address: None,
+            refund_pubkey: transfer.source_pubkey,
+            claimant_pubkey: transfer.target_pubkey,
             state: SwapState::Pending,
             release_tx_id: None,
             release_recipient: None,
@@ -457,11 +470,12 @@ impl HtlcSwap {
             )));
         }
 
-        // 5. Guard: pre-committed claimant (C1 security patch).
-        if let Some(ref expected) = record.claimant_address {
-            if expected != recipient {
+        // 5. Guard: pre-committed claimant public key.
+        if let Some(ref expected_pk) = record.claimant_pubkey {
+            let expected_addr = zion_core::crypto::derive_address(expected_pk);
+            if expected_addr != recipient {
                 return Err(MultichainError::Validation(format!(
-                    "recipient {recipient} does not match committed claimant {expected}"
+                    "recipient {recipient} does not match committed claimant {expected_addr}"
                 )));
             }
         }
@@ -470,6 +484,8 @@ impl HtlcSwap {
         let preimage_hex = hex::encode(secret);
         transfer.preimage = Some(hash_sha256(secret));
         transfer.lock_tx_id = Some(record.lock_tx_id.clone());
+        transfer.source_pubkey = record.refund_pubkey;
+        transfer.target_pubkey = record.claimant_pubkey;
         let target_chain = transfer.target.address.chain;
         let release_tx = if let Some(adapter) = self.adapters.get(target_chain) {
             adapter.execute_outbound(transfer).await?
@@ -534,6 +550,8 @@ impl HtlcSwap {
 
         // Refund to locker on source chain.
         transfer.lock_tx_id = Some(record.lock_tx_id.clone());
+        transfer.source_pubkey = record.refund_pubkey;
+        transfer.target_pubkey = record.claimant_pubkey;
         let source_chain = transfer.source.address.chain;
         let release_tx = if let Some(adapter) = self.adapters.get(source_chain) {
             adapter.execute_outbound(transfer).await?
@@ -720,28 +738,37 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn htlc_claimant_address_enforced() {
+    async fn htlc_claimant_pubkey_enforced() {
+        use ed25519_dalek::SigningKey;
+        use rand::rngs::OsRng;
+        use zion_core::crypto::derive_address;
+
         let secret = b"preimage";
         let mut transfer = htlc_transfer(secret);
         let swap = HtlcSwap::new_offline();
 
         swap.initiate(&mut transfer).await.unwrap();
 
-        // Inject a pre-committed claimant.
+        // Inject a pre-committed claimant Ed25519 public key.
+        let mut csprng = OsRng;
+        let claimant_sk = SigningKey::generate(&mut csprng);
+        let claimant_pk = claimant_sk.verifying_key().to_bytes();
+        let claimant_addr = derive_address(&claimant_pk);
+
         let hash_hex = hash_sha256(secret).to_hex();
         swap.records
             .lock()
             .await
             .get_mut(&hash_hex)
             .unwrap()
-            .claimant_address = Some("zion1claimant".to_string());
+            .claimant_pubkey = Some(claimant_pk);
 
         // Wrong recipient → rejected.
-        let err = swap.claim(secret, "0xwrong", &mut transfer).await;
+        let err = swap.claim(secret, "zion1wrong", &mut transfer).await;
         assert!(matches!(err, Err(MultichainError::Validation(_))));
 
         // Correct recipient → accepted.
-        swap.claim(secret, "zion1claimant", &mut transfer)
+        swap.claim(secret, &claimant_addr, &mut transfer)
             .await
             .unwrap();
         assert_eq!(transfer.status, TransferStatus::Completed);

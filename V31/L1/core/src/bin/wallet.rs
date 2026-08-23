@@ -329,17 +329,48 @@ fn fetch_v31_utxos(address: &str) -> Vec<zion_core::v31_wallet::SpendableUtxo> {
         die("no spendable UTXOs for this address");
     }
 
-    utxo_list
+    // Fetch current chain height to filter immature coinbase UTXOs (need 100 confs).
+    let chain_info = rpc_call("getChainInfo", json!({}));
+    let current_height = chain_info["chain_height"].as_u64().unwrap_or(0);
+    const COINBASE_MATURITY: u64 = 100;
+
+    let all: Vec<zion_core::v31_wallet::SpendableUtxo> = utxo_list
         .iter()
         .map(|u| zion_core::v31_wallet::SpendableUtxo {
             tx_hash: hex_to_hash32(u["tx_hash"].as_str().unwrap_or("")),
             output_index: u["output_index"].as_u64().unwrap_or(0) as u32,
             amount: u["amount"].as_u64().unwrap_or(0),
             address: address.to_string(),
+            script: hex::decode(u["script_hex"].as_str().unwrap_or("")).unwrap_or_default(),
             block_height: u["block_height"].as_u64().unwrap_or(0),
             is_coinbase: u["is_coinbase"].as_bool().unwrap_or(false),
         })
-        .collect()
+        .collect();
+
+    let mature: Vec<zion_core::v31_wallet::SpendableUtxo> = all
+        .iter()
+        .filter(|u| {
+            if u.is_coinbase {
+                let age = current_height.saturating_sub(u.block_height);
+                age >= COINBASE_MATURITY
+            } else {
+                true
+            }
+        })
+        .cloned()
+        .collect();
+
+    if mature.is_empty() {
+        eprintln!("⚠️  All {} UTXOs are immature coinbase (need {} confirmations)", all.len(), COINBASE_MATURITY);
+        die("no mature spendable UTXOs for this address");
+    }
+
+    let filtered = all.len() - mature.len();
+    if filtered > 0 {
+        eprintln!("ℹ️  Filtered {filtered} immature coinbase UTXOs, {} mature UTXOs remaining", mature.len());
+    }
+
+    mature
 }
 
 fn cmd_send(to: &str, amount_str: &str, fee: u64, memo: Option<String>, yes: bool) {

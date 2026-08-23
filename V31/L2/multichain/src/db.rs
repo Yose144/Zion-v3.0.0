@@ -59,7 +59,8 @@ impl Db {
                 expires_at INTEGER NOT NULL,
                 counterparty_chain TEXT NOT NULL,
                 counterparty_addr TEXT NOT NULL,
-                claimant_address TEXT,
+                refund_pubkey TEXT,
+                claimant_pubkey TEXT,
                 state TEXT NOT NULL,
                 release_tx_id TEXT,
                 release_recipient TEXT,
@@ -112,10 +113,10 @@ impl Db {
             r#"
             INSERT OR REPLACE INTO htlc_records
             (hash_hex, locker_address, amount, lock_tx_id, lock_block_height,
-             expires_at, counterparty_chain, counterparty_addr, claimant_address,
-             state, release_tx_id, release_recipient, preimage_hex,
+             expires_at, counterparty_chain, counterparty_addr, refund_pubkey,
+             claimant_pubkey, state, release_tx_id, release_recipient, preimage_hex,
              created_at, updated_at, data_json)
-            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)
             "#,
             rusqlite::params![
                 record.hash_hex,
@@ -126,7 +127,8 @@ impl Db {
                 record.expires_at,
                 record.counterparty_chain,
                 record.counterparty_addr,
-                record.claimant_address,
+                record.refund_pubkey.map(hex::encode),
+                record.claimant_pubkey.map(hex::encode),
                 record.state.to_string(),
                 record.release_tx_id,
                 record.release_recipient,

@@ -199,6 +199,7 @@ pub async fn migrate_v3_state<P: AsRef<Path>>(
             TransactionOutput {
                 amount: Amount::new(amount),
                 address,
+                script: vec![],
             }
         })
         .collect();

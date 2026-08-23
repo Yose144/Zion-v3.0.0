@@ -331,6 +331,12 @@ async fn fetch_utxos(
                 output_index,
                 amount,
                 address: address.to_string(),
+                script: hex::decode(
+                    utxo.get("script_hex")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or(""),
+                )
+                .unwrap_or_default(),
                 block_height,
                 is_coinbase,
             });
