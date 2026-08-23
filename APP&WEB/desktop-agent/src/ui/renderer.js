@@ -1638,9 +1638,9 @@ function setupZisControls() {
   const setBusy = (el, busy) => {
     if (!el) return;
     el.disabled = busy;
-    el.dataset.wasText = busy ? (el.dataset.wasText || el.innerText) : undefined;
+    el.dataset.wasHtml = busy ? (el.dataset.wasHtml || el.innerHTML) : undefined;
     if (busy) el.innerHTML = `<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:6px;"></span>Loading…`;
-    else if (el.dataset.wasText) el.innerHTML = el.dataset.wasText;
+    else if (el.dataset.wasHtml) el.innerHTML = el.dataset.wasHtml;
   };
 
   const safeJson = (obj) => {
