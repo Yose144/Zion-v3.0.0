@@ -153,6 +153,21 @@ async fn main() -> ExitCode {
         }
     };
 
+    // Load persisted AMM pools into the in-memory DEX router.
+    match service.load_dex_pools().await {
+        Ok(()) => {
+            let count = service.list_dex_pools().await.len();
+            if count > 0 {
+                info!("[warpd] Loaded {} DEX pool(s) from DB", count);
+            } else {
+                info!("[warpd] No DEX pools in DB — router starts empty");
+            }
+        }
+        Err(e) => {
+            error!("[warpd] Failed to load DEX pools from DB: {}", e);
+        }
+    }
+
     let dex_config = ServerConfig {
         bind: config.listen_addr.clone(),
         port: config.listen_port.wrapping_add(1),
