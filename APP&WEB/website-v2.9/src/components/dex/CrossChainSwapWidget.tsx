@@ -13,11 +13,14 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { ArrowDownUp, Loader2, Zap, AlertCircle, CheckCircle2, Settings } from 'lucide-react';
 import ChainSelector from './ChainSelector';
 import TokenSelector, { TOKENS_BY_CHAIN } from './TokenSelector';
 import SwapPathVisual from './SwapPathVisual';
 import { useWallet } from '@/contexts/WalletContext';
+import { useAuth } from '@/contexts/AuthContext';
+import LoginModal from '@/components/LoginModal';
 import { CONTRACTS } from '@/lib/defi-contracts';
 
 const API_BASE = '/api/swap';
@@ -158,8 +161,14 @@ function toAtomicAmount(amount: string, decimals: number): string {
  * This avoids precision loss for u128 values > Number.MAX_SAFE_INTEGER (2^53-1),
  * which the V31 backend's serde deserializer requires (amount: u128).
  */
-function buildSwapBody(from: object, to: object, amount: string, extra?: object): string {
-  const base = { from, to, ...extra };
+function buildSwapBody(
+  from: object,
+  to: object,
+  amount: string,
+  extra?: object,
+  fromAddress?: string | null,
+): string {
+  const base = { from, to, ...(fromAddress ? { from_address: fromAddress } : {}), ...extra };
   const jsonStr = JSON.stringify(base);
   // Insert "amount":<raw-number> before the closing brace
   return jsonStr.replace(/}$/, `,"amount":${amount}}`);
@@ -189,8 +198,26 @@ function buildSteps(route: Route['route']) {
   }).filter(Boolean);
 }
 
+function linkedAddressForChain(
+  linkedAddresses: { chainType: string; chainId?: string | null; address: string }[] | undefined,
+  chain: string,
+): string | undefined {
+  if (!linkedAddresses) return undefined;
+  if (chain === 'zion' || chain === 'zion-l1') {
+    return linkedAddresses.find((la) => la.chainType === 'zion-l1')?.address;
+  }
+  const evm = linkedAddresses.find(
+    (la) => la.chainType === 'evm' && (la.chainId === chain || !la.chainId),
+  );
+  if (evm) return evm.address;
+  // Fallback: first address of any matching family.
+  return linkedAddresses.find((la) => la.chainType === chain)?.address;
+}
+
 export default function CrossChainSwapWidget() {
+  const pathname = usePathname();
   const { connected, connect } = useWallet();
+  const { authenticated, user } = useAuth();
   const [srcChain, setSrcChain] = useState('base');
   const [destChain, setDestChain] = useState('base');
   const [srcToken, setSrcToken] = useState('wZION');
@@ -198,12 +225,14 @@ export default function CrossChainSwapWidget() {
   const [amount, setAmount] = useState('100');
   const [slippageBps, setSlippageBps] = useState(200); // 2%
   const [showSettings, setShowSettings] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
 
   const [route, setRoute] = useState<Route | null>(null);
   const [phase, setPhase] = useState<SwapPhase>('idle');
   const [error, setError] = useState<string | null>(null);
   const [swapResult, setSwapResult] = useState<SwapResult | null>(null);
   const [recipient, setRecipient] = useState('');
+  const [fromAddress, setFromAddress] = useState<string | undefined>(undefined);
 
   // Reset token when chain changes
   useEffect(() => {
@@ -213,6 +242,11 @@ export default function CrossChainSwapWidget() {
   useEffect(() => {
     setDestToken('');
   }, [destChain]);
+
+  // Pre-fill the source address from the authenticated user's linked addresses.
+  useEffect(() => {
+    setFromAddress(linkedAddressForChain(user?.linkedAddresses, srcChain));
+  }, [srcChain, user]);
 
   const fromAsset = buildAsset(srcChain, srcToken);
   const toAsset = buildAsset(destChain, destToken);
@@ -231,11 +265,12 @@ export default function CrossChainSwapWidget() {
     setError(null);
 
     try {
-      const body = buildSwapBody(fromAsset, toAsset, amountAtomic, { n: 3, max_hops: 3 });
+      const body = buildSwapBody(fromAsset, toAsset, amountAtomic, { n: 3, max_hops: 3 }, fromAddress);
 
       const resp = await fetch(`${API_BASE}/quote/multi`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body,
       });
 
@@ -252,7 +287,7 @@ export default function CrossChainSwapWidget() {
       setPhase('error');
       setRoute(null);
     }
-  }, [srcToken, destToken, amount, fromAsset, toAsset, amountAtomic]);
+  }, [srcToken, destToken, amount, fromAsset, toAsset, amountAtomic, fromAddress]);
 
   // Debounced quote fetch
   useEffect(() => {
@@ -264,15 +299,21 @@ export default function CrossChainSwapWidget() {
   const executeSwap = useCallback(async () => {
     if (!route || !srcToken || !destToken) return;
 
+    if (!authenticated) {
+      setShowLogin(true);
+      return;
+    }
+
     setPhase('executing');
     setError(null);
 
     try {
-      const body = buildSwapBody(fromAsset, toAsset, amountAtomic);
+      const body = buildSwapBody(fromAsset, toAsset, amountAtomic, undefined, fromAddress);
 
       const resp = await fetch(`${API_BASE}/execute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body,
       });
 
@@ -288,7 +329,7 @@ export default function CrossChainSwapWidget() {
       setError(e.message || 'Swap execution failed');
       setPhase('error');
     }
-  }, [route, srcToken, destToken, fromAsset, toAsset, amountAtomic]);
+  }, [route, srcToken, destToken, fromAsset, toAsset, amountAtomic, authenticated, fromAddress]);
 
   // Swap chains (reverse direction)
   const swapChains = () => {
@@ -372,6 +413,11 @@ export default function CrossChainSwapWidget() {
               className="w-full px-4 py-4 bg-zinc-900/80 border border-zinc-700/50 rounded-xl text-2xl font-bold text-white placeholder-zinc-600 focus:border-zion-gold/50 focus:outline-none transition-colors"
             />
           </div>
+          {authenticated && fromAddress && (
+            <div className="text-xs text-zinc-500">
+              From address: <span className="font-mono text-zion-gold/80">{fromAddress}</span>
+            </div>
+          )}
         </div>
 
         {/* Swap direction button */}
@@ -481,6 +527,12 @@ export default function CrossChainSwapWidget() {
           </span>
         </div>
       </div>
+
+      <LoginModal
+        open={showLogin}
+        onClose={() => setShowLogin(false)}
+        redirectTo={pathname}
+      />
     </div>
   );
 }

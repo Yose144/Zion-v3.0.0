@@ -23,6 +23,7 @@ import {
   getApiKeys as sharedGetApiKeys,
   createApiKey as sharedCreateApiKey,
   revokeApiKey as sharedRevokeApiKey,
+  linkAddress as sharedLinkAddress,
   useZisAuth as sharedUseZisAuth,
   getZisUrl,
   ZIS_SESSION_COOKIE,
@@ -288,6 +289,30 @@ export async function revokeApiKey(id: string): Promise<{ ok: boolean }> {
     return { ok: res.ok };
   }
   return sharedRevokeApiKey(id);
+}
+
+/**
+ * Link an additional address to the authenticated user's account.
+ */
+export async function linkAddress(body: {
+  address: string;
+  chainType: ZisChainType;
+  chainId?: string;
+  publicKey?: string;
+  signature: string;
+  message?: string;
+}): Promise<{ linked: ZisLinkedAddress; user: ZisUser }> {
+  if (isBrowser()) {
+    const res = await fetch(`${CLIENT_PROXY_BASE}/link`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`Link address failed: ${res.status}`);
+    return res.json();
+  }
+  return sharedLinkAddress(body);
 }
 
 // ── Server-side helper: extract cookie from NextRequest ──────────────

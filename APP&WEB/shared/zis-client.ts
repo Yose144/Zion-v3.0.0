@@ -313,6 +313,29 @@ export async function updateProfile(
 }
 
 /**
+ * Link an additional address to the authenticated user's account.
+ * POST /api/auth/link  (requires zion_session cookie)
+ */
+export async function linkAddress(
+  body: {
+    address: string;
+    chainType: ZisChainType;
+    chainId?: string;
+    publicKey?: string;
+    signature: string;
+    message?: string;
+  },
+  options?: { cookieHeader?: string; baseUrl?: string },
+): Promise<{ linked: ZisLinkedAddress; user: ZisUser }> {
+  return zisFetch<{ linked: ZisLinkedAddress; user: ZisUser }>('/api/auth/link', {
+    method: 'POST',
+    body,
+    headers: options?.cookieHeader ? { Cookie: options.cookieHeader } : undefined,
+    baseUrl: options?.baseUrl,
+  });
+}
+
+/**
  * Log out the current session (revokes the session on ZIS).
  * POST /api/auth/logout  (requires zion_session cookie)
  *
@@ -419,6 +442,21 @@ export async function revokeApiKey(
   return zisFetch<{ ok: boolean }>(`/api/keys/${encodeURIComponent(id)}`, {
     method: 'DELETE',
     headers: options?.cookieHeader ? { Cookie: options.cookieHeader } : undefined,
+    baseUrl: options?.baseUrl,
+  });
+}
+
+/**
+ * Verify a ZIS API key and return its owner (service-to-service auth).
+ * POST /api/keys/verify
+ */
+export async function verifyApiKey(
+  apiKey: string,
+  options?: { baseUrl?: string },
+): Promise<{ valid: boolean; user: ZisUser }> {
+  return zisFetch<{ valid: boolean; user: ZisUser }>('/api/keys/verify', {
+    method: 'POST',
+    body: { apiKey },
     baseUrl: options?.baseUrl,
   });
 }
