@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { SITE_RELEASE_LABEL } from '@/lib/site';
 import { useLang } from '@/contexts/LanguageContext';
+import { tr } from '@/lib/translations';
 
 const t = {
   cs: {
@@ -396,7 +397,7 @@ export default function RoadmapPage() {
       items: [
         'wZION ERC-20 deployed on Base Mainnet ✅',
         'Uniswap V3 pool wZION/WETH live ✅',
-        'DeFi UI on app.zionterranova.com/defi ✅',
+        'Multichain Hub UI on app.zionterranova.com/multichain ✅',
         cs ? 'Prohloubit likviditu + price discovery' : 'Deepen liquidity + price discovery',
         'CoinGecko / DexScreener listing',
       ],
@@ -829,8 +830,8 @@ export default function RoadmapPage() {
             ))}
           </div>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <Link href="/defi" className="zion-button-primary">
-              <Activity className="h-4 w-4" /> DeFi Hub
+            <Link href="/multichain" className="zion-button-primary">
+              <Activity className="h-4 w-4" /> {tr('nav', 'multichain', lang)}
             </Link>
             <Link href="/docs" className="zion-button-secondary">
               <BookOpen className="h-4 w-4" /> {copy.documentation}

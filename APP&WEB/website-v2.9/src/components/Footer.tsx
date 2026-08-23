@@ -34,7 +34,7 @@ export default function Footer() {
       hover: 'hover:text-zion-gold',
       bar: 'from-zion-gold',
       links: [
-        { href: '/defi', label: `L2 ${tr('nav', 'defi', lang)}` },
+        { href: '/multichain', label: `L2 ${tr('nav', 'multichain', lang)}` },
         { href: '/cex', label: tr('nav', 'cex_listings', lang) },
         { href: '/wallet', label: tr('nav', 'wallet', lang) },
         { href: '/dao', label: tr('nav', 'dao', lang) },

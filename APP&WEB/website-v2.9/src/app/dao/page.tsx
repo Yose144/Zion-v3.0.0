@@ -262,7 +262,7 @@ const getPhases = (cs: boolean) => [
 const getQuickLinks = (cs: boolean) => [
   { label: DaoCopy.governanceDocs[cs ? 'cs' : 'en'], href: '/docs', description: DaoCopy.proposalFlowVotingPowerEmergen[cs ? 'cs' : 'en'] },
   { label: DaoCopy.treasuryDashboard[cs ? 'cs' : 'en'], href: '/dashboard', description: DaoCopy.realTimeBalancesAllocationOver[cs ? 'cs' : 'en'] },
-  { label: DaoCopy.defiHub[cs ? 'cs' : 'en'], href: '/defi', description: DaoCopy.swapBridgeAndPortfolioOnBaseMa[cs ? 'cs' : 'en'] },
+  { label: DaoCopy.defiHub[cs ? 'cs' : 'en'], href: '/multichain', description: DaoCopy.swapBridgeAndPortfolioOnBaseMa[cs ? 'cs' : 'en'] },
 ];
 
 const getFaqs = (cs: boolean) => [
@@ -1109,10 +1109,10 @@ export default function DaoPage() {
           </p>
           <div className="flex justify-center gap-4 flex-wrap">
             <Link
-              href="/defi"
+              href="/multichain"
               className="zion-button-primary"
             >
-              DeFi
+              {DaoCopy.defiHub[cs ? 'cs' : 'en']}
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link

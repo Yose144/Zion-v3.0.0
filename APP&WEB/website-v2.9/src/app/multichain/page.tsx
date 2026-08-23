@@ -38,12 +38,12 @@ import { getDAOStats, type DAOStats as DAOStatsType } from '@/lib/dao-api';
 
 /* ── Copy ── */
 const MC = {
-  hero: { cs: `Multichain · L2 Value Layer`, en: `Multichain · L2 Value Layer` },
+  hero: { cs: `Multichain Hub · L2 Value Layer`, en: `Multichain Hub · L2 Value Layer` },
   heroSub: { cs: `Jeden unified servis. Pět protokolů. Tridaštní cross-chain infrastruktura.`, en: `One unified service. Five protocols. Cross-chain infrastructure done right.` },
-  heroDesc: { cs: `Unified multichain servis spojuje Bridge, WARP, HTLC Swap, ZionDex a DAO do jednoho servisu. 13 chain rodin, 5/7 validator consensus, trustless atomic swaps, AMM routing s intent-based settlement.`, en: `The unified multichain service unifies Bridge, WARP, HTLC Swap, ZionDex, and DAO into a single service. 13 chain families, 5/7 validator consensus, trustless atomic swaps, AMM routing with intent-based settlement.` },
+  heroDesc: { cs: `Unified multichain servis spojuje Bridge, WARP, HTLC Swap, ZionDex a DAO do jednoho servisu. 13 chain rodin, Guardian consensus, trustless atomic swaps, AMM routing s intent-based settlement.`, en: `The unified multichain service unifies Bridge, WARP, HTLC Swap, ZionDex, and DAO into a single service. 13 chain families, Guardian consensus, trustless atomic swaps, AMM routing with intent-based settlement.` },
   /* sections */
   bridge: { cs: `Bridge · L1 ↔ L2`, en: `Bridge · L1 ↔ L2` },
-  bridgeDesc: { cs: `Lock-mint / burn-release. 1:1 peg, 5/7 Guardian validátory, 60-block L1 finalita. Žádné protokolové poplatky.`, en: `Lock-mint / burn-release. 1:1 peg, 5/7 Guardian validators, 60-block L1 finality. No protocol fees.` },
+  bridgeDesc: { cs: `Lock-mint / burn-release. 1:1 peg, Guardian validátory, 60-block L1 finalita. Žádné protokolové poplatky.`, en: `Lock-mint / burn-release. 1:1 peg, Guardian validators, 60-block L1 finality. No protocol fees.` },
   warp: { cs: `WARP · Cross-Chain`, en: `WARP · Cross-Chain` },
   warpDesc: { cs: `Universal cross-chain bridge pro 13 chain rodin. EVM, Bitcoin, Solana, Cosmos, Cardano, Lightning, Aptos, NEAR, Sui, TON, Tron, Stellar, ZionL1.`, en: `Universal cross-chain bridge for 13 chain families. EVM, Bitcoin, Solana, Cosmos, Cardano, Lightning, Aptos, NEAR, Sui, TON, Tron, Stellar, ZionL1.` },
   swap: { cs: `Atomic Swap · HTLC`, en: `Atomic Swap · HTLC` },
@@ -53,10 +53,10 @@ const MC = {
   dao: { cs: `DAO · Governance`, en: `DAO · Governance` },
   daoDesc: { cs: `Multi-layer governance. Proposal lifecycle: Create → Vote → Tally → Quorum → Timelock → Execute. L1 memo scanner. 5-of-7 multi-sig treasury.`, en: `Multi-layer governance. Proposal lifecycle: Create → Vote → Tally → Quorum → Timelock → Execute. L1 memo scanner. 5-of-7 multi-sig treasury.` },
   api: { cs: `API · Endpoints`, en: `API · Endpoints` },
-  apiDesc: { cs: `30+ HTTP endpoints na portu 8453. Bridge, WARP, HTLC, DEX, DAO, Wallet, Pool — vše v jednom servisu.`, en: `30+ HTTP endpoints on port 8453. Bridge, WARP, HTLC, DEX, DAO, Wallet, Pool — all in one service.` },
+  apiDesc: { cs: `30+ HTTP endpoints. Bridge, WARP, HTLC, DEX, DAO, Wallet, Pool — vše v jednom servisu.`, en: `30+ HTTP endpoints. Bridge, WARP, HTLC, DEX, DAO, Wallet, Pool — all in one service.` },
   /* stats */
   chains: { cs: `Chain rodiny`, en: `Chain families` },
-  validators: { cs: `Validátory`, en: `Validators` },
+  validators: { cs: `Guardian`, en: `Guardian` },
   endpoints: { cs: `API endpoints`, en: `API endpoints` },
   tests: { cs: `Testy`, en: `Tests` },
   /* CTA */
@@ -184,7 +184,7 @@ export default function MultichainPage() {
             <div className="flex flex-col gap-6">
               <div className="zion-kicker border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan">
                 <Layers className="h-4 w-4" />
-                ZION Multichain
+                ZION Multichain Hub
               </div>
               <div>
                 <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
@@ -200,7 +200,7 @@ export default function MultichainPage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
                   { label: t('chains'), value: '13', icon: Globe2, color: 'text-zion-cyan' },
-                  { label: t('validators'), value: '5/7', icon: ShieldCheck, color: 'text-zion-gold' },
+                  { label: t('validators'), value: 'Multi-sig', icon: ShieldCheck, color: 'text-zion-gold' },
                   { label: t('endpoints'), value: '30+', icon: Code2, color: 'text-zion-cyan' },
                   { label: t('tests'), value: '562', icon: Activity, color: 'text-zion-cyan' },
                 ].map((s) => (
@@ -264,7 +264,7 @@ export default function MultichainPage() {
             </div>
           )}
 
-          {/* Bridge widget — link to /defi for full widget */}
+          {/* Bridge widget — link to /multichain for full widget */}
           <div className="zion-rainbow-card p-5 sm:p-6" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
             <div className="flex items-center justify-between">
               <div>
@@ -273,7 +273,7 @@ export default function MultichainPage() {
                   {cs ? 'Lock ZION na L1 → přijmi wZION na Base. Nebo spal wZION → přijmi ZION. 1:1 peg, žádné poplatky.' : 'Lock ZION on L1 → receive wZION on Base. Or burn wZION → receive ZION. 1:1 peg, no fees.'}
                 </p>
               </div>
-              <Link href="/defi#bridge" className="zion-button-primary text-sm shrink-0">
+              <Link href="/multichain#bridge" className="zion-button-primary text-sm shrink-0">
                 <ArrowLeftRight className="h-4 w-4" />
                 {cs ? 'Otevřít' : 'Open'}
               </Link>
@@ -337,9 +337,9 @@ export default function MultichainPage() {
               <p className="text-sm text-gray-400 mb-4">
                 {cs ? '30+ DEX, 20+ bridge protokolů. wZION na 6 chainech.' : '30+ DEX, 20+ bridge protocols. wZION on 6 chains.'}
               </p>
-              <Link href="/defi#swap" className="zion-button-primary text-sm">
+              <Link href="/multichain#swap" className="zion-button-primary text-sm">
                 <ArrowRight className="h-4 w-4" />
-                {cs ? 'Otevřít LiFi widget' : 'Open LiFi widget'}
+                {cs ? 'Otevřít swap' : 'Open swap'}
               </Link>
             </div>
             <div className="zion-rainbow-card p-5" style={{ '--rc': '6, 105, 40' } as CSSProperties}>
@@ -347,7 +347,7 @@ export default function MultichainPage() {
                 {cs ? 'WARP Transfer Status' : 'WARP Transfer Status'}
               </h3>
               <p className="text-sm text-gray-400 mb-4">
-                {cs ? 'Query transfer status by ID. WARP daemon API na portu 8453.' : 'Query transfer status by ID. WARP daemon API on port 8453.'}
+                {cs ? 'Query transfer status by ID.' : 'Query transfer status by ID.'}
               </p>
               <div className="space-y-2 text-sm">
                 <div className="flex items-center justify-between rounded-lg border border-white/10 bg-black/30 px-3 py-2">
@@ -359,12 +359,8 @@ export default function MultichainPage() {
                   <span className="font-mono text-zion-cyan">EVM (6)</span>
                 </div>
                 <div className="flex items-center justify-between rounded-lg border border-white/10 bg-black/30 px-3 py-2">
-                  <span className="text-gray-400">{cs ? 'Quorum' : 'Quorum'}</span>
-                  <span className="font-mono text-zion-gold">2/5</span>
-                </div>
-                <div className="flex items-center justify-between rounded-lg border border-white/10 bg-black/30 px-3 py-2">
-                  <span className="text-gray-400">{cs ? 'API port' : 'API port'}</span>
-                  <span className="font-mono text-zion-cyan">8453</span>
+                  <span className="text-gray-400">{cs ? 'Stav' : 'Status'}</span>
+                  <span className="font-mono text-zion-cyan">{cs ? 'Aktivní' : 'Active'}</span>
                 </div>
               </div>
             </div>
@@ -467,14 +463,14 @@ export default function MultichainPage() {
             </div>
           </div>
 
-          {/* DEX widgets — link to /defi for full widgets */}
+          {/* DEX widgets — link to /multichain for full widgets */}
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="zion-rainbow-card p-5" style={{ '--rc': '228, 30, 43' } as CSSProperties}>
               <h3 className="text-lg font-semibold text-white mb-2">{cs ? 'Cross-chain swap' : 'Cross-chain swap'}</h3>
               <p className="text-sm text-gray-400 mb-4">
                 {cs ? 'ZionDex Router API. Multi-hop routing. Top-N quote paths.' : 'ZionDex Router API. Multi-hop routing. Top-N quote paths.'}
               </p>
-              <Link href="/defi#swap" className="zion-button-primary text-sm">
+              <Link href="/multichain#swap" className="zion-button-primary text-sm">
                 <ArrowRight className="h-4 w-4" />
                 {cs ? 'Otevřít swap' : 'Open swap'}
               </Link>
@@ -484,7 +480,7 @@ export default function MultichainPage() {
               <p className="text-sm text-gray-400 mb-4">
                 {cs ? 'Uniswap V3 pool. 0.3% fee. 1% slippage tolerance.' : 'Uniswap V3 pool. 0.3% fee. 1% slippage tolerance.'}
               </p>
-              <Link href="/defi#swap" className="zion-button-primary text-sm">
+              <Link href="/multichain#swap" className="zion-button-primary text-sm">
                 <ArrowRight className="h-4 w-4" />
                 {cs ? 'Otevřít swap' : 'Open swap'}
               </Link>
@@ -500,7 +496,7 @@ export default function MultichainPage() {
                   {cs ? 'Plný dashboard: Swap, Liquidity, Portfolio, Bridge, Atomic.' : 'Full dashboard: Swap, Liquidity, Portfolio, Bridge, Atomic.'}
                 </p>
               </div>
-              <Link href="/defi" className="zion-button-primary text-sm shrink-0">
+              <Link href="/multichain" className="zion-button-primary text-sm shrink-0">
                 <ArrowRight className="h-4 w-4" />
                 {cs ? 'Otevřít' : 'Open'}
               </Link>
@@ -555,7 +551,10 @@ export default function MultichainPage() {
               <h2 className="text-2xl sm:text-3xl font-bold text-white">{t('api')}</h2>
               <p className="text-sm text-gray-400 mt-0.5">{t('apiDesc')}</p>
             </div>
-            <span className="ml-auto font-mono text-sm text-zion-cyan">127.0.0.1:8453</span>
+            <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-zion-cyan/10 px-3 py-1 text-xs font-semibold text-zion-cyan border border-zion-cyan/20">
+              <Activity className="h-3 w-3" />
+              {cs ? 'Aktivní' : 'Live'}
+            </span>
           </div>
 
           {/* API table */}

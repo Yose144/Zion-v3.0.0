@@ -29,6 +29,7 @@ const t = {
     philosophy: { cs: 'Filozofie',   en: 'Philosophy' },
     ai_native:  { cs: 'AI Native',   en: 'AI Native' },
     monitoring: { cs: 'Monitoring',  en: 'Monitoring' },
+    multichain: { cs: 'Multichain Hub',    en: 'Multichain Hub' },
     defi:       { cs: 'Multichain Hub',    en: 'Multichain Hub' },
     meme_lab:   { cs: 'Meme Lab',    en: 'Meme Lab' },
     kompas:     { cs: 'Zlatý Kompas', en: 'Golden Compass' },

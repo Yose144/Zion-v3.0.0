@@ -102,7 +102,7 @@ export default function LiquidityPage() {
             <div>
               <p className="text-sm font-medium text-amber-200">ZionDex Liquidity — Under Construction</p>
               <p className="text-xs text-amber-200/70 mt-1">
-                Native ZionDex AMM pools are not deployed yet (addresses shown as 0x0). Adding liquidity here is currently simulated and will not create a real on-chain position. Use Uniswap V3 pools via /defi for real liquidity.
+                Native ZionDex AMM pools are not deployed yet (addresses shown as 0x0). Adding liquidity here is currently simulated and will not create a real on-chain position. Use Uniswap V3 pools via /multichain for real liquidity.
               </p>
             </div>
           </div>

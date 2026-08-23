@@ -130,6 +130,8 @@ const nextConfig: NextConfig = {
       { source: '/swap', destination: '/multichain#swap', permanent: true },
       { source: '/dex', destination: '/multichain#dex', permanent: true },
       { source: '/ziondex', destination: '/multichain#dex', permanent: true },
+      // The legacy /defi hub is now the canonical Multichain Hub
+      { source: '/defi/:path*', destination: '/multichain', permanent: true },
     ];
   },
   // P1-33: Security headers — CSP, X-Frame-Options, HSTS, etc.

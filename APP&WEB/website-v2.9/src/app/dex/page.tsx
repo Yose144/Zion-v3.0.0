@@ -147,11 +147,11 @@ export default function DexPage() {
                   <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
                 </Link>
                 <Link
-                  href="/defi"
+                  href="/multichain"
                   className="zion-rainbow-sub flex items-center justify-between p-2"
                   style={{ '--rc': '6, 105, 40' } as CSSProperties}
                 >
-                  <span className="text-sm text-zinc-300">DeFi Hub</span>
+                  <span className="text-sm text-zinc-300">Multichain Hub</span>
                   <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
                 </Link>
                 <Link
@@ -171,11 +171,11 @@ export default function DexPage() {
                   <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
                 </Link>
                 <Link
-                  href="/defi"
+                  href="/multichain"
                   className="zion-rainbow-sub flex items-center justify-between p-2"
                   style={{ '--rc': '6, 105, 40' } as CSSProperties}
                 >
-                  <span className="text-sm text-zinc-300">Staking & Farming (in DeFi Hub)</span>
+                  <span className="text-sm text-zinc-300">Staking & Farming (in Multichain Hub)</span>
                   <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
                 </Link>
               </div>
