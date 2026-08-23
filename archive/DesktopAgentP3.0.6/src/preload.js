@@ -193,6 +193,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
   cliAtomicSwapClaim: (data) => ipcRenderer.invoke('cli-atomic-swap-claim', data),
   cliAtomicSwapRefund: (data) => ipcRenderer.invoke('cli-atomic-swap-refund', data),
 
+  // ── ZIS (ZION Identity Service) ────────────────────────────────────
+  zisGetSession: () => ipcRenderer.invoke('zis-get-session'),
+  zisLoginMnemonic: (data) => ipcRenderer.invoke('zis-login-mnemonic', data),
+  zisLoginPrivateKey: (data) => ipcRenderer.invoke('zis-login-private-key', data),
+  zisLoginSiwe: (data) => ipcRenderer.invoke('zis-login-siwe', data),
+  zisLogout: () => ipcRenderer.invoke('zis-logout'),
+  zisMe: () => ipcRenderer.invoke('zis-me'),
+  zisListKeys: () => ipcRenderer.invoke('zis-list-keys'),
+  zisCreateKey: (data) => ipcRenderer.invoke('zis-create-key', data),
+  zisRevokeKey: (data) => ipcRenderer.invoke('zis-revoke-key', data),
+  zisSetApiKey: (data) => ipcRenderer.invoke('zis-set-api-key', data),
+
   // Open URL in system browser
   openExternal: (url) => ipcRenderer.invoke('open-external', url),
 
