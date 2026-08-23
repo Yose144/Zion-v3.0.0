@@ -60,10 +60,19 @@ HTLC specifické testy ve `zion-core`:
 - `htlc_refund_fails_before_timeout`
 - `htlc_output_script_is_preserved_in_utxo`
 
+## UI integrace
+
+- `APP&WEB/website-v2.9/src/app/api/swap/[...path]/route.ts` proxy nyní přesměrovává `/api/swap/htlc/*` na `/v1/multichain/swaps/htlc/*`.
+- `APP&WEB/website-v2.9/src/lib/swap-api.ts` aktualizováno:
+  - `getHtlcStatus`, `getPendingHtlcs`, `getEscrowAddress`, `submitClaim`, `submitRefund` volají `/api/swap/htlc/...`.
+  - Přidána `submitLock()` s parametry `from`, `to`, `amount`, `hashHex`, `timelock`, `sourcePubkeyHex`, `targetPubkeyHex`.
+- `V31/L2/multichain/src/server.rs` rozšířen o `GET /v1/multichain/swaps/htlc/pending` a `GET /v1/multichain/swaps/htlc/escrow`.
+- `npm run build` v `website-v2.9` prochází.
+
 ## Co ještě zbývá / další kroky
 
-1. **L2 / E2E testy:** Spustit plný multichain e2e flow (lock → claim → refund) mezi ZION L1 a dalšími chainy (BTC, ETH, Base).
-2. **UI integrace:** Aktualizovat Next.js bridge UI, aby odesílalo `source_pubkey_hex` a `target_pubkey_hex` při HTLC lock volání na multichain API.
+1. **L2 / E2E testy:** Spustit plný multichain e2e flow (lock → claim → refund) mezi ZION L1 a dalšími chainy (BTC, ETH, Base). Vyžaduje spuštěný `zion-node` a `warpd` s konfigurací a funded relayer UTXO.
+2. **UI formulář lock:** Aktualizovat `src/app/swap/page.tsx` tak, aby generoval hashlock/preimage a nabízel pole pro `source_pubkey_hex` / `target_pubkey_hex` před voláním `submitLock()`.
 3. **Dokumentace API:** Popsat nové HTLC endpoint request/response schémata v multichain serveru.
 4. **Mainnet Alpha deploy:** Připravit binárky `zion-node`, `zion-multichain` a restartovat Edge služby.
 
