@@ -20,6 +20,10 @@ rsync -az --delete -e "ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29" \
   postcss.config.mjs tailwind.config.ts \
   zion-new:/opt/zion/APP\&WEB/website-v2.9/
 
+# Oprávnění (pokud rsync zachoval lokální ownera)
+ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 zion-new \
+  "chown -R zion:zion '/opt/zion/APP&WEB/website-v2.9'"
+
 # Restart služby
 ssh -i ~/.ssh/zion-edge-post-wipe-2026-07-29 zion-new "systemctl restart zion-website"
 
