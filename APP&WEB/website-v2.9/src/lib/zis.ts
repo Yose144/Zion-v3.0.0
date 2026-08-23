@@ -17,6 +17,12 @@ import {
   getCurrentUser as sharedGetCurrentUser,
   updateProfile as sharedUpdateProfile,
   logout as sharedLogout,
+  getSessions as sharedGetSessions,
+  revokeSession as sharedRevokeSession,
+  revokeAllSessions as sharedRevokeAllSessions,
+  getApiKeys as sharedGetApiKeys,
+  createApiKey as sharedCreateApiKey,
+  revokeApiKey as sharedRevokeApiKey,
   useZisAuth as sharedUseZisAuth,
   getZisUrl,
   ZIS_SESSION_COOKIE,
@@ -26,6 +32,8 @@ import {
   type ZisChainType,
   type ZisLinkedAddress,
   type ZisOasisPlayer,
+  type ZisActiveSession,
+  type ZisApiKey,
   type UseZisAuthResult,
 } from '../../../shared/zis-client';
 
@@ -37,6 +45,8 @@ export type {
   ZisChainType,
   ZisLinkedAddress,
   ZisOasisPlayer,
+  ZisActiveSession,
+  ZisApiKey,
   UseZisAuthResult,
 };
 
@@ -50,6 +60,8 @@ export { ZIS_SESSION_COOKIE, getZisUrl };
 //
 // On the server we talk to ZIS directly via ZIS_URL.
 const CLIENT_PROXY_BASE = '/api/auth';
+const CLIENT_PROXY_BASE_SESSION = '/api/session';
+const CLIENT_PROXY_BASE_KEYS = '/api/keys';
 
 function isBrowser(): boolean {
   return typeof window !== 'undefined';
@@ -179,6 +191,103 @@ export async function logout(): Promise<{ ok: boolean }> {
     return { ok: res.ok };
   }
   return sharedLogout();
+}
+
+// ── Session management (client-side through local proxy) ─────────────
+
+/**
+ * List active sessions for the current user.
+ */
+export async function getSessions(
+  options?: { cookieHeader?: string },
+): Promise<{ sessions: ZisActiveSession[] }> {
+  if (isBrowser()) {
+    const res = await fetch(`${CLIENT_PROXY_BASE_SESSION}`, {
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) throw new Error(`Sessions fetch failed: ${res.status}`);
+    return res.json();
+  }
+  return sharedGetSessions({ cookieHeader: options?.cookieHeader });
+}
+
+/**
+ * Revoke a specific session by its JWT JTI.
+ */
+export async function revokeSession(jti: string): Promise<{ ok: boolean }> {
+  if (isBrowser()) {
+    const res = await fetch(`${CLIENT_PROXY_BASE_SESSION}/${encodeURIComponent(jti)}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    return { ok: res.ok };
+  }
+  return sharedRevokeSession(jti);
+}
+
+/**
+ * Revoke all active sessions for the current user (logout everywhere).
+ */
+export async function revokeAllSessions(): Promise<{ ok: boolean }> {
+  if (isBrowser()) {
+    const res = await fetch(`${CLIENT_PROXY_BASE_SESSION}/revoke-all`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    return { ok: res.ok };
+  }
+  return sharedRevokeAllSessions();
+}
+
+// ── API key management (client-side through local proxy) ─────────────
+
+/**
+ * List API keys for the current user.
+ */
+export async function getApiKeys(
+  options?: { cookieHeader?: string },
+): Promise<{ keys: ZisApiKey[] }> {
+  if (isBrowser()) {
+    const res = await fetch(`${CLIENT_PROXY_BASE_KEYS}`, {
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) throw new Error(`API keys fetch failed: ${res.status}`);
+    return res.json();
+  }
+  return sharedGetApiKeys({ cookieHeader: options?.cookieHeader });
+}
+
+/**
+ * Create a new API key. The raw key is returned only once.
+ */
+export async function createApiKey(label: string): Promise<{ apiKey: string; label: string }> {
+  if (isBrowser()) {
+    const res = await fetch(`${CLIENT_PROXY_BASE_KEYS}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ label }),
+    });
+    if (!res.ok) throw new Error(`API key creation failed: ${res.status}`);
+    return res.json();
+  }
+  return sharedCreateApiKey(label);
+}
+
+/**
+ * Revoke an API key by id.
+ */
+export async function revokeApiKey(id: string): Promise<{ ok: boolean }> {
+  if (isBrowser()) {
+    const res = await fetch(`${CLIENT_PROXY_BASE_KEYS}/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    return { ok: res.ok };
+  }
+  return sharedRevokeApiKey(id);
 }
 
 // ── Server-side helper: extract cookie from NextRequest ──────────────

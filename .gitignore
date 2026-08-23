@@ -3,6 +3,9 @@
 L2wallet.md
 secrets/
 keys/
+# Exception: website ZIS API key proxy route
+!APP&WEB/website-v2.9/src/app/api/keys/
+!APP&WEB/website-v2.9/src/app/api/keys/**
 *.key
 zion-validator-key.env
 newzionssh.md
