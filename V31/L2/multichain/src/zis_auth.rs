@@ -95,6 +95,38 @@ impl ZisClient {
         }
     }
 
+    /// Resolve a ZIS user from a raw API key.
+    pub async fn resolve_api_key(&self, api_key: &str) -> Result<Option<ZisUser>, reqwest::Error> {
+        if !self.enabled {
+            return Ok(None);
+        }
+
+        let url = format!("{}/api/keys/verify", self.zis_url.trim_end_matches('/'));
+        let res = self
+            .http
+            .post(&url)
+            .json(&serde_json::json!({ "apiKey": api_key }))
+            .timeout(self.timeout)
+            .send()
+            .await?;
+
+        if res.status() == 401 || res.status() == 403 {
+            return Ok(None);
+        }
+
+        if !res.status().is_success() {
+            return Ok(None);
+        }
+
+        #[derive(Deserialize)]
+        struct VerifyResponse {
+            user: ZisUser,
+        }
+
+        let body = res.json::<VerifyResponse>().await?;
+        Ok(Some(body.user))
+    }
+
     /// Resolve a ZIS user from a `zion_session` cookie value.
     pub async fn resolve_session(&self, cookie_value: &str) -> Result<Option<ZisUser>, reqwest::Error> {
         if !self.enabled {
@@ -157,7 +189,7 @@ pub async fn resolve_zis_auth(
                 match client.resolve_session(value).await {
                     Ok(Some(user)) => {
                         req.extensions_mut().insert(user);
-                        break;
+                        return Ok(next.run(req).await);
                     }
                     Ok(None) => {
                         tracing::debug!("ZIS session not valid");
@@ -165,6 +197,33 @@ pub async fn resolve_zis_auth(
                     Err(e) => {
                         tracing::warn!("ZIS resolve error: {}", e);
                     }
+                }
+            }
+        }
+    }
+
+    // Try ZIS API key via Authorization header.
+    if let Some(auth_header) = req
+        .headers()
+        .get("authorization")
+        .and_then(|h| h.to_str().ok())
+    {
+        let token = auth_header
+            .strip_prefix("Bearer ")
+            .or_else(|| auth_header.strip_prefix("bearer "))
+            .unwrap_or(auth_header)
+            .trim();
+        if token.starts_with("zis_") {
+            match client.resolve_api_key(token).await {
+                Ok(Some(user)) => {
+                    req.extensions_mut().insert(user);
+                    return Ok(next.run(req).await);
+                }
+                Ok(None) => {
+                    tracing::debug!("ZIS API key not valid");
+                }
+                Err(e) => {
+                    tracing::warn!("ZIS API key resolve error: {}", e);
                 }
             }
         }

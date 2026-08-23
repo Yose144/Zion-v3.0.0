@@ -1,8 +1,8 @@
 // Auth challenge + verification for both ZION L1 (Ed25519) and EVM (SIWE).
 
 import * as ed from 'noble-ed25519';
-import { sha256 } from '@noble/hashes/sha2.js';
-import { ripemd160 } from '@noble/hashes/legacy.js';
+import { sha256 } from '@noble/hashes/sha256';
+import { ripemd160 } from '@noble/hashes/ripemd160';
 import { randomBytes } from 'node:crypto';
 import { SiweMessage } from 'siwe';
 
