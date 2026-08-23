@@ -4449,22 +4449,28 @@ async function nodeRpc(method, params = {}) {
 ipcMain.handle('node-get-status', async () => {
   // Try local node first
   try {
-    const [sync, peers] = await Promise.all([
-      nodeRpc('getSyncStatus'),
-      nodeRpc('getPeers'),
+    const [chainInfo, peerInfo] = await Promise.all([
+      nodeRpc('getChainInfo'),
+      nodeRpc('getPeerInfo'),
     ]);
     return {
       success: true,
       running: true,
       local: true,
       pid: nodeProcess?.pid ?? null,
-      sync,
-      peers,
+      sync: {
+        current_height: chainInfo?.chain_height ?? 0,
+        target_height: chainInfo?.chain_height ?? 0,
+        synced: true,
+        ibd: false,
+      },
+      peers: peerInfo,
+      chainInfo,
     };
   } catch (e) {
     // Local node not running — fall back to remote Edge node status
     try {
-      const rpcUrl = `http://${PRIMARY_MAINNET_HOST}:${PRIMARY_RPC_PORT}/jsonrpc`;
+      const rpcUrl = `${PRIMARY_MAINNET_HOST}:${PRIMARY_RPC_PORT}`;
       const info = await zionRpcCall(rpcUrl, 'getChainInfo', {});
       if (info && info.chain_height) {
         return {
@@ -4498,13 +4504,13 @@ ipcMain.handle('node-get-status', async () => {
 ipcMain.handle('node-get-peers', async () => {
   // Try local node first
   try {
-    const peers = await nodeRpc('getPeers');
-    return { success: true, local: true, ...peers };
+    const peerInfo = await nodeRpc('getPeerInfo');
+    return { success: true, local: true, ...peerInfo };
   } catch (e) {
     // Fall back to remote Edge node
     try {
-      const rpcUrl = `http://${PRIMARY_MAINNET_HOST}:${PRIMARY_RPC_PORT}/jsonrpc`;
-      const result = await zionRpcCall(rpcUrl, 'getPeerList', []);
+      const rpcUrl = `${PRIMARY_MAINNET_HOST}:${PRIMARY_RPC_PORT}`;
+      const result = await zionRpcCall(rpcUrl, 'getPeerInfo', {});
       const peers = result?.peers || [];
       return {
         success: true,
@@ -6391,7 +6397,14 @@ ipcMain.handle('cli-config-set', async (_event, { key, value }) => {
 
 // ── Bridge CLI (lock / burn) ───────────────────────────────────────
 ipcMain.handle('cli-bridge-status', async () => {
-  // CLI bridge has no status subcommand — use topology chains instead
+  // Try public HTTPS bridge status API first (rich JSON), fall back to CLI topology
+  try {
+    const resp = await fetch(`${BRIDGE_API_BASE}/status`);
+    if (resp.ok) {
+      const data = await resp.json();
+      return { success: true, output: JSON.stringify(data, null, 2), source: 'https' };
+    }
+  } catch { /* fall through to CLI */ }
   return runZionCli(['topology', 'chains']);
 });
 ipcMain.handle('cli-bridge-pending', async () => {
@@ -6399,7 +6412,15 @@ ipcMain.handle('cli-bridge-pending', async () => {
   return runZionCli(['warp', 'pending']);
 });
 ipcMain.handle('cli-bridge-history', async (_event, { n }) => {
-  // Bridge has no history subcommand — use explorer blocks
+  // Try public HTTPS bridge transactions API first, fall back to CLI explorer blocks
+  try {
+    const limit = n || 20;
+    const resp = await fetch(`${BRIDGE_API_BASE}/transactions?limit=${limit}`);
+    if (resp.ok) {
+      const data = await resp.json();
+      return { success: true, output: JSON.stringify(data, null, 2), source: 'https' };
+    }
+  } catch { /* fall through to CLI */ }
   return runZionCli(['explorer', 'blocks']);
 });
 ipcMain.handle('cli-bridge-chains', async () => {
@@ -6433,8 +6454,12 @@ ipcMain.handle('cli-dao-params', async () => {
   return runZionCli(['dao', 'params']);
 });
 
-// ── DAO data from Edge server HTTP API (fallback when CLI binary absent) ──
-const DAO_API_BASE = 'https://zionterranova.com/api/dao';
+// ── Multichain HTTPS API fallbacks (public Next.js proxy on app.zionterranova.com) ──
+// DAO: GET public, POST requires x-dao-key. Warp: only /status public, rest needs x-warp-key.
+// Bridge: /api/bridge/status and /api/bridge/transactions are public.
+const DAO_API_BASE = 'https://app.zionterranova.com/api/dao';
+const BRIDGE_API_BASE = 'https://app.zionterranova.com/api/bridge';
+const WARP_API_BASE = 'https://app.zionterranova.com/api/warp';
 
 ipcMain.handle('dao-get-proposals', async () => {
   try {
@@ -6448,8 +6473,72 @@ ipcMain.handle('dao-get-proposals', async () => {
 });
 
 ipcMain.handle('dao-get-treasury', async () => {
+  // DAO service does not expose /treasury — use /stats which contains circulating_supply
   try {
-    const resp = await fetch(`${DAO_API_BASE}/treasury`);
+    const resp = await fetch(`${DAO_API_BASE}/stats`);
+    if (!resp.ok) return { success: false, error: `Treasury endpoint not available (HTTP ${resp.status})` };
+    const data = await resp.json();
+    return { success: true, ...data };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('dao-get-status', async () => {
+  // DAO service exposes /health and /stats (not /status). Use /stats for rich data.
+  try {
+    const [healthResp, statsResp] = await Promise.all([
+      fetch(`${DAO_API_BASE}/health`),
+      fetch(`${DAO_API_BASE}/stats`),
+    ]);
+    if (!healthResp.ok && !statsResp.ok) return { success: false, error: `HTTP ${healthResp.status}` };
+    const health = healthResp.ok ? await healthResp.json() : {};
+    const stats = statsResp.ok ? await statsResp.json() : {};
+    return { success: true, health: health.data || health, stats: stats.data || stats };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('dao-get-params', async () => {
+  // DAO service does not expose /params — return health + stats as best available
+  try {
+    const resp = await fetch(`${DAO_API_BASE}/stats`);
+    if (!resp.ok) return { success: false, error: `DAO params endpoint not available (HTTP ${resp.status})` };
+    const data = await resp.json();
+    return { success: true, ...data };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('bridge-get-status', async () => {
+  try {
+    const resp = await fetch(`${BRIDGE_API_BASE}/status`);
+    if (!resp.ok) return { success: false, error: `HTTP ${resp.status}` };
+    const data = await resp.json();
+    return { success: true, ...data };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('bridge-get-transactions', async (_event, { limit } = {}) => {
+  try {
+    const url = `${BRIDGE_API_BASE}/transactions${limit ? `?limit=${limit}` : ''}`;
+    const resp = await fetch(url);
+    if (!resp.ok) return { success: false, error: `HTTP ${resp.status}` };
+    const data = await resp.json();
+    return { success: true, ...data };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('warp-get-status', async () => {
+  // WARP service exposes /health (not /status). Next.js proxy maps /api/warp/health → 8453/health.
+  try {
+    const resp = await fetch(`${WARP_API_BASE}/health`);
     if (!resp.ok) return { success: false, error: `HTTP ${resp.status}` };
     const data = await resp.json();
     return { success: true, ...data };
@@ -6478,6 +6567,14 @@ ipcMain.handle('cli-pool-earnings', async (_event, { address, target }) => {
 
 // ── Warp CLI ───────────────────────────────────────────────────────
 ipcMain.handle('cli-warp-status', async () => {
+  // Try public HTTPS warp health first, fall back to CLI
+  try {
+    const resp = await fetch(`${WARP_API_BASE}/health`);
+    if (resp.ok) {
+      const data = await resp.json();
+      return { success: true, output: JSON.stringify(data, null, 2), source: 'https' };
+    }
+  } catch { /* fall through to CLI */ }
   return runZionCli(['warp', 'status']);
 });
 ipcMain.handle('cli-warp-chains', async () => {

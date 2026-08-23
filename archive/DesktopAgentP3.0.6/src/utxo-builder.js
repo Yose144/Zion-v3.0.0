@@ -146,6 +146,8 @@ function buildPreimage(tx, scripts) {
   for (const output of tx.outputs) {
     parts.push(uint128LE(output.amount));
     parts.push(Buffer.from(output.address.encoded, 'utf8'));
+    // Output script (empty for standard pay-to-pubkey-hash; non-empty for scripts)
+    parts.push(Buffer.from(output.script || []));
   }
 
   // memo
@@ -275,18 +277,20 @@ function buildUtxoTransaction({
     );
   }
 
-  // Build outputs
+  // Build outputs (script: [] = standard pay-to-pubkey-hash, matches V31 core)
   const outputs = [
     {
       amount: amountFlowers.toString(),
-      address: makeAddressObject(toAddress)
+      address: makeAddressObject(toAddress),
+      script: []
     }
   ];
 
   if (changeFlowers > 0n) {
     outputs.push({
       amount: changeFlowers.toString(),
-      address: makeAddressObject(fromAddress)
+      address: makeAddressObject(fromAddress),
+      script: []
     });
   } else {
     // No change output — fee is whatever remains (still >= min for 1 output)

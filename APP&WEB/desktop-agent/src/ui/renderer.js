@@ -17,6 +17,35 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
+// ── Sandbox-safe prompt replacement (Electron does not support window.prompt()) ──
+function showPrompt(title, defaultValue = '') {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.id = 'renderer-prompt-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;z-index:10000';
+    overlay.innerHTML = `
+      <div style="background:#151515;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:24px;min-width:340px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.6)">
+        <div style="color:#fcd116;font-size:14px;font-weight:600;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px">Input</div>
+        <div style="color:#fff;font-size:14px;margin-bottom:16px">${escapeHtml(title)}</div>
+        <input id="renderer-prompt-input" type="text" value="${escapeHtml(defaultValue)}" style="width:100%;padding:10px 12px;background:#0a0a0a;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:14px;outline:none;box-sizing:border-box">
+        <div style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end">
+          <button id="renderer-prompt-cancel" style="padding:8px 16px;background:transparent;border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.8);border-radius:8px;cursor:pointer;font-size:13px">Cancel</button>
+          <button id="renderer-prompt-ok" style="padding:8px 16px;background:linear-gradient(135deg,#fcd116,#e41e2b);border:none;color:#000;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">OK</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const input = document.getElementById('renderer-prompt-input');
+    const ok = document.getElementById('renderer-prompt-ok');
+    const cancel = document.getElementById('renderer-prompt-cancel');
+    const finish = (val) => { overlay.remove(); resolve(val); };
+    ok.addEventListener('click', () => finish(input.value));
+    cancel.addEventListener('click', () => finish(null));
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') finish(input.value); if (e.key === 'Escape') finish(null); });
+    input.focus();
+    input.select();
+  });
+}
 // ────────────────────────────────────────────────────────────────────────────
 
 let currentView = 'dashboard';
@@ -2984,7 +3013,7 @@ window.copyWalletAddress = (address) => {
 };
 
 window.exportWalletPrompt = async (address) => {
-  const password = prompt('Enter wallet password to export private key:');
+  const password = await showPrompt('Enter wallet password to export private key:');
   if (!password) return;
 
   const result = await window.electronAPI.exportWallet({ address, password });
@@ -5345,7 +5374,9 @@ async function refreshDaoTreasury() {
     const d = resp.data;
     if (!d) return;
     const balEl = document.getElementById('dao-treasury-balance');
-    if (balEl) balEl.textContent = `${(d.available_zion / 1e9).toFixed(0)} ZION`;
+    // DAO service exposes circulating_supply via /stats (not available_zion)
+    const bal = d.available_zion != null ? d.available_zion : d.circulating_supply;
+    if (balEl) balEl.textContent = bal != null ? `${(bal / 1e6).toFixed(0)} ZION` : '—';
     const dailyEl = document.getElementById('dao-daily-spent');
     if (dailyEl) dailyEl.textContent = '0';
     const opsEl = document.getElementById('dao-ops-pending');
@@ -5410,11 +5441,11 @@ function initCliView() {
   document.getElementById('cli-btn-mine-status')?.addEventListener('click', () => runCli('cliMineStatus', 'mine status'));
   document.getElementById('cli-btn-wallet-list')?.addEventListener('click', () => runCli('cliWalletList', 'wallet address'));
   document.getElementById('cli-btn-wallet-balance')?.addEventListener('click', async () => {
-    const address = prompt('Enter ZION address (or leave empty for config wallet):');
+    const address = await showPrompt('Enter ZION address (or leave empty for config wallet):');
     await runCli('cliWalletBalance', 'wallet balance', { address: address || undefined, chain: 'zion-l1' });
   });
   document.getElementById('cli-btn-config-get')?.addEventListener('click', async () => {
-    const key = prompt('Enter config key (or leave empty for all):');
+    const key = await showPrompt('Enter config key (or leave empty for all):');
     await runCli('cliConfigGet', 'doctor', { key: key || undefined });
   });
   document.getElementById('cli-btn-clear')?.addEventListener('click', clearConsole);
@@ -5448,7 +5479,7 @@ function initCliView() {
   document.getElementById('cli-btn-bridge-pending')?.addEventListener('click', () => runCli('cliBridgePending', 'bridge pending'));
   document.getElementById('cli-btn-bridge-chains')?.addEventListener('click', () => runCli('cliBridgeChains', 'bridge chains'));
   document.getElementById('cli-btn-bridge-history')?.addEventListener('click', async () => {
-    const n = prompt('Number of entries (default 10):') || '10';
+    const n = (await showPrompt('Number of entries (default 10):')) || '10';
     await runCli('cliBridgeHistory', `bridge history ${n}`, { n: parseInt(n) || 10 });
   });
 
@@ -5463,7 +5494,7 @@ function initCliView() {
   document.getElementById('cli-btn-pool-miners')?.addEventListener('click', () => runCli('cliPoolMiners', 'pool miners edge', { target: 'edge' }));
   document.getElementById('cli-btn-pool-config')?.addEventListener('click', () => runCli('cliPoolConfig', 'pool config edge', { target: 'edge' }));
   document.getElementById('cli-btn-pool-earnings')?.addEventListener('click', async () => {
-    const address = prompt('Your ZION address (or empty for config wallet):');
+    const address = await showPrompt('Your ZION address (or empty for config wallet):');
     await runCli('cliPoolEarnings', 'pool earnings', { address: address || undefined, target: 'edge' });
   });
 

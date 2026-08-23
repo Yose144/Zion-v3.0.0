@@ -161,6 +161,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   cliDaoParams: () => ipcRenderer.invoke('cli-dao-params'),
   daoGetProposals: () => ipcRenderer.invoke('dao-get-proposals'),
   daoGetTreasury: () => ipcRenderer.invoke('dao-get-treasury'),
+  daoGetStatus: () => ipcRenderer.invoke('dao-get-status'),
+  daoGetParams: () => ipcRenderer.invoke('dao-get-params'),
+  bridgeGetStatus: () => ipcRenderer.invoke('bridge-get-status'),
+  bridgeGetTransactions: (data) => ipcRenderer.invoke('bridge-get-transactions', data),
+  warpGetStatus: () => ipcRenderer.invoke('warp-get-status'),
 
   // ── Pool CLI ─────────────────────────────────────────────────────
   cliPoolStats: (data) => ipcRenderer.invoke('cli-pool-stats', data),
