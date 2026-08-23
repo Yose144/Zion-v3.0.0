@@ -8,6 +8,7 @@
 > **Canonical forward plan:** [`docs/3.2/ROADMAP.md`](./docs/3.2/ROADMAP.md)  
 > **Marketing / launch plan:** [`OneLoveV3.2.md`](./OneLoveV3.2.md)  
 > **Technical execution plan:** [`V31/PLAN_TO_3.2.md`](./V31/PLAN_TO_3.2.md)  
+> **ZionDex + ZIS Multichain Wallet plan:** [`ZionDexZis.md`](./ZionDexZis.md)  
 > **Live status:** [`StatusV3.md`](./StatusV3.md) · [`V31/STATUS.md`](./V31/STATUS.md)
 
 ---
@@ -31,7 +32,7 @@ Historical 3.1 reports are archived in [`docs/3.1/REPORTS/`](./docs/3.1/REPORTS/
 
 3.2.0 "One Love" is the Mainnet Stable release. The critical path is:
 
-1. **Real-world E2E** — GPU rigs, AuxPoW pools, bridge Base mainnet round-trip, public subtree sync.
+1. **Real-world E2E** — GPU rigs, AuxPoW pools, bridge Base mainnet round-trip, public subtree sync, DEX quote → on-chain settlement.
 2. **Stability & security** — internal/external audit, 24h fuzzing, chaos tests, 1000+ miner simulation, DR drill.
 3. **30-day continuous run** — no critical incidents, ≥99.9% uptime.
 4. **Release readiness** — feature freeze, multi-platform GitHub release, SMOS package, public docs, community channels.

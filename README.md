@@ -9,6 +9,7 @@
 
 > **Last updated: 2026-08-22 (V31 soft-fork premine/coinbase maturity, wallet-sdk + mobile-app UTXO native format, website swap proxy, CLI `--soft-fork-activation-height`; 311 core tests pass, website build OK)**
 
+- **ZionDex + ZIS Multichain Wallet plan:** The end-to-end DEX, ZIS-backed multichain wallet, and settlement roadmap is captured in [`ZionDexZis.md`](ZionDexZis.md).
 - **Active mainnet track:** `V31/` workspace — version `3.1.0-beta` (V31 Mainnet Alpha), protocol string `zion-v3-node/3.1.0-alpha`, clean `cargo test --workspace`.
 - **3.2 "One Love" canonical docs:** Public whitepapers and onboarding (CZ/EN) are now canonized in [`docs/WP-Mainet/`](docs/WP-Mainet/README.md); see the launch plan [`OneLoveV3.2.md`](OneLoveV3.2.md) and technical execution plan [`V31/PLAN_TO_3.2.md`](V31/PLAN_TO_3.2.md).
 - **V3 production line has been archived** to `archive/V3/` after the 2026-08-04 V31 cutover.
@@ -51,6 +52,7 @@
 | **Historical incidents + public-subtree rules** | [`AGENTS.md`](AGENTS.md) |
 | **Hard reset procedure (genesis + keys)** | [`HARD_RESET_PLAYBOOK.md`](HARD_RESET_PLAYBOOK.md) |
 | **Public (MIT) subtree** | [`public/`](public/) |
+| **ZionDex + ZIS Multichain Wallet plan** | [`ZionDexZis.md`](ZionDexZis.md) |
 
 ---
 

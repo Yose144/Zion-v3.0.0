@@ -15,7 +15,7 @@ The ZION Identity Service (`APP&WEB/identity/`) is live on `https://auth.zionter
 2. **L4 OASIS** has its own player database but no SSO gate. OASIS Web is a separate Next.js app that re-exports the shared ZIS client but does not use it yet. We need to bind OASIS player profiles to ZIS users and require authentication for gameplay.
 3. **website-v2.9** already has `AuthContext`, SIWE, and Edge middleware protecting `/account` and `/dashboard/private`. The remaining work is to extend route protection to the rest of the authenticated surface, unify the login redirect experience, and feed the authenticated user into the DeFi/DEX widgets.
 
-The plan is split into four implementation phases plus a final testing and deploy phase. Each phase contains concrete files to change, acceptance criteria, and deploy notes.
+The plan is split into four implementation phases plus a final testing and deploy phase. Each phase contains concrete files to change, acceptance criteria, and deploy notes. A more detailed technical and product plan covering the DEX execution, settlement, and multichain wallet integration is in [`ZionDexZis.md`](./ZionDexZis.md).
 
 ---
 
