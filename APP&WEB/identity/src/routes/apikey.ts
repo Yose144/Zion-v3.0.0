@@ -7,7 +7,38 @@ const CreateKeySchema = z.object({
   label: z.string().min(1).max(64),
 });
 
+const VerifyKeySchema = z.object({
+  apiKey: z.string().min(16),
+});
+
 export async function apiKeyRoutes(app: FastifyInstance): Promise<void> {
+  // Verify an API key and return its owner (service-to-service auth)
+  app.post('/verify', async (req, reply) => {
+    const parsed = VerifyKeySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'BAD_REQUEST', details: parsed.error.issues });
+    }
+    const keyHash = createHash('sha256').update(parsed.data.apiKey).digest('hex');
+    const apiKey = await app.prisma.apiKey.findUnique({
+      where: { keyHash },
+    });
+    if (!apiKey) {
+      return reply.code(401).send({ error: 'UNAUTHORIZED', message: 'Invalid API key' });
+    }
+    await app.prisma.apiKey.update({
+      where: { id: apiKey.id },
+      data: { lastUsed: new Date() },
+    });
+    const user = await app.prisma.user.findUnique({
+      where: { id: apiKey.userId },
+      include: { linkedAddresses: true, oasisPlayer: true },
+    });
+    if (!user) {
+      return reply.code(401).send({ error: 'UNAUTHORIZED', message: 'User not found' });
+    }
+    return { valid: true, user };
+  });
+
   // Create a new API key for the current user
   app.post('/', { preHandler: [requireAuth] }, async (req, reply) => {
     const parsed = CreateKeySchema.safeParse(req.body);
