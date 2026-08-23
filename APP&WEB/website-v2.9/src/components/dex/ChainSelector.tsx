@@ -32,6 +32,8 @@ const CHAINS: ChainOption[] = [
   { id: 'sui', name: 'Sui', symbol: 'SUI', color: '#4da2ff' },
   { id: 'near', name: 'NEAR', symbol: 'NEAR', color: '#00ec97' },
   { id: 'ton', name: 'TON', symbol: 'TON', color: '#0098ea' },
+  { id: 'bitcoin', name: 'Bitcoin', symbol: 'BTC', color: '#f7931a' },
+  { id: 'lightning', name: 'Lightning', symbol: 'LN', color: '#792ee5' },
 ];
 
 interface Props {

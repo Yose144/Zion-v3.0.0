@@ -171,7 +171,7 @@ export default function DexPage() {
                   <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
                 </Link>
                 <Link
-                  href="/multichain"
+                  href="/multichain#earn"
                   className="zion-rainbow-sub flex items-center justify-between p-2"
                   style={{ '--rc': '6, 105, 40' } as CSSProperties}
                 >
@@ -193,7 +193,7 @@ export default function DexPage() {
                   <span className="text-zinc-500">L3 WARP bridge</span>
                   <span className="flex items-center gap-1 text-zion-cyan">
                     <Layers className="w-3 h-3" />
-                    port 8453
+                    Live
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -210,7 +210,7 @@ export default function DexPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-500">Validator quorum</span>
-                  <span className="text-zinc-300">5/5 (Ed25519)</span>
+                  <span className="text-zinc-300">Decentralized</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-500">Max slippage</span>
@@ -228,9 +228,6 @@ export default function DexPage() {
           <p className="text-xs text-zinc-600">
             ZionDex Router API at{' '}
             <code className="text-zinc-400">dex.zionterranova.com</code>
-            {' · '}
-            L3 WARP Bridge at{' '}
-            <code className="text-zinc-400">port 8453</code>
             {' · '}
             <Link href="/ziondex" className="text-zion-gold/80 hover:text-zion-gold">
               Learn more →

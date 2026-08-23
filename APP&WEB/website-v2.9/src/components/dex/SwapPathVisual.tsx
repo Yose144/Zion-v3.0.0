@@ -48,6 +48,8 @@ const CHAIN_COLORS: Record<string, string> = {
   sui: '#4da2ff',
   near: '#00ec97',
   ton: '#0098ea',
+  bitcoin: '#f7931a',
+  lightning: '#792ee5',
 };
 
 const CHAIN_NAMES: Record<string, string> = {
@@ -67,6 +69,8 @@ const CHAIN_NAMES: Record<string, string> = {
   sui: 'Sui',
   near: 'NEAR',
   ton: 'TON',
+  bitcoin: 'Bitcoin',
+  lightning: 'Lightning',
 };
 
 function ChainDot({ chain }: { chain: string }) {
