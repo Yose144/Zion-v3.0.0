@@ -73,8 +73,8 @@ HTLC specifické testy ve `zion-core`:
 
 1. **L2 / E2E testy:** ✅ **Dokončeno 2026-08-23.** Plný multichain e2e flow (lock → claim → refund) na ZION L1 proběhl úspěšně s lokálním `zion-node` (port 9555) a `warpd` (port 9335/9336). Viz sekce "E2E Test Results" níže.
 2. **UI formulář lock:** ✅ **Dokončeno.** `src/app/swap/page.tsx` generuje hashlock/preimage a nabízí pole pro `source_pubkey_hex` / `target_pubkey_hex` před voláním `submitLock()`.
-3. **Dokumentace API:** Popsat nové HTLC endpoint request/response schémata v multichain serveru.
-4. **Mainnet Alpha deploy:** Připravit binárky `zion-node`, `zion-multichain` a restartovat Edge služby.
+3. **Dokumentace API:** ✅ **Dokončeno.** `docs/3.0.8/HTLC_API_REFERENCE.md` dokumentuje všech 6 HTLC endpointů.
+4. **Mainnet Alpha deploy:** ✅ **Dokončeno 2026-08-23.** Nové binárky `zion-node`, `warpd`, `zion-pool` nasazeny na Edge serveru (`62.171.141.136`). Služby restartovány, chain healthy (height 13416+). E2E HTLC lock→claim test úspěšný na live Edge.
 
 ## E2E Test Results (2026-08-23)
 
@@ -101,6 +101,28 @@ Plný end-to-end test nativního L1 HTLC protokolu proběhl úspěšně:
 4. **`server.rs` HTLC endpoints** — error responses nyní vrací JSON `{"message":"..."}` místo prázdného 400, což usnadňuje debugging.
 5. **Test `htlc_claimant_pubkey_enforced`** — aktualizován na 32B preimage (native L1 vyžaduje 32B).
 6. **Minimální lock amount** — 100 ZION (100_000_000 flowers) je funkční minimum (fee = 1 ZION = 1_000_000 flowers, claim/refund vyžaduje `lock_utxo.amount > fee`).
+
+## Edge Mainnet Alpha E2E Test Results (2026-08-23)
+
+Nasazeno na live Edge serveru (`62.171.141.136`):
+
+### Deploy
+- Nové binárky `zion-node`, `warpd`, `zion-pool` nahrány a aktivovány na Edge.
+- `WARP_MNEMONIC` nastaven v `/etc/zion/edge-environment.sh` — warpd keyring derivuje L1 signing key pro HTLC operace.
+- Keyring adresa `zion1n8r6f7j6z03426y6e2r8v344d7449526m6m08v6` fundingována 1000 ZION z pool walletu.
+- `quick_mine` binary použit pro solo mining (pool měl stale template bug — merkle root mismatch mezi pool a node).
+
+### Lock → Claim (live Edge)
+- **Lock:** `POST http://127.0.0.1:8454/v1/multichain/swaps/htlc/lock` s `amount=100000000` (100 ZION), `timelock=4102444800` (2099), `source_pubkey_hex=target_pubkey_hex` (warpd keyring) → `status:"executing"`, `transfer_id:"htlc-lock-<hash>"`.
+- **Block confirmation:** `quick_mine` → lock TX potvrzen v bloku.
+- **Claim:** `POST /v1/multichain/swaps/htlc/claim` s `secret_hex` (32B preimage), `target_address` (warpd keyring adresa) → `status:"completed"`, `recipient` naplněno.
+- **Query po claimu:** `state:"claimed"` ✅
+
+### Poznámky k Edge deploy
+- Pool `zion-v31-miner` (CPU-only) byl dočasně spuštěn pro mining, po testu zastaven a disabled.
+- `quick_mine` binary je efektivnější pro solo mining na CPU-only serveru (přímý RPC, bypass pool template cache).
+- Pool merkle root mismatch bug: pool používá stale block template po node restartu. Nový pool binary nasazen, ale bug přetrvává — pravděpodobně race condition v template caching. Pro production mining použít `quick_mine` nebo GPU miner.
+- HTLC endpoint je na DEX API portu 8454 (ne 8453 WARP API port).
 
 ## Soubory změněné v této session
 
