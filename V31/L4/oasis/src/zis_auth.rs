@@ -68,6 +68,25 @@ impl ZisUser {
                 && chain_id.map_or(true, |c| a.chain_id.as_deref() == Some(c))
         })
     }
+
+    /// Whether the user is allowed to act on a ZION L1 OASIS address.
+    ///
+    /// Checks the primary address, any `zion-l1` linked address, and the
+    /// linked OASIS player address (if present).
+    pub fn can_act_as_zion_address(&self, address: &str) -> bool {
+        if self.primary_address.eq_ignore_ascii_case(address) {
+            return true;
+        }
+        if let Some(ref oasis) = self.oasis_player {
+            if oasis.address.eq_ignore_ascii_case(address) {
+                return true;
+            }
+        }
+        self.linked_addresses.iter().any(|a| {
+            a.chain_type.eq_ignore_ascii_case("zion-l1")
+                && a.address.eq_ignore_ascii_case(address)
+        })
+    }
 }
 
 /// Lightweight client that calls the ZION Identity Service.

@@ -9,6 +9,8 @@ use std::collections::HashMap;
 pub struct Player {
     /// ZION wallet address (L1 identity)
     pub address: String,
+    /// ZIS user id, when the player profile is linked to a ZIS account
+    pub user_id: Option<String>,
     /// Display name (optional)
     pub display_name: Option<String>,
     /// Current XP
@@ -53,6 +55,7 @@ impl Player {
 
         Self {
             address,
+            user_id: None,
             display_name: None,
             total_xp: 0,
             level: ConsciousnessLevel::Physical,

@@ -43,7 +43,7 @@ use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::server::OasisState;
-use crate::zis_auth::resolve_user_from_headers;
+use crate::zis_auth::{resolve_user_from_headers, ZisUser};
 
 /// Maximum clock skew / replay window in seconds.
 pub const TIMESTAMP_WINDOW_SECS: u64 = 300;
@@ -221,47 +221,145 @@ pub fn extract_from_headers(headers: &HeaderMap) -> Result<WalletAuth, AuthError
 #[derive(Debug, Clone)]
 pub struct AuthenticatedWallet(pub String);
 
+/// Resolved identity after successful authentication.
+#[derive(Clone, Debug)]
+enum ResolvedIdentity {
+    Zis(ZisUser),
+    Wallet(AuthenticatedWallet),
+}
+
+impl ResolvedIdentity {
+    fn address_matches(&self, address: &str) -> bool {
+        match self {
+            ResolvedIdentity::Zis(u) => u.can_act_as_zion_address(address),
+            ResolvedIdentity::Wallet(w) => w.0.eq_ignore_ascii_case(address),
+        }
+    }
+
+    fn zis_user(&self) -> Option<&ZisUser> {
+        match self {
+            ResolvedIdentity::Zis(u) => Some(u),
+            ResolvedIdentity::Wallet(_) => None,
+        }
+    }
+}
+
+/// Extract a ZION L1 player address from the request path when the route
+/// is one of the `/api/v1/oasis/player/:address/*` endpoints.
+fn player_address_from_path(path: &str) -> Option<&str> {
+    let parts: Vec<&str> = path.split('/').collect();
+    if parts.len() >= 6
+        && parts.get(1) == Some(&"api")
+        && parts.get(2) == Some(&"v1")
+        && parts.get(3) == Some(&"oasis")
+        && parts.get(4) == Some(&"player")
+    {
+        parts.get(5).and_then(|s| {
+            if s.starts_with("zion1") && s.len() >= 40 {
+                Some(*s)
+            } else {
+                None
+            }
+        })
+    } else {
+        None
+    }
+}
+
+/// Ensure the authenticated identity owns the player address in the path,
+/// and sync the player profile with the ZIS user when present.
+fn authorize_player_address(
+    state: &OasisState,
+    identity: &ResolvedIdentity,
+    path: &str,
+) -> Result<(), StatusCode> {
+    let address = match player_address_from_path(path) {
+        Some(a) => a,
+        None => return Ok(()),
+    };
+
+    if !identity.address_matches(address) {
+        tracing::warn!("OASIS auth: identity does not own player address {}", address);
+        return Err(StatusCode::FORBIDDEN);
+    }
+
+    if let Some(user) = identity.zis_user() {
+        if let Ok(mut player) = state.db.get_or_create_player(address) {
+            let needs_save = player.user_id.as_deref() != Some(&user.id)
+                || player.display_name != user.display_name;
+            if needs_save {
+                player.user_id = Some(user.id.clone());
+                player.display_name = user.display_name.clone();
+                if let Err(e) = state.db.save_player(&player) {
+                    tracing::warn!("OASIS player sync failed for {}: {}", address, e);
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
 /// Axum middleware requiring a valid authentication method.
 ///
 /// Tries ZIS first (cookie `zion_session` or `Authorization: Bearer zis_...`)
 /// and falls back to the legacy wallet-signature headers. On success the
 /// resolved identity is attached as either [`ZisUser`] or [`AuthenticatedWallet`].
+/// For `/api/v1/oasis/player/:address/*` routes, the caller must own the
+/// address and the local player record is synced with the ZIS profile.
 pub async fn require_auth(
     State(state): State<OasisState>,
     mut req: Request,
     next: Next,
 ) -> Result<Response, StatusCode> {
+    let identity: ResolvedIdentity;
+
     // Try ZIS when it is configured.
     if let Some(client) = &state.zis_client {
         if let Some(user) = resolve_user_from_headers(client, req.headers()).await {
-            req.extensions_mut().insert(user);
+            identity = ResolvedIdentity::Zis(user);
+        } else {
+            // No valid ZIS credentials and ZIS is the enforced method.
+            return Err(StatusCode::UNAUTHORIZED);
+        }
+    } else {
+        // Legacy wallet-signature auth (used when ZIS is not enabled).
+        // If no wallet headers are present, the request proceeds unauthenticated
+        // so existing tests and open endpoints keep working. If any wallet header
+        // is present, all headers must be valid.
+        if req.headers().get(HDR_ADDRESS).is_none() {
             return Ok(next.run(req).await);
         }
-        // No valid ZIS credentials and ZIS is the enforced method.
-        return Err(StatusCode::UNAUTHORIZED);
-    }
 
-    // Legacy wallet-signature auth (used when ZIS is not enabled).
-    // If no wallet headers are present, the request proceeds unauthenticated
-    // so existing tests and open endpoints keep working. If any wallet header
-    // is present, all headers must be valid.
-    if req.headers().get(HDR_ADDRESS).is_none() {
-        return Ok(next.run(req).await);
-    }
+        let auth = match extract_from_headers(req.headers()) {
+            Ok(a) => a,
+            Err(e) => return Err(e.status_code()),
+        };
 
-    let auth = match extract_from_headers(req.headers()) {
-        Ok(a) => a,
-        Err(e) => return Err(e.status_code()),
-    };
-
-    match auth.verify() {
-        Ok(()) => {
-            let address = auth.address.clone();
-            req.extensions_mut().insert(AuthenticatedWallet(address));
-            Ok(next.run(req).await)
+        match auth.verify() {
+            Ok(()) => {
+                let address = auth.address.clone();
+                identity = ResolvedIdentity::Wallet(AuthenticatedWallet(address));
+            }
+            Err(e) => return Err(e.status_code()),
         }
-        Err(e) => Err(e.status_code()),
     }
+
+    // For player-scoped routes, verify ownership and sync profile.
+    let path = req.uri().path().to_string();
+    authorize_player_address(&state, &identity, &path)?;
+
+    // Insert the resolved identity into request extensions for handlers.
+    match identity {
+        ResolvedIdentity::Zis(user) => {
+            req.extensions_mut().insert(user);
+        }
+        ResolvedIdentity::Wallet(wallet) => {
+            req.extensions_mut().insert(wallet);
+        }
+    }
+
+    Ok(next.run(req).await)
 }
 
 // ── Address derivation ─────────────────────────────────────────────────
