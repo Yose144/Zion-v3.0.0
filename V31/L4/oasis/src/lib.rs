@@ -76,6 +76,7 @@ pub mod tithe;
 pub mod websocket;
 pub mod worlds;
 pub mod xp;
+pub mod zis_auth;
 
 // Re-exports
 pub use config::OasisConfig;
