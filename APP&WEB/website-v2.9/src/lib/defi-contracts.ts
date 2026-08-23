@@ -258,9 +258,16 @@ export const BRIDGE_ABI = [
 
 // ─── Uniswap V3 ABIs ────────────────────────────────────────────────────────
 
-export const SWAP_ROUTER_ABI = [
+export const SWAP_ROUTER02_ABI = [
   'function exactInputSingle((address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96)) external payable returns (uint256 amountOut)',
+  'function exactInput(bytes path, address recipient, uint256 amountIn, uint256 amountOutMinimum) external payable returns (uint256 amountOut)',
+  'function multicall(uint256 deadline, bytes[] data) external payable returns (bytes[] memory results)',
+  'function unwrapWETH9(uint256 amountMinimum, address recipient) external payable',
+  'function refundETH() external payable',
 ] as const;
+
+/** @deprecated — use SWAP_ROUTER02_ABI */
+export const SWAP_ROUTER_ABI = SWAP_ROUTER02_ABI;
 
 export const QUOTER_V2_ABI = [
   'function quoteExactInputSingle((address tokenIn, address tokenOut, uint256 amountIn, uint24 fee, uint160 sqrtPriceLimitX96)) external returns (uint256 amountOut, uint160 sqrtPriceX96After, uint32 initializedTicksCrossed, uint256 gasEstimate)',

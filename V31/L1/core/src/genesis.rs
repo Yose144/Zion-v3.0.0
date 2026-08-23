@@ -95,6 +95,8 @@ fn premine_outputs() -> Vec<TransactionOutput> {
         output("zion1h6644748u5x6p4p784n6g2l7j77625w6a0k80s8", 1440000000_u64),
         output("zion1t6z3c0f0p3h0v233a3h432k5h764j0r3n5ml756", 400000000_u64),
         output("zion1j3w3h7k8m635h734y786j5804305m822t5uk546", 100000000_u64),
+        // Local E2E relayer — remove before mainnet; not part of canonical premine.
+        output("zion138c2r0q790d622s3l2j480x77850x0v6l4m7348", 1000000000_u64),
     ]
 }
 

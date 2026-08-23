@@ -2,51 +2,192 @@
 
 /**
  * CrossChainSwapWidget — main swap UI for ZionDex
- * Uses ZionDex Router API for quotes and execution
+ * Uses the local Next.js proxy (/api/swap) which forwards to the V31
+ * multichain DEX (zion-multichain port 8454) for quotes and execution.
+ *
+ * The backend expects zion_l1_types::Asset shaped bodies:
+ *   { "from": { "id": { "chain": "base", "contract": "0x...", "ticker": "wZION" },
+ *               "decimals": 18, "name": "wZION" },
+ *     "to":   { ... },
+ *     "amount": "123456" }
  */
 
 import { useState, useCallback, useEffect } from 'react';
 import { ArrowDownUp, Loader2, Zap, AlertCircle, CheckCircle2, Settings } from 'lucide-react';
 import ChainSelector from './ChainSelector';
-import TokenSelector from './TokenSelector';
+import TokenSelector, { TOKENS_BY_CHAIN } from './TokenSelector';
 import SwapPathVisual from './SwapPathVisual';
 import { useWallet } from '@/contexts/WalletContext';
+import { CONTRACTS } from '@/lib/defi-contracts';
 
-const ROUTER_URL = process.env.NEXT_PUBLIC_ZIONDEX_ROUTER_URL || 'https://dex.zionterranova.com';
+const API_BASE = '/api/swap';
 
-type SwapPhase = 'idle' | 'quoting' | 'quoted' | 'executing' | 'success' | 'error';
+// Canonical contract addresses for supported non-native tokens by chain.
+// Native tokens have `null` contract. Unknown tokens fall back to null.
+const TOKEN_CONTRACTS: Record<string, Record<string, string | null>> = {
+  base: {
+    wZION: CONTRACTS.wZION,
+    USDT: CONTRACTS.USDT,
+    USDC: CONTRACTS.USDC,
+    WETH: CONTRACTS.WETH,
+  },
+  arbitrum: {
+    wZION: CONTRACTS.wZION,
+    USDC: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
+    WETH: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
+  },
+  bsc: {
+    wZION: CONTRACTS.wZION,
+    USDT: '0x55d398326f99059fF775485246999027B3197955',
+  },
+  polygon: {
+    wZION: CONTRACTS.wZION,
+    USDC: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
+    WMATIC: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
+  },
+  optimism: {
+    wZION: CONTRACTS.wZION,
+    USDC: '0x0b2C639c533813f4Aa9D7837CAbe68763ed8Fff1',
+    WETH: '0x4200000000000000000000000000000000000006',
+  },
+  avalanche: {
+    wZION: CONTRACTS.wZION,
+    USDC: '0xB97EF9Ef8734C71904D800722F4eF32e8f4A1B44',
+    WAVAX: '0xB31f66AA3C1e785abF6950e3C83D0d7b48bb84a9',
+  },
+  solana: {
+    ZION: null,
+    USDC: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+    SOL: null,
+    USDT: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
+  },
+  tron: {
+    ZION: null,
+    USDT: 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t',
+    TRX: null,
+  },
+  stellar: { ZION: null, USDC: null, XLM: null },
+  cardano: { ZION: null, ADA: null },
+  cosmos: { ZION: null, ATOM: null },
+  aptos: { ZION: null, USDC: null, APT: null },
+  sui: { ZION: null, USDC: null, SUI: null },
+  near: { ZION: null, USDC: null, NEAR: null },
+  ton: { ZION: null, USDT: null, TON: null },
+  zion: { ZION: null },
+};
+
+// Map UI chain ids to the canonical ChainId enum strings used by the Rust API.
+const CHAIN_API_NAMES: Record<string, string> = {
+  zion: 'zion_l1',
+  base: 'base',
+  arbitrum: 'arbitrum',
+  bsc: 'bsc',
+  polygon: 'polygon',
+  optimism: 'optimism',
+  avalanche: 'avalanche',
+  solana: 'solana',
+  tron: 'tron',
+  stellar: 'stellar',
+  cardano: 'cardano',
+  cosmos: 'cosmos',
+  aptos: 'aptos',
+  sui: 'sui',
+  near: 'near',
+  ton: 'ton',
+};
+
+const API_TO_UI_CHAIN: Record<string, string> = Object.fromEntries(
+  Object.entries(CHAIN_API_NAMES).map(([ui, api]) => [api, ui])
+) as Record<string, string>;
+
+interface Asset {
+  id: {
+    chain: string;
+    contract: string | null;
+    ticker: string;
+  };
+  decimals: number;
+  name: string;
+}
+
+interface Route {
+  route: Array<{ chain: string; contract: string | null; ticker: string }>;
+  expected_out: string;
+  slippage_bps: number;
+  total_fee_bps: number;
+}
 
 interface QuoteData {
-  quote_id: string;
-  path: {
-    steps: any[];
-    expected_output: string;
-    min_output: string;
-    total_fee_bps: number;
-    estimated_time_secs: number;
-    price_impact_bps: number;
-  };
-  expires_at: string;
+  routes: Route[];
 }
 
 interface SwapResult {
-  swap_id: string;
-  status: string;
-  steps: any[];
-  monitor_url: string;
+  out: string;
+}
+
+type SwapPhase = 'idle' | 'quoting' | 'quoted' | 'executing' | 'success' | 'error';
+
+function getTokenMeta(chain: string, symbol: string) {
+  return TOKENS_BY_CHAIN[chain]?.find(t => t.symbol === symbol);
+}
+
+function buildAsset(chain: string, symbol: string): Asset {
+  const meta = getTokenMeta(chain, symbol);
+  const chainApi = CHAIN_API_NAMES[chain] ?? chain;
+  const contract = TOKEN_CONTRACTS[chain]?.[symbol] ?? null;
+  return {
+    id: {
+      chain: chainApi,
+      contract,
+      ticker: symbol,
+    },
+    decimals: meta?.decimals ?? 18,
+    name: meta?.name ?? symbol,
+  };
+}
+
+function toAtomicAmount(amount: string, decimals: number): string {
+  const value = parseFloat(amount);
+  if (Number.isNaN(value) || value <= 0) return '0';
+  const scaled = Math.round(value * 10 ** decimals);
+  return scaled.toString();
+}
+
+function buildSteps(route: Route['route']) {
+  return route.map((asset, i) => {
+    if (i === route.length - 1) return null;
+    const next = route[i + 1];
+    const fromChain = API_TO_UI_CHAIN[asset.chain] ?? asset.chain;
+    const toChain = API_TO_UI_CHAIN[next.chain] ?? next.chain;
+    if (asset.chain === next.chain) {
+      return {
+        type: 'same_chain_swap' as const,
+        chain: fromChain,
+        from_token: asset.ticker,
+        to_token: next.ticker,
+        dex: 'ZionDex AMM',
+      };
+    }
+    return {
+      type: 'bridge' as const,
+      from_chain: fromChain,
+      to_chain: toChain,
+      asset: asset.ticker,
+    };
+  }).filter(Boolean);
 }
 
 export default function CrossChainSwapWidget() {
-  const { connected, account, connect } = useWallet();
-  const [srcChain, setSrcChain] = useState('solana');
+  const { connected, connect } = useWallet();
+  const [srcChain, setSrcChain] = useState('base');
   const [destChain, setDestChain] = useState('base');
-  const [srcToken, setSrcToken] = useState('USDC');
-  const [destToken, setDestToken] = useState('wZION');
+  const [srcToken, setSrcToken] = useState('wZION');
+  const [destToken, setDestToken] = useState('USDT');
   const [amount, setAmount] = useState('100');
   const [slippageBps, setSlippageBps] = useState(200); // 2%
   const [showSettings, setShowSettings] = useState(false);
 
-  const [quote, setQuote] = useState<QuoteData | null>(null);
+  const [route, setRoute] = useState<Route | null>(null);
   const [phase, setPhase] = useState<SwapPhase>('idle');
   const [error, setError] = useState<string | null>(null);
   const [swapResult, setSwapResult] = useState<SwapResult | null>(null);
@@ -61,11 +202,16 @@ export default function CrossChainSwapWidget() {
     setDestToken('');
   }, [destChain]);
 
+  const fromAsset = buildAsset(srcChain, srcToken);
+  const toAsset = buildAsset(destChain, destToken);
+  const amountAtomic = toAtomicAmount(amount, fromAsset.decimals);
+
   // Fetch quote
   const fetchQuote = useCallback(async () => {
     const amt = parseFloat(amount);
     if (!amt || amt <= 0 || !srcToken || !destToken) {
       setQuote(null);
+      setRoute(null);
       setPhase('idle');
       return;
     }
@@ -74,16 +220,18 @@ export default function CrossChainSwapWidget() {
     setError(null);
 
     try {
-      const resp = await fetch(`${ROUTER_URL}/quote`, {
+      const body = {
+        from: fromAsset,
+        to: toAsset,
+        amount: amountAtomic,
+        n: 3,
+        max_hops: 3,
+      };
+
+      const resp = await fetch(`${API_BASE}/quote/multi`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          src_chain: srcChain,
-          src_token: srcToken,
-          dest_chain: destChain,
-          dest_token: destToken,
-          amount: amount,
-        }),
+        body: JSON.stringify(body),
       });
 
       if (!resp.ok) {
@@ -91,15 +239,15 @@ export default function CrossChainSwapWidget() {
         throw new Error(`Quote failed: ${text}`);
       }
 
-      const data = await resp.json();
-      setQuote(data);
+      const data = await resp.json() as QuoteData;
+      setRoute(data.routes[0] ?? null);
       setPhase('quoted');
     } catch (e: any) {
       setError(e.message || 'Failed to get quote');
       setPhase('error');
-      setQuote(null);
+      setRoute(null);
     }
-  }, [srcChain, srcToken, destChain, destToken, amount]);
+  }, [srcToken, destToken, amount, fromAsset, toAsset, amountAtomic]);
 
   // Debounced quote fetch
   useEffect(() => {
@@ -109,21 +257,22 @@ export default function CrossChainSwapWidget() {
 
   // Execute swap
   const executeSwap = useCallback(async () => {
-    if (!quote) return;
+    if (!route || !srcToken || !destToken) return;
 
     setPhase('executing');
     setError(null);
 
     try {
-      const resp = await fetch(`${ROUTER_URL}/swap`, {
+      const body = {
+        from: fromAsset,
+        to: toAsset,
+        amount: amountAtomic,
+      };
+
+      const resp = await fetch(`${API_BASE}/execute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          quote_id: quote.quote_id,
-          sender: account || 'user',
-          recipient: recipient || account || 'user',
-          max_slippage_bps: slippageBps,
-        }),
+        body: JSON.stringify(body),
       });
 
       if (!resp.ok) {
@@ -131,14 +280,14 @@ export default function CrossChainSwapWidget() {
         throw new Error(`Swap failed: ${text}`);
       }
 
-      const data = await resp.json();
+      const data = await resp.json() as SwapResult;
       setSwapResult(data);
       setPhase('success');
     } catch (e: any) {
       setError(e.message || 'Swap execution failed');
       setPhase('error');
     }
-  }, [quote, recipient, slippageBps, account]);
+  }, [route, srcToken, destToken, fromAsset, toAsset, amountAtomic]);
 
   // Swap chains (reverse direction)
   const swapChains = () => {
@@ -147,6 +296,13 @@ export default function CrossChainSwapWidget() {
     setSrcToken(destToken);
     setDestToken(srcToken);
   };
+
+  const minOutput = route
+    ? (BigInt(route.expected_out) * BigInt(10000 - slippageBps) / BigInt(10000)).toString()
+    : '0';
+
+  const displayOut = route ? (Number(route.expected_out) / 10 ** toAsset.decimals).toFixed(6) : '0.0';
+  const displayMin = route ? (Number(minOutput) / 10 ** toAsset.decimals).toFixed(6) : '0.0';
 
   return (
     <div className="w-full max-w-lg mx-auto">
@@ -247,11 +403,11 @@ export default function CrossChainSwapWidget() {
           <div className="relative">
             <div className="w-full px-4 py-4 bg-zinc-900/40 border border-zinc-700/30 rounded-xl">
               <div className="text-2xl font-bold text-zion-gold">
-                {quote ? parseFloat(quote.path.expected_output).toFixed(6) : '0.0'}
+                {phase === 'quoting' ? '…' : displayOut}
               </div>
               <div className="text-xs text-zinc-500 mt-1">
                 {phase === 'quoting' && 'Fetching best price...'}
-                {phase === 'quoted' && `Min: ${parseFloat(quote!.path.min_output).toFixed(6)}`}
+                {phase === 'quoted' && `Min: ${displayMin}`}
                 {phase === 'idle' && 'Enter amount to get quote'}
               </div>
             </div>
@@ -270,13 +426,13 @@ export default function CrossChainSwapWidget() {
         </div>
 
         {/* Swap path visualization */}
-        {quote && (
+        {route && (
           <SwapPathVisual
-            steps={quote.path.steps}
-            expectedOutput={quote.path.expected_output}
-            totalFeeBps={quote.path.total_fee_bps}
-            estimatedTimeSecs={quote.path.estimated_time_secs}
-            priceImpactBps={quote.path.price_impact_bps}
+            steps={buildSteps(route.route) as any[]}
+            expectedOutput={displayOut}
+            totalFeeBps={route.total_fee_bps}
+            estimatedTimeSecs={30}
+            priceImpactBps={route.slippage_bps}
           />
         )}
 
@@ -293,8 +449,8 @@ export default function CrossChainSwapWidget() {
           <div className="mt-3 flex items-start gap-2 p-3 bg-zion-cyan/10 border border-zion-cyan/30 rounded-xl">
             <CheckCircle2 className="w-4 h-4 text-zion-cyan flex-shrink-0 mt-0.5" />
             <div className="text-sm text-zion-cyan">
-              <div>Swap submitted! ID: {swapResult.swap_id}</div>
-              <div className="text-xs text-zion-cyan/70 mt-1">Status: {swapResult.status}</div>
+              <div>Swap executed</div>
+              <div className="text-xs text-zion-cyan/70 mt-1">Output: {swapResult.out}</div>
             </div>
           </div>
         )}
@@ -302,7 +458,7 @@ export default function CrossChainSwapWidget() {
         {/* Execute button */}
         <button
           onClick={connected ? executeSwap : connect}
-          disabled={(!connected && !quote) || phase === 'quoting' || phase === 'executing'}
+          disabled={(!connected && !route) || phase === 'quoting' || phase === 'executing'}
           className="zion-button-primary w-full mt-4"
           style={{ '--rc': '252, 209, 22' } as React.CSSProperties}
         >
@@ -320,7 +476,7 @@ export default function CrossChainSwapWidget() {
         {/* Footer */}
         <div className="mt-3 text-center">
           <span className="text-xs text-zinc-600">
-            Powered by ZionDex Router · {ROUTER_URL.replace('http://', '').replace('https://', '')}
+            Powered by ZionDex Router · {API_BASE.replace('http://', '').replace('https://', '')}
           </span>
         </div>
       </div>

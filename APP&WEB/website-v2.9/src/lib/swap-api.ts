@@ -91,8 +91,9 @@ export async function submitClaim(input: {
       headers,
       body: JSON.stringify({
         hash_hex: input.hashHex,
-        preimage_hex: input.preimageHex,
-        recipient: input.recipient,
+        secret_hex: input.preimageHex,
+        to: input.recipient,
+        target_address: input.recipient,
       }),
     });
     const data = await res.json();

@@ -2,20 +2,16 @@
 
 /**
  * BridgeBurnWidget — interactive wZION → ZION burn widget.
- * Uses MetaMask (window.ethereum) + ethers v5 to call burn(amount, l1Recipient)
- * on the wZION ERC-20 contract on Base Mainnet.
+ * Uses the shared WalletContext (MetaMask/EIP-6963) for signing
+ * and calls burn(amount, l1Recipient) on the wZION ERC-20 contract on Base Mainnet.
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { ethers } from 'ethers';
 import { Flame, Wallet, RefreshCw, ExternalLink, CheckCircle2, AlertCircle, Copy } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
-import {
-  BRIDGE_CONTRACTS,
-  WZION_ABI,
-  BASE_MAINNET_CHAIN_ID,
-  switchToBaseMainnet,
-} from '@/lib/bridge-api';
+import { useWallet } from '@/contexts/WalletContext';
+import { BRIDGE_CONTRACTS, WZION_ABI } from '@/lib/bridge-api';
 
 const BridgeBurnWidgetCopy = {
   enUs: { cs: `cs-CZ`, en: `en-US` },
@@ -78,8 +74,9 @@ interface TxInfo {
 export default function BridgeBurnWidget() {
   const { lang } = useLang();
   const cs = lang === 'cs';
+  const { connected, account, signer, provider, isBaseMainnet, connect, switchToBase } = useWallet();
+
   const [phase, setPhase] = useState<Phase>('idle');
-  const [account, setAccount] = useState<string | null>(null);
   const [balance, setBalance] = useState<string>('0');
   const [amount, setAmount] = useState('');
   const [l1Address, setL1Address] = useState('');
@@ -87,22 +84,17 @@ export default function BridgeBurnWidget() {
   const [txInfo, setTxInfo] = useState<TxInfo | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const hasMetaMask = typeof window !== 'undefined' && !!(window as Window & { ethereum?: unknown }).ethereum;
+  const hasWallet = typeof window !== 'undefined';
 
   // ── helpers ─────────────────────────────────────────────────────────────────
 
-  function getProvider() {
-    const eth = (window as Window & { ethereum?: unknown }).ethereum;
-    if (!eth) throw new Error('MetaMask not found');
-    return new ethers.providers.Web3Provider(eth as ethers.providers.ExternalProvider);
-  }
-
-  const refreshBalance = useCallback(async (addr: string) => {
+  const refreshBalance = useCallback(async () => {
+    if (!account) return;
     try {
-      setPhase('loading-balance');
-      const provider = getProvider();
-      const contract = new ethers.Contract(BRIDGE_CONTRACTS.wzion_address, WZION_ABI, provider);
-      const raw: ethers.BigNumber = await contract.balanceOf(addr);
+      setPhase(p => (p === 'idle' ? 'loading-balance' : p));
+      const readProvider = provider ?? new ethers.providers.JsonRpcProvider('https://mainnet.base.org');
+      const contract = new ethers.Contract(BRIDGE_CONTRACTS.wzion_address, WZION_ABI, readProvider);
+      const raw: ethers.BigNumber = await contract.balanceOf(account);
       const formatted = ethers.utils.formatUnits(raw, WZION_DECIMALS);
       setBalance(parseFloat(formatted).toLocaleString(BridgeBurnWidgetCopy.enUs[cs ? 'cs' : 'en'], { maximumFractionDigits: 8 }));
       setPhase('ready');
@@ -111,70 +103,56 @@ export default function BridgeBurnWidget() {
       setPhase('ready');
       console.error('balance fetch error', e);
     }
-  }, [cs]);
+  }, [account, provider, cs]);
+
+  // Sync phase with wallet state
+  useEffect(() => {
+    if (connected && isBaseMainnet) {
+      void refreshBalance();
+    } else if (connected && !isBaseMainnet) {
+      setPhase('switching-chain');
+    } else {
+      setPhase('idle');
+      setBalance('0');
+    }
+  }, [connected, isBaseMainnet, refreshBalance]);
 
   // ── connect wallet ───────────────────────────────────────────────────────────
 
-  async function connect() {
+  async function handleConnect() {
     setError(null);
     setPhase('connecting');
     try {
-      const provider = getProvider();
-      const accounts = await provider.send('eth_requestAccounts', []);
-      if (!accounts[0]) throw new Error('No account returned');
-
-      setPhase('switching-chain');
-      await switchToBaseMainnet();
-
-      const network = await provider.getNetwork();
-      if (network.chainId !== BASE_MAINNET_CHAIN_ID) {
-        throw new Error(`Wrong network: expected Base Mainnet (${BASE_MAINNET_CHAIN_ID}), got ${network.chainId}`);
+      await connect();
+      if (!connected) {
+        throw new Error('No wallet connected');
       }
-
-      setAccount(accounts[0] as string);
-      await refreshBalance(accounts[0] as string);
+      if (!isBaseMainnet) {
+        setPhase('switching-chain');
+        await switchToBase();
+      }
+      setPhase('ready');
     } catch (e: unknown) {
       setError((e as Error).message ?? String(e));
       setPhase('idle');
     }
   }
 
-  // listen for account/chain changes
+  // listen for account/chain changes are now handled by WalletContext; just refresh on account change
   useEffect(() => {
-    if (!hasMetaMask) return;
-    const eth = (window as Window & { ethereum?: {
-      on: (event: string, cb: (...args: unknown[]) => void) => void;
-      removeListener: (event: string, cb: (...args: unknown[]) => void) => void;
-    } }).ethereum!;
-
-    const onAccounts = (accounts: unknown) => {
-      const accs = accounts as string[];
-      if (accs.length === 0) {
-        setAccount(null);
-        setPhase('idle');
-      } else {
-        setAccount(accs[0]);
-        refreshBalance(accs[0]);
-      }
-    };
-
-    const onChain = () => {
-      if (account) refreshBalance(account);
-    };
-
-    eth.on('accountsChanged', onAccounts);
-    eth.on('chainChanged', onChain);
-    return () => {
-      eth.removeListener('accountsChanged', onAccounts);
-      eth.removeListener('chainChanged', onChain);
-    };
-  }, [account, refreshBalance, hasMetaMask]);
+    if (connected && isBaseMainnet && account) {
+      void refreshBalance();
+    }
+  }, [account, connected, isBaseMainnet, refreshBalance]);
 
   // ── burn ─────────────────────────────────────────────────────────────────────
 
   async function burn() {
     setError(null);
-    if (!account) return;
+    if (!signer || !account) {
+      setError('Wallet not connected');
+      return;
+    }
 
     const amountFloat = parseFloat(amount);
     if (isNaN(amountFloat) || amountFloat <= 0) {
@@ -188,14 +166,8 @@ export default function BridgeBurnWidget() {
 
     setPhase('confirming');
     try {
-      const provider = getProvider();
-      await switchToBaseMainnet();
-      const signer = provider.getSigner();
-
-      // ensure still on right network
-      const network = await provider.getNetwork();
-      if (network.chainId !== BASE_MAINNET_CHAIN_ID) {
-        throw new Error(BridgeBurnWidgetCopy.pleaseSwitchToBaseInMetamask[cs ? 'cs' : 'en']);
+      if (!isBaseMainnet) {
+        await switchToBase();
       }
 
       const contract = new ethers.Contract(BRIDGE_CONTRACTS.wzion_address, WZION_ABI, signer);
@@ -207,7 +179,7 @@ export default function BridgeBurnWidget() {
       setPhase('success');
 
       // refresh balance after confirmation
-      tx.wait(1).then(() => refreshBalance(account)).catch(() => {});
+      tx.wait(1).then(() => refreshBalance()).catch(() => {});
     } catch (e: unknown) {
       const msg = (e as { reason?: string; message?: string }).reason ?? (e as Error).message ?? String(e);
       setError(msg);
@@ -226,7 +198,7 @@ export default function BridgeBurnWidget() {
   // ── render ───────────────────────────────────────────────────────────────────
 
   // Not connected — show connect button
-  if (phase === 'idle' || phase === 'connecting' || phase === 'switching-chain') {
+  if (phase === 'idle' || phase === 'connecting' || phase === 'switching-chain' || !connected) {
     return (
       <div className="zion-rainbow-card p-6 space-y-4" style={{ '--rc': '252, 209, 22' } as React.CSSProperties}>
         <div className="flex items-center gap-2">
@@ -238,7 +210,7 @@ export default function BridgeBurnWidget() {
           {BridgeBurnWidgetCopy.connectMetamaskOnBaseToBurnYou[cs ? 'cs' : 'en']}
         </p>
 
-        {!hasMetaMask && (
+        {!hasWallet && (
           <div className="flex items-start gap-2 rounded-xl border border-zion-gold/30 bg-zion-gold/10 p-3">
             <AlertCircle className="h-4 w-4 text-zion-gold shrink-0 mt-0.5" />
             <p className="text-xs text-zion-gold">
@@ -259,8 +231,8 @@ export default function BridgeBurnWidget() {
         )}
 
         <button
-          onClick={connect}
-          disabled={!hasMetaMask || phase !== 'idle'}
+          onClick={handleConnect}
+          disabled={phase === 'connecting' || phase === 'switching-chain'}
           className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-zion-gold/40 bg-zion-gold/20 px-5 py-3 text-sm font-semibold text-zion-gold hover:bg-zion-gold/30 disabled:opacity-50 transition-colors"
         >
           {phase === 'connecting' && <RefreshCw className="h-4 w-4 animate-spin" />}
@@ -320,7 +292,7 @@ export default function BridgeBurnWidget() {
             setTxInfo(null);
             setAmount('');
             setL1Address('');
-            refreshBalance(account!);
+            void refreshBalance();
           }}
           className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
         >
@@ -344,7 +316,7 @@ export default function BridgeBurnWidget() {
           <h3 className="font-semibold text-white text-sm">{BridgeBurnWidgetCopy.burnWzionZionOnL1[cs ? 'cs' : 'en']}</h3>
         </div>
         <button
-          onClick={() => account && refreshBalance(account)}
+          onClick={refreshBalance}
           disabled={isBusy}
           className="rounded-xl border border-white/10 bg-white/5 p-1.5 hover:bg-white/10 disabled:opacity-50 transition-colors"
           title={BridgeBurnWidgetCopy.refreshBalance[cs ? 'cs' : 'en']}
@@ -439,17 +411,17 @@ export default function BridgeBurnWidget() {
         {isBusy ? (
           <>
             <RefreshCw className="h-4 w-4 animate-spin" />
-            {phase === 'confirming' ? (BridgeBurnWidgetCopy.confirmInMetamask[cs ? 'cs' : 'en']) : phase === 'pending' ? (BridgeBurnWidgetCopy.broadcastingTx[cs ? 'cs' : 'en']) : (BridgeBurnWidgetCopy.loading[cs ? 'cs' : 'en'])}
+            {phase === 'confirming' ? (BridgeBurnWidgetCopy.confirmInMetamask[cs ? 'cs' : 'en']) : phase === 'loading-balance' ? (BridgeBurnWidgetCopy.loading[cs ? 'cs' : 'en']) : (BridgeBurnWidgetCopy.broadcastingTx[cs ? 'cs' : 'en'])}
           </>
         ) : (
           <>
             <Flame className="h-4 w-4" />
-            {BridgeBurnWidgetCopy.burn[cs ? 'cs' : 'en']}{amountFloat > 0 ? `${amountFloat} ` : ''}wZION → ZION on L1
+            {BridgeBurnWidgetCopy.burn[cs ? 'cs' : 'en']}{amountFloat > 0 ? amountFloat.toFixed(4) : ''} wZION
           </>
         )}
       </button>
 
-      <p className="text-xs text-gray-500 text-center">
+      <p className="text-[10px] text-gray-500 leading-relaxed">
         {BridgeBurnWidgetCopy.zionArrivesOnL1Within5MinAfter[cs ? 'cs' : 'en']}
       </p>
     </div>

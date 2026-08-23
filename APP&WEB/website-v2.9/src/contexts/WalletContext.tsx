@@ -1,12 +1,12 @@
 'use client';
 
 /**
- * WalletContext — shared MetaMask wallet connection for DeFi pages.
+ * WalletContext — shared EVM wallet connection for DeFi pages.
  * Handles connect/disconnect, chain switching to Base Mainnet (8453),
- * and exposes account + provider to all children.
+ * EIP-6963 multi-provider discovery, and exposes account + provider/signer.
  */
 
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from 'react';
 import { ethers } from 'ethers';
 
 // ─── Base Mainnet ──────────────────────────────────────────────────────────────
@@ -16,7 +16,7 @@ const BASE_MAINNET_HEX = '0x2105';
 
 const BASE_CHAIN_PARAMS = {
   chainId: BASE_MAINNET_HEX,
-  chainName: 'Base',
+  chainName: 'Base Mainnet',
   nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
   rpcUrls: ['https://mainnet.base.org'],
   blockExplorerUrls: ['https://basescan.org'],
@@ -32,6 +32,7 @@ interface WalletState {
   isBaseMainnet: boolean;
   provider: ethers.providers.Web3Provider | null;
   signer: ethers.Signer | null;
+  walletName: string | null;
   connect: () => Promise<void>;
   disconnect: () => void;
   switchToBase: () => Promise<void>;
@@ -46,6 +47,7 @@ const defaultState: WalletState = {
   isBaseMainnet: false,
   provider: null,
   signer: null,
+  walletName: null,
   connect: async () => {},
   disconnect: () => {},
   switchToBase: async () => {},
@@ -62,44 +64,136 @@ interface EthereumProvider extends ethers.providers.ExternalProvider {
   removeListener(event: 'chainChanged', handler: (chainId: string) => void): void;
 }
 
-function getEthereum(): EthereumProvider | null {
-  if (typeof window === 'undefined') return null;
-  return ((window as Window & { ethereum?: unknown }).ethereum as EthereumProvider | undefined) ?? null;
+interface Eip6963ProviderInfo {
+  name: string;
+  icon?: string;
+  rdns?: string;
+  uuid: string;
 }
 
-// ─── Provider ──────────────────────────────────────────────────────────────────
+interface Eip6963ProviderDetail {
+  info: Eip6963ProviderInfo;
+  provider: EthereumProvider;
+}
+
+// ─── Provider discovery ────────────────────────────────────────────────────────
+
+function isEthereumProvider(value: unknown): value is EthereumProvider {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as EthereumProvider).request === 'function'
+  );
+}
+
+function getLegacyProvider(): EthereumProvider | null {
+  if (typeof window === 'undefined') return null;
+  const win = window as Window & { ethereum?: unknown };
+  if (isEthereumProvider(win.ethereum)) return win.ethereum;
+  if (Array.isArray(win.ethereum)) {
+    const mm = win.ethereum.find((p) => isEthereumProvider(p) && (p as any).isMetaMask);
+    if (mm) return mm as EthereumProvider;
+    const first = win.ethereum.find((p) => isEthereumProvider(p));
+    if (first) return first as EthereumProvider;
+  }
+  return null;
+}
+
+function discoverEip6963Providers(timeout = 600): Promise<Eip6963ProviderDetail[]> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') {
+      resolve([]);
+      return;
+    }
+
+    const providers: Eip6963ProviderDetail[] = [];
+
+    const onAnnounce = (event: Event) => {
+      const detail = (event as CustomEvent<Eip6963ProviderDetail>).detail;
+      if (detail && isEthereumProvider(detail.provider)) {
+        providers.push(detail);
+      }
+    };
+
+    window.addEventListener('eip6963:announceProvider' as any, onAnnounce);
+    window.dispatchEvent(new Event('eip6963:requestProvider' as any));
+
+    setTimeout(() => {
+      window.removeEventListener('eip6963:announceProvider' as any, onAnnounce);
+      resolve(providers);
+    }, timeout);
+  });
+}
+
+const METAMASK_RDNS = [
+  'io.metamask',
+  'io.metamask.mobile',
+  'io.metamask.flask',
+];
+
+function preferMetaMask(providers: Eip6963ProviderDetail[]): Eip6963ProviderDetail | null {
+  const mm = providers.find((p) => p.info.rdns && METAMASK_RDNS.includes(p.info.rdns));
+  if (mm) return mm;
+  return providers[0] ?? null;
+}
+
+async function getProvider(preferMetaMaskWallet = true): Promise<{
+  provider: EthereumProvider;
+  name: string;
+} | null> {
+  if (typeof window === 'undefined') return null;
+
+  const eip6963 = await discoverEip6963Providers();
+  if (eip6963.length) {
+    const chosen = preferMetaMaskWallet ? preferMetaMask(eip6963) : eip6963[0];
+    if (chosen) return { provider: chosen.provider, name: chosen.info.name };
+  }
+
+  const legacy = getLegacyProvider();
+  if (legacy) {
+    const name = (legacy as any).isMetaMask ? 'MetaMask' : 'Injected Wallet';
+    return { provider: legacy, name };
+  }
+
+  return null;
+}
+
+// ─── Provider component ────────────────────────────────────────────────────────
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [account, setAccount] = useState<string | null>(null);
   const [chainId, setChainId] = useState<number | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeProvider, setActiveProvider] = useState<EthereumProvider | null>(null);
+  const [walletName, setWalletName] = useState<string | null>(null);
 
   const connected = !!account;
   const isBaseMainnet = chainId === BASE_MAINNET_CHAIN_ID;
 
-  const getProviderAndSigner = useCallback(() => {
-    const eth = getEthereum();
-    if (!eth) return { provider: null, signer: null };
-    const provider = new ethers.providers.Web3Provider(eth, 'any');
-    const signer = account ? provider.getSigner() : null;
-    return { provider, signer };
-  }, [account]);
+  const provider = useMemo(() => {
+    if (!activeProvider) return null;
+    return new ethers.providers.Web3Provider(activeProvider as ethers.providers.ExternalProvider, 'any');
+  }, [activeProvider]);
 
-  const { provider, signer } = getProviderAndSigner();
+  const signer = useMemo(() => {
+    return provider ? provider.getSigner() : null;
+  }, [provider]);
 
-  // ── switch chain ───────────────────────────────────────────────────────────
+  // ─── switch chain ─────────────────────────────────────────────────────────────
 
   const switchToBase = useCallback(async () => {
-    const eth = getEthereum();
-    if (!eth) throw new Error('MetaMask not found');
+    const eth = activeProvider;
+    if (!eth) throw new Error('Wallet not connected');
+
     try {
       await eth.request({
         method: 'wallet_switchEthereumChain',
         params: [{ chainId: BASE_MAINNET_HEX }],
       });
     } catch (e: unknown) {
-      if ((e as { code?: number }).code === 4902) {
+      const code = (e as { code?: number }).code;
+      if (code === 4902) {
         await eth.request({
           method: 'wallet_addEthereumChain',
           params: [BASE_CHAIN_PARAMS],
@@ -108,72 +202,124 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         throw e;
       }
     }
-  }, []);
+  }, [activeProvider]);
 
-  // ── connect ────────────────────────────────────────────────────────────────
+  // ─── connect ──────────────────────────────────────────────────────────────────
 
   const connect = useCallback(async () => {
-    const eth = getEthereum();
-    if (!eth) {
-      setError('MetaMask not installed');
-      return;
-    }
-    setConnecting(true);
     setError(null);
+    setConnecting(true);
+
     try {
+      const found = await getProvider();
+      if (!found) {
+        throw new Error('No Ethereum wallet found. Please install MetaMask or enable an injected wallet.');
+      }
+
+      const { provider: eth, name } = found;
+      setActiveProvider(eth);
+      setWalletName(name);
+
       const accounts = (await eth.request({ method: 'eth_requestAccounts' })) as string[];
-      if (!accounts[0]) throw new Error('No account');
-      await switchToBase();
+      if (!accounts[0]) throw new Error('No account selected');
+
       setAccount(accounts[0]);
-      setChainId(BASE_MAINNET_CHAIN_ID);
+
+      const chainHex = (await eth.request({ method: 'eth_chainId' })) as string;
+      const currentChain = parseInt(chainHex, 16);
+      setChainId(currentChain);
+
+      if (currentChain !== BASE_MAINNET_CHAIN_ID) {
+        await switchToBase();
+        const newChainHex = (await eth.request({ method: 'eth_chainId' })) as string;
+        setChainId(parseInt(newChainHex, 16));
+      }
     } catch (e) {
-      setError((e as Error).message ?? String(e));
+      const msg = (e as Error).message ?? String(e);
+      if (msg.toLowerCase().includes('user rejected') || msg.toLowerCase().includes('cancelled')) {
+        setError('Connection rejected. Please approve the wallet request.');
+      } else {
+        setError(msg);
+      }
     } finally {
       setConnecting(false);
     }
   }, [switchToBase]);
 
+  // ─── disconnect ───────────────────────────────────────────────────────────────
+
   const disconnect = useCallback(() => {
+    if (activeProvider) {
+      // Best-effort revoke for MetaMask; ignore errors if not supported.
+      activeProvider
+        .request({
+          method: 'wallet_revokePermissions',
+          params: [{ eth_accounts: {} }],
+        } as { method: string; params?: unknown[] })
+        .catch(() => {});
+    }
+
+    setActiveProvider(null);
+    setWalletName(null);
     setAccount(null);
     setChainId(null);
     setError(null);
-  }, []);
+  }, [activeProvider]);
 
-  // ── listeners ──────────────────────────────────────────────────────────────
+  // ─── listeners + auto-connect ─────────────────────────────────────────────────
+
+  const mounted = useRef(true);
 
   useEffect(() => {
-    const eth = getEthereum();
-    if (!eth) return;
+    mounted.current = true;
 
-    const onAccounts = (accs: string[]) => {
-      if (accs.length === 0) {
-        setAccount(null);
-      } else {
-        setAccount(accs[0]);
+    const init = async () => {
+      const found = await getProvider();
+      if (!found || !mounted.current) return;
+
+      const { provider: eth, name } = found;
+      setActiveProvider(eth);
+      setWalletName(name);
+
+      const onAccounts = (accs: string[]) => {
+        if (accs.length === 0) {
+          setAccount(null);
+          setChainId(null);
+        } else {
+          setAccount(accs[0]);
+        }
+      };
+
+      const onChain = (hexId: string) => {
+        setChainId(parseInt(hexId, 16));
+      };
+
+      eth.on('accountsChanged', onAccounts);
+      eth.on('chainChanged', onChain);
+
+      // Auto-connect if already authorized (does not prompt)
+      try {
+        const accounts = (await eth.request({ method: 'eth_accounts' })) as string[];
+        if (accounts[0] && mounted.current) {
+          setAccount(accounts[0]);
+          const chain = (await eth.request({ method: 'eth_chainId' })) as string;
+          if (mounted.current) setChainId(parseInt(chain, 16));
+        }
+      } catch {
+        // silent
       }
-    };
-    const onChain = (hexId: string) => {
-      setChainId(parseInt(hexId, 16));
+
+      return () => {
+        eth.removeListener('accountsChanged', onAccounts);
+        eth.removeListener('chainChanged', onChain);
+      };
     };
 
-    eth.on('accountsChanged', onAccounts);
-    eth.on('chainChanged', onChain);
-
-    // Check if already connected
-    eth.request({ method: 'eth_accounts' }).then((accs) => {
-      const accounts = accs as string[];
-      if (accounts.length > 0) {
-        setAccount(accounts[0]);
-        eth.request({ method: 'eth_chainId' }).then((chainId) => {
-          const hex = chainId as string;
-          setChainId(parseInt(hex, 16));
-        });
-      }
-    }).catch(() => {});
+    const cleanupPromise = init();
 
     return () => {
-      eth.removeListener('accountsChanged', onAccounts);
-      eth.removeListener('chainChanged', onChain);
+      mounted.current = false;
+      cleanupPromise.then((cleanup) => cleanup?.()).catch(() => {});
     };
   }, []);
 
@@ -187,6 +333,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         isBaseMainnet,
         provider,
         signer,
+        walletName,
         connect,
         disconnect,
         switchToBase,

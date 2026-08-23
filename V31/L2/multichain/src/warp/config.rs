@@ -17,6 +17,11 @@ pub struct WarpConfig {
     pub l1_rpc_url: String,
     pub l1_vault_address: String,
 
+    /// Optional BIP39 mnemonic for deterministic L1 relay keys.
+    /// Falls back to WARP_MNEMONIC env var or a random keyring if unset.
+    #[serde(default)]
+    pub mnemonic: Option<String>,
+
     /// Poll interval for chain watchers in seconds (default: 15).
     #[serde(default)]
     pub poll_interval_secs: Option<u64>,
@@ -73,6 +78,7 @@ impl Default for WarpConfig {
             timelock_threshold_zion: 1_000_000,
             l1_rpc_url: "http://127.0.0.1:9445".into(),
             l1_vault_address: "zion1warp_vault_address".into(),
+            mnemonic: None,
             chains: vec![],
             poll_interval_secs: None,
             solver: SolverConfig::default(),

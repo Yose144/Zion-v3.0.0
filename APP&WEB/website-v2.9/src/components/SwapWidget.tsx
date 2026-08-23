@@ -1,8 +1,9 @@
 'use client';
 
 /**
- * SwapWidget — real Uniswap V3 swap interface for wZION/ETH on Base Mainnet.
+ * SwapWidget — real Uniswap V3 swap interface for wZION/WETH on Base Mainnet.
  * Uses SwapRouter02 for execution and QuoterV2 for price quotes.
+ * wZION → ETH swaps unwrap the WETH output to native ETH in the same tx.
  */
 
 import { useState, useCallback, useEffect } from 'react';
@@ -10,7 +11,7 @@ import { ethers } from 'ethers';
 import { ArrowDownUp, Loader2, ExternalLink, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { useWallet } from '@/contexts/WalletContext';
-import { CONTRACTS, WZION_ABI, SWAP_ROUTER_ABI, QUOTER_V2_ABI } from '@/lib/defi-contracts';
+import { CONTRACTS, WZION_ABI, SWAP_ROUTER02_ABI, QUOTER_V2_ABI } from '@/lib/defi-contracts';
 
 const SwapWidgetCopy = {
   swap: { cs: `Swap`, en: `Swap` },
@@ -27,8 +28,13 @@ const SwapWidgetCopy = {
   swapping: { cs: `Swapuji…`, en: `Swapping…` },
 };
 
-const POOL_FEE = 3000; // 0.3%
+/** wZION/WETH pool fee tier = 1% */
+const POOL_FEE = 10000;
 const SLIPPAGE_BPS = 100; // 1% slippage tolerance
+const DEADLINE_SECONDS = 300;
+
+/** Sentinel for SwapRouter02's `address(this)` */
+const ADDRESS_THIS = '0x0000000000000000000000000000000000000002';
 
 type Direction = 'eth-to-wzion' | 'wzion-to-eth';
 type SwapPhase = 'idle' | 'quoting' | 'approving' | 'swapping' | 'success' | 'error';
@@ -100,7 +106,8 @@ export default function SwapWidget() {
         });
 
         const amountOut = ethers.utils.formatEther(result.amountOut);
-        setQuote(parseFloat(amountOut).toFixed(direction === 'eth-to-wzion' ? 2 : 8));
+        const decimals = direction === 'eth-to-wzion' ? 2 : 6;
+        setQuote(parseFloat(amountOut).toFixed(decimals));
         setPhase('idle');
       } catch {
         setQuote(null);
@@ -139,7 +146,8 @@ export default function SwapWidget() {
       const quoteWei = ethers.utils.parseEther(quote ?? '0');
       const amountOutMin = quoteWei.mul(10000 - SLIPPAGE_BPS).div(10000);
 
-      const router = new ethers.Contract(CONTRACTS.UniV3Router, SWAP_ROUTER_ABI, signer);
+      const router = new ethers.Contract(CONTRACTS.UniV3Router, SWAP_ROUTER02_ABI, signer);
+      const deadline = Math.floor(Date.now() / 1000) + DEADLINE_SECONDS;
 
       if (direction === 'eth-to-wzion') {
         // ETH → wZION: send ETH as value, tokenIn = WETH
@@ -160,7 +168,7 @@ export default function SwapWidget() {
         await tx.wait();
         setPhase('success');
       } else {
-        // wZION → ETH: need to approve router first
+        // wZION → ETH: swap wZION for WETH, then unwrap to ETH in a single multicall
         setPhase('approving');
         const wzion = new ethers.Contract(CONTRACTS.wZION, WZION_ABI, signer);
         const allowance = await wzion.allowance(account, CONTRACTS.UniV3Router);
@@ -170,15 +178,25 @@ export default function SwapWidget() {
         }
 
         setPhase('swapping');
-        const tx = await router.exactInputSingle({
-          tokenIn: CONTRACTS.wZION,
-          tokenOut: CONTRACTS.WETH,
-          fee: POOL_FEE,
-          recipient: account,
-          amountIn,
-          amountOutMinimum: amountOutMin,
-          sqrtPriceLimitX96: 0,
-        });
+
+        const swapCalldata = router.interface.encodeFunctionData('exactInputSingle', [
+          {
+            tokenIn: CONTRACTS.wZION,
+            tokenOut: CONTRACTS.WETH,
+            fee: POOL_FEE,
+            recipient: ADDRESS_THIS,
+            amountIn,
+            amountOutMinimum: amountOutMin,
+            sqrtPriceLimitX96: 0,
+          },
+        ]);
+
+        const unwrapCalldata = router.interface.encodeFunctionData('unwrapWETH9', [
+          amountOutMin,
+          account,
+        ]);
+
+        const tx = await router.multicall(deadline, [swapCalldata, unwrapCalldata]);
         setTxHash(tx.hash);
         await tx.wait();
         setPhase('success');
@@ -304,7 +322,7 @@ export default function SwapWidget() {
               1 wZION ≈ {direction === 'eth-to-wzion'
                 ? (parseFloat(inputAmount) / parseFloat(quote)).toFixed(8)
                 : (parseFloat(quote) / parseFloat(inputAmount)).toFixed(8)
-              } ETH · {SwapWidgetCopy.fee[cs ? 'cs' : 'en']} 0.3% · slippage 1%
+              } ETH · {SwapWidgetCopy.fee[cs ? 'cs' : 'en']} 1% · slippage 1%
             </div>
           )}
 
@@ -352,9 +370,9 @@ export default function SwapWidget() {
 
           {/* Pool info */}
           <div className="flex items-center justify-between text-[10px] text-gray-500 pt-2">
-            <span>Uniswap V3 · Base Mainnet · 0.3% fee</span>
+            <span>Uniswap V3 · Base Mainnet · 1% fee</span>
             <a
-              href={`https://basescan.org/address/${CONTRACTS.UniV3PoolUSDT}`}
+              href={`https://basescan.org/address/${CONTRACTS.UniV3PoolWETH}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 hover:text-gray-300 transition-colors"

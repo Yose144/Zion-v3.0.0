@@ -606,12 +606,19 @@ struct HtlcLockRequest {
     target_pubkey_hex: Option<String>,
 }
 
-fn decode_pubkey_hex(hex: &Option<String>) -> Result<Option<[u8; 32]>, StatusCode> {
+fn bad_request(msg: &str) -> (StatusCode, Json<serde_json::Value>) {
+    (
+        StatusCode::BAD_REQUEST,
+        Json(serde_json::json!({"message": msg})),
+    )
+}
+
+fn decode_pubkey_hex(hex: &Option<String>) -> Result<Option<[u8; 32]>, (StatusCode, Json<serde_json::Value>)> {
     match hex.as_deref() {
         None | Some("") => Ok(None),
         Some(s) => {
-            let bytes = hex::decode(s).map_err(|_| StatusCode::BAD_REQUEST)?;
-            bytes.try_into().map_err(|_| StatusCode::BAD_REQUEST).map(Some)
+            let bytes = hex::decode(s).map_err(|_| bad_request("invalid pubkey hex"))?;
+            bytes.try_into().map_err(|_| bad_request("pubkey must be 32 bytes")).map(Some)
         }
     }
 }
@@ -619,10 +626,11 @@ fn decode_pubkey_hex(hex: &Option<String>) -> Result<Option<[u8; 32]>, StatusCod
 async fn htlc_lock(
     State(state): State<AppState>,
     Json(req): Json<HtlcLockRequest>,
-) -> Result<Json<serde_json::Value>, StatusCode> {
-    let from_id = chain_name_to_id(&req.from).map_err(|_| StatusCode::BAD_REQUEST)?;
-    let to_id = chain_name_to_id(&req.to).map_err(|_| StatusCode::BAD_REQUEST)?;
-    let hashlock = Hash::from_hex(&req.hash_hex).ok_or(StatusCode::BAD_REQUEST)?;
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let from_id = chain_name_to_id(&req.from).map_err(|e| bad_request(&e.to_string()))?;
+    let to_id = chain_name_to_id(&req.to).map_err(|e| bad_request(&e.to_string()))?;
+    let hashlock = Hash::from_hex(&req.hash_hex)
+        .ok_or_else(|| bad_request("invalid hash_hex"))?;
 
     let source = build_endpoint(
         state.service.as_ref(),
@@ -631,7 +639,7 @@ async fn htlc_lock(
         req.amount,
         default_ticker(from_id),
     )
-    .map_err(|_| StatusCode::BAD_REQUEST)?;
+    .map_err(|e| bad_request(&e.to_string()))?;
     let target = build_endpoint(
         state.service.as_ref(),
         to_id,
@@ -639,7 +647,7 @@ async fn htlc_lock(
         req.amount,
         default_ticker(to_id),
     )
-    .map_err(|_| StatusCode::BAD_REQUEST)?;
+    .map_err(|e| bad_request(&e.to_string()))?;
 
     let mut transfer = Transfer::new(format!("htlc-lock-{}", req.hash_hex), TransferDirection::Htlc, source, target);
     transfer.hashlock = Some(hashlock);
@@ -653,7 +661,7 @@ async fn htlc_lock(
             "status": transfer.status,
             "transfer_id": transfer.id,
         }))),
-        Err(_) => Err(StatusCode::BAD_REQUEST),
+        Err(e) => Err(bad_request(&e.to_string())),
     }
 }
 
@@ -669,18 +677,19 @@ struct HtlcClaimRequest {
 async fn htlc_claim(
     State(state): State<AppState>,
     Json(req): Json<HtlcClaimRequest>,
-) -> Result<Json<serde_json::Value>, StatusCode> {
-    let to_id = chain_name_to_id(&req.to).map_err(|_| StatusCode::BAD_REQUEST)?;
-    let hashlock = Hash::from_hex(&req.hash_hex).ok_or(StatusCode::BAD_REQUEST)?;
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let to_id = chain_name_to_id(&req.to).map_err(|e| bad_request(&e.to_string()))?;
+    let hashlock = Hash::from_hex(&req.hash_hex)
+        .ok_or_else(|| bad_request("invalid hash_hex"))?;
     let record = state
         .service
         .htlc()
         .get_record(&req.hash_hex)
         .await
-        .ok_or(StatusCode::NOT_FOUND)?;
+        .ok_or_else(|| (StatusCode::NOT_FOUND, Json(serde_json::json!({"message": "HTLC not found"}))))?;
     let recipient = req.target_address.unwrap_or(record.counterparty_addr.clone());
 
-    let secret = hex::decode(&req.secret_hex).map_err(|_| StatusCode::BAD_REQUEST)?;
+    let secret = hex::decode(&req.secret_hex).map_err(|_| bad_request("invalid secret_hex"))?;
 
     // Build a minimal target endpoint for the adapter; source is irrelevant for claim.
     let source = build_endpoint(
@@ -690,7 +699,7 @@ async fn htlc_claim(
         record.amount as u128,
         default_ticker(to_id),
     )
-    .map_err(|_| StatusCode::BAD_REQUEST)?;
+    .map_err(|e| bad_request(&e.to_string()))?;
     let target = build_endpoint(
         state.service.as_ref(),
         to_id,
@@ -698,7 +707,7 @@ async fn htlc_claim(
         record.amount as u128,
         default_ticker(to_id),
     )
-    .map_err(|_| StatusCode::BAD_REQUEST)?;
+    .map_err(|e| bad_request(&e.to_string()))?;
 
     let mut transfer = Transfer::new(format!("htlc-claim-{}", req.hash_hex), TransferDirection::Htlc, source, target);
     transfer.hashlock = Some(hashlock);
@@ -709,7 +718,7 @@ async fn htlc_claim(
             "status": transfer.status,
             "recipient": recipient,
         }))),
-        Err(_) => Err(StatusCode::BAD_REQUEST),
+        Err(e) => Err(bad_request(&e.to_string())),
     }
 }
 
@@ -724,15 +733,16 @@ struct HtlcRefundRequest {
 async fn htlc_refund(
     State(state): State<AppState>,
     Json(req): Json<HtlcRefundRequest>,
-) -> Result<Json<serde_json::Value>, StatusCode> {
-    let from_id = chain_name_to_id(&req.from).map_err(|_| StatusCode::BAD_REQUEST)?;
-    let hashlock = Hash::from_hex(&req.hash_hex).ok_or(StatusCode::BAD_REQUEST)?;
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let from_id = chain_name_to_id(&req.from).map_err(|e| bad_request(&e.to_string()))?;
+    let hashlock = Hash::from_hex(&req.hash_hex)
+        .ok_or_else(|| bad_request("invalid hash_hex"))?;
     let record = state
         .service
         .htlc()
         .get_record(&req.hash_hex)
         .await
-        .ok_or(StatusCode::NOT_FOUND)?;
+        .ok_or_else(|| (StatusCode::NOT_FOUND, Json(serde_json::json!({"message": "HTLC not found"}))))?;
     let locker = req.source_address.unwrap_or(record.locker_address.clone());
 
     let source = build_endpoint(
@@ -742,7 +752,7 @@ async fn htlc_refund(
         record.amount as u128,
         default_ticker(from_id),
     )
-    .map_err(|_| StatusCode::BAD_REQUEST)?;
+    .map_err(|e| bad_request(&e.to_string()))?;
     // Target is irrelevant for refund; use the source as a placeholder.
     let target = build_endpoint(
         state.service.as_ref(),
@@ -751,7 +761,7 @@ async fn htlc_refund(
         record.amount as u128,
         default_ticker(from_id),
     )
-    .map_err(|_| StatusCode::BAD_REQUEST)?;
+    .map_err(|e| bad_request(&e.to_string()))?;
 
     let mut transfer = Transfer::new(format!("htlc-refund-{}", req.hash_hex), TransferDirection::Htlc, source, target);
     transfer.hashlock = Some(hashlock);
@@ -762,7 +772,7 @@ async fn htlc_refund(
             "hash": req.hash_hex,
             "status": transfer.status,
         }))),
-        Err(_) => Err(StatusCode::BAD_REQUEST),
+        Err(e) => Err(bad_request(&e.to_string())),
     }
 }
 

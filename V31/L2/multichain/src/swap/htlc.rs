@@ -470,23 +470,42 @@ impl HtlcSwap {
             )));
         }
 
-        // 5. Guard: pre-committed claimant public key.
-        if let Some(ref expected_pk) = record.claimant_pubkey {
-            let expected_addr = zion_core::crypto::derive_address(expected_pk);
-            if expected_addr != recipient {
-                return Err(MultichainError::Validation(format!(
-                    "recipient {recipient} does not match committed claimant {expected_addr}"
-                )));
+        // 5. Guard: pre-committed claimant public key (only enforced for ZION L1 targets).
+        let target_chain = transfer.target.address.chain;
+        if target_chain == ChainId::ZionL1 {
+            if let Some(ref expected_pk) = record.claimant_pubkey {
+                let expected_addr = zion_core::crypto::derive_address(expected_pk);
+                if expected_addr != recipient {
+                    return Err(MultichainError::Validation(format!(
+                        "recipient {recipient} does not match committed claimant {expected_addr}"
+                    )));
+                }
             }
         }
 
         // 6. Release funds on target chain via adapter.
+        // Native L1 HTLC scripts require a 32-byte preimage (the secret itself),
+        // not the SHA-256 hash of it, and the on-chain timeout from the record.
+        let target_chain = transfer.target.address.chain;
+        if target_chain == ChainId::ZionL1 && secret.len() != 32 {
+            return Err(MultichainError::Validation(
+                "HTLC secret must be 32 bytes for native L1 claim".to_string(),
+            ));
+        }
+        let mut preimage = [0u8; 32];
+        if target_chain == ChainId::ZionL1 {
+            preimage.copy_from_slice(secret);
+        } else {
+            // Non-native chains store the SHA-256 hash as the preimage field
+            // (legacy behaviour preserved for offline/EVM test paths).
+            preimage.copy_from_slice(&hash_sha256(secret).0);
+        }
         let preimage_hex = hex::encode(secret);
-        transfer.preimage = Some(hash_sha256(secret));
+        transfer.preimage = Some(Hash::new(preimage));
+        transfer.timelock = Some(record.expires_at as u64);
         transfer.lock_tx_id = Some(record.lock_tx_id.clone());
         transfer.source_pubkey = record.refund_pubkey;
         transfer.target_pubkey = record.claimant_pubkey;
-        let target_chain = transfer.target.address.chain;
         let release_tx = if let Some(adapter) = self.adapters.get(target_chain) {
             adapter.execute_outbound(transfer).await?
         } else {
@@ -548,7 +567,8 @@ impl HtlcSwap {
             )));
         }
 
-        // Refund to locker on source chain.
+        // Refund to locker on source chain, using the on-chain timeout stored in the record.
+        transfer.timelock = Some(record.expires_at as u64);
         transfer.lock_tx_id = Some(record.lock_tx_id.clone());
         transfer.source_pubkey = record.refund_pubkey;
         transfer.target_pubkey = record.claimant_pubkey;
@@ -743,8 +763,22 @@ mod tests {
         use rand::rngs::OsRng;
         use zion_core::crypto::derive_address;
 
-        let secret = b"preimage";
-        let mut transfer = htlc_transfer(secret);
+        // Native L1 claims require a 32-byte preimage.
+        let secret = [42u8; 32];
+        // Claimant pubkey is enforced only for ZION L1 targets.
+        let source = TransferEndpoint {
+            address: Address::new(ChainId::Bitcoin, vec![0u8; 20], "bc1qtest").unwrap(),
+            asset: Asset::native(ChainId::Bitcoin, "BTC", 8, "Bitcoin"),
+            amount: Amount::new(1000),
+        };
+        let target = TransferEndpoint {
+            address: Address::new(ChainId::ZionL1, vec![], "zion1claimant").unwrap(),
+            asset: Asset::native(ChainId::ZionL1, "ZION", 6, "ZION"),
+            amount: Amount::new(1000),
+        };
+        let mut transfer = Transfer::new("htlc-claimant", TransferDirection::Htlc, source, target);
+        transfer.hashlock = Some(hash_sha256(&secret));
+        transfer.timelock = Some(4_077_782_400);
         let swap = HtlcSwap::new_offline();
 
         swap.initiate(&mut transfer).await.unwrap();
@@ -755,7 +789,7 @@ mod tests {
         let claimant_pk = claimant_sk.verifying_key().to_bytes();
         let claimant_addr = derive_address(&claimant_pk);
 
-        let hash_hex = hash_sha256(secret).to_hex();
+        let hash_hex = hash_sha256(&secret).to_hex();
         swap.records
             .lock()
             .await
@@ -764,11 +798,11 @@ mod tests {
             .claimant_pubkey = Some(claimant_pk);
 
         // Wrong recipient → rejected.
-        let err = swap.claim(secret, "zion1wrong", &mut transfer).await;
+        let err = swap.claim(&secret, "zion1wrong", &mut transfer).await;
         assert!(matches!(err, Err(MultichainError::Validation(_))));
 
         // Correct recipient → accepted.
-        swap.claim(secret, &claimant_addr, &mut transfer)
+        swap.claim(&secret, &claimant_addr, &mut transfer)
             .await
             .unwrap();
         assert_eq!(transfer.status, TransferStatus::Completed);
