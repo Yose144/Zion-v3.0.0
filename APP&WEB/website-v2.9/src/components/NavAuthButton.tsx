@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LogIn, LogOut, LayoutDashboard, User, ChevronDown } from 'lucide-react';
+import { LogIn, LogOut, LayoutDashboard, User, ChevronDown, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import LoginModal from './LoginModal';
 
@@ -87,6 +87,15 @@ export default function NavAuthButton() {
                 className="flex w-full items-center gap-2 px-4 py-2.5 text-xs text-zion-gold/85 hover:bg-white/5 hover:text-white transition-colors"
               >
                 <User className="w-3.5 h-3.5" /> My Wallet
+              </button>
+              <button
+                onClick={() => {
+                  setShowMenu(false);
+                  router.push('/dashboard/private');
+                }}
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-xs text-zion-gold/85 hover:bg-white/5 hover:text-white transition-colors"
+              >
+                <Shield className="w-3.5 h-3.5" /> Private Dashboard
               </button>
               <div className="h-px bg-white/5" />
               <button

@@ -72,7 +72,16 @@ export default function Footer() {
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
           {/* Brand column */}
           <div className="md:col-span-2 space-y-4">
-            <h3 className="text-2xl font-extrabold text-gradient tracking-tight">ZION TerraNova</h3>
+            <div className="flex items-center gap-3">
+              <img
+                src="/symbol-200x200.png"
+                alt="ZION TerraNova"
+                width={48}
+                height={48}
+                className="w-12 h-12 rounded-xl object-contain border border-white/10"
+              />
+              <h3 className="text-2xl font-extrabold text-gradient tracking-tight">ZION TerraNova</h3>
+            </div>
             <p className="text-sm text-zion-gold/70 leading-relaxed max-w-sm font-medium">
               {tr('footer', 'tagline', lang)}
             </p>

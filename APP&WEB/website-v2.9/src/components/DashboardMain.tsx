@@ -902,7 +902,7 @@ export default function DashboardMain() {
                 <Activity className="h-3 w-3 text-zion-cyan" /> Auto-refresh 30s
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                <Globe className="h-3 w-3 text-zion-cyan" /> Edge server
+                <Globe className="h-3 w-3 text-zion-cyan" /> ZION L1
               </span>
               {metricsSource === 'fallback' && (
                 <span className="inline-flex items-center gap-2 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-4 py-2 text-zion-gold">
