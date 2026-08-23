@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import clsx from 'clsx';
@@ -49,7 +49,7 @@ function EarthStaticFallback({ className }: { className?: string }) {
       <div className="absolute inset-x-0 bottom-0 top-9 flex items-center justify-center sm:top-10">
         <div className="relative h-[80%] w-[80%]">
           <Image
-            src="/textures/earth-blue-marble.jpg"
+            src="/textures/earth-blue-marble.webp"
             alt="ZION Terra Nova — holographic Earth"
             fill
             className="object-contain opacity-95"
@@ -65,7 +65,7 @@ function EarthStaticFallback({ className }: { className?: string }) {
   );
 }
 
-export default function HolographicEarthLazy({ className }: { className?: string }) {
+function HolographicEarthLazy({ className }: { className?: string }) {
   const [webglOk, setWebglOk] = useState<boolean | null>(null);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -89,3 +89,5 @@ export default function HolographicEarthLazy({ className }: { className?: string
 
   return <HolographicEarth className={className} />;
 }
+
+export default memo(HolographicEarthLazy);

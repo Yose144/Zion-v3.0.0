@@ -1,5 +1,7 @@
 'use client';
 
+import { memo } from 'react';
+
 /**
  * Stargate — přesná replika z newearth.cz
  *
@@ -54,7 +56,7 @@ const ROTATE_LAYERS = [
   { src: '1.png', cls: 'rotate28' },
 ];
 
-export default function StargateLogo({ className = '' }: { className?: string }) {
+function StargateLogo({ className = '' }: { className?: string }) {
   /* eslint-disable @next/next/no-img-element */
   return (
     <div className={`stargate-wrap ${className}`}>
@@ -113,3 +115,5 @@ export default function StargateLogo({ className = '' }: { className?: string })
     </div>
   );
 }
+
+export default memo(StargateLogo);

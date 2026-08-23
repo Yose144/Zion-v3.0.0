@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import StargateLogo from '@/components/StargateLogo';
 
@@ -16,7 +16,7 @@ interface DogeVsZionBannerProps {
   cs?: boolean;
 }
 
-export default function DogeVsZionBanner({ cs = true }: DogeVsZionBannerProps) {
+function DogeVsZionBanner({ cs = true }: DogeVsZionBannerProps) {
   const [hover, setHover] = useState(false);
 
   return (
@@ -113,3 +113,5 @@ export default function DogeVsZionBanner({ cs = true }: DogeVsZionBannerProps) {
     </Link>
   );
 }
+
+export default memo(DogeVsZionBanner);
