@@ -659,6 +659,11 @@ let appHeartbeatLastLogMs = 0;
 let minerRateSamples = [];
 let minerShareLastSample = { t: 0, accepted: 0, rejected: 0 };
 let minerShareDeltaSamples = [];
+// Track last seen accepted/rejected counts per stream for synthetic share events.
+// ZANO and VRSC don't emit "V3 Trinity: {COIN} share accepted" lines — their
+// shares are only visible as incrementing counts in periodic "stream stats" lines.
+// We detect the increment and emit a synthetic share-event to the renderer.
+let _streamShareCounts = { 1: { accepted: -1, rejected: -1 }, 2: { accepted: -1, rejected: -1 }, 3: { accepted: -1, rejected: -1 } };
 let minerStats = {
   hashrate: 0,
   shares: 0,
@@ -731,6 +736,7 @@ function resetMinerTelemetryForNewSpawn() {
   delete minerStats.miner_version;
   // Reset trinity per-stream telemetry on new spawn
   minerStats.streams = [];
+  _streamShareCounts = { 1: { accepted: -1, rejected: -1 }, 2: { accepted: -1, rejected: -1 }, 3: { accepted: -1, rejected: -1 } };
   Object.assign(minerStats, {
     hashrate: 0,
     shares: 0,
@@ -3210,9 +3216,10 @@ function maybeEmitShareEvent(output) {
   if (trinityAccM) {
     const coin = trinityAccM[1].toUpperCase();
     const streamIdx = coin === 'ZION' ? 1 : coin === 'ZANO' ? 2 : coin === 'VRSC' ? 3 : 1;
+    const algo = coin === 'ZION' ? 'ekam_deeksha' : coin === 'ZANO' ? 'progpow' : coin === 'VRSC' ? 'verushash' : '';
     try {
       sendToRenderer('share-event', {
-        stream: streamIdx, coin, accepted: true,
+        stream: streamIdx, coin, accepted: true, algorithm: algo,
         job: parseInt(trinityAccM[2], 10), height: parseInt(trinityAccM[4], 10),
         nonce: parseInt(trinityAccM[3], 10), ts: Date.now(),
       });
@@ -3222,9 +3229,10 @@ function maybeEmitShareEvent(output) {
   if (trinityRejM) {
     const coin = trinityRejM[1].toUpperCase();
     const streamIdx = coin === 'ZION' ? 1 : coin === 'ZANO' ? 2 : coin === 'VRSC' ? 3 : 1;
+    const algo = coin === 'ZION' ? 'ekam_deeksha' : coin === 'ZANO' ? 'progpow' : coin === 'VRSC' ? 'verushash' : '';
     try {
       sendToRenderer('share-event', {
-        stream: streamIdx, coin, accepted: false,
+        stream: streamIdx, coin, accepted: false, algorithm: algo,
         job: parseInt(trinityRejM[2], 10), height: parseInt(trinityRejM[4], 10),
         nonce: parseInt(trinityRejM[3], 10), reason: trinityRejM[5] || 'rejected',
         ts: Date.now(),
@@ -4004,6 +4012,37 @@ function parseMinerOutput(output) {
       rejected,
       active
     };
+
+    // Detect share count increments for ZANO (stream 2) and VRSC (stream 3).
+    // These streams don't emit "V3 Trinity: {COIN} share accepted" lines,
+    // so we synthesize share events from the periodic stream stats counters.
+    // Stream 1 (ZION) has real-time share events, so we skip it here to avoid
+    // duplicate entries in the share log.
+    if (idx >= 2) {
+      const prev = _streamShareCounts[idx];
+      if (prev && prev.accepted >= 0) {
+        const accDelta = accepted - prev.accepted;
+        const rejDelta = rejected - prev.rejected;
+        if (accDelta > 0) {
+          try {
+            sendToRenderer('share-event', {
+              stream: idx, coin, accepted: true,
+              status: 'accepted', algorithm: streamAlgos[streamId] || '', ts: Date.now(),
+            });
+          } catch {}
+        }
+        if (rejDelta > 0) {
+          try {
+            sendToRenderer('share-event', {
+              stream: idx, coin, accepted: false,
+              status: 'rejected', reason: 'rejected', algorithm: streamAlgos[streamId] || '', ts: Date.now(),
+            });
+          } catch {}
+        }
+      }
+      _streamShareCounts[idx] = { accepted, rejected };
+    }
+
     // Do NOT set top-level accepted/rejected here — the top-level shares
     // should be the TOTAL across all 3 streams, set by the periodic metrics
     // summary parser below.

@@ -1975,6 +1975,8 @@ function setupEventListeners() {
     if (data.accepted) {
       const detail = data.coin === 'ZION'
         ? `job=${data.job} h=${data.height} nonce=${data.nonce} ${data.latencyMs}ms`
+        : data.coin === 'ZANO' ? 'GPU progpow'
+        : data.coin === 'VRSC' ? 'CPU verushash'
         : `status=${data.status}`;
       addLogEntry(`✓ ${data.coin} share accepted (${detail})`, 'success');
     } else {
@@ -2420,6 +2422,10 @@ function renderShareLog() {
       detail = ok
         ? `job=${s.job} h=${s.height} ${s.latencyMs}ms`
         : `job=${s.job} reason=${s.reason || '?'}`;
+    } else if (s.coin === 'ZANO') {
+      detail = ok ? 'GPU progpow accepted' : `reason=${s.reason || 'rejected'}`;
+    } else if (s.coin === 'VRSC') {
+      detail = ok ? 'CPU verushash accepted' : `reason=${s.reason || 'rejected'}`;
     } else {
       detail = s.status || (ok ? 'accepted' : 'rejected');
     }
