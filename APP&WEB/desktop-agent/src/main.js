@@ -1374,14 +1374,9 @@ function loadConfig() {
         saveConfig(merged);
       }
       merged.algorithm = normalizeAlgorithmName(merged.algorithm || DEFAULT_CONFIG.algorithm);
-      // V31 Mainnet Alpha: disable triple-stream by default until the user
-      // explicitly enables it and supplies valid AuxPoW pool URLs. Old configs
-      // may still have the previous (broken) default of true.
-      if (merged.tripleStream === true) {
-        log('[config] disabling legacy tripleStream default; enable in UI only when AuxPoW pools are configured');
-        merged.tripleStream = false;
-        saveConfig(merged);
-      }
+      // V31 Mainnet Alpha: triple-stream is honored when explicitly enabled in
+      // config (e.g. one-click auto-start). Ensure it stays a boolean.
+      merged.tripleStream = !!merged.tripleStream;
       merged.desktopPureZionDefault = DESKTOP_PURE_ZION_DEFAULT;
       // Migrate legacy 'address' field to 'wallet' if wallet is empty
       if (!merged.wallet && merged.address) {
@@ -2355,7 +2350,10 @@ function startMiningV31(config, v31Path) {
   } else if (!wantsGpu) {
     args.push('--no-gpu');
   }
-  if (tripleStreamEnabled && cpuCoinAuto && gpuCoinAuto) {
+  if (tripleStreamEnabled) {
+    args.push('--v3-trinity');
+  }
+  if (tripleStreamEnabled && config.autonomous === true && cpuCoinAuto && gpuCoinAuto) {
     args.push('--autonomous');
   }
 
@@ -2369,7 +2367,10 @@ function startMiningV31(config, v31Path) {
     ZION_GPU_BACKEND: selectedGpuBackend,
     ZION_BACKEND: selectedGpuBackend,
     ZION_MINER_ALGORITHM: algoForMiner,
-    ZION_PROFIT_INTERVAL: '300'
+    ZION_PROFIT_INTERVAL: '300',
+    // Enable tracing output so the miner emits "stream stats" lines
+    // (info! level) that the desktop agent parses for per-stream shares.
+    RUST_LOG: process.env.RUST_LOG || 'info'
   };
   const nodeRpc = config?.rpcUrl || DEFAULT_RPC_URL;
   if (nodeRpc) {
@@ -2384,7 +2385,7 @@ function startMiningV31(config, v31Path) {
     if (wantsGpu && !gpuCoinAuto) {
       env.ZION_STREAM2_FORCE_COIN = gpuCoin.toUpperCase();
     }
-    env.ZION_AUTONOMOUS = (cpuCoinAuto && gpuCoinAuto) ? '1' : '0';
+    env.ZION_AUTONOMOUS = (config.autonomous === true && cpuCoinAuto && gpuCoinAuto) ? '1' : '0';
   } else {
     env.ZION_AUTONOMOUS = '0';
   }
