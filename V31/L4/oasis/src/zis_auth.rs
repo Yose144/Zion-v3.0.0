@@ -11,6 +11,7 @@ use tracing;
 
 /// A linked wallet address stored in ZIS.
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ZisLinkedAddress {
     pub id: String,
     pub user_id: String,
@@ -22,6 +23,7 @@ pub struct ZisLinkedAddress {
 
 /// OASIS player profile linked to a ZIS user.
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ZisOasisPlayer {
     pub id: String,
     pub user_id: String,
@@ -41,6 +43,7 @@ pub struct ZisOasisPlayer {
 
 /// Resolved ZIS user.
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ZisUser {
     pub id: String,
     pub primary_address: String,
