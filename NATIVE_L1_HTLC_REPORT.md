@@ -71,14 +71,40 @@ HTLC specifické testy ve `zion-core`:
 
 ## Co ještě zbývá / další kroky
 
-1. **L2 / E2E testy:** Spustit plný multichain e2e flow (lock → claim → refund) mezi ZION L1 a dalšími chainy (BTC, ETH, Base). Vyžaduje spuštěný `zion-node` a `warpd` s konfigurací a funded relayer UTXO.
-2. **UI formulář lock:** Aktualizovat `src/app/swap/page.tsx` tak, aby generoval hashlock/preimage a nabízel pole pro `source_pubkey_hex` / `target_pubkey_hex` před voláním `submitLock()`.
+1. **L2 / E2E testy:** ✅ **Dokončeno 2026-08-23.** Plný multichain e2e flow (lock → claim → refund) na ZION L1 proběhl úspěšně s lokálním `zion-node` (port 9555) a `warpd` (port 9335/9336). Viz sekce "E2E Test Results" níže.
+2. **UI formulář lock:** ✅ **Dokončeno.** `src/app/swap/page.tsx` generuje hashlock/preimage a nabízí pole pro `source_pubkey_hex` / `target_pubkey_hex` před voláním `submitLock()`.
 3. **Dokumentace API:** Popsat nové HTLC endpoint request/response schémata v multichain serveru.
 4. **Mainnet Alpha deploy:** Připravit binárky `zion-node`, `zion-multichain` a restartovat Edge služby.
 
+## E2E Test Results (2026-08-23)
+
+Plný end-to-end test nativního L1 HTLC protokolu proběhl úspěšně:
+
+### Lock → Claim
+- **Lock:** `POST /v1/multichain/swaps/htlc/lock` s `from=zion`, `to=zion`, `amount=100000000` (100 ZION), `timelock=4077782400` (2099), `source_pubkey_hex` a `target_pubkey_hex` → HTTP 200, `status:"executing"`, `transfer_id:"htlc-lock-<hash>"`.
+- **Block confirmation:** `quick_mine` na lokálním uzlu → lock TX potvrzen.
+- **Query:** `GET /v1/multichain/swaps/htlc/<hash>` → `state:"pending"`, `lock_tx_id` naplněno, `refund_pubkey`/`claimant_pubkey` uloženy.
+- **Claim:** `POST /v1/multichain/swaps/htlc/claim` s `secret_hex` (32B preimage), `to=zion`, `target_address` → HTTP 200, `status:"completed"`.
+- **Query po claimu:** `state:"claimed"`, `release_tx_id` a `preimage_hex` naplněny.
+
+### Lock → Refund
+- **Lock:** `POST /v1/multichain/swaps/htlc/lock` s `timelock=now+5s` → HTTP 200.
+- **Block confirmation:** `quick_mine` → lock TX potvrzen.
+- **Wait 10s** pro vypršení timelocku.
+- **Refund:** `POST /v1/multichain/swaps/htlc/refund` s `hash_hex`, `from=zion` → HTTP 200, `status:"refunded"`.
+- **Query po refundu:** `state:"refunded"`, `release_tx_id` a `release_recipient` naplněny.
+
+### Bug fixes v této session
+1. **`HtlcSwap::claim`** — `transfer.preimage` nyní obsahuje 32B preimage (ne SHA-256 hash) pro native L1 target; `transfer.timelock` se nastavuje z `record.expires_at` (on-chain timeout).
+2. **`HtlcSwap::refund`** — `transfer.timelock` se nastavuje z `record.expires_at` před voláním adapteru.
+3. **`UtxoSet::validate_transaction`** — mempool validace nyní používá current wall-clock time místo `block_timestamp=0`, takže HTLC refund TX mohou projít mempoolem po vypršení timelocku.
+4. **`server.rs` HTLC endpoints** — error responses nyní vrací JSON `{"message":"..."}` místo prázdného 400, což usnadňuje debugging.
+5. **Test `htlc_claimant_pubkey_enforced`** — aktualizován na 32B preimage (native L1 vyžaduje 32B).
+6. **Minimální lock amount** — 100 ZION (100_000_000 flowers) je funkční minimum (fee = 1 ZION = 1_000_000 flowers, claim/refund vyžaduje `lock_utxo.amount > fee`).
+
 ## Soubory změněné v této session
 
-- `V31/L1/core/src/utxo.rs`
+- `V31/L1/core/src/utxo.rs` (mempool timestamp fix)
 - `V31/L1/core/src/v31_wallet.rs`
 - `V31/L1/core/src/transaction.rs`
 - `V31/L1/core/src/rpc.rs`
@@ -88,14 +114,23 @@ HTLC specifické testy ve `zion-core`:
 - `V31/L1/core/src/migration.rs`
 - `V31/L1/core/src/bin/wallet.rs`
 - `V31/L2/multichain/src/chain/adapters/zion_l1.rs`
-- `V31/L2/multichain/src/swap/htlc.rs`
-- `V31/L2/multichain/src/server.rs`
+- `V31/L2/multichain/src/swap/htlc.rs` (claim preimage/timelock fix, refund timelock fix)
+- `V31/L2/multichain/src/server.rs` (HTLC error responses with messages)
 - `V31/L2/multichain/src/db.rs`
 - `V31/L2/multichain/src/types.rs`
+- `V31/L2/multichain/src/config.rs` (mnemonic field)
+- `V31/L2/multichain/src/warp/config.rs` (mnemonic field)
+- `V31/L2/multichain/src/service.rs` (load_keyring)
+- `V31/L2/multichain/src/bin/warpd.rs` (pass mnemonic)
+- `V31/L2/multichain/src/warp/watcher.rs` (test helper)
 - `V31/cli/src/main.rs`
 - `V31/L1/miner/src/runtime.rs`
 - `V31/L1/pool/src/payout.rs`
 - `V31/L1/pool/src/deferred_payout.rs`
+- `APP&WEB/website-v2.9/src/app/swap/page.tsx`
+- `APP&WEB/website-v2.9/src/lib/swap-api.ts`
+- `APP&WEB/website-v2.9/src/lib/swap-helpers.ts` (new)
+- `APP&WEB/website-v2.9/src/app/api/swap/[...path]/route.ts`
 
 ## Poznámky
 
