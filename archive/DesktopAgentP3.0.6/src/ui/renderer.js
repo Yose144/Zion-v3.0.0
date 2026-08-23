@@ -5506,7 +5506,7 @@ async function refreshDaoTreasury() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// CLI View — ZION Unified Command Line Interface
+// CLI View — ZION Unified Command Line Interface (tabbed, input-driven)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function initCliView() {
@@ -5525,13 +5525,24 @@ function initCliView() {
     consoleEl.innerHTML = '';
   }
 
+  function formatOutput(result) {
+    if (typeof result === 'string') return result;
+    if (result && typeof result === 'object') {
+      try {
+        return JSON.stringify(result, null, 2);
+      } catch { return String(result); }
+    }
+    return String(result ?? '');
+  }
+
   async function runCli(handlerName, label, args = {}) {
     statusBadge.textContent = `${label}…`;
     statusBadge.className = 'cli-badge busy';
     try {
       const result = await window.electronAPI[handlerName](args);
       if (result?.success) {
-        appendCliOutput(`$ zion ${label}\n${result.output || 'OK'}`);
+        const output = result.output !== undefined ? result.output : formatOutput(result);
+        appendCliOutput(`$ zion ${label}\n${output}`);
       } else {
         appendCliOutput(`$ zion ${label}\nError: ${result?.error || 'Unknown error'}`, true);
       }
@@ -5542,70 +5553,158 @@ function initCliView() {
     statusBadge.className = 'cli-badge ready';
   }
 
-  document.getElementById('cli-btn-version')?.addEventListener('click', () => runCli('cliGetVersion', 'version'));
-  document.getElementById('cli-btn-mine-status')?.addEventListener('click', () => runCli('cliMineStatus', 'mine status'));
-  document.getElementById('cli-btn-wallet-list')?.addEventListener('click', () => runCli('cliWalletList', 'wallet address'));
-  document.getElementById('cli-btn-wallet-balance')?.addEventListener('click', async () => {
-    const address = await showPrompt('Enter ZION address (or leave empty for config wallet):');
-    await runCli('cliWalletBalance', 'wallet balance', { address: address || undefined, chain: 'zion-l1' });
-  });
-  document.getElementById('cli-btn-config-get')?.addEventListener('click', async () => {
-    const key = await showPrompt('Enter config key (or leave empty for all):');
-    await runCli('cliConfigGet', 'doctor', { key: key || undefined });
-  });
+  function getValue(id, defaultValue = '') {
+    return document.getElementById(id)?.value.trim() || defaultValue;
+  }
+
+  function requireValues(fields) {
+    for (const [id, name] of fields) {
+      if (!getValue(id)) {
+        appendCliOutput(`Error: ${name} is required`, true);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  clearConsole();
+  appendCliOutput('— ZION CLI Terminal —\nClick a command below to run it.');
+
   document.getElementById('cli-btn-clear')?.addEventListener('click', clearConsole);
 
-  // Send transaction
+  // ── Status tab ─────────────────────────────────────────────────────
+  document.getElementById('cli-btn-version')?.addEventListener('click', () => runCli('cliGetVersion', 'version'));
+  document.getElementById('cli-btn-doctor')?.addEventListener('click', () => runCli('cliConfigGet', 'doctor', {}));
+  document.getElementById('cli-btn-node-status')?.addEventListener('click', () => runCli('nodeGetStatus', 'node status'));
+  document.getElementById('cli-btn-node-peers')?.addEventListener('click', () => runCli('nodeGetPeers', 'node peers'));
+  document.getElementById('cli-btn-wallet-list')?.addEventListener('click', () => runCli('cliWalletList', 'wallet list'));
+  document.getElementById('cli-btn-wallet-list2')?.addEventListener('click', () => runCli('cliWalletList', 'wallet list'));
+
+  // ── Wallet tab ─────────────────────────────────────────────────────
+  document.getElementById('cli-btn-wallet-balance')?.addEventListener('click', async () => {
+    if (!requireValues([['cli-balance-address', 'address']])) return;
+    const address = getValue('cli-balance-address');
+    const chain = getValue('cli-balance-chain', 'zion-l1');
+    await runCli('cliWalletBalance', `wallet balance --address ${address} --chain ${chain}`, { address, chain });
+  });
+
   document.getElementById('cli-btn-send')?.addEventListener('click', async () => {
-    const wallet = document.getElementById('cli-send-wallet').value.trim();
-    const to = document.getElementById('cli-send-to').value.trim();
-    const amount = document.getElementById('cli-send-amount').value.trim();
-    if (!wallet || !to || !amount) {
-      appendCliOutput('Error: wallet, to, and amount are required', true);
-      return;
-    }
-    await runCli('cliWalletSend', `wallet send -w ${wallet} --to ${to} --amount ${amount}`, { wallet, to, amount });
+    if (!requireValues([['cli-send-wallet', 'wallet file'], ['cli-send-to', 'to address'], ['cli-send-amount', 'amount']])) return;
+    const wallet = getValue('cli-send-wallet');
+    const to = getValue('cli-send-to');
+    const amount = getValue('cli-send-amount');
+    const memo = getValue('cli-send-memo');
+    await runCli('cliWalletSend', `wallet send -w ${wallet} --to ${to} --amount ${amount}`, { wallet, to, amount, memo });
   });
 
-  // Mining controls
+  // ── Mining tab ─────────────────────────────────────────────────────
   document.getElementById('cli-btn-mine-start')?.addEventListener('click', async () => {
-    const wallet = document.getElementById('cli-mine-wallet').value.trim();
-    const pool = document.getElementById('cli-mine-pool').value.trim() || '62.171.141.136:8444';
-    if (!wallet) {
-      appendCliOutput('Error: wallet address is required', true);
-      return;
-    }
-    await runCli('cliMineStart', 'mine start', { pool, wallet });
+    if (!requireValues([['cli-mine-wallet', 'wallet address']])) return;
+    const wallet = getValue('cli-mine-wallet');
+    const pool = getValue('cli-mine-pool') || '62.171.141.136:8444';
+    const worker = getValue('cli-mine-worker');
+    await runCli('cliMineStart', 'miner start', { pool, wallet, worker });
   });
-  document.getElementById('cli-btn-mine-stop')?.addEventListener('click', () => runCli('cliMineStop', 'mine stop'));
+  document.getElementById('cli-btn-mine-stop')?.addEventListener('click', () => runCli('cliMineStop', 'miner stop'));
+  document.getElementById('cli-btn-mine-status')?.addEventListener('click', () => runCli('cliMineStatus', 'miner status'));
 
-  // ── Bridge ────────────────────────────────────────────────────────
+  // ── Multichain tab — Bridge ────────────────────────────────────────
   document.getElementById('cli-btn-bridge-status')?.addEventListener('click', () => runCli('cliBridgeStatus', 'bridge status'));
   document.getElementById('cli-btn-bridge-pending')?.addEventListener('click', () => runCli('cliBridgePending', 'bridge pending'));
   document.getElementById('cli-btn-bridge-chains')?.addEventListener('click', () => runCli('cliBridgeChains', 'bridge chains'));
-  document.getElementById('cli-btn-bridge-history')?.addEventListener('click', async () => {
-    const n = (await showPrompt('Number of entries (default 10):')) || '10';
-    await runCli('cliBridgeHistory', `bridge history ${n}`, { n: parseInt(n) || 10 });
+  document.getElementById('cli-btn-bridge-lock')?.addEventListener('click', async () => {
+    if (!requireValues([['cli-bridge-from', 'from chain'], ['cli-bridge-to', 'to chain'], ['cli-bridge-amount', 'amount']])) return;
+    const from = getValue('cli-bridge-from');
+    const to = getValue('cli-bridge-to');
+    const amount = getValue('cli-bridge-amount');
+    const sourceAddress = getValue('cli-bridge-source') || undefined;
+    const targetAddress = getValue('cli-bridge-target') || undefined;
+    await runCli('cliBridgeLock', `bridge lock --from ${from} --to ${to} --amount ${amount}`, { from, to, amount, sourceAddress, targetAddress });
+  });
+  document.getElementById('cli-btn-bridge-burn')?.addEventListener('click', async () => {
+    if (!requireValues([['cli-bridge-from', 'from chain'], ['cli-bridge-to', 'to chain'], ['cli-bridge-amount', 'amount']])) return;
+    const from = getValue('cli-bridge-from');
+    const to = getValue('cli-bridge-to');
+    const amount = getValue('cli-bridge-amount');
+    const sourceAddress = getValue('cli-bridge-source') || undefined;
+    const targetAddress = getValue('cli-bridge-target') || undefined;
+    await runCli('cliBridgeBurn', `bridge burn --from ${from} --to ${to} --amount ${amount}`, { from, to, amount, sourceAddress, targetAddress });
   });
 
-  // ── DAO ───────────────────────────────────────────────────────────
+  // Multichain tab — Warp
+  document.getElementById('cli-btn-warp-status')?.addEventListener('click', () => runCli('cliWarpStatus', 'warp status'));
+  document.getElementById('cli-btn-warp-routes')?.addEventListener('click', () => runCli('cliWarpChains', 'warp routes'));
+  document.getElementById('cli-btn-warp-pending')?.addEventListener('click', () => runCli('cliWarpPending', 'warp pending'));
+  document.getElementById('cli-btn-warp-estimate')?.addEventListener('click', async () => {
+    if (!requireValues([['cli-warp-from', 'from chain'], ['cli-warp-to', 'to chain'], ['cli-warp-amount', 'amount']])) return;
+    const from = getValue('cli-warp-from');
+    const to = getValue('cli-warp-to');
+    const amount = getValue('cli-warp-amount');
+    await runCli('cliWarpEstimate', `warp estimate --from ${from} --to ${to} --amount ${amount}`, { from, to, amount });
+  });
+
+  // Multichain tab — DAO
   document.getElementById('cli-btn-dao-status')?.addEventListener('click', () => runCli('cliDaoStatus', 'dao status'));
   document.getElementById('cli-btn-dao-proposals')?.addEventListener('click', () => runCli('cliDaoProposals', 'dao proposals'));
   document.getElementById('cli-btn-dao-treasury')?.addEventListener('click', () => runCli('cliDaoTreasury', 'dao treasury'));
   document.getElementById('cli-btn-dao-params')?.addEventListener('click', () => runCli('cliDaoParams', 'dao params'));
 
-  // ── Pool ──────────────────────────────────────────────────────────
-  document.getElementById('cli-btn-pool-stats')?.addEventListener('click', () => runCli('cliPoolStats', 'pool stats edge', { target: 'edge' }));
-  document.getElementById('cli-btn-pool-miners')?.addEventListener('click', () => runCli('cliPoolMiners', 'pool miners edge', { target: 'edge' }));
-  document.getElementById('cli-btn-pool-config')?.addEventListener('click', () => runCli('cliPoolConfig', 'pool config edge', { target: 'edge' }));
-  document.getElementById('cli-btn-pool-earnings')?.addEventListener('click', async () => {
-    const address = await showPrompt('Your ZION address (or empty for config wallet):');
-    await runCli('cliPoolEarnings', 'pool earnings', { address: address || undefined, target: 'edge' });
+  // Multichain tab — Pool
+  document.getElementById('cli-btn-pool-stats')?.addEventListener('click', () => runCli('cliPoolStats', 'pool stats', { target: 'edge' }));
+  document.getElementById('cli-btn-pool-miners')?.addEventListener('click', () => runCli('cliPoolMiners', 'pool miners', { target: 'edge' }));
+  document.getElementById('cli-btn-pool-payouts')?.addEventListener('click', async () => {
+    const address = getValue('cli-pool-address') || undefined;
+    await runCli('cliPoolEarnings', 'pool payouts', { address, target: 'edge' });
   });
 
-  // ── Warp ──────────────────────────────────────────────────────────
-  document.getElementById('cli-btn-warp-status')?.addEventListener('click', () => runCli('cliWarpStatus', 'warp status'));
-  document.getElementById('cli-btn-warp-chains')?.addEventListener('click', () => runCli('cliWarpChains', 'warp chains'));
-  document.getElementById('cli-btn-warp-pending')?.addEventListener('click', () => runCli('cliWarpPending', 'warp pending'));
-  document.getElementById('cli-btn-warp-stats')?.addEventListener('click', () => runCli('cliWarpStats', 'warp stats'));
+  // ── Swap tab ───────────────────────────────────────────────────────
+  document.getElementById('cli-btn-swap-quote')?.addEventListener('click', async () => {
+    if (!requireValues([['cli-swap-from', 'from asset'], ['cli-swap-to', 'to asset'], ['cli-swap-amount', 'amount']])) return;
+    const from = getValue('cli-swap-from');
+    const to = getValue('cli-swap-to');
+    const amount = getValue('cli-swap-amount');
+    const decimals = parseInt(getValue('cli-swap-decimals', '6')) || 6;
+    await runCli('cliSwapQuote', `swap quote --from ${from} --to ${to} --amount ${amount}`, { from, to, amount, decimals });
+  });
+  document.getElementById('cli-btn-swap-execute')?.addEventListener('click', async () => {
+    if (!requireValues([['cli-swap-from', 'from asset'], ['cli-swap-to', 'to asset'], ['cli-swap-amount', 'amount']])) return;
+    const from = getValue('cli-swap-from');
+    const to = getValue('cli-swap-to');
+    const amount = getValue('cli-swap-amount');
+    const decimals = parseInt(getValue('cli-swap-decimals', '6')) || 6;
+    await runCli('cliSwapExecute', `swap execute --from ${from} --to ${to} --amount ${amount}`, { from, to, amount, decimals });
+  });
+
+  // ── Atomic Swap tab ────────────────────────────────────────────────
+  document.getElementById('cli-btn-htlc-status')?.addEventListener('click', () => runCli('cliAtomicSwapStatus', 'atomic-swap status'));
+  document.getElementById('cli-btn-htlc-escrow')?.addEventListener('click', () => runCli('cliAtomicSwapEscrow', 'atomic-swap escrow'));
+  document.getElementById('cli-btn-htlc-pending')?.addEventListener('click', () => runCli('cliAtomicSwapPending', 'atomic-swap pending'));
+  document.getElementById('cli-btn-htlc-get')?.addEventListener('click', async () => {
+    if (!requireValues([['cli-htlc-hash', 'hash']])) return;
+    const hash = getValue('cli-htlc-hash');
+    await runCli('cliAtomicSwapGet', `atomic-swap get ${hash}`, { hash });
+  });
+  document.getElementById('cli-btn-htlc-create')?.addEventListener('click', async () => {
+    if (!requireValues([['cli-htlc-amount', 'amount'], ['cli-htlc-chain', 'chain'], ['cli-htlc-recipient', 'recipient']])) return;
+    const amount = getValue('cli-htlc-amount');
+    const chain = getValue('cli-htlc-chain');
+    const recipient = getValue('cli-htlc-recipient');
+    const preimage = getValue('cli-htlc-preimage') || undefined;
+    const timeout = parseInt(getValue('cli-htlc-timeout', '120')) || 120;
+    await runCli('cliAtomicSwapCreate', `atomic-swap create ${amount} ${chain} ${recipient}`, { amount, chain, recipient, preimage, timeout });
+  });
+  document.getElementById('cli-btn-htlc-claim')?.addEventListener('click', async () => {
+    if (!requireValues([['cli-htlc-hash', 'hash'], ['cli-htlc-preimage2', 'preimage'], ['cli-htlc-recipient2', 'recipient']])) return;
+    const hash = getValue('cli-htlc-hash');
+    const preimage = getValue('cli-htlc-preimage2');
+    const recipient = getValue('cli-htlc-recipient2');
+    const token = getValue('cli-htlc-token') || undefined;
+    await runCli('cliAtomicSwapClaim', `atomic-swap claim ${hash} ${preimage} ${recipient}`, { hash, preimage, recipient, token });
+  });
+  document.getElementById('cli-btn-htlc-refund')?.addEventListener('click', async () => {
+    if (!requireValues([['cli-htlc-hash', 'hash']])) return;
+    const hash = getValue('cli-htlc-hash');
+    const token = getValue('cli-htlc-token') || undefined;
+    await runCli('cliAtomicSwapRefund', `atomic-swap refund ${hash}`, { hash, token });
+  });
 }

@@ -7249,129 +7249,265 @@
       <!-- CLI — ZION Unified Command Line Interface             -->
       <!-- ═══════════════════════════════════════════════════ -->
       <div id="cli-view" class="view-shell d-none">
-        <div class="web29-page-header">
+        <div class="web29-page-header" style="margin-bottom:10px;">
           <div class="web29-title-stack">
-            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-terminal"></use></svg>v3 Unified CLI</div>
+            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-terminal"></use></svg>v3.1 Unified CLI</div>
             <div class="web29-title-row">
               <h1 class="web29-title text-gradient">ZION CLI</h1>
-              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>Node + Miner + Wallet</div>
+              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>Node + Miner + Wallet + Multichain</div>
             </div>
-            <div class="web29-subtitle">Direct access to the <code>zion</code> unified command line — wallet, mining, node, and config.</div>
+            <div class="web29-subtitle">Direct command access with live output. All inputs are visible — no prompts.</div>
           </div>
         </div>
 
-        <div class="control-panel panel-tight">
-          <div class="actions-row">
-            <button class="btn btn-primary" id="cli-btn-version">Version</button>
-            <button class="btn btn-primary" id="cli-btn-mine-status">Mine Status</button>
-            <button class="btn btn-primary" id="cli-btn-wallet-list">Wallets</button>
-            <button class="btn btn-primary" id="cli-btn-wallet-balance">Balance</button>
-            <button class="btn btn-primary" id="cli-btn-config-get">Config</button>
-            <button class="btn btn-ghost btn-sm" id="cli-btn-clear">Clear</button>
-          </div>
-        </div>
-
-        <div class="control-panel">
-          <h2 class="panel-header-row">
+        <!-- CLI Output Console -->
+        <div class="control-panel panel-tight" style="margin-bottom:14px;">
+          <div class="panel-header-row" style="align-items:center;">
             <span class="panel-header-title">
               <svg class="icon" aria-hidden="true"><use href="#i-terminal"></use></svg>
               <span>CLI Output</span>
             </span>
-            <span id="cli-status-badge" class="cli-badge ready">Ready</span>
-          </h2>
-          <div id="cli-console" class="cli-terminal">
-— ZION CLI Terminal —
-Click a button above to run a command.
+            <div style="display:flex;align-items:center;gap:10px;margin-left:auto;">
+              <span id="cli-status-badge" class="cli-badge ready">Ready</span>
+              <button class="btn btn-ghost btn-sm" id="cli-btn-clear">Clear</button>
+            </div>
+          </div>
+          <div id="cli-console" class="cli-terminal" style="height:220px;">
+            Click a command below to run it.
           </div>
         </div>
 
-        <!-- Quick Actions -->
-        <div class="wallet-grid panel-mt-20">
-          <div class="control-panel">
-            <h2 class="panel-header-row">
-              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg> Send ZION</span>
-            </h2>
-            <div class="stack-col panel-mt-20">
-              <input id="cli-send-wallet" class="wizard-input" type="text" placeholder="wallet file path (e.g. wallet.json)">
-              <input id="cli-send-to" class="wizard-input" type="text" placeholder="To address (zion1...)">
-              <input id="cli-send-amount" class="wizard-input" type="text" placeholder="Amount (e.g. 0.01)">
-              <button class="btn btn-accent" id="cli-btn-send">Send Transaction</button>
+        <!-- Section tabs -->
+        <div class="section-tabs" data-group="cli">
+          <div class="section-tab active" data-section="cli-status-panel">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-star"></use></svg>
+            <span>Status</span>
+          </div>
+          <div class="section-tab" data-section="cli-wallet-panel">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
+            <span>Wallet</span>
+          </div>
+          <div class="section-tab" data-section="cli-mining-panel">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+            <span>Mining</span>
+          </div>
+          <div class="section-tab" data-section="cli-multichain-panel">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-bridge"></use></svg>
+            <span>Multichain</span>
+          </div>
+          <div class="section-tab" data-section="cli-swap-panel">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-swap"></use></svg>
+            <span>Swap</span>
+          </div>
+          <div class="section-tab" data-section="cli-htlc-panel">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-lock"></use></svg>
+            <span>Atomic Swap</span>
+          </div>
+        </div>
+
+        <!-- Status Panel -->
+        <div id="cli-status-panel" class="section-panel active">
+          <div class="wallet-grid" style="grid-template-columns:repeat(3,1fr);">
+            <div class="control-panel">
+              <h2>System</h2>
+              <div class="stack-col" style="gap:8px;">
+                <button class="btn btn-primary" id="cli-btn-version">Version</button>
+                <button class="btn btn-primary" id="cli-btn-doctor">Doctor</button>
+              </div>
+            </div>
+            <div class="control-panel">
+              <h2>Node</h2>
+              <div class="stack-col" style="gap:8px;">
+                <button class="btn btn-primary" id="cli-btn-node-status">Node Status</button>
+                <button class="btn btn-primary" id="cli-btn-node-peers">Peer Info</button>
+              </div>
+            </div>
+            <div class="control-panel">
+              <h2>Wallet</h2>
+              <button class="btn btn-primary" id="cli-btn-wallet-list">List Wallets</button>
             </div>
           </div>
-          <div class="control-panel">
-            <h2 class="panel-header-row">
-              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg> Mining</span>
-            </h2>
-            <div class="stack-col panel-mt-20">
-              <input id="cli-mine-wallet" class="wizard-input" type="text" placeholder="Wallet address (zion1...)">
-              <input id="cli-mine-pool" class="wizard-input" type="text" placeholder="Pool (default: 62.171.141.136:8444)">
-              <div class="actions-row">
-                <button class="btn btn-accent" id="cli-btn-mine-start">Start Mining</button>
-                <button class="btn btn-ghost" id="cli-btn-mine-stop">Stop</button>
+        </div>
+
+        <!-- Wallet Panel -->
+        <div id="cli-wallet-panel" class="section-panel">
+          <div class="wallet-grid">
+            <div class="control-panel">
+              <h2>Get Balance</h2>
+              <div class="stack-col" style="gap:8px;">
+                <input id="cli-balance-address" class="wizard-input" type="text" placeholder="ZION address (zion1...)">
+                <input id="cli-balance-chain" class="wizard-input" type="text" value="zion-l1" placeholder="Chain (default: zion-l1)">
+                <div class="actions-row" style="gap:8px;flex-wrap:wrap;">
+                  <button class="btn btn-primary" id="cli-btn-wallet-balance">Balance</button>
+                  <button class="btn btn-ghost" id="cli-btn-wallet-list2">List Wallets</button>
+                </div>
+              </div>
+            </div>
+            <div class="control-panel">
+              <h2>Send ZION</h2>
+              <div class="stack-col" style="gap:8px;">
+                <input id="cli-send-wallet" class="wizard-input" type="text" placeholder="Wallet file path (e.g. wallet.json)">
+                <input id="cli-send-to" class="wizard-input" type="text" placeholder="To address (zion1...)">
+                <input id="cli-send-amount" class="wizard-input" type="text" placeholder="Amount (e.g. 0.01)">
+                <input id="cli-send-memo" class="wizard-input" type="text" placeholder="Memo (optional)">
+                <button class="btn btn-accent" id="cli-btn-send">Send Transaction</button>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- L2 / L3 Commands -->
-        <div class="pool-grid panel-mt-20">
-          <!-- Bridge -->
-          <div class="control-panel">
-            <h2 class="panel-header-row">
-              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-bridge"></use></svg> Bridge (L2)</span>
-            </h2>
-            <div class="actions-row panel-mt-20">
-              <button class="btn btn-primary btn-sm" id="cli-btn-bridge-status">Status</button>
-              <button class="btn btn-primary btn-sm" id="cli-btn-bridge-pending">Pending</button>
-              <button class="btn btn-primary btn-sm" id="cli-btn-bridge-chains">Chains</button>
-              <button class="btn btn-ghost btn-sm" id="cli-btn-bridge-history">History</button>
-            </div>
-          </div>
-          <!-- DAO -->
-          <div class="control-panel">
-            <h2 class="panel-header-row">
-              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg> DAO (L2)</span>
-            </h2>
-            <div class="actions-row panel-mt-20">
-              <button class="btn btn-primary btn-sm" id="cli-btn-dao-status">Status</button>
-              <button class="btn btn-primary btn-sm" id="cli-btn-dao-proposals">Proposals</button>
-              <button class="btn btn-primary btn-sm" id="cli-btn-dao-treasury">Treasury</button>
-              <button class="btn btn-ghost btn-sm" id="cli-btn-dao-params">Params</button>
-            </div>
-            <div class="stack-col" style="gap:6px;margin-top:12px">
-              <div class="bridge-readiness-row status-done">
-                <span class="bridge-readiness-label">Bridge Vault: 100M ZION locked for Base</span>
+        <!-- Mining Panel -->
+        <div id="cli-mining-panel" class="section-panel">
+          <div class="wallet-grid">
+            <div class="control-panel">
+              <h2>Start Mining</h2>
+              <div class="stack-col" style="gap:8px;">
+                <input id="cli-mine-wallet" class="wizard-input" type="text" placeholder="Wallet address (zion1...)">
+                <input id="cli-mine-pool" class="wizard-input" type="text" placeholder="Pool (default: 62.171.141.136:8444)">
+                <input id="cli-mine-worker" class="wizard-input" type="text" placeholder="Worker name (optional)">
+                <div class="actions-row" style="gap:8px;">
+                  <button class="btn btn-accent" id="cli-btn-mine-start">Start Mining</button>
+                  <button class="btn btn-ghost" id="cli-btn-mine-stop">Stop</button>
+                </div>
               </div>
-              <div class="bridge-readiness-row status-done">
-                <span class="bridge-readiness-label">DAO Treasury: active (guardian multisig)</span>
-              </div>
-              <div class="bridge-readiness-row status-done">
-                <span class="bridge-readiness-label">Governance: 65 tests passing</span>
+            </div>
+            <div class="control-panel">
+              <h2>Mining Status</h2>
+              <div class="stack-col" style="gap:8px;">
+                <button class="btn btn-primary" id="cli-btn-mine-status">Mine Status</button>
+                <div class="bridge-readiness-row status-pending" style="margin-top:8px;">
+                  <span class="bridge-readiness-label" id="cli-mining-status-hint">Start a miner to see live stats.</span>
+                </div>
               </div>
             </div>
           </div>
-          <!-- Pool -->
-          <div class="control-panel">
-            <h2 class="panel-header-row">
-              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg> Pool (L1)</span>
-            </h2>
-            <div class="actions-row panel-mt-20">
-              <button class="btn btn-primary btn-sm" id="cli-btn-pool-stats">Stats</button>
-              <button class="btn btn-primary btn-sm" id="cli-btn-pool-miners">Miners</button>
-              <button class="btn btn-primary btn-sm" id="cli-btn-pool-config">Config</button>
-              <button class="btn btn-ghost btn-sm" id="cli-btn-pool-earnings">Earnings</button>
+        </div>
+
+        <!-- Multichain Panel -->
+        <div id="cli-multichain-panel" class="section-panel">
+          <div class="wallet-grid" style="grid-template-columns:repeat(2,1fr);">
+            <!-- Bridge -->
+            <div class="control-panel">
+              <h2>Bridge</h2>
+              <div class="stack-col" style="gap:8px;">
+                <input id="cli-bridge-from" class="wizard-input" type="text" placeholder="From chain (e.g. zion-l1)">
+                <input id="cli-bridge-to" class="wizard-input" type="text" placeholder="To chain (e.g. base)">
+                <input id="cli-bridge-amount" class="wizard-input" type="text" placeholder="Amount (smallest units)">
+                <input id="cli-bridge-source" class="wizard-input" type="text" placeholder="Source address (optional)">
+                <input id="cli-bridge-target" class="wizard-input" type="text" placeholder="Target address (optional)">
+                <div class="actions-row" style="gap:8px;flex-wrap:wrap;">
+                  <button class="btn btn-primary btn-sm" id="cli-btn-bridge-status">Status</button>
+                  <button class="btn btn-primary btn-sm" id="cli-btn-bridge-pending">Pending</button>
+                  <button class="btn btn-primary btn-sm" id="cli-btn-bridge-chains">Chains</button>
+                </div>
+                <div class="actions-row" style="gap:8px;flex-wrap:wrap;margin-top:4px;">
+                  <button class="btn btn-accent btn-sm" id="cli-btn-bridge-lock">Lock</button>
+                  <button class="btn btn-accent btn-sm" id="cli-btn-bridge-burn">Burn</button>
+                </div>
+                <div class="bridge-readiness-row status-pending">
+                  <span class="bridge-readiness-label">Lock/Burn need local multichain TOML config.</span>
+                </div>
+              </div>
+            </div>
+            <!-- Warp -->
+            <div class="control-panel">
+              <h2>Warp</h2>
+              <div class="stack-col" style="gap:8px;">
+                <input id="cli-warp-from" class="wizard-input" type="text" placeholder="From chain (e.g. zion-l1)">
+                <input id="cli-warp-to" class="wizard-input" type="text" placeholder="To chain (e.g. base)">
+                <input id="cli-warp-amount" class="wizard-input" type="text" placeholder="Amount (smallest units)">
+                <div class="actions-row" style="gap:8px;flex-wrap:wrap;">
+                  <button class="btn btn-primary btn-sm" id="cli-btn-warp-status">Status</button>
+                  <button class="btn btn-primary btn-sm" id="cli-btn-warp-routes">Routes</button>
+                  <button class="btn btn-primary btn-sm" id="cli-btn-warp-pending">Pending</button>
+                </div>
+                <div class="actions-row" style="gap:8px;flex-wrap:wrap;margin-top:4px;">
+                  <button class="btn btn-accent btn-sm" id="cli-btn-warp-estimate">Estimate</button>
+                </div>
+                <div class="bridge-readiness-row status-pending">
+                  <span class="bridge-readiness-label">Most commands need local multichain service.</span>
+                </div>
+              </div>
+            </div>
+            <!-- DAO -->
+            <div class="control-panel">
+              <h2>DAO</h2>
+              <div class="actions-row" style="gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-primary btn-sm" id="cli-btn-dao-status">Status</button>
+                <button class="btn btn-primary btn-sm" id="cli-btn-dao-proposals">Proposals</button>
+                <button class="btn btn-primary btn-sm" id="cli-btn-dao-treasury">Treasury</button>
+                <button class="btn btn-primary btn-sm" id="cli-btn-dao-params">Params</button>
+              </div>
+            </div>
+            <!-- Pool -->
+            <div class="control-panel">
+              <h2>Pool</h2>
+              <div class="stack-col" style="gap:8px;">
+                <input id="cli-pool-address" class="wizard-input" type="text" placeholder="Your ZION address (optional)">
+                <div class="actions-row" style="gap:8px;flex-wrap:wrap;">
+                  <button class="btn btn-primary btn-sm" id="cli-btn-pool-stats">Stats</button>
+                  <button class="btn btn-primary btn-sm" id="cli-btn-pool-miners">Miners</button>
+                  <button class="btn btn-primary btn-sm" id="cli-btn-pool-payouts">Payouts</button>
+                </div>
+              </div>
             </div>
           </div>
-          <!-- Warp -->
-          <div class="control-panel">
-            <h2 class="panel-header-row">
-              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-terminal"></use></svg> Warp (L3)</span>
-            </h2>
-            <div class="actions-row panel-mt-20">
-              <button class="btn btn-primary btn-sm" id="cli-btn-warp-status">Status</button>
-              <button class="btn btn-primary btn-sm" id="cli-btn-warp-chains">Chains</button>
-              <button class="btn btn-primary btn-sm" id="cli-btn-warp-pending">Pending</button>
-              <button class="btn btn-ghost btn-sm" id="cli-btn-warp-stats">Stats</button>
+        </div>
+
+        <!-- Swap Panel -->
+        <div id="cli-swap-panel" class="section-panel">
+          <div class="wallet-grid">
+            <div class="control-panel">
+              <h2>DEX Swap</h2>
+              <div class="stack-col" style="gap:8px;">
+                <input id="cli-swap-from" class="wizard-input" type="text" placeholder="From asset (e.g. zion-l1:ZION)">
+                <input id="cli-swap-to" class="wizard-input" type="text" placeholder="To asset (e.g. base:USDC:0x...)">
+                <input id="cli-swap-amount" class="wizard-input" type="text" placeholder="Amount (smallest units)">
+                <input id="cli-swap-decimals" class="wizard-input" type="text" value="6" placeholder="Decimals (default: 6)">
+                <div class="actions-row" style="gap:8px;">
+                  <button class="btn btn-primary" id="cli-btn-swap-quote">Quote</button>
+                  <button class="btn btn-accent" id="cli-btn-swap-execute">Execute</button>
+                </div>
+                <div class="bridge-readiness-row status-pending">
+                  <span class="bridge-readiness-label">Swap needs local multichain service.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Atomic Swap Panel -->
+        <div id="cli-htlc-panel" class="section-panel">
+          <div class="wallet-grid" style="grid-template-columns:repeat(2,1fr);">
+            <div class="control-panel">
+              <h2>Create HTLC</h2>
+              <div class="stack-col" style="gap:8px;">
+                <input id="cli-htlc-amount" class="wizard-input" type="text" placeholder="Amount (ZION)">
+                <input id="cli-htlc-chain" class="wizard-input" type="text" placeholder="Target chain (e.g. base)">
+                <input id="cli-htlc-recipient" class="wizard-input" type="text" placeholder="Recipient address">
+                <input id="cli-htlc-preimage" class="wizard-input" type="text" placeholder="Preimage hex (optional)">
+                <input id="cli-htlc-timeout" class="wizard-input" type="text" value="120" placeholder="Timeout min (default 120)">
+                <button class="btn btn-accent" id="cli-btn-htlc-create">Create</button>
+              </div>
+            </div>
+            <div class="control-panel">
+              <h2>Manage HTLC</h2>
+              <div class="stack-col" style="gap:8px;">
+                <input id="cli-htlc-hash" class="wizard-input" type="text" placeholder="HTLC hash">
+                <input id="cli-htlc-preimage2" class="wizard-input" type="text" placeholder="Preimage for claim">
+                <input id="cli-htlc-recipient2" class="wizard-input" type="text" placeholder="Recipient for claim">
+                <input id="cli-htlc-token" class="wizard-input" type="text" placeholder="Token (optional)">
+                <div class="actions-row" style="gap:8px;flex-wrap:wrap;">
+                  <button class="btn btn-primary btn-sm" id="cli-btn-htlc-status">Status</button>
+                  <button class="btn btn-primary btn-sm" id="cli-btn-htlc-escrow">Escrow</button>
+                  <button class="btn btn-primary btn-sm" id="cli-btn-htlc-pending">Pending</button>
+                  <button class="btn btn-primary btn-sm" id="cli-btn-htlc-get">Get</button>
+                </div>
+                <div class="actions-row" style="gap:8px;flex-wrap:wrap;margin-top:4px;">
+                  <button class="btn btn-accent btn-sm" id="cli-btn-htlc-claim">Claim</button>
+                  <button class="btn btn-ghost btn-sm" id="cli-btn-htlc-refund">Refund</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
