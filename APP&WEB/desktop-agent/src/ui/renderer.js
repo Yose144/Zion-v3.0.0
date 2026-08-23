@@ -2221,7 +2221,7 @@ function buildStatsSignature(stats) {
   // Include a compact signature of the streams array so the UI refreshes
   // when per-stream hashrate/shares/coin/active state changes.
   const streamsSig = Array.isArray(stats.streams)
-    ? stats.streams.map(s =>
+    ? stats.streams.filter(s => s).map(s =>
         `${s.index}:${s.coin}:${s.algorithm}:${s.hashrate_10s}:${s.hashrate_60s}:${s.accepted}:${s.rejected}:${s.active ? 1 : 0}`
       ).join(',')
     : '';
@@ -3520,7 +3520,7 @@ function updateTripleStreamPanel(stats) {
 
   const fmtHr = fmtHashrate;
 
-  const streams = Array.isArray(stats.streams) ? stats.streams : [];
+  const streams = Array.isArray(stats.streams) ? stats.streams.filter(s => s) : [];
   const statusEl = document.getElementById('trinity-status');
 
   // Panel visibility: always show, but reflect idle/active state
@@ -3532,7 +3532,7 @@ function updateTripleStreamPanel(stats) {
       statusEl.textContent = 'Single Stream';
       statusEl.className = 'pill pill-compact';
     } else {
-      const activeCount = streams.filter(s => s.active).length;
+      const activeCount = streams.filter(s => s && s.active).length;
       statusEl.textContent = `${activeCount}/${streams.length} active`;
       statusEl.className = 'pill pill-compact';
     }
@@ -3541,7 +3541,7 @@ function updateTripleStreamPanel(stats) {
   // Render each stream card (1-indexed: stream-1, stream-2, stream-3).
   // Prefer the explicit `index` field; fall back to array order if missing.
   for (let i = 1; i <= 3; i++) {
-    const stream = streams.find(s => Number(s.index) === i) || streams[i - 1];
+    const stream = streams.find(s => s && Number(s.index) === i) || streams[i - 1];
     const card = document.getElementById(`stream-card-${i}`);
     if (!card) continue;
 
