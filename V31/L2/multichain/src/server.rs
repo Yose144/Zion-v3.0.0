@@ -20,6 +20,7 @@ use std::net::SocketAddr;
 use crate::config::ServerConfig;
 use crate::contracts::ZionContracts;
 use crate::error::{MultichainError, MultichainResult};
+use crate::node_rewards::{HeartbeatRequest, NodeRecord, PayoutRecord, RegisterNodeRequest};
 use crate::rate_limit::{auth_rate_limit, RateLimiter};
 use crate::service::MultichainService;
 use crate::zis_auth::{address_from_linked, resolve_zis_auth, ZisClient, ZisUser};
@@ -181,6 +182,13 @@ impl ApiServer {
             .ok()
             .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
             .unwrap_or(false);
+
+        // When ZIS auth is enabled, browser/headless callers use ZIS sessions or
+        // ZIS API keys; the legacy static multichain API key is no longer required.
+        if zis_enabled {
+            config.auth.api_key = None;
+        }
+
         let zis_client = ZisClient::new(zis_enabled, zis_url);
 
         let state = AppState {
@@ -228,6 +236,10 @@ impl ApiServer {
             .route("/v1/multichain/swaps/htlc/:hash", get(htlc_get))
             .route("/v1/pool/stats", get(pool_stats))
             .route("/v1/pool/payouts", get(pool_payouts))
+            .route("/v1/nodes/register", post(register_node))
+            .route("/v1/nodes/heartbeat", post(node_heartbeat))
+            .route("/v1/nodes", get(list_nodes))
+            .route("/v1/nodes/payouts", get(node_reward_payouts))
             .layer(axum::middleware::from_fn_with_state(
                 state.limiter.clone(),
                 auth_rate_limit,
@@ -269,6 +281,28 @@ impl ApiServer {
                 interval.tick().await;
                 if let Err(e) = payout_service.execute_payouts().await {
                     tracing::warn!("payout executor error: {}", e);
+                }
+            }
+        });
+
+        let node_reward_service = Arc::clone(&self.service);
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(Duration::from_secs(60));
+            loop {
+                interval.tick().await;
+                match node_reward_service.height(ChainId::ZionL1).await {
+                    Ok(height) => {
+                        if let Err(e) = node_reward_service
+                            .node_rewards()
+                            .lock()
+                            .await
+                            .maybe_payout(height)
+                            .await
+                        {
+                            tracing::warn!("node reward payout error: {}", e);
+                        }
+                    }
+                    Err(e) => tracing::warn!("node reward height error: {}", e),
                 }
             }
         });
@@ -1121,5 +1155,62 @@ fn chain_name_to_id(name: &str) -> MultichainResult<zion_l1_types::ChainId> {
         "ethereum" | "eth" => Ok(ChainId::Ethereum),
         "zion-l1" | "zion" | "zionl1" => Ok(ChainId::ZionL1),
         _ => Err(MultichainError::AdapterNotFound(name.to_string())),
+    }
+}
+
+async fn register_node(
+    State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
+    Json(req): Json<RegisterNodeRequest>,
+) -> Result<Json<NodeRecord>, StatusCode> {
+    let user = user.ok_or(StatusCode::UNAUTHORIZED)?;
+    match state
+        .service
+        .node_rewards()
+        .lock()
+        .await
+        .register(user.0.id, req)
+        .await
+    {
+        Ok(record) => Ok(Json(record)),
+        Err(e) => {
+            tracing::warn!("node register failed: {e}");
+            Err(StatusCode::BAD_REQUEST)
+        }
+    }
+}
+
+async fn node_heartbeat(
+    State(state): State<AppState>,
+    Json(req): Json<HeartbeatRequest>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    match state.service.node_rewards().lock().await.heartbeat(req).await {
+        Ok(()) => Ok(Json(serde_json::json!({ "ok": true }))),
+        Err(e) => {
+            tracing::warn!("node heartbeat failed: {e}");
+            Err(StatusCode::BAD_REQUEST)
+        }
+    }
+}
+
+async fn list_nodes(State(state): State<AppState>) -> Result<Json<Vec<NodeRecord>>, StatusCode> {
+    match state.service.node_rewards().lock().await.list_active_nodes().await {
+        Ok(nodes) => Ok(Json(nodes)),
+        Err(e) => {
+            tracing::warn!("list active nodes failed: {e}");
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+async fn node_reward_payouts(
+    State(state): State<AppState>,
+) -> Result<Json<Vec<PayoutRecord>>, StatusCode> {
+    match state.service.node_rewards().lock().await.list_payouts().await {
+        Ok(payouts) => Ok(Json(payouts)),
+        Err(e) => {
+            tracing::warn!("list node reward payouts failed: {e}");
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
     }
 }
