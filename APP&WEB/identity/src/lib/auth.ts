@@ -22,7 +22,21 @@ export async function requireAuth(
   try {
     await req.jwtVerify();
   } catch {
-    reply.code(401).send({ error: 'UNAUTHORIZED', message: 'Invalid or missing token' });
+    return reply.code(401).send({ error: 'UNAUTHORIZED', message: 'Invalid or missing token' });
+  }
+
+  const payload = req.user as JwtPayload;
+  if (!payload?.jti) {
+    return reply.code(401).send({ error: 'UNAUTHORIZED', message: 'Missing session ID' });
+  }
+
+  // Verify the session exists in the DB and has not been revoked or expired.
+  const session = await (req.server as FastifyInstance).prisma.session.findUnique({
+    where: { jwtJti: payload.jti },
+  });
+
+  if (!session || session.revoked || session.expiresAt < new Date()) {
+    return reply.code(401).send({ error: 'UNAUTHORIZED', message: 'Session revoked or expired' });
   }
 }
 
@@ -32,12 +46,20 @@ export async function optionalAuth(
 ): Promise<void> {
   try {
     await req.jwtVerify();
+    const payload = req.user as JwtPayload;
+    if (payload?.jti) {
+      const session = await (req.server as FastifyInstance).prisma.session.findUnique({
+        where: { jwtJti: payload.jti },
+      });
+      if (!session || session.revoked || session.expiresAt < new Date()) {
+        (req as unknown as Record<string, unknown>).user = undefined;
+      }
+    }
   } catch {
     // ignore — anonymous allowed
   }
 }
 
-export function registerAuthHook(app: FastifyInstance): void {
+export function registerAuthHook(_app: FastifyInstance): void {
   // no-op; routes use requireAuth directly
-  void app;
 }

@@ -15,6 +15,7 @@ import {
   verifyEd25519 as sharedVerifyEd25519,
   verifySiwe as sharedVerifySiwe,
   getCurrentUser as sharedGetCurrentUser,
+  updateProfile as sharedUpdateProfile,
   logout as sharedLogout,
   useZisAuth as sharedUseZisAuth,
   getZisUrl,
@@ -145,6 +146,25 @@ export async function getCurrentUser(
   return sharedGetCurrentUser({
     cookieHeader: options?.cookieHeader,
   });
+}
+
+/**
+ * Update the current user's profile via the local proxy.
+ */
+export async function updateProfile(
+  profile: { displayName?: string; email?: string | null; avatar?: string | null; bio?: string | null },
+): Promise<ZisUser> {
+  if (isBrowser()) {
+    const res = await fetch(`${CLIENT_PROXY_BASE}/me`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(profile),
+    });
+    if (!res.ok) throw new Error(`Profile update failed: ${res.status}`);
+    return res.json();
+  }
+  return sharedUpdateProfile(profile);
 }
 
 /**

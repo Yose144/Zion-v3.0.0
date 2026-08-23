@@ -120,7 +120,7 @@ function isBrowser(): boolean {
 // ── Core fetch helper ────────────────────────────────────────────────
 
 interface ZisFetchOptions {
-  method?: 'GET' | 'POST';
+  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
   body?: unknown;
   /** Extra headers (e.g. cookie forwarding from server-side). */
   headers?: Record<string, string>;
@@ -270,6 +270,24 @@ export async function getCurrentUser(
     if (e.status === 401 || e.status === 403) return null;
     throw err;
   }
+}
+
+/**
+ * Update the current user's profile.
+ * PATCH /api/auth/me  (requires zion_session cookie)
+ *
+ * Server-side callers must forward the cookie via `options.cookieHeader`.
+ */
+export async function updateProfile(
+  profile: { displayName?: string; email?: string | null; avatar?: string | null; bio?: string | null },
+  options?: { cookieHeader?: string; baseUrl?: string },
+): Promise<ZisUser> {
+  return zisFetch<ZisUser>('/api/auth/me', {
+    method: 'PATCH',
+    body: profile,
+    headers: options?.cookieHeader ? { Cookie: options.cookieHeader } : undefined,
+    baseUrl: options?.baseUrl,
+  });
 }
 
 /**

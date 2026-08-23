@@ -19,7 +19,7 @@ export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from 'next/server';
 import { getZisUrl, ZIS_SESSION_COOKIE } from '@/lib/zis';
 
-const ALLOWED_METHODS = new Set(['GET', 'POST']);
+const ALLOWED_METHODS = new Set(['GET', 'POST', 'PATCH', 'DELETE']);
 
 export async function GET(
   req: NextRequest,
@@ -29,6 +29,20 @@ export async function GET(
 }
 
 export async function POST(
+  req: NextRequest,
+  ctx: { params: Promise<{ zis: string[] }> },
+) {
+  return proxy(req, ctx);
+}
+
+export async function PATCH(
+  req: NextRequest,
+  ctx: { params: Promise<{ zis: string[] }> },
+) {
+  return proxy(req, ctx);
+}
+
+export async function DELETE(
   req: NextRequest,
   ctx: { params: Promise<{ zis: string[] }> },
 ) {
@@ -75,9 +89,9 @@ async function proxy(
     forwardHeaders['Content-Type'] = contentType;
   }
 
-  // Read body for POST
+  // Read body for mutating methods.
   let body: BodyInit | undefined;
-  if (method === 'POST') {
+  if (method === 'POST' || method === 'PATCH' || method === 'DELETE') {
     body = await req.text();
   }
 
@@ -106,11 +120,14 @@ async function proxy(
     },
   });
 
-  // Pass through Set-Cookie so the SSO cookie is established on the
-  // same origin (the cookie domain is .zionterranova.com).
-  const setCookie = zisRes.headers.get('set-cookie');
-  if (setCookie) {
-    response.headers.set('set-cookie', setCookie);
+  // Pass through all Set-Cookie headers so the SSO cookie is established on
+  // the same origin (the cookie domain is .zionterranova.com).
+  const setCookies =
+    (zisRes.headers as unknown as { getSetCookie?: () => string[] }).getSetCookie?.() ??
+    (zisRes.headers.get('set-cookie') ? [zisRes.headers.get('set-cookie')!] : []);
+
+  for (const cookie of setCookies) {
+    response.headers.append('set-cookie', cookie);
   }
 
   return response;
