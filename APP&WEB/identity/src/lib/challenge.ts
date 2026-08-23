@@ -4,6 +4,7 @@ import * as ed from 'noble-ed25519';
 import { sha256 } from '@noble/hashes/sha2.js';
 import { ripemd160 } from '@noble/hashes/legacy.js';
 import { randomBytes } from 'node:crypto';
+import { SiweMessage } from 'siwe';
 
 const CHALLENGE_TTL_MS = 5 * 60 * 1000; // 5 min
 const ZION_PREFIX = 'zion1';
@@ -107,18 +108,37 @@ export async function verifyEd25519(
 
 /**
  * Verify an EVM SIWE message + signature (EIP-191 personal_sign / EIP-712).
- * Caller is expected to have already parsed the SIWE message; we just check
- * the recovered address matches and the challenge nonce is known.
+ *
+ * Parses the SIWE message, recovers the signer address from the signature,
+ * and ensures the nonce matches a challenge issued by this service.
  */
-export function verifySiwe(
+export async function verifySiwe(
   address: string,
-  recoveredAddress: string,
-  nonceFromMessage: string,
-): boolean {
+  signature: string,
+  message: string,
+): Promise<boolean> {
   const challenge = getChallenge(address);
   if (!challenge) return false;
-  if (address.toLowerCase() !== recoveredAddress.toLowerCase()) return false;
-  if (!challenge.includes(`nonce: ${nonceFromMessage}`)) return false;
+
+  let parsed: SiweMessage;
+  try {
+    parsed = new SiweMessage(message);
+  } catch {
+    return false;
+  }
+
+  // The nonce in the SIWE message must be the nonce from the active challenge.
+  if (!challenge.includes(`nonce: ${parsed.nonce}`)) return false;
+
+  // Verify the EIP-191 signature and recover the signing address.
+  const { success, data } = await parsed.verify({
+    signature,
+    domain: parsed.domain,
+    nonce: parsed.nonce,
+  });
+  if (!success || !data) return false;
+  if (data.address.toLowerCase() !== address.toLowerCase()) return false;
+
   clearChallenge(address);
   return true;
 }

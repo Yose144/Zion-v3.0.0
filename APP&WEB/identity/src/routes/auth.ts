@@ -20,6 +20,7 @@ const VerifySiweSchema = z.object({
   address: z.string(), // 0x...
   message: z.string(), // raw SIWE message
   signature: z.string(), // 0x-prefixed hex
+  recoveredAddress: z.string().optional(), // deprecated, no longer needed
 });
 
 const UpdateProfileSchema = z.object({
@@ -69,15 +70,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     }
     const { address, message, signature } = parsed.data;
 
-    // Recover EVM address from signature (EIP-191)
-    // NOTE: in production use `ethers.utils.verifyMessage(message, signature)`.
-    // We accept the recovered address passed by the gateway for now.
-    // The gateway must perform ecrecover — ZIS itself stays crypto-light.
-    const recoveredAddress = (req.body as Record<string, string>).recoveredAddress ?? address;
-    const nonceMatch = message.match(/Nonce: ([^\n]+)/i);
-    const nonce = nonceMatch?.[1] ?? '';
-
-    const ok = verifySiwe(address, recoveredAddress, nonce);
+    const ok = await verifySiwe(address, signature, message);
     if (!ok) {
       return reply.code(401).send({ error: 'AUTH_FAILED', message: 'SIWE verification failed' });
     }
