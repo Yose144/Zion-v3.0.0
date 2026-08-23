@@ -42,7 +42,7 @@ async function swapFetch(path: string, init?: RequestInit): Promise<Response> {
 /** Get the L1 escrow address from daemon */
 export async function getEscrowAddress(): Promise<EscrowAddressResponse | null> {
   try {
-    const res = await swapFetch('/escrow-address', { cache: 'no-store' });
+    const res = await swapFetch('/htlc/escrow', { cache: 'no-store' });
     if (!res.ok) return null;
     return await res.json();
   } catch {
@@ -53,10 +53,10 @@ export async function getEscrowAddress(): Promise<EscrowAddressResponse | null> 
 /** Query HTLC status by hash */
 export async function getHtlcStatus(hashHex: string): Promise<HtlcRecord | null> {
   try {
-    const res = await swapFetch(`/${hashHex}`, { cache: 'no-store' });
+    const res = await swapFetch(`/htlc/${hashHex}`, { cache: 'no-store' });
     if (!res.ok) return null;
     const data = await res.json();
-    return data.htlc || null;
+    return data.record || null;
   } catch {
     return null;
   }
@@ -65,7 +65,7 @@ export async function getHtlcStatus(hashHex: string): Promise<HtlcRecord | null>
 /** List pending HTLCs */
 export async function getPendingHtlcs(): Promise<HtlcRecord[]> {
   try {
-    const res = await swapFetch('/pending', { cache: 'no-store' });
+    const res = await swapFetch('/htlc/pending', { cache: 'no-store' });
     if (!res.ok) return [];
     const data = await res.json();
     return data.htlcs || [];
@@ -86,7 +86,7 @@ export async function submitClaim(input: {
     if (input.token) {
       headers['Authorization'] = `Bearer ${input.token}`;
     }
-    const res = await swapFetch('/claim', {
+    const res = await swapFetch('/htlc/claim', {
       method: 'POST',
       headers,
       body: JSON.stringify({
@@ -109,6 +109,54 @@ export async function submitClaim(input: {
   }
 }
 
+/** Submit lock request */
+export async function submitLock(input: {
+  from: string;
+  to: string;
+  amount: number;
+  hashHex: string;
+  timelock: number;
+  sourceAddress?: string;
+  targetAddress?: string;
+  sourcePubkeyHex?: string;
+  targetPubkeyHex?: string;
+  token?: string;
+}): Promise<{ success: boolean; message: string; transfer_id?: string; status?: string }> {
+  try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (input.token) {
+      headers['Authorization'] = `Bearer ${input.token}`;
+    }
+    const res = await swapFetch('/htlc/lock', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        from: input.from,
+        to: input.to,
+        amount: input.amount,
+        hash_hex: input.hashHex,
+        timelock: input.timelock,
+        source_address: input.sourceAddress,
+        target_address: input.targetAddress,
+        source_pubkey_hex: input.sourcePubkeyHex,
+        target_pubkey_hex: input.targetPubkeyHex,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      return { success: false, message: data.message || 'Lock failed' };
+    }
+    return {
+      success: true,
+      message: 'HTLC lock submitted',
+      transfer_id: data.transfer_id,
+      status: data.status,
+    };
+  } catch (e: any) {
+    return { success: false, message: e.message || 'Network error' };
+  }
+}
+
 /** Submit refund for expired HTLC */
 export async function submitRefund(input: {
   hashHex: string;
@@ -119,7 +167,7 @@ export async function submitRefund(input: {
     if (input.token) {
       headers['Authorization'] = `Bearer ${input.token}`;
     }
-    const res = await swapFetch('/refund', {
+    const res = await swapFetch('/htlc/refund', {
       method: 'POST',
       headers,
       body: JSON.stringify({ hash_hex: input.hashHex }),

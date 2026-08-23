@@ -199,6 +199,8 @@ impl ApiServer {
             .route("/v1/multichain/swaps/htlc/lock", post(htlc_lock))
             .route("/v1/multichain/swaps/htlc/claim", post(htlc_claim))
             .route("/v1/multichain/swaps/htlc/refund", post(htlc_refund))
+            .route("/v1/multichain/swaps/htlc/pending", get(htlc_pending))
+            .route("/v1/multichain/swaps/htlc/escrow", get(htlc_escrow))
             .route("/v1/multichain/swaps/htlc/:hash", get(htlc_get))
             .route("/v1/pool/stats", get(pool_stats))
             .route("/v1/pool/payouts", get(pool_payouts))
@@ -560,6 +562,27 @@ async fn htlc_get(
         Some(record) => Ok(Json(serde_json::json!({ "record": record }))),
         None => Err(StatusCode::NOT_FOUND),
     }
+}
+
+async fn htlc_pending(State(state): State<AppState>) -> Json<serde_json::Value> {
+    let records = state.service.htlc().pending_records().await;
+    Json(serde_json::json!({ "htlcs": records }))
+}
+
+async fn htlc_escrow(State(state): State<AppState>) -> Result<Json<serde_json::Value>, StatusCode> {
+    let service = state.service.as_ref();
+    let address = service
+        .wallet_address(ChainId::ZionL1, 0, 0)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let escrow = format!(
+        "SWAP:LOCK:<hash_hex>:<timeout_min>:<chain>:<addr>:{}\n",
+        address.encoded
+    );
+    Ok(Json(serde_json::json!({
+        "status": "ok",
+        "escrow_address": address.encoded,
+        "memo_format": escrow
+    })))
 }
 
 #[derive(Deserialize)]
