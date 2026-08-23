@@ -16,7 +16,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 EDGE_HOST="${ZION_EDGE_HOST:-zion-post-wipe}"
 EDGE_USER="${ZION_EDGE_USER:-root}"
-REMOTE_DIR="/opt/zion/website-v2.9"
+REMOTE_DIR="/opt/zion/APP&WEB/website-v2.9"
 SERVICE="zion-website.service"
 
 echo "[deploy-web2.9] Building locally..."
@@ -35,7 +35,7 @@ rsync -avz --delete \
   "${EDGE_HOST}:${REMOTE_DIR}/"
 
 echo "[deploy-web2.9] Fixing ownership and restarting ${SERVICE}"
-ssh "${EDGE_HOST}" "chown -R zion:zion ${REMOTE_DIR} && systemctl daemon-reload && systemctl restart ${SERVICE}"
+ssh "${EDGE_HOST}" "chown -R zion:zion '${REMOTE_DIR}' && systemctl daemon-reload && systemctl restart ${SERVICE}"
 
 echo "[deploy-web2.9] Waiting for app.zionterranova.com..."
 for i in $(seq 1 12); do
