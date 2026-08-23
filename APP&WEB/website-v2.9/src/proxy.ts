@@ -49,7 +49,16 @@ function getJwtSecret(): Uint8Array {
   return new TextEncoder().encode(secret);
 }
 
-const PROTECTED_PATHS = ['/account', '/dashboard/private'];
+const PROTECTED_PATHS = [
+  '/account',
+  '/dashboard/private',
+  '/dex',
+  '/swap',
+  '/ziondex',
+  '/bridge',
+  '/multichain',
+  '/defi',
+];
 
 function isProtected(pathname: string): boolean {
   return PROTECTED_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
@@ -148,5 +157,16 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/:path*', '/account/:path*', '/dashboard/private/:path*'],
+  matcher: [
+    '/admin/:path*',
+    '/api/:path*',
+    '/account/:path*',
+    '/dashboard/private/:path*',
+    '/dex/:path*',
+    '/swap/:path*',
+    '/ziondex/:path*',
+    '/bridge/:path*',
+    '/multichain/:path*',
+    '/defi/:path*',
+  ],
 };

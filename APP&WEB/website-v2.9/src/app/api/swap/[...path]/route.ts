@@ -33,10 +33,12 @@ async function proxySwap(request: Request, path: string[]) {
   const accept = request.headers.get('accept');
   const contentType = request.headers.get('content-type');
   const apiKey = request.headers.get('authorization');
+  const cookie = request.headers.get('cookie');
 
   if (accept) headers.set('accept', accept);
   if (contentType) headers.set('content-type', contentType);
   if (apiKey) headers.set('authorization', apiKey);
+  if (cookie) headers.set('cookie', cookie);
 
   const method = request.method.toUpperCase();
   const body = method === 'POST' ? await request.text() : undefined;
