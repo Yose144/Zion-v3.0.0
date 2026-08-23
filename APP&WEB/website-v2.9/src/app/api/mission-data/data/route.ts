@@ -120,7 +120,7 @@ async function loadCollectorState(): Promise<StabilityCollectorState | null> {
   return null;
 }
 
-/* ── Load the G8 30-day continuous-run state from Edge disk ───────── */
+/* ── Load the G8 30-day continuous-run state ───────── */
 async function loadG8RunState(): Promise<StabilityCollectorState | null> {
   try {
     const raw = await readFile('/opt/zion/data/g8_run.json', 'utf8');
@@ -310,42 +310,42 @@ export async function GET() {
 
   const readinessMap = {
     done: [
-      { title: 'G11 — V3→V31 migration complete', detail: 'H1–H4 remediation finished: Foundry wZION/ZIONBridge/ZDXToken tests pass, zion deploy/update wired, miner TUI verified, CLI build green.' },
-      { title: 'E4 — Bridge Base mainnet round-trip', detail: '100 ZION lock → 100 wZION mint → 100 wZION burn → 100 ZION unlock confirmed on V31 native chain.' },
+      { title: 'G11 — public mainnet migration complete', detail: 'H1–H4 remediation finished: wZION, ZIONBridge and ZDXToken tests pass, deployment tooling wired, Terminal Miner verified, CLI build green.' },
+      { title: 'E4 — Bridge Base mainnet round-trip', detail: '100 ZION lock → 100 wZION mint → 100 wZION burn → 100 ZION unlock confirmed on the ZION chain.' },
       { title: 'G5/E8 — XMR / RandomX AuxPoW on MoneroOcean', detail: 'CryptonoteStratum job/submit parsing fixed and validated for ZION miner CPU path.' },
       { title: 'G7 — chaos and load tests passed', detail: '10k-miner pool handshake, DEX/bridge overload, P2P reconnect storm and 10-min tx fuzz preview all green.' },
-      { title: 'G1 — GPU/rig E2E closed', detail: 'GTX 1070 Ti (CUDA) and SimpleMining AMD rig connected to Edge pool with >99% accept rate.' },
+      { title: 'G1 — GPU/rig E2E closed', detail: 'GTX 1070 Ti (CUDA) and AMD rig connected to mainnet pool with >99% accept rate.' },
       { title: 'G3 — solver network E2E closed', detail: 'Off-chain solvers, X-Solver-Key auth and full intent→bid→settle flow verified.' },
-      { title: 'G4 — public subtree sync', detail: 'public/ is fully synchronized with github.com/Zion-TerraNova/v3-Mainnet:main.' },
-      { title: 'H5 — AuxPoW E2E test harness', detail: 'Local CryptonoteStratum mock + zion-pool + CPU miner XMR path end-to-end validated.' },
-      { title: 'Premine/coinbase maturity soft-fork', detail: 'V31 core enforces COINBASE_MATURITY=100 and admin/time locks, with configurable activation height.' },
+      { title: 'G4 — public subtree sync', detail: 'public source tree is fully synchronized.' },
+      { title: 'H5 — AuxPoW E2E test harness', detail: 'Local pool mock + CPU miner end-to-end validated.' },
+      { title: 'Premine/coinbase maturity soft-fork', detail: 'ZION core enforces COINBASE_MATURITY=100 and admin/time locks, with configurable activation height.' },
       { title: 'V3.2.0 public release assets', detail: 'Terminal Miner, CLI and Desktop Agent build scripts, workflows and download metadata switched to v3.2.0.' },
     ],
     missing: [],
     not_missing: [
-      { title: 'G11 — V3→V31 migration complete', detail: 'H1–H4 remediation finished: Foundry wZION/ZIONBridge/ZDXToken tests pass, zion deploy/update wired, miner TUI verified, CLI build green.' },
-      { title: 'E4 — Bridge Base mainnet round-trip', detail: '100 ZION lock → 100 wZION mint → 100 wZION burn → 100 ZION unlock confirmed on V31 native chain.' },
+      { title: 'G11 — public mainnet migration complete', detail: 'H1–H4 remediation finished: wZION, ZIONBridge and ZDXToken tests pass, deployment tooling wired, Terminal Miner verified, CLI build green.' },
+      { title: 'E4 — Bridge Base mainnet round-trip', detail: '100 ZION lock → 100 wZION mint → 100 wZION burn → 100 ZION unlock confirmed on the ZION chain.' },
       { title: 'G5/E8 — XMR / RandomX AuxPoW on MoneroOcean', detail: 'CryptonoteStratum job/submit parsing fixed and validated for ZION miner CPU path.' },
       { title: 'G7 — chaos and load tests passed', detail: '10k-miner pool handshake, DEX/bridge overload, P2P reconnect storm and 10-min tx fuzz preview all green.' },
-      { title: 'G1 — GPU/rig E2E closed', detail: 'GTX 1070 Ti (CUDA) and SimpleMining AMD rig connected to Edge pool with >99% accept rate.' },
+      { title: 'G1 — GPU/rig E2E closed', detail: 'GTX 1070 Ti (CUDA) and AMD rig connected to mainnet pool with >99% accept rate.' },
       { title: 'G3 — solver network E2E closed', detail: 'Off-chain solvers, X-Solver-Key auth and full intent→bid→settle flow verified.' },
-      { title: 'G4 — public subtree sync', detail: 'public/ is fully synchronized with github.com/Zion-TerraNova/v3-Mainnet:main.' },
-      { title: 'H5 — AuxPoW E2E test harness', detail: 'Local CryptonoteStratum mock + zion-pool + CPU miner XMR path end-to-end validated.' },
-      { title: 'Premine/coinbase maturity soft-fork', detail: 'V31 core enforces COINBASE_MATURITY=100 and admin/time locks, with configurable activation height.' },
+      { title: 'G4 — public subtree sync', detail: 'public source tree is fully synchronized.' },
+      { title: 'H5 — AuxPoW E2E test harness', detail: 'Local pool mock + CPU miner end-to-end validated.' },
+      { title: 'Premine/coinbase maturity soft-fork', detail: 'ZION core enforces COINBASE_MATURITY=100 and admin/time locks, with configurable activation height.' },
       { title: 'V3.2.0 public release assets', detail: 'Terminal Miner, CLI and Desktop Agent build scripts, workflows and download metadata switched to v3.2.0.' },
     ],
     next_48h: [
       { title: 'G8 — 30-day continuous run', detail: 'Started 2026-08-23 07:00 CET. Target 2026-09-22 07:00 CET. Uptime target ≥99.9%.' },
-      { title: 'G9 — security audit', detail: 'Schedule external security audit (Trail of Bits or equivalent) for V31 L1/L2 before public launch.' },
+      { title: 'G9 — security audit', detail: 'Schedule external security audit (Trail of Bits or equivalent) for L1/L2 before public launch.' },
       { title: 'G10 — L5/L6 decision', detail: 'Formal treasury, humanitarian fund and Issobella space-fund governance activation plan.' },
-      { title: 'Phase I — ZIS identity service', detail: 'Finalise zion-zis deployment, rate limiting and public auth flows.' },
+      { title: 'Phase I — ZIS identity service', detail: 'Finalise ZION Identity Service deployment, rate limiting and public auth flows.' },
     ],
   };
 
   const data = {
     timestamp: new Date().toISOString(),
     environment: {
-      label: 'V31 Mainnet Alpha',
+      label: 'Mainnet Alpha',
       current_phase: 'G8 30-day continuous run · running',
       public_launch_status: 'G8 IN-PROGRESS',
     },

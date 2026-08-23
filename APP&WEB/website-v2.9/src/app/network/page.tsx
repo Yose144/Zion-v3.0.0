@@ -96,10 +96,10 @@ const NetworkCopy = {
   v306TrinityMainnetBeta1111Serv: { cs: `v3.2.0 "One Love, Mainnet Stable" — 11/11 služeb aktivních`, en: `v3.2.0 "One Love, Mainnet Stable" — 11/11 services active` },
   jsonRpcEndpointsLive84438448Ba: { cs: `JSON-RPC endpointy live (primární 9445; záloha offline)`, en: `JSON-RPC endpoints live (primary 9445; backup offline)` },
   e2eMemoTestsConfirmedInBlock75: { cs: `E2E memo testy potvrzené v bloku 752`, en: `E2E memo tests confirmed in block 752` },
-  f47MaxTxAmountCapF5SenderBalan: { cs: `F4.7 max-tx-amount cap + F5 sender balance check aktivní`, en: `F4.7 max-tx-amount cap + F5 sender balance check active` },
+  f47MaxTxAmountCapF5SenderBalan: { cs: `max-tx-amount cap + sender balance check aktivní`, en: `max-tx-amount cap + sender balance check active` },
   lwmaDaaTarget60sBlockTime: { cs: `LWMA DAA — cíl 60s block time`, en: `LWMA DAA — target 60s block time` },
   systemdServicesWithAutoRestart: { cs: `Služby s automatickým restartem`, en: `Services with auto-restart` },
-  prometheusGrafanaMonitoring: { cs: `Monitoring Prometheus + Grafana`, en: `Prometheus + Grafana monitoring` },
+  telemetryMetricsMonitoring: { cs: `Monitoring telemetry + metrics`, en: `Telemetry + Metrics monitoring` },
   ufwFirewallApparmorRpcAuditLog: { cs: `Bezpečnostní hardening, firewall a audit log aktivní`, en: `Security hardening, firewall and audit log active` },
   sshTunnelsForBackupNodeReverse: { cs: `Záložní spojení pro standby node`, en: `Backup link for standby node` },
   enUs: { cs: `cs-CZ`, en: `en-US` },
@@ -220,7 +220,7 @@ const NetworkCopy = {
   nativeRustInfrastructureRunnin: { cs: `Nativní Rust infrastruktura běží 24/7 z aktuálního primárního hostu. Připojte svůj miner, spusťte vlastní node nebo prozkoumejte blockchain, zatímco historický kontext sítě zůstává zachován v dokumentaci.`, en: `Native Rust infrastructure running 24/7 from the current primary host. Connect your miner, run your own node, or explore the blockchain while historical network context stays preserved in docs.` },
   primaryHostLive: { cs: `Primární host online`, en: `Primary host live` },
   internalSeeds: { cs: `Veřejné seedy`, en: `Public seeds` },
-  dockerNative: { cs: `Docker nativně`, en: `Docker native` },
+  containerNative: { cs: `Nativní kontejnery`, en: `Container native` },
   archivedMultiHostHistory: { cs: `Archivovaná síťová historie`, en: `Archived network history` },
   explorer: { cs: `Explorer`, en: `Explorer` },
   roadmap: { cs: `Roadmapa`, en: `Roadmap` },
@@ -423,7 +423,7 @@ const getNetworkFacts = (cs: boolean) => [
   { text: NetworkCopy.f47MaxTxAmountCapF5SenderBalan[cs ? 'cs' : 'en'], done: true },
   { text: NetworkCopy.lwmaDaaTarget60sBlockTime[cs ? 'cs' : 'en'], done: true },
   { text: NetworkCopy.systemdServicesWithAutoRestart[cs ? 'cs' : 'en'], done: true },
-  { text: NetworkCopy.prometheusGrafanaMonitoring[cs ? 'cs' : 'en'], done: true },
+  { text: NetworkCopy.telemetryMetricsMonitoring[cs ? 'cs' : 'en'], done: true },
   {
     text: NetworkCopy.ufwFirewallApparmorRpcAuditLog[cs ? 'cs' : 'en'],
     done: true,
@@ -1160,7 +1160,7 @@ export default function NetworkPage() {
               'Cosmic Harmony PoW',
               NetworkCopy.primaryHostLive[cs ? 'cs' : 'en'],
               NetworkCopy.internalSeeds[cs ? 'cs' : 'en'],
-              NetworkCopy.dockerNative[cs ? 'cs' : 'en'],
+              NetworkCopy.containerNative[cs ? 'cs' : 'en'],
               NetworkCopy.archivedMultiHostHistory[cs ? 'cs' : 'en'],
             ].map((item) => (
               <span key={item} className="zion-badge-gold">
@@ -1261,7 +1261,7 @@ function NetFAQSection({ cs }: { cs: boolean }) {
     { q: NetworkCopy.howManyZionAreMinedPerBlock[cs ? 'cs' : 'en'], a: cs ? `V první dekádě je odměna ${BLOCK_REWARD_ZION.toFixed(3)} ZION/blok. Každých 10 let (${BLOCKS_PER_DECADE.toLocaleString()} bloků) se odměna sníží o 20 % (Decade Decay).` : `In the first decade the reward is ${BLOCK_REWARD_ZION.toFixed(3)} ZION/block. Every 10 years (${BLOCKS_PER_DECADE.toLocaleString()} blocks) the reward decreases by 20% (Decade Decay).` },
     { q: NetworkCopy.whatIsTheMaximumSupply[cs ? 'cs' : 'en'], a: cs ? `Maximální supply je ${(TOTAL_SUPPLY_ZION / 1e9).toFixed(0)} miliard ZION včetně genesis premine ${(GENESIS_PREMINE_ZION / 1e9).toFixed(2)} mld ZION.` : `Maximum supply is ${(TOTAL_SUPPLY_ZION / 1e9).toFixed(0)} billion ZION including genesis premine of ${(GENESIS_PREMINE_ZION / 1e9).toFixed(2)}B ZION.` },
     { q: NetworkCopy.howToConnectAsAMiner[cs ? 'cs' : 'en'], a: cs ? `Stáhněte si XMRig nebo Desktop App a použijte stratum+tcp://${SITE_POOL_PRIMARY} jako pool adresu. Detaily najdete v Connection Guides výše.` : `Download XMRig or the Desktop App and use stratum+tcp://${SITE_POOL_PRIMARY} as the pool address. See the Connection Guides section above for details.` },
-    { q: NetworkCopy.howToRunYourOwnFullNode[cs ? 'cs' : 'en'], a: cs ? `Klonujte repo, sestavte zion-node pomocí cargo build --release a spusťte ./target/release/zion-node --p2p-bind-ip 0.0.0.0 --add-exclusive-node ${SITE_PRIMARY_HOST}:8333. Docker compose je k dispozici v repozitáři.` : `Clone the repo, build zion-node with cargo build --release, then run ./target/release/zion-node --p2p-bind-ip 0.0.0.0 --add-exclusive-node ${SITE_PRIMARY_HOST}:8333. Docker compose is available in the repo.` },
+    { q: NetworkCopy.howToRunYourOwnFullNode[cs ? 'cs' : 'en'], a: cs ? `Klonujte repo, sestavte zion-node pomocí cargo build --release a spusťte ./target/release/zion-node --p2p-bind-ip 0.0.0.0 --add-exclusive-node ${SITE_PRIMARY_HOST}:8333. Kontejnerové nastavení je k dispozici v repozitáři.` : `Clone the repo, build zion-node with cargo build --release, then run ./target/release/zion-node --p2p-bind-ip 0.0.0.0 --add-exclusive-node ${SITE_PRIMARY_HOST}:8333. Container setup is available in the repo.` },
     { q: NetworkCopy.whatPoolFeeDoesZionCharge[cs ? 'cs' : 'en'], a: NetworkCopy.k89GoesToTheMiner5ToTheHumanita[cs ? 'cs' : 'en'] },
     { q: NetworkCopy.isTheNetworkPubliclyLaunched[cs ? 'cs' : 'en'], a: NetworkCopy.mainnetGenesisTookPlaceOn11Jun[cs ? 'cs' : 'en'] },
   ], [cs]);

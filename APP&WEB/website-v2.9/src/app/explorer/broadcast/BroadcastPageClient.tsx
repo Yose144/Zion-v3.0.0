@@ -25,7 +25,7 @@ const ExplorerBroadcastBroadcastPageClientCopy = {
   broadcast: { cs: `Broadcast`, en: `Broadcast` },
   submit: { cs: `Odeslat`, en: `Submit` },
   broadcastTransaction: { cs: `Broadcast transakce`, en: `Broadcast Transaction` },
-  submitASignedTransactionToTheZ: { cs: `Odešlete podepsanou transakci do ZION sítě. Podporuje V31 native UTXO JSON, account-model JSON i raw hex formát.`, en: `Submit a signed transaction to the ZION network. Supports V31 native UTXO JSON, account-model JSON, and raw hex format.` },
+  submitASignedTransactionToTheZ: { cs: `Odešlete podepsanou transakci do ZION sítě. Podporuje native ZION UTXO JSON, account-model JSON i raw hex formát.`, en: `Submit a signed transaction to the ZION network. Supports native ZION UTXO JSON, account-model JSON, and raw hex format.` },
   transactionsMustBeSignedBefore: { cs: `Transakce musí být podepsána před odesláním. Tento nástroj nepodepisuje — pouze odesílá již podepsaná data do sítě.`, en: `Transactions must be signed before broadcasting. This tool does not sign — it only submits already-signed data to the network.` },
   format: { cs: `Formát:`, en: `Format:` },
   model: { cs: `Model:`, en: `Model:` },
@@ -40,7 +40,7 @@ const ExplorerBroadcastBroadcastPageClientCopy = {
   error: { cs: `Chyba`, en: `Error` },
   howToBroadcast: { cs: `Jak broadcastovat`, en: `How to broadcast` },
   accountModelSignTheTransaction: { cs: `Account-model: podepište transakci pomocí wallet SDK, vložte JSON s from/to/amount/fee/nonce/public_key/signature.`, en: `Account-model: sign the transaction using the wallet SDK, paste JSON with from/to/amount/fee/nonce/public_key/signature.` },
-  utxoModelUseTheSubmittransacti: { cs: `V31 native UTXO: vložte JSON s version, inputs (previous_output jako 32 bajtů, index, script), outputs (amount jako desetinný řetězec, address {chain, bytes, encoded}) a memo.`, en: `V31 native UTXO: paste JSON with version, inputs (previous_output as 32 bytes, index, script), outputs (amount as decimal string, address {chain, bytes, encoded}), and memo.` },
+  utxoModelUseTheSubmittransacti: { cs: `native ZION UTXO: vložte JSON s version, inputs (previous_output jako 32 bajtů, index, script), outputs (amount jako desetinný řetězec, address {chain, bytes, encoded}) a memo.`, en: `native ZION UTXO: paste JSON with version, inputs (previous_output as 32 bytes, index, script), outputs (amount as decimal string, address {chain, bytes, encoded}), and memo.` },
   rawHexForPreSignedBinaryTransa: { cs: `Raw hex: vložte pre-signed binární transakci v hex formátu (0x prefix bude odstraněn).`, en: `Raw hex: paste a pre-signed binary transaction in hex format (0x prefix is allowed).` },
   afterSuccessfulBroadcastYouRec: { cs: `Po úspěšném broadcastu dostanete tx_id pro sledování v průzkumníku.`, en: `After successful broadcast you receive a tx_id to track in the explorer.` },
 };
