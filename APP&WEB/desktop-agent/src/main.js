@@ -3988,6 +3988,10 @@ function parseMinerOutput(output) {
   const streamAlgos = { zion: 'ekam_deeksha', 'gpu-external': 'progpow', 'cpu-external': 'verushash' };
   const streamDefaultCoins = { zion: 'ZION', 'gpu-external': 'ZANO', 'cpu-external': 'VRSC' };
   if (!Array.isArray(minerStats.streams)) minerStats.streams = [];
+  // Use a temp object keyed by 1-based index to avoid sparse array issues.
+  // Direct array assignment (streams[1]=...) + filter() compaction causes
+  // re-indexing that corrupts the mapping on subsequent calls.
+  const _newStreams = {};
   for (const m of output.matchAll(/(?:^|\n)[^\n]*?stream\s+stats[^\n]*stream\s*=\s*"?([^"\s,]+)"?\s+coin\s*=\s*"?([^"\s,]+)"?\s+accepted\s*=\s*(\d+)\s+rejected\s*=\s*(\d+)\s+hashrate\s*=\s*([^\s,]+)\s+status\s*=\s*"?([^"\s,]+)"?/gi)) {
     const streamId = String(m[1] || '').toLowerCase();
     const idx = streamIndex[streamId] ?? 1;
@@ -4000,11 +4004,11 @@ function parseMinerOutput(output) {
     if (coin === streamId || coin === 'gpu-external' || coin === 'cpu-external') {
       coin = streamDefaultCoins[streamId] || coin;
     }
-    minerStats.streams[idx] = {
+    _newStreams[idx] = {
       index: idx,
       label: streamLabels[streamId] || streamId,
       coin: coin,
-      algorithm: streamAlgos[streamId] || (minerStats.streams[idx] && minerStats.streams[idx].algorithm) || '',
+      algorithm: streamAlgos[streamId] || '',
       hashrate_10s: Number.isFinite(hr) ? hr : 0,
       hashrate_60s: Number.isFinite(hr) ? hr : 0,
       hashrate_15m: Number.isFinite(hr) ? hr : 0,
@@ -4048,11 +4052,13 @@ function parseMinerOutput(output) {
     // summary parser below.
   }
 
-  // Compact sparse array to dense — 1-indexed assignment leaves index 0 as a hole.
-  // After IPC JSON serialization, holes become null, causing renderer's
-  // streams.find(s => Number(s.index) === i) to crash on null.index.
-  if (Array.isArray(minerStats.streams)) {
-    minerStats.streams = minerStats.streams.filter(s => s);
+  // Build a dense array from the temp object, sorted by stream index.
+  // This replaces the old sparse-array + filter() approach which caused
+  // duplicate ZION entries (filter re-indexed the array, so the next
+  // streams[1]=... overwrote ZANO instead of updating ZION).
+  const _sortedIdxs = Object.keys(_newStreams).map(Number).sort((a, b) => a - b);
+  if (_sortedIdxs.length > 0) {
+    minerStats.streams = _sortedIdxs.map(i => _newStreams[i]);
   }
 
   // ─── V31 TUI log (aggregate hashrate only) ───
