@@ -4,7 +4,7 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use axum::{
-    extract::{Path, State},
+    extract::{Extension, Path, State},
     http::{HeaderValue, Method, StatusCode, header::HeaderName},
     response::Json,
     routing::{get, post},
@@ -22,6 +22,7 @@ use crate::contracts::ZionContracts;
 use crate::error::{MultichainError, MultichainResult};
 use crate::rate_limit::{auth_rate_limit, RateLimiter};
 use crate::service::MultichainService;
+use crate::zis_auth::{resolve_zis_auth, ZisClient, ZisUser};
 use crate::swap::dex::intent::{PathHop, SolverBid, SwapIntent};
 use crate::swap::dex::solver_network::HttpSolverClient;
 use crate::swap::Pool;
@@ -71,6 +72,7 @@ pub struct AppState {
     solver_name: String,
     solver_fee_bps: u16,
     solver_api_key: Option<String>,
+    zis_client: ZisClient,
 }
 
 /// HTTP API gateway for `zion-multichain`.
@@ -160,6 +162,14 @@ impl ApiServer {
         }
 
         let solver_cfg = self.service.config().solver.clone();
+        let zis_url = std::env::var("ZIS_URL")
+            .unwrap_or_else(|_| "https://auth.zionterranova.com".to_string());
+        let zis_enabled = std::env::var("ZION_MULTICHAIN_ZIS_AUTH")
+            .ok()
+            .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+            .unwrap_or(false);
+        let zis_client = ZisClient::new(zis_enabled, zis_url);
+
         let state = AppState {
             service: Arc::clone(&self.service),
             limiter: RateLimiter::new(&config),
@@ -170,6 +180,7 @@ impl ApiServer {
             },
             solver_fee_bps: solver_cfg.fee_bps,
             solver_api_key: solver_cfg.api_key,
+            zis_client,
         };
 
         Router::new()
@@ -208,6 +219,10 @@ impl ApiServer {
                 state.limiter.clone(),
                 auth_rate_limit,
             ))
+            .layer(axum::middleware::from_fn_with_state(
+                state.zis_client.clone(),
+                resolve_zis_auth,
+            ))
             .layer(
                 CorsLayer::new()
                     .allow_origin(cors_allowed_origins())
@@ -222,7 +237,9 @@ impl ApiServer {
                         HeaderName::from_static("x-dao-key"),
                         HeaderName::from_static("x-warp-key"),
                         HeaderName::from_static("accept"),
-                    ])),
+                        HeaderName::from_static("cookie"),
+                    ]))
+                    .allow_credentials(true),
             )
             .with_state(state)
     }
@@ -458,8 +475,13 @@ async fn swap_quote_multi(
 
 async fn swap_execute(
     State(state): State<AppState>,
+    user: Option<Extension<ZisUser>>,
     Json(req): Json<SwapRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
+    if state.zis_client.enabled && user.is_none() {
+        return Err(StatusCode::UNAUTHORIZED);
+    }
+    let _user = user.as_ref().map(|u| &u.0);
     match state
         .service
         .dex_swap(&req.from, &req.to, Amount::new(req.amount))

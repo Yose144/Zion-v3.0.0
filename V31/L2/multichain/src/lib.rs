@@ -24,6 +24,7 @@ pub mod swap;
 pub mod types;
 pub mod wallet;
 pub mod warp;
+pub mod zis_auth;
 
 pub use bridge::Bridge;
 pub use chain::{ChainAdapter, ChainAdapterRegistry};
