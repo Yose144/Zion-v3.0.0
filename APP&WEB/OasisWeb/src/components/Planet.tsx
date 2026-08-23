@@ -4,6 +4,13 @@ import { useRef, useMemo, useState, useEffect } from 'react';
 import { useFrame, ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Html } from '@react-three/drei';
+import {
+  createPlanetTexture,
+  createAtmosphereTexture,
+  planetSecondaryColor,
+  planetStyleFromColor,
+  type PlanetStyle,
+} from '../lib/planetTexture';
 
 /**
  * Universal planet component — uses real Earth textures for Nova Zeme,
@@ -23,6 +30,8 @@ export default function Planet({
   rotationSpeed = 0.05,
   onClick,
   label,
+  seed,
+  style,
 }: {
   position?: [number, number, number];
   radius?: number;
@@ -34,6 +43,8 @@ export default function Planet({
   rotationSpeed?: number;
   onClick?: () => void;
   label?: string;
+  seed?: number;
+  style?: PlanetStyle;
 }) {
   const planetRef = useRef<THREE.Group>(null);
   const atmosphereRef = useRef<THREE.Mesh>(null);
@@ -43,6 +54,14 @@ export default function Planet({
     bump?: THREE.Texture;
     night?: THREE.Texture;
   }>({});
+
+  const baseColor = useMemo(() => getVariantColor(variant), [variant]);
+  const secondaryColor = useMemo(() => planetSecondaryColor(baseColor), [baseColor]);
+  const effectiveStyle = useMemo(() => style ?? planetStyleFromColor(baseColor), [style, baseColor]);
+  const effectiveSeed = useMemo(
+    () => seed ?? (label ? label.split('').reduce((a, c) => a + c.charCodeAt(0), 0) : variant.charCodeAt(0) * 137),
+    [seed, label, variant]
+  );
 
   // Load Earth textures only for 'earth' variant (Nova Zeme)
   useEffect(() => {
@@ -59,34 +78,14 @@ export default function Planet({
     });
   }, [variant]);
 
-  // Procedural texture for non-earth variants
+  // Procedural texture for non-earth variants — unique per seed
   const procTexture = useMemo(() => {
     if (variant === 'earth') return null;
-    return generatePlanetTexture(variant);
-  }, [variant]);
+    return createPlanetTexture(baseColor, secondaryColor, effectiveSeed, isMobile, effectiveStyle);
+  }, [variant, baseColor, secondaryColor, effectiveSeed, isMobile, effectiveStyle]);
 
   // Atmosphere glow texture
-  const glowTexture = useMemo(() => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 128;
-    canvas.height = 128;
-    const ctx = canvas.getContext('2d')!;
-    const colors: Record<string, string> = {
-      earth: 'rgba(14, 165, 233, 0.4)',
-      mars: 'rgba(194, 65, 12, 0.3)',
-      ice: 'rgba(56, 189, 248, 0.4)',
-      gas: 'rgba(168, 85, 247, 0.35)',
-      jungle: 'rgba(5, 150, 100, 0.35)',
-      ocean: 'rgba(2, 132, 199, 0.4)',
-    };
-    const grad = ctx.createRadialGradient(64, 64, 30, 64, 64, 64);
-    grad.addColorStop(0, colors[variant] || colors.earth);
-    grad.addColorStop(0.5, colors[variant]?.replace(/[\d.]+\)/, '0.15)') || 'rgba(14, 165, 233, 0.15)');
-    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 128, 128);
-    return new THREE.CanvasTexture(canvas);
-  }, [variant]);
+  const glowTexture = useMemo(() => createAtmosphereTexture(baseColor, isMobile ? 64 : 128), [baseColor, isMobile]);
 
   useFrame((_, delta) => {
     if (planetRef.current) {
@@ -135,12 +134,15 @@ export default function Planet({
               emissiveIntensity={3.0}
             />
           ) : (
-            <meshStandardMaterial
+            <meshPhysicalMaterial
               map={procTexture || undefined}
-              roughness={0.6}
-              metalness={0.1}
-              emissive={getVariantEmissive(variant)}
-              emissiveIntensity={0.5}
+              color="#ffffff"
+              roughness={0.65}
+              metalness={0.05}
+              clearcoat={0.25}
+              clearcoatRoughness={0.45}
+              emissive={new THREE.Color(baseColor)}
+              emissiveIntensity={0.35}
             />
           )}
         </mesh>
@@ -425,87 +427,4 @@ function getVariantColor(variant: string): string {
   return colors[variant] || '#ffffff';
 }
 
-function getVariantEmissive(variant: string): THREE.Color {
-  const colors: Record<string, string> = {
-    mars: '#c2410c',
-    ice: '#0ea5e9',
-    gas: '#8b5cf6',
-    jungle: '#059669',
-    ocean: '#0ea5e9',
-    earth: '#0ea5e9',
-  };
-  return new THREE.Color(colors[variant] || '#0ea5e9');
-}
 
-function generatePlanetTexture(variant: string): THREE.CanvasTexture {
-  const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 128;
-  const ctx = canvas.getContext('2d')!;
-  const rng = mulberry32(variant.charCodeAt(0) * 137);
-
-  const palettes: Record<string, { base: string; land: string; ice: string }> = {
-    mars: { base: '#c2410c', land: '#9a3412', ice: '#fb923c' },
-    ice: { base: '#0c4a6e', land: '#bae6fd', ice: '#ffffff' },
-    gas: { base: '#7c3aed', land: '#c4b5fd', ice: '#f0abfc' },
-    jungle: { base: '#047857', land: '#10b981', ice: '#a7f3d0' },
-    ocean: { base: '#0284c7', land: '#0ea5e9', ice: '#ffffff' },
-  };
-
-  const pal = palettes[variant] || palettes.mars;
-
-  // Base
-  ctx.fillStyle = pal.base;
-  ctx.fillRect(0, 0, 256, 128);
-
-  // Landmasses
-  for (let i = 0; i < 8; i++) {
-    const x = rng() * 256;
-    const y = 20 + rng() * 88;
-    const r = 15 + rng() * 35;
-    const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
-    grad.addColorStop(0, pal.land);
-    grad.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // Ice caps
-  const iceGrad = ctx.createLinearGradient(0, 0, 0, 15);
-  iceGrad.addColorStop(0, pal.ice + 'CC');
-  iceGrad.addColorStop(1, pal.ice + '00');
-  ctx.fillStyle = iceGrad;
-  ctx.fillRect(0, 0, 256, 15);
-
-  const iceGrad2 = ctx.createLinearGradient(0, 113, 0, 128);
-  iceGrad2.addColorStop(0, pal.ice + '00');
-  iceGrad2.addColorStop(1, pal.ice + 'CC');
-  ctx.fillStyle = iceGrad2;
-  ctx.fillRect(0, 113, 256, 15);
-
-  // Gas bands
-  if (variant === 'gas') {
-    for (let i = 0; i < 6; i++) {
-      const y = 20 + i * 15;
-      ctx.fillStyle = `rgba(${200 + rng() * 40}, ${160 + rng() * 40}, ${80 + rng() * 40}, 0.3)`;
-      ctx.fillRect(0, y, 256, 8);
-    }
-  }
-
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.wrapS = THREE.RepeatWrapping;
-  return tex;
-}
-
-function mulberry32(seed: number) {
-  return function () {
-    seed |= 0;
-    seed = (seed + 0x6D2B79F5) | 0;
-    let t = seed;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}

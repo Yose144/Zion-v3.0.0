@@ -8,6 +8,13 @@ import type { World } from '../domain/types/world';
 import { createRandom } from '../domain/ports/random';
 import { useGameStore } from '../store/gameStore';
 import { CATEGORY_COLORS } from '../lib/categoryColors';
+import {
+  createPlanetTexture,
+  createGlowTexture,
+  createRingTexture,
+  createCoronaTexture,
+  planetSecondaryColor,
+} from '../lib/planetTexture';
 
 /**
  * Fresnel-based atmosphere glow — the rim brightens with viewing angle like
@@ -56,161 +63,11 @@ const SIZES: Record<string, number> = {
   dimension: 1.0,
 };
 
-function hexToRgb(hex: string) {
-  const n = parseInt(hex.slice(1), 16);
-  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
-}
 
-function createGlowTexture(color: string): THREE.Texture {
-  const size = 256;
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext('2d')!;
-  const c = hexToRgb(color);
 
-  const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-  g.addColorStop(0, `rgba(255, 255, 255, 1)`);
-  g.addColorStop(0.2, `rgba(${c.r}, ${c.g}, ${c.b}, 0.6)`);
-  g.addColorStop(0.5, `rgba(${c.r}, ${c.g}, ${c.b}, 0.15)`);
-  g.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, size, size);
 
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.needsUpdate = true;
-  return texture;
-}
 
-function createPlanetTexture(baseColor: string, secondaryColor: string, seed: number, isMobile = false): THREE.Texture {
-  const size = isMobile ? 256 : 512;
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext('2d')!;
-  const rng = createRandom(seed);
-
-  // Base ocean / void
-  ctx.fillStyle = baseColor;
-  ctx.fillRect(0, 0, size, size);
-
-  // Subtle base color banding (latitude variation) before continents
-  for (let y = 0; y < size; y += 4) {
-    const band = new THREE.Color(baseColor).offsetHSL(0, 0, (Math.sin(y * 0.02 + seed) * 0.03));
-    ctx.fillStyle = `#${band.getHexString()}`;
-    ctx.globalAlpha = 0.5;
-    ctx.fillRect(0, y, size, 4);
-  }
-  ctx.globalAlpha = 1;
-
-  // Continents / landmasses — irregular blobby shapes instead of perfect circles
-  ctx.fillStyle = secondaryColor;
-  const blobs = 12 + rng.int(0, 10);
-  for (let i = 0; i < blobs; i++) {
-    const cx = rng.next() * size;
-    const cy = rng.next() * size;
-    const baseR = 24 + rng.next() * 70;
-    const points = 10;
-    ctx.beginPath();
-    for (let p = 0; p <= points; p++) {
-      const angle = (p / points) * Math.PI * 2;
-      const r = baseR * (0.7 + rng.next() * 0.6);
-      const x = cx + Math.cos(angle) * r;
-      const y = cy + Math.sin(angle) * r;
-      if (p === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.closePath();
-    ctx.fill();
-  }
-
-  // Fine surface detail / mottling
-  for (let i = 0; i < 400; i++) {
-    const x = rng.next() * size;
-    const y = rng.next() * size;
-    const r = 2 + rng.next() * 6;
-    ctx.fillStyle = `rgba(255,255,255,${0.02 + rng.next() * 0.05})`;
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // Wispy cloud layer for a lived-in, atmospheric look
-  for (let i = 0; i < 26; i++) {
-    const cx = rng.next() * size;
-    const cy = rng.next() * size;
-    const r = 30 + rng.next() * 90;
-    const cloud = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-    cloud.addColorStop(0, 'rgba(255,255,255,0.22)');
-    cloud.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = cloud;
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, r, r * 0.4, rng.next() * Math.PI, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // Atmosphere / terminator shadow gradient — softer than before so the lit
-  // side reads brighter
-  const g = ctx.createRadialGradient(size * 0.4, size * 0.4, size * 0.3, size / 2, size / 2, size * 0.75);
-  g.addColorStop(0, 'rgba(255,255,255,0.06)');
-  g.addColorStop(0.65, 'rgba(0,0,0,0.08)');
-  g.addColorStop(1, 'rgba(0,0,0,0.45)');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, size, size);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.needsUpdate = true;
-  texture.anisotropy = 4;
-  return texture;
-}
-
-function createCoronaTexture(color: string): THREE.Texture {
-  const size = 512;
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext('2d')!;
-  const c = hexToRgb(color);
-
-  const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-  g.addColorStop(0, `rgba(255, 250, 240, 0.95)`);
-  g.addColorStop(0.15, `rgba(${c.r}, ${c.g}, ${c.b}, 0.65)`);
-  g.addColorStop(0.45, `rgba(${c.r}, ${c.g}, ${c.b}, 0.15)`);
-  g.addColorStop(1, 'rgba(0, 0, 0, 0)');
-
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, size, size);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.needsUpdate = true;
-  return texture;
-}
-
-function createRingTexture(color: string): THREE.Texture {
-  const size = 512;
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext('2d')!;
-  const c = hexToRgb(color);
-
-  ctx.clearRect(0, 0, size, size);
-  const g = ctx.createRadialGradient(size / 2, size / 2, size * 0.28, size / 2, size / 2, size * 0.5);
-  g.addColorStop(0, 'rgba(0,0,0,0)');
-  g.addColorStop(0.3, `rgba(${c.r}, ${c.g}, ${c.b}, 0.35)`);
-  g.addColorStop(0.45, `rgba(${c.r}, ${c.g}, ${c.b}, 0.12)`);
-  g.addColorStop(0.55, `rgba(${c.r}, ${c.g}, ${c.b}, 0.35)`);
-  g.addColorStop(0.7, `rgba(${c.r}, ${c.g}, ${c.b}, 0.08)`);
-  g.addColorStop(1, 'rgba(0,0,0,0)');
-
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, size, size);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.needsUpdate = true;
-  return texture;
-}
 
 function AtmosphereSphere({ color, size }: { color: string; size: number }) {
   const colorObj = useMemo(() => new THREE.Color(color), [color]);
@@ -394,13 +251,6 @@ function AvatarHologram({ world, color, size }: { world: World; color: string; s
   );
 }
 
-function planetSecondaryColor(color: string): string {
-  const c = new THREE.Color(color);
-  const hsl = {} as { h: number; s: number; l: number };
-  c.getHSL(hsl);
-  c.setHSL(hsl.h, Math.max(0.3, hsl.s * 0.75), Math.min(0.75, hsl.l * 1.35));
-  return `#${c.getHexString()}`;
-}
 
 export default function WorldEnvironment({ world, isMobile = false }: { world: World; isMobile?: boolean }) {
   const groupRef = useRef<THREE.Group>(null);
