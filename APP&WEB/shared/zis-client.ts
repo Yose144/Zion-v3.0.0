@@ -72,6 +72,28 @@ export interface ZisSession {
   expiresAt: string;
 }
 
+/** Active ZIS session returned by GET /api/session. */
+export interface ZisActiveSession {
+  id: string;
+  userId: string;
+  jwtJti: string;
+  userAgent?: string | null;
+  ipAddress?: string | null;
+  createdAt: string;
+  expiresAt: string;
+  revoked: boolean;
+  lastUsedAt?: string | null;
+}
+
+/** ZIS API key metadata (without the secret). */
+export interface ZisApiKey {
+  id: string;
+  userId: string;
+  label: string;
+  createdAt: string;
+  lastUsed?: string | null;
+}
+
 /** Challenge nonce response from POST /api/auth/challenge. */
 export interface ZisChallenge {
   challenge: string;
@@ -310,6 +332,95 @@ export async function logout(
   } catch {
     return { ok: false };
   }
+}
+
+/**
+ * List active sessions for the current user.
+ * GET /api/session  (requires zion_session cookie)
+ */
+export async function getSessions(
+  options?: { cookieHeader?: string; baseUrl?: string },
+): Promise<{ sessions: ZisActiveSession[] }> {
+  return zisFetch<{ sessions: ZisActiveSession[] }>('/api/session', {
+    method: 'GET',
+    headers: options?.cookieHeader ? { Cookie: options.cookieHeader } : undefined,
+    baseUrl: options?.baseUrl,
+  });
+}
+
+/**
+ * Revoke a specific session by its JWT JTI.
+ * DELETE /api/session/:jti  (requires zion_session cookie)
+ */
+export async function revokeSession(
+  jti: string,
+  options?: { cookieHeader?: string; baseUrl?: string },
+): Promise<{ ok: boolean }> {
+  return zisFetch<{ ok: boolean }>(`/api/session/${encodeURIComponent(jti)}`, {
+    method: 'DELETE',
+    headers: options?.cookieHeader ? { Cookie: options.cookieHeader } : undefined,
+    baseUrl: options?.baseUrl,
+  });
+}
+
+/**
+ * Revoke all active sessions for the current user (logout everywhere).
+ * POST /api/session/revoke-all  (requires zion_session cookie)
+ */
+export async function revokeAllSessions(
+  options?: { cookieHeader?: string; baseUrl?: string },
+): Promise<{ ok: boolean }> {
+  return zisFetch<{ ok: boolean }>('/api/session/revoke-all', {
+    method: 'POST',
+    headers: options?.cookieHeader ? { Cookie: options.cookieHeader } : undefined,
+    baseUrl: options?.baseUrl,
+  });
+}
+
+/**
+ * List API keys for the current user.
+ * GET /api/keys  (requires zion_session cookie)
+ */
+export async function getApiKeys(
+  options?: { cookieHeader?: string; baseUrl?: string },
+): Promise<{ keys: ZisApiKey[] }> {
+  return zisFetch<{ keys: ZisApiKey[] }>('/api/keys', {
+    method: 'GET',
+    headers: options?.cookieHeader ? { Cookie: options.cookieHeader } : undefined,
+    baseUrl: options?.baseUrl,
+  });
+}
+
+/**
+ * Create a new API key for the current user.
+ * POST /api/keys  (requires zion_session cookie)
+ * Returns the raw key only once.
+ */
+export async function createApiKey(
+  label: string,
+  options?: { cookieHeader?: string; baseUrl?: string },
+): Promise<{ apiKey: string; label: string }> {
+  return zisFetch<{ apiKey: string; label: string }>('/api/keys', {
+    method: 'POST',
+    body: { label },
+    headers: options?.cookieHeader ? { Cookie: options.cookieHeader } : undefined,
+    baseUrl: options?.baseUrl,
+  });
+}
+
+/**
+ * Revoke an API key by id.
+ * DELETE /api/keys/:id  (requires zion_session cookie)
+ */
+export async function revokeApiKey(
+  id: string,
+  options?: { cookieHeader?: string; baseUrl?: string },
+): Promise<{ ok: boolean }> {
+  return zisFetch<{ ok: boolean }>(`/api/keys/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: options?.cookieHeader ? { Cookie: options.cookieHeader } : undefined,
+    baseUrl: options?.baseUrl,
+  });
 }
 
 /**
