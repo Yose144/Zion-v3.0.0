@@ -1160,6 +1160,79 @@ pre, code{white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere;}
       </div>
     </div>
 
+    <!-- G8 30-Day Continuous Run Panel -->
+    <div id="card-g8-run" class="zion-panel p-5 mb-6" style="border-color:rgba(6,182,212,0.15);background:linear-gradient(145deg,rgba(6,182,212,0.06),rgba(15,20,35,0.92));">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2"><span class="text-gradient" style="background:linear-gradient(90deg,#22d3ee,#a855f7);-webkit-background-clip:text;color:transparent;">🎯 G8 — 30-Day Continuous Run</span></h2>
+        <span id="g8-status-badge" class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">Loading…</span>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3 text-sm">
+        <div>
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider">Started</div>
+          <div id="g8-start" class="font-mono text-cyan-300 text-xs">—</div>
+        </div>
+        <div>
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider">Target End</div>
+          <div id="g8-end" class="font-mono text-purple-300 text-xs">—</div>
+        </div>
+        <div>
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider">Elapsed</div>
+          <div id="g8-elapsed" class="font-mono text-white text-xs">—</div>
+        </div>
+        <div>
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider">Remaining</div>
+          <div id="g8-remaining" class="font-mono text-white text-xs">—</div>
+        </div>
+      </div>
+      <div class="relative w-full h-5 bg-black/40 rounded-full overflow-hidden mb-2">
+        <div id="g8-progress" class="h-full rounded-full transition-all duration-700 ease-out" style="width:0%; background:linear-gradient(90deg,#22d3ee,#a855f7);"></div>
+        <div class="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white">
+          <span id="g8-progress-text">—</span>%
+        </div>
+      </div>
+      <div class="text-[10px] text-gray-400">
+        Uptime target: <strong>≥99.9%</strong> · no critical incidents · Public UI: <a href="https://app.zionterranova.com/g8" target="_blank" class="text-cyan-300 hover:underline">app.zionterranova.com/g8</a>
+      </div>
+    </div>
+
+    <script>
+    (function(){
+      function fmtDuration(s){
+        s = Math.floor(s);
+        const d = Math.floor(s/86400); const h = Math.floor((s%86400)/3600); const m = Math.floor((s%3600)/60);
+        return `${d}d ${h}h ${m}m`;
+      }
+      async function refreshG8(){
+        try{
+          const r = await fetch('/api/g8');
+          const d = await r.json();
+          const badge = document.getElementById('g8-status-badge');
+          if(!d.started){
+            badge.textContent = 'Not started';
+            badge.className = 'text-xs px-2 py-0.5 rounded-full bg-amber-700/50 text-amber-200';
+            return;
+          }
+          const status = d.status || 'running';
+          badge.textContent = status;
+          badge.className = status === 'running'
+            ? 'text-xs px-2 py-0.5 rounded-full bg-emerald-700/50 text-emerald-200'
+            : 'text-xs px-2 py-0.5 rounded-full bg-blue-700/50 text-blue-200';
+          const started = new Date(d.started);
+          const end = new Date(d.target_end);
+          document.getElementById('g8-start').textContent = started.toLocaleString();
+          document.getElementById('g8-end').textContent = end.toLocaleString();
+          document.getElementById('g8-elapsed').textContent = fmtDuration(d.elapsed_seconds || 0);
+          document.getElementById('g8-remaining').textContent = fmtDuration(d.remaining_seconds || 0);
+          const pct = d.progress_percent || 0;
+          document.getElementById('g8-progress').style.width = pct + '%';
+          document.getElementById('g8-progress-text').textContent = pct.toFixed(4);
+        }catch(e){ console.error('G8 panel error', e); }
+      }
+      refreshG8();
+      setInterval(refreshG8, 30000);
+    })();
+    </script>
+
     <!-- Edge Server (unified health + services + control) -->
     <div id="card-edge-server" class="zion-panel svc-card p-5">
       <div class="flex items-center justify-between mb-4 relative z-10">
