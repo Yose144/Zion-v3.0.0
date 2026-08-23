@@ -270,21 +270,23 @@ function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   // Robust 4D vector leaves: cone geometry oriented along the branch direction,
   // with the 4th component (w) driving individual wobble amplitude.
+  // Reuse transient math objects to avoid per-frame allocations.
+  const matrixRef = useRef(new THREE.Matrix4());
+  const quatRef = useRef(new THREE.Quaternion());
+  const swayQuatRef = useRef(new THREE.Quaternion());
+  const axisRef = useRef(new THREE.Vector3(0, 1, 0));
+  const scaleRef = useRef(new THREE.Vector3());
   const geometry = useMemo(
-    () => new THREE.ConeGeometry(0.15, 0.85, 4),
+    () => new THREE.ConeGeometry(0.15, 0.85, 4, 1, true),
     []
   );
   const material = useMemo(
     () =>
-      new THREE.MeshPhysicalMaterial({
+      new THREE.MeshBasicMaterial({
         vertexColors: true,
         transparent: true,
         opacity: 0.96,
-        roughness: 0.35,
-        metalness: 0.1,
-        clearcoat: 0.35,
-        clearcoatRoughness: 0.25,
-        emissive: new THREE.Color(0x000000),
+        side: THREE.DoubleSide,
         toneMapped: false,
       }),
     []
@@ -344,13 +346,12 @@ function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
 
   useEffect(() => {
     if (!meshRef.current) return;
-    const dummy = new THREE.Object3D();
+    const matrix = matrixRef.current;
+    const scale = scaleRef.current;
     leaves.forEach((leaf, i) => {
-      dummy.position.copy(leaf.pos);
-      dummy.quaternion.copy(leaf.quat);
-      dummy.scale.setScalar(leaf.scale);
-      dummy.updateMatrix();
-      meshRef.current!.setMatrixAt(i, dummy.matrix);
+      scale.setScalar(leaf.scale);
+      matrix.compose(leaf.pos, leaf.quat, scale);
+      meshRef.current!.setMatrixAt(i, matrix);
       meshRef.current!.setColorAt(i, leaf.color);
     });
     meshRef.current.instanceMatrix.needsUpdate = true;
@@ -359,17 +360,20 @@ function LeafCanopy({ anchors, leavesPerAnchor = 3, rng }: LeafCanopyProps) {
 
   useFrame((state) => {
     if (!meshRef.current) return;
-    const dummy = new THREE.Object3D();
+    const matrix = matrixRef.current;
+    const quat = quatRef.current;
+    const swayQuat = swayQuatRef.current;
+    const axis = axisRef.current;
+    const scale = scaleRef.current;
     const t = state.clock.elapsedTime;
-    const axis = new THREE.Vector3(0, 1, 0);
     leaves.forEach((leaf, i) => {
       const sway = Math.sin(t * leaf.speed + leaf.phase) * 0.12 * leaf.w;
-      dummy.position.copy(leaf.pos);
-      dummy.quaternion.copy(leaf.quat);
-      dummy.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(axis, sway));
-      dummy.scale.setScalar(leaf.scale);
-      dummy.updateMatrix();
-      meshRef.current!.setMatrixAt(i, dummy.matrix);
+      swayQuat.setFromAxisAngle(axis, sway);
+      quat.copy(leaf.quat);
+      quat.multiply(swayQuat);
+      scale.setScalar(leaf.scale);
+      matrix.compose(leaf.pos, quat, scale);
+      meshRef.current!.setMatrixAt(i, matrix);
     });
     meshRef.current.instanceMatrix.needsUpdate = true;
   });
@@ -493,7 +497,7 @@ function EnergyRings() {
     <group ref={groupRef}>
       {rings.map((ring, i) => (
         <mesh key={i} position={[0, ring.yOffset, 0]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[ring.radius, ring.tube, 12, 48]} />
+          <torusGeometry args={[ring.radius, ring.tube, 8, 32]} />
           <meshBasicMaterial
             color={ring.color}
             transparent
@@ -581,9 +585,9 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
   const collectedFruitIds = useGameStore((s) => s.collectedFruitIds);
   const fruitThreshold = useGameStore((s) => s.fruitThreshold);
   const [hoveredFruit, setHoveredFruit] = useState<number | null>(null);
-  const [blessingFlash, setBlessingFlash] = useState(0);
   const RESPAWN_SECONDS = 30;
   const fruitStateRef = useRef<{ collected: boolean; respawnAt: number }[]>([]);
+  const blessingFlashRef = useRef(0);
 
   const {
     branches,
@@ -599,7 +603,9 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
     // canopy should read as a wide dome sitting on a modest trunk, not a
     // tall spire.
     const top = new THREE.Vector3(0, 0.5, 0);
-    generateBranches(root, top, 0, 5, branches, rng);
+    // Reduced maxDepth (4 instead of 5) to keep branch/tube/leaf count sane
+    // and avoid per-frame matrix updates exploding.
+    generateBranches(root, top, 0, 4, branches, rng);
 
     const fruits = branches.filter((b) => b.depth >= 4).map((b) => b.end);
 
@@ -612,9 +618,7 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
       if (b.depth < 2) continue;
       const dir = new THREE.Vector3().subVectors(b.end, b.start).normalize();
       const curve = branchCurve(b);
-      // With more branches now in the skeleton, fewer samples per branch
-      // keep total leaf count (and per-frame sway animation cost) in check
-      // while still covering the now-wider canopy.
+      // Keep total leaf count (and per-frame sway animation cost) in check.
       const samples = isMobile ? 1 : b.depth >= 4 ? 2 : 1;
       for (let s = 1; s <= samples; s++) {
         leafAnchors.push({ end: curve.getPoint(s / samples), dir });
@@ -623,7 +627,7 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
 
     const branchGeometries = branches.map((b) => {
       const radius = Math.max(0.008, b.width * 0.045);
-      return new THREE.TubeGeometry(branchCurve(b), 10, radius, 9, false);
+      return new THREE.TubeGeometry(branchCurve(b), 6, radius, 6, false);
     });
 
     const branchGeometry = mergeGeometries(branchGeometries);
@@ -639,7 +643,7 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
 
     const rootGeometries = roots.map((b) => {
       const radius = Math.max(0.008, b.width * 0.065);
-      return new THREE.TubeGeometry(branchCurve(b), 8, radius, 8, false);
+      return new THREE.TubeGeometry(branchCurve(b), 5, radius, 5, false);
     });
 
     const rootsGeometry = rootGeometries.length > 0 ? mergeGeometries(rootGeometries) : new THREE.BufferGeometry();
@@ -669,17 +673,13 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
     return { branches, branchGeometry, rootsGeometry, fruitData, glowTexture, leafAnchors };
   }, [rng, isMobile]);
 
-  const fruitGeometry = useMemo(() => new THREE.IcosahedronGeometry(1, 2), []);
+  const fruitGeometry = useMemo(() => new THREE.IcosahedronGeometry(1, 1), []);
   const fruitMaterial = useMemo(
     () =>
-      new THREE.MeshPhysicalMaterial({
+      new THREE.MeshBasicMaterial({
         vertexColors: true,
         transparent: true,
         opacity: 1,
-        roughness: 0.12,
-        metalness: 0.15,
-        clearcoat: 1,
-        clearcoatRoughness: 0.08,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
         toneMapped: false,
@@ -707,14 +707,12 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
 
   const branchMaterial = useMemo(
     () =>
-      new THREE.MeshPhysicalMaterial({
+      new THREE.MeshStandardMaterial({
         color: 0x6b4c2a,
         emissive: 0x3d2410,
         emissiveIntensity: 0.2,
         roughness: 0.6,
         metalness: 0.15,
-        clearcoat: 0.25,
-        clearcoatRoughness: 0.45,
         toneMapped: false,
       }),
     []
@@ -722,24 +720,25 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
 
   const rootMaterial = useMemo(
     () =>
-      new THREE.MeshPhysicalMaterial({
+      new THREE.MeshStandardMaterial({
         color: 0x3d2410,
         emissive: 0x1a0f0a,
         emissiveIntensity: 0.25,
         roughness: 0.75,
         metalness: 0.15,
-        clearcoat: 0.15,
         toneMapped: false,
       }),
     []
   );
+
+  const fruitDummy = useRef(new THREE.Object3D());
 
   useFrame((state, delta) => {
     if (groupRef.current) {
       groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.04) * 0.03;
     }
     if (fruitRef.current) {
-      const dummy = new THREE.Object3D();
+      const dummy = fruitDummy.current;
       const pulse = 1 + Math.sin(state.clock.elapsedTime * 1.2) * 0.08;
       const now = state.clock.elapsedTime;
       for (let i = 0; i < fruitData.length; i++) {
@@ -754,7 +753,7 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
 
         const beat = 1 + Math.sin(state.clock.elapsedTime * 1.8 + i) * 0.05;
         const hoverBoost = hoveredFruit === i && !fs.collected ? 1.4 : 1;
-        const blessingBoost = blessingFlash > 0 ? 1 + blessingFlash * 0.3 : 1;
+        const blessingBoost = blessingFlashRef.current > 0 ? 1 + blessingFlashRef.current * 0.3 : 1;
         // Collected fruits scale to 0 (invisible); a tiny pop on respawn
         const baseScale = fs.collected ? 0 : f.scale * pulse * beat * hoverBoost * blessingBoost;
         // Smooth respawn pop: scale up over ~0.5s after respawn
@@ -778,9 +777,9 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
       const auraPulse = 1 + Math.sin(state.clock.elapsedTime * 0.5) * 0.08;
       auraRef.current.scale.set(4.2 * auraPulse, 4.2 * auraPulse, 1);
     }
-    // Decay blessing flash
-    if (blessingFlash > 0) {
-      setBlessingFlash((v) => Math.max(0, v - delta * 1.5));
+    // Decay blessing flash without triggering React re-renders.
+    if (blessingFlashRef.current > 0) {
+      blessingFlashRef.current = Math.max(0, blessingFlashRef.current - delta * 1.5);
     }
   });
 
@@ -804,7 +803,7 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
         const newCount = prevCount + 1;
         if (newCount >= fruitThreshold) {
           // Blessing triggered — flash all fruits
-          setBlessingFlash(1);
+          blessingFlashRef.current = 1;
         }
       }
     },
@@ -842,19 +841,19 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
 
       {/* Tree heart — layered luminous core (Contact-style bright center) */}
       <mesh ref={heartRef} position={[0, 0.45, 0]}>
-        <sphereGeometry args={[0.55, 64, 64]} />
+        <sphereGeometry args={[0.55, 32, 32]} />
         <meshBasicMaterial color="#e41e2b" transparent opacity={0.22} blending={THREE.AdditiveBlending} depthWrite={false} />
       </mesh>
       <mesh position={[0, 0.45, 0]}>
-        <sphereGeometry args={[0.32, 64, 64]} />
+        <sphereGeometry args={[0.32, 24, 24]} />
         <meshBasicMaterial color="#fcd116" transparent opacity={0.38} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
       </mesh>
       <mesh position={[0, 0.45, 0]}>
-        <sphereGeometry args={[0.18, 64, 64]} />
+        <sphereGeometry args={[0.18, 16, 16]} />
         <meshBasicMaterial color="#078930" transparent opacity={0.65} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
       </mesh>
       <mesh position={[0, 0.45, 0]}>
-        <sphereGeometry args={[0.08, 32, 32]} />
+        <sphereGeometry args={[0.08, 12, 12]} />
         <meshBasicMaterial color="#ffffff" transparent opacity={1} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
       </mesh>
 
@@ -875,7 +874,7 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
       </sprite>
 
       {/* Contact-style light fountain — spiraling vertical streaks */}
-      <LightFountain rng={rng} count={isMobile ? 250 : 400} />
+      <LightFountain rng={rng} count={isMobile ? 120 : 220} />
 
       {/* Pulsing energy rings around the tree */}
       <EnergyRings />
@@ -887,7 +886,7 @@ export default function TreeOfLife({ isMobile = false }: { isMobile?: boolean })
       <pointLight position={[0, 0.45, 0]} intensity={4.0} distance={14} decay={1.5} color="#fcd116" />
       <pointLight position={[0, 2, 0]} intensity={2.2} distance={12} decay={1.5} color="#e41e2b" />
 
-      <SporeField count={isMobile ? 200 : 320} rng={rng} />
+      <SporeField count={isMobile ? 120 : 200} rng={rng} />
       <LeafCanopy anchors={leafAnchors} leavesPerAnchor={isMobile ? 1 : 2} rng={rng} />
     </group>
   );
