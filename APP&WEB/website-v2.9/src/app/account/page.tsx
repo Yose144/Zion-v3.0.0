@@ -21,6 +21,7 @@ import WalletOverview from '@/components/dashboard/WalletOverview';
 import MiningStats from '@/components/dashboard/MiningStats';
 import TransactionHistory from '@/components/dashboard/TransactionHistory';
 import DashboardAIChat from '@/components/dashboard/DashboardAIChat';
+import SecurityPanel from '@/components/dashboard/SecurityPanel';
 
 const AccountCopy = {
   enUs: { cs: `cs-CZ`, en: `en-US` },
@@ -53,13 +54,14 @@ const AccountCopy = {
   wallet: { cs: `Peněženka`, en: `Wallet` },
 };
 
-type Tab = 'wallet' | 'mining' | 'transactions' | 'ai';
+type Tab = 'wallet' | 'mining' | 'transactions' | 'ai' | 'security';
 
 const TABS: { id: Tab; labelCs: string; labelEn: string; icon: typeof Wallet; rc: string }[] = [
   { id: 'wallet', labelCs: 'Peněženka', labelEn: 'Wallet', icon: Wallet, rc: '6, 105, 40' },
   { id: 'mining', labelCs: 'Těžení', labelEn: 'Mining', icon: Pickaxe, rc: '228, 30, 43' },
   { id: 'transactions', labelCs: 'Transakce', labelEn: 'Transactions', icon: ArrowLeftRight, rc: '252, 209, 22' },
   { id: 'ai', labelCs: 'AI Chat', labelEn: 'AI Chat', icon: Sparkles, rc: '6, 105, 40' },
+  { id: 'security', labelCs: 'Bezpečnost', labelEn: 'Security', icon: Shield, rc: '252, 209, 22' },
 ];
 
 interface DashboardStats {
@@ -493,6 +495,7 @@ export default function AccountPage() {
                   <DashboardAIChat />
                 </div>
               )}
+              {activeTab === 'security' && <SecurityPanel />}
             </motion.div>
           </AnimatePresence>
         </section>
