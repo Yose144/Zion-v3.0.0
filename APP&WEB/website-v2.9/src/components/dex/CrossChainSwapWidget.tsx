@@ -153,6 +153,18 @@ function toAtomicAmount(amount: string, decimals: number): string {
   return scaled.toString();
 }
 
+/**
+ * Build a JSON body string with `amount` as a raw JSON number (not a string).
+ * This avoids precision loss for u128 values > Number.MAX_SAFE_INTEGER (2^53-1),
+ * which the V31 backend's serde deserializer requires (amount: u128).
+ */
+function buildSwapBody(from: object, to: object, amount: string, extra?: object): string {
+  const base = { from, to, ...extra };
+  const jsonStr = JSON.stringify(base);
+  // Insert "amount":<raw-number> before the closing brace
+  return jsonStr.replace(/}$/, `,"amount":${amount}}`);
+}
+
 function buildSteps(route: Route['route']) {
   return route.map((asset, i) => {
     if (i === route.length - 1) return null;
@@ -220,18 +232,12 @@ export default function CrossChainSwapWidget() {
     setError(null);
 
     try {
-      const body = {
-        from: fromAsset,
-        to: toAsset,
-        amount: amountAtomic,
-        n: 3,
-        max_hops: 3,
-      };
+      const body = buildSwapBody(fromAsset, toAsset, amountAtomic, { n: 3, max_hops: 3 });
 
       const resp = await fetch(`${API_BASE}/quote/multi`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body,
       });
 
       if (!resp.ok) {
@@ -263,16 +269,12 @@ export default function CrossChainSwapWidget() {
     setError(null);
 
     try {
-      const body = {
-        from: fromAsset,
-        to: toAsset,
-        amount: amountAtomic,
-      };
+      const body = buildSwapBody(fromAsset, toAsset, amountAtomic);
 
       const resp = await fetch(`${API_BASE}/execute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body,
       });
 
       if (!resp.ok) {
