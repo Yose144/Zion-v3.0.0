@@ -9,7 +9,7 @@ import { createRandom } from '../domain/ports/random';
 // flies between worlds — so it should read as the visual centerpiece, not
 // a background layer. Slightly larger/brighter points than a pure backdrop.
 const PARAMETERS = {
-  count: 20000,
+  count: 12000,
   radius: 48,
   branches: 8,
   spin: 1.35,
@@ -18,7 +18,7 @@ const PARAMETERS = {
   insideColor: '#fcd116',
   midColor: '#e41e2b',
   outsideColor: '#078930',
-  size: 0.16,
+  size: 0.18,
 };
 
 function createParticleTexture(): THREE.Texture {
@@ -46,8 +46,8 @@ export default function Galaxy({ isMobile = false }: { isMobile?: boolean }) {
   const pointsRef = useRef<THREE.Points>(null);
   const dustRef = useRef<THREE.Points>(null);
 
-  const count = isMobile ? 8000 : PARAMETERS.count;
-  const dustCount = isMobile ? 1000 : 2500;
+  const count = isMobile ? 5000 : PARAMETERS.count;
+  const dustCount = isMobile ? 600 : 1200;
 
   const { geometry, material, dustGeometry, dustMaterial } = useMemo(() => {
     const rng = createRandom(31415);
