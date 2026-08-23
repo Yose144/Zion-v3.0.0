@@ -319,8 +319,24 @@ pub async fn require_auth(
         if let Some(user) = resolve_user_from_headers(client, req.headers()).await {
             identity = ResolvedIdentity::Zis(user);
         } else {
-            // No valid ZIS credentials and ZIS is the enforced method.
-            return Err(StatusCode::UNAUTHORIZED);
+            // No valid ZIS credentials — fall back to legacy wallet-signature auth
+            // so the UE5 / mobile game client keeps working while OASIS Web uses ZIS.
+            if req.headers().get(HDR_ADDRESS).is_none() {
+                return Err(StatusCode::UNAUTHORIZED);
+            }
+
+            let auth = match extract_from_headers(req.headers()) {
+                Ok(a) => a,
+                Err(e) => return Err(e.status_code()),
+            };
+
+            match auth.verify() {
+                Ok(()) => {
+                    let address = auth.address.clone();
+                    identity = ResolvedIdentity::Wallet(AuthenticatedWallet(address));
+                }
+                Err(e) => return Err(e.status_code()),
+            }
         }
     } else {
         // Legacy wallet-signature auth (used when ZIS is not enabled).
