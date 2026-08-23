@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import type { World } from '../domain/types/world';
 import { createRandom } from '../domain/ports/random';
 import { useGameStore } from '../store/gameStore';
+import { CATEGORY_COLORS } from '../lib/categoryColors';
 
 /**
  * Fresnel-based atmosphere glow — the rim brightens with viewing angle like
@@ -14,7 +15,7 @@ import { useGameStore } from '../store/gameStore';
  * makes planets read as atmospheric bodies rather than painted balls.
  */
 const AtmosphereMaterial = shaderMaterial(
-  { uColor: new THREE.Color('#078930'), uIntensity: 1.0, uPower: 2.2 },
+  { uColor: new THREE.Color('#06b6d4'), uIntensity: 1.0, uPower: 2.2 },
   /* vertex */ `
     varying vec3 vNormal;
     varying vec3 vViewDir;
@@ -47,20 +48,12 @@ declare module '@react-three/fiber' {
   }
 }
 
-const CATEGORY_COLORS: Record<string, string> = {
-  'star-system': '#fcd116',
-  'planet': '#078930',
-  'sector': '#e41e2b',
-  'world': '#078930',
-  'dimension': '#e41e2b',
-};
-
 const SIZES: Record<string, number> = {
   'star-system': 2.4,
-  'planet': 1.3,
-  'sector': 1.0,
-  'world': 1.1,
-  'dimension': 1.0,
+  planet: 1.3,
+  sector: 1.0,
+  world: 1.1,
+  dimension: 1.0,
 };
 
 function hexToRgb(hex: string) {
@@ -90,8 +83,8 @@ function createGlowTexture(color: string): THREE.Texture {
   return texture;
 }
 
-function createPlanetTexture(baseColor: string, secondaryColor: string, seed: number): THREE.Texture {
-  const size = 768;
+function createPlanetTexture(baseColor: string, secondaryColor: string, seed: number, isMobile = false): THREE.Texture {
+  const size = isMobile ? 256 : 512;
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
@@ -442,27 +435,27 @@ export default function WorldEnvironment({ world, isMobile = false }: { world: W
 
   const planetTexture = useMemo(() => {
     if (world.category === 'planet' || world.category === 'world') {
-      const base = world.category === 'world' ? '#078930' : color;
-      const secondary = world.category === 'world' ? '#078930' : planetSecondaryColor(color);
-      return createPlanetTexture(base, secondary, seed);
+      const base = color;
+      const secondary = planetSecondaryColor(color);
+      return createPlanetTexture(base, secondary, seed, isMobile);
     }
     return null;
-  }, [world.category, color, seed]);
+  }, [world.category, color, seed, isMobile]);
 
   const ringTexture = useMemo(() => createRingTexture(color), [color]);
 
   return (
     <group ref={groupRef} position={[0, 0, 0]}>
       {/* distant star backdrop */}
-      <Stars radius={140} depth={90} count={isMobile ? 1500 : 5000} factor={3} saturation={0} fade speed={0.3} />
+      <Stars radius={140} depth={90} count={isMobile ? 800 : 2000} factor={3} saturation={0.65} fade speed={0.3} />
 
       {world.category === 'star-system' && (
         <>
           <mesh geometry={centralGeometry}>
-            <meshBasicMaterial color="#fcd116" toneMapped={false} />
+            <meshBasicMaterial color={color} toneMapped={false} />
           </mesh>
           <StarCorona color={color} size={size} />
-          <SatelliteRing count={Math.floor(8 * mobileFactor)} color="#078930" distance={4.2} sizeBase={0.1} />
+          <SatelliteRing count={Math.floor(8 * mobileFactor)} color={color} distance={4.2} sizeBase={0.1} />
           <OrbitRing radius={4.2} color={color} />
           <WorldParticles count={Math.floor(260 * mobileFactor)} color={color} seed={seed} radius={9} />
           <AvatarHologram world={world} color={color} size={size} />

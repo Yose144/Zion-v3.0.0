@@ -3,6 +3,7 @@
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import type { World } from '../domain/types/world';
+import { CATEGORY_COLORS } from '../lib/categoryColors';
 
 interface HyperlanesProps {
   worlds: World[];
@@ -10,14 +11,6 @@ interface HyperlanesProps {
 }
 
 const MAX_LINKS = 2;
-
-const CATEGORY_COLORS: Record<string, string> = {
-  'star-system': '#fcd116',
-  'planet': '#078930',
-  'sector': '#e41e2b',
-  'world': '#078930',
-  'dimension': '#e41e2b',
-};
 
 export default function Hyperlanes({ worlds, isMobile = false }: HyperlanesProps) {
   const linesRef = useRef<THREE.LineSegments>(null);

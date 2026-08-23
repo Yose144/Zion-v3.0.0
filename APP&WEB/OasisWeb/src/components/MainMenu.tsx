@@ -12,7 +12,7 @@ import MiniMap from './MiniMap';
 import type { World, WorldCategory, WorldLayer } from '../domain/types/world';
 import type { MusicPlayerState } from './AudioEngine';
 import { useGameStore, getLevel, getLevelProgress } from '../store/gameStore';
-import { CATEGORY_COLORS, CATEGORY_LABELS } from './WorldPanel';
+import { CATEGORY_COLORS, CATEGORY_LABELS } from '../lib/categoryColors';
 
 const WORLD_CATEGORIES: WorldCategory[] = ['star-system', 'planet', 'sector', 'world', 'dimension'];
 const LAYERS = [1, 2, 3, 4, 5] as const;
@@ -342,10 +342,10 @@ function DiscoveryStats() {
     <div className="zion-hud-panel !relative p-3">
       <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-white/70">Discovery</p>
       <div className="grid grid-cols-2 gap-3">
-        <Stat value={discoveredWorlds.length} total={total} label="Worlds" color="#078930" />
-        <Stat value={scannedWorlds.length} total={total} label="Scanned" color="#078930" />
-        <Stat value={collectedEggs.length} label="Eggs" color="#fcd116" />
-        <Stat value={completedQuests.length} label="Quests" color="#e41e2b" />
+        <Stat value={discoveredWorlds.length} total={total} label="Worlds" color="#06b6d4" />
+        <Stat value={scannedWorlds.length} total={total} label="Scanned" color="#3b82f6" />
+        <Stat value={collectedEggs.length} label="Eggs" color="#f59e0b" />
+        <Stat value={completedQuests.length} label="Quests" color="#8b5cf6" />
       </div>
     </div>
   );

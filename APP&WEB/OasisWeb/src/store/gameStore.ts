@@ -30,17 +30,17 @@ export interface ShipModelDef {
 }
 
 export const SHIP_MODELS: ShipModelDef[] = [
-  { id: 'pilgrim', label: 'Pilgrim Scout', description: 'Default explorer vessel', stlPath: null, procedural: true, color: '#078930', unlockLevel: 1, unlockCost: 0, class: 'Scout', stats: { boost: 1, cargo: 1, scanner: 1, hp: 100 } },
-  { id: 'awing', label: 'A-Wing', description: 'Fast interceptor — high boost', stlPath: '/models/awing.stl', procedural: false, color: '#e41e2b', unlockLevel: 2, unlockCost: 500, class: 'Interceptor', stats: { boost: 3, cargo: 1, scanner: 2, hp: 80 } },
+  { id: 'pilgrim', label: 'Pilgrim Scout', description: 'Default explorer vessel', stlPath: null, procedural: true, color: '#06b6d4', unlockLevel: 1, unlockCost: 0, class: 'Scout', stats: { boost: 1, cargo: 1, scanner: 1, hp: 100 } },
+  { id: 'awing', label: 'A-Wing', description: 'Fast interceptor — high boost', stlPath: '/models/awing.stl', procedural: false, color: '#f43f5e', unlockLevel: 2, unlockCost: 500, class: 'Interceptor', stats: { boost: 3, cargo: 1, scanner: 2, hp: 80 } },
   { id: 'snowspeeder', label: 'Snowspeeder', description: 'Atmospheric recon', stlPath: '/models/snowspeeder.stl', procedural: false, color: '#a3a3a3', unlockLevel: 3, unlockCost: 1000, class: 'Recon', stats: { boost: 2, cargo: 1, scanner: 3, hp: 90 } },
   { id: 'tiefighter', label: 'TIE Fighter', description: 'Imperial patrol — agile', stlPath: '/models/tiefighter.stl', procedural: false, color: '#1a1a1a', unlockLevel: 4, unlockCost: 2500, class: 'Patrol', stats: { boost: 2, cargo: 1, scanner: 2, hp: 70 } },
-  { id: 'bwing', label: 'B-Wing', description: 'Heavy assault — balanced', stlPath: '/models/bwing.stl', procedural: false, color: '#fcd116', unlockLevel: 5, unlockCost: 5000, class: 'Assault', stats: { boost: 2, cargo: 2, scanner: 2, hp: 120 } },
+  { id: 'bwing', label: 'B-Wing', description: 'Heavy assault — balanced', stlPath: '/models/bwing.stl', procedural: false, color: '#a1a1aa', unlockLevel: 5, unlockCost: 5000, class: 'Assault', stats: { boost: 2, cargo: 2, scanner: 2, hp: 120 } },
   { id: 'tieinterceptor', label: 'TIE Interceptor', description: 'Elite strike — max speed', stlPath: '/models/tieinterceptor.stl', procedural: false, color: '#0d0d0d', unlockLevel: 7, unlockCost: 10000, class: 'Elite Strike', stats: { boost: 4, cargo: 1, scanner: 2, hp: 80 } },
   // New procedural starfighters
-  { id: 'xwing', label: 'X-Wing', description: 'Rebel icon — balanced all-rounder', stlPath: null, procedural: true, color: '#e41e2b', unlockLevel: 6, unlockCost: 7500, class: 'Starfighter', stats: { boost: 3, cargo: 2, scanner: 2, hp: 110 } },
-  { id: 'ywing', label: 'Y-Wing', description: 'Heavy bomber — high cargo, strong hull', stlPath: null, procedural: true, color: '#e41e2b', unlockLevel: 8, unlockCost: 15000, class: 'Bomber', stats: { boost: 2, cargo: 4, scanner: 2, hp: 150 } },
+  { id: 'xwing', label: 'X-Wing', description: 'Rebel icon — balanced all-rounder', stlPath: null, procedural: true, color: '#ef4444', unlockLevel: 6, unlockCost: 7500, class: 'Starfighter', stats: { boost: 3, cargo: 2, scanner: 2, hp: 110 } },
+  { id: 'ywing', label: 'Y-Wing', description: 'Heavy bomber — high cargo, strong hull', stlPath: null, procedural: true, color: '#f59e0b', unlockLevel: 8, unlockCost: 15000, class: 'Bomber', stats: { boost: 2, cargo: 4, scanner: 2, hp: 150 } },
   { id: 'jedistarfighter', label: 'Jedi Starfighter', description: 'Elegant interceptor — precision crafted', stlPath: null, procedural: true, color: '#d4d4d4', unlockLevel: 9, unlockCost: 20000, class: 'Jedi', stats: { boost: 4, cargo: 2, scanner: 3, hp: 100 } },
-  { id: 'slave1', label: 'Slave I', description: 'Bounty hunter\'s vessel — versatile', stlPath: null, procedural: true, color: '#078930', unlockLevel: 10, unlockCost: 30000, class: 'Bounty', stats: { boost: 3, cargo: 3, scanner: 4, hp: 130 } },
+  { id: 'slave1', label: 'Slave I', description: 'Bounty hunter\'s vessel — versatile', stlPath: null, procedural: true, color: '#22c55e', unlockLevel: 10, unlockCost: 30000, class: 'Bounty', stats: { boost: 3, cargo: 3, scanner: 4, hp: 130 } },
   { id: 'falcon', label: 'Millennium Falcon', description: 'Legendary freighter — max versatility', stlPath: null, procedural: true, color: '#a3a3a3', unlockLevel: 12, unlockCost: 50000, class: 'Freighter', stats: { boost: 4, cargo: 5, scanner: 3, hp: 200 } },
   { id: 'stardestroyer', label: 'Star Destroyer', description: 'Capital ship — dominates the battlefield', stlPath: null, procedural: true, color: '#4a4a4a', unlockLevel: 15, unlockCost: 100000, class: 'Capital', stats: { boost: 2, cargo: 5, scanner: 5, hp: 500 } },
 ];
@@ -156,8 +156,8 @@ export const useGameStore = create<GameState>()(
       collectedFruitIds: [],
       collectedHiranKeys: [],
       archetype: null,
-      avatarConfig: { callsign: '', bodyType: 'standard', neonColor: '#078930', augmentation: 'neural' },
-      shipLoadout: { boost: 1, cargo: 1, scanner: 1, color: '#078930', model: 'pilgrim' },
+      avatarConfig: { callsign: '', bodyType: 'standard', neonColor: '#06b6d4', augmentation: 'neural' },
+      shipLoadout: { boost: 1, cargo: 1, scanner: 1, color: '#06b6d4', model: 'pilgrim' },
       unlockedShips: ['pilgrim'],
       worlds: WORLDS,
 
@@ -355,8 +355,8 @@ export const useGameStore = create<GameState>()(
           collectedFruitIds: [],
           collectedHiranKeys: [],
           archetype: null,
-          avatarConfig: { callsign: '', bodyType: 'standard', neonColor: '#078930', augmentation: 'neural' },
-          shipLoadout: { boost: 1, cargo: 1, scanner: 1, color: '#078930', model: 'pilgrim' },
+          avatarConfig: { callsign: '', bodyType: 'standard', neonColor: '#06b6d4', augmentation: 'neural' },
+          shipLoadout: { boost: 1, cargo: 1, scanner: 1, color: '#06b6d4', model: 'pilgrim' },
           unlockedShips: ['pilgrim'],
         }),
     }),

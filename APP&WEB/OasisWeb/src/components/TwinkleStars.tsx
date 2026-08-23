@@ -64,9 +64,9 @@ declare module '@react-three/fiber' {
   }
 }
 
-// Realistic-ish spectral colors (blue-white / white / warm gold) instead of
-// uniform white — real starfields have visible color variety.
-const STAR_PALETTE = ['#078930', '#ffffff', '#fcd116', '#078930', '#fcd116'];
+// Realistic stellar spectral colours: blue-white / white / warm white / orange / red.
+// No greens or rasta yellows — those are reserved for the TreeOfLife.
+const STAR_PALETTE = ['#ffffff', '#e0f2fe', '#bfdbfe', '#fef3c7', '#fed7aa', '#fca5a5'];
 
 interface TwinkleStarsProps {
   count?: number;

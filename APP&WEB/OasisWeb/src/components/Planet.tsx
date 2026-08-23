@@ -19,7 +19,7 @@ export default function Planet({
   variant = 'earth' as 'earth' | 'mars' | 'ice' | 'gas' | 'jungle' | 'ocean',
   hasAtmosphere = true,
   hasOrbit = false,
-  orbitColor = '#fcd116',
+  orbitColor = '#06b6d4',
   rotationSpeed = 0.05,
   onClick,
   label,
@@ -72,16 +72,16 @@ export default function Planet({
     canvas.height = 128;
     const ctx = canvas.getContext('2d')!;
     const colors: Record<string, string> = {
-      earth: 'rgba(7, 137, 48, 0.4)',
-      mars: 'rgba(228, 30, 43, 0.3)',
-      ice: 'rgba(252, 209, 22, 0.4)',
-      gas: 'rgba(252, 209, 22, 0.3)',
-      jungle: 'rgba(7, 137, 48, 0.35)',
-      ocean: 'rgba(7, 137, 48, 0.4)',
+      earth: 'rgba(14, 165, 233, 0.4)',
+      mars: 'rgba(194, 65, 12, 0.3)',
+      ice: 'rgba(56, 189, 248, 0.4)',
+      gas: 'rgba(168, 85, 247, 0.35)',
+      jungle: 'rgba(5, 150, 100, 0.35)',
+      ocean: 'rgba(2, 132, 199, 0.4)',
     };
     const grad = ctx.createRadialGradient(64, 64, 30, 64, 64, 64);
     grad.addColorStop(0, colors[variant] || colors.earth);
-    grad.addColorStop(0.5, colors[variant]?.replace(/[\d.]+\)/, '0.15)') || 'rgba(7, 137, 48, 0.15)');
+    grad.addColorStop(0.5, colors[variant]?.replace(/[\d.]+\)/, '0.15)') || 'rgba(14, 165, 233, 0.15)');
     grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 128, 128);
@@ -105,7 +105,7 @@ export default function Planet({
       <group position={position}>
         <mesh>
           <sphereGeometry args={[radius, isMobile ? 16 : 32, isMobile ? 12 : 24]} />
-          <meshStandardMaterial color="#078930" emissive="#078930" emissiveIntensity={0.3} />
+          <meshStandardMaterial color="#0ea5e9" emissive="#0ea5e9" emissiveIntensity={0.3} />
         </mesh>
       </group>
     );
@@ -131,7 +131,7 @@ export default function Planet({
               metalness={0}
               color={new THREE.Color('#ffffff')}
               emissiveMap={textures.night}
-              emissive={new THREE.Color('#fcd116')}
+              emissive={new THREE.Color('#f59e0b')}
               emissiveIntensity={3.0}
             />
           ) : (
@@ -225,8 +225,8 @@ const PIONEER_PROJECTS: PioneerProject[] = [
     id: 'genesis',
     name: 'Zahrada Genesis',
     location: 'Algarve · Portugalsko',
-    color: '#078930',
-    rgb: '34, 197, 94',
+    color: '#10b981',
+    rgb: '16, 185, 129',
     descCs: 'Atlantický uzel Terra Nova — farma, glamping, voda, energie, komunita.',
     descEn: 'Atlantic Terra Nova node — farm, glamping, water, energy, community.',
     lat: 37,
@@ -236,8 +236,8 @@ const PIONEER_PROJECTS: PioneerProject[] = [
     id: 'dharma',
     name: 'Dharma Temple',
     location: 'La Palma · Kanárské ostrovy',
-    color: '#e41e2b',
-    rgb: '228, 30, 43',
+    color: '#8b5cf6',
+    rgb: '139, 92, 246',
     descCs: 'Spirituální uzel — meditace, syntropic zahrada, dharma governance.',
     descEn: 'Spiritual node — meditation, syntropic garden, dharma governance.',
     lat: 28,
@@ -247,8 +247,8 @@ const PIONEER_PROJECTS: PioneerProject[] = [
     id: 'piko-ora',
     name: 'Te Pīko Ora',
     location: 'Tahiti · Francouzská Polynésie',
-    color: '#078930',
-    rgb: '7, 137, 48',
+    color: '#06b6d4',
+    rgb: '6, 182, 212',
     descCs: 'Tichomořský uzel — ochrana mořského dědictví, regenerativní komunita.',
     descEn: 'Pacific node — marine heritage protection, regenerative community.',
     lat: -17,
@@ -320,7 +320,7 @@ export function NovaZeme({
           variant="earth"
           hasAtmosphere
           hasOrbit
-          orbitColor="#fcd116"
+          orbitColor="#06b6d4"
           rotationSpeed={0.08}
         />
 
@@ -380,8 +380,8 @@ export function NovaZeme({
       <mesh ref={issobelaRef}>
         <boxGeometry args={[0.08, 0.08, 0.08]} />
         <meshStandardMaterial
-          color="#fcd116"
-          emissive="#fcd116"
+          color="#38bdf8"
+          emissive="#38bdf8"
           emissiveIntensity={1.5}
         />
       </mesh>
@@ -392,15 +392,15 @@ export function NovaZeme({
           <div
             style={{
               background: 'rgba(0,0,0,0.7)',
-              border: '1px solid rgba(34,197,94,0.5)',
-              color: '#078930',
+              border: '1px solid rgba(6,182,212,0.5)',
+              color: '#06b6d4',
               padding: '4px 12px',
               borderRadius: '12px',
               fontSize: '12px',
               fontWeight: 700,
               letterSpacing: '0.1em',
               whiteSpace: 'nowrap',
-              boxShadow: '0 0 20px rgba(34,197,94,0.3)',
+              boxShadow: '0 0 20px rgba(6,182,212,0.3)',
             }}
           >
             NOVA ZEME · L5
@@ -415,26 +415,26 @@ export function NovaZeme({
 
 function getVariantColor(variant: string): string {
   const colors: Record<string, string> = {
-    mars: '#e41e2b',
-    ice: '#fcd116',
-    gas: '#fcd116',
-    jungle: '#078930',
-    ocean: '#078930',
-    earth: '#078930',
+    mars: '#c2410c',
+    ice: '#38bdf8',
+    gas: '#a855f7',
+    jungle: '#059669',
+    ocean: '#0ea5e9',
+    earth: '#0ea5e9',
   };
   return colors[variant] || '#ffffff';
 }
 
 function getVariantEmissive(variant: string): THREE.Color {
   const colors: Record<string, string> = {
-    mars: '#e41e2b',
-    ice: '#078930',
-    gas: '#e41e2b',
-    jungle: '#078930',
-    ocean: '#078930',
-    earth: '#078930',
+    mars: '#c2410c',
+    ice: '#0ea5e9',
+    gas: '#8b5cf6',
+    jungle: '#059669',
+    ocean: '#0ea5e9',
+    earth: '#0ea5e9',
   };
-  return new THREE.Color(colors[variant] || '#078930');
+  return new THREE.Color(colors[variant] || '#0ea5e9');
 }
 
 function generatePlanetTexture(variant: string): THREE.CanvasTexture {
@@ -445,11 +445,11 @@ function generatePlanetTexture(variant: string): THREE.CanvasTexture {
   const rng = mulberry32(variant.charCodeAt(0) * 137);
 
   const palettes: Record<string, { base: string; land: string; ice: string }> = {
-    mars: { base: '#e41e2b', land: '#e41e2b', ice: '#fcd116' },
-    ice: { base: '#078930', land: '#d4d4d4', ice: '#ffffff' },
-    gas: { base: '#fcd116', land: '#fcd116', ice: '#fcd116' },
-    jungle: { base: '#078930', land: '#078930', ice: '#078930' },
-    ocean: { base: '#078930', land: '#078930', ice: '#078930' },
+    mars: { base: '#c2410c', land: '#9a3412', ice: '#fb923c' },
+    ice: { base: '#0c4a6e', land: '#bae6fd', ice: '#ffffff' },
+    gas: { base: '#7c3aed', land: '#c4b5fd', ice: '#f0abfc' },
+    jungle: { base: '#047857', land: '#10b981', ice: '#a7f3d0' },
+    ocean: { base: '#0284c7', land: '#0ea5e9', ice: '#ffffff' },
   };
 
   const pal = palettes[variant] || palettes.mars;

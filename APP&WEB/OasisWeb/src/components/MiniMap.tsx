@@ -2,14 +2,7 @@
 
 import { useEffect, useMemo, useRef, useCallback, memo } from 'react';
 import type { World, WorldCategory } from '../domain/types/world';
-
-const CATEGORY_COLORS: Record<WorldCategory, string> = {
-  'star-system': '#fcd116',
-  planet: '#078930',
-  sector: '#e41e2b',
-  world: '#078930',
-  dimension: '#e41e2b',
-};
+import { CATEGORY_COLORS } from '../lib/categoryColors';
 
 const PADDING = 18;
 
@@ -110,7 +103,7 @@ function MiniMap({ worlds: allWorlds, activeCategories, selectedWorldId, onWorld
       ctx.beginPath();
       ctx.arc(c.x, c.y, 3, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = '#fcd116';
+      ctx.strokeStyle = '#06b6d4';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.arc(c.x, c.y, 6, 0, Math.PI * 2);

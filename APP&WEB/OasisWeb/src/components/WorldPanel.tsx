@@ -9,6 +9,7 @@ import { useGameStore, getLevel, getLevelProgress } from '../store/gameStore';
 import { discoverWorldClue, scanWorld as apiScanWorld, approachWorld as apiApproachWorld, awardPlayerXp, completePlayerQuest } from '../lib/api';
 import { useAudio } from './AudioEngine';
 import { useToastStore } from '../store/toastStore';
+import { CATEGORY_COLORS, CATEGORY_RGB, CATEGORY_LABELS } from '../lib/categoryColors';
 
 const TYPE_ICONS: Record<Quest['type'], typeof Compass> = {
   exploration: Compass,
@@ -18,30 +19,8 @@ const TYPE_ICONS: Record<Quest['type'], typeof Compass> = {
   social: Users,
 };
 
-/* ZION-theme-aligned functional colors */
-export const CATEGORY_COLORS: Record<string, string> = {
-  'star-system': '#fcd116',
-  'planet': '#078930',
-  'sector': '#e41e2b',
-  'world': '#078930',
-  'dimension': '#e41e2b',
-};
-
-const CATEGORY_RGB: Record<string, string> = {
-  'star-system': '252, 209, 22',
-  'planet': '7, 137, 48',
-  'sector': '228, 30, 43',
-  'world': '7, 137, 48',
-  'dimension': '236, 72, 153',
-};
-
-export const CATEGORY_LABELS: Record<string, string> = {
-  'star-system': 'Star System',
-  'planet': 'Planet',
-  'sector': 'Sector',
-  'world': 'World',
-  'dimension': 'Dimension',
-};
+/* Re-export for backwards compatibility; authoritative values live in ../lib/categoryColors */
+export { CATEGORY_COLORS, CATEGORY_RGB, CATEGORY_LABELS };
 
 /* ── Nova Zeme L5 Pioneer Projects (from web2.9 TerraNova) ── */
 const NOVA_ZEME_PROJECTS = [
@@ -49,7 +28,7 @@ const NOVA_ZEME_PROJECTS = [
     id: 'genesis',
     name: 'Zahrada Genesis',
     location: 'Algarve · Portugalsko',
-    color: '#078930',
+    color: '#10b981',
     status: 'Active',
     desc: 'Atlantický uzel Terra Nova — organická farma, glamping, solar off-grid, surf a sázení stromů. První dlouhodobá komunitní infrastruktura.',
     href: 'https://app.zionterranova.com/terranova/genesis',
@@ -58,7 +37,7 @@ const NOVA_ZEME_PROJECTS = [
     id: 'dharma',
     name: 'Dharma Temple',
     location: 'La Palma · Kanárské ostrovy',
-    color: '#e41e2b',
+    color: '#8b5cf6',
     status: 'Prep',
     desc: 'Spirituální a vzdělávací uzel — meditace, syntropic zahrada, dharma governance, vulkanická krajina, off-grid voda. UNESCO Biosphere Reserve.',
     href: 'https://app.zionterranova.com/terranova/dharma-temple',
@@ -67,7 +46,7 @@ const NOVA_ZEME_PROJECTS = [
     id: 'piko-ora',
     name: 'Te Pīko Ora',
     location: 'Tahiti · Francouzská Polynésie',
-    color: '#078930',
+    color: '#06b6d4',
     status: 'Planned',
     desc: 'Tichomořský uzel — ochrana mořského i pozemského dědictví, regenerativní komunita, kulturní most mezi Polynésií a ZION.',
     href: 'https://app.zionterranova.com/terranova/te-piko-ora',
@@ -359,9 +338,9 @@ function WorldPanel({ world, onClose, onEnter }: WorldPanelProps) {
             <p className="text-[10px] font-bold uppercase tracking-wider text-white/80">World Intel</p>
           </div>
           <div className="space-y-2">
-            <StatBar icon={Shield} label="Danger" value={intel.danger} color="#e41e2b" />
-            <StatBar icon={Cpu} label="Tech Level" value={intel.tech} color="#078930" />
-            <StatBar icon={Gem} label="Resources" value={intel.resources} color="#fcd116" />
+            <StatBar icon={Shield} label="Danger" value={intel.danger} color="#ef4444" />
+            <StatBar icon={Cpu} label="Tech Level" value={intel.tech} color="#06b6d4" />
+            <StatBar icon={Gem} label="Resources" value={intel.resources} color="#f59e0b" />
           </div>
           <div className="mt-2 flex items-center gap-1.5 border-t border-white/5 pt-2 text-[9px]">
             <Users2 className="h-2.5 w-2.5" style={{ color }} />

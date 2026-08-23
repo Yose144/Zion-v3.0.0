@@ -60,16 +60,16 @@ const GALAXIES: {
   color: string;
   scale: [number, number, number];
 }[] = [
-  { name: 'Andromeda', position: [0, 1.8, -95], color: '#078930', scale: [20, 12, 1] },
-  { name: 'Triangulum', position: [82, -1.2, 43], color: '#078930', scale: [18, 11, 1] },
+  { name: 'Andromeda', position: [0, 1.8, -95], color: '#f9a8d4', scale: [20, 12, 1] },
+  { name: 'Triangulum', position: [82, -1.2, 43], color: '#7dd3fc', scale: [18, 11, 1] },
   { name: 'Sombrero', position: [-64, 1.0, -75], color: '#f5f5f5', scale: [18, 11, 1] },
-  { name: 'Cartwheel', position: [78, -1.5, -61], color: '#e41e2b', scale: [20, 12, 1] },
-  { name: 'Whirlpool', position: [-88, 2.5, 20], color: '#078930', scale: [16, 10, 1] },
-  { name: 'Sunflower', position: [55, 3.0, -88], color: '#fcd116', scale: [15, 9, 1] },
-  { name: 'Pinwheel', position: [-45, -3.5, 65], color: '#e41e2b', scale: [17, 10, 1] },
-  { name: 'Cigar', position: [92, -2.0, -30], color: '#e41e2b', scale: [14, 8, 1] },
-  { name: 'Centaurus-A', position: [-72, -2.5, -40], color: '#e41e2b', scale: [16, 10, 1] },
-  { name: 'NGC-1300', position: [40, 4.5, 80], color: '#078930', scale: [15, 9, 1] },
+  { name: 'Cartwheel', position: [78, -1.5, -61], color: '#f472b6', scale: [20, 12, 1] },
+  { name: 'Whirlpool', position: [-88, 2.5, 20], color: '#60a5fa', scale: [16, 10, 1] },
+  { name: 'Sunflower', position: [55, 3.0, -88], color: '#f59e0b', scale: [15, 9, 1] },
+  { name: 'Pinwheel', position: [-45, -3.5, 65], color: '#a78bfa', scale: [17, 10, 1] },
+  { name: 'Cigar', position: [92, -2.0, -30], color: '#fb7185', scale: [14, 8, 1] },
+  { name: 'Centaurus-A', position: [-72, -2.5, -40], color: '#c084fc', scale: [16, 10, 1] },
+  { name: 'NGC-1300', position: [40, 4.5, 80], color: '#22d3ee', scale: [15, 9, 1] },
 ];
 
 export default function DistantGalaxies() {
@@ -93,7 +93,7 @@ export default function DistantGalaxies() {
             transparent
             opacity={0.35}
             blending={THREE.AdditiveBlending}
-            depthWrite
+            depthWrite={false}
             alphaTest={0.02}
             fog={false}
           />

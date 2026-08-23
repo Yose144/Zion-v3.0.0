@@ -20,6 +20,7 @@ import { useToastStore } from '../store/toastStore';
 import { getQuests, getAvatars, getTerritories, getWorlds, scanWorld as apiScanWorld, approachWorld as apiApproachWorld } from '../lib/api';
 import type { World, WorldCategory, WorldLayer } from '../domain/types/world';
 import { useAuth } from '../contexts/AuthContext';
+import { CATEGORY_COLORS } from '../lib/categoryColors';
 
 const BabylonIntro = dynamic(() => import('./BabylonIntro'), { ssr: false });
 const WarpIntro = dynamic(() => import('./WarpIntro'), { ssr: false });
@@ -29,14 +30,6 @@ import WorldPanel from './WorldPanel';
 const ALL_CATEGORIES: WorldCategory[] = ['star-system', 'planet', 'sector', 'world', 'dimension'];
 const ALL_LAYERS: WorldLayer[] = [1, 2, 3, 4, 5];
 const MAX_FLIGHT_SPEED = 18;
-
-const CATEGORY_COLORS: Record<WorldCategory, string> = {
-  'star-system': '#fcd116',
-  'planet': '#078930',
-  'sector': '#e41e2b',
-  'world': '#078930',
-  'dimension': '#e41e2b',
-};
 
 export default function OasisClient() {
   const [mounted, setMounted] = useState(false);
@@ -200,7 +193,7 @@ export default function OasisClient() {
         color: CATEGORY_COLORS[selectedWorld.category],
       };
     }
-    return { pos: { x: 0, y: 0, z: 0 }, name: 'Galactic Core', color: '#e41e2b' };
+    return { pos: { x: 0, y: 0, z: 0 }, name: 'Galactic Core', color: '#06b6d4' };
   }, [flightMode, landTarget, selectedWorld, view]);
 
   useEffect(() => {

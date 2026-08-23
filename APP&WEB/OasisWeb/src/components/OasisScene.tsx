@@ -6,6 +6,7 @@ import { OrbitControls, Stars, Environment } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette, HueSaturation, BrightnessContrast } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import type { World, WorldCategory, WorldLayer } from '../domain/types/world';
+import { CATEGORY_COLORS } from '../lib/categoryColors';
 import TreeOfLife from './TreeOfLife';
 import Galaxy from './Galaxy';
 import DistantGalaxies from './DistantGalaxies';
@@ -161,14 +162,6 @@ function UniverseRotator({
   return null;
 }
 
-const CATEGORY_COLORS: Record<WorldCategory, string> = {
-  'star-system': '#fcd116',
-  'planet': '#078930',
-  'sector': '#e41e2b',
-  'world': '#078930',
-  'dimension': '#e41e2b',
-};
-
 interface OasisSceneProps {
   started?: boolean;
   onArrived?: () => void;
@@ -221,7 +214,7 @@ export default function OasisScene({
     <div style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}>
       <Canvas
         camera={{ position: isMobile ? [0, 4, 22] : [0, 3.5, 34], fov: isMobile ? 60 : 55 }}
-        dpr={[1, isMobile ? 1 : 1.15]}
+        dpr={[1, isMobile ? 1 : 1]}
         style={{ width: '100%', height: '100%', display: 'block', position: 'absolute', inset: 0 }}
         gl={{
           antialias: false,
@@ -231,20 +224,20 @@ export default function OasisScene({
           failIfMajorPerformanceCaveat: false,
         }}
         onCreated={({ gl, camera }) => {
-          gl.setClearColor(isMobile ? '#0d0d0d' : '#0d0d0d');
+          gl.setClearColor(isMobile ? '#05060a' : '#05060a');
           if (isMobile) {
             camera.lookAt(0, 0.5, 0);
           }
         }}
       >
-        <color attach="background" args={[isMobile ? '#0d0d0d' : '#0d0d0d']} />
-        {!isMobile && <fog attach="fog" args={['#0d0d0d', 80, 200]} />}
+        <color attach="background" args={[isMobile ? '#05060a' : '#05060a']} />
+        {!isMobile && <fog attach="fog" args={['#05060a', 80, 200]} />}
 
-        {/* Lighting */}
+        {/* Lighting — cool white key, cyan fill, violet rim */}
         <ambientLight intensity={isMobile ? 0.8 : 0.15} />
         <pointLight position={[10, 8, 10]} intensity={1.0} color="#ffffff" />
-        <pointLight position={[-12, -6, -12]} intensity={0.65} color="#e41e2b" />
-        <pointLight position={[0, 10, 0]} intensity={0.5} color="#078930" />
+        <pointLight position={[-12, -6, -12]} intensity={0.65} color="#38bdf8" />
+        <pointLight position={[0, 10, 0]} intensity={0.5} color="#8b5cf6" />
 
         {/* HDRI environment — desktop only */}
         {!isMobile && (
@@ -262,15 +255,15 @@ export default function OasisScene({
         {view === 'galaxy' && (
           <group ref={universeRef}>
             <R3FErrorBoundary label="Stars">
-              <Stars radius={250} depth={160} count={isMobile ? 2000 : 4000} factor={4.5} saturation={0} fade speed={0.4} />
+              <Stars radius={250} depth={160} count={isMobile ? 1500 : 3000} factor={4.5} saturation={0.65} fade speed={0.4} />
             </R3FErrorBoundary>
 
             <R3FErrorBoundary label="TwinkleStars">
-              <TwinkleStars count={isMobile ? 800 : 2000} radius={150} />
+              <TwinkleStars count={isMobile ? 600 : 1500} radius={150} />
             </R3FErrorBoundary>
 
             <R3FErrorBoundary label="ShootingStars">
-              <ShootingStars count={isMobile ? 2 : 4} isMobile={isMobile} />
+              <ShootingStars count={isMobile ? 2 : 3} isMobile={isMobile} />
             </R3FErrorBoundary>
 
             <R3FErrorBoundary label="DistantGalaxies">
@@ -441,10 +434,10 @@ export default function OasisScene({
 
         {!isMobile && (
           <EffectComposer multisampling={2}>
-            <Bloom intensity={0.58} luminanceThreshold={0.4} luminanceSmoothing={0.55} mipmapBlur radius={0.45} />
-            <HueSaturation saturation={0.14} />
-            <BrightnessContrast brightness={-0.02} contrast={0.08} />
-            <Vignette eskil={false} offset={0.2} darkness={0.75} />
+            <Bloom intensity={0.62} luminanceThreshold={0.35} luminanceSmoothing={0.55} mipmapBlur radius={0.45} />
+            <HueSaturation saturation={0.28} />
+            <BrightnessContrast brightness={0.02} contrast={0.12} />
+            <Vignette eskil={false} offset={0.22} darkness={0.7} />
           </EffectComposer>
         )}
 
