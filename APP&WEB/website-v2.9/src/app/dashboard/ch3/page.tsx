@@ -6,7 +6,7 @@ import { useLang } from "@/contexts/LanguageContext";
 const DashboardCh3Copy = {
   loadingChV3Settings: { cs: `Načítání CH v3 nastavení...`, en: `Loading CH v3 Settings...` },
   chV3RevenueStreams: { cs: `CH v3 Revenue Streams`, en: `CH v3 Revenue Streams` },
-  configureAll5RevenueStreamsFor: { cs: `Konfigurace všech 5 revenue streamů pro Cosmic Harmony v3`, en: `Configure all 5 revenue streams for Cosmic Harmony v3` },
+  configureAll5RevenueStreamsFor: { cs: `Konfigurace všech 5 revenue streamů pro v3.2.0 "One Love"`, en: `Configure all 5 revenue streams for v3.2.0 "One Love"` },
   overview: { cs: `📊 Přehled`, en: `📊 Overview` },
   mergedMining: { cs: `💎 Merged Mining`, en: `💎 Merged Mining` },
   dynamicGpu: { cs: `🎮 Dynamic GPU`, en: `🎮 Dynamic GPU` },

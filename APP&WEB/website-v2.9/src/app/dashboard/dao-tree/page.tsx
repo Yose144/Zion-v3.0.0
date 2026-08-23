@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from "react";
 import {
   Crown,
   Gem,
@@ -123,31 +124,55 @@ const upcoming = [
   },
 ];
 
-const daoMetrics = [
-  {
-    label: "Guardians initiated",
-    value: "27",
-    note: "Limit 144 před public launch",
-  },
-  {
-    label: "DAO Treasury",
-    value: "1.82M ZION",
-    note: "Live multi-sig escrow",
-  },
-  {
-    label: "Active circles",
-    value: "3",
-    note: "Community · Builders · Guardians",
-  },
-  {
-    label: "Last induction",
-    value: "19 Dec 2025",
-    note: "AURORA PRIME",
-  },
+const DAO_TREASURY_ADDRESSES = [
+  "zion1f5h5k6t8q3t3d8c5y667z6p2x8t3y3p8c7633g5",
+  "zion1s27490u7n823g098w42077h8f2n824w0y75w0s3",
+  "zion1n0r7k274z3t030h4v4g3g5h704c737z658aa238",
 ];
 
 export default function DaoDashboardPage() {
   const { lang } = useLang();
+  const [treasuryBalance, setTreasuryBalance] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        let total = 0;
+        for (const addr of DAO_TREASURY_ADDRESSES) {
+          const r = await fetch(`/api/blockchain/address?address=${encodeURIComponent(addr)}`, { signal: AbortSignal.timeout(5000) });
+          if (!r.ok) continue;
+          const d = await r.json();
+          total += typeof d?.balance === 'number' ? d.balance : 0;
+        }
+        if (!cancelled) setTreasuryBalance(total);
+      } catch { /* treasury fetch optional */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const daoMetrics = [
+    {
+      label: "DAO Treasury",
+      value: treasuryBalance != null ? `${treasuryBalance.toLocaleString()} ZION` : "—",
+      note: lang === 'cs' ? "Live on-chain · 3 sloty · time-lock 144,000" : "Live on-chain · 3 slots · time-lock 144,000",
+    },
+    {
+      label: "Active circles",
+      value: "3",
+      note: "Community · Builders · Guardians",
+    },
+    {
+      label: "Guardians initiated",
+      value: "—",
+      note: lang === 'cs' ? "Registry se připravuje" : "Registry pending",
+    },
+    {
+      label: "144k Guardians",
+      value: "—",
+      note: lang === 'cs' ? "Onboarding po public launch" : "Onboarding after public launch",
+    },
+  ];
   return (
     <div className="zion-page text-white">
       <div className="zion-container max-w-6xl space-y-12">
