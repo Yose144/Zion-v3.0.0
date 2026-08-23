@@ -17,6 +17,14 @@ pub struct Transfer {
     /// For HTLC claim/refund: the on-chain lock transaction id that created
     /// the UTXO this transfer must spend (Zion L1 UTXO adapter).
     pub lock_tx_id: Option<String>,
+    /// Optional 32-byte Ed25519 public key for the source party. Used by
+    /// native L1 HTLC scripts to authorize refund.
+    #[serde(default, with = "serde_bytes", skip_serializing_if = "Option::is_none")]
+    pub source_pubkey: Option<[u8; 32]>,
+    /// Optional 32-byte Ed25519 public key for the target party. Used by
+    /// native L1 HTLC scripts to authorize claim.
+    #[serde(default, with = "serde_bytes", skip_serializing_if = "Option::is_none")]
+    pub target_pubkey: Option<[u8; 32]>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -75,6 +83,8 @@ impl Transfer {
             timelock: None,
             preimage: None,
             lock_tx_id: None,
+            source_pubkey: None,
+            target_pubkey: None,
             created_at: now,
             updated_at: now,
         }

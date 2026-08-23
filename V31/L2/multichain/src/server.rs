@@ -573,6 +573,24 @@ struct HtlcLockRequest {
     source_address: Option<String>,
     #[serde(default)]
     target_address: Option<String>,
+    /// Optional 32-byte Ed25519 public key for the locker (refund path).
+    /// Required for native ZION L1 HTLC scripts.
+    #[serde(default)]
+    source_pubkey_hex: Option<String>,
+    /// Optional 32-byte Ed25519 public key for the claimant (claim path).
+    /// Required for native ZION L1 HTLC scripts.
+    #[serde(default)]
+    target_pubkey_hex: Option<String>,
+}
+
+fn decode_pubkey_hex(hex: &Option<String>) -> Result<Option<[u8; 32]>, StatusCode> {
+    match hex.as_deref() {
+        None | Some("") => Ok(None),
+        Some(s) => {
+            let bytes = hex::decode(s).map_err(|_| StatusCode::BAD_REQUEST)?;
+            bytes.try_into().map_err(|_| StatusCode::BAD_REQUEST).map(Some)
+        }
+    }
 }
 
 async fn htlc_lock(
@@ -603,6 +621,8 @@ async fn htlc_lock(
     let mut transfer = Transfer::new(format!("htlc-lock-{}", req.hash_hex), TransferDirection::Htlc, source, target);
     transfer.hashlock = Some(hashlock);
     transfer.timelock = Some(req.timelock);
+    transfer.source_pubkey = decode_pubkey_hex(&req.source_pubkey_hex)?;
+    transfer.target_pubkey = decode_pubkey_hex(&req.target_pubkey_hex)?;
 
     match state.service.htlc().initiate(&mut transfer).await {
         Ok(_) => Ok(Json(serde_json::json!({

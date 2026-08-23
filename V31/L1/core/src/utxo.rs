@@ -7,12 +7,13 @@
 
 use std::collections::HashMap;
 
+use sha2::{Digest, Sha256 as Sha2};
 use zion_l1_types::{Address, Amount, Hash};
 
 use crate::block::Block;
 use crate::crypto;
 use crate::fee;
-use crate::transaction::{Transaction, TransactionInput};
+use crate::transaction::{Transaction, TransactionInput, TransactionOutput};
 
 /// An unspent transaction output identifier.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
@@ -38,6 +39,8 @@ impl From<&TransactionInput> for Outpoint {
 pub struct UtxoOutput {
     pub amount: Amount,
     pub address: Address,
+    /// Output script. Empty = plain P2PKH output owned by `address`.
+    pub script: Vec<u8>,
     pub block_height: u64,
     pub block_timestamp: u64,
     /// Whether this output was created by a coinbase transaction.
@@ -69,6 +72,18 @@ pub enum UtxoError {
     ImmatureCoinbase { outpoint: Outpoint, age: u64, required: u64 },
     #[error("premine output is locked: {address} ({reason})")]
     PremineLocked { address: String, reason: String },
+    #[error("HTLC output script is invalid for input {0}")]
+    InvalidHtlcScript(usize),
+    #[error("HTLC preimage does not match hashlock for input {0}")]
+    HtlcPreimageMismatch(usize),
+    #[error("HTLC timelock expired for claim on input {0}")]
+    HtlcClaimExpired(usize),
+    #[error("HTLC timelock not yet expired for refund on input {0}")]
+    HtlcRefundNotExpired(usize),
+    #[error("HTLC public key not authorized for input {0}")]
+    HtlcUnauthorizedKey(usize),
+    #[error("HTLC spend output must go to the authorized address for input {0}")]
+    HtlcInvalidDestination(usize),
 }
 
 /// In-memory UTXO set.
@@ -87,8 +102,9 @@ impl UtxoSet {
     /// Return unspent outputs for the given encoded address.
     ///
     /// Tuple: `(tx_hash, output_index, amount, block_height, block_timestamp,
-    /// is_coinbase)`.
-    pub fn get_utxos_for_address(&self, address: &str) -> Vec<(Hash, u32, u64, u64, u64, bool)> {
+    /// is_coinbase, script)`.
+    #[allow(clippy::type_complexity)]
+    pub fn get_utxos_for_address(&self, address: &str) -> Vec<(Hash, u32, u64, u64, u64, bool, Vec<u8>)> {
         let mut out = Vec::new();
         for (outpoint, output) in &self.outputs {
             if output.address.encoded == address {
@@ -101,6 +117,7 @@ impl UtxoSet {
                         output.block_height,
                         output.block_timestamp,
                         output.is_coinbase,
+                        output.script.clone(),
                     ));
                 }
             }
@@ -141,7 +158,7 @@ impl UtxoSet {
         }
 
         // Collect the outputs being spent before we remove them, and verify
-        // signatures before mutating the set.
+        // signatures / output scripts before mutating the set.
         let signing_hash = tx.signing_hash();
         let mut inputs = Vec::with_capacity(tx.inputs.len());
         for (i, input) in tx.inputs.iter().enumerate() {
@@ -152,13 +169,7 @@ impl UtxoSet {
                 .ok_or(UtxoError::InputNotFound(outpoint))?
                 .clone();
 
-            if !verify_input(input, &signing_hash, &output.address.encoded) {
-                return Err(if input.script.len() < 96 {
-                    UtxoError::InvalidSignature(i)
-                } else {
-                    UtxoError::AddressMismatch(i)
-                });
-            }
+            verify_input(i, input, &signing_hash, &output, block_timestamp, &tx.outputs)?;
 
             inputs.push((outpoint, output));
         }
@@ -214,6 +225,7 @@ impl UtxoSet {
                 UtxoOutput {
                     amount: output.amount,
                     address: output.address.clone(),
+                    script: output.script.clone(),
                     block_height,
                     block_timestamp,
                     is_coinbase: false,
@@ -240,6 +252,7 @@ impl UtxoSet {
                 UtxoOutput {
                     amount: output.amount,
                     address: output.address.clone(),
+                    script: output.script.clone(),
                     block_height,
                     block_timestamp,
                     is_coinbase: true,
@@ -270,19 +283,411 @@ impl UtxoSet {
     }
 }
 
-/// Verify an input script.
+/// Verify an input script against the output it spends.
 ///
-/// Script format: <signature bytes> || <32-byte public key>.
-/// The public key is taken from the last 32 bytes, the signature from the
-/// preceding bytes. The signature must be valid over `signing_hash` and the
-/// public key must derive to the expected address.
-fn verify_input(input: &TransactionInput, signing_hash: &Hash, expected_address: &str) -> bool {
+/// Empty output script = P2PKH:
+///   input script: <signature bytes> || <32-byte public key>
+///   The public key must derive to the output address.
+///
+/// HTLC output script (0x01 prefix):
+///   [1B 0x01] [32B hashlock] [8B timeout] [32B claimant pubkey] [32B refund pubkey]
+///
+/// HTLC claim input:
+///   <32B preimage> <64B signature> <32B pubkey>
+/// HTLC refund input:
+///   <64B signature> <32B pubkey>
+fn verify_input(
+    index: usize,
+    input: &TransactionInput,
+    signing_hash: &Hash,
+    output: &UtxoOutput,
+    block_timestamp: u64,
+    tx_outputs: &[TransactionOutput],
+) -> Result<(), UtxoError> {
+    if output.script.is_empty() {
+        // Standard P2PKH.
+        if input.script.len() < 96 {
+            return Err(UtxoError::InvalidSignature(index));
+        }
+        let (sig, pk) = input.script.split_at(input.script.len() - 32);
+        if !crypto::verify(pk, &signing_hash.0, sig) {
+            return Err(UtxoError::InvalidSignature(index));
+        }
+        if crypto::derive_address(pk) != output.address.encoded {
+            return Err(UtxoError::AddressMismatch(index));
+        }
+        return Ok(());
+    }
+
+    if output.script[0] != 0x01 {
+        return Err(UtxoError::InvalidHtlcScript(index));
+    }
+    if output.script.len() != 1 + 32 + 8 + 32 + 32 {
+        return Err(UtxoError::InvalidHtlcScript(index));
+    }
+
+    let hashlock = &output.script[1..33];
+    let timeout = u64::from_le_bytes(output.script[33..41].try_into().unwrap());
+    let claimant_pk = &output.script[41..73];
+    let refund_pk = &output.script[73..105];
+
+    // Distinguish claim (has preimage) from refund (no preimage) by length.
+    if input.script.len() == 96 {
+        // Refund path.
+        if block_timestamp < timeout {
+            return Err(UtxoError::HtlcRefundNotExpired(index));
+        }
+        return htlc_verify_spender(input, signing_hash, refund_pk, tx_outputs, index);
+    }
+
+    if input.script.len() == 128 {
+        // Claim path.
+        if block_timestamp >= timeout {
+            return Err(UtxoError::HtlcClaimExpired(index));
+        }
+        let preimage = &input.script[0..32];
+        let mut hasher = Sha2::new();
+        hasher.update(preimage);
+        let actual = hasher.finalize();
+        if &actual[..] != hashlock {
+            return Err(UtxoError::HtlcPreimageMismatch(index));
+        }
+        return htlc_verify_spender(input, signing_hash, claimant_pk, tx_outputs, index);
+    }
+
+    Err(UtxoError::InvalidHtlcScript(index))
+}
+
+/// Verify that the HTLC spender's signature is valid and that the transaction
+/// sends the funds to the address derived from the authorized public key.
+fn htlc_verify_spender(
+    input: &TransactionInput,
+    signing_hash: &Hash,
+    authorized_pk: &[u8],
+    tx_outputs: &[TransactionOutput],
+    index: usize,
+) -> Result<(), UtxoError> {
     if input.script.len() < 96 {
-        return false;
+        return Err(UtxoError::InvalidHtlcScript(index));
     }
-    let (sig, pk) = input.script.split_at(input.script.len() - 32);
+    let (payload, sig_and_pk) = if input.script.len() == 128 {
+        input.script.split_at(32)
+    } else {
+        (&[] as &[u8], input.script.as_slice())
+    };
+    let _ = payload;
+    if sig_and_pk.len() != 96 {
+        return Err(UtxoError::InvalidHtlcScript(index));
+    }
+    let (sig, pk) = sig_and_pk.split_at(64);
+    if pk != authorized_pk {
+        return Err(UtxoError::HtlcUnauthorizedKey(index));
+    }
     if !crypto::verify(pk, &signing_hash.0, sig) {
-        return false;
+        return Err(UtxoError::InvalidSignature(index));
     }
-    crypto::derive_address(pk) == expected_address
+    let expected_address = crypto::derive_address(pk);
+    if tx_outputs.len() != 1 || tx_outputs[0].address.encoded != expected_address {
+        return Err(UtxoError::HtlcInvalidDestination(index));
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::crypto::{derive_address, generate_keypair};
+    use crate::transaction::{Transaction, TransactionOutput};
+    use crate::v31_wallet::{
+        build_htlc_claim, build_htlc_lock, build_htlc_refund, htlc_output_script, SpendableUtxo,
+    };
+    use sha2::{Digest, Sha256};
+    use zion_l1_types::{Address, Amount, ChainId};
+
+    fn fund_coinbase(utxo_set: &mut UtxoSet, address: &str, amount: u64, height: u64) {
+        let coinbase = Transaction {
+            version: 1,
+            inputs: vec![],
+            outputs: vec![TransactionOutput {
+                amount: Amount::new(amount as u128),
+                address: Address::new(ChainId::ZionL1, vec![], address).unwrap(),
+                ..Default::default()
+            }],
+            memo: vec![],
+        };
+        utxo_set.apply_transaction(&coinbase, height, 0).unwrap();
+    }
+
+    fn spendable(utxo_set: &UtxoSet, address: &str) -> SpendableUtxo {
+        let (tx_hash, index, amount, height, _ts, _cb, script) = utxo_set
+            .get_utxos_for_address(address)
+            .into_iter()
+            .find(|u| u.6.is_empty())
+            .expect("no plain P2PKH UTXO found");
+        SpendableUtxo {
+            tx_hash: tx_hash.0,
+            output_index: index,
+            amount,
+            address: address.to_string(),
+            script,
+            block_height: height,
+            is_coinbase: false,
+        }
+    }
+
+    fn htlc_spendable(utxo_set: &UtxoSet, address: &str) -> SpendableUtxo {
+        let (tx_hash, index, amount, height, _ts, _cb, script) = utxo_set
+            .get_utxos_for_address(address)
+            .into_iter()
+            .find(|u| !u.6.is_empty())
+            .expect("no HTLC UTXO found");
+        SpendableUtxo {
+            tx_hash: tx_hash.0,
+            output_index: index,
+            amount,
+            address: address.to_string(),
+            script,
+            block_height: height,
+            is_coinbase: false,
+        }
+    }
+
+    #[test]
+    fn htlc_lock_claim_native_succeeds() {
+        let (locker_sk, locker_pk) = generate_keypair();
+        let (claimant_sk, claimant_pk) = generate_keypair();
+        let (_refund_sk, refund_pk) = (locker_sk.clone(), locker_pk);
+
+        let locker_addr = derive_address(locker_pk.as_bytes());
+        let claimant_addr = derive_address(claimant_pk.as_bytes());
+
+        let mut utxo_set = UtxoSet::new();
+        fund_coinbase(&mut utxo_set, &locker_addr, 10_000_000_000, 1);
+
+        let preimage = b"preimagepreimagepreimagepreimage".as_slice();
+        let mut hasher = Sha256::new();
+        hasher.update(preimage);
+        let hashlock: [u8; 32] = hasher.finalize().into();
+        let timeout = 1000u64;
+
+        let utxo = spendable(&utxo_set, &locker_addr);
+        let build = build_htlc_lock(
+            &locker_sk,
+            &locker_addr,
+            1_000_000_000,
+            10_000,
+            &[utxo],
+            &hashlock,
+            timeout,
+            claimant_pk.as_bytes(),
+            refund_pk.as_bytes(),
+        )
+        .unwrap();
+
+        let lock_tx = build.transaction;
+        utxo_set.apply_transaction(&lock_tx, 2, 100).unwrap();
+
+        let refund_addr = derive_address(refund_pk.as_bytes());
+        let lock_utxo = htlc_spendable(&utxo_set, &refund_addr);
+
+        // Claim before timeout.
+        let claim_tx = build_htlc_claim(
+            &claimant_sk,
+            10_000,
+            &lock_utxo,
+            &hashlock,
+            timeout,
+            claimant_pk.as_bytes(),
+            refund_pk.as_bytes(),
+            &preimage.try_into().unwrap(),
+        )
+        .unwrap();
+
+        utxo_set.apply_transaction(&claim_tx, 3, 200).unwrap();
+        assert_eq!(utxo_set.get_utxos_for_address(&claimant_addr).len(), 1);
+    }
+
+    #[test]
+    fn htlc_refund_native_succeeds_after_timeout() {
+        let (locker_sk, locker_pk) = generate_keypair();
+        let (_claimant_sk, claimant_pk) = generate_keypair();
+        let (refund_sk, refund_pk) = (locker_sk.clone(), locker_pk);
+
+        let locker_addr = derive_address(locker_pk.as_bytes());
+        let refund_addr = derive_address(refund_pk.as_bytes());
+
+        let mut utxo_set = UtxoSet::new();
+        fund_coinbase(&mut utxo_set, &locker_addr, 10_000_000_000, 1);
+
+        let hashlock = [42u8; 32];
+        let timeout = 1000u64;
+
+        let utxo = spendable(&utxo_set, &locker_addr);
+        let build = build_htlc_lock(
+            &locker_sk,
+            &locker_addr,
+            1_000_000_000,
+            10_000,
+            &[utxo],
+            &hashlock,
+            timeout,
+            claimant_pk.as_bytes(),
+            refund_pk.as_bytes(),
+        )
+        .unwrap();
+
+        utxo_set.apply_transaction(&build.transaction, 2, 100).unwrap();
+
+        let lock_utxo = htlc_spendable(&utxo_set, &refund_addr);
+        let refund_tx = build_htlc_refund(
+            &refund_sk,
+            10_000,
+            &lock_utxo,
+            &hashlock,
+            timeout,
+            claimant_pk.as_bytes(),
+            refund_pk.as_bytes(),
+        )
+        .unwrap();
+
+        // Timeout has passed.
+        utxo_set.apply_transaction(&refund_tx, 3, 1001).unwrap();
+        let total: u64 = utxo_set
+            .get_utxos_for_address(&refund_addr)
+            .iter()
+            .map(|u| u.2)
+            .sum();
+        assert_eq!(total, 9_999_980_000);
+    }
+
+    #[test]
+    fn htlc_claim_fails_after_timeout() {
+        let (locker_sk, locker_pk) = generate_keypair();
+        let (claimant_sk, claimant_pk) = generate_keypair();
+        let (_refund_sk, refund_pk) = (locker_sk.clone(), locker_pk);
+
+        let locker_addr = derive_address(locker_pk.as_bytes());
+
+        let mut utxo_set = UtxoSet::new();
+        fund_coinbase(&mut utxo_set, &locker_addr, 10_000_000_000, 1);
+
+        let preimage = b"preimagepreimagepreimagepreimage";
+        let mut hasher = Sha256::new();
+        hasher.update(preimage);
+        let hashlock: [u8; 32] = hasher.finalize().into();
+        let timeout = 1000u64;
+
+        let utxo = spendable(&utxo_set, &locker_addr);
+        let build = build_htlc_lock(
+            &locker_sk,
+            &locker_addr,
+            1_000_000_000,
+            10_000,
+            &[utxo],
+            &hashlock,
+            timeout,
+            claimant_pk.as_bytes(),
+            refund_pk.as_bytes(),
+        )
+        .unwrap();
+
+        utxo_set.apply_transaction(&build.transaction, 2, 100).unwrap();
+        let refund_addr = derive_address(refund_pk.as_bytes());
+        let lock_utxo = htlc_spendable(&utxo_set, &refund_addr);
+
+        let claim_tx = build_htlc_claim(
+            &claimant_sk,
+            10_000,
+            &lock_utxo,
+            &hashlock,
+            timeout,
+            claimant_pk.as_bytes(),
+            refund_pk.as_bytes(),
+            &preimage.as_slice().try_into().unwrap(),
+        )
+        .unwrap();
+
+        let err = utxo_set.apply_transaction(&claim_tx, 3, 1001).unwrap_err();
+        assert!(matches!(err, UtxoError::HtlcClaimExpired(0)));
+    }
+
+    #[test]
+    fn htlc_refund_fails_before_timeout() {
+        let (locker_sk, locker_pk) = generate_keypair();
+        let (_claimant_sk, claimant_pk) = generate_keypair();
+        let (refund_sk, refund_pk) = (locker_sk.clone(), locker_pk);
+
+        let locker_addr = derive_address(locker_pk.as_bytes());
+
+        let mut utxo_set = UtxoSet::new();
+        fund_coinbase(&mut utxo_set, &locker_addr, 10_000_000_000, 1);
+
+        let hashlock = [42u8; 32];
+        let timeout = 1000u64;
+
+        let utxo = spendable(&utxo_set, &locker_addr);
+        let build = build_htlc_lock(
+            &locker_sk,
+            &locker_addr,
+            1_000_000_000,
+            10_000,
+            &[utxo],
+            &hashlock,
+            timeout,
+            claimant_pk.as_bytes(),
+            refund_pk.as_bytes(),
+        )
+        .unwrap();
+
+        utxo_set.apply_transaction(&build.transaction, 2, 100).unwrap();
+        let refund_addr = derive_address(refund_pk.as_bytes());
+        let lock_utxo = htlc_spendable(&utxo_set, &refund_addr);
+
+        let refund_tx = build_htlc_refund(
+            &refund_sk,
+            10_000,
+            &lock_utxo,
+            &hashlock,
+            timeout,
+            claimant_pk.as_bytes(),
+            refund_pk.as_bytes(),
+        )
+        .unwrap();
+
+        let err = utxo_set.apply_transaction(&refund_tx, 3, 999).unwrap_err();
+        assert!(matches!(err, UtxoError::HtlcRefundNotExpired(0)));
+    }
+
+    #[test]
+    fn htlc_output_script_is_preserved_in_utxo() {
+        let (locker_sk, locker_pk) = generate_keypair();
+        let (_claimant_sk, claimant_pk) = generate_keypair();
+
+        let locker_addr = derive_address(locker_pk.as_bytes());
+        let refund_addr = derive_address(locker_pk.as_bytes());
+        let mut utxo_set = UtxoSet::new();
+        fund_coinbase(&mut utxo_set, &locker_addr, 10_000_000_000, 1);
+
+        let hashlock = [7u8; 32];
+        let timeout = 5000u64;
+        let script = htlc_output_script(&hashlock, timeout, claimant_pk.as_bytes(), locker_pk.as_bytes());
+
+        let utxo = spendable(&utxo_set, &locker_addr);
+        let build = build_htlc_lock(
+            &locker_sk,
+            &locker_addr,
+            1_000_000_000,
+            10_000,
+            &[utxo],
+            &hashlock,
+            timeout,
+            claimant_pk.as_bytes(),
+            locker_pk.as_bytes(),
+        )
+        .unwrap();
+
+        utxo_set.apply_transaction(&build.transaction, 2, 100).unwrap();
+        let lock_utxo = htlc_spendable(&utxo_set, &refund_addr);
+        assert_eq!(lock_utxo.script, script);
+    }
 }

@@ -973,10 +973,12 @@ mod tests {
                 TransactionOutput {
                     amount: Amount::new(1_000_000_000_000),
                     address: addr("zion1recipientaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+                    ..Default::default()
                 },
                 TransactionOutput {
                     amount: Amount::new(500_000_000_000),
                     address: addr("zion1changeaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+                    ..Default::default()
                 },
             ],
             vec![],
@@ -1064,10 +1066,12 @@ mod tests {
                 TransactionOutput {
                     amount: Amount::new(1_000_000_000_000),
                     address: addr("zion1otherrecipientbbbbbbbbbbbbbbbbbbbbbbbbb"),
+                    ..Default::default()
                 },
                 TransactionOutput {
                     amount: Amount::new(649_000_000_000_000),
                     address: addr(sender), // change back to the sender
+                    ..Default::default()
                 },
             ],
             vec![],

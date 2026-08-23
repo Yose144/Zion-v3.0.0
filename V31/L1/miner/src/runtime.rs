@@ -340,6 +340,7 @@ impl MinerRuntime {
             outputs: vec![TransactionOutput {
                 address: self.config.reward_address.clone(),
                 amount: reward,
+                ..Default::default()
             }],
             memo: b"coinbase".to_vec(),
         }

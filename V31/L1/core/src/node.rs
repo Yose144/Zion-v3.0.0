@@ -740,12 +740,12 @@ impl Node {
     ///
     /// Excludes outputs already consumed by a mempool transaction so wallets
     /// do not build conflicting transactions while a previous spend is pending.
-    pub async fn get_utxos_for_address(&self, address: &str) -> Vec<(Hash, u32, u64, u64, u64, bool)> {
+    pub async fn get_utxos_for_address(&self, address: &str) -> Vec<(Hash, u32, u64, u64, u64, bool, Vec<u8>)> {
         let set = self.utxo_set.lock().await;
         let mut utxos = set.get_utxos_for_address(address);
         drop(set);
         let spent = self.mempool.spent_outpoints().await;
-        utxos.retain(|(tx_hash, index, _amount, _height, _timestamp, _is_coinbase)| {
+        utxos.retain(|(tx_hash, index, _amount, _height, _timestamp, _is_coinbase, _script)| {
             let outpoint = Outpoint::new(*tx_hash, *index);
             !spent.contains(&outpoint)
         });
@@ -814,14 +814,17 @@ impl Node {
                 TransactionOutput {
                     amount: Amount::new(miner_amount as u128),
                     address: miner,
+                    ..Default::default()
                 },
                 TransactionOutput {
                     amount: Amount::new(human_amount as u128),
                     address: self.config.human_address.clone(),
+                    ..Default::default()
                 },
                 TransactionOutput {
                     amount: Amount::new(issobella_amount as u128),
                     address: self.config.issobella_address.clone(),
+                    ..Default::default()
                 },
             ],
             memo: format!("coinbase:height={}", next_height).into_bytes(),
@@ -1130,6 +1133,7 @@ mod tests {
             output_index: 0,
             amount: coinbase.outputs[0].amount.0 as u64,
             address: miner_addr.clone(),
+            script: coinbase.outputs[0].script.clone(),
             block_height: 1,
             is_coinbase: true,
         };
@@ -1199,6 +1203,7 @@ mod tests {
             output_index: 0,
             amount: coinbase.outputs[0].amount.0 as u64,
             address: miner_addr.clone(),
+            script: coinbase.outputs[0].script.clone(),
             block_height: 1,
             is_coinbase: true,
         };
@@ -1246,6 +1251,7 @@ mod tests {
             outputs: vec![TransactionOutput {
                 amount: Amount::new(1_000_000),
                 address: premine_addr,
+                ..Default::default()
             }],
             memo: vec![],
         };
@@ -1266,6 +1272,7 @@ mod tests {
                 amount: Amount::new(1),
                 address: Address::new(zion_l1_types::ChainId::ZionL1, vec![], "zion1test")
                     .unwrap(),
+                ..Default::default()
             }],
             memo: vec![],
         };
