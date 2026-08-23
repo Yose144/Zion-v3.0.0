@@ -3,7 +3,7 @@
 **Date:** 2026-08-23
 **Scope:** L2 multichain (`V31/L2/multichain`), L4 OASIS (`V31/L4/oasis` + `APP&WEB/OasisWeb`), and Web 2.9 (`APP&WEB/website-v2.9`)
 **Author:** Devin
-**Status:** Draft — pending execution
+**Status:** In progress — all four phases implemented locally, pending final smoke tests, commit and deploy
 
 ---
 
@@ -37,27 +37,28 @@ The plan is split into four implementation phases plus a final testing and deplo
 
 <ref_file file="/home/zionserver/2.9.6-main/APP&WEB/shared/zis-client.ts" />
 
-### 2.3 L2 multichain (auth gap)
+### 2.3 L2 multichain (auth implemented)
 
-The Axum server in `V31/L2/multichain/src/server.rs` only has a per-IP rate limiter and a static `Authorization: Bearer <api_key>` check for non-GET requests. It does not understand the `zion_session` cookie or ZIS API keys, and `MultichainService` has no concept of a caller identity.
+The Axum server in `V31/L2/multichain/src/server.rs` now resolves callers via the `zion_session` cookie or a ZIS API key (`resolve_zis_auth` in `src/zis_auth.rs`). `ZisUser` is attached to request extensions and `require_user` is used by mutating handlers. CORS allows credentials for `*.zionterranova.com` origins and local dev.
 
-<ref_file file="/home/zionserver/2.9.6-main/V31/L2/multichain/src/rate_limit.rs" />
+<ref_file file="/home/zionserver/2.9.6-main/V31/L2/multichain/src/zis_auth.rs" />
 <ref_file file="/home/zionserver/2.9.6-main/V31/L2/multichain/src/server.rs" />
 
-### 2.4 L4 OASIS (auth gap)
+### 2.4 L4 OASIS (auth implemented)
 
-The OASIS backend in `V31/L4/oasis/src/server.rs` is keyed by on-chain `address` path parameters. There is no session validation, so any caller can POST XP or join guilds for any address. `APP&WEB/OasisWeb/src/lib/zis.ts` re-exports the shared client and provides `checkOasisAuth()` but no page uses it yet.
+The OASIS backend in `V31/L4/oasis/src/server.rs` now wraps sensitive POST routes with `require_auth` and resolves ZIS sessions / API keys (`src/zis_auth.rs`). It verifies the caller owns the `:address` path parameter and syncs `player.user_id` to the ZIS user. `APP&WEB/OasisWeb/src/contexts/AuthContext.tsx` provides ZIS-backed auth and uses the player's ZION address.
 
 <ref_file file="/home/zionserver/2.9.6-main/V31/L4/oasis/src/server.rs" />
 <ref_file file="/home/zionserver/2.9.6-main/APP&WEB/OasisWeb/src/lib/zis.ts" />
 
-### 2.5 website-v2.9 (partial integration)
+### 2.5 website-v2.9 (auth integration)
 
-Web 2.9 already has:
+Web 2.9 now has:
 
 - `AuthContext` backed by ZIS.
 - Local Next.js proxy routes for `/api/auth/*`, `/api/session/*`, and `/api/keys/*`.
-- Edge middleware (`src/proxy.ts`) that protects `/account` and `/dashboard/private` and redirects unauthenticated users to `/login?redirect=...`.
+- Edge middleware (`src/proxy.ts`) that protects `/account`, `/dashboard/private`, `/dex`, `/swap`, `/ziondex`, `/bridge`, `/multichain`, and `/defi`, redirecting unauthenticated users to `/login?redirect=...`.
+- `CrossChainSwapWidget` sends `credentials: 'include'`, pre-fills the source address from linked addresses, and prompts for login before swap execution.
 - `NavAuthButton`, `LoginModal`, and `AccountPage`.
 
 <ref_file file="/home/zionserver/2.9.6-main/APP&WEB/website-v2.9/src/contexts/AuthContext.tsx" />
@@ -510,4 +511,9 @@ The current session is a 7-day signed JWT. Add an optional refresh:
 
 ---
 
-*This plan is ready for review. Once approved, execute Phase 1 first, then proceed through each phase in order.*
+## 12. Progress log
+
+- **2026-08-23 (Web 2.9 auth migration):** Legacy local JWT routes removed; `src/proxy.ts` now validates protected pages against ZIS. `ZION_JWT_SECRET` no longer required by website code.
+- **2026-08-23 (Plan update):** Status moved to *In progress*. `POST /api/keys/verify` already exists in `APP&WEB/identity/src/routes/apikey.ts`. `DexOrder` and `BridgeTransaction` models exist in the shared Prisma schema.
+
+*Next: finish Phase 4 hardening (`/api/auth/link`, session refresh, shared client helpers), then close remaining gaps in Phases 1–3.*

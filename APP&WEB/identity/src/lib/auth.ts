@@ -38,6 +38,38 @@ export async function requireAuth(
   if (!session || session.revoked || session.expiresAt < new Date()) {
     return reply.code(401).send({ error: 'UNAUTHORIZED', message: 'Session revoked or expired' });
   }
+
+  // Rolling refresh: if the session is more than 50% through its lifetime,
+  // issue a new token with the same JTI and an extended expiry.
+  const iatMs = payload.iat * 1000;
+  const expMs = payload.exp * 1000;
+  const halfLife = (expMs - iatMs) / 2;
+  const refreshAt = iatMs + halfLife;
+  const now = Date.now();
+
+  if (now >= refreshAt && now < expMs - 60_000) {
+    const app = req.server as FastifyInstance;
+    const newExpiresAt = new Date(now + 7 * 24 * 60 * 60 * 1000);
+
+    await app.prisma.session.update({
+      where: { jwtJti: payload.jti },
+      data: { expiresAt: newExpiresAt },
+    });
+
+    const token = app.jwt.sign({ sub: payload.sub, addr: payload.addr, jti: payload.jti }, {
+      expiresIn: '7d',
+    });
+
+    reply.setCookie('zion_session', token, {
+      domain: app.cookieDomain,
+      path: '/',
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      signed: true,
+      expires: newExpiresAt,
+    });
+  }
 }
 
 export async function optionalAuth(

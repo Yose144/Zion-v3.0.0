@@ -30,6 +30,17 @@ const UpdateProfileSchema = z.object({
   bio: z.string().max(512).optional().nullable(),
 });
 
+const LinkAddressSchema = z.object({
+  address: z.string().min(8),
+  chainType: z.enum(['zion-l1', 'evm', 'bitcoin']),
+  chainId: z.string().optional(),
+  // Ed25519 linking
+  publicKey: z.string().optional(),
+  signature: z.string().min(1),
+  // SIWE linking
+  message: z.string().optional(),
+});
+
 export async function authRoutes(app: FastifyInstance): Promise<void> {
   // ── POST /challenge ─────────────────────────────────────────────
   app.post('/challenge', async (req, reply) => {
@@ -120,6 +131,59 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     });
     reply.clearCookie('zion_session', { domain: app.cookieDomain });
     return { ok: true };
+  });
+
+  // ── POST /link ──────────────────────────────────────────────────
+  // Link an additional address to the authenticated user's account.
+  // The caller must sign a fresh ZIS challenge for the address they want to link.
+  app.post('/link', { preHandler: [requireAuth] }, async (req, reply) => {
+    const parsed = LinkAddressSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'BAD_REQUEST', details: parsed.error.issues });
+    }
+    const { address, chainType, chainId, publicKey, signature, message } = parsed.data;
+    const payload = req.user as { sub: string };
+
+    let ok = false;
+    if (chainType === 'zion-l1') {
+      if (!publicKey) {
+        return reply.code(400).send({ error: 'BAD_REQUEST', message: 'publicKey is required for zion-l1' });
+      }
+      ok = await verifyEd25519(address, signature, publicKey);
+    } else if (chainType === 'evm') {
+      if (!message) {
+        return reply.code(400).send({ error: 'BAD_REQUEST', message: 'message is required for evm' });
+      }
+      ok = await verifySiwe(address, signature, message);
+    } else {
+      return reply.code(400).send({ error: 'BAD_REQUEST', message: 'Unsupported chainType' });
+    }
+
+    if (!ok) {
+      return reply.code(401).send({ error: 'AUTH_FAILED', message: 'Invalid signature or expired challenge' });
+    }
+
+    // Prevent linking an address that already belongs to another user.
+    const existing = await app.prisma.linkedAddress.findUnique({ where: { address } });
+    if (existing && existing.userId !== payload.sub) {
+      return reply.code(409).send({ error: 'CONFLICT', message: 'Address is already linked to another account' });
+    }
+
+    const linked = await app.prisma.linkedAddress.upsert({
+      where: { address },
+      update: { userId: payload.sub, chainType, chainId: chainId ?? null },
+      create: { userId: payload.sub, address, chainType, chainId: chainId ?? null },
+    });
+
+    const user = await app.prisma.user.findUnique({
+      where: { id: payload.sub },
+      include: { linkedAddresses: true, oasisPlayer: true },
+    });
+    if (!user) {
+      return reply.code(404).send({ error: 'NOT_FOUND' });
+    }
+
+    return { linked, user };
   });
 }
 
