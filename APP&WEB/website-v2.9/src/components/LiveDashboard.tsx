@@ -182,7 +182,7 @@ export default function LiveDashboard() {
             <div className="grid grid-cols-2 gap-2 mt-1">
               <div>
                 <p className="text-xs text-gray-400">{LiveDashboardCopy.zionPrice[cs ? 'cs' : 'en']}</p>
-                <p className="text-base font-bold text-white">${defiPrice?.price?.usd_per_wzion?.toFixed(6) ?? '0.000200'}</p>
+                <p className="text-base font-bold text-white">${defiPrice?.price?.usd_per_wzion?.toFixed(6) ?? '—'}</p>
               </div>
               <div>
                 <p className="text-xs text-gray-400">{LiveDashboardCopy.tvlUsd[cs ? 'cs' : 'en']}</p>

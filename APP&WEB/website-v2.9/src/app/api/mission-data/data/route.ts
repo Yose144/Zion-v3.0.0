@@ -8,8 +8,8 @@ import { getSeedNodesConfig } from '@/lib/network-config';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const DEFAULT_MAINNET_STABILITY_START_ISO = '2026-03-29T00:00:00Z';
-const MAINNET_STABILITY_TARGET_DURATION = 72 * 3600;
+const DEFAULT_MAINNET_STABILITY_START_ISO = '2026-08-23T05:00:00Z';
+const MAINNET_STABILITY_TARGET_DURATION = 30 * 24 * 3600;
 const MAINNET_STABILITY_STATE_CANDIDATES = [
   '/data/mainnet-stability-run/active-run.json',
   path.resolve(process.cwd(), 'ops', 'mainnet-stability-run', 'active-run.json'),
@@ -118,6 +118,32 @@ async function loadCollectorState(): Promise<StabilityCollectorState | null> {
   }
 
   return null;
+}
+
+/* ── Load the G8 30-day continuous-run state from Edge disk ───────── */
+async function loadG8RunState(): Promise<StabilityCollectorState | null> {
+  try {
+    const raw = await readFile('/opt/zion/data/g8_run.json', 'utf8');
+    const parsed = JSON.parse(raw) as any;
+    if (!parsed || typeof parsed !== 'object' || !parsed.started || !parsed.target_end) return null;
+    const startMs = new Date(parsed.started).getTime();
+    const endMs = new Date(parsed.target_end).getTime();
+    return {
+      started_at: parsed.started,
+      target_duration_secs: Math.max(3600, Math.floor((endMs - startMs) / 1000)),
+      run_id: parsed.run_id ?? 'g8-30day',
+      samples_collected: 0,
+      issue_count: Array.isArray(parsed.critical_incidents) ? parsed.critical_incidents.length : 0,
+      latest: {
+        status: parsed.status,
+        pool_reachable: Array.isArray(parsed.services)
+          ? parsed.services.some((s: any) => s.id === 'v31-pool' && s.alive)
+          : undefined,
+      },
+    };
+  } catch {
+    return null;
+  }
 }
 
 /* ── Fetch data for a specific node via V3 TCP RPC ───────────────── */
@@ -267,7 +293,7 @@ function buildMainnetStabilityRun(
 /* ── GET handler ───────────────────────────────────────────────── */
 export async function GET() {
   const nodes = getSeedNodesConfig();
-  const collectorState = await loadCollectorState();
+  const collectorState = (await loadG8RunState()) ?? (await loadCollectorState());
   // Query all nodes in parallel
   const [primary, usa, singapore] = await Promise.all([
     fetchNodeData(nodes.find(n => n.id === 'edge-vps')?.id ?? nodes[0]?.id),
@@ -284,77 +310,49 @@ export async function GET() {
 
   const readinessMap = {
     done: [
-      {
-        title: 'Consensus a on-chain reward split jsou ověřené',
-        detail: 'Live bloky 465, 471 a 472 potvrdily 89/5/5/1 split přímo na chainu, ne jen v pool accounting vrstvě.',
-      },
-      {
-        title: 'Edge server a Edge server drží tip po rolloutu',
-        detail: 'Edge server topologie zůstala po fee-split deployi bez divergence a s potvrzeným syncem.',
-      },
-      {
-        title: 'Deploy runbook a operator guide jsou srovnané',
-        detail: 'Aktuální docs odpovídají raw TCP RPC modelu, živým portům a skutečným binárkám node/server/zion-miner.',
-      },
-      {
-        title: 'Monitoring a pool telemetry běží',
-        detail: 'Dashboard, Prometheus a pool stats vrací live data. Mainnet monitoring aktivní.',
-      },
+      { title: 'G11 — V3→V31 migration complete', detail: 'H1–H4 remediation finished: Foundry wZION/ZIONBridge/ZDXToken tests pass, zion deploy/update wired, miner TUI verified, CLI build green.' },
+      { title: 'E4 — Bridge Base mainnet round-trip', detail: '100 ZION lock → 100 wZION mint → 100 wZION burn → 100 ZION unlock confirmed on V31 native chain.' },
+      { title: 'G5/E8 — XMR / RandomX AuxPoW on MoneroOcean', detail: 'CryptonoteStratum job/submit parsing fixed and validated for ZION miner CPU path.' },
+      { title: 'G7 — chaos and load tests passed', detail: '10k-miner pool handshake, DEX/bridge overload, P2P reconnect storm and 10-min tx fuzz preview all green.' },
+      { title: 'G1 — GPU/rig E2E closed', detail: 'GTX 1070 Ti (CUDA) and SimpleMining AMD rig connected to Edge pool with >99% accept rate.' },
+      { title: 'G3 — solver network E2E closed', detail: 'Off-chain solvers, X-Solver-Key auth and full intent→bid→settle flow verified.' },
+      { title: 'G4 — public subtree sync', detail: 'public/ is fully synchronized with github.com/Zion-TerraNova/v3-Mainnet:main.' },
+      { title: 'H5 — AuxPoW E2E test harness', detail: 'Local CryptonoteStratum mock + zion-pool + CPU miner XMR path end-to-end validated.' },
+      { title: 'Premine/coinbase maturity soft-fork', detail: 'V31 core enforces COINBASE_MATURITY=100 and admin/time locks, with configurable activation height.' },
+      { title: 'V3.2.0 public release assets', detail: 'Terminal Miner, CLI and Desktop Agent build scripts, workflows and download metadata switched to v3.2.0.' },
     ],
     missing: [],
     not_missing: [
-      {
-        title: 'Consensus a on-chain reward split ověřené',
-        detail: 'Live bloky 465, 471 a 472 potvrdily 89/5/5/1 split přímo na chainu, ne jen v pool accounting vrstvě.',
-      },
-      {
-        title: 'Edge server a Edge server drží tip po rolloutu',
-        detail: 'Edge server topologie zůstala po fee-split deployi bez divergence a s potvrzeným syncem.',
-      },
-      {
-        title: 'BFG scrub a secret hygiene uzavřeny',
-        detail: 'Git historie vyčištěna, žádné credential leaky v historii repa.',
-      },
-      {
-        title: 'Genesis artefakty, tag a checksumy kompletní',
-        detail: 'Offline genesis chain, release tag a veřejné checksum workflow jsou formálně uzavřené.',
-      },
-      {
-        title: 'Exit criteria sign-off potvrzen',
-        detail: 'MAINNET_EXIT_CRITERIA.md uzavřen s finálním launch podpisem a waiver logem.',
-      },
-      {
-        title: 'Stability closure report kompletní',
-        detail: `Collector uzavřen — vzorky, tip agreement, reject rate a pool recovery evidence potvrzeny. Launch gate: GO.`,
-      },
+      { title: 'G11 — V3→V31 migration complete', detail: 'H1–H4 remediation finished: Foundry wZION/ZIONBridge/ZDXToken tests pass, zion deploy/update wired, miner TUI verified, CLI build green.' },
+      { title: 'E4 — Bridge Base mainnet round-trip', detail: '100 ZION lock → 100 wZION mint → 100 wZION burn → 100 ZION unlock confirmed on V31 native chain.' },
+      { title: 'G5/E8 — XMR / RandomX AuxPoW on MoneroOcean', detail: 'CryptonoteStratum job/submit parsing fixed and validated for ZION miner CPU path.' },
+      { title: 'G7 — chaos and load tests passed', detail: '10k-miner pool handshake, DEX/bridge overload, P2P reconnect storm and 10-min tx fuzz preview all green.' },
+      { title: 'G1 — GPU/rig E2E closed', detail: 'GTX 1070 Ti (CUDA) and SimpleMining AMD rig connected to Edge pool with >99% accept rate.' },
+      { title: 'G3 — solver network E2E closed', detail: 'Off-chain solvers, X-Solver-Key auth and full intent→bid→settle flow verified.' },
+      { title: 'G4 — public subtree sync', detail: 'public/ is fully synchronized with github.com/Zion-TerraNova/v3-Mainnet:main.' },
+      { title: 'H5 — AuxPoW E2E test harness', detail: 'Local CryptonoteStratum mock + zion-pool + CPU miner XMR path end-to-end validated.' },
+      { title: 'Premine/coinbase maturity soft-fork', detail: 'V31 core enforces COINBASE_MATURITY=100 and admin/time locks, with configurable activation height.' },
+      { title: 'V3.2.0 public release assets', detail: 'Terminal Miner, CLI and Desktop Agent build scripts, workflows and download metadata switched to v3.2.0.' },
     ],
     next_48h: [
-      {
-        title: 'Launch Countdown — 31. prosince 2026',
-        detail: 'Příprava launch pokračuje. Edge server v testování, pool přijímá test shares, monitoring aktivní.',
-      },
-      {
-        title: 'Post-Launch — L2/L3 roadmap',
-        detail: 'wZION bridge live na Base Mainnet, DAO voting a NCL AI runtime navazují po stabilním L1 základu.',
-      },
-      {
-        title: 'Exchange onboarding a community',
-        detail: 'Veřejný mining pool otevřen, fee split 89/5/5/1 aktivní, listing přípravy.',
-      },
+      { title: 'G8 — 30-day continuous run', detail: 'Started 2026-08-23 07:00 CET. Target 2026-09-22 07:00 CET. Uptime target ≥99.9%.' },
+      { title: 'G9 — security audit', detail: 'Schedule external security audit (Trail of Bits or equivalent) for V31 L1/L2 before public launch.' },
+      { title: 'G10 — L5/L6 decision', detail: 'Formal treasury, humanitarian fund and Issobella space-fund governance activation plan.' },
+      { title: 'Phase I — ZIS identity service', detail: 'Finalise zion-zis deployment, rate limiting and public auth flows.' },
     ],
   };
 
   const data = {
     timestamp: new Date().toISOString(),
     environment: {
-      label: 'V3 Production Mainnet',
-      current_phase: 'Production mainnet · launch GO',
-      public_launch_status: 'GO',
+      label: 'V31 Mainnet Alpha',
+      current_phase: 'G8 30-day continuous run · running',
+      public_launch_status: 'G8 IN-PROGRESS',
     },
     mainnet_stability_run: mainnetStabilityRun,
     launch_rehearsal: mainnetStabilityRun,
     readiness_map: readinessMap,
-    current_topology: 'core-edge',
+    current_topology: nodes.map((n: any) => n.id ?? n.ip).join(' / ') || 'edge-vps',
     primary,
     usa,
     singapore,
